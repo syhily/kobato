@@ -1,6 +1,6 @@
 // Session-revocation policy — the single owner of "who may revoke
-// whose session". The Redis primitives (`repo.ts::revokeSessionById`,
-// `session-storage.ts::revokeAllSessionsOfUser`) are deliberately
+// whose session". The session-table primitives (`repo.ts::revokeSessionById`,
+// `service.ts::revokeAllSessionsOfUser`) are deliberately
 // role-blind; every HTTP perimeter routes through one of the three
 // scopes below instead of hand-rolling ownership checks:
 //
@@ -29,7 +29,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { ViewerContext } from '@/server/domains/auth/rbac'
 
 import { findSessionMeta, revokeSessionById } from '@/server/domains/auth/repo'
-import { revokeAllSessionsOfUser } from '@/server/domains/auth/session-storage'
+import { revokeAllSessionsOfUser } from '@/server/domains/auth/service'
 import { findSafeUserById } from '@/server/infra/db/operations/user'
 import { DomainError } from '@/server/infra/http/errors'
 
@@ -43,15 +43,19 @@ export interface SessionRevocation {
  * an admin acting through `account.revokeSession` gets no bypass, so
  * the audit trail always reads as the owner managing their own session.
  */
-export async function revokeOwnSessionWithGuard(sessionId: string, actor: ViewerContext): Promise<SessionRevocation> {
-  const meta = await findSessionMeta(sessionId)
+export async function revokeOwnSessionWithGuard(
+  db: NodePgDatabase,
+  sessionId: string,
+  actor: ViewerContext,
+): Promise<SessionRevocation> {
+  const meta = await findSessionMeta(db, sessionId)
   if (!meta) {
     return { targetUserId: null }
   }
   if (meta.userId.toString() !== actor.userId) {
     throw new DomainError('FORBIDDEN', '无权操作该会话。')
   }
-  await revokeSessionById(sessionId, meta.userId)
+  await revokeSessionById(db, sessionId, meta.userId)
   return { targetUserId: meta.userId }
 }
 
@@ -66,7 +70,7 @@ export async function revokeSessionWithGuard(
   sessionId: string,
   actor: ViewerContext,
 ): Promise<SessionRevocation> {
-  const meta = await findSessionMeta(sessionId)
+  const meta = await findSessionMeta(db, sessionId)
   if (!meta) {
     return { targetUserId: null }
   }
@@ -79,7 +83,7 @@ export async function revokeSessionWithGuard(
       throw new DomainError('FORBIDDEN', '无权撤销其他管理员的会话。')
     }
   }
-  await revokeSessionById(sessionId, meta.userId)
+  await revokeSessionById(db, sessionId, meta.userId)
   return { targetUserId: meta.userId }
 }
 
@@ -98,5 +102,5 @@ export async function revokeAllSessionsWithGuard(
   if (targetUser?.role === 'admin' && targetUserId.toString() !== actor.userId) {
     throw new DomainError('FORBIDDEN', '无权撤销其他管理员的全部会话。')
   }
-  await revokeAllSessionsOfUser(targetUserId)
+  await revokeAllSessionsOfUser(db, targetUserId)
 }

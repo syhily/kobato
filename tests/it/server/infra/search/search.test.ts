@@ -4,7 +4,6 @@ import type { Pool } from 'pg'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables } from '#/_helpers/integration-db'
-import { flushWorkerRedis } from '#/_helpers/redis'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { postSearchIndex } from '@/server/infra/db/schema/content'
 import { post } from '@/server/infra/db/schema/post'
@@ -64,7 +63,6 @@ function liveWhere() {
 
 beforeEach(async () => {
   await clearAllTables(db)
-  await flushWorkerRedis()
   mocks.generateEmbedding.mockReset()
   mocks.warn.mockClear()
   __setTrgmAvailabilityForTests(null)
@@ -181,7 +179,7 @@ describe('services/search — searchPosts', () => {
 
     const result = await searchPosts(db, liveWhere(), 'semantic', 10)
 
-    expect(mocks.generateEmbedding).toHaveBeenCalledWith('semantic')
+    expect(mocks.generateEmbedding).toHaveBeenCalledWith(db, 'semantic')
     // Vector search won't match because no embeddings in DB,
     // but LIKE should still find the titles containing 'semantic'
     expect(result.hits).toContain('vector-match-1')
@@ -297,9 +295,20 @@ describe('services/search — search result cache invalidation', () => {
 
     // Invalidation bumps the generation stamp, so the next query misses
     // the old-generation entry and re-runs against the corpus.
-    await invalidateSearchCache()
+    await invalidateSearchCache(db)
     const fresh = await searchPosts(db, liveWhere(), 'cache', 10)
     expect(fresh.hits).toEqual(['cache-beta', 'cache-alpha'])
+
+    // The counter row now exists, so a second bump takes the
+    // ON CONFLICT DO UPDATE branch (value::int + 1) — and invalidates
+    // all over again.
+    await seedPost({ slug: 'cache-gamma', title: 'Cache Gamma' })
+    const staleAgain = await searchPosts(db, liveWhere(), 'cache', 10)
+    expect(staleAgain.hits).toEqual(['cache-beta', 'cache-alpha'])
+
+    await invalidateSearchCache(db)
+    const freshAgain = await searchPosts(db, liveWhere(), 'cache', 10)
+    expect(freshAgain.hits).toEqual(['cache-gamma', 'cache-beta', 'cache-alpha'])
   })
 })
 

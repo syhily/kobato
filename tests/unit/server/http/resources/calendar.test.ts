@@ -1,4 +1,10 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+// The db handle is only forwarded to the mocked loadBuffer — a stand-in is
+// enough for the unit scope.
+const db = {} as NodePgDatabase
 
 describe('serveCalendar', () => {
   beforeEach(() => {
@@ -19,7 +25,7 @@ describe('serveCalendar', () => {
         (buffer: Buffer) => new Response(new Uint8Array(buffer), { headers: { 'Content-Type': 'image/png' } }),
       ),
     }))
-    vi.doMock('@/server/infra/redis/buffer-cache', () => ({
+    vi.doMock('@/server/infra/cache/buffer-cache', () => ({
       loadBuffer: vi.fn().mockResolvedValue(Buffer.from('png-bytes')),
     }))
     vi.doMock('@/server/render/calendar/render', () => ({
@@ -32,7 +38,7 @@ describe('serveCalendar', () => {
     }))
 
     const serveCalendar = await importServeCalendar()
-    const res = await serveCalendar({ year: '2026', time: '0617' }, 'light', {
+    const res = await serveCalendar(db, { year: '2026', time: '0617' }, 'light', {
       'Cache-Control': 'public, max-age=86400',
     })
     expect(res.status).toBe(200)
@@ -49,7 +55,7 @@ describe('serveCalendar', () => {
         (buffer: Buffer) => new Response(new Uint8Array(buffer), { headers: { 'Content-Type': 'image/png' } }),
       ),
     }))
-    vi.doMock('@/server/infra/redis/buffer-cache', () => ({ loadBuffer }))
+    vi.doMock('@/server/infra/cache/buffer-cache', () => ({ loadBuffer }))
     vi.doMock('@/server/render/calendar/render', () => ({
       renderCalendar: vi.fn().mockResolvedValue(Buffer.from('dark-png')),
     }))
@@ -60,8 +66,8 @@ describe('serveCalendar', () => {
     }))
 
     const serveCalendar = await importServeCalendar()
-    await serveCalendar({ year: '2026', time: '0617' }, 'dark', {})
-    expect(loadBuffer).toHaveBeenCalledWith('cal:2026-06-17-dark', expect.any(Function), 3600)
+    await serveCalendar(db, { year: '2026', time: '0617' }, 'dark', {})
+    expect(loadBuffer).toHaveBeenCalledWith(db, 'cal:2026-06-17-dark', expect.any(Function), 3600, 'calendar')
   })
 
   it('throws 404 for malformed year', async () => {
@@ -76,7 +82,7 @@ describe('serveCalendar', () => {
     }))
 
     const serveCalendar = await importServeCalendar()
-    await expect(serveCalendar({ year: 'ab' }, 'light', {})).rejects.toMatchObject({
+    await expect(serveCalendar(db, { year: 'ab' }, 'light', {})).rejects.toMatchObject({
       status: 404,
     })
     expect(notFound).toHaveBeenCalled()
@@ -94,7 +100,7 @@ describe('serveCalendar', () => {
     }))
 
     const serveCalendar = await importServeCalendar()
-    await expect(serveCalendar({ year: '2026', time: '0230' }, 'light', {})).rejects.toMatchObject({
+    await expect(serveCalendar(db, { year: '2026', time: '0230' }, 'light', {})).rejects.toMatchObject({
       status: 404,
     })
     expect(notFound).toHaveBeenCalled()
@@ -112,7 +118,7 @@ describe('serveCalendar', () => {
     }))
 
     const serveCalendar = await importServeCalendar()
-    await expect(serveCalendar({ year: '2026', time: 'abcd' }, 'light', {})).rejects.toMatchObject({
+    await expect(serveCalendar(db, { year: '2026', time: 'abcd' }, 'light', {})).rejects.toMatchObject({
       status: 404,
     })
     expect(notFound).toHaveBeenCalled()
@@ -130,7 +136,7 @@ describe('serveCalendar', () => {
     }))
 
     const serveCalendar = await importServeCalendar()
-    await expect(serveCalendar({ year: '2026', time: '1399' }, 'light', {})).rejects.toMatchObject({
+    await expect(serveCalendar(db, { year: '2026', time: '1399' }, 'light', {})).rejects.toMatchObject({
       status: 404,
     })
     expect(notFound).toHaveBeenCalled()

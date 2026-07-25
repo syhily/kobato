@@ -45,7 +45,7 @@ export async function indexPost(
   const plainText = bodyToPlainText(body)
   const indexText = corpusText({ title, summary, plainText })
 
-  const rawEmbedding = await generateEmbedding(indexText)
+  const rawEmbedding = await generateEmbedding(db, indexText)
 
   getLogger('search.indexer').info('Embedding generated', {
     postId: String(postId),

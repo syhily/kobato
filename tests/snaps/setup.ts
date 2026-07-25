@@ -1,4 +1,4 @@
-// Vitest worker setup for snapshot tests. No DB/Redis — just env vars and
+// Vitest worker setup for snapshot tests. No DB — just env vars and
 // the settings snapshot slot.
 
 import { afterEach } from 'vitest'

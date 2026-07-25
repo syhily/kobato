@@ -5,7 +5,6 @@ import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables } from '#/_helpers/integration-db'
-import { flushWorkerRedis } from '#/_helpers/redis'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
@@ -30,7 +29,6 @@ afterAll(async () => {
 
 beforeEach(async () => {
   await clearAllTables(db)
-  await flushWorkerRedis()
   vi.clearAllMocks()
 })
 

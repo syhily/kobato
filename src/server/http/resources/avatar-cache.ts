@@ -1,7 +1,9 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { Buffer } from 'node:buffer'
 
-import { createInflight } from '@/server/infra/redis/inflight'
-import { storage } from '@/server/infra/redis/storage'
+import { createInflight } from '@/server/infra/cache/inflight'
+import { getItemRaw, setItemRaw } from '@/server/infra/cache/kv-store'
 import { getCacheSettings } from '@/shared/config/getters'
 
 export interface Avatar {
@@ -15,7 +17,7 @@ export enum AvatarStatus {
 }
 
 // Dedupe concurrent loads for the same email so a hot avatar (e.g. the site
-// owner appearing in every comment thread) only round-trips Redis once per
+// owner appearing in every comment thread) only round-trips kv_cache once per
 // concurrent burst instead of once per requesting comment.
 const avatarInflight = createInflight<Avatar | null>()
 
@@ -37,9 +39,9 @@ const avatarKey = (email: string, size: number): string => `${avatarConfig().pre
 // `avatar-${email}`). Byte 0 is the status sentinel, the rest is the
 // avatar payload (only present for HAVE_AVATAR).
 //
-// The previous two-key layout cost two Redis round-trips on every
+// The previous two-key layout cost two cache round-trips on every
 // non-cached avatar render (status GET → payload GET); this design halves
-// that to a single GET and removes the cross-key consistency footgun
+// that to a single read and removes the cross-key consistency footgun
 // where the status key could outlive its payload (or vice versa) if a
 // write was interrupted.
 function encodeAvatar(status: AvatarStatus, buffer: Buffer | null): Buffer {
@@ -66,21 +68,23 @@ function decodeAvatar(payload: unknown): Avatar | null {
   return null
 }
 
-export async function loadAvatar(email: string, size: number): Promise<Avatar | null> {
+export async function loadAvatar(db: NodePgDatabase, email: string, size: number): Promise<Avatar | null> {
   const key = avatarKey(email, size)
   return avatarInflight(key, async () => {
-    const payload = await storage.getItemRaw(key)
+    const payload = await getItemRaw(db, key)
     return decodeAvatar(payload)
   })
 }
 
 export async function cacheAvatar(
+  db: NodePgDatabase,
   args:
     | { email: string; size: number; buffer: Buffer; status: AvatarStatus.HAVE_AVATAR }
     | { email: string; size: number; status: AvatarStatus.NO_AVATAR },
 ) {
   const buffer = args.status === AvatarStatus.HAVE_AVATAR ? args.buffer : null
-  await storage.setItemRaw(avatarKey(args.email, args.size), encodeAvatar(args.status, buffer), {
-    ttl: avatarConfig().ttlSeconds,
+  await setItemRaw(db, avatarKey(args.email, args.size), encodeAvatar(args.status, buffer), {
+    ttlSeconds: avatarConfig().ttlSeconds,
+    bucket: 'avatar',
   })
 }

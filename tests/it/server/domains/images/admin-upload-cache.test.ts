@@ -5,7 +5,6 @@ import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables } from '#/_helpers/integration-db'
-import { flushWorkerRedis } from '#/_helpers/redis'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { image } from '@/server/infra/db/schema/media'
 
@@ -30,8 +29,7 @@ afterAll(async () => {
 beforeEach(async () => {
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
   await clearAllTables(db)
-  await flushWorkerRedis()
-  await cache.clearImageEnhanceCache()
+  await cache.clearImageEnhanceCache(db)
 })
 
 async function seedImage(overrides: Partial<typeof image.$inferInsert> = {}) {
@@ -70,7 +68,7 @@ describe('images/services/cache — invalidateImageEnhanceCacheFor', () => {
   it('clears the cached entry', async () => {
     await seedImage({ storagePath: 'images/to-clear.jpg' })
     await cache.readManyMeta(db, ['images/to-clear.jpg'])
-    await cache.invalidateImageEnhanceCacheFor('images/to-clear.jpg')
+    await cache.invalidateImageEnhanceCacheFor(db, 'images/to-clear.jpg')
 
     await db.delete(image).where(eq(image.storagePath, 'images/to-clear.jpg'))
     const meta = (await cache.readManyMeta(db, ['images/to-clear.jpg'])).get('images/to-clear.jpg')

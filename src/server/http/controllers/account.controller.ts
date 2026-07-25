@@ -133,9 +133,9 @@ const revokeSession = authedProc
   .input(revokeSessionInput)
   .output(z.object({ success: z.boolean(), currentSession: z.boolean() }))
   .handler(async ({ input, context }) => {
-    const { viewer, session } = context
+    const { viewer, session, db } = context
     const currentSession = input.id === session.id
-    const { targetUserId } = await revokeOwnSessionWithGuard(input.id, viewer)
+    const { targetUserId } = await revokeOwnSessionWithGuard(db, input.id, viewer)
     if (targetUserId !== null) {
       recordAuditEventFromContext(context, {
         action: 'session_revoked',

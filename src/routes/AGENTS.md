@@ -3,7 +3,7 @@
 `src/routes/` contains route modules — loader / action / meta /
 component orchestration. Read session/context at the perimeter, call
 into `server/`, project DTOs through `shared/`, render with `ui/`. No
-DB queries, Redis access, or markdown parsing inline.
+DB queries, cache access, or markdown parsing inline.
 
 Route modules live alongside resource routes (feeds, sitemap, OG
 images, JSON APIs) under the same folder so the per-URL contract is

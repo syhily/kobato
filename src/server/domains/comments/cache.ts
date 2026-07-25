@@ -3,14 +3,16 @@
 // Currently caches the global "latest comments" sidebar list.
 // Per-page comment-thread caching is left for future profiling.
 
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import type { LatestComment } from '@/shared/types/comments'
 
-import { createRedisCache } from '@/server/infra/cache/redis-cache'
+import { createKvCache } from '@/server/infra/cache/kv-cache'
 
-export const latestCommentsCache = createRedisCache<LatestComment[]>('comments:latest', {
+export const latestCommentsCache = createKvCache<LatestComment[]>('comments:latest', {
   ttlMs: 30_000,
 })
 
-export async function clearLatestCommentsCache(): Promise<void> {
-  await latestCommentsCache.clear()
+export async function clearLatestCommentsCache(db: NodePgDatabase): Promise<void> {
+  await latestCommentsCache.clear(db)
 }

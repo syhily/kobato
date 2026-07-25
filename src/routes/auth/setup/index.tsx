@@ -30,10 +30,10 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   // Ensure the setup token is visible in the server console whenever the
   // install wizard is visited (covers restarts, log rotation, etc.).
   try {
-    await getSetupToken()
+    await getSetupToken(db)
   } catch {
-    // Redis may be temporarily unreachable; the token will be lazily
-    // created on the next successful call.
+    // The database may be temporarily unreachable; the token will be
+    // lazily created on the next successful call.
   }
 
   // Pull the request context so we trip session middleware exactly once.
@@ -76,7 +76,7 @@ export async function action({ request, context }: Route.ActionArgs) {
       return data({ error: '请输入 Setup Token。' })
     }
 
-    const isValid = await verifySetupToken(token)
+    const isValid = await verifySetupToken(db, token)
     if (!isValid) {
       return data({ error: 'Setup Token 错误，请查看服务器控制台输出。' })
     }
@@ -99,8 +99,8 @@ export async function action({ request, context }: Route.ActionArgs) {
     }
 
     // Defense in depth: a stale session flag must not bypass a token that
-    // has expired or been invalidated in Redis.
-    if (!(await isSetupTokenActive())) {
+    // has expired or been invalidated.
+    if (!(await isSetupTokenActive(db))) {
       return data({ error: 'Setup Token 已过期或失效，请重新验证。' })
     }
 

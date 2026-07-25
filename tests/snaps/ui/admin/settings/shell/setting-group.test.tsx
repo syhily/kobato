@@ -177,7 +177,7 @@ describe('snapshot: SettingsNav', () => {
       label: '缓存管理',
       icon: 'Database',
       group: 'system' as const,
-      keywords: ['redis'],
+      keywords: ['kv'],
     },
   ]
 

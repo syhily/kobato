@@ -201,8 +201,8 @@ async function afterPostStateChange(
   id: bigint,
   options: { index?: IndexablePostData | null | 'remove' } = {},
 ): Promise<string | undefined> {
-  await clearContentCaches('post', id)
-  await invalidateSearchCache()
+  await clearContentCaches(db, 'post', id)
+  await invalidateSearchCache(db)
   const { index } = options
   if (index === 'remove') {
     await removePostIndex(db, id).catch((err: unknown) => {

@@ -33,7 +33,7 @@ export async function runVectorSearch(
     return runLikeSearch(db, baseWhere, query)
   }
 
-  const embedding = await generateEmbedding(query)
+  const embedding = await generateEmbedding(db, query)
   getLogger('search.vector').info('Search vector query', {
     query,
     hasEmbedding: embedding !== null,

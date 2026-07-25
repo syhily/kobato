@@ -29,7 +29,7 @@ export async function updateCommentBodyAndContent(
   content: string,
 ): Promise<void> {
   await db.update(comment).set({ body, content }).where(eq(comment.id, id))
-  await clearLatestCommentsCache()
+  await clearLatestCommentsCache(db)
 }
 
 // Fresh-edit variant of `comment.updateOwn`: an owner editing their own
@@ -51,7 +51,7 @@ export async function updateOwnCommentBody(
     .where(and(eq(comment.id, id), eq(comment.updatedAt, expectedUpdatedAt)))
   const affected = result.rowCount ?? 0
   if (affected > 0) {
-    await clearLatestCommentsCache()
+    await clearLatestCommentsCache(db)
   }
   return affected
 }
@@ -76,7 +76,7 @@ export async function updateOwnCommentBodyAndPending(
     .where(and(eq(comment.id, id), eq(comment.updatedAt, expectedUpdatedAt)))
   const affected = result.rowCount ?? 0
   if (affected > 0) {
-    await clearLatestCommentsCache()
+    await clearLatestCommentsCache(db)
   }
   return affected
 }

@@ -19,8 +19,8 @@ import { findPublicPostMetaBySlug } from '@/server/domains/posts/repos/single'
 import { rateLimitByIp } from '@/server/http/middlewares/rate-limit'
 import { AvatarStatus, cacheAvatar, loadAvatar } from '@/server/http/resources/avatar-cache'
 import { serveCalendar } from '@/server/http/resources/calendar'
+import { loadBuffer } from '@/server/infra/cache/buffer-cache'
 import { findCategoryBySlug } from '@/server/infra/db/operations/category'
-import { loadBuffer } from '@/server/infra/redis/buffer-cache'
 import { drawOpenGraph } from '@/server/render/og/render'
 import { getCacheSettings, requireBlogSettingsSection } from '@/shared/config/getters'
 import { joinUrl } from '@/shared/utils/urls'
@@ -77,9 +77,11 @@ function createOgHandler(adapters: readonly OgAdapter[]) {
     const summary =
       entity.summary || (adapter.useSiteSummaryFallback ? requireBlogSettingsSection('siteIdentity').description : '')
     const buffer = await loadBuffer(
+      c.var.db,
       ogCacheKey(`${adapter.cacheKeyPrefix}${slug}`, entity.title, summary, entity.cover),
       () => drawOpenGraph({ title: entity.title, summary, cover: entity.cover }),
       ttl,
+      'og',
     )
     return respondPng(c, buffer, OG_HEADERS)
   }
@@ -141,14 +143,14 @@ export const imagesRouter = new Hono<Env>()
   .get('/images/calendar/:year/:filename{[^/]+\\.png}', async (c) => {
     const params = { year: c.req.param('year'), time: stripPng(c.req.param('filename')) }
     const headers = { 'Cache-Control': 'public, max-age=86400' }
-    const res = await serveCalendar(params, 'light', headers)
+    const res = await serveCalendar(c.var.db, params, 'light', headers)
     res.headers.forEach((v, k) => c.header(k, v))
     return c.body(await res.arrayBuffer())
   })
   .get('/images/calendar/dark/:year/:filename{[^/]+\\.png}', async (c) => {
     const params = { year: c.req.param('year'), time: stripPng(c.req.param('filename')) }
     const headers = { 'Cache-Control': 'public, max-age=86400' }
-    const res = await serveCalendar(params, 'dark', headers)
+    const res = await serveCalendar(c.var.db, params, 'dark', headers)
     res.headers.forEach((v, k) => c.header(k, v))
     return c.body(await res.arrayBuffer())
   })
@@ -161,21 +163,21 @@ export const imagesRouter = new Hono<Env>()
 
     const { email, hash: canonical } = await resolveAvatarInfo(c.var.db, hash)
     if (canonical === null) {
-      await cacheAvatar({ email: hash, size, status: AvatarStatus.NO_AVATAR })
+      await cacheAvatar(c.var.db, { email: hash, size, status: AvatarStatus.NO_AVATAR })
       return c.redirect(defaultAvatarUrl())
     }
 
     if (email && isQQEmail(email)) {
       const buffer = await fetchQQAvatarImage(email, size)
       if (buffer === null) {
-        await cacheAvatar({ email: canonical, size, status: AvatarStatus.NO_AVATAR })
+        await cacheAvatar(c.var.db, { email: canonical, size, status: AvatarStatus.NO_AVATAR })
         return c.redirect(defaultAvatarUrl())
       }
-      await cacheAvatar({ email: canonical, size, status: AvatarStatus.HAVE_AVATAR, buffer })
+      await cacheAvatar(c.var.db, { email: canonical, size, status: AvatarStatus.HAVE_AVATAR, buffer })
       return respondPng(c, buffer, AVATAR_HEADERS)
     }
 
-    const avatar = await loadAvatar(canonical, size)
+    const avatar = await loadAvatar(c.var.db, canonical, size)
     if (avatar !== null) {
       if (avatar.status === AvatarStatus.NO_AVATAR) {
         return c.redirect(defaultAvatarUrl())
@@ -187,10 +189,10 @@ export const imagesRouter = new Hono<Env>()
 
     const buffer = await fetchAvatarImage(canonical, size)
     if (buffer === null) {
-      await cacheAvatar({ email: canonical, size, status: AvatarStatus.NO_AVATAR })
+      await cacheAvatar(c.var.db, { email: canonical, size, status: AvatarStatus.NO_AVATAR })
       return c.redirect(defaultAvatarUrl())
     }
 
-    await cacheAvatar({ email: canonical, size, status: AvatarStatus.HAVE_AVATAR, buffer })
+    await cacheAvatar(c.var.db, { email: canonical, size, status: AvatarStatus.HAVE_AVATAR, buffer })
     return respondPng(c, buffer, AVATAR_HEADERS)
   })

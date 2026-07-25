@@ -22,9 +22,13 @@ const revokeToken = publicProc
   .handler(async ({ input, context }) => {
     // `verifyCommentOwnership` runs the same cleanup + token-match loop;
     // the matched token is the one to revoke.
-    const { cleaned, token: targetToken } = await verifyCommentOwnership(context.commentTokens.cookie, input.rid)
+    const { cleaned, token: targetToken } = await verifyCommentOwnership(
+      context.db,
+      context.commentTokens.cookie,
+      input.rid,
+    )
     if (targetToken !== null) {
-      await revokeCommentToken(targetToken)
+      await revokeCommentToken(context.db, targetToken)
     }
     const next: typeof cleaned = {}
     for (const [pageKey, entries] of Object.entries(cleaned)) {
@@ -43,7 +47,7 @@ const myComments = publicProc
   .output(z.object({ comments: z.array(commentItemDto), expiresAt: z.record(z.string(), z.number()) }))
   .use(commentTokenCookie)
   .handler(async ({ input, context }) => {
-    const { cleaned, validEntries } = await cleanupExpiredTokens(context.commentTokens.cookie)
+    const { cleaned, validEntries } = await cleanupExpiredTokens(context.db, context.commentTokens.cookie)
     const commentIds: bigint[] = []
     for (const entry of validEntries) {
       if (entry.payload.pageKey === input.page_key) {

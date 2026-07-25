@@ -322,7 +322,7 @@ function defaultCreateWorker(): Worker {
 
 // Register the pool teardown as a shutdown hook. Priority 0 (default)
 // runs after flush hooks (priority 100) but alongside other
-// connection-close hooks (Redis, DB). The pool rejects in-flight jobs
+// connection-close hooks (the DB pool). The pool rejects in-flight jobs
 // deterministically, so no data is lost — callers see an error and the
 // request fails fast.
 registerShutdownHook(stopProcessPool, 0)

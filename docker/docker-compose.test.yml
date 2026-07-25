@@ -16,13 +16,3 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
-
-  redis-test:
-    image: redis:7-alpine
-    ports:
-      - '6381:6379'
-    healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
-      interval: 5s
-      timeout: 3s
-      retries: 5

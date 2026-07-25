@@ -1,74 +1,54 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Pool } from 'pg'
 
+import { afterAll, beforeEach, describe, expect, it } from 'vitest'
+
+import { clearAllTables } from '#/_helpers/integration-db'
 import { recordSessionLogin } from '@/server/domains/auth/repo'
 import { listSessionsByUser } from '@/server/domains/auth/service'
-import { redisInstance } from '@/server/infra/redis/storage'
+import { createDbPool, closePool } from '@/server/infra/db/pool'
+import { session as sessionTable } from '@/server/infra/db/schema/session'
+import { user } from '@/server/infra/db/schema/user'
 
-const mockDb = {} as any
+const poolManager = createDbPool()
+const db: NodePgDatabase = poolManager.db
+const pool: Pool = poolManager.pool
 
-async function clearSessionKeys(): Promise<void> {
-  const redis = redisInstance()
-  let cursor = '0'
-  do {
-    const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', 'user_sessions:*', 'COUNT', 100)
-    cursor = nextCursor
-    if (keys.length > 0) {
-      await redis.del(...keys)
-    }
-  } while (cursor !== '0')
-
-  cursor = '0'
-  do {
-    const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', 'session:*', 'COUNT', 100)
-    cursor = nextCursor
-    if (keys.length > 0) {
-      await redis.del(...keys)
-    }
-  } while (cursor !== '0')
-
-  cursor = '0'
-  do {
-    const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', 'session_meta:*', 'COUNT', 100)
-    cursor = nextCursor
-    if (keys.length > 0) {
-      await redis.del(...keys)
-    }
-  } while (cursor !== '0')
-}
+afterAll(async () => {
+  await closePool(pool)
+})
 
 beforeEach(async () => {
-  await clearSessionKeys()
+  await clearAllTables(db)
 })
 
 describe('listSessionsByUser', () => {
-  it('joins the user_sessions set with each session_meta hash and returns parsed metadata', async () => {
-    const userId = 42n
+  it('returns parsed metadata for each live session row of the user', async () => {
+    const [u] = await db
+      .insert(user)
+      .values({ name: 'T', email: 'sessions@example.com', password: 'hashed', role: 'admin' })
+      .returning()
+    const userId = u.id
     const loginAt = new Date()
-    const redis = redisInstance()
 
-    // `recordSessionLogin` writes the meta hash; the `user_sessions` set
-    // is populated by `establishLoginSession` in production. We mirror that
-    // step manually so `listSessionsByUser` sees the sids.
-    await redis.sadd(`user_sessions:${userId}`, 'sid-a')
-    await redis.set(`session:sid-a`, 'blob-a')
-    await recordSessionLogin({
-      sid: 'sid-a',
-      userId,
-      userAgent: 'Mozilla/5.0 (Macintosh) Chrome/120',
-      ip: '203.0.113.1',
-      loginAt,
-    })
-    await redis.sadd(`user_sessions:${userId}`, 'sid-b')
-    await redis.set(`session:sid-b`, 'blob-b')
-    await recordSessionLogin({
-      sid: 'sid-b',
-      userId,
-      userAgent: null,
-      ip: '203.0.113.2',
-      loginAt,
-    })
+    // The session row is created by session-storage at commit time in
+    // production; we mirror that with a bare insert, then stamp the login
+    // meta via `recordSessionLogin` (which is UPDATE-only).
+    const seeds = [
+      { sid: 'sid-a', userAgent: 'Mozilla/5.0 (Macintosh) Chrome/120', ip: '203.0.113.1' },
+      { sid: 'sid-b', userAgent: null, ip: '203.0.113.2' },
+    ] as const
+    for (const seed of seeds) {
+      await db.insert(sessionTable).values({
+        id: seed.sid,
+        userId,
+        data: {},
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+      })
+      await recordSessionLogin(db, { sid: seed.sid, userId, userAgent: seed.userAgent, ip: seed.ip, loginAt })
+    }
 
-    const sessions = await listSessionsByUser(mockDb, userId)
+    const sessions = await listSessionsByUser(db, userId)
     const ids = sessions.map((s) => s.sid).sort()
     expect(ids).toEqual(['sid-a', 'sid-b'])
 
@@ -82,7 +62,7 @@ describe('listSessionsByUser', () => {
   })
 
   it('returns empty when no sessions are registered', async () => {
-    const sessions = await listSessionsByUser(mockDb, 7n)
+    const sessions = await listSessionsByUser(db, 7n)
     expect(sessions).toEqual([])
   })
 })

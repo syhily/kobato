@@ -1,14 +1,20 @@
 import type { Session } from 'react-router'
+import type { SuperJSONResult } from 'superjson'
 
+import { and, eq, gt } from 'drizzle-orm'
 import { createSession, createSessionStorage } from 'react-router'
 import superjson from 'superjson'
 
 import type { Role } from '@/shared/utils/roles'
 
+import { getDb } from '@/server/bootstrap/db-lifecycle'
+import { session as sessionTable } from '@/server/infra/db/schema/session'
 import { SESSION_SECRET } from '@/server/infra/env'
 import { getLogger } from '@/server/infra/logger'
-import { redisInstance } from '@/server/infra/redis/storage'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
+import { idFromString } from '@/shared/utils/id'
+import { isRecord } from '@/shared/utils/type-guards'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const log = getLogger('auth.session-storage')
 
@@ -78,12 +84,24 @@ const storage = createSessionStorage<BlogSessionData>({
     return id
   },
   async readData(id) {
-    const value = await redisInstance().get(`session:${id}`)
-    if (!value) {
+    // Expired rows read as misses; the hourly sweep in
+    // `infra/cache/kv-maintenance.ts` deletes them lazily.
+    const rows = await getDb()
+      .select({ data: sessionTable.data })
+      .from(sessionTable)
+      .where(and(eq(sessionTable.id, id), gt(sessionTable.expiresAt, new Date())))
+      .limit(1)
+    const row = rows[0]
+    if (!row) {
       return null
     }
     try {
-      return superjson.parse<BlogSessionData>(value)
+      // Rows written by `writeSession` always carry the superjson
+      // envelope (`{ json, meta? }`); anything else reads as a miss.
+      if (!isRecord(row.data) || !('json' in row.data)) {
+        return null
+      }
+      return superjson.deserialize<BlogSessionData>(unsafeCast<SuperJSONResult>(row.data))
     } catch {
       log.warn('session parse failed', { id })
       return null
@@ -93,19 +111,29 @@ const storage = createSessionStorage<BlogSessionData>({
     await writeSession(id, data, expires)
   },
   async deleteData(id) {
-    await redisInstance().del(`session:${id}`)
+    await getDb().delete(sessionTable).where(eq(sessionTable.id, id))
   },
 })
 
 async function writeSession(id: string, data: BlogSessionData, expires: Date | undefined): Promise<void> {
-  const redis = redisInstance()
-  const payload = superjson.stringify(data)
-  const ttl = resolveSessionMaxAge()
-  if (expires) {
-    await redis.set(`session:${id}`, payload, 'PXAT', expires.getTime())
-  } else {
-    await redis.set(`session:${id}`, payload, 'EX', ttl)
-  }
+  const db = getDb()
+  const payload = superjson.serialize(data)
+  const expiresAt = expires ?? new Date(Date.now() + resolveSessionMaxAge() * 1000)
+  // The `user_id` column is derived from the payload on every write: an
+  // OTP-pending session carries only `pendingOtpUser` (NULL); once the
+  // login completes the session is rewritten with `user` and the column
+  // picks up the owner. This derived column is what replaced the
+  // `user_sessions:<uid>` set.
+  const userId = data.user ? idFromString(data.user.id) : null
+  await db
+    .insert(sessionTable)
+    .values({ id, userId, data: payload, expiresAt })
+    .onConflictDoUpdate({
+      target: sessionTable.id,
+      // Never touch the meta columns (user_agent, ip, login_at, …) on a
+      // payload rewrite — they are owned by `repo.ts::recordSessionLogin`.
+      set: { userId, data: payload, expiresAt },
+    })
 }
 
 export const { getSession, commitSession, destroySession } = storage
@@ -119,57 +147,16 @@ export async function getRequestSession(request: Request): Promise<BlogSession> 
  * before the cookie is ever serialised. React Router's `Session.id` is
  * a closed-over `let` set once at creation — calling `commitSession`
  * does NOT mutate it. So if the login path wants to know the sid
- * before doing its Redis bookkeeping (so it can index
- * `user_sessions:<userId>` against the real cookie sid), it must
- * mint the sid itself and feed it to `createSession`.
+ * before doing its session-row bookkeeping (so the `user_id` column and
+ * the meta columns land against the real cookie sid), it must mint the
+ * sid itself and feed it to `createSession`.
  *
  * `commitSession(buildSessionWithSid(sid, data))` then takes the
- * `id` branch (`updateData(id, data, expires)`) and writes
- * `session:<sid>` with our pre-chosen id intact. The returned
- * Set-Cookie header carries the same `<sid>` signed against the
- * cookie secret, so the next request's cookie correctly resolves
- * back to `session:<sid>`.
+ * `id` branch (`updateData(id, data, expires)`) and writes the session
+ * row with our pre-chosen id intact. The returned Set-Cookie header
+ * carries the same `<sid>` signed against the cookie secret, so the
+ * next request's cookie correctly resolves back to that row.
  */
 export function buildSessionWithSid(sid: string, data: BlogSessionData): BlogSession {
   return createSession<BlogSessionData, BlogSessionData>(data, sid)
-}
-
-/**
- * Revoke every session belonging to a user. Called after password change
- * or role downgrade so stale cookies cannot be reused.
- *
- * `exceptSessionId` keeps one session alive — used by self-service
- * password change so the user is not logged out from the tab that just
- * saved the new password.
- */
-const REVOKE_SESSIONS_LUA = `
-local setKey = KEYS[1]
-local sessionPrefix = KEYS[2]
-local sessionMetaPrefix = KEYS[3]
-local except = ARGV[1]
-local sids = redis.call('SMEMBERS', setKey)
-for i = 1, #sids do
-  local sid = sids[i]
-  if sid ~= except then
-    redis.call('DEL', sessionPrefix .. sid)
-    redis.call('DEL', sessionMetaPrefix .. sid)
-  end
-end
-if except == '' then
-  redis.call('DEL', setKey)
-else
-  for i = 1, #sids do
-    local sid = sids[i]
-    if sid ~= except then
-      redis.call('SREM', setKey, sid)
-    end
-  end
-end
-return #sids
-`
-
-export async function revokeAllSessionsOfUser(userId: bigint, exceptSessionId?: string): Promise<void> {
-  const redis = redisInstance()
-  const setKey = `user_sessions:${userId}`
-  await redis.eval(REVOKE_SESSIONS_LUA, 3, setKey, 'session:', 'session_meta:', exceptSessionId ?? '')
 }

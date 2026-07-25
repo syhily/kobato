@@ -23,6 +23,19 @@ vi.mock('@/server/domains/comments/repos/public-query/threads', () => ({
   findChildComments: vi.fn(),
 }))
 
+// `latestComments` reads/writes the sidebar list through the kv-table
+// cache, which needs a real Drizzle handle. Same contract as the repo
+// mocks above: the cache always misses so the db stand-in is never
+// dereferenced.
+vi.mock('@/server/domains/comments/cache', () => ({
+  latestCommentsCache: {
+    get: vi.fn(async () => null),
+    set: vi.fn(async () => undefined),
+    clear: vi.fn(async () => undefined),
+  },
+  clearLatestCommentsCache: vi.fn(async () => undefined),
+}))
+
 vi.mock('@/server/infra/db/operations/metric', () => ({
   ensureMetric: vi.fn(async () => seedMetric()),
   findMetricByPublicId: vi.fn(),

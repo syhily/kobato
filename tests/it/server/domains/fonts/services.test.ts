@@ -7,7 +7,6 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FontRow } from '@/server/infra/db/schema/font'
 
 import { clearAllTables } from '#/_helpers/integration-db'
-import { flushWorkerRedis } from '#/_helpers/redis'
 import { deleteFont, setFontSlot } from '@/server/domains/fonts/services/mutate'
 import { deleteFontPackage } from '@/server/domains/fonts/storage'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
@@ -40,7 +39,6 @@ afterAll(async () => {
 
 beforeEach(async () => {
   await clearAllTables(db)
-  await flushWorkerRedis()
   vi.mocked(deleteFontPackage).mockClear()
 })
 

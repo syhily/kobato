@@ -44,18 +44,8 @@ jobs:
           --health-interval 5s
           --health-timeout 3s
           --health-retries 5
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 5s
-          --health-timeout 3s
-          --health-retries 5
     env:
       database__url: postgres://test:test@127.0.0.1:5432/test
-      redis__url: redis://127.0.0.1:6379
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v4
@@ -77,7 +67,7 @@ jobs:
           rm kobato.sha256
       - run: pnpm run sea:smoke "dist-sea/kobato-${{ matrix.target }}"
       # True HTTP e2e against the SEA-booted instance (tests/e2e). Only on
-      # Linux — the darwin/win32 jobs have no Postgres/Redis services.
+      # Linux — the darwin/win32 jobs have no Postgres service.
       - run: pnpm run sea:e2e "dist-sea/kobato-${{ matrix.target }}"
       - name: Package tar.gz with checksum
         env:
@@ -96,7 +86,7 @@ jobs:
             dist-sea/kobato-${{ matrix.target }}.tar.gz.sha256
 
   # macOS targets: separate job because GitHub service containers (the
-  # Postgres/Redis the deep smoke boots against) only run on Linux. The
+  # Postgres the deep smoke boots against) only run on Linux. The
   # macOS smoke is therefore binary-only (--version / --smoke-natives /
   # --smoke-worker); the full server lifecycle stays covered by the Linux
   # targets above.

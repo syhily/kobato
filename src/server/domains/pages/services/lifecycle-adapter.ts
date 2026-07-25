@@ -27,7 +27,7 @@ export const pageLifecycleAdapter: ContentEntityAdapter<PageMetaRow, Page> = {
   getPublishedRevisionId: (meta) => meta.publishedRevisionId,
   projectPreview: (meta, revision) => toCmsPage(meta, revision),
   recordForceOverwrite: (entry) => recordForceOverwriteAudit(auditLog, 'pageMetaId', entry),
-  async afterPublish(_db, meta) {
-    await clearContentCaches('page', meta.id)
+  async afterPublish(db, meta) {
+    await clearContentCaches(db, 'page', meta.id)
   },
 }

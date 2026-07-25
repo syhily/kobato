@@ -27,7 +27,7 @@ export async function verifyCommentAccess(
     return { ok: true, cleaned: cookie }
   }
 
-  const { token: ownerToken, cleaned } = await verifyCommentOwnership(cookie, commentId)
+  const { token: ownerToken, cleaned } = await verifyCommentOwnership(db, cookie, commentId)
   if (ownerToken !== null) {
     return { ok: true, cleaned }
   }

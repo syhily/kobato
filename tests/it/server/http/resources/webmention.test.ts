@@ -9,7 +9,6 @@ import type { Env } from '@/server/http/context'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { installFetch } from '#/_helpers/fetch'
 import { clearAllTables } from '#/_helpers/integration-db'
-import { flushWorkerRedis } from '#/_helpers/redis'
 import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
 import { onErrorHandler } from '@/server/http/errors'
 import { webmentionRouter } from '@/server/http/resources/webmention'
@@ -17,6 +16,7 @@ import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { page } from '@/server/infra/db/schema/page'
 import { post } from '@/server/infra/db/schema/post'
 import { webmention } from '@/server/infra/db/schema/webmention'
+import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 
 const poolManager = createDbPool()
 const db: NodePgDatabase = poolManager.db
@@ -30,7 +30,9 @@ afterAll(async () => {
 
 beforeEach(async () => {
   await clearAllTables(db)
-  await flushWorkerRedis()
+  // The rate limiter is a process-level Map — reset it or earlier tests
+  // (same client IP) exhaust the window for later ones.
+  __resetRateLimitsForTests()
   mockFetch.reset()
   globalThis.fetch = mockFetch.fetch as unknown as typeof globalThis.fetch
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)

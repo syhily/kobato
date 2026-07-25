@@ -5,7 +5,6 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables } from '#/_helpers/integration-db'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
-import { flushWorkerRedis } from '#/_helpers/redis'
 import { callRpc } from '#/_helpers/rpc-call'
 import { hydrateBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
@@ -27,7 +26,6 @@ afterAll(async () => {
 
 beforeEach(async () => {
   await clearAllTables(db)
-  await flushWorkerRedis()
   const { BLOG_SETTINGS_SNAPSHOT_SLOT } = await import('@/shared/config/snapshot')
   BLOG_SETTINGS_SNAPSHOT_SLOT.writeHydration(undefined)
   BLOG_SETTINGS_SNAPSHOT_SLOT.write(null)

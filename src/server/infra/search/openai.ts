@@ -1,8 +1,10 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { createHash } from 'node:crypto'
 
+import { createInflight } from '@/server/infra/cache/inflight'
+import { getItemRaw, setItemRaw } from '@/server/infra/cache/kv-store'
 import { getLogger } from '@/server/infra/logger'
-import { createInflight } from '@/server/infra/redis/inflight'
-import { storage } from '@/server/infra/redis/storage'
 import { INFRA_SEARCH_DEFAULTS } from '@/server/infra/search/defaults'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { CACHE_BUCKET_FALLBACKS } from '@/shared/types/cache'
@@ -80,7 +82,7 @@ function embeddingCacheKey(prefix: string, text: string): string {
   return `${prefix}${createHash('sha256').update(text).digest('hex')}`
 }
 
-export async function generateEmbedding(text: string): Promise<number[] | null> {
+export async function generateEmbedding(db: NodePgDatabase, text: string): Promise<number[] | null> {
   const config = getConfig()
   if (config === null) {
     return null
@@ -92,8 +94,8 @@ export async function generateEmbedding(text: string): Promise<number[] | null> 
   const cacheSlot = bundle?.cache?.cache.embeddingSearch ?? CACHE_BUCKET_FALLBACKS.embeddingSearch
   const key = embeddingCacheKey(cacheSlot.prefix, text)
 
-  // Hot path: single Redis round-trip on cache hit.
-  const cachedRaw = await storage.getItemRaw(key)
+  // Hot path: single kv_cache round-trip on cache hit.
+  const cachedRaw = await getItemRaw(db, key)
   const cached = decodeEmbedding(cachedRaw)
   if (cached !== null) {
     getLogger('search.openai').info('Embedding cache hit', {
@@ -111,7 +113,7 @@ export async function generateEmbedding(text: string): Promise<number[] | null> 
   return embeddingInflight(key, async () => {
     // Double-check: another concurrent request may have warmed the cache
     // while this promise was waiting in the inflight map.
-    const doubleCheckRaw = await storage.getItemRaw(key)
+    const doubleCheckRaw = await getItemRaw(db, key)
     const doubleCheck = decodeEmbedding(doubleCheckRaw)
     if (doubleCheck !== null) {
       return doubleCheck
@@ -160,7 +162,10 @@ export async function generateEmbedding(text: string): Promise<number[] | null> 
         return null
       }
 
-      await storage.setItemRaw(key, encodeEmbedding(embedding), { ttl: cacheSlot.ttlSeconds })
+      await setItemRaw(db, key, encodeEmbedding(embedding), {
+        ttlSeconds: cacheSlot.ttlSeconds,
+        bucket: 'embeddingSearch',
+      })
       return embedding
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)

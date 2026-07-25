@@ -10,7 +10,6 @@ import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { installFetch } from '#/_helpers/fetch'
 import { clearAllTables } from '#/_helpers/integration-db'
 import { makePublicCtx } from '#/_helpers/mock-ctx'
-import { flushWorkerRedis } from '#/_helpers/redis'
 import { callRpc } from '#/_helpers/rpc-call'
 import { signUnsubscribeId } from '@/server/domains/newsletter/signing'
 import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
@@ -50,7 +49,6 @@ function enableNewsletter() {
 
 beforeEach(async () => {
   await clearAllTables(db)
-  await flushWorkerRedis()
   mockFetch.reset()
   globalThis.fetch = mockFetch.fetch as unknown as typeof globalThis.fetch
   enableNewsletter()

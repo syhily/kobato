@@ -1,6 +1,12 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { AvatarStatus } from '@/server/http/resources/avatar-cache'
+
+// The db handle is only forwarded to the mocked kv-store — a stand-in is
+// enough for the unit scope.
+const db = {} as NodePgDatabase
 
 describe('avatar-cache helpers', () => {
   beforeEach(() => {
@@ -12,15 +18,13 @@ describe('avatar-cache helpers', () => {
   }
 
   it('loads a cached avatar', async () => {
-    vi.doMock('@/server/infra/redis/inflight', () => ({
+    vi.doMock('@/server/infra/cache/inflight', () => ({
       createInflight: vi.fn(() => vi.fn((_email, fn) => fn())),
     }))
-    vi.doMock('@/server/infra/redis/storage', () => ({
-      storage: {
-        getItemRaw: vi
-          .fn()
-          .mockResolvedValue(Buffer.concat([Buffer.from([AvatarStatus.HAVE_AVATAR]), Buffer.from('avatar-bytes')])),
-      },
+    vi.doMock('@/server/infra/cache/kv-store', () => ({
+      getItemRaw: vi
+        .fn()
+        .mockResolvedValue(Buffer.concat([Buffer.from([AvatarStatus.HAVE_AVATAR]), Buffer.from('avatar-bytes')])),
     }))
     vi.doMock('@/shared/config/getters', () => ({
       getCacheSettings: vi.fn().mockReturnValue({
@@ -29,7 +33,7 @@ describe('avatar-cache helpers', () => {
     }))
 
     const { loadAvatar } = await importModule()
-    const avatar = await loadAvatar('a@example.com', 120)
+    const avatar = await loadAvatar(db, 'a@example.com', 120)
     expect(avatar).not.toBeNull()
     expect(avatar!.status).toBe(AvatarStatus.HAVE_AVATAR)
     expect(avatar!.buffer?.toString()).toBe('avatar-bytes')
@@ -37,12 +41,10 @@ describe('avatar-cache helpers', () => {
 
   it('reads the entry under the requested size', async () => {
     const getItemRaw = vi.fn().mockResolvedValue(null)
-    vi.doMock('@/server/infra/redis/inflight', () => ({
+    vi.doMock('@/server/infra/cache/inflight', () => ({
       createInflight: vi.fn(() => vi.fn((_email, fn) => fn())),
     }))
-    vi.doMock('@/server/infra/redis/storage', () => ({
-      storage: { getItemRaw },
-    }))
+    vi.doMock('@/server/infra/cache/kv-store', () => ({ getItemRaw }))
     vi.doMock('@/shared/config/getters', () => ({
       getCacheSettings: vi.fn().mockReturnValue({
         cache: { avatar: { prefix: 'avatar:', ttlSeconds: 3600 } },
@@ -50,16 +52,16 @@ describe('avatar-cache helpers', () => {
     }))
 
     const { loadAvatar } = await importModule()
-    expect(await loadAvatar('missing@example.com', 512)).toBeNull()
-    expect(getItemRaw).toHaveBeenCalledWith('avatar:512:missing@example.com')
+    expect(await loadAvatar(db, 'missing@example.com', 512)).toBeNull()
+    expect(getItemRaw).toHaveBeenCalledWith(db, 'avatar:512:missing@example.com')
   })
 
   it('caches a HAVE_AVATAR entry', async () => {
     const setItemRaw = vi.fn().mockResolvedValue(undefined)
-    vi.doMock('@/server/infra/redis/inflight', () => ({
+    vi.doMock('@/server/infra/cache/inflight', () => ({
       createInflight: vi.fn(),
     }))
-    vi.doMock('@/server/infra/redis/storage', () => ({ storage: { setItemRaw } }))
+    vi.doMock('@/server/infra/cache/kv-store', () => ({ setItemRaw }))
     vi.doMock('@/shared/config/getters', () => ({
       getCacheSettings: vi.fn().mockReturnValue({
         cache: { avatar: { prefix: 'avatar:', ttlSeconds: 3600 } },
@@ -67,7 +69,7 @@ describe('avatar-cache helpers', () => {
     }))
 
     const { cacheAvatar } = await importModule()
-    await cacheAvatar({
+    await cacheAvatar(db, {
       email: 'a@example.com',
       size: 80,
       status: AvatarStatus.HAVE_AVATAR,
@@ -75,18 +77,19 @@ describe('avatar-cache helpers', () => {
     })
 
     expect(setItemRaw).toHaveBeenCalledWith(
+      db,
       'avatar:80:a@example.com',
       Buffer.concat([Buffer.from([AvatarStatus.HAVE_AVATAR]), Buffer.from('png')]),
-      { ttl: 3600 },
+      { ttlSeconds: 3600, bucket: 'avatar' },
     )
   })
 
   it('caches a NO_AVATAR entry as a single sentinel byte', async () => {
     const setItemRaw = vi.fn().mockResolvedValue(undefined)
-    vi.doMock('@/server/infra/redis/inflight', () => ({
+    vi.doMock('@/server/infra/cache/inflight', () => ({
       createInflight: vi.fn(),
     }))
-    vi.doMock('@/server/infra/redis/storage', () => ({ storage: { setItemRaw } }))
+    vi.doMock('@/server/infra/cache/kv-store', () => ({ setItemRaw }))
     vi.doMock('@/shared/config/getters', () => ({
       getCacheSettings: vi.fn().mockReturnValue({
         cache: { avatar: { prefix: 'avatar:', ttlSeconds: 3600 } },
@@ -94,10 +97,11 @@ describe('avatar-cache helpers', () => {
     }))
 
     const { cacheAvatar } = await importModule()
-    await cacheAvatar({ email: 'a@example.com', size: 80, status: AvatarStatus.NO_AVATAR })
+    await cacheAvatar(db, { email: 'a@example.com', size: 80, status: AvatarStatus.NO_AVATAR })
 
-    expect(setItemRaw).toHaveBeenCalledWith('avatar:80:a@example.com', Buffer.from([AvatarStatus.NO_AVATAR]), {
-      ttl: 3600,
+    expect(setItemRaw).toHaveBeenCalledWith(db, 'avatar:80:a@example.com', Buffer.from([AvatarStatus.NO_AVATAR]), {
+      ttlSeconds: 3600,
+      bucket: 'avatar',
     })
   })
 })

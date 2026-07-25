@@ -1,13 +1,14 @@
 import type { SQL } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { sql } from 'drizzle-orm'
+import { and, eq, gt, isNull, or, sql } from 'drizzle-orm'
 import { createHash } from 'node:crypto'
 
 import type { SearchSettings } from '@/shared/config/types'
 
+import { getItem, setItem } from '@/server/infra/cache/kv-store'
+import { kvCache } from '@/server/infra/db/schema/kv-cache'
 import { getLogger } from '@/server/infra/logger'
-import { redisInstance, storage } from '@/server/infra/redis/storage'
 import { INFRA_SEARCH_DEFAULTS } from '@/server/infra/search/defaults'
 import { likeCacheKeyParts, runLikeSearch } from '@/server/infra/search/like'
 import { runTrgmSearch, trgmCacheKeyParts } from '@/server/infra/search/trgm'
@@ -65,7 +66,8 @@ export function __setTrgmAvailabilityForTests(available: boolean | null): void {
 //     (similarity threshold + embedding model for vector, trigram
 //     threshold for trgm, none for like)
 //
-// Value is JSON.stringify(slugs[]) — short strings, negligible overhead.
+// Value is the slug array itself (superjson envelope in the `value`
+// JSONB column) — short strings, negligible overhead.
 //
 // Invalidation is a generation stamp, not key enumeration (getKeys caps
 // the scan and would silently under-invalidate past the ceiling): every
@@ -90,13 +92,24 @@ function searchGenerationKey(): string {
 // authoritative.
 let searchCacheGeneration: Promise<number> | null = null
 
-function readSearchCacheGeneration(): Promise<number> {
-  searchCacheGeneration ??= redisInstance()
-    .get(searchGenerationKey())
-    .then((raw) => {
-      const parsed = raw === null ? 0 : Number.parseInt(raw, 10)
-      return Number.isNaN(parsed) ? 0 : parsed
-    })
+// The counter row lives in `kv_cache` at the `${prefix}generation` key
+// with a raw integer JSONB in `value` and NULL `expires_at` (never
+// swept). It deliberately bypasses `kv-store`'s `getItem`, which only
+// decodes the superjson envelope and would read a raw scalar as a miss.
+function parseGeneration(value: unknown): number {
+  const parsed = typeof value === 'number' ? value : Number.parseInt(String(value), 10)
+  return Number.isNaN(parsed) ? 0 : parsed
+}
+
+function readSearchCacheGeneration(db: NodePgDatabase): Promise<number> {
+  searchCacheGeneration ??= db
+    .select({ value: kvCache.value })
+    .from(kvCache)
+    .where(
+      and(eq(kvCache.key, searchGenerationKey()), or(isNull(kvCache.expiresAt), gt(kvCache.expiresAt, new Date()))),
+    )
+    .limit(1)
+    .then((rows) => parseGeneration(rows[0]?.value ?? 0))
     .catch((error: unknown) => {
       searchCacheGeneration = null
       getLogger('search.cache').warn('search cache generation read failed', {
@@ -109,7 +122,7 @@ function readSearchCacheGeneration(): Promise<number> {
 
 /**
  * Test-only seam: drop the process-cached generation so the next search
- * re-reads the counter from Redis.
+ * re-reads the counter from `kv_cache`.
  */
 export function __resetSearchCacheGenerationForTests(): void {
   searchCacheGeneration = null
@@ -126,32 +139,30 @@ function cacheKeyParts(settings: SearchSettings['search'], query: string): strin
   }
 }
 
-async function searchCacheKey(settings: SearchSettings['search'], query: string): Promise<string> {
-  const generation = await readSearchCacheGeneration()
+async function searchCacheKey(settings: SearchSettings['search'], query: string, db: NodePgDatabase): Promise<string> {
+  const generation = await readSearchCacheGeneration(db)
   const hashInput = cacheKeyParts(settings, query)
   return `${searchCachePrefix()}${generation}:${createHash('sha256').update(hashInput.join('|')).digest('hex')}`
 }
 
-async function getCachedSearchResult(key: string): Promise<string[] | null> {
-  const raw = await storage.getItem(key)
-  if (typeof raw === 'string') {
-    try {
-      const parsed = JSON.parse(raw) as unknown
-      if (Array.isArray(parsed) && parsed.every((s) => typeof s === 'string')) {
-        return parsed as string[]
-      }
-    } catch {
-      // stale or corrupted — treat as miss
-    }
+async function getCachedSearchResult(db: NodePgDatabase, key: string): Promise<string[] | null> {
+  const value = await getItem<unknown>(db, key)
+  if (Array.isArray(value) && value.every((s) => typeof s === 'string')) {
+    return value
   }
   return null
 }
 
-async function setCachedSearchResult(key: string, slugs: string[], ttlSeconds: number): Promise<void> {
+async function setCachedSearchResult(
+  db: NodePgDatabase,
+  key: string,
+  slugs: string[],
+  ttlSeconds: number,
+): Promise<void> {
   if (slugs.length === 0) {
     return
   }
-  await storage.setItem(key, JSON.stringify(slugs), { ttl: ttlSeconds })
+  await setItem(db, key, slugs, { ttlSeconds, bucket: 'searchResult' })
 }
 
 /**
@@ -159,13 +170,21 @@ async function setCachedSearchResult(key: string, slugs: string[], ttlSeconds: n
  * Called whenever a post's published / deleted / restored state changes
  * so stale result lists don't survive until their TTL expires.
  *
- * Fire-and-forget by contract: invalidation must never bring down the
- * post mutation that triggered it, so Redis failures are logged and
- * swallowed here — callers neither catch nor inspect the result.
+ * A single INSERT … ON CONFLICT … DO UPDATE keeps the bump atomic
+ * (Postgres row lock, the INCR equivalent). Fire-and-forget by contract:
+ * invalidation must never bring down the post mutation that triggered
+ * it, so database failures are logged and swallowed here — callers
+ * neither catch nor inspect the result.
  */
-export async function invalidateSearchCache(): Promise<void> {
+export async function invalidateSearchCache(db: NodePgDatabase): Promise<void> {
   try {
-    const generation = await redisInstance().incr(searchGenerationKey())
+    const result = await db.execute(
+      sql`INSERT INTO kv_cache (key, bucket, value, blob, expires_at)
+          VALUES (${searchGenerationKey()}, 'searchResult', '1'::jsonb, NULL, NULL)
+          ON CONFLICT (key) DO UPDATE SET value = (kv_cache.value::int + 1)::text::jsonb
+          RETURNING value`,
+    )
+    const generation = parseGeneration(result.rows[0]?.value ?? 0)
     searchCacheGeneration = Promise.resolve(generation)
     getLogger('search.cache').info('invalidated search result cache', { generation })
   } catch (error: unknown) {
@@ -231,10 +250,10 @@ export async function searchPosts(
   }
 
   const settings = getSearchSettings()
-  const cacheKey = await searchCacheKey(settings, trimmed)
+  const cacheKey = await searchCacheKey(settings, trimmed, db)
 
   // Try cache first
-  const cached = await getCachedSearchResult(cacheKey)
+  const cached = await getCachedSearchResult(db, cacheKey)
   if (cached !== null) {
     getLogger('search.result').info('Search result cache hit', {
       query: trimmed,
@@ -255,7 +274,7 @@ export async function searchPosts(
   if (allSlugs.length > 0) {
     const bundle = getBlogSettingsBundleSync()
     const ttl = bundle?.cache?.cache.searchResult?.ttlSeconds ?? CACHE_BUCKET_FALLBACKS.searchResult.ttlSeconds
-    await setCachedSearchResult(cacheKey, allSlugs, ttl)
+    await setCachedSearchResult(db, cacheKey, allSlugs, ttl)
   }
 
   const hits = allSlugs.slice(offset, offset + limit)

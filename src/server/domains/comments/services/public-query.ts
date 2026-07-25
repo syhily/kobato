@@ -47,7 +47,7 @@ export async function hasApprovedComments(db: NodePgDatabase, userId: bigint): P
 }
 
 export async function latestComments(db: NodePgDatabase): Promise<LatestComment[]> {
-  const cached = await latestCommentsCache.get()
+  const cached = await latestCommentsCache.get(db)
   if (cached !== null) {
     return cached
   }
@@ -57,7 +57,7 @@ export async function latestComments(db: NodePgDatabase): Promise<LatestComment[
   const distinctIds = await latestDistinctCommentIds(db, ids, limit)
   const rows = await commentsByIds(db, distinctIds, limit)
   const result = rows.map(toLatestComment)
-  await latestCommentsCache.set(result)
+  await latestCommentsCache.set(db, result)
   return result
 }
 

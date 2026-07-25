@@ -1,11 +1,12 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { Pool } from 'pg'
 
+import { eq } from 'drizzle-orm'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { clearAllTables } from '#/_helpers/integration-db'
-import { flushWorkerRedis } from '#/_helpers/redis'
+import { flushAuditLog } from '@/server/domains/audit/repos/batcher'
 import { establishLoginSession, logout, userSession } from '@/server/domains/auth/primitives'
 import { requireRole, requireUserRole, isPostOwner, canEditPost } from '@/server/domains/auth/rbac'
 import {
@@ -13,7 +14,6 @@ import {
   findSessionMeta,
   revokeSessionById,
   recordSessionActivity,
-  USER_SET_KEY,
 } from '@/server/domains/auth/repo'
 import { listSessionsByUser, listAllSessions } from '@/server/domains/auth/service'
 import { revokeSessionWithGuard } from '@/server/domains/auth/session-guard'
@@ -36,7 +36,9 @@ import {
   verifyOtpToken,
 } from '@/server/domains/auth/verification-tokens'
 import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
+import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
+import { session as sessionTable } from '@/server/infra/db/schema/session'
 import { verification } from '@/server/infra/db/schema/user'
 import { user } from '@/server/infra/db/schema/user'
 
@@ -48,19 +50,37 @@ afterAll(async () => {
   await closePool(pool)
 })
 
+// The audit batcher is a process-level singleton that production code
+// initialises during bootstrap. Tests below exercise
+// `establishLoginSession`, which records an audit event fire-and-forget —
+// wire the batcher up so the event lands, and flush it before the next
+// test's `clearAllTables` truncates the user rows it references.
 beforeEach(async () => {
+  initAllBatchers(pool, db)
   await clearAllTables(db)
-  await flushWorkerRedis()
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
 })
 
-afterEach(() => {
+afterEach(async () => {
   vi.useRealTimers()
+  await flushAuditLog()
+  resetAllBatchers()
 })
 
 async function seedUser(role: 'admin' | 'visitor' | 'author' = 'admin', email = 'a@example.com') {
   const [u] = await db.insert(user).values({ name: 'T', email, password: 'hashed', role }).returning()
   return u
+}
+
+/** Seed a bare session row — `recordSessionLogin` is UPDATE-only, so the
+ * row must already exist with its owner stamped. */
+async function seedSessionRow(sid: string, userId: bigint | null, expiresAt?: Date) {
+  await db.insert(sessionTable).values({
+    id: sid,
+    userId,
+    data: {},
+    expiresAt: expiresAt ?? new Date(Date.now() + 60 * 60 * 1000),
+  })
 }
 
 describe('auth/verification-tokens — issueResetToken', () => {
@@ -198,38 +218,36 @@ describe('auth/verification-tokens — OTP', () => {
 
 describe('auth/setup-token — getSetupToken & verify', () => {
   it('generates a token, persists it, and verifies the same value', async () => {
-    await flushWorkerRedis()
-    const token = await getSetupToken()
+    const token = await getSetupToken(db)
     expect(token).toMatch(/^[a-f0-9]{64}$/)
-    expect(await verifySetupToken(token)).toBe(true)
-    expect(await isSetupTokenActive()).toBe(true)
+    expect(await verifySetupToken(db, token)).toBe(true)
+    expect(await isSetupTokenActive(db)).toBe(true)
   })
 
   it('returns the same token across calls until invalidated', async () => {
-    await flushWorkerRedis()
-    const a = await getSetupToken()
-    const b = await getSetupToken()
+    const a = await getSetupToken(db)
+    const b = await getSetupToken(db)
     expect(a).toBe(b)
   })
 
   it('rejects an unequal candidate of the same length', async () => {
-    await flushWorkerRedis()
-    const token = await getSetupToken()
+    const token = await getSetupToken(db)
     const other = '0'.repeat(token.length)
-    expect(await verifySetupToken(other)).toBe(false)
+    expect(await verifySetupToken(db, other)).toBe(false)
   })
 
-  it('returns false when no token exists in Redis', async () => {
-    await flushWorkerRedis()
-    expect(await verifySetupToken('whatever')).toBe(false)
-    expect(await isSetupTokenActive()).toBe(false)
+  it('returns false when no token exists', async () => {
+    expect(await verifySetupToken(db, 'whatever')).toBe(false)
+    expect(await isSetupTokenActive(db)).toBe(false)
   })
 
+  // NOTE: this test runs last in the file's setup-token usage — the
+  // module-level `tokenInvalidated` flag stays set for the rest of the
+  // process, and no later test in this file touches the setup token.
   it('after invalidate, getSetupToken throws and verify returns false', async () => {
-    await flushWorkerRedis()
-    await getSetupToken()
-    await invalidateSetupToken()
-    await expect(getSetupToken()).rejects.toThrow(/invalidated/i)
+    await getSetupToken(db)
+    await invalidateSetupToken(db)
+    await expect(getSetupToken(db)).rejects.toThrow(/invalidated/i)
   })
 })
 
@@ -277,12 +295,13 @@ describe('auth/rbac — predicates', () => {
 })
 
 describe('auth/repo — session meta', () => {
-  it('recordSessionLogin writes a meta hash that findSessionMeta can read back', async () => {
+  it('recordSessionLogin writes meta columns that findSessionMeta can read back', async () => {
     const u = await seedUser('admin', 'meta@example.com')
     const sid = 'sid-record-1'
-    await recordSessionLogin({ sid, userId: u.id, userAgent: 'jest', ip: '127.0.0.1' })
+    await seedSessionRow(sid, u.id)
+    await recordSessionLogin(db, { sid, userId: u.id, userAgent: 'jest', ip: '127.0.0.1' })
 
-    const meta = await findSessionMeta(sid)
+    const meta = await findSessionMeta(db, sid)
     expect(meta).not.toBeNull()
     expect(meta!.userId).toBe(u.id)
     expect(meta!.ip).toBe('127.0.0.1')
@@ -291,39 +310,39 @@ describe('auth/repo — session meta', () => {
   it('truncates a user agent longer than 512 chars', async () => {
     const u = await seedUser('admin', 'longua@example.com')
     const sid = 'sid-long-ua'
+    await seedSessionRow(sid, u.id)
     const longUa = 'x'.repeat(1000)
-    await recordSessionLogin({ sid, userId: u.id, userAgent: longUa, ip: '1.1.1.1' })
-    const meta = await findSessionMeta(sid)
+    await recordSessionLogin(db, { sid, userId: u.id, userAgent: longUa, ip: '1.1.1.1' })
+    const meta = await findSessionMeta(db, sid)
     expect(meta!.userAgent.length).toBe(512)
   })
 
   it('returns null from findSessionMeta for an unknown sid', async () => {
-    expect(await findSessionMeta('nope')).toBeNull()
+    expect(await findSessionMeta(db, 'nope')).toBeNull()
   })
 
-  it('revokeSessionById drops meta, cookie blob, and user_sessions entry', async () => {
+  it('revokeSessionById drops the session row', async () => {
     const u = await seedUser('admin', 'rev-session@example.com')
     const sid = 'sid-revoke-1'
-    const redis = (await import('@/server/infra/redis/storage')).redisInstance()
-    await redis.set(`session:${sid}`, 'blob')
-    await redis.sadd(USER_SET_KEY(u.id), sid)
-    await recordSessionLogin({ sid, userId: u.id, userAgent: 'ua', ip: '1.1.1.1' })
+    await seedSessionRow(sid, u.id)
+    await recordSessionLogin(db, { sid, userId: u.id, userAgent: 'ua', ip: '1.1.1.1' })
 
-    await revokeSessionById(sid, u.id)
+    await revokeSessionById(db, sid, u.id)
 
-    expect(await findSessionMeta(sid)).toBeNull()
-    expect(await redis.get(`session:${sid}`)).toBeNull()
-    expect(await redis.sismember(USER_SET_KEY(u.id), sid)).toBe(0)
+    expect(await findSessionMeta(db, sid)).toBeNull()
+    const rows = await db.select().from(sessionTable).where(eq(sessionTable.id, sid))
+    expect(rows).toHaveLength(0)
   })
 
   it('recordSessionActivity is a void fire-and-forget that writes lastActiveAt', async () => {
     const u = await seedUser('admin', 'activity@example.com')
     const sid = 'sid-activity'
-    await recordSessionLogin({ sid, userId: u.id, userAgent: 'ua', ip: '1.1.1.1' })
-    recordSessionActivity(sid)
+    await seedSessionRow(sid, u.id)
+    await recordSessionLogin(db, { sid, userId: u.id, userAgent: 'ua', ip: '1.1.1.1' })
+    recordSessionActivity(db, sid)
     // Fire-and-forget; give the promise a tick.
     await new Promise((r) => setTimeout(r, 50))
-    const meta = await findSessionMeta(sid)
+    const meta = await findSessionMeta(db, sid)
     expect(meta).not.toBeNull()
   })
 })
@@ -334,38 +353,28 @@ describe('auth/service — listSessionsByUser', () => {
     expect(await listSessionsByUser(db, u.id)).toEqual([])
   })
 
-  it('returns session metas and cleans up orphans (cookie blob missing)', async () => {
+  it('returns only live session metas (expired rows are excluded)', async () => {
     const u = await seedUser('admin', 'has@example.com')
     const liveSid = 'sid-live'
-    const orphanSid = 'sid-orphan'
-    const redis = (await import('@/server/infra/redis/storage')).redisInstance()
+    const expiredSid = 'sid-expired'
 
-    // Live: cookie blob exists + meta exists + set entry exists.
-    await redis.set(`session:${liveSid}`, 'blob')
-    await redis.sadd(USER_SET_KEY(u.id), liveSid)
-    await recordSessionLogin({ sid: liveSid, userId: u.id, userAgent: 'jest', ip: '1.1.1.1' })
+    await seedSessionRow(liveSid, u.id)
+    await recordSessionLogin(db, { sid: liveSid, userId: u.id, userAgent: 'jest', ip: '1.1.1.1' })
 
-    // Orphan: meta + set entry exist but cookie blob is gone.
-    await redis.sadd(USER_SET_KEY(u.id), orphanSid)
-    await recordSessionLogin({ sid: orphanSid, userId: u.id, userAgent: 'jest', ip: '2.2.2.2' })
-    await redis.del(`session:${orphanSid}`)
+    await seedSessionRow(expiredSid, u.id, new Date(Date.now() - 60 * 1000))
+    await recordSessionLogin(db, { sid: expiredSid, userId: u.id, userAgent: 'jest', ip: '2.2.2.2' })
 
     const list = await listSessionsByUser(db, u.id)
     expect(list).toHaveLength(1)
     expect(list[0]!.sid).toBe(liveSid)
-
-    // Orphan meta should be cleaned up by the listing.
-    expect(await findSessionMeta(orphanSid)).toBeNull()
   })
 
-  it('filters sids whose meta belongs to a different user', async () => {
+  it('does not return sessions that belong to a different user', async () => {
     const alice = await seedUser('admin', 'alice@example.com')
     const bob = await seedUser('admin', 'bob@example.com')
     const aliceSid = 'sid-alice'
-    const redis = (await import('@/server/infra/redis/storage')).redisInstance()
-    await redis.set(`session:${aliceSid}`, 'blob')
-    await redis.sadd(USER_SET_KEY(alice.id), aliceSid)
-    await recordSessionLogin({ sid: aliceSid, userId: alice.id, userAgent: 'ua', ip: '1.1.1.1' })
+    await seedSessionRow(aliceSid, alice.id)
+    await recordSessionLogin(db, { sid: aliceSid, userId: alice.id, userAgent: 'ua', ip: '1.1.1.1' })
 
     const list = await listSessionsByUser(db, bob.id)
     expect(list).toEqual([])
@@ -374,8 +383,19 @@ describe('auth/service — listSessionsByUser', () => {
 
 describe('auth/service — listAllSessions', () => {
   it('returns an empty list when no sessions exist', async () => {
-    await flushWorkerRedis()
     expect(await listAllSessions(db)).toEqual([])
+  })
+
+  it('joins live sessions with their owning user', async () => {
+    const u = await seedUser('admin', 'all@example.com')
+    const sid = 'sid-all-1'
+    await seedSessionRow(sid, u.id)
+    await recordSessionLogin(db, { sid, userId: u.id, userAgent: 'ua', ip: '1.1.1.1' })
+
+    const list = await listAllSessions(db)
+    expect(list).toHaveLength(1)
+    expect(list[0]!.sid).toBe(sid)
+    expect(list[0]!.userEmail).toBe('all@example.com')
   })
 })
 
@@ -388,23 +408,20 @@ describe('auth/session-guard — revokeSessionWithGuard', () => {
   it("revokes the caller's own session regardless of role", async () => {
     const u = await seedUser('admin', 'own@example.com')
     const sid = 'sid-own'
-    const redis = (await import('@/server/infra/redis/storage')).redisInstance()
-    await redis.set(`session:${sid}`, 'blob')
-    await redis.sadd(USER_SET_KEY(u.id), sid)
-    await recordSessionLogin({ sid, userId: u.id, userAgent: 'ua', ip: '1.1.1.1' })
+    await seedSessionRow(sid, u.id)
+    await recordSessionLogin(db, { sid, userId: u.id, userAgent: 'ua', ip: '1.1.1.1' })
 
     const result = await revokeSessionWithGuard(db, sid, { userId: String(u.id), role: 'admin' })
     expect(result.targetUserId).toBe(u.id)
-    expect(await findSessionMeta(sid)).toBeNull()
+    expect(await findSessionMeta(db, sid)).toBeNull()
   })
 
   it("throws FORBIDDEN when an admin tries to revoke another admin's session", async () => {
     const alice = await seedUser('admin', 'a-admin@example.com')
     const bob = await seedUser('admin', 'b-admin@example.com')
     const sid = 'sid-guard'
-    const redis = (await import('@/server/infra/redis/storage')).redisInstance()
-    await redis.set(`session:${sid}`, 'blob')
-    await recordSessionLogin({ sid, userId: bob.id, userAgent: 'ua', ip: '1.1.1.1' })
+    await seedSessionRow(sid, bob.id)
+    await recordSessionLogin(db, { sid, userId: bob.id, userAgent: 'ua', ip: '1.1.1.1' })
 
     await expect(revokeSessionWithGuard(db, sid, { userId: String(alice.id), role: 'admin' })).rejects.toThrow(/无权/)
   })
@@ -413,9 +430,8 @@ describe('auth/session-guard — revokeSessionWithGuard', () => {
     const admin = await seedUser('admin', 'admin2@example.com')
     const visitor = await seedUser('visitor', 'visitor@example.com')
     const sid = 'sid-cross'
-    const redis = (await import('@/server/infra/redis/storage')).redisInstance()
-    await redis.set(`session:${sid}`, 'blob')
-    await recordSessionLogin({ sid, userId: visitor.id, userAgent: 'ua', ip: '1.1.1.1' })
+    await seedSessionRow(sid, visitor.id)
+    await recordSessionLogin(db, { sid, userId: visitor.id, userAgent: 'ua', ip: '1.1.1.1' })
 
     const result = await revokeSessionWithGuard(db, sid, { userId: String(admin.id), role: 'admin' })
     expect(result.targetUserId).toBe(visitor.id)
@@ -434,7 +450,7 @@ describe('auth/primitives — establishLoginSession & logout', () => {
     ).rejects.toThrow(/role/)
   })
 
-  it('establishes a login, populates user_sessions, then logout clears it', async () => {
+  it('establishes a login, writes the session row, then logout clears it', async () => {
     const u = await seedUser('admin', 'establish@example.com')
     const session = await getRequestSession(new Request('http://localhost/'))
     const request = new Request('http://localhost/', { headers: { 'User-Agent': 'vitest' } })
@@ -443,8 +459,12 @@ describe('auth/primitives — establishLoginSession & logout', () => {
     expect(result.sid).toMatch(/^[0-9a-f-]+$/)
     expect(result.setCookie).toContain('__session=')
 
-    const redis = (await import('@/server/infra/redis/storage')).redisInstance()
-    expect(await redis.sismember(USER_SET_KEY(u.id), result.sid)).toBe(1)
+    // The session row must exist with the owner stamped. It is written
+    // through the process-level pool (session-storage), which commits
+    // against the same worker database.
+    const rows = await db.select().from(sessionTable).where(eq(sessionTable.id, result.sid))
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!.userId).toBe(u.id)
 
     // Now login again with a fresh session for logout flow.
     const session2 = await getRequestSession(
@@ -456,15 +476,18 @@ describe('auth/primitives — establishLoginSession & logout', () => {
 
   it('revokes other sessions when revokeOtherSessions is set', async () => {
     const u = await seedUser('admin', 'revoke-others@example.com')
-    const redis = (await import('@/server/infra/redis/storage')).redisInstance()
-    await redis.set('session:existing', 'blob')
-    await redis.sadd(USER_SET_KEY(u.id), 'existing')
+    const session1 = await getRequestSession(new Request('http://localhost/'))
+    const first = await establishLoginSession(db, session1, u as any, new Request('http://localhost/'), '127.0.0.1')
 
-    const session = await getRequestSession(new Request('http://localhost/'))
-    await establishLoginSession(db, session, u as any, new Request('http://localhost/'), '127.0.0.1', {
+    const session2 = await getRequestSession(new Request('http://localhost/'))
+    const second = await establishLoginSession(db, session2, u as any, new Request('http://localhost/'), '127.0.0.1', {
       revokeOtherSessions: true,
     })
-    expect(await redis.sismember(USER_SET_KEY(u.id), 'existing')).toBe(0)
+
+    expect(second.sid).not.toBe(first.sid)
+    // The first session's row is gone; only the new one remains.
+    expect(await db.select().from(sessionTable).where(eq(sessionTable.id, first.sid))).toHaveLength(0)
+    expect(await db.select().from(sessionTable).where(eq(sessionTable.id, second.sid))).toHaveLength(1)
   })
 })
 

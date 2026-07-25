@@ -31,7 +31,7 @@ vi.mock('@/server/infra/rate-limit', () => ({
   tryKeyedRateLimit: vi.fn().mockResolvedValue({ exceeded: false, count: 1 }),
 }))
 
-vi.mock('@/server/infra/redis/buffer-cache', () => ({
+vi.mock('@/server/infra/cache/buffer-cache', () => ({
   loadBuffer: vi.fn(),
 }))
 
@@ -67,9 +67,9 @@ import { findPublicPostMetaBySlug } from '@/server/domains/posts/repos/single'
 import { loadAvatar } from '@/server/http/resources/avatar-cache'
 import { serveCalendar } from '@/server/http/resources/calendar'
 import { imagesRouter } from '@/server/http/resources/images'
+import { loadBuffer } from '@/server/infra/cache/buffer-cache'
 import { findCategoryBySlug } from '@/server/infra/db/operations/category'
 import { readBucket, tryKeyedRateLimit } from '@/server/infra/rate-limit'
-import { loadBuffer } from '@/server/infra/redis/buffer-cache'
 import { drawOpenGraph } from '@/server/render/og/render'
 
 const env = { db: {}, clientAddress: '127.0.0.1' } as never
@@ -144,10 +144,10 @@ describe('images resource', () => {
     ;(loadAvatar as ReturnType<typeof vi.fn>).mockResolvedValue({ status: 'have_avatar', buffer: Buffer.from('av') })
     const res = await imagesRouter.request('http://localhost/images/avatar/abc.png?s=256', undefined, env)
     expect(res.status).toBe(200)
-    expect(loadAvatar).toHaveBeenCalledWith('abc', 256)
+    expect(loadAvatar).toHaveBeenCalledWith(undefined, 'abc', 256)
     ;(loadAvatar as ReturnType<typeof vi.fn>).mockClear()
     await imagesRouter.request('http://localhost/images/avatar/abc.png', undefined, env)
-    expect(loadAvatar).toHaveBeenCalledWith('abc', 120)
+    expect(loadAvatar).toHaveBeenCalledWith(undefined, 'abc', 120)
   })
 
   it('falls back to default avatar when hash is empty', async () => {

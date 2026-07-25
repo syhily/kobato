@@ -2,219 +2,121 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// auth/service.ts orchestrates Redis + DB reads. The pure surface we
-// exercise here is the branching in:
-//   - listSessionsByUser — empty set, empty-string filtering, orphan
-//     cleanup, meta parse + userId filtering.
-//   - listAllSessions — SCAN cursor loop, orphan vs live split, user
-//     join with deleted-user fallback.
+import type { SessionMeta } from '@/server/domains/auth/repo'
+
+// auth/service.ts orchestrates the repo's session-table primitives and
+// the user-table join. The pure surface we exercise here is:
+//   - revokeAllSessionsOfUser — db/except delegation + rowCount passthrough.
+//   - listSessionsByUser — straight delegation to the repo.
+//   - listAllSessions — empty short-circuit, user-id dedup, the user join
+//     with the deleted-user fallback.
 // The revocation policy moved to `session-guard.ts` and is covered by
 // tests/unit/server/domains/auth/session-guard.test.ts.
-// We stub redisInstance so every Redis call is deterministic, and stub
-// the user DB ops.
 
-// ─── Redis stub ──────────────────────────────────────────
-// Each test shapes the mutable `state` object, then `newRedis()` returns
-// a fresh stub whose methods read from it. Pipelines collect commands
-// and resolve their exec() from `state.pipelineBatches`.
-
-interface RedisState {
-  smembers: string[]
-  scanPages: Array<[string, string[]]>
-  // Queue of pipeline-result tuples; each pipeline().exec() drains one batch.
-  pipelineBatches: unknown[][]
-}
-
-function freshState(): RedisState {
-  return { smembers: [], scanPages: [['0', []]], pipelineBatches: [] }
-}
-
-let state = freshState()
-
-function newRedis() {
-  let scanIdx = 0
-  const mkPipeline = () => {
-    return {
-      exists(_k: string) {
-        return this
-      },
-      hgetall(_k: string) {
-        return this
-      },
-      del(_k: string) {
-        return this
-      },
-      srem(_k: string) {
-        return this
-      },
-      async exec() {
-        const batch = state.pipelineBatches.shift() ?? []
-        return batch
-      },
-    }
-  }
-  return {
-    smembers: vi.fn(async () => state.smembers),
-    scan: vi.fn(async () => {
-      const page = state.scanPages[scanIdx] ?? ['0', []]
-      scanIdx += 1
-      return page
-    }),
-    exists: vi.fn(async () => 0),
-    hgetall: vi.fn(async () => ({})),
-    del: vi.fn(async () => 0),
-    pipeline: vi.fn(() => mkPipeline()),
-  }
-}
-
-const mockRedis = newRedis()
+const repoMocks = vi.hoisted(() => ({
+  deleteSessionsOfUser: vi.fn(),
+  listLiveSessions: vi.fn(),
+  listLiveSessionsByUser: vi.fn(),
+}))
 
 const findUsersByIdsMock = vi.hoisted(() => vi.fn())
 
-vi.mock('@/server/infra/redis/storage', () => ({ redisInstance: () => mockRedis }))
-vi.mock('@/server/infra/logger', () => ({ getLogger: () => ({ info: vi.fn(), error: vi.fn(), warn: vi.fn() }) }))
+vi.mock('@/server/domains/auth/repo', () => repoMocks)
 vi.mock('@/server/infra/db/operations/user', () => ({
   findUsersByIds: findUsersByIdsMock,
 }))
 
-const { listSessionsByUser, listAllSessions } = await import('@/server/domains/auth/service')
+const { revokeAllSessionsOfUser, listSessionsByUser, listAllSessions } = await import('@/server/domains/auth/service')
 
 const fakeDb = {} as NodePgDatabase
 
-// Hash shapes matching parseMeta's expectations. Every value MUST be a
-// string — isStringRecord rejects hashes containing null/number values.
-function metaHash(userId: string, ip = '1.1.1.1', ua = 'ua') {
+function meta(userId: bigint, sid = 's1', ip = '1.1.1.1', ua = 'ua'): SessionMeta {
   return {
+    sid,
     userId,
-    ip,
     userAgent: ua,
-    platformHint: '',
-    loginAt: '1700000000000',
-    lastActiveAt: '1700000001000',
-    expiresAt: '1700000002000',
+    platformHint: null,
+    ip,
+    loginAt: new Date(1_700_000_000_000),
+    lastActiveAt: new Date(1_700_000_001_000),
+    expiresAt: new Date(1_700_000_002_000),
   }
 }
 
-describe('auth/service — session orchestration branches', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-    state = freshState()
-    // Reset the redis method implementations in place (don't reassign the
-    // object — the vi.mock closure captured this exact reference).
-    Object.assign(mockRedis, newRedis())
+beforeEach(() => {
+  vi.clearAllMocks()
+  repoMocks.deleteSessionsOfUser.mockResolvedValue(0)
+  repoMocks.listLiveSessions.mockResolvedValue([])
+  repoMocks.listLiveSessionsByUser.mockResolvedValue([])
+  findUsersByIdsMock.mockResolvedValue([])
+})
+
+describe('auth/service — revokeAllSessionsOfUser', () => {
+  it('delegates to the repo with db + userId and returns the deleted count', async () => {
+    repoMocks.deleteSessionsOfUser.mockResolvedValue(3)
+    const count = await revokeAllSessionsOfUser(fakeDb, 1n)
+    expect(repoMocks.deleteSessionsOfUser).toHaveBeenCalledWith(fakeDb, 1n, undefined)
+    expect(count).toBe(3)
+  })
+
+  it('passes exceptSessionId through so the caller session survives', async () => {
+    repoMocks.deleteSessionsOfUser.mockResolvedValue(2)
+    const count = await revokeAllSessionsOfUser(fakeDb, 1n, 'keep-me')
+    expect(repoMocks.deleteSessionsOfUser).toHaveBeenCalledWith(fakeDb, 1n, 'keep-me')
+    expect(count).toBe(2)
+  })
+})
+
+describe('auth/service — listSessionsByUser', () => {
+  it('returns [] when the user has no live sessions', async () => {
+    const result = await listSessionsByUser(fakeDb, 1n)
+    expect(repoMocks.listLiveSessionsByUser).toHaveBeenCalledWith(fakeDb, 1n)
+    expect(result).toEqual([])
+  })
+
+  it('returns the repo metas verbatim', async () => {
+    repoMocks.listLiveSessionsByUser.mockResolvedValue([meta(1n, 's1'), meta(1n, 's2')])
+    const result = await listSessionsByUser(fakeDb, 1n)
+    expect(result.map((s) => s.sid)).toEqual(['s1', 's2'])
+  })
+})
+
+describe('auth/service — listAllSessions', () => {
+  it('returns [] and skips the user join when there are no live sessions', async () => {
+    const result = await listAllSessions(fakeDb)
+    expect(result).toEqual([])
+    expect(findUsersByIdsMock).not.toHaveBeenCalled()
+  })
+
+  it('joins live metas with users', async () => {
+    repoMocks.listLiveSessions.mockResolvedValue([meta(5n, 's1', '2.2.2.2', 'ua2')])
+    findUsersByIdsMock.mockResolvedValue([{ id: 5n, name: 'Alice', email: 'a@x', role: 'admin' }])
+    const result = await listAllSessions(fakeDb)
+    expect(result).toHaveLength(1)
+    expect(result[0]!.userName).toBe('Alice')
+    expect(result[0]!.userRole).toBe('admin')
+    expect(result[0]!.ip).toBe('2.2.2.2')
+  })
+
+  it('dedups user ids before the bulk user read', async () => {
+    repoMocks.listLiveSessions.mockResolvedValue([meta(5n, 's1'), meta(5n, 's2')])
+    findUsersByIdsMock.mockResolvedValue([{ id: 5n, name: 'Alice', email: 'a@x', role: 'admin' }])
+    const result = await listAllSessions(fakeDb)
+    expect(findUsersByIdsMock).toHaveBeenCalledWith(fakeDb, [5n])
+    expect(result).toHaveLength(2)
+  })
+
+  it('uses the deleted-user fallback when no user row matches', async () => {
+    repoMocks.listLiveSessions.mockResolvedValue([meta(9n, 's1', '3.3.3.3', '')])
     findUsersByIdsMock.mockResolvedValue([])
+    const result = await listAllSessions(fakeDb)
+    expect(result[0]!.userName).toBe('已删除的用户')
+    expect(result[0]!.userEmail).toBe('')
+    expect(result[0]!.userRole).toBeNull()
   })
 
-  describe('listSessionsByUser', () => {
-    it('returns [] when the user has no session set', async () => {
-      const result = await listSessionsByUser(fakeDb, 1n)
-      expect(result).toEqual([])
-    })
-
-    it('returns [] when every set member is an empty string', async () => {
-      state.smembers = ['', '']
-      const result = await listSessionsByUser(fakeDb, 1n)
-      expect(result).toEqual([])
-    })
-
-    it('returns [] when no candidate session survives the EXISTS check', async () => {
-      state.smembers = ['s1', 's2']
-      // Pipeline 0 (exists): both 0 → orphans → cleanup pipeline then empty live.
-      state.pipelineBatches = [
-        [
-          [null, 0],
-          [null, 0],
-        ],
-      ]
-      const result = await listSessionsByUser(fakeDb, 1n)
-      expect(result).toEqual([])
-    })
-
-    it('parses live session metas and filters out other-user rows', async () => {
-      state.smembers = ['s1']
-      // Pipeline 0 (exists): s1 live. Pipeline 1 (hgetall): returns the hash.
-      state.pipelineBatches = [[[null, 1]], [[null, metaHash('1')]]]
-      const result = await listSessionsByUser(fakeDb, 1n)
-      expect(result).toHaveLength(1)
-      expect(result[0]!.userId).toBe(1n)
-    })
-
-    it('filters out metas whose hash has non-string values (isStringRecord guard)', async () => {
-      state.smembers = ['s1']
-      state.pipelineBatches = [[[null, 1]], [[null, { userId: '1', bad: null }]]]
-      const result = await listSessionsByUser(fakeDb, 1n)
-      expect(result).toEqual([])
-    })
-
-    it('drops metas belonging to a different user', async () => {
-      state.smembers = ['s1', 's2']
-      state.pipelineBatches = [
-        [
-          [null, 1],
-          [null, 1],
-        ], // both live
-        [
-          [null, metaHash('1')],
-          [null, metaHash('999')],
-        ], // second is other-user
-      ]
-      const result = await listSessionsByUser(fakeDb, 1n)
-      expect(result).toHaveLength(1)
-      expect(result[0]!.userId).toBe(1n)
-    })
-  })
-
-  describe('listAllSessions', () => {
-    it('returns [] when SCAN finds no session_meta keys', async () => {
-      const result = await listAllSessions(fakeDb)
-      expect(result).toEqual([])
-    })
-
-    it('returns [] when all scanned sids are orphaned', async () => {
-      state.scanPages = [['0', ['session_meta:s1', 'session_meta:s2']]]
-      // Pipeline 0 (exists): both 0 → orphans only → cleanup + empty.
-      state.pipelineBatches = [
-        [
-          [null, 0],
-          [null, 0],
-        ],
-      ]
-      const result = await listAllSessions(fakeDb)
-      expect(result).toEqual([])
-    })
-
-    it('joins live metas with users and falls back for deleted users', async () => {
-      state.scanPages = [['0', ['session_meta:s1']]]
-      state.pipelineBatches = [
-        [[null, 1]], // exists
-        [[null, metaHash('5', '2.2.2.2', 'ua2')]], // hgetall
-      ]
-      findUsersByIdsMock.mockResolvedValue([{ id: 5n, name: 'Alice', email: 'a@x', role: 'admin' }])
-      const result = await listAllSessions(fakeDb)
-      expect(result).toHaveLength(1)
-      expect(result[0]!.userName).toBe('Alice')
-      expect(result[0]!.userRole).toBe('admin')
-    })
-
-    it('uses the deleted-user fallback when no user row matches', async () => {
-      state.scanPages = [['0', ['session_meta:s1']]]
-      state.pipelineBatches = [[[null, 1]], [[null, metaHash('9', '3.3.3.3', '')]]]
-      findUsersByIdsMock.mockResolvedValue([])
-      const result = await listAllSessions(fakeDb)
-      expect(result[0]!.userName).toBe('已删除的用户')
-      expect(result[0]!.userEmail).toBe('')
-      expect(result[0]!.userRole).toBeNull()
-    })
-
-    it('stops the SCAN loop once MAX_SESSIONS_SCAN is exceeded', async () => {
-      const huge = Array.from({ length: 11_000 }, (_, i) => `session_meta:s${i}`)
-      state.scanPages = [
-        ['42', huge],
-        ['0', []],
-      ]
-      await listAllSessions(fakeDb)
-      // Only the first SCAN page should have been consumed (cap reached).
-      expect(mockRedis.scan).toHaveBeenCalledTimes(1)
-    })
+  it('soft-caps the session read at 10k rows', async () => {
+    await listAllSessions(fakeDb)
+    expect(repoMocks.listLiveSessions).toHaveBeenCalledWith(fakeDb, 10_000)
   })
 })

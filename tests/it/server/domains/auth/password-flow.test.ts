@@ -358,7 +358,7 @@ describe('auth/password-flow — resetPasswordWithToken', () => {
 
   it('still succeeds when passkey cleanup fails (best-effort)', async () => {
     mocks.consumeToken.mockResolvedValueOnce({ userId: 42n })
-    mocks.deleteAllCredentials.mockRejectedValueOnce(new Error('redis down'))
+    mocks.deleteAllCredentials.mockRejectedValueOnce(new Error('db down'))
     mocks.findUserById.mockResolvedValueOnce({
       id: 42n,
       name: 'Vis',

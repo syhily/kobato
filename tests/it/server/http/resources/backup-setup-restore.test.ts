@@ -232,7 +232,7 @@ describe('/api/setup/restore', () => {
     expect(body.error.message).toBe('Setup Token 验证已过期或未完成，请先返回安装页面完成验证。')
   })
 
-  it('returns 403 when setup token has expired in Redis', async () => {
+  it('returns 403 when setup token has expired', async () => {
     mockIsSetupTokenActive.mockResolvedValue(false)
     const app = await buildApp(makeSession({ setupTokenVerified: true, csrfToken: 'valid-csrf' }))
     const formData = new FormData()

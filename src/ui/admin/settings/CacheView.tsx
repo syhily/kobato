@@ -70,7 +70,7 @@ export function CacheView({ cache }: CacheViewProps) {
               ? '正在读取缓存统计…'
               : statsError
                 ? '读取缓存统计失败'
-                : `SCAN 所有已注册的缓存键并通过 UNLINK 异步删除。当前共 ${totalKeys} 个键。`
+                : `删除数据库缓存表中所有已注册分组的记录。当前共 ${totalKeys} 条缓存。`
           }
         >
           <p className="text-sm text-muted-foreground">
@@ -137,7 +137,7 @@ function ReservedBucketsSection({ reserved }: { reserved: ReservedCacheBucketSta
   return (
     <SettingGroup
       title="受保护的缓存（只读）"
-      description="以下缓存关键到运行时安全，仅作可视化展示，不支持改名或清空。如确需操作，请通过 `npm` 或 Redis CLI 进行。"
+      description="以下缓存关键到运行时安全，仅作可视化展示，不支持改名或清空。如确需操作，请通过数据库 SQL 或重启服务进行。"
     >
       <div className="grid gap-3 sm:grid-cols-2">
         {reserved.map((bucket) => (

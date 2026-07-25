@@ -5,7 +5,6 @@ import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { clearAllTables } from '#/_helpers/integration-db'
-import { flushWorkerRedis } from '#/_helpers/redis'
 import { enrichEvent } from '@/server/domains/analytics/enrich'
 import { queryHeatmap } from '@/server/domains/analytics/services/heatmap'
 import { queryMetric } from '@/server/domains/analytics/services/metric'
@@ -29,7 +28,6 @@ afterAll(async () => {
 
 beforeEach(async () => {
   await clearAllTables(db)
-  await flushWorkerRedis()
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
 })
 

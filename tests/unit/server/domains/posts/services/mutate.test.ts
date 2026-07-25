@@ -303,7 +303,7 @@ describe('posts mutate — post-state-change side effects', () => {
     const result = await restorePost(db, 100n)
 
     expect(result).toEqual({ restored: true, warning: undefined })
-    expect(clearContentCaches).toHaveBeenCalledWith('post', 100n)
+    expect(clearContentCaches).toHaveBeenCalledWith(db, 'post', 100n)
     expect(invalidateSearchCache).toHaveBeenCalledTimes(1)
     expect(indexPost).toHaveBeenCalledTimes(1)
     expect(removePostIndex).not.toHaveBeenCalled()
@@ -348,7 +348,7 @@ describe('posts mutate — post-state-change side effects', () => {
 
     await unpublishPost(db, 100n)
 
-    expect(clearContentCaches).toHaveBeenCalledWith('post', 100n)
+    expect(clearContentCaches).toHaveBeenCalledWith(db, 'post', 100n)
     expect(invalidateSearchCache).toHaveBeenCalledTimes(1)
     expect(removePostIndex).toHaveBeenCalledWith(db, 100n)
     expect(indexPost).not.toHaveBeenCalled()
@@ -372,7 +372,7 @@ describe('posts mutate — post-state-change side effects', () => {
 
     expect(result.deleted).toBe(true)
     expect(removePostIndex).toHaveBeenCalledTimes(1)
-    expect(clearContentCaches).toHaveBeenCalledWith('post', 100n)
+    expect(clearContentCaches).toHaveBeenCalledWith(db, 'post', 100n)
     expect(invalidateSearchCache).toHaveBeenCalledTimes(1)
     expect(indexPost).not.toHaveBeenCalled()
   })

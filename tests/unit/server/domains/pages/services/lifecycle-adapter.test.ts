@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 // Pure unit pin for the page adapter's draft-preview access rule
 // (CONTEXT.md "Draft preview": pages allow admin only). The
-// side-effectful import graph is mocked so the suite stays DB/Redis-free.
+// side-effectful import graph is mocked so the suite stays DB-free.
 
 vi.mock('@/server/domains/content/shared', () => ({
   clearContentCaches: vi.fn().mockResolvedValue(undefined),

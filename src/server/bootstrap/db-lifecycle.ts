@@ -2,6 +2,7 @@ import { scheduleNextArchive, wireArchiveScheduler } from '@/server/domains/audi
 import { registerRestoreComplete } from '@/server/domains/backup/restore-orchestrator'
 import { resetLikeTokenSweep, startLikeTokenSweep } from '@/server/domains/comments/services/likes'
 import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
+import { wireKvSweepScheduler } from '@/server/infra/cache/kv-maintenance'
 import { flushAllBatchers, initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
 import { migrateDatabase } from '@/server/infra/db/migrate'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
@@ -55,6 +56,7 @@ function wirePool(instance: ReturnType<typeof createDbPool>): ReturnType<typeof 
   setRestartDb(db)
   setRestartRefreshSettings(refreshBlogSettings)
   wireArchiveScheduler({ getDb })
+  wireKvSweepScheduler({ getDb })
   initAllBatchers(pool, db)
   startLikeTokenSweep(db)
   return instance

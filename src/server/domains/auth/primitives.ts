@@ -5,20 +5,19 @@ import type { Role } from '@/shared/utils/roles'
 
 import { recordAuditEvent } from '@/server/domains/audit/services/record'
 import { recordSessionActivity, recordSessionLogin } from '@/server/domains/auth/repo'
+import { revokeAllSessionsOfUser } from '@/server/domains/auth/service'
 import {
   type BlogSession,
   buildSessionWithSid,
   commitSessionWithMaxAge,
   destroySession,
   getRequestSession,
-  revokeAllSessionsOfUser,
   resolveSessionMaxAge,
   type SessionUser,
 } from '@/server/domains/auth/session-storage'
 import { findUserById, updateLastLogin } from '@/server/infra/db/operations/user'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
-import { redisInstance } from '@/server/infra/redis/storage'
 import { idFromString } from '@/shared/utils/id'
 
 export interface SessionContext {
@@ -65,11 +64,10 @@ export async function establishLoginSession(
     throw new DomainError('INTERNAL', 'establishLoginSession requires a user with a role')
   }
   if (options.revokeOtherSessions) {
-    await revokeAllSessionsOfUser(dbUser.id)
+    await revokeAllSessionsOfUser(db, dbUser.id)
   }
   if (session.id) {
     await destroySession(session)
-    await redisInstance().srem(`user_sessions:${dbUser.id}`, session.id)
   }
   const sid = crypto.randomUUID()
   const userData: SessionUser = {
@@ -86,9 +84,8 @@ export async function establishLoginSession(
   const userAgent = request.headers.get('User-Agent')
   const platformHint = request.headers.get('Sec-CH-UA-Platform')
   await updateLastLogin(db, dbUser.id, clientAddress, userAgent)
-  await redisInstance().sadd(`user_sessions:${dbUser.id}`, sid)
   try {
-    await recordSessionLogin({
+    await recordSessionLogin(db, {
       sid,
       userId: dbUser.id,
       userAgent,
@@ -96,7 +93,7 @@ export async function establishLoginSession(
       ip: clientAddress,
     })
   } catch {
-    // Best-effort: don't block auth on Redis hiccup.
+    // Best-effort: don't block auth on a meta-write hiccup.
   }
 
   recordAuditEvent({
@@ -120,15 +117,10 @@ export function userSession(session: BlogSession): SessionUser | undefined {
 }
 
 export async function logout(session: BlogSession): Promise<void> {
-  const user = userSession(session)
-  if (user) {
-    const sid = session.id
-    const redis = redisInstance()
-    await redis.srem(`user_sessions:${user.id}`, sid)
-    // Drop the parallel meta hash so the admin / self-service views
-    // stop listing a session whose cookie is no longer valid.
-    await redis.del(`session_meta:${sid}`)
-  }
+  // Dropping `user` marks the session dirty; the commit rewrites the
+  // session row with no owner (`user_id` back to NULL), so the admin /
+  // self-service views stop listing it and the cookie no longer resolves
+  // to a logged-in user.
   session.unset('user')
 }
 
@@ -178,7 +170,7 @@ export async function resolveSessionContext(
   }
 
   if (user) {
-    recordSessionActivity(session.id)
+    recordSessionActivity(db, session.id)
   }
 
   return { session, user, role: user?.role ?? null, dirty }

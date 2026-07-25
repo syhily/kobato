@@ -2,12 +2,13 @@ import { z } from 'zod'
 
 import type { CacheBucketId } from '@/shared/types/cache'
 
-// Per-bucket Redis cache configuration. Each bucket owns a stable id
+// Per-bucket cache configuration (rows in the `kv_cache` table, tagged
+// with the bucket id). Each bucket owns a stable id
 // (`og` / `calendar` / `avatar`) baked into the writers; the editor can
 // only rename the PREFIX and tune the TTL. The prefix has to end with
-// `:` so the SCAN MATCH `${prefix}*` can never reach into a
-// neighbouring bucket's namespace by accident (e.g. an `og` prefix
-// could otherwise match `ogre-foo`).
+// `:` so the key shape stays namespaced and a prefix scan can never
+// reach into a neighbouring bucket's namespace by accident (e.g. an
+// `og` prefix could otherwise match `ogre-foo`).
 //
 // "RESERVED_PREFIXES" enumerates surfaces that the admin panel must
 // NEVER let an editor overwrite — the session and rate-limit caches
@@ -21,8 +22,8 @@ export const RESERVED_CACHE_PREFIXES: readonly string[] = ['session:', 'rate-lim
 const PREFIX_PATTERN = /^[a-z0-9_-]+:$/i
 // 1 hour ≤ TTL ≤ 30 days. The lower bound keeps a typo from making a
 // cache useless (sub-minute TTL would treadmill regenerations and
-// hammer Redis); the upper bound keeps stale renders from outliving a
-// content rename for too long.
+// hammer the database); the upper bound keeps stale renders from
+// outliving a content rename for too long.
 const MIN_TTL_SECONDS = 60 * 60
 const MAX_TTL_SECONDS = 60 * 60 * 24 * 30
 
@@ -46,10 +47,11 @@ export const cacheSchema = z
       // markdown render results both used to live in a process-local
       // `lru-cache`, which meant every server replica re-warmed the
       // same data and a deploy nuked them entirely. Routing them
-      // through Redis like the other buckets gives us shared warmth
-      // and one-click admin invalidation; the writers still front the
-      // network round-trip with `createInflight` so concurrent
-      // requests for the same key collapse to a single load.
+      // through the shared `kv_cache` table like the other buckets
+      // gives us shared warmth and one-click admin invalidation; the
+      // writers still front the database round-trip with
+      // `createInflight` so concurrent requests for the same key
+      // collapse to a single load.
       imageMeta: cacheBucketSchema,
       embeddingSearch: cacheBucketSchema,
       searchResult: cacheBucketSchema,
@@ -67,8 +69,8 @@ export const cacheSchema = z
     ]
 
     // Two prefixes "collide" if either is a strict prefix of the other.
-    // Equality is the obvious case; the prefix-of case matters because
-    // SCAN `og-*` would match keys written under prefix `og-foo-`.
+    // Equality is the obvious case; the prefix-of case matters because a
+    // prefix sweep `og-*` would match keys written under prefix `og-foo-`.
     function collides(a: string, b: string): boolean {
       return a === b || a.startsWith(b) || b.startsWith(a)
     }
@@ -84,7 +86,7 @@ export const cacheSchema = z
           ctx.addIssue({
             code: 'custom',
             path: ['cache', right.id, 'prefix'],
-            message: `「${right.id}」的前缀 \`${right.prefix}\` 与「${left.id}」的前缀 \`${left.prefix}\` 冲突，会让 SCAN 互相误伤`,
+            message: `「${right.id}」的前缀 \`${right.prefix}\` 与「${left.id}」的前缀 \`${left.prefix}\` 冲突，会让前缀扫描互相误伤`,
           })
         }
       }

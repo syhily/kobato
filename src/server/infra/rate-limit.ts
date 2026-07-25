@@ -3,15 +3,25 @@ import { createHash } from 'node:crypto'
 import type { RateLimitBucket, RateLimitSettings } from '@/shared/config/types'
 
 import { getLogger } from '@/server/infra/logger'
-import { redisInstance } from '@/server/infra/redis/storage'
 import { rateLimitDefaults } from '@/shared/config/defaults'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 const log = getLogger('rate-limit')
 
-// All keys live under the reserved `rate-limit:` namespace so the
-// admin cache panel can never SCAN/UNLINK them by accident — see the
-// `RESERVED_CACHE_PREFIXES` enforcement in `@/server/domains/settings/schema`.
+// Rate limiting is fully in-process: a module-level Map of fixed-window
+// counters, one entry per key. There is no external store, so the old
+// fail-closed failure mode (Redis down → every login denied) is gone —
+// the limiter simply cannot fail. Two deliberate trade-offs:
+//
+//   - Counters reset on process restart. A bounced deploy re-arms every
+//     window; acceptable for the single-process self-host target and far
+//     better than coupling login availability to a cache service.
+//   - Multi-instance deployments do not share counters. The project
+//     already assumes a single process.
+//
+// Keys keep the historical reserved `rate-limit:` namespace (see
+// `RESERVED_CACHE_PREFIXES` in `@/server/domains/settings/schemas/cache`)
+// so key shapes stay stable for any key-level diagnostics.
 const RATE_LIMIT_NAMESPACE = 'rate-limit:'
 
 const signInKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}signin:${ip}`
@@ -20,9 +30,9 @@ const passwordResetKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}password-reset:
 const passwordResetTargetKey = (userId: bigint) => `${RATE_LIMIT_NAMESPACE}password-reset-target:${userId.toString()}`
 const commentPostIpKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}comment-post:${ip}`
 
-// Hash the email so the raw string never lands in Redis. SHA-256
-// truncated to 32 hex chars (128 bits) is more than enough collision
-// resistance for a per-window counter.
+// Hash the email so the raw address never lands in the counter map.
+// SHA-256 truncated to 32 hex chars (128 bits) is more than enough
+// collision resistance for a per-window counter.
 function hashEmail(email: string): string {
   const normalized = email.trim().toLowerCase()
   return createHash('sha256').update(normalized).digest('hex').slice(0, 32)
@@ -73,40 +83,87 @@ export interface RateLimitResult {
   exceeded: boolean
 }
 
-// Increment-and-check in a single round trip. `INCR` is atomic in
-// Redis so the post-increment counter is strictly monotonic; the
-// pipelined `EXPIRE … NX` arms the TTL on the first hit only and
-// silently no-ops on subsequent hits within the window (Redis 7.0+;
-// older servers without NX support extend the TTL on every hit, which
-// is still correct just less ideal).
+interface WindowEntry {
+  count: number
+  /** Epoch ms at which the current window closes and the counter resets. */
+  resetAt: number
+}
+
+const entries = new Map<string, WindowEntry>()
+
+// Hard cap on tracked keys. Expired entries are removed lazily — when
+// the same key is hit again, or by the sweeps below — so an attacker
+// spraying unique IPs/emails could otherwise grow the map without
+// bound. 10k entries at ~100 bytes each is ~1 MB: negligible.
+const MAX_ENTRIES = 10_000
+
+function sweepExpired(now: number): void {
+  for (const [key, entry] of entries) {
+    if (now >= entry.resetAt) {
+      entries.delete(key)
+    }
+  }
+}
+
+// Make room for one more key when the map is full. Expired windows go
+// first; if every entry is still live, evict the windows closest to
+// expiring (their counters would have reset soonest anyway, so the
+// throttle loss is minimal) and warn — a full map of live counters
+// means the process is tracking an unusual number of distinct subjects.
+function ensureCapacity(now: number): void {
+  if (entries.size < MAX_ENTRIES) {
+    return
+  }
+  sweepExpired(now)
+  if (entries.size < MAX_ENTRIES) {
+    return
+  }
+  const excess = entries.size - MAX_ENTRIES + 1
+  const byResetAt = [...entries.entries()].sort((a, b) => a[1].resetAt - b[1].resetAt)
+  for (const [key] of byResetAt.slice(0, excess)) {
+    entries.delete(key)
+  }
+  log.warn('rate-limit counter map full; evicted the oldest windows', { evicted: excess, size: entries.size })
+}
+
+// Increment-and-check against the in-process fixed window. The first
+// hit in a window arms `resetAt` (now + windowSeconds); later hits in
+// the same window only bump the counter — the exact semantics of the
+// old INCR + EXPIRE … NX pipeline, minus the network round trip. The
+// signature stays async so every caller is untouched.
 export async function tryKeyedRateLimit(key: string, bucket: RateLimitBucket): Promise<RateLimitResult> {
-  const redis = redisInstance()
-  const pipeline = redis.pipeline()
-  pipeline.incr(key)
-  pipeline.expire(key, bucket.windowSeconds, 'NX')
-  let results: [Error | null, unknown][] | null
-  try {
-    results = await pipeline.exec()
-  } catch (err) {
-    // Redis is unreachable (circuit open, network partition, OOM).
-    // Fail closed — deny requests when the rate-limit counter is
-    // unavailable to prevent brute-force attacks during degradation.
-    log.warn('tryKeyedRateLimit: Redis pipeline failed, failing closed', {
-      key,
-      err: err instanceof Error ? err.message : String(err),
-    })
-    return { count: Number.POSITIVE_INFINITY, exceeded: true }
+  const now = Date.now()
+  const live = entries.get(key)
+  if (live !== undefined && now < live.resetAt) {
+    live.count += 1
+    return { count: live.count, exceeded: live.count > bucket.maxAttempts }
   }
-  const incrResult = results?.[0]
-  if (!incrResult || incrResult[0]) {
-    log.warn('tryKeyedRateLimit: failed to increment counter, failing closed', {
-      key,
-      error: String(incrResult?.[0] ?? 'unknown redis error'),
-    })
-    return { count: Number.POSITIVE_INFINITY, exceeded: true }
+  if (live === undefined) {
+    ensureCapacity(now)
   }
-  const count = Number(incrResult[1])
-  return { count, exceeded: count > bucket.maxAttempts }
+  const entry: WindowEntry = { count: 1, resetAt: now + bucket.windowSeconds * 1000 }
+  entries.set(key, entry)
+  return { count: entry.count, exceeded: entry.count > bucket.maxAttempts }
+}
+
+/**
+ * Number of live (unexpired) counter windows, for the admin cache
+ * panel. Expired entries are swept first so the count never includes
+ * ghosts.
+ */
+export function rateLimitEntryCount(): number {
+  sweepExpired(Date.now())
+  return entries.size
+}
+
+/** Test-only seam: wipe every counter so cases start from a clean map. */
+export function __resetRateLimitsForTests(): void {
+  entries.clear()
+}
+
+/** Test-only seam: list the tracked key strings (key-shape/privacy assertions). */
+export function __rateLimitKeysForTests(): string[] {
+  return [...entries.keys()]
 }
 
 /**
@@ -128,8 +185,8 @@ export async function tryInviteRateLimit(ip: string): Promise<RateLimitResult> {
  * Throttles admin author invitations by `(actor adminId, invitee email)`.
  * Additive to {@link tryInviteRateLimit}: even if an admin's per-IP
  * budget is fresh, they cannot re-send invites to the same mailbox
- * faster than this bucket allows. The email is hashed before it lands
- * in Redis so the raw address never persists in the cache.
+ * faster than this bucket allows. The email is hashed before it
+ * becomes a counter key so the raw address is never stored.
  */
 export async function tryInviteByEmailRateLimit(adminId: bigint, email: string): Promise<RateLimitResult> {
   return tryKeyedRateLimit(inviteEmailKey(adminId, email), readBucket('inviteEmail'))
@@ -144,7 +201,7 @@ export async function tryPasswordResetRateLimit(ip: string): Promise<RateLimitRe
  * Throttles public lostpassword submissions by normalised target email.
  * Additive to {@link tryPasswordResetRateLimit}: stops an attacker
  * rotating client IPs from spamming reset prompts to a single mailbox.
- * The email is hashed before it lands in Redis.
+ * The email is hashed before it becomes a counter key.
  */
 export async function tryPasswordResetByEmailRateLimit(email: string): Promise<RateLimitResult> {
   return tryKeyedRateLimit(passwordResetEmailKey(email), readBucket('passwordResetEmail'))

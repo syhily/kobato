@@ -105,7 +105,7 @@ export async function migrateLocalToS3(db: NodePgDatabase): Promise<MigrationRes
         await s3Backend.put({ key: row.path, body, contentType: row.mime, visibility: 'public' })
       }
       await db.update(image).set({ storageDriver: 's3' }).where(eq(image.storagePath, row.path))
-      await invalidateImageEnhanceCacheFor(row.path)
+      await invalidateImageEnhanceCacheFor(db, row.path)
       await deleteLocalSafe(row.path)
       if (alreadyInS3) {
         result.skipped += 1

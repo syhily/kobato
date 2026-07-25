@@ -19,8 +19,8 @@ vi.mock('@/server/infra/db/operations/user', () => ({
   PASSWORD_HASH_ROUNDS: 12,
 }))
 
-vi.mock('@/server/domains/auth/session-storage', () => ({
-  revokeAllSessionsOfUser: vi.fn().mockResolvedValue(undefined),
+vi.mock('@/server/domains/auth/service', () => ({
+  revokeAllSessionsOfUser: vi.fn().mockResolvedValue(0),
 }))
 
 vi.mock('@/server/domains/auth/repo', () => ({
@@ -33,7 +33,7 @@ vi.mock('@/server/infra/rate-limit', () => ({
 }))
 
 const { findUserById, updateUserById } = await import('@/server/infra/db/operations/user')
-const { revokeAllSessionsOfUser } = await import('@/server/domains/auth/session-storage')
+const { revokeAllSessionsOfUser } = await import('@/server/domains/auth/service')
 const { revokeSessionById } = await import('@/server/domains/auth/repo')
 const { accountRouter } = await import('@/server/http/controllers/account.controller')
 
@@ -120,7 +120,7 @@ describe('accountRouter.updatePassword', () => {
       1n,
       expect.objectContaining({ password: 'hashed:new-password' }),
     )
-    expect(vi.mocked(revokeAllSessionsOfUser)).toHaveBeenCalledWith(1n, 'keep-me')
+    expect(vi.mocked(revokeAllSessionsOfUser)).toHaveBeenCalledWith(expect.anything(), 1n, 'keep-me')
   })
 
   it('throws FORBIDDEN when the original password does not match', async () => {

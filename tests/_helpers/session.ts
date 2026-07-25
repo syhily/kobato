@@ -3,8 +3,9 @@ import { createSession } from 'react-router'
 import type { BlogSession, BlogSessionData, SessionUser } from '@/server/domains/auth/session-storage'
 
 // In-memory `BlogSession` doppelganger. `react-router`'s real `Session`
-// builds on top of `createSessionStorage`, which pulls Redis. Tests don't
-// need that — they only need `.get` / `.set` / `.unset` semantics.
+// builds on top of `createSessionStorage`, which the app wires to the
+// session table through db-lifecycle. Tests don't need that — they only
+// need `.get` / `.set` / `.unset` semantics.
 export function makeSession(data: Partial<BlogSessionData> = {}): BlogSession {
   return createSession<BlogSessionData, BlogSessionData>(data, 'test-session')
 }

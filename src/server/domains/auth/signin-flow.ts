@@ -591,8 +591,8 @@ export async function resetPasswordWithToken(
   // `{ revokeOtherSessions: true }` enforces the reset invariant: every
   // other session of this user (incl. anything an attacker might still
   // hold) is destroyed before the new one is issued.
-  // `establishLoginSession` mints the sid + cookie itself (so we can
-  // index the real cookie sid against Redis); use its returned
+  // `establishLoginSession` mints the sid + cookie itself (so the real
+  // cookie sid is the one written to the session table); use its returned
   // `setCookie` rather than re-committing the in-memory session —
   // calling `commitSession` after would mint a SECOND sid and orphan
   // the one we just wrote.
@@ -669,7 +669,7 @@ export async function signUpInitialAdminWithSession(
   const established = await establishLoginSession(db, session, admin, request, clientAddress)
 
   await refreshBlogSettings(db)
-  await invalidateSetupToken()
+  await invalidateSetupToken(db)
 
   return {
     type: 'redirect',

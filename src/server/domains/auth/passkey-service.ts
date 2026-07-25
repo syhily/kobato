@@ -5,6 +5,7 @@ import type {
   RegistrationResponseJSON,
 } from '@simplewebauthn/server'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { SuperJSONResult } from 'superjson'
 
 import {
   generateAuthenticationOptions as swaGenerateAuthenticationOptions,
@@ -12,19 +13,21 @@ import {
   verifyAuthenticationResponse as swaVerifyAuthenticationResponse,
   verifyRegistrationResponse as swaVerifyRegistrationResponse,
 } from '@simplewebauthn/server'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, gt } from 'drizzle-orm'
+import superjson from 'superjson'
 
 import type { SafeUser } from '@/server/infra/db/operations/user'
 import type { PasskeyCredentialRow } from '@/server/infra/db/types'
 
 import { findSafeUserById, findUserByEmail } from '@/server/infra/db/operations/user'
+import { oneTimeToken } from '@/server/infra/db/schema/one-time-token'
 import { passkeyCredential } from '@/server/infra/db/schema/passkey'
 import { user } from '@/server/infra/db/schema/user'
 import { DomainError, isUniqueConstraintError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
-import { redisInstance } from '@/server/infra/redis/storage'
 import { requireBlogSettingsBundle } from '@/shared/config/getters'
 import { isValidPasskeyDomain, tryParseUrl } from '@/shared/utils/safe-url'
+import { isRecord } from '@/shared/utils/type-guards'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const log = getLogger('auth.passkey')
@@ -44,34 +47,50 @@ function rpConfig() {
   return { rpID: url.hostname, rpName: title, origin: website }
 }
 
-async function storeChallenge(prefix: string, challenge: string, data: Record<string, unknown>): Promise<void> {
-  const redis = redisInstance()
-  await redis.set(`${prefix}${challenge}`, JSON.stringify(data), 'EX', CHALLENGE_TTL_SECONDS)
+async function storeChallenge(
+  db: NodePgDatabase,
+  prefix: string,
+  challenge: string,
+  data: Record<string, unknown>,
+): Promise<void> {
+  const payload = superjson.serialize(data)
+  const expiresAt = new Date(Date.now() + CHALLENGE_TTL_SECONDS * 1000)
+  await db
+    .insert(oneTimeToken)
+    .values({ key: `${prefix}${challenge}`, payload, expiresAt })
+    .onConflictDoUpdate({
+      target: oneTimeToken.key,
+      set: { payload, expiresAt },
+    })
 }
 
-// Atomic GET-and-DELETE to prevent challenge replay under concurrency.
-const CONSUME_CHALLENGE_LUA = `
-local raw = redis.call('GET', KEYS[1])
-if raw then
-  redis.call('DEL', KEYS[1])
-  return raw
-end
-return nil
-`
-
-async function consumeChallenge(prefix: string, challenge: string): Promise<Record<string, unknown> | null> {
-  const redis = redisInstance()
+/**
+ * Atomic consume: a single `DELETE … RETURNING payload` removes the row
+ * and returns its payload in one statement (the PG equivalent of the old
+ * Redis GET-and-DEL Lua script), so a challenge can never be replayed
+ * under concurrency. Expired rows consume as misses.
+ */
+async function consumeChallenge(
+  db: NodePgDatabase,
+  prefix: string,
+  challenge: string,
+): Promise<Record<string, unknown> | null> {
   const key = `${prefix}${challenge}`
   try {
-    // EVAL script numkeys key — traditional syntax is portable across
-    // ioredis versions and test mocks.
-    const raw = unsafeCast<string | null>(await redis.eval(CONSUME_CHALLENGE_LUA, 1, key))
-    if (!raw) {
+    const rows = await db
+      .delete(oneTimeToken)
+      .where(and(eq(oneTimeToken.key, key), gt(oneTimeToken.expiresAt, new Date())))
+      .returning({ payload: oneTimeToken.payload })
+    const payload = rows[0]?.payload
+    // Rows written by `storeChallenge` always carry the superjson
+    // envelope (`{ json, meta? }`); anything else reads as a miss.
+    if (!isRecord(payload) || !('json' in payload)) {
       return null
     }
-    return unsafeCast<Record<string, unknown>>(JSON.parse(raw))
+    const data = superjson.deserialize<Record<string, unknown>>(unsafeCast<SuperJSONResult>(payload))
+    return isRecord(data) ? data : null
   } catch (error) {
-    log.error('Redis EVAL failed while consuming passkey challenge', { key, error })
+    log.error('Failed to consume passkey challenge', { key, error })
     return null
   }
 }
@@ -109,7 +128,7 @@ export async function generateRegistrationOptions(
     })),
   })
 
-  await storeChallenge(REG_CHALLENGE_PREFIX, options.challenge, {
+  await storeChallenge(db, REG_CHALLENGE_PREFIX, options.challenge, {
     userId: String(dbUser.id),
     deviceName: deviceName ?? null,
   })
@@ -130,7 +149,7 @@ export async function verifyRegistrationResponse(
 ): Promise<PasskeyCredentialRow> {
   const { rpID, origin } = rpConfig()
 
-  const challengeData = await consumeChallenge(REG_CHALLENGE_PREFIX, input.challenge)
+  const challengeData = await consumeChallenge(db, REG_CHALLENGE_PREFIX, input.challenge)
   if (!challengeData) {
     throw new DomainError('BAD_REQUEST', '注册挑战已过期或无效，请重试。')
   }
@@ -212,7 +231,7 @@ export async function generateAuthenticationOptions(
     userVerification: 'required',
   })
 
-  await storeChallenge(AUTH_CHALLENGE_PREFIX, options.challenge, {
+  await storeChallenge(db, AUTH_CHALLENGE_PREFIX, options.challenge, {
     email: email ?? null,
   })
 
@@ -231,7 +250,7 @@ export async function verifyAuthenticationResponse(
 ): Promise<AuthenticationFinishResult> {
   const { rpID, origin } = rpConfig()
 
-  const challengeData = await consumeChallenge(AUTH_CHALLENGE_PREFIX, challenge)
+  const challengeData = await consumeChallenge(db, AUTH_CHALLENGE_PREFIX, challenge)
   if (!challengeData) {
     throw new DomainError('BAD_REQUEST', '登录挑战已过期或无效，请重试。')
   }

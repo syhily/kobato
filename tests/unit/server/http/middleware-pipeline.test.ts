@@ -107,8 +107,6 @@ vi.mock('@/server/http/resources/sitemap', () => ({
 
 const getServerPhase = vi.fn().mockReturnValue('running')
 const getRestoreState = vi.fn().mockReturnValue(null)
-const isRedisHealthy = vi.fn().mockReturnValue(true)
-const pingRedis = vi.fn().mockResolvedValue(true)
 
 vi.mock('@/server/infra/lifecycle', () => ({
   getServerPhase: () => getServerPhase(),
@@ -129,11 +127,6 @@ vi.mock('hono-pino', () => ({
 vi.mock('@/server/infra/logger/sanitizer', () => ({
   sanitizeReqHeaders: vi.fn((headers) => headers),
   resBindings: vi.fn(() => ({})),
-}))
-
-vi.mock('@/server/infra/redis/storage', () => ({
-  isRedisHealthy: () => isRedisHealthy(),
-  pingRedis: () => pingRedis(),
 }))
 
 const getBlogSettingsBundleSync = vi.fn().mockReturnValue(null)

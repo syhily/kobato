@@ -89,7 +89,7 @@ describe('feed resource', () => {
     const res = await requestFeed('http://localhost/feed')
 
     expect(generateFeeds).toHaveBeenCalledTimes(1)
-    expect(cacheSet).toHaveBeenCalledWith(BUILT)
+    expect(cacheSet).toHaveBeenCalledWith(undefined, BUILT)
     await expect(res.text()).resolves.toBe(BUILT.rss)
   })
 

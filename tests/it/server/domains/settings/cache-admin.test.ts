@@ -1,45 +1,57 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Pool } from 'pg'
+
+import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 import type { ClearCacheTarget } from '@/shared/types/cache'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
-import { flushWorkerRedis } from '#/_helpers/redis'
+import { clearAllTables } from '#/_helpers/integration-db'
 import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
-import { clearAdminCache, getAdminCacheStats } from '@/server/infra/redis/admin-ops'
-import { redisInstance, storage } from '@/server/infra/redis/storage'
+import { clearAdminCache, getAdminCacheStats } from '@/server/infra/cache/admin-ops'
+import { createDbPool, closePool } from '@/server/infra/db/pool'
+import { kvCache } from '@/server/infra/db/schema/kv-cache'
+import { session } from '@/server/infra/db/schema/session'
 
-async function remainingOwnKeys(ownKeys: string[]): Promise<string[]> {
-  // Use storage.getKeys so the returned key names are stripped of any
-  // global Redis prefix, matching the plain names in ownKeys.
-  const all = await storage.getKeys()
-  return all.filter((k) => ownKeys.includes(k)).sort()
+const poolManager = createDbPool()
+const db: NodePgDatabase = poolManager.db
+const pool: Pool = poolManager.pool
+
+afterAll(async () => {
+  await closePool(pool)
+})
+
+async function seedKvRow(key: string, bucket: string, opts: { expired?: boolean } = {}): Promise<void> {
+  await db.insert(kvCache).values({
+    key,
+    bucket,
+    blob: Buffer.from([1]),
+    expiresAt: opts.expired ? new Date(Date.now() - 1000) : new Date(Date.now() + 3_600_000),
+  })
+}
+
+async function remainingKvKeys(): Promise<string[]> {
+  const rows = await db.select({ key: kvCache.key }).from(kvCache).orderBy(kvCache.key)
+  return rows.map((row) => row.key)
 }
 
 describe('service: cache admin', () => {
-  // Track keys created by each test so we can filter `redis.keys('*')`
-  // to only our own keys — parallel workers may write keys that would
-  // otherwise pollute exact-list assertions.
-  let ownKeys: string[]
-
   beforeEach(async () => {
-    ownKeys = []
-    // Flush the current worker's Redis keys so no leftover keys from
-    // other tests pollute the SCAN counts.
-    await flushWorkerRedis()
+    // Truncate kv_cache (and everything else) so no leftover rows from
+    // other tests pollute the bucket counts.
+    await clearAllTables(db)
     setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
   })
 
-  it('counts keys per bucket via SCAN', async () => {
-    const redis = redisInstance()
-    await redis.set('og:hello-deadbeef', Buffer.from([1, 2]))
-    await redis.set('og:world-cafef00d', Buffer.from([3, 4]))
-    await redis.set('avatar:abc', Buffer.from([5]))
-    await redis.set('calendar:2026-04-30', Buffer.from([6]))
+  it('counts rows per bucket column', async () => {
+    await seedKvRow('og:hello-deadbeef', 'og')
+    await seedKvRow('og:world-cafef00d', 'og')
+    await seedKvRow('avatar:abc', 'avatar')
+    await seedKvRow('calendar:2026-04-30', 'calendar')
     // Out-of-bucket noise — must NOT show up.
-    await redis.set('session:xyz', 'cookie-payload')
-    await redis.set('rate-limit:1.2.3.4', '4')
+    await seedKvRow('feed:xml:all', 'misc')
 
-    const stats = await getAdminCacheStats()
+    const stats = await getAdminCacheStats(db)
 
     const counts = Object.fromEntries(stats.buckets.map((bucket) => [bucket.id, bucket.keyCount]))
     expect(counts).toEqual({
@@ -53,33 +65,43 @@ describe('service: cache admin', () => {
     expect(stats.total).toBe(4)
   })
 
-  it('clears only the targeted bucket', async () => {
-    const redis = redisInstance()
-    ownKeys = ['og:hello-deadbeef', 'og:world-cafef00d', 'avatar:abc', 'session:xyz']
-    await redis.set('og:hello-deadbeef', Buffer.from([1]))
-    await redis.set('og:world-cafef00d', Buffer.from([2]))
-    await redis.set('avatar:abc', Buffer.from([3]))
-    await redis.set('session:xyz', 'cookie-payload')
+  it('does not count expired rows but still clears them', async () => {
+    await seedKvRow('og:live', 'og')
+    await seedKvRow('og:expired', 'og', { expired: true })
 
-    const result = await clearAdminCache('og')
+    const stats = await getAdminCacheStats(db)
+    expect(stats.buckets.find((bucket) => bucket.id === 'og')?.keyCount).toBe(1)
+
+    const result = await clearAdminCache(db, 'og')
+    expect(result.total).toBe(2)
+    expect(await remainingKvKeys()).toEqual([])
+  })
+
+  it('clears only the targeted bucket', async () => {
+    await seedKvRow('og:hello-deadbeef', 'og')
+    await seedKvRow('og:world-cafef00d', 'og')
+    await seedKvRow('avatar:abc', 'avatar')
+    await seedKvRow('feed:xml:all', 'misc')
+
+    const result = await clearAdminCache(db, 'og')
 
     expect(result.cleared).toEqual([{ bucketId: 'og', label: 'OG 图缓存', removed: 2 }])
     expect(result.total).toBe(2)
-
-    const remaining = await remainingOwnKeys(ownKeys)
-    expect(remaining).toEqual(['avatar:abc', 'session:xyz'])
+    expect(await remainingKvKeys()).toEqual(['avatar:abc', 'feed:xml:all'])
   })
 
   it('aggregates counts when clearing all buckets', async () => {
-    const redis = redisInstance()
-    ownKeys = ['og:hello-deadbeef', 'avatar:abc', 'avatar:def', 'calendar:2026-04-30', 'session:xyz']
-    await redis.set('og:hello-deadbeef', Buffer.from([1]))
-    await redis.set('avatar:abc', Buffer.from([2]))
-    await redis.set('avatar:def', Buffer.from([3]))
-    await redis.set('calendar:2026-04-30', Buffer.from([4]))
-    await redis.set('session:xyz', 'cookie-payload')
+    await seedKvRow('og:hello-deadbeef', 'og')
+    await seedKvRow('avatar:abc', 'avatar')
+    await seedKvRow('avatar:def', 'avatar')
+    await seedKvRow('calendar:2026-04-30', 'calendar')
+    await db.insert(session).values({
+      id: 'session-1',
+      data: {},
+      expiresAt: new Date(Date.now() + 3_600_000),
+    })
 
-    const result = await clearAdminCache('all')
+    const result = await clearAdminCache(db, 'all')
 
     expect(result.total).toBe(4)
     const cleared = Object.fromEntries(result.cleared.map((entry) => [entry.bucketId, entry.removed]))
@@ -91,21 +113,33 @@ describe('service: cache admin', () => {
       embeddingSearch: 0,
       searchResult: 0,
     })
-    const remaining = await remainingOwnKeys(ownKeys)
-    expect(remaining).toEqual(['session:xyz'])
+    expect(await remainingKvKeys()).toEqual([])
+    // Sessions are a reserved bucket: never cleared, still reported.
+    expect(result.refreshedStats.reserved.find((bucket) => bucket.id === 'session')?.keyCount).toBe(1)
+  })
+
+  it('reports live session rows in the reserved bucket stats', async () => {
+    await db.insert(session).values([
+      { id: 'session-live', data: {}, expiresAt: new Date(Date.now() + 3_600_000) },
+      { id: 'session-expired', data: {}, expiresAt: new Date(Date.now() - 1000) },
+    ])
+
+    const stats = await getAdminCacheStats(db)
+    const sessionBucket = stats.reserved.find((bucket) => bucket.id === 'session')
+    expect(sessionBucket?.keyCount).toBe(1)
   })
 
   it('rejects unknown bucket targets with DomainError', async () => {
-    await expect(clearAdminCache('nope' as unknown as ClearCacheTarget)).rejects.toThrow('未知的缓存分组')
+    await expect(clearAdminCache(db, 'nope' as unknown as ClearCacheTarget)).rejects.toThrow('未知的缓存分组')
   })
 
   it('returns 0 deletions when the bucket is already empty', async () => {
-    const result = await clearAdminCache('og')
+    const result = await clearAdminCache(db, 'og')
     expect(result.total).toBe(0)
     expect(result.cleared[0]?.removed).toBe(0)
   })
 
-  it('honors a renamed prefix from the live snapshot', async () => {
+  it('surfaces a renamed prefix on the stats entry while the bucket column stays authoritative', async () => {
     setBlogSettingsBundleForTests({
       ...TEST_BLOG_SETTINGS_BUNDLE,
       cache: {
@@ -119,27 +153,24 @@ describe('service: cache admin', () => {
       },
     })
 
-    const redis = redisInstance()
-    ownKeys = ['opengraph:fresh-deadbeef', 'og:stale-deadbeef', 'avatar:abc']
-    await redis.set('opengraph:fresh-deadbeef', Buffer.from([1]))
-    await redis.set('og:stale-deadbeef', Buffer.from([2])) // legacy key under the old prefix
-    await redis.set('avatar:abc', Buffer.from([3]))
+    await seedKvRow('opengraph:fresh-deadbeef', 'og')
+    await seedKvRow('og:stale-deadbeef', 'og') // legacy key under the old prefix, same bucket label
+    await seedKvRow('avatar:abc', 'avatar')
 
-    const stats = await getAdminCacheStats()
+    const stats = await getAdminCacheStats(db)
     expect(stats.buckets.find((bucket) => bucket.id === 'og')?.pattern).toBe('opengraph:*')
-    expect(stats.buckets.find((bucket) => bucket.id === 'og')?.keyCount).toBe(1)
+    // Both rows carry the `og` bucket label — counting follows the column,
+    // not the key prefix, so a rename no longer orphans old entries.
+    expect(stats.buckets.find((bucket) => bucket.id === 'og')?.keyCount).toBe(2)
 
-    const cleared = await clearAdminCache('og')
-    expect(cleared.total).toBe(1)
-    // Legacy `og:stale-…` key is NOT touched.
-    const remaining = await remainingOwnKeys(ownKeys)
-    expect(remaining).toEqual(['avatar:abc', 'og:stale-deadbeef'])
+    const cleared = await clearAdminCache(db, 'og')
+    expect(cleared.total).toBe(2)
+    expect(await remainingKvKeys()).toEqual(['avatar:abc'])
   })
 
   it('exposes prefix + TTL on every stats entry', async () => {
-    const redis = redisInstance()
-    await redis.set('og:hello-x', Buffer.from([1]))
-    const stats = await getAdminCacheStats()
+    await seedKvRow('og:hello-x', 'og')
+    const stats = await getAdminCacheStats(db)
 
     const og = stats.buckets.find((bucket) => bucket.id === 'og')
     const cacheFixture = TEST_BLOG_SETTINGS_BUNDLE.cache!.cache
@@ -148,22 +179,19 @@ describe('service: cache admin', () => {
     expect(og?.pattern).toBe(`${cacheFixture.og.prefix}*`)
   })
 
-  it('scans and clears the imageMeta buckets the same way as og/avatar/calendar', async () => {
-    const redis = redisInstance()
-    ownKeys = ['image-meta:images/2024/06/cover.jpg', 'image-meta:images/2024/06/banner.jpg', 'og:foo']
-    await redis.set('image-meta:images/2024/06/cover.jpg', JSON.stringify({ found: true }))
-    await redis.set('image-meta:images/2024/06/banner.jpg', JSON.stringify({ found: false }))
-    await redis.set('og:foo', Buffer.from([1]))
+  it('counts and clears the imageMeta bucket the same way as og/avatar/calendar', async () => {
+    await seedKvRow('image-meta:images/2024/06/cover.jpg', 'imageMeta')
+    await seedKvRow('image-meta:images/2024/06/banner.jpg', 'imageMeta')
+    await seedKvRow('og:foo', 'og')
 
-    const stats = await getAdminCacheStats()
+    const stats = await getAdminCacheStats(db)
     const counts = Object.fromEntries(stats.buckets.map((b) => [b.id, b.keyCount]))
     expect(counts.imageMeta).toBe(2)
 
-    const result = await clearAdminCache('imageMeta')
+    const result = await clearAdminCache(db, 'imageMeta')
     expect(result.total).toBe(2)
     expect(result.cleared[0]?.bucketId).toBe('imageMeta')
-    // og keys survive a targeted imageMeta sweep.
-    const remaining = await remainingOwnKeys(ownKeys)
-    expect(remaining).toEqual(['og:foo'])
+    // og rows survive a targeted imageMeta sweep.
+    expect(await remainingKvKeys()).toEqual(['og:foo'])
   })
 })

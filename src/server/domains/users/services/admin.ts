@@ -3,7 +3,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { UserSortOrder } from '@/server/domains/users/schema'
 import type { User } from '@/server/infra/db/types'
 
-import { revokeAllSessionsOfUser } from '@/server/domains/auth/session-storage'
+import { revokeAllSessionsOfUser } from '@/server/domains/auth/service'
 import { issueResetToken, issueSetupToken } from '@/server/domains/auth/verification-tokens'
 import {
   type AdminUserRow,
@@ -121,7 +121,7 @@ export async function updateUserRoleWithGuard(
   }
   const updated = await updateUserRole(db, targetId, newRole)
   if (updated) {
-    await revokeAllSessionsOfUser(targetId)
+    await revokeAllSessionsOfUser(db, targetId)
   }
   return updated
 }
@@ -230,6 +230,6 @@ export async function softDeleteUserWithGuard(
   if (!ok) {
     throw new DomainError('NOT_FOUND', '用户不存在或已被删除')
   }
-  await revokeAllSessionsOfUser(targetId)
+  await revokeAllSessionsOfUser(db, targetId)
   return { previousRole: target.role }
 }

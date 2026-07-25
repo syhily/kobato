@@ -61,7 +61,7 @@ export async function createPage(
     }
     return inserted
   })
-  await clearContentCaches('page', row.id)
+  await clearContentCaches(db, 'page', row.id)
   return toAdminPageDto(row)
 }
 
@@ -109,7 +109,7 @@ export async function updatePageMeta(db: NodePgDatabase, input: UpsertPageMetaIn
   if (updated === null) {
     throw new DomainError('NOT_FOUND', '页面不存在或已被删除。')
   }
-  await clearContentCaches('page', pageId)
+  await clearContentCaches(db, 'page', pageId)
   return toAdminPageDto(updated)
 }
 
@@ -122,7 +122,7 @@ export async function deletePage(db: NodePgDatabase, id: bigint): Promise<{ dele
     return { deleted }
   })
   if (result.deleted) {
-    await clearContentCaches('page', id)
+    await clearContentCaches(db, 'page', id)
   }
   return result
 }
@@ -142,7 +142,7 @@ export async function restorePage(db: NodePgDatabase, id: bigint): Promise<{ res
     return { restored }
   })
   if (result.restored) {
-    await clearContentCaches('page', id)
+    await clearContentCaches(db, 'page', id)
   }
   return result
 }
@@ -156,6 +156,6 @@ export async function unpublishPage(db: NodePgDatabase, id: bigint): Promise<Adm
   if (updated === null) {
     throw new DomainError('NOT_FOUND', '页面不存在或已被删除。')
   }
-  await clearContentCaches('page', id)
+  await clearContentCaches(db, 'page', id)
   return toAdminPageDto(updated)
 }

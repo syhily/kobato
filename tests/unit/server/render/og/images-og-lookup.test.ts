@@ -28,8 +28,8 @@ vi.mock('@/server/infra/rate-limit', () => ({
   readBucket: vi.fn(() => ({ windowSeconds: 60, maxAttempts: 60 })),
   tryKeyedRateLimit: vi.fn(async () => ({ count: 1, exceeded: false })),
 }))
-vi.mock('@/server/infra/redis/buffer-cache', () => ({
-  loadBuffer: vi.fn(async (_key: unknown, loader: () => Promise<unknown>) => loader()),
+vi.mock('@/server/infra/cache/buffer-cache', () => ({
+  loadBuffer: vi.fn(async (_db: unknown, _key: unknown, loader: () => Promise<unknown>) => loader()),
 }))
 vi.mock('@/shared/config/getters', () => ({
   requireBlogSettingsSection: vi.fn((section: string) => {

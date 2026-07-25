@@ -3,22 +3,33 @@
 // line would double the file length without adding clarity.
 // oxlint-disable unicorn/no-await-expression-member
 
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
-import { flushWorkerRedis } from '#/_helpers/redis'
 import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
 import {
+  rateLimitEntryCount,
   tryCommentPostRateLimit,
   tryCommentPostRateLimitByEmail,
   tryLikeIncreaseRateLimit,
   tryRateLimit,
+  __resetRateLimitsForTests,
 } from '@/server/infra/rate-limit'
-import { redisInstance, storage } from '@/server/infra/redis/storage'
 
-beforeEach(async () => {
-  await flushWorkerRedis()
+// The limiter is a pure in-process counter map — no external store, no
+// DB — so window boundaries are driven with fake timers and the map is
+// reset between cases via the test-only seam.
+const T0 = new Date('2026-01-01T00:00:00.000Z').getTime()
+
+beforeEach(() => {
+  vi.useFakeTimers()
+  vi.setSystemTime(T0)
+  __resetRateLimitsForTests()
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
+})
+
+afterEach(() => {
+  vi.useRealTimers()
 })
 
 describe('server/rate-limit — config-driven thresholds', () => {
@@ -39,11 +50,12 @@ describe('server/rate-limit — config-driven thresholds', () => {
     expect(second).toEqual({ count: 2, exceeded: false })
     expect(third).toEqual({ count: 3, exceeded: true })
 
-    // First hit armed the EXPIRE NX with the configured window.
-    const redis = redisInstance()
-    const ttl = await redis.ttl('rate-limit:like-increase:1.2.3.4')
-    expect(ttl).toBeGreaterThan(0)
-    expect(ttl).toBeLessThanOrEqual(120)
+    // The configured 120s window anchors at the first hit: 119s later
+    // the counter still climbs; 121s later a fresh window starts.
+    vi.setSystemTime(T0 + 119_000)
+    expect((await tryLikeIncreaseRateLimit('1.2.3.4')).count).toBe(4)
+    vi.setSystemTime(T0 + 121_000)
+    expect((await tryLikeIncreaseRateLimit('1.2.3.4')).count).toBe(1)
   })
 
   it('hot-reloads when the admin saves a new policy mid-process', async () => {
@@ -94,15 +106,12 @@ describe('server/rate-limit — config-driven thresholds', () => {
     await tryCommentPostRateLimitByEmail('alice@example.com')
     await tryLikeIncreaseRateLimit('11.11.11.11')
 
-    const keys = await storage.getKeys('rate-limit:')
-    const namespaces = keys.map((key) => key.split(':').slice(0, 2).join(':'))
-    expect(new Set(namespaces)).toEqual(
-      new Set(['rate-limit:signin', 'rate-limit:comment-post', 'rate-limit:comment-email', 'rate-limit:like-increase']),
-    )
-    // Email keys must store the hash, not the raw address. The string
-    // 'alice@example.com' should never appear verbatim in any key.
-    for (const key of keys) {
-      expect(key.includes('alice@example.com')).toBe(false)
-    }
+    // Four independent counters → four live entries; a second hit on
+    // any surface bumps only its own counter.
+    expect(rateLimitEntryCount()).toBe(4)
+    expect((await tryRateLimit('11.11.11.11')).count).toBe(2)
+    expect((await tryCommentPostRateLimit('11.11.11.11')).count).toBe(2)
+    expect((await tryCommentPostRateLimitByEmail('alice@example.com')).count).toBe(2)
+    expect((await tryLikeIncreaseRateLimit('11.11.11.11')).count).toBe(2)
   })
 })

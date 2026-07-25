@@ -37,7 +37,7 @@ vi.mock('@/server/render/og/render', () => ({
 }))
 vi.mock('@/server/http/resources/calendar', () => ({
   serveCalendar: vi.fn().mockImplementation(
-    async (params: { year?: string; time?: string }) =>
+    async (_db: unknown, params: { year?: string; time?: string }) =>
       new Response(JSON.stringify(params), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
@@ -108,12 +108,22 @@ describe('imagesRouter calendar', () => {
   it('extracts year + time from `/images/calendar/<year>/<time>.png`', async () => {
     const { serveCalendar } = await import('@/server/http/resources/calendar')
     await imagesRouter.request('/images/calendar/2024/12-25.png')
-    expect(vi.mocked(serveCalendar)).toHaveBeenCalledWith({ year: '2024', time: '12-25' }, 'light', expect.anything())
+    expect(vi.mocked(serveCalendar)).toHaveBeenCalledWith(
+      undefined,
+      { year: '2024', time: '12-25' },
+      'light',
+      expect.anything(),
+    )
   })
 
   it('routes the dark variant to the dark theme', async () => {
     const { serveCalendar } = await import('@/server/http/resources/calendar')
     await imagesRouter.request('/images/calendar/dark/2024/01-01.png')
-    expect(vi.mocked(serveCalendar)).toHaveBeenCalledWith({ year: '2024', time: '01-01' }, 'dark', expect.anything())
+    expect(vi.mocked(serveCalendar)).toHaveBeenCalledWith(
+      undefined,
+      { year: '2024', time: '01-01' },
+      'dark',
+      expect.anything(),
+    )
   })
 })

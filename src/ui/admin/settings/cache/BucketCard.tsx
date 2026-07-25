@@ -203,9 +203,9 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
   return (
     <SettingGroup title={bucket.label} description={bucket.description}>
       <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <BucketField label="Redis 键数" value={`${bucket.keyCount}`} />
+        <BucketField label="缓存条数" value={`${bucket.keyCount}`} />
         <BucketField label="当前前缀" value={<code className="font-mono text-xs">{bucket.prefix}</code>} />
-        <BucketField label="SCAN 模式" value={<code className="font-mono text-xs">{bucket.pattern}</code>} />
+        <BucketField label="键匹配模式" value={<code className="font-mono text-xs">{bucket.pattern}</code>} />
         <BucketField label="当前 TTL" value={formatTtl(bucket.ttlSeconds)} />
       </dl>
 
@@ -232,7 +232,7 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
           <SettingsRow
             label="TTL（小时）"
             htmlFor={ttlId}
-            hint={`将以 ${draft.ttlHours * SECONDS_PER_HOUR} 秒写入 Redis（1 小时 ~ 30 天）。`}
+            hint={`将以 ${draft.ttlHours * SECONDS_PER_HOUR} 秒为有效期写入数据库缓存表（1 小时 ~ 30 天）。`}
           >
             <Input
               id={ttlId}

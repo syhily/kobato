@@ -9,7 +9,6 @@ import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { installFetch } from '#/_helpers/fetch'
 import { clearAllTables } from '#/_helpers/integration-db'
 import { makeAuthedCtx, makePublicCtx } from '#/_helpers/mock-ctx'
-import { flushWorkerRedis } from '#/_helpers/redis'
 import { callRpc } from '#/_helpers/rpc-call'
 import { flushAuditLog } from '@/server/domains/audit/repos/batcher'
 import { listPublicFriends } from '@/server/domains/friends/service'
@@ -20,6 +19,7 @@ import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { friend } from '@/server/infra/db/schema/friend'
 import { user } from '@/server/infra/db/schema/user'
 import { invalidateMailTransportCache } from '@/server/infra/email/sender'
+import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 
 vi.mock('@/server/domains/images/services/enhance', () => ({
   hydrateImageRefs: vi.fn(async () => undefined),
@@ -60,7 +60,9 @@ function enableMail() {
 
 beforeEach(async () => {
   await clearAllTables(db)
-  await flushWorkerRedis()
+  // The rate limiter is a process-level Map — reset it or earlier tests
+  // (same client IP) exhaust the window for later ones.
+  __resetRateLimitsForTests()
   mockFetch.reset()
   globalThis.fetch = mockFetch.fetch as unknown as typeof globalThis.fetch
   enableMail()

@@ -1,22 +1,12 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const pipelineMock = {
-  incr: vi.fn(),
-  expire: vi.fn(),
-  exec: vi.fn(),
-}
-
-const redisMock = {
-  pipeline: vi.fn(() => pipelineMock),
-}
-
-vi.mock('@/server/infra/redis/storage', () => ({
-  redisInstance: vi.fn(() => redisMock),
+const loggerMocks = vi.hoisted(() => ({
+  warn: vi.fn(),
 }))
 
 vi.mock('@/server/infra/logger', () => ({
   getLogger: vi.fn(() => ({
-    warn: vi.fn(),
+    warn: loggerMocks.warn,
     info: vi.fn(),
     error: vi.fn(),
     child: vi.fn(function (this: unknown) {
@@ -54,16 +44,25 @@ import {
   tryPasskeyDeleteRateLimit,
   readBucket,
   tryKeyedRateLimit,
+  rateLimitEntryCount,
+  __resetRateLimitsForTests,
   type RateLimitResult,
 } from '@/server/infra/rate-limit'
 
 const sampleBucket = { windowSeconds: 60, maxAttempts: 3 }
+const T0 = new Date('2026-01-01T00:00:00.000Z').getTime()
 
 describe('rate-limit', () => {
   beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(T0)
     vi.clearAllMocks()
     bundle = null
-    pipelineMock.exec.mockResolvedValue([[null, 1]])
+    __resetRateLimitsForTests()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('readBucket prefers live settings and falls back to defaults', () => {
@@ -74,36 +73,75 @@ describe('rate-limit', () => {
     expect(readBucket('signInIp')).toEqual(expect.objectContaining({ maxAttempts: 5 }))
   })
 
-  it('tryKeyedRateLimit returns count and exceeded state on success', async () => {
-    pipelineMock.exec.mockResolvedValue([[null, 4]])
-    const result = await tryKeyedRateLimit('key:1', sampleBucket)
-    expect(result.count).toBe(4)
-    expect(result.exceeded).toBe(true)
-    expect(pipelineMock.incr).toHaveBeenCalledWith('key:1')
-    expect(pipelineMock.expire).toHaveBeenCalledWith('key:1', sampleBucket.windowSeconds, 'NX')
+  it('counts post-increment within a window and trips strictly above maxAttempts', async () => {
+    // windowSeconds: 60, maxAttempts: 3 → hits 1–3 allowed, 4th trips.
+    expect(await tryKeyedRateLimit('key:1', sampleBucket)).toEqual({ count: 1, exceeded: false })
+    expect(await tryKeyedRateLimit('key:1', sampleBucket)).toEqual({ count: 2, exceeded: false })
+    expect(await tryKeyedRateLimit('key:1', sampleBucket)).toEqual({ count: 3, exceeded: false })
+    expect(await tryKeyedRateLimit('key:1', sampleBucket)).toEqual({ count: 4, exceeded: true })
   })
 
-  it('tryKeyedRateLimit fails closed when redis throws', async () => {
-    pipelineMock.exec.mockRejectedValue(new Error('redis down'))
-    const result = await tryKeyedRateLimit('key:2', sampleBucket)
-    expect(result.exceeded).toBe(true)
-    expect(result.count).toBe(Number.POSITIVE_INFINITY)
+  it('anchors the window at the first hit and starts a new window after windowSeconds', async () => {
+    await tryKeyedRateLimit('key:2', sampleBucket)
+    // 30s in: same window, the counter keeps climbing.
+    vi.setSystemTime(T0 + 30_000)
+    expect(await tryKeyedRateLimit('key:2', sampleBucket)).toEqual({ count: 2, exceeded: false })
+    vi.setSystemTime(T0 + 59_999)
+    expect(await tryKeyedRateLimit('key:2', sampleBucket)).toEqual({ count: 3, exceeded: false })
+    // 60s after the FIRST hit (not the last one): new window, counter resets.
+    vi.setSystemTime(T0 + 60_000)
+    expect(await tryKeyedRateLimit('key:2', sampleBucket)).toEqual({ count: 1, exceeded: false })
   })
 
-  it('tryKeyedRateLimit fails closed when exec returns null', async () => {
-    pipelineMock.exec.mockResolvedValue(null)
-    const result = await tryKeyedRateLimit('key:3', sampleBucket)
-    expect(result.exceeded).toBe(true)
+  it('tracks keys independently', async () => {
+    await tryKeyedRateLimit('key:a', sampleBucket)
+    await tryKeyedRateLimit('key:a', sampleBucket)
+    expect(await tryKeyedRateLimit('key:b', sampleBucket)).toEqual({ count: 1, exceeded: false })
   })
 
-  it('tryKeyedRateLimit fails closed when incr reports an error', async () => {
-    pipelineMock.exec.mockResolvedValue([[new Error('OOM'), 0]])
-    const result = await tryKeyedRateLimit('key:4', sampleBucket)
-    expect(result.exceeded).toBe(true)
+  it('rateLimitEntryCount reports live entries and sweeps expired ones', async () => {
+    expect(rateLimitEntryCount()).toBe(0)
+    await tryKeyedRateLimit('key:1', sampleBucket)
+    await tryKeyedRateLimit('key:2', sampleBucket)
+    await tryKeyedRateLimit('key:2', sampleBucket)
+    expect(rateLimitEntryCount()).toBe(2)
+
+    vi.setSystemTime(T0 + 61_000)
+    expect(rateLimitEntryCount()).toBe(0)
+  })
+
+  it('sweeps expired entries when the map is full instead of evicting live ones', async () => {
+    const bucket = { windowSeconds: 60, maxAttempts: 1 }
+    for (let i = 0; i < 10_000; i += 1) {
+      await tryKeyedRateLimit(`spray:${i}`, bucket)
+    }
+    expect(rateLimitEntryCount()).toBe(10_000)
+
+    // Every entry has expired; the next insert must reclaim them
+    // without touching the eviction path.
+    vi.setSystemTime(T0 + 61_000)
+    await tryKeyedRateLimit('spray:new', bucket)
+    expect(rateLimitEntryCount()).toBe(1)
+    expect(loggerMocks.warn).not.toHaveBeenCalled()
+  })
+
+  it('evicts the oldest windows and warns when the map is full of live entries', async () => {
+    const bucket = { windowSeconds: 60, maxAttempts: 100 }
+    for (let i = 0; i < 10_000; i += 1) {
+      await tryKeyedRateLimit(`spray:${i}`, bucket)
+    }
+    // One more distinct key while every entry is still live → capacity
+    // guard evicts the oldest window (`spray:0`, stable order on equal
+    // resetAt) to make room.
+    await tryKeyedRateLimit('spray:overflow', bucket)
+    expect(rateLimitEntryCount()).toBe(10_000)
+    expect(loggerMocks.warn).toHaveBeenCalledTimes(1)
+    // The overflow key is tracked; the evicted key restarts at count 1.
+    expect(await tryKeyedRateLimit('spray:overflow', bucket)).toEqual({ count: 2, exceeded: false })
+    expect(await tryKeyedRateLimit('spray:0', bucket)).toEqual({ count: 1, exceeded: false })
   })
 
   it('covers every public rate-limit entry point', async () => {
-    pipelineMock.exec.mockResolvedValue([[null, 1]])
     const callables: Array<() => Promise<RateLimitResult>> = [
       () => tryRateLimit('127.0.0.1'),
       () => tryInviteRateLimit('127.0.0.1'),

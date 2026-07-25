@@ -31,8 +31,8 @@ vi.mock('@/server/domains/comments/services/moderate', () => ({
   bulkApproveCommentsByUser: vi.fn().mockResolvedValue({ approved: 0 }),
   bulkDeleteCommentsByUser: vi.fn().mockResolvedValue({ deleted: 0 }),
 }))
-vi.mock('@/server/domains/auth/session-storage', () => ({
-  revokeAllSessionsOfUser: vi.fn().mockResolvedValue(undefined),
+vi.mock('@/server/domains/auth/service', () => ({
+  revokeAllSessionsOfUser: vi.fn().mockResolvedValue(0),
 }))
 vi.mock('@/server/domains/auth/repo', () => ({
   findSessionMeta: vi.fn(),

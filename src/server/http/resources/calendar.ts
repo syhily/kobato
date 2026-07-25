@@ -1,13 +1,16 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { format, isValid, parse } from 'date-fns'
 
+import { loadBuffer } from '@/server/infra/cache/buffer-cache'
 import { notFound, pngResponse } from '@/server/infra/http/status'
-import { loadBuffer } from '@/server/infra/redis/buffer-cache'
 import { type CalendarTheme, renderCalendar } from '@/server/render/calendar/render'
 import { getCacheSettings } from '@/shared/config/getters'
 
 const timeRegex = /^\d{4}$/
 
 export async function serveCalendar(
+  db: NodePgDatabase,
   params: { year?: string; time?: string },
   theme: CalendarTheme,
   responseHeaders: HeadersInit,
@@ -36,9 +39,11 @@ export async function serveCalendar(
   const cache = getCacheSettings().cache.calendar
   const themeSuffix = theme === 'dark' ? '-dark' : ''
   const buffer = await loadBuffer(
+    db,
     `${cache.prefix}${format(date, 'yyyy-MM-dd')}${themeSuffix}`,
     () => renderCalendar(date, theme),
     cache.ttlSeconds,
+    'calendar',
   )
 
   return pngResponse(buffer, responseHeaders)

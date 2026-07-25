@@ -298,11 +298,11 @@ describe('snapshot: BucketCard', () => {
       ),
     )
     expect(html).toContain('OG 预渲染缓存')
-    expect(html).toContain('Redis 键数')
+    expect(html).toContain('缓存条数')
     expect(html).toContain('42')
     expect(html).toContain('当前前缀')
     expect(html).toContain('og:')
-    expect(html).toContain('SCAN 模式')
+    expect(html).toContain('键匹配模式')
     expect(html).toContain('当前 TTL')
     expect(html).toContain('编辑')
     expect(html).toContain('清空该分组')

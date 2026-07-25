@@ -17,7 +17,7 @@ function withMetadata(post: ReturnType<typeof makePost>): ClientPostWithMetadata
 }
 
 // Snapshot a few high-leverage UI shells. These render pure components
-// (no SSR loaders, no DB/Redis) so any DOM/markup drift surfaces as a
+// (no SSR loaders, no DB) so any DOM/markup drift surfaces as a
 // PR diff. Real route snapshots would need to mock the entire catalog +
 // session pipeline; we intentionally cover the smallest blast-radius
 // pieces here.

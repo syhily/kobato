@@ -40,8 +40,6 @@ vi.mock('@/server/domains/settings/services/section-changes', () => ({
   SECTION_CHANGE_HANDLERS: new Map(),
 }))
 
-import { flushWorkerRedis } from '#/_helpers/redis'
-
 const db = {
   transaction: vi.fn(async (fn: (tx: NodePgDatabase) => Promise<unknown>) => fn(db)),
 } as unknown as NodePgDatabase
@@ -250,7 +248,6 @@ function bundleRows(bundle: BlogSettingsBundle): Setting[] {
 }
 
 beforeEach(async () => {
-  await flushWorkerRedis()
   vi.mocked(settingQueries.findSettingByScope).mockReset()
   vi.mocked(settingQueries.findSettingsByScopePrefix).mockReset()
   vi.mocked(settingQueries.upsertSetting).mockReset()

@@ -144,7 +144,7 @@ export async function uploadImage(db: NodePgDatabase, input: UploadImageInputs):
     })
   }
 
-  await invalidateImageEnhanceCacheFor(row.storagePath)
+  await invalidateImageEnhanceCacheFor(db, row.storagePath)
 
   return toAdminImageDto(row, input.uploader?.name ?? null)
 }

@@ -10,6 +10,7 @@ import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { migrateSecretsEncryption } from '@/server/domains/settings/services/migrate-secrets'
 import { wrapFetchWithLeakedResponseHandler } from '@/server/http/leaked-response'
 import { buildLoadContext, configureMiddleware } from '@/server/http/middleware-pipeline'
+import { scheduleNextKvSweep } from '@/server/infra/cache/kv-maintenance'
 import { hasAdmin } from '@/server/infra/db/operations/user'
 import { PORT } from '@/server/infra/env'
 import { createHonoServer } from '@/server/infra/hono/node'
@@ -61,6 +62,7 @@ if (!hmr?.secretsMigrated) {
   scheduleNextBackup()
   initBackupScheduler()
   scheduleNextArchive()
+  scheduleNextKvSweep()
 
   if (hmr) {
     hmr.secretsMigrated = true
@@ -70,12 +72,12 @@ if (!hmr?.secretsMigrated) {
 // ─── Setup token (uninstalled deployments only) ──────────
 // Generate the one-time setup token on startup so operators can
 // read it from the console / docker logs before visiting the
-// install wizard.  Swallow errors (e.g. Redis unreachable) — the
+// install wizard.  Swallow errors (e.g. database unreachable) — the
 // token will be lazily created on the first visit to /admin/setup.
 
 try {
   if (!(await hasAdmin(getDb()))) {
-    await getSetupToken()
+    await getSetupToken(getDb())
   }
 } catch (err) {
   root.warn(

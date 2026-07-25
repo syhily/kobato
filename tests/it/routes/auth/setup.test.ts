@@ -138,7 +138,9 @@ describe('routes/setup', () => {
           body: formData,
         }),
         url: new URL('http://localhost/admin/setup'),
-        context: makeRouteContext(),
+        // Anonymous session — the action commits it, and the session
+        // table's user_id FK rejects the helper's default fake user.
+        context: makeRouteContext({ session: emptySession() }),
         params: {},
         pattern: 'admin/setup',
       })
@@ -265,7 +267,7 @@ describe('routes/setup', () => {
       expect(data?.error).toBe('请先验证 Setup Token。')
     })
 
-    it('returns error when setup token has expired in Redis', async () => {
+    it('returns error when setup token has expired', async () => {
       vi.mocked(setupToken.isSetupTokenActive).mockResolvedValue(false)
 
       const formData = new FormData()

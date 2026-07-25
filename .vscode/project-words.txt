@@ -97,6 +97,7 @@ healthcheck
 hefei
 heiti
 hiragino
+hitokoto
 hmac
 hnsw
 hono
@@ -107,6 +108,7 @@ ianvs
 icomoon
 iconfont
 idat
+idb
 iend
 ihdr
 ilike
@@ -114,7 +116,6 @@ indexeddb
 initdb
 inlines
 inspectable
-ioredis
 iosevka
 iroha
 iseeklife
@@ -262,7 +263,6 @@ qrcode
 quan
 recma
 recognise
-rediscli
 redmi
 referer
 regclass
@@ -282,6 +282,7 @@ segmentby
 segoe
 serialised
 shadcn
+shanbay
 sheng
 shiki
 shikijs
@@ -361,6 +362,7 @@ wechat
 weibo
 wlwmanifest
 wshobson
+wufazhuce
 xiao
 xiaoten
 xiaoyu

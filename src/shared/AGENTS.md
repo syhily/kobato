@@ -1,7 +1,7 @@
 # Shared conventions
 
 `src/shared/` is isomorphic, side-effect-free, safe in both bundles.
-Forbidden: `node:*`, `ioredis`, `drizzle-orm`, DOM-only APIs, direct
+Forbidden: `node:*`, `drizzle-orm`, DOM-only APIs, direct
 `process.env`, `console.*`.
 
 Imports `shared/*` only. Runs in both bundles without polyfills.

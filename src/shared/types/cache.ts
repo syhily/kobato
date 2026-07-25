@@ -26,10 +26,11 @@ export const CACHE_BUCKET_FALLBACKS: Record<CacheBucketId, CacheBucketSlot> = {
 
 // Read-only cache surfaces that the admin panel surfaces for visibility
 // only — no rename, no clear. Both are critical to runtime behaviour:
-// `session:*` clearing would log everyone out and break in-flight tokens
-// tokens; `rate-limit:*` clearing would let throttled abusers retry
-// immediately. The prefixes are baked in to keep these surfaces
-// administrative-tool territory (npm shells / Redis CLI).
+// clearing sessions would log everyone out and break in-flight tokens;
+// clearing rate-limit counters would let throttled abusers retry
+// immediately. Sessions live in the `session` table and rate-limit
+// counters are in-process, so operating on them stays
+// administrative-tool territory (SQL shells / process restarts).
 export type ReservedCacheBucketId = 'session' | 'rateLimit'
 
 export interface ReservedCacheBucket {
@@ -45,7 +46,7 @@ export const RESERVED_CACHE_BUCKETS: readonly ReservedCacheBucket[] = [
     id: 'session',
     label: '登录会话',
     description:
-      'Cookie 解析后命中的 Redis 会话 blob，键形如 session:${sid}。承载所有已登录设备的服务端会话；为防止误清空导致全员登出，仅供查看。',
+      'Cookie 解析后命中的服务端会话记录，存储于数据库 session 表（行主键即 sid）。承载所有已登录设备的服务端会话；为防止误清空导致全员登出，仅供查看。',
     prefix: 'session:',
     pattern: 'session:*',
   },

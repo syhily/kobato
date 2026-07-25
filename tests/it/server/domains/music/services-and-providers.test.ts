@@ -5,7 +5,6 @@ import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables } from '#/_helpers/integration-db'
-import { flushWorkerRedis } from '#/_helpers/redis'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { music } from '@/server/infra/db/schema/media'
 import { user } from '@/server/infra/db/schema/user'
@@ -60,7 +59,6 @@ afterAll(async () => {
 beforeEach(async () => {
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
   await clearAllTables(db)
-  await flushWorkerRedis()
   vi.clearAllMocks()
 })
 

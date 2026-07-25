@@ -50,6 +50,11 @@ vi.mock('@/server/infra/logger', () => ({
     warn: vi.fn(),
     error: vi.fn(),
   },
+  getLogger: vi.fn(() => ({
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  })),
 }))
 
 vi.mock('@/server/infra/db/batcher-registry', () => ({

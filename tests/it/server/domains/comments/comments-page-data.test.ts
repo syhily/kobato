@@ -20,7 +20,7 @@ vi.mock('@/server/domains/comments/services/public-query', () => ({
   loadComments: vi.fn(),
   parseComments: vi.fn(async () => []),
 }))
-vi.mock('@/server/domains/comments/services/likes', () => ({ queryLikes: vi.fn() }))
+vi.mock('@/server/domains/comments/services/likes', () => ({ queryLikes: vi.fn(), startLikeTokenSweep: vi.fn() }))
 vi.mock('@/server/http/loaders/sidebar', () => ({ loadSidebarData: vi.fn() }))
 vi.mock('@/server/domains/analytics/repos/pv-batcher', () => ({ bumpPageView: vi.fn() }))
 

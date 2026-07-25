@@ -1,24 +1,28 @@
 // Session metadata data-access layer. The cookie-backed session storage
-// lives in `session-storage.ts` (signed `__session` cookie + `session:<sid>`
-// blob in Redis); this module owns the PARALLEL `session_meta:<sid>`
-// hash that powers `/my/sessions` and `/admin/security/sessions`.
+// lives in `session-storage.ts` (signed `__session` cookie + one row per
+// session in the `session` table); this module owns the meta columns on
+// that same row (`user_agent` / `platform_hint` / `ip` / `login_at` /
+// `last_active_at`) that power `/my/sessions` and
+// `/admin/security/sessions`.
 //
-// Orchestration (listing, scanning, orphan cleanup) lives in `service.ts`.
-// This module is limited to raw Redis reads/writes and their helpers.
+// Orchestration (listing, revocation entry points) lives in
+// `service.ts`. This module is limited to raw session-table reads/writes
+// and their helpers.
 
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
+import { and, eq, gt, isNotNull, ne } from 'drizzle-orm'
+
+import type { SessionRow } from '@/server/infra/db/types'
 import type { Role } from '@/shared/utils/roles'
 
 import { resolveSessionMaxAge } from '@/server/domains/auth/session-storage'
+import { session as sessionTable } from '@/server/infra/db/schema/session'
 import { getLogger } from '@/server/infra/logger'
-import { redisInstance } from '@/server/infra/redis/storage'
-import { idFromString } from '@/shared/utils/id'
 
 const log = getLogger('auth.sessions')
 
 const USER_AGENT_MAX_LENGTH = 512
-
-const META_KEY = (sid: string) => `session_meta:${sid}`
-const USER_SET_KEY = (userId: bigint | string) => `user_sessions:${userId}`
 
 export interface SessionMeta {
   sid: string
@@ -55,112 +59,128 @@ function truncateUserAgent(ua: string | null): string {
 }
 
 /**
- * Persist the metadata for a freshly-established session. Called from
- * `establishLoginSession` AFTER the `user_sessions:<userId>` set has
- * been updated, so the meta hash can be looked up by SID without a
- * fallback scan.
+ * Stamp the login metadata onto a freshly-established session's row.
+ * Called from `establishLoginSession` AFTER the session row has been
+ * committed (so the row exists with its `user_id` already set); the
+ * UPDATE is a no-op when the row is gone, matching the old best-effort
+ * meta-hash write.
  */
-export async function recordSessionLogin(input: RecordLoginInput): Promise<void> {
-  const redis = redisInstance()
+export async function recordSessionLogin(db: NodePgDatabase, input: RecordLoginInput): Promise<void> {
   const now = input.loginAt ?? new Date()
-  const loginMs = now.getTime()
-  const expiresMs = loginMs + resolveSessionMaxAge() * 1000
-  const fields = {
-    userId: input.userId.toString(),
-    userAgent: truncateUserAgent(input.userAgent),
-    platformHint: input.platformHint ?? '',
-    ip: input.ip,
-    loginAt: String(loginMs),
-    lastActiveAt: String(loginMs),
-    expiresAt: String(expiresMs),
-  }
-  await redis.hset(META_KEY(input.sid), fields)
-  // Pin the meta key to the same expiry as the session blob.
-  await redis.pexpireat(META_KEY(input.sid), expiresMs)
+  await db
+    .update(sessionTable)
+    .set({
+      userAgent: truncateUserAgent(input.userAgent),
+      platformHint: input.platformHint ?? null,
+      ip: input.ip,
+      loginAt: now,
+      lastActiveAt: now,
+    })
+    .where(eq(sessionTable.id, input.sid))
 }
 
 /**
- * Fire-and-forget bump of `lastActiveAt` and the meta key's TTL. Called
+ * Fire-and-forget bump of `last_active_at` and `expires_at`. Called
  * from `resolveSessionContext` on every authenticated request — must
  * stay off the synchronous request path.
  *
- * The PEXPIRE keeps the meta hash aligned with the session cookie's
- * sliding-refresh: as long as the user is active, both the session
- * blob and the meta hash get pushed forward by `SESSION_MAX_AGE`.
+ * The `expires_at` bump keeps the row aligned with the session cookie's
+ * sliding-refresh: as long as the user is active, the session row gets
+ * pushed forward by `SESSION_MAX_AGE`.
  */
-export function recordSessionActivity(sid: string): void {
-  const redis = redisInstance()
-  const now = Date.now()
-  const newExpiresAt = now + resolveSessionMaxAge() * 1000
-  void Promise.all([
-    redis.hset(META_KEY(sid), {
-      lastActiveAt: String(now),
-      expiresAt: String(newExpiresAt),
-    }),
-    redis.pexpireat(META_KEY(sid), newExpiresAt),
-  ]).catch((error) => {
-    log.warn('failed to refresh session meta', { sid, error: String(error) })
-  })
+export function recordSessionActivity(db: NodePgDatabase, sid: string): void {
+  const now = new Date()
+  const expiresAt = new Date(now.getTime() + resolveSessionMaxAge() * 1000)
+  void db
+    .update(sessionTable)
+    .set({ lastActiveAt: now, expiresAt })
+    .where(eq(sessionTable.id, sid))
+    .then(
+      () => undefined,
+      (error) => {
+        log.warn('failed to refresh session meta', { sid, error: String(error) })
+      },
+    )
 }
 
-function parseMeta(sid: string, hash: Record<string, string>): SessionMeta | null {
-  if (!hash || Object.keys(hash).length === 0) {
+// Rows whose owner or login meta is missing (an OTP-pending row, or a
+// row committed but not yet stamped by `recordSessionLogin`) map to
+// null — the same way a missing Redis meta hash used to read as a miss.
+function sessionRowToMeta(row: SessionRow | undefined): SessionMeta | null {
+  if (!row || row.userId === null || row.loginAt === null || row.lastActiveAt === null) {
     return null
   }
-  const userIdRaw = hash.userId
-  if (!userIdRaw) {
-    return null
-  }
-  let userId: bigint
-  try {
-    userId = idFromString(userIdRaw)
-  } catch {
-    return null
-  }
-  const loginAt = Number(hash.loginAt ?? '0')
-  const lastActiveAt = Number(hash.lastActiveAt ?? '0')
-  const expiresAt = Number(hash.expiresAt ?? '0')
   return {
-    sid,
-    userId,
-    userAgent: hash.userAgent ?? '',
-    platformHint: hash.platformHint || null,
-    ip: hash.ip ?? '',
-    loginAt: new Date(loginAt),
-    lastActiveAt: new Date(lastActiveAt),
-    expiresAt: new Date(expiresAt),
+    sid: row.id,
+    userId: row.userId,
+    userAgent: row.userAgent ?? '',
+    platformHint: row.platformHint,
+    ip: row.ip ?? '',
+    loginAt: row.loginAt,
+    lastActiveAt: row.lastActiveAt,
+    expiresAt: row.expiresAt,
   }
 }
 
 /**
- * Revoke one session by its id. The cookie-side `session:<sid>` blob,
- * the `user_sessions:<userId>` index entry, and the `session_meta:<sid>`
- * hash are all dropped atomically (via a single pipeline) so a partial
- * delete cannot leave the admin view showing a session whose cookie
- * has already been invalidated.
+ * Revoke one session by its id. The single DELETE carries the owner
+ * match in its WHERE clause, so a session can only be dropped by a
+ * caller that already resolved its owner.
  *
  * Role-blind: callers must go through `session-guard.ts` (own / admin /
  * bulk scopes) for the perimeter check.
  */
-export async function revokeSessionById(sid: string, userId: bigint): Promise<void> {
-  const redis = redisInstance()
-  const pipeline = redis.pipeline()
-  pipeline.del(`session:${sid}`)
-  pipeline.del(META_KEY(sid))
-  pipeline.srem(USER_SET_KEY(userId), sid)
-  await pipeline.exec()
+export async function revokeSessionById(db: NodePgDatabase, sid: string, userId: bigint): Promise<void> {
+  await db.delete(sessionTable).where(and(eq(sessionTable.id, sid), eq(sessionTable.userId, userId)))
 }
 
 /**
- * Fetch one meta row by id. Returns `null` if Redis no longer has the
- * hash (the session expired or was already revoked). Used by the API
- * actions to confirm ownership before deleting.
+ * Fetch one session's meta by id. Returns `null` when the row is gone,
+ * expired, or has no owner stamped yet (the session expired, was
+ * revoked, or never completed login). Used by the API actions to
+ * confirm ownership before deleting.
  */
-export async function findSessionMeta(sid: string): Promise<SessionMeta | null> {
-  const redis = redisInstance()
-  const hash = (await redis.hgetall(META_KEY(sid))) as Record<string, string>
-  return parseMeta(sid, hash)
+export async function findSessionMeta(db: NodePgDatabase, sid: string): Promise<SessionMeta | null> {
+  const rows = await db
+    .select()
+    .from(sessionTable)
+    .where(and(eq(sessionTable.id, sid), gt(sessionTable.expiresAt, new Date())))
+    .limit(1)
+  return sessionRowToMeta(rows[0])
 }
 
-// Exposed for `service.ts` session-list orchestration.
-export { parseMeta, META_KEY, USER_SET_KEY }
+/** Live (unexpired, owner-stamped) sessions belonging to one user. */
+export async function listLiveSessionsByUser(db: NodePgDatabase, userId: bigint): Promise<SessionMeta[]> {
+  const rows = await db
+    .select()
+    .from(sessionTable)
+    .where(and(eq(sessionTable.userId, userId), gt(sessionTable.expiresAt, new Date())))
+  return rows.map(sessionRowToMeta).filter((meta): meta is SessionMeta => meta !== null)
+}
+
+/** Live sessions across the site, soft-capped at `maxRows`. */
+export async function listLiveSessions(db: NodePgDatabase, maxRows: number): Promise<SessionMeta[]> {
+  const rows = await db
+    .select()
+    .from(sessionTable)
+    .where(and(isNotNull(sessionTable.userId), gt(sessionTable.expiresAt, new Date())))
+    .limit(maxRows)
+  return rows.map(sessionRowToMeta).filter((meta): meta is SessionMeta => meta !== null)
+}
+
+/**
+ * Drop every session belonging to one user in a single statement (the
+ * PG equivalent of the old Lua script over `user_sessions:<uid>`), with
+ * an optional exemption for the caller's own session. Returns the
+ * number of deleted rows.
+ */
+export async function deleteSessionsOfUser(
+  db: NodePgDatabase,
+  userId: bigint,
+  exceptSessionId?: string,
+): Promise<number> {
+  const result = await db
+    .delete(sessionTable)
+    .where(and(eq(sessionTable.userId, userId), exceptSessionId ? ne(sessionTable.id, exceptSessionId) : undefined))
+  return result.rowCount ?? 0
+}

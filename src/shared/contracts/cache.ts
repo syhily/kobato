@@ -12,7 +12,7 @@ const cacheBucketStatsDto = z.object({
   prefix: z.string(),
   ttlSeconds: z.number().int().nonnegative(),
   pattern: z.string(),
-  /** Approximate count from a SCAN sweep, not authoritative under churn. */
+  /** Live row count for the bucket (expired rows excluded). */
   keyCount: z.number().int().nonnegative(),
 })
 export type CacheBucketStats = z.infer<typeof cacheBucketStatsDto>

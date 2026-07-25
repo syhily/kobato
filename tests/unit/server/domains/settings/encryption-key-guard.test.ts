@@ -20,9 +20,6 @@ vi.mock('@/server/infra/env', () => ({
   get DATABASE_URL() {
     return 'postgresql://localhost:5434/test'
   },
-  get REDIS_URL() {
-    return 'redis://localhost:6381'
-  },
   get SESSION_SECRET() {
     return 'test-session-secret-must-be-32-chars-long!'
   },
@@ -43,9 +40,6 @@ vi.mock('@/server/infra/env', () => ({
   },
   get DB_STATEMENT_TIMEOUT_MS() {
     return 30000
-  },
-  get REDIS_KEY_PREFIX() {
-    return undefined
   },
   get DEFAULT_FONT_PATH() {
     return undefined

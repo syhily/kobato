@@ -87,9 +87,9 @@ export const backupRouter = new Hono<Env>()
         return c.json({ error: { message: 'Setup Token 验证已过期或未完成，请先返回安装页面完成验证。' } }, 403)
       }
 
-      // Double-check the token is still active in Redis (defense against
+      // Double-check the token is still active (defense against
       // stale session flags after token expiration or invalidation).
-      if (!(await isSetupTokenActive())) {
+      if (!(await isSetupTokenActive(c.var.db))) {
         return c.json({ error: { message: 'Setup Token 已过期或失效，请重新验证。' } }, 403)
       }
 

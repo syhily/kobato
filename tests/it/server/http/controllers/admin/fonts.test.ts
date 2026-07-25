@@ -9,7 +9,6 @@ import type { FontRow } from '@/server/infra/db/schema/font'
 
 import { clearAllTables } from '#/_helpers/integration-db'
 import { makeAuthedCtx, makePublicCtx } from '#/_helpers/mock-ctx'
-import { flushWorkerRedis } from '#/_helpers/redis'
 import { flushAuditLog } from '@/server/domains/audit/repos/batcher'
 import { adminFontsRouter } from '@/server/http/controllers/admin/fonts.controller'
 import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
@@ -41,7 +40,6 @@ afterAll(async () => {
 
 beforeEach(async () => {
   await clearAllTables(db)
-  await flushWorkerRedis()
   initAllBatchers(pool, db)
 })
 

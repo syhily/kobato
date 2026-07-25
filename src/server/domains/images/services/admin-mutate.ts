@@ -46,7 +46,7 @@ export async function deleteImage(db: NodePgDatabase, id: bigint, viewer?: Image
   if (deleted === null) {
     throw new DomainError('NOT_FOUND', '图片不存在')
   }
-  await invalidateImageEnhanceCacheFor(deleted.storagePath)
+  await invalidateImageEnhanceCacheFor(db, deleted.storagePath)
 }
 
 export async function updateImageNote(
@@ -110,7 +110,7 @@ export async function recalculateImageThumbhash(
     throw new DomainError('NOT_FOUND', '图片不存在')
   }
 
-  await invalidateImageEnhanceCacheFor(existing.storagePath)
+  await invalidateImageEnhanceCacheFor(db, existing.storagePath)
 
   return toAdminImageDto(updated, updated.uploaderName)
 }

@@ -19,10 +19,12 @@ server/
 Pure primitives. `db/` (Drizzle pool, schema, migrations,
 `operations/<entity>.ts` raw helpers, `copy-batcher` +
 `batcher-registry` driving every process-level write batcher through
-one init/flush/reset lifecycle), `redis/` (ioredis:
-storage, buckets, inflight, `buffer-cache`, `admin-ops`), `http/`
-(generic `etag`, `headers`, `status`, `errors` with `DomainError` /
-`ActionFailure`), `email/` (sender + React Email), `search/` (LIKE,
+one init/flush/reset lifecycle), `cache/` (`kv-store`/`kv-cache`/
+`kv-maintenance` PG-backed cache facade + hourly expiry sweep,
+feed/sitemap caches, `buffer-cache` binary read-through, admin cache
+panel `buckets`/`admin-ops`, `inflight` request coalescing),
+`http/` (generic `etag`, `headers`, `status`, `errors` with
+`DomainError` / `ActionFailure`), `email/` (sender + React Email), `search/` (LIKE,
 pg_trgm and vector drivers, openai client), `image/` (worker_threads
 process pool, `compress`), `crypto/` (secret encryption, random-token
 primitives), `env.ts`, `logger.ts`,
@@ -158,8 +160,9 @@ the caller's responsibility.
 ## Sessions, Env, Security
 
 - Sessions: Hono middleware (`server/http/middlewares/session.ts`)
-  wraps React Router `createSessionStorage` with Redis persistence and
-  a signed `__session` cookie. `SESSION_SECRET` required. Populates
+  wraps React Router `createSessionStorage` with Postgres persistence
+  (the `session` table) and a signed `__session` cookie.
+  `SESSION_SECRET` required. Populates
   `c.var.session` and commits `Set-Cookie` after the response.
 - Server env: `@/server/infra/env` (inline `createEnv` + Zod). Adding
   an env var updates the schema, `src/env.d.ts`, and `.env.example`
@@ -180,7 +183,7 @@ Env vars (`@/server/infra/env.ts`) require a redeploy; database settings
 Env vars are for: (1) immutable runtime constants (`HOST`, `PORT`,
 `LOG_LEVEL`, `DB_POOL_MAX`, `DB_STATEMENT_TIMEOUT_MS`), (2) secrets and
 credentials that must not live in the database (`DATABASE_URL`,
-`REDIS_URL`, `SESSION_SECRET`, `ENCRYPTION_KEY`), (3) deployment-local
+`SESSION_SECRET`, `ENCRYPTION_KEY`), (3) deployment-local
 filesystem paths (`DATA_PATH`). Everything else — feature toggles,
 thresholds, URLs, CDN hosts, pagination sizes, relative font paths —
 is a database setting (`assets.storage.enabled`, `seo.og.width`,

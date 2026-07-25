@@ -2,7 +2,6 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { flushWorkerRedis } from '#/_helpers/redis'
 import { emptySession } from '#/_helpers/session'
 
 // `signInWithSession` is the single entry-point both the public admin login
@@ -13,14 +12,29 @@ import { emptySession } from '#/_helpers/session'
 //      browser persists the new login) AND a rotated `csrf-token` cookie
 //      (so any concurrently-open admin tab picks up a fresh, session-bound
 //      token without having to re-fetch the form).
-//   2. The rate limiter only round-trips Redis once per attempt (the
-//      legacy `exceedLimit` + `incrLimit` pair was collapsed into
+//   2. The rate limiter only round-trips once per attempt (the legacy
+//      `exceedLimit` + `incrLimit` pair was collapsed into
 //      `tryRateLimit`).
 //
-// Redis is real (session storage writes encrypted session blobs), while
-// DB operations stay mocked so boundary-condition tests (empty insertAdmin
+// Session storage stays real (signed cookie round-trip), but its session
+// rows are stubbed at `getDb()` — `insertAdmin` is mocked, so a real
+// session-table INSERT would FK-violate on the missing user row. Other DB
+// operations stay mocked so boundary-condition tests (empty insertAdmin
 // result, concurrent-install race) remain possible without heavy fixture
 // setup.
+
+vi.mock('@/server/bootstrap/db-lifecycle', () => {
+  const fakeDb = {
+    insert: () => ({ values: () => ({ onConflictDoUpdate: async () => {} }) }),
+    delete: () => ({ where: async () => {} }),
+    update: () => ({ set: () => ({ where: async () => {} }) }),
+    select: () => ({ from: () => ({ where: () => ({ limit: async () => [] }) }) }),
+  }
+  return {
+    getDb: () => fakeDb,
+    getPool: () => ({}),
+  }
+})
 
 vi.mock('@/server/infra/db/operations/user', () => ({
   hasAdmin: vi.fn(async () => false),
@@ -50,7 +64,10 @@ vi.mock('@/server/domains/audit/services/record', () => ({
 
 const db = {
   transaction: async <T>(callback: (tx: NodePgDatabase) => Promise<T>) => callback(db as NodePgDatabase),
-} as NodePgDatabase
+  // `invalidateSetupToken` deletes the setup-token row on successful
+  // install; the row itself lives nowhere in this file's mocked world.
+  delete: () => ({ where: async () => {} }),
+} as unknown as NodePgDatabase
 const pool = {} as any
 
 const userQuery = await import('@/server/infra/db/operations/user')
@@ -97,7 +114,6 @@ beforeEach(async () => {
   vi.mocked(settingsSnapshot.refreshBlogSettings).mockReset()
   vi.mocked(rateLimit.tryRateLimit).mockReset()
   vi.mocked(rateLimit.tryRateLimit).mockResolvedValue({ count: 1, exceeded: false })
-  await flushWorkerRedis()
 })
 
 function buildRequest(): Request {

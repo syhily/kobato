@@ -6,7 +6,7 @@ import type { ViewerContext } from '@/server/domains/auth/rbac'
 
 // auth/session-guard.ts owns the "who may revoke whose session" policy
 // for all three scopes (own / admin / bulk). We stub the role-blind
-// Redis primitives (repo + session-storage) and the user lookup so each
+// session-table primitives (repo + service) and the user lookup so each
 // test drives exactly one policy branch.
 
 const findSessionMetaMock = vi.hoisted(() => vi.fn())
@@ -19,7 +19,7 @@ vi.mock('@/server/domains/auth/repo', () => ({
   revokeSessionById: revokeSessionByIdMock,
 }))
 
-vi.mock('@/server/domains/auth/session-storage', () => ({
+vi.mock('@/server/domains/auth/service', () => ({
   revokeAllSessionsOfUser: revokeAllSessionsOfUserMock,
 }))
 
@@ -45,21 +45,21 @@ describe('auth/session-guard — revokeOwnSessionWithGuard (own scope)', () => {
 
   it('returns targetUserId:null when the session meta is missing (no-op)', async () => {
     findSessionMetaMock.mockResolvedValue(null)
-    const result = await revokeOwnSessionWithGuard('sid', actor('1'))
+    const result = await revokeOwnSessionWithGuard(fakeDb, 'sid', actor('1'))
     expect(result).toEqual({ targetUserId: null })
     expect(revokeSessionByIdMock).not.toHaveBeenCalled()
   })
 
   it('revokes when the actor owns the session', async () => {
     findSessionMetaMock.mockResolvedValue({ userId: 1n, sid: 'sid' })
-    const result = await revokeOwnSessionWithGuard('sid', actor('1', 'visitor'))
+    const result = await revokeOwnSessionWithGuard(fakeDb, 'sid', actor('1', 'visitor'))
     expect(result.targetUserId).toBe(1n)
-    expect(revokeSessionByIdMock).toHaveBeenCalledWith('sid', 1n)
+    expect(revokeSessionByIdMock).toHaveBeenCalledWith(fakeDb, 'sid', 1n)
   })
 
   it('throws FORBIDDEN when the session belongs to another user — even for an admin actor (no bypass)', async () => {
     findSessionMetaMock.mockResolvedValue({ userId: 999n, sid: 'sid' })
-    await expect(revokeOwnSessionWithGuard('sid', actor('1', 'admin'))).rejects.toThrow('无权操作该会话。')
+    await expect(revokeOwnSessionWithGuard(fakeDb, 'sid', actor('1', 'admin'))).rejects.toThrow('无权操作该会话。')
     expect(revokeSessionByIdMock).not.toHaveBeenCalled()
   })
 })
@@ -82,7 +82,7 @@ describe('auth/session-guard — revokeSessionWithGuard (admin scope)', () => {
     findSessionMetaMock.mockResolvedValue({ userId: 1n, sid: 'sid' })
     const result = await revokeSessionWithGuard(fakeDb, 'sid', actor('1'))
     expect(result.targetUserId).toBe(1n)
-    expect(revokeSessionByIdMock).toHaveBeenCalledWith('sid', 1n)
+    expect(revokeSessionByIdMock).toHaveBeenCalledWith(fakeDb, 'sid', 1n)
     expect(findSafeUserByIdMock).not.toHaveBeenCalled()
   })
 
@@ -129,13 +129,13 @@ describe('auth/session-guard — revokeAllSessionsWithGuard (bulk scope)', () =>
   it('allows an admin to bulk-revoke their own sessions', async () => {
     findSafeUserByIdMock.mockResolvedValue({ id: 1n, role: 'admin', deletedAt: null })
     await revokeAllSessionsWithGuard(fakeDb, 1n, actor('1'))
-    expect(revokeAllSessionsOfUserMock).toHaveBeenCalledWith(1n)
+    expect(revokeAllSessionsOfUserMock).toHaveBeenCalledWith(fakeDb, 1n)
   })
 
   it('allows an admin to bulk-revoke a non-admin user', async () => {
     findSafeUserByIdMock.mockResolvedValue({ id: 2n, role: 'visitor', deletedAt: null })
     await revokeAllSessionsWithGuard(fakeDb, 2n, actor('1'))
-    expect(revokeAllSessionsOfUserMock).toHaveBeenCalledWith(2n)
+    expect(revokeAllSessionsOfUserMock).toHaveBeenCalledWith(fakeDb, 2n)
   })
 
   it('throws FORBIDDEN when an admin bulk-revokes another admin', async () => {
@@ -155,6 +155,6 @@ describe('auth/session-guard — revokeAllSessionsWithGuard (bulk scope)', () =>
   it('proceeds when the target user row is missing', async () => {
     findSafeUserByIdMock.mockResolvedValue(null)
     await revokeAllSessionsWithGuard(fakeDb, 2n, actor('1'))
-    expect(revokeAllSessionsOfUserMock).toHaveBeenCalledWith(2n)
+    expect(revokeAllSessionsOfUserMock).toHaveBeenCalledWith(fakeDb, 2n)
   })
 })

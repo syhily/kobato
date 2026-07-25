@@ -5,7 +5,6 @@ import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vites
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { clearAllTables } from '#/_helpers/integration-db'
-import { flushWorkerRedis } from '#/_helpers/redis'
 import { flushAuditLog, pushAuditEvent } from '@/server/domains/audit/repos/batcher'
 import {
   buildAuditLogWhere,
@@ -33,7 +32,6 @@ afterAll(async () => {
 
 beforeEach(async () => {
   await clearAllTables(db)
-  await flushWorkerRedis()
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
 })
 

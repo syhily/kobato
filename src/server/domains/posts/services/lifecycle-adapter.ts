@@ -26,8 +26,8 @@ export const postLifecycleAdapter: ContentEntityAdapter<PostMetaRow, Post> = {
   projectPreview: (meta, revision) => toCmsPost(meta, revision),
   recordForceOverwrite: (entry) => recordForceOverwriteAudit(auditLog, 'postMetaId', entry),
   async afterPublish(db, meta, body, warnings) {
-    await clearContentCaches('post', meta.id)
-    await invalidateSearchCache()
+    await clearContentCaches(db, 'post', meta.id)
+    await invalidateSearchCache(db)
     // Index the canonical body already in scope rather than re-reading the
     // row from the DB: `body` is freshly canonicalized + prerendered, so it
     // matches what `publishLatestRevision` persisted — a re-read would only

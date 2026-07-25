@@ -210,7 +210,11 @@ describe('account controller', () => {
       expect(response.status).toBe(200)
       const body = await parseRpcJson<{ success: boolean; currentSession: boolean }>(response)
       expect(body.currentSession).toBe(true)
-      expect(revokeOwnSessionWithGuardMock).toHaveBeenCalledWith('session-1', expect.objectContaining({ userId: '1' }))
+      expect(revokeOwnSessionWithGuardMock).toHaveBeenCalledWith(
+        expect.anything(),
+        'session-1',
+        expect.objectContaining({ userId: '1' }),
+      )
       expect(recordAuditEventFromContextMock).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({

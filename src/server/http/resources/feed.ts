@@ -37,10 +37,10 @@ function cacheKeyFor(scope?: FeedOptions): string {
 async function writeFeedResponse(c: Context<Env>, kind: 'rss' | 'atom', scope?: FeedOptions) {
   const cache = feedCacheFor(cacheKeyFor(scope))
   const feed =
-    (await cache.get()) ??
+    (await cache.get(c.var.db)) ??
     (await (async () => {
       const built = await generateFeeds(c.var.db, scope ?? {})
-      await cache.set(built)
+      await cache.set(c.var.db, built)
       return built
     })())
   new Headers(feedHeaders(kind)).forEach((value, name) => c.header(name, value))

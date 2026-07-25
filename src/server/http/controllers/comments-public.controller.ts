@@ -58,14 +58,14 @@ const replyComment = publicProc
     if (!isAdmin) {
       try {
         const ttl = requireBlogSettingsSection('comments').comments.tokenTtlSeconds
-        const token = await issueCommentToken(comment.id, comment.userId, input.page_key, ttl)
+        const token = await issueCommentToken(context.db, comment.id, comment.userId, input.page_key, ttl)
         const existing = parseCommentTokensCookie(requestFacts.cookie)
         const next = appendCommentToken(existing, input.page_key, token, ttl)
         responseHeaders.append('Set-Cookie', serializeCommentTokensCookie(next))
       } catch (err) {
-        // Token issuance failed (e.g. Redis down). The comment is already
-        // persisted; failing the whole request would leave the user
-        // without any indication their comment was saved.
+        // Token issuance failed (e.g. database hiccup). The comment is
+        // already persisted; failing the whole request would leave the
+        // user without any indication their comment was saved.
         getLogger('comments.token').warn('comment token issuance failed', {
           commentId: comment.id,
           error: err instanceof Error ? err.message : String(err),

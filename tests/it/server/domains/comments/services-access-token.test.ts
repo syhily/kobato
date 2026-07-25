@@ -6,10 +6,10 @@ import superjson from 'superjson'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables } from '#/_helpers/integration-db'
-import { flushWorkerRedis } from '#/_helpers/redis'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { comment } from '@/server/infra/db/schema/comment'
 import { metric } from '@/server/infra/db/schema/metric'
+import { oneTimeToken } from '@/server/infra/db/schema/one-time-token'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
 
@@ -33,7 +33,6 @@ afterAll(async () => {
 
 beforeEach(async () => {
   await clearAllTables(db)
-  await flushWorkerRedis()
   vi.clearAllMocks()
 })
 
@@ -213,16 +212,16 @@ describe('comments/services/token — issue/verify/revoke cycle', () => {
   it('issues a token that verifies then is revoked', async () => {
     const { issueCommentToken, verifyCommentToken, revokeCommentToken } =
       await import('@/server/domains/comments/services/token')
-    const tok = await issueCommentToken(1n, 2n, 'post:1', 60)
-    const payload = await verifyCommentToken(tok)
+    const tok = await issueCommentToken(db, 1n, 2n, 'post:1', 60)
+    const payload = await verifyCommentToken(db, tok)
     expect(payload?.commentId).toBe('1')
     expect(payload?.userId).toBe('2')
-    await revokeCommentToken(tok)
-    expect(await verifyCommentToken(tok)).toBeNull()
+    await revokeCommentToken(db, tok)
+    expect(await verifyCommentToken(db, tok)).toBeNull()
   })
   it('returns null for an unknown token', async () => {
     const { verifyCommentToken } = await import('@/server/domains/comments/services/token')
-    expect(await verifyCommentToken('does-not-exist')).toBeNull()
+    expect(await verifyCommentToken(db, 'does-not-exist')).toBeNull()
   })
 })
 
@@ -244,13 +243,13 @@ describe('comments/services/token — appendCommentToken', () => {
 describe('comments/services/token — cleanupExpiredTokens', () => {
   it('returns empty result when the cookie is empty', async () => {
     const { cleanupExpiredTokens } = await import('@/server/domains/comments/services/token')
-    const r = await cleanupExpiredTokens({})
+    const r = await cleanupExpiredTokens(db, {})
     expect(r.cleaned).toEqual({})
     expect(r.validEntries).toEqual([])
   })
   it('skips entries whose local expiresAt has already passed', async () => {
     const { cleanupExpiredTokens } = await import('@/server/domains/comments/services/token')
-    const r = await cleanupExpiredTokens({
+    const r = await cleanupExpiredTokens(db, {
       'post:1': [{ token: 'expired', expiresAt: Date.now() - 1000 }],
     })
     expect(r.cleaned).toEqual({})
@@ -258,57 +257,61 @@ describe('comments/services/token — cleanupExpiredTokens', () => {
   })
   it('accepts a real token issued by issueCommentToken (superjson wire format)', async () => {
     const { issueCommentToken, cleanupExpiredTokens } = await import('@/server/domains/comments/services/token')
-    const token = await issueCommentToken(42n, 7n, 'post:1', 60)
-    const r = await cleanupExpiredTokens({
+    const token = await issueCommentToken(db, 42n, 7n, 'post:1', 60)
+    const r = await cleanupExpiredTokens(db, {
       'post:1': [{ token, expiresAt: Date.now() + 60_000 }],
     })
     expect(r.validEntries).toHaveLength(1)
     expect(r.validEntries[0]?.payload.commentId).toBe('42')
     expect(r.cleaned['post:1']).toHaveLength(1)
   })
-  it('skips entries whose Redis payload is not valid JSON', async () => {
-    const { redisInstance } = await import('@/server/infra/redis/storage')
+  it('skips entries whose stored payload is not a superjson envelope', async () => {
     const { cleanupExpiredTokens } = await import('@/server/domains/comments/services/token')
-    const redis = redisInstance()
     const token = 'bad-json-' + Math.random().toString(36).slice(2)
-    await redis.set(`comment:token:${token}`, 'not-json', 'EX', 60)
-    const r = await cleanupExpiredTokens({
+    // The jsonb column accepts a bare JSON string; the envelope guard
+    // (`isRecord + 'json' in`) reads it as a miss.
+    await db.insert(oneTimeToken).values({
+      key: `comment:token:${token}`,
+      payload: 'not-an-envelope',
+      expiresAt: new Date(Date.now() + 60_000),
+    })
+    const r = await cleanupExpiredTokens(db, {
       'post:1': [{ token, expiresAt: Date.now() + 60_000 }],
     })
     expect(r.validEntries).toEqual([])
     expect(r.cleaned).toEqual({})
-    await redis.del(`comment:token:${token}`)
   })
-  it('skips entries whose Redis payload fails the shape guard', async () => {
-    const { redisInstance } = await import('@/server/infra/redis/storage')
+  it('skips entries whose stored payload fails the shape guard', async () => {
     const { cleanupExpiredTokens } = await import('@/server/domains/comments/services/token')
-    const redis = redisInstance()
     const token = 'bad-shape-' + Math.random().toString(36).slice(2)
-    await redis.set(`comment:token:${token}`, superjson.stringify({ foo: 'bar' }), 'EX', 60)
-    const r = await cleanupExpiredTokens({
+    await db.insert(oneTimeToken).values({
+      key: `comment:token:${token}`,
+      payload: superjson.serialize({ foo: 'bar' }),
+      expiresAt: new Date(Date.now() + 60_000),
+    })
+    const r = await cleanupExpiredTokens(db, {
       'post:1': [{ token, expiresAt: Date.now() + 60_000 }],
     })
     expect(r.validEntries).toEqual([])
-    await redis.del(`comment:token:${token}`)
   })
 })
 
 describe('comments/services/token — verifyCommentOwnership', () => {
   it('returns token=null when no token list is supplied', async () => {
     const { verifyCommentOwnership } = await import('@/server/domains/comments/services/token')
-    const r = await verifyCommentOwnership({}, '7')
+    const r = await verifyCommentOwnership(db, {}, '7')
     expect(r.token).toBeNull()
   })
   it('returns the matched token when a backed token matches the commentId', async () => {
     const { issueCommentToken, verifyCommentOwnership } = await import('@/server/domains/comments/services/token')
-    const token = await issueCommentToken(77n, 7n, 'post:1', 60)
-    const r = await verifyCommentOwnership({ 'post:1': [{ token, expiresAt: Date.now() + 60_000 }] }, '77')
+    const token = await issueCommentToken(db, 77n, 7n, 'post:1', 60)
+    const r = await verifyCommentOwnership(db, { 'post:1': [{ token, expiresAt: Date.now() + 60_000 }] }, '77')
     expect(r.token).toBe(token)
   })
   it('returns token=null when the backed token does not match the commentId', async () => {
     const { issueCommentToken, verifyCommentOwnership } = await import('@/server/domains/comments/services/token')
-    const token = await issueCommentToken(111n, 7n, 'post:1', 60)
-    const r = await verifyCommentOwnership({ 'post:1': [{ token, expiresAt: Date.now() + 60_000 }] }, '222')
+    const token = await issueCommentToken(db, 111n, 7n, 'post:1', 60)
+    const r = await verifyCommentOwnership(db, { 'post:1': [{ token, expiresAt: Date.now() + 60_000 }] }, '222')
     expect(r.token).toBeNull()
   })
 })

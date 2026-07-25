@@ -1,4 +1,4 @@
-// Vitest worker setup for unit tests. No DB/Redis — just env vars and
+// Vitest worker setup for unit tests. No DB — just env vars and
 // the settings snapshot slot so tests that import server modules can resolve.
 //
 // Also registers @testing-library/jest-dom matchers + auto-cleanup for

@@ -207,6 +207,6 @@ export async function createComment(
   const sub = await validateSubmission(db, commentReq, facts, clientAddress, session)
   const info = await persistComment(db, commentReq, sub, facts.userAgent, clientAddress)
   await notifyCommentCreated(db, info, sub.target)
-  await clearLatestCommentsCache()
+  await clearLatestCommentsCache(db)
   return info
 }

@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { RequestFacts } from '@/server/infra/http/request-facts'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
-import { flushWorkerRedis } from '#/_helpers/redis'
 import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
 
 const pushAccessEvent = vi.fn()
@@ -29,7 +28,6 @@ const CHROME_UA =
 
 beforeEach(async () => {
   vi.clearAllMocks()
-  await flushWorkerRedis()
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
 })
 

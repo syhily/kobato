@@ -99,7 +99,6 @@ const NODE_ONLY_PACKAGES: readonly NodeOnlyPackage[] = [
   { name: 'shiki', reason: 'server-side syntax highlighting' },
   { name: 'katex', reason: 'server-side math rendering' },
   { name: 'pinyin-pro', reason: '~150KB CJK tables, server-side slug romanisation' },
-  { name: 'ioredis', reason: 'data layer, server-only' },
   { name: 'pg', reason: 'data layer, server-only' },
   { name: 'drizzle-orm', reason: 'data layer, server-only' },
   { name: 'nodemailer', reason: 'mail delivery, server-only' },

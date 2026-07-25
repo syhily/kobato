@@ -15,17 +15,17 @@ import { comment } from '@/server/infra/db/schema/comment'
 
 export async function approveCommentById(db: NodePgDatabase, id: bigint): Promise<void> {
   await db.update(comment).set({ isPending: false }).where(eq(comment.id, id))
-  await clearLatestCommentsCache()
+  await clearLatestCommentsCache(db)
 }
 
 export async function deleteCommentById(db: NodePgDatabase, id: bigint): Promise<void> {
   await db.delete(comment).where(eq(comment.id, id))
-  await clearLatestCommentsCache()
+  await clearLatestCommentsCache(db)
 }
 
 export async function softDeleteCommentById(db: NodePgDatabase, id: bigint): Promise<void> {
   await db.update(comment).set({ deletedAt: new Date() }).where(eq(comment.id, id))
-  await clearLatestCommentsCache()
+  await clearLatestCommentsCache(db)
 }
 
 export async function bulkApprovePendingByUser(db: NodePgDatabase, userId: bigint): Promise<number> {
@@ -35,7 +35,7 @@ export async function bulkApprovePendingByUser(db: NodePgDatabase, userId: bigin
     .set({ isPending: false })
     .where(and(eq(comment.userId, userId), eq(comment.isPending, true), isNull(comment.deletedAt)))
     .returning({ id: comment.id })
-  await clearLatestCommentsCache()
+  await clearLatestCommentsCache(db)
   return updated.length
 }
 
@@ -48,7 +48,7 @@ export async function bulkSoftDeleteCommentsByUser(db: NodePgDatabase, userId: b
     .set({ deletedAt: new Date() })
     .where(and(eq(comment.userId, userId), isNull(comment.deletedAt)))
     .returning({ id: comment.id })
-  await clearLatestCommentsCache()
+  await clearLatestCommentsCache(db)
   return updated.length
 }
 

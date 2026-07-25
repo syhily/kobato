@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 // Pure unit pin for the post adapter's draft-preview access rule
 // (CONTEXT.md "Draft preview": posts allow author and above). The
-// side-effectful import graph is mocked so the suite stays DB/Redis-free.
+// side-effectful import graph is mocked so the suite stays DB-free.
 
 vi.mock('@/server/domains/content/shared', () => ({
   clearContentCaches: vi.fn().mockResolvedValue(undefined),

@@ -49,7 +49,7 @@ export function validateBucket(
       continue
     }
     if (collides(trimmed, other.prefix)) {
-      return `与「${other.id}」的前缀 \`${other.prefix}\` 冲突，会让 SCAN 互相误伤`
+      return `与「${other.id}」的前缀 \`${other.prefix}\` 冲突，会让前缀扫描互相误伤`
     }
   }
   return null

@@ -95,7 +95,7 @@ export const SECTION_DISPLAY: Record<SettingsSection, SectionDisplayMeta> = {
   },
   cache: {
     label: '缓存管理',
-    description: 'OG 图 / 头像 / 日历的 Redis 缓存',
+    description: 'OG 图 / 头像 / 日历的服务端缓存',
     group: 'system',
     icon: 'Database',
   },

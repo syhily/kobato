@@ -4,7 +4,6 @@ import type { Pool } from 'pg'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables } from '#/_helpers/integration-db'
-import { flushWorkerRedis } from '#/_helpers/redis'
 import { latestCommentsCache } from '@/server/domains/comments/cache'
 import { latestComments } from '@/server/domains/comments/services/public-query'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
@@ -45,7 +44,6 @@ afterAll(async () => {
 beforeEach(async () => {
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
   await clearAllTables(db)
-  await flushWorkerRedis()
 })
 
 async function seedUser(overrides: Partial<typeof user.$inferInsert> = {}): Promise<bigint> {
@@ -102,13 +100,13 @@ describe('comments/repos/moderation — bulk mutations clear the sidebar cache',
     // Warm the sidebar cache. The pending comment is not listed yet.
     const warmed = await latestComments(db)
     expect(warmed).toHaveLength(0)
-    expect(await latestCommentsCache.get()).not.toBeNull()
+    expect(await latestCommentsCache.get(db)).not.toBeNull()
 
     const { approved } = await bulkApproveCommentsByUser(db, userId)
     expect(approved).toBe(1)
 
     // The cache must be cleared, so the next read sees the approved row.
-    expect(await latestCommentsCache.get()).toBeNull()
+    expect(await latestCommentsCache.get(db)).toBeNull()
     const fresh = await latestComments(db)
     expect(fresh).toHaveLength(1)
     expect(fresh[0]!.permalink).toBe(`/posts/bulk-approve-target/#user-comment-${commentId}`)
@@ -122,13 +120,13 @@ describe('comments/repos/moderation — bulk mutations clear the sidebar cache',
     // Warm the sidebar cache with the approved comment listed.
     const warmed = await latestComments(db)
     expect(warmed).toHaveLength(1)
-    expect(await latestCommentsCache.get()).not.toBeNull()
+    expect(await latestCommentsCache.get(db)).not.toBeNull()
 
     const { deleted } = await bulkDeleteCommentsByUser(db, userId)
     expect(deleted).toBe(1)
 
     // The cache must be cleared, so the next read no longer sees the row.
-    expect(await latestCommentsCache.get()).toBeNull()
+    expect(await latestCommentsCache.get(db)).toBeNull()
     const fresh = await latestComments(db)
     expect(fresh).toHaveLength(0)
   })
@@ -143,13 +141,13 @@ describe('comments/repos/moderation — approve-delete-request clears the sideba
     // Warm the sidebar cache with the approved comment listed.
     const warmed = await latestComments(db)
     expect(warmed).toHaveLength(1)
-    expect(await latestCommentsCache.get()).not.toBeNull()
+    expect(await latestCommentsCache.get(db)).not.toBeNull()
 
     // Admin approves the user's delete request → soft delete.
     await softDeleteCommentById(db, commentId)
 
     // The cache must be cleared, so the re-read no longer sees the row.
-    expect(await latestCommentsCache.get()).toBeNull()
+    expect(await latestCommentsCache.get(db)).toBeNull()
     const fresh = await latestComments(db)
     expect(fresh).toHaveLength(0)
   })

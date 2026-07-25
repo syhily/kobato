@@ -1,16 +1,15 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
+import superjson from 'superjson'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { SafeUser } from '@/server/infra/db/operations/user'
 import type { PasskeyCredentialRow } from '@/server/infra/db/types'
 
-const mockRedis = {
-  set: vi.fn(),
-  get: vi.fn(),
-  del: vi.fn(),
-  eval: vi.fn(),
-}
+// passkey-service.ts stores challenges in the `one_time_token` table and
+// credentials in `passkey_credential`, both through drizzle chains on the
+// threaded `db`. The db doubles below hand-roll those chains and capture
+// the values/returning payloads so each test can shape them.
 
 const swaMocks = {
   generateRegistrationOptions: vi.fn(),
@@ -18,10 +17,6 @@ const swaMocks = {
   generateAuthenticationOptions: vi.fn(),
   verifyAuthenticationResponse: vi.fn(),
 }
-
-vi.mock('@/server/infra/redis/storage', () => ({
-  redisInstance: vi.fn(() => mockRedis),
-}))
 
 vi.mock('@simplewebauthn/server', () => ({
   generateRegistrationOptions: vi.fn((...args: unknown[]) => swaMocks.generateRegistrationOptions(...args)),
@@ -71,50 +66,76 @@ function testUser(partial: Partial<SafeUser> = {}): SafeUser {
   } as SafeUser
 }
 
+/** superjson envelope, exactly as `storeChallenge` writes it. */
+function challengePayload(data: Record<string, unknown>) {
+  return superjson.serialize(data)
+}
+
+interface ChallengeCapture {
+  key?: string
+  payload?: unknown
+  expiresAt?: Date
+}
+
+/** db double whose insert chain captures one_time_token writes. */
+function dbWithTokenInsert(capture: ChallengeCapture, selectRows: unknown[] = []): NodePgDatabase {
+  return {
+    select: vi.fn(() => ({ from: vi.fn(() => ({ where: vi.fn(() => selectRows) })) })),
+    insert: vi.fn(() => ({
+      values: vi.fn((values: { key: string; payload: unknown; expiresAt: Date }) => {
+        capture.key = values.key
+        capture.payload = values.payload
+        capture.expiresAt = values.expiresAt
+        return { onConflictDoUpdate: vi.fn(async () => undefined) }
+      }),
+    })),
+  } as unknown as NodePgDatabase
+}
+
+/** db double whose delete chain serves the consume-challenge rows. */
+function dbWithChallengeConsume(consumeRows: { payload: unknown }[]): {
+  db: NodePgDatabase
+  deleteSpy: ReturnType<typeof vi.fn>
+} {
+  const deleteSpy = vi.fn(() => ({
+    where: vi.fn(() => ({
+      returning: vi.fn(async () => consumeRows),
+    })),
+  }))
+  return { db: { delete: deleteSpy } as unknown as NodePgDatabase, deleteSpy }
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
-  mockRedis.set.mockResolvedValue('OK')
-  mockRedis.get.mockResolvedValue(null)
-  mockRedis.del.mockResolvedValue(1)
-  mockRedis.eval.mockResolvedValue(null)
 })
 
 describe('passkey-service — generateRegistrationOptions', () => {
-  it('returns options and stores a challenge in Redis', async () => {
+  it('returns options and stores a challenge row', async () => {
     swaMocks.generateRegistrationOptions.mockResolvedValue({
       challenge: 'test-challenge',
       rp: { name: 'Test', id: 'example.com' },
     })
 
-    const dbEmptySelect = {
-      select: vi.fn(() => ({ from: vi.fn(() => ({ where: vi.fn(() => []) })) })),
-    } as unknown as NodePgDatabase
-
-    const result = await passkeyService.generateRegistrationOptions(dbEmptySelect, testUser())
+    const capture: ChallengeCapture = {}
+    const result = await passkeyService.generateRegistrationOptions(dbWithTokenInsert(capture), testUser())
 
     expect(result.options).toBeDefined()
     expect(result.options.challenge).toBe('test-challenge')
-    expect(mockRedis.set).toHaveBeenCalledOnce()
-    expect(mockRedis.set).toHaveBeenCalledWith(
-      'passkey:reg-challenge:test-challenge',
-      expect.stringContaining('"userId":"1"'),
-      'EX',
-      300,
-    )
+    expect(capture.key).toBe('passkey:reg-challenge:test-challenge')
+    expect(capture.payload).toEqual(challengePayload({ userId: '1', deviceName: null }))
+    // 300s TTL, matching the old Redis EX.
+    expect(capture.expiresAt!.getTime()).toBeGreaterThan(Date.now() + 290_000)
+    expect(capture.expiresAt!.getTime()).toBeLessThanOrEqual(Date.now() + 300_000)
   })
 
   it('passes excludeCredentials with stored transports', async () => {
     swaMocks.generateRegistrationOptions.mockResolvedValue({ challenge: 'c2', rp: { name: 'T', id: 'x' } })
 
-    const dbWithSelect = {
-      select: vi.fn(() => ({
-        from: vi.fn(() => ({
-          where: vi.fn(() => [{ credentialId: 'cred-1', transports: ['internal'] }]),
-        })),
-      })),
-    } as unknown as NodePgDatabase
-
-    await passkeyService.generateRegistrationOptions(dbWithSelect, testUser())
+    const capture: ChallengeCapture = {}
+    await passkeyService.generateRegistrationOptions(
+      dbWithTokenInsert(capture, [{ credentialId: 'cred-1', transports: ['internal'] }]),
+      testUser(),
+    )
 
     expect(swaMocks.generateRegistrationOptions).toHaveBeenCalledOnce()
     const callArg = swaMocks.generateRegistrationOptions.mock.calls[0][0]
@@ -124,7 +145,9 @@ describe('passkey-service — generateRegistrationOptions', () => {
 
 describe('passkey-service — verifyRegistrationResponse', () => {
   it('verifies response and inserts credential', async () => {
-    mockRedis.eval.mockResolvedValue(JSON.stringify({ userId: '1', deviceName: 'My Device' }))
+    const { db: consumeDb } = dbWithChallengeConsume([
+      { payload: challengePayload({ userId: '1', deviceName: 'My Device' }) },
+    ])
 
     swaMocks.verifyRegistrationResponse.mockResolvedValue({
       verified: true,
@@ -152,7 +175,8 @@ describe('passkey-service — verifyRegistrationResponse', () => {
       updatedAt: new Date(),
     }
 
-    const dbWithInsert = {
+    const dbWithOps = {
+      ...consumeDb,
       insert: vi.fn(() => ({
         values: vi.fn(() => ({
           returning: vi.fn(() => [inserted]),
@@ -160,7 +184,7 @@ describe('passkey-service — verifyRegistrationResponse', () => {
       })),
     } as unknown as NodePgDatabase
 
-    const result = await passkeyService.verifyRegistrationResponse(dbWithInsert, testUser(), {
+    const result = await passkeyService.verifyRegistrationResponse(dbWithOps, testUser(), {
       response: {
         id: 'cred-id',
         rawId: 'raw-id',
@@ -173,14 +197,13 @@ describe('passkey-service — verifyRegistrationResponse', () => {
     })
 
     expect(result.credentialId).toBe('cred-id')
-    expect(mockRedis.eval).toHaveBeenCalledWith(expect.any(String), 1, 'passkey:reg-challenge:test-challenge')
   })
 
-  it('throws DomainError when challenge is expired', async () => {
-    mockRedis.eval.mockResolvedValue(null)
+  it('throws DomainError when challenge is expired (consume returns no row)', async () => {
+    const { db: consumeDb } = dbWithChallengeConsume([])
 
     await expect(
-      passkeyService.verifyRegistrationResponse(db, testUser(), {
+      passkeyService.verifyRegistrationResponse(consumeDb, testUser(), {
         response: {
           id: 'x',
           rawId: 'x',
@@ -194,7 +217,7 @@ describe('passkey-service — verifyRegistrationResponse', () => {
   })
 
   it('throws DomainError on duplicate credential', async () => {
-    mockRedis.eval.mockResolvedValue(JSON.stringify({ userId: '1' }))
+    const { db: consumeDb } = dbWithChallengeConsume([{ payload: challengePayload({ userId: '1' }) }])
     swaMocks.verifyRegistrationResponse.mockResolvedValue({
       verified: true,
       registrationInfo: {
@@ -204,11 +227,11 @@ describe('passkey-service — verifyRegistrationResponse', () => {
     })
 
     const dbWithConflict = {
+      ...consumeDb,
       insert: vi.fn(() => ({
         values: vi.fn(() => ({
           returning: vi.fn(() => {
-            const err = new Error('unique constraint violation')
-            throw err
+            throw new Error('unique constraint violation')
           }),
         })),
       })),
@@ -229,10 +252,10 @@ describe('passkey-service — verifyRegistrationResponse', () => {
   })
 
   it('throws DomainError when challenge belongs to a different user', async () => {
-    mockRedis.eval.mockResolvedValue(JSON.stringify({ userId: '999' }))
+    const { db: consumeDb } = dbWithChallengeConsume([{ payload: challengePayload({ userId: '999' }) }])
 
     await expect(
-      passkeyService.verifyRegistrationResponse(db, testUser({ id: 1n } as any), {
+      passkeyService.verifyRegistrationResponse(consumeDb, testUser({ id: 1n } as any), {
         response: {
           id: 'x',
           rawId: 'x',
@@ -246,13 +269,13 @@ describe('passkey-service — verifyRegistrationResponse', () => {
   })
 
   it('throws DomainError when SWA verification returns verified: false', async () => {
-    mockRedis.eval.mockResolvedValue(JSON.stringify({ userId: '1' }))
+    const { db: consumeDb } = dbWithChallengeConsume([{ payload: challengePayload({ userId: '1' }) }])
     swaMocks.verifyRegistrationResponse.mockResolvedValue({
       verified: false,
     })
 
     await expect(
-      passkeyService.verifyRegistrationResponse(db, testUser(), {
+      passkeyService.verifyRegistrationResponse(consumeDb, testUser(), {
         response: {
           id: 'x',
           rawId: 'x',
@@ -270,17 +293,14 @@ describe('passkey-service — generateAuthenticationOptions', () => {
   it('returns options without allowCredentials when email is absent', async () => {
     swaMocks.generateAuthenticationOptions.mockResolvedValue({ challenge: 'auth-c', rpId: 'example.com' })
 
-    const result = await passkeyService.generateAuthenticationOptions(db)
+    const capture: ChallengeCapture = {}
+    const result = await passkeyService.generateAuthenticationOptions(dbWithTokenInsert(capture))
 
     expect(result.options).toBeDefined()
     const callArg = swaMocks.generateAuthenticationOptions.mock.calls[0][0]
     expect(callArg.allowCredentials).toBeUndefined()
-    expect(mockRedis.set).toHaveBeenCalledWith(
-      'passkey:auth-challenge:auth-c',
-      expect.stringContaining('"email":null'),
-      'EX',
-      300,
-    )
+    expect(capture.key).toBe('passkey:auth-challenge:auth-c')
+    expect(capture.payload).toEqual(challengePayload({ email: null }))
   })
 
   it('returns options with allowCredentials for known email', async () => {
@@ -292,15 +312,11 @@ describe('passkey-service — generateAuthenticationOptions', () => {
       role: 'admin',
     } as any)
 
-    const dbWithSelect = {
-      select: vi.fn(() => ({
-        from: vi.fn(() => ({
-          where: vi.fn(() => [{ credentialId: 'cred-1', transports: ['internal'] }]),
-        })),
-      })),
-    } as unknown as NodePgDatabase
-
-    const result = await passkeyService.generateAuthenticationOptions(dbWithSelect, 'test@example.com')
+    const capture: ChallengeCapture = {}
+    const result = await passkeyService.generateAuthenticationOptions(
+      dbWithTokenInsert(capture, [{ credentialId: 'cred-1', transports: ['internal'] }]),
+      'test@example.com',
+    )
 
     expect(result.options).toBeDefined()
     const callArg = swaMocks.generateAuthenticationOptions.mock.calls[0][0]
@@ -310,7 +326,7 @@ describe('passkey-service — generateAuthenticationOptions', () => {
 
 describe('passkey-service — verifyAuthenticationResponse', () => {
   it('verifies and updates counter', async () => {
-    mockRedis.eval.mockResolvedValue(JSON.stringify({ email: 'test@example.com' }))
+    const { db: consumeDb } = dbWithChallengeConsume([{ payload: challengePayload({ email: 'test@example.com' }) }])
 
     swaMocks.verifyAuthenticationResponse.mockResolvedValue({
       verified: true,
@@ -326,6 +342,7 @@ describe('passkey-service — verifyAuthenticationResponse', () => {
     })
 
     const dbWithOps = {
+      ...consumeDb,
       select: vi.fn(() => ({
         from: vi.fn(() => ({
           where: vi.fn(() => ({
@@ -376,11 +393,11 @@ describe('passkey-service — verifyAuthenticationResponse', () => {
   })
 
   it('throws DomainError when challenge is expired', async () => {
-    mockRedis.eval.mockResolvedValue(null)
+    const { db: consumeDb } = dbWithChallengeConsume([])
 
     await expect(
       passkeyService.verifyAuthenticationResponse(
-        db,
+        consumeDb,
         {
           id: 'x',
           rawId: 'x',
@@ -394,9 +411,10 @@ describe('passkey-service — verifyAuthenticationResponse', () => {
   })
 
   it('throws DomainError when credential not found', async () => {
-    mockRedis.eval.mockResolvedValue(JSON.stringify({ email: 'test@example.com' }))
+    const { db: consumeDb } = dbWithChallengeConsume([{ payload: challengePayload({ email: 'test@example.com' }) }])
 
     const dbEmptySelect = {
+      ...consumeDb,
       select: vi.fn(() => ({
         from: vi.fn(() => ({
           where: vi.fn(() => ({
@@ -422,12 +440,13 @@ describe('passkey-service — verifyAuthenticationResponse', () => {
   })
 
   it('throws DomainError when SWA verification returns verified: false', async () => {
-    mockRedis.eval.mockResolvedValue(JSON.stringify({ email: 'test@example.com' }))
+    const { db: consumeDb } = dbWithChallengeConsume([{ payload: challengePayload({ email: 'test@example.com' }) }])
     swaMocks.verifyAuthenticationResponse.mockResolvedValue({
       verified: false,
     })
 
     const dbWithOps = {
+      ...consumeDb,
       select: vi.fn(() => ({
         from: vi.fn(() => ({
           where: vi.fn(() => ({
@@ -453,8 +472,8 @@ describe('passkey-service — verifyAuthenticationResponse', () => {
       passkeyService.verifyAuthenticationResponse(
         dbWithOps,
         {
-          id: 'cred-1',
-          rawId: 'raw',
+          id: 'x',
+          rawId: 'x',
           response: { clientDataJSON: '', authenticatorData: '', signature: '' },
           clientExtensionResults: {},
           type: 'public-key',
@@ -664,11 +683,8 @@ describe('passkey-service — rpConfig validation', () => {
       rp: { name: 'Test', id: 'example.com' },
     })
 
-    const dbEmptySelect = {
-      select: vi.fn(() => ({ from: vi.fn(() => ({ where: vi.fn(() => []) })) })),
-    } as unknown as NodePgDatabase
-
-    const result = await passkeyService.generateRegistrationOptions(dbEmptySelect, testUser())
+    const capture: ChallengeCapture = {}
+    const result = await passkeyService.generateRegistrationOptions(dbWithTokenInsert(capture), testUser())
     expect(result.options).toBeDefined()
   })
 })

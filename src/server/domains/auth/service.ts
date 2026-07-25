@@ -1,175 +1,64 @@
-// Session orchestration: listing, scanning, and orphan cleanup that
-// composes the raw data-access primitives from `repo.ts`. Keeps `repo.ts`
-// lean (direct Redis reads/writes) per the domain locked vocabulary.
-// Revocation policy ("who may revoke whose session") lives in
-// `session-guard.ts`.
+// Session orchestration: listing and revocation entry points that
+// compose the raw data-access primitives from `repo.ts`. Keeps `repo.ts`
+// lean (direct session-table reads/writes) per the domain locked
+// vocabulary. Revocation policy ("who may revoke whose session") lives
+// in `session-guard.ts`.
 
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import type { SessionMeta, SessionWithUser } from '@/server/domains/auth/repo'
 
-import { META_KEY, parseMeta, USER_SET_KEY } from '@/server/domains/auth/repo'
+import { deleteSessionsOfUser, listLiveSessions, listLiveSessionsByUser } from '@/server/domains/auth/repo'
 import { findUsersByIds } from '@/server/infra/db/operations/user'
-import { getLogger } from '@/server/infra/logger'
-import { redisInstance } from '@/server/infra/redis/storage'
-import { isRecord } from '@/shared/utils/type-guards'
 
-const log = getLogger('auth.sessions')
-
-function isStringRecord(value: unknown): value is Record<string, string> {
-  if (!isRecord(value)) {
-    return false
-  }
-  return Object.values(value).every((v) => typeof v === 'string')
-}
-
-function cleanOrphanMetas(orphanSids: string[]): void {
-  if (orphanSids.length === 0) {
-    return
-  }
-  const redis = redisInstance()
-  const cleanup = redis.pipeline()
-  for (const sid of orphanSids) {
-    cleanup.del(META_KEY(sid))
-  }
-  void cleanup.exec().catch((error) => log.warn('orphan cleanup failed', { error: String(error) }))
-}
+const MAX_SESSIONS_LISTED = 10_000
 
 /**
- * Pipeline `EXISTS session:<sid>` against every candidate sid in one
- * round trip. Any sid whose cookie blob is gone counts as orphaned —
- * `user_sessions:<userId>` and `session_meta:<sid>` both get lazily
- * dropped (best-effort; pipeline failure does not block the caller).
- * Returns only sids whose cookie blob is still live.
+ * Revoke every session belonging to a user — a single
+ * `DELETE FROM session WHERE user_id = $1` statement, which replaced the
+ * old Lua script over the `user_sessions:<uid>` set. Called after
+ * password change or role downgrade so stale cookies cannot be reused.
+ *
+ * `exceptSessionId` keeps one session alive — used by self-service
+ * password change so the user is not logged out from the tab that just
+ * saved the new password.
+ *
+ * Returns the number of revoked sessions.
  */
-async function filterLiveSidsAndCleanOrphans(sids: string[], userId: bigint): Promise<string[]> {
-  const redis = redisInstance()
-  const existsPipeline = redis.pipeline()
-  for (const sid of sids) {
-    existsPipeline.exists(`session:${sid}`)
-  }
-  const results = await existsPipeline.exec()
-  const live: string[] = []
-  const orphans: string[] = []
-  sids.forEach((sid, i) => {
-    const [, exists] = results?.[i] ?? [null, 0]
-    if (exists === 1) {
-      live.push(sid)
-    } else {
-      orphans.push(sid)
-    }
-  })
-  if (orphans.length > 0) {
-    const cleanup = redis.pipeline()
-    for (const sid of orphans) {
-      cleanup.del(META_KEY(sid))
-      cleanup.srem(USER_SET_KEY(userId), sid)
-    }
-    void cleanup.exec().catch((error) => {
-      log.warn('failed to clean orphan sessions', { error: String(error) })
-    })
-  }
-  return live
+export async function revokeAllSessionsOfUser(
+  db: NodePgDatabase,
+  userId: bigint,
+  exceptSessionId?: string,
+): Promise<number> {
+  return deleteSessionsOfUser(db, userId, exceptSessionId)
 }
 
-const MAX_SESSIONS_SCAN = 10_000
-
 /**
- * Enumerate every active session for one user. Reads
- * `user_sessions:<id>` and joins each entry to its meta hash. Stale
- * ids (set entry exists but the meta hash has been evicted by Redis
- * eviction or a manual cleanup) are filtered out — they would render
- * as empty rows in the UI.
+ * Enumerate every active session for one user. Rows whose login meta
+ * has not been stamped yet (a row committed but not yet updated by
+ * `recordSessionLogin`) are filtered out — they would render as empty
+ * rows in the UI.
  */
 export async function listSessionsByUser(db: NodePgDatabase, userId: bigint): Promise<SessionMeta[]> {
-  const redis = redisInstance()
-  const sids = await redis.smembers(USER_SET_KEY(userId))
-  if (sids.length === 0) {
-    return []
-  }
-  const realSids = sids.filter((sid) => sid !== '')
-  if (realSids.length === 0) {
-    return []
-  }
-  const liveSids = await filterLiveSidsAndCleanOrphans(realSids, userId)
-  if (liveSids.length === 0) {
-    return []
-  }
-  const metaPipeline = redis.pipeline()
-  for (const sid of liveSids) {
-    metaPipeline.hgetall(META_KEY(sid))
-  }
-  const metaResults = await metaPipeline.exec()
-  const metas = liveSids.map((sid, i) => {
-    const [, hash] = metaResults?.[i] ?? [null, {}]
-    return isStringRecord(hash) ? parseMeta(sid, hash) : null
-  })
-  return metas.filter((meta): meta is SessionMeta => meta !== null && meta.userId === userId)
+  return listLiveSessionsByUser(db, userId)
 }
 
 /**
- * Enumerate every active session across the site. Uses `SCAN` over
- * `session_meta:*` so we never block the Redis main thread, and joins
- * results against the `user` table in a single bulk read.
+ * Enumerate every active session across the site and join the results
+ * against the `user` table in a single bulk read.
  *
- * Soft-capped at `MAX_SESSIONS_SCAN` sids to bound memory usage on
+ * Soft-capped at `MAX_SESSIONS_LISTED` rows to bound memory usage on
  * long-running deployments.
  */
 export async function listAllSessions(db: NodePgDatabase): Promise<SessionWithUser[]> {
-  const redis = redisInstance()
-  const sids: string[] = []
-  let cursor = '0'
-  do {
-    const [next, keys] = (await redis.scan(cursor, 'MATCH', 'session_meta:*', 'COUNT', 500)) as [string, string[]]
-    cursor = next
-    for (const key of keys) {
-      sids.push(key.slice('session_meta:'.length))
-    }
-  } while (cursor !== '0' && sids.length < MAX_SESSIONS_SCAN)
-  if (sids.length === 0) {
+  const metas = await listLiveSessions(db, MAX_SESSIONS_LISTED)
+  if (metas.length === 0) {
     return []
   }
-  const realSids = sids.filter((sid) => sid !== '')
-  if (realSids.length === 0) {
-    return []
-  }
-  const existsPipeline = redis.pipeline()
-  for (const sid of realSids) {
-    existsPipeline.exists(`session:${sid}`)
-  }
-  const existsResults = await existsPipeline.exec()
-  const liveSids: string[] = []
-  const orphanSids: string[] = []
-  realSids.forEach((sid, i) => {
-    const [, exists] = existsResults?.[i] ?? [null, 0]
-    if (exists === 1) {
-      liveSids.push(sid)
-    } else {
-      orphanSids.push(sid)
-    }
-  })
-  if (liveSids.length === 0) {
-    cleanOrphanMetas(orphanSids)
-    return []
-  }
-  const metaPipeline = redis.pipeline()
-  for (const sid of liveSids) {
-    metaPipeline.hgetall(META_KEY(sid))
-  }
-  const metaResults = await metaPipeline.exec()
-  const metas = liveSids.map((sid, i) => {
-    const [, hash] = metaResults?.[i] ?? [null, {}]
-    return isStringRecord(hash) ? parseMeta(sid, hash) : null
-  })
-  const validMetas = metas.filter((meta): meta is SessionMeta => meta !== null)
-  cleanOrphanMetas(orphanSids)
-  if (validMetas.length === 0) {
-    return []
-  }
-  const uniqueIds = Array.from(new Set(validMetas.map((m) => m.userId)))
+  const uniqueIds = Array.from(new Set(metas.map((m) => m.userId)))
   const users = await findUsersByIds(db, uniqueIds)
   const userById = new Map(users.map((u) => [u.id.toString(), u]))
-  return validMetas.map((meta) => {
+  return metas.map((meta) => {
     const u = userById.get(meta.userId.toString())
     return {
       ...meta,

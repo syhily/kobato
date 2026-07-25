@@ -386,7 +386,7 @@ describe('snapshot: CacheView', () => {
     const html = stableHtml(renderToHtml(<CacheView cache={baseCacheSlice} />))
     // Clear-all card with populated key total
     expect(html).toContain('一键清空')
-    expect(html).toContain('当前共 142 个键')
+    expect(html).toContain('当前共 142 条缓存')
     expect(html).toContain('清空全部缓存')
     expect(html).toContain('Session 与限流计数不会受影响')
     // Bucket cards (id-keyed settings render the bucket label)
@@ -424,7 +424,7 @@ describe('snapshot: CacheView', () => {
       error: null,
     }
     const html = stableHtml(renderToHtml(<CacheView cache={baseCacheSlice} />))
-    expect(html).toContain('当前共 0 个键')
+    expect(html).toContain('当前共 0 条缓存')
     expect(html).toContain('disabled=""')
   })
 })

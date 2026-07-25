@@ -1,13 +1,13 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { Pool } from 'pg'
 
+import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { clearAllTables } from '#/_helpers/integration-db'
-import { flushWorkerRedis } from '#/_helpers/redis'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
+import { kvCache } from '@/server/infra/db/schema/kv-cache'
 import { image } from '@/server/infra/db/schema/media'
-import { redisInstance } from '@/server/infra/redis/storage'
 
 const { clearImageEnhanceCache } = await import('@/server/domains/images/services/cache')
 const { resolveImageRef } = await import('@/server/domains/images/services/resolve')
@@ -25,8 +25,7 @@ const { TEST_BLOG_SETTINGS_BUNDLE } = await import('#/_helpers/blog-settings')
 beforeEach(async () => {
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
   await clearAllTables(db)
-  await flushWorkerRedis()
-  await clearImageEnhanceCache()
+  await clearImageEnhanceCache(db)
 })
 
 async function seedImage(overrides: Partial<typeof image.$inferInsert> = {}) {
@@ -66,15 +65,19 @@ describe('server/images/render-enhance — resolveImageRef', () => {
     expect(await resolveImageRef(db, 'https://assets.example.com/images/no-such.jpg')).toBeNull()
   })
 
-  it('serves a second hit from the Redis cache', async () => {
+  it('serves a second hit from the kv cache', async () => {
     await seedImage()
 
     const result1 = await resolveImageRef(db, 'https://assets.example.com/images/categories/coding.jpg')
     expect(result1).not.toBeNull()
 
-    // Verify cache was written to Redis
-    const cached = await redisInstance().get('image-meta:images/categories/coding.jpg')
-    expect(cached).not.toBeNull()
+    // Verify the cache row was written to kv_cache
+    const cached = await db
+      .select({ key: kvCache.key, bucket: kvCache.bucket })
+      .from(kvCache)
+      .where(eq(kvCache.key, 'image-meta:images/categories/coding.jpg'))
+    expect(cached).toHaveLength(1)
+    expect(cached[0]?.bucket).toBe('imageMeta')
 
     // Second call should return the same result (cache hit)
     const result2 = await resolveImageRef(db, 'https://assets.example.com/images/categories/coding.jpg')

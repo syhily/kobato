@@ -1,12 +1,17 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { SuperJSONResult } from 'superjson'
+
+import { and, eq, gt, inArray } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
 import superjson from 'superjson'
 
 import type { CommentTokenCookie, CommentTokenCookieEntry } from '@/shared/utils/comment-token'
 
+import { oneTimeToken } from '@/server/infra/db/schema/one-time-token'
 import { getLogger } from '@/server/infra/logger'
-import { redisInstance } from '@/server/infra/redis/storage'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { isRecord } from '@/shared/utils/type-guards'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const log = getLogger('comments.token')
 
@@ -32,28 +37,35 @@ function isCommentTokenPayload(value: unknown): value is CommentTokenPayload {
 }
 
 /**
- * Single codec for the Redis token keyspace. superjson both ways — the guard
- * runs after decode as a second-line check against shape drift.
+ * Single codec for the `one_time_token` payloads. superjson both ways —
+ * the guard runs after decode as a second-line check against shape drift.
  */
-function encodeTokenPayload(payload: CommentTokenPayload): string {
-  return superjson.stringify(payload)
+function encodeTokenPayload(payload: CommentTokenPayload): SuperJSONResult {
+  return superjson.serialize(payload)
 }
 
-function decodeTokenPayload(raw: string): CommentTokenPayload | null {
+function decodeTokenPayload(raw: unknown): CommentTokenPayload | null {
+  // Rows written by `issueCommentToken` always carry the superjson
+  // envelope (`{ json, meta? }`); anything else in the column reads as a
+  // miss.
+  if (!isRecord(raw) || !('json' in raw)) {
+    return null
+  }
   try {
-    const parsed: unknown = superjson.parse(raw)
+    const parsed: unknown = superjson.deserialize(unsafeCast<SuperJSONResult>(raw))
     if (!isCommentTokenPayload(parsed)) {
-      log.warn('Invalid comment token payload shape from Redis')
+      log.warn('Invalid comment token payload shape')
       return null
     }
     return parsed
   } catch (error) {
-    log.warn('Failed to parse comment token payload from Redis', { error })
+    log.warn('Failed to parse comment token payload', { error })
     return null
   }
 }
 
 export async function issueCommentToken(
+  db: NodePgDatabase,
   commentId: bigint | string,
   userId: bigint | string,
   pageKey: string,
@@ -67,31 +79,40 @@ export async function issueCommentToken(
     createdAt: Date.now(),
   }
   const ttl = ttlSeconds ?? requireBlogSettingsSection('comments').comments.tokenTtlSeconds
-  const redis = redisInstance()
-  await redis.set(`${TOKEN_KEY_PREFIX}${token}`, encodeTokenPayload(payload), 'EX', ttl)
+  await db.insert(oneTimeToken).values({
+    key: `${TOKEN_KEY_PREFIX}${token}`,
+    payload: encodeTokenPayload(payload),
+    expiresAt: new Date(Date.now() + ttl * 1000),
+  })
   return token
 }
 
-export async function verifyCommentToken(token: string): Promise<CommentTokenPayload | null> {
-  const redis = redisInstance()
-  const raw = await redis.get(`${TOKEN_KEY_PREFIX}${token}`)
-  if (!raw) {
+export async function verifyCommentToken(db: NodePgDatabase, token: string): Promise<CommentTokenPayload | null> {
+  const rows = await db
+    .select({ payload: oneTimeToken.payload })
+    .from(oneTimeToken)
+    .where(and(eq(oneTimeToken.key, `${TOKEN_KEY_PREFIX}${token}`), gt(oneTimeToken.expiresAt, new Date())))
+    .limit(1)
+  const row = rows[0]
+  if (!row) {
     return null
   }
-  return decodeTokenPayload(raw)
+  return decodeTokenPayload(row.payload)
 }
 
-export async function revokeCommentToken(token: string): Promise<void> {
-  const redis = redisInstance()
-  await redis.del(`${TOKEN_KEY_PREFIX}${token}`)
+export async function revokeCommentToken(db: NodePgDatabase, token: string): Promise<void> {
+  await db.delete(oneTimeToken).where(eq(oneTimeToken.key, `${TOKEN_KEY_PREFIX}${token}`))
 }
 
 /**
  * Clean up expired tokens from the cookie value by checking both the
- * per-token `expiresAt` field and the Redis key existence.
+ * per-token `expiresAt` field and the row's existence/expiry.
  * Returns the cleaned cookie payload and the list of still-valid tokens with payloads.
  */
-export async function cleanupExpiredTokens(cookie: CommentTokenCookie): Promise<{
+export async function cleanupExpiredTokens(
+  db: NodePgDatabase,
+  cookie: CommentTokenCookie,
+): Promise<{
   cleaned: CommentTokenCookie
   validEntries: Array<{ token: string; payload: CommentTokenPayload; expiresAt: number }>
 }> {
@@ -100,7 +121,7 @@ export async function cleanupExpiredTokens(cookie: CommentTokenCookie): Promise<
   const now = Date.now()
 
   // Collect all non-expired entries first so we can verify them in a
-  // single Redis MGET instead of N sequential round-trips.
+  // single query instead of N sequential round-trips.
   const candidates: Array<{ pageKey: string; entry: CommentTokenCookieEntry }> = []
   for (const [pageKey, entries] of Object.entries(cookie)) {
     for (const entry of entries) {
@@ -114,14 +135,16 @@ export async function cleanupExpiredTokens(cookie: CommentTokenCookie): Promise<
     return { cleaned, validEntries }
   }
 
-  const redis = redisInstance()
   const keys = candidates.map((c) => `${TOKEN_KEY_PREFIX}${c.entry.token}`)
-  const rawResults = await redis.mget(...keys)
+  const rows = await db
+    .select({ key: oneTimeToken.key, payload: oneTimeToken.payload })
+    .from(oneTimeToken)
+    .where(and(inArray(oneTimeToken.key, keys), gt(oneTimeToken.expiresAt, new Date())))
+  const payloadByKey = new Map(rows.map((row) => [row.key, row.payload]))
 
-  for (let i = 0; i < candidates.length; i++) {
-    const { pageKey, entry } = candidates[i]!
-    const raw = rawResults[i]
-    if (typeof raw !== 'string') {
+  for (const { pageKey, entry } of candidates) {
+    const raw = payloadByKey.get(`${TOKEN_KEY_PREFIX}${entry.token}`)
+    if (raw === undefined) {
       continue
     }
     const payload = decodeTokenPayload(raw)
@@ -161,10 +184,11 @@ export function appendCommentToken(
  * dropped.
  */
 export async function verifyCommentOwnership(
+  db: NodePgDatabase,
   cookie: CommentTokenCookie,
   commentId: string,
 ): Promise<{ token: string | null; cleaned: CommentTokenCookie }> {
-  const { cleaned, validEntries } = await cleanupExpiredTokens(cookie)
+  const { cleaned, validEntries } = await cleanupExpiredTokens(db, cookie)
   for (const entry of validEntries) {
     if (entry.payload.commentId === commentId) {
       return { token: entry.token, cleaned }

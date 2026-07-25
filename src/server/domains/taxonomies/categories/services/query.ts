@@ -9,7 +9,8 @@ import type { Category } from '@/shared/types/catalog'
 import { hydrateImageRefs } from '@/server/domains/images/services/enhance'
 import { toAdminCategoryDto } from '@/server/domains/taxonomies/categories/projection'
 import { countPostsByTaxonomy } from '@/server/domains/taxonomies/counts'
-import { createRedisCache } from '@/server/infra/cache/redis-cache'
+import { createInflight } from '@/server/infra/cache/inflight'
+import { createKvCache } from '@/server/infra/cache/kv-cache'
 import {
   type AdminCategoriesListFilters,
   findCategoryByName,
@@ -17,7 +18,6 @@ import {
   listAdminCategoryRows,
 } from '@/server/infra/db/operations/category'
 import { category as categoryTable } from '@/server/infra/db/schema/taxonomy'
-import { createInflight } from '@/server/infra/redis/inflight'
 
 export async function listCategoriesForAdmin(
   db: NodePgDatabase,
@@ -47,25 +47,25 @@ async function hydrateCategoryImages(db: NodePgDatabase, categories: Category[])
   )
 }
 
-const categoriesCache = createRedisCache<Category[]>('categories:all', { ttlMs: 30_000 })
+const categoriesCache = createKvCache<Category[]>('categories:all', { ttlMs: 30_000 })
 const categoriesInflight = createInflight<Category[]>()
 
 export { categoriesCache }
 
 export async function listAllCategories(db: NodePgDatabase): Promise<Category[]> {
-  const cached = await categoriesCache.get()
+  const cached = await categoriesCache.get(db)
   if (cached !== null) {
     return cached
   }
 
   return categoriesInflight('listAllCategories', async () => {
-    const cachedInner = await categoriesCache.get()
+    const cachedInner = await categoriesCache.get(db)
     if (cachedInner !== null) {
       return cachedInner
     }
 
     const categories = await queryAllCategories(db)
-    await categoriesCache.set(categories)
+    await categoriesCache.set(db, categories)
     return categories
   })
 }

@@ -6,17 +6,16 @@ import { eq } from 'drizzle-orm'
 import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { clearAllTables } from '#/_helpers/integration-db'
-import { flushWorkerRedis } from '#/_helpers/redis'
 import { emptySession } from '#/_helpers/session'
 import { flushAuditLog } from '@/server/domains/audit/repos/batcher'
 import { establishLoginSession } from '@/server/domains/auth/primitives'
-import { revokeAllSessionsOfUser } from '@/server/domains/auth/session-storage'
+import { revokeAllSessionsOfUser } from '@/server/domains/auth/service'
 import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { auditLog } from '@/server/infra/db/schema/config'
+import { session as sessionTable } from '@/server/infra/db/schema/session'
 import { user } from '@/server/infra/db/schema/user'
 import { DomainError } from '@/server/infra/http/errors'
-import { redisInstance } from '@/server/infra/redis/storage'
 
 const poolDb = createDbPool()
 const db: NodePgDatabase = poolDb.db
@@ -66,13 +65,17 @@ function buildRequest(userAgent = 'Mozilla/5.0 (Test) Chrome/120'): Request {
 
 beforeEach(async () => {
   await clearAllTables(db)
-  await flushWorkerRedis()
 })
+
+async function findSessionRow(sid: string) {
+  const rows = await db.select().from(sessionTable).where(eq(sessionTable.id, sid))
+  return rows[0]
+}
 
 // ── Tests ─────────────────────────────────────────────────────────────────
 
 describe('establishLoginSession', () => {
-  it('writes both session:<sid> and user_sessions:<userId>', async () => {
+  it('writes a session row stamped with the user and login meta', async () => {
     const userId = await seedUser()
     const dbUser = await db
       .select()
@@ -80,17 +83,20 @@ describe('establishLoginSession', () => {
       .where(eq(user.id, userId))
       .limit(1)
       .then((r) => r[0])
-    const redis = redisInstance()
 
     const result = await establishLoginSession(db, emptySession(), dbUser, buildRequest(), '203.0.113.1')
 
-    // The session blob keyed by sid must exist in Redis.
-    const blob = await redis.get(`session:${result.sid}`)
-    expect(blob).not.toBeNull()
-
-    // The user_sessions set must contain the new sid.
-    const members = await redis.smembers(`user_sessions:${userId}`)
-    expect(members).toContain(result.sid)
+    // The session row keyed by sid must exist with its owner stamped. It
+    // is written through the process-level pool (session-storage), which
+    // commits against the same worker database.
+    const row = await findSessionRow(result.sid)
+    expect(row).toBeDefined()
+    expect(row!.userId).toBe(userId)
+    expect(row!.loginAt).not.toBeNull()
+    expect(row!.lastActiveAt).not.toBeNull()
+    expect(row!.userAgent).toBe('Mozilla/5.0 (Test) Chrome/120')
+    expect(row!.ip).toBe('203.0.113.1')
+    expect(row!.expiresAt.getTime()).toBeGreaterThan(Date.now())
   })
 
   it('supports revocation via revokeAllSessionsOfUser', async () => {
@@ -101,19 +107,15 @@ describe('establishLoginSession', () => {
       .where(eq(user.id, userId))
       .limit(1)
       .then((r) => r[0])
-    const redis = redisInstance()
 
     const result = await establishLoginSession(db, emptySession(), dbUser, buildRequest(), '203.0.113.2')
 
-    // Confirm both structures exist before revocation.
-    expect(await redis.exists(`session:${result.sid}`)).toBeGreaterThan(0)
-    expect(await redis.smembers(`user_sessions:${userId}`)).toContain(result.sid)
+    // Confirm the row exists before revocation.
+    expect(await findSessionRow(result.sid)).toBeDefined()
 
-    await revokeAllSessionsOfUser(userId)
-
-    // Both the session blob and the set entry must be cleared.
-    expect(await redis.get(`session:${result.sid}`)).toBeNull()
-    expect(await redis.smembers(`user_sessions:${userId}`)).toEqual([])
+    const deleted = await revokeAllSessionsOfUser(db, userId)
+    expect(deleted).toBe(1)
+    expect(await findSessionRow(result.sid)).toBeUndefined()
   })
 
   it('emits an audit event on successful login', async () => {
@@ -148,25 +150,20 @@ describe('establishLoginSession', () => {
       .where(eq(user.id, userId))
       .limit(1)
       .then((r) => r[0])
-    const redis = redisInstance()
 
     // Establish a first session.
     const first = await establishLoginSession(db, emptySession(), dbUser, buildRequest(), '203.0.113.4')
-    expect(await redis.smembers(`user_sessions:${userId}`)).toContain(first.sid)
+    expect(await findSessionRow(first.sid)).toBeDefined()
 
     // Establish a second session with revokeOtherSessions; the first
-    // session's blob and set entry must be cleared.
+    // session's row must be deleted.
     const second = await establishLoginSession(db, emptySession(), dbUser, buildRequest(), '203.0.113.5', {
       revokeOtherSessions: true,
     })
 
     expect(second.sid).not.toBe(first.sid)
-
-    // The first session blob is gone.
-    expect(await redis.get(`session:${first.sid}`)).toBeNull()
-    // The set now contains only the new sid.
-    const members = await redis.smembers(`user_sessions:${userId}`)
-    expect(members).toEqual([second.sid])
+    expect(await findSessionRow(first.sid)).toBeUndefined()
+    expect(await findSessionRow(second.sid)).toBeDefined()
   })
 
   it('throws when the user has no role', async () => {

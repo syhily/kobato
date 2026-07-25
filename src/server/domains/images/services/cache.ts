@@ -3,9 +3,9 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { ImageRow } from '@/server/infra/db/types'
 import type { StorageDriver } from '@/shared/config/types'
 
+import { getItems, getKeys, removeItem, setItem } from '@/server/infra/cache/kv-store'
 import { findImagesByStoragePaths } from '@/server/infra/db/operations/image'
 import { getLogger } from '@/server/infra/logger'
-import { storage } from '@/server/infra/redis/storage'
 import { getCacheSettings } from '@/shared/config/getters'
 
 const log = getLogger('images.render-enhance')
@@ -57,7 +57,7 @@ export async function readManyMeta(db: NodePgDatabase, storagePaths: string[]): 
   for (const storagePath of storagePaths) {
     keyToPath.set(`${prefix}${storagePath}`, storagePath)
   }
-  const cacheEntries = await storage.getItems<CachedImageMeta>([...keyToPath.keys()])
+  const cacheEntries = await getItems<CachedImageMeta>(db, [...keyToPath.keys()])
 
   const missingPaths: string[] = []
   for (const entry of cacheEntries) {
@@ -84,7 +84,7 @@ export async function readManyMeta(db: NodePgDatabase, storagePaths: string[]): 
     await Promise.all(
       toWrite.map(async ({ key, value }) => {
         try {
-          await storage.setItem(key, value, { ttl: ttlSeconds })
+          await setItem(db, key, value, { ttlSeconds, bucket: 'imageMeta' })
         } catch (error) {
           log.warn('Failed to write image-meta cache; continuing without warmth', { key, error })
         }
@@ -95,21 +95,21 @@ export async function readManyMeta(db: NodePgDatabase, storagePaths: string[]): 
   return out
 }
 
-export async function invalidateImageEnhanceCacheFor(storagePath: string): Promise<void> {
+export async function invalidateImageEnhanceCacheFor(db: NodePgDatabase, storagePath: string): Promise<void> {
   try {
-    await storage.removeItem(cacheKey(storagePath))
+    await removeItem(db, cacheKey(storagePath))
   } catch (error) {
     log.warn('Failed to invalidate image-meta cache key', { storagePath, error })
   }
 }
 
-export async function clearImageEnhanceCache(): Promise<void> {
+export async function clearImageEnhanceCache(db: NodePgDatabase): Promise<void> {
   const prefix = bucket().prefix
-  const keys = await storage.getKeys(prefix)
+  const keys = await getKeys(db, prefix)
   await Promise.all(
     keys.map(async (key) => {
       try {
-        await storage.removeItem(key)
+        await removeItem(db, key)
       } catch (error) {
         log.warn('Failed to clear image-meta key', { key, error })
       }

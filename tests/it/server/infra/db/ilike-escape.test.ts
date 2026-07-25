@@ -25,7 +25,7 @@ afterAll(async () => {
 
 beforeEach(async () => {
   await clearAllTables(db)
-  await invalidateSearchCache()
+  await invalidateSearchCache(db)
 })
 
 /** The same caller-supplied live gate the production search loader passes. */

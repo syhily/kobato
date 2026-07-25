@@ -34,8 +34,8 @@ export function ConfirmClearDialog({ open, target, buckets, onConfirm, onCancel 
   const total = isAll ? buckets.reduce((sum, entry) => sum + entry.keyCount, 0) : (bucket?.keyCount ?? 0)
   const title = isAll ? '清空全部缓存？' : `清空「${bucket?.label ?? ''}」缓存？`
   const description = isAll
-    ? `本次操作会通过 SCAN 找出全部 ${total} 个 Redis 键并 UNLINK 删除。下一次访问 OG 图 / 头像 / 日历会重新生成或拉取，可能短时间内增加服务器负载。该操作不可撤销。`
-    : `本次操作会通过 SCAN 找出 ${total} 个匹配 ${bucket?.pattern ?? ''} 的 Redis 键并 UNLINK 删除。该操作不可撤销。`
+    ? `本次操作会删除数据库缓存表中全部 ${total} 条记录。下一次访问 OG 图 / 头像 / 日历会重新生成或拉取，可能短时间内增加服务器负载。该操作不可撤销。`
+    : `本次操作会删除缓存表中 ${total} 条键匹配 ${bucket?.pattern ?? ''} 的记录。该操作不可撤销。`
 
   return (
     <AlertDialog open={open} onOpenChange={(next) => (next ? null : onCancel())}>

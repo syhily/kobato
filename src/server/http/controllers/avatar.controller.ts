@@ -13,7 +13,7 @@ const findAvatar = publicProc
   .input(z.object({ email: z.email() }))
   .output(z.object({ avatar: z.string() }))
   .use(resourceRateLimit)
-  .handler(async ({ input }) => {
+  .handler(async ({ input, context }) => {
     const hash = await encodedEmail(input.email)
     if (isQQEmail(input.email)) {
       // Pre-warm the cache at the default display size — the URL returned
@@ -21,9 +21,14 @@ const findAvatar = publicProc
       // read) the DEFAULT_AVATAR_SIZE entry.
       const buffer = await fetchQQAvatarImage(input.email, DEFAULT_AVATAR_SIZE)
       if (buffer !== null) {
-        await cacheAvatar({ email: hash, size: DEFAULT_AVATAR_SIZE, status: AvatarStatus.HAVE_AVATAR, buffer })
+        await cacheAvatar(context.db, {
+          email: hash,
+          size: DEFAULT_AVATAR_SIZE,
+          status: AvatarStatus.HAVE_AVATAR,
+          buffer,
+        })
       } else {
-        await cacheAvatar({ email: hash, size: DEFAULT_AVATAR_SIZE, status: AvatarStatus.NO_AVATAR })
+        await cacheAvatar(context.db, { email: hash, size: DEFAULT_AVATAR_SIZE, status: AvatarStatus.NO_AVATAR })
       }
     }
     return {

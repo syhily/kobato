@@ -6,7 +6,6 @@ import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables } from '#/_helpers/integration-db'
-import { flushWorkerRedis } from '#/_helpers/redis'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { passkeyCredential } from '@/server/infra/db/schema/passkey'
 import { user } from '@/server/infra/db/schema/user'
@@ -67,7 +66,6 @@ async function seedUser(overrides: Record<string, unknown> = {}): Promise<bigint
 
 beforeEach(async () => {
   await clearAllTables(db)
-  await flushWorkerRedis()
   vi.clearAllMocks()
 })
 
@@ -249,7 +247,7 @@ describe('passkey — force blocks password login', () => {
 
     const result = await handleCredentialLogin(
       db,
-      { id: 'sess-1', get: () => undefined, set: () => undefined, unset: () => undefined } as any,
+      { id: 'sess-1', data: {}, get: () => undefined, set: () => undefined, unset: () => undefined } as any,
       '127.0.0.1',
       new Request('http://localhost'),
       formData,
