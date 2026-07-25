@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router'
+import { useNavigate, useOutletContext } from 'react-router'
 
 import { getRouteRequestContext } from '@/server/domains/auth/context'
 import { isPasskeyEnabled } from '@/server/domains/auth/passkey-gate'
@@ -18,5 +18,13 @@ export const meta = titleMeta('用户详情')
 
 export default function WpAdminUserDetailRoute({ loaderData, params }: Route.ComponentProps) {
   const navigate = useNavigate()
-  return <UserDetailView userId={params.id ?? ''} navigate={navigate} passkeyEnabled={loaderData.passkeyEnabled} />
+  const { currentUser } = useOutletContext<{ currentUser: { id: string; name: string; email: string } }>()
+  return (
+    <UserDetailView
+      userId={params.id ?? ''}
+      currentUserId={currentUser.id}
+      navigate={navigate}
+      passkeyEnabled={loaderData.passkeyEnabled}
+    />
+  )
 }

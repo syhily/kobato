@@ -135,7 +135,9 @@ describe('snapshot: UserOperationsCard', () => {
 describe('snapshot: UserDetailView', () => {
   it('renders skeleton while loading', () => {
     const html = stableHtml(
-      renderInRouter(<UserDetailView userId="user-1" navigate={vi.fn()} passkeyEnabled={false} />),
+      renderInRouter(
+        <UserDetailView userId="user-1" currentUserId="admin-1" navigate={vi.fn()} passkeyEnabled={false} />,
+      ),
     )
     expect(html).toContain('skeleton')
   })

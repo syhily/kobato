@@ -8,6 +8,7 @@ import type { AdminCommentWire as AdminComment } from '@/shared/contracts/commen
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
+import { avatarImageUrl } from '@/shared/utils/avatar'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { idStr } from '@/shared/utils/tools'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
@@ -26,11 +27,13 @@ const DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 
 export interface UserDetailViewProps {
   userId: string
+  /** The signed-in admin's id — the operations card hides self-targeting actions. */
+  currentUserId: string
   navigate: NavigateFunction
   passkeyEnabled: boolean
 }
 
-export function UserDetailView({ userId, navigate, passkeyEnabled }: UserDetailViewProps) {
+export function UserDetailView({ userId, currentUserId, navigate, passkeyEnabled }: UserDetailViewProps) {
   const config = useSiteIdentity()
 
   const userQuery = useQuery(orpcQuery.admin.users.get.queryOptions({ input: { id: userId } }))
@@ -75,7 +78,7 @@ export function UserDetailView({ userId, navigate, passkeyEnabled }: UserDetailV
           <Card>
             <CardContent className="flex flex-col items-center gap-4 text-center">
               <Avatar className="size-20">
-                <AvatarImage src={`/images/avatar/${user.id}.png`} alt={user.name} />
+                <AvatarImage src={avatarImageUrl(user.id)} alt={user.name} />
                 <AvatarFallback className="bg-muted text-lg font-semibold">{initial}</AvatarFallback>
               </Avatar>
               <div>
@@ -150,7 +153,7 @@ export function UserDetailView({ userId, navigate, passkeyEnabled }: UserDetailV
 
           <UserOperationsCard
             user={user}
-            currentUserId={userId}
+            currentUserId={currentUserId}
             passkeyEnabled={passkeyEnabled}
             onDeleted={() => void navigate('/admin/security/users')}
           />

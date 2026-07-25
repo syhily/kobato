@@ -234,7 +234,7 @@ describe('snapshot: UserDetailView', () => {
     queryMocks.commentsQuery = { data: null, isPending: true, isFetching: false, error: null, refetch: vi.fn() }
     const html = stableHtml(
       renderInRouter(
-        <UserDetailView userId="u1" navigate={vi.fn()} passkeyEnabled={false} />,
+        <UserDetailView userId="u1" currentUserId="admin-1" navigate={vi.fn()} passkeyEnabled={false} />,
         '/admin/security/users/u1',
       ),
     )
@@ -269,7 +269,7 @@ describe('snapshot: UserDetailView', () => {
     }
     const html = stableHtml(
       renderInRouter(
-        <UserDetailView userId="detail-1" navigate={vi.fn()} passkeyEnabled={false} />,
+        <UserDetailView userId="detail-1" currentUserId="admin-1" navigate={vi.fn()} passkeyEnabled={false} />,
         '/admin/security/users/detail-1',
       ),
     )
@@ -279,6 +279,8 @@ describe('snapshot: UserDetailView', () => {
     expect(html).toContain('diana@example.com')
     // Role badge.
     expect(html).toContain('作者')
+    // Viewing another user renders the role editor in the operations card.
+    expect(html).toContain('data-slot="select-trigger"')
     // Status badge: not muted, not deleted => 正常.
     expect(html).toContain('正常')
     // Custom badge.
@@ -293,6 +295,37 @@ describe('snapshot: UserDetailView', () => {
     expect(html).toContain('该用户暂无评论。')
     // Back button.
     expect(html).toContain('aria-label="返回用户列表"')
+  })
+
+  it('hides the role editor when the admin views their own detail', () => {
+    const user = makeAdminUser({
+      id: 'self-1',
+      name: 'Self Admin',
+      role: 'admin',
+    })
+    queryMocks.userQuery = {
+      data: { user },
+      isPending: false,
+      isFetching: false,
+      error: null,
+      refetch: vi.fn(),
+    }
+    queryMocks.commentsQuery = {
+      data: { comments: [] },
+      isPending: false,
+      isFetching: false,
+      error: null,
+      refetch: vi.fn(),
+    }
+    const html = stableHtml(
+      renderInRouter(
+        <UserDetailView userId="self-1" currentUserId="self-1" navigate={vi.fn()} passkeyEnabled={false} />,
+        '/admin/security/users/self-1',
+      ),
+    )
+    expect(html).toContain('Self Admin')
+    // No role Select when the viewed user is the viewer themself.
+    expect(html).not.toContain('data-slot="select-trigger"')
   })
 
   it('renders the deleted + muted badges for a muted deleted user', () => {
@@ -319,7 +352,7 @@ describe('snapshot: UserDetailView', () => {
     }
     const html = stableHtml(
       renderInRouter(
-        <UserDetailView userId="dm-1" navigate={vi.fn()} passkeyEnabled={false} />,
+        <UserDetailView userId="dm-1" currentUserId="admin-1" navigate={vi.fn()} passkeyEnabled={false} />,
         '/admin/security/users/dm-1',
       ),
     )
@@ -353,7 +386,7 @@ describe('snapshot: UserDetailView', () => {
     }
     const html = stableHtml(
       renderInRouter(
-        <UserDetailView userId="anon-det-1" navigate={vi.fn()} passkeyEnabled={true} />,
+        <UserDetailView userId="anon-det-1" currentUserId="admin-1" navigate={vi.fn()} passkeyEnabled={true} />,
         '/admin/security/users/anon-det-1',
       ),
     )

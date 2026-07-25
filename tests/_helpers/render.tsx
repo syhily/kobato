@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Buffer } from 'node:buffer'
 import { renderToStaticMarkup, renderToString } from 'react-dom/server'
 import { prerenderToNodeStream } from 'react-dom/static'
-import { createMemoryRouter, type RouteObject, RouterProvider } from 'react-router'
+import { createMemoryRouter, Outlet, type RouteObject, RouterProvider } from 'react-router'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { BlogSettingsProvider } from '@/shared/lib/blog-config-context'
@@ -43,6 +43,31 @@ export function renderToHtml(element: ReactElement): string {
 // same invariant without bringing up the real loader chain.
 export function renderInRouter(node: ReactNode, initialPath: string = '/'): string {
   const routes: RouteObject[] = [{ path: '*', element: <>{node}</> }]
+  const router = createMemoryRouter(routes, { initialEntries: [initialPath] })
+  return renderToStaticMarkup(
+    <QueryClientProvider client={testQueryClient}>
+      <ThemeProvider>
+        <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>
+          <RouterProvider router={router} />
+        </BlogSettingsProvider>
+      </ThemeProvider>
+    </QueryClientProvider>,
+  )
+}
+
+/**
+ * Like `renderInRouter`, but nests the tree under a parent route whose
+ * `<Outlet>` carries `outletContext` — for routes that read
+ * `useOutletContext` (e.g. the admin layout's `currentUser`).
+ */
+export function renderInRouterWithOutlet(node: ReactNode, initialPath: string, outletContext: unknown): string {
+  const routes: RouteObject[] = [
+    {
+      path: '/',
+      element: <Outlet context={outletContext} />,
+      children: [{ path: '*', element: <>{node}</> }],
+    },
+  ]
   const router = createMemoryRouter(routes, { initialEntries: [initialPath] })
   return renderToStaticMarkup(
     <QueryClientProvider client={testQueryClient}>

@@ -312,13 +312,14 @@ describe('admin routes — Component SSR renders', () => {
     })
 
     it('security/users/detail renders the UserDetailView shell with passkey flag', () => {
-      // The route reads `params.id` from RR7's injected ComponentProps.
-      // We pass `params` explicitly (RR7 merges it with the injected
-      // shape) so the detail view gets a non-empty userId.
+      // The route reads `params.id` from RR7's injected ComponentProps and
+      // `currentUser` from the admin layout's outlet context. We pass both
+      // explicitly so the detail view gets a non-empty userId and viewer.
       const html = stableHtml(
-        renderInRouter(
+        renderInRouterWithOutlet(
           <UsersDetailRoute loaderData={{ passkeyEnabled: false }} params={{ id: '42' }} />,
           '/admin/security/users/42',
+          { currentUser: CURRENT_USER },
         ),
       )
       expect(html.length).toBeGreaterThan(0)

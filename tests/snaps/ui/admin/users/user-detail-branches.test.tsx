@@ -171,7 +171,7 @@ function makeAdminComment(overrides: Partial<AdminComment> = {}): AdminComment {
 function renderDetail(userId: string): string {
   return stableHtml(
     renderInRouter(
-      <UserDetailView userId={userId} navigate={vi.fn()} passkeyEnabled={false} />,
+      <UserDetailView userId={userId} currentUserId="admin-1" navigate={vi.fn()} passkeyEnabled={false} />,
       `/admin/security/users/${userId}`,
     ),
   )
