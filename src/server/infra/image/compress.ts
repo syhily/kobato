@@ -11,6 +11,18 @@ export interface CompressImageOptions {
   preserveAlpha?: boolean
 }
 
+/** Pixel width of an encoded image, or `undefined` when the buffer is not
+ *  a decodable image at all. The avatar pipeline uses this to spot mirror
+ *  placeholders served inline at the wrong size. */
+export async function imageWidth(buf: Buffer): Promise<number | undefined> {
+  try {
+    const meta = await sharp(buf).metadata()
+    return meta.width
+  } catch {
+    return undefined
+  }
+}
+
 export async function compressImage(buf: Buffer, options: CompressImageOptions = {}): Promise<Buffer> {
   const pipeline = sharp(buf)
   if (!options.preserveAlpha) {

@@ -1,13 +1,14 @@
 import { Buffer } from 'node:buffer'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { warnMock } = vi.hoisted(() => ({ warnMock: vi.fn() }))
+const { warnMock, imageWidthMock } = vi.hoisted(() => ({ warnMock: vi.fn(), imageWidthMock: vi.fn() }))
 vi.mock('@/server/infra/logger', () => ({
   getLogger: () => ({ warn: warnMock }),
 }))
 
 vi.mock('@/server/infra/image/compress', () => ({
   compressImage: (buf: Buffer) => Promise.resolve(buf),
+  imageWidth: imageWidthMock,
 }))
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
@@ -24,6 +25,9 @@ import { setBlogSettingsBundleForTests } from '@/server/domains/settings/service
 beforeEach(() => {
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
   warnMock.mockClear()
+  imageWidthMock.mockReset()
+  // Default: upstream serves a large-enough image so the size guard passes.
+  imageWidthMock.mockResolvedValue(512)
 })
 
 function withAllowedMirror<T>(fn: () => Promise<T>): Promise<T> {
@@ -137,6 +141,27 @@ describe('domains/comments/services/avatar — fetchAvatarImage', () => {
   it('returns null when the mirror redirects to the default avatar URL', async () => {
     const defaultUrl = defaultAvatarUrl()
     mockFetch([new Response(null, { status: 302, headers: { location: defaultUrl } })])
+    expect(await withAllowedMirror(() => fetchAvatarImage('hash', 120))).toBeNull()
+  })
+
+  it('returns null when the upstream image is narrower than the requested size (inline placeholder)', async () => {
+    imageWidthMock.mockResolvedValue(24)
+    const body = Buffer.from([0x89, 0x50, 0x4e, 0x47])
+    mockFetch([new Response(body, { status: 200, headers: { 'Content-Type': 'image/png' } })])
+    expect(await withAllowedMirror(() => fetchAvatarImage('hash', 120))).toBeNull()
+  })
+
+  it('accepts an upstream image at exactly the requested size', async () => {
+    imageWidthMock.mockResolvedValue(120)
+    const body = Buffer.from([0x89, 0x50, 0x4e, 0x47])
+    mockFetch([new Response(body, { status: 200, headers: { 'Content-Type': 'image/png' } })])
+    expect(await withAllowedMirror(() => fetchAvatarImage('hash', 120))).not.toBeNull()
+  })
+
+  it('returns null when the upstream body is not a decodable image', async () => {
+    imageWidthMock.mockResolvedValue(undefined)
+    const body = Buffer.from('<html>not an image</html>')
+    mockFetch([new Response(body, { status: 200 })])
     expect(await withAllowedMirror(() => fetchAvatarImage('hash', 120))).toBeNull()
   })
 

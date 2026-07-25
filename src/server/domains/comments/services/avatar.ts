@@ -3,7 +3,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { Buffer } from 'node:buffer'
 
 import { findEmailById } from '@/server/infra/db/operations/user'
-import { compressImage } from '@/server/infra/image/compress'
+import { compressImage, imageWidth } from '@/server/infra/image/compress'
 import { getLogger } from '@/server/infra/logger'
 import { safeFetch } from '@/server/infra/safe-fetch'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
@@ -96,7 +96,13 @@ async function safeFetchAvatar(
 /** Fetch the avatar PNG bytes from the configured gravatar mirror at the
  *  requested pixel size. Returns `null` when the mirror reports "no avatar"
  *  (either via 4xx, via a redirect back to the default-avatar URL, after the
- *  redirect budget is exhausted, or when the upstream network call fails).
+ *  redirect budget is exhausted, or when the upstream network call fails) —
+ *  and also when the 200 payload is narrower than the requested size or not
+ *  a decodable image at all. Gravatar-protocol mirrors always serve exactly
+ *  the requested size (gravatar upscales smaller originals), so an
+ *  undersized inline payload is the mirror's "unknown hash" placeholder
+ *  served as 200 instead of a `d=` redirect (loli.net style); caching it
+ *  would poison that size bucket with a 24px globe for the full TTL.
  *  The buffer is compressed before being handed back so the cache layer
  *  stores the smaller payload. */
 export async function fetchAvatarImage(hash: string, size: number): Promise<Buffer | null> {
@@ -120,7 +126,12 @@ export async function fetchAvatarImage(hash: string, size: number): Promise<Buff
   if (body === null) {
     return null
   }
-  return compressImage(Buffer.from(body))
+  const buffer = Buffer.from(body)
+  const width = await imageWidth(buffer)
+  if (width === undefined || width < size) {
+    return null
+  }
+  return compressImage(buffer)
 }
 
 const QQ_EMAIL_RE = /^\d+@qq\.com$/i
