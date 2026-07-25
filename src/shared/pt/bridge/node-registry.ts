@@ -20,7 +20,6 @@ import type {
 
 import { codeBlockToPmNode, pmCodeBlockToBlock } from '@/shared/pt/bridge/nodes/code'
 import { footnoteDefinitionBlockToPmNode, pmFootnoteDefinitionToBlocks } from '@/shared/pt/bridge/nodes/footnote'
-import { headingStyleFromLevel } from '@/shared/pt/bridge/nodes/heading'
 import { horizontalRuleBlockToPmNode, pmHorizontalRuleToBlock } from '@/shared/pt/bridge/nodes/horizontalRule'
 import { imageBlockToPmNode, pmImageToBlock } from '@/shared/pt/bridge/nodes/image'
 import { flattenList } from '@/shared/pt/bridge/nodes/list'
@@ -29,6 +28,7 @@ import { pmTableToBlock, tableBlockToPmNode } from '@/shared/pt/bridge/nodes/tab
 import { paragraphToTextBlock, textBlockToPmNode } from '@/shared/pt/bridge/nodes/text'
 import { pmTwoColumnToBlocks, twoColumnBlockToPmNode } from '@/shared/pt/bridge/nodes/twoColumn'
 import { isBlock, isInline } from '@/shared/pt/bridge/utils'
+import { headingStyleFromLevel } from '@/shared/pt/heading-levels'
 
 // One dispatch table drives BOTH bridge directions. Each entry binds a PM
 // node type to the PT block it round-trips with; per-node attribute

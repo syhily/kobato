@@ -6,15 +6,9 @@ let createDbPoolResult = { db: dbMock, pool: poolMock }
 
 let restoreCallback: ((success: boolean, err?: Error) => Promise<void>) | null = null
 
-const flushAuditLog = vi.fn()
-const flushAccessLog = vi.fn()
-const flushPageViews = vi.fn()
-const initAccessLogBatcher = vi.fn()
-const initPageViewBatcher = vi.fn()
-const initAuditLogBatcher = vi.fn()
-const resetAccessLogBatcher = vi.fn()
-const resetPageViewBatcher = vi.fn()
-const resetAuditLogBatcher = vi.fn()
+const initAllBatchers = vi.fn()
+const flushAllBatchers = vi.fn()
+const resetAllBatchers = vi.fn()
 const resetLikeTokenSweep = vi.fn()
 const startLikeTokenSweep = vi.fn()
 const migrateDatabase = vi.fn()
@@ -58,26 +52,21 @@ vi.mock('@/server/infra/logger', () => ({
   },
 }))
 
-vi.mock('@/server/domains/analytics/repos/batcher', () => ({
-  flushAccessLog: (...args: unknown[]) => flushAccessLog(...args),
-  initAccessLogBatcher: (...args: unknown[]) => initAccessLogBatcher(...args),
-  resetAccessLogBatcher: (...args: unknown[]) => resetAccessLogBatcher(...args),
+vi.mock('@/server/infra/db/batcher-registry', () => ({
+  initAllBatchers: (...args: unknown[]) => initAllBatchers(...args),
+  flushAllBatchers: (...args: unknown[]) => flushAllBatchers(...args),
+  resetAllBatchers: (...args: unknown[]) => resetAllBatchers(...args),
 }))
 
-vi.mock('@/server/domains/analytics/repos/pv-batcher', () => ({
-  flushPageViews: (...args: unknown[]) => flushPageViews(...args),
-  initPageViewBatcher: (...args: unknown[]) => initPageViewBatcher(...args),
-  resetPageViewBatcher: (...args: unknown[]) => resetPageViewBatcher(...args),
-}))
-
-vi.mock('@/server/domains/audit/repos/batcher', () => ({
-  flushAuditLog: (...args: unknown[]) => flushAuditLog(...args),
-  initAuditLogBatcher: (...args: unknown[]) => initAuditLogBatcher(...args),
-  resetAuditLogBatcher: (...args: unknown[]) => resetAuditLogBatcher(...args),
-}))
+// db-lifecycle imports the batcher modules only for their registration
+// side effect; the mocked registry absorbs the lifecycle calls.
+vi.mock('@/server/domains/analytics/repos/batcher', () => ({}))
+vi.mock('@/server/domains/analytics/repos/pv-batcher', () => ({}))
+vi.mock('@/server/domains/audit/repos/batcher', () => ({}))
 
 vi.mock('@/server/domains/audit/services/scheduler', () => ({
   scheduleNextArchive: (...args: unknown[]) => scheduleNextArchive(...args),
+  wireArchiveScheduler: vi.fn(),
 }))
 
 vi.mock('@/server/domains/backup/restore-orchestrator', () => ({
@@ -108,45 +97,24 @@ describe('db-lifecycle', () => {
 
   it('recreates the pool and reinitializes batchers', async () => {
     const instance = await recreatePool()
-    expect(flushAuditLog).toHaveBeenCalled()
-    expect(flushAccessLog).toHaveBeenCalled()
-    expect(flushPageViews).toHaveBeenCalled()
+    expect(flushAllBatchers).toHaveBeenCalled()
     expect(instance.db).toBe(dbMock)
     expect(instance.pool).toBe(poolMock)
-    expect(resetAccessLogBatcher).toHaveBeenCalled()
-    expect(resetPageViewBatcher).toHaveBeenCalled()
-    expect(resetAuditLogBatcher).toHaveBeenCalled()
-    expect(initAccessLogBatcher).toHaveBeenCalledWith(poolMock)
-    expect(initPageViewBatcher).toHaveBeenCalledWith(dbMock)
-    expect(initAuditLogBatcher).toHaveBeenCalledWith(dbMock, poolMock)
+    expect(resetAllBatchers).toHaveBeenCalled()
+    expect(initAllBatchers).toHaveBeenCalledWith(poolMock, dbMock)
     expect(resetLikeTokenSweep).toHaveBeenCalled()
     expect(startLikeTokenSweep).toHaveBeenCalledWith(dbMock)
 
     const wiringOrder = [
-      resetAccessLogBatcher,
-      resetPageViewBatcher,
-      resetAuditLogBatcher,
+      flushAllBatchers,
+      resetAllBatchers,
       resetLikeTokenSweep,
       setRestartDb,
       setRestartRefreshSettings,
-      initAccessLogBatcher,
-      initPageViewBatcher,
-      initAuditLogBatcher,
+      initAllBatchers,
       startLikeTokenSweep,
     ].map((mock) => mock.mock.invocationCallOrder[0])
     expect(wiringOrder).toEqual([...wiringOrder].sort((a, b) => a - b))
-  })
-
-  it('warns but continues when flush helpers fail during recreatePool', async () => {
-    flushAuditLog.mockRejectedValueOnce(new Error('audit flush failed'))
-    flushAccessLog.mockRejectedValueOnce(new Error('access flush failed'))
-    flushPageViews.mockRejectedValueOnce(new Error('pv flush failed'))
-
-    await recreatePool()
-
-    expect(flushAuditLog).toHaveBeenCalled()
-    expect(flushAccessLog).toHaveBeenCalled()
-    expect(flushPageViews).toHaveBeenCalled()
   })
 
   it('handles successful restore completion', async () => {
@@ -158,10 +126,6 @@ describe('db-lifecycle', () => {
 
   it('handles failed restore completion and pool recreation errors', async () => {
     createDbPoolResult = null as never
-    const err = new Error('recreate failed')
-    flushAuditLog.mockRejectedValueOnce(err)
-    flushAccessLog.mockRejectedValueOnce(err)
-    flushPageViews.mockRejectedValueOnce(err)
 
     await restoreCallback!(false, new Error('backup failed'))
     expect(restartServer).toHaveBeenCalled()

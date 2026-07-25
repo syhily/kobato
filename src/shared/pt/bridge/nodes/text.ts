@@ -1,8 +1,8 @@
 import type { PmBlockNode, PmHardBreakNode, PmInlineNode, PmMark } from '@/shared/pt/bridge/types'
 import type { MarkDef, Span, TextBlock, StandardBlockStyle } from '@/shared/pt/schema'
 
-import { headingLevelFromStyle } from '@/shared/pt/bridge/nodes/heading'
 import { stringAttr, hashLinkHref } from '@/shared/pt/bridge/utils'
+import { headingLevelFromStyle } from '@/shared/pt/heading-levels'
 
 export function textBlockToPmNode(block: TextBlock, asListItemChild: boolean): PmBlockNode {
   const inlines: Array<PmInlineNode | PmHardBreakNode> = []

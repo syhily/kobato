@@ -9,7 +9,7 @@ import { signUpInitialAdminWithSession } from '@/server/domains/auth/signin-flow
 import { checkPgToolsAvailable } from '@/server/domains/backup/services/shared'
 import { ensureNoAdminOrRedirect } from '@/server/domains/settings/install-gate'
 import { tryKeyedRateLimit } from '@/server/infra/rate-limit'
-import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
+import { titleMeta } from '@/shared/seo/title-meta'
 import { AdminInstallForm } from '@/ui/admin/auth/AdminInstallForm'
 import { SetupTokenVerifyForm } from '@/ui/admin/auth/SetupTokenVerifyForm'
 import { BrandLogo } from '@/ui/public/chrome/BrandLogo'
@@ -145,9 +145,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   return data({ error: '未知操作。' })
 }
 
-export function meta({ matches }: Route.MetaArgs) {
-  return routeMeta({ title: '创建站点' }, bundleFromMatches(matches))
-}
+export const meta = titleMeta('创建站点')
 
 export default function AdminInstallRoute({ actionData, loaderData }: Route.ComponentProps) {
   const navigation = useNavigation()

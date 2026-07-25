@@ -2,17 +2,25 @@
 import { PortableText, type PortableTextComponents, type PortableTextTypeComponentProps } from '@portabletext/react'
 import { useMemo, type ReactNode } from 'react'
 
+import type { EnrichedPortableTextBody } from '@/shared/pt/enriched'
 import type {
   FootnoteDefinitionBlock,
   NonRecursiveBlock,
   PortableTextBlock,
-  PortableTextBody as PortableTextBodyType,
   SolutionBlock,
   TextBlock,
   TwoColumnBlock,
 } from '@/shared/pt/schema'
 
-import { collectHeadingSlotsInPortableTextRenderOrder } from '@/shared/pt/utils'
+import {
+  FOOTNOTE_BACKREF_ARIA_LABEL,
+  FOOTNOTE_BACKREF_ATTRIBUTE,
+  FOOTNOTES_SECTION_HEADING_ID,
+  footnoteAnchorId,
+  footnoteRefHref,
+} from '@/shared/pt/footnote-anchors'
+import { partitionFootnoteDefinitions } from '@/shared/pt/footnote-merge'
+import { buildHeadingIdByBlockKey } from '@/shared/pt/utils'
 import { Slugger } from '@/shared/slug'
 import { Solution } from '@/ui/pt/blocks/Solution'
 import { FootnoteProvider, FootnotePreviewRegistrar } from '@/ui/pt/Footnotes'
@@ -46,7 +54,7 @@ import {
 // plain text (never React children) so SSR/hydration stay in sync.
 
 export interface PortableTextBodyProps {
-  body: PortableTextBodyType
+  body: EnrichedPortableTextBody
   /** Optional thumbhash hydration map keyed by image src, supplied by the route loader. */
   imageMeta?: ImageMetaMap
   headingSlugs?: readonly string[]
@@ -64,27 +72,12 @@ export function PortableTextBody({
   const footnoteCtx = useMemo<FootnoteRefCtx>(() => ({ definitions: collectFootnoteDefinitions(body) }), [body])
 
   const headingIdByBlockKey = useMemo(() => {
-    const slots = collectHeadingSlotsInPortableTextRenderOrder(body)
-    const map = new Map<string, string>()
     const fallbackSlugger = new Slugger()
-    for (let i = 0; i < slots.length; i += 1) {
-      const slot = slots[i]
-      const pre = headingSlugs?.[i]
-      const id =
-        headingSlugs !== undefined && typeof pre === 'string' && pre.length > 0
-          ? pre
-          : fallbackSlugger.slug(slot.plainText)
-      map.set(slot.blockKey, id)
-    }
-    return map
+    return buildHeadingIdByBlockKey(body, headingSlugs, (plainText) => fallbackSlugger.slug(plainText))
   }, [body, headingSlugs])
 
   // Footnote definitions render at the bottom — never inline.
-  const inlineBody = useMemo(() => body.filter((block) => block._type !== 'footnoteDefinition'), [body])
-  const footnotes = useMemo(
-    () => body.filter((block): block is FootnoteDefinitionBlock => block._type === 'footnoteDefinition'),
-    [body],
-  )
+  const { prose, definitions } = useMemo(() => partitionFootnoteDefinitions(body), [body])
 
   const musicPresentation = useMemo<MusicPresentationCtx>(
     () => ({ suppressAutoplay: musicAutoplay === 'suppressed' }),
@@ -103,9 +96,9 @@ export function PortableTextBody({
           <FootnoteRefContext value={footnoteCtx}>
             <HeadingIdByBlockKeyContext value={headingIdByBlockKey}>
               <div className="portable-text-body">
-                <PortableText value={inlineBody as PortableTextBlock[]} components={portableTextComponents} />
-                {footnotes.length > 0 ? (
-                  <FootnotesSection definitions={footnotes} sectionTitle={resolvedFootnotesHeading} />
+                <PortableText value={prose as PortableTextBlock[]} components={portableTextComponents} />
+                {definitions.length > 0 ? (
+                  <FootnotesSection definitions={definitions} sectionTitle={resolvedFootnotesHeading} />
                 ) : null}
               </div>
             </HeadingIdByBlockKeyContext>
@@ -116,7 +109,7 @@ export function PortableTextBody({
   )
 }
 
-function collectFootnoteDefinitions(body: PortableTextBodyType): Map<string, FootnoteDefinitionBlock> {
+function collectFootnoteDefinitions(body: EnrichedPortableTextBody): Map<string, FootnoteDefinitionBlock> {
   const out = new Map<string, FootnoteDefinitionBlock>()
   for (const block of body) {
     if (block._type === 'footnoteDefinition') {
@@ -227,9 +220,9 @@ function lastNormalParagraphKey(children: readonly NonRecursiveBlock[]): string 
 function FootnoteBackrefLink({ footnoteIndex }: { footnoteIndex: number }) {
   return (
     <a
-      href={`#user-content-fnref-${footnoteIndex}`}
-      data-footnote-backref=""
-      aria-label="返回引用"
+      href={footnoteRefHref(footnoteIndex)}
+      {...{ [FOOTNOTE_BACKREF_ATTRIBUTE]: '' }}
+      aria-label={FOOTNOTE_BACKREF_ARIA_LABEL}
       className="data-footnote-backref"
     >
       ↩
@@ -266,13 +259,13 @@ function FootnotesSection({
   sectionTitle: string
 }): ReactNode {
   return (
-    <section className="footnotes" data-footnotes="" aria-labelledby="footnotes-section-heading">
-      <h3 id="footnotes-section-heading" className="mt-10 mb-3 scroll-mt-20 text-lg font-semibold text-ink-1">
+    <section className="footnotes" data-footnotes="" aria-labelledby={FOOTNOTES_SECTION_HEADING_ID}>
+      <h3 id={FOOTNOTES_SECTION_HEADING_ID} className="mt-10 mb-3 scroll-mt-20 text-lg font-semibold text-ink-1">
         {sectionTitle}
       </h3>
       <ol>
         {definitions.map((definition) => {
-          const anchorId = `user-content-fn-${definition.index}`
+          const anchorId = footnoteAnchorId(definition.index)
           const lastPk = lastNormalParagraphKey(definition.children)
           const comps = footnotesPortableComponents(lastPk, definition.index)
           const preview = (

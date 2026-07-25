@@ -3,7 +3,7 @@ import path from 'node:path'
 
 import { adminUploadRoute } from '@/server/http/resources/admin-upload-route'
 import { FONT_DIR } from '@/server/infra/paths'
-import { resetCanvasFont, resetFontCache } from '@/server/render/og/assets'
+import { resetCanvasFont, resetFontCache } from '@/server/render/canvas-fonts'
 
 const FONT_SLOTS = new Set(['og', 'calendar'])
 const FONT_MAX_BYTES = 60 * 1024 * 1024 // 60 MiB

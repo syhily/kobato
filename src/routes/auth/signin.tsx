@@ -19,7 +19,7 @@ import {
 } from '@/server/domains/auth/signin-flow'
 import { peekToken } from '@/server/domains/auth/verification-tokens'
 import { ensureInstalledOrRedirect } from '@/server/domains/settings/install-gate'
-import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
+import { titleMeta } from '@/shared/seo/title-meta'
 import { safeRedirectPath } from '@/shared/utils/safe-url'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { LoginForm, LostPasswordForm, OtpForm, ResetPasswordForm } from '@/ui/admin/auth/AdminCredentialsForm'
@@ -194,9 +194,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   })
 }
 
-export function meta({ matches }: Route.MetaArgs) {
-  return routeMeta({ title: '用户登陆' }, bundleFromMatches(matches))
-}
+export const meta = titleMeta('用户登陆')
 
 function localizeAuthError(error: string | null): string | null {
   if (error === null) {

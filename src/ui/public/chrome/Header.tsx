@@ -29,7 +29,9 @@ export interface HeaderProps {
   /** Logged-in user identity, or `null` for anonymous visitors. */
   currentUser: HeaderCurrentUser | null
   pathname: string
-  search: string
+  /** Prebuilt `action=logout&redirect_to=…` query for the mobile UserMenu —
+   *  constructed once by BaseLayout (which also serves the desktop menu). */
+  logoutQuery: string
 }
 
 const asideShellClass = cn(
@@ -112,16 +114,12 @@ function SocialNavIcon({ network, className }: { network: SocialNetwork; classNa
   return <Icon className={className} />
 }
 
-export function Header({ navigation, currentUser, pathname, search }: HeaderProps) {
+export function Header({ navigation, currentUser, pathname, logoutQuery }: HeaderProps) {
   const { title } = useSiteIdentity()
   const { socials } = useSocialsSettings()
   const assets = useAssetsSettingsOptional()
   const qs = brandingVersion(assets?.branding)
   const v = qs ? `?v=${qs}` : ''
-  const logoutQuery = new URLSearchParams({
-    action: 'logout',
-    redirect_to: `${pathname}${search}`,
-  }).toString()
 
   const [menuOpen, setMenuOpen] = useState(false)
   const [isDesktop, setIsDesktop] = useState(true)

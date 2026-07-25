@@ -3,7 +3,7 @@ import type { RefObject } from 'react'
 import { SearchIcon } from 'lucide-react'
 import { useCallback, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
-import { Form, useNavigate } from 'react-router'
+import { Form, useNavigate, type NavigateFunction } from 'react-router'
 
 import { Button } from '@/ui/components/button'
 import { IconButtonContent } from '@/ui/components/icon-button-content'
@@ -20,6 +20,18 @@ const sidebarSearchInputClass = cn(
   'focus:shadow-none focus:outline-0',
 )
 
+/** Read `q` off the submitted form and route to the keyword search page.
+ *  Returns false (no navigation) for blank queries. */
+function navigateToSearch(navigate: NavigateFunction, form: HTMLFormElement): boolean {
+  const qEntry = new FormData(form).get('q')
+  const q = typeof qEntry === 'string' ? qEntry.trim() : ''
+  if (!q) {
+    return false
+  }
+  void navigate(`/search/${encodeURIComponent(q)}`)
+  return true
+}
+
 export function SearchBar() {
   const navigate = useNavigate()
   return (
@@ -29,12 +41,7 @@ export function SearchBar() {
         action="/search"
         onSubmit={(e) => {
           e.preventDefault()
-          const form = e.currentTarget
-          const qEntry = new FormData(form).get('q')
-          const q = typeof qEntry === 'string' ? qEntry : ''
-          if (q.trim()) {
-            void navigate(`/search/${encodeURIComponent(q.trim())}`)
-          }
+          navigateToSearch(navigate, e.currentTarget)
         }}
       >
         <label htmlFor="sidebar-search-input" className="sr-only">
@@ -101,11 +108,7 @@ function SearchPopup({ open, onClose, inputRef }: SearchPopupProps) {
         action="/search"
         onSubmit={(e) => {
           e.preventDefault()
-          const form = e.currentTarget
-          const qEntry = new FormData(form).get('q')
-          const q = typeof qEntry === 'string' ? qEntry : ''
-          if (q.trim()) {
-            void navigate(`/search/${encodeURIComponent(q.trim())}`)
+          if (navigateToSearch(navigate, e.currentTarget)) {
             onClose()
           }
         }}

@@ -10,8 +10,8 @@ import { requireRole } from '@/server/domains/auth/rbac'
 import { countMyComments } from '@/server/domains/comments/repos/admin-query'
 import { loadAdminPendingDashboard } from '@/server/domains/comments/services/admin-query'
 import { countPostMetas, listPostMetas } from '@/server/domains/posts/repos/admin-query'
-import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
 import { computeDateRange } from '@/shared/contracts/analytics'
+import { titleMeta } from '@/shared/seo/title-meta'
 import { roleLabel } from '@/shared/utils/roles'
 import { QuickActions } from '@/ui/admin/dashboard/QuickActions'
 import { RecentDraftsCard } from '@/ui/admin/dashboard/RecentDraftsCard'
@@ -22,9 +22,7 @@ import { VisitSummaryCard } from '@/ui/admin/welcome/VisitSummaryCard'
 
 import type { Route } from './+types/dashboard'
 
-export function meta({ matches }: Route.MetaArgs) {
-  return routeMeta({ title: '欢迎' }, bundleFromMatches(matches))
-}
+export const meta = titleMeta('欢迎')
 
 const RECENT_DRAFTS_LIMIT = 5
 const RECENT_PUBLISHED_LIMIT = 5

@@ -35,7 +35,7 @@ vi.mock('@/server/infra/redis/buffer-cache', () => ({
   loadBuffer: vi.fn(),
 }))
 
-vi.mock('@/server/render/avatar/fetch', () => ({
+vi.mock('@/server/domains/comments/services/avatar', () => ({
   defaultAvatarUrl: vi.fn(() => '/images/default-avatar.png'),
   fetchAvatarImage: vi.fn(),
   fetchQQAvatarImage: vi.fn(),
@@ -58,6 +58,7 @@ vi.mock('@/shared/utils/urls', () => ({
   joinUrl: vi.fn((base: string, path: string) => `${base}${path}`),
 }))
 
+import { fetchAvatarImage, fetchQQAvatarImage, resolveAvatarInfo } from '@/server/domains/comments/services/avatar'
 import { findPublicPageMetaBySlug } from '@/server/domains/pages/repo'
 import { findPublicPostMetaBySlug } from '@/server/domains/posts/repos/single'
 import { loadAvatar } from '@/server/http/resources/avatar-cache'
@@ -66,7 +67,6 @@ import { imagesRouter } from '@/server/http/resources/images'
 import { findCategoryBySlug } from '@/server/infra/db/operations/category'
 import { readBucket, tryKeyedRateLimit } from '@/server/infra/rate-limit'
 import { loadBuffer } from '@/server/infra/redis/buffer-cache'
-import { fetchAvatarImage, fetchQQAvatarImage, resolveAvatarInfo } from '@/server/render/avatar/fetch'
 import { drawOpenGraph } from '@/server/render/og/render'
 
 const env = { db: {}, clientAddress: '127.0.0.1' } as never

@@ -8,10 +8,10 @@ import type { Assert, Equals } from '@/shared/contracts/primitives'
 
 import { getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
-import { settingsMeta } from '@/server/render/seo/settings-meta'
 import { NAV_GROUP_LABEL, SECTION_DISPLAY } from '@/shared/config/display'
 import { projectAssetsForAdmin, projectMailForAdmin, projectSearchForAdmin } from '@/shared/config/projection'
 import { SETTINGS_SECTIONS } from '@/shared/config/sections'
+import { titleMeta } from '@/shared/seo/title-meta'
 import { AnalyticsForm } from '@/ui/admin/settings/AnalyticsForm'
 import { AssetsForm } from '@/ui/admin/settings/AssetsForm'
 import { BackupView } from '@/ui/admin/settings/BackupView'
@@ -41,7 +41,7 @@ import { ThresholdForm } from '@/ui/admin/settings/ThresholdForm'
 
 import type { Route } from './+types/index'
 
-export const meta = settingsMeta('系统设置')
+export const meta = titleMeta('系统设置')
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const ctx = getRouteRequestContext({ request, context })

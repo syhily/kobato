@@ -1,14 +1,14 @@
 import { type PortableTextTypeComponentProps } from '@portabletext/react'
 import { use, type ReactNode } from 'react'
 
+import type { EnrichedMusicPlayerBlock } from '@/shared/pt/enriched'
 import type {
   CodeBlock,
   HorizontalRuleBlock,
   ImageBlock,
   ImageBlockLayout,
-  MarkDef,
+  LinkMarkDef,
   MathBlock,
-  MusicPlayerBlock,
   Span,
   TableBlock,
   TextBlock,
@@ -21,7 +21,6 @@ import { sanitizeHtml } from '@/ui/lib/sanitize-html'
 import { BlockImage } from '@/ui/pt/blocks/BlockImage'
 import { CodeBlock as CodeBlockComponent } from '@/ui/pt/blocks/CodeBlock'
 import { MusicPlayer } from '@/ui/pt/blocks/MusicPlayer'
-import { FootnoteReference } from '@/ui/pt/Footnotes'
 import { renderMathMarkupOrTexFallback } from '@/ui/pt/render-marks'
 import { HeadingIdByBlockKeyContext, MusicPresentationContext, PT_INLINE } from '@/ui/pt/render-shared'
 
@@ -123,7 +122,7 @@ export function HorizontalRuleComponent(_props: PortableTextTypeComponentProps<H
   return <hr />
 }
 
-export function MusicPlayerComponent({ value }: PortableTextTypeComponentProps<MusicPlayerBlock>) {
+export function MusicPlayerComponent({ value }: PortableTextTypeComponentProps<EnrichedMusicPlayerBlock>) {
   const { suppressAutoplay } = use(MusicPresentationContext)
   return (
     <MusicPlayer
@@ -169,11 +168,16 @@ export function TableBlockComponent({ value }: PortableTextTypeComponentProps<Ta
   )
 }
 
-function renderSpansInline(spans: readonly Span[], markDefs: readonly MarkDef[]): ReactNode {
+// Table cells carry link markDefs only per the wire schema
+// (`tableCellSchema.markDefs` is `linkMarkDefSchema[]`) — the bridge strips
+// any other def on save and the editor's table-cell guard strips them on
+// paste, so the cell inline pipeline types to the schema instead of
+// re-declaring the full markDef union.
+function renderSpansInline(spans: readonly Span[], markDefs: readonly LinkMarkDef[]): ReactNode {
   return spans.map((span) => <SpanInline key={span._key} span={span} markDefs={markDefs} />)
 }
 
-function SpanInline({ span, markDefs }: { span: Span; markDefs: readonly MarkDef[] }) {
+function SpanInline({ span, markDefs }: { span: Span; markDefs: readonly LinkMarkDef[] }) {
   const marks = span.marks ?? []
   if (marks.length === 0) {
     return <>{span.text}</>
@@ -185,7 +189,7 @@ function SpanInline({ span, markDefs }: { span: Span; markDefs: readonly MarkDef
   return <>{node}</>
 }
 
-function applyInlineMark(node: ReactNode, markName: string, markDefs: readonly MarkDef[]): ReactNode {
+function applyInlineMark(node: ReactNode, markName: string, markDefs: readonly LinkMarkDef[]): ReactNode {
   switch (markName) {
     case 'strong':
       return <strong className={PT_INLINE.strong}>{node}</strong>
@@ -202,28 +206,14 @@ function applyInlineMark(node: ReactNode, markName: string, markDefs: readonly M
   if (def === undefined) {
     return node
   }
-  switch (def._type) {
-    case 'link': {
-      // Defense-in-depth: never emit executable JavaScript or data URLs
-      // even if the schema filter is somehow bypassed. `sanitizeUrl` also
-      // strips C0 control characters, closing the `java\tscript:` bypass
-      // that a naive protocol regex misses.
-      const href = sanitizeUrl(def.href)
-      return (
-        <a href={href} rel={safeRel(def.target, def.rel)} target={def.target} className={PT_INLINE.link}>
-          {node}
-        </a>
-      )
-    }
-    case 'mathInline':
-      return renderMathMarkupOrTexFallback(def.tex, def.mathml, def.svg, 'inline')
-    case 'footnoteRef':
-      return (
-        <FootnoteReference id={`user-content-fnref-${def.index}`} data-footnote-ref="">
-          <a href={`#user-content-fn-${def.index}`} className="footnote-ref">
-            {def.index}
-          </a>
-        </FootnoteReference>
-      )
-  }
+  // Defense-in-depth: never emit executable JavaScript or data URLs
+  // even if the schema filter is somehow bypassed. `sanitizeUrl` also
+  // strips C0 control characters, closing the `java\tscript:` bypass
+  // that a naive protocol regex misses.
+  const href = sanitizeUrl(def.href)
+  return (
+    <a href={href} rel={safeRel(def.target, def.rel)} target={def.target} className={PT_INLINE.link}>
+      {node}
+    </a>
+  )
 }

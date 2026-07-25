@@ -3,6 +3,7 @@ import { type ReactNode } from 'react'
 
 import type { FootnoteRefMarkDef, LinkMarkDef, MathInlineMarkDef } from '@/shared/pt/schema'
 
+import { footnoteAnchorHref, footnoteRefId } from '@/shared/pt/footnote-anchors'
 import { sanitizeUrl } from '@/shared/sanitize-url'
 import { cn } from '@/ui/lib/cn'
 import { safeRel } from '@/ui/lib/link'
@@ -78,8 +79,8 @@ export function FootnoteRefMarkRenderer({ value, children }: PortableTextMarkCom
     return <>{children}</>
   }
   return (
-    <FootnoteReference id={`user-content-fnref-${def.index}`} data-footnote-ref="">
-      <a href={`#user-content-fn-${def.index}`} className="footnote-ref">
+    <FootnoteReference id={footnoteRefId(def.index)} data-footnote-ref="">
+      <a href={footnoteAnchorHref(def.index)} className="footnote-ref">
         {def.index}
       </a>
     </FootnoteReference>

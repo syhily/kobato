@@ -6,6 +6,7 @@ import superjson from 'superjson'
 import type { AuditEventInput } from '@/server/domains/audit/types'
 
 import { csvEscape } from '@/server/infra/csv'
+import { getBatcher, registerBatcher, requireBatcher } from '@/server/infra/db/batcher-registry'
 import { type FlushResult, CopyBatcher, replayDeadLetter, writeDeadLetter } from '@/server/infra/db/copy-batcher'
 import { auditLog } from '@/server/infra/db/schema/config'
 import { getLogger } from '@/server/infra/logger'
@@ -13,6 +14,8 @@ import { AUDIT_DEAD_LETTER_PATH } from '@/server/infra/paths'
 import { idFromString } from '@/shared/utils/id'
 
 const log = getLogger('audit.batcher')
+
+const BATCHER_NAME = 'AuditLogBatcher'
 
 const DEAD_LETTER_SEP = '\n'
 
@@ -153,30 +156,17 @@ async function insertPerRow(db: NodePgDatabase, events: AuditEventInput[]): Prom
   return { committed: successCount, deadLettered: failedEvents.length }
 }
 
-// Singleton — global batcher instance
-
-let batcher: AuditLogBatcher | undefined
-
-export function initAuditLogBatcher(db: NodePgDatabase, pool: Pool): void {
-  batcher = new AuditLogBatcher(db, pool)
-}
-
-export function resetAuditLogBatcher(): void {
-  batcher = undefined
-}
-
-function requireBatcher(): AuditLogBatcher {
-  if (!batcher) {
-    throw new Error('AuditLogBatcher not initialized — call initAuditLogBatcher(db, pool) first')
-  }
-  return batcher
-}
+// Self-register on the infra batching seam: the bootstrap lifecycle
+// drives init/flush/reset through the registry (`initAllBatchers` /
+// `flushAllBatchers` / `resetAllBatchers`) with no per-domain calls.
+registerBatcher(BATCHER_NAME, (pool, db) => new AuditLogBatcher(db, pool))
 
 export function pushAuditEvent(event: AuditEventInput): void {
-  requireBatcher().push(event)
+  requireBatcher<AuditLogBatcher>(BATCHER_NAME).push(event)
 }
 
 export function flushAuditLog(): Promise<FlushResult> {
+  const batcher = getBatcher<AuditLogBatcher>(BATCHER_NAME)
   if (!batcher) {
     return Promise.resolve({ committed: 0, deadLettered: 0 })
   }
@@ -184,9 +174,11 @@ export function flushAuditLog(): Promise<FlushResult> {
 }
 
 export async function replayDeadLetterAuditLog(path?: string): Promise<{ replayed: number; failed: number }> {
-  if (!batcher) {
-    throw new Error('AuditLogBatcher not initialized — call initAuditLogBatcher(db, pool) first')
-  }
-  const b = batcher
-  return replayDeadLetter(path ?? deadLetterPath(), deserializeFromDeadLetter, async (events) => b.ingest(events), log)
+  const batcher = requireBatcher<AuditLogBatcher>(BATCHER_NAME)
+  return replayDeadLetter(
+    path ?? deadLetterPath(),
+    deserializeFromDeadLetter,
+    async (events) => batcher.ingest(events),
+    log,
+  )
 }

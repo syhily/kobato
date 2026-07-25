@@ -5,7 +5,6 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { PmDoc } from '@/shared/pt/bridge/types'
 import type { FootnoteDefinitionBlock, PortableTextBody } from '@/shared/pt/schema'
 
-import { footnoteSyncSignature, synchronizeFootnoteIndices } from '@/shared/pt/bridge/nodes/footnote'
 import { pmDocToBody } from '@/shared/pt/bridge/pm-to-pt'
 import { bodyToPmDoc } from '@/shared/pt/bridge/pt-to-pm'
 import {
@@ -15,6 +14,7 @@ import {
   plainTextToFootnoteChildren,
   stripFootnoteDefinitionsForEditor,
 } from '@/shared/pt/footnote-merge'
+import { footnoteSyncSignature, synchronizeFootnoteIndices } from '@/shared/pt/footnote-sync'
 import { generateBlockKey } from '@/shared/pt/utils'
 import {
   canInsertFootnoteMark,

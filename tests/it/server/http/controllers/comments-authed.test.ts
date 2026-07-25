@@ -7,8 +7,9 @@ import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { clearAllTables } from '#/_helpers/integration-db'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
-import { flushAuditLog, initAuditLogBatcher, resetAuditLogBatcher } from '@/server/domains/audit/repos/batcher'
+import { flushAuditLog } from '@/server/domains/audit/repos/batcher'
 import { commentsAuthedRouter } from '@/server/http/controllers/comments-authed.controller'
+import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { comment } from '@/server/infra/db/schema/comment'
 import { auditLog } from '@/server/infra/db/schema/config'
@@ -125,11 +126,11 @@ describe('commentsAuthedRouter.searchMineEntities', () => {
 
 describe('commentsAuthedRouter — delete-request audit events', () => {
   beforeEach(() => {
-    initAuditLogBatcher(db, pool)
+    initAllBatchers(pool, db)
   })
 
   afterEach(() => {
-    resetAuditLogBatcher()
+    resetAllBatchers()
   })
 
   async function auditRowsFor(action: string) {
@@ -143,7 +144,8 @@ describe('commentsAuthedRouter — delete-request audit events', () => {
     const cid = await seedComment({ userId: u, ownerId: pid, type: 'post' })
 
     const res = await call(commentsAuthedRouter.requestDeleteOwn, { commentId: String(cid) }, { context: ctxFor(u) })
-    expect(res.success).toBe(true)
+    expect(res.comment.id).toBe(String(cid))
+    expect(res.comment.deleteRequestedAt).not.toBeNull()
 
     const rows = await auditRowsFor('comment_delete_requested')
     expect(rows).toHaveLength(1)
@@ -159,7 +161,7 @@ describe('commentsAuthedRouter — delete-request audit events', () => {
 
     await call(commentsAuthedRouter.requestDeleteOwn, { commentId: String(cid) }, { context: ctxFor(u) })
     const res = await call(commentsAuthedRouter.requestDeleteOwn, { commentId: String(cid) }, { context: ctxFor(u) })
-    expect(res.success).toBe(true)
+    expect(res.comment.deleteRequestedAt).not.toBeNull()
 
     const rows = await auditRowsFor('comment_delete_requested')
     expect(rows).toHaveLength(1)
@@ -172,13 +174,44 @@ describe('commentsAuthedRouter — delete-request audit events', () => {
 
     await call(commentsAuthedRouter.requestDeleteOwn, { commentId: String(cid) }, { context: ctxFor(u) })
     const res = await call(commentsAuthedRouter.cancelDeleteOwn, { commentId: String(cid) }, { context: ctxFor(u) })
-    expect(res.success).toBe(true)
+    expect(res.comment.id).toBe(String(cid))
+    expect(res.comment.deleteRequestedAt).toBeNull()
 
     const rows = await auditRowsFor('comment_delete_request_cancelled')
     expect(rows).toHaveLength(1)
     expect(rows[0]!.resourceType).toBe('comment')
     expect(rows[0]!.resourceId).toBe(String(cid))
     expect(rows[0]!.actorId).toBe(u)
+  })
+})
+
+describe('commentsAuthedRouter.updateOwn', () => {
+  beforeEach(() => {
+    initAllBatchers(pool, db)
+  })
+
+  afterEach(() => {
+    resetAllBatchers()
+  })
+
+  it('returns the updated wire comment', async () => {
+    const u = await seedVisitor({ name: 'U10', email: 'u10@x.com' })
+    const pid = await seedPost('Own Edit Post', 'own-edit-post')
+    const cid = await seedComment({ userId: u, ownerId: pid, type: 'post' })
+
+    const body = [
+      {
+        _type: 'block' as const,
+        _key: 'b1',
+        style: 'normal' as const,
+        children: [{ _type: 'span' as const, _key: 's1', text: 'edited body' }],
+      },
+    ]
+    const res = await call(commentsAuthedRouter.updateOwn, { commentId: String(cid), body }, { context: ctxFor(u) })
+
+    expect(res.comment.id).toBe(String(cid))
+    expect(res.comment.userId).toBe(String(u))
+    expect(JSON.stringify(res.comment.body)).toContain('edited body')
   })
 })
 

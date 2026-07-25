@@ -2,7 +2,8 @@ import { PassThrough } from 'node:stream'
 import superjson from 'superjson'
 import { describe, expect, it, vi } from 'vitest'
 
-import { initAccessLogBatcher, replayDeadLetterAccessLog } from '@/server/domains/analytics/repos/batcher'
+import { replayDeadLetterAccessLog } from '@/server/domains/analytics/repos/batcher'
+import { initAllBatchers } from '@/server/infra/db/batcher-registry'
 
 const { mockPool } = vi.hoisted(() => {
   const mp: any = {
@@ -80,8 +81,9 @@ const makeEvent = (path: string) =>
   })
 
 describe('replayDeadLetter', () => {
-  // The batcher singleton must be initialized before replay operations.
-  initAccessLogBatcher(mockPool)
+  // The batcher must be initialized (via the shared registry) before
+  // replay operations.
+  initAllBatchers(mockPool, {} as never)
 
   it('returns replayed=0 failed=0 when file does not exist', async () => {
     vi.mocked(readFile).mockRejectedValue(new Error('ENOENT'))

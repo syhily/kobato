@@ -103,6 +103,8 @@ ceremony:
   - `#/_helpers/rpc-call` — oRPC test caller (integration only)
   - `#/_helpers/session` — session fixtures (integration only)
   - `#/_helpers/fetch` — fetch mocks (integration only)
+  - `#/_helpers/comments-leaf` — provider factory for the three
+    leaf-facing comments contexts (comment-item tests)
 - `#/_helpers/e2e-client` — cookie-jar HTTP client + real signin (e2e only)
 - `#/_helpers/e2e-rpc` — oRPC-over-HTTP caller (e2e only)
 - `#/*` is mapped to `./tests/*` in `tsconfig.json` and resolved by Vitest.

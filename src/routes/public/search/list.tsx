@@ -3,7 +3,7 @@ import type { ListingPageLoaderData } from '@/server/http/loaders/listing'
 import { getDbFromContext, getPoolFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { listingHeaders, publicShouldRevalidate } from '@/server/http/loaders/route-exports'
 import { searchLoader } from '@/server/http/loaders/search'
-import { metaWithFallback } from '@/server/render/seo/meta'
+import { metaWithFallback } from '@/shared/seo/meta'
 import { PostListingBody } from '@/ui/public/post/PostListViews'
 
 import type { Route } from './+types/list'

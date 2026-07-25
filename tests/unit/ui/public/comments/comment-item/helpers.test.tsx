@@ -1,4 +1,3 @@
-import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
@@ -14,7 +13,6 @@ import {
   nestedCommentInnerClass,
   nestedCommentLiClass,
   rootCommentLiClass,
-  useCommentsLeafContext,
 } from '@/ui/public/comments/comment-item/helpers'
 
 describe('ui/public/comments/comment-item/helpers', () => {
@@ -117,31 +115,6 @@ describe('ui/public/comments/comment-item/helpers', () => {
     it('shows only hours when the remaining minutes are a whole hour', () => {
       const expiresAt = Date.now() + 3 * 60 * 60 * 1000
       expect(editableHint(expiresAt, false)).toBe('3 小时内可编辑此消息。')
-    })
-  })
-
-  describe('useCommentsLeafContext', () => {
-    function LeafDisplay({ mode }: { mode?: 'admin' | 'public' }) {
-      const ctx = useCommentsLeafContext(mode)
-      return (
-        <div>
-          <span data-testid="admin">{String(ctx.admin)}</span>
-          <span data-testid="active">{ctx.activeReplyToId}</span>
-        </div>
-      )
-    }
-
-    it('falls back to prop mode when rendered outside providers', () => {
-      const adminHtml = renderToStaticMarkup(<LeafDisplay mode="admin" />)
-      expect(adminHtml).toContain('true')
-
-      const publicHtml = renderToStaticMarkup(<LeafDisplay mode="public" />)
-      expect(publicHtml).toContain('false')
-    })
-
-    it('defaults activeReplyToId to 0 outside providers', () => {
-      const html = renderToStaticMarkup(<LeafDisplay />)
-      expect(html).toContain('>0<')
     })
   })
 })

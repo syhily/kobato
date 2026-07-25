@@ -1,16 +1,21 @@
-import { flushAccessLog, initAccessLogBatcher, resetAccessLogBatcher } from '@/server/domains/analytics/repos/batcher'
-import { flushPageViews, initPageViewBatcher, resetPageViewBatcher } from '@/server/domains/analytics/repos/pv-batcher'
-import { flushAuditLog, initAuditLogBatcher, resetAuditLogBatcher } from '@/server/domains/audit/repos/batcher'
-import { scheduleNextArchive } from '@/server/domains/audit/services/scheduler'
+import { scheduleNextArchive, wireArchiveScheduler } from '@/server/domains/audit/services/scheduler'
 import { registerRestoreComplete } from '@/server/domains/backup/restore-orchestrator'
 import { resetLikeTokenSweep, startLikeTokenSweep } from '@/server/domains/comments/services/likes'
 import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
+import { flushAllBatchers, initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
 import { migrateDatabase } from '@/server/infra/db/migrate'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { isVitest } from '@/server/infra/env'
 import { registerShutdownHook, restartServer, setRestartDb, setRestartRefreshSettings } from '@/server/infra/lifecycle'
 import { root } from '@/server/infra/logger'
 import { isRecord } from '@/shared/utils/type-guards'
+// Load-bearing side-effect imports: each batcher module self-registers
+// on the infra batching seam (`@/server/infra/db/batcher-registry`) at
+// import time, so `initAllBatchers` / `flushAllBatchers` /
+// `resetAllBatchers` below cover every batcher with no per-domain calls.
+import '@/server/domains/analytics/repos/batcher'
+import '@/server/domains/analytics/repos/pv-batcher'
+import '@/server/domains/audit/repos/batcher'
 
 // ─── HMR-safe resource creation ──────────────────────────
 // In dev, React Router re-evaluates server.ts on every HMR cycle.
@@ -49,9 +54,8 @@ function wirePool(instance: ReturnType<typeof createDbPool>): ReturnType<typeof 
   }
   setRestartDb(db)
   setRestartRefreshSettings(refreshBlogSettings)
-  initAccessLogBatcher(pool)
-  initPageViewBatcher(db)
-  initAuditLogBatcher(db, pool)
+  wireArchiveScheduler({ getDb })
+  initAllBatchers(pool, db)
   startLikeTokenSweep(db)
   return instance
 }
@@ -85,7 +89,7 @@ registerRestoreComplete(async (success, err) => {
 
   if (recreated) {
     try {
-      scheduleNextArchive(pool)
+      scheduleNextArchive()
     } catch (schedErr) {
       root.warn(
         { err: schedErr instanceof Error ? schedErr.message : String(schedErr) },
@@ -133,34 +137,11 @@ if (!hmr?.migrationsRan) {
 registerShutdownHook(() => closePool(pool), 0)
 
 export async function recreatePool(): Promise<{ db: typeof db; pool: typeof pool }> {
-  try {
-    await flushAuditLog()
-  } catch (err) {
-    root.warn(
-      { err: err instanceof Error ? err.message : String(err) },
-      'Audit log flush failed before pool recreation',
-    )
-  }
-  try {
-    await flushAccessLog()
-  } catch (err) {
-    root.warn(
-      { err: err instanceof Error ? err.message : String(err) },
-      'Access log flush failed before pool recreation',
-    )
-  }
-  try {
-    await flushPageViews()
-  } catch (err) {
-    root.warn(
-      { err: err instanceof Error ? err.message : String(err) },
-      'Page view flush failed before pool recreation',
-    )
-  }
+  // flushAllBatchers isolates per-batcher failures internally — a
+  // failing flush never blocks the remaining batchers or the pool swap.
+  await flushAllBatchers()
 
-  resetAccessLogBatcher()
-  resetPageViewBatcher()
-  resetAuditLogBatcher()
+  resetAllBatchers()
   resetLikeTokenSweep()
   return wirePool(createDbPool())
 }

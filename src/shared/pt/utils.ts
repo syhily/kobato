@@ -6,11 +6,12 @@ import type {
   PortableTextBody,
   PortableTextHeading,
   PortableTextHeadingSlot,
-  StandardBlockStyle,
   TextBlock,
 } from '@/shared/pt/schema'
 
+import { headingLevelFromStyle } from '@/shared/pt/heading-levels'
 import { Slugger } from '@/shared/slug'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 // --- Key generation ---------------------------------------------------------
 
@@ -40,11 +41,7 @@ export function generateBlockKey(): string {
 // --- Headings ---------------------------------------------------------------
 
 function tryPushHeadingSlot(block: TextBlock, out: PortableTextHeadingSlot[]): void {
-  const style = block.style
-  if (style === undefined || style === 'normal' || style === 'blockquote') {
-    return
-  }
-  const depth = headingDepthFromStyle(style)
+  const depth = headingLevelFromStyle(block.style)
   if (depth === null) {
     return
   }
@@ -135,20 +132,34 @@ export function collectHeadings(
   }))
 }
 
-function headingDepthFromStyle(style: StandardBlockStyle): number | null {
-  switch (style) {
-    case 'h1':
-      return 1
-    case 'h2':
-      return 2
-    case 'h3':
-      return 3
-    case 'h4':
-      return 4
-    case 'blockquote':
-    case 'normal':
-      return null
+/**
+ * Zip the heading slots of a body with precomputed slugs into a
+ * `_key → anchor id` map — the single owner of the slots→slug zip used
+ * by BOTH render adapters (feed HTML and React tree), so the two can
+ * never drift into different id assignment.
+ *
+ * Slot `i` takes `headingSlugs[i]` when that entry is a non-empty string
+ * (the TOC pipeline's canonical slug); otherwise `fallbackSlug` derives
+ * an id from the heading's plain text. The fallback legitimately differs
+ * per adapter — the feed renderer passes pinyin-aware `deriveSlug`
+ * (`@/server/infra/slug`), the React tree passes a client-safe `Slugger`
+ * closure — so it stays a parameter. Callers with no precomputed slugs
+ * (revision preview passes `[]`) exercise exactly this fallback path.
+ */
+export function buildHeadingIdByBlockKey(
+  body: PortableTextBody,
+  headingSlugs: readonly string[] | undefined,
+  fallbackSlug: (plainText: string) => string,
+): Map<string, string> {
+  const slots = collectHeadingSlotsInPortableTextRenderOrder(body)
+  const map = new Map<string, string>()
+  for (let i = 0; i < slots.length; i += 1) {
+    const slot = slots[i]
+    const pre = headingSlugs?.[i]
+    const id = typeof pre === 'string' && pre.length > 0 ? pre : fallbackSlug(slot.plainText)
+    map.set(slot.blockKey, id)
   }
+  return map
 }
 
 // --- Nested traversal -------------------------------------------------------
@@ -184,6 +195,35 @@ export function visitNestedBlocks(body: PortableTextBody, visit: (block: Block) 
   }
 }
 
+/**
+ * Mapping counterpart of `visitNestedBlocks` — same nesting rules, same
+ * pre-order: the callback rewrites each top-level block first, then each
+ * container's children (`solution` / `footnoteDefinition` `children`,
+ * `twoColumn` `left` then `right`). Containers that the callback leaves
+ * untouched still descend so nested blocks are mapped too.
+ *
+ * The callback MUST preserve each position's block kind: a block nested
+ * inside a container has to map to a `NonRecursiveBlock` (nesting is one
+ * level deep by schema). Every block is mapped exactly once; the result
+ * is always a new array with new container objects, while untouched
+ * leaves keep their identity.
+ */
+export function mapNestedBlocks(body: PortableTextBody, map: (block: Block) => Block): PortableTextBody {
+  // The callback contract guarantees a nested position maps back to a
+  // NonRecursiveBlock — the schema forbids containers one level down.
+  const mapChild = (child: NonRecursiveBlock): NonRecursiveBlock => unsafeCast<NonRecursiveBlock>(map(child))
+  return body.map((block) => {
+    const mapped = map(block)
+    if (mapped._type === 'solution' || mapped._type === 'footnoteDefinition') {
+      return { ...mapped, children: mapped.children.map(mapChild) }
+    }
+    if (mapped._type === 'twoColumn') {
+      return { ...mapped, left: mapped.left.map(mapChild), right: mapped.right.map(mapChild) }
+    }
+    return mapped
+  })
+}
+
 // --- Image paths ------------------------------------------------------------
 
 /** Walk a body and pick out every `image.storagePath` referenced. */
@@ -197,17 +237,38 @@ export function collectImageStoragePaths(body: PortableTextBody): string[] {
   return Array.from(paths)
 }
 
+/**
+ * Walk a body and pick out every `musicPlayer.playerId` referenced,
+ * deduped in first-seen order. The single collector behind both music
+ * resolution paths — SSR enrichment (`@/server/domains/pt/prerender`)
+ * and feed rendering (`@/server/render/pt-html`) — which then call the
+ * single fetch seam `getPublicMusicMetasByIds` and keep only their own
+ * projection of the result.
+ */
+export function collectMusicPlayerIds(body: PortableTextBody): string[] {
+  const ids = new Set<string>()
+  visitNestedBlocks(body, (block) => {
+    if (block._type === 'musicPlayer') {
+      ids.add(block.playerId)
+    }
+  })
+  return Array.from(ids)
+}
+
 // --- Plain text -------------------------------------------------------------
 
 /** Plain-text projection used by search / RSS summary / OG fallback. */
 export function bodyToPlainText(body: PortableTextBody): string {
   const out: string[] = []
-  for (const block of body) {
+  visitNestedBlocks(body, (block) => {
     pushBlockText(block, out)
-  }
+  })
   return out.join('\n').trim()
 }
 
+// Leaf projection callback for `visitNestedBlocks` — containers carry no
+// text of their own, so only leaf blocks push (the visitor descends into
+// `solution` / `footnoteDefinition` / `twoColumn` children on its own).
 function pushBlockText(block: Block, out: string[]): void {
   if (block._type === 'block') {
     out.push(block.children.map((span) => span.text).join(''))
@@ -241,21 +302,6 @@ function pushBlockText(block: Block, out: string[]): void {
   }
   if (block._type === 'musicPlayer') {
     out.push(`[Music: ${block.playerId}]`)
-    return
-  }
-  if (block._type === 'solution' || block._type === 'footnoteDefinition') {
-    for (const child of block.children) {
-      pushBlockText(child, out)
-    }
-    return
-  }
-  if (block._type === 'twoColumn') {
-    for (const child of block.left) {
-      pushBlockText(child, out)
-    }
-    for (const child of block.right) {
-      pushBlockText(child, out)
-    }
     return
   }
 }

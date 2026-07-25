@@ -6,19 +6,19 @@ vi.mock('@/server/infra/logger', () => ({
   getLogger: () => ({ warn: warnMock }),
 }))
 
-vi.mock('@/server/render/image-compress', () => ({
+vi.mock('@/server/infra/image/compress', () => ({
   compressImage: (buf: Buffer) => Promise.resolve(buf),
 }))
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
-import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
 import {
   defaultAvatarUrl,
   fetchAvatarImage,
   fetchQQAvatarImage,
   getQQAvatarUrl,
   isQQEmail,
-} from '@/server/render/avatar/fetch'
+} from '@/server/domains/comments/services/avatar'
+import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
 
 beforeEach(() => {
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
@@ -50,7 +50,7 @@ function mockFetch(responses: Array<Response | (() => Response)>) {
   return fn
 }
 
-describe('render/avatar/fetch — isQQEmail / getQQAvatarUrl', () => {
+describe('domains/comments/services/avatar — isQQEmail / getQQAvatarUrl', () => {
   it('detects QQ emails', () => {
     expect(isQQEmail('12345@qq.com')).toBe(true)
     expect(isQQEmail('12345@qq.COM')).toBe(true)
@@ -74,7 +74,7 @@ describe('render/avatar/fetch — isQQEmail / getQQAvatarUrl', () => {
   })
 })
 
-describe('render/avatar/fetch — defaultAvatarUrl', () => {
+describe('domains/comments/services/avatar — defaultAvatarUrl', () => {
   it('joins the site website with the default avatar path', () => {
     const url = defaultAvatarUrl()
     expect(url).toMatch(/images\/default-avatar\.png$/)
@@ -82,7 +82,7 @@ describe('render/avatar/fetch — defaultAvatarUrl', () => {
   })
 })
 
-describe('render/avatar/fetch — fetchAvatarImage', () => {
+describe('domains/comments/services/avatar — fetchAvatarImage', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
   })
@@ -155,7 +155,7 @@ describe('render/avatar/fetch — fetchAvatarImage', () => {
   })
 })
 
-describe('render/avatar/fetch — fetchQQAvatarImage', () => {
+describe('domains/comments/services/avatar — fetchQQAvatarImage', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
   })

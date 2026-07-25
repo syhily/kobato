@@ -42,13 +42,13 @@ vi.mock('@/server/domains/comments/services/shared', () => ({
   safeResolveMetricTarget: vi.fn(),
 }))
 
-vi.mock('@/server/render/avatar/fetch', () => ({
+vi.mock('@/server/domains/comments/services/avatar', () => ({
   fetchQQAvatarImage: vi.fn(),
   isQQEmail: () => false,
 }))
 
-vi.mock('@/server/render/avatar/cache', () => ({
-  AvatarStatus: { HAVE_AVATAR: 'have', NO_AVATAR: 'none' },
+vi.mock('@/server/http/resources/avatar-cache', () => ({
+  AvatarStatus: { HAVE_AVATAR: 0, NO_AVATAR: 1 },
   cacheAvatar: vi.fn(),
 }))
 

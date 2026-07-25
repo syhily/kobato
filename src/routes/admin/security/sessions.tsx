@@ -3,7 +3,7 @@ import { data } from 'react-router'
 import { getDbFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
 import { listAllSessions } from '@/server/domains/auth/service'
-import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
+import { titleMeta } from '@/shared/seo/title-meta'
 import {
   DEFAULT_ADMIN_SORT,
   SESSION_SORT_OPTIONS,
@@ -14,9 +14,7 @@ import { SessionsView } from '@/ui/admin/sessions/SessionsView'
 
 import type { Route } from './+types/sessions'
 
-export function meta({ matches }: Route.MetaArgs) {
-  return routeMeta({ title: '会话管理' }, bundleFromMatches(matches))
-}
+export const meta = titleMeta('会话管理')
 
 export interface AdminSessionItem {
   sid: string

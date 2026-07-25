@@ -1,5 +1,4 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
 
 import { and, gt, gte, inArray, lt, sql } from 'drizzle-orm'
 import { createGzip } from 'node:zlib'
@@ -221,7 +220,7 @@ export async function cleanupExpiredArchives(): Promise<CleanupResult> {
 
 // Run the full archive job
 
-export async function runArchiveJob(db: NodePgDatabase, _pool: Pool): Promise<void> {
+export async function runArchiveJob(db: NodePgDatabase): Promise<void> {
   try {
     const archiveResult = await archiveExpiredAuditLogs(db)
     const cleanupResult = await cleanupExpiredArchives()

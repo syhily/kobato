@@ -5,14 +5,12 @@ import { isPasskeyEnabled } from '@/server/domains/auth/passkey-gate'
 import { requireRole } from '@/server/domains/auth/rbac'
 import { countMyComments } from '@/server/domains/comments/repos/admin-query'
 import { findUserById } from '@/server/infra/db/operations/user'
-import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
+import { titleMeta } from '@/shared/seo/title-meta'
 import { MyProfileView } from '@/ui/admin/my/MyProfileView'
 
 import type { Route } from './+types/profile'
 
-export function meta({ matches }: Route.MetaArgs) {
-  return routeMeta({ title: '个人信息' }, bundleFromMatches(matches))
-}
+export const meta = titleMeta('个人信息')
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const ctx = getRouteRequestContext({ request, context })

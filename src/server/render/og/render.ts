@@ -1,9 +1,10 @@
 import type { Image, SKRSContext2D } from '@napi-rs/canvas'
 import type { Buffer } from 'node:buffer'
 
+import { compressImage } from '@/server/infra/image/compress'
 import { requireExternal } from '@/server/infra/sea'
-import { compressImage } from '@/server/render/image-compress'
-import { ensureCanvasFont, logoDark, type FontSlot } from '@/server/render/og/assets'
+import { ensureCanvasFont, type FontSlot } from '@/server/render/canvas-fonts'
+import { logoDark } from '@/server/render/og/assets'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 
 // Native module — must resolve against the extracted tree under SEA (see
@@ -135,8 +136,8 @@ export interface OpenGraphProps {
   cover: string
 }
 
-// Font registration lives in `og/assets.ts` (`ensureCanvasFont`) — one
-// single-flight per slot, shared with the calendar renderer.
+// Font registration lives in `render/canvas-fonts.ts` (`ensureCanvasFont`) —
+// one single-flight per slot, shared with the calendar renderer.
 function ensureFonts(): Promise<FontSlot | null> {
   return ensureCanvasFont('og')
 }

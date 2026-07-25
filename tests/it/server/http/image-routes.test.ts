@@ -24,7 +24,7 @@ vi.mock('@/server/http/resources/avatar-cache', () => ({
 }))
 // catalog/catalog was removed; images.ts now queries posts/repo and pages/repo
 // directly via findPostBySlug / findPageBySlug in parallel.
-vi.mock('@/server/render/avatar/fetch', () => ({
+vi.mock('@/server/domains/comments/services/avatar', () => ({
   defaultAvatarUrl: () => 'https://example.test/images/default-avatar.png',
   fetchAvatarImage: vi.fn().mockResolvedValue(Buffer.from([0x89, 0x50, 0x4e, 0x47])),
   fetchQQAvatarImage: vi.fn(),
@@ -73,7 +73,7 @@ const { imagesRouter } = await import('@/server/http/resources/images')
 
 describe('imagesRouter avatar', () => {
   it('extracts the bare hash from `/images/avatar/<hash>.png`', async () => {
-    const { resolveAvatarInfo } = await import('@/server/render/avatar/fetch')
+    const { resolveAvatarInfo } = await import('@/server/domains/comments/services/avatar')
     const res = await imagesRouter.request('/images/avatar/abcdef0123456789.png')
     // Route does NOT 404 (it now resolves the hash; the path-parser bug
     // would have driven this into the missing-param fallback).
@@ -82,7 +82,7 @@ describe('imagesRouter avatar', () => {
   })
 
   it('matches numeric ids the same way', async () => {
-    const { resolveAvatarInfo } = await import('@/server/render/avatar/fetch')
+    const { resolveAvatarInfo } = await import('@/server/domains/comments/services/avatar')
     await imagesRouter.request('/images/avatar/42.png')
     expect(vi.mocked(resolveAvatarInfo)).toHaveBeenNthCalledWith(2, undefined, '42')
   })

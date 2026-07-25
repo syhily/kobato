@@ -1,8 +1,8 @@
 import { getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
-import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { projectAssetsForAdmin } from '@/shared/config/projection'
+import { titleMeta } from '@/shared/seo/title-meta'
 import { BrandingView } from '@/ui/admin/library/BrandingView'
 
 import type { Route } from './+types/branding'
@@ -17,9 +17,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   return { branding: projected.branding }
 }
 
-export function meta({ matches }: Route.MetaArgs) {
-  return routeMeta({ title: '品牌素材' }, bundleFromMatches(matches))
-}
+export const meta = titleMeta('品牌素材')
 
 export default function WpAdminBrandingRoute({ loaderData }: Route.ComponentProps) {
   return <BrandingView branding={loaderData.branding} />

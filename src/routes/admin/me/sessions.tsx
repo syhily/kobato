@@ -3,7 +3,7 @@ import { data } from 'react-router'
 import { getDbFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
 import { listSessionsByUser } from '@/server/domains/auth/service'
-import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
+import { titleMeta } from '@/shared/seo/title-meta'
 import {
   DEFAULT_MY_SORT,
   MY_SESSION_SORT_OPTIONS,
@@ -14,9 +14,7 @@ import { MySessionsView } from '@/ui/admin/my/MySessionsView'
 
 import type { Route } from './+types/sessions'
 
-export function meta({ matches }: Route.MetaArgs) {
-  return routeMeta({ title: '登录设备' }, bundleFromMatches(matches))
-}
+export const meta = titleMeta('登录设备')
 
 export interface MySessionItem {
   sid: string

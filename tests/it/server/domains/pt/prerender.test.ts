@@ -3,7 +3,8 @@ import type { Pool } from 'pg'
 
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { MusicPlayerBlock, PortableTextBody } from '@/shared/pt/schema'
+import type { EnrichedMusicPlayerBlock } from '@/shared/pt/enriched'
+import type { PortableTextBody } from '@/shared/pt/schema'
 
 import { clearAllTables } from '#/_helpers/integration-db'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
@@ -71,14 +72,14 @@ describe('server/domains/pt/prerenderMusicPlayerBlocks (db)', () => {
     const result = await prerenderMusicPlayerBlocks(db, body)
     expect(result).toHaveLength(2)
 
-    const covered = result![0] as MusicPlayerBlock
+    const covered = result![0] as EnrichedMusicPlayerBlock
     expect(covered.meta).toBeDefined()
     expect(covered.meta!.cover).toBe('https://assets.example.com/musics/covered.jpg')
     expect(covered.meta!.audioUrl).toContain('https://assets.example.com/')
 
     // A coverless track stays playable — the cover falls back to the
     // bundled default vinyl image instead of hiding the player.
-    const coverless = result![1] as MusicPlayerBlock
+    const coverless = result![1] as EnrichedMusicPlayerBlock
     expect(coverless.meta).toBeDefined()
     expect(coverless.meta!.cover).toBe(DEFAULT_MUSIC_COVER_URL)
     expect(coverless.meta!.audioUrl).toContain('https://assets.example.com/')
@@ -97,7 +98,7 @@ describe('server/domains/pt/prerenderMusicPlayerBlocks (db)', () => {
     ]
 
     const result = await prerenderMusicPlayerBlocks(db, body)
-    expect((result![0] as MusicPlayerBlock).meta).toBeDefined()
-    expect((result![1] as MusicPlayerBlock).meta).toBeUndefined()
+    expect((result![0] as EnrichedMusicPlayerBlock).meta).toBeDefined()
+    expect((result![1] as EnrichedMusicPlayerBlock).meta).toBeUndefined()
   })
 })

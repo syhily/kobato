@@ -5,6 +5,7 @@ import superjson from 'superjson'
 import type { EnrichedAccessEvent } from '@/server/domains/analytics/types'
 
 import { csvEscape } from '@/server/infra/csv'
+import { getBatcher, registerBatcher, requireBatcher } from '@/server/infra/db/batcher-registry'
 import {
   type FlushResult,
   CopyBatcher,
@@ -14,7 +15,7 @@ import {
 import { getLogger } from '@/server/infra/logger'
 import { ANALYTICS_DEAD_LETTER_PATH } from '@/server/infra/paths'
 
-export { csvEscape }
+const BATCHER_NAME = 'AccessLogBatcher'
 
 const DEAD_LETTER_SEP = '\n'
 
@@ -110,42 +111,29 @@ class AccessLogBatcher extends CopyBatcher<EnrichedAccessEvent> {
   }
 }
 
-let batcher: AccessLogBatcher | undefined
-
-export function initAccessLogBatcher(pool: Pool): void {
-  batcher = new AccessLogBatcher(pool)
-}
-
-export function resetAccessLogBatcher(): void {
-  batcher = undefined
-}
+// Self-register on the infra batching seam: the bootstrap lifecycle
+// drives init/flush/reset through the registry (`initAllBatchers` /
+// `flushAllBatchers` / `resetAllBatchers`) with no per-domain calls.
+registerBatcher(BATCHER_NAME, (pool) => new AccessLogBatcher(pool))
 
 export function pushAccessEvent(event: EnrichedAccessEvent): void {
-  if (!batcher) {
-    throw new Error('AccessLogBatcher not initialized — call initAccessLogBatcher(pool) first')
-  }
-  batcher.push(event)
+  requireBatcher<AccessLogBatcher>(BATCHER_NAME).push(event)
 }
 
 export function flushAccessLog(): Promise<FlushResult> {
+  const batcher = getBatcher<AccessLogBatcher>(BATCHER_NAME)
   if (!batcher) {
     return Promise.resolve({ committed: 0, deadLettered: 0 })
   }
   return batcher.flush()
 }
 
-/** @deprecated Use replayDeadLetterAccessLog */
-export const replayDeadLetter = replayDeadLetterAccessLog
-
 export async function replayDeadLetterAccessLog(path?: string): Promise<{ replayed: number; failed: number }> {
-  if (!batcher) {
-    throw new Error('AccessLogBatcher not initialized — call initAccessLogBatcher(pool) first')
-  }
-  const b = batcher
+  const batcher = requireBatcher<AccessLogBatcher>(BATCHER_NAME)
   return replayFromInfra(
     path ?? deadLetterPath(),
     deserializeFromDeadLetter,
-    async (events) => b.ingest(events),
+    async (events) => batcher.ingest(events),
     getLogger('analytics.batcher'),
   )
 }

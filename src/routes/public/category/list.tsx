@@ -6,7 +6,7 @@ import { listingLoader } from '@/server/http/loaders/listing'
 import { listingHeaders, publicShouldRevalidate } from '@/server/http/loaders/route-exports'
 import { findCategoryBySlug } from '@/server/infra/db/operations/category'
 import { notFound } from '@/server/infra/http/status'
-import { metaWithFallback } from '@/server/render/seo/meta'
+import { metaWithFallback } from '@/shared/seo/meta'
 import { PostListingBody } from '@/ui/public/post/PostListViews'
 
 import type { Route } from './+types/list'

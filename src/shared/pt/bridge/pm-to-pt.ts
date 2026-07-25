@@ -2,7 +2,7 @@ import type { PmDoc } from '@/shared/pt/bridge/types'
 import type { Block, PortableTextBody } from '@/shared/pt/schema'
 
 import { dispatchPmNodeToBlocks } from '@/shared/pt/bridge/node-registry'
-import { synchronizeFootnoteIndices } from '@/shared/pt/bridge/nodes/footnote'
+import { synchronizeFootnoteIndices } from '@/shared/pt/footnote-sync'
 
 /**
  * Convert a ProseMirror `doc` node back into a PortableText body.

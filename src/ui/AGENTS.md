@@ -11,8 +11,11 @@ parent.
   so `npx shadcn@latest add/diff` works. `components.json` aliases
   `components` and `ui` here. One token cascade in `:root`
   (`tailwind.css`) covers public + admin.
-- **`ui/public/`** — `chrome/`, `post/`, `comments/`, `friends/`
-  (friend-link application form), `widgets/`, plus
+- **`ui/public/`** — `chrome/`, `post/`, `comments/` (thread state
+  split across four contexts in `comments-context.ts` — Tree /
+  Identity / ReplySlot / Actions — so leaf rows subscribe to slices
+  instead of one mega-context), `friends/`
+  (friend-link application form), `widgets/`, `aplayer/`, plus
   single-file leaves (`Search.tsx`, `Sidebar.tsx`, `LikeActions.tsx`).
 - **`ui/admin/`** — grouped by domain (`analytics`, `auth`,
   `categories`, `comments`, `editor`, `editor-shell`, `friends`,

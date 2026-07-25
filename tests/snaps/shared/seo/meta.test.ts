@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { routeMeta } from '@/server/render/seo/meta'
+import { routeMeta } from '@/shared/seo/meta'
 
 // Snapshot the full meta-tag head emitted for the three canonical page kinds
 // (default home, post detail, listing). A regression here changes the SEO

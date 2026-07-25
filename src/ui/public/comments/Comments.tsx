@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query'
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { flushSync } from 'react-dom'
 
 import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
@@ -12,17 +12,19 @@ import type {
 } from '@/shared/types/comments'
 
 import { orpcQuery } from '@/client/api/orpc-query'
-import { useCommentsSettings } from '@/shared/lib/blog-config-context'
 import { Button } from '@/ui/components/button'
 import { CommentItem } from '@/ui/public/comments/comment-item/CommentItem'
 import { CommentReplyForm } from '@/ui/public/comments/CommentReplyForm'
 import {
   CommentsActionsContext,
-  CommentsStateContext,
+  CommentsIdentityContext,
+  CommentsReplySlotContext,
+  CommentsTreeContext,
   type CommentTreeAction,
   type CommentTreeState,
   useCommentsActions,
-  useCommentsState,
+  useCommentsReplySlot,
+  useCommentsTree,
 } from '@/ui/public/comments/comments-context'
 
 export interface CommentsProps {
@@ -65,6 +67,7 @@ function reducer(state: CommentTreeState, action: CommentTreeAction): CommentTre
         rootsTotal: action.rootsTotal,
         rootsLoaded: action.rootsLoaded,
         replyToId: 0,
+        myComments: new Map(),
       }
     case 'append':
       return {
@@ -156,7 +159,22 @@ function reducer(state: CommentTreeState, action: CommentTreeAction): CommentTre
           return { ...item, children: [...children, c] }
         })
       }
-      return { ...state, items }
+      // 3) Fold token ownership into the same dispatch so the tree and the
+      // ownership map land atomically.
+      const myComments = new Map(state.myComments)
+      for (const c of action.comments) {
+        const key = asKey(c.id)
+        myComments.set(key, { expiresAt: action.expiresAt[key] })
+      }
+      return { ...state, items, myComments }
+    }
+    case 'dismissMyComment': {
+      if (!state.myComments.has(action.id)) {
+        return state
+      }
+      const myComments = new Map(state.myComments)
+      myComments.delete(action.id)
+      return { ...state, myComments }
     }
   }
 }
@@ -167,6 +185,7 @@ function createCommentTreeState(items: CommentItemType[], rootsCount: number): C
     rootsLoaded: Math.min(items.length, rootsCount),
     rootsTotal: rootsCount,
     replyToId: 0,
+    myComments: new Map(),
   }
 }
 
@@ -231,32 +250,20 @@ function CommentsRoot({ commentKey, initialItems, rootsCount, totalCount, user, 
   const onEdited = useCallback((comment: CommentItemType) => dispatch({ type: 'updateComment', comment }), [])
   const onApproved = useCallback((id: bigint | string) => dispatch({ type: 'approveComment', id }), [])
   const onDeleted = useCallback((id: bigint | string) => dispatch({ type: 'removeComment', id }), [])
-  const revokeToken = useMutation({
+  const { mutate: revokeToken } = useMutation({
     ...orpcQuery.comments.revokeToken.mutationOptions(),
   })
 
   const admin = user?.admin === true
+  const currentUserId = user?.id != null ? String(user.id) : null
   const replyTarget = state.replyToId === 0 ? undefined : findComment(state.items, state.replyToId)
   const activeReplyToId = replyTarget ? state.replyToId : 0
-
-  // Load the current user's own comments (including pending) via token cookie.
-  const [myCommentIds, setMyCommentIds] = useState<Set<string>>(new Set())
-  const [myCommentExpiresAt, setMyCommentExpiresAt] = useState<Map<string, number>>(new Map())
 
   const onDismissMyComment = useCallback(
     (id: bigint | string) => {
       const key = asKey(id)
-      revokeToken.mutate({ rid: key })
-      setMyCommentIds((prev) => {
-        const next = new Set(prev)
-        next.delete(key)
-        return next
-      })
-      setMyCommentExpiresAt((prev) => {
-        const next = new Map(prev)
-        next.delete(key)
-        return next
-      })
+      revokeToken({ rid: key })
+      dispatch({ type: 'dismissMyComment', id: key })
     },
     [revokeToken],
   )
@@ -264,6 +271,9 @@ function CommentsRoot({ commentKey, initialItems, rootsCount, totalCount, user, 
     dispatch({ type: 'insertReply', comment, rid })
     dispatch({ type: 'setReplyTo', rid: 0 })
   }, [])
+  // Load the current user's own comments (including pending) via token cookie.
+  // The reducer folds both the tree entries and the ownership map from this
+  // one dispatch.
   const myComments = useMutation({
     ...orpcQuery.comments.myComments.mutationOptions(),
     onSuccess: (payload: MyCommentsOutput) => {
@@ -273,8 +283,6 @@ function CommentsRoot({ commentKey, initialItems, rootsCount, totalCount, user, 
           comments: payload.comments,
           expiresAt: payload.expiresAt,
         })
-        setMyCommentIds(new Set(payload.comments.map((c) => asKey(c.id))))
-        setMyCommentExpiresAt(new Map(Object.entries(payload.expiresAt)))
       }
     },
   })
@@ -300,21 +308,14 @@ function CommentsRoot({ commentKey, initialItems, rootsCount, totalCount, user, 
     [commentKey, activeReplyToId, replyTarget, user, onCancelReply, onReplied],
   )
 
-  const stateValue = useMemo(
-    () => ({
-      commentKey,
-      totalCount,
-      admin,
-      user,
-      state,
-      activeReplyToId,
-      myCommentIds,
-      myCommentExpiresAt,
-      currentUserId: user?.id != null ? String(user.id) : null,
-      replyForm,
-    }),
-    [commentKey, totalCount, admin, user, state, activeReplyToId, myCommentIds, myCommentExpiresAt, replyForm],
+  const treeValue = useMemo(() => ({ commentKey, totalCount, state }), [commentKey, totalCount, state])
+
+  const identityValue = useMemo(
+    () => ({ admin, currentUserId, myComments: state.myComments }),
+    [admin, currentUserId, state.myComments],
   )
+
+  const slotValue = useMemo(() => ({ activeReplyToId, replyForm }), [activeReplyToId, replyForm])
 
   const actionsValue = useMemo(
     () => ({
@@ -330,38 +331,42 @@ function CommentsRoot({ commentKey, initialItems, rootsCount, totalCount, user, 
   )
 
   return (
-    <CommentsStateContext value={stateValue}>
-      <CommentsActionsContext value={actionsValue}>
-        <div id="comments" className="pt-12">
-          {children}
-        </div>
-      </CommentsActionsContext>
-    </CommentsStateContext>
+    <CommentsTreeContext value={treeValue}>
+      <CommentsIdentityContext value={identityValue}>
+        <CommentsReplySlotContext value={slotValue}>
+          <CommentsActionsContext value={actionsValue}>
+            <div id="comments" className="pt-12">
+              {children}
+            </div>
+          </CommentsActionsContext>
+        </CommentsReplySlotContext>
+      </CommentsIdentityContext>
+    </CommentsTreeContext>
   )
 }
 
 function CommentsHeader() {
-  const ctx = useCommentsState('Comments.Header')
+  const { totalCount } = useCommentsTree('Comments.Header')
   return (
     <div className="mb-6 text-xl leading-body font-semibold">
-      评论 <small className="font-theme text-sm">({ctx.totalCount})</small>
+      评论 <small className="font-theme text-sm">({totalCount})</small>
     </div>
   )
 }
 
 function CommentsReplyFormSlot() {
-  const ctx = useCommentsState('Comments.ReplyFormSlot')
-  if (ctx.activeReplyToId !== 0) {
+  const { activeReplyToId, replyForm } = useCommentsReplySlot('Comments.ReplyFormSlot')
+  if (activeReplyToId !== 0) {
     return null
   }
-  return <>{ctx.replyForm}</>
+  return <>{replyForm}</>
 }
 
 function CommentsList() {
-  const ctx = useCommentsState('Comments.List')
+  const { state } = useCommentsTree('Comments.List')
   return (
     <ul className="comment-list">
-      {ctx.state.items.map((item) => (
+      {state.items.map((item) => (
         <CommentItem key={asKey(item.id)} comment={item} depth={1} />
       ))}
     </ul>
@@ -369,14 +374,12 @@ function CommentsList() {
 }
 
 function CommentsLoadMore() {
-  const state = useCommentsState('Comments.LoadMore')
+  const { commentKey, state } = useCommentsTree('Comments.LoadMore')
   const actions = useCommentsActions('Comments.LoadMore')
-  const { comments } = useCommentsSettings()
-  const pageSize = comments.size
 
-  const rootsLoadedRef = useRef(state.state.rootsLoaded)
+  const rootsLoadedRef = useRef(state.rootsLoaded)
   useEffect(() => {
-    rootsLoadedRef.current = state.state.rootsLoaded
+    rootsLoadedRef.current = state.rootsLoaded
   })
 
   const loadMore = useMutation({
@@ -390,7 +393,7 @@ function CommentsLoadMore() {
     },
   })
 
-  if (state.state.rootsLoaded >= state.state.rootsTotal) {
+  if (state.rootsLoaded >= state.rootsTotal) {
     return null
   }
 
@@ -400,21 +403,14 @@ function CommentsLoadMore() {
       return
     }
     loadMore.mutate({
-      page_key: state.commentKey,
-      offset: state.state.rootsLoaded,
+      page_key: commentKey,
+      offset: state.rootsLoaded,
     } satisfies LoadCommentsInput)
   }
 
   return (
     <div className="mt-4 text-center md:mt-6">
-      <Button
-        variant="light"
-        onClick={onLoadMore}
-        disabled={moreLoading}
-        data-key={state.commentKey}
-        data-size={pageSize}
-        data-offset={state.state.rootsLoaded}
-      >
+      <Button variant="light" onClick={onLoadMore} disabled={moreLoading}>
         {moreLoading ? '加载中…' : '加载更多'}
       </Button>
     </div>

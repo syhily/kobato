@@ -1,5 +1,9 @@
 import type { StandardBlockStyle } from '@/shared/pt/schema'
 
+// Single owner of the heading style ↔ level mapping, schema-adjacent so
+// both the bridge (`pt-to-pm` heading emission) and the heading-slot
+// collector (`@/shared/pt/utils`) read the same table.
+
 export function headingLevelFromStyle(style: StandardBlockStyle | undefined): number | null {
   switch (style) {
     case 'h1':

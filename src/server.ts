@@ -2,7 +2,7 @@ import { serve } from '@hono/node-server'
 
 import type { Env } from '@/server/http/context'
 
-import { getDb, getPool } from '@/server/bootstrap/db-lifecycle'
+import { getDb } from '@/server/bootstrap/db-lifecycle'
 import { scheduleNextArchive } from '@/server/domains/audit/services/scheduler'
 import { getSetupToken } from '@/server/domains/auth/setup-token'
 import { initBackupScheduler, scheduleNextBackup } from '@/server/domains/backup/scheduler'
@@ -60,7 +60,7 @@ if (!hmr?.secretsMigrated) {
 
   scheduleNextBackup()
   initBackupScheduler()
-  scheduleNextArchive(getPool())
+  scheduleNextArchive()
 
   if (hmr) {
     hmr.secretsMigrated = true

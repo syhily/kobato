@@ -1,5 +1,4 @@
 import { useMutation } from '@tanstack/react-query'
-import { useRevalidator } from 'react-router'
 
 import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
 
@@ -18,46 +17,49 @@ import {
   AlertDialogTrigger,
 } from '@/ui/components/alert-dialog'
 import { cn } from '@/ui/lib/cn'
-import { asKey, commentFooterButtonClass, useCommentsLeafContext } from '@/ui/public/comments/comment-item/helpers'
+import { commentFlags } from '@/ui/public/comments/comment-item/comment-flags'
+import { commentFooterButtonClass } from '@/ui/public/comments/comment-item/helpers'
+import { useCommentsActions, useCommentsIdentity } from '@/ui/public/comments/comments-context'
 
 interface CommentActionsProps {
   comment: CommentItemType
-  mode?: 'admin' | 'public'
   /** Open the admin / legacy-token edit area (round-trips through `comment.edit`). */
   onEditAdmin: () => void
   /** Open the visitor self-edit area (posts to `comment.updateOwn`). */
   onEditOwn: () => void
 }
 
-export function CommentActions({ comment, mode: propMode, onEditAdmin, onEditOwn }: CommentActionsProps) {
+export function CommentActions({ comment, onEditAdmin, onEditOwn }: CommentActionsProps) {
   const siteIdentity = useSiteIdentity()
-  const leaf = useCommentsLeafContext(propMode)
-  const revalidator = useRevalidator()
+  const identity = useCommentsIdentity('CommentActions')
+  const actions = useCommentsActions('CommentActions')
   const approve = useMutation({
     ...orpcQuery.admin.comments.approve.mutationOptions(),
-    onSuccess: () => leaf.onApproved(comment.id),
+    onSuccess: () => actions.onApproved(comment.id),
   })
   const remove = useMutation({
     ...orpcQuery.admin.comments.delete.mutationOptions(),
-    onSuccess: () => leaf.onDeleted(comment.id),
+    onSuccess: () => actions.onDeleted(comment.id),
   })
 
+  // The own-comment mutations return the updated wire comment; route it
+  // through the same reducer action as every other mutation instead of
+  // revalidating the whole detail loader.
   const requestDelete = useMutation({
     ...orpcQuery.comments.requestDeleteOwn.mutationOptions(),
-    onSuccess: () => void revalidator.revalidate(),
+    onSuccess: (payload) => actions.onEdited(payload.comment),
   })
   const cancelDelete = useMutation({
     ...orpcQuery.comments.cancelDeleteOwn.mutationOptions(),
-    onSuccess: () => void revalidator.revalidate(),
+    onSuccess: (payload) => actions.onEdited(payload.comment),
   })
 
-  const isOwnedByCurrentUser = leaf.currentUserId !== null && String(comment.userId) === leaf.currentUserId
-  const hasPendingDelete = comment.deleteRequestedAt !== null && comment.deleteRequestedAt !== undefined
-  const showOwnAffordances = isOwnedByCurrentUser && !leaf.admin
-  const ownEditDisabled = hasPendingDelete || requestDelete.isPending || cancelDelete.isPending
+  const flags = commentFlags(comment, identity)
+  const showOwnAffordances = flags.isOwnedByCurrentUser && !identity.admin
+  const ownEditDisabled = flags.hasPendingDelete || requestDelete.isPending || cancelDelete.isPending
   const deleteToggleDisabled = requestDelete.isPending || cancelDelete.isPending
 
-  const handleReply = () => leaf.onReply(Number(comment.id))
+  const handleReply = () => actions.onReply(Number(comment.id))
   const handleApprove = () => approve.mutate({ commentId: String(comment.id) })
   const handleDelete = () => remove.mutate({ commentId: String(comment.id) })
   const handleRequestDelete = () => requestDelete.mutate({ commentId: String(comment.id) })
@@ -69,28 +71,25 @@ export function CommentActions({ comment, mode: propMode, onEditAdmin, onEditOwn
       <button
         type="button"
         className={cn(commentFooterButtonClass, 'hover:text-brand')}
-        data-rid={comment.id}
         onMouseDown={(event) => event.preventDefault()}
         onClick={handleReply}
       >
         回复
       </button>
-      {(leaf.admin || leaf.myCommentIds.has(asKey(comment.id))) && (
+      {(identity.admin || flags.isMine) && (
         <button
           type="button"
           className={cn(commentFooterButtonClass, 'hover:text-alert')}
-          data-rid={comment.id}
           onMouseDown={(event) => event.preventDefault()}
           onClick={onEditAdmin}
         >
           编辑
         </button>
       )}
-      {showOwnAffordances && !hasPendingDelete && (
+      {showOwnAffordances && !flags.hasPendingDelete && (
         <button
           type="button"
           className={cn(commentFooterButtonClass, 'hover:text-alert')}
-          data-rid={comment.id}
           onMouseDown={(event) => event.preventDefault()}
           onClick={onEditOwn}
           disabled={ownEditDisabled}
@@ -99,11 +98,10 @@ export function CommentActions({ comment, mode: propMode, onEditAdmin, onEditOwn
         </button>
       )}
       {showOwnAffordances &&
-        (hasPendingDelete ? (
+        (flags.hasPendingDelete ? (
           <button
             type="button"
             className={cn(commentFooterButtonClass, 'hover:text-brand')}
-            data-rid={comment.id}
             onMouseDown={(event) => event.preventDefault()}
             onClick={handleCancelDelete}
             disabled={deleteToggleDisabled}
@@ -117,7 +115,6 @@ export function CommentActions({ comment, mode: propMode, onEditAdmin, onEditOwn
                 <button
                   type="button"
                   className={cn(commentFooterButtonClass, 'hover:text-alert')}
-                  data-rid={comment.id}
                   onMouseDown={(event) => event.preventDefault()}
                   disabled={deleteToggleDisabled}
                 >
@@ -139,13 +136,12 @@ export function CommentActions({ comment, mode: propMode, onEditAdmin, onEditOwn
             </AlertDialogContent>
           </AlertDialog>
         ))}
-      {leaf.admin && (
+      {identity.admin && (
         <>
           {comment.isPending && (
             <button
               type="button"
               className={cn(commentFooterButtonClass, 'text-warn')}
-              data-rid={comment.id}
               onMouseDown={(event) => event.preventDefault()}
               onClick={handleApprove}
               disabled={approve.isPending}
@@ -159,7 +155,6 @@ export function CommentActions({ comment, mode: propMode, onEditAdmin, onEditOwn
                 <button
                   type="button"
                   className={cn(commentFooterButtonClass, 'text-alert')}
-                  data-rid={comment.id}
                   onMouseDown={(event) => event.preventDefault()}
                   disabled={remove.isPending}
                 >

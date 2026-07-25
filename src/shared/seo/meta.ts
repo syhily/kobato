@@ -1,11 +1,13 @@
 import type { MetaDescriptor } from 'react-router'
 
-// This module runs on both server and client (via `meta()`), so it only
-// imports from `@/shared/*` — never `@/server/*` which would bloat the bundle.
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
+// Isomorphic by construction: route `meta()` exports pull this module into
+// the browser bundle, so it may only import `@/shared/*` — the invariant is
+// pinned by `tests/unit/shared/contracts/boundaries.test.ts`.
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { brandingVersion, extractXHandle } from '@/shared/config/utils'
+import { ogImagePathForSlug } from '@/shared/seo/og-image'
 import { isRecord } from '@/shared/utils/type-guards'
 import { joinUrl } from '@/shared/utils/urls'
 
@@ -227,7 +229,7 @@ export function seoForPost(post: PostMetaShape): RouteSeoOptions {
     title: post.title,
     description: post.summary,
     pageUrl: post.permalink,
-    ogImageUrl: post.og ? post.og : `/images/og/${post.slug}.png`,
+    ogImageUrl: post.og ? post.og : ogImagePathForSlug(post.slug),
     ogImageAltText: post.title,
     variant: {
       kind: 'post',
@@ -257,7 +259,7 @@ export function seoForPage(page: PageMetaShape): RouteSeoOptions {
     title: page.title,
     description: page.summary,
     pageUrl: page.permalink,
-    ogImageUrl: page.og ? page.og : `/images/og/${page.slug}.png`,
+    ogImageUrl: page.og ? page.og : ogImagePathForSlug(page.slug),
     ogImageAltText: page.title,
     variant: {
       kind: 'page',

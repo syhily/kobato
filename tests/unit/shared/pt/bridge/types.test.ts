@@ -4,9 +4,9 @@ import type { PmBlockNode, PmDoc } from '@/shared/pt/bridge/types'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
 import { arePortableTextBodiesEquivalent } from '@/shared/pt/bridge/canonicalize'
-import { synchronizeFootnoteIndices } from '@/shared/pt/bridge/nodes/footnote'
 import { pmDocToBody } from '@/shared/pt/bridge/pm-to-pt'
 import { bodyToPmDoc } from '@/shared/pt/bridge/pt-to-pm'
+import { synchronizeFootnoteIndices } from '@/shared/pt/footnote-sync'
 
 // PortableText ↔ ProseMirror bridge contract tests. The on-disk PT is
 // the canonical shape (validated by the API perimeter); ProseMirror is

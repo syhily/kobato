@@ -1,6 +1,6 @@
 import { getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
-import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
+import { titleMeta } from '@/shared/seo/title-meta'
 import { CategoriesView } from '@/ui/admin/categories/CategoriesView'
 
 import type { Route } from './+types/categories'
@@ -11,9 +11,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   return null
 }
 
-export function meta({ matches }: Route.MetaArgs) {
-  return routeMeta({ title: '分类管理' }, bundleFromMatches(matches))
-}
+export const meta = titleMeta('分类管理')
 
 export default function WpAdminCategoriesRoute() {
   return <CategoriesView />

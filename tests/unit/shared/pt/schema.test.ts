@@ -223,6 +223,26 @@ describe('contract: portable-text dialect — rejects unknown shapes', () => {
   })
 })
 
+describe('contract: portable-text dialect — storage-pure wire schema', () => {
+  it('strips SSR music enrichment (`meta`) at the API perimeter', () => {
+    // `meta` is request-scoped enrichment (`@/shared/pt/enriched`) injected
+    // by the SSR prerender — never authored, never stored. The wire schema
+    // must not carry it: parsing a block that smuggles one in strips the
+    // key instead of persisting it to `content.body`.
+    const smuggled: unknown = [
+      {
+        _type: 'musicPlayer',
+        _key: 'm1',
+        playerId: '7hk2pqrxyzabc012',
+        meta: { id: 'x', name: 'N', artist: 'A', cover: 'c', audioUrl: 'u', lyric: '' },
+      },
+    ]
+    const parsed = validatePortableTextBody(smuggled)
+    expect(parsed[0]).toEqual({ _type: 'musicPlayer', _key: 'm1', playerId: '7hk2pqrxyzabc012' })
+    expect('meta' in parsed[0]!).toBe(false)
+  })
+})
+
 describe('contract: portable-text helpers', () => {
   it('collectHeadings walks solution innards then later top-level blocks (render order)', () => {
     const body: PortableTextBody = [

@@ -1,7 +1,7 @@
 import { Buffer } from 'node:buffer'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { ensureCanvasFont, resetCanvasFont, resetFontCache } from '@/server/render/og/assets'
+import { ensureCanvasFont, resetCanvasFont, resetFontCache } from '@/server/render/canvas-fonts'
 
 // Unit tests for the canvas font single-flight (`ensureCanvasFont`). The
 // invariant under test: one in-flight load per slot, the loaded slot is
@@ -51,10 +51,6 @@ vi.mock('@/shared/config/getters', () => ({
   }),
 }))
 
-vi.mock('@/server/domains/assets/services/routes', () => ({
-  resolveSiteAsset: vi.fn(async () => null),
-}))
-
 const TTF_BUFFER = Buffer.from('fake-ttf-bytes')
 
 beforeEach(() => {
@@ -72,7 +68,7 @@ beforeEach(() => {
   mocks.readFile.mockResolvedValue(TTF_BUFFER)
 })
 
-describe('render/og/assets — ensureCanvasFont', () => {
+describe('render/canvas-fonts — ensureCanvasFont', () => {
   it('coalesces concurrent calls into a single TTF read and one registration', async () => {
     mocks.families.og = 'OPPO Sans'
 

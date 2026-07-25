@@ -16,18 +16,9 @@ vi.mock('@/shared/config/getters', () => ({
   ),
 }))
 
-vi.mock('@/shared/pt/utils', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/shared/pt/utils')>()
-  return {
-    ...actual,
-    collectHeadingSlotsInPortableTextRenderOrder: vi.fn(
-      (body: Array<{ _key: string; style?: string; children?: Array<{ text: string }> }>) =>
-        body
-          .filter((b) => b.style && b.style.startsWith('h') && b.children && b.children.length > 0)
-          .map((b) => ({ blockKey: b._key, plainText: b.children![0].text, depth: Number(b.style!.slice(1)) })),
-    ),
-  }
-})
+// NOTE: the heading-slot collector and the slots→slug zip are NOT mocked —
+// the suite exercises the real single-owned modules in `@/shared/pt/utils`
+// (the mock that reimplemented them was removed when ownership moved).
 
 vi.mock('@/shared/utils/footnotes-section-title', () => ({
   resolveFootnotesSectionTitle: vi.fn(() => 'Footnotes'),

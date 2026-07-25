@@ -116,7 +116,6 @@ describe('snapshot: Comments data-loaded tree', () => {
     expect(html).toContain('发表评论')
     // LoadMore branch fires because rootsLoaded (2) < rootsTotal (5).
     expect(html).toContain('加载更多')
-    expect(html).toContain('data-key="/posts/hello"')
   })
 
   it('renders nested replies under a root via the children map branch', () => {

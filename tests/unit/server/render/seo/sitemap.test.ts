@@ -174,7 +174,7 @@ beforeEach(() => {
 
 describe('buildSitemapXml', () => {
   it('emits a valid xml preamble + urlset shell when there are no posts or pages', async () => {
-    const xml = await buildSitemapXml({} as never, new Request('https://test.example/sitemap.xml'))
+    const xml = await buildSitemapXml({} as never)
 
     expect(xml).toBe(
       [
@@ -190,7 +190,7 @@ describe('buildSitemapXml', () => {
     const published = new Date('2024-06-01T00:00:00.000Z')
     postRows.push({ slug: 'hello-world', firstPublishedAt: published, publishedAt: published })
 
-    const xml = await buildSitemapXml({} as never, new Request('https://test.example/sitemap.xml'))
+    const xml = await buildSitemapXml({} as never)
 
     expect(xml).toContain(
       `  <url><loc>https://test.example/posts/hello-world</loc><lastmod>${published.toISOString()}</lastmod></url>`,
@@ -201,7 +201,7 @@ describe('buildSitemapXml', () => {
     const publishedAt = new Date('2024-07-15T12:00:00.000Z')
     postRows.push({ slug: 'no-first', firstPublishedAt: null, publishedAt })
 
-    const xml = await buildSitemapXml({} as never, new Request('https://test.example/sitemap.xml'))
+    const xml = await buildSitemapXml({} as never)
 
     expect(xml).toContain(
       `  <url><loc>https://test.example/posts/no-first</loc><lastmod>${publishedAt.toISOString()}</lastmod></url>`,
@@ -212,7 +212,7 @@ describe('buildSitemapXml', () => {
     const date = new Date('2024-08-01T00:00:00.000Z')
     pageRows.push({ slug: 'about', firstPublishedAt: date, publishedAt: date })
 
-    const xml = await buildSitemapXml({} as never, new Request('https://test.example/sitemap.xml'))
+    const xml = await buildSitemapXml({} as never)
 
     expect(xml).toContain(`  <url><loc>https://test.example/about</loc><lastmod>${date.toISOString()}</lastmod></url>`)
     expect(xml).not.toContain('https://test.example/posts/about')
@@ -227,7 +227,7 @@ describe('buildSitemapXml', () => {
     const date = new Date('2024-09-01T00:00:00.000Z')
     postRows.push({ slug: 'only-published', firstPublishedAt: date, publishedAt: date })
 
-    const xml = await buildSitemapXml({} as never, new Request('https://test.example/sitemap.xml'))
+    const xml = await buildSitemapXml({} as never)
 
     const postUrlCount = (xml.match(/<loc>https:\/\/test\.example\/posts\//g) ?? []).length
     expect(postUrlCount).toBe(1)
@@ -239,7 +239,7 @@ describe('buildSitemapXml', () => {
     const date = new Date('2024-10-01T00:00:00.000Z')
     postRows.push({ slug: 'a&b<c>', firstPublishedAt: date, publishedAt: date })
 
-    const xml = await buildSitemapXml({} as never, new Request('https://test.example/sitemap.xml'))
+    const xml = await buildSitemapXml({} as never)
 
     expect(xml).toContain('<loc>https://test.example/posts/a&amp;b&lt;c&gt;</loc>')
     expect(xml).not.toContain('posts/a&b<c>')

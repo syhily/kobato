@@ -1,7 +1,8 @@
-import { useCallback, useRef, useState } from 'react'
+import { useRef } from 'react'
 
 import { VolumeDownIcon, VolumeOffIcon, VolumeUpIcon } from '@/ui/icons/aplayer'
 import { cn } from '@/ui/lib/cn'
+import { useDragPercentage } from '@/ui/public/aplayer/hooks/use-drag-percentage'
 import { computePercentageOfY } from '@/ui/public/aplayer/utils/compute-percentage'
 
 export type VolumeProps = {
@@ -14,29 +15,10 @@ export type VolumeProps = {
 
 export function Volume({ themeColor, volume, muted, onToggleMuted, onChangeVolume }: VolumeProps) {
   const volumeBarRef = useRef<HTMLDivElement>(null)
-  const [isDragging, setDragging] = useState(false)
-
-  const handleMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      onChangeVolume(computePercentageOfY(e, volumeBarRef))
-      setDragging(true)
-
-      const controller = new AbortController()
-      const handleMouseMove = (e: MouseEvent) => {
-        onChangeVolume(computePercentageOfY(e, volumeBarRef))
-      }
-
-      const handleMouseUp = (e: MouseEvent) => {
-        controller.abort()
-        setDragging(false)
-        onChangeVolume(computePercentageOfY(e, volumeBarRef))
-      }
-
-      document.addEventListener('mousemove', handleMouseMove, { signal: controller.signal })
-      document.addEventListener('mouseup', handleMouseUp, { signal: controller.signal })
-    },
-    [onChangeVolume],
-  )
+  const { isDragging, handleMouseDown } = useDragPercentage(volumeBarRef, {
+    compute: computePercentageOfY,
+    onChange: onChangeVolume,
+  })
 
   return (
     <div className="aplayer-volume-wrap group relative ml-aplayer-volume-indent inline-block h-aplayer-icon cursor-pointer">

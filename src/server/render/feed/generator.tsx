@@ -12,26 +12,12 @@ import { findCategoriesByNames } from '@/server/infra/db/operations/category'
 import { DomainError } from '@/server/infra/http/errors'
 import { renderPortableTextToHtml } from '@/server/render/pt-html'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
+import { ogImagePathForSlug } from '@/shared/seo/og-image'
 import { joinUrl } from '@/shared/utils/urls'
 
 export interface FeedOptions {
   category?: string
   tag?: string
-}
-
-const CONTENT_TYPES = {
-  rss: 'application/xml; charset=utf-8',
-  atom: 'application/atom+xml; charset=utf-8',
-} as const
-
-// Centralised cache headers for syndication feeds. The Hono feed resource
-// (`@/server/http/resources/feed`) applies them to every feed response so
-// all six feed URLs share one cache policy.
-export function feedHeaders(kind: 'rss' | 'atom'): HeadersInit {
-  return {
-    'Content-Type': CONTENT_TYPES[kind],
-    'Cache-Control': 'public, max-age=1800',
-  }
 }
 
 // Allowlist-based server-side HTML sanitizer for feed output. Strips script
@@ -203,7 +189,7 @@ export async function generateFeeds(db: NodePgDatabase, options: FeedOptions = {
       date: post.date,
       image: post.og
         ? joinUrl(siteIdentity.website, post.og)
-        : joinUrl(siteIdentity.website, `/images/og/${post.slug}.png`),
+        : joinUrl(siteIdentity.website, ogImagePathForSlug(post.slug)),
       category: itemCategories,
     })
   }

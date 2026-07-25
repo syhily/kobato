@@ -7,15 +7,13 @@ import { getDbFromContext, getRouteRequestContext } from '@/server/domains/auth/
 import { requireRole } from '@/server/domains/auth/rbac'
 import { listMyCommentEntities } from '@/server/domains/comments/repos/admin-query'
 import { resolveEntitiesForComments } from '@/server/domains/comments/repos/public-query/entities'
-import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
+import { titleMeta } from '@/shared/seo/title-meta'
 import { parseCommentEntity, serializeCommentEntity } from '@/shared/utils/comments'
 import { MyCommentsView } from '@/ui/admin/my/MyCommentsView'
 
 import type { Route } from './+types/comments'
 
-export function meta({ matches }: Route.MetaArgs) {
-  return routeMeta({ title: '我的评论' }, bundleFromMatches(matches))
-}
+export const meta = titleMeta('我的评论')
 
 export interface MyCommentEntityOption {
   /** `${type}:${ownerId}` — opaque Combobox value. */

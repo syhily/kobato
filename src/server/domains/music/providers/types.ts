@@ -1,14 +1,3 @@
-export interface ProviderSearchHit {
-  source: string
-  sourceId: string
-  name: string
-  artist: string[]
-  album: string
-  picId: string
-  urlId: string
-  lyricId: string
-}
-
 export interface ProviderTrack {
   source: string
   sourceId: string
@@ -21,7 +10,7 @@ export interface ProviderTrack {
 }
 
 export interface ProviderSearchResult {
-  hits: ProviderSearchHit[]
+  hits: ProviderTrack[]
   hasMore: boolean
 }
 

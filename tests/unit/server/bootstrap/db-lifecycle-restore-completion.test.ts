@@ -7,15 +7,9 @@ const mockClosePool = vi.hoisted(() => vi.fn())
 const mockRegisterShutdownHook = vi.hoisted(() => vi.fn())
 const mockSetRestartDb = vi.hoisted(() => vi.fn())
 const mockSetRestartRefreshSettings = vi.hoisted(() => vi.fn())
-const mockInitAccessLogBatcher = vi.hoisted(() => vi.fn())
-const mockResetAccessLogBatcher = vi.hoisted(() => vi.fn())
-const mockFlushAccessLog = vi.hoisted(() => vi.fn())
-const mockInitPageViewBatcher = vi.hoisted(() => vi.fn())
-const mockResetPageViewBatcher = vi.hoisted(() => vi.fn())
-const mockFlushPageViews = vi.hoisted(() => vi.fn())
-const mockInitAuditLogBatcher = vi.hoisted(() => vi.fn())
-const mockResetAuditLogBatcher = vi.hoisted(() => vi.fn())
-const mockFlushAuditLog = vi.hoisted(() => vi.fn())
+const mockInitAllBatchers = vi.hoisted(() => vi.fn())
+const mockFlushAllBatchers = vi.hoisted(() => vi.fn())
+const mockResetAllBatchers = vi.hoisted(() => vi.fn())
 const mockScheduleNextArchive = vi.hoisted(() => vi.fn())
 const mockStartLikeTokenSweep = vi.hoisted(() => vi.fn())
 const mockResetLikeTokenSweep = vi.hoisted(() => vi.fn())
@@ -58,26 +52,21 @@ vi.mock('@/server/domains/settings/services/hydrate', () => ({
   refreshBlogSettings: mockRefreshBlogSettings,
 }))
 
-vi.mock('@/server/domains/analytics/repos/batcher', () => ({
-  initAccessLogBatcher: mockInitAccessLogBatcher,
-  resetAccessLogBatcher: mockResetAccessLogBatcher,
-  flushAccessLog: mockFlushAccessLog,
+vi.mock('@/server/infra/db/batcher-registry', () => ({
+  initAllBatchers: mockInitAllBatchers,
+  flushAllBatchers: mockFlushAllBatchers,
+  resetAllBatchers: mockResetAllBatchers,
 }))
 
-vi.mock('@/server/domains/analytics/repos/pv-batcher', () => ({
-  initPageViewBatcher: mockInitPageViewBatcher,
-  resetPageViewBatcher: mockResetPageViewBatcher,
-  flushPageViews: mockFlushPageViews,
-}))
-
-vi.mock('@/server/domains/audit/repos/batcher', () => ({
-  initAuditLogBatcher: mockInitAuditLogBatcher,
-  resetAuditLogBatcher: mockResetAuditLogBatcher,
-  flushAuditLog: mockFlushAuditLog,
-}))
+// db-lifecycle imports the batcher modules only for their registration
+// side effect; the mocked registry absorbs the lifecycle calls.
+vi.mock('@/server/domains/analytics/repos/batcher', () => ({}))
+vi.mock('@/server/domains/analytics/repos/pv-batcher', () => ({}))
+vi.mock('@/server/domains/audit/repos/batcher', () => ({}))
 
 vi.mock('@/server/domains/audit/services/scheduler', () => ({
   scheduleNextArchive: mockScheduleNextArchive,
+  wireArchiveScheduler: vi.fn(),
 }))
 
 vi.mock('@/server/domains/comments/services/likes', () => ({

@@ -8,7 +8,7 @@ import type { CommentEditOutput, CommentRawOutput } from '@/shared/types/comment
 import { orpcQuery } from '@/client/api/orpc-query'
 import { Button } from '@/ui/components/button'
 import { EMPTY_COMMENT_BODY, isCommentBodyBlank } from '@/ui/public/comments/comment-body-helpers'
-import { useCommentsLeafContext } from '@/ui/public/comments/comment-item/helpers'
+import { useCommentsActions } from '@/ui/public/comments/comments-context'
 import { LazyCommentBodyEditor } from '@/ui/public/comments/LazyCommentBodyEditor'
 
 interface InlineEditFormProps {
@@ -18,7 +18,7 @@ interface InlineEditFormProps {
 }
 
 export function InlineEditForm({ commentId, onCancel, onSaved }: InlineEditFormProps) {
-  const leaf = useCommentsLeafContext(undefined)
+  const actions = useCommentsActions('InlineEditForm')
   const [body, setBody] = useState<CommentBody>(EMPTY_COMMENT_BODY)
   const [initialBody, setInitialBody] = useState<CommentBody>(EMPTY_COMMENT_BODY)
   const [bodyKey, setBodyKey] = useState(0)
@@ -37,7 +37,7 @@ export function InlineEditForm({ commentId, onCancel, onSaved }: InlineEditFormP
   const editAction = useMutation({
     ...orpcQuery.comments.edit.mutationOptions(),
     onSuccess: (payload: CommentEditOutput) => {
-      leaf.onEdited(payload.comment)
+      actions.onEdited(payload.comment)
       onSaved(payload.comment)
     },
   })

@@ -1,6 +1,8 @@
 import { Writable } from 'node:stream'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
+
 const dbInsert = vi.fn()
 const dbInsertValues = vi.fn(() => ({ values: dbInsert }))
 
@@ -48,8 +50,8 @@ vi.mock('pg-copy-streams', () => ({
 
 async function resetBatcher() {
   const mod = await import('@/server/domains/audit/repos/batcher')
-  mod.resetAuditLogBatcher()
-  mod.initAuditLogBatcher(db, pool)
+  resetAllBatchers()
+  initAllBatchers(pool, db)
   return mod
 }
 

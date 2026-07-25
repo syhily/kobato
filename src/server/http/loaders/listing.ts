@@ -1,7 +1,7 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { MetaDescriptor } from 'react-router'
 
-import type { FeedLinkOptions } from '@/server/render/seo/meta'
+import type { FeedLinkOptions } from '@/shared/seo/meta'
 import type { ListingPostCard, ListingPostCardWithMetadata } from '@/shared/types/catalog'
 
 import { getClientPostsWithMetadata } from '@/server/domains/posts/repos/public-query/listing'

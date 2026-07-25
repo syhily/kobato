@@ -1,6 +1,6 @@
 import { getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
-import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
+import { titleMeta } from '@/shared/seo/title-meta'
 import { UsersView } from '@/ui/admin/users/UsersView'
 
 import type { Route } from './+types/index'
@@ -11,9 +11,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   return null
 }
 
-export function meta({ matches }: Route.MetaArgs) {
-  return routeMeta({ title: '用户管理' }, bundleFromMatches(matches))
-}
+export const meta = titleMeta('用户管理')
 
 export default function WpAdminUsersRoute() {
   return <UsersView />

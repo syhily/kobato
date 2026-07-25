@@ -1,6 +1,5 @@
 import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
-import { useRevalidator } from 'react-router'
 
 import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
@@ -8,6 +7,7 @@ import type { CommentBody } from '@/shared/pt/comment-schema'
 import { orpcQuery } from '@/client/api/orpc-query'
 import { Button } from '@/ui/components/button'
 import { isCommentBodyBlank } from '@/ui/public/comments/comment-body-helpers'
+import { useCommentsActions } from '@/ui/public/comments/comments-context'
 import { LazyCommentBodyEditor } from '@/ui/public/comments/LazyCommentBodyEditor'
 
 interface InlineOwnEditFormProps {
@@ -17,11 +17,13 @@ interface InlineOwnEditFormProps {
 }
 
 export function InlineOwnEditForm({ comment, onCancel, onSaved }: InlineOwnEditFormProps) {
-  const revalidator = useRevalidator()
+  const actions = useCommentsActions('InlineOwnEditForm')
   const updateOwn = useMutation({
     ...orpcQuery.comments.updateOwn.mutationOptions(),
-    onSuccess: () => {
-      void revalidator.revalidate()
+    onSuccess: (payload) => {
+      // The procedure returns the updated wire comment — sync it through
+      // the reducer like every other mutation, no loader revalidation.
+      actions.onEdited(payload.comment)
       onSaved()
     },
   })

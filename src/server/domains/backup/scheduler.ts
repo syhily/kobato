@@ -1,9 +1,9 @@
 import { getDb } from '@/server/bootstrap/db-lifecycle'
-import { computeNextRun } from '@/server/domains/backup/scheduler-utils'
 import { createBackup, cleanupOldBackups } from '@/server/domains/backup/services/backup'
 import { checkPgToolsAvailable } from '@/server/domains/backup/services/shared'
 import { registerShutdownHook } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
+import { computeNextRun } from '@/server/infra/scheduler-utils'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 const log = getLogger('backup.scheduler')

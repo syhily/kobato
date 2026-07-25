@@ -5,10 +5,13 @@ import type { Block, NonRecursiveBlock, PortableTextBody, TextBlock } from '@/sh
 
 import {
   bodyToPlainText,
+  buildHeadingIdByBlockKey,
   collectHeadings,
   collectHeadingSlotsInPortableTextRenderOrder,
   collectImageStoragePaths,
+  collectMusicPlayerIds,
   generateBlockKey,
+  mapNestedBlocks,
   safeValidatePortableTextBody,
   validatePortableTextBody,
   visitNestedBlocks,
@@ -360,6 +363,179 @@ describe('shared/pt/utils — bodyToPlainText', () => {
       },
     ]
     expect(bodyToPlainText(body)).toBe('left\nright')
+  })
+})
+
+// --- mapNestedBlocks -------------------------------------------------------
+
+describe('shared/pt/utils — mapNestedBlocks', () => {
+  it('maps every block exactly once in pre-order: container first, then children, left before right', () => {
+    const body: PortableTextBody = [
+      { _type: 'block', _key: 'b1', children: [{ _type: 'span', _key: 's1', text: 'lead' }] },
+      {
+        _type: 'solution',
+        _key: 'sol1',
+        children: [
+          { _type: 'block', _key: 'b2', children: [{ _type: 'span', _key: 's2', text: 'sol' }] },
+          { _type: 'image', _key: 'i1', src: 'x' },
+        ],
+      },
+      {
+        _type: 'twoColumn',
+        _key: 'tc1',
+        left: [{ _type: 'code', _key: 'c1', code: 'left' }],
+        right: [{ _type: 'mathBlock', _key: 'm1', tex: 'right' }],
+      },
+      {
+        _type: 'footnoteDefinition',
+        _key: 'fn1',
+        index: 1,
+        children: [{ _type: 'musicPlayer', _key: 'mp1', playerId: 'p1' }],
+      },
+    ]
+    const seen: string[] = []
+    const result = mapNestedBlocks(body, (block) => {
+      seen.push(`${block._type}:${block._key}`)
+      return block
+    })
+    expect(seen).toEqual([
+      'block:b1',
+      'solution:sol1',
+      'block:b2',
+      'image:i1',
+      'twoColumn:tc1',
+      'code:c1',
+      'mathBlock:m1',
+      'footnoteDefinition:fn1',
+      'musicPlayer:mp1',
+    ])
+    // Identity-preserving callback returns an equal-but-new body.
+    expect(result).toEqual(body)
+  })
+
+  it('rewrites nested blocks through the same callback', () => {
+    const body: PortableTextBody = [
+      {
+        _type: 'twoColumn',
+        _key: 'tc1',
+        left: [{ _type: 'image', _key: 'i1', src: 'a' }],
+        right: [],
+      },
+      {
+        _type: 'footnoteDefinition',
+        _key: 'fn1',
+        index: 1,
+        children: [{ _type: 'image', _key: 'i2', src: 'b' }],
+      },
+    ]
+    const result = mapNestedBlocks(body, (block) =>
+      block._type === 'image' ? { ...block, src: `${block.src}-mapped` } : block,
+    )
+    const tc = result[0] as Extract<Block, { _type: 'twoColumn' }>
+    expect((tc.left[0] as { src: string }).src).toBe('a-mapped')
+    const fn = result[1] as Extract<Block, { _type: 'footnoteDefinition' }>
+    expect((fn.children[0] as { src: string }).src).toBe('b-mapped')
+    // The original body is untouched.
+    expect((body[0] as Extract<Block, { _type: 'twoColumn' }>).left[0]).toMatchObject({ src: 'a' })
+  })
+
+  it('keeps leaf identity while containers always get fresh objects', () => {
+    const leaf = textBlock('leaf')
+    const container = { _type: 'solution', _key: 'sol', children: [leaf] } as Extract<Block, { _type: 'solution' }>
+    const body: PortableTextBody = [container]
+    const result = mapNestedBlocks(body, (block) => block)
+    expect(result[0]).not.toBe(container)
+    expect((result[0] as Extract<Block, { _type: 'solution' }>).children[0]).toBe(leaf)
+  })
+})
+
+// --- buildHeadingIdByBlockKey ------------------------------------------------
+
+describe('shared/pt/utils — buildHeadingIdByBlockKey', () => {
+  it('zips slots with the precomputed slugs by render order', () => {
+    const body: PortableTextBody = [textBlock('Alpha', 'h2'), textBlock('Beta', 'h3')]
+    const map = buildHeadingIdByBlockKey(body, ['custom-a', 'custom-b'], (text) => `fb-${text}`)
+    expect(map.size).toBe(2)
+    const [a, b] = collectHeadingSlotsInPortableTextRenderOrder(body)
+    expect(map.get(a!.blockKey)).toBe('custom-a')
+    expect(map.get(b!.blockKey)).toBe('custom-b')
+  })
+
+  it('falls back to the derived slug when the precomputed slot is missing or empty', () => {
+    const body: PortableTextBody = [textBlock('Alpha', 'h2'), textBlock('Beta', 'h2')]
+    const seen: string[] = []
+    // Revision preview passes `[]`; empty strings fall back too.
+    const map = buildHeadingIdByBlockKey(body, ['', 'kept'], (text) => {
+      seen.push(text)
+      return `fb-${text}`
+    })
+    const [a, b] = collectHeadingSlotsInPortableTextRenderOrder(body)
+    expect(map.get(a!.blockKey)).toBe('fb-Alpha')
+    expect(map.get(b!.blockKey)).toBe('kept')
+    expect(seen).toEqual(['Alpha'])
+  })
+
+  it('uses the fallback for every slot when headingSlugs is undefined', () => {
+    const body: PortableTextBody = [textBlock('Only', 'h1')]
+    const map = buildHeadingIdByBlockKey(body, undefined, () => 'derived')
+    const [slot] = collectHeadingSlotsInPortableTextRenderOrder(body)
+    expect(map.get(slot!.blockKey)).toBe('derived')
+  })
+
+  it('covers footnote-definition headings after the main column', () => {
+    const body: PortableTextBody = [
+      textBlock('Main', 'h2'),
+      {
+        _type: 'footnoteDefinition',
+        _key: 'fn1',
+        index: 1,
+        children: [textBlock('InNote', 'h3')],
+      },
+    ]
+    const map = buildHeadingIdByBlockKey(body, ['main-slug', 'note-slug'], () => 'fb')
+    const slots = collectHeadingSlotsInPortableTextRenderOrder(body)
+    expect(map.get(slots[0]!.blockKey)).toBe('main-slug')
+    expect(map.get(slots[1]!.blockKey)).toBe('note-slug')
+  })
+})
+
+// --- collectMusicPlayerIds ---------------------------------------------------
+
+describe('shared/pt/utils — collectMusicPlayerIds', () => {
+  it('collects player ids deduped in first-seen order', () => {
+    const body: PortableTextBody = [
+      { _type: 'musicPlayer', _key: 'm1', playerId: 'p1' },
+      { _type: 'musicPlayer', _key: 'm2', playerId: 'p2' },
+      { _type: 'musicPlayer', _key: 'm3', playerId: 'p1' },
+    ]
+    expect(collectMusicPlayerIds(body)).toEqual(['p1', 'p2'])
+  })
+
+  it('descends into solution, footnoteDefinition, and twoColumn children', () => {
+    const body: PortableTextBody = [
+      {
+        _type: 'solution',
+        _key: 'sol',
+        children: [{ _type: 'musicPlayer', _key: 'm1', playerId: 'p-sol' }],
+      },
+      {
+        _type: 'footnoteDefinition',
+        _key: 'fn',
+        index: 1,
+        children: [{ _type: 'musicPlayer', _key: 'm2', playerId: 'p-fn' }],
+      },
+      {
+        _type: 'twoColumn',
+        _key: 'tc',
+        left: [{ _type: 'musicPlayer', _key: 'm3', playerId: 'p-left' }],
+        right: [{ _type: 'musicPlayer', _key: 'm4', playerId: 'p-right' }],
+      },
+    ]
+    expect(collectMusicPlayerIds(body)).toEqual(['p-sol', 'p-fn', 'p-left', 'p-right'])
+  })
+
+  it('returns an empty list when no music players exist', () => {
+    expect(collectMusicPlayerIds([textBlock('no music')])).toEqual([])
   })
 })
 

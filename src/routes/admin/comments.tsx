@@ -4,7 +4,7 @@ import type { ActiveFilter } from '@/ui/admin/comments/useCommentsController'
 
 import { getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
-import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
+import { titleMeta } from '@/shared/seo/title-meta'
 import { CommentsView } from '@/ui/admin/comments/CommentsView'
 import { isTextFilterOperator, textFilterLabel } from '@/ui/admin/comments/useCommentsController'
 import {
@@ -21,9 +21,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   return null
 }
 
-export function meta({ matches }: Route.MetaArgs) {
-  return routeMeta({ title: '评论管理' }, bundleFromMatches(matches))
-}
+export const meta = titleMeta('评论管理')
 
 // Build the initial filter list from a `URLSearchParams` snapshot.
 // Exported so the route's filter-restore logic is unit-testable

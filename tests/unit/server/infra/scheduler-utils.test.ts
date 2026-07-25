@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
-import { computeNextRun } from '@/server/domains/backup/scheduler-utils'
 import { DomainError } from '@/server/infra/http/errors'
+import { computeNextRun } from '@/server/infra/scheduler-utils'
 
-describe('services/backup — scheduler', () => {
+describe('infra/scheduler-utils — computeNextRun', () => {
   const timeZone = 'Asia/Shanghai'
 
   it('computes next daily run when target is later today', () => {

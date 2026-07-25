@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
-import { headingLevelFromStyle, headingStyleFromLevel } from '@/shared/pt/bridge/nodes/heading'
+import { headingLevelFromStyle, headingStyleFromLevel } from '@/shared/pt/heading-levels'
 
-describe('shared/pt/bridge/nodes/heading — headingLevelFromStyle', () => {
+describe('shared/pt/heading-levels — headingLevelFromStyle', () => {
   it('maps h1-h4 styles to numeric levels', () => {
     expect(headingLevelFromStyle('h1')).toBe(1)
     expect(headingLevelFromStyle('h2')).toBe(2)
@@ -17,7 +17,7 @@ describe('shared/pt/bridge/nodes/heading — headingLevelFromStyle', () => {
   })
 })
 
-describe('shared/pt/bridge/nodes/heading — headingStyleFromLevel', () => {
+describe('shared/pt/heading-levels — headingStyleFromLevel', () => {
   it('returns the matching style for 1..4', () => {
     expect(headingStyleFromLevel(1)).toBe('h1')
     expect(headingStyleFromLevel(2)).toBe('h2')

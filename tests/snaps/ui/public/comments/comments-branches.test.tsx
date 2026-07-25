@@ -170,9 +170,9 @@ describe('snapshot: Comments render branches', () => {
     mutationState.isPending = false
   })
 
-  it('renders the load-more button with offset + page-size data attributes', () => {
+  it('renders the load-more button while fewer roots are loaded than the total', () => {
     const items = [makeComment({ id: '1' }), makeComment({ id: '2' }), makeComment({ id: '3' })]
-    // 3 roots shipped, 10 total → next offset is 3.
+    // 3 roots shipped, 10 total → the load-more button renders, not disabled.
     const html = stableHtml(
       renderInRouter(
         <Comments commentKey="/posts/paged" comments={commentsData(10, 10)} items={items} />,
@@ -180,9 +180,7 @@ describe('snapshot: Comments render branches', () => {
       ),
     )
     expect(html).toContain('加载更多')
-    expect(html).toContain('data-key="/posts/paged"')
-    // The data-offset reflects the current rootsLoaded count.
-    expect(html).toContain('data-offset="3"')
+    expect(html).not.toContain('disabled=""')
   })
 
   it('renders the header with a zero count when the thread is empty', () => {

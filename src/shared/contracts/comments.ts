@@ -66,6 +66,13 @@ export const commentItemDto = commentBaseDto.extend({
 })
 export type CommentItemWire = z.infer<typeof commentItemDto>
 
+// Shared output of the own-comment mutation trio (`comments.updateOwn` /
+// `requestDeleteOwn` / `cancelDeleteOwn`): the updated wire comment, so the
+// public comments reducer stays the single sync owner and the leaves never
+// need a full-loader revalidation to flip one flag.
+export const ownCommentMutationDto = z.object({ comment: commentItemDto })
+export type OwnCommentMutationOutput = z.infer<typeof ownCommentMutationDto>
+
 // ─── admin comment wire (includes PII fields + content) ───
 export const adminCommentBaseDto = commentBaseDto.extend({
   content: z.string().nullable(),

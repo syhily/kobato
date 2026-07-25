@@ -1,7 +1,7 @@
 import { getDbFromContext } from '@/server/domains/auth/context'
 import { getClientPostsWithMetadata, listClientPosts } from '@/server/domains/posts/repos/public-query/listing'
 import { listingHeaders, publicShouldRevalidate } from '@/server/http/loaders/route-exports'
-import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
+import { titleMeta } from '@/shared/seo/title-meta'
 import { toListingPostCard } from '@/shared/types/catalog'
 import { ArchivesBody } from '@/ui/public/post/ArchivesBody'
 
@@ -29,9 +29,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 export const headers = listingHeaders
 export const shouldRevalidate = publicShouldRevalidate
 
-export function meta({ matches }: Route.MetaArgs) {
-  return routeMeta({ title: '归档' }, bundleFromMatches(matches))
-}
+export const meta = titleMeta('归档')
 
 export default function ArchivesRoute({ loaderData }: Route.ComponentProps) {
   return <ArchivesBody resolvedPosts={loaderData.resolvedPosts} listingNowIso={loaderData.listingNowIso} />

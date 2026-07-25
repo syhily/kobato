@@ -40,7 +40,7 @@ export function BaseLayout({ navigation, footer, currentUser, pathname, search, 
       >
         跳转到主要内容
       </a>
-      <Header navigation={resolvedNavigation} currentUser={currentUser} pathname={pathname} search={search} />
+      <Header navigation={resolvedNavigation} currentUser={currentUser} pathname={pathname} logoutQuery={logoutQuery} />
       {currentUser && (
         // Raise above the right-side cover image used on detail pages
         // (z-aside-drawer / 1020) so the avatar and its dropdown stay reachable.

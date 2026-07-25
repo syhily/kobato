@@ -32,11 +32,10 @@ vi.mock('@/server/infra/paths', () => ({
 import {
   csvRow,
   flushAccessLog,
-  initAccessLogBatcher,
   pushAccessEvent,
   replayDeadLetterAccessLog,
-  resetAccessLogBatcher,
 } from '@/server/domains/analytics/repos/batcher'
+import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
 
 function makeEvent(
   overrides: Partial<Parameters<typeof pushAccessEvent>[0]> = {},
@@ -86,7 +85,7 @@ function mockPoolForCopy() {
 describe('analytics batcher', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    resetAccessLogBatcher()
+    resetAllBatchers()
   })
 
   it('serializes an event to csv', () => {
@@ -99,14 +98,14 @@ describe('analytics batcher', () => {
   })
 
   it('flushes an empty batch immediately', async () => {
-    initAccessLogBatcher(poolMock as never)
+    initAllBatchers(poolMock as never, {} as never)
     const result = await flushAccessLog()
     expect(result).toEqual({ committed: 0, deadLettered: 0 })
   })
 
   it('pushes and flushes events', async () => {
     mockPoolForCopy()
-    initAccessLogBatcher(poolMock as never)
+    initAllBatchers(poolMock as never, {} as never)
     pushAccessEvent(makeEvent())
     const result = await flushAccessLog()
     expect(result.committed).toBe(1)
@@ -114,7 +113,7 @@ describe('analytics batcher', () => {
   })
 
   it('throws when pushing before initialization', () => {
-    resetAccessLogBatcher()
+    resetAllBatchers()
     expect(() => pushAccessEvent(makeEvent())).toThrow('not initialized')
   })
 
@@ -131,7 +130,7 @@ describe('analytics batcher', () => {
       release: vi.fn(),
     }
     poolMock.connect.mockResolvedValue(client)
-    initAccessLogBatcher(poolMock as never)
+    initAllBatchers(poolMock as never, {} as never)
     pushAccessEvent(makeEvent())
     const result = await flushAccessLog()
     expect(result.deadLettered).toBe(1)
@@ -139,7 +138,7 @@ describe('analytics batcher', () => {
 
   it('replays dead-letter events', async () => {
     mockPoolForCopy()
-    initAccessLogBatcher(poolMock as never)
+    initAllBatchers(poolMock as never, {} as never)
     const result = await replayDeadLetterAccessLog('/nonexistent')
     expect(result.replayed).toBe(0)
   })

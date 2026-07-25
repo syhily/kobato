@@ -27,11 +27,16 @@ the server or client boundary catch and log it.
 - `types/` — Standalone shared types and isomorphic helpers with no
   contract twin (catalog projections, domain inputs, image URL helpers).
 - `pt/` — PortableText schema, bridge, semantics, comment markdown,
-  footnote-merge.
+  footnote-merge, the footnote anchor DOM contract (`footnote-anchors`),
+  editor↔storage footnote sync (`footnote-sync`), the heading
+  style↔level table (`heading-levels`), and the request-scoped
+  enriched-body overlay (`enriched`).
 - `route-warmup/` — warmup manifest file contract (parse, validate,
   chunk collection) shared by the build plugin and the SSR reader.
 - `sea/` — SEA embedded-asset key contract (single owner for the writer
   in `scripts/sea/` and the runtime readers under `src/server/`).
+- `seo/` — isomorphic meta-tag builders (`meta`, `title-meta`,
+  `og-image`) shared by routes, loaders, and the feed/OG renderers.
 - `utils/` — `urls`, `safe-url`, `security`, `tools`,
   `formatter`, `pagination`, `toc`, `paths`, `roles`, `user-agent`,
   `chunk-error`, `comment-token`, `footnotes-section-title`.

@@ -14,7 +14,7 @@ export const sitemapRouter = new Hono<Env>().get(
     const xml =
       cached ??
       (await (async () => {
-        const built = await buildSitemapXml(c.var.db, c.req.raw)
+        const built = await buildSitemapXml(c.var.db)
         void sitemapCache.set(built)
         return built
       })())

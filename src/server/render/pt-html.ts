@@ -7,11 +7,13 @@ import type {
   CodeBlock,
   FootnoteDefinitionBlock,
   ImageBlock,
+  LinkMarkDef,
   MathBlock,
   MusicPlayerBlock,
   PortableTextBlock,
   PortableTextBody as PortableTextBodyType,
   SolutionBlock,
+  Span,
   TableBlock,
   TextBlock,
   TwoColumnBlock,
@@ -20,7 +22,16 @@ import type {
 import { getPublicMusicMetasByIds } from '@/server/domains/music/services/read'
 import { deriveSlug } from '@/server/infra/slug'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
-import { collectHeadingSlotsInPortableTextRenderOrder, visitNestedBlocks } from '@/shared/pt/utils'
+import {
+  FOOTNOTE_BACKREF_ARIA_LABEL,
+  FOOTNOTE_BACKREF_ATTRIBUTE,
+  FOOTNOTES_SECTION_HEADING_ID,
+  footnoteAnchorHref,
+  footnoteAnchorId,
+  footnoteRefHref,
+} from '@/shared/pt/footnote-anchors'
+import { partitionFootnoteDefinitions } from '@/shared/pt/footnote-merge'
+import { buildHeadingIdByBlockKey, collectMusicPlayerIds } from '@/shared/pt/utils'
 import { sanitizeUrl } from '@/shared/sanitize-url'
 import { resolveFootnotesSectionTitle } from '@/shared/utils/footnotes-section-title'
 import { escapeHtml } from '@/shared/utils/security'
@@ -28,7 +39,6 @@ import { joinUrl } from '@/shared/utils/urls'
 
 export interface RenderPortableTextToHtmlOptions {
   rssMode?: boolean
-  musicAutoplay?: 'suppressed' | 'default'
 }
 
 export async function renderPortableTextToHtml(
@@ -39,37 +49,22 @@ export async function renderPortableTextToHtml(
 ): Promise<string> {
   const footnotesSectionTitle = resolveFootnotesSectionTitle(requireBlogSettingsSection('content'))
 
-  const headingIdByBlockKey = buildHeadingIdMap(body, headingSlugs)
+  const headingIdByBlockKey = buildHeadingIdByBlockKey(body, headingSlugs, deriveSlug)
   const isRss = options.rssMode === true
 
-  const inlineBody = body.filter((block) => block._type !== 'footnoteDefinition')
-  const footnotes = body.filter((block): block is FootnoteDefinitionBlock => block._type === 'footnoteDefinition')
+  const { prose, definitions } = partitionFootnoteDefinitions(body)
 
   const musicByPlayerId = await resolveMusicPlayerMeta(db, body)
 
   const components = buildPortableTextComponents({ headingIdByBlockKey, isRss, musicByPlayerId })
 
-  let html = toHTML(inlineBody as PortableTextBlock[], { components })
+  let html = toHTML(prose as PortableTextBlock[], { components })
 
-  if (footnotes.length > 0) {
-    html += renderFootnotesSection(footnotes, footnotesSectionTitle, components)
+  if (definitions.length > 0) {
+    html += renderFootnotesSection(definitions, footnotesSectionTitle, components)
   }
 
   return html
-}
-
-// Heading ID map
-
-function buildHeadingIdMap(body: PortableTextBodyType, headingSlugs: readonly string[]): Map<string, string> {
-  const slots = collectHeadingSlotsInPortableTextRenderOrder(body)
-  const map = new Map<string, string>()
-  for (let i = 0; i < slots.length; i += 1) {
-    const slot = slots[i]
-    const pre = headingSlugs[i]
-    const id = typeof pre === 'string' && pre.length > 0 ? pre : deriveSlug(slot.plainText)
-    map.set(slot.blockKey, id)
-  }
-  return map
 }
 
 // Music player resolution
@@ -87,8 +82,7 @@ async function resolveMusicPlayerMeta(db: NodePgDatabase, body: PortableTextBody
     return new Map()
   }
 
-  const uniqueIds = [...new Set(playerIds)]
-  const metas = await getPublicMusicMetasByIds(db, uniqueIds)
+  const metas = await getPublicMusicMetasByIds(db, playerIds)
 
   const map = new Map<string, MusicMeta>()
   for (const [playerId, meta] of metas) {
@@ -106,16 +100,6 @@ function absolutizeForFeed(url: string): string {
     return url
   }
   return joinUrl(requireBlogSettingsSection('siteIdentity').website, url)
-}
-
-function collectMusicPlayerIds(body: PortableTextBodyType): string[] {
-  const ids: string[] = []
-  visitNestedBlocks(body, (block) => {
-    if (block._type === 'musicPlayer') {
-      ids.push(block.playerId)
-    }
-  })
-  return ids
 }
 
 // HTML components
@@ -173,7 +157,8 @@ function renderFootnoteRefMark(children: string, value: FootnoteRefMarkValue | u
   if (value === undefined) {
     return children
   }
-  return `<sup><a href="#user-content-fn-${value.index}">${value.index}</a></sup>`
+  const index = value.index ?? 0
+  return `<sup><a href="${footnoteAnchorHref(index)}">${index}</a></sup>`
 }
 
 // h1–h4 share one renderer body; only the tag differs.
@@ -231,7 +216,7 @@ function buildPortableTextComponents(ctx: ComponentContext): PortableTextCompone
         }
         return `<div>${left}${right}</div>`
       },
-      table: ({ value }) => renderTableBlock(value as TableBlock, ctx.isRss),
+      table: ({ value }) => renderTableBlock(value as TableBlock),
     },
     hardBreak: () => '<br />',
     unknownType: () => '',
@@ -292,8 +277,14 @@ function renderMusicPlayer(value: MusicPlayerBlock, ctx: ComponentContext): stri
 }
 
 // Table block
+//
+// Table cells carry link markDefs only per the wire schema
+// (`tableCellSchema.markDefs` is `linkMarkDefSchema[]`) — the bridge strips
+// any other def on save and the editor's table-cell guard strips them on
+// paste, so the cell inline pipeline types to the schema instead of
+// re-declaring the full markDef union.
 
-function renderTableBlock(value: TableBlock, isRss: boolean): string {
+function renderTableBlock(value: TableBlock): string {
   const rows = value.rows ?? []
   const hasHeader = value.hasHeaderRow ?? false
   const headRows = hasHeader ? rows.slice(0, 1) : []
@@ -305,7 +296,7 @@ function renderTableBlock(value: TableBlock, isRss: boolean): string {
     for (const row of headRows) {
       html += '<tr>'
       for (const cell of row.cells) {
-        html += `<th>${renderSpansInline(cell.content, cell.markDefs ?? [], isRss)}</th>`
+        html += `<th>${renderSpansInline(cell.content, cell.markDefs ?? [])}</th>`
       }
       html += '</tr>'
     }
@@ -316,7 +307,7 @@ function renderTableBlock(value: TableBlock, isRss: boolean): string {
     html += '<tr>'
     for (const cell of row.cells) {
       const tag = cell.isHeader === true ? 'th' : 'td'
-      html += `<${tag}>${renderSpansInline(cell.content, cell.markDefs ?? [], isRss)}</${tag}>`
+      html += `<${tag}>${renderSpansInline(cell.content, cell.markDefs ?? [])}</${tag}>`
     }
     html += '</tr>'
   }
@@ -324,66 +315,23 @@ function renderTableBlock(value: TableBlock, isRss: boolean): string {
   return html
 }
 
-function renderSpansInline(
-  spans: readonly { _key: string; text: string; marks?: string[] }[],
-  markDefs: readonly {
-    _key: string
-    _type: string
-    href?: string
-    rel?: string
-    target?: string
-    tex?: string
-    mathml?: string
-    svg?: string
-    index?: number
-  }[],
-  isRss: boolean,
-): string {
-  return spans.map((span) => renderSpanInline(span, markDefs, isRss)).join('')
+function renderSpansInline(spans: readonly Span[], markDefs: readonly LinkMarkDef[]): string {
+  return spans.map((span) => renderSpanInline(span, markDefs)).join('')
 }
 
-function renderSpanInline(
-  span: { _key: string; text: string; marks?: string[] },
-  markDefs: readonly {
-    _key: string
-    _type: string
-    href?: string
-    rel?: string
-    target?: string
-    tex?: string
-    mathml?: string
-    svg?: string
-    index?: number
-  }[],
-  isRss: boolean,
-): string {
+function renderSpanInline(span: Span, markDefs: readonly LinkMarkDef[]): string {
   const marks = span.marks ?? []
   if (marks.length === 0) {
     return escapeHtml(span.text)
   }
   let html = escapeHtml(span.text)
   for (const markName of marks) {
-    html = applyInlineMarkHtml(html, markName, markDefs, isRss)
+    html = applyInlineMarkHtml(html, markName, markDefs)
   }
   return html
 }
 
-function applyInlineMarkHtml(
-  text: string,
-  markName: string,
-  markDefs: readonly {
-    _key: string
-    _type: string
-    href?: string
-    rel?: string
-    target?: string
-    tex?: string
-    mathml?: string
-    svg?: string
-    index?: number
-  }[],
-  isRss: boolean,
-): string {
+function applyInlineMarkHtml(text: string, markName: string, markDefs: readonly LinkMarkDef[]): string {
   switch (markName) {
     case 'strong':
       return `<strong>${text}</strong>`
@@ -400,17 +348,9 @@ function applyInlineMarkHtml(
   if (def === undefined) {
     return text
   }
-  // Same mark rules as the block-level `marks` map — see the shared
+  // Same link rule as the block-level `marks` map — see the shared
   // helpers at the top of this file.
-  switch (def._type) {
-    case 'link':
-      return renderLinkMark(text, def)
-    case 'mathInline':
-      return renderMathInlineMark(text, def, isRss)
-    case 'footnoteRef':
-      return renderFootnoteRefMark(text, def)
-  }
-  return text
+  return renderLinkMark(text, def)
 }
 
 // Footnotes section
@@ -420,13 +360,13 @@ function renderFootnotesSection(
   sectionTitle: string,
   components: PortableTextComponents,
 ): string {
-  let html = `<section class="footnotes" data-footnotes="" aria-labelledby="footnotes-section-heading">`
-  html += `<h3 id="footnotes-section-heading">${escapeHtml(sectionTitle)}</h3>`
+  let html = `<section class="footnotes" data-footnotes="" aria-labelledby="${FOOTNOTES_SECTION_HEADING_ID}">`
+  html += `<h3 id="${FOOTNOTES_SECTION_HEADING_ID}">${escapeHtml(sectionTitle)}</h3>`
   html += '<ol>'
   for (const def of definitions) {
-    const anchorId = `user-content-fn-${def.index}`
+    const anchorId = footnoteAnchorId(def.index)
     const childrenHtml = toHTML(def.children as PortableTextBlock[], { components })
-    html += `<li id="${anchorId}">${childrenHtml}<p><a href="#user-content-fnref-${def.index}" data-footnote-backref="" aria-label="返回引用">↩</a></p></li>`
+    html += `<li id="${anchorId}">${childrenHtml}<p><a href="${footnoteRefHref(def.index)}" ${FOOTNOTE_BACKREF_ATTRIBUTE}="" aria-label="${FOOTNOTE_BACKREF_ARIA_LABEL}">↩</a></p></li>`
   }
   html += '</ol></section>'
   return html

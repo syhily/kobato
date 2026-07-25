@@ -7,7 +7,7 @@ vi.mock('@/server/infra/rate-limit', () => ({
   tryResourceRateLimit: vi.fn().mockResolvedValue({ exceeded: false }),
 }))
 
-vi.mock('@/server/render/avatar/fetch', () => ({
+vi.mock('@/server/domains/comments/services/avatar', () => ({
   fetchQQAvatarImage: vi.fn(),
   isQQEmail: vi.fn(),
 }))

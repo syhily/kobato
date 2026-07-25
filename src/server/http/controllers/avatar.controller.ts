@@ -1,8 +1,8 @@
 import { z } from 'zod'
 
+import { fetchQQAvatarImage, isQQEmail } from '@/server/domains/comments/services/avatar'
 import { publicProc, resourceRateLimit } from '@/server/http/orpc-base'
 import { AvatarStatus, cacheAvatar } from '@/server/http/resources/avatar-cache'
-import { fetchQQAvatarImage, isQQEmail } from '@/server/render/avatar/fetch'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { encodedEmail } from '@/shared/utils/security'
 import { joinUrl } from '@/shared/utils/urls'

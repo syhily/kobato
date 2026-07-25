@@ -2,6 +2,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import type { EntityTarget } from '@/server/infra/db/target'
 
+import { getBatcher, registerBatcher, requireBatcher } from '@/server/infra/db/batcher-registry'
 import { incrementMetricPvBatch } from '@/server/infra/db/operations/metric'
 import { targetKey } from '@/server/infra/db/target'
 import { registerShutdownHook } from '@/server/infra/lifecycle'
@@ -102,30 +103,34 @@ class PageViewBatcher {
   }
 }
 
-let batcher: PageViewBatcher | undefined
+const BATCHER_NAME = 'PageViewBatcher'
 
-export function initPageViewBatcher(db: NodePgDatabase): void {
-  batcher = new PageViewBatcher(
-    {
-      flushIntervalMs: 60_000,
-      flushThreshold: 50,
-    },
-    db,
-  )
-}
-
-export function resetPageViewBatcher(): void {
-  batcher = undefined
-}
+// Second implementation of the batching seam alongside `CopyBatcher`
+// (`@/server/infra/db/copy-batcher`): the access/audit batchers buffer
+// whole rows and flush them via `COPY FROM STDIN`, while this one
+// aggregates high-frequency counters in a Map and flushes upserts — a
+// different buffer shape and failure model (merge-back retry, not
+// dead-letter) that does not fit the COPY machine. Both self-register
+// on the same registry so the bootstrap lifecycle drives them through
+// one vocabulary.
+registerBatcher(
+  BATCHER_NAME,
+  (_pool, db) =>
+    new PageViewBatcher(
+      {
+        flushIntervalMs: 60_000,
+        flushThreshold: 50,
+      },
+      db,
+    ),
+)
 
 export function bumpPageView(target: EntityTarget): void {
-  if (!batcher) {
-    throw new Error('PageViewBatcher not initialized — call initPageViewBatcher(db) first')
-  }
-  batcher.increment(targetKey(target))
+  requireBatcher<PageViewBatcher>(BATCHER_NAME).increment(targetKey(target))
 }
 
 export function flushPageViews(): Promise<void> {
+  const batcher = getBatcher<PageViewBatcher>(BATCHER_NAME)
   if (!batcher) {
     return Promise.resolve()
   }

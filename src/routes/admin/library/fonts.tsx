@@ -1,6 +1,6 @@
 import { getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
-import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
+import { titleMeta } from '@/shared/seo/title-meta'
 import { FontsView } from '@/ui/admin/fonts/FontsView'
 
 import type { Route } from './+types/fonts'
@@ -15,9 +15,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   return null
 }
 
-export function meta({ matches }: Route.MetaArgs) {
-  return routeMeta({ title: '网站字体' }, bundleFromMatches(matches))
-}
+export const meta = titleMeta('网站字体')
 
 export default function AdminLibraryFontsRoute() {
   return <FontsView />

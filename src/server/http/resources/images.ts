@@ -5,6 +5,13 @@ import crypto from 'node:crypto'
 
 import type { Env } from '@/server/http/context'
 
+import {
+  defaultAvatarUrl,
+  fetchAvatarImage,
+  fetchQQAvatarImage,
+  isQQEmail,
+  resolveAvatarInfo,
+} from '@/server/domains/comments/services/avatar'
 import { isLive } from '@/server/domains/content/schema'
 import { findPublicPageMetaBySlug } from '@/server/domains/pages/repo'
 import { findPublicPostMetaBySlug } from '@/server/domains/posts/repos/single'
@@ -13,13 +20,6 @@ import { AvatarStatus, cacheAvatar, loadAvatar } from '@/server/http/resources/a
 import { serveCalendar } from '@/server/http/resources/calendar'
 import { findCategoryBySlug } from '@/server/infra/db/operations/category'
 import { loadBuffer } from '@/server/infra/redis/buffer-cache'
-import {
-  defaultAvatarUrl,
-  fetchAvatarImage,
-  fetchQQAvatarImage,
-  isQQEmail,
-  resolveAvatarInfo,
-} from '@/server/render/avatar/fetch'
 import { drawOpenGraph } from '@/server/render/og/render'
 import { getCacheSettings, requireBlogSettingsSection } from '@/shared/config/getters'
 import { joinUrl } from '@/shared/utils/urls'

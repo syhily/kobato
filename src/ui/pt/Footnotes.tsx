@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from 'react'
 
+import { FOOTNOTE_ID_PREFIX, FOOTNOTE_REF_ID_PREFIX } from '@/shared/pt/footnote-anchors'
 import { Tooltip } from '@/ui/components/tooltip'
 
 interface FootnoteContextValue {
@@ -26,8 +27,6 @@ interface FootnoteElementProps {
 
 const FootnotePreviewContext = createContext<FootnoteContextValue | null>(null)
 const FootnoteRegisterContext = createContext<FootnoteRegister | null>(null)
-const FOOTNOTE_ID_PREFIX = 'user-content-fn-'
-const FOOTNOTE_REF_ID_PREFIX = 'user-content-fnref-'
 
 export function FootnoteProvider({ children }: { children: ReactNode }) {
   const [previews, setPreviews] = useState<ReadonlyMap<string, ReactNode>>(() => new Map())

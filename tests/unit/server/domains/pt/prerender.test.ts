@@ -1,13 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { PublicMusicMeta } from '@/shared/contracts/music'
-import type {
-  FootnoteDefinitionBlock,
-  MusicPlayerBlock,
-  PortableTextBody,
-  SolutionBlock,
-  TwoColumnBlock,
-} from '@/shared/pt/schema'
+import type { EnrichedMusicPlayerBlock } from '@/shared/pt/enriched'
+import type { FootnoteDefinitionBlock, PortableTextBody, SolutionBlock, TwoColumnBlock } from '@/shared/pt/schema'
 
 vi.mock('@/server/domains/music/services/read', () => ({
   getPublicMusicMetasByIds: vi.fn(),
@@ -77,7 +72,7 @@ describe('server/domains/pt/prerenderMusicPlayerBlocks', () => {
     const result = await prerenderMusicPlayerBlocks(fakeDb, body)
     expect(result).toHaveLength(3)
 
-    const first = result![0] as MusicPlayerBlock
+    const first = result![0] as EnrichedMusicPlayerBlock
     expect(first._type).toBe('musicPlayer')
     expect(first.meta).toEqual({
       id: 'playeroneeeeeeeeee',
@@ -88,7 +83,7 @@ describe('server/domains/pt/prerenderMusicPlayerBlocks', () => {
       lyric: '',
     })
 
-    const third = result![2] as MusicPlayerBlock
+    const third = result![2] as EnrichedMusicPlayerBlock
     expect(third._type).toBe('musicPlayer')
     expect(third.meta).toBeUndefined()
 
@@ -131,15 +126,15 @@ describe('server/domains/pt/prerenderMusicPlayerBlocks', () => {
 
     const solution = result![0] as SolutionBlock
     expect(solution._type).toBe('solution')
-    expect((solution.children[0] as MusicPlayerBlock).meta).toBeDefined()
+    expect((solution.children[0] as EnrichedMusicPlayerBlock).meta).toBeDefined()
 
     const footnote = result![1] as FootnoteDefinitionBlock
     expect(footnote._type).toBe('footnoteDefinition')
-    expect((footnote.children[0] as MusicPlayerBlock).meta).toBeDefined()
+    expect((footnote.children[0] as EnrichedMusicPlayerBlock).meta).toBeDefined()
 
     const twoColumn = result![2] as TwoColumnBlock
     expect(twoColumn._type).toBe('twoColumn')
-    expect((twoColumn.left[0] as MusicPlayerBlock).meta).toBeDefined()
+    expect((twoColumn.left[0] as EnrichedMusicPlayerBlock).meta).toBeDefined()
 
     // The same playerId referenced three times is deduped into one batch call.
     expect(getPublicMusicMetasByIds).toHaveBeenCalledTimes(1)

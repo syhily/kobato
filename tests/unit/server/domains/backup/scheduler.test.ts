@@ -36,7 +36,7 @@ vi.mock('@/shared/config/getters', () => ({
   getBlogSettingsBundleSync: vi.fn(() => bundle),
 }))
 
-vi.mock('@/server/domains/backup/scheduler-utils', () => ({
+vi.mock('@/server/infra/scheduler-utils', () => ({
   computeNextRun: vi.fn((_settings, _tz, now) => new Date(now.getTime() + 3_600_000)),
 }))
 
@@ -82,7 +82,7 @@ describe('backup scheduler', () => {
   })
 
   it('handles a next-run in the past by scheduling in one minute', async () => {
-    const { computeNextRun } = await import('@/server/domains/backup/scheduler-utils')
+    const { computeNextRun } = await import('@/server/infra/scheduler-utils')
     ;(computeNextRun as ReturnType<typeof vi.fn>).mockReturnValueOnce(new Date(Date.now() - 1000))
     bundle = {
       backup: { scheduled: { enabled: true, frequency: 'daily' }, retention: { enabled: false } },

@@ -8,9 +8,10 @@ import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { clearAllTables } from '#/_helpers/integration-db'
 import { flushWorkerRedis } from '#/_helpers/redis'
 import { emptySession } from '#/_helpers/session'
-import { flushAuditLog, initAuditLogBatcher, resetAuditLogBatcher } from '@/server/domains/audit/repos/batcher'
+import { flushAuditLog } from '@/server/domains/audit/repos/batcher'
 import { establishLoginSession } from '@/server/domains/auth/primitives'
 import { revokeAllSessionsOfUser } from '@/server/domains/auth/session-storage'
+import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { auditLog } from '@/server/infra/db/schema/config'
 import { user } from '@/server/infra/db/schema/user'
@@ -25,20 +26,21 @@ afterAll(async () => {
   await closePool(pool)
 })
 
-// The audit batcher is a module-level singleton that production code
-// initialises during bootstrap. Integration tests that exercise
-// `recordAuditEvent` (called fire-and-forget inside `establishLoginSession`)
-// must wire up the batcher themselves so events actually land in the
-// `audit_log` table. `flushAuditLog()` forces a drain before assertions
-// and before teardown so no pending event references a user row that the
-// next test's `clearAllTables` will truncate (FK violation).
+// The audit batcher is a process-level singleton that production code
+// initialises during bootstrap via the batcher registry. Integration
+// tests that exercise `recordAuditEvent` (called fire-and-forget inside
+// `establishLoginSession`) must wire up the batcher themselves so events
+// actually land in the `audit_log` table. `flushAuditLog()` forces a
+// drain before assertions and before teardown so no pending event
+// references a user row that the next test's `clearAllTables` will
+// truncate (FK violation).
 beforeEach(() => {
-  initAuditLogBatcher(db, pool)
+  initAllBatchers(pool, db)
 })
 
 afterEach(async () => {
   await flushAuditLog()
-  resetAuditLogBatcher()
+  resetAllBatchers()
 })
 
 // ── Fixtures ──────────────────────────────────────────────────────────────

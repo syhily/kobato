@@ -11,10 +11,11 @@ import { clearAllTables } from '#/_helpers/integration-db'
 import { makeAuthedCtx, makePublicCtx } from '#/_helpers/mock-ctx'
 import { flushWorkerRedis } from '#/_helpers/redis'
 import { callRpc } from '#/_helpers/rpc-call'
-import { flushAuditLog, initAuditLogBatcher, resetAuditLogBatcher } from '@/server/domains/audit/repos/batcher'
+import { flushAuditLog } from '@/server/domains/audit/repos/batcher'
 import { listPublicFriends } from '@/server/domains/friends/service'
 import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
 import { adminFriendsRouter } from '@/server/http/controllers/admin/friends.controller'
+import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { friend } from '@/server/infra/db/schema/friend'
 import { user } from '@/server/infra/db/schema/user'
@@ -214,7 +215,7 @@ describe('integration / friends apply', () => {
 
 describe('integration / friends apply → admin approve', () => {
   beforeEach(() => {
-    initAuditLogBatcher(db, pool)
+    initAllBatchers(pool, db)
   })
 
   afterEach(async () => {
@@ -223,7 +224,7 @@ describe('integration / friends apply → admin approve', () => {
     // the next test and dead-letter the buffered events on the
     // audit_log.actor_id FK.
     await flushAuditLog()
-    resetAuditLogBatcher()
+    resetAllBatchers()
   })
 
   it('flips visible on approve and the friend appears in listPublicFriends', async () => {

@@ -1,7 +1,5 @@
 import { z } from 'zod'
 
-import type { MusicPlayerBlockMeta } from '@/shared/types/music'
-
 import { isSafeUrl } from '@/shared/sanitize-url'
 
 // Strict PortableText subset for this repository. PT is stored in
@@ -130,8 +128,6 @@ export const musicPlayerBlockSchema = z.object({
   playerId: z.string().min(1),
   auto: z.boolean().optional(),
   center: z.boolean().optional(),
-  /** Resolved metadata injected by `prerenderMusicPlayerBlocks` at SSR time. */
-  meta: z.custom<MusicPlayerBlockMeta>().optional(),
 })
 export type MusicPlayerBlock = z.infer<typeof musicPlayerBlockSchema>
 

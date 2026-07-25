@@ -11,18 +11,23 @@ server/
 ├── infra/      # Technical primitives — zero business knowledge.
 ├── domains/    # Self-contained business modules (one folder per domain).
 ├── http/       # HTTP perimeter (oRPC + Hono).
-└── render/     # SSR output products (HTML, RSS/Atom, OG, calendar, avatar, SEO).
+└── render/     # SSR output products (HTML, RSS/Atom, OG, calendar, SEO).
 ```
 
 ## infra/
 
 Pure primitives. `db/` (Drizzle pool, schema, migrations,
-`operations/<entity>.ts` raw helpers), `redis/` (ioredis:
+`operations/<entity>.ts` raw helpers, `copy-batcher` +
+`batcher-registry` driving every process-level write batcher through
+one init/flush/reset lifecycle), `redis/` (ioredis:
 storage, buckets, inflight, `buffer-cache`, `admin-ops`), `http/`
 (generic `etag`, `headers`, `status`, `errors` with `DomainError` /
 `ActionFailure`), `email/` (sender + React Email), `search/` (LIKE,
-pg_trgm and vector drivers, openai client), `env.ts`, `logger.ts`,
-`rate-limit.ts`, `slug.ts`.
+pg_trgm and vector drivers, openai client), `image/` (worker_threads
+process pool, `compress`), `crypto/` (secret encryption, random-token
+primitives), `env.ts`, `logger.ts`,
+`rate-limit.ts`, `slug.ts`, `scheduler-utils.ts` (site-timezone
+daily/weekly/monthly run computation).
 
 Imports nothing from `domains/`, `http/`, or `render/`.
 
@@ -46,13 +51,15 @@ one predictable location.
 
 Domains: `analytics`, `auth` (session-storage, csrf, rbac, flows,
 verification-tokens), `comments` (loader, moderation, projection,
-likes, token, badge, url, canonicalize, pure policy gates `services/policy.ts`), `content` (revision `repos/`,
+likes, token, badge, url, canonicalize, avatar fetch/cache, pure policy
+gates `services/policy.ts`), `content` (revision `repos/`,
 entity-agnostic draft→publish `lifecycle.ts`, save-time library image
 sync `services/image-sync.ts`, restore-time `slug-reclaim.ts`, admin
 list orchestration `services/admin-list.ts`, shared limit/offset ladder
 `repos/pagination.ts`; post/page behavior attaches via each entity
 domain's `services/lifecycle-adapter.ts`), `friends`, `images` (schema,
-service, storage, key, process), `music`, `pages`, `posts`, `pt`
+service, storage, key, process), `music` (provider registry: netease,
+tencent), `pages`, `posts`, `pt`
 (Shiki/KaTeX prerender, canonicalize, comment-to-html), `settings`
 (install-flow, install-gate), `taxonomies/{categories,tags}`, `users`,
 `audit`, `update` (SEA self-update: gate, release fetch,
@@ -133,10 +140,16 @@ Smoke coverage in `tests/server.http.orpc-smoke.test.ts`.
 
 ## render/
 
-SSR output products. `seo/`, `feed/` (RSS/Atom + PT-feed renderer),
-`og/`, `calendar/` (SVG + Hono serve helper), `avatar/` (Gravatar/QQ
-fetcher + Redis cache), `react-prerender.ts`, `image-enhance.ts` (feed
-HTML post-processor), `image-compress.ts` (shared PNG helper).
+SSR output products. `seo/` (listing SEO, sitemap), `feed/` (RSS/Atom
+
+- PT-feed renderer), `og/`, `calendar/` (SVG + Hono serve helper),
+  `canvas-fonts.ts` (shared @napi-rs/canvas font registration),
+  `pt-html.ts` (PT → feed HTML string), `analytics/`, `warmup/`.
+  Meta-tag builders live in `@/shared/seo/` (`meta`, `title-meta`,
+  `og-image`) so routes, loaders, and renderers share them
+  isomorphically. Avatar fetch/cache is a comments domain service
+  (`domains/comments/services/avatar.ts`); image compression is an infra
+  primitive (`infra/image/compress.ts`).
 
 Never persists — produces strings, Buffers, or Responses. Caching is
 the caller's responsibility.
@@ -313,10 +326,12 @@ is a database setting (`assets.storage.enabled`, `seo.og.width`,
   written straight through `@/server/infra/storage/registry::activeBackend`
   (same active-backend model as images). The per-track `storageDriver` is
   persisted so reads/deletes and URL resolution dispatch correctly.
-- PortableText references rows via a 16-char lowercase random id. Service
-  is netease-only via the inline `NeteaseResolver`; `(source, sourceId)`
-  is unique with `source` reserved as varchar for future providers.
-  Lyrics live in `music.lyric` so the player avoids a second round trip.
+- PortableText references rows via a 16-char lowercase random id.
+  Provider adapters (`netease`, `tencent`) sit behind
+  `providers/registry.ts::getProvider` against the shared
+  `MusicProvider` interface (`providers/types.ts`); `(source, sourceId)`
+  is unique. Lyrics live in `music.lyric` so the player avoids a second
+  round trip.
 
 ### Audit Log
 
@@ -341,7 +356,7 @@ is a database setting (`assets.storage.enabled`, `seo.og.width`,
   before storage and masked to `***` in API responses. Do NOT put
   passwords, tokens, or raw session ids in details.
 - **Retention**: DB rows are kept for `auditLogDbRetentionDays`
-  (default 30, max 90), then archived daily at 04:00 to S3 as
+  (default 30, max 90), then archived daily at 04:00 site time to S3 as
   `audit-log/archive/YYYY-MM-DD.jsonl.gz` and deleted from the DB. S3
   archives are kept for `auditLogArchiveRetentionDays` (default 180).
   The `audit_log` table is excluded from `pg_dump` backups.
@@ -349,8 +364,11 @@ is a database setting (`assets.storage.enabled`, `seo.og.width`,
   boundary server-side so the UI cannot request already-archived data.
 - **Batcher**: events are buffered in memory (threshold 50 events /
   500ms flush) and written via Postgres `COPY FROM STDIN`; on COPY
-  failure the batch falls back to per-row INSERT. Buffered events are
-  flushed on `SIGTERM` / `SIGINT` / `beforeExit`.
+  failure the batch falls back to per-row INSERT. The batcher
+  self-registers with `infra/db/batcher-registry` at import time, so
+  pool (re)creation drives it through the shared init/flush/reset
+  lifecycle. Buffered events are flushed on `SIGTERM` / `SIGINT` /
+  `beforeExit`.
 - **UI sync checklist**: when adding a new action, add a Chinese
   translation to `ACTION_OPTIONS` in
   `src/ui/admin/audit/filter-constants.ts`. Untranslated actions fall

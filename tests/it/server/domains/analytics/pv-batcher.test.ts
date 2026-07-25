@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
+
 const incrementMetricPvBatch = vi.fn()
 
 vi.mock('@/server/infra/db/operations/metric', () => ({
@@ -16,7 +18,7 @@ vi.mock('@/server/infra/lifecycle', () => ({
 
 async function freshBatcher() {
   const mod = await import('@/server/domains/analytics/repos/pv-batcher')
-  mod.resetPageViewBatcher()
+  resetAllBatchers()
   return mod
 }
 
@@ -33,9 +35,9 @@ describe('analytics/pv-batcher', () => {
   it('adds snapshot back to new buffer on flush failure (not double-count)', async () => {
     incrementMetricPvBatch.mockRejectedValueOnce(new Error('DB down'))
 
-    const { bumpPageView, flushPageViews, initPageViewBatcher } = await freshBatcher()
+    const { bumpPageView, flushPageViews } = await freshBatcher()
     const db = {} as any
-    initPageViewBatcher(db)
+    initAllBatchers({} as any, db)
 
     // 3 increments before flush
     bumpPageView({ type: 'post', ownerId: 1n })
@@ -67,9 +69,9 @@ describe('analytics/pv-batcher', () => {
   it('clears buffer after successful flush', async () => {
     incrementMetricPvBatch.mockResolvedValueOnce(undefined)
 
-    const { bumpPageView, flushPageViews, initPageViewBatcher } = await freshBatcher()
+    const { bumpPageView, flushPageViews } = await freshBatcher()
     const db = {} as any
-    initPageViewBatcher(db)
+    initAllBatchers({} as any, db)
 
     bumpPageView({ type: 'post', ownerId: 1n })
     await flushPageViews()

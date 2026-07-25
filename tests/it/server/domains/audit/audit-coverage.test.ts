@@ -6,12 +6,7 @@ import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vites
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { clearAllTables } from '#/_helpers/integration-db'
 import { flushWorkerRedis } from '#/_helpers/redis'
-import {
-  flushAuditLog,
-  initAuditLogBatcher,
-  pushAuditEvent,
-  resetAuditLogBatcher,
-} from '@/server/domains/audit/repos/batcher'
+import { flushAuditLog, pushAuditEvent } from '@/server/domains/audit/repos/batcher'
 import {
   buildAuditLogWhere,
   countAuditLogs,
@@ -23,6 +18,7 @@ import { archiveExpiredAuditLogs, cleanupExpiredArchives, runArchiveJob } from '
 import { recordAuditEvent } from '@/server/domains/audit/services/record'
 import { scheduleNextArchive, stopArchiveScheduler } from '@/server/domains/audit/services/scheduler'
 import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
+import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { auditLog } from '@/server/infra/db/schema/config'
 import { user } from '@/server/infra/db/schema/user'
@@ -42,7 +38,7 @@ beforeEach(async () => {
 })
 
 afterEach(() => {
-  resetAuditLogBatcher()
+  resetAllBatchers()
   stopArchiveScheduler()
   vi.useRealTimers()
 })
@@ -153,17 +149,17 @@ describe('audit/repos/query — fetchAuditLogActors', () => {
 
 describe('audit/repos/batcher — flushAuditLog', () => {
   it('returns zeros when the batcher is not initialized', async () => {
-    resetAuditLogBatcher()
+    resetAllBatchers()
     expect(await flushAuditLog()).toEqual({ committed: 0, deadLettered: 0 })
   })
 
   it('pushAuditEvent throws when the batcher is not initialized', () => {
-    resetAuditLogBatcher()
+    resetAllBatchers()
     expect(() => pushAuditEvent({ action: 'login', resourceType: 'session' })).toThrow(/initialized/)
   })
 
   it('flushes pushed events via COPY and writes them to the audit_log table', async () => {
-    initAuditLogBatcher(db, pool)
+    initAllBatchers(pool, db)
     pushAuditEvent({ action: 'login', resourceType: 'session' })
     pushAuditEvent({ action: 'logout', resourceType: 'session' })
     const result = await flushAuditLog()
@@ -176,13 +172,13 @@ describe('audit/repos/batcher — flushAuditLog', () => {
 
 describe('audit/services/record — recordAuditEvent', () => {
   it('is a no-op when the batcher is not initialized (does not throw)', () => {
-    resetAuditLogBatcher()
+    resetAllBatchers()
     expect(() => recordAuditEvent({ action: 'login', resourceType: 'session' })).not.toThrow()
   })
 
   it('routes the event into the batcher when initialized', async () => {
     const u = await seedUser('admin', 'Recorder', 'recorder@example.com')
-    initAuditLogBatcher(db, pool)
+    initAllBatchers(pool, db)
     recordAuditEvent({
       action: 'login',
       resourceType: 'session',
@@ -254,7 +250,7 @@ describe('audit/services/archive — runArchiveJob', () => {
         storage: { ...TEST_BLOG_SETTINGS_BUNDLE.assets!.storage, enabled: false, secretAccessKey: '' },
       },
     })
-    await expect(runArchiveJob(db, pool)).resolves.toBeUndefined()
+    await expect(runArchiveJob(db)).resolves.toBeUndefined()
   })
 })
 
@@ -262,21 +258,21 @@ describe('audit/services/scheduler — scheduleNextArchive', () => {
   it('retries every 30s when settings are not hydrated', () => {
     vi.useFakeTimers()
     setBlogSettingsBundleForTests(null)
-    scheduleNextArchive(pool)
+    scheduleNextArchive()
     expect(vi.getTimerCount()).toBeGreaterThan(0)
   })
 
   it('schedules the next run when settings are hydrated', () => {
     vi.useFakeTimers()
     setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
-    scheduleNextArchive(pool)
+    scheduleNextArchive()
     expect(vi.getTimerCount()).toBeGreaterThan(0)
   })
 
   it('stopArchiveScheduler clears the pending timer', () => {
     vi.useFakeTimers()
     setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
-    scheduleNextArchive(pool)
+    scheduleNextArchive()
     stopArchiveScheduler()
     expect(vi.getTimerCount()).toBe(0)
   })

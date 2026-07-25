@@ -3,33 +3,20 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { and, eq, lt, sql } from 'drizzle-orm'
 import { createHash, randomBytes, randomInt, timingSafeEqual } from 'node:crypto'
 
+import { generateToken, sha256, TOKEN_LEN_RE } from '@/server/infra/crypto/tokens'
 import { verification } from '@/server/infra/db/schema/user'
 import { getLogger } from '@/server/infra/logger'
 
 const log = getLogger('verification-tokens')
 
-const TOKEN_BYTES = 32
 const RESET_TTL_MS = 15 * 60 * 1000
 const SETUP_TTL_MS = 7 * 24 * 60 * 60 * 1000
-
-// `randomBytes(TOKEN_BYTES=32).toString('base64url')` produces exactly
-// 43 chars. Any input outside that length is by-construction not one
-// of our tokens — fail fast before hitting the DB.
-const TOKEN_LEN_RE = /^[A-Za-z0-9_-]{43}$/
 
 // Purpose tags persisted to `verification.purpose`. The DB column is
 // `varchar(32)` so the set has plenty of headroom for future flows
 // (e.g. `'email-change'`), but new values must be added here so the
 // type system catches typos at call sites.
 export type TokenPurpose = 'password-reset' | 'author-invite' | 'signin-otp'
-
-function sha256(token: string): string {
-  return createHash('sha256').update(token).digest('hex')
-}
-
-function generateToken(): string {
-  return randomBytes(TOKEN_BYTES).toString('base64url')
-}
 
 export interface TokenResult {
   token: string

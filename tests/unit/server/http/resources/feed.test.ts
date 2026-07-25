@@ -7,10 +7,6 @@ vi.mock('@/server/infra/rate-limit', () => ({
 
 vi.mock('@/server/render/feed/generator', () => ({
   generateFeeds: vi.fn(),
-  feedHeaders: (kind: 'rss' | 'atom') => ({
-    'Content-Type': kind === 'rss' ? 'application/xml; charset=utf-8' : 'application/atom+xml; charset=utf-8',
-    'Cache-Control': 'public, max-age=1800',
-  }),
 }))
 
 vi.mock('@/server/infra/cache/feed-cache', () => ({

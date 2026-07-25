@@ -3,22 +3,22 @@ import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { isCommentOwner } from '@/server/domains/auth/rbac'
+import { asCommentItemWire } from '@/server/domains/comments/projection'
 import { countApprovedRepliesOfComment, listMyCommentEntities } from '@/server/domains/comments/repos/admin-query'
 import { clearDeleteRequest, requestDeleteComment } from '@/server/domains/comments/repos/moderation'
 import { findCommentWithUserById } from '@/server/domains/comments/repos/public-query/by-id'
 import { loadMineCommentsPage } from '@/server/domains/comments/services/mine-comments'
 import { updateOwnComment } from '@/server/domains/comments/services/moderate'
 import { authedProc } from '@/server/http/orpc-base'
+import { ownCommentMutationDto } from '@/shared/contracts/comments'
 import { commentBodySchema } from '@/shared/pt/comment-schema'
 import { parseCommentEntity, serializeCommentEntity } from '@/shared/utils/comments'
 import { idFromString } from '@/shared/utils/id'
 
-const successOutput = z.object({ success: z.boolean() })
-
 const updateOwn = authedProc
   .route({ method: 'POST', path: '/comments/update-own' })
   .input(z.object({ commentId: z.string(), body: commentBodySchema }))
-  .output(successOutput)
+  .output(ownCommentMutationDto)
   .handler(async ({ input, context }) => {
     const commentId = input.commentId ? idFromString(input.commentId) : 0n
     if (commentId === 0n) {
@@ -35,19 +35,22 @@ const updateOwn = authedProc
     if (replyCount > 0) {
       throw new ORPCError('CONFLICT', { message: '已有回复，无法再编辑。' })
     }
-    await updateOwnComment(context.db, String(commentId), input.body)
+    const updated = await updateOwnComment(context.db, String(commentId), input.body)
+    if (!updated) {
+      throw new ORPCError('NOT_FOUND', { message: '更新评论失败' })
+    }
     recordAuditEventFromContext(context, {
       action: 'comment_own_updated',
       resourceType: 'comment',
       resourceId: input.commentId,
     })
-    return { success: true }
+    return { comment: asCommentItemWire(updated) }
   })
 
 const requestDeleteOwn = authedProc
   .route({ method: 'POST', path: '/comments/request-delete-own' })
   .input(z.object({ commentId: z.string() }))
-  .output(successOutput)
+  .output(ownCommentMutationDto)
   .handler(async ({ input, context }) => {
     const commentId = idFromString(input.commentId)
     const c = await findCommentWithUserById(context.db, commentId)
@@ -55,7 +58,9 @@ const requestDeleteOwn = authedProc
       throw new ORPCError('NOT_FOUND', { message: '资源不存在。' })
     }
     if (c.deleteRequestedAt !== null) {
-      return { success: true }
+      // Idempotent no-op: the flag is already set, so the current row IS
+      // the updated one — return it without re-writing or re-auditing.
+      return { comment: asCommentItemWire(c) }
     }
     await requestDeleteComment(context.db, commentId, idFromString(context.viewer.userId))
     recordAuditEventFromContext(context, {
@@ -63,13 +68,17 @@ const requestDeleteOwn = authedProc
       resourceType: 'comment',
       resourceId: input.commentId,
     })
-    return { success: true }
+    const updated = await findCommentWithUserById(context.db, commentId)
+    if (!updated) {
+      throw new ORPCError('NOT_FOUND', { message: '资源不存在。' })
+    }
+    return { comment: asCommentItemWire(updated) }
   })
 
 const cancelDeleteOwn = authedProc
   .route({ method: 'POST', path: '/comments/cancel-delete-own' })
   .input(z.object({ commentId: z.string() }))
-  .output(successOutput)
+  .output(ownCommentMutationDto)
   .handler(async ({ input, context }) => {
     const commentId = idFromString(input.commentId)
     const c = await findCommentWithUserById(context.db, commentId)
@@ -85,7 +94,11 @@ const cancelDeleteOwn = authedProc
       resourceType: 'comment',
       resourceId: input.commentId,
     })
-    return { success: true }
+    const updated = await findCommentWithUserById(context.db, commentId)
+    if (!updated) {
+      throw new ORPCError('NOT_FOUND', { message: '资源不存在。' })
+    }
+    return { comment: asCommentItemWire(updated) }
   })
 
 const loadMine = authedProc

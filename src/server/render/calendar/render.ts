@@ -5,9 +5,9 @@ import { format, getDate, getISODay, getMonth, getYear } from 'date-fns'
 import { Solar } from 'lunar-typescript'
 
 import { DomainError } from '@/server/infra/http/errors'
+import { compressImage } from '@/server/infra/image/compress'
 import { requireExternal } from '@/server/infra/sea'
-import { compressImage } from '@/server/render/image-compress'
-import { ensureCanvasFont, type FontSlot } from '@/server/render/og/assets'
+import { ensureCanvasFont, type FontSlot } from '@/server/render/canvas-fonts'
 import { isRecord } from '@/shared/utils/type-guards'
 
 // Native module — must resolve against the extracted tree under SEA (see
@@ -17,8 +17,8 @@ const { createCanvas } = requireExternal<typeof import('@napi-rs/canvas')>('@nap
 const WIDTH = 600
 const HEIGHT = 880
 
-// Font registration lives in `og/assets.ts` (`ensureCanvasFont`) — one
-// single-flight per slot, shared with the OG renderer.
+// Font registration lives in `render/canvas-fonts.ts` (`ensureCanvasFont`) —
+// one single-flight per slot, shared with the OG renderer.
 function ensureFonts(): Promise<FontSlot | null> {
   return ensureCanvasFont('calendar')
 }

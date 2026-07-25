@@ -86,6 +86,37 @@ describe('contract: module and bundle boundaries', () => {
     expect(offenders).toEqual([])
   })
 
+  it('keeps shared/seo isomorphic: shared-only value imports, no node specifiers', () => {
+    // Route `meta()` exports pull `shared/seo` into the browser bundle, so a
+    // server-layer or node-only import there would leak into every route
+    // chunk. This pins mechanically what the old `server/render/seo` path
+    // only documented in a comment.
+    const offenders: string[] = []
+    for (const file of files('src/shared/seo', '-g', '*.ts', '-g', '*.tsx')) {
+      const source = readFileSync(file, 'utf8')
+      for (const line of source.split('\n')) {
+        const trimmed = line.trim()
+        if (!trimmed.startsWith('import')) {
+          continue
+        }
+        if (/from\s+['"]node:/.test(trimmed)) {
+          offenders.push(`${file}: ${trimmed}`)
+          continue
+        }
+        // `import type` is erased at compile time and stays legal.
+        if (trimmed.startsWith('import type')) {
+          continue
+        }
+        const specifier = /from\s+['"]([^'"]+)['"]/.exec(trimmed)?.[1]
+        if (specifier !== undefined && specifier.startsWith('@/') && !specifier.startsWith('@/shared/')) {
+          offenders.push(`${file}: ${trimmed}`)
+        }
+      }
+    }
+
+    expect(offenders).toEqual([])
+  })
+
   it('public stylesheet imports tailwind.css', () => {
     const globals = readFileSync('src/styles/public.css', 'utf8')
     expect(globals).toMatch(/@import\s+['"]\.\/tailwind\.css['"]/)

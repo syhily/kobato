@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router'
 
 import { getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
-import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
+import { titleMeta } from '@/shared/seo/title-meta'
 import { PageEditorShell } from '@/ui/admin/pages/PageEditorShell'
 
 import type { Route } from './+types/new'
@@ -13,9 +13,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   return null
 }
 
-export function meta({ matches }: Route.MetaArgs) {
-  return routeMeta({ title: '新建页面' }, bundleFromMatches(matches))
-}
+export const meta = titleMeta('新建页面')
 
 export default function WpAdminPageNewRoute() {
   const navigate = useNavigate()

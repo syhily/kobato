@@ -5,14 +5,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
 import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
-import {
-  bundleFromMatches,
-  metaWithFallback,
-  pageTitle,
-  routeMeta,
-  seoForPage,
-  seoForPost,
-} from '@/server/render/seo/meta'
+import { bundleFromMatches, metaWithFallback, pageTitle, routeMeta, seoForPage, seoForPost } from '@/shared/seo/meta'
 
 // `routeMeta` and `pageTitle` consult the snapshot reader for the
 // site title / website / OG defaults. There is no longer a baked-in

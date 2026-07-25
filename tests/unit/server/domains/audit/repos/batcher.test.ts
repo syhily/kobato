@@ -36,13 +36,8 @@ vi.mock('@/server/infra/paths', () => ({
   AUDIT_DEAD_LETTER_PATH: '/tmp/audit-dead-letter.log',
 }))
 
-import {
-  flushAuditLog,
-  initAuditLogBatcher,
-  pushAuditEvent,
-  resetAuditLogBatcher,
-  replayDeadLetterAuditLog,
-} from '@/server/domains/audit/repos/batcher'
+import { flushAuditLog, pushAuditEvent, replayDeadLetterAuditLog } from '@/server/domains/audit/repos/batcher'
+import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
 
 function makeEvent(
   overrides: Partial<Parameters<typeof pushAuditEvent>[0]> = {},
@@ -92,19 +87,19 @@ function mockPoolForFailure() {
 describe('audit batcher', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    resetAuditLogBatcher()
+    resetAllBatchers()
     insertResult = Promise.resolve(undefined)
   })
 
   it('flushes an empty batch immediately', async () => {
-    initAuditLogBatcher(dbMock as never, poolMock as never)
+    initAllBatchers(poolMock as never, dbMock as never)
     const result = await flushAuditLog()
     expect(result).toEqual({ committed: 0, deadLettered: 0 })
   })
 
   it('pushes and flushes events via COPY', async () => {
     mockPoolForCopy()
-    initAuditLogBatcher(dbMock as never, poolMock as never)
+    initAllBatchers(poolMock as never, dbMock as never)
     pushAuditEvent(makeEvent())
     const result = await flushAuditLog()
     expect(result.committed).toBe(1)
@@ -113,7 +108,7 @@ describe('audit batcher', () => {
 
   it('falls back to batch insert when COPY fails', async () => {
     mockPoolForFailure()
-    initAuditLogBatcher(dbMock as never, poolMock as never)
+    initAllBatchers(poolMock as never, dbMock as never)
     pushAuditEvent(makeEvent())
     const result = await flushAuditLog()
     expect(result.committed).toBe(1)
@@ -123,7 +118,7 @@ describe('audit batcher', () => {
   it('falls back to per-row insert when batch insert fails', async () => {
     mockPoolForFailure()
     insertResult = Promise.reject(new Error('batch insert failed'))
-    initAuditLogBatcher(dbMock as never, poolMock as never)
+    initAllBatchers(poolMock as never, dbMock as never)
     pushAuditEvent(makeEvent())
     const result = await flushAuditLog()
     expect(result.committed).toBe(0)
@@ -131,13 +126,13 @@ describe('audit batcher', () => {
   })
 
   it('throws when pushing before initialization', () => {
-    resetAuditLogBatcher()
+    resetAllBatchers()
     expect(() => pushAuditEvent(makeEvent())).toThrow('not initialized')
   })
 
   it('replays dead-letter events', async () => {
     mockPoolForCopy()
-    initAuditLogBatcher(dbMock as never, poolMock as never)
+    initAllBatchers(poolMock as never, dbMock as never)
     const result = await replayDeadLetterAuditLog('/nonexistent')
     expect(result.replayed).toBe(0)
   })

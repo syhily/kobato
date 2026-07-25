@@ -1,15 +1,37 @@
-import type { FootnoteDefinitionBlock, NonRecursiveBlock, PortableTextBody, TextBlock } from '@/shared/pt/schema'
+import type { Block, FootnoteDefinitionBlock, NonRecursiveBlock, PortableTextBody, TextBlock } from '@/shared/pt/schema'
 
-import { synchronizeFootnoteIndices } from '@/shared/pt/bridge/nodes/footnote'
+import { synchronizeFootnoteIndices } from '@/shared/pt/footnote-sync'
 import { generateBlockKey } from '@/shared/pt/utils'
 
+/**
+ * The one inline/footnote partition: `prose` renders in place, footnote
+ * `definitions` render as a trailing section. Both render adapters (feed
+ * HTML, React tree) consume this — the section markup itself stays
+ * per-adapter, the partition does not.
+ */
+export function partitionFootnoteDefinitions(body: PortableTextBody): {
+  prose: PortableTextBody
+  definitions: FootnoteDefinitionBlock[]
+} {
+  const prose: Block[] = []
+  const definitions: FootnoteDefinitionBlock[] = []
+  for (const block of body) {
+    if (block._type === 'footnoteDefinition') {
+      definitions.push(block)
+    } else {
+      prose.push(block)
+    }
+  }
+  return { prose, definitions }
+}
+
 export function extractFootnoteDefinitionBlocks(body: PortableTextBody): FootnoteDefinitionBlock[] {
-  return body.filter((b): b is FootnoteDefinitionBlock => b._type === 'footnoteDefinition')
+  return partitionFootnoteDefinitions(body).definitions
 }
 
 /** Body passed into `bodyToPmDoc` for the page editor — prose only; footnotes live in parallel state. */
 export function stripFootnoteDefinitionsForEditor(body: PortableTextBody): PortableTextBody {
-  return body.filter((b) => b._type !== 'footnoteDefinition')
+  return partitionFootnoteDefinitions(body).prose
 }
 
 export function mergeProseBodyWithFootnoteDefinitions(

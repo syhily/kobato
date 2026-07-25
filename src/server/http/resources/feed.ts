@@ -7,7 +7,21 @@ import type { FeedOptions } from '@/server/render/feed/generator'
 
 import { rateLimitByIp } from '@/server/http/middlewares/rate-limit'
 import { feedCacheFor } from '@/server/infra/cache/feed-cache'
-import { feedHeaders, generateFeeds } from '@/server/render/feed/generator'
+import { generateFeeds } from '@/server/render/feed/generator'
+
+const CONTENT_TYPES = {
+  rss: 'application/xml; charset=utf-8',
+  atom: 'application/atom+xml; charset=utf-8',
+} as const
+
+// Centralised cache headers for syndication feeds, applied to every feed
+// response so all six feed URLs share one cache policy.
+function feedHeaders(kind: 'rss' | 'atom'): HeadersInit {
+  return {
+    'Content-Type': CONTENT_TYPES[kind],
+    'Cache-Control': 'public, max-age=1800',
+  }
+}
 
 // Cache keys are namespaced because category and tag slugs share one slug namespace, and a category slugged `all` would otherwise collide with the site-wide feed.
 function cacheKeyFor(scope?: FeedOptions): string {

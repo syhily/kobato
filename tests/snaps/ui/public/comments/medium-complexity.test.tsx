@@ -4,8 +4,8 @@ import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comm
 import type { CommentFormUser } from '@/shared/types/catalog'
 import type { Comments as CommentsData } from '@/shared/types/comments'
 
+import { makeLeafContext } from '#/_helpers/comments-leaf'
 import { renderInRouter } from '#/_helpers/render'
-import { CommentActions } from '@/ui/public/comments/comment-item/CommentActions'
 import { CommentItem } from '@/ui/public/comments/comment-item/CommentItem'
 import { CommentReplyForm } from '@/ui/public/comments/CommentReplyForm'
 import { Comments } from '@/ui/public/comments/Comments'
@@ -58,7 +58,12 @@ const commentsData: CommentsData = { comments: [], count: 1, roots_count: 1 }
 
 describe('snapshot: medium-complexity comment components', () => {
   it('CommentActions renders public affordances for a visitor', () => {
-    const html = renderInRouter(<CommentItem comment={makeComment()} depth={1} mode="public" />)
+    const Leaf = makeLeafContext()
+    const html = renderInRouter(
+      <Leaf>
+        <CommentItem comment={makeComment()} depth={1} />
+      </Leaf>,
+    )
     expect(html).toContain('id="user-comment-1"')
     expect(html).toContain('回复')
     expect(html).not.toContain('编辑')
@@ -67,7 +72,12 @@ describe('snapshot: medium-complexity comment components', () => {
   })
 
   it('CommentActions renders admin approve/delete buttons for pending comments', () => {
-    const html = renderInRouter(<CommentItem comment={makeComment({ isPending: true })} depth={1} mode="admin" />)
+    const Leaf = makeLeafContext({ identity: { admin: true } })
+    const html = renderInRouter(
+      <Leaf>
+        <CommentItem comment={makeComment({ isPending: true })} depth={1} />
+      </Leaf>,
+    )
     expect(html).toContain('通过')
     expect(html).toContain('删除')
     expect(html).toContain('您的评论正在等待审核中...')

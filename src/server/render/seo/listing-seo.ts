@@ -2,7 +2,7 @@ import type { MetaDescriptor } from 'react-router'
 
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
-import { type FeedLinkOptions, routeMeta } from '@/server/render/seo/meta'
+import { type FeedLinkOptions, routeMeta } from '@/shared/seo/meta'
 import { pagePath } from '@/shared/utils/paths'
 
 export interface ListingSeoProps {

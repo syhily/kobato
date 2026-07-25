@@ -39,7 +39,7 @@ describe('fontsRouter', () => {
     vi.doMock('@/server/infra/paths', () => ({
       FONT_DIR: '/tmp/fonts',
     }))
-    vi.doMock('@/server/render/og/assets', () => ({
+    vi.doMock('@/server/render/canvas-fonts', () => ({
       resetFontCache: vi.fn(),
       resetCanvasFont: vi.fn(),
     }))
@@ -68,7 +68,7 @@ describe('fontsRouter', () => {
   })
 
   it('invalidates the canvas font slot on upload — the next ensureCanvasFont re-reads', async () => {
-    // Use the REAL og/assets module here: the point of this test is the
+    // Use the REAL canvas-fonts module here: the point of this test is the
     // upload → invalidation → re-read chain, so only its leaf
     // dependencies (settings, fs, the native font registry) are mocked.
     const families = { og: 'OPPO Sans', calendar: '' }
@@ -81,7 +81,7 @@ describe('fontsRouter', () => {
     const registered = new Set<string>()
     // `vi.doMock` registrations are file-scoped: undo the partial assets
     // mock from the first test so the real module loads below.
-    vi.doUnmock('@/server/render/og/assets')
+    vi.doUnmock('@/server/render/canvas-fonts')
     vi.doMock('@/server/domains/audit/services/record', () => ({
       recordAuditEvent: vi.fn(),
     }))
@@ -109,12 +109,9 @@ describe('fontsRouter', () => {
         throw new Error(`unexpected settings section: ${section}`)
       }),
     }))
-    vi.doMock('@/server/domains/assets/services/routes', () => ({
-      resolveSiteAsset: vi.fn(async () => null),
-    }))
 
     const { fontsRouter } = await import('@/server/http/resources/fonts')
-    const { ensureCanvasFont } = await import('@/server/render/og/assets')
+    const { ensureCanvasFont } = await import('@/server/render/canvas-fonts')
     const app = createTestApp()
     app.route('/', fontsRouter)
 

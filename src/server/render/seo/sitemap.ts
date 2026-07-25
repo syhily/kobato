@@ -9,7 +9,7 @@ function escapeXml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
-export async function buildSitemapXml(db: NodePgDatabase, _request: Request): Promise<string> {
+export async function buildSitemapXml(db: NodePgDatabase): Promise<string> {
   const [posts, pages] = await Promise.all([listSitemapPosts(db), listSitemapPages(db)])
 
   // Build via array join so the response starts with `<?xml ... ?>` on the

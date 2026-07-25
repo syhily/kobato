@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { LoadingIcon } from '@/ui/icons/aplayer'
+import { useDragPercentage } from '@/ui/public/aplayer/hooks/use-drag-percentage'
 import { computePercentage } from '@/ui/public/aplayer/utils/compute-percentage'
 
 export type ProgressBarProps = {
@@ -13,39 +14,17 @@ export type ProgressBarProps = {
 export function ProgressBar({ themeColor, bufferedPercentage, playedPercentage, onSeek }: ProgressBarProps) {
   const progressBarRef = useRef<HTMLDivElement>(null)
   const [progress, setProgress] = useState(playedPercentage)
-  const isDraggingRef = useRef(false)
+  const { isDraggingRef, handleMouseDown } = useDragPercentage(progressBarRef, {
+    compute: computePercentage,
+    onChange: setProgress,
+    onCommit: onSeek,
+  })
 
   useEffect(() => {
     if (!isDraggingRef.current) {
       setProgress(playedPercentage)
     }
-  }, [playedPercentage])
-
-  const handleMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      isDraggingRef.current = true
-      const percentage = computePercentage(e, progressBarRef)
-      setProgress(percentage)
-
-      const controller = new AbortController()
-      const handleMouseMove = (e: MouseEvent) => {
-        const percentage = computePercentage(e, progressBarRef)
-        setProgress(percentage)
-      }
-
-      const handleMouseUp = (e: MouseEvent) => {
-        controller.abort()
-        const percentage = computePercentage(e, progressBarRef)
-        setProgress(percentage)
-        onSeek?.(percentage)
-        isDraggingRef.current = false
-      }
-
-      document.addEventListener('mousemove', handleMouseMove, { signal: controller.signal })
-      document.addEventListener('mouseup', handleMouseUp, { signal: controller.signal })
-    },
-    [onSeek],
-  )
+  }, [playedPercentage, isDraggingRef])
 
   return (
     <div

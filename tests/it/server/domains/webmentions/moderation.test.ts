@@ -7,8 +7,9 @@ import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { clearAllTables } from '#/_helpers/integration-db'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
-import { flushAuditLog, initAuditLogBatcher, resetAuditLogBatcher } from '@/server/domains/audit/repos/batcher'
+import { flushAuditLog } from '@/server/domains/audit/repos/batcher'
 import { adminWebmentionsRouter } from '@/server/http/controllers/admin/webmentions.controller'
+import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
 import { insertWebmention } from '@/server/infra/db/operations/webmention'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { auditLog } from '@/server/infra/db/schema/config'
@@ -122,7 +123,7 @@ describe('integration / admin webmentions moderation', () => {
 
 describe('integration / admin webmentions approve + reject', () => {
   beforeEach(() => {
-    initAuditLogBatcher(db, pool)
+    initAllBatchers(pool, db)
   })
 
   afterEach(async () => {
@@ -131,7 +132,7 @@ describe('integration / admin webmentions approve + reject', () => {
     // the next test and dead-letter the buffered events on the
     // audit_log.actor_id FK.
     await flushAuditLog()
-    resetAuditLogBatcher()
+    resetAllBatchers()
   })
 
   async function auditRowsFor(action: string) {

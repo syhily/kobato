@@ -1,72 +1,107 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+vi.useFakeTimers()
 
-const mockPool = { totalCount: 0, idleCount: 0 } as unknown as Pool
-const freshDb = { $client: mockPool } as unknown as NodePgDatabase
+const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
 
-const mocks = vi.hoisted(() => ({
-  drizzle: vi.fn(() => freshDb),
-  runArchiveJob: vi.fn().mockResolvedValue(undefined),
-  registerShutdownHook: vi.fn(),
-  getBlogSettingsBundleSync: vi.fn(() => ({ limits: {} })),
-}))
-
-vi.mock('drizzle-orm/node-postgres', () => ({
-  drizzle: mocks.drizzle,
-}))
+const runArchiveJob = vi.fn().mockResolvedValue(undefined)
+const registerShutdownHook = vi.fn()
+const db = {}
+const getDb = vi.fn().mockReturnValue(db)
 
 vi.mock('@/server/domains/audit/services/archive', () => ({
-  runArchiveJob: mocks.runArchiveJob,
+  runArchiveJob: (...args: unknown[]) => runArchiveJob(...args),
 }))
 
 vi.mock('@/server/infra/lifecycle', () => ({
-  registerShutdownHook: mocks.registerShutdownHook,
+  registerShutdownHook: (...args: unknown[]) => registerShutdownHook(...args),
 }))
 
 vi.mock('@/server/infra/logger', () => ({
-  getLogger: () => ({ info: vi.fn(), error: vi.fn(), warn: vi.fn() }),
+  getLogger: vi.fn(() => logger),
 }))
 
+let bundle: Record<string, unknown> | null = null
 vi.mock('@/shared/config/getters', () => ({
-  getBlogSettingsBundleSync: mocks.getBlogSettingsBundleSync,
+  getBlogSettingsBundleSync: vi.fn(() => bundle),
 }))
 
-describe('server/domains/audit/services/scheduler', () => {
+vi.mock('@/server/infra/scheduler-utils', () => ({
+  computeNextRun: vi.fn((_settings, _tz, now: Date) => new Date(now.getTime() + 3_600_000)),
+}))
+
+const { scheduleNextArchive, rescheduleArchive, stopArchiveScheduler, wireArchiveScheduler } =
+  await import('@/server/domains/audit/services/scheduler')
+
+describe('audit scheduler', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mocks.drizzle.mockReturnValue(freshDb)
-    mocks.runArchiveJob.mockResolvedValue(undefined)
+    getDb.mockReturnValue(db)
+    bundle = null
+    stopArchiveScheduler()
+    wireArchiveScheduler({ getDb })
   })
 
-  it('does not retain a Drizzle transaction object and creates a fresh DB when the timer fires', async () => {
-    vi.useFakeTimers()
-    vi.resetModules()
+  afterEach(() => {
+    stopArchiveScheduler()
+  })
 
-    const { scheduleNextArchive } = await import('@/server/domains/audit/services/scheduler')
+  it('retries shortly when settings are not hydrated', () => {
+    scheduleNextArchive()
+    expect(vi.getTimerCount()).toBe(1)
+    expect(runArchiveJob).not.toHaveBeenCalled()
+  })
 
-    scheduleNextArchive(mockPool)
+  it('schedules the next 04:00 run when settings are hydrated', () => {
+    bundle = { siteIdentity: { timeZone: 'UTC' } }
+    scheduleNextArchive()
+    expect(vi.getTimerCount()).toBe(1)
+    expect(runArchiveJob).not.toHaveBeenCalled()
+  })
 
-    // No DB should be created and no archive job should run before the timer fires.
-    expect(mocks.drizzle).not.toHaveBeenCalled()
-    expect(mocks.runArchiveJob).not.toHaveBeenCalled()
+  it('runs the archive job with the lazily-resolved db when the timer fires', async () => {
+    bundle = { siteIdentity: { timeZone: 'UTC' } }
+    scheduleNextArchive()
 
-    const now = new Date()
-    const nextRun = new Date(now)
-    nextRun.setHours(4, 0, 0, 0)
-    if (nextRun.getTime() <= now.getTime()) {
-      nextRun.setDate(nextRun.getDate() + 1)
-    }
-    const delayMs = nextRun.getTime() - now.getTime()
+    // The db is read via getDb() at fire time, not captured at schedule
+    // time — a recreated pool (restore completion) is picked up.
+    const freshDb = {}
+    getDb.mockReturnValue(freshDb)
 
-    await vi.advanceTimersByTimeAsync(delayMs)
+    await vi.advanceTimersByTimeAsync(3_600_000)
+    expect(runArchiveJob).toHaveBeenCalledTimes(1)
+    expect(runArchiveJob).toHaveBeenCalledWith(freshDb)
+  })
 
-    expect(mocks.drizzle).toHaveBeenCalledTimes(1)
-    expect(mocks.drizzle).toHaveBeenCalledWith({ client: mockPool })
-    expect(mocks.runArchiveJob).toHaveBeenCalledTimes(1)
-    expect(mocks.runArchiveJob).toHaveBeenCalledWith(freshDb, mockPool)
+  it('reschedules the next run after the job completes', async () => {
+    bundle = { siteIdentity: { timeZone: 'UTC' } }
+    scheduleNextArchive()
+    await vi.advanceTimersByTimeAsync(3_600_000)
+    expect(runArchiveJob).toHaveBeenCalledTimes(1)
+    expect(vi.getTimerCount()).toBe(1)
+    await vi.advanceTimersByTimeAsync(3_600_000)
+    expect(runArchiveJob).toHaveBeenCalledTimes(2)
+  })
 
-    vi.useRealTimers()
+  it('logs an error when the archive job fails', async () => {
+    runArchiveJob.mockRejectedValueOnce(new Error('archive failed'))
+    bundle = { siteIdentity: { timeZone: 'UTC' } }
+    scheduleNextArchive()
+    await vi.advanceTimersByTimeAsync(3_600_000)
+    expect(logger.error).toHaveBeenCalled()
+  })
+
+  it('reschedules on settings change', () => {
+    bundle = { siteIdentity: { timeZone: 'UTC' } }
+    rescheduleArchive()
+    expect(vi.getTimerCount()).toBe(1)
+  })
+
+  it('stops the scheduler', () => {
+    bundle = { siteIdentity: { timeZone: 'UTC' } }
+    scheduleNextArchive()
+    expect(vi.getTimerCount()).toBe(1)
+    stopArchiveScheduler()
+    expect(vi.getTimerCount()).toBe(0)
   })
 })

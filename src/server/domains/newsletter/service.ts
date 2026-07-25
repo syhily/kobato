@@ -1,11 +1,10 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { createHash, randomBytes } from 'node:crypto'
-
 import type { NewsletterSubscriberRow } from '@/server/infra/db/types'
 
 import { sendConfirmSubscription } from '@/server/domains/newsletter/email'
 import { signUnsubscribeId, verifyUnsubscribeSignature } from '@/server/domains/newsletter/signing'
+import { generateToken, sha256, TOKEN_LEN_RE } from '@/server/infra/crypto/tokens'
 import {
   findSubscriberByConfirmTokenHash,
   findSubscriberByEmail,
@@ -19,25 +18,15 @@ import { requireBlogSettingsSection } from '@/shared/config/getters'
 
 const log = getLogger('newsletter.service')
 
-// Double-opt-in confirm tokens: 32 random bytes → 43-char base64url,
-// stored as a sha256 hash (the verification-tokens precedent). 24h is
-// generous enough for slow inboxes without leaving pending rows open
-// indefinitely.
-const TOKEN_BYTES = 32
+// Double-opt-in confirm tokens use the shared token primitives
+// (`@/server/infra/crypto/tokens`): 43-char base64url, stored as a
+// sha256 hash. 24h is generous enough for slow inboxes without leaving
+// pending rows open indefinitely.
 const CONFIRM_TTL_MS = 24 * 60 * 60 * 1000
 const CONFIRM_TTL_HOURS = CONFIRM_TTL_MS / (60 * 60 * 1000)
-const TOKEN_LEN_RE = /^[A-Za-z0-9_-]{43}$/
 
 const INVALID_CONFIRM_MESSAGE = '确认链接无效或已过期，请重新订阅。'
 const INVALID_UNSUBSCRIBE_MESSAGE = '退订链接无效。'
-
-function generateToken(): string {
-  return randomBytes(TOKEN_BYTES).toString('base64url')
-}
-
-function sha256(token: string): string {
-  return createHash('sha256').update(token).digest('hex')
-}
 
 export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase()

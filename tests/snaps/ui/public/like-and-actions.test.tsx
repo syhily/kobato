@@ -1,17 +1,11 @@
-import { type ReactNode } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 
 import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
 
+import { makeLeafContext } from '#/_helpers/comments-leaf'
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { CommentActions } from '@/ui/public/comments/comment-item/CommentActions'
 import { CommentReplyForm } from '@/ui/public/comments/CommentReplyForm'
-import {
-  CommentsActionsContext,
-  CommentsStateContext,
-  type CommentsActionsContextValue,
-  type CommentsStateContextValue,
-} from '@/ui/public/comments/comments-context'
 import { LikeButton, LikeShare } from '@/ui/public/LikeActions'
 
 // LikeButton + CommentActions + CommentReplyForm each drive `useMutation`
@@ -112,42 +106,6 @@ function makeComment(overrides: Partial<CommentItemType> = {}): CommentItemType 
   }
 }
 
-/** Wrap children in the Comments context so CommentActions sees a fully
- *  populated leaf (admin flag, myCommentIds, currentUserId, callbacks). */
-function withCommentsContext(
-  node: ReactNode,
-  state: Partial<CommentsStateContextValue> = {},
-  actions: Partial<CommentsActionsContextValue> = {},
-): ReactNode {
-  const fullState: CommentsStateContextValue = {
-    commentKey: 'post-1',
-    totalCount: 0,
-    admin: false,
-    state: { items: [], rootsLoaded: 0, rootsTotal: 0, replyToId: 0 },
-    activeReplyToId: 0,
-    myCommentIds: new Set<string>(),
-    myCommentExpiresAt: new Map<string, number>(),
-    currentUserId: null,
-    replyForm: null,
-    ...state,
-  }
-  const fullActions: CommentsActionsContextValue = {
-    onReply: () => undefined,
-    onCancelReply: () => undefined,
-    onEdited: () => undefined,
-    onApproved: () => undefined,
-    onDeleted: () => undefined,
-    onDismissMyComment: () => undefined,
-    dispatch: () => undefined,
-    ...actions,
-  }
-  return (
-    <CommentsStateContext.Provider value={fullState}>
-      <CommentsActionsContext.Provider value={fullActions}>{node}</CommentsActionsContext.Provider>
-    </CommentsStateContext.Provider>
-  )
-}
-
 // ─────────────────────────── LikeButton ───────────────────────────
 
 describe('snapshot: LikeButton', () => {
@@ -161,8 +119,6 @@ describe('snapshot: LikeButton', () => {
     // NumberFlow renders each digit as a column with aria-label carrying the
     // full value.
     expect(html).toContain('aria-label="42"')
-    // Permalink is surfaced via the data attribute the click handler reads.
-    expect(html).toContain('data-permalink="/posts/hello"')
   })
 
   it('renders the zero-count state without crashing', () => {
@@ -219,11 +175,12 @@ describe('snapshot: LikeShare (page permalink)', () => {
 
 describe('snapshot: CommentActions', () => {
   it('renders only the reply affordance in public mode for a foreign comment', () => {
+    const Leaf = makeLeafContext()
     const html = stableHtml(
       renderInRouter(
-        withCommentsContext(
-          <CommentActions comment={makeComment()} mode="public" onEditAdmin={() => {}} onEditOwn={() => {}} />,
-        ),
+        <Leaf>
+          <CommentActions comment={makeComment()} onEditAdmin={() => {}} onEditOwn={() => {}} />
+        </Leaf>,
         '/posts/1',
       ),
     )
@@ -237,17 +194,16 @@ describe('snapshot: CommentActions', () => {
   })
 
   it('renders the admin edit / approve / delete affordances for a pending comment', () => {
+    const Leaf = makeLeafContext({ identity: { admin: true } })
     const html = stableHtml(
       renderInRouter(
-        withCommentsContext(
+        <Leaf>
           <CommentActions
             comment={makeComment({ id: '7', isPending: true })}
-            mode="admin"
             onEditAdmin={() => {}}
             onEditOwn={() => {}}
-          />,
-          { admin: true } as Partial<CommentsStateContextValue>,
-        ),
+          />
+        </Leaf>,
         '/admin',
       ),
     )
@@ -262,17 +218,12 @@ describe('snapshot: CommentActions', () => {
   })
 
   it('hides the approve button for an already-approved comment', () => {
+    const Leaf = makeLeafContext({ identity: { admin: true } })
     const html = stableHtml(
       renderInRouter(
-        withCommentsContext(
-          <CommentActions
-            comment={makeComment({ isPending: false })}
-            mode="admin"
-            onEditAdmin={() => {}}
-            onEditOwn={() => {}}
-          />,
-          { admin: true } as Partial<CommentsStateContextValue>,
-        ),
+        <Leaf>
+          <CommentActions comment={makeComment({ isPending: false })} onEditAdmin={() => {}} onEditOwn={() => {}} />
+        </Leaf>,
         '/admin',
       ),
     )
@@ -283,20 +234,16 @@ describe('snapshot: CommentActions', () => {
   })
 
   it('renders the visitor own-edit + request-delete affordances for an owned comment', () => {
+    const Leaf = makeLeafContext({ identity: { currentUserId: '42', admin: false } })
     const html = stableHtml(
       renderInRouter(
-        withCommentsContext(
+        <Leaf>
           <CommentActions
             comment={makeComment({ id: '42', userId: '42' })}
-            mode="public"
             onEditAdmin={() => {}}
             onEditOwn={() => {}}
-          />,
-          {
-            currentUserId: '42',
-            admin: false,
-          } as Partial<CommentsStateContextValue>,
-        ),
+          />
+        </Leaf>,
         '/posts/1',
       ),
     )
@@ -310,17 +257,16 @@ describe('snapshot: CommentActions', () => {
   })
 
   it('renders the cancel-delete affordance when the visitor already requested deletion', () => {
+    const Leaf = makeLeafContext({ identity: { currentUserId: '42', admin: false } })
     const html = stableHtml(
       renderInRouter(
-        withCommentsContext(
+        <Leaf>
           <CommentActions
             comment={makeComment({ id: '42', userId: '42', deleteRequestedAt: '2024-06-01T00:00:00.000Z' })}
-            mode="public"
             onEditAdmin={() => {}}
             onEditOwn={() => {}}
-          />,
-          { currentUserId: '42', admin: false } as Partial<CommentsStateContextValue>,
-        ),
+          />
+        </Leaf>,
         '/posts/1',
       ),
     )
