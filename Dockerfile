@@ -50,10 +50,6 @@ COPY --from=build /app/dist-sea/kobato.sha256 /usr/local/bin/kobato.sha256
 ENV NODE_ENV=production
 ENV server__host=0.0.0.0
 ENV server__port=4321
-# The SEA binary extracts its embedded native packages (sharp, canvas) to
-# <XDG_CACHE_HOME>/kobato on first boot; point it at the data volume so the
-# extraction survives container replacement (src/server/infra/sea.ts).
-ENV XDG_CACHE_HOME=/data/.cache
 
 EXPOSE 4321
 
