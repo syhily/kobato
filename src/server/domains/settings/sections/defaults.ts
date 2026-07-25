@@ -20,6 +20,7 @@ const sidebarDefaults = {
       { type: 'randomTags' as const, enabled: false, count: 20 },
       { type: 'todayCalendar' as const, enabled: false },
     ],
+    dailyQuote: { source: 'shanbay' as const, customQuotes: [] },
   },
 } as const
 const commentsDefaults = {

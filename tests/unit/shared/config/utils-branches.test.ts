@@ -7,7 +7,7 @@ import { brandingVersion, extractXHandle, isSidebarWidgetEnabled } from '@/share
 // --- isSidebarWidgetEnabled (getSidebarWidgetCount is covered in utils.test.ts) --
 
 function sidebarSettings(widgets: SidebarSettings['sidebar']['widgets']): SidebarSettings {
-  return { sidebar: { widgets } }
+  return { sidebar: { widgets, dailyQuote: { source: 'shanbay', customQuotes: [] } } }
 }
 
 describe('shared/config/utils — isSidebarWidgetEnabled', () => {

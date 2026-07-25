@@ -93,6 +93,7 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
         { type: 'randomTags', enabled: true, count: 10 },
         { type: 'todayCalendar', enabled: true },
       ],
+      dailyQuote: { source: 'shanbay', customQuotes: [] },
     },
   },
   comments: {

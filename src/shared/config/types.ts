@@ -82,9 +82,28 @@ export interface SidebarWidget {
   count?: number
 }
 
+/** Daily-quote sources for the calendar image. The three remote providers
+ * fall back to the built-in bank on failure; `custom` uses the
+ * admin-uploaded `customQuotes` (≥ 10 entries, enforced by the schema) and
+ * behaves like `local` below that; `local` is the built-in bank only. */
+export type DailyQuoteSource = 'shanbay' | 'one' | 'hitokoto' | 'custom' | 'local'
+
+export interface CustomQuote {
+  content: string
+  author: string
+}
+
 export interface SidebarSettings {
   sidebar: {
     widgets: SidebarWidget[]
+    /**
+     * The schema's `.default(...)` (`schemas/sidebar.ts`) fills this bucket
+     * on every read, so it is always present post-hydration.
+     */
+    dailyQuote: {
+      source: DailyQuoteSource
+      customQuotes: CustomQuote[]
+    }
   }
 }
 

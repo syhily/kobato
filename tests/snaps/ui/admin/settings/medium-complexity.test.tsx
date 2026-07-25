@@ -217,6 +217,7 @@ const baseSidebar: SidebarSettings = {
       { type: 'randomTags', enabled: true, count: 10 },
       { type: 'todayCalendar', enabled: true },
     ],
+    dailyQuote: { source: 'shanbay', customQuotes: [] },
   },
 }
 

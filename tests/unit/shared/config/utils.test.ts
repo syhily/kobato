@@ -12,6 +12,7 @@ describe('getSidebarWidgetCount', () => {
         { type: 'randomTags' as const, enabled: true, count: 20 },
         { type: 'todayCalendar' as const, enabled: true },
       ],
+      dailyQuote: { source: 'shanbay' as const, customQuotes: [] },
     },
   }
 
@@ -25,7 +26,7 @@ describe('getSidebarWidgetCount', () => {
   })
 
   it('returns 0 when the widget type is not found', () => {
-    const emptySettings = { sidebar: { widgets: [] } }
+    const emptySettings = { sidebar: { widgets: [], dailyQuote: { source: 'shanbay' as const, customQuotes: [] } } }
     expect(getSidebarWidgetCount(emptySettings, 'recentPosts')).toBe(0)
   })
 
@@ -33,6 +34,7 @@ describe('getSidebarWidgetCount', () => {
     const noCountSettings = {
       sidebar: {
         widgets: [{ type: 'recentPosts' as const, enabled: true }],
+        dailyQuote: { source: 'shanbay' as const, customQuotes: [] },
       },
     }
     expect(getSidebarWidgetCount(noCountSettings, 'recentPosts')).toBe(0)

@@ -60,6 +60,7 @@ const fixture: BlogSettingsBundle = {
   sidebar: {
     sidebar: {
       widgets: [],
+      dailyQuote: { source: 'shanbay', customQuotes: [] },
     },
   },
   comments: {

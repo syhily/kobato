@@ -57,6 +57,7 @@ const fixture: BlogSettingsBundle = {
         { type: 'randomTags', enabled: true, count: 20 },
         { type: 'todayCalendar', enabled: true },
       ],
+      dailyQuote: { source: 'shanbay', customQuotes: [] },
     },
   },
   comments: {

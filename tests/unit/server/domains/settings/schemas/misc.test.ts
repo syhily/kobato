@@ -363,6 +363,62 @@ describe('settings/schemas/sidebar', () => {
       }).success,
     ).toBe(false)
   })
+
+  it('applies dailyQuote defaults when omitted', () => {
+    const result = sidebarSchema.safeParse({ sidebar: { widgets: [] } })
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.sidebar.dailyQuote).toEqual({ source: 'shanbay', customQuotes: [] })
+    }
+  })
+
+  it('rejects an unknown dailyQuote source', () => {
+    expect(
+      sidebarSchema.safeParse({
+        sidebar: { widgets: [], dailyQuote: { source: 'nope' as never, customQuotes: [] } },
+      }).success,
+    ).toBe(false)
+  })
+
+  it('accepts 10+ custom quotes and defaults the author to an empty string', () => {
+    const quotes = Array.from({ length: 10 }, (_, i) => ({ content: `名言${i}` }))
+    const result = sidebarSchema.safeParse({
+      sidebar: { widgets: [], dailyQuote: { source: 'custom', customQuotes: quotes } },
+    })
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.sidebar.dailyQuote.customQuotes[0].author).toBe('')
+    }
+  })
+
+  it('rejects 1–9 custom quotes (the minimum usable bank is 10)', () => {
+    const quotes = Array.from({ length: 9 }, (_, i) => ({ content: `名言${i}` }))
+    expect(
+      sidebarSchema.safeParse({
+        sidebar: { widgets: [], dailyQuote: { source: 'custom', customQuotes: quotes } },
+      }).success,
+    ).toBe(false)
+  })
+
+  it('accepts an empty customQuotes array (clearing restores the built-in bank)', () => {
+    expect(
+      sidebarSchema.safeParse({
+        sidebar: { widgets: [], dailyQuote: { source: 'local', customQuotes: [] } },
+      }).success,
+    ).toBe(true)
+  })
+
+  it('rejects a custom quote with empty content', () => {
+    const quotes = [
+      ...Array.from({ length: 9 }, (_, i) => ({ content: `名言${i}` })),
+      { content: '   ', author: '佚名' },
+    ]
+    expect(
+      sidebarSchema.safeParse({
+        sidebar: { widgets: [], dailyQuote: { source: 'custom', customQuotes: quotes } },
+      }).success,
+    ).toBe(false)
+  })
 })
 
 describe('settings/schemas/socials', () => {
