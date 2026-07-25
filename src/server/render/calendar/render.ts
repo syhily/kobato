@@ -1,14 +1,13 @@
 import type { SKRSContext2D } from '@napi-rs/canvas'
 import type { Buffer } from 'node:buffer'
 
-import { format, getDate, getISODay, getMonth, getYear } from 'date-fns'
+import { getDate, getISODay, getMonth, getYear } from 'date-fns'
 import { Solar } from 'lunar-typescript'
 
-import { DomainError } from '@/server/infra/http/errors'
 import { compressImage } from '@/server/infra/image/compress'
 import { requireExternal } from '@/server/infra/sea'
+import { getDailyQuote } from '@/server/render/calendar/daily-quote'
 import { ensureCanvasFont, type FontSlot } from '@/server/render/canvas-fonts'
-import { isRecord } from '@/shared/utils/type-guards'
 
 // Native module — must resolve against the extracted tree under SEA (see
 // `@/server/infra/sea`). Outside SEA this resolves node_modules normally.
@@ -21,26 +20,6 @@ const HEIGHT = 880
 // one single-flight per slot, shared with the OG renderer.
 function ensureFonts(): Promise<FontSlot | null> {
   return ensureCanvasFont('calendar')
-}
-
-function isQuotePayload(value: unknown): value is { content: string; translation: string; author: string } {
-  if (!isRecord(value)) {
-    return false
-  }
-  return typeof value.content === 'string' && typeof value.translation === 'string' && typeof value.author === 'string'
-}
-
-async function fetchDailyQuote(date: Date) {
-  const url = `https://apiv3.shanbay.com/weapps/dailyquote/quote?date=${format(date, 'yyyy-MM-dd')}`
-  const res = await fetch(url, { signal: AbortSignal.timeout(30_000) })
-  if (!res.ok) {
-    throw new DomainError('INTERNAL', `API 请求失败: ${res.status}`)
-  }
-  const parsed: unknown = await res.json()
-  if (!isQuotePayload(parsed)) {
-    throw new DomainError('INTERNAL', 'API 响应格式异常')
-  }
-  return parsed
 }
 
 function getMonthLabel(date: Date) {
@@ -101,7 +80,7 @@ export async function renderCalendar(date: Date, theme: CalendarTheme = 'light')
   const calendarFontSlot = await ensureFonts()
 
   // Generate the required data from date.
-  const quoteData = await fetchDailyQuote(date)
+  const quote = await getDailyQuote(date)
   const monthText = getMonthLabel(date)
   const lunarText = getLunarLabel(date)
   const weekday = getWeekdayLabel(date)
@@ -167,7 +146,7 @@ export async function renderCalendar(date: Date, theme: CalendarTheme = 'light')
   ctx.textAlign = 'left'
   ctx.textBaseline = 'top'
   ctx.font = `36px ${calFont}`
-  const quoteText = quoteData.translation
+  const quoteText = quote.content
   const quoteLines = wrapText(ctx, quoteText, maxTextWidth)
   let y = quoteY
   const lineHeight = 56
@@ -180,7 +159,7 @@ export async function renderCalendar(date: Date, theme: CalendarTheme = 'light')
   y += 30
   ctx.font = `24px ${calFont}`
   ctx.textAlign = 'right'
-  const authorText = quoteData.author || ''
+  const authorText = quote.author || ''
   ctx.fillText(authorText, WIDTH - 36, HEIGHT - 50)
 
   const encodedImage = await canvas.encode('png')

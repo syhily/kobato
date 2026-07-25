@@ -44,10 +44,17 @@ describe('services/images/calendar — renderCalendar', () => {
     expect(meta.height).toBe(880)
   })
 
-  it('propagates upstream API failures (no half-rendered image)', { timeout: 30_000 }, async () => {
+  it('still renders a valid PNG when the quote API fails (local fallback)', { timeout: 30_000 }, async () => {
     globalThis.fetch = vi.fn(async () => new Response('nope', { status: 500 }))
 
-    await expect(renderCalendar(parseISO('2024-04-24'))).rejects.toThrow(/API 请求失败/)
+    const buffer = await renderCalendar(parseISO('2024-04-24'))
+
+    expect(Buffer.isBuffer(buffer)).toBe(true)
+    expect(buffer[0]).toBe(0x89)
+    expect(String.fromCharCode(buffer[1], buffer[2], buffer[3])).toBe('PNG')
+    const meta = await sharp(buffer).metadata()
+    expect(meta.width).toBe(600)
+    expect(meta.height).toBe(880)
   })
 
   it('encodes lunar dates for traditional Chinese New Year correctly', { timeout: 30_000 }, async () => {
