@@ -1,5 +1,3 @@
-// GENERATED FILE — do not edit by hand.
-//
 // Built-in daily-quote bank for the calendar image, the final fallback
 // when the configured remote provider fails (or when `local` is the
 // configured source). This is the COMPLETE famous list from the source —
@@ -7,12 +5,12 @@
 // with an ellipsis, and `pickForDate` hashes the date so every entry
 // stays reachable across years.
 //
-// Source: BullshitGenerator data.json @ 690988559f39f2e452b1bfd5904282d90c7ace32
+// Vendored snapshot of BullshitGenerator's data.json, pinned commit
+// 690988559f39f2e452b1bfd5904282d90c7ace32:
 //   https://raw.githubusercontent.com/liutongyang/BullshitGenerator/690988559f39f2e452b1bfd5904282d90c7ace32/data.json
-// Regenerate: pnpx vite-node scripts/generate-local-quotes.ts
-// Processing: split the `作者a，内容。b` template (unparseable entries are
-// template residue, dropped), tidy CJK punctuation spacing, dedupe by
-// content, keep source order.
+// Entries were decoded from the `作者a，内容。b` template (unparseable
+// template residue dropped), punctuation spacing tidied, deduped by
+// content, source order preserved.
 
 import type { DailyQuote } from '@/server/render/calendar/daily-quote'
 
