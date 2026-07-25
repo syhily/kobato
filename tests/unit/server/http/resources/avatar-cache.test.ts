@@ -26,34 +26,32 @@ describe('avatar-cache helpers', () => {
       getCacheSettings: vi.fn().mockReturnValue({
         cache: { avatar: { prefix: 'avatar:', ttlSeconds: 3600 } },
       }),
-      requireBlogSettingsSection: vi.fn().mockReturnValue({ comments: { avatar: { size: 80 } } }),
     }))
 
     const { loadAvatar } = await importModule()
-    const avatar = await loadAvatar('a@example.com')
+    const avatar = await loadAvatar('a@example.com', 120)
     expect(avatar).not.toBeNull()
     expect(avatar!.status).toBe(AvatarStatus.HAVE_AVATAR)
     expect(avatar!.buffer?.toString()).toBe('avatar-bytes')
   })
 
-  it('returns null for missing cache entry', async () => {
+  it('reads the entry under the requested size', async () => {
+    const getItemRaw = vi.fn().mockResolvedValue(null)
     vi.doMock('@/server/infra/redis/inflight', () => ({
       createInflight: vi.fn(() => vi.fn((_email, fn) => fn())),
     }))
     vi.doMock('@/server/infra/redis/storage', () => ({
-      storage: {
-        getItemRaw: vi.fn().mockResolvedValue(null),
-      },
+      storage: { getItemRaw },
     }))
     vi.doMock('@/shared/config/getters', () => ({
       getCacheSettings: vi.fn().mockReturnValue({
         cache: { avatar: { prefix: 'avatar:', ttlSeconds: 3600 } },
       }),
-      requireBlogSettingsSection: vi.fn().mockReturnValue({ comments: { avatar: { size: 80 } } }),
     }))
 
     const { loadAvatar } = await importModule()
-    expect(await loadAvatar('missing@example.com')).toBeNull()
+    expect(await loadAvatar('missing@example.com', 512)).toBeNull()
+    expect(getItemRaw).toHaveBeenCalledWith('avatar:512:missing@example.com')
   })
 
   it('caches a HAVE_AVATAR entry', async () => {
@@ -66,11 +64,15 @@ describe('avatar-cache helpers', () => {
       getCacheSettings: vi.fn().mockReturnValue({
         cache: { avatar: { prefix: 'avatar:', ttlSeconds: 3600 } },
       }),
-      requireBlogSettingsSection: vi.fn().mockReturnValue({ comments: { avatar: { size: 80 } } }),
     }))
 
     const { cacheAvatar } = await importModule()
-    await cacheAvatar({ email: 'a@example.com', status: AvatarStatus.HAVE_AVATAR, buffer: Buffer.from('png') })
+    await cacheAvatar({
+      email: 'a@example.com',
+      size: 80,
+      status: AvatarStatus.HAVE_AVATAR,
+      buffer: Buffer.from('png'),
+    })
 
     expect(setItemRaw).toHaveBeenCalledWith(
       'avatar:80:a@example.com',
@@ -89,11 +91,10 @@ describe('avatar-cache helpers', () => {
       getCacheSettings: vi.fn().mockReturnValue({
         cache: { avatar: { prefix: 'avatar:', ttlSeconds: 3600 } },
       }),
-      requireBlogSettingsSection: vi.fn().mockReturnValue({ comments: { avatar: { size: 80 } } }),
     }))
 
     const { cacheAvatar } = await importModule()
-    await cacheAvatar({ email: 'a@example.com', status: AvatarStatus.NO_AVATAR })
+    await cacheAvatar({ email: 'a@example.com', size: 80, status: AvatarStatus.NO_AVATAR })
 
     expect(setItemRaw).toHaveBeenCalledWith('avatar:80:a@example.com', Buffer.from([AvatarStatus.NO_AVATAR]), {
       ttl: 3600,

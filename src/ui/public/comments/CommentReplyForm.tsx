@@ -10,7 +10,7 @@ import type { FindAvatarOutput, ReplyCommentInput, ReplyCommentOutput } from '@/
 import { orpcQuery } from '@/client/api/orpc-query'
 import { useCommentGuest } from '@/client/hooks/use-comment-guest'
 import { bodyToPlainText } from '@/shared/pt/utils'
-import { joinUrl } from '@/shared/utils/urls'
+import { avatarImageUrl } from '@/shared/utils/avatar'
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
 import { cn } from '@/ui/lib/cn'
@@ -45,7 +45,7 @@ export function CommentReplyForm({
   const formRef = useRef<HTMLFormElement | null>(null)
   const [avatarSrc, setAvatarSrc] = useState<string>(() => {
     if (user?.admin) {
-      return joinUrl('/images/avatar', `${user.id}.png`)
+      return avatarImageUrl(user.id)
     }
     if (guestProfile?.avatar) {
       return guestProfile.avatar

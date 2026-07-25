@@ -5,6 +5,7 @@ import { useRevalidator } from 'react-router'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
+import { avatarImageUrl } from '@/shared/utils/avatar'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { roleLabel } from '@/shared/utils/roles'
 import { PasskeyManagementCard } from '@/ui/admin/my/PasskeyManagementCard'
@@ -85,7 +86,7 @@ export function MyProfileView({ user, counts, passkeyEnabled }: MyProfileViewPro
           <Card>
             <CardContent className="flex flex-col items-center gap-4 text-center">
               <Avatar className="size-20">
-                <AvatarImage src={`/images/avatar/${user.id}.png`} alt={user.name} />
+                <AvatarImage src={avatarImageUrl(user.id)} alt={user.name} />
                 <AvatarFallback className="bg-muted text-lg font-semibold">{initial}</AvatarFallback>
               </Avatar>
               <div>

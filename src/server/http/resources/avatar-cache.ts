@@ -2,7 +2,7 @@ import { Buffer } from 'node:buffer'
 
 import { createInflight } from '@/server/infra/redis/inflight'
 import { storage } from '@/server/infra/redis/storage'
-import { getCacheSettings, requireBlogSettingsSection } from '@/shared/config/getters'
+import { getCacheSettings } from '@/shared/config/getters'
 
 export interface Avatar {
   status: AvatarStatus
@@ -25,16 +25,13 @@ const avatarInflight = createInflight<Avatar | null>()
 function avatarConfig(): { prefix: string; ttlSeconds: number } {
   return getCacheSettings().cache.avatar
 }
-const avatarKey = (email: string): string => `${avatarConfig().prefix}${avatarSize()}:${email}`
+const avatarKey = (email: string, size: number): string => `${avatarConfig().prefix}${size}:${email}`
 
-// The fetch size is part of the cache key: the gravatar mirror is asked for
-// `comments.avatar.size` pixels (QQ maps the same setting onto qlogo specs),
-// so after an admin bumps that setting the next read must refetch instead of
-// serving the stale low-res payload until TTL expiry. Entries under the old
-// size age out at their stored TTL, same as a prefix rename.
-function avatarSize(): number {
-  return requireBlogSettingsSection('comments').comments.avatar.size
-}
+// The fetch size is part of the cache key: the endpoint serves the size its
+// caller asked for via `?s=` (120 by default), and the upstream is queried
+// at exactly that size — a 120px entry must never serve a `?s=512` request
+// (or vice versa). Entries under sizes nobody requests anymore age out at
+// their stored TTL, same as a prefix rename.
 
 // Single-key cache layout (was two keys: `avatar-status-${email}` plus
 // `avatar-${email}`). Byte 0 is the status sentinel, the rest is the
@@ -69,8 +66,8 @@ function decodeAvatar(payload: unknown): Avatar | null {
   return null
 }
 
-export async function loadAvatar(email: string): Promise<Avatar | null> {
-  const key = avatarKey(email)
+export async function loadAvatar(email: string, size: number): Promise<Avatar | null> {
+  const key = avatarKey(email, size)
   return avatarInflight(key, async () => {
     const payload = await storage.getItemRaw(key)
     return decodeAvatar(payload)
@@ -79,11 +76,11 @@ export async function loadAvatar(email: string): Promise<Avatar | null> {
 
 export async function cacheAvatar(
   args:
-    | { email: string; buffer: Buffer; status: AvatarStatus.HAVE_AVATAR }
-    | { email: string; status: AvatarStatus.NO_AVATAR },
+    | { email: string; size: number; buffer: Buffer; status: AvatarStatus.HAVE_AVATAR }
+    | { email: string; size: number; status: AvatarStatus.NO_AVATAR },
 ) {
   const buffer = args.status === AvatarStatus.HAVE_AVATAR ? args.buffer : null
-  await storage.setItemRaw(avatarKey(args.email), encodeAvatar(args.status, buffer), {
+  await storage.setItemRaw(avatarKey(args.email, args.size), encodeAvatar(args.status, buffer), {
     ttl: avatarConfig().ttlSeconds,
   })
 }

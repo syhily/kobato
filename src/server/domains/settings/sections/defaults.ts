@@ -25,7 +25,7 @@ const sidebarDefaults = {
 const commentsDefaults = {
   comments: {
     size: 10,
-    avatar: { mirror: 'https://www.gravatar.com/avatar', size: 80 },
+    avatar: { mirror: 'https://www.gravatar.com/avatar' },
     tokenTtlSeconds: 1800,
   },
 } as const

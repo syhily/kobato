@@ -48,7 +48,7 @@ const BUCKET_META = [
     id: 'avatar',
     label: 'Gravatar 头像缓存',
     description:
-      '/images/avatar/:hash.png 缓存的头像字节，键形如 ${prefix}${size}:${hash}（size 为评论设置里的头像尺寸）。用户更换头像后清理可让访客立即看到新头像。',
+      '/images/avatar/:hash.png 缓存的头像字节，键形如 ${prefix}${size}:${hash}（size 为请求 ?s= 参数的尺寸，默认 120）。用户更换头像后清理可让访客立即看到新头像。',
   },
   {
     id: 'imageMeta',

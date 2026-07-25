@@ -1,7 +1,7 @@
 import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
 
+import { avatarImageUrl } from '@/shared/utils/avatar'
 import { safeHref } from '@/shared/utils/safe-url'
-import { joinUrl } from '@/shared/utils/urls'
 import { cn } from '@/ui/lib/cn'
 import { commentAuthorClass, commentAvatarClass } from '@/ui/public/comments/comment-item/helpers'
 
@@ -17,7 +17,7 @@ export function CommentAvatar({ comment, depth }: { comment: CommentItemType; de
     >
       <img
         alt={comment.name}
-        src={joinUrl('/images/avatar', `${comment.userId}.png`)}
+        src={avatarImageUrl(comment.userId)}
         className="size-full rounded-full object-cover"
         height={40}
         width={40}

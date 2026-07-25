@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 
 import type { HeaderCurrentUser } from '@/ui/public/chrome/Header'
 
+import { avatarImageUrl } from '@/shared/utils/avatar'
 import { roleLabel } from '@/shared/utils/roles'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/avatar'
 import { Button } from '@/ui/components/button'
@@ -32,7 +33,7 @@ export function UserMenu({ currentUser, logoutQuery }: Props) {
         render={
           <Button variant="ghost" size="icon" className="size-9 rounded-full" aria-label="用户菜单">
             <Avatar className="size-8">
-              <AvatarImage src={`/images/avatar/${currentUser.id}.png`} alt={currentUser.name} />
+              <AvatarImage src={avatarImageUrl(currentUser.id)} alt={currentUser.name} />
               <AvatarFallback>{initial}</AvatarFallback>
             </Avatar>
           </Button>

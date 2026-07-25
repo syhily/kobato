@@ -4,6 +4,7 @@ import { Link } from 'react-router'
 import type { AdminSessionItem } from '@/routes/admin/security/sessions'
 
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
+import { avatarImageUrl } from '@/shared/utils/avatar'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { ROLE_LEVELS, roleLabel, type Role } from '@/shared/utils/roles'
 import { formatUserAgentLabel } from '@/shared/utils/user-agent'
@@ -48,7 +49,7 @@ export function AdminSessionRow({ item, submitting, onRevoke, config }: AdminSes
     >
       <div className="flex min-w-0 flex-1 items-start gap-3">
         <Avatar className="size-10 shrink-0">
-          <AvatarImage src={`/images/avatar/${item.userId}.png`} alt={item.userName} />
+          <AvatarImage src={avatarImageUrl(item.userId)} alt={item.userName} />
           <AvatarFallback>{initial}</AvatarFallback>
         </Avatar>
         <div className="flex min-w-0 flex-col gap-1.5">

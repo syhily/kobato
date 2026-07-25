@@ -76,7 +76,7 @@ describe('settings/schemas/mail', () => {
 describe('settings/schemas/comments', () => {
   it('accepts a valid payload and applies the default tokenTtlSeconds', () => {
     const result = commentsSchema.safeParse({
-      comments: { size: 10, avatar: { mirror: 'https://gravatar.com/avatar/', size: 80 } },
+      comments: { size: 10, avatar: { mirror: 'https://gravatar.com/avatar/' } },
     })
     expect(result.success).toBe(true)
     if (result.success) {
@@ -87,7 +87,7 @@ describe('settings/schemas/comments', () => {
   it('rejects an unknown gravatar mirror', () => {
     expect(
       commentsSchema.safeParse({
-        comments: { size: 10, avatar: { mirror: 'https://evil.example/avatar/', size: 80 } },
+        comments: { size: 10, avatar: { mirror: 'https://evil.example/avatar/' } },
       }).success,
     ).toBe(false)
   })
@@ -95,20 +95,12 @@ describe('settings/schemas/comments', () => {
   it('rejects size below 1 or above 100', () => {
     expect(
       commentsSchema.safeParse({
-        comments: { size: 0, avatar: { mirror: 'https://gravatar.com/avatar/', size: 80 } },
+        comments: { size: 0, avatar: { mirror: 'https://gravatar.com/avatar/' } },
       }).success,
     ).toBe(false)
     expect(
       commentsSchema.safeParse({
-        comments: { size: 101, avatar: { mirror: 'https://gravatar.com/avatar/', size: 80 } },
-      }).success,
-    ).toBe(false)
-  })
-
-  it('rejects avatar size outside 16..512', () => {
-    expect(
-      commentsSchema.safeParse({
-        comments: { size: 5, avatar: { mirror: 'https://gravatar.com/avatar/', size: 8 } },
+        comments: { size: 101, avatar: { mirror: 'https://gravatar.com/avatar/' } },
       }).success,
     ).toBe(false)
   })
@@ -118,7 +110,7 @@ describe('settings/schemas/comments', () => {
       commentsSchema.safeParse({
         comments: {
           size: 5,
-          avatar: { mirror: 'https://gravatar.com/avatar/', size: 80 },
+          avatar: { mirror: 'https://gravatar.com/avatar/' },
           tokenTtlSeconds: 10,
         },
       }).success,

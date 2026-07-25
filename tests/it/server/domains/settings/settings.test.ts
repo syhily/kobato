@@ -107,7 +107,7 @@ const fixtureBundle: BlogSettingsBundle = {
   comments: {
     comments: {
       size: 10,
-      avatar: { mirror: 'https://gravatar.com/avatar/', size: 80 },
+      avatar: { mirror: 'https://gravatar.com/avatar/' },
       tokenTtlSeconds: 1800,
     },
   },

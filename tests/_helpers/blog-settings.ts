@@ -98,7 +98,7 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
   comments: {
     comments: {
       size: 10,
-      avatar: { mirror: 'https://gravatar.loli.net/avatar', size: 120 },
+      avatar: { mirror: 'https://gravatar.loli.net/avatar' },
       tokenTtlSeconds: 1800,
     },
   },

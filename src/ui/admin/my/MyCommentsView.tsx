@@ -10,6 +10,7 @@ import type { MyCommentsStatus } from '@/shared/types/comments'
 import { orpcQuery } from '@/client/api/orpc-query'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { commentBodySchema } from '@/shared/pt/comment-schema'
+import { avatarImageUrl } from '@/shared/utils/avatar'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { CommentsFilterBar } from '@/ui/admin/comments/CommentsFilterBar'
@@ -381,7 +382,7 @@ function MyCommentRow({
     >
       <div className="flex min-w-0 items-start gap-3">
         <Avatar className="size-10 shrink-0">
-          <AvatarImage src={`/images/avatar/${currentUser.id}.png`} alt={currentUser.name} />
+          <AvatarImage src={avatarImageUrl(currentUser.id)} alt={currentUser.name} />
           <AvatarFallback className="bg-muted text-sm font-semibold text-muted-foreground">{initial}</AvatarFallback>
         </Avatar>
 

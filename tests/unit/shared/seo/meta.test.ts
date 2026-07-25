@@ -62,7 +62,7 @@ const fixture: BlogSettingsBundle = {
   comments: {
     comments: {
       size: 10,
-      avatar: { mirror: 'https://cdn.test.example/avatar', size: 80 },
+      avatar: { mirror: 'https://cdn.test.example/avatar' },
       tokenTtlSeconds: 1800,
     },
   },

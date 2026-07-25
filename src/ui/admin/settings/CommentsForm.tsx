@@ -41,19 +41,15 @@ function CommentsPaginationCard({ comments }: { comments: CommentsSettings }) {
 }
 
 function CommentsAvatarCard({ comments }: { comments: CommentsSettings }) {
-  const { form, flushOnBlur, settingGroupProps } = useSettingsCard<
-    CommentsSettings,
-    { avatarMirror: string; avatarSize: number }
-  >({
+  const { form, flushOnBlur, settingGroupProps } = useSettingsCard<CommentsSettings, { avatarMirror: string }>({
     section: 'comments',
     source: comments,
     toState: (source) => ({
       avatarMirror: source.comments.avatar.mirror,
-      avatarSize: source.comments.avatar.size,
     }),
     fromState: (state) => ({
       comments: {
-        avatar: { mirror: state.avatarMirror.trim(), size: state.avatarSize },
+        avatar: { mirror: state.avatarMirror.trim() },
       },
     }),
   })
@@ -75,16 +71,6 @@ function CommentsAvatarCard({ comments }: { comments: CommentsSettings }) {
             id="comments-avatar-mirror"
             type="url"
             {...form.register('avatarMirror')}
-          />
-        </SettingsRow>
-        <SettingsRow label="头像尺寸 (px)" htmlFor="comments-avatar-size">
-          <SettingsInput
-            flushOnBlur={flushOnBlur}
-            id="comments-avatar-size"
-            type="number"
-            min={16}
-            max={512}
-            {...form.register('avatarSize', { valueAsNumber: true })}
           />
         </SettingsRow>
       </SettingGroupContent>

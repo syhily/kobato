@@ -7,6 +7,7 @@ import type { AdminCommentWire as AdminComment } from '@/shared/contracts/commen
 import { orpcQuery } from '@/client/api/orpc-query'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { bodyToPlainText } from '@/shared/pt/utils'
+import { avatarImageUrl } from '@/shared/utils/avatar'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { safeHref } from '@/shared/utils/safe-url'
 import { idStr } from '@/shared/utils/tools'
@@ -95,7 +96,7 @@ export function AdminCommentRow({
     >
       <div className="flex min-w-0 items-start gap-3">
         <Avatar className="size-10 shrink-0">
-          <AvatarImage src={`/images/avatar/${comment.userId}.png`} alt={comment.name} />
+          <AvatarImage src={avatarImageUrl(comment.userId)} alt={comment.name} />
           <AvatarFallback className="bg-muted text-sm font-semibold text-muted-foreground">{initial}</AvatarFallback>
         </Avatar>
 

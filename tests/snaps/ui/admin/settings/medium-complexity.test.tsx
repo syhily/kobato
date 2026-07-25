@@ -118,7 +118,7 @@ const baseCache = {
 const baseComments: CommentsSettings = {
   comments: {
     size: 10,
-    avatar: { mirror: 'https://gravatar.loli.net/avatar', size: 120 },
+    avatar: { mirror: 'https://gravatar.loli.net/avatar' },
     tokenTtlSeconds: 1800,
   },
 }

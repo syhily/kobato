@@ -7,6 +7,7 @@ import { compressImage } from '@/server/infra/image/compress'
 import { getLogger } from '@/server/infra/logger'
 import { safeFetch } from '@/server/infra/safe-fetch'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
+import { DEFAULT_AVATAR_SIZE } from '@/shared/utils/avatar'
 import { idFromString } from '@/shared/utils/id'
 import { isAllowedMirrorUrl } from '@/shared/utils/safe-url'
 import { encodedEmail } from '@/shared/utils/security'
@@ -22,6 +23,26 @@ import { joinUrl } from '@/shared/utils/urls'
 
 const MAX_REDIRECT_HOPS = 5
 const FETCH_TIMEOUT_MS = 30_000
+
+// Bounds for the endpoint's `?s=` parameter — the range the Gravatar and QQ
+// upstreams usefully serve (the retired `comments.avatar.size` setting
+// validated the same window).
+const MIN_AVATAR_SIZE = 16
+const MAX_AVATAR_SIZE = 512
+
+/** Resolve the avatar endpoint's `?s=` query parameter: an integer clamped
+ *  to [16, 512], defaulting to DEFAULT_AVATAR_SIZE when the parameter is
+ *  absent, blank, or not a finite number. */
+export function resolveAvatarSize(raw: string | undefined): number {
+  if (raw === undefined || raw.trim() === '') {
+    return DEFAULT_AVATAR_SIZE
+  }
+  const parsed = Number(raw)
+  if (!Number.isFinite(parsed)) {
+    return DEFAULT_AVATAR_SIZE
+  }
+  return Math.min(MAX_AVATAR_SIZE, Math.max(MIN_AVATAR_SIZE, Math.trunc(parsed)))
+}
 
 /** Default-avatar URL on this site, used both as the loader fallback and
  *  as the gravatar `d=` sentinel. */
@@ -72,13 +93,13 @@ async function safeFetchAvatar(
   return null
 }
 
-/** Fetch the avatar PNG bytes from the configured gravatar mirror.
- *  Returns `null` when the mirror reports "no avatar" (either via 4xx,
- *  via a redirect back to the default-avatar URL, after the redirect
- *  budget is exhausted, or when the upstream network call fails). The
- *  buffer is compressed before being handed back so the cache layer
+/** Fetch the avatar PNG bytes from the configured gravatar mirror at the
+ *  requested pixel size. Returns `null` when the mirror reports "no avatar"
+ *  (either via 4xx, via a redirect back to the default-avatar URL, after the
+ *  redirect budget is exhausted, or when the upstream network call fails).
+ *  The buffer is compressed before being handed back so the cache layer
  *  stores the smaller payload. */
-export async function fetchAvatarImage(hash: string): Promise<Buffer | null> {
+export async function fetchAvatarImage(hash: string, size: number): Promise<Buffer | null> {
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
   const comments = requireBlogSettingsSection('comments')
   // SSRF guard: reject mirror URLs that are not on the gravatar allowlist
@@ -89,10 +110,7 @@ export async function fetchAvatarImage(hash: string): Promise<Buffer | null> {
     return null
   }
   const defaultLink = defaultAvatarUrl()
-  const initialLink = joinUrl(
-    comments.comments.avatar.mirror,
-    `${hash}?s=${comments.comments.avatar.size}&d=${encodeURIComponent(defaultLink)}`,
-  )
+  const initialLink = joinUrl(comments.comments.avatar.mirror, `${hash}?s=${size}&d=${encodeURIComponent(defaultLink)}`)
   const headers: Record<string, string> = {
     Accept: 'image/png',
     Referer: siteIdentity.website,
@@ -126,11 +144,11 @@ export function getQQAvatarUrl(email: string, size: number): string | null {
   return `https://q.qlogo.cn/headimg_dl?dst_uin=${match[1]}&spec=${spec}`
 }
 
-/** Fetch the avatar PNG bytes from the QQ avatar CDN.
- *  Returns `null` when the request fails. The buffer is compressed
+/** Fetch the avatar PNG bytes from the QQ avatar CDN at the requested pixel
+ *  size. Returns `null` when the request fails. The buffer is compressed
  *  before being handed back so the cache layer stores the smaller payload. */
-export async function fetchQQAvatarImage(email: string): Promise<Buffer | null> {
-  const url = getQQAvatarUrl(email, requireBlogSettingsSection('comments').comments.avatar.size)
+export async function fetchQQAvatarImage(email: string, size: number): Promise<Buffer | null> {
+  const url = getQQAvatarUrl(email, size)
   if (url === null) {
     return null
   }

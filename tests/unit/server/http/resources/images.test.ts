@@ -41,6 +41,9 @@ vi.mock('@/server/domains/comments/services/avatar', () => ({
   fetchQQAvatarImage: vi.fn(),
   isQQEmail: vi.fn((email: string) => email.endsWith('@qq.com')),
   resolveAvatarInfo: vi.fn(),
+  // Pass-through stub so the tests can watch `?s=` flow into the cache and
+  // fetch calls; the clamping rules live in the service's own unit tests.
+  resolveAvatarSize: vi.fn((raw: string | undefined) => (raw === undefined || raw === '' ? 120 : Number(raw))),
 }))
 
 vi.mock('@/server/render/og/render', () => ({
@@ -134,6 +137,17 @@ describe('images resource', () => {
     ;(fetchAvatarImage as ReturnType<typeof vi.fn>).mockResolvedValue(Buffer.from('av'))
     const res = await imagesRouter.request('http://localhost/images/avatar/abc.png', undefined, env)
     expect(res.status).toBe(200)
+  })
+
+  it('threads the `?s=` size into the cache lookup, defaulting to 120', async () => {
+    ;(resolveAvatarInfo as ReturnType<typeof vi.fn>).mockResolvedValue({ email: null, hash: 'abc' })
+    ;(loadAvatar as ReturnType<typeof vi.fn>).mockResolvedValue({ status: 'have_avatar', buffer: Buffer.from('av') })
+    const res = await imagesRouter.request('http://localhost/images/avatar/abc.png?s=256', undefined, env)
+    expect(res.status).toBe(200)
+    expect(loadAvatar).toHaveBeenCalledWith('abc', 256)
+    ;(loadAvatar as ReturnType<typeof vi.fn>).mockClear()
+    await imagesRouter.request('http://localhost/images/avatar/abc.png', undefined, env)
+    expect(loadAvatar).toHaveBeenCalledWith('abc', 120)
   })
 
   it('falls back to default avatar when hash is empty', async () => {

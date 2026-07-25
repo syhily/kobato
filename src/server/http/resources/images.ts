@@ -11,6 +11,7 @@ import {
   fetchQQAvatarImage,
   isQQEmail,
   resolveAvatarInfo,
+  resolveAvatarSize,
 } from '@/server/domains/comments/services/avatar'
 import { isLive } from '@/server/domains/content/schema'
 import { findPublicPageMetaBySlug } from '@/server/domains/pages/repo'
@@ -156,24 +157,25 @@ export const imagesRouter = new Hono<Env>()
     if (!hash) {
       return c.redirect(defaultAvatarUrl())
     }
+    const size = resolveAvatarSize(c.req.query('s'))
 
     const { email, hash: canonical } = await resolveAvatarInfo(c.var.db, hash)
     if (canonical === null) {
-      await cacheAvatar({ email: hash, status: AvatarStatus.NO_AVATAR })
+      await cacheAvatar({ email: hash, size, status: AvatarStatus.NO_AVATAR })
       return c.redirect(defaultAvatarUrl())
     }
 
     if (email && isQQEmail(email)) {
-      const buffer = await fetchQQAvatarImage(email)
+      const buffer = await fetchQQAvatarImage(email, size)
       if (buffer === null) {
-        await cacheAvatar({ email: canonical, status: AvatarStatus.NO_AVATAR })
+        await cacheAvatar({ email: canonical, size, status: AvatarStatus.NO_AVATAR })
         return c.redirect(defaultAvatarUrl())
       }
-      await cacheAvatar({ email: canonical, status: AvatarStatus.HAVE_AVATAR, buffer })
+      await cacheAvatar({ email: canonical, size, status: AvatarStatus.HAVE_AVATAR, buffer })
       return respondPng(c, buffer, AVATAR_HEADERS)
     }
 
-    const avatar = await loadAvatar(canonical)
+    const avatar = await loadAvatar(canonical, size)
     if (avatar !== null) {
       if (avatar.status === AvatarStatus.NO_AVATAR) {
         return c.redirect(defaultAvatarUrl())
@@ -183,12 +185,12 @@ export const imagesRouter = new Hono<Env>()
       }
     }
 
-    const buffer = await fetchAvatarImage(canonical)
+    const buffer = await fetchAvatarImage(canonical, size)
     if (buffer === null) {
-      await cacheAvatar({ email: canonical, status: AvatarStatus.NO_AVATAR })
+      await cacheAvatar({ email: canonical, size, status: AvatarStatus.NO_AVATAR })
       return c.redirect(defaultAvatarUrl())
     }
 
-    await cacheAvatar({ email: canonical, status: AvatarStatus.HAVE_AVATAR, buffer })
+    await cacheAvatar({ email: canonical, size, status: AvatarStatus.HAVE_AVATAR, buffer })
     return respondPng(c, buffer, AVATAR_HEADERS)
   })

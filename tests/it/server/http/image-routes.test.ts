@@ -30,6 +30,7 @@ vi.mock('@/server/domains/comments/services/avatar', () => ({
   fetchQQAvatarImage: vi.fn(),
   isQQEmail: () => false,
   resolveAvatarInfo: vi.fn().mockImplementation(async (hash: string) => ({ email: null, hash })),
+  resolveAvatarSize: vi.fn((raw: string | undefined) => (raw === undefined || raw === '' ? 120 : Number(raw))),
 }))
 vi.mock('@/server/render/og/render', () => ({
   drawOpenGraph: vi.fn().mockResolvedValue(Buffer.from([0x89, 0x50, 0x4e, 0x47])),

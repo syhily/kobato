@@ -94,7 +94,6 @@ export interface CommentsSettings {
     size: number
     avatar: {
       mirror: string
-      size: number
     }
     /** TTL for the temporary comment edit token (seconds). */
     tokenTtlSeconds: number

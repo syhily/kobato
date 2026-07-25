@@ -2,6 +2,7 @@ import { ChevronsUpDownIcon, InfoIcon, LogOutIcon, MessageSquareIcon, MonitorIco
 import { useState } from 'react'
 import { Link } from 'react-router'
 
+import { avatarImageUrl } from '@/shared/utils/avatar'
 import { VersionDialog } from '@/ui/admin/shell/VersionDialog'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/avatar'
 import {
@@ -38,7 +39,7 @@ export function AppSidebarFooter({ className, id, name, email }: AppSidebarFoote
                   aria-label="用户菜单"
                 >
                   <Avatar className="size-8">
-                    {id ? <AvatarImage src={`/images/avatar/${id}.png`} alt={name} /> : null}
+                    {id ? <AvatarImage src={avatarImageUrl(id)} alt={name} /> : null}
                     <AvatarFallback className="bg-primary text-xs font-semibold text-primary-foreground">
                       {initial}
                     </AvatarFallback>
@@ -54,7 +55,7 @@ export function AppSidebarFooter({ className, id, name, email }: AppSidebarFoote
             <DropdownMenuContent align="start" sideOffset={8} className="min-w-[var(--anchor-width)] px-3 pt-3">
               <DropdownMenuLabel className="flex items-center gap-3 rounded-xl p-3">
                 <Avatar className="size-10">
-                  {id ? <AvatarImage src={`/images/avatar/${id}.png`} alt={name} /> : null}
+                  {id ? <AvatarImage src={avatarImageUrl(id)} alt={name} /> : null}
                   <AvatarFallback className="bg-primary text-sm font-semibold text-primary-foreground">
                     {initial}
                   </AvatarFallback>

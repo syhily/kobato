@@ -149,7 +149,7 @@ describe('avatarRouter.find', () => {
     const res = (await call(avatarRouter.find, { email: 'someone@example.com' }, { context: ctx })) as {
       avatar: string
     }
-    expect(res.avatar).toMatch(/^https:\/\/example\.test\/images\/avatar\/.+\.png$/)
+    expect(res.avatar).toMatch(/^https:\/\/example\.test\/images\/avatar\/.+\.png\?s=120$/)
   })
 })
 

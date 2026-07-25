@@ -17,6 +17,7 @@ import {
   fetchQQAvatarImage,
   getQQAvatarUrl,
   isQQEmail,
+  resolveAvatarSize,
 } from '@/server/domains/comments/services/avatar'
 import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
 
@@ -49,6 +50,28 @@ function mockFetch(responses: Array<Response | (() => Response)>) {
   vi.stubGlobal('fetch', fn)
   return fn
 }
+
+describe('domains/comments/services/avatar — resolveAvatarSize', () => {
+  it('defaults to 120 when the parameter is absent, blank, or not a number', () => {
+    expect(resolveAvatarSize(undefined)).toBe(120)
+    expect(resolveAvatarSize('')).toBe(120)
+    expect(resolveAvatarSize('  ')).toBe(120)
+    expect(resolveAvatarSize('abc')).toBe(120)
+    expect(resolveAvatarSize('Infinity')).toBe(120)
+  })
+
+  it('passes through an in-range integer', () => {
+    expect(resolveAvatarSize('120')).toBe(120)
+    expect(resolveAvatarSize('48')).toBe(48)
+  })
+
+  it('truncates floats and clamps to 16..512', () => {
+    expect(resolveAvatarSize('119.9')).toBe(119)
+    expect(resolveAvatarSize('1')).toBe(16)
+    expect(resolveAvatarSize('-5')).toBe(16)
+    expect(resolveAvatarSize('10000')).toBe(512)
+  })
+})
 
 describe('domains/comments/services/avatar — isQQEmail / getQQAvatarUrl', () => {
   it('detects QQ emails', () => {
@@ -100,21 +123,21 @@ describe('domains/comments/services/avatar — fetchAvatarImage', () => {
         },
       },
     })
-    expect(await fetchAvatarImage('abc')).toBeNull()
+    expect(await fetchAvatarImage('abc', 120)).toBeNull()
     expect(fetchSpy).not.toHaveBeenCalled()
   })
 
   it('returns the compressed bytes on a 2xx response', async () => {
     const body = Buffer.from([0x89, 0x50, 0x4e, 0x47])
     mockFetch([new Response(body, { status: 200, headers: { 'Content-Type': 'image/png' } })])
-    const result = await withAllowedMirror(() => fetchAvatarImage('hash'))
+    const result = await withAllowedMirror(() => fetchAvatarImage('hash', 120))
     expect(result).not.toBeNull()
   })
 
   it('returns null when the mirror redirects to the default avatar URL', async () => {
     const defaultUrl = defaultAvatarUrl()
     mockFetch([new Response(null, { status: 302, headers: { location: defaultUrl } })])
-    expect(await withAllowedMirror(() => fetchAvatarImage('hash'))).toBeNull()
+    expect(await withAllowedMirror(() => fetchAvatarImage('hash', 120))).toBeNull()
   })
 
   it('follows a non-default redirect', async () => {
@@ -123,25 +146,25 @@ describe('domains/comments/services/avatar — fetchAvatarImage', () => {
       new Response(null, { status: 302, headers: { location: 'https://gravatar.com/avatar/real?d=x' } }),
       new Response(body, { status: 200 }),
     ])
-    expect(await withAllowedMirror(() => fetchAvatarImage('hash'))).not.toBeNull()
+    expect(await withAllowedMirror(() => fetchAvatarImage('hash', 120))).not.toBeNull()
   })
 
   it('rejects a redirect to an internal address (SSRF)', async () => {
     const fetchFn = mockFetch([
       new Response(null, { status: 302, headers: { location: 'http://169.254.169.254/latest/meta-data/' } }),
     ])
-    expect(await withAllowedMirror(() => fetchAvatarImage('hash'))).toBeNull()
+    expect(await withAllowedMirror(() => fetchAvatarImage('hash', 120))).toBeNull()
     expect(fetchFn).toHaveBeenCalledTimes(1)
   })
 
   it('returns null on a 4xx response', async () => {
     mockFetch([new Response(null, { status: 404 })])
-    expect(await withAllowedMirror(() => fetchAvatarImage('hash'))).toBeNull()
+    expect(await withAllowedMirror(() => fetchAvatarImage('hash', 120))).toBeNull()
   })
 
   it('returns null when a 3xx response has no location header', async () => {
     mockFetch([new Response(null, { status: 302 })])
-    expect(await withAllowedMirror(() => fetchAvatarImage('hash'))).toBeNull()
+    expect(await withAllowedMirror(() => fetchAvatarImage('hash', 120))).toBeNull()
   })
 
   it('returns null when fetch throws a network error', async () => {
@@ -150,7 +173,7 @@ describe('domains/comments/services/avatar — fetchAvatarImage', () => {
         throw new TypeError('fetch failed', { cause: new AggregateError([], 'ETIMEDOUT') })
       },
     ])
-    expect(await withAllowedMirror(() => fetchAvatarImage('hash'))).toBeNull()
+    expect(await withAllowedMirror(() => fetchAvatarImage('hash', 120))).toBeNull()
     expect(warnMock).toHaveBeenCalledWith('avatar fetch failed', { error: 'fetch failed' })
   })
 })
@@ -163,19 +186,19 @@ describe('domains/comments/services/avatar — fetchQQAvatarImage', () => {
   it('returns null for non-QQ emails without calling fetch', async () => {
     const spy = vi.fn()
     vi.stubGlobal('fetch', spy)
-    expect(await fetchQQAvatarImage('a@b.com')).toBeNull()
+    expect(await fetchQQAvatarImage('a@b.com', 120)).toBeNull()
     expect(spy).not.toHaveBeenCalled()
   })
 
   it('returns bytes on a 2xx response', async () => {
     const body = Buffer.from([0xff, 0xd8])
     mockFetch([new Response(body, { status: 200 })])
-    expect(await fetchQQAvatarImage('12345@qq.com')).not.toBeNull()
+    expect(await fetchQQAvatarImage('12345@qq.com', 120)).not.toBeNull()
   })
 
   it('returns null on a non-2xx response', async () => {
     mockFetch([new Response(null, { status: 500 })])
-    expect(await fetchQQAvatarImage('12345@qq.com')).toBeNull()
+    expect(await fetchQQAvatarImage('12345@qq.com', 120)).toBeNull()
   })
 
   it('returns null when fetch throws a network error', async () => {
@@ -184,7 +207,7 @@ describe('domains/comments/services/avatar — fetchQQAvatarImage', () => {
         throw new TypeError('fetch failed', { cause: new AggregateError([], 'ETIMEDOUT') })
       },
     ])
-    expect(await fetchQQAvatarImage('12345@qq.com')).toBeNull()
+    expect(await fetchQQAvatarImage('12345@qq.com', 120)).toBeNull()
     expect(warnMock).toHaveBeenCalledWith('avatar fetch failed', { error: 'fetch failed' })
   })
 
@@ -192,7 +215,7 @@ describe('domains/comments/services/avatar — fetchQQAvatarImage', () => {
     const fetchFn = mockFetch([
       new Response(null, { status: 302, headers: { location: 'https://evil.example/avatar.png' } }),
     ])
-    expect(await fetchQQAvatarImage('12345@qq.com')).toBeNull()
+    expect(await fetchQQAvatarImage('12345@qq.com', 120)).toBeNull()
     expect(fetchFn).toHaveBeenCalledTimes(1)
   })
 })

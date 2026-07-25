@@ -4,6 +4,7 @@ import { fetchQQAvatarImage, isQQEmail } from '@/server/domains/comments/service
 import { publicProc, resourceRateLimit } from '@/server/http/orpc-base'
 import { AvatarStatus, cacheAvatar } from '@/server/http/resources/avatar-cache'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
+import { avatarImageUrl, DEFAULT_AVATAR_SIZE } from '@/shared/utils/avatar'
 import { encodedEmail } from '@/shared/utils/security'
 import { joinUrl } from '@/shared/utils/urls'
 
@@ -15,15 +16,18 @@ const findAvatar = publicProc
   .handler(async ({ input }) => {
     const hash = await encodedEmail(input.email)
     if (isQQEmail(input.email)) {
-      const buffer = await fetchQQAvatarImage(input.email)
+      // Pre-warm the cache at the default display size — the URL returned
+      // below carries no explicit `?s=`, so the endpoint will serve (and
+      // read) the DEFAULT_AVATAR_SIZE entry.
+      const buffer = await fetchQQAvatarImage(input.email, DEFAULT_AVATAR_SIZE)
       if (buffer !== null) {
-        await cacheAvatar({ email: hash, status: AvatarStatus.HAVE_AVATAR, buffer })
+        await cacheAvatar({ email: hash, size: DEFAULT_AVATAR_SIZE, status: AvatarStatus.HAVE_AVATAR, buffer })
       } else {
-        await cacheAvatar({ email: hash, status: AvatarStatus.NO_AVATAR })
+        await cacheAvatar({ email: hash, size: DEFAULT_AVATAR_SIZE, status: AvatarStatus.NO_AVATAR })
       }
     }
     return {
-      avatar: joinUrl(requireBlogSettingsSection('siteIdentity').website, 'images/avatar', `${hash}.png`),
+      avatar: joinUrl(requireBlogSettingsSection('siteIdentity').website, avatarImageUrl(hash)),
     }
   })
 

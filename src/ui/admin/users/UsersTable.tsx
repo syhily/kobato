@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router'
 import type { SiteIdentitySettings } from '@/shared/config/types'
 import type { AdminUserDto } from '@/shared/contracts/users'
 
+import { avatarImageUrl } from '@/shared/utils/avatar'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { roleLabel } from '@/shared/utils/roles'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/avatar'
@@ -122,7 +123,7 @@ const UserRow = memo(function UserRow({ user, config }: UserRowProps) {
       <TableCell className="px-4 py-4">
         <div className="flex items-center gap-3">
           <Avatar className="size-10 shrink-0">
-            <AvatarImage src={`/images/avatar/${user.id}.png`} alt={user.name} />
+            <AvatarImage src={avatarImageUrl(user.id)} alt={user.name} />
             <AvatarFallback className="bg-muted text-xs font-semibold">{initial}</AvatarFallback>
           </Avatar>
           <div className="min-w-0">

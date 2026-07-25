@@ -36,7 +36,7 @@ describe('avatarRouter.find', () => {
   it('returns a hash-based avatar path', async () => {
     const ctx = makePublicCtx()
     const res = await call(avatarRouter.find, { email: 'user@example.com' }, { context: ctx })
-    expect(res.avatar).toMatch(/^https:\/\/example\.test\/images\/avatar\/[0-9a-f]{64}\.png$/)
+    expect(res.avatar).toMatch(/^https:\/\/example\.test\/images\/avatar\/[0-9a-f]{64}\.png\?s=120$/)
   })
 
   it('returns different paths for different emails', async () => {
