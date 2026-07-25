@@ -264,9 +264,18 @@ export async function bootServer(
   // explicit --config the binary would create/read kobato.config.json in
   // its own directory or ~/.config and persist smoke secrets + the
   // throwaway database URL into real locations.
+  //
+  // Config vars (`database__url`, `redis__url`, …) must NOT be inherited
+  // from the parent environment: CI defines them at job level, and a
+  // leaked value silently overrides the converged config file (env >
+  // file) — the file-only restart would then boot against the
+  // maintenance database instead of the per-run smoke one. Config
+  // reaches the child only through the explicit `env` argument (and
+  // server__port below).
+  const parentEnv = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.includes('__')))
   const child = spawn(binaryPath, ['--config', join(dirs.root, 'kobato.config.json')], {
     cwd: dirs.cwd,
-    env: { ...process.env, ...env, server__port: String(port) },
+    env: { ...parentEnv, ...env, server__port: String(port) },
     stdio: ['ignore', 'pipe', 'pipe'],
   })
   child.stdout?.pipe(logStream)
