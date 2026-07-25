@@ -1,11 +1,10 @@
-import { useSortable } from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
 import { ExternalLinkIcon, GripVerticalIcon, SquarePenIcon, Trash2Icon } from 'lucide-react'
 import { Fragment, memo } from 'react'
 import { Link } from 'react-router'
 
 import type { AdminCategoryDto } from '@/shared/contracts/categories'
 
+import { useSortableRow } from '@/ui/admin/shared/sortable'
 import { Skeleton } from '@/ui/components/skeleton'
 import { Tooltip } from '@/ui/components/tooltip'
 import { cn } from '@/ui/lib/cn'
@@ -19,14 +18,10 @@ interface CategoryRowProps {
 }
 
 export const CategoryRow = memo(function CategoryRow({ category, sortEnabled, onEdit, onDelete }: CategoryRowProps) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const { setNodeRef, style, isDragging, dragHandleProps } = useSortableRow({
     id: category.id,
     disabled: !sortEnabled,
   })
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  }
 
   return (
     <div
@@ -37,11 +32,12 @@ export const CategoryRow = memo(function CategoryRow({ category, sortEnabled, on
         isDragging && 'opacity-50',
       )}
     >
-      {/* Drag handle */}
+      {/* Drag handle — custom chrome (sizing + disabled state) over the shared
+          dnd plumbing. */}
       <button
         type="button"
-        {...attributes}
-        {...listeners}
+        {...dragHandleProps.attributes}
+        {...dragHandleProps.listeners}
         className={
           sortEnabled
             ? 'flex size-6 shrink-0 cursor-grab items-center justify-center rounded-sm text-muted-foreground hover:bg-accent hover:text-foreground active:cursor-grabbing'

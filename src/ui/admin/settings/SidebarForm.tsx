@@ -1,21 +1,6 @@
-import {
-  closestCenter,
-  DndContext,
-  type DragEndEvent,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core'
+import { closestCenter, DndContext, type DragEndEvent } from '@dnd-kit/core'
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers'
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
-import { GripVerticalIcon } from 'lucide-react'
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { Controller, useFieldArray } from 'react-hook-form'
 
 const VERTICAL_AXIS_ONLY = [restrictToVerticalAxis]
@@ -28,6 +13,7 @@ import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupConte
 import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
 import { SettingsSwitch } from '@/ui/admin/settings/shell/SettingsSwitch'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
+import { resolveSortableMove, SortableDragHandle, useSortableRow, useSortableSensors } from '@/ui/admin/shared/sortable'
 import { FieldLabel } from '@/ui/components/field'
 
 interface SidebarFormProps {
@@ -63,28 +49,23 @@ function SortableWidgetRow({
   save: () => void
   flushOnBlur: () => void
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const {
+    setNodeRef,
+    style: rowStyle,
+    isDragging,
+    dragHandleProps,
+  } = useSortableRow({
     id: widget.type,
   })
-  const { 'aria-describedby': _, ...dragAttributes } = attributes
   const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
+    ...rowStyle,
     opacity: isDragging ? 0.5 : 1,
   }
   const hasCount = widget.type === 'recentPosts' || widget.type === 'recentComments' || widget.type === 'randomTags'
 
   return (
     <div ref={setNodeRef} style={style} className="flex items-center gap-3 rounded-xl border bg-muted/30 p-3">
-      <button
-        type="button"
-        {...dragAttributes}
-        {...listeners}
-        className="shrink-0 cursor-grab text-muted-foreground active:cursor-grabbing"
-        aria-label="拖拽排序"
-      >
-        <GripVerticalIcon className="size-4" />
-      </button>
+      <SortableDragHandle {...dragHandleProps} />
       <div className="flex-1">
         <SettingsRow label={WIDGET_LABELS[widget.type]} hint={WIDGET_HINTS[widget.type]}>
           <div className="flex items-center gap-3">
@@ -134,19 +115,14 @@ export function SidebarForm({ sidebar }: SidebarFormProps) {
     },
   )
 
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  )
+  const sensors = useSortableSensors()
 
   const rows = useFieldArray({ control: form.control, name: 'widgets' })
 
   function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event
-    if (over && active.id !== over.id) {
-      const oldIndex = rows.fields.findIndex((w) => w.type === active.id)
-      const newIndex = rows.fields.findIndex((w) => w.type === over.id)
-      rows.move(oldIndex, newIndex)
+    const move = resolveSortableMove(event.active.id, event.over?.id, rows.fields, (w) => w.type)
+    if (move) {
+      rows.move(move.from, move.to)
     }
   }
 

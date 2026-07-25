@@ -1,14 +1,6 @@
-import {
-  closestCenter,
-  DndContext,
-  type DragEndEvent,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core'
+import { closestCenter, DndContext, type DragEndEvent } from '@dnd-kit/core'
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers'
-import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { PlusIcon, SearchIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -21,6 +13,7 @@ import { CategoriesSkeleton, CategoryRow } from '@/ui/admin/categories/CategoryR
 import { EditCategoryDialog } from '@/ui/admin/categories/EditCategoryDialog'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
+import { resolveSortableMove, useSortableSensors } from '@/ui/admin/shared/sortable'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 
 type EditTarget = AdminCategoryDto | null | undefined
@@ -105,29 +98,23 @@ export function CategoriesView() {
   const dndEnabled = rows.length > 1
   const isReorderPending = reorderMutation.isPending
 
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  )
+  const sensors = useSortableSensors()
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
       const { active, over } = event
-      if (over && active.id !== over.id) {
-        const ids = rows.map((row) => row.id)
-        const oldIndex = ids.indexOf(String(active.id))
-        const newIndex = ids.indexOf(String(over.id))
-        if (oldIndex < 0 || newIndex < 0) {
-          return
-        }
-        const next = ids.slice()
-        next.splice(oldIndex, 1)
-        next.splice(newIndex, 0, ids[oldIndex])
-        if (next.every((id, index) => id === ids[index])) {
-          return
-        }
-        submitReorder({ orderedIds: next })
+      const ids = rows.map((row) => row.id)
+      const move = resolveSortableMove(String(active.id), over ? String(over.id) : undefined, ids, (id) => id)
+      if (!move) {
+        return
       }
+      const next = ids.slice()
+      next.splice(move.from, 1)
+      next.splice(move.to, 0, ids[move.from])
+      if (next.every((id, index) => id === ids[index])) {
+        return
+      }
+      submitReorder({ orderedIds: next })
     },
     [rows, submitReorder],
   )

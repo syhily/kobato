@@ -48,8 +48,8 @@ describe('sortableIndexOf', () => {
   })
 })
 
-function ProbeRow({ id }: { id: string }) {
-  const { setNodeRef, style, dragHandleProps } = useSortableRow({ id })
+function ProbeRow({ id, disabled }: { id: string; disabled?: boolean }) {
+  const { setNodeRef, style, dragHandleProps } = useSortableRow({ id, disabled })
   return (
     <div ref={setNodeRef} style={style}>
       <SortableDragHandle {...dragHandleProps} />
@@ -73,5 +73,19 @@ describe('sortable row chrome', () => {
       expect(handle).not.toHaveAttribute('aria-describedby')
       expect(handle).toHaveAttribute('aria-roledescription', 'sortable')
     }
+  })
+
+  it('forwards the disabled option to useSortable', () => {
+    render(
+      <DndContext>
+        <SortableContext items={['a', 'b']} strategy={verticalListSortingStrategy}>
+          <ProbeRow id="a" disabled />
+          <ProbeRow id="b" />
+        </SortableContext>
+      </DndContext>,
+    )
+    const [disabledHandle, enabledHandle] = screen.getAllByRole('button', { name: '拖拽排序' })
+    expect(disabledHandle).toHaveAttribute('aria-disabled', 'true')
+    expect(enabledHandle).toHaveAttribute('aria-disabled', 'false')
   })
 })

@@ -86,7 +86,12 @@ export interface SortableRowChrome {
  * object trips the react-compiler ref heuristic (`row.setNodeRef` reads as
  * a ref access during render).
  */
-export function useSortableRow(options: { id: UniqueIdentifier; data?: Record<string, unknown> }): SortableRowChrome {
+export function useSortableRow(options: {
+  id: UniqueIdentifier
+  data?: Record<string, unknown>
+  /** Forwarded to `useSortable` — a disabled row stays put and ignores drags. */
+  disabled?: boolean
+}): SortableRowChrome {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable(options)
   const { 'aria-describedby': _removed, ...dragAttributes } = attributes
   void _removed
