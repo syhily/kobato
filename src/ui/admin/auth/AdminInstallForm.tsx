@@ -2,11 +2,12 @@ import { EyeIcon, EyeOffIcon, Loader2Icon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Form, useNavigation, useRouteLoaderData } from 'react-router'
 
+import { useFileUpload } from '@/client/hooks/use-file-upload'
+import { isApiAccepted } from '@/shared/utils/api-error'
 import { Button } from '@/ui/components/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/ui/components/dialog'
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
-import { extractApiErrorMessage, isApiAccepted } from '@/ui/lib/api-error'
 import { cn } from '@/ui/lib/cn'
 
 // Shared auth input styling — must match AdminCredentialsForm.
@@ -31,12 +32,33 @@ export function AdminInstallForm({ pgToolsAvailable }: AdminInstallFormProps) {
   const csrfToken = useCsrfToken()
 
   const [mode, setMode] = useState<InstallMode>('install')
-  const [isRestoring, setIsRestoring] = useState(false)
   const [restoreError, setRestoreError] = useState<string | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [waitingForRestart, setWaitingForRestart] = useState(false)
   const [waitStatus, setWaitStatus] = useState<'polling' | 'timeout'>('polling')
   const pollAbortRef = useRef<AbortController | null>(null)
+
+  // The restore POST goes through the shared upload adapter: the whole form
+  // (backup file + embedded CSRF field) is the body, failures render inline
+  // via restoreError, and an accepted response kicks off the restart poll.
+  const { upload: uploadRestore, pending: isRestoring } = useFileUpload({
+    endpoint: '/api/setup/restore',
+    credentials: 'include',
+    parseJson: true,
+    messages: {
+      httpFailure: () => '恢复失败，请检查备份文件后重试。',
+      failure: '网络错误，请稍后重试。',
+    },
+    onError: setRestoreError,
+    onSuccess: (body) => {
+      if (isApiAccepted(body)) {
+        setWaitingForRestart(true)
+        setWaitStatus('polling')
+        pollAbortRef.current = new AbortController()
+        void pollReady(pollAbortRef.current.signal)
+      }
+    },
+  })
 
   // Abort any in-flight polling when the component unmounts.
   useEffect(() => {
@@ -99,42 +121,7 @@ export function AdminInstallForm({ pgToolsAvailable }: AdminInstallFormProps) {
   async function handleRestoreSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault()
     setRestoreError(null)
-    setIsRestoring(true)
-
-    try {
-      const form = e.currentTarget
-      const formData = new FormData(form)
-      const headers: Record<string, string> = {}
-      if (csrfToken) {
-        headers['x-csrf-token'] = csrfToken
-      }
-      const res = await fetch('/api/setup/restore', {
-        method: 'POST',
-        body: formData,
-        credentials: 'include',
-        headers,
-      })
-
-      const json: unknown = await res.json()
-      const errorMessage = extractApiErrorMessage(json)
-      const accepted = isApiAccepted(json)
-
-      if (!res.ok) {
-        setRestoreError(errorMessage ?? '恢复失败，请检查备份文件后重试。')
-        return
-      }
-
-      if (accepted) {
-        setWaitingForRestart(true)
-        setWaitStatus('polling')
-        pollAbortRef.current = new AbortController()
-        void pollReady(pollAbortRef.current.signal)
-      }
-    } catch {
-      setRestoreError('网络错误，请稍后重试。')
-    } finally {
-      setIsRestoring(false)
-    }
+    await uploadRestore(new FormData(e.currentTarget))
   }
 
   return (

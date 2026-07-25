@@ -10,11 +10,17 @@ import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
 import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
+import { SettingsRadioGroup } from '@/ui/admin/settings/shell/SettingsRadioGroup'
+import {
+  SettingsSecretInput,
+  secretFieldPatch,
+  secretFieldStrings,
+} from '@/ui/admin/settings/shell/SettingsSecretInput'
+import { SettingsSwitch } from '@/ui/admin/settings/shell/SettingsSwitch'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Button } from '@/ui/components/button'
 import { FieldLabel } from '@/ui/components/field'
-import { RadioGroup, RadioGroupItem } from '@/ui/components/radio-group'
-import { Switch } from '@/ui/components/switch'
+import { RadioGroupItem } from '@/ui/components/radio-group'
 
 export type { SearchLoaderShape }
 
@@ -65,13 +71,11 @@ function SearchModeCard({ search }: { search: SearchLoaderShape }) {
             name="enabled"
             render={({ field }) => (
               <div className="flex items-center gap-3">
-                <Switch
+                <SettingsSwitch
                   id="search-enabled"
                   checked={field.value}
-                  onCheckedChange={(val) => {
-                    field.onChange(val)
-                    save()
-                  }}
+                  onCheckedChange={field.onChange}
+                  save={save}
                 />
                 <FieldLabel htmlFor="search-enabled" className="font-normal">
                   {field.value ? '已开启' : '已关闭'}
@@ -85,12 +89,10 @@ function SearchModeCard({ search }: { search: SearchLoaderShape }) {
             control={form.control}
             name="mode"
             render={({ field }) => (
-              <RadioGroup
+              <SettingsRadioGroup
                 value={field.value}
-                onValueChange={(v) => {
-                  field.onChange(v)
-                  save()
-                }}
+                onValueChange={field.onChange}
+                save={save}
                 className="flex items-center gap-4"
               >
                 <div className="flex items-center gap-2">
@@ -111,7 +113,7 @@ function SearchModeCard({ search }: { search: SearchLoaderShape }) {
                     向量（OpenAI + pgvector）
                   </FieldLabel>
                 </div>
-              </RadioGroup>
+              </SettingsRadioGroup>
             )}
           />
         </SettingsRow>
@@ -148,20 +150,22 @@ function SearchOpenAiCard({ search }: { search: SearchLoaderShape }) {
       model: source.search.model,
       similarityThreshold: source.search.similarityThreshold,
     }),
-    fromState: (state) => {
-      const trimmedKey = state.apiKey.trim()
-      return {
-        search: {
-          endpoint: state.endpoint.trim(),
-          model: state.model.trim(),
-          similarityThreshold: state.similarityThreshold,
-          ...(trimmedKey ? { apiKey: trimmedKey } : {}),
-        },
-      }
-    },
+    fromState: (state) => ({
+      search: {
+        endpoint: state.endpoint.trim(),
+        model: state.model.trim(),
+        similarityThreshold: state.similarityThreshold,
+        ...secretFieldPatch(state.apiKey, 'apiKey'),
+      },
+    }),
   })
 
-  const apiKeyConfigured = search.apiKeyMask !== null
+  const apiKeyField = secretFieldStrings({
+    mask: search.apiKeyMask,
+    keepLabel: '保留现有 Key',
+    emptyHint: '尚未配置。',
+    emptyPlaceholder: '粘贴 OpenAI API Key',
+  })
   return (
     <SettingGroup title="OpenAI 配置" description="向量搜索需要调用 OpenAI Embedding API。" {...settingGroupProps}>
       <SettingGroupContent>
@@ -179,21 +183,12 @@ function SearchOpenAiCard({ search }: { search: SearchLoaderShape }) {
             {...form.register('endpoint')}
           />
         </SettingsRow>
-        <SettingsRow
-          label="API Key"
-          htmlFor="search-api-key"
-          hint={
-            apiKeyConfigured ? `当前已配置（结尾 …${search.apiKeyMask}）。留空保存表示保留现有 Key。` : '尚未配置。'
-          }
-        >
-          <SettingsInput
+        <SettingsRow label="API Key" htmlFor="search-api-key" hint={apiKeyField.hint}>
+          <SettingsSecretInput
             flushOnBlur={flushOnBlur}
             id="search-api-key"
-            type="password"
+            placeholder={apiKeyField.placeholder}
             {...form.register('apiKey')}
-            placeholder={apiKeyConfigured ? '保留现有 Key' : '粘贴 OpenAI API Key'}
-            maxLength={512}
-            autoComplete="new-password"
           />
         </SettingsRow>
         <SettingsRow label="模型" htmlFor="search-model" hint="默认 text-embedding-3-small，性价比最高。">

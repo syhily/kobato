@@ -6,9 +6,9 @@ import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
 import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
+import { SettingsSwitch } from '@/ui/admin/settings/shell/SettingsSwitch'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { FieldLabel } from '@/ui/components/field'
-import { Switch } from '@/ui/components/switch'
 
 interface NewsletterFormProps {
   newsletter: NewsletterSettings
@@ -48,13 +48,11 @@ export function NewsletterForm({ newsletter }: NewsletterFormProps) {
               name="enabled"
               render={({ field }) => (
                 <div className="flex items-center gap-3">
-                  <Switch
+                  <SettingsSwitch
                     id="newsletter-enabled"
                     checked={field.value}
-                    onCheckedChange={(val) => {
-                      field.onChange(val)
-                      save()
-                    }}
+                    onCheckedChange={field.onChange}
+                    save={save}
                   />
                   <FieldLabel htmlFor="newsletter-enabled" className="font-normal">
                     {field.value ? '已开启' : '已关闭'}

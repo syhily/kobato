@@ -17,7 +17,7 @@ import { and, eq } from 'drizzle-orm'
 import type { SafeUser } from '@/server/infra/db/operations/user'
 import type { PasskeyCredentialRow } from '@/server/infra/db/types'
 
-import { findUserByEmail, findUserById } from '@/server/infra/db/operations/user'
+import { findSafeUserById, findUserByEmail } from '@/server/infra/db/operations/user'
 import { passkeyCredential } from '@/server/infra/db/schema/passkey'
 import { user } from '@/server/infra/db/schema/user'
 import { DomainError, isUniqueConstraintError } from '@/server/infra/http/errors'
@@ -266,7 +266,7 @@ export async function verifyAuthenticationResponse(
   }
 
   // Verify user state BEFORE mutating the credential counter.
-  const dbUser = await findUserById(db, cred.userId)
+  const dbUser = await findSafeUserById(db, cred.userId)
   if (!dbUser || !dbUser.role || dbUser.deletedAt) {
     throw new DomainError('BAD_REQUEST', '账户状态异常，无法登录。')
   }
@@ -277,9 +277,7 @@ export async function verifyAuthenticationResponse(
     .set({ counter: Number(verification.authenticationInfo.newCounter), updatedAt: new Date() })
     .where(eq(passkeyCredential.id, cred.id))
 
-  // Return SafeUser shape
-  const { password: _p, lastIp: _li, lastUa: _lu, ...safeUser } = dbUser
-  return { user: unsafeCast<SafeUser>(safeUser), authMethod: 'passkey' }
+  return { user: dbUser, authMethod: 'passkey' }
 }
 
 // ─── Credential management ─────────────────────────────────

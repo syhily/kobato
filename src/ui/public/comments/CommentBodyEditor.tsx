@@ -100,13 +100,20 @@ export function CommentBodyEditor({
     },
   })
 
-  // Reset editor content when `bodyKey` changes.
+  // Reset editor content when `bodyKey` changes, using the latest
+  // `initialBody` — its identity changes every render, so it rides a
+  // ref instead of the deps array (depending on it would re-trigger
+  // the reset on every parent render).
+  const initialBodyRef = useRef(initialBody)
+  useEffect(() => {
+    initialBodyRef.current = initialBody
+  })
+
   useEffect(() => {
     if (editor === null) {
       return
     }
-    editor.commands.setContent(safeBodyToPmDoc(initialBody) as JSONContent, { emitUpdate: false })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    editor.commands.setContent(safeBodyToPmDoc(initialBodyRef.current) as JSONContent, { emitUpdate: false })
   }, [bodyKey, editor])
 
   useEffect(() => {

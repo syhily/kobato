@@ -362,9 +362,19 @@ Three framework-level flushes call every registered card via
    — **never** bare `<Input>`. The wrapper merges RHF's onBlur with
    `flushOnBlur`; spreading `register` first would clobber it. For multi-line
    controlled fields use `<SettingsTextarea flushOnBlur={flushOnBlur}>`.
-3. Every `<Select>` / `<RadioGroup>` / `<Combobox>` `onValueChange` MUST call
-   `save()` after `field.onChange(...)` — there is no debounce to catch it.
-   Audit with `rg 'onValueChange=\{field.onChange\}' src/ui/admin/settings/`.
+   Secret fields (API keys, passwords) render through
+   `<SettingsSecretInput>` and build their `fromState` line with
+   `secretFieldPatch(value, 'fieldName')` + `secretFieldStrings(...)`
+   (`src/ui/admin/settings/shell/SettingsSecretInput.tsx`) — the
+   omit-on-empty rule and the mask hint live in that one module.
+3. Render switch/select/radio/combobox/checkbox controls through the
+   `SettingsSwitch` / `SettingsSelect` / `SettingsRadioGroup` /
+   `SettingsCombobox` / `SettingsCheckbox` wrappers
+   (`src/ui/admin/settings/shell/`) with `save={save}` — the wrapper
+   fires `field.onChange` first, then `save()`. **Never** hand-roll
+   `onValueChange={(v) => { field.onChange(v); save() }}` — the
+   boundaries contract test flags both the hand-rolled handler and a
+   bare `={field.onChange}` in any card that imports no wrapper.
 4. List append/remove/move buttons MUST NOT call `save()` — they leave the
    form dirty and the next blur/flush commits the whole list. Calling
    `save()` on append would filter empty rows in `fromState`, shrink the

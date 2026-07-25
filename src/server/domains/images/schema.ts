@@ -1,9 +1,5 @@
 import { z } from 'zod'
 
-import type { DeleteImageInput, ListImagesInput, UpdateImageNoteInput, UploadImageInput } from '@/shared/types/images'
-
-export type { DeleteImageInput, ListImagesInput, UpdateImageNoteInput, UploadImageInput }
-
 const optionalTrimmed = (max: number) =>
   z
     .string()

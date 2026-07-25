@@ -2,11 +2,9 @@ import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
-import { revokeSessionWithGuard } from '@/server/domains/auth/service'
-import { revokeAllSessionsOfUser } from '@/server/domains/auth/session-storage'
+import { revokeAllSessionsWithGuard, revokeSessionWithGuard } from '@/server/domains/auth/session-guard'
 import { bulkApproveCommentsByUser, bulkDeleteCommentsByUser } from '@/server/domains/comments/services/moderate'
 import { adminProc } from '@/server/http/orpc-base'
-import { findUserById } from '@/server/infra/db/operations/user'
 import { idFromString } from '@/shared/utils/id'
 
 const userIdInput = z.object({ userId: z.string().min(1) })
@@ -18,7 +16,7 @@ const revokeSession = adminProc
   .output(z.object({ success: z.boolean(), currentSession: z.boolean() }))
   .handler(async ({ input, context }) => {
     const currentSession = input.sessionId === context.session.id
-    const result = await revokeSessionWithGuard(context.db, input.sessionId, context.viewer.userId, context.viewer.role)
+    const result = await revokeSessionWithGuard(context.db, input.sessionId, context.viewer)
     recordAuditEventFromContext(context, {
       action: 'session_revoked',
       resourceType: 'session',
@@ -39,12 +37,7 @@ const revokeAllSessions = adminProc
     } catch {
       throw new ORPCError('BAD_REQUEST', { message: '用户 ID 无效。' })
     }
-    // Guard: an admin may not bulk-revoke another admin's sessions.
-    const targetUser = await findUserById(context.db, targetId)
-    if (targetUser?.role === 'admin' && context.viewer.userId !== input.userId) {
-      throw new ORPCError('FORBIDDEN', { message: '无权撤销其他管理员的全部会话。' })
-    }
-    await revokeAllSessionsOfUser(targetId)
+    await revokeAllSessionsWithGuard(context.db, targetId, context.viewer)
     recordAuditEventFromContext(context, {
       action: 'session_revoked',
       resourceType: 'session',

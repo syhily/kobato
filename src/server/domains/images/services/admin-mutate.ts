@@ -5,7 +5,6 @@ import type { AdminImageDto } from '@/shared/contracts/images'
 import { canEditImage, type ViewerContext } from '@/server/domains/auth/rbac'
 import { toAdminImageDto } from '@/server/domains/images/services/admin-read'
 import { invalidateImageEnhanceCacheFor } from '@/server/domains/images/services/cache'
-import { deleteImage as deleteStoredImage, getImage } from '@/server/domains/images/storage'
 import {
   findAdminImageRowById,
   findImageById,
@@ -17,6 +16,7 @@ import { DomainError, ErrorMessages } from '@/server/infra/http/errors'
 import { processImageBuffer } from '@/server/infra/image/process'
 import { getLogger } from '@/server/infra/logger'
 import { StorageObjectNotFound } from '@/server/infra/storage/backend'
+import { backendFor } from '@/server/infra/storage/registry'
 
 const log = getLogger('images.service')
 
@@ -32,7 +32,7 @@ export async function deleteImage(db: NodePgDatabase, id: bigint, viewer?: Image
   }
 
   try {
-    await deleteStoredImage(existing.storagePath, existing.storageDriver)
+    await backendFor(existing.storageDriver).delete(existing.storagePath)
   } catch (error) {
     log.warn('Storage delete failed; proceeding with DB soft-delete anyway', {
       id: String(id),
@@ -84,7 +84,7 @@ export async function recalculateImageThumbhash(
 
   let buffer: Buffer
   try {
-    buffer = await getImage(existing.storagePath, existing.storageDriver)
+    buffer = await backendFor(existing.storageDriver).get(existing.storagePath)
   } catch (error) {
     if (error instanceof StorageObjectNotFound) {
       throw new DomainError('NOT_FOUND', '存储中未找到该图片对象')

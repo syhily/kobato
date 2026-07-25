@@ -1,7 +1,7 @@
 import type { ListingPageLoaderData } from '@/server/http/loaders/listing'
 
 import { getDbFromContext, getPoolFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
-import { listingHeaders, publicShouldRevalidate } from '@/server/http/loaders/route-exports'
+import { listingHeaders } from '@/server/http/loaders/route-exports'
 import { searchLoader } from '@/server/http/loaders/search'
 import { metaWithFallback } from '@/shared/seo/meta'
 import { PostListingBody } from '@/ui/public/post/PostListViews'
@@ -21,7 +21,6 @@ export async function loader({ request, params, context }: Route.LoaderArgs): Pr
 }
 
 export const headers = listingHeaders
-export const shouldRevalidate = publicShouldRevalidate
 
 export function meta({ loaderData, matches }: Route.MetaArgs) {
   return metaWithFallback({ loaderData, matches })

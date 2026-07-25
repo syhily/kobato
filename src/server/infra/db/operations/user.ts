@@ -110,11 +110,6 @@ export async function verifyUserPassword(db: NodePgDatabase, email: string, pass
   return ok ? u : null
 }
 
-export async function findUserIdByEmail(db: NodePgDatabase, email: string): Promise<string | null> {
-  const rows = await db.select({ id: user.id }).from(user).where(eq(user.email, email)).limit(1)
-  return rows[0] ? `${rows[0].id}` : null
-}
-
 export async function findEmailById(db: NodePgDatabase, id: bigint): Promise<string | null> {
   const rows = await db.select({ email: user.email }).from(user).where(eq(user.id, id)).limit(1)
   return rows[0]?.email ?? null

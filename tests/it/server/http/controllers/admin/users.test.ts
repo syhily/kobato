@@ -10,6 +10,7 @@ vi.mock('@/server/infra/db/operations/user', () => ({
   countAdmins: vi.fn().mockResolvedValue(2),
   findUserByEmail: vi.fn().mockResolvedValue(null),
   findUserById: vi.fn(),
+  findSafeUserById: vi.fn(),
   insertAuthor: vi.fn(),
   restoreUserById: vi.fn(),
   setUserMuted: vi.fn(),
@@ -159,20 +160,20 @@ describe('adminUsersRouter.update', () => {
 
 describe('adminUsersRouter.revokeAllSessions', () => {
   it('allows an admin to revoke their own sessions', async () => {
-    vi.mocked(userOps.findUserById).mockResolvedValueOnce({
+    vi.mocked(userOps.findSafeUserById).mockResolvedValueOnce({
       id: 1n,
       role: 'admin',
-    } as unknown as Awaited<ReturnType<typeof userOps.findUserById>>)
+    } as unknown as Awaited<ReturnType<typeof userOps.findSafeUserById>>)
     const ctx = makeAuthedCtx({ userId: '1' })
     const res = await call(adminUsersRouter.revokeAllSessions, { userId: '1' }, { context: ctx })
     expect(res).toEqual({ success: true })
   })
 
   it("forbids an admin from revoking another admin's sessions", async () => {
-    vi.mocked(userOps.findUserById).mockResolvedValueOnce({
+    vi.mocked(userOps.findSafeUserById).mockResolvedValueOnce({
       id: 2n,
       role: 'admin',
-    } as unknown as Awaited<ReturnType<typeof userOps.findUserById>>)
+    } as unknown as Awaited<ReturnType<typeof userOps.findSafeUserById>>)
     const ctx = makeAuthedCtx({ userId: '1' })
     await expect(call(adminUsersRouter.revokeAllSessions, { userId: '2' }, { context: ctx })).rejects.toMatchObject({
       code: 'FORBIDDEN',
@@ -180,10 +181,10 @@ describe('adminUsersRouter.revokeAllSessions', () => {
   })
 
   it("allows an admin to revoke a visitor's sessions", async () => {
-    vi.mocked(userOps.findUserById).mockResolvedValueOnce({
+    vi.mocked(userOps.findSafeUserById).mockResolvedValueOnce({
       id: 2n,
       role: 'visitor',
-    } as unknown as Awaited<ReturnType<typeof userOps.findUserById>>)
+    } as unknown as Awaited<ReturnType<typeof userOps.findSafeUserById>>)
     const ctx = makeAuthedCtx({ userId: '1' })
     const res = await call(adminUsersRouter.revokeAllSessions, { userId: '2' }, { context: ctx })
     expect(res).toEqual({ success: true })

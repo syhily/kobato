@@ -6,10 +6,11 @@ import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
 import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
+import { SettingsSelect } from '@/ui/admin/settings/shell/SettingsSelect'
+import { SettingsSwitch } from '@/ui/admin/settings/shell/SettingsSwitch'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { FieldLabel } from '@/ui/components/field'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
-import { Switch } from '@/ui/components/switch'
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 
 interface FormState {
   scheduledEnabled: boolean
@@ -78,14 +79,12 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
             name="scheduledEnabled"
             render={({ field }) => (
               <div className="flex items-center gap-3">
-                <Switch
+                <SettingsSwitch
                   id="scheduled-enabled"
                   checked={field.value}
                   disabled={!canConfigure}
-                  onCheckedChange={(val) => {
-                    field.onChange(val)
-                    save()
-                  }}
+                  onCheckedChange={field.onChange}
+                  save={save}
                 />
                 <FieldLabel htmlFor="scheduled-enabled" className="font-normal">
                   开启
@@ -102,12 +101,10 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
                 control={form.control}
                 name="frequency"
                 render={({ field }) => (
-                  <Select
+                  <SettingsSelect
                     value={field.value}
-                    onValueChange={(v) => {
-                      field.onChange(v)
-                      save()
-                    }}
+                    onValueChange={field.onChange}
+                    save={save}
                     disabled={!canConfigure}
                   >
                     <SelectTrigger>
@@ -118,7 +115,7 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
                       <SelectItem value="weekly">每周</SelectItem>
                       <SelectItem value="monthly">每月</SelectItem>
                     </SelectContent>
-                  </Select>
+                  </SettingsSelect>
                 )}
               />
             </SettingsRow>
@@ -129,12 +126,10 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
                   control={form.control}
                   name="hour"
                   render={({ field }) => (
-                    <Select
+                    <SettingsSelect
                       value={String(field.value)}
-                      onValueChange={(v) => {
-                        field.onChange(Number(v))
-                        save()
-                      }}
+                      onValueChange={(v) => field.onChange(Number(v))}
+                      save={save}
                       disabled={!canConfigure}
                     >
                       <SelectTrigger className="w-24">
@@ -147,7 +142,7 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
                           </SelectItem>
                         ))}
                       </SelectContent>
-                    </Select>
+                    </SettingsSelect>
                   )}
                 />
                 <span className="flex items-center text-muted-foreground">:</span>
@@ -155,12 +150,10 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
                   control={form.control}
                   name="minute"
                   render={({ field }) => (
-                    <Select
+                    <SettingsSelect
                       value={String(field.value)}
-                      onValueChange={(v) => {
-                        field.onChange(asBackupMinute(v))
-                        save()
-                      }}
+                      onValueChange={(v) => field.onChange(asBackupMinute(v))}
+                      save={save}
                       disabled={!canConfigure}
                     >
                       <SelectTrigger className="w-24">
@@ -173,7 +166,7 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
                           </SelectItem>
                         ))}
                       </SelectContent>
-                    </Select>
+                    </SettingsSelect>
                   )}
                 />
               </div>
@@ -185,12 +178,10 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
                   control={form.control}
                   name="dayOfWeek"
                   render={({ field }) => (
-                    <Select
+                    <SettingsSelect
                       value={field.value ? String(field.value) : ''}
-                      onValueChange={(v) => {
-                        field.onChange(Number(v))
-                        save()
-                      }}
+                      onValueChange={(v) => field.onChange(Number(v))}
+                      save={save}
                       disabled={!canConfigure}
                     >
                       <SelectTrigger>
@@ -203,7 +194,7 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
                           </SelectItem>
                         ))}
                       </SelectContent>
-                    </Select>
+                    </SettingsSelect>
                   )}
                 />
               </SettingsRow>
@@ -215,12 +206,10 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
                   control={form.control}
                   name="dayOfMonth"
                   render={({ field }) => (
-                    <Select
+                    <SettingsSelect
                       value={field.value ? String(field.value) : ''}
-                      onValueChange={(v) => {
-                        field.onChange(Number(v))
-                        save()
-                      }}
+                      onValueChange={(v) => field.onChange(Number(v))}
+                      save={save}
                       disabled={!canConfigure}
                     >
                       <SelectTrigger>
@@ -233,7 +222,7 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
                           </SelectItem>
                         ))}
                       </SelectContent>
-                    </Select>
+                    </SettingsSelect>
                   )}
                 />
               </SettingsRow>
@@ -245,14 +234,12 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
                 name="retentionEnabled"
                 render={({ field }) => (
                   <div className="flex items-center gap-3">
-                    <Switch
+                    <SettingsSwitch
                       id="retention-enabled"
                       checked={field.value}
                       disabled={!canConfigure}
-                      onCheckedChange={(val) => {
-                        field.onChange(val)
-                        save()
-                      }}
+                      onCheckedChange={field.onChange}
+                      save={save}
                     />
                     <FieldLabel htmlFor="retention-enabled" className="font-normal">
                       自动清理历史备份

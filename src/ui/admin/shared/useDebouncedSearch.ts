@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 interface UseDebouncedSearchOptions<T> {
   /** Initial input value. Defaults to `''`. */
@@ -30,15 +30,19 @@ export function useDebouncedSearch<T>({ initial = '', delayMs = 250, onChange }:
     setValue(initial)
   }
 
+  // `onChange` rides a ref: callers usually pass a fresh closure on
+  // every render, and depending on it would reset the debounce timer
+  // on every keystroke so it never fires.
+  const onChangeRef = useRef(onChange)
+  useEffect(() => {
+    onChangeRef.current = onChange
+  })
+
   useEffect(() => {
     const handle = window.setTimeout(() => {
-      void onChange(value)
+      void onChangeRef.current(value)
     }, delayMs)
     return () => window.clearTimeout(handle)
-    // `onChange` is intentionally omitted from deps: callers usually
-    // pass a fresh closure on every render, and adding it would make
-    // the timer reset on every keystroke and never fire.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, delayMs])
 
   return [value, setValue] as const

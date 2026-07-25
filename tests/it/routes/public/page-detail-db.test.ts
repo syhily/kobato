@@ -103,9 +103,6 @@ vi.mock('@/server/http/loaders/comments', () => ({
 vi.mock('@/server/domains/images/services/enhance', () => ({
   resolveImageMetaBySources: vi.fn(async () => new Map()),
 }))
-vi.mock('@/server/domains/images/services/cover', () => ({
-  loadImageThumbhash: vi.fn(async () => null),
-}))
 // The music prerender would hit Postgres via findMusicByPlayerId; this
 // test pins the page-body contract, not music resolution, so pass the
 // body straight through.

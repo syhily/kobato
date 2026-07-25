@@ -10,7 +10,7 @@ import { countPublicPosts, listPublicPostCardsPaginated } from '@/server/domains
 import { getCategoryLinks } from '@/server/domains/taxonomies/categories/services/query'
 import { listAllTags } from '@/server/domains/taxonomies/tags/service'
 import { listingLoader } from '@/server/http/loaders/listing'
-import { listingHeaders, publicShouldRevalidate } from '@/server/http/loaders/route-exports'
+import { listingHeaders } from '@/server/http/loaders/route-exports'
 import { loadSidebarData } from '@/server/http/loaders/sidebar'
 import { selectSidebarTags } from '@/server/http/loaders/sidebar-select'
 import { extractRequestFacts } from '@/server/http/utils/request-facts'
@@ -120,7 +120,6 @@ export async function loader({
 }
 
 export const headers = listingHeaders
-export const shouldRevalidate = publicShouldRevalidate
 
 export function meta({ loaderData, matches }: Route.MetaArgs) {
   return metaWithFallback({ loaderData, matches })

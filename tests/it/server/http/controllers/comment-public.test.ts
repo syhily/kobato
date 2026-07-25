@@ -17,10 +17,6 @@ vi.mock('@/server/infra/db/operations/metric', () => ({
   findMetricByPublicId: vi.fn(),
 }))
 
-vi.mock('@/server/infra/db/operations/user', () => ({
-  findUserIdByEmail: vi.fn().mockResolvedValue(null),
-}))
-
 vi.mock('@/server/domains/comments/services/likes', () => ({
   decreaseLikes: vi.fn(),
   increaseLikes: vi.fn().mockResolvedValue({ likes: 1, token: 't' }),

@@ -4,10 +4,11 @@ import { toast } from 'sonner'
 
 import type { AssetsLoaderShape, BrandingSlotStatus } from '@/shared/config/projection'
 
+import { useFileUpload } from '@/client/hooks/use-file-upload'
+import { extractApiErrorMessage } from '@/shared/utils/api-error'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { Button } from '@/ui/components/button'
 import { Card, CardContent } from '@/ui/components/card'
-import { extractApiErrorMessage } from '@/ui/lib/api-error'
 import { cn } from '@/ui/lib/cn'
 
 // Per-slot UI metadata. `publicPath` matches the server-side
@@ -239,54 +240,31 @@ function SlotGroupCard({ group, branding }: { group: SlotGroup; branding: Assets
 function SlotRow({ meta, status }: { meta: SlotMeta; status: BrandingSlotStatus }) {
   const revalidator = useRevalidator()
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [pending, setPending] = useState<'upload' | 'clear' | null>(null)
+  const [clearing, setClearing] = useState(false)
   const rootData = useRouteLoaderData<{ csrfToken?: string }>('root')
   const csrfToken = rootData?.csrfToken
 
   const configured = status.etag !== ''
   const previewUrl = configured ? `${meta.publicPath}?v=${status.etag}` : meta.publicPath
 
-  const handleUpload = useCallback(
-    async (file: File) => {
-      const expectedExt = meta.accept.replace('.', '')
-      if (!file.name.toLowerCase().endsWith(`.${expectedExt}`)) {
-        toast.error('文件类型错误', { description: `请选择 ${meta.accept} 格式的文件` })
-        return
-      }
-      if (file.size > meta.maxBytes) {
-        toast.error(`文件过大（${(file.size / 1024).toFixed(0)} KB）`, {
-          description: `${meta.label} 大小上限为 ${(meta.maxBytes / 1024).toFixed(0)} KB。`,
-        })
-        return
-      }
-      setPending('upload')
-      try {
-        const formData = new FormData()
-        formData.append('slot', meta.slot)
-        formData.append('file', file)
-        const headers: Record<string, string> = {}
-        if (csrfToken) {
-          headers['x-csrf-token'] = csrfToken
-        }
-        const res = await fetch('/api/admin/branding/upload', { method: 'POST', body: formData, headers })
-        if (!res.ok) {
-          const data: unknown = await res.json().catch(() => null)
-          const message = extractApiErrorMessage(data)
-          throw new Error(message ?? `上传失败 (${res.status})`)
-        }
-        toast.success(`${meta.label} 已上传`)
-        await revalidator.revalidate()
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : '上传失败')
-      } finally {
-        setPending(null)
-      }
+  const { upload, pending } = useFileUpload({
+    endpoint: '/api/admin/branding/upload',
+    fields: { slot: meta.slot },
+    accept: [meta.accept],
+    maxBytes: meta.maxBytes,
+    messages: {
+      invalidType: { title: '文件类型错误', description: `请选择 ${meta.accept} 格式的文件` },
+      tooLarge: (file) => ({
+        title: `文件过大（${(file.size / 1024).toFixed(0)} KB）`,
+        description: `${meta.label} 大小上限为 ${(meta.maxBytes / 1024).toFixed(0)} KB。`,
+      }),
+      success: `${meta.label} 已上传`,
     },
-    [csrfToken, meta, revalidator],
-  )
+    onSuccess: () => revalidator.revalidate(),
+  })
 
   const handleClear = useCallback(async () => {
-    setPending('clear')
+    setClearing(true)
     try {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' }
       if (csrfToken) {
@@ -307,7 +285,7 @@ function SlotRow({ meta, status }: { meta: SlotMeta; status: BrandingSlotStatus 
     } catch (err) {
       toast.error(err instanceof Error ? err.message : '清除失败')
     } finally {
-      setPending(null)
+      setClearing(false)
     }
   }, [csrfToken, meta, revalidator])
 
@@ -344,7 +322,7 @@ function SlotRow({ meta, status }: { meta: SlotMeta; status: BrandingSlotStatus 
           onChange={(e) => {
             const f = e.target.files?.[0]
             if (f) {
-              void handleUpload(f)
+              void upload(f)
             }
             e.target.value = ''
           }}
@@ -353,20 +331,20 @@ function SlotRow({ meta, status }: { meta: SlotMeta; status: BrandingSlotStatus 
           type="button"
           variant="default"
           className="w-full"
-          disabled={pending !== null}
+          disabled={pending || clearing}
           onClick={() => fileInputRef.current?.click()}
         >
-          {pending === 'upload' ? '上传中…' : configured ? '替换' : '上传'}
+          {pending ? '上传中…' : configured ? '替换' : '上传'}
         </Button>
         {configured ? (
           <Button
             type="button"
             variant="outline"
             className="w-full"
-            disabled={pending !== null}
+            disabled={pending || clearing}
             onClick={() => void handleClear()}
           >
-            {pending === 'clear' ? '清除中…' : '清除'}
+            {clearing ? '清除中…' : '清除'}
           </Button>
         ) : null}
       </div>

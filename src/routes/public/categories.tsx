@@ -1,6 +1,6 @@
 import { getDbFromContext } from '@/server/domains/auth/context'
 import { listAllCategories } from '@/server/domains/taxonomies/categories/services/query'
-import { listingHeaders, publicShouldRevalidate } from '@/server/http/loaders/route-exports'
+import { listingHeaders } from '@/server/http/loaders/route-exports'
 import { titleMeta } from '@/shared/seo/title-meta'
 import { CategoriesBody } from '@/ui/public/post/CategoriesBody'
 
@@ -15,7 +15,6 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export const headers = listingHeaders
-export const shouldRevalidate = publicShouldRevalidate
 
 export const meta = titleMeta('分类')
 

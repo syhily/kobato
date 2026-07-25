@@ -1,31 +1,39 @@
+import type { NavigateFunction } from 'react-router'
+
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Play, Pause, Trash2, X, Copy, Pencil, Check, RotateCcw } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useCallback, useState } from 'react'
-import { useParams, useNavigate } from 'react-router'
 import { toast } from 'sonner'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
 import { transitions } from '@/client/lib/motion'
+import { useSiteIdentity } from '@/shared/lib/blog-config-context'
+import { formatLocalDate } from '@/shared/utils/formatter'
 import { LyricsDisplay } from '@/ui/admin/musics/LyricsDisplay'
+import { buildMusicUpdate } from '@/ui/admin/musics/music-update'
 import { useMusicPlayerActions, useMusicPlayerState, useMusicPlayerTime } from '@/ui/admin/musics/MusicPlayerContext'
 import { ConfirmDialog, type ConfirmState } from '@/ui/admin/shared/ConfirmDialog'
 import { cn } from '@/ui/lib/cn'
 import { Image } from '@/ui/public/widgets/Image'
 
-export function MusicDetailView() {
-  const params = useParams()
-  const navigate = useNavigate()
+const DATE_FORMAT = 'yyyy-LL-dd'
+
+interface MusicDetailViewProps {
+  id: string
+  navigate: NavigateFunction
+}
+
+export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
   const queryClient = useQueryClient()
+  const config = useSiteIdentity()
   const { load, toggle } = useMusicPlayerActions()
   const { currentTrack, isPlaying } = useMusicPlayerState()
   const currentTime = useMusicPlayerTime()
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
   const [copied, setCopied] = useState(false)
   const [editing, setEditing] = useState(false)
-
-  const id = params.id ?? ''
 
   // Reset editing state when navigating between different songs
   const [lastId, setLastId] = useState(id)
@@ -87,17 +95,9 @@ export function MusicDetailView() {
     if (!music) {
       return
     }
-    const artistArr = draftArtist
-      .split('/')
-      .map((a) => a.trim())
-      .filter((a) => a !== '')
-    updateMutation.mutate({
-      id: music.id,
-      name: draftName.trim() || music.name,
-      artist: artistArr.length > 0 ? artistArr : music.artist,
-      album: draftAlbum.trim() || music.album,
-      lyric: draftLyric?.trim() || undefined,
-    })
+    updateMutation.mutate(
+      buildMusicUpdate(music, { name: draftName, artist: draftArtist, album: draftAlbum, lyric: draftLyric }),
+    )
   }, [music, draftName, draftArtist, draftAlbum, draftLyric, updateMutation])
 
   const handlePlay = useCallback(() => {
@@ -313,7 +313,7 @@ export function MusicDetailView() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ ...transitions.detailFade, delay: 0.25 }}
             >
-              {music.source} · {music.uploaderName ?? '—'} · {formatDate(music.createdAt)}
+              {music.source} · {music.uploaderName ?? '—'} · {formatLocalDate(music.createdAt, DATE_FORMAT, config)}
             </motion.p>
           </div>
         </div>
@@ -412,7 +412,7 @@ export function MusicDetailView() {
           </div>
           <div>
             <span className="block text-xs text-ink-4/70">更新时间</span>
-            <span>{formatDate(music.updatedAt)}</span>
+            <span>{formatLocalDate(music.updatedAt, DATE_FORMAT, config)}</span>
           </div>
         </motion.div>
       )}
@@ -462,16 +462,4 @@ function DetailSkeleton() {
       </div>
     </div>
   )
-}
-
-function formatDate(iso: string): string {
-  try {
-    const date = new Date(iso)
-    if (Number.isNaN(date.getTime())) {
-      return '—'
-    }
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-  } catch {
-    return '—'
-  }
 }

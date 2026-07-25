@@ -1,10 +1,6 @@
 import { createContext, use, type ReactNode } from 'react'
 
-export interface ResolvedImageMeta {
-  thumbhash?: string
-  width?: number
-  height?: number
-}
+import type { ResolvedImageMeta } from '@/shared/types/images'
 
 export type ImageMetaMap = Record<string, ResolvedImageMeta>
 

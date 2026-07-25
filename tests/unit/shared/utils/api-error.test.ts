@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { extractApiErrorMessage, isApiAccepted } from '@/ui/lib/api-error'
+import { extractApiErrorMessage, isApiAccepted } from '@/shared/utils/api-error'
 
 describe('extractApiErrorMessage', () => {
   it('returns undefined for non-object inputs', () => {

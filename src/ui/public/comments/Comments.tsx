@@ -287,12 +287,12 @@ function CommentsRoot({ commentKey, initialItems, rootsCount, totalCount, user, 
     },
   })
 
+  const { mutate: loadMyComments } = myComments
   useEffect(() => {
     if (!admin && !user) {
-      myComments.mutate({ page_key: commentKey })
+      loadMyComments({ page_key: commentKey })
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [commentKey, admin, user])
+  }, [commentKey, admin, user, loadMyComments])
 
   const replyForm = useMemo(
     () => (

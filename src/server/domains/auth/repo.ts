@@ -139,9 +139,8 @@ function parseMeta(sid: string, hash: Record<string, string>): SessionMeta | nul
  * delete cannot leave the admin view showing a session whose cookie
  * has already been invalidated.
  *
- * Role-blind: callers must enforce ownership / admin-bypass. See
- * `account.revokeSession` (visitor-owned) and `admin.revokeSession`
- * (admin-only) for the two perimeter checks.
+ * Role-blind: callers must go through `session-guard.ts` (own / admin /
+ * bulk scopes) for the perimeter check.
  */
 export async function revokeSessionById(sid: string, userId: bigint): Promise<void> {
   const redis = redisInstance()

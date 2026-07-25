@@ -5,9 +5,7 @@ import type { StorageDriver } from '@/shared/config/types'
 
 import { findImagesByStoragePaths } from '@/server/infra/db/operations/image'
 import { getLogger } from '@/server/infra/logger'
-import { createInflight } from '@/server/infra/redis/inflight'
 import { storage } from '@/server/infra/redis/storage'
-import { resolveAssetUrl } from '@/server/infra/storage/public-url'
 import { getCacheSettings } from '@/shared/config/getters'
 
 const log = getLogger('images.render-enhance')
@@ -46,29 +44,6 @@ function bucket(): { prefix: string; ttlSeconds: number } {
 
 function cacheKey(storagePath: string): string {
   return `${bucket().prefix}${storagePath}`
-}
-
-const inflight = createInflight<CachedImageMeta>()
-
-export async function readMeta(db: NodePgDatabase, storagePath: string): Promise<CachedImageMeta> {
-  return inflight(storagePath, async () => {
-    const cached = await storage.getItem<CachedImageMeta>(cacheKey(storagePath))
-    if (cached !== null) {
-      return cached
-    }
-    const rows = await findImagesByStoragePaths(db, [storagePath])
-    const row = rows[0] ?? null
-    const value: CachedImageMeta = row !== null ? rowToCached(row) : { found: false }
-    try {
-      await storage.setItem(cacheKey(storagePath), value, { ttl: bucket().ttlSeconds })
-    } catch (error) {
-      log.warn('Failed to write image-meta cache; continuing without warmth', {
-        storagePath,
-        error,
-      })
-    }
-    return value
-  })
 }
 
 export async function readManyMeta(db: NodePgDatabase, storagePaths: string[]): Promise<Map<string, CachedImageMeta>> {
@@ -140,24 +115,6 @@ export async function clearImageEnhanceCache(): Promise<void> {
       }
     }),
   )
-}
-
-/**
- * Resolve the public URL for a cached image meta. Dispatches on the
- * per-asset `driver` via the central `resolveAssetUrl` (S3 → CDN,
- * local → `/storage/*`), appending the `?v=<updatedAtMs>` cache buster.
- */
-export function resolvePublicUrl(meta: CachedImageMetaPresent): string {
-  return resolveAssetUrl(meta.driver, meta.storagePath, meta.updatedAtMs)
-}
-
-/**
- * Build a public URL from a bare storage path + driver (no cache buster).
- * Used by the admin list DTO. Throws `ActionFailure(503)` for an S3 asset
- * when the CDN base is unset.
- */
-export function buildPublicUrl(storagePath: string, driver: StorageDriver): string {
-  return resolveAssetUrl(driver, storagePath)
 }
 
 export function resolveSrcToStoragePath(src: string, publicBaseUrl: string | null): string | null {

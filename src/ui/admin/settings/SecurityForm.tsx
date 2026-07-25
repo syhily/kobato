@@ -9,10 +9,10 @@ import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
 import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
+import { SettingsSwitch } from '@/ui/admin/settings/shell/SettingsSwitch'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Button } from '@/ui/components/button'
 import { FieldLabel } from '@/ui/components/field'
-import { Switch } from '@/ui/components/switch'
 
 interface ExemptPathRow {
   clientId: string
@@ -56,14 +56,7 @@ function CsrfToggleCard({ security }: { security: SecuritySettings }) {
             name="enabled"
             render={({ field }) => (
               <div className="flex items-center gap-3">
-                <Switch
-                  id="csrf-enabled"
-                  checked={field.value}
-                  onCheckedChange={(val) => {
-                    field.onChange(val)
-                    save()
-                  }}
-                />
+                <SettingsSwitch id="csrf-enabled" checked={field.value} onCheckedChange={field.onChange} save={save} />
                 <FieldLabel htmlFor="csrf-enabled" className="font-normal">
                   {field.value ? '已开启' : '已关闭'}
                 </FieldLabel>
@@ -180,14 +173,7 @@ function CorsPolicyCard({ security }: { security: SecuritySettings }) {
             name="enabled"
             render={({ field }) => (
               <div className="flex items-center gap-3">
-                <Switch
-                  id="cors-enabled"
-                  checked={field.value}
-                  onCheckedChange={(val) => {
-                    field.onChange(val)
-                    save()
-                  }}
-                />
+                <SettingsSwitch id="cors-enabled" checked={field.value} onCheckedChange={field.onChange} save={save} />
                 <FieldLabel htmlFor="cors-enabled" className="font-normal">
                   {field.value ? '已开启' : '已关闭'}
                 </FieldLabel>
@@ -290,13 +276,11 @@ function OtpToggleCard({ security, mail, mailMasks }: SecurityFormProps) {
             name="enabled"
             render={({ field }) => (
               <div className="flex items-center gap-3">
-                <Switch
+                <SettingsSwitch
                   id="otp-enabled"
                   checked={field.value}
-                  onCheckedChange={(val) => {
-                    field.onChange(val)
-                    save()
-                  }}
+                  onCheckedChange={field.onChange}
+                  save={save}
                   disabled={!mailReady && !field.value}
                 />
                 <FieldLabel htmlFor="otp-enabled" className="font-normal">
@@ -346,13 +330,11 @@ function PasskeyToggleCard({ security }: { security: SecuritySettings }) {
             name="enabled"
             render={({ field }) => (
               <div className="flex items-center gap-3">
-                <Switch
+                <SettingsSwitch
                   id="passkey-enabled"
                   checked={field.value}
-                  onCheckedChange={(val) => {
-                    field.onChange(val)
-                    save()
-                  }}
+                  onCheckedChange={field.onChange}
+                  save={save}
                   disabled={!domainValid && !field.value}
                 />
                 <FieldLabel htmlFor="passkey-enabled" className="font-normal">

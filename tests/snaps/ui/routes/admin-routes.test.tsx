@@ -268,8 +268,14 @@ describe('admin routes — Component SSR renders', () => {
     })
 
     it('library/music/detail renders the MusicDetailView shell', () => {
+      // Like the user detail route, the component reads `params.id` from
+      // RR7's injected ComponentProps — pass it explicitly so the detail
+      // view gets a non-empty id.
       const html = stableHtml(
-        renderInRouter(<MusicDetailRoute loaderData={emptyLoaderData} />, '/admin/library/music/abc'),
+        renderInRouter(
+          <MusicDetailRoute loaderData={emptyLoaderData} params={{ id: 'abc' }} />,
+          '/admin/library/music/abc',
+        ),
       )
       expect(html.length).toBeGreaterThan(0)
     })

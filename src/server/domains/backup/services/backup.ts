@@ -19,9 +19,7 @@ import {
   listBackupStoragePaths,
 } from '@/server/infra/db/operations/backup'
 import { getLogger } from '@/server/infra/logger'
-import { localBackend } from '@/server/infra/storage/backends/local'
-import { s3Backend } from '@/server/infra/storage/backends/s3'
-import { activeBackend, backendFor } from '@/server/infra/storage/registry'
+import { activeBackend, allBackends, backendFor } from '@/server/infra/storage/registry'
 
 const log = getLogger('backup.service')
 
@@ -53,19 +51,17 @@ function parseTimestampFromKey(key: string): string | null {
 async function reconcileBackups(db: NodePgDatabase): Promise<void> {
   const known = new Set(await listBackupStoragePaths(db))
   const candidates: { key: string; size: number; driver: 's3' | 'local' }[] = []
-  try {
-    for (const obj of await s3Backend.list('backup/')) {
-      candidates.push({ key: obj.key, size: obj.size, driver: 's3' })
+  // Scan every registered backend (s3 first, then local — a key present in
+  // both is attributed to s3). A listing failure in one backend must not
+  // abort the scan of the others.
+  for (const { backend, driver } of allBackends()) {
+    try {
+      for (const obj of await backend.list('backup/')) {
+        candidates.push({ key: obj.key, size: obj.size, driver })
+      }
+    } catch (error) {
+      log.warn('Reconcile: backend listing failed; continuing with the rest', { driver, error: String(error) })
     }
-  } catch (error) {
-    log.warn('Reconcile: S3 listing failed; continuing with local only', { error: String(error) })
-  }
-  try {
-    for (const obj of await localBackend.list('backup/')) {
-      candidates.push({ key: obj.key, size: obj.size, driver: 'local' })
-    }
-  } catch {
-    // Local storage dir may simply be empty — ignore.
   }
 
   for (const obj of candidates) {

@@ -1,64 +1,34 @@
 import { UploadIcon } from 'lucide-react'
-import { useRef, useState } from 'react'
-import { Link, useRouteLoaderData } from 'react-router'
-import { toast } from 'sonner'
+import { useRef } from 'react'
+import { Link } from 'react-router'
 
 import type { FontsSettings } from '@/shared/config/types'
 
+import { useFileUpload } from '@/client/hooks/use-file-upload'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
 import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Button } from '@/ui/components/button'
-import { extractApiErrorMessage } from '@/ui/lib/api-error'
 
 interface FontsFormProps {
   fonts: FontsSettings
 }
 
-async function uploadFont(slot: 'og' | 'calendar', file: File, csrfToken: string | undefined): Promise<void> {
-  const formData = new FormData()
-  formData.append('slot', slot)
-  formData.append('file', file)
-  const headers: Record<string, string> = {}
-  if (csrfToken) {
-    headers['x-csrf-token'] = csrfToken
-  }
-  const res = await fetch('/api/admin/fonts/upload', { method: 'POST', body: formData, headers })
-  if (!res.ok) {
-    const data: unknown = await res.json().catch(() => null)
-    const message = extractApiErrorMessage(data)
-    throw new Error(message ?? `上传失败 (${res.status})`)
-  }
-}
-
 function FontUploadRow({ slot, label, family }: { slot: 'og' | 'calendar'; label: string; family: string }) {
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [uploading, setUploading] = useState(false)
-  const rootData = useRouteLoaderData<{ csrfToken?: string }>('root')
-  const csrfToken = rootData?.csrfToken
-
-  const handleFileChange = async (file: File) => {
-    const lower = file.name.toLowerCase()
-    if (!lower.endsWith('.ttf') && !lower.endsWith('.otf')) {
-      toast.error('文件类型错误', { description: '仅支持 .ttf 或 .otf 字体文件' })
-      return
-    }
-    if (file.size > 60 * 1024 * 1024) {
-      toast.error('文件过大', { description: '字体文件大小上限为 60 MB' })
-      return
-    }
-    setUploading(true)
-    try {
-      await uploadFont(slot, file, csrfToken)
-      toast.success(`${label} 已上传`)
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : '上传失败')
-    } finally {
-      setUploading(false)
-    }
-  }
+  const { upload, pending } = useFileUpload({
+    endpoint: '/api/admin/fonts/upload',
+    fields: { slot },
+    accept: ['.ttf', '.otf'],
+    maxBytes: 60 * 1024 * 1024,
+    messages: {
+      invalidType: { title: '文件类型错误', description: '仅支持 .ttf 或 .otf 字体文件' },
+      tooLarge: () => ({ title: '文件过大', description: '字体文件大小上限为 60 MB' }),
+      success: `${label} 已上传`,
+    },
+  })
 
   return (
     <div className="flex items-center gap-3">
@@ -71,7 +41,7 @@ function FontUploadRow({ slot, label, family }: { slot: 'og' | 'calendar'; label
         onChange={(e) => {
           const f = e.target.files?.[0]
           if (f) {
-            void handleFileChange(f)
+            void upload(f)
           }
           e.target.value = ''
         }}
@@ -80,11 +50,11 @@ function FontUploadRow({ slot, label, family }: { slot: 'og' | 'calendar'; label
         type="button"
         variant="outline"
         size="sm"
-        disabled={uploading}
+        disabled={pending}
         onClick={() => fileInputRef.current?.click()}
       >
         <UploadIcon data-icon="sm" />
-        {uploading ? '上传中…' : '上传字体'}
+        {pending ? '上传中…' : '上传字体'}
       </Button>
       <span className="text-sm text-muted-foreground">{family ? `已配置族名：${family}` : '未配置族名'}</span>
     </div>

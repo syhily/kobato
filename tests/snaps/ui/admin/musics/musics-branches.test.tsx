@@ -160,11 +160,13 @@ function renderMusics(): string {
   )
 }
 
+const navigateMock = vi.fn()
+
 function renderDetail(): string {
   return stableHtml(
     renderInRouter(
       <MusicPlayerProvider>
-        <MusicDetailView />
+        <MusicDetailView id="music-1" navigate={navigateMock} />
       </MusicPlayerProvider>,
       '/admin/library/music/music-1',
     ),
@@ -384,6 +386,11 @@ describe('MusicDetailView render branches', () => {
     expect(html).toContain('aria-label="关闭"')
     expect(html).toContain('aria-label="播放"')
     expect(html).toContain('复制 playerId')
+    // Dates render through the shared formatLocalDate (site-configured
+    // timezone Asia/Shanghai from the test bundle): createdAt /
+    // updatedAt ISO fixtures land on these local dates.
+    expect(html).toContain('2024-01-01')
+    expect(html).toContain('2024-02-01')
   })
 
   it('renders the no-cover placeholder block when coverUrl is empty', () => {

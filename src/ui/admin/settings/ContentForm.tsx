@@ -6,10 +6,11 @@ import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
 import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
+import { SettingsSelect } from '@/ui/admin/settings/shell/SettingsSelect'
+import { SettingsSwitch } from '@/ui/admin/settings/shell/SettingsSwitch'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { FieldLabel } from '@/ui/components/field'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
-import { Switch } from '@/ui/components/switch'
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 
 interface ContentFormProps {
   content: ContentSettings
@@ -129,13 +130,11 @@ function ContentFeedCard({ content }: { content: ContentSettings }) {
               control={form.control}
               name="feedFull"
               render={({ field }) => (
-                <Switch
+                <SettingsSwitch
                   id="content-feed-full"
                   checked={field.value}
-                  onCheckedChange={(val) => {
-                    field.onChange(val)
-                    save()
-                  }}
+                  onCheckedChange={field.onChange}
+                  save={save}
                 />
               )}
             />
@@ -196,13 +195,7 @@ function ContentSortCard({ content }: { content: ContentSettings }) {
             control={form.control}
             name="postSortBy"
             render={({ field }) => (
-              <Select
-                value={field.value}
-                onValueChange={(v) => {
-                  field.onChange(v)
-                  save()
-                }}
-              >
+              <SettingsSelect value={field.value} onValueChange={field.onChange} save={save}>
                 <SelectTrigger id="content-post-sort-by" className="w-full">
                   <SelectValue>
                     {(value: string | null) => SORT_BY_ITEMS.find((o) => o.value === value)?.label ?? value ?? ''}
@@ -215,7 +208,7 @@ function ContentSortCard({ content }: { content: ContentSettings }) {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </SettingsSelect>
             )}
           />
         </SettingsRow>
@@ -224,13 +217,7 @@ function ContentSortCard({ content }: { content: ContentSettings }) {
             control={form.control}
             name="postSort"
             render={({ field }) => (
-              <Select
-                value={field.value}
-                onValueChange={(v) => {
-                  field.onChange(v)
-                  save()
-                }}
-              >
+              <SettingsSelect value={field.value} onValueChange={field.onChange} save={save}>
                 <SelectTrigger id="content-post-sort" className="w-full">
                   <SelectValue>
                     {(value: string | null) => SORT_DIR_ITEMS.find((o) => o.value === value)?.label ?? value ?? ''}
@@ -243,7 +230,7 @@ function ContentSortCard({ content }: { content: ContentSettings }) {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </SettingsSelect>
             )}
           />
         </SettingsRow>
@@ -253,13 +240,11 @@ function ContentSortCard({ content }: { content: ContentSettings }) {
               control={form.control}
               name="postFeatureEnabled"
               render={({ field }) => (
-                <Switch
+                <SettingsSwitch
                   id="content-post-feature-enabled"
                   checked={field.value}
-                  onCheckedChange={(val) => {
-                    field.onChange(val)
-                    save()
-                  }}
+                  onCheckedChange={field.onChange}
+                  save={save}
                 />
               )}
             />

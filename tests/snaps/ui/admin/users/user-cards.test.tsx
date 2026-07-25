@@ -6,7 +6,7 @@ import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { UserDetailView } from '@/ui/admin/users/UserDetailView'
 import { UserOperationsCard } from '@/ui/admin/users/UserOperationsCard'
 
-// UserOperationsCard is fully props-driven: every button is gated on a
+// UserOperationsCard owns its mutations; every rendered button is gated on a
 // combination of `user.role`, `user.deletedAt`, `user.isMuted`,
 // `user.pendingCount`, `user.commentCount` and `user.passkeyCount`. We render
 // one fixture per branch to hit every conditional. The existing
@@ -41,12 +41,6 @@ function makeAdminUser(overrides: Partial<AdminUserDto> = {}): AdminUserDto {
   }
 }
 
-const noopMutation = {
-  isPending: false,
-  error: null,
-  mutate: vi.fn(),
-}
-
 function renderOpsCard(user: AdminUserDto, currentUserId = 'self-1', passkeyEnabled = false) {
   return stableHtml(
     renderToHtml(
@@ -54,18 +48,7 @@ function renderOpsCard(user: AdminUserDto, currentUserId = 'self-1', passkeyEnab
         user={user}
         currentUserId={currentUserId}
         passkeyEnabled={passkeyEnabled}
-        roleDraft=""
-        setRoleDraft={() => undefined}
-        setConfirm={() => undefined}
-        updateRoleMutation={noopMutation}
-        sendResetMutation={noopMutation}
-        revokeSessionsMutation={noopMutation}
-        muteMutation={noopMutation}
-        bulkApproveMutation={noopMutation}
-        deleteMutation={noopMutation}
-        restoreMutation={noopMutation}
-        bulkDeleteMutation={noopMutation}
-        clearPasskeysMutation={noopMutation}
+        onDeleted={vi.fn()}
       />,
     ),
   )

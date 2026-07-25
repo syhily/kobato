@@ -5,7 +5,10 @@
 
 ## Structure
 
-- `hooks/` — browser hooks.
+- `hooks/` — browser hooks. Admin file uploads go through
+  `useFileUpload` (`@/client/hooks/use-file-upload`): it owns the CSRF
+  read, accept/size guards, FormData POST, error unwrap, and toast
+  choreography. Never hand-roll a fetch upload in a view.
 - `api/` — oRPC client. All HTTP calls go through
   `api.<domain>.<endpoint>(flatInput)` from `@/client/api/client`. The
   typed client is built from `typeof apiRouter`. `unwrap()` translates

@@ -18,9 +18,21 @@ parent.
   (friend-link application form), `widgets/`, `aplayer/`, plus
   single-file leaves (`Search.tsx`, `Sidebar.tsx`, `LikeActions.tsx`).
 - **`ui/admin/`** — grouped by domain (`analytics`, `auth`,
-  `categories`, `comments`, `editor`, `editor-shell`, `friends`,
-  `images`, `musics`, `my`, `pages`, `posts`, `sessions`, `settings`,
-  `tags`, `users`, `dashboard`, plus `shared/` and `shell/`).
+  `categories`, `comments`, `editor`, `editor-shell`, `fonts`,
+  `friends`, `images`, `library`, `musics`, `my`, `pages`, `posts`,
+  `sessions`, `settings`, `tags`, `users`, `dashboard`, plus `shared/`
+  and `shell/`).
+  - `fonts/` — the font library view split into focused modules:
+    `FontsView.tsx` (shell, ≤500 LOC), `FontUploadButton.tsx`
+    (upload-phase dialog FSM on `useFileUpload`), `font-slots.ts`
+    (exported `slotsReducer` + `useFontSlotsController` with the
+    in-flight reseed guard), `dnd.ts` (fonts drag protocol guards).
+  - `shared/` — cross-domain admin modules (`useAdminInfiniteList`,
+    `filterPillsReducer`, `sortable.tsx` …). `sortable.tsx` is the one
+    dnd-list adapter: `useSortableSensors`, `useSortableRow` (destructure
+    its result — member access trips the react-compiler ref heuristic),
+    `SortableDragHandle`, `resolveSortableMove`. New sortable lists use
+    it instead of copying row chrome.
   - `editor/` — the Tiptap micro-app (`PageBodyEditor`, `tiptap/`,
     `toolbar/`, `pickers/`, `FootnoteEditorDialog`,
     `portable-text-diff`). Self-contained; only `PageBodyEditor` is

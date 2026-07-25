@@ -16,7 +16,7 @@ const cache = await import('@/server/domains/images/services/cache')
 const adminRead = await import('@/server/domains/images/services/admin-read')
 const adminMutate = await import('@/server/domains/images/services/admin-mutate')
 const upload = await import('@/server/domains/images/services/upload')
-const cover = await import('@/server/domains/images/services/cover')
+const resolve = await import('@/server/domains/images/services/resolve')
 const enhance = await import('@/server/domains/images/services/enhance')
 
 const poolManager = createDbPool()
@@ -49,36 +49,6 @@ async function seedImage(overrides: Partial<typeof image.$inferInsert> = {}) {
   return rows[0]
 }
 
-describe('images/services/cache — readMeta', () => {
-  it('returns missing when the row does not exist', async () => {
-    const meta = await cache.readMeta(db, 'images/none.jpg')
-    expect(meta.found).toBe(false)
-  })
-
-  it('returns the row when it exists', async () => {
-    const img = await seedImage({ storagePath: 'images/found.jpg', width: 800, height: 600, thumbhash: 'hash' })
-    const meta = await cache.readMeta(db, 'images/found.jpg')
-    expect(meta.found).toBe(true)
-    if (meta.found) {
-      expect(meta.width).toBe(800)
-      expect(meta.height).toBe(600)
-      expect(meta.thumbhash).toBe('hash')
-      expect(meta.storagePath).toBe('images/found.jpg')
-    }
-    void img
-  })
-
-  it('serves subsequent reads from cache', async () => {
-    await seedImage({ storagePath: 'images/cached.jpg' })
-    const m1 = await cache.readMeta(db, 'images/cached.jpg')
-    expect(m1.found).toBe(true)
-
-    await db.delete(image).where(eq(image.storagePath, 'images/cached.jpg'))
-    const m2 = await cache.readMeta(db, 'images/cached.jpg')
-    expect(m2.found).toBe(true)
-  })
-})
-
 describe('images/services/cache — readManyMeta', () => {
   it('returns empty map for empty input', async () => {
     expect(await cache.readManyMeta(db, [])).toEqual(new Map())
@@ -99,64 +69,12 @@ describe('images/services/cache — readManyMeta', () => {
 describe('images/services/cache — invalidateImageEnhanceCacheFor', () => {
   it('clears the cached entry', async () => {
     await seedImage({ storagePath: 'images/to-clear.jpg' })
-    await cache.readMeta(db, 'images/to-clear.jpg')
+    await cache.readManyMeta(db, ['images/to-clear.jpg'])
     await cache.invalidateImageEnhanceCacheFor('images/to-clear.jpg')
 
     await db.delete(image).where(eq(image.storagePath, 'images/to-clear.jpg'))
-    const meta = await cache.readMeta(db, 'images/to-clear.jpg')
-    expect(meta.found).toBe(false)
-  })
-})
-
-describe('images/services/cache — resolvePublicUrl', () => {
-  it('joins the S3 base url and appends a cache buster', () => {
-    const meta = {
-      found: true as const,
-      storagePath: 'images/x.jpg',
-      driver: 's3' as const,
-      width: 1,
-      height: 1,
-      thumbhash: null,
-      updatedAtMs: 1000,
-    }
-    expect(cache.resolvePublicUrl(meta)).toBe('https://assets.example.com/images/x.jpg?v=1000')
-  })
-
-  it('resolves a local-driver asset through the /storage route', () => {
-    const meta = {
-      found: true as const,
-      storagePath: 'images/x.jpg',
-      driver: 'local' as const,
-      width: 1,
-      height: 1,
-      thumbhash: null,
-      updatedAtMs: 1000,
-    }
-    // Local assets are served from the site origin's /storage/* route.
-    expect(cache.resolvePublicUrl(meta)).toMatch(/\/storage\/images\/x\.jpg\?v=1000$/)
-  })
-
-  it('strips a leading slash from the storagePath', () => {
-    const meta = {
-      found: true as const,
-      storagePath: '/foo.jpg',
-      driver: 's3' as const,
-      width: 1,
-      height: 1,
-      thumbhash: null,
-      updatedAtMs: 0,
-    }
-    expect(cache.resolvePublicUrl(meta)).toBe('https://assets.example.com/foo.jpg?v=0')
-  })
-})
-
-describe('images/services/cache — buildPublicUrl', () => {
-  it('joins base url with storage path for an S3 asset', () => {
-    expect(cache.buildPublicUrl('images/foo.jpg', 's3')).toBe('https://assets.example.com/images/foo.jpg')
-  })
-
-  it('strips a leading slash from storage path', () => {
-    expect(cache.buildPublicUrl('/foo.jpg', 's3')).toBe('https://assets.example.com/foo.jpg')
+    const meta = (await cache.readManyMeta(db, ['images/to-clear.jpg'])).get('images/to-clear.jpg')
+    expect(meta?.found).toBe(false)
   })
 })
 
@@ -319,57 +237,57 @@ describe('images/services/upload — uploadImage', () => {
   })
 })
 
-describe('images/services/cover — loadImageThumbhash', () => {
+describe('images/services/resolve — resolveImageRef', () => {
   it('returns null for empty src', async () => {
-    expect(await cover.loadImageThumbhash(db, '')).toBeNull()
+    expect(await resolve.resolveImageRef(db, '')).toBeNull()
   })
 
   it('returns null for unrelated src', async () => {
-    expect(await cover.loadImageThumbhash(db, 'https://example.com/x.png')).toBeNull()
+    expect(await resolve.resolveImageRef(db, 'https://example.com/x.png')).toBeNull()
   })
 
   it('returns null for unknown storage path', async () => {
-    expect(await cover.loadImageThumbhash(db, 'https://assets.example.com/images/none.jpg')).toBeNull()
+    expect(await resolve.resolveImageRef(db, 'https://assets.example.com/images/none.jpg')).toBeNull()
   })
 
   it('returns the lookup for a known src', async () => {
     await seedImage({ storagePath: 'images/known.jpg', width: 100, height: 50, thumbhash: 'th' })
-    const r = await cover.loadImageThumbhash(db, 'https://assets.example.com/images/known.jpg')
+    const r = await resolve.resolveImageRef(db, 'https://assets.example.com/images/known.jpg')
     expect(r).not.toBeNull()
     expect(r!.width).toBe(100)
     expect(r!.thumbhash).toBe('th')
   })
 })
 
-describe('images/services/cover — loadManyImageThumbhash', () => {
+describe('images/services/resolve — resolveImageRefs', () => {
   it('returns empty map for empty input', async () => {
-    expect(await cover.loadManyImageThumbhash(db, [])).toEqual(new Map())
+    expect(await resolve.resolveImageRefs(db, [])).toEqual(new Map())
   })
 
   it('resolves a batch of urls', async () => {
     await seedImage({ storagePath: 'images/a.jpg', thumbhash: 'ta' })
     await seedImage({ storagePath: 'images/b.jpg', thumbhash: 'tb' })
-    const map = await cover.loadManyImageThumbhash(db, [
+    const map = await resolve.resolveImageRefs(db, [
       'https://assets.example.com/images/a.jpg',
       'https://assets.example.com/images/b.jpg',
       'https://assets.example.com/images/missing.jpg',
     ])
     expect(map.size).toBe(2)
   })
+
+  it('resolves every distinct URL even when two share one storage path', async () => {
+    await seedImage({ storagePath: 'images/a.jpg', thumbhash: 'ta' })
+    const map = await resolve.resolveImageRefs(db, ['https://assets.example.com/images/a.jpg', 'images/a.jpg'])
+    expect(map.size).toBe(2)
+    expect(map.get('images/a.jpg')?.thumbhash).toBe('ta')
+  })
 })
 
 describe('images/services/enhance — resolveImageMetaBySources', () => {
-  it('returns empty map for empty input', async () => {
-    expect(await enhance.resolveImageMetaBySources(db, [])).toEqual(new Map())
-  })
-
-  it('resolves metadata for known sources', async () => {
+  it('projects resolved refs to the sparse PT-block meta (dims + thumbhash, no publicUrl)', async () => {
     await seedImage({ storagePath: 'images/a.jpg', width: 10, height: 20, thumbhash: 'th' })
     const m = await enhance.resolveImageMetaBySources(db, ['https://assets.example.com/images/a.jpg'])
-    expect(m.size).toBe(1)
-    const meta = m.get('https://assets.example.com/images/a.jpg')
-    expect(meta?.width).toBe(10)
-    expect(meta?.thumbhash).toBe('th')
+    expect(m.get('https://assets.example.com/images/a.jpg')).toEqual({ width: 10, height: 20, thumbhash: 'th' })
   })
 })
 

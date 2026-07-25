@@ -6,10 +6,16 @@ import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
 import { SettingsInput, SettingsTextarea } from '@/ui/admin/settings/shell/SettingsInput'
+import {
+  SettingsSecretInput,
+  secretFieldPatch,
+  secretFieldStrings,
+} from '@/ui/admin/settings/shell/SettingsSecretInput'
+import { SettingsSelect } from '@/ui/admin/settings/shell/SettingsSelect'
+import { SettingsSwitch } from '@/ui/admin/settings/shell/SettingsSwitch'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { FieldLabel } from '@/ui/components/field'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
-import { Switch } from '@/ui/components/switch'
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 
 export type { AssetsLoaderShape }
 
@@ -50,13 +56,7 @@ function AssetsDomainCard({ assets }: { assets: AssetsLoaderShape }) {
             control={form.control}
             name="assetScheme"
             render={({ field }) => (
-              <Select
-                value={field.value}
-                onValueChange={(v) => {
-                  field.onChange(v)
-                  save()
-                }}
-              >
+              <SettingsSelect value={field.value} onValueChange={field.onChange} save={save}>
                 <SelectTrigger id="assets-asset-scheme" className="w-full">
                   <SelectValue>
                     {(value: string | null) => SCHEME_OPTIONS.find((o) => o.value === value)?.label ?? value ?? ''}
@@ -69,7 +69,7 @@ function AssetsDomainCard({ assets }: { assets: AssetsLoaderShape }) {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </SettingsSelect>
             )}
           />
         </SettingsRow>
@@ -114,13 +114,11 @@ function AssetsToggleCard({ assets }: { assets: AssetsLoaderShape }) {
             name="enabled"
             render={({ field }) => (
               <div className="flex items-center gap-3">
-                <Switch
+                <SettingsSwitch
                   id="assets-storage-enabled"
                   checked={field.value}
-                  onCheckedChange={(val) => {
-                    field.onChange(val)
-                    save()
-                  }}
+                  onCheckedChange={field.onChange}
+                  save={save}
                 />
                 <FieldLabel htmlFor="assets-storage-enabled" className="font-normal">
                   {field.value ? '已开启' : '已关闭'}
@@ -158,23 +156,25 @@ function AssetsS3Card({ assets }: { assets: AssetsLoaderShape }) {
       forcePathStyle: source.storage.forcePathStyle,
       urlTemplate: source.storage.urlTemplate,
     }),
-    fromState: (state) => {
-      const trimmedSecret = state.secretAccessKey.trim()
-      return {
-        storage: {
-          endpoint: state.endpoint.trim(),
-          region: state.region.trim(),
-          bucket: state.bucket.trim(),
-          accessKeyId: state.accessKeyId.trim(),
-          forcePathStyle: state.forcePathStyle,
-          urlTemplate: state.urlTemplate.trim(),
-          ...(trimmedSecret ? { secretAccessKey: trimmedSecret } : {}),
-        },
-      }
-    },
+    fromState: (state) => ({
+      storage: {
+        endpoint: state.endpoint.trim(),
+        region: state.region.trim(),
+        bucket: state.bucket.trim(),
+        accessKeyId: state.accessKeyId.trim(),
+        forcePathStyle: state.forcePathStyle,
+        urlTemplate: state.urlTemplate.trim(),
+        ...secretFieldPatch(state.secretAccessKey, 'secretAccessKey'),
+      },
+    }),
   })
 
-  const secretConfigured = display.secretAccessKeyMask !== null
+  const secretAccessKeyField = secretFieldStrings({
+    mask: display.secretAccessKeyMask,
+    keepLabel: '保留现有 Secret',
+    emptyHint: '尚未配置。将以明文存入 setting 表。',
+    emptyPlaceholder: '粘贴 Secret Access Key',
+  })
   return (
     <SettingGroup
       title="S3 兼容存储"
@@ -206,23 +206,12 @@ function AssetsS3Card({ assets }: { assets: AssetsLoaderShape }) {
             {...form.register('accessKeyId')}
           />
         </SettingsRow>
-        <SettingsRow
-          label="Secret Access Key"
-          htmlFor="assets-secret"
-          hint={
-            secretConfigured
-              ? `当前已配置（结尾 …${display.secretAccessKeyMask}）。留空保存表示保留现有 Secret。`
-              : '尚未配置。将以明文存入 setting 表。'
-          }
-        >
-          <SettingsInput
+        <SettingsRow label="Secret Access Key" htmlFor="assets-secret" hint={secretAccessKeyField.hint}>
+          <SettingsSecretInput
             flushOnBlur={flushOnBlur}
             id="assets-secret"
-            type="password"
+            placeholder={secretAccessKeyField.placeholder}
             {...form.register('secretAccessKey')}
-            placeholder={secretConfigured ? '保留现有 Secret' : '粘贴 Secret Access Key'}
-            maxLength={512}
-            autoComplete="new-password"
           />
         </SettingsRow>
         <SettingsRow label="Path-style 寻址" hint="部分自托管 S3 兼容服务需要开启；R2 / S3 默认走 virtual-hosted。">
@@ -231,13 +220,11 @@ function AssetsS3Card({ assets }: { assets: AssetsLoaderShape }) {
               control={form.control}
               name="forcePathStyle"
               render={({ field }) => (
-                <Switch
+                <SettingsSwitch
                   id="assets-force-path-style"
                   checked={field.value}
-                  onCheckedChange={(val) => {
-                    field.onChange(val)
-                    save()
-                  }}
+                  onCheckedChange={field.onChange}
+                  save={save}
                 />
               )}
             />

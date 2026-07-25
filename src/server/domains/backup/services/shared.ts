@@ -28,10 +28,6 @@ export async function checkPgToolsAvailable(): Promise<boolean> {
   return pgToolsAvailable
 }
 
-export function getPgToolsAvailableSync(): boolean {
-  return pgToolsAvailable ?? false
-}
-
 export async function ensurePgTools(): Promise<void> {
   const available = await checkPgToolsAvailable()
   if (!available) {

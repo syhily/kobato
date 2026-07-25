@@ -50,7 +50,7 @@ Move every export into the subdirectory so callers always import from
 one predictable location.
 
 Domains: `analytics`, `auth` (session-storage, csrf, rbac, flows,
-verification-tokens), `comments` (loader, moderation, projection,
+verification-tokens, session-revocation guard `session-guard.ts`), `comments` (loader, moderation, projection,
 likes, token, badge, url, canonicalize, avatar fetch/cache, pure policy
 gates `services/policy.ts`), `content` (revision `repos/`,
 entity-agnostic draft→publish `lifecycle.ts`, save-time library image
@@ -80,7 +80,8 @@ hono-rbac); `controllers/` (per-domain `<name>.controller.ts`, admin
 under `controllers/admin/`); `resources/` (non-JSON: feed, sitemap,
 images, redirects, analytics); `loaders/` (React Router data
 orchestrators: detail, listing, search, comments, sidebar, pagination,
-revalidate, route-exports).
+route-exports). Public routes deliberately rely on the router's default
+revalidation.
 
 Controllers and loaders **orchestrate only** — business logic stays in
 `domains/<x>/service.ts`.
@@ -304,11 +305,14 @@ is a database setting (`assets.storage.enabled`, `seo.og.width`,
   per-row `storageDriver`: S3 → `<asset.scheme>://<asset.host>/<storagePath>`,
   local → `<siteIdentity.website>/storage/<storagePath>` (served by the
   public `/storage/*` route).
-- `@/server/domains/images/storage` is the upload/URL entry point. Writes go
-  to the active backend and never 503 on a missing S3 config — local is the
-  always-on fallback. Each row persists its `storageDriver` so reads/deletes
-  and URL resolution target the right backend after a local→S3 switch.
-  Toggling S3 back on does not require re-pasting credentials.
+- Uploads and deletes call `@/server/infra/storage/registry` directly
+  (`activeBackend()` for writes, `backendFor(driver)` for reads/deletes)
+  — writes never 503 on a missing S3 config: local is the always-on
+  fallback. Each row persists its `storageDriver` so reads/deletes and
+  URL resolution target the right backend after a local→S3 switch.
+  Toggling S3 back on does not require re-pasting credentials. Modules
+  that must scan every backend (the backup reconcile) iterate via
+  `allBackends()` — never import a backend directly.
 - Every `image` row is a storage object — no `external` origin, no
   `image.source` discriminator.
 - Uploads go through `/admin/library/images` (generic
@@ -317,7 +321,10 @@ is a database setting (`assets.storage.enabled`, `seo.og.width`,
   `EditFriendDialog` (`images/links/<host>.jpg`), both 1280×425.
 - `@/server/domains/images/services/enhance` post-processes generated HTML for
   feeds and synchronously resolves cover thumbhashes via a process-level
-  LRU cache.
+  LRU cache. All URL → image-meta resolution (dims, thumbhash,
+  publicUrl) flows through the single pipeline in
+  `@/server/domains/images/services/resolve` — single-URL and batch
+  entries over one implementation with one best-effort base-URL policy.
 
 ### Music
 

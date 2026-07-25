@@ -2,6 +2,7 @@ import type { StorageBackend, StorageDriver } from '@/server/infra/storage/backe
 
 import { localBackend } from '@/server/infra/storage/backends/local'
 import { s3Backend } from '@/server/infra/storage/backends/s3'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const backends: Record<StorageDriver, StorageBackend> = {
   s3: s3Backend,
@@ -34,6 +35,21 @@ export function activeBackend(): { backend: StorageBackend; driver: StorageDrive
     // Settings snapshot not hydrated yet — fall back to local.
   }
   return { backend: localBackend, driver: 'local' }
+}
+
+/**
+ * Every registered backend in stable registry order (s3 first, then
+ * local), for operations that span all backends at once — e.g. the backup
+ * reconcile, which lists each backend to re-register orphaned objects.
+ * When the same key exists in several backends, the earlier driver wins.
+ */
+export function allBackends(): { driver: StorageDriver; backend: StorageBackend }[] {
+  // `Object.entries` widens the record keys to `string`; they are
+  // `StorageDriver` by construction.
+  return Object.entries(backends).map(([driver, backend]) => ({
+    driver: unsafeCast<StorageDriver>(driver),
+    backend,
+  }))
 }
 
 /** True when S3 is configured as the primary backend for new uploads. */

@@ -8,7 +8,7 @@ import { listAllFriends } from '@/server/domains/friends/service'
 import { prerenderMusicPlayerBlocks } from '@/server/domains/pt/prerender'
 import { loadPublicDetailData } from '@/server/http/loaders/detail'
 import { loadPagePreview } from '@/server/http/loaders/page-preview'
-import { detailHeaders, publicShouldRevalidate } from '@/server/http/loaders/route-exports'
+import { detailHeaders } from '@/server/http/loaders/route-exports'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { bundleFromMatches, routeMeta, seoForPage } from '@/shared/seo/meta'
 import { resolveFootnotesSectionTitle } from '@/shared/utils/footnotes-section-title'
@@ -21,7 +21,6 @@ import type { Route } from './+types/detail'
 
 export const handle: RouteHandle = { footer: false, postFonts: true }
 export const headers = detailHeaders
-export const shouldRevalidate = publicShouldRevalidate
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
   const db = getDbFromContext({ request, context })

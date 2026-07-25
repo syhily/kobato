@@ -1,6 +1,6 @@
 import { getDbFromContext } from '@/server/domains/auth/context'
 import { getClientPostsWithMetadata, listClientPosts } from '@/server/domains/posts/repos/public-query/listing'
-import { listingHeaders, publicShouldRevalidate } from '@/server/http/loaders/route-exports'
+import { listingHeaders } from '@/server/http/loaders/route-exports'
 import { titleMeta } from '@/shared/seo/title-meta'
 import { toListingPostCard } from '@/shared/types/catalog'
 import { ArchivesBody } from '@/ui/public/post/ArchivesBody'
@@ -27,7 +27,6 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export const headers = listingHeaders
-export const shouldRevalidate = publicShouldRevalidate
 
 export const meta = titleMeta('归档')
 

@@ -21,17 +21,6 @@ import { getLogger } from '@/server/infra/logger'
 
 const log = getLogger('backup.upload')
 
-// pg_tools check is expensive (shells out). Cache at startup so we don't
-// pay the cost on every setup-restore request.
-let pgToolsAvailable: boolean | null = null
-
-async function isPgToolsAvailable(): Promise<boolean> {
-  if (pgToolsAvailable === null) {
-    pgToolsAvailable = await checkPgToolsAvailable()
-  }
-  return pgToolsAvailable
-}
-
 export const backupRouter = new Hono<Env>()
   .get('/api/admin/backup/restore-status', requireRoleMw('admin'), (c) => {
     const restore = getRestoreState()
@@ -112,7 +101,7 @@ export const backupRouter = new Hono<Env>()
         return c.json({ error: { message: '安全校验失败，请刷新页面后重试。' } }, 403)
       }
 
-      if (!(await isPgToolsAvailable())) {
+      if (!(await checkPgToolsAvailable())) {
         return c.json({ error: { message: '当前运行环境缺少 postgresql-client，无法还原备份。' } }, 503)
       }
 

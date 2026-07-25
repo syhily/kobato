@@ -1,64 +1,34 @@
 import { UploadIcon } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useRef } from 'react'
 import { Controller } from 'react-hook-form'
-import { useRouteLoaderData } from 'react-router'
-import { toast } from 'sonner'
 
 import type { AnalyticsSettings } from '@/shared/config/types'
 
+import { useFileUpload } from '@/client/hooks/use-file-upload'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
+import { SettingsSwitch } from '@/ui/admin/settings/shell/SettingsSwitch'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Button } from '@/ui/components/button'
 import { FieldLabel } from '@/ui/components/field'
-import { Switch } from '@/ui/components/switch'
-import { extractApiErrorMessage } from '@/ui/lib/api-error'
 
 interface AnalyticsFormProps {
   analytics: AnalyticsSettings
 }
 
-async function uploadMaxMind(file: File, csrfToken: string | undefined): Promise<void> {
-  const formData = new FormData()
-  formData.append('file', file)
-  const headers: Record<string, string> = {}
-  if (csrfToken) {
-    headers['x-csrf-token'] = csrfToken
-  }
-  const res = await fetch('/api/admin/maxmind/upload', { method: 'POST', body: formData, headers })
-  if (!res.ok) {
-    const data: unknown = await res.json().catch(() => null)
-    const message = extractApiErrorMessage(data)
-    throw new Error(message ?? `上传失败 (${res.status})`)
-  }
-}
-
 function MaxMindUploadRow() {
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [uploading, setUploading] = useState(false)
-  const rootData = useRouteLoaderData<{ csrfToken?: string }>('root')
-  const csrfToken = rootData?.csrfToken
-
-  const handleFileChange = async (file: File) => {
-    if (!file.name.toLowerCase().endsWith('.mmdb')) {
-      toast.error('文件类型错误', { description: '仅支持 .mmdb 格式的 MaxMind 数据库文件' })
-      return
-    }
-    if (file.size > 100 * 1024 * 1024) {
-      toast.error('文件过大', { description: 'MaxMind 数据库文件大小上限为 100 MB' })
-      return
-    }
-    setUploading(true)
-    try {
-      await uploadMaxMind(file, csrfToken)
-      toast.success('MaxMind 数据库已上传')
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : '上传失败')
-    } finally {
-      setUploading(false)
-    }
-  }
+  const { upload, pending } = useFileUpload({
+    endpoint: '/api/admin/maxmind/upload',
+    accept: ['.mmdb'],
+    maxBytes: 100 * 1024 * 1024,
+    messages: {
+      invalidType: { title: '文件类型错误', description: '仅支持 .mmdb 格式的 MaxMind 数据库文件' },
+      tooLarge: () => ({ title: '文件过大', description: 'MaxMind 数据库文件大小上限为 100 MB' }),
+      success: 'MaxMind 数据库已上传',
+    },
+  })
 
   return (
     <div className="flex items-center gap-3">
@@ -71,7 +41,7 @@ function MaxMindUploadRow() {
         onChange={(e) => {
           const f = e.target.files?.[0]
           if (f) {
-            void handleFileChange(f)
+            void upload(f)
           }
           e.target.value = ''
         }}
@@ -80,11 +50,11 @@ function MaxMindUploadRow() {
         type="button"
         variant="outline"
         size="sm"
-        disabled={uploading}
+        disabled={pending}
         onClick={() => fileInputRef.current?.click()}
       >
         <UploadIcon data-icon="sm" />
-        {uploading ? '上传中…' : '上传 GeoLite2-City.mmdb'}
+        {pending ? '上传中…' : '上传 GeoLite2-City.mmdb'}
       </Button>
       <span className="text-sm text-muted-foreground">上传后 GeoIP 解析自动生效，无需重启服务</span>
     </div>
@@ -117,13 +87,11 @@ export function AnalyticsForm({ analytics }: AnalyticsFormProps) {
               name="trackAdmin"
               render={({ field }) => (
                 <div className="flex items-center gap-3">
-                  <Switch
+                  <SettingsSwitch
                     id="analytics-track-admin"
                     checked={field.value}
-                    onCheckedChange={(val) => {
-                      field.onChange(val)
-                      save()
-                    }}
+                    onCheckedChange={field.onChange}
+                    save={save}
                   />
                   <FieldLabel htmlFor="analytics-track-admin" className="font-normal">
                     {field.value ? '已开启' : '已关闭'}
@@ -138,13 +106,11 @@ export function AnalyticsForm({ analytics }: AnalyticsFormProps) {
               name="keepBotRows"
               render={({ field }) => (
                 <div className="flex items-center gap-3">
-                  <Switch
+                  <SettingsSwitch
                     id="analytics-keep-bot-rows"
                     checked={field.value}
-                    onCheckedChange={(val) => {
-                      field.onChange(val)
-                      save()
-                    }}
+                    onCheckedChange={field.onChange}
+                    save={save}
                   />
                   <FieldLabel htmlFor="analytics-keep-bot-rows" className="font-normal">
                     {field.value ? '已开启' : '已关闭'}

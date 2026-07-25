@@ -440,7 +440,7 @@ export const s3Backend: StorageBackend = {
 }
 
 // `buildPublicUrl` lives in `@/server/domains/images/services/cache` and
-// reads the live `publicBaseUrl` through `@/server/domains/images/storage`'s
-// dispatcher. Keeping it out of this module is what allows the SSR
-// enhancer to stay free of the AWS SDK in code paths that only need
-// to compute a URL (no PUT/DELETE).
+// resolves the live `publicBaseUrl` directly through
+// `@/server/infra/storage/public-url`'s `resolveAssetUrl`. Keeping it out
+// of this module is what allows the SSR enhancer to stay free of the AWS
+// SDK in code paths that only need to compute a URL (no PUT/DELETE).

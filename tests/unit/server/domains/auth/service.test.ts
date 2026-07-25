@@ -8,7 +8,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 //     cleanup, meta parse + userId filtering.
 //   - listAllSessions — SCAN cursor loop, orphan vs live split, user
 //     join with deleted-user fallback.
-//   - revokeSessionWithGuard — missing meta, admin-on-other-admin guard.
+// The revocation policy moved to `session-guard.ts` and is covered by
+// tests/unit/server/domains/auth/session-guard.test.ts.
 // We stub redisInstance so every Redis call is deterministic, and stub
 // the user DB ops.
 
@@ -68,27 +69,15 @@ function newRedis() {
 
 const mockRedis = newRedis()
 
-const findSessionMetaMock = vi.hoisted(() => vi.fn())
-const revokeSessionByIdMock = vi.hoisted(() => vi.fn())
-const findSafeUserByIdMock = vi.hoisted(() => vi.fn())
 const findUsersByIdsMock = vi.hoisted(() => vi.fn())
 
 vi.mock('@/server/infra/redis/storage', () => ({ redisInstance: () => mockRedis }))
 vi.mock('@/server/infra/logger', () => ({ getLogger: () => ({ info: vi.fn(), error: vi.fn(), warn: vi.fn() }) }))
-vi.mock('@/server/domains/auth/repo', async () => {
-  const actual = await vi.importActual<typeof import('@/server/domains/auth/repo')>('@/server/domains/auth/repo')
-  return {
-    ...actual,
-    findSessionMeta: findSessionMetaMock,
-    revokeSessionById: revokeSessionByIdMock,
-  }
-})
 vi.mock('@/server/infra/db/operations/user', () => ({
-  findSafeUserById: findSafeUserByIdMock,
   findUsersByIds: findUsersByIdsMock,
 }))
 
-const { listSessionsByUser, listAllSessions, revokeSessionWithGuard } = await import('@/server/domains/auth/service')
+const { listSessionsByUser, listAllSessions } = await import('@/server/domains/auth/service')
 
 const fakeDb = {} as NodePgDatabase
 
@@ -113,8 +102,6 @@ describe('auth/service — session orchestration branches', () => {
     // Reset the redis method implementations in place (don't reassign the
     // object — the vi.mock closure captured this exact reference).
     Object.assign(mockRedis, newRedis())
-    revokeSessionByIdMock.mockResolvedValue(undefined)
-    findSafeUserByIdMock.mockResolvedValue(null)
     findUsersByIdsMock.mockResolvedValue([])
   })
 
@@ -228,52 +215,6 @@ describe('auth/service — session orchestration branches', () => {
       await listAllSessions(fakeDb)
       // Only the first SCAN page should have been consumed (cap reached).
       expect(mockRedis.scan).toHaveBeenCalledTimes(1)
-    })
-  })
-
-  describe('revokeSessionWithGuard', () => {
-    it('returns targetUserId:null when the session meta is missing', async () => {
-      findSessionMetaMock.mockResolvedValue(null)
-      const result = await revokeSessionWithGuard(fakeDb, 'sid', '1', 'admin')
-      expect(result).toEqual({ targetUserId: null })
-      expect(revokeSessionByIdMock).not.toHaveBeenCalled()
-    })
-
-    it('revokes immediately when the actor owns the session', async () => {
-      findSessionMetaMock.mockResolvedValue({ userId: 1n, sid: 'sid' })
-      const result = await revokeSessionWithGuard(fakeDb, 'sid', '1', 'admin')
-      expect(result.targetUserId).toBe(1n)
-      expect(revokeSessionByIdMock).toHaveBeenCalledWith('sid', 1n)
-    })
-
-    it('revokes when a non-admin targets another user (no admin guard)', async () => {
-      findSessionMetaMock.mockResolvedValue({ userId: 2n, sid: 'sid' })
-      const result = await revokeSessionWithGuard(fakeDb, 'sid', '1', 'visitor')
-      expect(result.targetUserId).toBe(2n)
-      expect(revokeSessionByIdMock).toHaveBeenCalled()
-    })
-
-    it('throws FORBIDDEN when an admin targets another live admin', async () => {
-      findSessionMetaMock.mockResolvedValue({ userId: 2n, sid: 'sid' })
-      findSafeUserByIdMock.mockResolvedValue({ id: 2n, role: 'admin', deletedAt: null })
-      await expect(revokeSessionWithGuard(fakeDb, 'sid', '1', 'admin')).rejects.toThrow(/无权撤销其他管理员/)
-      expect(revokeSessionByIdMock).not.toHaveBeenCalled()
-    })
-
-    it('revokes when the target admin has been soft-deleted', async () => {
-      findSessionMetaMock.mockResolvedValue({ userId: 2n, sid: 'sid' })
-      findSafeUserByIdMock.mockResolvedValue({ id: 2n, role: 'admin', deletedAt: new Date() })
-      const result = await revokeSessionWithGuard(fakeDb, 'sid', '1', 'admin')
-      expect(result.targetUserId).toBe(2n)
-      expect(revokeSessionByIdMock).toHaveBeenCalled()
-    })
-
-    it('revokes when the target is a non-admin user', async () => {
-      findSessionMetaMock.mockResolvedValue({ userId: 2n, sid: 'sid' })
-      findSafeUserByIdMock.mockResolvedValue({ id: 2n, role: 'visitor', deletedAt: null })
-      const result = await revokeSessionWithGuard(fakeDb, 'sid', '1', 'admin')
-      expect(result.targetUserId).toBe(2n)
-      expect(revokeSessionByIdMock).toHaveBeenCalled()
     })
   })
 })

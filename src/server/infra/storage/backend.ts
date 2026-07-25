@@ -40,9 +40,10 @@ export interface PutStreamInput {
 /**
  * Pluggable storage backend. Two implementations exist: S3
  * (`backends/s3.ts`) and local (under `DATA_PATH/storage/`). Domain
- * dispatchers never import a backend directly — they resolve one from
- * the registry (`activeBackend()` for writes, `backendFor(driver)` for
- * reads/deletes/migration).
+ * dispatchers never import a backend directly — they go through the
+ * registry: resolve one via `activeBackend()` (writes) or
+ * `backendFor(driver)` (reads/deletes/migration), or iterate every
+ * registered backend via `allBackends()` (the backup reconcile).
  *
  * URL resolution is intentionally NOT on this interface: the public URL
  * depends on the driver + the configured base URLs, which the registry

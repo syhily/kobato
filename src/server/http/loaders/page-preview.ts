@@ -1,9 +1,9 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { LoaderFunctionArgs } from 'react-router'
 
-import type { ResolvedImageMeta } from '@/server/domains/images/services/enhance'
 import type { PortableTextBody } from '@/shared/pt/schema'
 import type { DraftMarker } from '@/shared/types/catalog'
+import type { ResolvedImageMeta } from '@/shared/types/images'
 import type { MarkdownHeading } from '@/shared/utils/toc'
 
 import { tryGetSessionContext } from '@/server/domains/auth/context'

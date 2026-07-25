@@ -59,15 +59,25 @@ vi.mock('@/server/infra/storage/backends/s3', () => ({
   },
 }))
 
-vi.mock('@/server/infra/storage/registry', () => ({
-  activeBackend: () => ({ backend: { put: vi.fn() }, driver: 's3' }),
-  backendFor: (driver: 's3' | 'local') => ({
-    delete: async (key: string) => {
-      memoryStore.deletedKeys.add(key)
-    },
-    get: async () => Buffer.alloc(0),
-  }),
-}))
+vi.mock('@/server/infra/storage/registry', async () => {
+  // The imports below resolve to the mocked adapters above, so the
+  // reconcile iterates the same in-memory backends.
+  const { localBackend } = await import('@/server/infra/storage/backends/local')
+  const { s3Backend } = await import('@/server/infra/storage/backends/s3')
+  return {
+    activeBackend: () => ({ backend: { put: vi.fn() }, driver: 's3' }),
+    backendFor: (driver: 's3' | 'local') => ({
+      delete: async (key: string) => {
+        memoryStore.deletedKeys.add(key)
+      },
+      get: async () => Buffer.alloc(0),
+    }),
+    allBackends: () => [
+      { driver: 's3', backend: s3Backend },
+      { driver: 'local', backend: localBackend },
+    ],
+  }
+})
 
 const poolManager = createDbPool()
 const db: NodePgDatabase = poolManager.db

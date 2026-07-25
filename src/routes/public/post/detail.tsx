@@ -13,7 +13,7 @@ import { postLifecycleAdapter } from '@/server/domains/posts/services/lifecycle-
 import { prerenderMusicPlayerBlocks } from '@/server/domains/pt/prerender'
 import { getTagsByNames, listAllTags } from '@/server/domains/taxonomies/tags/service'
 import { loadPublicDetailData } from '@/server/http/loaders/detail'
-import { detailHeaders, publicShouldRevalidate } from '@/server/http/loaders/route-exports'
+import { detailHeaders } from '@/server/http/loaders/route-exports'
 import { selectSidebarTags } from '@/server/http/loaders/sidebar-select'
 import { ifNoneMatch, notModifiedResponse, weakEtag } from '@/server/infra/http/etag'
 import { redirectPermanent } from '@/server/infra/http/redirects'
@@ -30,7 +30,6 @@ import type { Route } from './+types/detail'
 
 export const handle: RouteHandle = { postFonts: true }
 export const headers = detailHeaders
-export const shouldRevalidate = publicShouldRevalidate
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
   const db = getDbFromContext({ request, context })

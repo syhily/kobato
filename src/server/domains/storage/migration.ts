@@ -17,12 +17,16 @@ import { findSettingByScope, upsertSetting } from '@/server/infra/db/operations/
 import { backup as backupTable } from '@/server/infra/db/schema/backup'
 import { image, music } from '@/server/infra/db/schema/media'
 import { getLogger } from '@/server/infra/logger'
-import { localBackend } from '@/server/infra/storage/backends/local'
-import { s3Backend } from '@/server/infra/storage/backends/s3'
+import { backendFor } from '@/server/infra/storage/registry'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const log = getLogger('storage.migration')
+
+// The migration copies objects between the two registered backends; both
+// are resolved through the registry instead of importing the adapters.
+const localBackend = backendFor('local')
+const s3Backend = backendFor('s3')
 
 /** Best-effort local cleanup after a copy — never rejects (ENOENT is fine). */
 const deleteLocalSafe = (key: string): Promise<void> =>

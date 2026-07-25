@@ -118,9 +118,6 @@ vi.mock('@/server/http/loaders/comments', () => ({
 vi.mock('@/server/domains/images/services/enhance', () => ({
   resolveImageMetaBySources: vi.fn(async () => new Map()),
 }))
-vi.mock('@/server/domains/images/services/cover', () => ({
-  loadImageThumbhash: vi.fn(async () => null),
-}))
 
 const postRoute = await import('@/routes/public/post/detail')
 const lifecycle = await import('@/server/domains/content/lifecycle')

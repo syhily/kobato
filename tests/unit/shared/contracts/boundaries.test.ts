@@ -480,9 +480,27 @@ describe('contract: module and bundle boundaries', () => {
     })
     expect(bareInputOffenders).toEqual([])
 
+    // Save-on-change for Switch / Checkbox / Select / RadioGroup / Combobox
+    // lives in the Settings* wrappers (SettingsSwitch, SettingsSelect, …):
+    // they merge RHF's `field.onChange` with the card's `save`. Two failure
+    // modes stay banned in card files:
+    //   1. the retired hand-rolled inline handler (`field.onChange(…)` then
+    //      `save()` in the same function) — use a wrapper instead;
+    //   2. a bare `onChange={field.onChange}` with no wrapper import anywhere
+    //      in the file — a control that never saves.
+    const handRolledOffenders = settingsCardFiles.filter((file) =>
+      /field\.onChange\([^)]*\)\s*save\(\)/.test(readFileSync(file, 'utf8')),
+    )
+    expect(handRolledOffenders).toEqual([])
+
     const directChangeOffenders = settingsCardFiles.filter((file) => {
       const source = readFileSync(file, 'utf8')
-      return /on(?:Checked|Value)Change=\{field\.onChange\}/.test(source)
+      if (!/on(?:Checked|Value)Change=\{field\.onChange\}/.test(source)) {
+        return false
+      }
+      return !/from '@\/ui\/admin\/settings\/shell\/Settings(?:Switch|Checkbox|Select|RadioGroup|Combobox)'/.test(
+        source,
+      )
     })
     expect(directChangeOffenders).toEqual([])
   })

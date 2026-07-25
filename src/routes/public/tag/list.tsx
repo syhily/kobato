@@ -3,7 +3,7 @@ import type { ListingPageLoaderData } from '@/server/http/loaders/listing'
 import { getDbFromContext } from '@/server/domains/auth/context'
 import { countPublicPosts, listPublicPostCardsPaginated } from '@/server/domains/posts/repos/public-query/listing'
 import { listingLoader } from '@/server/http/loaders/listing'
-import { listingHeaders, publicShouldRevalidate } from '@/server/http/loaders/route-exports'
+import { listingHeaders } from '@/server/http/loaders/route-exports'
 import { findTagBySlug } from '@/server/infra/db/operations/tag'
 import { notFound } from '@/server/infra/http/status'
 import { metaWithFallback } from '@/shared/seo/meta'
@@ -38,7 +38,6 @@ export async function loader({ request, context, params }: Route.LoaderArgs): Pr
 }
 
 export const headers = listingHeaders
-export const shouldRevalidate = publicShouldRevalidate
 
 export function meta({ loaderData, matches }: Route.MetaArgs) {
   return metaWithFallback({ loaderData, matches })

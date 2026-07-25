@@ -10,7 +10,7 @@ import { image } from '@/server/infra/db/schema/media'
 import { redisInstance } from '@/server/infra/redis/storage'
 
 const { clearImageEnhanceCache } = await import('@/server/domains/images/services/cache')
-const { loadImageThumbhash } = await import('@/server/domains/images/services/cover')
+const { resolveImageRef } = await import('@/server/domains/images/services/resolve')
 
 const poolManager = createDbPool()
 const db: NodePgDatabase = poolManager.db
@@ -45,15 +45,15 @@ async function seedImage(overrides: Partial<typeof image.$inferInsert> = {}) {
   return rows[0]
 }
 
-describe('server/images/render-enhance — loadImageThumbhash', () => {
+describe('server/images/render-enhance — resolveImageRef', () => {
   it('returns null for empty src', async () => {
-    expect(await loadImageThumbhash(db, '')).toBeNull()
+    expect(await resolveImageRef(db, '')).toBeNull()
   })
 
   it('returns the row dimensions and thumbhash for a matched URL', async () => {
     const row = await seedImage()
 
-    const result = await loadImageThumbhash(db, 'https://assets.example.com/images/categories/coding.jpg')
+    const result = await resolveImageRef(db, 'https://assets.example.com/images/categories/coding.jpg')
     expect(result).toEqual({
       width: 1280,
       height: 425,
@@ -63,13 +63,13 @@ describe('server/images/render-enhance — loadImageThumbhash', () => {
   })
 
   it('returns null when the URL has no matching row', async () => {
-    expect(await loadImageThumbhash(db, 'https://assets.example.com/images/no-such.jpg')).toBeNull()
+    expect(await resolveImageRef(db, 'https://assets.example.com/images/no-such.jpg')).toBeNull()
   })
 
   it('serves a second hit from the Redis cache', async () => {
     await seedImage()
 
-    const result1 = await loadImageThumbhash(db, 'https://assets.example.com/images/categories/coding.jpg')
+    const result1 = await resolveImageRef(db, 'https://assets.example.com/images/categories/coding.jpg')
     expect(result1).not.toBeNull()
 
     // Verify cache was written to Redis
@@ -77,7 +77,7 @@ describe('server/images/render-enhance — loadImageThumbhash', () => {
     expect(cached).not.toBeNull()
 
     // Second call should return the same result (cache hit)
-    const result2 = await loadImageThumbhash(db, 'https://assets.example.com/images/categories/coding.jpg')
+    const result2 = await resolveImageRef(db, 'https://assets.example.com/images/categories/coding.jpg')
     expect(result2).toEqual(result1)
   })
 })

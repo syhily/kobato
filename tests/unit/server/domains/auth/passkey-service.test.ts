@@ -42,7 +42,7 @@ vi.mock('@/shared/config/getters', () => ({
 
 vi.mock('@/server/infra/db/operations/user', () => ({
   findUserByEmail: vi.fn(),
-  findUserById: vi.fn(),
+  findSafeUserById: vi.fn(),
 }))
 
 const db = {} as unknown as NodePgDatabase
@@ -66,8 +66,6 @@ function testUser(partial: Partial<SafeUser> = {}): SafeUser {
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: null,
-    lastIp: null,
-    lastUa: null,
     passkeyForce: false,
     ...partial,
   } as SafeUser
@@ -354,7 +352,7 @@ describe('passkey-service — verifyAuthenticationResponse', () => {
       })),
     } as unknown as NodePgDatabase
 
-    vi.mocked(userOps.findUserById).mockResolvedValue(testUser({ id: 1n, role: 'admin' }) as any)
+    vi.mocked(userOps.findSafeUserById).mockResolvedValue(testUser({ id: 1n, role: 'admin' }) as any)
 
     const result = await passkeyService.verifyAuthenticationResponse(
       dbWithOps,
@@ -370,6 +368,11 @@ describe('passkey-service — verifyAuthenticationResponse', () => {
 
     expect(result.user.id).toBe(1n)
     expect(result.authMethod).toBe('passkey')
+    // The returned user is the SafeUser accessor result verbatim — the
+    // hand-rolled sensitive-field strip is gone.
+    expect(result.user).not.toHaveProperty('password')
+    expect(result.user).not.toHaveProperty('lastIp')
+    expect(result.user).not.toHaveProperty('lastUa')
   })
 
   it('throws DomainError when challenge is expired', async () => {

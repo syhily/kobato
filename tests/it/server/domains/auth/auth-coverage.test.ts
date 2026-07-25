@@ -15,7 +15,8 @@ import {
   recordSessionActivity,
   USER_SET_KEY,
 } from '@/server/domains/auth/repo'
-import { listSessionsByUser, listAllSessions, revokeSessionWithGuard } from '@/server/domains/auth/service'
+import { listSessionsByUser, listAllSessions } from '@/server/domains/auth/service'
+import { revokeSessionWithGuard } from '@/server/domains/auth/session-guard'
 import { commitSessionWithMaxAge, getRequestSession } from '@/server/domains/auth/session-storage'
 import {
   getSetupToken,
@@ -378,9 +379,9 @@ describe('auth/service — listAllSessions', () => {
   })
 })
 
-describe('auth/service — revokeSessionWithGuard', () => {
+describe('auth/session-guard — revokeSessionWithGuard', () => {
   it('returns null targetUserId when the session does not exist', async () => {
-    const result = await revokeSessionWithGuard(db, 'missing', '1', 'admin')
+    const result = await revokeSessionWithGuard(db, 'missing', { userId: '1', role: 'admin' })
     expect(result).toEqual({ targetUserId: null })
   })
 
@@ -392,7 +393,7 @@ describe('auth/service — revokeSessionWithGuard', () => {
     await redis.sadd(USER_SET_KEY(u.id), sid)
     await recordSessionLogin({ sid, userId: u.id, userAgent: 'ua', ip: '1.1.1.1' })
 
-    const result = await revokeSessionWithGuard(db, sid, String(u.id), 'admin')
+    const result = await revokeSessionWithGuard(db, sid, { userId: String(u.id), role: 'admin' })
     expect(result.targetUserId).toBe(u.id)
     expect(await findSessionMeta(sid)).toBeNull()
   })
@@ -405,7 +406,7 @@ describe('auth/service — revokeSessionWithGuard', () => {
     await redis.set(`session:${sid}`, 'blob')
     await recordSessionLogin({ sid, userId: bob.id, userAgent: 'ua', ip: '1.1.1.1' })
 
-    await expect(revokeSessionWithGuard(db, sid, String(alice.id), 'admin')).rejects.toThrow(/无权/)
+    await expect(revokeSessionWithGuard(db, sid, { userId: String(alice.id), role: 'admin' })).rejects.toThrow(/无权/)
   })
 
   it("allows an admin to revoke a non-admin's session", async () => {
@@ -416,7 +417,7 @@ describe('auth/service — revokeSessionWithGuard', () => {
     await redis.set(`session:${sid}`, 'blob')
     await recordSessionLogin({ sid, userId: visitor.id, userAgent: 'ua', ip: '1.1.1.1' })
 
-    const result = await revokeSessionWithGuard(db, sid, String(admin.id), 'admin')
+    const result = await revokeSessionWithGuard(db, sid, { userId: String(admin.id), role: 'admin' })
     expect(result.targetUserId).toBe(visitor.id)
   })
 })

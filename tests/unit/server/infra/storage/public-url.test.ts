@@ -16,7 +16,7 @@ const { requireBlogSettingsSection } = (await import('@/shared/config/getters'))
   // section shapes without matching the real (large) section union.
   requireBlogSettingsSection: ReturnType<typeof vi.fn>
 }
-const { resolveAssetUrl, safeResolveAssetUrl } = await import('@/server/infra/storage/public-url')
+const { resolveAssetUrl, safeResolveAssetUrl, getPublicBaseUrl } = await import('@/server/infra/storage/public-url')
 
 beforeEach(() => {
   requireBlogSettingsSection.mockImplementation((section: string) => {
@@ -27,6 +27,33 @@ beforeEach(() => {
       return { website: 'https://site.example.com' }
     }
     return {}
+  })
+})
+
+describe('getPublicBaseUrl', () => {
+  it('derives the base URL from the assets section host', () => {
+    expect(getPublicBaseUrl()).toBe('https://cdn.example.com')
+  })
+
+  it('follows asset host updates immediately', () => {
+    requireBlogSettingsSection.mockImplementation((section: string) =>
+      section === 'assets' ? { asset: { scheme: 'https', host: 'assets2.example.com' } } : {},
+    )
+    expect(getPublicBaseUrl()).toBe('https://assets2.example.com')
+  })
+
+  it('keeps reporting the host-derived base when uploads are OFF (so SSR can still render historical s3 rows)', () => {
+    requireBlogSettingsSection.mockImplementation((section: string) =>
+      section === 'assets' ? { asset: { scheme: 'https', host: 'cdn.example.com' }, storage: { enabled: false } } : {},
+    )
+    expect(getPublicBaseUrl()).toBe('https://cdn.example.com')
+  })
+
+  it('returns null when the CDN host is empty', () => {
+    requireBlogSettingsSection.mockImplementation((section: string) =>
+      section === 'assets' ? { asset: { scheme: 'https', host: '' } } : {},
+    )
+    expect(getPublicBaseUrl()).toBeNull()
   })
 })
 

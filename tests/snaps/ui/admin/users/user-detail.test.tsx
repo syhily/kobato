@@ -1,12 +1,25 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AdminUserDto } from '@/shared/contracts/users'
 
-import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { UserDetailView } from '@/ui/admin/users/UserDetailView'
 import { UserEditForm } from '@/ui/admin/users/UserEditForm'
 import { UserOperationsCard } from '@/ui/admin/users/UserOperationsCard'
+
+// The cards own their TanStack mutations now. Stub `useMutation` with a
+// shared fixture so the update-error branch can be driven from the test.
+const mutationMock = vi.hoisted(() => ({
+  state: { mutate: vi.fn(), isPending: false, error: null as { message: string } | null },
+}))
+
+vi.mock('@tanstack/react-query', async () => {
+  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
+  return {
+    ...actual,
+    useMutation: () => mutationMock.state,
+  }
+})
 
 function makeAdminUser(overrides: Partial<AdminUserDto> = {}): AdminUserDto {
   const id = overrides.id ?? `user-${Math.random().toString(36).slice(2, 8)}`
@@ -31,36 +44,22 @@ function makeAdminUser(overrides: Partial<AdminUserDto> = {}): AdminUserDto {
   }
 }
 
-const noopMutation = {
-  isPending: false,
-  error: null,
-  mutate: () => {},
-}
+beforeEach(() => {
+  mutationMock.state = { mutate: vi.fn(), isPending: false, error: null }
+})
 
 describe('snapshot: UserEditForm', () => {
   it('renders the form', () => {
-    const html = stableHtml(
-      renderToHtml(
-        <UserEditForm
-          name="Alice"
-          setName={() => {}}
-          email="alice@example.com"
-          setEmail={() => {}}
-          link="https://example.com"
-          setLink={() => {}}
-          badgeName="VIP"
-          setBadgeName={() => {}}
-          badgeColor="#ff0000"
-          setBadgeColor={() => {}}
-          useTextOverride={true}
-          setUseTextOverride={() => {}}
-          badgeTextColor="#ffffff"
-          setBadgeTextColor={() => {}}
-          updateMutation={noopMutation}
-          userId="user-1"
-        />,
-      ),
-    )
+    const user = makeAdminUser({
+      id: 'user-1',
+      name: 'Alice',
+      email: 'alice@example.com',
+      link: 'https://example.com',
+      badgeName: 'VIP',
+      badgeColor: '#ff0000',
+      badgeTextColor: '#ffffff',
+    })
+    const html = stableHtml(renderToHtml(<UserEditForm user={user} />))
     expect(html).toContain('编辑信息')
     expect(html).toContain('Alice')
     expect(html).toContain('alice@example.com')
@@ -69,32 +68,13 @@ describe('snapshot: UserEditForm', () => {
   })
 
   it('renders with update error', () => {
-    const html = stableHtml(
-      renderToHtml(
-        <UserEditForm
-          name="Alice"
-          setName={() => {}}
-          email="alice@example.com"
-          setEmail={() => {}}
-          link=""
-          setLink={() => {}}
-          badgeName=""
-          setBadgeName={() => {}}
-          badgeColor="#007a82"
-          setBadgeColor={() => {}}
-          useTextOverride={false}
-          setUseTextOverride={() => {}}
-          badgeTextColor="#ffffff"
-          setBadgeTextColor={() => {}}
-          updateMutation={{
-            isPending: false,
-            error: { message: '邮箱已被占用' },
-            mutate: () => {},
-          }}
-          userId="user-1"
-        />,
-      ),
-    )
+    mutationMock.state = {
+      mutate: vi.fn(),
+      isPending: false,
+      error: { message: '邮箱已被占用' },
+    }
+    const user = makeAdminUser({ id: 'user-1', name: 'Alice', email: 'alice@example.com' })
+    const html = stableHtml(renderToHtml(<UserEditForm user={user} />))
     expect(html).toContain('邮箱已被占用')
   })
 })
@@ -111,23 +91,7 @@ describe('snapshot: UserOperationsCard', () => {
     })
     const html = stableHtml(
       renderToHtml(
-        <UserOperationsCard
-          user={user}
-          currentUserId="user-1"
-          passkeyEnabled={true}
-          roleDraft=""
-          setRoleDraft={() => {}}
-          setConfirm={() => {}}
-          updateRoleMutation={noopMutation}
-          sendResetMutation={noopMutation}
-          revokeSessionsMutation={noopMutation}
-          muteMutation={noopMutation}
-          bulkApproveMutation={noopMutation}
-          deleteMutation={noopMutation}
-          restoreMutation={noopMutation}
-          bulkDeleteMutation={noopMutation}
-          clearPasskeysMutation={noopMutation}
-        />,
+        <UserOperationsCard user={user} currentUserId="user-1" passkeyEnabled={true} onDeleted={() => {}} />,
       ),
     )
     expect(html).toContain('操作')
@@ -144,23 +108,7 @@ describe('snapshot: UserOperationsCard', () => {
     const user = makeAdminUser({ id: 'user-1', name: 'Alice', role: 'admin' })
     const html = stableHtml(
       renderToHtml(
-        <UserOperationsCard
-          user={user}
-          currentUserId="user-1"
-          passkeyEnabled={false}
-          roleDraft=""
-          setRoleDraft={() => {}}
-          setConfirm={() => {}}
-          updateRoleMutation={noopMutation}
-          sendResetMutation={noopMutation}
-          revokeSessionsMutation={noopMutation}
-          muteMutation={noopMutation}
-          bulkApproveMutation={noopMutation}
-          deleteMutation={noopMutation}
-          restoreMutation={noopMutation}
-          bulkDeleteMutation={noopMutation}
-          clearPasskeysMutation={noopMutation}
-        />,
+        <UserOperationsCard user={user} currentUserId="user-1" passkeyEnabled={false} onDeleted={() => {}} />,
       ),
     )
     expect(html).toContain('操作')
@@ -177,23 +125,7 @@ describe('snapshot: UserOperationsCard', () => {
     })
     const html = stableHtml(
       renderToHtml(
-        <UserOperationsCard
-          user={user}
-          currentUserId="user-1"
-          passkeyEnabled={false}
-          roleDraft=""
-          setRoleDraft={() => {}}
-          setConfirm={() => {}}
-          updateRoleMutation={noopMutation}
-          sendResetMutation={noopMutation}
-          revokeSessionsMutation={noopMutation}
-          muteMutation={noopMutation}
-          bulkApproveMutation={noopMutation}
-          deleteMutation={noopMutation}
-          restoreMutation={noopMutation}
-          bulkDeleteMutation={noopMutation}
-          clearPasskeysMutation={noopMutation}
-        />,
+        <UserOperationsCard user={user} currentUserId="user-1" passkeyEnabled={false} onDeleted={() => {}} />,
       ),
     )
     expect(html).toContain('解除禁言')

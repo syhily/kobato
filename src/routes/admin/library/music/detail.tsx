@@ -1,3 +1,5 @@
+import { useNavigate } from 'react-router'
+
 import { getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
 import { titleMeta } from '@/shared/seo/title-meta'
@@ -12,6 +14,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
 
 export const meta = titleMeta('歌曲详情')
 
-export default function AdminMusicDetailRoute() {
-  return <MusicDetailView />
+export default function AdminMusicDetailRoute({ params }: Route.ComponentProps) {
+  const navigate = useNavigate()
+  return <MusicDetailView id={params.id ?? ''} navigate={navigate} />
 }

@@ -8,10 +8,11 @@ import type { SiteIdentitySettings } from '@/shared/config/types'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
+import { SettingsCombobox } from '@/ui/admin/settings/shell/SettingsCombobox'
 import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Button } from '@/ui/components/button'
-import { Combobox, ComboboxContent, ComboboxItem, ComboboxTrigger, ComboboxValue } from '@/ui/components/combobox'
+import { ComboboxContent, ComboboxItem, ComboboxTrigger, ComboboxValue } from '@/ui/components/combobox'
 
 interface TimeZoneItem {
   value: string
@@ -322,13 +323,13 @@ function GeneralTimeZoneCard({
             render={({ field }) => {
               const selected = timeZoneItems.find((item) => item.value === field.value) ?? null
               return (
-                <Combobox<TimeZoneItem>
+                <SettingsCombobox<TimeZoneItem>
                   items={timeZoneItems}
                   value={selected}
+                  save={save}
                   onValueChange={(item) => {
                     if (item) {
                       field.onChange(item.value)
-                      save()
                     }
                   }}
                 >
@@ -342,7 +343,7 @@ function GeneralTimeZoneCard({
                       </ComboboxItem>
                     )}
                   </ComboboxContent>
-                </Combobox>
+                </SettingsCombobox>
               )
             }}
           />

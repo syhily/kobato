@@ -11,12 +11,18 @@ import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
 import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
+import {
+  SettingsSecretInput,
+  secretFieldPatch,
+  secretFieldStrings,
+} from '@/ui/admin/settings/shell/SettingsSecretInput'
+import { SettingsSelect } from '@/ui/admin/settings/shell/SettingsSelect'
+import { SettingsSwitch } from '@/ui/admin/settings/shell/SettingsSwitch'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Button } from '@/ui/components/button'
 import { FieldLabel } from '@/ui/components/field'
 import { Input } from '@/ui/components/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
-import { Switch } from '@/ui/components/switch'
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 
 interface MailFormProps {
   mail: MailLoaderShape
@@ -58,14 +64,7 @@ function MailToggleCard({ mail }: { mail: MailLoaderShape }) {
               control={form.control}
               name="enabled"
               render={({ field }) => (
-                <Switch
-                  id="mail-enabled"
-                  checked={field.value}
-                  onCheckedChange={(val) => {
-                    field.onChange(val)
-                    save()
-                  }}
-                />
+                <SettingsSwitch id="mail-enabled" checked={field.value} onCheckedChange={field.onChange} save={save} />
               )}
             />
             <FieldLabel htmlFor="mail-enabled" className="font-normal">
@@ -107,12 +106,12 @@ function ProviderSelectCard({ mail }: { mail: MailLoaderShape }) {
             control={form.control}
             name="transport"
             render={({ field }) => (
-              <Select
+              <SettingsSelect
                 value={field.value}
+                save={save}
                 onValueChange={(value) => {
                   if (value === 'zeabur' || value === 'smtp' || value === 'mailgun') {
                     field.onChange(value)
-                    save()
                   }
                 }}
               >
@@ -130,7 +129,7 @@ function ProviderSelectCard({ mail }: { mail: MailLoaderShape }) {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </SettingsSelect>
             )}
           />
         </SettingsRow>
@@ -150,18 +149,20 @@ function ZeaburConfigCard({ mail }: { mail: MailLoaderShape }) {
       host: source.mail.host,
       apiKey: '',
     }),
-    fromState: (state) => {
-      const trimmedKey = state.apiKey.trim()
-      return {
-        mail: {
-          host: state.host.trim(),
-          ...(trimmedKey ? { apiKey: trimmedKey } : {}),
-        },
-      }
-    },
+    fromState: (state) => ({
+      mail: {
+        host: state.host.trim(),
+        ...secretFieldPatch(state.apiKey, 'apiKey'),
+      },
+    }),
   })
 
-  const apiKeyConfigured = display.mail.apiKeyMask !== null
+  const apiKeyField = secretFieldStrings({
+    mask: display.mail.apiKeyMask,
+    keepLabel: '保留现有 Key',
+    emptyHint: '尚未配置。在 Zeabur 控制台 ZSend 服务页面生成的密钥。',
+    emptyPlaceholder: '粘贴 Zeabur ZSend API Key',
+  })
   return (
     <SettingGroup
       title="Zeabur ZSend 配置"
@@ -178,23 +179,12 @@ function ZeaburConfigCard({ mail }: { mail: MailLoaderShape }) {
             {...form.register('host')}
           />
         </SettingsRow>
-        <SettingsRow
-          label="API Key"
-          htmlFor="mail-api-key"
-          hint={
-            apiKeyConfigured
-              ? `当前已配置（结尾 …${display.mail.apiKeyMask}）。留空保存表示保留现有 Key。`
-              : '尚未配置。在 Zeabur 控制台 ZSend 服务页面生成的密钥。'
-          }
-        >
-          <SettingsInput
+        <SettingsRow label="API Key" htmlFor="mail-api-key" hint={apiKeyField.hint}>
+          <SettingsSecretInput
             flushOnBlur={flushOnBlur}
             id="mail-api-key"
-            type="password"
+            placeholder={apiKeyField.placeholder}
             {...form.register('apiKey')}
-            placeholder={apiKeyConfigured ? '保留现有 Key' : '粘贴 Zeabur ZSend API Key'}
-            maxLength={512}
-            autoComplete="new-password"
           />
         </SettingsRow>
       </SettingGroupContent>
@@ -213,18 +203,20 @@ function MailgunConfigCard({ mail }: { mail: MailLoaderShape }) {
       mailgunDomain: source.mail.mailgunDomain,
       mailgunApiKey: '',
     }),
-    fromState: (state) => {
-      const trimmedKey = state.mailgunApiKey.trim()
-      return {
-        mail: {
-          mailgunDomain: state.mailgunDomain.trim(),
-          ...(trimmedKey ? { mailgunApiKey: trimmedKey } : {}),
-        },
-      }
-    },
+    fromState: (state) => ({
+      mail: {
+        mailgunDomain: state.mailgunDomain.trim(),
+        ...secretFieldPatch(state.mailgunApiKey, 'mailgunApiKey'),
+      },
+    }),
   })
 
-  const apiKeyConfigured = display.mail.mailgunApiKeyMask !== null
+  const mailgunApiKeyField = secretFieldStrings({
+    mask: display.mail.mailgunApiKeyMask,
+    keepLabel: '保留现有 Key',
+    emptyHint: '尚未配置。在 Mailgun 控制台「Settings → API Keys」页面生成的私钥（key-... 或 MG_... 形式）。',
+    emptyPlaceholder: '粘贴 Mailgun Private API Key',
+  })
   return (
     <SettingGroup
       title="Mailgun 配置"
@@ -245,23 +237,12 @@ function MailgunConfigCard({ mail }: { mail: MailLoaderShape }) {
             {...form.register('mailgunDomain')}
           />
         </SettingsRow>
-        <SettingsRow
-          label="API Key"
-          htmlFor="mail-mailgun-api-key"
-          hint={
-            apiKeyConfigured
-              ? `当前已配置（结尾 …${display.mail.mailgunApiKeyMask}）。留空保存表示保留现有 Key。`
-              : '尚未配置。在 Mailgun 控制台「Settings → API Keys」页面生成的私钥（key-... 或 MG_... 形式）。'
-          }
-        >
-          <SettingsInput
+        <SettingsRow label="API Key" htmlFor="mail-mailgun-api-key" hint={mailgunApiKeyField.hint}>
+          <SettingsSecretInput
             flushOnBlur={flushOnBlur}
             id="mail-mailgun-api-key"
-            type="password"
+            placeholder={mailgunApiKeyField.placeholder}
             {...form.register('mailgunApiKey')}
-            placeholder={apiKeyConfigured ? '保留现有 Key' : '粘贴 Mailgun Private API Key'}
-            maxLength={512}
-            autoComplete="new-password"
           />
         </SettingsRow>
       </SettingGroupContent>
@@ -293,23 +274,25 @@ function SmtpConfigCard({ mail }: { mail: MailLoaderShape }) {
       smtpRequireTls: source.mail.smtpRequireTls,
       smtpRejectUnauthorized: source.mail.smtpRejectUnauthorized,
     }),
-    fromState: (state) => {
-      const trimmedPass = state.smtpPass.trim()
-      return {
-        mail: {
-          smtpHost: state.smtpHost.trim(),
-          smtpPort: Number.isFinite(state.smtpPort) ? state.smtpPort : 587,
-          smtpUser: state.smtpUser.trim(),
-          smtpSecure: state.smtpSecure,
-          smtpRequireTls: state.smtpRequireTls,
-          smtpRejectUnauthorized: state.smtpRejectUnauthorized,
-          ...(trimmedPass ? { smtpPass: trimmedPass } : {}),
-        },
-      }
-    },
+    fromState: (state) => ({
+      mail: {
+        smtpHost: state.smtpHost.trim(),
+        smtpPort: Number.isFinite(state.smtpPort) ? state.smtpPort : 587,
+        smtpUser: state.smtpUser.trim(),
+        smtpSecure: state.smtpSecure,
+        smtpRequireTls: state.smtpRequireTls,
+        smtpRejectUnauthorized: state.smtpRejectUnauthorized,
+        ...secretFieldPatch(state.smtpPass, 'smtpPass'),
+      },
+    }),
   })
 
-  const passConfigured = display.mail.smtpPassMask !== null
+  const smtpPassField = secretFieldStrings({
+    mask: display.mail.smtpPassMask,
+    keepLabel: '保留现有密码',
+    emptyHint: '尚未配置。',
+    emptyPlaceholder: '输入 SMTP 密码',
+  })
   return (
     <SettingGroup
       title="SMTP 配置"
@@ -346,23 +329,12 @@ function SmtpConfigCard({ mail }: { mail: MailLoaderShape }) {
             {...form.register('smtpUser')}
           />
         </SettingsRow>
-        <SettingsRow
-          label="密码"
-          htmlFor="mail-smtp-pass"
-          hint={
-            passConfigured
-              ? `当前已配置（结尾 …${display.mail.smtpPassMask}）。留空保存表示保留现有密码。`
-              : '尚未配置。'
-          }
-        >
-          <SettingsInput
+        <SettingsRow label="密码" htmlFor="mail-smtp-pass" hint={smtpPassField.hint}>
+          <SettingsSecretInput
             flushOnBlur={flushOnBlur}
             id="mail-smtp-pass"
-            type="password"
+            placeholder={smtpPassField.placeholder}
             {...form.register('smtpPass')}
-            placeholder={passConfigured ? '保留现有密码' : '输入 SMTP 密码'}
-            maxLength={512}
-            autoComplete="new-password"
           />
         </SettingsRow>
         <SettingsRow label="使用 TLS" hint="465 端口通常需要开启，587 端口视服务器配置而定。">
@@ -371,13 +343,11 @@ function SmtpConfigCard({ mail }: { mail: MailLoaderShape }) {
               control={form.control}
               name="smtpSecure"
               render={({ field }) => (
-                <Switch
+                <SettingsSwitch
                   id="mail-smtp-secure"
                   checked={field.value}
-                  onCheckedChange={(val) => {
-                    field.onChange(val)
-                    save()
-                  }}
+                  onCheckedChange={field.onChange}
+                  save={save}
                 />
               )}
             />
@@ -392,13 +362,11 @@ function SmtpConfigCard({ mail }: { mail: MailLoaderShape }) {
               control={form.control}
               name="smtpRequireTls"
               render={({ field }) => (
-                <Switch
+                <SettingsSwitch
                   id="mail-smtp-require-tls"
                   checked={field.value}
-                  onCheckedChange={(val) => {
-                    field.onChange(val)
-                    save()
-                  }}
+                  onCheckedChange={field.onChange}
+                  save={save}
                 />
               )}
             />
@@ -416,13 +384,11 @@ function SmtpConfigCard({ mail }: { mail: MailLoaderShape }) {
               control={form.control}
               name="smtpRejectUnauthorized"
               render={({ field }) => (
-                <Switch
+                <SettingsSwitch
                   id="mail-smtp-reject-unauthorized"
                   checked={field.value}
-                  onCheckedChange={(val) => {
-                    field.onChange(val)
-                    save()
-                  }}
+                  onCheckedChange={field.onChange}
+                  save={save}
                 />
               )}
             />

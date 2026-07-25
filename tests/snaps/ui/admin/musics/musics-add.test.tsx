@@ -592,6 +592,9 @@ describe('snapshot: SearchAlbumCard', () => {
 
 // ═════════════════════════ MusicDetailView ════════════════════════════════
 
+// The view is pure-props now: the route module supplies the id + navigate.
+const navigateMock = vi.fn()
+
 describe('snapshot: MusicDetailView', () => {
   beforeEach(resetQueryMocks)
 
@@ -604,7 +607,7 @@ describe('snapshot: MusicDetailView', () => {
     const html = stableHtml(
       renderInRouter(
         <MusicPlayerProvider>
-          <MusicDetailView />
+          <MusicDetailView id="music-1" navigate={navigateMock} />
         </MusicPlayerProvider>,
         '/admin/library/music/music-1',
       ),
@@ -621,7 +624,7 @@ describe('snapshot: MusicDetailView', () => {
     const html = stableHtml(
       renderInRouter(
         <MusicPlayerProvider>
-          <MusicDetailView />
+          <MusicDetailView id="music-1" navigate={navigateMock} />
         </MusicPlayerProvider>,
         '/admin/library/music/music-1',
       ),
@@ -639,7 +642,7 @@ describe('snapshot: MusicDetailView', () => {
     const html = stableHtml(
       renderInRouter(
         <MusicPlayerProvider>
-          <MusicDetailView />
+          <MusicDetailView id="missing" navigate={navigateMock} />
         </MusicPlayerProvider>,
         '/admin/library/music/missing',
       ),
@@ -668,7 +671,7 @@ describe('snapshot: MusicDetailView', () => {
     const html = stableHtml(
       renderInRouter(
         <MusicPlayerProvider>
-          <MusicDetailView />
+          <MusicDetailView id="music-42" navigate={navigateMock} />
         </MusicPlayerProvider>,
         '/admin/library/music/music-42',
       ),
@@ -713,7 +716,7 @@ describe('snapshot: MusicDetailView', () => {
     const html = stableHtml(
       renderInRouter(
         <MusicPlayerProvider>
-          <MusicDetailView />
+          <MusicDetailView id="music-1" navigate={navigateMock} />
         </MusicPlayerProvider>,
         '/admin/library/music/music-1',
       ),
@@ -733,7 +736,7 @@ describe('snapshot: MusicDetailView', () => {
     const html = stableHtml(
       renderInRouter(
         <MusicPlayerProvider>
-          <MusicDetailView />
+          <MusicDetailView id="music-1" navigate={navigateMock} />
         </MusicPlayerProvider>,
         '/admin/library/music/music-1',
       ),

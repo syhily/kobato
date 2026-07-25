@@ -12,10 +12,11 @@ import {
   setPasskeyForce,
   verifyRegistrationResponse,
 } from '@/server/domains/auth/passkey-service'
-import { findSessionMeta, revokeSessionById } from '@/server/domains/auth/repo'
 import { MIN_PASSWORD_LENGTH, PASSWORD_COMPLEXITY_RE } from '@/server/domains/auth/schema'
-import { findUserById, updateAccountPassword, updateAccountProfile } from '@/server/domains/users/services/account'
+import { revokeOwnSessionWithGuard } from '@/server/domains/auth/session-guard'
+import { updateAccountPassword, updateAccountProfile } from '@/server/domains/users/services/account'
 import { authedProc } from '@/server/http/orpc-base'
+import { findSafeUserById } from '@/server/infra/db/operations/user'
 import {
   tryPasskeyDeleteRateLimit,
   tryPasskeyRegisterBeginRateLimit,
@@ -134,20 +135,15 @@ const revokeSession = authedProc
   .handler(async ({ input, context }) => {
     const { viewer, session } = context
     const currentSession = input.id === session.id
-    const meta = await findSessionMeta(input.id)
-    if (!meta) {
-      return { success: true, currentSession }
+    const { targetUserId } = await revokeOwnSessionWithGuard(input.id, viewer)
+    if (targetUserId !== null) {
+      recordAuditEventFromContext(context, {
+        action: 'session_revoked',
+        resourceType: 'session',
+        resourceId: input.id,
+        details: { currentSession, targetUserId: String(targetUserId) },
+      })
     }
-    if (meta.userId.toString() !== viewer.userId) {
-      throw new ORPCError('FORBIDDEN', { message: '无权操作该会话。' })
-    }
-    await revokeSessionById(input.id, meta.userId)
-    recordAuditEventFromContext(context, {
-      action: 'session_revoked',
-      resourceType: 'session',
-      resourceId: input.id,
-      details: { currentSession, targetUserId: String(meta.userId) },
-    })
     return { success: true, currentSession }
   })
 
@@ -196,12 +192,11 @@ const passkeyRegisterBegin = authedProc
     if (limit.exceeded) {
       throw new ORPCError('TOO_MANY_REQUESTS', { message: '操作过于频繁，请稍后再试。' })
     }
-    const dbUser = await findUserById(db, idFromString(viewer.userId))
+    const dbUser = await findSafeUserById(db, idFromString(viewer.userId))
     if (!dbUser) {
       throw new ORPCError('NOT_FOUND', { message: '用户不存在。' })
     }
-    const { password: _p, lastIp: _li, lastUa: _lu, ...safeUser } = dbUser
-    const { options } = await generateRegistrationOptions(db, safeUser as typeof safeUser, input.deviceName)
+    const { options } = await generateRegistrationOptions(db, dbUser, input.deviceName)
     return { options }
   })
 
@@ -224,15 +219,14 @@ const passkeyRegisterFinish = authedProc
     if (limit.exceeded) {
       throw new ORPCError('TOO_MANY_REQUESTS', { message: '操作过于频繁，请稍后再试。' })
     }
-    const dbUser = await findUserById(db, idFromString(viewer.userId))
+    const dbUser = await findSafeUserById(db, idFromString(viewer.userId))
     if (!dbUser) {
       throw new ORPCError('NOT_FOUND', { message: '用户不存在。' })
     }
-    const { password: _p, lastIp: _li, lastUa: _lu, ...safeUser } = dbUser
     if (!isRegistrationResponseJSON(input.response)) {
       throw new ORPCError('BAD_REQUEST', { message: '无效的 Passkey 响应格式。' })
     }
-    await verifyRegistrationResponse(db, safeUser, {
+    await verifyRegistrationResponse(db, dbUser, {
       response: input.response,
       deviceName: input.deviceName,
       challenge: input.challenge,

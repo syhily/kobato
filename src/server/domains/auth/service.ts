@@ -1,14 +1,15 @@
 // Session orchestration: listing, scanning, and orphan cleanup that
 // composes the raw data-access primitives from `repo.ts`. Keeps `repo.ts`
 // lean (direct Redis reads/writes) per the domain locked vocabulary.
+// Revocation policy ("who may revoke whose session") lives in
+// `session-guard.ts`.
 
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import type { SessionMeta, SessionWithUser } from '@/server/domains/auth/repo'
 
-import { findSessionMeta, META_KEY, parseMeta, revokeSessionById, USER_SET_KEY } from '@/server/domains/auth/repo'
-import { findSafeUserById, findUsersByIds } from '@/server/infra/db/operations/user'
-import { DomainError } from '@/server/infra/http/errors'
+import { META_KEY, parseMeta, USER_SET_KEY } from '@/server/domains/auth/repo'
+import { findUsersByIds } from '@/server/infra/db/operations/user'
 import { getLogger } from '@/server/infra/logger'
 import { redisInstance } from '@/server/infra/redis/storage'
 import { isRecord } from '@/shared/utils/type-guards'
@@ -177,29 +178,4 @@ export async function listAllSessions(db: NodePgDatabase): Promise<SessionWithUs
       userRole: u?.role ?? null,
     }
   })
-}
-
-// Revoke session with RBAC guard
-
-export async function revokeSessionWithGuard(
-  db: NodePgDatabase,
-  sessionId: string,
-  actorId: string,
-  actorRole: string | null | undefined,
-): Promise<{ targetUserId: bigint | null }> {
-  const meta = await findSessionMeta(sessionId)
-  if (!meta) {
-    return { targetUserId: null }
-  }
-  // Ownership check: an admin may not revoke another admin's session
-  // unless it is their own session. This prevents privilege escalation
-  // where a compromised admin account kicks out all other admins.
-  if (actorRole === 'admin' && meta.userId.toString() !== actorId) {
-    const targetUser = await findSafeUserById(db, meta.userId)
-    if (targetUser && !targetUser.deletedAt && targetUser.role === 'admin') {
-      throw new DomainError('FORBIDDEN', '无权撤销其他管理员的会话。')
-    }
-  }
-  await revokeSessionById(sessionId, meta.userId)
-  return { targetUserId: meta.userId }
 }

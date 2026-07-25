@@ -42,10 +42,10 @@ export function InlineEditForm({ commentId, onCancel, onSaved }: InlineEditFormP
     },
   })
 
+  const { mutate: loadRawBody } = raw
   useEffect(() => {
-    raw.mutate({ rid: String(commentId) })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [commentId])
+    loadRawBody({ rid: String(commentId) })
+  }, [commentId, loadRawBody])
 
   const saving = editAction.isPending
 

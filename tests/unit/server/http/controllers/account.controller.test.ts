@@ -5,10 +5,12 @@ import { parseRpcJson } from '#/_helpers/rpc-call'
 
 // Stub every service-layer dep the account controller reaches for. The
 // handlers themselves stay real — we exercise their branching (rate-limit,
-// passkey-enabled gate, ownership check, missing-user, invalid-response,
+// passkey-enabled gate, guard propagation, missing-user, invalid-response,
 // domain-error propagation) by shaping the mock return values per test.
 // The passkey force/credential invariant itself lives in passkey-service
-// and is covered by tests/unit/server/domains/auth/passkey-service.test.ts.
+// and is covered by tests/unit/server/domains/auth/passkey-service.test.ts;
+// the revocation policy lives in session-guard and is covered by
+// tests/unit/server/domains/auth/session-guard.test.ts.
 
 const tryRateLimitMock = vi.hoisted(() => vi.fn(async () => ({ exceeded: false })))
 const tryPasskeyRegisterBeginRateLimitMock = vi.hoisted(() => vi.fn(async () => ({ exceeded: false })))
@@ -20,9 +22,8 @@ const isPasskeyEnabledMock = vi.hoisted(() => vi.fn(() => true))
 
 const updateAccountProfileMock = vi.hoisted(() => vi.fn())
 const updateAccountPasswordMock = vi.hoisted(() => vi.fn())
-const findUserByIdMock = vi.hoisted(() => vi.fn())
-const findSessionMetaMock = vi.hoisted(() => vi.fn())
-const revokeSessionByIdMock = vi.hoisted(() => vi.fn())
+const findSafeUserByIdMock = vi.hoisted(() => vi.fn())
+const revokeOwnSessionWithGuardMock = vi.hoisted(() => vi.fn())
 
 const generateRegistrationOptionsMock = vi.hoisted(() => vi.fn())
 const verifyRegistrationResponseMock = vi.hoisted(() => vi.fn())
@@ -43,14 +44,16 @@ vi.mock('@/server/infra/rate-limit', () => ({
 vi.mock('@/server/domains/auth/passkey-gate', () => ({ isPasskeyEnabled: isPasskeyEnabledMock }))
 
 vi.mock('@/server/domains/users/services/account', () => ({
-  findUserById: findUserByIdMock,
   updateAccountPassword: updateAccountPasswordMock,
   updateAccountProfile: updateAccountProfileMock,
 }))
 
-vi.mock('@/server/domains/auth/repo', () => ({
-  findSessionMeta: findSessionMetaMock,
-  revokeSessionById: revokeSessionByIdMock,
+vi.mock('@/server/infra/db/operations/user', () => ({
+  findSafeUserById: findSafeUserByIdMock,
+}))
+
+vi.mock('@/server/domains/auth/session-guard', () => ({
+  revokeOwnSessionWithGuard: revokeOwnSessionWithGuardMock,
 }))
 
 vi.mock('@/server/domains/auth/passkey-service', () => ({
@@ -104,8 +107,13 @@ describe('account controller', () => {
     tryPasskeyRegisterFinishRateLimitMock.mockResolvedValue({ exceeded: false })
     tryPasskeyDeleteRateLimitMock.mockResolvedValue({ exceeded: false })
     tryPasskeySetForceRateLimitMock.mockResolvedValue({ exceeded: false })
-    findSessionMetaMock.mockResolvedValue(null)
-    revokeSessionByIdMock.mockResolvedValue(undefined)
+    findSafeUserByIdMock.mockResolvedValue({
+      id: 1n,
+      name: 'n',
+      email: 'e',
+      role: 'admin',
+    })
+    revokeOwnSessionWithGuardMock.mockResolvedValue({ targetUserId: null })
     listCredentialsMock.mockResolvedValue([])
     deleteCredentialMock.mockResolvedValue(true)
     setPasskeyForceMock.mockResolvedValue(undefined)
@@ -123,14 +131,6 @@ describe('account controller', () => {
       emailVerified: true,
     })
     updateAccountPasswordMock.mockResolvedValue(undefined)
-    findUserByIdMock.mockResolvedValue({
-      id: 1n,
-      name: 'n',
-      email: 'e',
-      password: 'x',
-      lastIp: '1.1.1.1',
-      lastUa: 'ua',
-    })
   })
 
   // ─── updateProfile ───────────────────────────────────────
@@ -194,30 +194,37 @@ describe('account controller', () => {
 
   // ─── revokeSession ───────────────────────────────────────
   describe('revokeSession', () => {
-    it('returns success when the target session meta is missing (no-op)', async () => {
-      findSessionMetaMock.mockResolvedValue(null)
+    it('returns success without an audit event when the guard reports a no-op (meta missing)', async () => {
+      revokeOwnSessionWithGuardMock.mockResolvedValue({ targetUserId: null })
       const response = await call('/revokeSession', { id: 'sess-other' }, 'session-current')
       expect(response.status).toBe(200)
       const body = await parseRpcJson<{ success: boolean; currentSession: boolean }>(response)
       expect(body.success).toBe(true)
       expect(body.currentSession).toBe(false)
-      expect(revokeSessionByIdMock).not.toHaveBeenCalled()
+      expect(recordAuditEventFromContextMock).not.toHaveBeenCalled()
     })
 
-    it('revokes a session owned by the viewer and reports currentSession=true when id matches', async () => {
-      findSessionMetaMock.mockResolvedValue({ userId: 1n })
+    it('reports currentSession=true when id matches and records the audit event', async () => {
+      revokeOwnSessionWithGuardMock.mockResolvedValue({ targetUserId: 1n })
       const response = await call('/revokeSession', { id: 'session-1' }, 'session-1')
       expect(response.status).toBe(200)
       const body = await parseRpcJson<{ success: boolean; currentSession: boolean }>(response)
       expect(body.currentSession).toBe(true)
-      expect(revokeSessionByIdMock).toHaveBeenCalledWith('session-1', 1n)
+      expect(revokeOwnSessionWithGuardMock).toHaveBeenCalledWith('session-1', expect.objectContaining({ userId: '1' }))
+      expect(recordAuditEventFromContextMock).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          action: 'session_revoked',
+          details: { currentSession: true, targetUserId: '1' },
+        }),
+      )
     })
 
-    it('throws FORBIDDEN when the target session belongs to a different user', async () => {
-      findSessionMetaMock.mockResolvedValue({ userId: 999n })
+    it('propagates the guard FORBIDDEN when the target session belongs to a different user', async () => {
+      revokeOwnSessionWithGuardMock.mockRejectedValue(new DomainError('FORBIDDEN', '无权操作该会话。'))
       const response = await call('/revokeSession', { id: 'sess-other' }, 'session-1')
       expect(response.status).toBe(403)
-      expect(revokeSessionByIdMock).not.toHaveBeenCalled()
+      expect(recordAuditEventFromContextMock).not.toHaveBeenCalled()
     })
   })
 
@@ -262,20 +269,20 @@ describe('account controller', () => {
     })
 
     it('throws NOT_FOUND when the viewer user cannot be loaded', async () => {
-      findUserByIdMock.mockResolvedValue(null)
+      findSafeUserByIdMock.mockResolvedValue(null)
       const response = await call('/passkeyRegisterBegin', {})
       expect(response.status).toBe(404)
     })
 
-    it('forwards the safe user (without password/lastIp/lastUa) to generateRegistrationOptions', async () => {
+    it('forwards the SafeUser from the accessor verbatim to generateRegistrationOptions', async () => {
+      const safeUser = { id: 1n, name: 'n', email: 'e', role: 'admin' }
+      findSafeUserByIdMock.mockResolvedValue(safeUser)
       const response = await call('/passkeyRegisterBegin', { deviceName: 'YubiKey' })
       expect(response.status).toBe(200)
       const body = await parseRpcJson<{ options: unknown }>(response)
       expect(body.options).toEqual({ challenge: 'c' })
-      const passedUser = generateRegistrationOptionsMock.mock.calls[0]![1]
-      expect(passedUser).not.toHaveProperty('password')
-      expect(passedUser).not.toHaveProperty('lastIp')
-      expect(passedUser).not.toHaveProperty('lastUa')
+      expect(findSafeUserByIdMock).toHaveBeenCalledWith(expect.anything(), 1n)
+      expect(generateRegistrationOptionsMock).toHaveBeenCalledWith(expect.anything(), safeUser, 'YubiKey')
     })
   })
 
@@ -300,7 +307,7 @@ describe('account controller', () => {
     })
 
     it('throws NOT_FOUND when the viewer user is missing', async () => {
-      findUserByIdMock.mockResolvedValue(null)
+      findSafeUserByIdMock.mockResolvedValue(null)
       const response = await call('/passkeyRegisterFinish', validFinish)
       expect(response.status).toBe(404)
     })

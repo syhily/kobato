@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 import { orpc } from '@/client/api/client'
 import { useThumbhashBackground } from '@/client/hooks/use-thumbhash-bg'
 import { useAssetsSettings } from '@/shared/lib/blog-config-context'
-import { getImageSrcset } from '@/shared/types/images'
+import { getImageSrcset, type ResolvedImageMeta } from '@/shared/types/images'
 import { cn } from '@/ui/lib/cn'
 import { useImageMeta } from '@/ui/pt/image-meta-context'
 import { DARK_IMAGE_DIM_CLASS } from '@/ui/public/widgets/Image'
@@ -14,12 +14,6 @@ import { useImageLoaded } from '@/ui/public/widgets/use-image-loaded'
 export type BlockImageProps = Omit<ImgHTMLAttributes<HTMLImageElement>, 'ref'> & {
   'data-thumbhash'?: string
   ref?: Ref<HTMLImageElement>
-}
-
-interface ResolvedImageMeta {
-  thumbhash?: string
-  width?: number
-  height?: number
 }
 
 const META_CACHE_LIMIT = 256

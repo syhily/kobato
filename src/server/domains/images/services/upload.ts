@@ -6,11 +6,11 @@ import type { AdminImageDto } from '@/shared/contracts/images'
 import { type ImageKindSpec, buildObjectKey } from '@/server/domains/images/key'
 import { toAdminImageDto } from '@/server/domains/images/services/admin-read'
 import { invalidateImageEnhanceCacheFor } from '@/server/domains/images/services/cache'
-import { putImage } from '@/server/domains/images/storage'
 import { insertImage, upsertImageByStoragePath } from '@/server/infra/db/operations/image'
 import { DomainError } from '@/server/infra/http/errors'
 import { processImageBuffer } from '@/server/infra/image/process'
 import { getLogger } from '@/server/infra/logger'
+import { activeBackend } from '@/server/infra/storage/registry'
 import { formatBytes } from '@/shared/utils/formatter'
 
 const log = getLogger('images.service')
@@ -103,11 +103,11 @@ export async function uploadImage(db: NodePgDatabase, input: UploadImageInputs):
   const keySpec = toKeySpec(input.kind)
   const objectKey = buildObjectKey(keySpec)
 
-  const { driver } = await putImage({
-    storagePath: objectKey,
-    body: processed.buffer,
-    contentType: 'image/jpeg',
-  })
+  // Writes go to the active backend (S3 when enabled + configured, local
+  // otherwise); the driver is persisted on the row so reads/deletes can
+  // dispatch on it later.
+  const { backend, driver } = activeBackend()
+  await backend.put({ key: objectKey, body: processed.buffer, contentType: 'image/jpeg', visibility: 'public' })
 
   const trimmedNote = input.note?.trim() ?? ''
   const noteValue = trimmedNote === '' ? null : trimmedNote

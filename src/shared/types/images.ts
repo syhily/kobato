@@ -49,6 +49,19 @@ export interface RecalculateThumbhashOutput {
   image: AdminImageDto
 }
 
+/**
+ * Sparse image metadata the server enhancer resolves for a Portable Text
+ * image source (dimensions + thumbhash, no public URL — the block keeps its
+ * own src). Isomorphic by construction: produced by the images domain's
+ * render enhancer, consumed by the PT renderer (src/ui/pt) through the
+ * image-meta context.
+ */
+export interface ResolvedImageMeta {
+  thumbhash?: string
+  width?: number
+  height?: number
+}
+
 /** Pure client-friendly classifier so the table column doesn't have to import server code. */
 export function classifyImageKind(storagePath: string): AdminImageKind {
   if (storagePath.startsWith('images/categories/')) {

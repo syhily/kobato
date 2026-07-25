@@ -9,14 +9,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 // only things actually exercised here.
 
 const processImageBufferMock = vi.hoisted(() => vi.fn())
-const putImageMock = vi.hoisted(() => vi.fn())
+const storagePutMock = vi.hoisted(() => vi.fn())
 const insertImageMock = vi.hoisted(() => vi.fn())
 const upsertImageByStoragePathMock = vi.hoisted(() => vi.fn())
 const invalidateCacheMock = vi.hoisted(() => vi.fn())
 const toAdminImageDtoMock = vi.hoisted(() => vi.fn())
 
 vi.mock('@/server/infra/image/process', () => ({ processImageBuffer: processImageBufferMock }))
-vi.mock('@/server/domains/images/storage', () => ({ putImage: putImageMock }))
+vi.mock('@/server/infra/storage/registry', () => ({
+  activeBackend: () => ({ backend: { put: storagePutMock }, driver: 's3' }),
+}))
 vi.mock('@/server/infra/db/operations/image', () => ({
   insertImage: insertImageMock,
   upsertImageByStoragePath: upsertImageByStoragePathMock,
@@ -68,7 +70,7 @@ describe('images/services/upload — pure validation + mime detection', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     processImageBufferMock.mockReset()
-    putImageMock.mockResolvedValue({ driver: 's3' })
+    storagePutMock.mockResolvedValue({ key: 'images/x.jpg', size: 0 })
     insertImageMock.mockReset()
     upsertImageByStoragePathMock.mockReset()
     invalidateCacheMock.mockResolvedValue(undefined)
@@ -191,7 +193,7 @@ describe('images/services/upload — pure validation + mime detection', () => {
           uploader: null,
         }),
       ).rejects.toThrow(/重编码后体积超过上限/)
-      expect(putImageMock).not.toHaveBeenCalled()
+      expect(storagePutMock).not.toHaveBeenCalled()
     })
   })
 

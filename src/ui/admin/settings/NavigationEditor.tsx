@@ -1,21 +1,7 @@
-import {
-  closestCenter,
-  DndContext,
-  type DragEndEvent,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core'
+import { closestCenter, DndContext, type DragEndEvent } from '@dnd-kit/core'
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers'
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
-import { GripVerticalIcon, PlusIcon, Trash2Icon } from 'lucide-react'
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { PlusIcon, Trash2Icon } from 'lucide-react'
 import { Controller, useFieldArray } from 'react-hook-form'
 
 const VERTICAL_AXIS_ONLY = [restrictToVerticalAxis]
@@ -25,10 +11,11 @@ import type { FooterNavItem, NavigationSettings, SocialItem } from '@/shared/con
 
 import { SOCIAL_NETWORK_META, SOCIAL_NETWORKS } from '@/shared/config/socials'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
+import { SettingsCheckbox } from '@/ui/admin/settings/shell/SettingsCheckbox'
 import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
+import { resolveSortableMove, SortableDragHandle, useSortableRow, useSortableSensors } from '@/ui/admin/shared/sortable'
 import { Button } from '@/ui/components/button'
-import { Checkbox } from '@/ui/components/checkbox'
 import { Field, FieldLabel } from '@/ui/components/field'
 import { Label } from '@/ui/components/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
@@ -95,27 +82,12 @@ function SortableSideNavRow({
   save: () => void
   onRemove: (index: number) => void
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: field.clientId,
-  })
-  const { 'aria-describedby': _, ...dragAttributes } = attributes
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  }
+  const { setNodeRef, style: rowStyle, isDragging, dragHandleProps } = useSortableRow({ id: field.clientId })
+  const style = { ...rowStyle, opacity: isDragging ? 0.5 : 1 }
 
   return (
     <div ref={setNodeRef} style={style} className="flex items-center gap-3 rounded-xl border bg-muted/30 p-3">
-      <button
-        type="button"
-        {...dragAttributes}
-        {...listeners}
-        className="shrink-0 cursor-grab text-muted-foreground active:cursor-grabbing"
-        aria-label="拖拽排序"
-      >
-        <GripVerticalIcon className="size-4" />
-      </button>
+      <SortableDragHandle {...dragHandleProps} />
       <div className="flex flex-1 flex-col gap-2 sm:flex-row">
         <div className="flex flex-col gap-1 sm:flex-1">
           <Label htmlFor={`nav-text-${index}`}>显示文本</Label>
@@ -142,13 +114,11 @@ function SortableSideNavRow({
               control={form.control}
               name={`sideNavRows.${index}.newTab` as const}
               render={({ field }) => (
-                <Checkbox
+                <SettingsCheckbox
                   id={`nav-newtab-${index}`}
                   checked={field.value}
-                  onCheckedChange={(value) => {
-                    field.onChange(value)
-                    save()
-                  }}
+                  onCheckedChange={field.onChange}
+                  save={save}
                 />
               )}
             />
@@ -197,19 +167,14 @@ function SideNavCard({ navigation }: { navigation: NavigationSettings }) {
     }),
   })
 
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  )
+  const sensors = useSortableSensors()
 
   const rows = useFieldArray({ control: form.control, name: 'sideNavRows' })
 
   function handleSideNavDragEnd(event: DragEndEvent) {
-    const { active, over } = event
-    if (over && active.id !== over.id) {
-      const oldIndex = rows.fields.findIndex((i) => i.clientId === active.id)
-      const newIndex = rows.fields.findIndex((i) => i.clientId === over.id)
-      rows.move(oldIndex, newIndex)
+    const move = resolveSortableMove(event.active.id, event.over?.id, rows.fields, (i) => i.clientId)
+    if (move) {
+      rows.move(move.from, move.to)
     }
   }
 
@@ -273,27 +238,12 @@ function SortableFooterNavRow({
   onUpdate: (idx: number, patch: Partial<FooterNavItem>) => void
   onRemove: (idx: number) => void
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: item.clientId,
-  })
-  const { 'aria-describedby': _, ...dragAttributes } = attributes
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  }
+  const { setNodeRef, style: rowStyle, isDragging, dragHandleProps } = useSortableRow({ id: item.clientId })
+  const style = { ...rowStyle, opacity: isDragging ? 0.5 : 1 }
 
   return (
     <div ref={setNodeRef} style={style} className="flex items-center gap-3 rounded-xl border bg-muted/30 p-3">
-      <button
-        type="button"
-        {...dragAttributes}
-        {...listeners}
-        className="shrink-0 cursor-grab text-muted-foreground active:cursor-grabbing"
-        aria-label="拖拽排序"
-      >
-        <GripVerticalIcon className="size-4" />
-      </button>
+      <SortableDragHandle {...dragHandleProps} />
       <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
         <div className="flex flex-1 flex-col gap-1">
           <Label htmlFor={`footer-item-type-${index}`}>类型</Label>
@@ -370,19 +320,14 @@ function FooterNavCard({ navigation, socials }: { navigation: NavigationSettings
     }),
   })
 
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  )
+  const sensors = useSortableSensors()
 
   const rows = useFieldArray({ control: form.control, name: 'footerNavItems' })
 
   function handleFooterDragEnd(event: DragEndEvent) {
-    const { active, over } = event
-    if (over && active.id !== over.id) {
-      const oldIndex = rows.fields.findIndex((i) => i.clientId === active.id)
-      const newIndex = rows.fields.findIndex((i) => i.clientId === over.id)
-      rows.move(oldIndex, newIndex)
+    const move = resolveSortableMove(event.active.id, event.over?.id, rows.fields, (i) => i.clientId)
+    if (move) {
+      rows.move(move.from, move.to)
     }
   }
 

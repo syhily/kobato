@@ -15,8 +15,6 @@ import bcrypt from 'bcryptjs'
 
 import type { BlogSession, PendingOtpUser } from '@/server/domains/auth/session-storage'
 import type { User } from '@/server/infra/db/types'
-import type { SettingsSection } from '@/shared/config/sections'
-import type { AssetsSettings, SiteIdentitySettings } from '@/shared/config/types'
 
 import { recordAuditEvent } from '@/server/domains/audit/services/record'
 import { isPasskeyEnabled } from '@/server/domains/auth/passkey-gate'
@@ -27,10 +25,8 @@ import { commitSessionWithMaxAge } from '@/server/domains/auth/session-storage'
 import { invalidateSetupToken } from '@/server/domains/auth/setup-token'
 import { consumeToken, issueOtpToken, issueResetToken, verifyOtpToken } from '@/server/domains/auth/verification-tokens'
 import { hasApprovedComments } from '@/server/domains/comments/services/public-query'
-import { ASSETS_STORAGE_INSTALL_DEFAULTS } from '@/server/domains/settings/sections/defaults'
-import { buildDefaultSectionPayloads, SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
 import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
-import { upsertSetting } from '@/server/infra/db/operations/setting'
+import { buildInstallSectionRows, seedInstallSections } from '@/server/domains/settings/services/install-flow'
 import {
   findUserByEmail,
   findUserById,
@@ -648,52 +644,16 @@ export async function signUpInitialAdminWithSession(
     }
   }
 
-  // ── Seed all settings sections in one pass ──
-  const hostname = new URL(request.url).hostname
-  const siteIdentity: SiteIdentitySettings = {
-    title,
-    description: 'Welcome',
-    website: `https://${hostname}`,
-    keywords: [],
-    author: { name, email, url: `https://${hostname}` },
-    locale: 'zh-CN',
-    timeZone: 'Asia/Shanghai',
-    timeFormat: 'yyyy-LL-dd HH:mm',
-    initialYear: new Date().getFullYear(),
-    icpNo: '',
-    moeIcpNo: '',
-  }
-
-  const assets: AssetsSettings = {
-    asset: { host: hostname, scheme: 'https' },
-    ...ASSETS_STORAGE_INSTALL_DEFAULTS,
-  }
-
-  const defaultPayloads = buildDefaultSectionPayloads()
-
-  const generalPayload: Record<string, unknown> = { ...siteIdentity }
-  const assetsPayload: Record<string, unknown> = { ...assets }
-
-  const sections: { section: SettingsSection; payload: Record<string, unknown> }[] = [
-    { section: 'general', payload: generalPayload },
-    { section: 'assets', payload: assetsPayload },
-    ...defaultPayloads,
-  ]
-
-  // Validate every section against its schema before writing any.
-  const parsedSections: { payload: Record<string, unknown>; scope: string }[] = []
-  for (const { section, payload } of sections) {
-    const meta = SECTION_REGISTRY[section]
-    const check = meta.schema.safeParse(payload)
-    if (!check.success) {
-      const first = check.error.issues[0]
-      const path = first ? first.path.join('.') : '<unknown>'
-      return {
-        type: 'error',
-        message: `${meta.scope} 校验失败（${path}）：${first?.message ?? '未知错误'}`,
-      }
+  // Composition only: the settings domain owns the section seed
+  // (`services/install-flow` builds and validates all 18 rows); here the
+  // admin insert and the seed share one transaction so a fresh install
+  // commits — or rolls back — atomically.
+  const seedRows = buildInstallSectionRows({ title, name, email, hostname: new URL(request.url).hostname })
+  if (!seedRows.ok) {
+    return {
+      type: 'error',
+      message: seedRows.message,
     }
-    parsedSections.push({ payload: check.data as Record<string, unknown>, scope: meta.scope })
   }
 
   const admin = await db.transaction(async (tx) => {
@@ -702,10 +662,7 @@ export async function signUpInitialAdminWithSession(
     if (!admin) {
       throw new DomainError('INTERNAL', '创建管理员账号失败')
     }
-    const updatedBy = idFromString(admin.id)
-    for (const { payload, scope } of parsedSections) {
-      await upsertSetting(tx, payload, updatedBy, scope)
-    }
+    await seedInstallSections(tx, seedRows.rows, idFromString(admin.id))
     return admin
   })
 

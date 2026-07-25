@@ -97,8 +97,12 @@ function makeAdminMusic(overrides: Partial<AdminMusicDto> = {}): AdminMusicDto {
   }
 }
 
+const navigateMock = vi.fn()
+
 function renderDetail(): string {
-  return stableHtml(renderInRouter(<MusicDetailView />, '/admin/library/music/music-1'))
+  return stableHtml(
+    renderInRouter(<MusicDetailView id="music-1" navigate={navigateMock} />, '/admin/library/music/music-1'),
+  )
 }
 
 describe('snapshot: MusicDetailView player-context branches', () => {

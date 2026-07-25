@@ -26,9 +26,9 @@ import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
 import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
+import { SettingsSwitch } from '@/ui/admin/settings/shell/SettingsSwitch'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { FieldLabel } from '@/ui/components/field'
-import { Switch } from '@/ui/components/switch'
 
 interface SidebarFormProps {
   sidebar: SidebarSettings
@@ -92,13 +92,11 @@ function SortableWidgetRow({
               control={form.control}
               name={`widgets.${index}.enabled` as const}
               render={({ field }) => (
-                <Switch
+                <SettingsSwitch
                   id={`sidebar-${widget.type}`}
                   checked={field.value}
-                  onCheckedChange={(val) => {
-                    field.onChange(val)
-                    save()
-                  }}
+                  onCheckedChange={field.onChange}
+                  save={save}
                 />
               )}
             />

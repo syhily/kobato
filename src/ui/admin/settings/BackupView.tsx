@@ -8,12 +8,12 @@ import type { BackupFileDto } from '@/shared/types/backup'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
+import { extractApiErrorMessage, isApiAccepted } from '@/shared/utils/api-error'
 import { BackupFileList } from '@/ui/admin/settings/BackupFileList'
 import { BackupRestoreDialog } from '@/ui/admin/settings/BackupRestoreDialog'
 import { BackupScheduleForm } from '@/ui/admin/settings/BackupScheduleForm'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { Button } from '@/ui/components/button'
-import { extractApiErrorMessage, isApiAccepted } from '@/ui/lib/api-error'
 
 type RestorePhase = 'confirm' | 'waiting'
 
