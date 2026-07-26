@@ -25,8 +25,8 @@ vi.mock('@/server/http/resources/avatar-cache', () => ({
   cacheAvatar: vi.fn(),
   loadAvatar: vi.fn().mockResolvedValue(null),
 }))
-// catalog/catalog was removed; images.ts now queries posts/repo and pages/repo
-// directly via findPostBySlug / findPageBySlug in parallel.
+// catalog/catalog was removed; images.ts now resolves slugs via
+// findPublicPostMetaBySlug / findPublicPageMetaBySlug (mocked below).
 vi.mock('@/server/domains/comments/services/avatar', () => ({
   defaultAvatarUrl: () => 'https://example.test/images/default-avatar.png',
   fetchAvatarImage: vi.fn().mockResolvedValue(Buffer.from([0x89, 0x50, 0x4e, 0x47])),

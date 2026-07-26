@@ -56,11 +56,9 @@ function getConfig(): OpenAiConfig | null {
   return { apiKey: settings.apiKey, baseURL }
 }
 
-// Embedding cache: binary Float32Array storage to minimise serialisation cost
-// and memory footprint. 1536 floats @ 4 bytes each = 6144 bytes per key,
-// versus ~12 KB for JSON stringified number[]. The codec lives on the
-// `embeddingSearch` cache declaration; a loader returning null is never
-// cached (cacheWhen on the declaration).
+// Embedding cache: binary Float32Array storage (1536 floats = 6144
+// bytes/key versus ~12 KB JSON). The codec and the never-cache-null
+// policy (cacheWhen) live on the `embeddingSearch` cache declaration.
 
 export async function generateEmbedding(db: NodePgDatabase, text: string): Promise<number[] | null> {
   const config = getConfig()

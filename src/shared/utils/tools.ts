@@ -64,9 +64,7 @@ export function shuffle<T>(items: readonly T[], seed?: string): T[] {
   return copy
 }
 
-// Lodash's `_.sampleSize`: pick `n` distinct items from `items`, in random
-// order. Drop-in replacement so we no longer need to ship lodash on the
-// server (~70KB of duplicated functionality for two utilities).
+// Drop-in replacement for `_.sampleSize` — avoids shipping lodash.
 export function sampleSize<T>(items: readonly T[], n: number, seed?: string): T[] {
   if (n <= 0 || items.length === 0) {
     return []
@@ -77,8 +75,6 @@ export function sampleSize<T>(items: readonly T[], n: number, seed?: string): T[
   return shuffle(items, seed).slice(0, n)
 }
 
-// Group an array by the result of a key function. Replaces _.groupBy for the
-// (currently single) call site that needed it.
 export function groupBy<T, K extends string | number>(items: readonly T[], keyFn: (item: T) => K): Record<K, T[]> {
   const result = unsafeCast<Record<K, T[]>>({})
   for (const item of items) {
@@ -88,8 +84,7 @@ export function groupBy<T, K extends string | number>(items: readonly T[], keyFn
   return result
 }
 
-/** Recursively clone an object and all its nested objects/arrays.
- *  No-op for primitives and null. */
+/** Recursively clone an object and all its nested objects/arrays. */
 export function deepClone<T>(obj: T): T {
   if (obj === null || typeof obj !== 'object') {
     return obj
@@ -104,8 +99,7 @@ export function deepClone<T>(obj: T): T {
   return unsafeCast<T>(cloned)
 }
 
-/** Recursively freeze an object and all its nested objects/arrays.
- *  No-op for primitives, null, or already-frozen objects. */
+/** Recursively freeze an object and all its nested objects/arrays. */
 export function deepFreeze<T>(obj: T): T {
   if (obj === null || typeof obj !== 'object') {
     return obj

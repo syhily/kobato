@@ -20,10 +20,9 @@ export interface ConfirmState {
   destructive: boolean
   /**
    * Optional icon rendered before `actionLabel` on the confirm button.
-   * When omitted the icon defaults to `Trash2Icon` for destructive
-   * actions (overwhelmingly "delete" in this admin) and `CheckIcon`
-   * for the "approve / acknowledge" path. Callers whose destructive
-   * action isn't a delete (e.g. 禁言) should pass their own icon.
+   * Defaults to `Trash2Icon` for destructive actions (overwhelmingly
+   * "delete") and `CheckIcon` for the approve path; pass your own icon
+   * when the destructive action isn't a delete (e.g. 禁言).
    */
   actionIcon?: ReactNode
   onConfirm: () => void
@@ -36,18 +35,11 @@ export interface ConfirmDialogProps {
 }
 
 /**
- * Generic approve/delete confirmation dialog. Used by every admin view
- * that needs a yes/no prompt. The parent passes `state` only when it
- * wants the dialog open: setting it back to `null` flips `open` to
- * false AND would normally blank every prop derived from `state`
- * (`title`, `description`, `actionLabel`, `destructive`) — which the
- * shadcn AlertDialog renders for the duration of its close animation.
- *
- * Without a snapshot the title would flash to the empty string and the
- * action button would lose its label and red tint mid-animation. Cache
- * the last truthy `state` so the in-flight close animation keeps
- * rendering the contents the user just saw. The cache is updated via
- * the React-blessed "adjust state during render" pattern.
+ * Generic approve/delete confirmation dialog used by every admin view.
+ * Setting `state` back to `null` flips `open` to false, but the shadcn
+ * AlertDialog keeps rendering its props through the close animation — so
+ * the last truthy `state` is cached (via the "adjust state during render"
+ * pattern) to keep the title and button from blanking mid-animation.
  */
 export function ConfirmDialog({ state, onClose }: ConfirmDialogProps) {
   const [lastState, setLastState] = useState<ConfirmState | null>(state)

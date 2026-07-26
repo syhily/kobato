@@ -8,10 +8,8 @@ import type { Env } from '@/server/http/context'
 // `/search/<keyword>` path-style search endpoint) with a 301 so
 // any inbound link or bookmark keeps resolving.
 //
-// Lives in `server/http/resources/` next to feed/sitemap/images
-// rather than as inline `app.get(...)` calls in `server.ts`, per
-// Plan §6 — non-JSON resource endpoints belong with each other,
-// not in the SSR wiring file.
+// Lives in `server/http/resources/` with the other non-JSON resource
+// endpoints (feed/sitemap/images), not in the SSR wiring file.
 
 export const redirectsRouter = new Hono<Env>()
 

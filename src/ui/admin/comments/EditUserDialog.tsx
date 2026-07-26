@@ -141,10 +141,8 @@ export function EditUserDialog({ comment, onClose, onSaved }: EditUserDialogProp
             />
           </div>
           {/*
-           * Optional badge text-colour override. Same UX as the user
-           * detail page (see `UserDetailView.tsx`): a checkbox gates a
-           * picker + live preview chip so the chosen swatch is visible
-           * against the current background before saving.
+           * Optional badge text-colour override — same checkbox-gated picker +
+           * live preview chip UX as the user detail page (`UserDetailView.tsx`).
            */}
           <div className="flex flex-col gap-2 sm:col-span-2">
             <div className="flex items-center gap-2">

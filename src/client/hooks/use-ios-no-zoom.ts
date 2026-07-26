@@ -2,28 +2,11 @@ import { useEffect, useLayoutEffect, useRef } from 'react'
 
 const useBrowserLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect
 
-// iOS Safari zooms the viewport in when the user focuses a form
-// control whose CSS `font-size` is below 16px. Bumping every input
-// to `font-size: 16px` would inflate the densities the project's
-// design system relies on (admin form rows, comment composer, etc.),
-// so we instead disable user-scaling on the viewport meta tag while
-// any `INPUT` / `TEXTAREA` / `SELECT` on the page is focused and
-// restore the previous value the moment focus leaves the form
-// control.
-//
-// Project contract — call this hook ONCE at the top of the app
-// (`src/root.tsx`'s `App` component). It listens on `document`
-// through bubbling `focusin` / `focusout` events, so a single
-// install covers every form control across public + admin + login
-// + install flows. Individual form components MUST NOT call this
-// themselves — duplicating the install would have two listeners
-// race against the same `<meta>` rewrite and leak pinch-zoom in or
-// out unpredictably. See `AGENTS.md` § "iOS auto-zoom contract".
-//
-// Detection is restricted to iOS / iPadOS WebKit because no other
-// platform exhibits the bug; the no-op on Android / desktop means
-// pinch-zoom on the rest of the page (e.g. zooming an article cover
-// image) stays available.
+// iOS Safari zooms in when focusing a form control with `font-size < 16px`.
+// This hook disables user-scaling on the viewport meta tag while any
+// INPUT/TEXTAREA/SELECT is focused, restoring it when focus leaves.
+// Mount ONCE at the top of the app — duplicate installs race the same
+// `<meta>` rewrite. Gated to iOS/iPadOS WebKit; other platforms no-op.
 export function useIosNoZoomOnFocus(): void {
   const originalContentRef = useRef<string | null>(null)
 
@@ -63,10 +46,8 @@ export function useIosNoZoomOnFocus(): void {
       if (!isFormControl(event.target)) {
         return
       }
-      // `relatedTarget` is the next focus owner: keep the lock while
-      // focus moves between form controls anywhere on the page —
-      // restoring the meta tag mid-tab would let Safari re-zoom on
-      // every keystroke.
+      // Keep the lock while focus moves between form controls —
+      // restoring mid-tab would let Safari re-zoom on every keystroke.
       if (isFormControl(event.relatedTarget)) {
         return
       }

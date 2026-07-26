@@ -1,18 +1,14 @@
 /**
  * ThumbHash — compact perceptual image hash for blur placeholders.
  *
- * This is a TypeScript port of Evan Wallace's original implementation:
- * https://github.com/evanw/thumbhash
- *
- * Ported from npm package `thumbhash@0.1.1` so the decoder stays in the
- * main bundle instead of being lazy-loaded. Snapshot tests in
- * `tests/unit.thumbhash.test.ts` guard against drift from the upstream
- * algorithm.
+ * TypeScript port of Evan Wallace's `thumbhash@0.1.1`
+ * (https://github.com/evanw/thumbhash), kept in the main bundle instead
+ * of being lazy-loaded. Snapshot tests in `tests/unit.thumbhash.test.ts`
+ * guard against drift from the upstream algorithm.
  *
  * The algorithm encodes a small (≤100×100) RGBA image into a ~30-byte
- * hash using DCT (discrete cosine transform) coefficient quantization.
- * The hash can be decoded back into a tiny PNG data URL suitable for a
- * CSS background-image placeholder while the real image loads.
+ * hash using DCT coefficient quantization; the hash decodes back into a
+ * tiny PNG data URL usable as a CSS background-image placeholder.
  */
 
 /**

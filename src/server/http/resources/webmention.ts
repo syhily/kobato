@@ -13,7 +13,7 @@ const MAX_FORM_BODY_BYTES = 16 * 1024
 
 // W3C Webmention receive endpoint. Unauthenticated by protocol design —
 // the abuse load is carried by the per-IP resource rate limit plus the
-// moderation queue (plan 026 Phase 0 #4). Verification is synchronous:
+// moderation queue. Verification is synchronous:
 // 202 goes out only after the source has been fetched, verified to link
 // to the target, and stored as pending. DomainError escapes to the
 // perimeter onError handler, which maps it to 400/404 with a JSON body.

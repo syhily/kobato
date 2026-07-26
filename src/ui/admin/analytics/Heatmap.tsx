@@ -4,9 +4,8 @@ import type { HeatmapCell } from '@/shared/contracts/analytics'
 
 import { cn } from '@/ui/lib/cn'
 
-// 7 × 24 weekday × hour heatmap. Pure CSS Grid + `color-mix()` for
-// cell intensity — matches Sink's `Heatmap.vue` aesthetic without
-// pulling in a chart library.
+// 7 × 24 weekday × hour heatmap modeled on Sink's `Heatmap.vue`.
+// Pure CSS Grid + `color-mix()` for cell intensity — no chart library.
 
 const WEEKDAY_LABELS = ['日', '一', '二', '三', '四', '五', '六'] as const
 
@@ -61,9 +60,8 @@ export function Heatmap({ data, className }: HeatmapProps) {
             const hour = idx % 24
             return (
               <div
-                // The cell's position on the 7×24 grid is a stable
-                // bijection — derive the key from weekday+hour so it
-                // carries the cell's identity, not its array slot.
+                // The 7×24 grid position is a stable bijection — key on
+                // weekday+hour (cell identity), not the array slot.
                 key={`${weekday}-${hour}`}
                 title={`${WEEKDAY_LABELS[weekday]} ${hour}:00 — ${visits} 次访问`}
                 className="aspect-square rounded-sm transition-transform hover:scale-110 hover:ring-1 hover:ring-foreground/30"

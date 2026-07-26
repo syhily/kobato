@@ -43,10 +43,9 @@ export function createSearchComponentId(base: string, unique: string): SearchCom
   return `${base}-${unique}`
 }
 
-// Split Context: high-frequency filter state vs low-frequency search API.
-// Prevents every nav item from re-rendering on each keystroke — only
-// components that read `filter` / `setFilter` subscribe to the volatile
-// Context; the rest read from the stable API Context.
+// Split Context: high-frequency filter state vs low-frequency search API, so
+// nav items don't re-render on each keystroke — only components reading
+// `filter` / `setFilter` subscribe to the volatile Context.
 
 interface FilterState {
   filter: string

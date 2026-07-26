@@ -1,21 +1,15 @@
-// Shared blog settings fixtures for the test suite. After the
-// per-section settings refactor the codebase has no `DEFAULT_SETTINGS`:
-// any route, sidebar, formatter, OG, or thumbhash test that touches
-// the runtime config has to seed the in-process snapshot before the
-// import chain reaches `requireBlogSettingsSection()`. The setup file
-// (tests/setup.ts) installs the bundle once per worker so individual
-// tests don't have to.
+// Shared blog settings fixtures for the test suite: any route, sidebar,
+// formatter, OG, or thumbhash test that touches the runtime config has to
+// seed the in-process snapshot before the import chain reaches
+// `requireBlogSettingsSection()`. The per-project setup files
+// (tests/unit/setup.ts, tests/it/setup.ts) install the bundle once per
+// worker so individual tests don't have to.
 //
 // `TEST_BLOG_SETTINGS_BUNDLE` is the bucketed shape that mirrors the
-// on-disk `setting('blog.<section>')` rows. It is the canonical fixture
-// — there is no longer a parallel "legacy aggregated `BlogSettings`"
-// fixture, because the legacy projection has been deleted from the
-// shared module entirely.
-//
-// Values mirror the historical `DEFAULT_SETTINGS` so snapshot-based
-// tests (post detail / home / SEO head / …) keep working without
-// their `__snapshots__` files churning every time an unrelated default
-// changes. Tests that need a different shape can call
+// on-disk `setting('blog.<section>')` rows. Values mirror the historical
+// defaults so snapshot-based tests (post detail / home / SEO head / …)
+// keep working without their `__snapshots__` files churning every time an
+// unrelated default changes. Tests that need a different shape can call
 // `setBlogSettingsBundleForTests(custom)` in their own `beforeEach`.
 import type { BlogSettingsBundle } from '@/shared/config/types'
 

@@ -1,10 +1,9 @@
 import { useState } from 'react'
 import { useLocation } from 'react-router'
 
-// Filter state for the posts admin list. Server rows live exclusively in
-// the TanStack cache (useInfiniteQuery in PostsView) — this hook owns only
-// the UI filters, their URL search-param initialization, and the URL→state
-// sync for dashboard links (?status= / ?tag= / ?category=).
+// Filter state for the posts admin list. Server rows live in the TanStack
+// cache (PostsView) — this hook owns only the UI filters plus their URL
+// search-param init/sync for dashboard links (?status= / ?tag= / ?category=).
 
 export type PostStatusFilter = 'all' | 'published' | 'draft' | 'hidden' | 'deleted'
 
@@ -62,10 +61,9 @@ export function usePostsFilters() {
   const [sortBy, setSortBy] = useState<PostsFilters['sortBy']>('publishedAt')
   const [sortOrder, setSortOrder] = useState<PostsFilters['sortOrder']>('desc')
 
-  // URL → state sync. Adjusting state during render (the sanctioned
-  // "derive state from props" pattern) replaces the old reducer's effects:
-  // UI-driven filter changes never touch `search`, so this block only runs
-  // on real navigation and can never clobber the user's in-progress edits.
+  // URL → state sync via the sanctioned "adjust state during render" pattern.
+  // UI-driven filter changes never touch `search`, so this only runs on real
+  // navigation and can't clobber the user's in-progress edits.
   const [lastSearch, setLastSearch] = useState(search)
   if (search !== lastSearch) {
     setLastSearch(search)

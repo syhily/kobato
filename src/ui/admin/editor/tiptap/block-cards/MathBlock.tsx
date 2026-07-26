@@ -32,7 +32,7 @@ export function stripMathArtifacts(block: Block): Block {
 
 export function MathBlockSummary({ payload }: { payload: MathBlock }) {
   if (payload.mathml !== undefined && payload.mathml !== '') {
-    // SAFETY: `mathml` is produced server-side by KaTeX via the admin
+    // SAFETY: `mathml` is produced server-side by KaTeX and sanitized below.
     return (
       <div
         className="math math-display mt-2 max-w-full overflow-x-auto text-center"

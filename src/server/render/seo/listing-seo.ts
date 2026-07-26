@@ -22,16 +22,13 @@ export interface ListingSeoProps {
   ogImageUrl?: string
 }
 
-// Produces the **complete** `MetaDescriptor[]` for a listing page in one
-// call so loaders can ship the final tags over the wire. Each route's
-// `meta()` then becomes a one-liner that returns `loaderData?.seo ?? routeMeta()`,
-// avoiding the previous double-projection through a `ListingSeoPayload`
-// shape (and the routeMeta call duplicated in every meta function).
+// Produces the complete `MetaDescriptor[]` for a listing page in one call
+// so loaders ship the final tags over the wire; each route's `meta()` then
+// returns `loaderData?.seo ?? routeMeta()`.
 //
-// `bundle` is optional: in loaders we always have the boot-hydrated
-// snapshot to read from, but a caller (e.g. a `meta()` callback that
-// already extracted the bundle from `matches`) can pass it explicitly
-// to avoid touching `globalThis`.
+// `bundle` is optional: loaders read the boot-hydrated snapshot, but a
+// caller (e.g. a `meta()` callback that already extracted the bundle from
+// `matches`) can pass it explicitly to avoid touching `globalThis`.
 export function listingSeo(
   { title, description, pageNum, totalPage, rootPath, forceNoindex = false, feedLinks, ogImageUrl }: ListingSeoProps,
   bundle?: BlogSettingsBundle | null,

@@ -38,13 +38,10 @@ export function PreviewPane({ body, title, slug, scrollContainerRef }: PreviewPa
         </div>
       </div>
       <div ref={scrollContainerRef} className="min-h-0 grow overflow-y-auto">
-        {/* Mirror of the title + slug surfaces that normally live
-         *  above the editor. While live preview is on, the editor
-         *  hides its own strip and the operator edits the values via
-         *  the metadata sheet — but the preview still needs to show
-         *  the page title for visual parity with the public detail
-         *  route, AND so the first line on each side of the split
-         *  view sits on the same horizontal baseline. */}
+        {/* While live preview is on, the editor hides its own title/slug
+         *  strip — the preview still renders the title for visual parity
+         *  with the public detail route, and so the first line on each
+         *  side of the split view shares a horizontal baseline. */}
         <header className="mb-3 flex flex-col gap-1 border-b pb-3">
           <h1 className="text-2xl leading-tight font-bold tracking-tight md:text-3xl">
             {trimmedTitle === '' ? <span className="text-muted-foreground">页面标题</span> : trimmedTitle}

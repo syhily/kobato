@@ -21,12 +21,10 @@ export interface FeedOptions {
   tag?: string
 }
 
-// Allowlist-based server-side HTML sanitizer for feed output. Strips script
-// tags, event handler attributes, javascript:/data: URLs, and SVG/MathML tags
-// since feed HTML is served to external aggregators without additional
-// filtering. `sanitize-html` is a pure-JS parser (no jsdom dependency), which
-// closes the bypasses the previous regex chain had (unclosed `<script>`,
-// slash-separated event handlers, etc.).
+// Allowlist-based HTML sanitizer for feed output served to external
+// aggregators. `sanitize-html` is a pure-JS parser (no jsdom dependency),
+// which closes the bypasses the previous regex chain had (unclosed
+// `<script>`, slash-separated event handlers, etc.).
 export function sanitizeFeedHtml(html: string): string {
   return sanitizeHtml(html, {
     allowedTags: [
@@ -86,13 +84,11 @@ export function sanitizeFeedHtml(html: string): string {
 }
 
 async function renderEntryContent(db: NodePgDatabase, entry: Post | Page): Promise<string> {
-  // Feed items ship as HTML (RSS/Atom can't carry a React tree). We prerender
-  // the body but skip the image-enhancement pipeline: feed readers don't
-  // need thumbhash placeholders or DB-resolved dimensions.
-  //
-  // `rssMode` degrades interactive blocks (musicPlayer, etc.) to static HTML
-  // so feed readers without JavaScript still get meaningful content.
-  // Both pages and posts now live in Postgres and carry a PortableText body.
+  // Feed items ship as HTML (RSS/Atom can't carry a React tree). We skip the
+  // image-enhancement pipeline (feed readers don't need thumbhash
+  // placeholders or DB-resolved dimensions), and `rssMode` degrades
+  // interactive blocks (musicPlayer, etc.) to static HTML so feed readers
+  // without JavaScript still get meaningful content.
   const html = await renderPortableTextToHtml(
     entry.body,
     entry.headings.map((h) => h.slug),
@@ -119,7 +115,6 @@ export async function generateFeeds(db: NodePgDatabase, options: FeedOptions = {
     { resolveCategory: resolveCategoryBySlugOrName, resolveTag: resolveTagBySlugOrName },
   )
 
-  // Start to build the feed.
   const feed = new Feed({
     title: siteIdentity.title,
     description: siteIdentity.description,

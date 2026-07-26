@@ -56,20 +56,12 @@ function SelectContent({
   return (
     <BaseSelect.Portal>
       {/*
-       * `alignItemWithTrigger={false}` switches Base UI's Select away
-       * from its native macOS-style behaviour where the popup overlays
-       * the trigger and the selected item lines up over the trigger
-       * label. That mode is disorienting in our admin form context —
-       * the popup appears to "swallow" the trigger and the chevron
-       * disappears under the popup border, which the user reported as
-       * "下拉框样式很奇怪". With it disabled the popup behaves like a
-       * standard shadcn/Radix popper: anchored below the trigger with
-       * a 4px gap, so the trigger and its chevron stay fully visible.
-       *
-       * `min-w-[var(--anchor-width)]` matches the popup width to the
-       * trigger so options never look narrower than their parent
-       * combobox column. The CSS variable is exposed by Base UI's
-       * positioner.
+       * `alignItemWithTrigger={false}` disables Base UI's macOS-style mode
+       * where the popup overlays and appears to "swallow" the trigger
+       * (reported as 「下拉框样式很奇怪」); the popup anchors below the
+       * trigger like a standard shadcn/Radix popper instead.
+       * `min-w-[max(8rem,var(--anchor-width))]` matches the popup width to
+       * the trigger via the CSS variable Base UI's positioner exposes.
        */}
       <BaseSelect.Positioner
         align={align}

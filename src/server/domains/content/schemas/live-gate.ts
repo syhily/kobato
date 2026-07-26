@@ -24,22 +24,14 @@ export interface LiveContentOptions {
 }
 
 /**
- * In-memory projection of the "live" gate shared by posts and pages. A
- * row is live — reachable at its public URL and listed publicly — when
- * it is not soft-deleted, is published, has a published revision
- * attached, and its `publishedAt` is not in the future.
+ * In-memory projection of the "live" gate shared by posts and pages: a
+ * row is publicly reachable when it is not soft-deleted, is published,
+ * has a published revision, and its `publishedAt` is not in the future.
  *
- * This is one of two projections of a single gate defined in this
- * module; the SQL projection is `liveContentWhere` below. The two MUST
- * be changed together — a condition edited in only one of them silently
- * splits what "live" means between read paths. Both take the same
- * `LiveContentOptions` bag; `includeScheduled` skips only the
- * `publishedAt` leg in each.
- *
- * SQL callers must not bind the meta columns by hand: the post-/page-
- * table bindings `livePostWhere` (`posts/live-gate.ts`) and
- * `livePageWhere` (`pages/live-gate.ts`) are the only sanctioned callers of
- * `liveContentWhere` outside this module and its tests.
+ * `liveContentWhere` below is the SQL projection of the same gate — the
+ * two MUST be changed together. SQL callers must go through the
+ * post-/page-table bindings `livePostWhere` / `livePageWhere`, never
+ * hand-bound columns.
  */
 export function isLive(meta: LiveMeta, options: LiveContentOptions = {}): boolean {
   if (meta.deletedAt !== null) {
@@ -72,13 +64,9 @@ export interface LiveContentColumns {
 }
 
 /**
- * SQL projection of the same "live" gate as `isLive` above — not
- * soft-deleted, published, has a published revision, and (unless
- * `includeScheduled`) `publishedAt <= asOf`. Takes the same
- * `LiveContentOptions` bag as `isLive`; keep the two projections in
- * sync (see the warning on `isLive`). Call this through the post-/page-
- * table bindings `livePostWhere` / `livePageWhere`, never with hand-bound
- * columns.
+ * SQL projection of the same "live" gate as `isLive` above; keep the
+ * two in sync. `includeScheduled` skips only the `publishedAt <= asOf`
+ * leg.
  */
 export function liveContentWhere(columns: LiveContentColumns, options: LiveContentOptions = {}): SQL {
   const conditions: SQL[] = [
@@ -100,22 +88,11 @@ export interface PromotedMeta {
 
 /**
  * In-memory projection of the "promoted" gate shared by posts and
- * pages. A row is promoted when it is marked published and has a
- * published revision attached — nothing more. These are the live gate's
- * middle legs minus `deletedAt` and `publishedAt`: promoted ignores
- * soft-delete state and scheduling, answering "does this row have a
- * published revision to show", which is what lifecycle bucketing
- * (`buildPostsWhere`) and restore re-indexing (`restorePost`) need.
- *
- * This is one of two projections of a single gate defined in this
- * module; the SQL projection is `promotedContentWhere` below. The two
- * MUST be changed together — a condition edited in only one of them
- * silently splits what "promoted" means between read paths.
- *
- * SQL callers must not bind the meta columns by hand: the post-table
- * binding `promotedPostWhere` (`posts/live-gate.ts`) is the only
- * sanctioned caller of `promotedContentWhere` outside this module and
- * its tests.
+ * pages: published with a published revision attached, ignoring
+ * soft-delete state and scheduling. `promotedContentWhere` below is the
+ * SQL projection — the two MUST be changed together. SQL callers must
+ * go through the post-table binding `promotedPostWhere`
+ * (`posts/live-gate.ts`).
  *
  * Declared as a type predicate so a promoted row's `publishedRevisionId`
  * narrows to non-null `bigint` for the caller (e.g. `restorePost`
@@ -135,11 +112,8 @@ export interface PromotedContentColumns {
 }
 
 /**
- * SQL projection of the same "promoted" gate as `isPromoted` above —
- * published with a published revision attached, regardless of
- * soft-delete state and scheduling. Keep the two projections in sync
- * (see the warning on `isPromoted`). Call this through the post-table
- * binding `promotedPostWhere`, never with hand-bound columns.
+ * SQL projection of the same "promoted" gate as `isPromoted` above;
+ * keep the two in sync.
  */
 export function promotedContentWhere(columns: PromotedContentColumns): SQL {
   return and(eq(columns.published, true), isNotNull(columns.publishedRevisionId))!

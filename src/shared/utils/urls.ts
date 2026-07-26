@@ -1,6 +1,3 @@
-// allocation that the previous `replace(/^\/+/, "")` version paid on every
-// `joinUrl` segment (which adds up — `joinUrl` is called from feed/SEO/sitemap
-// rendering for every post on every request).
 function trimStartSlash(value: string): string {
   let i = 0
   while (i < value.length && value.charCodeAt(i) === 47) {

@@ -1,18 +1,8 @@
-// Shared types for the analytics ingestion pipeline. Two stages:
-//
-//   1. `RawAccessEvent` — what the route loader / middleware can produce
-//      cheaply from `request` + a resolved `EntityTarget`. No external
-//      I/O.
-//   2. `EnrichedAccessEvent` — what `enrichEvent()` returns after the
-//      MaxMind lookup + UA parse + bot detection. This is what
-//      `AccessLogBatcher` flushes to the `access_log` hypertable.
-//
-// Both shapes mirror the columns declared on the Drizzle `accessLog`
-// table 1:1 so the COPY pipeline never has to project between
-// types. Adding a column means appending to both interfaces AND the
-// CSV column list inside `batcher.ts`'s `copyEvents()` — kept colocated
-// in the batcher's `COPY_COLUMNS` constant so a missed update lands a
-// type error.
+// Shared types for the analytics ingestion pipeline: `RawAccessEvent`
+// (cheap, produced from the request, no I/O) → `EnrichedAccessEvent`
+// (after geo/UA/bot enrichment; what the batcher flushes to `access_log`).
+// Both mirror the `accessLog` columns 1:1 — adding a column means updating
+// both interfaces plus the batcher's `COPY_COLUMNS`.
 
 import type { EntityTarget } from '@/server/infra/db/target'
 

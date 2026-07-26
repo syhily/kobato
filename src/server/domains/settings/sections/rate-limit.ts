@@ -3,38 +3,13 @@ import { z } from 'zod'
 import { rateLimitDefaults } from '@/shared/config/defaults'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
-// Centralised rate-limiting policy. Every bucket below maps 1:1 to a
-// surface in `@/server/infra/rate-limit`:
+// Centralised rate-limiting policy. Every bucket maps 1:1 to a surface
+// in `@/server/infra/rate-limit`.
 //
-//   * `signInIp`            — `tryRateLimit(ip)` (login form)
-//   * `commentPostIp`       — `tryCommentPostRateLimit(ip)` (anonymous comments)
-//   * `commentPostEmail`    — `tryCommentPostRateLimitByEmail(email)`
-//   * `likeIncreaseIp`      — `tryLikeIncreaseRateLimit(ip)` (post likes)
-//   * `inviteIp`            — `tryInviteRateLimit(ip)` (admin invite)
-//   * `inviteEmail`         — `tryInviteByEmailRateLimit(adminId, email)`
-//   * `passwordResetIp`     — `tryPasswordResetRateLimit(ip)` (lostpassword)
-//   * `passwordResetEmail`  — `tryPasswordResetByEmailRateLimit(email)`
-//   * `passwordResetTarget` — `tryPasswordResetByTargetRateLimit(userId)`
-//   * `resourceIp`          — `tryResourceRateLimit(ip)` (oRPC public resource
-//                             guard) + `rateLimitByIp(key, 'resourceIp')`
-//                             (Hono resource routes: feed, webmention,
-//                             images, sitemap)
-//   * `otpSendIp`           — `tryOtpSendRateLimit(ip)` (OTP send)
-//   * `otpSendEmail`        — `tryOtpSendByEmailRateLimit(email)` (OTP send per email)
-//   * `otpVerifyIp`         — `tryOtpVerifyRateLimit(ip)` (OTP verify)
-//   * `otpVerifyEmail`      — `tryOtpVerifyByEmailRateLimit(email)` (OTP verify per email)
-//
-// Bounds rationale:
-//
-//   * 60s ≤ window ≤ 24h. Sub-minute windows treadmill the counter
-//     (the EXPIRE NX wouldn't even land before the TTL ticks); >24h
-//     would let one typo lock a returning visitor out for an entire
-//     day. The historical hard-coded values (30 min sign-in, 1 h
-//     comment IP/email) sit comfortably inside this band.
-//   * 1 ≤ maxAttempts ≤ 1000. The lower bound prevents the "0 means
-//     deny everyone" footgun; the upper bound is a sanity ceiling
-//     (a logged-in visitor clicking "like" once per second for
-//     ~16 minutes would still come in under it).
+// Bounds: 60s ≤ window ≤ 24h (sub-minute windows treadmill the counter;
+// >24h could lock a returning visitor out for a day over one typo), and
+// 1 ≤ maxAttempts ≤ 1000 (0 would deny everyone; 1000 is a sanity
+// ceiling).
 const RATE_LIMIT_MIN_WINDOW = 60
 const RATE_LIMIT_MAX_WINDOW = 60 * 60 * 24
 const RATE_LIMIT_MIN_ATTEMPTS = 1

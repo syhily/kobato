@@ -52,11 +52,10 @@ export interface AdminTagsListResult {
   hasMore: boolean
 }
 
-// Server-side pagination: parallel `[rows, total, postCounter]` so we
-// pay only one round-trip for the page-of-rows query, the COUNT(*),
-// and the per-term counts. `total` is the full filtered count
-// (independent of `offset`/`limit`) so the client can render the
-// correct number of pagination buttons.
+// Server-side pagination: one round-trip each for the page of rows, the
+// COUNT(*), and the per-term counts. `total` is the full filtered count
+// (independent of `offset`/`limit`) so the client can render the correct
+// number of pagination buttons.
 export async function listTagsForAdmin(
   db: NodePgDatabase,
   filters: AdminTagsListFilters,
@@ -130,13 +129,10 @@ export async function upsertAdminTag(
   return toAdminTagDto(updated, counts.get(updated.name) ?? 0)
 }
 
-// Block-only deletion regardless of role. `deleteAdminTaxonomy` refuses
-// to remove a tag while any post still references it through the
-// `post_tag` join — this is the project's intentional stricter-than-
-// RBAC-design fence: we never orphan posts, even when an admin clicks
-// delete. Authors get the same UX as admins because the cross-check is
-// global to the tag, not the viewer. Same contract as
-// `deleteAdminCategory`.
+// Block-only deletion regardless of role: `deleteAdminTaxonomy` refuses
+// to remove a tag while any post still references it — a deliberate
+// stricter-than-RBAC fence so posts are never orphaned, even for an
+// admin. Same contract as `deleteAdminCategory`.
 export async function deleteAdminTag(db: NodePgDatabase, id: bigint, _viewer?: ViewerIdentity): Promise<boolean> {
   const deleted = await deleteAdminTaxonomy(id, '标签', {
     findById: (id) => findTagById(db, id),
@@ -151,10 +147,10 @@ export async function deleteAdminTag(db: NodePgDatabase, id: bigint, _viewer?: V
 
 // --- Public catalog queries -------------------------------------------------
 
-// Slug lookup promoted from `infra/db/operations/tag`: tag resolution is
-// a taxonomy-domain capability, and its consumers (public tag route,
+// Slug lookup promoted from `infra/db/operations/tag`: tag resolution
+// is a taxonomy-domain capability, and its consumers (public tag route,
 // the ensure-unique guards above, the feed resolver below) all live on
-// this surface. Public routes resolve strictly by slug (plan 080, Q1) —
+// this surface. Public routes resolve strictly by slug —
 // the feed's slug-or-name fallback composes this with `findTagByName`.
 export async function findTagBySlug(db: NodePgDatabase, slug: string): Promise<TagRow | null> {
   const rows = await db.select().from(tagTable).where(eq(tagTable.slug, slug)).limit(1)

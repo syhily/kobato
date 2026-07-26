@@ -33,16 +33,9 @@ const FAVICON_DERIVED_SLOTS = [
 
 // Upload a buffer for one branding slot. When `slot === 'faviconSvg'`
 // we also regenerate the favicon pack so the four derived icons stay
-// in sync with the SVG. The settings row is updated atomically: every
-// new ObjectRef is committed in a single upsert.
-//
-// Failure modes:
-//   - S3 upload fails for the primary slot → caller sees the error,
-//     row untouched, no S3 leak (we delete on rollback below).
-//   - Favicon-pack generation or one of its uploads fails → we delete
-//     every object we just put (including the freshly-uploaded SVG)
-//     so the operator can retry without leaving stale bytes in S3 or
-//     a partial pack in the row.
+// in sync with the SVG. Every new ObjectRef is committed in a single
+// settings upsert; on any failure we delete every object we just put so
+// no stale bytes or partial pack are left behind.
 export async function uploadBrandingAsset(
   db: NodePgDatabase,
   slot: BrandingSlot,

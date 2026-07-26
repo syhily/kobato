@@ -14,11 +14,8 @@ interface UseDebouncedSearchOptions<T> {
 /**
  * Two-state debounced text input helper. Returns the immediately-bound
  * input value (for the controlled `<input>`) plus a setter, and fires
- * `onChange(value)` after `delayMs` of inactivity.
- *
- * Replaces the four ad-hoc `setTimeout` debounces previously inlined in
- * the admin views (CommentsView's `pageQuery`/`authorQuery`, UsersView's
- * search input).
+ * `onChange(value)` after `delayMs` of inactivity. Replaces the ad-hoc
+ * `setTimeout` debounces previously inlined in the admin views.
  */
 export function useDebouncedSearch<T>({ initial = '', delayMs = 250, onChange }: UseDebouncedSearchOptions<T>) {
   const [value, setValue] = useState(initial)
@@ -30,9 +27,9 @@ export function useDebouncedSearch<T>({ initial = '', delayMs = 250, onChange }:
     setValue(initial)
   }
 
-  // `onChange` rides a ref: callers usually pass a fresh closure on
-  // every render, and depending on it would reset the debounce timer
-  // on every keystroke so it never fires.
+  // `onChange` rides a ref: callers usually pass a fresh closure every
+  // render, and depending on it would reset the debounce timer on every
+  // keystroke so it never fires.
   const onChangeRef = useRef(onChange)
   useEffect(() => {
     onChangeRef.current = onChange

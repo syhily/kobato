@@ -60,7 +60,6 @@ export async function action({ request, context }: Route.ActionArgs) {
 
   // ── Intent: verify-token ───────────────────────────────────────────────
   if (intent === 'verify-token') {
-    // CSRF guard for the setup token verification form.
     if (!validateCsrfForAction(session, request, formData)) {
       return data({ error: '安全校验失败，请刷新页面后重试。' })
     }
@@ -102,7 +101,6 @@ export async function action({ request, context }: Route.ActionArgs) {
       return data({ error: 'Setup Token 已过期或失效，请重新验证。' })
     }
 
-    // CSRF guard for the setup form action.
     if (!validateCsrfForAction(session, request, formData)) {
       return data({ error: '安全校验失败，请刷新页面后重试。' })
     }
@@ -152,7 +150,6 @@ export default function AdminInstallRoute({ actionData, loaderData }: Route.Comp
 
   return (
     <div className="flex flex-col gap-8">
-      {/* Ghost-style welcome header */}
       <header className="text-center">
         <BrandLogo className="mx-auto mb-10 h-20 w-auto" />
         {!loaderData.setupTokenVerified ? (
@@ -162,9 +159,8 @@ export default function AdminInstallRoute({ actionData, loaderData }: Route.Comp
         )}
       </header>
 
-      {/* Error message for install action — centered, Ghost-style.
-          SetupTokenVerifyForm renders its own errors, so we only show
-          this block when the install form is visible. */}
+      {/* Error for the install action — SetupTokenVerifyForm renders its
+          own errors, so only show this when the install form is visible. */}
       {loaderData.setupTokenVerified && actionData && 'error' in actionData && actionData.error ? (
         <div role="alert" aria-live="polite" className="text-center text-sm leading-relaxed text-destructive">
           {actionData.error}

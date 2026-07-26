@@ -232,7 +232,6 @@ export function routeWarmupPlugin(): Plugin {
           return
         }
 
-        // Build chunk size map
         const chunkSizes = new Map<string, number>()
         for (const file of readdirSync(clientAssetsDir)) {
           if (!file.endsWith('.js')) {
@@ -242,7 +241,6 @@ export function routeWarmupPlugin(): Plugin {
           chunkSizes.set(`/assets/${file}`, stat.size)
         }
 
-        // Collect per-tier chunks
         const t1Raw = collectManifestChunks(manifest, TIER1_ROUTES)
         const t2PubRaw = collectManifestChunks(manifest, TIER2_PUBLIC_ROUTES)
         const t2AdminRaw = collectManifestChunks(manifest, TIER2_ADMIN_ROUTES)
@@ -254,7 +252,6 @@ export function routeWarmupPlugin(): Plugin {
           t1Raw.push(imp)
         }
 
-        // Deduplicate
         const tier1Set = new Set(t1Raw)
 
         // Apply filters. Exclusion patterns match against the chunk
@@ -315,7 +312,6 @@ export function routeWarmupPlugin(): Plugin {
           tier2_auth,
         }
 
-        // Write manifest
         const manifestPath = join(clientAssetsDir, 'warmup-manifest.json')
         writeFileSync(manifestPath, JSON.stringify(warmupManifest, null, 2))
 

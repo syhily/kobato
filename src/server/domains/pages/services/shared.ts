@@ -5,10 +5,7 @@ import { DomainError } from '@/server/infra/http/errors'
 
 /**
  * Page upsert input: the shared meta fields (see `UpsertMetaInputBase`)
- * plus the page-only friends-widget flag. `slug` stays optional — when
- * omitted (or empty), the service derives one from `title` via
- * `deriveSlug` (the canonical pinyin -> github-slugger pipeline);
- * authors only set it for a custom URL like `about-us`.
+ * plus the page-only friends-widget flag.
  */
 export interface UpsertPageMetaInput extends UpsertMetaInputBase {
   showFriends?: boolean

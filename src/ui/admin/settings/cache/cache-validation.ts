@@ -41,9 +41,8 @@ export function validateBucket(
   if (reserved !== undefined) {
     return `与系统保留前缀 \`${reserved}\` 冲突，请换一个名字`
   }
-  // Skip any "other" entry that happens to share this card's bucket
-  // id (defensive — `allBuckets` is keyed by id so there shouldn't be
-  // duplicates, but the loop reads more naturally with the guard).
+  // Defensive: `allBuckets` is keyed by id so duplicates shouldn't
+  // occur, but skip an "other" entry sharing this card's bucket id.
   for (const other of others) {
     if (other.id === bucketId) {
       continue

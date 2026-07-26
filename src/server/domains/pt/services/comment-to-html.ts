@@ -3,26 +3,15 @@ import type { LinkMarkDef, MathInlineMarkDef, Span } from '@/shared/pt/schema'
 
 import { escapeHtml } from '@/shared/utils/security'
 
-// Email-friendly server renderer for comment bodies. Produces a
-// compact HTML string suitable for embedding in transactional email
-// templates via `dangerouslySetInnerHTML`.
-//
-// Unlike the public-site `<PortableTextBody>` SSR renderer this
-// helper:
-//
-//   * Emits no Shiki / KaTeX class names. Email clients strip class
-//     attributes anyway; rendering the pre-baked syntax HTML would
-//     leak ~1KB per code block for no visual gain. We fall back to
-//     plain `<pre><code>` instead.
-//   * Renders math as inline TeX inside `<code>` rather than MathML
-//     — MathML support across mail clients is poor enough that the
-//     TeX source is a better default.
-//   * Has no React dependency, so server code can compose the HTML
-//     into an email template `dangerouslySetInnerHTML` without crossing
-//     the `server → ui` import boundary.
-//
-// This module ONLY handles the comment dialect. The (richer) blog
-// post / page rendering path stays on `<PortableTextBody>`.
+// Email-friendly server renderer for comment bodies, producing a
+// compact HTML string for transactional email templates. Unlike the
+// public-site `<PortableTextBody>` SSR renderer it emits no Shiki /
+// KaTeX class names (email clients strip classes anyway), renders math
+// as inline TeX inside `<code>` (MathML support in mail clients is
+// poor), and has no React dependency so server code stays inside the
+// `server → ui` import boundary. This module ONLY handles the comment
+// dialect; the richer post/page rendering path stays on
+// `<PortableTextBody>`.
 
 const NEWLINE = '\n'
 

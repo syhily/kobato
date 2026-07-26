@@ -14,12 +14,10 @@ import { encodedEmail } from '@/shared/utils/security'
 import { isNumeric } from '@/shared/utils/tools'
 import { joinUrl } from '@/shared/utils/urls'
 
-// Avatar-fetch domain service. Lifted out of `src/routes/image.avatar.ts`
-// per the route-orchestration rule: route modules should orchestrate
-// (parse → service → DTO → respond) and not embed business logic. The
-// route now only needs to ask "fetch the canonical PNG buffer for this
-// id/hash" and let this module handle gravatar mirror redirects, the
-// "no-avatar" fallback, and id ↔ email-hash translation.
+// Avatar-fetch domain service. The HTTP resource only asks "fetch the
+// canonical PNG buffer for this id/hash"; this module owns the gravatar
+// mirror redirects, the "no-avatar" fallback, and id ↔ email-hash
+// translation.
 
 const MAX_REDIRECT_HOPS = 5
 const FETCH_TIMEOUT_MS = 30_000
@@ -209,11 +207,10 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 }
 
 /** Fetch the site owner's GitHub avatar and inline it as a base64 data URL
- *  so the client never makes a cross-origin request (lifted out of
- *  `github.controller.ts`, following the `fetchLatestRelease` precedent).
- *  The avatar is decorative — any upstream failure resolves to an empty
- *  string instead of an error. The URL is a compile-time constant, so a
- *  plain `fetch` (no SSRF guard) is sufficient. */
+ *  so the client never makes a cross-origin request. The avatar is
+ *  decorative — any upstream failure resolves to an empty string instead
+ *  of an error. The URL is a compile-time constant, so a plain `fetch`
+ *  (no SSRF guard) is sufficient. */
 export async function fetchGithubAvatarDataUrl(): Promise<string> {
   const res = await fetch(GITHUB_AVATAR_URL, { signal: AbortSignal.timeout(30_000) })
   if (!res.ok) {

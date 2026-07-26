@@ -128,11 +128,8 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
     [loadPage],
   )
 
-  // Kick off the initial list load. `backupFiles` starts `undefined` so
-  // `isInitialLoading` is purely derived from the state — no separate
-  // loading flag that would force setState-in-effect. The actual load
-  // is deferred via a Promise.resolve so the compiler doesn't trace the
-  // setState-through-promise back to this effect.
+  // Defer the initial list load so `isInitialLoading` is derived from
+  // `backupFiles` state alone — no separate loading flag needed.
   useEffect(() => {
     Promise.resolve()
       .then(() => safeLoadPage(5))

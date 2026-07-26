@@ -89,12 +89,9 @@ export function useEditorShellPersist<
   const isEditing = detail !== undefined
 
   // --- Owned save-flow state -------------------------------------------------
-  // Status, the save timestamp, saved-body bookkeeping, the server's
-  // publishedAt, and the post-save preview banner all live here: every
-  // persist flow writes them and the orchestrator only projects them into
-  // the sidebar / toolbar views. The banner protocol (arm → note legs →
-  // show / cancel) never crosses the module boundary anymore — persist arms
-  // the countdown and the mutation callbacks below note and cancel legs.
+  // Persist flows write these; the orchestrator only projects them into the
+  // sidebar / toolbar views. The banner protocol (arm → note legs → show /
+  // cancel) never crosses the module boundary.
   const [status, setStatus] = useState<EditorShellStatus>({ kind: 'idle' })
   const [displaySaveAtMs, setDisplaySaveAtMs] = useState<number | null>(() => deriveBaselineUpdatedAtMs(detail))
   const [lastSavedBody, setLastSavedBody] = useState<PortableTextBody>(() => deriveBaselineRevision(detail)?.body ?? [])

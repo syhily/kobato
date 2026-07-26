@@ -1,20 +1,12 @@
 import { randomBytes } from 'node:crypto'
 
 // Daily-rotating salt for `visitorHash`. In-memory only — UV counts
-// reset across process restarts AND across replicas. For a personal
-// blog with a single Node process this is acceptable; the alternative
-// is a Redis-backed salt with `SET analytics:salt:<date> NX EX 86400`
-// which is the documented upgrade path (see
-// `docs/blog-analytics-plan.md §R7`).
+// reset across process restarts and replicas, acceptable for a
+// single-process personal blog.
 //
-// Why a fresh salt every UTC day:
-//   - Stable WITHIN a day → `COUNT(DISTINCT visitor_hash)` on a 24h
-//     window returns honest UVs.
-//   - Anonymous ACROSS days → the same IP doesn't reveal which days a
-//     given visitor returned, blunting the linkability of the raw `ip`
-//     column. (We still store the raw IP per `docs/blog-analytics-plan.md §D3`,
-//     but the hash gives the dashboard a path off the raw value if
-//     compliance ever flips.)
+// Why a fresh salt every UTC day: stable WITHIN a day → honest
+// `COUNT(DISTINCT visitor_hash)` on a 24h window; anonymous ACROSS days →
+// the same IP can't be linked across days.
 
 let currentSalt = randomBytes(32).toString('hex')
 let currentDay = currentUtcDay()

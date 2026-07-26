@@ -15,12 +15,10 @@ interface PendingFriendRowProps {
   onDelete: () => void
 }
 
-// Row in the pending-review bucket on top of the admin friends list.
-// Differs from `FriendRow` in three ways: a poster fallback (applicants
-// often have no cover URL, stored as ''), a 待审核 badge instead of the
-// visibility badge, and an approve action. One-click approve reuses the
-// admin upsert path, which requires a valid poster URL — so it stays
-// disabled until the admin fills the cover via the edit dialog.
+// Row in the pending-review bucket: poster fallback for coverless
+// applicants, a 待审核 badge, and an approve action. Approve reuses the
+// admin upsert path, which requires a valid poster — it stays disabled
+// until the admin fills the cover via the edit dialog.
 export const PendingFriendRow = memo(function PendingFriendRow({
   friend,
   disabled,

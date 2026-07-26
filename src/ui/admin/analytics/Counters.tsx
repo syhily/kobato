@@ -5,11 +5,9 @@ import type { CountersDto } from '@/shared/contracts/analytics'
 import { Card } from '@/ui/components/card'
 import { cn } from '@/ui/lib/cn'
 
-// Three KPI cards (visits / visitors / referers). Pure-props — the
-// parent route's loader queries `analytics.counters` and hands the
-// resolved DTO down. `NumberFlow` animates the digit roll on every
-// value change, so URL-driven re-fetches feel kinetic without us
-// owning any animation state.
+// Three pure-props KPI cards (visits / visitors / referers).
+// `NumberFlow` animates the digit roll on every value change, so
+// URL-driven re-fetches feel kinetic without owning any animation state.
 
 export interface CountersProps {
   data: CountersDto | null

@@ -325,10 +325,9 @@ function resolveParent(comment: AdminComment, parentLookup: Map<string, AdminCom
   return null
 }
 
-// Truncated single-line preview of a comment body for the "Replied to"
-// hint. Reuses the shared plain-text projection so a paragraph break
-// or nested code block collapses into whitespace, not into a literal
-// newline inside the inline hint.
+// Truncated single-line preview of a comment body for the "Replied to" hint.
+// The shared plain-text projection collapses paragraph breaks / nested code
+// blocks into whitespace, not a literal newline inside the inline hint.
 function snippet(body: AdminComment['body'], max: number): string {
   const text = bodyToPlainText(body).replace(/\s+/g, ' ').trim()
   if (text.length <= max) {

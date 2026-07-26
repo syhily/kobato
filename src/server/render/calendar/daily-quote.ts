@@ -18,12 +18,6 @@ import { isRecord } from '@/shared/utils/type-guards'
 //     silently behaves like `local`.
 //   local  — the built-in bank, no remote call at all.
 //
-// Local picks are deterministic per date (FNV-1a hash of the ISO date,
-// modulo the bank length), so a re-render after the PNG cache expires
-// still shows the same quote. Hashing — rather than day-of-year modulo —
-// keeps banks larger than 366 entries fully reachable across years (the
-// built-in bank holds the complete BullshitGenerator famous list, 10k+).
-//
 // Known degradations of the remote providers:
 //   - ONE (`v3.wufazhuce.com`) has no date parameter — it only serves
 //     "today", so historical calendar dates also render today's entry.

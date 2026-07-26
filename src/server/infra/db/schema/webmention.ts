@@ -8,17 +8,12 @@ import { webmentionStatusEnum } from '@/server/infra/db/schema/shared'
 // verified it links to `targetUrl`; moderation then flips the row to
 // `approved` / `rejected` (both kept — the row is the audit trail).
 //
-// Field design:
-// - `targetUrl` is the canonical site URL the mention verified against;
-//   `targetType` / `targetOwnerId` pin it to the live post/page row so
-//   moderation survives slug edits.
 // - `authorName` / `title` / `summary` are best-effort extractions from
-//   the source HTML (microformats2 parsing is Phase 2).
+//   the source HTML.
 // - `rawPayload` is the verbatim form payload as received
-//   (`{ source, target }`) — intentionally tiny; the fetched HTML is
-//   never persisted.
+//   (`{ source, target }`) — the fetched HTML is never persisted.
 // - No UNIQUE(source_url, target_url): re-mention update semantics are
-//   Phase 2, so duplicates land as separate pending rows for now.
+//   not implemented; duplicates land as separate pending rows.
 export const webmention = pgTable(
   'webmention',
   {

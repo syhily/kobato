@@ -69,7 +69,6 @@ export async function action({ request, context }: Route.ActionArgs) {
 
   const formData = await request.formData()
 
-  // CSRF guard for all non-GET auth form actions.
   if (!validateCsrfForAction(session, request, formData)) {
     return data({ error: '安全校验失败，请刷新页面后重试。' })
   }
@@ -160,9 +159,7 @@ export default function LoginRoute({ actionData, loaderData }: Route.ComponentPr
       )}
       {loaderData.action === 'verifyotp' && 'pendingOtpEmail' in loaderData && 'pendingOtpSentAt' in loaderData && (
         <OtpForm
-          // narrowed by 'in' check above
           email={unsafeCast<string>(loaderData.pendingOtpEmail)}
-          // narrowed by 'in' check above
           sentAt={unsafeCast<number>(loaderData.pendingOtpSentAt)}
           isSubmitting={isSubmitting}
           csrfToken={csrfToken}

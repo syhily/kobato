@@ -15,10 +15,8 @@ export const meta = titleMeta('个人信息')
 export async function loader({ request, context }: Route.LoaderArgs) {
   const rc = getRequestContext({ request, context })
   const ctx = { user: rc.viewer ?? undefined, role: rc.viewer?.role ?? null }
-  // Self-service: any logged-in role (visitor, author, admin) can
-  // edit their own row. admin.layout's `visitor` gate already
-  // rejects anonymous visitors, but `requireRole` here keeps the
-  // contract explicit for the loader.
+  // Self-service: any logged-in role can edit their own row. admin.layout
+  // already rejects anonymous visitors; this keeps the contract explicit.
   requireRole(ctx, 'visitor')
   const userId = BigInt(ctx.user.id)
   const [profile, counts] = await Promise.all([getAccountProfile(rc.db, userId), countMyComments(rc.db, userId)])

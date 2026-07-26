@@ -1,39 +1,19 @@
-// Deep end-to-end smoke for the built SEA binary (`pnpm run sea:smoke`).
+// Deep end-to-end smoke for the built SEA binary.
 //
-// Managed mode (default): verify dist-sea/kobato end to end against a real
-// Postgres — the CLI flags, native-package extraction and loading,
-// a real sharp job through the worker_threads image pool, and a full
-// server lifecycle against a FRESH per-run database (`kobato_smoke_<rand>`,
-// created on the same Postgres server and dropped in cleanup): boot with
-// an unrelated cwd, embedded migrations, the fresh-install gate, SSR HTML,
-// embedded static assets, then a seeded admin + core settings, a graceful
-// restart, the installed gate, installed SSR, the @napi-rs/canvas calendar
-// endpoint over HTTP, natives-cache reuse, and clean SIGTERM shutdowns.
-// Temp dirs and secrets are generated per run; nothing touches the repo,
-// the shared `test` database, or the user's caches.
+// Managed mode (default): verify dist-sea/kobato end to end — CLI flags,
+// native-package extraction, worker pool, and a full server lifecycle
+// against a fresh per-run database (`kobato_smoke_<rand>`): boot,
+// migrations, install gate, SSR, embedded assets, seeded admin + settings,
+// graceful restart, installed SSR, canvas calendar, natives-cache reuse,
+// SIGTERM shutdowns.
 //
-// External mode (`--external <baseUrl>`): run only the HTTP assertions
-// against an already-running server (e.g. the Phase-5 Docker container) —
-// no binary, env, or lifecycle checks, and no database seeding. The
-// calendar check degrades to SKIP on an uninstalled instance.
+// External mode (`--external <baseUrl>`): HTTP assertions only against an
+// already-running server — no binary checks, no seeding.
 //
-// Binary-only mode (`--binary-only <binary>`): just the checks that need
-// no services — --version, --smoke-natives, and --smoke-worker against a
-// dummy (validated, never connected) env. Used by the macOS and Windows
-// CI targets: GitHub macOS runners have no Docker and Windows runners
-// only run Windows containers, so neither can host the Postgres
-// service container; the full managed lifecycle stays on Linux.
+// Binary-only mode (`--binary-only <binary>`): service-free checks only
+// (--version, --smoke-natives, --smoke-worker). Used by macOS/Windows CI.
 //
-// DATABASE_URL defaults to the docker-compose.test.yml stack (postgres
-// on 127.0.0.1:5434) and can be overridden through the environment —
-// CI injects its service URL the same way. The role must be allowed to
-// CREATE/DROP DATABASE (the `test` role in both the local stack and the
-// CI service is the cluster superuser). Imports: Node builtins plus
-// `pg` (already a devDependency, used for the per-run database and the
-// seed SQL); no other dependencies.
-//
-// The instance lifecycle (per-run database, boot, seed, HTTP polling) is
-// shared with the e2e orchestrator via scripts/sea/instance.ts.
+// Instance lifecycle is shared with e2e via scripts/sea/instance.ts.
 
 import { spawnSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'

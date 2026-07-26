@@ -12,18 +12,14 @@ import {
   SelectValue,
 } from '@/ui/components/select'
 
-// Floating affordance that appears whenever the cursor is inside a
-// `codeBlock` PM node. The only control on offer is a language
-// dropdown — everything else (indent, line-wrap…) is the textarea
-// default. The chosen value lands on `codeBlock.attrs.language`,
-// which the PT bridge already round-trips into
-// `CodeBlock.language`; the SSR Shiki highlighter
-// (`@/server/domains/pages/prerender`) then matches it against
+// Floating language picker shown while the cursor is inside a `codeBlock`
+// PM node. The chosen value lands on `codeBlock.attrs.language`, which the
+// PT bridge round-trips into `CodeBlock.language`; the SSR Shiki
+// highlighter (`@/server/domains/pt/prerender`) matches it against
 // `bundledLanguages`, falling back to plain text on miss.
 //
-// The list is a curated subset chosen for everyday blogging — Shiki's
-// full bundled set is ~200 grammars and renders the dropdown
-// unusable.
+// The list is a curated subset — Shiki's full bundled set is ~200
+// grammars and renders the dropdown unusable.
 
 interface LanguageOption {
   value: string

@@ -6,21 +6,15 @@ import { pushAccessEvent } from '@/server/domains/analytics/services/batcher'
 import { getLogger } from '@/server/infra/logger'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
-// Single entry point for every "this request happened" signal. Fire-
-// and-forget: callers `void trackAccess(...)` so a slow geo lookup or
-// a backed-up batch flush never blocks render.
+// Single entry point for every "this request happened" signal. Fire-and-
+// forget: callers `void trackAccess(...)` so enrichment/flush never blocks
+// render. Bot filter and admin-exemption come from the `blog.analytics`
+// settings section, falling back to safe defaults (`trackAdmin: false`,
+// `keepBotRows: false`) when the section is unseeded.
 //
-// Bot filter and admin-exemption are driven by the `analytics` settings
-// section (`blog.analytics`). If the section has not been seeded yet
-// (e.g. a deployment upgraded before the backfill runs), both toggles
-// fall back to their safe defaults (`trackAdmin: false`,
-// `keepBotRows: false`) so the access-log pipeline never breaks.
-//
-// We deliberately do NOT also call `bumpPageView()` here even though
-// the analytics plan mentions a dual-write contract — the existing call
-// site inside `loadDetailPageCritical`
-// (`@/server/http/loaders/comments`) already runs for every detail
-// render and predates this pipeline; mirroring it here would double-count.
+// `bumpPageView()` is deliberately NOT called here — the existing call
+// site in `loadDetailPageCritical` (`@/server/http/loaders/comments`)
+// already covers every detail render; mirroring it would double-count.
 
 const log = getLogger('analytics.track')
 

@@ -9,15 +9,10 @@ import { ErrorView } from '@/ui/public/chrome/ErrorView'
 
 import type { Route } from './+types/layout'
 
-// Pathless layout that wraps every public-facing route.
-//
-// 1. STATIC CSS GRAPH. `BaseLayout` statically imports `public.css`.
-//    Because this module is statically imported by the route manifest,
-//    React Router can include the compiled stylesheet in the SSR `<Links />`
-//    output for every public URL.
-//
-// 2. ADMIN ISOLATION. The admin SPA sits OUTSIDE this layout, so Vite
-//    never pulls `public.css` into admin chunks.
+// Pathless layout wrapping every public-facing route. `BaseLayout`
+// statically imports `public.css`, so the compiled stylesheet lands in the
+// SSR `<Links />` output for every public URL, while the admin SPA sits
+// OUTSIDE this layout and never pulls `public.css` into admin chunks.
 //
 // Routes that need to opt out of the site footer use `handle.footer = false`.
 

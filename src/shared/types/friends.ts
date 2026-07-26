@@ -8,11 +8,8 @@
 import type { AdminFriendDto } from '@/shared/contracts/friends'
 
 // `offset` / `limit` mirror the tag and comment moderation listings:
-// the admin table is paginated server-side because friend rows can
-// grow to a hundred-plus on long-running blogs and shipping all of
-// them every time `?q=` changes both bloats the response and stalls
-// the table render. Both are optional — omitted requests fall back
-// to `offset=0, limit=10` (the default page size on the client).
+// the admin table is paginated server-side. Both are optional — omitted
+// requests fall back to `offset=0, limit=10` (client default page size).
 export interface ListFriendsInput {
   q?: string
   includeHidden?: boolean

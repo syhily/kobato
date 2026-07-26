@@ -4,11 +4,10 @@
 
 When modifying files in this directory, open and follow these skills first:
 
-| Skill                    | Path                                             | Scope                                                              |
-| ------------------------ | ------------------------------------------------ | ------------------------------------------------------------------ |
-| `tailwind-design-system` | `.agents/skills/tailwind-design-system/SKILL.md` | Tailwind v4 `@theme`, design tokens, `@custom-variant`, `@utility` |
-| `shadcn`                 | `.agents/skills/shadcn/SKILL.md`                 | shadcn/ui component presets, `components.json`, token naming       |
-| `web-design-guidelines`  | `.agents/skills/web-design-guidelines/SKILL.md`  | Accessibility, color contrast, motion, focus states                |
+| Skill                   | Path                                            | Scope                                                        |
+| ----------------------- | ----------------------------------------------- | ------------------------------------------------------------ |
+| `shadcn`                | `.agents/skills/shadcn/SKILL.md`                | shadcn/ui component presets, `components.json`, token naming |
+| `web-design-guidelines` | `.agents/skills/web-design-guidelines/SKILL.md` | Accessibility, color contrast, motion, focus states          |
 
 ## Design tokens
 
@@ -25,8 +24,8 @@ When modifying files in this directory, open and follow these skills first:
   declared as named tokens in `@theme inline` (e.g. `--spacing-*`) and
   consumed through Tailwind utilities. Arbitrary values such as
   `w-[100px]`, `h-[20rem]`, or `gap-[0.75rem]` are not acceptable.
-- The contract test in `tests/contract.tailwind-tokens.test.ts` guards
-  against drift between `tailwind.css` and `cn.ts`.
+- The contract test in `tests/unit/contract/tailwind-tokens.test.ts`
+  guards against drift between `tailwind.css` and `cn.ts`.
 
 ## Shadow tiers
 

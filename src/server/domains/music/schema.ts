@@ -1,9 +1,6 @@
 import { z } from 'zod'
 
-// Zod schemas for the music admin API surface. `source` is a literal
-// for now (`'netease'` only) so the wire envelope stays forward-
-// compatible with future providers — adding `'tencent'` later means
-// widening this union and supplying a matching Meting wrapper.
+// Zod schemas for the music admin API surface.
 
 export const metingSourceSchema = z.enum(['netease', 'tencent'])
 

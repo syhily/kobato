@@ -52,13 +52,10 @@ export interface EditorMetaPanelProps<TMeta> {
 }
 
 /**
- * The meta panel mounts exactly one sidebar instance: on large screens with
- * the preview closed it lives in the grid's aside column; everywhere else
- * (small screens, or while the live preview owns the second column) it
- * moves into a `Sheet` overlay. Mounting just one instance keeps the
- * revision-history drawer's query and the delete/restore mutations
- * single-instance — the old dual mount (CSS-hidden aside + Sheet) ran both
- * twice.
+ * Mounts exactly one sidebar instance: aside column on large screens with
+ * the preview closed, `Sheet` overlay everywhere else. A single instance
+ * keeps the revision-history query and delete/restore mutations from
+ * running twice (the old CSS-hidden dual mount ran both).
  */
 export function EditorMetaPanel<TMeta>({
   entityKind,

@@ -111,9 +111,7 @@ async function backfillMissingSectionDefaults(bundle: BlogSettingsBundle, db: No
 
 export async function hydrateBlogSettings(db: NodePgDatabase): Promise<BlogSettingsBundle | null> {
   // Single-process deployment model: the in-process snapshot is always
-  // authoritative once loaded. (A Redis-shared version counter used to
-  // promise cross-process invalidation, but the local-version short-circuit
-  // made it unreachable — deleted rather than pretending.)
+  // authoritative once loaded.
   //
   // The hydration promise below is the single-flight for the initial load.
   // Semantics: share-in-flight; failure: keep-stale — a failed load drops

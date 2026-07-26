@@ -1,6 +1,4 @@
-// Single owner of the editor's datetime-local ↔ ISO contract. Three call
-// sites used to carry their own copies (editor-shell-derived, both entity
-// MetaSidebars, DateTimePicker); every conversion now routes through here:
+// Single owner of the editor's datetime-local ↔ ISO contract:
 //
 //   wire ISO ──isoToLocalInputValue──▶ picker value (`YYYY-MM-DDTHH:mm`)
 //   picker value ──localInputValueToIso──▶ wire ISO
@@ -8,10 +6,8 @@
 //   Date ──dateToLocalInputValue──▶ picker value (picker commits)
 //   wire ISO ──futureLocalInputValueOrEmpty──▶ picker value, future only
 //
-// The picker value has exactly two outcomes across the shell: a timestamp
-// or "no value". Both `''` and unparseable input map to the no-value
-// sentinel — `null` for the parsers, `''` for the formatters — and this
-// module owns that decision.
+// Both `''` and unparseable input map to the no-value sentinel (`null` for
+// the parsers, `''` for the formatters) — this module owns that decision.
 
 function pad(n: number): string {
   return n.toString().padStart(2, '0')

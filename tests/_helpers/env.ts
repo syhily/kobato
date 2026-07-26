@@ -1,9 +1,10 @@
-// Centralised env defaults used by every test that pulls in `.server.ts`
-// modules (which read `@/shared/env.server` at module-load time). Kept in
-// sync with `tests/setup.ts` so individual tests can re-import it cheaply.
+// Centralised env defaults used by every test that pulls in server
+// modules (which read `@/server/infra/env` at module-load time). Imported
+// by the per-project setup files so individual tests can re-import it
+// cheaply.
 
 // Postgres base URL — the actual test database URL is created per-worker
-// in `tests/setup.ts` via `createWorkerDatabase()`.
+// in `tests/it/setup.ts` via `createWorkerDatabase()`.
 const POSTGRES_BASE_URL = 'postgres://test:test@localhost:5434/test'
 
 export const TEST_ENV = {

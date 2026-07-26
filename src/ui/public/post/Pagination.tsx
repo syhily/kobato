@@ -20,9 +20,8 @@ export function Pagination({ current, total, rootPath }: PaginationProps) {
     <nav aria-label="文章" data-slot="pagination" className="navigation mx-auto flex w-full justify-center">
       <ul data-slot="pagination-content" className="flex flex-row flex-wrap items-center justify-center gap-2">
         {items.map((item, i) => {
-          // Disambiguate the (at most two) ellipsis slots by their window
-          // edge — pairing the ellipsis with the neighbouring page number
-          // makes the key stable regardless of list length.
+          // Key the (at most two) ellipsis slots by their neighbouring page
+          // numbers so the key stays stable regardless of list length.
           const prev = items[i - 1]
           const next = items[i + 1]
           const ellipsisKey = `ellipsis-${prev ?? 'start'}-${next ?? 'end'}`

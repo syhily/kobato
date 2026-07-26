@@ -134,8 +134,7 @@ function reducer(state: CommentTreeState, action: CommentTreeAction): CommentTre
         const replacement = action.comments.find((c) => asKey(c.id) === asKey(item.id))!
         return { ...replacement, children: item.children }
       })
-      // 2) Insert brand-new comments.
-      // Root comments from myComments are pinned to the top so pending
+      // 2) Insert brand-new comments: new roots pin to the top so pending
       // posts are immediately visible; children stay anchored under parent.
       const newRoots: CommentItemType[] = []
       const newChildren: CommentItemType[] = []
@@ -159,8 +158,7 @@ function reducer(state: CommentTreeState, action: CommentTreeAction): CommentTre
           return { ...item, children: [...children, c] }
         })
       }
-      // 3) Fold token ownership into the same dispatch so the tree and the
-      // ownership map land atomically.
+      // 3) Fold token ownership into the same dispatch so tree and ownership map land atomically.
       const myComments = new Map(state.myComments)
       for (const c of action.comments) {
         const key = asKey(c.id)
@@ -271,9 +269,8 @@ function CommentsRoot({ commentKey, initialItems, rootsCount, totalCount, user, 
     dispatch({ type: 'insertReply', comment, rid })
     dispatch({ type: 'setReplyTo', rid: 0 })
   }, [])
-  // Load the current user's own comments (including pending) via token cookie.
-  // The reducer folds both the tree entries and the ownership map from this
-  // one dispatch.
+  // Load the current user's own comments (including pending) via token cookie;
+  // one dispatch folds in both the tree entries and the ownership map.
   const myComments = useMutation({
     ...orpcQuery.comments.myComments.mutationOptions(),
     onSuccess: (payload: MyCommentsOutput) => {

@@ -75,7 +75,8 @@ export const MathInlineMark = Mark.create({
   },
 })
 
-// (see `footnote-caret-trigger`). PT keeps defs beside prose — see merge layer.
+// Footnote refs are inline marks (insert trigger: `footnote-caret-trigger`);
+// PT keeps defs beside prose — see the merge layer.
 export const FootnoteRefMark = Mark.create({
   name: 'footnoteRef',
   inclusive: true,

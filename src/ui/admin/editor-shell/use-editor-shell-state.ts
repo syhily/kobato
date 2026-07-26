@@ -25,11 +25,8 @@ import { useEditorKeyboardShortcuts } from '@/ui/admin/editor-shell/use-editor-k
 import { useEditorShellLayout } from '@/ui/admin/editor-shell/use-editor-shell-layout'
 import { useEditorShellPersist } from '@/ui/admin/editor-shell/use-editor-shell-persist'
 
-// The module owns the empty-body identity: both "no body yet" paths must
-// hand out this single reference, never a fresh `[]`. A fresh array per
-// recompute fed the conflict check below into an infinite
-// setState-during-render loop ("Too many re-renders") — live in edit mode
-// when an entity has zero revisions.
+// Both "no body yet" paths must hand out this single reference, never a
+// fresh `[]` — a fresh array triggers infinite setState-during-render.
 const EMPTY_BODY: PortableTextBody = []
 
 export function useEditorShellState<
@@ -165,12 +162,10 @@ export function useEditorShellState<
   }
 
   // --- Persist notifications -------------------------------------------------
-  // Persist owns the save-flow state (status, save timestamp, saved-body
-  // bookkeeping, preview banner) and reports back into orchestrator-owned
-  // state through these three notifications only. `resetMeta` /
-  // `updateAfterSave` stay here: the expected token keys the local-storage
-  // draft (`useLocalDraft` above) whose conflict gates persist's autosave —
-  // moving the token into persist would close a hook-ordering cycle.
+  // Persist owns the save-flow state and reports back through these three
+  // notifications only. The expected token stays here: it keys the
+  // local-storage draft whose conflict gates persist's autosave — moving it
+  // into persist would close a hook-ordering cycle.
   const markMetaPublished = useCallback(() => {
     setMeta((m) => ({ ...m, published: true }))
   }, [])

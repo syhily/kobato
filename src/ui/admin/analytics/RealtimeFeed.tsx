@@ -29,11 +29,9 @@ export function RealtimeFeed({ className }: { className?: string }) {
             <ul className="flex flex-col gap-1">
               {ordered.map((e) => (
                 <li
-                  // Key on the event's content identity (ts + path + ua
-                  // fingerprint) rather than its list position — the feed
-                  // is append-only and the rolling window can drop the
-                  // head, which would shift positional keys and remount
-                  // every row.
+                  // Key on the event's content identity rather than its list
+                  // position — the rolling window can drop the head, which
+                  // would shift positional keys and remount every row.
                   key={`${e.ts}-${e.path}-${e.browser ?? ''}-${e.os ?? ''}`}
                   className="grid grid-cols-[auto_1fr_auto] items-center gap-2 rounded-xl px-2 py-1 text-xs hover:bg-accent/40"
                 >

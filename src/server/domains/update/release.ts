@@ -1,8 +1,5 @@
-// Latest-release lookup against the GitHub Releases API (plan 090).
-// Extracted from `github.controller.ts` so both the public `github.release`
-// procedure and the self-update domain share one fetch/validate
-// implementation. Throws `DomainError('INTERNAL', …)`; HTTP callers decide
-// the wire-level translation.
+// Latest-release lookup against the GitHub Releases API.
+// Shared by the public `github.release` procedure and the self-update domain.
 
 import { DomainError } from '@/server/infra/http/errors'
 import { APP_REPOSITORY } from '@/shared/config/version'

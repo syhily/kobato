@@ -40,15 +40,10 @@ import { SortableDragHandle, sortableIndexOf, useSortableRow, useSortableSensors
 import { Button } from '@/ui/components/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/components/card'
 
-// Self-hosted web-font library + slot assignment. Three concerns:
-//  1. Library grid — every uploaded font; draggable into a slot, with delete
-//     (refuses if referenced).
-//  2. Upload — `FontUploadButton` owns the dialog state machine and the
-//     package upload POST.
-//  3. Slot assignment — three columns (global / post / code); each is an
-//     ordered list of font ids. Drag to assign / reorder, click ✕ to remove.
-//     Add/remove/reorder call `admin.fonts.setSlot` directly (NOT the
-//     settings autosave path) and revalidate.
+// Self-hosted web-font library + slot assignment: a library grid (draggable
+// into a slot, delete refuses if referenced), the `FontUploadButton` upload
+// dialog, and three slot columns (global / post / code) persisted directly
+// via `admin.fonts.setSlot` (NOT the settings autosave path) + revalidate.
 
 const SLOT_LABELS: Record<FontSlot, string> = {
   global: '全站',
@@ -80,9 +75,8 @@ export function FontsView() {
     onSuccess: () => {
       toast.success('字体已删除')
       // Invalidate via the procedure-level orpcQuery key — a hand-rolled
-      // ['admin','fonts','list'] array can never match the nested key
-      // grammar (TanStack's prefix matcher bails on the first
-      // element-type mismatch) and would leave the list stale forever.
+      // ['admin','fonts','list'] array can't match TanStack's nested key
+      // grammar and would leave the list stale forever.
       void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.fonts.list.key() })
       void revalidator.revalidate()
     },
@@ -105,24 +99,19 @@ export function FontsView() {
 
   const sensors = useSortableSensors()
 
-  // The drag spans two containers with opposite intents:
-  //  - Library rows (left) are draggable but never droppable. Dropping one
-  //    into a slot only counts when the pointer is *inside* the slot rect.
-  //  - Slot items (right) sort within their own column; reorder wants the
-  //    "nearest corner" looseness `closestCorners` provides.
-  // `closestCorners` alone returns the nearest slot even when the pointer is
-  // still hovering the library column, so a drag started on the left would
-  // "land" in a slot on drop without ever entering it. Dispatching by active
-  // type keeps both behaviors correct.
+  // The drag spans two containers: library rows only drop when the pointer
+  // is inside a slot rect (pointerWithin); slot items reorder with the
+  // "nearest corner" looseness of closestCorners. Dispatching by active
+  // type keeps both correct — closestCorners alone would land a library
+  // drag in the nearest slot without the pointer ever entering it.
   const collisionDetection: CollisionDetection = (args) => {
     const activeData = args.active.data.current
     const activeType =
       activeData && typeof activeData === 'object' ? (activeData as { type?: unknown }).type : undefined
     if (activeType === 'library') {
       const within = pointerWithin(args)
-      // Fall back to closestCorners only if the pointer is genuinely inside a
-      // droppable — pointerWithin already returns [] when it isn't, so the
-      // fallback here just ranks multiple overlapping slots.
+      // pointerWithin already returns [] when the pointer is outside every
+      // droppable — pass it through so a library drag never lands.
       return within.length > 0 ? within : []
     }
     return closestCorners(args)
@@ -139,9 +128,8 @@ export function FontsView() {
     }
     const overData = over.data.current
 
-    // Resolve the target slot + insertion index from whatever we landed on.
-    // Landing on the slot container itself appends; landing on an item
-    // targets that item's slot and uses its index.
+    // Resolve the target slot + insertion index from the drop target: the
+    // slot container appends; an item targets its slot and index.
     let targetSlot: FontSlot | undefined
     let targetIndex: number | undefined
     if (isSlotItemData(overData)) {
@@ -348,10 +336,8 @@ function SlotColumn({
                   ))}
                 </ol>
               </SortableContext>
-              {/* Trailing drop region: gives a visible target to "append at
-                  the end" instead of forcing the user to hit an existing row.
-                  The dashed outline only surfaces while dragging over so the
-                  filled slot still reads as a tidy list at rest. */}
+              {/* Trailing drop region for "append at the end" — the dashed
+                  outline only surfaces while dragging over. */}
               <div
                 className={
                   'min-h-10 rounded px-2 py-1.5 text-center text-xs transition-colors' +

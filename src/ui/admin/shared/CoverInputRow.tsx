@@ -9,10 +9,9 @@ import { Label } from '@/ui/components/label'
 import { cn } from '@/ui/lib/cn'
 
 // Shared cover/poster row used by `EditCategoryDialog`, `EditTagDialog`
-// and `EditFriendDialog`. Provides a click-to-upload thumbnail preview
-// plus a clear button. Manual URL pasting is intentionally removed so
-// every image goes through the upload pipeline and stays under the
-// same asset host (keeps CSP `img-src` predictable).
+// and `EditFriendDialog`: click-to-upload thumbnail plus a clear button.
+// Manual URL pasting is intentionally removed so every image goes through
+// the upload pipeline (keeps CSP `img-src` predictable).
 export interface CoverInputRowProps {
   label: string
   htmlFor: string
@@ -23,16 +22,15 @@ export interface CoverInputRowProps {
   onChange: (value: string) => void
   /**
    * `kind` for the upload dialog. The parent must keep `slug` / `host`
-   * in sync with the matching form field — otherwise the upload will
-   * land at a stale object key. Passing `null` disables the upload
-   * button (e.g. when the slug field is empty in "new entry" mode).
+   * in sync with the matching form field — otherwise the upload lands
+   * at a stale object key. `null` disables the upload button (e.g. an
+   * empty slug field in "new entry" mode).
    */
   uploadKind: UploadKind | null
   /**
-   * Optional preview image shown inside the thumbnail when `value` is
-   * empty. Used by OG fields to display the auto-generated default card
-   * so the operator sees what will be rendered before clicking to
-   * override.
+   * Preview shown inside the thumbnail when `value` is empty — used by
+   * OG fields to display the auto-generated default card before the
+   * operator overrides it.
    */
   fallbackSrc?: string
   /**
@@ -41,9 +39,9 @@ export interface CoverInputRowProps {
    */
   thumbnailClassName?: string
   /**
-   * Object-fit strategy for the preview image. Defaults to `cover`.
-   * Use `contain` when the image has a fixed aspect ratio and should
-   * be shown in full (e.g. friend link banners at 1280×425).
+   * Object-fit strategy for the preview image. Defaults to `cover`; use
+   * `contain` for fixed-aspect images shown in full (e.g. friend link
+   * banners at 1280×425).
    */
   objectFit?: 'cover' | 'contain'
 }
@@ -68,10 +66,9 @@ export function CoverInputRow({
     setUploadOpen(false)
   }
 
-  // Uploads always succeed: the active backend is S3 when configured and
-  // local storage otherwise, so there's no "uploads disabled" state to gate
-  // on. The only real precondition is that the parent has supplied a
-  // `kind` (i.e. the slug/host it needs is filled in).
+  // Uploads always succeed (S3 when configured, local storage otherwise), so
+  // there's no "uploads disabled" gate — the only precondition is a supplied
+  // `kind` (the slug/host it needs is filled in).
   const uploadDisabled = uploadKind === null
   const uploadTitle = uploadKind === null ? '请先填写 slug / host 后再上传' : undefined
 

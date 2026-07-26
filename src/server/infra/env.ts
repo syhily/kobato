@@ -10,7 +10,7 @@ import { unsafeCast } from '@/shared/utils/unsafe-cast'
 //   1. schema defaults
 //   2. the config file `kobato.config.json` (always present — auto-created;
 //      env overrides are written back into it, see `@/server/infra/config`)
-//   3. process env vars, named by Ghost's `__` convention:
+//   3. process env vars, named by the `__` convention:
 //      `database__url` overrides `database.url`, etc. The validated TS
 //      export names below (`env.DATABASE_URL`, …) are unchanged; only the
 //      process-level variable names follow the nested convention.

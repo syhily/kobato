@@ -44,9 +44,8 @@ export function TagsField({ values, onChange, disabled }: TagsFieldProps) {
       setOpen(false)
       setHighlighted(0)
       isComposingRef.current = false
-      // Mobile Chinese IMEs may keep an active composition session after the
-      // previous tag is added (especially when the dropdown is clicked). Reset
-      // the IME state so the next tag can be typed and searched normally.
+      // Mobile Chinese IMEs may keep an active composition session after a tag
+      // is added (especially via dropdown click) — blur+focus resets the IME.
       const el = inputRef.current
       if (el && document.activeElement === el) {
         el.blur()
@@ -63,9 +62,9 @@ export function TagsField({ values, onChange, disabled }: TagsFieldProps) {
     [values, onChange],
   )
 
-  // Existence check: one targeted server search per entered tag name (exact
-  // match on the result), so the warning stays correct no matter how many
-  // tags exist in total. Names are few and react-query caches per name.
+  // Existence check: one targeted server search per entered tag name, so the
+  // warning stays correct no matter how many tags exist. Names are few and
+  // react-query caches per name.
   const existenceQueries = useQueries({
     queries: values.map((name) =>
       orpcQuery.admin.tags.list.queryOptions({

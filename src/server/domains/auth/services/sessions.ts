@@ -15,8 +15,7 @@ const MAX_SESSIONS_LISTED = 10_000
 
 /**
  * Revoke every session belonging to a user — a single
- * `DELETE FROM session WHERE user_id = $1` statement, which replaced the
- * old Lua script over the `user_sessions:<uid>` set. Called after
+ * `DELETE FROM session WHERE user_id = $1` statement. Called after
  * password change or role downgrade so stale cookies cannot be reused.
  *
  * `exceptSessionId` keeps one session alive — used by self-service

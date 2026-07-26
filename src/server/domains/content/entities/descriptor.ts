@@ -57,8 +57,7 @@ export interface UpsertMetaInputBase {
  * Meta-table persistence behind the descriptor. One implementation
  * (`makeMetaCrud` in `entities/meta-repo.ts`) serves both entities; the
  * descriptor wires the bindings through the entity's own surface modules
- * (`posts/services/single` + `posts/repos/write`, `pages/repo`) so unit
- * tests keep their per-entity mock seams.
+ * so unit tests keep their per-entity mock seams.
  */
 export interface MetaCrud<TMeta extends MetaRowBase, TNew> {
   findMetaById: (db: NodePgDatabase, id: bigint) => Promise<TMeta | null>
@@ -86,16 +85,9 @@ export type MetaMutationEvent = 'create' | 'update' | 'delete' | 'unpublish'
 /**
  * One descriptor per meta entity drives BOTH the body lifecycle
  * (`ContentEntityAdapter` via `makeContentEntityAdapter`) and the meta
- * CRUD skeleton (`makeEntityMutations`, `makeEntityAdminQuery`). The
- * generic implementations live in `content/entities/*`; posts and pages
- * keep only this declaration plus their genuinely-specific services
- * (taxonomy, search indexing, public queries, feed).
- *
- * Everything entity-specific attaches here:
- * - posts: RBAC ownership gate, author+ draft preview, tag/category
- *   relations, visible/pinned/alias columns, search-index side effects.
- * - pages: existence-only access, admin-only draft preview, showFriends,
- *   invalidation on every meta mutation.
+ * CRUD skeleton (`makeEntityMutations`, `makeEntityAdminQuery`) in
+ * `content/entities/*`; posts and pages keep only this declaration plus
+ * their genuinely-specific services.
  */
 export interface MetaEntityDescriptor<
   TMeta extends MetaRowBase,

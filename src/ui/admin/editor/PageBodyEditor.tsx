@@ -48,9 +48,9 @@ export interface PageBodyEditorProps {
   initialBody: PortableTextBody
   /**
    * Identity of the body source. When this string changes the editor
-   * resets its content from `initialBody`. Use the page id +
-   * `clientRevisionToken` so opening a different page (or accepting a
-   * remote revision in the conflict resolver) flushes stale content.
+   * resets its content from `initialBody` — use page id +
+   * `clientRevisionToken` so page switches and accepted remote
+   * revisions flush stale content.
    */
   bodyKey: string
   /** Fired on every editor update with the freshly-derived PortableText body. */
@@ -58,10 +58,9 @@ export interface PageBodyEditorProps {
   /** When true, the editor becomes read-only. */
   disabled?: boolean
   /**
-   * Live preview column layout: keep the formatting toolbar fixed above
-   * the scrollable canvas. When false, the toolbar starts inline at the
-   * top of the scroll stack and a floating duplicate appears at the
-   * bottom center after it scrolls out of view.
+   * Live preview column layout: toolbar stays fixed above the scrollable
+   * canvas. When false the toolbar scrolls inline and a floating
+   * duplicate pins to the bottom center once it scrolls out of view.
    */
   livePreviewOpen?: boolean
   /**
@@ -70,13 +69,9 @@ export interface PageBodyEditorProps {
    */
   scrollContainerRef?: React.RefObject<HTMLDivElement | null>
   /**
-   * Action(s) rendered to the right of the floating editor toolbar
-   * (the duplicate that pins to the bottom-center once the inline
-   * toolbar has scrolled off-screen). Useful for shell-level controls
-   * like 发布草稿 that should stay reachable while the operator is
-   * deep in the body. Pass `null` to hide. Renders nothing when the
-   * floating toolbar itself isn't visible (live-preview mode, or
-   * before the operator has scrolled).
+   * Action(s) rendered to the right of the floating toolbar (e.g. 发布草稿).
+   * Pass `null` to hide; renders nothing while the floating toolbar is
+   * hidden (live-preview mode, or before the operator has scrolled).
    */
   floatingActions?: React.ReactNode
 }
@@ -317,11 +312,9 @@ export function PageBodyEditor({
           <div className="sticky top-0 z-20 shrink-0 border-b bg-card">
             <Toolbar {...toolbarProps} />
           </div>
-          {/* Bottom padding (`pb-editor-pad-bottom`) gives the operator a generous
-              scroll runway past the end of the document. Without it the
-              last paragraph hugs the container edge, which leaves the
-              slash menu (anchored below the caret) clipped or overlapped
-              by the surrounding chrome when authoring near the bottom. */}
+          {/* Bottom padding gives a scroll runway past the end of the
+              document — without it the caret-anchored slash menu gets
+              clipped by the surrounding chrome near the bottom. */}
           <div
             ref={scrollContainerRef}
             className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-3 pt-6 pb-editor-pad-bottom md:px-6"
@@ -342,16 +335,12 @@ export function PageBodyEditor({
             <div className="min-h-0 grow px-3 pt-6 pb-editor-pad-bottom md:px-6">{editorCanvas}</div>
           </div>
           {showFloatingToolbar ? (
-            // Centered toolbar pill, anchored at the same `bottom-*`
-            // offset as the publish FAB column. `right-{n}` reserves
-            // room for that column so the pill never crashes into it
-            // on narrow phones — the toolbar shrinks (via the inner
-            // `overflow-x-auto`) instead of stretching past the FABs.
-            // The publish FAB now lives in its own fixed slot below
-            // (see the sibling block) so the pill width can change
-            // freely with density without dragging the publish button
-            // sideways — addresses the "publish icon drifts when the
-            // toolbar expands" complaint.
+            // Centered toolbar pill at the same `bottom-*` offset as the
+            // publish FAB column. `right-{n}` reserves room for that column
+            // on narrow phones — the pill shrinks via `overflow-x-auto`
+            // instead of stretching past the FABs. The FAB lives in its own
+            // fixed slot so pill width can change with density without
+            // dragging the publish button sideways.
             <div className="pointer-events-none fixed right-20 bottom-6 left-0 z-40 flex touch-manipulation items-center justify-center px-3 sm:right-24 sm:bottom-8 lg:right-28">
               <div className="pointer-events-auto max-w-full overflow-x-auto rounded-xl border bg-card/95 p-1 shadow-lg ring-1 ring-border/60 backdrop-blur-sm supports-[backdrop-filter]:bg-card/90">
                 <Toolbar {...toolbarProps} className="border-b-0" />
@@ -359,17 +348,11 @@ export function PageBodyEditor({
             </div>
           ) : null}
           {showFloatingToolbar && floatingActions ? (
-            // Publish FAB column anchored bottom-right, independent of
-            // the centered toolbar pill. Sitting at the same `bottom-*`
-            // tier as the toolbar means the two stay visually paired
-            // on a single row, but the FAB never moves horizontally as
-            // toolbar density changes. `AdminScrollTopButton` lifts
-            // itself one row higher in focused mode so the scroll-to-
-            // top FAB sits directly above this slot rather than
-            // crashing into the centered toolbar pill. Tied to the
-            // same `showFloatingToolbar` gate as the toolbar pill so
-            // the FAB only surfaces once the inline header toolbar
-            // of view.
+            // Publish FAB column anchored bottom-right, independent of the
+            // centered toolbar pill — it never moves horizontally as toolbar
+            // density changes. `AdminScrollTopButton` lifts one row higher in
+            // focused mode so it sits directly above this slot. Gated on the
+            // same `showFloatingToolbar` flag as the pill.
             <div className="pointer-events-auto fixed right-4 bottom-6 z-40 touch-manipulation sm:bottom-8 lg:right-6">
               {floatingActions}
             </div>

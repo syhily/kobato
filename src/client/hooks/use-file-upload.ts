@@ -4,12 +4,11 @@ import { toast } from 'sonner'
 
 import { extractApiErrorMessage } from '@/shared/utils/api-error'
 
-// One adapter for the admin "upload a file to an /api/* resource route"
-// choreography that used to be hand-rolled per call site: read the CSRF
-// token from the root loader, run the extension / size guards, POST a
-// multipart FormData body, unwrap the `{ error: { message } }` envelope,
-// and surface the outcome. These uploads deliberately bypass the oRPC
-// client — the resource routes sit behind their own (larger) body limits.
+// Shared adapter for the admin "upload a file to an /api/* resource route"
+// flows: CSRF token from the root loader, extension/size guards, multipart
+// POST, `{ error: { message } }` unwrapping. Uploads deliberately bypass
+// the oRPC client — the resource routes sit behind their own (larger) body
+// limits.
 
 export interface FileUploadToast {
   title: string

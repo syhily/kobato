@@ -21,9 +21,8 @@ interface Props {
   logoutQuery: string
 }
 
-// User menu surfaced in the public chrome's site-nav region. The
-// trigger is a single avatar button so the menu nests gracefully
-// next to the other site-nav links without taking a full row.
+// User menu in the public chrome's site-nav; the single avatar-button trigger
+// nests next to the other site-nav links without taking a full row.
 export function UserMenu({ currentUser, logoutQuery }: Props) {
   const initial = (currentUser.name || '?').slice(0, 1).toUpperCase()
   const canEnterAdmin = currentUser.role === 'admin' || currentUser.role === 'author'

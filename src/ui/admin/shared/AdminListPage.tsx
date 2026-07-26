@@ -13,8 +13,7 @@ interface HeaderProps {
   /**
    * Trailing slot rendered to the right of the title block on desktop,
    * stacked below it on narrow viewports. Use for refresh / export /
-   * "new …" buttons; bulk-action toolbars belong inside `Toolbar` so
-   * they stay grouped with the filters that produced the selection.
+   * "new …" buttons; bulk-action toolbars belong inside `Toolbar`.
    */
   children?: ReactNode
 }
@@ -66,10 +65,9 @@ interface FilterFieldProps {
   /** Column label rendered above the control. Stays 28px tall to align with sibling columns that show a "X clear" button. */
   label: string
   /**
-   * Optional trailing button rendered on the same row as the label
-   * (e.g. `<ClearFilterButton />`). When absent the label row still
-   * reserves 28px so a row of FilterFields doesn't jitter as the
-   * editor adds or removes filters.
+   * Optional trailing button rendered on the label row (e.g.
+   * `<ClearFilterButton />`). When absent the row still reserves 28px so
+   * a row of FilterFields doesn't jitter as filters are added or removed.
    */
   action?: ReactNode
   children: ReactNode

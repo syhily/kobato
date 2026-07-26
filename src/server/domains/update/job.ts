@@ -1,8 +1,7 @@
-// In-memory single-job state machine for self-update (plan 090, decision
-// Q3). One update at a time: a second `apply` while a job is running is
-// rejected with CONFLICT. The job runs in-process in the background; the
-// admin UI polls `admin.update.status` for progress. There is no
-// `'succeeded'` state — on success the process schedules its own restart
+// In-memory single-job state machine for self-update. One update at a time:
+// a second `apply` while a job is running is rejected with CONFLICT.
+// The job runs in-process; the admin UI polls `admin.update.status`.
+// There is no `'succeeded'` state — on success the process restarts.
 // and exits, so the UI infers success from the version change after reload.
 
 import { spawn } from 'node:child_process'

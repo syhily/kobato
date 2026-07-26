@@ -38,7 +38,7 @@ function deserializeFromDeadLetter(line: string): AuditEventInput | null {
 // Column order is wire-significant — `COPY (col1, col2, ...) FROM
 // STDIN` parses positional CSV, so this list MUST match the order
 // `toCsvRow()` emits below and the column types declared on the
-// Drizzle `auditLog` table (`@/server/infra/db/schema.ts`).
+// Drizzle `auditLog` table (`@/server/infra/db/schema/config`).
 const COPY_COLUMNS = [
   'action',
   'actor_id',

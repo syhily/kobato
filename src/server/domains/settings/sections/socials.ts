@@ -9,9 +9,10 @@ import { httpUrlOrEmptyStringSchema } from '@/shared/utils/safe-url'
 // surfaces these as a fixed badge — the schema is the second line of
 // defence against a hand-crafted payload that tries to mix and match.
 //
-// The `superRefine` then enforces uniqueness so every platform appears
-// platforms, but a stale tab or a direct API call could otherwise sneak
-// duplicates past the UI.
+// The `superRefine` also enforces uniqueness so every platform appears
+// at most once — the admin form already filters used platforms out of
+// the picker, but a stale tab or a direct API call could otherwise
+// sneak duplicates past the UI.
 export const socialsSchema = z
   .object({
     socials: z

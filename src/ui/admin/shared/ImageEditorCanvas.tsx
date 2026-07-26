@@ -28,25 +28,23 @@ export interface ImageEditorCanvasProps {
    */
   locked?: LockedAspect
   /**
-   * Free-aspect output width override (source pixels). Ignored when
-   * `locked` is set. When provided and strictly smaller than the
-   * current crop width, the encoder downscales the cropped region to
-   * exactly this width, preserving the crop's aspect ratio. Values
-   * `>= cropWidth` are treated as "no resize" and the encoder writes
-   * the crop at its native resolution.
+   * Free-aspect output width override (source pixels), ignored when
+   * `locked` is set. When strictly smaller than the current crop width
+   * the encoder downscales the crop to exactly this width, preserving
+   * aspect ratio; values `>= cropWidth` write the crop at native
+   * resolution.
    */
   outputWidth?: number
   /**
-   * Reports the current crop rectangle (source pixels). Fires after
-   * every crop mutation so the parent can clamp a target-width input
-   * to "at most the current crop width" without duplicating the crop
-   * state machine.
+   * Reports the current crop rectangle (source pixels) after every crop
+   * mutation, so the parent can clamp a target-width input to "at most
+   * the current crop width" without duplicating the crop state machine.
    */
   onCropChange?: (cropWidth: number, cropHeight: number) => void
   /**
    * Imperative handle: parent calls this to read the current encoded
-   * blob. Returning a Promise lets us defer the canvas → blob work to
-   * the moment the operator clicks "上传".
+   * blob. Returning a Promise defers the canvas → blob work to the
+   * moment the operator clicks "上传".
    */
   onReady: (encoder: () => Promise<{ blob: Blob; width: number; height: number }>) => void
 }

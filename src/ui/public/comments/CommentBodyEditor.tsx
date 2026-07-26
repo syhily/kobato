@@ -27,9 +27,8 @@ export interface CommentBodyEditorProps {
   /** Initial PortableText body. Read on first mount + when `bodyKey` changes. */
   initialBody: CommentBody
   /**
-   * Identity of the body source — when this string changes the editor
-   * resets its content from `initialBody`. Use it for the reply form
-   * to reset after submit, or when switching the edited comment.
+   * Identity of the body source — when this string changes the editor resets
+   * its content from `initialBody` (e.g. reply form reset, switching comment).
    */
   bodyKey: string
   /** Fired on every editor update with the freshly-derived comment body. */
@@ -100,10 +99,8 @@ export function CommentBodyEditor({
     },
   })
 
-  // Reset editor content when `bodyKey` changes, using the latest
-  // `initialBody` — its identity changes every render, so it rides a
-  // ref instead of the deps array (depending on it would re-trigger
-  // the reset on every parent render).
+  // Reset editor content when `bodyKey` changes, reading `initialBody` via a
+  // ref — its identity changes every render, so depending on it would re-trigger the reset.
   const initialBodyRef = useRef(initialBody)
   useEffect(() => {
     initialBodyRef.current = initialBody

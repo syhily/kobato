@@ -20,9 +20,8 @@ export function hasAtLeast(role: RoleOrNull | undefined, min: Role): boolean {
 /**
  * Human-readable Chinese label. Used by both the public chrome
  * (user menu badge) and the admin profile screen. Callers must narrow
- * to a non-null `Role` first — every real call site already lives
- * behind a session gate, so the previous '匿名' default was
- * unreachable.
+ * to a non-null `Role` first — every real call site lives behind a
+ * session gate.
  */
 export function roleLabel(role: Role): string {
   switch (role) {

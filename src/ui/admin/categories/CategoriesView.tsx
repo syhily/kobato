@@ -23,10 +23,9 @@ export function CategoriesView() {
   const [editTarget, setEditTarget] = useState<EditTarget>(undefined)
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
 
-  // Server rows live exclusively in the TanStack cache — the list procedure
-  // returns the full collection (no pagination), so the view reads the query
-  // data directly and mutations invalidate this namespace instead of patching
-  // a local mirror.
+  // Server rows live exclusively in the TanStack cache (the list procedure
+  // returns the full collection, no pagination) — mutations invalidate this
+  // namespace instead of patching a local mirror.
   const listOptions = orpcQuery.admin.categories.list.queryOptions({ input: {} })
   const listQuery = useQuery(listOptions)
   // Memoized so the empty-fallback array identity is stable across renders —
@@ -48,8 +47,7 @@ export function CategoriesView() {
     ...orpcQuery.admin.categories.delete.mutationOptions(),
     onSuccess: () => {
       toast.success('已删除分类')
-      // Invalidation re-syncs the cache so the deleted row disappears from
-      // the list immediately.
+      // Invalidation re-syncs the cache so the deleted row disappears immediately.
       invalidateList()
     },
     onError: (error) => {
@@ -67,10 +65,9 @@ export function CategoriesView() {
   const reorderMutation = useMutation({
     ...orpcQuery.admin.categories.reorder.mutationOptions(),
     onMutate: ({ orderedIds }) => {
-      // Optimistic local reorder while the server round-trip is in flight.
-      // Rewrite each row's `sortOrder` to its new index so the UI badge
-      // updates immediately; the mutation settles by invalidating the list,
-      // which restores the canonical server order (success or failure).
+      // Optimistic local reorder: rewrite each row's `sortOrder` to its new
+      // index so the UI badge updates immediately. The mutation settles by
+      // invalidating the list, restoring the canonical server order either way.
       const byId = new Map(rows.map((row) => [row.id, row]))
       const categories: AdminCategoryDto[] = []
       for (const [index, id] of orderedIds.entries()) {

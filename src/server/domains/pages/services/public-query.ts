@@ -16,14 +16,9 @@ import { page as pageMetaTable } from '@/server/infra/db/schema/page'
 const crud = makeMetaCrud<PageMetaRow, NewPageMeta>(pageMetaTable)
 
 /**
- * Slug-keyed lookup that **excludes** soft-deleted rows. Used by the
- * public catalog where deleted pages should 404 even if they share a
- * slug with a future restoration target. Scheduled pages (rows with
- * `published_at > now()`) are NOT filtered here because the catalog
- * caller is the only place where the visibility check belongs;
- * keeping the row reachable from the admin path through this same
- * helper would force a parallel "include scheduled" boolean. The
- * catalog applies the timestamp gate in the service layer instead.
+ * Slug-keyed lookup that **excludes** soft-deleted rows. Scheduled pages
+ * (`published_at > now()`) are NOT filtered here — the catalog service
+ * layer applies the timestamp gate instead.
  */
 export const findPublicPageMetaBySlug = crud.findPublicMetaBySlug
 
@@ -63,13 +58,9 @@ export interface SitemapPageRow {
 }
 
 /**
- * Sitemap-only projection of published pages. Applies the SQL
- * projection of the live gate (`livePageWhere`, the page-table dual of
- * `isLive` used inside `listAllPages`) — not deleted, published, has a
- * published revision, `published_at` not in the future — but selects
- * only `slug` + `firstPublishedAt` + `publishedAt` to skip the
- * revision-join + image-hydration the full `listAllPages` path
- * performs.
+ * Sitemap-only projection of published pages: live-gated via
+ * `livePageWhere`, selecting only the columns the sitemap needs so it
+ * skips the revision-join + image-hydration of the full `listAllPages`.
  */
 export async function listSitemapPages(db: NodePgDatabase, now = new Date()): Promise<SitemapPageRow[]> {
   return db

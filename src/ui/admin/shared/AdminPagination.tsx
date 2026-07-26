@@ -18,26 +18,14 @@ interface AdminPaginationProps {
 }
 
 /**
- * Shared admin pagination control. Replaces the in-file `PaginationBar` /
- * `UsersPagination` copies that previously lived inside `CommentsView` and
- * `UsersView`. Renders the shadcn `Pagination` primitive with the same
- * chip ladder the public site renders.
+ * Shared admin pagination control, replacing the in-file copies that lived
+ * in `CommentsView` and `UsersView`. Renders the shadcn `Pagination`
+ * primitive with the same `computePageWindow` chip ladder as the public
+ * site (`src/ui/public/post/Pagination.tsx`), without prev/next chevrons.
  *
- * Layout is congruent with the public-site pagination
- * (`src/ui/post/pagination/Pagination.tsx`) — both surfaces render
- * the chip sequence produced by `computePageWindow` (1-based,
- * "DENSE up to 6 / WINDOWED with [first, ..., neighbours, ..., last]"
- * thereafter), and neither carries prev/next chevrons.
- *
- * Index conventions:
- *   - The component's external API stays 0-based (`currentPage`,
- *     `onChange(page)`) because the rest of the admin business code
- *     (`useCommentsController`, `loadXxx({
- *     offset: page * pageSize })`) is 0-based.
- *   - Internally we add 1 before calling `computePageWindow`
- *     (which is 1-based) and subtract 1 when wiring the click
- *     callback, so admin business code never sees the 1-based
- *     surface.
+ * The external API stays 0-based like the rest of the admin code;
+ * internally we add 1 before calling `computePageWindow` (1-based) and
+ * subtract 1 in the click callback.
  */
 export function AdminPagination({ totalPages, currentPage, onChange }: AdminPaginationProps) {
   const items = useMemo(
@@ -52,9 +40,8 @@ export function AdminPagination({ totalPages, currentPage, onChange }: AdminPagi
       <PaginationContent>
         {items.map((item, i) => {
           // Disambiguate the (at most two) ellipsis slots by their window
-          // edge — `i` alone would be a positional key, but pairing the
-          // ellipsis with the neighbouring page number makes it stable
-          // regardless of list length.
+          // edge — pairing with the neighbouring page number keeps the key
+          // stable regardless of list length.
           const prev = items[i - 1]
           const next = items[i + 1]
           const ellipsisKey = `ellipsis-${prev ?? 'start'}-${next ?? 'end'}`

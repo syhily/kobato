@@ -13,10 +13,8 @@ export interface CommentItemProps {
   pending?: boolean
 }
 
-// Memoized so a tree dispatch that preserves item references (the reducer's
-// mapTree keeps untouched nodes referentially equal) re-renders only the
-// affected leaf. Reply-toggle still re-renders every wrapper via the reply
-// slot context — each leaf must learn whether it hosts the form.
+// Memoized so a tree dispatch that preserves item references re-renders only
+// the affected leaf; reply-toggle still re-renders every wrapper via the reply slot context.
 export const CommentItem = memo(function CommentItem(props: CommentItemProps) {
   return props.depth === 1 ? <RootComment {...props} /> : <NestedComment {...props} />
 })

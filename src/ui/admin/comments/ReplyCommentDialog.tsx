@@ -39,9 +39,9 @@ export function ReplyCommentDialog({ comment, authorName, authorEmail, onClose, 
   const [body, setBody] = useState<CommentBody>(EMPTY_COMMENT_BODY)
   const [bodyKey, setBodyKey] = useState(0)
   const [lastCommentId, setLastCommentId] = useState(comment?.id)
-  // Reset the editor body whenever the dialog opens for a new comment, or
-  // closes. Bumping `bodyKey` forces `CommentBodyEditor` to remount its
-  // Tiptap instance so the previous reply doesn't leak into the next one.
+  // Reset the editor body whenever the dialog opens for a new comment or closes.
+  // Bumping `bodyKey` remounts `CommentBodyEditor`'s Tiptap instance so the
+  // previous reply doesn't leak into the next one.
   if (comment?.id !== lastCommentId) {
     setLastCommentId(comment?.id)
     setBody(EMPTY_COMMENT_BODY)

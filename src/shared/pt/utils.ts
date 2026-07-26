@@ -17,11 +17,8 @@ import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 // Generate a short opaque `_key` for a freshly-created block / span /
 // markDef. Keys only need uniqueness within the body — they're not
-// stable across saves. We use a 12-char `[a-z0-9]` chunk so they're
-// short enough to render in DevTools without hurting readability.
-//
-// Falls back to `Math.random` when `crypto.getRandomValues` is missing
-// (e.g. some Node test environments).
+// stable across saves. Falls back to `Math.random` when
+// `crypto.getRandomValues` is missing (e.g. some Node test environments).
 export function generateBlockKey(): string {
   const bytes = new Uint8Array(8)
   if (typeof globalThis !== 'undefined' && typeof globalThis.crypto?.getRandomValues === 'function') {
@@ -66,10 +63,10 @@ function visitNonRecursiveForHeadings(blocks: readonly NonRecursiveBlock[], out:
 /**
  * Heading blocks in **exact** render order for `PortableTextBody`:
  * top-level main column (skipping `footnoteDefinition` rows), DFS into
- * each `solution` and each `twoColumn` (left then right), then every footnote
- * definition's children in row
- * order. Matches `@portabletext/react` traversal so `_key` → anchor
- * maps stay stable across SSR and hydration without render-phase state.
+ * each `solution` and each `twoColumn` (left then right), then every
+ * footnote definition's children in row order. Matches
+ * `@portabletext/react` traversal so `_key` → anchor maps stay stable
+ * across SSR and hydration without render-phase state.
  */
 export function collectHeadingSlotsInPortableTextRenderOrder(body: PortableTextBody): PortableTextHeadingSlot[] {
   const out: PortableTextHeadingSlot[] = []
@@ -100,24 +97,19 @@ export function collectHeadingSlotsInPortableTextRenderOrder(body: PortableTextB
 
 /**
  * Return the structured TOC entries this body would render. The slug
- * pipeline matches the output `rehype-slug` produced on MDX posts, so
- * heading anchors stayed stable when content migrated from MDX into
- * the new editor:
+ * pipeline matches what `rehype-slug` produced on MDX posts, so heading
+ * anchors stayed stable when content migrated from MDX into the editor:
  *
  *   - `transform` (optional) is applied to the heading text BEFORE
  *     `Slugger`. Server-side callers pass `deriveSlug` from
- *     `@/server/slug` to romanise CJK via `pinyin-pro`. We can't
- *     import `pinyin-pro` directly here because this module ships
- *     to the client (`pt-bridge`, type re-exports), and pinyin-pro
- *     is ~150KB of CJK lookup tables.
+ *     `@/server/infra/slug` to romanise CJK via `pinyin-pro` — it can't be
+ *     imported here because this module ships to the client and
+ *     pinyin-pro is ~150KB of CJK lookup tables.
  *   - `Slugger` then lowercases, collapses non-alphanumerics into `-`,
  *     and dedups within the same body (`foo`, `foo-1`, `foo-2`, …).
  *
- * Without `transform`, behaviour matches slugger-only output (Han
- * characters kept verbatim).
- * With it, you get the project-wide canonical slug — which is what
- * the SSR renderer wants. Order matches `collectHeadingSlotsInPortableTextRenderOrder`
- * so callers can pass `headings.map(h => h.slug)` to `<PortableTextBody>`.
+ * Order matches `collectHeadingSlotsInPortableTextRenderOrder` so callers
+ * can pass `headings.map(h => h.slug)` to `<PortableTextBody>`.
  */
 export function collectHeadings(
   body: PortableTextBody,
@@ -138,13 +130,11 @@ export function collectHeadings(
  * by BOTH render adapters (feed HTML and React tree), so the two can
  * never drift into different id assignment.
  *
- * Slot `i` takes `headingSlugs[i]` when that entry is a non-empty string
- * (the TOC pipeline's canonical slug); otherwise `fallbackSlug` derives
- * an id from the heading's plain text. The fallback legitimately differs
- * per adapter — the feed renderer passes pinyin-aware `deriveSlug`
- * (`@/server/infra/slug`), the React tree passes a client-safe `Slugger`
- * closure — so it stays a parameter. Callers with no precomputed slugs
- * (revision preview passes `[]`) exercise exactly this fallback path.
+ * Slot `i` takes `headingSlugs[i]` when that entry is a non-empty string;
+ * otherwise `fallbackSlug` derives an id from the heading's plain text.
+ * The fallback legitimately differs per adapter (pinyin-aware on the feed
+ * renderer, client-safe `Slugger` in the React tree), so it stays a
+ * parameter.
  */
 export function buildHeadingIdByBlockKey(
   body: PortableTextBody,
@@ -165,15 +155,11 @@ export function buildHeadingIdByBlockKey(
 // --- Nested traversal -------------------------------------------------------
 
 /**
- * Depth-first walk over a PortableText body in render order: top-level
- * blocks in body order, descending into `solution` / `footnoteDefinition`
- * `children` and `twoColumn` `left` then `right`. Yields **every** block —
- * container blocks themselves first, then their descendants (pre-order).
- *
- * The schema's nesting rules live here exactly once; collectors (image
- * paths, code/math pre-render, music players, image sync) are callbacks
- * that filter by `_type`. Nesting is one level deep by schema — container
- * children are `NonRecursiveBlock[]` — so the walk cannot recurse further.
+ * Depth-first walk over a PortableText body in render order (pre-order:
+ * container first, then its descendants). The schema's nesting rules live
+ * here exactly once; collectors (image paths, code/math pre-render, music
+ * players, image sync) are callbacks that filter by `_type`. Nesting is
+ * one level deep by schema, so the walk cannot recurse further.
  */
 export function visitNestedBlocks(body: PortableTextBody, visit: (block: Block) => void): void {
   for (const block of body) {
@@ -197,20 +183,15 @@ export function visitNestedBlocks(body: PortableTextBody, visit: (block: Block) 
 
 /**
  * Mapping counterpart of `visitNestedBlocks` — same nesting rules, same
- * pre-order: the callback rewrites each top-level block first, then each
- * container's children (`solution` / `footnoteDefinition` `children`,
- * `twoColumn` `left` then `right`). Containers that the callback leaves
- * untouched still descend so nested blocks are mapped too.
- *
- * The callback MUST preserve each position's block kind: a block nested
- * inside a container has to map to a `NonRecursiveBlock` (nesting is one
- * level deep by schema). Every block is mapped exactly once; the result
- * is always a new array with new container objects, while untouched
- * leaves keep their identity.
+ * pre-order. The callback MUST preserve each position's block kind: a
+ * nested block has to map to a `NonRecursiveBlock` (nesting is one level
+ * deep by schema). Every block is mapped exactly once; the result is
+ * always a new array with new container objects, while untouched leaves
+ * keep their identity.
  */
 export function mapNestedBlocks(body: PortableTextBody, map: (block: Block) => Block): PortableTextBody {
   // The callback contract guarantees a nested position maps back to a
-  // NonRecursiveBlock — the schema forbids containers one level down.
+  // NonRecursiveBlock (the schema forbids deeper nesting).
   const mapChild = (child: NonRecursiveBlock): NonRecursiveBlock => unsafeCast<NonRecursiveBlock>(map(child))
   return body.map((block) => {
     const mapped = map(block)
@@ -240,10 +221,8 @@ export function collectImageStoragePaths(body: PortableTextBody): string[] {
 /**
  * Walk a body and pick out every `musicPlayer.playerId` referenced,
  * deduped in first-seen order. The single collector behind both music
- * resolution paths — SSR enrichment (`@/server/domains/pt/prerender`)
- * and feed rendering (`@/server/render/pt-html`) — which then call the
- * single fetch seam `getPublicMusicMetasByIds` and keep only their own
- * projection of the result.
+ * resolution paths — SSR enrichment and feed rendering — which then call
+ * the single fetch seam `getPublicMusicMetasByIds`.
  */
 export function collectMusicPlayerIds(body: PortableTextBody): string[] {
   const ids = new Set<string>()
@@ -267,8 +246,7 @@ export function bodyToPlainText(body: PortableTextBody): string {
 }
 
 // Leaf projection callback for `visitNestedBlocks` — containers carry no
-// text of their own, so only leaf blocks push (the visitor descends into
-// `solution` / `footnoteDefinition` / `twoColumn` children on its own).
+// text of their own, so only leaf blocks push.
 function pushBlockText(block: Block, out: string[]): void {
   if (block._type === 'block') {
     out.push(block.children.map((span) => span.text).join(''))

@@ -3,9 +3,8 @@ import { createContext, use } from 'react'
 import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
 
 /**
- * Token-claimed ownership of one comment in the tree. `expiresAt` is the
- * edit-token expiration (ms epoch) behind the "editable for X more minutes"
- * hint; absent when the token carries no expiry.
+ * Token-claimed ownership of one comment. `expiresAt` (ms epoch) backs the
+ * "editable for X more minutes" hint; absent when the token carries no expiry.
  */
 export interface MyCommentOwnership {
   expiresAt?: number
@@ -17,9 +16,8 @@ export interface CommentTreeState {
   rootsTotal: number
   replyToId: number
   /**
-   * Owned ("my") comments keyed by stringified comment id. Lives in the
-   * reducer so the ownership map and the tree update atomically — one
-   * `mergeMyComments` / `dismissMyComment` dispatch lands both.
+   * Owned ("my") comments keyed by stringified comment id. Lives in the reducer
+   * so the ownership map and the tree update atomically in one dispatch.
    */
   myComments: Map<string, MyCommentOwnership>
 }
@@ -46,10 +44,9 @@ export interface CommentsTreeContextValue {
 }
 
 /**
- * Viewer identity + ownership. Referentially stable across tree dispatches
- * (the reducer preserves the `myComments` map reference unless ownership
- * itself changes), so leaves subscribed here do not re-render on reply,
- * edit, approve, or load-more.
+ * Viewer identity + ownership. Referentially stable across tree dispatches (the
+ * reducer preserves the `myComments` map reference unless ownership itself changes),
+ * so leaves subscribed here do not re-render on reply, edit, approve, or load-more.
  */
 export interface CommentsIdentityContextValue {
   admin: boolean

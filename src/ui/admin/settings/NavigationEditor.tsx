@@ -42,10 +42,9 @@ const TYPE_LABELS: Record<FooterNavItem['type'], string> = {
   search: '搜索',
 }
 
-// Runtime guards for the Select-option strings. The `<Select>` emits the
-// literal `value` of the chosen `<SelectItem>`, but its callback is typed
-// `(value: string) => void` — so narrowing back to the union needs a guard,
-// not a cast.
+// Runtime guards for the Select-option strings: the `<Select>` callback is
+// typed `(value: string) => void`, so narrowing back to the union needs a
+// guard, not a cast.
 const FOOTER_NAV_TYPE_SET: ReadonlySet<string> = new Set(['social', 'themeToggle', 'search'])
 const SOCIAL_NETWORK_SET: ReadonlySet<string> = new Set(SOCIAL_NETWORKS)
 

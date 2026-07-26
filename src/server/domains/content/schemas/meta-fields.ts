@@ -7,8 +7,7 @@ import { safeBoolean } from '@/shared/utils/schema'
  * input schemas. Both entities accept the same user-supplied slug
  * alphabet (`[._-]` between segments) so legacy page URLs like
  * `archives.html` survive — see `src/server/AGENTS.md` "Slug derivation
- * and uniqueness". Server-derived slugs stay plain kebab-case via
- * `@/server/infra/slug::deriveSlug`.
+ * and uniqueness".
  */
 export const slugSchema = z
   .string()

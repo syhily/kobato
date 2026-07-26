@@ -7,13 +7,8 @@ import { Input } from '@/ui/components/input'
 import { Textarea } from '@/ui/components/textarea'
 import { Popup } from '@/ui/public/widgets/Popup'
 
-// Public friend-link application, mounted on pages with `showFriends`
-// below the friend grid. The page shows only a Ghost-style signup
-// button; the form itself lives in a Popup — a single-column stack of
-// placeholder-driven fields (mirroring the comment form), an
-// off-screen honeypot (`contact` — deliberately not the comment form's
-// `subtitle`), an inline error line, and a success state replacing the
-// form.
+// Public friend-link application below the friend grid: a signup button opens a
+// Popup holding the form, an off-screen honeypot (`contact`), and a success state.
 export function FriendApplyForm() {
   const [open, setOpen] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -56,8 +51,7 @@ export function FriendApplyForm() {
   const handleOpen = () => setOpen(true)
   const handleClose = () => {
     setOpen(false)
-    // A closed dialog reopens fresh: stale success/error never greets the
-    // next visit.
+    // A closed dialog reopens fresh — clear stale success/error state.
     setSubmitted(false)
     setSubmitError(null)
   }

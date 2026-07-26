@@ -32,15 +32,14 @@ import { headingStyleFromLevel } from '@/shared/pt/heading-levels'
 
 // One dispatch table drives BOTH bridge directions. Each entry binds a PM
 // node type to the PT block it round-trips with; per-node attribute
-// knowledge lives in the co-located node modules (`bridge/nodes/*`), the
-// registry only wires them. Adding a node type = one entry + one fixture
-// (the round-trip suite enforces fixture completeness).
+// knowledge lives in the co-located node modules (`bridge/nodes/*`).
+// Adding a node type = one entry + one fixture (the round-trip suite
+// enforces fixture completeness).
 //
 // `ptType` / `blockToPm` are `null` when the entry only exists for the
 // PM→PT leg: heading / blockquote / list items are styles of the PT text
-// `block` (the `paragraph` entry owns the `block` forward converter), and
-// PT list streaks are consumed by the `consumeListStreak` state machine in
-// `pushBlocks`, never by per-block dispatch.
+// `block`, and PT list streaks are consumed by the `consumeListStreak`
+// state machine in `pushBlocks`, never by per-block dispatch.
 
 export interface BridgeNodeEntry {
   /** PM node type claimed on the PM→PT leg. */
@@ -54,11 +53,9 @@ export interface BridgeNodeEntry {
 }
 
 // PortableText flattens — there is no "nested under blockquote" container.
-// Tiptap's Blockquote accepts `block+`, so the quote may carry lists, code
-// blocks, or even tables. Paragraphs adopt the blockquote style and inherit
-// the quote's textAlign; non-paragraph children flow back through the
-// registry dispatch so their content survives (lists keep their items, code
-// keeps its body) instead of being silently dropped.
+// Paragraphs adopt the blockquote style and inherit the quote's textAlign;
+// non-paragraph children flow back through the registry dispatch so their
+// content survives instead of being silently dropped.
 function pmBlockquoteToBlocks(node: PmBlockNode, out: Block[], ctx: BridgeReverseContext): void {
   const textAlign = node.attrs?.textAlign as string | undefined
   for (const child of (node.content ?? []).filter(isBlock)) {

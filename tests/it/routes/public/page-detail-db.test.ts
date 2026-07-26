@@ -53,7 +53,6 @@ const dbPage = {
   publishedRevisionId: 42n,
 }
 
-// catalog/catalog removed; pages/loader uses findPublicPostMetaBySlug + findPageBySlug.
 vi.mock('@/server/domains/pages/repo', () => ({
   findPageMetaById: vi.fn(async () => null),
   findPageMetaBySlug: vi.fn(async () => null),
@@ -89,9 +88,9 @@ vi.mock('@/shared/types/catalog', async () => {
   }
 })
 
-// Stub out the comments/data loader the same way `route.detail.test.ts`
-// does — the page.detail route awaits this for every request and we
-// don't have Postgres in unit tests.
+// Stub out the comments/data loader the same way `detail.test.ts` does —
+// the page.detail route awaits this for every request and we don't want
+// it hitting Postgres.
 vi.mock('@/server/http/loaders/comments', () => ({
   loadDetailPageStreaming: vi.fn(async () => ({
     critical: {

@@ -18,7 +18,7 @@ export function canInsertFootnoteMark(editor: Editor): boolean {
   return true
 }
 
-/** Next visible footnote index (1-based) from parallel defs + inline refs (+ legacy blockCard payloads). */
+/** Next visible footnote index (1-based) from parallel defs + inline refs. */
 export function computeNextFootnoteIndex(editor: Editor, defs: readonly FootnoteDefinitionBlock[]): number {
   let max = 0
   for (const d of defs) {

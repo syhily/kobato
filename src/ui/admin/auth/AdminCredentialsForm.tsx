@@ -79,10 +79,6 @@ export function LoginForm({ action, passkeyEnabled, isSubmitting, csrfToken }: L
     setPasskeyError(null)
     try {
       const email = emailRef.current?.value?.trim()
-      // The endpoint returns `{ options: z.any() }` because the WebAuthn
-      // options JSON shape is owned by @simplewebauthn. We extract the
-      // `options` value as `unknown`, then narrow it via a minimal shape
-      // check before handing it to @simplewebauthn.
       const result: unknown = await orpc.passkey.authBegin({ email })
       const options = extractAuthOptions(result)
       const challenge = options.challenge

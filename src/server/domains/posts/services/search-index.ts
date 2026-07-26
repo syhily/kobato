@@ -11,7 +11,7 @@ import { generateEmbedding } from '@/server/infra/search/openai'
 import { bodyToPlainText } from '@/shared/pt/utils'
 
 // pgvector column dimension. Must stay in sync with `postSearchIndex.embedding`
-// in `src/server/db/schema.ts`.
+// in `@/server/infra/db/schema/content`.
 const EMBEDDING_DIMENSIONS = 1536
 
 function normalizeEmbedding(embedding: number[]): number[] {

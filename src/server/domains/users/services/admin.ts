@@ -109,8 +109,6 @@ export async function listUsersForAdmin(
   return { users, total, hasMore: offset + users.length < total }
 }
 
-// Role update with guard
-
 export async function updateUserRoleWithGuard(
   db: NodePgDatabase,
   targetId: bigint,
@@ -137,8 +135,6 @@ export async function updateUserRoleWithGuard(
   return updated
 }
 
-// Invite author with rollback on email failure
-
 export interface InviteAuthorResult {
   success: true
   userId: bigint
@@ -157,9 +153,8 @@ export async function inviteAuthorWithRollback(
     throw new DomainError('CONFLICT', '该邮箱已被注册。')
   }
 
-  // Phase 1: atomic DB writes. `insertAuthor` + `issueSetupToken` are
-  // enrolled in a single transaction so a failure in either rolls both
-  // back — no orphaned user rows or setup tokens can survive.
+  // Atomic DB writes: `insertAuthor` + `issueSetupToken` in a single
+  // transaction so a failure rolls both back.
   const { user, token } = await db.transaction(async (tx) => {
     const [inserted] = await insertAuthor(tx, name, email)
     if (!inserted) {
@@ -169,9 +164,8 @@ export async function inviteAuthorWithRollback(
     return { user: inserted, token }
   })
 
-  // Phase 2: external side effect AFTER commit. If the email send fails
-  // the only compensation needed is to soft-delete the user row — the
-  // setup token was never committed, so there is nothing to revoke.
+  // External side effect AFTER commit. If the email send fails,
+  // soft-delete the user row — the token was never committed.
   const link = `${origin}/admin/signin?action=accept-invite&token=${encodeURIComponent(token)}`
   const sendResult = await sendAuthorInvite(user, link, inviterName, inviterEmail)
   if (!sendResult.ok) {
@@ -196,8 +190,6 @@ export async function inviteAuthorWithRollback(
   return { success: true, userId: user.id }
 }
 
-// Send password reset
-
 export async function sendPasswordResetToUser(
   db: NodePgDatabase,
   email: string,
@@ -216,8 +208,6 @@ export async function sendPasswordResetToUser(
   await sendPasswordResetEmail(user, link)
   return { userId: user.id }
 }
-
-// Soft delete user with guard
 
 export async function softDeleteUserWithGuard(
   db: NodePgDatabase,

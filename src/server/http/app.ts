@@ -13,12 +13,13 @@ import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 //
 // Single mount point for the whole API. `RPCHandler` consumes the
 // composed `apiRouter` and answers every request whose path matches
-// `/rpc/*`. The Hono wrapper here is responsible for three things:
+// `/rpc/*`. The Hono wrapper adds the perimeter around it:
 //
 //   1. `bodyLimit` — read from `blog.limits` settings (default 10 MB).
 //      Checked per-request from the live settings snapshot so admin
 //      changes take effect immediately without a server restart.
-//   2. Context projection — `c.var.requestContext` is the canonical
+//   2. `csrfGuard` on `/rpc/*`.
+//   3. Context projection — `c.var.requestContext` is the canonical
 //      per-request fact base derived by the request-context middleware;
 //      the bridge projects it into `HandlerContext` and adds
 //      `responseHeaders`, a fresh `Headers` object that procedures

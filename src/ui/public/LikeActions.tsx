@@ -189,9 +189,8 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
         className={cn(
           'px-10',
           'border-like-bg bg-like-bg hover:border-like-bg-hover hover:bg-like-bg-hover',
-          // Lift on hover: a soft ambient shadow + a gentle 4% scale-up.
-          // Transition respects prefers-reduced-motion via the global
-          // base.css media-query guard (transition-duration → 0.01ms).
+          // Lift on hover: soft shadow + 4% scale-up. Transition respects
+          // prefers-reduced-motion via the base.css media-query guard.
           'transition-[transform,box-shadow,background-color,border-color] duration-200 ease-[cubic-bezier(0.175,0.885,0.32,1.1)] hover:scale-[1.04] hover:shadow-[0_12px_32px_-6px_rgb(0_0_0/0.25)]',
           'data-[liked=true]:border-like-active data-[liked=true]:bg-like-active data-[liked=true]:text-white data-[liked=true]:shadow-like-active',
         )}

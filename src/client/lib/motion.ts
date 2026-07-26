@@ -17,7 +17,7 @@ export const transitions = {
   drawer: { type: 'spring' as const, stiffness: 400, damping: 35 },
   /** Fade in/out. */
   fade: { duration: 0.3, ease: 'easeOut' as const },
-  /** Detail-page fade-up (matches original CSS cubic-bezier). */
+  /** Detail-page fade-up. */
   detailFade: { duration: 0.4, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] },
   /** Children stagger. */
   stagger: { staggerChildren: 0.05 },
@@ -25,12 +25,12 @@ export const transitions = {
   slowLoop: { repeat: Infinity, duration: 20, ease: 'easeInOut' as const },
   /** Pulse loop. */
   pulseLoop: { repeat: Infinity, duration: 6, ease: 'easeInOut' as const, repeatType: 'reverse' as const },
-  /** Popup content spring — synced with backdrop fade (0.35s). */
+  /** Popup content spring — synced with backdrop fade. */
   popup: { type: 'spring' as const, duration: 0.35, bounce: 0.15 },
   /** Popup backdrop fade — synced with content spring. */
   popupFade: { duration: 0.35, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] },
-  /** Dialog content spring — synced with CSS transition (0.3s). */
+  /** Dialog content spring. */
   dialog: { type: 'spring' as const, duration: 0.3, bounce: 0.15 },
-  /** Menu / dropdown spring — synced with CSS transition (0.25s). */
+  /** Menu / dropdown spring. */
   menu: { type: 'spring' as const, duration: 0.25, bounce: 0.15 },
 }

@@ -124,10 +124,9 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
           next.set(key, value)
         }
       }
-      // Use React Router's setSearchParams so the loader re-runs and the
-      // component props (status/q/entity) stay in sync with the URL.
-      // `replace: true` keeps the history stack clean; `preventScrollReset`
-      // avoids the page jumping back to the top on every filter change.
+      // setSearchParams re-runs the loader so the props stay in sync with
+      // the URL; `replace` keeps history clean and `preventScrollReset`
+      // avoids jumping to the top on every filter change.
       setSearchParams(next, { replace: true, preventScrollReset: true })
     },
     [searchParams, setSearchParams],

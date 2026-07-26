@@ -16,11 +16,10 @@ import {
 } from '@/ui/components/dialog'
 import { Input } from '@/ui/components/input'
 
-// Web-font upload button + dialog. A single dialog transitions from name
-// input through upload progress to a terminal success/error result. The
-// upload hits the dedicated resource route (not oRPC) because source fonts
-// can be 60 MiB and the oRPC bridge sits behind the request-wide body
-// limit; slicing is synchronous server-side (~15–20s for CJK), so the
+// Web-font upload button + dialog: name input → upload progress →
+// success/error result. Uses the dedicated resource route (not oRPC, which
+// sits behind the request-wide body limit) because source fonts can be
+// 60 MiB; slicing runs synchronously server-side (~15–20s for CJK), so the
 // progress phase holds until the response returns.
 
 type UploadPhase =
@@ -39,11 +38,10 @@ export function FontUploadButton() {
 
   const dialogOpen = phase.kind !== 'idle'
 
-  // The upload options close over the family name of the *input* phase, so
-  // the guards, the multipart fields, and the result phases all use the
-  // value visible when the user clicked 上传. (After the phase advances the
-  // hook re-renders with an empty name, but the in-flight `upload` callback
-  // captured the options from the click-time render.)
+  // The upload options close over the family name from the click-time
+  // render, so the guards, multipart fields, and result phases keep the
+  // value the user saw even after the phase advances and the name
+  // re-renders empty.
   const inputFamilyName = phase.kind === 'input' ? phase.familyName : ''
   const trimmedFamilyName = inputFamilyName.trim()
 

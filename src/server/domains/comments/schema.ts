@@ -18,7 +18,7 @@ export const commentReplySchema = z
     email: z.email(),
     link: httpUrlOrEmptyStringSchema.optional(),
     body: commentBodySchema,
-    /** Removed — no longer used. */
+    /** Retained for schema compatibility; no longer used. */
     rid: z.number().optional(),
     /** Leave blank — used for bot filtering only; stripped before `createComment`. */
     subtitle: commentHoneypot.schema,
@@ -58,12 +58,11 @@ export type LoadAllCommentsInput = z.infer<typeof loadAllCommentsSchema>
 // trimmed and capped at 100 chars (any sane substring fits) and `limit`
 // is hard-bounded so a malicious caller can't request 1M rows.
 //
-// `ids` is an optional, comma-separated list of user identifiers the
-// caller wants to "rehydrate" (e.g. when restoring a Combobox
-// selection from a `?userId=2232` URL parameter — the URL only carries
-// the value, never the human label, so the client needs a one-shot
-// `ids` is present the authors endpoint returns an exact-match by id
-// and ignores `q` to avoid mixing two query intents in one round-trip.
+// `ids` is an optional comma-separated list of user identifiers used to
+// rehydrate a Combobox selection from a `?userId=2232` URL parameter —
+// the URL only carries the value, never the human label. When `ids` is
+// present the authors endpoint returns exact matches by id and ignores
+// `q` to avoid mixing two query intents in one round-trip.
 //
 // `key` is the page-flavoured equivalent: a single page `key` (a URL
 // such as `https://example.com/about/`) used to rehydrate the page-title

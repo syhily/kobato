@@ -1,7 +1,6 @@
 // Generate a cryptographically random URL-safe token of the requested
 // character length. Uses base64url encoding (RFC 4648 §5) so each character
-// contributes ~6 bits of entropy: a 64-char token therefore carries 384 bits
-// — matching the doc comments at call sites (e.g. `likes.server.ts`).
+// contributes ~6 bits of entropy: a 64-char token therefore carries 384 bits.
 //
 // We oversize the random byte pool to `ceil(length * 6 / 8)` so the encoded
 // output is always at least `length` characters, then slice to the exact

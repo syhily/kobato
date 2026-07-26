@@ -29,16 +29,11 @@ export interface EntityMutations<TInput extends UpsertMetaInputBase, TAdminDto> 
 
 /**
  * The five-function meta-mutation skeleton every content entity shares:
- * resolve slug → reserve it in-transaction → meta write → relation /
- * registry sync → post-commit side effects, with the slug
- * unique-constraint → CONFLICT mapping on the whole write phase. All
- * entity behavior (author resolution, pre-flight checks, column extras,
- * tag relations, DTO extras, invalidation, search indexing) attaches
- * through the descriptor hooks — see `entities/descriptor.ts`.
- *
- * Restore re-claims the slug inside the transaction and composes the
- * reclaim warning ahead of any `afterRestore` warning, space-joined —
- * the shape posts already returned.
+ * resolve slug → reserve in-transaction → meta write → relation/registry
+ * sync → post-commit side effects, with slug unique-constraint → CONFLICT
+ * mapping. All entity behavior attaches through the descriptor hooks —
+ * see `entities/descriptor.ts`. Restore re-claims the slug inside the
+ * transaction and space-joins its warning ahead of `afterRestore`'s.
  */
 export function makeEntityMutations<
   TMeta extends MetaRowBase,

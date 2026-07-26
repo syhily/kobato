@@ -28,10 +28,8 @@ export interface EditorScreenEntity extends EntityLike {
 }
 
 /**
- * Entity parameterization of the editor screen. Everything the shared
- * screen cannot know — DTO accessors, draft factories, wire calls, route
- * stubs, display noun, and the meta-sidebar component — arrives through
- * this one adapter object.
+ * Entity parameterization of the editor screen — DTO accessors, draft
+ * factories, wire calls, route stubs, display noun, meta-sidebar.
  */
 export interface EditorScreenAdapter<
   TMeta extends { title: string; slug: string; published: boolean; publishedAt: string },
@@ -96,11 +94,8 @@ export interface EditorScreenProps<
 }
 
 /**
- * The single editor screen both entities render. Owns the toolbar row, the
- * three-state layout grid, the preview pane, the title/slug strip, the
- * floating publish button, the action banner, the draft-conflict dialog,
- * and the single-mounted meta panel (aside ↔ Sheet). Entity differences
- * arrive through the adapter; shared state lives in `useEditorShellState`.
+ * The shared editor screen for both entities. Entity differences arrive
+ * through the adapter; shared state lives in `useEditorShellState`.
  */
 export function EditorScreen<
   TMeta extends { title: string; slug: string; published: boolean; publishedAt: string },
@@ -114,8 +109,7 @@ export function EditorScreen<
 
   // Loader-stable detail object for the state hook: the query DTO prop is
   // referentially stable, so memoizing on it keeps the hook's memos from
-  // recomputing every render (an unstable detail used to feed the conflict
-  // check into a "Too many re-renders" loop on revision-less entities).
+  // recomputing every render.
   const editorDetail = useMemo(
     () =>
       detail !== undefined

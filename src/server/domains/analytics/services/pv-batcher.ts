@@ -105,14 +105,11 @@ class PageViewBatcher {
 
 const BATCHER_NAME = 'PageViewBatcher'
 
-// Second implementation of the batching seam alongside `CopyBatcher`
-// (`@/server/infra/db/copy-batcher`): the access/audit batchers buffer
-// whole rows and flush them via `COPY FROM STDIN`, while this one
-// aggregates high-frequency counters in a Map and flushes upserts — a
-// different buffer shape and failure model (merge-back retry, not
-// dead-letter) that does not fit the COPY machine. Both self-register
-// on the same registry so the bootstrap lifecycle drives them through
-// one vocabulary.
+// Second implementation of the batching seam alongside `CopyBatcher`:
+// COPY batchers buffer whole rows, while this one aggregates counters in
+// a Map and flushes upserts with merge-back retry instead of dead-letter.
+// Both self-register on the same registry so the bootstrap lifecycle
+// drives them through one vocabulary.
 registerBatcher(
   BATCHER_NAME,
   (_pool, db) =>

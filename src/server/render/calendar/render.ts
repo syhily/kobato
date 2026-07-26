@@ -24,16 +24,13 @@ function ensureFonts(): Promise<FontSlot | null> {
 
 function getMonthLabel(date: Date) {
   const months = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月']
-  // `date-fns` `getMonth` is 0-indexed (matches `Date.prototype.getMonth`),
-  // so the array index is `getMonth(date)` directly — no `- 1` offset
-  // like the previous `luxon.month` (1-indexed) needed.
+  // `date-fns` `getMonth` is 0-indexed, so the array index is `getMonth(date)` directly.
   return months[getMonth(date)]
 }
 
 function getWeekdayLabel(date: Date) {
   const weekdays = ['星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期日']
-  // ISO day-of-week: 1 = Monday … 7 = Sunday. Same convention as the
-  // previous `luxon.weekday`, so the `- 1` offset stays the same.
+  // ISO day-of-week: 1 = Monday … 7 = Sunday, hence the `- 1` offset.
   return weekdays[getISODay(date) - 1]
 }
 
@@ -79,7 +76,6 @@ export type CalendarTheme = 'light' | 'dark'
 export async function renderCalendar(date: Date, theme: CalendarTheme = 'light'): Promise<Buffer> {
   const calendarFontSlot = await ensureFonts()
 
-  // Generate the required data from date.
   const quote = await getDailyQuote(date)
   const monthText = getMonthLabel(date)
   const lunarText = getLunarLabel(date)

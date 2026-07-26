@@ -167,10 +167,8 @@ function slotToKebab(slot: BrandingSlot): string {
 }
 
 // Map SLOT_CONTENT_TYPE values to file extensions so storage keys carry
-// the correct suffix. Without this, objects land in the bucket / local
-// filesystem as bare `branding/favicon-ico` with no extension, which
-// breaks `Content-Type` detection in the local-storage router and makes
-// the bucket harder to browse.
+// the correct suffix — bare extensionless keys break `Content-Type`
+// detection in the local-storage router.
 const EXT_BY_CONTENT_TYPE: Record<string, string> = {
   'image/svg+xml': '.svg',
   'image/x-icon': '.ico',
@@ -229,11 +227,10 @@ export async function putBrandingObject(slot: BrandingSlot, buffer: Buffer): Pro
   return ref
 }
 
-// Best-effort delete — if the backend already lacks the object (e.g.
-// operator pruned the bucket / removed the local file manually) the
-// admin's "clear" should still succeed at the settings layer. Real
-// failures surface to the caller. `driver` targets the backend the ref
-// was uploaded to, so a local asset isn't looked up in S3.
+// Best-effort delete — if the backend already lacks the object, the
+// admin's "clear" should still succeed at the settings layer. `driver`
+// targets the backend the ref was uploaded to, so a local asset isn't
+// looked up in S3.
 export async function deleteBrandingObject(slot: BrandingSlot, driver: StorageDriver = 's3'): Promise<void> {
   const backend = backendFor(driver)
   const key = s3KeyForSlot(slot)
@@ -275,16 +272,13 @@ function cacheGet(slot: BrandingSlot, etag: string): Buffer | undefined {
   return bufferCache.get(`${slot}:${etag}`)
 }
 
-// Returns `null` (rather than throwing) when the object can't be
-// fetched — the route handler falls back to the bundled default. This
-// matches how `OG` and `font` loaders treat missing optional assets:
-// availability of a custom branding upload should never 5xx the
-// `/favicon.ico` route.
+// Returns `null` (rather than throwing) when the object can't be fetched
+// — the route handler falls back to the bundled default, so a missing
+// custom upload never 5xx's the asset route.
 //
 // Auto-migrates objects still stored under the legacy extensionless key
-// (pre-2026-06-22): if the current key doesn't exist but the legacy key
-// does, the bytes are copied to the current key and the legacy object is
-// deleted. The migration is transparent — callers don't know it happened.
+// (pre-2026-06-22): copies the bytes to the current key and deletes the
+// legacy object, transparently to callers.
 export async function fetchBrandingObject(slot: BrandingSlot, ref: BrandingObjectRef): Promise<Buffer | null> {
   const cached = cacheGet(slot, ref.etag)
   if (cached !== undefined) {

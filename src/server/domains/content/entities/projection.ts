@@ -2,13 +2,11 @@ import type { MetaRowBase } from '@/server/domains/content/entities/descriptor'
 
 /**
  * The 19 admin-DTO fields every content entity shares, projected from
- * the shared meta columns. Entity DTOs extend this with their extras
- * (post: visible/category/tags/alias/pinnedAt/firstPublishedAt; page:
- * showFriends) — see `AdminPostDto` / `AdminPageDto`.
+ * the shared meta columns. Entity DTOs extend this with their extras —
+ * see `AdminPostDto` / `AdminPageDto`.
  *
- * Bigint ids stringified because the JSON envelope helper coerces them,
- * but the admin UI expects the contract to declare strings up front so
- * the React components don't have to know about the coercion.
+ * Bigint ids stringified because the admin contract declares strings up
+ * front so React components never see the JSON envelope's coercion.
  */
 export interface AdminMetaDto {
   id: string
@@ -37,8 +35,7 @@ export interface AdminMetaDto {
   /**
    * The row's `metric.public_id` UUID — the opaque wire identifier the
    * admin comment-count link uses to deep-link into
-   * `/admin/comments?pageKey=<uuid>`. Empty string on detail / save
-   * paths that don't fan out a metric upsert.
+   * `/admin/comments?pageKey=<uuid>`. Empty string on detail / save paths.
    */
   commentPublicId: string
 }

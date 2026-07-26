@@ -123,7 +123,7 @@ describe('passkey-service — generateRegistrationOptions', () => {
     expect(result.options.challenge).toBe('test-challenge')
     expect(capture.key).toBe('passkey:reg-challenge:test-challenge')
     expect(capture.payload).toEqual(challengePayload({ userId: '1', deviceName: null }))
-    // 300s TTL, matching the old Redis EX.
+    // 300s TTL.
     expect(capture.expiresAt!.getTime()).toBeGreaterThan(Date.now() + 290_000)
     expect(capture.expiresAt!.getTime()).toBeLessThanOrEqual(Date.now() + 300_000)
   })

@@ -54,9 +54,8 @@ export function ImagesView() {
   })
 
   // The grid caches as `type: 'infinite'` and the editor's
-  // ImageLibraryPicker as `type: 'query'`; the procedure-level orpcQuery
-  // key partial-matches both operation types — a hand-rolled
-  // ['admin','images','list'] array never would.
+  // ImageLibraryPicker as `type: 'query'` — the procedure-level orpcQuery
+  // key partial-matches both; a hand-rolled key array never would.
   const invalidateList = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.images.list.key() })
   }, [queryClient])

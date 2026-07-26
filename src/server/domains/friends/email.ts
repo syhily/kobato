@@ -9,9 +9,9 @@ import { AdminNotificationEmail } from '@/server/infra/email/templates/AdminNoti
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 
 // Sent to the administrator when a visitor submits a friend-link
-// application. Fire-and-forget from the apply service (same shape as
-// `sendNewComment`): a mail-pipeline hiccup must never fail the
-// application — the pending row is the durable record.
+// application. Fire-and-forget from the apply service: a mail-pipeline
+// hiccup must never fail the application — the pending row is the
+// durable record.
 export async function sendNewFriendApplication(friend: FriendRow): Promise<SendResult> {
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
   const rows: AdminNotificationRow[] = [

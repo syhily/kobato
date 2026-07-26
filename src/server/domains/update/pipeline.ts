@@ -1,8 +1,6 @@
-// Self-update pipeline (plan 090), modeled on AdGuardHome's
-// `internal/updater`: stage → download → verify → extract → chmod → backup →
-// swap, with best-effort restore while the pipeline is still running and the
-// stage dir always cleaned. Post-restart rollback is deliberately manual
-// via the `<binary>.bak` sibling (decision Q4).
+// Self-update pipeline: stage → download → verify → extract → chmod →
+// backup → swap, with best-effort restore and manual post-restart rollback
+// via the `<binary>.bak` sibling.
 //
 // The release asset is a `kobato-linux-<arch>.tar.gz` (built by sea.yml)
 // containing the bare binary; its `.sha256` sidecar hashes the archive, so

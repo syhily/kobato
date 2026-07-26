@@ -44,10 +44,11 @@ export async function updateCommentBodyAndContent(
 
 // Fresh-edit variant of `comment.updateOwn`: an owner editing their own
 // comment within the grace window (see `updateOwnComment` in
-// `@/server/domains/comments/moderation`) gets to rewrite the PortableText body and
-// its markdown projection in place, bumping `updated_at` but NOT
-// flipping `is_pending`. The comment stays in whatever moderation
-// state it was already in, and the admin notification is skipped.
+// `@/server/domains/comments/services/moderate`) gets to rewrite the
+// PortableText body and its markdown projection in place, bumping
+// `updated_at` but NOT flipping `is_pending`. The comment stays in
+// whatever moderation state it was already in, and the admin
+// notification is skipped.
 export async function updateOwnCommentBody(
   db: NodePgDatabase,
   id: bigint,

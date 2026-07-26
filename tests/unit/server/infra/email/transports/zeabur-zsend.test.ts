@@ -4,11 +4,9 @@ import type { ZeaburConfig } from '@/server/infra/email/transports/zeabur-zsend'
 
 import { ZeaburZSendTransport } from '@/server/infra/email/transports/zeabur-zsend'
 
-// These tests pin the Zeabur ZSend transport behavior that used to live
-// inline in `sender.ts:sendEmail`. The dispatcher routes everything to
-// this transport today, so the contract here is what every mail sender
-// (password reset, OTP, comment notifications, author invite) actually
-// relies on.
+// These tests pin the Zeabur ZSend transport behavior — the contract
+// every mail sender (password reset, OTP, comment notifications, author
+// invite) relies on when the zeabur transport is configured.
 
 const baseConfig: ZeaburConfig = {
   enabled: true,

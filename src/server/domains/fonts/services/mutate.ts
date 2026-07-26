@@ -23,8 +23,7 @@ import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 /**
  * Read the current `fonts` settings section from the DB (within the caller's
- * transaction). Used to compute GC candidates against the *current* slot
- * snapshot before the upsert overwrites it.
+ * transaction). Used by slot edits (merge base) and by delete (slot-usage check).
  */
 async function readCurrentFonts(db: NodePgDatabase): Promise<FontsSettings> {
   const row = await findSettingByScope(db, SECTION_REGISTRY.fonts.scope)

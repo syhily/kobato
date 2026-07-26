@@ -168,11 +168,10 @@ export function TableBlockComponent({ value }: PortableTextTypeComponentProps<Ta
   )
 }
 
-// Table cells carry link markDefs only per the wire schema
-// (`tableCellSchema.markDefs` is `linkMarkDefSchema[]`) — the bridge strips
-// any other def on save and the editor's table-cell guard strips them on
-// paste, so the cell inline pipeline types to the schema instead of
-// re-declaring the full markDef union.
+// Table cells carry link markDefs only per the wire schema (the bridge
+// strips other defs on save, the editor's table-cell guard on paste), so
+// the cell inline pipeline types to the schema instead of re-declaring the
+// full markDef union.
 function renderSpansInline(spans: readonly Span[], markDefs: readonly LinkMarkDef[]): ReactNode {
   return spans.map((span) => <SpanInline key={span._key} span={span} markDefs={markDefs} />)
 }

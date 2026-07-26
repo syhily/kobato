@@ -32,7 +32,7 @@ Cross-cutting integration tests still live inside `tests/it/` under the primary 
 
 ## Test utilities
 
-- Import test utilities from `vitest`, not `vite-plus/test`.
+- Import test utilities (`describe`, `it`, `expect`, `vi`) from `vitest`.
 
 ## Infrastructure requirements
 

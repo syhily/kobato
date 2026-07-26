@@ -24,7 +24,6 @@ export const FILTER_FIELDS: FieldDefinition[] = [
   { key: 'date', label: '时间', icon: CalendarIcon },
 ]
 
-// Re-exported from the previous toolbar so the option lists stay centralised.
 export const ACTION_OPTIONS = [
   { value: '', label: '全部' },
   { value: 'login', label: '登录' },

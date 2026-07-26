@@ -5,7 +5,7 @@
 //   intermediates/server.mjs         tsdown output — single-file ESM server
 //   intermediates/process-worker.cjs tsdown output — embedded worker text
 //   intermediates/smoke-worker.cjs   tsdown output — --smoke-worker entry
-//   intermediates/manifest.json      embedded asset manifest (see assets.mjs)
+//   intermediates/manifest.json      embedded asset manifest (see assets.ts)
 //   intermediates/sea-config.json    node --experimental-sea-config input
 //   intermediates/kobato.blob        generated SEA blob
 //   kobato(.exe)                     final single-executable binary

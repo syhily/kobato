@@ -6,8 +6,8 @@
 // `/admin/security/sessions`.
 //
 // Orchestration (listing, revocation entry points) lives in
-// `service.ts`. This module is limited to raw session-table reads/writes
-// and their helpers.
+// `services/sessions.ts`. This module is limited to raw session-table
+// reads/writes and their helpers.
 
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
@@ -62,8 +62,7 @@ function truncateUserAgent(ua: string | null): string {
  * Stamp the login metadata onto a freshly-established session's row.
  * Called from `establishLoginSession` AFTER the session row has been
  * committed (so the row exists with its `user_id` already set); the
- * UPDATE is a no-op when the row is gone, matching the old best-effort
- * meta-hash write.
+ * UPDATE is a no-op when the row is gone.
  */
 export async function recordSessionLogin(db: NodePgDatabase, input: RecordLoginInput): Promise<void> {
   const now = input.loginAt ?? new Date()
@@ -104,8 +103,7 @@ export function recordSessionActivity(db: NodePgDatabase, sid: string): void {
 }
 
 // Rows whose owner or login meta is missing (an OTP-pending row, or a
-// row committed but not yet stamped by `recordSessionLogin`) map to
-// null — the same way a missing Redis meta hash used to read as a miss.
+// row committed but not yet stamped by `recordSessionLogin`) map to null.
 function sessionRowToMeta(row: SessionRow | undefined): SessionMeta | null {
   if (!row || row.userId === null || row.loginAt === null || row.lastActiveAt === null) {
     return null
@@ -169,10 +167,9 @@ export async function listLiveSessions(db: NodePgDatabase, maxRows: number): Pro
 }
 
 /**
- * Drop every session belonging to one user in a single statement (the
- * PG equivalent of the old Lua script over `user_sessions:<uid>`), with
- * an optional exemption for the caller's own session. Returns the
- * number of deleted rows.
+ * Drop every session belonging to one user in a single statement, with
+ * an optional exemption for the caller's own session. Returns the number
+ * of deleted rows.
  */
 export async function deleteSessionsOfUser(
   db: NodePgDatabase,

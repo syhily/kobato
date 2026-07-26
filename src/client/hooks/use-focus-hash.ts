@@ -1,22 +1,13 @@
 import { useEffect } from 'react'
 import { useLocation } from 'react-router'
 
-// Smooth-scroll to the URL hash on initial mount and whenever the hash
-// changes. Also flashes a comment node when the hash targets one
-// (`#user-comment-<id>`).
+// Smooth-scroll to the URL hash on mount and when the hash changes.
+// Flashes a comment node when the hash targets `#user-comment-<id>`.
 //
-// Two timing concerns:
-//
-// 1. The target may not be in the DOM yet when the hash changes —
-//    comment threads on detail routes stream in through
-//    `<Suspense fallback={<CommentsSkeleton />}>` after the route
-//    loader resolves the comments promise. We watch DOM mutations
-//    until the target lands or a ceiling elapses.
-// 2. The flash must wait until the smooth scroll has come to rest so
-//    the highlight only starts once the user can actually see the
-//    target. We listen for `scrollend` with a fallback timeout for
-//    the cases where no scroll is needed (already in view) or the
-//    event never lands.
+// Two timing concerns: the target may not be in the DOM yet (comment
+// threads stream in via `<Suspense>`), so we watch DOM mutations until
+// it lands or a ceiling elapses; and the flash waits until the smooth
+// scroll settles (`scrollend` with a timeout fallback).
 const TARGET_WAIT_MS = 5000
 const SCROLL_SETTLE_FALLBACK_MS = 300
 const NO_SCROLL_THRESHOLD_PX = 4
@@ -107,8 +98,7 @@ function flashComment(target: HTMLElement): void {
     node.classList.remove('active')
   }
   // The hash points at `<li id="user-comment-N">`; the visual flash
-  // lives on the `<article>` wrapper inside it so the highlight fills
-  // the full comment row including the avatar gutter.
+  // lives on the `<article>` wrapper inside it.
   const article = target.querySelector<HTMLElement>('article.comment-body')
   if (article === null) {
     return

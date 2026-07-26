@@ -87,12 +87,10 @@ export type AdminCommentsData = InfiniteData<AdminCommentsPage, number>
 
 const ZERO_STATUS_COUNTS: StatusCounts = { all: 0, pending: 0, approved: 0, deleteRequested: 0 }
 
-// Local-mutation helpers. After an admin action (approve / delete / edit /
-// delete-request resolution) has succeeded server-side, the view patches
-// the cached list pages in place instead of refetching. Each helper mirrors
-// the semantics of the retired `commentsReducer` action of the same name
-// one-for-one — including the deliberate choice to leave `total` untouched
-// on removal (the next page load re-syncs it).
+// Local-mutation helpers: after an admin action (approve / delete / edit /
+// delete-request resolution) succeeds server-side, the view patches the cached
+// list pages in place instead of refetching. `total` is deliberately left
+// untouched on removal — the next page load re-syncs it.
 
 export function removeCommentFromPages(data: AdminCommentsData, id: string): AdminCommentsData {
   const removed = data.pages.flatMap((page) => page.comments).find((comment) => idStr(comment.id) === id)
@@ -191,9 +189,9 @@ export function useCommentsController({ initialFilters }: UseCommentsControllerO
   const filterCreatedAfter = dateBounds.after
   const filterCreatedBefore = dateBounds.before
 
-  // Mirror the active filters into the URL so a filtered view stays
-  // shareable. Debounced: text/date edits dispatch on every keystroke, and
-  // the URL should only settle once the user pauses.
+  // Mirror the active filters into the URL so a filtered view stays shareable.
+  // Debounced — text/date edits dispatch on every keystroke; the URL settles
+  // once the user pauses.
   const [searchParams, setSearchParams] = useSearchParams()
   const urlSyncTimerRef = useRef<number | null>(null)
   useEffect(() => {
@@ -281,9 +279,9 @@ export function useCommentsController({ initialFilters }: UseCommentsControllerO
   })
   const statusCounts = firstPage?.statusCounts ?? ZERO_STATUS_COUNTS
 
-  // After an admin action has succeeded server-side, rewrite the cached list
-  // pages in place instead of refetching — the helpers above stay pure;
-  // `patchPages` owns the query key and the `setQueryData` call.
+  // After a server-side admin action succeeds, rewrite the cached list pages
+  // in place instead of refetching — the helpers above stay pure; `patchPages`
+  // owns the query key and the `setQueryData` call.
   const approveComment = useCallback(
     (id: string) => patchPages((data) => approveCommentInPages(data, id)),
     [patchPages],
@@ -302,9 +300,8 @@ export function useCommentsController({ initialFilters }: UseCommentsControllerO
   )
 
   // Full refresh after mutations the local patches can't model (user edits,
-  // replies). The procedure-level key covers every cached input combination
-  // of `loadAll`; only the active combination has a live query, so exactly
-  // that one refetches.
+  // replies). The procedure-level key covers every cached `loadAll` input;
+  // only the active combination has a live query, so exactly that one refetches.
   const invalidateList = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.comments.loadAll.key() })
   }, [queryClient])

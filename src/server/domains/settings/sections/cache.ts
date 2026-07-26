@@ -4,22 +4,19 @@ import { FIXED_CACHE_PREFIXES } from '@/shared/cache/registry'
 import { CACHE_BUCKET_FALLBACKS, type TunableCacheBucketId, TUNABLE_CACHE_BUCKET_IDS } from '@/shared/types/cache'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
-// Per-bucket cache configuration (rows in the `kv_cache` table, tagged
-// with the bucket id). Only tunable buckets own a settings slot — the
-// slot list derives from the declaration registry
-// (`@/shared/cache/registry`), and the editor can only rename the PREFIX
-// and tune the TTL. The prefix has to end with `:` so the key shape
-// stays namespaced and a prefix scan can never reach into a neighbouring
-// bucket's namespace by accident (e.g. an `og` prefix could otherwise
-// match `ogre-foo`).
+// Per-bucket cache configuration. Only tunable buckets own a settings
+// slot (the list derives from the declaration registry,
+// `@/shared/cache/registry`); the editor can only rename the PREFIX and
+// tune the TTL. The prefix must end with `:` so a prefix scan can never
+// reach into a neighbouring bucket's namespace (an `og` prefix could
+// otherwise match `ogre-foo`).
 //
-// "RESERVED_PREFIXES" enumerates surfaces that the admin panel must
-// NEVER let an editor overwrite — the session and rate-limit caches
-// both depend on stable key shapes for safety reasons (clearing
-// sessions logs everyone out; clearing rate-limit lets bad actors
-// retry immediately). `avatar-status` is the historical two-key
-// avatar layout — keeping it reserved means a future archeology dig
-// can't be silently shadowed.
+// "RESERVED_PREFIXES" enumerates surfaces the admin panel must NEVER let
+// an editor overwrite — the session and rate-limit caches depend on
+// stable key shapes for safety (clearing sessions logs everyone out;
+// clearing rate-limit lets bad actors retry immediately).
+// `avatar-status` is the historical two-key avatar layout — keeping it
+// reserved means a future archeology dig can't be silently shadowed.
 export const RESERVED_CACHE_PREFIXES: readonly string[] = ['session:', 'rate-limit:', 'avatar-status:']
 
 const PREFIX_PATTERN = /^[a-z0-9_-]+:$/i
@@ -104,8 +101,7 @@ export const cacheSchema = z
     }
   })
 
-// Tunable cache slots derive from the declaration registry — only
-// tunable buckets get a settings slot.
+// Tunable cache slots derive from the declaration registry.
 export const cacheDefaults = { cache: { ...CACHE_BUCKET_FALLBACKS } } as const
 
 export const cacheSection = {

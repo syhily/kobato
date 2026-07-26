@@ -5,16 +5,11 @@
 // `CACHE_BUCKET_FALLBACKS`, the settings defaults and schema slots, the
 // admin cache panel) reads from this table, so adding a cache never
 // requires editing a second list. The behavior plane (key shapes,
-// codecs, `cacheWhen`, counters) lives in the server module
-// `@/server/infra/cache/registry`.
+// codecs, `cacheWhen`, counters) lives in `@/server/infra/cache/registry`.
 //
 // The `id` doubles as the value written into the `kv_cache.bucket`
-// column — every writer treats it as a stable discriminator, so counts
-// and clears follow the column, never a key-prefix scan.
-//
-// `tunable` buckets get a settings slot (prefix + TTL editable at
-// `/admin/settings/cache`); the rest keep their declared prefix + TTL
-// and show read-only in the admin panel.
+// column. `tunable` buckets get a settings slot (prefix + TTL editable
+// at `/admin/settings/cache`); the rest show read-only in the panel.
 
 export interface CacheDeclaration {
   /** Stable discriminator — also the `kv_cache.bucket` value. */

@@ -60,11 +60,8 @@ export function EditFriendDialog({ friend, onClose, onSaved }: EditFriendDialogP
   })
   const { mutate: submit, isPending } = upsertMutation
 
-  // Reset the form whenever the parent toggles the dialog. `friend ===
-  // undefined` means "closed" — leave the form alone so the close
-  // animation doesn't blank the fields the user just saw. `friend ===
-  // null` is the "open for new" trigger; a populated `friend` is the
-  // "open for edit" trigger.
+  // Re-seed the form when the parent toggles the dialog (discriminator
+  // semantics on the props interface above).
   if (friend !== lastFriend) {
     setLastFriend(friend)
     if (friend === undefined) {

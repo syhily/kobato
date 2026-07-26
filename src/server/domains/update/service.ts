@@ -1,7 +1,5 @@
-// Self-update service — the interface the admin procedures mount
-// (plan 090). Orchestration: release lookup + gate evaluation + version
-// comparison; the job state machine lives in `job.ts` and the controller
-// reads its status reader directly.
+// Self-update service — orchestrates release lookup, gate evaluation,
+// and version comparison. The job state machine lives in `job.ts`.
 
 import type { UpdateCheckResult } from '@/shared/contracts/update'
 
@@ -11,9 +9,8 @@ import { fetchLatestRelease } from '@/server/domains/update/release'
 import { DomainError } from '@/server/infra/http/errors'
 import { APP_VERSION } from '@/shared/config/version'
 
-// Semver-lite comparison for release tags (plan 090). Strips a leading `v`,
-// compares numeric `x.y.z` triples; pre-release suffixes beyond the dev gate
-// (`-dev` is refused upstream by the self-update gate) are ignored.
+// Semver-lite comparison: strips a leading `v`, compares numeric `x.y.z`
+// triples; pre-release suffixes are ignored.
 function parseTriple(version: string): [number, number, number] {
   const core = version.replace(/^v/, '').split('-', 2)[0] ?? ''
   const parts = core.split('.')

@@ -58,10 +58,9 @@ export function useCreateDraft<TBody, TMeta>(
   const [sessionId] = useState(() => readOrCreateSessionId(config.sessionKey))
   const key = `${config.keyPrefix}${sessionId}`
 
-  // The draft lifecycle (load/persist/broadcast) lives in useDraftSession;
-  // this adapter only supplies the session key and the meta-carrying mapping.
-  // Note the raw record body is surfaced, not the parsed one — that is the
-  // behavior the create flow has always had.
+  // The draft lifecycle lives in useDraftSession; this adapter only supplies
+  // the session key and the meta-carrying mapping. Note the raw record body
+  // is surfaced, not the parsed one — historical create-flow behavior.
   const mapLoaded = useCallback((record: DraftRecord): { body: TBody; meta: TMeta; savedAt: number } | null => {
     if (!hasMeta<TBody, TMeta>(record)) {
       return null

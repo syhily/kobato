@@ -1,18 +1,11 @@
 // Install-time seed of every settings section — the strict counterpart
-// to hydrate.ts's lazy backfill. The backfill fills in missing rows
-// best-effort on an already-installed deployment; this module writes all
-// 18 section rows for a FRESH install in one all-or-nothing pass:
-// `blog.general` and `blog.assets` are built from the install form
-// identity, the remaining 16 come from the registry defaults via
-// `buildDefaultSectionPayloads` (the same validated-defaults core the
-// backfill uses).
-//
-// The two-phase split mirrors the flow's shape. `buildInstallSectionRows`
-// validates every section BEFORE any write so a failure produces a form
-// error with zero DB side effects. `seedInstallSections` then persists
-// the validated rows on the caller's transaction handle, so the section
-// rows commit — or roll back — atomically with the first admin row
-// (`@/server/domains/auth/services/setup` composes the two).
+// to hydrate.ts's lazy backfill: writes all 18 section rows for a FRESH
+// install in one all-or-nothing pass (`blog.general` and `blog.assets`
+// from the install-form identity, the other 16 from registry defaults).
+// `buildInstallSectionRows` validates every section BEFORE any write so
+// a failure produces a form error with zero DB side effects;
+// `seedInstallSections` persists the validated rows on the caller's
+// transaction so they commit atomically with the first admin row.
 
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 

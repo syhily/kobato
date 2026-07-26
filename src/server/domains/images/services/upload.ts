@@ -35,11 +35,9 @@ const ALLOWED_IMAGE_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp
  * size) against the allowlist and the configured cap — runs BEFORE the
  * bytes are buffered, so a mislabeled or oversize Blob is rejected
  * cheaply. The authoritative checks (magic-byte sniffing, real byte
- * counts) still run inside {@link uploadImage}; the two layers
- * deliberately report different statuses (413 here for the declared size,
- * 400 there for the actual bytes), so this throws `ORPCError` — the
- * DomainError vocabulary has no PAYLOAD_TOO_LARGE code. Messages are the
- * wire contract — do not reword.
+ * counts) still run inside {@link uploadImage}; this layer throws
+ * `ORPCError` because DomainError has no PAYLOAD_TOO_LARGE code.
+ * Messages are the wire contract — do not reword.
  */
 export function assertImageUploadAllowed(file: { type: string; size: number }, maxBytes: number): void {
   if (!ALLOWED_IMAGE_MIME_TYPES.has(file.type)) {

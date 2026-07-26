@@ -6,9 +6,9 @@ import { orpcQuery } from '@/client/api/orpc-query'
 import { useAdminInfiniteList } from '@/ui/admin/shared/useAdminInfiniteList'
 
 // Flatten fetched pages into one hit list, first occurrence winning on
-// `source:sourceId` collisions — upstream pages can overlap when the
-// provider's result set shifts between page fetches. Exported pure so unit
-// tests can exercise it without mounting the hook.
+// `source:sourceId` collisions (upstream pages can overlap as the
+// provider's result set shifts). Exported pure so unit tests can exercise
+// it without mounting the hook.
 export function dedupeSearchHits(pages: SearchMusicOutput[]): MetingSearchHit[] {
   const seen = new Set<string>()
   return pages
@@ -23,13 +23,11 @@ export function dedupeSearchHits(pages: SearchMusicOutput[]): MetingSearchHit[] 
     })
 }
 
-// One search-pagination machine for the meting "add music" surfaces, built
-// on the shared admin infinite-list scaffold — the search endpoint reports
-// only `hasMore`, which the scaffold's optional-`total` page shape absorbs.
-// The hook holds no offset state, no result state, and no mirror refs.
-// Callers render only: they keep their own keyword/source inputs, add
-// mutation, and preview wiring, and drive the machine through `search` /
-// `loadMore` / `reset`.
+// Search-pagination machine for the meting "add music" surfaces, built on
+// the shared admin infinite-list scaffold (the search endpoint reports
+// only `hasMore`, absorbed by the scaffold's optional-`total` page shape).
+// Callers keep their own keyword/source inputs, add mutation, and preview
+// wiring, and drive the machine through `search` / `loadMore` / `reset`.
 export function useMetingMusicSearch({ limit }: { limit: number }) {
   const [submitted, setSubmitted] = useState<{ source: MetingSource; keyword: string } | null>(null)
 

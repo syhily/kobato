@@ -6,10 +6,9 @@ import { safeFetch } from '@/server/infra/safe-fetch'
 
 const log = getLogger('webmentions.fetch')
 
-// Slice decision (plan 026 Phase 0 #3): synchronous fetch-and-verify
-// before 202, with a strict timeout and size cap. If spam volume ever
-// makes the synchronous cost a problem, the fix is an async queue
-// (Phase 2), not weaker caps.
+// Synchronous fetch-and-verify before 202, with a strict timeout and
+// size cap. If spam volume makes the synchronous cost a problem, the fix
+// is an async queue, not weaker caps.
 export const SOURCE_FETCH_TIMEOUT_MS = 10_000
 export const MAX_SOURCE_BYTES = 1024 * 1024 // 1 MB
 const MAX_REDIRECTS = 5

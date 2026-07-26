@@ -1,18 +1,10 @@
 import { useEffect } from 'react'
 
-// React Router v7 keeps already-injected CSS attached to `<head>` across
-// SPA navigations on purpose (see `persistentHrefs` in the dev/runtime;
-// shared lazy chunks may still reference it). That is the right default
-// for layered stylesheets, but it breaks any admin-area route when the
-// user navigates here from the public site: `public.css` stays in
-// `<head>`, and per the W3C cascade-layers spec un-layered rules beat
-// any `@layer utilities` rule of any specificity.
-//
-// This hook closes that gap by detaching every public stylesheet on
-// mount and re-attaching them on unmount, so an SPA navigation back to
-// a public page keeps its styling. It is shared by the admin SPA
-// layout and the signin / install split-screen layout — every route
-// that opts out of the public chrome via `handle.layout = "admin"`
+// React Router keeps injected CSS in `<head>` across SPA navigations.
+// This breaks admin/auth/editor layouts reached from the public site:
+// `public.css` stays in `<head>` and its un-layered rules beat any
+// `@layer utilities` rule. Detach public stylesheets on mount,
+// re-attach on unmount. Every layout that opts out of public chrome
 // must also opt into this hook.
 
 function isPublicStylesheet(el: Element): boolean {
@@ -49,13 +41,9 @@ export function useDetachPublicCss(): void {
     })
     return () => {
       for (const { node, nextSibling, parent } of detached) {
-        // The DOM may have shifted while the admin tree was mounted
-        // (Vite HMR re-injecting public.css, React Router stream
-        // chunks landing late, an error boundary unmounting the
-        // shell mid-flight). Re-anchor defensively: only insertBefore
-        // when `nextSibling` is still a real child of `parent`,
-        // otherwise fall back to append. Skip entirely when the node
-        // has somehow been re-attached elsewhere.
+        // Re-anchor defensively: only insertBefore when `nextSibling`
+        // is still a child of `parent`, otherwise fall back to append.
+        // Skip when the node has already been re-attached elsewhere.
         if (node.parentNode !== null) {
           continue
         }

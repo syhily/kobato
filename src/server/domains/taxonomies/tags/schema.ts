@@ -25,8 +25,7 @@ export const tagIdSchema = z.object({
 })
 
 // `slug` is optional on the wire; the service derives it via
-// `pinyin-pro` when blank, mirroring the historical compile-time
-// helper in `source.config.ts`.
+// `pinyin-pro` when blank.
 export const upsertTagSchema = z.object({
   id: z.string().min(1).optional(),
   name: z.string().trim().min(1).max(20),

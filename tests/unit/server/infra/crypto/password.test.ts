@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs'
 import { describe, expect, it } from 'vitest'
 
 // We don't expose a `hashPassword`/`verifyPassword` wrapper — bcryptjs is
-// called inline from `db/query/user.server.ts`. The tests below pin the
+// called inline from `infra/db/operations/user.ts`. The tests below pin the
 // bcryptjs contract we depend on so swapping the lib (or upgrading it) is
 // surfaced immediately rather than at first failed login.
 

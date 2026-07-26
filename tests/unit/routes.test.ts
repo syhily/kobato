@@ -58,8 +58,8 @@ describe('contract: public URL stability', () => {
   })
 
   it('image endpoints (/images/og /calendar /avatar) preserve their URL shape', () => {
-    // Image resource routes migrated to Hono — see server.ts and
-    // server/http/resources/images.ts. Public URLs remain stable.
+    // Image resource routes migrated to Hono — see middleware-pipeline.ts
+    // and server/http/resources/images.ts. Public URLs remain stable.
     const paths = new Set(all.map((r) => r.path))
     expect(paths.has('images/og/:slug.png')).toBe(false)
     expect(paths.has('images/calendar/:year/:time.png')).toBe(false)

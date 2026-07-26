@@ -23,7 +23,7 @@ import { useCommentsActions, useCommentsIdentity } from '@/ui/public/comments/co
 
 interface CommentActionsProps {
   comment: CommentItemType
-  /** Open the admin / legacy-token edit area (round-trips through `comment.edit`). */
+  /** Open the admin edit area (round-trips through `comment.edit`). */
   onEditAdmin: () => void
   /** Open the visitor self-edit area (posts to `comment.updateOwn`). */
   onEditOwn: () => void
@@ -42,9 +42,8 @@ export function CommentActions({ comment, onEditAdmin, onEditOwn }: CommentActio
     onSuccess: () => actions.onDeleted(comment.id),
   })
 
-  // The own-comment mutations return the updated wire comment; route it
-  // through the same reducer action as every other mutation instead of
-  // revalidating the whole detail loader.
+  // Own-comment mutations return the updated wire comment; route it through the
+  // same reducer action as every other mutation instead of revalidating the detail loader.
   const requestDelete = useMutation({
     ...orpcQuery.comments.requestDeleteOwn.mutationOptions(),
     onSuccess: (payload) => actions.onEdited(payload.comment),

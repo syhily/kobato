@@ -12,7 +12,7 @@ import { extractRequestFacts } from '@/server/http/utils/request-facts'
 //      project agreed to intercept. The Hono wp-decoy middleware is the
 //      single chokepoint that runs this predicate before any route
 //      loader and answers hits with the canonical `404 Not WordPress`.
-//   2. `routes/page.detail.tsx` — sanity check that real page slugs still
+//   2. `routes/public/page/detail.tsx` — sanity check that real page slugs still
 //      resolve through the page-detail loader (the middleware is what
 //      handles probes; the loader never re-checks).
 
@@ -35,8 +35,9 @@ fixtures.samplePage = {
   publishedRevisionId: null,
 }
 
-// catalog/catalog removed; pages/loader.ts now uses findPublicPostMetaBySlug +
-// findPageBySlug directly. Catalog slug routing is gone.
+// catalog/catalog removed; slug routing now runs through
+// `http/loaders/page-preview` (findPublicPostMetaBySlug + findPageBySlug in
+// parallel) — hence the posts/pages seams mocked below.
 vi.mock('@/server/domains/posts/services/public-query', () => ({}))
 vi.mock('@/server/domains/posts/services/single', () => ({
   findPostMetaById: vi.fn(async () => null),

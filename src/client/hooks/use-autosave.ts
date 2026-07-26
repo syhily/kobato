@@ -150,7 +150,6 @@ export function useAutosave<TBody>({
     }
   }, [body, enabled, debounceMs, hardCapMs, doFlush])
 
-  // Force-flush on tab hide / pagehide so the last edits don't get lost.
   useEffect(() => {
     if (!enabled) {
       return

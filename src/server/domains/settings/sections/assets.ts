@@ -4,42 +4,27 @@ const coerceBoolean = z
   .union([z.boolean(), z.literal('true'), z.literal('false')])
   .transform((v) => (typeof v === 'boolean' ? v : v === 'true'))
 
-// `<MusicPlayer>` to fetch APlayer audio + lyrics), the S3-compatible
-// storage credentials, and the upload limits for the admin image
-// library. Image public URLs share the same `asset.scheme://asset.host`
-// base with music metadata, so combining the two keeps the operator
-// from having to keep two pages in sync.
+// Asset host/scheme base (shared by image public URLs and music
+// metadata), the S3-compatible storage credentials, and the upload
+// limits for the admin image library.
 //
-// Storage is always available: uploads go to the active backend, which
-// is S3 when `storage.enabled` is on AND every bucket field is filled
-// (the `superRefine` below enforces the latter), and the local
-// filesystem otherwise (`$DATA_PATH/storage/`). There is no longer an
-// "uploads refused with 503" state — local is the always-on fallback,
-// so fresh installs work out of the box without configuring S3.
+// Storage is always available: uploads go to S3 when `storage.enabled`
+// is on AND every bucket field is filled (the `superRefine` below
+// enforces the latter), and to the local filesystem otherwise. Each
+// asset row records its backend (`storageDriver`) so reads, deletes,
+// and public-URL resolution dispatch correctly after a local→S3 switch.
 //
-// Each asset row records the backend it was written to (`storageDriver`),
-// so reads, deletes, and public-URL resolution dispatch correctly after
-// a local→S3 switch, and the migration tool can copy local objects to S3.
-//
-// We deliberately keep the bucket fields nullable when disabled so
-// that flipping the toggle off doesn't force the admin to re-paste
-// the credentials when they flip it back on later. The admin form
-// remembers (and re-submits) the previously-typed values.
-//
-// `secretAccessKey` follows the same "optional ⇒ keep existing"
-// convention as `mail.apiKey`: the admin form sends `undefined` to
-// signal "I'm tweaking other fields, don't make me re-paste the
-// secret". `applySectionPatch` folds the persisted value back in;
-// passing an empty string (or any explicit string) overwrites the
-// stored secret.
+// The bucket fields stay nullable when disabled so toggling S3 off and
+// back on doesn't force re-pasting credentials. `secretAccessKey`
+// follows the same "optional ⇒ keep existing" convention as
+// `mail.apiKey`: `undefined` keeps the stored secret, any string
+// (including empty) overwrites it (`applySectionPatch` folds the
+// persisted value back in).
 
-// Branding user-asset slots (SVGs / binaries) are managed through the
-// dedicated `/admin/branding/upload` and `/admin/branding/clear`
-// endpoints. Only `robotsTxt` is plain text configuration written
-// through this PATCH — the binary slots come back through the schema
-// during hydration, so they have to be declared here or Zod would
-// strip them on read and the uploaded ObjectRefs would silently
-// disappear from the bundle.
+// Branding binary slots are managed through `/admin/branding/upload` +
+// `/admin/branding/clear`, not this PATCH — but they must be declared
+// in the schema or Zod would strip them on read and the uploaded
+// ObjectRefs would silently disappear from the bundle.
 const ROBOTS_PRINTABLE = /^[\t\n\r -~]*$/
 const robotsTxt = z
   .string()
@@ -90,9 +75,8 @@ export const assetsSchema = z
     branding: z
       .object({
         // The 5 SVG + 8 binary slots managed by
-        // `/admin/branding/upload` + `/admin/branding/clear`. Each
-        // stores a `BrandingObjectRef` after upload; not present until
-        // the admin uploads one. Slot names mirror
+        // `/admin/branding/upload` + `/admin/branding/clear`; absent
+        // until the admin uploads one. Slot names mirror
         // `src/server/assets/defaults.ts`.
         faviconSvg: brandingObjectRef.optional(),
         logoSvg: brandingObjectRef.optional(),
@@ -116,10 +100,9 @@ export const assetsSchema = z
     if (!value.storage.enabled) {
       return
     }
-    // When the toggle is on, every bucket field has to carry a real
-    // value. The admin form mirrors these checks client-side so the
-    // user never reaches the network in the all-empty case, but a
-    // hand-crafted PATCH would otherwise sneak through.
+    // When the toggle is on, every bucket field must carry a real value
+    // (the admin form mirrors these checks client-side; this catches a
+    // hand-crafted PATCH).
     const required: { key: keyof typeof value.storage; label: string }[] = [
       { key: 'endpoint', label: 'Endpoint' },
       { key: 'region', label: 'Region' },
@@ -138,11 +121,10 @@ export const assetsSchema = z
     }
   })
 
-// The install-form seed for the storage/upload buckets — the rest of
-// the assets payload (the `asset` host/scheme pair) comes from the
-// request hostname. Consumed by `services/install-flow.ts` only; like
-// `general`, the section ships no registry seed because the setup-time
-// first write arrives complete.
+// Install-form seed for the storage/upload buckets (the `asset`
+// host/scheme pair comes from the request hostname). Consumed by
+// `services/install-flow.ts` only; like `general`, the section ships no
+// registry seed because the setup-time first write arrives complete.
 export const ASSETS_STORAGE_INSTALL_DEFAULTS = {
   storage: {
     enabled: false,

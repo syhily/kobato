@@ -45,10 +45,9 @@ async function readSetupToken(db: NodePgDatabase): Promise<string | null> {
  * multi-instance deployments share it; it is valid only until the first
  * admin is created.
  *
- * Security note: the full token is NEVER written to structured logs.
- * Only a SHA-256 hash prefix is logged for troubleshooting; the actual
- * token is returned to the caller (install wizard) so it can be shown
- * in the UI or TTY console without entering the logging pipeline.
+ * Security note: the full token is NEVER written to structured logs —
+ * it is printed to stdout (terminal / `docker logs`) and returned to
+ * the caller (install wizard) without entering the logging pipeline.
  */
 export async function getSetupToken(db: NodePgDatabase): Promise<string> {
   if (tokenInvalidated) {
@@ -65,8 +64,7 @@ export async function getSetupToken(db: NodePgDatabase): Promise<string> {
     })
   }
   // Print the full token to stdout (not structured logs) so operators
-  // can read it from the terminal or `docker logs` while the SHA-256
-  // hash above is the only value that enters the logging pipeline.
+  // can read it from the terminal or `docker logs`.
   boxLog(['Setup token generated (valid until first admin is created):', token], { style: 'bold', align: 'center' })
   return token
 }

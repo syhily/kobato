@@ -45,12 +45,11 @@ export const upsertCategorySchema = z.object({
   sortOrder: z.coerce.number().int().min(0).max(9999).optional().default(0),
 })
 
-// Drag-to-reorder payload. `orderedIds` is the full list of category
-// ids the admin saw when the drop happened, in the order they should
-// appear after the drop. The service validates that the set is
-// identical to the live row set (no add / drop) before rewriting any
-// `sort_order`, so a stale or partial submission is rejected with
-// HTTP 400 instead of silently destroying ordering for unseen rows.
+// Drag-to-reorder payload: the full list of category ids in their
+// post-drop order. The service validates the set is identical to the
+// live row set before rewriting any `sort_order`, so a stale or partial
+// submission is rejected with 400 instead of silently destroying
+// ordering for unseen rows.
 export const reorderCategoriesSchema = z.object({
   orderedIds: z.array(z.string().min(1)).min(1).max(500),
 })

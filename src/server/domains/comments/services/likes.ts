@@ -121,9 +121,8 @@ export async function purgeStaleLikeTokens(db: NodePgDatabase): Promise<void> {
 }
 
 /**
- * In-process sweep timer. Purges soft-deleted like tokens once an hour.
- * Guarded by a `Symbol.for` global so HMR / accidental double imports
- * never spawn duplicate timers in dev.
+ * In-process sweep timer. Purges soft-deleted like tokens once an hour;
+ * a module-level guard prevents duplicate timers.
  */
 const SWEEP_INTERVAL_MS = 60 * 60 * 1000
 

@@ -64,8 +64,8 @@ export function applyBlockStyle(editor: Editor, value: string): void {
       chain.setParagraph().run()
       return
     case 'blockquote':
-      // toggle vs set: setting blockquote when already inside it is a
-      // the wrapper. Same goes for codeBlock below.
+      // Only toggle when not already active — toggling an active
+      // blockquote would unwrap it. Same goes for codeBlock below.
       if (!editor.isActive('blockquote')) {
         chain.toggleBlockquote().run()
       }

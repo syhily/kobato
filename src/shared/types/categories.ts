@@ -43,13 +43,10 @@ export interface DeleteCategoryOutput {
   success: boolean
 }
 
-// Drag-to-reorder payload. The admin UI sends the full ordered list of
-// category ids it currently displays; the server validates the set
-// matches the live row set, then rewrites every row's `sortOrder` in
-// a single transaction so the new ordering is atomically reflected on
-// the public site. Returns the freshly-ordered DTOs so the client
-// reducer can swap state.rows in place without a follow-up `list`
-// round-trip.
+// Drag-to-reorder payload. The admin UI sends the full ordered id list;
+// the server validates it against the live row set and rewrites every
+// row's `sortOrder` in one transaction. Returns the freshly-ordered DTOs
+// so the client can swap state without a follow-up `list` round-trip.
 export interface ReorderCategoriesInput {
   orderedIds: string[]
 }

@@ -2,19 +2,14 @@ import type { RefObject } from 'react'
 
 import { useEffect, useState } from 'react'
 
-// Shared scroll-position observer for floating "back to top" buttons
-// and similar chrome that needs to appear/disappear based on how far
-// the user has scrolled. Uses rAF to coalesce scroll events so we
-// only `setState` at most once per animation frame.
+// Shared scroll-position observer for floating "back to top" buttons and
+// similar chrome. Uses rAF to coalesce scroll events so `setState` fires at
+// most once per animation frame. Used by the public `ScrollTopButton` and
+// the admin `AdminScrollTopButton` under `src/ui/`.
 //
-// Consumers live under `src/ui/`: the public site's
-// `ScrollTopButton` (Bootstrap-styled) and the admin SPA's
-// `AdminScrollTopButton` (shadcn-styled) both subscribe to this
-// hook so their visibility thresholds stay lockstep.
-//
-// When `scrollRootRef` is set (admin `<main>`), scroll depth is read
-// from that element instead of `window` so the button still works after
-// the shell pins the document to the viewport and scrolls inside `main`.
+// When `scrollRootRef` is set (admin `<main>`), scroll depth is read from
+// that element instead of `window` — the admin shell pins the document to
+// the viewport and scrolls inside `main`.
 export function useShowOnScroll(threshold: number = 300, scrollRootRef?: RefObject<Element | null>): boolean {
   const [show, setShow] = useState(false)
 

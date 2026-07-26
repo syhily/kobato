@@ -13,25 +13,15 @@ export function setCsrfToken(token: string) {
 
 /**
  * Typed oRPC client. Every procedure under `apiRouter` is available
- * as a strongly-typed async function — input/output types flow from
- * the server-side `ApiRouter` type definition.
- *
- *   const { user } = await orpc.admin.users.get({ id: '42' })
- *   await orpc.admin.users.mute({ id: '42', muted: true })
- *
- * Errors thrown by the server are normalized client-side as
+ * as a strongly-typed async function. Errors are normalized as
  * `ORPCError` instances.
  */
 const link = new RPCLink({
-  // RPCLink does `new URL(baseUrl)` internally and the `URL` constructor
-  // throws on relative inputs ("Invalid URL"), so we resolve `/rpc`
-  // against `location.origin` lazily. Lazy because:
-  //   - `client.ts` is allowed to import-transitively from SSR-side
-  //     code (typing only), so we must NOT touch `window` at module
-  //     load — the function is only invoked once a request actually
-  //     fires, which by construction is the browser.
-  //   - Storybook / Vitest may stub `location`; reading it per-call
-  //     instead of once-at-construction keeps those overrides honest.
+  // RPCLink does `new URL(baseUrl)` internally, which throws on relative
+  // inputs ("Invalid URL"), so `/rpc` is resolved against `location.origin`
+  // lazily: this module is import-transitively reachable from SSR typing code
+  // and must not touch `window` at module load, and per-call reads keep
+  // Storybook / Vitest `location` stubs honest.
   url: () => `${globalThis.location?.origin ?? 'http://localhost'}/rpc`,
   headers: () => {
     const h: Record<string, string> = {}

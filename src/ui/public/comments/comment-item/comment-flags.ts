@@ -4,9 +4,8 @@ import type { MyCommentOwnership } from '@/ui/public/comments/comments-context'
 import { asKey } from '@/ui/public/comments/comment-item/helpers'
 
 /**
- * The slice of viewer identity the ownership predicates read. Satisfied
- * structurally by `CommentsIdentityContextValue` — declared here so the
- * derivation does not depend on the context module's full shape.
+ * Slice of viewer identity the ownership predicates read, satisfied structurally
+ * by `CommentsIdentityContextValue` without depending on the context module.
  */
 export interface CommentIdentity {
   currentUserId: string | null
@@ -14,9 +13,8 @@ export interface CommentIdentity {
 }
 
 /**
- * Single source of the per-comment ownership / moderation predicates.
- * `CommentRow` (pending-banner matrix) and `CommentActions` (affordance
- * gates) used to derive these independently; both now read this.
+ * Single source of the per-comment ownership / moderation predicates, read by
+ * both `CommentRow` (pending-banner matrix) and `CommentActions` (affordance gates).
  */
 export interface CommentFlags {
   /** Token-claimed ownership from the anonymous "my comments" merge. */

@@ -198,14 +198,12 @@ export async function createHonoServer<E extends Env = BlankEnv>(options?: HonoS
       },
       mergedOptions.listeningListener,
     )
-    // Execute your onServe callback. Use case: socket.io binding
     mergedOptions.onServe?.(server)
   } else {
     const devServer = getViteDevServer()
     if (devServer?.httpServer) {
       const httpServer = devServer.httpServer
 
-      // Execute your onServe callback. Use case: socket.io binding
       mergedOptions.onServe?.(httpServer)
 
       log.info('🚧 Dev server started')

@@ -13,7 +13,7 @@ export function formatBlockMessage(kind: string, name: string, titles: readonly 
   return `${kind}「${name}」仍被 ${suffix}引用：${preview}。请先在引用文章中修改后再删除。`
 }
 
-// Pre-flight uniqueness guard for create. `entityLabel` is the
+// Pre-flight uniqueness guard for create.
 export async function ensureUniqueOnCreateTaxonomy<T extends { id: bigint }>(
   findByName: (name: string) => Promise<T | null>,
   findBySlug: (slug: string) => Promise<T | null>,
@@ -62,13 +62,11 @@ export async function ensureUniqueOnUpdateTaxonomy<T extends { id: bigint }>(
 }
 
 // Block-only deletion: refuses to delete a taxonomy row while any post
-// still references it. The 409 body lists up to 5 referencing post
-// titles so the admin knows which posts to fix. `listPostTitles` is a
-// deliberately slim seam (titles only, full inclusion gate) — the guard
-// must not pay for the full listing pipeline (tag batch, revision join,
-// cover/thumbhash hydration) just to name the referencing posts. It
-// receives the whole row: categories count references by `row.id` (posts
-// store `category_id`), tags by `row.name` (the `post_tag` join key).
+// still references it. `listPostTitles` is a deliberately slim seam
+// (titles only) — the guard must not pay for the full listing pipeline
+// just to name the referencing posts. It receives the whole row:
+// categories count references by `row.id`, tags by `row.name` (the
+// `post_tag` join key).
 export async function deleteAdminTaxonomy<T extends { id: bigint; name: string }>(
   id: bigint,
   entityLabel: string,

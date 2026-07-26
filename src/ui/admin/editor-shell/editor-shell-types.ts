@@ -58,10 +58,6 @@ export interface EditorShellDetail<TEntity extends EntityLike> {
   publishedRevision: RevisionLike | null
 }
 
-// The save wire shape (`SaveBodyInput` / `SaveBodyOutput`, imported above)
-// is the single statement in `@/shared/types/revision` — the shell consumes
-// it directly so a save-result `warning` type-checks end to end.
-
 export interface UseEditorShellStateArgs<
   TMeta,
   TEntity extends EntityLike,

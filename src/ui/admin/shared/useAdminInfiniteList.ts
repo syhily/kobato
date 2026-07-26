@@ -10,20 +10,19 @@ import { toast } from 'sonner'
 
 import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'
 
-// Page contract shared by every admin list procedure: offset-paginated and
+// Page contract shared by every admin list procedure: offset-paginated,
 // `hasMore` gates the next fetch. `total` is optional — endpoints without a
 // count aggregate (e.g. the meting music search) report only `hasMore`, and
-// the hook derives a `0` total for them so counters never render a raw
-// `undefined`.
+// the hook derives a `0` total so counters never render a raw `undefined`.
 interface AdminListPageShape {
   hasMore: boolean
   total?: number
 }
 
 // Structural view of an oRPC procedure's TanStack utils, narrowed to the
-// infinite-list entry points the hook drives. Declaring it structurally lets
-// each call site's concrete procedure utils (posts, users, comments, …)
-// satisfy the interface without coupling the hook to the full router type.
+// infinite-list entry points the hook drives — declared structurally so each
+// call site's concrete procedure utils satisfy it without coupling to the
+// full router type.
 interface AdminInfiniteListSource<TInput, TPage extends AdminListPageShape> {
   /** Procedure-level key — the scope `reset` drops cached pages for. */
   key(): QueryKey
@@ -36,13 +35,12 @@ interface AdminInfiniteListSource<TInput, TPage extends AdminListPageShape> {
 }
 
 // Shared scaffold for the admin infinite-scroll lists: owns the
-// infiniteQuery options assembly, the offset arithmetic, the rows/total
-// derivation, the error toast, and the sentinel wiring. Views keep their
-// filter state (mirrored into `buildInput`) and their row rendering.
+// infiniteQuery options assembly, offset arithmetic, rows/total derivation,
+// error toast, and sentinel wiring. Views keep their filter state (mirrored
+// into `buildInput`) and their row rendering.
 //
-// Server rows live exclusively in the TanStack cache — every loaded page is
-// refetched together on invalidation. Mutations either invalidate the
-// procedure namespace or rewrite the cached pages in place through
+// Server rows live exclusively in the TanStack cache — mutations either
+// invalidate the procedure namespace or rewrite cached pages in place via
 // `patchPages`; the hook owns the query key either way, so views never
 // rebuild it by hand.
 export function useAdminInfiniteList<TInput, TPage extends AdminListPageShape, TRow>({
@@ -88,8 +86,8 @@ export function useAdminInfiniteList<TInput, TPage extends AdminListPageShape, T
 
   const queryClient = useQueryClient()
   // The options builder rebuilds the query key every render; keep the latest
-  // in a ref (synced from an effect) so `patchPages` stays referentially
-  // stable for its consumers' `useCallback` chains.
+  // in a ref so `patchPages` stays referentially stable for its consumers'
+  // `useCallback` chains.
   const queryKeyRef = useRef(options.queryKey)
   useEffect(() => {
     queryKeyRef.current = options.queryKey

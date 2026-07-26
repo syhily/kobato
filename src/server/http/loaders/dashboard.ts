@@ -108,7 +108,6 @@ export async function loadAdminDashboardData({
     updatedAtIso: row.updatedAt.toISOString(),
   }))
 
-  // Project recently published posts.
   const recentPublished: DraftSummary[] = recentPublishedRows.map((row) => ({
     id: String(row.id),
     title: row.title,

@@ -1,10 +1,9 @@
 import { tryParseUrl } from '@/shared/utils/safe-url'
 
 // Link verification + best-effort metadata extraction for webmention
-// source documents. Deliberately regex-based: the document is already
-// size-capped (1 MB) by the fetch layer, extraction is best-effort by
-// design (microformats2 parsing is Phase 2), and the only hard
-// requirement is finding an <a href> that resolves to the target.
+// source documents. Regex-based: the document is size-capped (1 MB) by
+// the fetch layer, extraction is best-effort by design, and the only
+// hard requirement is finding an <a href> that resolves to the target.
 
 const ANCHOR_HREF_RE = /<a\b[^>]*?\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi
 const TITLE_RE = /<title\b[^>]*>([\s\S]*?)<\/title>/i
@@ -40,8 +39,7 @@ function clean(value: string, max: number): string | null {
  * drop the fragment, drop default ports, and strip trailing slashes
  * from the path (except the root). Scheme and host are already
  * lowercased by `URL`. Query strings are compared as-is — a mention of
- * `?utm_source=…` is NOT the canonical target (strict rule, documented
- * in plan 026's reviewer notes).
+ * `?utm_source=…` is NOT the canonical target.
  */
 export function normalizeForMatch(raw: string): string | null {
   const url = tryParseUrl(raw)

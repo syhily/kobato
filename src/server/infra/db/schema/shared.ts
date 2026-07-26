@@ -14,6 +14,6 @@ export const newsletterSubscriberStatusEnum = pgEnum('newsletter_subscriber_stat
 
 // Webmention moderation lifecycle. `pending` rows have been verified
 // (source links to target) but await admin review; `approved` rows are
-// cleared for display (Phase 2); `rejected` rows are kept (not deleted)
-// so the moderation decision stays auditable.
+// cleared for display; `rejected` rows are kept (not deleted) so the
+// moderation decision stays auditable.
 export const webmentionStatusEnum = pgEnum('webmention_status', ['pending', 'approved', 'rejected'])

@@ -1,19 +1,14 @@
 import { type ReactNode, createContext, use, useCallback, useMemo, useRef } from 'react'
 
-// Flush registry for /admin/settings.
-//
-// Each `useSettingsCard` registers its `flush` fn under its section id. Three
-// trigger sources call back into the registry:
-//   - close button / ESC                 → `flushAll`
-//   - scroll-away (IntersectionObserver) → `flushSection(id)`
+// Flush registry for /admin/settings. Each `useSettingsCard` registers its
+// `flush` fn under its section id; three trigger sources call back in:
+//   - close button / ESC                    → `flushAll`
+//   - scroll-away (IntersectionObserver)    → `flushSection(id)`
 //   - page hide (visibilitychange/pagehide) → `flushAll`
 //
-// The registry itself is agnostic about *when* to flush — it only knows *what*
-// to call. Dirty-checking lives inside each card's `flush`, so calling a clean
-// card is a cheap no-op.
-//
-// Refs (not state) hold the Map so registrations don't trigger re-renders —
-// only the card that registered cares about its own flush identity.
+// Dirty-checking lives inside each card's `flush`, so flushing a clean card
+// is a cheap no-op. Refs (not state) hold the Map so registrations don't
+// trigger re-renders.
 
 interface SettingsFlushContextValue {
   /** Register a flush fn under a section id. Returns an unregister fn. */

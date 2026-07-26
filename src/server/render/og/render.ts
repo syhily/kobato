@@ -147,11 +147,11 @@ export async function drawOpenGraph({ title, summary, cover }: OpenGraphProps): 
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
   const seo = requireBlogSettingsSection('seo')
 
-  // Fetch the cover image as the background
+  // Fetch the cover image (used as the background) and the site logo.
   const [coverImage, logoBuffer] = await Promise.all([loadImage(cover), logoDark()])
   const logoImage = await loadImage(logoBuffer)
 
-  // Mark sure the summary length is small enough to fit in
+  // Strip HTML and clamp the summary so it fits the card.
   let description = summary.replace(/<[^>]+>/g, '').trim()
   if (description.length > 80) {
     description = `${description.slice(0, 80)} ...`

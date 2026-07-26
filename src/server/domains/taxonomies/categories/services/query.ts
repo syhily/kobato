@@ -102,7 +102,7 @@ export async function getCategoryLinks(db: NodePgDatabase, names: readonly strin
 // resolution is a taxonomy-domain capability, and its consumers (public
 // category route, OG-image resource, the ensure-unique guards in
 // `mutate.ts`, the feed resolver below) all live on this surface.
-// Public routes resolve strictly by slug (plan 080, Q1) — the feed's
+// Public routes resolve strictly by slug — the feed's
 // slug-or-name fallback composes this with `findCategoryByName`.
 export async function findCategoryBySlug(db: NodePgDatabase, slug: string): Promise<CategoryRow | null> {
   const rows = await db.select().from(categoryTable).where(eq(categoryTable.slug, slug)).limit(1)
@@ -111,8 +111,7 @@ export async function findCategoryBySlug(db: NodePgDatabase, slug: string): Prom
 
 // Feed-only resolution rule: feed URLs accept a category slug, but
 // legacy subscribers may carry the display name. Public routes stay
-// slug-only (plan 080, Q1). Deliberately shallow: one composition, no
-// state, no cache.
+// slug-only. Deliberately shallow: one composition, no state, no cache.
 export async function resolveCategoryBySlugOrName(db: NodePgDatabase, value: string): Promise<CategoryRow | null> {
   return (await findCategoryBySlug(db, value)) ?? (await findCategoryByName(db, value))
 }

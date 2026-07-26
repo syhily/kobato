@@ -66,9 +66,8 @@ async function storeChallenge(
 
 /**
  * Atomic consume: a single `DELETE … RETURNING payload` removes the row
- * and returns its payload in one statement (the PG equivalent of the old
- * Redis GET-and-DEL Lua script), so a challenge can never be replayed
- * under concurrency. Expired rows consume as misses.
+ * and returns its payload in one statement, so a challenge can never be
+ * replayed under concurrency. Expired rows consume as misses.
  */
 async function consumeChallenge(
   db: NodePgDatabase,

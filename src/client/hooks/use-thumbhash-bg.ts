@@ -8,23 +8,13 @@ import { thumbHashToDataURL } from '@/shared/utils/thumbhash'
 // raw thumbhash string for a constant-size hit.
 const thumbhashStyleCache = new Map<string, CSSProperties>()
 
-// Lazily decodes a thumbhash string into a CSS style object so the placeholder
-// fades behind the real image while it downloads. Returns `undefined` until the
-// decode finishes, then a stable style object that the host element merges via
-// the `style` prop.
+// Lazily decodes a thumbhash string into a CSS style object so the
+// placeholder fades behind the real image while it downloads. Returns
+// `undefined` until the decode finishes, then a stable style object.
 //
-// The thumbhash itself is injected at SSR time by the detail-page loader
-// (`imageMeta` → `ImageMetaProvider` → `BlockImage`) as `data-thumbhash`
-// on the HTML, keyed off the matching row in the runtime `image` table.
-// Consumers only need to pass that attribute through to this hook.
-//
-// `useSyncExternalStore` is used here because:
-//   * the server snapshot always returns `undefined`, keeping decode work out
-//     of SSR and avoiding hydration mismatches.
-//   * the client snapshot can compute synchronously on mount, so the
-//     placeholder appears immediately without a render delay.
-//   * the cached style object is stable across renders, preventing cascading
-//     re-renders from returning a fresh object every time.
+// Uses `useSyncExternalStore`: the server snapshot returns `undefined`
+// (no SSR decode), the client snapshot computes synchronously on mount.
+// The cached style object is stable across renders.
 export function useThumbhashBackground(thumbhash: string | undefined, loaded = false): CSSProperties | undefined {
   return useSyncExternalStore(
     emptySubscribe,

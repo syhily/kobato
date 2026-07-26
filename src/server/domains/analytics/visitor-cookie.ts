@@ -2,22 +2,11 @@ import { randomBytes } from 'node:crypto'
 
 import { KOBATO_AID_COOKIE } from '@/server/domains/analytics/track'
 
-// Long-lived opaque visitor identifier. Issued exactly once per browser
-// (httpOnly, sameSite=Lax, Max-Age=30d) so the analytics dashboard can
-// reason about cross-day returning visitors without relying on the
-// daily-rotating `visitor_hash` (which deliberately resets across UTC
-// boundaries).
-//
-// Why not the existing `__session` cookie? `__session` is signed and
-// keyed on logged-in identity; we want a stable handle even for
-// anonymous readers and we don't want to tie analytics fingerprinting
-// to the session secret. A separate cookie keeps the two surfaces
-// independent and lets a future "delete my analytics history" admin
-// action expire one without touching the other.
-//
-// The cookie value is a 12-byte random hex string (96 bits of entropy)
-// — large enough that collisions are negligible and small enough that
-// it doesn't bloat every request's `Cookie:` header.
+// Long-lived opaque visitor identifier, issued once per browser so the
+// dashboard can track cross-day returning visitors without the daily-rotating
+// `visitor_hash`. Kept separate from the signed, login-keyed `__session`
+// cookie so anonymous readers get a stable handle and analytics stays
+// independent of the session secret. Value: 12-byte random hex (96 bits).
 
 const MAX_AGE_SECONDS = 60 * 60 * 24 * 30
 

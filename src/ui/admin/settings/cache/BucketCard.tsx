@@ -45,9 +45,8 @@ interface BucketCardProps {
 
 export function BucketCard({ bucket, settings, allBuckets, isClearPending, clearStatus, onClear }: BucketCardProps) {
   const editable = settings !== undefined
-  // Non-tunable buckets fall back to the stats row for display. Memoized
-  // so the identity is stable across renders — the snapshot sync below
-  // compares by reference.
+  // Non-tunable buckets fall back to the stats row for display; memoized
+  // for a stable identity — the snapshot sync below compares by reference.
   const effectiveSettings = useMemo(
     () => settings ?? { prefix: bucket.prefix, ttlSeconds: bucket.ttlSeconds },
     [settings, bucket.prefix, bucket.ttlSeconds],
@@ -56,11 +55,9 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
   const [snapshot, setSnapshot] = useState<BucketDraft>(() => snapshotFromSettings(effectiveSettings))
   const [draft, setDraft] = useState<BucketDraft>(snapshot)
   const submittedDraftRef = useRef<{ value: BucketDraft } | null>(null)
-  // The "auto-exit on save" effect needs to fire exactly once per
-  // successful save, not on every render where `status === 'saved'`.
-  // Track whether THIS card initiated the most recent submission so a
-  // sibling card's save (which we ignore) doesn't accidentally close
-  // this one.
+  // Fire "auto-exit on save" exactly once per successful save, not on
+  // every render where `status === 'saved'`: track whether THIS card
+  // initiated the submission so a sibling card's save doesn't close this one.
   const [savingFromHere, setSavingFromHere] = useState(false)
 
   // Sync snapshot/draft to settings via the React-blessed "adjust state

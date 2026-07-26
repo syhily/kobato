@@ -8,10 +8,9 @@ import { Skeleton } from '@/ui/components/skeleton'
 import { cn } from '@/ui/lib/cn'
 import { skeletonKeys } from '@/ui/lib/skeleton-keys'
 
-// Generic top-N list for one metric type. Each row carries a horizontal
-// progress bar whose width is `value / maxValue`. Clicking a row
-// pushes the dimension's value as a filter through `useAnalyticsState`,
-// matching Sink's drill-down convention.
+// Generic top-N list for one metric type; each row's progress bar width is
+// `value / maxValue`. Clicking a row pushes the value as a filter through
+// `useAnalyticsState` (Sink's drill-down convention).
 
 export interface MetricListProps {
   type: MetricType

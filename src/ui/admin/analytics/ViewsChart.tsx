@@ -279,7 +279,7 @@ function SingleBar({ label, value, color }: { label: string; value: number; colo
   )
 }
 
-// Helpers (kept private; exported equivalents not needed elsewhere).
+// Private helpers.
 
 function buildLinePath(xs: number[], ys: number[]): string {
   let d = ''

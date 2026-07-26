@@ -33,7 +33,7 @@ export function renderToHtml(element: ReactElement): string {
   )
 }
 
-// Render a component tree under a memory router so React Router 7 hooks
+// Render a component tree under a memory router so React Router hooks
 // (`useLocation`, `useHref`, `useFetcher`, `<Link>`, …) can resolve. The
 // memory router is configured with a single catch-all route so the snapshot
 // matches what the SSR runtime would produce for `initialPath`. The tree is

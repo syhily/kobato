@@ -19,12 +19,9 @@ export interface UseDragPercentageOptions {
   onCommit?: (percentage: number) => void
 }
 
-/** Shared drag machine for the aplayer bars: mousedown on the track arms
- *  document-level mousemove/mouseup listeners behind a fresh
- *  AbortController; mouseup aborts the listeners and settles the drag.
- *  `isDragging` drives hover-dependent chrome (volume popup), while
- *  `isDraggingRef` lets consumers gate external-value sync effects
- *  without re-subscribing them. */
+/** Shared drag machine for the aplayer bars: mousedown arms document-level
+ *  mousemove/mouseup listeners behind an AbortController; mouseup aborts and settles.
+ *  `isDraggingRef` mirrors `isDragging` for effects that must not re-subscribe. */
 export function useDragPercentage(
   ref: RefObject<HTMLDivElement | null>,
   { compute, onChange, onCommit }: UseDragPercentageOptions,

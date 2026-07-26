@@ -1,11 +1,7 @@
-// Single owner of the SEA embedded-asset key contract. The SEA binary
-// embeds every runtime resource into the blob; the writer is
-// `scripts/sea/assets.ts` (via `node --experimental-sea-config`) and the
-// readers under `src/server/` fetch assets back by key through
-// `getEmbeddedAsset` / `listEmbeddedAssetKeys` (`@/server/infra/sea`).
-// Keeping the keys here makes drift between writer and readers impossible
-// by construction — renaming a key is one edit that every side picks up.
-// Never hardcode an asset key outside this module.
+// Single owner of the SEA embedded-asset key contract: the writer is
+// `scripts/sea/assets.ts`, the readers under `src/server/` fetch assets
+// back by key through `getEmbeddedAsset` / `listEmbeddedAssetKeys`
+// (`@/server/infra/sea`). Never hardcode an asset key outside this module.
 //
 // Asset key layout:
 //   manifest.json                    this build's manifest

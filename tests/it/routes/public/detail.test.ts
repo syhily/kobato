@@ -37,8 +37,6 @@ const samplePage = {
 const sampleTag = makeTag({ name: 'typescript', slug: 'typescript' })
 const sidebarSamples = makePostList(3, { slug: 'sidebar' })
 
-// catalog/catalog removed; post detail uses findPostBySlug directly, page
-// detail uses pages/loader which queries findPublicPostMetaBySlug + findPageBySlug.
 vi.mock('@/server/domains/posts/services/single', () => ({
   findPostMetaById: vi.fn(async () => null),
   findPostMetaBySlug: vi.fn(async () => null),
@@ -112,7 +110,7 @@ vi.mock('@/ui/pt/render', () => ({
 }))
 
 vi.mock('@/server/http/loaders/comments', () => ({
-  // The detail loader now reads `loadDetailPageStreaming`; comments ride
+  // The detail loader reads `loadDetailPageStreaming`; comments ride
   // along as a Promise so the loader can stream them through `<Await>`.
   loadDetailPageStreaming: vi.fn(async () => ({
     critical: {

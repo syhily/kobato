@@ -3,10 +3,9 @@ import { z } from 'zod'
 import type { MailSettings } from '@/shared/config/types'
 import type { Assert, Equals } from '@/shared/contracts/primitives'
 
-// Per-slot status surfaced to the admin form. `etag` is what the form
-// uses for cache-busting in preview URLs (e.g. `/favicon.svg?v=<etag>`)
-// and to detect "is configured?" in the read-only view. We send the
-// hash, NOT the bytes, so the loader response stays tiny.
+// Per-slot status surfaced to the admin form. `etag` drives cache-busting
+// in preview URLs and the "is configured?" check; we send the hash, NOT
+// the bytes, so the loader response stays tiny.
 export interface BrandingSlotStatus {
   /** Empty string when the slot has no custom upload. */
   etag: string
@@ -282,12 +281,10 @@ export function projectSearchForAdmin(
 }
 
 /**
- * Project the raw `MailSettings` (from the settings bundle) into the
- * shape `<MailForm>` expects: the three encrypted secrets are swapped
- * for their masks, and both SMTP TLS flags are forwarded — dropping them
- * here used to silently flip a stored `false` back to `true` on the next
- * SMTP-card save. The input is the post-hydration bundle slice, so the
- * schema defaults guarantee every non-secret field is present.
+ * Project the raw `MailSettings` into the shape `<MailForm>` expects:
+ * the three encrypted secrets are swapped for their masks, and both SMTP
+ * TLS flags are forwarded. The input is the post-hydration bundle slice,
+ * so schema defaults guarantee every non-secret field is present.
  */
 export function projectMailForAdmin(
   mail: MailSettings,

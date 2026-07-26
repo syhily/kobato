@@ -48,9 +48,8 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
   const bundle = await db.transaction(async (tx) => {
     // The stored row is the only honest write base: merge the patch onto
     // it (objects merge, arrays replace), then validate the merged
-    // section. Reading inside the transaction keeps the merge base and
-    // the upsert atomic, and this single read also feeds the
-    // secret/branding preservation in `applySectionPatch`.
+    // section. This single read also feeds the secret/branding
+    // preservation in `applySectionPatch`.
     const storedRow = (await findSettingByScope(tx, meta.scope)) ?? null
     const base = resolveMergeBase(meta, storedRow)
     const merged = mergeSectionPatch(base, unsafeCast<Record<string, unknown>>(payload))

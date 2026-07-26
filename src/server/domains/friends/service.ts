@@ -23,10 +23,9 @@ import { getLogger } from '@/server/infra/logger'
 
 const log = getLogger('friends.service')
 
-// Public projection (no `id`/`visible`/`createdAt`/`updatedAt`/`rssUrl`).
-// The `Friend` shape exported from `@/shared/types/catalog` already matches —
-// we just produce that DTO so the catalog stays decoupled from the DB
-// row layout.
+// Public projection (no `id`/`visible`/timestamps/`rssUrl`) — matches
+// the `Friend` shape in `@/shared/types/catalog`, keeping the catalog
+// decoupled from the DB row layout.
 export interface PublicFriend {
   website: string
   description?: string
@@ -71,10 +70,9 @@ export interface AdminFriendsListResult {
   hasMore: boolean
 }
 
-// Server-side pagination: parallel `[rows, total]` so we pay only one
-// round-trip for the page-of-rows query and the COUNT(*). `total` is
-// the full filtered count (independent of `offset`/`limit`) so the
-// client can render the correct number of pagination buttons.
+// Server-side pagination: `[rows, total]` in parallel. `total` is the
+// full filtered count (independent of `offset`/`limit`) so the client
+// can render the correct number of pagination buttons.
 export async function listFriendsForAdmin(
   db: NodePgDatabase,
   filters: AdminFriendsListFilters,
@@ -104,10 +102,8 @@ export interface UpsertFriendInputs {
 // Single entry-point that the admin Resource Route action calls. The
 // `id` distinguishes update from create; on create we soft-check
 // `homepage` against existing rows to nudge the editor away from
-// accidental duplicates (a hard UNIQUE constraint in the DB would
-// reject benign protocol/trailing-slash variants the editor probably
-// meant as updates — this stays at the service layer so the admin can
-// still force the duplicate by editing the existing row directly).
+// accidental duplicates (a hard UNIQUE constraint would reject benign
+// protocol/trailing-slash variants).
 export async function upsertAdminFriend(db: NodePgDatabase, input: UpsertFriendInputs): Promise<AdminFriendDto> {
   const description = normaliseNullable(input.description)
   const rssUrl = normaliseNullable(input.rssUrl)
@@ -175,11 +171,8 @@ export interface ApplyFriendInputs {
 
 // Entry-point for the public `friends.apply` procedure. The row lands
 // as `visible: false` (pending) — approval is the admin flipping the
-// flag. `homepage` duplicates are rejected with the same soft-check
-// the admin upsert path uses, so the pending queue can't accumulate
-// repeat applications. The admin notification is fire-and-forget: a
-// mail-pipeline hiccup must never fail the application (the
-// `sendNewComment` precedent).
+// flag. The admin notification is fire-and-forget: a mail-pipeline
+// hiccup must never fail the application.
 export async function applyFriend(db: NodePgDatabase, input: ApplyFriendInputs): Promise<void> {
   const dup = await findFriendByHomepage(db, input.homepage)
   if (dup !== null) {
@@ -202,9 +195,8 @@ export async function applyFriend(db: NodePgDatabase, input: ApplyFriendInputs):
   fireAndForgetNotify(sendNewFriendApplication(row), log, 'friend application')
 }
 
-// Trim and collapse the empty string to `null` so the DB never stores
-// "" as a sentinel for "no description". Drizzle's nullable text
-// columns accept `null` directly.
+// Trim and collapse '' to `null` so the DB never stores "" as a
+// sentinel for "no description".
 function normaliseNullable(value: string | null | undefined): string | null {
   if (value === null || value === undefined) {
     return null

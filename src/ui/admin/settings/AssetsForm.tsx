@@ -301,10 +301,9 @@ function AssetsUploadCard({ assets }: { assets: AssetsLoaderShape }) {
   )
 }
 
-// `robots.txt` is plain configuration text (not an asset), so it stays
-// here in the settings section and flows through the regular settings
-// PATCH. The actual brand assets (favicons, logos, posters, default
-// avatar) are managed at `/admin/library/branding`.
+// `robots.txt` is plain configuration text (not an asset), so it stays here
+// and flows through the regular settings PATCH; the actual brand assets are
+// managed at `/admin/library/branding`.
 function AssetsRobotsTxtCard({ assets }: { assets: AssetsLoaderShape }) {
   const { form, flushOnBlur, settingGroupProps } = useSettingsCard<AssetsLoaderShape, { robotsTxt: string }>({
     section: 'assets',

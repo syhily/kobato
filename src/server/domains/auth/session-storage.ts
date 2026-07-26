@@ -124,8 +124,7 @@ async function writeSession(id: string, data: BlogSessionData, expires: Date | u
   // The `user_id` column is derived from the payload on every write: an
   // OTP-pending session carries only `pendingOtpUser` (NULL); once the
   // login completes the session is rewritten with `user` and the column
-  // picks up the owner. This derived column is what replaced the
-  // `user_sessions:<uid>` set.
+  // picks up the owner.
   const userId = data.user ? idFromString(data.user.id) : null
   await db
     .insert(sessionTable)
@@ -145,19 +144,10 @@ export async function getRequestSession(request: Request): Promise<BlogSession> 
 }
 
 /**
- * Construct a `BlogSession` whose `id` is set to a caller-chosen sid
- * before the cookie is ever serialised. React Router's `Session.id` is
- * a closed-over `let` set once at creation — calling `commitSession`
- * does NOT mutate it. So if the login path wants to know the sid
- * before doing its session-row bookkeeping (so the `user_id` column and
- * the meta columns land against the real cookie sid), it must mint the
- * sid itself and feed it to `createSession`.
- *
- * `commitSession(buildSessionWithSid(sid, data))` then takes the
- * `id` branch (`updateData(id, data, expires)`) and writes the session
- * row with our pre-chosen id intact. The returned Set-Cookie header
- * carries the same `<sid>` signed against the cookie secret, so the
- * next request's cookie correctly resolves back to that row.
+ * Construct a `BlogSession` with a pre-chosen sid. React Router's
+ * `Session.id` is closed over at creation, so the login path must mint
+ * the sid itself before doing session-row bookkeeping. `commitSession`
+ * then writes the session row with the pre-chosen id intact.
  */
 export function buildSessionWithSid(sid: string, data: BlogSessionData): BlogSession {
   return createSession<BlogSessionData, BlogSessionData>(data, sid)

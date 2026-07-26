@@ -1,9 +1,6 @@
 // Configuration file (`kobato.config.json`) — the default configuration
 // source, always present (auto-created when missing).
 //
-// Model (Ghost-style, see docs/research/ghost-settings-autosave.md and the
-// nconf env separator in ghost/core/core/shared/config/loader.ts):
-//
 //   - ONE declarative table (CONFIG_TABLE) is the single source of truth:
 //     each row maps a nested config path (`database.url`) to a TS export
 //     name (`DATABASE_URL`) and a Zod schema. The process env var name is
@@ -98,7 +95,7 @@ export type TableServerSchema = {
   [E in (typeof CONFIG_TABLE)[number] as E['export']]: E['schema']
 }
 
-/** Process env var name for a table entry — Ghost's `__` separator convention. */
+/** Process env var name for a table entry — `__` separator convention. */
 export function configEnvName(path: readonly string[]): string {
   return path.join('__')
 }
@@ -265,14 +262,10 @@ function writeConfigFile(filePath: string, data: Record<string, unknown>): void 
 // ─── Legacy key migration ────────────────────────────────────────────────
 
 /**
- * In-place migration for config files written before the config-key renames
- * (`auth.sessionSecret` → `security.sessionSecret`, `paths.*` → `storage.*`,
- * `logging.level` → `server.loggingLevel`) and before Redis was removed —
- * every auto-created file from that era carries a `redis` block the strict
- * file schema now rejects. Legacy values MOVE into the current layout
- * without ever overwriting a value the file already holds there; a legacy
- * key whose target slot is taken is dropped. Returns one Chinese note per
- * consumed legacy key so the caller can log a single summary line.
+ * In-place migration for config files written before the config-key renames.
+ * Legacy values MOVE into the current layout without overwriting existing
+ * values; a legacy key whose target slot is taken is dropped. Returns one
+ * Chinese note per consumed legacy key.
  */
 export function migrateLegacyKeys(data: Record<string, unknown>): { migrated: boolean; notes: string[] } {
   const notes: string[] = []

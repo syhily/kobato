@@ -6,16 +6,13 @@ import type { EnrichedAccessEvent, RawAccessEvent } from '@/server/domains/analy
 import { lookupCity } from '@/server/domains/analytics/geoip'
 import { getDailySalt } from '@/server/domains/analytics/salt'
 
-// Take a raw request signal and produce a row-shaped event ready for
-// the COPY pipeline. Pure async work — never touches the request /
-// response objects after this returns. All failures degrade to null
-// fields rather than throwing.
+// Take a raw request signal and produce a row-shaped event for the COPY
+// pipeline. Never touches request/response objects; failures degrade to
+// null fields rather than throwing.
 
 function hashIp(ip: string): string {
-  // SHA-256 truncated to 32 hex chars. 128 bits of state in a 32-byte
-  // text column is still well below the SHA-256 collision floor at
-  // the data volumes a personal blog produces, and the visitor table
-  // index is materially smaller than a full 64-char hash.
+  // SHA-256 truncated to 32 hex chars — collision-safe at personal-blog
+  // volumes and keeps the visitor index smaller than a full 64-char hash.
   return createHash('sha256')
     .update(ip + getDailySalt())
     .digest('hex')
@@ -33,14 +30,9 @@ function parseRefererHost(referer: string | null): string | null {
   }
 }
 
-// Minimal `Accept-Language` first-tag parser. The header is
-// comma-separated quality-weighted tags
-// (`zh-CN,zh;q=0.9,en;q=0.8`). The dashboard only cares about the
-// primary preference, so first tag wins. Empty / malformed input
-// returns `null` — same null-degrade behaviour as every other
-// enrichment column. Dropping the `intl-parse-accept-language` dep
-// (the plan's original choice) saves ~25KB of runtime for what is
-// effectively `split(',')[0]`.
+// Minimal `Accept-Language` first-tag parser. The dashboard only cares
+// about the primary preference, so first tag wins; empty/malformed input
+// degrades to `null` like every other enrichment column.
 function parsePrimaryLanguage(header: string | null): string | null {
   if (!header) {
     return null

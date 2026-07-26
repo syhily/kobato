@@ -156,20 +156,12 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded, initialFile
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && !isPending && onClose()}>
-      {/* `max-h-[calc(100dvh-2rem)]` clamps the dialog to the viewport
-          even when the source image's aspect ratio (or natural size)
-          would otherwise push the cropper canvas past the bottom of
-          the screen — without it a portrait phone shot on a small
-          laptop would render the dialog footer outside the visible
-          area and the operator could never click "上传". `dvh` (not
-          `vh`) tracks the actual visible viewport on iOS Safari so
-          the footer doesn't disappear under the URL bar. The form
-          below carries `min-h-0 overflow-y-auto` so the cropper +
-          quality + note section scrolls internally instead, while
-          the header/footer stay pinned. The wide cap is gated on
-          `sm:` so mobile keeps the base `max-w-[calc(100%-2rem)]`
-          breathing room — without it the dialog goes edge-to-edge
-          and the backdrop has no tappable area to dismiss. */}
+      {/* `max-h-[calc(100dvh-2rem)]` clamps the dialog to the viewport so a
+          tall cropper never pushes the footer (and its "上传" button) off
+          screen; `dvh` tracks iOS Safari's visible viewport. The form below
+          carries `min-h-0 overflow-y-auto` so the body scrolls while the
+          header/footer stay pinned. The wide cap is `sm:`-gated so mobile
+          keeps edge breathing room for backdrop-dismiss. */}
       <DialogContent className="flex max-h-[calc(100dvh-2rem)] flex-col overflow-hidden sm:max-w-3xl">
         <form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col gap-4">
           <DialogHeader>

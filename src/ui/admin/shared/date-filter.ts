@@ -1,15 +1,10 @@
 import { isRecord } from '@/shared/utils/type-guards'
 
-// Pill-value contract for the admin date filters, owned here in two modes:
-//
-// - **Range** (`{from, to}`) — an inclusive from/to pair with either side
-//   optional; the audit log serializes it into its filter pills.
-// - **Single date + operator** (`{date, op}`) — one calendar day compared
-//   with a Ghost-style operator; the comments filters use it.
-//
-// Both modes serialize to a JSON string pill value and each has its own
-// parse / label / bounds-resolver trio below — the `SingleDate` prefix keeps
-// the two modes' exports unambiguous.
+// Pill-value contract for the admin date filters, in two modes: **Range**
+// (`{from, to}`, audit log) and **Single date + operator** (`{date, op}`,
+// comments filters). Both serialize to a JSON string pill value; each mode
+// has its own parse / label / bounds-resolver trio below, disambiguated by
+// the `SingleDate` prefix.
 
 export interface DateFilterValue {
   from: string

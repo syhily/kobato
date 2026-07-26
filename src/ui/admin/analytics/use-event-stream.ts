@@ -13,12 +13,10 @@ function isRealtimeEvent(value: unknown): value is RealtimeEvent {
   )
 }
 
-// EventSource subscription hook for the realtime tail. Maintains a
-// rolling buffer of the latest `bufferSize` events and exposes the
-// connection state so the UI can show a "connecting / live / lost"
-// pip. Auto-reconnects with exponential backoff handled by the
-// browser's EventSource implementation — we only retry on
-// `onerror` after the underlying socket gave up.
+// EventSource subscription hook for the realtime tail: a rolling buffer of
+// the latest `bufferSize` events plus a "connecting / live / lost" state.
+// Reconnect/backoff is the browser's native EventSource behavior; `onerror`
+// after the socket gives up just marks the state lost.
 
 export interface UseEventStreamOptions {
   bufferSize?: number

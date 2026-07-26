@@ -10,11 +10,9 @@ import type { Route } from './+types/layout'
 
 export const meta = titleMeta('访问统计')
 
-// Layout is intentionally thin — date-range picker + filters live on
-// the child routes because the realtime feed doesn't need them.
-// Putting them here would force `admin.analytics.realtime.tsx` to
-// either ignore the URL params (confusing) or run a no-op revalidation
-// every time the user tweaks the range (wasteful).
+// Layout is intentionally thin — the date-range picker + filters live on
+// the child routes so the realtime feed isn't forced to ignore the URL
+// params or run a no-op revalidation on every range change.
 export async function loader({ request, context }: Route.LoaderArgs) {
   const rc = getRequestContext({ request, context })
   const user = rc.viewer ?? undefined

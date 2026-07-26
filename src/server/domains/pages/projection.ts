@@ -7,14 +7,11 @@ import { readRevisionProjection } from '@/server/domains/content/projection-help
 
 // --- Public catalog projection ----------------------------------------------
 
-// `toCmsPage` is the catalog-facing projection: it accepts the meta
-// row joined with the published revision (or null when the page has
-// never been published) and produces the shared `Page` DTO
-// (`@/shared/types/catalog`) directly — there is no server-side variant
-// of the shape. Pages without a published revision still surface in the
-// catalog (so the admin can link to them while drafting), but with an
-// empty body and no headings — the public detail route renders an
-// empty body.
+// `toCmsPage` is the catalog-facing projection: meta row + published
+// revision (or null) → the shared `Page` DTO (`@/shared/types/catalog`)
+// directly — there is no server-side variant of the shape. Pages
+// without a published revision still surface in the catalog with an
+// empty body and no headings.
 export function toCmsPage(
   meta: PageMetaRow,
   publishedRevision: ContentRow | null,
@@ -72,11 +69,9 @@ export function toAdminPageDto(
 }
 
 // Editor "load" DTO — the admin page edit route returns this so the
-// browser can hydrate the Tiptap editor *and* the metadata panel from
-// one round trip. The `body` slot is the *latest* revision (draft
-// preferred over published) so reopening the editor restores
-// in-progress edits, while `publishedRevisionId` lets the UI badge
-// the editor as "published" / "has unpublished changes" / "draft only".
+// browser hydrates the Tiptap editor and the metadata panel from one
+// round trip. `body` comes from the *latest* revision (draft preferred)
+// so reopening restores in-progress edits.
 export interface AdminPageDetailDto {
   page: AdminPageDto
   latestRevision: AdminRevisionDto | null

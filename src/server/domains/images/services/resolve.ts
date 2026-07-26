@@ -1,18 +1,12 @@
 // Single owner of the "image URL(s) → stored meta" pipeline: match each URL
 // against the configured CDN base, read the cached image rows, and hand back
 // dimensions / thumbhash / public URL per resolvable URL. `resolveImageRefs`
-// is the batch entry; `resolveImageRef` a thin single-URL wrapper over it.
-// The render-enhance projections in `./enhance` also mount this pipeline.
+// is the batch entry; `resolveImageRef` a thin single-URL wrapper.
 //
-// Base-URL policy: every caller is a best-effort render surface (SSR
-// post/page enhance, cover hydration for listings and feeds, the public
-// resolve-thumbhash endpoint), so an unreadable settings snapshot (early
-// boot, install gate, truncated section) degrades the CDN match to `null`
-// — origin-relative `/storage/…` and `/images/…` srcs still resolve — and
-// never fails the render. This collapses the historical divergence where
-// the enhance path rethrew errors not matching a fragile `missing|hydrated`
-// message regex while the cover path swallowed everything: both realistic
-// failure modes of `getPublicBaseUrl` are exactly "settings unavailable".
+// Base-URL policy: every caller is a best-effort render surface, so an
+// unreadable settings snapshot degrades the CDN match to `null` —
+// origin-relative `/storage/…` and `/images/…` srcs still resolve — and
+// never fails the render.
 
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 

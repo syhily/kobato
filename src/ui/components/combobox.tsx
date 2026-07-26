@@ -81,15 +81,13 @@ function ComboboxContent<Item>({
               />
             </div>
             {/*
-             * Base UI's `Combobox.Empty` must stay mounted in the DOM
-             * regardless of result state — it doubles as an `aria-live`
-             * region for AT users (see ComboboxEmpty.js docstring), so we
-             * cannot conditionally render it or hide it with `hidden` /
-             * `display:none`. To stop it from reserving its `py-6` worth
-             * of vertical space when the list has matches, scope the
-             * padding/border behind the `empty:` Tailwind variant — the
-             * div is genuinely empty whenever Base UI hands it `null`
-             * children (i.e. `filteredItems.length > 0`).
+             * Base UI's `Combobox.Empty` must stay mounted regardless of
+             * result state — it doubles as an `aria-live` region (see
+             * ComboboxEmpty.js docstring), so it can't be conditionally
+             * rendered or hidden with `display:none`. Instead the padding
+             * is scoped behind the `empty:` variant: the div is genuinely
+             * empty whenever Base UI hands it `null` children (list has
+             * matches).
              */}
             <BaseCombobox.Empty className="text-center text-sm text-muted-foreground not-empty:px-3 not-empty:py-6">
               {emptyMessage}

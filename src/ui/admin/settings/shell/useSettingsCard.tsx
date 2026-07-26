@@ -62,10 +62,9 @@ function isFieldErrorRecord(value: unknown): value is Record<string, unknown> {
   return isRecord(value)
 }
 
-// Zod issue paths are PropertyKey[] (string | number | symbol). RHF error
-// trees key by string, so every path element is coerced via `String()`. The
-// narrowing is total — no information is lost because every PropertyKey has
-// a well-defined string form.
+// Zod issue paths are PropertyKey[] (string | number | symbol); RHF error
+// trees key by string, so coerce every path element via `String()` — the
+// narrowing is total since every PropertyKey has a well-defined string form.
 function pathKey(p: PropertyKey): string {
   return typeof p === 'string' ? p : String(p)
 }
@@ -87,8 +86,8 @@ function buildZodErrors<T extends FieldValues>(
         current = stepped
       } else {
         // The path walked into an array slot or primitive that earlier issues
-        // materialised; step in by treating it as a record. Runtime shape is
-        // already correct because every prior iteration wrote a container.
+        // materialised; treat it as a record (every prior iteration wrote a
+        // container, so the runtime shape is already correct).
         current = unsafeCast<Record<string, unknown>>(stepped)
       }
     }

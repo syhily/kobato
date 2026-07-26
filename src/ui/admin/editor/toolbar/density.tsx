@@ -7,10 +7,9 @@ export type ToolbarDensity = 'compact' | 'full'
 
 const TOOLBAR_DENSITY_STORAGE_KEY = 'kobato/admin/page-editor/toolbar-density'
 
-// Persistent toolbar density preference. Defaults to `'full'` so a
-// fresh visit shows every group inline; the outer `flex-wrap` container
-// grows to more rows when space is tight. Compact mode uses Select +
-// so SSR + hydration agree on the initial 'full' default.
+// Persistent toolbar density preference. Defaults to `'full'` so SSR +
+// hydration agree on the initial render; the outer `flex-wrap` container
+// grows to more rows when space is tight.
 export function useToolbarDensityPreference(): [ToolbarDensity, (next: ToolbarDensity) => void] {
   // Lazy initializer so SSR + first client render agree on the default
   // (the linter-friendly alternative to setState-in-effect).

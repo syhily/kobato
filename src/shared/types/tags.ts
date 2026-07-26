@@ -8,11 +8,9 @@
 import type { AdminTagDto } from '@/shared/contracts/tags'
 
 // `offset` / `limit` mirror the comment moderation listing
-// (`LoadAllCommentsInput`): the admin table is paginated server-side
-// because the tag table has hundreds of rows and shipping all of them
-// every time `?q=` changes both bloats the response and stalls the
-// table render. Both are optional — omitted requests fall back to
-// `offset=0, limit=20` (the default page size on the client).
+// (`LoadAllCommentsInput`): the admin table is paginated server-side.
+// Both are optional — omitted requests fall back to `offset=0, limit=20`
+// (the default page size on the client).
 export interface ListTagsInput {
   q?: string
   offset?: number
@@ -29,8 +27,7 @@ export interface ListTagsOutput {
 
 // `id` absent → create a new row. Present → update the matching row.
 // `slug` is optional on input; the server derives it from `name`
-// via `pinyin-pro` when blank, mirroring the historical compile-time
-// helper in `source.config.ts`.
+// via `pinyin-pro` when blank.
 export interface UpsertTagInput {
   id?: string
   name: string

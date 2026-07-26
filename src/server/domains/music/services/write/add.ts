@@ -28,10 +28,8 @@ export interface AddMusicInputs {
   uploader: { id: bigint; name: string } | null
   /**
    * Optional pre-resolved metadata + asset URLs. The historical-import
-   * script preloads this from the legacy
-   * `https://assets.example.com/musics/<id>.json` so we don't pay for a full
-   * Meting round-trip on import. Missing fields fall through to the
-   * Meting wrapper.
+   * script preloads this from the legacy assets JSON so it skips the
+   * Meting round-trip; missing fields fall through to the provider.
    */
   prefill?: AddMusicPrefill
 }
@@ -48,15 +46,14 @@ export interface AddMusicPrefill {
 /**
  * Single source of truth for "add this song to the library". Used by
  * the admin add-music dialog action AND the historical-import CLI.
- *
- * The function is idempotent on `(source, sourceId)`: an already-
- * imported song returns its existing row instead of re-uploading,
- * which makes the import script safe to re-run.
+ * Idempotent on `(source, sourceId)`: an already-imported song returns
+ * its existing row instead of re-uploading, so the import script is
+ * safe to re-run.
  */
 export async function addMusic(db: NodePgDatabase, input: AddMusicInputs): Promise<AdminMusicDto> {
-  // Idempotency: skip the whole upload-and-insert dance if we already
-  // imported this song. The caller can decide whether to surface this
-  // as "already exists" (UI) or "skip" (importer).
+  // Idempotency: skip the upload-and-insert dance if we already imported
+  // this song. The caller decides whether to surface "already exists" (UI)
+  // or "skip" (importer).
   const existing = await findMusicBySourceAndId(db, input.source, input.sourceId)
   if (existing !== null && existing.deletedAt === null) {
     return toAdminMusicDto({ ...existing, uploaderName: input.uploader?.name ?? null }, input.uploader?.name ?? null)

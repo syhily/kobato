@@ -1,8 +1,7 @@
 import { useState } from 'react'
 
-// Filter state for the users admin list. Server rows live exclusively in
-// the TanStack cache (useInfiniteQuery in UsersView) — this hook owns only
-// the UI filters.
+// Filter state for the users admin list. Server rows live in the TanStack
+// cache (UsersView) — this hook owns only the UI filters.
 
 export type RoleFilter = 'all' | 'admin' | 'author' | 'visitor' | 'normal'
 export type SortOrder = 'recent' | 'commentCount'

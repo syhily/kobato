@@ -7,11 +7,8 @@ import { readStringArray } from '@/shared/utils/tools'
 import { isRecord } from '@/shared/utils/type-guards'
 
 // `content.body` is `jsonb` so Drizzle hands it to us as `unknown`.
-// We round-trip through `validatePortableTextBody` so the SSR /
-// editor never sees a malformed payload — saving a corrupted blob
-// shouldn't be possible (the API perimeter validates), but defending
-// the read path keeps a future direct-INSERT bug from blanking the
-// public site.
+// Round-trip through `validatePortableTextBody` so a corrupted blob
+// (e.g. a direct INSERT) never blanks the public site.
 export function readBody(value: unknown): PortableTextBody {
   if (value === null || value === undefined) {
     return []

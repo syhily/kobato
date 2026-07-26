@@ -3,12 +3,9 @@ import type { SocialNetwork } from '@/shared/config/socials'
 import type { Assert, Equals } from '@/shared/contracts/primitives'
 import type { CacheBucketSlot, TunableCacheBucketId } from '@/shared/types/cache'
 
-// Per-section DTOs for the editable blog configuration.
-//
-// The runtime config used to live in a single fat aggregated shape;
-// it has since been split so that each settings page owns an isolated
-// DTO. The DB stores one row per section and `BlogSettingsBundle` is
-// the in-memory composition of those rows.
+// Per-section DTOs for the editable blog configuration. The DB stores
+// one row per section and `BlogSettingsBundle` is the in-memory
+// composition of those rows.
 
 export interface SiteIdentitySettings {
   title: string
@@ -181,11 +178,9 @@ export interface CacheSettings {
 // the settings JSON shape and the server storage layer agree on it.
 export type StorageDriver = 's3' | 'local'
 
-// Metadata kept in the settings row for each branding asset.
-// `etag` is the sha256 of the uploaded bytes; used as the HTTP ETag
-// value and as the in-process cache key. `driver` records which backend
-// the bytes live in ('s3' | 'local'); it defaults to 's3' for refs
-// created before local storage existed.
+// Metadata kept in the settings row for each branding asset. `etag` is
+// the sha256 of the uploaded bytes, used as the HTTP ETag value and as
+// the in-process cache key.
 export interface BrandingObjectRef {
   etag: string
   contentType: string
@@ -366,12 +361,10 @@ type DeepPartial<T> = T extends readonly (infer Item)[]
 
 /**
  * Compile-time contract for a settings card's write payload. The section
- * literal selects the matching persisted DTO, while every nested property is
- * optional because cards submit honest Section patches — only the fields the
- * card owns, never loader masks or untouched sibling buckets. The server
- * deep-merges the patch into the stored row (objects merge, arrays replace)
- * and validates the merged section; `useSettingsCard` mirrors the same merge
- * locally for its optimistic display projection.
+ * literal selects the matching persisted DTO, while every nested property
+ * is optional because cards submit honest Section patches — only the
+ * fields the card owns. The server deep-merges the patch into the stored
+ * row (objects merge, arrays replace) and validates the merged section.
  */
 export type SettingsSectionPatch<Section extends SettingsSection> = DeepPartial<
   NonNullable<BlogSettingsBundle[(typeof SECTION_TO_BUNDLE_KEY)[Section]]>

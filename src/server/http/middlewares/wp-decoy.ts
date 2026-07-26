@@ -21,14 +21,9 @@ export function isWordPressDecoyPath(pathname: string): boolean {
     return false
   }
 
-  // `/admin/*` is the SPA admin shell. Everything the real shell ever
-  // serves is a clean React Router path with no file extension
-  // (`/admin/comments`, `/admin/security/users`, `/admin/security/users/123`).
-  // The probes we want to keep intercepting under this prefix are
-  // exclusively WordPress PHP entry points (e.g. `options.php`,
-  // `setup-config.php`, `admin-ajax.php`, `network/setup-config.php`),
-  // so the `.php` rule below already covers them — we just need to
-  // avoid blanket-rejecting the prefix here.
+  // No `/admin/*` blanket rule: the real SPA shell serves clean
+  // extension-less paths there, and the WP probes under that prefix are
+  // all `.php` entry points — already caught by the rule below.
   if (pathname.startsWith('/wp-content/')) {
     return true
   }

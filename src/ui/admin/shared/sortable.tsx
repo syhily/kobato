@@ -14,10 +14,9 @@ import { CSS } from '@dnd-kit/utilities'
 import { GripVerticalIcon } from 'lucide-react'
 
 // Shared chrome for the admin's @dnd-kit sortable lists (navigation editors,
-// font slot columns). Owns the pieces that used to be hand-copied per list —
-// the sensor set, the find-by-id + move drag-end plumbing, and the row
-// scaffolding (`useSortable` + grip handle + transform style) — while each
-// list keeps its own row contents and container styling.
+// font slot columns): the sensor set, the find-by-id + move drag-end
+// plumbing, and the row scaffolding (`useSortable` + grip handle + transform
+// style) — each list keeps its own row contents and container styling.
 
 /** Pointer + keyboard sensors; every admin sortable list uses this exact set. */
 export function useSortableSensors() {
@@ -57,11 +56,9 @@ export function resolveSortableMove<T>(
 
 /**
  * Props for `<SortableDragHandle>`: the dnd-kit attributes (with
- * `aria-describedby` stripped, as in the lists this module was extracted
- * from) plus the synthetic listeners. Kept as two fields because
- * `SyntheticListenerMap`'s index signature cannot intersect with the
- * attribute props — the handle spreads them onto the button separately,
- * exactly as the per-list copies did.
+ * `aria-describedby` stripped) plus the synthetic listeners. Kept as two
+ * fields because `SyntheticListenerMap`'s index signature cannot intersect
+ * with the attribute props — the handle spreads them separately.
  */
 export interface SortableDragHandleProps {
   attributes: Omit<DraggableAttributes, 'aria-describedby'>
@@ -81,10 +78,9 @@ export interface SortableRowChrome {
 /**
  * The per-row `useSortable` plumbing shared by every admin sortable list.
  * Row contents and container styling stay at the call site; the dragging
- * visual is up to the list (inline opacity or a class toggle) via
- * `isDragging`. Destructure the result — member access on the returned
- * object trips the react-compiler ref heuristic (`row.setNodeRef` reads as
- * a ref access during render).
+ * visual is up to the list via `isDragging`. Destructure the result —
+ * member access trips the react-compiler ref heuristic (`row.setNodeRef`
+ * reads as a ref access during render).
  */
 export function useSortableRow(options: {
   id: UniqueIdentifier

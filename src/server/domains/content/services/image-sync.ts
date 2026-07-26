@@ -7,24 +7,12 @@ import { getPublicBaseUrl } from '@/server/infra/storage/public-url'
 import { visitNestedBlocks } from '@/shared/pt/utils'
 import { idFromString } from '@/shared/utils/id'
 
-// Two-step sync for `image` blocks at save time.
-//
-//   1. Library blocks (`imageId !== undefined`) — re-resolve
-//      `storagePath` / `width` / `height` / `thumbhash` / `src` from
-//      the canonical `image` row so the body stays in lockstep with
-//      the media library. Also write back to the row when the
-//      operator edited `alt` (`image.note`) inside the editor —
-//      this is the "edit alt updates the table" half of the brief.
-//
-//   2. External blocks (`imageId === undefined`) — leave alone. The
-//      `src` is a third-party URL; we don't fetch its bytes, don't
-//      compute a thumbhash, and don't add it to the revision's
-//      `image_sources` projection (the existing
-//      `collectImageStoragePaths` already skips blocks without a
-//      `storagePath`, so nothing extra to do here).
-//
-// Mutates the passed body in place. Failures are swallowed —
-// canonicalising a single block isn't worth blocking the save.
+// Two-step sync for `image` blocks at save time. Library blocks
+// (`imageId !== undefined`) re-resolve `storagePath` / dims / thumbhash /
+// `src` from the canonical `image` row, and write back `alt` edits to
+// `image.note`. External blocks are left alone (third-party `src`; never
+// fetched or projected). Mutates the body in place; failures are
+// swallowed — canonicalising a single block isn't worth blocking the save.
 export async function syncLibraryImageBlocks(db: NodePgDatabase, body: PortableTextBody): Promise<void> {
   const targets: ImageBlock[] = []
   visitNestedBlocks(body, (block) => {

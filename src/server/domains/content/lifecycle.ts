@@ -30,12 +30,9 @@ export interface ContentEntityAdapter<TMeta, TPreview> {
   findPublicMetaBySlug(db: NodePgDatabase, slug: string): Promise<TMeta | null>
   assertAccess(meta: TMeta | null, viewer?: ViewerIdentity): asserts meta is TMeta
   /**
-   * Draft-preview gate — the per-entity preview access rule (CONTEXT.md
-   * "Draft preview"): posts allow author and above; pages allow admin
-   * only. Mounted by the public detail loaders before they call
-   * `loadDraftPreviewBySlug`. A predicate, not a throwing assert: the
-   * page loader must fall through to the published page when the viewer
-   * lacks preview rights.
+   * Draft-preview gate (CONTEXT.md "Draft preview"): posts author+, pages
+   * admin only. A predicate, not a throwing assert: the page loader must
+   * fall through to the published page when the viewer lacks preview rights.
    */
   canPreviewDraft(role: RoleOrNull | undefined): boolean
   getId(meta: TMeta): bigint
@@ -57,10 +54,8 @@ export interface ForceOverwriteEntry<TMeta> {
 
 /**
  * Shared `force_overwrite_save` audit payload for the entity adapters'
- * `recordForceOverwrite`. The only per-entity differences are the logger
- * scope (`audit.cms.posts` / `audit.cms.pages`) and the meta id key name
- * (`postMetaId` / `pageMetaId`) — both stay with the caller so the
- * emitted context keeps its historical shape byte-for-byte.
+ * `recordForceOverwrite`. The logger scope and meta id key stay with
+ * the caller so the emitted context keeps its historical shape.
  */
 export function recordForceOverwriteAudit<TMeta extends { id: bigint }>(
   auditLog: Logger,
@@ -181,10 +176,9 @@ export async function saveBody<TMeta, TPreview>(
 
 /**
  * Draft preview by slug: projects the latest draft when one exists,
- * otherwise the published revision. Soft-deleted rows (filtered by
- * `findPublicMetaBySlug`) return `null`. This module enforces no access
- * rule — callers gate through `adapter.canPreviewDraft` (posts:
- * author+; pages: admin only; CONTEXT.md "Draft preview").
+ * otherwise the published revision. Soft-deleted rows return `null`.
+ * This module enforces no access rule — callers gate through
+ * `adapter.canPreviewDraft`.
  */
 export async function loadDraftPreviewBySlug<TMeta, TPreview>(
   db: NodePgDatabase,

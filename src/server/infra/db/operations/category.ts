@@ -99,11 +99,11 @@ export async function deleteCategory(db: NodePgDatabase, id: bigint): Promise<bo
   return result.length > 0
 }
 
-// Bulk-rewrite `sort_order` so the rows match the order in which their
-// ids appear in `orderedIds`. Each row's `sort_order` becomes its
-// 0-based index in the supplied array, and `updated_at` is bumped to
-// the same wall clock so the audit trail reflects a single operation.
-// The whole rewrite happens inside a single transaction so the public
+// Bulk-rewrite `sort_order` so each row's `sort_order` becomes its
+// 0-based index in `orderedIds`, with `updated_at` bumped to one shared
+// wall clock so the audit trail reflects a single operation. The whole
+// rewrite runs inside a single transaction so the public listing never
+// shows a half-applied ranking.
 //
 // Returns the freshly-ordered rows in the same order as `orderedIds`,
 // so callers don't need a follow-up `select` round-trip to project the

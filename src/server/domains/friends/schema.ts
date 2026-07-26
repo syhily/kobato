@@ -69,13 +69,11 @@ const optionalHttpUrl = () =>
 // Public friend-link application (`friends.apply`). Mirrors the row
 // shape of `upsertFriendSchema` minus the admin-only `id`/`visible`
 // (applications always land as `visible: false`), with `poster`
-// downgraded to optional — applicants rarely have a cover URL handy;
-// the admin fills it before approving. URLs are refined to http(s)
-// because this is an anonymous write: a `javascript:` homepage must
-// never reach the pending queue (the public grid renders `homepage`
-// as a raw href once approved). The honeypot is named `contact` —
-// deliberately NOT the comment form's `subtitle` — so the two public
-// forms don't share a bot signature.
+// downgraded to optional. URLs are refined to http(s) because this is
+// an anonymous write: a `javascript:` homepage must never reach the
+// pending queue. The honeypot is named `contact` — deliberately NOT the
+// comment form's `subtitle` — so the two public forms don't share a bot
+// signature.
 export const applyFriendSchema = z
   .object({
     website: z.string().trim().min(1).max(80),

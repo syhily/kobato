@@ -3,23 +3,15 @@ import type { BlogSettingsBundle } from '@/shared/config/types'
 /**
  * ⚠️ SSR SAFETY WARNING
  *
- * The `storage` object below is module-level mutable state. In an SSR
- * environment this means the same object is shared across concurrent
- * requests on the same Node.js instance.  The current usage pattern
- * relies on the fact that:
- *
- * 1. `write()` / `writeHydration()` are only called from server-side
- *    request lifecycle code (`hydrateBlogSettings`).
- * 2. The stored value is request-agnostic (global blog settings).
- *
- * If blog settings ever become tenant-specific or request-specific,
- * this MUST be migrated to request-local storage (e.g. AsyncLocalStorage
- * or React Server Context) so that data does not leak between requests.
- *
- * Evaluation: moving this into `src/server/` entry files would break
- * `getBlogSettingsBundleSync()` usage in isomorphic `shared/` code.
- * The current compromise is to keep the slot in `shared/` with the
- * explicit warning above.
+ * The `storage` object below is module-level mutable state shared across
+ * concurrent requests on the same Node.js instance. That is safe only
+ * because writes happen in server-side lifecycle code and the stored
+ * value is request-agnostic (global blog settings). If settings ever
+ * become tenant- or request-specific, this MUST move to request-local
+ * storage (e.g. AsyncLocalStorage) so data does not leak between
+ * requests. The slot stays in `shared/` because moving it into
+ * `src/server/` would break `getBlogSettingsBundleSync()` in isomorphic
+ * code.
  */
 type Storage = Readonly<{
   blogSettingsSnapshot: BlogSettingsBundle | null | undefined

@@ -12,8 +12,8 @@ import {
   thumbHashToRGBA,
 } from '@/shared/utils/thumbhash'
 
-// Snapshots generated once from npm thumbhash@0.1.1. If the algorithm ever
-// changes intentionally, delete this file and rerun the generator script.
+// Snapshots generated once from npm thumbhash@0.1.1; regenerate them if the
+// algorithm ever changes intentionally.
 const SNAPSHOTS: Array<{
   name: string
   source: { w: number; h: number }

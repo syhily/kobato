@@ -112,8 +112,6 @@ function applyPrivacyTagsRecursive(context: LogContext): LogContext {
   return tagged
 }
 
-// Pino root instance
-
 interface LogContext {
   [key: string]: unknown
 }
@@ -146,8 +144,6 @@ export const root = pino(
   },
   stdout,
 )
-
-// Public Logger interface — unchanged from the custom logger
 
 export interface Logger {
   debug(message: string, context?: LogContext): void

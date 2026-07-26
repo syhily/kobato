@@ -3,28 +3,20 @@
  *
  * Browsers strip control characters (tab, newline, null, etc.) when
  * parsing URL protocols, so `java\tscript:alert(1)` is equivalent to
- * `javascript:alert(1)` at runtime even though a naive regex sees them
- * as different strings. Stripping those characters before validation
+ * `javascript:alert(1)` at runtime; stripping them before validation
  * closes this class of bypass.
  *
- * Protocol policy (whitelist):
- *   - Allowed: http, https, mailto, tel
- *   - Blocked: javascript, data, vbscript, and anything else with a scheme
- *   - Allowed: relative paths, anchor links (#), protocol-relative (//)
+ * Protocol policy (whitelist): http, https, mailto, tel, plus relative
+ * paths, anchors (#) and protocol-relative (//); everything else with a
+ * scheme (javascript, data, vbscript, …) is blocked.
  *
- * Single source of truth referenced by:
- *   - PT schema (`linkMarkDefSchema` in `src/shared/pt/schema.ts`)
- *   - PT React renderer (`src/ui/pt/render-marks.tsx`, `render-blocks.tsx`)
- *   - Server PT→HTML renderer (`src/server/render/pt-html.ts`)
- *   - Any future renderer or editor that emits <a href="…">.
+ * Referenced by the PT schema (`linkMarkDefSchema`), the PT React
+ * renderer, and the server PT→HTML renderer.
  */
 
 /**
- * Strip C0 control characters (U+0000–U+001F) from a string.
- *
- * Browsers ignore these characters when parsing URL protocols, so
- * `java\tscript:…` is equivalent to `javascript:…`.  Removing them
- * before protocol checking prevents this class of bypass.
+ * Strip C0 control characters (U+0000–U+001F) from a string — browsers
+ * ignore them when parsing URL protocols (see the module header).
  *
  * Uses a non-regex implementation to avoid triggering the
  * `no-control-regex` lint rule, which correctly flags that matching

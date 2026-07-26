@@ -65,10 +65,9 @@ export async function renderPortableTextToHtml(
   return html
 }
 
-// Music player resolution. The metas arrive through `resolveMusicEmbeds`,
-// the PT-owned embed seam (`@/server/domains/pt/embeds`) — callers wire the
-// music domain's `getPublicMusicMetasByIds` in so this module never imports
-// the music domain.
+// Music player resolution: metas arrive through `resolveMusicEmbeds`, the
+// PT-owned embed seam (`@/server/domains/pt/embeds`), so this module never
+// imports the music domain.
 
 interface MusicMeta {
   name: string

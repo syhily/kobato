@@ -25,11 +25,10 @@ type AnyNewMeta = NewPostMeta | NewPageMeta
 /**
  * The meta-table CRUD every content entity shares: id/slug lookups
  * (including the row-locking reservation probe and the public
- * not-deleted slug read), insert, patch-by-id, and the soft-delete /
- * restore pair. One implementation over the shared columns; the
- * entity's table comes in as a parameter so no entity fork of these
- * queries can drift. Rows cross the boundary as `unknown` and leave as
- * `TMeta` — the table union guarantees the shape (`MetaRowBase`).
+ * not-deleted slug read), insert, patch-by-id, soft-delete / restore.
+ * One implementation over the shared columns; the entity's table comes
+ * in as a parameter so no entity fork can drift. Rows cross the
+ * boundary as `unknown` and leave as `TMeta` (`MetaRowBase`).
  */
 export function makeMetaCrud<TMeta extends MetaRowBase, TNew extends AnyNewMeta>(
   table: MetaTable,
@@ -158,8 +157,7 @@ export interface MetaListQueries<TMeta extends MetaRowBase, TFilters extends Lim
 /**
  * The admin-list meta queries both entities share: meta columns joined
  * with the author's name, filtered + ordered + paginated per entity
- * options, and the matching count. Entity list filters / ordering plug
- * in through `buildWhere` / `orderBy`.
+ * options, plus the matching count.
  */
 export function makeMetaListQueries<TMeta extends MetaRowBase, TFilters extends LimitOffset>(
   table: MetaTable,

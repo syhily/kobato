@@ -11,13 +11,11 @@ import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
 import { extractApiErrorMessage } from '@/shared/utils/api-error'
 
-// Optimistic slot controller for the fonts view. Drags need a local mirror
-// of `blogSettings.fonts` so the item doesn't snap back to its old slot
-// while `setSlot` round-trips. A reducer owns the state; the `seeded` action
-// rewrites it from the server, but only when no mutation is in flight
-// (`inFlight > 0`) — otherwise a revalidate triggered mid-sequence would
-// clobber the optimistic state (same trade-off as the settings reseed
-// guard).
+// Optimistic slot controller for the fonts view: a local reducer mirrors
+// `blogSettings.fonts` so dragged items don't snap back while `setSlot`
+// round-trips; the `seeded` action rewrites from the server only when no
+// mutation is in flight, so a mid-sequence revalidate can't clobber the
+// optimistic state (same trade-off as the settings reseed guard).
 
 export const MAX_SLOT_FONTS = 8
 

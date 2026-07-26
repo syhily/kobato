@@ -1,19 +1,7 @@
 import { isBlockedFetchHost, tryParseUrl } from '@/shared/utils/safe-url'
 
-// One SSRF-guarded outbound-fetch module for every server-side download
-// (plan 042). It owns the whole invariant that used to be triplicated in
-// the music download, webmention source-fetch, and avatar mirror paths:
-//
-//   URL parse → http(s) protocol allowlist → `isBlockedFetchHost` →
-//   `redirect: 'manual'` loop with per-hop revalidation and a redirect
-//   budget → per-request timeout → size cap (Content-Length pre-check
-//   plus buffered-body post-check).
-//
-// The module never logs and never throws domain errors: failures come back
-// as a typed union and each caller maps them to its own error mode
-// (music → DomainError variants, webmentions → DomainError variants,
-// avatar → null with its privacy-safe warnings). If DNS-rebinding defense
-// (resolve-then-check) ever lands, it lands HERE once.
+// SSRF-guarded outbound-fetch for all server-side downloads. Failures
+// return a typed union; callers map them to their own error modes.
 
 export const SAFE_FETCH_DEFAULT_TIMEOUT_MS = 10_000
 export const SAFE_FETCH_DEFAULT_MAX_REDIRECTS = 5

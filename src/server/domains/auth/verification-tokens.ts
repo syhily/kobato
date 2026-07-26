@@ -42,9 +42,9 @@ async function issueToken(
   const expiresAt = new Date(Date.now() + ttlMs)
   const id = generateToken().slice(0, 24)
 
-  // Single-token-per-(purpose, user) invariant. The unique index
-  // `uq_verification_purpose_user` enforces this; we use UPSERT to
-  // rotate the live token in-place when an admin re-clicks
+  // Single-token-per-(purpose, user) invariant, enforced by the
+  // `uq_verification_purpose_user` unique index; the UPSERT rotates the
+  // live token in-place on re-issue.
   await db
     .insert(verification)
     .values({ id, purpose, userId, value, expiresAt })

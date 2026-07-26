@@ -1,8 +1,6 @@
-// Self-update gate (plan 090, decision Q2). Self-update is offered only when
-// EVERY condition holds: running as a SEA binary, linux x64/arm64, not
-// containerized, the binary's directory is writable, and the build is not a
-// dev build. Each failed check appends a Chinese admin-facing reason — the
-// UI renders `reasons` verbatim, so refusal copy lives here alone.
+// Self-update gate. Offered only when: running as a SEA binary, linux
+// x64/arm64, not containerized, binary directory writable, non-dev build.
+// Each failed check appends a Chinese admin-facing reason.
 
 import { accessSync, constants, existsSync, readFileSync } from 'node:fs'
 import { dirname } from 'node:path'

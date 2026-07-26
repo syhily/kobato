@@ -44,9 +44,9 @@ describe('services/images/og — drawOpenGraph', () => {
       cover: `data:image/png;base64,${cover.toString('base64')}`,
     })
     const meta = await sharp(output).metadata()
-    // Defaults from blog.config:
-    //   og.width × og.height (typically 1200×630). Reading from sharp avoids
-    //   importing config in this test (which would drag the catalog in).
+    // Dimensions come from the seo.og settings section (typically 1200×630).
+    // Reading from sharp avoids importing config in this test (which would
+    // drag the catalog in).
     expect(meta.width).toBeGreaterThan(0)
     expect(meta.height).toBeGreaterThan(0)
     // Verify aspect ratio matches the typical OG card (~1.9). If a future

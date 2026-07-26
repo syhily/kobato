@@ -253,11 +253,8 @@ export async function updateImageNote(db: NodePgDatabase, id: bigint, note: stri
 /**
  * UPDATE the row's `note` and re-read it joined with `user` so the
  * admin shell receives the full DTO (including `uploaderName`) in
- * one helper call. PG's `UPDATE ... RETURNING` does not support
- * `JOIN`, so we issue the read as a follow-up SELECT against the
- * same shared pool; the two statements are tiny and indexed (PK
- * lookup + FK lookup) and live behind the same query helper so
- * service code stays single-call.
+ * one helper call. PG's `UPDATE ... RETURNING` cannot `JOIN`, so the
+ * read is a follow-up SELECT.
  */
 export async function updateImageNoteWithUploader(
   db: NodePgDatabase,

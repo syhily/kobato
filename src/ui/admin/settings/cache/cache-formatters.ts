@@ -1,10 +1,9 @@
 import { MAX_TTL_HOURS, MIN_TTL_HOURS, SECONDS_PER_HOUR } from '@/ui/admin/settings/cache/cache-constants'
 
-// Render the stored TTL in the most readable unit. The form uses
-// hours, but a "1 day" / "7 days" string reads better at a glance on
-// the per-bucket card. Code-TTL buckets (feed, sitemap, taxonomies,
-// comments) run at minute / second granularity, so sub-hour values get
-// their own units instead of rounding to "0 小时".
+// Render the stored TTL in the most readable unit. Code-TTL buckets
+// (feed, sitemap, taxonomies, comments) run at minute / second
+// granularity, so sub-hour values get their own units instead of
+// rounding to "0 小时".
 export function formatTtl(seconds: number): string {
   if (seconds < SECONDS_PER_HOUR) {
     if (seconds % 60 === 0) {
@@ -20,10 +19,8 @@ export function formatTtl(seconds: number): string {
   return `${totalHours} 小时`
 }
 
-// Format the snapshot timestamp purely on the client to avoid an SSR /
-// hydration mismatch on locales / time zones. We only need a short
-// "HH:MM:SS" suffix because the page is interactive and the operator
-// will see when it changes.
+// Format the snapshot timestamp on the client only, to avoid an SSR /
+// hydration mismatch on locales / time zones.
 export function formatTimestamp(iso: string): string {
   try {
     const date = new Date(iso)

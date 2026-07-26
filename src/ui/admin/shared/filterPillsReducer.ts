@@ -1,5 +1,4 @@
-// Shared filter-pill state machine for admin list surfaces. Owns the
-// add/remove/rename/clear pill bookkeeping in exactly one place; consumers
+// Shared filter-pill state machine for admin list surfaces. Consumers
 // (comments, audit log, images) parametrize it with their field-key union
 // and keep their value codecs and side effects (images' q mirror) local.
 

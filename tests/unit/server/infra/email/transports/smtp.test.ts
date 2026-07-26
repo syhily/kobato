@@ -19,11 +19,9 @@ import type { SmtpConfig } from '@/server/infra/email/transports/smtp'
 
 import { SmtpTransport } from '@/server/infra/email/transports/smtp'
 
-// These tests pin the SMTP transport stub. The dispatcher does not yet
-// route to this transport — see `sender.ts:getTransport()` — so these
-// tests are the only thing exercising the SmtpTransport code path.
-// They lock in the same skip / happy / failure vocabulary the Zeabur
-// transport speaks so the dispatcher can swap them transparently.
+// These tests pin the SMTP transport stub. They lock in the same
+// skip / happy / failure vocabulary the Zeabur transport speaks so the
+// dispatcher can swap them transparently.
 
 const baseConfig: SmtpConfig = {
   enabled: true,

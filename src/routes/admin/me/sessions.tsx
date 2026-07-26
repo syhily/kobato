@@ -30,9 +30,8 @@ export interface MySessionItem {
 export async function loader({ request, context }: Route.LoaderArgs) {
   const rc = getRequestContext({ request, context })
   const ctx = { session: rc.session, user: rc.viewer ?? undefined, role: rc.viewer?.role ?? null }
-  // admin.layout already gates on `visitor`, but assert here so
-  // the loader narrows `ctx.user` to non-null and so a future
-  // refactor of the layout can't accidentally widen access.
+  // admin.layout already gates on `visitor`; assert here to narrow
+  // `ctx.user` and guard against a future layout refactor widening access.
   requireRole(ctx, 'visitor')
   const url = new URL(request.url)
   const sort: SessionSortState<'lastActive' | 'loginTime'> = parseSessionSort(

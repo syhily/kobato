@@ -24,7 +24,6 @@ export async function findContentsByIds(db: NodePgDatabase, ids: bigint[]): Prom
  * structural over post and page rows (like `LiveContentColumns`), since
  * both declare `publishedRevisionId` identically. Returns a map keyed by
  * revision id so callers resolve `meta.publishedRevisionId` in O(1).
- * Empty input (or all-null revision ids) short-circuits without a query.
  */
 export async function hydratePublishedRevisions(
   db: NodePgDatabase,

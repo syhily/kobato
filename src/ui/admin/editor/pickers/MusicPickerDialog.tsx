@@ -11,11 +11,11 @@ import { Button } from '@/ui/components/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/ui/components/dialog'
 import { Input } from '@/ui/components/input'
 
-// Music picker. Pulls from the local admin library, with an inline
-// `/admin/library/music`. Newly added tracks are prepended to the picker
-// list so the operator can pick them straight into the article without
-// leaving the editor — `addMusic` already downloads the audio + cover
-// to S3 and inserts the row before resolving.
+// Music picker pulling from the local admin library, with an inline add
+// flow. Newly added tracks are prepended to the picker list so the
+// operator can pick them straight into the article without leaving the
+// editor — `addMusic` already downloads the audio + cover to S3 and
+// inserts the row before resolving.
 
 export interface MusicPickerDialogProps {
   trigger?: React.ReactNode
@@ -43,11 +43,9 @@ export function MusicPickerDialog({ trigger, onPick, open: openProp, onOpenChang
   const [addOpen, setAddOpen] = useState(false)
   const queryClient = useQueryClient()
 
-  // Key-driven: changing `q` changes the query key, replacing the old
-  // disabled-query + timer-debounce machine and its render-phase copy
-  // into local state. Accepted delta from that machine: reopening the
-  // dialog with a stale cached key now shows the cached rows while
-  // react-query revalidates, instead of flashing a spinner.
+  // Key-driven: changing `q` changes the query key, so reopening the
+  // dialog with a stale cached key shows the cached rows while
+  // react-query revalidates instead of flashing a spinner.
   const listInput = { q: q.trim() === '' ? undefined : q.trim(), limit: 60 }
   const listQuery = useQuery(orpcQuery.admin.music.list.queryOptions({ input: listInput, enabled: open }))
   // `null` (not []) for undefined data keeps the loading/empty split — a

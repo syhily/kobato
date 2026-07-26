@@ -30,16 +30,8 @@ interface ImageDetailDialogProps {
   onRecalculateThumbhash: (image: AdminImageDto) => void
 }
 
-// Image library detail dialog. Owns the full preview and every meta
-// field that used to live as a separate table column (path, public
-// URL, dimensions, byte size, uploader, timestamps, note). The parent
-// view remains a pure thumbnail grid; clicking a card opens this
-// dialog.
-//
-// The note edit affordance lives inside the dialog (not in a separate
-// flow) so the operator never has to bounce between dialog and grid:
-// click → reveal → save / cancel → close. The delete affordance still
-// hands off to the existing `ConfirmDialog` via `onDelete`.
+// Image library detail dialog: full preview plus meta fields, with
+// note editing inline (click → reveal → save / cancel).
 export function ImageDetailDialog({
   image,
   open,

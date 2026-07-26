@@ -18,8 +18,7 @@ interface Paginatable<Row> extends PromiseLike<Row[]> {
  * Shared limit/offset ladder for admin list queries. A conditional
  * `.limit()` / `.offset()` can't be expressed as one fluent expression on
  * drizzle's non-dynamic builder (each method retypes the query via
- * `PgSelectWithout`), so every admin list repo used to hand-copy this
- * four-branch ladder.
+ * `PgSelectWithout`).
  */
 export function applyLimitOffset<Row>(query: Paginatable<Row>, { limit, offset }: LimitOffset): PromiseLike<Row[]> {
   if (limit !== undefined) {

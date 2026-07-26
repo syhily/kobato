@@ -58,7 +58,6 @@ const unpublishedPage = {
 
 let currentSession = regularSession()
 
-// catalog/catalog removed; pages/loader uses findPublicPostMetaBySlug + findPageBySlug.
 vi.mock('@/server/domains/pages/repo', () => ({
   findPageMetaById: vi.fn(async () => null),
   findPageMetaBySlug: vi.fn(async () => null),

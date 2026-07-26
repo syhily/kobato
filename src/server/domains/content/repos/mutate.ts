@@ -35,9 +35,7 @@ export interface LockedMeta {
 /**
  * Shared transaction prologue for the revision mutations: lock the owner
  * meta row (`SELECT … FOR UPDATE`, throwing NOT_FOUND when it is gone)
- * and load the latest content revision (any status). Both
- * `saveDraftRevision` and `publishLatestRevision` used to open with a
- * verbatim copy of this block.
+ * and load the latest content revision (any status).
  */
 export async function lockMetaAndLoadLatest(
   tx: RevisionTx,
@@ -75,9 +73,7 @@ export interface TokenConflict {
  * A conflict requires all of: the client did NOT pass `force`, the
  * client echoed an expectation token, a latest revision exists, and the
  * tokens differ. `undefined` expectation means "no expectation" (skip);
- * `null` is a real token value that simply never matches. The four
- * former call sites were this same predicate with an inline
- * `latest !== undefined` guard folded in.
+ * `null` is a real token value that simply never matches.
  */
 export function checkTokenConflict(
   latest: ContentRow | undefined,

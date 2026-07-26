@@ -14,14 +14,14 @@ intermediate module. No `export { X } from 'y'` or
 
 ## Error handling
 
-Never use `console.error`, `console.warn`, or `console.log` in shared
-modules. `shared/` has no logger instance (server and client each bring
-their own). If something unexpected happens, **throw an error** and let
-the server or client boundary catch and log it.
+`shared/` has no logger instance (server and client each bring their
+own). If something unexpected happens, **throw an error** and let the
+server or client boundary catch and log it.
 
 ## Structure
 
-- `config/` — `blog`, `settings`, `socials` (BlogSettingsBundle).
+- `config/` — settings sections, defaults, projection, socials
+  (`BlogSettingsBundle`).
 - `contracts/` — Zod schemas (the wire format) plus the DTO types derived
   from them.
 - `types/` — Standalone shared types and isomorphic helpers with no
@@ -40,6 +40,9 @@ the server or client boundary catch and log it.
 - `utils/` — `urls`, `safe-url`, `security`, `tools`,
   `formatter`, `pagination`, `toc`, `paths`, `roles`, `user-agent`,
   `chunk-error`, `comment-token`, `footnotes-section-title`, `memo`.
+- `cache/`, `constants/`, `lib/` — small standalone modules; a few
+  top-level files (`slug`, `sanitize-url`, `zod-config`) round out the
+  layer.
 
 ## Zod DTO single source
 
@@ -53,7 +56,7 @@ the settings system's compile-time registry checks.
 
 ## Client API usage
 
-UI calls `api.<domain>.<resource>.<verb>(flatInput)` — single flat
-input, no `{ body, query, params }` buckets. Unwrap via `unwrap()`
-from `@/client/api/unwrap`. Errors are `ORPCError('CODE', { message })`;
-`unwrap()` bridges to `ApiError(message, status, issues)`.
+UI calls `orpc.<domain>.<resource>.<verb>(flatInput)` — single flat
+input, no `{ body, query, params }` buckets; the `shared/contracts/`
+schema validates that input server-side. Errors reach the client as
+`ORPCError('CODE', { message })` rejections.

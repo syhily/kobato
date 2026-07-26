@@ -1,20 +1,13 @@
 // Wire-projection helpers for comment payloads.
 //
 // Drizzle types `comment.id` / `userId` / `ownerId` / `rootId` as
-// `bigint` (the `bigserial` columns flow through `mode: 'bigint'`)
-// and timestamps as `Date`. Both fail `JSON.stringify` for bigints
-// and emit Date as ISO strings only by virtue of `Date#toJSON`. The
-// contract DTOs in `_dtos.ts` model the wire shape — `string` ids,
+// `bigint` and timestamps as `Date`, neither of which survives
+// `JSON.stringify` in the shape the wire DTOs declare. The contract DTOs
+// in `@/shared/contracts/comments` model the wire shape — `string` ids,
 // ISO timestamps — which is what consumers expect over the network.
 //
-// These helpers do the projection explicitly so the response
-// runtime check in `adapter` is satisfied. They are
-// idempotent: pre-converted values (`id` already a string) pass
-// straight through.
-//
-// A future server-side TS refactor will retype `CommentAndUser` to
-// `CommentItemWire` directly and collapse these helpers into a
-// single identity call.
+// These helpers do the projection explicitly and are idempotent:
+// pre-converted values (`id` already a string) pass straight through.
 
 import type { AdminCommentWire, CommentItemWire } from '@/shared/contracts/comments'
 import type { AdminComment, CommentAndUser, CommentItem } from '@/shared/types/comments'

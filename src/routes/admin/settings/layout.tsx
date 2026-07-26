@@ -17,10 +17,8 @@ interface ParentContext {
 /**
  * Bundle shape downstream settings routes consume. Every section is
  * narrowed to NonNullable here because the loader below enforces the
- * invariant once and forwards the strengthened type to outlet
- * consumers. That deletes ~12 identical `bundle.<section> === null`
- * 503 guards from the per-section routes — the seed contract is now
- * checked exactly where it lives.
+ * invariant once — deleting ~12 identical `bundle.<section> === null`
+ * 503 guards from the per-section routes.
  */
 export type SettingsBundle = {
   [K in keyof BlogSettingsBundle]-?: NonNullable<BlogSettingsBundle[K]>
@@ -30,13 +28,9 @@ export interface SettingsOutletContext extends ParentContext {
   /**
    * Bucketed settings document straight from the storage layer. Each
    * field maps 1:1 to a `setting('blog.<section>')` row, so a save to
-   * one section never re-shapes another section's bucket. Per-section
-   * forms read `bundle.cache`, `bundle.mail`, etc.
-   *
-   * Every bucket is non-null: the layout loader enforces the invariant
-   * before it forwards the bundle to children.
-   *
-   * Secrets are redacted (empty strings) — use `masks` for UI hints.
+   * one section never re-shapes another section's bucket. Every bucket
+   * is non-null (enforced by the layout loader). Secrets are redacted
+   * (empty strings) — use `masks` for UI hints.
    */
   bundle: SettingsBundle
   /**
@@ -54,18 +48,13 @@ export interface SettingsOutletContext extends ParentContext {
 }
 
 // Single loader read shared by every section route below the shell. The
-// snapshot is small (one JSONB row per section), so re-reading it once
-// per navigation keeps the editor view fresh without each child route
-// having to wire up its own fetcher. After a save, `useFetcher` posts
-// to `admin/updateSettings` and React Router revalidates this loader,
-// so the child gets the new snapshot for free.
+// snapshot is small, and React Router revalidates this loader after each
+// `admin/updateSettings` save, so children get fresh snapshots for free.
 //
-// Defensive 503 lives here ONCE: missing `siteIdentity` / `assets`
-// rows mean the install never completed (the gate should have
-// intercepted), and any other missing optional section means an admin
-// truncated a row by hand. Surfacing the regression at the layer that
-// actually owns the seed contract lets every per-section route trust
-// the bundle is fully populated and avoid re-stating the same guard.
+// Defensive 503 lives here ONCE: a missing `siteIdentity` / `assets` row
+// means the install never completed, and any other missing section means
+// an admin truncated a row by hand. Owning the guard at this layer lets
+// every per-section route trust the bundle is fully populated.
 function assertSettingsBundle(value: Record<string, unknown>): asserts value is SettingsBundle {
   const missing = Object.entries(value)
     .filter(([, v]) => v === null)

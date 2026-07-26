@@ -1,28 +1,9 @@
-// Session-revocation policy — the single owner of "who may revoke
-// whose session". The session-table primitives (`repo.ts::revokeSessionById`,
-// `service.ts::revokeAllSessionsOfUser`) are deliberately
-// role-blind; every HTTP perimeter routes through one of the three
-// scopes below instead of hand-rolling ownership checks:
-//
-//   own   — `account.revokeSession`: strict ownership, NO admin bypass.
-//           The endpoint is an "own-route" (a user manages their own
-//           sessions), the same semantics as the `is{Entity}Owner`
-//           predicate family in `rbac.ts`.
-//   admin — `admin.users.revokeSession`: an admin may revoke any
-//           non-admin's session and their own, but never another LIVE
-//           admin's — a compromised admin account must not be able to
-//           kick out the other admins. Soft-deleted admins are exempt:
-//           revoking their leftover sessions is janitorial.
-//   bulk  — `admin.users.revokeAllSessions`: the same admin-vs-admin
-//           rule keyed by user id instead of session id. Kept verbatim
-//           from the original inline copy: the target lookup has NO
-//           soft-delete exemption and the refusal message differs. Do
-//           not "tidy" the two admin scopes into one rule without a
-//           behaviour review.
-//
-// Audit events stay in the controllers — the guard only reports the
-// affected user (or null for a no-op) so the caller can fill in the
-// details.
+// Session-revocation policy — the single owner of "who may revoke whose
+// session". Three scopes:
+//   own   — strict ownership, no admin bypass.
+//   admin — an admin may revoke any non-admin's session and their own,
+//           but never another live admin's.
+//   bulk  — same admin-vs-admin rule, but no soft-delete exemption.
 
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
@@ -74,9 +55,8 @@ export async function revokeSessionWithGuard(
   if (!meta) {
     return { targetUserId: null }
   }
-  // Ownership check: an admin may not revoke another admin's session
-  // unless it is their own session. This prevents privilege escalation
-  // where a compromised admin account kicks out all other admins.
+  // An admin may not revoke another live admin's session unless it is
+  // their own — prevents a compromised admin kicking out the others.
   if (actor.role === 'admin' && meta.userId.toString() !== actor.id) {
     const targetUser = await findSafeUserById(db, meta.userId)
     if (targetUser && !targetUser.deletedAt && targetUser.role === 'admin') {
