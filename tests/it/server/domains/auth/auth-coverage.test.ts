@@ -510,7 +510,8 @@ describe('auth/otp-flow — handleOtpCancel', () => {
     })
     session.set('otpFailCount', 2)
 
-    const result = await handleOtpCancel(session, '/admin')
+    const markSessionDirty = vi.fn()
+    const result = await handleOtpCancel({ db, session, clientAddress: '127.0.0.1', markSessionDirty }, '/admin')
     expect(result.type).toBe('redirect')
     if (result.type === 'redirect') {
       expect(result.to).toContain('signin')
@@ -518,6 +519,10 @@ describe('auth/otp-flow — handleOtpCancel', () => {
     }
     expect(session.get('pendingOtpUser')).toBeUndefined()
     expect(session.get('otpFailCount')).toBeUndefined()
+    // Same-session mutations are committed by the boundary middleware —
+    // the domain only marks the session dirty and carries no setCookie.
+    expect(markSessionDirty).toHaveBeenCalledTimes(1)
+    expect(result).not.toHaveProperty('setCookie')
   })
 })
 
@@ -525,10 +530,9 @@ describe('auth/otp-flow — handleCredentialLogin', () => {
   it('rejects an empty body with a Chinese error message', async () => {
     const session = await getRequestSession(new Request('http://localhost/'))
     const formData = new FormData()
+    const markSessionDirty = vi.fn()
     const result = await handleCredentialLogin(
-      db,
-      session,
-      '127.0.0.1',
+      { db, session, clientAddress: '127.0.0.1', markSessionDirty },
       new Request('http://localhost/'),
       formData,
       '/admin',
@@ -537,6 +541,8 @@ describe('auth/otp-flow — handleCredentialLogin', () => {
     if (result.type === 'error') {
       expect(result.message).toContain('邮箱')
     }
+    // Error results carry no mutation — no dirty mark, no setCookie.
+    expect(markSessionDirty).not.toHaveBeenCalled()
   })
 
   it('returns the invalid-credentials error when the user cannot be verified', async () => {
@@ -544,14 +550,14 @@ describe('auth/otp-flow — handleCredentialLogin', () => {
     const formData = new FormData()
     formData.set('email', 'missing@example.com')
     formData.set('password', 'whatever')
+    const markSessionDirty = vi.fn()
     const result = await handleCredentialLogin(
-      db,
-      session,
-      '127.0.0.1',
+      { db, session, clientAddress: '127.0.0.1', markSessionDirty },
       new Request('http://localhost/'),
       formData,
       '/admin',
     )
     expect(result.type).toBe('error')
+    expect(markSessionDirty).not.toHaveBeenCalled()
   })
 })

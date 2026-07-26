@@ -245,10 +245,14 @@ describe('passkey — force blocks password login', () => {
     formData.set('email', 'forced@example.com')
     formData.set('password', 'Password123!')
 
+    const markSessionDirty = vi.fn()
     const result = await handleCredentialLogin(
-      db,
-      { id: 'sess-1', data: {}, get: () => undefined, set: () => undefined, unset: () => undefined } as any,
-      '127.0.0.1',
+      {
+        db,
+        session: { id: 'sess-1', data: {}, get: () => undefined, set: () => undefined, unset: () => undefined } as any,
+        clientAddress: '127.0.0.1',
+        markSessionDirty,
+      },
       new Request('http://localhost'),
       formData,
       '/admin',
@@ -258,6 +262,9 @@ describe('passkey — force blocks password login', () => {
     if (result.type === 'error') {
       expect(result.message).toContain('Passkey')
     }
+    // passkeyForce 是「无 mutation 的错误结果」：既不携带 setCookie，也不标脏会话。
+    expect(result.setCookie).toBeUndefined()
+    expect(markSessionDirty).not.toHaveBeenCalled()
   })
 })
 

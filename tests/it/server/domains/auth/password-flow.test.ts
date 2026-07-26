@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { BlogSession } from '@/server/domains/auth/session-storage'
+import type { SigninFlowContext } from '@/server/domains/auth/signin-flow'
 
 // Flow-seam tests for `domains/auth/password-flow`. Everything below the
 // flow (repos, tokens, mail, rate limit, passkey cleanup, session
@@ -77,6 +78,10 @@ const db = {} as NodePgDatabase
 const session = { id: 'sess-1' } as unknown as BlogSession
 const CLIENT = '203.0.113.7'
 const GENERIC = '如果该邮箱存在且符合要求，重置邮件已发送。'
+
+function flowCtx(): SigninFlowContext {
+  return { db, session, clientAddress: CLIENT, markSessionDirty: vi.fn() }
+}
 
 function request(): Request {
   return new Request('http://localhost/admin/signin?action=lostpassword', {
@@ -255,9 +260,7 @@ describe('auth/password-flow — resetPasswordWithToken', () => {
 
   it('rejects a short password before consuming the token', async () => {
     const result = await resetPasswordWithToken(
-      db,
-      session,
-      CLIENT,
+      flowCtx(),
       request(),
       formWith({ reset_token: 'tok-abc', password: 'Sh0rt' }),
       '/admin',
@@ -273,9 +276,7 @@ describe('auth/password-flow — resetPasswordWithToken', () => {
 
   it('rejects a password that fails the complexity rule', async () => {
     const result = await resetPasswordWithToken(
-      db,
-      session,
-      CLIENT,
+      flowCtx(),
       request(),
       formWith({ reset_token: 'tok-abc', password: 'alllowercase1' }),
       '/admin',
@@ -289,7 +290,7 @@ describe('auth/password-flow — resetPasswordWithToken', () => {
   it('returns 链接无效或已过期 when the token does not consume', async () => {
     mocks.consumeToken.mockResolvedValueOnce(null)
 
-    const result = await resetPasswordWithToken(db, session, CLIENT, request(), validForm(), '/admin', 'password-reset')
+    const result = await resetPasswordWithToken(flowCtx(), request(), validForm(), '/admin', 'password-reset')
 
     expect(result).toEqual({ type: 'error', message: '链接无效或已过期。' })
     expect(mocks.establishLoginSession).not.toHaveBeenCalled()
@@ -298,7 +299,7 @@ describe('auth/password-flow — resetPasswordWithToken', () => {
   it('passes the intent purpose through to consumeToken (accept-invite)', async () => {
     mocks.consumeToken.mockResolvedValueOnce(null)
 
-    await resetPasswordWithToken(db, session, CLIENT, request(), validForm(), '/admin', 'author-invite')
+    await resetPasswordWithToken(flowCtx(), request(), validForm(), '/admin', 'author-invite')
 
     expect(mocks.consumeToken).toHaveBeenCalledWith(db, 'tok-abc', 'author-invite')
   })
@@ -314,7 +315,7 @@ describe('auth/password-flow — resetPasswordWithToken', () => {
     } as never)
 
     const req = request()
-    const result = await resetPasswordWithToken(db, session, CLIENT, req, validForm(), '/admin', 'password-reset')
+    const result = await resetPasswordWithToken(flowCtx(), req, validForm(), '/admin', 'password-reset')
 
     expect(result).toEqual({ type: 'redirect', to: '/admin', setCookie: '__session=abc' })
 
@@ -367,7 +368,7 @@ describe('auth/password-flow — resetPasswordWithToken', () => {
       deletedAt: null,
     } as never)
 
-    const result = await resetPasswordWithToken(db, session, CLIENT, request(), validForm(), '/admin', 'password-reset')
+    const result = await resetPasswordWithToken(flowCtx(), request(), validForm(), '/admin', 'password-reset')
 
     expect(result.type).toBe('redirect')
     expect(mocks.establishLoginSession).toHaveBeenCalled()
@@ -377,7 +378,7 @@ describe('auth/password-flow — resetPasswordWithToken', () => {
     mocks.consumeToken.mockResolvedValueOnce({ userId: 42n })
     mocks.findUserById.mockResolvedValueOnce(null)
 
-    const result = await resetPasswordWithToken(db, session, CLIENT, request(), validForm(), '/admin', 'password-reset')
+    const result = await resetPasswordWithToken(flowCtx(), request(), validForm(), '/admin', 'password-reset')
 
     expect(result).toEqual({ type: 'error', message: '账户状态异常，无法登录。' })
     expect(mocks.establishLoginSession).not.toHaveBeenCalled()

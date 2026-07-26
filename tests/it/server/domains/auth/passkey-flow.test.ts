@@ -3,6 +3,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { BlogSession } from '@/server/domains/auth/session-storage'
+import type { SigninFlowContext } from '@/server/domains/auth/signin-flow'
 
 // Flow-seam tests for `domains/auth/passkey-flow`. The WebAuthn ceremony
 // itself lives in `passkey-service` (covered by `passkey.test.ts`); here
@@ -48,6 +49,12 @@ const db = {} as NodePgDatabase
 const session = { id: 'sess-1' } as unknown as BlogSession
 const CLIENT = '203.0.113.7'
 
+// The passkey leg never mutates the same session — markSessionDirty is a
+// no-op stand-in; only the sid-rotating setCookie channel is exercised.
+function ctx(): SigninFlowContext {
+  return { db, session, clientAddress: CLIENT, markSessionDirty: () => {} }
+}
+
 function request(): Request {
   return new Request('http://localhost/admin/signin?action=passkey', {
     method: 'POST',
@@ -71,14 +78,14 @@ describe('auth/passkey-flow — signInWithPasskey', () => {
   it('refuses when the passkey feature is disabled', async () => {
     mocks.isPasskeyEnabled.mockReturnValueOnce(false)
 
-    const result = await signInWithPasskey(db, session, CLIENT, request(), passkeyForm(), '/admin')
+    const result = await signInWithPasskey(ctx(), request(), passkeyForm(), '/admin')
 
     expect(result).toEqual({ type: 'error', message: 'Passkey 登录未启用。' })
     expect(mocks.verifyAuthenticationResponse).not.toHaveBeenCalled()
   })
 
   it('refuses when the response or challenge field is missing', async () => {
-    const result = await signInWithPasskey(db, session, CLIENT, request(), new FormData(), '/admin')
+    const result = await signInWithPasskey(ctx(), request(), new FormData(), '/admin')
 
     expect(result).toEqual({ type: 'error', message: 'Passkey 响应缺失。' })
     expect(mocks.tryPasskeyAuthFinishRateLimit).not.toHaveBeenCalled()
@@ -89,7 +96,7 @@ describe('auth/passkey-flow — signInWithPasskey', () => {
     fd.set('passkey_response', '{not-json')
     fd.set('passkey_challenge', 'challenge-1')
 
-    const result = await signInWithPasskey(db, session, CLIENT, request(), fd, '/admin')
+    const result = await signInWithPasskey(ctx(), request(), fd, '/admin')
 
     expect(result).toEqual({ type: 'error', message: 'Passkey 响应格式错误。' })
     expect(mocks.verifyAuthenticationResponse).not.toHaveBeenCalled()
@@ -98,7 +105,7 @@ describe('auth/passkey-flow — signInWithPasskey', () => {
   it('refuses when the finish rate limit trips', async () => {
     mocks.tryPasskeyAuthFinishRateLimit.mockResolvedValueOnce({ count: 9, exceeded: true })
 
-    const result = await signInWithPasskey(db, session, CLIENT, request(), passkeyForm(), '/admin')
+    const result = await signInWithPasskey(ctx(), request(), passkeyForm(), '/admin')
 
     expect(result).toEqual({ type: 'error', message: '操作过于频繁，请稍后再试。' })
     expect(mocks.verifyAuthenticationResponse).not.toHaveBeenCalled()
@@ -111,7 +118,7 @@ describe('auth/passkey-flow — signInWithPasskey', () => {
     })
 
     const req = request()
-    const result = await signInWithPasskey(db, session, CLIENT, req, passkeyForm(), '/admin')
+    const result = await signInWithPasskey(ctx(), req, passkeyForm(), '/admin')
 
     expect(result).toEqual({ type: 'redirect', to: '/admin', setCookie: '__session=abc' })
     expect(mocks.verifyAuthenticationResponse).toHaveBeenCalledWith(db, { id: 'cred-1' }, 'challenge-1')
@@ -132,7 +139,7 @@ describe('auth/passkey-flow — signInWithPasskey', () => {
   it('surfaces the service error message verbatim', async () => {
     mocks.verifyAuthenticationResponse.mockRejectedValueOnce(new Error('登录挑战已过期或无效，请重试。'))
 
-    const result = await signInWithPasskey(db, session, CLIENT, request(), passkeyForm(), '/admin')
+    const result = await signInWithPasskey(ctx(), request(), passkeyForm(), '/admin')
 
     expect(result).toEqual({ type: 'error', message: '登录挑战已过期或无效，请重试。' })
     expect(mocks.establishLoginSession).not.toHaveBeenCalled()
@@ -141,7 +148,7 @@ describe('auth/passkey-flow — signInWithPasskey', () => {
   it('falls back to the generic error for non-Error throws', async () => {
     mocks.verifyAuthenticationResponse.mockRejectedValueOnce('boom')
 
-    const result = await signInWithPasskey(db, session, CLIENT, request(), passkeyForm(), '/admin')
+    const result = await signInWithPasskey(ctx(), request(), passkeyForm(), '/admin')
 
     expect(result).toEqual({ type: 'error', message: 'Passkey 验证失败，请重试。' })
   })

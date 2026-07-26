@@ -67,10 +67,9 @@ when the response already carries a `__session` `Set-Cookie`, the
 dirty-commit is skipped — browsers apply same-name cookies in order
 and the middleware's header would land last, overriding the route's
 rotation/destroy and resurrecting the deleted session row. (The
-signin-flow's OTP-pending commits still use the explicit channel for
-same-session mutations; converging them onto `markSessionDirty` is
-deliberately left as follow-up — the skip rule makes the mix safe
-meanwhile.)
+signin-flow's same-session mutations — OTP staging, fail counters —
+were converged onto `markSessionDirty` in the same release: the flows
+take a `SigninFlowContext` and never commit explicitly anymore.)
 
 **No fallbacks.** The dual-source nonce, the
 `tryGetSessionContext(...) ?? resolveSessionContext(...)` loader

@@ -18,6 +18,7 @@ const state = vi.hoisted(() => {
       link: string | null
       password: string
     } | null,
+    markSessionDirty: vi.fn(),
     session: {
       get(key: string) {
         return store.get(key)
@@ -42,6 +43,7 @@ vi.mock('@/server/http/request-context', async () => {
         makeRequestContext({
           request,
           session: state.session as RequestContext['session'],
+          markSessionDirty: state.markSessionDirty,
           user: state.loggedIn
             ? { id: '1', name: 'admin', email: 'admin@example.com', website: null, role: 'admin' as const }
             : undefined,
@@ -209,6 +211,18 @@ function extractData(result: unknown): Record<string, unknown> {
   return (result as { data?: Record<string, unknown> }).data ?? {}
 }
 
+// The Set-Cookie contract differs per channel: same-session mutations go
+// through markSessionDirty and the perimeter middleware commits after the
+// response (no header when the route is called directly); sid rotations
+// keep their explicit Set-Cookie on the result.
+function setCookieOf(result: unknown): string | null {
+  if (result instanceof Response) {
+    return result.headers.get('Set-Cookie')
+  }
+  const init = (result as { init?: ResponseInit | null }).init
+  return new Headers(init?.headers).get('Set-Cookie')
+}
+
 describe('routes/signin', () => {
   it('sanitizes external logout redirect targets', async () => {
     const response = await catchResponse(
@@ -268,6 +282,10 @@ describe('routes/signin', () => {
 
     expect(response.status).toBe(302)
     expect(response.headers.get('location')).toBe('/admin/signin?redirect_to=%2F')
+    // Expiry cleanup marks the session dirty; the redirect carries no
+    // Set-Cookie — the middleware commits after the response resolves.
+    expect(state.markSessionDirty).toHaveBeenCalledTimes(1)
+    expect(response.headers.get('Set-Cookie')).toBeNull()
     expect(state.session.get('pendingOtpUser')).toBeUndefined()
     expect(state.session.get('otpFailCount')).toBeUndefined()
   })
@@ -294,7 +312,7 @@ describe('routes/signin — OTP', () => {
   })
 
   it('issues OTP and sends email when OTP is enabled and mail is ready', async () => {
-    await action(postFormData(validLogin))
+    const result = await action(postFormData(validLogin))
 
     const { issueOtpToken } = await import('@/server/domains/auth/verification-tokens')
     const { sendSignInOtp } = await import('@/server/infra/email/sender')
@@ -306,11 +324,14 @@ describe('routes/signin — OTP', () => {
     )
     expect(state.session.get('pendingOtpUser')).toBeDefined()
     expect(state.session.get('otpFailCount')).toBe(0)
+    // Staging is a same-session mutation: dirty-marked, no Set-Cookie.
+    expect(state.markSessionDirty).toHaveBeenCalled()
+    expect(setCookieOf(result)).toBeNull()
   })
 
   it('does NOT trigger OTP when mail is not ready', async () => {
     state.mailReady = false
-    await action(postFormData(validLogin))
+    const result = await action(postFormData(validLogin))
 
     const { issueOtpToken } = await import('@/server/domains/auth/verification-tokens')
     const { sendSignInOtp } = await import('@/server/infra/email/sender')
@@ -319,11 +340,14 @@ describe('routes/signin — OTP', () => {
     expect(vi.mocked(issueOtpToken)).not.toHaveBeenCalled()
     expect(vi.mocked(sendSignInOtp)).not.toHaveBeenCalled()
     expect(vi.mocked(establishLoginSession)).toHaveBeenCalled()
+    // Sid rotation keeps its explicit Set-Cookie channel.
+    expect(setCookieOf(result)).toBe('blog_session=test')
+    expect(state.markSessionDirty).not.toHaveBeenCalled()
   })
 
   it('does NOT trigger OTP when otp.enabled is false', async () => {
     state.otpEnabled = false
-    await action(postFormData(validLogin))
+    const result = await action(postFormData(validLogin))
 
     const { issueOtpToken } = await import('@/server/domains/auth/verification-tokens')
     const { sendSignInOtp } = await import('@/server/infra/email/sender')
@@ -332,6 +356,9 @@ describe('routes/signin — OTP', () => {
     expect(vi.mocked(issueOtpToken)).not.toHaveBeenCalled()
     expect(vi.mocked(sendSignInOtp)).not.toHaveBeenCalled()
     expect(vi.mocked(establishLoginSession)).toHaveBeenCalled()
+    // Sid rotation keeps its explicit Set-Cookie channel.
+    expect(setCookieOf(result)).toBe('blog_session=test')
+    expect(state.markSessionDirty).not.toHaveBeenCalled()
   })
 
   it('blocks OTP send when rate limit is exceeded', async () => {
@@ -341,10 +368,13 @@ describe('routes/signin — OTP', () => {
     const { issueOtpToken } = await import('@/server/domains/auth/verification-tokens')
     const { sendSignInOtp } = await import('@/server/infra/email/sender')
 
-    await action(postFormData(validLogin))
+    const result = await action(postFormData(validLogin))
 
     expect(vi.mocked(issueOtpToken)).not.toHaveBeenCalled()
     expect(vi.mocked(sendSignInOtp)).not.toHaveBeenCalled()
+    // Rate-limit error carries no mutation: not dirty, no Set-Cookie.
+    expect(state.markSessionDirty).not.toHaveBeenCalled()
+    expect(setCookieOf(result)).toBeNull()
   })
 
   it('verifies OTP successfully and establishes session', async () => {
@@ -358,7 +388,7 @@ describe('routes/signin — OTP', () => {
 
     const otpBody = new FormData()
     otpBody.set('otp_code', '123456')
-    await action(postFormData(otpBody, '?action=verifyotp'))
+    const result = await action(postFormData(otpBody, '?action=verifyotp'))
 
     const { establishLoginSession } = await import('@/server/domains/auth/primitives')
     expect(vi.mocked(establishLoginSession)).toHaveBeenCalledWith(
@@ -372,6 +402,9 @@ describe('routes/signin — OTP', () => {
 
     // pendingOtpUser should be cleaned up
     expect(state.session.get('pendingOtpUser')).toBeUndefined()
+    // Cleanup marks dirty; the sid rotation still carries its own cookie.
+    expect(state.markSessionDirty).toHaveBeenCalled()
+    expect(setCookieOf(result)).toBe('blog_session=test')
   })
 
   it('fails verification with wrong OTP code', async () => {
@@ -385,10 +418,13 @@ describe('routes/signin — OTP', () => {
 
     const otpBody = new FormData()
     otpBody.set('otp_code', '000000')
-    await action(postFormData(otpBody, '?action=verifyotp'))
+    const result = await action(postFormData(otpBody, '?action=verifyotp'))
 
     // otpFailCount should increment
     expect(state.session.get('otpFailCount')).toBe(1)
+    // Fail-counter mutation marks dirty; the error carries no Set-Cookie.
+    expect(state.markSessionDirty).toHaveBeenCalled()
+    expect(setCookieOf(result)).toBeNull()
   })
 
   it('locks out after 3 failed OTP attempts', async () => {
@@ -409,6 +445,7 @@ describe('routes/signin — OTP', () => {
 
     // pendingOtpUser should be cleared (locked out)
     expect(state.session.get('pendingOtpUser')).toBeUndefined()
+    expect(state.markSessionDirty).toHaveBeenCalled()
   })
 
   it('resends OTP and resets fail count', async () => {
@@ -420,11 +457,14 @@ describe('routes/signin — OTP', () => {
       sentAt: Date.now(),
     })
 
-    await action(postFormData(new FormData(), '?action=resendotp'))
+    const result = await action(postFormData(new FormData(), '?action=resendotp'))
 
     const { sendSignInOtp } = await import('@/server/infra/email/sender')
     expect(vi.mocked(sendSignInOtp)).toHaveBeenCalled()
     expect(state.session.get('otpFailCount')).toBe(0)
+    // Resend re-stages the pending entry: dirty-marked, no Set-Cookie.
+    expect(state.markSessionDirty).toHaveBeenCalled()
+    expect(setCookieOf(result)).toBeNull()
   })
 
   it('cancels OTP flow and clears pending state', async () => {
@@ -435,10 +475,12 @@ describe('routes/signin — OTP', () => {
       sentAt: Date.now(),
     })
 
-    await action(postFormData(new FormData(), '?action=cancelotp'))
+    const result = await action(postFormData(new FormData(), '?action=cancelotp'))
 
     expect(state.session.get('pendingOtpUser')).toBeUndefined()
     expect(state.session.get('otpFailCount')).toBeUndefined()
+    expect(state.markSessionDirty).toHaveBeenCalled()
+    expect(setCookieOf(result)).toBeNull()
   })
 
   it('blocks OTP verify when rate limit is exceeded', async () => {
@@ -460,6 +502,7 @@ describe('routes/signin — OTP', () => {
     const { establishLoginSession } = await import('@/server/domains/auth/primitives')
     // establishLoginSession should NOT be called because rate limit blocked it
     expect(vi.mocked(establishLoginSession)).not.toHaveBeenCalled()
+    expect(state.markSessionDirty).not.toHaveBeenCalled()
   })
 
   // ── Login edge cases ─────────────────────────────────────────────────────
@@ -473,6 +516,7 @@ describe('routes/signin — OTP', () => {
     const d = extractData(result)
 
     expect(d.error).toBe('请填写正确的邮箱和密码。')
+    expect(state.markSessionDirty).not.toHaveBeenCalled()
   })
 
   it('blocks login when login rate limit exceeded', async () => {
@@ -483,6 +527,7 @@ describe('routes/signin — OTP', () => {
     const d = extractData(result)
 
     expect(d.error).toBe('登录失败次数过多，请稍后再试。')
+    expect(state.markSessionDirty).not.toHaveBeenCalled()
   })
 
   it('wrong password returns redirect without triggering OTP', async () => {
@@ -492,6 +537,9 @@ describe('routes/signin — OTP', () => {
     expect(result).toBeInstanceOf(Response)
     expect((result as Response).status).toBe(302)
     expect((result as Response).headers.get('Location')).toContain('error=invalid_credentials')
+    // Invalid-credentials redirect carries no mutation: no Set-Cookie.
+    expect(setCookieOf(result)).toBeNull()
+    expect(state.markSessionDirty).not.toHaveBeenCalled()
 
     const { issueOtpToken } = await import('@/server/domains/auth/verification-tokens')
     expect(vi.mocked(issueOtpToken)).not.toHaveBeenCalled()
@@ -506,6 +554,8 @@ describe('routes/signin — OTP', () => {
 
     expect(d.error).toBe('验证码发送失败，请稍后重试。')
     expect(state.session.get('pendingOtpUser')).toBeUndefined()
+    // Send failed before staging: no mutation, not dirty.
+    expect(state.markSessionDirty).not.toHaveBeenCalled()
   })
 
   it('returns error when first-time OTP email throws', async () => {
@@ -517,6 +567,8 @@ describe('routes/signin — OTP', () => {
 
     expect(d.error).toBe('验证码发送失败，请稍后重试。')
     expect(state.session.get('pendingOtpUser')).toBeUndefined()
+    // Send failed before staging: no mutation, not dirty.
+    expect(state.markSessionDirty).not.toHaveBeenCalled()
   })
 
   // ── verifyotp edge cases ─────────────────────────────────────────────────
@@ -528,6 +580,7 @@ describe('routes/signin — OTP', () => {
     const d = extractData(result)
 
     expect(d.error).toBe('请先完成登录。')
+    expect(state.markSessionDirty).not.toHaveBeenCalled()
   })
 
   it('returns error when OTP valid but user not found', async () => {
@@ -548,6 +601,9 @@ describe('routes/signin — OTP', () => {
     const d = extractData(result)
 
     expect(d.error).toBe('账户状态异常，无法登录。')
+    // The pending entry was cleared before the user lookup failed.
+    expect(state.markSessionDirty).toHaveBeenCalled()
+    expect(setCookieOf(result)).toBeNull()
     const { establishLoginSession } = await import('@/server/domains/auth/primitives')
     expect(vi.mocked(establishLoginSession)).not.toHaveBeenCalled()
   })
@@ -564,9 +620,11 @@ describe('routes/signin — OTP', () => {
 
     const otpBody = new FormData()
     otpBody.set('otp_code', '123456')
-    await action(postFormData(otpBody, '?action=verifyotp'))
+    const result = await action(postFormData(otpBody, '?action=verifyotp'))
 
     expect(state.session.get('otpFailCount')).toBeUndefined()
+    expect(state.markSessionDirty).toHaveBeenCalled()
+    expect(setCookieOf(result)).toBe('blog_session=test')
   })
 
   // ── resendotp edge cases ─────────────────────────────────────────────────
@@ -576,6 +634,7 @@ describe('routes/signin — OTP', () => {
     const d = extractData(result)
 
     expect(d.error).toBe('请先完成登录。')
+    expect(state.markSessionDirty).not.toHaveBeenCalled()
   })
 
   it('returns error when email send fails on resend', async () => {
@@ -593,6 +652,7 @@ describe('routes/signin — OTP', () => {
     const d = extractData(result)
 
     expect(d.error).toBe('验证码发送失败，请稍后重试。')
+    expect(state.markSessionDirty).not.toHaveBeenCalled()
   })
 
   it('updates pendingOtpUser with new expiresAt and sentAt on resend', async () => {
@@ -610,6 +670,7 @@ describe('routes/signin — OTP', () => {
     const updated = state.session.get('pendingOtpUser') as { expiresAt: number; sentAt: number }
     expect(updated.expiresAt).toBeGreaterThan(oldExpires)
     expect(updated.sentAt).toBeGreaterThan(oldSent)
+    expect(state.markSessionDirty).toHaveBeenCalled()
   })
 
   it('blocks resend when rate limit exceeded', async () => {
@@ -629,6 +690,7 @@ describe('routes/signin — OTP', () => {
     expect(d.error).toBe('发送过于频繁，请稍后再试。')
     const { issueOtpToken } = await import('@/server/domains/auth/verification-tokens')
     expect(vi.mocked(issueOtpToken)).not.toHaveBeenCalled()
+    expect(state.markSessionDirty).not.toHaveBeenCalled()
   })
 
   // ── cancelotp edge cases ─────────────────────────────────────────────────

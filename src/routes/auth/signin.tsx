@@ -4,7 +4,7 @@ import { recordAuditEventFromContext } from '@/server/domains/audit/services/rec
 import { validateCsrfForAction } from '@/server/domains/auth/csrf'
 import { isPasskeyEnabled } from '@/server/domains/auth/passkey-gate'
 import { logout } from '@/server/domains/auth/primitives'
-import { commitSessionWithMaxAge, destroySession } from '@/server/domains/auth/session-storage'
+import { destroySession } from '@/server/domains/auth/session-storage'
 import {
   type AuthFlowResult,
   handleCredentialLogin,
@@ -114,9 +114,11 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   // rule — the loader only consumes the projection.
   const otpState = readLivePendingOtp(session)
   if (otpState.expired) {
-    throw redirect(`/admin/signin?redirect_to=${encodeURIComponent(redirectTo)}`, {
-      headers: { 'Set-Cookie': await commitSessionWithMaxAge(session) },
-    })
+    // The expired pending entry was just cleared from the session — mark
+    // dirty and let the middleware commit, instead of carrying an explicit
+    // Set-Cookie on the redirect.
+    rc.markSessionDirty()
+    throw redirect(`/admin/signin?redirect_to=${encodeURIComponent(redirectTo)}`)
   }
   const pendingOtpUser = otpState.pending
   if (pendingOtpUser) {
@@ -167,28 +169,26 @@ export async function action({ request, context }: Route.ActionArgs) {
 
   if (action === 'resetpassword' || action === 'accept-invite') {
     const purpose = action === 'resetpassword' ? 'password-reset' : 'author-invite'
-    return toActionResult(
-      await resetPasswordWithToken(db, session, clientAddress, request, formData, redirectTo, purpose),
-    )
+    return toActionResult(await resetPasswordWithToken(rc, request, formData, redirectTo, purpose))
   }
 
   if (action === 'cancelotp') {
-    return toActionResult(await handleOtpCancel(session, redirectTo))
+    return toActionResult(await handleOtpCancel(rc, redirectTo))
   }
 
   if (action === 'verifyotp') {
-    return toActionResult(await handleOtpVerify(db, session, clientAddress, request, formData, redirectTo))
+    return toActionResult(await handleOtpVerify(rc, request, formData, redirectTo))
   }
 
   if (action === 'resendotp') {
-    return toActionResult(await handleOtpResend(db, session, clientAddress, request))
+    return toActionResult(await handleOtpResend(rc, request))
   }
 
   if (action === 'passkey') {
-    return toActionResult(await signInWithPasskey(db, session, clientAddress, request, formData, redirectTo))
+    return toActionResult(await signInWithPasskey(rc, request, formData, redirectTo))
   }
 
-  return toActionResult(await handleCredentialLogin(db, session, clientAddress, request, formData, redirectTo), {
+  return toActionResult(await handleCredentialLogin(rc, request, formData, redirectTo), {
     redirectTo,
   })
 }

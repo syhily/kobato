@@ -21,7 +21,6 @@ import { isPasskeyEnabled } from '@/server/domains/auth/passkey-gate'
 import { deleteAllCredentials, verifyAuthenticationResponse } from '@/server/domains/auth/passkey-service'
 import { establishLoginSession } from '@/server/domains/auth/primitives'
 import { MIN_PASSWORD_LENGTH, PASSWORD_COMPLEXITY_RE, signInSchema } from '@/server/domains/auth/schema'
-import { commitSessionWithMaxAge } from '@/server/domains/auth/session-storage'
 import { invalidateSetupToken } from '@/server/domains/auth/setup-token'
 import { consumeToken, issueOtpToken, issueResetToken, verifyOtpToken } from '@/server/domains/auth/verification-tokens'
 import { hasApprovedComments } from '@/server/domains/comments/services/public-query'
@@ -61,6 +60,25 @@ export type AuthFlowResult =
   | { type: 'error'; message: string; setCookie?: string }
   | { type: 'success'; message: string; setCookie?: string }
 
+/**
+ * The slice of the canonical request context the signin flows need.
+ * Structurally satisfied by `RequestContext` (`@/server/http/request-context`)
+ * so routes pass `rc` straight in — the domain stays decoupled from the
+ * http layer.
+ *
+ * Same-session mutations (OTP staging, fail counters) call
+ * `markSessionDirty()`; the perimeter middleware emits the Set-Cookie
+ * after the response resolves. `AuthFlowResult.setCookie` is reserved
+ * for sid-rotating results (`establishLoginSession`) — never for
+ * same-session commits.
+ */
+export interface SigninFlowContext {
+  db: NodePgDatabase
+  session: BlogSession
+  clientAddress: string
+  markSessionDirty(): void
+}
+
 function formFieldString(formData: FormData, key: string): string {
   const value = formData.get(key)
   return typeof value === 'string' ? value.trim() : ''
@@ -87,17 +105,18 @@ export function readLivePendingOtp(session: BlogSession): { pending: PendingOtpU
   return { pending, expired: false }
 }
 
-function clearPendingOtp(session: BlogSession): void {
-  session.unset('pendingOtpUser')
-  session.unset('otpFailCount')
+function clearPendingOtp(ctx: SigninFlowContext): void {
+  ctx.session.unset('pendingOtpUser')
+  ctx.session.unset('otpFailCount')
+  ctx.markSessionDirty()
 }
 
 /** Parse the pending entry's userId; a malformed entry is cleared and reported. */
-function parsePendingUserId(session: BlogSession, pendingOtpUser: PendingOtpUser): bigint | null {
+function parsePendingUserId(ctx: SigninFlowContext, pendingOtpUser: PendingOtpUser): bigint | null {
   try {
     return BigInt(pendingOtpUser.userId)
   } catch {
-    clearPendingOtp(session)
+    clearPendingOtp(ctx)
     return null
   }
 }
@@ -129,13 +148,12 @@ async function sendOtpSafely(
  * on failure; on success the caller decides the response shape.
  */
 async function issueAndSendOtp(
-  db: NodePgDatabase,
-  session: BlogSession,
-  clientAddress: string,
+  ctx: SigninFlowContext,
   request: Request,
   dbUser: { id: bigint; name: string; email: string; role: string | null },
   { resend }: { resend: boolean },
 ): Promise<AuthFlowResult | null> {
+  const { db, session, clientAddress } = ctx
   const [ipLimit, emailLimit] = await Promise.all([
     tryOtpSendRateLimit(clientAddress),
     tryOtpSendByEmailRateLimit(dbUser.email),
@@ -144,14 +162,13 @@ async function issueAndSendOtp(
     return {
       type: 'error',
       message: '发送过于频繁，请稍后再试。',
-      setCookie: await commitSessionWithMaxAge(session),
     }
   }
 
   const { otpCode, expiresAt } = await issueOtpToken(db, dbUser.id)
   const sendResult = await sendOtpSafely(dbUser, otpCode)
   if (!sendResult.ok) {
-    return { type: 'error', message: sendResult.error, setCookie: await commitSessionWithMaxAge(session) }
+    return { type: 'error', message: sendResult.error }
   }
 
   session.set('pendingOtpUser', {
@@ -161,6 +178,7 @@ async function issueAndSendOtp(
     sentAt: Date.now(),
   })
   session.set('otpFailCount', 0)
+  ctx.markSessionDirty()
 
   recordAuditEvent({
     action: 'otp_sent',
@@ -175,26 +193,24 @@ async function issueAndSendOtp(
   return null
 }
 
-export async function handleOtpCancel(session: BlogSession, redirectTo: string): Promise<AuthFlowResult> {
-  clearPendingOtp(session)
+export async function handleOtpCancel(ctx: SigninFlowContext, redirectTo: string): Promise<AuthFlowResult> {
+  clearPendingOtp(ctx)
   return {
     type: 'redirect',
     to: `/admin/signin?redirect_to=${encodeURIComponent(redirectTo)}`,
-    setCookie: await commitSessionWithMaxAge(session),
   }
 }
 
 export async function handleOtpVerify(
-  db: NodePgDatabase,
-  session: BlogSession,
-  clientAddress: string,
+  ctx: SigninFlowContext,
   request: Request,
   formData: FormData,
   redirectTo: string,
 ): Promise<AuthFlowResult> {
+  const { db, session, clientAddress } = ctx
   const pendingOtpUser = session.get('pendingOtpUser')
   if (!pendingOtpUser) {
-    return { type: 'error', message: '请先完成登录。', setCookie: await commitSessionWithMaxAge(session) }
+    return { type: 'error', message: '请先完成登录。' }
   }
 
   const [ipLimit, emailLimit] = await Promise.all([
@@ -205,16 +221,14 @@ export async function handleOtpVerify(
     return {
       type: 'error',
       message: '操作过于频繁，请稍后再试。',
-      setCookie: await commitSessionWithMaxAge(session),
     }
   }
 
-  const userId = parsePendingUserId(session, pendingOtpUser)
+  const userId = parsePendingUserId(ctx, pendingOtpUser)
   if (userId === null) {
     return {
       type: 'error',
       message: '登录状态异常，请重新登录。',
-      setCookie: await commitSessionWithMaxAge(session),
     }
   }
 
@@ -224,8 +238,9 @@ export async function handleOtpVerify(
   if (result === null) {
     const failCount = (session.get('otpFailCount') ?? 0) + 1
     session.set('otpFailCount', failCount)
+    ctx.markSessionDirty()
     if (failCount >= 3) {
-      clearPendingOtp(session)
+      clearPendingOtp(ctx)
       recordAuditEvent({
         action: 'otp_failed',
         resourceType: 'user',
@@ -238,7 +253,6 @@ export async function handleOtpVerify(
       return {
         type: 'error',
         message: '验证失败次数过多，请重新登录。',
-        setCookie: await commitSessionWithMaxAge(session),
       }
     }
     recordAuditEvent({
@@ -253,18 +267,16 @@ export async function handleOtpVerify(
     return {
       type: 'error',
       message: '验证码无效或已过期。',
-      setCookie: await commitSessionWithMaxAge(session),
     }
   }
 
-  clearPendingOtp(session)
+  clearPendingOtp(ctx)
 
   const dbUser = await findUserById(db, userId)
   if (!dbUser || !dbUser.role || dbUser.deletedAt) {
     return {
       type: 'error',
       message: '账户状态异常，无法登录。',
-      setCookie: await commitSessionWithMaxAge(session),
     }
   }
 
@@ -274,39 +286,33 @@ export async function handleOtpVerify(
   return { type: 'redirect', to: redirectTo, setCookie: established.setCookie }
 }
 
-export async function handleOtpResend(
-  db: NodePgDatabase,
-  session: BlogSession,
-  clientAddress: string,
-  request: Request,
-): Promise<AuthFlowResult> {
+export async function handleOtpResend(ctx: SigninFlowContext, request: Request): Promise<AuthFlowResult> {
+  const { db, session } = ctx
   const pendingOtpUser = session.get('pendingOtpUser')
   if (!pendingOtpUser) {
-    return { type: 'error', message: '请先完成登录。', setCookie: await commitSessionWithMaxAge(session) }
+    return { type: 'error', message: '请先完成登录。' }
   }
 
-  const userId = parsePendingUserId(session, pendingOtpUser)
+  const userId = parsePendingUserId(ctx, pendingOtpUser)
   if (userId === null) {
     return {
       type: 'error',
       message: '登录状态异常，请重新登录。',
-      setCookie: await commitSessionWithMaxAge(session),
     }
   }
 
   const dbUser = await findUserById(db, userId)
   if (!dbUser || !dbUser.role || dbUser.deletedAt) {
-    return { type: 'error', message: '账户状态异常。', setCookie: await commitSessionWithMaxAge(session) }
+    return { type: 'error', message: '账户状态异常。' }
   }
 
-  const failure = await issueAndSendOtp(db, session, clientAddress, request, dbUser, { resend: true })
+  const failure = await issueAndSendOtp(ctx, request, dbUser, { resend: true })
   if (failure) {
     return failure
   }
   return {
     type: 'success',
     message: '验证码已重新发送。',
-    setCookie: await commitSessionWithMaxAge(session),
   }
 }
 
@@ -343,32 +349,28 @@ async function checkPasskeyForce(db: NodePgDatabase, email: string): Promise<boo
 }
 
 async function sendOtpAndStageSession(
-  db: NodePgDatabase,
-  session: BlogSession,
-  clientAddress: string,
+  ctx: SigninFlowContext,
   request: Request,
   dbUser: { id: bigint; name: string; email: string; role: string | null },
   redirectTo: string,
 ): Promise<AuthFlowResult> {
-  const failure = await issueAndSendOtp(db, session, clientAddress, request, dbUser, { resend: false })
+  const failure = await issueAndSendOtp(ctx, request, dbUser, { resend: false })
   if (failure) {
     return failure
   }
   return {
     type: 'redirect',
     to: `/admin/signin?action=verifyotp&redirect_to=${encodeURIComponent(redirectTo)}`,
-    setCookie: await commitSessionWithMaxAge(session),
   }
 }
 
 export async function handleCredentialLogin(
-  db: NodePgDatabase,
-  session: BlogSession,
-  clientAddress: string,
+  ctx: SigninFlowContext,
   request: Request,
   formData: FormData,
   redirectTo: string,
 ): Promise<AuthFlowResult> {
+  const { db, clientAddress, session } = ctx
   const input = parseLoginInput(formData)
   if (!input) {
     return { type: 'error', message: '请填写正确的邮箱和密码。' }
@@ -379,7 +381,6 @@ export async function handleCredentialLogin(
     return {
       type: 'error',
       message: '登录失败次数过多，请稍后再试。',
-      setCookie: await commitSessionWithMaxAge(session),
     }
   }
 
@@ -388,7 +389,6 @@ export async function handleCredentialLogin(
     return {
       type: 'error',
       message: '该账户已强制使用 Passkey 登录，请使用 Passkey 方式登录。',
-      setCookie: await commitSessionWithMaxAge(session),
     }
   }
 
@@ -406,18 +406,16 @@ export async function handleCredentialLogin(
       return {
         type: 'redirect',
         to: `/admin/signin?error=invalid_credentials&redirect_to=${encodeURIComponent(redirectTo)}`,
-        setCookie: await commitSessionWithMaxAge(session),
       }
     }
     return {
       type: 'error',
       message: '请填写正确的邮箱和密码。',
-      setCookie: await commitSessionWithMaxAge(session),
     }
   }
 
   if (isOtpEnabled()) {
-    return sendOtpAndStageSession(db, session, clientAddress, request, dbUser, redirectTo)
+    return sendOtpAndStageSession(ctx, request, dbUser, redirectTo)
   }
 
   const established = await establishLoginSession(db, session, dbUser, request, clientAddress)
@@ -427,13 +425,12 @@ export async function handleCredentialLogin(
 // ─── Passkey signin ──────────────────────────────────────────────────────
 
 export async function signInWithPasskey(
-  db: NodePgDatabase,
-  session: BlogSession,
-  clientAddress: string,
+  ctx: SigninFlowContext,
   request: Request,
   formData: FormData,
   redirectTo: string,
 ): Promise<AuthFlowResult> {
+  const { db, session, clientAddress } = ctx
   if (!isPasskeyEnabled()) {
     return { type: 'error', message: 'Passkey 登录未启用。' }
   }
@@ -551,14 +548,13 @@ export async function requestPasswordReset(
  * `purpose` differs.
  */
 export async function resetPasswordWithToken(
-  db: NodePgDatabase,
-  session: BlogSession,
-  clientAddress: string,
+  ctx: SigninFlowContext,
   request: Request,
   formData: FormData,
   redirectTo: string,
   purpose: 'password-reset' | 'author-invite',
 ): Promise<AuthFlowResult> {
+  const { db, session, clientAddress } = ctx
   const rawToken = formData.get('reset_token')
   const newPassword = formData.get('password')
   const rawTokenStr = typeof rawToken === 'string' ? rawToken : ''
