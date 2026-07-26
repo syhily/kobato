@@ -1,13 +1,13 @@
-import { getDbFromContext } from '@/server/domains/auth/context'
 import { listAllCategories } from '@/server/domains/taxonomies/categories/services/query'
 import { listingHeaders } from '@/server/http/loaders/route-exports'
+import { getRequestContext } from '@/server/http/request-context'
 import { titleMeta } from '@/shared/seo/title-meta'
 import { CategoriesBody } from '@/ui/public/post/CategoriesBody'
 
 import type { Route } from './+types/categories'
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const db = getDbFromContext({ request, context })
+  const { db } = getRequestContext({ request, context })
   const categories = await listAllCategories(db)
   return {
     categories,

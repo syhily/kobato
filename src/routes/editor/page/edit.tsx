@@ -1,15 +1,15 @@
 import { useNavigate } from 'react-router'
 
-import { getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
+import { getRequestContext } from '@/server/http/request-context'
 import { titleMeta } from '@/shared/seo/title-meta'
 import { PageEditorRoute } from '@/ui/admin/pages/PageEditorRoute'
 
 import type { Route } from './+types/edit'
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const ctx = getRouteRequestContext({ request, context })
-  requireRole(ctx, 'admin')
+  const rc = getRequestContext({ request, context })
+  requireRole({ user: rc.viewer ?? undefined }, 'admin')
   return null
 }
 

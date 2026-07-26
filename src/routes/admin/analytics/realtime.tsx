@@ -1,12 +1,14 @@
-import { getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
+import { getRequestContext } from '@/server/http/request-context'
 import { RealtimeFeed } from '@/ui/admin/analytics/RealtimeFeed'
 
 import type { Route } from './+types/realtime'
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const ctx = getRouteRequestContext({ request, context })
-  requireRole(ctx, 'admin')
+  const rc = getRequestContext({ request, context })
+  const user = rc.viewer ?? undefined
+  const role = rc.viewer?.role ?? null
+  requireRole({ user, role }, 'admin')
   return null
 }
 

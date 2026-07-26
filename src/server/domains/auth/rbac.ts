@@ -28,9 +28,9 @@ export function requireUserRole(user: SessionUser | undefined, min: Role): asser
 
 /**
  * Convenience façade for route loaders: asserts on a `{ user, role }`
- * wrapper so callers can pass `getRouteRequestContext(...)` straight
- * in. Internally delegates to `requireUserRole` so the throw site
- * stays single-source-of-truth.
+ * wrapper so callers can pass a projection of the canonical
+ * `RequestContext` straight in. Internally delegates to `requireUserRole`
+ * so the throw site stays single-source-of-truth.
  */
 export function requireRole(
   ctx: { user?: SessionUser; role?: RoleOrNull },

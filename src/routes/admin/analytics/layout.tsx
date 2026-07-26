@@ -1,8 +1,8 @@
 import { ActivityIcon, ChartLineIcon, LinkIcon } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router'
 
-import { getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
+import { getRequestContext } from '@/server/http/request-context'
 import { titleMeta } from '@/shared/seo/title-meta'
 import { cn } from '@/ui/lib/cn'
 
@@ -16,8 +16,10 @@ export const meta = titleMeta('访问统计')
 // either ignore the URL params (confusing) or run a no-op revalidation
 // every time the user tweaks the range (wasteful).
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const ctx = getRouteRequestContext({ request, context })
-  requireRole(ctx, 'admin')
+  const rc = getRequestContext({ request, context })
+  const user = rc.viewer ?? undefined
+  const role = rc.viewer?.role ?? null
+  requireRole({ user, role }, 'admin')
   return null
 }
 

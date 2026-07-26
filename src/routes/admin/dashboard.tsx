@@ -5,11 +5,11 @@ import type { DraftSummary } from '@/ui/admin/dashboard/types'
 
 import { queryCounters } from '@/server/domains/analytics/services/counters'
 import { queryViews } from '@/server/domains/analytics/services/views'
-import { getDbFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
 import { countMyComments } from '@/server/domains/comments/repos/admin-query'
 import { loadAdminPendingDashboard } from '@/server/domains/comments/services/admin-query'
 import { countPostMetas, listPostMetas } from '@/server/domains/posts/repos/admin-query'
+import { getRequestContext } from '@/server/http/request-context'
 import { computeDateRange } from '@/shared/contracts/analytics'
 import { titleMeta } from '@/shared/seo/title-meta'
 import { roleLabel } from '@/shared/utils/roles'
@@ -32,12 +32,13 @@ const RECENT_PUBLISHED_LIMIT = 5
 const PENDING_PAGE_SIZE = 3
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const ctx = getRouteRequestContext({ request, context })
+  const rc = getRequestContext({ request, context })
+  const ctx = { user: rc.viewer ?? undefined, role: rc.viewer?.role ?? null }
   // Defence-in-depth: `admin.layout` already gates author+, but
   // asserting here narrows `ctx.user` / `ctx.role` to non-null for the
   // loader body so the response shape is statically tight.
   requireRole(ctx, 'author')
-  const db = getDbFromContext({ request, context })
+  const db = rc.db
   const now = new Date()
 
   const userId = BigInt(ctx.user.id)

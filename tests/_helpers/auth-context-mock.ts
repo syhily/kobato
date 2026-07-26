@@ -1,50 +1,37 @@
 import { vi } from 'vitest'
 
-import type { BlogSession } from '@/server/domains/auth/session-storage'
+import type { RequestContext } from '@/server/http/request-context'
 
 import { emptySession } from '#/_helpers/session'
-
-export interface AuthContextMockOptions {
-  /** Override getDbFromContext / getPoolFromContext with vi.fn(). */
-  mockDbPool?: boolean
-}
+import { extractRequestFacts, normalizeDocumentUrl } from '@/server/http/utils/request-facts'
 
 /**
- * Factory for `vi.mock('@/server/domains/auth/context', ...)` that extracts
- * session / request facts from the `RouterContextProvider` passed via
- * `makeRouteContext`. Falls back to an empty session when the context is
- * not a proper `RouterContextProvider` (e.g. `new Map()`).
+ * Factory for `vi.mock('@/server/http/request-context', ...)` that returns
+ * the canonical `RequestContext` stored on the `RouterContextProvider`
+ * passed via `makeRouteContext`. Falls back to an empty-session stub when
+ * the context is not a proper `RouterContextProvider` (e.g. `new Map()`).
  */
-export async function createAuthContextMockModule(options?: AuthContextMockOptions) {
-  const actual = await vi.importActual<typeof import('@/server/domains/auth/context')>('@/server/domains/auth/context')
+export async function createRequestContextMockModule() {
+  const actual = await vi.importActual<typeof import('@/server/http/request-context')>('@/server/http/request-context')
   return {
     ...actual,
-    getRouteRequestContext: vi.fn((args: { request: Request; context: unknown }) => {
+    getRequestContext: vi.fn((args: { request: Request; context: unknown }): RequestContext => {
       try {
         const ctx = args.context as { get: (key: unknown) => unknown }
-        const sessionCtx = ctx.get(actual.sessionContext) as {
-          session: BlogSession
-          user: unknown
-          role: unknown
-        }
-        const requestCtx = ctx.get(actual.requestContext) as { clientAddress: string; url: URL }
-        return {
-          session: sessionCtx.session,
-          user: sessionCtx.user,
-          role: sessionCtx.role,
-          clientAddress: requestCtx.clientAddress,
-          url: requestCtx.url,
-        }
+        return ctx.get(actual.requestContext) as RequestContext
       } catch {
         return {
           session: emptySession(),
-          user: undefined,
-          role: null,
+          viewer: null,
           clientAddress: '127.0.0.1',
-          url: new URL(args.request.url),
+          url: normalizeDocumentUrl(new URL(args.request.url)),
+          requestFacts: extractRequestFacts(args.request),
+          db: {} as RequestContext['db'],
+          pool: {} as RequestContext['pool'],
+          cspNonce: 'test-csp-nonce',
+          markSessionDirty: () => {},
         }
       }
     }),
-    ...(options?.mockDbPool ? { getDbFromContext: vi.fn(), getPoolFromContext: vi.fn() } : {}),
   }
 }

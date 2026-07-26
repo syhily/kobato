@@ -97,9 +97,12 @@ ceremony:
   - `#/_helpers/integration-db` — DB creation / teardown (integration only)
   - `#/_helpers/db` — query helpers (integration only)
   - `#/_helpers/mock-ctx` — mock auth context (integration only)
-  - `#/_helpers/request-context` — canonical `requestContext` RR key stubs
-    for loader tests (`makeLoaderArgsWithContext`; only for test files
-    whose module graph already imports `@/server/http/request-context`)
+  - `#/_helpers/context` — `makeRouteContext` / `makeLoaderArgs` factories
+    that set the canonical `requestContext` RR key (ADR-0003) for direct
+    loader/action tests
+  - `#/_helpers/auth-context-mock` — `createRequestContextMockModule()` for
+    `vi.mock('@/server/http/request-context', ...)` when a test invokes a
+    handler without a real `RouterContextProvider`
   - `#/_helpers/rpc-call` — oRPC test caller (integration only)
   - `#/_helpers/session` — session fixtures (integration only)
   - `#/_helpers/fetch` — fetch mocks (integration only)

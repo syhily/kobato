@@ -11,9 +11,9 @@ import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { setting } from '@/server/infra/db/schema/config'
 import { user } from '@/server/infra/db/schema/user'
 
-vi.mock('@/server/domains/auth/context', async () => {
-  const { createAuthContextMockModule } = await import('#/_helpers/auth-context-mock')
-  return createAuthContextMockModule({ mockDbPool: true })
+vi.mock('@/server/http/request-context', async () => {
+  const { createRequestContextMockModule } = await import('#/_helpers/auth-context-mock')
+  return createRequestContextMockModule()
 })
 
 const poolDb = createDbPool()
@@ -58,12 +58,19 @@ vi.mock('@/server/domains/auth/setup-token', async (importOriginal) => {
   }
 })
 
-const mockContext = await import('@/server/domains/auth/context')
+const mockContext = await import('@/server/http/request-context')
 const { action, loader } = await import('@/routes/auth/setup/index')
 
 beforeAll(() => {
-  vi.mocked(mockContext.getDbFromContext).mockReturnValue(db)
-  vi.mocked(mockContext.getPoolFromContext).mockReturnValue(pool)
+  // The factory mock derives the RequestContext from the RouterContextProvider
+  // on each call (the per-test session keeps flowing through); overlay the
+  // real db/pool handles so the install flow hits the integration database.
+  const fromProvider = vi.mocked(mockContext.getRequestContext).getMockImplementation()
+  vi.mocked(mockContext.getRequestContext).mockImplementation((args) => ({
+    ...fromProvider!(args),
+    db,
+    pool,
+  }))
 })
 
 beforeEach(async () => {

@@ -4,7 +4,6 @@ import { data } from 'react-router'
 import type { RouteHandle } from '@/root'
 import type { DraftMarker } from '@/shared/types/catalog'
 
-import { getDbFromContext } from '@/server/domains/auth/context'
 import { loadDraftPreviewBySlug } from '@/server/domains/content/lifecycle'
 import { resolveImageMetaBySources } from '@/server/domains/images/services/enhance'
 import { selectSidebarPosts } from '@/server/domains/posts/repos/public-query/featured'
@@ -33,12 +32,13 @@ export const handle: RouteHandle = { postFonts: true }
 export const headers = detailHeaders
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
-  const db = getDbFromContext({ request, context })
+  const rc = getRequestContext({ request, context })
+  const db = rc.db
   let sourcePost = (await findPostBySlug(db, params.slug)) ?? undefined
   let draftMarker: DraftMarker = null
 
   if (sourcePost === undefined) {
-    const role = getRequestContext({ request, context }).viewer?.role
+    const role = rc.viewer?.role
     if (postLifecycleAdapter.canPreviewDraft(role)) {
       const preview = await loadDraftPreviewBySlug(db, postLifecycleAdapter, params.slug)
       if (preview !== null) {

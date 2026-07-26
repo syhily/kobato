@@ -1,7 +1,7 @@
 import { queryMetric } from '@/server/domains/analytics/services/metric'
 import { parseAnalyticsSearch } from '@/server/domains/analytics/services/query-parser'
-import { getDbFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
+import { getRequestContext } from '@/server/http/request-context'
 import { DateRangePicker } from '@/ui/admin/analytics/DateRangePicker'
 import { useAnalyticsState } from '@/ui/admin/analytics/use-analytics-state'
 import { Card, CardContent } from '@/ui/components/card'
@@ -9,13 +9,15 @@ import { Card, CardContent } from '@/ui/components/card'
 import type { Route } from './+types/mentions'
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const ctx = getRouteRequestContext({ request, context })
-  requireRole(ctx, 'admin')
+  const rc = getRequestContext({ request, context })
+  const user = rc.viewer ?? undefined
+  const role = rc.viewer?.role ?? null
+  requireRole({ user, role }, 'admin')
 
   const url = new URL(request.url)
   const input = parseAnalyticsSearch(url.searchParams)
 
-  const db = getDbFromContext({ request, context })
+  const db = rc.db
   const referers = await queryMetric(db, input, 'referer', 50)
 
   return { referers }

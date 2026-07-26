@@ -3,8 +3,8 @@ import { data, Outlet, redirect } from 'react-router'
 import type { RouteHandle } from '@/root'
 
 import { useDetachPublicCss } from '@/client/hooks/use-detach-public-css'
-import { getDbFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { countAdminPendingDashboard } from '@/server/domains/comments/repos/admin-query'
+import { getRequestContext } from '@/server/http/request-context'
 import { countUsers } from '@/server/infra/db/operations/user'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { hasAtLeast } from '@/shared/utils/roles'
@@ -23,8 +23,10 @@ import '@/styles/admin.css'
 export const handle: RouteHandle = { layout: 'admin', postFonts: true }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const { role, user, url } = getRouteRequestContext({ request, context })
-  const db = getDbFromContext({ request, context })
+  const rc = getRequestContext({ request, context })
+  const { db, url } = rc
+  const user = rc.viewer ?? undefined
+  const role = rc.viewer?.role ?? null
   // Self-service visitors land on `/admin/me/profile`; other admin
   // routes have their own per-route `requireRole` gate that promotes
   // the minimum to `author` (content management) or `admin` (settings,

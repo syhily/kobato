@@ -11,8 +11,8 @@ import { queryHeatmap } from '@/server/domains/analytics/services/heatmap'
 import { queryMetric } from '@/server/domains/analytics/services/metric'
 import { parseAnalyticsSearch } from '@/server/domains/analytics/services/query-parser'
 import { queryViews } from '@/server/domains/analytics/services/views'
-import { getDbFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
+import { getRequestContext } from '@/server/http/request-context'
 import { METRIC_GROUPS, METRIC_GROUP_TABS } from '@/shared/contracts/analytics'
 import { Counters } from '@/ui/admin/analytics/Counters'
 import { DateRangePicker } from '@/ui/admin/analytics/DateRangePicker'
@@ -31,13 +31,15 @@ import type { Route } from './+types/overview'
 // (`MetricList`) take over once the URL state changes.
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const ctx = getRouteRequestContext({ request, context })
-  requireRole(ctx, 'admin')
+  const rc = getRequestContext({ request, context })
+  const user = rc.viewer ?? undefined
+  const role = rc.viewer?.role ?? null
+  requireRole({ user, role }, 'admin')
 
   const url = new URL(request.url)
   const input = parseAnalyticsSearch(url.searchParams)
 
-  const db = getDbFromContext({ request, context })
+  const db = rc.db
 
   // First-pass metric types: the first tab of each of the 5 groups.
   // The list components hydrate the other tabs on demand via their

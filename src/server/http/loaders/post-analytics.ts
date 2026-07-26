@@ -8,10 +8,10 @@ import { queryHeatmap } from '@/server/domains/analytics/services/heatmap'
 import { queryMetric } from '@/server/domains/analytics/services/metric'
 import { parseAnalyticsSearch } from '@/server/domains/analytics/services/query-parser'
 import { queryViews } from '@/server/domains/analytics/services/views'
-import { getDbFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
 import { toAdminPostDto } from '@/server/domains/posts/projection'
 import { findPostMetaById } from '@/server/domains/posts/repos/single'
+import { getRequestContext } from '@/server/http/request-context'
 import { findTagNamesByPostId } from '@/server/infra/db/operations/post-tag'
 import { METRIC_GROUPS, METRIC_GROUP_TABS } from '@/shared/contracts/analytics'
 
@@ -32,10 +32,10 @@ export async function loadPostAnalyticsData({
   context,
   postId,
 }: Pick<LoaderFunctionArgs, 'request' | 'context'> & { postId: bigint }): Promise<PostAnalyticsData> {
-  const ctx = getRouteRequestContext({ request, context })
-  requireRole(ctx, 'author')
+  const ctx = getRequestContext({ request, context })
+  requireRole({ user: ctx.viewer ?? undefined, role: ctx.viewer?.role ?? null }, 'author')
 
-  const db = getDbFromContext({ request, context })
+  const db = ctx.db
 
   const meta = await findPostMetaById(db, postId)
   if (meta === null) {

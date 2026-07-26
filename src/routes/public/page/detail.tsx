@@ -3,12 +3,12 @@ import { data } from 'react-router'
 
 import type { RouteHandle } from '@/root'
 
-import { getDbFromContext } from '@/server/domains/auth/context'
 import { listAllFriends } from '@/server/domains/friends/service'
 import { prerenderMusicPlayerBlocks } from '@/server/domains/pt/prerender'
 import { loadPublicDetailData } from '@/server/http/loaders/detail'
 import { loadPagePreview } from '@/server/http/loaders/page-preview'
 import { detailHeaders } from '@/server/http/loaders/route-exports'
+import { getRequestContext } from '@/server/http/request-context'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { bundleFromMatches, routeMeta, seoForPage } from '@/shared/seo/meta'
 import { resolveFootnotesSectionTitle } from '@/shared/utils/footnotes-section-title'
@@ -23,7 +23,7 @@ export const handle: RouteHandle = { footer: false, postFonts: true }
 export const headers = detailHeaders
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
-  const db = getDbFromContext({ request, context })
+  const { db } = getRequestContext({ request, context })
   const url = new URL(request.url)
   const wantsDraftPreview = url.searchParams.get('draft') === 'true'
 

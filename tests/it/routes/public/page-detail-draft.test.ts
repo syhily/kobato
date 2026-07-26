@@ -3,8 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
 import { makePage } from '#/_helpers/catalog'
-import { unwrapLoaderData } from '#/_helpers/context'
-import { makeLoaderArgsWithContext } from '#/_helpers/request-context'
+import { makeLoaderArgs, unwrapLoaderData } from '#/_helpers/context'
 import { adminSession, regularSession } from '#/_helpers/session'
 
 // Draft-preview contract for `routes/page.detail`. Three states the
@@ -128,7 +127,7 @@ describe('routes/page.detail draft preview', () => {
   it('serves the published body without a marker for anonymous visitors', async () => {
     const result = unwrapLoaderData<LoaderResult>(
       await pageRoute.loader(
-        makeLoaderArgsWithContext({
+        makeLoaderArgs({
           request: new Request('http://localhost/about'),
           session: currentSession,
           params: { slug: 'about' },
@@ -144,7 +143,7 @@ describe('routes/page.detail draft preview', () => {
   it('ignores `?draft=true` for anonymous visitors on a published page', async () => {
     const result = unwrapLoaderData<LoaderResult>(
       await pageRoute.loader(
-        makeLoaderArgsWithContext({
+        makeLoaderArgs({
           request: new Request('http://localhost/about?draft=true'),
           session: currentSession,
           params: { slug: 'about' },
@@ -163,7 +162,7 @@ describe('routes/page.detail draft preview', () => {
     let thrown: unknown
     try {
       await pageRoute.loader(
-        makeLoaderArgsWithContext({
+        makeLoaderArgs({
           request: new Request('http://localhost/secret'),
           session: currentSession,
           params: { slug: 'secret' },
@@ -183,7 +182,7 @@ describe('routes/page.detail draft preview', () => {
 
     const result = unwrapLoaderData<LoaderResult>(
       await pageRoute.loader(
-        makeLoaderArgsWithContext({
+        makeLoaderArgs({
           request: new Request('http://localhost/secret'),
           session: currentSession,
           params: { slug: 'secret' },
@@ -207,7 +206,7 @@ describe('routes/page.detail draft preview', () => {
 
     const result = unwrapLoaderData<LoaderResult>(
       await pageRoute.loader(
-        makeLoaderArgsWithContext({
+        makeLoaderArgs({
           request: new Request('http://localhost/about?draft=true'),
           session: currentSession,
           params: { slug: 'about' },
@@ -228,7 +227,7 @@ describe('routes/page.detail draft preview', () => {
 
     const result = unwrapLoaderData<LoaderResult>(
       await pageRoute.loader(
-        makeLoaderArgsWithContext({
+        makeLoaderArgs({
           request: new Request('http://localhost/about?draft=true'),
           session: currentSession,
           params: { slug: 'about' },
@@ -246,7 +245,7 @@ describe('routes/page.detail draft preview', () => {
 
     const result = unwrapLoaderData<LoaderResult>(
       await pageRoute.loader(
-        makeLoaderArgsWithContext({
+        makeLoaderArgs({
           request: new Request('http://localhost/about'),
           session: currentSession,
           params: { slug: 'about' },

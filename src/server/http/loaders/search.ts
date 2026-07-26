@@ -3,9 +3,10 @@ import type { Pool } from 'pg'
 
 import { redirect } from 'react-router'
 
+import type { AuditContext } from '@/server/domains/audit/types'
 import type { ListingPageLoaderData } from '@/server/http/loaders/listing'
 
-import { recordAuditEvent } from '@/server/domains/audit/services/record'
+import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { getClientPostsWithMetadata } from '@/server/domains/posts/repos/public-query/listing'
 import { getPostsBySlugs } from '@/server/domains/posts/repos/public-query/misc'
 import { livePostWhere } from '@/server/domains/posts/repos/shared'
@@ -21,13 +22,13 @@ export interface SearchLoaderOptions {
   keyword: string | undefined
   num: string | undefined
   forceNoindex?: boolean
-  clientAddress?: string
-  request?: Request
+  /** Canonical request facts; when present, a `search` audit event is recorded. */
+  auditContext?: AuditContext
 }
 export async function searchLoader(
   db: NodePgDatabase,
   pool: Pool,
-  { keyword, num, forceNoindex = true, clientAddress, request }: SearchLoaderOptions,
+  { keyword, num, forceNoindex = true, auditContext }: SearchLoaderOptions,
 ): Promise<ListingPageLoaderData> {
   const listingNowIso = new Date().toISOString()
   const query = keyword?.trim() ?? ''
@@ -43,13 +44,11 @@ export async function searchLoader(
   // business rules.
   const liveWhere = livePostWhere()
   const { hits, page, totalPages } = await searchPosts(db, liveWhere, query, pageSize, (pageNum - 1) * pageSize)
-  if (request !== undefined) {
-    recordAuditEvent({
+  if (auditContext !== undefined) {
+    recordAuditEventFromContext(auditContext, {
       action: 'search',
       resourceType: 'search',
       details: { keyword: query, resultCount: hits.length },
-      ipAddress: clientAddress ?? null,
-      userAgent: request.headers.get('User-Agent') ?? null,
     })
   }
   if (num !== undefined) {

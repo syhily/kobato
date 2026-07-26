@@ -10,7 +10,7 @@ import { PassThrough } from 'node:stream'
 import { renderToPipeableStream } from 'react-dom/server'
 import { ServerRouter } from 'react-router'
 
-import { cspNonceContext } from '@/server/domains/auth/context'
+import { requestContext } from '@/server/http/request-context'
 import { getLogger } from '@/server/infra/logger'
 
 export const streamTimeout = 5_000
@@ -32,7 +32,7 @@ export default function handleRequest(
     })
   }
 
-  const nonce = loadContext.get(cspNonceContext)
+  const nonce = loadContext.get(requestContext).cspNonce
 
   // WORKAROUND: React Router v8's HydratedRouter does not include `nonce` in
   // FrameworkContext on the client, while ServerRouter does on the server. The

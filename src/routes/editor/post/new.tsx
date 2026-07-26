@@ -1,14 +1,15 @@
 import { useNavigate } from 'react-router'
 
-import { getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
+import { getRequestContext } from '@/server/http/request-context'
 import { titleMeta } from '@/shared/seo/title-meta'
 import { PostEditorShell } from '@/ui/admin/posts/PostEditorShell'
 
 import type { Route } from './+types/new'
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  requireRole(getRouteRequestContext({ request, context }), 'author')
+  const rc = getRequestContext({ request, context })
+  requireRole({ user: rc.viewer ?? undefined }, 'author')
   return null
 }
 

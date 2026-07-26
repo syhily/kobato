@@ -7,13 +7,9 @@ const mocks = vi.hoisted(() => ({
   getClientPostsWithMetadata: vi.fn(async (_db: unknown, posts: unknown[]) => posts),
 }))
 
-vi.mock('@/server/domains/auth/context', async () => {
-  const actual = await vi.importActual<typeof import('@/server/domains/auth/context')>('@/server/domains/auth/context')
-  return {
-    ...actual,
-    getDbFromContext: vi.fn(() => ({})),
-    getPoolFromContext: vi.fn(() => ({})),
-  }
+vi.mock('@/server/http/request-context', async () => {
+  const { createRequestContextMockModule } = await import('#/_helpers/auth-context-mock')
+  return createRequestContextMockModule()
 })
 
 vi.mock('@/server/domains/posts/repos/public-query/listing', () => ({

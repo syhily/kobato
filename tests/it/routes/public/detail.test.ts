@@ -1,14 +1,9 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { RouterContextProvider } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { makePage, makePost, makePostList, makeTag } from '#/_helpers/catalog'
-import { unwrapLoaderData } from '#/_helpers/context'
-import { makeLoaderArgsWithContext } from '#/_helpers/request-context'
+import { makeLoaderArgs, unwrapLoaderData } from '#/_helpers/context'
 import { emptySession, regularSession } from '#/_helpers/session'
-import { dbContext, poolContext } from '@/server/domains/auth/context'
 
 // post.detail / page.detail loaders form the most-trafficked SSR endpoints.
 // Pin the alias 301 redirect, the page-vs-post-slug fallback redirect, and
@@ -136,7 +131,7 @@ describe('routes/post.detail loader', () => {
   it('301-redirects from a post alias to the canonical slug', async () => {
     await expect(
       postRoute.loader(
-        makeLoaderArgsWithContext({
+        makeLoaderArgs({
           request: new Request('http://localhost/posts/hello-old'),
           session,
           params: { slug: 'hello-old' },
@@ -148,7 +143,7 @@ describe('routes/post.detail loader', () => {
   it("404s when the slug isn't a known post or alias", async () => {
     await expect(
       postRoute.loader(
-        makeLoaderArgsWithContext({
+        makeLoaderArgs({
           request: new Request('http://localhost/posts/missing'),
           session,
           params: { slug: 'missing' },
@@ -162,7 +157,7 @@ describe('routes/post.detail loader', () => {
     // a missing slug must still 404 rather than leak a draft preview.
     await expect(
       postRoute.loader(
-        makeLoaderArgsWithContext({
+        makeLoaderArgs({
           request: new Request('http://localhost/posts/missing'),
           session: emptySession(),
           params: { slug: 'missing' },
@@ -177,7 +172,7 @@ describe('routes/post.detail loader', () => {
       body: unknown[]
     }>(
       await postRoute.loader(
-        makeLoaderArgsWithContext({
+        makeLoaderArgs({
           request: new Request('http://localhost/posts/hello'),
           session,
           params: { slug: 'hello' },
@@ -195,7 +190,7 @@ describe('routes/page.detail loader', () => {
   it('returns the canonical page payload for a real page slug', async () => {
     const data = unwrapLoaderData<{ page: { permalink: string } }>(
       await pageRoute.loader(
-        makeLoaderArgsWithContext({
+        makeLoaderArgs({
           request: new Request('http://localhost/about'),
           session,
           params: { slug: 'about' },
@@ -212,8 +207,6 @@ describe('routes/page.detail loader', () => {
     // programming error and throws — `resolveSessionContext` is never
     // consulted as a fallback.
     const ctx = new RouterContextProvider()
-    ctx.set(dbContext, {} as NodePgDatabase)
-    ctx.set(poolContext, {} as Pool)
 
     await expect(
       pageRoute.loader({
@@ -228,7 +221,7 @@ describe('routes/page.detail loader', () => {
   it('301-redirects to /posts/:slug when a page slug actually belongs to a post', async () => {
     try {
       await pageRoute.loader(
-        makeLoaderArgsWithContext({
+        makeLoaderArgs({
           request: new Request('http://localhost/hello'),
           session,
           params: { slug: 'hello' },
@@ -246,7 +239,7 @@ describe('routes/page.detail loader', () => {
   it('404s when neither page nor post matches the slug', async () => {
     await expect(
       pageRoute.loader(
-        makeLoaderArgsWithContext({
+        makeLoaderArgs({
           request: new Request('http://localhost/missing'),
           session,
           params: { slug: 'missing' },

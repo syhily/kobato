@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { makeLoaderArgs } from '#/_helpers/context'
 import { makeSession } from '#/_helpers/session'
-import { cspNonceContext } from '@/server/domains/auth/context'
 
 const session = makeSession({ csrfToken: 'test-csrf-token' })
 
@@ -46,8 +45,8 @@ describe('root loader', () => {
       session,
       user: undefined,
       clientAddress: '127.0.0.1',
+      cspNonce: 'test-nonce-abc123',
     })
-    args.context.set(cspNonceContext, 'test-nonce-abc123')
 
     const result = await loader(args)
 

@@ -45,9 +45,10 @@ db/pool handles, CSP nonce. It is stored as the _only_ Hono var besides
   (deliberately without `markSessionDirty` — procedures get a read-only
   session).
 - `buildLoadContext` sets the canonical RR context key
-  (`getRequestContext(args)` for loaders) and, during the migration,
-  the legacy five keys as a pure projection
-  (`projectLegacyRouteContexts`).
+  (`getRequestContext(args)` for loaders) as the single value on the
+  `RouterContextProvider`. (During the migration it also set the legacy
+  five keys via `projectLegacyRouteContexts`; both were deleted when
+  the route-side migration landed.)
 
 **Viewer IS the SessionUser.** `ViewerContext` is deleted. `rbac.ts`
 predicates take the structural minimum `ViewerIdentity { id, role }`,
@@ -61,7 +62,15 @@ writes the `Set-Cookie` after `next()` — the single commit point.
 Sid-changing flows (login rotation, logout) keep their explicit
 `Set-Cookie` channel via `establishLoginSession` / `destroySession`.
 The two channels never mix: a handler that rotates the sid does not
-also rely on the dirty-commit.
+also rely on the dirty-commit. The seam is enforced in the middleware:
+when the response already carries a `__session` `Set-Cookie`, the
+dirty-commit is skipped — browsers apply same-name cookies in order
+and the middleware's header would land last, overriding the route's
+rotation/destroy and resurrecting the deleted session row. (The
+signin-flow's OTP-pending commits still use the explicit channel for
+same-session mutations; converging them onto `markSessionDirty` is
+deliberately left as follow-up — the skip rule makes the mix safe
+meanwhile.)
 
 **No fallbacks.** The dual-source nonce, the
 `tryGetSessionContext(...) ?? resolveSessionContext(...)` loader
@@ -93,8 +102,9 @@ context is a programming error and throws (React Router's
   (`session-guard`, taxonomy/music/post ownership checks) speak
   `ViewerIdentity`.
 - The legacy RR keys and `getRouteRequestContext` /
-  `getDbFromContext` survive until the route-side migration completes;
-  they are projections, so deleting them later is mechanical.
+  `getDbFromContext` were deleted once the route-side migration
+  completed (same release); every loader/action reads the single
+  canonical key via `getRequestContext(args)`.
 - Analytics treats normalized data requests as first-class
   (`RequestFacts.isDataRequest`) instead of each consumer re-detecting
   them.

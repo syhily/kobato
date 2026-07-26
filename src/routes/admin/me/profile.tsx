@@ -1,9 +1,9 @@
 import { data } from 'react-router'
 
-import { getDbFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { isPasskeyEnabled } from '@/server/domains/auth/passkey-gate'
 import { requireRole } from '@/server/domains/auth/rbac'
 import { countMyComments } from '@/server/domains/comments/repos/admin-query'
+import { getRequestContext } from '@/server/http/request-context'
 import { findUserById } from '@/server/infra/db/operations/user'
 import { titleMeta } from '@/shared/seo/title-meta'
 import { MyProfileView } from '@/ui/admin/my/MyProfileView'
@@ -13,15 +13,15 @@ import type { Route } from './+types/profile'
 export const meta = titleMeta('个人信息')
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const ctx = getRouteRequestContext({ request, context })
+  const rc = getRequestContext({ request, context })
+  const ctx = { user: rc.viewer ?? undefined, role: rc.viewer?.role ?? null }
   // Self-service: any logged-in role (visitor, author, admin) can
   // edit their own row. admin.layout's `visitor` gate already
   // rejects anonymous visitors, but `requireRole` here keeps the
   // contract explicit for the loader.
   requireRole(ctx, 'visitor')
-  const db = getDbFromContext({ request, context })
   const userId = BigInt(ctx.user.id)
-  const [dbUser, counts] = await Promise.all([findUserById(db, userId), countMyComments(db, userId)])
+  const [dbUser, counts] = await Promise.all([findUserById(rc.db, userId), countMyComments(rc.db, userId)])
   return data({
     user: {
       id: ctx.user.id,

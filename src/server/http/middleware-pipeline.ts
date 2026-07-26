@@ -9,7 +9,6 @@ import { RouterContextProvider } from 'react-router'
 import type { Env } from '@/server/http/context'
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
-import { cspNonceContext, dbContext, poolContext, requestContext, sessionContext } from '@/server/domains/auth/context'
 import { hydrateBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { createApiApp } from '@/server/http/app'
 import { onErrorHandler } from '@/server/http/errors'
@@ -20,7 +19,7 @@ import { requestTimeout } from '@/server/http/middlewares/request-timeout'
 import { trailingSlashNormaliser } from '@/server/http/middlewares/trailing-slash'
 import { honoVisitorCookieMiddleware } from '@/server/http/middlewares/visitor-cookie'
 import { honoWpDecoyMiddleware } from '@/server/http/middlewares/wp-decoy'
-import { projectLegacyRouteContexts, requestContext as canonicalRequestContext } from '@/server/http/request-context'
+import { requestContext } from '@/server/http/request-context'
 import { analyticsEventsRouter } from '@/server/http/resources/analytics'
 import { assetsRouter } from '@/server/http/resources/assets'
 import { backupRouter } from '@/server/http/resources/backup'
@@ -215,16 +214,9 @@ export async function buildLoadContext(c: { var: Env['Variables']; req: { raw: R
   // loader. See `tests/middleware.pipeline.test.ts` for the regression
   // guard.
   await hydrateBlogSettings(rc.db)
-  // Pure projection of the canonical RequestContext — nothing re-derived.
-  // The legacy five keys stay until the stage-③ RR migration deletes
-  // them; the canonical key is set alongside from day one.
-  const { session, request } = projectLegacyRouteContexts(rc)
+  // The single canonical key — every loader/action reads it via
+  // `getRequestContext`. Nothing is re-derived per route.
   const context = new RouterContextProvider()
-  context.set(sessionContext, session)
-  context.set(requestContext, request)
-  context.set(dbContext, rc.db)
-  context.set(poolContext, rc.pool)
-  context.set(cspNonceContext, rc.cspNonce)
-  context.set(canonicalRequestContext, rc)
+  context.set(requestContext, rc)
   return context
 }

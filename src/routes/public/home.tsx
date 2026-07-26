@@ -3,7 +3,6 @@ import type { ListingPostCard } from '@/shared/types/catalog'
 import type { SidebarData } from '@/ui/public/Sidebar'
 
 import { trackAccess } from '@/server/domains/analytics/track'
-import { getDbFromContext } from '@/server/domains/auth/context'
 import { selectFeaturePosts, selectSidebarPosts } from '@/server/domains/posts/repos/public-query/featured'
 import { countPublicPosts, listPublicPostCardsPaginated } from '@/server/domains/posts/repos/public-query/listing'
 import { getCategoryLinks } from '@/server/domains/taxonomies/categories/services/query'
@@ -33,7 +32,7 @@ export async function loader({
   params,
 }: Route.LoaderArgs): Promise<ListingPageLoaderData<HomeExtra>> {
   const rc = getRequestContext({ request, context })
-  const db = getDbFromContext({ request, context })
+  const db = rc.db
 
   // Time-series access-log write for the analytics dashboard. The
   // homepage isn't a content detail page so we pass a null target —

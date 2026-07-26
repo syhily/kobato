@@ -3,10 +3,10 @@ import { data, useOutletContext } from 'react-router'
 import type { MyCommentsStatus } from '@/server/domains/comments/repos/shared'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
-import { getDbFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
 import { listMyCommentEntities } from '@/server/domains/comments/repos/admin-query'
 import { resolveEntitiesForComments } from '@/server/domains/comments/repos/public-query/entities'
+import { getRequestContext } from '@/server/http/request-context'
 import { titleMeta } from '@/shared/seo/title-meta'
 import { parseCommentEntity, serializeCommentEntity } from '@/shared/utils/comments'
 import { MyCommentsView } from '@/ui/admin/my/MyCommentsView'
@@ -53,10 +53,10 @@ function parseStatus(raw: string | null): MyCommentsStatus {
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const ctx = getRouteRequestContext({ request, context })
+  const rc = getRequestContext({ request, context })
+  const ctx = { user: rc.viewer ?? undefined, role: rc.viewer?.role ?? null }
   // Self-service path — any logged-in role can see their own comments.
   requireRole(ctx, 'visitor')
-  const db = getDbFromContext({ request, context })
   const userId = BigInt(ctx.user.id)
   const url = new URL(request.url)
   const status = parseStatus(url.searchParams.get('status'))
@@ -64,7 +64,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const entity = parseCommentEntity(url.searchParams.get('entity'))
   const entityValue = entity ? serializeCommentEntity(entity) : null
 
-  const entityOptionsRaw = await listMyCommentEntities(db, userId)
+  const entityOptionsRaw = await listMyCommentEntities(rc.db, userId)
   const entityOptions: MyCommentEntityOption[] = entityOptionsRaw.map((e) => ({
     value: serializeCommentEntity({ type: e.type, ownerId: e.ownerId }),
     label: e.title,
@@ -73,7 +73,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   // If the URL pins an entity that isn't in the result set, do a
   // follow-up lookup so the trigger can render the human-readable title.
   if (entity && !entityOptions.some((o) => o.value === entityValue)) {
-    const resolved = await resolveEntitiesForComments(db, [entity])
+    const resolved = await resolveEntitiesForComments(rc.db, [entity])
     const row = resolved.get(serializeCommentEntity(entity))
     if (row) {
       entityOptions.unshift({ value: serializeCommentEntity(entity), label: row.title })

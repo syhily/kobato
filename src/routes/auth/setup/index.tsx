@@ -1,13 +1,12 @@
 import { data, redirect, useNavigation } from 'react-router'
 
-import { getDbFromContext, getPoolFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { validateCsrfForAction } from '@/server/domains/auth/csrf'
 import { signUpAdminSchema } from '@/server/domains/auth/schema'
-import { commitSessionWithMaxAge } from '@/server/domains/auth/session-storage'
 import { getSetupToken, isSetupTokenActive, verifySetupToken } from '@/server/domains/auth/setup-token'
 import { signUpInitialAdminWithSession } from '@/server/domains/auth/signin-flow'
 import { checkPgToolsAvailable } from '@/server/domains/backup/services/shared'
 import { ensureNoAdminOrRedirect } from '@/server/domains/settings/install-gate'
+import { getRequestContext } from '@/server/http/request-context'
 import { tryKeyedRateLimit } from '@/server/infra/rate-limit'
 import { titleMeta } from '@/shared/seo/title-meta'
 import { AdminInstallForm } from '@/ui/admin/auth/AdminInstallForm'
@@ -21,7 +20,8 @@ const ADMIN_INSTALL_FIELDS = ['title', 'name', 'email', 'password'] as const
 const SETUP_VERIFY_BUCKET = { windowSeconds: 3600, maxAttempts: 10 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const db = getDbFromContext({ request, context })
+  const rc = getRequestContext({ request, context })
+  const db = rc.db
   // Possible outcomes:
   //   noAdmin   → render the admin-credentials form.
   //   installed → 303 → /admin/signin
@@ -36,8 +36,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     // lazily created on the next successful call.
   }
 
-  // Pull the request context so we trip session middleware exactly once.
-  const { session } = getRouteRequestContext({ request, context })
+  const { session } = rc
   return data({
     pgToolsAvailable: await checkPgToolsAvailable(),
     setupTokenVerified: session.get('setupTokenVerified') === true,
@@ -46,15 +45,16 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
-  const db = getDbFromContext({ request, context })
-  const pool = getPoolFromContext({ request, context })
+  const rc = getRequestContext({ request, context })
+  const db = rc.db
+  const pool = rc.pool
   // Same gate as the loader. A POST that races a concurrent install
   // would still be caught by `signUpInitialAdminWithSession`'s own
   // `hasAdmin()` check (returns 409), so the redirect here is a UX
   // courtesy, not a security boundary.
   await ensureNoAdminOrRedirect(db)
 
-  const { session, clientAddress } = getRouteRequestContext({ request, context })
+  const { session, clientAddress } = rc
   const formData = await request.formData()
   const intent = formData.get('intent')
 
@@ -82,14 +82,12 @@ export async function action({ request, context }: Route.ActionArgs) {
     }
 
     session.set('setupTokenVerified', true)
-    // Manually commit the session here. React Router actions run inside
-    // Hono's `next()` so they cannot set `c.var.sessionDirty`. The Hono
-    // session middleware will also commit after `next()` returns when
-    // `sessionDirty` is true (e.g. for a fresh session that just got its
-    // CSRF token). This produces two Set-Cookie headers with equivalent
-    // content; browsers handle it correctly. The same pattern exists in
-    // `signin.tsx`.
-    return data({ setupTokenVerified: true }, { headers: { 'Set-Cookie': await commitSessionWithMaxAge(session) } })
+    // Same-session mutation — mark dirty and let the request-context
+    // middleware emit the Set-Cookie after the response resolves. No
+    // explicit commit here (unlike the sid-rotating install flow below,
+    // which keeps its own Set-Cookie channel).
+    rc.markSessionDirty()
+    return data({ setupTokenVerified: true })
   }
 
   // ── Intent: install (or no intent for backward compat) ─────────────────

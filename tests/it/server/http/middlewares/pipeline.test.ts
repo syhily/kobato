@@ -28,9 +28,9 @@ const { buildLoadContext } = await import('@/server/http/middleware-pipeline')
 
 // The perimeter middleware derives the canonical RequestContext
 // (`@/server/http/request-context`) once per request; `buildLoadContext`
-// only projects it. These tests hand it a stub carrying the fields the
-// projection reads (`session` / `viewer` / `clientAddress` / `url`) plus
-// the pass-through handles (`db` / `pool` / `cspNonce`).
+// sets it on the RouterContextProvider as-is. These tests hand it a stub
+// carrying the canonical fields (`session` / `viewer` / `clientAddress` /
+// `url`) plus the pass-through handles (`db` / `pool` / `cspNonce`).
 function makeContextStub(overrides: Record<string, unknown> = {}) {
   return {
     var: {
@@ -87,14 +87,18 @@ describe('middleware-pipeline / buildLoadContext', () => {
     await expect(buildLoadContext(makeContextStub())).rejects.toThrow('DB pool exhausted')
   })
 
-  it('threads the CSP nonce into the React Router context', async () => {
+  it('sets the canonical RequestContext as the single React Router context value', async () => {
     hydrateMock.mockResolvedValue(undefined)
     BLOG_SETTINGS_SNAPSHOT_SLOT.write({ siteIdentity: { title: 'Test' } } as any)
 
-    await buildLoadContext(makeContextStub())
+    const c = makeContextStub()
+    await buildLoadContext(c)
 
-    // One of the context.set calls must carry the nonce value.
-    const values = routerContextSetMock.mock.calls.map((call) => call[1])
-    expect(values).toContain('test-nonce-123')
+    // Exactly one context.set call, carrying the canonical RequestContext
+    // itself (identity) — the CSP nonce rides inside it.
+    expect(routerContextSetMock).toHaveBeenCalledTimes(1)
+    const rc = routerContextSetMock.mock.calls[0]![1]
+    expect(rc).toBe(c.var.requestContext)
+    expect(rc.cspNonce).toBe('test-nonce-123')
   })
 })

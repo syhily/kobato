@@ -1,6 +1,6 @@
-import { getDbFromContext } from '@/server/domains/auth/context'
 import { getClientPostsWithMetadata, listClientPosts } from '@/server/domains/posts/repos/public-query/listing'
 import { listingHeaders } from '@/server/http/loaders/route-exports'
+import { getRequestContext } from '@/server/http/request-context'
 import { titleMeta } from '@/shared/seo/title-meta'
 import { toListingPostCard } from '@/shared/types/catalog'
 import { ArchivesBody } from '@/ui/public/post/ArchivesBody'
@@ -8,7 +8,7 @@ import { ArchivesBody } from '@/ui/public/post/ArchivesBody'
 import type { Route } from './+types/archives'
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const db = getDbFromContext({ request, context })
+  const { db } = getRequestContext({ request, context })
   const listingNowIso = new Date().toISOString()
   // Archives promises completeness: list every live post. The bound is explicit
   // (the helper otherwise defaults to 200) and far above any realistic personal

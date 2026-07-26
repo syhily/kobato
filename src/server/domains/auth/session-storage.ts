@@ -56,6 +56,8 @@ export type BlogSession = Session<BlogSessionData, BlogSessionData>
 
 export const SESSION_MAX_AGE = 60 * 60 * 24 * 14
 
+export const SESSION_COOKIE_NAME = '__session'
+
 function resolveSessionMaxAge(): number {
   const bundle = getBlogSettingsBundleSync()
   const configured = bundle?.limits?.sessionMaxAge

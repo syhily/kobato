@@ -3,8 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
 import { makePost } from '#/_helpers/catalog'
-import { unwrapLoaderData } from '#/_helpers/context'
-import { makeLoaderArgsWithContext } from '#/_helpers/request-context'
+import { makeLoaderArgs, unwrapLoaderData } from '#/_helpers/context'
 import { adminSession, authorSession, regularSession } from '#/_helpers/session'
 
 // Draft-preview contract for `routes/post.detail`.
@@ -127,7 +126,7 @@ describe('routes/post.detail draft visibility', () => {
   it('serves the published post for anonymous visitors', async () => {
     const result = unwrapLoaderData<LoaderResult>(
       await postRoute.loader(
-        makeLoaderArgsWithContext({
+        makeLoaderArgs({
           request: new Request('http://localhost/posts/hello'),
           session: currentSession,
           params: { slug: 'hello' },
@@ -144,7 +143,7 @@ describe('routes/post.detail draft visibility', () => {
     let thrown: unknown
     try {
       await postRoute.loader(
-        makeLoaderArgsWithContext({
+        makeLoaderArgs({
           request: new Request('http://localhost/posts/secret'),
           session: currentSession,
           params: { slug: 'secret' },
@@ -163,7 +162,7 @@ describe('routes/post.detail draft visibility', () => {
     let thrown: unknown
     try {
       await postRoute.loader(
-        makeLoaderArgsWithContext({
+        makeLoaderArgs({
           request: new Request('http://localhost/posts/never-published'),
           session: currentSession,
           params: { slug: 'never-published' },
@@ -183,7 +182,7 @@ describe('routes/post.detail draft visibility', () => {
     let thrown: unknown
     try {
       await postRoute.loader(
-        makeLoaderArgsWithContext({
+        makeLoaderArgs({
           request: new Request('http://localhost/posts/secret'),
           session: currentSession,
           params: { slug: 'secret' },
@@ -203,7 +202,7 @@ describe('routes/post.detail draft visibility', () => {
 
     const result = unwrapLoaderData<LoaderResult>(
       await postRoute.loader(
-        makeLoaderArgsWithContext({
+        makeLoaderArgs({
           request: new Request('http://localhost/posts/secret'),
           session: currentSession,
           params: { slug: 'secret' },
@@ -222,7 +221,7 @@ describe('routes/post.detail draft visibility', () => {
 
     const result = unwrapLoaderData<LoaderResult>(
       await postRoute.loader(
-        makeLoaderArgsWithContext({
+        makeLoaderArgs({
           request: new Request('http://localhost/posts/secret'),
           session: currentSession,
           params: { slug: 'secret' },
@@ -240,7 +239,7 @@ describe('routes/post.detail draft visibility', () => {
 
     const result = unwrapLoaderData<LoaderResult>(
       await postRoute.loader(
-        makeLoaderArgsWithContext({
+        makeLoaderArgs({
           request: new Request('http://localhost/posts/hello'),
           session: currentSession,
           params: { slug: 'hello' },

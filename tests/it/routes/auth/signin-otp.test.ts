@@ -12,6 +12,7 @@ import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { clearAllTables } from '#/_helpers/integration-db'
 import { makeSession } from '#/_helpers/session'
 import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
+import { extractRequestFacts } from '@/server/http/utils/request-facts'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { user, verification } from '@/server/infra/db/schema/user'
 import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
@@ -19,21 +20,21 @@ import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 // ── Mock handles ────────────────────────────────────────────────────────────
 
 const mockHandles = vi.hoisted(() => ({
-  getDbFromContext: vi.fn<any>(),
-  getPoolFromContext: vi.fn<any>(),
+  getRequestContext: vi.fn<any>(),
   sendSignInOtp: vi.fn<any>(),
   establishLoginSession: vi.fn<any>(),
-  getRouteRequestContext: vi.fn<any>(),
   recordAuditEvent: vi.fn<any>(),
 }))
 
 // ── Module mocks ────────────────────────────────────────────────────────────
 
-vi.mock('@/server/domains/auth/context', () => ({
-  getRouteRequestContext: mockHandles.getRouteRequestContext,
-  getDbFromContext: mockHandles.getDbFromContext,
-  getPoolFromContext: mockHandles.getPoolFromContext,
-}))
+vi.mock('@/server/http/request-context', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/server/http/request-context')>()
+  return {
+    ...actual,
+    getRequestContext: mockHandles.getRequestContext,
+  }
+})
 
 vi.mock('@/server/domains/settings/install-gate', () => ({
   ensureInstalledOrRedirect: vi.fn(async () => null),
@@ -106,8 +107,6 @@ const { action } = await import('@/routes/auth/signin')
 let testSession: BlogSession
 
 beforeAll(() => {
-  mockHandles.getDbFromContext.mockReturnValue(db)
-  mockHandles.getPoolFromContext.mockReturnValue(pool)
   mockHandles.sendSignInOtp.mockResolvedValue({ ok: true })
   mockHandles.establishLoginSession.mockResolvedValue({
     sid: 'test-sid',
@@ -122,12 +121,17 @@ beforeEach(async () => {
   // (same email/IP) exhaust the otpSend* budgets for later ones.
   __resetRateLimitsForTests()
   testSession = makeSession({})
-  mockHandles.getRouteRequestContext.mockReturnValue({
+  const url = new URL('http://localhost/admin/signin')
+  mockHandles.getRequestContext.mockReturnValue({
     session: testSession,
-    user: undefined,
-    role: null,
+    viewer: null,
     clientAddress: '127.0.0.1',
-    url: new URL('http://localhost/admin/signin'),
+    url,
+    requestFacts: extractRequestFacts(new Request(url)),
+    db,
+    pool,
+    cspNonce: 'test-csp-nonce',
+    markSessionDirty: () => {},
   })
   mockHandles.sendSignInOtp.mockClear()
   mockHandles.establishLoginSession.mockClear()
@@ -169,12 +173,16 @@ function setContext(action: string | null, redirectTo = '/admin', clientAddress 
   }
   params.set('redirect_to', redirectTo)
   const url = new URL(`http://localhost/admin/signin?${params.toString()}`)
-  mockHandles.getRouteRequestContext.mockReturnValue({
+  mockHandles.getRequestContext.mockReturnValue({
     session: testSession,
-    user: undefined,
-    role: null,
+    viewer: null,
     clientAddress,
     url,
+    requestFacts: extractRequestFacts(new Request(url)),
+    db,
+    pool,
+    cspNonce: 'test-csp-nonce',
+    markSessionDirty: () => {},
   })
   return url
 }

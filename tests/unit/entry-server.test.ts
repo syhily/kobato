@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { cspNonceContext } from '@/server/domains/auth/context'
+import { requestContext } from '@/server/http/request-context'
 
 const renderToPipeableStreamMock = vi.hoisted(() =>
   vi.fn((_element: unknown, _options: Record<string, unknown>) => ({
@@ -35,8 +35,8 @@ describe('entry.server.tsx / handleRequest', () => {
   it('passes the nonce to ServerRouter and renderToPipeableStream', async () => {
     const loadContext = {
       get: vi.fn((context: unknown) => {
-        if (context === cspNonceContext) {
-          return 'test-nonce-xyz789'
+        if (context === requestContext) {
+          return { cspNonce: 'test-nonce-xyz789' }
         }
         return undefined
       }),

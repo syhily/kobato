@@ -8,14 +8,6 @@ vi.mock('@/server/bootstrap/db-lifecycle', () => ({
   getPool: vi.fn(() => ({})),
 }))
 
-vi.mock('@/server/domains/auth/context', () => ({
-  cspNonceContext: Symbol('cspNonce'),
-  dbContext: Symbol('db'),
-  poolContext: Symbol('pool'),
-  requestContext: Symbol('request'),
-  sessionContext: Symbol('session'),
-}))
-
 vi.mock('@/server/domains/settings/services/hydrate', () => ({
   hydrateBlogSettings: vi.fn().mockResolvedValue(undefined),
 }))
@@ -135,6 +127,7 @@ vi.mock('@/shared/config/getters', () => ({
 }))
 
 import { buildCspHeader, configureMiddleware, buildLoadContext } from '@/server/http/middleware-pipeline'
+import { requestContext, type RequestContext } from '@/server/http/request-context'
 
 describe('buildCspHeader', () => {
   it('returns a strict nonce-based policy in production', () => {
@@ -180,21 +173,22 @@ describe('configureMiddleware', () => {
 
 describe('buildLoadContext', () => {
   it('hydrates settings and returns a RouterContextProvider', async () => {
+    const rc = {
+      session: {},
+      viewer: null,
+      clientAddress: '127.0.0.1',
+      url: new URL('http://localhost/'),
+      db: {},
+      pool: {},
+      cspNonce: 'nonce',
+      markSessionDirty: () => {},
+    } as unknown as RequestContext
     const context = await buildLoadContext({
-      var: {
-        requestContext: {
-          session: {},
-          viewer: null,
-          clientAddress: '127.0.0.1',
-          url: new URL('http://localhost/'),
-          db: {},
-          pool: {},
-          cspNonce: 'nonce',
-          markSessionDirty: () => {},
-        },
-      } as unknown as Env['Variables'],
+      var: { requestContext: rc } as unknown as Env['Variables'],
       req: { raw: new Request('http://localhost/'), url: 'http://localhost/' },
     })
     expect(context).toBeDefined()
+    // The single canonical key carries the Hono-side RequestContext as-is.
+    expect(context.get(requestContext)).toBe(rc)
   })
 })

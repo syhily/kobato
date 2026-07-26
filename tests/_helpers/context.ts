@@ -4,19 +4,25 @@ import type { Pool } from 'pg'
 import { RouterContextProvider } from 'react-router'
 
 import type { BlogSession, SessionUser } from '@/server/domains/auth/session-storage'
+import type { RequestContext } from '@/server/http/request-context'
 
 import { regularSession } from '#/_helpers/session'
-import { dbContext, poolContext, requestContext, sessionContext } from '@/server/domains/auth/context'
+import { requestContext } from '@/server/http/request-context'
+import { extractRequestFacts, normalizeDocumentUrl } from '@/server/http/utils/request-facts'
 
-// Stand-in for the `RouterContextProvider` that `sessionMiddleware` populates
+// Stand-in for the `RouterContextProvider` that `buildLoadContext` populates
 // in production. Direct loader/action unit tests that bypass the router get
-// a context that already has the session + request facts pre-loaded so the
-// route handler's `context.get(sessionContext)` keeps working.
+// a context that already has the canonical `RequestContext` pre-loaded so
+// the route handler's `getRequestContext(args)` keeps working.
 export interface MakeContextOptions {
   request?: Request
   session?: BlogSession
   user?: SessionUser
   clientAddress?: string
+  db?: NodePgDatabase
+  pool?: Pool
+  cspNonce?: string
+  markSessionDirty?: () => void
 }
 
 export function makeRouteContext({
@@ -24,20 +30,25 @@ export function makeRouteContext({
   session = regularSession(),
   user,
   clientAddress = '127.0.0.1',
+  db,
+  pool,
+  cspNonce = 'test-csp-nonce',
+  markSessionDirty = () => {},
 }: MakeContextOptions = {}): RouterContextProvider {
   const context = new RouterContextProvider()
   const resolvedUser = user ?? (session?.data?.user as SessionUser | undefined)
-  context.set(sessionContext, {
+  const canonical: RequestContext = {
     session,
-    user: resolvedUser,
-    role: resolvedUser?.role ?? null,
-  })
-  context.set(requestContext, {
+    viewer: resolvedUser ?? null,
     clientAddress,
-    url: new URL(request.url),
-  })
-  context.set(dbContext, {} as NodePgDatabase)
-  context.set(poolContext, {} as Pool)
+    url: normalizeDocumentUrl(new URL(request.url)),
+    requestFacts: extractRequestFacts(request),
+    db: (db ?? {}) as NodePgDatabase,
+    pool: (pool ?? {}) as Pool,
+    cspNonce,
+    markSessionDirty,
+  }
+  context.set(requestContext, canonical)
   return context
 }
 

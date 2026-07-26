@@ -1,9 +1,9 @@
 import type { ListingPageLoaderData } from '@/server/http/loaders/listing'
 
-import { getDbFromContext } from '@/server/domains/auth/context'
 import { countPublicPosts, listPublicPostCardsPaginated } from '@/server/domains/posts/repos/public-query/listing'
 import { listingLoader } from '@/server/http/loaders/listing'
 import { listingHeaders } from '@/server/http/loaders/route-exports'
+import { getRequestContext } from '@/server/http/request-context'
 import { findCategoryBySlug } from '@/server/infra/db/operations/category'
 import { notFound } from '@/server/infra/http/status'
 import { metaWithFallback } from '@/shared/seo/meta'
@@ -12,7 +12,7 @@ import { PostListingBody } from '@/ui/public/post/PostListViews'
 import type { Route } from './+types/list'
 
 export async function loader({ request, context, params }: Route.LoaderArgs): Promise<ListingPageLoaderData> {
-  const db = getDbFromContext({ request, context })
+  const { db } = getRequestContext({ request, context })
   const category = await findCategoryBySlug(db, params.slug)
   if (!category) {
     notFound()

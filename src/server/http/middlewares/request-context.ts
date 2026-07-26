@@ -1,10 +1,15 @@
 import { createMiddleware } from 'hono/factory'
+import { randomBytes } from 'node:crypto'
 
 import type { Env } from '@/server/http/context'
+import type { RequestContext } from '@/server/http/request-context'
 
+import { getDb, getPool } from '@/server/bootstrap/db-lifecycle'
 import { ensureCsrfToken } from '@/server/domains/auth/csrf'
-import { commitSessionWithMaxAge } from '@/server/domains/auth/session-storage'
-import { deriveRequestContext } from '@/server/http/request-context'
+import { resolveSessionContext } from '@/server/domains/auth/primitives'
+import { commitSessionWithMaxAge, SESSION_COOKIE_NAME } from '@/server/domains/auth/session-storage'
+import { getClientAddress } from '@/server/http/utils/client-address'
+import { extractRequestFacts, normalizeDocumentUrl } from '@/server/http/utils/request-facts'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 function getDirectRemoteAddress(c: { env: unknown }): string | undefined {
@@ -18,6 +23,49 @@ function getDirectRemoteAddress(c: { env: unknown }): string | undefined {
   return typeof socket?.remoteAddress === 'string' ? socket.remoteAddress : undefined
 }
 
+export interface DerivedRequest {
+  requestContext: RequestContext
+  /** Middleware-only reader for the dirty flag behind `markSessionDirty`. */
+  isSessionDirty(): boolean
+}
+
+/**
+ * Derive the canonical `RequestContext`. Called once per request by the
+ * middleware; `directRemoteAddress` is the raw socket peer (Hono-specific
+ * `c.env` dig, so it stays on the middleware side of the seam).
+ */
+export async function deriveRequestContext(input: {
+  request: Request
+  directRemoteAddress: string | undefined
+}): Promise<DerivedRequest> {
+  const { request } = input
+  // Per-request resolution keeps pool recreation (backup restore) visible.
+  const db = getDb()
+  const pool = getPool()
+
+  let dirty = false
+  const sessionCtx = await resolveSessionContext(db, request)
+  if (sessionCtx.dirty) {
+    dirty = true
+  }
+
+  const rawUrl = new URL(request.url)
+  const requestContext: RequestContext = {
+    session: sessionCtx.session,
+    viewer: sessionCtx.user ?? null,
+    clientAddress: getClientAddress(request, input.directRemoteAddress),
+    url: normalizeDocumentUrl(rawUrl),
+    requestFacts: extractRequestFacts(request),
+    db,
+    pool,
+    cspNonce: randomBytes(16).toString('base64'),
+    markSessionDirty() {
+      dirty = true
+    },
+  }
+  return { requestContext, isSessionDirty: () => dirty }
+}
+
 /**
  * The single per-request derivation point. Produces the canonical
  * `RequestContext` (see `@/server/http/request-context`) and stores it on
@@ -26,8 +74,10 @@ function getDirectRemoteAddress(c: { env: unknown }): string | undefined {
  *
  * Also the single session commit point: same-session mutations mark the
  * context dirty (`markSessionDirty`) and the Set-Cookie goes out here,
- * after the response resolves. Sid-changing flows (login rotation) keep
- * their explicit Set-Cookie channel — see ADR-0003.
+ * after the response resolves — unless the route already set a
+ * `__session` cookie itself, in which case the route's header wins and
+ * the dirty commit is skipped. Sid-changing flows (login rotation,
+ * logout) keep their explicit Set-Cookie channel — see ADR-0003.
  */
 export const requestContextMiddleware = createMiddleware<Env>(async (c, next) => {
   const derived = await deriveRequestContext({
@@ -37,8 +87,7 @@ export const requestContextMiddleware = createMiddleware<Env>(async (c, next) =>
   const { requestContext } = derived
 
   // Ensure every session carries a CSRF token. The token is generated
-  // lazily on first access; subsequent requests reuse it. Rotation
-  // (if configured) also regenerates the token and timestamp.
+  // lazily on first access; subsequent requests reuse it.
   const tokenBefore = requestContext.session.get('csrfToken')
   ensureCsrfToken(requestContext.session)
   if (requestContext.session.get('csrfToken') !== tokenBefore) {
@@ -50,7 +99,16 @@ export const requestContextMiddleware = createMiddleware<Env>(async (c, next) =>
   await next()
 
   if (derived.isSessionDirty()) {
-    const setCookie = await commitSessionWithMaxAge(requestContext.session)
-    c.header('Set-Cookie', setCookie, { append: true })
+    // A route that sets the session cookie itself (login rotation, logout
+    // destroy, the OTP/setup explicit commits) owns the cookie channel for
+    // this response. Appending a second `__session` commit here would land
+    // LAST (browsers apply Set-Cookie in order) and override the route's
+    // header — for destroy/rotation flows that means resurrecting the very
+    // session row the route just deleted and keeping the old sid alive.
+    const routeTookOver = c.res.headers.getSetCookie().some((v) => v.startsWith(`${SESSION_COOKIE_NAME}=`))
+    if (!routeTookOver) {
+      const setCookie = await commitSessionWithMaxAge(requestContext.session)
+      c.header('Set-Cookie', setCookie, { append: true })
+    }
   }
 })

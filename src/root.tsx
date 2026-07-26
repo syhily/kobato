@@ -14,9 +14,9 @@ import { useChunkErrorRecovery, useReloadOnChunkError } from '@/client/hooks/use
 import { useFocusHash } from '@/client/hooks/use-focus-hash'
 import { useIosNoZoomOnFocus } from '@/client/hooks/use-ios-no-zoom'
 import { defaultTransition } from '@/client/lib/motion'
-import { getCspNonceFromContext, getDbFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { resolveFontsForRender } from '@/server/domains/fonts/services/render'
 import { redactSecretsFromBundle } from '@/server/domains/settings/services/core'
+import { getRequestContext } from '@/server/http/request-context'
 import { getCriticalChunksForPathname, getWarmupManifest } from '@/server/render/warmup/manifest'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { BlogSettingsProvider } from '@/shared/lib/blog-config-context'
@@ -75,7 +75,10 @@ export function meta({ loaderData, matches }: Route.MetaArgs) {
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const { role, user, session } = getRouteRequestContext({ request, context })
+  const rc = getRequestContext({ request, context })
+  const { session } = rc
+  const role = rc.viewer?.role ?? null
+  const user = rc.viewer ?? undefined
   const admin = role === 'admin'
   const csrfToken = session.get('csrfToken')
   if (typeof csrfToken !== 'string') {
@@ -96,10 +99,10 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   // second round-trip. Post/code fonts are resolved eagerly (the root layout
   // can't know which child routes opt in via `handle.postFonts` until render)
   // but only rendered when the matched route opts in — see the Layout below.
-  // `getDbFromContext` is read lazily so a missing bundle never touches the
+  // `rc.db` is read lazily so a missing bundle never touches the
   // request db.
   const fonts = blogSettings?.fonts
-    ? await resolveFontsForRender(getDbFromContext({ request, context }), blogSettings.fonts, /* wantsPostFonts */ true)
+    ? await resolveFontsForRender(rc.db, blogSettings.fonts, /* wantsPostFonts */ true)
     : null
 
   const warmupManifest = getWarmupManifest()
@@ -107,7 +110,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const criticalLinks = getCriticalChunksForPathname(pathname) ?? warmupManifest?.tier1 ?? []
   const tier2Chunks = warmupManifest ? collectTier2Chunks(warmupManifest, admin, new Set(criticalLinks)) : []
 
-  const cspNonce = getCspNonceFromContext({ request, context })
+  const cspNonce = rc.cspNonce
 
   return { admin, currentUser, blogSettings, fonts, theme, csrfToken, criticalLinks, tier2Chunks, cspNonce }
 }

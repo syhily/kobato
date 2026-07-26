@@ -3,7 +3,7 @@ import { data, Outlet, redirect } from 'react-router'
 import type { RouteHandle } from '@/root'
 
 import { useDetachPublicCss } from '@/client/hooks/use-detach-public-css'
-import { getRouteRequestContext } from '@/server/domains/auth/context'
+import { getRequestContext } from '@/server/http/request-context'
 import { hasAtLeast } from '@/shared/utils/roles'
 import { AdminErrorFallback } from '@/ui/admin/shell/AdminErrorFallback'
 
@@ -13,7 +13,10 @@ import '@/styles/admin.css'
 export const handle: RouteHandle = { layout: 'admin', postFonts: true }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const { role, user, url } = getRouteRequestContext({ request, context })
+  const rc = getRequestContext({ request, context })
+  const { url } = rc
+  const user = rc.viewer ?? undefined
+  const role = rc.viewer?.role ?? null
   if (!hasAtLeast(role, 'author')) {
     const redirectPath = url.pathname
     throw redirect(`/admin/signin?redirect_to=${encodeURIComponent(redirectPath)}`)

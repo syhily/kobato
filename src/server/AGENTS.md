@@ -172,9 +172,11 @@ the caller's responsibility.
   var besides `requestId`. Every surface (oRPC bridge, RR
   `buildLoadContext`, resource routers) projects from it; nothing
   re-derives. Same-session mutations call `markSessionDirty()` and the
-  middleware commits `Set-Cookie` after the response (the only commit
-  point); sid-changing flows keep their explicit Set-Cookie channel.
-  See ADR-0003.
+  middleware commits `Set-Cookie` after the response — unless the route
+  already set a `__session` cookie itself, in which case the route's
+  header wins and the dirty commit is skipped (last Set-Cookie would
+  otherwise override sid rotation / destroy). Sid-changing flows keep
+  their explicit Set-Cookie channel. See ADR-0003.
 - Server env: `@/server/infra/env` (inline `createEnv` + Zod). Adding
   an env var updates the schema, `src/env.d.ts`, and `.env.example`
   together.

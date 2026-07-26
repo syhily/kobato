@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { RequestContext } from '@/server/http/request-context'
+
 const state = vi.hoisted(() => {
   const store = new Map<string, unknown>()
   return {
@@ -30,19 +32,26 @@ const state = vi.hoisted(() => {
   }
 })
 
-vi.mock('@/server/domains/auth/context', async () => {
-  const actual = await vi.importActual<typeof import('@/server/domains/auth/context')>('@/server/domains/auth/context')
+vi.mock('@/server/http/request-context', async () => {
+  const actual = await vi.importActual<typeof import('@/server/http/request-context')>('@/server/http/request-context')
+  const { extractRequestFacts } = await import('@/server/http/utils/request-facts')
   return {
     ...actual,
-    getRouteRequestContext: vi.fn(({ request }: { request: Request }) => ({
-      session: state.session,
-      user: state.loggedIn ? { id: '1', name: 'admin', email: 'admin@example.com' } : undefined,
-      role: state.loggedIn ? ('admin' as const) : null,
-      clientAddress: '127.0.0.1',
-      url: new URL(request.url),
-    })),
-    getDbFromContext: vi.fn(() => ({})),
-    getPoolFromContext: vi.fn(() => ({})),
+    getRequestContext: vi.fn(
+      ({ request }: { request: Request }): RequestContext => ({
+        session: state.session as RequestContext['session'],
+        viewer: state.loggedIn
+          ? { id: '1', name: 'admin', email: 'admin@example.com', website: null, role: 'admin' as const }
+          : null,
+        clientAddress: '127.0.0.1',
+        url: new URL(request.url),
+        requestFacts: extractRequestFacts(request),
+        db: {} as never,
+        pool: {} as never,
+        cspNonce: 'test-csp-nonce',
+        markSessionDirty: () => {},
+      }),
+    ),
   }
 })
 

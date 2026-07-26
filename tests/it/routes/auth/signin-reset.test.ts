@@ -12,23 +12,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 //
 // We exercise the action with scenarios that pin this invariant in place.
 
-const state = vi.hoisted(() => {
-  const store = new Map<string, unknown>()
-  return {
-    session: {
-      get(key: string) {
-        return store.get(key)
-      },
-      set(key: string, value: unknown) {
-        store.set(key, value)
-      },
-      unset(key: string) {
-        store.delete(key)
-      },
-    },
-  }
-})
-
 const sessionMocks = vi.hoisted(() => ({
   commitSession: vi.fn(async () => 'blog_session=stub'),
   destroySession: vi.fn(async () => 'blog_session=deleted'),
@@ -49,20 +32,12 @@ vi.mock('@/server/domains/auth/session-storage', async () => {
   }
 })
 
-vi.mock('@/server/domains/auth/context', async () => {
-  const actual = await vi.importActual<typeof import('@/server/domains/auth/context')>('@/server/domains/auth/context')
-  return {
-    ...actual,
-    getRouteRequestContext: vi.fn(({ request }: { request: Request }) => ({
-      session: state.session,
-      user: undefined,
-      role: null,
-      clientAddress: '203.0.113.7',
-      url: new URL(request.url),
-    })),
-    getDbFromContext: vi.fn(() => ({})),
-    getPoolFromContext: vi.fn(() => ({})),
-  }
+// The action is invoked with bare `{ request }` (no RouterContextProvider),
+// so the mock's empty-session fallback supplies the canonical stub — the
+// flow never touches the session beyond passing it to mocked primitives.
+vi.mock('@/server/http/request-context', async () => {
+  const { createRequestContextMockModule } = await import('#/_helpers/auth-context-mock')
+  return createRequestContextMockModule()
 })
 
 vi.mock('@/server/domains/auth/signin-flow', async () => {

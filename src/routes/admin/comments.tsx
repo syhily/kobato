@@ -2,8 +2,8 @@ import { useOutletContext, useSearchParams } from 'react-router'
 
 import type { ActiveFilter } from '@/ui/admin/comments/useCommentsController'
 
-import { getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
+import { getRequestContext } from '@/server/http/request-context'
 import { titleMeta } from '@/shared/seo/title-meta'
 import { CommentsView } from '@/ui/admin/comments/CommentsView'
 import { isTextFilterOperator, textFilterLabel } from '@/ui/admin/comments/useCommentsController'
@@ -16,8 +16,8 @@ import {
 import type { Route } from './+types/comments'
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const ctx = getRouteRequestContext({ request, context })
-  requireRole(ctx, 'admin')
+  const rc = getRequestContext({ request, context })
+  requireRole({ user: rc.viewer ?? undefined, role: rc.viewer?.role ?? null }, 'admin')
   return null
 }
 

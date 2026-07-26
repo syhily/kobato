@@ -36,6 +36,7 @@ describe('requestContextMiddleware', () => {
     }))
     vi.doMock('@/server/domains/auth/session-storage', () => ({
       commitSessionWithMaxAge: vi.fn().mockResolvedValue('__session=abc'),
+      SESSION_COOKIE_NAME: '__session',
     }))
     vi.doMock('@/server/http/utils/client-address', () => ({
       getClientAddress: vi.fn().mockReturnValue('192.168.1.1'),
@@ -92,5 +93,29 @@ describe('requestContextMiddleware', () => {
     app.get('/', (c) => c.json({ ok: true }))
     const res = await app.request('/')
     expect(res.headers.get('Set-Cookie')).toBeNull()
+  })
+
+  it('yields to a route that set the session cookie itself (login rotation / logout)', async () => {
+    const { app } = await buildApp({ sessionCtx: { dirty: true } })
+    app.get('/', (c) => {
+      // The route owns the cookie channel for this response — e.g. a
+      // sid-rotating login or a session-destroying logout.
+      c.header('Set-Cookie', '__session=new-sid', { append: true })
+      return c.json({ ok: true })
+    })
+    const res = await app.request('/')
+    // The middleware's dirty commit must NOT land after the route's header
+    // (last Set-Cookie wins — appending would resurrect the old sid).
+    expect(res.headers.getSetCookie()).toEqual(['__session=new-sid'])
+  })
+
+  it('still commits when the route only set an unrelated cookie', async () => {
+    const { app } = await buildApp({ sessionCtx: { dirty: true } })
+    app.get('/', (c) => {
+      c.header('Set-Cookie', 'visitor=xyz', { append: true })
+      return c.json({ ok: true })
+    })
+    const res = await app.request('/')
+    expect(res.headers.getSetCookie()).toEqual(['visitor=xyz', '__session=abc'])
   })
 })

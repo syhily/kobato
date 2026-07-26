@@ -3,9 +3,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { makeRouteContext } from '#/_helpers/context'
 import { emptySession, makeSession } from '#/_helpers/session'
 
-vi.mock('@/server/domains/auth/context', async () => {
-  const { createAuthContextMockModule } = await import('#/_helpers/auth-context-mock')
-  return createAuthContextMockModule()
+vi.mock('@/server/http/request-context', async () => {
+  const { createRequestContextMockModule } = await import('#/_helpers/auth-context-mock')
+  return createRequestContextMockModule()
 })
 
 vi.mock('@/server/domains/auth/signin-flow', async () => {

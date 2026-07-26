@@ -1,7 +1,6 @@
 import { data, redirect, useNavigation } from 'react-router'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
-import { getDbFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { validateCsrfForAction } from '@/server/domains/auth/csrf'
 import { isPasskeyEnabled } from '@/server/domains/auth/passkey-gate'
 import { logout } from '@/server/domains/auth/primitives'
@@ -62,10 +61,12 @@ function toActionResult(result: AuthFlowResult, extraData?: Record<string, unkno
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const db = getDbFromContext({ request, context })
+  const rc = getRequestContext({ request, context })
+  const db = rc.db
   await ensureInstalledOrRedirect(db)
 
-  const { session, user, url } = getRouteRequestContext({ request, context })
+  const { session, url } = rc
+  const user = rc.viewer
   const redirectTo = safeRedirectPath(url.searchParams.get('redirect_to'), '/', url.origin)
   const action = url.searchParams.get('action')
 
@@ -73,7 +74,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     const user = session.get('user')
     await logout(session)
     if (user) {
-      recordAuditEventFromContext(getRequestContext({ request, context }), {
+      recordAuditEventFromContext(rc, {
         action: 'logout',
         resourceType: 'session',
         resourceId: session.id,
@@ -145,10 +146,11 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
-  const db = getDbFromContext({ request, context })
+  const rc = getRequestContext({ request, context })
+  const db = rc.db
   await ensureInstalledOrRedirect(db)
 
-  const { session, clientAddress, url } = getRouteRequestContext({ request, context })
+  const { session, clientAddress, url } = rc
   const redirectTo = safeRedirectPath(url.searchParams.get('redirect_to'), '/admin', url.origin)
   const action = url.searchParams.get('action')
 
