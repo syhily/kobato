@@ -15,7 +15,6 @@ vi.mock('@/server/infra/search/openai', () => ({
 vi.mock('@/server/domains/images/services/enhance', () => ({
   hydrateImageRefs: vi.fn(async () => undefined),
 }))
-vi.mock('@/server/infra/search/search', () => ({ invalidateSearchCache: vi.fn(async () => undefined) }))
 
 const poolManager = createDbPool()
 const db: NodePgDatabase = poolManager.db

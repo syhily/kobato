@@ -13,7 +13,7 @@ import { oneTimeToken } from '@/server/infra/db/schema/one-time-token'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
 
-vi.mock('@/server/domains/comments/cache', () => ({ clearLatestCommentsCache: vi.fn(async () => undefined) }))
+vi.mock('@/server/domains/content/invalidate', () => ({ invalidateContent: vi.fn(async () => undefined) }))
 vi.mock('@/server/domains/comments/services/email', () => ({
   sendApprovedComment: vi.fn(async () => undefined),
   sendNewComment: vi.fn(async () => undefined),
@@ -74,15 +74,15 @@ describe('comments/repos/public-query — findCommentWithUserById', () => {
 })
 
 describe('comments/services/moderate — approveComment', () => {
-  it('flips is_pending=false and clears cache', async () => {
+  it('flips is_pending=false and emits comment invalidation from the repo', async () => {
     const u1 = await seedUser()
     const id = await seedComment({ userId: u1, isPending: true })
     const { approveComment } = await import('@/server/domains/comments/services/moderate')
     await approveComment(db, String(id))
     const rows = await db.select({ isPending: comment.isPending }).from(comment)
     expect(rows[0]?.isPending).toBe(false)
-    const { clearLatestCommentsCache } = await import('@/server/domains/comments/cache')
-    expect(clearLatestCommentsCache).toHaveBeenCalled()
+    const { invalidateContent } = await import('@/server/domains/content/invalidate')
+    expect(invalidateContent).toHaveBeenCalledWith(db, { entity: 'comment' })
   })
 })
 

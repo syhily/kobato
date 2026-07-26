@@ -2,30 +2,30 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { and, eq, isNotNull, isNull } from 'drizzle-orm'
 
-import { clearLatestCommentsCache } from '@/server/domains/comments/cache'
+import { invalidateContent } from '@/server/domains/content/invalidate'
 import { comment } from '@/server/infra/db/schema/comment'
 
 // Cache-invalidation invariant: every mutation that changes what the
-// sidebar latest-comments list shows clears that cache HERE, inside the
-// repo mutation itself, so a new caller can never forget it. The
-// delete-request trio (requestDeleteComment / clearDeleteRequest /
-// adminClearDeleteRequest) deliberately does NOT clear: they only touch
-// `deleteRequestedAt`, which the latest-comments query does not filter
-// on.
+// sidebar latest-comments list shows emits `{ entity: 'comment' }`
+// through the content-invalidation door HERE, inside the repo mutation
+// itself, so a new caller can never forget it. The delete-request trio
+// (requestDeleteComment / clearDeleteRequest / adminClearDeleteRequest)
+// deliberately does NOT emit: they only touch `deleteRequestedAt`,
+// which the latest-comments query does not filter on.
 
 export async function approveCommentById(db: NodePgDatabase, id: bigint): Promise<void> {
   await db.update(comment).set({ isPending: false }).where(eq(comment.id, id))
-  await clearLatestCommentsCache(db)
+  await invalidateContent(db, { entity: 'comment' })
 }
 
 export async function deleteCommentById(db: NodePgDatabase, id: bigint): Promise<void> {
   await db.delete(comment).where(eq(comment.id, id))
-  await clearLatestCommentsCache(db)
+  await invalidateContent(db, { entity: 'comment' })
 }
 
 export async function softDeleteCommentById(db: NodePgDatabase, id: bigint): Promise<void> {
   await db.update(comment).set({ deletedAt: new Date() }).where(eq(comment.id, id))
-  await clearLatestCommentsCache(db)
+  await invalidateContent(db, { entity: 'comment' })
 }
 
 export async function bulkApprovePendingByUser(db: NodePgDatabase, userId: bigint): Promise<number> {
@@ -35,7 +35,7 @@ export async function bulkApprovePendingByUser(db: NodePgDatabase, userId: bigin
     .set({ isPending: false })
     .where(and(eq(comment.userId, userId), eq(comment.isPending, true), isNull(comment.deletedAt)))
     .returning({ id: comment.id })
-  await clearLatestCommentsCache(db)
+  await invalidateContent(db, { entity: 'comment' })
   return updated.length
 }
 
@@ -48,7 +48,7 @@ export async function bulkSoftDeleteCommentsByUser(db: NodePgDatabase, userId: b
     .set({ deletedAt: new Date() })
     .where(and(eq(comment.userId, userId), isNull(comment.deletedAt)))
     .returning({ id: comment.id })
-  await clearLatestCommentsCache(db)
+  await invalidateContent(db, { entity: 'comment' })
   return updated.length
 }
 

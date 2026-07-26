@@ -56,7 +56,8 @@ Domains: `analytics`, `auth` (session-storage, csrf, rbac, flows,
 verification-tokens, session-revocation guard `session-guard.ts`), `comments` (loader, moderation, projection,
 likes, token, badge, url, canonicalize, avatar fetch/cache, pure policy
 gates `services/policy.ts`), `content` (revision `repos/`,
-entity-agnostic draft→publish `lifecycle.ts`, save-time library image
+entity-agnostic draft→publish `lifecycle.ts`, single
+content-invalidation door `invalidate.ts`, save-time library image
 sync `services/image-sync.ts`, restore-time `slug-reclaim.ts`, admin
 list orchestration `services/admin-list.ts`, shared limit/offset ladder
 `repos/pagination.ts`; post/page behavior attaches via each entity

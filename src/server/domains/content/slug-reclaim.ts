@@ -1,11 +1,11 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import type { ContentEntityType } from '@/server/domains/content/shared'
+import type { ContentType } from '@/server/domains/content/schema'
 
 import { findSlugRegistryBySlugForUpdate, insertSlugRegistry } from '@/server/infra/db/operations/slug-registry'
 import { isUniqueConstraintError } from '@/server/infra/http/errors'
 
-const ENTITY_LABEL: Record<ContentEntityType, string> = { post: '文章', page: '页面' }
+const ENTITY_LABEL: Record<ContentType, string> = { post: '文章', page: '页面' }
 
 /**
  * Re-claims a soft-deleted entity's slug during restore. Runs inside the
@@ -19,7 +19,7 @@ const ENTITY_LABEL: Record<ContentEntityType, string> = { post: '文章', page: 
  */
 export async function reclaimSlugOnRestore(
   tx: NodePgDatabase,
-  entityType: ContentEntityType,
+  entityType: ContentType,
   entityId: bigint,
   slug: string,
 ): Promise<string | undefined> {

@@ -2,7 +2,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import type { AdminPageDto } from '@/server/domains/pages/projection'
 
-import { clearContentCaches } from '@/server/domains/content/shared'
+import { invalidateContent } from '@/server/domains/content/invalidate'
 import { rethrowSlugConflict } from '@/server/domains/content/slug-conflict'
 import { reclaimSlugOnRestore } from '@/server/domains/content/slug-reclaim'
 import { toAdminPageDto } from '@/server/domains/pages/projection'
@@ -61,7 +61,7 @@ export async function createPage(
     }
     return inserted
   })
-  await clearContentCaches(db, 'page', row.id)
+  await invalidateContent(db, { entity: 'page' })
   return toAdminPageDto(row)
 }
 
@@ -109,7 +109,7 @@ export async function updatePageMeta(db: NodePgDatabase, input: UpsertPageMetaIn
   if (updated === null) {
     throw new DomainError('NOT_FOUND', '页面不存在或已被删除。')
   }
-  await clearContentCaches(db, 'page', pageId)
+  await invalidateContent(db, { entity: 'page' })
   return toAdminPageDto(updated)
 }
 
@@ -122,7 +122,7 @@ export async function deletePage(db: NodePgDatabase, id: bigint): Promise<{ dele
     return { deleted }
   })
   if (result.deleted) {
-    await clearContentCaches(db, 'page', id)
+    await invalidateContent(db, { entity: 'page' })
   }
   return result
 }
@@ -142,7 +142,7 @@ export async function restorePage(db: NodePgDatabase, id: bigint): Promise<{ res
     return { restored }
   })
   if (result.restored) {
-    await clearContentCaches(db, 'page', id)
+    await invalidateContent(db, { entity: 'page' })
   }
   return result
 }
@@ -156,6 +156,6 @@ export async function unpublishPage(db: NodePgDatabase, id: bigint): Promise<Adm
   if (updated === null) {
     throw new DomainError('NOT_FOUND', '页面不存在或已被删除。')
   }
-  await clearContentCaches(db, 'page', id)
+  await invalidateContent(db, { entity: 'page' })
   return toAdminPageDto(updated)
 }

@@ -27,8 +27,9 @@ import { idFromString } from '@/shared/utils/id'
 const adminLog = getLogger('comments.admin')
 
 // The sidebar latest-comments cache is invalidated inside the repo
-// mutations themselves (`repos/moderation.ts`, `repos/mutate.ts`), so
-// the service layer has no cache calls to forget.
+// mutations themselves (`repos/moderation.ts`, `repos/mutate.ts`), which
+// emit `{ entity: 'comment' }` through the content-invalidation door —
+// the service layer has no invalidation calls to forget.
 
 export async function approveComment(db: NodePgDatabase, rid: string) {
   const id = idFromString(rid)

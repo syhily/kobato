@@ -43,8 +43,8 @@ vi.mock('@/server/infra/logger', async (importOriginal) => {
   }
 })
 
-const { searchPosts, invalidateSearchCache, __setTrgmAvailabilityForTests } =
-  await import('@/server/infra/search/search')
+const { searchPosts, __setTrgmAvailabilityForTests } = await import('@/server/infra/search/search')
+const { bumpCounter } = await import('@/server/infra/cache/registry')
 const { getPostsBySlugs } = await import('@/server/domains/posts/repos/public-query/misc')
 const { searchPostOptions } = await import('@/server/infra/search/options')
 const { liveContentWhere } = await import('@/server/domains/content/schema')
@@ -281,7 +281,7 @@ describe('services/search — searchPosts (trgm mode)', () => {
 })
 
 describe('services/search — search result cache invalidation', () => {
-  it('serves fresh results after invalidateSearchCache bumps the generation', async () => {
+  it('serves fresh results after the search generation is bumped', async () => {
     await seedPost({ slug: 'cache-alpha', title: 'Cache Alpha' })
 
     // First query populates the result cache …
@@ -295,7 +295,7 @@ describe('services/search — search result cache invalidation', () => {
 
     // Invalidation bumps the generation stamp, so the next query misses
     // the old-generation entry and re-runs against the corpus.
-    await invalidateSearchCache(db)
+    await bumpCounter(db, 'searchResult')
     const fresh = await searchPosts(db, liveWhere(), 'cache', 10)
     expect(fresh.hits).toEqual(['cache-beta', 'cache-alpha'])
 
@@ -306,7 +306,7 @@ describe('services/search — search result cache invalidation', () => {
     const staleAgain = await searchPosts(db, liveWhere(), 'cache', 10)
     expect(staleAgain.hits).toEqual(['cache-beta', 'cache-alpha'])
 
-    await invalidateSearchCache(db)
+    await bumpCounter(db, 'searchResult')
     const freshAgain = await searchPosts(db, liveWhere(), 'cache', 10)
     expect(freshAgain.hits).toEqual(['cache-gamma', 'cache-beta', 'cache-alpha'])
   })

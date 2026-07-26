@@ -6,8 +6,8 @@ vi.mock('@/server/domains/content/repos/query', () => ({
   findContentById: vi.fn(),
 }))
 
-vi.mock('@/server/domains/content/shared', () => ({
-  clearContentCaches: vi.fn().mockResolvedValue(undefined),
+vi.mock('@/server/domains/content/invalidate', () => ({
+  invalidateContent: vi.fn().mockResolvedValue(undefined),
 }))
 
 vi.mock('@/server/domains/posts/projection', () => ({
@@ -76,10 +76,6 @@ vi.mock('@/server/infra/logger', () => ({
       return this
     }),
   })),
-}))
-
-vi.mock('@/server/infra/search/search', () => ({
-  invalidateSearchCache: vi.fn().mockResolvedValue(undefined),
 }))
 
 vi.mock('@/server/infra/slug', () => ({
@@ -154,8 +150,8 @@ function fakeDb(query = new FakeQuery()): NodePgDatabase {
   } as unknown as NodePgDatabase
 }
 
+import { invalidateContent } from '@/server/domains/content/invalidate'
 import { findContentById } from '@/server/domains/content/repos/query'
-import { clearContentCaches } from '@/server/domains/content/shared'
 import { findPostMetaById, findPostMetaBySlugForUpdate } from '@/server/domains/posts/repos/single'
 import { restorePostMeta, softDeletePostMeta, updatePostMetaById } from '@/server/domains/posts/repos/write'
 import {
@@ -168,7 +164,6 @@ import {
 import { indexPost, removePostIndex } from '@/server/domains/posts/services/search-index'
 import { findSlugRegistryBySlugForUpdate, insertSlugRegistry } from '@/server/infra/db/operations/slug-registry'
 import { isUniqueConstraintError } from '@/server/infra/http/errors'
-import { invalidateSearchCache } from '@/server/infra/search/search'
 
 describe('posts mutate service', () => {
   beforeEach(() => {
@@ -294,7 +289,7 @@ describe('posts mutate — post-state-change side effects', () => {
     ;(insertSlugRegistry as ReturnType<typeof vi.fn>).mockResolvedValue(undefined)
   })
 
-  it('restore re-indexes a published post after clearing caches and invalidating search', async () => {
+  it('restore re-indexes a published post after invalidating content caches', async () => {
     const db = fakeDb()
     ;(findPostMetaById as ReturnType<typeof vi.fn>).mockResolvedValue(publishedMeta)
     ;(restorePostMeta as ReturnType<typeof vi.fn>).mockResolvedValue(true)
@@ -303,8 +298,7 @@ describe('posts mutate — post-state-change side effects', () => {
     const result = await restorePost(db, 100n)
 
     expect(result).toEqual({ restored: true, warning: undefined })
-    expect(clearContentCaches).toHaveBeenCalledWith(db, 'post', 100n)
-    expect(invalidateSearchCache).toHaveBeenCalledTimes(1)
+    expect(invalidateContent).toHaveBeenCalledWith(db, { entity: 'post' })
     expect(indexPost).toHaveBeenCalledTimes(1)
     expect(removePostIndex).not.toHaveBeenCalled()
   })
@@ -341,15 +335,14 @@ describe('posts mutate — post-state-change side effects', () => {
     )
   })
 
-  it('unpublish clears caches, invalidates search, and removes the index row', async () => {
+  it('unpublish invalidates content caches and removes the index row', async () => {
     const db = fakeDb()
     ;(findPostMetaById as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 100n })
     ;(updatePostMetaById as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 100n })
 
     await unpublishPost(db, 100n)
 
-    expect(clearContentCaches).toHaveBeenCalledWith(db, 'post', 100n)
-    expect(invalidateSearchCache).toHaveBeenCalledTimes(1)
+    expect(invalidateContent).toHaveBeenCalledWith(db, { entity: 'post' })
     expect(removePostIndex).toHaveBeenCalledWith(db, 100n)
     expect(indexPost).not.toHaveBeenCalled()
   })
@@ -363,7 +356,7 @@ describe('posts mutate — post-state-change side effects', () => {
     await expect(unpublishPost(db, 100n)).resolves.toMatchObject({ id: 100n })
   })
 
-  it('delete clears caches and invalidates search; the index row goes inside the transaction', async () => {
+  it('delete invalidates content caches; the index row goes inside the transaction', async () => {
     const db = fakeDb()
     ;(findPostMetaById as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 100n })
     ;(softDeletePostMeta as ReturnType<typeof vi.fn>).mockResolvedValue(true)
@@ -372,8 +365,7 @@ describe('posts mutate — post-state-change side effects', () => {
 
     expect(result.deleted).toBe(true)
     expect(removePostIndex).toHaveBeenCalledTimes(1)
-    expect(clearContentCaches).toHaveBeenCalledWith(db, 'post', 100n)
-    expect(invalidateSearchCache).toHaveBeenCalledTimes(1)
+    expect(invalidateContent).toHaveBeenCalledWith(db, { entity: 'post' })
     expect(indexPost).not.toHaveBeenCalled()
   })
 })

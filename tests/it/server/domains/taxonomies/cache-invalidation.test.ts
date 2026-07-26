@@ -1,10 +1,12 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { Pool } from 'pg'
 
+import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables } from '#/_helpers/integration-db'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
+import { kvCache } from '@/server/infra/db/schema/kv-cache'
 
 vi.mock('@/server/infra/search/openai', () => ({
   generateEmbedding: vi.fn(async () => null),
@@ -12,7 +14,6 @@ vi.mock('@/server/infra/search/openai', () => ({
 vi.mock('@/server/domains/images/services/enhance', () => ({
   hydrateImageRefs: vi.fn(async () => undefined),
 }))
-vi.mock('@/server/infra/search/search', () => ({ invalidateSearchCache: vi.fn(async () => undefined) }))
 
 const poolManager = createDbPool()
 const db: NodePgDatabase = poolManager.db
@@ -25,6 +26,11 @@ afterAll(async () => {
 beforeEach(async () => {
   await clearAllTables(db)
 })
+
+async function feedRowCount(): Promise<number> {
+  const rows = await db.select({ key: kvCache.key }).from(kvCache).where(eq(kvCache.bucket, 'feed'))
+  return rows.length
+}
 
 describe('taxonomy cache invalidation', () => {
   it('shows a renamed tag immediately after upsertAdminTag (no TTL wait)', async () => {
@@ -40,6 +46,21 @@ describe('taxonomy cache invalidation', () => {
     const after = await listAllTags(db)
     expect(after.map((t) => t.name)).toContain('NewName')
     expect(after.map((t) => t.name)).not.toContain('OldName')
+  })
+
+  it('clears the whole feed bucket when a category is renamed', async () => {
+    const { upsertAdminCategory } = await import('@/server/domains/taxonomies/categories/services/mutate')
+    const { set } = await import('@/server/infra/cache/registry')
+    const created = await upsertAdminCategory(db, { name: 'FeedCat', cover: '', description: '' })
+
+    // Warm the feed bucket, including the category-scoped key.
+    await set(db, 'feed', { scope: 'all' }, '<xml>all</xml>')
+    await set(db, 'feed', { scope: 'cat:feedcat' }, '<xml>cat</xml>')
+    expect(await feedRowCount()).toBe(2)
+
+    await upsertAdminCategory(db, { id: BigInt(created.id), name: 'FeedCatRenamed', cover: '', description: '' })
+
+    expect(await feedRowCount()).toBe(0)
   })
 
   it('increments a tag count immediately when a post carrying the tag is published', async () => {

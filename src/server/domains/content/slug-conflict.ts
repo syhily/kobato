@@ -1,4 +1,4 @@
-import type { ContentEntityType } from '@/server/domains/content/shared'
+import type { ContentType } from '@/server/domains/content/schema'
 
 import { DomainError, isUniqueConstraintError } from '@/server/infra/http/errors'
 
@@ -13,7 +13,7 @@ import { DomainError, isUniqueConstraintError } from '@/server/infra/http/errors
  * The guard itself looks through one level of `cause`, so driver errors
  * wrapped in drizzle's `DrizzleQueryError` are matched here.
  */
-export function rethrowSlugConflict(err: unknown, entityType: ContentEntityType, slug: string): never {
+export function rethrowSlugConflict(err: unknown, entityType: ContentType, slug: string): never {
   if (isUniqueConstraintError(err, `${entityType}_slug_key`) || isUniqueConstraintError(err, 'uq_slug_registry_slug')) {
     throw new DomainError('CONFLICT', `slug "${slug}" 已被占用。`)
   }

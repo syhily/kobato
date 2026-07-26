@@ -1,8 +1,7 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import type { ViewerContext } from '@/server/domains/auth/rbac'
-import type { PublishLatestResult, SaveDraftResult } from '@/server/domains/content/schema'
-import type { ContentEntityType } from '@/server/domains/content/shared'
+import type { ContentType, PublishLatestResult, SaveDraftResult } from '@/server/domains/content/schema'
 import type { ContentRow } from '@/server/infra/db/types'
 import type { AdminRevisionDto } from '@/shared/contracts/revision'
 import type { PortableTextBody, PortableTextHeading } from '@/shared/pt/schema'
@@ -26,7 +25,7 @@ const log = getLogger('content.lifecycle')
  * preview projection, force-overwrite audit, post-publish side effects).
  */
 export interface ContentEntityAdapter<TMeta, TPreview> {
-  entityType: ContentEntityType
+  entityType: ContentType
   findMetaById(db: NodePgDatabase, id: bigint): Promise<TMeta | null>
   findPublicMetaBySlug(db: NodePgDatabase, slug: string): Promise<TMeta | null>
   assertAccess(meta: TMeta | null, viewer?: ViewerContext): asserts meta is TMeta

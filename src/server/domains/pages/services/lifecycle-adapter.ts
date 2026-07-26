@@ -2,8 +2,8 @@ import type { ContentEntityAdapter } from '@/server/domains/content/lifecycle'
 import type { PageMetaRow } from '@/server/infra/db/types'
 import type { Page } from '@/shared/types/catalog'
 
+import { invalidateContent } from '@/server/domains/content/invalidate'
 import { recordForceOverwriteAudit } from '@/server/domains/content/lifecycle'
-import { clearContentCaches } from '@/server/domains/content/shared'
 import { toCmsPage } from '@/server/domains/pages/projection'
 import { findPageMetaById, findPublicPageMetaBySlug } from '@/server/domains/pages/repo'
 import { DomainError } from '@/server/infra/http/errors'
@@ -27,7 +27,7 @@ export const pageLifecycleAdapter: ContentEntityAdapter<PageMetaRow, Page> = {
   getPublishedRevisionId: (meta) => meta.publishedRevisionId,
   projectPreview: (meta, revision) => toCmsPage(meta, revision),
   recordForceOverwrite: (entry) => recordForceOverwriteAudit(auditLog, 'pageMetaId', entry),
-  async afterPublish(db, meta) {
-    await clearContentCaches(db, 'page', meta.id)
+  async afterPublish(db) {
+    await invalidateContent(db, { entity: 'page' })
   },
 }

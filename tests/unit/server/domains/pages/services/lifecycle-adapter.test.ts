@@ -4,8 +4,8 @@ import { describe, expect, it, vi } from 'vitest'
 // (CONTEXT.md "Draft preview": pages allow admin only). The
 // side-effectful import graph is mocked so the suite stays DB-free.
 
-vi.mock('@/server/domains/content/shared', () => ({
-  clearContentCaches: vi.fn().mockResolvedValue(undefined),
+vi.mock('@/server/domains/content/invalidate', () => ({
+  invalidateContent: vi.fn().mockResolvedValue(undefined),
 }))
 
 vi.mock('@/server/domains/pages/repo', () => ({

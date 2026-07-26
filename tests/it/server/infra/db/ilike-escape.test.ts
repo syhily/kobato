@@ -7,13 +7,14 @@ import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 import { clearAllTables } from '#/_helpers/integration-db'
 import { buildAdminListConditions } from '@/server/domains/comments/repos/shared'
 import { liveContentWhere } from '@/server/domains/content/schema'
+import { bumpCounter } from '@/server/infra/cache/registry'
 import { ilikeEscape } from '@/server/infra/db/ilike-escape'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { comment } from '@/server/infra/db/schema/comment'
 import { postSearchIndex } from '@/server/infra/db/schema/content'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
-import { invalidateSearchCache, searchPosts } from '@/server/infra/search/search'
+import { searchPosts } from '@/server/infra/search/search'
 
 const poolManager = createDbPool()
 const db: NodePgDatabase = poolManager.db
@@ -25,7 +26,7 @@ afterAll(async () => {
 
 beforeEach(async () => {
   await clearAllTables(db)
-  await invalidateSearchCache(db)
+  await bumpCounter(db, 'searchResult')
 })
 
 /** The same caller-supplied live gate the production search loader passes. */

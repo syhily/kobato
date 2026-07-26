@@ -11,7 +11,6 @@ import type { RequestFacts } from '@/server/infra/http/request-facts'
 
 import { userSession } from '@/server/domains/auth/primitives'
 import { withCommentBadgeTextColor } from '@/server/domains/comments/badge'
-import { clearLatestCommentsCache } from '@/server/domains/comments/cache'
 import { insertComment } from '@/server/domains/comments/repos/mutate'
 import {
   countApprovedCommentsByUser,
@@ -207,6 +206,5 @@ export async function createComment(
   const sub = await validateSubmission(db, commentReq, facts, clientAddress, session)
   const info = await persistComment(db, commentReq, sub, facts.userAgent, clientAddress)
   await notifyCommentCreated(db, info, sub.target)
-  await clearLatestCommentsCache(db)
   return info
 }

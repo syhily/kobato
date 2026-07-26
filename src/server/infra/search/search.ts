@@ -5,7 +5,7 @@ import { sql } from 'drizzle-orm'
 
 import type { SearchSettings } from '@/shared/config/types'
 
-import { bumpCounter, getCounter, through } from '@/server/infra/cache/registry'
+import { getCounter, through } from '@/server/infra/cache/registry'
 import { getLogger } from '@/server/infra/logger'
 import { INFRA_SEARCH_DEFAULTS } from '@/server/infra/search/defaults'
 import { likeCacheKeyParts, runLikeSearch } from '@/server/infra/search/like'
@@ -78,20 +78,6 @@ function cacheKeyParts(settings: SearchSettings['search'], query: string): strin
     case 'like':
       return likeCacheKeyParts(settings, query)
   }
-}
-
-/**
- * Invalidate all cached search results by bumping the generation stamp.
- * Called whenever a post's published / deleted / restored state changes
- * so stale result lists don't survive until their TTL expires.
- *
- * Fire-and-forget by contract: invalidation must never bring down the
- * post mutation that triggered it — `bumpCounter` already logs and
- * swallows database failures, so callers neither catch nor inspect the
- * result.
- */
-export async function invalidateSearchCache(db: NodePgDatabase): Promise<void> {
-  await bumpCounter(db, 'searchResult')
 }
 
 // Core search execution (no pagination — returns the full ordered list).

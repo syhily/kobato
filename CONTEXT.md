@@ -109,3 +109,14 @@ and write policy, and every consumer goes through its verbs (`through`,
 through `kv-store` directly.
 _Avoid_: hand-rolled cache-aside at call sites, ad-hoc key strings
 outside the behavior plane
+
+**Content invalidation**:
+One door — `invalidateContent(db, event)` in
+`@/server/domains/content/invalidate` — owns the event → side-effect
+mapping (post: feed + taxonomy lists + sitemap + search generation; page:
+sitemap; category/tag: taxonomy list + whole feed bucket; comment:
+latest-comments list). Emission layer: repo mutations for comments (two
+controllers call the repos directly, bypassing the services),
+service/lifecycle for posts, pages, and taxonomies.
+_Avoid_: calling cache clears or `bumpCounter` directly from mutation
+sites

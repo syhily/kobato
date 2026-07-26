@@ -2,14 +2,13 @@ import type { ContentEntityAdapter } from '@/server/domains/content/lifecycle'
 import type { PostMetaRow } from '@/server/infra/db/types'
 import type { Post } from '@/shared/types/catalog'
 
+import { invalidateContent } from '@/server/domains/content/invalidate'
 import { recordForceOverwriteAudit } from '@/server/domains/content/lifecycle'
-import { clearContentCaches } from '@/server/domains/content/shared'
 import { toCmsPost } from '@/server/domains/posts/projection'
 import { findPostMetaById, findPublicPostMetaBySlug } from '@/server/domains/posts/repos/single'
 import { indexPost } from '@/server/domains/posts/services/search-index'
 import { assertOwnPostOr404 } from '@/server/domains/posts/services/shared'
 import { getLogger } from '@/server/infra/logger'
-import { invalidateSearchCache } from '@/server/infra/search/search'
 import { hasAtLeast } from '@/shared/utils/roles'
 
 const log = getLogger('posts.service')
@@ -26,8 +25,7 @@ export const postLifecycleAdapter: ContentEntityAdapter<PostMetaRow, Post> = {
   projectPreview: (meta, revision) => toCmsPost(meta, revision),
   recordForceOverwrite: (entry) => recordForceOverwriteAudit(auditLog, 'postMetaId', entry),
   async afterPublish(db, meta, body, warnings) {
-    await clearContentCaches(db, 'post', meta.id)
-    await invalidateSearchCache(db)
+    await invalidateContent(db, { entity: 'post' })
     // Index the canonical body already in scope rather than re-reading the
     // row from the DB: `body` is freshly canonicalized + prerendered, so it
     // matches what `publishLatestRevision` persisted — a re-read would only

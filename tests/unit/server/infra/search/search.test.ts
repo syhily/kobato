@@ -6,7 +6,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const mocks = vi.hoisted(() => ({
   through: vi.fn(),
   getCounter: vi.fn(),
-  bumpCounter: vi.fn(),
   runLikeSearch: vi.fn(),
   info: vi.fn(),
   warn: vi.fn(),
@@ -15,7 +14,6 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/server/infra/cache/registry', () => ({
   through: mocks.through,
   getCounter: mocks.getCounter,
-  bumpCounter: mocks.bumpCounter,
 }))
 
 vi.mock('@/server/infra/search/openai', () => ({
@@ -59,7 +57,7 @@ vi.mock('@/server/infra/logger', () => {
   return { getLogger: () => makeStub(), logger: makeStub() }
 })
 
-import { invalidateSearchCache, searchPosts } from '@/server/infra/search/search'
+import { searchPosts } from '@/server/infra/search/search'
 
 // The cache module is mocked, so the Drizzle handle only serves the trgm
 // availability probe (`db.execute`).
@@ -71,18 +69,8 @@ const where = sql`true`
 beforeEach(() => {
   vi.clearAllMocks()
   mocks.getCounter.mockResolvedValue(7)
-  mocks.bumpCounter.mockResolvedValue(undefined)
   mocks.through.mockResolvedValue(['slug-a', 'slug-b', 'slug-c'])
   mocks.runLikeSearch.mockResolvedValue(['slug-like'])
-})
-
-describe('infra/search — invalidateSearchCache', () => {
-  it('bumps the searchResult generation counter instead of enumerating keys', async () => {
-    await invalidateSearchCache(db)
-
-    expect(mocks.bumpCounter).toHaveBeenCalledTimes(1)
-    expect(mocks.bumpCounter).toHaveBeenCalledWith(db, 'searchResult')
-  })
 })
 
 describe('infra/search — searchPosts', () => {

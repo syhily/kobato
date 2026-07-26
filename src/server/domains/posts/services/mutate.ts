@@ -2,9 +2,9 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { eq } from 'drizzle-orm'
 
+import { invalidateContent } from '@/server/domains/content/invalidate'
 import { findContentById } from '@/server/domains/content/repos/query'
 import { isPromoted } from '@/server/domains/content/schema'
-import { clearContentCaches } from '@/server/domains/content/shared'
 import { rethrowSlugConflict } from '@/server/domains/content/slug-conflict'
 import { reclaimSlugOnRestore } from '@/server/domains/content/slug-reclaim'
 import { toAdminPostDto, type AdminPostDto } from '@/server/domains/posts/projection'
@@ -27,7 +27,6 @@ import { findTagsByNames, seedTagsIfMissing } from '@/server/infra/db/operations
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
-import { invalidateSearchCache } from '@/server/infra/search/search'
 import { resolveSlugForTaxonomy } from '@/server/infra/slug'
 import { ensureSlugLegal, resolveSlug } from '@/server/infra/slug-validation'
 import { reserveSlugInTransaction } from '@/server/infra/slug/reservation'
@@ -190,19 +189,19 @@ interface IndexablePostData {
 
 /**
  * Side effects after a post state change (delete / restore / unpublish):
- * clear content caches, invalidate the search cache, then apply the
- * search-index change selected by `index` — 'remove' drops the index row
- * (unpublish), an IndexablePostData re-indexes (restore) and yields the
- * Chinese warning when the write fails, undefined/null leaves the index
- * alone (delete already removed the row inside its transaction).
+ * invalidate the content caches through the content door (bucket clears +
+ * search generation bump), then apply the search-index change selected by
+ * `index` — 'remove' drops the index row (unpublish), an
+ * IndexablePostData re-indexes (restore) and yields the Chinese warning
+ * when the write fails, undefined/null leaves the index alone (delete
+ * already removed the row inside its transaction).
  */
 async function afterPostStateChange(
   db: NodePgDatabase,
   id: bigint,
   options: { index?: IndexablePostData | null | 'remove' } = {},
 ): Promise<string | undefined> {
-  await clearContentCaches(db, 'post', id)
-  await invalidateSearchCache(db)
+  await invalidateContent(db, { entity: 'post' })
   const { index } = options
   if (index === 'remove') {
     await removePostIndex(db, id).catch((err: unknown) => {

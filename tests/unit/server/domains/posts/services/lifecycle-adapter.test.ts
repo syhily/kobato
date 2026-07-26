@@ -4,8 +4,8 @@ import { describe, expect, it, vi } from 'vitest'
 // (CONTEXT.md "Draft preview": posts allow author and above). The
 // side-effectful import graph is mocked so the suite stays DB-free.
 
-vi.mock('@/server/domains/content/shared', () => ({
-  clearContentCaches: vi.fn().mockResolvedValue(undefined),
+vi.mock('@/server/domains/content/invalidate', () => ({
+  invalidateContent: vi.fn().mockResolvedValue(undefined),
 }))
 
 vi.mock('@/server/domains/posts/repos/single', () => ({
@@ -15,10 +15,6 @@ vi.mock('@/server/domains/posts/repos/single', () => ({
 
 vi.mock('@/server/domains/posts/services/search-index', () => ({
   indexPost: vi.fn().mockResolvedValue(undefined),
-}))
-
-vi.mock('@/server/infra/search/search', () => ({
-  invalidateSearchCache: vi.fn().mockResolvedValue(undefined),
 }))
 
 const { postLifecycleAdapter } = await import('@/server/domains/posts/services/lifecycle-adapter')

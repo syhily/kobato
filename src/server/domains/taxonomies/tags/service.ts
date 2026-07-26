@@ -6,6 +6,7 @@ import type { TagRow } from '@/server/infra/db/types'
 import type { AdminTagDto } from '@/shared/contracts/tags'
 import type { Tag } from '@/shared/types/catalog'
 
+import { invalidateContent } from '@/server/domains/content/invalidate'
 import { listPostTitlesByTaxonomy } from '@/server/domains/posts/repos/public-query/taxonomy'
 import { countPostsByTaxonomy } from '@/server/domains/taxonomies/counts'
 import {
@@ -13,7 +14,7 @@ import {
   ensureUniqueOnCreateTaxonomy,
   ensureUniqueOnUpdateTaxonomy,
 } from '@/server/domains/taxonomies/shared'
-import { clear, through } from '@/server/infra/cache/registry'
+import { through } from '@/server/infra/cache/registry'
 import {
   type AdminTagsListFilters,
   countAdminTags,
@@ -102,7 +103,7 @@ export async function upsertAdminTag(
       '标签',
     )
     const row = await insertTag(db, { name: input.name, slug, ogImage: input.ogImage ?? '' })
-    await clearTagCache(db)
+    await invalidateContent(db, { entity: 'tag' })
     const counts = await countPostsByTaxonomy(db, { kind: 'tag', gate: 'admin', name: row.name })
     return toAdminTagDto(row, counts.get(row.name) ?? 0)
   }
@@ -130,7 +131,7 @@ export async function upsertAdminTag(
   if (updated === null) {
     throw new DomainError('NOT_FOUND', '标签不存在')
   }
-  await clearTagCache(db)
+  await invalidateContent(db, { entity: 'tag' })
   const counts = await countPostsByTaxonomy(db, { kind: 'tag', gate: 'admin', name: updated.name })
   return toAdminTagDto(updated, counts.get(updated.name) ?? 0)
 }
@@ -149,17 +150,12 @@ export async function deleteAdminTag(db: NodePgDatabase, id: bigint, _viewer?: T
     listPostTitles: (row) => listPostTitlesByTaxonomy(db, 'tag', row.name),
   })
   if (deleted) {
-    await clearTagCache(db)
+    await invalidateContent(db, { entity: 'tag' })
   }
   return deleted
 }
 
 // --- Public catalog queries -------------------------------------------------
-
-/** Drop the cached public tag list (call after any tag/content mutation). */
-export async function clearTagCache(db: NodePgDatabase): Promise<void> {
-  await clear(db, 'tags')
-}
 
 export async function listAllTags(db: NodePgDatabase): Promise<Tag[]> {
   return through(db, 'tags', {}, async () => {
