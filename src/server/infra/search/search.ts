@@ -118,7 +118,7 @@ async function executeSearch(
 // Public API
 
 // The visibility gate is supplied by the caller (infra has zero business
-// knowledge — the "live" rule lives in `@/server/domains/content/schema`).
+// knowledge — the "live" rule lives in `@/server/domains/content/schemas/live-gate`).
 export async function searchPosts(
   db: NodePgDatabase,
   baseWhere: SQL,

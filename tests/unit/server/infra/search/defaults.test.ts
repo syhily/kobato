@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { searchSchema } from '@/server/domains/settings/schemas/search'
+import { searchSchema } from '@/server/domains/settings/sections/search'
 import { INFRA_SEARCH_DEFAULTS } from '@/server/infra/search/defaults'
 
 describe('infra/search — settings fallback', () => {

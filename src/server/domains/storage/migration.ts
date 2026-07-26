@@ -9,7 +9,7 @@ import {
   legacyKeyForSlot,
   SLOT_CONTENT_TYPE,
   s3KeyForSlot,
-} from '@/server/domains/assets/repos/storage'
+} from '@/server/domains/assets/services/storage'
 import { invalidateImageEnhanceCacheFor } from '@/server/domains/images/services/cache'
 import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
 import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'

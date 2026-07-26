@@ -1,11 +1,12 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import type { AdminCategoryDto, UpsertCategoryInputs } from '@/server/domains/taxonomies/categories/projection'
+import type { UpsertCategoryInputs } from '@/server/domains/taxonomies/categories/projection'
+import type { AdminCategoryDto } from '@/shared/contracts/categories'
 
 import { invalidateContent } from '@/server/domains/content/invalidate'
-import { listPostTitlesByCategoryId } from '@/server/domains/posts/repos/public-query/taxonomy'
+import { countPostsByTaxonomy, listPostTitlesByCategoryId } from '@/server/domains/posts/services/taxonomy'
 import { toAdminCategoryDto } from '@/server/domains/taxonomies/categories/projection'
-import { countPostsByTaxonomy } from '@/server/domains/taxonomies/counts'
+import { findCategoryBySlug } from '@/server/domains/taxonomies/categories/services/query'
 import {
   deleteAdminTaxonomy,
   ensureUniqueOnCreateTaxonomy,
@@ -15,7 +16,6 @@ import {
   deleteCategory as deleteCategoryRow,
   findCategoryById,
   findCategoryByName,
-  findCategoryBySlug,
   insertCategory,
   listPublicCategoryRows,
   reorderCategories as reorderCategoryRows,

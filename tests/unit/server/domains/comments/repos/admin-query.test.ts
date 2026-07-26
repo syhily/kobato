@@ -4,9 +4,9 @@ import { describe, expect, it } from 'vitest'
 
 // Covers RBAC-RECTIFICATION-PLAN §1.7 (O7).
 //
-// `listMyComments(userId, offset, limit)` and `countMyComments(userId)`
-// must share a single visibility predicate. Drift between the two had
-// previously caused
+// `listMyComments(userId, offset, limit)` (repos/admin-query.ts) and
+// `countMyComments(userId)` (services/mine-comments.ts) must share a
+// single visibility predicate. Drift between the two had previously caused
 // `hasMore = offset + comments.length < counts.total` to under-count
 // the total (the list query included rows the count query had already
 // dropped), truncating the "/my/comments" tail page or hiding a
@@ -28,9 +28,16 @@ import { describe, expect, it } from 'vitest'
 
 const commentQueryPath = resolve(process.cwd(), 'src/server/domains/comments/repos/admin-query.ts')
 const commentSharedPath = resolve(process.cwd(), 'src/server/domains/comments/repos/shared.ts')
+const mineCommentsPath = resolve(process.cwd(), 'src/server/domains/comments/services/mine-comments.ts')
 
 function readSource(): string {
-  return readFileSync(commentQueryPath, 'utf8') + '\n' + readFileSync(commentSharedPath, 'utf8')
+  return (
+    readFileSync(commentQueryPath, 'utf8') +
+    '\n' +
+    readFileSync(commentSharedPath, 'utf8') +
+    '\n' +
+    readFileSync(mineCommentsPath, 'utf8')
+  )
 }
 
 function extractFunctionBody(source: string, fnSignaturePattern: RegExp): string {

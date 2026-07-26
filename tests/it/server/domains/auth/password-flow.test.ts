@@ -3,15 +3,17 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import bcrypt from 'bcryptjs'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { SigninFlowContext } from '@/server/domains/auth/services/shared'
 import type { BlogSession } from '@/server/domains/auth/session-storage'
-import type { SigninFlowContext } from '@/server/domains/auth/signin-flow'
 
 // Flow-seam tests for `domains/auth/password-flow`. Everything below the
 // flow (repos, tokens, mail, rate limit, passkey cleanup, session
 // primitive, audit) is mocked so each pin asserts the flow's own
 // orchestration: rate-limit strategy, enumeration-safe generic success,
 // the commenter-claim business rule, and the reset invariant
-// (revokeOtherSessions + passkey cleanup ordering).
+// (revokeOtherSessions + passkey cleanup ordering). The comments domain's
+// "established commenter" check arrives as an injected dependency
+// (`PasswordResetFlowDeps`), so it is stubbed directly — no module mock.
 
 const mocks = vi.hoisted(() => ({
   issueResetToken: vi.fn(async () => ({ token: 'tok-abc', expiresAt: new Date() })),
@@ -51,10 +53,6 @@ vi.mock('@/server/domains/audit/services/record', () => ({
   recordAuditEvent: mocks.recordAuditEvent,
 }))
 
-vi.mock('@/server/domains/comments/services/public-query', () => ({
-  hasApprovedComments: mocks.hasApprovedComments,
-}))
-
 vi.mock('@/server/infra/rate-limit', () => ({
   tryPasswordResetRateLimit: mocks.tryPasswordResetRateLimit,
   tryPasswordResetByEmailRateLimit: mocks.tryPasswordResetByEmailRateLimit,
@@ -72,12 +70,13 @@ vi.mock('@/shared/config/getters', () => ({
   getBlogSettingsBundleSync: mocks.getBlogSettingsBundleSync,
 }))
 
-import { requestPasswordReset, resetPasswordWithToken } from '@/server/domains/auth/signin-flow'
+import { requestPasswordReset, resetPasswordWithToken } from '@/server/domains/auth/services/password-reset'
 
 const db = {} as NodePgDatabase
 const session = { id: 'sess-1' } as unknown as BlogSession
 const CLIENT = '203.0.113.7'
 const GENERIC = '如果该邮箱存在且符合要求，重置邮件已发送。'
+const resetDeps = { hasApprovedComments: mocks.hasApprovedComments }
 
 function flowCtx(): SigninFlowContext {
   return { db, session, clientAddress: CLIENT, markSessionDirty: vi.fn() }
@@ -106,7 +105,7 @@ describe('auth/password-flow — requestPasswordReset', () => {
   it('short-circuits with the generic success when the per-IP limit trips (no lookup)', async () => {
     mocks.tryPasswordResetRateLimit.mockResolvedValueOnce({ count: 9, exceeded: true })
 
-    const result = await requestPasswordReset(db, CLIENT, request(), formWith({ email: 'a@example.com' }))
+    const result = await requestPasswordReset(db, CLIENT, request(), formWith({ email: 'a@example.com' }), resetDeps)
 
     expect(result).toEqual({ type: 'success', message: GENERIC })
     expect(mocks.findUserByEmail).not.toHaveBeenCalled()
@@ -117,7 +116,7 @@ describe('auth/password-flow — requestPasswordReset', () => {
   it('short-circuits with the generic success when the per-email limit trips', async () => {
     mocks.tryPasswordResetByEmailRateLimit.mockResolvedValueOnce({ count: 9, exceeded: true })
 
-    const result = await requestPasswordReset(db, CLIENT, request(), formWith({ email: 'a@example.com' }))
+    const result = await requestPasswordReset(db, CLIENT, request(), formWith({ email: 'a@example.com' }), resetDeps)
 
     expect(result).toEqual({ type: 'success', message: GENERIC })
     expect(mocks.tryPasswordResetByEmailRateLimit).toHaveBeenCalledWith('a@example.com')
@@ -125,7 +124,7 @@ describe('auth/password-flow — requestPasswordReset', () => {
   })
 
   it('skips the per-email bucket when the form has no email', async () => {
-    const result = await requestPasswordReset(db, CLIENT, request(), formWith({}))
+    const result = await requestPasswordReset(db, CLIENT, request(), formWith({}), resetDeps)
 
     expect(result).toEqual({ type: 'success', message: GENERIC })
     expect(mocks.tryPasswordResetByEmailRateLimit).not.toHaveBeenCalled()
@@ -142,7 +141,7 @@ describe('auth/password-flow — requestPasswordReset', () => {
       deletedAt: null,
     } as never)
 
-    const result = await requestPasswordReset(db, CLIENT, request(), formWith({ email: 'vis@example.com' }))
+    const result = await requestPasswordReset(db, CLIENT, request(), formWith({ email: 'vis@example.com' }), resetDeps)
 
     expect(result).toEqual({ type: 'success', message: GENERIC })
     expect(mocks.issueResetToken).toHaveBeenCalledTimes(1)
@@ -176,14 +175,20 @@ describe('auth/password-flow — requestPasswordReset', () => {
       deletedAt: null,
     } as never)
 
-    await requestPasswordReset(db, CLIENT, request(), formWith({ email: 'vis@example.com' }))
+    await requestPasswordReset(db, CLIENT, request(), formWith({ email: 'vis@example.com' }), resetDeps)
 
     const [, link] = mocks.sendPasswordReset.mock.calls[0]!
     expect(link).toBe('http://localhost/admin/signin?action=resetpassword&token=tok-abc')
   })
 
   it('stays silent for an unknown email (enumeration-safe)', async () => {
-    const result = await requestPasswordReset(db, CLIENT, request(), formWith({ email: 'ghost@example.com' }))
+    const result = await requestPasswordReset(
+      db,
+      CLIENT,
+      request(),
+      formWith({ email: 'ghost@example.com' }),
+      resetDeps,
+    )
 
     expect(result).toEqual({ type: 'success', message: GENERIC })
     expect(mocks.issueResetToken).not.toHaveBeenCalled()
@@ -201,7 +206,7 @@ describe('auth/password-flow — requestPasswordReset', () => {
       deletedAt: new Date(),
     } as never)
 
-    const result = await requestPasswordReset(db, CLIENT, request(), formWith({ email: 'gone@example.com' }))
+    const result = await requestPasswordReset(db, CLIENT, request(), formWith({ email: 'gone@example.com' }), resetDeps)
 
     expect(result).toEqual({ type: 'success', message: GENERIC })
     expect(mocks.issueResetToken).not.toHaveBeenCalled()
@@ -219,7 +224,7 @@ describe('auth/password-flow — requestPasswordReset', () => {
     } as never)
     mocks.hasApprovedComments.mockResolvedValueOnce(false)
 
-    const result = await requestPasswordReset(db, CLIENT, request(), formWith({ email: 'anon@example.com' }))
+    const result = await requestPasswordReset(db, CLIENT, request(), formWith({ email: 'anon@example.com' }), resetDeps)
 
     expect(result).toEqual({ type: 'success', message: GENERIC })
     expect(mocks.hasApprovedComments).toHaveBeenCalledWith(db, 8n)
@@ -240,7 +245,7 @@ describe('auth/password-flow — requestPasswordReset', () => {
     } as never)
     mocks.hasApprovedComments.mockResolvedValueOnce(true)
 
-    const result = await requestPasswordReset(db, CLIENT, request(), formWith({ email: 'anon@example.com' }))
+    const result = await requestPasswordReset(db, CLIENT, request(), formWith({ email: 'anon@example.com' }), resetDeps)
 
     expect(result).toEqual({ type: 'success', message: GENERIC })
     expect(mocks.updateUserById).toHaveBeenCalledWith(db, 8n, { role: 'visitor' })

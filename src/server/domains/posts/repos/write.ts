@@ -1,39 +1,13 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
-import { and, eq, isNull } from 'drizzle-orm'
-
 import type { NewPostMeta, PostMetaRow } from '@/server/infra/db/types'
 
+import { makeMetaCrud } from '@/server/domains/content/entities/meta-repo'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 
-export async function updatePostMetaById(
-  db: NodePgDatabase,
-  id: bigint,
-  patch: Partial<Omit<NewPostMeta, 'id' | 'createdAt'>>,
-): Promise<PostMetaRow | null> {
-  const rows = await db
-    .update(postMetaTable)
-    .set({ ...patch, updatedAt: new Date() })
-    .where(eq(postMetaTable.id, id))
-    .returning()
-  return rows[0] ?? null
-}
+// Meta-row writes come from the shared meta CRUD (`content/entities/meta-repo.ts`)
+// bound to the post table — no post-specific fork of these queries exists.
+const crud = makeMetaCrud<PostMetaRow, NewPostMeta>(postMetaTable)
 
-export async function softDeletePostMeta(db: NodePgDatabase, id: bigint): Promise<boolean> {
-  const now = new Date()
-  const rows = await db
-    .update(postMetaTable)
-    .set({ deletedAt: now, updatedAt: now })
-    .where(and(eq(postMetaTable.id, id), isNull(postMetaTable.deletedAt)))
-    .returning({ id: postMetaTable.id })
-  return rows.length > 0
-}
-
-export async function restorePostMeta(db: NodePgDatabase, id: bigint): Promise<boolean> {
-  const rows = await db
-    .update(postMetaTable)
-    .set({ deletedAt: null, updatedAt: new Date() })
-    .where(eq(postMetaTable.id, id))
-    .returning({ id: postMetaTable.id })
-  return rows.length > 0
-}
+export const insertPostMeta = crud.insertMeta
+export const updatePostMetaById = crud.updateMetaById
+export const softDeletePostMeta = crud.softDeleteMeta
+export const restorePostMeta = crud.restoreMeta

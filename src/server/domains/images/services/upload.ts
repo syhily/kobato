@@ -1,5 +1,7 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
+import { ORPCError } from '@orpc/server'
+
 import type { ImageRow } from '@/server/infra/db/types'
 import type { AdminImageDto } from '@/shared/contracts/images'
 
@@ -27,6 +29,30 @@ export interface UploadImageInputs {
 }
 
 const ALLOWED_IMAGE_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif'])
+
+/**
+ * Pre-read validation of the client-declared upload envelope (MIME type +
+ * size) against the allowlist and the configured cap — runs BEFORE the
+ * bytes are buffered, so a mislabeled or oversize Blob is rejected
+ * cheaply. The authoritative checks (magic-byte sniffing, real byte
+ * counts) still run inside {@link uploadImage}; the two layers
+ * deliberately report different statuses (413 here for the declared size,
+ * 400 there for the actual bytes), so this throws `ORPCError` — the
+ * DomainError vocabulary has no PAYLOAD_TOO_LARGE code. Messages are the
+ * wire contract — do not reword.
+ */
+export function assertImageUploadAllowed(file: { type: string; size: number }, maxBytes: number): void {
+  if (!ALLOWED_IMAGE_MIME_TYPES.has(file.type)) {
+    throw new ORPCError('BAD_REQUEST', {
+      message: '不支持的图片格式，请上传 JPEG、PNG、WebP、AVIF 或 GIF 格式的图片',
+    })
+  }
+  if (file.size > maxBytes) {
+    throw new ORPCError('PAYLOAD_TOO_LARGE', {
+      message: `图片体积超过上限（${formatBytes(maxBytes)}）`,
+    })
+  }
+}
 
 function getBufferMimeType(buffer: Buffer): string | null {
   if (buffer.length < 12) {

@@ -77,11 +77,6 @@ export async function findTagByName(db: NodePgDatabase, name: string): Promise<T
   return rows[0] ?? null
 }
 
-export async function findTagBySlug(db: NodePgDatabase, slug: string): Promise<TagRow | null> {
-  const rows = await db.select().from(tag).where(eq(tag.slug, slug)).limit(1)
-  return rows[0] ?? null
-}
-
 export async function findTagsByNames(db: NodePgDatabase, names: string[]): Promise<TagRow[]> {
   if (names.length === 0) {
     return []

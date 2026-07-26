@@ -39,8 +39,10 @@ const sidebarSamples = makePostList(3, { slug: 'sidebar' })
 
 // catalog/catalog removed; post detail uses findPostBySlug directly, page
 // detail uses pages/loader which queries findPublicPostMetaBySlug + findPageBySlug.
-vi.mock('@/server/domains/posts/repos/single', () => ({
+vi.mock('@/server/domains/posts/services/single', () => ({
   findPostMetaById: vi.fn(async () => null),
+  findPostMetaBySlug: vi.fn(async () => null),
+  findPostMetaBySlugForUpdate: vi.fn(async () => null),
   findPostBySlug: vi.fn(async (_db: unknown, slug: string) => {
     if (slug === 'hello' || slug === 'hello-old') {
       return samplePost
@@ -60,15 +62,23 @@ vi.mock('@/server/domains/posts/repos/single', () => ({
     return null
   }),
 }))
-vi.mock('@/server/domains/posts/repos/public-query/listing', () => ({
+vi.mock('@/server/domains/posts/services/public-query', () => ({
   listClientPosts: vi.fn(async () => sidebarSamples),
 }))
-vi.mock('@/server/domains/posts/repos/public-query/featured', () => ({
+vi.mock('@/server/domains/posts/services/featured', () => ({
   selectSidebarPosts: vi.fn(async () => sidebarSamples),
 }))
 vi.mock('@/server/domains/pages/repo', () => ({
-  listPublicPageMetas: vi.fn(async () => []),
   findPageMetaById: vi.fn(async () => null),
+  findPageMetaBySlug: vi.fn(async () => null),
+  findPageMetaBySlugForUpdate: vi.fn(async () => null),
+  insertPageMeta: vi.fn(async () => null),
+  updatePageMetaById: vi.fn(async () => null),
+  softDeletePageMeta: vi.fn(async () => false),
+  restorePageMeta: vi.fn(async () => false),
+}))
+vi.mock('@/server/domains/pages/services/public-query', () => ({
+  listPublicPageMetas: vi.fn(async () => []),
   findPublicPageMetaBySlug: vi.fn(async () => null),
   findPageBySlug: vi.fn(async (_db: unknown, slug: string) => {
     if (slug === 'about') {

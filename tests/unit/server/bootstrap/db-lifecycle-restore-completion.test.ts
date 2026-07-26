@@ -60,9 +60,9 @@ vi.mock('@/server/infra/db/batcher-registry', () => ({
 
 // db-lifecycle imports the batcher modules only for their registration
 // side effect; the mocked registry absorbs the lifecycle calls.
-vi.mock('@/server/domains/analytics/repos/batcher', () => ({}))
-vi.mock('@/server/domains/analytics/repos/pv-batcher', () => ({}))
-vi.mock('@/server/domains/audit/repos/batcher', () => ({}))
+vi.mock('@/server/domains/analytics/services/batcher', () => ({}))
+vi.mock('@/server/domains/analytics/services/pv-batcher', () => ({}))
+vi.mock('@/server/domains/audit/services/batcher', () => ({}))
 
 vi.mock('@/server/domains/audit/services/scheduler', () => ({
   scheduleNextArchive: mockScheduleNextArchive,

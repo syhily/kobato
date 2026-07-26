@@ -4,11 +4,9 @@ import { z } from 'zod'
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { isCommentOwner } from '@/server/domains/auth/rbac'
 import { asCommentItemWire } from '@/server/domains/comments/projection'
-import { countApprovedRepliesOfComment, listMyCommentEntities } from '@/server/domains/comments/repos/admin-query'
-import { clearDeleteRequest, requestDeleteComment } from '@/server/domains/comments/repos/moderation'
-import { findCommentWithUserById } from '@/server/domains/comments/repos/public-query/by-id'
-import { loadMineCommentsPage } from '@/server/domains/comments/services/mine-comments'
-import { updateOwnComment } from '@/server/domains/comments/services/moderate'
+import { findCommentWithUserById } from '@/server/domains/comments/services/lookup'
+import { listMyCommentEntities, loadMineCommentsPage } from '@/server/domains/comments/services/mine-comments'
+import { clearDeleteRequest, editOwnComment, requestDeleteComment } from '@/server/domains/comments/services/moderate'
 import { authedProc } from '@/server/http/orpc-base'
 import { ownCommentMutationDto } from '@/shared/contracts/comments'
 import { commentBodySchema } from '@/shared/pt/comment-schema'
@@ -24,26 +22,9 @@ const updateOwn = authedProc
     if (commentId === 0n) {
       throw new ORPCError('BAD_REQUEST', { message: '缺少 commentId' })
     }
-    const c = await findCommentWithUserById(context.db, commentId)
-    if (!c || !isCommentOwner(context.viewer, c)) {
-      throw new ORPCError('NOT_FOUND', { message: '资源不存在。' })
-    }
-    if (c.deleteRequestedAt !== null) {
-      throw new ORPCError('CONFLICT', { message: '已申请删除，无法编辑。' })
-    }
-    const replyCount = await countApprovedRepliesOfComment(context.db, commentId)
-    if (replyCount > 0) {
-      throw new ORPCError('CONFLICT', { message: '已有回复，无法再编辑。' })
-    }
-    const updated = await updateOwnComment(context.db, String(commentId), input.body)
-    if (!updated) {
-      throw new ORPCError('NOT_FOUND', { message: '更新评论失败' })
-    }
-    recordAuditEventFromContext(context, {
-      action: 'comment_own_updated',
-      resourceType: 'comment',
-      resourceId: input.commentId,
-    })
+    // The edit-lock flow (ownership, delete-request fence, has-replies
+    // lock, grace-window mutation, audit) lives in the comments domain.
+    const updated = await editOwnComment(context.db, input.commentId, input.body, context.viewer, context)
     return { comment: asCommentItemWire(updated) }
   })
 

@@ -2,8 +2,8 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { SigninFlowContext } from '@/server/domains/auth/services/shared'
 import type { BlogSession } from '@/server/domains/auth/session-storage'
-import type { SigninFlowContext } from '@/server/domains/auth/signin-flow'
 
 // Flow-seam tests for `domains/auth/passkey-flow`. The WebAuthn ceremony
 // itself lives in `passkey-service` (covered by `passkey.test.ts`); here
@@ -43,7 +43,7 @@ vi.mock('@/server/domains/audit/services/record', () => ({
   recordAuditEvent: mocks.recordAuditEvent,
 }))
 
-import { signInWithPasskey } from '@/server/domains/auth/signin-flow'
+import { signInWithPasskey } from '@/server/domains/auth/services/passkey'
 
 const db = {} as NodePgDatabase
 const session = { id: 'sess-1' } as unknown as BlogSession

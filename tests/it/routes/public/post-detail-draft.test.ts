@@ -51,8 +51,10 @@ const draftPost = {
 
 let currentSession = regularSession()
 
-vi.mock('@/server/domains/posts/repos/single', () => ({
+vi.mock('@/server/domains/posts/services/single', () => ({
   findPostMetaById: vi.fn(async () => null),
+  findPostMetaBySlug: vi.fn(async () => null),
+  findPostMetaBySlugForUpdate: vi.fn(async () => null),
   findPublicPostMetaBySlug: vi.fn(async () => null),
   findPostBySlug: vi.fn(async (_db: unknown, slug: string) => {
     if (slug === 'hello') {
@@ -63,10 +65,10 @@ vi.mock('@/server/domains/posts/repos/single', () => ({
     return null
   }),
 }))
-vi.mock('@/server/domains/posts/repos/public-query/featured', () => ({
+vi.mock('@/server/domains/posts/services/featured', () => ({
   selectSidebarPosts: vi.fn(async () => []),
 }))
-vi.mock('@/server/domains/posts/repos/public-query/listing', () => ({}))
+vi.mock('@/server/domains/posts/services/public-query', () => ({}))
 vi.mock('@/server/domains/taxonomies/tags/service', () => ({
   getTagsByNames: vi.fn(async () => []),
   listAllTags: vi.fn(async () => []),
@@ -108,7 +110,7 @@ vi.mock('@/server/domains/images/services/enhance', () => ({
 const postRoute = await import('@/routes/public/post/detail')
 const lifecycle = await import('@/server/domains/content/lifecycle')
 const draftPreviewMock = vi.mocked(lifecycle.loadDraftPreviewBySlug)
-const postsSingle = await import('@/server/domains/posts/repos/single')
+const postsSingle = await import('@/server/domains/posts/services/single')
 const findPostBySlugMock = vi.mocked(postsSingle.findPostBySlug)
 
 type LoaderResult = {

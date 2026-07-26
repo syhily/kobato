@@ -6,11 +6,10 @@ import { userSession } from '@/server/domains/auth/primitives'
 import { uploadImageMetadataSchema } from '@/server/domains/images/schema'
 import { deleteImage, recalculateImageThumbhash, updateImageNote } from '@/server/domains/images/services/admin-mutate'
 import { listImagesForAdmin } from '@/server/domains/images/services/admin-read'
-import { uploadImage } from '@/server/domains/images/services/upload'
+import { assertImageUploadAllowed, uploadImage } from '@/server/domains/images/services/upload'
 import { authorProc } from '@/server/http/orpc-base'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { adminImageDto, listImagesOutputDto } from '@/shared/contracts/images'
-import { formatBytes } from '@/shared/utils/formatter'
 import { idFromString } from '@/shared/utils/id'
 
 const list = authorProc
@@ -83,18 +82,10 @@ const upload = authorProc
   )
   .output(z.object({ image: adminImageDto }))
   .handler(async ({ input, context }) => {
-    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif']
-    if (!allowedMimeTypes.includes(input.file.type)) {
-      throw new ORPCError('BAD_REQUEST', {
-        message: '不支持的图片格式，请上传 JPEG、PNG、WebP、AVIF 或 GIF 格式的图片',
-      })
-    }
     const settings = requireBlogSettingsSection('assets')
-    if (input.file.size > settings.upload.maxBytes) {
-      throw new ORPCError('PAYLOAD_TOO_LARGE', {
-        message: `图片体积超过上限（${formatBytes(settings.upload.maxBytes)}）`,
-      })
-    }
+    // Declared MIME/size validation lives in the images domain (next to
+    // the magic-byte sniffing); the kind dispatch below is pure routing.
+    assertImageUploadAllowed(input.file, settings.upload.maxBytes)
     const sessionUser = userSession(context.session)
     if (!sessionUser) {
       throw new ORPCError('UNAUTHORIZED', { message: '未登录' })

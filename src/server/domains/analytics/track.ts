@@ -2,7 +2,7 @@ import type { EntityTarget } from '@/server/infra/db/target'
 import type { RequestFacts } from '@/server/infra/http/request-facts'
 
 import { enrichEvent } from '@/server/domains/analytics/enrich'
-import { pushAccessEvent } from '@/server/domains/analytics/repos/batcher'
+import { pushAccessEvent } from '@/server/domains/analytics/services/batcher'
 import { getLogger } from '@/server/infra/logger'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 

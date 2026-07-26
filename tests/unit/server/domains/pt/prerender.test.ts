@@ -1,20 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { MusicEmbedResolver } from '@/server/domains/pt/embeds'
 import type { PublicMusicMeta } from '@/shared/contracts/music'
 import type { EnrichedMusicPlayerBlock } from '@/shared/pt/enriched'
 import type { FootnoteDefinitionBlock, PortableTextBody, SolutionBlock, TwoColumnBlock } from '@/shared/pt/schema'
 
-vi.mock('@/server/domains/music/services/read', () => ({
-  getPublicMusicMetasByIds: vi.fn(),
-}))
-
-import { getPublicMusicMetasByIds } from '@/server/domains/music/services/read'
 import { prerenderMusicPlayerBlocks } from '@/server/domains/pt/prerender'
 
-const fakeDb = {} as never
+// The music meta lookup arrives through the injected PT embed seam, so the
+// suite stubs the resolver directly — no module mock of the music domain.
+const resolveMusicEmbeds = vi.fn<MusicEmbedResolver>()
 
 beforeEach(() => {
-  vi.mocked(getPublicMusicMetasByIds).mockReset()
+  resolveMusicEmbeds.mockReset()
 })
 
 function makeMusicMeta(partial: Partial<PublicMusicMeta> & { id: string }): PublicMusicMeta {
@@ -35,7 +33,7 @@ function makeMetaMap(...entries: PublicMusicMeta[]): Map<string, PublicMusicMeta
 
 describe('server/domains/pt/prerenderMusicPlayerBlocks', () => {
   it('returns null when the body is null', async () => {
-    const result = await prerenderMusicPlayerBlocks(fakeDb, null)
+    const result = await prerenderMusicPlayerBlocks(null, resolveMusicEmbeds)
     expect(result).toBeNull()
   })
 
@@ -50,13 +48,13 @@ describe('server/domains/pt/prerenderMusicPlayerBlocks', () => {
       { _type: 'horizontalRule', _key: 'hr1' },
     ]
 
-    const result = await prerenderMusicPlayerBlocks(fakeDb, body)
+    const result = await prerenderMusicPlayerBlocks(body, resolveMusicEmbeds)
     expect(result).toEqual(body)
-    expect(getPublicMusicMetasByIds).not.toHaveBeenCalled()
+    expect(resolveMusicEmbeds).not.toHaveBeenCalled()
   })
 
   it('resolves music metadata for top-level musicPlayer blocks with one batch call', async () => {
-    vi.mocked(getPublicMusicMetasByIds).mockResolvedValue(
+    resolveMusicEmbeds.mockResolvedValue(
       makeMetaMap(
         makeMusicMeta({ id: 'playeroneeeeeeeeee', name: 'One' }),
         makeMusicMeta({ id: 'playertwooooooooooo', name: 'Two' }),
@@ -69,7 +67,7 @@ describe('server/domains/pt/prerenderMusicPlayerBlocks', () => {
       { _type: 'musicPlayer', _key: 'm3', playerId: 'missingggggggggggg' },
     ]
 
-    const result = await prerenderMusicPlayerBlocks(fakeDb, body)
+    const result = await prerenderMusicPlayerBlocks(body, resolveMusicEmbeds)
     expect(result).toHaveLength(3)
 
     const first = result![0] as EnrichedMusicPlayerBlock
@@ -88,18 +86,12 @@ describe('server/domains/pt/prerenderMusicPlayerBlocks', () => {
     expect(third.meta).toBeUndefined()
 
     // Every player id is resolved by a single batch query, not per-block calls.
-    expect(getPublicMusicMetasByIds).toHaveBeenCalledTimes(1)
-    expect(getPublicMusicMetasByIds).toHaveBeenCalledWith(fakeDb, [
-      'playeroneeeeeeeeee',
-      'playertwooooooooooo',
-      'missingggggggggggg',
-    ])
+    expect(resolveMusicEmbeds).toHaveBeenCalledTimes(1)
+    expect(resolveMusicEmbeds).toHaveBeenCalledWith(['playeroneeeeeeeeee', 'playertwooooooooooo', 'missingggggggggggg'])
   })
 
   it('resolves music players nested in solution, footnoteDefinition, and twoColumn blocks', async () => {
-    vi.mocked(getPublicMusicMetasByIds).mockResolvedValue(
-      makeMetaMap(makeMusicMeta({ id: 'nestedoneeeeeeeeee', name: 'Nested' })),
-    )
+    resolveMusicEmbeds.mockResolvedValue(makeMetaMap(makeMusicMeta({ id: 'nestedoneeeeeeeeee', name: 'Nested' })))
 
     const body: PortableTextBody = [
       {
@@ -121,7 +113,7 @@ describe('server/domains/pt/prerenderMusicPlayerBlocks', () => {
       },
     ]
 
-    const result = await prerenderMusicPlayerBlocks(fakeDb, body)
+    const result = await prerenderMusicPlayerBlocks(body, resolveMusicEmbeds)
     expect(result).toHaveLength(3)
 
     const solution = result![0] as SolutionBlock
@@ -137,12 +129,12 @@ describe('server/domains/pt/prerenderMusicPlayerBlocks', () => {
     expect((twoColumn.left[0] as EnrichedMusicPlayerBlock).meta).toBeDefined()
 
     // The same playerId referenced three times is deduped into one batch call.
-    expect(getPublicMusicMetasByIds).toHaveBeenCalledTimes(1)
-    expect(getPublicMusicMetasByIds).toHaveBeenCalledWith(fakeDb, ['nestedoneeeeeeeeee'])
+    expect(resolveMusicEmbeds).toHaveBeenCalledTimes(1)
+    expect(resolveMusicEmbeds).toHaveBeenCalledWith(['nestedoneeeeeeeeee'])
   })
 
   it('leaves non-music blocks untouched', async () => {
-    vi.mocked(getPublicMusicMetasByIds).mockResolvedValue(new Map())
+    resolveMusicEmbeds.mockResolvedValue(new Map())
 
     const body: PortableTextBody = [
       {
@@ -154,7 +146,7 @@ describe('server/domains/pt/prerenderMusicPlayerBlocks', () => {
       { _type: 'musicPlayer', _key: 'm1', playerId: 'unknownggggggggggg' },
     ]
 
-    const result = await prerenderMusicPlayerBlocks(fakeDb, body)
+    const result = await prerenderMusicPlayerBlocks(body, resolveMusicEmbeds)
     const paragraph = result![0] as { _type: 'block'; children: unknown }
     expect(paragraph._type).toBe('block')
     expect(paragraph.children).toEqual([{ _type: 'span', _key: 's1', text: 'hello' }])

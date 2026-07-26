@@ -1,21 +1,18 @@
-import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { asAdminCommentsWire } from '@/server/domains/comments/projection'
-import {
-  adminClearDeleteRequest,
-  deleteCommentById,
-  softDeleteCommentById,
-} from '@/server/domains/comments/repos/moderation'
-import { findCommentWithUserById } from '@/server/domains/comments/repos/public-query/by-id'
 import {
   loadAdminPendingDashboard,
   loadAllComments,
   searchAuthorOptions,
   searchPageOptions,
 } from '@/server/domains/comments/services/admin-query'
-import { approveComment } from '@/server/domains/comments/services/moderate'
+import {
+  approveComment,
+  deleteCommentById,
+  resolveCommentDeleteRequest,
+} from '@/server/domains/comments/services/moderate'
 import { adminProc } from '@/server/http/orpc-base'
 import { adminCommentDto, adminPendingDashboardDto } from '@/shared/contracts/comments'
 import { idFromString } from '@/shared/utils/id'
@@ -144,29 +141,10 @@ const approveCommentDeletion = adminProc
   .input(z.object({ commentId: z.string(), approve: z.boolean() }))
   .output(z.object({ success: z.boolean() }))
   .handler(async ({ input, context }) => {
-    const id = idFromString(input.commentId)
-    const c = await findCommentWithUserById(context.db, id)
-    if (!c) {
-      throw new ORPCError('NOT_FOUND', { message: '评论不存在。' })
-    }
-    if (c.deleteRequestedAt === null) {
-      throw new ORPCError('CONFLICT', { message: '该评论没有待处理的删除申请。' })
-    }
-    if (input.approve) {
-      await softDeleteCommentById(context.db, id)
-      recordAuditEventFromContext(context, {
-        action: 'comment_delete_request_approved',
-        resourceType: 'comment',
-        resourceId: input.commentId,
-      })
-    } else {
-      await adminClearDeleteRequest(context.db, id)
-      recordAuditEventFromContext(context, {
-        action: 'comment_delete_request_rejected',
-        resourceType: 'comment',
-        resourceId: input.commentId,
-      })
-    }
+    // The delete-request state machine (existence, pending-request fence,
+    // approve → soft-delete / reject → clear, per-branch audit) lives in
+    // the comments domain.
+    await resolveCommentDeleteRequest(context.db, input.commentId, input.approve, context)
     return { success: true }
   })
 

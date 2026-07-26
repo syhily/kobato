@@ -7,9 +7,8 @@ import type { AuditContext } from '@/server/domains/audit/types'
 import type { ListingPageLoaderData } from '@/server/http/loaders/listing'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
-import { getClientPostsWithMetadata } from '@/server/domains/posts/repos/public-query/listing'
-import { getPostsBySlugs } from '@/server/domains/posts/repos/public-query/misc'
-import { livePostWhere } from '@/server/domains/posts/repos/shared'
+import { livePostWhere } from '@/server/domains/posts/live-gate'
+import { getClientPostsWithMetadata, getPostsBySlugs } from '@/server/domains/posts/services/public-query'
 import { parseListingPage } from '@/server/http/loaders/pagination'
 import { searchPostOptions } from '@/server/infra/search/options'
 import { searchPosts } from '@/server/infra/search/search'
@@ -39,7 +38,7 @@ export async function searchLoader(
   const pageNum = parseListingPage(num, rootPath)
   const pageSize = requireBlogSettingsSection('content').pagination.search
   // Only live posts are searchable — the gate is defined once in
-  // `@/server/domains/content/schema`, bound to the post columns by
+  // `@/server/domains/content/schemas/live-gate`, bound to the post columns by
   // `livePostWhere`, and passed down so the search infra stays free of
   // business rules.
   const liveWhere = livePostWhere()

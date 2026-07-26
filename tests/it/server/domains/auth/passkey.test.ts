@@ -240,7 +240,7 @@ describe('passkey — force blocks password login', () => {
   it('blocks credential login when passkeyForce is true', async () => {
     await seedUser({ email: 'forced@example.com', passkeyForce: true })
 
-    const { handleCredentialLogin } = await import('@/server/domains/auth/signin-flow')
+    const { handleCredentialLogin } = await import('@/server/domains/auth/services/credential')
     const formData = new FormData()
     formData.set('email', 'forced@example.com')
     formData.set('password', 'Password123!')

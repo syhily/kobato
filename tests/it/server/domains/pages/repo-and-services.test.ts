@@ -13,11 +13,13 @@ import { user } from '@/server/infra/db/schema/user'
 // Spy mode keeps the originals — the race-window cases stub the reserve
 // lookup once so a real `page_slug_key` violation reaches the catch.
 vi.mock('@/server/domains/pages/repo', { spy: true })
+vi.mock('@/server/domains/pages/services/public-query', { spy: true })
 
 const { setBlogSettingsBundleForTests } = await import('@/server/domains/settings/services/test-utils')
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('#/_helpers/blog-settings')
 
 const repo = await import('@/server/domains/pages/repo')
+const publicQuery = await import('@/server/domains/pages/services/public-query')
 const mutate = await import('@/server/domains/pages/services/mutate')
 const adminQuery = await import('@/server/domains/pages/services/admin-query')
 const lifecycle = await import('@/server/domains/content/lifecycle')
@@ -179,30 +181,30 @@ describe('pages/repo — findPageMetaById / findPageMetaBySlug', () => {
   })
 })
 
-describe('pages/repo — findPublicPageMetaBySlug', () => {
+describe('pages/services/public-query — findPublicPageMetaBySlug', () => {
   it('returns null for soft-deleted', async () => {
     await seedPage({ slug: 'gone', deletedAt: new Date() })
-    expect(await repo.findPublicPageMetaBySlug(db, 'gone')).toBeNull()
+    expect(await publicQuery.findPublicPageMetaBySlug(db, 'gone')).toBeNull()
   })
 
   it('returns the row when not deleted', async () => {
     await seedPage({ slug: 'live' })
-    expect(await repo.findPublicPageMetaBySlug(db, 'live')).not.toBeNull()
+    expect(await publicQuery.findPublicPageMetaBySlug(db, 'live')).not.toBeNull()
   })
 })
 
-describe('pages/repo — listPublicPageMetas', () => {
+describe('pages/services/public-query — listPublicPageMetas', () => {
   it('excludes soft-deleted rows', async () => {
     await seedPage({ title: 'A' })
     await seedPage({ title: 'B', deletedAt: new Date() })
 
-    const rows = await repo.listPublicPageMetas(db)
+    const rows = await publicQuery.listPublicPageMetas(db)
     expect(rows).toHaveLength(1)
     expect(rows[0].title).toBe('A')
   })
 })
 
-describe('pages/repo — listSitemapPages', () => {
+describe('pages/services/public-query — listSitemapPages', () => {
   it('returns published, non-deleted pages with revision', async () => {
     const rev = await seedRevision(0n)
     await seedPage({ slug: 'live', published: true, publishedRevisionId: rev.id })
@@ -210,7 +212,7 @@ describe('pages/repo — listSitemapPages', () => {
     await seedPage({ slug: 'unpub', published: false, publishedRevisionId: rev.id })
     await seedPage({ slug: 'deleted', published: true, publishedRevisionId: rev.id, deletedAt: new Date() })
 
-    const rows = await repo.listSitemapPages(db)
+    const rows = await publicQuery.listSitemapPages(db)
     expect(rows.map((r) => r.slug)).toEqual(['live'])
   })
 
@@ -220,7 +222,7 @@ describe('pages/repo — listSitemapPages', () => {
     future.setHours(future.getHours() + 24)
     await seedPage({ slug: 'future', published: true, publishedRevisionId: rev.id, publishedAt: future })
 
-    expect(await repo.listSitemapPages(db)).toHaveLength(0)
+    expect(await publicQuery.listSitemapPages(db)).toHaveLength(0)
   })
 })
 
@@ -382,8 +384,11 @@ describe('pages/services/admin-query — getPageDetailForAdmin', () => {
 })
 
 describe('pages/services/admin-query — listRevisionsForAdmin', () => {
-  it('returns empty for unknown page', async () => {
-    expect(await adminQuery.listRevisionsForAdmin(db, 9999n)).toHaveLength(0)
+  it('throws NOT_FOUND for unknown page', async () => {
+    // Unified with the posts mirror (and pages' own getPageDetailForAdmin):
+    // a missing entity surfaces the service-level NOT_FOUND instead of an
+    // empty revision list.
+    await expect(adminQuery.listRevisionsForAdmin(db, 9999n)).rejects.toMatchObject({ code: 'NOT_FOUND' })
   })
 
   it('returns revisions for a known page', async () => {

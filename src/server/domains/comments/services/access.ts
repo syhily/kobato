@@ -2,7 +2,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import type { CommentTokenCookie } from '@/shared/utils/comment-token'
 
-import { findCommentWithUserById } from '@/server/domains/comments/repos/public-query/by-id'
+import { findCommentWithUserById } from '@/server/domains/comments/services/lookup'
 import { verifyCommentOwnership } from '@/server/domains/comments/services/token'
 import { idFromString } from '@/shared/utils/id'
 

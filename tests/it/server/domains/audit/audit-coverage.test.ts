@@ -5,15 +5,15 @@ import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vites
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { clearAllTables } from '#/_helpers/integration-db'
-import { flushAuditLog, pushAuditEvent } from '@/server/domains/audit/repos/batcher'
+import { archiveExpiredAuditLogs, cleanupExpiredArchives, runArchiveJob } from '@/server/domains/audit/services/archive'
+import { flushAuditLog, pushAuditEvent } from '@/server/domains/audit/services/batcher'
 import {
   buildAuditLogWhere,
   countAuditLogs,
   listAuditLogs,
   fetchAuditLogActorMap,
   fetchAuditLogActors,
-} from '@/server/domains/audit/repos/query'
-import { archiveExpiredAuditLogs, cleanupExpiredArchives, runArchiveJob } from '@/server/domains/audit/services/archive'
+} from '@/server/domains/audit/services/query'
 import { recordAuditEvent } from '@/server/domains/audit/services/record'
 import { scheduleNextArchive, stopArchiveScheduler } from '@/server/domains/audit/services/scheduler'
 import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'

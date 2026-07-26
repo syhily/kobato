@@ -1,10 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@/server/domains/music/services/read', () => ({
-  getPublicMusicMetasByIds: vi.fn(),
-}))
+import type { MusicEmbedResolver } from '@/server/domains/pt/embeds'
 
 vi.mock('@/server/infra/slug', () => ({
   deriveSlug: vi.fn((text: string) => `slug-${text}`),
@@ -24,15 +20,16 @@ vi.mock('@/shared/utils/footnotes-section-title', () => ({
   resolveFootnotesSectionTitle: vi.fn(() => 'Footnotes'),
 }))
 
-import { getPublicMusicMetasByIds } from '@/server/domains/music/services/read'
 import { renderPortableTextToHtml } from '@/server/render/pt-html'
 
-const dbMock = {} as NodePgDatabase
+// The music meta lookup arrives through the injected PT embed seam, so the
+// suite stubs the resolver directly — no module mock of the music domain.
+const resolveMusicEmbeds = vi.fn<MusicEmbedResolver>()
 
 describe('renderPortableTextToHtml', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    ;(getPublicMusicMetasByIds as ReturnType<typeof vi.fn>).mockResolvedValue(
+    resolveMusicEmbeds.mockResolvedValue(
       new Map([
         [
           'p1',
@@ -162,7 +159,7 @@ describe('renderPortableTextToHtml', () => {
       },
     ]
 
-    const html = await renderPortableTextToHtml(dbMock, body as never, ['custom-title'])
+    const html = await renderPortableTextToHtml(body as never, ['custom-title'], resolveMusicEmbeds)
 
     expect(html).toContain('<h1 id="custom-title">Title</h1>')
     expect(html).toContain('<strong>world</strong>')
@@ -214,7 +211,7 @@ describe('renderPortableTextToHtml', () => {
       },
     ]
 
-    const html = await renderPortableTextToHtml(dbMock, body as never, [], { rssMode: true })
+    const html = await renderPortableTextToHtml(body as never, [], resolveMusicEmbeds, { rssMode: true })
 
     expect(html).toContain('Section')
     expect(html).toContain('<pre><code>a^2</code></pre>')
@@ -223,14 +220,14 @@ describe('renderPortableTextToHtml', () => {
   })
 
   it('falls back to placeholder when music player metadata is missing', async () => {
-    ;(getPublicMusicMetasByIds as ReturnType<typeof vi.fn>).mockResolvedValue(new Map())
+    resolveMusicEmbeds.mockResolvedValue(new Map())
     const body = [{ _type: 'musicPlayer', _key: 'm1', playerId: 'missing' }]
-    const html = await renderPortableTextToHtml(dbMock, body as never, [])
+    const html = await renderPortableTextToHtml(body as never, [], resolveMusicEmbeds)
     expect(html).toContain('此文章包含音乐播放器')
   })
 
   it('renders the resolved cover as an <img>, absolutizing the relative default cover', async () => {
-    ;(getPublicMusicMetasByIds as ReturnType<typeof vi.fn>).mockResolvedValue(
+    resolveMusicEmbeds.mockResolvedValue(
       new Map([
         [
           'p1',
@@ -247,7 +244,7 @@ describe('renderPortableTextToHtml', () => {
       ]),
     )
     const body = [{ _type: 'musicPlayer', _key: 'm1', playerId: 'p1' }]
-    const html = await renderPortableTextToHtml(dbMock, body as never, [])
+    const html = await renderPortableTextToHtml(body as never, [], resolveMusicEmbeds)
     expect(html).toContain('<img src="https://example.com/images/default-music-cover.png" alt="Song" />')
     expect(html).toContain('<audio controls preload="none" src="https://cdn.example.com/song.mp3"></audio>')
   })
@@ -314,7 +311,7 @@ describe('renderPortableTextToHtml', () => {
       },
     ]
 
-    const html = await renderPortableTextToHtml(dbMock, body as never, [])
+    const html = await renderPortableTextToHtml(body as never, [], resolveMusicEmbeds)
 
     expect(html).toContain('<em>emphasis</em>')
     expect(html).toContain('<code>code</code>')
@@ -346,7 +343,7 @@ describe('renderPortableTextToHtml', () => {
         highlightedHtml: '<b>code</b>',
       },
     ]
-    const html = await renderPortableTextToHtml(dbMock, body as never, [], { rssMode: true })
+    const html = await renderPortableTextToHtml(body as never, [], resolveMusicEmbeds, { rssMode: true })
     expect(html).toContain('<code>a</code>')
     expect(html).toContain('<![CDATA[<b>code</b>]]>')
   })

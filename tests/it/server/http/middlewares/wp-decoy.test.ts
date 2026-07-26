@@ -37,8 +37,11 @@ fixtures.samplePage = {
 
 // catalog/catalog removed; pages/loader.ts now uses findPublicPostMetaBySlug +
 // findPageBySlug directly. Catalog slug routing is gone.
-vi.mock('@/server/domains/posts/repos/public-query/listing', () => ({}))
-vi.mock('@/server/domains/posts/repos/single', () => ({
+vi.mock('@/server/domains/posts/services/public-query', () => ({}))
+vi.mock('@/server/domains/posts/services/single', () => ({
+  findPostMetaById: vi.fn(async () => null),
+  findPostMetaBySlug: vi.fn(async () => null),
+  findPostMetaBySlugForUpdate: vi.fn(async () => null),
   findPostBySlug: vi.fn(async (_db: unknown, slug: string) => (slug === 'hello' ? fixtures.samplePost : null)),
   findPublicPostMetaBySlug: vi.fn(async (_db: unknown, slug: string) =>
     slug === 'hello'
@@ -47,8 +50,16 @@ vi.mock('@/server/domains/posts/repos/single', () => ({
   ),
 }))
 vi.mock('@/server/domains/pages/repo', () => ({
-  listPublicPageMetas: vi.fn(async () => []),
   findPageMetaById: vi.fn(async () => null),
+  findPageMetaBySlug: vi.fn(async () => null),
+  findPageMetaBySlugForUpdate: vi.fn(async () => null),
+  insertPageMeta: vi.fn(async () => null),
+  updatePageMetaById: vi.fn(async () => null),
+  softDeletePageMeta: vi.fn(async () => false),
+  restorePageMeta: vi.fn(async () => false),
+}))
+vi.mock('@/server/domains/pages/services/public-query', () => ({
+  listPublicPageMetas: vi.fn(async () => []),
   findPublicPageMetaBySlug: vi.fn(async () => null),
   findPageBySlug: vi.fn(async (_db: unknown, slug: string) => (slug === 'about' ? fixtures.samplePage : null)),
 }))

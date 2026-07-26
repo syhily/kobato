@@ -58,7 +58,7 @@ vi.mock('@/server/domains/comments/services/moderate', () => ({
   updateComment: vi.fn(),
 }))
 
-vi.mock('@/server/domains/comments/repos/public-query/by-id', () => ({
+vi.mock('@/server/domains/comments/services/lookup', () => ({
   findCommentWithUserById: vi.fn(),
 }))
 
@@ -80,7 +80,7 @@ const publicQuery = await import('@/server/domains/comments/services/public-quer
 const shared = await import('@/server/domains/comments/services/shared')
 const mutate = await import('@/server/domains/comments/services/mutate')
 const token = await import('@/server/domains/comments/services/token')
-const byId = await import('@/server/domains/comments/repos/public-query/by-id')
+const byId = await import('@/server/domains/comments/services/lookup')
 const { avatarRouter } = await import('@/server/http/controllers/avatar.controller')
 const { commentsPublicRouter } = await import('@/server/http/controllers/comments-public.controller')
 const commentsRouter = commentsPublicRouter

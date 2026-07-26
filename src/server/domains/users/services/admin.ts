@@ -1,9 +1,11 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import type { UserSortOrder } from '@/server/domains/users/schema'
-import type { User } from '@/server/infra/db/types'
+import { count } from 'drizzle-orm'
 
-import { revokeAllSessionsOfUser } from '@/server/domains/auth/service'
+import type { User } from '@/server/infra/db/types'
+import type { UserSortOrder } from '@/shared/types/users'
+
+import { revokeAllSessionsOfUser } from '@/server/domains/auth/services/sessions'
 import { issueResetToken, issueSetupToken } from '@/server/domains/auth/verification-tokens'
 import {
   type AdminUserRow,
@@ -20,12 +22,21 @@ import {
   softDeleteUserById,
   updateUserRole,
 } from '@/server/infra/db/operations/user'
+import { user } from '@/server/infra/db/schema/user'
 import { sendAuthorInvite, sendPasswordReset as sendPasswordResetEmail } from '@/server/infra/email/sender'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { tryPasswordResetByTargetRateLimit } from '@/server/infra/rate-limit'
 
 const log = getLogger('users.admin')
+
+// Total user rows (deleted included) for the admin shell's user-count
+// badge. Promoted from `infra/db/operations/user` — the admin shell was
+// its only consumer, so the capability lives on the users surface.
+export async function countUsers(db: NodePgDatabase): Promise<number> {
+  const rows = await db.select({ count: count() }).from(user)
+  return rows[0]?.count ?? 0
+}
 
 // Wire-format DTO returned by every admin user-management endpoint.
 // Bigints are stringified so `BigInt` plumbing never reaches the client.

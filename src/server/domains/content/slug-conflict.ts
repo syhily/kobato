@@ -1,4 +1,4 @@
-import type { ContentType } from '@/server/domains/content/schema'
+import type { ContentType } from '@/server/domains/content/schemas/revision'
 
 import { DomainError, isUniqueConstraintError } from '@/server/infra/http/errors'
 

@@ -9,7 +9,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 // the RSS/Atom output that downstream subscribers depend on.
 
 const mocks = vi.hoisted(() => ({
-  listPublicPostsWithContent: vi.fn(),
+  selectFeedPosts: vi.fn(),
   findCategoryBySlug: vi.fn(),
   findCategoryByName: vi.fn(),
   findCategoriesByNames: vi.fn(),
@@ -19,8 +19,8 @@ const mocks = vi.hoisted(() => ({
   getTagsByNames: vi.fn(),
 }))
 
-vi.mock('@/server/domains/posts/repos/public-query/feed', () => ({
-  listPublicPostsWithContent: mocks.listPublicPostsWithContent,
+vi.mock('@/server/domains/posts/services/feed', () => ({
+  selectFeedPosts: mocks.selectFeedPosts,
 }))
 vi.mock('@/server/domains/taxonomies/categories/services/query', () => ({
   listAllCategories: mocks.listAllCategories,
@@ -68,7 +68,7 @@ function fakeCatalog(
 ) {
   const categories = opts.categories ?? []
   const tags = opts.tags ?? []
-  mocks.listPublicPostsWithContent.mockResolvedValue(opts.posts ?? [])
+  mocks.selectFeedPosts.mockResolvedValue(opts.posts ?? [])
   mocks.findCategoryBySlug.mockImplementation((_db: unknown, slug: string) =>
     categories.find((cat) => cat.slug === slug),
   )
@@ -83,7 +83,7 @@ function fakeCatalog(
   mocks.listAllCategories.mockResolvedValue(categories)
   mocks.getTagsByNames.mockResolvedValue([])
   return {
-    listPublicPostsWithContent: mocks.listPublicPostsWithContent,
+    selectFeedPosts: mocks.selectFeedPosts,
   }
 }
 
@@ -119,41 +119,52 @@ describe('services/feed — generateFeeds (channel envelope)', () => {
     expect(feeds.rss).not.toContain('<generator>WordPress 3.2.1</generator>')
   })
 
-  it('selects hidden posts by default while still excluding scheduled posts', async () => {
+  it('delegates post selection to the posts domain with the configured page size', async () => {
+    // The visibility policy itself (hidden included, scheduled excluded)
+    // is pinned at the domain seam in
+    // tests/unit/server/domains/posts/services/feed.test.ts.
     const catalog = fakeCatalog()
 
     await generateFeeds(db)
 
-    expect(catalog.listPublicPostsWithContent).toHaveBeenCalledWith(expect.any(Object), {
-      includeHidden: true,
-      includeScheduled: false,
-      limit: 20,
-    })
+    expect(catalog.selectFeedPosts).toHaveBeenCalledWith(
+      expect.any(Object),
+      { category: undefined, tag: undefined, limit: 20 },
+      { resolveCategory: expect.any(Function), resolveTag: expect.any(Function) },
+    )
   })
 
-  it('uses the same hidden-inclusive visibility for scoped RSS/Atom feeds', async () => {
-    const catalog = fakeCatalog({
-      categories: [{ id: 7n, name: '技术', slug: 'tech' }],
-      tags: [{ name: 'React', slug: 'react' }],
-    })
+  it('passes the category/tag scopes through to the domain selection', async () => {
+    const catalog = fakeCatalog()
 
     await generateFeeds(db, { category: 'tech' })
-
-    expect(catalog.listPublicPostsWithContent).toHaveBeenLastCalledWith(expect.any(Object), {
-      includeHidden: true,
-      includeScheduled: false,
-      categoryId: 7n,
-      limit: 20,
-    })
+    expect(catalog.selectFeedPosts).toHaveBeenLastCalledWith(
+      expect.any(Object),
+      { category: 'tech', tag: undefined, limit: 20 },
+      expect.any(Object),
+    )
 
     await generateFeeds(db, { tag: 'react' })
+    expect(catalog.selectFeedPosts).toHaveBeenLastCalledWith(
+      expect.any(Object),
+      { category: undefined, tag: 'react', limit: 20 },
+      expect.any(Object),
+    )
+  })
 
-    expect(catalog.listPublicPostsWithContent).toHaveBeenLastCalledWith(expect.any(Object), {
-      includeHidden: true,
-      includeScheduled: false,
-      tag: 'React',
-      limit: 20,
-    })
+  it('wires the taxonomy slug-or-name resolvers into the domain selection', async () => {
+    const catalog = fakeCatalog()
+    const categoriesService = await import('@/server/domains/taxonomies/categories/services/query')
+    const tagsService = await import('@/server/domains/taxonomies/tags/service')
+
+    await generateFeeds(db)
+
+    const resolvers = catalog.selectFeedPosts.mock.calls[0]![2] as {
+      resolveCategory: unknown
+      resolveTag: unknown
+    }
+    expect(resolvers.resolveCategory).toBe(categoriesService.resolveCategoryBySlugOrName)
+    expect(resolvers.resolveTag).toBe(tagsService.resolveTagBySlugOrName)
   })
 
   it('does not emit `xml-stylesheet` (client XSLT is deprecated in browsers)', async () => {

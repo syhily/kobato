@@ -1,8 +1,7 @@
-/* oxlint-disable typescript/no-unsafe-argument, typescript/no-unsafe-type-assertion */
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { toHTML, type PortableTextBlockComponent, type PortableTextComponents } from '@portabletext/to-html'
 
+/* oxlint-disable typescript/no-unsafe-argument, typescript/no-unsafe-type-assertion */
+import type { MusicEmbedResolver } from '@/server/domains/pt/embeds'
 import type {
   CodeBlock,
   FootnoteDefinitionBlock,
@@ -19,7 +18,6 @@ import type {
   TwoColumnBlock,
 } from '@/shared/pt/schema'
 
-import { getPublicMusicMetasByIds } from '@/server/domains/music/services/read'
 import { deriveSlug } from '@/server/infra/slug'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import {
@@ -42,9 +40,9 @@ export interface RenderPortableTextToHtmlOptions {
 }
 
 export async function renderPortableTextToHtml(
-  db: NodePgDatabase,
   body: PortableTextBodyType,
   headingSlugs: readonly string[],
+  resolveMusicEmbeds: MusicEmbedResolver,
   options: RenderPortableTextToHtmlOptions = {},
 ): Promise<string> {
   const footnotesSectionTitle = resolveFootnotesSectionTitle(requireBlogSettingsSection('content'))
@@ -54,7 +52,7 @@ export async function renderPortableTextToHtml(
 
   const { prose, definitions } = partitionFootnoteDefinitions(body)
 
-  const musicByPlayerId = await resolveMusicPlayerMeta(db, body)
+  const musicByPlayerId = await resolveMusicPlayerMeta(body, resolveMusicEmbeds)
 
   const components = buildPortableTextComponents({ headingIdByBlockKey, isRss, musicByPlayerId })
 
@@ -67,7 +65,10 @@ export async function renderPortableTextToHtml(
   return html
 }
 
-// Music player resolution
+// Music player resolution. The metas arrive through `resolveMusicEmbeds`,
+// the PT-owned embed seam (`@/server/domains/pt/embeds`) — callers wire the
+// music domain's `getPublicMusicMetasByIds` in so this module never imports
+// the music domain.
 
 interface MusicMeta {
   name: string
@@ -76,13 +77,16 @@ interface MusicMeta {
   cover: string
 }
 
-async function resolveMusicPlayerMeta(db: NodePgDatabase, body: PortableTextBodyType): Promise<Map<string, MusicMeta>> {
+async function resolveMusicPlayerMeta(
+  body: PortableTextBodyType,
+  resolveMusicEmbeds: MusicEmbedResolver,
+): Promise<Map<string, MusicMeta>> {
   const playerIds = collectMusicPlayerIds(body)
   if (playerIds.length === 0) {
     return new Map()
   }
 
-  const metas = await getPublicMusicMetasByIds(db, playerIds)
+  const metas = await resolveMusicEmbeds(playerIds)
 
   const map = new Map<string, MusicMeta>()
   for (const [playerId, meta] of metas) {

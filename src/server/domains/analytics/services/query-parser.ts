@@ -17,16 +17,31 @@ export interface AnalyticsQueryInput {
   entityId?: bigint
 }
 
+/**
+ * The typed shape every analytics query entry point converges on: the
+ * raw string fields before range/filter/entity resolution. Loaders hand
+ * in URL search params (`parseAnalyticsSearch` below); the oRPC
+ * controller hands in its validated input directly — no URL round-trip.
+ */
+export interface AnalyticsSearchFields {
+  preset?: string | null
+  startAt?: string | null
+  endAt?: string | null
+  filters?: string | null
+  entityType?: string | null
+  entityId?: string | null
+}
+
 const FILTERABLE_SET = new Set<string>(FILTERABLE_TYPES)
 
 function isPresetKey(value: string): value is PresetKey {
   return unsafeCast<readonly string[]>(PRESET_KEYS).includes(value)
 }
 
-export function parseAnalyticsSearch(searchParams: URLSearchParams): AnalyticsQueryInput {
-  const preset = searchParams.get('preset')
-  const startAtRaw = searchParams.get('startAt')
-  const endAtRaw = searchParams.get('endAt')
+export function parseAnalyticsInput(fields: AnalyticsSearchFields): AnalyticsQueryInput {
+  const preset = fields.preset
+  const startAtRaw = fields.startAt
+  const endAtRaw = fields.endAt
 
   let range: DateRange
   if (startAtRaw && endAtRaw) {
@@ -46,7 +61,7 @@ export function parseAnalyticsSearch(searchParams: URLSearchParams): AnalyticsQu
   const filters: Filters = {}
   const MAX_FILTERS_PAYLOAD_BYTES = 10 * 1024
 
-  const filtersRaw = searchParams.get('filters')
+  const filtersRaw = fields.filters
   if (filtersRaw && filtersRaw.length <= MAX_FILTERS_PAYLOAD_BYTES) {
     try {
       const parsed: unknown = JSON.parse(filtersRaw)
@@ -63,8 +78,8 @@ export function parseAnalyticsSearch(searchParams: URLSearchParams): AnalyticsQu
     }
   }
 
-  const entityType = searchParams.get('entityType')
-  const entityIdRaw = searchParams.get('entityId')
+  const entityType = fields.entityType
+  const entityIdRaw = fields.entityId
   const result: AnalyticsQueryInput = { range, filters }
   if ((entityType === 'post' || entityType === 'page') && entityIdRaw) {
     try {
@@ -75,4 +90,17 @@ export function parseAnalyticsSearch(searchParams: URLSearchParams): AnalyticsQu
     }
   }
   return result
+}
+
+// URL-shaped entry point — only for callers whose input truly is a URL
+// (the route loaders). Everything else feeds `parseAnalyticsInput`.
+export function parseAnalyticsSearch(searchParams: URLSearchParams): AnalyticsQueryInput {
+  return parseAnalyticsInput({
+    preset: searchParams.get('preset'),
+    startAt: searchParams.get('startAt'),
+    endAt: searchParams.get('endAt'),
+    filters: searchParams.get('filters'),
+    entityType: searchParams.get('entityType'),
+    entityId: searchParams.get('entityId'),
+  })
 }

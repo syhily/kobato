@@ -1,8 +1,9 @@
 import { type ReactNode, useRef } from 'react'
 import { Link } from 'react-router'
 
-import type { ClientTag, CommentFormUser, DetailPostShell, DraftMarker, MarkdownHeading } from '@/shared/types/catalog'
+import type { ClientTag, CommentFormUser, DetailPostShell, DraftMarker } from '@/shared/types/catalog'
 import type { DetailPageComments } from '@/shared/types/comments'
+import type { MarkdownHeading } from '@/shared/utils/toc'
 
 import { useMediumZoom } from '@/client/hooks/use-medium-zoom'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'

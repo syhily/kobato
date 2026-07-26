@@ -6,7 +6,7 @@ import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
 
 const pushAccessEvent = vi.fn()
-vi.mock('@/server/domains/analytics/repos/batcher', () => ({ pushAccessEvent }))
+vi.mock('@/server/domains/analytics/services/batcher', () => ({ pushAccessEvent }))
 
 const { trackAccess, KOBATO_AID_COOKIE } = await import('@/server/domains/analytics/track')
 

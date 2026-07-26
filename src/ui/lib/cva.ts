@@ -17,8 +17,6 @@ import type { ClassValue } from '@/ui/lib/clsx'
  */
 import { clsx } from '@/ui/lib/clsx'
 
-export type { ClassValue }
-
 export type ClassPropKey = 'class' | 'className'
 
 export type ClassProp =

@@ -1,14 +1,24 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import type { MyCommentsFilters } from '@/server/domains/comments/repos/shared'
+import { and, count, eq, sql } from 'drizzle-orm'
+
 import type { EntityType } from '@/server/infra/db/target'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
-import { countMyComments, listMyComments } from '@/server/domains/comments/repos/admin-query'
+import { listMyComments } from '@/server/domains/comments/repos/admin-query'
 import { findParentCommentsByIds } from '@/server/domains/comments/repos/public-query/by-id'
-import { resolveEntitiesForComments } from '@/server/domains/comments/repos/public-query/entities'
-import { mineSoftDeleteCutoff } from '@/server/domains/comments/repos/shared'
-import { entityPermalink } from '@/server/domains/comments/services/shared'
+import {
+  mineSoftDeleteCutoff,
+  mineVisibleClause,
+  mineWhere,
+  targetSlugTitleSubquery,
+  MY_COMMENT_ENTITY_LIMIT,
+  type MyCommentEntity,
+  type MyCommentsFilters,
+} from '@/server/domains/comments/repos/shared'
+import { entityPermalink, resolveEntitiesForComments } from '@/server/domains/comments/services/shared'
+import { ilikeEscape } from '@/server/infra/db/ilike-escape'
+import { comment } from '@/server/infra/db/schema/comment'
 
 export interface MineCommentItem {
   id: string
@@ -105,5 +115,59 @@ export async function loadMineCommentsPage(
     items,
     total: counts.total,
     hasMore: offset + rows.length < counts.total,
+  }
+}
+
+export async function listMyCommentEntities(
+  db: NodePgDatabase,
+  userId: bigint,
+  options: { q?: string; cutoff?: Date } = {},
+): Promise<MyCommentEntity[]> {
+  const q = options.q?.trim() ?? ''
+  const entity = targetSlugTitleSubquery(db)
+  const conditions = [mineVisibleClause(userId, options.cutoff ?? mineSoftDeleteCutoff())]
+  if (q !== '') {
+    conditions.push(ilikeEscape(entity.title, q))
+  }
+  const rows = await db
+    .selectDistinct({
+      type: entity.type,
+      ownerId: entity.ownerId,
+      slug: entity.slug,
+      title: entity.title,
+    })
+    .from(comment)
+    .innerJoin(entity, and(eq(entity.type, comment.type), eq(entity.ownerId, comment.ownerId)))
+    .where(and(...conditions))
+    .orderBy(entity.title)
+    .limit(MY_COMMENT_ENTITY_LIMIT)
+  return rows.map((row) => ({
+    type: row.type,
+    ownerId: row.ownerId,
+    slug: row.slug ?? '',
+    title: row.title ?? '',
+  }))
+}
+
+export async function countMyComments(
+  db: NodePgDatabase,
+  userId: bigint,
+  filters: MyCommentsFilters = {},
+  cutoff: Date = mineSoftDeleteCutoff(),
+): Promise<{ total: number; pending: number; deleteRequested: number; deleted: number }> {
+  const rows = await db
+    .select({
+      total: count(),
+      pending: sql<number>`COUNT(*) FILTER (WHERE ${comment.isPending} = TRUE)`,
+      deleteRequested: sql<number>`COUNT(*) FILTER (WHERE ${comment.deleteRequestedAt} IS NOT NULL)`,
+      deleted: sql<number>`COUNT(*) FILTER (WHERE ${comment.deletedAt} IS NOT NULL)`,
+    })
+    .from(comment)
+    .where(mineWhere(userId, filters, cutoff))
+  return {
+    total: Number(rows[0]?.total ?? 0),
+    pending: Number(rows[0]?.pending ?? 0),
+    deleteRequested: Number(rows[0]?.deleteRequested ?? 0),
+    deleted: Number(rows[0]?.deleted ?? 0),
   }
 }

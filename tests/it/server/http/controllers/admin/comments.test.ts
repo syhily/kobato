@@ -5,6 +5,7 @@ import type { AdminCommentWire } from '@/shared/contracts/comments'
 import type { AdminComment } from '@/shared/types/comments'
 
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
+import { DomainError } from '@/server/infra/http/errors'
 
 vi.mock('@/server/domains/comments/services/admin-query', () => ({
   loadAdminPendingDashboard: vi.fn(),
@@ -14,12 +15,10 @@ vi.mock('@/server/domains/comments/services/admin-query', () => ({
 }))
 
 vi.mock('@/server/domains/comments/services/moderate', () => ({
-  approveComment: vi.fn(),
-}))
-
-vi.mock('@/server/domains/comments/repos/moderation', () => ({
   adminClearDeleteRequest: vi.fn(),
+  approveComment: vi.fn(),
   deleteCommentById: vi.fn(),
+  resolveCommentDeleteRequest: vi.fn(),
   softDeleteCommentById: vi.fn(),
 }))
 
@@ -27,15 +26,9 @@ vi.mock('@/server/domains/comments/projection', () => ({
   asAdminCommentsWire: vi.fn(),
 }))
 
-vi.mock('@/server/domains/comments/repos/public-query/by-id', () => ({
-  findCommentWithUserById: vi.fn(),
-}))
-
 const adminQuery = await import('@/server/domains/comments/services/admin-query')
 const moderate = await import('@/server/domains/comments/services/moderate')
-const moderationRepo = await import('@/server/domains/comments/repos/moderation')
 const projection = await import('@/server/domains/comments/projection')
-const queryRepo = await import('@/server/domains/comments/repos/public-query/by-id')
 const { adminCommentsRouter } = await import('@/server/http/controllers/admin/comments.controller')
 
 beforeEach(() => {
@@ -87,7 +80,7 @@ describe('adminCommentsRouter.approve', () => {
 
 describe('adminCommentsRouter.delete', () => {
   it('resolves to undefined on success', async () => {
-    vi.mocked(moderationRepo.deleteCommentById).mockResolvedValueOnce(undefined)
+    vi.mocked(moderate.deleteCommentById).mockResolvedValueOnce(undefined)
     const ctx = makeAuthedCtx()
     const res = await call(adminCommentsRouter.delete, { commentId: '1' }, { context: ctx })
     expect(res).toBeUndefined()
@@ -261,12 +254,14 @@ describe('adminCommentsRouter.searchAuthors', () => {
   })
 })
 
-describe('adminCommentsRouter.approveCommentDeletion', () => {
-  it('returns success when approving deletion', async () => {
-    vi.mocked(queryRepo.findCommentWithUserById).mockResolvedValueOnce({
-      deleteRequestedAt: new Date(),
-    } as unknown as Awaited<ReturnType<typeof queryRepo.findCommentWithUserById>>)
-    vi.mocked(moderationRepo.softDeleteCommentById).mockResolvedValueOnce(undefined)
+describe('adminCommentsRouter.approveCommentDeletion — orchestration only', () => {
+  // The delete-request state machine (existence fence, pending-request
+  // fence, approve → soft-delete / reject → clear, per-branch audit) is
+  // pinned at the domain seam in
+  // tests/it/server/domains/comments/moderation-flows.test.ts; here we
+  // only pin the controller → service wiring and the error translation.
+  it('delegates an approval to the comments domain and returns success', async () => {
+    vi.mocked(moderate.resolveCommentDeleteRequest).mockResolvedValueOnce(undefined)
     const ctx = makeAuthedCtx()
     const res = await call(
       adminCommentsRouter.approveCommentDeletion,
@@ -274,33 +269,11 @@ describe('adminCommentsRouter.approveCommentDeletion', () => {
       { context: ctx },
     )
     expect(res).toEqual({ success: true })
+    expect(moderate.resolveCommentDeleteRequest).toHaveBeenCalledWith(ctx.db, '1', true, ctx)
   })
 
-  it('throws NOT_FOUND when comment does not exist', async () => {
-    vi.mocked(queryRepo.findCommentWithUserById).mockResolvedValueOnce(
-      null as unknown as Awaited<ReturnType<typeof queryRepo.findCommentWithUserById>>,
-    )
-    const ctx = makeAuthedCtx()
-    await expect(
-      call(adminCommentsRouter.approveCommentDeletion, { commentId: '999', approve: true }, { context: ctx }),
-    ).rejects.toMatchObject({ code: 'NOT_FOUND' })
-  })
-
-  it('throws CONFLICT when no delete request exists', async () => {
-    vi.mocked(queryRepo.findCommentWithUserById).mockResolvedValueOnce({
-      deleteRequestedAt: null,
-    } as unknown as Awaited<ReturnType<typeof queryRepo.findCommentWithUserById>>)
-    const ctx = makeAuthedCtx()
-    await expect(
-      call(adminCommentsRouter.approveCommentDeletion, { commentId: '1', approve: true }, { context: ctx }),
-    ).rejects.toMatchObject({ code: 'CONFLICT' })
-  })
-
-  it('clears the delete request when rejecting deletion', async () => {
-    vi.mocked(queryRepo.findCommentWithUserById).mockResolvedValueOnce({
-      deleteRequestedAt: new Date(),
-    } as unknown as Awaited<ReturnType<typeof queryRepo.findCommentWithUserById>>)
-    vi.mocked(moderationRepo.adminClearDeleteRequest).mockResolvedValueOnce(true)
+  it('delegates a rejection to the comments domain and returns success', async () => {
+    vi.mocked(moderate.resolveCommentDeleteRequest).mockResolvedValueOnce(undefined)
     const ctx = makeAuthedCtx()
     const res = await call(
       adminCommentsRouter.approveCommentDeletion,
@@ -308,8 +281,25 @@ describe('adminCommentsRouter.approveCommentDeletion', () => {
       { context: ctx },
     )
     expect(res).toEqual({ success: true })
-    expect(moderationRepo.adminClearDeleteRequest).toHaveBeenCalledWith(ctx.db, 1n)
-    expect(moderationRepo.softDeleteCommentById).not.toHaveBeenCalled()
+    expect(moderate.resolveCommentDeleteRequest).toHaveBeenCalledWith(ctx.db, '1', false, ctx)
+  })
+
+  it('translates a domain NOT_FOUND onto the wire', async () => {
+    vi.mocked(moderate.resolveCommentDeleteRequest).mockRejectedValueOnce(new DomainError('NOT_FOUND', '评论不存在。'))
+    const ctx = makeAuthedCtx()
+    await expect(
+      call(adminCommentsRouter.approveCommentDeletion, { commentId: '999', approve: true }, { context: ctx }),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' })
+  })
+
+  it('translates a domain CONFLICT onto the wire', async () => {
+    vi.mocked(moderate.resolveCommentDeleteRequest).mockRejectedValueOnce(
+      new DomainError('CONFLICT', '该评论没有待处理的删除申请。'),
+    )
+    const ctx = makeAuthedCtx()
+    await expect(
+      call(adminCommentsRouter.approveCommentDeletion, { commentId: '1', approve: true }, { context: ctx }),
+    ).rejects.toMatchObject({ code: 'CONFLICT' })
   })
 })
 

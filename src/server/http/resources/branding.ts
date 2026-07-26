@@ -1,4 +1,5 @@
-import { clearBrandingAsset, isBrandingSlot, uploadBrandingAsset } from '@/server/domains/assets/management'
+import { clearBrandingAsset, uploadBrandingAsset } from '@/server/domains/assets/management'
+import { isBrandingSlot } from '@/server/domains/assets/services/storage'
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { csrfGuard } from '@/server/http/middlewares/csrf'
 import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'

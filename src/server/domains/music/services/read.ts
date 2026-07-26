@@ -86,8 +86,10 @@ export async function getMusicMetaForPlayer(db: NodePgDatabase, playerId: string
 
 /**
  * Batch variant of `getMusicMetaForPlayer` — one query regardless of how
- * many players a page embeds. The single seam consumed by SSR
- * (`domains/pt/prerender`) and feed rendering (`render/pt-html`).
+ * many players a page embeds. This is the implementation callers wire into
+ * the PT-owned embed seam (`@/server/domains/pt/embeds`): SSR routes and
+ * feed/preview rendering pass it to `domains/pt/prerender` and
+ * `render/pt-html`, so PT itself never imports this domain.
  */
 export async function getPublicMusicMetasByIds(
   db: NodePgDatabase,

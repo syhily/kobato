@@ -2,7 +2,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { CommentAndUser } from '@/server/domains/comments/types'
+import type { CommentAndUser } from '@/shared/types/comments'
 
 // `commentBodyToHtml` pulls in the whole PT prerender pipeline (Shiki,
 // KaTeX, …) — stub it so the test can focus on the sender's transport /

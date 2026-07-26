@@ -10,7 +10,7 @@ import type { ContentRow, PostMetaRow } from '@/server/infra/db/types'
 // each knob combination — the public listing call sites are one-liners
 // over these defaults.
 
-vi.mock('@/server/domains/content/repos/query', () => ({
+vi.mock('@/server/domains/content/revisions', () => ({
   hydratePublishedRevisions: vi.fn(async () => new Map()),
 }))
 
@@ -37,7 +37,7 @@ vi.mock('@/server/domains/images/services/enhance', () => ({
   ),
 }))
 
-const { hydratePublishedRevisions } = await import('@/server/domains/content/repos/query')
+const { hydratePublishedRevisions } = await import('@/server/domains/content/revisions')
 const { hydrateImageRefs } = await import('@/server/domains/images/services/enhance')
 const { findTagNamesByPostIds } = await import('@/server/infra/db/operations/post-tag')
 const { findCategoryNamesByIds } = await import('@/server/infra/db/operations/category')

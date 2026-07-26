@@ -2,7 +2,7 @@ import { PassThrough } from 'node:stream'
 import superjson from 'superjson'
 import { describe, expect, it, vi } from 'vitest'
 
-import { replayDeadLetterAccessLog } from '@/server/domains/analytics/repos/batcher'
+import { replayDeadLetterAccessLog } from '@/server/domains/analytics/services/batcher'
 import { initAllBatchers } from '@/server/infra/db/batcher-registry'
 
 const { mockPool } = vi.hoisted(() => {

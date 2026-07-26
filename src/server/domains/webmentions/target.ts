@@ -1,12 +1,8 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { and, eq } from 'drizzle-orm'
-
 import { entityPermalink } from '@/server/domains/comments/services/shared'
-import { livePageWhere } from '@/server/domains/pages/repo'
-import { livePostWhere } from '@/server/domains/posts/repos/shared'
-import { page } from '@/server/infra/db/schema/page'
-import { post } from '@/server/infra/db/schema/post'
+import { findLivePageBySlug } from '@/server/domains/pages/services/public-query'
+import { findLivePostBySlug } from '@/server/domains/posts/services/single'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { tryParseUrl } from '@/shared/utils/safe-url'
 
@@ -28,24 +24,6 @@ function decodeSegment(segment: string | undefined): string | null {
   } catch {
     return null
   }
-}
-
-async function findLivePostBySlug(db: NodePgDatabase, slug: string): Promise<{ id: bigint; title: string } | null> {
-  const rows = await db
-    .select({ id: post.id, title: post.title })
-    .from(post)
-    .where(and(eq(post.slug, slug), livePostWhere()))
-    .limit(1)
-  return rows[0] ?? null
-}
-
-async function findLivePageBySlug(db: NodePgDatabase, slug: string): Promise<{ id: bigint; title: string } | null> {
-  const rows = await db
-    .select({ id: page.id, title: page.title })
-    .from(page)
-    .where(and(eq(page.slug, slug), livePageWhere()))
-    .limit(1)
-  return rows[0] ?? null
 }
 
 /**

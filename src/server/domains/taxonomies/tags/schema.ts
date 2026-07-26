@@ -1,11 +1,5 @@
 import { z } from 'zod'
 
-import type { ListTagsInput, UpsertTagInput } from '@/shared/types/tags'
-
-// Re-export the wire-format types alongside the Zod validators so
-// admin Resource Routes import schema + type from the same module.
-export type { ListTagsInput, UpsertTagInput }
-
 const slugSchema = z
   .string()
   .trim()

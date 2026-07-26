@@ -1,11 +1,11 @@
 import { data, useOutletContext } from 'react-router'
 
-import type { MyCommentsStatus } from '@/server/domains/comments/repos/shared'
 import type { CommentBody } from '@/shared/pt/comment-schema'
+import type { MyCommentsStatus } from '@/shared/types/comments'
 
 import { requireRole } from '@/server/domains/auth/rbac'
-import { listMyCommentEntities } from '@/server/domains/comments/repos/admin-query'
-import { resolveEntitiesForComments } from '@/server/domains/comments/repos/public-query/entities'
+import { listMyCommentEntities } from '@/server/domains/comments/services/mine-comments'
+import { resolveEntitiesForComments } from '@/server/domains/comments/services/shared'
 import { getRequestContext } from '@/server/http/request-context'
 import { titleMeta } from '@/shared/seo/title-meta'
 import { parseCommentEntity, serializeCommentEntity } from '@/shared/utils/comments'

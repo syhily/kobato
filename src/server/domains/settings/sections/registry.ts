@@ -4,43 +4,25 @@ import type { SettingsSection } from '@/shared/config/sections'
 import type { BlogSettingsBundle } from '@/shared/config/types'
 import type { Assert, Equals } from '@/shared/contracts/primitives'
 
-import { analyticsSchema } from '@/server/domains/settings/schemas/analytics'
-import { assetsSchema } from '@/server/domains/settings/schemas/assets'
-import { backupSchema } from '@/server/domains/settings/schemas/backup'
-import { cacheSchema } from '@/server/domains/settings/schemas/cache'
-import { commentsSchema } from '@/server/domains/settings/schemas/comments'
-import { contentSchema } from '@/server/domains/settings/schemas/content'
-import { fontsSchema } from '@/server/domains/settings/schemas/fonts'
-import { generalSchema } from '@/server/domains/settings/schemas/general'
-import { limitsSchema } from '@/server/domains/settings/schemas/limits'
-import { mailSchema } from '@/server/domains/settings/schemas/mail'
-import { navigationSchema } from '@/server/domains/settings/schemas/navigation'
-import { newsletterSchema } from '@/server/domains/settings/schemas/newsletter'
-import { rateLimitSchema } from '@/server/domains/settings/schemas/rate-limit'
-import { searchSchema } from '@/server/domains/settings/schemas/search'
-import { securitySchema } from '@/server/domains/settings/schemas/security'
-import { seoSchema } from '@/server/domains/settings/schemas/seo'
-import { sidebarSchema } from '@/server/domains/settings/schemas/sidebar'
-import { socialsSchema } from '@/server/domains/settings/schemas/socials'
-import {
-  analyticsDefaults,
-  backupDefaults,
-  cacheDefaults,
-  commentsDefaults,
-  contentDefaults,
-  fontsDefaults,
-  limitsDefaults,
-  mailDefaults,
-  navigationDefaults,
-  newsletterDefaults,
-  searchDefaults,
-  securityDefaults,
-  seoDefaults,
-  sidebarDefaults,
-  socialsDefaults,
-} from '@/server/domains/settings/sections/defaults'
+import { analyticsSection } from '@/server/domains/settings/sections/analytics'
+import { assetsSection } from '@/server/domains/settings/sections/assets'
+import { backupSection } from '@/server/domains/settings/sections/backup'
+import { cacheSection } from '@/server/domains/settings/sections/cache'
+import { commentsSection } from '@/server/domains/settings/sections/comments'
+import { contentSection } from '@/server/domains/settings/sections/content'
+import { fontsSection } from '@/server/domains/settings/sections/fonts'
+import { generalSection } from '@/server/domains/settings/sections/general'
+import { limitsSection } from '@/server/domains/settings/sections/limits'
+import { mailSection } from '@/server/domains/settings/sections/mail'
+import { navigationSection } from '@/server/domains/settings/sections/navigation'
+import { newsletterSection } from '@/server/domains/settings/sections/newsletter'
+import { rateLimitSection } from '@/server/domains/settings/sections/rate-limit'
+import { searchSection } from '@/server/domains/settings/sections/search'
+import { securitySection } from '@/server/domains/settings/sections/security'
+import { seoSection } from '@/server/domains/settings/sections/seo'
+import { sidebarSection } from '@/server/domains/settings/sections/sidebar'
+import { socialsSection } from '@/server/domains/settings/sections/socials'
 import { DomainError } from '@/server/infra/http/errors'
-import { rateLimitDefaults } from '@/shared/config/defaults'
 import { SETTINGS_SECTIONS } from '@/shared/config/sections'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
@@ -54,90 +36,30 @@ export interface SectionMeta<
   defaults: Record<string, unknown> | null
 }
 
+// One module per section (`sections/<section>.ts`) owns that section's
+// Zod schema, seed defaults, and registry metadata (scope + bundle key)
+// — adding a section means adding ONE module plus ONE line here, never
+// a second enumeration. This map is composition only; the schema↔DTO
+// parity asserts at the bottom pin every entry to its bundle slot.
 export const SECTION_REGISTRY = {
-  general: { scope: 'blog.general', schema: generalSchema, key: 'siteIdentity', defaults: null },
-  assets: { scope: 'blog.assets', schema: assetsSchema, key: 'assets', defaults: null },
-  navigation: {
-    scope: 'blog.navigation',
-    schema: navigationSchema,
-    key: 'navigation',
-    defaults: navigationDefaults,
-  },
-  socials: {
-    scope: 'blog.socials',
-    schema: socialsSchema,
-    key: 'socials',
-    defaults: socialsDefaults,
-  },
-  content: {
-    scope: 'blog.content',
-    schema: contentSchema,
-    key: 'content',
-    defaults: contentDefaults,
-  },
-  sidebar: {
-    scope: 'blog.sidebar',
-    schema: sidebarSchema,
-    key: 'sidebar',
-    defaults: sidebarDefaults,
-  },
-  comments: {
-    scope: 'blog.comments',
-    schema: commentsSchema,
-    key: 'comments',
-    defaults: commentsDefaults,
-  },
-  seo: { scope: 'blog.seo', schema: seoSchema, key: 'seo', defaults: seoDefaults },
-  mail: { scope: 'blog.mail', schema: mailSchema, key: 'mail', defaults: mailDefaults },
-  newsletter: {
-    scope: 'blog.newsletter',
-    schema: newsletterSchema,
-    key: 'newsletter',
-    defaults: newsletterDefaults,
-  },
-  cache: { scope: 'blog.cache', schema: cacheSchema, key: 'cache', defaults: cacheDefaults },
-  rateLimit: {
-    scope: 'blog.rateLimit',
-    schema: rateLimitSchema,
-    key: 'rateLimit',
-    defaults: rateLimitDefaults,
-  },
-  search: {
-    scope: 'blog.search',
-    schema: searchSchema,
-    key: 'search',
-    defaults: searchDefaults,
-  },
-  fonts: {
-    scope: 'blog.fonts',
-    schema: fontsSchema,
-    key: 'fonts',
-    defaults: fontsDefaults,
-  },
-  backup: {
-    scope: 'blog.backup',
-    schema: backupSchema,
-    key: 'backup',
-    defaults: backupDefaults,
-  },
-  limits: {
-    scope: 'blog.limits',
-    schema: limitsSchema,
-    key: 'limits',
-    defaults: limitsDefaults,
-  },
-  analytics: {
-    scope: 'blog.analytics',
-    schema: analyticsSchema,
-    key: 'analytics',
-    defaults: analyticsDefaults,
-  },
-  security: {
-    scope: 'blog.security',
-    schema: securitySchema,
-    key: 'security',
-    defaults: securityDefaults,
-  },
+  general: generalSection,
+  assets: assetsSection,
+  navigation: navigationSection,
+  socials: socialsSection,
+  content: contentSection,
+  sidebar: sidebarSection,
+  comments: commentsSection,
+  seo: seoSection,
+  mail: mailSection,
+  newsletter: newsletterSection,
+  cache: cacheSection,
+  rateLimit: rateLimitSection,
+  search: searchSection,
+  fonts: fontsSection,
+  backup: backupSection,
+  limits: limitsSection,
+  analytics: analyticsSection,
+  security: securitySection,
 } as const satisfies Record<SettingsSection, SectionMeta>
 
 /** Common prefix used to fetch every settings row in one SELECT. */
@@ -201,34 +123,52 @@ export function buildDefaultSectionPayloads(): {
 // bundle-slot DTO — hydration writes `parsed.data` straight into the
 // bundle (`services/hydrate.ts:81`), so drift here means the DTO lies.
 type _generalSchemaDtoParity = Assert<
-  Equals<z.infer<typeof generalSchema>, NonNullable<BlogSettingsBundle['siteIdentity']>>
+  Equals<z.infer<typeof generalSection.schema>, NonNullable<BlogSettingsBundle['siteIdentity']>>
 >
-type _assetsSchemaDtoParity = Assert<Equals<z.infer<typeof assetsSchema>, NonNullable<BlogSettingsBundle['assets']>>>
+type _assetsSchemaDtoParity = Assert<
+  Equals<z.infer<typeof assetsSection.schema>, NonNullable<BlogSettingsBundle['assets']>>
+>
 type _navigationSchemaDtoParity = Assert<
-  Equals<z.infer<typeof navigationSchema>, NonNullable<BlogSettingsBundle['navigation']>>
+  Equals<z.infer<typeof navigationSection.schema>, NonNullable<BlogSettingsBundle['navigation']>>
 >
-type _socialsSchemaDtoParity = Assert<Equals<z.infer<typeof socialsSchema>, NonNullable<BlogSettingsBundle['socials']>>>
-type _contentSchemaDtoParity = Assert<Equals<z.infer<typeof contentSchema>, NonNullable<BlogSettingsBundle['content']>>>
-type _sidebarSchemaDtoParity = Assert<Equals<z.infer<typeof sidebarSchema>, NonNullable<BlogSettingsBundle['sidebar']>>>
+type _socialsSchemaDtoParity = Assert<
+  Equals<z.infer<typeof socialsSection.schema>, NonNullable<BlogSettingsBundle['socials']>>
+>
+type _contentSchemaDtoParity = Assert<
+  Equals<z.infer<typeof contentSection.schema>, NonNullable<BlogSettingsBundle['content']>>
+>
+type _sidebarSchemaDtoParity = Assert<
+  Equals<z.infer<typeof sidebarSection.schema>, NonNullable<BlogSettingsBundle['sidebar']>>
+>
 type _commentsSchemaDtoParity = Assert<
-  Equals<z.infer<typeof commentsSchema>, NonNullable<BlogSettingsBundle['comments']>>
+  Equals<z.infer<typeof commentsSection.schema>, NonNullable<BlogSettingsBundle['comments']>>
 >
-type _seoSchemaDtoParity = Assert<Equals<z.infer<typeof seoSchema>, NonNullable<BlogSettingsBundle['seo']>>>
-type _mailSchemaDtoParity = Assert<Equals<z.infer<typeof mailSchema>, NonNullable<BlogSettingsBundle['mail']>>>
+type _seoSchemaDtoParity = Assert<Equals<z.infer<typeof seoSection.schema>, NonNullable<BlogSettingsBundle['seo']>>>
+type _mailSchemaDtoParity = Assert<Equals<z.infer<typeof mailSection.schema>, NonNullable<BlogSettingsBundle['mail']>>>
 type _newsletterSchemaDtoParity = Assert<
-  Equals<z.infer<typeof newsletterSchema>, NonNullable<BlogSettingsBundle['newsletter']>>
+  Equals<z.infer<typeof newsletterSection.schema>, NonNullable<BlogSettingsBundle['newsletter']>>
 >
-type _cacheSchemaDtoParity = Assert<Equals<z.infer<typeof cacheSchema>, NonNullable<BlogSettingsBundle['cache']>>>
+type _cacheSchemaDtoParity = Assert<
+  Equals<z.infer<typeof cacheSection.schema>, NonNullable<BlogSettingsBundle['cache']>>
+>
 type _rateLimitSchemaDtoParity = Assert<
-  Equals<z.infer<typeof rateLimitSchema>, NonNullable<BlogSettingsBundle['rateLimit']>>
+  Equals<z.infer<typeof rateLimitSection.schema>, NonNullable<BlogSettingsBundle['rateLimit']>>
 >
-type _searchSchemaDtoParity = Assert<Equals<z.infer<typeof searchSchema>, NonNullable<BlogSettingsBundle['search']>>>
-type _fontsSchemaDtoParity = Assert<Equals<z.infer<typeof fontsSchema>, NonNullable<BlogSettingsBundle['fonts']>>>
-type _backupSchemaDtoParity = Assert<Equals<z.infer<typeof backupSchema>, NonNullable<BlogSettingsBundle['backup']>>>
-type _limitsSchemaDtoParity = Assert<Equals<z.infer<typeof limitsSchema>, NonNullable<BlogSettingsBundle['limits']>>>
+type _searchSchemaDtoParity = Assert<
+  Equals<z.infer<typeof searchSection.schema>, NonNullable<BlogSettingsBundle['search']>>
+>
+type _fontsSchemaDtoParity = Assert<
+  Equals<z.infer<typeof fontsSection.schema>, NonNullable<BlogSettingsBundle['fonts']>>
+>
+type _backupSchemaDtoParity = Assert<
+  Equals<z.infer<typeof backupSection.schema>, NonNullable<BlogSettingsBundle['backup']>>
+>
+type _limitsSchemaDtoParity = Assert<
+  Equals<z.infer<typeof limitsSection.schema>, NonNullable<BlogSettingsBundle['limits']>>
+>
 type _analyticsSchemaDtoParity = Assert<
-  Equals<z.infer<typeof analyticsSchema>, NonNullable<BlogSettingsBundle['analytics']>>
+  Equals<z.infer<typeof analyticsSection.schema>, NonNullable<BlogSettingsBundle['analytics']>>
 >
 type _securitySchemaDtoParity = Assert<
-  Equals<z.infer<typeof securitySchema>, NonNullable<BlogSettingsBundle['security']>>
+  Equals<z.infer<typeof securitySection.schema>, NonNullable<BlogSettingsBundle['security']>>
 >

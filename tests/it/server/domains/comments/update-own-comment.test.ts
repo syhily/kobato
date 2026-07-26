@@ -17,7 +17,7 @@ import type { CommentWithUser } from '@/server/domains/comments/repos/shared'
 //   * a lost optimistic-lock race (0 rows affected) rejects CONFLICT;
 //   * a row that vanishes mid-edit returns null without writing.
 
-vi.mock('@/server/domains/comments/repos/public-query/by-id', () => ({
+vi.mock('@/server/domains/comments/services/lookup', () => ({
   findCommentWithUserById: vi.fn(),
 }))
 vi.mock('@/server/domains/comments/repos/admin-query', () => ({
@@ -28,11 +28,6 @@ vi.mock('@/server/domains/comments/repos/mutate', () => ({
   updateOwnCommentBody: vi.fn(async () => 1),
   updateOwnCommentBodyAndPending: vi.fn(async () => 1),
   updateCommentBodyAndContent: vi.fn(),
-}))
-
-vi.mock('@/server/domains/comments/repos/moderation', () => ({
-  approveCommentById: vi.fn(),
-  deleteCommentById: vi.fn(),
 }))
 
 vi.mock('@/server/infra/db/operations/metric', () => ({
@@ -56,7 +51,7 @@ vi.mock('@/server/domains/comments/services/canonicalize', () => ({
 
 const db = {} as NodePgDatabase
 
-const queryRepo = await import('@/server/domains/comments/repos/public-query/by-id')
+const lookup = await import('@/server/domains/comments/services/lookup')
 await import('@/server/domains/comments/repos/admin-query')
 const mutateRepo = await import('@/server/domains/comments/repos/mutate')
 const emails = await import('@/server/domains/comments/services/email')
@@ -68,7 +63,7 @@ const { updateOwnComment } = await import('@/server/domains/comments/services/mo
 // widen the literal back into the union — a typed re-cast lets the
 // fixture rows feed `mockResolvedValueOnce` without sprinkling extra
 // casts at every call site.
-const findCommentMock = queryRepo.findCommentWithUserById as unknown as Mock<
+const findCommentMock = lookup.findCommentWithUserById as unknown as Mock<
   (id: bigint) => Promise<CommentWithUser | null>
 >
 

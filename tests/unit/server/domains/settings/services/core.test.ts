@@ -5,8 +5,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
-import { limitsSchema } from '@/server/domains/settings/schemas/limits'
 import { SECRET_FIELDS } from '@/server/domains/settings/secrets'
+import { limitsSchema } from '@/server/domains/settings/sections/limits'
 import { computeSecretMasks, updateBlogSettingsSection } from '@/server/domains/settings/services/core'
 import { DomainError } from '@/server/infra/http/errors'
 

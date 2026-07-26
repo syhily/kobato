@@ -1,7 +1,7 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { listSitemapPages } from '@/server/domains/pages/repo'
-import { listSitemapPosts } from '@/server/domains/posts/repos/public-query/misc'
+import { listSitemapPages } from '@/server/domains/pages/services/public-query'
+import { listSitemapPosts } from '@/server/domains/posts/services/public-query'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { joinUrl } from '@/shared/utils/urls'
 

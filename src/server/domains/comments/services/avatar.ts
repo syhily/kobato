@@ -194,3 +194,32 @@ export async function resolveAvatarInfo(
   }
   return { email: null, hash: rawHash }
 }
+
+// ─── Site-owner GitHub avatar ────────────────────────────────────────────
+
+const GITHUB_AVATAR_URL = 'https://avatars.githubusercontent.com/u/1761698?s=32'
+
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer)
+  let binary = ''
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]!)
+  }
+  return btoa(binary)
+}
+
+/** Fetch the site owner's GitHub avatar and inline it as a base64 data URL
+ *  so the client never makes a cross-origin request (lifted out of
+ *  `github.controller.ts`, following the `fetchLatestRelease` precedent).
+ *  The avatar is decorative — any upstream failure resolves to an empty
+ *  string instead of an error. The URL is a compile-time constant, so a
+ *  plain `fetch` (no SSRF guard) is sufficient. */
+export async function fetchGithubAvatarDataUrl(): Promise<string> {
+  const res = await fetch(GITHUB_AVATAR_URL, { signal: AbortSignal.timeout(30_000) })
+  if (!res.ok) {
+    return ''
+  }
+  const buffer = await res.arrayBuffer()
+  const contentType = res.headers.get('content-type') ?? 'image/png'
+  return `data:${contentType};base64,${arrayBufferToBase64(buffer)}`
+}

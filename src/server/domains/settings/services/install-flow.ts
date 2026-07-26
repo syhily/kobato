@@ -12,14 +12,14 @@
 // error with zero DB side effects. `seedInstallSections` then persists
 // the validated rows on the caller's transaction handle, so the section
 // rows commit — or roll back — atomically with the first admin row
-// (`@/server/domains/auth/signin-flow` composes the two).
+// (`@/server/domains/auth/services/setup` composes the two).
 
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import type { SettingsSection } from '@/shared/config/sections'
 import type { AssetsSettings, SiteIdentitySettings } from '@/shared/config/types'
 
-import { ASSETS_STORAGE_INSTALL_DEFAULTS } from '@/server/domains/settings/sections/defaults'
+import { ASSETS_STORAGE_INSTALL_DEFAULTS } from '@/server/domains/settings/sections/assets'
 import { buildDefaultSectionPayloads, SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
 import { upsertSetting } from '@/server/infra/db/operations/setting'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'

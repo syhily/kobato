@@ -4,15 +4,6 @@ import type { StorageDriver } from '@/shared/config/types'
 
 import { ActionFailure } from '@/server/infra/http/errors'
 
-/**
- * The backend a stored object lives in. Every asset — image, music track,
- * branding slot, backup — records its driver so reads, deletes, and the
- * local→S3 migration always target the right place. Keys are
- * backend-agnostic: the same `images/...` key works under both backends,
- * which is what makes a migration a plain copy + driver flip.
- */
-export type { StorageDriver }
-
 export interface StoredObjectMeta {
   key: string
   size: number

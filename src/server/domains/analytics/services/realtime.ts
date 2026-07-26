@@ -1,10 +1,60 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { sql } from 'drizzle-orm'
+import { createHash } from 'node:crypto'
 
 import type { RealtimeEvent } from '@/shared/contracts/analytics'
 
 import { isRecord } from '@/shared/utils/type-guards'
+
+// ─── SSE connection registry ─────────────────────────────────────────────
+// The `/api/analytics/events` resource owns only the Hono/SSE wire
+// plumbing; the per-session connection bookkeeping and the cap policy
+// live here, next to the tail query the stream polls.
+
+const MAX_REALTIME_CONNECTIONS_PER_SESSION = 2
+
+// Per-session connection counter. Node.js is single-threaded, so a plain
+// Map is safe. If worker threads are ever introduced, this state must move
+// to the main thread only.
+const activeSSEConnections = new Map<string, number>()
+
+/** Cap key for one realtime consumer: the session id when the request
+ *  carries one, else a truncated SHA-256 of the client address — the raw
+ *  IP is never used as a map key. */
+export function realtimeConnectionKey(sessionId: string | null | undefined, clientAddress: string): string {
+  if (sessionId) {
+    return `session:${sessionId}`
+  }
+  return `ip:${createHash('sha256').update(clientAddress).digest('hex').slice(0, 32)}`
+}
+
+/**
+ * Take one of the per-key realtime-connection slots. Returns an
+ * idempotent release function, or `null` when the key is already at
+ * MAX_REALTIME_CONNECTIONS_PER_SESSION (the caller maps that to 429).
+ * Acquisition is synchronous, so check-and-increment cannot race.
+ */
+export function acquireRealtimeConnection(key: string): (() => void) | null {
+  const current = activeSSEConnections.get(key) ?? 0
+  if (current >= MAX_REALTIME_CONNECTIONS_PER_SESSION) {
+    return null
+  }
+  activeSSEConnections.set(key, current + 1)
+  let released = false
+  return () => {
+    if (released) {
+      return
+    }
+    released = true
+    const remaining = (activeSSEConnections.get(key) ?? 0) - 1
+    if (remaining <= 0) {
+      activeSSEConnections.delete(key)
+    } else {
+      activeSSEConnections.set(key, remaining)
+    }
+  }
+}
 
 export async function queryRealtimeTail(db: NodePgDatabase, sinceTs: Date, limit = 50): Promise<RealtimeEvent[]> {
   const result = await db.execute(sql`

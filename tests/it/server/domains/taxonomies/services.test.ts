@@ -410,7 +410,7 @@ describe('taxonomies/categories — rename cascades to posts with zero post writ
     const { upsertAdminCategory } = await import('@/server/domains/taxonomies/categories/services/mutate')
     await upsertAdminCategory(db, { id, name: 'New', cover: '', description: '' })
     // The public pipeline resolves the display name via category_id…
-    const { listPublicPosts } = await import('@/server/domains/posts/repos/public-query/listing')
+    const { listPublicPosts } = await import('@/server/domains/posts/services/public-query')
     const { hydratePostList } = await import('@/server/domains/posts/repos/hydrate')
     const metas = await listPublicPosts(db, { categoryId: id })
     const posts = await hydratePostList(db, metas)

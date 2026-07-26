@@ -1,7 +1,7 @@
 import { CodeIcon, ListIcon, ListOrderedIcon, QuoteIcon, SigmaIcon, Type as TypeIcon } from 'lucide-react'
 
 import type { Block } from '@/shared/pt/schema'
-import type { SlashCommand } from '@/ui/admin/editor/tiptap/SlashMenu'
+import type { SlashCommand } from '@/ui/admin/editor/tiptap/slash-commands'
 
 import { generateBlockKey } from '@/shared/pt/utils'
 

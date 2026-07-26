@@ -1,10 +1,10 @@
-import { and, asc, desc, eq, isNotNull, isNull, not, or, sql, type SQL } from 'drizzle-orm'
+import { and, asc, desc, eq, not, sql, type SQL } from 'drizzle-orm'
 
 import type { PostMetaRow } from '@/server/infra/db/types'
 import type { ClientPost } from '@/shared/types/catalog'
 
-import { liveContentWhere, promotedContentWhere, type LiveContentOptions } from '@/server/domains/content/schema'
-import { ilikeEscape } from '@/server/infra/db/ilike-escape'
+import { buildMetaListWhere, type MetaListFiltersBase } from '@/server/domains/content/entities/meta-repo'
+import { livePostWhere, promotedPostWhere } from '@/server/domains/posts/live-gate'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { postTag } from '@/server/infra/db/schema/post-tag'
 import { tag } from '@/server/infra/db/schema/taxonomy'
@@ -12,62 +12,17 @@ import { readStringArray } from '@/shared/utils/tools'
 
 export type PostMetaWithAuthor = PostMetaRow & { authorName: string | null }
 
-/**
- * Repo-side binding of the live gate for the `post` table. Binds the
- * four meta columns once and delegates to `liveContentWhere`, so call
- * sites never hand-assemble the column struct (and can't drift into
- * their own copy of the gate). See the warning on `isLive` in
- * `content/schema.ts`.
- */
-export function livePostWhere(options?: LiveContentOptions): SQL {
-  return liveContentWhere(
-    {
-      deletedAt: postMetaTable.deletedAt,
-      published: postMetaTable.published,
-      publishedRevisionId: postMetaTable.publishedRevisionId,
-      publishedAt: postMetaTable.publishedAt,
-    },
-    options,
-  )
-}
-
-/**
- * Repo-side binding of the promoted gate for the `post` table. Binds
- * the two meta columns once and delegates to `promotedContentWhere`, so
- * call sites never hand-assemble the column struct (and can't drift
- * into their own copy of the gate). See the warning on `isPromoted` in
- * `content/schema.ts`.
- */
-export function promotedPostWhere(): SQL {
-  return promotedContentWhere({
-    published: postMetaTable.published,
-    publishedRevisionId: postMetaTable.publishedRevisionId,
-  })
-}
-
-export interface ListPostsFilters {
-  /** Free-text query matched case-insensitively against `slug` and `title`. */
-  q?: string
-  /** Deletion state filter. */
-  deletedStatus?: 'all' | 'deleted' | 'normal'
-  /** Zero-based offset for pagination. */
-  offset?: number
-  /** Page size. When undefined every match is returned. */
-  limit?: number
+export interface ListPostsFilters extends MetaListFiltersBase {
   /** Filter by category id. */
   categoryId?: bigint
   /** Filter by tag name (JSONB contains). */
   tag?: string
-  /** Filter by published flag. */
-  published?: boolean
   /** Filter by visible flag. */
   visible?: boolean
   /** Sort field. */
   sortBy?: 'publishedAt' | 'updatedAt'
   /** Sort direction. */
   sortOrder?: 'asc' | 'desc'
-  /** Filter by author id. */
-  authorId?: bigint
   /**
    * Coarse lifecycle bucket — partitions every live row into one of two
    * sets that match the `StatusBadge` logic in `PostsView`, routed
@@ -88,27 +43,20 @@ export interface ListPostsFilters {
   lifecycle?: 'draft' | 'published'
 }
 
+/**
+ * Posts' admin-list WHERE: the shared legs (deletion state, slug/title
+ * search, published, author) come from `buildMetaListWhere`; the
+ * taxonomy / visible / lifecycle legs below are post-specific. SQL
+ * `AND` is order-insensitive, so the leg order change vs the old
+ * hand-built clause is semantic-noop.
+ */
 export function buildPostsWhere(filters: ListPostsFilters): SQL | undefined {
-  const conditions: SQL[] = []
-  if (filters.deletedStatus === 'deleted') {
-    conditions.push(isNotNull(postMetaTable.deletedAt))
-  } else if (filters.deletedStatus === 'normal') {
-    conditions.push(isNull(postMetaTable.deletedAt))
-  }
-  if (filters.q && filters.q.trim() !== '') {
-    const search = or(
-      ilikeEscape(postMetaTable.slug, filters.q.trim()),
-      ilikeEscape(postMetaTable.title, filters.q.trim()),
-    )
-    if (search) {
-      conditions.push(search)
-    }
-  }
+  const extras: SQL[] = []
   if (filters.categoryId !== undefined) {
-    conditions.push(eq(postMetaTable.categoryId, filters.categoryId))
+    extras.push(eq(postMetaTable.categoryId, filters.categoryId))
   }
   if (filters.tag) {
-    conditions.push(
+    extras.push(
       sql`EXISTS (
         SELECT 1 FROM ${postTag}
         INNER JOIN ${tag} ON ${eq(postTag.tagId, tag.id)}
@@ -116,27 +64,15 @@ export function buildPostsWhere(filters: ListPostsFilters): SQL | undefined {
       )`,
     )
   }
-  if (filters.published !== undefined) {
-    conditions.push(eq(postMetaTable.published, filters.published))
-  }
   if (filters.visible !== undefined) {
-    conditions.push(eq(postMetaTable.visible, filters.visible))
-  }
-  if (filters.authorId !== undefined) {
-    conditions.push(eq(postMetaTable.authorId, filters.authorId))
+    extras.push(eq(postMetaTable.visible, filters.visible))
   }
   if (filters.lifecycle === 'published') {
-    conditions.push(promotedPostWhere())
+    extras.push(promotedPostWhere())
   } else if (filters.lifecycle === 'draft') {
-    conditions.push(not(promotedPostWhere()))
+    extras.push(not(promotedPostWhere()))
   }
-  if (conditions.length === 0) {
-    return undefined
-  }
-  if (conditions.length === 1) {
-    return conditions[0]
-  }
-  return and(...conditions)
+  return buildMetaListWhere(postMetaTable, filters, extras)
 }
 
 export function buildPostsOrderBy(filters: ListPostsFilters) {

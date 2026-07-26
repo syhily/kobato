@@ -32,7 +32,7 @@ const { bulkApproveCommentsByUser, bulkDeleteCommentsByUser } =
   await import('@/server/domains/comments/services/moderate')
 // The admin approve-delete-request path calls the repo mutation
 // directly; the cache invalidation is sunk into the mutation itself.
-const { softDeleteCommentById } = await import('@/server/domains/comments/repos/moderation')
+const { softDeleteCommentById } = await import('@/server/domains/comments/services/moderate')
 
 const poolManager = createDbPool()
 const db: NodePgDatabase = poolManager.db

@@ -434,8 +434,16 @@ unknown key at any depth rejects with 400. Concretely:
 - `client/*` and `ui/*` may import `shared/*`, `ui/*`, `client/*`. Not
   any `server/*` module or `.server.*` file.
 - `shared/*` imports `shared/*` only.
-- `routes/*` may import from any layer; route components must accept
-  plain props.
+- `routes/*` are wiring: extract the request context, call one
+  `server/http/loaders/*` orchestration or a domain-surface service, and
+  render. They must not import `@/server/infra/db/operations/*` (pinned
+  by a boundaries contract test) — business data access goes through
+  domain surfaces or `http/loaders`. Route components accept plain
+  props.
+- Cross-domain imports under `server/domains/` must stay acyclic (the
+  domain graph is a DAG, pinned by a boundaries contract test). Compose
+  across domains by caller-wired injection when a direct import would
+  close a cycle — see `server/domains/pt/embeds.ts`.
 - Avoid barrel `index.ts` files (`bundle-barrel-imports`).
 - No `export { X } from 'y'` or `export type { X } from 'y'` re-exports
   anywhere in the project. Import directly from the source module

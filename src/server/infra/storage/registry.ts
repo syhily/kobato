@@ -1,4 +1,5 @@
-import type { StorageBackend, StorageDriver } from '@/server/infra/storage/backend'
+import type { StorageBackend } from '@/server/infra/storage/backend'
+import type { StorageDriver } from '@/shared/config/types'
 
 import { localBackend } from '@/server/infra/storage/backends/local'
 import { s3Backend } from '@/server/infra/storage/backends/s3'

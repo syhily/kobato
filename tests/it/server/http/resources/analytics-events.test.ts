@@ -6,7 +6,11 @@ import type { SessionUser } from '@/server/domains/auth/session-storage'
 import type { Env } from '@/server/http/context'
 import type { RequestContext } from '@/server/http/request-context'
 
-vi.mock('@/server/domains/analytics/services/realtime', () => ({
+vi.mock('@/server/domains/analytics/services/realtime', async (importOriginal) => ({
+  // Keep the real connection registry + cap policy — the whole point of
+  // these tests is driving it through the resource — and stub only the
+  // tail query the poll loop runs.
+  ...(await importOriginal<typeof import('@/server/domains/analytics/services/realtime')>()),
   queryRealtimeTail: vi.fn().mockResolvedValue([]),
 }))
 

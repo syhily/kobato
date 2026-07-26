@@ -52,11 +52,6 @@ export async function findCategoryByName(db: NodePgDatabase, name: string): Prom
   return rows[0] ?? null
 }
 
-export async function findCategoryBySlug(db: NodePgDatabase, slug: string): Promise<CategoryRow | null> {
-  const rows = await db.select().from(category).where(eq(category.slug, slug)).limit(1)
-  return rows[0] ?? null
-}
-
 // The single seam for post→category name resolution: posts store
 // `category_id`, listings project the display NAME onto the wire DTO.
 // Mount this in `hydratePostList`-style pipelines (next to the tag-name

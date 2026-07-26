@@ -2,10 +2,10 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { createElement } from 'react'
 
-import type { CommentAndUser } from '@/server/domains/comments/types'
 import type { EntityTarget } from '@/server/infra/db/target'
 import type { Comment, User } from '@/server/infra/db/types'
 import type { SendResult } from '@/server/infra/email/types'
+import type { CommentAndUser } from '@/shared/types/comments'
 
 import { entityCommentUrl, findEntitySlugTitle } from '@/server/domains/comments/services/shared'
 import { commentBodyToHtml } from '@/server/domains/pt/services/comment-to-html'

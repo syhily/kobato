@@ -24,12 +24,15 @@ vi.mock('@/server/infra/storage/public-url', () => ({
 }))
 
 const ops = await import('@/server/infra/db/operations/music')
-const { DEFAULT_MUSIC_COVER_URL } = await import('@/server/domains/music/services/read')
+const { DEFAULT_MUSIC_COVER_URL, getPublicMusicMetasByIds } = await import('@/server/domains/music/services/read')
 const { prerenderMusicPlayerBlocks } = await import('@/server/domains/pt/prerender')
 
 const poolManager = createDbPool()
 const db: NodePgDatabase = poolManager.db
 const pool: Pool = poolManager.pool
+
+// The PT embed seam wired the same way the SSR routes wire it.
+const resolveMusicEmbeds = (playerIds: readonly string[]) => getPublicMusicMetasByIds(db, playerIds)
 
 afterAll(async () => {
   await closePool(pool)
@@ -69,7 +72,7 @@ describe('server/domains/pt/prerenderMusicPlayerBlocks (db)', () => {
       { _type: 'musicPlayer', _key: 'm2', playerId: 'coverless' },
     ]
 
-    const result = await prerenderMusicPlayerBlocks(db, body)
+    const result = await prerenderMusicPlayerBlocks(body, resolveMusicEmbeds)
     expect(result).toHaveLength(2)
 
     const covered = result![0] as EnrichedMusicPlayerBlock
@@ -97,7 +100,7 @@ describe('server/domains/pt/prerenderMusicPlayerBlocks (db)', () => {
       { _type: 'musicPlayer', _key: 'm2', playerId: 'missing' },
     ]
 
-    const result = await prerenderMusicPlayerBlocks(db, body)
+    const result = await prerenderMusicPlayerBlocks(body, resolveMusicEmbeds)
     expect((result![0] as EnrichedMusicPlayerBlock).meta).toBeDefined()
     expect((result![1] as EnrichedMusicPlayerBlock).meta).toBeUndefined()
   })

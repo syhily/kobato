@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
-import type { MarkdownHeading } from '@/shared/types/catalog'
+import type { MarkdownHeading } from '@/shared/utils/toc'
 
 import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'

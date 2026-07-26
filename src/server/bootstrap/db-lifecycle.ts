@@ -14,9 +14,9 @@ import { isRecord } from '@/shared/utils/type-guards'
 // on the infra batching seam (`@/server/infra/db/batcher-registry`) at
 // import time, so `initAllBatchers` / `flushAllBatchers` /
 // `resetAllBatchers` below cover every batcher with no per-domain calls.
-import '@/server/domains/analytics/repos/batcher'
-import '@/server/domains/analytics/repos/pv-batcher'
-import '@/server/domains/audit/repos/batcher'
+import '@/server/domains/analytics/services/batcher'
+import '@/server/domains/analytics/services/pv-batcher'
+import '@/server/domains/audit/services/batcher'
 
 // ─── HMR-safe resource creation ──────────────────────────
 // In dev, React Router re-evaluates server.ts on every HMR cycle.

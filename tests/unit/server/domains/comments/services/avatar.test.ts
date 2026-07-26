@@ -15,6 +15,7 @@ import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import {
   defaultAvatarUrl,
   fetchAvatarImage,
+  fetchGithubAvatarDataUrl,
   fetchQQAvatarImage,
   getQQAvatarUrl,
   isQQEmail,
@@ -242,5 +243,33 @@ describe('domains/comments/services/avatar — fetchQQAvatarImage', () => {
     ])
     expect(await fetchQQAvatarImage('12345@qq.com', 120)).toBeNull()
     expect(fetchFn).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('domains/comments/services/avatar — fetchGithubAvatarDataUrl (sunk from github.controller)', () => {
+  it('inlines the upstream bytes as a base64 data URL with the upstream content type', async () => {
+    mockFetch([
+      new Response(new Uint8Array([0x89, 0x50, 0x4e, 0x47]).buffer, {
+        status: 200,
+        headers: { 'Content-Type': 'image/png' },
+      }),
+    ])
+
+    const dataUrl = await fetchGithubAvatarDataUrl()
+
+    // PNG magic bytes → 'iVBORw==' in base64.
+    expect(dataUrl).toBe('data:image/png;base64,iVBORw==')
+  })
+
+  it('defaults the content type to image/png when the upstream omits the header', async () => {
+    mockFetch([new Response(new Uint8Array([1, 2, 3]).buffer, { status: 200 })])
+
+    expect(await fetchGithubAvatarDataUrl()).toMatch(/^data:image\/png;base64,/)
+  })
+
+  it('resolves to an empty string when the upstream is not ok', async () => {
+    mockFetch([new Response('not found', { status: 404 })])
+
+    expect(await fetchGithubAvatarDataUrl()).toBe('')
   })
 })

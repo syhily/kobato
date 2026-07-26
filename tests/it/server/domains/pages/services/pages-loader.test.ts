@@ -64,12 +64,23 @@ const mocks = vi.hoisted(() => ({
   resolveImageMetaBySources: vi.fn(async () => []),
 }))
 
-vi.mock('@/server/domains/posts/repos/single', () => ({
+vi.mock('@/server/domains/posts/services/single', () => ({
+  findPostMetaById: vi.fn(async () => null),
+  findPostMetaBySlug: vi.fn(async () => null),
+  findPostMetaBySlugForUpdate: vi.fn(async () => null),
   findPublicPostMetaBySlug: mocks.findPublicPostMetaBySlug,
 }))
 vi.mock('@/server/domains/pages/repo', () => ({
-  findPageBySlug: mocks.findPageBySlug,
   findPageMetaById: vi.fn(async () => null),
+  findPageMetaBySlug: vi.fn(async () => null),
+  findPageMetaBySlugForUpdate: vi.fn(async () => null),
+  insertPageMeta: vi.fn(async () => null),
+  updatePageMetaById: vi.fn(async () => null),
+  softDeletePageMeta: vi.fn(async () => false),
+  restorePageMeta: vi.fn(async () => false),
+}))
+vi.mock('@/server/domains/pages/services/public-query', () => ({
+  findPageBySlug: mocks.findPageBySlug,
   findPublicPageMetaBySlug: vi.fn(async () => null),
 }))
 vi.mock('@/server/domains/content/lifecycle', () => ({

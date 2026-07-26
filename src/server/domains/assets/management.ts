@@ -8,9 +8,8 @@ import {
   type BrandingSlot,
   deleteBrandingObject,
   ensureMatchesSlot,
-  isBrandingSlot,
   putBrandingObject,
-} from '@/server/domains/assets/repos/storage'
+} from '@/server/domains/assets/services/storage'
 import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
 import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { findSettingByScope, upsertSetting } from '@/server/infra/db/operations/setting'
@@ -31,8 +30,6 @@ const FAVICON_DERIVED_SLOTS = [
   'icon192',
   'icon512',
 ] as const satisfies readonly BinarySlot[]
-
-export { isBrandingSlot, type BrandingSlot }
 
 // Upload a buffer for one branding slot. When `slot === 'faviconSvg'`
 // we also regenerate the favicon pack so the four derived icons stay

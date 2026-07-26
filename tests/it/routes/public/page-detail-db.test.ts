@@ -55,13 +55,24 @@ const dbPage = {
 
 // catalog/catalog removed; pages/loader uses findPublicPostMetaBySlug + findPageBySlug.
 vi.mock('@/server/domains/pages/repo', () => ({
-  listPublicPageMetas: vi.fn(async () => []),
   findPageMetaById: vi.fn(async () => null),
+  findPageMetaBySlug: vi.fn(async () => null),
+  findPageMetaBySlugForUpdate: vi.fn(async () => null),
+  insertPageMeta: vi.fn(async () => null),
+  updatePageMetaById: vi.fn(async () => null),
+  softDeletePageMeta: vi.fn(async () => false),
+  restorePageMeta: vi.fn(async () => false),
+}))
+vi.mock('@/server/domains/pages/services/public-query', () => ({
+  listPublicPageMetas: vi.fn(async () => []),
   findPublicPageMetaBySlug: vi.fn(async () => null),
   findPageBySlug: vi.fn(async (_db: unknown, slug: string) => (slug === 'about' ? dbPage : null)),
 }))
-vi.mock('@/server/domains/posts/repos/public-query/listing', () => ({}))
-vi.mock('@/server/domains/posts/repos/single', () => ({
+vi.mock('@/server/domains/posts/services/public-query', () => ({}))
+vi.mock('@/server/domains/posts/services/single', () => ({
+  findPostMetaById: vi.fn(async () => null),
+  findPostMetaBySlug: vi.fn(async () => null),
+  findPostMetaBySlugForUpdate: vi.fn(async () => null),
   findPostBySlug: vi.fn(async () => null),
   findPublicPostMetaBySlug: vi.fn(async () => null),
 }))
@@ -103,11 +114,11 @@ vi.mock('@/server/http/loaders/comments', () => ({
 vi.mock('@/server/domains/images/services/enhance', () => ({
   resolveImageMetaBySources: vi.fn(async () => new Map()),
 }))
-// The music prerender would hit Postgres via findMusicByPlayerId; this
-// test pins the page-body contract, not music resolution, so pass the
-// body straight through.
+// The music prerender resolves players through the injected embed seam;
+// this test pins the page-body contract, not music resolution, so pass
+// the body straight through.
 vi.mock('@/server/domains/pt/prerender', () => ({
-  prerenderMusicPlayerBlocks: vi.fn(async (_db: unknown, body: unknown) => body),
+  prerenderMusicPlayerBlocks: vi.fn(async (body: unknown) => body),
 }))
 
 const pageRoute = await import('@/routes/public/page/detail')

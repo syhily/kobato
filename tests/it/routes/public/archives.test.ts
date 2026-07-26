@@ -12,11 +12,9 @@ vi.mock('@/server/http/request-context', async () => {
   return createRequestContextMockModule()
 })
 
-vi.mock('@/server/domains/posts/repos/public-query/listing', () => ({
+vi.mock('@/server/domains/posts/services/public-query', () => ({
   listClientPosts: mocks.listClientPosts,
   getClientPostsWithMetadata: mocks.getClientPostsWithMetadata,
-}))
-vi.mock('@/server/domains/posts/repos/public-query/misc', () => ({
   listAllPosts: mocks.listAllPosts,
 }))
 vi.mock('@/shared/types/catalog', async () => {

@@ -10,25 +10,6 @@ vi.mock('drizzle-orm', async (importOriginal) => {
   }
 })
 
-vi.mock('@/server/domains/content/repos/query', () => ({
-  findContentById: vi.fn(),
-  findContentsByIds: vi.fn(),
-  hydratePublishedRevisions: vi.fn(async () => new Map()),
-}))
-
-vi.mock('@/server/domains/content/schema', () => ({
-  isLive: vi.fn(() => true),
-  liveContentWhere: vi.fn(() => 'live-where'),
-}))
-
-vi.mock('@/server/domains/images/services/enhance', () => ({
-  hydrateImageRefs: vi.fn().mockResolvedValue(undefined),
-}))
-
-vi.mock('@/server/domains/pages/projection', () => ({
-  toCmsPage: vi.fn((meta, revision) => ({ ...meta, revision, body: revision?.body ?? null })),
-}))
-
 vi.mock('@/server/infra/db/ilike-escape', () => ({
   ilikeEscape: vi.fn((column, value) => ({ column, value })),
 }))
@@ -69,11 +50,6 @@ vi.mock('@/server/infra/db/schema/page', () => ({
 vi.mock('@/server/infra/db/schema/user', () => ({
   user: { id: { name: 'id' }, name: { name: 'name' } },
 }))
-
-import { findContentById, findContentsByIds } from '@/server/domains/content/repos/query'
-import { isLive } from '@/server/domains/content/schema'
-import { hydrateImageRefs } from '@/server/domains/images/services/enhance'
-import { toCmsPage } from '@/server/domains/pages/projection'
 
 class FakeQuery {
   rows: unknown[] = []
@@ -145,16 +121,11 @@ function fakeDb(rows: unknown[] = []): NodePgDatabase {
 
 import {
   countPageMetas,
-  findPageBySlug,
   findPageMetaById,
   findPageMetaBySlug,
   findPageMetaBySlugForUpdate,
-  findPublicPageMetaBySlug,
   insertPageMeta,
-  listAllPages,
   listPageMetas,
-  listPublicPageMetas,
-  listSitemapPages,
   restorePageMeta,
   softDeletePageMeta,
   updatePageMetaById,
@@ -163,7 +134,6 @@ import {
 describe('pages repo', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    ;(isLive as ReturnType<typeof vi.fn>).mockReturnValue(true)
   })
 
   it('lists, counts, and filters page metas', async () => {
@@ -188,19 +158,6 @@ describe('pages repo', () => {
     expect(await findPageMetaBySlugForUpdate(db, 'hello')).toBeTruthy()
   })
 
-  it('finds public page meta and lists public pages', async () => {
-    const db = fakeDb([{ id: 1n, slug: 'hello', deletedAt: null }])
-    expect(await findPublicPageMetaBySlug(db, 'hello')).toBeTruthy()
-    const pages = await listPublicPageMetas(db)
-    expect(pages).toHaveLength(1)
-  })
-
-  it('lists sitemap pages', async () => {
-    const db = fakeDb([{ slug: 'hello', firstPublishedAt: new Date(), publishedAt: new Date() }])
-    const rows = await listSitemapPages(db)
-    expect(rows).toHaveLength(1)
-  })
-
   it('inserts and updates page meta', async () => {
     const db = fakeDb()
     const inserted = await insertPageMeta(db, { slug: 'new', title: 'New' } as never)
@@ -213,31 +170,5 @@ describe('pages repo', () => {
     const db = fakeDb([{ id: 1n, deletedAt: null }])
     expect(await softDeletePageMeta(db, 1n)).toBe(true)
     expect(await restorePageMeta(db, 1n)).toBe(true)
-  })
-
-  it('finds a page by slug', async () => {
-    const db = fakeDb([{ id: 1n, slug: 'hello', publishedRevisionId: 2n, deletedAt: null }])
-    ;(findContentById as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 2n, body: [] })
-    ;(toCmsPage as ReturnType<typeof vi.fn>).mockReturnValue({
-      ...{ id: 1n, slug: 'hello', body: [], cover: '', coverThumbhash: null, coverWidth: null, coverHeight: null },
-    })
-    const page = await findPageBySlug(db, 'hello')
-    expect(page).not.toBeNull()
-    expect(hydrateImageRefs).toHaveBeenCalled()
-  })
-
-  it('returns null for invisible page by slug', async () => {
-    const db = fakeDb([{ id: 1n, slug: 'hello', deletedAt: null }])
-    ;(isLive as ReturnType<typeof vi.fn>).mockReturnValue(false)
-    const page = await findPageBySlug(db, 'hello')
-    expect(page).toBeNull()
-  })
-
-  it('lists all public pages', async () => {
-    const db = fakeDb([{ id: 1n, slug: 'a', publishedRevisionId: 2n, deletedAt: null }])
-    ;(findContentsByIds as ReturnType<typeof vi.fn>).mockResolvedValue([{ id: 2n, body: [] }])
-    ;(toCmsPage as ReturnType<typeof vi.fn>).mockReturnValue({ id: 1n, slug: 'a', body: [], cover: '' })
-    const pages = await listAllPages(db)
-    expect(pages).toHaveLength(1)
   })
 })

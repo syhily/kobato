@@ -2,7 +2,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@/server/domains/content/repos/query', () => ({
+vi.mock('@/server/domains/content/revisions', () => ({
   findContentById: vi.fn(),
 }))
 
@@ -14,12 +14,15 @@ vi.mock('@/server/domains/posts/projection', () => ({
   toAdminPostDto: vi.fn((row, ctx) => ({ ...row, ...ctx })),
 }))
 
-vi.mock('@/server/domains/posts/repos/single', () => ({
+vi.mock('@/server/domains/posts/services/single', () => ({
   findPostMetaById: vi.fn(),
+  findPostMetaBySlug: vi.fn(),
   findPostMetaBySlugForUpdate: vi.fn(),
+  findPublicPostMetaBySlug: vi.fn(),
 }))
 
 vi.mock('@/server/domains/posts/repos/write', () => ({
+  insertPostMeta: vi.fn(),
   restorePostMeta: vi.fn(),
   softDeletePostMeta: vi.fn(),
   updatePostMetaById: vi.fn(),
@@ -36,6 +39,7 @@ vi.mock('@/server/domains/posts/services/shared', () => ({
 
 vi.mock('@/server/infra/db/operations/category', () => ({
   findCategoryById: vi.fn().mockResolvedValue(null),
+  findCategoryNamesByIds: vi.fn().mockResolvedValue(new Map()),
 }))
 
 vi.mock('@/server/infra/db/operations/post-tag', () => ({
@@ -151,9 +155,13 @@ function fakeDb(query = new FakeQuery()): NodePgDatabase {
 }
 
 import { invalidateContent } from '@/server/domains/content/invalidate'
-import { findContentById } from '@/server/domains/content/repos/query'
-import { findPostMetaById, findPostMetaBySlugForUpdate } from '@/server/domains/posts/repos/single'
-import { restorePostMeta, softDeletePostMeta, updatePostMetaById } from '@/server/domains/posts/repos/write'
+import { findContentById } from '@/server/domains/content/revisions'
+import {
+  insertPostMeta,
+  restorePostMeta,
+  softDeletePostMeta,
+  updatePostMetaById,
+} from '@/server/domains/posts/repos/write'
 import {
   createPost,
   deletePost,
@@ -162,6 +170,7 @@ import {
   updatePostMeta,
 } from '@/server/domains/posts/services/mutate'
 import { indexPost, removePostIndex } from '@/server/domains/posts/services/search-index'
+import { findPostMetaById, findPostMetaBySlugForUpdate } from '@/server/domains/posts/services/single'
 import { findSlugRegistryBySlugForUpdate, insertSlugRegistry } from '@/server/infra/db/operations/slug-registry'
 import { isUniqueConstraintError } from '@/server/infra/http/errors'
 
@@ -169,6 +178,7 @@ describe('posts mutate service', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     ;(isUniqueConstraintError as ReturnType<typeof vi.fn>).mockReturnValue(false)
+    ;(insertPostMeta as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 100n, createdAt: new Date() })
   })
 
   it('creates a post', async () => {
@@ -184,9 +194,10 @@ describe('posts mutate service', () => {
   })
 
   it('throws a conflict when slug is taken', async () => {
-    const query = new FakeQuery()
-    query.rejectNext(new Error('duplicate key value violates unique constraint "post_slug_key"'))
-    const db = fakeDb(query)
+    const db = fakeDb()
+    ;(insertPostMeta as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+      new Error('duplicate key value violates unique constraint "post_slug_key"'),
+    )
     ;(isUniqueConstraintError as ReturnType<typeof vi.fn>).mockReturnValue(true)
     await expect(createPost(db, { slug: 'hello', title: 'Hello' }, 1n)).rejects.toThrow('已被占用')
   })
@@ -194,6 +205,7 @@ describe('posts mutate service', () => {
   it('updates post meta', async () => {
     const db = fakeDb()
     ;(findPostMetaById as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 100n, slug: 'old' })
+    ;(updatePostMetaById as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 100n, slug: 'new' })
     const result = await updatePostMeta(db, { id: 100n, slug: 'new', title: 'New', tags: ['tag1'] })
     expect(result).toMatchObject({ id: 100n, tags: ['tag1'] })
   })

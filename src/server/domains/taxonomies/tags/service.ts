@@ -1,6 +1,6 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { asc, inArray } from 'drizzle-orm'
+import { asc, eq, inArray } from 'drizzle-orm'
 
 import type { ViewerIdentity } from '@/server/domains/auth/rbac'
 import type { TagRow } from '@/server/infra/db/types'
@@ -8,8 +8,7 @@ import type { AdminTagDto } from '@/shared/contracts/tags'
 import type { Tag } from '@/shared/types/catalog'
 
 import { invalidateContent } from '@/server/domains/content/invalidate'
-import { listPostTitlesByTaxonomy } from '@/server/domains/posts/repos/public-query/taxonomy'
-import { countPostsByTaxonomy } from '@/server/domains/taxonomies/counts'
+import { countPostsByTaxonomy, listPostTitlesByTaxonomy } from '@/server/domains/posts/services/taxonomy'
 import {
   deleteAdminTaxonomy,
   ensureUniqueOnCreateTaxonomy,
@@ -22,7 +21,6 @@ import {
   deleteTag as deleteTagRow,
   findTagById,
   findTagByName,
-  findTagBySlug,
   insertTag,
   listAdminTagRows,
   updateTag,
@@ -152,6 +150,16 @@ export async function deleteAdminTag(db: NodePgDatabase, id: bigint, _viewer?: V
 }
 
 // --- Public catalog queries -------------------------------------------------
+
+// Slug lookup promoted from `infra/db/operations/tag`: tag resolution is
+// a taxonomy-domain capability, and its consumers (public tag route,
+// the ensure-unique guards above, the feed resolver below) all live on
+// this surface. Public routes resolve strictly by slug (plan 080, Q1) —
+// the feed's slug-or-name fallback composes this with `findTagByName`.
+export async function findTagBySlug(db: NodePgDatabase, slug: string): Promise<TagRow | null> {
+  const rows = await db.select().from(tagTable).where(eq(tagTable.slug, slug)).limit(1)
+  return rows[0] ?? null
+}
 
 export async function listAllTags(db: NodePgDatabase): Promise<Tag[]> {
   return through(db, 'tags', {}, async () => {

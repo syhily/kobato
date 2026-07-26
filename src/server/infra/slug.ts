@@ -44,5 +44,3 @@ export function resolveSlugForTaxonomy(explicit: string | undefined, name: strin
   }
   return derived
 }
-
-export { DERIVED_SLUG_PATTERN, SLUG_MAX }

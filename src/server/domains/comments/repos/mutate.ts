@@ -26,12 +26,12 @@ export async function updateCommentContent(db: NodePgDatabase, id: bigint, conte
   await db.update(comment).set({ content }).where(eq(comment.id, id))
 }
 
-// Like `repos/moderation.ts`, the mutations below emit the comment
-// invalidation inline so no caller can forget it. The optimistic-lock
-// pair emits only when a row was actually updated — a conflicting write
-// (0 rows) leaves the caches alone, matching the historical
-// service-level behaviour where the CONFLICT throw happened before the
-// invalidation.
+// Like the moderation mutations in `services/moderate.ts`, the mutations
+// below emit the comment invalidation inline so no caller can forget
+// it. The optimistic-lock pair emits only when a row was actually
+// updated — a conflicting write (0 rows) leaves the caches alone,
+// matching the historical service-level behaviour where the CONFLICT
+// throw happened before the invalidation.
 export async function updateCommentBodyAndContent(
   db: NodePgDatabase,
   id: bigint,

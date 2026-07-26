@@ -6,9 +6,10 @@ import type { DraftMarker } from '@/shared/types/catalog'
 
 import { loadDraftPreviewBySlug } from '@/server/domains/content/lifecycle'
 import { resolveImageMetaBySources } from '@/server/domains/images/services/enhance'
-import { selectSidebarPosts } from '@/server/domains/posts/repos/public-query/featured'
-import { findPostBySlug } from '@/server/domains/posts/repos/single'
+import { getPublicMusicMetasByIds } from '@/server/domains/music/services/read'
+import { selectSidebarPosts } from '@/server/domains/posts/services/featured'
 import { postLifecycleAdapter } from '@/server/domains/posts/services/lifecycle-adapter'
+import { findPostBySlug } from '@/server/domains/posts/services/single'
 import { prerenderMusicPlayerBlocks } from '@/server/domains/pt/prerender'
 import { getTagsByNames, listAllTags } from '@/server/domains/taxonomies/tags/service'
 import { loadPublicDetailData } from '@/server/http/loaders/detail'
@@ -70,7 +71,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     resolveImageMetaBySources(db, sourcePost.imageSources).then((r) => Object.fromEntries(r)),
     listAllTags(db).then(selectSidebarTags),
     selectSidebarPosts(db, getSidebarWidgetCount(requireBlogSettingsSection('sidebar'), 'recentPosts')),
-    prerenderMusicPlayerBlocks(db, sourcePost.body),
+    prerenderMusicPlayerBlocks(sourcePost.body, (playerIds) => getPublicMusicMetasByIds(db, playerIds)),
   ])
 
   const { detail } = await loadPublicDetailData(db, {

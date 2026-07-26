@@ -19,7 +19,7 @@ revision attached, regardless of soft-delete state and scheduling. Promoted is
 the projection used by lifecycle bucketing (draft vs published) and restore
 re-indexing; Live implies Promoted, not the reverse. Its paired projections
 are `isPromoted` (in-memory) and `promotedContentWhere` (SQL) in
-`src/server/domains/content/schema.ts`, bound per entity by
+`src/server/domains/content/schemas/live-gate.ts`, bound per entity by
 `promotedPostWhere`.
 _Avoid_: live (stricter — adds the not-deleted and not-future legs),
 published (overloaded — the bare flag misses the required published revision)
@@ -33,7 +33,10 @@ _Avoid_: hidden (implies unreachable — it is not)
 **Content lifecycle**:
 The single draft→publish revision pipeline owned by the content domain. Every
 post/page body save, publish, preview, and editor load flows through it;
-post- and page-specific behavior attaches at its seams.
+post- and page-specific behavior attaches through the entity's
+`descriptor.ts` (`posts/descriptor.ts`, `pages/descriptor.ts`), which the
+content domain's `entities/` factories turn into the lifecycle adapter and
+the meta CRUD/mutation skeleton.
 _Avoid_: post draft service / page draft service (retired dual tracks)
 
 **Scheduled**:
@@ -62,9 +65,10 @@ not the revision itself)
 
 **Live gate**:
 The paired projections `isLive` (in-memory) and `liveContentWhere` (SQL) in
-`src/server/domains/content/schema.ts` that decide whether a row satisfies
+`src/server/domains/content/schemas/live-gate.ts` that decide whether a row satisfies
 Live. Both take the same `{ asOf, includeScheduled }` options; entity column
-binding lives in repo-side adapters (`livePostWhere` / `livePageWhere`).
+binding lives in the post-/page-table bindings (`posts/live-gate.ts` /
+`pages/live-gate.ts`).
 _Avoid_: hand-written `published && publishedRevisionId` checks (that's the
 Promoted gate (q.v.) — route them through its projections instead)
 
@@ -73,6 +77,23 @@ Viewing non-live content by direct link. Deliberate per-entity policy:
 authors may preview post drafts; only admins may preview page drafts.
 _Avoid_: "preview" without an entity qualifier (the rule differs per
 entity), admin-only (the stale claim the code never enforced)
+
+**Taxonomy**:
+A category or tag used to group posts. A post has at most one category
+(`categoryId`) and any number of tags; both are edited from the admin
+and cannot be deleted while a post still references them. The taxonomy
+domains own their list caches; the post-count projections live on the
+posts surface (`posts/services/taxonomy.ts`).
+_Avoid_: label, topic; lumping friends in — friends is the blogroll
+feature, not a taxonomy
+
+**Branding asset**:
+One of the site's fixed identity images (favicon, logo, OG image,
+avatars), owned by `domains/assets` — slot key layouts, per-slot
+MIME/byte limits, favicon generation, the public branding routes.
+_Avoid_: "assets" unqualified — the `assets` Section (q.v.) is the
+storage-backend configuration (S3 toggle, credentials, upload limits,
+CDN host), a different concept that happens to share the name
 
 ### Settings
 
@@ -146,3 +167,33 @@ The session's identity projection — the full `SessionUser` on
 `ViewerIdentity { id, role }`, which a `SessionUser` satisfies; the audit
 trail reads the same shape.
 _Avoid_: `ViewerContext` (retired), `viewer.userId` (the field is `id`)
+
+### Structure
+
+**Core domain**:
+One of the language-backed concepts — `content`, `posts`, `pages`,
+`pt`, `settings` — whose terms appear in this file. Core domains are
+where the product's vocabulary lives; a change to a core concept
+(e.g. the Live gate) is a change to the language itself.
+_Avoid_: treating every folder in `domains/` as equally "core"
+
+**Feature domain**:
+A business feature built on the core concepts — `auth`, `users`,
+`comments`, `taxonomies`, `images`, `assets`, `fonts`, `music`,
+`friends`, `newsletter`, `webmentions`. Features compose core concepts
+(a comment has a PT body; a taxonomy groups posts) but add no terms to
+the content language.
+_Avoid_: "service" (that's the platform stratum or a file name, never
+a feature)
+
+**Platform service**:
+A technical capability with no domain objects of its own — `analytics`,
+`audit`, `backup`, `update`, and the storage migration. Platform
+services are either leaves (import no other domain: analytics, audit,
+backup, update) or composition points (the storage migration
+orchestrates across domains from the admin perimeter). They are wired
+by bootstrap/perimeter; core and feature domains do not import them,
+except documented explicit wiring (settings rescheduling audit/backup,
+auth emitting audit events).
+_Avoid_: growing a new cross-domain import INTO a platform service —
+compose at the perimeter instead

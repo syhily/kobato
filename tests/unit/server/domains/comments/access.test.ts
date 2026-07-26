@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import type { CommentTokenCookie } from '@/shared/utils/comment-token'
 
-vi.mock('@/server/domains/comments/repos/public-query/by-id', () => ({
+vi.mock('@/server/domains/comments/services/lookup', () => ({
   findCommentWithUserById: vi.fn(),
 }))
 
@@ -10,8 +10,8 @@ vi.mock('@/server/domains/comments/services/token', () => ({
   verifyCommentOwnership: vi.fn(),
 }))
 
-import { findCommentWithUserById } from '@/server/domains/comments/repos/public-query/by-id'
 import { verifyCommentAccess } from '@/server/domains/comments/services/access'
+import { findCommentWithUserById } from '@/server/domains/comments/services/lookup'
 import { verifyCommentOwnership } from '@/server/domains/comments/services/token'
 
 const cookie: CommentTokenCookie = { version: 1, tokens: {} } as never

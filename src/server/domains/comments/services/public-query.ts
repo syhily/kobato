@@ -1,8 +1,8 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import type { BlogSession } from '@/server/domains/auth/session-storage'
-import type { CommentAndUser, CommentItem, Comments, LatestComment } from '@/server/domains/comments/types'
 import type { EntityTarget } from '@/server/infra/db/target'
+import type { CommentAndUser, CommentItem, Comments, LatestComment } from '@/shared/types/comments'
 
 import { userSession } from '@/server/domains/auth/primitives'
 import {

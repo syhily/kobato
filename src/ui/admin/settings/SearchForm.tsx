@@ -22,8 +22,6 @@ import { Button } from '@/ui/components/button'
 import { FieldLabel } from '@/ui/components/field'
 import { RadioGroupItem } from '@/ui/components/radio-group'
 
-export type { SearchLoaderShape }
-
 interface SearchFormProps {
   search: SearchLoaderShape
 }

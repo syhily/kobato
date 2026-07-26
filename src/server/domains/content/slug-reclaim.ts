@@ -1,6 +1,6 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import type { ContentType } from '@/server/domains/content/schema'
+import type { ContentType } from '@/server/domains/content/schemas/revision'
 
 import { findSlugRegistryBySlugForUpdate, insertSlugRegistry } from '@/server/infra/db/operations/slug-registry'
 import { isUniqueConstraintError } from '@/server/infra/http/errors'

@@ -41,7 +41,7 @@ vi.mock('@/server/infra/db/operations/metric', () => ({
   findMetricByTarget: vi.fn(),
 }))
 
-vi.mock('@/server/domains/analytics/repos/pv-batcher', () => ({
+vi.mock('@/server/domains/analytics/services/pv-batcher', () => ({
   bumpPageView: vi.fn(),
 }))
 

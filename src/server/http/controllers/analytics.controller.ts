@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { queryCounters } from '@/server/domains/analytics/services/counters'
 import { queryHeatmap } from '@/server/domains/analytics/services/heatmap'
 import { queryMetric } from '@/server/domains/analytics/services/metric'
-import { parseAnalyticsSearch } from '@/server/domains/analytics/services/query-parser'
+import { parseAnalyticsInput } from '@/server/domains/analytics/services/query-parser'
 import { queryViews } from '@/server/domains/analytics/services/views'
 import { adminProc } from '@/server/http/orpc-base'
 import { METRIC_TYPE_VALUES, METRIC_TYPES, PRESET_KEY_VALUES } from '@/shared/contracts/analytics'
@@ -52,46 +52,23 @@ const metricRowOutput = z.object({
 
 const METRIC_SET = new Set<string>(METRIC_TYPES)
 
-function buildAnalyticsInput(input: z.infer<typeof analyticsInput>) {
-  const sp = new URLSearchParams()
-  if (input.preset) {
-    sp.set('preset', input.preset)
-  }
-  if (input.startAt) {
-    sp.set('startAt', input.startAt)
-  }
-  if (input.endAt) {
-    sp.set('endAt', input.endAt)
-  }
-  if (input.filters) {
-    sp.set('filters', input.filters)
-  }
-  if (input.entityType) {
-    sp.set('entityType', input.entityType)
-  }
-  if (input.entityId) {
-    sp.set('entityId', input.entityId)
-  }
-  return parseAnalyticsSearch(sp)
-}
-
 const counters = adminProc
   .route({ method: 'GET', path: '/analytics/counters' })
   .input(analyticsInput)
   .output(countersOutput)
-  .handler(({ input, context }) => queryCounters(context.db, buildAnalyticsInput(input)))
+  .handler(({ input, context }) => queryCounters(context.db, parseAnalyticsInput(input)))
 
 const views = adminProc
   .route({ method: 'GET', path: '/analytics/views' })
   .input(analyticsInput)
   .output(z.array(viewsPointOutput))
-  .handler(({ input, context }) => queryViews(context.db, buildAnalyticsInput(input)))
+  .handler(({ input, context }) => queryViews(context.db, parseAnalyticsInput(input)))
 
 const heatmap = adminProc
   .route({ method: 'GET', path: '/analytics/heatmap' })
   .input(analyticsInput)
   .output(z.array(heatmapCellOutput))
-  .handler(({ input, context }) => queryHeatmap(context.db, buildAnalyticsInput(input)))
+  .handler(({ input, context }) => queryHeatmap(context.db, parseAnalyticsInput(input)))
 
 const metrics = adminProc
   .route({ method: 'GET', path: '/analytics/metrics' })
@@ -101,7 +78,7 @@ const metrics = adminProc
     if (!METRIC_SET.has(input.type)) {
       throw new ORPCError('BAD_REQUEST', { message: `unknown metric type: ${input.type}` })
     }
-    return queryMetric(context.db, buildAnalyticsInput(input), input.type, input.limit)
+    return queryMetric(context.db, parseAnalyticsInput(input), input.type, input.limit)
   })
 
 export const analyticsRouter = { counters, views, heatmap, metrics }

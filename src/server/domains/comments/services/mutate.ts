@@ -5,9 +5,9 @@ import { createHash } from 'node:crypto'
 
 import type { BlogSession } from '@/server/domains/auth/session-storage'
 import type { MetricTarget } from '@/server/domains/comments/services/shared'
-import type { CommentAndUser, CommentReq } from '@/server/domains/comments/types'
 import type { NewComment } from '@/server/infra/db/types'
 import type { RequestFacts } from '@/server/infra/http/request-facts'
+import type { CommentAndUser, CommentReq } from '@/shared/types/comments'
 
 import { userSession } from '@/server/domains/auth/primitives'
 import { withCommentBadgeTextColor } from '@/server/domains/comments/badge'

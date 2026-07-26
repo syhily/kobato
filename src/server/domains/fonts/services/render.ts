@@ -9,8 +9,6 @@ import { resolveAssetUrl } from '@/server/infra/storage/public-url'
 
 const log = getLogger('fonts.render')
 
-export type { ResolvedFont, ResolvedFonts }
-
 const EMPTY: ResolvedFonts = { global: [], post: [], code: [] }
 
 function etagToTimestamp(etag: string): number {

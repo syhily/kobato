@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
+import type { MusicEmbedResolver } from '@/server/domains/pt/embeds'
+
 import { sanitizeFeedHtml } from '@/server/render/feed/generator'
 import { renderPortableTextToHtml } from '@/server/render/pt-html'
 
-// A typed stand-in for the NodePgDatabase argument. `renderPortableTextToHtml`
-// only touches the DB when resolving music players; bodies without music
-// players never call into it, so a cast is sufficient for these markup tests.
-const fakeDb = {} as Parameters<typeof renderPortableTextToHtml>[0]
+// Bodies without music players never invoke the resolver, so a no-op
+// embed-seam stub is sufficient for these markup tests.
+const resolveMusicEmbeds: MusicEmbedResolver = async () => new Map()
 
 describe('feed-safety', () => {
   describe('sanitizeFeedHtml', () => {
@@ -122,7 +123,6 @@ describe('feed-safety', () => {
   describe('renderPortableTextToHtml rssMode math', () => {
     it('renders inline math as TeX fallback in RSS mode, not MathML/SVG', async () => {
       const html = await renderPortableTextToHtml(
-        fakeDb,
         [
           {
             _type: 'block',
@@ -148,6 +148,7 @@ describe('feed-safety', () => {
           },
         ],
         [],
+        resolveMusicEmbeds,
         { rssMode: true },
       )
 
@@ -158,7 +159,6 @@ describe('feed-safety', () => {
 
     it('renders math blocks as TeX fallback in RSS mode, not MathML/SVG', async () => {
       const html = await renderPortableTextToHtml(
-        fakeDb,
         [
           {
             _type: 'mathBlock',
@@ -169,6 +169,7 @@ describe('feed-safety', () => {
           },
         ],
         [],
+        resolveMusicEmbeds,
         { rssMode: true },
       )
 
@@ -179,7 +180,6 @@ describe('feed-safety', () => {
 
     it('still emits SVG for inline math when not in RSS mode', async () => {
       const html = await renderPortableTextToHtml(
-        fakeDb,
         [
           {
             _type: 'block',
@@ -204,6 +204,7 @@ describe('feed-safety', () => {
           },
         ],
         [],
+        resolveMusicEmbeds,
         { rssMode: false },
       )
 

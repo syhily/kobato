@@ -1,7 +1,5 @@
 import { z } from 'zod'
 
-import type { ListUsersInput, MuteUserInput, UserIdInput, UserSortOrder } from '@/shared/types/users'
-
 import { userSortOrders } from '@/shared/types/users'
 
 // Schemas for the admin user-management Resource Routes. Kept separate
@@ -12,9 +10,6 @@ import { userSortOrders } from '@/shared/types/users'
 // historical default (newest accounts first); `commentCount` sorts by
 // the aggregated comment count desc so the most active commenters
 // surface to the top — useful for triage.
-export { userSortOrders }
-export type { ListUsersInput, MuteUserInput, UserIdInput, UserSortOrder }
-
 export const listUsersSchema = z.object({
   offset: z.coerce.number().min(0).default(0),
   limit: z.coerce.number().min(1).max(100).default(20),

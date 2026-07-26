@@ -1,8 +1,6 @@
 import type { CategoryRow } from '@/server/infra/db/types'
 import type { AdminCategoryDto } from '@/shared/contracts/categories'
 
-export type { AdminCategoryDto }
-
 export function toAdminCategoryDto(row: CategoryRow, postCount: number): AdminCategoryDto {
   return {
     id: String(row.id),

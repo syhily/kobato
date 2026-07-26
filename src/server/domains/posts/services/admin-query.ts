@@ -1,61 +1,34 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
+import type { AdminPostDetailDto } from '@/server/domains/posts/projection'
 import type { ListPostsFilters } from '@/server/domains/posts/repos/shared'
-import type { AdminRevisionDto } from '@/shared/contracts/revision'
+import type { AdminPostsListResult, ViewerContext } from '@/server/domains/posts/services/shared'
+import type { PostMetaRow } from '@/server/infra/db/types'
 
-import { toAdminRevisionDto } from '@/server/domains/content/projection'
-import { findContentById, findLatestRevision, listRevisions } from '@/server/domains/content/repos/query'
-import { listForAdmin } from '@/server/domains/content/services/admin-list'
-import { toAdminPostDto, type AdminPostDetailDto } from '@/server/domains/posts/projection'
-import { countPostMetas, listPostMetas } from '@/server/domains/posts/repos/admin-query'
-import { findPostMetaById } from '@/server/domains/posts/repos/single'
-import {
-  assertOwnPostOr404,
-  type AdminPostsListResult,
-  type ViewerContext,
-} from '@/server/domains/posts/services/shared'
-import { findCategoryNamesByIds } from '@/server/infra/db/operations/category'
-import { findTagNamesByPostId, findTagNamesByPostIds } from '@/server/infra/db/operations/post-tag'
-import { idFromString } from '@/shared/utils/id'
+import { makeEntityAdminQuery } from '@/server/domains/content/entities/admin-query'
+import { makeMetaListQueries } from '@/server/domains/content/entities/meta-repo'
+import { postDescriptor } from '@/server/domains/posts/descriptor'
+import { buildPostsOrderBy, buildPostsWhere } from '@/server/domains/posts/repos/shared'
+import { post as postMetaTable } from '@/server/infra/db/schema/post'
+
+// Meta list/count come from the shared list-query factory
+// (`content/entities/meta-repo.ts`) with the post where/orderBy legs.
+const listQueries = makeMetaListQueries<PostMetaRow, ListPostsFilters>(postMetaTable, {
+  buildWhere: buildPostsWhere,
+  orderBy: buildPostsOrderBy,
+})
+
+export const listPostMetas = listQueries.listMetas
+export const countPostMetas = listQueries.countMetas
+
+const adminQuery = makeEntityAdminQuery(postDescriptor, listQueries)
 
 export async function listPostsForAdmin(
   db: NodePgDatabase,
   filters: ListPostsFilters = {},
   viewer?: ViewerContext,
 ): Promise<AdminPostsListResult> {
-  let appliedFilters = filters
-  if (viewer && viewer.role !== 'admin') {
-    appliedFilters = { ...filters, authorId: idFromString(viewer.id) }
-  }
-  const { items, total, hasMore } = await listForAdmin(db, {
-    entityType: 'post',
-    filters: appliedFilters,
-    defaultLimit: 20,
-    listRows: listPostMetas,
-    countRows: countPostMetas,
-    loadExtras: async (db, rows) => {
-      const [tagMap, categoryMap] = await Promise.all([
-        findTagNamesByPostIds(
-          db,
-          rows.map((row) => row.id),
-        ),
-        findCategoryNamesByIds(
-          db,
-          rows.map((row) => row.categoryId).filter((id): id is bigint => id !== null),
-        ),
-      ])
-      return new Map(
-        rows.map((row) => [
-          row.id,
-          {
-            tags: tagMap.get(row.id) ?? [],
-            categoryName: categoryMap.get(row.categoryId ?? -1n) ?? '',
-          },
-        ]),
-      )
-    },
-    toDto: (row, engagement, extras) => toAdminPostDto(row, { ...engagement, ...extras }),
-  })
+  const { items, total, hasMore } = await adminQuery.listForAdmin(db, filters, viewer)
   return { posts: items, total, hasMore }
 }
 
@@ -64,28 +37,8 @@ export async function getPostDetailForAdmin(
   id: bigint,
   viewer?: ViewerContext,
 ): Promise<AdminPostDetailDto> {
-  const meta = await findPostMetaById(db, id)
-  assertOwnPostOr404(meta, viewer)
-  const [latest, published, tags, categoryMap] = await Promise.all([
-    findLatestRevision(db, 'post', meta.id),
-    meta.publishedRevisionId === null ? Promise.resolve(null) : findContentById(db, meta.publishedRevisionId),
-    findTagNamesByPostId(db, meta.id),
-    findCategoryNamesByIds(db, meta.categoryId === null ? [] : [meta.categoryId]),
-  ])
-  return {
-    post: toAdminPostDto(meta, { tags, categoryName: categoryMap.get(meta.categoryId ?? -1n) ?? '' }),
-    latestRevision: latest === null ? null : toAdminRevisionDto(latest),
-    publishedRevision: published === null ? null : toAdminRevisionDto(published),
-  }
+  const { meta, latestRevision, publishedRevision } = await adminQuery.getDetailForAdmin(db, id, viewer)
+  return { post: meta, latestRevision, publishedRevision }
 }
 
-export async function listRevisionsForAdmin(
-  db: NodePgDatabase,
-  id: bigint,
-  viewer?: ViewerContext,
-): Promise<AdminRevisionDto[]> {
-  const meta = await findPostMetaById(db, id)
-  assertOwnPostOr404(meta, viewer)
-  const rows = await listRevisions(db, 'post', id)
-  return rows.map(toAdminRevisionDto)
-}
+export const listRevisionsForAdmin = adminQuery.listRevisionsForAdmin

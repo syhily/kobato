@@ -5,7 +5,12 @@ import type { Env } from '@/server/http/context'
 
 const queryRealtimeTail = vi.fn().mockResolvedValue([])
 
-vi.mock('@/server/domains/analytics/services/realtime', () => ({
+vi.mock('@/server/domains/analytics/services/realtime', async (importOriginal) => ({
+  // Keep the real connection registry + cap policy — these tests drive it
+  // through the Hono resource — and stub only the tail query the poll
+  // loop runs. The registry itself is pinned at the domain seam in
+  // tests/unit/server/domains/analytics/services/realtime.test.ts.
+  ...(await importOriginal<typeof import('@/server/domains/analytics/services/realtime')>()),
   queryRealtimeTail: (...args: unknown[]) => queryRealtimeTail(...args),
 }))
 

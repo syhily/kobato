@@ -20,7 +20,7 @@ const log = getLogger('rate-limit')
 //     already assumes a single process.
 //
 // Keys keep the historical reserved `rate-limit:` namespace (see
-// `RESERVED_CACHE_PREFIXES` in `@/server/domains/settings/schemas/cache`)
+// `RESERVED_CACHE_PREFIXES` in `@/server/domains/settings/sections/cache`)
 // so key shapes stay stable for any key-level diagnostics.
 const RATE_LIMIT_NAMESPACE = 'rate-limit:'
 

@@ -3,15 +3,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Env } from '@/server/http/context'
 
-vi.mock('@/server/domains/content/schema', () => ({
+vi.mock('@/server/domains/content/schemas/live-gate', () => ({
   isLive: vi.fn(() => true),
 }))
 
-vi.mock('@/server/domains/pages/repo', () => ({
+vi.mock('@/server/domains/pages/services/public-query', () => ({
   findPublicPageMetaBySlug: vi.fn(),
 }))
 
-vi.mock('@/server/domains/posts/repos/single', () => ({
+vi.mock('@/server/domains/posts/services/single', () => ({
   findPublicPostMetaBySlug: vi.fn(),
 }))
 
@@ -25,7 +25,7 @@ vi.mock('@/server/http/resources/calendar', () => ({
   serveCalendar: vi.fn(),
 }))
 
-vi.mock('@/server/infra/db/operations/category', () => ({
+vi.mock('@/server/domains/taxonomies/categories/services/query', () => ({
   findCategoryBySlug: vi.fn(),
 }))
 
@@ -64,13 +64,13 @@ vi.mock('@/shared/utils/urls', () => ({
 }))
 
 import { fetchAvatarImage, fetchQQAvatarImage, resolveAvatarInfo } from '@/server/domains/comments/services/avatar'
-import { findPublicPageMetaBySlug } from '@/server/domains/pages/repo'
-import { findPublicPostMetaBySlug } from '@/server/domains/posts/repos/single'
+import { findPublicPageMetaBySlug } from '@/server/domains/pages/services/public-query'
+import { findPublicPostMetaBySlug } from '@/server/domains/posts/services/single'
+import { findCategoryBySlug } from '@/server/domains/taxonomies/categories/services/query'
 import { loadAvatar } from '@/server/http/resources/avatar-cache'
 import { serveCalendar } from '@/server/http/resources/calendar'
 import { imagesRouter } from '@/server/http/resources/images'
 import { through } from '@/server/infra/cache/registry'
-import { findCategoryBySlug } from '@/server/infra/db/operations/category'
 import { readBucket, tryKeyedRateLimit } from '@/server/infra/rate-limit'
 import { drawOpenGraph } from '@/server/render/og/render'
 

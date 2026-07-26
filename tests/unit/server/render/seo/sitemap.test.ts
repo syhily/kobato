@@ -11,11 +11,11 @@ import { setBlogSettingsBundleForTests } from '@/server/domains/settings/service
 const postRows: Array<{ slug: string; firstPublishedAt: Date | null; publishedAt: Date }> = []
 const pageRows: Array<{ slug: string; firstPublishedAt: Date | null; publishedAt: Date }> = []
 
-vi.mock('@/server/domains/posts/repos/public-query/misc', () => ({
+vi.mock('@/server/domains/posts/services/public-query', () => ({
   listSitemapPosts: vi.fn(async () => postRows),
 }))
 
-vi.mock('@/server/domains/pages/repo', () => ({
+vi.mock('@/server/domains/pages/services/public-query', () => ({
   listSitemapPages: vi.fn(async () => pageRows),
 }))
 

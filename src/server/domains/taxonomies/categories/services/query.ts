@@ -1,19 +1,18 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { asc, inArray } from 'drizzle-orm'
+import { asc, eq, inArray } from 'drizzle-orm'
 
 import type { AdminCategoriesListResult } from '@/server/domains/taxonomies/categories/projection'
 import type { CategoryRow } from '@/server/infra/db/types'
 import type { Category } from '@/shared/types/catalog'
 
 import { hydrateImageRefs } from '@/server/domains/images/services/enhance'
+import { countPostsByTaxonomy } from '@/server/domains/posts/services/taxonomy'
 import { toAdminCategoryDto } from '@/server/domains/taxonomies/categories/projection'
-import { countPostsByTaxonomy } from '@/server/domains/taxonomies/counts'
 import { through } from '@/server/infra/cache/registry'
 import {
   type AdminCategoriesListFilters,
   findCategoryByName,
-  findCategoryBySlug,
   listAdminCategoryRows,
 } from '@/server/infra/db/operations/category'
 import { category as categoryTable } from '@/server/infra/db/schema/taxonomy'
@@ -97,6 +96,17 @@ export async function getCategoryLinks(db: NodePgDatabase, names: readonly strin
     result[row.name] = `/cats/${row.slug}`
   }
   return result
+}
+
+// Slug lookup promoted from `infra/db/operations/category`: category
+// resolution is a taxonomy-domain capability, and its consumers (public
+// category route, OG-image resource, the ensure-unique guards in
+// `mutate.ts`, the feed resolver below) all live on this surface.
+// Public routes resolve strictly by slug (plan 080, Q1) — the feed's
+// slug-or-name fallback composes this with `findCategoryByName`.
+export async function findCategoryBySlug(db: NodePgDatabase, slug: string): Promise<CategoryRow | null> {
+  const rows = await db.select().from(categoryTable).where(eq(categoryTable.slug, slug)).limit(1)
+  return rows[0] ?? null
 }
 
 // Feed-only resolution rule: feed URLs accept a category slug, but

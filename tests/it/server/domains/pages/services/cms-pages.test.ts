@@ -18,15 +18,17 @@ vi.mock('@/server/domains/pages/repo', () => ({
   findPageMetaById: vi.fn(),
   findPageMetaBySlug: vi.fn(),
   findPageMetaBySlugForUpdate: vi.fn(async () => null),
-  findPublicPageMetaBySlug: vi.fn(),
   insertPageMeta: vi.fn(),
   listPageMetas: vi.fn(async () => []),
-  listPublicPageMetas: vi.fn(async () => []),
   restorePageMeta: vi.fn(),
   softDeletePageMeta: vi.fn(),
   updatePageMetaById: vi.fn(),
 }))
-vi.mock('@/server/domains/content/repos/query', () => ({
+vi.mock('@/server/domains/pages/services/public-query', () => ({
+  findPublicPageMetaBySlug: vi.fn(),
+  listPublicPageMetas: vi.fn(async () => []),
+}))
+vi.mock('@/server/domains/content/revisions', () => ({
   findContentById: vi.fn(),
   findContentsByIds: vi.fn(async () => []),
   findLatestDraft: vi.fn(),
@@ -102,7 +104,7 @@ const db = {
 } as unknown as NodePgDatabase
 
 const repo = await import('@/server/domains/pages/repo')
-const query = await import('@/server/domains/content/repos/query')
+const query = await import('@/server/domains/content/revisions')
 const contentMutate = await import('@/server/domains/content/repos/mutate')
 const { DomainError } = await import('@/server/infra/http/errors')
 const adminQuery = await import('@/server/domains/pages/services/admin-query')

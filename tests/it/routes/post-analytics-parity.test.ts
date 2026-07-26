@@ -41,7 +41,7 @@ const sampleMeta = {
 
 const metricRows: Record<string, MetricRow[]> = {}
 
-vi.mock('@/server/domains/posts/repos/single', () => ({
+vi.mock('@/server/domains/posts/services/single', () => ({
   findPostMetaById: vi.fn(async (_db: unknown, id: bigint) => (id === 7n ? sampleMeta : null)),
 }))
 vi.mock('@/server/infra/db/operations/post-tag', () => ({

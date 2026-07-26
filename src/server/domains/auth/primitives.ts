@@ -5,7 +5,7 @@ import type { Role } from '@/shared/utils/roles'
 
 import { recordAuditEvent } from '@/server/domains/audit/services/record'
 import { recordSessionActivity, recordSessionLogin } from '@/server/domains/auth/repo'
-import { revokeAllSessionsOfUser } from '@/server/domains/auth/service'
+import { revokeAllSessionsOfUser } from '@/server/domains/auth/services/sessions'
 import {
   type BlogSession,
   buildSessionWithSid,

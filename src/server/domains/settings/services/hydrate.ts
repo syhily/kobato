@@ -13,7 +13,7 @@ import {
 import { decryptIfNeeded } from '@/server/infra/crypto/secret-encryption'
 import { findSettingsByScopePrefix, upsertSetting } from '@/server/infra/db/operations/setting'
 import { getLogger } from '@/server/infra/logger'
-import { BUNDLE_KEYS } from '@/shared/config/sections'
+import { BUNDLE_KEYS, SECTION_TO_BUNDLE_KEY, SETTINGS_SECTIONS } from '@/shared/config/sections'
 import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@/shared/config/snapshot'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
@@ -141,4 +141,42 @@ export async function hydrateBlogSettings(db: NodePgDatabase): Promise<BlogSetti
 export async function refreshBlogSettings(db: NodePgDatabase): Promise<BlogSettingsBundle | null> {
   BLOG_SETTINGS_SNAPSHOT_SLOT.writeHydration(undefined)
   return hydrateBlogSettings(db)
+}
+
+/**
+ * The admin settings shell's eager backfill: any section the hydrated
+ * bundle is missing but that ships registry defaults gets written to the
+ * DB and populated into a COPY of the bundle (the hydrated snapshot is
+ * shared cache — never mutate it). Best-effort per row: a failed upsert
+ * leaves the key null so the caller's completeness check surfaces it.
+ *
+ * Distinct from the hydration backfill above: that one repairs the
+ * snapshot at load time with validated payloads, while this one serves
+ * the shell's per-navigation read with the raw registry defaults.
+ */
+export async function backfillSettingsSections(
+  db: NodePgDatabase,
+  bundle: BlogSettingsBundle,
+): Promise<Record<string, unknown>> {
+  const mutable: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(bundle)) {
+    mutable[key] = value
+  }
+  for (const section of SETTINGS_SECTIONS) {
+    const key = SECTION_TO_BUNDLE_KEY[section]
+    if (mutable[key] !== null) {
+      continue
+    }
+    const meta = SECTION_REGISTRY[section]
+    if (meta.defaults === null) {
+      continue
+    }
+    try {
+      await upsertSetting(db, meta.defaults, null, meta.scope)
+      mutable[key] = meta.defaults
+    } catch {
+      // Best-effort; the caller's assert surfaces still-missing sections.
+    }
+  }
+  return mutable
 }

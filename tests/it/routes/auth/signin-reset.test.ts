@@ -40,9 +40,9 @@ vi.mock('@/server/http/request-context', async () => {
   return createRequestContextMockModule()
 })
 
-vi.mock('@/server/domains/auth/signin-flow', async () => {
-  const actual = await vi.importActual<typeof import('@/server/domains/auth/signin-flow')>(
-    '@/server/domains/auth/signin-flow',
+vi.mock('@/server/domains/auth/services/password-reset', async () => {
+  const actual = await vi.importActual<typeof import('@/server/domains/auth/services/password-reset')>(
+    '@/server/domains/auth/services/password-reset',
   )
   return {
     ...actual,

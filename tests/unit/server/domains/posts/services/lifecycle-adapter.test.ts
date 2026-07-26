@@ -8,8 +8,10 @@ vi.mock('@/server/domains/content/invalidate', () => ({
   invalidateContent: vi.fn().mockResolvedValue(undefined),
 }))
 
-vi.mock('@/server/domains/posts/repos/single', () => ({
+vi.mock('@/server/domains/posts/services/single', () => ({
   findPostMetaById: vi.fn(),
+  findPostMetaBySlug: vi.fn(),
+  findPostMetaBySlugForUpdate: vi.fn(),
   findPublicPostMetaBySlug: vi.fn(),
 }))
 

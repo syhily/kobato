@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import type { MarkdownHeading } from '@/shared/types/catalog'
+import type { MarkdownHeading } from '@/shared/utils/toc'
 
 import { renderToHtml } from '#/_helpers/render'
 import { TableOfContents } from '@/ui/public/post/TableOfContents'

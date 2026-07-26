@@ -9,8 +9,6 @@ import { createPortal } from 'react-dom'
 import { filterSlashCommands, SLASH_COMMANDS, type SlashCommand } from '@/ui/admin/editor/tiptap/slash-commands'
 import { cn } from '@/ui/lib/cn'
 
-export type { SlashCommand }
-
 interface SlashCommandsExtensionOptions {
   /**
    * Catalogue to filter against. Defaults to the full admin catalogue

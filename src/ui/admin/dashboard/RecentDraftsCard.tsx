@@ -1,7 +1,7 @@
 import { ArrowRightIcon } from 'lucide-react'
 import { Link } from 'react-router'
 
-import type { DraftSummary } from '@/ui/admin/dashboard/types'
+import type { DraftSummary } from '@/shared/contracts/dashboard'
 
 import { Button } from '@/ui/components/button'
 

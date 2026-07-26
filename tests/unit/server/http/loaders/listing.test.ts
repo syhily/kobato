@@ -2,7 +2,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { describe, expect, it, vi } from 'vitest'
 
-vi.mock('@/server/domains/posts/repos/public-query/listing', () => ({
+vi.mock('@/server/domains/posts/services/public-query', () => ({
   getClientPostsWithMetadata: vi.fn(async (_db: unknown, posts: unknown[]) => posts),
 }))
 

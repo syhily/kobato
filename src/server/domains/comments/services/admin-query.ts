@@ -1,13 +1,14 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
+import { sql } from 'drizzle-orm'
+
 import type { AdminListFilters, AdminPendingKind } from '@/server/domains/comments/repos/shared'
-import type { AdminCommentsResult } from '@/server/domains/comments/types'
 import type { AdminPendingDashboardDto, AdminPendingItemDto } from '@/shared/contracts/comments'
+import type { AdminCommentsResult } from '@/shared/types/comments'
 
 import { withCommentBadgeTextColor } from '@/server/domains/comments/badge'
 import {
   countAdminComments,
-  countAdminPendingDashboard,
   listAdminComments,
   listAdminPendingDashboard,
   searchCommentAuthors,
@@ -15,6 +16,7 @@ import {
 } from '@/server/domains/comments/repos/admin-query'
 import { asCommentTarget, entityPermalink } from '@/server/domains/comments/services/shared'
 import { findMetricByPublicId } from '@/server/infra/db/operations/metric'
+import { comment } from '@/server/infra/db/schema/comment'
 
 const DASHBOARD_EXCERPT_LIMIT = 120
 
@@ -31,6 +33,25 @@ function makeDashboardExcerpt(raw: string | null): string {
     return trimmed
   }
   return `${codepoints.slice(0, DASHBOARD_EXCERPT_LIMIT).join('')}…`
+}
+
+export async function countAdminPendingDashboard(db: NodePgDatabase): Promise<{
+  all: number
+  approval: number
+  deletion: number
+}> {
+  const rows = await db
+    .select({
+      all: sql<number>`COUNT(*) FILTER (WHERE ${comment.deletedAt} IS NULL AND (${comment.isPending} = TRUE OR ${comment.deleteRequestedAt} IS NOT NULL))`,
+      approval: sql<number>`COUNT(*) FILTER (WHERE ${comment.deletedAt} IS NULL AND ${comment.isPending} = TRUE AND ${comment.deleteRequestedAt} IS NULL)`,
+      deletion: sql<number>`COUNT(*) FILTER (WHERE ${comment.deletedAt} IS NULL AND ${comment.deleteRequestedAt} IS NOT NULL)`,
+    })
+    .from(comment)
+  return {
+    all: Number(rows[0]?.all ?? 0),
+    approval: Number(rows[0]?.approval ?? 0),
+    deletion: Number(rows[0]?.deletion ?? 0),
+  }
 }
 
 export async function searchPageOptions(

@@ -8,9 +8,9 @@ vi.mock('@/server/http/request-context', async () => {
   return createRequestContextMockModule()
 })
 
-vi.mock('@/server/domains/auth/signin-flow', async () => {
-  const actual = await vi.importActual<typeof import('@/server/domains/auth/signin-flow')>(
-    '@/server/domains/auth/signin-flow',
+vi.mock('@/server/domains/auth/services/setup', async () => {
+  const actual = await vi.importActual<typeof import('@/server/domains/auth/services/setup')>(
+    '@/server/domains/auth/services/setup',
   )
   return {
     ...actual,
@@ -48,7 +48,7 @@ vi.mock('@/server/domains/settings/install-gate', () => ({
 }))
 
 const installGate = await import('@/server/domains/settings/install-gate')
-const flows = await import('@/server/domains/auth/signin-flow')
+const flows = await import('@/server/domains/auth/services/setup')
 const setupToken = await import('@/server/domains/auth/setup-token')
 const rateLimit = await import('@/server/infra/rate-limit')
 const { action, loader } = await import('@/routes/auth/setup/index')

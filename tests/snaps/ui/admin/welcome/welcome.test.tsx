@@ -3,11 +3,8 @@ import { describe, expect, it, vi } from 'vitest'
 import type { AdminPendingDashboardDto, AdminPendingItemDto } from '@/shared/contracts/comments'
 
 import { renderInRouter, stableHtml } from '#/_helpers/render'
-import {
-  EMPTY_STATE_LINES,
-  PendingModerationPanel,
-  pickEmptyStateLine,
-} from '@/ui/admin/welcome/PendingModerationPanel'
+import { EMPTY_STATE_LINES, pickEmptyStateLine } from '@/shared/contracts/dashboard'
+import { PendingModerationPanel } from '@/ui/admin/welcome/PendingModerationPanel'
 import { VisitSummaryCard } from '@/ui/admin/welcome/VisitSummaryCard'
 
 // PendingModerationPanel seeds a react-query cache with `initialData`. The

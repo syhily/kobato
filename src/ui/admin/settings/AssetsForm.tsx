@@ -17,8 +17,6 @@ import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { FieldLabel } from '@/ui/components/field'
 import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 
-export type { AssetsLoaderShape }
-
 interface AssetsFormProps {
   assets: AssetsLoaderShape
 }

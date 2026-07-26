@@ -3,6 +3,7 @@ import type { authorProc } from '@/server/http/orpc-base'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { previewBody, saveBody } from '@/server/domains/content/lifecycle'
+import { getPublicMusicMetasByIds } from '@/server/domains/music/services/read'
 import { renderPortableTextToHtml } from '@/server/render/pt-html'
 import { previewBodyInput, previewOutputDto, saveBodyInput, saveResultOutput } from '@/shared/contracts/revision'
 import { idFromString } from '@/shared/utils/id'
@@ -105,7 +106,9 @@ export function makeRevisionRouter<TMeta, TPreview>(options: MakeRevisionRouterO
     .input(previewBodyInput)
     .output(previewOutputDto)
     .handler(({ input, context }) => {
-      return previewBody(input.body, (body) => renderPortableTextToHtml(context.db, body, []))
+      return previewBody(input.body, (body) =>
+        renderPortableTextToHtml(body, [], (playerIds) => getPublicMusicMetasByIds(context.db, playerIds)),
+      )
     })
 
   return { saveDraft, publishLatest, preview }

@@ -17,7 +17,7 @@ vi.mock('@/server/infra/lifecycle', () => ({
 }))
 
 async function freshBatcher() {
-  const mod = await import('@/server/domains/analytics/repos/pv-batcher')
+  const mod = await import('@/server/domains/analytics/services/pv-batcher')
   resetAllBatchers()
   return mod
 }
@@ -57,7 +57,7 @@ describe('analytics/pv-batcher', () => {
     // New buffer during flush: post:1=1, post:2=1
     // Recovery adds them: post:1=3, post:2=2
     // Total = 5, which is exactly the number of increments we performed.
-    const { flushPageViews: flushAgain } = await import('@/server/domains/analytics/repos/pv-batcher')
+    const { flushPageViews: flushAgain } = await import('@/server/domains/analytics/services/pv-batcher')
     await flushAgain()
 
     expect(incrementMetricPvBatch).toHaveBeenCalledTimes(2)

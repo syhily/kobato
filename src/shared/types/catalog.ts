@@ -1,7 +1,5 @@
 import type { MarkdownHeading } from '@/shared/utils/toc'
 
-export type { MarkdownHeading }
-
 export type DraftMarker = 'draft' | 'unpublished-draft' | 'published-draft' | null
 
 export interface Friend {
@@ -195,7 +193,6 @@ export interface CommentFormUser {
 
 // Types that need PortableTextBody (isomorphic)
 import type { PortableTextBody } from '@/shared/pt/schema'
-export type { PortableTextBody }
 
 export interface Post extends ClientPost {
   body: PortableTextBody

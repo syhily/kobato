@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { AdminCommentsResult } from '@/server/domains/comments/types'
+import type { AdminCommentsResult } from '@/shared/types/comments'
 
 vi.mock('@/server/domains/comments/repos/admin-query', () => ({
   listAdminComments: vi.fn(),

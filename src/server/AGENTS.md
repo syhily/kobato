@@ -40,39 +40,95 @@ One folder per business domain. Base vocabulary:
 `schema.ts / repo.ts / service.ts / projection.ts / cache.ts` plus
 feature-named files (`preview.ts`, `loader.ts`, etc.).
 
-When any domain file grows beyond ~300 lines, split it into a focused
-subdirectory with per-use-case modules (e.g. `services/catalog.ts`,
-`repos/admin-query.ts`, `schemas/general.ts`). Shared helpers and types
-stay in the root file or move to a `shared.ts` within the subdirectory.
-Callers import from the specific module rather than the monolithic file.
+Split by concept cohesion, not by line count: when a file mixes two
+responsibilities, split it into a focused subdirectory with per-use-case
+modules (e.g. `services/catalog.ts`, `repos/admin-query.ts`,
+`schemas/general.ts`) — a file under ~300 lines that mixes two concepts
+should still split. A file past ~300 lines that remains one cohesive
+algorithm (one provider adapter, one validation pipeline) MAY stay
+whole instead of being shredded into pass-through shards.
+Shared helpers and types stay in the root file or move to a `shared.ts`
+within the subdirectory. Callers import from the specific module rather
+than the monolithic file.
 
 **Consistency rule**: once a subdirectory exists for a base vocabulary
 file (e.g. `services/` or `repos/`), the corresponding root file
 (`service.ts` or `repo.ts`) MUST NOT coexist in the same domain.
 Move every export into the subdirectory so callers always import from
-one predictable location.
+one predictable location. Pinned by the boundaries contract test
+(`keeps base-vocabulary root files from coexisting with their
+subdirectory`).
 
-Domains: `analytics`, `auth` (session-storage, csrf, rbac, flows,
+Domains: `analytics`, `auth` (session-storage, csrf, rbac, per-flow
+signin `services/` — `credential`, `otp`, `passkey`, `password-reset`,
+`setup` — session orchestration `services/sessions.ts`,
 verification-tokens, session-revocation guard `session-guard.ts`), `comments` (loader, moderation, projection,
 likes, token, badge, url, canonicalize, avatar fetch/cache, pure policy
-gates `services/policy.ts`), `content` (revision `repos/`,
+gates `services/policy.ts`), `content` (revision writes `repos/`,
+revision reads `revisions.ts`,
 entity-agnostic draft→publish `lifecycle.ts`, single
 content-invalidation door `invalidate.ts`, save-time library image
 sync `services/image-sync.ts`, restore-time `slug-reclaim.ts`, admin
 list orchestration `services/admin-list.ts`, shared limit/offset ladder
-`repos/pagination.ts`; post/page behavior attaches via each entity
-domain's `services/lifecycle-adapter.ts`), `friends`, `images` (schema,
+`pagination.ts`, descriptor-driven meta-entity module `entities/` —
+one `MetaEntityDescriptor` per entity drives the meta CRUD
+(`entities/meta-repo.ts`), the five-mutation skeleton
+(`entities/mutate.ts`), the admin-query trio
+(`entities/admin-query.ts`), and the body-lifecycle adapter
+(`entities/lifecycle-adapter.ts`); post/page behavior attaches via
+each entity domain's `descriptor.ts`), `friends`, `images` (schema,
 service, storage, key, process), `music` (provider registry: netease,
 tencent), `pages`, `posts`, `pt`
-(Shiki/KaTeX prerender, canonicalize, comment-to-html), `settings`
-(install-flow, install-gate), `taxonomies/{categories,tags}`, `users`,
+(Shiki/KaTeX prerender, canonicalize, comment-to-html, caller-wired embed
+seam `embeds.ts`), `settings`
+(one `sections/<section>.ts` per section — the section's Zod schema,
+seed defaults, and registry metadata in a single module — composed into
+`SECTION_REGISTRY` by `sections/registry.ts`; install-flow,
+install-gate), `taxonomies/{categories,tags}`, `users`,
 `audit`, `update` (SEA self-update: gate, release fetch,
 download/verify/swap pipeline, single-job state machine), `webmentions`
 (W3C Webmention receive: target resolution, SSRF-guarded source fetch,
 link verification, moderation).
 
 Domains may import from `shared/`, `infra/`, and other `domains/`.
+Cross-domain imports must stay acyclic — the domain graph is a DAG,
+pinned by `tests/unit/shared/contracts/boundaries.test.ts`
+(`keeps the cross-domain import graph acyclic`). When two domains need
+to compose in a direction that would close a cycle, the consumer domain
+declares the dependency as an injected parameter and the caller (routes,
+http, render) wires it — see `domains/pt/embeds.ts` (the music embed
+resolver seam) and `PasswordResetFlowDeps` in `domains/auth/services/password-reset.ts`.
+
+A domain's `repos/**` (or root `repo.ts`) is **private to that domain** —
+it is the persistence implementation behind the domain interface, not
+part of it. Cross-domain consumers import from the domain surface only
+(`services/`, `projection`, `schema`, root feature modules); when another
+domain needs a capability, promote it to the surface instead of importing
+it out of `repos/`. Pinned by the same contract test file
+(`keeps domain repos private to their owning domain`).
 `tests/contract.cookie.test.ts` pins `domains/auth/session-storage.ts`.
+
+### Strata
+
+`domains/` holds three kinds of module (terms defined in CONTEXT.md →
+Structure). The stratum is descriptive today — the mechanical rules are
+the DAG and repos-privacy above — but it decides where new code lands
+and which dependency shapes need review.
+
+| Stratum          | Domains                                                                                                                 | Dependency shape                                                                                                                                            |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Core domain      | `content`, `posts`, `pages`, `pt`, `settings`                                                                           | May import features; changes here change the domain language (CONTEXT.md)                                                                                   |
+| Feature domain   | `auth`, `users`, `comments`, `taxonomies`, `images`, `assets`, `fonts`, `music`, `friends`, `newsletter`, `webmentions` | Compose core concepts; never imported BY platform                                                                                                           |
+| Platform service | `analytics`, `audit`, `backup`, `update`, `storage`                                                                     | Leaves (import no other domain) except `storage/migration.ts` — a cross-domain application service composed from the admin perimeter, not a business domain |
+
+New cross-domain imports INTO a platform service are a smell: compose at
+the perimeter (controller/resource/bootstrap) instead. The documented
+exceptions are `settings → audit/backup` (scheduler rewiring on section
+change, explicit one-way wiring — self-registration was deliberately
+removed) and `auth → audit` (audit-event emission). A new module gets
+its default home from the strata: business concept → feature (or core
+if it extends the CONTEXT.md language); technical capability → platform
+leaf; cross-domain orchestration → the perimeter, not a new domain.
 
 ## http/
 
@@ -214,7 +270,12 @@ is a database setting (`assets.storage.enabled`, `seo.og.width`,
   `backup`, `limits`, `analytics`, `security`.
   Per-section splitting avoids races between concurrent admin tabs.
 - Section ↔ DB scope ↔ Zod schema ↔ bundle key mapping lives in
-  `@/server/domains/settings/sections/registry.ts`'s `SECTION_REGISTRY`.
+  `SECTION_REGISTRY` (`@/server/domains/settings/sections/registry.ts`),
+  which is composition only: each `sections/<section>.ts` module is that
+  section's single home (Zod schema, seed defaults, scope + bundle key
+  metadata), so adding a section is one new module plus one registry
+  line — never a second enumeration. The schema↔DTO parity asserts sit
+  at the bottom of `registry.ts`.
 - In-memory composition: `BlogSettingsBundle` (`@/shared/config/blog`).
   SSR uses `requireBlogSettingsSection('<key>')`; UI uses the matching
   per-section hook. **New UI MUST NOT** read the aggregated
@@ -273,12 +334,12 @@ is a database setting (`assets.storage.enabled`, `seo.og.width`,
   loader passes `livePostWhere(...)`), keeping `infra/` free of
   business rules. The full "live" gate (not deleted, published, has a
   published revision, `publishedAt` not in the future) is defined once
-  in `@/server/domains/content/schema.ts` with two projections that
+  in `@/server/domains/content/schemas/live-gate.ts` with two projections that
   MUST be changed together: `isLive` (in-memory predicate) and
   `liveContentWhere` (SQL fragment). SQL call sites bind columns through
-  the repo-side adapters `livePostWhere` (`posts/repos/shared.ts`) /
-  `livePageWhere` (`pages/repo.ts`) — never hand-assemble the column
-  struct. Admin taxonomy counts deliberately include scheduled posts but
+  the post-/page-table bindings `livePostWhere` / `promotedPostWhere`
+  (`posts/live-gate.ts`) and `livePageWhere` (`pages/live-gate.ts`) —
+  never hand-assemble the column struct. Admin taxonomy counts deliberately include scheduled posts but
   still require a published revision (`countPostsByTaxonomy` with the
   `admin` gate).
 

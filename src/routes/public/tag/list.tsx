@@ -1,10 +1,10 @@
 import type { ListingPageLoaderData } from '@/server/http/loaders/listing'
 
-import { countPublicPosts, listPublicPostCardsPaginated } from '@/server/domains/posts/repos/public-query/listing'
+import { countPublicPosts, listPublicPostCardsPaginated } from '@/server/domains/posts/services/public-query'
+import { findTagBySlug } from '@/server/domains/taxonomies/tags/service'
 import { listingLoader } from '@/server/http/loaders/listing'
 import { listingHeaders } from '@/server/http/loaders/route-exports'
 import { getRequestContext } from '@/server/http/request-context'
-import { findTagBySlug } from '@/server/infra/db/operations/tag'
 import { notFound } from '@/server/infra/http/status'
 import { metaWithFallback } from '@/shared/seo/meta'
 import { PostListingBody } from '@/ui/public/post/PostListViews'

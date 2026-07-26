@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import { safeBoolean } from '@/shared/utils/schema'
+
 /**
  * Field-level zod pieces shared verbatim by the post and page admin
  * input schemas. Both entities accept the same user-supplied slug
@@ -25,3 +27,30 @@ export const optionalText = (max: number) =>
     .transform((value) => value ?? '')
 
 export const idSchema = z.object({ id: z.string().min(1) })
+
+/**
+ * The upsert-meta skeleton every content entity shares — the writable
+ * shared meta columns. Entity schemas `.extend()` it with their extras
+ * (`upsertPostMetaSchema`: visible/pinnedAt/categoryId/tags/alias;
+ * `upsertPageMetaSchema`: showFriends). Both entities accept the same
+ * user-supplied slug alphabet via `slugSchema`.
+ */
+export const upsertMetaBaseSchema = z.object({
+  id: z.string().min(1).optional(),
+  slug: slugSchema.optional(),
+  title: z.string().trim().min(1).max(200),
+  summary: optionalText(500),
+  cover: z.string().trim().max(500).optional().default(''),
+  og: z
+    .string()
+    .trim()
+    .max(500)
+    .nullable()
+    .optional()
+    .transform((value) => (value === undefined || value === '' ? null : value)),
+  published: safeBoolean().optional(),
+  commentsEnabled: safeBoolean().optional(),
+  showToc: safeBoolean().optional(),
+  showUpdated: safeBoolean().optional(),
+  publishedAt: z.iso.datetime({ offset: true }).optional(),
+})

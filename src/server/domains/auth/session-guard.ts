@@ -29,7 +29,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { ViewerIdentity } from '@/server/domains/auth/rbac'
 
 import { findSessionMeta, revokeSessionById } from '@/server/domains/auth/repo'
-import { revokeAllSessionsOfUser } from '@/server/domains/auth/service'
+import { revokeAllSessionsOfUser } from '@/server/domains/auth/services/sessions'
 import { findSafeUserById } from '@/server/infra/db/operations/user'
 import { DomainError } from '@/server/infra/http/errors'
 

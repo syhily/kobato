@@ -1,7 +1,7 @@
 import { data } from 'react-router'
 
 import { requireRole } from '@/server/domains/auth/rbac'
-import { listSessionsByUser } from '@/server/domains/auth/service'
+import { listSessionsByUser } from '@/server/domains/auth/services/sessions'
 import { getRequestContext } from '@/server/http/request-context'
 import { titleMeta } from '@/shared/seo/title-meta'
 import {

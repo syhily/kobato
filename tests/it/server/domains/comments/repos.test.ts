@@ -9,27 +9,13 @@ import { clearAllTables } from '#/_helpers/integration-db'
 import {
   countAllComments,
   countAdminComments,
-  countAdminPendingDashboard,
-  countApprovedRepliesOfComment,
-  countMyComments,
   findCommentWithUserAndTarget,
   listAdminComments,
   listAdminPendingDashboard,
-  listMyCommentEntities,
   listMyComments,
   searchCommentAuthors,
   searchPages,
 } from '@/server/domains/comments/repos/admin-query'
-import {
-  adminClearDeleteRequest,
-  approveCommentById,
-  bulkApprovePendingByUser,
-  bulkSoftDeleteCommentsByUser,
-  clearDeleteRequest,
-  deleteCommentById,
-  requestDeleteComment,
-  softDeleteCommentById,
-} from '@/server/domains/comments/repos/moderation'
 import {
   insertComment,
   updateCommentBodyAndContent,
@@ -45,12 +31,9 @@ import {
 } from '@/server/domains/comments/repos/public-query/admin'
 import {
   countApprovedCommentsByUser,
-  findCommentWithUserById,
-  findCommentsByIds,
   findParentCommentsByIds,
   recentCommentsForUserDedupe,
 } from '@/server/domains/comments/repos/public-query/by-id'
-import { resolveEntitiesForComments } from '@/server/domains/comments/repos/public-query/entities'
 import {
   countCommentsAndRoots,
   findChildComments,
@@ -64,6 +47,24 @@ import {
   targetSlugTitleSubquery,
   whereTarget,
 } from '@/server/domains/comments/repos/shared'
+import { countAdminPendingDashboard } from '@/server/domains/comments/services/admin-query'
+import {
+  countApprovedRepliesOfComment,
+  findCommentsByIds,
+  findCommentWithUserById,
+} from '@/server/domains/comments/services/lookup'
+import { countMyComments, listMyCommentEntities } from '@/server/domains/comments/services/mine-comments'
+import {
+  adminClearDeleteRequest,
+  approveCommentById,
+  bulkApprovePendingByUser,
+  bulkSoftDeleteCommentsByUser,
+  clearDeleteRequest,
+  deleteCommentById,
+  requestDeleteComment,
+  softDeleteCommentById,
+} from '@/server/domains/comments/services/moderate'
+import { resolveEntitiesForComments } from '@/server/domains/comments/services/shared'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { comment } from '@/server/infra/db/schema/comment'
 import { metric } from '@/server/infra/db/schema/metric'
@@ -202,7 +203,7 @@ describe('comments/repos/shared — mineWhere', () => {
   })
 })
 
-describe('comments/repos/moderation — approveCommentById', () => {
+describe('comments/services/moderate — approveCommentById', () => {
   it('flips is_pending to false', async () => {
     const id = await seedComment({ isPending: true })
     await approveCommentById(db, id)
@@ -211,7 +212,7 @@ describe('comments/repos/moderation — approveCommentById', () => {
   })
 })
 
-describe('comments/repos/moderation — deleteCommentById', () => {
+describe('comments/services/moderate — deleteCommentById', () => {
   it('removes the row', async () => {
     const id = await seedComment()
     await deleteCommentById(db, id)
@@ -220,7 +221,7 @@ describe('comments/repos/moderation — deleteCommentById', () => {
   })
 })
 
-describe('comments/repos/moderation — softDeleteCommentById', () => {
+describe('comments/services/moderate — softDeleteCommentById', () => {
   it('sets deleted_at', async () => {
     const id = await seedComment()
     await softDeleteCommentById(db, id)
@@ -229,7 +230,7 @@ describe('comments/repos/moderation — softDeleteCommentById', () => {
   })
 })
 
-describe('comments/repos/moderation — bulkApprovePendingByUser', () => {
+describe('comments/services/moderate — bulkApprovePendingByUser', () => {
   it("approves only that user's pending rows and returns the count", async () => {
     const u1 = await seedUser({ name: 'U1', email: 'u1@x.com' })
     const u2 = await seedUser({ name: 'U2', email: 'u2@x.com' })
@@ -242,7 +243,7 @@ describe('comments/repos/moderation — bulkApprovePendingByUser', () => {
   })
 })
 
-describe('comments/repos/moderation — bulkSoftDeleteCommentsByUser', () => {
+describe('comments/services/moderate — bulkSoftDeleteCommentsByUser', () => {
   it("soft-deletes all of a user's live rows", async () => {
     const u1 = await seedUser({ name: 'U1', email: 'u1@x.com' })
     const pid = await seedPost('p2')
@@ -253,7 +254,7 @@ describe('comments/repos/moderation — bulkSoftDeleteCommentsByUser', () => {
   })
 })
 
-describe('comments/repos/moderation — requestDeleteComment', () => {
+describe('comments/services/moderate — requestDeleteComment', () => {
   it('records deleteRequestedAt and deleteRequestedBy', async () => {
     const u1 = await seedUser({ name: 'U1', email: 'u1@x.com' })
     const pid = await seedPost('p3')
@@ -267,7 +268,7 @@ describe('comments/repos/moderation — requestDeleteComment', () => {
   })
 })
 
-describe('comments/repos/moderation — clearDeleteRequest', () => {
+describe('comments/services/moderate — clearDeleteRequest', () => {
   it('clears only when the requester matches', async () => {
     const u1 = await seedUser({ name: 'U1', email: 'u1@x.com' })
     const u2 = await seedUser({ name: 'U2', email: 'u2@x.com' })
@@ -281,7 +282,7 @@ describe('comments/repos/moderation — clearDeleteRequest', () => {
   })
 })
 
-describe('comments/repos/moderation — adminClearDeleteRequest', () => {
+describe('comments/services/moderate — adminClearDeleteRequest', () => {
   it('clears the request regardless of requester', async () => {
     const u1 = await seedUser({ name: 'U1', email: 'u1@x.com' })
     const pid = await seedPost('p5')
@@ -372,7 +373,7 @@ describe('comments/repos/mutate — updateOwnCommentBodyAndPending', () => {
   })
 })
 
-describe('comments/repos/public-query/entities — resolveEntitiesForComments', () => {
+describe('comments/services/shared — resolveEntitiesForComments', () => {
   it('returns an empty map for an empty input', async () => {
     const out = await resolveEntitiesForComments(db, [])
     expect(out.size).toBe(0)
@@ -411,7 +412,7 @@ describe('comments/repos/public-query/by-id — recentCommentsForUserDedupe', ()
   })
 })
 
-describe('comments/repos/public-query/by-id — findCommentWithUserById', () => {
+describe('comments/services/lookup — findCommentWithUserById', () => {
   it('returns null for a non-existent id', async () => {
     expect(await findCommentWithUserById(db, 9999n)).toBeNull()
   })
@@ -424,7 +425,7 @@ describe('comments/repos/public-query/by-id — findCommentWithUserById', () => 
   })
 })
 
-describe('comments/repos/public-query/by-id — findCommentsByIds', () => {
+describe('comments/services/lookup — findCommentsByIds', () => {
   it('returns [] for empty ids', async () => {
     expect(await findCommentsByIds(db, [])).toEqual([])
   })
@@ -648,7 +649,7 @@ describe('comments/repos/admin-query — listAdminPendingDashboard', () => {
   })
 })
 
-describe('comments/repos/admin-query — countAdminPendingDashboard', () => {
+describe('comments/services/admin-query — countAdminPendingDashboard', () => {
   it('breaks down by all/approval/deletion', async () => {
     const u1 = await seedUser({ name: 'P', email: 'p@x.com' })
     const pid = await seedPost('p25')
@@ -662,7 +663,7 @@ describe('comments/repos/admin-query — countAdminPendingDashboard', () => {
   })
 })
 
-describe('comments/repos/admin-query — countApprovedRepliesOfComment', () => {
+describe('comments/services/lookup — countApprovedRepliesOfComment', () => {
   it('returns 0 when there are no approved replies', async () => {
     expect(await countApprovedRepliesOfComment(db, 9999n)).toBe(0)
   })
@@ -694,7 +695,7 @@ describe('comments/repos/admin-query — listMyComments', () => {
   })
 })
 
-describe('comments/repos/admin-query — listMyCommentEntities', () => {
+describe('comments/services/mine-comments — listMyCommentEntities', () => {
   it('returns the unique entities the user has commented on', async () => {
     const u1 = await seedUser({ name: 'S', email: 's@x.com' })
     const pid = await seedPost('p28')
@@ -726,7 +727,7 @@ describe('comments/repos/admin-query — listMyCommentEntities', () => {
   })
 })
 
-describe('comments/repos/admin-query — countMyComments', () => {
+describe('comments/services/mine-comments — countMyComments', () => {
   it('breaks down by total/pending/deleteRequested/deleted', async () => {
     const u1 = await seedUser({ name: 'T', email: 't@x.com' })
     const pid = await seedPost('p29')

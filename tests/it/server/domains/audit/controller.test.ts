@@ -9,7 +9,7 @@ vi.mock('@/shared/config/getters', () => ({
 }))
 
 const { parseDate, clampDateToRetention, toAuditLogItemDto } = await import('@/server/domains/audit/projection')
-const { buildAuditLogWhere } = await import('@/server/domains/audit/repos/query')
+const { buildAuditLogWhere } = await import('@/server/domains/audit/services/query')
 const { auditLogRouter } = await import('@/server/http/controllers/admin/audit.controller')
 
 describe('audit/controller helpers', () => {

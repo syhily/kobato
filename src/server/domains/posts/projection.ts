@@ -2,7 +2,8 @@ import type { ContentRow, PostMetaRow } from '@/server/infra/db/types'
 import type { AdminRevisionDto } from '@/shared/contracts/revision'
 import type { Post } from '@/shared/types/catalog'
 
-import { readBody, readHeadings } from '@/server/domains/content/projection-helpers'
+import { toAdminMetaDto, type AdminMetaDto } from '@/server/domains/content/entities/projection'
+import { readRevisionProjection } from '@/server/domains/content/projection-helpers'
 import { toClientPostFromMeta } from '@/server/domains/posts/repos/shared'
 import { readStringArray } from '@/shared/utils/tools'
 
@@ -21,9 +22,7 @@ export function toCmsPost(
     categoryName?: string
   } = {},
 ): Post {
-  const body = publishedRevision !== null ? readBody(publishedRevision.body) : []
-  const imageSources = publishedRevision !== null ? readStringArray(publishedRevision.imageSources) : []
-  const headings = publishedRevision !== null ? readHeadings(publishedRevision.headings) : []
+  const { body, imageSources, headings } = readRevisionProjection(publishedRevision)
 
   // Compose, don't copy: the ~20 catalog fields come from the shared
   // projection (`toClientPostFromMeta`); only the revision-joined CMS
@@ -41,45 +40,15 @@ export function toCmsPost(
 
 // --- Admin projection -------------------------------------------------------
 
-export interface AdminPostDto {
-  id: string
-  slug: string
-  title: string
-  summary: string
-  cover: string
-  og: string | null
-  published: boolean
-  commentsEnabled: boolean
-  showToc: boolean
-  showUpdated: boolean
+export interface AdminPostDto extends AdminMetaDto {
   visible: boolean
-  publishedAt: string
-  publishedRevisionId: string | null
-  createdAt: string
-  updatedAt: string
-  deletedAt: string | null
   category: string
   categoryId: string | null
   tags: string[]
   alias: string[]
-  authorId: string | null
-  authorName: string | null
   pinnedAt: string | null
   /** Null until the first successful publish. */
   firstPublishedAt: string | null
-  /**
-   * Approved comment count for this post's metric row. Populated by
-   * `listPostsForAdmin`; defaults to `0` on detail / save paths that
-   * don't need to fan out an extra query.
-   */
-  commentCount: number
-  /**
-   * The post's `metric.public_id` UUID — the opaque wire identifier
-   * the admin comment-count link uses to deep-link into
-   * `/admin/comments?pageKey=<uuid>`. Empty string on detail / save
-   * paths that don't fan out a metric upsert.
-   */
-  commentPublicId: string
 }
 
 export function toAdminPostDto(
@@ -87,32 +56,14 @@ export function toAdminPostDto(
   options: { commentCount?: number; commentPublicId?: string; tags?: string[]; categoryName?: string } = {},
 ): AdminPostDto {
   return {
-    id: String(row.id),
-    slug: row.slug,
-    title: row.title,
-    summary: row.summary,
-    cover: row.cover,
-    og: row.og,
-    published: row.published,
-    commentsEnabled: row.commentsEnabled,
-    showToc: row.showToc,
-    showUpdated: row.showUpdated,
+    ...toAdminMetaDto(row, options),
     visible: row.visible,
-    publishedAt: row.publishedAt.toISOString(),
-    publishedRevisionId: row.publishedRevisionId === null ? null : String(row.publishedRevisionId),
-    createdAt: row.createdAt.toISOString(),
-    updatedAt: row.updatedAt.toISOString(),
-    deletedAt: row.deletedAt === null ? null : row.deletedAt.toISOString(),
     category: options.categoryName ?? '',
     categoryId: row.categoryId === null ? null : String(row.categoryId),
     tags: options.tags ?? [],
     alias: readStringArray(row.alias),
-    authorId: row.authorId === null ? null : String(row.authorId),
-    authorName: (row as { authorName?: string | null }).authorName ?? null,
     pinnedAt: row.pinnedAt === null ? null : row.pinnedAt.toISOString(),
     firstPublishedAt: row.firstPublishedAt === null ? null : row.firstPublishedAt.toISOString(),
-    commentCount: options.commentCount ?? 0,
-    commentPublicId: options.commentPublicId ?? '',
   }
 }
 

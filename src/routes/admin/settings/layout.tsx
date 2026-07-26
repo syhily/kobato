@@ -2,13 +2,10 @@ import { isRouteErrorResponse, Outlet, useOutletContext, useRouteError } from 'r
 
 import type { BlogSettingsBundle, SecretMasks } from '@/shared/config/types'
 
-import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
 import { computeSecretMasks, redactSecretsFromBundle } from '@/server/domains/settings/services/core'
-import { hydrateBlogSettings } from '@/server/domains/settings/services/hydrate'
+import { backfillSettingsSections, hydrateBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { getSupportedTimeZones } from '@/server/domains/settings/timezones'
 import { getRequestContext } from '@/server/http/request-context'
-import { upsertSetting } from '@/server/infra/db/operations/setting'
-import { SECTION_TO_BUNDLE_KEY, SETTINGS_SECTIONS } from '@/shared/config/sections'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 import type { Route } from './+types/layout'
@@ -90,27 +87,10 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   }
 
   // Eager backfill: any section that is null but carries registry defaults
-  // gets written to DB and populated in the bundle before we check.
+  // gets written to DB and populated in the bundle copy before we check.
   // This prevents newly-added optional sections (e.g. backup) from breaking
   // the entire admin panel on existing deployments whose DB predates them.
-  const mutable: Record<string, unknown> = {}
-  for (const [key, value] of Object.entries(bundle)) {
-    mutable[key] = value
-  }
-  for (const section of SETTINGS_SECTIONS) {
-    const key = SECTION_TO_BUNDLE_KEY[section]
-    if (mutable[key] === null) {
-      const meta = SECTION_REGISTRY[section]
-      if (meta.defaults !== null) {
-        try {
-          await upsertSetting(db, meta.defaults, null, meta.scope)
-          mutable[key] = meta.defaults
-        } catch {
-          // Best-effort; if it fails we'll surface it below.
-        }
-      }
-    }
-  }
+  const mutable = await backfillSettingsSections(db, bundle)
 
   assertSettingsBundle(mutable)
   const masks = computeSecretMasks(unsafeCast<BlogSettingsBundle>(mutable))

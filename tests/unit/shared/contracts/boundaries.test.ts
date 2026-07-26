@@ -1,4 +1,5 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
+import { dirname as posixDirname, normalize as posixNormalize } from 'node:path/posix'
 import { describe, expect, it } from 'vitest'
 
 // Node-native replacement for ripgrep. GitHub's ubuntu-latest runner
@@ -73,6 +74,53 @@ function files(...args: string[]): string[] {
   })
 }
 
+// Comment-stripped view of a source file: `//` and `/* */` blocks may
+// mention import paths or re-export syntax and must not trip the checks.
+function stripComments(source: string): string {
+  return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
+}
+
+// Every static / dynamic import specifier in a comment-stripped source.
+// Line-oriented checks miss multiline statements whose `from '…'` clause
+// sits on its own line, so this matches the `from` / `import` keywords
+// directly across the whole file.
+function importSpecifiers(source: string): string[] {
+  const specifierRe = /(?:\bfrom\s+|\bimport\s*\(\s*|\bimport\s+)['"]([^'"]+)['"]/g
+  return [...source.matchAll(specifierRe)].map((match) => match[1])
+}
+
+// Local names bound by `import … from '…'` statements. Used to tell an
+// import-then-export facade apart from a legal `const x = …; export { x }`:
+// only exported bindings that came from an import are facades.
+function importedBindings(source: string): Set<string> {
+  const names = new Set<string>()
+  const importRe = /\bimport\s+([^'";]*?)\s+from\s*['"][^'"]+['"]/g
+  for (const match of source.matchAll(importRe)) {
+    let clause = match[1].trim()
+    if (clause.startsWith('type ')) {
+      clause = clause.slice(5).trim()
+    }
+    const brace = /\{([^{}]*)\}/.exec(clause)
+    const head = brace ? clause.slice(0, brace.index) : clause
+    for (const part of head.split(',')) {
+      const name = part.trim().replace(/^type\s+/, '')
+      if (name === '') {
+        continue
+      }
+      names.add(name.startsWith('* as ') ? name.slice(5).trim() : name)
+    }
+    for (const part of (brace?.[1] ?? '').split(',')) {
+      const name = part.trim().replace(/^type\s+/, '')
+      if (name === '') {
+        continue
+      }
+      const alias = /\bas\s+([\w$]+)\s*$/.exec(name)
+      names.add(alias?.[1] ?? name)
+    }
+  }
+  return names
+}
+
 describe('contract: module and bundle boundaries', () => {
   it('keeps value imports from @/server out of shared modules', () => {
     const offenders = files('src/shared', '-g', '*.ts', '-g', '*.tsx').filter((file) => {
@@ -82,6 +130,321 @@ describe('contract: module and bundle boundaries', () => {
         return trimmed.startsWith('import') && !trimmed.startsWith('import type') && trimmed.includes('@/server/')
       })
     })
+
+    expect(offenders).toEqual([])
+  })
+
+  it('keeps re-export facades out of src (every import points at the owning module)', () => {
+    // A re-exported symbol hides its owning module and drifts out of sync
+    // with the source — AGENTS.md bans `export { X } from 'y'` and the
+    // import-then-export variant project-wide. Re-exporting a
+    // locally-declared symbol (`const x = …; export { x }`, local aliases)
+    // stays legal: only bindings that came from an import are flagged.
+    //
+    // Allowlist: React Router requires `ErrorBoundary` to be exported from
+    // the route module itself, so the three layout routes re-export the
+    // shared admin fallback under that exact name. Entries are full
+    // `file: statement` pairs — any other re-export in these files flags.
+    const allowlist = new Set(
+      ['src/routes/admin/layout.tsx', 'src/routes/auth/layout.tsx', 'src/routes/editor/layout.tsx'].map(
+        (file) => `${file}: export { AdminErrorFallback as ErrorBoundary }`,
+      ),
+    )
+
+    const offenders: string[] = []
+    const directRe = /\bexport\s+(?:type\s+)?(?:\*\s+as\s+[\w$]+|\*|\{[^{}]*\})\s*from\s*['"][^'"]+['"]/g
+    const plainRe = /\bexport\s+(?:type\s+)?\{([^{}]*)\}(?!\s*from)/g
+    for (const file of files('src', '-g', '*.ts', '-g', '*.tsx')) {
+      const source = stripComments(readFileSync(file, 'utf8'))
+      for (const match of source.matchAll(directRe)) {
+        offenders.push(`${file}: ${match[0].replace(/\s+/g, ' ')}`)
+      }
+      const imported = importedBindings(source)
+      for (const match of source.matchAll(plainRe)) {
+        const reexported = match[1]
+          .split(',')
+          .map((part) => part.trim().replace(/^type\s+/, ''))
+          .filter((part) => part !== '')
+          .map((part) => (/\bas\s/.test(part) ? part.slice(0, part.indexOf(' as ')).trim() : part))
+        if (reexported.some((name) => imported.has(name))) {
+          offenders.push(`${file}: ${match[0].replace(/\s+/g, ' ')}`)
+        }
+      }
+    }
+
+    expect(offenders.filter((offender) => !allowlist.has(offender))).toEqual([])
+  })
+
+  it('keeps barrel index modules out of src', () => {
+    // A barrel `index.ts` (nothing but re-exports) drags the whole feature
+    // graph into every consumer (`bundle-barrel-imports`). Route modules
+    // named index.tsx with a real loader/action/component are fine, so the
+    // check only fires when stripping every `export … from` statement
+    // leaves nothing but whitespace behind.
+    const exportFromRe = /\bexport\s+(?:type\s+)?(?:\*\s+as\s+[\w$]+|\*|\{[^{}]*\})\s*from\s*['"][^'"]+['"]/g
+    const offenders = files('src', '-g', '*.ts', '-g', '*.tsx')
+      .filter((file) => /(^|\/)index\.tsx?$/.test(file))
+      .filter((file) => {
+        const source = stripComments(readFileSync(file, 'utf8'))
+        return /\bexport\b/.test(source) && source.replace(exportFromRe, '').trim() === ''
+      })
+
+    expect(offenders).toEqual([])
+  })
+
+  it('keeps the server layer graph one-way (infra → domains → render → http)', () => {
+    // `infra/` holds technical primitives with zero business knowledge, so
+    // it must stay unaware of every layer above it; `domains/` owns the
+    // business rules and must not reach into the SSR (`render/`) or
+    // transport (`http/`) perimeters; `render/` must not reach `http/`.
+    // Type imports count too — they pin the same coupling.
+    const rules: Array<{ from: string; banned: string[] }> = [
+      { from: 'src/server/infra/', banned: ['@/server/domains/', '@/server/http/', '@/server/render/'] },
+      { from: 'src/server/domains/', banned: ['@/server/http/', '@/server/render/'] },
+      { from: 'src/server/render/', banned: ['@/server/http/'] },
+    ]
+    const offenders: string[] = []
+    for (const file of files('src/server', '-g', '*.ts', '-g', '*.tsx')) {
+      const rule = rules.find((entry) => file.startsWith(entry.from))
+      if (rule === undefined) {
+        continue
+      }
+      for (const specifier of importSpecifiers(stripComments(readFileSync(file, 'utf8')))) {
+        if (rule.banned.some((banned) => specifier.startsWith(banned))) {
+          offenders.push(`${file}: ${specifier}`)
+        }
+      }
+    }
+
+    expect(offenders).toEqual([])
+  })
+
+  it('keeps the cross-domain import graph acyclic', () => {
+    // Domains compose in one direction only: a cycle (auth ↔ comments,
+    // pt → music → … → pt) makes every domain inside it impossible to
+    // understand or test in isolation, so the domain graph is a DAG and
+    // must stay one. Cross-domain values flow through caller-wired
+    // injection instead (see `domains/pt/embeds` and
+    // `domains/auth/services/password-reset`'s `PasswordResetFlowDeps`). Edges come from `@/server/domains/<other>`
+    // specifiers — a relative import escaping into another domain would
+    // count too, and type imports pin the same coupling as value imports.
+    const domainsRoot = 'src/server/domains'
+    const domainOf = (path: string): string | null => {
+      if (!path.startsWith(`${domainsRoot}/`)) {
+        return null
+      }
+      const rest = path.slice(domainsRoot.length + 1)
+      const slash = rest.indexOf('/')
+      return slash === -1 ? null : rest.slice(0, slash)
+    }
+
+    const nodes = new Set<string>()
+    for (const entry of readdirSync(domainsRoot, { withFileTypes: true })) {
+      if (entry.isDirectory()) {
+        nodes.add(entry.name)
+      }
+    }
+    const adjacency = new Map<string, Set<string>>()
+    for (const file of files(domainsRoot, '-g', '*.ts', '-g', '*.tsx')) {
+      const from = domainOf(file)
+      if (from === null) {
+        continue
+      }
+      for (const specifier of importSpecifiers(stripComments(readFileSync(file, 'utf8')))) {
+        let target: string | null = null
+        if (specifier.startsWith('@/server/domains/')) {
+          target = `src/${specifier.slice(2)}`
+        } else if (specifier.startsWith('./') || specifier.startsWith('../')) {
+          target = posixNormalize(`${posixDirname(file)}/${specifier}`)
+        }
+        if (target === null) {
+          continue
+        }
+        const to = domainOf(target)
+        if (to === null || to === from) {
+          continue
+        }
+        nodes.add(from)
+        nodes.add(to)
+        let targets = adjacency.get(from)
+        if (targets === undefined) {
+          targets = new Set()
+          adjacency.set(from, targets)
+        }
+        targets.add(to)
+      }
+    }
+
+    // Three-color DFS topological check. The assertion payload is the
+    // cycle path itself, so a failure prints the offending loop
+    // (e.g. ['auth', 'comments', 'auth']) instead of a bare boolean.
+    const cycle: string[] = []
+    const state = new Map<string, 'visiting' | 'done'>()
+    const stack: string[] = []
+    const visit = (node: string): boolean => {
+      state.set(node, 'visiting')
+      stack.push(node)
+      for (const next of [...(adjacency.get(node) ?? [])].sort()) {
+        if (state.get(next) === 'done') {
+          continue
+        }
+        if (state.get(next) === 'visiting') {
+          cycle.push(...stack.slice(stack.indexOf(next)), next)
+          return true
+        }
+        if (visit(next)) {
+          return true
+        }
+      }
+      stack.pop()
+      state.set(node, 'done')
+      return false
+    }
+    for (const node of [...nodes].sort()) {
+      if (!state.has(node) && visit(node)) {
+        break
+      }
+    }
+
+    expect(cycle).toEqual([])
+  })
+
+  it('keeps domain repos private to their owning domain', () => {
+    // A domain's interface is its services/, projection, schema, and root
+    // feature modules; `repos/**` (or a root `repo.ts`) is the persistence
+    // implementation behind that interface. A cross-domain capability must
+    // be promoted to the owning domain's surface instead of imported out of
+    // its repos — that keeps the interface (not the storage layout) the
+    // test surface every consumer relies on. Importers inside the owning
+    // domain are fine; both `@/`-aliased and relative specifiers count, and
+    // type imports pin the same coupling.
+    const domainsRoot = 'src/server/domains'
+    const reposOwner = (path: string): string | null => {
+      if (!path.startsWith(`${domainsRoot}/`)) {
+        return null
+      }
+      const rest = path.slice(domainsRoot.length + 1)
+      const slash = rest.indexOf('/')
+      if (slash === -1) {
+        return null
+      }
+      const inner = rest.slice(slash + 1)
+      if (inner === 'repo.ts' || inner === 'repos' || inner.startsWith('repos/')) {
+        return rest.slice(0, slash)
+      }
+      return null
+    }
+
+    const offenders: string[] = []
+    for (const file of files('src/server', '-g', '*.ts', '-g', '*.tsx')) {
+      for (const specifier of importSpecifiers(stripComments(readFileSync(file, 'utf8')))) {
+        let target: string | null = null
+        if (specifier.startsWith('@/server/domains/')) {
+          target = `src/${specifier.slice(2)}`
+        } else if (specifier.startsWith('./') || specifier.startsWith('../')) {
+          target = posixNormalize(`${posixDirname(file)}/${specifier}`)
+        }
+        if (target === null) {
+          continue
+        }
+        const owner = reposOwner(target)
+        if (owner === null || file.startsWith(`${domainsRoot}/${owner}/`)) {
+          continue
+        }
+        offenders.push(`${file}: ${specifier}`)
+      }
+    }
+
+    expect(offenders).toEqual([])
+  })
+
+  it('keeps base-vocabulary root files from coexisting with their subdirectory', () => {
+    // One predictable import location per vocabulary: once a domain grows
+    // `services/` (or `repos/`, `schemas/`, …), the same-vocabulary root
+    // file (`service.ts`, `repo.ts`, `schema.ts`, …) must not survive next
+    // to it — two legal homes for the same vocabulary would leave every
+    // future import a coin flip and make the split cosmetic. Feature-named
+    // root files and directories are untouched by this rule.
+    const pairs = [
+      ['schema.ts', 'schemas'],
+      ['repo.ts', 'repos'],
+      ['service.ts', 'services'],
+      ['projection.ts', 'projections'],
+      ['cache.ts', 'caches'],
+    ] as const
+    const offenders: string[] = []
+    for (const entry of readdirSync('src/server/domains', { withFileTypes: true })) {
+      if (!entry.isDirectory()) {
+        continue
+      }
+      const domainRoot = `src/server/domains/${entry.name}`
+      for (const [rootFile, subdir] of pairs) {
+        if (existsSync(`${domainRoot}/${rootFile}`) && existsSync(`${domainRoot}/${subdir}`)) {
+          offenders.push(`${entry.name}: ${rootFile} coexists with ${subdir}/`)
+        }
+      }
+    }
+
+    expect(offenders).toEqual([])
+  })
+
+  it('keeps routes on domain surfaces: no infra/db/operations imports under src/routes', () => {
+    // Route modules are wiring: extract the request context, call one
+    // orchestration (`http/loaders/*` or a domain-surface service), and
+    // render. A route reaching into `infra/db/operations` bypasses the
+    // domain interface and re-couples the URL layer to the storage
+    // layout — business data access belongs behind a domain surface or
+    // an http/loaders assembly (the same rule the repos-privacy test
+    // enforces between domains). Infra primitives that are not business
+    // data access (the rate limiter, `infra/http/status`) stay legal and
+    // are not matched here. Value and type imports both count, whether
+    // `@/`-aliased or relative.
+    const offenders: string[] = []
+    for (const file of files('src/routes', '-g', '*.ts', '-g', '*.tsx')) {
+      for (const specifier of importSpecifiers(stripComments(readFileSync(file, 'utf8')))) {
+        const target =
+          specifier.startsWith('./') || specifier.startsWith('../')
+            ? posixNormalize(`${posixDirname(file)}/${specifier}`)
+            : specifier
+        if (target.startsWith('@/server/infra/db/operations') || target.startsWith('src/server/infra/db/operations')) {
+          offenders.push(`${file}: ${specifier}`)
+        }
+      }
+    }
+
+    expect(offenders).toEqual([])
+  })
+
+  it('keeps client and ui modules out of the server layer', () => {
+    // `@/client/` hooks and `@/ui/` components touch DOM APIs and styles
+    // that cannot evaluate under SSR — the server must depend on
+    // `@/shared/` (isomorphic) and `@/server/` only. Guarded for both
+    // value and type imports.
+    const offenders: string[] = []
+    for (const file of files('src/server', '-g', '*.ts', '-g', '*.tsx')) {
+      for (const specifier of importSpecifiers(stripComments(readFileSync(file, 'utf8')))) {
+        if (specifier.startsWith('@/client/') || specifier.startsWith('@/ui/')) {
+          offenders.push(`${file}: ${specifier}`)
+        }
+      }
+    }
+
+    expect(offenders).toEqual([])
+  })
+
+  it('keeps client modules out of shared (isomorphic) modules', () => {
+    // `shared/*` is imported by the server bundle, the browser bundle, and
+    // vite.config.ts, so it can only depend on itself — a `@/client/`
+    // import would drag browser-only hooks into every consumer. Guarded
+    // for both value and type imports.
+    const offenders: string[] = []
+    for (const file of files('src/shared', '-g', '*.ts', '-g', '*.tsx')) {
+      for (const specifier of importSpecifiers(stripComments(readFileSync(file, 'utf8')))) {
+        if (specifier.startsWith('@/client/')) {
+          offenders.push(`${file}: ${specifier}`)
+        }
+      }
+    }
 
     expect(offenders).toEqual([])
   })

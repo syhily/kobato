@@ -105,16 +105,6 @@ describe('infra/db/operations/tag — single-row lookups', () => {
     const { findTagByName } = await import('@/server/infra/db/operations/tag')
     expect(await findTagByName(createMockDb([]), 'react')).toBeNull()
   })
-
-  it('findTagBySlug returns the row when present', async () => {
-    const { findTagBySlug } = await import('@/server/infra/db/operations/tag')
-    expect(await findTagBySlug(createMockDb([{ id: 1n }]), 'react-slug')).toEqual({ id: 1n })
-  })
-
-  it('findTagBySlug returns null when absent', async () => {
-    const { findTagBySlug } = await import('@/server/infra/db/operations/tag')
-    expect(await findTagBySlug(createMockDb([]), 'react-slug')).toBeNull()
-  })
 })
 
 describe('infra/db/operations/tag — findTagsByNames', () => {

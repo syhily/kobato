@@ -1,6 +1,9 @@
-import type { MarkdownHeading, PortableTextBody } from '@/shared/types/catalog'
+import type { ContentRow } from '@/server/infra/db/types'
+import type { PortableTextBody } from '@/shared/pt/schema'
+import type { MarkdownHeading } from '@/shared/utils/toc'
 
 import { validatePortableTextBody } from '@/shared/pt/utils'
+import { readStringArray } from '@/shared/utils/tools'
 import { isRecord } from '@/shared/utils/type-guards'
 
 // `content.body` is `jsonb` so Drizzle hands it to us as `unknown`.
@@ -35,4 +38,22 @@ export function readHeadings(value: unknown): MarkdownHeading[] {
     })
   }
   return out
+}
+
+/**
+ * The revision-joined CMS fields both catalog projections (`toCmsPost`,
+ * `toCmsPage`) derive identically: the PT body, the image-source list,
+ * and the heading anchors — each empty when the entity has no published
+ * revision yet.
+ */
+export function readRevisionProjection(revision: ContentRow | null): {
+  body: PortableTextBody
+  imageSources: string[]
+  headings: MarkdownHeading[]
+} {
+  return {
+    body: revision !== null ? readBody(revision.body) : [],
+    imageSources: revision !== null ? readStringArray(revision.imageSources) : [],
+    headings: revision !== null ? readHeadings(revision.headings) : [],
+  }
 }

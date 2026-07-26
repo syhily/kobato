@@ -16,10 +16,10 @@ vi.mock('@/server/http/request-context', async () => {
   return createRequestContextMockModule()
 })
 
-vi.mock('@/server/infra/db/operations/category', () => ({
+vi.mock('@/server/domains/taxonomies/categories/services/query', () => ({
   findCategoryBySlug: vi.fn(async (_db: unknown, slug: string) => (slug === 'general' ? sampleCategory : null)),
 }))
-vi.mock('@/server/infra/db/operations/tag', () => ({
+vi.mock('@/server/domains/taxonomies/tags/service', () => ({
   findTagBySlug: vi.fn(async (_db: unknown, slug: string) => (slug === 'typescript' ? sampleTag : null)),
 }))
 
@@ -32,12 +32,10 @@ vi.mock('@/shared/types/catalog', async () => {
   }
 })
 
-vi.mock('@/server/domains/posts/repos/public-query/misc', () => ({
+vi.mock('@/server/domains/posts/services/public-query', () => ({
   getPostsBySlugs: vi.fn(async (_db: unknown, _slugs: string[], options: { includeHidden?: boolean }) =>
     options?.includeHidden ? samplePosts : publicPosts,
   ),
-}))
-vi.mock('@/server/domains/posts/repos/public-query/listing', () => ({
   countPublicPosts: vi.fn(
     async (_db: unknown, _filters: { includeHidden?: boolean; category?: string; tag?: string }) =>
       _filters?.includeHidden ? samplePosts.length : publicPosts.length,

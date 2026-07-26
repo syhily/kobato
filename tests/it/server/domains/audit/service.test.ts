@@ -20,7 +20,7 @@ const pushAuditEvent = vi.fn()
 const loggerMock = { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() }
 const getLogger = vi.fn(() => loggerMock)
 
-vi.mock('@/server/domains/audit/repos/batcher', () => ({ pushAuditEvent }))
+vi.mock('@/server/domains/audit/services/batcher', () => ({ pushAuditEvent }))
 vi.mock('@/server/infra/logger', () => ({
   getLogger,
   L3_KEYS: new Set([

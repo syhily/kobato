@@ -27,7 +27,7 @@ vi.mock('@/server/domains/images/services/cache', () => ({ invalidateImageEnhanc
 vi.mock('@/server/domains/images/services/admin-read', () => ({ toAdminImageDto: toAdminImageDtoMock }))
 vi.mock('@/server/infra/logger', () => ({ getLogger: () => ({ info: vi.fn(), error: vi.fn(), warn: vi.fn() }) }))
 
-const { uploadImage } = await import('@/server/domains/images/services/upload')
+const { assertImageUploadAllowed, uploadImage } = await import('@/server/domains/images/services/upload')
 
 const fakeDb = {} as NodePgDatabase
 
@@ -323,5 +323,50 @@ describe('images/services/upload — pure validation + mime detection', () => {
       expect(insertImageMock.mock.calls[0]![1]).toMatchObject({ uploaderId: null })
       expect(toAdminImageDtoMock).toHaveBeenCalledWith(expect.anything(), null)
     })
+  })
+})
+
+describe('assertImageUploadAllowed — declared-envelope validation (sunk from the controller)', () => {
+  // These are ORPCErrors (not DomainErrors) so the wire keeps its 400/413
+  // split: the declared-size pre-check reports 413 while the authoritative
+  // in-buffer checks inside uploadImage report 400.
+  it('rejects a declared MIME type outside the allowlist with BAD_REQUEST', () => {
+    expect(() => assertImageUploadAllowed({ type: 'image/tiff', size: 10 }, 1000)).toThrow(
+      /不支持的图片格式，请上传 JPEG、PNG、WebP、AVIF 或 GIF 格式的图片/,
+    )
+    try {
+      assertImageUploadAllowed({ type: 'image/tiff', size: 10 }, 1000)
+      expect.unreachable()
+    } catch (err) {
+      expect(err).toMatchObject({ code: 'BAD_REQUEST' })
+    }
+  })
+
+  it('accepts every declared MIME type in the allowlist', () => {
+    for (const type of ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif']) {
+      expect(() => assertImageUploadAllowed({ type, size: 10 }, 1000)).not.toThrow()
+    }
+  })
+
+  it('rejects a declared size over maxBytes with PAYLOAD_TOO_LARGE', () => {
+    try {
+      assertImageUploadAllowed({ type: 'image/png', size: 2 * 1024 * 1024 }, 1024 * 1024)
+      expect.unreachable()
+    } catch (err) {
+      expect(err).toMatchObject({ code: 'PAYLOAD_TOO_LARGE', message: '图片体积超过上限（1.0 MB）' })
+    }
+  })
+
+  it('accepts a declared size exactly at maxBytes', () => {
+    expect(() => assertImageUploadAllowed({ type: 'image/png', size: 1000 }, 1000)).not.toThrow()
+  })
+
+  it('checks the MIME type before the size (a bad type reports the format error even when oversize)', () => {
+    try {
+      assertImageUploadAllowed({ type: 'text/plain', size: Number.MAX_SAFE_INTEGER }, 1)
+      expect.unreachable()
+    } catch (err) {
+      expect(err).toMatchObject({ code: 'BAD_REQUEST' })
+    }
   })
 })

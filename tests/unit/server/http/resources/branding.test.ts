@@ -29,9 +29,11 @@ describe('brandingRouter', () => {
 
   it('uploads a valid branding asset', async () => {
     vi.doMock('@/server/domains/assets/management', () => ({
-      isBrandingSlot: vi.fn((slot: string) => slot === 'logo'),
       uploadBrandingAsset: vi.fn().mockResolvedValue('ref-123'),
       clearBrandingAsset: vi.fn(),
+    }))
+    vi.doMock('@/server/domains/assets/services/storage', () => ({
+      isBrandingSlot: vi.fn((slot: string) => slot === 'logo'),
     }))
     vi.doMock('@/server/domains/audit/services/record', () => ({
       recordAuditEvent: vi.fn(),
@@ -59,9 +61,11 @@ describe('brandingRouter', () => {
 
   it('rejects upload with unknown slot', async () => {
     vi.doMock('@/server/domains/assets/management', () => ({
-      isBrandingSlot: vi.fn().mockReturnValue(false),
       uploadBrandingAsset: vi.fn(),
       clearBrandingAsset: vi.fn(),
+    }))
+    vi.doMock('@/server/domains/assets/services/storage', () => ({
+      isBrandingSlot: vi.fn().mockReturnValue(false),
     }))
 
     const { brandingRouter } = await import('@/server/http/resources/branding')
@@ -81,9 +85,11 @@ describe('brandingRouter', () => {
 
   it('rejects upload when file is missing', async () => {
     vi.doMock('@/server/domains/assets/management', () => ({
-      isBrandingSlot: vi.fn().mockReturnValue(true),
       uploadBrandingAsset: vi.fn(),
       clearBrandingAsset: vi.fn(),
+    }))
+    vi.doMock('@/server/domains/assets/services/storage', () => ({
+      isBrandingSlot: vi.fn().mockReturnValue(true),
     }))
 
     const { brandingRouter } = await import('@/server/http/resources/branding')
@@ -102,9 +108,11 @@ describe('brandingRouter', () => {
 
   it('clears a valid branding slot', async () => {
     vi.doMock('@/server/domains/assets/management', () => ({
-      isBrandingSlot: vi.fn((slot: string) => slot === 'logo'),
       uploadBrandingAsset: vi.fn(),
       clearBrandingAsset: vi.fn().mockResolvedValue(undefined),
+    }))
+    vi.doMock('@/server/domains/assets/services/storage', () => ({
+      isBrandingSlot: vi.fn((slot: string) => slot === 'logo'),
     }))
     vi.doMock('@/server/domains/audit/services/record', () => ({
       recordAuditEvent: vi.fn(),
@@ -129,9 +137,11 @@ describe('brandingRouter', () => {
 
   it('rejects clear with invalid slot', async () => {
     vi.doMock('@/server/domains/assets/management', () => ({
-      isBrandingSlot: vi.fn().mockReturnValue(false),
       uploadBrandingAsset: vi.fn(),
       clearBrandingAsset: vi.fn(),
+    }))
+    vi.doMock('@/server/domains/assets/services/storage', () => ({
+      isBrandingSlot: vi.fn().mockReturnValue(false),
     }))
 
     const { brandingRouter } = await import('@/server/http/resources/branding')
@@ -148,9 +158,11 @@ describe('brandingRouter', () => {
 
   it('rejects uploads that exceed the body limit', async () => {
     vi.doMock('@/server/domains/assets/management', () => ({
-      isBrandingSlot: vi.fn().mockReturnValue(true),
       uploadBrandingAsset: vi.fn(),
       clearBrandingAsset: vi.fn(),
+    }))
+    vi.doMock('@/server/domains/assets/services/storage', () => ({
+      isBrandingSlot: vi.fn().mockReturnValue(true),
     }))
 
     const { brandingRouter } = await import('@/server/http/resources/branding')

@@ -5,7 +5,7 @@ import type { EntityTarget } from '@/server/infra/db/target'
 import type { CommentFormUser } from '@/shared/types/catalog'
 import type { DetailPageComments } from '@/shared/types/comments'
 
-import { bumpPageView } from '@/server/domains/analytics/repos/pv-batcher'
+import { bumpPageView } from '@/server/domains/analytics/services/pv-batcher'
 import { userSession } from '@/server/domains/auth/primitives'
 import { asCommentItemsWire } from '@/server/domains/comments/projection'
 import { queryLikes } from '@/server/domains/comments/services/likes'

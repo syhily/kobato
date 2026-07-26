@@ -5,7 +5,8 @@ import sanitizeHtml from 'sanitize-html'
 
 import type { Page, Post } from '@/shared/types/catalog'
 
-import { listPublicPostsWithContent } from '@/server/domains/posts/repos/public-query/feed'
+import { getPublicMusicMetasByIds } from '@/server/domains/music/services/read'
+import { selectFeedPosts } from '@/server/domains/posts/services/feed'
 import { listAllCategories, resolveCategoryBySlugOrName } from '@/server/domains/taxonomies/categories/services/query'
 import { getTagsByNames, resolveTagBySlugOrName } from '@/server/domains/taxonomies/tags/service'
 import { findCategoriesByNames } from '@/server/infra/db/operations/category'
@@ -93,9 +94,9 @@ async function renderEntryContent(db: NodePgDatabase, entry: Post | Page): Promi
   // so feed readers without JavaScript still get meaningful content.
   // Both pages and posts now live in Postgres and carry a PortableText body.
   const html = await renderPortableTextToHtml(
-    db,
     entry.body,
     entry.headings.map((h) => h.slug),
+    (playerIds) => getPublicMusicMetasByIds(db, playerIds),
     { rssMode: true },
   )
   return sanitizeFeedHtml(html)
@@ -108,15 +109,15 @@ export async function generateFeeds(db: NodePgDatabase, options: FeedOptions = {
   if (category !== undefined && tag !== undefined) {
     throw new DomainError('BAD_REQUEST', 'Category and tag cannot be specified at the same time')
   }
-  // Visibility is internal to the feed channel: hidden posts are included
-  // (they stay listed in feeds by design), scheduled posts are not.
-  const feedPosts = await selectFeedPosts(db, {
-    includeHidden: true,
-    includeScheduled: false,
-    category,
-    tag,
-    limit: content.feed.size,
-  })
+  // The feed channel's visibility policy (hidden included, scheduled not)
+  // and the slug-or-name scope resolution live in the posts domain; the
+  // renderer only wires the taxonomy resolvers the domain cannot import
+  // (taxonomies → posts is the existing DAG edge).
+  const feedPosts = await selectFeedPosts(
+    db,
+    { category, tag, limit: content.feed.size },
+    { resolveCategory: resolveCategoryBySlugOrName, resolveTag: resolveTagBySlugOrName },
+  )
 
   // Start to build the feed.
   const feed = new Feed({
@@ -209,37 +210,4 @@ export async function generateFeeds(db: NodePgDatabase, options: FeedOptions = {
         '<feed xml:lang="zh-CN" xmlns="http://www.w3.org/2005/Atom">',
       ),
   }
-}
-
-async function selectFeedPosts(
-  db: NodePgDatabase,
-  options: Pick<FeedOptions, 'category' | 'tag'> & {
-    includeHidden: boolean
-    includeScheduled: boolean
-    limit?: number
-  },
-): Promise<Post[]> {
-  const visibility = {
-    includeHidden: options.includeHidden,
-    includeScheduled: options.includeScheduled,
-    limit: options.limit,
-  }
-
-  if (options.category !== undefined) {
-    const category = await resolveCategoryBySlugOrName(db, options.category)
-    if (category === null) {
-      return []
-    }
-    return listPublicPostsWithContent(db, { ...visibility, categoryId: category.id })
-  }
-
-  if (options.tag !== undefined) {
-    const tag = await resolveTagBySlugOrName(db, options.tag)
-    if (tag === null) {
-      return []
-    }
-    return listPublicPostsWithContent(db, { ...visibility, tag: tag.name })
-  }
-
-  return listPublicPostsWithContent(db, visibility)
 }

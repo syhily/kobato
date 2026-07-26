@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { idSchema, optionalText, slugSchema } from '@/server/domains/content/schemas/meta-fields'
+import { idSchema, upsertMetaBaseSchema } from '@/server/domains/content/schemas/meta-fields'
 import { safeBoolean } from '@/shared/utils/schema'
 
 export const listPagesSchema = z.object({
@@ -18,25 +18,8 @@ export const restorePageSchema = idSchema
 export const unpublishPageSchema = idSchema
 export const listPageRevisionsSchema = idSchema
 
-export const upsertPageMetaSchema = z.object({
-  id: z.string().min(1).optional(),
-  slug: slugSchema.optional(),
-  title: z.string().trim().min(1).max(200),
-  summary: optionalText(500),
-  cover: z.string().trim().max(500).optional().default(''),
-  og: z
-    .string()
-    .trim()
-    .max(500)
-    .nullable()
-    .optional()
-    .transform((value) => (value === undefined || value === '' ? null : value)),
-  published: safeBoolean().optional(),
-  commentsEnabled: safeBoolean().optional(),
-  showToc: safeBoolean().optional(),
-  showUpdated: safeBoolean().optional(),
+export const upsertPageMetaSchema = upsertMetaBaseSchema.extend({
   showFriends: safeBoolean().optional(),
-  publishedAt: z.iso.datetime({ offset: true }).optional(),
 })
 
 export const renderMathSchema = z.object({

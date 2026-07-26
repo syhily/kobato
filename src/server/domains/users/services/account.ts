@@ -2,7 +2,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import bcrypt from 'bcryptjs'
 
-import { revokeAllSessionsOfUser } from '@/server/domains/auth/service'
+import { revokeAllSessionsOfUser } from '@/server/domains/auth/services/sessions'
 import { findUserById, PASSWORD_HASH_ROUNDS, updateUserById } from '@/server/infra/db/operations/user'
 import { DomainError } from '@/server/infra/http/errors'
 
@@ -13,6 +13,40 @@ export interface AccountProfileInput {
   badgeColor?: string | null
   badgeTextColor?: string | null
   receiveEmail?: boolean
+}
+
+// The self-service profile projection behind `/admin/me/profile`. A
+// missing row (deleted mid-session) degrades to empty fields instead of
+// failing the page — the layout already guarantees a live session.
+export interface AccountProfile {
+  id: string
+  name: string
+  email: string
+  link: string
+  role: 'admin' | 'author' | 'visitor' | null
+  badgeName: string
+  badgeColor: string
+  createdAt: string | null
+  lastIp: string | null
+  lastUa: string | null
+  passkeyForce: boolean
+}
+
+export async function getAccountProfile(db: NodePgDatabase, userId: bigint): Promise<AccountProfile> {
+  const dbUser = await findUserById(db, userId)
+  return {
+    id: String(userId),
+    name: dbUser?.name ?? '',
+    email: dbUser?.email ?? '',
+    link: dbUser?.link ?? '',
+    role: dbUser?.role ?? null,
+    badgeName: dbUser?.badgeName ?? '',
+    badgeColor: dbUser?.badgeColor ?? '',
+    createdAt: dbUser?.createdAt ? dbUser.createdAt.toISOString() : null,
+    lastIp: dbUser?.lastIp ?? null,
+    lastUa: dbUser?.lastUa ?? null,
+    passkeyForce: dbUser?.passkeyForce ?? false,
+  }
 }
 
 export async function updateAccountProfile(

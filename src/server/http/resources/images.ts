@@ -12,14 +12,14 @@ import {
   resolveAvatarInfo,
   resolveAvatarSize,
 } from '@/server/domains/comments/services/avatar'
-import { isLive } from '@/server/domains/content/schema'
-import { findPublicPageMetaBySlug } from '@/server/domains/pages/repo'
-import { findPublicPostMetaBySlug } from '@/server/domains/posts/repos/single'
+import { isLive } from '@/server/domains/content/schemas/live-gate'
+import { findPublicPageMetaBySlug } from '@/server/domains/pages/services/public-query'
+import { findPublicPostMetaBySlug } from '@/server/domains/posts/services/single'
+import { findCategoryBySlug } from '@/server/domains/taxonomies/categories/services/query'
 import { rateLimitByIp } from '@/server/http/middlewares/rate-limit'
 import { AvatarStatus, cacheAvatar, loadAvatar } from '@/server/http/resources/avatar-cache'
 import { serveCalendar } from '@/server/http/resources/calendar'
 import { through } from '@/server/infra/cache/registry'
-import { findCategoryBySlug } from '@/server/infra/db/operations/category'
 import { drawOpenGraph } from '@/server/render/og/render'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { joinUrl } from '@/shared/utils/urls'

@@ -10,7 +10,7 @@ import {
   fetchAuditLogActors,
   listAuditLogs,
   type AuditLogFilterInput,
-} from '@/server/domains/audit/repos/query'
+} from '@/server/domains/audit/services/query'
 import { adminProc } from '@/server/http/orpc-base'
 import {
   auditLogActorsOutput,

@@ -16,11 +16,11 @@ const mocks = vi.hoisted(() => ({
   drawOpenGraph: vi.fn(() => Buffer.from('og-image')),
 }))
 
-vi.mock('@/server/domains/posts/repos/single', () => ({
+vi.mock('@/server/domains/posts/services/single', () => ({
   findPublicPostMetaBySlug: mocks.findPublicPostMetaBySlug,
   findPostBySlug: mocks.findPostBySlug,
 }))
-vi.mock('@/server/domains/pages/repo', () => ({
+vi.mock('@/server/domains/pages/services/public-query', () => ({
   findPublicPageMetaBySlug: mocks.findPublicPageMetaBySlug,
   findPageBySlug: mocks.findPageBySlug,
 }))

@@ -47,11 +47,11 @@ vi.mock('@/server/http/resources/calendar', () => ({
       }),
   ),
 }))
-vi.mock('@/server/domains/pages/repo', () => ({
+vi.mock('@/server/domains/pages/services/public-query', () => ({
   listPublicPageMetas: vi.fn(async () => []),
   findPublicPageMetaBySlug: vi.fn(),
 }))
-vi.mock('@/server/domains/posts/repos/single', () => ({
+vi.mock('@/server/domains/posts/services/single', () => ({
   findPublicPostMetaBySlug: vi.fn(),
 }))
 vi.mock('@/shared/config/getters', () => ({
@@ -113,8 +113,8 @@ describe('imagesRouter avatar', () => {
 
 describe('imagesRouter og', () => {
   it('looks up slug via findPublicPostMetaBySlug and findPublicPageMetaBySlug in parallel', async () => {
-    const { findPublicPostMetaBySlug } = await import('@/server/domains/posts/repos/single')
-    const { findPublicPageMetaBySlug } = await import('@/server/domains/pages/repo')
+    const { findPublicPostMetaBySlug } = await import('@/server/domains/posts/services/single')
+    const { findPublicPageMetaBySlug } = await import('@/server/domains/pages/services/public-query')
     await app.request('/images/og/hello-world.png')
     expect(vi.mocked(findPublicPostMetaBySlug)).toHaveBeenCalledWith(undefined, 'hello-world')
     expect(vi.mocked(findPublicPageMetaBySlug)).toHaveBeenCalledWith(undefined, 'hello-world')

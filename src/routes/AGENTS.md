@@ -2,8 +2,11 @@
 
 `src/routes/` contains route modules — loader / action / meta /
 component orchestration. Read session/context at the perimeter, call
-into `server/`, project DTOs through `shared/`, render with `ui/`. No
-DB queries, cache access, or markdown parsing inline.
+into `server/http/loaders/*` orchestration or domain-surface services,
+project DTOs through `shared/`, render with `ui/`. No DB queries,
+cache access, or markdown parsing inline — and never import
+`server/infra/db/operations/*` directly (business data access goes
+through domain surfaces; a boundaries contract test pins this).
 
 Route modules live alongside resource routes (feeds, sitemap, OG
 images, JSON APIs) under the same folder so the per-URL contract is

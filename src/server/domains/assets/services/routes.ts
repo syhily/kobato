@@ -7,7 +7,7 @@ import {
   DEFAULT_SVG_ETAG,
   type SvgSlot,
 } from '@/server/assets/defaults'
-import { fetchBrandingObject, SLOT_CONTENT_TYPE } from '@/server/domains/assets/repos/storage'
+import { fetchBrandingObject, SLOT_CONTENT_TYPE } from '@/server/domains/assets/services/storage'
 import { NODE_ENV } from '@/server/infra/env'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 

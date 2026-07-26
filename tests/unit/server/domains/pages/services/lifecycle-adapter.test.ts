@@ -10,6 +10,15 @@ vi.mock('@/server/domains/content/invalidate', () => ({
 
 vi.mock('@/server/domains/pages/repo', () => ({
   findPageMetaById: vi.fn(),
+  findPageMetaBySlug: vi.fn(),
+  findPageMetaBySlugForUpdate: vi.fn(),
+  insertPageMeta: vi.fn(),
+  updatePageMetaById: vi.fn(),
+  softDeletePageMeta: vi.fn(),
+  restorePageMeta: vi.fn(),
+}))
+
+vi.mock('@/server/domains/pages/services/public-query', () => ({
   findPublicPageMetaBySlug: vi.fn(),
 }))
 

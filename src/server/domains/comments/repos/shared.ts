@@ -5,8 +5,6 @@ import { and, eq, gte, isNotNull, isNull, lte, not, or, sql } from 'drizzle-orm'
 import type { EntityTarget, EntityType } from '@/server/infra/db/target'
 import type { MyCommentsStatus } from '@/shared/types/comments'
 
-export type { MyCommentsStatus }
-
 import { ilikeEscape } from '@/server/infra/db/ilike-escape'
 import { comment } from '@/server/infra/db/schema/comment'
 import { page } from '@/server/infra/db/schema/page'

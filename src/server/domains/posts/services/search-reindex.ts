@@ -2,7 +2,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { count, inArray } from 'drizzle-orm'
 
-import { livePostWhere } from '@/server/domains/posts/repos/shared'
+import { livePostWhere } from '@/server/domains/posts/live-gate'
 import { indexPost } from '@/server/domains/posts/services/search-index'
 import { content } from '@/server/infra/db/schema/content'
 import { post } from '@/server/infra/db/schema/post'

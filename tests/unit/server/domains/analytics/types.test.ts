@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { EnrichedAccessEvent } from '@/server/domains/analytics/types'
 
-import { csvRow } from '@/server/domains/analytics/repos/batcher'
+import { csvRow } from '@/server/domains/analytics/services/batcher'
 import { csvEscape } from '@/server/infra/csv'
 
 describe('csvEscape', () => {

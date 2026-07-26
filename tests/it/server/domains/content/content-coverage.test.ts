@@ -12,7 +12,7 @@ import {
   findLatestRevision,
   findLatestDraft,
   listRevisions,
-} from '@/server/domains/content/repos/query'
+} from '@/server/domains/content/revisions'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { page as pageMetaTable } from '@/server/infra/db/schema/page'

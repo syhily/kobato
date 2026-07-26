@@ -1,7 +1,7 @@
 import type { AuditContext, AuditEventInput } from '@/server/domains/audit/types'
 
 import { tagL3InDetails } from '@/server/domains/audit/privacy'
-import { pushAuditEvent } from '@/server/domains/audit/repos/batcher'
+import { pushAuditEvent } from '@/server/domains/audit/services/batcher'
 import { getLogger } from '@/server/infra/logger'
 
 const log = getLogger('audit.service')

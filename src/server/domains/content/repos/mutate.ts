@@ -10,7 +10,7 @@ import type {
   PublishLatestResult,
   SaveDraftInput,
   SaveDraftResult,
-} from '@/server/domains/content/schema'
+} from '@/server/domains/content/schemas/revision'
 import type { ContentRow, NewContent } from '@/server/infra/db/types'
 
 import { content as contentTable } from '@/server/infra/db/schema/content'

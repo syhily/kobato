@@ -4,6 +4,7 @@ import { data } from 'react-router'
 import type { RouteHandle } from '@/root'
 
 import { listAllFriends } from '@/server/domains/friends/service'
+import { getPublicMusicMetasByIds } from '@/server/domains/music/services/read'
 import { prerenderMusicPlayerBlocks } from '@/server/domains/pt/prerender'
 import { loadPublicDetailData } from '@/server/http/loaders/detail'
 import { loadPagePreview } from '@/server/http/loaders/page-preview'
@@ -33,7 +34,9 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   ])
 
   const footnotesSectionTitle = resolveFootnotesSectionTitle(requireBlogSettingsSection('content'))
-  const enrichedBody = await prerenderMusicPlayerBlocks(db, preview.body)
+  const enrichedBody = await prerenderMusicPlayerBlocks(preview.body, (playerIds) =>
+    getPublicMusicMetasByIds(db, playerIds),
+  )
 
   const { detail } = await loadPublicDetailData(db, {
     request,

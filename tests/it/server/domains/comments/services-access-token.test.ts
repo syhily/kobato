@@ -59,15 +59,15 @@ async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Pro
   return rows[0]!.id
 }
 
-describe('comments/repos/public-query — findCommentWithUserById', () => {
+describe('comments/services/lookup — findCommentWithUserById', () => {
   it('returns null when the comment does not exist', async () => {
-    const { findCommentWithUserById } = await import('@/server/domains/comments/repos/public-query/by-id')
+    const { findCommentWithUserById } = await import('@/server/domains/comments/services/lookup')
     expect(await findCommentWithUserById(db, 9999n)).toBeNull()
   })
   it('returns the comment with the user join', async () => {
     const u1 = await seedUser()
     const id = await seedComment({ userId: u1 })
-    const { findCommentWithUserById } = await import('@/server/domains/comments/repos/public-query/by-id')
+    const { findCommentWithUserById } = await import('@/server/domains/comments/services/lookup')
     const r = await findCommentWithUserById(db, id)
     expect(r?.name).toBe('Alice')
   })
@@ -86,11 +86,11 @@ describe('comments/services/moderate — approveComment', () => {
   })
 })
 
-describe('comments/repos/moderation — deleteCommentById', () => {
+describe('comments/services/moderate — deleteCommentById', () => {
   it('hard-deletes the row', async () => {
     const u1 = await seedUser()
     const id = await seedComment({ userId: u1 })
-    const { deleteCommentById } = await import('@/server/domains/comments/repos/moderation')
+    const { deleteCommentById } = await import('@/server/domains/comments/services/moderate')
     await deleteCommentById(db, id)
     const rows = await db.select({ id: comment.id }).from(comment)
     expect(rows).toHaveLength(0)

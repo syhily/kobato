@@ -6,7 +6,7 @@ import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vites
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { clearAllTables } from '#/_helpers/integration-db'
-import { flushAuditLog } from '@/server/domains/audit/repos/batcher'
+import { flushAuditLog } from '@/server/domains/audit/services/batcher'
 import { establishLoginSession, logout, userSession } from '@/server/domains/auth/primitives'
 import { requireRole, requireUserRole, isPostOwner, canEditPost } from '@/server/domains/auth/rbac'
 import {
@@ -15,7 +15,9 @@ import {
   revokeSessionById,
   recordSessionActivity,
 } from '@/server/domains/auth/repo'
-import { listSessionsByUser, listAllSessions } from '@/server/domains/auth/service'
+import { handleCredentialLogin } from '@/server/domains/auth/services/credential'
+import { handleOtpCancel } from '@/server/domains/auth/services/otp'
+import { listSessionsByUser, listAllSessions } from '@/server/domains/auth/services/sessions'
 import { revokeSessionWithGuard } from '@/server/domains/auth/session-guard'
 import { commitSessionWithMaxAge, getRequestSession } from '@/server/domains/auth/session-storage'
 import {
@@ -24,7 +26,6 @@ import {
   verifySetupToken,
   isSetupTokenActive,
 } from '@/server/domains/auth/setup-token'
-import { handleOtpCancel, handleCredentialLogin } from '@/server/domains/auth/signin-flow'
 import {
   issueOtpToken,
   issueResetToken,

@@ -1,3 +1,4 @@
+import type { UpsertMetaInputBase } from '@/server/domains/content/entities/descriptor'
 import type { AdminPostDto } from '@/server/domains/posts/projection'
 import type { PostMetaRow } from '@/server/infra/db/types'
 
@@ -12,23 +13,12 @@ export interface AdminPostsListResult {
   hasMore: boolean
 }
 
-export interface UpsertPostMetaInput {
-  id?: bigint
-  slug?: string
-  title: string
-  summary?: string
-  cover?: string
-  og?: string | null
-  published?: boolean
-  commentsEnabled?: boolean
-  showToc?: boolean
-  showUpdated?: boolean
+export interface UpsertPostMetaInput extends UpsertMetaInputBase {
   visible?: boolean
   pinnedAt?: Date | null
   categoryId?: bigint | null
   tags?: string[]
   alias?: string[]
-  publishedAt?: Date
 }
 
 export function assertOwnPostOr404(meta: PostMetaRow | null, viewer?: ViewerContext): asserts meta is PostMetaRow {

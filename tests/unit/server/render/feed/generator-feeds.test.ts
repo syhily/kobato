@@ -2,17 +2,17 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@/server/domains/posts/repos/public-query/feed', () => ({
-  listPublicPostsWithContent: (db: unknown, opts: unknown) => feedState.listPosts(db, opts),
+vi.mock('@/server/domains/posts/services/feed', () => ({
+  selectFeedPosts: (db: unknown, opts: unknown, resolvers: unknown) => feedState.selectPosts(db, opts, resolvers),
 }))
 vi.mock('@/server/domains/taxonomies/categories/services/query', () => ({
   listAllCategories: () => feedState.listCats(),
-  resolveCategoryBySlugOrName: (_db: unknown, v: string) =>
-    feedState.findCatBySlug(v).then((r) => r ?? feedState.findCatByName(v)),
+  // Passed through to the domain selection as injected resolvers — the
+  // generator never calls them itself, so a null stub is enough here.
+  resolveCategoryBySlugOrName: vi.fn(async () => null),
 }))
 vi.mock('@/server/domains/taxonomies/tags/service', () => ({
-  resolveTagBySlugOrName: (_db: unknown, v: string) =>
-    feedState.findTagBySlug(v).then((r) => r ?? feedState.findTagByName(v)),
+  resolveTagBySlugOrName: vi.fn(async () => null),
   getTagsByNames: (_db: unknown, names: string[]) => feedState.getTags(names),
 }))
 vi.mock('@/server/infra/db/operations/category', () => ({
@@ -28,14 +28,14 @@ import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
 import { generateFeeds } from '@/server/render/feed/generator'
 
+// Perimeter coverage for `generateFeeds`: the RSS/Atom envelope and the
+// wiring into the posts domain's `selectFeedPosts`. The selection policy
+// (visibility, scope resolution, miss → empty) is pinned at the domain
+// seam in tests/unit/server/domains/posts/services/feed.test.ts.
 const feedState = {
-  listPosts: vi.fn<(db: unknown, opts: unknown) => Promise<(Post | Page)[]>>(),
+  selectPosts: vi.fn<(db: unknown, opts: unknown, resolvers: unknown) => Promise<(Post | Page)[]>>(),
   findCats: vi.fn<(names: string[]) => Promise<unknown[]>>(),
-  findCatByName: vi.fn<(name: string) => Promise<unknown | null>>(),
-  findCatBySlug: vi.fn<(slug: string) => Promise<unknown | null>>(),
   listCats: vi.fn<() => Promise<unknown[]>>(),
-  findTagByName: vi.fn<(name: string) => Promise<unknown | null>>(),
-  findTagBySlug: vi.fn<(slug: string) => Promise<unknown | null>>(),
   getTags: vi.fn<(names: string[]) => Promise<unknown[]>>(),
   render: vi.fn<() => Promise<string>>(),
 }
@@ -59,22 +59,14 @@ function makePost(overrides: Partial<Post> = {}): Post {
 }
 
 beforeEach(() => {
-  feedState.listPosts.mockReset()
+  feedState.selectPosts.mockReset()
   feedState.findCats.mockReset()
-  feedState.findCatByName.mockReset()
-  feedState.findCatBySlug.mockReset()
   feedState.listCats.mockReset()
-  feedState.findTagByName.mockReset()
-  feedState.findTagBySlug.mockReset()
   feedState.getTags.mockReset()
   feedState.render.mockReset()
-  feedState.listPosts.mockResolvedValue([])
+  feedState.selectPosts.mockResolvedValue([])
   feedState.findCats.mockResolvedValue([])
-  feedState.findCatByName.mockResolvedValue(null)
-  feedState.findCatBySlug.mockResolvedValue(null)
   feedState.listCats.mockResolvedValue([{ name: '默认分类' }])
-  feedState.findTagByName.mockResolvedValue(null)
-  feedState.findTagBySlug.mockResolvedValue(null)
   feedState.getTags.mockResolvedValue([])
   feedState.render.mockResolvedValue('<p>body</p>')
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
@@ -86,14 +78,14 @@ afterEach(() => {
 
 describe('render/feed/generator — generateFeeds', () => {
   it('generates a feed with no posts', async () => {
-    feedState.listPosts.mockResolvedValue([])
+    feedState.selectPosts.mockResolvedValue([])
     const result = await generateFeeds(fakeDb)
     expect(result.rss).toContain('<?xml')
     expect(result.atom).toContain('xml:lang="zh-CN"')
   })
 
   it('generates a feed with one post including its content', async () => {
-    feedState.listPosts.mockResolvedValue([makePost()])
+    feedState.selectPosts.mockResolvedValue([makePost()])
     feedState.getTags.mockResolvedValue([{ name: 'react', slug: 'react' }])
     feedState.findCats.mockResolvedValue([{ name: '默认分类', slug: 'default' }])
     const result = await generateFeeds(fakeDb)
@@ -105,52 +97,27 @@ describe('render/feed/generator — generateFeeds', () => {
     await expect(generateFeeds(fakeDb, { category: 'c', tag: 't' })).rejects.toMatchObject({ name: 'DomainError' })
   })
 
-  it('returns an empty feed when the category slug and name both miss', async () => {
-    feedState.findCatBySlug.mockResolvedValue(null)
-    feedState.findCatByName.mockResolvedValue(null)
+  it('forwards the category scope and the configured feed size to the domain selection', async () => {
+    await generateFeeds(fakeDb, { category: 'react' })
+    expect(feedState.selectPosts).toHaveBeenCalledWith(
+      fakeDb,
+      { category: 'react', tag: undefined, limit: 20 },
+      expect.objectContaining({ resolveCategory: expect.any(Function), resolveTag: expect.any(Function) }),
+    )
+  })
+
+  it('forwards the tag scope to the domain selection', async () => {
+    await generateFeeds(fakeDb, { tag: 'react' })
+    expect(feedState.selectPosts).toHaveBeenCalledWith(
+      fakeDb,
+      { category: undefined, tag: 'react', limit: 20 },
+      expect.any(Object),
+    )
+  })
+
+  it('renders an empty feed when the domain selection is empty', async () => {
+    feedState.selectPosts.mockResolvedValue([])
     const result = await generateFeeds(fakeDb, { category: 'missing' })
     expect(result.rss).toContain('<?xml')
-    expect(feedState.listPosts).not.toHaveBeenCalled()
-  })
-
-  it('queries posts by category id when the slug matches', async () => {
-    feedState.findCatBySlug.mockResolvedValue({ id: 7n, name: 'React', slug: 'react' })
-    feedState.listPosts.mockResolvedValue([])
-    await generateFeeds(fakeDb, { category: 'react' })
-    expect(feedState.listPosts).toHaveBeenCalled()
-    const opts = feedState.listPosts.mock.calls[0]![1] as { categoryId: bigint }
-    expect(opts.categoryId).toBe(7n)
-  })
-
-  it('falls back to category name lookup when slug misses', async () => {
-    feedState.findCatBySlug.mockResolvedValue(null)
-    feedState.findCatByName.mockResolvedValue({ id: 7n, name: 'React', slug: 'react' })
-    feedState.listPosts.mockResolvedValue([])
-    await generateFeeds(fakeDb, { category: 'React' })
-    expect(feedState.listPosts).toHaveBeenCalled()
-  })
-
-  it('returns an empty feed when the tag slug and name both miss', async () => {
-    feedState.findTagBySlug.mockResolvedValue(null)
-    feedState.findTagByName.mockResolvedValue(null)
-    const result = await generateFeeds(fakeDb, { tag: 'missing' })
-    expect(result.rss).toContain('<?xml')
-    expect(feedState.listPosts).not.toHaveBeenCalled()
-  })
-
-  it('queries posts by tag name when the slug matches', async () => {
-    feedState.findTagBySlug.mockResolvedValue({ name: 'React', slug: 'react' })
-    feedState.listPosts.mockResolvedValue([])
-    await generateFeeds(fakeDb, { tag: 'react' })
-    const opts = feedState.listPosts.mock.calls[0]![1] as { tag: string }
-    expect(opts.tag).toBe('React')
-  })
-
-  it('falls back to tag name lookup when slug misses', async () => {
-    feedState.findTagBySlug.mockResolvedValue(null)
-    feedState.findTagByName.mockResolvedValue({ name: 'React', slug: 'react' })
-    feedState.listPosts.mockResolvedValue([])
-    await generateFeeds(fakeDb, { tag: 'React' })
-    expect(feedState.listPosts).toHaveBeenCalled()
   })
 })

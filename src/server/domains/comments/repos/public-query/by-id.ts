@@ -2,7 +2,8 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { and, count, desc, eq, gte, inArray } from 'drizzle-orm'
 
-import { commentWithUser, type ParentCommentRow } from '@/server/domains/comments/repos/shared'
+import type { ParentCommentRow } from '@/server/domains/comments/repos/shared'
+
 import { comment } from '@/server/infra/db/schema/comment'
 import { user } from '@/server/infra/db/schema/user'
 
@@ -21,27 +22,6 @@ export async function recentCommentsForUserDedupe(db: NodePgDatabase, userId: bi
     .where(and(eq(comment.userId, userId), gte(comment.createdAt, since)))
     .orderBy(desc(comment.createdAt), desc(comment.id))
     .limit(limit)
-}
-
-export async function findCommentWithUserById(db: NodePgDatabase, id: bigint) {
-  const rows = await db
-    .select(commentWithUser)
-    .from(comment)
-    .innerJoin(user, eq(comment.userId, user.id))
-    .where(eq(comment.id, id))
-    .limit(1)
-  return rows[0] ?? null
-}
-
-export async function findCommentsByIds(db: NodePgDatabase, ids: bigint[]) {
-  if (ids.length === 0) {
-    return []
-  }
-  return db
-    .select(commentWithUser)
-    .from(comment)
-    .innerJoin(user, eq(comment.userId, user.id))
-    .where(inArray(comment.id, ids))
 }
 
 export async function findCommentWithSourceUser(db: NodePgDatabase, id: bigint) {

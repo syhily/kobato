@@ -6,7 +6,7 @@ import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { clearAllTables } from '#/_helpers/integration-db'
 import { buildAdminListConditions } from '@/server/domains/comments/repos/shared'
-import { liveContentWhere } from '@/server/domains/content/schema'
+import { liveContentWhere } from '@/server/domains/content/schemas/live-gate'
 import { bumpCounter } from '@/server/infra/cache/registry'
 import { ilikeEscape } from '@/server/infra/db/ilike-escape'
 import { createDbPool, closePool } from '@/server/infra/db/pool'

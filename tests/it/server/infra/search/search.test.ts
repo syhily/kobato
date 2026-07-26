@@ -45,9 +45,9 @@ vi.mock('@/server/infra/logger', async (importOriginal) => {
 
 const { searchPosts, __setTrgmAvailabilityForTests } = await import('@/server/infra/search/search')
 const { bumpCounter } = await import('@/server/infra/cache/registry')
-const { getPostsBySlugs } = await import('@/server/domains/posts/repos/public-query/misc')
+const { getPostsBySlugs } = await import('@/server/domains/posts/services/public-query')
 const { searchPostOptions } = await import('@/server/infra/search/options')
-const { liveContentWhere } = await import('@/server/domains/content/schema')
+const { liveContentWhere } = await import('@/server/domains/content/schemas/live-gate')
 const { setBlogSettingsBundleForTests } = await import('@/server/domains/settings/services/test-utils')
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('#/_helpers/blog-settings')
 

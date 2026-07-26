@@ -1,5 +1,5 @@
 import type { MusicRow } from '@/server/infra/db/types'
-import type { AdminMusicDto, MetingSearchHit } from '@/shared/contracts/music'
+import type { AdminMusicDto } from '@/shared/contracts/music'
 
 import { resolveAssetUrl } from '@/server/infra/storage/public-url'
 
@@ -37,8 +37,3 @@ export function splitArtist(packed: string): string[] {
     .map((part) => part.trim())
     .filter((part) => part !== '')
 }
-
-// Re-export the search hit type so the import script can import it
-// from the same module the route uses, without crossing into the
-// raw Meting wrapper.
-export type { MetingSearchHit }

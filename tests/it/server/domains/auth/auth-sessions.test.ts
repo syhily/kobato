@@ -5,7 +5,7 @@ import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { clearAllTables } from '#/_helpers/integration-db'
 import { recordSessionLogin } from '@/server/domains/auth/repo'
-import { listSessionsByUser } from '@/server/domains/auth/service'
+import { listSessionsByUser } from '@/server/domains/auth/services/sessions'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { session as sessionTable } from '@/server/infra/db/schema/session'
 import { user } from '@/server/infra/db/schema/user'

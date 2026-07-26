@@ -11,8 +11,8 @@ vi.mock('@/shared/config/getters', () => ({
     return {}
   }),
 }))
-vi.mock('@/server/domains/assets/repos/storage', async (importActual) => {
-  const actual = (await importActual()) as typeof import('@/server/domains/assets/repos/storage')
+vi.mock('@/server/domains/assets/services/storage', async (importActual) => {
+  const actual = (await importActual()) as typeof import('@/server/domains/assets/services/storage')
   return {
     ...actual,
     fetchBrandingObject: vi.fn().mockResolvedValue(null),

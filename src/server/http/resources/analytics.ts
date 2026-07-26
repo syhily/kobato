@@ -1,47 +1,17 @@
-import type { Context } from 'hono'
-
 import { Hono } from 'hono'
-import { createHash } from 'node:crypto'
 
 import type { Env } from '@/server/http/context'
 
-import { queryRealtimeTail } from '@/server/domains/analytics/services/realtime'
+import {
+  acquireRealtimeConnection,
+  queryRealtimeTail,
+  realtimeConnectionKey,
+} from '@/server/domains/analytics/services/realtime'
 import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'
 import { getLogger } from '@/server/infra/logger'
 
 const POLL_INTERVAL_MS = 2_000
 const HEARTBEAT_INTERVAL_MS = 25_000
-const MAX_CONNECTIONS_PER_SESSION = 2
-
-// Per-session connection counter. Node.js is single-threaded, so a plain
-// Map is safe. If worker threads are ever introduced, this state must move
-// to the main thread only.
-const activeSSEConnections = new Map<string, number>()
-
-function getRealtimeKey(c: Context<Env>): string {
-  const sessionId = c.var.requestContext.session.id
-  if (sessionId) {
-    return `session:${sessionId}`
-  }
-  return `ip:${hashClientAddress(c.var.requestContext.clientAddress)}`
-}
-
-function hashClientAddress(address: string): string {
-  return createHash('sha256').update(address).digest('hex').slice(0, 32)
-}
-
-function incrementSession(sessionId: string): void {
-  activeSSEConnections.set(sessionId, (activeSSEConnections.get(sessionId) ?? 0) + 1)
-}
-
-function decrementSession(sessionId: string): void {
-  const current = (activeSSEConnections.get(sessionId) ?? 0) - 1
-  if (current <= 0) {
-    activeSSEConnections.delete(sessionId)
-  } else {
-    activeSSEConnections.set(sessionId, current)
-  }
-}
 
 export const analyticsEventsRouter = new Hono<Env>().get('/api/analytics/events', requireRoleMw('admin'), async (c) => {
   const sinceParam = c.req.query('since')
@@ -50,16 +20,17 @@ export const analyticsEventsRouter = new Hono<Env>().get('/api/analytics/events'
     lastSeen = new Date(Date.now() - 60_000)
   }
 
-  const sessionId = getRealtimeKey(c)
-  const current = activeSSEConnections.get(sessionId) ?? 0
-  if (current >= MAX_CONNECTIONS_PER_SESSION) {
+  // The connection registry and the per-session cap live in the analytics
+  // domain; this resource keeps only the SSE/Hono plumbing.
+  const connectionKey = realtimeConnectionKey(c.var.requestContext.session.id, c.var.requestContext.clientAddress)
+  const releaseConnection = acquireRealtimeConnection(connectionKey)
+  if (releaseConnection === null) {
     return c.json({ error: 'Too many realtime connections for this session' }, 429)
   }
 
   const encoder = new TextEncoder()
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
-      incrementSession(sessionId)
       let closed = false
       let pollInProgress = false
 
@@ -68,7 +39,7 @@ export const analyticsEventsRouter = new Hono<Env>().get('/api/analytics/events'
           return
         }
         closed = true
-        decrementSession(sessionId)
+        releaseConnection()
         clearInterval(pollTimer)
         clearInterval(heartbeatTimer)
         c.req.raw.signal.removeEventListener('abort', close)

@@ -258,8 +258,3 @@ export async function updateUserRole(
   const updated = await db.update(user).set({ role }).where(eq(user.id, id)).returning()
   return updated[0] ?? null
 }
-
-export async function countUsers(db: NodePgDatabase): Promise<number> {
-  const rows = await db.select({ count: count() }).from(user)
-  return rows[0]?.count ?? 0
-}

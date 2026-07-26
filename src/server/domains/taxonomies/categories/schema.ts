@@ -1,11 +1,5 @@
 import { z } from 'zod'
 
-import type { ListCategoriesInput, ReorderCategoriesInput, UpsertCategoryInput } from '@/shared/types/categories'
-
-// Re-export the wire-format types alongside the Zod validators so
-// admin Resource Routes import schema + type from the same module.
-export type { ListCategoriesInput, ReorderCategoriesInput, UpsertCategoryInput }
-
 // Helper: trim incoming text. Used for `description` so a blank
 // textarea collapses to "" (the column has `NOT NULL DEFAULT ''`).
 const optionalText = (max: number) =>

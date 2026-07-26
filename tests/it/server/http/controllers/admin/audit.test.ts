@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 
-vi.mock('@/server/domains/audit/repos/query', () => ({
+vi.mock('@/server/domains/audit/services/query', () => ({
   countAuditLogs: vi.fn(),
   listAuditLogs: vi.fn(),
   fetchAuditLogActorMap: vi.fn(),
@@ -14,7 +14,7 @@ vi.mock('@/server/domains/audit/highlight', () => ({
   highlightAuditLogDetails: vi.fn((details: string | null) => Promise.resolve(details)),
 }))
 
-const query = await import('@/server/domains/audit/repos/query')
+const query = await import('@/server/domains/audit/services/query')
 const { auditLogRouter } = await import('@/server/http/controllers/admin/audit.controller')
 
 const ctx = makeAuthedCtx({ role: 'admin' })

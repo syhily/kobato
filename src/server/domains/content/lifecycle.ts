@@ -1,7 +1,7 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import type { ViewerIdentity } from '@/server/domains/auth/rbac'
-import type { ContentType, PublishLatestResult, SaveDraftResult } from '@/server/domains/content/schema'
+import type { ContentType, PublishLatestResult, SaveDraftResult } from '@/server/domains/content/schemas/revision'
 import type { ContentRow } from '@/server/infra/db/types'
 import type { AdminRevisionDto } from '@/shared/contracts/revision'
 import type { PortableTextBody, PortableTextHeading } from '@/shared/pt/schema'
@@ -9,7 +9,7 @@ import type { RoleOrNull } from '@/shared/utils/roles'
 
 import { toAdminRevisionDto } from '@/server/domains/content/projection'
 import { publishLatestRevision, saveDraftRevision } from '@/server/domains/content/repos/mutate'
-import { findContentById, findLatestDraft, findLatestRevision } from '@/server/domains/content/repos/query'
+import { findContentById, findLatestDraft, findLatestRevision } from '@/server/domains/content/revisions'
 import { syncLibraryImageBlocks } from '@/server/domains/content/services/image-sync'
 import { canonicalizePortableTextBody } from '@/server/domains/pt/services/canonicalize'
 import { getLogger, type Logger } from '@/server/infra/logger'

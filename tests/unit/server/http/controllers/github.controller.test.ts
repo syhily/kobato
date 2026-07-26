@@ -9,6 +9,15 @@ vi.mock('@/server/infra/rate-limit', () => ({
   tryResourceRateLimit: vi.fn(async () => ({ exceeded: false })),
 }))
 
+// The avatar fetch + base64 inlining lives in the comments domain
+// (pinned in tests/unit/server/domains/comments/services/avatar.test.ts);
+// the controller only maps the service result onto the wire shape.
+vi.mock('@/server/domains/comments/services/avatar', () => ({
+  fetchGithubAvatarDataUrl: vi.fn(),
+}))
+
+const avatarService = await import('@/server/domains/comments/services/avatar')
+
 const { RPCHandler } = await import('@orpc/server/fetch')
 const handler = new RPCHandler(githubRouter)
 
@@ -32,28 +41,21 @@ describe('github controller', () => {
 
   beforeEach(() => {
     mockFetch.reset()
+    vi.mocked(avatarService.fetchGithubAvatarDataUrl).mockReset()
     globalThis.fetch = mockFetch.fetch as unknown as typeof globalThis.fetch
   })
 
-  it('avatar returns base64 data URL on success', async () => {
-    const buffer = new Uint8Array([0x89, 0x50, 0x4e, 0x47]).buffer
-    mockFetch.enqueue(
-      /avatars\.githubusercontent\.com/,
-      () =>
-        new Response(buffer, {
-          status: 200,
-          headers: { 'Content-Type': 'image/png' },
-        }),
-    )
+  it('avatar returns the data URL produced by the domain service', async () => {
+    vi.mocked(avatarService.fetchGithubAvatarDataUrl).mockResolvedValueOnce('data:image/png;base64,iVBORw==')
 
     const response = await call('/avatar', {})
     expect(response.status).toBe(200)
     const body = await parseRpcJson<{ avatar: string }>(response)
-    expect(body.avatar).toMatch(/^data:image\/png;base64,/)
+    expect(body.avatar).toBe('data:image/png;base64,iVBORw==')
   })
 
-  it('avatar returns empty string when upstream fails', async () => {
-    mockFetch.enqueue(/avatars\.githubusercontent\.com/, new Response('not found', { status: 404 }))
+  it('avatar passes through the empty-string fallback for a failed upstream', async () => {
+    vi.mocked(avatarService.fetchGithubAvatarDataUrl).mockResolvedValueOnce('')
 
     const response = await call('/avatar', {})
     expect(response.status).toBe(200)

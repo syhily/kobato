@@ -7,7 +7,7 @@ import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { clearAllTables } from '#/_helpers/integration-db'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
-import { flushAuditLog } from '@/server/domains/audit/repos/batcher'
+import { flushAuditLog } from '@/server/domains/audit/services/batcher'
 import { commentsAuthedRouter } from '@/server/http/controllers/comments-authed.controller'
 import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
 import { createDbPool, closePool } from '@/server/infra/db/pool'

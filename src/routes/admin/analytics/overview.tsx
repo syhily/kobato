@@ -4,16 +4,10 @@ function isChartTab(value: string): value is 'views' | 'heatmap' {
   return value === 'views' || value === 'heatmap'
 }
 
-import type { MetricGroup, MetricRow, MetricType } from '@/shared/contracts/analytics'
+import type { MetricGroup } from '@/shared/contracts/analytics'
 
-import { queryCounters } from '@/server/domains/analytics/services/counters'
-import { queryHeatmap } from '@/server/domains/analytics/services/heatmap'
-import { queryMetric } from '@/server/domains/analytics/services/metric'
-import { parseAnalyticsSearch } from '@/server/domains/analytics/services/query-parser'
-import { queryViews } from '@/server/domains/analytics/services/views'
-import { requireRole } from '@/server/domains/auth/rbac'
-import { getRequestContext } from '@/server/http/request-context'
-import { METRIC_GROUPS, METRIC_GROUP_TABS } from '@/shared/contracts/analytics'
+import { loadAdminAnalyticsOverview } from '@/server/http/loaders/analytics-overview'
+import { METRIC_GROUPS } from '@/shared/contracts/analytics'
 import { Counters } from '@/ui/admin/analytics/Counters'
 import { DateRangePicker } from '@/ui/admin/analytics/DateRangePicker'
 import { FiltersBar } from '@/ui/admin/analytics/Filters'
@@ -26,39 +20,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/components/tabs'
 
 import type { Route } from './+types/overview'
 
-// Overview tab. SSR loader fans out all dashboard queries in parallel
-// so the first paint is fully populated; client-side fetchers
-// (`MetricList`) take over once the URL state changes.
-
+// Overview tab. The loader fans out all dashboard queries in parallel
+// (via `@/server/http/loaders/analytics-overview` → the domain's
+// `loadAnalyticsOverview`) so the first paint is fully populated;
+// client-side fetchers (`MetricList`) take over once the URL state
+// changes.
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const rc = getRequestContext({ request, context })
-  const user = rc.viewer ?? undefined
-  const role = rc.viewer?.role ?? null
-  requireRole({ user, role }, 'admin')
-
-  const url = new URL(request.url)
-  const input = parseAnalyticsSearch(url.searchParams)
-
-  const db = rc.db
-
-  // First-pass metric types: the first tab of each of the 5 groups.
-  // The list components hydrate the other tabs on demand via their
-  // own fetcher load.
-  const initialMetricTypes = METRIC_GROUPS.map((g) => METRIC_GROUP_TABS[g][0]!)
-
-  const [counters, views, heatmap, ...metricRows] = await Promise.all([
-    queryCounters(db, input),
-    queryViews(db, input),
-    queryHeatmap(db, input),
-    ...initialMetricTypes.map((t) => queryMetric(db, input, t, 10)),
-  ])
-
-  const initialMetrics: Partial<Record<MetricType, MetricRow[]>> = {}
-  initialMetricTypes.forEach((t, idx) => {
-    initialMetrics[t] = metricRows[idx]!
-  })
-
-  return { counters, views, heatmap, initialMetrics }
+  return loadAdminAnalyticsOverview({ request, context })
 }
 
 export default function WpAdminAnalyticsOverview({ loaderData }: Route.ComponentProps) {

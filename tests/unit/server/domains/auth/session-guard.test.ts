@@ -19,7 +19,7 @@ vi.mock('@/server/domains/auth/repo', () => ({
   revokeSessionById: revokeSessionByIdMock,
 }))
 
-vi.mock('@/server/domains/auth/service', () => ({
+vi.mock('@/server/domains/auth/services/sessions', () => ({
   revokeAllSessionsOfUser: revokeAllSessionsOfUserMock,
 }))
 

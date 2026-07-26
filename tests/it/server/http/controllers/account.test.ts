@@ -19,7 +19,7 @@ vi.mock('@/server/infra/db/operations/user', () => ({
   PASSWORD_HASH_ROUNDS: 12,
 }))
 
-vi.mock('@/server/domains/auth/service', () => ({
+vi.mock('@/server/domains/auth/services/sessions', () => ({
   revokeAllSessionsOfUser: vi.fn().mockResolvedValue(0),
 }))
 
@@ -33,7 +33,7 @@ vi.mock('@/server/infra/rate-limit', () => ({
 }))
 
 const { findUserById, updateUserById } = await import('@/server/infra/db/operations/user')
-const { revokeAllSessionsOfUser } = await import('@/server/domains/auth/service')
+const { revokeAllSessionsOfUser } = await import('@/server/domains/auth/services/sessions')
 const { revokeSessionById } = await import('@/server/domains/auth/repo')
 const { accountRouter } = await import('@/server/http/controllers/account.controller')
 
