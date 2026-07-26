@@ -2,7 +2,7 @@
 
 - Status: accepted
 - Date: 2026-07-25
-- Commit: `fe020efe`
+- Commit: `750c5634`
 
 ## Context
 

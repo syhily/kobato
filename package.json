@@ -70,13 +70,13 @@
     "@dnd-kit/modifiers": "^9.0.0",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
-    "@hono/node-server": "^2.0.11",
+    "@hono/node-server": "^2.0.12",
     "@hono/vite-dev-server": "^0.26.1",
     "@maxmind/geoip2-node": "^7.1.0",
     "@number-flow/react": "^0.6.2",
-    "@orpc/client": "^1.14.8",
-    "@orpc/react-query": "^1.14.8",
-    "@orpc/server": "^1.14.8",
+    "@orpc/client": "^1.14.10",
+    "@orpc/react-query": "^1.14.10",
+    "@orpc/server": "^1.14.10",
     "@portabletext/react": "^7.0.1",
     "@portabletext/to-html": "^5.0.2",
     "@react-router/dev": "^8.3.0",
@@ -126,7 +126,7 @@
     "isbot": "^5.2.1",
     "jsdom": "^29.1.1",
     "katex": "^0.18.1",
-    "lucide-react": "^1.26.0",
+    "lucide-react": "^1.27.0",
     "lunar-typescript": "^1.8.6",
     "mailgun.js": "^13.3.0",
     "medium-zoom": "^1.1.0",
@@ -168,5 +168,5 @@
       "oxlint -c oxlint.config.ts --fix --no-error-on-unmatched-pattern"
     ]
   },
-  "packageManager": "pnpm@11.8.0"
+  "packageManager": "pnpm@11.9.0"
 }
