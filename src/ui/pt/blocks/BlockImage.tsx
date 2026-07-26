@@ -6,6 +6,7 @@ import { orpc } from '@/client/api/client'
 import { useThumbhashBackground } from '@/client/hooks/use-thumbhash-bg'
 import { useAssetsSettings } from '@/shared/lib/blog-config-context'
 import { getImageSrcset, type ResolvedImageMeta } from '@/shared/types/images'
+import { createBoundedMap } from '@/shared/utils/memo'
 import { cn } from '@/ui/lib/cn'
 import { useImageMeta } from '@/ui/pt/image-meta-context'
 import { DARK_IMAGE_DIM_CLASS } from '@/ui/public/widgets/Image'
@@ -16,18 +17,7 @@ export type BlockImageProps = Omit<ImgHTMLAttributes<HTMLImageElement>, 'ref'> &
   ref?: Ref<HTMLImageElement>
 }
 
-const META_CACHE_LIMIT = 256
-const imageMetaBySrcCache = new Map<string, ResolvedImageMeta>()
-
-function setImageMetaCache(src: string, meta: ResolvedImageMeta): void {
-  if (!imageMetaBySrcCache.has(src) && imageMetaBySrcCache.size >= META_CACHE_LIMIT) {
-    const oldest = imageMetaBySrcCache.keys().next().value
-    if (oldest !== undefined) {
-      imageMetaBySrcCache.delete(oldest)
-    }
-  }
-  imageMetaBySrcCache.set(src, meta)
-}
+const imageMetaBySrcCache = createBoundedMap<string, ResolvedImageMeta>(256)
 
 export function BlockImage({
   alt = '',
@@ -99,7 +89,7 @@ export function BlockImage({
           next.height = data.height
         }
         if (next.thumbhash !== undefined || next.width !== undefined || next.height !== undefined) {
-          setImageMetaCache(src, next)
+          imageMetaBySrcCache.set(src, next)
           // oxlint-disable-next-line promise/no-callback-in-promise -- setResolvedMeta is a React state setter, not a traditional callback
           setResolvedMeta(next)
         }

@@ -114,6 +114,11 @@ export async function hydrateBlogSettings(db: NodePgDatabase): Promise<BlogSetti
   // authoritative once loaded. (A Redis-shared version counter used to
   // promise cross-process invalidation, but the local-version short-circuit
   // made it unreachable — deleted rather than pretending.)
+  //
+  // The hydration promise below is the single-flight for the initial load.
+  // Semantics: share-in-flight; failure: keep-stale — a failed load drops
+  // the flight so the next call retries, but never overwrites the last
+  // good snapshot, so settings stay available through a DB outage.
   const pending = BLOG_SETTINGS_SNAPSHOT_SLOT.readHydration()
   if (pending) {
     return pending

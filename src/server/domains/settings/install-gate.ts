@@ -1,6 +1,5 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { cache } from 'react'
 import { redirect } from 'react-router'
 
 import { hasAdmin } from '@/server/infra/db/operations/user'
@@ -17,19 +16,22 @@ import { hasAdmin } from '@/server/infra/db/operations/user'
 export type InstallState = 'noAdmin' | 'installed'
 
 /**
- * Cheap, snapshot-backed installation check shared by the gate and by
- * the install / login routes.
+ * Cheap installation check shared by the gate middleware and by the
+ * install / login routes.
  *
- * Wrapped in `React.cache` so the `installGateMiddleware` and any
- * downstream loader (`/admin/setup`, `/admin/signin`) that calls
- * `ensure…OrRedirect()` share a single resolution per render pass.
+ * No memoization — every call queries `hasAdmin(db)` directly (a SELECT
+ * COUNT on the users table, cheap at blog scale). A previous version
+ * wrapped this in `React.cache()` claiming per-render-pass dedup, but
+ * outside React Server Components `cache()` is a pure pass-through, so
+ * the dedup never happened; the wrapper was removed rather than kept as
+ * a placebo.
  */
-export const getInstallState = cache(async function getInstallState(db: NodePgDatabase): Promise<InstallState> {
+export async function getInstallState(db: NodePgDatabase): Promise<InstallState> {
   if (!(await hasAdmin(db))) {
     return 'noAdmin'
   }
   return 'installed'
-})
+}
 
 /**
  * Convenience: `true` iff the deployment has finished installing.

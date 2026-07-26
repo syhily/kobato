@@ -1,21 +1,16 @@
 import { createHighlighter } from 'shiki'
 
 import { SHIKI_THEMES } from '@/server/infra/pt/shiki'
+import { createPromiseMemo } from '@/shared/utils/memo'
 
-let highlighterPromise: ReturnType<typeof createHighlighter> | null = null
-
-function getHighlighter() {
-  if (highlighterPromise === null) {
-    highlighterPromise = createHighlighter({
-      themes: [SHIKI_THEMES.light, SHIKI_THEMES.dark],
-      langs: ['json'],
-    }).catch((err) => {
-      highlighterPromise = null
-      throw err
-    })
-  }
-  return highlighterPromise
-}
+// Process-level highlighter singleton (json only). Single-flight
+// semantics: share-in-flight; failure: retry.
+const getHighlighter = createPromiseMemo(() =>
+  createHighlighter({
+    themes: [SHIKI_THEMES.light, SHIKI_THEMES.dark],
+    langs: ['json'],
+  }),
+)
 
 export async function highlightAuditLogDetails(details: Record<string, unknown> | null): Promise<string | null> {
   if (!details) {

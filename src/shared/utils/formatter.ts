@@ -4,6 +4,8 @@
 // locale / time zone come from the runtime DB-backed blog config.
 // Callers thread the relevant slice of the config in explicitly.
 
+import { createBoundedMap } from '@/shared/utils/memo'
+
 export type FormatterLocale =
   | { locale: string; timeZone: string; timeFormat: string }
   | { settings: { locale: string; timeZone: string; timeFormat: string } }
@@ -41,11 +43,10 @@ function makeFormatter(locale: string, timeZone: string): Intl.DateTimeFormat {
   })
 }
 
-// Tiny LRU keyed by `${locale}|${timeZone}` so repeated formatter calls
-// for the same deployment do not pay the `Intl.DateTimeFormat` ctor
+// Bounded FIFO map keyed by `${locale}|${timeZone}` so repeated formatter
+// calls for the same deployment do not pay the `Intl.DateTimeFormat` ctor
 // cost on every invocation.
-const formatterCache = new Map<string, Intl.DateTimeFormat>()
-const FORMATTER_CACHE_MAX = 8
+const formatterCache = createBoundedMap<string, Intl.DateTimeFormat>(8)
 
 function cachedFormatter(locale: string, timeZone: string): Intl.DateTimeFormat {
   const key = `${locale}|${timeZone}`
@@ -55,12 +56,6 @@ function cachedFormatter(locale: string, timeZone: string): Intl.DateTimeFormat 
   }
 
   const formatter = makeFormatter(locale, timeZone)
-  if (formatterCache.size >= FORMATTER_CACHE_MAX) {
-    const oldest = formatterCache.keys().next().value
-    if (oldest !== undefined) {
-      formatterCache.delete(oldest)
-    }
-  }
   formatterCache.set(key, formatter)
   return formatter
 }

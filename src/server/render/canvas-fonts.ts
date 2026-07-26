@@ -114,9 +114,13 @@ async function loadFontSlot(slot: 'og' | 'calendar'): Promise<FontSlot | null> {
 
 // -------- Canvas font single-flight registration --------
 //
-// Single-flight font registration: if a deploy spike fires 50 canvas
-// renders in parallel, only the first one reads the TTF — the rest
-// await the same Promise. Slot is null when the admin hasn't
+// Single-flight semantics: share-in-flight; failure: no-cache — a null
+// result (no family configured, file missing) is never memoized, so the
+// next render re-attempts the load.
+//
+// If a deploy spike fires 50 canvas renders in parallel, only the first
+// one reads the TTF — the rest await the same Promise. Slot is null when
+// the admin hasn't
 // configured the path/family yet (or the file is missing); in that
 // case we skip `GlobalFonts.register` and Canvas falls back to its
 // built-in CJK shaper so the image still renders, just with system

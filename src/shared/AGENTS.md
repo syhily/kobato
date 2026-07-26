@@ -39,7 +39,7 @@ the server or client boundary catch and log it.
   `og-image`) shared by routes, loaders, and the feed/OG renderers.
 - `utils/` — `urls`, `safe-url`, `security`, `tools`,
   `formatter`, `pagination`, `toc`, `paths`, `roles`, `user-agent`,
-  `chunk-error`, `comment-token`, `footnotes-section-title`.
+  `chunk-error`, `comment-token`, `footnotes-section-title`, `memo`.
 
 ## Zod DTO single source
 

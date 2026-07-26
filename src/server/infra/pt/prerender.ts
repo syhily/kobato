@@ -8,6 +8,7 @@ import { KATEX_OPTIONS } from '@/server/infra/pt/katex'
 import { SHIKI_THEMES, shikiTransformers } from '@/server/infra/pt/shiki'
 import { HIGHLIGHT_LANGUAGES } from '@/shared/constants/languages'
 import { visitNestedBlocks } from '@/shared/pt/utils'
+import { createPromiseMemo } from '@/shared/utils/memo'
 
 const log = getLogger('pt.prerender')
 
@@ -82,23 +83,15 @@ function collectFromTextBlock(
   }
 }
 
-// Process-level singleton: shared across saves; concurrent first-save
-// requests share the same in-flight bootstrap promise.
-let shikiHighlighterPromise: ReturnType<typeof createHighlighter> | null = null
-
-function getShikiHighlighter(): ReturnType<typeof createHighlighter> {
-  if (shikiHighlighterPromise === null) {
-    shikiHighlighterPromise = createHighlighter({
-      langs: HIGHLIGHT_LANGUAGES.filter((lang) => lang in bundledLanguages),
-      themes: [SHIKI_THEMES.light, SHIKI_THEMES.dark],
-    }).catch((err) => {
-      // Reset so a later save can retry instead of poisoning the cache.
-      shikiHighlighterPromise = null
-      throw err
-    })
-  }
-  return shikiHighlighterPromise
-}
+// Process-level singleton shared across saves. Single-flight semantics:
+// share-in-flight (concurrent first saves await one bootstrap promise);
+// failure: retry (a rejected bootstrap is dropped, a later save re-tries).
+const getShikiHighlighter = createPromiseMemo(() =>
+  createHighlighter({
+    langs: HIGHLIGHT_LANGUAGES.filter((lang) => lang in bundledLanguages),
+    themes: [SHIKI_THEMES.light, SHIKI_THEMES.dark],
+  }),
+)
 
 async function runShikiPasses(blocks: { code: string; language?: string; highlightedHtml?: string }[]): Promise<void> {
   if (blocks.length === 0) {

@@ -8,6 +8,7 @@ import { ActionFailure } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { StorageObjectNotFound } from '@/server/infra/storage/backend'
 import { activeBackend, backendFor } from '@/server/infra/storage/registry'
+import { createBoundedMap } from '@/shared/utils/memo'
 
 const log = getLogger('branding.storage')
 
@@ -263,17 +264,10 @@ export async function deleteBrandingObject(slot: BrandingSlot, driver: StorageDr
 // Each branding slot is at most a few hundred KB. Keep the latest bytes
 // per (slot, etag) in memory so subsequent requests skip the S3 round-
 // trip. Etag-keyed so a re-upload to the same slot deterministically
-// misses the cache.
-const bufferCache = new Map<string, Buffer>()
-const MAX_CACHE_ENTRIES = 64
+// misses the cache. Bounded FIFO map, capped well above the slot count.
+const bufferCache = createBoundedMap<string, Buffer>(64)
 
 function cacheSet(slot: BrandingSlot, etag: string, buffer: Buffer): void {
-  if (bufferCache.size >= MAX_CACHE_ENTRIES) {
-    const oldest = bufferCache.keys().next().value
-    if (oldest) {
-      bufferCache.delete(oldest)
-    }
-  }
   bufferCache.set(`${slot}:${etag}`, buffer)
 }
 
