@@ -2,7 +2,9 @@ import { Hono } from 'hono'
 import { createSession } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { SessionUser } from '@/server/domains/auth/session-storage'
 import type { Env } from '@/server/http/context'
+import type { RequestContext } from '@/server/http/request-context'
 
 vi.mock('@/server/domains/analytics/services/realtime', () => ({
   queryRealtimeTail: vi.fn().mockResolvedValue([]),
@@ -10,22 +12,40 @@ vi.mock('@/server/domains/analytics/services/realtime', () => ({
 
 import { analyticsEventsRouter } from '@/server/http/resources/analytics'
 
-function makeAdminSession(sessionId: string) {
-  return createSession(
-    {
-      user: { id: '1', name: 'Admin', email: 'admin@test.com', website: null, role: 'admin' },
+const ADMIN_VIEWER: SessionUser = {
+  id: '1',
+  name: 'Admin',
+  email: 'admin@test.com',
+  website: null,
+  role: 'admin',
+}
+
+function makeRequestContext(sessionId: string, clientAddress: string): RequestContext {
+  return {
+    session: createSession({ user: ADMIN_VIEWER }, sessionId) as unknown as RequestContext['session'],
+    viewer: ADMIN_VIEWER,
+    clientAddress,
+    url: new URL('http://localhost/api/analytics/events'),
+    requestFacts: {
+      path: '/api/analytics/events',
+      isDataRequest: false,
+      userAgent: null,
+      referer: null,
+      acceptLanguage: null,
+      purpose: null,
+      cookie: null,
     },
-    sessionId,
-  )
+    db: {} as RequestContext['db'],
+    pool: {} as RequestContext['pool'],
+    cspNonce: 'test-nonce',
+    markSessionDirty: () => undefined,
+  }
 }
 
 async function buildApp(sessionId: string, clientAddress = '127.0.0.1') {
   const app = new Hono<Env>()
   app.use('*', async (c, next) => {
-    c.set('session', makeAdminSession(sessionId) as unknown as Env['Variables']['session'])
-    c.set('clientAddress', clientAddress)
-    c.set('db', {} as Env['Variables']['db'])
-    c.set('pool', {} as Env['Variables']['pool'])
+    c.set('requestContext', makeRequestContext(sessionId, clientAddress))
     c.set('requestId', 'test-request')
     await next()
   })
@@ -38,10 +58,7 @@ async function openStream(app: Hono<Env>, sessionId: string, clientAddress = '12
   // itself is stateless; the context is what determines the cap key.
   const scoped = new Hono<Env>()
   scoped.use('*', async (c, next) => {
-    c.set('session', makeAdminSession(sessionId) as unknown as Env['Variables']['session'])
-    c.set('clientAddress', clientAddress)
-    c.set('db', {} as Env['Variables']['db'])
-    c.set('pool', {} as Env['Variables']['pool'])
+    c.set('requestContext', makeRequestContext(sessionId, clientAddress))
     c.set('requestId', 'test-request')
     await next()
   })

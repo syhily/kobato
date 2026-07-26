@@ -2,6 +2,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { asc, inArray } from 'drizzle-orm'
 
+import type { ViewerIdentity } from '@/server/domains/auth/rbac'
 import type { TagRow } from '@/server/infra/db/types'
 import type { AdminTagDto } from '@/shared/contracts/tags'
 import type { Tag } from '@/shared/types/catalog'
@@ -29,7 +30,7 @@ import {
 import { tag as tagTable } from '@/server/infra/db/schema/taxonomy'
 import { DomainError, ErrorMessages } from '@/server/infra/http/errors'
 import { resolveSlugForTaxonomy } from '@/server/infra/slug'
-import { hasAtLeast, type Role } from '@/shared/utils/roles'
+import { hasAtLeast } from '@/shared/utils/roles'
 
 // Wire-format DTO for every admin tag endpoint. `postCount` is
 // projected by the caller from `countPostsByTaxonomy` (mirrors the
@@ -82,15 +83,10 @@ export interface UpsertTagInputs {
   ogImage?: string
 }
 
-export interface TagViewerContext {
-  userId: string
-  role: Role
-}
-
 export async function upsertAdminTag(
   db: NodePgDatabase,
   input: UpsertTagInputs,
-  viewer?: TagViewerContext,
+  viewer?: ViewerIdentity,
 ): Promise<AdminTagDto> {
   const slug = resolveSlugForTaxonomy(input.slug, input.name)
 
@@ -143,7 +139,7 @@ export async function upsertAdminTag(
 // delete. Authors get the same UX as admins because the cross-check is
 // global to the tag, not the viewer. Same contract as
 // `deleteAdminCategory`.
-export async function deleteAdminTag(db: NodePgDatabase, id: bigint, _viewer?: TagViewerContext): Promise<boolean> {
+export async function deleteAdminTag(db: NodePgDatabase, id: bigint, _viewer?: ViewerIdentity): Promise<boolean> {
   const deleted = await deleteAdminTaxonomy(id, '标签', {
     findById: (id) => findTagById(db, id),
     deleteRow: (id) => deleteTagRow(db, id),

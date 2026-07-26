@@ -31,7 +31,7 @@ const update = adminProc
   // schema at assembly time.
   .output(z.object({ section: z.unknown() }))
   .handler(async ({ input, context }) => {
-    const editorId = safeBigInt(context.viewer.userId)
+    const editorId = safeBigInt(context.viewer.id)
     // DomainError translation lives in orpc-base's domainErrorGuard —
     // no per-controller catch here.
     const bundle = await updateBlogSettingsSection(context.db, context.pool, input.section, input.payload, editorId)

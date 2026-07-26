@@ -25,7 +25,7 @@ export async function listPostsForAdmin(
 ): Promise<AdminPostsListResult> {
   let appliedFilters = filters
   if (viewer && viewer.role !== 'admin') {
-    appliedFilters = { ...filters, authorId: idFromString(viewer.userId) }
+    appliedFilters = { ...filters, authorId: idFromString(viewer.id) }
   }
   const { items, total, hasMore } = await listForAdmin(db, {
     entityType: 'post',

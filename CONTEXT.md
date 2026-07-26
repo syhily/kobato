@@ -120,3 +120,29 @@ controllers call the repos directly, bypassing the services),
 service/lifecycle for posts, pages, and taxonomies.
 _Avoid_: calling cache clears or `bumpCounter` directly from mutation
 sites
+
+### Request pipeline
+
+**RequestContext**:
+The canonical per-request fact base (`src/server/http/request-context.ts`),
+derived exactly once per request by `requestContextMiddleware` and
+projected — never re-derived — onto the three context surfaces: Hono
+`c.var.requestContext`, the oRPC `HandlerContext` field copy, and the
+React Router `RouterContextProvider` key. It carries the session, the
+viewer, the proxy-aware client address, the normalized document URL
+(`.data` / `_routes` / `index` stripped), the request facts, the
+db/pool handles, and the CSP nonce. Same-session mutations call
+`markSessionDirty()` and the middleware commits — the only Set-Cookie
+commit point; sid-changing flows (login rotation) keep their explicit
+Set-Cookie channel.
+_Avoid_: re-deriving the session / URL / client address in a loader,
+resource, or controller (read the projection), hand-built audit context
+literals (use `recordAuditEventFromContext`)
+
+**Viewer**:
+The session's identity projection — the full `SessionUser` on
+`RequestContext.viewer` (`null` when anonymous). Permission predicates in
+`src/server/domains/auth/rbac.ts` take the structural minimum
+`ViewerIdentity { id, role }`, which a `SessionUser` satisfies; the audit
+trail reads the same shape.
+_Avoid_: `ViewerContext` (retired), `viewer.userId` (the field is `id`)

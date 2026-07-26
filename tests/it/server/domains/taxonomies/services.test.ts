@@ -214,7 +214,7 @@ describe('taxonomies/tags/service — upsertAdminTag (update)', () => {
   it('rejects update from a non-admin viewer', async () => {
     const id = await seedTag({ name: 'X', slug: 'x' })
     const { upsertAdminTag } = await import('@/server/domains/taxonomies/tags/service')
-    await expect(upsertAdminTag(db, { id, name: 'Y' }, { userId: '1', role: 'author' })).rejects.toMatchObject({
+    await expect(upsertAdminTag(db, { id, name: 'Y' }, { id: '1', role: 'author' })).rejects.toMatchObject({
       code: 'FORBIDDEN',
     })
   })

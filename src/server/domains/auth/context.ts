@@ -21,30 +21,6 @@ export const dbContext = createContext<NodePgDatabase>()
 export const poolContext = createContext<Pool>()
 export const cspNonceContext = createContext<string>()
 
-export function tryGetSessionContext(context: Readonly<RouterContextProvider> | undefined): SessionContext | undefined {
-  if (context === undefined) {
-    return undefined
-  }
-  try {
-    return context.get(sessionContext)
-  } catch {
-    return undefined
-  }
-}
-
-export function tryGetRequestContext(
-  context: Readonly<RouterContextProvider> | undefined,
-): RequestContextValue | undefined {
-  if (context === undefined) {
-    return undefined
-  }
-  try {
-    return context.get(requestContext)
-  } catch {
-    return undefined
-  }
-}
-
 type AnyRouteArgs = {
   request: Request
   context: LoaderFunctionArgs['context']

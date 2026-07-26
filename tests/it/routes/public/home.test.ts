@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { makeCategory, makePostList, makeTag } from '#/_helpers/catalog'
-import { makeLoaderArgs } from '#/_helpers/context'
+import { makeLoaderArgsWithContext } from '#/_helpers/request-context'
 import { regularSession } from '#/_helpers/session'
 
 // `home` loader is the SSR fan-out for `/` and `/page/:num`. The route is
@@ -94,7 +94,7 @@ describe('routes/home loader', () => {
   it('/page/1 collapses to / (canonical) via 30x redirect', async () => {
     await expect(
       loader(
-        makeLoaderArgs({
+        makeLoaderArgsWithContext({
           request: new Request('http://localhost/page/1'),
           session,
           params: { num: '1' },
@@ -105,7 +105,7 @@ describe('routes/home loader', () => {
 
   it('returns the unified listing payload (resolvedPosts, extra.sidebar, empty seo) on /', async () => {
     const result = await loader(
-      makeLoaderArgs({
+      makeLoaderArgsWithContext({
         request: new Request('http://localhost/'),
         session,
         params: {},
@@ -126,7 +126,7 @@ describe('routes/home loader', () => {
     // check keeps a tail of exactly 4 on its own page so /page/2 still
     // renders the four-post stub instead of redirecting.
     const result = await loader(
-      makeLoaderArgs({
+      makeLoaderArgsWithContext({
         request: new Request('http://localhost/page/2'),
         session,
         params: { num: '2' },
@@ -154,7 +154,7 @@ describe('routes/home loader', () => {
   it('redirects /page/N to the last valid page when N overflows', async () => {
     await expect(
       loader(
-        makeLoaderArgs({
+        makeLoaderArgsWithContext({
           request: new Request('http://localhost/page/9999'),
           session,
           params: { num: '9999' },
@@ -179,7 +179,7 @@ describe('routes/home loader — tail-merge guard', () => {
     // rendering the orphan card alone.
     await expect(
       loader(
-        makeLoaderArgs({
+        makeLoaderArgsWithContext({
           request: new Request('http://localhost/page/2'),
           session,
           params: { num: '2' },
@@ -194,7 +194,7 @@ describe('routes/home loader — tail-merge guard', () => {
     mocks.postCount = 7
 
     const result = await loader(
-      makeLoaderArgs({
+      makeLoaderArgsWithContext({
         request: new Request('http://localhost/'),
         session,
         params: {},

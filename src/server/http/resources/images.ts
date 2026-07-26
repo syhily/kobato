@@ -70,7 +70,7 @@ function createOgHandler(adapters: readonly OgAdapter[]) {
     const summary =
       entity.summary || (adapter.useSiteSummaryFallback ? requireBlogSettingsSection('siteIdentity').description : '')
     const buffer = await through(
-      c.var.db,
+      c.var.requestContext.db,
       'og',
       { slug: `${adapter.cacheKeyPrefix}${slug}`, title: entity.title, summary, cover: entity.cover },
       () => drawOpenGraph({ title: entity.title, summary, cover: entity.cover }),
@@ -83,7 +83,7 @@ const postOgAdapter: OgAdapter = {
   cacheKeyPrefix: '',
   useSiteSummaryFallback: false,
   async resolve(c, slug) {
-    const post = await findPublicPostMetaBySlug(c.var.db, slug)
+    const post = await findPublicPostMetaBySlug(c.var.requestContext.db, slug)
     return post && isLive(post) ? { title: post.title, summary: post.summary, cover: post.cover } : null
   },
 }
@@ -92,7 +92,7 @@ const pageOgAdapter: OgAdapter = {
   cacheKeyPrefix: '',
   useSiteSummaryFallback: true,
   async resolve(c, slug) {
-    const page = await findPublicPageMetaBySlug(c.var.db, slug)
+    const page = await findPublicPageMetaBySlug(c.var.requestContext.db, slug)
     return page && isLive(page) ? { title: page.title, summary: page.summary, cover: page.cover } : null
   },
 }
@@ -101,7 +101,7 @@ const categoryOgAdapter: OgAdapter = {
   cacheKeyPrefix: 'cat-',
   useSiteSummaryFallback: true,
   async resolve(c, slug) {
-    const category = await findCategoryBySlug(c.var.db, slug)
+    const category = await findCategoryBySlug(c.var.requestContext.db, slug)
     return category ? { title: category.name, summary: category.description, cover: category.cover } : null
   },
 }
@@ -135,14 +135,14 @@ export const imagesRouter = new Hono<Env>()
   .get('/images/calendar/:year/:filename{[^/]+\\.png}', async (c) => {
     const params = { year: c.req.param('year'), time: stripPng(c.req.param('filename')) }
     const headers = { 'Cache-Control': 'public, max-age=86400' }
-    const res = await serveCalendar(c.var.db, params, 'light', headers)
+    const res = await serveCalendar(c.var.requestContext.db, params, 'light', headers)
     res.headers.forEach((v, k) => c.header(k, v))
     return c.body(await res.arrayBuffer())
   })
   .get('/images/calendar/dark/:year/:filename{[^/]+\\.png}', async (c) => {
     const params = { year: c.req.param('year'), time: stripPng(c.req.param('filename')) }
     const headers = { 'Cache-Control': 'public, max-age=86400' }
-    const res = await serveCalendar(c.var.db, params, 'dark', headers)
+    const res = await serveCalendar(c.var.requestContext.db, params, 'dark', headers)
     res.headers.forEach((v, k) => c.header(k, v))
     return c.body(await res.arrayBuffer())
   })
@@ -153,23 +153,23 @@ export const imagesRouter = new Hono<Env>()
     }
     const size = resolveAvatarSize(c.req.query('s'))
 
-    const { email, hash: canonical } = await resolveAvatarInfo(c.var.db, hash)
+    const { email, hash: canonical } = await resolveAvatarInfo(c.var.requestContext.db, hash)
     if (canonical === null) {
-      await cacheAvatar(c.var.db, { email: hash, size, status: AvatarStatus.NO_AVATAR })
+      await cacheAvatar(c.var.requestContext.db, { email: hash, size, status: AvatarStatus.NO_AVATAR })
       return c.redirect(defaultAvatarUrl())
     }
 
     if (email && isQQEmail(email)) {
       const buffer = await fetchQQAvatarImage(email, size)
       if (buffer === null) {
-        await cacheAvatar(c.var.db, { email: canonical, size, status: AvatarStatus.NO_AVATAR })
+        await cacheAvatar(c.var.requestContext.db, { email: canonical, size, status: AvatarStatus.NO_AVATAR })
         return c.redirect(defaultAvatarUrl())
       }
-      await cacheAvatar(c.var.db, { email: canonical, size, status: AvatarStatus.HAVE_AVATAR, buffer })
+      await cacheAvatar(c.var.requestContext.db, { email: canonical, size, status: AvatarStatus.HAVE_AVATAR, buffer })
       return respondPng(c, buffer, AVATAR_HEADERS)
     }
 
-    const avatar = await loadAvatar(c.var.db, canonical, size)
+    const avatar = await loadAvatar(c.var.requestContext.db, canonical, size)
     if (avatar !== null) {
       if (avatar.status === AvatarStatus.NO_AVATAR) {
         return c.redirect(defaultAvatarUrl())
@@ -181,10 +181,10 @@ export const imagesRouter = new Hono<Env>()
 
     const buffer = await fetchAvatarImage(canonical, size)
     if (buffer === null) {
-      await cacheAvatar(c.var.db, { email: canonical, size, status: AvatarStatus.NO_AVATAR })
+      await cacheAvatar(c.var.requestContext.db, { email: canonical, size, status: AvatarStatus.NO_AVATAR })
       return c.redirect(defaultAvatarUrl())
     }
 
-    await cacheAvatar(c.var.db, { email: canonical, size, status: AvatarStatus.HAVE_AVATAR, buffer })
+    await cacheAvatar(c.var.requestContext.db, { email: canonical, size, status: AvatarStatus.HAVE_AVATAR, buffer })
     return respondPng(c, buffer, AVATAR_HEADERS)
   })

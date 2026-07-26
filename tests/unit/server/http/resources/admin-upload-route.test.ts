@@ -3,15 +3,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Env } from '@/server/http/context'
 
-import { adminSession } from '#/_helpers/session'
+import { adminSession, adminUser } from '#/_helpers/session'
+import { extractRequestFacts } from '@/server/http/utils/request-facts'
 
 const mocks = vi.hoisted(() => ({
-  recordAuditEvent: vi.fn(),
+  recordAuditEventFromContext: vi.fn(),
   info: vi.fn(),
 }))
 
 vi.mock('@/server/domains/audit/services/record', () => ({
-  recordAuditEvent: mocks.recordAuditEvent,
+  recordAuditEventFromContext: mocks.recordAuditEventFromContext,
 }))
 
 vi.mock('@/server/http/middlewares/csrf', () => ({
@@ -27,8 +28,12 @@ const { adminUploadRoute } = await import('@/server/http/resources/admin-upload-
 function createApp() {
   const app = new Hono<Env>()
   app.use('*', async (c, next) => {
-    c.set('session', adminSession())
-    c.set('clientAddress', '127.0.0.1')
+    c.set('requestContext', {
+      session: adminSession(),
+      viewer: adminUser(),
+      clientAddress: '127.0.0.1',
+      requestFacts: extractRequestFacts(c.req.raw),
+    } as never)
     await next()
   })
   app.route(
@@ -70,15 +75,18 @@ describe('adminUploadRoute', () => {
 
     expect(response.status).toBe(200)
     await expect(response.json()).resolves.toEqual({ kind: 'avatar', size: 3 })
-    expect(mocks.recordAuditEvent).toHaveBeenCalledWith({
-      action: 'test_uploaded',
-      resourceType: 'test',
-      resourceId: 'avatar',
-      actorId: '1',
-      actorRole: 'admin',
-      ipAddress: '127.0.0.1',
-      userAgent: 'test-agent',
-    })
+    expect(mocks.recordAuditEventFromContext).toHaveBeenCalledWith(
+      expect.objectContaining({
+        viewer: expect.objectContaining({ id: '1', role: 'admin' }),
+        clientAddress: '127.0.0.1',
+        requestFacts: expect.objectContaining({ userAgent: 'test-agent' }),
+      }),
+      {
+        action: 'test_uploaded',
+        resourceType: 'test',
+        resourceId: 'avatar',
+      },
+    )
     expect(mocks.info).toHaveBeenCalledWith('Uploaded test file', { kind: 'avatar', size: 3 })
   })
 

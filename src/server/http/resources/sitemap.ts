@@ -10,7 +10,7 @@ export const sitemapRouter = new Hono<Env>().get(
   '/sitemap.xml',
   rateLimitByIp('sitemap', 'resourceIp', { errorBody: { error: 'Too many requests' } }),
   async (c) => {
-    const xml = await through(c.var.db, 'sitemap', {}, () => buildSitemapXml(c.var.db))
+    const xml = await through(c.var.requestContext.db, 'sitemap', {}, () => buildSitemapXml(c.var.requestContext.db))
     c.header('Content-Type', 'application/xml; charset=utf-8')
     c.header('Cache-Control', 'public, max-age=3600')
     return c.body(xml)

@@ -32,7 +32,7 @@ export const webmentionRouter = new Hono<Env>().post(
       return c.json({ error: 'Invalid webmention request: source and target must be valid http(s) URLs' }, 400)
     }
 
-    const mention = await receiveWebmention(c.var.db, parsed.data)
+    const mention = await receiveWebmention(c.var.requestContext.db, parsed.data)
     return c.json({ status: 'pending', id: mention.id.toString() }, 202)
   },
 )

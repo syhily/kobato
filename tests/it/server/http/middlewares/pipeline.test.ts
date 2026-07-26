@@ -3,12 +3,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@/shared/config/snapshot'
 
 const hydrateMock = vi.hoisted(() => vi.fn())
-const routeContextsMock = vi.hoisted(() =>
-  vi.fn(() => ({
-    session: { session: {}, user: null, role: null },
-    request: { clientAddress: '127.0.0.1', url: new URL('http://localhost/') },
-  })),
-)
 const routerContextSetMock = vi.hoisted(() => vi.fn())
 
 vi.mock('@/server/bootstrap/db-lifecycle', () => ({
@@ -18,10 +12,6 @@ vi.mock('@/server/bootstrap/db-lifecycle', () => ({
 
 vi.mock('@/server/domains/settings/services/hydrate', () => ({
   hydrateBlogSettings: hydrateMock,
-}))
-
-vi.mock('@/server/http/middlewares/session', () => ({
-  buildRouteContexts: routeContextsMock,
 }))
 
 vi.mock('react-router', async () => {
@@ -35,6 +25,30 @@ vi.mock('react-router', async () => {
 })
 
 const { buildLoadContext } = await import('@/server/http/middleware-pipeline')
+
+// The perimeter middleware derives the canonical RequestContext
+// (`@/server/http/request-context`) once per request; `buildLoadContext`
+// only projects it. These tests hand it a stub carrying the fields the
+// projection reads (`session` / `viewer` / `clientAddress` / `url`) plus
+// the pass-through handles (`db` / `pool` / `cspNonce`).
+function makeContextStub(overrides: Record<string, unknown> = {}) {
+  return {
+    var: {
+      requestContext: {
+        session: { get: () => undefined },
+        viewer: null,
+        clientAddress: '127.0.0.1',
+        url: new URL('http://localhost/'),
+        db: { id: 'db-stub' },
+        pool: { id: 'pool-stub' },
+        cspNonce: 'test-nonce-123',
+        markSessionDirty: () => {},
+        ...overrides,
+      },
+    },
+    req: { raw: new Request('http://localhost/'), url: 'http://localhost/' },
+  } as any
+}
 
 describe('middleware-pipeline / buildLoadContext', () => {
   beforeEach(() => {
@@ -52,10 +66,7 @@ describe('middleware-pipeline / buildLoadContext', () => {
       BLOG_SETTINGS_SNAPSHOT_SLOT.write({ siteIdentity: { title: 'Test' } } as any)
     })
 
-    const c = {
-      var: { session: { get: () => undefined }, clientAddress: '127.0.0.1' },
-      req: { raw: new Request('http://localhost/'), url: 'http://localhost/' },
-    } as any
+    const c = makeContextStub()
 
     const promise = buildLoadContext(c)
 
@@ -73,24 +84,14 @@ describe('middleware-pipeline / buildLoadContext', () => {
   it('does not swallow a hydration failure — it propagates so the request becomes a 500', async () => {
     hydrateMock.mockRejectedValue(new Error('DB pool exhausted'))
 
-    const c = {
-      var: { session: { get: () => undefined }, clientAddress: '127.0.0.1' },
-      req: { raw: new Request('http://localhost/'), url: 'http://localhost/' },
-    } as any
-
-    await expect(buildLoadContext(c)).rejects.toThrow('DB pool exhausted')
+    await expect(buildLoadContext(makeContextStub())).rejects.toThrow('DB pool exhausted')
   })
 
   it('threads the CSP nonce into the React Router context', async () => {
     hydrateMock.mockResolvedValue(undefined)
     BLOG_SETTINGS_SNAPSHOT_SLOT.write({ siteIdentity: { title: 'Test' } } as any)
 
-    const c = {
-      var: { session: { get: () => undefined }, clientAddress: '127.0.0.1', cspNonce: 'test-nonce-123' },
-      req: { raw: new Request('http://localhost/'), url: 'http://localhost/' },
-    } as any
-
-    await buildLoadContext(c)
+    await buildLoadContext(makeContextStub())
 
     // One of the context.set calls must carry the nonce value.
     const values = routerContextSetMock.mock.calls.map((call) => call[1])

@@ -28,7 +28,7 @@ export function rateLimitByIp(
 ) {
   return createMiddleware<Env>(async (c, next) => {
     const bucket: RateLimitBucket = typeof bucketOrName === 'string' ? readBucket(bucketOrName) : bucketOrName
-    const { exceeded } = await tryKeyedRateLimit(`rate-limit:${key}:${c.var.clientAddress}`, bucket)
+    const { exceeded } = await tryKeyedRateLimit(`rate-limit:${key}:${c.var.requestContext.clientAddress}`, bucket)
     if (exceeded) {
       if (opts?.errorBody !== undefined) {
         return c.json(opts.errorBody, 429)

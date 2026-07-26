@@ -2,8 +2,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { makePage, makePost } from '#/_helpers/catalog'
 import { makeLoaderArgs, unwrapLoaderData } from '#/_helpers/context'
-import { regularSession } from '#/_helpers/session'
+import { regularSession, regularUser } from '#/_helpers/session'
 import { isWordPressDecoyPath } from '@/server/http/middlewares/wp-decoy'
+import { requestContext } from '@/server/http/request-context'
+import { extractRequestFacts } from '@/server/http/utils/request-facts'
 
 // WordPress probe decoy contract. Two things under test:
 //   1. `isWordPressDecoyPath` — pure predicate matching the patterns the
@@ -149,15 +151,24 @@ describe('isWordPressDecoyPath', () => {
 
 describe('routes/page.detail loader (probe interception lives in the middleware)', () => {
   it('still serves real page slugs', async () => {
-    const data = unwrapLoaderData<{ page: { permalink: string } }>(
-      await pageDetailRoute.loader(
-        makeLoaderArgs({
-          request: new Request('http://localhost/about'),
-          session,
-          params: { slug: 'about' },
-        }),
-      ),
-    )
+    const request = new Request('http://localhost/about')
+    const args = makeLoaderArgs({
+      request,
+      session,
+      params: { slug: 'about' },
+    })
+    // The loader chain resolves the canonical RequestContext via
+    // `getRequestContext` (`loadPublicDetailData` reads `session` /
+    // `viewer` / `clientAddress` / `requestFacts` from it), so the
+    // hand-built provider must carry the canonical key alongside the
+    // legacy ones `makeLoaderArgs` sets.
+    args.context.set(requestContext, {
+      session,
+      viewer: regularUser(),
+      clientAddress: '127.0.0.1',
+      requestFacts: extractRequestFacts(request),
+    })
+    const data = unwrapLoaderData<{ page: { permalink: string } }>(await pageDetailRoute.loader(args))
     expect(data.page.permalink).toBe('/about')
   })
 })

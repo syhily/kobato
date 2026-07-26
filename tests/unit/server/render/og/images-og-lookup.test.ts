@@ -1,4 +1,7 @@
+import { Hono } from 'hono'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import type { Env } from '@/server/http/context'
 
 // Tests for the OG image route slug resolution in `imagesRouter`.
 // The route uses slim public-meta lookups (findPublicPostMetaBySlug +
@@ -58,8 +61,18 @@ beforeEach(() => {
 // hoisted, so the mocks still apply.
 import { imagesRouter } from '@/server/http/resources/images'
 
+// Minimal requestContext stub — the rate-limit middleware reads
+// `.clientAddress`, the OG handler reads `.db`; no other field of the
+// canonical context is consulted on this surface.
+const app = new Hono<Env>()
+app.use('*', async (c, next) => {
+  c.set('requestContext', { clientAddress: '127.0.0.1', db: {} } as unknown as Env['Variables']['requestContext'])
+  await next()
+})
+app.route('/', imagesRouter)
+
 async function requestOg(slug: string) {
-  const res = await imagesRouter.request(`/images/og/${slug}.png`)
+  const res = await app.request(`/images/og/${slug}.png`)
   return res
 }
 

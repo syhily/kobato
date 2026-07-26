@@ -4,24 +4,23 @@ import { pinoLogger } from 'hono-pino'
 import { compress } from 'hono/compress'
 import { requestId } from 'hono/request-id'
 import { secureHeaders } from 'hono/secure-headers'
-import { randomBytes } from 'node:crypto'
 import { RouterContextProvider } from 'react-router'
 
 import type { Env } from '@/server/http/context'
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
-import { getDb, getPool } from '@/server/bootstrap/db-lifecycle'
 import { cspNonceContext, dbContext, poolContext, requestContext, sessionContext } from '@/server/domains/auth/context'
 import { hydrateBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { createApiApp } from '@/server/http/app'
 import { onErrorHandler } from '@/server/http/errors'
 import { corsMiddleware } from '@/server/http/middlewares/cors'
 import { honoInstallGateMiddleware } from '@/server/http/middlewares/install-gate'
+import { requestContextMiddleware } from '@/server/http/middlewares/request-context'
 import { requestTimeout } from '@/server/http/middlewares/request-timeout'
-import { buildRouteContexts, honoSessionMiddleware } from '@/server/http/middlewares/session'
 import { trailingSlashNormaliser } from '@/server/http/middlewares/trailing-slash'
 import { honoVisitorCookieMiddleware } from '@/server/http/middlewares/visitor-cookie'
 import { honoWpDecoyMiddleware } from '@/server/http/middlewares/wp-decoy'
+import { projectLegacyRouteContexts, requestContext as canonicalRequestContext } from '@/server/http/request-context'
 import { analyticsEventsRouter } from '@/server/http/resources/analytics'
 import { assetsRouter } from '@/server/http/resources/assets'
 import { backupRouter } from '@/server/http/resources/backup'
@@ -98,17 +97,6 @@ export function buildCspHeader({ bundle, nonce, isDev }: CspInput): string {
 }
 
 export function configureMiddleware(app: Hono<Env>): void {
-  // Inject db and pool into every request's Hono context so
-  // middleware, route handlers, and the oRPC bridge can reach them.
-  // getDb()/getPool() are called per-request so pool recreation
-  // (backup restore) is reflected immediately.
-  app.use('*', async (c, next) => {
-    c.set('db', getDb())
-    c.set('pool', getPool())
-    c.set('cspNonce', randomBytes(16).toString('base64'))
-    await next()
-  })
-
   app.onError(onErrorHandler)
   app.use(requestId())
   app.use(compress())
@@ -123,7 +111,7 @@ export function configureMiddleware(app: Hono<Env>): void {
   app.use(async (c, next) => {
     await next()
     const bundle = getBlogSettingsBundleSync()
-    const csp = buildCspHeader({ bundle, nonce: c.var.cspNonce, isDev: import.meta.env.DEV })
+    const csp = buildCspHeader({ bundle, nonce: c.var.requestContext.cspNonce, isDev: import.meta.env.DEV })
     c.res.headers.set('Content-Security-Policy', csp)
   })
 
@@ -164,7 +152,7 @@ export function configureMiddleware(app: Hono<Env>): void {
   app.use(trailingSlashNormaliser)
   app.use(honoWpDecoyMiddleware)
   app.use(requestTimeout())
-  app.use(honoSessionMiddleware)
+  app.use(requestContextMiddleware)
   app.use(honoInstallGateMiddleware)
   app.use(honoVisitorCookieMiddleware)
 
@@ -215,8 +203,7 @@ export function configureMiddleware(app: Hono<Env>): void {
 }
 
 export async function buildLoadContext(c: { var: Env['Variables']; req: { raw: Request; url: string } }) {
-  const db = getDb()
-  const pool = getPool()
+  const rc = c.var.requestContext
   // CRITICAL: await the hydration before returning the context.
   //
   // Route loaders (e.g. `routes/public/home.tsx`) call
@@ -227,18 +214,17 @@ export async function buildLoadContext(c: { var: Env['Variables']; req: { raw: R
   // guarantees the snapshot is populated before React Router calls any
   // loader. See `tests/middleware.pipeline.test.ts` for the regression
   // guard.
-  await hydrateBlogSettings(db)
-  const { session, request } = buildRouteContexts(c)
+  await hydrateBlogSettings(rc.db)
+  // Pure projection of the canonical RequestContext — nothing re-derived.
+  // The legacy five keys stay until the stage-③ RR migration deletes
+  // them; the canonical key is set alongside from day one.
+  const { session, request } = projectLegacyRouteContexts(rc)
   const context = new RouterContextProvider()
   context.set(sessionContext, session)
   context.set(requestContext, request)
-  context.set(dbContext, db)
-  context.set(poolContext, pool)
-  // Defensive: the `*` middleware should always set `cspNonce`, but
-  // sub-app routing in Hono can occasionally drop `c.var` values.
-  // Generate a fresh nonce here so `entry.server.tsx` never receives
-  // an empty string (which React DOM renders as `nonce=""`).
-  const cspNonce = c.var.cspNonce || randomBytes(16).toString('base64')
-  context.set(cspNonceContext, cspNonce)
+  context.set(dbContext, rc.db)
+  context.set(poolContext, rc.pool)
+  context.set(cspNonceContext, rc.cspNonce)
+  context.set(canonicalRequestContext, rc)
   return context
 }

@@ -4,7 +4,7 @@ import { data } from 'react-router'
 import type { RouteHandle } from '@/root'
 import type { DraftMarker } from '@/shared/types/catalog'
 
-import { getDbFromContext, tryGetSessionContext } from '@/server/domains/auth/context'
+import { getDbFromContext } from '@/server/domains/auth/context'
 import { loadDraftPreviewBySlug } from '@/server/domains/content/lifecycle'
 import { resolveImageMetaBySources } from '@/server/domains/images/services/enhance'
 import { selectSidebarPosts } from '@/server/domains/posts/repos/public-query/featured'
@@ -15,6 +15,7 @@ import { getTagsByNames, listAllTags } from '@/server/domains/taxonomies/tags/se
 import { loadPublicDetailData } from '@/server/http/loaders/detail'
 import { detailHeaders } from '@/server/http/loaders/route-exports'
 import { selectSidebarTags } from '@/server/http/loaders/sidebar-select'
+import { getRequestContext } from '@/server/http/request-context'
 import { ifNoneMatch, notModifiedResponse, weakEtag } from '@/server/infra/http/etag'
 import { redirectPermanent } from '@/server/infra/http/redirects'
 import { notFound } from '@/server/infra/http/status'
@@ -37,11 +38,8 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   let draftMarker: DraftMarker = null
 
   if (sourcePost === undefined) {
-    const sessionContext = tryGetSessionContext(context)
-    if (!sessionContext) {
-      throw notFound()
-    }
-    if (postLifecycleAdapter.canPreviewDraft(sessionContext.role)) {
+    const role = getRequestContext({ request, context }).viewer?.role
+    if (postLifecycleAdapter.canPreviewDraft(role)) {
       const preview = await loadDraftPreviewBySlug(db, postLifecycleAdapter, params.slug)
       if (preview !== null) {
         sourcePost = preview.preview

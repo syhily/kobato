@@ -32,9 +32,11 @@ const makeApp = (sessionId?: string) => {
   }
   const app = new Hono<Env>()
     .use(async (c, next) => {
-      c.set('session', session as never)
-      c.set('clientAddress', '127.0.0.1')
-      c.set('db', {} as never)
+      c.set('requestContext', {
+        session,
+        clientAddress: '127.0.0.1',
+        db: {},
+      } as never)
       await next()
     })
     .route('/', analyticsEventsRouter)

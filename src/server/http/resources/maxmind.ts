@@ -7,7 +7,7 @@ import path from 'node:path'
 import type { Env } from '@/server/http/context'
 
 import { resetGeoReader } from '@/server/domains/analytics/geoip'
-import { recordAuditEvent } from '@/server/domains/audit/services/record'
+import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { csrfGuard } from '@/server/http/middlewares/csrf'
 import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'
 import { getLogger } from '@/server/infra/logger'
@@ -57,14 +57,10 @@ export const maxmindRouter = new Hono<Env>().post(
 
     resetGeoReader()
 
-    recordAuditEvent({
+    recordAuditEventFromContext(c.var.requestContext, {
       action: 'maxmind_uploaded',
-      actorId: c.var.viewer?.userId,
-      actorRole: c.var.viewer?.role ?? null,
       resourceType: 'maxmind',
       resourceId: 'geolite2-city',
-      ipAddress: c.var.clientAddress,
-      userAgent: c.req.header('User-Agent') ?? null,
       details: { size: buffer.length },
     })
     log.info('MaxMind DB uploaded', { size: buffer.length, path: MAXMIND_DB_PATH })

@@ -3,8 +3,7 @@ import type { Pool } from 'pg'
 
 import { ORPCError, os } from '@orpc/server'
 
-import type { ViewerContext } from '@/server/domains/auth/rbac'
-import type { Env } from '@/server/http/context'
+import type { BlogSession, SessionUser } from '@/server/domains/auth/session-storage'
 import type { RequestFacts } from '@/server/infra/http/request-facts'
 import type { CommentTokenCookie } from '@/shared/utils/comment-token'
 
@@ -15,8 +14,8 @@ import { parseCommentTokensCookie, serializeCommentTokensCookie } from '@/shared
 import { hasAtLeast, type Role } from '@/shared/utils/roles'
 
 // Context every oRPC procedure sees. The Hono `/rpc/*` bridge in
-// `app.ts` builds this from `c.var` after the perimeter middleware
-// (session / install-gate / visitor-cookie / wp-decoy) has run.
+// `app.ts` projects it from `c.var.requestContext` (the canonical
+// per-request fact base) after the perimeter middleware has run.
 //
 // `responseHeaders` is a mutable bag the procedure can append to
 // (e.g. `Set-Cookie` for comment-token issuance).
@@ -31,8 +30,9 @@ export interface HandlerContext {
    * never touch the raw `Request`.
    */
   requestFacts: RequestFacts
-  session: Env['Variables']['session']
-  viewer: ViewerContext | null
+  session: BlogSession
+  /** The session's identity projection (full `SessionUser`); `null` when anonymous. */
+  viewer: SessionUser | null
   clientAddress: string
   responseHeaders: Headers
   db: NodePgDatabase
@@ -43,7 +43,7 @@ export interface HandlerContext {
 // `viewer` is guaranteed non-null. oRPC's `.use()` chaining propagates
 // this narrowed context to the procedure handler automatically.
 export interface AuthedHandlerContext extends Omit<HandlerContext, 'viewer'> {
-  viewer: ViewerContext
+  viewer: SessionUser
 }
 
 // ─── Root procedure builder ─────────────────────────────
@@ -87,7 +87,7 @@ const domainErrorGuard = root.middleware(async ({ context, next }) => {
   }
 })
 
-function ensureViewer(context: HandlerContext): ViewerContext {
+function ensureViewer(context: HandlerContext): SessionUser {
   if (!context.viewer) {
     throw new ORPCError('UNAUTHORIZED', { message: ErrorMessages.UNAUTHORIZED })
   }
@@ -175,7 +175,7 @@ export const publicProc = root.use(domainErrorGuard)
 
 // ─── Authed base procedure ──────────────────────────────
 // Any logged-in user (admin / author / visitor). After this middleware
-// resolves, `context.viewer` is typed as `ViewerContext` (non-null).
+// resolves, `context.viewer` is typed as `SessionUser` (non-null).
 export const authedProc = root.use(requireAuth).use(domainErrorGuard)
 
 // ─── Role-gated base procedures ─────────────────────────

@@ -124,7 +124,7 @@ const upsertMeta = adminProc
       showFriends: input.showFriends,
       publishedAt: input.publishedAt === undefined ? undefined : new Date(input.publishedAt),
     }
-    const sessionUserId = idFromString(context.viewer.userId)
+    const sessionUserId = idFromString(context.viewer.id)
     const page =
       input.id === undefined
         ? await createPage(context.db, meta, sessionUserId)

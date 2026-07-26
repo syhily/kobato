@@ -19,11 +19,11 @@ const MAX_CONNECTIONS_PER_SESSION = 2
 const activeSSEConnections = new Map<string, number>()
 
 function getRealtimeKey(c: Context<Env>): string {
-  const sessionId = c.var.session.id
+  const sessionId = c.var.requestContext.session.id
   if (sessionId) {
     return `session:${sessionId}`
   }
-  return `ip:${hashClientAddress(c.var.clientAddress)}`
+  return `ip:${hashClientAddress(c.var.requestContext.clientAddress)}`
 }
 
 function hashClientAddress(address: string): string {
@@ -106,7 +106,7 @@ export const analyticsEventsRouter = new Hono<Env>().get('/api/analytics/events'
         pollInProgress = true
         void (async () => {
           try {
-            const rows = await queryRealtimeTail(c.var.db, lastSeen)
+            const rows = await queryRealtimeTail(c.var.requestContext.db, lastSeen)
             if (rows.length > 0) {
               const ordered = [...rows].reverse()
               lastSeen = new Date(ordered[ordered.length - 1]!.ts)

@@ -2,7 +2,6 @@ import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
-import { userSession } from '@/server/domains/auth/primitives'
 import { findMusicDtoById, listMusicForAdmin } from '@/server/domains/music/services/read'
 import { searchMusic } from '@/server/domains/music/services/search'
 import { addMusic } from '@/server/domains/music/services/write/add'
@@ -64,8 +63,8 @@ const add = authorProc
       source: input.source,
       sourceId: input.sourceId,
       uploader: {
-        id: idFromString(context.viewer.userId),
-        name: userSession(context.session)?.name ?? '',
+        id: idFromString(context.viewer.id),
+        name: context.viewer.name,
       },
     })
     recordAuditEventFromContext(context, {
@@ -99,7 +98,7 @@ const update = authorProc
         lyric: input.lyric ?? null,
       },
       {
-        userId: context.viewer.userId,
+        id: context.viewer.id,
         role: context.viewer.role,
       },
     )
@@ -129,7 +128,7 @@ const remove = authorProc
   .output(z.void())
   .handler(async ({ input, context }) => {
     await deleteMusic(context.db, idFromString(input.id), {
-      userId: context.viewer.userId,
+      id: context.viewer.id,
       role: context.viewer.role,
     })
     recordAuditEventFromContext(context, {

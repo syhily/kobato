@@ -7,7 +7,6 @@ import type { HandlerContext } from '@/server/http/orpc-base'
 import { apiRouter } from '@/server/http/api-router'
 import { csrfGuard } from '@/server/http/middlewares/csrf'
 import { dynamicBodyLimit } from '@/server/http/middlewares/dynamic-body-limit'
-import { extractRequestFacts } from '@/server/http/utils/request-facts'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 // ─── oRPC + Hono perimeter ──────────────────────────────
@@ -19,9 +18,10 @@ import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 //   1. `bodyLimit` — read from `blog.limits` settings (default 10 MB).
 //      Checked per-request from the live settings snapshot so admin
 //      changes take effect immediately without a server restart.
-//   2. Context bridging — `c.var.{session,viewer,clientAddress}` is
-//      populated by the perimeter middleware in `src/server.ts`;
-//      `responseHeaders` is a fresh `Headers` object that procedures
+//   2. Context projection — `c.var.requestContext` is the canonical
+//      per-request fact base derived by the request-context middleware;
+//      the bridge projects it into `HandlerContext` and adds
+//      `responseHeaders`, a fresh `Headers` object that procedures
 //      can append to (Set-Cookie etc.) and we merge onto the final
 //      Response after the handler resolves.
 //
@@ -58,15 +58,19 @@ export function createApiApp(): Hono<Env> {
 
   app.use('/rpc/*', async (c, next) => {
     const responseHeaders = new Headers()
+    const rc = c.var.requestContext
+    // Pure projection of the canonical RequestContext (no re-derivation).
+    // Deliberately omits `markSessionDirty` — procedures get a read-only
+    // session; the comment-token flow uses its own cookie jar instead.
     const context: HandlerContext = {
       request: c.req.raw,
-      requestFacts: extractRequestFacts(c.req.raw),
-      session: c.var.session,
-      viewer: c.var.viewer ?? null,
-      clientAddress: c.var.clientAddress,
+      requestFacts: rc.requestFacts,
+      session: rc.session,
+      viewer: rc.viewer,
+      clientAddress: rc.clientAddress,
       responseHeaders,
-      db: c.var.db,
-      pool: c.var.pool,
+      db: rc.db,
+      pool: rc.pool,
     }
     const result = await handler.handle(c.req.raw, { prefix: '/rpc', context })
     if (!result.matched) {

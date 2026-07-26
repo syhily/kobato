@@ -6,14 +6,13 @@ import type { DraftMarker } from '@/shared/types/catalog'
 import type { ResolvedImageMeta } from '@/shared/types/images'
 import type { MarkdownHeading } from '@/shared/utils/toc'
 
-import { tryGetSessionContext } from '@/server/domains/auth/context'
-import { resolveSessionContext } from '@/server/domains/auth/primitives'
 import { loadDraftPreviewBySlug } from '@/server/domains/content/lifecycle'
 import { isLive } from '@/server/domains/content/schema'
 import { resolveImageMetaBySources } from '@/server/domains/images/services/enhance'
 import { findPageBySlug } from '@/server/domains/pages/repo'
 import { pageLifecycleAdapter } from '@/server/domains/pages/services/lifecycle-adapter'
 import { findPublicPostMetaBySlug } from '@/server/domains/posts/repos/single'
+import { getRequestContext } from '@/server/http/request-context'
 import { ifNoneMatch, notModifiedResponse, weakEtag } from '@/server/infra/http/etag'
 import { redirectPermanent } from '@/server/infra/http/redirects'
 import { notFound } from '@/server/infra/http/status'
@@ -73,8 +72,8 @@ export async function loadPagePreview({
 
   const needsDraftLookup = sourcePage === undefined || (wantsDraftPreview && publishedPage !== undefined)
   if (needsDraftLookup) {
-    const sessionContext = tryGetSessionContext(context) ?? (await resolveSessionContext(db, request))
-    if (pageLifecycleAdapter.canPreviewDraft(sessionContext.role)) {
+    const role = getRequestContext({ request, context }).viewer?.role
+    if (pageLifecycleAdapter.canPreviewDraft(role)) {
       const draftPreview = await loadDraftPreviewBySlug(db, pageLifecycleAdapter, slug)
       if (draftPreview !== null) {
         // `draftPreview.preview` is already the shared `Page` DTO

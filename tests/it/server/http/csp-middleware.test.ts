@@ -13,14 +13,14 @@ describe('CSP middleware', () => {
 
     // Mimic the nonce-generation middleware
     app.use('*', async (c, next) => {
-      c.set('cspNonce', 'test-nonce-12345')
+      c.set('requestContext', { cspNonce: 'test-nonce-12345' } as unknown as Env['Variables']['requestContext'])
       await next()
     })
 
     // Mimic the dynamic-CSP middleware (simplified inline copy)
     app.use(async (c, next) => {
       await next()
-      const nonce = c.var.cspNonce
+      const nonce = c.var.requestContext.cspNonce
       const scriptSrc = isDev ? "script-src 'self' 'unsafe-inline'" : `script-src 'self' 'nonce-${nonce}'`
       const csp = [
         "default-src 'self'",

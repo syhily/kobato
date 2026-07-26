@@ -6,8 +6,7 @@ import type { Env } from '@/server/http/context'
 function createTestApp() {
   const app = new Hono<Env>()
   app.use('*', async (c, next) => {
-    c.set('clientAddress' as never, '127.0.0.1' as never)
-    c.set('db' as never, {} as never)
+    c.set('requestContext', { clientAddress: '127.0.0.1', db: {} } as never)
     await next()
   })
   return app

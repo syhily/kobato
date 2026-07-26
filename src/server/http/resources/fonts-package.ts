@@ -30,7 +30,7 @@ export const fontsPackageRouter = adminUploadRoute({
   },
   async handler({ c, file, validated: familyName }) {
     const buffer = new Uint8Array(await file.arrayBuffer())
-    const font = await uploadFont(c.var.db, {
+    const font = await uploadFont(c.var.requestContext.db, {
       buffer,
       sourceName: file.name || 'font.ttf',
       familyName,

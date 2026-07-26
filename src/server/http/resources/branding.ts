@@ -1,5 +1,5 @@
 import { clearBrandingAsset, isBrandingSlot, uploadBrandingAsset } from '@/server/domains/assets/management'
-import { recordAuditEvent } from '@/server/domains/audit/services/record'
+import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { csrfGuard } from '@/server/http/middlewares/csrf'
 import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'
 import { adminUploadRoute } from '@/server/http/resources/admin-upload-route'
@@ -27,7 +27,7 @@ export const brandingRouter = adminUploadRoute({
   },
   async handler({ c, file, validated: slot }) {
     const buffer = Buffer.from(await file.arrayBuffer())
-    const ref = await uploadBrandingAsset(c.var.db, slot, buffer)
+    const ref = await uploadBrandingAsset(c.var.requestContext.db, slot, buffer)
     return {
       response: c.json({ slot, ref }),
       audit: {
@@ -46,15 +46,11 @@ export const brandingRouter = adminUploadRoute({
   if (typeof slot !== 'string' || !isBrandingSlot(slot)) {
     return c.json({ error: { message: '未知的品牌素材槽位' } }, 400)
   }
-  await clearBrandingAsset(c.var.db, slot)
-  recordAuditEvent({
+  await clearBrandingAsset(c.var.requestContext.db, slot)
+  recordAuditEventFromContext(c.var.requestContext, {
     action: 'branding_cleared',
-    actorId: c.var.viewer?.userId,
-    actorRole: c.var.viewer?.role ?? null,
     resourceType: 'branding',
     resourceId: slot,
-    ipAddress: c.var.clientAddress,
-    userAgent: c.req.header('User-Agent') ?? null,
   })
   log.info('Branding cleared', { slot })
   return c.json({ slot, success: true })

@@ -3,6 +3,8 @@ import { describe, expect, it, vi } from 'vitest'
 
 import type { Env } from '@/server/http/context'
 
+import { normalizeDocumentUrl } from '@/server/http/utils/request-facts'
+
 // prettier-ignore
 const EXEMPT_CASES = [
   // static asset prefixes
@@ -44,6 +46,16 @@ describe('honoInstallGateMiddleware', () => {
   async function makeApp() {
     const { honoInstallGateMiddleware } = await import('@/server/http/middlewares/install-gate')
     const app = new Hono<Env>()
+    // Stub the canonical per-request context — the gate reads
+    // `requestContext.url` (already normalized upstream: `.data` stripped)
+    // and `requestContext.db`.
+    app.use('*', async (c, next) => {
+      c.set('requestContext', {
+        url: normalizeDocumentUrl(new URL(c.req.url)),
+        db: {},
+      } as unknown as Env['Variables']['requestContext'])
+      await next()
+    })
     app.use(honoInstallGateMiddleware)
     app.all('*', (c) => c.json({ ok: true }))
     return app

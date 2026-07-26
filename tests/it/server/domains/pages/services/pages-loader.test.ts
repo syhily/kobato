@@ -3,11 +3,15 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { RouterContextProvider } from 'react-router'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { SessionUser } from '@/server/domains/auth/session-storage'
+import type { RequestContext } from '@/server/http/request-context'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
 import { makePage } from '#/_helpers/catalog'
+import { adminUser } from '#/_helpers/session'
+import { requestContext } from '@/server/http/request-context'
 
-// Tests for `loadPagePreview` in `@/server/domains/pages/loader`.
+// Tests for `loadPagePreview` in `@/server/http/loaders/page-preview`.
 // The loader uses parallel DB lookups (findPublicPostMetaBySlug +
 // findPageBySlug) instead of the old catalog cache (getEntryBySlug).
 
@@ -57,8 +61,6 @@ const mocks = vi.hoisted(() => ({
   findPublicPostMetaBySlug: vi.fn(async (): Promise<unknown> => null),
   findPageBySlug: vi.fn(async (): Promise<unknown> => null),
   loadDraftPreviewBySlug: vi.fn(async (): Promise<unknown> => null),
-  tryGetSessionContext: vi.fn((): unknown => null),
-  resolveSessionContext: vi.fn(async () => ({ role: 'anonymous', user: null, session: null })),
   resolveImageMetaBySources: vi.fn(async () => []),
 }))
 
@@ -73,12 +75,6 @@ vi.mock('@/server/domains/pages/repo', () => ({
 vi.mock('@/server/domains/content/lifecycle', () => ({
   loadDraftPreviewBySlug: mocks.loadDraftPreviewBySlug,
 }))
-vi.mock('@/server/domains/auth/context', () => ({
-  tryGetSessionContext: mocks.tryGetSessionContext,
-}))
-vi.mock('@/server/domains/auth/primitives', () => ({
-  resolveSessionContext: mocks.resolveSessionContext,
-}))
 vi.mock('@/server/infra/http/etag', () => ({
   ifNoneMatch: () => false,
   weakEtag: () => 'etag',
@@ -88,13 +84,18 @@ vi.mock('@/server/domains/images/services/enhance', () => ({
   resolveImageMetaBySources: mocks.resolveImageMetaBySources,
 }))
 
-function makeArgs(slug: string) {
+function makeArgs(slug: string, viewer: SessionUser | null = null) {
+  const context = new RouterContextProvider()
+  // `loadPagePreview` reads only `viewer` off the canonical request
+  // context (draft-preview role gating) — partial stub cast through
+  // `unknown`, the same convention as the middleware tests.
+  context.set(requestContext, { viewer } as unknown as RequestContext)
   return {
     db: mockDb,
     slug,
     wantsDraftPreview: false,
     request: new Request(`http://localhost/${slug}`),
-    context: new RouterContextProvider(),
+    context,
   }
 }
 
@@ -103,12 +104,6 @@ beforeEach(() => {
   mocks.findPublicPostMetaBySlug.mockImplementation(async () => null)
   mocks.findPageBySlug.mockImplementation(async () => null)
   mocks.loadDraftPreviewBySlug.mockImplementation(async () => null)
-  mocks.tryGetSessionContext.mockReturnValue(null)
-  mocks.resolveSessionContext.mockImplementation(async () => ({
-    role: 'anonymous',
-    user: null,
-    session: null,
-  }))
 })
 
 let loadPagePreview: (typeof import('@/server/http/loaders/page-preview'))['loadPagePreview']
@@ -180,9 +175,8 @@ describe('loadPagePreview — slug redirect logic', () => {
       preview: draftPage,
       hasNewerDraft: false,
     }))
-    mocks.tryGetSessionContext.mockReturnValue({ role: 'admin', user: { id: '1' }, session: {} })
 
-    const result = await loadPagePreview(makeArgs('new-page'))
+    const result = await loadPagePreview(makeArgs('new-page', adminUser()))
 
     expect(result.draftMarker).toBe('draft')
     expect(result.page.title).toBe('New Page Draft')

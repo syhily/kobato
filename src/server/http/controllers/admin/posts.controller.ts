@@ -127,7 +127,7 @@ const upsertMeta = authorProc
       pinnedAt: input.pinnedAt === undefined || input.pinnedAt === null ? input.pinnedAt : new Date(input.pinnedAt),
       publishedAt: input.publishedAt === undefined ? undefined : new Date(input.publishedAt),
     }
-    const sessionUserId = idFromString(context.viewer.userId)
+    const sessionUserId = idFromString(context.viewer.id)
     const post =
       input.id === undefined
         ? await createPost(context.db, meta, sessionUserId, context.viewer)

@@ -2,7 +2,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { ViewerContext } from '@/server/domains/auth/rbac'
+import type { ViewerIdentity } from '@/server/domains/auth/rbac'
 
 // auth/session-guard.ts owns the "who may revoke whose session" policy
 // for all three scopes (own / admin / bulk). We stub the role-blind
@@ -33,8 +33,8 @@ const { DomainError } = await import('@/server/infra/http/errors')
 
 const fakeDb = {} as NodePgDatabase
 
-function actor(userId: string, role: ViewerContext['role'] = 'admin'): ViewerContext {
-  return { userId, role }
+function actor(id: string, role: ViewerIdentity['role'] = 'admin'): ViewerIdentity {
+  return { id, role }
 }
 
 describe('auth/session-guard — revokeOwnSessionWithGuard (own scope)', () => {

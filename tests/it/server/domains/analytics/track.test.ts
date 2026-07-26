@@ -13,6 +13,7 @@ const { trackAccess, KOBATO_AID_COOKIE } = await import('@/server/domains/analyt
 function makeFacts(overrides: Partial<RequestFacts> = {}): RequestFacts {
   return {
     path: '/post/1',
+    isDataRequest: false,
     userAgent: null,
     referer: null,
     acceptLanguage: null,

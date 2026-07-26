@@ -15,7 +15,7 @@ export const handle: RouteHandle = { layout: 'admin', postFonts: true }
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { role, user, url } = getRouteRequestContext({ request, context })
   if (!hasAtLeast(role, 'author')) {
-    const redirectPath = url.pathname.replace(/\.data$/, '')
+    const redirectPath = url.pathname
     throw redirect(`/admin/signin?redirect_to=${encodeURIComponent(redirectPath)}`)
   }
 

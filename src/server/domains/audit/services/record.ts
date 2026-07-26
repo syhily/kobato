@@ -47,7 +47,7 @@ export function recordAuditEvent(input: AuditEventInput): void {
  */
 export function buildAuditContext(context: AuditContext) {
   return {
-    actorId: context.viewer?.userId,
+    actorId: context.viewer?.id,
     actorRole: context.viewer?.role ?? null,
     ipAddress: context.clientAddress,
     userAgent: context.requestFacts.userAgent,

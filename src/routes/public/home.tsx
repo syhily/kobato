@@ -3,8 +3,7 @@ import type { ListingPostCard } from '@/shared/types/catalog'
 import type { SidebarData } from '@/ui/public/Sidebar'
 
 import { trackAccess } from '@/server/domains/analytics/track'
-import { getDbFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
-import { userSession } from '@/server/domains/auth/primitives'
+import { getDbFromContext } from '@/server/domains/auth/context'
 import { selectFeaturePosts, selectSidebarPosts } from '@/server/domains/posts/repos/public-query/featured'
 import { countPublicPosts, listPublicPostCardsPaginated } from '@/server/domains/posts/repos/public-query/listing'
 import { getCategoryLinks } from '@/server/domains/taxonomies/categories/services/query'
@@ -13,7 +12,7 @@ import { listingLoader } from '@/server/http/loaders/listing'
 import { listingHeaders } from '@/server/http/loaders/route-exports'
 import { loadSidebarData } from '@/server/http/loaders/sidebar'
 import { selectSidebarTags } from '@/server/http/loaders/sidebar-select'
-import { extractRequestFacts } from '@/server/http/utils/request-facts'
+import { getRequestContext } from '@/server/http/request-context'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { getSidebarWidgetCount, isSidebarWidgetEnabled } from '@/shared/config/utils'
 import { metaWithFallback } from '@/shared/seo/meta'
@@ -33,7 +32,7 @@ export async function loader({
   context,
   params,
 }: Route.LoaderArgs): Promise<ListingPageLoaderData<HomeExtra>> {
-  const { session, clientAddress } = getRouteRequestContext({ request, context })
+  const rc = getRequestContext({ request, context })
   const db = getDbFromContext({ request, context })
 
   // Time-series access-log write for the analytics dashboard. The
@@ -42,9 +41,9 @@ export async function loader({
   // admin-exemption (so the dashboard owner doesn't pollute their
   // own visitor metrics) lives inside `trackAccess`; pass `isAdmin`
   // so it can apply the exemption and honour the analytics settings.
-  void trackAccess(extractRequestFacts(request), null, {
-    isAdmin: userSession(session)?.role === 'admin',
-    clientAddress,
+  void trackAccess(rc.requestFacts, null, {
+    isAdmin: rc.viewer?.role === 'admin',
+    clientAddress: rc.clientAddress,
   })
 
   const content = requireBlogSettingsSection('content')
@@ -62,7 +61,7 @@ export async function loader({
 
   const [totalPosts, sidebar, featureSeed] = await Promise.all([
     countPublicPosts(db, filters),
-    loadSidebarData(db, session),
+    loadSidebarData(db, rc.session),
     Promise.resolve(formatLocalDate(new Date(), 'yyyy-MM-dd', requireBlogSettingsSection('siteIdentity'))),
   ])
 

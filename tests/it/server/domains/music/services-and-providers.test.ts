@@ -203,7 +203,7 @@ describe('music/services/write/metadata — updateMusicMetadata', () => {
       metadataMod.updateMusicMetadata(
         db,
         { id: m.id, name: 'X', artist: [], album: 'A', lyric: null },
-        { userId: '1', role: 'author' },
+        { id: '1', role: 'author' },
       ),
     ).rejects.toThrow()
   })
@@ -214,7 +214,7 @@ describe('music/services/write/metadata — updateMusicMetadata', () => {
     const dto = await metadataMod.updateMusicMetadata(
       db,
       { id: m.id, name: 'New', artist: ['A', 'B'], album: 'Alb', lyric: '[00:00] Hello' },
-      { userId: String(uploader.id), role: 'author' },
+      { id: String(uploader.id), role: 'author' },
     )
     expect(dto.name).toBe('New')
     expect(dto.artist).toEqual(['A', 'B'])
@@ -227,7 +227,7 @@ describe('music/services/write/metadata — updateMusicMetadata', () => {
     const dto = await metadataMod.updateMusicMetadata(
       db,
       { id: m.id, name: 'Admin Edit', artist: ['Admin'], album: 'Admin', lyric: null },
-      { userId: '999', role: 'admin' },
+      { id: '999', role: 'admin' },
     )
     expect(dto.name).toBe('Admin Edit')
   })
@@ -240,14 +240,14 @@ describe('music/services/write/delete — deleteMusic', () => {
 
   it('soft-deletes the row', async () => {
     const m = await seedMusic()
-    await deleteMod.deleteMusic(db, m.id, { userId: '1', role: 'admin' })
+    await deleteMod.deleteMusic(db, m.id, { id: '1', role: 'admin' })
     const rows = await db.select().from(music).where(eq(music.id, m.id))
     expect(rows[0].deletedAt).not.toBeNull()
   })
 
   it('throws FORBIDDEN when non-admin viewer is not uploader', async () => {
     const m = await seedMusic({ uploaderId: 9n })
-    await expect(deleteMod.deleteMusic(db, m.id, { userId: '1', role: 'author' })).rejects.toThrow()
+    await expect(deleteMod.deleteMusic(db, m.id, { id: '1', role: 'author' })).rejects.toThrow()
   })
 })
 

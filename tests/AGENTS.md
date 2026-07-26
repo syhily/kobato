@@ -97,6 +97,9 @@ ceremony:
   - `#/_helpers/integration-db` — DB creation / teardown (integration only)
   - `#/_helpers/db` — query helpers (integration only)
   - `#/_helpers/mock-ctx` — mock auth context (integration only)
+  - `#/_helpers/request-context` — canonical `requestContext` RR key stubs
+    for loader tests (`makeLoaderArgsWithContext`; only for test files
+    whose module graph already imports `@/server/http/request-context`)
   - `#/_helpers/rpc-call` — oRPC test caller (integration only)
   - `#/_helpers/session` — session fixtures (integration only)
   - `#/_helpers/fetch` — fetch mocks (integration only)

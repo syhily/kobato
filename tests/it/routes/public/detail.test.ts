@@ -5,13 +5,27 @@ import { RouterContextProvider } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { makePage, makePost, makePostList, makeTag } from '#/_helpers/catalog'
-import { makeLoaderArgs, unwrapLoaderData } from '#/_helpers/context'
-import { regularSession } from '#/_helpers/session'
+import { unwrapLoaderData } from '#/_helpers/context'
+import { makeLoaderArgsWithContext } from '#/_helpers/request-context'
+import { emptySession, regularSession } from '#/_helpers/session'
 import { dbContext, poolContext } from '@/server/domains/auth/context'
 
 // post.detail / page.detail loaders form the most-trafficked SSR endpoints.
 // Pin the alias 301 redirect, the page-vs-post-slug fallback redirect, and
 // the 404 contracts that protect against catalog drift.
+
+const mocks = vi.hoisted(() => ({
+  resolveSessionContext: vi.fn(),
+}))
+
+// Wrapped (not replaced) so the "no session re-resolution fallback" test
+// can assert the loaders never consult it — everything else stays real.
+vi.mock('@/server/domains/auth/primitives', async () => {
+  const actual = await vi.importActual<typeof import('@/server/domains/auth/primitives')>(
+    '@/server/domains/auth/primitives',
+  )
+  return { ...actual, resolveSessionContext: mocks.resolveSessionContext }
+})
 
 const session = regularSession()
 const samplePost = {
@@ -122,7 +136,7 @@ describe('routes/post.detail loader', () => {
   it('301-redirects from a post alias to the canonical slug', async () => {
     await expect(
       postRoute.loader(
-        makeLoaderArgs({
+        makeLoaderArgsWithContext({
           request: new Request('http://localhost/posts/hello-old'),
           session,
           params: { slug: 'hello-old' },
@@ -134,7 +148,7 @@ describe('routes/post.detail loader', () => {
   it("404s when the slug isn't a known post or alias", async () => {
     await expect(
       postRoute.loader(
-        makeLoaderArgs({
+        makeLoaderArgsWithContext({
           request: new Request('http://localhost/posts/missing'),
           session,
           params: { slug: 'missing' },
@@ -143,17 +157,17 @@ describe('routes/post.detail loader', () => {
     ).rejects.toMatchObject({ status: 404 })
   })
 
-  it('404s when the slug is missing and no session context is present', async () => {
-    const context = new RouterContextProvider()
-    context.set(dbContext, {} as NodePgDatabase)
-    context.set(poolContext, {} as Pool)
-
+  it('404s when the slug is missing for an anonymous visitor', async () => {
+    // Anonymous requests carry the canonical context with `viewer: null`;
+    // a missing slug must still 404 rather than leak a draft preview.
     await expect(
-      postRoute.loader({
-        request: new Request('http://localhost/posts/missing'),
-        context,
-        params: { slug: 'missing' },
-      } as unknown as Parameters<typeof postRoute.loader>[0]),
+      postRoute.loader(
+        makeLoaderArgsWithContext({
+          request: new Request('http://localhost/posts/missing'),
+          session: emptySession(),
+          params: { slug: 'missing' },
+        }),
+      ),
     ).rejects.toMatchObject({ status: 404 })
   })
 
@@ -163,7 +177,7 @@ describe('routes/post.detail loader', () => {
       body: unknown[]
     }>(
       await postRoute.loader(
-        makeLoaderArgs({
+        makeLoaderArgsWithContext({
           request: new Request('http://localhost/posts/hello'),
           session,
           params: { slug: 'hello' },
@@ -181,7 +195,7 @@ describe('routes/page.detail loader', () => {
   it('returns the canonical page payload for a real page slug', async () => {
     const data = unwrapLoaderData<{ page: { permalink: string } }>(
       await pageRoute.loader(
-        makeLoaderArgs({
+        makeLoaderArgsWithContext({
           request: new Request('http://localhost/about'),
           session,
           params: { slug: 'about' },
@@ -192,25 +206,29 @@ describe('routes/page.detail loader', () => {
     expect(data.page.permalink).toBe('/about')
   })
 
-  it('falls back to resolving the request session when detail loaders receive an empty context', async () => {
+  it('throws instead of re-resolving the session when the canonical request context is missing', async () => {
+    // ADR-0003: the session re-resolution fallback was deleted. A loader
+    // that finds no canonical request context treats that as a
+    // programming error and throws — `resolveSessionContext` is never
+    // consulted as a fallback.
     const ctx = new RouterContextProvider()
     ctx.set(dbContext, {} as NodePgDatabase)
     ctx.set(poolContext, {} as Pool)
-    const data = unwrapLoaderData<{ page: { permalink: string } }>(
-      await pageRoute.loader({
+
+    await expect(
+      pageRoute.loader({
         request: new Request('http://localhost/about'),
         context: ctx,
         params: { slug: 'about' },
       } as unknown as Parameters<typeof pageRoute.loader>[0]),
-    )
-
-    expect(data.page.permalink).toBe('/about')
+    ).rejects.toThrow('No value found for context')
+    expect(mocks.resolveSessionContext).not.toHaveBeenCalled()
   })
 
   it('301-redirects to /posts/:slug when a page slug actually belongs to a post', async () => {
     try {
       await pageRoute.loader(
-        makeLoaderArgs({
+        makeLoaderArgsWithContext({
           request: new Request('http://localhost/hello'),
           session,
           params: { slug: 'hello' },
@@ -228,7 +246,7 @@ describe('routes/page.detail loader', () => {
   it('404s when neither page nor post matches the slug', async () => {
     await expect(
       pageRoute.loader(
-        makeLoaderArgs({
+        makeLoaderArgsWithContext({
           request: new Request('http://localhost/missing'),
           session,
           params: { slug: 'missing' },

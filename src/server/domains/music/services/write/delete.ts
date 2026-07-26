@@ -1,17 +1,17 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import type { MusicViewerContext } from '@/server/domains/music/services/write/metadata'
+import type { ViewerIdentity } from '@/server/domains/auth/rbac'
 
 import { findMusicById, softDeleteMusic } from '@/server/infra/db/operations/music'
 import { DomainError, ErrorMessages } from '@/server/infra/http/errors'
 import { backendFor } from '@/server/infra/storage/registry'
 
-export async function deleteMusic(db: NodePgDatabase, id: bigint, viewer?: MusicViewerContext): Promise<void> {
+export async function deleteMusic(db: NodePgDatabase, id: bigint, viewer?: ViewerIdentity): Promise<void> {
   const existing = await findMusicById(db, id)
   if (existing === null) {
     throw new DomainError('NOT_FOUND', '音乐不存在')
   }
-  if (viewer && viewer.role !== 'admin' && existing.uploaderId?.toString() !== viewer.userId) {
+  if (viewer && viewer.role !== 'admin' && existing.uploaderId?.toString() !== viewer.id) {
     throw new DomainError('NOT_FOUND', ErrorMessages.NOT_FOUND)
   }
 

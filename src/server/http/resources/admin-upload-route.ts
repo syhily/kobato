@@ -7,7 +7,7 @@ import { bodyLimit } from 'hono/body-limit'
 import type { AuditEventInput } from '@/server/domains/audit/types'
 import type { Env } from '@/server/http/context'
 
-import { recordAuditEvent } from '@/server/domains/audit/services/record'
+import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { csrfGuard } from '@/server/http/middlewares/csrf'
 import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'
 import { getLogger } from '@/server/infra/logger'
@@ -73,13 +73,7 @@ export function adminUploadRoute<TValidated>(options: AdminUploadRouteOptions<TV
         return result
       }
 
-      recordAuditEvent({
-        ...result.audit,
-        actorId: c.var.viewer?.userId,
-        actorRole: c.var.viewer?.role ?? null,
-        ipAddress: c.var.clientAddress,
-        userAgent: c.req.header('User-Agent') ?? null,
-      })
+      recordAuditEventFromContext(c.var.requestContext, result.audit)
       log.info(options.logMessage, result.logContext)
       return result.response
     },

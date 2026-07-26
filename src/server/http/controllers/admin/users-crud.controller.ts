@@ -103,7 +103,7 @@ const softDelete = adminProc
   .input(idInput)
   .output(z.void())
   .handler(async ({ input, context }) => {
-    const result = await softDeleteUserWithGuard(context.db, idFromString(input.id), context.viewer.userId)
+    const result = await softDeleteUserWithGuard(context.db, idFromString(input.id), context.viewer.id)
     recordAuditEventFromContext(context, {
       action: 'user_soft_deleted',
       resourceType: 'user',

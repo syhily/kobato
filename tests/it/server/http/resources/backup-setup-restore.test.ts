@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Env } from '@/server/http/context'
+import type { RequestContext } from '@/server/http/request-context'
 
 const mockHasAdmin = vi.fn()
 const mockFindFirstAdminUser = vi.fn()
@@ -80,14 +81,25 @@ function makeSession(data: Partial<BlogSessionData> = {}) {
   return createSession<BlogSessionData, BlogSessionData>(data, 'test-session')
 }
 
+function makeRequestContext(session: ReturnType<typeof makeSession>): RequestContext {
+  return {
+    session,
+    viewer: session.get('user') ?? null,
+    clientAddress: '127.0.0.1',
+    url: new URL('http://localhost/'),
+    requestFacts: {} as RequestContext['requestFacts'],
+    db: {} as RequestContext['db'],
+    pool: {} as RequestContext['pool'],
+    cspNonce: 'test-csp-nonce',
+    markSessionDirty: () => {},
+  }
+}
+
 async function buildApp(session: ReturnType<typeof makeSession>) {
   const { backupRouter } = await import('@/server/http/resources/backup')
   const app = new Hono<Env>()
   app.use('*', async (c, next) => {
-    c.set('session', session as unknown as Env['Variables']['session'])
-    c.set('clientAddress', '127.0.0.1')
-    c.set('db', {} as Env['Variables']['db'])
-    c.set('pool', {} as Env['Variables']['pool'])
+    c.set('requestContext', makeRequestContext(session))
     await next()
   })
   app.route('/', backupRouter)
@@ -111,15 +123,14 @@ describe('/api/admin/backup/upload-restore', () => {
     const app = new Hono<Env>()
     app.use('*', async (c, next) => {
       c.set(
-        'session',
-        makeSession({
-          csrfToken: 'valid-csrf',
-          user: { id: '1', name: 'Admin', email: 'admin@test.com', website: null, role: 'admin' },
-        }) as unknown as Env['Variables']['session'],
+        'requestContext',
+        makeRequestContext(
+          makeSession({
+            csrfToken: 'valid-csrf',
+            user: { id: '1', name: 'Admin', email: 'admin@test.com', website: null, role: 'admin' },
+          }),
+        ),
       )
-      c.set('clientAddress', '127.0.0.1')
-      c.set('db', {} as Env['Variables']['db'])
-      c.set('pool', {} as Env['Variables']['pool'])
       await next()
     })
     app.route('/', backupRouter)
@@ -141,15 +152,14 @@ describe('/api/admin/backup/upload-restore', () => {
     const app = new Hono<Env>()
     app.use('*', async (c, next) => {
       c.set(
-        'session',
-        makeSession({
-          csrfToken: 'valid-csrf',
-          user: { id: '1', name: 'Admin', email: 'admin@test.com', website: null, role: 'admin' },
-        }) as unknown as Env['Variables']['session'],
+        'requestContext',
+        makeRequestContext(
+          makeSession({
+            csrfToken: 'valid-csrf',
+            user: { id: '1', name: 'Admin', email: 'admin@test.com', website: null, role: 'admin' },
+          }),
+        ),
       )
-      c.set('clientAddress', '127.0.0.1')
-      c.set('db', {} as Env['Variables']['db'])
-      c.set('pool', {} as Env['Variables']['pool'])
       await next()
     })
     app.route('/', backupRouter)
@@ -174,15 +184,14 @@ describe('/api/admin/backup/upload-restore', () => {
     const app = new Hono<Env>()
     app.use('*', async (c, next) => {
       c.set(
-        'session',
-        makeSession({
-          csrfToken: 'valid-csrf',
-          user: { id: '1', name: 'Admin', email: 'admin@test.com', website: null, role: 'admin' },
-        }) as unknown as Env['Variables']['session'],
+        'requestContext',
+        makeRequestContext(
+          makeSession({
+            csrfToken: 'valid-csrf',
+            user: { id: '1', name: 'Admin', email: 'admin@test.com', website: null, role: 'admin' },
+          }),
+        ),
       )
-      c.set('clientAddress', '127.0.0.1')
-      c.set('db', {} as Env['Variables']['db'])
-      c.set('pool', {} as Env['Variables']['pool'])
       await next()
     })
     app.route('/', backupRouter)

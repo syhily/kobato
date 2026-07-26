@@ -3,14 +3,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Env } from '@/server/http/context'
 
-import { adminSession } from '#/_helpers/session'
+import { adminSession, adminUser } from '#/_helpers/session'
 
 function createTestApp(session = adminSession()) {
   const app = new Hono<Env>()
   app.use('*', async (c, next) => {
-    c.set('session' as never, session as never)
-    c.set('viewer' as never, { userId: '1', role: 'admin' } as never)
-    c.set('clientAddress' as never, '127.0.0.1' as never)
+    c.set('requestContext', { session, viewer: adminUser(), clientAddress: '127.0.0.1' } as never)
     await next()
   })
   return app
@@ -35,6 +33,7 @@ describe('maxmindRouter', () => {
     }))
     vi.doMock('@/server/domains/audit/services/record', () => ({
       recordAuditEvent: vi.fn(),
+      recordAuditEventFromContext: vi.fn(),
     }))
     vi.doMock('@/server/infra/logger', () => ({
       getLogger: vi.fn(() => ({ info: vi.fn() })),

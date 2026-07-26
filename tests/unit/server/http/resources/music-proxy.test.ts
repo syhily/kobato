@@ -9,7 +9,7 @@ import { onErrorHandler } from '@/server/http/errors'
 function createTestApp(session = adminSession()) {
   const app = new Hono<Env>()
   app.use('*', async (c, next) => {
-    c.set('session' as never, session as never)
+    c.set('requestContext', { session, viewer: session.get('user') ?? null } as never)
     await next()
   })
   app.onError(onErrorHandler)

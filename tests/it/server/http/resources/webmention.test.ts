@@ -5,6 +5,7 @@ import { Hono } from 'hono'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 import type { Env } from '@/server/http/context'
+import type { RequestContext } from '@/server/http/request-context'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { installFetch } from '#/_helpers/fetch'
@@ -42,10 +43,11 @@ function buildApp(clientAddress = '203.0.113.10') {
   const app = new Hono<Env>()
   app.onError(onErrorHandler)
   app.use('*', async (c, next) => {
-    c.set('clientAddress', clientAddress)
-    c.set('db', db)
-    c.set('pool', pool)
     c.set('requestId', 'test-request')
+    // Minimal RequestContext stub — the router reads `.db` and the
+    // rate-limit middleware reads `.clientAddress`; no other field of
+    // the canonical context is consulted on this surface.
+    c.set('requestContext', { clientAddress, db, pool } as unknown as RequestContext)
     await next()
   })
   app.route('/', webmentionRouter)

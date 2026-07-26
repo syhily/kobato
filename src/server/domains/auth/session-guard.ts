@@ -26,7 +26,7 @@
 
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import type { ViewerContext } from '@/server/domains/auth/rbac'
+import type { ViewerIdentity } from '@/server/domains/auth/rbac'
 
 import { findSessionMeta, revokeSessionById } from '@/server/domains/auth/repo'
 import { revokeAllSessionsOfUser } from '@/server/domains/auth/service'
@@ -46,13 +46,13 @@ export interface SessionRevocation {
 export async function revokeOwnSessionWithGuard(
   db: NodePgDatabase,
   sessionId: string,
-  actor: ViewerContext,
+  actor: ViewerIdentity,
 ): Promise<SessionRevocation> {
   const meta = await findSessionMeta(db, sessionId)
   if (!meta) {
     return { targetUserId: null }
   }
-  if (meta.userId.toString() !== actor.userId) {
+  if (meta.userId.toString() !== actor.id) {
     throw new DomainError('FORBIDDEN', '无权操作该会话。')
   }
   await revokeSessionById(db, sessionId, meta.userId)
@@ -68,7 +68,7 @@ export async function revokeOwnSessionWithGuard(
 export async function revokeSessionWithGuard(
   db: NodePgDatabase,
   sessionId: string,
-  actor: ViewerContext,
+  actor: ViewerIdentity,
 ): Promise<SessionRevocation> {
   const meta = await findSessionMeta(db, sessionId)
   if (!meta) {
@@ -77,7 +77,7 @@ export async function revokeSessionWithGuard(
   // Ownership check: an admin may not revoke another admin's session
   // unless it is their own session. This prevents privilege escalation
   // where a compromised admin account kicks out all other admins.
-  if (actor.role === 'admin' && meta.userId.toString() !== actor.userId) {
+  if (actor.role === 'admin' && meta.userId.toString() !== actor.id) {
     const targetUser = await findSafeUserById(db, meta.userId)
     if (targetUser && !targetUser.deletedAt && targetUser.role === 'admin') {
       throw new DomainError('FORBIDDEN', '无权撤销其他管理员的会话。')
@@ -96,10 +96,10 @@ export async function revokeSessionWithGuard(
 export async function revokeAllSessionsWithGuard(
   db: NodePgDatabase,
   targetUserId: bigint,
-  actor: ViewerContext,
+  actor: ViewerIdentity,
 ): Promise<void> {
   const targetUser = await findSafeUserById(db, targetUserId)
-  if (targetUser?.role === 'admin' && targetUserId.toString() !== actor.userId) {
+  if (targetUser?.role === 'admin' && targetUserId.toString() !== actor.id) {
     throw new DomainError('FORBIDDEN', '无权撤销其他管理员的全部会话。')
   }
   await revokeAllSessionsOfUser(db, targetUserId)

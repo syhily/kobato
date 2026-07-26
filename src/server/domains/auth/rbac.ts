@@ -4,22 +4,21 @@ import { ActionFailure, ErrorMessages } from '@/server/infra/http/errors'
 import { hasAtLeast, type Role, type RoleOrNull } from '@/shared/utils/roles'
 
 /**
- * Per-request viewer identity. Built once by `defineGuardedApiAction`
- * after `requireRole` has succeeded, then passed verbatim to
- * permission predicates. Carrying viewer instead of `(userId, role)`
- * pairs makes adding fields (e.g. session id) a non-breaking change.
+ * The structural minimum a viewer identity must carry for permission
+ * predicates. The canonical `RequestContext.viewer` (a full `SessionUser`,
+ * see `@/server/http/request-context`) satisfies it; tests can stub the
+ * two fields directly.
  */
-export interface ViewerContext {
-  userId: string
+export interface ViewerIdentity {
+  id: string
   role: Role
 }
 
 /**
  * Asserts `user is SessionUser` AND `user.role >= min`. Throws
- * `ActionFailure(403)` otherwise. Use this from `defineGuardedApiAction`
- * and `admin.uploadImage` — anywhere we have a raw `SessionUser | undefined`
- * and want the type system to pick up the narrowed shape on the
- * non-throw path.
+ * `ActionFailure(403)` otherwise. Use anywhere we have a raw
+ * `SessionUser | undefined` and want the type system to pick up the
+ * narrowed shape on the non-throw path.
  */
 export function requireUserRole(user: SessionUser | undefined, min: Role): asserts user is SessionUser {
   if (!user || !hasAtLeast(user.role, min)) {
@@ -61,12 +60,12 @@ export function requireRole(
 // column. `bigint` is assignable to `bigint | null`, so non-null callers
 // (e.g. `{ userId: bigint }` for comments) still satisfy the constraint.
 function ownerOf<K extends string>(field: K) {
-  return <T extends Record<K, bigint | null>>(viewer: ViewerContext, row: T): boolean => {
+  return <T extends Record<K, bigint | null>>(viewer: ViewerIdentity, row: T): boolean => {
     const owner = row[field]
     if (owner === null) {
       return false
     }
-    return owner.toString() === viewer.userId
+    return owner.toString() === viewer.id
   }
 }
 
@@ -79,14 +78,14 @@ export function isAdmin(viewer: { role: Role }): boolean {
   return viewer.role === 'admin'
 }
 
-export function canEditPost(viewer: ViewerContext, post: { authorId: bigint | null }): boolean {
+export function canEditPost(viewer: ViewerIdentity, post: { authorId: bigint | null }): boolean {
   return isAdmin(viewer) || isPostOwner(viewer, post)
 }
 
-export function canEditImage(viewer: ViewerContext, img: { uploaderId: bigint | null }): boolean {
+export function canEditImage(viewer: ViewerIdentity, img: { uploaderId: bigint | null }): boolean {
   return isAdmin(viewer) || isImageOwner(viewer, img)
 }
 
-export function canEditMusic(viewer: ViewerContext, m: { uploaderId: bigint | null }): boolean {
+export function canEditMusic(viewer: ViewerIdentity, m: { uploaderId: bigint | null }): boolean {
   return isAdmin(viewer) || isMusicOwner(viewer, m)
 }

@@ -179,7 +179,7 @@ describe('posts mutate service', () => {
 
   it('creates a post on behalf of a non-admin viewer', async () => {
     const db = fakeDb()
-    const result = await createPost(db, { slug: 'hello', title: 'Hello' }, null, { userId: '2', role: 'author' })
+    const result = await createPost(db, { slug: 'hello', title: 'Hello' }, null, { id: '2', role: 'author' })
     expect(result).toMatchObject({ id: 100n })
   })
 

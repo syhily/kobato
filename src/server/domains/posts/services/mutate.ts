@@ -62,7 +62,7 @@ export async function createPost(
 ): Promise<AdminPostDto> {
   let resolvedAuthorId = authorId
   if (viewer && viewer.role !== 'admin') {
-    resolvedAuthorId = idFromString(viewer.userId)
+    resolvedAuthorId = idFromString(viewer.id)
   }
   const slug = resolveSlug(input.slug, input.title)
   ensureSlugLegal(slug, 'post')

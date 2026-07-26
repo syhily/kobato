@@ -29,9 +29,11 @@ describe('csrfGuard middleware', () => {
     const { Hono } = await import('hono')
     const { csrfGuard } = await import('@/server/http/middlewares/csrf')
     const app = new Hono<Env>()
-    // Minimal session stub on c.var
+    // Minimal requestContext stub on c.var — csrfGuard only reads .session
     app.use('*', async (c, next) => {
-      c.set('session', makeSession({ csrfToken: 'valid-token' }) as unknown as Env['Variables']['session'])
+      c.set('requestContext', {
+        session: makeSession({ csrfToken: 'valid-token' }),
+      } as unknown as Env['Variables']['requestContext'])
       await next()
     })
     app.use('/rpc/*', csrfGuard)

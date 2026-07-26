@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { recordAuditEvent, recordAuditEventFromContext } from '@/server/domains/audit/services/record'
+import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { performSafeRestore } from '@/server/domains/backup/restore-orchestrator'
 import {
   createBackup,
@@ -93,21 +93,12 @@ const restore = adminProc
     const { db, pool } = context
     const buffer = await getBackupBuffer(db, input.key)
 
-    const actorId = context.viewer?.userId
-    const actorRole = context.viewer?.role ?? null
-    const ipAddress = context.clientAddress
-    const userAgent = context.request.headers.get('User-Agent')
-
     performSafeRestore({ pool, log }, async () => {
       await restoreFromBackup(db, buffer, input.key)
-      recordAuditEvent({
+      recordAuditEventFromContext(context, {
         action: 'backup_restored',
         resourceType: 'backup',
         resourceId: input.key,
-        actorId,
-        actorRole,
-        ipAddress,
-        userAgent,
       })
       log.info('Restore completed', { key: input.key })
     })

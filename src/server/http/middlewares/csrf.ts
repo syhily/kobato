@@ -10,7 +10,7 @@ export const csrfGuard = createMiddleware<Env>(async (c, next) => {
     return next()
   }
   const token = c.req.header(CSRF_HEADER)
-  if (!validateCsrfToken(c.var.session, token)) {
+  if (!validateCsrfToken(c.var.requestContext.session, token)) {
     throw new HTTPException(403, { message: 'Invalid or missing CSRF token' })
   }
   await next()

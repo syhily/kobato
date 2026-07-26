@@ -7,9 +7,9 @@ import { extractRequestFacts } from '@/server/http/utils/request-facts'
 
 // Builders for the `context` argument passed to oRPC procedures
 // (via `call(router.method, input, { context })`). Authed procedures
-// gate on `context.session.get('user')` via the `requireAuth` /
-// `requireRole` middleware in `orpc-base.ts`; this helper seeds that
-// session-stub so tests can drive procedures end-to-end.
+// gate on `context.viewer` via the `requireAuth` / `requireRole`
+// middleware in `orpc-base.ts`; this helper seeds both the viewer and
+// the session-stub so tests can drive procedures end-to-end.
 
 export interface MockCtxOptions {
   userId?: string
@@ -42,7 +42,7 @@ export function makeAuthedCtx(opts: MockCtxOptions = {}): HandlerContext {
     request,
     requestFacts: extractRequestFacts(request),
     session: makeSessionStub({ id: userId, role }, opts.sessionId ?? 'session-1'),
-    viewer: { userId, role },
+    viewer: { id: userId, name: 'Test User', email: 'test@example.com', website: null, role },
     clientAddress: opts.clientAddress ?? '127.0.0.1',
     responseHeaders: new Headers(),
     db: opts.db ?? ({} as NodePgDatabase),

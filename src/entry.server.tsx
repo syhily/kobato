@@ -6,7 +6,6 @@ import { isbot } from 'isbot'
 
 import '@/shared/zod-config'
 
-import { randomBytes } from 'node:crypto'
 import { PassThrough } from 'node:stream'
 import { renderToPipeableStream } from 'react-dom/server'
 import { ServerRouter } from 'react-router'
@@ -33,11 +32,7 @@ export default function handleRequest(
     })
   }
 
-  let nonce = loadContext.get(cspNonceContext)
-  if (!nonce) {
-    log.warn('CSP nonce missing from load context; generating fallback nonce')
-    nonce = randomBytes(16).toString('base64')
-  }
+  const nonce = loadContext.get(cspNonceContext)
 
   // WORKAROUND: React Router v8's HydratedRouter does not include `nonce` in
   // FrameworkContext on the client, while ServerRouter does on the server. The

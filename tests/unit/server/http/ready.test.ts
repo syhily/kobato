@@ -62,6 +62,15 @@ describe('/ready endpoint', () => {
     try {
       const { honoInstallGateMiddleware } = await import('@/server/http/middlewares/install-gate')
       const app = new Hono<Env>()
+      // Stub the canonical per-request context — the gate reads
+      // `requestContext.url` and `requestContext.db`.
+      app.use('*', async (c, next) => {
+        c.set('requestContext', {
+          url: new URL(c.req.url),
+          db: {},
+        } as unknown as Env['Variables']['requestContext'])
+        await next()
+      })
       app.use(honoInstallGateMiddleware)
       app.get('/ready', (c) => c.json({ status: 'ok' }))
 

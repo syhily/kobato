@@ -278,16 +278,16 @@ describe('auth/rbac — predicates', () => {
     ).not.toThrow()
   })
 
-  it('isPostOwner compares authorId to viewer.userId', () => {
-    const viewer = { userId: '5', role: 'admin' as const }
+  it('isPostOwner compares authorId to viewer.id', () => {
+    const viewer = { id: '5', role: 'admin' as const }
     expect(isPostOwner(viewer, { authorId: 5n })).toBe(true)
     expect(isPostOwner(viewer, { authorId: 6n })).toBe(false)
     expect(isPostOwner(viewer, { authorId: null })).toBe(false)
   })
 
   it('canEditPost is true for admin OR owner', () => {
-    const admin = { userId: '1', role: 'admin' as const }
-    const author = { userId: '5', role: 'author' as const }
+    const admin = { id: '1', role: 'admin' as const }
+    const author = { id: '5', role: 'author' as const }
     expect(canEditPost(admin, { authorId: 99n })).toBe(true)
     expect(canEditPost(author, { authorId: 5n })).toBe(true)
     expect(canEditPost(author, { authorId: 6n })).toBe(false)
@@ -401,7 +401,7 @@ describe('auth/service — listAllSessions', () => {
 
 describe('auth/session-guard — revokeSessionWithGuard', () => {
   it('returns null targetUserId when the session does not exist', async () => {
-    const result = await revokeSessionWithGuard(db, 'missing', { userId: '1', role: 'admin' })
+    const result = await revokeSessionWithGuard(db, 'missing', { id: '1', role: 'admin' })
     expect(result).toEqual({ targetUserId: null })
   })
 
@@ -411,7 +411,7 @@ describe('auth/session-guard — revokeSessionWithGuard', () => {
     await seedSessionRow(sid, u.id)
     await recordSessionLogin(db, { sid, userId: u.id, userAgent: 'ua', ip: '1.1.1.1' })
 
-    const result = await revokeSessionWithGuard(db, sid, { userId: String(u.id), role: 'admin' })
+    const result = await revokeSessionWithGuard(db, sid, { id: String(u.id), role: 'admin' })
     expect(result.targetUserId).toBe(u.id)
     expect(await findSessionMeta(db, sid)).toBeNull()
   })
@@ -423,7 +423,7 @@ describe('auth/session-guard — revokeSessionWithGuard', () => {
     await seedSessionRow(sid, bob.id)
     await recordSessionLogin(db, { sid, userId: bob.id, userAgent: 'ua', ip: '1.1.1.1' })
 
-    await expect(revokeSessionWithGuard(db, sid, { userId: String(alice.id), role: 'admin' })).rejects.toThrow(/无权/)
+    await expect(revokeSessionWithGuard(db, sid, { id: String(alice.id), role: 'admin' })).rejects.toThrow(/无权/)
   })
 
   it("allows an admin to revoke a non-admin's session", async () => {
@@ -433,7 +433,7 @@ describe('auth/session-guard — revokeSessionWithGuard', () => {
     await seedSessionRow(sid, visitor.id)
     await recordSessionLogin(db, { sid, userId: visitor.id, userAgent: 'ua', ip: '1.1.1.1' })
 
-    const result = await revokeSessionWithGuard(db, sid, { userId: String(admin.id), role: 'admin' })
+    const result = await revokeSessionWithGuard(db, sid, { id: String(admin.id), role: 'admin' })
     expect(result.targetUserId).toBe(visitor.id)
   })
 })

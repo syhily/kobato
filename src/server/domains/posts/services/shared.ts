@@ -1,10 +1,10 @@
 import type { AdminPostDto } from '@/server/domains/posts/projection'
 import type { PostMetaRow } from '@/server/infra/db/types'
 
-import { canEditPost, type ViewerContext as RbacViewerContext } from '@/server/domains/auth/rbac'
+import { canEditPost, type ViewerIdentity } from '@/server/domains/auth/rbac'
 import { DomainError, ErrorMessages } from '@/server/infra/http/errors'
 
-export type ViewerContext = RbacViewerContext
+export type ViewerContext = ViewerIdentity
 
 export interface AdminPostsListResult {
   posts: AdminPostDto[]

@@ -3,7 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
 import { makePage } from '#/_helpers/catalog'
-import { makeLoaderArgs, unwrapLoaderData } from '#/_helpers/context'
+import { unwrapLoaderData } from '#/_helpers/context'
+import { makeLoaderArgsWithContext } from '#/_helpers/request-context'
 import { regularSession } from '#/_helpers/session'
 
 // Pages live exclusively in the `page` + `content` Postgres tables,
@@ -124,7 +125,7 @@ describe('routes/page.detail loader (DB-backed page)', () => {
       imageMeta: Record<string, unknown>
     }>(
       await pageRoute.loader(
-        makeLoaderArgs({
+        makeLoaderArgsWithContext({
           request: new Request('http://localhost/about'),
           session,
           params: { slug: 'about' },
@@ -145,7 +146,7 @@ describe('routes/page.detail loader (DB-backed page)', () => {
       page: { headings: unknown[]; permalink: string; title: string }
     }>(
       await pageRoute.loader(
-        makeLoaderArgs({
+        makeLoaderArgsWithContext({
           request: new Request('http://localhost/about'),
           session,
           params: { slug: 'about' },

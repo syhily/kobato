@@ -6,6 +6,7 @@ import type { RequestFacts } from '@/server/infra/http/request-facts'
 function makeRequestFacts(overrides: Partial<RequestFacts> = {}): RequestFacts {
   return {
     path: '/',
+    isDataRequest: false,
     userAgent: null,
     referer: null,
     acceptLanguage: null,
@@ -74,7 +75,7 @@ describe('audit/service', () => {
   describe('buildAuditContext', () => {
     it('extracts actor, role, ip and ua from AuditContext', () => {
       const context = {
-        viewer: { userId: 1n, role: 'admin' },
+        viewer: { id: 1n, role: 'admin' },
         clientAddress: '192.168.1.1',
         requestFacts: makeRequestFacts({ userAgent: 'TestBot/1.0' }),
       } as unknown as AuditContext
@@ -108,7 +109,7 @@ describe('audit/service', () => {
   describe('recordAuditEventFromContext', () => {
     it('combines buildAuditContext and recordAuditEvent', () => {
       const context = {
-        viewer: { userId: 42n, role: 'author' },
+        viewer: { id: 42n, role: 'author' },
         clientAddress: '10.0.0.1',
         requestFacts: makeRequestFacts({ userAgent: 'Mozilla/5.0' }),
       } as unknown as AuditContext

@@ -13,16 +13,16 @@ import {
   isPostOwner,
   requireRole,
   requireUserRole,
-  type ViewerContext,
+  type ViewerIdentity,
 } from '@/server/domains/auth/rbac'
 import { ActionFailure } from '@/server/infra/http/errors'
 
-function viewer(role: 'admin' | 'author' | 'visitor', userId = '1'): ViewerContext {
-  return { userId, role }
+function viewer(role: 'admin' | 'author' | 'visitor', id = '1'): ViewerIdentity {
+  return { id, role }
 }
 
 function sessionUser(role: 'admin' | 'author' | 'visitor'): SessionUser {
-  return { id: 1n, role, name: 'tester', email: 't@example.com', website: null } as unknown as SessionUser
+  return { id: '1', role, name: 'tester', email: 't@example.com', website: null } as unknown as SessionUser
 }
 
 describe('server/domains/auth/rbac — requireUserRole', () => {

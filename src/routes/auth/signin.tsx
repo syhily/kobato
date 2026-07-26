@@ -1,6 +1,6 @@
 import { data, redirect, useNavigation } from 'react-router'
 
-import { recordAuditEvent } from '@/server/domains/audit/services/record'
+import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { getDbFromContext, getRouteRequestContext } from '@/server/domains/auth/context'
 import { validateCsrfForAction } from '@/server/domains/auth/csrf'
 import { isPasskeyEnabled } from '@/server/domains/auth/passkey-gate'
@@ -19,6 +19,7 @@ import {
 } from '@/server/domains/auth/signin-flow'
 import { peekToken } from '@/server/domains/auth/verification-tokens'
 import { ensureInstalledOrRedirect } from '@/server/domains/settings/install-gate'
+import { getRequestContext } from '@/server/http/request-context'
 import { titleMeta } from '@/shared/seo/title-meta'
 import { safeRedirectPath } from '@/shared/utils/safe-url'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
@@ -64,7 +65,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const db = getDbFromContext({ request, context })
   await ensureInstalledOrRedirect(db)
 
-  const { session, user, url, clientAddress } = getRouteRequestContext({ request, context })
+  const { session, user, url } = getRouteRequestContext({ request, context })
   const redirectTo = safeRedirectPath(url.searchParams.get('redirect_to'), '/', url.origin)
   const action = url.searchParams.get('action')
 
@@ -72,14 +73,10 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     const user = session.get('user')
     await logout(session)
     if (user) {
-      recordAuditEvent({
+      recordAuditEventFromContext(getRequestContext({ request, context }), {
         action: 'logout',
         resourceType: 'session',
         resourceId: session.id,
-        actorId: user.id,
-        actorRole: user.role,
-        ipAddress: clientAddress,
-        userAgent: request.headers.get('User-Agent'),
       })
     }
     throw redirect(redirectTo, {

@@ -91,7 +91,7 @@ const updateProfile = authedProc
   .output(z.object({ user: accountUserOutput }))
   .handler(async ({ input, context }) => {
     const { viewer, db } = context
-    const updated = await updateAccountProfile(db, idFromString(viewer.userId), input, viewer.role)
+    const updated = await updateAccountProfile(db, idFromString(viewer.id), input, viewer.role)
     return {
       user: {
         id: String(updated.id),
@@ -119,11 +119,11 @@ const updatePassword = authedProc
       throw new ORPCError('TOO_MANY_REQUESTS', { message: '操作过于频繁，请稍后再试。' })
     }
 
-    await updateAccountPassword(db, idFromString(viewer.userId), input.oldPassword, input.newPassword, session.id)
+    await updateAccountPassword(db, idFromString(viewer.id), input.oldPassword, input.newPassword, session.id)
     recordAuditEventFromContext(context, {
       action: 'password_changed',
       resourceType: 'user',
-      resourceId: viewer.userId,
+      resourceId: viewer.id,
     })
     return { success: true }
   })
@@ -168,7 +168,7 @@ const passkeyList = authedProc
       throw new ORPCError('BAD_REQUEST', { message: 'Passkey 登录未启用。' })
     }
     const { db, viewer } = context
-    const credentials = await listCredentials(db, idFromString(viewer.userId))
+    const credentials = await listCredentials(db, idFromString(viewer.id))
     return {
       credentials: credentials.map((c) => ({
         id: c.id,
@@ -192,7 +192,7 @@ const passkeyRegisterBegin = authedProc
     if (limit.exceeded) {
       throw new ORPCError('TOO_MANY_REQUESTS', { message: '操作过于频繁，请稍后再试。' })
     }
-    const dbUser = await findSafeUserById(db, idFromString(viewer.userId))
+    const dbUser = await findSafeUserById(db, idFromString(viewer.id))
     if (!dbUser) {
       throw new ORPCError('NOT_FOUND', { message: '用户不存在。' })
     }
@@ -219,7 +219,7 @@ const passkeyRegisterFinish = authedProc
     if (limit.exceeded) {
       throw new ORPCError('TOO_MANY_REQUESTS', { message: '操作过于频繁，请稍后再试。' })
     }
-    const dbUser = await findSafeUserById(db, idFromString(viewer.userId))
+    const dbUser = await findSafeUserById(db, idFromString(viewer.id))
     if (!dbUser) {
       throw new ORPCError('NOT_FOUND', { message: '用户不存在。' })
     }
@@ -234,7 +234,7 @@ const passkeyRegisterFinish = authedProc
     recordAuditEventFromContext(context, {
       action: 'passkey_registered',
       resourceType: 'user',
-      resourceId: viewer.userId,
+      resourceId: viewer.id,
     })
     return { success: true }
   })
@@ -252,7 +252,7 @@ const passkeyDelete = authedProc
     if (limit.exceeded) {
       throw new ORPCError('TOO_MANY_REQUESTS', { message: '操作过于频繁，请稍后再试。' })
     }
-    const userId = idFromString(viewer.userId)
+    const userId = idFromString(viewer.id)
     const ok = await deleteCredential(db, input.credentialId, userId)
     if (!ok) {
       throw new ORPCError('NOT_FOUND', { message: '凭据不存在。' })
@@ -260,7 +260,7 @@ const passkeyDelete = authedProc
     recordAuditEventFromContext(context, {
       action: 'passkey_deleted',
       resourceType: 'user',
-      resourceId: viewer.userId,
+      resourceId: viewer.id,
     })
     return { success: true }
   })
@@ -278,11 +278,11 @@ const passkeySetForce = authedProc
     if (limit.exceeded) {
       throw new ORPCError('TOO_MANY_REQUESTS', { message: '操作过于频繁，请稍后再试。' })
     }
-    await setPasskeyForce(db, idFromString(viewer.userId), input.force)
+    await setPasskeyForce(db, idFromString(viewer.id), input.force)
     recordAuditEventFromContext(context, {
       action: 'passkey_force_changed',
       resourceType: 'user',
-      resourceId: viewer.userId,
+      resourceId: viewer.id,
       details: { force: input.force },
     })
     return { success: true }

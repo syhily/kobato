@@ -4,7 +4,6 @@ import { z } from 'zod'
 import type { CommentReq } from '@/shared/types/comments'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
-import { userSession } from '@/server/domains/auth/primitives'
 import { asCommentItemWire, asCommentItemsWire } from '@/server/domains/comments/projection'
 import { findCommentWithUserById } from '@/server/domains/comments/repos/public-query/by-id'
 import { commentReplySchema, commentRidSchema } from '@/server/domains/comments/schema'
@@ -29,7 +28,7 @@ const replyComment = publicProc
   .output(z.object({ comment: commentItemDto }))
   .handler(async ({ input, context }) => {
     const { requestFacts, clientAddress, session, responseHeaders } = context
-    const isAdmin = userSession(session)?.role === 'admin'
+    const isAdmin = context.viewer?.role === 'admin'
     if (!isAdmin) {
       const byIp = await tryCommentPostRateLimit(clientAddress)
       if (byIp.exceeded) {
@@ -96,7 +95,7 @@ const getRaw = publicProc
   .output(z.object({ body: commentBodySchema }))
   .use(commentTokenCookie)
   .handler(async ({ input, context }) => {
-    const sessionUser = userSession(context.session)
+    const sessionUser = context.viewer ?? undefined
     const { ok, cleaned } = await verifyCommentAccess(context.db, context.commentTokens.cookie, input.rid, sessionUser)
     if (!ok) {
       throw new ORPCError('FORBIDDEN', { message: '无权查看该评论' })
@@ -116,7 +115,7 @@ const edit = publicProc
   .use(resourceRateLimit)
   .use(commentTokenCookie)
   .handler(async ({ input, context }) => {
-    const sessionUser = userSession(context.session)
+    const sessionUser = context.viewer ?? undefined
     const { ok, cleaned } = await verifyCommentAccess(context.db, context.commentTokens.cookie, input.rid, sessionUser)
     if (!ok) {
       throw new ORPCError('FORBIDDEN', { message: '无权编辑该评论' })

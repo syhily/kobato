@@ -46,7 +46,7 @@ const updateRole = adminProc
   .output(z.object({ user: adminUserDto.nullable() }))
   .handler(async ({ input, context }) => {
     const targetId = idFromString(input.id)
-    const updated = await updateUserRoleWithGuard(context.db, targetId, input.role, context.viewer.userId)
+    const updated = await updateUserRoleWithGuard(context.db, targetId, input.role, context.viewer.id)
     if (updated) {
       recordAuditEventFromContext(context, {
         action: 'user_role_changed',
@@ -66,7 +66,7 @@ const inviteAuthor = adminProc
   .handler(async ({ input, context }) => {
     const [ipLimit, emailLimit] = await Promise.all([
       tryInviteRateLimit(context.clientAddress),
-      tryInviteByEmailRateLimit(idFromString(context.viewer.userId), input.email),
+      tryInviteByEmailRateLimit(idFromString(context.viewer.id), input.email),
     ])
     if (ipLimit.exceeded || emailLimit.exceeded) {
       throw new ORPCError('TOO_MANY_REQUESTS', { message: '邀请发送过于频繁，请稍后再试。' })
@@ -74,8 +74,7 @@ const inviteAuthor = adminProc
 
     const bundle = getBlogSettingsBundleSync()
     const origin = bundle?.siteIdentity?.website ?? new URL(context.request.url).origin
-    const inviterSession = context.session.get('user')
-    const inviterName = inviterSession?.name ?? '管理员'
+    const inviterName = context.viewer.name ?? '管理员'
 
     const result = await inviteAuthorWithRollback(
       context.db,
@@ -83,7 +82,7 @@ const inviteAuthor = adminProc
       input.email,
       origin,
       inviterName,
-      inviterSession?.email,
+      context.viewer.email,
     )
 
     recordAuditEventFromContext(context, {

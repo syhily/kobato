@@ -5,10 +5,8 @@ import type { EntityTarget } from '@/server/infra/db/target'
 import type { DetailPageComments } from '@/shared/types/comments'
 
 import { trackAccess } from '@/server/domains/analytics/track'
-import { tryGetRequestContext, tryGetSessionContext } from '@/server/domains/auth/context'
-import { resolveSessionContext, userSession } from '@/server/domains/auth/primitives'
 import { loadDetailPageStreaming } from '@/server/http/loaders/comments'
-import { extractRequestFacts } from '@/server/http/utils/request-facts'
+import { getRequestContext } from '@/server/http/request-context'
 
 export type PublicDetailCritical = Awaited<ReturnType<typeof loadDetailPageStreaming>>['critical']
 
@@ -34,10 +32,10 @@ export async function loadPublicDetailData(
     target: EntityTarget
   },
 ): Promise<{ detail: PublicDetailData }> {
-  const sessionContext = tryGetSessionContext(context) ?? (await resolveSessionContext(db, request))
-  const { session } = sessionContext
+  const rc = getRequestContext({ request, context })
+  const { session } = rc
   const trackView = !isPrefetchRequest(request)
-  const isAdmin = userSession(session)?.role === 'admin'
+  const isAdmin = rc.viewer?.role === 'admin'
 
   // Append-only access-log write for the analytics dashboard. Lives
   // alongside (not inside) the existing `bumpPageView` flow: the
@@ -47,8 +45,7 @@ export async function loadPublicDetailData(
   // and the analytics settings override both live inside
   // `trackAccess`. `void`d — never blocks the loader.
   if (trackView) {
-    const reqCtx = tryGetRequestContext(context)
-    void trackAccess(extractRequestFacts(request), target, { isAdmin, clientAddress: reqCtx?.clientAddress })
+    void trackAccess(rc.requestFacts, target, { isAdmin, clientAddress: rc.clientAddress })
   }
 
   const streaming = await loadDetailPageStreaming(db, session, target, { trackView })

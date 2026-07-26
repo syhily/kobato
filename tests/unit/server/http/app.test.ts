@@ -1,4 +1,9 @@
+import { Hono } from 'hono'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import type { Env } from '@/server/http/context'
+
+import { extractRequestFacts } from '@/server/http/utils/request-facts'
 
 let capturedContext: unknown
 const handlerHandleMock =
@@ -48,11 +53,31 @@ describe('createApiApp', () => {
     handlerHandleMock.mockReset()
   })
 
+  // The RPC bridge projects `c.var.requestContext` (derived upstream by the
+  // request-context middleware) into the oRPC HandlerContext — stub the
+  // canonical context the way the perimeter would.
+  async function makeApp() {
+    const { createApiApp } = await import('@/server/http/app')
+    const app = new Hono<Env>()
+    app.use('*', async (c, next) => {
+      c.set('requestContext', {
+        session: { id: 'session-1' },
+        viewer: null,
+        clientAddress: '127.0.0.1',
+        requestFacts: extractRequestFacts(c.req.raw),
+        db: {},
+        pool: {},
+      } as unknown as Env['Variables']['requestContext'])
+      await next()
+    })
+    app.route('/', createApiApp())
+    return app
+  }
+
   it('creates a Hono app and returns 404 for unmatched RPC requests', async () => {
     handlerHandleMock.mockResolvedValue({ matched: false })
 
-    const { createApiApp } = await import('@/server/http/app')
-    const app = createApiApp()
+    const app = await makeApp()
     const res = await app.request('/rpc/unknown', { method: 'POST' })
 
     expect(res.status).toBe(404)
@@ -73,8 +98,7 @@ describe('createApiApp', () => {
       }
     })
 
-    const { createApiApp } = await import('@/server/http/app')
-    const app = createApiApp()
+    const app = await makeApp()
     const res = await app.request('/rpc/test', {
       method: 'POST',
       body: '{}',
@@ -85,6 +109,9 @@ describe('createApiApp', () => {
     expect(res.headers.get('x-custom')).toBe('yes')
     expect(res.headers.getSetCookie()).toEqual(['a=1', 'b=2'])
     expect(capturedContext).toMatchObject({
+      viewer: null,
+      clientAddress: '127.0.0.1',
+      session: { id: 'session-1' },
       responseHeaders: expect.any(Headers),
     })
   })
@@ -92,8 +119,7 @@ describe('createApiApp', () => {
   it('rejects oversized requests with the custom error body', async () => {
     handlerHandleMock.mockResolvedValue({ matched: false })
 
-    const { createApiApp } = await import('@/server/http/app')
-    const app = createApiApp()
+    const app = await makeApp()
     const res = await app.request('/rpc/test', {
       method: 'POST',
       body: 'x',

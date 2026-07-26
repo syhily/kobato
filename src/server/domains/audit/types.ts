@@ -1,7 +1,7 @@
 import type { RequestFacts } from '@/server/infra/http/request-facts'
 
 export interface AuditContext {
-  viewer: { userId: bigint | string; role?: string } | null
+  viewer: { id: bigint | string; role?: string } | null
   clientAddress: string
   requestFacts: RequestFacts
 }

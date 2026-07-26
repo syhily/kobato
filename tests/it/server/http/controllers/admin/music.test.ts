@@ -123,7 +123,7 @@ describe('adminMusicRouter.update', () => {
         album: 'Album',
         lyric: '[00:00] Hi',
       },
-      { userId: '42', role: 'author' },
+      { id: '42', role: 'author' },
     )
   })
 })

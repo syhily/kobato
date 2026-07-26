@@ -1,4 +1,7 @@
+import { Hono } from 'hono'
 import { describe, expect, it, vi } from 'vitest'
+
+import type { Env } from '@/server/http/context'
 
 // Regression net for the Hono path-parser footgun that was silently
 // degrading every `/images/*.png` endpoint to its fallback branch.
@@ -72,10 +75,24 @@ vi.mock('@/shared/config/getters', () => ({
 
 const { imagesRouter } = await import('@/server/http/resources/images')
 
+// The perimeter normally derives the canonical RequestContext in
+// `requestContextMiddleware`; these route-level tests wrap the router in an
+// app that stubs the only two fields the images pipeline reads
+// (rate-limit → `clientAddress`, handlers → `db`).
+const app = new Hono<Env>()
+app.use('*', async (c, next) => {
+  c.set('requestContext', {
+    clientAddress: '127.0.0.1',
+    db: undefined,
+  } as unknown as Env['Variables']['requestContext'])
+  await next()
+})
+app.route('/', imagesRouter)
+
 describe('imagesRouter avatar', () => {
   it('extracts the bare hash from `/images/avatar/<hash>.png`', async () => {
     const { resolveAvatarInfo } = await import('@/server/domains/comments/services/avatar')
-    const res = await imagesRouter.request('/images/avatar/abcdef0123456789.png')
+    const res = await app.request('/images/avatar/abcdef0123456789.png')
     // Route does NOT 404 (it now resolves the hash; the path-parser bug
     // would have driven this into the missing-param fallback).
     expect(res.status).toBeLessThan(500)
@@ -84,12 +101,12 @@ describe('imagesRouter avatar', () => {
 
   it('matches numeric ids the same way', async () => {
     const { resolveAvatarInfo } = await import('@/server/domains/comments/services/avatar')
-    await imagesRouter.request('/images/avatar/42.png')
+    await app.request('/images/avatar/42.png')
     expect(vi.mocked(resolveAvatarInfo)).toHaveBeenNthCalledWith(2, undefined, '42')
   })
 
   it('rejects non-png extensions with 404', async () => {
-    const res = await imagesRouter.request('/images/avatar/42.jpg')
+    const res = await app.request('/images/avatar/42.jpg')
     expect(res.status).toBe(404)
   })
 })
@@ -98,7 +115,7 @@ describe('imagesRouter og', () => {
   it('looks up slug via findPublicPostMetaBySlug and findPublicPageMetaBySlug in parallel', async () => {
     const { findPublicPostMetaBySlug } = await import('@/server/domains/posts/repos/single')
     const { findPublicPageMetaBySlug } = await import('@/server/domains/pages/repo')
-    await imagesRouter.request('/images/og/hello-world.png')
+    await app.request('/images/og/hello-world.png')
     expect(vi.mocked(findPublicPostMetaBySlug)).toHaveBeenCalledWith(undefined, 'hello-world')
     expect(vi.mocked(findPublicPageMetaBySlug)).toHaveBeenCalledWith(undefined, 'hello-world')
   })
@@ -107,7 +124,7 @@ describe('imagesRouter og', () => {
 describe('imagesRouter calendar', () => {
   it('extracts year + time from `/images/calendar/<year>/<time>.png`', async () => {
     const { serveCalendar } = await import('@/server/http/resources/calendar')
-    await imagesRouter.request('/images/calendar/2024/12-25.png')
+    await app.request('/images/calendar/2024/12-25.png')
     expect(vi.mocked(serveCalendar)).toHaveBeenCalledWith(
       undefined,
       { year: '2024', time: '12-25' },
@@ -118,7 +135,7 @@ describe('imagesRouter calendar', () => {
 
   it('routes the dark variant to the dark theme', async () => {
     const { serveCalendar } = await import('@/server/http/resources/calendar')
-    await imagesRouter.request('/images/calendar/dark/2024/01-01.png')
+    await app.request('/images/calendar/dark/2024/01-01.png')
     expect(vi.mocked(serveCalendar)).toHaveBeenCalledWith(
       undefined,
       { year: '2024', time: '01-01' },

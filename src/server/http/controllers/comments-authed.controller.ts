@@ -62,7 +62,7 @@ const requestDeleteOwn = authedProc
       // the updated one — return it without re-writing or re-auditing.
       return { comment: asCommentItemWire(c) }
     }
-    await requestDeleteComment(context.db, commentId, idFromString(context.viewer.userId))
+    await requestDeleteComment(context.db, commentId, idFromString(context.viewer.id))
     recordAuditEventFromContext(context, {
       action: 'comment_delete_requested',
       resourceType: 'comment',
@@ -85,7 +85,7 @@ const cancelDeleteOwn = authedProc
     if (!c || !isCommentOwner(context.viewer, c)) {
       throw new ORPCError('NOT_FOUND', { message: '资源不存在。' })
     }
-    const ok = await clearDeleteRequest(context.db, commentId, idFromString(context.viewer.userId))
+    const ok = await clearDeleteRequest(context.db, commentId, idFromString(context.viewer.id))
     if (!ok) {
       throw new ORPCError('CONFLICT', { message: '无法撤回删除申请。' })
     }
@@ -131,7 +131,7 @@ const loadMine = authedProc
     }),
   )
   .handler(async ({ input, context }) => {
-    const userId = idFromString(context.viewer.userId)
+    const userId = idFromString(context.viewer.id)
     const entity = input.entity ? parseCommentEntity(input.entity) : null
     const filters = {
       status: input.status,
@@ -146,7 +146,7 @@ const searchMineEntities = authedProc
   .input(z.object({ q: z.string().trim().max(100).optional() }))
   .output(z.object({ entities: z.array(z.object({ value: z.string(), label: z.string() })) }))
   .handler(async ({ input, context }) => {
-    const userId = idFromString(context.viewer.userId)
+    const userId = idFromString(context.viewer.id)
     const rows = await listMyCommentEntities(context.db, userId, { q: input.q })
     return {
       entities: rows.map((e) => ({

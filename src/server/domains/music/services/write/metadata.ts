@@ -1,7 +1,7 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
+import type { ViewerIdentity } from '@/server/domains/auth/rbac'
 import type { AdminMusicDto } from '@/shared/contracts/music'
-import type { Role } from '@/shared/utils/roles'
 
 import { toAdminMusicDto } from '@/server/domains/music/projection'
 import { findAdminMusicRowById, findMusicById, updateMusic } from '@/server/infra/db/operations/music'
@@ -16,11 +16,6 @@ export interface UpdateMusicMetadataInputs {
   lyric: string | null
 }
 
-export interface MusicViewerContext {
-  userId: string
-  role: Role
-}
-
 /**
  * Metadata-only edit for the admin UI. Provider id triplet
  * (`source`, `sourceId`, `playerId`), audio/cover storage paths,
@@ -33,13 +28,13 @@ export interface MusicViewerContext {
 export async function updateMusicMetadata(
   db: NodePgDatabase,
   input: UpdateMusicMetadataInputs,
-  viewer?: MusicViewerContext,
+  viewer?: ViewerIdentity,
 ): Promise<AdminMusicDto> {
   const existing = await findMusicById(db, input.id)
   if (existing === null || existing.deletedAt !== null) {
     throw new DomainError('NOT_FOUND', '音乐不存在')
   }
-  if (viewer && viewer.role !== 'admin' && existing.uploaderId?.toString() !== viewer.userId) {
+  if (viewer && viewer.role !== 'admin' && existing.uploaderId?.toString() !== viewer.id) {
     throw new DomainError('NOT_FOUND', ErrorMessages.NOT_FOUND)
   }
 

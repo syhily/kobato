@@ -15,13 +15,12 @@ import { hasAtLeast, type Role } from '@/shared/utils/roles'
 
 export const requireRoleMw = (role: Role) =>
   createMiddleware<Env>(async (c, next) => {
-    const user = c.var.session.get('user')
-    if (!user) {
+    const viewer = c.var.requestContext.viewer
+    if (!viewer) {
       throw new HTTPException(401, { message: '未登录' })
     }
-    if (!hasAtLeast(user.role, role)) {
+    if (!hasAtLeast(viewer.role, role)) {
       throw new HTTPException(403, { message: '权限不足' })
     }
-    c.set('viewer', { userId: user.id, role: user.role })
     await next()
   })

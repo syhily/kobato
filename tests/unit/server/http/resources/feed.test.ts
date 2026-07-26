@@ -1,4 +1,7 @@
+import { Hono } from 'hono'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import type { Env } from '@/server/http/context'
 
 vi.mock('@/server/infra/rate-limit', () => ({
   readBucket: vi.fn(() => ({ windowSeconds: 60, maxAttempts: 60 })),
@@ -24,10 +27,13 @@ const CACHED = { rss: '<rss version="2.0">cached</rss>', atom: '<feed>cached</fe
 const throughMock = through as unknown as ReturnType<typeof vi.fn>
 
 function requestFeed(url: string) {
-  return feedRouter.request(url, undefined, {
-    db: {},
-    clientAddress: '127.0.0.1',
-  } as never)
+  const app = new Hono<Env>()
+  app.use('*', async (c, next) => {
+    c.set('requestContext', { db: {}, clientAddress: '127.0.0.1' } as never)
+    await next()
+  })
+  app.route('/', feedRouter)
+  return app.request(url)
 }
 
 describe('feed resource', () => {
@@ -87,28 +93,28 @@ describe('feed resource', () => {
     const res = await requestFeed('http://localhost/feed')
 
     expect(generateFeeds).toHaveBeenCalledTimes(1)
-    expect(throughMock).toHaveBeenCalledWith(undefined, 'feed', { scope: 'all' }, expect.any(Function))
+    expect(throughMock).toHaveBeenCalledWith({}, 'feed', { scope: 'all' }, expect.any(Function))
     await expect(res.text()).resolves.toBe(BUILT.rss)
   })
 
   it('namespaces the cache key for category feeds', async () => {
     await requestFeed('http://localhost/cats/tech/feed')
-    expect(throughMock).toHaveBeenCalledWith(undefined, 'feed', { scope: 'cat:tech' }, expect.any(Function))
+    expect(throughMock).toHaveBeenCalledWith({}, 'feed', { scope: 'cat:tech' }, expect.any(Function))
   })
 
   it('namespaces the cache key for tag feeds', async () => {
     await requestFeed('http://localhost/tags/tech/feed')
-    expect(throughMock).toHaveBeenCalledWith(undefined, 'feed', { scope: 'tag:tech' }, expect.any(Function))
+    expect(throughMock).toHaveBeenCalledWith({}, 'feed', { scope: 'tag:tech' }, expect.any(Function))
   })
 
   it('uses the bare `all` key for the site-wide feed', async () => {
     await requestFeed('http://localhost/feed')
-    expect(throughMock).toHaveBeenCalledWith(undefined, 'feed', { scope: 'all' }, expect.any(Function))
+    expect(throughMock).toHaveBeenCalledWith({}, 'feed', { scope: 'all' }, expect.any(Function))
   })
 
   it('namespaces a category slugged `all` away from the site-wide feed', async () => {
     await requestFeed('http://localhost/cats/all/feed')
-    expect(throughMock).toHaveBeenCalledWith(undefined, 'feed', { scope: 'cat:all' }, expect.any(Function))
-    expect(throughMock).not.toHaveBeenCalledWith(undefined, 'feed', { scope: 'all' }, expect.any(Function))
+    expect(throughMock).toHaveBeenCalledWith({}, 'feed', { scope: 'cat:all' }, expect.any(Function))
+    expect(throughMock).not.toHaveBeenCalledWith({}, 'feed', { scope: 'all' }, expect.any(Function))
   })
 })

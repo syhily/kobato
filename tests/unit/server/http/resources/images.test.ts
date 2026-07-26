@@ -1,4 +1,7 @@
+import { Hono } from 'hono'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import type { Env } from '@/server/http/context'
 
 vi.mock('@/server/domains/content/schema', () => ({
   isLive: vi.fn(() => true),
@@ -71,7 +74,15 @@ import { findCategoryBySlug } from '@/server/infra/db/operations/category'
 import { readBucket, tryKeyedRateLimit } from '@/server/infra/rate-limit'
 import { drawOpenGraph } from '@/server/render/og/render'
 
-const env = { db: {}, clientAddress: '127.0.0.1' } as never
+function requestImages(url: string) {
+  const app = new Hono<Env>()
+  app.use('*', async (c, next) => {
+    c.set('requestContext', { db: {}, clientAddress: '127.0.0.1' } as never)
+    await next()
+  })
+  app.route('/', imagesRouter)
+  return app.request(url)
+}
 
 describe('images resource', () => {
   beforeEach(async () => {
@@ -98,7 +109,7 @@ describe('images resource', () => {
       published: true,
       publishedRevisionId: 1n,
     })
-    const res = await imagesRouter.request('http://localhost/images/og/post.png', undefined, env)
+    const res = await requestImages('http://localhost/images/og/post.png')
     expect(res.status).toBe(200)
   })
 
@@ -108,28 +119,28 @@ describe('images resource', () => {
       summary: 'Page summary',
       cover: 'cover.jpg',
     })
-    const res = await imagesRouter.request('http://localhost/images/og/page.png', undefined, env)
+    const res = await requestImages('http://localhost/images/og/page.png')
     expect(res.status).toBe(200)
   })
 
   it('falls back when no entity is found', async () => {
-    const res = await imagesRouter.request('http://localhost/images/og/missing.png', undefined, env)
+    const res = await requestImages('http://localhost/images/og/missing.png')
     expect(res.status).toBe(302)
   })
 
   it('renders an OG image for a category', async () => {
     ;(findCategoryBySlug as ReturnType<typeof vi.fn>).mockResolvedValue({ name: 'Code', description: '', cover: '' })
-    const res = await imagesRouter.request('http://localhost/images/og/cats/code.png', undefined, env)
+    const res = await requestImages('http://localhost/images/og/cats/code.png')
     expect(res.status).toBe(200)
   })
 
   it('serves a calendar image', async () => {
-    const res = await imagesRouter.request('http://localhost/images/calendar/2026/now.png', undefined, env)
+    const res = await requestImages('http://localhost/images/calendar/2026/now.png')
     expect(res.status).toBe(200)
   })
 
   it('serves a dark calendar image', async () => {
-    const res = await imagesRouter.request('http://localhost/images/calendar/dark/2026/now.png', undefined, env)
+    const res = await requestImages('http://localhost/images/calendar/dark/2026/now.png')
     expect(res.status).toBe(200)
   })
 
@@ -137,24 +148,24 @@ describe('images resource', () => {
     ;(resolveAvatarInfo as ReturnType<typeof vi.fn>).mockResolvedValue({ email: 'a@example.com', hash: 'abc' })
     ;(loadAvatar as ReturnType<typeof vi.fn>).mockResolvedValue({ status: 'have_avatar', buffer: Buffer.from('av') })
     ;(fetchAvatarImage as ReturnType<typeof vi.fn>).mockResolvedValue(Buffer.from('av'))
-    const res = await imagesRouter.request('http://localhost/images/avatar/abc.png', undefined, env)
+    const res = await requestImages('http://localhost/images/avatar/abc.png')
     expect(res.status).toBe(200)
   })
 
   it('threads the `?s=` size into the cache lookup, defaulting to 120', async () => {
     ;(resolveAvatarInfo as ReturnType<typeof vi.fn>).mockResolvedValue({ email: null, hash: 'abc' })
     ;(loadAvatar as ReturnType<typeof vi.fn>).mockResolvedValue({ status: 'have_avatar', buffer: Buffer.from('av') })
-    const res = await imagesRouter.request('http://localhost/images/avatar/abc.png?s=256', undefined, env)
+    const res = await requestImages('http://localhost/images/avatar/abc.png?s=256')
     expect(res.status).toBe(200)
-    expect(loadAvatar).toHaveBeenCalledWith(undefined, 'abc', 256)
+    expect(loadAvatar).toHaveBeenCalledWith({}, 'abc', 256)
     ;(loadAvatar as ReturnType<typeof vi.fn>).mockClear()
-    await imagesRouter.request('http://localhost/images/avatar/abc.png', undefined, env)
-    expect(loadAvatar).toHaveBeenCalledWith(undefined, 'abc', 120)
+    await requestImages('http://localhost/images/avatar/abc.png')
+    expect(loadAvatar).toHaveBeenCalledWith({}, 'abc', 120)
   })
 
   it('falls back to default avatar when hash is empty', async () => {
     ;(resolveAvatarInfo as ReturnType<typeof vi.fn>).mockResolvedValue({ email: '', hash: null })
-    const res = await imagesRouter.request('http://localhost/images/avatar/abc.png', undefined, env)
+    const res = await requestImages('http://localhost/images/avatar/abc.png')
     expect(res.status).toBe(302)
   })
 })

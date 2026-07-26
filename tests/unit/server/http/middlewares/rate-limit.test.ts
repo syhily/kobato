@@ -19,7 +19,7 @@ const SETTINGS_BUCKET = { windowSeconds: 60, maxAttempts: 3 }
 function buildApp(...args: Parameters<typeof rateLimitByIp>) {
   const app = new Hono<Env>()
   app.use('*', async (c, next) => {
-    c.set('clientAddress', '203.0.113.7')
+    c.set('requestContext', { clientAddress: '203.0.113.7' } as unknown as Env['Variables']['requestContext'])
     await next()
   })
   app.get('/ping', rateLimitByIp(...args), (c) => c.text('pong'))

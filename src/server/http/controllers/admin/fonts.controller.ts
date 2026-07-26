@@ -48,7 +48,7 @@ const setSlot = adminProc
       context.pool,
       input.slot,
       input.fontIds,
-      context.viewer ? idFromString(context.viewer.userId) : null,
+      context.viewer ? idFromString(context.viewer.id) : null,
     )
     recordAuditEventFromContext(context, {
       action: 'font_slot_updated',

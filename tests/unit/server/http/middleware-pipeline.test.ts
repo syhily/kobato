@@ -36,13 +36,12 @@ vi.mock('@/server/http/middlewares/install-gate', () => ({
   honoInstallGateMiddleware: vi.fn(() => async (_c: unknown, next: () => Promise<void>) => next()),
 }))
 
-vi.mock('@/server/http/middlewares/request-timeout', () => ({
-  requestTimeout: vi.fn(() => async (_c: unknown, next: () => Promise<void>) => next()),
+vi.mock('@/server/http/middlewares/request-context', () => ({
+  requestContextMiddleware: vi.fn(() => async (_c: unknown, next: () => Promise<void>) => next()),
 }))
 
-vi.mock('@/server/http/middlewares/session', () => ({
-  buildRouteContexts: vi.fn(() => ({ session: {}, request: {} })),
-  honoSessionMiddleware: vi.fn(() => async (_c: unknown, next: () => Promise<void>) => next()),
+vi.mock('@/server/http/middlewares/request-timeout', () => ({
+  requestTimeout: vi.fn(() => async (_c: unknown, next: () => Promise<void>) => next()),
 }))
 
 vi.mock('@/server/http/middlewares/trailing-slash', () => ({
@@ -182,7 +181,18 @@ describe('configureMiddleware', () => {
 describe('buildLoadContext', () => {
   it('hydrates settings and returns a RouterContextProvider', async () => {
     const context = await buildLoadContext({
-      var: { cspNonce: 'nonce' } as Env['Variables'],
+      var: {
+        requestContext: {
+          session: {},
+          viewer: null,
+          clientAddress: '127.0.0.1',
+          url: new URL('http://localhost/'),
+          db: {},
+          pool: {},
+          cspNonce: 'nonce',
+          markSessionDirty: () => {},
+        },
+      } as unknown as Env['Variables'],
       req: { raw: new Request('http://localhost/'), url: 'http://localhost/' },
     })
     expect(context).toBeDefined()

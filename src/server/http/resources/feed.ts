@@ -35,8 +35,8 @@ function cacheKeyFor(scope?: FeedOptions): string {
 }
 
 async function writeFeedResponse(c: Context<Env>, kind: 'rss' | 'atom', scope?: FeedOptions) {
-  const feed = await through(c.var.db, 'feed', { scope: cacheKeyFor(scope) }, () =>
-    generateFeeds(c.var.db, scope ?? {}),
+  const feed = await through(c.var.requestContext.db, 'feed', { scope: cacheKeyFor(scope) }, () =>
+    generateFeeds(c.var.requestContext.db, scope ?? {}),
   )
   new Headers(feedHeaders(kind)).forEach((value, name) => c.header(name, value))
   return c.body(kind === 'rss' ? feed.rss : feed.atom)

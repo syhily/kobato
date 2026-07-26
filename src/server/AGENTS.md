@@ -76,16 +76,17 @@ Domains may import from `shared/`, `infra/`, and other `domains/`.
 
 ## http/
 
-HTTP perimeter only. Procedure base (`orpc-base.ts`), context, composed
-router (`api-router.ts`), error hook (`errors.ts`), Hono entry
-(`app.ts`); `middlewares/` (session, csrf,
-install-gate, rate-limit, trailing-slash, visitor-cookie, wp-decoy,
-hono-rbac); `controllers/` (per-domain `<name>.controller.ts`, admin
-under `controllers/admin/`); `resources/` (non-JSON: feed, sitemap,
-images, redirects, analytics); `loaders/` (React Router data
-orchestrators: detail, listing, search, comments, sidebar, pagination,
-route-exports). Public routes deliberately rely on the router's default
-revalidation.
+HTTP perimeter only. Procedure base (`orpc-base.ts`), canonical
+request context (`request-context.ts` — one derivation, three
+projections; see ADR-0003), composed router (`api-router.ts`), error
+hook (`errors.ts`), Hono entry (`app.ts`); `middlewares/`
+(request-context, csrf, install-gate, rate-limit, trailing-slash,
+visitor-cookie, wp-decoy, hono-rbac); `controllers/` (per-domain
+`<name>.controller.ts`, admin under `controllers/admin/`);
+`resources/` (non-JSON: feed, sitemap, images, redirects, analytics);
+`loaders/` (React Router data orchestrators: detail, listing, search,
+comments, sidebar, pagination, route-exports). Public routes
+deliberately rely on the router's default revalidation.
 
 Controllers and loaders **orchestrate only** — business logic stays in
 `domains/<x>/service.ts`.
@@ -161,11 +162,19 @@ the caller's responsibility.
 
 ## Sessions, Env, Security
 
-- Sessions: Hono middleware (`server/http/middlewares/session.ts`)
-  wraps React Router `createSessionStorage` with Postgres persistence
-  (the `session` table) and a signed `__session` cookie.
-  `SESSION_SECRET` required. Populates
-  `c.var.session` and commits `Set-Cookie` after the response.
+- Sessions: one perimeter middleware
+  (`server/http/middlewares/request-context.ts`) derives the canonical
+  `RequestContext` (`server/http/request-context.ts`) once per request —
+  session (React Router `createSessionStorage` with Postgres
+  persistence, the `session` table, signed `__session` cookie;
+  `SESSION_SECRET` required), viewer, client address, normalized URL,
+  request facts, db/pool, CSP nonce — and stores it as the only Hono
+  var besides `requestId`. Every surface (oRPC bridge, RR
+  `buildLoadContext`, resource routers) projects from it; nothing
+  re-derives. Same-session mutations call `markSessionDirty()` and the
+  middleware commits `Set-Cookie` after the response (the only commit
+  point); sid-changing flows keep their explicit Set-Cookie channel.
+  See ADR-0003.
 - Server env: `@/server/infra/env` (inline `createEnv` + Zod). Adding
   an env var updates the schema, `src/env.d.ts`, and `.env.example`
   together.

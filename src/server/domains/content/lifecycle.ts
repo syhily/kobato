@@ -1,6 +1,6 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import type { ViewerContext } from '@/server/domains/auth/rbac'
+import type { ViewerIdentity } from '@/server/domains/auth/rbac'
 import type { ContentType, PublishLatestResult, SaveDraftResult } from '@/server/domains/content/schema'
 import type { ContentRow } from '@/server/infra/db/types'
 import type { AdminRevisionDto } from '@/shared/contracts/revision'
@@ -28,7 +28,7 @@ export interface ContentEntityAdapter<TMeta, TPreview> {
   entityType: ContentType
   findMetaById(db: NodePgDatabase, id: bigint): Promise<TMeta | null>
   findPublicMetaBySlug(db: NodePgDatabase, slug: string): Promise<TMeta | null>
-  assertAccess(meta: TMeta | null, viewer?: ViewerContext): asserts meta is TMeta
+  assertAccess(meta: TMeta | null, viewer?: ViewerIdentity): asserts meta is TMeta
   /**
    * Draft-preview gate — the per-entity preview access rule (CONTEXT.md
    * "Draft preview"): posts allow author and above; pages allow admin
@@ -112,7 +112,7 @@ export async function saveBody<TMeta, TPreview>(
   adapter: ContentEntityAdapter<TMeta, TPreview>,
   input: SaveBodyInput,
   mode: 'draft' | 'publish',
-  viewer?: ViewerContext,
+  viewer?: ViewerIdentity,
 ): Promise<SaveBodyResult> {
   const meta = await adapter.findMetaById(db, input.entityId)
   adapter.assertAccess(meta, viewer)

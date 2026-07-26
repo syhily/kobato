@@ -2,7 +2,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import type { AdminImageDto } from '@/shared/contracts/images'
 
-import { canEditImage, type ViewerContext } from '@/server/domains/auth/rbac'
+import { canEditImage, type ViewerIdentity } from '@/server/domains/auth/rbac'
 import { toAdminImageDto } from '@/server/domains/images/services/admin-read'
 import { invalidateImageEnhanceCacheFor } from '@/server/domains/images/services/cache'
 import {
@@ -20,7 +20,7 @@ import { backendFor } from '@/server/infra/storage/registry'
 
 const log = getLogger('images.service')
 
-export type ImageViewerContext = ViewerContext
+export type ImageViewerContext = ViewerIdentity
 
 export async function deleteImage(db: NodePgDatabase, id: bigint, viewer?: ImageViewerContext): Promise<void> {
   const existing = await findImageById(db, id)

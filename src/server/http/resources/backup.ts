@@ -32,7 +32,7 @@ export const backupRouter = new Hono<Env>()
     if (!isValidBackupKey(timestamp)) {
       return c.json({ error: { message: '无效的备份标识。' } }, 400)
     }
-    const buffer = await getBackupBuffer(c.var.db, timestamp)
+    const buffer = await getBackupBuffer(c.var.requestContext.db, timestamp)
     const fileName = `backup-${timestamp}.sql.gz`
     c.header('Content-Type', 'application/gzip')
     c.header('Content-Disposition', `attachment; filename="${fileName}"`)
@@ -61,8 +61,8 @@ export const backupRouter = new Hono<Env>()
       const sql = await extractBackupSql(buffer, file.name)
       validateBackupSql(sql)
 
-      performSafeRestore({ pool: c.var.pool, log }, async () => {
-        await restoreFromSql(c.var.db, sql)
+      performSafeRestore({ pool: c.var.requestContext.pool, log }, async () => {
+        await restoreFromSql(c.var.requestContext.db, sql)
         log.info('Restore from uploaded backup completed')
       })
 
@@ -77,19 +77,19 @@ export const backupRouter = new Hono<Env>()
       onError: (c) => c.json({ error: { message: '上传文件过大' } }, 413),
     }),
     async (c) => {
-      if (await hasAdmin(c.var.db)) {
+      if (await hasAdmin(c.var.requestContext.db)) {
         return c.json({ error: { message: '站点已安装，请直接登录后通过后台还原备份。' } }, 409)
       }
 
       // Require a verified session to prove console access.
-      const setupTokenVerified = c.var.session.get('setupTokenVerified')
+      const setupTokenVerified = c.var.requestContext.session.get('setupTokenVerified')
       if (!setupTokenVerified) {
         return c.json({ error: { message: 'Setup Token 验证已过期或未完成，请先返回安装页面完成验证。' } }, 403)
       }
 
       // Double-check the token is still active (defense against
       // stale session flags after token expiration or invalidation).
-      if (!(await isSetupTokenActive(c.var.db))) {
+      if (!(await isSetupTokenActive(c.var.requestContext.db))) {
         return c.json({ error: { message: 'Setup Token 已过期或失效，请重新验证。' } }, 403)
       }
 
@@ -97,7 +97,7 @@ export const backupRouter = new Hono<Env>()
       // as the setup flow, so we require the CSRF header to prevent
       // cross-site form submission.
       const csrfToken = c.req.header(CSRF_HEADER)
-      if (!validateCsrfToken(c.var.session, csrfToken)) {
+      if (!validateCsrfToken(c.var.requestContext.session, csrfToken)) {
         return c.json({ error: { message: '安全校验失败，请刷新页面后重试。' } }, 403)
       }
 
@@ -119,21 +119,21 @@ export const backupRouter = new Hono<Env>()
       const sql = await extractBackupSql(buffer, file.name)
       validateBackupSql(sql)
 
-      const clientAddress = c.var.clientAddress
+      const clientAddress = c.var.requestContext.clientAddress
       const userAgent = c.req.raw.headers.get('User-Agent')
       const fileName = file.name
 
-      performSafeRestore({ pool: c.var.pool, log }, async () => {
-        await restoreFromSql(c.var.db, sql)
+      performSafeRestore({ pool: c.var.requestContext.pool, log }, async () => {
+        await restoreFromSql(c.var.requestContext.db, sql)
 
-        const admin = await findFirstAdminUser(c.var.db)
+        const admin = await findFirstAdminUser(c.var.requestContext.db)
         if (!admin) {
           log.error('Setup restore: no admin found after restore', { fileName })
           throw new Error('Setup restore: no admin found after restore')
         }
 
         try {
-          await refreshBlogSettings(c.var.db)
+          await refreshBlogSettings(c.var.requestContext.db)
         } catch (err) {
           log.warn('refreshBlogSettings failed after setup restore; continuing', {
             err: err instanceof Error ? err.message : String(err),

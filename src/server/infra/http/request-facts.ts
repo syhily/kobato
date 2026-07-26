@@ -11,8 +11,18 @@
  * threaded separately as `clientAddress`.
  */
 export interface RequestFacts {
-  /** URL pathname of the request (`new URL(request.url).pathname`). */
+  /**
+   * Normalized document pathname (React Router's `.data` / `_.data`
+   * suffixes and `_routes` / `index` params stripped), so analytics and
+   * logs never see implementation-detail URLs.
+   */
   path: string
+  /**
+   * True when the raw request was a React Router data request (client
+   * navigation / fetcher revalidation) rather than a document request.
+   * Derived from the `.data` suffix before normalization.
+   */
+  isDataRequest: boolean
   /** `User-Agent` header. */
   userAgent: string | null
   /** `Referer` header. */
