@@ -55,9 +55,11 @@ export function processWorkerEntryPlugin(): Plugin {
           ssr: true,
           rolldownOptions: {
             input: WORKER_ENTRY,
-            // `sharp` stays external only as a safety net — the worker now
-            // loads it via `requireExternal` (`@/server/infra/sea`), which
-            // the bundle inlines; its node builtins must stay external.
+            // `sharp` is a static import in the worker source now — keep
+            // it external so this non-SEA bundle resolves node_modules at
+            // runtime (the SEA bundle inlines it instead and redirects
+            // its platform loads to `nativeRequire`). Node builtins must
+            // stay external either way.
             external: ['sharp', 'pg', 'node:worker_threads', 'node:buffer', 'node:module', 'node:os', 'node:path'],
             output: {
               format: 'es',

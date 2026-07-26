@@ -1,34 +1,32 @@
 // SEA natives bootstrap — the one piece of the single-executable runtime
 // that touches disk.
 //
-// Everything except native packages is read straight from the SEA blob
-// (see `@/server/infra/sea`). Native `.node` / `.so` files cannot be
-// dlopen'ed from memory, so on first run the embedded native packages
-// (sharp, sharp-ico, @napi-rs/canvas and their platform packages) are
-// extracted to `<cacheDir>/natives-<manifest-hash>/node_modules/` with
+// Everything except the native dynamic libraries is read straight from
+// the SEA blob (see `@/server/infra/sea`) — all native package JS rides
+// inside the injected server bundle with its platform loads redirected to
+// `nativeRequire` (`@/server/infra/native-require`). Native `.node` /
+// `.so` / `.dylib` / `.dll` files cannot be dlopen'ed from memory, so on
+// first run the embedded libraries (the rpath-patched sharp addon, the
+// libvips files, the skia addon — 3 files on darwin/linux, 4 on win32)
+// are extracted to a FLAT `<cacheDir>/natives-<manifest-hash>/` dir with
 // per-file sha256 verification and atomic (tmp + rename) writes. The
-// prelude then points `requireExternal` at that tree via
-// `KOBATO_NATIVES_DIR`.
-//
-// The same treatment applies to the single-file bundles that must load
-// from real file URLs: the server bundle ships as the embedded
-// `server/server.mjs` asset (top-level await in src/server.ts makes CJS
-// output impossible) and is materialized next to the natives dir on every
-// boot so the prelude can `await import()` it; the `--smoke-worker` entry
-// ships as `worker/smoke-worker.cjs` and is materialized on demand by
-// `materializeSmokeWorkerBundle()`.
+// bootstrap (the `@/server/infra/sea-bootstrap` side-effect import ahead
+// of the server graph, or the CLI flags in `@/server/infra/sea-cli`)
+// then points `nativeRequire` at that dir via `KOBATO_NATIVES_DIR`.
 //
 // The manifest asset (`manifest.json`, generated at build time by
 // scripts/sea/assets) describes every embedded file; only entries whose
-// asset key starts with `node_modules/` are extracted — all other assets
-// stay in the blob and are read from memory.
+// asset key starts with `natives/` are extracted — all other assets stay
+// in the blob and are read from memory. Blob payloads are stored
+// compressed, but every read goes through `getEmbeddedAsset`, which
+// decodes transparently — the per-file sha256 verification below still
+// runs over the RAW bytes, so it is unchanged by compression.
 //
-// Dependency discipline: this module runs inside the SEA prelude before
-// the server graph (and its env-validated modules) is available, so it
-// must only import node builtins, `@/server/infra/sea`,
-// `@/shared/sea/assets` (side-effect-free constants), and type-only
-// symbols — never the pino logger or the env facade (both validate env
-// vars at module scope).
+// Dependency discipline: this module runs ahead of the server graph (and
+// its env-validated modules), so it must only import node builtins,
+// `@/server/infra/sea`, `@/shared/sea/assets` (side-effect-free
+// constants), and type-only symbols — never the pino logger or the env
+// facade (both validate env vars at module scope).
 
 import { createHash } from 'node:crypto'
 import { mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
@@ -37,19 +35,17 @@ import { dirname, join } from 'node:path'
 import type { Logger } from '@/server/infra/logger'
 
 import { getEmbeddedAsset, isSea, resolveCacheDir } from '@/server/infra/sea'
-import {
-  SEA_MANIFEST_KEY,
-  SEA_NATIVE_ASSET_PREFIX,
-  SEA_SERVER_BUNDLE_KEY,
-  SEA_SMOKE_WORKER_BUNDLE_KEY,
-} from '@/shared/sea/assets'
-
-const NOOP_SHIM_CONTENT = 'module.exports = require\n'
+import { SEA_MANIFEST_KEY, SEA_NATIVE_ASSET_PREFIX, type SeaAssetCodec } from '@/shared/sea/assets'
 
 export interface SeaManifestFile {
   key: string
   path: string
+  /** sha256 of the RAW (uncompressed) bytes — verification is codec-agnostic. */
   sha256: string
+  /** Blob payload codec; absent in manifests from before blob compression (treated as `'none'`). */
+  codec?: SeaAssetCodec
+  /** Raw byte length; informational only, verification goes through sha256. */
+  size?: number
 }
 
 export interface SeaManifest {
@@ -70,9 +66,9 @@ export interface ExtractNativesOptions {
 }
 
 export interface ExtractNativesResult {
-  /** `<cacheDir>/natives-<hash>` — root of the extracted tree. */
+  /** `<cacheDir>/natives-<hash>` — the flat dir the libraries extract into. */
   dir: string
-  /** `<dir>/node_modules` — the value exported as `KOBATO_NATIVES_DIR`. */
+  /** Same as `dir` (the layout is flat) — the value exported as `KOBATO_NATIVES_DIR`. */
   nativesDir: string
   /** Files written (or repaired) during this run. */
   extracted: number
@@ -83,8 +79,9 @@ export interface ExtractNativesResult {
 // Minimal stand-in for the project logger. The pino logger
 // (`@/server/infra/logger`) transitively imports the env facade, which
 // validates required env vars at module scope and exits the process when
-// they are missing — the SEA prelude must instead run with zero env
-// (`--version`, `--help`, `--smoke-natives` work without a database).
+// they are missing — the SEA bootstrap/CLI modules must instead run with
+// zero env (`--version`, `--help`, `--smoke-natives` work without a
+// database).
 // Same call shape, plain JSON lines on stdout; debug lines are gated on
 // server__loggingLevel=debug, mirroring the production default level of 'info'.
 const log: Pick<Logger, 'info' | 'debug'> = {
@@ -132,7 +129,16 @@ function parseManifest(raw: Buffer): SeaManifest {
     ) {
       throw new Error(`Invalid SEA manifest (${SEA_MANIFEST_KEY}): every file needs { key, path, sha256 }`)
     }
-    files.push({ key: entry.key, path: entry.path, sha256: entry.sha256 })
+    const file: SeaManifestFile = { key: entry.key, path: entry.path, sha256: entry.sha256 }
+    // codec/size were introduced with blob compression — pass them through
+    // when present and valid, stay tolerant of older manifests without them.
+    if (entry.codec === 'zstd' || entry.codec === 'brotli' || entry.codec === 'none') {
+      file.codec = entry.codec
+    }
+    if (typeof entry.size === 'number') {
+      file.size = entry.size
+    }
+    files.push(file)
   }
   return { version: parsed.version, target: parsed.target, files }
 }
@@ -205,8 +211,9 @@ function nativesDirName(manifestRaw: Buffer): string {
 }
 
 /**
- * Extract the embedded native packages into the cache dir (idempotent).
- * Exported for tests; production code enters through `bootstrapSeaRuntime`.
+ * Extract the embedded native libraries into the flat cache dir
+ * (idempotent). Exported for tests; production code enters through
+ * `bootstrapSeaRuntime`.
  */
 export function extractNatives(options: ExtractNativesOptions): ExtractNativesResult {
   const logger = options.logger ?? log
@@ -225,12 +232,15 @@ export function extractNatives(options: ExtractNativesOptions): ExtractNativesRe
   let extracted = 0
   let reused = 0
   for (const file of manifest.files) {
-    // Only native packages are extracted; every other asset stays in the
-    // blob and is read from memory via `getEmbeddedAsset`.
+    // Only the native dynamic libraries are extracted; every other asset
+    // stays in the blob and is read from memory via `getEmbeddedAsset`.
+    // The layout is FLAT: the extraction path is the asset key with the
+    // `natives/` prefix stripped (`natives/sharp.node` → `<dir>/sharp.node`).
     if (!file.key.startsWith(SEA_NATIVE_ASSET_PREFIX)) {
       continue
     }
-    assertSafeRelativePath(file.path)
+    const relativePath = file.key.slice(SEA_NATIVE_ASSET_PREFIX.length)
+    assertSafeRelativePath(relativePath)
     const bytes = options.getAsset(file.key)
     if (bytes === null) {
       throw new Error(`SEA manifest references a missing embedded asset: ${file.key}`)
@@ -239,87 +249,28 @@ export function extractNatives(options: ExtractNativesOptions): ExtractNativesRe
     if (actualSha256 !== file.sha256) {
       throw new Error(`SEA embedded asset checksum mismatch: ${file.key} (sha256 ${actualSha256} != ${file.sha256})`)
     }
-    if (ensureFile(join(dir, file.path), bytes, file.sha256) === 'written') {
+    if (ensureFile(join(dir, relativePath), bytes, file.sha256) === 'written') {
       extracted += 1
     } else {
       reused += 1
     }
   }
 
-  // Shim that lets `requireExternal` root `createRequire` inside the
-  // extracted tree (createRequire needs a filename, not a directory).
-  const noopContent = Buffer.from(NOOP_SHIM_CONTENT, 'utf-8')
-  ensureFile(join(dir, 'node_modules', 'noop.cjs'), noopContent, sha256(noopContent))
-
   gcStaleNativesDirs(options.cacheDir, dirName, logger)
 
   logger.info('SEA natives ready', { extracted, reused, dir })
-  return { dir, nativesDir: join(dir, 'node_modules'), extracted, reused }
+  return { dir, nativesDir: dir, extracted, reused }
 }
 
 /**
- * Write an embedded single-file bundle (`server/server.mjs`,
- * `worker/smoke-worker.cjs`) next to the extracted natives and return its
- * absolute path.
- *
- * The prelude loads these bundles via `await import(<file URL>)` instead
- * of bundling them into the CJS prelude: `src/server.ts` uses top-level
- * await, which no bundler can express in CJS output. The materialized
- * file lives inside the same `natives-<manifest-hash>` dir, so it is
- * covered by the same sha256 verification (on every start), atomic
- * writes, and stale-dir GC as the native packages — a tampered or
- * half-written copy is always detected and replaced from the blob.
+ * SEA bootstrap entry point (sync by design — it runs before the server
+ * graph evaluates). No-op outside SEA mode. On success,
+ * `process.env.KOBATO_NATIVES_DIR` points at the flat natives dir so
+ * `nativeRequire` can load the extracted libraries.
  */
-function materializeEmbeddedBundle(manifest: SeaManifest, dir: string, key: string, fileName: string): string {
-  const entry = manifest.files.find((file) => file.key === key)
-  if (entry === undefined) {
-    throw new Error(`Invalid SEA manifest (${SEA_MANIFEST_KEY}): missing ${key}`)
-  }
-  const bytes = getEmbeddedAsset(key)
-  if (bytes === null) {
-    throw new Error(`SEA embedded bundle asset missing: ${key}`)
-  }
-  const actualSha256 = sha256(bytes)
-  if (actualSha256 !== entry.sha256) {
-    throw new Error(`SEA embedded bundle checksum mismatch: ${key} (sha256 ${actualSha256} != ${entry.sha256})`)
-  }
-  const bundlePath = join(dir, fileName)
-  ensureFile(bundlePath, bytes, entry.sha256)
-  return bundlePath
-}
-
-/**
- * The `--smoke-worker` counterpart to the server bundle materialization
- * above: write the embedded `worker/smoke-worker.cjs` next to the natives
- * and return its absolute path. Must run AFTER `bootstrapSeaRuntime()`
- * (the natives dir it writes into is created there, and the pool's
- * workers need `KOBATO_NATIVES_DIR`). Returns `null` outside SEA mode —
- * the prelude then falls back to the sibling `smoke-worker.cjs` emitted
- * by the same tsdown run.
- */
-export function materializeSmokeWorkerBundle(): string | null {
+export function bootstrapSeaRuntime(): void {
   if (!isSea()) {
-    return null
-  }
-  const manifestRaw = getEmbeddedAsset(SEA_MANIFEST_KEY)
-  if (manifestRaw === null) {
-    throw new Error(`SEA manifest asset missing: ${SEA_MANIFEST_KEY}`)
-  }
-  const dir = join(resolveCacheDir(), nativesDirName(manifestRaw))
-  return materializeEmbeddedBundle(parseManifest(manifestRaw), dir, SEA_SMOKE_WORKER_BUNDLE_KEY, 'smoke-worker.cjs')
-}
-
-/**
- * SEA prelude entry point (sync by design — it runs before the server
- * bundle is imported). Returns `null` outside SEA mode (a no-op then).
- * On success, `process.env.KOBATO_NATIVES_DIR` points at the extracted
- * node_modules tree so `requireExternal` can load native packages, and
- * the returned absolute path locates the materialized server bundle for
- * the prelude's dynamic import.
- */
-export function bootstrapSeaRuntime(): string | null {
-  if (!isSea()) {
-    return null
+    return
   }
   const manifestRaw = getEmbeddedAsset(SEA_MANIFEST_KEY)
   if (manifestRaw === null) {
@@ -327,5 +278,4 @@ export function bootstrapSeaRuntime(): string | null {
   }
   const result = extractNatives({ manifestRaw, cacheDir: resolveCacheDir(), getAsset: getEmbeddedAsset })
   process.env.KOBATO_NATIVES_DIR = result.nativesDir
-  return materializeEmbeddedBundle(parseManifest(manifestRaw), result.dir, SEA_SERVER_BUNDLE_KEY, 'server.mjs')
 }

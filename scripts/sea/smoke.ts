@@ -17,7 +17,7 @@
 
 import { spawnSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
-import { readFile, rm } from 'node:fs/promises'
+import { readFile, readdir, rm, stat } from 'node:fs/promises'
 import { join, resolve as resolvePath } from 'node:path'
 
 import type { SmokeDatabase, SmokeServer } from './instance.ts'
@@ -38,7 +38,7 @@ import {
   waitForExit,
   waitForHttp,
 } from './instance.ts'
-import { seaBinaryPath } from './paths.ts'
+import { seaBinaryPath, seaBlobPath } from './paths.ts'
 
 interface CheckResult {
   name: string
@@ -53,6 +53,16 @@ const LOG_TAIL_LINES = 50
 
 const PNG_MAGIC = [0x89, 0x50, 0x4e, 0x47]
 const CALENDAR_MIN_BYTES = 2_048
+
+// The blob is the binary's variable part: uncompressed it was ~87 MB, the
+// compressed payload must stay in the ~25-35 MB band. A regression to
+// uncompressed embedding roughly doubles the binary — fail loudly here
+// rather than at release time. The blob only exists for the postject
+// injector (darwin-x64); `--build-sea` builds it into the binary
+// internally, so there the same regression is caught by a binary-size
+// budget instead (linux node26 base ~148 MB + ~25 MB payload).
+const BLOB_MAX_BYTES = 35 * 1024 * 1024
+const BINARY_MAX_BYTES = 190 * 1024 * 1024
 
 const results: CheckResult[] = []
 let serverLogPath: string | null = null
@@ -86,6 +96,35 @@ function tailLines(text: string, count: number) {
   return text.trim().split('\n').slice(-count).join('\n')
 }
 
+/**
+ * Assert the payload stays within the compression budget. The blob only
+ * exists in a postject-injector workspace (darwin-x64); on `--build-sea`
+ * targets the payload rides inside the binary, so the binary size is
+ * budgeted instead. Runs in managed and binary-only mode (external mode
+ * tests someone else's server).
+ */
+async function checkBlobSize() {
+  const blob = await stat(seaBlobPath()).catch(() => null)
+  if (blob !== null) {
+    const mb = (blob.size / 1024 / 1024).toFixed(1)
+    if (blob.size > BLOB_MAX_BYTES) {
+      throw new Error(`blob is ${mb} MB, over the ${BLOB_MAX_BYTES / 1024 / 1024} MB compression budget`)
+    }
+    return `${mb} MB blob within the ${BLOB_MAX_BYTES / 1024 / 1024} MB budget`
+  }
+  // No blob file: the `--build-sea` injector never wrote one — budget the
+  // binary instead (node26 base ~148 MB + compressed payload ~25 MB).
+  const binary = await stat(seaBinaryPath()).catch(() => null)
+  if (binary === null) {
+    throw new Error(`neither ${seaBlobPath()} nor ${seaBinaryPath()} found — run pnpm run sea:build first`)
+  }
+  const mb = (binary.size / 1024 / 1024).toFixed(1)
+  if (binary.size > BINARY_MAX_BYTES) {
+    throw new Error(`binary is ${mb} MB, over the ${BINARY_MAX_BYTES / 1024 / 1024} MB budget (--build-sea target)`)
+  }
+  return `${mb} MB binary within the ${BINARY_MAX_BYTES / 1024 / 1024} MB budget (--build-sea target)`
+}
+
 function checkVersion(binaryPath: string) {
   const result = spawnSync(binaryPath, ['--version'], { encoding: 'utf-8', timeout: VERSION_TIMEOUT_MS })
   if (result.error) {
@@ -100,6 +139,42 @@ function checkVersion(binaryPath: string) {
     throw new Error(`unexpected output: ${line || '(empty)'}`)
   }
   return line
+}
+
+/**
+ * The extraction dir is FLAT and holds exactly the native dynamic
+ * libraries: sharp.node + skia.node + the libvips files (one on
+ * darwin/linux, two DLLs on win32) — no node_modules tree, no package
+ * files. The materialized bundles (server.mjs, smoke-worker.cjs) share
+ * the dir by design and are excluded from the count. Assert the layout
+ * right after `--smoke-natives` populated it.
+ */
+async function checkNativesLayout(cacheDir: string) {
+  const expectedCount = process.platform === 'win32' ? 4 : 3
+  const entries = await readdir(cacheDir)
+  const nativesDirs = entries.filter((entry) => entry.startsWith('natives-'))
+  if (nativesDirs.length !== 1) {
+    throw new Error(`expected exactly one natives-* dir in ${cacheDir}, found ${nativesDirs.length}`)
+  }
+  const dir = join(cacheDir, nativesDirs[0]!)
+  const files = await readdir(dir, { withFileTypes: true })
+  if (files.some((file) => file.isDirectory())) {
+    throw new Error(`natives dir is not flat: ${files.map((file) => file.name).join(', ')}`)
+  }
+  const names = files
+    .map((file) => file.name)
+    .filter((name) => name !== 'server.mjs' && name !== 'smoke-worker.cjs')
+    .sort()
+  if (names.length !== expectedCount) {
+    throw new Error(`expected ${expectedCount} extracted native files, found ${names.length}: ${names.join(', ')}`)
+  }
+  if (!names.includes('sharp.node') || !names.includes('skia.node')) {
+    throw new Error(`sharp.node / skia.node missing from the extraction: ${names.join(', ')}`)
+  }
+  if (!names.every((name) => name === 'sharp.node' || name === 'skia.node' || name.startsWith('libvips'))) {
+    throw new Error(`unexpected files in the extraction: ${names.join(', ')}`)
+  }
+  return `${names.length} flat files: ${names.join(', ')}`
 }
 
 function checkNatives(binaryPath: string, cacheDir: string) {
@@ -179,12 +254,14 @@ async function checkShutdown(server: SmokeServer) {
 
 /**
  * The server's bootstrap logs `SEA natives ready` with per-file counts;
- * a warm cache (populated by the --smoke-natives check) means reused > 0.
- * Read after the log stream closed so no buffered writes are missed.
- * Lines are parsed as JSON and matched on the `msg` field — never on key
- * order or substrings, so a logger refactor can't false-fail the smoke.
+ * a warm cache (populated by the --smoke-natives check) means every
+ * native library is reused. Read after the log stream closed so no
+ * buffered writes are missed. Lines are parsed as JSON and matched on
+ * the `msg` field — never on key order or substrings, so a logger
+ * refactor can't false-fail the smoke.
  */
 async function checkNativesReuse() {
+  const expectedCount = process.platform === 'win32' ? 4 : 3
   const log = await readFile(serverLogPath ?? fail('serverLogPath unset'), 'utf-8')
   let extracted: number | null = null
   let reused: number | null = null
@@ -212,8 +289,10 @@ async function checkNativesReuse() {
   if (extracted === null || reused === null) {
     throw new Error('no "SEA natives ready" line in the server log')
   }
-  if (reused === 0) {
-    throw new Error(`server re-extracted the natives despite a warm cache (extracted=${extracted} reused=${reused})`)
+  if (reused !== expectedCount) {
+    throw new Error(
+      `server did not reuse the warm natives cache (extracted=${extracted} reused=${reused}, expected reused=${expectedCount})`,
+    )
   }
   return `extracted=${extracted} reused=${reused}`
 }
@@ -353,8 +432,10 @@ async function runManaged(binaryPath: string) {
   let server = none<SmokeServer>()
   let smokeDatabase = none<SmokeDatabase>()
   try {
+    await check('SEA blob within the compression budget', () => checkBlobSize())
     await check('kobato --version', () => checkVersion(binaryPath))
     await check('kobato --smoke-natives (sharp + canvas)', () => checkNatives(binaryPath, dirs.cache))
+    await check('natives extraction is the flat dynamic-library set', () => checkNativesLayout(dirs.cache))
 
     await check('create per-run smoke database', async () => {
       smokeDatabase = await createSmokeDatabase(databaseUrl)
@@ -482,8 +563,10 @@ async function runBinaryOnly(binaryPath: string) {
   console.log(`    binary:   ${binaryPath}`)
   console.log(`    temp dir: ${dirs.root}`)
 
+  await check('SEA blob within the compression budget', () => checkBlobSize())
   await check('kobato --version', () => checkVersion(binaryPath))
   await check('kobato --smoke-natives (sharp + canvas)', () => checkNatives(binaryPath, dirs.cache))
+  await check('natives extraction is the flat dynamic-library set', () => checkNativesLayout(dirs.cache))
   await check('kobato --smoke-worker (sharp worker pool)', () =>
     checkWorker(binaryPath, {
       database__url: process.env.database__url ?? DEFAULT_DATABASE_URL,

@@ -1,15 +1,18 @@
 // SEA build orchestrator (`pnpm run sea:build`).
 //
 //   1. react-router build       build/server (ESM chunks) + build/client
-//   2. tsdown                   inline everything into main.cjs +
-//                               process-worker.cjs (dist-sea/intermediates)
+//   2. vite bundle              inline everything into server.mjs (the
+//                               injected ESM main) + process-worker.cjs +
+//                               smoke-worker.cjs (dist-sea/intermediates)
 //   3. check-bundle             fail on leftover external specifiers
 //   4. assets                   collect embedded assets + manifest.json
 //   5. blob                     node --experimental-sea-config
-//   6. inject                   copy node + postject the blob
+//                               (postject injector only)
+//   6. inject                   --build-sea (default) or postject
+//                               (darwin-x64) — see inject.ts
 //   7. checksum                 dist-sea/kobato.sha256
 //
-// The build is platform-native by design: the embedded native packages
+// The build is platform-native by design: the embedded native libraries
 // and the copied Node executable are the build machine's, so run it on
 // the delivery target's architecture (CI matrix / linux container).
 
@@ -17,19 +20,35 @@ import { createHash } from 'node:crypto'
 import { readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
-import { collectSeaAssets } from './assets.ts'
+import { collectSeaAssets, type SeaPackCodec } from './assets.ts'
 import { runBlobStep } from './blob.ts'
 import { fail, run } from './exec.ts'
-import { runInjectStep } from './inject.ts'
+import { runInjectStep, selectInjector } from './inject.ts'
 import { repoRoot, seaBinaryFileName, seaBinaryPath, seaBinarySha256Path, seaIntermediatesDir } from './paths.ts'
 
-const REQUIRED_NODE_MAJOR = 24
+const REQUIRED_NODE_MAJOR = 26
 
 function ensureNodeVersion() {
   const major = Number(process.versions.node.split('.')[0])
   if (major < REQUIRED_NODE_MAJOR) {
     fail(`SEA build requires Node.js >= ${REQUIRED_NODE_MAJOR}, current ${process.versions.node}.`)
   }
+}
+
+/**
+ * Blob payload codec: `--codec zstd` (default, fast build/decode) or
+ * `--codec brotli` (quality 11, smallest release binaries).
+ */
+function parseCodecArg(): SeaPackCodec {
+  const index = process.argv.indexOf('--codec')
+  if (index === -1) {
+    return 'zstd'
+  }
+  const value = process.argv[index + 1]
+  if (value === 'zstd' || value === 'brotli') {
+    return value
+  }
+  fail(`Invalid --codec "${value ?? '(missing)'}" — expected "zstd" or "brotli".`)
 }
 
 /** The server build emits exactly one hashed cnfs wasm — pin it down. */
@@ -51,30 +70,41 @@ async function writeBinaryChecksum() {
 
 async function main() {
   ensureNodeVersion()
-  console.log(`==> SEA build (${process.platform}-${process.arch}, node ${process.versions.node})`)
+  const codec = parseCodecArg()
+  console.log(`==> SEA build (${process.platform}-${process.arch}, node ${process.versions.node}, codec ${codec})`)
 
   console.log('==> react-router build')
   run('pnpm', ['run', 'build'], { env: { ...process.env, NODE_ENV: 'production' } })
 
-  console.log('==> tsdown bundle')
-  // tsdown runs its config-array entries in parallel, so `clean` cannot
-  // be trusted there — wipe the intermediates dir up front instead.
+  console.log('==> vite bundle')
+  // The three bundles share the intermediates dir and none of them may
+  // wipe it (emptyOutDir: false in vite.sea.config.ts) — clean it here.
   await rm(seaIntermediatesDir(), { recursive: true, force: true })
-  run('pnpm', ['exec', 'tsdown', '--config', 'tsdown.sea.config.ts'])
+  for (const seaBundle of ['server', 'worker', 'smoke']) {
+    run('pnpm', ['exec', 'vite', 'build', '--config', 'vite.sea.config.ts'], {
+      env: { ...process.env, SEA_BUNDLE: seaBundle },
+    })
+  }
 
   console.log('==> bundle check')
   run(process.execPath, [join(repoRoot, 'scripts', 'sea', 'check-bundle.ts')])
 
   console.log('==> collect assets')
   const wasmPath = await locateCnfsWasm()
-  const { assets } = await collectSeaAssets({ wasmPath })
-  console.log(`    ${assets.size} embedded assets`)
+  const { assets, stats } = await collectSeaAssets({ wasmPath, codec })
+  const mb = (bytes: number) => (bytes / 1024 / 1024).toFixed(1)
+  console.log(`    ${assets.size} embedded assets, ${mb(stats.rawBytes)} MB raw -> ${mb(stats.packedBytes)} MB packed`)
 
-  console.log('==> generate SEA blob')
-  await runBlobStep(assets)
+  // The postject injector (darwin-x64) needs a pre-generated blob;
+  // `--build-sea` regenerates it internally (see inject.ts).
+  const injector = selectInjector()
+  if (injector === 'postject') {
+    console.log('==> generate SEA blob')
+    await runBlobStep(assets)
+  }
 
-  console.log('==> inject blob into node binary')
-  await runInjectStep()
+  console.log(`==> inject blob into node binary (${injector})`)
+  await runInjectStep(assets)
 
   await writeBinaryChecksum()
 

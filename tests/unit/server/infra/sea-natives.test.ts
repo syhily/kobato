@@ -9,8 +9,9 @@ import { bootstrapSeaRuntime, extractNatives, type SeaManifest } from '@/server/
 // Unit tests for the SEA natives extractor. `bootstrapSeaRuntime` is a
 // no-op outside SEA mode, so the extraction core (`extractNatives`) is
 // exercised directly with a fake embedded-asset source and a temp cache
-// dir: first-run extraction, reuse on the second run, repair of a
-// corrupted file, the `noop.cjs` shim, and GC of stale hash dirs.
+// dir: first-run extraction into the FLAT layout (`natives/` prefix
+// stripped), reuse on the second run, repair of a corrupted file, and GC
+// of stale hash dirs.
 
 const CURRENT_TARGET = `${process.platform}-${process.arch}`
 
@@ -49,32 +50,40 @@ afterEach(() => {
 })
 
 describe('infra/sea-natives — extractNatives', () => {
-  it('extracts only node_modules/ assets and writes the noop.cjs shim', () => {
+  it('extracts only natives/ assets, into a flat dir', () => {
     const cacheDir = makeTmpDir()
     const { manifestRaw, getAsset } = buildEmbedded({
-      'node_modules/sharp/package.json': '{"name":"sharp"}',
-      'node_modules/sharp/lib/sharp.node': 'fake-native-bytes',
+      'natives/sharp.node': 'fake-sharp-addon',
+      'natives/libvips-cpp.8.18.3.dylib': 'fake-libvips',
+      'natives/skia.node': 'fake-skia-addon',
+      'natives-meta/libvips-versions.json': '{"vips":"8.18.3"}',
       'client/assets/app.js': 'stays-in-the-blob',
     })
 
     const result = extractNatives({ manifestRaw, cacheDir, getAsset, logger: silentLogger })
 
-    expect(result.extracted).toBe(2)
+    expect(result.extracted).toBe(3)
     expect(result.reused).toBe(0)
-    expect(result.nativesDir).toBe(join(result.dir, 'node_modules'))
-    expect(readFileSync(join(result.dir, 'node_modules/sharp/lib/sharp.node'), 'utf-8')).toBe('fake-native-bytes')
-    expect(readFileSync(join(result.dir, 'node_modules/sharp/package.json'), 'utf-8')).toBe('{"name":"sharp"}')
-    // Non-native assets are never written to disk.
+    expect(result.nativesDir).toBe(result.dir)
+    // Flat: the `natives/` prefix is stripped, no subdirectories.
+    expect(readFileSync(join(result.dir, 'sharp.node'), 'utf-8')).toBe('fake-sharp-addon')
+    expect(readFileSync(join(result.dir, 'libvips-cpp.8.18.3.dylib'), 'utf-8')).toBe('fake-libvips')
+    expect(readFileSync(join(result.dir, 'skia.node'), 'utf-8')).toBe('fake-skia-addon')
+    // Everything else — metadata JSON included — is never written to disk.
+    expect(existsSync(join(result.dir, 'natives'))).toBe(false)
+    expect(existsSync(join(result.dir, 'natives-meta'))).toBe(false)
     expect(existsSync(join(result.dir, 'client/assets/app.js'))).toBe(false)
-    // The createRequire shim exists next to the extracted packages.
-    expect(readFileSync(join(result.nativesDir, 'noop.cjs'), 'utf-8')).toBe('module.exports = require\n')
     // The cache dir name carries the manifest hash prefix.
     expect(result.dir).toBe(join(cacheDir, `natives-${sha256(manifestRaw).slice(0, 16)}`))
   })
 
   it('reuses unchanged files on a second run', () => {
     const cacheDir = makeTmpDir()
-    const embedded = buildEmbedded({ 'node_modules/sharp/lib/sharp.node': 'fake-native-bytes' })
+    const embedded = buildEmbedded({
+      'natives/sharp.node': 'fake-sharp-addon',
+      'natives/libvips-cpp.8.18.3.dylib': 'fake-libvips',
+      'natives/skia.node': 'fake-skia-addon',
+    })
 
     extractNatives({ manifestRaw: embedded.manifestRaw, cacheDir, getAsset: embedded.getAsset, logger: silentLogger })
     const second = extractNatives({
@@ -85,12 +94,12 @@ describe('infra/sea-natives — extractNatives', () => {
     })
 
     expect(second.extracted).toBe(0)
-    expect(second.reused).toBe(1)
+    expect(second.reused).toBe(3)
   })
 
   it('repairs a corrupted file instead of trusting it', () => {
     const cacheDir = makeTmpDir()
-    const embedded = buildEmbedded({ 'node_modules/sharp/lib/sharp.node': 'fake-native-bytes' })
+    const embedded = buildEmbedded({ 'natives/sharp.node': 'fake-sharp-addon' })
 
     const first = extractNatives({
       manifestRaw: embedded.manifestRaw,
@@ -98,7 +107,7 @@ describe('infra/sea-natives — extractNatives', () => {
       getAsset: embedded.getAsset,
       logger: silentLogger,
     })
-    writeFileSync(join(first.dir, 'node_modules/sharp/lib/sharp.node'), 'tampered')
+    writeFileSync(join(first.dir, 'sharp.node'), 'tampered')
 
     const second = extractNatives({
       manifestRaw: embedded.manifestRaw,
@@ -109,15 +118,15 @@ describe('infra/sea-natives — extractNatives', () => {
 
     expect(second.extracted).toBe(1)
     expect(second.reused).toBe(0)
-    expect(readFileSync(join(first.dir, 'node_modules/sharp/lib/sharp.node'), 'utf-8')).toBe('fake-native-bytes')
+    expect(readFileSync(join(first.dir, 'sharp.node'), 'utf-8')).toBe('fake-sharp-addon')
   })
 
   it('removes stale natives-* dirs from previous manifest hashes', () => {
     const cacheDir = makeTmpDir()
-    const staleDir = join(cacheDir, 'natives-deadbeefcafe0000', 'node_modules', 'sharp')
+    const staleDir = join(cacheDir, 'natives-deadbeefcafe0000')
     mkdirSync(staleDir, { recursive: true })
     writeFileSync(join(staleDir, 'stale.node'), 'old')
-    const embedded = buildEmbedded({ 'node_modules/sharp/lib/sharp.node': 'fake-native-bytes' })
+    const embedded = buildEmbedded({ 'natives/sharp.node': 'fake-sharp-addon' })
 
     const result = extractNatives({
       manifestRaw: embedded.manifestRaw,
@@ -132,7 +141,7 @@ describe('infra/sea-natives — extractNatives', () => {
 
   it('throws a clear error when the manifest target does not match this machine', () => {
     const cacheDir = makeTmpDir()
-    const { manifestRaw, getAsset } = buildEmbedded({ 'node_modules/sharp/lib/sharp.node': 'x' }, 'aix-ppc64')
+    const { manifestRaw, getAsset } = buildEmbedded({ 'natives/sharp.node': 'x' }, 'aix-ppc64')
 
     expect(() => extractNatives({ manifestRaw, cacheDir, getAsset, logger: silentLogger })).toThrow(
       /target mismatch.*aix-ppc64/,
@@ -141,7 +150,7 @@ describe('infra/sea-natives — extractNatives', () => {
 
   it('throws when an embedded asset fails its sha256 check', () => {
     const cacheDir = makeTmpDir()
-    const { manifestRaw } = buildEmbedded({ 'node_modules/sharp/lib/sharp.node': 'expected' })
+    const { manifestRaw } = buildEmbedded({ 'natives/sharp.node': 'expected' })
     const corruptedGetAsset = () => Buffer.from('corrupted', 'utf-8')
 
     expect(() => extractNatives({ manifestRaw, cacheDir, getAsset: corruptedGetAsset, logger: silentLogger })).toThrow(

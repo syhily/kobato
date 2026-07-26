@@ -3,23 +3,32 @@
 # SEA blob (inserts a third PT_LOAD segment and shifts the first page), so
 # dlopen'd native addons (.node) can no longer resolve napi_* symbols from
 # the main program. On the glibc binary the injected result is intact.
-FROM node:24-bookworm-slim AS build
+FROM node:26-bookworm-slim AS build
 WORKDIR /app
 
-# Enable and activate the pnpm version pinned in package.json.
-RUN corepack enable && corepack prepare pnpm@11.8.0 --activate
+# pnpm, matching the packageManager field (11.9.0). Node 25+ images no
+# longer bundle Corepack, so install pnpm globally from npm instead.
+RUN npm install -g pnpm@11.9.0
+
+# patchelf — the SEA build rewrites the sharp addon's rpath to `$ORIGIN`
+# so the extracted flat dir is self-contained (see scripts/sea/assets.ts).
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends patchelf \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install dependencies first so source changes don't invalidate the layer.
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
 
-# Build the SEA single executable: react-router build + tsdown bundle + SEA
-# blob + postject injection (see scripts/sea/build.ts). The copied node
-# binary and the sharp / @napi-rs/canvas platform packages pnpm installs
-# here are glibc builds, matching the debian runtime stage below.
+# Build the SEA single executable: react-router build + vite bundle + SEA
+# blob + postject injection (see scripts/sea/build.ts). `--codec brotli`
+# packs the blob payload at brotli-11 (smallest release binaries; local
+# builds default to the faster zstd). The copied node binary and the
+# sharp / @napi-rs/canvas platform packages pnpm installs here are glibc
+# builds, matching the debian runtime stage below.
 COPY . .
-RUN pnpm run sea:build
+RUN pnpm run sea:build --codec brotli
 
 FROM debian:bookworm-slim AS runtime
 

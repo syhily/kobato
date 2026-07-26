@@ -1,11 +1,10 @@
 import type { Buffer } from 'node:buffer'
-import type sharpDefault from 'sharp'
 
-import { requireExternal } from '@/server/infra/sea'
+import sharp from 'sharp'
 
-// Native module — must resolve against the extracted tree under SEA (see
-// `@/server/infra/sea`). Outside SEA this resolves node_modules normally.
-const sharp = requireExternal<typeof sharpDefault>('sharp')
+// Statically imported and bundled; under SEA the bundler plugin redirects
+// sharp's own platform loads to `nativeRequire` (see
+// `scripts/sea/redirect-native-requires.ts`).
 
 export interface CompressImageOptions {
   preserveAlpha?: boolean

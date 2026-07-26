@@ -1,13 +1,16 @@
 // Shared paths for the SEA (single executable) build pipeline.
 //
 // Layout under dist-sea/:
-//   intermediates/main.cjs           tsdown output — SEA main (prelude)
-//   intermediates/server.mjs         tsdown output — single-file ESM server
-//   intermediates/process-worker.cjs tsdown output — embedded worker text
-//   intermediates/smoke-worker.cjs   tsdown output — --smoke-worker entry
+//   intermediates/server.mjs         vite output — single-file ESM server
+//                                    (the injected `main` of the binary)
+//   intermediates/process-worker.cjs vite output — embedded worker text
+//   intermediates/smoke-worker.cjs   vite output — --smoke-worker entry
+//   intermediates/staged-natives/    patched native libraries (see assets.ts)
+//   intermediates/packed/<key>       compressed asset payloads (see assets.ts)
 //   intermediates/manifest.json      embedded asset manifest (see assets.ts)
-//   intermediates/sea-config.json    node --experimental-sea-config input
-//   intermediates/kobato.blob        generated SEA blob
+//   intermediates/sea-config.json    sea config input (--build-sea /
+//                                    --experimental-sea-config)
+//   intermediates/kobato.blob        generated SEA blob (postject path only)
 //   kobato(.exe)                     final single-executable binary
 //   kobato.sha256                    sha256sum-format checksum file
 
@@ -27,10 +30,6 @@ export function seaIntermediatesDir() {
   return resolve(seaDistDir(), 'intermediates')
 }
 
-export function seaMainBundlePath() {
-  return resolve(seaIntermediatesDir(), 'main.cjs')
-}
-
 export function seaServerBundlePath() {
   return resolve(seaIntermediatesDir(), 'server.mjs')
 }
@@ -45,6 +44,16 @@ export function seaSmokeWorkerBundlePath() {
 
 export function seaManifestPath() {
   return resolve(seaIntermediatesDir(), 'manifest.json')
+}
+
+/** Compressed asset payloads, laid out by asset key (`packed/<key>`). */
+export function seaPackedAssetsDir() {
+  return resolve(seaIntermediatesDir(), 'packed')
+}
+
+/** Staging area for the rpath-patched native libraries (never the node_modules originals). */
+export function seaStagedNativesDir() {
+  return resolve(seaIntermediatesDir(), 'staged-natives')
 }
 
 export function seaConfigPath() {

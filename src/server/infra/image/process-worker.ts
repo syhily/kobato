@@ -1,11 +1,9 @@
-import type sharpDefault from 'sharp'
 import type { Sharp } from 'sharp'
 
 import { parentPort, workerData } from 'node:worker_threads'
+import sharp from 'sharp'
 
 import type { DomainErrorWire } from '@/server/infra/http/errors'
-
-import { requireExternal } from '@/server/infra/sea'
 
 // Relative import (not `@/shared/...`) so the worker is fully
 // self-contained: Node's `worker_threads` loads it directly in tests via
@@ -14,10 +12,10 @@ import { requireExternal } from '@/server/infra/sea'
 // thumbhash code without pulling in the rest of the app graph.
 import { rgbaToThumbHash } from '../../../shared/utils/thumbhash.ts'
 
-// Native module — must resolve against the extracted tree under SEA (see
-// `@/server/infra/sea`, which the worker bundle inlines). Outside SEA this
-// resolves node_modules normally.
-const sharp = requireExternal<typeof sharpDefault>('sharp')
+// sharp is statically imported: the non-SEA worker bundle keeps it
+// external and resolves node_modules normally; the SEA bundle inlines it
+// and the bundler plugin redirects its platform loads to `nativeRequire`
+// (see `scripts/sea/redirect-native-requires.ts`).
 
 const THUMBHASH_MAX_DIMENSION = 100
 const MAX_INPUT_PIXELS = 16384 * 16384

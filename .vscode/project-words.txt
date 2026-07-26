@@ -321,7 +321,6 @@ topbar
 trae
 translog
 tsconfigs
-tsdown
 tsgo
 tsgolint
 tview

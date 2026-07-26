@@ -299,10 +299,10 @@ function defaultCreateWorker(): Worker {
     // Single-executable build: the worker bundle is embedded as a text
     // asset and started with `eval: true`. This is the intended SEA
     // mechanism — worker threads share the parent process environment,
-    // so the worker's own `requireExternal` calls resolve via
-    // `KOBATO_NATIVES_DIR` without workerData plumbing. (Fallback if a
-    // Node build rejects eval workers under SEA: extract the file to the
-    // cache dir and load it by path — not implemented yet.)
+    // so the worker's redirected native loads (`nativeRequire`) resolve
+    // via `KOBATO_NATIVES_DIR` without workerData plumbing. (Fallback if
+    // a Node build rejects eval workers under SEA: extract the file to
+    // the cache dir and load it by path — not implemented yet.)
     const code = getEmbeddedAsset(SEA_PROCESS_WORKER_BUNDLE_KEY)
     if (code === null) {
       throw new Error(`Embedded worker asset missing: ${SEA_PROCESS_WORKER_BUNDLE_KEY}`)

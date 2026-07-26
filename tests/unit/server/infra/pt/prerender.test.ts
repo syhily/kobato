@@ -8,11 +8,9 @@ vi.mock('katex', () => ({
 vi.mock('katex/contrib/mhchem', () => ({}))
 vi.mock('@/server/infra/pt/shiki', () => ({
   SHIKI_THEMES: { light: 'github-light', dark: 'github-dark' },
+  SHIKI_SUPPORTED_LANGUAGES: new Set(['typescript', 'tsx', 'text']),
+  createShikiHighlighter: () => prerenderState.shiki(),
   shikiTransformers: () => [],
-}))
-vi.mock('shiki', () => ({
-  bundledLanguages: { typescript: {}, tsx: {}, text: {} },
-  createHighlighter: () => prerenderState.shiki(),
 }))
 
 import type { PortableTextBody } from '@/shared/pt/schema'

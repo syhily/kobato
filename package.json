@@ -155,7 +155,6 @@
     "tailwind-merge": "^3.6.0",
     "tailwindcss": "^4.3.3",
     "taze": "^19.16.0",
-    "tsdown": "^0.22.14",
     "typescript": "7.0.2",
     "ua-parser-js": "^2.0.10",
     "vite": "^8.1.5",

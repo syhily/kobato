@@ -24,16 +24,13 @@ vi.mock('node:fs/promises', () => ({
   readFile: mocks.readFile,
 }))
 
-// The native font registry is loaded via `requireExternal` (SEA-safe
-// indirection), so the mock targets the helper module, not the package.
-vi.mock('@/server/infra/sea', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@/server/infra/sea')>()),
-  requireExternal: () => ({
-    GlobalFonts: {
-      has: mocks.fontsHas,
-      register: mocks.fontsRegister,
-    },
-  }),
+// The native font registry is a static import in the module under test,
+// so the mock targets the package directly.
+vi.mock('@napi-rs/canvas', () => ({
+  GlobalFonts: {
+    has: mocks.fontsHas,
+    register: mocks.fontsRegister,
+  },
 }))
 
 vi.mock('@/shared/config/getters', () => ({

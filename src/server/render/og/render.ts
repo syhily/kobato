@@ -1,15 +1,16 @@
 import type { Image, SKRSContext2D } from '@napi-rs/canvas'
 import type { Buffer } from 'node:buffer'
 
+import { Canvas, loadImage } from '@napi-rs/canvas'
+
 import { compressImage } from '@/server/infra/image/compress'
-import { requireExternal } from '@/server/infra/sea'
 import { ensureCanvasFont, type FontSlot } from '@/server/render/canvas-fonts'
 import { logoDark } from '@/server/render/og/assets'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 
-// Native module — must resolve against the extracted tree under SEA (see
-// `@/server/infra/sea`). Outside SEA this resolves node_modules normally.
-const { Canvas, loadImage } = requireExternal<typeof import('@napi-rs/canvas')>('@napi-rs/canvas')
+// @napi-rs/canvas is statically imported and bundled; under SEA the
+// bundler plugin redirects its platform addon load to `nativeRequire`
+// (see `scripts/sea/redirect-native-requires.ts`).
 
 /**
  * Generate the open graph.

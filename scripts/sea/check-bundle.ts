@@ -2,16 +2,16 @@
 //
 // All three bundles must be fully self-contained: every relative
 // specifier and every non-builtin bare specifier must have been inlined
-// by tsdown, and no `import.meta.env` may survive (vite-style env access
-// is meaningless inside the binary). Leftovers would fail at runtime —
-// the SEA's restricted require resolves nothing, and the embedded worker
-// / materialized server have no node_modules next to them — so fail the
-// build here instead.
+// by the vite build, and no `import.meta.env` may survive (vite-style
+// env access is meaningless inside the binary). Leftovers would fail at
+// runtime — the SEA's restricted require resolves nothing, and the
+// embedded worker / materialized server have no node_modules next to
+// them — so fail the build here instead.
 
 import { readFileSync } from 'node:fs'
 import { builtinModules } from 'node:module'
 
-import { seaMainBundlePath, seaServerBundlePath, seaWorkerBundlePath } from './paths.ts'
+import { seaServerBundlePath, seaSmokeWorkerBundlePath, seaWorkerBundlePath } from './paths.ts'
 
 const builtins = new Set([...builtinModules, ...builtinModules.map((name) => `node:${name}`)])
 
@@ -19,12 +19,18 @@ const builtins = new Set([...builtinModules, ...builtinModules.map((name) => `no
 // LITERALS (error messages shipped by upstream packages), never as real
 // imports — verified against the vite-built server bundle, which contains
 // the identical strings in production today:
-//   @aws-sdk/signature-v4a  — @smithy/signature-v4's "please install …"
-//                             SigV4a error text embeds
-//                             `require('@aws-sdk/signature-v4a')`;
+//   @aws-sdk/signature-v4a    — @smithy/signature-v4's "please install …"
+//                               SigV4a error text embeds
+//                               `require('@aws-sdk/signature-v4a')`;
+//   @aws-sdk/signature-v4-crt — @smithy/signature-v4's CRT error text
+//                               embeds `require("@aws-sdk/signature-v4-crt")`
+//                               ("register the package by calling […]").
+//                               Only matches the scan once the bundle is
+//                               minified onto single lines — still a
+//                               string literal, verified in context.
 //   ./MyComponent           — React's react.lazy error text embeds
 //                             `import('./MyComponent')`.
-const allowedExternalSpecifiers = new Set(['@aws-sdk/signature-v4a'])
+const allowedExternalSpecifiers = new Set(['@aws-sdk/signature-v4a', '@aws-sdk/signature-v4-crt'])
 const allowedRelativeSpecifiers = new Set(['./MyComponent'])
 
 function isAllowedSpecifier(specifier: string) {
@@ -56,6 +62,22 @@ function checkBundle(bundlePath: string) {
   }
 
   for (const line of executableLines(text)) {
+    // Rolldown's runtime-external shim: `__require("bare")` is how a
+    // failed/externalized CJS require survives into the bundle (a plain-
+    // `require` scan cannot see it). Only node builtins may ride it —
+    // anything else is a `Cannot find module` at runtime inside the
+    // binary (the sharp-ico → require("sharp") failure shape).
+    for (const match of line.matchAll(/__require\(\s*["']([^"']+)["']\s*\)/g)) {
+      const specifier = match[1]
+      if (specifier.startsWith('.') || specifier.startsWith('/')) {
+        errors.push(`relative runtime require remains: ${specifier}`)
+        continue
+      }
+      if (!isAllowedSpecifier(specifier)) {
+        errors.push(`external runtime require remains: ${specifier}`)
+      }
+    }
+
     for (const match of line.matchAll(/(?<![.\w])require\(\s*["']([^"']+)["']\s*\)/g)) {
       const specifier = match[1]
       if (specifier.startsWith('.') || specifier.startsWith('/')) {
@@ -102,7 +124,7 @@ function checkBundle(bundlePath: string) {
 }
 
 let failed = false
-for (const bundlePath of [seaMainBundlePath(), seaServerBundlePath(), seaWorkerBundlePath()]) {
+for (const bundlePath of [seaServerBundlePath(), seaWorkerBundlePath(), seaSmokeWorkerBundlePath()]) {
   const errors = checkBundle(bundlePath)
   if (errors.length > 0) {
     failed = true

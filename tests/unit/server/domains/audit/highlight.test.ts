@@ -7,12 +7,9 @@ const createHighlighterMock = vi.fn(() =>
   }),
 )
 
-vi.mock('shiki', () => ({
-  createHighlighter: createHighlighterMock,
-}))
-
 vi.mock('@/server/infra/pt/shiki', () => ({
   SHIKI_THEMES: { light: 'solarized-light', dark: 'solarized-dark' },
+  createShikiHighlighter: createHighlighterMock,
 }))
 
 describe('highlightAuditLogDetails', () => {
@@ -35,10 +32,10 @@ describe('highlightAuditLogDetails', () => {
     const result = await highlightAuditLogDetails({ user: 'alice', action: 'login' })
 
     expect(result).toBe('<pre>html</pre>')
-    expect(createHighlighterMock).toHaveBeenCalledWith({
-      themes: ['solarized-light', 'solarized-dark'],
-      langs: ['json'],
-    })
+    // The shared factory owns the language/theme registration — the audit
+    // pass only picks `json` at render time.
+    expect(createHighlighterMock).toHaveBeenCalledTimes(1)
+    expect(createHighlighterMock).toHaveBeenCalledWith()
     expect(codeToHtmlMock).toHaveBeenCalledWith(JSON.stringify({ user: 'alice', action: 'login' }, null, 2), {
       lang: 'json',
       themes: { light: 'solarized-light', dark: 'solarized-dark' },

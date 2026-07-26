@@ -1,14 +1,14 @@
+import { GlobalFonts } from '@napi-rs/canvas'
 import { Buffer } from 'node:buffer'
 import { access, readFile } from 'node:fs/promises'
 
 import { getLogger } from '@/server/infra/logger'
 import { FONT_DIR } from '@/server/infra/paths'
-import { requireExternal } from '@/server/infra/sea'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 
-// Native module — must resolve against the extracted tree under SEA (see
-// `@/server/infra/sea`). Outside SEA this resolves node_modules normally.
-const { GlobalFonts } = requireExternal<typeof import('@napi-rs/canvas')>('@napi-rs/canvas')
+// @napi-rs/canvas is statically imported and bundled; under SEA the
+// bundler plugin redirects its platform addon load to `nativeRequire`
+// (see `scripts/sea/redirect-native-requires.ts`).
 
 // -------- Canvas fonts (`fonts.og` / `fonts.calendar` from settings) --------
 //

@@ -6,8 +6,13 @@ import {
   SEA_DRIZZLE_ASSET_PREFIX,
   SEA_MANIFEST_KEY,
   SEA_NATIVE_ASSET_PREFIX,
+  SEA_NATIVE_META_LIBVIPS_PACKAGE_KEY,
+  SEA_NATIVE_META_LIBVIPS_VERSIONS_KEY,
+  SEA_NATIVE_META_SHARP_PACKAGE_KEY,
+  SEA_NATIVE_META_SHARP_VERSIONS_KEY,
+  SEA_NATIVE_SHARP_ADDON_KEY,
+  SEA_NATIVE_SKIA_ADDON_KEY,
   SEA_PROCESS_WORKER_BUNDLE_KEY,
-  SEA_SERVER_BUNDLE_KEY,
   SEA_SMOKE_WORKER_BUNDLE_KEY,
   SEA_WASM_CNFS_KEY,
 } from '@/shared/sea/assets'
@@ -28,13 +33,18 @@ const PARTIES: { file: string; names: string[]; forbiddenLiterals: string[] }[] 
     file: 'scripts/sea/assets.ts',
     names: [
       'SEA_MANIFEST_KEY',
-      'SEA_SERVER_BUNDLE_KEY',
       'SEA_PROCESS_WORKER_BUNDLE_KEY',
       'SEA_SMOKE_WORKER_BUNDLE_KEY',
       'SEA_WASM_CNFS_KEY',
       'SEA_CLIENT_ASSET_PREFIX',
       'SEA_DRIZZLE_ASSET_PREFIX',
       'SEA_NATIVE_ASSET_PREFIX',
+      'SEA_NATIVE_SHARP_ADDON_KEY',
+      'SEA_NATIVE_SKIA_ADDON_KEY',
+      'SEA_NATIVE_META_LIBVIPS_VERSIONS_KEY',
+      'SEA_NATIVE_META_LIBVIPS_PACKAGE_KEY',
+      'SEA_NATIVE_META_SHARP_PACKAGE_KEY',
+      'SEA_NATIVE_META_SHARP_VERSIONS_KEY',
     ],
     forbiddenLiterals: [
       `'manifest.json'`,
@@ -42,12 +52,46 @@ const PARTIES: { file: string; names: string[]; forbiddenLiterals: string[] }[] 
       `'worker/process-worker.cjs'`,
       `'worker/smoke-worker.cjs'`,
       `'wasm/cnfs.wasm'`,
+      `'natives/sharp.node'`,
+      `'natives/skia.node'`,
+      `'natives-meta/`,
     ],
   },
   {
+    file: 'src/server/infra/sea.ts',
+    names: ['SEA_MANIFEST_KEY'],
+    forbiddenLiterals: [`'manifest.json'`],
+  },
+  {
     file: 'src/server/infra/sea-natives.ts',
-    names: ['SEA_MANIFEST_KEY', 'SEA_SERVER_BUNDLE_KEY', 'SEA_SMOKE_WORKER_BUNDLE_KEY', 'SEA_NATIVE_ASSET_PREFIX'],
-    forbiddenLiterals: [`'manifest.json'`, `'server/server.mjs'`, `'worker/smoke-worker.cjs'`, `'node_modules/'`],
+    names: ['SEA_MANIFEST_KEY', 'SEA_NATIVE_ASSET_PREFIX'],
+    forbiddenLiterals: [`'manifest.json'`, `'natives/'`],
+  },
+  {
+    file: 'src/server/infra/sea-cli.ts',
+    names: ['SEA_SMOKE_WORKER_BUNDLE_KEY'],
+    forbiddenLiterals: [`'worker/smoke-worker.cjs'`],
+  },
+  {
+    file: 'src/server/infra/native-require.ts',
+    names: [
+      'SEA_NATIVE_ASSET_PREFIX',
+      'SEA_NATIVE_SHARP_ADDON_KEY',
+      'SEA_NATIVE_SKIA_ADDON_KEY',
+      'SEA_NATIVE_META_LIBVIPS_VERSIONS_KEY',
+      'SEA_NATIVE_META_LIBVIPS_PACKAGE_KEY',
+      'SEA_NATIVE_META_SHARP_PACKAGE_KEY',
+      'SEA_NATIVE_META_SHARP_VERSIONS_KEY',
+    ],
+    forbiddenLiterals: [
+      `'natives/'`,
+      `'natives/sharp.node'`,
+      `'natives/skia.node'`,
+      `'natives-meta/libvips-versions.json'`,
+      `'natives-meta/libvips-package.json'`,
+      `'natives-meta/sharp-platform-package.json'`,
+      `'natives-meta/sharp-platform-versions.json'`,
+    ],
   },
   {
     file: 'src/server/infra/image/process-pool.ts',
@@ -83,13 +127,18 @@ function readSource(path: string): string {
 describe('contract: SEA embedded-asset keys', () => {
   it('pins the key and prefix values in the shared module', () => {
     expect(SEA_MANIFEST_KEY).toBe('manifest.json')
-    expect(SEA_SERVER_BUNDLE_KEY).toBe('server/server.mjs')
     expect(SEA_PROCESS_WORKER_BUNDLE_KEY).toBe('worker/process-worker.cjs')
     expect(SEA_SMOKE_WORKER_BUNDLE_KEY).toBe('worker/smoke-worker.cjs')
     expect(SEA_WASM_CNFS_KEY).toBe('wasm/cnfs.wasm')
     expect(SEA_CLIENT_ASSET_PREFIX).toBe('client/')
     expect(SEA_DRIZZLE_ASSET_PREFIX).toBe('drizzle/')
-    expect(SEA_NATIVE_ASSET_PREFIX).toBe('node_modules/')
+    expect(SEA_NATIVE_ASSET_PREFIX).toBe('natives/')
+    expect(SEA_NATIVE_SHARP_ADDON_KEY).toBe('natives/sharp.node')
+    expect(SEA_NATIVE_SKIA_ADDON_KEY).toBe('natives/skia.node')
+    expect(SEA_NATIVE_META_LIBVIPS_VERSIONS_KEY).toBe('natives-meta/libvips-versions.json')
+    expect(SEA_NATIVE_META_LIBVIPS_PACKAGE_KEY).toBe('natives-meta/libvips-package.json')
+    expect(SEA_NATIVE_META_SHARP_PACKAGE_KEY).toBe('natives-meta/sharp-platform-package.json')
+    expect(SEA_NATIVE_META_SHARP_VERSIONS_KEY).toBe('natives-meta/sharp-platform-versions.json')
   })
 
   it('writer and readers all import their keys from the shared module', () => {
@@ -116,11 +165,27 @@ describe('contract: SEA embedded-asset keys', () => {
     // The constants must come from the shared module — a local definition
     // would fork the contract (the pre-shared-module bug shape).
     expect(source).not.toMatch(/(?:export\s+)?const\s+SEA_MANIFEST_KEY\s*=/)
-    expect(source).not.toMatch(/(?:export\s+)?const\s+SEA_SERVER_BUNDLE_KEY\s*=/)
     expect(source).not.toMatch(/(?:export\s+)?const\s+SEA_SMOKE_WORKER_BUNDLE_KEY\s*=/)
     expect(source).not.toMatch(/(?:export\s+)?const\s+NATIVE_ASSET_PREFIX\s*=/)
     // And the values it uses are exactly the shared ones: importing the
     // names above from the shared module makes equality by construction.
     expect(source).toMatch(/import\s*\{[^}]*SEA_MANIFEST_KEY[^}]*\}\s*from\s*'@\/shared\/sea\/assets'/)
+  })
+
+  it('pins the asset codec union in the shared module', () => {
+    const source = readSource(SHARED_MODULE)
+    // The manifest `codec` field has exactly three values; adding one means
+    // touching writer + reader, which this pins as a deliberate change.
+    expect(source).toMatch(/export type SeaAssetCodec = 'zstd' \| 'brotli' \| 'none'/)
+  })
+
+  it('writer and readers source the asset codec from the shared module', () => {
+    for (const file of ['scripts/sea/assets.ts', 'src/server/infra/sea.ts', 'src/server/infra/sea-natives.ts']) {
+      const source = readSource(file)
+      expect(source, `${file} must reference SeaAssetCodec`).toContain('SeaAssetCodec')
+      expect(source, `${file} must import SeaAssetCodec from the shared SEA assets module`).toMatch(
+        /import\s*\{[^}]*type SeaAssetCodec[^}]*\}\s*from\s*'(?:@\/shared\/sea\/assets|\.\.\/\.\.\/src\/shared\/sea\/assets\.ts)'/,
+      )
+    }
   })
 })

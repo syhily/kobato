@@ -55,8 +55,7 @@ function mockSharp(opts: {
   }
 }
 
-// The worker loads sharp via `requireExternal` (SEA-safe indirection), so
-// the mock targets the helper module, not the package.
+// The worker statically imports sharp, so the mock targets the package.
 const sharpMock = vi.hoisted(() => {
   let current: ((input: unknown) => unknown) | null = null
   const fn = Object.assign(
@@ -75,10 +74,7 @@ const sharpMock = vi.hoisted(() => {
   return { fn }
 })
 
-vi.mock('@/server/infra/sea', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@/server/infra/sea')>()),
-  requireExternal: () => sharpMock.fn,
-}))
+vi.mock('sharp', () => ({ default: sharpMock.fn }))
 
 vi.mock('@/shared/utils/thumbhash', () => ({
   rgbaToThumbHash: () => new Uint8Array([0, 1, 2, 3]),

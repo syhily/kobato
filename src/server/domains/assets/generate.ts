@@ -1,12 +1,9 @@
-import type sharpDefault from 'sharp'
-import type { encode } from 'sharp-ico'
+import sharp from 'sharp'
+import { encode as encodeIco } from 'sharp-ico'
 
-import { requireExternal } from '@/server/infra/sea'
-
-// Native modules — must resolve against the extracted tree under SEA (see
-// `@/server/infra/sea`). Outside SEA they resolve node_modules normally.
-const sharp = requireExternal<typeof sharpDefault>('sharp')
-const { encode: encodeIco } = requireExternal<{ encode: typeof encode }>('sharp-ico')
+// Statically imported and bundled; under SEA the bundler plugin redirects
+// the packages' own platform loads to `nativeRequire` (see
+// `scripts/sea/redirect-native-requires.ts`).
 
 // Caller (settings service) is responsible for uploading each buffer to
 // S3. Returning raw Buffers (not base64) avoids a redundant

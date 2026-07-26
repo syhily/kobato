@@ -1,12 +1,15 @@
 import katex from 'katex'
-import { bundledLanguages, createHighlighter } from 'shiki'
 
 import type { MarkDef, PortableTextBody, TextBlock } from '@/shared/pt/schema'
 
 import { getLogger } from '@/server/infra/logger'
 import { KATEX_OPTIONS } from '@/server/infra/pt/katex'
-import { SHIKI_THEMES, shikiTransformers } from '@/server/infra/pt/shiki'
-import { HIGHLIGHT_LANGUAGES } from '@/shared/constants/languages'
+import {
+  SHIKI_SUPPORTED_LANGUAGES,
+  SHIKI_THEMES,
+  createShikiHighlighter,
+  shikiTransformers,
+} from '@/server/infra/pt/shiki'
 import { visitNestedBlocks } from '@/shared/pt/utils'
 import { createPromiseMemo } from '@/shared/utils/memo'
 
@@ -86,18 +89,13 @@ function collectFromTextBlock(
 // Process-level singleton shared across saves. Single-flight semantics:
 // share-in-flight (concurrent first saves await one bootstrap promise);
 // failure: retry (a rejected bootstrap is dropped, a later save re-tries).
-const getShikiHighlighter = createPromiseMemo(() =>
-  createHighlighter({
-    langs: HIGHLIGHT_LANGUAGES.filter((lang) => lang in bundledLanguages),
-    themes: [SHIKI_THEMES.light, SHIKI_THEMES.dark],
-  }),
-)
+const getShikiHighlighter = createPromiseMemo(() => createShikiHighlighter())
 
 async function runShikiPasses(blocks: { code: string; language?: string; highlightedHtml?: string }[]): Promise<void> {
   if (blocks.length === 0) {
     return
   }
-  let highlighter: Awaited<ReturnType<typeof createHighlighter>>
+  let highlighter: Awaited<ReturnType<typeof createShikiHighlighter>>
   try {
     highlighter = await getShikiHighlighter()
   } catch {
@@ -108,7 +106,7 @@ async function runShikiPasses(blocks: { code: string; language?: string; highlig
       try {
         block.highlightedHtml = highlighter.codeToHtml(block.code, {
           lang:
-            typeof block.language === 'string' && block.language !== '' && block.language in bundledLanguages
+            typeof block.language === 'string' && block.language !== '' && SHIKI_SUPPORTED_LANGUAGES.has(block.language)
               ? block.language
               : 'text',
           themes: SHIKI_THEMES,
