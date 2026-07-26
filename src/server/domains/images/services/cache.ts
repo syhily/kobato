@@ -3,12 +3,8 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { ImageRow } from '@/server/infra/db/types'
 import type { StorageDriver } from '@/shared/config/types'
 
-import { getItems, getKeys, removeItem, setItem } from '@/server/infra/cache/kv-store'
+import { remove, throughMany } from '@/server/infra/cache/registry'
 import { findImagesByStoragePaths } from '@/server/infra/db/operations/image'
-import { getLogger } from '@/server/infra/logger'
-import { getCacheSettings } from '@/shared/config/getters'
-
-const log = getLogger('images.render-enhance')
 
 export interface CachedImageMetaPresent {
   found: true
@@ -38,83 +34,39 @@ function rowToCached(row: ImageRow): CachedImageMetaPresent {
   }
 }
 
-function bucket(): { prefix: string; ttlSeconds: number } {
-  return getCacheSettings().cache.imageMeta
-}
-
-function cacheKey(storagePath: string): string {
-  return `${bucket().prefix}${storagePath}`
-}
-
 export async function readManyMeta(db: NodePgDatabase, storagePaths: string[]): Promise<Map<string, CachedImageMeta>> {
   const out = new Map<string, CachedImageMeta>()
   if (storagePaths.length === 0) {
     return out
   }
 
-  const { prefix, ttlSeconds } = bucket()
-  const keyToPath = new Map<string, string>()
-  for (const storagePath of storagePaths) {
-    keyToPath.set(`${prefix}${storagePath}`, storagePath)
-  }
-  const cacheEntries = await getItems<CachedImageMeta>(db, [...keyToPath.keys()])
+  const results = await throughMany(
+    db,
+    'imageMeta',
+    storagePaths.map((storagePath) => ({ storagePath })),
+    async (missing) => {
+      const rows = await findImagesByStoragePaths(
+        db,
+        missing.map((params) => params.storagePath),
+      )
+      const rowMap = new Map(rows.map((row) => [row.storagePath, row]))
+      return missing.map((params) => {
+        const row = rowMap.get(params.storagePath)
+        return { params, value: row !== undefined ? rowToCached(row) : ({ found: false } as CachedImageMeta) }
+      })
+    },
+  )
 
-  const missingPaths: string[] = []
-  for (const entry of cacheEntries) {
-    const storagePath = keyToPath.get(entry.key)!
-    if (entry.value !== null) {
-      out.set(storagePath, entry.value)
-    } else {
-      missingPaths.push(storagePath)
+  for (const { params, value } of results) {
+    if (value !== null) {
+      out.set(params.storagePath, value)
     }
   }
-
-  if (missingPaths.length > 0) {
-    const rows = await findImagesByStoragePaths(db, missingPaths)
-    const rowMap = new Map(rows.map((r) => [r.storagePath, r]))
-
-    const toWrite: { key: string; value: CachedImageMeta }[] = []
-    for (const storagePath of missingPaths) {
-      const row = rowMap.get(storagePath)
-      const value: CachedImageMeta = row !== undefined ? rowToCached(row) : { found: false }
-      out.set(storagePath, value)
-      toWrite.push({ key: `${prefix}${storagePath}`, value })
-    }
-
-    await Promise.all(
-      toWrite.map(async ({ key, value }) => {
-        try {
-          await setItem(db, key, value, { ttlSeconds, bucket: 'imageMeta' })
-        } catch (error) {
-          log.warn('Failed to write image-meta cache; continuing without warmth', { key, error })
-        }
-      }),
-    )
-  }
-
   return out
 }
 
 export async function invalidateImageEnhanceCacheFor(db: NodePgDatabase, storagePath: string): Promise<void> {
-  try {
-    await removeItem(db, cacheKey(storagePath))
-  } catch (error) {
-    log.warn('Failed to invalidate image-meta cache key', { storagePath, error })
-  }
-}
-
-export async function clearImageEnhanceCache(db: NodePgDatabase): Promise<void> {
-  const prefix = bucket().prefix
-  const keys = await getKeys(db, prefix)
-  await Promise.all(
-    keys.map(async (key) => {
-      try {
-        await removeItem(db, key)
-      } catch (error) {
-        log.warn('Failed to clear image-meta key', { key, error })
-      }
-    }),
-  )
+  await remove(db, 'imageMeta', { storagePath })
 }
 
 export function resolveSrcToStoragePath(src: string, publicBaseUrl: string | null): string | null {

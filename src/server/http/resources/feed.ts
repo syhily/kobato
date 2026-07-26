@@ -6,7 +6,7 @@ import type { Env } from '@/server/http/context'
 import type { FeedOptions } from '@/server/render/feed/generator'
 
 import { rateLimitByIp } from '@/server/http/middlewares/rate-limit'
-import { feedCacheFor } from '@/server/infra/cache/feed-cache'
+import { through } from '@/server/infra/cache/registry'
 import { generateFeeds } from '@/server/render/feed/generator'
 
 const CONTENT_TYPES = {
@@ -35,14 +35,9 @@ function cacheKeyFor(scope?: FeedOptions): string {
 }
 
 async function writeFeedResponse(c: Context<Env>, kind: 'rss' | 'atom', scope?: FeedOptions) {
-  const cache = feedCacheFor(cacheKeyFor(scope))
-  const feed =
-    (await cache.get(c.var.db)) ??
-    (await (async () => {
-      const built = await generateFeeds(c.var.db, scope ?? {})
-      await cache.set(c.var.db, built)
-      return built
-    })())
+  const feed = await through(c.var.db, 'feed', { scope: cacheKeyFor(scope) }, () =>
+    generateFeeds(c.var.db, scope ?? {}),
+  )
   new Headers(feedHeaders(kind)).forEach((value, name) => c.header(name, value))
   return c.body(kind === 'rss' ? feed.rss : feed.atom)
 }

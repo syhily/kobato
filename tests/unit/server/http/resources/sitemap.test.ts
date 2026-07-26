@@ -23,11 +23,8 @@ describe('sitemapRouter', () => {
   // timeout when the whole suite saturates the transform queue (pre-commit).
   it('returns cached sitemap when available', { timeout: 30_000 }, async () => {
     const cached = '<urlset></urlset>'
-    vi.doMock('@/server/infra/cache/sitemap-cache', () => ({
-      sitemapCache: {
-        get: vi.fn().mockResolvedValue(cached),
-        set: vi.fn(),
-      },
+    vi.doMock('@/server/infra/cache/registry', () => ({
+      through: vi.fn().mockResolvedValue(cached),
     }))
     vi.doMock('@/server/infra/rate-limit', () => ({
       readBucket: vi.fn(() => ({ windowSeconds: 60, maxAttempts: 60 })),
@@ -47,12 +44,8 @@ describe('sitemapRouter', () => {
 
   it('builds sitemap on cache miss', async () => {
     const built = '<urlset><url><loc>/hello</loc></url></urlset>'
-    vi.doMock('@/server/infra/cache/sitemap-cache', () => ({
-      sitemapCache: {
-        get: vi.fn().mockResolvedValue(null),
-        set: vi.fn(),
-      },
-    }))
+    const through = vi.fn((_db: unknown, _id: unknown, _params: unknown, loader: () => unknown) => loader())
+    vi.doMock('@/server/infra/cache/registry', () => ({ through }))
     vi.doMock('@/server/infra/rate-limit', () => ({
       readBucket: vi.fn(() => ({ windowSeconds: 60, maxAttempts: 60 })),
       tryKeyedRateLimit: vi.fn().mockResolvedValue({ exceeded: false }),
@@ -68,6 +61,7 @@ describe('sitemapRouter', () => {
     const res = await app.request('/sitemap.xml')
     expect(res.status).toBe(200)
     await expect(res.text()).resolves.toBe(built)
+    expect(through).toHaveBeenCalledWith({}, 'sitemap', {}, expect.any(Function))
   })
 
   it('returns 429 when rate limit exceeded', async () => {

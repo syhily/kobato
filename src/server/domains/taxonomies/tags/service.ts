@@ -13,8 +13,7 @@ import {
   ensureUniqueOnCreateTaxonomy,
   ensureUniqueOnUpdateTaxonomy,
 } from '@/server/domains/taxonomies/shared'
-import { createInflight } from '@/server/infra/cache/inflight'
-import { createKvCache } from '@/server/infra/cache/kv-cache'
+import { clear, through } from '@/server/infra/cache/registry'
 import {
   type AdminTagsListFilters,
   countAdminTags,
@@ -28,11 +27,8 @@ import {
 } from '@/server/infra/db/operations/tag'
 import { tag as tagTable } from '@/server/infra/db/schema/taxonomy'
 import { DomainError, ErrorMessages } from '@/server/infra/http/errors'
-import { getLogger } from '@/server/infra/logger'
 import { resolveSlugForTaxonomy } from '@/server/infra/slug'
 import { hasAtLeast, type Role } from '@/shared/utils/roles'
-
-const log = getLogger('tags.service')
 
 // Wire-format DTO for every admin tag endpoint. `postCount` is
 // projected by the caller from `countPostsByTaxonomy` (mirrors the
@@ -106,9 +102,7 @@ export async function upsertAdminTag(
       '标签',
     )
     const row = await insertTag(db, { name: input.name, slug, ogImage: input.ogImage ?? '' })
-    await clearTagCache(db).catch((err: unknown) => {
-      log.warn('clear tag cache failed', { error: err })
-    })
+    await clearTagCache(db)
     const counts = await countPostsByTaxonomy(db, { kind: 'tag', gate: 'admin', name: row.name })
     return toAdminTagDto(row, counts.get(row.name) ?? 0)
   }
@@ -136,9 +130,7 @@ export async function upsertAdminTag(
   if (updated === null) {
     throw new DomainError('NOT_FOUND', '标签不存在')
   }
-  await clearTagCache(db).catch((err: unknown) => {
-    log.warn('clear tag cache failed', { error: err })
-  })
+  await clearTagCache(db)
   const counts = await countPostsByTaxonomy(db, { kind: 'tag', gate: 'admin', name: updated.name })
   return toAdminTagDto(updated, counts.get(updated.name) ?? 0)
 }
@@ -157,56 +149,37 @@ export async function deleteAdminTag(db: NodePgDatabase, id: bigint, _viewer?: T
     listPostTitles: (row) => listPostTitlesByTaxonomy(db, 'tag', row.name),
   })
   if (deleted) {
-    await clearTagCache(db).catch((err: unknown) => {
-      log.warn('clear tag cache failed', { error: err })
-    })
+    await clearTagCache(db)
   }
   return deleted
 }
 
 // --- Public catalog queries -------------------------------------------------
 
-const tagCache = createKvCache<Tag[]>('tags:all', { ttlMs: 30_000 })
-const tagInflight = createInflight<Tag[]>()
-
 /** Drop the cached public tag list (call after any tag/content mutation). */
 export async function clearTagCache(db: NodePgDatabase): Promise<void> {
-  await tagCache.clear(db)
+  await clear(db, 'tags')
 }
 
 export async function listAllTags(db: NodePgDatabase): Promise<Tag[]> {
-  const cached = await tagCache.get(db)
-  if (cached !== null) {
-    return cached
-  }
-
-  return tagInflight('listAllTags', async () => {
-    const cachedInner = await tagCache.get(db)
-    if (cachedInner !== null) {
-      return cachedInner
-    }
-
+  return through(db, 'tags', {}, async () => {
     const tagRows = await db
       .select({ name: tagTable.name, slug: tagTable.slug })
       .from(tagTable)
       .orderBy(asc(tagTable.name))
 
     if (tagRows.length === 0) {
-      await tagCache.set(db, [])
       return []
     }
 
     const countsMap = await countPostsByTaxonomy(db, { kind: 'tag', gate: 'public' })
 
-    const tags = tagRows.map((row) => ({
+    return tagRows.map((row) => ({
       name: row.name,
       slug: row.slug,
       counts: countsMap.get(row.name) ?? 0,
       permalink: `/tags/${row.slug}`,
     }))
-
-    await tagCache.set(db, tags)
-    return tags
   })
 }
 

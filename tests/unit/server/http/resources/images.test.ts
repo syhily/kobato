@@ -31,8 +31,8 @@ vi.mock('@/server/infra/rate-limit', () => ({
   tryKeyedRateLimit: vi.fn().mockResolvedValue({ exceeded: false, count: 1 }),
 }))
 
-vi.mock('@/server/infra/cache/buffer-cache', () => ({
-  loadBuffer: vi.fn(),
+vi.mock('@/server/infra/cache/registry', () => ({
+  through: vi.fn(),
 }))
 
 vi.mock('@/server/domains/comments/services/avatar', () => ({
@@ -51,7 +51,6 @@ vi.mock('@/server/render/og/render', () => ({
 }))
 
 vi.mock('@/shared/config/getters', () => ({
-  getCacheSettings: vi.fn(() => ({ cache: { og: { prefix: 'og:', ttlSeconds: 3600 } } })),
   requireBlogSettingsSection: vi.fn((section: string) =>
     section === 'siteIdentity' ? { website: 'https://example.com', description: 'desc' } : {},
   ),
@@ -67,7 +66,7 @@ import { findPublicPostMetaBySlug } from '@/server/domains/posts/repos/single'
 import { loadAvatar } from '@/server/http/resources/avatar-cache'
 import { serveCalendar } from '@/server/http/resources/calendar'
 import { imagesRouter } from '@/server/http/resources/images'
-import { loadBuffer } from '@/server/infra/cache/buffer-cache'
+import { through } from '@/server/infra/cache/registry'
 import { findCategoryBySlug } from '@/server/infra/db/operations/category'
 import { readBucket, tryKeyedRateLimit } from '@/server/infra/rate-limit'
 import { drawOpenGraph } from '@/server/render/og/render'
@@ -79,7 +78,10 @@ describe('images resource', () => {
     vi.resetAllMocks()
     ;(readBucket as ReturnType<typeof vi.fn>).mockReturnValue({ windowSeconds: 60, maxAttempts: 60 })
     ;(tryKeyedRateLimit as ReturnType<typeof vi.fn>).mockResolvedValue({ exceeded: false, count: 1 })
-    ;(loadBuffer as ReturnType<typeof vi.fn>).mockResolvedValue(Buffer.from('png'))
+    // Default: a cache miss — run the loader and return its value.
+    ;(through as unknown as ReturnType<typeof vi.fn>).mockImplementation(
+      (_db: unknown, _id: unknown, _params: unknown, loader: () => unknown) => loader(),
+    )
     ;(serveCalendar as ReturnType<typeof vi.fn>).mockResolvedValue(
       new Response('cal', { headers: { 'Content-Type': 'image/png' } }),
     )

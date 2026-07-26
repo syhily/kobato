@@ -1,14 +1,17 @@
 import { z } from 'zod'
 
-import type { CacheBucketId } from '@/shared/types/cache'
+import { FIXED_CACHE_PREFIXES } from '@/shared/cache/registry'
+import { type TunableCacheBucketId, TUNABLE_CACHE_BUCKET_IDS } from '@/shared/types/cache'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 // Per-bucket cache configuration (rows in the `kv_cache` table, tagged
-// with the bucket id). Each bucket owns a stable id
-// (`og` / `calendar` / `avatar`) baked into the writers; the editor can
-// only rename the PREFIX and tune the TTL. The prefix has to end with
-// `:` so the key shape stays namespaced and a prefix scan can never
-// reach into a neighbouring bucket's namespace by accident (e.g. an
-// `og` prefix could otherwise match `ogre-foo`).
+// with the bucket id). Only tunable buckets own a settings slot — the
+// slot list derives from the declaration registry
+// (`@/shared/cache/registry`), and the editor can only rename the PREFIX
+// and tune the TTL. The prefix has to end with `:` so the key shape
+// stays namespaced and a prefix scan can never reach into a neighbouring
+// bucket's namespace by accident (e.g. an `og` prefix could otherwise
+// match `ogre-foo`).
 //
 // "RESERVED_PREFIXES" enumerates surfaces that the admin panel must
 // NEVER let an editor overwrite — the session and rate-limit caches
@@ -37,36 +40,26 @@ const cacheBucketSchema = z.object({
   ttlSeconds: z.coerce.number().int().min(MIN_TTL_SECONDS).max(MAX_TTL_SECONDS),
 })
 
+// Only tunable buckets get a settings slot; the non-tunable declarations
+// (feed / sitemap / categories / tags / comments) keep their code TTL.
+// TUNABLE_CACHE_BUCKET_IDS covers every tunable id by construction — the
+// literal-keyed Record just can't be proven complete from a runtime map.
+const tunableShape = unsafeCast<Record<TunableCacheBucketId, typeof cacheBucketSchema>>(
+  Object.fromEntries(TUNABLE_CACHE_BUCKET_IDS.map((id) => [id, cacheBucketSchema])),
+)
+
+// The non-tunable default prefixes join the reserved set: renaming a
+// tunable bucket onto one of them would merge two namespaces under one
+// prefix and let a prefix scan reach across buckets.
+const PROTECTED_PREFIXES: readonly string[] = [...RESERVED_CACHE_PREFIXES, ...FIXED_CACHE_PREFIXES]
+
 export const cacheSchema = z
   .object({
-    cache: z.object({
-      og: cacheBucketSchema,
-      calendar: cacheBucketSchema,
-      avatar: cacheBucketSchema,
-      // Image metadata lookups (storagePath → ImageRow) and comment
-      // markdown render results both used to live in a process-local
-      // `lru-cache`, which meant every server replica re-warmed the
-      // same data and a deploy nuked them entirely. Routing them
-      // through the shared `kv_cache` table like the other buckets
-      // gives us shared warmth and one-click admin invalidation; the
-      // writers still front the database round-trip with
-      // `createInflight` so concurrent requests for the same key
-      // collapse to a single load.
-      imageMeta: cacheBucketSchema,
-      embeddingSearch: cacheBucketSchema,
-      searchResult: cacheBucketSchema,
-    }),
+    cache: z.object(tunableShape),
   })
   .superRefine((value, ctx) => {
     const buckets = value.cache
-    const entries: { id: CacheBucketId; prefix: string }[] = [
-      { id: 'og', prefix: buckets.og.prefix },
-      { id: 'calendar', prefix: buckets.calendar.prefix },
-      { id: 'avatar', prefix: buckets.avatar.prefix },
-      { id: 'imageMeta', prefix: buckets.imageMeta.prefix },
-      { id: 'embeddingSearch', prefix: buckets.embeddingSearch.prefix },
-      { id: 'searchResult', prefix: buckets.searchResult.prefix },
-    ]
+    const entries = TUNABLE_CACHE_BUCKET_IDS.map((id) => ({ id, prefix: buckets[id].prefix }))
 
     // Two prefixes "collide" if either is a strict prefix of the other.
     // Equality is the obvious case; the prefix-of case matters because a
@@ -91,7 +84,7 @@ export const cacheSchema = z
         }
       }
 
-      const reserved = RESERVED_CACHE_PREFIXES.find((slot) => {
+      const reserved = PROTECTED_PREFIXES.find((slot) => {
         const entry = entries[i]
         if (entry === undefined) {
           return false
@@ -104,7 +97,7 @@ export const cacheSchema = z
           ctx.addIssue({
             code: 'custom',
             path: ['cache', entry.id, 'prefix'],
-            message: `\`${entry.prefix}\` 与系统保留前缀 \`${reserved}\` 冲突（session / rate-limit 等不可被管理面板清空）`,
+            message: `\`${entry.prefix}\` 与系统保留前缀 \`${reserved}\` 冲突（session / rate-limit / 固定缓存不可被管理面板清空）`,
           })
         }
       }

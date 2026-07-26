@@ -5,7 +5,6 @@ import type { CommentAndUser, CommentItem, Comments, LatestComment } from '@/ser
 import type { EntityTarget } from '@/server/infra/db/target'
 
 import { userSession } from '@/server/domains/auth/primitives'
-import { latestCommentsCache } from '@/server/domains/comments/cache'
 import {
   adminUserIds,
   commentsByIds,
@@ -19,6 +18,7 @@ import {
   findRootComments,
 } from '@/server/domains/comments/repos/public-query/threads'
 import { toLatestComment, ensureCommentPage } from '@/server/domains/comments/services/shared'
+import { through } from '@/server/infra/cache/registry'
 import { getLogger } from '@/server/infra/logger'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { getSidebarWidgetCount } from '@/shared/config/utils'
@@ -47,18 +47,13 @@ export async function hasApprovedComments(db: NodePgDatabase, userId: bigint): P
 }
 
 export async function latestComments(db: NodePgDatabase): Promise<LatestComment[]> {
-  const cached = await latestCommentsCache.get(db)
-  if (cached !== null) {
-    return cached
-  }
-
-  const limit = getSidebarWidgetCount(requireBlogSettingsSection('sidebar'), 'recentComments')
-  const ids = await adminUserIds(db)
-  const distinctIds = await latestDistinctCommentIds(db, ids, limit)
-  const rows = await commentsByIds(db, distinctIds, limit)
-  const result = rows.map(toLatestComment)
-  await latestCommentsCache.set(db, result)
-  return result
+  return through(db, 'comments', {}, async () => {
+    const limit = getSidebarWidgetCount(requireBlogSettingsSection('sidebar'), 'recentComments')
+    const ids = await adminUserIds(db)
+    const distinctIds = await latestDistinctCommentIds(db, ids, limit)
+    const rows = await commentsByIds(db, distinctIds, limit)
+    return rows.map(toLatestComment)
+  })
 }
 
 export async function loadComments(

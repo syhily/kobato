@@ -4,7 +4,7 @@ import { useCallback, useState } from 'react'
 
 import type { CacheSettings } from '@/shared/config/types'
 import type { ReservedCacheBucketStats } from '@/shared/contracts/cache'
-import type { CacheBucketId, ClearCacheTarget } from '@/shared/types/cache'
+import type { CacheBucketId, CacheBucketSlot, ClearCacheTarget } from '@/shared/types/cache'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
@@ -24,6 +24,10 @@ interface CacheViewProps {
 export function CacheView({ cache }: CacheViewProps) {
   const [status, setStatus] = useState<ClearStatus>(idleClearStatus)
   const [confirmTarget, setConfirmTarget] = useState<ClearCacheTarget | null>(null)
+
+  // Only tunable buckets carry an editable settings slot; widening to a
+  // Partial keeps `bucket.id` (the full CacheBucketId union) indexable.
+  const tunableSlots: Partial<Record<CacheBucketId, CacheBucketSlot>> = cache
 
   const {
     data: stats,
@@ -105,7 +109,7 @@ export function CacheView({ cache }: CacheViewProps) {
         <BucketCard
           key={bucket.id}
           bucket={bucket}
-          settings={cache[bucket.id]}
+          settings={tunableSlots[bucket.id]}
           allBuckets={cache}
           isClearPending={isClearPending}
           clearStatus={status}
@@ -131,8 +135,6 @@ export function CacheView({ cache }: CacheViewProps) {
   )
 }
 
-export type { CacheBucketId }
-
 function ReservedBucketsSection({ reserved }: { reserved: ReservedCacheBucketStats[] }) {
   return (
     <SettingGroup
@@ -144,7 +146,6 @@ function ReservedBucketsSection({ reserved }: { reserved: ReservedCacheBucketSta
           <div key={bucket.id} className="rounded-xl border bg-card p-4">
             <div className="flex items-baseline justify-between gap-3">
               <h3 className="text-sm font-medium">{bucket.label}</h3>
-              <span className="font-mono text-xs text-muted-foreground">{bucket.prefix}*</span>
             </div>
             <p className="mt-1 text-xs text-muted-foreground">{bucket.description}</p>
             <p className="mt-3 text-xs">

@@ -5,14 +5,8 @@
 
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import type { LatestComment } from '@/shared/types/comments'
-
-import { createKvCache } from '@/server/infra/cache/kv-cache'
-
-export const latestCommentsCache = createKvCache<LatestComment[]>('comments:latest', {
-  ttlMs: 30_000,
-})
+import { clear } from '@/server/infra/cache/registry'
 
 export async function clearLatestCommentsCache(db: NodePgDatabase): Promise<void> {
-  await latestCommentsCache.clear(db)
+  await clear(db, 'comments')
 }

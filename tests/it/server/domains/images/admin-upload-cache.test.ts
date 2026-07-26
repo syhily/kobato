@@ -29,7 +29,6 @@ afterAll(async () => {
 beforeEach(async () => {
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
   await clearAllTables(db)
-  await cache.clearImageEnhanceCache(db)
 })
 
 async function seedImage(overrides: Partial<typeof image.$inferInsert> = {}) {

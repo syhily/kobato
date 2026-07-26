@@ -5,18 +5,21 @@ import { and, count, eq, gt, isNull, or } from 'drizzle-orm'
 import type { CacheBucketStats, ReservedCacheBucketStats } from '@/shared/contracts/cache'
 import type { CacheBucket, CacheBucketId, ReservedCacheBucketId } from '@/shared/types/cache'
 
+import { resolveCacheSlot } from '@/server/infra/cache/registry'
 import { kvCache } from '@/server/infra/db/schema/kv-cache'
 import { session } from '@/server/infra/db/schema/session'
 import { rateLimitEntryCount } from '@/server/infra/rate-limit'
-import { getCacheSettings } from '@/shared/config/getters'
-import { RESERVED_CACHE_BUCKETS } from '@/shared/types/cache'
+import { CACHE_DECLARATIONS } from '@/shared/cache/registry'
+import { CACHE_BUCKET_IDS, RESERVED_CACHE_BUCKETS } from '@/shared/types/cache'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
-// Registry of admin-clearable cache buckets. The bucket ID
-// (`og` / `calendar` / `avatar` / …) is hard-coded because every writer in
-// the codebase treats it as a stable discriminator — it is also the value
-// written into the `kv_cache.bucket` column. The user-facing PREFIX and TTL
-// are pulled from the live blog-settings snapshot, so a rename in the admin
-// panel takes effect on the next read.
+// Admin view over the shared cache declarations. Every bucket ID
+// (`og` / `calendar` / `avatar` / …) is a stable discriminator — it is
+// also the value written into the `kv_cache.bucket` column. The
+// user-facing prefix and TTL come from `resolveCacheSlot` (live
+// blog-settings snapshot for tunable buckets, the declared default
+// otherwise), so a rename in the admin panel takes effect on the next
+// read. Descriptions are rendered with the effective prefix at call time.
 //
 // Deliberately excludes:
 //  - sessions              clearing them would log every signed-in user out
@@ -26,67 +29,13 @@ import { RESERVED_CACHE_BUCKETS } from '@/shared/types/cache'
 // Those two surfaces DO surface read-only in the admin cache page via the
 // parallel `RESERVED_CACHE_BUCKETS` registry (see `snapshotReservedBuckets()`).
 
-// Static metadata. The dynamic prefix / TTL / pattern slots are filled
-// in by `getCacheBuckets()` from the live snapshot. `as const` keeps
-// the ID list typed as the literal tuple so callers can derive Zod
-// enums and discriminated unions without losing type information.
-const BUCKET_META = [
-  {
-    id: 'og',
-    label: 'OG 图缓存',
-    description:
-      '/images/og/:slug.png 的渲染结果，键形如 ${prefix}${slug}-${hash}。修改 OG 尺寸或文章封面 / 摘要后清理。',
-  },
-  {
-    id: 'calendar',
-    label: '侧边栏日历缓存',
-    description: '/images/calendar/:date.png 的渲染结果，键形如 ${prefix}${yyyy-MM-dd}。一天后会自动失效。',
-  },
-  {
-    id: 'avatar',
-    label: 'Gravatar 头像缓存',
-    description:
-      '/images/avatar/:hash.png 缓存的头像字节，键形如 ${prefix}${size}:${hash}（size 为请求 ?s= 参数的尺寸，默认 120）。用户更换头像后清理可让访客立即看到新头像。',
-  },
-  {
-    id: 'imageMeta',
-    label: '图片元数据缓存',
-    description:
-      'SSR 渲染时 storagePath → image 行的查询结果（宽 / 高 / thumbhash），键形如 ${prefix}${storagePath}。在图片库批量上传或导入旧站数据后清理一次即可。',
-  },
-
-  {
-    id: 'embeddingSearch',
-    label: '搜索 Embedding 缓存',
-    description:
-      '向量搜索时查询文本的 Embedding 结果，键形如 ${prefix}${sha256(text)}。切换 Embedding 模型或维度后应清理一次。',
-  },
-  {
-    id: 'searchResult',
-    label: '搜索结果缓存',
-    description:
-      '搜索查询返回的文章 slug 列表，键形如 ${prefix}${sha256(mode+query+threshold+model)}。分页时直接命中缓存，避免重复查询数据库。',
-  },
-] as const satisfies readonly {
-  id: CacheBucketId
-  label: string
-  description: string
-}[]
-
-/**
- * Build the bucket list from the live blog-settings snapshot. Reading
- * fresh on every call is intentional — it costs nothing (in-process
- * `Map` lookup) and ensures admin renames are immediately visible to
- * `getAdminCacheStats()` / `clearAdminCache()`.
- */
 export function getCacheBuckets(): CacheBucket[] {
-  const cache = getCacheSettings().cache
-  return BUCKET_META.map((meta) => {
-    const slot = cache[meta.id]
+  return CACHE_DECLARATIONS.map((declaration) => {
+    const slot = resolveCacheSlot(declaration.id)
     return {
-      id: meta.id,
-      label: meta.label,
-      description: meta.description,
+      id: declaration.id,
+      label: declaration.label,
+      description: declaration.description(slot.prefix),
       prefix: slot.prefix,
       ttlSeconds: slot.ttlSeconds,
       pattern: `${slot.prefix}*`,
@@ -155,8 +104,6 @@ export async function snapshotReservedBuckets(db: NodePgDatabase): Promise<Reser
       id: bucket.id,
       label: bucket.label,
       description: bucket.description,
-      prefix: bucket.prefix,
-      pattern: bucket.pattern,
       keyCount: await countReservedBucket(db, bucket.id),
     })),
   )
@@ -166,16 +113,11 @@ export async function snapshotReservedBuckets(db: NodePgDatabase): Promise<Reser
 export async function clearAllBuckets(db: NodePgDatabase): Promise<Record<CacheBucketId, number>> {
   const buckets = getCacheBuckets()
   const entries = await Promise.all(buckets.map(async (bucket) => [bucket.id, await clearBucket(db, bucket)] as const))
-  const result: Record<CacheBucketId, number> = {
-    avatar: 0,
-    calendar: 0,
-    embeddingSearch: 0,
-    imageMeta: 0,
-    og: 0,
-    searchResult: 0,
-  }
-  for (const [id, count] of entries) {
-    result[id] = count
+  // CACHE_BUCKET_IDS covers every bucket id — the literal-keyed Record
+  // just can't be proven complete from a runtime map.
+  const result = unsafeCast<Record<CacheBucketId, number>>(Object.fromEntries(CACHE_BUCKET_IDS.map((id) => [id, 0])))
+  for (const [id, removed] of entries) {
+    result[id] = removed
   }
   return result
 }

@@ -2,8 +2,8 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The db handle is only forwarded to the mocked loadBuffer — a stand-in is
-// enough for the unit scope.
+// The db handle is only forwarded to the mocked cache module — a stand-in
+// is enough for the unit scope.
 const db = {} as NodePgDatabase
 
 describe('serveCalendar', () => {
@@ -25,16 +25,11 @@ describe('serveCalendar', () => {
         (buffer: Buffer) => new Response(new Uint8Array(buffer), { headers: { 'Content-Type': 'image/png' } }),
       ),
     }))
-    vi.doMock('@/server/infra/cache/buffer-cache', () => ({
-      loadBuffer: vi.fn().mockResolvedValue(Buffer.from('png-bytes')),
+    vi.doMock('@/server/infra/cache/registry', () => ({
+      through: vi.fn().mockResolvedValue(Buffer.from('png-bytes')),
     }))
     vi.doMock('@/server/render/calendar/render', () => ({
       renderCalendar: vi.fn().mockResolvedValue(Buffer.from('png-bytes')),
-    }))
-    vi.doMock('@/shared/config/getters', () => ({
-      getCacheSettings: vi.fn().mockReturnValue({
-        cache: { calendar: { prefix: 'calendar:', ttlSeconds: 86400 } },
-      }),
     }))
 
     const serveCalendar = await importServeCalendar()
@@ -45,8 +40,8 @@ describe('serveCalendar', () => {
     expect(res.headers.get('Content-Type')).toBe('image/png')
   })
 
-  it('uses dark theme suffix in cache key', async () => {
-    const loadBuffer = vi.fn().mockResolvedValue(Buffer.from('dark-png'))
+  it('caches through the calendar declaration with the parsed date and theme', async () => {
+    const through = vi.fn().mockResolvedValue(Buffer.from('dark-png'))
     vi.doMock('@/server/infra/http/status', () => ({
       notFound: vi.fn(() => {
         throw new Error('notFound should not be called')
@@ -55,19 +50,14 @@ describe('serveCalendar', () => {
         (buffer: Buffer) => new Response(new Uint8Array(buffer), { headers: { 'Content-Type': 'image/png' } }),
       ),
     }))
-    vi.doMock('@/server/infra/cache/buffer-cache', () => ({ loadBuffer }))
+    vi.doMock('@/server/infra/cache/registry', () => ({ through }))
     vi.doMock('@/server/render/calendar/render', () => ({
       renderCalendar: vi.fn().mockResolvedValue(Buffer.from('dark-png')),
-    }))
-    vi.doMock('@/shared/config/getters', () => ({
-      getCacheSettings: vi.fn().mockReturnValue({
-        cache: { calendar: { prefix: 'cal:', ttlSeconds: 3600 } },
-      }),
     }))
 
     const serveCalendar = await importServeCalendar()
     await serveCalendar(db, { year: '2026', time: '0617' }, 'dark', {})
-    expect(loadBuffer).toHaveBeenCalledWith(db, 'cal:2026-06-17-dark', expect.any(Function), 3600, 'calendar')
+    expect(through).toHaveBeenCalledWith(db, 'calendar', { date: '2026-06-17', theme: 'dark' }, expect.any(Function))
   })
 
   it('throws 404 for malformed year', async () => {
@@ -75,11 +65,6 @@ describe('serveCalendar', () => {
       throw new Response('Not Found', { status: 404 })
     })
     vi.doMock('@/server/infra/http/status', () => ({ notFound, pngResponse: vi.fn() }))
-    vi.doMock('@/shared/config/getters', () => ({
-      getCacheSettings: vi.fn().mockReturnValue({
-        cache: { calendar: { prefix: 'calendar:', ttlSeconds: 86400 } },
-      }),
-    }))
 
     const serveCalendar = await importServeCalendar()
     await expect(serveCalendar(db, { year: 'ab' }, 'light', {})).rejects.toMatchObject({
@@ -93,11 +78,6 @@ describe('serveCalendar', () => {
       throw new Response('Not Found', { status: 404 })
     })
     vi.doMock('@/server/infra/http/status', () => ({ notFound, pngResponse: vi.fn() }))
-    vi.doMock('@/shared/config/getters', () => ({
-      getCacheSettings: vi.fn().mockReturnValue({
-        cache: { calendar: { prefix: 'calendar:', ttlSeconds: 86400 } },
-      }),
-    }))
 
     const serveCalendar = await importServeCalendar()
     await expect(serveCalendar(db, { year: '2026', time: '0230' }, 'light', {})).rejects.toMatchObject({
@@ -111,11 +91,6 @@ describe('serveCalendar', () => {
       throw new Response('Not Found', { status: 404 })
     })
     vi.doMock('@/server/infra/http/status', () => ({ notFound, pngResponse: vi.fn() }))
-    vi.doMock('@/shared/config/getters', () => ({
-      getCacheSettings: vi.fn().mockReturnValue({
-        cache: { calendar: { prefix: 'calendar:', ttlSeconds: 86400 } },
-      }),
-    }))
 
     const serveCalendar = await importServeCalendar()
     await expect(serveCalendar(db, { year: '2026', time: 'abcd' }, 'light', {})).rejects.toMatchObject({
@@ -129,11 +104,6 @@ describe('serveCalendar', () => {
       throw new Response('Not Found', { status: 404 })
     })
     vi.doMock('@/server/infra/http/status', () => ({ notFound, pngResponse: vi.fn() }))
-    vi.doMock('@/shared/config/getters', () => ({
-      getCacheSettings: vi.fn().mockReturnValue({
-        cache: { calendar: { prefix: 'calendar:', ttlSeconds: 86400 } },
-      }),
-    }))
 
     const serveCalendar = await importServeCalendar()
     await expect(serveCalendar(db, { year: '2026', time: '1399' }, 'light', {})).rejects.toMatchObject({

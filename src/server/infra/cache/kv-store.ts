@@ -2,36 +2,31 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { Buffer } from 'node:buffer'
 import type { SuperJSONResult } from 'superjson'
 
-import { and, eq, gt, inArray, isNull, or, sql } from 'drizzle-orm'
+import { and, eq, gt, inArray, isNull, or } from 'drizzle-orm'
 import superjson from 'superjson'
 
 import { kvCache } from '@/server/infra/db/schema/kv-cache'
-import { escapeLikePattern } from '@/shared/utils/escape-like'
 import { isRecord } from '@/shared/utils/type-guards'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 /**
- * Postgres-backed cache facade mirroring the old Redis `storage` object's
- * method shapes — but every function takes the Drizzle `db` as its first
- * parameter and rows live in the `kv_cache` table instead of a Redis
- * keyspace.
- *
- * JSON payloads are superjson-serialized into the `value` JSONB column —
- * structured storage, so `serialize`/`deserialize` rather than the
- * string-oriented `stringify`/`parse` pair the Redis wrapper uses. Binary
- * payloads go to the `blob` BYTEA column. A row holds one or the other:
- * both writers null out the sibling column so an overwrite never leaves a
- * stale payload of the other kind behind.
+ * Postgres-backed row-access plane for the cache module
+ * (`@/server/infra/cache/registry`) — the ONLY consumer. JSON payloads
+ * are superjson-serialized into the `value` JSONB column — structured
+ * storage, so `serialize`/`deserialize` rather than the string-oriented
+ * `stringify`/`parse` pair the Redis wrapper uses. Binary payloads go to
+ * the `blob` BYTEA column. A row holds one or the other: both writers
+ * null out the sibling column so an overwrite never leaves a stale
+ * payload of the other kind behind.
  */
 
 export interface KvStoreSetOptions {
   /** Time-to-live in seconds. Omit for an entry that never expires. */
   ttlSeconds?: number
-  /** Bucket label surfaced by the admin cache panel. Defaults to 'misc'. */
-  bucket?: string
+  /** Bucket label surfaced by the admin cache panel — required so every
+   *  row lands in a declared bucket (there is no misc bucket). */
+  bucket: string
 }
-
-const DEFAULT_BUCKET = 'misc'
 
 // Lazy expiry: a row is live only when it has no expiry or its expiry is
 // still in the future. The hourly sweep in `kv-maintenance.ts` deletes
@@ -78,21 +73,15 @@ export async function getItem<T>(db: NodePgDatabase, key: string): Promise<T | n
   return deserializeValue<T>(row.value)
 }
 
-export async function setItem(
-  db: NodePgDatabase,
-  key: string,
-  value: unknown,
-  opts: KvStoreSetOptions = {},
-): Promise<void> {
+export async function setItem(db: NodePgDatabase, key: string, value: unknown, opts: KvStoreSetOptions): Promise<void> {
   const serialized = superjson.serialize(value)
   const expiresAt = expiryFrom(opts)
-  const bucket = opts.bucket ?? DEFAULT_BUCKET
   await db
     .insert(kvCache)
-    .values({ key, bucket, value: serialized, blob: null, expiresAt })
+    .values({ key, bucket: opts.bucket, value: serialized, blob: null, expiresAt })
     .onConflictDoUpdate({
       target: kvCache.key,
-      set: { bucket, value: serialized, blob: null, expiresAt },
+      set: { bucket: opts.bucket, value: serialized, blob: null, expiresAt },
     })
 }
 
@@ -109,16 +98,15 @@ export async function setItemRaw(
   db: NodePgDatabase,
   key: string,
   value: Buffer,
-  opts: KvStoreSetOptions = {},
+  opts: KvStoreSetOptions,
 ): Promise<void> {
   const expiresAt = expiryFrom(opts)
-  const bucket = opts.bucket ?? DEFAULT_BUCKET
   await db
     .insert(kvCache)
-    .values({ key, bucket, value: null, blob: value, expiresAt })
+    .values({ key, bucket: opts.bucket, value: null, blob: value, expiresAt })
     .onConflictDoUpdate({
       target: kvCache.key,
-      set: { bucket, value: null, blob: value, expiresAt },
+      set: { bucket: opts.bucket, value: null, blob: value, expiresAt },
     })
 }
 
@@ -138,15 +126,4 @@ export async function getItems<T>(db: NodePgDatabase, keys: string[]): Promise<{
   // Result order follows the input keys (MGET semantics); missing or
   // expired keys come back as null values.
   return keys.map((key) => ({ key, value: deserializeValue<T>(byKey.get(key) ?? null) }))
-}
-
-export async function getKeys(db: NodePgDatabase, prefix?: string, maxCount = 10_000): Promise<string[]> {
-  const pattern = prefix === undefined ? '%' : `${escapeLikePattern(prefix)}%`
-  const rows = await db
-    .select({ key: kvCache.key })
-    .from(kvCache)
-    .where(and(sql`${kvCache.key} LIKE ${pattern} ESCAPE '\\'`, liveEntries()))
-    .orderBy(kvCache.key)
-    .limit(maxCount)
-  return rows.map((row) => row.key)
 }

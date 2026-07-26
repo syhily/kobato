@@ -19,10 +19,11 @@ server/
 Pure primitives. `db/` (Drizzle pool, schema, migrations,
 `operations/<entity>.ts` raw helpers, `copy-batcher` +
 `batcher-registry` driving every process-level write batcher through
-one init/flush/reset lifecycle), `cache/` (`kv-store`/`kv-cache`/
-`kv-maintenance` PG-backed cache facade + hourly expiry sweep,
-feed/sitemap caches, `buffer-cache` binary read-through, admin cache
-panel `buckets`/`admin-ops`, `inflight` request coalescing),
+one init/flush/reset lifecycle), `cache/` (`registry` behavior plane —
+the only module touching `kv_cache` through its private `kv-store`
+row-access plane; `through`/`get`/`set`/`remove`/`clear`/`throughMany`
+verbs plus generation counters, `kv-maintenance` hourly expiry sweep,
+admin cache panel `buckets`/`admin-ops`, `inflight` request coalescing),
 `http/` (generic `etag`, `headers`, `status`, `errors` with
 `DomainError` / `ActionFailure`), `email/` (sender + React Email), `search/` (LIKE,
 pg_trgm and vector drivers, openai client), `image/` (worker_threads

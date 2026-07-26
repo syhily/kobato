@@ -9,7 +9,6 @@ import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { kvCache } from '@/server/infra/db/schema/kv-cache'
 import { image } from '@/server/infra/db/schema/media'
 
-const { clearImageEnhanceCache } = await import('@/server/domains/images/services/cache')
 const { resolveImageRef } = await import('@/server/domains/images/services/resolve')
 
 const poolManager = createDbPool()
@@ -25,7 +24,6 @@ const { TEST_BLOG_SETTINGS_BUNDLE } = await import('#/_helpers/blog-settings')
 beforeEach(async () => {
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
   await clearAllTables(db)
-  await clearImageEnhanceCache(db)
 })
 
 async function seedImage(overrides: Partial<typeof image.$inferInsert> = {}) {

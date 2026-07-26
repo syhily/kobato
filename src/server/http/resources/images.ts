@@ -1,7 +1,6 @@
 import type { Context } from 'hono'
 
 import { Hono } from 'hono'
-import crypto from 'node:crypto'
 
 import type { Env } from '@/server/http/context'
 
@@ -19,18 +18,13 @@ import { findPublicPostMetaBySlug } from '@/server/domains/posts/repos/single'
 import { rateLimitByIp } from '@/server/http/middlewares/rate-limit'
 import { AvatarStatus, cacheAvatar, loadAvatar } from '@/server/http/resources/avatar-cache'
 import { serveCalendar } from '@/server/http/resources/calendar'
-import { loadBuffer } from '@/server/infra/cache/buffer-cache'
+import { through } from '@/server/infra/cache/registry'
 import { findCategoryBySlug } from '@/server/infra/db/operations/category'
 import { drawOpenGraph } from '@/server/render/og/render'
-import { getCacheSettings, requireBlogSettingsSection } from '@/shared/config/getters'
+import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { joinUrl } from '@/shared/utils/urls'
 
 // ─── OG image ─────────────────────────────────────────────────────
-
-function ogCacheKey(slug: string, title: string, summary: string, cover: string): string {
-  const hash = crypto.createHash('sha1').update(`${title}\u0001${summary}\u0001${cover}`).digest('hex').slice(0, 16)
-  return `${getCacheSettings().cache.og.prefix}${slug}-${hash}`
-}
 
 const OG_HEADERS = {
   'Cache-Control': 'public, max-age=604800, immutable',
@@ -65,7 +59,6 @@ function createOgHandler(adapters: readonly OgAdapter[]) {
       return ogFallback(c)
     }
 
-    const ttl = getCacheSettings().cache.og.ttlSeconds
     const entities = await Promise.all(adapters.map((adapter) => adapter.resolve(c, slug)))
     const selectedIndex = entities.findIndex((entity) => entity !== null)
     const entity = entities[selectedIndex]
@@ -76,12 +69,11 @@ function createOgHandler(adapters: readonly OgAdapter[]) {
 
     const summary =
       entity.summary || (adapter.useSiteSummaryFallback ? requireBlogSettingsSection('siteIdentity').description : '')
-    const buffer = await loadBuffer(
+    const buffer = await through(
       c.var.db,
-      ogCacheKey(`${adapter.cacheKeyPrefix}${slug}`, entity.title, summary, entity.cover),
-      () => drawOpenGraph({ title: entity.title, summary, cover: entity.cover }),
-      ttl,
       'og',
+      { slug: `${adapter.cacheKeyPrefix}${slug}`, title: entity.title, summary, cover: entity.cover },
+      () => drawOpenGraph({ title: entity.title, summary, cover: entity.cover }),
     )
     return respondPng(c, buffer, OG_HEADERS)
   }

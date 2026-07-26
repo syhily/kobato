@@ -48,8 +48,9 @@ describe('service: cache admin', () => {
     await seedKvRow('og:world-cafef00d', 'og')
     await seedKvRow('avatar:abc', 'avatar')
     await seedKvRow('calendar:2026-04-30', 'calendar')
+    await seedKvRow('feed:xml:all', 'feed')
     // Out-of-bucket noise — must NOT show up.
-    await seedKvRow('feed:xml:all', 'misc')
+    await seedKvRow('legacy:misc', 'misc')
 
     const stats = await getAdminCacheStats(db)
 
@@ -61,8 +62,13 @@ describe('service: cache admin', () => {
       imageMeta: 0,
       embeddingSearch: 0,
       searchResult: 0,
+      feed: 1,
+      sitemap: 0,
+      categories: 0,
+      tags: 0,
+      comments: 0,
     })
-    expect(stats.total).toBe(4)
+    expect(stats.total).toBe(5)
   })
 
   it('does not count expired rows but still clears them', async () => {
@@ -81,13 +87,13 @@ describe('service: cache admin', () => {
     await seedKvRow('og:hello-deadbeef', 'og')
     await seedKvRow('og:world-cafef00d', 'og')
     await seedKvRow('avatar:abc', 'avatar')
-    await seedKvRow('feed:xml:all', 'misc')
+    await seedKvRow('legacy:misc', 'misc')
 
     const result = await clearAdminCache(db, 'og')
 
     expect(result.cleared).toEqual([{ bucketId: 'og', label: 'OG 图缓存', removed: 2 }])
     expect(result.total).toBe(2)
-    expect(await remainingKvKeys()).toEqual(['avatar:abc', 'feed:xml:all'])
+    expect(await remainingKvKeys()).toEqual(['avatar:abc', 'legacy:misc'])
   })
 
   it('aggregates counts when clearing all buckets', async () => {
@@ -112,6 +118,11 @@ describe('service: cache admin', () => {
       imageMeta: 0,
       embeddingSearch: 0,
       searchResult: 0,
+      feed: 0,
+      sitemap: 0,
+      categories: 0,
+      tags: 0,
+      comments: 0,
     })
     expect(await remainingKvKeys()).toEqual([])
     // Sessions are a reserved bucket: never cleared, still reported.

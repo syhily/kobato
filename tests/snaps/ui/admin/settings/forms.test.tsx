@@ -368,8 +368,6 @@ function makePopulatedStats(): AdminCacheStatsDto {
         id: 'session',
         label: '登录会话',
         description: '已登录用户的服务端会话 blob。',
-        prefix: 'session:',
-        pattern: 'session:*',
         keyCount: 13,
       },
     ],

@@ -3,6 +3,8 @@
 // exception is `rateLimitDefaults`, which stays in
 // `@/shared/config/defaults` because the infra rate-limit fallback
 // (`@/server/infra/rate-limit`) shares it.
+import { CACHE_BUCKET_FALLBACKS } from '@/shared/types/cache'
+
 const navigationDefaults = { navigation: { sideNav: [], footerNav: [] } } as const
 const socialsDefaults = { socials: [] } as const
 const contentDefaults = {
@@ -55,17 +57,9 @@ const mailDefaults = {
 const newsletterDefaults = {
   newsletter: { enabled: false, fromName: '', subjectPrefix: '' },
 } as const
-const cacheDefaults = {
-  cache: {
-    og: { prefix: 'og:', ttlSeconds: 60 * 60 * 24 },
-    calendar: { prefix: 'calendar:', ttlSeconds: 60 * 60 * 24 },
-    avatar: { prefix: 'avatar:', ttlSeconds: 60 * 60 * 24 },
-    imageMeta: { prefix: 'image-meta:', ttlSeconds: 60 * 60 },
-
-    embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
-    searchResult: { prefix: 'search-result:', ttlSeconds: 60 * 60 },
-  },
-} as const
+// Tunable cache slots derive from the declaration registry — only
+// tunable buckets get a settings slot.
+const cacheDefaults = { cache: { ...CACHE_BUCKET_FALLBACKS } } as const
 const searchDefaults = {
   search: {
     enabled: false,

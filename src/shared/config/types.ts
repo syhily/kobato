@@ -1,6 +1,7 @@
 import type { BundleKey, SECTION_TO_BUNDLE_KEY, SettingsSection } from '@/shared/config/sections'
 import type { SocialNetwork } from '@/shared/config/socials'
 import type { Assert, Equals } from '@/shared/contracts/primitives'
+import type { CacheBucketSlot, TunableCacheBucketId } from '@/shared/types/cache'
 
 // Per-section DTOs for the editable blog configuration.
 //
@@ -168,15 +169,10 @@ export interface NewsletterSettings {
   }
 }
 
+// Only tunable buckets own a settings slot — the slot list derives from
+// the cache declaration registry, never from a hand-maintained list.
 export interface CacheSettings {
-  cache: {
-    og: { prefix: string; ttlSeconds: number }
-    calendar: { prefix: string; ttlSeconds: number }
-    avatar: { prefix: string; ttlSeconds: number }
-    imageMeta: { prefix: string; ttlSeconds: number }
-    embeddingSearch: { prefix: string; ttlSeconds: number }
-    searchResult: { prefix: string; ttlSeconds: number }
-  }
+  cache: Record<TunableCacheBucketId, CacheBucketSlot>
 }
 
 // The backend a stored object lives in. Each asset (image, music,

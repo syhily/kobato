@@ -196,7 +196,8 @@ feedRouter)`). They do **not** appear in `routes.ts`:
 Each handler pins its taxonomy scope at compile time and passes the
 `slug` route param straight into `generateFeeds` — there is no
 URL-sniffing helper. Responses are rate-limited
-(`tryResourceRateLimit`) and cached through `feedCacheFor` with a
+(`tryResourceRateLimit`) and cached through the cache module's
+`through` verb (the `feed` declaration) with a
 namespaced key (`cat:<slug>` / `tag:<slug>` / `all`) so a category
 slugged `all` can never collide with the site-wide feed. When you add
 a new scope, add a new `.get()` pair that states its scope inline —

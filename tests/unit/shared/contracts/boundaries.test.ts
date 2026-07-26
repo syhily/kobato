@@ -86,6 +86,21 @@ describe('contract: module and bundle boundaries', () => {
     expect(offenders).toEqual([])
   })
 
+  it('keeps the kv-store row-access plane private to the cache module', () => {
+    // `@/server/infra/cache/registry` is the ONLY consumer of kv-store —
+    // every other module must go through the cache verbs (through / get /
+    // set / clear / counters) so key shapes and codecs stay declared in
+    // one place.
+    const offenders = files('src', '-g', '*.ts', '-g', '*.tsx').filter((file) => {
+      if (file.startsWith('src/server/infra/cache/')) {
+        return false
+      }
+      return readFileSync(file, 'utf8').includes('@/server/infra/cache/kv-store')
+    })
+
+    expect(offenders).toEqual([])
+  })
+
   it('keeps shared/seo isomorphic: shared-only value imports, no node specifiers', () => {
     // Route `meta()` exports pull `shared/seo` into the browser bundle, so a
     // server-layer or node-only import there would leak into every route

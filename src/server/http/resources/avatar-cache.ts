@@ -1,79 +1,27 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { Buffer } from 'node:buffer'
-
-import { createInflight } from '@/server/infra/cache/inflight'
-import { getItemRaw, setItemRaw } from '@/server/infra/cache/kv-store'
-import { getCacheSettings } from '@/shared/config/getters'
+import { get, set } from '@/server/infra/cache/registry'
 
 export interface Avatar {
   status: AvatarStatus
   buffer: Buffer | null
 }
 
+// The numeric values are part of the persisted byte protocol — byte 0 of
+// the cached blob is this sentinel. The encoder / decoder lives in the
+// avatar declaration of `@/server/infra/cache/registry`; keep the enum
+// values in sync with it (0 = payload follows, 1 = negative entry).
 export enum AvatarStatus {
   HAVE_AVATAR = 0,
   NO_AVATAR = 1,
 }
 
-// Dedupe concurrent loads for the same email so a hot avatar (e.g. the site
-// owner appearing in every comment thread) only round-trips kv_cache once per
-// concurrent burst instead of once per requesting comment.
-const avatarInflight = createInflight<Avatar | null>()
-
-// Prefix + TTL pulled from the live snapshot so an admin rename in
-// `/admin/settings/cache` applies to the next read / write. Old keys
-// under the previous prefix age out at their stored TTL.
-function avatarConfig(): { prefix: string; ttlSeconds: number } {
-  return getCacheSettings().cache.avatar
-}
-const avatarKey = (email: string, size: number): string => `${avatarConfig().prefix}${size}:${email}`
-
-// The fetch size is part of the cache key: the endpoint serves the size its
-// caller asked for via `?s=` (120 by default), and the upstream is queried
-// at exactly that size — a 120px entry must never serve a `?s=512` request
-// (or vice versa). Entries under sizes nobody requests anymore age out at
-// their stored TTL, same as a prefix rename.
-
-// Single-key cache layout (was two keys: `avatar-status-${email}` plus
-// `avatar-${email}`). Byte 0 is the status sentinel, the rest is the
-// avatar payload (only present for HAVE_AVATAR).
-//
-// The previous two-key layout cost two cache round-trips on every
-// non-cached avatar render (status GET → payload GET); this design halves
-// that to a single read and removes the cross-key consistency footgun
-// where the status key could outlive its payload (or vice versa) if a
-// write was interrupted.
-function encodeAvatar(status: AvatarStatus, buffer: Buffer | null): Buffer {
-  if (status === AvatarStatus.NO_AVATAR || buffer === null) {
-    return Buffer.from([AvatarStatus.NO_AVATAR])
-  }
-  const out = Buffer.allocUnsafe(buffer.length + 1)
-  out[0] = AvatarStatus.HAVE_AVATAR
-  buffer.copy(out, 1)
-  return out
-}
-
-function decodeAvatar(payload: unknown): Avatar | null {
-  if (!Buffer.isBuffer(payload) || payload.length === 0) {
-    return null
-  }
-  const status = payload[0] as AvatarStatus
-  if (status === AvatarStatus.NO_AVATAR) {
-    return { status, buffer: null }
-  }
-  if (status === AvatarStatus.HAVE_AVATAR) {
-    return { status, buffer: payload.subarray(1) as Buffer }
-  }
-  return null
-}
-
+// Concurrent reads of the same email coalesce inside the cache module,
+// so a hot avatar (e.g. the site owner appearing in every comment
+// thread) only round-trips kv_cache once per concurrent burst instead of
+// once per requesting comment.
 export async function loadAvatar(db: NodePgDatabase, email: string, size: number): Promise<Avatar | null> {
-  const key = avatarKey(email, size)
-  return avatarInflight(key, async () => {
-    const payload = await getItemRaw(db, key)
-    return decodeAvatar(payload)
-  })
+  return get<'avatar', Avatar>(db, 'avatar', { size, email })
 }
 
 export async function cacheAvatar(
@@ -83,8 +31,6 @@ export async function cacheAvatar(
     | { email: string; size: number; status: AvatarStatus.NO_AVATAR },
 ) {
   const buffer = args.status === AvatarStatus.HAVE_AVATAR ? args.buffer : null
-  await setItemRaw(db, avatarKey(args.email, args.size), encodeAvatar(args.status, buffer), {
-    ttlSeconds: avatarConfig().ttlSeconds,
-    bucket: 'avatar',
-  })
+  const entry: Avatar = { status: args.status, buffer }
+  await set(db, 'avatar', { size: args.size, email: args.email }, entry)
 }

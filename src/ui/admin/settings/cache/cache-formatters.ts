@@ -2,8 +2,16 @@ import { MAX_TTL_HOURS, MIN_TTL_HOURS, SECONDS_PER_HOUR } from '@/ui/admin/setti
 
 // Render the stored TTL in the most readable unit. The form uses
 // hours, but a "1 day" / "7 days" string reads better at a glance on
-// the per-bucket card.
+// the per-bucket card. Code-TTL buckets (feed, sitemap, taxonomies,
+// comments) run at minute / second granularity, so sub-hour values get
+// their own units instead of rounding to "0 小时".
 export function formatTtl(seconds: number): string {
+  if (seconds < SECONDS_PER_HOUR) {
+    if (seconds % 60 === 0) {
+      return `${seconds / 60} 分钟`
+    }
+    return `${seconds} 秒`
+  }
   const totalHours = Math.round(seconds / SECONDS_PER_HOUR)
   if (totalHours >= 24 && totalHours % 24 === 0) {
     const days = totalHours / 24

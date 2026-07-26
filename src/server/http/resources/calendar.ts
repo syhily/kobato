@@ -2,10 +2,9 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { format, isValid, parse } from 'date-fns'
 
-import { loadBuffer } from '@/server/infra/cache/buffer-cache'
+import { through } from '@/server/infra/cache/registry'
 import { notFound, pngResponse } from '@/server/infra/http/status'
 import { type CalendarTheme, renderCalendar } from '@/server/render/calendar/render'
-import { getCacheSettings } from '@/shared/config/getters'
 
 const timeRegex = /^\d{4}$/
 
@@ -32,18 +31,8 @@ export async function serveCalendar(
     notFound()
   }
 
-  // Read prefix + TTL from the live snapshot so admin renames in
-  // `/admin/settings/cache` apply to the very next render. Dark
-  // variants get a distinct cache key so the two themes don't clobber
-  // each other under the same prefix.
-  const cache = getCacheSettings().cache.calendar
-  const themeSuffix = theme === 'dark' ? '-dark' : ''
-  const buffer = await loadBuffer(
-    db,
-    `${cache.prefix}${format(date, 'yyyy-MM-dd')}${themeSuffix}`,
-    () => renderCalendar(date, theme),
-    cache.ttlSeconds,
-    'calendar',
+  const buffer = await through(db, 'calendar', { date: format(date, 'yyyy-MM-dd'), theme }, () =>
+    renderCalendar(date, theme),
   )
 
   return pngResponse(buffer, responseHeaders)

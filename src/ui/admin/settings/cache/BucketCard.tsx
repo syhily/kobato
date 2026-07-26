@@ -6,6 +6,7 @@ import type { CacheBucketStats } from '@/shared/contracts/cache'
 import type { CacheBucketId } from '@/shared/types/cache'
 import type { ClearStatus } from '@/ui/admin/settings/cache/cache-status'
 
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { MAX_TTL_HOURS, MIN_TTL_HOURS, SECONDS_PER_HOUR } from '@/ui/admin/settings/cache/cache-constants'
 import { clamp, formatTtl, hoursToSeconds } from '@/ui/admin/settings/cache/cache-formatters'
 import {
@@ -25,8 +26,12 @@ type CacheSlice = CacheSettings['cache']
 
 interface BucketCardProps {
   bucket: CacheBucketStats
-  /** This bucket's authoritative settings (server-side snapshot). */
-  settings: { prefix: string; ttlSeconds: number }
+  /**
+   * This bucket's authoritative settings (server-side snapshot).
+   * `undefined` for non-tunable buckets — their prefix/TTL are declared
+   * in the cache registry and the card renders read-only.
+   */
+  settings?: { prefix: string; ttlSeconds: number }
   /**
    * The full cache slice — feeds the prefix-collision validation for the
    * sibling buckets. The save itself posts only this card's bucket; the
@@ -39,8 +44,16 @@ interface BucketCardProps {
 }
 
 export function BucketCard({ bucket, settings, allBuckets, isClearPending, clearStatus, onClear }: BucketCardProps) {
+  const editable = settings !== undefined
+  // Non-tunable buckets fall back to the stats row for display. Memoized
+  // so the identity is stable across renders — the snapshot sync below
+  // compares by reference.
+  const effectiveSettings = useMemo(
+    () => settings ?? { prefix: bucket.prefix, ttlSeconds: bucket.ttlSeconds },
+    [settings, bucket.prefix, bucket.ttlSeconds],
+  )
   const [isEditing, setIsEditing] = useState(false)
-  const [snapshot, setSnapshot] = useState<BucketDraft>(() => snapshotFromSettings(settings))
+  const [snapshot, setSnapshot] = useState<BucketDraft>(() => snapshotFromSettings(effectiveSettings))
   const [draft, setDraft] = useState<BucketDraft>(snapshot)
   const submittedDraftRef = useRef<{ value: BucketDraft } | null>(null)
   // The "auto-exit on save" effect needs to fire exactly once per
@@ -52,13 +65,13 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
 
   // Sync snapshot/draft to settings via the React-blessed "adjust state
   // during render" pattern instead of setState-in-effect.
-  const [lastSettingsRef, setLastSettingsRef] = useState<{ settings: typeof settings; isEditing: boolean }>({
-    settings,
+  const [lastSettingsRef, setLastSettingsRef] = useState<{ settings: typeof effectiveSettings; isEditing: boolean }>({
+    settings: effectiveSettings,
     isEditing,
   })
-  if (lastSettingsRef.settings !== settings || lastSettingsRef.isEditing !== isEditing) {
-    setLastSettingsRef({ settings, isEditing })
-    const fresh = snapshotFromSettings(settings)
+  if (lastSettingsRef.settings !== effectiveSettings || lastSettingsRef.isEditing !== isEditing) {
+    setLastSettingsRef({ settings: effectiveSettings, isEditing })
+    const fresh = snapshotFromSettings(effectiveSettings)
     setSnapshot(fresh)
     if (!isEditing) {
       setDraft(fresh)
@@ -99,12 +112,10 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
   }
 
   const otherBuckets = useMemo(() => {
-    const all: { id: CacheBucketId; prefix: string }[] = [
-      { id: 'og', prefix: allBuckets.og.prefix },
-      { id: 'calendar', prefix: allBuckets.calendar.prefix },
-      { id: 'avatar', prefix: allBuckets.avatar.prefix },
-      { id: 'imageMeta', prefix: allBuckets.imageMeta.prefix },
-    ]
+    // CacheSlice keys are exactly the tunable bucket ids.
+    const all = unsafeCast<[CacheBucketId, { prefix: string; ttlSeconds: number }][]>(Object.entries(allBuckets)).map(
+      ([id, slot]) => ({ id, prefix: slot.prefix }),
+    )
     return all.filter((entry) => entry.id !== bucket.id)
   }, [allBuckets, bucket.id])
 
@@ -153,16 +164,18 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
 
   const actionButtons = (
     <>
-      {isEditing ? (
-        <Button type="button" variant="ghost" disabled={isSavePending} onClick={onCancel}>
-          <XIcon data-icon /> 取消
-        </Button>
-      ) : (
-        <Button type="button" variant="outline" disabled={isClearPending} onClick={onEdit}>
-          <SquarePenIcon data-icon /> 编辑
-        </Button>
-      )}
-      {isEditing ? (
+      {editable ? (
+        isEditing ? (
+          <Button type="button" variant="ghost" disabled={isSavePending} onClick={onCancel}>
+            <XIcon data-icon /> 取消
+          </Button>
+        ) : (
+          <Button type="button" variant="outline" disabled={isClearPending} onClick={onEdit}>
+            <SquarePenIcon data-icon /> 编辑
+          </Button>
+        )
+      ) : null}
+      {editable && isEditing ? (
         <Button type="submit" disabled={isSavePending || !isDirty || validationError !== null}>
           <SaveIcon data-icon /> {isSavePending ? '保存中…' : '保存配置'}
         </Button>
@@ -209,7 +222,7 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
         <BucketField label="当前 TTL" value={formatTtl(bucket.ttlSeconds)} />
       </dl>
 
-      {isEditing ? (
+      {editable && isEditing ? (
         <form onSubmit={onSubmit} className="flex flex-col gap-4">
           <SettingsRow
             label="键前缀"

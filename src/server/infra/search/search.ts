@@ -1,20 +1,17 @@
 import type { SQL } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { and, eq, gt, isNull, or, sql } from 'drizzle-orm'
-import { createHash } from 'node:crypto'
+import { sql } from 'drizzle-orm'
 
 import type { SearchSettings } from '@/shared/config/types'
 
-import { getItem, setItem } from '@/server/infra/cache/kv-store'
-import { kvCache } from '@/server/infra/db/schema/kv-cache'
+import { bumpCounter, getCounter, through } from '@/server/infra/cache/registry'
 import { getLogger } from '@/server/infra/logger'
 import { INFRA_SEARCH_DEFAULTS } from '@/server/infra/search/defaults'
 import { likeCacheKeyParts, runLikeSearch } from '@/server/infra/search/like'
 import { runTrgmSearch, trgmCacheKeyParts } from '@/server/infra/search/trgm'
 import { runVectorSearch, vectorCacheKeyParts } from '@/server/infra/search/vector'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
-import { CACHE_BUCKET_FALLBACKS } from '@/shared/types/cache'
 
 function getSearchSettings(): SearchSettings['search'] {
   const bundle = getBlogSettingsBundleSync()
@@ -57,76 +54,20 @@ export function __setTrgmAvailabilityForTests(available: boolean | null): void {
 // Search-result cache
 //
 // The full ordered slug list for a query is cached so pagination never
-// re-runs the embedding API or the database query.  The cache key
+// re-runs the embedding API or the database query. The cache key
 // incorporates every input that could change the result set:
-//   - cache generation (see below)
+//   - the cache generation (a `kv_cache` counter owned by the
+//     `searchResult` cache declaration — bumping it orphans every entry
+//     stamped with an older generation, so invalidation never enumerates
+//     keys)
 //   - the active mode's key parts, owned by its mode module
 //     (`infra/search/{like,trgm,vector}.ts`): the mode, the query, and
 //     exactly the settings knobs that mode's result set depends on
 //     (similarity threshold + embedding model for vector, trigram
 //     threshold for trgm, none for like)
 //
-// Value is the slug array itself (superjson envelope in the `value`
-// JSONB column) — short strings, negligible overhead.
-//
-// Invalidation is a generation stamp, not key enumeration (getKeys caps
-// the scan and would silently under-invalidate past the ceiling): every
-// key carries a per-installation counter and bumping it makes all
-// previously cached entries unreachable — they expire by TTL. Same
-// namespace-rollover pattern as the feed cache (plans/003).
-
-function searchCachePrefix(): string {
-  const bundle = getBlogSettingsBundleSync()
-  return bundle?.cache?.cache.searchResult?.prefix ?? CACHE_BUCKET_FALLBACKS.searchResult.prefix
-}
-
-function searchGenerationKey(): string {
-  return `${searchCachePrefix()}generation`
-}
-
-// The generation is read once per process and cached in module state. A
-// failed read is NOT cached (the next search retries) and falls back to
-// generation 0 — a missing or unreadable counter must never break
-// search. Single-instance self-host is the documented deploy target, so
-// only this process bumps the counter and the cached value stays
-// authoritative.
-let searchCacheGeneration: Promise<number> | null = null
-
-// The counter row lives in `kv_cache` at the `${prefix}generation` key
-// with a raw integer JSONB in `value` and NULL `expires_at` (never
-// swept). It deliberately bypasses `kv-store`'s `getItem`, which only
-// decodes the superjson envelope and would read a raw scalar as a miss.
-function parseGeneration(value: unknown): number {
-  const parsed = typeof value === 'number' ? value : Number.parseInt(String(value), 10)
-  return Number.isNaN(parsed) ? 0 : parsed
-}
-
-function readSearchCacheGeneration(db: NodePgDatabase): Promise<number> {
-  searchCacheGeneration ??= db
-    .select({ value: kvCache.value })
-    .from(kvCache)
-    .where(
-      and(eq(kvCache.key, searchGenerationKey()), or(isNull(kvCache.expiresAt), gt(kvCache.expiresAt, new Date()))),
-    )
-    .limit(1)
-    .then((rows) => parseGeneration(rows[0]?.value ?? 0))
-    .catch((error: unknown) => {
-      searchCacheGeneration = null
-      getLogger('search.cache').warn('search cache generation read failed', {
-        error: error instanceof Error ? error.message : String(error),
-      })
-      return 0
-    })
-  return searchCacheGeneration
-}
-
-/**
- * Test-only seam: drop the process-cached generation so the next search
- * re-reads the counter from `kv_cache`.
- */
-export function __resetSearchCacheGenerationForTests(): void {
-  searchCacheGeneration = null
-}
+// Value is the slug array itself — short strings, negligible overhead.
+// Empty result sets are never cached (cacheWhen on the declaration).
 
 function cacheKeyParts(settings: SearchSettings['search'], query: string): string[] {
   switch (settings.mode) {
@@ -139,59 +80,18 @@ function cacheKeyParts(settings: SearchSettings['search'], query: string): strin
   }
 }
 
-async function searchCacheKey(settings: SearchSettings['search'], query: string, db: NodePgDatabase): Promise<string> {
-  const generation = await readSearchCacheGeneration(db)
-  const hashInput = cacheKeyParts(settings, query)
-  return `${searchCachePrefix()}${generation}:${createHash('sha256').update(hashInput.join('|')).digest('hex')}`
-}
-
-async function getCachedSearchResult(db: NodePgDatabase, key: string): Promise<string[] | null> {
-  const value = await getItem<unknown>(db, key)
-  if (Array.isArray(value) && value.every((s) => typeof s === 'string')) {
-    return value
-  }
-  return null
-}
-
-async function setCachedSearchResult(
-  db: NodePgDatabase,
-  key: string,
-  slugs: string[],
-  ttlSeconds: number,
-): Promise<void> {
-  if (slugs.length === 0) {
-    return
-  }
-  await setItem(db, key, slugs, { ttlSeconds, bucket: 'searchResult' })
-}
-
 /**
  * Invalidate all cached search results by bumping the generation stamp.
  * Called whenever a post's published / deleted / restored state changes
  * so stale result lists don't survive until their TTL expires.
  *
- * A single INSERT … ON CONFLICT … DO UPDATE keeps the bump atomic
- * (Postgres row lock, the INCR equivalent). Fire-and-forget by contract:
- * invalidation must never bring down the post mutation that triggered
- * it, so database failures are logged and swallowed here — callers
- * neither catch nor inspect the result.
+ * Fire-and-forget by contract: invalidation must never bring down the
+ * post mutation that triggered it — `bumpCounter` already logs and
+ * swallows database failures, so callers neither catch nor inspect the
+ * result.
  */
 export async function invalidateSearchCache(db: NodePgDatabase): Promise<void> {
-  try {
-    const result = await db.execute(
-      sql`INSERT INTO kv_cache (key, bucket, value, blob, expires_at)
-          VALUES (${searchGenerationKey()}, 'searchResult', '1'::jsonb, NULL, NULL)
-          ON CONFLICT (key) DO UPDATE SET value = (kv_cache.value::int + 1)::text::jsonb
-          RETURNING value`,
-    )
-    const generation = parseGeneration(result.rows[0]?.value ?? 0)
-    searchCacheGeneration = Promise.resolve(generation)
-    getLogger('search.cache').info('invalidated search result cache', { generation })
-  } catch (error: unknown) {
-    getLogger('search.cache').warn('search result cache invalidation failed', {
-      error: error instanceof Error ? error.message : String(error),
-    })
-  }
+  await bumpCounter(db, 'searchResult')
 }
 
 // Core search execution (no pagination — returns the full ordered list).
@@ -250,32 +150,20 @@ export async function searchPosts(
   }
 
   const settings = getSearchSettings()
-  const cacheKey = await searchCacheKey(settings, trimmed, db)
-
-  // Try cache first
-  const cached = await getCachedSearchResult(db, cacheKey)
-  if (cached !== null) {
-    getLogger('search.result').info('Search result cache hit', {
-      query: trimmed,
-      total: cached.length,
-    })
-    const hits = cached.slice(offset, offset + limit)
-    return {
-      hits,
-      page: Math.floor(offset / limit) + 1,
-      totalPages: Math.ceil(cached.length / Math.max(limit, 1)),
-    }
-  }
-
-  // Execute full search
-  const allSlugs = await executeSearch(db, settings, baseWhere, trimmed)
-
-  // Write cache (only when non-empty, as requested)
-  if (allSlugs.length > 0) {
-    const bundle = getBlogSettingsBundleSync()
-    const ttl = bundle?.cache?.cache.searchResult?.ttlSeconds ?? CACHE_BUCKET_FALLBACKS.searchResult.ttlSeconds
-    await setCachedSearchResult(db, cacheKey, allSlugs, ttl)
-  }
+  const generation = await getCounter(db, 'searchResult')
+  const allSlugs = await through(
+    db,
+    'searchResult',
+    { generation, parts: cacheKeyParts(settings, trimmed) },
+    () => executeSearch(db, settings, baseWhere, trimmed),
+    {
+      onHit: (cached) =>
+        getLogger('search.result').info('Search result cache hit', {
+          query: trimmed,
+          total: cached.length,
+        }),
+    },
+  )
 
   const hits = allSlugs.slice(offset, offset + limit)
   return {

@@ -1,8 +1,9 @@
 import { z } from 'zod'
 
 import { isoDateTime } from '@/shared/contracts/primitives'
+import { CACHE_BUCKET_IDS } from '@/shared/types/cache'
 
-const cacheBucketId = z.enum(['og', 'calendar', 'avatar', 'imageMeta', 'embeddingSearch', 'searchResult'])
+const cacheBucketId = z.enum(CACHE_BUCKET_IDS)
 const reservedCacheBucketId = z.enum(['session', 'rateLimit'])
 
 const cacheBucketStatsDto = z.object({
@@ -17,12 +18,13 @@ const cacheBucketStatsDto = z.object({
 })
 export type CacheBucketStats = z.infer<typeof cacheBucketStatsDto>
 
+// Reserved buckets have no key prefix — sessions live in the `session`
+// table and rate-limit counters are in-process, so only a live count is
+// reported alongside the description.
 const reservedCacheBucketStatsDto = z.object({
   id: reservedCacheBucketId,
   label: z.string(),
   description: z.string(),
-  prefix: z.string(),
-  pattern: z.string(),
   keyCount: z.number().int().nonnegative(),
 })
 export type ReservedCacheBucketStats = z.infer<typeof reservedCacheBucketStatsDto>

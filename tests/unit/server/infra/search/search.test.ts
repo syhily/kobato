@@ -4,23 +4,37 @@ import { sql } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
-  selectLimit: vi.fn(),
-  execute: vi.fn(),
-  getItem: vi.fn(),
-  setItem: vi.fn(),
-  getKeys: vi.fn(),
-  warn: vi.fn(),
+  through: vi.fn(),
+  getCounter: vi.fn(),
+  bumpCounter: vi.fn(),
+  runLikeSearch: vi.fn(),
   info: vi.fn(),
+  warn: vi.fn(),
 }))
 
-vi.mock('@/server/infra/cache/kv-store', () => ({
-  getItem: mocks.getItem,
-  setItem: mocks.setItem,
-  getKeys: mocks.getKeys,
+vi.mock('@/server/infra/cache/registry', () => ({
+  through: mocks.through,
+  getCounter: mocks.getCounter,
+  bumpCounter: mocks.bumpCounter,
 }))
 
 vi.mock('@/server/infra/search/openai', () => ({
   generateEmbedding: vi.fn(async () => null),
+}))
+
+vi.mock('@/server/infra/search/like', () => ({
+  likeCacheKeyParts: vi.fn((_settings: unknown, query: string) => ['like', query]),
+  runLikeSearch: mocks.runLikeSearch,
+}))
+
+vi.mock('@/server/infra/search/trgm', () => ({
+  trgmCacheKeyParts: vi.fn((_settings: unknown, query: string) => ['trgm', query, '0.3']),
+  runTrgmSearch: vi.fn(async () => ['slug-trgm']),
+}))
+
+vi.mock('@/server/infra/search/vector', () => ({
+  vectorCacheKeyParts: vi.fn((_settings: unknown, query: string) => ['vector', query]),
+  runVectorSearch: vi.fn(async () => ['slug-vector']),
 }))
 
 vi.mock('@/server/infra/logger', () => {
@@ -45,83 +59,98 @@ vi.mock('@/server/infra/logger', () => {
   return { getLogger: () => makeStub(), logger: makeStub() }
 })
 
-const { searchPosts, invalidateSearchCache, __resetSearchCacheGenerationForTests } =
-  await import('@/server/infra/search/search')
+import { invalidateSearchCache, searchPosts } from '@/server/infra/search/search'
 
-// A populated result cache means searchPosts never reaches the database
-// beyond the generation read, so a chainable stub stands in for the
-// Drizzle handle: `select().from().where().limit()` for the counter row,
-// `execute()` for the atomic bump.
+// The cache module is mocked, so the Drizzle handle only serves the trgm
+// availability probe (`db.execute`).
 const db = {
-  select: vi.fn(() => ({
-    from: vi.fn(() => ({
-      where: vi.fn(() => ({
-        limit: mocks.selectLimit,
-      })),
-    })),
-  })),
-  execute: mocks.execute,
+  execute: vi.fn(async () => ({ rows: [{ extname: 'pg_trgm' }] })),
 } as unknown as NodePgDatabase
 const where = sql`true`
 
 beforeEach(() => {
-  mocks.selectLimit.mockReset().mockResolvedValue([])
-  mocks.execute.mockReset().mockResolvedValue({ rows: [{ value: 1 }] })
-  mocks.getItem.mockReset().mockResolvedValue(null)
-  mocks.setItem.mockReset().mockResolvedValue(undefined)
-  mocks.getKeys.mockReset().mockResolvedValue([])
-  mocks.warn.mockClear()
-  mocks.info.mockClear()
-  __resetSearchCacheGenerationForTests()
+  vi.clearAllMocks()
+  mocks.getCounter.mockResolvedValue(7)
+  mocks.bumpCounter.mockResolvedValue(undefined)
+  mocks.through.mockResolvedValue(['slug-a', 'slug-b', 'slug-c'])
+  mocks.runLikeSearch.mockResolvedValue(['slug-like'])
 })
 
 describe('infra/search — invalidateSearchCache', () => {
-  it('bumps the generation counter atomically instead of enumerating keys', async () => {
+  it('bumps the searchResult generation counter instead of enumerating keys', async () => {
     await invalidateSearchCache(db)
 
-    expect(mocks.execute).toHaveBeenCalledTimes(1)
-    expect(mocks.getKeys).not.toHaveBeenCalled()
-    expect(mocks.info).toHaveBeenCalledWith('invalidated search result cache', { generation: 1 })
-  })
-
-  it('resolves without throwing when the bump fails, logging one warning', async () => {
-    mocks.execute.mockRejectedValue(new Error('db down'))
-
-    await expect(invalidateSearchCache(db)).resolves.toBeUndefined()
-
-    expect(mocks.warn).toHaveBeenCalledTimes(1)
-    expect(mocks.warn.mock.calls[0]?.[0]).toBe('search result cache invalidation failed')
+    expect(mocks.bumpCounter).toHaveBeenCalledTimes(1)
+    expect(mocks.bumpCounter).toHaveBeenCalledWith(db, 'searchResult')
   })
 })
 
-describe('infra/search — cache generation stamp', () => {
-  it('falls back to generation 0 when the counter row is missing, then recovers after a bump', async () => {
-    mocks.getItem.mockResolvedValue(['slug-a'])
+describe('infra/search — searchPosts', () => {
+  it('reads the generation counter and caches through the searchResult declaration', async () => {
+    const result = await searchPosts(db, where, 'hello', 10)
 
-    const first = await searchPosts(db, where, 'hello', 10)
-    expect(first.hits).toEqual(['slug-a'])
-    expect(mocks.selectLimit).toHaveBeenCalledTimes(1)
-    expect(mocks.getItem.mock.calls[0]?.[1]).toMatch(/^search-result:0:[0-9a-f]{64}$/)
-
-    mocks.execute.mockResolvedValue({ rows: [{ value: 7 }] })
-    await invalidateSearchCache(db)
-
-    const second = await searchPosts(db, where, 'hello', 10)
-    expect(second.hits).toEqual(['slug-a'])
-    expect(mocks.getItem.mock.calls[1]?.[1]).toMatch(/^search-result:7:[0-9a-f]{64}$/)
+    expect(mocks.getCounter).toHaveBeenCalledWith(db, 'searchResult')
+    expect(mocks.through).toHaveBeenCalledTimes(1)
+    const [dbArg, id, params, loader, options] = mocks.through.mock.calls[0] as unknown as [
+      unknown,
+      string,
+      { generation: number; parts: string[] },
+      () => Promise<string[]>,
+      { onHit?: (value: string[]) => void },
+    ]
+    expect(dbArg).toBe(db)
+    expect(id).toBe('searchResult')
+    expect(params.generation).toBe(7)
+    // No settings bundle is hydrated in the unit scope, so the infra
+    // defaults apply — LIKE mode folds only the mode and the query in.
+    expect(params.parts).toEqual(['like', 'hello'])
+    expect(loader).toBeTypeOf('function')
+    expect(options.onHit).toBeTypeOf('function')
+    expect(result.hits).toEqual(['slug-a', 'slug-b', 'slug-c'])
   })
 
-  it('does not cache a failed generation read — the next search retries', async () => {
-    mocks.selectLimit.mockRejectedValueOnce(new Error('flaky'))
-    mocks.getItem.mockResolvedValue(['slug-a'])
+  it('paginates over the cached slug list', async () => {
+    const result = await searchPosts(db, where, 'hello', 2, 2)
 
-    await searchPosts(db, where, 'hello', 10)
-    expect(mocks.getItem.mock.calls[0]?.[1]).toMatch(/^search-result:0:[0-9a-f]{64}$/)
-    expect(mocks.warn).toHaveBeenCalledTimes(1)
-    expect(mocks.warn.mock.calls[0]?.[0]).toBe('search cache generation read failed')
+    expect(result.hits).toEqual(['slug-c'])
+    expect(result.page).toBe(2)
+    expect(result.totalPages).toBe(2)
+  })
 
-    mocks.selectLimit.mockResolvedValue([{ value: 3 }])
+  it('runs the loader through to the active mode on a cache miss', async () => {
+    mocks.through.mockImplementation(
+      async (_db: unknown, _id: unknown, _params: unknown, loader: () => Promise<string[]>) => loader(),
+    )
+
+    const result = await searchPosts(db, where, 'hello', 10)
+
+    expect(mocks.runLikeSearch).toHaveBeenCalledTimes(1)
+    expect(result.hits).toEqual(['slug-like'])
+  })
+
+  it('logs a cache hit through the onHit callback', async () => {
     await searchPosts(db, where, 'hello', 10)
-    expect(mocks.getItem.mock.calls[1]?.[1]).toMatch(/^search-result:3:[0-9a-f]{64}$/)
+
+    const options = (
+      mocks.through.mock.calls[0] as unknown as [
+        unknown,
+        unknown,
+        unknown,
+        unknown,
+        {
+          onHit: (value: string[]) => void
+        },
+      ]
+    )[4]
+    options.onHit(['slug-a'])
+    expect(mocks.info).toHaveBeenCalledWith('Search result cache hit', { query: 'hello', total: 1 })
+  })
+
+  it('short-circuits an empty query without touching the cache', async () => {
+    const result = await searchPosts(db, where, '   ', 10)
+
+    expect(result).toEqual({ hits: [], page: 1, totalPages: 0 })
+    expect(mocks.getCounter).not.toHaveBeenCalled()
+    expect(mocks.through).not.toHaveBeenCalled()
   })
 })

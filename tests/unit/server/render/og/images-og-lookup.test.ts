@@ -28,14 +28,11 @@ vi.mock('@/server/infra/rate-limit', () => ({
   readBucket: vi.fn(() => ({ windowSeconds: 60, maxAttempts: 60 })),
   tryKeyedRateLimit: vi.fn(async () => ({ count: 1, exceeded: false })),
 }))
-vi.mock('@/server/infra/cache/buffer-cache', () => ({
-  loadBuffer: vi.fn(async (_db: unknown, _key: unknown, loader: () => Promise<unknown>) => loader()),
+vi.mock('@/server/infra/cache/registry', () => ({
+  through: vi.fn(async (_db: unknown, _id: unknown, _params: unknown, loader: () => Promise<unknown>) => loader()),
 }))
 vi.mock('@/shared/config/getters', () => ({
   requireBlogSettingsSection: vi.fn((section: string) => {
-    if (section === 'cache') {
-      return { cache: { og: { prefix: 'og:', ttlSeconds: 3600 } } }
-    }
     if (section === 'siteIdentity') {
       return { description: 'A blog', website: 'https://example.com' }
     }
@@ -44,7 +41,6 @@ vi.mock('@/shared/config/getters', () => ({
     }
     return {}
   }),
-  getCacheSettings: () => ({ cache: { og: { prefix: 'og:', ttlSeconds: 3600 } } }),
   getBlogSettingsBundleSync: () => ({
     rateLimit: { resourceIp: { windowSeconds: 60, maxAttempts: 60 } },
   }),

@@ -2,53 +2,39 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+vi.mock('@/server/infra/cache/registry', () => ({
+  clear: vi.fn(),
+}))
+
 import { clearContentCaches } from '@/server/domains/content/shared'
-import { clearFeedCache } from '@/server/infra/cache/feed-cache'
-import { clearSitemapCache } from '@/server/infra/cache/sitemap-cache'
+import { clear } from '@/server/infra/cache/registry'
 
-vi.mock('@/server/infra/cache/feed-cache', () => ({
-  clearFeedCache: vi.fn(),
-}))
-vi.mock('@/server/infra/cache/sitemap-cache', () => ({
-  clearSitemapCache: vi.fn(),
-}))
+const clearMock = vi.mocked(clear)
 
-// The db handle is only forwarded to the mocked clear helpers — a stand-in
+// The db handle is only forwarded to the mocked cache module — a stand-in
 // is enough for the unit scope.
 const db = {} as NodePgDatabase
 
 describe('clearContentCaches', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(clearFeedCache).mockResolvedValue(undefined)
-    vi.mocked(clearSitemapCache).mockResolvedValue(undefined)
+    clearMock.mockResolvedValue(undefined)
   })
 
-  it('clears feed and sitemap caches for posts', async () => {
+  it('clears feed, taxonomy and sitemap caches for posts', async () => {
     await clearContentCaches(db, 'post', 42n)
 
-    expect(clearFeedCache).toHaveBeenCalledTimes(1)
-    expect(clearSitemapCache).toHaveBeenCalledTimes(1)
+    expect(clearMock).toHaveBeenCalledWith(db, 'feed')
+    expect(clearMock).toHaveBeenCalledWith(db, 'tags')
+    expect(clearMock).toHaveBeenCalledWith(db, 'categories')
+    expect(clearMock).toHaveBeenCalledWith(db, 'sitemap')
+    expect(clearMock).toHaveBeenCalledTimes(4)
   })
 
   it('clears only the sitemap cache for pages', async () => {
     await clearContentCaches(db, 'page', 42n)
 
-    expect(clearSitemapCache).toHaveBeenCalledTimes(1)
-    expect(clearFeedCache).not.toHaveBeenCalled()
-  })
-
-  it('logs but does not throw when feed cache clearing fails for posts', async () => {
-    vi.mocked(clearFeedCache).mockRejectedValue(new Error('feed down'))
-
-    await expect(clearContentCaches(db, 'post', 42n)).resolves.toBeUndefined()
-
-    expect(clearSitemapCache).toHaveBeenCalledTimes(1)
-  })
-
-  it('logs but does not throw when sitemap cache clearing fails', async () => {
-    vi.mocked(clearSitemapCache).mockRejectedValue(new Error('sitemap down'))
-
-    await expect(clearContentCaches(db, 'page', 42n)).resolves.toBeUndefined()
+    expect(clearMock).toHaveBeenCalledTimes(1)
+    expect(clearMock).toHaveBeenCalledWith(db, 'sitemap')
   })
 })

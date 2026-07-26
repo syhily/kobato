@@ -9,20 +9,19 @@ vi.mock('@/server/render/feed/generator', () => ({
   generateFeeds: vi.fn(),
 }))
 
-vi.mock('@/server/infra/cache/feed-cache', () => ({
-  feedCacheFor: vi.fn(),
+vi.mock('@/server/infra/cache/registry', () => ({
+  through: vi.fn(),
 }))
 
 import { feedRouter } from '@/server/http/resources/feed'
-import { feedCacheFor } from '@/server/infra/cache/feed-cache'
+import { through } from '@/server/infra/cache/registry'
 import { tryKeyedRateLimit } from '@/server/infra/rate-limit'
 import { generateFeeds } from '@/server/render/feed/generator'
 
 const BUILT = { rss: '<rss version="2.0">built</rss>', atom: '<feed>built</feed>' }
 const CACHED = { rss: '<rss version="2.0">cached</rss>', atom: '<feed>cached</feed>' }
 
-let cacheGet: ReturnType<typeof vi.fn>
-let cacheSet: ReturnType<typeof vi.fn>
+const throughMock = through as unknown as ReturnType<typeof vi.fn>
 
 function requestFeed(url: string) {
   return feedRouter.request(url, undefined, {
@@ -34,11 +33,10 @@ function requestFeed(url: string) {
 describe('feed resource', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    cacheGet = vi.fn().mockResolvedValue(null)
-    cacheSet = vi.fn().mockResolvedValue(undefined)
     ;(tryKeyedRateLimit as ReturnType<typeof vi.fn>).mockResolvedValue({ exceeded: false, count: 1 })
     ;(generateFeeds as ReturnType<typeof vi.fn>).mockResolvedValue(BUILT)
-    ;(feedCacheFor as ReturnType<typeof vi.fn>).mockReturnValue({ get: cacheGet, set: cacheSet, clear: vi.fn() })
+    // Default: a cache miss — run the loader and return its value.
+    throughMock.mockImplementation((_db: unknown, _id: unknown, _params: unknown, loader: () => unknown) => loader())
   })
 
   it('returns rss feed', async () => {
@@ -74,7 +72,7 @@ describe('feed resource', () => {
   })
 
   it('serves a cache hit without regenerating the feed', async () => {
-    cacheGet.mockResolvedValue(CACHED)
+    throughMock.mockResolvedValue(CACHED)
 
     const res = await requestFeed('http://localhost/feed')
 
@@ -89,28 +87,28 @@ describe('feed resource', () => {
     const res = await requestFeed('http://localhost/feed')
 
     expect(generateFeeds).toHaveBeenCalledTimes(1)
-    expect(cacheSet).toHaveBeenCalledWith(undefined, BUILT)
+    expect(throughMock).toHaveBeenCalledWith(undefined, 'feed', { scope: 'all' }, expect.any(Function))
     await expect(res.text()).resolves.toBe(BUILT.rss)
   })
 
   it('namespaces the cache key for category feeds', async () => {
     await requestFeed('http://localhost/cats/tech/feed')
-    expect(feedCacheFor).toHaveBeenCalledWith('cat:tech')
+    expect(throughMock).toHaveBeenCalledWith(undefined, 'feed', { scope: 'cat:tech' }, expect.any(Function))
   })
 
   it('namespaces the cache key for tag feeds', async () => {
     await requestFeed('http://localhost/tags/tech/feed')
-    expect(feedCacheFor).toHaveBeenCalledWith('tag:tech')
+    expect(throughMock).toHaveBeenCalledWith(undefined, 'feed', { scope: 'tag:tech' }, expect.any(Function))
   })
 
   it('uses the bare `all` key for the site-wide feed', async () => {
     await requestFeed('http://localhost/feed')
-    expect(feedCacheFor).toHaveBeenCalledWith('all')
+    expect(throughMock).toHaveBeenCalledWith(undefined, 'feed', { scope: 'all' }, expect.any(Function))
   })
 
   it('namespaces a category slugged `all` away from the site-wide feed', async () => {
     await requestFeed('http://localhost/cats/all/feed')
-    expect(feedCacheFor).toHaveBeenCalledWith('cat:all')
-    expect(feedCacheFor).not.toHaveBeenCalledWith('all')
+    expect(throughMock).toHaveBeenCalledWith(undefined, 'feed', { scope: 'cat:all' }, expect.any(Function))
+    expect(throughMock).not.toHaveBeenCalledWith(undefined, 'feed', { scope: 'all' }, expect.any(Function))
   })
 })

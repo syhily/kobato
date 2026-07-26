@@ -4,7 +4,7 @@ import type { AdminCategoryDto, UpsertCategoryInputs } from '@/server/domains/ta
 
 import { listPostTitlesByCategoryId } from '@/server/domains/posts/repos/public-query/taxonomy'
 import { toAdminCategoryDto } from '@/server/domains/taxonomies/categories/projection'
-import { categoriesCache } from '@/server/domains/taxonomies/categories/services/query'
+import { clearCategoryCache } from '@/server/domains/taxonomies/categories/services/query'
 import { countPostsByTaxonomy } from '@/server/domains/taxonomies/counts'
 import {
   deleteAdminTaxonomy,
@@ -44,7 +44,7 @@ export async function upsertAdminCategory(db: NodePgDatabase, input: UpsertCateg
       description: input.description,
       ...(input.sortOrder !== undefined ? { sortOrder: input.sortOrder } : {}),
     })
-    await categoriesCache.clear(db)
+    await clearCategoryCache(db)
     const counts = await countPostsByTaxonomy(db, { kind: 'category', gate: 'admin', name: row.name })
     return toAdminCategoryDto(row, counts.get(row.name) ?? 0)
   }
@@ -74,7 +74,7 @@ export async function upsertAdminCategory(db: NodePgDatabase, input: UpsertCateg
   if (updated === null) {
     throw new DomainError('NOT_FOUND', '分类不存在')
   }
-  await categoriesCache.clear(db)
+  await clearCategoryCache(db)
   const counts = await countPostsByTaxonomy(db, { kind: 'category', gate: 'admin', name: updated.name })
   return toAdminCategoryDto(updated, counts.get(updated.name) ?? 0)
 }
@@ -109,7 +109,7 @@ export async function reorderAdminCategories(
     ),
     countPostsByTaxonomy(db, { kind: 'category', gate: 'admin' }),
   ])
-  await categoriesCache.clear(db)
+  await clearCategoryCache(db)
   return updated.map((row) => toAdminCategoryDto(row, counts.get(row.name) ?? 0))
 }
 
@@ -120,7 +120,7 @@ export async function deleteAdminCategory(db: NodePgDatabase, id: bigint): Promi
     listPostTitles: (row) => listPostTitlesByCategoryId(db, row.id),
   })
   if (result) {
-    await categoriesCache.clear(db)
+    await clearCategoryCache(db)
   }
   return result
 }

@@ -1,32 +1,21 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { categoriesCache } from '@/server/domains/taxonomies/categories/services/query'
-import { clearTagCache } from '@/server/domains/taxonomies/tags/service'
-import { clearFeedCache } from '@/server/infra/cache/feed-cache'
-import { clearSitemapCache } from '@/server/infra/cache/sitemap-cache'
-import { getLogger } from '@/server/infra/logger'
-
-const log = getLogger('content.cache')
+import { clear } from '@/server/infra/cache/registry'
 
 export type ContentEntityType = 'post' | 'page'
 
+// Every clear is best-effort (the cache module logs and swallows
+// failures), so a cache outage can never bring down a content mutation.
+// `entityId` stays in the signature for caller compatibility.
 export async function clearContentCaches(
   db: NodePgDatabase,
   entityType: ContentEntityType,
-  entityId?: bigint,
+  _entityId?: bigint,
 ): Promise<void> {
   if (entityType === 'post') {
-    await clearFeedCache(db).catch((err: unknown) => {
-      log.warn('clear feed cache failed', { entityId: entityId?.toString(), error: err })
-    })
-    await clearTagCache(db).catch((err: unknown) => {
-      log.warn('clear tag cache failed', { entityId: entityId?.toString(), error: err })
-    })
-    await categoriesCache.clear(db).catch((err: unknown) => {
-      log.warn('clear category cache failed', { entityId: entityId?.toString(), error: err })
-    })
+    await clear(db, 'feed')
+    await clear(db, 'tags')
+    await clear(db, 'categories')
   }
-  await clearSitemapCache(db).catch((err: unknown) => {
-    log.warn('clear sitemap cache failed', { entityId: entityId?.toString(), error: err })
-  })
+  await clear(db, 'sitemap')
 }

@@ -95,3 +95,17 @@ fields one card owns. The server merges it against the stored section
 (objects merge, lists replace) instead of trusting a client-assembled full
 snapshot; unknown fields are rejected.
 _Avoid_: full-section snapshot, loader shape as write base
+
+### Cache
+
+**Cache declaration**:
+One named `kv_cache` bucket (og, calendar, avatar, imageMeta,
+embeddingSearch, searchResult, feed, sitemap, categories, tags,
+comments). Declared once in `@/shared/cache/registry` (metadata plane:
+label, description, default prefix + TTL, tunable flag); the behavior
+plane (`@/server/infra/cache/registry`) attaches the key shape, codec,
+and write policy, and every consumer goes through its verbs (`through`,
+`get`/`set`/`remove`/`clear`, `throughMany`, generation counters) — never
+through `kv-store` directly.
+_Avoid_: hand-rolled cache-aside at call sites, ad-hoc key strings
+outside the behavior plane
