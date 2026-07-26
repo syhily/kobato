@@ -11,7 +11,8 @@ const source = readFileSync(sessionFile, 'utf8')
 
 describe('contract: session cookie configuration', () => {
   it('uses the historical session cookie name (__session)', () => {
-    expect(source).toContain("name: '__session'")
+    expect(source).toContain('name: SESSION_COOKIE_NAME')
+    expect(source).toContain("SESSION_COOKIE_NAME = '__session'")
   })
 
   it("keeps the cookie httpOnly so client-side JS can't read it", () => {

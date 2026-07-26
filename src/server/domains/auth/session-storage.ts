@@ -72,7 +72,7 @@ export async function commitSessionWithMaxAge(session: BlogSession): Promise<str
 
 const storage = createSessionStorage<BlogSessionData>({
   cookie: {
-    name: '__session',
+    name: SESSION_COOKIE_NAME,
     httpOnly: true,
     maxAge: SESSION_MAX_AGE,
     path: '/',

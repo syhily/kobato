@@ -26,7 +26,6 @@ describe('requestContextMiddleware', () => {
       resolveSessionContext: vi.fn().mockResolvedValue({
         session,
         user,
-        role: user.role,
         dirty: false,
         ...mocks.sessionCtx,
       }),

@@ -23,7 +23,6 @@ import { idFromString } from '@/shared/utils/id'
 export interface SessionContext {
   session: BlogSession
   user: SessionUser | undefined
-  role: Role | null
 }
 
 export interface EstablishLoginOptions {
@@ -78,7 +77,9 @@ export async function establishLoginSession(
     role: dbUser.role,
   }
   const absoluteExpiry = Date.now() + resolveSessionMaxAge() * 1000
-  session.set('user', userData)
+  // Only the NEW session object carries the user — the (destroyed) old one
+  // is never committed again (the middleware skips its dirty-commit once
+  // this response sets a `__session` cookie).
   const newSession = buildSessionWithSid(sid, { user: userData, absoluteExpiry })
   const setCookie = await commitSessionWithMaxAge(newSession)
   const userAgent = request.headers.get('User-Agent')
@@ -173,5 +174,5 @@ export async function resolveSessionContext(
     recordSessionActivity(db, session.id)
   }
 
-  return { session, user, role: user?.role ?? null, dirty }
+  return { session, user, dirty }
 }

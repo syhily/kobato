@@ -496,7 +496,6 @@ describe('auth/primitives — resolveSessionContext', () => {
     const { resolveSessionContext } = await import('@/server/domains/auth/primitives')
     const result = await resolveSessionContext(db, new Request('http://localhost/'))
     expect(result.user).toBeUndefined()
-    expect(result.role).toBeNull()
   })
 })
 
