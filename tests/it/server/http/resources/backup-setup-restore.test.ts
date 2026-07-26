@@ -4,6 +4,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Env } from '@/server/http/context'
 import type { RequestContext } from '@/server/http/request-context'
 
+import { makeRequestContext } from '#/_helpers/request-context'
+
 const mockHasAdmin = vi.fn()
 const mockFindFirstAdminUser = vi.fn()
 const mockIsSetupTokenActive = vi.fn()
@@ -81,25 +83,15 @@ function makeSession(data: Partial<BlogSessionData> = {}) {
   return createSession<BlogSessionData, BlogSessionData>(data, 'test-session')
 }
 
-function makeRequestContext(session: ReturnType<typeof makeSession>): RequestContext {
-  return {
-    session,
-    viewer: session.get('user') ?? null,
-    clientAddress: '127.0.0.1',
-    url: new URL('http://localhost/'),
-    requestFacts: {} as RequestContext['requestFacts'],
-    db: {} as RequestContext['db'],
-    pool: {} as RequestContext['pool'],
-    cspNonce: 'test-csp-nonce',
-    markSessionDirty: () => {},
-  }
+function makeRc(session: ReturnType<typeof makeSession>): RequestContext {
+  return makeRequestContext({ session })
 }
 
 async function buildApp(session: ReturnType<typeof makeSession>) {
   const { backupRouter } = await import('@/server/http/resources/backup')
   const app = new Hono<Env>()
   app.use('*', async (c, next) => {
-    c.set('requestContext', makeRequestContext(session))
+    c.set('requestContext', makeRc(session))
     await next()
   })
   app.route('/', backupRouter)
@@ -124,7 +116,7 @@ describe('/api/admin/backup/upload-restore', () => {
     app.use('*', async (c, next) => {
       c.set(
         'requestContext',
-        makeRequestContext(
+        makeRc(
           makeSession({
             csrfToken: 'valid-csrf',
             user: { id: '1', name: 'Admin', email: 'admin@test.com', website: null, role: 'admin' },
@@ -153,7 +145,7 @@ describe('/api/admin/backup/upload-restore', () => {
     app.use('*', async (c, next) => {
       c.set(
         'requestContext',
-        makeRequestContext(
+        makeRc(
           makeSession({
             csrfToken: 'valid-csrf',
             user: { id: '1', name: 'Admin', email: 'admin@test.com', website: null, role: 'admin' },
@@ -185,7 +177,7 @@ describe('/api/admin/backup/upload-restore', () => {
     app.use('*', async (c, next) => {
       c.set(
         'requestContext',
-        makeRequestContext(
+        makeRc(
           makeSession({
             csrfToken: 'valid-csrf',
             user: { id: '1', name: 'Admin', email: 'admin@test.com', website: null, role: 'admin' },

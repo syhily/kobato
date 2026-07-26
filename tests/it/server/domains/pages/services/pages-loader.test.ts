@@ -4,10 +4,10 @@ import { RouterContextProvider } from 'react-router'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { SessionUser } from '@/server/domains/auth/session-storage'
-import type { RequestContext } from '@/server/http/request-context'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
 import { makePage } from '#/_helpers/catalog'
+import { makeRequestContext } from '#/_helpers/request-context'
 import { adminUser } from '#/_helpers/session'
 import { requestContext } from '@/server/http/request-context'
 
@@ -87,9 +87,8 @@ vi.mock('@/server/domains/images/services/enhance', () => ({
 function makeArgs(slug: string, viewer: SessionUser | null = null) {
   const context = new RouterContextProvider()
   // `loadPagePreview` reads only `viewer` off the canonical request
-  // context (draft-preview role gating) — partial stub cast through
-  // `unknown`, the same convention as the middleware tests.
-  context.set(requestContext, { viewer } as unknown as RequestContext)
+  // context (draft-preview role gating).
+  context.set(requestContext, makeRequestContext({ user: viewer }))
   return {
     db: mockDb,
     slug,

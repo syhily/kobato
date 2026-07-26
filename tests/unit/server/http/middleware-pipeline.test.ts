@@ -3,6 +3,9 @@ import { describe, expect, it, vi } from 'vitest'
 
 import type { Env } from '@/server/http/context'
 
+import { makeRequestContext } from '#/_helpers/request-context'
+import { emptySession } from '#/_helpers/session'
+
 vi.mock('@/server/bootstrap/db-lifecycle', () => ({
   getDb: vi.fn(() => ({})),
   getPool: vi.fn(() => ({})),
@@ -127,7 +130,7 @@ vi.mock('@/shared/config/getters', () => ({
 }))
 
 import { buildCspHeader, configureMiddleware, buildLoadContext } from '@/server/http/middleware-pipeline'
-import { requestContext, type RequestContext } from '@/server/http/request-context'
+import { requestContext } from '@/server/http/request-context'
 
 describe('buildCspHeader', () => {
   it('returns a strict nonce-based policy in production', () => {
@@ -173,16 +176,7 @@ describe('configureMiddleware', () => {
 
 describe('buildLoadContext', () => {
   it('hydrates settings and returns a RouterContextProvider', async () => {
-    const rc = {
-      session: {},
-      viewer: null,
-      clientAddress: '127.0.0.1',
-      url: new URL('http://localhost/'),
-      db: {},
-      pool: {},
-      cspNonce: 'nonce',
-      markSessionDirty: () => {},
-    } as unknown as RequestContext
+    const rc = makeRequestContext({ session: emptySession(), cspNonce: 'nonce' })
     const context = await buildLoadContext({
       var: { requestContext: rc } as unknown as Env['Variables'],
       req: { raw: new Request('http://localhost/'), url: 'http://localhost/' },

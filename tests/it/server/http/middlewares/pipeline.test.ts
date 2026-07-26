@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { BlogSession } from '@/server/domains/auth/session-storage'
+
+import { makeRequestContext } from '#/_helpers/request-context'
 import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@/shared/config/snapshot'
 
 const hydrateMock = vi.hoisted(() => vi.fn())
@@ -35,14 +38,13 @@ function makeContextStub(overrides: Record<string, unknown> = {}) {
   return {
     var: {
       requestContext: {
-        session: { get: () => undefined },
-        viewer: null,
-        clientAddress: '127.0.0.1',
-        url: new URL('http://localhost/'),
-        db: { id: 'db-stub' },
-        pool: { id: 'pool-stub' },
-        cspNonce: 'test-nonce-123',
-        markSessionDirty: () => {},
+        ...makeRequestContext({
+          session: { get: () => undefined } as unknown as BlogSession,
+          clientAddress: '127.0.0.1',
+          db: { id: 'db-stub' } as never,
+          pool: { id: 'pool-stub' } as never,
+          cspNonce: 'test-nonce-123',
+        }),
         ...overrides,
       },
     },

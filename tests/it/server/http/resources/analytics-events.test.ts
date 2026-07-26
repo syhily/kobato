@@ -10,6 +10,7 @@ vi.mock('@/server/domains/analytics/services/realtime', () => ({
   queryRealtimeTail: vi.fn().mockResolvedValue([]),
 }))
 
+import { makeRequestContext as makeBaseRequestContext } from '#/_helpers/request-context'
 import { analyticsEventsRouter } from '@/server/http/resources/analytics'
 
 const ADMIN_VIEWER: SessionUser = {
@@ -21,25 +22,12 @@ const ADMIN_VIEWER: SessionUser = {
 }
 
 function makeRequestContext(sessionId: string, clientAddress: string): RequestContext {
-  return {
+  return makeBaseRequestContext({
+    request: new Request('http://localhost/api/analytics/events'),
     session: createSession({ user: ADMIN_VIEWER }, sessionId) as unknown as RequestContext['session'],
-    viewer: ADMIN_VIEWER,
+    user: ADMIN_VIEWER,
     clientAddress,
-    url: new URL('http://localhost/api/analytics/events'),
-    requestFacts: {
-      path: '/api/analytics/events',
-      isDataRequest: false,
-      userAgent: null,
-      referer: null,
-      acceptLanguage: null,
-      purpose: null,
-      cookie: null,
-    },
-    db: {} as RequestContext['db'],
-    pool: {} as RequestContext['pool'],
-    cspNonce: 'test-nonce',
-    markSessionDirty: () => undefined,
-  }
+  })
 }
 
 async function buildApp(sessionId: string, clientAddress = '127.0.0.1') {

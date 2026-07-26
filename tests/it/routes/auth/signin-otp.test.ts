@@ -10,9 +10,9 @@ import type { BlogSettingsBundle } from '@/shared/config/types'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { clearAllTables } from '#/_helpers/integration-db'
+import { makeRequestContext } from '#/_helpers/request-context'
 import { makeSession } from '#/_helpers/session'
 import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
-import { extractRequestFacts } from '@/server/http/utils/request-facts'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { user, verification } from '@/server/infra/db/schema/user'
 import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
@@ -121,18 +121,14 @@ beforeEach(async () => {
   // (same email/IP) exhaust the otpSend* budgets for later ones.
   __resetRateLimitsForTests()
   testSession = makeSession({})
-  const url = new URL('http://localhost/admin/signin')
-  mockHandles.getRequestContext.mockReturnValue({
-    session: testSession,
-    viewer: null,
-    clientAddress: '127.0.0.1',
-    url,
-    requestFacts: extractRequestFacts(new Request(url)),
-    db,
-    pool,
-    cspNonce: 'test-csp-nonce',
-    markSessionDirty: () => {},
-  })
+  mockHandles.getRequestContext.mockReturnValue(
+    makeRequestContext({
+      session: testSession,
+      db,
+      pool,
+      request: new Request('http://localhost/admin/signin'),
+    }),
+  )
   mockHandles.sendSignInOtp.mockClear()
   mockHandles.establishLoginSession.mockClear()
   mockHandles.recordAuditEvent.mockClear()
@@ -173,17 +169,9 @@ function setContext(action: string | null, redirectTo = '/admin', clientAddress 
   }
   params.set('redirect_to', redirectTo)
   const url = new URL(`http://localhost/admin/signin?${params.toString()}`)
-  mockHandles.getRequestContext.mockReturnValue({
-    session: testSession,
-    viewer: null,
-    clientAddress,
-    url,
-    requestFacts: extractRequestFacts(new Request(url)),
-    db,
-    pool,
-    cspNonce: 'test-csp-nonce',
-    markSessionDirty: () => {},
-  })
+  mockHandles.getRequestContext.mockReturnValue(
+    makeRequestContext({ session: testSession, clientAddress, db, pool, request: new Request(url) }),
+  )
   return url
 }
 

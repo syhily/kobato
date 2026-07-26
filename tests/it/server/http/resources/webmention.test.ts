@@ -5,11 +5,11 @@ import { Hono } from 'hono'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 import type { Env } from '@/server/http/context'
-import type { RequestContext } from '@/server/http/request-context'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { installFetch } from '#/_helpers/fetch'
 import { clearAllTables } from '#/_helpers/integration-db'
+import { makeRequestContext } from '#/_helpers/request-context'
 import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
 import { onErrorHandler } from '@/server/http/errors'
 import { webmentionRouter } from '@/server/http/resources/webmention'
@@ -44,10 +44,10 @@ function buildApp(clientAddress = '203.0.113.10') {
   app.onError(onErrorHandler)
   app.use('*', async (c, next) => {
     c.set('requestId', 'test-request')
-    // Minimal RequestContext stub — the router reads `.db` and the
+    // Factory-built RequestContext — the router reads `.db` and the
     // rate-limit middleware reads `.clientAddress`; no other field of
     // the canonical context is consulted on this surface.
-    c.set('requestContext', { clientAddress, db, pool } as unknown as RequestContext)
+    c.set('requestContext', makeRequestContext({ clientAddress, db, pool }))
     await next()
   })
   app.route('/', webmentionRouter)

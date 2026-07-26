@@ -97,9 +97,13 @@ ceremony:
   - `#/_helpers/integration-db` — DB creation / teardown (integration only)
   - `#/_helpers/db` — query helpers (integration only)
   - `#/_helpers/mock-ctx` — mock auth context (integration only)
-  - `#/_helpers/context` — `makeRouteContext` / `makeLoaderArgs` factories
-    that set the canonical `requestContext` RR key (ADR-0003) for direct
-    loader/action tests
+  - `#/_helpers/request-context` — `makeRequestContext`, the single
+    canonical `RequestContext` stub factory (never hand-roll rc literals;
+    safe to import from `vi.mock('@/server/http/request-context', …)`
+    factories — no runtime edge to the mocked module)
+  - `#/_helpers/context` — `makeRouteContext` / `makeLoaderArgs` wrappers
+    that set the stub on a `RouterContextProvider` for direct loader/action
+    tests
   - `#/_helpers/auth-context-mock` — `createRequestContextMockModule()` for
     `vi.mock('@/server/http/request-context', ...)` when a test invokes a
     handler without a real `RouterContextProvider`

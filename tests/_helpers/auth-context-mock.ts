@@ -2,8 +2,8 @@ import { vi } from 'vitest'
 
 import type { RequestContext } from '@/server/http/request-context'
 
+import { makeRequestContext } from '#/_helpers/request-context'
 import { emptySession } from '#/_helpers/session'
-import { extractRequestFacts, normalizeDocumentUrl } from '@/server/http/utils/request-facts'
 
 /**
  * Factory for `vi.mock('@/server/http/request-context', ...)` that returns
@@ -20,17 +20,7 @@ export async function createRequestContextMockModule() {
         const ctx = args.context as { get: (key: unknown) => unknown }
         return ctx.get(actual.requestContext) as RequestContext
       } catch {
-        return {
-          session: emptySession(),
-          viewer: null,
-          clientAddress: '127.0.0.1',
-          url: normalizeDocumentUrl(new URL(args.request.url)),
-          requestFacts: extractRequestFacts(args.request),
-          db: {} as RequestContext['db'],
-          pool: {} as RequestContext['pool'],
-          cspNonce: 'test-csp-nonce',
-          markSessionDirty: () => {},
-        }
+        return makeRequestContext({ request: args.request, session: emptySession() })
       }
     }),
   }

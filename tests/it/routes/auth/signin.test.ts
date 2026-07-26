@@ -34,23 +34,18 @@ const state = vi.hoisted(() => {
 
 vi.mock('@/server/http/request-context', async () => {
   const actual = await vi.importActual<typeof import('@/server/http/request-context')>('@/server/http/request-context')
-  const { extractRequestFacts } = await import('@/server/http/utils/request-facts')
+  const { makeRequestContext } = await import('#/_helpers/request-context')
   return {
     ...actual,
     getRequestContext: vi.fn(
-      ({ request }: { request: Request }): RequestContext => ({
-        session: state.session as RequestContext['session'],
-        viewer: state.loggedIn
-          ? { id: '1', name: 'admin', email: 'admin@example.com', website: null, role: 'admin' as const }
-          : null,
-        clientAddress: '127.0.0.1',
-        url: new URL(request.url),
-        requestFacts: extractRequestFacts(request),
-        db: {} as never,
-        pool: {} as never,
-        cspNonce: 'test-csp-nonce',
-        markSessionDirty: () => {},
-      }),
+      ({ request }: { request: Request }): RequestContext =>
+        makeRequestContext({
+          request,
+          session: state.session as RequestContext['session'],
+          user: state.loggedIn
+            ? { id: '1', name: 'admin', email: 'admin@example.com', website: null, role: 'admin' as const }
+            : undefined,
+        }),
     ),
   }
 })

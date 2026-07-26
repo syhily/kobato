@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { makeRequestContext } from '#/_helpers/request-context'
 import { requestContext } from '@/server/http/request-context'
 
 const renderToPipeableStreamMock = vi.hoisted(() =>
@@ -36,7 +37,7 @@ describe('entry.server.tsx / handleRequest', () => {
     const loadContext = {
       get: vi.fn((context: unknown) => {
         if (context === requestContext) {
-          return { cspNonce: 'test-nonce-xyz789' }
+          return makeRequestContext({ cspNonce: 'test-nonce-xyz789' })
         }
         return undefined
       }),

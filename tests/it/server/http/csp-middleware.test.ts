@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Env } from '@/server/http/context'
 
+import { makeRequestContext } from '#/_helpers/request-context'
+
 describe('CSP middleware', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -13,7 +15,7 @@ describe('CSP middleware', () => {
 
     // Mimic the nonce-generation middleware
     app.use('*', async (c, next) => {
-      c.set('requestContext', { cspNonce: 'test-nonce-12345' } as unknown as Env['Variables']['requestContext'])
+      c.set('requestContext', makeRequestContext({ cspNonce: 'test-nonce-12345' }))
       await next()
     })
 
