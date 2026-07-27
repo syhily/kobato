@@ -4,7 +4,7 @@ import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 import { parseRpcJson } from '#/_helpers/rpc-call'
 
 const fetchAdminUserDto = vi.hoisted(() => vi.fn())
-const setUserMuted = vi.hoisted(() => vi.fn())
+const muteUser = vi.hoisted(() => vi.fn())
 const updateUserRoleWithGuard = vi.hoisted(() => vi.fn())
 const inviteAuthorWithRollback = vi.hoisted(() => vi.fn())
 const sendPasswordResetToUser = vi.hoisted(() => vi.fn())
@@ -12,13 +12,10 @@ const deleteAllCredentials = vi.hoisted(() => vi.fn())
 
 vi.mock('@/server/domains/users/services/admin', () => ({
   fetchAdminUserDto,
+  muteUser,
   updateUserRoleWithGuard,
   inviteAuthorWithRollback,
   sendPasswordResetToUser,
-}))
-
-vi.mock('@/server/infra/db/operations/user', () => ({
-  setUserMuted,
 }))
 
 vi.mock('@/server/domains/audit/services/record', () => ({
@@ -61,29 +58,33 @@ async function call(path: string, input: unknown) {
   return result.response
 }
 
+function makeAdminUserDto() {
+  return {
+    id: '1',
+    name: 'Alice',
+    email: 'alice@example.com',
+    link: null,
+    badgeName: null,
+    badgeColor: null,
+    badgeTextColor: null,
+    role: 'author',
+    isMuted: false,
+    emailVerified: true,
+    createdAt: new Date().toISOString(),
+    deletedAt: null,
+    commentCount: 0,
+    pendingCount: 0,
+    lastCommentAt: null,
+    passkeyCount: 0,
+    passkeyForce: false,
+  }
+}
+
 describe('admin users-admin controller', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    fetchAdminUserDto.mockResolvedValue({
-      id: '1',
-      name: 'Alice',
-      email: 'alice@example.com',
-      link: null,
-      badgeName: null,
-      badgeColor: null,
-      badgeTextColor: null,
-      role: 'author',
-      isMuted: false,
-      emailVerified: true,
-      createdAt: new Date().toISOString(),
-      deletedAt: null,
-      commentCount: 0,
-      pendingCount: 0,
-      lastCommentAt: null,
-      passkeyCount: 0,
-      passkeyForce: false,
-    })
-    setUserMuted.mockResolvedValue({ id: 1n })
+    fetchAdminUserDto.mockResolvedValue(makeAdminUserDto())
+    muteUser.mockResolvedValue(makeAdminUserDto())
     updateUserRoleWithGuard.mockResolvedValue({ role: 'visitor' })
     inviteAuthorWithRollback.mockResolvedValue({ userId: 2n })
     sendPasswordResetToUser.mockResolvedValue({ userId: 3n })
@@ -94,11 +95,12 @@ describe('admin users-admin controller', () => {
     expect(response.status).toBe(200)
     const body = await parseRpcJson<{ user: unknown }>(response)
     expect(body.user).toBeDefined()
-    expect(setUserMuted).toHaveBeenCalledWith(expect.anything(), 1n, true)
+    expect(muteUser).toHaveBeenCalledWith(expect.anything(), 1n, true)
   })
 
-  it('returns 404 when muting a non-existent user', async () => {
-    setUserMuted.mockResolvedValue(null)
+  it('returns 404 when muting a non-existent user or an admin', async () => {
+    const { DomainError } = await import('@/server/infra/http/errors')
+    muteUser.mockRejectedValue(new DomainError('NOT_FOUND', '用户不存在或为管理员（管理员不可禁言）'))
     const response = await call('/mute', { id: '1', muted: true })
     expect(response.status).toBe(404)
   })
@@ -116,6 +118,15 @@ describe('admin users-admin controller', () => {
     expect(response.status).toBe(200)
     const body = await parseRpcJson<{ success: boolean }>(response)
     expect(body.success).toBe(true)
+    // The site origin comes from the settings bundle via resolveSiteOrigin.
+    expect(inviteAuthorWithRollback).toHaveBeenCalledWith(
+      expect.anything(),
+      'Bob',
+      'bob@example.com',
+      'https://example.com',
+      'Test User',
+      'test@example.com',
+    )
   })
 
   it('rejects an invite when rate limited', async () => {
@@ -130,6 +141,7 @@ describe('admin users-admin controller', () => {
     expect(response.status).toBe(200)
     const body = await parseRpcJson<{ success: boolean }>(response)
     expect(body.success).toBe(true)
+    expect(sendPasswordResetToUser).toHaveBeenCalledWith(expect.anything(), 'alice@example.com', 'https://example.com')
   })
 
   it('clears passkeys for a user', async () => {

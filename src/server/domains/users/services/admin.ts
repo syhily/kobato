@@ -19,6 +19,7 @@ import {
   findUserByEmail,
   findUserById,
   insertAuthor,
+  setUserMuted,
   softDeleteUserById,
   updateUserRole,
 } from '@/server/infra/db/operations/user'
@@ -87,6 +88,22 @@ export function toAdminUserDto(row: AdminUserRow): AdminUserDto {
 export async function fetchAdminUserDto(db: NodePgDatabase, id: bigint): Promise<AdminUserDto | null> {
   const row = await findAdminUserById(db, id)
   return row ? toAdminUserDto(row) : null
+}
+
+// Mute/unmute an account and return the aggregated admin DTO. The
+// "admins cannot be muted" guard lives inside `setUserMuted`'s WHERE
+// clause, so a null write covers both "no such user" and "target is an
+// admin" — same wire contract the controller used to inline.
+export async function muteUser(db: NodePgDatabase, id: bigint, muted: boolean): Promise<AdminUserDto> {
+  const updated = await setUserMuted(db, id, muted)
+  if (!updated) {
+    throw new DomainError('NOT_FOUND', '用户不存在或为管理员（管理员不可禁言）')
+  }
+  const dto = await fetchAdminUserDto(db, updated.id)
+  if (!dto) {
+    throw new DomainError('NOT_FOUND', '用户不存在')
+  }
+  return dto
 }
 
 export interface ListAdminUsersResult {

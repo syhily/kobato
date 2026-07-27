@@ -9,7 +9,7 @@ import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { comment } from '@/server/infra/db/schema/comment'
 import { user } from '@/server/infra/db/schema/user'
 
-const { setBlogSettingsBundleForTests } = await import('@/server/domains/settings/services/test-utils')
+const { setBlogSettingsBundleForTests } = await import('#/_helpers/blog-settings')
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('#/_helpers/blog-settings')
 
 const sendAuthorInvite = vi.fn()
@@ -216,6 +216,29 @@ describe('infra/db/operations/user — setUserMuted', () => {
     const u = await seedUser({ name: 'M', email: 'm@example.com', role: 'admin' })
     const r = await userOps.setUserMuted(db, u.id, true)
     expect(r).toBeNull()
+  })
+})
+
+describe('users/services/admin — muteUser', () => {
+  it('throws NOT_FOUND for an unknown target', async () => {
+    await expect(admin.muteUser(db, 9999n, true)).rejects.toThrow(/用户不存在或为管理员/)
+  })
+
+  it('throws NOT_FOUND when targeting an admin (admins cannot be muted)', async () => {
+    const u = await seedUser({ name: 'Admin', email: 'admin-mute@example.com', role: 'admin' })
+    await expect(admin.muteUser(db, u.id, true)).rejects.toThrow(/管理员不可禁言/)
+  })
+
+  it('mutes a user and returns the aggregated admin DTO', async () => {
+    const u = await seedUser({ name: 'M', email: 'mute@example.com', role: 'visitor' })
+
+    const dto = await admin.muteUser(db, u.id, true)
+    expect(dto.id).toBe(String(u.id))
+    expect(dto.isMuted).toBe(true)
+    expect(dto.name).toBe('M')
+
+    const unmuted = await admin.muteUser(db, u.id, false)
+    expect(unmuted.isMuted).toBe(false)
   })
 })
 

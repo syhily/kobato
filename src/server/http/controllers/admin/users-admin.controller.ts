@@ -6,13 +6,13 @@ import { deleteAllCredentials } from '@/server/domains/auth/passkey/service'
 import {
   fetchAdminUserDto,
   inviteAuthorWithRollback,
+  muteUser,
   sendPasswordResetToUser,
   updateUserRoleWithGuard,
 } from '@/server/domains/users/services/admin'
 import { adminProc, passkeyGuard } from '@/server/http/orpc-base'
-import { setUserMuted } from '@/server/infra/db/operations/user'
+import { resolveSiteOrigin } from '@/server/http/utils/site-origin'
 import { tryInviteByEmailRateLimit, tryInviteRateLimit } from '@/server/infra/rate-limit'
-import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { adminUserDto } from '@/shared/contracts/users'
 import { idFromString } from '@/shared/utils/id'
 
@@ -23,14 +23,7 @@ const mute = adminProc
   .input(z.object({ id: z.string().min(1), muted: z.boolean() }))
   .output(z.object({ user: adminUserDto }))
   .handler(async ({ input, context }) => {
-    const updated = await setUserMuted(context.db, idFromString(input.id), input.muted)
-    if (!updated) {
-      throw new ORPCError('NOT_FOUND', { message: '用户不存在或为管理员（管理员不可禁言）' })
-    }
-    const dto = await fetchAdminUserDto(context.db, updated.id)
-    if (!dto) {
-      throw new ORPCError('NOT_FOUND', { message: '用户不存在' })
-    }
+    const dto = await muteUser(context.db, idFromString(input.id), input.muted)
     recordAuditEventFromContext(context, {
       action: input.muted ? 'user_muted' : 'user_unmuted',
       resourceType: 'user',
@@ -71,8 +64,7 @@ const inviteAuthor = adminProc
       throw new ORPCError('TOO_MANY_REQUESTS', { message: '邀请发送过于频繁，请稍后再试。' })
     }
 
-    const bundle = getBlogSettingsBundleSync()
-    const origin = bundle?.siteIdentity?.website ?? new URL(context.request.url).origin
+    const origin = resolveSiteOrigin(context.request)
     const inviterName = context.viewer.name ?? '管理员'
 
     const result = await inviteAuthorWithRollback(
@@ -98,11 +90,7 @@ const sendPasswordReset = adminProc
   .input(z.object({ email: z.email().min(1) }))
   .output(successOutput)
   .handler(async ({ input, context }) => {
-    const user = await sendPasswordResetToUser(
-      context.db,
-      input.email,
-      getBlogSettingsBundleSync()?.siteIdentity?.website ?? new URL(context.request.url).origin,
-    )
+    const user = await sendPasswordResetToUser(context.db, input.email, resolveSiteOrigin(context.request))
 
     recordAuditEventFromContext(context, {
       action: 'password_reset_sent',
