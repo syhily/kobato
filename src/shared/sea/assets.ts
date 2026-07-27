@@ -8,8 +8,8 @@
 //   client/<path>                       whole build/client tree (static assets)
 //   drizzle/<folder>/<file>             whole drizzle/ tree (migrations)
 //   wasm/cnfs.wasm                      the cn-font-split wasm core
-//   worker/process-worker.cjs           bundled image worker (text)
-//   worker/smoke-worker.cjs             bundled --smoke-worker entry (text)
+//   worker/process-worker.mjs           bundled image worker (text)
+//   worker/smoke-worker.mjs             bundled --smoke-worker entry (text)
 //   natives/<file>                      native dynamic libraries (sharp.node,
 //                                       skia.node, libvips*) — the only
 //                                       assets extracted to disk at runtime
@@ -40,11 +40,11 @@ export const SEA_MANIFEST_KEY = 'manifest.json'
  */
 export type SeaAssetCodec = 'zstd' | 'brotli' | 'none'
 
-/** Key of the bundled image worker, embedded as text and started via `new Worker(code, { eval: true })`. */
-export const SEA_PROCESS_WORKER_BUNDLE_KEY = 'worker/process-worker.cjs'
+/** Key of the bundled image worker, embedded as text and started via `new Worker(code, { eval: true, execArgv: ['--input-type=module'] })`. */
+export const SEA_PROCESS_WORKER_BUNDLE_KEY = 'worker/process-worker.mjs'
 
-/** Key of the bundled `--smoke-worker` entry, embedded as text and dispatched via `new Worker(code, { eval: true })`. */
-export const SEA_SMOKE_WORKER_BUNDLE_KEY = 'worker/smoke-worker.cjs'
+/** Key of the bundled `--smoke-worker` entry, embedded as text and dispatched via `new Worker(code, { eval: true, execArgv: ['--input-type=module'] })`. */
+export const SEA_SMOKE_WORKER_BUNDLE_KEY = 'worker/smoke-worker.mjs'
 
 /** Key of the cn-font-split wasm core, instantiated from memory. */
 export const SEA_WASM_CNFS_KEY = 'wasm/cnfs.wasm'

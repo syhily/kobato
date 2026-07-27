@@ -49,8 +49,8 @@ const PARTIES: { file: string; names: string[]; forbiddenLiterals: string[] }[] 
     forbiddenLiterals: [
       `'manifest.json'`,
       `'server/server.mjs'`,
-      `'worker/process-worker.cjs'`,
-      `'worker/smoke-worker.cjs'`,
+      `'worker/process-worker.mjs'`,
+      `'worker/smoke-worker.mjs'`,
       `'wasm/cnfs.wasm'`,
       `'natives/sharp.node'`,
       `'natives/skia.node'`,
@@ -70,7 +70,7 @@ const PARTIES: { file: string; names: string[]; forbiddenLiterals: string[] }[] 
   {
     file: 'src/server/infra/sea-cli.ts',
     names: ['SEA_SMOKE_WORKER_BUNDLE_KEY'],
-    forbiddenLiterals: [`'worker/smoke-worker.cjs'`],
+    forbiddenLiterals: [`'worker/smoke-worker.mjs'`],
   },
   {
     file: 'src/server/infra/native-require.ts',
@@ -96,7 +96,7 @@ const PARTIES: { file: string; names: string[]; forbiddenLiterals: string[] }[] 
   {
     file: 'src/server/infra/image/process-pool.ts',
     names: ['SEA_PROCESS_WORKER_BUNDLE_KEY'],
-    forbiddenLiterals: [`'worker/process-worker.cjs'`],
+    forbiddenLiterals: [`'worker/process-worker.mjs'`],
   },
   {
     file: 'src/server/render/warmup/manifest.ts',
@@ -127,8 +127,8 @@ function readSource(path: string): string {
 describe('contract: SEA embedded-asset keys', () => {
   it('pins the key and prefix values in the shared module', () => {
     expect(SEA_MANIFEST_KEY).toBe('manifest.json')
-    expect(SEA_PROCESS_WORKER_BUNDLE_KEY).toBe('worker/process-worker.cjs')
-    expect(SEA_SMOKE_WORKER_BUNDLE_KEY).toBe('worker/smoke-worker.cjs')
+    expect(SEA_PROCESS_WORKER_BUNDLE_KEY).toBe('worker/process-worker.mjs')
+    expect(SEA_SMOKE_WORKER_BUNDLE_KEY).toBe('worker/smoke-worker.mjs')
     expect(SEA_WASM_CNFS_KEY).toBe('wasm/cnfs.wasm')
     expect(SEA_CLIENT_ASSET_PREFIX).toBe('client/')
     expect(SEA_DRIZZLE_ASSET_PREFIX).toBe('drizzle/')

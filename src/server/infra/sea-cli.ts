@@ -22,11 +22,11 @@
 //
 // `--smoke-worker` no longer materializes a bundle to disk (filesystem
 // `import()` is forbidden in the injected script): the embedded
-// `worker/smoke-worker.cjs` text is dispatched via
-// `new Worker(code, { eval: true })` — the same mechanism the image
-// process pool uses for `worker/process-worker.cjs`. Outside SEA the
-// sibling bundle emitted by the same vite run is spawned as a file
-// worker instead.
+// `worker/smoke-worker.mjs` text is dispatched via
+// `new Worker(code, { eval: true, execArgv: ['--input-type=module'] })` —
+// the same mechanism the image process pool uses for
+// `worker/process-worker.mjs`. Outside SEA the sibling bundle emitted by
+// the same vite run is spawned as a file worker instead.
 
 import { once } from 'node:events'
 import { Worker } from 'node:worker_threads'
@@ -127,19 +127,20 @@ async function smokeWorker(): Promise<void> {
   // bundled sharp at module scope.
   bootstrapSeaRuntime()
   const code = getEmbeddedAsset(SEA_SMOKE_WORKER_BUNDLE_KEY)
-  // Worker threads do NOT inherit the parent's argv (an eval worker sees
-  // [execPath, '[worker eval]']). The smoke worker's env graph resolves
-  // the config file from argv (`--config`), so forward this process's
-  // args explicitly — otherwise its config resolution falls through to
-  // the <execDir> candidate and writes a throwaway file next to the
-  // binary. The worker also inherits this process's env at spawn, so the
-  // natives dir set above is visible to it.
+  // Worker threads do NOT inherit the parent's argv. The smoke worker's
+  // env graph resolves the config file from argv (`--config`), so forward
+  // this process's args explicitly — otherwise its config resolution
+  // falls through to the <execDir> candidate and writes a throwaway file
+  // next to the binary. The worker also inherits this process's env at
+  // spawn, so the natives dir set above is visible to it.
   const workerOptions = { argv: process.argv.slice(2), workerData: { kobatoSmokeWorker: true } }
   const worker =
     code !== null
-      ? new Worker(code.toString('utf-8'), { ...workerOptions, eval: true })
+      ? // `--input-type=module`: run the eval'd ESM bundle as a module
+        // explicitly (see the image process pool for why it matters).
+        new Worker(code.toString('utf-8'), { ...workerOptions, eval: true, execArgv: ['--input-type=module'] })
       : // Non-SEA convenience: the sibling bundle from the same vite run.
-        new Worker(new URL('./smoke-worker.cjs', import.meta.url), workerOptions)
+        new Worker(new URL('./smoke-worker.mjs', import.meta.url), workerOptions)
   // The worker's own stdout/stderr are shared with this process (the
   // success line prints from inside it). Swallow the 'error' event — the
   // exit code carries the failure.

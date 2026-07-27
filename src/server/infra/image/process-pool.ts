@@ -297,17 +297,19 @@ export function __resetWorkerFactory(): void {
 function defaultCreateWorker(): Worker {
   if (isSea()) {
     // Single-executable build: the worker bundle is embedded as a text
-    // asset and started with `eval: true`. This is the intended SEA
-    // mechanism — worker threads share the parent process environment,
-    // so the worker's redirected native loads (`nativeRequire`) resolve
-    // via `KOBATO_NATIVES_DIR` without workerData plumbing. (Fallback if
-    // a Node build rejects eval workers under SEA: extract the file to
-    // the cache dir and load it by path — not implemented yet.)
+    // asset and started with `eval: true`. `--input-type=module` makes
+    // the eval'd ESM bundle run as a module EXPLICITLY (no syntax
+    // detection) and keeps `import.meta.url` a file: URL, which the
+    // module-scope `createRequire(import.meta.url)` sites in the inlined
+    // sharp code require. Worker threads share the parent process
+    // environment, so the worker's redirected native loads
+    // (`nativeRequire`) resolve via `KOBATO_NATIVES_DIR` without
+    // workerData plumbing.
     const code = getEmbeddedAsset(SEA_PROCESS_WORKER_BUNDLE_KEY)
     if (code === null) {
       throw new Error(`Embedded worker asset missing: ${SEA_PROCESS_WORKER_BUNDLE_KEY}`)
     }
-    return new Worker(code.toString('utf-8'), { eval: true })
+    return new Worker(code.toString('utf-8'), { eval: true, execArgv: ['--input-type=module'] })
   }
   // In production the worker entry is emitted by `processWorkerEntryPlugin`
   // at `<server-build-dir>/assets/process-worker.js` (stable name, no hash).
