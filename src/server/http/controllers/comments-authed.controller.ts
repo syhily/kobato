@@ -1,12 +1,13 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
-import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
-import { isCommentOwner } from '@/server/domains/auth/rbac'
 import { asCommentItemWire } from '@/server/domains/comments/projection'
-import { findCommentWithUserById } from '@/server/domains/comments/services/lookup'
 import { listMyCommentEntities, loadMineCommentsPage } from '@/server/domains/comments/services/mine-comments'
-import { clearDeleteRequest, editOwnComment, requestDeleteComment } from '@/server/domains/comments/services/moderate'
+import {
+  cancelOwnCommentDeletion,
+  editOwnComment,
+  requestOwnCommentDeletion,
+} from '@/server/domains/comments/services/moderate'
 import { authedProc } from '@/server/http/orpc-base'
 import { ownCommentMutationDto } from '@/shared/contracts/comments'
 import { commentBodySchema } from '@/shared/pt/comment-schema'
@@ -33,26 +34,9 @@ const requestDeleteOwn = authedProc
   .input(z.object({ commentId: z.string() }))
   .output(ownCommentMutationDto)
   .handler(async ({ input, context }) => {
-    const commentId = idFromString(input.commentId)
-    const c = await findCommentWithUserById(context.db, commentId)
-    if (!c || !isCommentOwner(context.viewer, c)) {
-      throw new ORPCError('NOT_FOUND', { message: '资源不存在。' })
-    }
-    if (c.deleteRequestedAt !== null) {
-      // Idempotent no-op: the flag is already set, so the current row IS
-      // the updated one — return it without re-writing or re-auditing.
-      return { comment: asCommentItemWire(c) }
-    }
-    await requestDeleteComment(context.db, commentId, idFromString(context.viewer.id))
-    recordAuditEventFromContext(context, {
-      action: 'comment_delete_requested',
-      resourceType: 'comment',
-      resourceId: input.commentId,
-    })
-    const updated = await findCommentWithUserById(context.db, commentId)
-    if (!updated) {
-      throw new ORPCError('NOT_FOUND', { message: '资源不存在。' })
-    }
+    // The request-delete flow (ownership, idempotent no-op, mutation,
+    // audit, fresh re-fetch) lives in the comments domain.
+    const updated = await requestOwnCommentDeletion(context.db, input.commentId, context.viewer, context)
     return { comment: asCommentItemWire(updated) }
   })
 
@@ -61,24 +45,9 @@ const cancelDeleteOwn = authedProc
   .input(z.object({ commentId: z.string() }))
   .output(ownCommentMutationDto)
   .handler(async ({ input, context }) => {
-    const commentId = idFromString(input.commentId)
-    const c = await findCommentWithUserById(context.db, commentId)
-    if (!c || !isCommentOwner(context.viewer, c)) {
-      throw new ORPCError('NOT_FOUND', { message: '资源不存在。' })
-    }
-    const ok = await clearDeleteRequest(context.db, commentId, idFromString(context.viewer.id))
-    if (!ok) {
-      throw new ORPCError('CONFLICT', { message: '无法撤回删除申请。' })
-    }
-    recordAuditEventFromContext(context, {
-      action: 'comment_delete_request_cancelled',
-      resourceType: 'comment',
-      resourceId: input.commentId,
-    })
-    const updated = await findCommentWithUserById(context.db, commentId)
-    if (!updated) {
-      throw new ORPCError('NOT_FOUND', { message: '资源不存在。' })
-    }
+    // The cancel-delete flow (ownership, guarded mutation, audit, fresh
+    // re-fetch) lives in the comments domain.
+    const updated = await cancelOwnCommentDeletion(context.db, input.commentId, context.viewer, context)
     return { comment: asCommentItemWire(updated) }
   })
 

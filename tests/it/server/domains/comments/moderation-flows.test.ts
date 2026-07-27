@@ -7,7 +7,12 @@ import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { clearAllTables } from '#/_helpers/integration-db'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 import { flushAuditLog } from '@/server/domains/audit/services/batcher'
-import { editOwnComment, resolveCommentDeleteRequest } from '@/server/domains/comments/services/moderate'
+import {
+  cancelOwnCommentDeletion,
+  editOwnComment,
+  requestOwnCommentDeletion,
+  resolveCommentDeleteRequest,
+} from '@/server/domains/comments/services/moderate'
 import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { comment } from '@/server/infra/db/schema/comment'
@@ -23,7 +28,11 @@ import { user } from '@/server/infra/db/schema/user'
 //     mutation (pinned separately in `update-own-comment.test.ts`);
 //   * `resolveCommentDeleteRequest` — the admin delete-request state
 //     machine: existence fence, pending-request fence, approve →
-//     soft-delete / reject → clear, each branch auditing its own event.
+//     soft-delete / reject → clear, each branch auditing its own event;
+//   * `requestOwnCommentDeletion` / `cancelOwnCommentDeletion` — the
+//     visitor delete-request lifecycle: ownership fence, the
+//     already-requested idempotent no-op, the guarded clear, each
+//     mutating branch auditing its own event.
 //
 // The error codes and Chinese messages asserted here are the wire
 // contract — the controllers used to throw them inline as `ORPCError`s
@@ -289,5 +298,116 @@ describe('resolveCommentDeleteRequest — admin delete-request state machine', (
     const [row] = await db.select().from(comment).where(eq(comment.id, cid))
     expect(row!.deletedAt).toBeNull()
     expect(await auditRowsFor('comment_delete_request_approved')).toHaveLength(0)
+  })
+})
+
+describe('requestOwnCommentDeletion — visitor delete-request flow', () => {
+  it('flags the owned comment and audits comment_delete_requested', async () => {
+    const u = await seedVisitor({ name: 'U10', email: 'u10@x.com' })
+    const pid = await seedPost('Request Deletion Post', 'request-deletion-post')
+    const cid = await seedComment({ userId: u, ownerId: pid, type: 'post' })
+
+    const ctx = ctxFor(u)
+    const updated = await requestOwnCommentDeletion(db, String(cid), ctx.viewer!, ctx)
+
+    expect(updated.id).toBe(cid)
+    expect(updated.deleteRequestedAt).not.toBeNull()
+    expect(updated.deleteRequestedBy).toBe(u)
+
+    const rows = await auditRowsFor('comment_delete_requested')
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!.resourceType).toBe('comment')
+    expect(rows[0]!.resourceId).toBe(String(cid))
+    expect(rows[0]!.actorId).toBe(u)
+  })
+
+  it('is an idempotent no-op when the flag is already set — no rewrite, no duplicate audit', async () => {
+    const u = await seedVisitor({ name: 'U11', email: 'u11@x.com' })
+    const pid = await seedPost('Request Deletion Twice', 'request-deletion-twice')
+    const cid = await seedComment({ userId: u, ownerId: pid, type: 'post' })
+
+    const ctx = ctxFor(u)
+    const first = await requestOwnCommentDeletion(db, String(cid), ctx.viewer!, ctx)
+    const second = await requestOwnCommentDeletion(db, String(cid), ctx.viewer!, ctx)
+
+    expect(second.deleteRequestedAt).toEqual(first.deleteRequestedAt)
+    expect(await auditRowsFor('comment_delete_requested')).toHaveLength(1)
+  })
+
+  it('rejects with NOT_FOUND when the comment belongs to somebody else', async () => {
+    const owner = await seedVisitor({ name: 'U12', email: 'u12@x.com' })
+    const stranger = await seedVisitor({ name: 'U13', email: 'u13@x.com' })
+    const pid = await seedPost('Foreign Request Post', 'foreign-request-post')
+    const cid = await seedComment({ userId: owner, ownerId: pid, type: 'post' })
+
+    const ctx = ctxFor(stranger)
+    await expect(requestOwnCommentDeletion(db, String(cid), ctx.viewer!, ctx)).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+      message: '资源不存在。',
+    })
+
+    // The fence fired before any write: no flag, no audit event.
+    const [row] = await db.select().from(comment).where(eq(comment.id, cid))
+    expect(row!.deleteRequestedAt).toBeNull()
+    expect(await auditRowsFor('comment_delete_requested')).toHaveLength(0)
+  })
+})
+
+describe('cancelOwnCommentDeletion — visitor cancel-delete-request flow', () => {
+  it('clears the pending request and audits comment_delete_request_cancelled', async () => {
+    const u = await seedVisitor({ name: 'U14', email: 'u14@x.com' })
+    const pid = await seedPost('Cancel Deletion Post', 'cancel-deletion-post')
+    const cid = await seedComment({ userId: u, ownerId: pid, type: 'post' })
+
+    const ctx = ctxFor(u)
+    await requestOwnCommentDeletion(db, String(cid), ctx.viewer!, ctx)
+    const updated = await cancelOwnCommentDeletion(db, String(cid), ctx.viewer!, ctx)
+
+    expect(updated.id).toBe(cid)
+    expect(updated.deleteRequestedAt).toBeNull()
+    expect(updated.deleteRequestedBy).toBeNull()
+
+    const rows = await auditRowsFor('comment_delete_request_cancelled')
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!.resourceType).toBe('comment')
+    expect(rows[0]!.resourceId).toBe(String(cid))
+    expect(rows[0]!.actorId).toBe(u)
+  })
+
+  it('rejects with CONFLICT when there is no pending delete request', async () => {
+    const u = await seedVisitor({ name: 'U15', email: 'u15@x.com' })
+    const pid = await seedPost('No Request Cancel Post', 'no-request-cancel-post')
+    const cid = await seedComment({ userId: u, ownerId: pid, type: 'post' })
+
+    const ctx = ctxFor(u)
+    await expect(cancelOwnCommentDeletion(db, String(cid), ctx.viewer!, ctx)).rejects.toMatchObject({
+      code: 'CONFLICT',
+      message: '无法撤回删除申请。',
+    })
+    expect(await auditRowsFor('comment_delete_request_cancelled')).toHaveLength(0)
+  })
+
+  it('rejects with NOT_FOUND when the comment belongs to somebody else', async () => {
+    const owner = await seedVisitor({ name: 'U16', email: 'u16@x.com' })
+    const stranger = await seedVisitor({ name: 'U17', email: 'u17@x.com' })
+    const pid = await seedPost('Foreign Cancel Post', 'foreign-cancel-post')
+    const cid = await seedComment({
+      userId: owner,
+      ownerId: pid,
+      type: 'post',
+      deleteRequestedAt: new Date(),
+      deleteRequestedBy: owner,
+    })
+
+    const ctx = ctxFor(stranger)
+    await expect(cancelOwnCommentDeletion(db, String(cid), ctx.viewer!, ctx)).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+      message: '资源不存在。',
+    })
+
+    // The fence fired before any write: the request is still pending.
+    const [row] = await db.select().from(comment).where(eq(comment.id, cid))
+    expect(row!.deleteRequestedAt).not.toBeNull()
+    expect(await auditRowsFor('comment_delete_request_cancelled')).toHaveLength(0)
   })
 })

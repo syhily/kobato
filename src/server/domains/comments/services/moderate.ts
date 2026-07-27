@@ -255,6 +255,79 @@ export async function editOwnComment(
   })
   return updated
 }
+
+/**
+ * Visitor self-service delete request — the full request-delete-own flow
+ * lifted from the authed comments controller: fetch → ownership check →
+ * the already-requested idempotent no-op → the flag-setting mutation in
+ * {@link requestDeleteComment} → audit `comment_delete_requested` →
+ * re-fetch the fresh row. Error codes/messages are the wire contract —
+ * do not reword.
+ */
+export async function requestOwnCommentDeletion(
+  db: NodePgDatabase,
+  rid: string,
+  viewer: ViewerIdentity,
+  audit: AuditContext,
+) {
+  const id = idFromString(rid)
+  const existing = await findCommentWithUserById(db, id)
+  if (existing === null || !isCommentOwner(viewer, existing)) {
+    throw new DomainError('NOT_FOUND', '资源不存在。')
+  }
+  if (existing.deleteRequestedAt !== null) {
+    // Idempotent no-op: the flag is already set, so the current row IS
+    // the updated one — return it without re-writing or re-auditing.
+    return existing
+  }
+  await requestDeleteComment(db, id, idFromString(viewer.id))
+  recordAuditEventFromContext(audit, {
+    action: 'comment_delete_requested',
+    resourceType: 'comment',
+    resourceId: rid,
+  })
+  const updated = await findCommentWithUserById(db, id)
+  if (updated === null) {
+    throw new DomainError('NOT_FOUND', '资源不存在。')
+  }
+  return updated
+}
+
+/**
+ * Visitor self-service cancel of a pending delete request — the full
+ * cancel-delete-own flow lifted from the authed comments controller:
+ * fetch → ownership check → the guarded mutation in
+ * {@link clearDeleteRequest} → audit `comment_delete_request_cancelled` →
+ * re-fetch the fresh row. Error codes/messages are the wire contract —
+ * do not reword.
+ */
+export async function cancelOwnCommentDeletion(
+  db: NodePgDatabase,
+  rid: string,
+  viewer: ViewerIdentity,
+  audit: AuditContext,
+) {
+  const id = idFromString(rid)
+  const existing = await findCommentWithUserById(db, id)
+  if (existing === null || !isCommentOwner(viewer, existing)) {
+    throw new DomainError('NOT_FOUND', '资源不存在。')
+  }
+  const ok = await clearDeleteRequest(db, id, idFromString(viewer.id))
+  if (!ok) {
+    throw new DomainError('CONFLICT', '无法撤回删除申请。')
+  }
+  recordAuditEventFromContext(audit, {
+    action: 'comment_delete_request_cancelled',
+    resourceType: 'comment',
+    resourceId: rid,
+  })
+  const updated = await findCommentWithUserById(db, id)
+  if (updated === null) {
+    throw new DomainError('NOT_FOUND', '资源不存在。')
+  }
+  return updated
+}
+
 // comments repos stay internal to the comments domain — cross-domain
 // callers (users admin) go through these named services.
 
