@@ -7,7 +7,7 @@ import type { Comment, User } from '@/server/infra/db/types'
 import type { SendResult } from '@/server/infra/email/types'
 import type { CommentAndUser } from '@/shared/types/comments'
 
-import { entityCommentUrl, findEntitySlugTitle } from '@/server/domains/comments/services/shared'
+import { findEntitySlugTitle } from '@/server/domains/content/entities/slug-title'
 import { commentBodyToHtml } from '@/server/domains/pt/services/comment-to-html'
 import { sendAdminNotification } from '@/server/infra/email/admin-notification'
 import { render } from '@/server/infra/email/render'
@@ -17,6 +17,7 @@ import ApprovedComment from '@/server/infra/email/templates/ApprovedComment'
 import NewReply from '@/server/infra/email/templates/NewReply'
 import { getLogger } from '@/server/infra/logger'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
+import { entityCommentUrl } from '@/shared/utils/paths'
 
 const log = getLogger('comments.email')
 

@@ -9,10 +9,24 @@
 // These helpers do the projection explicitly and are idempotent:
 // pre-converted values (`id` already a string) pass straight through.
 
+import type { PendingCommentRow } from '@/server/domains/comments/repos/shared'
 import type { AdminCommentWire, CommentItemWire } from '@/shared/contracts/comments'
-import type { AdminComment, CommentAndUser, CommentItem } from '@/shared/types/comments'
+import type { AdminComment, CommentAndUser, CommentItem, LatestComment } from '@/shared/types/comments'
 
 import { withCommentBadgeTextColor } from '@/server/domains/comments/badge'
+import { entityPermalink, trimSiteSuffix } from '@/shared/utils/paths'
+
+/** Project a sidebar/digest row into the `LatestComment` wire shape. */
+export function toLatestComment(row: PendingCommentRow): LatestComment {
+  const slug = row.slug ?? ''
+  const path = slug === '' ? '/' : `${entityPermalink(row.type, slug)}/`
+  return {
+    title: trimSiteSuffix(row.title),
+    author: row.author ?? '',
+    authorLink: row.authorLink ?? '',
+    permalink: `${path}#user-comment-${row.id}`,
+  }
+}
 
 function asString(value: bigint | string | null | undefined): string {
   if (typeof value === 'string') {

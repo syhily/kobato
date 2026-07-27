@@ -220,12 +220,6 @@ export interface MyCommentEntity {
 
 export const MY_COMMENT_ENTITY_LIMIT = 20
 
-export interface EntitySlugTitle {
-  type: EntityType
-  slug: string
-  title: string
-}
-
 export interface ParentCommentRow {
   id: bigint
   userId: bigint

@@ -11,7 +11,7 @@ import { adminSession, regularSession } from '#/_helpers/session'
 // pin the contract by mocking the DB query module — the real Drizzle calls
 // are out of scope for this layer.
 
-vi.mock('@/server/domains/comments/repos/public-query/admin', () => ({
+vi.mock('@/server/domains/comments/repos/public-query/digest', () => ({
   pendingComments: vi.fn(),
   adminUserIds: vi.fn(),
   latestDistinctCommentIds: vi.fn(),
@@ -81,7 +81,7 @@ vi.mock('@/shared/config/getters', () => ({
 
 const db = {} as NodePgDatabase
 
-const adminQueries = await import('@/server/domains/comments/repos/public-query/admin')
+const adminQueries = await import('@/server/domains/comments/repos/public-query/digest')
 const threadQueries = await import('@/server/domains/comments/repos/public-query/threads')
 const metricQueries = await import('@/server/infra/db/operations/metric')
 const { loadComments, latestComments, pendingComments } =

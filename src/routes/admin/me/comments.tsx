@@ -5,7 +5,7 @@ import type { MyCommentsStatus } from '@/shared/types/comments'
 
 import { requireRole } from '@/server/domains/auth/rbac'
 import { listMyCommentEntities } from '@/server/domains/comments/services/mine-comments'
-import { resolveEntitiesForComments } from '@/server/domains/comments/services/shared'
+import { resolveEntitiesForComments } from '@/server/domains/content/entities/slug-title'
 import { getRequestContext } from '@/server/http/request-context'
 import { titleMeta } from '@/shared/seo/title-meta'
 import { parseCommentEntity, serializeCommentEntity } from '@/shared/utils/comments'

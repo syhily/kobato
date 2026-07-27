@@ -1,9 +1,9 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { entityPermalink } from '@/server/domains/comments/services/shared'
 import { findLivePageBySlug } from '@/server/domains/pages/services/public-query'
 import { findLivePostBySlug } from '@/server/domains/posts/services/single'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
+import { entityPermalink } from '@/shared/utils/paths'
 import { tryParseUrl } from '@/shared/utils/safe-url'
 
 export interface WebmentionTarget {

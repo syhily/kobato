@@ -24,16 +24,16 @@ import {
   updateOwnCommentBodyAndPending,
 } from '@/server/domains/comments/repos/mutate'
 import {
-  adminUserIds,
-  commentsByIds,
-  latestDistinctCommentIds,
-  pendingComments,
-} from '@/server/domains/comments/repos/public-query/admin'
-import {
   countApprovedCommentsByUser,
   findParentCommentsByIds,
   recentCommentsForUserDedupe,
 } from '@/server/domains/comments/repos/public-query/by-id'
+import {
+  adminUserIds,
+  commentsByIds,
+  latestDistinctCommentIds,
+  pendingComments,
+} from '@/server/domains/comments/repos/public-query/digest'
 import {
   countCommentsAndRoots,
   findChildComments,
@@ -64,7 +64,6 @@ import {
   requestDeleteComment,
   softDeleteCommentById,
 } from '@/server/domains/comments/services/moderate'
-import { resolveEntitiesForComments } from '@/server/domains/comments/services/shared'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { comment } from '@/server/infra/db/schema/comment'
 import { metric } from '@/server/infra/db/schema/metric'
@@ -373,24 +372,6 @@ describe('comments/repos/mutate — updateOwnCommentBodyAndPending', () => {
   })
 })
 
-describe('comments/services/shared — resolveEntitiesForComments', () => {
-  it('returns an empty map for an empty input', async () => {
-    const out = await resolveEntitiesForComments(db, [])
-    expect(out.size).toBe(0)
-  })
-
-  it('resolves posts and pages in a single round-trip each', async () => {
-    const pid = await seedPost('ent-post')
-    const pgid = await seedPageEntity('ent-page')
-    const out = await resolveEntitiesForComments(db, [
-      { type: 'post', ownerId: pid },
-      { type: 'page', ownerId: pgid },
-    ])
-    expect(out.get(`post:${pid}`)?.slug).toBe('ent-post')
-    expect(out.get(`page:${pgid}`)?.title).toBe('Page ent-page')
-  })
-})
-
 describe('comments/repos/public-query/by-id — countApprovedCommentsByUser', () => {
   it('counts non-pending rows for a user', async () => {
     const u1 = await seedUser({ name: 'U1', email: 'u1@x.com' })
@@ -501,7 +482,7 @@ describe('comments/repos/public-query/threads — findCommentRootId', () => {
   })
 })
 
-describe('comments/repos/public-query/admin — adminUserIds', () => {
+describe('comments/repos/public-query/digest — adminUserIds', () => {
   it('returns ids of users with role=admin', async () => {
     const a = await seedUser({ name: 'Admin', email: 'admin@x.com', role: 'admin' })
     await seedUser({ name: 'Visitor', email: 'v@x.com', role: 'visitor' })
@@ -510,7 +491,7 @@ describe('comments/repos/public-query/admin — adminUserIds', () => {
   })
 })
 
-describe('comments/repos/public-query/admin — pendingComments', () => {
+describe('comments/repos/public-query/digest — pendingComments', () => {
   it('returns pending rows with entity slug/title', async () => {
     const u1 = await seedUser({ name: 'I', email: 'i@x.com' })
     const pid = await seedPost('p15')
@@ -521,7 +502,7 @@ describe('comments/repos/public-query/admin — pendingComments', () => {
   })
 })
 
-describe('comments/repos/public-query/admin — latestDistinctCommentIds', () => {
+describe('comments/repos/public-query/digest — latestDistinctCommentIds', () => {
   it('returns one id per non-admin user (latest)', async () => {
     const u1 = await seedUser({ name: 'U1', email: 'u1@x.com' })
     const u2 = await seedUser({ name: 'U2', email: 'u2@x.com' })
@@ -535,7 +516,7 @@ describe('comments/repos/public-query/admin — latestDistinctCommentIds', () =>
   })
 })
 
-describe('comments/repos/public-query/admin — commentsByIds', () => {
+describe('comments/repos/public-query/digest — commentsByIds', () => {
   it('returns [] for empty ids', async () => {
     expect(await commentsByIds(db, [], 10)).toEqual([])
   })

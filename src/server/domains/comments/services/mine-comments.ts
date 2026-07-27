@@ -16,9 +16,10 @@ import {
   type MyCommentEntity,
   type MyCommentsFilters,
 } from '@/server/domains/comments/repos/shared'
-import { entityPermalink, resolveEntitiesForComments } from '@/server/domains/comments/services/shared'
+import { resolveEntitiesForComments } from '@/server/domains/content/entities/slug-title'
 import { ilikeEscape } from '@/server/infra/db/ilike-escape'
 import { comment } from '@/server/infra/db/schema/comment'
+import { entityPermalink } from '@/shared/utils/paths'
 
 export interface MineCommentItem {
   id: string

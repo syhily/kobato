@@ -17,7 +17,6 @@ vi.mock('@/server/domains/comments/badge', () => ({
 
 vi.mock('@/server/domains/comments/services/shared', () => ({
   asCommentTarget: vi.fn(),
-  entityPermalink: vi.fn(() => null),
 }))
 
 vi.mock('@/server/infra/db/operations/metric', () => ({

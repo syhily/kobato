@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
-import { canonicalPostPath, searchRootPath } from '@/shared/utils/paths'
+import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
+import {
+  canonicalPostPath,
+  entityCommentUrl,
+  entityPermalink,
+  searchRootPath,
+  trimSiteSuffix,
+} from '@/shared/utils/paths'
 
 // `canonicalPostPath` is what drives our alias-slug 301 redirects, and
 // `searchRootPath` is the only place query encoding happens for the search
@@ -53,5 +60,50 @@ describe('routes/_shared/searchRootPath', () => {
 
   it("encodes spaces as %20 (not '+', which is form-style not path-style)", () => {
     expect(searchRootPath('a b')).toBe('/search/a%20b')
+  })
+})
+
+// The entity-permalink helpers pin the `/posts/<slug>` vs `/<slug>` split
+// that webmention resolution and comment notification emails both parse
+// back apart — a drift here silently breaks inbound links.
+describe('shared/utils/paths — entityPermalink', () => {
+  it('prefixes posts with /posts/', () => {
+    expect(entityPermalink('post', 'hello-world')).toBe('/posts/hello-world')
+  })
+
+  it('mounts pages at the root', () => {
+    expect(entityPermalink('page', 'about')).toBe('/about')
+  })
+
+  it('keeps CJK slugs literal (router segments are already decoded)', () => {
+    expect(entityPermalink('post', '你好-世界')).toBe('/posts/你好-世界')
+  })
+})
+
+describe('shared/utils/paths — entityCommentUrl', () => {
+  const website = TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.website
+
+  it('joins the configured website with the permalink and a trailing slash', () => {
+    expect(entityCommentUrl('post', 'hello-world')).toBe(`${website}/posts/hello-world/`)
+  })
+
+  it('joins page permalinks the same way', () => {
+    expect(entityCommentUrl('page', 'about')).toBe(`${website}/about/`)
+  })
+})
+
+describe('shared/utils/paths — trimSiteSuffix', () => {
+  const siteTitle = TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.title
+
+  it('strips the ` - <site title>` suffix', () => {
+    expect(trimSiteSuffix(`Hello - ${siteTitle}`)).toBe('Hello')
+  })
+
+  it('leaves titles without the suffix untouched', () => {
+    expect(trimSiteSuffix('Hello world')).toBe('Hello world')
+  })
+
+  it('maps null to the empty string', () => {
+    expect(trimSiteSuffix(null)).toBe('')
   })
 })

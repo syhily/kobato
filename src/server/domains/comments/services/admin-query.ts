@@ -14,9 +14,10 @@ import {
   searchCommentAuthors,
   searchPages,
 } from '@/server/domains/comments/repos/admin-query'
-import { asCommentTarget, entityPermalink } from '@/server/domains/comments/services/shared'
+import { asCommentTarget } from '@/server/domains/comments/services/shared'
 import { findMetricByPublicId } from '@/server/infra/db/operations/metric'
 import { comment } from '@/server/infra/db/schema/comment'
+import { entityPermalink } from '@/shared/utils/paths'
 
 const DASHBOARD_EXCERPT_LIMIT = 120
 

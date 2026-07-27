@@ -5,19 +5,20 @@ import type { EntityTarget } from '@/server/infra/db/target'
 import type { CommentAndUser, CommentItem, Comments, LatestComment } from '@/shared/types/comments'
 
 import { userSession } from '@/server/domains/auth/primitives'
+import { toLatestComment } from '@/server/domains/comments/projection'
+import { countApprovedCommentsByUser } from '@/server/domains/comments/repos/public-query/by-id'
 import {
   adminUserIds,
   commentsByIds,
   latestDistinctCommentIds,
   pendingComments as pendingCommentsRepo,
-} from '@/server/domains/comments/repos/public-query/admin'
-import { countApprovedCommentsByUser } from '@/server/domains/comments/repos/public-query/by-id'
+} from '@/server/domains/comments/repos/public-query/digest'
 import {
   countCommentsAndRoots,
   findChildComments,
   findRootComments,
 } from '@/server/domains/comments/repos/public-query/threads'
-import { toLatestComment, ensureCommentPage } from '@/server/domains/comments/services/shared'
+import { ensureCommentPage } from '@/server/domains/comments/services/shared'
 import { through } from '@/server/infra/cache/registry'
 import { getLogger } from '@/server/infra/logger'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
