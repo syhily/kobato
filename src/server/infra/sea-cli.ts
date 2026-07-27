@@ -131,16 +131,27 @@ async function smokeWorker(): Promise<void> {
   // env graph resolves the config file from argv (`--config`), so forward
   // this process's args explicitly — otherwise its config resolution
   // falls through to the <execDir> candidate and writes a throwaway file
-  // next to the binary. The worker also inherits this process's env at
+  // next to the binary. The '[worker eval]' placeholder keeps the
+  // forwarded args at process.argv[2:]: the classic eval path splices
+  // that name into argv[1] itself, but the module eval path
+  // (--input-type=module) does NOT — without the placeholder every
+  // `process.argv.slice(2)` in the worker is off by one and `--config`
+  // is silently dropped. The worker also inherits this process's env at
   // spawn, so the natives dir set above is visible to it.
-  const workerOptions = { argv: process.argv.slice(2), workerData: { kobatoSmokeWorker: true } }
+  const workerOptions = {
+    argv: ['[worker eval]', ...process.argv.slice(2)],
+    workerData: { kobatoSmokeWorker: true },
+  }
   const worker =
     code !== null
       ? // `--input-type=module`: run the eval'd ESM bundle as a module
         // explicitly (see the image process pool for why it matters).
         new Worker(code.toString('utf-8'), { ...workerOptions, eval: true, execArgv: ['--input-type=module'] })
       : // Non-SEA convenience: the sibling bundle from the same vite run.
-        new Worker(new URL('./smoke-worker.mjs', import.meta.url), workerOptions)
+        new Worker(new URL('./smoke-worker.mjs', import.meta.url), {
+          argv: process.argv.slice(2),
+          workerData: workerOptions.workerData,
+        })
   // The worker's own stdout/stderr are shared with this process (the
   // success line prints from inside it). Swallow the 'error' event — the
   // exit code carries the failure.
