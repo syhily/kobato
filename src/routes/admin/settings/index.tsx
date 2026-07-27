@@ -1,4 +1,4 @@
-import { Children, useCallback, useEffect, useRef, useSyncExternalStore } from 'react'
+import { Children, useCallback, useEffect, useRef } from 'react'
 import { useNavigate, useOutletContext } from 'react-router'
 
 import type { SettingsOutletContext } from '@/routes/admin/settings/layout'
@@ -38,6 +38,7 @@ import { SettingsSearchProvider, useSettingsSearchContext } from '@/ui/admin/set
 import { SidebarForm } from '@/ui/admin/settings/SidebarForm'
 import { SocialsEditor } from '@/ui/admin/settings/SocialsEditor'
 import { ThresholdForm } from '@/ui/admin/settings/ThresholdForm'
+import { useMediaQuery } from '@/ui/lib/use-media-query'
 
 import type { Route } from './+types/index'
 
@@ -150,24 +151,6 @@ type _sectionConfigsHaveNoDuplicates = Assert<
 
 const MOBILE_QUERY = '(max-width: 1023px)'
 
-function subscribeMobile(callback: () => void) {
-  const mql = window.matchMedia(MOBILE_QUERY)
-  mql.addEventListener('change', callback)
-  return () => mql.removeEventListener('change', callback)
-}
-
-function getMobileSnapshot() {
-  return window.matchMedia(MOBILE_QUERY).matches
-}
-
-function getMobileServerSnapshot() {
-  return false
-}
-
-function useIsMobile() {
-  return useSyncExternalStore(subscribeMobile, getMobileSnapshot, getMobileServerSnapshot)
-}
-
 function SectionWrapper({
   id,
   title,
@@ -250,7 +233,7 @@ function SettingsPageInner() {
   const tz = timeZones
   const { checkVisible, filter } = useSettingsSearchContext()
   const { flushAll } = useSettingsFlushContext()
-  const isMobile = useIsMobile()
+  const isMobile = useMediaQuery(MOBILE_QUERY)
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {

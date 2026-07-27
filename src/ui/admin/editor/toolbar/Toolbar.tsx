@@ -21,7 +21,7 @@ import {
   Undo2Icon,
   UnderlineIcon,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 import { canInsertFootnoteMark } from '@/ui/admin/editor/tiptap/insert-inline-footnote'
 import { LinkPopover } from '@/ui/admin/editor/tiptap/LinkPopover'
@@ -33,6 +33,7 @@ import { Button } from '@/ui/components/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/popover'
 import { Separator } from '@/ui/components/separator'
 import { cn } from '@/ui/lib/cn'
+import { useMediaQuery } from '@/ui/lib/use-media-query'
 
 export interface ToolbarProps {
   editor: Editor
@@ -46,21 +47,9 @@ export interface ToolbarProps {
   className?: string
 }
 
-function useMobileToolbar(): boolean {
-  const [isMobile, setIsMobile] = useState(false)
-  useEffect(() => {
-    const mql = window.matchMedia('(max-width: 639px)')
-    const update = () => setIsMobile(mql.matches)
-    update()
-    mql.addEventListener('change', update)
-    return () => mql.removeEventListener('change', update)
-  }, [])
-  return isMobile
-}
-
 export function Toolbar(props: ToolbarProps) {
   const { editor, disabled, className } = props
-  const isMobile = useMobileToolbar()
+  const isMobile = useMediaQuery('(max-width: 639px)')
   const density: ToolbarDensity = isMobile ? 'full' : props.density
 
   const [linkToolbarOpen, setLinkToolbarOpen] = useState(false)

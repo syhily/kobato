@@ -12,6 +12,7 @@ import { IconButtonContent } from '@/ui/components/icon-button-content'
 import { SOCIAL_NETWORK_ICONS } from '@/ui/icons/brand'
 import { cn } from '@/ui/lib/cn'
 import { safeRel } from '@/ui/lib/link'
+import { useMediaQuery } from '@/ui/lib/use-media-query'
 import { BrandLogo } from '@/ui/public/chrome/BrandLogo'
 import { ThemeToggle } from '@/ui/public/chrome/ThemeToggle'
 import { UserMenu } from '@/ui/public/chrome/UserMenu'
@@ -122,13 +123,7 @@ export function Header({ navigation, currentUser, pathname, logoutQuery }: Heade
   const v = qs ? `?v=${qs}` : ''
 
   const [menuOpen, setMenuOpen] = useState(false)
-  const [isDesktop, setIsDesktop] = useState(true)
-  useEffect(() => {
-    const mql = window.matchMedia('(min-width: 1024px)')
-    const update = () => setIsDesktop(mql.matches)
-    mql.addEventListener('change', update)
-    return () => mql.removeEventListener('change', update)
-  }, [])
+  const isDesktop = useMediaQuery('(min-width: 1024px)', true)
   const triggerRef = useRef<HTMLButtonElement | null>(null)
   const menuLabelId = useId()
 
