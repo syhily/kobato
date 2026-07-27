@@ -7,6 +7,7 @@ import type { BlogSession, SessionUser } from '@/server/domains/auth/session-sto
 import type { RequestFacts } from '@/server/infra/http/request-facts'
 import type { CommentTokenCookie } from '@/shared/utils/comment-token'
 
+import { isPasskeyEnabled } from '@/server/domains/auth/passkey/gate'
 import { translateDomainError } from '@/server/http/translate-domain-error'
 import { ActionFailure, DomainError, ErrorMessages } from '@/server/infra/http/errors'
 import { tryResourceRateLimit } from '@/server/infra/rate-limit'
@@ -135,6 +136,21 @@ export const resourceRateLimit = root.middleware(async ({ context, next }) => {
   const { exceeded } = await tryResourceRateLimit(context.clientAddress)
   if (exceeded) {
     throw new ORPCError('TOO_MANY_REQUESTS', { message: '请求过于频繁，请稍后再试。' })
+  }
+  return next({})
+})
+
+// ─── Middleware: passkey feature gate ───────────────────
+// Guard for the passkey procedures (account registration/management,
+// public auth-begin, admin clear). Reads the settings-bundle flag via
+// `isPasskeyEnabled` and throws the one canonical DomainError the old
+// inline copies drifted between (ORPCError in controllers, DomainError
+// in the public controller) — `domainErrorGuard` translates it to the
+// same ORPCError('BAD_REQUEST') wire shape for every base. Mount via
+// `.use()` after `.input()`/`.output()`, matching `resourceRateLimit`.
+export const passkeyGuard = root.middleware(({ next }) => {
+  if (!isPasskeyEnabled()) {
+    throw new DomainError('BAD_REQUEST', 'Passkey 登录未启用。')
   }
   return next({})
 })

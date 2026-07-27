@@ -1,6 +1,6 @@
 import { useNavigate, useOutletContext } from 'react-router'
 
-import { isPasskeyEnabled } from '@/server/domains/auth/passkey-gate'
+import { isPasskeyEnabled } from '@/server/domains/auth/passkey/gate'
 import { requireRole } from '@/server/domains/auth/rbac'
 import { getRequestContext } from '@/server/http/request-context'
 import { titleMeta } from '@/shared/seo/title-meta'

@@ -2,15 +2,14 @@ import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
-import { isPasskeyEnabled } from '@/server/domains/auth/passkey-gate'
-import { deleteAllCredentials } from '@/server/domains/auth/passkey-service'
+import { deleteAllCredentials } from '@/server/domains/auth/passkey/service'
 import {
   fetchAdminUserDto,
   inviteAuthorWithRollback,
   sendPasswordResetToUser,
   updateUserRoleWithGuard,
 } from '@/server/domains/users/services/admin'
-import { adminProc } from '@/server/http/orpc-base'
+import { adminProc, passkeyGuard } from '@/server/http/orpc-base'
 import { setUserMuted } from '@/server/infra/db/operations/user'
 import { tryInviteByEmailRateLimit, tryInviteRateLimit } from '@/server/infra/rate-limit'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
@@ -117,10 +116,8 @@ const clearPasskeys = adminProc
   .route({ method: 'POST', path: '/admin/users/clear-passkeys' })
   .input(z.object({ id: z.string().min(1) }))
   .output(z.object({ user: adminUserDto }))
+  .use(passkeyGuard)
   .handler(async ({ input, context }) => {
-    if (!isPasskeyEnabled()) {
-      throw new ORPCError('BAD_REQUEST', { message: 'Passkey 登录未启用。' })
-    }
     const targetId = idFromString(input.id)
     await deleteAllCredentials(context.db, targetId)
     const dto = await fetchAdminUserDto(context.db, targetId)

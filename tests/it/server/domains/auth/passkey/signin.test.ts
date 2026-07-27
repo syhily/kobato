@@ -5,8 +5,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { SigninFlowContext } from '@/server/domains/auth/services/shared'
 import type { BlogSession } from '@/server/domains/auth/session-storage'
 
-// Flow-seam tests for `domains/auth/passkey-flow`. The WebAuthn ceremony
-// itself lives in `passkey-service` (covered by `passkey.test.ts`); here
+// Flow-seam tests for `domains/auth/passkey/signin`. The WebAuthn ceremony
+// itself lives in `passkey/service` (covered by `service.test.ts`); here
 // we pin the sign-in leg's guard order, rate limit, session establish,
 // last-login touch, audit emission, and error passthrough.
 
@@ -19,11 +19,11 @@ const mocks = vi.hoisted(() => ({
   recordAuditEvent: vi.fn(),
 }))
 
-vi.mock('@/server/domains/auth/passkey-gate', () => ({
+vi.mock('@/server/domains/auth/passkey/gate', () => ({
   isPasskeyEnabled: mocks.isPasskeyEnabled,
 }))
 
-vi.mock('@/server/domains/auth/passkey-service', () => ({
+vi.mock('@/server/domains/auth/passkey/service', () => ({
   verifyAuthenticationResponse: mocks.verifyAuthenticationResponse,
 }))
 
@@ -43,7 +43,7 @@ vi.mock('@/server/domains/audit/services/record', () => ({
   recordAuditEvent: mocks.recordAuditEvent,
 }))
 
-import { signInWithPasskey } from '@/server/domains/auth/services/passkey'
+import { signInWithPasskey } from '@/server/domains/auth/passkey/signin'
 
 const db = {} as NodePgDatabase
 const session = { id: 'sess-1' } as unknown as BlogSession
@@ -74,7 +74,7 @@ beforeEach(() => {
   mocks.isPasskeyEnabled.mockReturnValue(true)
 })
 
-describe('auth/passkey-flow — signInWithPasskey', () => {
+describe('auth/passkey/signin — signInWithPasskey', () => {
   it('refuses when the passkey feature is disabled', async () => {
     mocks.isPasskeyEnabled.mockReturnValueOnce(false)
 

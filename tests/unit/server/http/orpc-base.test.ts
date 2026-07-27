@@ -9,12 +9,18 @@ vi.mock('@/server/infra/rate-limit', () => ({
   tryResourceRateLimit: vi.fn(),
 }))
 
-import { commentTokenCookie, publicProc, resourceRateLimit } from '@/server/http/orpc-base'
+vi.mock('@/server/domains/auth/passkey/gate', () => ({
+  isPasskeyEnabled: vi.fn(),
+}))
+
+import { isPasskeyEnabled } from '@/server/domains/auth/passkey/gate'
+import { commentTokenCookie, passkeyGuard, publicProc, resourceRateLimit } from '@/server/http/orpc-base'
 import { ActionFailure, DomainError } from '@/server/infra/http/errors'
 import { tryResourceRateLimit } from '@/server/infra/rate-limit'
 import { parseCommentTokensCookie } from '@/shared/utils/comment-token'
 
 const tryResourceRateLimitMock = vi.mocked(tryResourceRateLimit)
+const isPasskeyEnabledMock = vi.mocked(isPasskeyEnabled)
 
 // Miniature router in the shape `orpc-base.ts` produces in production:
 // a public procedure with the shared `resourceRateLimit` guard mounted
@@ -83,6 +89,61 @@ describe('resourceRateLimit oRPC middleware', () => {
     expect(res.status).toBeGreaterThanOrEqual(400)
     expect(res.status).toBeLessThan(500)
     expect(tryResourceRateLimitMock).not.toHaveBeenCalled()
+  })
+})
+
+// Miniature router in the shape the passkey controllers produce: a
+// procedure with the shared `passkeyGuard` mounted via `.use()` after
+// `.input()`/`.output()`.
+const passkeyRouter = {
+  passkeyPing: publicProc
+    .route({ method: 'POST', path: '/passkey-ping' })
+    .input(z.object({}))
+    .output(z.object({ ok: z.boolean() }))
+    .use(passkeyGuard)
+    .handler(() => ({ ok: true })),
+}
+
+const passkeyHandler = new RPCHandler(passkeyRouter)
+
+async function callPasskeyPing(input: unknown) {
+  const result = await passkeyHandler.handle(
+    new Request('http://localhost/rpc/passkeyPing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ json: input }),
+    }),
+    { prefix: '/rpc', context: makePublicCtx() },
+  )
+  if (!result.matched) {
+    throw new Error('No route matched for /passkeyPing')
+  }
+  return result.response
+}
+
+describe('passkeyGuard oRPC middleware', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    isPasskeyEnabledMock.mockReturnValue(true)
+  })
+
+  it('passes through when the passkey feature is enabled', async () => {
+    const res = await callPasskeyPing({})
+
+    expect(res.status).toBe(200)
+    const body = (await res.json()) as { json: { ok: boolean } }
+    expect(body.json.ok).toBe(true)
+  })
+
+  it('answers 400 with the canonical DomainError shape when disabled', async () => {
+    isPasskeyEnabledMock.mockReturnValue(false)
+
+    const res = await callPasskeyPing({})
+
+    expect(res.status).toBe(400)
+    const text = await res.text()
+    expect(text).toContain('BAD_REQUEST')
+    expect(text).toContain('Passkey 登录未启用。')
   })
 })
 

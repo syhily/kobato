@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { SafeUser } from '@/server/infra/db/operations/user'
 import type { PasskeyCredentialRow } from '@/server/infra/db/types'
 
-// passkey-service.ts stores challenges in the `one_time_token` table and
+// passkey/service.ts stores challenges in the `one_time_token` table and
 // credentials in `passkey_credential`, both through drizzle chains on the
 // threaded `db`. The db doubles below hand-roll those chains and capture
 // the values/returning payloads so each test can shape them.
@@ -42,7 +42,7 @@ vi.mock('@/server/infra/db/operations/user', () => ({
 
 const db = {} as unknown as NodePgDatabase
 
-const passkeyService = await import('@/server/domains/auth/passkey-service')
+const passkeyService = await import('@/server/domains/auth/passkey/service')
 const userOps = await import('@/server/infra/db/operations/user')
 const { DomainError } = await import('@/server/infra/http/errors')
 
@@ -109,7 +109,7 @@ beforeEach(() => {
   vi.clearAllMocks()
 })
 
-describe('passkey-service — generateRegistrationOptions', () => {
+describe('passkey/service — generateRegistrationOptions', () => {
   it('returns options and stores a challenge row', async () => {
     swaMocks.generateRegistrationOptions.mockResolvedValue({
       challenge: 'test-challenge',
@@ -143,7 +143,7 @@ describe('passkey-service — generateRegistrationOptions', () => {
   })
 })
 
-describe('passkey-service — verifyRegistrationResponse', () => {
+describe('passkey/service — verifyRegistrationResponse', () => {
   it('verifies response and inserts credential', async () => {
     const { db: consumeDb } = dbWithChallengeConsume([
       { payload: challengePayload({ userId: '1', deviceName: 'My Device' }) },
@@ -289,7 +289,7 @@ describe('passkey-service — verifyRegistrationResponse', () => {
   })
 })
 
-describe('passkey-service — generateAuthenticationOptions', () => {
+describe('passkey/service — generateAuthenticationOptions', () => {
   it('returns options without allowCredentials when email is absent', async () => {
     swaMocks.generateAuthenticationOptions.mockResolvedValue({ challenge: 'auth-c', rpId: 'example.com' })
 
@@ -324,7 +324,7 @@ describe('passkey-service — generateAuthenticationOptions', () => {
   })
 })
 
-describe('passkey-service — verifyAuthenticationResponse', () => {
+describe('passkey/service — verifyAuthenticationResponse', () => {
   it('verifies and updates counter', async () => {
     const { db: consumeDb } = dbWithChallengeConsume([{ payload: challengePayload({ email: 'test@example.com' }) }])
 
@@ -484,7 +484,7 @@ describe('passkey-service — verifyAuthenticationResponse', () => {
   })
 })
 
-describe('passkey-service — credential management', () => {
+describe('passkey/service — credential management', () => {
   it('lists credentials ordered by createdAt', async () => {
     const rows = [
       { id: 1n, credentialId: 'c1', deviceName: 'Phone', createdAt: new Date('2024-01-01'), backedUp: false },
@@ -564,7 +564,7 @@ describe('passkey-service — credential management', () => {
   })
 })
 
-describe('passkey-service — force/credential invariant', () => {
+describe('passkey/service — force/credential invariant', () => {
   function dbWithCredentialCount(remaining: { id: bigint }[]) {
     const updateSpy = vi.fn(() => ({
       set: vi.fn(() => ({
@@ -645,7 +645,7 @@ describe('passkey-service — force/credential invariant', () => {
   })
 })
 
-describe('passkey-service — rpConfig validation', () => {
+describe('passkey/service — rpConfig validation', () => {
   it('rejects non-HTTPS origin', async () => {
     const { requireBlogSettingsBundle } = await import('@/shared/config/getters')
     vi.mocked(requireBlogSettingsBundle).mockReturnValueOnce({

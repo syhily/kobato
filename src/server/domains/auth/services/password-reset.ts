@@ -10,7 +10,7 @@ import type { AuthFlowResult, SigninFlowContext } from '@/server/domains/auth/se
 import type { User } from '@/server/infra/db/types'
 
 import { recordAuditEvent } from '@/server/domains/audit/services/record'
-import { deleteAllCredentials } from '@/server/domains/auth/passkey-service'
+import { deleteAllCredentials } from '@/server/domains/auth/passkey/service'
 import { establishLoginSession } from '@/server/domains/auth/primitives'
 import { MIN_PASSWORD_LENGTH, PASSWORD_COMPLEXITY_RE } from '@/server/domains/auth/schema'
 import { consumeToken, issueResetToken } from '@/server/domains/auth/verification-tokens'

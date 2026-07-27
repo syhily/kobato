@@ -3,8 +3,8 @@
 
 import type { AuthFlowResult, SigninFlowContext } from '@/server/domains/auth/services/shared'
 
-import { isPasskeyEnabled } from '@/server/domains/auth/passkey-gate'
-import { verifyAuthenticationResponse } from '@/server/domains/auth/passkey-service'
+import { isPasskeyEnabled } from '@/server/domains/auth/passkey/gate'
+import { verifyAuthenticationResponse } from '@/server/domains/auth/passkey/service'
 import { establishLoginSession } from '@/server/domains/auth/primitives'
 import { tryPasskeyAuthFinishRateLimit } from '@/server/infra/rate-limit'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'

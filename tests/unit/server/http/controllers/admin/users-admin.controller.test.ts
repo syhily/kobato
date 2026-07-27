@@ -25,11 +25,11 @@ vi.mock('@/server/domains/audit/services/record', () => ({
   recordAuditEventFromContext: vi.fn(),
 }))
 
-vi.mock('@/server/domains/auth/passkey-gate', () => ({
+vi.mock('@/server/domains/auth/passkey/gate', () => ({
   isPasskeyEnabled: vi.fn(() => true),
 }))
 
-vi.mock('@/server/domains/auth/passkey-service', () => ({
+vi.mock('@/server/domains/auth/passkey/service', () => ({
   deleteAllCredentials,
 }))
 
@@ -138,7 +138,7 @@ describe('admin users-admin controller', () => {
     const body = await parseRpcJson<{ user: unknown }>(response)
     expect(body.user).toBeDefined()
     // Force clearing is owned by deleteAllCredentials itself (service-level
-    // invariant, covered in passkey-service.test.ts).
+    // invariant, covered in passkey/service.test.ts).
     expect(deleteAllCredentials).toHaveBeenCalledWith(expect.anything(), 1n)
   })
 })

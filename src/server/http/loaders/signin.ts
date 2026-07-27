@@ -3,7 +3,7 @@ import type { LoaderFunctionArgs } from 'react-router'
 import { data, redirect } from 'react-router'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
-import { isPasskeyEnabled } from '@/server/domains/auth/passkey-gate'
+import { isPasskeyEnabled } from '@/server/domains/auth/passkey/gate'
 import { logout } from '@/server/domains/auth/primitives'
 import { readLivePendingOtp } from '@/server/domains/auth/services/otp'
 import { destroySession } from '@/server/domains/auth/session-storage'

@@ -47,7 +47,7 @@ vi.mock('@/shared/config/getters', async (importOriginal) => {
   }
 })
 
-const passkeyService = await import('@/server/domains/auth/passkey-service')
+const passkeyService = await import('@/server/domains/auth/passkey/service')
 
 async function seedUser(overrides: Record<string, unknown> = {}): Promise<bigint> {
   const hashed = await bcrypt.hash('Password123!', 12)

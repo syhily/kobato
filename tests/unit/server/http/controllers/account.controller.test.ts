@@ -7,8 +7,8 @@ import { parseRpcJson } from '#/_helpers/rpc-call'
 // handlers themselves stay real — we exercise their branching (rate-limit,
 // passkey-enabled gate, guard propagation, missing-user, invalid-response,
 // domain-error propagation) by shaping the mock return values per test.
-// The passkey force/credential invariant itself lives in passkey-service
-// and is covered by tests/unit/server/domains/auth/passkey-service.test.ts;
+// The passkey force/credential invariant itself lives in passkey/service
+// and is covered by tests/unit/server/domains/auth/passkey/service.test.ts;
 // the revocation policy lives in session-guard and is covered by
 // tests/unit/server/domains/auth/session-guard.test.ts.
 
@@ -41,7 +41,7 @@ vi.mock('@/server/infra/rate-limit', () => ({
   tryPasskeySetForceRateLimit: tryPasskeySetForceRateLimitMock,
 }))
 
-vi.mock('@/server/domains/auth/passkey-gate', () => ({ isPasskeyEnabled: isPasskeyEnabledMock }))
+vi.mock('@/server/domains/auth/passkey/gate', () => ({ isPasskeyEnabled: isPasskeyEnabledMock }))
 
 vi.mock('@/server/domains/users/services/account', () => ({
   updateAccountPassword: updateAccountPasswordMock,
@@ -56,7 +56,7 @@ vi.mock('@/server/domains/auth/session-guard', () => ({
   revokeOwnSessionWithGuard: revokeOwnSessionWithGuardMock,
 }))
 
-vi.mock('@/server/domains/auth/passkey-service', () => ({
+vi.mock('@/server/domains/auth/passkey/service', () => ({
   deleteCredential: deleteCredentialMock,
   generateRegistrationOptions: generateRegistrationOptionsMock,
   listCredentials: listCredentialsMock,

@@ -58,7 +58,7 @@ vi.mock('@/server/infra/rate-limit', () => ({
   tryPasswordResetByEmailRateLimit: mocks.tryPasswordResetByEmailRateLimit,
 }))
 
-vi.mock('@/server/domains/auth/passkey-service', () => ({
+vi.mock('@/server/domains/auth/passkey/service', () => ({
   deleteAllCredentials: mocks.deleteAllCredentials,
 }))
 

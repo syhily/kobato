@@ -1,6 +1,6 @@
 import { data } from 'react-router'
 
-import { isPasskeyEnabled } from '@/server/domains/auth/passkey-gate'
+import { isPasskeyEnabled } from '@/server/domains/auth/passkey/gate'
 import { requireRole } from '@/server/domains/auth/rbac'
 import { countMyComments } from '@/server/domains/comments/services/mine-comments'
 import { getAccountProfile } from '@/server/domains/users/services/account'

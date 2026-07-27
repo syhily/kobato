@@ -4,18 +4,17 @@ import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
-import { isPasskeyEnabled } from '@/server/domains/auth/passkey-gate'
 import {
   deleteCredential,
   generateRegistrationOptions,
   listCredentials,
   setPasskeyForce,
   verifyRegistrationResponse,
-} from '@/server/domains/auth/passkey-service'
+} from '@/server/domains/auth/passkey/service'
 import { MIN_PASSWORD_LENGTH, PASSWORD_COMPLEXITY_RE } from '@/server/domains/auth/schema'
 import { revokeOwnSessionWithGuard } from '@/server/domains/auth/session-guard'
 import { updateAccountPassword, updateAccountProfile } from '@/server/domains/users/services/account'
-import { authedProc } from '@/server/http/orpc-base'
+import { authedProc, passkeyGuard } from '@/server/http/orpc-base'
 import { findSafeUserById } from '@/server/infra/db/operations/user'
 import {
   tryPasskeyDeleteRateLimit,
@@ -163,10 +162,8 @@ const passkeyList = authedProc
       ),
     }),
   )
+  .use(passkeyGuard)
   .handler(async ({ context }) => {
-    if (!isPasskeyEnabled()) {
-      throw new ORPCError('BAD_REQUEST', { message: 'Passkey 登录未启用。' })
-    }
     const { db, viewer } = context
     const credentials = await listCredentials(db, idFromString(viewer.id))
     return {
@@ -183,10 +180,8 @@ const passkeyRegisterBegin = authedProc
   .route({ method: 'POST', path: '/account/passkeys/register-begin' })
   .input(z.object({ deviceName: z.string().max(100).optional() }))
   .output(z.object({ options: z.any() }))
+  .use(passkeyGuard)
   .handler(async ({ input, context }) => {
-    if (!isPasskeyEnabled()) {
-      throw new ORPCError('BAD_REQUEST', { message: 'Passkey 登录未启用。' })
-    }
     const { db, viewer, clientAddress } = context
     const limit = await tryPasskeyRegisterBeginRateLimit(clientAddress)
     if (limit.exceeded) {
@@ -210,10 +205,8 @@ const passkeyRegisterFinish = authedProc
     }),
   )
   .output(z.object({ success: z.boolean() }))
+  .use(passkeyGuard)
   .handler(async ({ input, context }) => {
-    if (!isPasskeyEnabled()) {
-      throw new ORPCError('BAD_REQUEST', { message: 'Passkey 登录未启用。' })
-    }
     const { db, viewer, clientAddress } = context
     const limit = await tryPasskeyRegisterFinishRateLimit(clientAddress)
     if (limit.exceeded) {
@@ -243,10 +236,8 @@ const passkeyDelete = authedProc
   .route({ method: 'POST', path: '/account/passkeys/delete' })
   .input(z.object({ credentialId: z.string().min(1) }))
   .output(z.object({ success: z.boolean() }))
+  .use(passkeyGuard)
   .handler(async ({ input, context }) => {
-    if (!isPasskeyEnabled()) {
-      throw new ORPCError('BAD_REQUEST', { message: 'Passkey 登录未启用。' })
-    }
     const { db, viewer, clientAddress } = context
     const limit = await tryPasskeyDeleteRateLimit(clientAddress)
     if (limit.exceeded) {
@@ -269,10 +260,8 @@ const passkeySetForce = authedProc
   .route({ method: 'POST', path: '/account/passkeys/set-force' })
   .input(z.object({ force: z.boolean() }))
   .output(z.object({ success: z.boolean() }))
+  .use(passkeyGuard)
   .handler(async ({ input, context }) => {
-    if (!isPasskeyEnabled()) {
-      throw new ORPCError('BAD_REQUEST', { message: 'Passkey 登录未启用。' })
-    }
     const { db, viewer, clientAddress } = context
     const limit = await tryPasskeySetForceRateLimit(clientAddress)
     if (limit.exceeded) {
