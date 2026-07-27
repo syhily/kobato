@@ -80,9 +80,6 @@ spec:
           - title: TimescaleDB port
             content: ${DATABASE_PORT_FORWARDED_PORT}
         env:
-          database__url:
-            default: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
-            expose: true
           POSTGRES_DB:
             default: kobato
             expose: true
@@ -118,6 +115,8 @@ spec:
           - id: config
             dir: /etc/kobato
         env:
+          database__url:
+            default: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
           server__host:
             default: 0.0.0.0
           server__port:
