@@ -3,8 +3,8 @@
 // Layout under dist-sea/:
 //   intermediates/server.mjs         vite output — single-file ESM server
 //                                    (the injected `main` of the binary)
-//   intermediates/process-worker.cjs vite output — embedded worker text
-//   intermediates/smoke-worker.cjs   vite output — --smoke-worker entry
+//   intermediates/process-worker.mjs vite output — embedded worker text
+//   intermediates/smoke-worker.mjs   vite output — --smoke-worker entry
 //   intermediates/staged-natives/    patched native libraries (see assets.ts)
 //   intermediates/packed/<key>       compressed asset payloads (see assets.ts)
 //   intermediates/manifest.json      embedded asset manifest (see assets.ts)
@@ -33,11 +33,11 @@ export function seaServerBundlePath() {
 }
 
 export function seaWorkerBundlePath() {
-  return resolve(seaIntermediatesDir(), 'process-worker.cjs')
+  return resolve(seaIntermediatesDir(), 'process-worker.mjs')
 }
 
 export function seaSmokeWorkerBundlePath() {
-  return resolve(seaIntermediatesDir(), 'smoke-worker.cjs')
+  return resolve(seaIntermediatesDir(), 'smoke-worker.mjs')
 }
 
 export function seaManifestPath() {

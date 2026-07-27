@@ -11,14 +11,14 @@
 //                      vite-built server inlined into ONE ESM file. Must
 //                      stay ESM: src/server.ts uses top-level await,
 //                      which no bundler can express in CJS.
-//   SEA_BUNDLE=worker  process-worker.cjs — the image worker, embedded as
+//   SEA_BUNDLE=worker  process-worker.mjs — the image worker, embedded as
 //                      a text asset and started via
-//                      `new Worker(code, { eval: true })`.
-//   SEA_BUNDLE=smoke   smoke-worker.cjs   — the `--smoke-worker` entry
+//                      `new Worker(code, { eval: true, execArgv: ['--input-type=module'] })`.
+//   SEA_BUNDLE=smoke   smoke-worker.mjs   — the `--smoke-worker` entry
 //                      (scripts/sea/smoke-worker.ts). Embedded as the
-//                      `worker/smoke-worker.cjs` asset and dispatched by
-//                      the binary's `--smoke-worker` flag via
-//                      `new Worker(code, { eval: true })`.
+//                      `worker/smoke-worker.mjs` asset and dispatched by
+//                      the binary's `--smoke-worker` flag via the same
+//                      eval-worker mechanism.
 //
 // sharp / sharp-ico / @napi-rs/canvas ARE statically imported and inlined
 // (`ssr.noExternal: true`); the redirect-native-requires plugin rewrites
@@ -44,8 +44,8 @@ const projectRoot = fileURLToPath(new URL('.', import.meta.url))
 
 const BUNDLES = {
   server: { entry: 'scripts/sea/server-entry.ts', format: 'es', fileName: 'server.mjs' },
-  worker: { entry: 'src/server/infra/image/process-worker.ts', format: 'cjs', fileName: 'process-worker.cjs' },
-  smoke: { entry: 'scripts/sea/smoke-worker.ts', format: 'cjs', fileName: 'smoke-worker.cjs' },
+  worker: { entry: 'src/server/infra/image/process-worker.ts', format: 'es', fileName: 'process-worker.mjs' },
+  smoke: { entry: 'scripts/sea/smoke-worker.ts', format: 'es', fileName: 'smoke-worker.mjs' },
 } as const
 
 function selectBundle(): { entry: string; format: 'cjs' | 'es'; fileName: string } {

@@ -460,12 +460,13 @@ export async function collectSeaAssets({ wasmPath, codec = 'zstd' }: { wasmPath:
   await addAsset(assets, files, SEA_WASM_CNFS_KEY, wasmPath, ctx)
 
   // The bundled image worker, embedded as text and started via
-  // `new Worker(code, { eval: true })` under SEA.
+  // `new Worker(code, { eval: true, execArgv: ['--input-type=module'] })`
+  // under SEA.
   await addAsset(assets, files, SEA_PROCESS_WORKER_BUNDLE_KEY, seaWorkerBundlePath(), ctx)
 
   // The bundled worker-pool smoke entry, embedded as text and dispatched
-  // by the binary's `--smoke-worker` flag via
-  // `new Worker(code, { eval: true })` (see `@/server/infra/sea-cli`).
+  // by the binary's `--smoke-worker` flag via the same eval-worker
+  // mechanism (see `@/server/infra/sea-cli`).
   await addAsset(assets, files, SEA_SMOKE_WORKER_BUNDLE_KEY, seaSmokeWorkerBundlePath(), ctx)
 
   // Native dynamic libraries (rpath-patched sharp addon, libvips, skia)

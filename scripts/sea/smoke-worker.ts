@@ -1,17 +1,18 @@
 // SEA worker-pool smoke — bundled by vite into
-// `dist-sea/intermediates/smoke-worker.cjs` (see vite.sea.config.ts) and
-// embedded as the `worker/smoke-worker.cjs` asset. The bundle's
+// `dist-sea/intermediates/smoke-worker.mjs` (see vite.sea.config.ts) and
+// embedded as the `worker/smoke-worker.mjs` asset. The bundle's
 // `--smoke-worker` flag (`@/server/infra/sea-cli`) dispatches it via
-// `new Worker(code, { eval: true })` — the same mechanism the image
-// process pool uses — with `workerData.kobatoSmokeWorker` set; the
-// dual-mode entry at the bottom then invokes `run()`. Outside SEA the
-// sibling bundle is spawned as a file worker instead.
+// `new Worker(code, { eval: true, execArgv: ['--input-type=module'] })` —
+// the same mechanism the image process pool uses — with
+// `workerData.kobatoSmokeWorker` set; the dual-mode entry at the bottom
+// then invokes `run()`. Outside SEA the sibling bundle is spawned as a
+// file worker instead.
 //
 // `--smoke-natives` loads sharp in the bundle's OWN process; this smoke
 // instead proves the production image pipeline end to end: a real job is
 // dispatched into the `worker_threads` pool (spawned from the embedded
-// `worker/process-worker.cjs` text via `new Worker(code, { eval: true })`
-// under SEA), sharp decodes/resizes/re-encodes inside the worker, and the
+// `worker/process-worker.mjs` text via the same eval worker under SEA),
+// sharp decodes/resizes/re-encodes inside the worker, and the
 // result round-trips back to this process.
 //
 // Unlike the other binary flags this module DOES pull the env-validated

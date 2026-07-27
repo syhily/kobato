@@ -89,15 +89,19 @@ import graph evaluated depth-first in import order. The entry shim
    module-evaluation time.
 3. the server graph (`build/server/index.js`).
 
-`--smoke-worker` dispatches the embedded `worker/smoke-worker.cjs` text
-via `new Worker(code, { eval: true, argv: process.argv.slice(2) })` — the
-`argv` forward matters: worker threads do NOT inherit the parent's argv,
-and the worker's env graph resolves the config file from `--config`.
+`--smoke-worker` dispatches the embedded `worker/smoke-worker.mjs` text
+via `new Worker(code, { eval: true, execArgv: ['--input-type=module'], argv: process.argv.slice(2) })` —
+the `--input-type=module` runs the eval'd bundle as ESM explicitly (the
+eval route keeps `import.meta.url` a file: URL, which the inlined
+packages' module-scope `createRequire(import.meta.url)` needs); the
+`argv` forward matters because worker threads do NOT inherit the
+parent's argv, and the worker's env graph resolves the config file from
+`--config`.
 
 **Vite 8 builds the three bundles** (`vite.sea.config.ts`, driven by the
-`SEA_BUNDLE` loop in `scripts/sea/build.ts`): `server.mjs` (ESM, the
-injected main), `process-worker.cjs` and `smoke-worker.cjs` (CJS,
-embedded as text assets). tsdown is gone; the bundles are minified,
+`SEA_BUNDLE` loop in `scripts/sea/build.ts`): `server.mjs` (the
+injected main), `process-worker.mjs` and `smoke-worker.mjs` (embedded
+as text assets) — all ESM. tsdown is gone; the bundles are minified,
 single-file (`codeSplitting: false`), `ssr.noExternal: true`.
 `scripts/sea/check-bundle.ts` fails the build on leftover external
 specifiers (including rolldown's `__require("bare")` runtime-external

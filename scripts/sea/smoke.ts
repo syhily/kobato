@@ -135,7 +135,7 @@ function checkVersion(binaryPath: string) {
  * The extraction dir is FLAT and holds exactly the native dynamic
  * libraries: sharp.node + skia.node + the libvips files (one on
  * darwin/linux, two DLLs on win32) — no node_modules tree, no package
- * files. The materialized bundles (server.mjs, smoke-worker.cjs) share
+ * files. The materialized bundles (server.mjs, smoke-worker.mjs) share
  * the dir by design and are excluded from the count. Assert the layout
  * right after `--smoke-natives` populated it.
  */
@@ -153,7 +153,7 @@ async function checkNativesLayout(cacheDir: string) {
   }
   const names = files
     .map((file) => file.name)
-    .filter((name) => name !== 'server.mjs' && name !== 'smoke-worker.cjs')
+    .filter((name) => name !== 'server.mjs' && name !== 'smoke-worker.mjs')
     .sort()
   if (names.length !== expectedCount) {
     throw new Error(`expected ${expectedCount} extracted native files, found ${names.length}: ${names.join(', ')}`)

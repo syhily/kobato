@@ -2,8 +2,8 @@
 //
 //   1. react-router build       build/server (ESM chunks) + build/client
 //   2. vite bundle              inline everything into server.mjs (the
-//                               injected ESM main) + process-worker.cjs +
-//                               smoke-worker.cjs (dist-sea/intermediates)
+//                               injected ESM main) + process-worker.mjs +
+//                               smoke-worker.mjs (dist-sea/intermediates)
 //   3. check-bundle             fail on leftover external specifiers
 //   4. assets                   collect embedded assets + manifest.json
 //   5. inject                   node --build-sea regenerates the blob and
