@@ -15,8 +15,8 @@ import {
   updateSlugRegistryByEntity,
 } from '@/server/infra/db/operations/slug-registry'
 import { DomainError } from '@/server/infra/http/errors'
-import { ensureSlugLegal, resolveSlug } from '@/server/infra/slug-validation'
 import { reserveSlugInTransaction } from '@/server/infra/slug/reservation'
+import { resolveSlug } from '@/server/infra/slug/resolve'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 export interface EntityMutations<TInput extends UpsertMetaInputBase, TAdminDto> {
@@ -54,8 +54,7 @@ export function makeEntityMutations<
     viewer?: ViewerIdentity,
   ): Promise<TAdminDto> {
     const resolvedAuthorId = mutations.resolveAuthorId?.(authorId, viewer) ?? authorId
-    const slug = resolveSlug(input.slug, input.title)
-    ensureSlugLegal(slug, descriptor.entityType)
+    const slug = resolveSlug(input.slug, input.title, { entity: descriptor.entityType })
     await mutations.preflightUpsert?.(db, input)
     const now = new Date()
     try {
@@ -101,8 +100,7 @@ export function makeEntityMutations<
     viewer?: ViewerIdentity,
   ): Promise<TAdminDto> {
     const id = input.id
-    const slug = resolveSlug(input.slug, input.title)
-    ensureSlugLegal(slug, descriptor.entityType)
+    const slug = resolveSlug(input.slug, input.title, { entity: descriptor.entityType })
     const existing = await repos.findMetaById(db, id)
     descriptor.access.assertAccess(existing, viewer)
     await mutations.preflightUpsert?.(db, input)

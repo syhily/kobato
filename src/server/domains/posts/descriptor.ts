@@ -27,7 +27,7 @@ import { findTagNamesByPostId, findTagNamesByPostIds, setPostTags } from '@/serv
 import { findTagsByNames, seedTagsIfMissing } from '@/server/infra/db/operations/tag'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
-import { resolveSlugForTaxonomy } from '@/server/infra/slug'
+import { resolveSlug } from '@/server/infra/slug/resolve'
 import { portableTextBodySchema } from '@/shared/pt/schema'
 import { idFromString } from '@/shared/utils/id'
 import { hasAtLeast } from '@/shared/utils/roles'
@@ -54,7 +54,7 @@ async function ensureTagsExist(db: NodePgDatabase, tagNames: string[]): Promise<
   }
   await seedTagsIfMissing(
     db,
-    tagNames.map((name) => ({ name, slug: resolveSlugForTaxonomy(undefined, name) })),
+    tagNames.map((name) => ({ name, slug: resolveSlug(undefined, name, { entity: 'taxonomy' }) })),
   )
 }
 

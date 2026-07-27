@@ -102,7 +102,7 @@ export function collectHeadingSlotsInPortableTextRenderOrder(body: PortableTextB
  *
  *   - `transform` (optional) is applied to the heading text BEFORE
  *     `Slugger`. Server-side callers pass `deriveSlug` from
- *     `@/server/infra/slug` to romanise CJK via `pinyin-pro` — it can't be
+ *     `@/server/infra/slug/derive` to romanise CJK via `pinyin-pro` — it can't be
  *     imported here because this module ships to the client and
  *     pinyin-pro is ~150KB of CJK lookup tables.
  *   - `Slugger` then lowercases, collapses non-alphanumerics into `-`,

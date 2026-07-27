@@ -13,7 +13,7 @@ import { findContentById, findLatestDraft, findLatestRevision } from '@/server/d
 import { syncLibraryImageBlocks } from '@/server/domains/content/services/image-sync'
 import { canonicalizePortableTextBody } from '@/server/domains/pt/services/canonicalize'
 import { getLogger, type Logger } from '@/server/infra/logger'
-import { deriveSlug } from '@/server/infra/slug'
+import { deriveSlug } from '@/server/infra/slug/derive'
 import { collectHeadings, collectImageStoragePaths } from '@/shared/pt/utils'
 
 const log = getLogger('content.lifecycle')

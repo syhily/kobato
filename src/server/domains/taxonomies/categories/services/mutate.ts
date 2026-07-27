@@ -22,11 +22,11 @@ import {
   updateCategory,
 } from '@/server/infra/db/operations/category'
 import { DomainError } from '@/server/infra/http/errors'
-import { resolveSlugForTaxonomy } from '@/server/infra/slug'
+import { resolveSlug } from '@/server/infra/slug/resolve'
 import { idFromString } from '@/shared/utils/id'
 
 export async function upsertAdminCategory(db: NodePgDatabase, input: UpsertCategoryInputs): Promise<AdminCategoryDto> {
-  const slug = resolveSlugForTaxonomy(input.slug, input.name)
+  const slug = resolveSlug(input.slug, input.name, { entity: 'taxonomy' })
 
   if (input.id === undefined) {
     await ensureUniqueOnCreateTaxonomy(

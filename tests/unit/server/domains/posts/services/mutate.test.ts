@@ -82,13 +82,8 @@ vi.mock('@/server/infra/logger', () => ({
   })),
 }))
 
-vi.mock('@/server/infra/slug', () => ({
-  resolveSlugForTaxonomy: vi.fn((_id, name) => name),
-}))
-
-vi.mock('@/server/infra/slug-validation', () => ({
-  ensureSlugLegal: vi.fn(),
-  resolveSlug: vi.fn((slug: string, title: string) => slug || title),
+vi.mock('@/server/infra/slug/resolve', () => ({
+  resolveSlug: vi.fn((slug: string | undefined, fallback: string) => slug || fallback),
 }))
 
 vi.mock('@/server/infra/slug/reservation', () => ({

@@ -27,7 +27,7 @@ import {
 } from '@/server/infra/db/operations/tag'
 import { tag as tagTable } from '@/server/infra/db/schema/taxonomy'
 import { DomainError, ErrorMessages } from '@/server/infra/http/errors'
-import { resolveSlugForTaxonomy } from '@/server/infra/slug'
+import { resolveSlug } from '@/server/infra/slug/resolve'
 import { hasAtLeast } from '@/shared/utils/roles'
 
 // Wire-format DTO for every admin tag endpoint. `postCount` is
@@ -85,7 +85,7 @@ export async function upsertAdminTag(
   input: UpsertTagInputs,
   viewer?: ViewerIdentity,
 ): Promise<AdminTagDto> {
-  const slug = resolveSlugForTaxonomy(input.slug, input.name)
+  const slug = resolveSlug(input.slug, input.name, { entity: 'taxonomy' })
 
   if (input.id === undefined) {
     await ensureUniqueOnCreateTaxonomy(

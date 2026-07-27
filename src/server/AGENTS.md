@@ -81,7 +81,7 @@ One perimeter middleware derives the canonical `RequestContext` once per request
 
 ### Slug derivation
 
-- Canonical: `@/server/infra/slug::deriveSlug(text)` — pipeline `pinyin-pro` → whitespace-collapse → `github-slugger`. Server-only (`pinyin-pro` must not reach the client).
+- Canonical: `@/server/infra/slug/derive::deriveSlug(text)` — pipeline `pinyin-pro` → whitespace-collapse → `github-slugger`. Server-only (`pinyin-pro` must not reach the client). The fused explicit-or-derived resolver is `@/server/infra/slug/resolve::resolveSlug`; the route-prefix fence + in-transaction reservation live in `@/server/infra/slug/reservation`.
 - Heading anchors: SSR loaders pre-compute via `collectHeadings(body, deriveSlug)`.
 - Page ↔ post slugs share one namespace. DB `UNIQUE(slug)` + cross-table fence via `@/server/domains/pages/fence::validateSlugFence`.
 

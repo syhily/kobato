@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { MusicEmbedResolver } from '@/server/domains/pt/embeds'
 
-vi.mock('@/server/infra/slug', () => ({
+vi.mock('@/server/infra/slug/derive', () => ({
   deriveSlug: vi.fn((text: string) => `slug-${text}`),
 }))
 

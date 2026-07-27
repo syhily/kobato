@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { DomainError } from '@/server/infra/http/errors'
-import { deriveSlug, resolveSlugForTaxonomy } from '@/server/infra/slug'
+import { deriveSlug } from '@/server/infra/slug/derive'
 import { DERIVED_SLUG_PATTERN, SLUG_MAX } from '@/shared/slug'
 
 // Contract tests for the project-wide slug helper. These pin the
@@ -63,44 +62,5 @@ describe('deriveSlug', () => {
       expect(slug.length).toBeLessThanOrEqual(SLUG_MAX)
       expect(DERIVED_SLUG_PATTERN.test(slug)).toBe(true)
     }
-  })
-})
-
-describe('resolveSlugForTaxonomy', () => {
-  it('returns the explicit slug when valid', () => {
-    expect(resolveSlugForTaxonomy('my-slug', 'irrelevant')).toBe('my-slug')
-  })
-
-  it('trims whitespace around the explicit slug', () => {
-    expect(resolveSlugForTaxonomy('  my-slug  ', '')).toBe('my-slug')
-  })
-
-  it('falls back to deriveSlug(name) when explicit is blank or missing', () => {
-    expect(resolveSlugForTaxonomy('', '且听书吟')).toBe('qie-ting-shu-yin')
-    expect(resolveSlugForTaxonomy(undefined, '且听书吟')).toBe('qie-ting-shu-yin')
-  })
-
-  it('throws DomainError(BAD_REQUEST) when the explicit slug fails the pattern', () => {
-    try {
-      resolveSlugForTaxonomy('UPPER CASE', 'name')
-      throw new Error('should have thrown')
-    } catch (e) {
-      expect(e).toBeInstanceOf(DomainError)
-      expect((e as DomainError).code).toBe('BAD_REQUEST')
-    }
-  })
-
-  it('throws DomainError(BAD_REQUEST) when the explicit slug exceeds SLUG_MAX', () => {
-    const tooLong = 'a'.repeat(SLUG_MAX + 1)
-    expect(() => resolveSlugForTaxonomy(tooLong, 'name')).toThrow(DomainError)
-  })
-
-  it('throws DomainError(BAD_REQUEST) when deriveSlug yields an empty string', () => {
-    expect(() => resolveSlugForTaxonomy(undefined, '!!!')).toThrow(DomainError)
-  })
-
-  it('accepts slugs at exactly SLUG_MAX characters', () => {
-    const exact = 'a'.repeat(SLUG_MAX)
-    expect(resolveSlugForTaxonomy(exact, '')).toBe(exact)
   })
 })

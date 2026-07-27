@@ -18,7 +18,7 @@ import type {
   TwoColumnBlock,
 } from '@/shared/pt/schema'
 
-import { deriveSlug } from '@/server/infra/slug'
+import { deriveSlug } from '@/server/infra/slug/derive'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import {
   FOOTNOTE_BACKREF_ARIA_LABEL,
