@@ -4,7 +4,7 @@ import type { LoaderFunctionArgs } from 'react-router'
 import type { EntityTarget } from '@/server/infra/db/target'
 import type { DetailPageComments } from '@/shared/types/comments'
 
-import { trackAccess } from '@/server/domains/analytics/track'
+import { trackPageView } from '@/server/domains/analytics/track'
 import { loadDetailPageStreaming } from '@/server/http/loaders/comments'
 import { getRequestContext } from '@/server/http/request-context'
 
@@ -15,11 +15,6 @@ export type PublicDetailCritical = Awaited<ReturnType<typeof loadDetailPageStrea
 // (`react-router-framework-mode/data-loading/data-loading` "Streaming with defer".)
 export interface PublicDetailData extends PublicDetailCritical {
   comments: Promise<DetailPageComments>
-}
-
-function isPrefetchRequest(request: Request): boolean {
-  const purpose = request.headers.get('Purpose') ?? request.headers.get('Sec-Purpose')
-  return purpose?.toLowerCase().includes('prefetch') ?? false
 }
 
 export async function loadPublicDetailData(
@@ -34,21 +29,19 @@ export async function loadPublicDetailData(
 ): Promise<{ detail: PublicDetailData }> {
   const rc = getRequestContext({ request, context })
   const { session } = rc
-  const trackView = !isPrefetchRequest(request)
-  const isAdmin = rc.viewer?.role === 'admin'
 
-  // Append-only access-log write for the analytics dashboard. Lives
-  // alongside (not inside) the existing `bumpPageView` flow: the
-  // counter increment happens via `loadDetailPageCritical` (called
-  // from `loadDetailPageStreaming` below), the time-series write
-  // happens here. The admin-exemption (matching `bumpPageView`'s)
-  // and the analytics settings override both live inside
-  // `trackAccess`. `void`d — never blocks the loader.
-  if (trackView) {
-    void trackAccess(rc.requestFacts, target, { isAdmin, clientAddress: rc.clientAddress })
-  }
+  // Both analytics signals (counter + time-series) from the single
+  // domain entry point. The whole "counts as a view" gate — prefetch via
+  // `rc.requestFacts.purpose`, admin exemption with the analytics
+  // settings override, bot handling — lives inside `trackPageView`; the
+  // loader passes the already-derived facts and never re-reads headers.
+  // `void`d — never blocks the loader.
+  void trackPageView(rc.requestFacts, target, {
+    isAdmin: rc.viewer?.role === 'admin',
+    clientAddress: rc.clientAddress,
+  })
 
-  const streaming = await loadDetailPageStreaming(db, session, target, { trackView })
+  const streaming = await loadDetailPageStreaming(db, session, target)
 
   return {
     detail: { ...streaming.critical, comments: streaming.comments },

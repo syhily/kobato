@@ -22,19 +22,16 @@ vi.mock('@/server/domains/comments/services/public-query', () => ({
 }))
 vi.mock('@/server/domains/comments/services/likes', () => ({ queryLikes: vi.fn(), startLikeTokenSweep: vi.fn() }))
 vi.mock('@/server/http/loaders/sidebar', () => ({ loadSidebarData: vi.fn() }))
-vi.mock('@/server/domains/analytics/services/pv-batcher', () => ({ bumpPageView: vi.fn() }))
 
 const commentShared = await import('@/server/domains/comments/services/shared')
 const commentPublicQuery = await import('@/server/domains/comments/services/public-query')
 const likes = await import('@/server/domains/comments/services/likes')
 const sidebar = await import('@/server/http/loaders/sidebar')
-const metrics = await import('@/server/domains/analytics/services/pv-batcher')
 const { loadDetailPageStreaming } = await import('@/server/http/loaders/comments')
 
 const POST_TIMING = { type: 'post' as const, ownerId: 1n }
 const POST_EMPTY = { type: 'post' as const, ownerId: 2n }
 const POST_ONE_UPSERT = { type: 'post' as const, ownerId: 3n }
-const POST_NO_TRACK = { type: 'post' as const, ownerId: 4n }
 
 const mockDb = {} as NodePgDatabase
 
@@ -118,25 +115,5 @@ describe('services/comments/page-data — loadDetailPageStreaming', () => {
     expect(commentPublicQuery.loadComments).toHaveBeenCalledWith(mockDb, session, POST_ONE_UPSERT, 0, {
       ensurePage: false,
     })
-  })
-
-  it('skips view increments when caller disables tracking', async () => {
-    vi.mocked(commentPublicQuery.loadComments).mockResolvedValue({
-      count: 0,
-      roots_count: 0,
-      comments: [],
-    })
-    vi.mocked(likes.queryLikes).mockResolvedValue(0)
-    vi.mocked(sidebar.loadSidebarData).mockResolvedValue({
-      recentPosts: [],
-      recentComments: [],
-      pendingComments: [],
-      tags: [],
-      isAdmin: false,
-    } as unknown as Awaited<ReturnType<typeof sidebar.loadSidebarData>>)
-
-    await loadDetailPageStreaming(mockDb, regularSession(), POST_NO_TRACK, { trackView: false })
-
-    expect(metrics.bumpPageView).not.toHaveBeenCalled()
   })
 })

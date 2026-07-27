@@ -2,7 +2,7 @@ import type { ListingPageLoaderData } from '@/server/http/loaders/listing'
 import type { ListingPostCard } from '@/shared/types/catalog'
 import type { SidebarData } from '@/ui/public/Sidebar'
 
-import { trackAccess } from '@/server/domains/analytics/track'
+import { trackPageView } from '@/server/domains/analytics/track'
 import { selectFeaturePosts, selectSidebarPosts } from '@/server/domains/posts/services/featured'
 import { countPublicPosts, listPublicPostCardsPaginated } from '@/server/domains/posts/services/public-query'
 import { getCategoryLinks } from '@/server/domains/taxonomies/categories/services/query'
@@ -36,11 +36,11 @@ export async function loader({
 
   // Time-series access-log write for the analytics dashboard. The
   // homepage isn't a content detail page so we pass a null target —
-  // the row still counts toward visits / visitors / referers. The
-  // admin-exemption (so the dashboard owner doesn't pollute their
-  // own visitor metrics) lives inside `trackAccess`; pass `isAdmin`
-  // so it can apply the exemption and honour the analytics settings.
-  void trackAccess(rc.requestFacts, null, {
+  // the counter is skipped but the row still counts toward visits /
+  // visitors / referers. The whole "counts as a view" gate (prefetch,
+  // admin exemption with the settings override, bot handling) lives
+  // inside `trackPageView`.
+  void trackPageView(rc.requestFacts, null, {
     isAdmin: rc.viewer?.role === 'admin',
     clientAddress: rc.clientAddress,
   })

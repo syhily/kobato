@@ -3,18 +3,26 @@ import type { RequestFacts } from '@/server/infra/http/request-facts'
 
 import { enrichEvent } from '@/server/domains/analytics/enrich'
 import { pushAccessEvent } from '@/server/domains/analytics/services/batcher'
+import { bumpPageView } from '@/server/domains/analytics/services/pv-batcher'
 import { getLogger } from '@/server/infra/logger'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
-// Single entry point for every "this request happened" signal. Fire-and-
-// forget: callers `void trackAccess(...)` so enrichment/flush never blocks
-// render. Bot filter and admin-exemption come from the `blog.analytics`
-// settings section, falling back to safe defaults (`trackAdmin: false`,
-// `keepBotRows: false`) when the section is unseeded.
+// Single owner of "what counts as a view" for the whole analytics domain.
+// Callers fire `void trackPageView(facts, target, options)` and the gate
+// here decides whether EITHER signal writes:
+//   - prefetch requests (via `facts.purpose`) never write anything;
+//   - admin visits are skipped unless "记录管理员访问" (`trackAdmin`) is
+//     toggled on in `/admin/settings` — the same rule covers BOTH signals;
+//   - bot traffic still bumps the counter (counters carry no bot
+//     dimension) but only lands in the time-series when `keepBotRows` is on.
+// Settings come from the `blog.analytics` section, falling back to safe
+// defaults (`trackAdmin: false`, `keepBotRows: false`) when unseeded.
 //
-// `bumpPageView()` is deliberately NOT called here — the existing call
-// site in `loadDetailPageCritical` (`@/server/http/loaders/comments`)
-// already covers every detail render; mirroring it would double-count.
+// One call fans out to both signals: the per-entity counter
+// (`bumpPageView`, skipped when `target` is null — e.g. the homepage,
+// which has no entity to count) and the time-series access log
+// (`pushAccessEvent`). Fire-and-forget: callers `void` the promise so
+// enrichment/flush never blocks render.
 
 const log = getLogger('analytics.track')
 
@@ -33,16 +41,16 @@ function isPrefetch(facts: RequestFacts): boolean {
   return facts.purpose?.toLowerCase().includes('prefetch') ?? false
 }
 
-export interface TrackAccessOptions {
+export interface TrackPageViewOptions {
   /** Override the request timestamp; defaults to `new Date()` at call time. */
   now?: Date
   /** Skip the bot check (useful in tests). */
   skipBotFilter?: boolean
   /**
    * Set by callers that have already resolved the session role. Admin
-   * visits are skipped by default (matches the `bumpPageView` admin
-   * exemption — dashboard owners shouldn't pollute their own visitor
-   * metrics). Toggle "记录管理员访问" in `/admin/settings` to override.
+   * visits are skipped by default — dashboard owners shouldn't pollute
+   * their own visitor metrics. Toggle "记录管理员访问" in
+   * `/admin/settings` to override; the toggle covers BOTH signals.
    */
   isAdmin?: boolean
   /**
@@ -52,10 +60,10 @@ export interface TrackAccessOptions {
   clientAddress?: string
 }
 
-export async function trackAccess(
+export async function trackPageView(
   facts: RequestFacts,
   target: EntityTarget | null,
-  options: TrackAccessOptions = {},
+  options: TrackPageViewOptions = {},
 ): Promise<void> {
   try {
     const bundle = getBlogSettingsBundleSync()
@@ -67,6 +75,14 @@ export async function trackAccess(
     if (isPrefetch(facts)) {
       return
     }
+
+    // Counter signal — the gate above has already passed, so this fires
+    // for every countable view. A null target (e.g. the homepage) has no
+    // entity to count and only lands in the time-series below.
+    if (target !== null) {
+      bumpPageView(target)
+    }
+
     const ip = options.clientAddress ?? 'unknown'
     const event = await enrichEvent({
       ts: options.now ?? new Date(),
@@ -88,7 +104,7 @@ export async function trackAccess(
     // An analytics failure must never break the user-facing request.
     // Matches Sink's defensive try/catch around its own access log
     // (`server/middleware/1.redirect.ts:148-152`).
-    log.error('trackAccess failed', { err: err instanceof Error ? err.message : String(err) })
+    log.error('trackPageView failed', { err: err instanceof Error ? err.message : String(err) })
   }
 }
 

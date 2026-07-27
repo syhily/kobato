@@ -5,7 +5,6 @@ import type { EntityTarget } from '@/server/infra/db/target'
 import type { CommentFormUser } from '@/shared/types/catalog'
 import type { DetailPageComments } from '@/shared/types/comments'
 
-import { bumpPageView } from '@/server/domains/analytics/services/pv-batcher'
 import { userSession } from '@/server/domains/auth/primitives'
 import { asCommentItemsWire } from '@/server/domains/comments/projection'
 import { queryLikes } from '@/server/domains/comments/services/likes'
@@ -49,22 +48,9 @@ async function loadCommentsAndItems(
 // (post body, likes, sidebar, current-user identity for the reply form).
 // Comments are intentionally excluded so the loader can stream them
 // alongside the SSR HTML.
-async function loadDetailPageCritical(
-  db: NodePgDatabase,
-  session: BlogSession,
-  target: EntityTarget,
-  options?: { trackView?: boolean },
-) {
+async function loadDetailPageCritical(db: NodePgDatabase, session: BlogSession, target: EntityTarget) {
   const user = userSession(session)
   const currentUser = toCommentFormUser(user)
-  const admin = user?.role === 'admin'
-  const trackView = options?.trackView ?? true
-
-  // Keep counting out of the critical path; this is fire-and-forget and
-  // callers can disable it for non-navigation requests (e.g. prefetch).
-  if (!admin && trackView) {
-    bumpPageView(target)
-  }
 
   const [metricRow, likes, sidebar] = await Promise.all([
     ensureCommentPage(db, target),
@@ -82,13 +68,8 @@ async function loadDetailPageCritical(
 
 // Detail data with the comments promise split out, ready to stream through
 // React Router's `defer`-style return + `<Await>` consumer.
-export async function loadDetailPageStreaming(
-  db: NodePgDatabase,
-  session: BlogSession,
-  target: EntityTarget,
-  options?: { trackView?: boolean },
-) {
+export async function loadDetailPageStreaming(db: NodePgDatabase, session: BlogSession, target: EntityTarget) {
   const comments = loadCommentsAndItems(db, session, target)
-  const critical = await loadDetailPageCritical(db, session, target, options)
+  const critical = await loadDetailPageCritical(db, session, target)
   return { critical, comments }
 }
