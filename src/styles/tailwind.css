@@ -1382,6 +1382,45 @@ body {
   }
 }
 
+/* Theme switch wipe — the full-page theme change runs inside a View
+   Transition (see transitionViewIfSupported + ThemeProvider). The old
+   snapshot stays put while the new one is revealed by a clip-path wipe:
+   top-down when entering dark, bottom-up when returning to light. The
+   :root.dark gate keys the direction off the RESULTING theme, because the
+   new snapshot is captured after the class swap. Reduced-motion users
+   never start a transition, so no CSS guard is needed here. */
+::view-transition-old(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-new(root) {
+  animation: theme-wipe-to-light 800ms ease-in-out;
+  mix-blend-mode: normal;
+}
+
+:root.dark::view-transition-new(root) {
+  animation-name: theme-wipe-to-dark;
+}
+
+@keyframes theme-wipe-to-dark {
+  from {
+    clip-path: polygon(0 0, 100% 0, 100% 0, 0 0);
+  }
+  to {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  }
+}
+
+@keyframes theme-wipe-to-light {
+  from {
+    clip-path: polygon(0 100%, 100% 100%, 100% 100%, 0 100%);
+  }
+  to {
+    clip-path: polygon(0 100%, 100% 100%, 100% 0, 0 0);
+  }
+}
+
 @keyframes slideUpFade {
   from {
     opacity: 0;

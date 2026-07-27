@@ -1,6 +1,8 @@
 import { createContext, use, useCallback, useEffect, useMemo, useState } from 'react'
+import { flushSync } from 'react-dom'
 
 import { getLogger } from '@/client/lib/logger'
+import { transitionViewIfSupported } from '@/client/lib/view-transition'
 
 const logger = getLogger('theme')
 
@@ -80,7 +82,13 @@ export function ThemeProvider({ children, initialResolved = 'light' }: ThemeProv
     } catch (err) {
       logger.warn('Failed to persist theme preference', { error: err, theme: next })
     }
-    setThemeState(next)
+    // flushSync forces the render AND the applyTheme effect to land inside
+    // the view-transition update window, so the new snapshot is captured
+    // with the new theme class already on <html>. Without the API the
+    // helper just runs the update synchronously.
+    transitionViewIfSupported(() => {
+      flushSync(() => setThemeState(next))
+    })
   }, [])
 
   const value = useMemo(() => ({ theme, setTheme, resolvedTheme }), [theme, setTheme, resolvedTheme])
