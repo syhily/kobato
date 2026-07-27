@@ -70,7 +70,7 @@ extracted to a flat cache dir on first run
 **Node 26 pin.** `scripts/sea/build.ts` gates `REQUIRED_NODE_MAJOR = 26`;
 the CI matrices (`.github/workflows/sea.yml` ×3, `ci.yml` ×2) pin
 `node-version: 26`; the Dockerfile builds on `node:26-bookworm-slim` with
-`npm install -g pnpm@11.9.0` (Node 25+ images ship no Corepack — keep the
+`npm install -g pnpm@11.17.0` (Node 25+ images ship no Corepack — keep the
 version aligned with the `packageManager` field). Local dev/tests still
 run on the machine's default Node; only `sea:build` gates.
 
