@@ -55,7 +55,7 @@ Agent Skills under `.agents/skills/` override these conventions on conflict:
 
 A Vite plugin splits ~500 client chunks into tiers so the browser proactively loads high-priority routes. At request time, `src/server/render/warmup/manifest.ts` matches the pathname against the route tree and emits critical `<link rel="modulepreload">` for the matched route and its ancestor layouts. Idle tiers preload lower-priority chunks via inline `<script>`.
 
-When adding or removing routes from `src/routes.ts`, update the tier arrays in `src/server/infra/route-warmup.ts`.
+Tier-2 buckets derive automatically from route-ID prefixes (`routes/public|admin|editor|auth/*`) in `src/server/infra/route-warmup.ts` — adding or removing routes in `src/routes.ts` needs no warmup edits. Only `TIER1_ROUTES` is editorial (critical-path changes). A contract test in `tests/unit/server/infra/route-warmup.test.ts` pins every declared route to exactly one bucket.
 
 ## SEA packaging
 

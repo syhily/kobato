@@ -34,7 +34,15 @@ vi.mock('node:fs', () => ({
 
 import { join } from 'node:path'
 
-import { routeWarmupPlugin } from '@/server/infra/route-warmup'
+import type { RouteManifest } from '@/shared/constants/route-warmup'
+
+import routes from '@/routes'
+import {
+  deriveTier2RouteIds,
+  routeWarmupPlugin,
+  TIER1_ROUTES,
+  tier2BucketForRouteId,
+} from '@/server/infra/route-warmup'
 
 function buildManifest(prefix: string): string {
   return `${prefix}${JSON.stringify(
@@ -239,6 +247,84 @@ describe('route-warmup plugin — writeBundle handler', () => {
 
     const manifest = JSON.parse(fsState.files.get('/build/client/assets/warmup-manifest.json') as string)
     expect(manifest.tier2_admin).not.toContain('/assets/dashboard.js')
+  })
+})
+
+describe('route-warmup tier derivation', () => {
+  const manifestOf = (ids: string[]): RouteManifest => ({
+    entry: { module: '/assets/entry.js', imports: [] },
+    routes: Object.fromEntries(ids.map((id) => [id, { id, module: `/assets/${id}.js`, imports: [] }])),
+  })
+
+  it('buckets route IDs by prefix and skips unprefixed IDs', () => {
+    const manifest = manifestOf([
+      'root',
+      'routes/public/layout',
+      'routes/public/home',
+      'routes/public/archives',
+      'routes/admin/dashboard',
+      'routes/editor/post/new',
+      'routes/auth/signin',
+      'home-page',
+      'category-list-page',
+    ])
+    expect(deriveTier2RouteIds(manifest)).toEqual({
+      public: ['routes/public/archives'],
+      admin: ['routes/admin/dashboard'],
+      editor: ['routes/editor/post/new'],
+      auth: ['routes/auth/signin'],
+    })
+  })
+
+  it('excludes TIER1 members from prefix buckets even when they carry a prefix', () => {
+    // 'routes/public/layout' and 'routes/public/home' start with
+    // 'routes/public/' but must stay tier-1-only.
+    for (const id of TIER1_ROUTES) {
+      const buckets = deriveTier2RouteIds(manifestOf([id]))
+      expect(Object.values(buckets).flat(), `TIER1 route "${id}" leaked into a tier-2 bucket`).toEqual([])
+    }
+  })
+})
+
+describe('route-warmup tier derivation — src/routes.ts coverage', () => {
+  interface RouteEntry {
+    file: string
+    id?: string
+  }
+
+  function flatten(entries: unknown[]): RouteEntry[] {
+    const out: RouteEntry[] = []
+    for (const entry of entries) {
+      if (!entry || typeof entry !== 'object') {
+        continue
+      }
+      if ('file' in entry) {
+        out.push(entry as RouteEntry)
+      }
+      if ('children' in entry && Array.isArray((entry as { children?: unknown }).children)) {
+        out.push(...flatten((entry as { children: unknown[] }).children))
+      }
+    }
+    return out
+  }
+
+  it('every route declared in src/routes.ts lands in exactly one warmup bucket', () => {
+    for (const entry of flatten(routes)) {
+      // React Router derives the manifest ID from the file path; an
+      // explicit `id` overrides it (paginated aliases). Aliases share the
+      // base file's chunk, so the base ID's bucket covers them.
+      const baseId = entry.file.replace(/\.tsx$/, '')
+      const manifestId = entry.id ?? baseId
+      const bucket =
+        TIER1_ROUTES.includes(manifestId) || TIER1_ROUTES.includes(baseId)
+          ? 'tier1'
+          : (tier2BucketForRouteId(manifestId) ?? tier2BucketForRouteId(baseId))
+      expect(
+        bucket,
+        `route "${manifestId}" (file ${entry.file}) is not covered by any warmup tier — ` +
+          'add it to TIER1_ROUTES or mount it under a routes/{public,admin,editor,auth}/ prefix',
+      ).not.toBeNull()
+    }
   })
 })
 

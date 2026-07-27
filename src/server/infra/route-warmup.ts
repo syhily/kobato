@@ -18,64 +18,51 @@ import { unsafeCast } from '../../shared/utils/unsafe-cast'
 // Critical path for the public launch route (home). The SSR runtime matches
 // the current request against the React Router client manifest and emits the
 // critical preloads for the matched route instead of always widening the
-// first paint with unrelated routes.
-const TIER1_ROUTES = ['root', 'routes/public/layout', 'routes/public/home']
+// first paint with unrelated routes. This is the only editorial list — tier 2
+// is derived from route-ID prefixes below.
+export const TIER1_ROUTES = ['root', 'routes/public/layout', 'routes/public/home']
 
-const TIER2_PUBLIC_ROUTES = [
-  'routes/public/archives',
-  'routes/public/categories',
-  'routes/public/category/list',
-  'category-list-page',
-  'routes/public/tag/list',
-  'tag-list-page',
-  'routes/public/search/list',
-  'search-list-page',
-  'routes/public/post/detail',
-  'routes/public/page/detail',
-  'routes/public/not-found',
-]
+// Tier-2 membership is derived from the parsed client manifest's route IDs by
+// prefix: `routes/public/` → public, `routes/admin/` → admin,
+// `routes/editor/` → editor, `routes/auth/` → auth. Paginated alias IDs
+// (`home-page`, `category-list-page`, …) carry no prefix and are skipped —
+// they share their base route's module chunk, which the prefixed base ID
+// already collects.
+const TIER2_PREFIXES = [
+  ['routes/public/', 'public'],
+  ['routes/admin/', 'admin'],
+  ['routes/editor/', 'editor'],
+  ['routes/auth/', 'auth'],
+] as const
 
-const TIER2_ADMIN_ROUTES = [
-  'routes/admin/layout',
-  'routes/admin/dashboard',
-  'routes/admin/posts/index',
-  'routes/admin/posts/analytics',
-  'routes/admin/pages/index',
-  'routes/admin/comments',
-  'routes/admin/taxonomy/categories',
-  'routes/admin/taxonomy/tags',
-  'routes/admin/library/images',
-  'routes/admin/library/music',
-  'routes/admin/library/music/add',
-  'routes/admin/library/music/detail',
-  'routes/admin/library/branding',
-  'routes/admin/library/fonts',
-  'routes/admin/taxonomy/friends',
-  'routes/admin/security/users/index',
-  'routes/admin/security/users/detail',
-  'routes/admin/me/profile',
-  'routes/admin/me/comments',
-  'routes/admin/me/sessions',
-  'routes/admin/security/sessions',
-  'routes/admin/security/audit-log',
-  'routes/admin/analytics/layout',
-  'routes/admin/analytics/overview',
-  'routes/admin/analytics/realtime',
-  'routes/admin/analytics/mentions',
-  'routes/admin/settings/layout',
-  'routes/admin/settings/index',
-]
+export type Tier2Bucket = (typeof TIER2_PREFIXES)[number][1]
 
-const TIER2_EDITOR_ROUTES = [
-  'routes/editor/layout',
-  'routes/editor/post/new',
-  'routes/editor/post/edit',
-  'routes/editor/post/analytics',
-  'routes/editor/page/new',
-  'routes/editor/page/edit',
-]
+export function tier2BucketForRouteId(id: string): Tier2Bucket | null {
+  for (const [prefix, bucket] of TIER2_PREFIXES) {
+    if (id.startsWith(prefix)) {
+      return bucket
+    }
+  }
+  return null
+}
 
-const TIER2_AUTH_ROUTES = ['routes/auth/layout', 'routes/auth/signin', 'routes/auth/setup/index']
+// Derives tier-2 route-ID lists from the parsed client manifest. TIER1
+// members are excluded up front so 'routes/public/layout' and
+// 'routes/public/home' stay tier-1-only despite their public prefix.
+export function deriveTier2RouteIds(manifest: RouteManifest): Record<Tier2Bucket, string[]> {
+  const tier1 = new Set<string>(TIER1_ROUTES)
+  const buckets: Record<Tier2Bucket, string[]> = { public: [], admin: [], editor: [], auth: [] }
+  for (const id of Object.keys(manifest.routes)) {
+    if (tier1.has(id)) {
+      continue
+    }
+    const bucket = tier2BucketForRouteId(id)
+    if (bucket) {
+      buckets[bucket].push(id)
+    }
+  }
+  return buckets
+}
 
 // Chunks excluded from all tiers except where explicitly allowed
 const EXCLUDED_PATTERNS = WARMUP_GLOBAL_EXCLUDED_PATTERNS.map((p) => new RegExp(p))
@@ -241,11 +228,12 @@ export function routeWarmupPlugin(): Plugin {
           chunkSizes.set(`/assets/${file}`, stat.size)
         }
 
+        const tier2Ids = deriveTier2RouteIds(manifest)
         const t1Raw = collectManifestChunks(manifest, TIER1_ROUTES)
-        const t2PubRaw = collectManifestChunks(manifest, TIER2_PUBLIC_ROUTES)
-        const t2AdminRaw = collectManifestChunks(manifest, TIER2_ADMIN_ROUTES)
-        const t2EditorRaw = collectManifestChunks(manifest, TIER2_EDITOR_ROUTES)
-        const t2AuthRaw = collectManifestChunks(manifest, TIER2_AUTH_ROUTES)
+        const t2PubRaw = collectManifestChunks(manifest, tier2Ids.public)
+        const t2AdminRaw = collectManifestChunks(manifest, tier2Ids.admin)
+        const t2EditorRaw = collectManifestChunks(manifest, tier2Ids.editor)
+        const t2AuthRaw = collectManifestChunks(manifest, tier2Ids.auth)
 
         // Also add entry imports to tier 1
         for (const imp of manifest.entry.imports) {
