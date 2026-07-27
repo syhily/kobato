@@ -20,6 +20,7 @@ vi.mock('@/server/infra/logger', () => ({
 
 import {
   __resetCacheCountersForTests,
+  AvatarStatus,
   bumpCounter,
   clear,
   get,
@@ -184,7 +185,12 @@ describe('cache registry — key shapes', () => {
   })
 
   it('carries the fetch size in the avatar key', async () => {
-    await set(db, 'avatar', { size: 120, email: 'a@b.c' }, { status: 0, buffer: Buffer.from('x') })
+    await set(
+      db,
+      'avatar',
+      { size: 120, email: 'a@b.c' },
+      { status: AvatarStatus.HAVE_AVATAR, buffer: Buffer.from('x') },
+    )
 
     expect(kvStoreMock.setItemRaw.mock.calls[0]?.[1]).toBe('avatar:120:a@b.c')
   })
@@ -202,29 +208,54 @@ describe('cache registry — key shapes', () => {
 
 describe('cache registry — avatar sentinel codec', () => {
   it('encodes a present avatar as sentinel byte 0 + payload', async () => {
-    await set(db, 'avatar', { size: 80, email: 'a@b.c' }, { status: 0, buffer: Buffer.from('png') })
+    await set(
+      db,
+      'avatar',
+      { size: 80, email: 'a@b.c' },
+      { status: AvatarStatus.HAVE_AVATAR, buffer: Buffer.from('png') },
+    )
 
     const blob = kvStoreMock.setItemRaw.mock.calls[0]?.[2] as Buffer
-    expect(blob[0]).toBe(0)
+    expect(blob[0]).toBe(AvatarStatus.HAVE_AVATAR)
     expect(blob.subarray(1).toString()).toBe('png')
   })
 
   it('encodes a missing avatar as the lone sentinel byte 1', async () => {
-    await set(db, 'avatar', { size: 80, email: 'a@b.c' }, { status: 1, buffer: null })
+    await set(db, 'avatar', { size: 80, email: 'a@b.c' }, { status: AvatarStatus.NO_AVATAR, buffer: null })
 
     const blob = kvStoreMock.setItemRaw.mock.calls[0]?.[2] as Buffer
-    expect(blob).toEqual(Buffer.from([1]))
+    expect(blob).toEqual(Buffer.from([AvatarStatus.NO_AVATAR]))
+  })
+
+  it('treats a HAVE_AVATAR entry with a null buffer as the negative sentinel', async () => {
+    // The codec refuses to write a payload-less positive entry — a corrupt
+    // in-memory shape degrades to the negative sentinel instead of an
+    // undecodable blob.
+    await set(db, 'avatar', { size: 80, email: 'a@b.c' }, { status: AvatarStatus.HAVE_AVATAR, buffer: null })
+
+    const blob = kvStoreMock.setItemRaw.mock.calls[0]?.[2] as Buffer
+    expect(blob).toEqual(Buffer.from([AvatarStatus.NO_AVATAR]))
   })
 
   it('round-trips both sentinel forms through get', async () => {
-    kvStoreMock.getItemRaw.mockResolvedValueOnce(Buffer.from([1]))
-    await expect(get(db, 'avatar', { size: 80, email: 'a@b.c' })).resolves.toEqual({ status: 1, buffer: null })
-
-    kvStoreMock.getItemRaw.mockResolvedValueOnce(Buffer.concat([Buffer.from([0]), Buffer.from('png')]))
+    kvStoreMock.getItemRaw.mockResolvedValueOnce(Buffer.from([AvatarStatus.NO_AVATAR]))
     await expect(get(db, 'avatar', { size: 80, email: 'a@b.c' })).resolves.toEqual({
-      status: 0,
+      status: AvatarStatus.NO_AVATAR,
+      buffer: null,
+    })
+
+    kvStoreMock.getItemRaw.mockResolvedValueOnce(
+      Buffer.concat([Buffer.from([AvatarStatus.HAVE_AVATAR]), Buffer.from('png')]),
+    )
+    await expect(get(db, 'avatar', { size: 80, email: 'a@b.c' })).resolves.toEqual({
+      status: AvatarStatus.HAVE_AVATAR,
       buffer: Buffer.from('png'),
     })
+  })
+
+  it('reads an unknown sentinel byte as a miss', async () => {
+    kvStoreMock.getItemRaw.mockResolvedValueOnce(Buffer.from([7, 1, 2, 3]))
+    await expect(get(db, 'avatar', { size: 80, email: 'a@b.c' })).resolves.toBeNull()
   })
 })
 

@@ -8,13 +8,13 @@ vi.mock('@/server/infra/rate-limit', () => ({
 }))
 
 vi.mock('@/server/domains/comments/services/avatar', () => ({
-  fetchQQAvatarImage: vi.fn(),
-  isQQEmail: vi.fn(),
-}))
-
-vi.mock('@/server/http/resources/avatar-cache', () => ({
-  AvatarStatus: { HAVE_AVATAR: 'have', NO_AVATAR: 'none' },
-  cacheAvatar: vi.fn(),
+  // Delegate to the real email hash so the hash-shape / determinism
+  // assertions below keep their bite; the fetch-and-cache orchestration
+  // inside the domain service is covered by its own unit tests.
+  resolveAvatarForEmail: vi.fn(async (_db: unknown, email: string) => {
+    const { encodedEmail } = await import('@/shared/utils/security')
+    return encodedEmail(email)
+  }),
 }))
 
 vi.mock('@/shared/config/getters', () => ({

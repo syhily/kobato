@@ -20,10 +20,11 @@ import type { Env } from '@/server/http/context'
 
 // Stub the heavy backends so we can assert routing without running the
 // real rendering pipeline.
-vi.mock('@/server/http/resources/avatar-cache', () => ({
+vi.mock('@/server/infra/cache/registry', () => ({
   AvatarStatus: { HAVE_AVATAR: 0, NO_AVATAR: 1 },
-  cacheAvatar: vi.fn(),
-  loadAvatar: vi.fn().mockResolvedValue(null),
+  get: vi.fn().mockResolvedValue(null),
+  set: vi.fn().mockResolvedValue(undefined),
+  through: vi.fn((_db: unknown, _id: unknown, _params: unknown, loader: () => unknown) => loader()),
 }))
 // catalog/catalog was removed; images.ts now resolves slugs via
 // findPublicPostMetaBySlug / findPublicPageMetaBySlug (mocked below).

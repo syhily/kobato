@@ -17,9 +17,8 @@ import { findPublicPageMetaBySlug } from '@/server/domains/pages/services/public
 import { findPublicPostMetaBySlug } from '@/server/domains/posts/services/single'
 import { findCategoryBySlug } from '@/server/domains/taxonomies/categories/services/query'
 import { rateLimitByIp } from '@/server/http/middlewares/rate-limit'
-import { AvatarStatus, cacheAvatar, loadAvatar } from '@/server/http/resources/avatar-cache'
 import { serveCalendar } from '@/server/http/resources/calendar'
-import { through } from '@/server/infra/cache/registry'
+import { type AvatarEntry, AvatarStatus, get, set, through } from '@/server/infra/cache/registry'
 import { drawOpenGraph } from '@/server/render/og/render'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { joinUrl } from '@/shared/utils/urls'
@@ -155,21 +154,40 @@ export const imagesRouter = new Hono<Env>()
 
     const { email, hash: canonical } = await resolveAvatarInfo(c.var.requestContext.db, hash)
     if (canonical === null) {
-      await cacheAvatar(c.var.requestContext.db, { email: hash, size, status: AvatarStatus.NO_AVATAR })
+      await set(
+        c.var.requestContext.db,
+        'avatar',
+        { size, email: hash },
+        { status: AvatarStatus.NO_AVATAR, buffer: null },
+      )
       return c.redirect(defaultAvatarUrl())
     }
 
     if (email && isQQEmail(email)) {
       const buffer = await fetchQQAvatarImage(email, size)
       if (buffer === null) {
-        await cacheAvatar(c.var.requestContext.db, { email: canonical, size, status: AvatarStatus.NO_AVATAR })
+        await set(
+          c.var.requestContext.db,
+          'avatar',
+          { size, email: canonical },
+          { status: AvatarStatus.NO_AVATAR, buffer: null },
+        )
         return c.redirect(defaultAvatarUrl())
       }
-      await cacheAvatar(c.var.requestContext.db, { email: canonical, size, status: AvatarStatus.HAVE_AVATAR, buffer })
+      await set(
+        c.var.requestContext.db,
+        'avatar',
+        { size, email: canonical },
+        { status: AvatarStatus.HAVE_AVATAR, buffer },
+      )
       return respondPng(c, buffer, AVATAR_HEADERS)
     }
 
-    const avatar = await loadAvatar(c.var.requestContext.db, canonical, size)
+    // Concurrent reads of the same email coalesce inside the cache module,
+    // so a hot avatar (e.g. the site owner appearing in every comment
+    // thread) only round-trips kv_cache once per concurrent burst instead
+    // of once per requesting comment.
+    const avatar = await get<'avatar', AvatarEntry>(c.var.requestContext.db, 'avatar', { size, email: canonical })
     if (avatar !== null) {
       if (avatar.status === AvatarStatus.NO_AVATAR) {
         return c.redirect(defaultAvatarUrl())
@@ -181,10 +199,20 @@ export const imagesRouter = new Hono<Env>()
 
     const buffer = await fetchAvatarImage(canonical, size)
     if (buffer === null) {
-      await cacheAvatar(c.var.requestContext.db, { email: canonical, size, status: AvatarStatus.NO_AVATAR })
+      await set(
+        c.var.requestContext.db,
+        'avatar',
+        { size, email: canonical },
+        { status: AvatarStatus.NO_AVATAR, buffer: null },
+      )
       return c.redirect(defaultAvatarUrl())
     }
 
-    await cacheAvatar(c.var.requestContext.db, { email: canonical, size, status: AvatarStatus.HAVE_AVATAR, buffer })
+    await set(
+      c.var.requestContext.db,
+      'avatar',
+      { size, email: canonical },
+      { status: AvatarStatus.HAVE_AVATAR, buffer },
+    )
     return respondPng(c, buffer, AVATAR_HEADERS)
   })

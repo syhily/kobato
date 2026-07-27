@@ -15,12 +15,6 @@ vi.mock('@/server/domains/posts/services/single', () => ({
   findPublicPostMetaBySlug: vi.fn(),
 }))
 
-vi.mock('@/server/http/resources/avatar-cache', () => ({
-  AvatarStatus: { NO_AVATAR: 'no_avatar', HAVE_AVATAR: 'have_avatar' },
-  cacheAvatar: vi.fn().mockResolvedValue(undefined),
-  loadAvatar: vi.fn(),
-}))
-
 vi.mock('@/server/http/resources/calendar', () => ({
   serveCalendar: vi.fn(),
 }))
@@ -35,6 +29,9 @@ vi.mock('@/server/infra/rate-limit', () => ({
 }))
 
 vi.mock('@/server/infra/cache/registry', () => ({
+  AvatarStatus: { NO_AVATAR: 1, HAVE_AVATAR: 0 },
+  get: vi.fn(),
+  set: vi.fn().mockResolvedValue(undefined),
   through: vi.fn(),
 }))
 
@@ -67,10 +64,9 @@ import { fetchAvatarImage, fetchQQAvatarImage, resolveAvatarInfo } from '@/serve
 import { findPublicPageMetaBySlug } from '@/server/domains/pages/services/public-query'
 import { findPublicPostMetaBySlug } from '@/server/domains/posts/services/single'
 import { findCategoryBySlug } from '@/server/domains/taxonomies/categories/services/query'
-import { loadAvatar } from '@/server/http/resources/avatar-cache'
 import { serveCalendar } from '@/server/http/resources/calendar'
 import { imagesRouter } from '@/server/http/resources/images'
-import { through } from '@/server/infra/cache/registry'
+import { AvatarStatus, get, through } from '@/server/infra/cache/registry'
 import { readBucket, tryKeyedRateLimit } from '@/server/infra/rate-limit'
 import { drawOpenGraph } from '@/server/render/og/render'
 
@@ -146,7 +142,10 @@ describe('images resource', () => {
 
   it('serves a cached avatar', async () => {
     ;(resolveAvatarInfo as ReturnType<typeof vi.fn>).mockResolvedValue({ email: 'a@example.com', hash: 'abc' })
-    ;(loadAvatar as ReturnType<typeof vi.fn>).mockResolvedValue({ status: 'have_avatar', buffer: Buffer.from('av') })
+    ;(get as ReturnType<typeof vi.fn>).mockResolvedValue({
+      status: AvatarStatus.HAVE_AVATAR,
+      buffer: Buffer.from('av'),
+    })
     ;(fetchAvatarImage as ReturnType<typeof vi.fn>).mockResolvedValue(Buffer.from('av'))
     const res = await requestImages('http://localhost/images/avatar/abc.png')
     expect(res.status).toBe(200)
@@ -154,13 +153,16 @@ describe('images resource', () => {
 
   it('threads the `?s=` size into the cache lookup, defaulting to 120', async () => {
     ;(resolveAvatarInfo as ReturnType<typeof vi.fn>).mockResolvedValue({ email: null, hash: 'abc' })
-    ;(loadAvatar as ReturnType<typeof vi.fn>).mockResolvedValue({ status: 'have_avatar', buffer: Buffer.from('av') })
+    ;(get as ReturnType<typeof vi.fn>).mockResolvedValue({
+      status: AvatarStatus.HAVE_AVATAR,
+      buffer: Buffer.from('av'),
+    })
     const res = await requestImages('http://localhost/images/avatar/abc.png?s=256')
     expect(res.status).toBe(200)
-    expect(loadAvatar).toHaveBeenCalledWith({}, 'abc', 256)
-    ;(loadAvatar as ReturnType<typeof vi.fn>).mockClear()
+    expect(get).toHaveBeenCalledWith({}, 'avatar', { size: 256, email: 'abc' })
+    ;(get as ReturnType<typeof vi.fn>).mockClear()
     await requestImages('http://localhost/images/avatar/abc.png')
-    expect(loadAvatar).toHaveBeenCalledWith({}, 'abc', 120)
+    expect(get).toHaveBeenCalledWith({}, 'avatar', { size: 120, email: 'abc' })
   })
 
   it('falls back to default avatar when hash is empty', async () => {

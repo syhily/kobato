@@ -1,9 +1,20 @@
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
 import { Buffer } from 'node:buffer'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { warnMock, imageWidthMock } = vi.hoisted(() => ({ warnMock: vi.fn(), imageWidthMock: vi.fn() }))
+const { warnMock, imageWidthMock, cacheSetMock } = vi.hoisted(() => ({
+  warnMock: vi.fn(),
+  imageWidthMock: vi.fn(),
+  cacheSetMock: vi.fn(),
+}))
 vi.mock('@/server/infra/logger', () => ({
   getLogger: () => ({ warn: warnMock }),
+}))
+
+vi.mock('@/server/infra/cache/registry', () => ({
+  AvatarStatus: { HAVE_AVATAR: 0, NO_AVATAR: 1 },
+  set: cacheSetMock,
 }))
 
 vi.mock('@/server/infra/image/compress', () => ({
@@ -19,13 +30,20 @@ import {
   fetchQQAvatarImage,
   getQQAvatarUrl,
   isQQEmail,
+  resolveAvatarForEmail,
   resolveAvatarSize,
 } from '@/server/domains/comments/services/avatar'
 import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
 
+// The db handle is only forwarded to the mocked cache registry — a
+// stand-in is enough for the unit scope.
+const db = {} as NodePgDatabase
+
 beforeEach(() => {
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
   warnMock.mockClear()
+  cacheSetMock.mockReset()
+  cacheSetMock.mockResolvedValue(undefined)
   imageWidthMock.mockReset()
   // Default: upstream serves a large-enough image so the size guard passes.
   imageWidthMock.mockResolvedValue(512)
@@ -271,5 +289,44 @@ describe('domains/comments/services/avatar — fetchGithubAvatarDataUrl (sunk fr
     mockFetch([new Response('not found', { status: 404 })])
 
     expect(await fetchGithubAvatarDataUrl()).toBe('')
+  })
+})
+
+describe('domains/comments/services/avatar — resolveAvatarForEmail', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('resolves a non-QQ email to its hash without fetching or warming the cache', async () => {
+    const spy = vi.fn()
+    vi.stubGlobal('fetch', spy)
+
+    const hash = await resolveAvatarForEmail(db, 'someone@example.com')
+
+    expect(hash).toMatch(/^[0-9a-f]{64}$/)
+    expect(spy).not.toHaveBeenCalled()
+    expect(cacheSetMock).not.toHaveBeenCalled()
+  })
+
+  it('pre-warms a HAVE_AVATAR entry at the default size when the QQ fetch succeeds', async () => {
+    const body = Buffer.from([0xff, 0xd8])
+    mockFetch([new Response(body, { status: 200 })])
+
+    const hash = await resolveAvatarForEmail(db, '12345@qq.com')
+
+    expect(cacheSetMock).toHaveBeenCalledWith(
+      db,
+      'avatar',
+      { size: 120, email: hash },
+      { status: 0, buffer: expect.any(Buffer) },
+    )
+  })
+
+  it('pre-warms the NO_AVATAR sentinel when the QQ upstream has no avatar', async () => {
+    mockFetch([new Response(null, { status: 404 })])
+
+    const hash = await resolveAvatarForEmail(db, '12345@qq.com')
+
+    expect(cacheSetMock).toHaveBeenCalledWith(db, 'avatar', { size: 120, email: hash }, { status: 1, buffer: null })
   })
 })

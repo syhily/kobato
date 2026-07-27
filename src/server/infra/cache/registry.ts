@@ -70,23 +70,30 @@ interface CacheBehavior<P> {
 }
 
 // Single-key avatar layout (was two keys: `avatar-status-${email}` plus
-// `avatar-${email}`). Byte 0 is the status sentinel — 0 = have avatar
-// (the payload follows), 1 = no avatar (a negative entry, payload-less).
-// The numeric values mirror `AvatarStatus` in
-// `@/server/http/resources/avatar-cache`.
-interface AvatarEntry {
-  status: number
+// `avatar-${email}`). Byte 0 is the status sentinel — `HAVE_AVATAR` (0)
+// means the payload follows, `NO_AVATAR` (1) is a negative, payload-less
+// entry. The enum IS the persisted byte protocol; the codec below is its
+// only reader/writer, and consumers (http resources, the comments avatar
+// domain service) import the enum from here.
+export enum AvatarStatus {
+  HAVE_AVATAR = 0,
+  NO_AVATAR = 1,
+}
+
+/** The avatar bucket's decoded entry shape — what `get` returns and `set` stores. */
+export interface AvatarEntry {
+  status: AvatarStatus
   buffer: Buffer | null
 }
 
 function encodeAvatar(value: unknown): Buffer {
   // The avatar declaration only ever stores AvatarEntry values.
   const entry = unsafeCast<AvatarEntry>(value)
-  if (entry.status === 1 || entry.buffer === null) {
-    return Buffer.from([1])
+  if (entry.status === AvatarStatus.NO_AVATAR || entry.buffer === null) {
+    return Buffer.from([AvatarStatus.NO_AVATAR])
   }
   const out = Buffer.allocUnsafe(entry.buffer.length + 1)
-  out[0] = 0
+  out[0] = AvatarStatus.HAVE_AVATAR
   entry.buffer.copy(out, 1)
   return out
 }
@@ -95,12 +102,13 @@ function decodeAvatar(raw: Buffer): AvatarEntry | null {
   if (raw.length === 0) {
     return null
   }
-  if (raw[0] === 1) {
-    return { status: 1, buffer: null }
+  const sentinel = unsafeCast<AvatarStatus>(raw[0])
+  if (sentinel === AvatarStatus.NO_AVATAR) {
+    return { status: AvatarStatus.NO_AVATAR, buffer: null }
   }
-  if (raw[0] === 0) {
+  if (sentinel === AvatarStatus.HAVE_AVATAR) {
     // subarray shares the backing Buffer — the cast only re-narrows the type.
-    return { status: 0, buffer: unsafeCast<Buffer>(raw.subarray(1)) }
+    return { status: AvatarStatus.HAVE_AVATAR, buffer: unsafeCast<Buffer>(raw.subarray(1)) }
   }
   return null
 }

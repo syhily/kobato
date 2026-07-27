@@ -2,6 +2,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { Buffer } from 'node:buffer'
 
+import { AvatarStatus, set } from '@/server/infra/cache/registry'
 import { findEmailById } from '@/server/infra/db/operations/user'
 import { compressImage, imageWidth } from '@/server/infra/image/compress'
 import { getLogger } from '@/server/infra/logger'
@@ -170,6 +171,28 @@ export async function fetchQQAvatarImage(email: string, size: number): Promise<B
     return null
   }
   return compressImage(Buffer.from(body))
+}
+
+/** Find-or-fetch-and-cache for the find-avatar procedure. Returns the
+ *  canonical email hash the avatar endpoint is keyed on. When the email
+ *  is a QQ email the cache is pre-warmed at DEFAULT_AVATAR_SIZE — the URL
+ *  the controller builds from the returned hash serves the
+ *  DEFAULT_AVATAR_SIZE entry — recording either the fetched bytes
+ *  (HAVE_AVATAR) or a negative entry (NO_AVATAR) when the upstream has
+ *  no avatar. Non-QQ emails leave the cache alone: the avatar endpoint
+ *  fetches from the gravatar mirror lazily per requested size. */
+export async function resolveAvatarForEmail(db: NodePgDatabase, email: string): Promise<string> {
+  const hash = await encodedEmail(email)
+  if (isQQEmail(email)) {
+    const buffer = await fetchQQAvatarImage(email, DEFAULT_AVATAR_SIZE)
+    await set(
+      db,
+      'avatar',
+      { size: DEFAULT_AVATAR_SIZE, email: hash },
+      buffer === null ? { status: AvatarStatus.NO_AVATAR, buffer: null } : { status: AvatarStatus.HAVE_AVATAR, buffer },
+    )
+  }
+  return hash
 }
 
 /** Translate the route param into the canonical cache key and, when the

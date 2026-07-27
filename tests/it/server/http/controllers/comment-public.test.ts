@@ -39,13 +39,7 @@ vi.mock('@/server/domains/comments/services/shared', () => ({
 }))
 
 vi.mock('@/server/domains/comments/services/avatar', () => ({
-  fetchQQAvatarImage: vi.fn(),
-  isQQEmail: () => false,
-}))
-
-vi.mock('@/server/http/resources/avatar-cache', () => ({
-  AvatarStatus: { HAVE_AVATAR: 0, NO_AVATAR: 1 },
-  cacheAvatar: vi.fn(),
+  resolveAvatarForEmail: vi.fn(async () => '0'.repeat(64)),
 }))
 
 vi.mock('@/server/domains/comments/services/token', () => ({
