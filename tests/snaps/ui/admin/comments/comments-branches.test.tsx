@@ -2,7 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
-import type { ActiveFilter } from '@/ui/admin/comments/useCommentsController'
+import type { CommentFilterFieldKey } from '@/ui/admin/comments/filter-fields'
+import type { CommentActions } from '@/ui/admin/comments/useCommentsController'
+import type { ActiveFilter } from '@/ui/admin/shared/filterPillsReducer'
 
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { CommentsView } from '@/ui/admin/comments/CommentsView'
@@ -31,22 +33,42 @@ vi.stubGlobal(
 //
 // The render-path branches we target here are the ones the existing test
 // leaves uncovered:
-//   - the `pageItems` / `authorItems` useMemo factories (run only when the
-//     secondary `useQuery` lookups resolve with data),
-//   - the `current not in items` `.unshift` branch inside both memos,
+//   - the search-item derivation inside `useFilterPills` (run only when the
+//     secondary `useQueries` lookups resolve with data),
+//   - the `current not in items` selected-value pinning inside that memo,
 //   - the `isFetchingNextPage` "加载中…" sentinel,
 //   - the `!hasMore && comments.length > 0` "已加载全部评论" sentinel,
-//   - the active-filter header/body slot split.
+//   - the active-filter header/body slot split (driven by the
+//     `initialFilters` prop through the real `useFilterPills`).
 
 const controllerState = vi.hoisted(() => ({
   comments: [] as AdminComment[],
   total: 0,
-  filters: [] as ActiveFilter[],
   statusCounts: { all: 0, pending: 0, approved: 0, deleteRequested: 0 },
   hasMore: false,
   isLoading: false,
   isFetchingNextPage: false,
 }))
+
+// No-op comment actions for the presentational row — hoisted so the
+// controller mock factory below can reference them.
+const stubActions = vi.hoisted((): CommentActions => {
+  const noop = () => {}
+  return {
+    approve: noop,
+    remove: noop,
+    approveDeletion: noop,
+    rejectDeletion: noop,
+    edit: noop,
+    reply: noop,
+    editUser: noop,
+    filterByPage: noop,
+    filterByAuthor: noop,
+    isApproving: () => false,
+    isRemoving: () => false,
+    isResolvingDeletion: () => false,
+  }
+})
 
 vi.mock('@/ui/admin/comments/useCommentsController', async () => {
   const actual = await vi.importActual<typeof import('@/ui/admin/comments/useCommentsController')>(
@@ -55,8 +77,6 @@ vi.mock('@/ui/admin/comments/useCommentsController', async () => {
   return {
     ...actual,
     useCommentsController: () => ({
-      filters: controllerState.filters,
-      dispatch: vi.fn(),
       comments: controllerState.comments,
       total: controllerState.total,
       statusCounts: controllerState.statusCounts,
@@ -64,10 +84,10 @@ vi.mock('@/ui/admin/comments/useCommentsController', async () => {
       isLoading: controllerState.isLoading,
       isFetchingNextPage: controllerState.isFetchingNextPage,
       sentinelRef: { current: null },
-      approveComment: vi.fn(),
-      removeComment: vi.fn(),
+      actions: stubActions,
+      confirm: null,
+      closeConfirm: vi.fn(),
       updateCommentBody: vi.fn(),
-      clearCommentDeleteRequest: vi.fn(),
       invalidateList: vi.fn(),
     }),
   }
@@ -75,11 +95,11 @@ vi.mock('@/ui/admin/comments/useCommentsController', async () => {
 
 // --- react-query singleton ---------------------------------------------------
 //
-// CommentsView fires four `useQuery` calls (searchPages, searchAuthors, plus
-// two rehydrate variants). The mock below returns the same hoisted object for
-// every call, so we pack both `.pages` and `.authors` arrays onto the shared
-// `data` field. Each test reassigns the singleton to control which option
-// list is populated.
+// The pill hook fires its search + rehydrate lookups through `useQueries`.
+// The mock below returns the same hoisted object for every query, so we
+// pack both `.pages` and `.authors` arrays onto the shared `data` field.
+// Each test reassigns the singleton to control which option list is
+// populated.
 
 const queryMocks = vi.hoisted(() => ({
   query: {
@@ -108,6 +128,7 @@ vi.mock('@tanstack/react-query', async () => {
   return {
     ...actual,
     useQuery: () => queryMocks.query,
+    useQueries: ({ queries }: { queries: unknown[] }) => queries.map(() => queryMocks.query),
     useMutation: () => queryMocks.mutation,
     useInfiniteQuery: () => queryMocks.infinite,
     useQueryClient: () => queryMocks.queryClient,
@@ -115,10 +136,6 @@ vi.mock('@tanstack/react-query', async () => {
 })
 
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
-
-vi.mock('@/ui/admin/shared/useDebouncedSearch', () => ({
-  useDebouncedSearch: () => ['', vi.fn()],
-}))
 
 // --- fixtures ----------------------------------------------------------------
 
@@ -173,14 +190,13 @@ function makeAdminComment(overrides: Partial<AdminComment> = {}): AdminComment {
 function resetController() {
   controllerState.comments = []
   controllerState.total = 0
-  controllerState.filters = []
   controllerState.statusCounts = { all: 0, pending: 0, approved: 0, deleteRequested: 0 }
   controllerState.hasMore = false
   controllerState.isLoading = false
   controllerState.isFetchingNextPage = false
 }
 
-function renderComments(initialFilters: ActiveFilter[] = []) {
+function renderComments(initialFilters: ActiveFilter<CommentFilterFieldKey>[] = []) {
   return stableHtml(
     renderInRouter(
       <CommentsView currentUserName="Alice" currentUserEmail="a@b.com" initialFilters={initialFilters} />,
@@ -204,15 +220,15 @@ describe('snapshot: CommentsView render branches', () => {
     }
   })
 
-  // The `pageItems` / `authorItems` useMemo factories (and their `.map` /
-  // `.unshift` callbacks) run during render regardless of whether the
+  // The search-items derivation inside `useFilterPills` (and its `.map` /
+  // pinning callbacks) runs during render regardless of whether the
   // Combobox popover is open. Base UI only surfaces the option labels as
   // user-visible text once the popover mounts (browser-only), so we can't
   // assert on the dropdown text itself — but driving a populated query
   // result through the component exercises every line of the memo and
   // proves the render completes without throwing.
 
-  it('runs the pageItems memo map branch when searchPages resolves with pages', () => {
+  it('runs the page search-items map branch when searchPages resolves with pages', () => {
     // Shared query data carries both `.pages` (for searchPages) and `.authors`
     // (for searchAuthors); the memo only reads the one it cares about.
     queryMocks.query = {
@@ -238,7 +254,7 @@ describe('snapshot: CommentsView render branches', () => {
     expect(html).toContain('已加载全部评论')
   })
 
-  it('runs the authorItems memo map branch when searchAuthors resolves with authors', () => {
+  it('runs the author search-items map branch when searchAuthors resolves with authors', () => {
     queryMocks.query = {
       ...queryMocks.query,
       data: {
@@ -253,14 +269,14 @@ describe('snapshot: CommentsView render branches', () => {
     controllerState.total = 1
     controllerState.statusCounts = { all: 1, pending: 0, approved: 1, deleteRequested: 0 }
     const html = renderComments()
-    // Row rendered (authorItems memo ran before the row render).
+    // Row rendered (the author items memo ran before the row render).
     expect(html).toContain('Carol')
     expect(html).toContain('已加载全部评论')
   })
 
-  it('runs the pageItems .unshift branch when the active page filter is not in fetched items', () => {
+  it('runs the page items pinning branch when the active page filter is not in fetched items', () => {
     // Active filter references a page that the autocomplete lookup did NOT
-    // return — the memo must prepend it so the trigger shows the label.
+    // return — the hook must prepend it so the trigger shows the label.
     queryMocks.query = {
       ...queryMocks.query,
       data: {
@@ -268,10 +284,11 @@ describe('snapshot: CommentsView render branches', () => {
         authors: [],
       },
     }
-    const activeFilters: ActiveFilter[] = [{ field: 'page', value: 'post-1', label: 'Pinned Page' }]
+    const activeFilters: ActiveFilter<CommentFilterFieldKey>[] = [
+      { field: 'page', value: 'post-1', label: 'Pinned Page' },
+    ]
     controllerState.comments = [makeAdminComment({ id: '3', name: 'Eve' })]
     controllerState.total = 1
-    controllerState.filters = activeFilters
     controllerState.statusCounts = { all: 1, pending: 0, approved: 1, deleteRequested: 0 }
     const html = renderComments(activeFilters)
     // Active-filter body slot rendered (filter bar moved into the body).
@@ -283,7 +300,7 @@ describe('snapshot: CommentsView render branches', () => {
     expect(html).toContain('清除')
   })
 
-  it('runs the authorItems .unshift branch when the active author filter is not in fetched items', () => {
+  it('runs the author items pinning branch when the active author filter is not in fetched items', () => {
     queryMocks.query = {
       ...queryMocks.query,
       data: {
@@ -291,10 +308,11 @@ describe('snapshot: CommentsView render branches', () => {
         authors: [{ id: 'u2', name: 'Fetched Author' }],
       },
     }
-    const activeFilters: ActiveFilter[] = [{ field: 'author', value: 'u-missing', label: 'Pinned Author' }]
+    const activeFilters: ActiveFilter<CommentFilterFieldKey>[] = [
+      { field: 'author', value: 'u-missing', label: 'Pinned Author' },
+    ]
     controllerState.comments = [makeAdminComment({ id: '4', name: 'Frank' })]
     controllerState.total = 1
-    controllerState.filters = activeFilters
     controllerState.statusCounts = { all: 1, pending: 0, approved: 1, deleteRequested: 0 }
     const html = renderComments(activeFilters)
     // Author field label "评论人" renders in the pill prefix.
@@ -368,8 +386,9 @@ describe('snapshot: CommentsView render branches', () => {
   })
 
   it('renders the active-filter body slot instead of the header slot when filters are active', () => {
-    const activeFilters: ActiveFilter[] = [{ field: 'status', value: 'pending', label: '待审核' }]
-    controllerState.filters = activeFilters
+    const activeFilters: ActiveFilter<CommentFilterFieldKey>[] = [
+      { field: 'status', value: 'pending', label: '待审核' },
+    ]
     const html = renderComments(activeFilters)
     // Filter bar still rendered (in the body slot), so the status filter
     // label is visible.

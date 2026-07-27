@@ -7,15 +7,16 @@ import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { MyCommentsView } from '@/ui/admin/my/MyCommentsView'
 
 // `MyCommentsView` reads its row list from a `useInfiniteQuery` against
-// `orpc.comments.loadMine` and its entity picker from a `useQuery` against
-// `orpc.comments.searchMineEntities`. Both go through `@tanstack/react-query`,
-// so we stub the hooks with hoisted singletons (mirroring `musics-view.test.
-// tsx`) and mutate the resolved data between cases.
+// `orpc.comments.loadMine` and its entity picker from the pill hook's
+// `useQueries` against `orpc.comments.searchMineEntities`. Both go through
+// `@tanstack/react-query`, so we stub the hooks with hoisted singletons
+// (mirroring `musics-view.test.tsx`) and mutate the resolved data between
+// cases.
 //
 // The render-path branches we target here:
-//   - `filters` useMemo: with/without the `textFilterDraft` extension,
-//   - `pageItems` useMemo: loader-provided `entityOptions` branch, live
-//     search-results branch, and the `current not in items` `.unshift`,
+//   - the URL-derived pill derivation (controlled `useFilterPills`),
+//   - the entity search items: loader-provided `entityOptions` branch, live
+//     search-results branch, and the `current not in items` pinning,
 //   - `items` memo flatMap over `listQuery.data.pages`,
 //   - the loading skeleton / empty-state / populated row map branches,
 //   - the `hasNextPage` sentinel + the "加载中…" / "已加载全部评论" copies,
@@ -63,16 +64,13 @@ vi.mock('@tanstack/react-query', async () => {
     ...actual,
     useInfiniteQuery: () => infiniteState,
     useQuery: () => queryState,
+    useQueries: ({ queries }: { queries: unknown[] }) => queries.map(() => queryState),
     useMutation: () => mutationState,
     useQueryClient: () => queryClientState,
   }
 })
 
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
-
-vi.mock('@/ui/admin/shared/useDebouncedSearch', () => ({
-  useDebouncedSearch: () => ['', vi.fn()],
-}))
 
 // --- fixtures ----------------------------------------------------------------
 
@@ -355,11 +353,11 @@ describe('snapshot: MyCommentsView render branches', () => {
     expect(html).toContain('data-slot="my-comment-row"')
   })
 
-  it('runs the pageItems memo over the loader-provided entityOptions when no live search is active', () => {
+  it('runs the entity items memo over the loader-provided entityOptions when no live search is active', () => {
     infiniteState.data = {
       pages: [{ items: [makeItem({ id: '12' })], total: 1, hasMore: false }],
     }
-    // Pass multiple entityOptions so the memo's `.map` over entityOptions runs.
+    // Pass multiple entityOptions so the hook's items derivation runs over them.
     const html = renderMy({
       entityOptions: [
         { value: 'post:1', label: 'Alpha' },
@@ -371,12 +369,12 @@ describe('snapshot: MyCommentsView render branches', () => {
     expect(html).toContain('data-slot="my-comment-row"')
   })
 
-  it('runs the pageItems memo .unshift branch when the pinned entity is not in entityOptions', () => {
+  it('runs the entity items pinning branch when the pinned entity is not in entityOptions', () => {
     infiniteState.data = {
       pages: [{ items: [makeItem({ id: '13' })], total: 1, hasMore: false }],
     }
     const html = renderMy({
-      // Pinned entity absent from the options list — the memo prepends a
+      // Pinned entity absent from the options list — the hook prepends a
       // synthetic entry so the filter pill can resolve its label.
       entity: 'post:missing',
       entityOptions: [{ value: 'post:1', label: 'Known Post' }],

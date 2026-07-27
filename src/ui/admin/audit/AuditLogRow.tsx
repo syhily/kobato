@@ -6,7 +6,7 @@ import type { AuditLogItemDto } from '@/shared/contracts/audit'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { ROLE_LEVELS, roleLabel, type Role } from '@/shared/utils/roles'
-import { ACTION_OPTIONS, RESOURCE_TYPE_OPTIONS } from '@/ui/admin/audit/filter-constants'
+import { ACTION_OPTIONS, RESOURCE_TYPE_OPTIONS } from '@/ui/admin/audit/filter-fields'
 import { Badge } from '@/ui/components/badge'
 import { cn } from '@/ui/lib/cn'
 

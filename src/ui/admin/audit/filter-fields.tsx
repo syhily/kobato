@@ -1,28 +1,27 @@
-import type { ComponentType, SVGProps } from 'react'
-
 import { CalendarIcon, ListChecksIcon, NetworkIcon, SearchIcon, UserIcon } from 'lucide-react'
 
-import type { ActiveFilter as GenericActiveFilter } from '@/ui/admin/shared/filterPillsReducer'
+import type { AuditLogActorDto } from '@/shared/contracts/audit'
+import type { FilterFieldSpec, FilterOptionItem } from '@/ui/admin/shared/filter-bar/types'
+
+// Audit-log filter-pill field specs. ACTION_OPTIONS / RESOURCE_TYPE_OPTIONS
+// double as the row badge vocabularies (AuditLogRow imports them here) —
+// the filter dropdowns use the same lists minus the synthetic 全部 entry.
+//
+// `buildAuditFilterFields` is a factory (memoized by the view) because the
+// actor options come from the async actors query. The actor rows keep their
+// icon + truncated-label rendering via `renderOption`.
 
 export type AuditLogFilterFieldKey = 'action' | 'resourceType' | 'actor' | 'ip' | 'date'
 
-export type ActiveFilter = GenericActiveFilter<AuditLogFilterFieldKey>
-
-export type FieldIcon = ComponentType<SVGProps<SVGSVGElement>>
-
-export interface FieldDefinition {
-  key: AuditLogFilterFieldKey
-  label: string
-  icon: FieldIcon
+/** The `admin.auditLog.list` / `exportCsv` input contributed by the active pills. */
+export interface AuditFilterQuery {
+  action?: string
+  resourceType?: string
+  actorId?: string
+  ip?: string
+  dateFrom?: string
+  dateTo?: string
 }
-
-export const FILTER_FIELDS: FieldDefinition[] = [
-  { key: 'action', label: '操作类型', icon: ListChecksIcon },
-  { key: 'resourceType', label: '资源类型', icon: SearchIcon },
-  { key: 'actor', label: '操作人', icon: UserIcon },
-  { key: 'ip', label: 'IP', icon: NetworkIcon },
-  { key: 'date', label: '时间', icon: CalendarIcon },
-]
 
 export const ACTION_OPTIONS = [
   { value: '', label: '全部' },
@@ -130,3 +129,67 @@ export const RESOURCE_TYPE_OPTIONS = [
   { value: 'audit_log', label: '审计日志' },
   { value: 'branding', label: '品牌素材' },
 ]
+
+function renderActorOption(option: FilterOptionItem) {
+  return (
+    <>
+      <UserIcon className="size-4 shrink-0 text-muted-foreground" />
+      <span className="truncate">{option.label}</span>
+    </>
+  )
+}
+
+export function buildAuditFilterFields(actors: AuditLogActorDto[]): FilterFieldSpec<AuditLogFilterFieldKey>[] {
+  return [
+    {
+      key: 'action',
+      label: '操作类型',
+      icon: ListChecksIcon,
+      kind: 'options',
+      options: ACTION_OPTIONS.filter((o) => o.value !== ''),
+      searchable: true,
+      searchPlaceholder: '搜索操作类型…',
+      toQuery: (value) => (value ? { action: value } : {}),
+    },
+    {
+      key: 'resourceType',
+      label: '资源类型',
+      icon: SearchIcon,
+      kind: 'options',
+      options: RESOURCE_TYPE_OPTIONS.filter((o) => o.value !== ''),
+      searchable: true,
+      searchPlaceholder: '搜索资源类型…',
+      toQuery: (value) => (value ? { resourceType: value } : {}),
+    },
+    {
+      key: 'actor',
+      label: '操作人',
+      icon: UserIcon,
+      kind: 'options',
+      options: actors.map((a) => ({ value: a.actorId, label: a.email || a.actorName || a.actorId })),
+      searchable: true,
+      searchPlaceholder: '搜索邮箱、姓名或 ID',
+      searchEmptyMessage: '无匹配操作人',
+      renderOption: renderActorOption,
+      toQuery: (value) => (value ? { actorId: value } : {}),
+    },
+    {
+      key: 'ip',
+      label: 'IP',
+      icon: NetworkIcon,
+      kind: 'freetext',
+      placeholder: '输入 IP 或片段',
+      toQuery: (value) => (value ? { ip: value } : {}),
+    },
+    {
+      key: 'date',
+      label: '时间',
+      icon: CalendarIcon,
+      kind: 'date-range',
+      toQuery: ({ from, to }) => ({
+        ...(from ? { dateFrom: from } : {}),
+        ...(to ? { dateTo: to } : {}),
+      }),
+    },
+  ]
+}

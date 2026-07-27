@@ -1,13 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AuditLogActorDto, AuditLogItemDto } from '@/shared/contracts/audit'
-import type { ActiveFilter } from '@/ui/admin/audit/filter-constants'
+import type { AuditLogFilterFieldKey } from '@/ui/admin/audit/filter-fields'
+import type { ActiveFilter } from '@/ui/admin/shared/filterPillsReducer'
 
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
-import { AuditLogFilterAddButton } from '@/ui/admin/audit/AuditLogFilterAddButton'
-import { AuditLogFilterPill } from '@/ui/admin/audit/AuditLogFilterPill'
 import { AuditLogRow } from '@/ui/admin/audit/AuditLogRow'
 import { AuditLogView } from '@/ui/admin/audit/AuditLogView'
+import { buildAuditFilterFields } from '@/ui/admin/audit/filter-fields'
+import { FilterAddButton } from '@/ui/admin/shared/filter-bar/add-button'
+import { FilterPill } from '@/ui/admin/shared/filter-bar/pill'
 
 // AuditLogView drives its rows from `useAdminInfiniteList` (server state
 // lives in the TanStack cache, via an internal `useInfiniteQuery`). The list
@@ -38,6 +40,7 @@ vi.mock('@tanstack/react-query', async () => {
   return {
     ...actual,
     useQuery: () => queryMocks.query,
+    useQueries: ({ queries }: { queries: unknown[] }) => queries.map(() => queryMocks.query),
     useMutation: () => queryMocks.mutation,
     useInfiniteQuery: () => queryMocks.infinite,
   }
@@ -197,11 +200,20 @@ describe('snapshot: AuditLogRow', () => {
 
 describe('snapshot: AuditLogFilterPill', () => {
   it('renders an action-type pill with the resolved option label', () => {
-    const filter: ActiveFilter = { field: 'action', value: 'login', label: '登录' }
+    const fields = buildAuditFilterFields(ACTORS)
+    const filter: ActiveFilter<AuditLogFilterFieldKey> = { field: 'action', value: 'login', label: '登录' }
     const html = stableHtml(
-      renderToHtml(<AuditLogFilterPill filter={filter} onRemove={() => {}} onValueChange={() => {}} actors={ACTORS} />),
+      renderToHtml(
+        <FilterPill
+          field={fields.find((f) => f.key === filter.field)}
+          filter={filter}
+          search={{}}
+          onRemove={() => {}}
+          onValueChange={() => {}}
+        />,
+      ),
     )
-    // Field label comes from FILTER_FIELDS; value label resolves via
+    // Field label comes from the field specs; the value label resolves via
     // ACTION_OPTIONS.
     expect(html).toContain('操作类型')
     expect(html).toContain('登录')
@@ -210,9 +222,18 @@ describe('snapshot: AuditLogFilterPill', () => {
   })
 
   it('renders an ip-type pill with a text input editor', () => {
-    const filter: ActiveFilter = { field: 'ip', value: '203.0.113', label: 'IP' }
+    const fields = buildAuditFilterFields(ACTORS)
+    const filter: ActiveFilter<AuditLogFilterFieldKey> = { field: 'ip', value: '203.0.113', label: 'IP' }
     const html = stableHtml(
-      renderToHtml(<AuditLogFilterPill filter={filter} onRemove={() => {}} onValueChange={() => {}} actors={ACTORS} />),
+      renderToHtml(
+        <FilterPill
+          field={fields.find((f) => f.key === filter.field)}
+          filter={filter}
+          search={{}}
+          onRemove={() => {}}
+          onValueChange={() => {}}
+        />,
+      ),
     )
     expect(html).toContain('IP')
     expect(html).toContain('<input')
@@ -220,9 +241,18 @@ describe('snapshot: AuditLogFilterPill', () => {
   })
 
   it('renders a resource-type pill with the resource label', () => {
-    const filter: ActiveFilter = { field: 'resourceType', value: 'post', label: '文章' }
+    const fields = buildAuditFilterFields(ACTORS)
+    const filter: ActiveFilter<AuditLogFilterFieldKey> = { field: 'resourceType', value: 'post', label: '文章' }
     const html = stableHtml(
-      renderToHtml(<AuditLogFilterPill filter={filter} onRemove={() => {}} onValueChange={() => {}} actors={ACTORS} />),
+      renderToHtml(
+        <FilterPill
+          field={fields.find((f) => f.key === filter.field)}
+          filter={filter}
+          search={{}}
+          onRemove={() => {}}
+          onValueChange={() => {}}
+        />,
+      ),
     )
     expect(html).toContain('资源类型')
     expect(html).toContain('文章')
@@ -232,7 +262,9 @@ describe('snapshot: AuditLogFilterPill', () => {
 describe('snapshot: AuditLogFilterAddButton', () => {
   it('renders the bare "筛选" trigger when no filters are active', () => {
     const html = stableHtml(
-      renderToHtml(<AuditLogFilterAddButton filters={[]} onAddFilter={() => {}} actors={ACTORS} />),
+      renderToHtml(
+        <FilterAddButton fields={buildAuditFilterFields(ACTORS)} filters={[]} search={{}} onAddFilter={() => {}} />,
+      ),
     )
     // Empty-state label is "筛选" — "添加筛选" only appears once a
     // filter is active.
@@ -243,9 +275,16 @@ describe('snapshot: AuditLogFilterAddButton', () => {
   })
 
   it('renders the "添加筛选" trigger once at least one filter is active', () => {
-    const filters: ActiveFilter[] = [{ field: 'action', value: 'login', label: '登录' }]
+    const filters: ActiveFilter<AuditLogFilterFieldKey>[] = [{ field: 'action', value: 'login', label: '登录' }]
     const html = stableHtml(
-      renderToHtml(<AuditLogFilterAddButton filters={filters} onAddFilter={() => {}} actors={ACTORS} />),
+      renderToHtml(
+        <FilterAddButton
+          fields={buildAuditFilterFields(ACTORS)}
+          filters={filters}
+          search={{}}
+          onAddFilter={() => {}}
+        />,
+      ),
     )
     expect(html).toContain('添加筛选')
   })

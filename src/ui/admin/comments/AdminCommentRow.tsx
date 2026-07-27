@@ -1,10 +1,8 @@
-import { useMutation } from '@tanstack/react-query'
 import { CheckIcon, ImageIcon, LinkIcon, ReplyIcon, SquarePenIcon, Trash2Icon, UserIcon, XIcon } from 'lucide-react'
-import { toast } from 'sonner'
 
 import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
+import type { CommentActions } from '@/ui/admin/comments/useCommentsController'
 
-import { orpcQuery } from '@/client/api/orpc-query'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { bodyToPlainText } from '@/shared/pt/utils'
 import { avatarImageUrl } from '@/shared/utils/avatar'
@@ -23,67 +21,12 @@ const REPLY_SNIPPET_MAX = 60
 export interface AdminCommentRowProps {
   comment: AdminComment
   parentLookup: Map<string, AdminComment>
-  onEdit: () => void
-  onReply: () => void
-  onEditUser: () => void
-  onApproved: () => void
-  onDeleted: () => void
-  onDeleteRequestResolved: (approved: boolean, isPending: boolean) => void
-  onConfirmApprove: (action: () => void) => void
-  onConfirmDelete: (action: () => void) => void
-  onConfirmApproveDeletion: (action: () => void) => void
-  onConfirmRejectDeletion: (action: () => void) => void
-  onFilterByPage: (pageKey: string, pageTitle: string) => void
-  onFilterByAuthor: (userId: string, name: string) => void
+  actions: CommentActions
 }
 
-export function AdminCommentRow({
-  comment,
-  parentLookup,
-  onEdit,
-  onReply,
-  onEditUser,
-  onApproved,
-  onDeleted,
-  onDeleteRequestResolved,
-  onConfirmApprove,
-  onConfirmDelete,
-  onConfirmApproveDeletion,
-  onConfirmRejectDeletion,
-  onFilterByPage,
-  onFilterByAuthor,
-}: AdminCommentRowProps) {
+export function AdminCommentRow({ comment, parentLookup, actions }: AdminCommentRowProps) {
   const config = useSiteIdentity()
   const authorHref = safeHref(comment.link)
-
-  const approveMutation = useMutation({
-    ...orpcQuery.admin.comments.approve.mutationOptions(),
-    onSuccess: () => onApproved(),
-  })
-  const deleteMutation = useMutation({
-    ...orpcQuery.admin.comments.delete.mutationOptions(),
-    onSuccess: () => onDeleted(),
-  })
-  const approveDeletionMutation = useMutation({
-    ...orpcQuery.admin.comments.approveCommentDeletion.mutationOptions(),
-    onSuccess: (_, variables) => onDeleteRequestResolved(variables.approve, comment.isPending === true),
-    onError: (error) => {
-      toast.error('处理删除申请失败', { description: error.message })
-    },
-  })
-
-  const submitApprove = () => {
-    approveMutation.mutate({ commentId: idStr(comment.id) })
-  }
-  const submitDelete = () => {
-    deleteMutation.mutate({ commentId: idStr(comment.id) })
-  }
-  const submitApproveDeletion = () => {
-    approveDeletionMutation.mutate({ commentId: idStr(comment.id), approve: true })
-  }
-  const submitRejectDeletion = () => {
-    approveDeletionMutation.mutate({ commentId: idStr(comment.id), approve: false })
-  }
 
   const initial = (comment.name || comment.email || '?').slice(0, 1).toUpperCase()
 
@@ -105,7 +48,7 @@ export function AdminCommentRow({
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={() => onFilterByAuthor(idStr(comment.userId), comment.name)}
+              onClick={() => actions.filterByAuthor(idStr(comment.userId), comment.name)}
               title={`仅查看 ${comment.name} 的评论`}
               className="cursor-pointer truncate text-left font-semibold hover:text-primary focus-visible:text-primary focus-visible:outline-none"
             >
@@ -152,7 +95,7 @@ export function AdminCommentRow({
                 {' · '}
                 <button
                   type="button"
-                  onClick={() => onFilterByPage(comment.pagePublicId ?? '', comment.pageTitle ?? '')}
+                  onClick={() => actions.filterByPage(comment.pagePublicId ?? '', comment.pageTitle ?? '')}
                   title={`仅查看《${comment.pageTitle}》的评论`}
                   className="hover:text-foreground"
                 >
@@ -183,8 +126,8 @@ export function AdminCommentRow({
                 type="button"
                 size="sm"
                 variant="outline"
-                disabled={approveMutation.isPending}
-                onClick={() => onConfirmApprove(submitApprove)}
+                disabled={actions.isApproving(comment)}
+                onClick={() => actions.approve(comment)}
                 aria-label="通过评论"
               >
                 <CheckIcon data-icon="sm" />
@@ -195,7 +138,7 @@ export function AdminCommentRow({
               type="button"
               size="sm"
               variant="ghost"
-              onClick={onReply}
+              onClick={() => actions.reply(comment)}
               aria-label="回复评论"
               className="h-7 px-2.5 text-xs text-muted-foreground hover:text-foreground"
             >
@@ -206,7 +149,7 @@ export function AdminCommentRow({
               type="button"
               size="sm"
               variant="ghost"
-              onClick={onEdit}
+              onClick={() => actions.edit(comment)}
               aria-label="编辑评论"
               className="h-7 px-2.5 text-xs text-muted-foreground hover:text-foreground"
             >
@@ -217,7 +160,7 @@ export function AdminCommentRow({
               type="button"
               size="sm"
               variant="ghost"
-              onClick={onEditUser}
+              onClick={() => actions.editUser(comment)}
               aria-label="编辑用户"
               className="h-7 px-2.5 text-xs text-muted-foreground hover:text-foreground"
             >
@@ -247,8 +190,8 @@ export function AdminCommentRow({
               type="button"
               size="sm"
               variant="ghost"
-              disabled={deleteMutation.isPending}
-              onClick={() => onConfirmDelete(submitDelete)}
+              disabled={actions.isRemoving(comment)}
+              onClick={() => actions.remove(comment)}
               aria-label="删除评论"
               className="h-7 px-2.5 text-xs text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
             >
@@ -261,8 +204,8 @@ export function AdminCommentRow({
                   type="button"
                   size="sm"
                   variant="outline"
-                  disabled={approveDeletionMutation.isPending}
-                  onClick={() => onConfirmRejectDeletion(submitRejectDeletion)}
+                  disabled={actions.isResolvingDeletion(comment)}
+                  onClick={() => actions.rejectDeletion(comment)}
                   aria-label="拒绝删除申请"
                   className="h-7 px-2.5 text-xs"
                 >
@@ -273,8 +216,8 @@ export function AdminCommentRow({
                   type="button"
                   size="sm"
                   variant="destructive"
-                  disabled={approveDeletionMutation.isPending}
-                  onClick={() => onConfirmApproveDeletion(submitApproveDeletion)}
+                  disabled={actions.isResolvingDeletion(comment)}
+                  onClick={() => actions.approveDeletion(comment)}
                   aria-label="同意删除申请"
                   className="h-7 px-2.5 text-xs"
                 >

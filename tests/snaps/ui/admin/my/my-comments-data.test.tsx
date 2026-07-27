@@ -43,6 +43,7 @@ vi.mock('@tanstack/react-query', async () => {
   return {
     ...actual,
     useQuery: () => queryMocks.query,
+    useQueries: ({ queries }: { queries: unknown[] }) => queries.map(() => queryMocks.query),
     useMutation: () => queryMocks.mutation,
     useInfiniteQuery: () => queryMocks.infinite,
     useQueryClient: () => queryMocks.queryClient,
@@ -50,10 +51,6 @@ vi.mock('@tanstack/react-query', async () => {
 })
 
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
-
-vi.mock('@/ui/admin/shared/useDebouncedSearch', () => ({
-  useDebouncedSearch: () => ['', vi.fn()],
-}))
 
 // The edit dialog pulls in `CommentBodyEditor` which itself imports a lazy
 // markdown editor; under SSR that lazy boundary leaves a placeholder that

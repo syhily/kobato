@@ -2,14 +2,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
-import type { ActiveFilter } from '@/ui/admin/comments/useCommentsController'
+import type { CommentActions } from '@/ui/admin/comments/useCommentsController'
 
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { AdminCommentRow } from '@/ui/admin/comments/AdminCommentRow'
 import { CommentsView } from '@/ui/admin/comments/CommentsView'
-import { DateFilterEditor, formatDateInput, parseDateInput } from '@/ui/admin/comments/DateFilterEditor'
 import { EditUserDialog } from '@/ui/admin/comments/EditUserDialog'
-import { TextFilterEditor } from '@/ui/admin/comments/TextFilterEditor'
 
 // Silence the harmless "IntersectionObserver is not defined" warning that
 // the CommentsView effect logs under SSR — it is expected in this
@@ -36,12 +34,32 @@ vi.stubGlobal(
 const controllerState = vi.hoisted(() => ({
   comments: [] as AdminComment[],
   total: 0,
-  filters: [] as ActiveFilter[],
   statusCounts: { all: 0, pending: 0, approved: 0, deleteRequested: 0 },
   hasMore: false,
   isLoading: false,
   isFetchingNextPage: false,
 }))
+
+// The admin comment row is presentational — every interactive affordance
+// flows through the single `actions` object. No-op stubs are enough for
+// SSR; hoisted so the controller mock factory below can reference them.
+const stubActions = vi.hoisted((): CommentActions => {
+  const noop = () => {}
+  return {
+    approve: noop,
+    remove: noop,
+    approveDeletion: noop,
+    rejectDeletion: noop,
+    edit: noop,
+    reply: noop,
+    editUser: noop,
+    filterByPage: noop,
+    filterByAuthor: noop,
+    isApproving: () => false,
+    isRemoving: () => false,
+    isResolvingDeletion: () => false,
+  }
+})
 
 vi.mock('@/ui/admin/comments/useCommentsController', async () => {
   const actual = await vi.importActual<typeof import('@/ui/admin/comments/useCommentsController')>(
@@ -50,8 +68,6 @@ vi.mock('@/ui/admin/comments/useCommentsController', async () => {
   return {
     ...actual,
     useCommentsController: () => ({
-      filters: controllerState.filters,
-      dispatch: vi.fn(),
       comments: controllerState.comments,
       total: controllerState.total,
       statusCounts: controllerState.statusCounts,
@@ -59,18 +75,19 @@ vi.mock('@/ui/admin/comments/useCommentsController', async () => {
       isLoading: controllerState.isLoading,
       isFetchingNextPage: controllerState.isFetchingNextPage,
       sentinelRef: { current: null },
-      approveComment: vi.fn(),
-      removeComment: vi.fn(),
+      actions: stubActions,
+      confirm: null,
+      closeConfirm: vi.fn(),
       updateCommentBody: vi.fn(),
-      clearCommentDeleteRequest: vi.fn(),
       invalidateList: vi.fn(),
     }),
   }
 })
 
-// The filter chrome still calls react-query for the page/author
-// autocomplete lookups — stub the query hooks with inert defaults so
-// the chrome renders without issuing network calls.
+// The pill chrome (the real `useFilterPills`, driven by the `initialFilters`
+// prop) still calls react-query for the page/author autocomplete lookups —
+// stub the query hooks with inert defaults so the chrome renders without
+// issuing network calls.
 
 const queryMocks = vi.hoisted(() => ({
   query: {
@@ -99,6 +116,7 @@ vi.mock('@tanstack/react-query', async () => {
   return {
     ...actual,
     useQuery: () => queryMocks.query,
+    useQueries: ({ queries }: { queries: unknown[] }) => queries.map(() => queryMocks.query),
     useMutation: () => queryMocks.mutation,
     useInfiniteQuery: () => queryMocks.infinite,
     useQueryClient: () => queryMocks.queryClient,
@@ -106,10 +124,6 @@ vi.mock('@tanstack/react-query', async () => {
 })
 
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
-
-vi.mock('@/ui/admin/shared/useDebouncedSearch', () => ({
-  useDebouncedSearch: () => ['', vi.fn()],
-}))
 
 // --- Fixtures ----------------------------------------------------------------
 
@@ -161,23 +175,9 @@ function makeAdminComment(overrides: Partial<AdminComment> = {}): AdminComment {
   }
 }
 
-// The admin comment row takes a bag of callbacks; for SSR we only need them
-// to be present and callable, so a single no-op stub is enough.
-const noop = () => {}
 const rowProps = {
   parentLookup: new Map<string, AdminComment>(),
-  onEdit: noop,
-  onReply: noop,
-  onEditUser: noop,
-  onApproved: noop,
-  onDeleted: noop,
-  onDeleteRequestResolved: noop,
-  onConfirmApprove: noop,
-  onConfirmDelete: noop,
-  onConfirmApproveDeletion: noop,
-  onConfirmRejectDeletion: noop,
-  onFilterByPage: noop,
-  onFilterByAuthor: noop,
+  actions: stubActions,
 }
 
 // --- 1. CommentsView (data-fetching view) ------------------------------------
@@ -188,7 +188,6 @@ describe('snapshot: CommentsView', () => {
     // controls which branch of the view it covers.
     controllerState.comments = []
     controllerState.total = 0
-    controllerState.filters = []
     controllerState.statusCounts = { all: 0, pending: 0, approved: 0, deleteRequested: 0 }
     controllerState.hasMore = false
     controllerState.isLoading = false
@@ -374,87 +373,10 @@ describe('snapshot: AdminCommentRow', () => {
   })
 })
 
-// --- 3. DateFilterEditor (+ pure helpers) ------------------------------------
-
-describe('DateFilterEditor helpers', () => {
-  it('parseDateInput returns undefined for empty input', () => {
-    expect(parseDateInput('')).toBeUndefined()
-  })
-
-  it('parseDateInput returns undefined for malformed input', () => {
-    expect(parseDateInput('not-a-date')).toBeUndefined()
-    expect(parseDateInput('2024-13-40')).toBeUndefined()
-    expect(parseDateInput('2024/03/12')).toBeUndefined()
-  })
-
-  it('parseDateInput parses a valid yyyy-mm-dd string', () => {
-    const parsed = parseDateInput('2024-03-12')
-    expect(parsed).toBeInstanceOf(Date)
-    expect(parsed!.getFullYear()).toBe(2024)
-    expect(parsed!.getMonth()).toBe(2) // March
-    expect(parsed!.getDate()).toBe(12)
-  })
-
-  it('formatDateInput round-trips a parsed date', () => {
-    const iso = '2024-03-12'
-    expect(formatDateInput(parseDateInput(iso)!)).toBe(iso)
-  })
-})
-
-describe('snapshot: DateFilterEditor', () => {
-  it('renders the date input with placeholder and current operator', () => {
-    const html = stableHtml(
-      renderInRouter(<DateFilterEditor value={{ date: '2024-03-12', op: 'is-or-less' }} onChange={() => {}} />),
-    )
-    expect(html).toContain('placeholder="YYYY-MM-DD"')
-    expect(html).toContain('aria-label="日期"')
-    expect(html).toContain('aria-label="打开日历"')
-    // The committed value should appear as the input value.
-    expect(html).toContain('value="2024-03-12"')
-  })
-
-  it('renders with no initial value', () => {
-    const html = stableHtml(renderInRouter(<DateFilterEditor value={null} onChange={() => {}} />))
-    expect(html).toContain('placeholder="YYYY-MM-DD"')
-  })
-})
-
-// --- 4. TextFilterEditor -----------------------------------------------------
-
-describe('snapshot: TextFilterEditor', () => {
-  it('renders the text input with placeholder and the operator trigger', () => {
-    const html = stableHtml(
-      renderInRouter(<TextFilterEditor value={{ op: 'contains', value: 'hello' }} onChange={() => {}} />),
-    )
-    expect(html).toContain('aria-label="搜索评论内容"')
-    expect(html).toContain('placeholder="搜索评论内容…"')
-    expect(html).toContain('value="hello"')
-    // With more than one default operator the trigger is shown; its label
-    // comes from TEXT_FILTER_OPERATORS.
-    expect(html).toContain('包含')
-  })
-
-  it('hides the operator trigger when only one operator is supplied', () => {
-    const html = stableHtml(
-      renderInRouter(
-        <TextFilterEditor
-          value={{ op: 'contains', value: '' }}
-          onChange={() => {}}
-          operators={[{ value: 'contains', label: '包含' }]}
-        />,
-      ),
-    )
-    // The search input is still present, but the operator dropdown label
-    // text (which would otherwise be the trigger's visible content) is
-    // not emitted as a standalone text node — there is no trigger at all.
-    expect(html).toContain('aria-label="搜索评论内容"')
-    // Single operator → no dropdown trigger markup. The single operator's
-    // label is NOT rendered because the trigger is conditionally hidden.
-    expect(html).not.toMatch(/<button[^>]*>\s*包含/u)
-  })
-})
-
-// --- 5. EditUserDialog -------------------------------------------------------
+// --- 3. EditUserDialog -------------------------------------------------------
+//
+// The date / text filter editors moved to the shared filter-bar module —
+// their coverage lives in tests/snaps/ui/admin/shared/filter-bar.test.tsx.
 
 describe('snapshot: EditUserDialog', () => {
   // The Dialog uses Base UI under the hood. When `comment` is null the

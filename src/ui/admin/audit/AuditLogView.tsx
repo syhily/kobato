@@ -1,16 +1,14 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { DownloadIcon, SearchIcon } from 'lucide-react'
-import { useCallback, useMemo, useReducer, useState } from 'react'
-
-import type { ActiveFilter, AuditLogFilterFieldKey } from '@/ui/admin/audit/filter-constants'
+import { useCallback, useMemo, useState } from 'react'
 
 import { orpcQuery } from '@/client/api/orpc-query'
-import { AuditLogFilterBar } from '@/ui/admin/audit/AuditLogFilterBar'
 import { AuditLogRow } from '@/ui/admin/audit/AuditLogRow'
+import { type AuditFilterQuery, buildAuditFilterFields } from '@/ui/admin/audit/filter-fields'
 import { AdminInfiniteListFooter } from '@/ui/admin/shared/AdminInfiniteListFooter'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
-import { parseDateFilter } from '@/ui/admin/shared/date-filter'
-import { filterPillsReducer } from '@/ui/admin/shared/filterPillsReducer'
+import { FilterPillBar } from '@/ui/admin/shared/filter-bar/FilterPillBar'
+import { useFilterPills } from '@/ui/admin/shared/filter-bar/useFilterPills'
 import { useAdminInfiniteList } from '@/ui/admin/shared/useAdminInfiniteList'
 import {
   AlertDialog,
@@ -30,31 +28,15 @@ import { skeletonKeys } from '@/ui/lib/skeleton-keys'
 
 const PAGE_SIZE = 20
 
-function buildQueryInput(filters: ActiveFilter[], offset: number) {
-  const action = filters.find((f) => f.field === 'action')?.value
-  const resourceType = filters.find((f) => f.field === 'resourceType')?.value
-  const actorId = filters.find((f) => f.field === 'actor')?.value
-  const ip = filters.find((f) => f.field === 'ip')?.value
-  const dateRange = parseDateFilter(filters.find((f) => f.field === 'date')?.value)
-
-  return {
-    offset,
-    limit: PAGE_SIZE,
-    ...(action ? { action } : {}),
-    ...(resourceType ? { resourceType } : {}),
-    ...(actorId ? { actorId } : {}),
-    ...(ip ? { ip } : {}),
-    ...(dateRange?.from ? { dateFrom: dateRange.from } : {}),
-    ...(dateRange?.to ? { dateTo: dateRange.to } : {}),
-  }
-}
-
 interface AuditLogViewProps {
   retentionDays: number
 }
 
 export function AuditLogView({ retentionDays }: AuditLogViewProps) {
-  const [filters, dispatch] = useReducer(filterPillsReducer<AuditLogFilterFieldKey>, [])
+  const actorsQuery = useQuery(orpcQuery.admin.auditLog.actors.queryOptions())
+  const actors = useMemo(() => actorsQuery.data ?? [], [actorsQuery.data])
+  const fields = useMemo(() => buildAuditFilterFields(actors), [actors])
+  const pills = useFilterPills({ fields })
 
   const [exportOpen, setExportOpen] = useState(false)
   const [includeFullIp, setIncludeFullIp] = useState(false)
@@ -62,19 +44,17 @@ export function AuditLogView({ retentionDays }: AuditLogViewProps) {
   const { rows, isLoading, hasNextPage, isFetchingNextPage, sentinelRef } = useAdminInfiniteList({
     namespace: orpcQuery.admin.auditLog.list,
     pageSize: PAGE_SIZE,
-    buildInput: (offset) => buildQueryInput(filters, offset),
+    buildInput: (offset) => ({ offset, limit: PAGE_SIZE, ...pills.queryInput<AuditFilterQuery>() }),
     selectRows: (page) => page.items,
     noun: '审计日志',
   })
 
-  const actorsQuery = useQuery(orpcQuery.admin.auditLog.actors.queryOptions())
-  const actors = useMemo(() => actorsQuery.data ?? [], [actorsQuery.data])
-
   const exportMutation = useMutation(orpcQuery.admin.auditLog.exportCsv.mutationOptions())
 
+  const { queryInput } = pills
   const handleExport = useCallback(async () => {
     try {
-      const input = buildQueryInput(filters, 0)
+      const input = queryInput<AuditFilterQuery>()
       const result = await exportMutation.mutateAsync({
         action: input.action,
         resourceType: input.resourceType,
@@ -98,37 +78,11 @@ export function AuditLogView({ retentionDays }: AuditLogViewProps) {
     } catch {
       // Error is surfaced via exportMutation.error / isPending state
     }
-  }, [filters, exportMutation, includeFullIp])
+  }, [queryInput, exportMutation, includeFullIp])
 
-  const handleAddFilter = useCallback(
-    (field: AuditLogFilterFieldKey, value: string, label: string) => {
-      dispatch({ type: 'addFilter', field, value, label })
-    },
-    [dispatch],
-  )
+  const hasActiveFilters = pills.hasFilters
 
-  const handleRemoveFilter = useCallback(
-    (field: AuditLogFilterFieldKey) => {
-      dispatch({ type: 'removeFilter', field })
-    },
-    [dispatch],
-  )
-
-  const handleClearFilters = useCallback(() => {
-    dispatch({ type: 'clearFilters' })
-  }, [dispatch])
-
-  const hasActiveFilters = filters.length > 0
-
-  const filterBar = (
-    <AuditLogFilterBar
-      filters={filters}
-      onAddFilter={handleAddFilter}
-      onRemoveFilter={handleRemoveFilter}
-      onClearFilters={handleClearFilters}
-      actors={actors}
-    />
-  )
+  const filterBar = <FilterPillBar {...pills.bar} />
 
   return (
     <AdminListPage>

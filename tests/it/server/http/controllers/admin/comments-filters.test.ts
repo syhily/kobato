@@ -6,7 +6,7 @@ import {
   parseTextFilter,
   TEXT_FILTER_OPERATORS,
   textFilterLabel,
-} from '@/ui/admin/comments/useCommentsController'
+} from '@/ui/admin/comments/filter-fields'
 import {
   DEFAULT_SINGLE_DATE_OPERATOR,
   isSingleDateFilterOperator,

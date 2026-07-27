@@ -1,76 +1,19 @@
-import { useQueryClient, type InfiniteData } from '@tanstack/react-query'
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { useMutation, useQueryClient, type InfiniteData } from '@tanstack/react-query'
+import { useCallback, useEffect, useRef, useState, type Dispatch } from 'react'
 import { useSearchParams } from 'react-router'
+import { toast } from 'sonner'
 
+import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
+import type { CommentFilterFieldKey, CommentsFilterQuery } from '@/ui/admin/comments/filter-fields'
+import type { ActiveFilter, FilterPillsAction } from '@/ui/admin/shared/filterPillsReducer'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
 import { idStr } from '@/shared/utils/tools'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
-import { parseSingleDateFilter, resolveSingleDateFilterBounds } from '@/ui/admin/shared/date-filter'
-import { filterPillsReducer, type ActiveFilter as GenericActiveFilter } from '@/ui/admin/shared/filterPillsReducer'
+import { type ConfirmState } from '@/ui/admin/shared/ConfirmDialog'
 import { useAdminInfiniteList } from '@/ui/admin/shared/useAdminInfiniteList'
-
-export type FilterStatus = 'all' | 'pending' | 'approved' | 'deleteRequested'
-
-export type FilterFieldKey = 'status' | 'page' | 'author' | 'text' | 'date'
-
-function isFilterStatus(value: unknown): value is FilterStatus {
-  return value === 'all' || value === 'pending' || value === 'approved' || value === 'deleteRequested'
-}
-
-export type TextFilterOperator = 'contains' | 'does-not-contain'
-
-export const TEXT_FILTER_OPERATORS: readonly { value: TextFilterOperator; label: string }[] = [
-  { value: 'contains', label: '包含' },
-  { value: 'does-not-contain', label: '不包含' },
-] as const
-
-export const DEFAULT_TEXT_OPERATOR: TextFilterOperator = 'contains'
-
-export function isTextFilterOperator(value: unknown): value is TextFilterOperator {
-  return value === 'contains' || value === 'does-not-contain'
-}
-
-export type ActiveFilter = GenericActiveFilter<FilterFieldKey>
-
-export interface FilterItem {
-  value: string
-  label: string
-}
-
-export interface TextFilterValue {
-  op: TextFilterOperator
-  value: string
-}
-
-export function parseTextFilter(value: string | undefined): TextFilterValue | null {
-  if (!value) {
-    return null
-  }
-  try {
-    const parsed = JSON.parse(value) as unknown
-    if (!parsed || typeof parsed !== 'object') {
-      return null
-    }
-    const op = (parsed as { op?: unknown }).op
-    const text = (parsed as { value?: unknown }).value
-    if (!isTextFilterOperator(op) || typeof text !== 'string') {
-      return null
-    }
-    return { op, value: text }
-  } catch {
-    return null
-  }
-}
-
-export function textFilterLabel(v: TextFilterValue): string {
-  const opLabel = TEXT_FILTER_OPERATORS.find((o) => o.value === v.op)?.label ?? ''
-  const trimmed = v.value.trim()
-  const excerpt = trimmed.length > 8 ? `${trimmed.slice(0, 8)}…` : trimmed
-  return excerpt ? `${opLabel}「${excerpt}」` : opLabel
-}
 
 export interface StatusCounts {
   all: number
@@ -165,29 +108,49 @@ export function clearDeleteRequestInPages(data: AdminCommentsData, id: string, i
   }
 }
 
-export interface UseCommentsControllerOptions {
-  initialFilters: ActiveFilter[]
+// View-owned editor intents: the edit / reply / edit-user dialogs live in
+// the view, so the view wires these three slots. Everything else on the
+// actions object is owned by the controller (mutations, confirm dialogs,
+// cache patches, filter shortcuts).
+export interface CommentIntents {
+  edit(comment: AdminComment): void
+  reply(comment: AdminComment): void
+  editUser(comment: AdminComment): void
 }
 
-export function useCommentsController({ initialFilters }: UseCommentsControllerOptions) {
+// The single comment-actions surface handed to `AdminCommentRow`. Mutation
+// triggers lead through their confirm dialog first — `approve(comment)`
+// opens the 通过 confirm, and confirming fires the mutation, exactly the
+// flow the view used to choreograph by hand.
+export interface CommentActions extends CommentIntents {
+  /** 通过 — confirm, then approve the pending comment. */
+  approve(comment: AdminComment): void
+  /** 删除评论 — confirm, then delete the comment. */
+  remove(comment: AdminComment): void
+  /** 同意删除 — confirm, then approve the author's delete request. */
+  approveDeletion(comment: AdminComment): void
+  /** 拒绝删除 — confirm, then reject the author's delete request. */
+  rejectDeletion(comment: AdminComment): void
+  filterByPage(pageKey: string, pageTitle: string): void
+  filterByAuthor(userId: string, name: string): void
+  /** Per-comment pending gates — the mutations are shared across rows, so
+   *  a button disables only while ITS comment is in flight. */
+  isApproving(comment: AdminComment): boolean
+  isRemoving(comment: AdminComment): boolean
+  isResolvingDeletion(comment: AdminComment): boolean
+}
+
+export interface UseCommentsControllerOptions {
+  /** Live pill state — owned by the view's `useFilterPills`, which also
+   *  produced `queryInput` (the merged per-field `toQuery` patch). */
+  filters: ActiveFilter<CommentFilterFieldKey>[]
+  dispatch: Dispatch<FilterPillsAction<CommentFilterFieldKey>>
+  queryInput: CommentsFilterQuery
+  intents: CommentIntents
+}
+
+export function useCommentsController({ filters, dispatch, queryInput, intents }: UseCommentsControllerOptions) {
   const queryClient = useQueryClient()
-  const [filters, dispatch] = useReducer(filterPillsReducer<FilterFieldKey>, initialFilters)
-
-  const statusFilter = filters.find((f) => f.field === 'status')
-  const pageFilter = filters.find((f) => f.field === 'page')
-  const authorFilter = filters.find((f) => f.field === 'author')
-  const textFilter = filters.find((f) => f.field === 'text')
-  const dateFilter = filters.find((f) => f.field === 'date')
-
-  const filterText = useMemo(() => (textFilter ? parseTextFilter(textFilter.value) : null), [textFilter])
-  const filterDateRange = useMemo(() => (dateFilter ? parseSingleDateFilter(dateFilter.value) : null), [dateFilter])
-  const dateBounds = useMemo(() => resolveSingleDateFilterBounds(filterDateRange), [filterDateRange])
-
-  const filterStatus: FilterStatus = isFilterStatus(statusFilter?.value) ? statusFilter.value : 'all'
-  const filterPageKey = pageFilter?.value ?? ''
-  const filterAuthorId = authorFilter?.value ?? ''
-  const filterCreatedAfter = dateBounds.after
-  const filterCreatedBefore = dateBounds.before
 
   // Mirror the active filters into the URL so a filtered view stays shareable.
   // Debounced — text/date edits dispatch on every keystroke; the URL settles
@@ -246,10 +209,6 @@ export function useCommentsController({ initialFilters }: UseCommentsControllerO
     }
   }, [filters, setSearchParams, searchParams])
 
-  const textQuery = filterText?.value ?? ''
-  const textMatch = filterText?.value ? filterText.op : ''
-  const createdAfter = filterCreatedAfter ?? ''
-  const createdBefore = filterCreatedBefore ?? ''
   const {
     rows: comments,
     total,
@@ -265,14 +224,7 @@ export function useCommentsController({ initialFilters }: UseCommentsControllerO
     buildInput: (offset) => ({
       offset,
       limit: PAGE_SIZE,
-      ...(filterPageKey ? { pageKey: filterPageKey } : {}),
-      ...(filterAuthorId ? { userId: filterAuthorId } : {}),
-      ...(filterStatus !== 'all' ? { status: filterStatus } : {}),
-      // `textQuery`/`textMatch` are truthy together; guarding on both
-      // narrows `match` to the contract's operator union (drops '').
-      ...(textQuery && textMatch ? { q: textQuery, match: textMatch } : {}),
-      ...(createdAfter ? { createdAfter } : {}),
-      ...(createdBefore ? { createdBefore } : {}),
+      ...queryInput,
     }),
     selectRows: (page) => page.comments,
     noun: '评论',
@@ -306,9 +258,89 @@ export function useCommentsController({ initialFilters }: UseCommentsControllerO
     void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.comments.loadAll.key() })
   }, [queryClient])
 
+  // Comment actions: each mutation owns its confirm-dialog state here, and
+  // its cache patch rides on success — the row stays presentational.
+  const [confirm, setConfirm] = useState<ConfirmState | null>(null)
+  const closeConfirm = useCallback(() => setConfirm(null), [])
+
+  const approveMutation = useMutation({
+    ...orpcQuery.admin.comments.approve.mutationOptions(),
+    onSuccess: (_result, variables) => approveComment(variables.commentId),
+  })
+  const deleteMutation = useMutation({
+    ...orpcQuery.admin.comments.delete.mutationOptions(),
+    onSuccess: (_result, variables) => removeComment(variables.commentId),
+  })
+  // Shared by 同意删除 / 拒绝删除 — the per-call `onSuccess` captures the
+  // comment so the reject path keeps its `isPending` count fixup.
+  const resolveDeletionMutation = useMutation({
+    ...orpcQuery.admin.comments.approveCommentDeletion.mutationOptions(),
+    onError: (error) => {
+      toast.error('处理删除申请失败', { description: error.message })
+    },
+  })
+
+  const actions: CommentActions = {
+    ...intents,
+    approve: (comment) =>
+      setConfirm({
+        title: '审核通过该评论？',
+        description: '审核通过后评论会立即对所有访客可见，并向作者发送通知邮件。',
+        actionLabel: '通过',
+        destructive: false,
+        onConfirm: () => approveMutation.mutate({ commentId: idStr(comment.id) }),
+      }),
+    remove: (comment) =>
+      setConfirm({
+        title: '删除该评论？',
+        description: '此操作不可撤销，删除后评论从前后台彻底消失。',
+        actionLabel: '删除',
+        destructive: true,
+        onConfirm: () => deleteMutation.mutate({ commentId: idStr(comment.id) }),
+      }),
+    approveDeletion: (comment) =>
+      setConfirm({
+        title: '同意删除该评论？',
+        description: '同意后评论会被标记为已删除，并从前后台隐藏。',
+        actionLabel: '同意删除',
+        destructive: true,
+        onConfirm: () =>
+          resolveDeletionMutation.mutate(
+            { commentId: idStr(comment.id), approve: true },
+            { onSuccess: () => removeComment(idStr(comment.id)) },
+          ),
+      }),
+    rejectDeletion: (comment) =>
+      setConfirm({
+        title: '拒绝删除申请？',
+        description: '拒绝后该评论会恢复为正常状态，作者需要重新申请才能再次删除。',
+        actionLabel: '拒绝删除',
+        destructive: false,
+        onConfirm: () =>
+          resolveDeletionMutation.mutate(
+            { commentId: idStr(comment.id), approve: false },
+            { onSuccess: () => clearCommentDeleteRequest(idStr(comment.id), comment.isPending === true) },
+          ),
+      }),
+    filterByPage: (pageKey, pageTitle) => {
+      dispatch({ type: 'addFilter', field: 'page', value: pageKey, label: pageTitle })
+      if (typeof window !== 'undefined') {
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      }
+    },
+    filterByAuthor: (userId, name) => {
+      dispatch({ type: 'addFilter', field: 'author', value: userId, label: name })
+      if (typeof window !== 'undefined') {
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      }
+    },
+    isApproving: (comment) => approveMutation.isPending && approveMutation.variables?.commentId === idStr(comment.id),
+    isRemoving: (comment) => deleteMutation.isPending && deleteMutation.variables?.commentId === idStr(comment.id),
+    isResolvingDeletion: (comment) =>
+      resolveDeletionMutation.isPending && resolveDeletionMutation.variables?.commentId === idStr(comment.id),
+  }
+
   return {
-    filters,
-    dispatch,
     comments,
     total,
     statusCounts,
@@ -316,17 +348,10 @@ export function useCommentsController({ initialFilters }: UseCommentsControllerO
     isLoading,
     isFetchingNextPage,
     sentinelRef,
-    approveComment,
-    removeComment,
+    actions,
+    confirm,
+    closeConfirm,
     updateCommentBody,
-    clearCommentDeleteRequest,
     invalidateList,
-    filterStatus,
-    filterPageKey,
-    filterAuthorId,
-    filterText,
-    filterDateRange,
-    filterCreatedAfter,
-    filterCreatedBefore,
   }
 }

@@ -1,12 +1,13 @@
 import { useOutletContext, useSearchParams } from 'react-router'
 
-import type { ActiveFilter } from '@/ui/admin/comments/useCommentsController'
+import type { CommentFilterFieldKey } from '@/ui/admin/comments/filter-fields'
+import type { ActiveFilter } from '@/ui/admin/shared/filterPillsReducer'
 
 import { requireRole } from '@/server/domains/auth/rbac'
 import { getRequestContext } from '@/server/http/request-context'
 import { titleMeta } from '@/shared/seo/title-meta'
 import { CommentsView } from '@/ui/admin/comments/CommentsView'
-import { isTextFilterOperator, textFilterLabel } from '@/ui/admin/comments/useCommentsController'
+import { isTextFilterOperator, textFilterLabel } from '@/ui/admin/comments/filter-fields'
 import {
   DEFAULT_SINGLE_DATE_OPERATOR,
   isSingleDateFilterOperator,
@@ -29,8 +30,10 @@ export const meta = titleMeta('评论管理')
 // `CommentsView` (and intentionally lenient — invalid values fall
 // back to a sensible default rather than throwing, so a hand-edited
 // URL never bricks the page).
-export function parseCommentFiltersFromSearchParams(searchParams: URLSearchParams): ActiveFilter[] {
-  const initialFilters: ActiveFilter[] = []
+export function parseCommentFiltersFromSearchParams(
+  searchParams: URLSearchParams,
+): ActiveFilter<CommentFilterFieldKey>[] {
+  const initialFilters: ActiveFilter<CommentFilterFieldKey>[] = []
 
   const status = searchParams.get('status')
   if (status && status !== 'all') {

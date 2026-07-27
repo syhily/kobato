@@ -1,27 +1,29 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AuditLogActorDto, AuditLogItemDto } from '@/shared/contracts/audit'
-import type { ActiveFilter } from '@/ui/admin/audit/filter-constants'
+import type { AuditLogFilterFieldKey } from '@/ui/admin/audit/filter-fields'
+import type { ActiveFilter } from '@/ui/admin/shared/filterPillsReducer'
 
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { AuditLogView } from '@/ui/admin/audit/AuditLogView'
 
 // The companion `audit-view.test.tsx` covers the empty-state shell (no
-// filters, no rows) and exercises `AuditLogRow` / filter-pill components
-// directly. This suite drives the remaining render-path branches in
+// filters, no rows) and exercises `AuditLogRow` / the shared filter-pill
+// leaves directly. This suite drives the remaining render-path branches in
 // `AuditLogView` itself: populated rows (the `rows.map` callback), the
 // loading skeleton, the has-more sentinel, the export-pending label, and
 // the active-filter pills with the filter bar relocated below the header.
 //
 // Rows come from `useAdminInfiniteList` (an internal `useInfiniteQuery`,
-// stubbed below through a hoisted slot). Filter pills live in the view's
-// own `useReducer(filterPillsReducer, [])`; the `react` mock swaps ONLY
-// that one useReducer call for a hoisted slot so tests can inject active
-// filters — every other useReducer consumer delegates to the real React.
+// stubbed below through a hoisted slot). The pill state lives in
+// `useFilterPills`; the module mock swaps ONLY that hook for a hoisted
+// slot so tests can inject active filters — the real `<FilterPillBar>`
+// still renders them.
 
 const mocks = vi.hoisted(() => ({
-  filters: [] as ActiveFilter[],
+  filters: [] as ActiveFilter<AuditLogFilterFieldKey>[],
   dispatch: vi.fn(),
+  actors: [] as AuditLogActorDto[],
   infinite: {
     data: undefined as { pages: { items: AuditLogItemDto[]; total: number; hasMore: boolean }[] } | undefined,
     isLoading: false,
@@ -40,17 +42,28 @@ const mocks = vi.hoisted(() => ({
   },
 }))
 
-vi.mock('react', async () => {
-  const actual = await vi.importActual<typeof import('react')>('react')
-  const { filterPillsReducer } = await vi.importActual<typeof import('@/ui/admin/shared/filterPillsReducer')>(
-    '@/ui/admin/shared/filterPillsReducer',
+vi.mock('@/ui/admin/shared/filter-bar/useFilterPills', async () => {
+  const { buildAuditFilterFields } = await vi.importActual<typeof import('@/ui/admin/audit/filter-fields')>(
+    '@/ui/admin/audit/filter-fields',
   )
   return {
-    ...actual,
-    useReducer: (reducer: unknown, ...rest: unknown[]) =>
-      reducer === filterPillsReducer
-        ? [mocks.filters, mocks.dispatch]
-        : (actual.useReducer as (...args: unknown[]) => unknown)(reducer, ...rest),
+    useFilterPills: () => ({
+      filters: mocks.filters,
+      hasFilters: mocks.filters.length > 0,
+      dispatch: mocks.dispatch,
+      queryInput: () => ({}),
+      text: () => ({ op: 'contains', value: '' }),
+      dateSingle: () => null,
+      dateRange: () => null,
+      bar: {
+        fields: buildAuditFilterFields(mocks.actors),
+        filters: mocks.filters,
+        search: {},
+        onAddFilter: vi.fn(),
+        onRemoveFilter: vi.fn(),
+        onClearFilters: vi.fn(),
+      },
+    }),
   }
 })
 
@@ -59,6 +72,7 @@ vi.mock('@tanstack/react-query', async () => {
   return {
     ...actual,
     useQuery: () => mocks.query,
+    useQueries: ({ queries }: { queries: unknown[] }) => queries.map(() => mocks.query),
     useMutation: () => mocks.mutation,
     useInfiniteQuery: () => mocks.infinite,
   }
@@ -123,6 +137,7 @@ describe('snapshot: AuditLogView branches', () => {
   beforeEach(() => {
     mocks.filters = []
     mocks.dispatch = vi.fn()
+    mocks.actors = ACTORS
     mocks.infinite = {
       data: undefined,
       isLoading: false,
@@ -184,8 +199,8 @@ describe('snapshot: AuditLogView branches', () => {
     // `hasActiveFilters` flips the filter-bar placement: when filters
     // are active the bar renders BELOW the header (instead of inside
     // it) and the add-button switches to "添加筛选". Drive multiple
-    // filter types so every pill render branch in AuditLogFilterBar /
-    // AuditLogFilterPill runs.
+    // filter types so every pill render branch in the shared
+    // FilterPillBar / FilterPill runs.
     mocks.filters = [
       { field: 'action', value: 'login', label: '登录' },
       { field: 'resourceType', value: 'post', label: '文章' },

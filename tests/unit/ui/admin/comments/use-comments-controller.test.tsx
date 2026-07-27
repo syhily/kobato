@@ -5,24 +5,30 @@ import { describe, expect, it } from 'vitest'
 
 import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
+import type { CommentFilterFieldKey } from '@/ui/admin/comments/filter-fields'
+import type { ActiveFilter } from '@/ui/admin/shared/filterPillsReducer'
 
 import { renderHook } from '#/_helpers/hook'
 import { orpcQuery } from '@/client/api/orpc-query'
 import {
-  DEFAULT_TEXT_OPERATOR,
-  approveCommentInPages,
-  clearDeleteRequestInPages,
+  COMMENT_FILTER_FIELDS,
+  type CommentsFilterQuery,
   isTextFilterOperator,
   parseTextFilter,
-  removeCommentFromPages,
   textFilterLabel,
+  type TextFilterValue,
+} from '@/ui/admin/comments/filter-fields'
+import {
+  approveCommentInPages,
+  clearDeleteRequestInPages,
+  removeCommentFromPages,
   updateCommentBodyInPages,
   useCommentsController,
   type AdminCommentsData,
   type AdminCommentsPage,
-  type TextFilterValue,
 } from '@/ui/admin/comments/useCommentsController'
 import { type SingleDateFilterValue } from '@/ui/admin/shared/date-filter'
+import { useFilterPills } from '@/ui/admin/shared/filter-bar/useFilterPills'
 
 // The controller owns a `useInfiniteQuery` + `useQueryClient`, so hook tests
 // need a real QueryClient above the memory router that `renderHook` mounts.
@@ -40,6 +46,10 @@ function makeWrapper() {
     { queryClient },
   )
 }
+
+// View-owned editor intents — inert stubs; the confirm/mutation actions are
+// covered by use-comments-actions.test.tsx (happy-dom, mocked oRPC client).
+const intents = { edit: () => {}, reply: () => {}, editUser: () => {} }
 
 let commentId = 0
 function makeAdminComment(overrides: Partial<AdminComment> = {}): AdminComment {
@@ -202,67 +212,73 @@ describe('ui/admin/comments/useCommentsController page patches', () => {
 })
 
 describe('ui/admin/comments/useCommentsController hook', () => {
+  // The controller receives its pill state from the view's `useFilterPills`
+  // — the bridge below composes them exactly the way `CommentsView` does.
+  function renderController(
+    initial: ActiveFilter<CommentFilterFieldKey>[],
+    options: { actions?: Array<(r: { pills: Pills; controller: Controller }) => void> } = {},
+  ) {
+    return renderHook(
+      () => {
+        const pills = useFilterPills({ fields: COMMENT_FILTER_FIELDS, initial })
+        const controller = useCommentsController({
+          filters: pills.filters,
+          dispatch: pills.dispatch,
+          queryInput: pills.queryInput<CommentsFilterQuery>(),
+          intents,
+        })
+        return { pills, controller }
+      },
+      { wrapper: makeWrapper(), actions: options.actions },
+    )
+  }
+  type Pills = ReturnType<typeof useFilterPills<CommentFilterFieldKey>>
+  type Controller = ReturnType<typeof useCommentsController>
+
   it('starts with the provided filters and an empty pending list', () => {
-    const { filters, filterStatus, comments, total, statusCounts, hasMore, isLoading } = renderHook(
-      () => useCommentsController({ initialFilters: [{ field: 'status', value: 'pending', label: '待审' }] }),
-      { wrapper: makeWrapper() },
-    )
-    expect(filters).toHaveLength(1)
-    expect(filterStatus).toBe('pending')
+    const { pills, controller } = renderController([{ field: 'status', value: 'pending', label: '待审' }])
+    expect(pills.filters).toHaveLength(1)
+    expect(pills.queryInput<CommentsFilterQuery>().status).toBe('pending')
     // The list query is pending under SSR — the view renders its skeleton.
-    expect(comments).toEqual([])
-    expect(total).toBe(0)
-    expect(statusCounts).toEqual({ all: 0, pending: 0, approved: 0, deleteRequested: 0 })
-    expect(hasMore).toBe(false)
-    expect(isLoading).toBe(true)
+    expect(controller.comments).toEqual([])
+    expect(controller.total).toBe(0)
+    expect(controller.statusCounts).toEqual({ all: 0, pending: 0, approved: 0, deleteRequested: 0 })
+    expect(controller.hasMore).toBe(false)
+    expect(controller.isLoading).toBe(true)
   })
 
-  it('derives page and author filters', () => {
-    const { filterPageKey, filterAuthorId } = renderHook(
-      () =>
-        useCommentsController({
-          initialFilters: [
-            { field: 'page', value: 'page-1', label: 'Page' },
-            { field: 'author', value: 'user-42', label: 'Author' },
-          ],
-        }),
-      { wrapper: makeWrapper() },
-    )
-    expect(filterPageKey).toBe('page-1')
-    expect(filterAuthorId).toBe('user-42')
+  it('derives the page and author query input from the pills', () => {
+    const { pills } = renderController([
+      { field: 'page', value: 'page-1', label: 'Page' },
+      { field: 'author', value: 'user-42', label: 'Author' },
+    ])
+    expect(pills.queryInput<CommentsFilterQuery>()).toEqual({ pageKey: 'page-1', userId: 'user-42' })
   })
 
-  it('parses text and date filters', () => {
+  it('parses text and date filters through the typed accessors', () => {
     const text: TextFilterValue = { op: 'contains', value: 'hello' }
     const date: SingleDateFilterValue = { date: '2024-03-15', op: 'is-greater' }
-    const { filterText, filterDateRange, filterCreatedAfter } = renderHook(
-      () =>
-        useCommentsController({
-          initialFilters: [
-            { field: 'text', value: JSON.stringify(text), label: 'Text' },
-            { field: 'date', value: JSON.stringify(date), label: 'Date' },
-          ],
-        }),
-      { wrapper: makeWrapper() },
-    )
-    expect(filterText).toEqual(text)
-    expect(filterDateRange).toEqual(date)
+    const { pills } = renderController([
+      { field: 'text', value: JSON.stringify(text), label: 'Text' },
+      { field: 'date', value: JSON.stringify(date), label: 'Date' },
+    ])
+    expect(pills.text('text')).toEqual(text)
+    expect(pills.dateSingle('date')).toEqual(date)
     const expectedEnd = new Date('2024-03-15')
     expectedEnd.setHours(23, 59, 59, 999)
-    expect(filterCreatedAfter).toBe(expectedEnd.toISOString())
+    expect(pills.queryInput<CommentsFilterQuery>().createdAfter).toBe(expectedEnd.toISOString())
   })
 
   it('adds and replaces filters', () => {
-    const { filters, filterStatus } = renderHook(() => useCommentsController({ initialFilters: [] }), {
-      wrapper: makeWrapper(),
+    const { pills } = renderController([], {
       actions: [
-        (r) => r.dispatch({ type: 'addFilter', field: 'status', value: 'pending', label: '待审' }),
-        (r) => r.dispatch({ type: 'addFilter', field: 'author', value: 'user-1', label: 'Author' }),
-        (r) => r.dispatch({ type: 'addFilter', field: 'status', value: 'approved', label: '已通过' }),
+        (r) => r.pills.dispatch({ type: 'addFilter', field: 'status', value: 'pending', label: '待审' }),
+        (r) => r.pills.dispatch({ type: 'addFilter', field: 'author', value: 'user-1', label: 'Author' }),
+        (r) => r.pills.dispatch({ type: 'addFilter', field: 'status', value: 'approved', label: '已通过' }),
       ],
     })
-    expect(filters).toHaveLength(2)
-    expect(filterStatus).toBe('approved')
+    expect(pills.filters).toHaveLength(2)
+    expect(pills.queryInput<CommentsFilterQuery>().status).toBe('approved')
   })
 
   it('invalidateList invalidates the cached loadAll pages for the active filter input', () => {
@@ -278,9 +294,20 @@ describe('ui/admin/comments/useCommentsController hook', () => {
       getNextPageParam: () => undefined,
     }).queryKey
     wrapper.queryClient.setQueryData(listKey, makeData(makePage([])))
-    const { invalidateList } = renderHook(() => useCommentsController({ initialFilters: [] }), { wrapper })
+    const controller = renderHook(
+      () => {
+        const pills = useFilterPills({ fields: COMMENT_FILTER_FIELDS, initial: [] })
+        return useCommentsController({
+          filters: pills.filters,
+          dispatch: pills.dispatch,
+          queryInput: pills.queryInput<CommentsFilterQuery>(),
+          intents,
+        })
+      },
+      { wrapper },
+    )
 
-    invalidateList()
+    controller.invalidateList()
 
     expect(wrapper.queryClient.getQueryState(listKey)?.isInvalidated).toBe(true)
   })

@@ -76,12 +76,12 @@ function DateOperatorTrigger({
   )
 }
 
-interface DateFilterEditorProps {
+interface DateSingleFilterEditorProps {
   value: SingleDateFilterValue | null
   onChange: (next: SingleDateFilterValue | null) => void
 }
 
-export function DateFilterEditor({ value, onChange }: DateFilterEditorProps) {
+export function DateSingleFilterEditor({ value, onChange }: DateSingleFilterEditorProps) {
   const op = value?.op ?? DEFAULT_SINGLE_DATE_OPERATOR
   const [localDate, setLocalDate] = useState(value?.date ?? '')
   const [calendarOpen, setCalendarOpen] = useState(false)

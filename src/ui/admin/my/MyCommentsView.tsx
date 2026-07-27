@@ -1,32 +1,35 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { FileTextIcon, ListChecksIcon, RotateCcwIcon, SearchIcon, SquarePenIcon, Trash2Icon } from 'lucide-react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { RotateCcwIcon, SearchIcon, SquarePenIcon, Trash2Icon } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 
 import type { MyCommentItem } from '@/routes/admin/me/comments'
 import type { MyCommentsStatus } from '@/shared/types/comments'
+import type { ActiveFilter, FilterPillsAction } from '@/ui/admin/shared/filterPillsReducer'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { commentBodySchema } from '@/shared/pt/comment-schema'
 import { avatarImageUrl } from '@/shared/utils/avatar'
 import { formatLocalDate } from '@/shared/utils/formatter'
-import { unsafeCast } from '@/shared/utils/unsafe-cast'
-import { CommentsFilterBar } from '@/ui/admin/comments/CommentsFilterBar'
-import { type FieldDefinition } from '@/ui/admin/comments/filter-constants'
 import {
   DEFAULT_TEXT_OPERATOR,
+  parseTextFilter,
   textFilterLabel,
-  type ActiveFilter,
-  type FilterFieldKey,
-  type FilterItem,
-} from '@/ui/admin/comments/useCommentsController'
+  type TextFilterValue,
+} from '@/ui/admin/comments/filter-fields'
+import {
+  buildMyCommentFilterFields,
+  MY_STATUS_OPTIONS,
+  type MyCommentFilterFieldKey,
+} from '@/ui/admin/my/filter-fields'
 import { MyEditCommentDialog } from '@/ui/admin/my/MyEditCommentDialog'
 import { AdminInfiniteListFooter } from '@/ui/admin/shared/AdminInfiniteListFooter'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
+import { FilterPillBar } from '@/ui/admin/shared/filter-bar/FilterPillBar'
+import { useFilterPills } from '@/ui/admin/shared/filter-bar/useFilterPills'
 import { useAdminInfiniteList } from '@/ui/admin/shared/useAdminInfiniteList'
-import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/avatar'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
@@ -37,19 +40,6 @@ import { PortableTextBody } from '@/ui/pt/render'
 
 const ADMIN_DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 const PAGE_SIZE = 20
-const FILTER_QUERY_DEBOUNCE_MS = 250
-
-const MY_COMMENT_FIELDS: FieldDefinition[] = [
-  { key: 'status', label: '状态', icon: ListChecksIcon },
-  { key: 'page', label: '文章', icon: FileTextIcon },
-  { key: 'text', label: '内容', icon: SearchIcon },
-]
-
-const MY_STATUS_OPTIONS: { value: Exclude<MyCommentsStatus, 'all'>; label: string }[] = [
-  { value: 'pending', label: '待审' },
-  { value: 'deleteRequested', label: '申请删除' },
-  { value: 'deleted', label: '已删除' },
-]
 
 export interface MyCommentEntityOption {
   value: string
@@ -69,50 +59,9 @@ export interface MyCommentsViewProps {
   currentUser: { id: string; name: string; email: string }
 }
 
-function buildActiveFilters({
-  status,
-  q,
-  entity,
-  entityOptions,
-}: {
-  status: MyCommentsStatus
-  q: string
-  entity: string | null
-  entityOptions: MyCommentEntityOption[]
-}): ActiveFilter[] {
-  const filters: ActiveFilter[] = []
-  if (status !== 'all') {
-    const label = MY_STATUS_OPTIONS.find((o) => o.value === status)?.label ?? status
-    filters.push({ field: 'status', value: status, label })
-  }
-  if (entity) {
-    const match = entityOptions.find((o) => o.value === entity)
-    filters.push({ field: 'page', value: entity, label: match?.label ?? entity })
-  }
-  if (q.trim()) {
-    const value = JSON.stringify({ op: DEFAULT_TEXT_OPERATOR, value: q.trim() })
-    filters.push({ field: 'text', value, label: textFilterLabel({ op: DEFAULT_TEXT_OPERATOR, value: q.trim() }) })
-  }
-  return filters
-}
-
 export function MyCommentsView({ status, q, entity, entityOptions, currentUser }: MyCommentsViewProps) {
   const [searchParams, setSearchParams] = useSearchParams()
   const queryClient = useQueryClient()
-
-  const [textFilterDraft, setTextFilterDraft] = useState<ActiveFilter | null>(null)
-  const [debouncedEntityQuery, setDebouncedEntityQuery] = useState('')
-  const [, setEntityQuery] = useDebouncedSearch({
-    delayMs: FILTER_QUERY_DEBOUNCE_MS,
-    onChange: (value) => setDebouncedEntityQuery(value),
-  })
-
-  const { data: entitiesData, isLoading: isEntitiesPending } = useQuery(
-    orpcQuery.comments.searchMineEntities.queryOptions({
-      input: debouncedEntityQuery ? { q: debouncedEntityQuery } : {},
-      enabled: debouncedEntityQuery !== '',
-    }),
-  )
 
   const updateParams = useCallback(
     (patch: Record<string, string | null>) => {
@@ -132,72 +81,62 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
     [searchParams, setSearchParams],
   )
 
-  const filters = useMemo(() => {
-    const base = buildActiveFilters({ status, q, entity, entityOptions })
-    if (textFilterDraft && !base.some((f) => f.field === 'text')) {
-      return [...base, textFilterDraft]
+  // The URL is the source of truth: the pills run in controlled mode over
+  // the loader props, and every pill action maps back onto the params.
+  const filtersFromUrl = useMemo<ActiveFilter<MyCommentFilterFieldKey>[]>(() => {
+    const filters: ActiveFilter<MyCommentFilterFieldKey>[] = []
+    if (status !== 'all') {
+      const label = MY_STATUS_OPTIONS.find((o) => o.value === status)?.label ?? status
+      filters.push({ field: 'status', value: status, label })
     }
-    return base
-  }, [status, q, entity, entityOptions, textFilterDraft])
-
-  const pageItems: FilterItem[] = useMemo(() => {
-    // When the user is actively searching, prefer the live search results.
-    // Otherwise fall back to the loader-provided entity list so the dropdown
-    // isn't empty on first open.
-    const fetched = debouncedEntityQuery
-      ? (entitiesData?.entities ?? [])
-      : entityOptions.map((o) => ({ value: o.value, label: o.label }))
-    const items = fetched.map((e) => ({ value: e.value, label: e.label }))
-    const current = entity
-      ? { value: entity, label: entityOptions.find((o) => o.value === entity)?.label ?? entity }
-      : null
-    if (current && !items.some((i) => i.value === current.value)) {
-      items.unshift(current)
+    if (entity) {
+      const match = entityOptions.find((o) => o.value === entity)
+      filters.push({ field: 'page', value: entity, label: match?.label ?? entity })
     }
-    return items
-  }, [debouncedEntityQuery, entitiesData, entity, entityOptions])
+    if (q.trim()) {
+      const value: TextFilterValue = { op: DEFAULT_TEXT_OPERATOR, value: q.trim() }
+      filters.push({ field: 'text', value: JSON.stringify(value), label: textFilterLabel(value) })
+    }
+    return filters
+  }, [status, q, entity, entityOptions])
 
-  const handleRemoveFilter = useCallback(
-    (field: FilterFieldKey) => {
-      if (field === 'status') {
-        updateParams({ status: null })
-      } else if (field === 'page') {
-        updateParams({ entity: null })
-      } else if (field === 'text') {
-        setTextFilterDraft(null)
-        updateParams({ q: null })
+  const fields = useMemo(() => buildMyCommentFilterFields(entityOptions), [entityOptions])
+
+  // Pill action → URL patch. An empty text pill maps to q: null — the pill
+  // survives locally in the hook until the URL next re-validates.
+  const syncUrl = useCallback(
+    (_next: ActiveFilter<MyCommentFilterFieldKey>[], action: FilterPillsAction<MyCommentFilterFieldKey>) => {
+      switch (action.type) {
+        case 'addFilter':
+          if (action.field === 'status') {
+            updateParams({ status: action.value === 'all' ? null : action.value })
+          } else if (action.field === 'page') {
+            updateParams({ entity: action.value })
+          } else if (action.field === 'text') {
+            const text = parseTextFilter(action.value)?.value.trim() ?? ''
+            updateParams({ q: text || null })
+          }
+          break
+        case 'removeFilter':
+          if (action.field === 'status') {
+            updateParams({ status: null })
+          } else if (action.field === 'page') {
+            updateParams({ entity: null })
+          } else if (action.field === 'text') {
+            updateParams({ q: null })
+          }
+          break
+        case 'clearFilters':
+          updateParams({ status: null, entity: null, q: null })
+          break
+        case 'renameFilter':
+          break
       }
     },
     [updateParams],
   )
 
-  const handleAddFilter = useCallback(
-    (field: FilterFieldKey, value: string, _label: string) => {
-      if (field === 'status') {
-        updateParams({ status: value === 'all' ? null : value })
-      } else if (field === 'page') {
-        updateParams({ entity: value })
-      } else if (field === 'text') {
-        try {
-          const parsed = unsafeCast<{ value?: string; op?: string }>(JSON.parse(value))
-          const text = parsed.value?.trim() ?? ''
-          // Always show the pill via the draft so the user can type into it.
-          // Sync the URL in both directions: non-empty text sets q, empty text
-          // clears it (so the result list isn't filtered by a stale value).
-          setTextFilterDraft({ field: 'text', value, label: _label })
-          updateParams({ q: text })
-        } catch {
-          // ignore malformed value
-        }
-      }
-    },
-    [updateParams],
-  )
-
-  const handleClearFilters = useCallback(() => {
-    setTextFilterDraft(null)
-    updateParams({ status: null, entity: null, q: null })
-  }, [updateParams])
+  const pills = useFilterPills({ fields, value: filtersFromUrl, onChange: syncUrl })
 
   const {
     rows: items,
@@ -260,24 +199,9 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
 
   const [editTarget, setEditTarget] = useState<MyCommentItem | null>(null)
 
-  const filterBar = (
-    <CommentsFilterBar
-      filters={filters}
-      onAddFilter={handleAddFilter}
-      onRemoveFilter={handleRemoveFilter}
-      onClearFilters={handleClearFilters}
-      pageItems={pageItems}
-      authorItems={[]}
-      onPageSearch={setEntityQuery}
-      onAuthorSearch={() => undefined}
-      isPagesPending={isEntitiesPending}
-      fields={MY_COMMENT_FIELDS}
-      statusOptions={MY_STATUS_OPTIONS}
-      textFilterOperators={[{ value: DEFAULT_TEXT_OPERATOR, label: '包含' }]}
-    />
-  )
+  const filterBar = <FilterPillBar {...pills.bar} />
 
-  const hasActiveFilters = filters.length > 0
+  const hasActiveFilters = pills.hasFilters
 
   return (
     <AdminListPage>
