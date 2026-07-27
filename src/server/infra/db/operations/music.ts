@@ -5,8 +5,8 @@ import { and, asc, count, desc, eq, isNull, or, type SQL } from 'drizzle-orm'
 import type { MusicRow, NewMusic } from '@/server/infra/db/types'
 
 import { ilikeEscape } from '@/server/infra/db/ilike-escape'
+import { applyPage, assembleWhere, withUploader } from '@/server/infra/db/operations/admin-list'
 import { music } from '@/server/infra/db/schema/media'
-import { user } from '@/server/infra/db/schema/user'
 
 export interface AdminMusicListFilters {
   q?: string
@@ -29,26 +29,36 @@ export interface AdminMusicRowWithUploader extends MusicRow {
   uploaderName: string | null
 }
 
-const ADMIN_MUSIC_WITH_UPLOADER_COLUMNS = {
-  id: music.id,
-  createdAt: music.createdAt,
-  updatedAt: music.updatedAt,
-  deletedAt: music.deletedAt,
-  source: music.source,
-  sourceId: music.sourceId,
-  playerId: music.playerId,
-  name: music.name,
-  artist: music.artist,
-  album: music.album,
-  audioStoragePath: music.audioStoragePath,
-  coverStoragePath: music.coverStoragePath,
-  storageDriver: music.storageDriver,
-  lyric: music.lyric,
-  uploaderId: music.uploaderId,
-  uploaderName: user.name,
-} as const
+// Entity-specific column selection for the admin-side
+// `music LEFT JOIN user` projection; `withUploader()` appends
+// `uploaderName` and owns the join plus the single-row refetch.
+const musicUploader = withUploader({
+  table: music,
+  idColumn: music.id,
+  uploaderIdColumn: music.uploaderId,
+  columns: {
+    id: music.id,
+    createdAt: music.createdAt,
+    updatedAt: music.updatedAt,
+    deletedAt: music.deletedAt,
+    source: music.source,
+    sourceId: music.sourceId,
+    playerId: music.playerId,
+    name: music.name,
+    artist: music.artist,
+    album: music.album,
+    audioStoragePath: music.audioStoragePath,
+    coverStoragePath: music.coverStoragePath,
+    storageDriver: music.storageDriver,
+    lyric: music.lyric,
+    uploaderId: music.uploaderId,
+  },
+})
 
-function buildAdminMusicWhere(filters: AdminMusicListFilters): SQL | undefined {
+// Entity-specific filter→SQL mapping for the admin music list. The
+// conditions-array → `WHERE` assembly is shared with the other admin
+// lists via `assembleWhere()`.
+function buildAdminMusicConditions(filters: AdminMusicListFilters): SQL[] {
   const conditions: SQL[] = []
 
   if (!filters.includeDeleted) {
@@ -69,13 +79,7 @@ function buildAdminMusicWhere(filters: AdminMusicListFilters): SQL | undefined {
     }
   }
 
-  if (conditions.length === 0) {
-    return undefined
-  }
-  if (conditions.length === 1) {
-    return conditions[0]
-  }
-  return and(...conditions)
+  return conditions
 }
 
 const COLUMN_MAP = {
@@ -95,37 +99,18 @@ export async function listAdminMusicRows(
   db: NodePgDatabase,
   filters: AdminMusicListFilters = {},
 ): Promise<AdminMusicRowWithUploader[]> {
-  const where = buildAdminMusicWhere(filters)
-  const baseQuery = db
-    .select(ADMIN_MUSIC_WITH_UPLOADER_COLUMNS)
-    .from(music)
-    .leftJoin(user, eq(user.id, music.uploaderId))
-
+  const where = assembleWhere(buildAdminMusicConditions(filters))
+  const baseQuery = musicUploader.selectJoined(db)
   const q = where ? baseQuery.where(where).orderBy(buildOrderBy(filters)) : baseQuery.orderBy(buildOrderBy(filters))
-  if (filters.limit !== undefined) {
-    if (filters.offset !== undefined && filters.offset > 0) {
-      return q.limit(filters.limit).offset(filters.offset)
-    }
-    return q.limit(filters.limit)
-  }
-  if (filters.offset !== undefined && filters.offset > 0) {
-    return q.offset(filters.offset)
-  }
-  return q
+  return applyPage(q, filters)
 }
 
 export async function findAdminMusicRowById(db: NodePgDatabase, id: bigint): Promise<AdminMusicRowWithUploader | null> {
-  const rows = await db
-    .select(ADMIN_MUSIC_WITH_UPLOADER_COLUMNS)
-    .from(music)
-    .leftJoin(user, eq(user.id, music.uploaderId))
-    .where(eq(music.id, id))
-    .limit(1)
-  return rows[0] ?? null
+  return musicUploader.findJoinedRowById(db, id)
 }
 
 export async function countAdminMusic(db: NodePgDatabase, filters: AdminMusicListFilters = {}): Promise<number> {
-  const where = buildAdminMusicWhere(filters)
+  const where = assembleWhere(buildAdminMusicConditions(filters))
   const rows = where
     ? await db.select({ value: count() }).from(music).where(where)
     : await db.select({ value: count() }).from(music)

@@ -1,10 +1,11 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { and, count, desc, eq, or, type SQL } from 'drizzle-orm'
+import { count, desc, eq, or, type SQL } from 'drizzle-orm'
 
 import type { FriendRow, NewFriend } from '@/server/infra/db/types'
 
 import { ilikeEscape } from '@/server/infra/db/ilike-escape'
+import { applyPage, assembleWhere } from '@/server/infra/db/operations/admin-list'
 import { friend } from '@/server/infra/db/schema/friend'
 
 // Stable ascending id ordering for the public catalog. Output flows
@@ -33,12 +34,14 @@ export interface AdminFriendsListFilters {
   limit?: number
 }
 
-// Build the shared `WHERE` clause used by both `listAdminFriendRows`
+// Build the shared conditions used by both `listAdminFriendRows`
 // and `countAdminFriends`. Keeping construction in one place ensures
 // the row listing and the pagination counter always filter on the
 // same predicate; if they drifted, `total` would be inconsistent
-// with the returned page (and `hasMore` would lie).
-function buildAdminFriendWhere(filters: AdminFriendsListFilters): SQL | undefined {
+// with the returned page (and `hasMore` would lie). The
+// conditions-array → `WHERE` assembly is shared with the other admin
+// lists via `assembleWhere()`.
+function buildAdminFriendConditions(filters: AdminFriendsListFilters): SQL[] {
   const conditions: SQL[] = []
   if (filters.visible !== undefined) {
     conditions.push(eq(friend.visible, filters.visible))
@@ -56,13 +59,7 @@ function buildAdminFriendWhere(filters: AdminFriendsListFilters): SQL | undefine
       conditions.push(search)
     }
   }
-  if (conditions.length === 0) {
-    return undefined
-  }
-  if (conditions.length === 1) {
-    return conditions[0]
-  }
-  return and(...conditions)
+  return conditions
 }
 
 // Admin list view. Newest entries surface first so the most recently
@@ -76,20 +73,11 @@ export async function listAdminFriendRows(
   db: NodePgDatabase,
   filters: AdminFriendsListFilters = {},
 ): Promise<FriendRow[]> {
-  const where = buildAdminFriendWhere(filters)
+  const where = assembleWhere(buildAdminFriendConditions(filters))
   const q = where
     ? db.select().from(friend).where(where).orderBy(desc(friend.createdAt))
     : db.select().from(friend).orderBy(desc(friend.createdAt))
-  if (filters.limit !== undefined) {
-    if (filters.offset !== undefined && filters.offset > 0) {
-      return q.limit(filters.limit).offset(filters.offset)
-    }
-    return q.limit(filters.limit)
-  }
-  if (filters.offset !== undefined && filters.offset > 0) {
-    return q.offset(filters.offset)
-  }
-  return q
+  return applyPage(q, filters)
 }
 
 // Pagination counter. Returns the total number of rows matching the
@@ -98,7 +86,7 @@ export async function listAdminFriendRows(
 // list response so the table's pagination control can render the
 // right number of pages.
 export async function countAdminFriends(db: NodePgDatabase, filters: AdminFriendsListFilters = {}): Promise<number> {
-  const where = buildAdminFriendWhere(filters)
+  const where = assembleWhere(buildAdminFriendConditions(filters))
   const rows = where
     ? await db.select({ value: count() }).from(friend).where(where)
     : await db.select({ value: count() }).from(friend)

@@ -1,10 +1,11 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { and, asc, eq, inArray, or, sql } from 'drizzle-orm'
+import { asc, eq, inArray, or, sql, type SQL } from 'drizzle-orm'
 
 import type { CategoryRow, NewCategory } from '@/server/infra/db/types'
 
 import { ilikeEscape } from '@/server/infra/db/ilike-escape'
+import { assembleWhere } from '@/server/infra/db/operations/admin-list'
 import { category } from '@/server/infra/db/schema/taxonomy'
 
 // Public listing reads. Stable `(sort_order ASC, id ASC)` order so the
@@ -28,14 +29,19 @@ export async function listAdminCategoryRows(
   db: NodePgDatabase,
   filters: AdminCategoriesListFilters = {},
 ): Promise<CategoryRow[]> {
-  const conditions = []
+  const conditions: SQL[] = []
   if (filters.q && filters.q.trim() !== '') {
     const q = filters.q.trim()
-    conditions.push(
-      or(ilikeEscape(category.name, q), ilikeEscape(category.slug, q), ilikeEscape(category.description, q)),
+    const search = or(
+      ilikeEscape(category.name, q),
+      ilikeEscape(category.slug, q),
+      ilikeEscape(category.description, q),
     )
+    if (search) {
+      conditions.push(search)
+    }
   }
-  const where = conditions.length === 0 ? undefined : conditions.length === 1 ? conditions[0] : and(...conditions)
+  const where = assembleWhere(conditions)
   const query = db.select().from(category)
   return where
     ? query.where(where).orderBy(asc(category.sortOrder), asc(category.id))

@@ -5,8 +5,8 @@ import { and, count, desc, eq, inArray, isNull, like, or, type SQL, sql } from '
 import type { ImageRow, NewImage } from '@/server/infra/db/types'
 
 import { ilikeEscape } from '@/server/infra/db/ilike-escape'
+import { applyPage, assembleWhere, withUploader } from '@/server/infra/db/operations/admin-list'
 import { image } from '@/server/infra/db/schema/media'
-import { user } from '@/server/infra/db/schema/user'
 
 export interface AdminImagesListFilters {
   q?: string
@@ -40,7 +40,10 @@ export interface AdminImageRowWithUploader extends ImageRow {
   uploaderName: string | null
 }
 
-function buildAdminImageWhere(filters: AdminImagesListFilters): SQL | undefined {
+// Entity-specific filter→SQL mapping for the admin image list. The
+// conditions-array → `WHERE` assembly is shared with the other admin
+// lists via `assembleWhere()`.
+function buildAdminImageConditions(filters: AdminImagesListFilters): SQL[] {
   const conditions: SQL[] = []
 
   if (!filters.includeDeleted) {
@@ -70,63 +73,42 @@ function buildAdminImageWhere(filters: AdminImagesListFilters): SQL | undefined 
     }
   }
 
-  if (conditions.length === 0) {
-    return undefined
-  }
-  if (conditions.length === 1) {
-    return conditions[0]
-  }
-  return and(...conditions)
+  return conditions
 }
 
-// Column map shared by every admin-side `image LEFT JOIN user`
-// projection (list view + single-row reads after a write). Centralised
-// so the column set stays in lock-step across the three call sites
-// without repeating the field list (and without paying for a
-// `select(*)` that would otherwise drag the `password` column out of
-// `user`).
-const ADMIN_IMAGE_WITH_UPLOADER_COLUMNS = {
-  id: image.id,
-  createdAt: image.createdAt,
-  updatedAt: image.updatedAt,
-  deletedAt: image.deletedAt,
-  storagePath: image.storagePath,
-  storageDriver: image.storageDriver,
-  mimeType: image.mimeType,
-  width: image.width,
-  height: image.height,
-  byteSize: image.byteSize,
-  thumbhash: image.thumbhash,
-  uploaderId: image.uploaderId,
-  note: image.note,
-  uploaderName: user.name,
-} as const
+// Entity-specific column selection for the admin-side
+// `image LEFT JOIN user` projection; `withUploader()` appends
+// `uploaderName` and owns the join, the single-row refetch, and the
+// post-update refetch.
+const imageUploader = withUploader({
+  table: image,
+  idColumn: image.id,
+  uploaderIdColumn: image.uploaderId,
+  columns: {
+    id: image.id,
+    createdAt: image.createdAt,
+    updatedAt: image.updatedAt,
+    deletedAt: image.deletedAt,
+    storagePath: image.storagePath,
+    storageDriver: image.storageDriver,
+    mimeType: image.mimeType,
+    width: image.width,
+    height: image.height,
+    byteSize: image.byteSize,
+    thumbhash: image.thumbhash,
+    uploaderId: image.uploaderId,
+    note: image.note,
+  },
+})
 
 export async function listAdminImageRows(
   db: NodePgDatabase,
   filters: AdminImagesListFilters = {},
 ): Promise<AdminImageRowWithUploader[]> {
-  const where = buildAdminImageWhere(filters)
-  // LEFT JOIN on `user` so a hard-deleted uploader row (or a NULL
-  // `uploader_id` on legacy rows) does not hide the image from the
-  // admin library. `uploaderName` is the user's display name when
-  // present, `null` otherwise.
-  const baseQuery = db
-    .select(ADMIN_IMAGE_WITH_UPLOADER_COLUMNS)
-    .from(image)
-    .leftJoin(user, eq(user.id, image.uploaderId))
-
+  const where = assembleWhere(buildAdminImageConditions(filters))
+  const baseQuery = imageUploader.selectJoined(db)
   const q = where ? baseQuery.where(where).orderBy(desc(image.createdAt)) : baseQuery.orderBy(desc(image.createdAt))
-  if (filters.limit !== undefined) {
-    if (filters.offset !== undefined && filters.offset > 0) {
-      return q.limit(filters.limit).offset(filters.offset)
-    }
-    return q.limit(filters.limit)
-  }
-  if (filters.offset !== undefined && filters.offset > 0) {
-    return q.offset(filters.offset)
-  }
-  return q
+  return applyPage(q, filters)
 }
 
 /**
@@ -136,17 +118,11 @@ export async function listAdminImageRows(
  * round-trip after `updateImageNote()` / `findImageDtoById()`.
  */
 export async function findAdminImageRowById(db: NodePgDatabase, id: bigint): Promise<AdminImageRowWithUploader | null> {
-  const rows = await db
-    .select(ADMIN_IMAGE_WITH_UPLOADER_COLUMNS)
-    .from(image)
-    .leftJoin(user, eq(user.id, image.uploaderId))
-    .where(eq(image.id, id))
-    .limit(1)
-  return rows[0] ?? null
+  return imageUploader.findJoinedRowById(db, id)
 }
 
 export async function countAdminImages(db: NodePgDatabase, filters: AdminImagesListFilters = {}): Promise<number> {
-  const where = buildAdminImageWhere(filters)
+  const where = assembleWhere(buildAdminImageConditions(filters))
   const rows = where
     ? await db.select({ value: count() }).from(image).where(where)
     : await db.select({ value: count() }).from(image)
@@ -253,19 +229,14 @@ export async function updateImageNote(db: NodePgDatabase, id: bigint, note: stri
 /**
  * UPDATE the row's `note` and re-read it joined with `user` so the
  * admin shell receives the full DTO (including `uploaderName`) in
- * one helper call. PG's `UPDATE ... RETURNING` cannot `JOIN`, so the
- * read is a follow-up SELECT.
+ * one helper call.
  */
 export async function updateImageNoteWithUploader(
   db: NodePgDatabase,
   id: bigint,
   note: string | null,
 ): Promise<AdminImageRowWithUploader | null> {
-  const updated = await updateImageNote(db, id, note)
-  if (updated === null) {
-    return null
-  }
-  return findAdminImageRowById(db, id)
+  return imageUploader.updateThenRefetch(db, id, (d, rowId) => updateImageNote(d, rowId, note))
 }
 
 export async function updateImageThumbhash(
@@ -286,9 +257,5 @@ export async function updateImageThumbhashWithUploader(
   id: bigint,
   thumbhash: string,
 ): Promise<AdminImageRowWithUploader | null> {
-  const updated = await updateImageThumbhash(db, id, thumbhash)
-  if (updated === null) {
-    return null
-  }
-  return findAdminImageRowById(db, id)
+  return imageUploader.updateThenRefetch(db, id, (d, rowId) => updateImageThumbhash(d, rowId, thumbhash))
 }
