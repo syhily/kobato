@@ -9,18 +9,22 @@ import { PostsSkeleton } from '@/ui/admin/posts/PostsSkeleton'
 import { PostsView } from '@/ui/admin/posts/PostsView'
 import { StatusBadge } from '@/ui/admin/posts/StatusBadge'
 
-// PostsView wires four useQuery calls (list + categories + tags + users) via
-// orpcQuery. Each spec below stubs them so SSR can render the chrome without
-// hitting the network. The controller hook reads `useLocation`, so we mount
-// under a memory router at the admin posts path.
+// PostsView wires three option-list useQuery calls (categories + tags +
+// users) via orpcQuery; the list itself is a useInfiniteQuery behind
+// useAdminInfiniteList. Each spec below stubs them so SSR can render the
+// chrome without hitting the network. The filter surface is the shared
+// pill bar (the real `useFilterPills`, uncontrolled) — the view reads
+// `useLocation` for the URL seed, so we mount under a memory router at the
+// admin posts path.
 
 const queryMocks = vi.hoisted(() => ({
   list: {
-    data: null as unknown,
-    isPending: true,
-    isFetching: false,
-    error: null,
-    refetch: vi.fn(),
+    data: undefined as unknown,
+    isLoading: true,
+    error: null as Error | null,
+    hasNextPage: false,
+    isFetchingNextPage: false,
+    fetchNextPage: vi.fn(),
   },
   aux: {
     data: null as unknown,
@@ -35,16 +39,10 @@ vi.mock('@tanstack/react-query', async () => {
   const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
   return {
     ...actual,
-    // First call in PostsView is the post list; subsequent calls are the
-    // categories/tags/users option fetchers. Distinguish by returning the
-    // pending list for the first and empty data for the rest.
-    useQuery: (() => {
-      let calls = 0
-      return () => {
-        calls += 1
-        return calls === 1 ? queryMocks.list : queryMocks.aux
-      }
-    })(),
+    useQuery: () => queryMocks.aux,
+    useQueries: ({ queries }: { queries: unknown[] }) => queries.map(() => queryMocks.aux),
+    useInfiniteQuery: () => queryMocks.list,
+    useQueryClient: () => ({ invalidateQueries: vi.fn(), setQueryData: vi.fn(), removeQueries: vi.fn() }),
   }
 })
 
@@ -54,11 +52,6 @@ vi.mock('sonner', () => ({
 
 describe('snapshot: PostsView', () => {
   it('renders list chrome and skeleton while the initial query is pending', () => {
-    queryMocks.list = {
-      ...queryMocks.list,
-      isPending: true,
-      data: null,
-    }
     const html = stableHtml(renderInRouter(<PostsView />, '/admin/posts'))
     // Header title and the create link render in any state.
     expect(html).toContain('文章管理')
@@ -67,15 +60,22 @@ describe('snapshot: PostsView', () => {
     expect(html).toContain('skeleton')
   })
 
-  it('renders status filter labels and the new-post affordance even while loading', () => {
-    queryMocks.list = {
-      ...queryMocks.list,
-      isPending: true,
-      data: null,
-    }
+  it('renders the pill-bar trigger and the sort select while loading', () => {
     const html = stableHtml(renderInRouter(<PostsView />, '/admin/posts'))
-    expect(html).toContain('全部状态')
-    expect(html).toContain('全部作者')
+    // No active filters — just the 筛选 trigger in the header slot.
+    expect(html).toContain('筛选')
+    // The sort select is not a filter pill — it stays in the header.
+    expect(html).toContain('最新发布')
+  })
+
+  it('seeds a status pill from the URL search params', () => {
+    const html = stableHtml(renderInRouter(<PostsView />, '/admin/posts?status=draft'))
+    // The seeded pill shows the field label and the resolved option label.
+    expect(html).toContain('状态')
+    expect(html).toContain('草稿')
+    // Active filters bring the 添加筛选 / 清除 affordances.
+    expect(html).toContain('添加筛选')
+    expect(html).toContain('清除')
   })
 })
 

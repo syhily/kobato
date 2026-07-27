@@ -2,15 +2,21 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AdminPageDto } from '@/shared/contracts/pages'
 import type { AdminUserDto } from '@/shared/contracts/users'
+import type { PageFilterFieldKey } from '@/ui/admin/pages/filter-fields'
+import type { ActiveFilter } from '@/ui/admin/shared/filterPillsReducer'
 
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { PagesView } from '@/ui/admin/pages/PagesView'
 
 // `PagesView` drives its rows from `useInfiniteQuery` (`admin.pages.list` —
-// server state lives in the TanStack cache) and its author options from a
-// `useQuery` (`admin.users.list`). We hoist query singletons so each test
-// can swap the resolved list / users data + loading flag without
-// re-mocking, mirroring the posts-branches pattern.
+// server state lives in the TanStack cache), its author options from a
+// `useQuery` (`admin.users.list`), and its filter surface from the shared
+// `useFilterPills` hook. We hoist query singletons so each test can swap
+// the resolved list / users data + loading flag without re-mocking, and a
+// hoisted pill-list singleton so tests can inject active filters — the
+// module mock swaps ONLY the hook (capturing the view-built field specs so
+// the real `<FilterPillBar>` still renders them), mirroring the
+// audit-branches pattern.
 const queryMocks = vi.hoisted(() => ({
   infinite: {
     data: undefined as { pages: { pages: AdminPageDto[]; total: number; hasMore: boolean }[] } | undefined,
@@ -25,7 +31,35 @@ const queryMocks = vi.hoisted(() => ({
     isPending: false,
     error: null as unknown,
   },
+  filters: [] as ActiveFilter<PageFilterFieldKey>[],
+  dispatch: vi.fn(),
 }))
+
+vi.mock('@/ui/admin/shared/filter-bar/useFilterPills', async () => {
+  const actual = await vi.importActual<typeof import('@/ui/admin/shared/filter-bar/useFilterPills')>(
+    '@/ui/admin/shared/filter-bar/useFilterPills',
+  )
+  return {
+    ...actual,
+    useFilterPills: ({ fields }: { fields: unknown }) => ({
+      filters: queryMocks.filters,
+      hasFilters: queryMocks.filters.length > 0,
+      dispatch: queryMocks.dispatch,
+      queryInput: () => ({}),
+      text: () => ({ op: 'contains', value: '' }),
+      dateSingle: () => null,
+      dateRange: () => null,
+      bar: {
+        fields,
+        filters: queryMocks.filters,
+        search: {},
+        onAddFilter: vi.fn(),
+        onRemoveFilter: vi.fn(),
+        onClearFilters: vi.fn(),
+      },
+    }),
+  }
+})
 
 vi.mock('@tanstack/react-query', async () => {
   const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
@@ -117,9 +151,11 @@ describe('snapshot: PagesView', () => {
       fetchNextPage: vi.fn(),
     }
     queryMocks.users = { data: { users: [makeAdminUser()], total: 1 }, isPending: false, error: null }
+    queryMocks.filters = []
+    queryMocks.dispatch = vi.fn()
   })
 
-  it('renders the header chrome (title, filters, new-page link) regardless of query state', () => {
+  it('renders the header chrome (title, filter bar, new-page link) regardless of query state', () => {
     const html = renderView()
     // Header title always renders; the total span is 0 until the list
     // resolves, but the title text is static.
@@ -127,10 +163,9 @@ describe('snapshot: PagesView', () => {
     // New-page anchor — present in every render branch.
     expect(html).toContain('新建页面')
     expect(html).toContain('href="/editor/page/new"')
-    // Status filter trigger shows the initial "全部状态" value.
-    expect(html).toContain('全部状态')
-    // Author filter trigger shows the initial "全部作者" value.
-    expect(html).toContain('全部作者')
+    // No active filters — just the pill-bar 筛选 trigger in the header slot.
+    expect(html).toContain('筛选')
+    expect(html).not.toContain('添加筛选')
   })
 
   it('renders the list skeleton while the initial query is pending', () => {
@@ -167,13 +202,23 @@ describe('snapshot: PagesView', () => {
     expect(html).toContain('已加载全部页面')
   })
 
-  it('renders the author filter trigger with the seeded author list available', () => {
-    // The users query resolves with one admin user; the author Select
-    // options are built from it. The Base UI SelectContent is portalled
-    // and only mounts its items when open, so on SSR we assert on the
-    // trigger's "全部作者" default-value label only.
+  it('renders the author pill with the label resolved from the seeded author list', () => {
+    // The users query resolves with one admin user; the author field's
+    // options are built from it, so the pill editor shows the name.
     queryMocks.users = { data: { users: [makeAdminUser({ name: '雨帆' })], total: 1 }, isPending: false, error: null }
+    queryMocks.filters = [{ field: 'author', value: '1', label: '雨帆' }]
     const html = renderView()
-    expect(html).toContain('全部作者')
+    expect(html).toContain('作者')
+    expect(html).toContain('雨帆')
+    // Active filters bring the 添加筛选 / 清除 affordances.
+    expect(html).toContain('添加筛选')
+    expect(html).toContain('清除')
+  })
+
+  it('renders a status pill labelled for the draft value', () => {
+    queryMocks.filters = [{ field: 'status', value: 'draft', label: '草稿' }]
+    const html = renderView()
+    expect(html).toContain('状态')
+    expect(html).toContain('草稿')
   })
 })

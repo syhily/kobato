@@ -1,70 +1,42 @@
 import { useQuery } from '@tanstack/react-query'
-import { PlusIcon, SearchIcon, XIcon } from 'lucide-react'
+import { PlusIcon, SearchIcon } from 'lucide-react'
 import { useMemo } from 'react'
 import { Link } from 'react-router'
 
-import type { AdminUserDto } from '@/shared/contracts/users'
-
 import { orpcQuery } from '@/client/api/orpc-query'
+import { buildPageFilterFields, type PagesFilterQuery } from '@/ui/admin/pages/filter-fields'
 import { PageRow } from '@/ui/admin/pages/PageRow'
 import { PagesSkeleton } from '@/ui/admin/pages/PagesSkeleton'
-import {
-  deriveStatusFields,
-  type PageStatusFilter,
-  type PagesFilters,
-  usePagesFilters,
-} from '@/ui/admin/pages/usePagesFilters'
 import { AdminInfiniteListFooter } from '@/ui/admin/shared/AdminInfiniteListFooter'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
+import { FilterPillBar } from '@/ui/admin/shared/filter-bar/FilterPillBar'
+import { useFilterPills } from '@/ui/admin/shared/filter-bar/useFilterPills'
 import { useAdminInfiniteList } from '@/ui/admin/shared/useAdminInfiniteList'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
-import { cn } from '@/ui/lib/cn'
-
-const STATUS_OPTIONS = [
-  { value: 'all', label: '全部状态' },
-  { value: 'published', label: '已发布' },
-  { value: 'draft', label: '草稿' },
-  { value: 'deleted', label: '已删除' },
-]
 
 const PAGE_SIZE = 10
 
-const pill =
-  'h-9 gap-1 rounded-(--radius) border-border px-3 text-(--text-admin-sm) font-medium shadow-none hover:bg-accent focus-visible:border-border focus-visible:ring-0 data-[popup-open]:border-border data-[popup-open]:ring-0'
-
-function buildQueryInput(filters: PagesFilters, offset: number) {
-  return {
-    ...deriveStatusFields(filters.status),
-    offset,
-    limit: PAGE_SIZE,
-    authorId: filters.authorId || undefined,
-  }
-}
-
 export function PagesView() {
-  const { filters, setStatus, setAuthorId } = usePagesFilters()
-
-  const { rows, total, isLoading, hasNextPage, isFetchingNextPage, sentinelRef } = useAdminInfiniteList({
-    namespace: orpcQuery.admin.pages.list,
-    pageSize: PAGE_SIZE,
-    buildInput: (offset) => buildQueryInput(filters, offset),
-    selectRows: (page) => page.pages,
-    noun: '页面',
-  })
-
   // --- Filter option data ---
   const { data: usersData } = useQuery(
     orpcQuery.admin.users.list.queryOptions({ input: { limit: 100, hasPages: true } }),
   )
-  const users = usersData?.users
-  const authorOptions = useMemo(
-    () => [
-      { value: '', label: '全部作者' },
-      ...(users ?? []).map((u: AdminUserDto) => ({ value: u.id, label: u.name })),
-    ],
-    [users],
-  )
+
+  const fields = useMemo(() => buildPageFilterFields(usersData?.users ?? []), [usersData])
+
+  // The pills own the whole filter surface: reducer state and the merged
+  // query input the list query spreads.
+  const pills = useFilterPills({ fields })
+
+  const { rows, total, isLoading, hasNextPage, isFetchingNextPage, sentinelRef } = useAdminInfiniteList({
+    namespace: orpcQuery.admin.pages.list,
+    pageSize: PAGE_SIZE,
+    buildInput: (offset) => ({ ...pills.queryInput<PagesFilterQuery>(), offset, limit: PAGE_SIZE }),
+    selectRows: (page) => page.pages,
+    noun: '页面',
+  })
+
+  const filterBar = <FilterPillBar {...pills.bar} />
 
   return (
     <>
@@ -77,63 +49,8 @@ export function PagesView() {
           }
         >
           <div className="flex shrink-0 flex-wrap items-center gap-2">
-            {/* Status */}
-            <div className="relative">
-              <Select
-                items={STATUS_OPTIONS}
-                value={filters.status}
-                onValueChange={(value) => setStatus((value ?? 'all') as PageStatusFilter)}
-              >
-                <SelectTrigger className={cn(pill, filters.status !== 'all' && 'pr-7 [&>span:last-child]:hidden')}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {STATUS_OPTIONS.map((item) => (
-                    <SelectItem key={item.value} value={item.value}>
-                      {item.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {filters.status !== 'all' && (
-                <button
-                  type="button"
-                  onClick={() => setStatus('all')}
-                  className="absolute top-1/2 right-1.5 z-10 flex size-5 -translate-y-1/2 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-                >
-                  <XIcon className="size-3.5" />
-                </button>
-              )}
-            </div>
-
-            {/* Author */}
-            <div className="relative">
-              <Select
-                items={authorOptions}
-                value={filters.authorId}
-                onValueChange={(value) => setAuthorId(value ?? '')}
-              >
-                <SelectTrigger className={cn(pill, filters.authorId && 'pr-7 [&>span:last-child]:hidden')}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {authorOptions.map((item) => (
-                    <SelectItem key={item.value} value={item.value}>
-                      {item.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {filters.authorId && (
-                <button
-                  type="button"
-                  onClick={() => setAuthorId('')}
-                  className="absolute top-1/2 right-1.5 z-10 flex size-5 -translate-y-1/2 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-                >
-                  <XIcon className="size-3.5" />
-                </button>
-              )}
-            </div>
+            {/* Header slot only when no filters are active — the body slot below takes over otherwise. */}
+            {!pills.hasFilters && filterBar}
 
             {/* New page */}
             <Link
@@ -145,6 +62,8 @@ export function PagesView() {
             </Link>
           </div>
         </AdminListPage.Header>
+
+        {pills.hasFilters && filterBar}
 
         <AdminListPage.Body>
           {isLoading ? (

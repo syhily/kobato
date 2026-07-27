@@ -1,34 +1,24 @@
 import { useQuery } from '@tanstack/react-query'
-import { PlusIcon, SearchIcon, XIcon } from 'lucide-react'
-import { useMemo } from 'react'
-import { Link } from 'react-router'
-
-import type { AdminUserDto } from '@/shared/contracts/users'
+import { PlusIcon, SearchIcon } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { Link, useLocation } from 'react-router'
 
 import { orpcQuery } from '@/client/api/orpc-query'
+import {
+  buildPostFilterFields,
+  postFiltersFromSearch,
+  type PostsFilterQuery,
+  syncPostFiltersFromUrl,
+} from '@/ui/admin/posts/filter-fields'
 import { PostRow } from '@/ui/admin/posts/PostRow'
 import { PostsSkeleton } from '@/ui/admin/posts/PostsSkeleton'
-import {
-  deriveStatusFields,
-  type PostStatusFilter,
-  type PostsFilters,
-  usePostsFilters,
-} from '@/ui/admin/posts/usePostsFilters'
 import { AdminInfiniteListFooter } from '@/ui/admin/shared/AdminInfiniteListFooter'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
+import { FilterPillBar } from '@/ui/admin/shared/filter-bar/FilterPillBar'
+import { useFilterPills } from '@/ui/admin/shared/filter-bar/useFilterPills'
 import { useAdminInfiniteList } from '@/ui/admin/shared/useAdminInfiniteList'
-import { Combobox, ComboboxContent, ComboboxItem, ComboboxTrigger, ComboboxValue } from '@/ui/components/combobox'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
-import { cn } from '@/ui/lib/cn'
-
-const STATUS_OPTIONS = [
-  { value: 'all', label: '全部状态' },
-  { value: 'published', label: '已发布' },
-  { value: 'draft', label: '草稿' },
-  { value: 'hidden', label: '隐藏' },
-  { value: 'deleted', label: '已删除' },
-]
 
 const SORT_OPTIONS = [
   { value: 'publishedAt-desc', label: '最新发布' },
@@ -42,30 +32,7 @@ const PAGE_SIZE = 10
 const pill =
   'h-9 gap-1 rounded-(--radius) border-border px-3 text-(--text-admin-sm) font-medium shadow-none hover:bg-accent focus-visible:border-border focus-visible:ring-0 data-[popup-open]:border-border data-[popup-open]:ring-0'
 
-function buildQueryInput(filters: PostsFilters, offset: number) {
-  return {
-    ...deriveStatusFields(filters.status),
-    offset,
-    limit: PAGE_SIZE,
-    categoryId: filters.category || undefined,
-    tag: filters.tag || undefined,
-    sortBy: filters.sortBy,
-    sortOrder: filters.sortOrder,
-    authorId: filters.authorId || undefined,
-  }
-}
-
 export function PostsView() {
-  const { filters, setStatus, setCategory, setTag, setAuthorId, setSortBy, setSortOrder } = usePostsFilters()
-
-  const { rows, total, isLoading, hasNextPage, isFetchingNextPage, sentinelRef } = useAdminInfiniteList({
-    namespace: orpcQuery.admin.posts.list,
-    pageSize: PAGE_SIZE,
-    buildInput: (offset) => buildQueryInput(filters, offset),
-    selectRows: (page) => page.posts,
-    noun: '文章',
-  })
-
   // --- Filter option data ---
   const { data: categoriesData } = useQuery(orpcQuery.admin.categories.list.queryOptions({ input: {} }))
   const { data: tagsData } = useQuery(orpcQuery.admin.tags.list.queryOptions({ input: { limit: 100 } }))
@@ -73,24 +40,53 @@ export function PostsView() {
     orpcQuery.admin.users.list.queryOptions({ input: { limit: 100, hasPosts: true } }),
   )
 
-  const categories = categoriesData?.categories
-  const tags = tagsData?.tags
-  const users = usersData?.users
-
-  const categoryOptions = useMemo(
-    () => [{ value: '', label: '全部分类' }, ...(categories ?? []).map((c) => ({ value: c.id, label: c.name }))],
-    [categories],
-  )
-  const tagNames = useMemo(() => (tags ?? []).map((t) => t.name), [tags])
-  const authorOptions = useMemo(
-    () => [
-      { value: '', label: '全部作者' },
-      ...(users ?? []).map((u: AdminUserDto) => ({ value: u.id, label: u.name })),
-    ],
-    [users],
+  const fields = useMemo(
+    () =>
+      buildPostFilterFields({
+        categories: categoriesData?.categories ?? [],
+        tags: (tagsData?.tags ?? []).map((t) => t.name),
+        authors: usersData?.users ?? [],
+      }),
+    [categoriesData, tagsData, usersData],
   )
 
-  const sortValue = `${filters.sortBy}-${filters.sortOrder}`
+  // The pills own the whole filter surface: reducer state and the merged
+  // query input the list query spreads. The URL seeds them (dashboard /
+  // sidebar / tag / category deep links) and re-syncs the URL-backed fields
+  // on later navigations.
+  const { search } = useLocation()
+  const [initialFilters] = useState(() => postFiltersFromSearch(search))
+  const pills = useFilterPills({ fields, initial: initialFilters })
+
+  const [sortBy, setSortBy] = useState<'publishedAt' | 'updatedAt'>('publishedAt')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+
+  // URL → pills sync via the sanctioned "adjust state during render" pattern.
+  // UI-driven filter changes never touch `search`, so this only runs on real
+  // navigation and can't clobber the user's in-progress edits.
+  const [lastSearch, setLastSearch] = useState(search)
+  if (search !== lastSearch) {
+    setLastSearch(search)
+    syncPostFiltersFromUrl(pills.filters, pills.dispatch, search)
+  }
+
+  const { rows, total, isLoading, hasNextPage, isFetchingNextPage, sentinelRef } = useAdminInfiniteList({
+    namespace: orpcQuery.admin.posts.list,
+    pageSize: PAGE_SIZE,
+    buildInput: (offset) => ({
+      ...pills.queryInput<PostsFilterQuery>(),
+      offset,
+      limit: PAGE_SIZE,
+      sortBy,
+      sortOrder,
+    }),
+    selectRows: (page) => page.posts,
+    noun: '文章',
+  })
+
+  const sortValue = `${sortBy}-${sortOrder}`
+
+  const filterBar = <FilterPillBar {...pills.bar} />
 
   return (
     <>
@@ -103,106 +99,8 @@ export function PostsView() {
           }
         >
           <div className="flex shrink-0 flex-wrap items-center gap-2">
-            {/* Status */}
-            <Select
-              items={STATUS_OPTIONS}
-              value={filters.status}
-              onValueChange={(value) => setStatus((value ?? 'all') as PostStatusFilter)}
-            >
-              <SelectTrigger className={pill}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {STATUS_OPTIONS.map((item) => (
-                  <SelectItem key={item.value} value={item.value}>
-                    {item.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {/* Category */}
-            <div className="relative">
-              <Select
-                items={categoryOptions}
-                value={filters.category}
-                onValueChange={(value) => setCategory(value ?? '')}
-              >
-                <SelectTrigger className={cn(pill, filters.category && 'pr-7 [&>span:last-child]:hidden')}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {categoryOptions.map((item) => (
-                    <SelectItem key={item.value} value={item.value}>
-                      {item.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {filters.category && (
-                <button
-                  type="button"
-                  onClick={() => setCategory('')}
-                  className="absolute top-1/2 right-1.5 z-10 flex size-5 -translate-y-1/2 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-                >
-                  <XIcon className="size-3.5" />
-                </button>
-              )}
-            </div>
-
-            {/* Tag */}
-            <div className="relative">
-              <Combobox items={tagNames} value={filters.tag || null} onValueChange={(value) => setTag(value ?? '')}>
-                <ComboboxTrigger className={cn(pill, filters.tag && 'pr-7 [&>span:last-child]:hidden')}>
-                  <ComboboxValue placeholder="全部标签" />
-                </ComboboxTrigger>
-                <ComboboxContent<string> inputPlaceholder="搜索标签…" emptyMessage="无匹配标签">
-                  {(item) => (
-                    <ComboboxItem key={item} value={item}>
-                      {item}
-                    </ComboboxItem>
-                  )}
-                </ComboboxContent>
-              </Combobox>
-              {filters.tag && (
-                <button
-                  type="button"
-                  onClick={() => setTag('')}
-                  className="absolute top-1/2 right-1.5 z-10 flex size-5 -translate-y-1/2 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-                >
-                  <XIcon className="size-3.5" />
-                </button>
-              )}
-            </div>
-
-            {/* Author */}
-            <div className="relative">
-              <Select
-                items={authorOptions}
-                value={filters.authorId}
-                onValueChange={(value) => setAuthorId(value ?? '')}
-              >
-                <SelectTrigger className={cn(pill, filters.authorId && 'pr-7 [&>span:last-child]:hidden')}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {authorOptions.map((item) => (
-                    <SelectItem key={item.value} value={item.value}>
-                      {item.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {filters.authorId && (
-                <button
-                  type="button"
-                  onClick={() => setAuthorId('')}
-                  className="absolute top-1/2 right-1.5 z-10 flex size-5 -translate-y-1/2 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-                >
-                  <XIcon className="size-3.5" />
-                </button>
-              )}
-            </div>
+            {/* Header slot only when no filters are active — the body slot below takes over otherwise. */}
+            {!pills.hasFilters && filterBar}
 
             {/* Sort */}
             <Select
@@ -246,6 +144,8 @@ export function PostsView() {
           </div>
         </AdminListPage.Header>
 
+        {pills.hasFilters && filterBar}
+
         <AdminListPage.Body>
           {isLoading ? (
             <PostsSkeleton />
@@ -262,7 +162,13 @@ export function PostsView() {
             <>
               <div className="divide-y">
                 {rows.map((row) => (
-                  <PostRow key={row.id} post={row} onFilterCategory={(category) => setCategory(category)} />
+                  <PostRow
+                    key={row.id}
+                    post={row}
+                    onFilterCategory={(categoryId, categoryName) =>
+                      pills.dispatch({ type: 'addFilter', field: 'category', value: categoryId, label: categoryName })
+                    }
+                  />
                 ))}
               </div>
               {/* Sentinel for infinite scroll */}

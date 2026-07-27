@@ -68,21 +68,22 @@ describe('snapshot: PostRow', () => {
     expect(html).toContain('仅草稿')
   })
 
-  it('calls onFilterCategory when category button clicked', () => {
-    const post = makeAdminPost({ category: 'life' })
-    let filtered = ''
+  it('wires the category button to onFilterCategory with id and name', () => {
+    const post = makeAdminPost({ category: 'life', categoryId: 'c-9' })
+    let filtered: [string, string] | null = null
     const html = stableHtml(
       renderInRouter(
         <PostRow
           post={post}
-          onFilterCategory={(c) => {
-            filtered = c
+          onFilterCategory={(id, name) => {
+            filtered = [id, name]
           }}
         />,
       ),
     )
     expect(html).toContain('life')
-    expect(filtered).toBe('')
+    // SSR never clicks — the callback stays unfired.
+    expect(filtered).toBeNull()
   })
 })
 

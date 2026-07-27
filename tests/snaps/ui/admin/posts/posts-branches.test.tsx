@@ -1,70 +1,79 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AdminPostDto } from '@/shared/contracts/posts'
-import type { PostStatusFilter, PostsFilters } from '@/ui/admin/posts/usePostsFilters'
+import type { PostFilterFieldKey } from '@/ui/admin/posts/filter-fields'
+import type { ActiveFilter } from '@/ui/admin/shared/filterPillsReducer'
 
 import { makeAdminPost } from '#/_helpers/catalog'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { PostsView } from '@/ui/admin/posts/PostsView'
 
 // PostsView drives its rows from `useInfiniteQuery` (server state lives in
-// the TanStack cache) and its filters from `usePostsFilters`. To maximise
-// render-path branch coverage we bypass both: a hoisted filters singleton
-// each test can flip, and two hoisted query slots — the infinite list
-// query and the shared slot for the three option-list queries.
+// the TanStack cache) and its filter surface from the shared `useFilterPills`
+// hook. To maximise render-path branch coverage we bypass both: a hoisted
+// pill-list singleton each test can flip (the module mock swaps ONLY the
+// hook — the real `<FilterPillBar>` still renders the pills), a hoisted
+// slot for the infinite list query, and a shared slot for the three
+// option-list queries.
 
-const controller = vi.hoisted(() => ({
-  filters: {
-    status: 'all' as PostStatusFilter,
-    category: '',
-    tag: '',
-    authorId: '',
-    sortBy: 'publishedAt' as PostsFilters['sortBy'],
-    sortOrder: 'desc' as PostsFilters['sortOrder'],
-  } satisfies PostsFilters,
+const mocks = vi.hoisted(() => ({
+  filters: [] as ActiveFilter<PostFilterFieldKey>[],
+  dispatch: vi.fn(),
+  sources: {
+    categories: [] as { id: string; name: string }[],
+    tags: [] as string[],
+    authors: [] as { id: string; name: string }[],
+  },
+  list: {
+    data: undefined as { pages: { posts: AdminPostDto[]; total: number; hasMore: boolean }[] } | undefined,
+    isLoading: true,
+    error: null as Error | null,
+    hasNextPage: false,
+    isFetchingNextPage: false,
+    fetchNextPage: vi.fn(),
+  },
+  aux: {
+    data: null as unknown,
+    isPending: false,
+    isFetching: false,
+    error: null,
+    refetch: vi.fn(),
+  },
 }))
 
-vi.mock('@/ui/admin/posts/usePostsFilters', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/ui/admin/posts/usePostsFilters')>()
+vi.mock('@/ui/admin/shared/filter-bar/useFilterPills', async () => {
+  const { buildPostFilterFields } = await vi.importActual<typeof import('@/ui/admin/posts/filter-fields')>(
+    '@/ui/admin/posts/filter-fields',
+  )
   return {
-    ...actual,
-    usePostsFilters: () => ({
-      filters: controller.filters,
-      setStatus: vi.fn(),
-      setCategory: vi.fn(),
-      setTag: vi.fn(),
-      setAuthorId: vi.fn(),
-      setSortBy: vi.fn(),
-      setSortOrder: vi.fn(),
+    useFilterPills: () => ({
+      filters: mocks.filters,
+      hasFilters: mocks.filters.length > 0,
+      dispatch: mocks.dispatch,
+      queryInput: () => ({}),
+      text: () => ({ op: 'contains', value: '' }),
+      dateSingle: () => null,
+      dateRange: () => null,
+      bar: {
+        fields: buildPostFilterFields(mocks.sources),
+        filters: mocks.filters,
+        search: {},
+        onAddFilter: vi.fn(),
+        onRemoveFilter: vi.fn(),
+        onClearFilters: vi.fn(),
+      },
     }),
   }
 })
-
-const listQuery = vi.hoisted(() => ({
-  data: undefined as { pages: { posts: AdminPostDto[]; total: number; hasMore: boolean }[] } | undefined,
-  isLoading: true,
-  error: null as Error | null,
-  hasNextPage: false,
-  isFetchingNextPage: false,
-  fetchNextPage: vi.fn(),
-}))
-
-// The three auxiliary option-list queries share a single slot because
-// PostsView treats them identically (they only differ by `data` shape).
-const auxQuery = vi.hoisted(() => ({
-  data: null as unknown,
-  isPending: false,
-  isFetching: false,
-  error: null,
-  refetch: vi.fn(),
-}))
 
 vi.mock('@tanstack/react-query', async () => {
   const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
   return {
     ...actual,
-    useInfiniteQuery: () => listQuery,
-    useQuery: () => auxQuery,
+    useQuery: () => mocks.aux,
+    useQueries: ({ queries }: { queries: unknown[] }) => queries.map(() => mocks.aux),
+    useInfiniteQuery: () => mocks.list,
+    useQueryClient: () => ({ invalidateQueries: vi.fn(), setQueryData: vi.fn(), removeQueries: vi.fn() }),
   }
 })
 
@@ -81,39 +90,30 @@ function makePost(overrides: Partial<AdminPostDto> = {}): AdminPostDto {
   })
 }
 
-function setFilters(overrides: Partial<PostsFilters> = {}): void {
-  controller.filters = { ...controller.filters, ...overrides }
-}
-
 function setList(posts: AdminPostDto[], total = posts.length): void {
-  listQuery.data = { pages: [{ posts, total, hasMore: false }] }
-  listQuery.isLoading = false
-  listQuery.error = null
+  mocks.list.data = { pages: [{ posts, total, hasMore: false }] }
+  mocks.list.isLoading = false
+  mocks.list.error = null
 }
 
 function resetQueries(): void {
-  listQuery.data = undefined
-  listQuery.isLoading = true
-  listQuery.error = null
-  listQuery.hasNextPage = false
-  listQuery.isFetchingNextPage = false
-  auxQuery.data = null
-  auxQuery.isPending = false
-  auxQuery.isFetching = false
+  mocks.list.data = undefined
+  mocks.list.isLoading = true
+  mocks.list.error = null
+  mocks.list.hasNextPage = false
+  mocks.list.isFetchingNextPage = false
+  mocks.aux.data = null
+  mocks.aux.isPending = false
+  mocks.aux.isFetching = false
 }
 
 // ─────────────────────────── shared setup ───────────────────────────
 
 describe('snapshot: PostsView branches', () => {
   beforeEach(() => {
-    controller.filters = {
-      status: 'all',
-      category: '',
-      tag: '',
-      authorId: '',
-      sortBy: 'publishedAt',
-      sortOrder: 'desc',
-    }
+    mocks.filters = []
+    mocks.dispatch = vi.fn()
+    mocks.sources = { categories: [], tags: [], authors: [] }
     resetQueries()
   })
 
@@ -148,9 +148,9 @@ describe('snapshot: PostsView branches', () => {
   // ────────────────────────────── error ──────────────────────────────
 
   it('still renders the chrome when the list query errors (toast path)', () => {
-    listQuery.isLoading = false
-    listQuery.error = new Error('boom')
-    listQuery.data = undefined
+    mocks.list.isLoading = false
+    mocks.list.error = new Error('boom')
+    mocks.list.data = undefined
     const html = stableHtml(renderInRouter(<PostsView />, '/admin/posts'))
     // Header + empty body still render; the toast is mocked.
     expect(html).toContain('文章管理')
@@ -158,106 +158,61 @@ describe('snapshot: PostsView branches', () => {
     expect(html).toContain('未找到文章')
   })
 
-  // ─────────────────── each status-filter value ───────────────────
+  // ─────────────────── filter-bar placement + sort ───────────────────
 
-  it.each(['all', 'published', 'draft', 'hidden', 'deleted'] satisfies PostStatusFilter[])(
-    'renders the status-filter trigger labelled for the %s status',
-    (status) => {
-      const labels: Record<PostStatusFilter, string> = {
-        all: '全部状态',
-        published: '已发布',
-        draft: '草稿',
-        hidden: '隐藏',
-        deleted: '已删除',
-      }
-      setList([])
-      setFilters({ status })
-      const html = stableHtml(renderInRouter(<PostsView />, '/admin/posts'))
-      expect(html).toContain(labels[status])
-    },
-  )
+  it('renders the bare 筛选 trigger and the sort select when no filters are active', () => {
+    setList([])
+    const html = stableHtml(renderInRouter(<PostsView />, '/admin/posts'))
+    expect(html).toContain('筛选')
+    expect(html).not.toContain('添加筛选')
+    // The sort select stays in the header — it is not a filter pill.
+    expect(html).toContain('最新发布')
+  })
 
-  // ──────────────────── each sort option label ─────────────────────
+  // ─────────────────── active-filter pills ───────────────────
+  //
+  // Each active pill renders the field label on the left and the option
+  // label in the value editor; the bar gains 添加筛选 / 清除.
 
   it.each([
-    ['publishedAt', 'desc', '最新发布'],
-    ['publishedAt', 'asc', '最早发布'],
-    ['updatedAt', 'desc', '最近更新'],
-    ['updatedAt', 'asc', '最早更新'],
-  ] as const)('renders the sort trigger labelled %s for %s-%s', (sortBy, sortOrder, label) => {
+    ['published', '已发布'],
+    ['draft', '草稿'],
+    ['hidden', '隐藏'],
+    ['deleted', '已删除'],
+  ] as const)('renders the status pill labelled %s for the %s value', (value, label) => {
     setList([])
-    setFilters({ sortBy, sortOrder })
+    mocks.filters = [{ field: 'status', value, label }]
     const html = stableHtml(renderInRouter(<PostsView />, '/admin/posts'))
+    expect(html).toContain('状态')
     expect(html).toContain(label)
+    expect(html).toContain('添加筛选')
+    expect(html).toContain('清除')
   })
 
-  // ─────────── secondary option-list queries (memos + maps) ─────────
-  //
-  // The category / tag / author option-list `useMemo` callbacks run on
-  // every render regardless of whether the popup is open, which is the
-  // render-path branch we care about here. Base UI portals the popup
-  // content away during SSR (it only mounts on client open), so the
-  // individual option labels are not part of the SSR string — we
-  // therefore assert the memos ran by checking the trigger's resolved
-  // value (the placeholder / selected label) and that the render did
-  // not throw.
-
-  it('runs the categoryOptions memo from the categories query without crashing', () => {
-    auxQuery.data = { categories: [{ name: '前端' }, { name: '随笔' }], total: 2 }
+  it('renders the category pill with the resolved option label', () => {
     setList([])
+    mocks.sources.categories = [{ id: 'c-1', name: '前端' }]
+    mocks.filters = [{ field: 'category', value: 'c-1', label: '前端' }]
     const html = stableHtml(renderInRouter(<PostsView />, '/admin/posts'))
-    // The placeholder label is the first entry of the memo.
-    expect(html).toContain('全部分类')
-    expect(html).toContain('文章管理')
+    expect(html).toContain('分类')
+    expect(html).toContain('前端')
   })
 
-  it('runs the tagNames memo from the tags query without crashing', () => {
-    auxQuery.data = { tags: [{ name: 'react' }, { name: 'vite' }], total: 2 }
+  it('renders the tag pill', () => {
     setList([])
+    mocks.sources.tags = ['react']
+    mocks.filters = [{ field: 'tag', value: 'react', label: 'react' }]
     const html = stableHtml(renderInRouter(<PostsView />, '/admin/posts'))
-    // Combobox trigger renders its placeholder when no value is set.
-    expect(html).toContain('全部标签')
-    expect(html).toContain('文章管理')
-  })
-
-  it('runs the authorOptions memo from the users query without crashing', () => {
-    auxQuery.data = {
-      users: [
-        { id: 'u-1', name: '雨帆' },
-        { id: 'u-2', name: '访客' },
-      ],
-    }
-    setList([])
-    const html = stableHtml(renderInRouter(<PostsView />, '/admin/posts'))
-    expect(html).toContain('全部作者')
-    expect(html).toContain('文章管理')
-  })
-
-  // ─────────────── active-filter states (clear buttons) ─────────────
-  //
-  // When a filter value is set the pill swaps to the value label and
-  // mounts an inline clear (X) button. The label IS user-visible in
-  // the closed trigger; the X button is rendered inline (no portal).
-
-  it('renders the category-filter active state with the value as the trigger label', () => {
-    setList([])
-    setFilters({ category: 'tech' })
-    const html = stableHtml(renderInRouter(<PostsView />, '/admin/posts'))
-    expect(html).toContain('tech')
-  })
-
-  it('renders the tag-filter active state', () => {
-    setList([])
-    setFilters({ tag: 'react' })
-    const html = stableHtml(renderInRouter(<PostsView />, '/admin/posts'))
+    expect(html).toContain('标签')
     expect(html).toContain('react')
   })
 
-  it('renders the author-filter active state', () => {
-    auxQuery.data = { users: [{ id: 'u-1', name: '雨帆' }] }
+  it('renders the author pill with the resolved option label', () => {
     setList([])
-    setFilters({ authorId: 'u-1' })
+    mocks.sources.authors = [{ id: 'u-1', name: '雨帆' }]
+    mocks.filters = [{ field: 'author', value: 'u-1', label: '雨帆' }]
     const html = stableHtml(renderInRouter(<PostsView />, '/admin/posts'))
+    expect(html).toContain('作者')
     expect(html).toContain('雨帆')
   })
 })

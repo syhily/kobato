@@ -8,8 +8,9 @@ import { Image } from '@/ui/public/widgets/Image'
 
 interface PostRowProps {
   post: AdminPostDto
-  /** Receives the category ID string — the posts-list filter keys by id. */
-  onFilterCategory?: (categoryId: string) => void
+  /** Receives the category ID + display name — the posts-list filter pill
+   *  keys by id and shows the name. */
+  onFilterCategory?: (categoryId: string, categoryName: string) => void
 }
 
 function formatPostDate(post: AdminPostDto): string {
@@ -104,7 +105,7 @@ export function PostRow({ post, onFilterCategory }: PostRowProps) {
           {post.categoryId !== null && onFilterCategory ? (
             <button
               type="button"
-              onClick={() => onFilterCategory(post.categoryId!)}
+              onClick={() => onFilterCategory(post.categoryId!, post.category || post.categoryId!)}
               className="hover:text-foreground hover:underline"
             >
               {post.category}
