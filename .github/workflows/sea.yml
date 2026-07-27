@@ -48,7 +48,7 @@ jobs:
       database__url: postgres://test:test@127.0.0.1:5432/test
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v6
         with:
           node-version: 26
@@ -106,7 +106,7 @@ jobs:
             target: darwin-arm64
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v6
         with:
           node-version: 26
@@ -157,7 +157,7 @@ jobs:
             target: win32-arm64
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v6
         with:
           node-version: 26
