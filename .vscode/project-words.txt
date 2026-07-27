@@ -219,6 +219,7 @@ oxfmt
 oxlint
 padolsey
 pandiyan
+patchelf
 pathed
 pcss
 pefc
