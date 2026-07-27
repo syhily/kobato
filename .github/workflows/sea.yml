@@ -47,9 +47,9 @@ jobs:
     env:
       database__url: postgres://test:test@127.0.0.1:5432/test
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 26
           cache: 'pnpm'
@@ -105,9 +105,9 @@ jobs:
           - os: macos-15
             target: darwin-arm64
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 26
           cache: 'pnpm'
@@ -156,9 +156,9 @@ jobs:
           - os: windows-11-arm
             target: win32-arm64
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 26
           cache: 'pnpm'
