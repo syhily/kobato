@@ -5,7 +5,8 @@ import { Fragment, useState } from 'react'
 
 import type { RateLimitSettings } from '@/shared/config/types'
 
-import { BOUNDS, BUCKET_META, GROUPS, type BucketKey } from '@/ui/admin/settings/rate-limit/constants'
+import { rateLimitBounds } from '@/shared/config/defaults'
+import { BUCKET_META, GROUPS, type BucketKey } from '@/ui/admin/settings/rate-limit/constants'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
@@ -54,12 +55,12 @@ function WindowEditCell({
           <SettingsInput
             flushOnBlur={flushOnBlur}
             type="number"
-            min={BOUNDS.windowSeconds.min}
-            max={BOUNDS.windowSeconds.max}
+            min={rateLimitBounds.windowSeconds.min}
+            max={rateLimitBounds.windowSeconds.max}
             className="h-7 text-xs"
             value={currentValue}
             onChange={(e) => {
-              const val = e.target.value === '' ? BOUNDS.windowSeconds.min : Number(e.target.value)
+              const val = e.target.value === '' ? rateLimitBounds.windowSeconds.min : Number(e.target.value)
               form.setValue(fieldName, val, { shouldDirty: true, shouldValidate: true })
             }}
             onKeyDown={(e) => {
@@ -108,12 +109,12 @@ function AttemptsEditCell({
     <SettingsInput
       flushOnBlur={flushOnBlur}
       type="number"
-      min={BOUNDS.maxAttempts.min}
-      max={BOUNDS.maxAttempts.max}
+      min={rateLimitBounds.maxAttempts.min}
+      max={rateLimitBounds.maxAttempts.max}
       className={cn('h-7 w-16 text-xs', error && 'border-destructive')}
       value={currentValue}
       onChange={(e) => {
-        const val = e.target.value === '' ? BOUNDS.maxAttempts.min : Number(e.target.value)
+        const val = e.target.value === '' ? rateLimitBounds.maxAttempts.min : Number(e.target.value)
         form.setValue(fieldName, val, { shouldDirty: true, shouldValidate: true })
       }}
     />

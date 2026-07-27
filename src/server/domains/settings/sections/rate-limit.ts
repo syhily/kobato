@@ -1,23 +1,14 @@
 import { z } from 'zod'
 
-import { rateLimitDefaults } from '@/shared/config/defaults'
+import { rateLimitBounds, rateLimitDefaults } from '@/shared/config/defaults'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 // Centralised rate-limiting policy. Every bucket maps 1:1 to a surface
-// in `@/server/infra/rate-limit`.
-//
-// Bounds: 60s ≤ window ≤ 24h (sub-minute windows treadmill the counter;
-// >24h could lock a returning visitor out for a day over one typo), and
-// 1 ≤ maxAttempts ≤ 1000 (0 would deny everyone; 1000 is a sanity
-// ceiling).
-const RATE_LIMIT_MIN_WINDOW = 60
-const RATE_LIMIT_MAX_WINDOW = 60 * 60 * 24
-const RATE_LIMIT_MIN_ATTEMPTS = 1
-const RATE_LIMIT_MAX_ATTEMPTS = 1000
-
+// in `@/server/infra/rate-limit`. The bounds live in
+// `@/shared/config/defaults` because the admin form mirrors them.
 const rateLimitBucketSchema = z.object({
-  windowSeconds: z.coerce.number().int().min(RATE_LIMIT_MIN_WINDOW).max(RATE_LIMIT_MAX_WINDOW),
-  maxAttempts: z.coerce.number().int().min(RATE_LIMIT_MIN_ATTEMPTS).max(RATE_LIMIT_MAX_ATTEMPTS),
+  windowSeconds: z.coerce.number().int().min(rateLimitBounds.windowSeconds.min).max(rateLimitBounds.windowSeconds.max),
+  maxAttempts: z.coerce.number().int().min(rateLimitBounds.maxAttempts.min).max(rateLimitBounds.maxAttempts.max),
 })
 
 export const RATE_LIMIT_BUCKET_KEYS = [
@@ -53,12 +44,6 @@ const rateLimitShape = unsafeCast<Record<(typeof RATE_LIMIT_BUCKET_KEYS)[number]
 )
 
 export const rateLimitSchema = z.object(rateLimitShape)
-
-/** Bounds re-exported so the admin form can mirror them in `min`/`max` attributes. */
-export const RATE_LIMIT_BOUNDS = {
-  windowSeconds: { min: RATE_LIMIT_MIN_WINDOW, max: RATE_LIMIT_MAX_WINDOW },
-  maxAttempts: { min: RATE_LIMIT_MIN_ATTEMPTS, max: RATE_LIMIT_MAX_ATTEMPTS },
-} as const
 
 // The seed stays in `@/shared/config/defaults` because the infra
 // rate-limit fallback (`@/server/infra/rate-limit`) shares it — this

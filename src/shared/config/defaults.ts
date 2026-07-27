@@ -1,3 +1,13 @@
+// Bounds shared by the server section schema and the admin form's
+// min/max attributes: 60s ≤ window ≤ 24h (sub-minute windows treadmill
+// the counter; >24h could lock a returning visitor out for a day over
+// one typo), and 1 ≤ maxAttempts ≤ 1000 (0 would deny everyone; 1000 is
+// a sanity ceiling).
+export const rateLimitBounds = {
+  windowSeconds: { min: 60, max: 60 * 60 * 24 },
+  maxAttempts: { min: 1, max: 1000 },
+} as const
+
 // Conservative rate-limit defaults used by the install seed, the
 // settings backfill, and the infra rate-limit fallback path.
 export const rateLimitDefaults = {

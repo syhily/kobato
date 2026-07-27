@@ -1,9 +1,6 @@
 import type { RateLimitSettings } from '@/shared/config/types'
 
-export const BOUNDS = {
-  windowSeconds: { min: 60, max: 60 * 60 * 24 },
-  maxAttempts: { min: 1, max: 1000 },
-} as const
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 export type BucketKey = keyof RateLimitSettings
 
@@ -255,26 +252,21 @@ export const BUCKET_META: Record<
   },
 }
 
-export const GROUPS: { label: string; keys: BucketKey[] }[] = [
-  {
-    label: '认证与登录',
-    keys: [
-      'signInIp',
-      'signInEmail',
-      'otpSendIp',
-      'otpSendEmail',
-      'otpVerifyIp',
-      'otpVerifyEmail',
-      'passkeyAuthBeginIp',
-      'passkeyAuthFinishIp',
-      'passkeyRegisterBeginIp',
-      'passkeyRegisterFinishIp',
-      'passkeySetForceIp',
-      'passkeyDeleteIp',
-    ],
-  },
-  { label: '密码重置', keys: ['passwordResetIp', 'passwordResetEmail', 'passwordResetTarget'] },
-  { label: '评论互动', keys: ['commentPostIp', 'commentPostEmail', 'likeIncreaseIp'] },
-  { label: '管理操作', keys: ['inviteIp', 'inviteEmail'] },
-  { label: '公共资源', keys: ['resourceIp'] },
-]
+// Groupings derived from each bucket's `group` field. First-appearance
+// order in BUCKET_META fixes both the group order and the key order
+// within a group, so rendering stays deterministic.
+export const GROUPS: { label: string; keys: BucketKey[] }[] = (() => {
+  const groups = new Map<string, BucketKey[]>()
+  // BUCKET_META is a full Record<BucketKey, …>, so its entries are
+  // exactly the bucket key set — the same narrowing Object.fromEntries
+  // needs elsewhere.
+  for (const [key, meta] of unsafeCast<[BucketKey, (typeof BUCKET_META)[BucketKey]][]>(Object.entries(BUCKET_META))) {
+    const keys = groups.get(meta.group)
+    if (keys) {
+      keys.push(key)
+    } else {
+      groups.set(meta.group, [key])
+    }
+  }
+  return [...groups].map(([label, keys]) => ({ label, keys }))
+})()
