@@ -5,8 +5,8 @@ import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
+import { setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { clearAllTables } from '#/_helpers/integration-db'
-import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
 import {
   __resetCacheCountersForTests,
   bumpCounter,

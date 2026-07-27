@@ -3,6 +3,7 @@ import type { Pool } from 'pg'
 
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { resetBlogSettingsForTests } from '#/_helpers/blog-settings'
 import { clearAllTables } from '#/_helpers/integration-db'
 import { makeAuthedCtx, makePublicCtx } from '#/_helpers/mock-ctx'
 import { callRpc, parseRpcJson } from '#/_helpers/rpc-call'
@@ -28,9 +29,7 @@ beforeEach(async () => {
   await clearAllTables(db)
   // Evict the in-process settings snapshot so tests don't reuse a
   // stale hydration promise from a previous worker.
-  const { BLOG_SETTINGS_SNAPSHOT_SLOT } = await import('@/shared/config/snapshot')
-  BLOG_SETTINGS_SNAPSHOT_SLOT.writeHydration(undefined)
-  BLOG_SETTINGS_SNAPSHOT_SLOT.write(null)
+  resetBlogSettingsForTests()
   // Seed the three rows that `hydrateBlogSettings` treats as the
   // "installed" baseline (general + assets + limits).
   await db.insert(setting).values([

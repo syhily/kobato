@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
-import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
+import { setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 
 vi.mock('@/server/domains/backup/services/backup', () => ({
   createBackup: vi.fn(async () => ({ fileName: 'backup/x.sql.gz', size: 100 })),

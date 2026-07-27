@@ -18,7 +18,7 @@ const pool: Pool = poolManager.pool
 afterAll(async () => {
   await closePool(pool)
 })
-const { setBlogSettingsBundleForTests } = await import('@/server/domains/settings/services/test-utils')
+const { setBlogSettingsBundleForTests } = await import('#/_helpers/blog-settings')
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('#/_helpers/blog-settings')
 
 beforeEach(async () => {

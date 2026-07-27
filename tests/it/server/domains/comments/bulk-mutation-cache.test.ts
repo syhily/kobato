@@ -20,7 +20,7 @@ vi.mock('@/server/infra/email/sender', () => ({
   sendPasswordReset: vi.fn(),
 }))
 
-const { setBlogSettingsBundleForTests } = await import('@/server/domains/settings/services/test-utils')
+const { setBlogSettingsBundleForTests } = await import('#/_helpers/blog-settings')
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('#/_helpers/blog-settings')
 
 // Import the comments-domain service entry points AFTER the mocks are

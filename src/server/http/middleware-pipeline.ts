@@ -207,12 +207,12 @@ export async function buildLoadContext(c: { var: Env['Variables']; req: { raw: R
   //
   // Route loaders (e.g. `routes/public/home.tsx`) call
   // `requireBlogSettingsSection()` which reads the in-process snapshot
-  // synchronously. If we fire-and-forget (warmBlogSettingsSnapshot),
-  // loaders can run before the DB round-trip finishes and hit the
+  // synchronously. If we fire-and-forget the hydration, loaders can run
+  // before the DB round-trip finishes and hit the
   // "Blog settings have not been hydrated yet" error. Awaiting here
   // guarantees the snapshot is populated before React Router calls any
-  // loader. See `tests/middleware.pipeline.test.ts` for the regression
-  // guard.
+  // loader. See `tests/it/server/http/middlewares/pipeline.test.ts` for
+  // the regression guard.
   await hydrateBlogSettings(rc.db)
   // The single canonical key — every loader/action reads it via
   // `getRequestContext`. Nothing is re-derived per route.

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
-import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
+import { setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 
 // The storage seam stays real (registry → S3 backend); only the AWS SDK is
 // mocked at the boundary. That keeps the availability checks honest — the

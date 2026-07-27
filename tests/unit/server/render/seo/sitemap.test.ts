@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
-import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
+import { setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 
 // The sitemap builder only reads `slug` + `firstPublishedAt` + `publishedAt`
 // from the slim projections. Mock them to return a small seeded set so we

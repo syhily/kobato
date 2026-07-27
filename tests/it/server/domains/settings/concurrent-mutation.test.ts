@@ -3,6 +3,7 @@ import type { Pool } from 'pg'
 
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { resetBlogSettingsForTests } from '#/_helpers/blog-settings'
 import { clearAllTables } from '#/_helpers/integration-db'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 import { callRpc } from '#/_helpers/rpc-call'
@@ -26,9 +27,7 @@ afterAll(async () => {
 
 beforeEach(async () => {
   await clearAllTables(db)
-  const { BLOG_SETTINGS_SNAPSHOT_SLOT } = await import('@/shared/config/snapshot')
-  BLOG_SETTINGS_SNAPSHOT_SLOT.writeHydration(undefined)
-  BLOG_SETTINGS_SNAPSHOT_SLOT.write(null)
+  resetBlogSettingsForTests()
 
   // Seed baseline rows so hydrateBlogSettings sees an installed deployment
   await db.insert(setting).values([

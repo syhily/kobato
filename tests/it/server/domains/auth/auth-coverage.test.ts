@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
+import { setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { clearAllTables } from '#/_helpers/integration-db'
 import { flushAuditLog } from '@/server/domains/audit/services/batcher'
 import { establishLoginSession, logout, userSession } from '@/server/domains/auth/primitives'
@@ -36,7 +37,6 @@ import {
   revokeTokensFor,
   verifyOtpToken,
 } from '@/server/domains/auth/verification-tokens'
-import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
 import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { session as sessionTable } from '@/server/infra/db/schema/session'

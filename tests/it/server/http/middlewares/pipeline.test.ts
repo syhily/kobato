@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { BlogSession } from '@/server/domains/auth/session-storage'
 
+import { resetBlogSettingsForTests } from '#/_helpers/blog-settings'
 import { makeRequestContext } from '#/_helpers/request-context'
 import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@/shared/config/snapshot'
 
@@ -55,8 +56,7 @@ function makeContextStub(overrides: Record<string, unknown> = {}) {
 describe('middleware-pipeline / buildLoadContext', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    BLOG_SETTINGS_SNAPSHOT_SLOT.write(null)
-    BLOG_SETTINGS_SNAPSHOT_SLOT.writeHydration(undefined)
+    resetBlogSettingsForTests()
   })
 
   it('awaits hydrateBlogSettings before returning the context', async () => {

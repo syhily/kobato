@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Logger } from '@/server/infra/logger'
 
-const { setBlogSettingsBundleForTests } = await import('@/server/domains/settings/services/test-utils')
+const { setBlogSettingsBundleForTests } = await import('#/_helpers/blog-settings')
 const { fireAndForgetNotify, sendAdminNotification } = await import('@/server/infra/email/admin-notification')
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('#/_helpers/blog-settings')
 

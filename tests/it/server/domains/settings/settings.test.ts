@@ -48,10 +48,8 @@ const pool = {} as any
 const settingQueries = await import('@/server/infra/db/operations/setting')
 const { updateBlogSettingsSection } = await import('@/server/domains/settings/services/core')
 const { hydrateBlogSettings } = await import('@/server/domains/settings/services/hydrate')
-const { setBlogSettingsBundleForTests, warmBlogSettingsSnapshot } =
-  await import('@/server/domains/settings/services/test-utils')
+const { resetBlogSettingsForTests, setBlogSettingsBundleForTests } = await import('#/_helpers/blog-settings')
 const { getBlogSettingsBundleSync, getCacheSettings } = await import('@/shared/config/getters')
-const { BLOG_SETTINGS_SNAPSHOT_SLOT } = await import('@/shared/config/snapshot')
 const { DomainError } = await import('@/server/infra/http/errors')
 
 // Bucketed settings fixture. The DB stores one row per section so
@@ -252,7 +250,7 @@ beforeEach(async () => {
   vi.mocked(settingQueries.findSettingsByScopePrefix).mockReset()
   vi.mocked(settingQueries.upsertSetting).mockReset()
   vi.clearAllMocks()
-  setBlogSettingsBundleForTests(undefined)
+  resetBlogSettingsForTests()
 })
 
 describe('services/settings — hydrateBlogSettings', () => {
@@ -1238,7 +1236,7 @@ describe('services/settings — section patch merge', () => {
 
 describe('services/settings — snapshot reader', () => {
   it('getBlogSettingsBundleSync returns null when the slot is empty (pre-install)', () => {
-    setBlogSettingsBundleForTests(undefined)
+    resetBlogSettingsForTests()
     expect(getBlogSettingsBundleSync()).toBeNull()
   })
 
@@ -1320,17 +1318,5 @@ describe('services/settings — snapshot reader', () => {
     expect(cache.imageMeta).toEqual({ prefix: 'image-meta:', ttlSeconds: 60 * 60 })
     const upsertCalls = vi.mocked(settingQueries.upsertSetting).mock.calls
     expect(upsertCalls.some((call) => call[3] === 'blog.cache')).toBe(true)
-  })
-})
-
-describe('services/settings — warmBlogSettingsSnapshot', () => {
-  it('catches a failed hydration without leaking an unhandled rejection', async () => {
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockRejectedValue(new Error('DB pool exhausted'))
-
-    expect(() => warmBlogSettingsSnapshot(db)).not.toThrow()
-
-    await new Promise((resolve) => setTimeout(resolve, 0))
-
-    expect(BLOG_SETTINGS_SNAPSHOT_SLOT.readHydration()).toBeUndefined()
   })
 })

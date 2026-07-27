@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CustomQuote, DailyQuoteSource } from '@/shared/config/types'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
-import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
+import { setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { getDailyQuote, pickForDate } from '@/server/render/calendar/daily-quote'
 import { LOCAL_QUOTES } from '@/server/render/calendar/local-quotes'
 

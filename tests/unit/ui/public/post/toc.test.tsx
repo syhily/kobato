@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { MarkdownHeading } from '@/shared/utils/toc'
 
-import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
+import { setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { TableOfContents } from '@/ui/public/post/TableOfContents'
 

@@ -49,7 +49,7 @@ vi.mock('@/server/infra/email/templates/SignInOtp', () => ({
 }))
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
-import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
+import { setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import {
   checkMailReady,
   invalidateMailTransportCache,

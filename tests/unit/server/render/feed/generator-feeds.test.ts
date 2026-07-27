@@ -25,7 +25,7 @@ vi.mock('@/server/render/pt-html', () => ({
 import type { Post, Page } from '@/shared/types/catalog'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
-import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
+import { setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { generateFeeds } from '@/server/render/feed/generator'
 
 // Perimeter coverage for `generateFeeds`: the RSS/Atom envelope and the

@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { RequestFacts } from '@/server/infra/http/request-facts'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
-import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
+import { setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 
 // `trackPageView` is the single owner of "what counts as a view": one gate
 // (prefetch via `facts.purpose`, admin exemption with the `trackAdmin`

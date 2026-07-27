@@ -9,15 +9,13 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup } from '@testing-library/react'
 import { afterEach } from 'vitest'
 
-import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
-import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@/shared/config/snapshot'
+import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import '#/_helpers/env'
 
-BLOG_SETTINGS_SNAPSHOT_SLOT.write(TEST_BLOG_SETTINGS_BUNDLE)
-BLOG_SETTINGS_SNAPSHOT_SLOT.writeHydration(Promise.resolve(TEST_BLOG_SETTINGS_BUNDLE))
+setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
 
 // Auto-reset the snapshot + DOM after every test to prevent isolation leaks.
 afterEach(() => {
   cleanup()
-  BLOG_SETTINGS_SNAPSHOT_SLOT.write(TEST_BLOG_SETTINGS_BUNDLE)
+  setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
 })

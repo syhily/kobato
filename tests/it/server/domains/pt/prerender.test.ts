@@ -10,7 +10,7 @@ import { clearAllTables } from '#/_helpers/integration-db'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { music } from '@/server/infra/db/schema/media'
 
-const { setBlogSettingsBundleForTests } = await import('@/server/domains/settings/services/test-utils')
+const { setBlogSettingsBundleForTests } = await import('#/_helpers/blog-settings')
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('#/_helpers/blog-settings')
 
 // URL building is stubbed at the public-url seam: every path resolves to a

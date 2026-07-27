@@ -6,14 +6,30 @@
 // worker so individual tests don't have to.
 //
 // `TEST_BLOG_SETTINGS_BUNDLE` is the bucketed shape that mirrors the
-// on-disk `setting('blog.<section>')` rows. Values mirror the historical
-// defaults so snapshot-based tests (post detail / home / SEO head / …)
-// keep working without their `__snapshots__` files churning every time an
-// unrelated default changes. Tests that need a different shape can call
-// `setBlogSettingsBundleForTests(custom)` in their own `beforeEach`.
+// on-disk `setting('blog.<section>')` rows. Sections whose fixture values
+// are byte-identical to the registry seed IMPORT those defaults (seo,
+// mail, newsletter, rateLimit, backup, limits, analytics, security) so
+// they can never drift; the rest are deliberate historical freezes that
+// keep snapshot-based tests (post detail / home / SEO head / …) from
+// churning every time an unrelated default changes. The contract test
+// `tests/unit/shared/contracts/blog-settings-fixture.test.ts` parses
+// every section against its registry schema so a frozen value that stops
+// satisfying its schema fails loudly. Tests that need a different shape
+// can call `setBlogSettingsBundleForTests(custom)` in their own
+// `beforeEach`.
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
+import { analyticsDefaults } from '@/server/domains/settings/sections/analytics'
+import { backupDefaults } from '@/server/domains/settings/sections/backup'
+import { limitsDefaults } from '@/server/domains/settings/sections/limits'
+import { mailDefaults } from '@/server/domains/settings/sections/mail'
+import { newsletterDefaults } from '@/server/domains/settings/sections/newsletter'
+import { securityDefaults } from '@/server/domains/settings/sections/security'
+import { seoDefaults } from '@/server/domains/settings/sections/seo'
+import { rateLimitDefaults } from '@/shared/config/defaults'
+import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@/shared/config/snapshot'
 import { CACHE_BUCKET_FALLBACKS } from '@/shared/types/cache'
+import { deepClone, deepFreeze } from '@/shared/utils/tools'
 
 export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
   siteIdentity: {
@@ -97,32 +113,10 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
       tokenTtlSeconds: 1800,
     },
   },
-  seo: {
-    toc: { minHeadingLevel: 2, maxHeadingLevel: 3 },
-    og: { width: 1200, height: 768 },
-  },
-
-  mail: {
-    mail: {
-      enabled: false,
-      host: 'api.zeabur.com',
-      apiKey: '',
-      sender: 'noreply@example.com',
-      transport: 'zeabur',
-      smtpHost: '',
-      smtpPort: 587,
-      smtpUser: '',
-      smtpPass: '',
-      smtpSecure: false,
-      smtpRequireTls: true,
-      smtpRejectUnauthorized: true,
-      mailgunDomain: '',
-      mailgunApiKey: '',
-    },
-  },
-  newsletter: {
-    newsletter: { enabled: false, fromName: '', subjectPrefix: '' },
-  },
+  // Byte-identical to the registry seeds — imported, not copied.
+  seo: seoDefaults,
+  mail: mailDefaults,
+  newsletter: newsletterDefaults,
   cache: {
     cache: {
       og: { ...CACHE_BUCKET_FALLBACKS.og, ttlSeconds: 60 * 60 * 24 * 7 },
@@ -135,34 +129,13 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
     },
   },
   // Rate-limit fixture mirrors the historical hard-coded thresholds
-  // so the suite's existing 429 assertions (auth flow, comment reply)
+  // (byte-identical to `rateLimitDefaults`, hence imported) so the
+  // suite's existing 429 assertions (auth flow, comment reply)
   // keep passing without per-test bundle surgery. Tests that need to
   // exercise the "exceeded" branch in a single hit can override the
   // bucket through `setBlogSettingsBundleForTests({ ..., rateLimit:
   // { ...rateLimit, signInIp: { windowSeconds: 60, maxAttempts: 1 } } })`.
-  rateLimit: {
-    signInIp: { windowSeconds: 60 * 30, maxAttempts: 5 },
-    commentPostIp: { windowSeconds: 60 * 60, maxAttempts: 12 },
-    commentPostEmail: { windowSeconds: 60 * 60, maxAttempts: 8 },
-    likeIncreaseIp: { windowSeconds: 60 * 60, maxAttempts: 30 },
-    inviteIp: { windowSeconds: 60 * 60, maxAttempts: 5 },
-    inviteEmail: { windowSeconds: 60 * 60, maxAttempts: 1 },
-    passwordResetIp: { windowSeconds: 60 * 30, maxAttempts: 3 },
-    passwordResetEmail: { windowSeconds: 60 * 5, maxAttempts: 1 },
-    passwordResetTarget: { windowSeconds: 60, maxAttempts: 1 },
-    resourceIp: { windowSeconds: 60, maxAttempts: 60 },
-    otpSendIp: { windowSeconds: 60 * 5, maxAttempts: 3 },
-    otpSendEmail: { windowSeconds: 60 * 5, maxAttempts: 1 },
-    otpVerifyIp: { windowSeconds: 60 * 5, maxAttempts: 5 },
-    otpVerifyEmail: { windowSeconds: 60 * 5, maxAttempts: 5 },
-    signInEmail: { windowSeconds: 60 * 30, maxAttempts: 5 },
-    passkeyAuthBeginIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
-    passkeyAuthFinishIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
-    passkeyRegisterBeginIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
-    passkeyRegisterFinishIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
-    passkeySetForceIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
-    passkeyDeleteIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
-  },
+  rateLimit: rateLimitDefaults,
   search: {
     search: {
       enabled: false,
@@ -181,23 +154,42 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
     post: [],
     code: [],
   },
-  backup: {
-    scheduled: { enabled: false, frequency: 'daily', hour: 3, minute: 0 },
-    retention: { enabled: true, days: 30 },
-  },
-  limits: {
-    maxRequestBodySize: 10 * 1024 * 1024,
-    sessionMaxAge: 60 * 60 * 24 * 30,
-    auditLogDbRetentionDays: 30,
-    auditLogArchiveRetentionDays: 180,
-  },
-  analytics: {
-    analytics: { trackAdmin: false, keepBotRows: false },
-  },
+  backup: backupDefaults,
+  limits: limitsDefaults,
+  analytics: analyticsDefaults,
+  // The `as const` seed's empty `readonly []` slots won't assign to the
+  // DTO's mutable arrays — spread them into fresh mutable arrays (the
+  // values still track `securityDefaults` by construction).
   security: {
-    csrf: { enabled: true, exemptPaths: [] },
-    cors: { enabled: false, origins: [] },
-    otp: { enabled: false },
-    passkey: { enabled: false },
+    ...securityDefaults,
+    csrf: { ...securityDefaults.csrf, exemptPaths: [...securityDefaults.csrf.exemptPaths] },
+    cors: { ...securityDefaults.cors, origins: [...securityDefaults.cors.origins] },
   },
+}
+
+/**
+ * Seed (or clear) the in-process blog-settings snapshot for tests.
+ * Custom bundles are deep-cloned + deep-frozen so per-test overrides
+ * can't leak mutations into a sibling test. The shared fixture itself
+ * keeps its identity (suites assert `toBe(TEST_BLOG_SETTINGS_BUNDLE)`)
+ * and is frozen in place instead — `deepFreeze` is idempotent, so the
+ * per-test re-seed is a no-op after the first call. `undefined` drops
+ * the in-flight hydration only (next read re-hydrates); `null` installs
+ * a "no settings" snapshot.
+ */
+export function setBlogSettingsBundleForTests(value: BlogSettingsBundle | null | undefined): void {
+  const frozen =
+    value == null ? value : value === TEST_BLOG_SETTINGS_BUNDLE ? deepFreeze(value) : deepFreeze(deepClone(value))
+  BLOG_SETTINGS_SNAPSHOT_SLOT.write(frozen)
+  BLOG_SETTINGS_SNAPSHOT_SLOT.writeHydration(frozen === undefined ? undefined : Promise.resolve(frozen ?? null))
+}
+
+/**
+ * Empty the in-process blog-settings snapshot (value `null`, no
+ * in-flight hydration), restoring the pre-install state so the next
+ * `hydrateBlogSettings()` re-reads from the DB.
+ */
+export function resetBlogSettingsForTests(): void {
+  BLOG_SETTINGS_SNAPSHOT_SLOT.write(null)
+  BLOG_SETTINGS_SNAPSHOT_SLOT.writeHydration(undefined)
 }

@@ -12,7 +12,7 @@ vi.mock('@/server/infra/cache/registry', () => ({
 }))
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
-import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
+import { setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { generateEmbedding } from '@/server/infra/search/openai'
 
 // The db handle is only forwarded to the mocked cache module — a stand-in

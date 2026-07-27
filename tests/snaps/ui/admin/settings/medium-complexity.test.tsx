@@ -204,8 +204,8 @@ const baseSecurity: SecuritySettings = {
 }
 
 const baseSeo: SeoSettings = {
-  toc: { minHeadingLevel: 2, maxHeadingLevel: 3 },
-  og: { width: 1200, height: 768 },
+  toc: { minHeadingLevel: 2, maxHeadingLevel: 4 },
+  og: { width: 1200, height: 630 },
 }
 
 const baseSidebar: SidebarSettings = {

@@ -15,7 +15,7 @@ import { user } from '@/server/infra/db/schema/user'
 vi.mock('@/server/domains/pages/repo', { spy: true })
 vi.mock('@/server/domains/pages/services/public-query', { spy: true })
 
-const { setBlogSettingsBundleForTests } = await import('@/server/domains/settings/services/test-utils')
+const { setBlogSettingsBundleForTests } = await import('#/_helpers/blog-settings')
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('#/_helpers/blog-settings')
 
 const repo = await import('@/server/domains/pages/repo')
