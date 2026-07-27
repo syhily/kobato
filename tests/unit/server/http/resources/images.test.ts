@@ -29,20 +29,14 @@ vi.mock('@/server/infra/rate-limit', () => ({
 }))
 
 vi.mock('@/server/infra/cache/registry', () => ({
-  AvatarStatus: { NO_AVATAR: 1, HAVE_AVATAR: 0 },
-  get: vi.fn(),
-  set: vi.fn().mockResolvedValue(undefined),
   through: vi.fn(),
 }))
 
 vi.mock('@/server/domains/comments/services/avatar', () => ({
   defaultAvatarUrl: vi.fn(() => '/images/default-avatar.png'),
-  fetchAvatarImage: vi.fn(),
-  fetchQQAvatarImage: vi.fn(),
-  isQQEmail: vi.fn((email: string) => email.endsWith('@qq.com')),
-  resolveAvatarInfo: vi.fn(),
-  // Pass-through stub so the tests can watch `?s=` flow into the cache and
-  // fetch calls; the clamping rules live in the service's own unit tests.
+  serveAvatar: vi.fn(),
+  // Pass-through stub so the tests can watch `?s=` flow into the domain
+  // call; the clamping rules live in the service's own unit tests.
   resolveAvatarSize: vi.fn((raw: string | undefined) => (raw === undefined || raw === '' ? 120 : Number(raw))),
 }))
 
@@ -60,13 +54,13 @@ vi.mock('@/shared/utils/urls', () => ({
   joinUrl: vi.fn((base: string, path: string) => `${base}${path}`),
 }))
 
-import { fetchAvatarImage, fetchQQAvatarImage, resolveAvatarInfo } from '@/server/domains/comments/services/avatar'
+import { serveAvatar } from '@/server/domains/comments/services/avatar'
 import { findPublicPageMetaBySlug } from '@/server/domains/pages/services/public-query'
 import { findPublicPostMetaBySlug } from '@/server/domains/posts/services/single'
 import { findCategoryBySlug } from '@/server/domains/taxonomies/categories/services/query'
 import { serveCalendar } from '@/server/http/resources/calendar'
 import { imagesRouter } from '@/server/http/resources/images'
-import { AvatarStatus, get, through } from '@/server/infra/cache/registry'
+import { through } from '@/server/infra/cache/registry'
 import { readBucket, tryKeyedRateLimit } from '@/server/infra/rate-limit'
 import { drawOpenGraph } from '@/server/render/og/render'
 
@@ -95,6 +89,9 @@ describe('images resource', () => {
     ;(findPublicPostMetaBySlug as ReturnType<typeof vi.fn>).mockResolvedValue(undefined)
     ;(findPublicPageMetaBySlug as ReturnType<typeof vi.fn>).mockResolvedValue(undefined)
     ;(findCategoryBySlug as ReturnType<typeof vi.fn>).mockResolvedValue(undefined)
+    // Default: the domain reports "no avatar" — the redirect mapping tests
+    // override per case.
+    ;(serveAvatar as ReturnType<typeof vi.fn>).mockResolvedValue({ kind: 'redirect' })
   })
 
   it('renders an OG image for a post', async () => {
@@ -140,34 +137,28 @@ describe('images resource', () => {
     expect(res.status).toBe(200)
   })
 
-  it('serves a cached avatar', async () => {
-    ;(resolveAvatarInfo as ReturnType<typeof vi.fn>).mockResolvedValue({ email: 'a@example.com', hash: 'abc' })
-    ;(get as ReturnType<typeof vi.fn>).mockResolvedValue({
-      status: AvatarStatus.HAVE_AVATAR,
-      buffer: Buffer.from('av'),
-    })
-    ;(fetchAvatarImage as ReturnType<typeof vi.fn>).mockResolvedValue(Buffer.from('av'))
+  it('maps a png outcome to a 200 image/png response', async () => {
+    ;(serveAvatar as ReturnType<typeof vi.fn>).mockResolvedValue({ kind: 'png', buffer: Buffer.from('av') })
     const res = await requestImages('http://localhost/images/avatar/abc.png')
     expect(res.status).toBe(200)
+    expect(res.headers.get('Content-Type')).toBe('image/png')
+    expect(res.headers.get('Cache-Control')).toBe('public, max-age=604800')
+    expect(Buffer.from(await res.arrayBuffer())).toEqual(Buffer.from('av'))
   })
 
-  it('threads the `?s=` size into the cache lookup, defaulting to 120', async () => {
-    ;(resolveAvatarInfo as ReturnType<typeof vi.fn>).mockResolvedValue({ email: null, hash: 'abc' })
-    ;(get as ReturnType<typeof vi.fn>).mockResolvedValue({
-      status: AvatarStatus.HAVE_AVATAR,
-      buffer: Buffer.from('av'),
-    })
-    const res = await requestImages('http://localhost/images/avatar/abc.png?s=256')
-    expect(res.status).toBe(200)
-    expect(get).toHaveBeenCalledWith({}, 'avatar', { size: 256, email: 'abc' })
-    ;(get as ReturnType<typeof vi.fn>).mockClear()
-    await requestImages('http://localhost/images/avatar/abc.png')
-    expect(get).toHaveBeenCalledWith({}, 'avatar', { size: 120, email: 'abc' })
-  })
-
-  it('falls back to default avatar when hash is empty', async () => {
-    ;(resolveAvatarInfo as ReturnType<typeof vi.fn>).mockResolvedValue({ email: '', hash: null })
+  it('maps a redirect outcome to the default avatar URL', async () => {
+    ;(serveAvatar as ReturnType<typeof vi.fn>).mockResolvedValue({ kind: 'redirect' })
     const res = await requestImages('http://localhost/images/avatar/abc.png')
     expect(res.status).toBe(302)
+    expect(res.headers.get('Location')).toBe('/images/default-avatar.png')
+  })
+
+  it('threads the `?s=` size into the domain call, defaulting to 120', async () => {
+    const res = await requestImages('http://localhost/images/avatar/abc.png?s=256')
+    expect(res.status).toBe(302)
+    expect(serveAvatar).toHaveBeenCalledWith({}, 'abc', 256)
+    ;(serveAvatar as ReturnType<typeof vi.fn>).mockClear()
+    await requestImages('http://localhost/images/avatar/abc.png')
+    expect(serveAvatar).toHaveBeenCalledWith({}, 'abc', 120)
   })
 })

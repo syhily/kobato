@@ -30,10 +30,7 @@ vi.mock('@/server/infra/cache/registry', () => ({
 // findPublicPostMetaBySlug / findPublicPageMetaBySlug (mocked below).
 vi.mock('@/server/domains/comments/services/avatar', () => ({
   defaultAvatarUrl: () => 'https://example.test/images/default-avatar.png',
-  fetchAvatarImage: vi.fn().mockResolvedValue(Buffer.from([0x89, 0x50, 0x4e, 0x47])),
-  fetchQQAvatarImage: vi.fn(),
-  isQQEmail: () => false,
-  resolveAvatarInfo: vi.fn().mockImplementation(async (hash: string) => ({ email: null, hash })),
+  serveAvatar: vi.fn().mockResolvedValue({ kind: 'redirect' }),
   resolveAvatarSize: vi.fn((raw: string | undefined) => (raw === undefined || raw === '' ? 120 : Number(raw))),
 }))
 vi.mock('@/server/render/og/render', () => ({
@@ -92,18 +89,18 @@ app.route('/', imagesRouter)
 
 describe('imagesRouter avatar', () => {
   it('extracts the bare hash from `/images/avatar/<hash>.png`', async () => {
-    const { resolveAvatarInfo } = await import('@/server/domains/comments/services/avatar')
+    const { serveAvatar } = await import('@/server/domains/comments/services/avatar')
     const res = await app.request('/images/avatar/abcdef0123456789.png')
     // Route does NOT 404 (it now resolves the hash; the path-parser bug
     // would have driven this into the missing-param fallback).
     expect(res.status).toBeLessThan(500)
-    expect(vi.mocked(resolveAvatarInfo)).toHaveBeenCalledWith(undefined, 'abcdef0123456789')
+    expect(vi.mocked(serveAvatar)).toHaveBeenCalledWith(undefined, 'abcdef0123456789', 120)
   })
 
   it('matches numeric ids the same way', async () => {
-    const { resolveAvatarInfo } = await import('@/server/domains/comments/services/avatar')
+    const { serveAvatar } = await import('@/server/domains/comments/services/avatar')
     await app.request('/images/avatar/42.png')
-    expect(vi.mocked(resolveAvatarInfo)).toHaveBeenNthCalledWith(2, undefined, '42')
+    expect(vi.mocked(serveAvatar)).toHaveBeenNthCalledWith(2, undefined, '42', 120)
   })
 
   it('rejects non-png extensions with 404', async () => {

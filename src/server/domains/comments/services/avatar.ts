@@ -2,7 +2,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { Buffer } from 'node:buffer'
 
-import { AvatarStatus, set } from '@/server/infra/cache/registry'
+import { type AvatarEntry, AvatarStatus, get, set } from '@/server/infra/cache/registry'
 import { findEmailById } from '@/server/infra/db/operations/user'
 import { compressImage, imageWidth } from '@/server/infra/image/compress'
 import { getLogger } from '@/server/infra/logger'
@@ -214,6 +214,68 @@ export async function resolveAvatarInfo(
     return { email, hash: await encodedEmail(email) }
   }
   return { email: null, hash: rawHash }
+}
+
+// ─── Avatar serving ──────────────────────────────────────────────────────
+
+/** The outcome of serving one `/images/avatar/:filename.png` request:
+ *  either the PNG bytes to respond with, or `redirect` — the caller sends
+ *  the requester to `defaultAvatarUrl()`. */
+export type ServedAvatar = { kind: 'png'; buffer: Buffer } | { kind: 'redirect' }
+
+/** The avatar endpoint's entire serving policy, sunk out of the HTTP
+ *  resource: id/hash translation, the negative-cache writes, the QQ
+ *  upstream branch, and the gravatar read-through branch. Every cache
+ *  entry is keyed `{ size, email }` and written exactly once per path.
+ *
+ *  QQ policy — deliberately NOT read-through (preserved verbatim from the
+ *  inline handler): QQ emails never read the cache. Every request fetches
+ *  the QQ CDN upstream and overwrites the entry (HAVE on success, a
+ *  negative on miss), so a stale negative can never shadow a QQ avatar
+ *  that appears later. Revisit separately if this turns out wrong.
+ *
+ *  Gravatar policy — read-through: a cached entry (positive or negative)
+ *  serves directly; a miss fetches the mirror once and records the
+ *  outcome. Concurrent reads of the same email coalesce inside the cache
+ *  module, so a hot avatar (e.g. the site owner appearing in every
+ *  comment thread) only round-trips kv_cache once per concurrent burst
+ *  instead of once per requesting comment. */
+export async function serveAvatar(db: NodePgDatabase, hash: string, size: number): Promise<ServedAvatar> {
+  const { email, hash: canonical } = await resolveAvatarInfo(db, hash)
+  if (canonical === null) {
+    // Numeric id with no user row — no upstream to ask, record the
+    // negative under the raw param so repeats short-circuit.
+    await set(db, 'avatar', { size, email: hash }, { status: AvatarStatus.NO_AVATAR, buffer: null })
+    return { kind: 'redirect' }
+  }
+
+  if (email !== null && isQQEmail(email)) {
+    const buffer = await fetchQQAvatarImage(email, size)
+    if (buffer === null) {
+      await set(db, 'avatar', { size, email: canonical }, { status: AvatarStatus.NO_AVATAR, buffer: null })
+      return { kind: 'redirect' }
+    }
+    await set(db, 'avatar', { size, email: canonical }, { status: AvatarStatus.HAVE_AVATAR, buffer })
+    return { kind: 'png', buffer }
+  }
+
+  const cached = await get<'avatar', AvatarEntry>(db, 'avatar', { size, email: canonical })
+  if (cached !== null) {
+    if (cached.status === AvatarStatus.NO_AVATAR) {
+      return { kind: 'redirect' }
+    }
+    if (cached.buffer !== null) {
+      return { kind: 'png', buffer: cached.buffer }
+    }
+  }
+
+  const buffer = await fetchAvatarImage(canonical, size)
+  if (buffer === null) {
+    await set(db, 'avatar', { size, email: canonical }, { status: AvatarStatus.NO_AVATAR, buffer: null })
+    return { kind: 'redirect' }
+  }
+  await set(db, 'avatar', { size, email: canonical }, { status: AvatarStatus.HAVE_AVATAR, buffer })
+  return { kind: 'png', buffer }
 }
 
 // ─── Site-owner GitHub avatar ────────────────────────────────────────────

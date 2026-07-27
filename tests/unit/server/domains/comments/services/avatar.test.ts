@@ -3,10 +3,12 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { Buffer } from 'node:buffer'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { warnMock, imageWidthMock, cacheSetMock } = vi.hoisted(() => ({
+const { warnMock, imageWidthMock, cacheGetMock, cacheSetMock, findEmailByIdMock } = vi.hoisted(() => ({
   warnMock: vi.fn(),
   imageWidthMock: vi.fn(),
+  cacheGetMock: vi.fn(),
   cacheSetMock: vi.fn(),
+  findEmailByIdMock: vi.fn(),
 }))
 vi.mock('@/server/infra/logger', () => ({
   getLogger: () => ({ warn: warnMock }),
@@ -14,7 +16,12 @@ vi.mock('@/server/infra/logger', () => ({
 
 vi.mock('@/server/infra/cache/registry', () => ({
   AvatarStatus: { HAVE_AVATAR: 0, NO_AVATAR: 1 },
+  get: cacheGetMock,
   set: cacheSetMock,
+}))
+
+vi.mock('@/server/infra/db/operations/user', () => ({
+  findEmailById: findEmailByIdMock,
 }))
 
 vi.mock('@/server/infra/image/compress', () => ({
@@ -23,6 +30,7 @@ vi.mock('@/server/infra/image/compress', () => ({
 }))
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
+import { setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import {
   defaultAvatarUrl,
   fetchAvatarImage,
@@ -32,8 +40,9 @@ import {
   isQQEmail,
   resolveAvatarForEmail,
   resolveAvatarSize,
+  serveAvatar,
 } from '@/server/domains/comments/services/avatar'
-import { setBlogSettingsBundleForTests } from '@/server/domains/settings/services/test-utils'
+import { encodedEmail } from '@/shared/utils/security'
 
 // The db handle is only forwarded to the mocked cache registry — a
 // stand-in is enough for the unit scope.
@@ -42,8 +51,14 @@ const db = {} as NodePgDatabase
 beforeEach(() => {
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
   warnMock.mockClear()
+  cacheGetMock.mockReset()
+  // Default: a cache miss.
+  cacheGetMock.mockResolvedValue(null)
   cacheSetMock.mockReset()
   cacheSetMock.mockResolvedValue(undefined)
+  findEmailByIdMock.mockReset()
+  // Default: no user row — only the numeric-id serving paths consult it.
+  findEmailByIdMock.mockResolvedValue(null)
   imageWidthMock.mockReset()
   // Default: upstream serves a large-enough image so the size guard passes.
   imageWidthMock.mockResolvedValue(512)
@@ -328,5 +343,109 @@ describe('domains/comments/services/avatar — resolveAvatarForEmail', () => {
     const hash = await resolveAvatarForEmail(db, '12345@qq.com')
 
     expect(cacheSetMock).toHaveBeenCalledWith(db, 'avatar', { size: 120, email: hash }, { status: 1, buffer: null })
+  })
+})
+
+describe('domains/comments/services/avatar — serveAvatar', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('writes a negative entry and redirects when the hash resolves to no user', async () => {
+    // Numeric id with no user row: nothing to ask upstream, so the raw
+    // param itself keys the negative entry.
+    const result = await serveAvatar(db, '42', 120)
+
+    expect(result).toEqual({ kind: 'redirect' })
+    expect(cacheSetMock).toHaveBeenCalledWith(db, 'avatar', { size: 120, email: '42' }, { status: 1, buffer: null })
+    expect(cacheGetMock).not.toHaveBeenCalled()
+  })
+
+  it('serves a QQ hit as png and overwrites the cache with HAVE_AVATAR — without ever reading it', async () => {
+    findEmailByIdMock.mockResolvedValue('12345@qq.com')
+    mockFetch([new Response(Buffer.from([0xff, 0xd8]), { status: 200 })])
+
+    const result = await serveAvatar(db, '42', 120)
+
+    expect(result).toEqual({ kind: 'png', buffer: expect.any(Buffer) })
+    // The QQ policy is deliberately not read-through: no cache read.
+    expect(cacheGetMock).not.toHaveBeenCalled()
+    const hash = await encodedEmail('12345@qq.com')
+    expect(cacheSetMock).toHaveBeenCalledWith(
+      db,
+      'avatar',
+      { size: 120, email: hash },
+      { status: 0, buffer: expect.any(Buffer) },
+    )
+  })
+
+  it('overwrites the cache with a negative entry and redirects on a QQ miss', async () => {
+    findEmailByIdMock.mockResolvedValue('12345@qq.com')
+    mockFetch([new Response(null, { status: 404 })])
+
+    const result = await serveAvatar(db, '42', 120)
+
+    expect(result).toEqual({ kind: 'redirect' })
+    expect(cacheGetMock).not.toHaveBeenCalled()
+    const hash = await encodedEmail('12345@qq.com')
+    expect(cacheSetMock).toHaveBeenCalledWith(db, 'avatar', { size: 120, email: hash }, { status: 1, buffer: null })
+  })
+
+  it('serves a gravatar cache hit as png without fetching upstream', async () => {
+    const spy = vi.fn()
+    vi.stubGlobal('fetch', spy)
+    cacheGetMock.mockResolvedValue({ status: 0, buffer: Buffer.from('av') })
+
+    const result = await serveAvatar(db, 'abc', 120)
+
+    expect(result).toEqual({ kind: 'png', buffer: Buffer.from('av') })
+    expect(cacheGetMock).toHaveBeenCalledWith(db, 'avatar', { size: 120, email: 'abc' })
+    expect(spy).not.toHaveBeenCalled()
+    expect(cacheSetMock).not.toHaveBeenCalled()
+  })
+
+  it('redirects on a gravatar negative-cache entry without fetching upstream', async () => {
+    const spy = vi.fn()
+    vi.stubGlobal('fetch', spy)
+    cacheGetMock.mockResolvedValue({ status: 1, buffer: null })
+
+    const result = await serveAvatar(db, 'abc', 120)
+
+    expect(result).toEqual({ kind: 'redirect' })
+    expect(spy).not.toHaveBeenCalled()
+    expect(cacheSetMock).not.toHaveBeenCalled()
+  })
+
+  it('writes a negative entry and redirects when the gravatar fetch misses', async () => {
+    mockFetch([new Response(null, { status: 404 })])
+
+    const result = await withAllowedMirror(() => serveAvatar(db, 'abc', 120))
+
+    expect(result).toEqual({ kind: 'redirect' })
+    expect(cacheSetMock).toHaveBeenCalledWith(db, 'avatar', { size: 120, email: 'abc' }, { status: 1, buffer: null })
+  })
+
+  it('serves the fetched bytes and caches HAVE_AVATAR on a gravatar fetch hit', async () => {
+    mockFetch([new Response(Buffer.from([0x89, 0x50, 0x4e, 0x47]), { status: 200 })])
+
+    const result = await withAllowedMirror(() => serveAvatar(db, 'abc', 120))
+
+    expect(result).toEqual({ kind: 'png', buffer: expect.any(Buffer) })
+    expect(cacheSetMock).toHaveBeenCalledWith(
+      db,
+      'avatar',
+      { size: 120, email: 'abc' },
+      { status: 0, buffer: expect.any(Buffer) },
+    )
+  })
+
+  it('treats a HAVE_AVATAR entry with a null buffer as a miss and records the negative on fetch failure', async () => {
+    cacheGetMock.mockResolvedValue({ status: 0, buffer: null })
+    mockFetch([new Response(null, { status: 404 })])
+
+    const result = await withAllowedMirror(() => serveAvatar(db, 'abc', 120))
+
+    expect(result).toEqual({ kind: 'redirect' })
+    expect(cacheSetMock).toHaveBeenCalledWith(db, 'avatar', { size: 120, email: 'abc' }, { status: 1, buffer: null })
   })
 })
