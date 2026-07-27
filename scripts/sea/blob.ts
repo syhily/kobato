@@ -1,7 +1,7 @@
-// SEA config generation: write sea-config.json for the two injector
-// paths. The same JSON shape feeds both — for `--experimental-sea-config`
-// (the postject path) `output` is the BLOB path; for `--build-sea`
-// `output` is the FINAL executable path (see scripts/sea/inject.ts).
+// SEA config generation: write sea-config.json for `node --build-sea`.
+// The config's `output` is the FINAL executable path — `--build-sea`
+// regenerates the blob internally and patches the binary in one step
+// (see scripts/sea/inject.ts).
 //
 // `main` is the single-file ESM server bundle and `mainFormat` is
 // `module`: the injected entry is `server.mjs` itself, so there is no
@@ -11,15 +11,13 @@
 
 import { writeFile } from 'node:fs/promises'
 
-import { run } from './exec.ts'
-import { seaBlobPath, seaConfigPath, seaServerBundlePath } from './paths.ts'
+import { seaConfigPath, seaServerBundlePath } from './paths.ts'
 
 /**
  * @param assets asset key -> absolute file path
  *   (sorted — see assets.ts). The config records absolute source paths;
  *   only the keys end up in the blob.
- * @param output blob path (--experimental-sea-config) or final binary
- *   path (--build-sea), depending on the caller's injector.
+ * @param output the final executable path `--build-sea` writes.
  */
 export async function writeSeaConfig(assets: Map<string, string>, output: string) {
   const config = {
@@ -32,13 +30,4 @@ export async function writeSeaConfig(assets: Map<string, string>, output: string
     useSnapshot: false,
   }
   await writeFile(seaConfigPath(), `${JSON.stringify(config, null, 2)}\n`)
-}
-
-/**
- * The postject path's blob generation (`node --experimental-sea-config`).
- * `--build-sea` builds its blob internally and never calls this.
- */
-export async function runBlobStep(assets: Map<string, string>) {
-  await writeSeaConfig(assets, seaBlobPath())
-  run(process.execPath, ['--experimental-sea-config', seaConfigPath()])
 }

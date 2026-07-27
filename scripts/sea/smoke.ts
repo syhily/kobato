@@ -38,7 +38,7 @@ import {
   waitForExit,
   waitForHttp,
 } from './instance.ts'
-import { seaBinaryPath, seaBlobPath } from './paths.ts'
+import { seaBinaryPath } from './paths.ts'
 
 interface CheckResult {
   name: string
@@ -57,11 +57,9 @@ const CALENDAR_MIN_BYTES = 2_048
 // The blob is the binary's variable part: uncompressed it was ~87 MB, the
 // compressed payload must stay in the ~25-35 MB band. A regression to
 // uncompressed embedding roughly doubles the binary — fail loudly here
-// rather than at release time. The blob only exists for the postject
-// injector (darwin-x64); `--build-sea` builds it into the binary
-// internally, so there the same regression is caught by a binary-size
-// budget instead (linux node26 base ~148 MB + ~25 MB payload).
-const BLOB_MAX_BYTES = 35 * 1024 * 1024
+// rather than at release time. `--build-sea` builds the blob into the
+// binary internally, so the regression is caught by a binary-size budget
+// (linux node26 base ~148 MB + ~25 MB payload).
 const BINARY_MAX_BYTES = 190 * 1024 * 1024
 
 const results: CheckResult[] = []
@@ -97,34 +95,24 @@ function tailLines(text: string, count: number) {
 }
 
 /**
- * Assert the payload stays within the compression budget. The blob only
- * exists in a postject-injector workspace (darwin-x64); on `--build-sea`
- * targets the payload rides inside the binary, so the binary size is
- * budgeted instead. The binary under test is the one passed to the smoke —
- * CI renames it to `kobato-<target>` before running `--binary-only`, so the
- * default `dist-sea/kobato` path cannot be assumed. Runs in managed and
+ * Assert the payload stays within the compression budget. `--build-sea`
+ * builds the blob into the binary internally, so the binary size is
+ * budgeted (node26 base ~148 MB + compressed payload ~25 MB). The binary
+ * under test is the one passed to the smoke — CI renames it to
+ * `kobato-<target>` before running `--binary-only`, so the default
+ * `dist-sea/kobato` path cannot be assumed. Runs in managed and
  * binary-only mode (external mode tests someone else's server).
  */
-async function checkBlobSize(binaryPath: string) {
-  const blob = await stat(seaBlobPath()).catch(() => null)
-  if (blob !== null) {
-    const mb = (blob.size / 1024 / 1024).toFixed(1)
-    if (blob.size > BLOB_MAX_BYTES) {
-      throw new Error(`blob is ${mb} MB, over the ${BLOB_MAX_BYTES / 1024 / 1024} MB compression budget`)
-    }
-    return `${mb} MB blob within the ${BLOB_MAX_BYTES / 1024 / 1024} MB budget`
-  }
-  // No blob file: the `--build-sea` injector never wrote one — budget the
-  // binary instead (node26 base ~148 MB + compressed payload ~25 MB).
+async function checkBinarySize(binaryPath: string) {
   const binary = await stat(binaryPath).catch(() => null)
   if (binary === null) {
-    throw new Error(`neither ${seaBlobPath()} nor ${binaryPath} found — run pnpm run sea:build first`)
+    throw new Error(`${binaryPath} not found — run pnpm run sea:build first`)
   }
   const mb = (binary.size / 1024 / 1024).toFixed(1)
   if (binary.size > BINARY_MAX_BYTES) {
-    throw new Error(`binary is ${mb} MB, over the ${BINARY_MAX_BYTES / 1024 / 1024} MB budget (--build-sea target)`)
+    throw new Error(`binary is ${mb} MB, over the ${BINARY_MAX_BYTES / 1024 / 1024} MB budget`)
   }
-  return `${mb} MB binary within the ${BINARY_MAX_BYTES / 1024 / 1024} MB budget (--build-sea target)`
+  return `${mb} MB binary within the ${BINARY_MAX_BYTES / 1024 / 1024} MB budget`
 }
 
 function checkVersion(binaryPath: string) {
@@ -434,7 +422,7 @@ async function runManaged(binaryPath: string) {
   let server = none<SmokeServer>()
   let smokeDatabase = none<SmokeDatabase>()
   try {
-    await check('SEA blob within the compression budget', () => checkBlobSize(binaryPath))
+    await check('SEA binary within the compression budget', () => checkBinarySize(binaryPath))
     await check('kobato --version', () => checkVersion(binaryPath))
     await check('kobato --smoke-natives (sharp + canvas)', () => checkNatives(binaryPath, dirs.cache))
     await check('natives extraction is the flat dynamic-library set', () => checkNativesLayout(dirs.cache))
@@ -565,7 +553,7 @@ async function runBinaryOnly(binaryPath: string) {
   console.log(`    binary:   ${binaryPath}`)
   console.log(`    temp dir: ${dirs.root}`)
 
-  await check('SEA blob within the compression budget', () => checkBlobSize(binaryPath))
+  await check('SEA binary within the compression budget', () => checkBinarySize(binaryPath))
   await check('kobato --version', () => checkVersion(binaryPath))
   await check('kobato --smoke-natives (sharp + canvas)', () => checkNatives(binaryPath, dirs.cache))
   await check('natives extraction is the flat dynamic-library set', () => checkNativesLayout(dirs.cache))

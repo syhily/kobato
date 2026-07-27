@@ -110,8 +110,8 @@ three sea.yml jobs; local builds stay zstd) into
 `dist-sea/intermediates/packed/<key>`. `manifest.json` rides uncompressed
 as the codec registry (`{key, path, sha256(raw), codec, size}`);
 `getEmbeddedAsset` parses it once and decodes lazily, memoized per key.
-The smoke budgets the payload: 35 MB blob on postject targets, 190 MB
-binary on `--build-sea` targets (which leave no standalone blob).
+The smoke budgets the binary at 190 MB — `--build-sea` leaves no
+standalone blob, so the compressed payload is sized inside the binary.
 
 **Natives = dynamic libraries ONLY.** The extraction writes exactly 3
 files (4 on win32) into the FLAT `<cache>/natives-<manifest-hash>/` dir:
@@ -133,15 +133,14 @@ embedded `natives-meta/*` metadata assets
   deliberately NOT UPX-compressed — every ordering is a verified dead
   end, re-verified against `--build-sea` output on Node 26.5.0
   (UPX 5.2.0, linux x64): inject-then-compress fails with
-  `CantPackException: bad e_phoff` (both postject and Node's own injector
-  write phdrs UPX can't parse,
+  `CantPackException: bad e_phoff` (Node's injector writes phdrs UPX
+  can't parse — the same failure class as
   [postject#87](https://github.com/nodejs/postject/issues/87));
   `--force-execve` fails with `UnknownExecutableFormatException`;
   compress-then-inject destroys the sentinel fuse so `--build-sea`
   refuses; and Node finds the blob via `dl_iterate_phdr` on the in-memory
   phdrs, which a packed stub does not present. Do not re-add an UPX step.
-- `pnpm run sea:smoke [binary]` — 20-check deep smoke: blob/binary
-  budget, version, natives, the flat 3-file extraction layout,
+- `pnpm run sea:smoke [binary]` — 20-check deep smoke: binary budget, version, natives, the flat 3-file extraction layout,
   `--smoke-worker` (a real sharp job round-tripping through the
   `worker_threads` image pool), boot + migrations on a per-run
   `kobato_smoke_<rand>` database (created on the same Postgres server,
@@ -172,29 +171,26 @@ embedded `natives-meta/*` metadata assets
   `--smoke-worker`. The first three need zero environment; the last one
   requires the full server configuration because the pool graph pulls in
   `@/server/infra/env` at import time — it validates but never connects.
-- Injection is a per-target matrix (`scripts/sea/inject.ts`):
-  **`--build-sea` is the primary injector** (linux-x64 verified) — it
-  regenerates the blob itself from the sea-config (whose `output` is the
-  final binary), does NOT codesign on darwin (the build does the
-  remove + ad-hoc re-sign itself), and the produced binary is
-  sanity-checked with `--version` inline. **postject is retained for
-  darwin-x64 only** — `--build-sea` segfaults there on 26.5.0
-  (upstream-untested platform, #63466-class; re-evaluate on later 26.x).
-  The postject path still runs `node --experimental-sea-config` for its
-  blob first.
+- Injection is single-path (`scripts/sea/inject.ts`): **`--build-sea` is
+  the only injector** — it regenerates the blob itself from the
+  sea-config (whose `output` is the final binary), does NOT codesign on
+  darwin (the build does the remove + ad-hoc re-sign itself), and the
+  produced binary is sanity-checked with `--version` inline. postject was
+  retired together with the darwin-x64 target (the only platform where
+  `--build-sea` segfaulted on 26.5.0, #63466-class).
 - Delivery targets are linux-x64 / linux-arm64 / darwin-arm64 /
-  darwin-x64 / win32-x64 / win32-arm64, built by
+  win32-x64 / win32-arm64, built by
   `.github/workflows/sea.yml`. The deep managed smoke stays Linux-only;
   the darwin and win32 matrix jobs run `--binary-only`. The darwin jobs
   need the `shasum -a 256` spelling (macOS has no `sha256sum`); the
   win32 jobs run the rename/package steps under Git Bash (`shell: bash`)
   and ship `kobato.exe`. Local macOS builds need an official Node.js 26
   distribution — Homebrew's node lacks the SEA sentinel fuse
-  (`scripts/sea/inject.ts` preflights this for the postject path).
+  (`scripts/sea/inject.ts` preflights this).
 - Windows runtime notes: the binary is `kobato.exe` (no extension →
   refuses to execute); the build spawns everything through cmd
-  (`shell: true` in `scripts/sea/exec.ts`) because pnpm and the
-  `.bin/postject` entry are `.cmd` shims there. The natives cache
+  (`shell: true` in `scripts/sea/exec.ts`) because pnpm's `.bin` entries
+  are `.cmd` shims there. The natives cache
   defaults to `%LOCALAPPDATA%\kobato` (`resolveCacheDir`). Windows
   delivers no SIGTERM — graceful shutdown relies on SIGINT (Ctrl+C),
   SIGHUP (console window closed), and SIGBREAK (Ctrl+Break), all
@@ -232,8 +228,9 @@ native-specifiers.test.ts`). `requireExternal` remains only as
   the process.env centralization rule in the boundaries test).
 
 The production Docker image ships only the SEA binary on a glibc base —
-musl is blocked by a postject `.gnu.hash` corruption bug on the musl
-node binary (see the comment at the top of `Dockerfile`).
+the historical musl blocker (a postject `.gnu.hash` corruption bug) is
+gone with postject, but musl stays unverified for SEA injection (see the
+comment at the top of `Dockerfile`).
 
 ### SEA self-update
 

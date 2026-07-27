@@ -1,8 +1,7 @@
-# NOTE: glibc (bookworm) base, not alpine — postject 1.0.0-alpha.6 corrupts
-# the .gnu.hash table of the official musl node binary when injecting the
-# SEA blob (inserts a third PT_LOAD segment and shifts the first page), so
-# dlopen'd native addons (.node) can no longer resolve napi_* symbols from
-# the main program. On the glibc binary the injected result is intact.
+# NOTE: glibc (bookworm) base, not alpine. The historical blocker was a
+# postject .gnu.hash corruption bug on the official musl node binary;
+# postject is gone (`--build-sea` is the only injector now), but musl
+# remains unverified for SEA injection — stay on the known-good glibc base.
 FROM node:26-bookworm-slim AS build
 WORKDIR /app
 
@@ -21,8 +20,8 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
 
-# Build the SEA single executable: react-router build + vite bundle + SEA
-# blob + postject injection (see scripts/sea/build.ts). `--codec brotli`
+# Build the SEA single executable: react-router build + vite bundle +
+# `--build-sea` injection (see scripts/sea/build.ts). `--codec brotli`
 # packs the blob payload at brotli-11 (smallest release binaries; local
 # builds default to the faster zstd). The copied node binary and the
 # sharp / @napi-rs/canvas platform packages pnpm installs here are glibc

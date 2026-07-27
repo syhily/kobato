@@ -1,6 +1,6 @@
 // SEA asset collection.
 //
-// Builds the embedded-asset map consumed by `node --experimental-sea-config`
+// Builds the embedded-asset map consumed by `node --build-sea`
 // (see blob.ts) and writes the `manifest.json` asset that the runtime
 // bootstrap (`src/server/infra/sea-natives.ts`) uses to verify and extract
 // the native libraries.

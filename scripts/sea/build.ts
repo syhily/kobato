@@ -6,11 +6,9 @@
 //                               smoke-worker.cjs (dist-sea/intermediates)
 //   3. check-bundle             fail on leftover external specifiers
 //   4. assets                   collect embedded assets + manifest.json
-//   5. blob                     node --experimental-sea-config
-//                               (postject injector only)
-//   6. inject                   --build-sea (default) or postject
-//                               (darwin-x64) — see inject.ts
-//   7. checksum                 dist-sea/kobato.sha256
+//   5. inject                   node --build-sea regenerates the blob and
+//                               patches the node binary — see inject.ts
+//   6. checksum                 dist-sea/kobato.sha256
 //
 // The build is platform-native by design: the embedded native libraries
 // and the copied Node executable are the build machine's, so run it on
@@ -21,9 +19,8 @@ import { readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 import { collectSeaAssets, type SeaPackCodec } from './assets.ts'
-import { runBlobStep } from './blob.ts'
 import { fail, run } from './exec.ts'
-import { runInjectStep, selectInjector } from './inject.ts'
+import { runInjectStep } from './inject.ts'
 import { repoRoot, seaBinaryFileName, seaBinaryPath, seaBinarySha256Path, seaIntermediatesDir } from './paths.ts'
 
 const REQUIRED_NODE_MAJOR = 26
@@ -95,15 +92,7 @@ async function main() {
   const mb = (bytes: number) => (bytes / 1024 / 1024).toFixed(1)
   console.log(`    ${assets.size} embedded assets, ${mb(stats.rawBytes)} MB raw -> ${mb(stats.packedBytes)} MB packed`)
 
-  // The postject injector (darwin-x64) needs a pre-generated blob;
-  // `--build-sea` regenerates it internally (see inject.ts).
-  const injector = selectInjector()
-  if (injector === 'postject') {
-    console.log('==> generate SEA blob')
-    await runBlobStep(assets)
-  }
-
-  console.log(`==> inject blob into node binary (${injector})`)
+  console.log('==> inject blob into node binary (--build-sea)')
   await runInjectStep(assets)
 
   await writeBinaryChecksum()

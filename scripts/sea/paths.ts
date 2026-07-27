@@ -8,9 +8,7 @@
 //   intermediates/staged-natives/    patched native libraries (see assets.ts)
 //   intermediates/packed/<key>       compressed asset payloads (see assets.ts)
 //   intermediates/manifest.json      embedded asset manifest (see assets.ts)
-//   intermediates/sea-config.json    sea config input (--build-sea /
-//                                    --experimental-sea-config)
-//   intermediates/kobato.blob        generated SEA blob (postject path only)
+//   intermediates/sea-config.json    sea config input (node --build-sea)
 //   kobato(.exe)                     final single-executable binary
 //   kobato.sha256                    sha256sum-format checksum file
 
@@ -58,10 +56,6 @@ export function seaStagedNativesDir() {
 
 export function seaConfigPath() {
   return resolve(seaIntermediatesDir(), 'sea-config.json')
-}
-
-export function seaBlobPath() {
-  return resolve(seaIntermediatesDir(), 'kobato.blob')
 }
 
 export function seaBinaryPath() {
