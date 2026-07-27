@@ -17,7 +17,7 @@
 import { Writable } from 'node:stream'
 import pino from 'pino'
 
-import { LOG_LEVEL } from '@/server/infra/env'
+import { LOG_LEVEL, NODE_ENV } from '@/server/infra/env'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 type Level = NonNullable<typeof LOG_LEVEL>
@@ -26,8 +26,9 @@ function resolveLevel(): Level {
   if (LOG_LEVEL) {
     return LOG_LEVEL
   }
-  const meta = unsafeCast<{ env?: { PROD?: boolean } }>(import.meta).env
-  return meta?.PROD === true ? 'info' : 'debug'
+  // NODE_ENV, not import.meta.env.PROD — this module also lands in the CJS
+  // worker bundles where import.meta is replaced with {}.
+  return NODE_ENV === 'production' ? 'info' : 'debug'
 }
 
 // Privacy tagging — L3 (direct identifier) fields
