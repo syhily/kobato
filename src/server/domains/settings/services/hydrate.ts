@@ -13,7 +13,7 @@ import {
 import { decryptIfNeeded } from '@/server/infra/crypto/secret-encryption'
 import { findSettingsByScopePrefix, upsertSetting } from '@/server/infra/db/operations/setting'
 import { getLogger } from '@/server/infra/logger'
-import { BUNDLE_KEYS, SECTION_TO_BUNDLE_KEY, SETTINGS_SECTIONS } from '@/shared/config/sections'
+import { BUNDLE_KEYS, SETTINGS_SECTIONS } from '@/shared/config/sections'
 import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@/shared/config/snapshot'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
@@ -160,12 +160,16 @@ export async function backfillSettingsSections(
   for (const [key, value] of Object.entries(bundle)) {
     mutable[key] = value
   }
+  // `meta.key` is read everywhere in this file (never
+  // SECTION_TO_BUNDLE_KEY): the mapped-type pin in `sections/registry.ts`
+  // proves the two maps agree, and the registry entry is already in hand
+  // here for `defaults` / `scope`.
   for (const section of SETTINGS_SECTIONS) {
-    const key = SECTION_TO_BUNDLE_KEY[section]
+    const meta = SECTION_REGISTRY[section]
+    const key = meta.key
     if (mutable[key] !== null) {
       continue
     }
-    const meta = SECTION_REGISTRY[section]
     if (meta.defaults === null) {
       continue
     }

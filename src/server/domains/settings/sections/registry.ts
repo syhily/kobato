@@ -23,7 +23,7 @@ import { seoSection } from '@/server/domains/settings/sections/seo'
 import { sidebarSection } from '@/server/domains/settings/sections/sidebar'
 import { socialsSection } from '@/server/domains/settings/sections/socials'
 import { DomainError } from '@/server/infra/http/errors'
-import { SETTINGS_SECTIONS } from '@/shared/config/sections'
+import { SECTION_TO_BUNDLE_KEY, SETTINGS_SECTIONS } from '@/shared/config/sections'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 export interface SectionMeta<
@@ -39,8 +39,8 @@ export interface SectionMeta<
 // One module per section (`sections/<section>.ts`) owns that section's
 // Zod schema, seed defaults, and registry metadata (scope + bundle key)
 // — adding a section means adding ONE module plus ONE line here, never
-// a second enumeration. This map is composition only; the schema↔DTO
-// parity asserts at the bottom pin every entry to its bundle slot.
+// a second enumeration. This map is composition only; the mapped-type
+// parity assert at the bottom pins every entry to its bundle slot.
 export const SECTION_REGISTRY = {
   general: generalSection,
   assets: assetsSection,
@@ -119,56 +119,33 @@ export function buildDefaultSectionPayloads(): {
   return out
 }
 
-// Compile-time parity: each section schema's OUTPUT type must equal its
-// bundle-slot DTO — hydration writes `parsed.data` straight into the
-// bundle (`services/hydrate.ts:81`), so drift here means the DTO lies.
-type _generalSchemaDtoParity = Assert<
-  Equals<z.infer<typeof generalSection.schema>, NonNullable<BlogSettingsBundle['siteIdentity']>>
->
-type _assetsSchemaDtoParity = Assert<
-  Equals<z.infer<typeof assetsSection.schema>, NonNullable<BlogSettingsBundle['assets']>>
->
-type _navigationSchemaDtoParity = Assert<
-  Equals<z.infer<typeof navigationSection.schema>, NonNullable<BlogSettingsBundle['navigation']>>
->
-type _socialsSchemaDtoParity = Assert<
-  Equals<z.infer<typeof socialsSection.schema>, NonNullable<BlogSettingsBundle['socials']>>
->
-type _contentSchemaDtoParity = Assert<
-  Equals<z.infer<typeof contentSection.schema>, NonNullable<BlogSettingsBundle['content']>>
->
-type _sidebarSchemaDtoParity = Assert<
-  Equals<z.infer<typeof sidebarSection.schema>, NonNullable<BlogSettingsBundle['sidebar']>>
->
-type _commentsSchemaDtoParity = Assert<
-  Equals<z.infer<typeof commentsSection.schema>, NonNullable<BlogSettingsBundle['comments']>>
->
-type _seoSchemaDtoParity = Assert<Equals<z.infer<typeof seoSection.schema>, NonNullable<BlogSettingsBundle['seo']>>>
-type _mailSchemaDtoParity = Assert<Equals<z.infer<typeof mailSection.schema>, NonNullable<BlogSettingsBundle['mail']>>>
-type _newsletterSchemaDtoParity = Assert<
-  Equals<z.infer<typeof newsletterSection.schema>, NonNullable<BlogSettingsBundle['newsletter']>>
->
-type _cacheSchemaDtoParity = Assert<
-  Equals<z.infer<typeof cacheSection.schema>, NonNullable<BlogSettingsBundle['cache']>>
->
-type _rateLimitSchemaDtoParity = Assert<
-  Equals<z.infer<typeof rateLimitSection.schema>, NonNullable<BlogSettingsBundle['rateLimit']>>
->
-type _searchSchemaDtoParity = Assert<
-  Equals<z.infer<typeof searchSection.schema>, NonNullable<BlogSettingsBundle['search']>>
->
-type _fontsSchemaDtoParity = Assert<
-  Equals<z.infer<typeof fontsSection.schema>, NonNullable<BlogSettingsBundle['fonts']>>
->
-type _backupSchemaDtoParity = Assert<
-  Equals<z.infer<typeof backupSection.schema>, NonNullable<BlogSettingsBundle['backup']>>
->
-type _limitsSchemaDtoParity = Assert<
-  Equals<z.infer<typeof limitsSection.schema>, NonNullable<BlogSettingsBundle['limits']>>
->
-type _analyticsSchemaDtoParity = Assert<
-  Equals<z.infer<typeof analyticsSection.schema>, NonNullable<BlogSettingsBundle['analytics']>>
->
-type _securitySchemaDtoParity = Assert<
-  Equals<z.infer<typeof securitySection.schema>, NonNullable<BlogSettingsBundle['security']>>
+// Compile-time parity, ONE mapped type over SECTION_REGISTRY ×
+// SECTION_TO_BUNDLE_KEY. For every section — present AND future — it
+// pins two agreements at once:
+//   1. the registry entry's `key` literal must equal the shared
+//      SECTION_TO_BUNDLE_KEY mapping (the same fact is declared in both
+//      places; a wrong key on either side fails the check), and
+//   2. the section schema's OUTPUT type must equal the DTO of the
+//      bundle slot that shared mapping points at — hydration writes
+//      `parsed.data` straight into the bundle (`services/hydrate.ts`),
+//      so drift here means the DTO lies.
+// A missing registry entry already fails the `satisfies` on
+// SECTION_REGISTRY above; a missing SECTION_TO_BUNDLE_KEY entry fails
+// its own `satisfies` in `@/shared/config/sections`. This assert is
+// what fails on key disagreement or schema/DTO drift.
+type _SectionRegistryBundleParity = Assert<
+  Equals<
+    {
+      [S in SettingsSection]: Equals<
+        (typeof SECTION_REGISTRY)[S]['key'],
+        (typeof SECTION_TO_BUNDLE_KEY)[S]
+      > extends true
+        ? Equals<
+            z.infer<(typeof SECTION_REGISTRY)[S]['schema']>,
+            NonNullable<BlogSettingsBundle[(typeof SECTION_TO_BUNDLE_KEY)[S]]>
+          >
+        : false
+    },
+    Record<SettingsSection, true>
+  >
 >
