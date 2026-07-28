@@ -26,7 +26,6 @@ export const SECRET_FIELDS = [
     field: 'secretAccessKey',
     maskKey: 'assetsSecretAccessKeyMask',
   },
-  { section: 'search', bundleKey: 'search', path: 'search', field: 'apiKey', maskKey: 'searchApiKeyMask' },
 ] as const satisfies readonly SecretFieldConfig[]
 
 // Compile-time parity: every SecretMasks key is produced by exactly one

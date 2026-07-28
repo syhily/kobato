@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { MailSettings } from '@/shared/config/types'
 
-import { projectAssetsForAdmin, projectMailForAdmin, projectSearchForAdmin } from '@/shared/config/projection'
+import { projectAssetsForAdmin, projectMailForAdmin } from '@/shared/config/projection'
 
 describe('shared/config/projection — projectAssetsForAdmin', () => {
   const baseInput = {
@@ -116,68 +116,6 @@ describe('shared/config/projection — projectAssetsForAdmin', () => {
       upload: {},
     })
     expect(out.branding.robotsTxt).toBe('')
-  })
-})
-
-describe('shared/config/projection — projectSearchForAdmin', () => {
-  it('uses defaults when called with undefined', () => {
-    const out = projectSearchForAdmin(undefined)
-    expect(out.search.enabled).toBe(false)
-    expect(out.search.mode).toBe('trgm')
-    expect(out.search.model).toBe('text-embedding-3-small')
-    expect(out.search.similarityThreshold).toBe(0.5)
-    expect(out.search.trgmThreshold).toBe(0.3)
-    expect(out.search.endpoint).toBe('')
-    expect(out.search.apiKey).toBe('')
-    expect(out.apiKeyMask).toBeNull()
-  })
-
-  it('preserves enabled, mode, endpoint, model, thresholds', () => {
-    const out = projectSearchForAdmin({
-      search: {
-        enabled: true,
-        mode: 'vector',
-        endpoint: 'https://api.openai.com',
-        apiKey: 'sk-abcdefgh',
-        model: 'text-embedding-3-large',
-        similarityThreshold: 0.75,
-        trgmThreshold: 0.2,
-      },
-    })
-    expect(out.search.enabled).toBe(true)
-    expect(out.search.mode).toBe('vector')
-    expect(out.search.endpoint).toBe('https://api.openai.com')
-    expect(out.search.model).toBe('text-embedding-3-large')
-    expect(out.search.similarityThreshold).toBe(0.75)
-    expect(out.search.trgmThreshold).toBe(0.2)
-  })
-
-  it('preserves the trgm mode instead of coercing it to like', () => {
-    const out = projectSearchForAdmin({
-      search: { mode: 'trgm' },
-    })
-    expect(out.search.mode).toBe('trgm')
-  })
-
-  it('never leaks the raw api key into the projected shape', () => {
-    const out = projectSearchForAdmin({
-      search: { enabled: true, mode: 'vector', apiKey: 'sk-abcdefghijkl' },
-    })
-    expect(out.search.apiKey).toBe('')
-    expect(out.apiKeyMask).toBe('ijkl')
-  })
-
-  it('honours an explicit api key mask override', () => {
-    const out = projectSearchForAdmin({ search: { apiKey: 'sk-abcdefghijkl' } }, 'xxxx')
-    expect(out.apiKeyMask).toBe('xxxx')
-  })
-
-  it('coerces unknown modes to "like"', () => {
-    const out = projectSearchForAdmin({
-      // @ts-expect-error intentionally invalid mode
-      search: { mode: 'bm25' },
-    })
-    expect(out.search.mode).toBe('like')
   })
 })
 

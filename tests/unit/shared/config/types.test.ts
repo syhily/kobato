@@ -3,13 +3,13 @@ import { describe, expect, it } from 'vitest'
 import type { SettingsSectionPatch } from '@/shared/config/types'
 
 describe('SettingsSectionPatch', () => {
-  it('keeps search fields nested under the persisted search bucket', () => {
-    const patch: SettingsSectionPatch<'search'> = { search: { trgmThreshold: 0.8 } }
+  it('keeps analytics fields nested under the persisted analytics bucket', () => {
+    const patch: SettingsSectionPatch<'analytics'> = { analytics: { trackAdmin: true } }
 
-    // @ts-expect-error Search fields at the payload root are discarded by the server schema.
-    const invalidPatch: SettingsSectionPatch<'search'> = { trgmThreshold: 0.8 }
+    // @ts-expect-error Section fields at the payload root are discarded by the server schema.
+    const invalidPatch: SettingsSectionPatch<'analytics'> = { trackAdmin: true }
 
-    expect(patch).toEqual({ search: { trgmThreshold: 0.8 } })
-    expect(invalidPatch).toEqual({ trgmThreshold: 0.8 })
+    expect(patch).toEqual({ analytics: { trackAdmin: true } })
+    expect(invalidPatch).toEqual({ trackAdmin: true })
   })
 })

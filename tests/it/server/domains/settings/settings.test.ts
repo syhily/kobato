@@ -166,17 +166,6 @@ const fixtureBundle: BlogSettingsBundle = {
     passkeySetForceIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
     passkeyDeleteIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
   },
-  search: {
-    search: {
-      enabled: false,
-      mode: 'like',
-      endpoint: '',
-      apiKey: '',
-      model: 'text-embedding-3-small',
-      similarityThreshold: 0.5,
-      trgmThreshold: 0.3,
-    },
-  },
   fonts: {
     og: { family: '' },
     calendar: { family: '' },
@@ -219,7 +208,6 @@ function bundleRows(bundle: BlogSettingsBundle): Setting[] {
     newsletter: 'blog.newsletter',
     cache: 'blog.cache',
     rateLimit: 'blog.rateLimit',
-    search: 'blog.search',
     fonts: 'blog.fonts',
     limits: 'blog.limits',
     analytics: 'blog.analytics',

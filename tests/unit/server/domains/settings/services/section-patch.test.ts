@@ -61,7 +61,6 @@ const NESTED_OBJECT_KEY: Partial<Record<SettingsSection, string>> = {
   newsletter: 'newsletter',
   cache: 'cache',
   rateLimit: 'signInIp',
-  search: 'search',
   fonts: 'og',
   backup: 'scheduled',
   analytics: 'analytics',
@@ -122,7 +121,6 @@ describe('server/domains/settings/services/assertSectionPatchKeys', () => {
     expect(() => assertSectionPatchKeys('mail', { mail: { host: 'api.zeabur.com', apiKeyMask: 'abcd' } })).toThrowError(
       DomainError,
     )
-    expect(() => assertSectionPatchKeys('search', { apiKeyMask: 'abcd' })).toThrowError(DomainError)
   })
 
   it('treats arrays as leaves — element values are the merged validation’s job', () => {

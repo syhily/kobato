@@ -76,7 +76,6 @@ const MASKS = {
   mailApiKeyMask: '',
   mailSmtpPassMask: '',
   mailMailgunApiKeyMask: '',
-  searchApiKeyMask: '',
 } as const
 
 const CURRENT_USER = { id: '1', name: 'Alice', email: 'alice@example.com' }

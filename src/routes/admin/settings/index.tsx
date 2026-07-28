@@ -9,7 +9,7 @@ import type { Assert, Equals } from '@/shared/contracts/primitives'
 import { requireRole } from '@/server/domains/auth/rbac'
 import { getRequestContext } from '@/server/http/request-context'
 import { NAV_GROUP_LABEL, SECTION_DISPLAY } from '@/shared/config/display'
-import { projectAssetsForAdmin, projectMailForAdmin, projectSearchForAdmin } from '@/shared/config/projection'
+import { projectAssetsForAdmin, projectMailForAdmin } from '@/shared/config/projection'
 import { SETTINGS_SECTIONS } from '@/shared/config/sections'
 import { titleMeta } from '@/shared/seo/title-meta'
 import { AnalyticsForm } from '@/ui/admin/settings/AnalyticsForm'
@@ -24,7 +24,6 @@ import { LimitsForm } from '@/ui/admin/settings/LimitsForm'
 import { MailForm } from '@/ui/admin/settings/MailForm'
 import { NavigationEditor } from '@/ui/admin/settings/NavigationEditor'
 import { NewsletterForm } from '@/ui/admin/settings/NewsletterForm'
-import { SearchForm } from '@/ui/admin/settings/SearchForm'
 import { SecurityForm } from '@/ui/admin/settings/SecurityForm'
 import { SeoForm } from '@/ui/admin/settings/SeoForm'
 import { SettingsFlushProvider, useSettingsFlushContext } from '@/ui/admin/settings/shell/SettingsFlushProvider'
@@ -104,12 +103,6 @@ const SECTION_CONFIGS = [
           mailgunApiKeyMask: masks.mailMailgunApiKeyMask,
         })}
       />
-    ),
-  },
-  {
-    id: 'search',
-    render: (bundle, _tz, masks) => (
-      <SearchForm search={projectSearchForAdmin(bundle.search, masks.searchApiKeyMask)} />
     ),
   },
   {

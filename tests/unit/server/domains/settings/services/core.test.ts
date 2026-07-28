@@ -155,7 +155,6 @@ describe('computeSecretMasks', () => {
     const bundle = {
       mail: { mail: { apiKey: 'key-aa11', smtpPass: 'pass-bb22', mailgunApiKey: 'mg-cc33' } },
       assets: { storage: { secretAccessKey: 's3-dd44' } },
-      search: { search: { apiKey: 'meili-ee55' } },
     } as unknown as BlogSettingsBundle
 
     const masks = computeSecretMasks(bundle)
@@ -170,7 +169,6 @@ describe('computeSecretMasks', () => {
       mailSmtpPassMask: 'bb22',
       mailMailgunApiKeyMask: 'cc33',
       assetsSecretAccessKeyMask: 'dd44',
-      searchApiKeyMask: 'ee55',
     })
   })
 
@@ -178,7 +176,6 @@ describe('computeSecretMasks', () => {
     const bundle = {
       mail: { mail: { apiKey: '', smtpPass: 'pass-bb22', mailgunApiKey: null } },
       assets: null,
-      search: { search: {} },
     } as unknown as BlogSettingsBundle
 
     const masks = computeSecretMasks(bundle)
@@ -188,7 +185,6 @@ describe('computeSecretMasks', () => {
       mailSmtpPassMask: 'bb22',
       mailMailgunApiKeyMask: null,
       assetsSecretAccessKeyMask: null,
-      searchApiKeyMask: null,
     })
   })
 })

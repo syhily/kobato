@@ -23,8 +23,6 @@ import {
   mailLoaderShapeSchema,
   projectAssetsForAdmin,
   projectMailForAdmin,
-  projectSearchForAdmin,
-  searchLoaderShapeSchema,
 } from '@/shared/config/projection'
 import { SECTION_TO_BUNDLE_KEY } from '@/shared/config/sections'
 import { isValidPasskeyDomain } from '@/shared/utils/safe-url'
@@ -164,7 +162,6 @@ export function redactSecretsFromBundle(bundle: BlogSettingsBundle): BlogSetting
 const SECTION_OUTPUT_SCHEMAS: Partial<Record<SettingsSection, z.ZodType>> = {
   assets: assetsLoaderShapeSchema,
   mail: mailLoaderShapeSchema,
-  search: searchLoaderShapeSchema,
 }
 
 /**
@@ -190,8 +187,6 @@ export function projectSectionForAdmin(
       smtpPassMask: masks.mailSmtpPassMask,
       mailgunApiKeyMask: masks.mailMailgunApiKeyMask,
     })
-  } else if (section === 'search') {
-    projected = projectSearchForAdmin(redacted.search ?? undefined, masks.searchApiKeyMask)
   } else {
     projected = redacted[SECTION_TO_BUNDLE_KEY[section]]
   }
