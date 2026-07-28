@@ -1,30 +1,29 @@
-// Shared lifecycle for driving a built SEA binary against real services.
+// Shared lifecycle for driving a built SEA binary.
 //
 // Extracted from scripts/sea/smoke.ts so both the deep managed smoke
 // (smoke.ts) and the HTTP e2e orchestrator (e2e.ts) boot instances the
-// exact same way: a per-run throwaway database (`kobato_smoke_<rand>`,
-// created on the same Postgres server and dropped in cleanup), per-run
-// temp dirs, server boot with output captured to a log file, HTTP boot
-// polling, and the "installed instance" SQL seed.
+// exact same way: per-run temp dirs (the SQLite content file and the
+// DuckDB analytics sidecar both live under `dirs.data` — no external
+// service at all), server boot with output captured to a log file, HTTP
+// boot polling, and the "installed instance" SQL seed.
 //
-// Imports: Node builtins plus `pg` (already a devDependency, used for the
-// per-run database and the seed SQL); no other dependencies.
+// Imports: Node builtins (the seed SQL runs through node:sqlite) plus
+// @duckdb/node-api (a runtime dependency — the analytics round-trip
+// check reads the sidecar file the binary wrote).
 
 import type { ChildProcess } from 'node:child_process'
 import type { WriteStream } from 'node:fs'
 
+import { DuckDBInstance } from '@duckdb/node-api'
 import { spawn } from 'node:child_process'
-import { randomBytes } from 'node:crypto'
 import { createWriteStream } from 'node:fs'
 import { mkdir, mkdtemp, readFile, stat } from 'node:fs/promises'
 import { createServer } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import pg from 'pg'
+import { DatabaseSync } from 'node:sqlite'
 
 import { fail } from './exec.ts'
-
-export const DEFAULT_DATABASE_URL = 'postgres://test:test@127.0.0.1:5434/test'
 
 export const BOOT_TIMEOUT_MS = 90_000
 const POLL_INTERVAL_MS = 500
@@ -52,23 +51,20 @@ export interface SmokeServer {
   healthResponse: Response | null
 }
 
-export interface SmokeDatabase {
-  databaseName: string
-  smokeDatabaseUrl: string
+/** Per-run database file paths (both live under `dirs.data`). */
+export interface SmokeDatabases {
+  /** SQLite content database. */
+  database: string
+  /** DuckDB analytics sidecar. */
+  analytics: string
+}
+
+export function smokeDatabases(dirs: TempDirs): SmokeDatabases {
+  return { database: join(dirs.data, 'kobato.db'), analytics: join(dirs.data, 'analytics.duckdb') }
 }
 
 export function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
-}
-
-/** Connection URLs may carry credentials — print host + path only. */
-export function describeUrl(rawUrl: string) {
-  try {
-    const url = new URL(rawUrl)
-    return `${url.host}${url.pathname}`
-  } catch {
-    return '(unparseable URL)'
-  }
 }
 
 /** A free high port on loopback, race-prone by nature but fine for a smoke. */
@@ -109,38 +105,6 @@ export async function ensureBinaryExists(binaryPath: string) {
   }
 }
 
-/**
- * Create a throwaway database on the same Postgres server so the run never
- * touches a shared one. Returns the smoke DATABASE_URL (same credentials,
- * swapped path). The caller drops the database in cleanup.
- */
-export async function createSmokeDatabase(baseDatabaseUrl: string): Promise<SmokeDatabase> {
-  const databaseName = `kobato_smoke_${randomBytes(4).toString('hex')}`
-  const client = new pg.Client({ connectionString: baseDatabaseUrl })
-  await client.connect()
-  try {
-    await client.query(`CREATE DATABASE "${databaseName}"`)
-  } finally {
-    await client.end()
-  }
-  const url = new URL(baseDatabaseUrl)
-  url.pathname = `/${databaseName}`
-  return { databaseName, smokeDatabaseUrl: url.toString() }
-}
-
-/** Best-effort drop of the per-run database; failures are logged, not fatal. */
-export async function dropSmokeDatabase(baseDatabaseUrl: string, databaseName: string) {
-  const client = new pg.Client({ connectionString: baseDatabaseUrl })
-  try {
-    await client.connect()
-    // FORCE terminates any lingering backend connections from the stopped
-    // server (PG 13+; the local test stack and CI service are PG 17).
-    await client.query(`DROP DATABASE IF EXISTS "${databaseName}" WITH (FORCE)`)
-  } finally {
-    await client.end().catch(() => undefined)
-  }
-}
-
 export interface SeedAdminOptions {
   email: string
   /** bcrypt hash of the admin's password (a placeholder hash when the
@@ -153,31 +117,32 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 export interface ConvergedConfig {
-  databaseUrl: string
+  database: string
   sessionSecret: string
 }
 
 /**
  * Assert a temp config file converged: the env-driven boot wrote its
- * overrides back (`database.url` + `security.sessionSecret` present as raw
- * strings — never the schema-transformed shape). Used by the smoke's and
- * the e2e orchestrator's convergence checks.
+ * overrides back (`storage.database` + `security.sessionSecret` present as
+ * raw strings — never the schema-transformed shape). Used by the smoke's
+ * and the e2e orchestrator's convergence checks.
  */
 export async function readConvergedConfig(configPath: string): Promise<ConvergedConfig> {
   const parsed: unknown = JSON.parse(await readFile(configPath, 'utf-8'))
-  const database = isRecord(parsed) && isRecord(parsed.database) ? parsed.database : null
+  const storage = isRecord(parsed) && isRecord(parsed.storage) ? parsed.storage : null
   const security = isRecord(parsed) && isRecord(parsed.security) ? parsed.security : null
-  if (database === null || typeof database.url !== 'string' || database.url === '') {
-    throw new Error(`config file did not converge: ${configPath} has no database.url`)
+  if (storage === null || typeof storage.database !== 'string' || storage.database === '') {
+    throw new Error(`config file did not converge: ${configPath} has no storage.database`)
   }
   if (security === null || typeof security.sessionSecret !== 'string' || security.sessionSecret.length < 32) {
     throw new Error(`config file did not converge: ${configPath} has no security.sessionSecret`)
   }
-  return { databaseUrl: database.url, sessionSecret: security.sessionSecret }
+  return { database: storage.database, sessionSecret: security.sessionSecret }
 }
 
 /**
- * Flip the instance to "installed" with plain SQL:
+ * Flip the instance to "installed" with plain SQL against the SQLite
+ * content file (the server is stopped — no WAL contention):
  *   1. one minimal admin row — `hasAdmin()` (role = 'admin' AND
  *      deleted_at IS NULL) is the whole install gate;
  *   2. the two settings scope roots the settings hydration requires
@@ -186,8 +151,10 @@ export async function readConvergedConfig(configPath: string): Promise<Converged
  *      with registry defaults — the same payloads the install flow
  *      writes, without replaying the passkey/setup-token wizard.
  * Both payloads must pass the real section Zod schemas at hydration time.
+ * Timestamps are epoch-ms integers (`timestamp_ms` columns), settings
+ * `data` is plain-JSON text.
  */
-export async function seedInstalledInstance(databaseUrl: string, admin: SeedAdminOptions) {
+export async function seedInstalledInstance(databasePath: string, admin: SeedAdminOptions) {
   const year = new Date().getFullYear()
   const general = JSON.stringify({
     title: 'Kobato Smoke',
@@ -217,30 +184,54 @@ export async function seedInstalledInstance(databaseUrl: string, admin: SeedAdmi
     upload: { maxBytes: 8 * 1024 * 1024, jpegQuality: 82 },
   })
 
-  const client = new pg.Client({ connectionString: databaseUrl })
-  await client.connect()
+  const db = new DatabaseSync(databasePath)
   try {
-    await client.query(
+    const now = Date.now()
+    db.prepare(
       `INSERT INTO "user" ("name", "email", "password", "role", "created_at", "updated_at")
-       VALUES ('Smoke Admin', $1, $2, 'admin', now(), now())
+       VALUES ('Smoke Admin', ?, ?, 'admin', ?, ?)
        ON CONFLICT ("email") DO NOTHING`,
-      [admin.email, admin.passwordHash],
-    )
-    await client.query(
+    ).run(admin.email, admin.passwordHash, now, now)
+    db.prepare(
       `INSERT INTO "setting" ("scope", "data", "updated_at", "updated_by")
-       VALUES ('blog.general', $1::jsonb, now(), NULL), ('blog.assets', $2::jsonb, now(), NULL)
+       VALUES ('blog.general', ?, ?, NULL), ('blog.assets', ?, ?, NULL)
        ON CONFLICT ("scope") DO NOTHING`,
-      [general, assets],
-    )
-    const { rows } = await client.query(
-      `SELECT count(*)::int AS admins FROM "user" WHERE "role" = 'admin' AND "deleted_at" IS NULL`,
-    )
-    if (rows[0].admins !== 1) {
-      throw new Error(`expected exactly 1 admin after seeding, found ${rows[0].admins}`)
+    ).run(general, now, assets, now)
+    const row: unknown = db
+      .prepare(`SELECT count(*) AS admins FROM "user" WHERE "role" = 'admin' AND "deleted_at" IS NULL`)
+      .get()
+    const admins =
+      isRecord(row) && (typeof row.admins === 'number' || typeof row.admins === 'bigint') ? Number(row.admins) : -1
+    if (admins !== 1) {
+      throw new Error(`expected exactly 1 admin after seeding, found ${admins}`)
     }
     return 'admin row + blog.general/blog.assets inserted'
   } finally {
-    await client.end()
+    db.close()
+  }
+}
+
+/**
+ * DuckDB round-trip verification: open the analytics sidecar AFTER the
+ * server shut down (its close checkpoints the WAL into one clean file)
+ * and prove the page views fetched over HTTP landed as access_log rows
+ * (track → batcher → Appender → file). Returns row and distinct-path
+ * counts from one aggregate scan.
+ */
+export async function scanAccessLog(analyticsPath: string): Promise<{ rows: number; paths: number }> {
+  const instance = await DuckDBInstance.create(analyticsPath)
+  try {
+    const connection = await instance.connect()
+    const result = await connection.runAndReadAll(
+      'SELECT count(*) AS rows, count(DISTINCT path) AS paths FROM access_log',
+    )
+    const row: unknown = result.getRowObjects()[0]
+    connection.closeSync()
+    const cell = (key: string): number =>
+      isRecord(row) && (typeof row[key] === 'number' || typeof row[key] === 'bigint') ? Number(row[key]) : 0
+    return { rows: cell('rows'), paths: cell('paths') }
+  } finally {
+    instance.closeSync()
   }
 }
 
@@ -262,15 +253,14 @@ export async function bootServer(
   // The config file MUST live inside the per-run temp root: without an
   // explicit --config the binary would create/read kobato.config.json in
   // its own directory or ~/.config and persist smoke secrets + the
-  // throwaway database URL into real locations.
+  // throwaway database path into real locations.
   //
-  // Config vars (`database__url`, `security__sessionSecret`, …) must NOT be
-  // inherited from the parent environment: CI defines them at job
-  // level, and a leaked value silently overrides the converged config
-  // file (env > file) — the file-only restart would then boot against
-  // the maintenance database instead of the per-run smoke one. Config
-  // reaches the child only through the explicit `env` argument (and
-  // server__port below).
+  // Config vars (`storage__database`, `security__sessionSecret`, …) must
+  // NOT be inherited from the parent environment: a leaked value
+  // silently overrides the converged config file (env > file) — the
+  // file-only restart would then boot against a foreign database instead
+  // of the per-run smoke one. Config reaches the child only through the
+  // explicit `env` argument (and server__port below).
   const parentEnv = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.includes('__')))
   const child = spawn(binaryPath, ['--config', join(dirs.root, 'kobato.config.json')], {
     cwd: dirs.cwd,

@@ -2,16 +2,17 @@
 //
 // Managed mode (default): verify dist-sea/kobato end to end — CLI flags,
 // native-package extraction, worker pool, and a full server lifecycle
-// against a fresh per-run database (`kobato_smoke_<rand>`): boot,
+// against per-run temp files (SQLite content DB + DuckDB analytics
+// sidecar under one mkdtemp root — no external services): boot,
 // migrations, install gate, SSR, embedded assets, seeded admin + settings,
-// graceful restart, installed SSR, canvas calendar, natives-cache reuse,
-// SIGTERM shutdowns.
+// graceful restart, installed SSR, canvas calendar, DuckDB analytics
+// round-trip, natives-cache reuse, SIGTERM shutdowns.
 //
 // External mode (`--external <baseUrl>`): HTTP assertions only against an
 // already-running server — no binary checks, no seeding.
 //
 // Binary-only mode (`--binary-only <binary>`): service-free checks only
-// (--version, --smoke-natives, --smoke-worker). Used by macOS/Windows CI.
+// (--version, --smoke-natives, --smoke-worker).
 //
 // Instance lifecycle is shared with e2e via scripts/sea/instance.ts.
 
@@ -20,21 +21,19 @@ import { randomBytes } from 'node:crypto'
 import { readFile, readdir, rm, stat } from 'node:fs/promises'
 import { join, resolve as resolvePath } from 'node:path'
 
-import type { SmokeDatabase, SmokeServer } from './instance.ts'
+import type { SmokeServer } from './instance.ts'
 
 import { fail } from './exec.ts'
 import {
   bootServer,
-  createSmokeDatabase,
-  DEFAULT_DATABASE_URL,
-  describeUrl,
-  dropSmokeDatabase,
   ensureBinaryExists,
   fetchManual,
   makeTempDirs,
   readConvergedConfig,
+  scanAccessLog,
   seedInstalledInstance,
   sleep,
+  smokeDatabases,
   waitForExit,
   waitForHttp,
 } from './instance.ts'
@@ -54,13 +53,14 @@ const LOG_TAIL_LINES = 50
 const PNG_MAGIC = [0x89, 0x50, 0x4e, 0x47]
 const CALENDAR_MIN_BYTES = 2_048
 
-// The blob is the binary's variable part: uncompressed it was ~87 MB, the
-// compressed payload must stay in the ~25-35 MB band. A regression to
-// uncompressed embedding roughly doubles the binary — fail loudly here
-// rather than at release time. `--build-sea` builds the blob into the
-// binary internally, so the regression is caught by a binary-size budget
-// (linux node26 base ~148 MB + ~25 MB payload).
-const BINARY_MAX_BYTES = 190 * 1024 * 1024
+// The blob is the binary's variable part: uncompressed it is ~173 MB
+// (libduckdb alone is ~112 MB raw), the compressed payload must stay in
+// the ~45-55 MB band. A regression to uncompressed embedding roughly
+// triples the binary — fail loudly here rather than at release time.
+// `--build-sea` builds the blob into the binary internally, so the
+// regression is caught by a binary-size budget (linux node26 base
+// ~148 MB + ~46 MB payload ≈ 194 MB).
+const BINARY_MAX_BYTES = 230 * 1024 * 1024
 
 const results: CheckResult[] = []
 let serverLogPath: string | null = null
@@ -133,14 +133,27 @@ function checkVersion(binaryPath: string) {
 
 /**
  * The extraction dir is FLAT and holds exactly the native dynamic
- * libraries: sharp.node + skia.node + the libvips files (one on
- * darwin/linux, two DLLs on win32) — no node_modules tree, no package
- * files. The materialized bundles (server.mjs, smoke-worker.mjs) share
- * the dir by design and are excluded from the count. Assert the layout
- * right after `--smoke-natives` populated it.
+ * libraries: sharp.node + skia.node + duckdb.node + the libvips files
+ * (one on darwin/linux, two DLLs on win32) + the libduckdb library
+ * (libduckdb.dylib/.so; duckdb.dll on win32) — no node_modules tree, no
+ * package files. The materialized bundles (server.mjs, smoke-worker.mjs)
+ * share the dir by design and are excluded from the count. Assert the
+ * layout right after `--smoke-natives` populated it.
  */
+const NATIVES_FILE_COUNT = process.platform === 'win32' ? 6 : 5
+
+function isExpectedNativeFile(name: string): boolean {
+  return (
+    name === 'sharp.node' ||
+    name === 'skia.node' ||
+    name === 'duckdb.node' ||
+    name === 'duckdb.dll' ||
+    name.startsWith('libvips') ||
+    name.startsWith('libduckdb')
+  )
+}
+
 async function checkNativesLayout(cacheDir: string) {
-  const expectedCount = process.platform === 'win32' ? 4 : 3
   const entries = await readdir(cacheDir)
   const nativesDirs = entries.filter((entry) => entry.startsWith('natives-'))
   if (nativesDirs.length !== 1) {
@@ -155,13 +168,13 @@ async function checkNativesLayout(cacheDir: string) {
     .map((file) => file.name)
     .filter((name) => name !== 'server.mjs' && name !== 'smoke-worker.mjs')
     .sort()
-  if (names.length !== expectedCount) {
-    throw new Error(`expected ${expectedCount} extracted native files, found ${names.length}: ${names.join(', ')}`)
+  if (names.length !== NATIVES_FILE_COUNT) {
+    throw new Error(`expected ${NATIVES_FILE_COUNT} extracted native files, found ${names.length}: ${names.join(', ')}`)
   }
-  if (!names.includes('sharp.node') || !names.includes('skia.node')) {
-    throw new Error(`sharp.node / skia.node missing from the extraction: ${names.join(', ')}`)
+  if (!names.includes('sharp.node') || !names.includes('skia.node') || !names.includes('duckdb.node')) {
+    throw new Error(`sharp.node / skia.node / duckdb.node missing from the extraction: ${names.join(', ')}`)
   }
-  if (!names.every((name) => name === 'sharp.node' || name === 'skia.node' || name.startsWith('libvips'))) {
+  if (!names.every(isExpectedNativeFile)) {
     throw new Error(`unexpected files in the extraction: ${names.join(', ')}`)
   }
   return `${names.length} flat files: ${names.join(', ')}`
@@ -193,7 +206,7 @@ function checkNatives(binaryPath: string, cacheDir: string) {
  * the same env the server boot gets is passed here. The `--config` points
  * at the temp cache dir — without it env loading would auto-create
  * `kobato.config.json` next to the binary and persist the throwaway
- * database URL and smoke secrets into it.
+ * database path and smoke secrets into it.
  */
 function checkWorker(binaryPath: string, env: Record<string, string>) {
   const expected = `SEA worker smoke passed: ${process.platform}-${process.arch}`
@@ -233,6 +246,13 @@ async function checkShutdown(server: SmokeServer) {
   if (outcome.timeout) {
     throw new Error(`still running ${SHUTDOWN_TIMEOUT_MS / 1000}s after SIGTERM (sent SIGKILL)`)
   }
+  // Windows delivers no SIGTERM — Node's kill maps to TerminateProcess,
+  // so a non-zero forceful exit IS the expected outcome there (graceful
+  // shutdown on win32 relies on console Ctrl+C, undeliverable to a
+  // spawned child). The check still proves the process exits promptly.
+  if (process.platform === 'win32') {
+    return `terminated after ${elapsed}s (win32: SIGTERM maps to TerminateProcess)`
+  }
   if (outcome.code === 0) {
     return `exit code 0 after ${elapsed}s`
   }
@@ -251,7 +271,7 @@ async function checkShutdown(server: SmokeServer) {
  * refactor can't false-fail the smoke.
  */
 async function checkNativesReuse() {
-  const expectedCount = process.platform === 'win32' ? 4 : 3
+  const expectedCount = NATIVES_FILE_COUNT
   const log = await readFile(serverLogPath ?? fail('serverLogPath unset'), 'utf-8')
   let extracted: number | null = null
   let reused: number | null = null
@@ -411,37 +431,32 @@ async function checkCalendar(baseUrl: string, { optional }: { optional: boolean 
 /** Returns a cleanup callback; the caller runs it after the summary/log dump. */
 async function runManaged(binaryPath: string) {
   await ensureBinaryExists(binaryPath)
-  const databaseUrl = process.env.database__url ?? DEFAULT_DATABASE_URL
   const dirs = await makeTempDirs()
+  const databases = smokeDatabases(dirs)
   serverLogPath = join(dirs.root, 'server.log')
 
   console.log(`    binary:   ${binaryPath}`)
-  console.log(`    database: ${describeUrl(databaseUrl)}`)
+  console.log(`    database: ${databases.database}`)
   console.log(`    temp dir: ${dirs.root}`)
 
+  const env = {
+    storage__database: databases.database,
+    storage__analyticsDatabase: databases.analytics,
+    security__sessionSecret: randomBytes(32).toString('hex'),
+    security__encryptionKey: randomBytes(32).toString('hex'),
+    storage__data: dirs.data,
+    KOBATO_CACHE_DIR: dirs.cache,
+    NODE_ENV: 'production',
+  }
+
   let server = none<SmokeServer>()
-  let smokeDatabase = none<SmokeDatabase>()
   try {
     await check('SEA binary within the compression budget', () => checkBinarySize(binaryPath))
     await check('kobato --version', () => checkVersion(binaryPath))
-    await check('kobato --smoke-natives (sharp + canvas)', () => checkNatives(binaryPath, dirs.cache))
+    await check('kobato --smoke-natives (sharp + canvas + duckdb)', () => checkNatives(binaryPath, dirs.cache))
     await check('natives extraction is the flat dynamic-library set', () => checkNativesLayout(dirs.cache))
 
-    await check('create per-run smoke database', async () => {
-      smokeDatabase = await createSmokeDatabase(databaseUrl)
-      return `${smokeDatabase.databaseName} on ${describeUrl(databaseUrl)}`
-    })
-
-    if (smokeDatabase !== null) {
-      const env = {
-        database__url: smokeDatabase.smokeDatabaseUrl,
-        security__sessionSecret: randomBytes(32).toString('hex'),
-        security__encryptionKey: randomBytes(32).toString('hex'),
-        storage__data: dirs.data,
-        KOBATO_CACHE_DIR: dirs.cache,
-        NODE_ENV: 'production',
-      }
-
+    {
       await check('kobato --smoke-worker (sharp worker pool)', () => checkWorker(binaryPath, env))
 
       const booted = await check('server boot (natives + migrations)', async () => {
@@ -462,10 +477,10 @@ async function runManaged(binaryPath: string) {
         await check('natives cache reused by the server', () => checkNativesReuse())
         await check('config file converged (env written back)', async () => {
           const converged = await readConvergedConfig(join(dirs.root, 'kobato.config.json'))
-          if (converged.databaseUrl !== smokeDatabase?.smokeDatabaseUrl) {
-            throw new Error(`database.url is ${converged.databaseUrl}, expected ${smokeDatabase?.smokeDatabaseUrl}`)
+          if (converged.database !== databases.database) {
+            throw new Error(`storage.database is ${converged.database}, expected ${databases.database}`)
           }
-          return 'database.url + sessionSecret persisted'
+          return 'storage.database + sessionSecret persisted'
         })
       }
 
@@ -480,7 +495,7 @@ async function runManaged(binaryPath: string) {
       const seeded =
         booted &&
         (await check('seed admin + core settings (SQL)', () =>
-          seedInstalledInstance(env.database__url, { email: SEED_ADMIN_EMAIL, passwordHash: SEED_ADMIN_PASSWORD }),
+          seedInstalledInstance(databases.database, { email: SEED_ADMIN_EMAIL, passwordHash: SEED_ADMIN_PASSWORD }),
         ))
       if (seeded) {
         // The restart runs with a REDUCED env on purpose: database/
@@ -515,9 +530,36 @@ async function runManaged(binaryPath: string) {
             return `200 text/html, ${body.length} bytes`
           })
           await checkCalendar(baseUrl, { optional: false })
+          // Page views for the DuckDB round-trip: the tracker drops
+          // bot-classified UAs by default, so fetch with a real browser
+          // UA. The graceful shutdown below flushes the access-log
+          // batcher before the analytics handle checkpoints + closes.
+          const BROWSER_UA =
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'
+          const PAGE_VIEWS = 3
+          await check(`${PAGE_VIEWS} page views recorded over HTTP`, async () => {
+            for (let i = 0; i < PAGE_VIEWS; i++) {
+              const res = await fetch(`${baseUrl}/`, {
+                headers: { 'user-agent': BROWSER_UA },
+                redirect: 'manual',
+                signal: AbortSignal.timeout(5_000),
+              })
+              if (res.status !== 200) {
+                throw new Error(`page view ${i + 1}: expected 200, got ${res.status}`)
+              }
+            }
+            return `${PAGE_VIEWS} GET / with a browser UA`
+          })
           await check('SIGTERM clean shutdown (seeded install)', () => checkShutdown(seededServer))
           await Promise.race([seededServer.logClosed, sleep(2_000)])
           await check('natives cache reused after restart', () => checkNativesReuse())
+          await check('DuckDB analytics round-trip (page views → access_log)', async () => {
+            const { rows, paths } = await scanAccessLog(databases.analytics)
+            if (rows < PAGE_VIEWS) {
+              throw new Error(`expected ≥ ${PAGE_VIEWS} access_log rows after ${PAGE_VIEWS} page views, found ${rows}`)
+            }
+            return `${rows} access_log rows, ${paths} distinct paths`
+          })
         }
       }
     }
@@ -528,14 +570,6 @@ async function runManaged(binaryPath: string) {
   }
 
   return async () => {
-    if (smokeDatabase !== null) {
-      const { databaseName } = smokeDatabase
-      await dropSmokeDatabase(databaseUrl, databaseName).catch((error: unknown) => {
-        console.warn(
-          `Warning: failed to drop ${databaseName}: ${error instanceof Error ? error.message : String(error)}`,
-        )
-      })
-    }
     await rm(dirs.root, { recursive: true, force: true }).catch(() => undefined)
   }
 }
@@ -543,23 +577,26 @@ async function runManaged(binaryPath: string) {
 /**
  * Binary-only mode: the service-free checks (CLI flags, natives extraction
  * and loading, the sharp worker pool). `--smoke-worker` validates the full
- * server env at import time but never connects, so dummy URLs satisfy it.
- * Returns a cleanup callback for the temp dirs (natives cache included).
+ * server config at import time but never connects, so temp paths satisfy
+ * it. Returns a cleanup callback for the temp dirs (natives cache
+ * included).
  */
 async function runBinaryOnly(binaryPath: string) {
   await ensureBinaryExists(binaryPath)
   const dirs = await makeTempDirs()
+  const databases = smokeDatabases(dirs)
 
   console.log(`    binary:   ${binaryPath}`)
   console.log(`    temp dir: ${dirs.root}`)
 
   await check('SEA binary within the compression budget', () => checkBinarySize(binaryPath))
   await check('kobato --version', () => checkVersion(binaryPath))
-  await check('kobato --smoke-natives (sharp + canvas)', () => checkNatives(binaryPath, dirs.cache))
+  await check('kobato --smoke-natives (sharp + canvas + duckdb)', () => checkNatives(binaryPath, dirs.cache))
   await check('natives extraction is the flat dynamic-library set', () => checkNativesLayout(dirs.cache))
   await check('kobato --smoke-worker (sharp worker pool)', () =>
     checkWorker(binaryPath, {
-      database__url: process.env.database__url ?? DEFAULT_DATABASE_URL,
+      storage__database: databases.database,
+      storage__analyticsDatabase: databases.analytics,
       security__sessionSecret: randomBytes(32).toString('hex'),
       security__encryptionKey: randomBytes(32).toString('hex'),
       storage__data: dirs.data,

@@ -1,14 +1,15 @@
 // Redirected native require — the runtime half of the SEA native-module
 // strategy (the build half is `scripts/sea/redirect-native-requires.ts`).
 //
-// sharp and @napi-rs/canvas are statically imported and bundled
-// into the server/worker bundles; the bundler plugin rewrites the
-// packages' own platform-specifier `require(...)` call sites to
-// `nativeRequire(...)`. This module resolves exactly the enumerated
-// specifiers those call sites can produce:
+// sharp, @napi-rs/canvas, and @duckdb/node-api are statically imported
+// and bundled into the server/worker bundles; the bundler plugin
+// rewrites the packages' own platform-specifier `require(...)` call
+// sites to `nativeRequire(...)`. This module resolves exactly the
+// enumerated specifiers those call sites can produce:
 //
 //   `@img/sharp-<platform>/sharp.node`     the sharp addon
 //   `@napi-rs/canvas-<triple>`             the skia addon
+//   `@duckdb/node-bindings-<platform>/duckdb.node`   the DuckDB addon
 //   `@img/sharp-libvips-<platform>/versions`   ┐ metadata probes sharp
 //   `@img/sharp-libvips-<platform>/package`    │ makes while detecting or
 //   `@img/sharp-<platform>/{package,versions}` ┘ diagnosing its binding
@@ -43,6 +44,7 @@ import { join } from 'node:path'
 import { getEmbeddedAsset, requireExternal } from '@/server/infra/sea'
 import {
   SEA_NATIVE_ASSET_PREFIX,
+  SEA_NATIVE_DUCKDB_ADDON_KEY,
   SEA_NATIVE_META_LIBVIPS_PACKAGE_KEY,
   SEA_NATIVE_META_LIBVIPS_VERSIONS_KEY,
   SEA_NATIVE_META_SHARP_PACKAGE_KEY,
@@ -87,8 +89,16 @@ function isMuslLinux(): boolean {
   return report.header?.glibcVersionRuntime === undefined
 }
 
+/** duckdb.js's `getRuntimePlatformArch()`: `${platform}-${arch}`, plus the musl suffix on musl linux. */
+function duckdbPlatformArch(): string {
+  return process.platform === 'linux' && isMuslLinux()
+    ? `linux-${process.arch}-musl`
+    : `${process.platform}-${process.arch}`
+}
+
 const SHARP_PLATFORM = sharpPlatform()
 const CANVAS_TRIPLE = canvasTriple()
+const DUCKDB_PLATFORM_ARCH = duckdbPlatformArch()
 
 /** The full enumerated specifier set — anything else is a hard error. */
 const SHARP_ADDON_SPEC = `@img/sharp-${SHARP_PLATFORM}/sharp.node`
@@ -98,6 +108,7 @@ const LIBVIPS_VERSIONS_SPEC = `@img/sharp-libvips-${SHARP_PLATFORM}/versions`
 const LIBVIPS_PACKAGE_SPEC = `@img/sharp-libvips-${SHARP_PLATFORM}/package`
 const LIBVIPS_LIB_SPEC = `@img/sharp-libvips-${SHARP_PLATFORM}/lib`
 const CANVAS_ADDON_SPEC = `@napi-rs/canvas-${CANVAS_TRIPLE}`
+const DUCKDB_ADDON_SPEC = `@duckdb/node-bindings-${DUCKDB_PLATFORM_ARCH}/duckdb.node`
 
 /** Extraction file name of an addon asset: its key minus the natives prefix. */
 function addonFileName(key: string): string {
@@ -131,6 +142,8 @@ export function nativeRequire<T>(specifier: string): T {
       return requireExternal<T>(underSea ? join(nativesDir, addonFileName(SEA_NATIVE_SHARP_ADDON_KEY)) : specifier)
     case CANVAS_ADDON_SPEC:
       return requireExternal<T>(underSea ? join(nativesDir, addonFileName(SEA_NATIVE_SKIA_ADDON_KEY)) : specifier)
+    case DUCKDB_ADDON_SPEC:
+      return requireExternal<T>(underSea ? join(nativesDir, addonFileName(SEA_NATIVE_DUCKDB_ADDON_KEY)) : specifier)
     case LIBVIPS_VERSIONS_SPEC:
       return underSea ? readEmbeddedMetadata<T>(SEA_NATIVE_META_LIBVIPS_VERSIONS_KEY) : requireExternal<T>(specifier)
     case LIBVIPS_PACKAGE_SPEC:

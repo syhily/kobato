@@ -1,19 +1,20 @@
 // Bundler plugin: redirect the native packages' platform requires.
 //
-// sharp and @napi-rs/canvas are statically imported by the
-// server/worker graphs and inlined into the SEA bundles (`ssr.noExternal:
-// true`). Their own platform loading must NOT resolve at bundle time —
-// the `.node` addons and libvips metadata live outside the bundle (the
-// flat natives cache dir + embedded `natives-meta/*` assets). This plugin
-// rewrites the platform-specifier `require(...)` call sites inside those
-// packages' modules to `nativeRequire(...)`, whose runtime resolution
-// lives in `@/server/infra/native-require`:
+// sharp, @napi-rs/canvas, and @duckdb/node-api are statically imported
+// by the server/worker graphs and inlined into the SEA bundles
+// (`ssr.noExternal: true`). Their own platform loading must NOT resolve
+// at bundle time — the `.node` addons and libvips metadata live outside
+// the bundle (the flat natives cache dir + embedded `natives-meta/*`
+// assets). This plugin rewrites the platform-specifier `require(...)`
+// call sites inside those packages' modules to `nativeRequire(...)`,
+// whose runtime resolution lives in `@/server/infra/native-require`:
 //
 //   require("@img/sharp-darwin-x64/sharp.node")     → nativeRequire(...)
 //   require(`@img/sharp-libvips-${p}/versions`)     → nativeRequire(...)
 //   require(`../src/build/Release/sharp-....node`)  → nativeRequire(...)  (throws; sharp's try/catch absorbs it)
 //   require('@napi-rs/canvas-darwin-x64')           → nativeRequire(...)
 //   require('./skia.darwin-x64.node')               → nativeRequire(...)  (throws; canvas's try/catch absorbs it)
+//   require('@duckdb/node-bindings-darwin-x64/duckdb.node')  → nativeRequire(...)
 //
 // Every other require (node builtins, `semver`, `detect-libc`,
 // `@img/colour`, relative JS imports, …) is left for the bundler to
@@ -36,30 +37,40 @@ const NATIVE_REQUIRE_BINDING = 'nativeRequire'
 const NATIVE_REQUIRE_MODULE = '@/server/infra/native-require'
 
 /**
- * Modules this plugin transforms: any file inside the sharp or
- * @napi-rs/canvas package directories (pnpm store or flat node_modules —
- * both layouts contain a `/node_modules/<pkg>/` segment). Platform
- * packages (`@img/*`, `@napi-rs/canvas-*`) never enter the module graph —
- * their only references were rewritten away — so they need no scope.
+ * Modules this plugin transforms: any file inside the sharp,
+ * @napi-rs/canvas, or @duckdb/node-bindings package directories (pnpm
+ * store or flat node_modules — both layouts contain a
+ * `/node_modules/<pkg>/` segment). Platform packages (`@img/*`,
+ * `@napi-rs/canvas-*`, `@duckdb/node-bindings-*`) never enter the module
+ * graph — their only references were rewritten away — so they need no
+ * scope.
  */
 const SCOPED_MODULE =
-  /[\\/]node_modules[\\/](?:\.pnpm[\\/][^\\/]+[\\/]node_modules[\\/])?(?:sharp|@napi-rs[\\/]canvas)[\\/]/
+  /[\\/]node_modules[\\/](?:\.pnpm[\\/][^\\/]+[\\/]node_modules[\\/])?(?:sharp|@napi-rs[\\/]canvas|@duckdb[\\/]node-bindings)[\\/]/
 
 /**
  * Arguments that mark a platform-specifier require: `@img/sharp…` (the
  * sharp platform addon + the libvips packages' metadata probes — NOT
  * `@img/colour`, a pure-JS dependency the bundler inlines normally),
- * `@napi-rs/canvas-…` (skia platform packages), `.node` (relative addon
- * attempts), `src/build` (sharp's build-from-source fallback),
- * `skia.wasi.cjs` (canvas's bundled-wasm fallback — rewritten so the
- * bundler never tries to resolve the nonexistent file; nativeRequire
- * throws and canvas's try/catch walks on).
+ * `@napi-rs/canvas-…` (skia platform packages),
+ * `@duckdb/node-bindings-…` (DuckDB platform packages), `.node`
+ * (relative addon attempts), `src/build` (sharp's build-from-source
+ * fallback), `skia.wasi.cjs` (canvas's bundled-wasm fallback — rewritten
+ * so the bundler never tries to resolve the nonexistent file;
+ * nativeRequire throws and canvas's try/catch walks on).
  */
-const PLATFORM_SPECIFIER_MARKERS = ['@img/sharp', '@napi-rs/canvas-', '.node', 'src/build', 'skia.wasi.cjs']
+const PLATFORM_SPECIFIER_MARKERS = [
+  '@img/sharp',
+  '@napi-rs/canvas-',
+  '@duckdb/node-bindings-',
+  '.node',
+  'src/build',
+  'skia.wasi.cjs',
+]
 
 /** Matches `require(<arg>)` call sites whose argument contains a platform marker. */
 const PLATFORM_REQUIRE =
-  /(?<![\w$.])require\(([^)]*(?:@img\/sharp|@napi-rs\/canvas-|\.node|src\/build|skia\.wasi\.cjs)[^)]*)\)/g
+  /(?<![\w$.])require\(([^)]*(?:@img\/sharp|@napi-rs\/canvas-|@duckdb\/node-bindings-|\.node|src\/build|skia\.wasi\.cjs)[^)]*)\)/g
 
 /** Whether a module id belongs to one of the native packages. Exported for the contract test. */
 export function isNativePackageModule(id: string): boolean {
