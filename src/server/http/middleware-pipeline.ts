@@ -109,8 +109,16 @@ export function configureMiddleware(app: Hono<Env>): void {
   // overwrite it with the dynamic nonce-based value.
   app.use(async (c, next) => {
     await next()
+    // Early short-circuits registered before `requestContextMiddleware`
+    // (trailing-slash 301 redirect, WP decoy 404) never derive a
+    // RequestContext — leave the static CSP from `secureHeaders` in place
+    // for those responses instead of crashing on the missing nonce.
+    const rc = c.var.requestContext
+    if (!rc) {
+      return
+    }
     const bundle = getBlogSettingsBundleSync()
-    const csp = buildCspHeader({ bundle, nonce: c.var.requestContext.cspNonce, isDev: import.meta.env.DEV })
+    const csp = buildCspHeader({ bundle, nonce: rc.cspNonce, isDev: import.meta.env.DEV })
     c.res.headers.set('Content-Security-Policy', csp)
   })
 

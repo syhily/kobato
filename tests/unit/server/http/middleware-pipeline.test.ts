@@ -28,11 +28,14 @@ vi.mock('@/server/http/middlewares/cors', () => ({
 }))
 
 vi.mock('@/server/http/middlewares/install-gate', () => ({
-  honoInstallGateMiddleware: vi.fn(() => async (_c: unknown, next: () => Promise<void>) => next()),
+  // Mounted directly (`app.use(honoInstallGateMiddleware)`) — the mock must
+  // BE the pass-through middleware, not a factory returning one.
+  honoInstallGateMiddleware: vi.fn(async (_c: unknown, next: () => Promise<void>) => next()),
 }))
 
 vi.mock('@/server/http/middlewares/request-context', () => ({
-  requestContextMiddleware: vi.fn(() => async (_c: unknown, next: () => Promise<void>) => next()),
+  // Mounted directly (`app.use(requestContextMiddleware)`) — see above.
+  requestContextMiddleware: vi.fn(async (_c: unknown, next: () => Promise<void>) => next()),
 }))
 
 vi.mock('@/server/http/middlewares/request-timeout', () => ({
@@ -40,15 +43,18 @@ vi.mock('@/server/http/middlewares/request-timeout', () => ({
 }))
 
 vi.mock('@/server/http/middlewares/trailing-slash', () => ({
-  trailingSlashNormaliser: vi.fn(() => async (_c: unknown, next: () => Promise<void>) => next()),
+  // Mounted directly (`app.use(trailingSlashNormaliser)`) — see above.
+  trailingSlashNormaliser: vi.fn(async (_c: unknown, next: () => Promise<void>) => next()),
 }))
 
 vi.mock('@/server/http/middlewares/visitor-cookie', () => ({
-  honoVisitorCookieMiddleware: vi.fn(() => async (_c: unknown, next: () => Promise<void>) => next()),
+  // Mounted directly (`app.use(honoVisitorCookieMiddleware)`) — see above.
+  honoVisitorCookieMiddleware: vi.fn(async (_c: unknown, next: () => Promise<void>) => next()),
 }))
 
 vi.mock('@/server/http/middlewares/wp-decoy', () => ({
-  honoWpDecoyMiddleware: vi.fn(() => async (_c: unknown, next: () => Promise<void>) => next()),
+  // Mounted directly (`app.use(honoWpDecoyMiddleware)`) — see above.
+  honoWpDecoyMiddleware: vi.fn(async (_c: unknown, next: () => Promise<void>) => next()),
 }))
 
 vi.mock('@/server/http/resources/analytics', () => ({
@@ -171,6 +177,35 @@ describe('configureMiddleware', () => {
     expect(paths).toContain('/health')
     expect(paths).toContain('/ready')
     expect(paths).toContain('/assets/*')
+  })
+})
+
+describe('dynamic CSP middleware', () => {
+  it('keeps the static secureHeaders CSP when no RequestContext was derived (early short-circuit)', async () => {
+    const app = new Hono<Env>()
+    configureMiddleware(app)
+    // The mocked requestContextMiddleware never sets c.var.requestContext,
+    // which is exactly the state early short-circuits registered before it
+    // (trailing-slash 301 redirect, WP decoy 404) leave behind — the dynamic
+    // CSP overwrite must skip instead of crashing on the missing nonce.
+    const res = await app.request('/health')
+    expect(res.status).toBe(200)
+    const csp = res.headers.get('Content-Security-Policy')
+    expect(csp).toContain("default-src 'self'")
+    // Marker only present in the dynamic policy from buildCspHeader.
+    expect(csp).not.toContain("base-uri 'self'")
+  })
+
+  it('overwrites with the dynamic policy when the RequestContext exists', async () => {
+    const app = new Hono<Env>()
+    configureMiddleware(app)
+    app.use((c, next) => {
+      c.set('requestContext', makeRequestContext({ session: emptySession(), cspNonce: 'test-nonce-xyz' }))
+      return next()
+    })
+    const res = await app.request('/any-path')
+    const csp = res.headers.get('Content-Security-Policy')
+    expect(csp).toContain("base-uri 'self'")
   })
 })
 
