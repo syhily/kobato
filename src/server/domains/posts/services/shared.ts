@@ -16,7 +16,7 @@ export interface AdminPostsListResult {
 export interface UpsertPostMetaInput extends UpsertMetaInputBase {
   visible?: boolean
   pinnedAt?: Date | null
-  categoryId?: bigint | null
+  categoryId?: number | null
   tags?: string[]
   alias?: string[]
 }

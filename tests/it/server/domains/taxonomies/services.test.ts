@@ -1,11 +1,10 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
+
 import { clearAllTables } from '#/_helpers/integration-db'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { postTag } from '@/server/infra/db/schema/post-tag'
 import { category as categoryTable, tag as tagTable } from '@/server/infra/db/schema/taxonomy'
@@ -14,12 +13,11 @@ vi.mock('@/server/domains/images/services/enhance', () => ({
   hydrateImageRefs: vi.fn(async () => undefined),
 }))
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {
@@ -27,7 +25,7 @@ beforeEach(async () => {
   vi.clearAllMocks()
 })
 
-async function seedCategory(opts: Partial<typeof categoryTable.$inferInsert> = {}): Promise<bigint> {
+async function seedCategory(opts: Partial<typeof categoryTable.$inferInsert> = {}): Promise<number> {
   const rows = await db
     .insert(categoryTable)
     .values({
@@ -42,7 +40,7 @@ async function seedCategory(opts: Partial<typeof categoryTable.$inferInsert> = {
   return rows[0]!.id
 }
 
-async function seedTag(opts: Partial<typeof tagTable.$inferInsert> = {}): Promise<bigint> {
+async function seedTag(opts: Partial<typeof tagTable.$inferInsert> = {}): Promise<number> {
   const rows = await db
     .insert(tagTable)
     .values({
@@ -55,16 +53,16 @@ async function seedTag(opts: Partial<typeof tagTable.$inferInsert> = {}): Promis
 }
 
 async function seedPublishedPost(
-  categoryId?: bigint | null,
+  categoryId?: number | null,
   opts: { title?: string; visible?: boolean; publishedAt?: Date } = {},
-): Promise<bigint> {
+): Promise<number> {
   const rows = await db
     .insert(postMetaTable)
     .values({
       slug: `p-${Math.random().toString(36).slice(2)}`,
       title: opts.title ?? 'Post',
       published: true,
-      publishedRevisionId: 1n,
+      publishedRevisionId: 1,
       publishedAt: opts.publishedAt ?? new Date('2020-01-01'),
       firstPublishedAt: new Date('2020-01-01'),
       categoryId: categoryId ?? null,
@@ -91,7 +89,7 @@ describe('taxonomies/shared — formatBlockMessage', () => {
 describe('taxonomies/shared — ensureUniqueOnCreateTaxonomy', () => {
   it('throws CONFLICT when name already exists', async () => {
     const { ensureUniqueOnCreateTaxonomy } = await import('@/server/domains/taxonomies/shared')
-    const dupName = async () => ({ id: 1n, name: 'X' }) as never
+    const dupName = async () => ({ id: 1, name: 'X' }) as never
     const noSlug = async () => null
     await expect(ensureUniqueOnCreateTaxonomy(dupName, noSlug, 'X', 'x', '标签')).rejects.toMatchObject({
       code: 'CONFLICT',
@@ -100,7 +98,7 @@ describe('taxonomies/shared — ensureUniqueOnCreateTaxonomy', () => {
   it('throws CONFLICT when slug already exists', async () => {
     const { ensureUniqueOnCreateTaxonomy } = await import('@/server/domains/taxonomies/shared')
     const noName = async () => null
-    const dupSlug = async () => ({ id: 1n, name: 'X' }) as never
+    const dupSlug = async () => ({ id: 1, name: 'X' }) as never
     await expect(ensureUniqueOnCreateTaxonomy(noName, dupSlug, 'X', 'x', '标签')).rejects.toMatchObject({
       code: 'CONFLICT',
     })
@@ -115,17 +113,17 @@ describe('taxonomies/shared — ensureUniqueOnCreateTaxonomy', () => {
 describe('taxonomies/shared — ensureUniqueOnUpdateTaxonomy', () => {
   it('throws CONFLICT when the new name is taken by another row', async () => {
     const { ensureUniqueOnUpdateTaxonomy } = await import('@/server/domains/taxonomies/shared')
-    const dupName = async () => ({ id: 2n, name: 'X' }) as never
+    const dupName = async () => ({ id: 2, name: 'X' }) as never
     const none = async () => null
-    await expect(ensureUniqueOnUpdateTaxonomy(dupName, none, 1n, 'X', 'Old', 'x', 'x', '标签')).rejects.toMatchObject({
+    await expect(ensureUniqueOnUpdateTaxonomy(dupName, none, 1, 'X', 'Old', 'x', 'x', '标签')).rejects.toMatchObject({
       code: 'CONFLICT',
     })
   })
   it('skips the check when name and slug are unchanged', async () => {
     const { ensureUniqueOnUpdateTaxonomy } = await import('@/server/domains/taxonomies/shared')
-    const dup = async () => ({ id: 2n }) as never
+    const dup = async () => ({ id: 2 }) as never
     await expect(
-      ensureUniqueOnUpdateTaxonomy(dup, dup, 1n, 'Same', 'Same', 'same', 'same', '标签'),
+      ensureUniqueOnUpdateTaxonomy(dup, dup, 1, 'Same', 'Same', 'same', 'same', '标签'),
     ).resolves.toBeUndefined()
   })
 })
@@ -133,7 +131,7 @@ describe('taxonomies/shared — ensureUniqueOnUpdateTaxonomy', () => {
 describe('taxonomies/shared — deleteAdminTaxonomy', () => {
   it('returns false when the row does not exist', async () => {
     const { deleteAdminTaxonomy } = await import('@/server/domains/taxonomies/shared')
-    const r = await deleteAdminTaxonomy(9999n, '标签', {
+    const r = await deleteAdminTaxonomy(9999, '标签', {
       findById: async () => null,
       deleteRow: async () => false,
       listPostTitles: async () => [],
@@ -143,8 +141,8 @@ describe('taxonomies/shared — deleteAdminTaxonomy', () => {
   it('throws CONFLICT when posts still reference the taxonomy', async () => {
     const { deleteAdminTaxonomy } = await import('@/server/domains/taxonomies/shared')
     await expect(
-      deleteAdminTaxonomy(1n, '标签', {
-        findById: async () => ({ id: 1n, name: 'X' }),
+      deleteAdminTaxonomy(1, '标签', {
+        findById: async () => ({ id: 1, name: 'X' }),
         deleteRow: async () => true,
         listPostTitles: async () => ['Post A'],
       }),
@@ -153,8 +151,8 @@ describe('taxonomies/shared — deleteAdminTaxonomy', () => {
   it('deletes when no posts reference it', async () => {
     const { deleteAdminTaxonomy } = await import('@/server/domains/taxonomies/shared')
     let deleted = false
-    const r = await deleteAdminTaxonomy(1n, '标签', {
-      findById: async () => ({ id: 1n, name: 'X' }),
+    const r = await deleteAdminTaxonomy(1, '标签', {
+      findById: async () => ({ id: 1, name: 'X' }),
       deleteRow: async () => {
         deleted = true
         return true
@@ -220,7 +218,7 @@ describe('taxonomies/tags/service — upsertAdminTag (update)', () => {
   })
   it('throws NOT_FOUND when id does not exist', async () => {
     const { upsertAdminTag } = await import('@/server/domains/taxonomies/tags/service')
-    await expect(upsertAdminTag(db, { id: 9999n, name: 'X' })).rejects.toMatchObject({
+    await expect(upsertAdminTag(db, { id: 9999, name: 'X' })).rejects.toMatchObject({
       code: 'NOT_FOUND',
     })
   })
@@ -335,7 +333,7 @@ describe('taxonomies/categories/services/mutate — upsertAdminCategory (update)
   })
   it('throws NOT_FOUND when id does not exist', async () => {
     const { upsertAdminCategory } = await import('@/server/domains/taxonomies/categories/services/mutate')
-    await expect(upsertAdminCategory(db, { id: 9999n, name: 'X', cover: '', description: '' })).rejects.toMatchObject({
+    await expect(upsertAdminCategory(db, { id: 9999, name: 'X', cover: '', description: '' })).rejects.toMatchObject({
       code: 'NOT_FOUND',
     })
   })
@@ -398,7 +396,7 @@ describe('taxonomies/categories/services/mutate — deleteAdminCategory', () => 
   })
   it('returns false when the category does not exist', async () => {
     const { deleteAdminCategory } = await import('@/server/domains/taxonomies/categories/services/mutate')
-    expect(await deleteAdminCategory(db, 9999n)).toBe(false)
+    expect(await deleteAdminCategory(db, 9999)).toBe(false)
   })
 })
 

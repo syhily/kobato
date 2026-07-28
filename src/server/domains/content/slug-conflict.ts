@@ -14,7 +14,9 @@ import { DomainError, isUniqueConstraintError } from '@/server/infra/http/errors
  * wrapped in drizzle's `DrizzleQueryError` are matched here.
  */
 export function rethrowSlugConflict(err: unknown, entityType: ContentType, slug: string): never {
-  if (isUniqueConstraintError(err, `${entityType}_slug_key`) || isUniqueConstraintError(err, 'uq_slug_registry_slug')) {
+  // SQLite messages name the offending columns (`post.slug` for the
+  // inline UNIQUE) or the named unique index (`uq_slug_registry_slug`).
+  if (isUniqueConstraintError(err, `${entityType}.slug`) || isUniqueConstraintError(err, 'uq_slug_registry_slug')) {
     throw new DomainError('CONFLICT', `slug "${slug}" 已被占用。`)
   }
   throw err

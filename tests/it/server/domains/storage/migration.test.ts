@@ -1,15 +1,13 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
 import type { BlogSettingsBundle, BrandingObjectRef } from '@/shared/config/types'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { clearAllTables } from '#/_helpers/integration-db'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { getLocalStorageMigrationStats } from '@/server/domains/storage/migration'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { backup as backupTable } from '@/server/infra/db/schema/backup'
 import { image, music } from '@/server/infra/db/schema/media'
 
@@ -17,12 +15,11 @@ import { image, music } from '@/server/infra/db/schema/media'
 // rows through the worker database, and the branding count comes from the
 // in-process settings snapshot — exactly what the admin migration card and
 // the migration run summary display.
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {

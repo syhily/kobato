@@ -1,8 +1,7 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { Feed } from 'feed'
 import sanitizeHtml from 'sanitize-html'
 
+import type { Database } from '@/server/infra/db/database'
 import type { Page, Post } from '@/shared/types/catalog'
 
 import { getPublicMusicMetasByIds } from '@/server/domains/music/services/read'
@@ -83,7 +82,7 @@ export function sanitizeFeedHtml(html: string): string {
   })
 }
 
-async function renderEntryContent(db: NodePgDatabase, entry: Post | Page): Promise<string> {
+async function renderEntryContent(db: Database, entry: Post | Page): Promise<string> {
   // Feed items ship as HTML (RSS/Atom can't carry a React tree). We skip the
   // image-enhancement pipeline (feed readers don't need thumbhash
   // placeholders or DB-resolved dimensions), and `rssMode` degrades
@@ -98,7 +97,7 @@ async function renderEntryContent(db: NodePgDatabase, entry: Post | Page): Promi
   return sanitizeFeedHtml(html)
 }
 
-export async function generateFeeds(db: NodePgDatabase, options: FeedOptions = {}) {
+export async function generateFeeds(db: Database, options: FeedOptions = {}) {
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
   const content = requireBlogSettingsSection('content')
   const { category, tag } = options

@@ -1,5 +1,4 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
+import type { Database } from '@/server/infra/db/database'
 import type { FontsSettings } from '@/shared/config/types'
 import type { ResolvedFont, ResolvedFonts } from '@/shared/types/fonts'
 
@@ -29,7 +28,7 @@ function etagToTimestamp(etag: string): number {
  *   only load on routes that opt in via `handle.postFonts`).
  */
 export async function resolveFontsForRender(
-  db: NodePgDatabase,
+  db: Database,
   settings: FontsSettings,
   wantsPostFonts: boolean,
 ): Promise<ResolvedFonts> {

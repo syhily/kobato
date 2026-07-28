@@ -1,8 +1,5 @@
-import type { Pool } from 'pg'
-
 import type { Logger } from '@/server/infra/logger'
 
-import { closePool } from '@/server/infra/db/pool'
 import { closeHttpServer, setRestoreState, setServerPhase } from '@/server/infra/lifecycle'
 
 type CompleteFn = (success: boolean, error?: Error) => Promise<void>
@@ -20,16 +17,19 @@ export function resetRestoreComplete(): void {
 }
 
 export interface RestoreOrchestratorDeps {
-  pool: Pool
+  /** Close the live database handle. MUST run before `restoreFn` swaps
+   * the database files — SQLite keeps the file open, and on Windows a
+   * replaced-under-foot file would fail outright (on POSIX it would
+   * silently keep writing to an unlinked inode). */
+  closeCurrentDatabase(): void
   log: Logger
 }
 
 /**
  * Fire-and-forget restore that drains the HTTP server before running the
- * restore, so no new requests arrive while `psql` is working. The connection
- * pool is kept open during `restoreFn` so post-restore DB queries (audit
- * logging, admin lookup, etc.) still work. The pool is closed and recreated
- * by the completion callback before the server is restarted.
+ * restore, so no new requests arrive while the backup file replaces the
+ * live one. The completion callback reopens the database on the new file
+ * and restarts the server.
  */
 export function performSafeRestore(deps: RestoreOrchestratorDeps, restoreFn: () => Promise<void>): void {
   // Capture the promise so callers (tests) can await completion, and so we
@@ -45,8 +45,8 @@ export function performSafeRestore(deps: RestoreOrchestratorDeps, restoreFn: () 
       // 1. Close HTTP server (stop accepting, drain in-flight)
       await closeHttpServer()
 
-      // 2. Run restore — psql uses its own connection, and the pool
-      //    is still available for post-restore DB queries inside restoreFn.
+      // 2. Close the database handle, then swap the files.
+      deps.closeCurrentDatabase()
       setRestoreState('restoring')
       await restoreFn()
 
@@ -59,8 +59,8 @@ export function performSafeRestore(deps: RestoreOrchestratorDeps, restoreFn: () 
       setRestoreState('failed', error.message)
     }
 
-    // 3. Run completion callback first (recreates pool, restarts server,
-    //    flushes batchers) so it can use the still-open old pool.
+    // 3. Run completion callback (reopens the database, restarts the
+    //    server, resets batchers).
     if (completeFn) {
       try {
         await completeFn(success, error)
@@ -71,19 +71,6 @@ export function performSafeRestore(deps: RestoreOrchestratorDeps, restoreFn: () 
       }
     } else {
       deps.log.error('No restore completion handler registered')
-    }
-
-    // 4. Close the old pool after the completion callback is done.
-    // deps.pool is the old pool captured before drain. The completion
-    // callback (server.ts) calls recreatePool() which creates a new pool
-    // and assigns it to the module-level db/pool variables. We close the
-    // old pool here after the callback finishes using it.
-    try {
-      await closePool(deps.pool)
-    } catch (err) {
-      deps.log.warn('Pool close error during restore completion', {
-        err: err instanceof Error ? err.message : String(err),
-      })
     }
   })()
 

@@ -1,11 +1,11 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { eq } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
+
 import { clearAllTables } from '#/_helpers/integration-db'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import {
   countAllComments,
   countAdminComments,
@@ -64,26 +64,24 @@ import {
   requestDeleteComment,
   softDeleteCommentById,
 } from '@/server/domains/comments/services/moderate'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { comment } from '@/server/infra/db/schema/comment'
 import { metric } from '@/server/infra/db/schema/metric'
 import { page } from '@/server/infra/db/schema/page'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {
   await clearAllTables(db)
 })
 
-async function seedUser(opts: Partial<typeof user.$inferInsert> = {}): Promise<bigint> {
+async function seedUser(opts: Partial<typeof user.$inferInsert> = {}): Promise<number> {
   const rows = await db
     .insert(user)
     .values({
@@ -97,7 +95,7 @@ async function seedUser(opts: Partial<typeof user.$inferInsert> = {}): Promise<b
   return rows[0]!.id
 }
 
-async function seedPost(slug: string): Promise<bigint> {
+async function seedPost(slug: string): Promise<number> {
   const rows = await db
     .insert(post)
     .values({
@@ -105,13 +103,13 @@ async function seedPost(slug: string): Promise<bigint> {
       title: `Post ${slug}`,
       summary: '',
       published: true,
-      publishedRevisionId: 1n,
+      publishedRevisionId: 1,
     })
     .returning({ id: post.id })
   return rows[0]!.id
 }
 
-async function seedPageEntity(slug: string): Promise<bigint> {
+async function seedPageEntity(slug: string): Promise<number> {
   const rows = await db
     .insert(page)
     .values({ slug, title: `Page ${slug}` })
@@ -119,22 +117,22 @@ async function seedPageEntity(slug: string): Promise<bigint> {
   return rows[0]!.id
 }
 
-async function seedMetricRow(type: 'post' | 'page', ownerId: bigint, publicId: string = randomUUID()): Promise<string> {
+async function seedMetricRow(type: 'post' | 'page', ownerId: number, publicId: string = randomUUID()): Promise<string> {
   await db.insert(metric).values({ type, ownerId, publicId })
   return publicId
 }
 
-async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Promise<bigint> {
+async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Promise<number> {
   const rows = await db
     .insert(comment)
     .values({
       type: opts.type ?? 'post',
-      ownerId: opts.ownerId ?? 1n,
-      userId: opts.userId ?? 1n,
+      ownerId: opts.ownerId ?? 1,
+      userId: opts.userId ?? 1,
       content: opts.content ?? 'hello',
       body: opts.body ?? [],
       rid: opts.rid ?? 0,
-      rootId: opts.rootId ?? 0n,
+      rootId: opts.rootId ?? 0,
       isPending: opts.isPending ?? false,
       ...opts,
     })
@@ -149,7 +147,7 @@ beforeAll(async () => {
 
 describe('comments/repos/shared — whereTarget', () => {
   it('builds an AND condition over type and ownerId', () => {
-    const cond = whereTarget({ type: 'post', ownerId: 5n })
+    const cond = whereTarget({ type: 'post', ownerId: 5 })
     expect(cond).toBeDefined()
   })
 })
@@ -162,8 +160,8 @@ describe('comments/repos/shared — buildAdminListConditions', () => {
 
   it('stacks status, target, user, q, match and date bounds', () => {
     const conds = buildAdminListConditions({
-      target: { type: 'post', ownerId: 1n },
-      userId: 7n,
+      target: { type: 'post', ownerId: 1 },
+      userId: 7,
       status: 'pending',
       q: 'foo',
       match: 'does-not-contain',
@@ -188,14 +186,14 @@ describe('comments/repos/shared — adminPendingWhere', () => {
 
 describe('comments/repos/shared — mineWhere', () => {
   it('applies only the visible-clause by default', () => {
-    expect(mineWhere(1n)).toBeDefined()
+    expect(mineWhere(1)).toBeDefined()
   })
 
   it('narrowes by status, entity and q when supplied', () => {
     expect(
-      mineWhere(1n, {
+      mineWhere(1, {
         status: 'pending',
-        entity: { type: 'post', ownerId: 2n },
+        entity: { type: 'post', ownerId: 2 },
         q: 'foo',
       }),
     ).toBeDefined()
@@ -337,8 +335,8 @@ describe('comments/repos/mutate — updateOwnCommentBody', () => {
       .insert(comment)
       .values({
         type: 'post',
-        ownerId: 1n,
-        userId: 1n,
+        ownerId: 1,
+        userId: 1,
         content: 'x',
         body: [],
         updatedAt: new Date('2025-01-01'),
@@ -356,8 +354,8 @@ describe('comments/repos/mutate — updateOwnCommentBodyAndPending', () => {
       .insert(comment)
       .values({
         type: 'post',
-        ownerId: 1n,
-        userId: 1n,
+        ownerId: 1,
+        userId: 1,
         content: 'x',
         body: [],
         updatedAt: new Date('2025-01-01'),
@@ -395,7 +393,7 @@ describe('comments/repos/public-query/by-id — recentCommentsForUserDedupe', ()
 
 describe('comments/services/lookup — findCommentWithUserById', () => {
   it('returns null for a non-existent id', async () => {
-    expect(await findCommentWithUserById(db, 9999n)).toBeNull()
+    expect(await findCommentWithUserById(db, 9999)).toBeNull()
   })
   it('joins user fields for an existing row', async () => {
     const u1 = await seedUser({ name: 'Carol', email: 'carol@x.com' })
@@ -435,14 +433,14 @@ describe('comments/repos/public-query/by-id — findParentCommentsByIds', () => 
 
 describe('comments/repos/public-query/threads — countCommentsAndRoots', () => {
   it('counts 0/0 for an empty target', async () => {
-    const r = await countCommentsAndRoots(db, { type: 'post', ownerId: 9999n }, [false])
+    const r = await countCommentsAndRoots(db, { type: 'post', ownerId: 9999 }, [false])
     expect(r).toEqual({ total: 0, roots: 0 })
   })
   it('counts total and root rows for a seeded target', async () => {
     const u1 = await seedUser({ name: 'F', email: 'f@x.com' })
     const pid = await seedPost('p12')
-    await seedComment({ userId: u1, ownerId: pid, rootId: 0n, isPending: false })
-    await seedComment({ userId: u1, ownerId: pid, rootId: 1n, isPending: false })
+    await seedComment({ userId: u1, ownerId: pid, rootId: 0, isPending: false })
+    await seedComment({ userId: u1, ownerId: pid, rootId: 1, isPending: false })
     const r = await countCommentsAndRoots(db, { type: 'post', ownerId: pid }, [false])
     expect(r.total).toBe(2)
     expect(r.roots).toBe(1)
@@ -453,7 +451,7 @@ describe('comments/repos/public-query/threads — findRootComments', () => {
   it('returns root rows for the target', async () => {
     const u1 = await seedUser({ name: 'G', email: 'g@x.com' })
     const pid = await seedPost('p13')
-    await seedComment({ userId: u1, ownerId: pid, rootId: 0n, isPending: false })
+    await seedComment({ userId: u1, ownerId: pid, rootId: 0, isPending: false })
     const rows = await findRootComments(db, { type: 'post', ownerId: pid }, [false], 0, 10)
     expect(rows).toHaveLength(1)
   })
@@ -461,24 +459,24 @@ describe('comments/repos/public-query/threads — findRootComments', () => {
 
 describe('comments/repos/public-query/threads — findChildComments', () => {
   it('returns [] for an empty rootIds list', async () => {
-    expect(await findChildComments(db, { type: 'post', ownerId: 1n }, [false], [])).toEqual([])
+    expect(await findChildComments(db, { type: 'post', ownerId: 1 }, [false], [])).toEqual([])
   })
   it('returns child rows matching rootIds', async () => {
     const u1 = await seedUser({ name: 'H', email: 'h@x.com' })
     const pid = await seedPost('p14')
-    await seedComment({ userId: u1, ownerId: pid, rootId: 42n, isPending: false })
-    const rows = await findChildComments(db, { type: 'post', ownerId: pid }, [false], [42n])
+    await seedComment({ userId: u1, ownerId: pid, rootId: 42, isPending: false })
+    const rows = await findChildComments(db, { type: 'post', ownerId: pid }, [false], [42])
     expect(rows).toHaveLength(1)
   })
 })
 
 describe('comments/repos/public-query/threads — findCommentRootId', () => {
   it('returns null for a non-existent id', async () => {
-    expect(await findCommentRootId(db, 9999n)).toBeNull()
+    expect(await findCommentRootId(db, 9999)).toBeNull()
   })
   it('returns the stored rootId', async () => {
-    const id = await seedComment({ rootId: 7n })
-    expect(await findCommentRootId(db, id)).toBe(7n)
+    const id = await seedComment({ rootId: 7 })
+    expect(await findCommentRootId(db, id)).toBe(7)
   })
 })
 
@@ -646,13 +644,13 @@ describe('comments/services/admin-query — countAdminPendingDashboard', () => {
 
 describe('comments/services/lookup — countApprovedRepliesOfComment', () => {
   it('returns 0 when there are no approved replies', async () => {
-    expect(await countApprovedRepliesOfComment(db, 9999n)).toBe(0)
+    expect(await countApprovedRepliesOfComment(db, 9999)).toBe(0)
   })
 })
 
 describe('comments/repos/admin-query — findCommentWithUserAndTarget', () => {
   it('returns null for a non-existent id', async () => {
-    expect(await findCommentWithUserAndTarget(db, 9999n)).toBeNull()
+    expect(await findCommentWithUserAndTarget(db, 9999)).toBeNull()
   })
   it('returns comment + user + metric + entity', async () => {
     const u1 = await seedUser({ name: 'Q', email: 'q@x.com' })

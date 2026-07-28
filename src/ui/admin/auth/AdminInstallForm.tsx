@@ -14,10 +14,6 @@ import { cn } from '@/ui/lib/cn'
 const inputClasses =
   'h-(--spacing-auth-input) rounded-xl border-0 bg-muted/50 px-4 text-xl md:text-xl placeholder:text-muted-foreground/50 focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:border-primary'
 
-interface AdminInstallFormProps {
-  pgToolsAvailable?: boolean
-}
-
 type InstallMode = 'install' | 'restore'
 
 function useCsrfToken(): string | undefined {
@@ -25,7 +21,7 @@ function useCsrfToken(): string | undefined {
   return rootData?.csrfToken
 }
 
-export function AdminInstallForm({ pgToolsAvailable }: AdminInstallFormProps) {
+export function AdminInstallForm() {
   const navigation = useNavigation()
   const isSubmitting = navigation.state === 'submitting' && navigation.formMethod === 'POST'
   const [showPassword, setShowPassword] = useState(false)
@@ -170,24 +166,18 @@ export function AdminInstallForm({ pgToolsAvailable }: AdminInstallFormProps) {
             setRestoreError(null)
             setSelectedFile(null)
           }}
-          disabled={pgToolsAvailable === false}
+
           className={cn(
             'flex-1 rounded-xl py-2.5 text-sm font-medium transition-colors',
             mode === 'restore'
               ? 'bg-background text-foreground shadow-sm'
               : 'text-muted-foreground hover:text-foreground',
-            pgToolsAvailable === false && 'cursor-not-allowed opacity-50',
+            '',
           )}
         >
           从备份恢复
         </button>
       </div>
-
-      {pgToolsAvailable === false && mode === 'restore' ? (
-        <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive">
-          当前运行环境缺少 postgresql-client，无法使用备份恢复功能。请联系管理员或选择全新安装。
-        </div>
-      ) : null}
 
       {mode === 'install' ? (
         <Form method="post" id="adminInstallForm" className="flex w-full flex-col gap-6">
@@ -304,7 +294,7 @@ export function AdminInstallForm({ pgToolsAvailable }: AdminInstallFormProps) {
               type="file"
               accept=".sql,.gz,application/gzip"
               required
-              disabled={isRestoring || pgToolsAvailable === false}
+              disabled={isRestoring}
               onChange={handleFileChange}
               className="sr-only"
               aria-label="选择备份文件"
@@ -314,7 +304,7 @@ export function AdminInstallForm({ pgToolsAvailable }: AdminInstallFormProps) {
                 type="button"
                 variant="outline"
                 size="sm"
-                disabled={isRestoring || pgToolsAvailable === false}
+                disabled={isRestoring}
                 onClick={() => fileInputRef.current?.click()}
               >
                 {selectedFile ? '重新选择' : '选择文件'}
@@ -346,7 +336,7 @@ export function AdminInstallForm({ pgToolsAvailable }: AdminInstallFormProps) {
 
           <Button
             type="submit"
-            disabled={isRestoring || pgToolsAvailable === false || restoreError !== null}
+            disabled={isRestoring || restoreError !== null}
             className="mt-7 h-(--spacing-auth-btn) w-full rounded-xl bg-brand text-xl font-normal text-white hover:opacity-90"
           >
             {isRestoring ? '恢复中...' : '上传并恢复'}

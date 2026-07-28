@@ -1,11 +1,10 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
+
 import { clearAllTables } from '#/_helpers/integration-db'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { music } from '@/server/infra/db/schema/media'
 import { user } from '@/server/infra/db/schema/user'
 
@@ -48,12 +47,11 @@ const registry = await import('@/server/domains/music/providers/registry')
 const neteaseProvider = await import('@/server/domains/music/providers/netease')
 const tencentProvider = await import('@/server/domains/music/providers/tencent')
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {
@@ -120,7 +118,7 @@ describe('music/services/read — listMusicForAdmin', () => {
 
 describe('music/services/read — findMusicDtoById', () => {
   it('returns null for unknown id', async () => {
-    expect(await read.findMusicDtoById(db, 9999n)).toBeNull()
+    expect(await read.findMusicDtoById(db, 9999)).toBeNull()
   })
 
   it('returns dto for known id', async () => {
@@ -186,7 +184,7 @@ describe('music/services/read — getPublicMusicMetasByIds', () => {
 describe('music/services/write/metadata — updateMusicMetadata', () => {
   it('throws NOT_FOUND when music does not exist', async () => {
     await expect(
-      metadataMod.updateMusicMetadata(db, { id: 9999n, name: 'X', artist: [], album: 'A', lyric: null }),
+      metadataMod.updateMusicMetadata(db, { id: 9999, name: 'X', artist: [], album: 'A', lyric: null }),
     ).rejects.toThrow(/音乐不存在/)
   })
 
@@ -198,7 +196,7 @@ describe('music/services/write/metadata — updateMusicMetadata', () => {
   })
 
   it('throws FORBIDDEN when a non-admin viewer is not the uploader', async () => {
-    const m = await seedMusic({ uploaderId: 5n })
+    const m = await seedMusic({ uploaderId: 5 })
     await expect(
       metadataMod.updateMusicMetadata(
         db,
@@ -235,7 +233,7 @@ describe('music/services/write/metadata — updateMusicMetadata', () => {
 
 describe('music/services/write/delete — deleteMusic', () => {
   it('throws NOT_FOUND when music does not exist', async () => {
-    await expect(deleteMod.deleteMusic(db, 9999n)).rejects.toThrow(/音乐不存在/)
+    await expect(deleteMod.deleteMusic(db, 9999)).rejects.toThrow(/音乐不存在/)
   })
 
   it('soft-deletes the row', async () => {
@@ -246,7 +244,7 @@ describe('music/services/write/delete — deleteMusic', () => {
   })
 
   it('throws FORBIDDEN when non-admin viewer is not uploader', async () => {
-    const m = await seedMusic({ uploaderId: 9n })
+    const m = await seedMusic({ uploaderId: 9 })
     await expect(deleteMod.deleteMusic(db, m.id, { id: '1', role: 'author' })).rejects.toThrow()
   })
 })
@@ -255,7 +253,7 @@ describe('music/services/write/add — addMusic', () => {
   it('returns the existing row when the song is already imported', async () => {
     const existing = await seedMusic({ source: 'netease', sourceId: 'dup' })
     const r = await addMod.addMusic(db, { source: 'netease', sourceId: 'dup', uploader: null })
-    expect(BigInt(r.id)).toBe(existing.id)
+    expect(Number(r.id)).toBe(existing.id)
   })
 
   it('throws NOT_FOUND when the provider has no track', async () => {

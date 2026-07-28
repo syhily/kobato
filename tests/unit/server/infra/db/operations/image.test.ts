@@ -1,6 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { describe, expect, it } from 'vitest'
+
+import type { Database } from '@/server/infra/db/database'
 
 type ResultRow = Record<string, unknown>
 
@@ -33,13 +33,13 @@ function createMockDb(rows: ResultRow[] = []) {
     },
   )
 
-  return dbProxy as unknown as NodePgDatabase
+  return dbProxy as unknown as Database
 }
 
 describe('infra/db/operations/image — listAdminImageRows', () => {
   it('returns rows from the builder', async () => {
     const { listAdminImageRows } = await import('@/server/infra/db/operations/image')
-    const db = createMockDb([{ id: 1n, storagePath: 'a', uploaderName: 'u' }])
+    const db = createMockDb([{ id: 1, storagePath: 'a', uploaderName: 'u' }])
     const result = await listAdminImageRows(db, {})
     expect(result).toHaveLength(1)
   })
@@ -93,12 +93,12 @@ describe('infra/db/operations/image — listAdminImageRows', () => {
 describe('infra/db/operations/image — findAdminImageRowById', () => {
   it('returns the first matching row', async () => {
     const { findAdminImageRowById } = await import('@/server/infra/db/operations/image')
-    expect(await findAdminImageRowById(createMockDb([{ id: 5n }]), 5n)).toEqual({ id: 5n })
+    expect(await findAdminImageRowById(createMockDb([{ id: 5 }]), 5)).toEqual({ id: 5 })
   })
 
   it('returns null when no rows', async () => {
     const { findAdminImageRowById } = await import('@/server/infra/db/operations/image')
-    expect(await findAdminImageRowById(createMockDb([]), 5n)).toBeNull()
+    expect(await findAdminImageRowById(createMockDb([]), 5)).toBeNull()
   })
 })
 
@@ -122,24 +122,24 @@ describe('infra/db/operations/image — countAdminImages', () => {
 describe('infra/db/operations/image — findImageById', () => {
   it('returns the row when present', async () => {
     const { findImageById } = await import('@/server/infra/db/operations/image')
-    expect(await findImageById(createMockDb([{ id: 1n }]), 1n)).toEqual({ id: 1n })
+    expect(await findImageById(createMockDb([{ id: 1 }]), 1)).toEqual({ id: 1 })
   })
 
   it('returns null when absent', async () => {
     const { findImageById } = await import('@/server/infra/db/operations/image')
-    expect(await findImageById(createMockDb([]), 1n)).toBeNull()
+    expect(await findImageById(createMockDb([]), 1)).toBeNull()
   })
 })
 
 describe('infra/db/operations/image — findImagesByIds / findImagesByStoragePaths', () => {
   it('short-circuits findImagesByIds on empty input', async () => {
     const { findImagesByIds } = await import('@/server/infra/db/operations/image')
-    expect(await findImagesByIds(createMockDb([{ id: 1n }]), [])).toEqual([])
+    expect(await findImagesByIds(createMockDb([{ id: 1 }]), [])).toEqual([])
   })
 
   it('queries for non-empty ids', async () => {
     const { findImagesByIds } = await import('@/server/infra/db/operations/image')
-    expect(await findImagesByIds(createMockDb([{ id: 1n }]), [1n, 2n])).toEqual([{ id: 1n }])
+    expect(await findImagesByIds(createMockDb([{ id: 1 }]), [1, 2])).toEqual([{ id: 1 }])
   })
 
   it('short-circuits findImagesByStoragePaths on empty input', async () => {
@@ -149,16 +149,16 @@ describe('infra/db/operations/image — findImagesByIds / findImagesByStoragePat
 
   it('queries for non-empty storage paths', async () => {
     const { findImagesByStoragePaths } = await import('@/server/infra/db/operations/image')
-    expect(await findImagesByStoragePaths(createMockDb([{ id: 1n }]), ['images/a.png'])).toEqual([{ id: 1n }])
+    expect(await findImagesByStoragePaths(createMockDb([{ id: 1 }]), ['images/a.png'])).toEqual([{ id: 1 }])
   })
 })
 
 describe('infra/db/operations/image — insertImage / insertImageIfMissing / upsertImageByStoragePath', () => {
   it('inserts and returns the row', async () => {
     const { insertImage } = await import('@/server/infra/db/operations/image')
-    expect(await insertImage(createMockDb([{ id: 1n }]), { storagePath: 'a', mimeType: 'image/png' } as never)).toEqual(
-      { id: 1n },
-    )
+    expect(await insertImage(createMockDb([{ id: 1 }]), { storagePath: 'a', mimeType: 'image/png' } as never)).toEqual({
+      id: 1,
+    })
   })
 
   it('insertImageIfMissing returns null on no returned rows', async () => {
@@ -171,61 +171,61 @@ describe('infra/db/operations/image — insertImage / insertImageIfMissing / ups
   it('insertImageIfMissing returns the row when inserted', async () => {
     const { insertImageIfMissing } = await import('@/server/infra/db/operations/image')
     expect(
-      await insertImageIfMissing(createMockDb([{ id: 1n }]), { storagePath: 'a', mimeType: 'image/png' } as never),
-    ).toEqual({ id: 1n })
+      await insertImageIfMissing(createMockDb([{ id: 1 }]), { storagePath: 'a', mimeType: 'image/png' } as never),
+    ).toEqual({ id: 1 })
   })
 
   it('upsertImageByStoragePath returns the upserted row', async () => {
     const { upsertImageByStoragePath } = await import('@/server/infra/db/operations/image')
     expect(
-      await upsertImageByStoragePath(createMockDb([{ id: 1n }]), { storagePath: 'a', mimeType: 'image/png' } as never),
-    ).toEqual({ id: 1n })
+      await upsertImageByStoragePath(createMockDb([{ id: 1 }]), { storagePath: 'a', mimeType: 'image/png' } as never),
+    ).toEqual({ id: 1 })
   })
 })
 
 describe('infra/db/operations/image — softDeleteImage / updateImageNote / updateImageThumbhash', () => {
   it('softDeleteImage returns the row when present', async () => {
     const { softDeleteImage } = await import('@/server/infra/db/operations/image')
-    expect(await softDeleteImage(createMockDb([{ id: 1n }]), 1n)).toEqual({ id: 1n })
+    expect(await softDeleteImage(createMockDb([{ id: 1 }]), 1)).toEqual({ id: 1 })
   })
 
   it('softDeleteImage returns null when absent', async () => {
     const { softDeleteImage } = await import('@/server/infra/db/operations/image')
-    expect(await softDeleteImage(createMockDb([]), 1n)).toBeNull()
+    expect(await softDeleteImage(createMockDb([]), 1)).toBeNull()
   })
 
   it('updateImageNote normalizes empty/whitespace note to null', async () => {
     const { updateImageNote } = await import('@/server/infra/db/operations/image')
-    expect(await updateImageNote(createMockDb([{ id: 1n }]), 1n, '   ')).toEqual({ id: 1n })
+    expect(await updateImageNote(createMockDb([{ id: 1 }]), 1, '   ')).toEqual({ id: 1 })
   })
 
   it('updateImageNote passes non-empty note through', async () => {
     const { updateImageNote } = await import('@/server/infra/db/operations/image')
-    expect(await updateImageNote(createMockDb([{ id: 1n }]), 1n, 'note')).toEqual({ id: 1n })
+    expect(await updateImageNote(createMockDb([{ id: 1 }]), 1, 'note')).toEqual({ id: 1 })
   })
 
   it('updateImageNoteWithUploader delegates to findAdminImageRowById', async () => {
     const { updateImageNoteWithUploader } = await import('@/server/infra/db/operations/image')
-    expect(await updateImageNoteWithUploader(createMockDb([{ id: 1n, uploaderName: 'u' }]), 1n, 'note')).toEqual({
-      id: 1n,
+    expect(await updateImageNoteWithUploader(createMockDb([{ id: 1, uploaderName: 'u' }]), 1, 'note')).toEqual({
+      id: 1,
       uploaderName: 'u',
     })
   })
 
   it('updateImageNoteWithUploader returns null when the update returns null', async () => {
     const { updateImageNoteWithUploader } = await import('@/server/infra/db/operations/image')
-    expect(await updateImageNoteWithUploader(createMockDb([]), 1n, 'note')).toBeNull()
+    expect(await updateImageNoteWithUploader(createMockDb([]), 1, 'note')).toBeNull()
   })
 
   it('updateImageThumbhash returns the row when present', async () => {
     const { updateImageThumbhash } = await import('@/server/infra/db/operations/image')
-    expect(await updateImageThumbhash(createMockDb([{ id: 1n }]), 1n, 'hash')).toEqual({ id: 1n })
+    expect(await updateImageThumbhash(createMockDb([{ id: 1 }]), 1, 'hash')).toEqual({ id: 1 })
   })
 
   it('updateImageThumbhashWithUploader returns the joined row', async () => {
     const { updateImageThumbhashWithUploader } = await import('@/server/infra/db/operations/image')
-    expect(await updateImageThumbhashWithUploader(createMockDb([{ id: 1n, uploaderName: 'u' }]), 1n, 'hash')).toEqual({
-      id: 1n,
+    expect(await updateImageThumbhashWithUploader(createMockDb([{ id: 1, uploaderName: 'u' }]), 1, 'hash')).toEqual({
+      id: 1,
       uploaderName: 'u',
     })
   })

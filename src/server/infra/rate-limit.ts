@@ -27,7 +27,7 @@ const RATE_LIMIT_NAMESPACE = 'rate-limit:'
 const signInKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}signin:${ip}`
 const inviteKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}invite:${ip}`
 const passwordResetKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}password-reset:${ip}`
-const passwordResetTargetKey = (userId: bigint) => `${RATE_LIMIT_NAMESPACE}password-reset-target:${userId.toString()}`
+const passwordResetTargetKey = (userId: number) => `${RATE_LIMIT_NAMESPACE}password-reset-target:${userId.toString()}`
 const commentPostIpKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}comment-post:${ip}`
 
 // Hash the email so the raw address never lands in the counter map.
@@ -39,7 +39,7 @@ function hashEmail(email: string): string {
 }
 
 const commentPostEmailKey = (email: string) => `${RATE_LIMIT_NAMESPACE}comment-email:${hashEmail(email)}`
-const inviteEmailKey = (adminId: bigint, email: string) =>
+const inviteEmailKey = (adminId: number, email: string) =>
   `${RATE_LIMIT_NAMESPACE}invite-email:${adminId.toString()}:${hashEmail(email)}`
 const passwordResetEmailKey = (email: string) => `${RATE_LIMIT_NAMESPACE}password-reset-email:${hashEmail(email)}`
 const likeIncreaseKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}like-increase:${ip}`
@@ -188,7 +188,7 @@ export async function tryInviteRateLimit(ip: string): Promise<RateLimitResult> {
  * faster than this bucket allows. The email is hashed before it
  * becomes a counter key so the raw address is never stored.
  */
-export async function tryInviteByEmailRateLimit(adminId: bigint, email: string): Promise<RateLimitResult> {
+export async function tryInviteByEmailRateLimit(adminId: number, email: string): Promise<RateLimitResult> {
   return tryKeyedRateLimit(inviteEmailKey(adminId, email), readBucket('inviteEmail'))
 }
 
@@ -213,7 +213,7 @@ export async function tryPasswordResetByEmailRateLimit(email: string): Promise<R
  * compromised cookie — can't carpet-bomb a single mailbox even if
  * their own IP budget is fresh.
  */
-export async function tryPasswordResetByTargetRateLimit(userId: bigint): Promise<RateLimitResult> {
+export async function tryPasswordResetByTargetRateLimit(userId: number): Promise<RateLimitResult> {
   return tryKeyedRateLimit(passwordResetTargetKey(userId), readBucket('passwordResetTarget'))
 }
 

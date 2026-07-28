@@ -56,6 +56,7 @@ vi.mock('@/server/domains/backup/services/validate', () => ({
 
 vi.mock('@/server/domains/backup/restore-orchestrator', () => ({
   performSafeRestore: (...args: unknown[]) => mockPerformSafeRestore(...args),
+  registerRestoreComplete: vi.fn(),
 }))
 
 vi.mock('@/server/domains/settings/services/hydrate', () => ({
@@ -212,7 +213,7 @@ describe('/api/setup/restore', () => {
     mockValidateCsrfToken.mockReturnValue(true)
     mockCheckPgToolsAvailable.mockResolvedValue(true)
     mockExtractBackupSql.mockResolvedValue('CREATE TABLE test (id INT);')
-    mockFindFirstAdminUser.mockResolvedValue({ id: 1n, role: 'admin' })
+    mockFindFirstAdminUser.mockResolvedValue({ id: 1, role: 'admin' })
     mockPerformSafeRestore.mockImplementation(async (_ctx: unknown, fn: () => Promise<void>) => {
       await fn()
     })

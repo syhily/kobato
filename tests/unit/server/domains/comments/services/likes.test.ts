@@ -1,6 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import type { Database } from '@/server/infra/db/database'
 
 vi.mock('@/server/infra/db/operations/like', () => ({
   commentCountsByOwnerIds: vi.fn(),
@@ -32,8 +32,8 @@ import * as likeOps from '@/server/infra/db/operations/like'
 import { decrementMetricVotes } from '@/server/infra/db/operations/metric'
 
 const dbMock = {
-  transaction: async (fn: (tx: NodePgDatabase) => Promise<unknown>) => fn(dbMock as NodePgDatabase),
-} as NodePgDatabase
+  transaction: (fn: (tx: Database) => unknown) => fn(dbMock as Database),
+} as Database
 
 import {
   decreaseLikes,
@@ -62,34 +62,34 @@ describe('comments likes service', () => {
   })
 
   it('increases likes and returns a token', async () => {
-    const result = await increaseLikes(dbMock, { type: 'post', ownerId: 1n })
+    const result = await increaseLikes(dbMock, { type: 'post', ownerId: 1 })
     expect(result.token).toBe('generated-token')
     expect(result.likes).toBe(5)
   })
 
   it('decreases likes when token is active', async () => {
-    await decreaseLikes(dbMock, { type: 'post', ownerId: 1n }, 'token')
+    await decreaseLikes(dbMock, { type: 'post', ownerId: 1 }, 'token')
     expect(decrementMetricVotes).toHaveBeenCalled()
   })
 
   it('queries likes', async () => {
-    const count = await queryLikes(dbMock, { type: 'post', ownerId: 1n })
+    const count = await queryLikes(dbMock, { type: 'post', ownerId: 1 })
     expect(count).toBe(7)
   })
 
   it('queries metadata for posts and pages', async () => {
     ;(likeOps.metricsByOwnerIds as ReturnType<typeof vi.fn>)
-      .mockResolvedValueOnce([{ type: 'post', ownerId: 1n, publicId: 'p1', like: 5, view: 10 }])
-      .mockResolvedValueOnce([{ type: 'page', ownerId: 2n, publicId: 'p2', like: 3, view: 8 }])
+      .mockResolvedValueOnce([{ type: 'post', ownerId: 1, publicId: 'p1', like: 5, view: 10 }])
+      .mockResolvedValueOnce([{ type: 'page', ownerId: 2, publicId: 'p2', like: 3, view: 8 }])
     ;(likeOps.commentCountsByOwnerIds as ReturnType<typeof vi.fn>)
-      .mockResolvedValueOnce([{ ownerId: 1n, count: 2 }])
-      .mockResolvedValueOnce([{ ownerId: 2n, count: 4 }])
+      .mockResolvedValueOnce([{ ownerId: 1, count: 2 }])
+      .mockResolvedValueOnce([{ ownerId: 2, count: 4 }])
 
     const map = await queryMetadata(
       dbMock,
       [
-        { type: 'post', ownerId: 1n },
-        { type: 'page', ownerId: 2n },
+        { type: 'post', ownerId: 1 },
+        { type: 'page', ownerId: 2 },
       ],
       { likes: true, views: true, comments: true },
     )
@@ -103,7 +103,7 @@ describe('comments likes service', () => {
   })
 
   it('validates a like token', async () => {
-    const ok = await validateLikeToken(dbMock, { type: 'post', ownerId: 1n }, 'token')
+    const ok = await validateLikeToken(dbMock, { type: 'post', ownerId: 1 }, 'token')
     expect(ok).toBe(true)
   })
 

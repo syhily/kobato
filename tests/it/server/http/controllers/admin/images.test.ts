@@ -122,7 +122,7 @@ describe('adminImagesRouter.upload — orchestration only', () => {
         jpegQuality: 80,
         // The session stub carries only id + role, so the resolved
         // uploader name is undefined here; the domain maps it to null.
-        uploader: { id: 1n, name: undefined },
+        uploader: { id: 1, name: undefined },
       }),
     )
   })

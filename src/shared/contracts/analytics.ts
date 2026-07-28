@@ -50,44 +50,24 @@ export function computeDateRange(preset: PresetKey, now: Date = new Date()): Dat
   }
 }
 
-export type TimeBucket = '1 minute' | '15 minutes' | '1 hour' | '1 day'
-
-export function pickTimeBucket(range: DateRange): TimeBucket {
+/**
+ * Time bucket width in milliseconds for the views time series. The
+ * bucket boundaries are computed with integer epoch-ms division in SQL
+ * (`(ts / bucket) * bucket`), so this is a plain number — no interval
+ * type needed.
+ */
+export function pickTimeBucketMs(range: DateRange): number {
   const span = range.endAt - range.startAt
   if (span <= 2 * HOUR) {
-    return '1 minute'
+    return 60_000
   }
   if (span <= 12 * HOUR) {
-    return '15 minutes'
+    return 15 * 60_000
   }
   if (span <= 30 * DAY) {
-    return '1 hour'
+    return 3_600_000
   }
-  return '1 day'
-}
-
-export type AggregateSource = 'access_log' | 'stats_hourly' | 'stats_daily'
-
-/**
- * Choose the source table/materialized view for aggregate analytics queries.
- *
- * Thresholds are intentionally conservative so that boundary rounding from
- * hourly/daily buckets does not affect the small ranges where dashboards care
- * about precision, while longer ranges benefit from pre-rolled aggregates:
- *
- * - Short (≤ 24 h): raw `access_log`
- * - Medium (1–30 days): `stats_hourly`
- * - Long (> 30 days): `stats_daily`
- */
-export function pickAggregateSource(range: DateRange): AggregateSource {
-  const span = range.endAt - range.startAt
-  if (span <= DAY) {
-    return 'access_log'
-  }
-  if (span <= 30 * DAY) {
-    return 'stats_hourly'
-  }
-  return 'stats_daily'
+  return 86_400_000
 }
 
 // ─── metric types ──────────────────────────────────────

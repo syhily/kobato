@@ -28,14 +28,14 @@ export function toLatestComment(row: PendingCommentRow): LatestComment {
   }
 }
 
-function asString(value: bigint | string | null | undefined): string {
+function asString(value: number | string | null | undefined): string {
   if (typeof value === 'string') {
     return value
   }
   return String(value ?? '')
 }
 
-function asNullableString(value: bigint | string | null | undefined): string | null {
+function asNullableString(value: number | string | null | undefined): string | null {
   if (value === null || value === undefined) {
     return null
   }

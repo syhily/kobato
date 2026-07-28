@@ -161,7 +161,7 @@ describe('adminUsersRouter.update', () => {
 describe('adminUsersRouter.revokeAllSessions', () => {
   it('allows an admin to revoke their own sessions', async () => {
     vi.mocked(userOps.findSafeUserById).mockResolvedValueOnce({
-      id: 1n,
+      id: 1,
       role: 'admin',
     } as unknown as Awaited<ReturnType<typeof userOps.findSafeUserById>>)
     const ctx = makeAuthedCtx({ userId: '1' })
@@ -171,7 +171,7 @@ describe('adminUsersRouter.revokeAllSessions', () => {
 
   it("forbids an admin from revoking another admin's sessions", async () => {
     vi.mocked(userOps.findSafeUserById).mockResolvedValueOnce({
-      id: 2n,
+      id: 2,
       role: 'admin',
     } as unknown as Awaited<ReturnType<typeof userOps.findSafeUserById>>)
     const ctx = makeAuthedCtx({ userId: '1' })
@@ -182,7 +182,7 @@ describe('adminUsersRouter.revokeAllSessions', () => {
 
   it("allows an admin to revoke a visitor's sessions", async () => {
     vi.mocked(userOps.findSafeUserById).mockResolvedValueOnce({
-      id: 2n,
+      id: 2,
       role: 'visitor',
     } as unknown as Awaited<ReturnType<typeof userOps.findSafeUserById>>)
     const ctx = makeAuthedCtx({ userId: '1' })

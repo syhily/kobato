@@ -29,10 +29,10 @@ vi.mock('@/server/domains/posts/services/admin-query', () => ({
   ),
   listPostMetas: vi.fn(async (_db: unknown, filters: { lifecycle?: string }) =>
     filters.lifecycle === 'draft'
-      ? [{ id: 11n, title: 'Draft A', updatedAt: new Date('2024-02-01T00:00:00.000Z'), publishedAt: null }]
+      ? [{ id: 11, title: 'Draft A', updatedAt: new Date('2024-02-01T00:00:00.000Z'), publishedAt: null }]
       : [
           {
-            id: 22n,
+            id: 22,
             title: 'Published B',
             updatedAt: new Date('2024-02-02T00:00:00.000Z'),
             publishedAt: new Date('2024-02-03T00:00:00.000Z'),

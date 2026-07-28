@@ -112,7 +112,7 @@ describe('account controller', () => {
     tryPasskeyDeleteRateLimitMock.mockResolvedValue({ exceeded: false })
     tryPasskeySetForceRateLimitMock.mockResolvedValue({ exceeded: false })
     findSafeUserByIdMock.mockResolvedValue({
-      id: 1n,
+      id: 1,
       name: 'n',
       email: 'e',
       role: 'admin',
@@ -124,7 +124,7 @@ describe('account controller', () => {
     generateRegistrationOptionsMock.mockResolvedValue({ options: { challenge: 'c' } })
     verifyRegistrationResponseMock.mockResolvedValue(undefined)
     updateAccountProfileMock.mockResolvedValue({
-      id: 1n,
+      id: 1,
       name: 'n',
       email: 'e',
       link: null,
@@ -147,7 +147,7 @@ describe('account controller', () => {
       expect(body.user.role).toBe('admin')
       expect(updateAccountProfileMock).toHaveBeenCalledWith(
         expect.anything(),
-        1n,
+        1,
         expect.objectContaining({ name: 'Alice' }),
         'admin',
       )
@@ -166,7 +166,7 @@ describe('account controller', () => {
       expect(body.success).toBe(true)
       expect(updateAccountPasswordMock).toHaveBeenCalledWith(
         expect.anything(),
-        1n,
+        1,
         'OldPass1234',
         'NewPassword1',
         'session-1',
@@ -209,7 +209,7 @@ describe('account controller', () => {
     })
 
     it('reports currentSession=true when id matches and records the audit event', async () => {
-      revokeOwnSessionWithGuardMock.mockResolvedValue({ targetUserId: 1n })
+      revokeOwnSessionWithGuardMock.mockResolvedValue({ targetUserId: 1 })
       const response = await call('/revokeSession', { id: 'session-1' }, 'session-1')
       expect(response.status).toBe(200)
       const body = await parseRpcJson<{ success: boolean; currentSession: boolean }>(response)
@@ -285,13 +285,13 @@ describe('account controller', () => {
     })
 
     it('forwards the SafeUser from the accessor verbatim to generateRegistrationOptions', async () => {
-      const safeUser = { id: 1n, name: 'n', email: 'e', role: 'admin' }
+      const safeUser = { id: 1, name: 'n', email: 'e', role: 'admin' }
       findSafeUserByIdMock.mockResolvedValue(safeUser)
       const response = await call('/passkeyRegisterBegin', { deviceName: 'YubiKey' })
       expect(response.status).toBe(200)
       const body = await parseRpcJson<{ options: unknown }>(response)
       expect(body.options).toEqual({ challenge: 'c' })
-      expect(findSafeUserByIdMock).toHaveBeenCalledWith(expect.anything(), 1n)
+      expect(findSafeUserByIdMock).toHaveBeenCalledWith(expect.anything(), 1)
       expect(generateRegistrationOptionsMock).toHaveBeenCalledWith(expect.anything(), safeUser, 'YubiKey')
     })
   })
@@ -354,7 +354,7 @@ describe('account controller', () => {
     it('deletes the credential and records an audit event', async () => {
       const response = await call('/passkeyDelete', { credentialId: 'c1' })
       expect(response.status).toBe(200)
-      expect(deleteCredentialMock).toHaveBeenCalledWith(expect.anything(), 'c1', 1n)
+      expect(deleteCredentialMock).toHaveBeenCalledWith(expect.anything(), 'c1', 1)
       expect(recordAuditEventFromContextMock).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({ action: 'passkey_deleted' }),
@@ -382,7 +382,7 @@ describe('account controller', () => {
     it('switches to passkey and records an audit event', async () => {
       const response = await call('/setLoginMethod', { method: 'passkey' })
       expect(response.status).toBe(200)
-      expect(setLoginMethodMock).toHaveBeenCalledWith(expect.anything(), 1n, 'passkey')
+      expect(setLoginMethodMock).toHaveBeenCalledWith(expect.anything(), 1, 'passkey')
       expect(recordAuditEventFromContextMock).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({ action: 'login_method_changed', details: { method: 'passkey' } }),
@@ -392,7 +392,7 @@ describe('account controller', () => {
     it('switches back to password', async () => {
       const response = await call('/setLoginMethod', { method: 'password' })
       expect(response.status).toBe(200)
-      expect(setLoginMethodMock).toHaveBeenCalledWith(expect.anything(), 1n, 'password')
+      expect(setLoginMethodMock).toHaveBeenCalledWith(expect.anything(), 1, 'password')
     })
 
     it('throws BAD_REQUEST when choosing passkey while passkeys are disabled', async () => {
@@ -412,7 +412,7 @@ describe('account controller', () => {
     it('switches to magic-link when mail is ready', async () => {
       const response = await call('/setLoginMethod', { method: 'magic-link' })
       expect(response.status).toBe(200)
-      expect(setLoginMethodMock).toHaveBeenCalledWith(expect.anything(), 1n, 'magic-link')
+      expect(setLoginMethodMock).toHaveBeenCalledWith(expect.anything(), 1, 'magic-link')
       expect(recordAuditEventFromContextMock).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({ action: 'login_method_changed', details: { method: 'magic-link' } }),

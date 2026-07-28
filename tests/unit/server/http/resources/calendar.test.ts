@@ -1,10 +1,10 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import type { Database } from '@/server/infra/db/database'
 
 // The db handle is only forwarded to the mocked cache module — a stand-in
 // is enough for the unit scope.
-const db = {} as NodePgDatabase
+const db = {} as Database
 
 describe('serveCalendar', () => {
   beforeEach(() => {

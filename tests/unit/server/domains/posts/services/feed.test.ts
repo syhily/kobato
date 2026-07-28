@@ -1,8 +1,7 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { FeedTaxonomyResolvers } from '@/server/domains/posts/services/feed'
+import type { Database } from '@/server/infra/db/database'
 
 // Domain-seam coverage for `selectFeedPosts` — the feed channel's post
 // selection sunk out of `render/feed/generator.tsx` (task C4). The
@@ -23,7 +22,7 @@ vi.mock('@/server/domains/posts/repos/hydrate', async (importOriginal) => ({
 
 const { selectFeedPosts } = await import('@/server/domains/posts/services/feed')
 
-const fakeDb = {} as NodePgDatabase
+const fakeDb = {} as Database
 
 function makeResolvers(overrides: Partial<FeedTaxonomyResolvers> = {}): FeedTaxonomyResolvers {
   return {
@@ -60,14 +59,14 @@ describe('selectFeedPosts — feed-channel visibility policy', () => {
 
 describe('selectFeedPosts — category/tag scoping', () => {
   it('resolves the category scope to its id before querying', async () => {
-    const resolvers = makeResolvers({ resolveCategory: vi.fn(async () => ({ id: 7n })) })
+    const resolvers = makeResolvers({ resolveCategory: vi.fn(async () => ({ id: 7 })) })
 
     await selectFeedPosts(fakeDb, { category: 'tech', limit: 20 }, resolvers)
 
     expect(resolvers.resolveCategory).toHaveBeenCalledWith(fakeDb, 'tech')
     expect(listPublicPostsMock).toHaveBeenCalledWith(
       fakeDb,
-      expect.objectContaining({ includeHidden: true, includeScheduled: false, categoryId: 7n, limit: 20 }),
+      expect.objectContaining({ includeHidden: true, includeScheduled: false, categoryId: 7, limit: 20 }),
     )
   })
 
@@ -102,7 +101,7 @@ describe('selectFeedPosts — category/tag scoping', () => {
   })
 
   it('does not touch the tag resolver when a category scope is given (category wins)', async () => {
-    const resolvers = makeResolvers({ resolveCategory: vi.fn(async () => ({ id: 7n })) })
+    const resolvers = makeResolvers({ resolveCategory: vi.fn(async () => ({ id: 7 })) })
 
     await selectFeedPosts(fakeDb, { category: 'tech', limit: 20 }, resolvers)
 

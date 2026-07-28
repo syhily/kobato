@@ -20,6 +20,7 @@ import {
   tryOtpVerifyByEmailRateLimit,
   tryOtpVerifyRateLimit,
 } from '@/server/infra/rate-limit'
+import { idFromString } from '@/shared/utils/id'
 
 const log = getLogger('auth.signin')
 
@@ -49,9 +50,9 @@ function clearPendingOtp(ctx: SigninFlowContext): void {
 }
 
 /** Parse the pending entry's userId; a malformed entry is cleared and reported. */
-function parsePendingUserId(ctx: SigninFlowContext, pendingOtpUser: PendingOtpUser): bigint | null {
+function parsePendingUserId(ctx: SigninFlowContext, pendingOtpUser: PendingOtpUser): number | null {
   try {
-    return BigInt(pendingOtpUser.userId)
+    return idFromString(pendingOtpUser.userId)
   } catch {
     clearPendingOtp(ctx)
     return null
@@ -87,7 +88,7 @@ async function sendOtpSafely(
 async function issueAndSendOtp(
   ctx: SigninFlowContext,
   request: Request,
-  dbUser: { id: bigint; name: string; email: string; role: string | null },
+  dbUser: { id: number; name: string; email: string; role: string | null },
   { resend }: { resend: boolean },
 ): Promise<AuthFlowResult | null> {
   const { db, session, clientAddress } = ctx
@@ -137,7 +138,7 @@ async function issueAndSendOtp(
 export async function sendOtpAndStageSession(
   ctx: SigninFlowContext,
   request: Request,
-  dbUser: { id: bigint; name: string; email: string; role: string | null },
+  dbUser: { id: number; name: string; email: string; role: string | null },
   redirectTo: string,
 ): Promise<AuthFlowResult> {
   const failure = await issueAndSendOtp(ctx, request, dbUser, { resend: false })

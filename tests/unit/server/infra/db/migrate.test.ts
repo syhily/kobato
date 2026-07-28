@@ -1,32 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const executeMock = vi.fn<() => Promise<unknown>>()
-const endMock = vi.fn<() => Promise<void>>().mockResolvedValue(undefined)
-const drizzleMock = vi.fn(() => ({
-  $client: { end: endMock },
-  execute: executeMock,
-}))
-const migrateMock = vi.fn<() => Promise<void>>()
+const migrateMock = vi.fn()
+const migrateSyncMock = vi.fn()
 
-vi.mock('drizzle-orm', () => ({
-  sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ strings: Array.from(strings), values }),
-}))
-
-vi.mock('drizzle-orm/node-postgres', () => ({
-  drizzle: drizzleMock,
-}))
-
-vi.mock('drizzle-orm/node-postgres/migrator', () => ({
+vi.mock('drizzle-orm/node-sqlite/migrator', () => ({
   migrate: migrateMock,
 }))
 
-vi.mock('@/server/infra/config', () => ({
-  serverConfig: {
-    server: {},
-    database: { url: 'postgres://test:test@localhost:5432/test' },
-    security: {},
-    storage: {},
-  },
+vi.mock('drizzle-orm/sqlite-core/async/session', () => ({
+  migrateSync: migrateSyncMock,
+}))
+
+vi.mock('@/server/infra/sea', () => ({
+  isSea: vi.fn(() => false),
+  getEmbeddedAsset: vi.fn(() => null),
+  listEmbeddedAssetKeys: vi.fn(() => []),
 }))
 
 vi.mock('@/server/infra/logger', () => ({
@@ -37,53 +25,41 @@ vi.mock('@/server/infra/logger', () => ({
   }),
 }))
 
+const { isSea } = await import('@/server/infra/sea')
+
 describe('migrateDatabase', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    executeMock.mockResolvedValue(undefined)
-    migrateMock.mockResolvedValue(undefined)
+    vi.mocked(isSea).mockReturnValue(false)
   })
 
-  it('acquires advisory lock, runs migrations, releases lock, and ends client', async () => {
+  it('runs the folder migrator outside SEA', async () => {
     const { migrateDatabase } = await import('@/server/infra/db/migrate')
-    await migrateDatabase()
+    const db = {} as never
+    await migrateDatabase(db)
 
-    expect(drizzleMock).toHaveBeenCalledWith({
-      connection: {
-        connectionString: 'postgres://test:test@localhost:5432/test',
-        max: 1,
-      },
+    expect(migrateMock).toHaveBeenCalledWith(db, {
+      migrationsFolder: './drizzle',
+      migrationsTable: '__drizzle_migrations',
     })
-    expect(executeMock).toHaveBeenCalledTimes(2)
-    expect(migrateMock).toHaveBeenCalledTimes(1)
-    expect(endMock).toHaveBeenCalledTimes(1)
-
-    // First execute is lock, second is unlock.
-    const calls = executeMock.mock.calls as unknown as Array<[{ strings: string[]; values: unknown[] }]>
-    expect(calls[0][0].strings.join('')).toContain('pg_advisory_lock')
-    expect(calls[1][0].strings.join('')).toContain('pg_advisory_unlock')
+    expect(migrateSyncMock).not.toHaveBeenCalled()
   })
 
-  it('logs and rethrows migration errors, then releases the lock and ends client', async () => {
-    const error = new Error('migration boom')
-    migrateMock.mockRejectedValue(error)
-
+  it('runs the embedded migrator under SEA', async () => {
+    vi.mocked(isSea).mockReturnValue(true)
     const { migrateDatabase } = await import('@/server/infra/db/migrate')
-    await expect(migrateDatabase()).rejects.toThrow('migration boom')
+    const db = { session: {} } as never
+    await migrateDatabase(db)
 
-    expect(migrateMock).toHaveBeenCalledTimes(1)
-    expect(executeMock).toHaveBeenCalledTimes(2)
-    expect(endMock).toHaveBeenCalledTimes(1)
+    expect(migrateSyncMock).toHaveBeenCalled()
+    expect(migrateMock).not.toHaveBeenCalled()
   })
 
-  it('still ends client when lock release throws', async () => {
-    executeMock.mockResolvedValueOnce(undefined)
-    executeMock.mockRejectedValueOnce(new Error('unlock failed'))
-
+  it('propagates migration failures', async () => {
+    migrateMock.mockImplementationOnce(() => {
+      throw new Error('boom')
+    })
     const { migrateDatabase } = await import('@/server/infra/db/migrate')
-    await migrateDatabase()
-
-    expect(executeMock).toHaveBeenCalledTimes(2)
-    expect(endMock).toHaveBeenCalledTimes(1)
+    await expect(migrateDatabase({} as never)).rejects.toThrow('boom')
   })
 })

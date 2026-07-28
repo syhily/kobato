@@ -46,7 +46,7 @@ vi.mock('@/server/domains/posts/services/single', () => ({
   findPostBySlug: vi.fn(async (_db: unknown, slug: string) => (slug === 'hello' ? fixtures.samplePost : null)),
   findPublicPostMetaBySlug: vi.fn(async (_db: unknown, slug: string) =>
     slug === 'hello'
-      ? { slug, published: true, deletedAt: null, publishedRevisionId: 1n, publishedAt: new Date() }
+      ? { slug, published: true, deletedAt: null, publishedRevisionId: 1, publishedAt: new Date() }
       : null,
   ),
 }))

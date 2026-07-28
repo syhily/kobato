@@ -1,8 +1,7 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { ContentEntityAdapter } from '@/server/domains/content/lifecycle'
+import type { Database } from '@/server/infra/db/database'
 import type { ContentRow } from '@/server/infra/db/types'
 
 import { DomainError } from '@/server/infra/http/errors'
@@ -17,7 +16,7 @@ vi.mock('@/server/domains/content/repos/mutate', () => ({
   publishLatestRevision: vi.fn(),
 }))
 vi.mock('@/server/domains/content/revisions', () => ({
-  findContentById: vi.fn(async () => null),
+  findContentById: vi.fn(() => null),
   findLatestDraft: vi.fn(async () => null),
   findLatestRevision: vi.fn(async () => null),
 }))
@@ -30,11 +29,11 @@ const { publishLatestRevision, saveDraftRevision } = await import('@/server/doma
 const query = await import('@/server/domains/content/revisions')
 const { syncLibraryImageBlocks } = await import('@/server/domains/content/services/image-sync')
 
-const db = {} as NodePgDatabase
+const db = {} as Database
 
 interface FakeMeta {
-  id: bigint
-  publishedRevisionId: bigint | null
+  id: number
+  publishedRevisionId: number | null
 }
 
 interface FakePreview {
@@ -46,8 +45,8 @@ function makeAdapter() {
   const afterPublish = vi.fn(async () => undefined)
   const adapter: ContentEntityAdapter<FakeMeta, FakePreview> = {
     entityType: 'post',
-    findMetaById: vi.fn(async () => ({ id: 1n, publishedRevisionId: null })),
-    findPublicMetaBySlug: vi.fn(async () => null),
+    findMetaById: vi.fn(() => ({ id: 1, publishedRevisionId: null })),
+    findPublicMetaBySlug: vi.fn(() => null),
     assertAccess(meta: FakeMeta | null): asserts meta is FakeMeta {
       if (meta === null) {
         throw new DomainError('NOT_FOUND', 'missing')
@@ -66,9 +65,9 @@ function makeAdapter() {
 function contentRow(overrides: Partial<ContentRow> = {}): ContentRow {
   const now = overrides.createdAt ?? new Date('2026-05-01T00:00:00.000Z')
   return {
-    id: overrides.id ?? 100n,
+    id: overrides.id ?? 100,
     type: overrides.type ?? 'post',
-    ownerId: overrides.ownerId ?? 1n,
+    ownerId: overrides.ownerId ?? 1,
     revisionNo: overrides.revisionNo ?? 1,
     status: overrides.status ?? 'draft',
     body: overrides.body ?? [],
@@ -101,16 +100,16 @@ describe('content/lifecycle — saveBody validation', () => {
   it('rejects a malformed body with BAD_REQUEST before touching the repo', async () => {
     const { adapter } = makeAdapter()
     await expect(
-      saveBody(db, adapter, { entityId: 1n, body: [{ _type: 'unknown', _key: 'k' }], authorId: null }, 'draft'),
+      saveBody(db, adapter, { entityId: 1, body: [{ _type: 'unknown', _key: 'k' }], authorId: null }, 'draft'),
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
     expect(saveDraftRevision).not.toHaveBeenCalled()
   })
 
   it('propagates the adapter access gate (missing meta → NOT_FOUND)', async () => {
     const { adapter } = makeAdapter()
-    vi.mocked(adapter.findMetaById).mockResolvedValue(null)
+    vi.mocked(adapter.findMetaById).mockReturnValue(null)
     await expect(
-      saveBody(db, adapter, { entityId: 1n, body: VALID_BODY, authorId: null }, 'draft'),
+      saveBody(db, adapter, { entityId: 1, body: VALID_BODY, authorId: null }, 'draft'),
     ).rejects.toMatchObject({ code: 'NOT_FOUND' })
     expect(saveDraftRevision).not.toHaveBeenCalled()
   })
@@ -122,7 +121,7 @@ describe('content/lifecycle — saveBody degraded sync', () => {
     vi.mocked(syncLibraryImageBlocks).mockRejectedValueOnce(new Error('boom'))
     vi.mocked(saveDraftRevision).mockResolvedValue({ status: 'saved', row: contentRow() })
 
-    const result = await saveBody(db, adapter, { entityId: 1n, body: VALID_BODY, authorId: null }, 'draft')
+    const result = await saveBody(db, adapter, { entityId: 1, body: VALID_BODY, authorId: null }, 'draft')
 
     expect(result.status).toBe('saved')
     expect(result.warning).toBe('图片库同步失败，部分图片可能无法正常显示。')
@@ -134,20 +133,20 @@ describe('content/lifecycle — saveBody force overwrite', () => {
   it('records the overwrite against the latest revision when tokens mismatch', async () => {
     const { adapter, recordForceOverwrite } = makeAdapter()
     vi.mocked(query.findLatestRevision).mockResolvedValue(
-      contentRow({ id: 600n, revisionNo: 9, clientRevisionToken: 'server-side-newer' }),
+      contentRow({ id: 600, revisionNo: 9, clientRevisionToken: 'server-side-newer' }),
     )
     vi.mocked(saveDraftRevision).mockResolvedValue({
       status: 'saved',
-      row: contentRow({ id: 601n, revisionNo: 9 }),
+      row: contentRow({ id: 601, revisionNo: 9 }),
     })
 
     await saveBody(
       db,
       adapter,
       {
-        entityId: 1n,
+        entityId: 1,
         body: VALID_BODY,
-        authorId: 42n,
+        authorId: 42,
         expectedClientRevisionToken: 'client-thought-this',
         force: true,
       },
@@ -157,38 +156,36 @@ describe('content/lifecycle — saveBody force overwrite', () => {
     // The overwrite context comes from `findLatestRevision` (any status),
     // never from `findLatestDraft` — publishing over a published revision
     // is audited the same way as overwriting a draft.
-    expect(query.findLatestRevision).toHaveBeenCalledWith(db, 'post', 1n)
+    expect(query.findLatestRevision).toHaveBeenCalledWith(db, 'post', 1)
     expect(query.findLatestDraft).not.toHaveBeenCalled()
 
     expect(recordForceOverwrite).toHaveBeenCalledTimes(1)
     const entry = recordForceOverwrite.mock.calls[0]![0] as {
       mode: string
-      authorId: bigint | null
+      authorId: number | null
       meta: FakeMeta
       overwritten: ContentRow
       expectedClientRevisionToken?: string | null
       resultRow: ContentRow
     }
     expect(entry.mode).toBe('draft')
-    expect(entry.authorId).toBe(42n)
-    expect(entry.meta.id).toBe(1n)
-    expect(entry.overwritten.id).toBe(600n)
+    expect(entry.authorId).toBe(42)
+    expect(entry.meta.id).toBe(1)
+    expect(entry.overwritten.id).toBe(600)
     expect(entry.overwritten.clientRevisionToken).toBe('server-side-newer')
     expect(entry.expectedClientRevisionToken).toBe('client-thought-this')
-    expect(entry.resultRow.id).toBe(601n)
+    expect(entry.resultRow.id).toBe(601)
   })
 
   it('skips the overwrite record when the expected token matches the latest revision', async () => {
     const { adapter, recordForceOverwrite } = makeAdapter()
-    vi.mocked(query.findLatestRevision).mockResolvedValue(
-      contentRow({ id: 700n, clientRevisionToken: 'aligned-token' }),
-    )
-    vi.mocked(saveDraftRevision).mockResolvedValue({ status: 'saved', row: contentRow({ id: 701n }) })
+    vi.mocked(query.findLatestRevision).mockResolvedValue(contentRow({ id: 700, clientRevisionToken: 'aligned-token' }))
+    vi.mocked(saveDraftRevision).mockResolvedValue({ status: 'saved', row: contentRow({ id: 701 }) })
 
     await saveBody(
       db,
       adapter,
-      { entityId: 1n, body: VALID_BODY, authorId: null, expectedClientRevisionToken: 'aligned-token', force: true },
+      { entityId: 1, body: VALID_BODY, authorId: null, expectedClientRevisionToken: 'aligned-token', force: true },
       'draft',
     )
 
@@ -199,7 +196,7 @@ describe('content/lifecycle — saveBody force overwrite', () => {
 describe('content/lifecycle — saveBody result projection', () => {
   it('passes a repo conflict through with the latest revision DTO', async () => {
     const { adapter, recordForceOverwrite, afterPublish } = makeAdapter()
-    const latest = contentRow({ id: 999n, revisionNo: 5, clientRevisionToken: '11111111-2222-3333-4444-555555555555' })
+    const latest = contentRow({ id: 999, revisionNo: 5, clientRevisionToken: '11111111-2222-3333-4444-555555555555' })
     vi.mocked(saveDraftRevision).mockResolvedValue({
       status: 'conflict',
       latest,
@@ -209,7 +206,7 @@ describe('content/lifecycle — saveBody result projection', () => {
     const result = await saveBody(
       db,
       adapter,
-      { entityId: 1n, body: VALID_BODY, authorId: null, expectedClientRevisionToken: 'stale-token' },
+      { entityId: 1, body: VALID_BODY, authorId: null, expectedClientRevisionToken: 'stale-token' },
       'draft',
     )
 
@@ -232,7 +229,7 @@ describe('content/lifecycle — saveBody publish side effects', () => {
       row: contentRow({ revisionNo: 7, status: 'published' }),
     })
 
-    const result = await saveBody(db, adapter, { entityId: 1n, body: VALID_BODY, authorId: 5n }, 'publish')
+    const result = await saveBody(db, adapter, { entityId: 1, body: VALID_BODY, authorId: 5 }, 'publish')
 
     expect(result.status).toBe('saved')
     expect(afterPublish).toHaveBeenCalledTimes(1)
@@ -243,7 +240,7 @@ describe('content/lifecycle — saveBody publish side effects', () => {
     const { adapter, afterPublish } = makeAdapter()
     vi.mocked(saveDraftRevision).mockResolvedValue({ status: 'saved', row: contentRow() })
 
-    await saveBody(db, adapter, { entityId: 1n, body: VALID_BODY, authorId: null }, 'draft')
+    await saveBody(db, adapter, { entityId: 1, body: VALID_BODY, authorId: null }, 'draft')
 
     expect(afterPublish).not.toHaveBeenCalled()
   })
@@ -257,8 +254,8 @@ describe('content/lifecycle — loadDraftPreviewBySlug', () => {
 
   it('projects the adapter preview with the draft flag', async () => {
     const { adapter } = makeAdapter()
-    vi.mocked(adapter.findPublicMetaBySlug).mockResolvedValue({ id: 3n, publishedRevisionId: null })
-    vi.mocked(query.findLatestDraft).mockResolvedValue(contentRow({ ownerId: 3n }))
+    vi.mocked(adapter.findPublicMetaBySlug).mockReturnValue({ id: 3, publishedRevisionId: null })
+    vi.mocked(query.findLatestDraft).mockResolvedValue(contentRow({ ownerId: 3 }))
 
     const result = await loadDraftPreviewBySlug(db, adapter, 'hello')
 

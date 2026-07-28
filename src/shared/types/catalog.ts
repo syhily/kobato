@@ -197,13 +197,13 @@ import type { PortableTextBody } from '@/shared/pt/schema'
 export interface Post extends ClientPost {
   body: PortableTextBody
   imageSources: string[]
-  publishedRevisionId: bigint | null
+  publishedRevisionId: number | null
 }
 
 export interface Page extends ClientPage {
   body: PortableTextBody
   imageSources: string[]
-  publishedRevisionId: bigint | null
+  publishedRevisionId: number | null
 }
 
 export function toClientPost(post: Post): ClientPost {

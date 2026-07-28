@@ -1,23 +1,21 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
+
 import { clearAllTables } from '#/_helpers/integration-db'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import {
   findMusicByPlayerId,
   findMusicBySourceAndId,
   insertMusic,
   softDeleteMusic,
 } from '@/server/infra/db/operations/music'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {
@@ -79,7 +77,7 @@ describe('db/query/music — softDeleteMusic', () => {
   })
 
   it('returns null when no row matches the id', async () => {
-    const out = await softDeleteMusic(db, 0n)
+    const out = await softDeleteMusic(db, 0)
     expect(out).toBeNull()
   })
 })
@@ -94,7 +92,7 @@ interface MusicOverrides {
   audioStoragePath?: string
   coverStoragePath?: string
   lyric?: string | null
-  uploaderId?: bigint | null
+  uploaderId?: number | null
 }
 
 function makeMusic(overrides: MusicOverrides = {}): Parameters<typeof insertMusic>[1] {

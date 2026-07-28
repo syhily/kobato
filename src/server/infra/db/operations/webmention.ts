@@ -1,14 +1,13 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { count, desc, eq } from 'drizzle-orm'
 
+import type { Database } from '@/server/infra/db/database'
 import type { NewWebmention, WebmentionRow } from '@/server/infra/db/types'
 
 import { webmention } from '@/server/infra/db/schema/webmention'
 
 export type WebmentionStatus = WebmentionRow['status']
 
-export async function insertWebmention(db: NodePgDatabase, values: NewWebmention): Promise<WebmentionRow> {
+export async function insertWebmention(db: Database, values: NewWebmention): Promise<WebmentionRow> {
   const now = new Date()
   const rows = await db
     .insert(webmention)
@@ -17,13 +16,13 @@ export async function insertWebmention(db: NodePgDatabase, values: NewWebmention
   return rows[0]
 }
 
-export async function findWebmentionById(db: NodePgDatabase, id: bigint): Promise<WebmentionRow | null> {
+export async function findWebmentionById(db: Database, id: number): Promise<WebmentionRow | null> {
   const rows = await db.select().from(webmention).where(eq(webmention.id, id)).limit(1)
   return rows[0] ?? null
 }
 
 export async function listWebmentionsByStatus(
-  db: NodePgDatabase,
+  db: Database,
   status: WebmentionStatus | undefined,
   offset: number,
   limit: number,
@@ -37,7 +36,7 @@ export async function listWebmentionsByStatus(
     .limit(limit)
 }
 
-export async function countWebmentions(db: NodePgDatabase, status: WebmentionStatus | undefined): Promise<number> {
+export async function countWebmentions(db: Database, status: WebmentionStatus | undefined): Promise<number> {
   const rows = await db
     .select({ count: count() })
     .from(webmention)
@@ -52,7 +51,7 @@ export interface WebmentionStatusCounts {
   rejected: number
 }
 
-export async function countWebmentionsByStatus(db: NodePgDatabase): Promise<WebmentionStatusCounts> {
+export async function countWebmentionsByStatus(db: Database): Promise<WebmentionStatusCounts> {
   const rows = await db
     .select({ status: webmention.status, count: count() })
     .from(webmention)
@@ -66,8 +65,8 @@ export async function countWebmentionsByStatus(db: NodePgDatabase): Promise<Webm
 }
 
 export async function setWebmentionStatus(
-  db: NodePgDatabase,
-  id: bigint,
+  db: Database,
+  id: number,
   status: WebmentionStatus,
 ): Promise<WebmentionRow | null> {
   const now = new Date()

@@ -1,17 +1,4 @@
-import { sql } from 'drizzle-orm'
-import {
-  bigint,
-  bigserial,
-  index,
-  integer,
-  jsonb,
-  pgTable,
-  text,
-  timestamp,
-  uniqueIndex,
-  uuid,
-  varchar,
-} from 'drizzle-orm/pg-core'
+import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 import { randomUUID } from 'node:crypto'
 
 // Shared revision table for pages and posts. A single table avoids near-
@@ -19,33 +6,34 @@ import { randomUUID } from 'node:crypto'
 //
 // `(type, owner_id)` is a polymorphic discriminator without a DB FK (not
 // expressible for polymorphic refs); the app enforces it in transactions.
-// `revision_no` increases per owner; concurrent saves serialise via `FOR UPDATE`.
-// `client_revision_token` is rotated on every write for optimistic concurrency.
-export const content = pgTable(
+// `revision_no` increases per owner; concurrent saves serialise on the
+// single-writer connection. `client_revision_token` is rotated on every
+// write for optimistic concurrency.
+export const content = sqliteTable(
   'content',
   {
-    id: bigserial('id', { mode: 'bigint' }).primaryKey().notNull(),
-    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
+    id: integer('id').primaryKey({ autoIncrement: true }).notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' })
       .notNull()
       .$defaultFn(() => new Date()),
-    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+    updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
       .notNull()
       .$defaultFn(() => new Date()),
-    type: varchar('type', { length: 16 }).notNull(),
-    ownerId: bigint('owner_id', { mode: 'bigint' }).notNull(),
+    type: text('type').notNull(),
+    ownerId: integer('owner_id').notNull(),
     revisionNo: integer('revision_no').notNull(),
-    status: varchar('status', { length: 16 }).notNull().default('draft'),
-    body: jsonb('body')
+    status: text('status').notNull().default('draft'),
+    body: text('body', { mode: 'json' })
       .notNull()
-      .default(sql`'[]'::jsonb`),
-    imageSources: jsonb('image_sources')
+      .$defaultFn(() => []),
+    imageSources: text('image_sources', { mode: 'json' })
       .notNull()
-      .default(sql`'[]'::jsonb`),
-    headings: jsonb('headings')
+      .$defaultFn(() => []),
+    headings: text('headings', { mode: 'json' })
       .notNull()
-      .default(sql`'[]'::jsonb`),
-    authorId: bigint('author_id', { mode: 'bigint' }),
-    clientRevisionToken: uuid('client_revision_token')
+      .$defaultFn(() => []),
+    authorId: integer('author_id'),
+    clientRevisionToken: text('client_revision_token')
       .notNull()
       .$defaultFn(() => randomUUID()),
   },
@@ -58,11 +46,10 @@ export const content = pgTable(
 
 // Plain text kept separate so the main `post` table stays narrow. LIKE
 // search joins this table for the body corpus (vector search removed).
-export const postSearchIndex = pgTable('post_search_index', {
-  postId: bigint('post_id', { mode: 'bigint' }).primaryKey().notNull(),
+export const postSearchIndex = sqliteTable('post_search_index', {
+  postId: integer('post_id').primaryKey().notNull(),
   plainText: text('plain_text').notNull().default(''),
-  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+  updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
     .notNull()
-    .default(sql`now()`)
     .$defaultFn(() => new Date()),
 })

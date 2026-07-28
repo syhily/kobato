@@ -1,8 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
 import { SECRET_FIELDS } from '@/server/domains/settings/secrets'
@@ -10,15 +8,14 @@ import { limitsSchema } from '@/server/domains/settings/sections/limits'
 import { computeSecretMasks, updateBlogSettingsSection } from '@/server/domains/settings/services/core'
 import { DomainError } from '@/server/infra/http/errors'
 
-const mockPool = {} as unknown as Pool
-const mockTx = {} as unknown as NodePgDatabase
+const mockTx = {} as unknown as Database
 const mockDb = {
-  transaction: vi.fn(async (callback: (tx: NodePgDatabase) => Promise<unknown>) => callback(mockTx)),
-} as unknown as NodePgDatabase
+  transaction: vi.fn((callback: (tx: Database) => unknown) => callback(mockTx)),
+} as unknown as Database
 
 const mocks = vi.hoisted(() => {
   const limitsSchema = {
-    safeParseAsync: vi.fn().mockResolvedValue({ success: true, data: { maxRequestBodySize: 2048 } }),
+    safeParse: vi.fn().mockReturnValue({ success: true, data: { maxRequestBodySize: 2048 } }),
   }
   return {
     SECTION_REGISTRY: {
@@ -26,10 +23,10 @@ const mocks = vi.hoisted(() => {
     },
     hydrateBlogSettings: vi.fn(),
     refreshBlogSettings: vi.fn().mockResolvedValue({ limits: {} } as BlogSettingsBundle),
-    upsertSetting: vi.fn().mockResolvedValue({ scope: 'blog.limits', data: {} }),
+    upsertSetting: vi.fn().mockReturnValue({ scope: 'blog.limits', data: {} }),
     getBlogSettingsBundleSync: vi.fn().mockReturnValue(null),
     loggerError: vi.fn(),
-    sectionChangeHandlers: new Map<string, (pool: Pool) => void | Promise<void>>(),
+    sectionChangeHandlers: new Map<string, () => void | Promise<void>>(),
   }
 })
 
@@ -51,7 +48,7 @@ vi.mock('@/server/domains/settings/services/section-changes', () => ({
 }))
 
 vi.mock('@/server/infra/db/operations/setting', () => ({
-  findSettingByScope: vi.fn().mockResolvedValue(null),
+  findSettingByScope: vi.fn().mockReturnValue(null),
   upsertSetting: mocks.upsertSetting,
 }))
 
@@ -85,7 +82,7 @@ describe('server/domains/settings/services/core', () => {
       defaults: { maxRequestBodySize: 'ten' },
     } as unknown as typeof originalLimitsMeta
 
-    const error = await updateBlogSettingsSection(mockDb, mockPool, 'limits', {}, null).catch((e: unknown) => e)
+    const error = await updateBlogSettingsSection(mockDb, 'limits', {}, null).catch((e: unknown) => e)
 
     expect(error).toBeInstanceOf(DomainError)
     expect((error as DomainError).code).toBe('INTERNAL')
@@ -106,11 +103,11 @@ describe('server/domains/settings/services/core', () => {
     })
     mocks.sectionChangeHandlers.set('limits', handler)
 
-    await updateBlogSettingsSection(mockDb, mockPool, 'limits', { maxRequestBodySize: 2048 }, null)
+    await updateBlogSettingsSection(mockDb, 'limits', { maxRequestBodySize: 2048 }, null)
 
     expect(calls).toEqual(['refresh', 'handler'])
     expect(handler).toHaveBeenCalledTimes(1)
-    expect(handler).toHaveBeenCalledWith(mockPool)
+    expect(handler).toHaveBeenCalledWith()
   })
 
   it('awaits the handler and does not swallow synchronous errors', async () => {
@@ -122,7 +119,7 @@ describe('server/domains/settings/services/core', () => {
       throw error
     })
 
-    const result = await updateBlogSettingsSection(mockDb, mockPool, 'limits', { maxRequestBodySize: 2048 }, null)
+    const result = await updateBlogSettingsSection(mockDb, 'limits', { maxRequestBodySize: 2048 }, null)
 
     expect(result).toBe(bundle)
     expect(mocks.loggerError).toHaveBeenCalledWith('Section change handler failed', {
@@ -140,7 +137,7 @@ describe('server/domains/settings/services/core', () => {
       throw error
     })
 
-    const result = await updateBlogSettingsSection(mockDb, mockPool, 'limits', { maxRequestBodySize: 2048 }, null)
+    const result = await updateBlogSettingsSection(mockDb, 'limits', { maxRequestBodySize: 2048 }, null)
 
     expect(result).toBe(bundle)
     expect(mocks.loggerError).toHaveBeenCalledWith('Section change handler failed', {

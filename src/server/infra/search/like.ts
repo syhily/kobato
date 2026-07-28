@@ -1,7 +1,8 @@
 import type { SQL } from 'drizzle-orm'
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { and, desc, eq, or } from 'drizzle-orm'
+
+import type { Database } from '@/server/infra/db/database'
 
 import { postSearchIndex } from '@/server/infra/db/schema/content'
 import { post } from '@/server/infra/db/schema/post'
@@ -15,7 +16,7 @@ export function likeWhere(baseWhere: SQL, query: string): SQL | undefined {
   return and(baseWhere, or(...corpusIlikeDisjuncts(query)))
 }
 
-export async function runLikeSearch(db: NodePgDatabase, baseWhere: SQL, query: string): Promise<string[]> {
+export async function runLikeSearch(db: Database, baseWhere: SQL, query: string): Promise<string[]> {
   const rows = await db
     .select({ slug: post.slug })
     .from(post)

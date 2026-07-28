@@ -1,5 +1,4 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
+import type { Database } from '@/server/infra/db/database'
 import type { Post, PostVisibilityOptions } from '@/shared/types/catalog'
 
 import { buildPublicPostFilters, hydratePostList } from '@/server/domains/posts/repos/hydrate'
@@ -11,9 +10,9 @@ import { listPublicPosts } from '@/server/domains/posts/services/public-query'
  * use {@link listAllPosts} when only metadata is needed (sitemap, search index).
  */
 export async function listPublicPostsWithContent(
-  db: NodePgDatabase,
+  db: Database,
   options?: PostVisibilityOptions & {
-    categoryId?: bigint
+    categoryId?: number
     tag?: string
     sortBy?: 'publishedAt' | 'updatedAt'
     limit?: number
@@ -42,8 +41,8 @@ export interface FeedPostSelection {
  * here would close the domain DAG (the boundaries contract test pins it).
  */
 export interface FeedTaxonomyResolvers {
-  resolveCategory: (db: NodePgDatabase, value: string) => Promise<{ id: bigint } | null>
-  resolveTag: (db: NodePgDatabase, value: string) => Promise<{ name: string } | null>
+  resolveCategory: (db: Database, value: string) => Promise<{ id: number } | null>
+  resolveTag: (db: Database, value: string) => Promise<{ name: string } | null>
 }
 
 /**
@@ -54,7 +53,7 @@ export interface FeedTaxonomyResolvers {
  * yields an empty selection (an empty feed, not an error).
  */
 export async function selectFeedPosts(
-  db: NodePgDatabase,
+  db: Database,
   options: FeedPostSelection,
   resolvers: FeedTaxonomyResolvers,
 ): Promise<Post[]> {

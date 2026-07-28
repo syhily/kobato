@@ -1,4 +1,5 @@
-import { bigint, index, integer, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
+import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { randomUUID } from 'node:crypto'
 
 import type { StorageDriver } from '@/shared/config/types'
 
@@ -24,19 +25,21 @@ import type { StorageDriver } from '@/shared/config/types'
 // - `etag` is the sha256 of `result.css`, used as the cache-busting query
 //   string on the `<link>` URL so repackaging a font busts browser/CDN
 //   caches without changing the key.
-export const font = pgTable(
+export const font = sqliteTable(
   'font',
   {
-    id: uuid('id').primaryKey().defaultRandom(),
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => randomUUID()),
     familyName: text('family_name').notNull(),
     sourceName: text('source_name').notNull(),
     hash: text('hash').notNull().unique(),
     cssKey: text('css_key').notNull(),
     storageDriver: text('storage_driver').$type<StorageDriver>().notNull(),
     chunkCount: integer('chunk_count').notNull(),
-    totalBytes: bigint('total_bytes', { mode: 'number' }).notNull(),
+    totalBytes: integer('total_bytes').notNull(),
     etag: text('etag').notNull(),
-    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
+    createdAt: integer('created_at', { mode: 'timestamp_ms' })
       .notNull()
       .$defaultFn(() => new Date()),
   },

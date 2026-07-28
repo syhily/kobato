@@ -1,7 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { and, desc, inArray, isNull, sql } from 'drizzle-orm'
 
+import type { Database } from '@/server/infra/db/database'
 import type { PostMetaRow } from '@/server/infra/db/types'
 import type { ClientPost, ListingPostCard, Post, PostVisibilityOptions } from '@/shared/types/catalog'
 
@@ -16,7 +15,7 @@ import { toListingPostCard } from '@/shared/types/catalog'
 import { idFromString } from '@/shared/utils/id'
 
 export async function listPublicPosts(
-  db: NodePgDatabase,
+  db: Database,
   filters: ListPublicPostsFilters = {},
   now = new Date(),
 ): Promise<PostMetaRow[]> {
@@ -27,20 +26,20 @@ export async function listPublicPosts(
 }
 
 export async function countPublicPosts(
-  db: NodePgDatabase,
+  db: Database,
   filters: Omit<ListPublicPostsFilters, 'sortBy' | 'limit' | 'offset'> = {},
   now = new Date(),
 ): Promise<number> {
   const where = buildPublicPostsWhere(filters, now)
   const rows = await db
-    .select({ count: sql<number>`count(*)::int` })
+    .select({ count: sql<number>`count(*)` })
     .from(postMetaTable)
     .where(where)
   return rows[0]?.count ?? 0
 }
 
 export async function listPublicPostCards(
-  db: NodePgDatabase,
+  db: Database,
   options?: PostVisibilityOptions & { sortBy?: 'publishedAt' | 'updatedAt' },
 ): Promise<ListingPostCard[]> {
   const filters = buildPublicPostFilters(options)
@@ -53,12 +52,12 @@ export async function listPublicPostCards(
     here: callers that need `total` call `countPublicPosts` themselves (all
     current callers already do), so the count runs once per request. */
 export async function listPublicPostCardsPaginated(
-  db: NodePgDatabase,
+  db: Database,
   pageNum: number,
   pageSize: number,
   options?: PostVisibilityOptions & {
     sortBy?: 'publishedAt' | 'updatedAt'
-    categoryId?: bigint
+    categoryId?: number
     tag?: string
     /** Override the default offset (`(pageNum - 1) * pageSize`). Used when the
         caller's pagination logic expands the last-page limit (tail-merge) so
@@ -81,7 +80,7 @@ export async function listPublicPostCardsPaginated(
 }
 
 export async function listClientPosts(
-  db: NodePgDatabase,
+  db: Database,
   options?: PostVisibilityOptions & { limit?: number },
 ): Promise<ClientPost[]> {
   const filters = buildPublicPostFilters(options)
@@ -90,7 +89,7 @@ export async function listClientPosts(
 }
 
 export async function getClientPostsWithMetadata<PostLike extends { id: string }>(
-  db: NodePgDatabase,
+  db: Database,
   posts: PostLike[],
   options: { likes: boolean; views: boolean; comments: boolean },
 ): Promise<(PostLike & { meta: { likes: number; views: number; comments: number } })[]> {
@@ -124,7 +123,7 @@ export interface SitemapPostRow {
  * revision-join + image-hydration fan-out the full `listAllPosts`
  * path performs.
  */
-export async function listSitemapPosts(db: NodePgDatabase, now = new Date()): Promise<SitemapPostRow[]> {
+export async function listSitemapPosts(db: Database, now = new Date()): Promise<SitemapPostRow[]> {
   return db
     .select({
       slug: postMetaTable.slug,
@@ -142,7 +141,7 @@ export async function listSitemapPosts(db: NodePgDatabase, now = new Date()): Pr
  * be re-ordered by date.
  */
 export async function getPostsBySlugs(
-  db: NodePgDatabase,
+  db: Database,
   slugs: readonly string[],
   options?: PostVisibilityOptions,
 ): Promise<Post[]> {
@@ -169,7 +168,7 @@ export async function getPostsBySlugs(
   return hydratePostList(db, filteredRows)
 }
 
-export async function listAllPosts(db: NodePgDatabase, options?: PostVisibilityOptions): Promise<Post[]> {
+export async function listAllPosts(db: Database, options?: PostVisibilityOptions): Promise<Post[]> {
   const filters = buildPublicPostFilters(options)
   const metas = await listPublicPosts(db, { ...filters })
   return hydratePostList(db, metas)

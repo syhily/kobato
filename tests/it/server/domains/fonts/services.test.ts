@@ -1,15 +1,13 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
 import type { FontRow } from '@/server/infra/db/schema/font'
 
 import { clearAllTables } from '#/_helpers/integration-db'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { deleteFont, setFontSlot } from '@/server/domains/fonts/services/mutate'
 import { deleteFontPackage } from '@/server/domains/fonts/storage'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { setting } from '@/server/infra/db/schema/config'
 import { font } from '@/server/infra/db/schema/font'
 import { DomainError } from '@/server/infra/http/errors'
@@ -29,12 +27,11 @@ vi.mock('@/server/domains/settings/services/section-changes', () => ({
   SECTION_CHANGE_HANDLERS: new Map(),
 }))
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {
@@ -73,11 +70,11 @@ describe('fonts/services/mutate — setFontSlot', () => {
     const a = await seedFont()
     const b = await seedFont()
 
-    await setFontSlot(db, pool, 'global', [a.id, b.id], null)
+    await setFontSlot(db, 'global', [a.id, b.id], null)
     const afterGlobal = await readFontsSettingsData()
     expect(afterGlobal).toMatchObject({ global: [a.id, b.id], post: [], code: [] })
 
-    await setFontSlot(db, pool, 'post', [b.id], null)
+    await setFontSlot(db, 'post', [b.id], null)
     const afterPost = await readFontsSettingsData()
     expect(afterPost).toMatchObject({ global: [a.id, b.id], post: [b.id], code: [] })
   })
@@ -98,7 +95,7 @@ describe('fonts/services/mutate — deleteFont', () => {
 
   it('refuses to delete a slot-referenced font with CONFLICT naming the slot', async () => {
     const target = await seedFont()
-    await setFontSlot(db, pool, 'global', [target.id], null)
+    await setFontSlot(db, 'global', [target.id], null)
 
     const error: unknown = await deleteFont(db, target.id).catch((e: unknown) => e)
 
@@ -119,8 +116,8 @@ describe('fonts/services/mutate — deleteFont', () => {
 
   it('lists every referencing slot in the CONFLICT message', async () => {
     const target = await seedFont()
-    await setFontSlot(db, pool, 'global', [target.id], null)
-    await setFontSlot(db, pool, 'post', [target.id], null)
+    await setFontSlot(db, 'global', [target.id], null)
+    await setFontSlot(db, 'post', [target.id], null)
 
     const error: unknown = await deleteFont(db, target.id).catch((e: unknown) => e)
 

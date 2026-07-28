@@ -38,22 +38,22 @@ const sampleTag = makeTag({ name: 'typescript', slug: 'typescript' })
 const sidebarSamples = makePostList(3, { slug: 'sidebar' })
 
 vi.mock('@/server/domains/posts/services/single', () => ({
-  findPostMetaById: vi.fn(async () => null),
-  findPostMetaBySlug: vi.fn(async () => null),
-  findPostMetaBySlugForUpdate: vi.fn(async () => null),
+  findPostMetaById: vi.fn(() => null),
+  findPostMetaBySlug: vi.fn(() => null),
+  findPostMetaBySlugForUpdate: vi.fn(() => null),
   findPostBySlug: vi.fn(async (_db: unknown, slug: string) => {
     if (slug === 'hello' || slug === 'hello-old') {
       return samplePost
     }
     return null
   }),
-  findPublicPostMetaBySlug: vi.fn(async (_db: unknown, slug: string) => {
+  findPublicPostMetaBySlug: vi.fn((_db: unknown, slug: string) => {
     if (slug === 'hello' || slug === 'hello-old') {
       return {
         slug,
         published: true,
         deletedAt: null,
-        publishedRevisionId: 1n,
+        publishedRevisionId: 1,
         publishedAt: new Date(),
       }
     }

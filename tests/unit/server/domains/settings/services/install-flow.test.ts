@@ -1,6 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import type { Database } from '@/server/infra/db/database'
 
 import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
 import { buildInstallSectionRows, seedInstallSections } from '@/server/domains/settings/services/install-flow'
@@ -89,27 +89,29 @@ describe('server/domains/settings/services/install-flow', () => {
     it('upserts every row through the caller-supplied handle, in order', async () => {
       // The handle IS the atomicity contract: the install flow passes its
       // admin-insert transaction, so every upsert must go through it.
-      const tx = { marker: 'admin-insert-tx' } as unknown as NodePgDatabase
+      const tx = { marker: 'admin-insert-tx' } as unknown as Database
       const rows = builtRows()
 
-      await seedInstallSections(tx, rows, 7n)
+      await seedInstallSections(tx, rows, 7)
 
       const calls = vi.mocked(settingQuery.upsertSetting).mock.calls
       expect(calls).toHaveLength(17)
       for (const [index, [handle, payload, updatedBy, scope]] of calls.entries()) {
         expect(handle).toBe(tx)
         expect(payload).toBe(rows[index]?.payload)
-        expect(updatedBy).toBe(7n)
+        expect(updatedBy).toBe(7)
         expect(scope).toBe(rows[index]?.scope)
       }
     })
 
     it('propagates a persist failure so the caller transaction rolls back', async () => {
-      vi.mocked(settingQuery.upsertSetting).mockRejectedValueOnce(new Error('connection lost'))
+      vi.mocked(settingQuery.upsertSetting).mockImplementationOnce(() => {
+        throw new Error('connection lost')
+      })
 
-      await expect(
-        seedInstallSections({} as unknown as NodePgDatabase, [{ scope: 'blog.general', payload: {} }], null),
-      ).rejects.toThrow('connection lost')
+      expect(() =>
+        seedInstallSections({} as unknown as Database, [{ scope: 'blog.general', payload: {} }], null),
+      ).toThrow('connection lost')
     })
   })
 })

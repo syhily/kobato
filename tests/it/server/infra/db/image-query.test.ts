@@ -1,20 +1,18 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
+
 import { clearAllTables } from '#/_helpers/integration-db'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { insertImageIfMissing, upsertImageByStoragePath } from '@/server/infra/db/operations/image'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { image } from '@/server/infra/db/schema/media'
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {
@@ -30,7 +28,7 @@ describe('db/query/image — upsertImageByStoragePath', () => {
       height: 100,
       byteSize: 12345,
       thumbhash: 'tt',
-      uploaderId: 99n,
+      uploaderId: 99,
       note: null,
     })
 
@@ -47,7 +45,7 @@ describe('db/query/image — upsertImageByStoragePath', () => {
       height: 100,
       byteSize: 12345,
       thumbhash: 'tt',
-      uploaderId: 99n,
+      uploaderId: 99,
       note: null,
     })
 
@@ -62,7 +60,7 @@ describe('db/query/image — upsertImageByStoragePath', () => {
       height: 200,
       byteSize: 99999,
       thumbhash: 'xx',
-      uploaderId: 88n,
+      uploaderId: 88,
       note: 'updated',
     })
 

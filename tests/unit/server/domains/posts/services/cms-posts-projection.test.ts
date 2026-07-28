@@ -16,7 +16,7 @@ const { toClientPostFromMeta } = await import('@/server/domains/posts/repos/shar
 function metaRow(overrides: Partial<PostMetaRow> = {}): PostMetaRow {
   const now = overrides.createdAt ?? new Date('2026-05-01T00:00:00.000Z')
   return {
-    id: overrides.id ?? 1n,
+    id: overrides.id ?? 1,
     slug: overrides.slug ?? 'hello',
     title: overrides.title ?? 'Hello',
     summary: overrides.summary ?? '',
@@ -31,7 +31,7 @@ function metaRow(overrides: Partial<PostMetaRow> = {}): PostMetaRow {
     publishedRevisionId: overrides.publishedRevisionId ?? null,
     firstPublishedAt: overrides.firstPublishedAt ?? null,
     authorId: overrides.authorId ?? null,
-    categoryId: overrides.categoryId ?? 1n,
+    categoryId: overrides.categoryId ?? 1,
     alias: overrides.alias ?? [],
     pinnedAt: overrides.pinnedAt ?? null,
     createdAt: now,
@@ -43,9 +43,9 @@ function metaRow(overrides: Partial<PostMetaRow> = {}): PostMetaRow {
 function contentRow(overrides: Partial<ContentRow> = {}): ContentRow {
   const now = overrides.createdAt ?? new Date('2026-05-01T00:00:00.000Z')
   return {
-    id: overrides.id ?? 100n,
+    id: overrides.id ?? 100,
     type: overrides.type ?? 'post',
-    ownerId: overrides.ownerId ?? 1n,
+    ownerId: overrides.ownerId ?? 1,
     revisionNo: overrides.revisionNo ?? 1,
     status: overrides.status ?? 'draft',
     body: overrides.body ?? [],
@@ -78,7 +78,7 @@ describe('cms/posts/projection — toCmsPost', () => {
   })
 
   it('projects the resolved category name and defaults to an empty string', () => {
-    expect(toCmsPost(metaRow({ categoryId: 5n }), null, { categoryName: 'Tech' }).category).toBe('Tech')
+    expect(toCmsPost(metaRow({ categoryId: 5 }), null, { categoryName: 'Tech' }).category).toBe('Tech')
     expect(toCmsPost(metaRow({ categoryId: null }), null).category).toBe('')
   })
 
@@ -92,9 +92,9 @@ describe('cms/posts/projection — toCmsPost', () => {
       },
     ]
     const dto = toCmsPost(
-      metaRow({ publishedRevisionId: 200n }),
+      metaRow({ publishedRevisionId: 200 }),
       contentRow({
-        id: 200n,
+        id: 200,
         body,
         imageSources: ['images/x.jpg'],
         headings: [{ depth: 2, text: 'Hi', slug: 'hi' }],
@@ -118,7 +118,7 @@ describe('cms/posts/projection — toClientPostFromMeta', () => {
   })
 
   it('stringifies the bigint id and builds the permalink', () => {
-    const dto = toClientPostFromMeta(metaRow({ id: 42n, slug: 'test-post' }))
+    const dto = toClientPostFromMeta(metaRow({ id: 42, slug: 'test-post' }))
     expect(dto.id).toBe('42')
     expect(dto.permalink).toBe('/posts/test-post')
   })

@@ -1,6 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { MetaDescriptor } from 'react-router'
 
+import type { Database } from '@/server/infra/db/database'
 import type { FeedLinkOptions } from '@/shared/seo/meta'
 import type { ListingPostCard, ListingPostCardWithMetadata } from '@/shared/types/catalog'
 
@@ -79,7 +79,7 @@ function calculateTotalPages(postCount: number, pageSize: number, mergeTailThres
 // Lives under `src/server/` so SSR-only catalog / metadata imports never reach
 // the client bundle.
 export async function listingLoader<TExtra = undefined>(
-  db: NodePgDatabase,
+  db: Database,
   {
     rawNum,
     totalPosts,

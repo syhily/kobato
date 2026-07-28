@@ -38,7 +38,7 @@ const { revokeSessionById } = await import('@/server/domains/auth/repo')
 const { accountRouter } = await import('@/server/http/controllers/account.controller')
 
 const dbUserStub = {
-  id: 1n,
+  id: 1,
   name: 'Alice',
   email: 'alice@example.com',
   link: null,
@@ -78,7 +78,7 @@ describe('accountRouter.updateProfile', () => {
     expect(res.user).toBeDefined()
     expect(vi.mocked(updateUserById)).toHaveBeenCalledWith(
       expect.any(Object),
-      1n,
+      1,
       expect.objectContaining({ name: 'Alice the Updated' }),
     )
   })
@@ -117,10 +117,10 @@ describe('accountRouter.updatePassword', () => {
     expect(res.success).toBe(true)
     expect(vi.mocked(updateUserById)).toHaveBeenCalledWith(
       expect.any(Object),
-      1n,
+      1,
       expect.objectContaining({ password: 'hashed:new-password' }),
     )
-    expect(vi.mocked(revokeAllSessionsOfUser)).toHaveBeenCalledWith(expect.anything(), 1n, 'keep-me')
+    expect(vi.mocked(revokeAllSessionsOfUser)).toHaveBeenCalledWith(expect.anything(), 1, 'keep-me')
   })
 
   it('throws FORBIDDEN when the original password does not match', async () => {

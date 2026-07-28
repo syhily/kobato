@@ -1,6 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import type { Database } from '@/server/infra/db/database'
 
 vi.mock('drizzle-orm', async (importOriginal) => {
   const actual = await importOriginal<typeof import('drizzle-orm')>()
@@ -97,26 +97,40 @@ class FakeQuery {
   returning() {
     return this
   }
-  then(resolve: (value: unknown) => unknown, reject?: (err: unknown) => unknown) {
+  all() {
     if (this.inserted) {
-      return Promise.resolve([{ id: 1n, createdAt: new Date(), ...this.inserted }]).then(resolve, reject)
+      return [{ id: 1, createdAt: new Date(), ...this.inserted }]
     }
     if (this.updated) {
-      return Promise.resolve([{ id: 1n, ...this.updated }]).then(resolve, reject)
+      return [{ id: 1, ...this.updated }]
+    }
+    return this.rows
+  }
+
+  run() {
+    return { changes: this.inserted !== null || this.updated !== null ? 1 : 0, lastInsertRowid: 1 }
+  }
+
+  then(resolve: (value: unknown) => unknown, reject?: (err: unknown) => unknown) {
+    if (this.inserted) {
+      return Promise.resolve([{ id: 1, createdAt: new Date(), ...this.inserted }]).then(resolve, reject)
+    }
+    if (this.updated) {
+      return Promise.resolve([{ id: 1, ...this.updated }]).then(resolve, reject)
     }
     return Promise.resolve(this.rows).then(resolve, reject)
   }
 }
 
-function fakeDb(rows: unknown[] = []): NodePgDatabase {
+function fakeDb(rows: unknown[] = []): Database {
   const query = new FakeQuery()
   query.rows = rows
   return {
     select: () => query.select(),
     insert: () => query.insert(),
     update: () => query.update(),
-    transaction: async (fn: (tx: NodePgDatabase) => Promise<unknown>) => fn(fakeDb(rows) as NodePgDatabase),
-  } as unknown as NodePgDatabase
+    transaction: (fn: (tx: Database) => unknown) => fn(fakeDb(rows) as Database),
+  } as unknown as Database
 }
 
 import {
@@ -137,12 +151,12 @@ describe('pages repo', () => {
   })
 
   it('lists, counts, and filters page metas', async () => {
-    const db = fakeDb([{ id: 1n, title: 'Page', authorName: 'Admin' }])
+    const db = fakeDb([{ id: 1, title: 'Page', authorName: 'Admin' }])
     const rows = await listPageMetas(db, {
       q: 'page',
       deletedStatus: 'normal',
       published: true,
-      authorId: 1n,
+      authorId: 1,
       limit: 10,
       offset: 0,
     })
@@ -152,8 +166,8 @@ describe('pages repo', () => {
   })
 
   it('finds a page meta by id, slug, and for update', async () => {
-    const db = fakeDb([{ id: 1n, slug: 'hello' }])
-    expect(await findPageMetaById(db, 1n)).toBeTruthy()
+    const db = fakeDb([{ id: 1, slug: 'hello' }])
+    expect(await findPageMetaById(db, 1)).toBeTruthy()
     expect(await findPageMetaBySlug(db, 'hello')).toBeTruthy()
     expect(await findPageMetaBySlugForUpdate(db, 'hello')).toBeTruthy()
   })
@@ -161,14 +175,14 @@ describe('pages repo', () => {
   it('inserts and updates page meta', async () => {
     const db = fakeDb()
     const inserted = await insertPageMeta(db, { slug: 'new', title: 'New' } as never)
-    expect(inserted.id).toBe(1n)
-    const updated = await updatePageMetaById(db, 1n, { title: 'Updated' })
+    expect(inserted.id).toBe(1)
+    const updated = await updatePageMetaById(db, 1, { title: 'Updated' })
     expect(updated).toBeTruthy()
   })
 
   it('soft-deletes and restores page meta', async () => {
-    const db = fakeDb([{ id: 1n, deletedAt: null }])
-    expect(await softDeletePageMeta(db, 1n)).toBe(true)
-    expect(await restorePageMeta(db, 1n)).toBe(true)
+    const db = fakeDb([{ id: 1, deletedAt: null }])
+    expect(await softDeletePageMeta(db, 1)).toBe(true)
+    expect(await restorePageMeta(db, 1)).toBe(true)
   })
 })

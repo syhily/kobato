@@ -1,5 +1,4 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
+import type { Database } from '@/server/infra/db/database'
 import type { ImageRow } from '@/server/infra/db/types'
 import type { AdminImageDto, ListImagesOutput } from '@/shared/contracts/images'
 import type { ListImagesInput } from '@/shared/types/images'
@@ -14,7 +13,7 @@ import {
 import { safeResolveAssetUrl } from '@/server/infra/storage/public-url'
 import { classifyImageKind } from '@/shared/types/images'
 
-export async function listImagesForAdmin(db: NodePgDatabase, input: ListImagesInput = {}): Promise<ListImagesOutput> {
+export async function listImagesForAdmin(db: Database, input: ListImagesInput = {}): Promise<ListImagesOutput> {
   const offset = clampOffset(input.offset)
   const limit = clampLimit(input.limit)
 
@@ -37,7 +36,7 @@ export async function listImagesForAdmin(db: NodePgDatabase, input: ListImagesIn
   }
 }
 
-export async function findImageDtoById(db: NodePgDatabase, id: bigint): Promise<AdminImageDto | null> {
+export async function findImageDtoById(db: Database, id: number): Promise<AdminImageDto | null> {
   const row = await findAdminImageRowById(db, id)
   if (row === null) {
     return null
@@ -46,7 +45,7 @@ export async function findImageDtoById(db: NodePgDatabase, id: bigint): Promise<
 }
 
 export async function bulkFindImagesByStoragePaths(
-  db: NodePgDatabase,
+  db: Database,
   paths: readonly string[],
 ): Promise<Map<string, ImageRow>> {
   const rows = await findImagesByStoragePaths(db, paths)

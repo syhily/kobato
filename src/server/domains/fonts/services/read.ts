@@ -1,7 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { eq, inArray } from 'drizzle-orm'
 
+import type { Database } from '@/server/infra/db/database'
 import type { FontRow } from '@/server/infra/db/schema/font'
 import type { AdminFontDto } from '@/shared/contracts/fonts'
 
@@ -27,7 +26,7 @@ export function toAdminFontDto(row: FontRow): AdminFontDto {
 }
 
 /** Return every font row, newest first — feeds the admin library grid. */
-export async function listFonts(db: NodePgDatabase): Promise<AdminFontDto[]> {
+export async function listFonts(db: Database): Promise<AdminFontDto[]> {
   const rows = await db.select().from(font).orderBy(font.createdAt)
   return rows.map(toAdminFontDto)
 }
@@ -41,7 +40,7 @@ export async function listFonts(db: NodePgDatabase): Promise<AdminFontDto[]> {
  * Returns the rows in **no particular order**; callers that care about
  * slot order re-sort by the slot list themselves (see `resolveSlotOrder`).
  */
-export async function findFontsByIds(db: NodePgDatabase, ids: readonly string[]): Promise<Map<string, FontRow>> {
+export async function findFontsByIds(db: Database, ids: readonly string[]): Promise<Map<string, FontRow>> {
   if (ids.length === 0) {
     return new Map()
   }
@@ -71,13 +70,13 @@ export function resolveSlotOrder(ids: readonly string[], byId: Map<string, FontR
 }
 
 /** Single-row fetch by id; `null` when the font does not exist. */
-export async function findFontById(db: NodePgDatabase, id: string): Promise<FontRow | null> {
+export async function findFontById(db: Database, id: string): Promise<FontRow | null> {
   const rows = await db.select().from(font).where(eq(font.id, id)).limit(1)
   return rows[0] ?? null
 }
 
 /** Single-row fetch by content hash (the dedup key). `null` when absent. */
-export async function findFontByHash(db: NodePgDatabase, hash: string): Promise<FontRow | null> {
+export async function findFontByHash(db: Database, hash: string): Promise<FontRow | null> {
   const rows = await db.select().from(font).where(eq(font.hash, hash)).limit(1)
   return rows[0] ?? null
 }

@@ -3,18 +3,18 @@ import { bodyLimit } from 'hono/body-limit'
 
 import type { Env } from '@/server/http/context'
 
+import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
 import { recordAuditEvent } from '@/server/domains/audit/services/record'
 import { CSRF_HEADER, validateCsrfToken } from '@/server/domains/auth/csrf'
 import { isSetupTokenActive } from '@/server/domains/auth/setup-token'
 import { performSafeRestore } from '@/server/domains/backup/restore-orchestrator'
 import { getBackupBuffer, isValidBackupKey } from '@/server/domains/backup/services/backup'
-import { extractBackupSql, restoreFromSql } from '@/server/domains/backup/services/restore'
-import { checkPgToolsAvailable } from '@/server/domains/backup/services/shared'
-import { validateBackupSql } from '@/server/domains/backup/services/validate'
+import { restoreFromBackup } from '@/server/domains/backup/services/restore'
 import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { csrfGuard } from '@/server/http/middlewares/csrf'
 import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'
 import { rateLimitByIp } from '@/server/http/middlewares/rate-limit'
+import { closeDatabase } from '@/server/infra/db/database'
 import { findFirstAdminUser, hasAdmin } from '@/server/infra/db/operations/user'
 import { getRestoreState, resetRestoreState } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
@@ -33,7 +33,7 @@ export const backupRouter = new Hono<Env>()
       return c.json({ error: { message: '无效的备份标识。' } }, 400)
     }
     const buffer = await getBackupBuffer(c.var.requestContext.db, timestamp)
-    const fileName = `backup-${timestamp}.sql.gz`
+    const fileName = `backup-${timestamp}.db.gz`
     c.header('Content-Type', 'application/gzip')
     c.header('Content-Disposition', `attachment; filename="${fileName}"`)
     return c.body(new Uint8Array(buffer))
@@ -58,11 +58,9 @@ export const backupRouter = new Hono<Env>()
       }
 
       const buffer = Buffer.from(await file.arrayBuffer())
-      const sql = await extractBackupSql(buffer, file.name)
-      validateBackupSql(sql)
 
-      performSafeRestore({ pool: c.var.requestContext.pool, log }, async () => {
-        await restoreFromSql(c.var.requestContext.db, sql)
+      performSafeRestore({ closeCurrentDatabase: () => closeDatabase(getDatabaseHandle()), log }, async () => {
+        await restoreFromBackup(buffer, file.name)
         log.info('Restore from uploaded backup completed')
       })
 
@@ -101,10 +99,6 @@ export const backupRouter = new Hono<Env>()
         return c.json({ error: { message: '安全校验失败，请刷新页面后重试。' } }, 403)
       }
 
-      if (!(await checkPgToolsAvailable())) {
-        return c.json({ error: { message: '当前运行环境缺少 postgresql-client，无法还原备份。' } }, 503)
-      }
-
       const body = await c.req.parseBody({ all: false })
       const file = body.file
       if (!(file instanceof File)) {
@@ -116,15 +110,13 @@ export const backupRouter = new Hono<Env>()
       }
 
       const buffer = Buffer.from(await file.arrayBuffer())
-      const sql = await extractBackupSql(buffer, file.name)
-      validateBackupSql(sql)
 
       const clientAddress = c.var.requestContext.clientAddress
       const userAgent = c.req.raw.headers.get('User-Agent')
       const fileName = file.name
 
-      performSafeRestore({ pool: c.var.requestContext.pool, log }, async () => {
-        await restoreFromSql(c.var.requestContext.db, sql)
+      performSafeRestore({ closeCurrentDatabase: () => closeDatabase(getDatabaseHandle()), log }, async () => {
+        await restoreFromBackup(buffer, fileName)
 
         const admin = await findFirstAdminUser(c.var.requestContext.db)
         if (!admin) {

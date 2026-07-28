@@ -7,6 +7,7 @@ import {
 } from '@/server/domains/newsletter/schema'
 import { confirm, subscribe, unsubscribe } from '@/server/domains/newsletter/service'
 import { publicProc, resourceRateLimit } from '@/server/http/orpc-base'
+import { idFromString } from '@/shared/utils/id'
 
 // Uniform `{ ok: true }` on every path — the response must not reveal
 // whether an address is already subscribed (or was ever seen).
@@ -38,7 +39,7 @@ const unsubscribeProc = publicProc
   .output(okOutput)
   .use(resourceRateLimit)
   .handler(async ({ input, context }) => {
-    await unsubscribe(context.db, BigInt(input.id), input.sig)
+    await unsubscribe(context.db, idFromString(input.id), input.sig)
     return { ok: true as const }
   })
 

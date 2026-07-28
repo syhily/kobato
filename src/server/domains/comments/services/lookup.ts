@@ -1,6 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { and, count, eq, inArray, isNull } from 'drizzle-orm'
+
+import type { Database } from '@/server/infra/db/database'
 
 import { commentWithUser } from '@/server/domains/comments/repos/shared'
 import { comment } from '@/server/infra/db/schema/comment'
@@ -11,7 +11,7 @@ import { user } from '@/server/infra/db/schema/user'
  * ownership checks, token flows) — the comments domain's sanctioned
  * single-comment read surface.
  */
-export async function findCommentWithUserById(db: NodePgDatabase, id: bigint) {
+export async function findCommentWithUserById(db: Database, id: number) {
   const rows = await db
     .select(commentWithUser)
     .from(comment)
@@ -21,7 +21,7 @@ export async function findCommentWithUserById(db: NodePgDatabase, id: bigint) {
   return rows[0] ?? null
 }
 
-export async function findCommentsByIds(db: NodePgDatabase, ids: bigint[]) {
+export async function findCommentsByIds(db: Database, ids: number[]) {
   if (ids.length === 0) {
     return []
   }
@@ -33,7 +33,7 @@ export async function findCommentsByIds(db: NodePgDatabase, ids: bigint[]) {
 }
 
 /** Approved direct replies of one comment — the "has replies → no edit" guard. */
-export async function countApprovedRepliesOfComment(db: NodePgDatabase, commentId: bigint): Promise<number> {
+export async function countApprovedRepliesOfComment(db: Database, commentId: number): Promise<number> {
   const rows = await db
     .select({ count: count() })
     .from(comment)

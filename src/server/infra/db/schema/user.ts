@@ -1,31 +1,29 @@
 import { sql } from 'drizzle-orm'
-import { bigint, bigserial, boolean, index, pgTable, text, timestamp, uniqueIndex, varchar } from 'drizzle-orm/pg-core'
+import { check, index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 
 import type { LoginMethod } from '@/shared/contracts/users'
 
-import { userRoleEnum } from '@/server/infra/db/schema/shared'
+import { USER_ROLES } from '@/server/infra/db/schema/shared'
 
-// RBAC role enum. Declared as a real Postgres ENUM (not a CHECK
-// constraint or varchar+TS-only enforcement) so a stray
-// `UPDATE user SET role = 'editor'` from a DB client is rejected at
-// the DB perimeter. Adding a new role later is a separate migration
-// (`ALTER TYPE user_role ADD VALUE`), which is a fair price for the
-// stronger guarantee.
+// RBAC role enum. `text({ enum })` constrains at the drizzle layer; the
+// explicit CHECK below keeps the DB-perimeter guarantee the Postgres
+// ENUM gave (a stray `UPDATE user SET role = 'editor'` from a DB client
+// is rejected).
 
-export const user = pgTable(
+export const user = sqliteTable(
   'user',
   {
-    id: bigserial('id', { mode: 'bigint' }).primaryKey().notNull(),
-    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
+    id: integer('id').primaryKey({ autoIncrement: true }).notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' })
       .notNull()
       .$defaultFn(() => new Date()),
-    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+    updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
       .notNull()
       .$defaultFn(() => new Date()),
-    deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
-    name: varchar('name', { length: 255 }).notNull(),
-    email: varchar('email', { length: 255 }).unique().notNull(),
-    emailVerified: boolean('email_verified').default(false).notNull(),
+    deletedAt: integer('deleted_at', { mode: 'timestamp_ms' }),
+    name: text('name').notNull(),
+    email: text('email').unique().notNull(),
+    emailVerified: integer('email_verified', { mode: 'boolean' }).default(false).notNull(),
     link: text('link'),
     password: text('password').notNull(),
     badgeName: text('badge_name'),
@@ -37,13 +35,12 @@ export const user = pgTable(
     badgeTextColor: text('badge_text_color'),
     lastIp: text('last_ip'),
     lastUa: text('last_ua'),
-    role: userRoleEnum('role'),
-    isMuted: boolean('is_muted').default(false).notNull(),
-    receiveEmail: boolean('receive_email').default(true),
+    role: text('role', { enum: USER_ROLES }),
+    isMuted: integer('is_muted', { mode: 'boolean' }).default(false).notNull(),
+    receiveEmail: integer('receive_email', { mode: 'boolean' }).default(true),
     // Unified per-user signin method: 'password' (default), 'magic-link',
-    // or 'passkey'. Replaces the old passkey_force boolean — the migration
-    // backfills forced users to 'passkey'.
-    loginMethod: varchar('login_method', { length: 16 }).$type<LoginMethod>().default('password').notNull(),
+    // or 'passkey'.
+    loginMethod: text('login_method').$type<LoginMethod>().default('password').notNull(),
   },
   (table) => [
     index('idx_users_email').on(table.email),
@@ -54,29 +51,29 @@ export const user = pgTable(
     index('idx_user_role')
       .on(table.role)
       .where(sql`role IS NOT NULL`),
+    check('user_role_chk', sql`${table.role} IN ('admin', 'author', 'visitor')`),
   ],
 )
 
 // One-shot tokens for password reset and author invite. Previously
 // the row identity was a single `identifier text` column shaped as
 // `<purpose>:<userId>` — that conflated two concerns into one column,
-// had no UNIQUE constraint, and forced bigint userIds through a
-// string-split / parseInt detour. Splitting `purpose` and `userId`
-// into two real columns lets the `(purpose, userId)` UNIQUE index do
-// its job (one live token per purpose per user) and lets the
-// application stay bigint end-to-end.
-export const verification = pgTable(
+// had no UNIQUE constraint, and forced userIds through a string-split /
+// parseInt detour. Splitting `purpose` and `userId` into two real
+// columns lets the `(purpose, userId)` UNIQUE index do its job (one
+// live token per purpose per user).
+export const verification = sqliteTable(
   'verification',
   {
     id: text('id').primaryKey(),
-    purpose: varchar('purpose', { length: 32 }).notNull(),
-    userId: bigint('user_id', { mode: 'bigint' }).notNull(),
+    purpose: text('purpose').notNull(),
+    userId: integer('user_id').notNull(),
     value: text('value').notNull(),
-    expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }).notNull(),
-    createdAt: timestamp('created_at')
+    expiresAt: integer('expires_at', { mode: 'timestamp_ms' }).notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' })
       .notNull()
       .$defaultFn(() => new Date()),
-    updatedAt: timestamp('updated_at')
+    updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
       .notNull()
       .$defaultFn(() => new Date()),
   },

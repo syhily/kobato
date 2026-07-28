@@ -1,7 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import type { ViewerIdentity } from '@/server/domains/auth/rbac'
 import type { ContentType, PublishLatestResult, SaveDraftResult } from '@/server/domains/content/schemas/revision'
+import type { Database } from '@/server/infra/db/database'
 import type { ContentRow } from '@/server/infra/db/types'
 import type { AdminRevisionDto } from '@/shared/contracts/revision'
 import type { PortableTextBody, PortableTextHeading } from '@/shared/pt/schema'
@@ -26,8 +25,8 @@ const log = getLogger('content.lifecycle')
  */
 export interface ContentEntityAdapter<TMeta, TPreview> {
   entityType: ContentType
-  findMetaById(db: NodePgDatabase, id: bigint): Promise<TMeta | null>
-  findPublicMetaBySlug(db: NodePgDatabase, slug: string): Promise<TMeta | null>
+  findMetaById(db: Database, id: number): TMeta | null
+  findPublicMetaBySlug(db: Database, slug: string): TMeta | null
   assertAccess(meta: TMeta | null, viewer?: ViewerIdentity): asserts meta is TMeta
   /**
    * Draft-preview gate (CONTEXT.md "Draft preview"): posts author+, pages
@@ -35,16 +34,16 @@ export interface ContentEntityAdapter<TMeta, TPreview> {
    * fall through to the published page when the viewer lacks preview rights.
    */
   canPreviewDraft(role: RoleOrNull | undefined): boolean
-  getId(meta: TMeta): bigint
-  getPublishedRevisionId(meta: TMeta): bigint | null
+  getId(meta: TMeta): number
+  getPublishedRevisionId(meta: TMeta): number | null
   projectPreview(meta: TMeta, revision: ContentRow | null): TPreview
   recordForceOverwrite(entry: ForceOverwriteEntry<TMeta>): void
-  afterPublish(db: NodePgDatabase, meta: TMeta, body: PortableTextBody, warnings: string[]): Promise<void>
+  afterPublish(db: Database, meta: TMeta, body: PortableTextBody, warnings: string[]): Promise<void>
 }
 
 export interface ForceOverwriteEntry<TMeta> {
   mode: 'draft' | 'publish'
-  authorId: bigint | null
+  authorId: number | null
   meta: TMeta
   /** The latest revision the force save overwrote. */
   overwritten: ContentRow
@@ -57,7 +56,7 @@ export interface ForceOverwriteEntry<TMeta> {
  * `recordForceOverwrite`. The logger scope and meta id key stay with
  * the caller so the emitted context keeps its historical shape.
  */
-export function recordForceOverwriteAudit<TMeta extends { id: bigint }>(
+export function recordForceOverwriteAudit<TMeta extends { id: number }>(
   auditLog: Logger,
   metaIdKey: 'postMetaId' | 'pageMetaId',
   entry: ForceOverwriteEntry<TMeta>,
@@ -74,11 +73,11 @@ export function recordForceOverwriteAudit<TMeta extends { id: bigint }>(
 }
 
 export interface SaveBodyInput {
-  entityId: bigint
+  entityId: number
   body: unknown
   expectedClientRevisionToken?: string | null
   force?: boolean
-  authorId: bigint | null
+  authorId: number | null
   publishedAt?: Date
 }
 
@@ -103,13 +102,13 @@ export interface DraftPreviewResult<TPreview> {
 }
 
 export async function saveBody<TMeta, TPreview>(
-  db: NodePgDatabase,
+  db: Database,
   adapter: ContentEntityAdapter<TMeta, TPreview>,
   input: SaveBodyInput,
   mode: 'draft' | 'publish',
   viewer?: ViewerIdentity,
 ): Promise<SaveBodyResult> {
-  const meta = await adapter.findMetaById(db, input.entityId)
+  const meta = adapter.findMetaById(db, input.entityId)
   adapter.assertAccess(meta, viewer)
   const body = await canonicalizePortableTextBody(input.body)
 
@@ -181,11 +180,11 @@ export async function saveBody<TMeta, TPreview>(
  * `adapter.canPreviewDraft`.
  */
 export async function loadDraftPreviewBySlug<TMeta, TPreview>(
-  db: NodePgDatabase,
+  db: Database,
   adapter: ContentEntityAdapter<TMeta, TPreview>,
   slug: string,
 ): Promise<DraftPreviewResult<TPreview> | null> {
-  const meta = await adapter.findPublicMetaBySlug(db, slug)
+  const meta = adapter.findPublicMetaBySlug(db, slug)
   if (meta === null) {
     return null
   }
@@ -193,7 +192,7 @@ export async function loadDraftPreviewBySlug<TMeta, TPreview>(
   const publishedRevisionId = adapter.getPublishedRevisionId(meta)
   let revision: ContentRow | null = draft
   if (revision === null && publishedRevisionId !== null) {
-    revision = await findContentById(db, publishedRevisionId)
+    revision = findContentById(db, publishedRevisionId)
   }
   return { preview: adapter.projectPreview(meta, revision), hasNewerDraft: draft !== null }
 }

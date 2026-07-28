@@ -50,7 +50,7 @@ const dbPage = {
   }),
   body: dbPageBody,
   imageSources: ['https://cdn.example.com/photo.jpg'],
-  publishedRevisionId: 42n,
+  publishedRevisionId: 42,
 }
 
 vi.mock('@/server/domains/pages/repo', () => ({

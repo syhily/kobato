@@ -1,9 +1,7 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { ORPCError, os } from '@orpc/server'
 
 import type { BlogSession, SessionUser } from '@/server/domains/auth/session-storage'
+import type { Database } from '@/server/infra/db/database'
 import type { RequestFacts } from '@/server/infra/http/request-facts'
 import type { CommentTokenCookie } from '@/shared/utils/comment-token'
 
@@ -36,8 +34,7 @@ export interface HandlerContext {
   viewer: SessionUser | null
   clientAddress: string
   responseHeaders: Headers
-  db: NodePgDatabase
-  pool: Pool
+  db: Database
 }
 
 // Subtype produced by `requireAuth` — once an auth middleware passes,

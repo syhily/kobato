@@ -1,7 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { count } from 'drizzle-orm'
 
+import type { Database } from '@/server/infra/db/database'
 import type { User } from '@/server/infra/db/types'
 import type { LoginMethod } from '@/shared/contracts/users'
 import type { UserSortOrder } from '@/shared/types/users'
@@ -35,7 +34,7 @@ const log = getLogger('users.admin')
 // Total user rows (deleted included) for the admin shell's user-count
 // badge. Promoted from `infra/db/operations/user` — the admin shell was
 // its only consumer, so the capability lives on the users surface.
-export async function countUsers(db: NodePgDatabase): Promise<number> {
+export async function countUsers(db: Database): Promise<number> {
   const rows = await db.select({ count: count() }).from(user)
   return rows[0]?.count ?? 0
 }
@@ -86,7 +85,7 @@ export function toAdminUserDto(row: AdminUserRow): AdminUserDto {
 
 // `setUserMuted` returns the raw `user` row (no aggregation); refetch
 // the aggregated view so the client always gets the same DTO shape.
-export async function fetchAdminUserDto(db: NodePgDatabase, id: bigint): Promise<AdminUserDto | null> {
+export async function fetchAdminUserDto(db: Database, id: number): Promise<AdminUserDto | null> {
   const row = await findAdminUserById(db, id)
   return row ? toAdminUserDto(row) : null
 }
@@ -95,7 +94,7 @@ export async function fetchAdminUserDto(db: NodePgDatabase, id: bigint): Promise
 // "admins cannot be muted" guard lives inside `setUserMuted`'s WHERE
 // clause, so a null write covers both "no such user" and "target is an
 // admin" — same wire contract the controller used to inline.
-export async function muteUser(db: NodePgDatabase, id: bigint, muted: boolean): Promise<AdminUserDto> {
+export async function muteUser(db: Database, id: number, muted: boolean): Promise<AdminUserDto> {
   const updated = await setUserMuted(db, id, muted)
   if (!updated) {
     throw new DomainError('NOT_FOUND', '用户不存在或为管理员（管理员不可禁言）')
@@ -114,7 +113,7 @@ export interface ListAdminUsersResult {
 }
 
 export async function listUsersForAdmin(
-  db: NodePgDatabase,
+  db: Database,
   offset: number,
   limit: number,
   filters: AdminUsersListFilters,
@@ -128,8 +127,8 @@ export async function listUsersForAdmin(
 }
 
 export async function updateUserRoleWithGuard(
-  db: NodePgDatabase,
-  targetId: bigint,
+  db: Database,
+  targetId: number,
   newRole: 'admin' | 'author' | 'visitor' | null,
   actorId: string,
 ): Promise<User | null> {
@@ -155,11 +154,11 @@ export async function updateUserRoleWithGuard(
 
 export interface InviteAuthorResult {
   success: true
-  userId: bigint
+  userId: number
 }
 
 export async function inviteAuthorWithRollback(
-  db: NodePgDatabase,
+  db: Database,
   name: string,
   email: string,
   origin: string,
@@ -172,13 +171,13 @@ export async function inviteAuthorWithRollback(
   }
 
   // Atomic DB writes: `insertAuthor` + `issueSetupToken` in a single
-  // transaction so a failure rolls both back.
-  const { user, token } = await db.transaction(async (tx) => {
-    const [inserted] = await insertAuthor(tx, name, email)
+  // (sync — node:sqlite) transaction so a failure rolls both back.
+  const { user, token } = db.transaction((tx) => {
+    const [inserted] = insertAuthor(tx, name, email)
     if (!inserted) {
       throw new DomainError('INTERNAL', '创建作者账户失败。')
     }
-    const { token } = await issueSetupToken(tx, inserted.id)
+    const { token } = issueSetupToken(tx, inserted.id)
     return { user: inserted, token }
   })
 
@@ -209,10 +208,10 @@ export async function inviteAuthorWithRollback(
 }
 
 export async function sendPasswordResetToUser(
-  db: NodePgDatabase,
+  db: Database,
   email: string,
   origin: string,
-): Promise<{ userId: bigint }> {
+): Promise<{ userId: number }> {
   const user = await findUserByEmail(db, email)
   if (!user || user.deletedAt) {
     throw new DomainError('NOT_FOUND', '用户不存在')
@@ -221,15 +220,15 @@ export async function sendPasswordResetToUser(
   if (limit.exceeded) {
     throw new DomainError('RATE_LIMITED', '该用户的重置邮件发送过于频繁，请稍后再试。')
   }
-  const { token } = await issueResetToken(db, user.id)
+  const { token } = issueResetToken(db, user.id)
   const link = `${origin}/admin/signin?action=resetpassword&token=${encodeURIComponent(token)}`
   await sendPasswordResetEmail(user, link)
   return { userId: user.id }
 }
 
 export async function softDeleteUserWithGuard(
-  db: NodePgDatabase,
-  targetId: bigint,
+  db: Database,
+  targetId: number,
   actorId: string,
 ): Promise<{ previousRole: 'admin' | 'author' | 'visitor' | null }> {
   if (actorId === String(targetId)) {

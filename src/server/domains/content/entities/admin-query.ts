@@ -1,5 +1,3 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import type { ViewerIdentity } from '@/server/domains/auth/rbac'
 import type {
   MetaEntityDescriptor,
@@ -9,6 +7,7 @@ import type {
 import type { MetaListQueries } from '@/server/domains/content/entities/meta-repo'
 import type { LimitOffset } from '@/server/domains/content/pagination'
 import type { AdminListEngagement, AdminListResult } from '@/server/domains/content/services/admin-list'
+import type { Database } from '@/server/infra/db/database'
 import type { AdminRevisionDto } from '@/shared/contracts/revision'
 
 import { toAdminRevisionDto } from '@/server/domains/content/projection'
@@ -23,9 +22,9 @@ export interface EntityAdminDetail<TAdminDto> {
 }
 
 export interface EntityAdminQuery<TFilters extends LimitOffset, TAdminDto> {
-  listForAdmin: (db: NodePgDatabase, filters: TFilters, viewer?: ViewerIdentity) => Promise<AdminListResult<TAdminDto>>
-  getDetailForAdmin: (db: NodePgDatabase, id: bigint, viewer?: ViewerIdentity) => Promise<EntityAdminDetail<TAdminDto>>
-  listRevisionsForAdmin: (db: NodePgDatabase, id: bigint, viewer?: ViewerIdentity) => Promise<AdminRevisionDto[]>
+  listForAdmin: (db: Database, filters: TFilters, viewer?: ViewerIdentity) => Promise<AdminListResult<TAdminDto>>
+  getDetailForAdmin: (db: Database, id: number, viewer?: ViewerIdentity) => Promise<EntityAdminDetail<TAdminDto>>
+  listRevisionsForAdmin: (db: Database, id: number, viewer?: ViewerIdentity) => Promise<AdminRevisionDto[]>
 }
 
 /**
@@ -49,7 +48,7 @@ export function makeEntityAdminQuery<
 ): EntityAdminQuery<TFilters, TAdminDto> {
   const { repos } = descriptor
 
-  async function listForAdminScoped(db: NodePgDatabase, filters: TFilters, viewer?: ViewerIdentity) {
+  async function listForAdminScoped(db: Database, filters: TFilters, viewer?: ViewerIdentity) {
     const applied = viewer !== undefined ? (descriptor.access.scopeListFilters?.(filters, viewer) ?? filters) : filters
     return listForAdmin(db, {
       entityType: descriptor.entityType,
@@ -67,8 +66,8 @@ export function makeEntityAdminQuery<
     })
   }
 
-  async function getDetailForAdmin(db: NodePgDatabase, id: bigint, viewer?: ViewerIdentity) {
-    const meta = await repos.findMetaById(db, id)
+  async function getDetailForAdmin(db: Database, id: number, viewer?: ViewerIdentity) {
+    const meta = repos.findMetaById(db, id)
     descriptor.access.assertAccess(meta, viewer)
     const [latest, published, extras] = await Promise.all([
       findLatestRevision(db, descriptor.entityType, meta.id),
@@ -82,8 +81,8 @@ export function makeEntityAdminQuery<
     }
   }
 
-  async function listRevisionsForAdmin(db: NodePgDatabase, id: bigint, viewer?: ViewerIdentity) {
-    const meta = await repos.findMetaById(db, id)
+  async function listRevisionsForAdmin(db: Database, id: number, viewer?: ViewerIdentity) {
+    const meta = repos.findMetaById(db, id)
     descriptor.access.assertAccess(meta, viewer)
     const rows = await listRevisions(db, descriptor.entityType, id)
     return rows.map(toAdminRevisionDto)

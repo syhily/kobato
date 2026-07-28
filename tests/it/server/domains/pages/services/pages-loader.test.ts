@@ -1,9 +1,8 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { RouterContextProvider } from 'react-router'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { SessionUser } from '@/server/domains/auth/session-storage'
+import type { Database } from '@/server/infra/db/database'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
 import { makePage } from '#/_helpers/catalog'
@@ -29,17 +28,17 @@ function makePostMeta(
     slug: string
     deletedAt: Date | null
     published: boolean
-    publishedRevisionId: bigint | null
+    publishedRevisionId: number | null
     publishedAt: Date
   }> = {},
 ) {
   return {
-    id: 1n,
+    id: 1,
     slug: 'test-post',
     title: 'Test Post',
     deletedAt: null as Date | null,
     published: true,
-    publishedRevisionId: 1n,
+    publishedRevisionId: 1,
     publishedAt: new Date('2024-01-01'),
     ...overrides,
   }
@@ -50,38 +49,38 @@ function makeDbPage(overrides: Record<string, unknown> = {}) {
     ...makePage({ slug: 'test-page', title: 'Test Page', permalink: '/test-page' }),
     body: pageBody,
     imageSources: [] as string[],
-    publishedRevisionId: 10n,
+    publishedRevisionId: 10,
     ...overrides,
   }
 }
 
-const mockDb = {} as NodePgDatabase
+const mockDb = {} as Database
 
 const mocks = vi.hoisted(() => ({
-  findPublicPostMetaBySlug: vi.fn(async (): Promise<unknown> => null),
+  findPublicPostMetaBySlug: vi.fn((): unknown => null),
   findPageBySlug: vi.fn(async (): Promise<unknown> => null),
   loadDraftPreviewBySlug: vi.fn(async (): Promise<unknown> => null),
   resolveImageMetaBySources: vi.fn(async () => []),
 }))
 
 vi.mock('@/server/domains/posts/services/single', () => ({
-  findPostMetaById: vi.fn(async () => null),
-  findPostMetaBySlug: vi.fn(async () => null),
-  findPostMetaBySlugForUpdate: vi.fn(async () => null),
+  findPostMetaById: vi.fn(() => null),
+  findPostMetaBySlug: vi.fn(() => null),
+  findPostMetaBySlugForUpdate: vi.fn(() => null),
   findPublicPostMetaBySlug: mocks.findPublicPostMetaBySlug,
 }))
 vi.mock('@/server/domains/pages/repo', () => ({
-  findPageMetaById: vi.fn(async () => null),
-  findPageMetaBySlug: vi.fn(async () => null),
-  findPageMetaBySlugForUpdate: vi.fn(async () => null),
-  insertPageMeta: vi.fn(async () => null),
-  updatePageMetaById: vi.fn(async () => null),
-  softDeletePageMeta: vi.fn(async () => false),
-  restorePageMeta: vi.fn(async () => false),
+  findPageMetaById: vi.fn(() => null),
+  findPageMetaBySlug: vi.fn(() => null),
+  findPageMetaBySlugForUpdate: vi.fn(() => null),
+  insertPageMeta: vi.fn(() => null),
+  updatePageMetaById: vi.fn(() => null),
+  softDeletePageMeta: vi.fn(() => false),
+  restorePageMeta: vi.fn(() => false),
 }))
 vi.mock('@/server/domains/pages/services/public-query', () => ({
   findPageBySlug: mocks.findPageBySlug,
-  findPublicPageMetaBySlug: vi.fn(async () => null),
+  findPublicPageMetaBySlug: vi.fn(() => null),
 }))
 vi.mock('@/server/domains/content/lifecycle', () => ({
   loadDraftPreviewBySlug: mocks.loadDraftPreviewBySlug,
@@ -111,7 +110,7 @@ function makeArgs(slug: string, viewer: SessionUser | null = null) {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  mocks.findPublicPostMetaBySlug.mockImplementation(async () => null)
+  mocks.findPublicPostMetaBySlug.mockImplementation(() => null)
   mocks.findPageBySlug.mockImplementation(async () => null)
   mocks.loadDraftPreviewBySlug.mockImplementation(async () => null)
 })
@@ -125,7 +124,7 @@ beforeAll(async () => {
 
 describe('loadPagePreview — slug redirect logic', () => {
   it('redirects to /posts/slug when a published post matches', async () => {
-    mocks.findPublicPostMetaBySlug.mockImplementation(async () => makePostMeta({ slug: 'hello' }))
+    mocks.findPublicPostMetaBySlug.mockImplementation(() => makePostMeta({ slug: 'hello' }))
 
     await expect(loadPagePreview(makeArgs('hello'))).rejects.toThrow()
     // The thrown response should be a 301 redirect
@@ -137,19 +136,19 @@ describe('loadPagePreview — slug redirect logic', () => {
   })
 
   it('does not redirect for an unpublished post (status=draft)', async () => {
-    mocks.findPublicPostMetaBySlug.mockImplementation(async () => makePostMeta({ published: false }))
+    mocks.findPublicPostMetaBySlug.mockImplementation(() => makePostMeta({ published: false }))
 
     await expect(loadPagePreview(makeArgs('draft-post'))).rejects.toMatchObject({ status: 404 })
   })
 
   it('does not redirect for a deleted post (deletedAt set)', async () => {
-    mocks.findPublicPostMetaBySlug.mockImplementation(async () => makePostMeta({ deletedAt: new Date() }))
+    mocks.findPublicPostMetaBySlug.mockImplementation(() => makePostMeta({ deletedAt: new Date() }))
 
     await expect(loadPagePreview(makeArgs('deleted-post'))).rejects.toMatchObject({ status: 404 })
   })
 
   it('does not redirect for a scheduled post (publishedAt in future)', async () => {
-    mocks.findPublicPostMetaBySlug.mockImplementation(async () => makePostMeta({ publishedAt: new Date('2099-01-01') }))
+    mocks.findPublicPostMetaBySlug.mockImplementation(() => makePostMeta({ publishedAt: new Date('2099-01-01') }))
 
     await expect(loadPagePreview(makeArgs('scheduled-post'))).rejects.toMatchObject({
       status: 404,
@@ -168,7 +167,7 @@ describe('loadPagePreview — slug redirect logic', () => {
   })
 
   it('redirects when both published post and page match (post wins)', async () => {
-    mocks.findPublicPostMetaBySlug.mockImplementation(async () => makePostMeta({ slug: 'collision' }))
+    mocks.findPublicPostMetaBySlug.mockImplementation(() => makePostMeta({ slug: 'collision' }))
     mocks.findPageBySlug.mockImplementation(async () => makeDbPage({ slug: 'collision' }))
 
     try {

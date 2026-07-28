@@ -1,6 +1,6 @@
 import { cn } from '@/ui/lib/cn'
 
-export function asKey(value: bigint | string | number): string {
+export function asKey(value: number | string): string {
   return String(value)
 }
 

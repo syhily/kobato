@@ -1,27 +1,28 @@
-import { bigint, index, inet, jsonb, pgTable, text, timestamp } from 'drizzle-orm/pg-core'
+import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
 import { user } from '@/server/infra/db/schema/user'
 
-// Server-side session store — the PG replacement for the Redis
+// Server-side session store — the replacement for the Redis
 // `session:<sid>` payload / `session_meta:<sid>` hash / `user_sessions:<uid>`
 // set trio. `userId` stays NULL while an OTP challenge is pending; the row
-// only gains a user once login completes. `data` holds the superjson-
-// serialized `BlogSessionData`; the meta fields are flat columns so session
+// only gains a user once login completes. `data` holds the plain-JSON
+// `BlogSessionData` (superjson was dropped with the migration — every
+// field is JSON-native); the meta fields are flat columns so session
 // listing/revocation is a plain SELECT/UPDATE instead of HGETALL/HSET.
-export const session = pgTable(
+export const session = sqliteTable(
   'session',
   {
     id: text('id').primaryKey(),
-    userId: bigint('user_id', { mode: 'bigint' }).references(() => user.id, {
+    userId: integer('user_id').references(() => user.id, {
       onDelete: 'cascade',
     }),
-    data: jsonb('data').notNull(),
+    data: text('data', { mode: 'json' }).notNull(),
     userAgent: text('user_agent'),
     platformHint: text('platform_hint'),
-    ip: inet('ip'),
-    loginAt: timestamp('login_at', { withTimezone: true, mode: 'date' }),
-    lastActiveAt: timestamp('last_active_at', { withTimezone: true, mode: 'date' }),
-    expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }).notNull(),
+    ip: text('ip'),
+    loginAt: integer('login_at', { mode: 'timestamp_ms' }),
+    lastActiveAt: integer('last_active_at', { mode: 'timestamp_ms' }),
+    expiresAt: integer('expires_at', { mode: 'timestamp_ms' }).notNull(),
   },
   (table) => [index('idx_session_user_id').on(table.userId), index('idx_session_expires_at').on(table.expiresAt)],
 )

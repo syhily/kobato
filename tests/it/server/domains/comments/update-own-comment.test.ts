@@ -1,9 +1,9 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { Mock } from 'vitest'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { CommentWithUser } from '@/server/domains/comments/repos/shared'
+import type { Database } from '@/server/infra/db/database'
 
 // `updateOwnComment` (visitor self-edit of their own comment) delegates
 // the grace-window branch to the pure `decideOwnEdit` decider — see
@@ -49,7 +49,7 @@ vi.mock('@/server/domains/comments/services/canonicalize', () => ({
   })),
 }))
 
-const db = {} as NodePgDatabase
+const db = {} as Database
 
 const lookup = await import('@/server/domains/comments/services/lookup')
 await import('@/server/domains/comments/repos/admin-query')
@@ -64,12 +64,12 @@ const { updateOwnComment } = await import('@/server/domains/comments/services/mo
 // fixture rows feed `mockResolvedValueOnce` without sprinkling extra
 // casts at every call site.
 const findCommentMock = lookup.findCommentWithUserById as unknown as Mock<
-  (id: bigint) => Promise<CommentWithUser | null>
+  (id: number) => Promise<CommentWithUser | null>
 >
 
 function row(overrides: Partial<CommentWithUser> = {}): CommentWithUser {
   return {
-    id: 42n,
+    id: 42,
     createAt: new Date('2024-01-01T00:00:00.000Z'),
     updatedAt: new Date('2024-01-01T00:00:00.000Z'),
     deleteAt: null,
@@ -83,8 +83,8 @@ function row(overrides: Partial<CommentWithUser> = {}): CommentWithUser {
       },
     ],
     type: 'post',
-    ownerId: 1n,
-    userId: 7n,
+    ownerId: 1,
+    userId: 7,
     isVerified: true,
     ua: '',
     ip: '',
@@ -94,7 +94,7 @@ function row(overrides: Partial<CommentWithUser> = {}): CommentWithUser {
     isPinned: false,
     voteUp: 0,
     voteDown: 0,
-    rootId: 0n,
+    rootId: 0,
     deleteRequestedAt: null,
     deleteRequestedBy: null,
     name: 'reader',
@@ -132,7 +132,7 @@ describe('updateOwnComment — decision wiring', () => {
     expect(mutateRepo.updateOwnCommentBody).toHaveBeenCalledTimes(1)
     expect(mutateRepo.updateOwnCommentBody).toHaveBeenCalledWith(
       db,
-      42n,
+      42,
       NEW_BODY,
       'edited markdown',
       existing.updatedAt,
@@ -154,7 +154,7 @@ describe('updateOwnComment — decision wiring', () => {
     expect(mutateRepo.updateOwnCommentBodyAndPending).toHaveBeenCalledTimes(1)
     expect(mutateRepo.updateOwnCommentBodyAndPending).toHaveBeenCalledWith(
       db,
-      42n,
+      42,
       NEW_BODY,
       'edited markdown',
       existing.updatedAt,
@@ -166,7 +166,7 @@ describe('updateOwnComment — decision wiring', () => {
     // the correct post / page.
     const [, commentArg, targetArg] = vi.mocked(emails.sendNewComment).mock.calls[0]
     expect(commentArg.isPending).toBe(true)
-    expect(targetArg).toEqual({ type: 'post', ownerId: 1n })
+    expect(targetArg).toEqual({ type: 'post', ownerId: 1 })
     expect(result?.isPending).toBe(true)
   })
 })

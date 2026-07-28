@@ -1,5 +1,6 @@
 import type { SQL } from 'drizzle-orm'
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+
+import type { Database } from '@/server/infra/db/database'
 
 import { getCounter, through } from '@/server/infra/cache/registry'
 import { getLogger } from '@/server/infra/logger'
@@ -23,7 +24,7 @@ import { likeCacheKeyParts, runLikeSearch } from '@/server/infra/search/like'
 // The visibility gate is supplied by the caller (infra has zero business
 // knowledge — the "live" rule lives in `@/server/domains/content/schemas/live-gate`).
 export async function searchPosts(
-  db: NodePgDatabase,
+  db: Database,
   baseWhere: SQL,
   query: string,
   limit: number,

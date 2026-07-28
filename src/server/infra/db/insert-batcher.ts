@@ -1,14 +1,11 @@
-import type { Pool, PoolClient } from 'pg'
-
 import { appendFile, readFile, rename, writeFile } from 'node:fs/promises'
-import { Readable } from 'node:stream'
-import { pipeline } from 'node:stream/promises'
-import { from as copyFrom } from 'pg-copy-streams'
+
+import type { Database } from '@/server/infra/db/database'
 
 import { registerShutdownHook } from '@/server/infra/lifecycle'
 import { getLogger, type Logger } from '@/server/infra/logger'
 
-export interface CopyBatcherOptions {
+export interface InsertBatcherOptions {
   flushIntervalMs: number
   flushThreshold: number
 }
@@ -18,12 +15,12 @@ export interface FlushResult {
   deadLettered: number
 }
 
-const VALID_IDENTIFIER = /^[a-z_][a-z0-9_]*$/
-
-// Generic in-memory batcher that flushes rows via `COPY FROM STDIN`.
-// Subclasses provide `toCsvRow()` for event serialization and
-// `onCopyFailed()` for domain-specific error handling (dead-letter,
-// INSERT fallback, etc.).
+// Generic in-memory batcher that flushes rows via one multi-row INSERT
+// in a single sync transaction — the shape SQLite excels at, and the
+// replacement for the old Postgres `COPY FROM STDIN` path with no loss
+// of durability (WAL + one commit per batch). Subclasses provide
+// `insertBatch()` for the write itself and `onInsertFailed()` for
+// domain-specific error handling (dead-letter, per-row fallback, etc.).
 //
 // Flush triggers:
 //   - Buffer reaches `flushThreshold`.
@@ -31,41 +28,29 @@ const VALID_IDENTIFIER = /^[a-z_][a-z0-9_]*$/
 //     flush (lazy timer, `.unref()` so it doesn't keep Node alive).
 //   - Process receives SIGTERM / SIGINT / `beforeExit` (via
 //     `registerShutdownHook` with priority 100 so flushers run before
-//     connection-close hooks).
-export abstract class CopyBatcher<T> {
+//     the database-close hook at priority 0).
+export abstract class InsertBatcher<T> {
   private buffer: T[] = []
   private timer: NodeJS.Timeout | null = null
   private flushing: Promise<FlushResult> | null = null
   protected readonly log: Logger
-  private readonly pool: Pool
 
   constructor(
-    private readonly opts: CopyBatcherOptions,
-    private readonly table: string,
-    private readonly columns: readonly string[],
+    private readonly opts: InsertBatcherOptions,
     scope: string,
-    pool: Pool,
+    private readonly db: Database,
   ) {
-    if (!VALID_IDENTIFIER.test(table)) {
-      throw new Error(`Invalid table name for COPY: ${table}`)
-    }
-    for (const col of columns) {
-      if (!VALID_IDENTIFIER.test(col)) {
-        throw new Error(`Invalid column name for COPY: ${col}`)
-      }
-    }
     this.log = getLogger(scope)
-    this.pool = pool
     registerShutdownHook(async () => {
       void (await this.flush())
     }, 100)
   }
 
-  /** Serialize one event to a CSV row (single line, `\n`-terminated). */
-  protected abstract toCsvRow(event: T): string
+  /** Insert the whole batch in one transaction. Sync — node:sqlite. */
+  protected abstract insertBatch(db: Database, events: T[]): void
 
-  /** Called when COPY fails. Implement INSERT fallback or dead-letter here. */
-  protected abstract onCopyFailed(events: T[], error: unknown): Promise<FlushResult>
+  /** Called when the batch insert fails. Implement per-row fallback or dead-letter here. */
+  protected abstract onInsertFailed(events: T[], error: unknown): Promise<FlushResult>
 
   push(event: T): void {
     this.buffer.push(event)
@@ -101,15 +86,15 @@ export abstract class CopyBatcher<T> {
 
     this.flushing = (async () => {
       try {
-        await this.copyToDb(snapshot)
+        this.insertBatch(this.db, snapshot)
         this.log.debug('flushed batch', { count: snapshot.length })
         return { committed: snapshot.length, deadLettered: 0 } as FlushResult
       } catch (err) {
-        this.log.error('COPY failed', {
+        this.log.error('batch insert failed', {
           err: err instanceof Error ? err.message : String(err),
           count: snapshot.length,
         })
-        return await this.onCopyFailed(snapshot, err)
+        return await this.onInsertFailed(snapshot, err)
       } finally {
         this.flushing = null
       }
@@ -118,29 +103,9 @@ export abstract class CopyBatcher<T> {
     return this.flushing
   }
 
-  /** Write events directly via COPY (used by dead-letter replay). */
-  async ingest(events: T[]): Promise<void> {
-    await this.copyToDb(events)
-  }
-
-  protected async copyToDb(events: T[]): Promise<void> {
-    let client: PoolClient | undefined
-    try {
-      client = await this.pool.connect()
-      const sql = `COPY ${this.table} (${this.columns.join(', ')}) FROM STDIN WITH (FORMAT csv, NULL '\\N')`
-      const stream = client.query(copyFrom(sql))
-      const toCsvRow = this.toCsvRow.bind(this)
-      const source = Readable.from(
-        (function* () {
-          for (const e of events) {
-            yield toCsvRow(e)
-          }
-        })(),
-      )
-      await pipeline(source, stream)
-    } finally {
-      client?.release()
-    }
+  /** Write events directly (used by dead-letter replay). */
+  ingest(events: T[]): void {
+    this.insertBatch(this.db, events)
   }
 }
 
@@ -166,7 +131,7 @@ export async function writeDeadLetter<T>(
 export async function replayDeadLetter<T>(
   path: string,
   deserialize: (line: string) => T | null,
-  reingest: (events: T[]) => Promise<void>,
+  reingest: (events: T[]) => void,
   log: Logger,
 ): Promise<{ replayed: number; failed: number }> {
   let content: string
@@ -196,7 +161,7 @@ export async function replayDeadLetter<T>(
   let replayed = 0
   if (events.length > 0) {
     try {
-      await reingest(events)
+      reingest(events)
       log.info('replayed dead-letter batch', { count: events.length, path })
       const tmp = `${path}.replayed`
       await writeFile(tmp, '', 'utf-8')

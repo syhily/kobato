@@ -36,7 +36,7 @@ describe('auth/primitives — resolveSessionContext', () => {
 
     getRequestSession.mockResolvedValueOnce(session)
     findUserById.mockResolvedValueOnce({
-      id: 1n,
+      id: 1,
       name: 'legacy',
       email: 'legacy@example.com',
       link: null,

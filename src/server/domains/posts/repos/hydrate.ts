@@ -1,6 +1,5 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import type { ListPublicPostsFilters } from '@/server/domains/posts/repos/shared'
+import type { Database } from '@/server/infra/db/database'
 import type { PostMetaRow } from '@/server/infra/db/types'
 import type { Post, PostVisibilityOptions } from '@/shared/types/catalog'
 
@@ -16,7 +15,7 @@ import { findTagNamesByPostIds } from '@/server/infra/db/operations/post-tag'
  * the stored cover to its CDN public URL and attaches the thumbhash.
  */
 export async function hydratePostImages<T extends { cover: string; coverThumbhash?: string }>(
-  db: NodePgDatabase,
+  db: Database,
   posts: T[],
 ): Promise<void> {
   await hydrateImageRefs(
@@ -61,7 +60,7 @@ export interface HydratePostListOptions {
  * instead of hand-assembling a new copy.
  */
 export async function hydratePostList(
-  db: NodePgDatabase,
+  db: Database,
   metas: PostMetaRow[],
   options: HydratePostListOptions = {},
 ): Promise<Post[]> {
@@ -75,14 +74,14 @@ export async function hydratePostList(
   )
   const categoryMap = await findCategoryNamesByIds(
     db,
-    metas.map((m) => m.categoryId).filter((id): id is bigint => id !== null),
+    metas.map((m) => m.categoryId).filter((id): id is number => id !== null),
   )
   const posts = metas.map((meta) => {
     const revision =
       revisions === null || meta.publishedRevisionId === null ? null : (revisions.get(meta.publishedRevisionId) ?? null)
     return toCmsPost(meta, revision, {
       tags: tagMap.get(meta.id) ?? [],
-      categoryName: categoryMap.get(meta.categoryId ?? -1n) ?? '',
+      categoryName: categoryMap.get(meta.categoryId ?? -1) ?? '',
     })
   })
   if (options.images !== false) {

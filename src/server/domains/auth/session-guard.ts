@@ -5,9 +5,8 @@
 //           but never another live admin's.
 //   bulk  — same admin-vs-admin rule, but no soft-delete exemption.
 
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import type { ViewerIdentity } from '@/server/domains/auth/rbac'
+import type { Database } from '@/server/infra/db/database'
 
 import { findSessionMeta, revokeSessionById } from '@/server/domains/auth/repo'
 import { revokeAllSessionsOfUser } from '@/server/domains/auth/services/sessions'
@@ -16,7 +15,7 @@ import { DomainError } from '@/server/infra/http/errors'
 
 /** Outcome of a single-session revocation: the session owner, or null when the meta was already gone (no-op). */
 export interface SessionRevocation {
-  targetUserId: bigint | null
+  targetUserId: number | null
 }
 
 /**
@@ -25,7 +24,7 @@ export interface SessionRevocation {
  * the audit trail always reads as the owner managing their own session.
  */
 export async function revokeOwnSessionWithGuard(
-  db: NodePgDatabase,
+  db: Database,
   sessionId: string,
   actor: ViewerIdentity,
 ): Promise<SessionRevocation> {
@@ -47,7 +46,7 @@ export async function revokeOwnSessionWithGuard(
  * check stays as defence in depth.
  */
 export async function revokeSessionWithGuard(
-  db: NodePgDatabase,
+  db: Database,
   sessionId: string,
   actor: ViewerIdentity,
 ): Promise<SessionRevocation> {
@@ -74,8 +73,8 @@ export async function revokeSessionWithGuard(
  * inline copy — see the module header).
  */
 export async function revokeAllSessionsWithGuard(
-  db: NodePgDatabase,
-  targetUserId: bigint,
+  db: Database,
+  targetUserId: number,
   actor: ViewerIdentity,
 ): Promise<void> {
   const targetUser = await findSafeUserById(db, targetUserId)

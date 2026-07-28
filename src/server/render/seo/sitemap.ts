@@ -1,4 +1,4 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Database } from '@/server/infra/db/database'
 
 import { listSitemapPages } from '@/server/domains/pages/services/public-query'
 import { listSitemapPosts } from '@/server/domains/posts/services/public-query'
@@ -9,7 +9,7 @@ function escapeXml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
-export async function buildSitemapXml(db: NodePgDatabase): Promise<string> {
+export async function buildSitemapXml(db: Database): Promise<string> {
   const [posts, pages] = await Promise.all([listSitemapPosts(db), listSitemapPages(db)])
 
   // Build via array join so the response starts with `<?xml ... ?>` on the

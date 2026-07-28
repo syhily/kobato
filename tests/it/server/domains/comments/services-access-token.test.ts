@@ -1,12 +1,11 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { randomUUID } from 'node:crypto'
 import superjson from 'superjson'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
+
 import { clearAllTables } from '#/_helpers/integration-db'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { comment } from '@/server/infra/db/schema/comment'
 import { metric } from '@/server/infra/db/schema/metric'
 import { oneTimeToken } from '@/server/infra/db/schema/one-time-token'
@@ -23,12 +22,11 @@ vi.mock('@/server/domains/comments/services/canonicalize', () => ({
   canonicalizeCommentBody: vi.fn(async (input: unknown) => ({ body: input, content: 'md' })),
 }))
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {
@@ -36,7 +34,7 @@ beforeEach(async () => {
   vi.clearAllMocks()
 })
 
-async function seedUser(): Promise<bigint> {
+async function seedUser(): Promise<number> {
   const rows = await db
     .insert(user)
     .values({ name: 'Alice', email: `alice-${Math.random()}@x.com`, password: 'p', role: 'visitor' })
@@ -44,13 +42,13 @@ async function seedUser(): Promise<bigint> {
   return rows[0]!.id
 }
 
-async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Promise<bigint> {
+async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Promise<number> {
   const rows = await db
     .insert(comment)
     .values({
       type: 'post',
-      ownerId: 1n,
-      userId: 1n,
+      ownerId: 1,
+      userId: 1,
       content: 'hi',
       body: [],
       ...opts,
@@ -62,7 +60,7 @@ async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Pro
 describe('comments/services/lookup — findCommentWithUserById', () => {
   it('returns null when the comment does not exist', async () => {
     const { findCommentWithUserById } = await import('@/server/domains/comments/services/lookup')
-    expect(await findCommentWithUserById(db, 9999n)).toBeNull()
+    expect(await findCommentWithUserById(db, 9999)).toBeNull()
   })
   it('returns the comment with the user join', async () => {
     const u1 = await seedUser()
@@ -188,7 +186,7 @@ describe('comments/services/admin-query — loadAllComments', () => {
     const u1 = await seedUser()
     const pid = await db
       .insert(post)
-      .values({ slug: 'filter-post', title: 'Filtered', published: true, publishedRevisionId: 1n })
+      .values({ slug: 'filter-post', title: 'Filtered', published: true, publishedRevisionId: 1 })
       .returning({ id: post.id })
     const pubId = randomUUID()
     await db.insert(metric).values({ type: 'post', ownerId: pid[0]!.id, publicId: pubId })
@@ -212,7 +210,7 @@ describe('comments/services/token — issue/verify/revoke cycle', () => {
   it('issues a token that verifies then is revoked', async () => {
     const { issueCommentToken, verifyCommentToken, revokeCommentToken } =
       await import('@/server/domains/comments/services/token')
-    const tok = await issueCommentToken(db, 1n, 2n, 'post:1', 60)
+    const tok = await issueCommentToken(db, 1, 2, 'post:1', 60)
     const payload = await verifyCommentToken(db, tok)
     expect(payload?.commentId).toBe('1')
     expect(payload?.userId).toBe('2')
@@ -257,7 +255,7 @@ describe('comments/services/token — cleanupExpiredTokens', () => {
   })
   it('accepts a real token issued by issueCommentToken (superjson wire format)', async () => {
     const { issueCommentToken, cleanupExpiredTokens } = await import('@/server/domains/comments/services/token')
-    const token = await issueCommentToken(db, 42n, 7n, 'post:1', 60)
+    const token = await issueCommentToken(db, 42, 7, 'post:1', 60)
     const r = await cleanupExpiredTokens(db, {
       'post:1': [{ token, expiresAt: Date.now() + 60_000 }],
     })
@@ -304,13 +302,13 @@ describe('comments/services/token — verifyCommentOwnership', () => {
   })
   it('returns the matched token when a backed token matches the commentId', async () => {
     const { issueCommentToken, verifyCommentOwnership } = await import('@/server/domains/comments/services/token')
-    const token = await issueCommentToken(db, 77n, 7n, 'post:1', 60)
+    const token = await issueCommentToken(db, 77, 7, 'post:1', 60)
     const r = await verifyCommentOwnership(db, { 'post:1': [{ token, expiresAt: Date.now() + 60_000 }] }, '77')
     expect(r.token).toBe(token)
   })
   it('returns token=null when the backed token does not match the commentId', async () => {
     const { issueCommentToken, verifyCommentOwnership } = await import('@/server/domains/comments/services/token')
-    const token = await issueCommentToken(db, 111n, 7n, 'post:1', 60)
+    const token = await issueCommentToken(db, 111, 7, 'post:1', 60)
     const r = await verifyCommentOwnership(db, { 'post:1': [{ token, expiresAt: Date.now() + 60_000 }] }, '222')
     expect(r.token).toBeNull()
   })

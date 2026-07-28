@@ -1,32 +1,29 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { Hono } from 'hono'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 import type { Env } from '@/server/http/context'
+import type { Database } from '@/server/infra/db/database'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { installFetch } from '#/_helpers/fetch'
 import { clearAllTables } from '#/_helpers/integration-db'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { makeRequestContext } from '#/_helpers/request-context'
 import { onErrorHandler } from '@/server/http/errors'
 import { webmentionRouter } from '@/server/http/resources/webmention'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { page } from '@/server/infra/db/schema/page'
 import { post } from '@/server/infra/db/schema/post'
 import { webmention } from '@/server/infra/db/schema/webmention'
 import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 const mockFetch = installFetch()
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {
@@ -47,25 +44,25 @@ function buildApp(clientAddress = '203.0.113.10') {
     // Factory-built RequestContext — the router reads `.db` and the
     // rate-limit middleware reads `.clientAddress`; no other field of
     // the canonical context is consulted on this surface.
-    c.set('requestContext', makeRequestContext({ clientAddress, db, pool }))
+    c.set('requestContext', makeRequestContext({ clientAddress, db }))
     await next()
   })
   app.route('/', webmentionRouter)
   return app
 }
 
-async function seedLivePost(slug: string, title = 'Mentioned Post'): Promise<bigint> {
+async function seedLivePost(slug: string, title = 'Mentioned Post'): Promise<number> {
   const rows = await db
     .insert(post)
-    .values({ slug, title, published: true, publishedRevisionId: 1n })
+    .values({ slug, title, published: true, publishedRevisionId: 1 })
     .returning({ id: post.id })
   return rows[0]!.id
 }
 
-async function seedLivePage(slug: string, title = 'Mentioned Page'): Promise<bigint> {
+async function seedLivePage(slug: string, title = 'Mentioned Page'): Promise<number> {
   const rows = await db
     .insert(page)
-    .values({ slug, title, published: true, publishedRevisionId: 1n })
+    .values({ slug, title, published: true, publishedRevisionId: 1 })
     .returning({ id: page.id })
   return rows[0]!.id
 }

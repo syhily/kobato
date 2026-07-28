@@ -17,7 +17,7 @@ function liveMeta(overrides: Partial<LiveMeta> = {}): LiveMeta {
   return {
     deletedAt: null,
     published: true,
-    publishedRevisionId: 1n,
+    publishedRevisionId: 1,
     publishedAt: new Date('2026-01-01T00:00:00.000Z'),
     ...overrides,
   }
@@ -108,13 +108,15 @@ describe('content/schemas/live-gate — liveContentWhere', () => {
     expect(query.sql).toContain('"published" = ')
     expect(query.sql).toContain('"published_revision_id" is not null')
     expect(query.sql).toContain('"published_at" <= ')
-    expect(query.params).toContain(true)
+    // sqlite boolean columns bind as 1/0
+    expect(query.params).toContain(1)
   })
 
   it('uses the provided asOf for the publishedAt comparison', () => {
     const asOf = new Date('2026-06-01T12:00:00.000Z')
     const query = toQuery(liveContentWhere(postColumns, { asOf }))
-    expect(query.params).toContain(asOf)
+    // Raw `sql` params bind epoch ms on timestamp_ms columns.
+    expect(query.params).toContain(asOf.getTime())
   })
 
   it('omits the publishedAt condition when includeScheduled is true', () => {
@@ -128,7 +130,7 @@ describe('content/schemas/live-gate — liveContentWhere', () => {
 function promotedMeta(overrides: Partial<PromotedMeta> = {}): PromotedMeta {
   return {
     published: true,
-    publishedRevisionId: 1n,
+    publishedRevisionId: 1,
     ...overrides,
   }
 }
@@ -167,7 +169,8 @@ describe('content/schemas/live-gate — promotedContentWhere', () => {
     const query = toQuery(promotedContentWhere(promotedColumns))
     expect(query.sql).toContain('"published" = ')
     expect(query.sql).toContain('"published_revision_id" is not null')
-    expect(query.params).toContain(true)
+    // sqlite boolean columns bind as 1/0
+    expect(query.params).toContain(1)
   })
 
   it('does not emit the live-only legs (deletedAt, publishedAt)', () => {

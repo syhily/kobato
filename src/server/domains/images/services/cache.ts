@@ -1,5 +1,4 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
+import type { Database } from '@/server/infra/db/database'
 import type { ImageRow } from '@/server/infra/db/types'
 import type { StorageDriver } from '@/shared/config/types'
 
@@ -34,7 +33,7 @@ function rowToCached(row: ImageRow): CachedImageMetaPresent {
   }
 }
 
-export async function readManyMeta(db: NodePgDatabase, storagePaths: string[]): Promise<Map<string, CachedImageMeta>> {
+export async function readManyMeta(db: Database, storagePaths: string[]): Promise<Map<string, CachedImageMeta>> {
   const out = new Map<string, CachedImageMeta>()
   if (storagePaths.length === 0) {
     return out
@@ -65,7 +64,7 @@ export async function readManyMeta(db: NodePgDatabase, storagePaths: string[]): 
   return out
 }
 
-export async function invalidateImageEnhanceCacheFor(db: NodePgDatabase, storagePath: string): Promise<void> {
+export async function invalidateImageEnhanceCacheFor(db: Database, storagePath: string): Promise<void> {
   await remove(db, 'imageMeta', { storagePath })
 }
 

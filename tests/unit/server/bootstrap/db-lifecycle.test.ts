@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const poolMock = { id: 'pool' }
+const clientMock = { id: 'client' }
 const dbMock = { id: 'db' }
-let createDbPoolResult = { db: dbMock, pool: poolMock }
+let openDatabaseResult = { db: dbMock, client: clientMock, path: ':memory:', closed: false }
 
 let restoreCallback: ((success: boolean, err?: Error) => Promise<void>) | null = null
 
@@ -17,15 +17,16 @@ const refreshBlogSettings = vi.fn()
 const restartServer = vi.fn()
 const setRestartDb = vi.fn()
 const setRestartRefreshSettings = vi.fn()
-const closePool = vi.fn()
+const closeDatabase = vi.fn()
 const registerShutdownHook = vi.fn((fn: () => unknown) => fn())
 const registerRestoreComplete = vi.fn((cb: (success: boolean, err?: Error) => Promise<void>) => {
   restoreCallback = cb
 })
 
-vi.mock('@/server/infra/db/pool', () => ({
-  createDbPool: vi.fn(() => createDbPoolResult),
-  closePool: (...args: unknown[]) => closePool(...args),
+vi.mock('@/server/infra/db/database', () => ({
+  openDatabase: vi.fn(() => openDatabaseResult),
+  closeDatabase: (...args: unknown[]) => closeDatabase(...args),
+  resolveDatabasePath: () => ':memory:',
 }))
 
 vi.mock('@/server/infra/db/migrate', () => ({
@@ -87,26 +88,27 @@ vi.mock('@/server/domains/settings/services/hydrate', () => ({
   refreshBlogSettings: (...args: unknown[]) => refreshBlogSettings(...args),
 }))
 
-const { recreatePool, getDb, getPool } = await import('@/server/bootstrap/db-lifecycle')
+const { reopenDatabase, getDb, getDatabaseHandle } = await import('@/server/bootstrap/db-lifecycle')
 
 describe('db-lifecycle', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    createDbPoolResult = { db: dbMock, pool: poolMock }
+    openDatabaseResult = { db: dbMock, client: clientMock, path: ':memory:', closed: false }
   })
 
-  it('exposes the current db and pool', () => {
+  it('exposes the current db and handle', () => {
     expect(getDb()).toBe(dbMock)
-    expect(getPool()).toBe(poolMock)
+    expect(getDatabaseHandle().db).toBe(dbMock)
+    expect(getDatabaseHandle().client).toBe(clientMock)
   })
 
   it('recreates the pool and reinitializes batchers', async () => {
-    const instance = await recreatePool()
+    const instance = await reopenDatabase()
     expect(flushAllBatchers).toHaveBeenCalled()
     expect(instance.db).toBe(dbMock)
-    expect(instance.pool).toBe(poolMock)
+    expect(instance.client).toBe(clientMock)
     expect(resetAllBatchers).toHaveBeenCalled()
-    expect(initAllBatchers).toHaveBeenCalledWith(poolMock, dbMock)
+    expect(initAllBatchers).toHaveBeenCalledWith(openDatabaseResult)
     expect(resetLikeTokenSweep).toHaveBeenCalled()
     expect(startLikeTokenSweep).toHaveBeenCalledWith(dbMock)
 
@@ -130,7 +132,7 @@ describe('db-lifecycle', () => {
   })
 
   it('handles failed restore completion and pool recreation errors', async () => {
-    createDbPoolResult = null as never
+    openDatabaseResult = null as never
 
     await restoreCallback!(false, new Error('backup failed'))
     expect(restartServer).toHaveBeenCalled()

@@ -46,7 +46,7 @@ const publishedPage = {
   ...makePage({ slug: 'about', title: 'About', permalink: '/about' }),
   body: publishedBody,
   imageSources: [],
-  publishedRevisionId: 42n,
+  publishedRevisionId: 42,
 }
 
 const unpublishedPage = {

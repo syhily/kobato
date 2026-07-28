@@ -1,7 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { startOfDay, subDays } from 'date-fns'
 
+import type { Database } from '@/server/infra/db/database'
 import type { EntityTarget } from '@/server/infra/db/target'
 
 import {
@@ -20,10 +19,7 @@ import { makeToken } from '@/shared/utils/security'
 
 const log = getLogger('comments.likes')
 
-export async function increaseLikes(
-  db: NodePgDatabase,
-  target: EntityTarget,
-): Promise<{ likes: number; token: string }> {
+export async function increaseLikes(db: Database, target: EntityTarget): Promise<{ likes: number; token: string }> {
   // 64 base64url chars ≈ 48 bytes ≈ 384 bits of entropy.
   const token = makeToken(64)
   // Transactional: insert + bump + RETURNING new count run as one statement
@@ -33,19 +29,19 @@ export async function increaseLikes(
   return { likes, token }
 }
 
-export async function decreaseLikes(db: NodePgDatabase, target: EntityTarget, token: string) {
+export async function decreaseLikes(db: Database, target: EntityTarget, token: string) {
   // Transactional: consume + decrement run as one unit so a crash
   // between them cannot leave the count inflated while the token is
   // already gone.
-  await db.transaction(async (tx) => {
-    const consumed = await consumeActiveLikeToken(tx, target, token)
+  db.transaction((tx) => {
+    const consumed = consumeActiveLikeToken(tx, target, token)
     if (consumed) {
-      await decrementMetricVotes(tx, target)
+      decrementMetricVotes(tx, target)
     }
   })
 }
 
-export async function queryLikes(db: NodePgDatabase, target: EntityTarget): Promise<number> {
+export async function queryLikes(db: Database, target: EntityTarget): Promise<number> {
   return metricVoteUp(db, target)
 }
 
@@ -57,7 +53,7 @@ export async function queryLikes(db: NodePgDatabase, target: EntityTarget): Prom
  * metric `publicId` UUID for downstream wire-format usage.
  */
 export async function queryMetadata(
-  db: NodePgDatabase,
+  db: Database,
   targets: EntityTarget[],
   options: { likes: boolean; views: boolean; comments: boolean },
 ): Promise<Map<string, { likes: number; views: number; comments: number; publicId: string }>> {
@@ -107,7 +103,7 @@ export async function queryMetadata(
 /**
  * Validate if a like token exists and is valid (not deleted).
  */
-export async function validateLikeToken(db: NodePgDatabase, target: EntityTarget, token: string): Promise<boolean> {
+export async function validateLikeToken(db: Database, target: EntityTarget, token: string): Promise<boolean> {
   return existsActiveLikeToken(db, target, token)
 }
 
@@ -115,7 +111,7 @@ export async function validateLikeToken(db: NodePgDatabase, target: EntityTarget
  * Physically delete all soft-deleted like tokens older than 30 days. Safe to
  * call from a cron job; also invoked by the in-process sweep below.
  */
-export async function purgeStaleLikeTokens(db: NodePgDatabase): Promise<void> {
+export async function purgeStaleLikeTokens(db: Database): Promise<void> {
   const thirtyDaysAgo = startOfDay(subDays(new Date(), 30))
   await purgeOldLikeTokens(db, thirtyDaysAgo)
 }
@@ -127,9 +123,9 @@ export async function purgeStaleLikeTokens(db: NodePgDatabase): Promise<void> {
 const SWEEP_INTERVAL_MS = 60 * 60 * 1000
 
 let sweepTimer: NodeJS.Timeout | undefined
-let sweepDb: NodePgDatabase | undefined
+let sweepDb: Database | undefined
 
-export function startLikeTokenSweep(db: NodePgDatabase): void {
+export function startLikeTokenSweep(db: Database): void {
   if (sweepTimer !== undefined) {
     return
   }

@@ -5,7 +5,7 @@
  */
 export interface CommentEntityRef {
   type: 'post' | 'page'
-  ownerId: bigint
+  ownerId: number
 }
 
 /**
@@ -34,7 +34,7 @@ export function parseCommentEntity(raw: string | null | undefined): CommentEntit
   }
 
   try {
-    return { type, ownerId: BigInt(rest) }
+    return { type, ownerId: Number(rest) }
   } catch {
     return null
   }

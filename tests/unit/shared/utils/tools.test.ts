@@ -14,8 +14,8 @@ import {
 
 describe('shared/utils/tools — safeBigInt', () => {
   it('returns BigInt for numeric strings', () => {
-    expect(safeBigInt('123')).toBe(123n)
-    expect(safeBigInt('-45')).toBe(-45n)
+    expect(safeBigInt('123')).toBe(123)
+    expect(safeBigInt('-45')).toBe(-45)
   })
 
   it('returns null for non-numeric input', () => {
@@ -52,7 +52,7 @@ describe('shared/utils/tools — readStringArray', () => {
 
 describe('shared/utils/tools — idStr', () => {
   it('stringifies bigint, number, and string ids', () => {
-    expect(idStr(42n)).toBe('42')
+    expect(idStr(42)).toBe('42')
     expect(idStr(42)).toBe('42')
     expect(idStr('42')).toBe('42')
   })

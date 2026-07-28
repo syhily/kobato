@@ -15,7 +15,7 @@ import { METRIC_GROUPS, METRIC_GROUP_TABS } from '@/shared/contracts/analytics'
 const session = authorSession()
 
 const sampleMeta = {
-  id: 7n,
+  id: 7,
   slug: 'hello-post',
   title: 'Hello Post',
   summary: 'summary',
@@ -27,7 +27,7 @@ const sampleMeta = {
   showUpdated: false,
   visible: true,
   publishedAt: new Date('2024-01-01T00:00:00.000Z'),
-  publishedRevisionId: 11n,
+  publishedRevisionId: 11,
   createdAt: new Date('2024-01-01T00:00:00.000Z'),
   updatedAt: new Date('2024-01-02T00:00:00.000Z'),
   deletedAt: null,
@@ -42,7 +42,7 @@ const sampleMeta = {
 const metricRows: Record<string, MetricRow[]> = {}
 
 vi.mock('@/server/domains/posts/services/single', () => ({
-  findPostMetaById: vi.fn(async (_db: unknown, id: bigint) => (id === 7n ? sampleMeta : null)),
+  findPostMetaById: vi.fn((_db: unknown, id: number) => (id === 7 ? sampleMeta : null)),
 }))
 vi.mock('@/server/infra/db/operations/post-tag', () => ({
   findTagNamesByPostId: vi.fn(async () => ['typescript']),

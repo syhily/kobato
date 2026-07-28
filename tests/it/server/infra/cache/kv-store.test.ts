@@ -1,22 +1,19 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
 import type { KvCacheRow } from '@/server/infra/db/types'
 
 import { clearAllTables } from '#/_helpers/integration-db'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { getItem, getItemRaw, getItems, removeItem, setItem, setItemRaw } from '@/server/infra/cache/kv-store'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { kvCache } from '@/server/infra/db/schema/kv-cache'
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {
@@ -33,13 +30,13 @@ const past = () => new Date(Date.now() - 60_000)
 describe('kv-store — JSON entries', () => {
   it('round-trips plain objects, Dates and bigints through superjson', async () => {
     const at = new Date('2026-07-01T12:00:00.000Z')
-    await setItem(db, 'k:plain', { name: 'kobato', at, id: 9007199254740993n }, { bucket: 'feed' })
+    await setItem(db, 'k:plain', { name: 'kobato', at, id: 9007199254740993 }, { bucket: 'feed' })
 
-    const result = await getItem<{ name: string; at: Date; id: bigint }>(db, 'k:plain')
+    const result = await getItem<{ name: string; at: Date; id: number }>(db, 'k:plain')
     expect(result?.name).toBe('kobato')
     expect(result?.at).toEqual(at)
     expect(result?.at instanceof Date).toBe(true)
-    expect(result?.id).toBe(9007199254740993n)
+    expect(result?.id).toBe(9007199254740993)
   })
 
   it('returns null for missing keys', async () => {

@@ -1,6 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import type { Database } from '@/server/infra/db/database'
 
 vi.mock('@/server/domains/posts/services/feed', () => ({
   selectFeedPosts: (db: unknown, opts: unknown, resolvers: unknown) => feedState.selectPosts(db, opts, resolvers),
@@ -40,7 +40,7 @@ const feedState = {
   render: vi.fn<() => Promise<string>>(),
 }
 
-const fakeDb = {} as NodePgDatabase
+const fakeDb = {} as Database
 
 function makePost(overrides: Partial<Post> = {}): Post {
   return {

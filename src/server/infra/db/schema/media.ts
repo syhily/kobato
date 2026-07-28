@@ -1,36 +1,25 @@
 import { sql } from 'drizzle-orm'
-import {
-  bigint,
-  bigserial,
-  check,
-  index,
-  integer,
-  pgTable,
-  text,
-  timestamp,
-  uniqueIndex,
-  varchar,
-} from 'drizzle-orm/pg-core'
+import { check, index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 
-export const image = pgTable(
+export const image = sqliteTable(
   'image',
   {
-    id: bigserial('id', { mode: 'bigint' }).primaryKey().notNull(),
-    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
+    id: integer('id').primaryKey({ autoIncrement: true }).notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' })
       .notNull()
       .$defaultFn(() => new Date()),
-    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+    updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
       .notNull()
       .$defaultFn(() => new Date()),
-    deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
-    storagePath: varchar('storage_path', { length: 500 }).unique().notNull(),
-    storageDriver: varchar('storage_driver', { length: 8 }).$type<'s3' | 'local'>().notNull().default('s3'),
-    mimeType: varchar('mime_type', { length: 60 }).notNull(),
+    deletedAt: integer('deleted_at', { mode: 'timestamp_ms' }),
+    storagePath: text('storage_path').unique().notNull(),
+    storageDriver: text('storage_driver').$type<'s3' | 'local'>().notNull().default('s3'),
+    mimeType: text('mime_type').notNull(),
     width: integer('width').notNull(),
     height: integer('height').notNull(),
-    byteSize: bigint('byte_size', { mode: 'number' }).notNull(),
+    byteSize: integer('byte_size').notNull(),
     thumbhash: text('thumbhash'),
-    uploaderId: bigint('uploader_id', { mode: 'bigint' }),
+    uploaderId: integer('uploader_id'),
     note: text('note'),
   },
   (table) => [
@@ -40,28 +29,28 @@ export const image = pgTable(
   ],
 )
 
-export const music = pgTable(
+export const music = sqliteTable(
   'music',
   {
-    id: bigserial('id', { mode: 'bigint' }).primaryKey().notNull(),
-    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
+    id: integer('id').primaryKey({ autoIncrement: true }).notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' })
       .notNull()
       .$defaultFn(() => new Date()),
-    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+    updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
       .notNull()
       .$defaultFn(() => new Date()),
-    deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
-    source: varchar('source', { length: 20 }).notNull(),
-    sourceId: varchar('source_id', { length: 64 }).notNull(),
-    playerId: varchar('player_id', { length: 16 }).unique().notNull(),
-    name: varchar('name', { length: 200 }).notNull(),
-    artist: varchar('artist', { length: 200 }).notNull(),
-    album: varchar('album', { length: 200 }).notNull(),
-    audioStoragePath: varchar('audio_storage_path', { length: 500 }).unique().notNull(),
-    coverStoragePath: varchar('cover_storage_path', { length: 500 }).unique().notNull(),
-    storageDriver: varchar('storage_driver', { length: 8 }).$type<'s3' | 'local'>().notNull().default('s3'),
+    deletedAt: integer('deleted_at', { mode: 'timestamp_ms' }),
+    source: text('source').notNull(),
+    sourceId: text('source_id').notNull(),
+    playerId: text('player_id').unique().notNull(),
+    name: text('name').notNull(),
+    artist: text('artist').notNull(),
+    album: text('album').notNull(),
+    audioStoragePath: text('audio_storage_path').unique().notNull(),
+    coverStoragePath: text('cover_storage_path').unique().notNull(),
+    storageDriver: text('storage_driver').$type<'s3' | 'local'>().notNull().default('s3'),
     lyric: text('lyric'),
-    uploaderId: bigint('uploader_id', { mode: 'bigint' }),
+    uploaderId: integer('uploader_id'),
   },
   (table) => [
     uniqueIndex('uq_music_source_source_id').on(table.source, table.sourceId),

@@ -1,6 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import type { Database } from '@/server/infra/db/database'
 
 // syncLibraryImageBlocks walks a PortableText body, collects every
 // `image` block (including those nested in solution / footnoteDefinition
@@ -24,7 +24,7 @@ vi.mock('@/server/infra/storage/public-url', () => ({ getPublicBaseUrl: getPubli
 
 const { syncLibraryImageBlocks } = await import('@/server/domains/content/services/image-sync')
 
-const fakeDb = {} as NodePgDatabase
+const fakeDb = {} as Database
 
 function img(_key: string, overrides: Record<string, unknown> = {}) {
   return { _type: 'image', _key, src: 'old-src', alt: '', ...overrides } as never
@@ -46,7 +46,7 @@ describe('content/services/image-sync — collectImageBlocks routing', () => {
 
   it('collects image blocks nested inside a solution container', async () => {
     findImagesByIdsMock.mockResolvedValue([
-      { id: 1n, storagePath: 'p/1.jpg', width: 10, height: 20, thumbhash: 'th', note: null },
+      { id: 1, storagePath: 'p/1.jpg', width: 10, height: 20, thumbhash: 'th', note: null },
     ])
     const body = [
       {
@@ -56,7 +56,7 @@ describe('content/services/image-sync — collectImageBlocks routing', () => {
       },
     ] as never
     await syncLibraryImageBlocks(fakeDb, body)
-    expect(findImagesByIdsMock).toHaveBeenCalledWith(fakeDb, [1n])
+    expect(findImagesByIdsMock).toHaveBeenCalledWith(fakeDb, [1])
     const block = (body[0] as { children: Array<{ src: string; storagePath: string }> }).children[0]!
     expect(block.src).toBe('https://cdn.test/p/1.jpg')
     expect(block.storagePath).toBe('p/1.jpg')
@@ -64,7 +64,7 @@ describe('content/services/image-sync — collectImageBlocks routing', () => {
 
   it('collects image blocks nested inside a footnoteDefinition container', async () => {
     findImagesByIdsMock.mockResolvedValue([
-      { id: 2n, storagePath: 'p/2.jpg', width: 1, height: 2, thumbhash: '', note: null },
+      { id: 2, storagePath: 'p/2.jpg', width: 1, height: 2, thumbhash: '', note: null },
     ])
     const body = [
       {
@@ -75,13 +75,13 @@ describe('content/services/image-sync — collectImageBlocks routing', () => {
       },
     ] as never
     await syncLibraryImageBlocks(fakeDb, body)
-    expect(findImagesByIdsMock).toHaveBeenCalledWith(fakeDb, [2n])
+    expect(findImagesByIdsMock).toHaveBeenCalledWith(fakeDb, [2])
   })
 
   it('collects image blocks from both columns of a twoColumn block', async () => {
     findImagesByIdsMock.mockResolvedValue([
-      { id: 3n, storagePath: 'p/3.jpg', width: 3, height: 3, thumbhash: 't3', note: null },
-      { id: 4n, storagePath: 'p/4.jpg', width: 4, height: 4, thumbhash: 't4', note: null },
+      { id: 3, storagePath: 'p/3.jpg', width: 3, height: 3, thumbhash: 't3', note: null },
+      { id: 4, storagePath: 'p/4.jpg', width: 4, height: 4, thumbhash: 't4', note: null },
     ])
     const body = [
       {
@@ -92,7 +92,7 @@ describe('content/services/image-sync — collectImageBlocks routing', () => {
       },
     ] as never
     await syncLibraryImageBlocks(fakeDb, body)
-    expect(findImagesByIdsMock).toHaveBeenCalledWith(fakeDb, [3n, 4n])
+    expect(findImagesByIdsMock).toHaveBeenCalledWith(fakeDb, [3, 4])
   })
 
   it('skips image blocks with an empty imageId', async () => {
@@ -123,7 +123,7 @@ describe('content/services/image-sync — row resolution', () => {
 
   it('preserves the existing width/height when the row has none', async () => {
     findImagesByIdsMock.mockResolvedValue([
-      { id: 1n, storagePath: 'p/1.jpg', width: null, height: null, thumbhash: null, note: null },
+      { id: 1, storagePath: 'p/1.jpg', width: null, height: null, thumbhash: null, note: null },
     ])
     const body = [img('i1', { imageId: '1', width: 7, height: 8 })] as never
     await syncLibraryImageBlocks(fakeDb, body)
@@ -133,7 +133,7 @@ describe('content/services/image-sync — row resolution', () => {
 
   it('overwrites width/height from the row when present', async () => {
     findImagesByIdsMock.mockResolvedValue([
-      { id: 1n, storagePath: 'p/1.jpg', width: 100, height: 200, thumbhash: null, note: null },
+      { id: 1, storagePath: 'p/1.jpg', width: 100, height: 200, thumbhash: null, note: null },
     ])
     const body = [img('i1', { imageId: '1', width: 0, height: 0 })] as never
     await syncLibraryImageBlocks(fakeDb, body)
@@ -143,7 +143,7 @@ describe('content/services/image-sync — row resolution', () => {
 
   it('skips thumbhash write-back when the row thumbhash is empty', async () => {
     findImagesByIdsMock.mockResolvedValue([
-      { id: 1n, storagePath: 'p/1.jpg', width: 1, height: 1, thumbhash: '', note: null },
+      { id: 1, storagePath: 'p/1.jpg', width: 1, height: 1, thumbhash: '', note: null },
     ])
     const body = [img('i1', { imageId: '1', thumbhash: 'original' })] as never
     await syncLibraryImageBlocks(fakeDb, body)
@@ -153,7 +153,7 @@ describe('content/services/image-sync — row resolution', () => {
   it('leaves src untouched when getPublicBaseUrl returns null', async () => {
     getPublicBaseUrlMock.mockReturnValue(null)
     findImagesByIdsMock.mockResolvedValue([
-      { id: 1n, storagePath: 'p/1.jpg', width: 1, height: 1, thumbhash: null, note: null },
+      { id: 1, storagePath: 'p/1.jpg', width: 1, height: 1, thumbhash: null, note: null },
     ])
     const body = [img('i1', { imageId: '1', src: 'external' })] as never
     await syncLibraryImageBlocks(fakeDb, body)
@@ -170,25 +170,25 @@ describe('content/services/image-sync — alt write-back', () => {
 
   it('writes the trimmed alt back to the row when it differs from note', async () => {
     findImagesByIdsMock.mockResolvedValue([
-      { id: 1n, storagePath: 'p/1.jpg', width: 1, height: 1, thumbhash: null, note: 'old' },
+      { id: 1, storagePath: 'p/1.jpg', width: 1, height: 1, thumbhash: null, note: 'old' },
     ])
     const body = [img('i1', { imageId: '1', alt: '  new  ' })] as never
     await syncLibraryImageBlocks(fakeDb, body)
-    expect(updateImageNoteMock).toHaveBeenCalledWith(fakeDb, 1n, 'new')
+    expect(updateImageNoteMock).toHaveBeenCalledWith(fakeDb, 1, 'new')
   })
 
   it('writes null when the trimmed alt is empty and differs from note', async () => {
     findImagesByIdsMock.mockResolvedValue([
-      { id: 1n, storagePath: 'p/1.jpg', width: 1, height: 1, thumbhash: null, note: 'had-value' },
+      { id: 1, storagePath: 'p/1.jpg', width: 1, height: 1, thumbhash: null, note: 'had-value' },
     ])
     const body = [img('i1', { imageId: '1', alt: '   ' })] as never
     await syncLibraryImageBlocks(fakeDb, body)
-    expect(updateImageNoteMock).toHaveBeenCalledWith(fakeDb, 1n, null)
+    expect(updateImageNoteMock).toHaveBeenCalledWith(fakeDb, 1, null)
   })
 
   it('does not write back when the trimmed alt equals the existing note', async () => {
     findImagesByIdsMock.mockResolvedValue([
-      { id: 1n, storagePath: 'p/1.jpg', width: 1, height: 1, thumbhash: null, note: 'same' },
+      { id: 1, storagePath: 'p/1.jpg', width: 1, height: 1, thumbhash: null, note: 'same' },
     ])
     const body = [img('i1', { imageId: '1', alt: 'same' })] as never
     await syncLibraryImageBlocks(fakeDb, body)
@@ -197,7 +197,7 @@ describe('content/services/image-sync — alt write-back', () => {
 
   it('swallows a failed note write-back without throwing', async () => {
     findImagesByIdsMock.mockResolvedValue([
-      { id: 1n, storagePath: 'p/1.jpg', width: 1, height: 1, thumbhash: null, note: 'old' },
+      { id: 1, storagePath: 'p/1.jpg', width: 1, height: 1, thumbhash: null, note: 'old' },
     ])
     updateImageNoteMock.mockRejectedValue(new Error('db down'))
     const body = [img('i1', { imageId: '1', alt: 'changed' })] as never

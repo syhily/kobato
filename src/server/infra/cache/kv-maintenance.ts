@@ -1,6 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { and, isNotNull, lt } from 'drizzle-orm'
+
+import type { Database } from '@/server/infra/db/database'
 
 import { kvCache } from '@/server/infra/db/schema/kv-cache'
 import { oneTimeToken } from '@/server/infra/db/schema/one-time-token'
@@ -20,7 +20,7 @@ const SWEEP_INTERVAL_MS = 60 * 60 * 1000
  * reclaims the space. NULL `expires_at` on `kv_cache` means "never
  * expires" and is deliberately kept.
  */
-export async function sweepExpiredKvEntries(db: NodePgDatabase): Promise<void> {
+export async function sweepExpiredKvEntries(db: Database): Promise<void> {
   const now = new Date()
   await db.delete(kvCache).where(and(isNotNull(kvCache.expiresAt), lt(kvCache.expiresAt, now)))
   await db.delete(oneTimeToken).where(lt(oneTimeToken.expiresAt, now))
@@ -38,9 +38,9 @@ let sweepTimer: NodeJS.Timeout | null = null
 // of db-lifecycle here would make infra depend on bootstrap. The getter is
 // invoked when the timer fires, so a recreated pool (restore completion)
 // is picked up without being captured in module state.
-let resolveDb: (() => NodePgDatabase) | null = null
+let resolveDb: (() => Database) | null = null
 
-export function wireKvSweepScheduler(deps: { getDb: () => NodePgDatabase }): void {
+export function wireKvSweepScheduler(deps: { getDb: () => Database }): void {
   resolveDb = deps.getDb
 }
 

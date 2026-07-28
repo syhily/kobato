@@ -23,13 +23,13 @@ export async function loadPostAnalyticsData({
   request,
   context,
   postId,
-}: Pick<LoaderFunctionArgs, 'request' | 'context'> & { postId: bigint }): Promise<PostAnalyticsData> {
+}: Pick<LoaderFunctionArgs, 'request' | 'context'> & { postId: number }): Promise<PostAnalyticsData> {
   const ctx = getRequestContext({ request, context })
   requireRole({ user: ctx.viewer ?? undefined, role: ctx.viewer?.role ?? null }, 'author')
 
   const db = ctx.db
 
-  const meta = await findPostMetaById(db, postId)
+  const meta = findPostMetaById(db, postId)
   if (meta === null) {
     throw new Response('文章不存在', { status: 404 })
   }

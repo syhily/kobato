@@ -7,8 +7,7 @@
 // `seedInstallSections` persists the validated rows on the caller's
 // transaction so they commit atomically with the first admin row.
 
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
+import type { Database } from '@/server/infra/db/database'
 import type { SettingsSection } from '@/shared/config/sections'
 import type { AssetsSettings, SiteIdentitySettings } from '@/shared/config/types'
 
@@ -87,12 +86,9 @@ export function buildInstallSectionRows(input: InstallSeedInput): InstallSection
  * flow passes the transaction that also inserts the admin row, so all 18
  * upserts participate in that transaction's commit/rollback.
  */
-export async function seedInstallSections(
-  db: NodePgDatabase,
-  rows: InstallSectionRow[],
-  updatedBy: bigint | null,
-): Promise<void> {
+// Sync (node:sqlite): called inside the install transaction.
+export function seedInstallSections(db: Database, rows: InstallSectionRow[], updatedBy: number | null): void {
   for (const { scope, payload } of rows) {
-    await upsertSetting(db, payload, updatedBy, scope)
+    upsertSetting(db, payload, updatedBy, scope)
   }
 }

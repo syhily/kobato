@@ -1,6 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { describe, expect, it } from 'vitest'
+
+import type { Database } from '@/server/infra/db/database'
 
 type ResultRow = Record<string, unknown>
 
@@ -33,20 +33,20 @@ function createMockDb(rows: ResultRow[] = []) {
     },
   )
 
-  return dbProxy as unknown as NodePgDatabase
+  return dbProxy as unknown as Database
 }
 
 describe('infra/db/operations/friend — listPublicFriendRows', () => {
   it('returns rows from the builder', async () => {
     const { listPublicFriendRows } = await import('@/server/infra/db/operations/friend')
-    expect(await listPublicFriendRows(createMockDb([{ id: 1n }]))).toHaveLength(1)
+    expect(await listPublicFriendRows(createMockDb([{ id: 1 }]))).toHaveLength(1)
   })
 })
 
 describe('infra/db/operations/friend — listAdminFriendRows', () => {
   it('returns rows from the builder', async () => {
     const { listAdminFriendRows } = await import('@/server/infra/db/operations/friend')
-    expect(await listAdminFriendRows(createMockDb([{ id: 1n }]), {})).toHaveLength(1)
+    expect(await listAdminFriendRows(createMockDb([{ id: 1 }]), {})).toHaveLength(1)
   })
 
   it('applies limit and offset', async () => {
@@ -95,17 +95,17 @@ describe('infra/db/operations/friend — countAdminFriends', () => {
 describe('infra/db/operations/friend — single-row lookups', () => {
   it('findFriendById returns the row when present', async () => {
     const { findFriendById } = await import('@/server/infra/db/operations/friend')
-    expect(await findFriendById(createMockDb([{ id: 1n }]), 1n)).toEqual({ id: 1n })
+    expect(await findFriendById(createMockDb([{ id: 1 }]), 1)).toEqual({ id: 1 })
   })
 
   it('findFriendById returns null when absent', async () => {
     const { findFriendById } = await import('@/server/infra/db/operations/friend')
-    expect(await findFriendById(createMockDb([]), 1n)).toBeNull()
+    expect(await findFriendById(createMockDb([]), 1)).toBeNull()
   })
 
   it('findFriendByHomepage returns the row when present', async () => {
     const { findFriendByHomepage } = await import('@/server/infra/db/operations/friend')
-    expect(await findFriendByHomepage(createMockDb([{ id: 1n }]), 'https://x.com')).toEqual({ id: 1n })
+    expect(await findFriendByHomepage(createMockDb([{ id: 1 }]), 'https://x.com')).toEqual({ id: 1 })
   })
 
   it('findFriendByHomepage returns null when absent', async () => {
@@ -117,28 +117,28 @@ describe('infra/db/operations/friend — single-row lookups', () => {
 describe('infra/db/operations/friend — insertFriend / updateFriend / deleteFriend', () => {
   it('inserts and returns the row', async () => {
     const { insertFriend } = await import('@/server/infra/db/operations/friend')
-    expect(await insertFriend(createMockDb([{ id: 1n }]), { website: 'x', homepage: 'https://x' } as never)).toEqual({
-      id: 1n,
+    expect(await insertFriend(createMockDb([{ id: 1 }]), { website: 'x', homepage: 'https://x' } as never)).toEqual({
+      id: 1,
     })
   })
 
   it('updateFriend returns the row when present', async () => {
     const { updateFriend } = await import('@/server/infra/db/operations/friend')
-    expect(await updateFriend(createMockDb([{ id: 1n }]), 1n, { website: 'y' } as never)).toEqual({ id: 1n })
+    expect(await updateFriend(createMockDb([{ id: 1 }]), 1, { website: 'y' } as never)).toEqual({ id: 1 })
   })
 
   it('updateFriend returns null when absent', async () => {
     const { updateFriend } = await import('@/server/infra/db/operations/friend')
-    expect(await updateFriend(createMockDb([]), 1n, { website: 'y' } as never)).toBeNull()
+    expect(await updateFriend(createMockDb([]), 1, { website: 'y' } as never)).toBeNull()
   })
 
   it('deleteFriend returns true when a row was deleted', async () => {
     const { deleteFriend } = await import('@/server/infra/db/operations/friend')
-    expect(await deleteFriend(createMockDb([{ id: 1n }]), 1n)).toBe(true)
+    expect(await deleteFriend(createMockDb([{ id: 1 }]), 1)).toBe(true)
   })
 
   it('deleteFriend returns false when no row was deleted', async () => {
     const { deleteFriend } = await import('@/server/infra/db/operations/friend')
-    expect(await deleteFriend(createMockDb([]), 1n)).toBe(false)
+    expect(await deleteFriend(createMockDb([]), 1)).toBe(false)
   })
 })

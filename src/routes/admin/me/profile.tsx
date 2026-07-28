@@ -7,6 +7,7 @@ import { countMyComments } from '@/server/domains/comments/services/mine-comment
 import { getAccountProfile } from '@/server/domains/users/services/account'
 import { getRequestContext } from '@/server/http/request-context'
 import { titleMeta } from '@/shared/seo/title-meta'
+import { idFromString } from '@/shared/utils/id'
 import { MyProfileView } from '@/ui/admin/my/MyProfileView'
 
 import type { Route } from './+types/profile'
@@ -19,7 +20,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   // Self-service: any logged-in role can edit their own row. admin.layout
   // already rejects anonymous visitors; this keeps the contract explicit.
   requireRole(ctx, 'visitor')
-  const userId = BigInt(ctx.user.id)
+  const userId = idFromString(ctx.user.id)
   const [profile, counts] = await Promise.all([getAccountProfile(rc.db, userId), countMyComments(rc.db, userId)])
   return data({
     user: profile,

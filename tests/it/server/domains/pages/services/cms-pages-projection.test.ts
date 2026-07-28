@@ -17,7 +17,7 @@ const { toAdminRevisionDto } = await import('@/server/domains/content/projection
 function metaRow(overrides: Partial<PageMetaRow> = {}): PageMetaRow {
   const now = overrides.createdAt ?? new Date('2026-05-01T00:00:00.000Z')
   return {
-    id: overrides.id ?? 1n,
+    id: overrides.id ?? 1,
     slug: overrides.slug ?? 'about',
     title: overrides.title ?? '关于我',
     summary: overrides.summary ?? '',
@@ -41,9 +41,9 @@ function metaRow(overrides: Partial<PageMetaRow> = {}): PageMetaRow {
 function contentRow(overrides: Partial<ContentRow> = {}): ContentRow {
   const now = overrides.createdAt ?? new Date('2026-05-01T00:00:00.000Z')
   return {
-    id: overrides.id ?? 100n,
+    id: overrides.id ?? 100,
     type: overrides.type ?? 'page',
-    ownerId: overrides.ownerId ?? 1n,
+    ownerId: overrides.ownerId ?? 1,
     revisionNo: overrides.revisionNo ?? 1,
     status: overrides.status ?? 'draft',
     body: overrides.body ?? [],
@@ -58,7 +58,7 @@ function contentRow(overrides: Partial<ContentRow> = {}): ContentRow {
 
 describe('cms/pages/projection — toCmsPage', () => {
   it('returns an empty body when there is no published revision', () => {
-    const dto = toCmsPage(metaRow({ id: 1n, publishedRevisionId: null }), null)
+    const dto = toCmsPage(metaRow({ id: 1, publishedRevisionId: null }), null)
     expect(dto.body).toEqual([])
     expect(dto.imageSources).toEqual([])
     expect(dto.headings).toEqual([])
@@ -76,9 +76,9 @@ describe('cms/pages/projection — toCmsPage', () => {
       },
     ]
     const dto = toCmsPage(
-      metaRow({ id: 1n, publishedRevisionId: 200n }),
+      metaRow({ id: 1, publishedRevisionId: 200 }),
       contentRow({
-        id: 200n,
+        id: 200,
         body,
         imageSources: ['images/x.jpg'],
         headings: [{ depth: 2, text: 'Hi', slug: 'hi' }],
@@ -87,23 +87,23 @@ describe('cms/pages/projection — toCmsPage', () => {
     expect(dto.body).toEqual(body)
     expect(dto.imageSources).toEqual(['images/x.jpg'])
     expect(dto.headings).toEqual([{ depth: 2, text: 'Hi', slug: 'hi' }])
-    expect(dto.publishedRevisionId).toBe(200n)
+    expect(dto.publishedRevisionId).toBe(200)
   })
 
   it('throws on a malformed jsonb body that bypassed the API perimeter', () => {
     expect(() =>
       toCmsPage(
-        metaRow({ id: 1n, publishedRevisionId: 200n }),
-        contentRow({ id: 200n, body: [{ _type: 'unknown_block', payload: 'foo' }] }),
+        metaRow({ id: 1, publishedRevisionId: 200 }),
+        contentRow({ id: 200, body: [{ _type: 'unknown_block', payload: 'foo' }] }),
       ),
     ).toThrow()
   })
 
   it('treats malformed imageSources as []', () => {
     const dto = toCmsPage(
-      metaRow({ id: 1n, publishedRevisionId: 200n }),
+      metaRow({ id: 1, publishedRevisionId: 200 }),
       contentRow({
-        id: 200n,
+        id: 200,
         body: [],
         imageSources: ['ok.jpg', 42, null] as unknown as ContentRow['imageSources'],
       }),
@@ -113,9 +113,9 @@ describe('cms/pages/projection — toCmsPage', () => {
 
   it('treats malformed headings entries as skipped without failing the projection', () => {
     const dto = toCmsPage(
-      metaRow({ id: 1n, publishedRevisionId: 200n }),
+      metaRow({ id: 1, publishedRevisionId: 200 }),
       contentRow({
-        id: 200n,
+        id: 200,
         body: [],
         headings: [
           { depth: 2, text: 'ok', slug: 'ok' },
@@ -132,7 +132,7 @@ describe('content/projection — toAdminRevisionDto', () => {
   it('stringifies bigint ids and ISO-encodes timestamps', () => {
     const dto = toAdminRevisionDto(
       contentRow({
-        id: 12345n,
+        id: 12345,
         revisionNo: 7,
         status: 'published',
         body: [
@@ -143,7 +143,7 @@ describe('content/projection — toAdminRevisionDto', () => {
             children: [{ _type: 'span', _key: 's1', text: 'Hi' }],
           },
         ],
-        authorId: 99n,
+        authorId: 99,
       }),
     )
     expect(dto.id).toBe('12345')

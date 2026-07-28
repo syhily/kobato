@@ -1,10 +1,10 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { ZodType } from 'zod'
 
-import { and, eq, gt, isNull, or, sql } from 'drizzle-orm'
+import { and, eq, gt, isNull, or } from 'drizzle-orm'
 import { Buffer } from 'node:buffer'
 import { createHash } from 'node:crypto'
 
+import type { Database } from '@/server/infra/db/database'
 import type { CacheBucketId } from '@/shared/types/cache'
 
 import { createInflight } from '@/server/infra/cache/inflight'
@@ -215,7 +215,7 @@ function keyFor<K extends CacheBucketId>(id: K, params: CacheParamsMap[K]): { ke
 
 // ─── Read / write primitives ──────────────────────────────
 
-async function readEntry(db: NodePgDatabase, id: CacheBucketId, key: string): Promise<unknown> {
+async function readEntry(db: Database, id: CacheBucketId, key: string): Promise<unknown> {
   const behavior = BEHAVIORS[id]
   try {
     if (behavior.kind === 'binary') {
@@ -248,7 +248,7 @@ async function readEntry(db: NodePgDatabase, id: CacheBucketId, key: string): Pr
   }
 }
 
-async function writeEntry(db: NodePgDatabase, id: CacheBucketId, key: string, slot: ResolvedSlot, value: unknown) {
+async function writeEntry(db: Database, id: CacheBucketId, key: string, slot: ResolvedSlot, value: unknown) {
   const behavior = BEHAVIORS[id]
   try {
     if (behavior.kind === 'binary') {
@@ -279,7 +279,7 @@ const inflight = createInflight<unknown>()
  * caches skip the read in dev but still write.
  */
 export async function through<K extends CacheBucketId, V>(
-  db: NodePgDatabase,
+  db: Database,
   id: K,
   params: CacheParamsMap[K],
   loader: () => Promise<V>,
@@ -319,7 +319,7 @@ export async function through<K extends CacheBucketId, V>(
 
 /** Direct read. Concurrent reads of the same key coalesce. */
 export async function get<K extends CacheBucketId, V>(
-  db: NodePgDatabase,
+  db: Database,
   id: K,
   params: CacheParamsMap[K],
 ): Promise<V | null> {
@@ -329,7 +329,7 @@ export async function get<K extends CacheBucketId, V>(
 
 /** Direct write (best-effort — failures are logged and swallowed). */
 export async function set<K extends CacheBucketId, V>(
-  db: NodePgDatabase,
+  db: Database,
   id: K,
   params: CacheParamsMap[K],
   value: V,
@@ -339,11 +339,7 @@ export async function set<K extends CacheBucketId, V>(
 }
 
 /** Per-key delete (best-effort). */
-export async function remove<K extends CacheBucketId>(
-  db: NodePgDatabase,
-  id: K,
-  params: CacheParamsMap[K],
-): Promise<void> {
+export async function remove<K extends CacheBucketId>(db: Database, id: K, params: CacheParamsMap[K]): Promise<void> {
   const { key } = keyFor(id, params)
   try {
     await removeItem(db, key)
@@ -353,9 +349,12 @@ export async function remove<K extends CacheBucketId>(
 }
 
 /** Whole-bucket delete — one bucket-column DELETE, no prefix scan (best-effort). */
-export async function clear(db: NodePgDatabase, id: CacheBucketId): Promise<void> {
+// Sync (node:sqlite): called inside entity transactions via
+// `invalidateContent`. No interleaving risk — the sync driver runs every
+// statement to completion before anything else on the event loop moves.
+export function clear(db: Database, id: CacheBucketId): void {
   try {
-    await db.delete(kvCache).where(eq(kvCache.bucket, id))
+    db.delete(kvCache).where(eq(kvCache.bucket, id)).run()
   } catch (error) {
     log.warn('cache bucket clear failed', { bucket: id, error })
   }
@@ -369,7 +368,7 @@ export async function clear(db: NodePgDatabase, id: CacheBucketId): Promise<void
  * as null).
  */
 export async function throughMany<K extends CacheBucketId, V>(
-  db: NodePgDatabase,
+  db: Database,
   id: K,
   paramsList: CacheParamsMap[K][],
   loader: (missing: CacheParamsMap[K][]) => Promise<{ params: CacheParamsMap[K]; value: V }[]>,
@@ -455,15 +454,19 @@ function liveCounterRow() {
   return or(isNull(kvCache.expiresAt), gt(kvCache.expiresAt, new Date()))
 }
 
-export function getCounter(db: NodePgDatabase, id: CacheBucketId): Promise<number> {
+export function getCounter(db: Database, id: CacheBucketId): Promise<number> {
   assertCounter(id)
   let memo = counterMemo.get(id)
   if (memo === undefined) {
-    memo = db
-      .select({ value: kvCache.value })
-      .from(kvCache)
-      .where(and(eq(kvCache.key, counterKey(id)), liveCounterRow()))
-      .limit(1)
+    memo = Promise.resolve()
+      .then(() =>
+        db
+          .select({ value: kvCache.value })
+          .from(kvCache)
+          .where(and(eq(kvCache.key, counterKey(id)), liveCounterRow()))
+          .limit(1)
+          .all(),
+      )
       .then((rows) => parseCounter(rows[0]?.value ?? 0))
       .catch((error: unknown) => {
         counterMemo.delete(id)
@@ -477,21 +480,27 @@ export function getCounter(db: NodePgDatabase, id: CacheBucketId): Promise<numbe
 
 /**
  * Bump the generation stamp, orphaning every entry stamped with an older
- * generation. A single INSERT … ON CONFLICT … DO UPDATE keeps the bump
- * atomic (Postgres row lock, the INCR equivalent). Fire-and-forget by
- * contract: invalidation must never bring down the mutation that
- * triggered it, so database failures are logged and swallowed here.
+ * generation. Read-modify-write inside one statement sequence — safe
+ * because the sync driver runs uninterrupted (no interleaving between
+ * the read and the write). Fire-and-forget by contract: invalidation
+ * must never bring down the mutation that triggered it, so database
+ * failures are logged and swallowed here. Sync — node:sqlite.
  */
-export async function bumpCounter(db: NodePgDatabase, id: CacheBucketId): Promise<void> {
+export function bumpCounter(db: Database, id: CacheBucketId): void {
   assertCounter(id)
   try {
-    const result = await db.execute(
-      sql`INSERT INTO kv_cache (key, bucket, value, blob, expires_at)
-          VALUES (${counterKey(id)}, ${id}, '1'::jsonb, NULL, NULL)
-          ON CONFLICT (key) DO UPDATE SET value = (kv_cache.value::int + 1)::text::jsonb
-          RETURNING value`,
-    )
-    const generation = parseCounter(result.rows[0]?.value ?? 0)
+    const key = counterKey(id)
+    const rows = db
+      .select({ value: kvCache.value })
+      .from(kvCache)
+      .where(and(eq(kvCache.key, key), liveCounterRow()))
+      .limit(1)
+      .all()
+    const generation = parseCounter(rows[0]?.value ?? 0) + 1
+    db.insert(kvCache)
+      .values({ key, bucket: id, value: generation, blob: null, expiresAt: null })
+      .onConflictDoUpdate({ target: kvCache.key, set: { value: generation, blob: null, expiresAt: null } })
+      .run()
     counterMemo.set(id, Promise.resolve(generation))
     log.info('cache counter bumped', { bucket: id, generation })
   } catch (error: unknown) {

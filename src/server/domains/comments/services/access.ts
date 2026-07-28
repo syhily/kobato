@@ -1,5 +1,4 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
+import type { Database } from '@/server/infra/db/database'
 import type { CommentTokenCookie } from '@/shared/utils/comment-token'
 
 import { findCommentWithUserById } from '@/server/domains/comments/services/lookup'
@@ -18,7 +17,7 @@ import { idFromString } from '@/shared/utils/id'
  * expired and invalid entries dropped.
  */
 export async function verifyCommentAccess(
-  db: NodePgDatabase,
+  db: Database,
   cookie: CommentTokenCookie,
   commentId: string,
   sessionUser?: { id: string; role: string },

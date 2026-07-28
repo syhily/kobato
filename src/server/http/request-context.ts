@@ -1,10 +1,9 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
 import type { LoaderFunctionArgs, RouterContextProvider } from 'react-router'
 
 import { createContext } from 'react-router'
 
 import type { BlogSession, SessionUser } from '@/server/domains/auth/session-storage'
+import type { Database } from '@/server/infra/db/database'
 import type { RequestFacts } from '@/server/infra/http/request-facts'
 
 /**
@@ -40,8 +39,7 @@ export interface RequestContext {
   /** Normalized document URL (never carries `.data` / `_routes` / `index`). */
   url: URL
   requestFacts: RequestFacts
-  db: NodePgDatabase
-  pool: Pool
+  db: Database
   cspNonce: string
   /**
    * Mark the session as mutated. The perimeter middleware commits it

@@ -1,11 +1,10 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
+
 import { clearAllTables } from '#/_helpers/integration-db'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { postTag } from '@/server/infra/db/schema/post-tag'
@@ -20,12 +19,11 @@ vi.mock('@/server/domains/images/services/enhance', () => ({
   ),
 }))
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {
@@ -33,7 +31,7 @@ beforeEach(async () => {
   vi.clearAllMocks()
 })
 
-async function seedPost(opts: Partial<typeof postMetaTable.$inferInsert> = {}): Promise<bigint> {
+async function seedPost(opts: Partial<typeof postMetaTable.$inferInsert> = {}): Promise<number> {
   const rows = await db
     .insert(postMetaTable)
     .values({
@@ -52,12 +50,12 @@ async function seedPost(opts: Partial<typeof postMetaTable.$inferInsert> = {}): 
   return rows[0]!.id
 }
 
-async function seedContent(opts: Partial<typeof contentTable.$inferInsert> = {}): Promise<bigint> {
+async function seedContent(opts: Partial<typeof contentTable.$inferInsert> = {}): Promise<number> {
   const rows = await db
     .insert(contentTable)
     .values({
       type: opts.type ?? 'post',
-      ownerId: opts.ownerId ?? 1n,
+      ownerId: opts.ownerId ?? 1,
       revisionNo: opts.revisionNo ?? 1,
       status: opts.status ?? 'published',
       body: opts.body ?? [],
@@ -67,7 +65,7 @@ async function seedContent(opts: Partial<typeof contentTable.$inferInsert> = {})
   return rows[0]!.id
 }
 
-async function seedTag(name: string, slug?: string): Promise<bigint> {
+async function seedTag(name: string, slug?: string): Promise<number> {
   const rows = await db
     .insert(tagTable)
     .values({ name, slug: slug ?? name.toLowerCase() })
@@ -75,7 +73,7 @@ async function seedTag(name: string, slug?: string): Promise<bigint> {
   return rows[0]!.id
 }
 
-async function linkTag(postId: bigint, tagId: bigint): Promise<void> {
+async function linkTag(postId: number, tagId: number): Promise<void> {
   await db.insert(postTag).values({ postId, tagId })
 }
 
@@ -90,7 +88,7 @@ describe('posts/repos/shared — buildPostsWhere', () => {
       buildPostsWhere({
         deletedStatus: 'normal',
         q: 'foo',
-        categoryId: 1n,
+        categoryId: 1,
         tag: 'react',
         published: true,
         visible: true,
@@ -121,7 +119,7 @@ describe('posts/repos/shared — toClientPostFromMeta', () => {
   it('projects meta + tags into the ClientPost shape', async () => {
     const { toClientPostFromMeta } = await import('@/server/domains/posts/repos/shared')
     const meta: typeof postMetaTable.$inferSelect = {
-      id: 1n,
+      id: 1,
       createdAt: new Date(),
       updatedAt: new Date(),
       deletedAt: null,
@@ -136,10 +134,10 @@ describe('posts/repos/shared — toClientPostFromMeta', () => {
       showUpdated: false,
       visible: true,
       publishedAt: new Date('2026-02-01'),
-      publishedRevisionId: 1n,
+      publishedRevisionId: 1,
       firstPublishedAt: new Date('2026-01-01'),
       authorId: null,
-      categoryId: 1n,
+      categoryId: 1,
       alias: ['a'],
       pinnedAt: null,
     }
@@ -158,8 +156,8 @@ describe('posts/repos/shared — buildPublicPostsWhere', () => {
     expect(buildPublicPostsWhere({ includeHidden: true, includeScheduled: true })).toBeDefined()
   })
   it('excludes scheduled rows unless includeScheduled is set', async () => {
-    await seedPost({ slug: 'live-now', publishedRevisionId: 1n, publishedAt: new Date('2020-01-01') })
-    await seedPost({ slug: 'live-future', publishedRevisionId: 1n, publishedAt: new Date('2099-01-01') })
+    await seedPost({ slug: 'live-now', publishedRevisionId: 1, publishedAt: new Date('2020-01-01') })
+    await seedPost({ slug: 'live-future', publishedRevisionId: 1, publishedAt: new Date('2099-01-01') })
     const { listPublicPosts } = await import('@/server/domains/posts/services/public-query')
     const scheduledExcluded = await listPublicPosts(db)
     expect(scheduledExcluded.map((r) => r.slug)).toEqual(['live-now'])
@@ -226,7 +224,7 @@ describe('posts/repos/hydrate — hydratePostList', () => {
   })
   it('projects metas with tags and an empty body by default', async () => {
     const tid = await seedTag('React')
-    const pid = await seedPost({ slug: 'h-list', publishedRevisionId: 1n })
+    const pid = await seedPost({ slug: 'h-list', publishedRevisionId: 1 })
     await linkTag(pid, tid)
     const rows = await db.select().from(postMetaTable).where(eq(postMetaTable.id, pid))
     const { hydratePostList } = await import('@/server/domains/posts/repos/hydrate')
@@ -245,7 +243,7 @@ describe('posts/repos/hydrate — hydratePostList', () => {
     expect(posts[0]?.publishedRevisionId).toBe(revId)
   })
   it('skips cover hydration when images: false', async () => {
-    const pid = await seedPost({ slug: 'h-noimg', publishedRevisionId: 1n, cover: '/c.png' })
+    const pid = await seedPost({ slug: 'h-noimg', publishedRevisionId: 1, cover: '/c.png' })
     const rows = await db.select().from(postMetaTable).where(eq(postMetaTable.id, pid))
     const { hydratePostList } = await import('@/server/domains/posts/repos/hydrate')
     const posts = await hydratePostList(db, rows, { images: false })

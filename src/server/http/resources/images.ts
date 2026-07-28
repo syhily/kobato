@@ -75,7 +75,7 @@ const postOgAdapter: OgAdapter = {
   cacheKeyPrefix: '',
   useSiteSummaryFallback: false,
   async resolve(c, slug) {
-    const post = await findPublicPostMetaBySlug(c.var.requestContext.db, slug)
+    const post = findPublicPostMetaBySlug(c.var.requestContext.db, slug)
     return post && isLive(post) ? { title: post.title, summary: post.summary, cover: post.cover } : null
   },
 }
@@ -84,7 +84,7 @@ const pageOgAdapter: OgAdapter = {
   cacheKeyPrefix: '',
   useSiteSummaryFallback: true,
   async resolve(c, slug) {
-    const page = await findPublicPageMetaBySlug(c.var.requestContext.db, slug)
+    const page = findPublicPageMetaBySlug(c.var.requestContext.db, slug)
     return page && isLive(page) ? { title: page.title, summary: page.summary, cover: page.cover } : null
   },
 }

@@ -1,7 +1,7 @@
 // Credential signin flow — email + password, with the passkey-method
 // refusal and the OTP staging branch when mail is ready.
 
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Database } from '@/server/infra/db/database'
 
 import { recordAuditEvent } from '@/server/domains/audit/services/record'
 import { isPasskeySigninUser } from '@/server/domains/auth/passkey/gate'
@@ -32,7 +32,7 @@ async function checkLoginRateLimits(clientAddress: string, email: string): Promi
   return { exceeded: loginLimit.exceeded || signInEmailLimit.exceeded }
 }
 
-async function checkPasskeyMethod(db: NodePgDatabase, email: string): Promise<boolean> {
+async function checkPasskeyMethod(db: Database, email: string): Promise<boolean> {
   const existingUser = await findUserByEmail(db, email)
   return isPasskeySigninUser(existingUser)
 }

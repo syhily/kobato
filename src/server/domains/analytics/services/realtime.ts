@@ -1,8 +1,7 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { sql } from 'drizzle-orm'
 import { createHash } from 'node:crypto'
 
+import type { Database } from '@/server/infra/db/database'
 import type { RealtimeEvent } from '@/shared/contracts/analytics'
 
 import { isRecord } from '@/shared/utils/type-guards'
@@ -56,8 +55,9 @@ export function acquireRealtimeConnection(key: string): (() => void) | null {
   }
 }
 
-export async function queryRealtimeTail(db: NodePgDatabase, sinceTs: Date, limit = 50): Promise<RealtimeEvent[]> {
-  const result = await db.execute(sql`
+export async function queryRealtimeTail(db: Database, sinceTs: Date, limit = 50): Promise<RealtimeEvent[]> {
+  // `ts` is an epoch-ms integer column.
+  const rows = db.all(sql`
     SELECT
       ts,
       path,
@@ -68,11 +68,11 @@ export async function queryRealtimeTail(db: NodePgDatabase, sinceTs: Date, limit
       device_type AS "deviceType",
       is_bot AS "isBot"
     FROM access_log
-    WHERE ts > ${sinceTs}
+    WHERE ts > ${sinceTs.getTime()}
     ORDER BY ts DESC
     LIMIT ${limit}
   `)
-  return result.rows.map((row) => {
+  return rows.map((row) => {
     if (!isRecord(row)) {
       return { ts: '', path: '', country: null, city: null, browser: null, os: null, deviceType: null, isBot: false }
     }

@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto'
 
-export function weakEtag(parts: ReadonlyArray<string | number | bigint | Date | null | undefined>): string {
+export function weakEtag(parts: ReadonlyArray<string | number | Date | null | undefined>): string {
   const hash = createHash('sha1')
     .update(
       parts

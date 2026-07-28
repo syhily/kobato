@@ -1,8 +1,7 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { PageMetaWithAuthor } from '@/server/domains/pages/repo'
+import type { Database } from '@/server/infra/db/database'
 import type { ContentRow } from '@/server/infra/db/types'
 
 // CMS page service — drives the save/publish state machine through
@@ -54,13 +53,13 @@ vi.mock('@/server/infra/db/operations/like', () => ({
   commentCountsByOwnerIds: vi.fn(async () => []),
 }))
 vi.mock('@/server/infra/db/operations/slug-registry', () => ({
-  insertSlugRegistry: vi.fn(async () => ({})),
-  updateSlugRegistryByEntity: vi.fn(async () => ({})),
-  deleteSlugRegistryByEntity: vi.fn(async () => {
+  insertSlugRegistry: vi.fn(() => ({})),
+  updateSlugRegistryByEntity: vi.fn(() => ({})),
+  deleteSlugRegistryByEntity: vi.fn(() => {
     void 0
   }),
-  findSlugRegistryBySlug: vi.fn(async () => null),
-  findSlugRegistryBySlugForUpdate: vi.fn(async () => null),
+  findSlugRegistryBySlug: vi.fn(() => null),
+  findSlugRegistryBySlugForUpdate: vi.fn(() => null),
 }))
 
 const { auditInfoMock, getLogger } = vi.hoisted(() => {
@@ -100,8 +99,8 @@ vi.mock('@/server/infra/logger', () => ({
 }))
 
 const db = {
-  transaction: async <T>(fn: (tx: NodePgDatabase) => Promise<T>) => fn(db as NodePgDatabase),
-} as unknown as NodePgDatabase
+  transaction: <T>(fn: (tx: Database) => T) => fn(db as Database),
+} as unknown as Database
 
 const repo = await import('@/server/domains/pages/repo')
 const query = await import('@/server/domains/content/revisions')
@@ -115,7 +114,7 @@ const { pageLifecycleAdapter } = await import('@/server/domains/pages/services/l
 function metaRow(overrides: Partial<PageMetaWithAuthor> = {}): PageMetaWithAuthor {
   const now = overrides.createdAt ?? new Date('2026-05-01T00:00:00.000Z')
   return {
-    id: overrides.id ?? 1n,
+    id: overrides.id ?? 1,
     slug: overrides.slug ?? 'about',
     title: overrides.title ?? '关于我',
     summary: overrides.summary ?? '',
@@ -140,9 +139,9 @@ function metaRow(overrides: Partial<PageMetaWithAuthor> = {}): PageMetaWithAutho
 function contentRow(overrides: Partial<ContentRow> = {}): ContentRow {
   const now = overrides.createdAt ?? new Date('2026-05-01T00:00:00.000Z')
   return {
-    id: overrides.id ?? 100n,
+    id: overrides.id ?? 100,
     type: overrides.type ?? 'page',
-    ownerId: overrides.ownerId ?? 1n,
+    ownerId: overrides.ownerId ?? 1,
     revisionNo: overrides.revisionNo ?? 1,
     status: overrides.status ?? 'draft',
     body: overrides.body ?? [],
@@ -179,7 +178,7 @@ beforeEach(() => {
 
 describe('cms/pages/service — listPagesForAdmin / getPageDetailForAdmin', () => {
   it('hasMore = true while another page exists, false when the offset+rows reaches total', async () => {
-    vi.mocked(repo.listPageMetas).mockResolvedValue([metaRow({ id: 1n }), metaRow({ id: 2n, slug: 'links' })])
+    vi.mocked(repo.listPageMetas).mockResolvedValue([metaRow({ id: 1 }), metaRow({ id: 2, slug: 'links' })])
     vi.mocked(repo.countPageMetas).mockResolvedValue(5)
 
     const more = await adminQuery.listPagesForAdmin(db, { offset: 0, limit: 2 })
@@ -187,26 +186,26 @@ describe('cms/pages/service — listPagesForAdmin / getPageDetailForAdmin', () =
     expect(more.hasMore).toBe(true)
     expect(more.pages.map((p) => p.slug)).toEqual(['about', 'links'])
 
-    vi.mocked(repo.listPageMetas).mockResolvedValue([metaRow({ id: 5n, slug: 'guestbook' })])
+    vi.mocked(repo.listPageMetas).mockResolvedValue([metaRow({ id: 5, slug: 'guestbook' })])
     vi.mocked(repo.countPageMetas).mockResolvedValue(5)
     const last = await adminQuery.listPagesForAdmin(db, { offset: 4, limit: 2 })
     expect(last.hasMore).toBe(false)
   })
 
   it('getPageDetailForAdmin throws NOT_FOUND for missing rows (same contract as posts)', async () => {
-    vi.mocked(repo.findPageMetaById).mockResolvedValue(null)
-    await expect(adminQuery.getPageDetailForAdmin(db, 99n)).rejects.toMatchObject({ code: 'NOT_FOUND' })
+    vi.mocked(repo.findPageMetaById).mockReturnValue(null)
+    await expect(adminQuery.getPageDetailForAdmin(db, 99)).rejects.toMatchObject({ code: 'NOT_FOUND' })
   })
 
   it('getPageDetailForAdmin projects latest + published revisions independently', async () => {
-    const meta = metaRow({ id: 7n, publishedRevisionId: 200n })
-    const draft = contentRow({ id: 201n, ownerId: 7n, revisionNo: 4, status: 'draft' })
-    const published = contentRow({ id: 200n, ownerId: 7n, revisionNo: 3, status: 'published' })
-    vi.mocked(repo.findPageMetaById).mockResolvedValue(meta)
+    const meta = metaRow({ id: 7, publishedRevisionId: 200 })
+    const draft = contentRow({ id: 201, ownerId: 7, revisionNo: 4, status: 'draft' })
+    const published = contentRow({ id: 200, ownerId: 7, revisionNo: 3, status: 'published' })
+    vi.mocked(repo.findPageMetaById).mockReturnValue(meta)
     vi.mocked(query.findLatestRevision).mockResolvedValue(draft)
-    vi.mocked(query.findContentById).mockResolvedValue(published)
+    vi.mocked(query.findContentById).mockReturnValue(published)
 
-    const detail = await adminQuery.getPageDetailForAdmin(db, 7n)
+    const detail = await adminQuery.getPageDetailForAdmin(db, 7)
     expect(detail.page.id).toBe('7')
     expect(detail.latestRevision?.revisionNo).toBe(4)
     expect(detail.latestRevision?.status).toBe('draft')
@@ -227,38 +226,38 @@ describe('cms/pages/service — createPage / updatePageMeta validation', () => {
   })
 
   it('rejects an existing slug on create with HTTP 409 semantics', async () => {
-    vi.mocked(repo.findPageMetaBySlugForUpdate).mockResolvedValue(metaRow({ slug: 'about' }))
+    vi.mocked(repo.findPageMetaBySlugForUpdate).mockReturnValue(metaRow({ slug: 'about' }))
     await expect(mutate.createPage(db, { slug: 'about', title: 't' }, null)).rejects.toMatchObject({
       code: 'CONFLICT',
     })
   })
 
   it('updatePageMeta tolerates a same-slug edit (no collision check fires)', async () => {
-    vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 7n, slug: 'about', title: 'old' }))
-    vi.mocked(repo.updatePageMetaById).mockResolvedValue(metaRow({ id: 7n, slug: 'about', title: 'new' }))
-    const dto = await mutate.updatePageMeta(db, { id: 7n, slug: 'about', title: 'new' })
+    vi.mocked(repo.findPageMetaById).mockReturnValue(metaRow({ id: 7, slug: 'about', title: 'old' }))
+    vi.mocked(repo.updatePageMetaById).mockReturnValue(metaRow({ id: 7, slug: 'about', title: 'new' }))
+    const dto = await mutate.updatePageMeta(db, { id: 7, slug: 'about', title: 'new' })
     expect(dto.title).toBe('new')
     expect(repo.findPageMetaBySlugForUpdate).not.toHaveBeenCalled()
   })
 
   it('updatePageMeta blocks renaming to a slug already used by a different page', async () => {
-    vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 7n, slug: 'about' }))
-    vi.mocked(repo.findPageMetaBySlugForUpdate).mockResolvedValue(metaRow({ id: 99n, slug: 'guestbook' }))
-    await expect(mutate.updatePageMeta(db, { id: 7n, slug: 'guestbook', title: 't' })).rejects.toMatchObject({
+    vi.mocked(repo.findPageMetaById).mockReturnValue(metaRow({ id: 7, slug: 'about' }))
+    vi.mocked(repo.findPageMetaBySlugForUpdate).mockReturnValue(metaRow({ id: 99, slug: 'guestbook' }))
+    await expect(mutate.updatePageMeta(db, { id: 7, slug: 'guestbook', title: 't' })).rejects.toMatchObject({
       code: 'CONFLICT',
     })
   })
 
   it('updatePageMeta returns 404 when the row was already deleted', async () => {
-    vi.mocked(repo.findPageMetaById).mockResolvedValue(null)
-    await expect(mutate.updatePageMeta(db, { id: 7n, slug: 'about', title: 't' })).rejects.toMatchObject({
+    vi.mocked(repo.findPageMetaById).mockReturnValue(null)
+    await expect(mutate.updatePageMeta(db, { id: 7, slug: 'about', title: 't' })).rejects.toMatchObject({
       code: 'NOT_FOUND',
     })
   })
 
   it('createPage always inserts status=draft even when input says true', async () => {
-    vi.mocked(repo.findPageMetaBySlugForUpdate).mockResolvedValue(null)
-    vi.mocked(repo.insertPageMeta).mockResolvedValue(metaRow({ slug: 'new-page', published: false }))
+    vi.mocked(repo.findPageMetaBySlugForUpdate).mockReturnValue(null)
+    vi.mocked(repo.insertPageMeta).mockReturnValue(metaRow({ slug: 'new-page', published: false }))
 
     await mutate.createPage(db, { title: 'New Page', published: true }, null)
 
@@ -267,8 +266,8 @@ describe('cms/pages/service — createPage / updatePageMeta validation', () => {
   })
 
   it('createPage inserts status=draft when input omits the field', async () => {
-    vi.mocked(repo.findPageMetaBySlugForUpdate).mockResolvedValue(null)
-    vi.mocked(repo.insertPageMeta).mockResolvedValue(metaRow({ slug: 'new-page', published: false }))
+    vi.mocked(repo.findPageMetaBySlugForUpdate).mockReturnValue(null)
+    vi.mocked(repo.insertPageMeta).mockReturnValue(metaRow({ slug: 'new-page', published: false }))
 
     await mutate.createPage(db, { title: 'New Page' }, null)
 
@@ -277,14 +276,14 @@ describe('cms/pages/service — createPage / updatePageMeta validation', () => {
   })
 
   it('updatePageMeta never touches published even when input includes it', async () => {
-    vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 7n, slug: 'about', published: true }))
-    vi.mocked(repo.findPageMetaBySlug).mockResolvedValue(null)
-    vi.mocked(repo.updatePageMetaById).mockResolvedValue(
-      metaRow({ id: 7n, slug: 'about', published: true, title: 'Updated' }),
+    vi.mocked(repo.findPageMetaById).mockReturnValue(metaRow({ id: 7, slug: 'about', published: true }))
+    vi.mocked(repo.findPageMetaBySlug).mockReturnValue(null)
+    vi.mocked(repo.updatePageMetaById).mockReturnValue(
+      metaRow({ id: 7, slug: 'about', published: true, title: 'Updated' }),
     )
 
     const dto = await mutate.updatePageMeta(db, {
-      id: 7n,
+      id: 7,
       slug: 'about',
       title: 'Updated',
       published: false,
@@ -298,12 +297,12 @@ describe('cms/pages/service — createPage / updatePageMeta validation', () => {
 
 describe('cms/pages lifecycle — saveBody draft / publish body validation', () => {
   it('rejects a malformed body (zod issues become DomainError 400)', async () => {
-    vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 1n }))
+    vi.mocked(repo.findPageMetaById).mockReturnValue(metaRow({ id: 1 }))
     await expect(
       lifecycle.saveBody(
         db,
         pageLifecycleAdapter,
-        { entityId: 1n, body: [{ _type: 'unknown', _key: 'k' }], authorId: null },
+        { entityId: 1, body: [{ _type: 'unknown', _key: 'k' }], authorId: null },
         'draft',
       ),
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
@@ -311,9 +310,9 @@ describe('cms/pages lifecycle — saveBody draft / publish body validation', () 
   })
 
   it('rejects when the page row is missing without touching the transaction', async () => {
-    vi.mocked(repo.findPageMetaById).mockResolvedValue(null)
+    vi.mocked(repo.findPageMetaById).mockReturnValue(null)
     await expect(
-      lifecycle.saveBody(db, pageLifecycleAdapter, { entityId: 1n, body: VALID_BODY, authorId: null }, 'draft'),
+      lifecycle.saveBody(db, pageLifecycleAdapter, { entityId: 1, body: VALID_BODY, authorId: null }, 'draft'),
     ).rejects.toMatchObject({
       code: 'NOT_FOUND',
     })
@@ -321,7 +320,7 @@ describe('cms/pages lifecycle — saveBody draft / publish body validation', () 
   })
 
   it('forwards body, derived imageSources, and derived headings into the repository call', async () => {
-    vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 1n }))
+    vi.mocked(repo.findPageMetaById).mockReturnValue(metaRow({ id: 1 }))
     vi.mocked(contentMutate.saveDraftRevision).mockResolvedValue({
       status: 'saved',
       row: contentRow({ revisionNo: 1, status: 'draft' }),
@@ -341,19 +340,19 @@ describe('cms/pages lifecycle — saveBody draft / publish body validation', () 
         storagePath: 'images/2026/05/foo.jpg',
       },
     ]
-    await lifecycle.saveBody(db, pageLifecycleAdapter, { entityId: 1n, body, authorId: 42n }, 'draft')
+    await lifecycle.saveBody(db, pageLifecycleAdapter, { entityId: 1, body, authorId: 42 }, 'draft')
 
     const arg = vi.mocked(contentMutate.saveDraftRevision).mock.calls[0][2]
-    expect(arg.ownerId).toBe(1n)
+    expect(arg.ownerId).toBe(1)
     expect(arg.imageSources).toEqual(['images/2026/05/foo.jpg'])
     expect(arg.headings).toEqual([{ depth: 2, text: 'Hello', slug: 'hello' }])
-    expect(arg.authorId).toBe(42n)
+    expect(arg.authorId).toBe(42)
   })
 
   it('translates a repository "conflict" into the wire shape with the latest revision DTO', async () => {
-    vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 1n }))
+    vi.mocked(repo.findPageMetaById).mockReturnValue(metaRow({ id: 1 }))
     const latest = contentRow({
-      id: 999n,
+      id: 999,
       revisionNo: 5,
       status: 'draft',
       clientRevisionToken: '11111111-2222-3333-4444-555555555555',
@@ -368,7 +367,7 @@ describe('cms/pages lifecycle — saveBody draft / publish body validation', () 
       db,
       pageLifecycleAdapter,
       {
-        entityId: 1n,
+        entityId: 1,
         body: VALID_BODY,
         authorId: null,
         expectedClientRevisionToken: 'stale-token',
@@ -384,7 +383,7 @@ describe('cms/pages lifecycle — saveBody draft / publish body validation', () 
   })
 
   it('publish projects the saved revision back as a "saved" wire DTO', async () => {
-    vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 1n }))
+    vi.mocked(repo.findPageMetaById).mockReturnValue(metaRow({ id: 1 }))
     vi.mocked(contentMutate.publishLatestRevision).mockResolvedValue({
       status: 'published',
       row: contentRow({ revisionNo: 7, status: 'published' }),
@@ -392,7 +391,7 @@ describe('cms/pages lifecycle — saveBody draft / publish body validation', () 
     const result = await lifecycle.saveBody(
       db,
       pageLifecycleAdapter,
-      { entityId: 1n, body: VALID_BODY, authorId: 5n },
+      { entityId: 1, body: VALID_BODY, authorId: 5 },
       'publish',
     )
     expect(result.status).toBe('saved')
@@ -405,7 +404,7 @@ describe('cms/pages lifecycle — saveBody draft / publish body validation', () 
 
 describe('cms/pages lifecycle — saveBody CAS + force', () => {
   it('saveBody forwards expectedClientRevisionToken untouched into the repo call', async () => {
-    vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 1n }))
+    vi.mocked(repo.findPageMetaById).mockReturnValue(metaRow({ id: 1 }))
     vi.mocked(contentMutate.saveDraftRevision).mockResolvedValue({
       status: 'saved',
       row: contentRow({ revisionNo: 1, status: 'draft' }),
@@ -415,7 +414,7 @@ describe('cms/pages lifecycle — saveBody CAS + force', () => {
       db,
       pageLifecycleAdapter,
       {
-        entityId: 1n,
+        entityId: 1,
         body: VALID_BODY,
         authorId: null,
         expectedClientRevisionToken: 'expected-token-abc',
@@ -431,11 +430,11 @@ describe('cms/pages lifecycle — saveBody CAS + force', () => {
   it('saveBody with force=true bypasses CAS at the repo and writes an audit log row', async () => {
     auditInfoMock.mockClear()
 
-    vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 7n }))
+    vi.mocked(repo.findPageMetaById).mockReturnValue(metaRow({ id: 7 }))
     vi.mocked(query.findLatestRevision).mockResolvedValue(
       contentRow({
-        id: 600n,
-        ownerId: 7n,
+        id: 600,
+        ownerId: 7,
         revisionNo: 9,
         status: 'draft',
         clientRevisionToken: 'server-side-newer',
@@ -443,16 +442,16 @@ describe('cms/pages lifecycle — saveBody CAS + force', () => {
     )
     vi.mocked(contentMutate.saveDraftRevision).mockResolvedValue({
       status: 'saved',
-      row: contentRow({ id: 601n, ownerId: 7n, revisionNo: 9, status: 'draft' }),
+      row: contentRow({ id: 601, ownerId: 7, revisionNo: 9, status: 'draft' }),
     })
 
     await lifecycle.saveBody(
       db,
       pageLifecycleAdapter,
       {
-        entityId: 7n,
+        entityId: 7,
         body: VALID_BODY,
-        authorId: 42n,
+        authorId: 42,
         expectedClientRevisionToken: 'client-thought-this',
         force: true,
       },
@@ -480,12 +479,12 @@ describe('cms/pages lifecycle — saveBody CAS + force', () => {
   it('saveBody with force=true on a no-op overwrite (matching tokens) skips the audit log', async () => {
     auditInfoMock.mockClear()
 
-    vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 7n }))
+    vi.mocked(repo.findPageMetaById).mockReturnValue(metaRow({ id: 7 }))
     const same = 'aligned-token'
     vi.mocked(query.findLatestRevision).mockResolvedValue(
       contentRow({
-        id: 700n,
-        ownerId: 7n,
+        id: 700,
+        ownerId: 7,
         revisionNo: 3,
         status: 'draft',
         clientRevisionToken: same,
@@ -493,14 +492,14 @@ describe('cms/pages lifecycle — saveBody CAS + force', () => {
     )
     vi.mocked(contentMutate.saveDraftRevision).mockResolvedValue({
       status: 'saved',
-      row: contentRow({ id: 701n, ownerId: 7n, revisionNo: 3, status: 'draft' }),
+      row: contentRow({ id: 701, ownerId: 7, revisionNo: 3, status: 'draft' }),
     })
 
     await lifecycle.saveBody(
       db,
       pageLifecycleAdapter,
       {
-        entityId: 7n,
+        entityId: 7,
         body: VALID_BODY,
         authorId: null,
         expectedClientRevisionToken: same,
@@ -513,9 +512,9 @@ describe('cms/pages lifecycle — saveBody CAS + force', () => {
   })
 
   it('publish forwards force and translates a conflict back into the wire shape', async () => {
-    vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 1n }))
+    vi.mocked(repo.findPageMetaById).mockReturnValue(metaRow({ id: 1 }))
     const stale = contentRow({
-      id: 800n,
+      id: 800,
       revisionNo: 4,
       status: 'draft',
       clientRevisionToken: 'newer-than-client',
@@ -530,7 +529,7 @@ describe('cms/pages lifecycle — saveBody CAS + force', () => {
       db,
       pageLifecycleAdapter,
       {
-        entityId: 1n,
+        entityId: 1,
         body: VALID_BODY,
         authorId: null,
         expectedClientRevisionToken: 'stale-client',
@@ -552,11 +551,11 @@ describe('cms/pages lifecycle — saveBody CAS + force', () => {
   it('publish with force=true writes audit log with mode="publish"', async () => {
     auditInfoMock.mockClear()
 
-    vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 11n }))
+    vi.mocked(repo.findPageMetaById).mockReturnValue(metaRow({ id: 11 }))
     vi.mocked(query.findLatestRevision).mockResolvedValue(
       contentRow({
-        id: 900n,
-        ownerId: 11n,
+        id: 900,
+        ownerId: 11,
         revisionNo: 12,
         status: 'draft',
         clientRevisionToken: 'srv-token',
@@ -564,16 +563,16 @@ describe('cms/pages lifecycle — saveBody CAS + force', () => {
     )
     vi.mocked(contentMutate.publishLatestRevision).mockResolvedValue({
       status: 'published',
-      row: contentRow({ id: 901n, ownerId: 11n, revisionNo: 12, status: 'published' }),
+      row: contentRow({ id: 901, ownerId: 11, revisionNo: 12, status: 'published' }),
     })
 
     await lifecycle.saveBody(
       db,
       pageLifecycleAdapter,
       {
-        entityId: 11n,
+        entityId: 11,
         body: VALID_BODY,
-        authorId: 99n,
+        authorId: 99,
         expectedClientRevisionToken: 'cli-token',
         force: true,
       },

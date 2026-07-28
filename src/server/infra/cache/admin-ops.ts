@@ -1,5 +1,4 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
+import type { Database } from '@/server/infra/db/database'
 import type { AdminCacheStatsDto, ClearCacheResultDto } from '@/shared/contracts/cache'
 import type { ClearCacheTarget } from '@/shared/types/cache'
 
@@ -13,13 +12,13 @@ import {
 } from '@/server/infra/cache/buckets'
 import { DomainError } from '@/server/infra/http/errors'
 
-export async function getAdminCacheStats(db: NodePgDatabase): Promise<AdminCacheStatsDto> {
+export async function getAdminCacheStats(db: Database): Promise<AdminCacheStatsDto> {
   const [buckets, reserved] = await Promise.all([snapshotAllBuckets(db), snapshotReservedBuckets(db)])
   const total = buckets.reduce((sum, bucket) => sum + bucket.keyCount, 0)
   return { buckets, reserved, total, generatedAt: new Date().toISOString() }
 }
 
-export async function clearAdminCache(db: NodePgDatabase, target: ClearCacheTarget): Promise<ClearCacheResultDto> {
+export async function clearAdminCache(db: Database, target: ClearCacheTarget): Promise<ClearCacheResultDto> {
   if (target === 'all') {
     const removed = await clearAllBuckets(db)
     const cleared = getCacheBuckets().map((bucket) => ({

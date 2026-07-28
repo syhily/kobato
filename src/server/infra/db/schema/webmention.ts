@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm'
-import { bigint, bigserial, index, jsonb, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core'
+import { check, index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
-import { webmentionStatusEnum } from '@/server/infra/db/schema/shared'
+import { WEBMENTION_STATUSES } from '@/server/infra/db/schema/shared'
 
 // Webmentions (W3C Webmention, receive side). A row is created in
 // `pending` status only after the endpoint has fetched `sourceUrl` and
@@ -14,33 +14,34 @@ import { webmentionStatusEnum } from '@/server/infra/db/schema/shared'
 //   (`{ source, target }`) — the fetched HTML is never persisted.
 // - No UNIQUE(source_url, target_url): re-mention update semantics are
 //   not implemented; duplicates land as separate pending rows.
-export const webmention = pgTable(
+export const webmention = sqliteTable(
   'webmention',
   {
-    id: bigserial('id', { mode: 'bigint' }).primaryKey().notNull(),
-    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
+    id: integer('id').primaryKey({ autoIncrement: true }).notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' })
       .notNull()
       .$defaultFn(() => new Date()),
-    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+    updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
       .notNull()
       .$defaultFn(() => new Date()),
     sourceUrl: text('source_url').notNull(),
     targetUrl: text('target_url').notNull(),
-    status: webmentionStatusEnum('status').notNull().default('pending'),
-    targetType: varchar('target_type', { length: 16 }).$type<'post' | 'page'>().notNull(),
-    targetOwnerId: bigint('target_owner_id', { mode: 'bigint' }).notNull(),
-    fetchedAt: timestamp('fetched_at', { withTimezone: true, mode: 'date' }),
-    authorName: varchar('author_name', { length: 200 }),
+    status: text('status', { enum: WEBMENTION_STATUSES }).notNull().default('pending'),
+    targetType: text('target_type').$type<'post' | 'page'>().notNull(),
+    targetOwnerId: integer('target_owner_id').notNull(),
+    fetchedAt: integer('fetched_at', { mode: 'timestamp_ms' }),
+    authorName: text('author_name'),
     title: text('title'),
     summary: text('summary'),
-    rawPayload: jsonb('raw_payload')
+    rawPayload: text('raw_payload', { mode: 'json' })
       .$type<{ source: string; target: string }>()
       .notNull()
-      .default(sql`'{}'::jsonb`),
-    moderatedAt: timestamp('moderated_at', { withTimezone: true, mode: 'date' }),
+      .$defaultFn(() => ({ source: '', target: '' })),
+    moderatedAt: integer('moderated_at', { mode: 'timestamp_ms' }),
   },
   (table) => [
     index('idx_webmention_status').on(table.status),
     index('idx_webmention_target').on(table.targetType, table.targetOwnerId),
+    check('webmention_status_chk', sql`${table.status} IN ('pending', 'approved', 'rejected')`),
   ],
 )

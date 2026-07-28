@@ -86,28 +86,28 @@ describe('images resource', () => {
     ;(serveCalendar as ReturnType<typeof vi.fn>).mockResolvedValue(
       new Response('cal', { headers: { 'Content-Type': 'image/png' } }),
     )
-    ;(findPublicPostMetaBySlug as ReturnType<typeof vi.fn>).mockResolvedValue(undefined)
-    ;(findPublicPageMetaBySlug as ReturnType<typeof vi.fn>).mockResolvedValue(undefined)
-    ;(findCategoryBySlug as ReturnType<typeof vi.fn>).mockResolvedValue(undefined)
+    ;(findPublicPostMetaBySlug as ReturnType<typeof vi.fn>).mockReturnValue(undefined)
+    ;(findPublicPageMetaBySlug as ReturnType<typeof vi.fn>).mockReturnValue(undefined)
+    ;(findCategoryBySlug as ReturnType<typeof vi.fn>).mockReturnValue(undefined)
     // Default: the domain reports "no avatar" — the redirect mapping tests
     // override per case.
     ;(serveAvatar as ReturnType<typeof vi.fn>).mockResolvedValue({ kind: 'redirect' })
   })
 
   it('renders an OG image for a post', async () => {
-    ;(findPublicPostMetaBySlug as ReturnType<typeof vi.fn>).mockResolvedValue({
+    ;(findPublicPostMetaBySlug as ReturnType<typeof vi.fn>).mockReturnValue({
       title: 'Post',
       summary: 'Summary',
       cover: 'cover.jpg',
       published: true,
-      publishedRevisionId: 1n,
+      publishedRevisionId: 1,
     })
     const res = await requestImages('http://localhost/images/og/post.png')
     expect(res.status).toBe(200)
   })
 
   it('renders an OG image for a page', async () => {
-    ;(findPublicPageMetaBySlug as ReturnType<typeof vi.fn>).mockResolvedValue({
+    ;(findPublicPageMetaBySlug as ReturnType<typeof vi.fn>).mockReturnValue({
       title: 'Page',
       summary: 'Page summary',
       cover: 'cover.jpg',
@@ -122,7 +122,7 @@ describe('images resource', () => {
   })
 
   it('renders an OG image for a category', async () => {
-    ;(findCategoryBySlug as ReturnType<typeof vi.fn>).mockResolvedValue({ name: 'Code', description: '', cover: '' })
+    ;(findCategoryBySlug as ReturnType<typeof vi.fn>).mockReturnValue({ name: 'Code', description: '', cover: '' })
     const res = await requestImages('http://localhost/images/og/cats/code.png')
     expect(res.status).toBe(200)
   })

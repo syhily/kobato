@@ -1,10 +1,8 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { redirect } from 'react-router'
 
 import type { AuditContext } from '@/server/domains/audit/types'
 import type { ListingPageLoaderData } from '@/server/http/loaders/listing'
+import type { Database } from '@/server/infra/db/database'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { livePostWhere } from '@/server/domains/posts/live-gate'
@@ -25,8 +23,7 @@ export interface SearchLoaderOptions {
   auditContext?: AuditContext
 }
 export async function searchLoader(
-  db: NodePgDatabase,
-  pool: Pool,
+  db: Database,
   { keyword, num, forceNoindex = true, auditContext }: SearchLoaderOptions,
 ): Promise<ListingPageLoaderData> {
   const listingNowIso = new Date().toISOString()

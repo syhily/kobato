@@ -1,20 +1,18 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
+
 import { clearAllTables } from '#/_helpers/integration-db'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { emptySession } from '#/_helpers/session'
 import { signUpInitialAdminWithSession } from '@/server/domains/auth/services/setup'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 describe('install snapshot debug', () => {
@@ -26,7 +24,7 @@ describe('install snapshot debug', () => {
     const session = emptySession()
     const request = new Request('http://localhost/admin/setup', { method: 'POST' })
 
-    const result = await signUpInitialAdminWithSession(db, pool, {
+    const result = await signUpInitialAdminWithSession(db, {
       title: 'My Blog',
       name: 'Admin',
       email: 'admin@example.com',

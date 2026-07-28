@@ -1,5 +1,4 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
+import type { Database } from '@/server/infra/db/database'
 import type { EntityType } from '@/server/infra/db/target'
 
 import { commentCountsByOwnerIds, metricsByOwnerIds } from '@/server/infra/db/operations/like'
@@ -19,7 +18,7 @@ export interface AdminListResult<Dto> {
 
 export interface ListForAdminOptions<
   Filters extends { limit?: number; offset?: number },
-  Row extends { id: bigint },
+  Row extends { id: number },
   Extras extends object,
   Dto,
 > {
@@ -28,14 +27,14 @@ export interface ListForAdminOptions<
   filters: Filters
   /** Applied when `filters.limit` is undefined. */
   defaultLimit: number
-  listRows: (db: NodePgDatabase, filters: Filters & { limit: number; offset: number }) => Promise<Row[]>
-  countRows: (db: NodePgDatabase, filters: Filters) => Promise<number>
+  listRows: (db: Database, filters: Filters & { limit: number; offset: number }) => Promise<Row[]>
+  countRows: (db: Database, filters: Filters) => Promise<number>
   /**
    * Domain-specific enrichment loaded in the same batch as the
    * metrics/comment reads (posts use it for tags + category names).
    * Keyed by row id; rows missing from the map get `undefined` extras.
    */
-  loadExtras?: (db: NodePgDatabase, rows: Row[]) => Promise<Map<bigint, Extras>>
+  loadExtras?: (db: Database, rows: Row[]) => Promise<Map<number, Extras>>
   toDto: (row: Row, engagement: AdminListEngagement, extras: Extras | undefined) => Dto
 }
 
@@ -48,10 +47,10 @@ export interface ListForAdminOptions<
  */
 export async function listForAdmin<
   Filters extends { limit?: number; offset?: number },
-  Row extends { id: bigint },
+  Row extends { id: number },
   Extras extends object = Record<string, never>,
   Dto = unknown,
->(db: NodePgDatabase, options: ListForAdminOptions<Filters, Row, Extras, Dto>): Promise<AdminListResult<Dto>> {
+>(db: Database, options: ListForAdminOptions<Filters, Row, Extras, Dto>): Promise<AdminListResult<Dto>> {
   const offset = options.filters.offset ?? 0
   const limit = options.filters.limit ?? options.defaultLimit
   const [rows, total] = await Promise.all([
@@ -69,7 +68,7 @@ export async function listForAdmin<
   const [metrics, countRows, extras] = await Promise.all([
     metricsByOwnerIds(db, options.entityType, ownerIds),
     commentCountsByOwnerIds(db, options.entityType, ownerIds),
-    options.loadExtras?.(db, rows) ?? Promise.resolve(new Map<bigint, Extras>()),
+    options.loadExtras?.(db, rows) ?? Promise.resolve(new Map<number, Extras>()),
   ])
   const publicIdByOwner = new Map(metrics.map((m) => [String(m.ownerId), m.publicId]))
   const countByOwner = new Map(countRows.map((r) => [String(r.ownerId), r.count]))

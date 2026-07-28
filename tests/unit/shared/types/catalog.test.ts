@@ -55,7 +55,7 @@ describe('shared/types/catalog — toClientPost', () => {
       ...basePost,
       body: [],
       imageSources: ['/a.png'],
-      publishedRevisionId: 5n,
+      publishedRevisionId: 5,
     }
     const client = toClientPost(post)
     expect(client).toEqual(basePost)

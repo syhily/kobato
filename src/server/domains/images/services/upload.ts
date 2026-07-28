@@ -1,7 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { ORPCError } from '@orpc/server'
 
+import type { Database } from '@/server/infra/db/database'
 import type { ImageRow } from '@/server/infra/db/types'
 import type { AdminImageDto } from '@/shared/contracts/images'
 
@@ -23,7 +22,7 @@ export interface UploadImageInputs {
   kind: UploadKind
   buffer: Buffer
   note?: string | null
-  uploader: { id: bigint; name: string } | null
+  uploader: { id: number; name: string } | null
   maxBytes: number
   jpegQuality: number
 }
@@ -106,7 +105,7 @@ function isValidImageBuffer(buffer: Buffer): boolean {
   return mime !== null && ALLOWED_IMAGE_MIME_TYPES.has(mime)
 }
 
-export async function uploadImage(db: NodePgDatabase, input: UploadImageInputs): Promise<AdminImageDto> {
+export async function uploadImage(db: Database, input: UploadImageInputs): Promise<AdminImageDto> {
   if (input.buffer.byteLength > input.maxBytes) {
     throw new DomainError('BAD_REQUEST', `图片体积超过上限（${formatBytes(input.maxBytes)}）`)
   }

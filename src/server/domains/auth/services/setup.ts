@@ -1,17 +1,15 @@
 // Initial-setup flow — create the first admin and seed every settings
 // section in one transaction, then establish the session.
 
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import type { AuthFlowResult } from '@/server/domains/auth/services/shared'
 import type { BlogSession } from '@/server/domains/auth/session-storage'
+import type { Database } from '@/server/infra/db/database'
 
 import { establishLoginSession } from '@/server/domains/auth/primitives'
 import { invalidateSetupToken } from '@/server/domains/auth/setup-token'
 import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { buildInstallSectionRows, seedInstallSections } from '@/server/domains/settings/services/install-flow'
-import { hasAdmin, insertAdmin } from '@/server/infra/db/operations/user'
+import { hasAdmin, hashAdminPassword, insertAdmin } from '@/server/infra/db/operations/user'
 import { DomainError } from '@/server/infra/http/errors'
 import { idFromString } from '@/shared/utils/id'
 
@@ -23,8 +21,7 @@ export interface SignUpAdminSeed {
 }
 
 export async function signUpInitialAdminWithSession(
-  db: NodePgDatabase,
-  pool: Pool,
+  db: Database,
   {
     title,
     name,
@@ -58,13 +55,17 @@ export async function signUpInitialAdminWithSession(
     }
   }
 
-  const admin = await db.transaction(async (tx) => {
-    const users = await insertAdmin(tx, name, email, password)
+  // bcrypt stays OUTSIDE the transaction (async work); the transaction
+  // itself is sync (node:sqlite — an async callback would commit before
+  // its awaited work ran).
+  const hashedPassword = await hashAdminPassword(password)
+  const admin = db.transaction((tx) => {
+    const users = insertAdmin(tx, name, email, hashedPassword)
     const admin = users[0]
     if (!admin) {
       throw new DomainError('INTERNAL', '创建管理员账号失败')
     }
-    await seedInstallSections(tx, seedRows.rows, idFromString(admin.id))
+    seedInstallSections(tx, seedRows.rows, idFromString(admin.id))
     return admin
   })
 

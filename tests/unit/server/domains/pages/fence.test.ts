@@ -5,27 +5,27 @@ import { validateSlugFence, CatalogConsistencyError, type CatalogEntry } from '@
 describe('catalog slug fence', () => {
   it('accepts disjoint page and post slug sets', () => {
     const entries: CatalogEntry[] = [
-      { type: 'post', id: 1n, slug: 'hello' },
-      { type: 'post', id: 2n, slug: 'world' },
-      { type: 'page', id: 3n, slug: 'about' },
-      { type: 'page', id: 4n, slug: 'links' },
+      { type: 'post', id: 1, slug: 'hello' },
+      { type: 'post', id: 2, slug: 'world' },
+      { type: 'page', id: 3, slug: 'about' },
+      { type: 'page', id: 4, slug: 'links' },
     ]
     expect(() => validateSlugFence(entries)).not.toThrow()
   })
 
   it('throws when a page slug collides with a post slug', () => {
     const entries: CatalogEntry[] = [
-      { type: 'post', id: 1n, slug: 'about' },
-      { type: 'page', id: 2n, slug: 'about' },
+      { type: 'post', id: 1, slug: 'about' },
+      { type: 'page', id: 2, slug: 'about' },
     ]
     expect(() => validateSlugFence(entries)).toThrow(CatalogConsistencyError)
   })
 
   it('CatalogConsistencyError carries the conflicting entries', () => {
     const entries: CatalogEntry[] = [
-      { type: 'post', id: 1n, slug: 'dup' },
-      { type: 'page', id: 2n, slug: 'dup' },
-      { type: 'post', id: 3n, slug: 'safe' },
+      { type: 'post', id: 1, slug: 'dup' },
+      { type: 'page', id: 2, slug: 'dup' },
+      { type: 'post', id: 3, slug: 'safe' },
     ]
     try {
       validateSlugFence(entries)
@@ -41,10 +41,10 @@ describe('catalog slug fence', () => {
 
   it('accumulates multiple conflicts', () => {
     const entries: CatalogEntry[] = [
-      { type: 'post', id: 1n, slug: 'a' },
-      { type: 'page', id: 2n, slug: 'a' },
-      { type: 'post', id: 3n, slug: 'b' },
-      { type: 'page', id: 4n, slug: 'b' },
+      { type: 'post', id: 1, slug: 'a' },
+      { type: 'page', id: 2, slug: 'a' },
+      { type: 'post', id: 3, slug: 'b' },
+      { type: 'page', id: 4, slug: 'b' },
     ]
     try {
       validateSlugFence(entries)

@@ -1,6 +1,5 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import type { ViewerIdentity } from '@/server/domains/auth/rbac'
+import type { Database } from '@/server/infra/db/database'
 import type { AdminMusicDto } from '@/shared/contracts/music'
 
 import { toAdminMusicDto } from '@/server/domains/music/projection'
@@ -8,7 +7,7 @@ import { findAdminMusicRowById, findMusicById, updateMusic } from '@/server/infr
 import { DomainError, ErrorMessages } from '@/server/infra/http/errors'
 
 export interface UpdateMusicMetadataInputs {
-  id: bigint
+  id: number
   name: string
   artist: string[]
   album: string
@@ -26,7 +25,7 @@ export interface UpdateMusicMetadataInputs {
  * projection unpacks it again on read.
  */
 export async function updateMusicMetadata(
-  db: NodePgDatabase,
+  db: Database,
   input: UpdateMusicMetadataInputs,
   viewer?: ViewerIdentity,
 ): Promise<AdminMusicDto> {

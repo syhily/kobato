@@ -1,28 +1,20 @@
 import type { MigrationMeta } from 'drizzle-orm/migrator'
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import { sql } from 'drizzle-orm'
 import { formatToMillis } from 'drizzle-orm/migrator.utils'
-import { drizzle } from 'drizzle-orm/node-postgres'
-import { migrate } from 'drizzle-orm/node-postgres/migrator'
-import { migrate as migratePg } from 'drizzle-orm/pg-core/async/session'
+import { migrate } from 'drizzle-orm/node-sqlite/migrator'
+import { migrateSync } from 'drizzle-orm/sqlite-core/async/session'
 import { createHash } from 'node:crypto'
 
-import { serverConfig } from '@/server/infra/config'
+import type { Database } from '@/server/infra/db/database'
+
 import { getLogger } from '@/server/infra/logger'
 import { getEmbeddedAsset, isSea, listEmbeddedAssetKeys } from '@/server/infra/sea'
 import { requireEmbeddedAssetText } from '@/server/infra/sea-asset'
 import { SEA_DRIZZLE_ASSET_PREFIX } from '@/shared/sea/assets'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const MIGRATIONS_FOLDER = './drizzle'
-const MIGRATIONS_SCHEMA = 'drizzle'
 const MIGRATIONS_TABLE = '__drizzle_migrations'
-
-// Advisory-lock IDs for Kobato migrations.
-// Any two distinct integers work; these are arbitrary constants chosen
-// to avoid collision with other applications using the same Postgres.
-const KOBATO_LOCK_ID = 1_743_298_651
-const DRIZZLE_LOCK_ID = 982_347_561
 
 const log = getLogger('db:migrations')
 
@@ -51,10 +43,9 @@ const SEA_MIGRATION_ASSETS: EmbeddedMigrationAssets = {
  * discovered by their `migration.sql` key, sorted with `localeCompare`,
  * the SQL is split on `--> statement-breakpoint`, the hash is the sha256
  * of the full file text, and `folderMillis` comes from the folder's
- * 14-digit timestamp prefix. The returned list is executed by drizzle's
- * own `migrate` (`pg-core/async/session`) — the very function the
- * node-postgres migrator delegates to — so table creation, schema
- * upgrades, statement splitting, transaction behavior, and
+ * 14-digit timestamp prefix. Engine-agnostic — the returned list is
+ * executed by drizzle's own `migrateSync` (`sqlite-core/async/session`)
+ * so statement splitting, transaction behavior, and
  * `__drizzle_migrations` inserts are identical to the fs path.
  */
 function readEmbeddedMigrationFiles(assets: EmbeddedMigrationAssets): MigrationMeta[] {
@@ -77,31 +68,27 @@ function readEmbeddedMigrationFiles(assets: EmbeddedMigrationAssets): MigrationM
 }
 
 /**
- * Run the embedded-asset migration path on an open connection. Exported
- * for tests (folder/embedded equivalence); production code enters
- * through `migrateDatabase`.
+ * Run the embedded-asset migration path on an open handle. Exported for
+ * tests (folder/embedded equivalence); production code enters through
+ * `migrateDatabase`.
  */
-export async function runEmbeddedMigrations(
-  db: NodePgDatabase,
-  assets: EmbeddedMigrationAssets = SEA_MIGRATION_ASSETS,
-): Promise<void> {
-  await migratePg(readEmbeddedMigrationFiles(assets), db, {
-    migrationsFolder: MIGRATIONS_FOLDER,
-    migrationsSchema: MIGRATIONS_SCHEMA,
-    migrationsTable: MIGRATIONS_TABLE,
-  })
+export function runEmbeddedMigrations(db: Database, assets: EmbeddedMigrationAssets = SEA_MIGRATION_ASSETS): void {
+  // `session` is an @internal constructor param on SQLiteAsyncDatabase —
+  // not a public property on the type — but drizzle's own node-sqlite
+  // migrator reaches it the same way at runtime
+  // (node_modules/drizzle-orm/node-sqlite/migrator.js).
+  const session = unsafeCast<{ session: Parameters<typeof migrateSync>[1] }>(db).session
+  migrateSync(readEmbeddedMigrationFiles(assets), session, { migrationsTable: MIGRATIONS_TABLE })
 }
 
-export async function migrateDatabase(): Promise<void> {
-  const migrationDb = drizzle({
-    connection: {
-      connectionString: serverConfig.database.url,
-      max: 1,
-    },
-  })
-  const client = migrationDb.$client as { end: () => Promise<void> }
-  let locked = false
-
+/**
+ * Migrate the database behind an open handle. Runs on the caller's
+ * connection (the single-writer model makes a second connection
+ * pointless — and wrong for `:memory:`, where a new connection would see
+ * a different, empty database). No advisory locks: migrations run at
+ * boot before the server accepts traffic, inside one transaction.
+ */
+export async function migrateDatabase(db: Database): Promise<void> {
   const embedded = isSea()
   log.info(
     'Running database migrations',
@@ -109,16 +96,13 @@ export async function migrateDatabase(): Promise<void> {
   )
 
   try {
-    await migrationDb.execute(sql`SELECT pg_advisory_lock(${KOBATO_LOCK_ID}, ${DRIZZLE_LOCK_ID})`)
-    locked = true
     if (embedded) {
       // Single-executable build: the `./drizzle` tree is embedded in the
       // binary (`drizzle/<folder>/migration.sql` assets), not on disk.
-      await runEmbeddedMigrations(migrationDb)
+      runEmbeddedMigrations(db)
     } else {
-      await migrate(migrationDb, {
+      migrate(db, {
         migrationsFolder: MIGRATIONS_FOLDER,
-        migrationsSchema: MIGRATIONS_SCHEMA,
         migrationsTable: MIGRATIONS_TABLE,
       })
     }
@@ -128,16 +112,5 @@ export async function migrateDatabase(): Promise<void> {
       error: error instanceof Error ? error.message : String(error),
     })
     throw error
-  } finally {
-    if (locked) {
-      try {
-        await migrationDb.execute(sql`SELECT pg_advisory_unlock(${KOBATO_LOCK_ID}, ${DRIZZLE_LOCK_ID})`)
-      } catch (error) {
-        log.warn('Failed to release database migration advisory lock', {
-          error: error instanceof Error ? error.message : String(error),
-        })
-      }
-    }
-    await client.end()
   }
 }

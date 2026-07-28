@@ -12,7 +12,7 @@ import { useCommentsActions } from '@/ui/public/comments/comments-context'
 import { LazyCommentBodyEditor } from '@/ui/public/comments/LazyCommentBodyEditor'
 
 interface InlineEditFormProps {
-  commentId: bigint | string
+  commentId: number | string
   onCancel: () => void
   onSaved: (comment: CommentItemType) => void
 }

@@ -1,7 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { asc, eq, inArray, or, sql, type SQL } from 'drizzle-orm'
 
+import type { Database } from '@/server/infra/db/database'
 import type { CategoryRow, NewCategory } from '@/server/infra/db/types'
 
 import { ilikeEscape } from '@/server/infra/db/ilike-escape'
@@ -11,7 +10,7 @@ import { category } from '@/server/infra/db/schema/taxonomy'
 // Public listing reads. Stable `(sort_order ASC, id ASC)` order so the
 // `/categories` listing has a deterministic admin-controlled ranking
 // that does not change as new rows are inserted.
-export async function listPublicCategoryRows(db: NodePgDatabase): Promise<CategoryRow[]> {
+export async function listPublicCategoryRows(db: Database): Promise<CategoryRow[]> {
   return db.select().from(category).orderBy(asc(category.sortOrder), asc(category.id))
 }
 
@@ -26,7 +25,7 @@ export interface AdminCategoriesListFilters {
 // the search box on the toolbar finds rows by either the Chinese name
 // or the URL slug.
 export async function listAdminCategoryRows(
-  db: NodePgDatabase,
+  db: Database,
   filters: AdminCategoriesListFilters = {},
 ): Promise<CategoryRow[]> {
   const conditions: SQL[] = []
@@ -48,12 +47,12 @@ export async function listAdminCategoryRows(
     : query.orderBy(asc(category.sortOrder), asc(category.id))
 }
 
-export async function findCategoryById(db: NodePgDatabase, id: bigint): Promise<CategoryRow | null> {
+export async function findCategoryById(db: Database, id: number): Promise<CategoryRow | null> {
   const rows = await db.select().from(category).where(eq(category.id, id)).limit(1)
   return rows[0] ?? null
 }
 
-export async function findCategoryByName(db: NodePgDatabase, name: string): Promise<CategoryRow | null> {
+export async function findCategoryByName(db: Database, name: string): Promise<CategoryRow | null> {
   const rows = await db.select().from(category).where(eq(category.name, name)).limit(1)
   return rows[0] ?? null
 }
@@ -62,8 +61,8 @@ export async function findCategoryByName(db: NodePgDatabase, name: string): Prom
 // `category_id`, listings project the display NAME onto the wire DTO.
 // Mount this in `hydratePostList`-style pipelines (next to the tag-name
 // batch) rather than hand-joining per query.
-export async function findCategoryNamesByIds(db: NodePgDatabase, ids: readonly bigint[]): Promise<Map<bigint, string>> {
-  const map = new Map<bigint, string>()
+export async function findCategoryNamesByIds(db: Database, ids: readonly number[]): Promise<Map<number, string>> {
+  const map = new Map<number, string>()
   if (ids.length === 0) {
     return map
   }
@@ -78,7 +77,7 @@ export async function findCategoryNamesByIds(db: NodePgDatabase, ids: readonly b
   return map
 }
 
-export async function insertCategory(db: NodePgDatabase, values: NewCategory): Promise<CategoryRow> {
+export async function insertCategory(db: Database, values: NewCategory): Promise<CategoryRow> {
   const now = new Date()
   const rows = await db
     .insert(category)
@@ -88,8 +87,8 @@ export async function insertCategory(db: NodePgDatabase, values: NewCategory): P
 }
 
 export async function updateCategory(
-  db: NodePgDatabase,
-  id: bigint,
+  db: Database,
+  id: number,
   values: Partial<NewCategory>,
 ): Promise<CategoryRow | null> {
   const rows = await db
@@ -100,7 +99,7 @@ export async function updateCategory(
   return rows[0] ?? null
 }
 
-export async function deleteCategory(db: NodePgDatabase, id: bigint): Promise<boolean> {
+export async function deleteCategory(db: Database, id: number): Promise<boolean> {
   const result = await db.delete(category).where(eq(category.id, id)).returning({ id: category.id })
   return result.length > 0
 }
@@ -114,7 +113,7 @@ export async function deleteCategory(db: NodePgDatabase, id: bigint): Promise<bo
 // Returns the freshly-ordered rows in the same order as `orderedIds`,
 // so callers don't need a follow-up `select` round-trip to project the
 // updated DTOs back to the admin client.
-export async function reorderCategories(db: NodePgDatabase, orderedIds: readonly bigint[]): Promise<CategoryRow[]> {
+export async function reorderCategories(db: Database, orderedIds: readonly number[]): Promise<CategoryRow[]> {
   if (orderedIds.length === 0) {
     return []
   }
@@ -123,18 +122,19 @@ export async function reorderCategories(db: NodePgDatabase, orderedIds: readonly
     orderedIds.map((id, i) => sql`WHEN ${category.id} = ${id} THEN ${i}`),
     sql` `,
   )
-  return db.transaction(async (tx) => {
-    const rows = await tx
+  return db.transaction((tx) => {
+    const rows = tx
       .update(category)
-      .set({ sortOrder: sql`CASE ${whens} END::integer`, updatedAt: now })
+      .set({ sortOrder: sql`CASE ${whens} END`, updatedAt: now })
       .where(inArray(category.id, [...orderedIds]))
       .returning()
+      .all()
     const byId = new Map(rows.map((r) => [r.id, r]))
     return orderedIds.map((id) => byId.get(id)!).filter(Boolean)
   })
 }
 
-export async function findCategoriesByNames(db: NodePgDatabase, names: readonly string[]): Promise<CategoryRow[]> {
+export async function findCategoriesByNames(db: Database, names: readonly string[]): Promise<CategoryRow[]> {
   if (names.length === 0) {
     return []
   }

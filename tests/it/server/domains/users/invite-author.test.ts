@@ -1,11 +1,10 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
+
 import { clearAllTables } from '#/_helpers/integration-db'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { user, verification } from '@/server/infra/db/schema/user'
 
 // `sendAuthorInvite` is the external side effect (SMTP/HTTP call). In
@@ -38,12 +37,11 @@ vi.mock('@/server/domains/auth/verification-tokens', () => ({
 // mocked bindings propagate through its import graph.
 const { inviteAuthorWithRollback } = await import('@/server/domains/users/services/admin')
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {
@@ -67,7 +65,7 @@ async function findUserRow(email: string) {
   return rows[0] ?? null
 }
 
-async function countSetupTokensFor(userId: bigint): Promise<number> {
+async function countSetupTokensFor(userId: number): Promise<number> {
   const rows = await db.select({ id: verification.id }).from(verification).where(eq(verification.userId, userId))
   return rows.length
 }
@@ -152,7 +150,9 @@ describe('integration / inviteAuthorWithRollback', () => {
     // Make `issueSetupToken` throw inside the transaction. The rollback
     // must discard the `insertAuthor` write so no orphaned user row is
     // left behind, and `sendAuthorInvite` must never run.
-    issueSetupToken.mockRejectedValueOnce(new Error('token store down'))
+    issueSetupToken.mockImplementationOnce(() => {
+      throw new Error('token store down')
+    })
 
     await expect(
       inviteAuthorWithRollback(db, 'Ghost Author', 'ghost@example.com', 'https://blog.example.com', 'Admin'),

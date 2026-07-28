@@ -1,5 +1,4 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
+import type { Database } from '@/server/infra/db/database'
 import type { NewsletterSubscriberRow } from '@/server/infra/db/types'
 
 import { sendConfirmSubscription } from '@/server/domains/newsletter/email'
@@ -51,7 +50,7 @@ export function buildConfirmUrl(token: string): string {
   return `${website}/newsletter/confirm?token=${encodeURIComponent(token)}`
 }
 
-export function buildUnsubscribeUrl(id: bigint): string {
+export function buildUnsubscribeUrl(id: number): string {
   const { website } = requireBlogSettingsSection('siteIdentity')
   return `${website}/newsletter/unsubscribe?id=${id.toString()}&sig=${signUnsubscribeId(id)}`
 }
@@ -62,7 +61,7 @@ export function buildUnsubscribeUrl(id: bigint): string {
  * normalized email; an already-`confirmed` row is a silent no-op so the
  * endpoint never reveals subscription state to a third party.
  */
-export async function subscribe(db: NodePgDatabase, rawEmail: string): Promise<void> {
+export async function subscribe(db: Database, rawEmail: string): Promise<void> {
   requireNewsletterEnabled()
   const email = normalizeEmail(rawEmail)
   const existing = await findSubscriberByEmail(db, email)
@@ -103,7 +102,7 @@ export async function subscribe(db: NodePgDatabase, rawEmail: string): Promise<v
   }
 }
 
-export async function confirm(db: NodePgDatabase, rawToken: string): Promise<NewsletterSubscriberRow> {
+export async function confirm(db: Database, rawToken: string): Promise<NewsletterSubscriberRow> {
   requireNewsletterEnabled()
   if (!TOKEN_LEN_RE.test(rawToken)) {
     throw new DomainError('BAD_REQUEST', INVALID_CONFIRM_MESSAGE)
@@ -133,7 +132,7 @@ export async function confirm(db: NodePgDatabase, rawToken: string): Promise<New
  * already-unsubscribed rows both resolve as success (never 404 on a
  * re-click); only a forged signature is rejected.
  */
-export async function unsubscribe(db: NodePgDatabase, id: bigint, signature: string): Promise<void> {
+export async function unsubscribe(db: Database, id: number, signature: string): Promise<void> {
   requireNewsletterEnabled()
   const row = await findSubscriberById(db, id)
   if (row === null) {

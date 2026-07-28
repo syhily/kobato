@@ -1,6 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { describe, expect, it } from 'vitest'
+
+import type { Database } from '@/server/infra/db/database'
 
 type ResultRow = Record<string, unknown>
 
@@ -33,13 +33,13 @@ function createMockDb(rows: ResultRow[] = []) {
     },
   )
 
-  return dbProxy as unknown as NodePgDatabase
+  return dbProxy as unknown as Database
 }
 
 describe('infra/db/operations/music — listAdminMusicRows', () => {
   it('returns rows from the builder', async () => {
     const { listAdminMusicRows } = await import('@/server/infra/db/operations/music')
-    expect(await listAdminMusicRows(createMockDb([{ id: 1n }]), {})).toHaveLength(1)
+    expect(await listAdminMusicRows(createMockDb([{ id: 1 }]), {})).toHaveLength(1)
   })
 
   it('applies limit and offset', async () => {
@@ -80,12 +80,12 @@ describe('infra/db/operations/music — listAdminMusicRows', () => {
 describe('infra/db/operations/music — findAdminMusicRowById', () => {
   it('returns the first matching row', async () => {
     const { findAdminMusicRowById } = await import('@/server/infra/db/operations/music')
-    expect(await findAdminMusicRowById(createMockDb([{ id: 5n }]), 5n)).toEqual({ id: 5n })
+    expect(await findAdminMusicRowById(createMockDb([{ id: 5 }]), 5)).toEqual({ id: 5 })
   })
 
   it('returns null when no rows', async () => {
     const { findAdminMusicRowById } = await import('@/server/infra/db/operations/music')
-    expect(await findAdminMusicRowById(createMockDb([]), 5n)).toBeNull()
+    expect(await findAdminMusicRowById(createMockDb([]), 5)).toBeNull()
   })
 })
 
@@ -109,12 +109,12 @@ describe('infra/db/operations/music — countAdminMusic', () => {
 describe('infra/db/operations/music — single-row lookups', () => {
   it('findMusicById returns the row when present', async () => {
     const { findMusicById } = await import('@/server/infra/db/operations/music')
-    expect(await findMusicById(createMockDb([{ id: 1n }]), 1n)).toEqual({ id: 1n })
+    expect(await findMusicById(createMockDb([{ id: 1 }]), 1)).toEqual({ id: 1 })
   })
 
   it('findMusicById returns null when absent', async () => {
     const { findMusicById } = await import('@/server/infra/db/operations/music')
-    expect(await findMusicById(createMockDb([]), 1n)).toBeNull()
+    expect(await findMusicById(createMockDb([]), 1)).toBeNull()
   })
 
   it('findMusicByPlayerId returns the row when present', async () => {
@@ -129,7 +129,7 @@ describe('infra/db/operations/music — single-row lookups', () => {
 
   it('findMusicBySourceAndId returns the row when present', async () => {
     const { findMusicBySourceAndId } = await import('@/server/infra/db/operations/music')
-    expect(await findMusicBySourceAndId(createMockDb([{ id: 1n }]), 'netease', 'abc')).toEqual({ id: 1n })
+    expect(await findMusicBySourceAndId(createMockDb([{ id: 1 }]), 'netease', 'abc')).toEqual({ id: 1 })
   })
 
   it('findMusicBySourceAndId returns null when absent', async () => {
@@ -141,43 +141,43 @@ describe('infra/db/operations/music — single-row lookups', () => {
 describe('infra/db/operations/music — findMusicByPlayerIds', () => {
   it('short-circuits on empty input', async () => {
     const { findMusicByPlayerIds } = await import('@/server/infra/db/operations/music')
-    expect(await findMusicByPlayerIds(createMockDb([{ id: 1n }]), [])).toEqual([])
+    expect(await findMusicByPlayerIds(createMockDb([{ id: 1 }]), [])).toEqual([])
   })
 
   it('queries for a single playerId', async () => {
     const { findMusicByPlayerIds } = await import('@/server/infra/db/operations/music')
-    expect(await findMusicByPlayerIds(createMockDb([{ id: 1n }]), ['p1'])).toEqual([{ id: 1n }])
+    expect(await findMusicByPlayerIds(createMockDb([{ id: 1 }]), ['p1'])).toEqual([{ id: 1 }])
   })
 
   it('queries for multiple playerIds', async () => {
     const { findMusicByPlayerIds } = await import('@/server/infra/db/operations/music')
-    expect(await findMusicByPlayerIds(createMockDb([{ id: 1n }]), ['p1', 'p2'])).toEqual([{ id: 1n }])
+    expect(await findMusicByPlayerIds(createMockDb([{ id: 1 }]), ['p1', 'p2'])).toEqual([{ id: 1 }])
   })
 })
 
 describe('infra/db/operations/music — insertMusic / updateMusic / softDeleteMusic', () => {
   it('inserts and returns the row', async () => {
     const { insertMusic } = await import('@/server/infra/db/operations/music')
-    expect(await insertMusic(createMockDb([{ id: 1n }]), { playerId: 'p' } as never)).toEqual({ id: 1n })
+    expect(await insertMusic(createMockDb([{ id: 1 }]), { playerId: 'p' } as never)).toEqual({ id: 1 })
   })
 
   it('updateMusic returns the row when present', async () => {
     const { updateMusic } = await import('@/server/infra/db/operations/music')
-    expect(await updateMusic(createMockDb([{ id: 1n }]), 1n, { name: 'x' } as never)).toEqual({ id: 1n })
+    expect(await updateMusic(createMockDb([{ id: 1 }]), 1, { name: 'x' } as never)).toEqual({ id: 1 })
   })
 
   it('updateMusic returns null when absent', async () => {
     const { updateMusic } = await import('@/server/infra/db/operations/music')
-    expect(await updateMusic(createMockDb([]), 1n, { name: 'x' } as never)).toBeNull()
+    expect(await updateMusic(createMockDb([]), 1, { name: 'x' } as never)).toBeNull()
   })
 
   it('softDeleteMusic returns the row when present', async () => {
     const { softDeleteMusic } = await import('@/server/infra/db/operations/music')
-    expect(await softDeleteMusic(createMockDb([{ id: 1n }]), 1n)).toEqual({ id: 1n })
+    expect(await softDeleteMusic(createMockDb([{ id: 1 }]), 1)).toEqual({ id: 1 })
   })
 
   it('softDeleteMusic returns null when absent', async () => {
     const { softDeleteMusic } = await import('@/server/infra/db/operations/music')
-    expect(await softDeleteMusic(createMockDb([]), 1n)).toBeNull()
+    expect(await softDeleteMusic(createMockDb([]), 1)).toBeNull()
   })
 })

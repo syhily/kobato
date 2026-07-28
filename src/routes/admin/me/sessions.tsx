@@ -4,6 +4,7 @@ import { requireRole } from '@/server/domains/auth/rbac'
 import { listSessionsByUser } from '@/server/domains/auth/services/sessions'
 import { getRequestContext } from '@/server/http/request-context'
 import { titleMeta } from '@/shared/seo/title-meta'
+import { idFromString } from '@/shared/utils/id'
 import {
   DEFAULT_MY_SORT,
   MY_SESSION_SORT_OPTIONS,
@@ -39,7 +40,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     MY_SESSION_SORT_OPTIONS,
     DEFAULT_MY_SORT,
   )
-  const userId = BigInt(ctx.user.id)
+  const userId = idFromString(ctx.user.id)
   const sessions = await listSessionsByUser(rc.db, userId)
   const sorted = [...sessions].sort((a, b) => {
     let cmp = 0

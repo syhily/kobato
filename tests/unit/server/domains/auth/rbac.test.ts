@@ -61,22 +61,22 @@ describe('server/domains/auth/rbac — requireRole', () => {
 
 describe('server/domains/auth/rbac — ownerOf family', () => {
   it('isPostOwner matches the authorId column', () => {
-    expect(isPostOwner(viewer('author', '5'), { authorId: 5n })).toBe(true)
-    expect(isPostOwner(viewer('author', '5'), { authorId: 6n })).toBe(false)
+    expect(isPostOwner(viewer('author', '5'), { authorId: 5 })).toBe(true)
+    expect(isPostOwner(viewer('author', '5'), { authorId: 6 })).toBe(false)
   })
 
   it('isImageOwner matches the uploaderId column', () => {
-    expect(isImageOwner(viewer('author', '5'), { uploaderId: 5n })).toBe(true)
+    expect(isImageOwner(viewer('author', '5'), { uploaderId: 5 })).toBe(true)
     expect(isImageOwner(viewer('author', '5'), { uploaderId: null })).toBe(false)
   })
 
   it('isMusicOwner matches the uploaderId column', () => {
-    expect(isMusicOwner(viewer('author', '5'), { uploaderId: 5n })).toBe(true)
+    expect(isMusicOwner(viewer('author', '5'), { uploaderId: 5 })).toBe(true)
   })
 
   it('isCommentOwner matches the userId column', () => {
-    expect(isCommentOwner(viewer('visitor', '5'), { userId: 5n })).toBe(true)
-    expect(isCommentOwner(viewer('visitor', '5'), { userId: 6n })).toBe(false)
+    expect(isCommentOwner(viewer('visitor', '5'), { userId: 5 })).toBe(true)
+    expect(isCommentOwner(viewer('visitor', '5'), { userId: 6 })).toBe(false)
   })
 
   it('treats null ownerId as never the viewer', () => {
@@ -94,21 +94,21 @@ describe('server/domains/auth/rbac — isAdmin', () => {
 
 describe('server/domains/auth/rbac — canEditX family (admin or owner)', () => {
   it('canEditPost lets admin act on anyone', () => {
-    expect(canEditPost(viewer('admin', '1'), { authorId: 99n })).toBe(true)
+    expect(canEditPost(viewer('admin', '1'), { authorId: 99 })).toBe(true)
   })
 
   it('canEditPost lets the author act on their own row', () => {
-    expect(canEditPost(viewer('author', '5'), { authorId: 5n })).toBe(true)
+    expect(canEditPost(viewer('author', '5'), { authorId: 5 })).toBe(true)
   })
 
   it('canEditPost blocks other authors', () => {
-    expect(canEditPost(viewer('author', '5'), { authorId: 6n })).toBe(false)
+    expect(canEditPost(viewer('author', '5'), { authorId: 6 })).toBe(false)
   })
 
   it('canEditImage and canEditMusic behave symmetrically', () => {
-    expect(canEditImage(viewer('admin'), { uploaderId: 7n })).toBe(true)
-    expect(canEditMusic(viewer('author', '7'), { uploaderId: 7n })).toBe(true)
-    expect(canEditImage(viewer('visitor', '7'), { uploaderId: 7n })).toBe(true)
-    expect(canEditMusic(viewer('visitor', '7'), { uploaderId: 8n })).toBe(false)
+    expect(canEditImage(viewer('admin'), { uploaderId: 7 })).toBe(true)
+    expect(canEditMusic(viewer('author', '7'), { uploaderId: 7 })).toBe(true)
+    expect(canEditImage(viewer('visitor', '7'), { uploaderId: 7 })).toBe(true)
+    expect(canEditMusic(viewer('visitor', '7'), { uploaderId: 8 })).toBe(false)
   })
 })

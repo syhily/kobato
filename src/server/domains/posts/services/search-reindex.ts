@@ -1,6 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { count, inArray } from 'drizzle-orm'
+
+import type { Database } from '@/server/infra/db/database'
 
 import { livePostWhere } from '@/server/domains/posts/live-gate'
 import { indexPost } from '@/server/domains/posts/services/search-index'
@@ -29,10 +29,7 @@ export interface ReindexBatchResult {
  * When `batchSize` is omitted the entire set is processed in one call.
  * Returns `nextOffset` so callers can drive pagination until it is null.
  */
-export async function reindexSearchBatch(
-  db: NodePgDatabase,
-  input: ReindexBatchInput = {},
-): Promise<ReindexBatchResult> {
+export async function reindexSearchBatch(db: Database, input: ReindexBatchInput = {}): Promise<ReindexBatchResult> {
   const useBatching = input.batchSize !== undefined || input.offset !== undefined
   const offset = input.offset ?? 0
   const batchSize = input.batchSize ?? 50

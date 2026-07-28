@@ -1,23 +1,21 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
+
 import { clearAllTables } from '#/_helpers/integration-db'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { consumeActiveLikeToken, existsActiveLikeToken, purgeOldLikeTokens } from '@/server/infra/db/operations/like'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { like } from '@/server/infra/db/schema/metric'
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
-const POST_A = { type: 'post' as const, ownerId: 1n }
+const POST_A = { type: 'post' as const, ownerId: 1 }
 
 beforeEach(async () => {
   await clearAllTables(db)
@@ -30,9 +28,9 @@ describe('db/query/like.server', () => {
     const after = new Date('2024-03-01T00:00:00.000Z')
 
     await db.insert(like).values([
-      { token: 'active', type: 'post', ownerId: 1n },
-      { token: 'old-deleted', type: 'post', ownerId: 1n, deletedAt: before },
-      { token: 'new-deleted', type: 'post', ownerId: 1n, deletedAt: after },
+      { token: 'active', type: 'post', ownerId: 1 },
+      { token: 'old-deleted', type: 'post', ownerId: 1, deletedAt: before },
+      { token: 'new-deleted', type: 'post', ownerId: 1, deletedAt: after },
     ])
 
     await purgeOldLikeTokens(db, cutoff)
@@ -46,8 +44,8 @@ describe('db/query/like.server', () => {
 
   it('checks like token existence against active rows only', async () => {
     await db.insert(like).values([
-      { token: 'tok-active', type: 'post', ownerId: 1n },
-      { token: 'tok-deleted', type: 'post', ownerId: 1n, deletedAt: new Date() },
+      { token: 'tok-active', type: 'post', ownerId: 1 },
+      { token: 'tok-deleted', type: 'post', ownerId: 1, deletedAt: new Date() },
     ])
 
     expect(await existsActiveLikeToken(db, POST_A, 'tok-active')).toBe(true)
@@ -57,8 +55,8 @@ describe('db/query/like.server', () => {
 
   it('atomically consumes active like tokens with one conditional update', async () => {
     await db.insert(like).values([
-      { token: 'tok-consume', type: 'post', ownerId: 1n },
-      { token: 'tok-deleted', type: 'post', ownerId: 1n, deletedAt: new Date() },
+      { token: 'tok-consume', type: 'post', ownerId: 1 },
+      { token: 'tok-deleted', type: 'post', ownerId: 1, deletedAt: new Date() },
     ])
 
     const result = await consumeActiveLikeToken(db, POST_A, 'tok-consume')

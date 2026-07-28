@@ -9,8 +9,8 @@ import type { Env } from '@/server/http/context'
 // findPageBySlug.
 
 const mocks = vi.hoisted(() => ({
-  findPublicPostMetaBySlug: vi.fn(async (): Promise<unknown> => null),
-  findPublicPageMetaBySlug: vi.fn(async (): Promise<unknown> => null),
+  findPublicPostMetaBySlug: vi.fn((): unknown => null),
+  findPublicPageMetaBySlug: vi.fn((): unknown => null),
   findPostBySlug: vi.fn(async (): Promise<unknown> => null),
   findPageBySlug: vi.fn(async (): Promise<unknown> => null),
   drawOpenGraph: vi.fn(() => Buffer.from('og-image')),
@@ -51,8 +51,8 @@ vi.mock('@/shared/config/getters', () => ({
 
 beforeEach(() => {
   vi.clearAllMocks()
-  mocks.findPublicPostMetaBySlug.mockImplementation(async () => null)
-  mocks.findPublicPageMetaBySlug.mockImplementation(async () => null)
+  mocks.findPublicPostMetaBySlug.mockImplementation(() => null)
+  mocks.findPublicPageMetaBySlug.mockImplementation(() => null)
 })
 
 // Static import on purpose: a lazy beforeEach import puts the first heavy
@@ -81,7 +81,7 @@ const publicPostMeta = {
   summary: 'World',
   cover: '/cover.png',
   published: true,
-  publishedRevisionId: 1n,
+  publishedRevisionId: 1,
   publishedAt: new Date('2020-01-01'),
   deletedAt: null,
 }
@@ -91,14 +91,14 @@ const publicPageMeta = {
   summary: 'About page',
   cover: '/about.png',
   published: true,
-  publishedRevisionId: 1n,
+  publishedRevisionId: 1,
   publishedAt: new Date('2020-01-01'),
   deletedAt: null,
 }
 
 describe('OG image slug resolution', () => {
   it('returns PNG when slug matches a public post', async () => {
-    mocks.findPublicPostMetaBySlug.mockImplementation(async () => publicPostMeta)
+    mocks.findPublicPostMetaBySlug.mockImplementation(() => publicPostMeta)
 
     const res = await requestOg('hello')
     expect(res.status).toBe(200)
@@ -106,7 +106,7 @@ describe('OG image slug resolution', () => {
   })
 
   it('returns PNG when slug matches a public page', async () => {
-    mocks.findPublicPageMetaBySlug.mockImplementation(async () => publicPageMeta)
+    mocks.findPublicPageMetaBySlug.mockImplementation(() => publicPageMeta)
 
     const res = await requestOg('about')
     expect(res.status).toBe(200)
@@ -119,7 +119,7 @@ describe('OG image slug resolution', () => {
   })
 
   it('falls back when post is not public', async () => {
-    mocks.findPublicPostMetaBySlug.mockImplementation(async () => ({
+    mocks.findPublicPostMetaBySlug.mockImplementation(() => ({
       ...publicPostMeta,
       published: false,
     }))
@@ -129,7 +129,7 @@ describe('OG image slug resolution', () => {
   })
 
   it('falls back when page is not catalog visible', async () => {
-    mocks.findPublicPageMetaBySlug.mockImplementation(async () => ({
+    mocks.findPublicPageMetaBySlug.mockImplementation(() => ({
       ...publicPageMeta,
       publishedAt: new Date('2099-01-01'),
     }))
@@ -139,8 +139,8 @@ describe('OG image slug resolution', () => {
   })
 
   it('uses post data when both post and page match (post wins)', async () => {
-    mocks.findPublicPostMetaBySlug.mockImplementation(async () => publicPostMeta)
-    mocks.findPublicPageMetaBySlug.mockImplementation(async () => publicPageMeta)
+    mocks.findPublicPostMetaBySlug.mockImplementation(() => publicPostMeta)
+    mocks.findPublicPageMetaBySlug.mockImplementation(() => publicPageMeta)
 
     const res = await requestOg('collision')
     expect(res.status).toBe(200)
@@ -156,7 +156,7 @@ describe('OG image slug resolution', () => {
   })
 
   it('does not call full findPostBySlug / findPageBySlug loaders', async () => {
-    mocks.findPublicPostMetaBySlug.mockImplementation(async () => publicPostMeta)
+    mocks.findPublicPostMetaBySlug.mockImplementation(() => publicPostMeta)
 
     await requestOg('hello')
     expect(mocks.findPostBySlug).not.toHaveBeenCalled()

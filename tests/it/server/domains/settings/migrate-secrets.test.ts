@@ -1,7 +1,7 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { createCipheriv, createHash, randomBytes } from 'node:crypto'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import type { Database } from '@/server/infra/db/database'
 
 const mockState = vi.hoisted(() => ({
   encryptionKey: 'test-encryption-key-32-chars-long!!',
@@ -34,7 +34,7 @@ vi.mock('@/server/infra/db/operations/setting', () => ({
   upsertSetting: mockState.upsertSetting,
 }))
 
-const db = {} as NodePgDatabase
+const db = {} as Database
 
 function encryptWithKey(plaintext: string, key: string): string {
   const derived = createHash('sha256').update(key).digest()
@@ -71,7 +71,7 @@ describe('migrateSecretsEncryption', () => {
   })
 
   it('encrypts plaintext secrets and upserts dirty scopes', async () => {
-    mockState.findSettingsByScopePrefix.mockResolvedValue([
+    mockState.findSettingsByScopePrefix.mockReturnValue([
       {
         scope: 'blog.mail',
         data: { mail: { apiKey: 'plain-mail-key' } },
@@ -107,7 +107,7 @@ describe('migrateSecretsEncryption', () => {
   it('skips already-encrypted secrets and verifies them', async () => {
     const ciphertext = encryptWithKey('already-encrypted', mockState.encryptionKey)
 
-    mockState.findSettingsByScopePrefix.mockResolvedValue([
+    mockState.findSettingsByScopePrefix.mockReturnValue([
       {
         scope: 'blog.mail',
         data: { mail: { apiKey: ciphertext } },
@@ -122,7 +122,7 @@ describe('migrateSecretsEncryption', () => {
   })
 
   it('skips empty strings and missing paths', async () => {
-    mockState.findSettingsByScopePrefix.mockResolvedValue([
+    mockState.findSettingsByScopePrefix.mockReturnValue([
       {
         scope: 'blog.mail',
         data: { mail: { apiKey: '' } },
@@ -142,7 +142,7 @@ describe('migrateSecretsEncryption', () => {
   it('throws when an encrypted secret cannot be decrypted with the current key', async () => {
     const wrongKeyCiphertext = encryptWithKey('secret-value', 'totally-different-key-32-chars!!')
 
-    mockState.findSettingsByScopePrefix.mockResolvedValue([
+    mockState.findSettingsByScopePrefix.mockReturnValue([
       {
         scope: 'blog.mail',
         data: { mail: { apiKey: wrongKeyCiphertext } },
@@ -159,7 +159,7 @@ describe('migrateSecretsEncryption', () => {
   })
 
   it('encrypts new values with the enc2: prefix (HKDF-derived key)', async () => {
-    mockState.findSettingsByScopePrefix.mockResolvedValue([
+    mockState.findSettingsByScopePrefix.mockReturnValue([
       {
         scope: 'blog.mail',
         data: { mail: { apiKey: 'plain-mail-key' } },
@@ -180,7 +180,7 @@ describe('migrateSecretsEncryption', () => {
     const legacyCiphertext = encryptWithKey('legacy-secret', mockState.encryptionKey)
     expect(legacyCiphertext).toMatch(/^enc:/)
 
-    mockState.findSettingsByScopePrefix.mockResolvedValue([
+    mockState.findSettingsByScopePrefix.mockReturnValue([
       {
         scope: 'blog.mail',
         data: { mail: { apiKey: legacyCiphertext } },
@@ -195,7 +195,9 @@ describe('migrateSecretsEncryption', () => {
   })
 
   it('throws when a secret fails to encrypt', async () => {
-    mockState.findSettingsByScopePrefix.mockRejectedValue(new Error('DB connection lost'))
+    mockState.findSettingsByScopePrefix.mockImplementation(() => {
+      throw new Error('DB connection lost')
+    })
 
     const migrate = await loadMigration()
     await expect(migrate(db)).rejects.toThrow('DB connection lost')

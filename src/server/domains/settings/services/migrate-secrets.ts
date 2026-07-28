@@ -1,4 +1,4 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Database } from '@/server/infra/db/database'
 
 import { SECRET_FIELDS } from '@/server/domains/settings/secrets'
 import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
@@ -10,13 +10,13 @@ import { isRecord } from '@/shared/utils/type-guards'
 
 const log = getLogger('settings.migrate-secrets')
 
-export async function migrateSecretsEncryption(db: NodePgDatabase): Promise<void> {
+export async function migrateSecretsEncryption(db: Database): Promise<void> {
   if (isVitest()) {
     return
   }
 
   try {
-    const rows = await findSettingsByScopePrefix(db, 'blog.')
+    const rows = findSettingsByScopePrefix(db, 'blog.')
     const byScope = new Map<string, Record<string, unknown>>()
     for (const r of rows) {
       if (isRecord(r.data)) {
@@ -71,7 +71,7 @@ export async function migrateSecretsEncryption(db: NodePgDatabase): Promise<void
     for (const scope of dirtyScopes) {
       const data = byScope.get(scope)
       if (data) {
-        await upsertSetting(db, data, null, scope)
+        upsertSetting(db, data, null, scope)
       }
     }
 

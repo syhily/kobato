@@ -1,18 +1,16 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { afterAll, describe, expect, it } from 'vitest'
 
-import { createDbPool, closePool } from '@/server/infra/db/pool'
+import type { Database } from '@/server/infra/db/database'
+
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 
 const imageSync = await import('@/server/domains/content/services/image-sync')
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 describe('content/services/image-sync — syncLibraryImageBlocks', () => {

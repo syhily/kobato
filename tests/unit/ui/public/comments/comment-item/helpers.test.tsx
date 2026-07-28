@@ -18,7 +18,7 @@ import {
 describe('ui/public/comments/comment-item/helpers', () => {
   describe('asKey', () => {
     it('stringifies bigint values', () => {
-      expect(asKey(BigInt(42))).toBe('42')
+      expect(asKey(Number(42))).toBe('42')
     })
 
     it('stringifies numbers', () => {

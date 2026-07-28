@@ -2,11 +2,10 @@
 // enumeration-safe) and `resetpassword` / `accept-invite` (consume the
 // single-use token and set a new password).
 
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import bcrypt from 'bcryptjs'
 
 import type { AuthFlowResult, SigninFlowContext } from '@/server/domains/auth/services/shared'
+import type { Database } from '@/server/infra/db/database'
 import type { User } from '@/server/infra/db/types'
 
 import { recordAuditEvent } from '@/server/domains/audit/services/record'
@@ -30,7 +29,7 @@ const GENERIC_RESET_MESSAGE = '如果该邮箱存在且符合要求，重置邮�
  * `@/server/domains/comments/services/public-query` in.
  */
 export interface PasswordResetFlowDeps {
-  hasApprovedComments(db: NodePgDatabase, userId: bigint): Promise<boolean>
+  hasApprovedComments(db: Database, userId: number): Promise<boolean>
 }
 
 /**
@@ -39,13 +38,13 @@ export interface PasswordResetFlowDeps {
  * commenter-claim paths — only the audited actor role differs.
  */
 async function issueTokenAndEmail(
-  db: NodePgDatabase,
+  db: Database,
   user: User,
   actorRole: string,
   clientAddress: string,
   request: Request,
 ): Promise<void> {
-  const { token } = await issueResetToken(db, user.id)
+  const { token } = issueResetToken(db, user.id)
   const origin = getBlogSettingsBundleSync()?.siteIdentity?.website ?? new URL(request.url).origin
   const link = `${origin}/admin/signin?action=resetpassword&token=${encodeURIComponent(token)}`
   await sendPasswordReset(user, link)
@@ -68,7 +67,7 @@ async function issueTokenAndEmail(
  * a tripped rate limit silently short-circuits with the same message.
  */
 export async function requestPasswordReset(
-  db: NodePgDatabase,
+  db: Database,
   clientAddress: string,
   request: Request,
   formData: FormData,

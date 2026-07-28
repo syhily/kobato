@@ -101,23 +101,27 @@ export const ErrorMessages = {
 } as const
 
 /**
- * Detect a Postgres unique-constraint violation (SQLSTATE 23505). When
- * `constraintName` is passed, the match is narrowed to that specific
- * constraint. drizzle-orm wraps driver errors in `DrizzleQueryError`, so the
- * match also looks through one level of `cause` to reach the original
- * `pg.DatabaseError`.
+ * Detect a SQLite unique-constraint violation (SQLITE_CONSTRAINT_UNIQUE /
+ * SQLITE_CONSTRAINT_PRIMARYKEY). node:sqlite errors carry a numeric
+ * `errcode`; the message names the offending columns
+ * (`UNIQUE constraint failed: post.slug`), so a `constraintName` filter
+ * matches against the message text (a table, column, or index name).
+ * drizzle-orm wraps driver errors in `DrizzleQueryError`, so the match
+ * also looks through one level of `cause`.
  */
-import { DatabaseError } from 'pg'
+const SQLITE_CONSTRAINT_PRIMARYKEY = 1555
+const SQLITE_CONSTRAINT_UNIQUE = 2067
 
 export function isUniqueConstraintError(err: unknown, constraintName?: string): boolean {
   const candidates = [err, err instanceof Error ? err.cause : undefined]
   return candidates.some((candidate) => {
-    if (candidate instanceof DatabaseError && candidate.code === '23505') {
-      if (constraintName) {
-        return candidate.constraint === constraintName
-      }
-      return true
+    const code = (candidate as { errcode?: number } | undefined)?.errcode
+    if (code !== SQLITE_CONSTRAINT_UNIQUE && code !== SQLITE_CONSTRAINT_PRIMARYKEY) {
+      return false
     }
-    return false
+    if (constraintName) {
+      return candidate instanceof Error && candidate.message.includes(constraintName)
+    }
+    return true
   })
 }

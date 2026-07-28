@@ -1,19 +1,17 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
+
 import { clearAllTables } from '#/_helpers/integration-db'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { makeAuthedCtx, makePublicCtx } from '#/_helpers/mock-ctx'
 import { callRpc, parseRpcJson } from '#/_helpers/rpc-call'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {
@@ -22,7 +20,7 @@ beforeEach(async () => {
 
 describe('integration / public comments', () => {
   it('rejects XSS payload in comment body link href', async () => {
-    const ctx = makePublicCtx({ db, pool })
+    const ctx = makePublicCtx({ db })
     const res = await callRpc(
       '/comments/replyComment',
       {
@@ -45,8 +43,8 @@ describe('integration / public comments', () => {
   })
 
   it('rejects a comment body exceeding 10,000 characters', async () => {
-    const adminCtx = makeAuthedCtx({ role: 'admin', db, pool })
-    const publicCtx = makePublicCtx({ db, pool })
+    const adminCtx = makeAuthedCtx({ role: 'admin', db })
+    const publicCtx = makePublicCtx({ db })
 
     // Create a page so the comment target exists
     const pageRes = await callRpc(

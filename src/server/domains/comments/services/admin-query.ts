@@ -1,8 +1,7 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { sql } from 'drizzle-orm'
 
 import type { AdminListFilters, AdminPendingKind } from '@/server/domains/comments/repos/shared'
+import type { Database } from '@/server/infra/db/database'
 import type { AdminPendingDashboardDto, AdminPendingItemDto } from '@/shared/contracts/comments'
 import type { AdminCommentsResult } from '@/shared/types/comments'
 
@@ -36,7 +35,7 @@ function makeDashboardExcerpt(raw: string | null): string {
   return `${codepoints.slice(0, DASHBOARD_EXCERPT_LIMIT).join('')}…`
 }
 
-export async function countAdminPendingDashboard(db: NodePgDatabase): Promise<{
+export async function countAdminPendingDashboard(db: Database): Promise<{
   all: number
   approval: number
   deletion: number
@@ -56,7 +55,7 @@ export async function countAdminPendingDashboard(db: NodePgDatabase): Promise<{
 }
 
 export async function searchPageOptions(
-  db: NodePgDatabase,
+  db: Database,
   q: string | undefined,
   limit: number,
   publicIds?: string[],
@@ -65,16 +64,16 @@ export async function searchPageOptions(
 }
 
 export async function searchAuthorOptions(
-  db: NodePgDatabase,
+  db: Database,
   q: string | undefined,
   limit: number,
-  ids?: bigint[],
-): Promise<Array<{ id: bigint; name: string }>> {
+  ids?: number[],
+): Promise<Array<{ id: number; name: string }>> {
   return searchCommentAuthors(db, q, limit, ids)
 }
 
 export async function loadAdminPendingDashboard(
-  db: NodePgDatabase,
+  db: Database,
   kind: AdminPendingKind,
   offset: number,
   limit: number,
@@ -107,7 +106,7 @@ export interface LoadAllCommentsOptions {
   offset: number
   limit: number
   filterPublicId?: string
-  filterUserId?: bigint
+  filterUserId?: number
   status?: 'all' | 'pending' | 'approved' | 'deleteRequested'
   filterQ?: string
   filterMatch?: 'contains' | 'does-not-contain'
@@ -115,10 +114,7 @@ export interface LoadAllCommentsOptions {
   filterCreatedBefore?: Date
 }
 
-export async function loadAllComments(
-  db: NodePgDatabase,
-  options: LoadAllCommentsOptions,
-): Promise<AdminCommentsResult> {
+export async function loadAllComments(db: Database, options: LoadAllCommentsOptions): Promise<AdminCommentsResult> {
   const {
     offset,
     limit,
@@ -131,7 +127,7 @@ export async function loadAllComments(
     filterCreatedBefore,
   } = options
 
-  let target: { type: 'post' | 'page'; ownerId: bigint } | undefined
+  let target: { type: 'post' | 'page'; ownerId: number } | undefined
   if (filterPublicId) {
     const metricRow = await findMetricByPublicId(db, filterPublicId)
     if (metricRow !== null) {

@@ -1,6 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import type { Database } from '@/server/infra/db/database'
 
 vi.useFakeTimers()
 
@@ -92,7 +92,7 @@ describe('sweepExpiredKvEntries', () => {
   it('issues one delete per replacement table', async () => {
     const localWhere = vi.fn().mockResolvedValue(undefined)
     const localDb = { delete: vi.fn(() => ({ where: localWhere })) }
-    await sweepExpiredKvEntries(localDb as unknown as NodePgDatabase)
+    await sweepExpiredKvEntries(localDb as unknown as Database)
     expect(localDb.delete).toHaveBeenCalledTimes(3)
     expect(localWhere).toHaveBeenCalledTimes(3)
   })

@@ -1,6 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { format, isValid, parse } from 'date-fns'
+
+import type { Database } from '@/server/infra/db/database'
 
 import { through } from '@/server/infra/cache/registry'
 import { notFound, pngResponse } from '@/server/infra/http/status'
@@ -9,7 +9,7 @@ import { type CalendarTheme, renderCalendar } from '@/server/render/calendar/ren
 const timeRegex = /^\d{4}$/
 
 export async function serveCalendar(
-  db: NodePgDatabase,
+  db: Database,
   params: { year?: string; time?: string },
   theme: CalendarTheme,
   responseHeaders: HeadersInit,

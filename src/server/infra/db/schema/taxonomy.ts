@@ -1,4 +1,4 @@
-import { bigserial, index, integer, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core'
+import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
 // Post category. CRUD at `/admin/taxonomy/categories`. Posts reference a
 // category by id (`post.category_id` FK, `ON DELETE SET NULL`), so renames
@@ -9,18 +9,18 @@ import { bigserial, index, integer, pgTable, text, timestamp, varchar } from 'dr
 // via `countPostsByTaxonomy` — they are NOT stored here so
 // a hot post's likes/views/comments churn never write-amplifies the
 // taxonomy table.
-export const category = pgTable(
+export const category = sqliteTable(
   'category',
   {
-    id: bigserial('id', { mode: 'bigint' }).primaryKey().notNull(),
-    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
+    id: integer('id').primaryKey({ autoIncrement: true }).notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' })
       .notNull()
       .$defaultFn(() => new Date()),
-    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+    updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
       .notNull()
       .$defaultFn(() => new Date()),
-    name: varchar('name', { length: 20 }).unique().notNull(),
-    slug: varchar('slug', { length: 80 }).unique().notNull(),
+    name: text('name').unique().notNull(),
+    slug: text('slug').unique().notNull(),
     cover: text('cover').notNull(),
     og: text('og'),
     description: text('description').notNull().default(''),
@@ -35,15 +35,15 @@ export const category = pgTable(
 // Post tag. CRUD at `/admin/taxonomy/tags`. Posts reference tags through
 // the `post_tag` join (by `tag.id`), so renames propagate automatically;
 // `name` is `UNIQUE`, `slug` drives `/tags/:slug` (`UNIQUE`).
-export const tag = pgTable('tag', {
-  id: bigserial('id', { mode: 'bigint' }).primaryKey().notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
+export const tag = sqliteTable('tag', {
+  id: integer('id').primaryKey({ autoIncrement: true }).notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' })
     .notNull()
     .$defaultFn(() => new Date()),
-  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+  updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
     .notNull()
     .$defaultFn(() => new Date()),
-  name: varchar('name', { length: 20 }).unique().notNull(),
-  slug: varchar('slug', { length: 80 }).unique().notNull(),
+  name: text('name').unique().notNull(),
+  slug: text('slug').unique().notNull(),
   ogImage: text('og_image').notNull().default(''),
 })

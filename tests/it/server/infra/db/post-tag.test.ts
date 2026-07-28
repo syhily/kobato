@@ -1,17 +1,16 @@
 import { describe, expect, it, afterAll, beforeEach } from 'vitest'
 
 import { clearAllTables } from '#/_helpers/integration-db'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { findTagNamesByPostId, findTagNamesByPostIds, setPostTags } from '@/server/infra/db/operations/post-tag'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { post } from '@/server/infra/db/schema/post'
 import { tag } from '@/server/infra/db/schema/taxonomy'
 
-const poolManager = createDbPool()
-const db = poolManager.db
-const pool = poolManager.pool
+const handle = createTestDatabase()
+const db = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {
@@ -118,7 +117,7 @@ describe('db/operations/post-tag', () => {
       const [t1] = await seedTags(['alpha'])
       await setPostTags(db, p1.id, [t1.id])
 
-      const map = await findTagNamesByPostIds(db, [p1.id, 999999n])
+      const map = await findTagNamesByPostIds(db, [p1.id, 999999])
       expect(map.size).toBe(1)
       expect(map.get(p1.id)).toEqual(['alpha'])
     })

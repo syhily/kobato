@@ -1,8 +1,7 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import type { AdminPostDetailDto } from '@/server/domains/posts/projection'
 import type { ListPostsFilters } from '@/server/domains/posts/repos/shared'
 import type { AdminPostsListResult, ViewerContext } from '@/server/domains/posts/services/shared'
+import type { Database } from '@/server/infra/db/database'
 import type { PostMetaRow } from '@/server/infra/db/types'
 
 import { makeEntityAdminQuery } from '@/server/domains/content/entities/admin-query'
@@ -24,7 +23,7 @@ export const countPostMetas = listQueries.countMetas
 const adminQuery = makeEntityAdminQuery(postDescriptor, listQueries)
 
 export async function listPostsForAdmin(
-  db: NodePgDatabase,
+  db: Database,
   filters: ListPostsFilters = {},
   viewer?: ViewerContext,
 ): Promise<AdminPostsListResult> {
@@ -33,8 +32,8 @@ export async function listPostsForAdmin(
 }
 
 export async function getPostDetailForAdmin(
-  db: NodePgDatabase,
-  id: bigint,
+  db: Database,
+  id: number,
   viewer?: ViewerContext,
 ): Promise<AdminPostDetailDto> {
   const { meta, latestRevision, publishedRevision } = await adminQuery.getDetailForAdmin(db, id, viewer)

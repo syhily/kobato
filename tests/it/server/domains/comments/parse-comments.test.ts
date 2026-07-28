@@ -20,7 +20,7 @@ vi.mock('@/shared/config/getters', () => ({
 
 const { parseComments } = await import('@/server/domains/comments/services/public-query')
 
-function row(overrides: Omit<Partial<CommentAndUser>, 'id'> & { id: bigint }): CommentAndUser {
+function row(overrides: Omit<Partial<CommentAndUser>, 'id'> & { id: number }): CommentAndUser {
   const { id, ...rest } = overrides
   return {
     id,
@@ -37,8 +37,8 @@ function row(overrides: Omit<Partial<CommentAndUser>, 'id'> & { id: bigint }): C
       },
     ],
     type: 'post' as const,
-    ownerId: 1n,
-    userId: 7n,
+    ownerId: 1,
+    userId: 7,
     isVerified: true,
     ua: '',
     ip: '',
@@ -48,7 +48,7 @@ function row(overrides: Omit<Partial<CommentAndUser>, 'id'> & { id: bigint }): C
     isPinned: false,
     voteUp: 0,
     voteDown: 0,
-    rootId: 0n,
+    rootId: 0,
     name: 'Alice',
     email: 'a@example.com',
     emailVerified: true,
@@ -67,9 +67,9 @@ function ids(items: CommentItem[]): string[] {
 describe('services/comments/loader — parseComments soft-delete reparenting', () => {
   it('leaves a non-deleted thread unchanged', async () => {
     const input: CommentAndUser[] = [
-      row({ id: 1n, rid: 0, rootId: 0n }),
-      row({ id: 2n, rid: 1, rootId: 1n }),
-      row({ id: 3n, rid: 1, rootId: 1n }),
+      row({ id: 1, rid: 0, rootId: 0 }),
+      row({ id: 2, rid: 1, rootId: 1 }),
+      row({ id: 3, rid: 1, rootId: 1 }),
     ]
 
     const tree = await parseComments(input)
@@ -82,9 +82,9 @@ describe('services/comments/loader — parseComments soft-delete reparenting', (
   it('drops a soft-deleted root and promotes its replies to roots', async () => {
     const deletedAt = new Date('2024-02-01T00:00:00.000Z')
     const input: CommentAndUser[] = [
-      row({ id: 1n, rid: 0, rootId: 0n, deleteAt: deletedAt }),
-      row({ id: 2n, rid: 1, rootId: 1n }),
-      row({ id: 3n, rid: 1, rootId: 1n }),
+      row({ id: 1, rid: 0, rootId: 0, deleteAt: deletedAt }),
+      row({ id: 2, rid: 1, rootId: 1 }),
+      row({ id: 3, rid: 1, rootId: 1 }),
     ]
 
     const tree = await parseComments(input)
@@ -97,9 +97,9 @@ describe('services/comments/loader — parseComments soft-delete reparenting', (
   it('reparents a reply to its grandparent when the parent is soft-deleted', async () => {
     const deletedAt = new Date('2024-02-01T00:00:00.000Z')
     const input: CommentAndUser[] = [
-      row({ id: 1n, rid: 0, rootId: 0n }),
-      row({ id: 2n, rid: 1, rootId: 1n, deleteAt: deletedAt }),
-      row({ id: 3n, rid: 2, rootId: 1n }),
+      row({ id: 1, rid: 0, rootId: 0 }),
+      row({ id: 2, rid: 1, rootId: 1, deleteAt: deletedAt }),
+      row({ id: 3, rid: 2, rootId: 1 }),
     ]
 
     const tree = await parseComments(input)
@@ -112,10 +112,10 @@ describe('services/comments/loader — parseComments soft-delete reparenting', (
   it('walks past multiple deleted ancestors until it finds a live one', async () => {
     const deletedAt = new Date('2024-02-01T00:00:00.000Z')
     const input: CommentAndUser[] = [
-      row({ id: 1n, rid: 0, rootId: 0n }),
-      row({ id: 2n, rid: 1, rootId: 1n, deleteAt: deletedAt }),
-      row({ id: 3n, rid: 2, rootId: 1n, deleteAt: deletedAt }),
-      row({ id: 4n, rid: 3, rootId: 1n }),
+      row({ id: 1, rid: 0, rootId: 0 }),
+      row({ id: 2, rid: 1, rootId: 1, deleteAt: deletedAt }),
+      row({ id: 3, rid: 2, rootId: 1, deleteAt: deletedAt }),
+      row({ id: 4, rid: 3, rootId: 1 }),
     ]
 
     const tree = await parseComments(input)
@@ -128,9 +128,9 @@ describe('services/comments/loader — parseComments soft-delete reparenting', (
   it('promotes a leaf to root when every ancestor is soft-deleted', async () => {
     const deletedAt = new Date('2024-02-01T00:00:00.000Z')
     const input: CommentAndUser[] = [
-      row({ id: 1n, rid: 0, rootId: 0n, deleteAt: deletedAt }),
-      row({ id: 2n, rid: 1, rootId: 1n, deleteAt: deletedAt }),
-      row({ id: 3n, rid: 2, rootId: 1n }),
+      row({ id: 1, rid: 0, rootId: 0, deleteAt: deletedAt }),
+      row({ id: 2, rid: 1, rootId: 1, deleteAt: deletedAt }),
+      row({ id: 3, rid: 2, rootId: 1 }),
     ]
 
     const tree = await parseComments(input)
@@ -144,7 +144,7 @@ describe('services/comments/loader — parseComments soft-delete reparenting', (
     // Pathological row: rid === id. Without the cycle guard the walker
     // would loop forever; we assert parseComments returns synchronously
     // with a sane shape.
-    const input: CommentAndUser[] = [row({ id: 5n, rid: 5, rootId: 0n })]
+    const input: CommentAndUser[] = [row({ id: 5, rid: 5, rootId: 0 })]
 
     const tree = await parseComments(input)
 
@@ -158,7 +158,7 @@ describe('services/comments/loader — parseComments soft-delete reparenting', (
     // The parent id=99 is not present on this page (filtered out by
     // paging / visibility). The reply should still render and become a
     // root rather than disappear silently.
-    const input: CommentAndUser[] = [row({ id: 7n, rid: 99, rootId: 99n })]
+    const input: CommentAndUser[] = [row({ id: 7, rid: 99, rootId: 99 })]
 
     const tree = await parseComments(input)
 

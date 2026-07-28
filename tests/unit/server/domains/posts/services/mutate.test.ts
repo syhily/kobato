@@ -1,6 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import type { Database } from '@/server/infra/db/database'
 
 vi.mock('@/server/domains/content/revisions', () => ({
   findContentById: vi.fn(),
@@ -39,11 +39,11 @@ vi.mock('@/server/domains/posts/services/shared', () => ({
 
 vi.mock('@/server/infra/db/operations/category', () => ({
   findCategoryById: vi.fn().mockResolvedValue(null),
-  findCategoryNamesByIds: vi.fn().mockResolvedValue(new Map()),
+  findCategoryNamesByIds: vi.fn().mockReturnValue(new Map()),
 }))
 
 vi.mock('@/server/infra/db/operations/post-tag', () => ({
-  findTagNamesByPostId: vi.fn().mockResolvedValue(['tag1']),
+  findTagNamesByPostId: vi.fn().mockReturnValue(['tag1']),
   setPostTags: vi.fn().mockResolvedValue(undefined),
 }))
 
@@ -55,8 +55,8 @@ vi.mock('@/server/infra/db/operations/slug-registry', () => ({
 }))
 
 vi.mock('@/server/infra/db/operations/tag', () => ({
-  findTagsByNames: vi.fn().mockResolvedValue([{ id: 1n, name: 'tag1' }]),
-  seedTagsIfMissing: vi.fn().mockResolvedValue(undefined),
+  findTagsByNames: vi.fn().mockReturnValue([{ id: 1, name: 'tag1' }]),
+  seedTagsIfMissing: vi.fn().mockReturnValue(undefined),
 }))
 
 vi.mock('@/server/infra/http/errors', () => ({
@@ -91,7 +91,7 @@ vi.mock('@/server/infra/slug/reservation', () => ({
 }))
 
 vi.mock('@/shared/utils/id', () => ({
-  idFromString: vi.fn((id: string) => BigInt(id)),
+  idFromString: vi.fn((id: string) => Number(id)),
 }))
 
 class FakeQuery {
@@ -120,6 +120,23 @@ class FakeQuery {
   returning() {
     return this
   }
+  all() {
+    if (this.rejectError) {
+      const err = this.rejectError
+      this.rejectError = null
+      throw err
+    }
+    if (this.inserted) {
+      return [{ id: 100, createdAt: new Date(), ...this.inserted }]
+    }
+    if (this.updated) {
+      return [{ id: 100, ...this.updated }]
+    }
+    return this.rows
+  }
+  run() {
+    return { changes: this.inserted || this.updated ? 1 : 0, lastInsertRowid: 100 }
+  }
   rejectNext(err: Error) {
     this.rejectError = err
     return this
@@ -132,21 +149,21 @@ class FakeQuery {
       return Promise.reject(err).then(resolve, reject)
     }
     if (this.inserted) {
-      return Promise.resolve([{ id: 100n, createdAt: new Date(), ...this.inserted }]).then(resolve, reject)
+      return Promise.resolve([{ id: 100, createdAt: new Date(), ...this.inserted }]).then(resolve, reject)
     }
     if (this.updated) {
-      return Promise.resolve([{ id: 100n, ...this.updated }]).then(resolve, reject)
+      return Promise.resolve([{ id: 100, ...this.updated }]).then(resolve, reject)
     }
     return Promise.resolve(this.rows).then(resolve, reject)
   }
 }
 
-function fakeDb(query = new FakeQuery()): NodePgDatabase {
+function fakeDb(query = new FakeQuery()): Database {
   return {
     insert: () => query.insert(),
     update: () => query.update(),
-    transaction: async (fn: (tx: NodePgDatabase) => Promise<unknown>) => fn(fakeDb(query) as NodePgDatabase),
-  } as unknown as NodePgDatabase
+    transaction: (fn: (tx: Database) => unknown) => fn(fakeDb(query) as Database),
+  } as unknown as Database
 }
 
 import { invalidateContent } from '@/server/domains/content/invalidate'
@@ -173,36 +190,36 @@ describe('posts mutate service', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     ;(isUniqueConstraintError as ReturnType<typeof vi.fn>).mockReturnValue(false)
-    ;(insertPostMeta as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 100n, createdAt: new Date() })
+    ;(insertPostMeta as ReturnType<typeof vi.fn>).mockReturnValue({ id: 100, createdAt: new Date() })
   })
 
   it('creates a post', async () => {
     const db = fakeDb()
-    const result = await createPost(db, { slug: 'hello', title: 'Hello', tags: ['tag1'] }, 1n)
-    expect(result).toMatchObject({ id: 100n, tags: ['tag1'] })
+    const result = await createPost(db, { slug: 'hello', title: 'Hello', tags: ['tag1'] }, 1)
+    expect(result).toMatchObject({ id: 100, tags: ['tag1'] })
   })
 
   it('creates a post on behalf of a non-admin viewer', async () => {
     const db = fakeDb()
     const result = await createPost(db, { slug: 'hello', title: 'Hello' }, null, { id: '2', role: 'author' })
-    expect(result).toMatchObject({ id: 100n })
+    expect(result).toMatchObject({ id: 100 })
   })
 
   it('throws a conflict when slug is taken', async () => {
     const db = fakeDb()
-    ;(insertPostMeta as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
-      new Error('duplicate key value violates unique constraint "post_slug_key"'),
-    )
+    ;(insertPostMeta as ReturnType<typeof vi.fn>).mockImplementationOnce(() => {
+      throw new Error('UNIQUE constraint failed: post.slug')
+    })
     ;(isUniqueConstraintError as ReturnType<typeof vi.fn>).mockReturnValue(true)
-    await expect(createPost(db, { slug: 'hello', title: 'Hello' }, 1n)).rejects.toThrow('已被占用')
+    await expect(createPost(db, { slug: 'hello', title: 'Hello' }, 1)).rejects.toThrow('已被占用')
   })
 
   it('updates post meta', async () => {
     const db = fakeDb()
-    ;(findPostMetaById as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 100n, slug: 'old' })
-    ;(updatePostMetaById as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 100n, slug: 'new' })
-    const result = await updatePostMeta(db, { id: 100n, slug: 'new', title: 'New', tags: ['tag1'] })
-    expect(result).toMatchObject({ id: 100n, tags: ['tag1'] })
+    ;(findPostMetaById as ReturnType<typeof vi.fn>).mockReturnValue({ id: 100, slug: 'old' })
+    ;(updatePostMetaById as ReturnType<typeof vi.fn>).mockReturnValue({ id: 100, slug: 'new' })
+    const result = await updatePostMeta(db, { id: 100, slug: 'new', title: 'New', tags: ['tag1'] })
+    expect(result).toMatchObject({ id: 100, tags: ['tag1'] })
   })
 
   it('rejects update without id', async () => {
@@ -212,97 +229,99 @@ describe('posts mutate service', () => {
 
   it('deletes a post', async () => {
     const db = fakeDb()
-    ;(findPostMetaById as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 100n })
-    ;(softDeletePostMeta as ReturnType<typeof vi.fn>).mockResolvedValue(true)
-    const result = await deletePost(db, 100n)
+    ;(findPostMetaById as ReturnType<typeof vi.fn>).mockReturnValue({ id: 100 })
+    ;(softDeletePostMeta as ReturnType<typeof vi.fn>).mockReturnValue(true)
+    const result = await deletePost(db, 100)
     expect(result.deleted).toBe(true)
   })
 
   it('unpublishes a post', async () => {
     const db = fakeDb()
-    ;(findPostMetaById as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 100n })
-    ;(updatePostMetaById as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 100n })
-    const result = await unpublishPost(db, 100n)
-    expect(result).toMatchObject({ id: 100n })
+    ;(findPostMetaById as ReturnType<typeof vi.fn>).mockReturnValue({ id: 100 })
+    ;(updatePostMetaById as ReturnType<typeof vi.fn>).mockReturnValue({ id: 100 })
+    const result = await unpublishPost(db, 100)
+    expect(result).toMatchObject({ id: 100 })
   })
 
   it('restores a post and indexes it', async () => {
     const db = fakeDb()
-    ;(findPostMetaById as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-      id: 100n,
+    ;(findPostMetaById as ReturnType<typeof vi.fn>).mockReturnValueOnce({
+      id: 100,
       published: true,
-      publishedRevisionId: 2n,
+      publishedRevisionId: 2,
       slug: 'hello',
     })
-    ;(restorePostMeta as ReturnType<typeof vi.fn>).mockResolvedValue(true)
-    ;(findContentById as ReturnType<typeof vi.fn>).mockResolvedValue({
-      id: 2n,
+    ;(restorePostMeta as ReturnType<typeof vi.fn>).mockReturnValue(true)
+    ;(findContentById as ReturnType<typeof vi.fn>).mockReturnValue({
+      id: 2,
       body: [{ _type: 'block', children: [] }],
     })
-    const result = await restorePost(db, 100n)
+    const result = await restorePost(db, 100)
     expect(result.restored).toBe(true)
   })
 
   it('warns when restored slug conflicts with another entity', async () => {
     const db = fakeDb()
-    ;(findPostMetaById as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-      id: 100n,
+    ;(findPostMetaById as ReturnType<typeof vi.fn>).mockReturnValueOnce({
+      id: 100,
       published: true,
       publishedRevisionId: null,
       slug: 'hello',
     })
-    ;(restorePostMeta as ReturnType<typeof vi.fn>).mockResolvedValue(true)
-    ;(findSlugRegistryBySlugForUpdate as ReturnType<typeof vi.fn>).mockResolvedValue({
+    ;(restorePostMeta as ReturnType<typeof vi.fn>).mockReturnValue(true)
+    ;(findSlugRegistryBySlugForUpdate as ReturnType<typeof vi.fn>).mockReturnValue({
       entityType: 'page',
-      entityId: 2n,
+      entityId: 2,
       slug: 'hello',
     })
-    const result = await restorePost(db, 100n)
+    const result = await restorePost(db, 100)
     expect(result.warning).toBeTruthy()
   })
 
   it('warns when slug registry insert fails during restore', async () => {
     const db = fakeDb()
-    ;(findPostMetaById as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-      id: 100n,
+    ;(findPostMetaById as ReturnType<typeof vi.fn>).mockReturnValueOnce({
+      id: 100,
       published: true,
       publishedRevisionId: null,
       slug: 'hello',
     })
-    ;(restorePostMeta as ReturnType<typeof vi.fn>).mockResolvedValue(true)
-    ;(findSlugRegistryBySlugForUpdate as ReturnType<typeof vi.fn>).mockResolvedValue(null)
-    ;(insertSlugRegistry as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('dup'))
+    ;(restorePostMeta as ReturnType<typeof vi.fn>).mockReturnValue(true)
+    ;(findSlugRegistryBySlugForUpdate as ReturnType<typeof vi.fn>).mockReturnValue(null)
+    ;(insertSlugRegistry as ReturnType<typeof vi.fn>).mockImplementation(() => {
+      throw new Error('UNIQUE constraint failed: index uq_slug_registry_slug')
+    })
     ;(isUniqueConstraintError as ReturnType<typeof vi.fn>).mockReturnValue(true)
-    const result = await restorePost(db, 100n)
+    const result = await restorePost(db, 100)
     expect(result.warning).toBeTruthy()
   })
 })
 
 describe('posts mutate — post-state-change side effects', () => {
   const publishedMeta = {
-    id: 100n,
+    id: 100,
     slug: 'hello',
     title: 'Hello',
     summary: 'S',
     published: true,
-    publishedRevisionId: 2n,
+    publishedRevisionId: 2,
   }
   const validBody = [{ _type: 'block', _key: 'b1', children: [{ _type: 'span', _key: 's1', text: 'hi' }] }]
 
   beforeEach(() => {
     vi.clearAllMocks()
     ;(isUniqueConstraintError as ReturnType<typeof vi.fn>).mockReturnValue(false)
-    ;(findSlugRegistryBySlugForUpdate as ReturnType<typeof vi.fn>).mockResolvedValue(null)
-    ;(insertSlugRegistry as ReturnType<typeof vi.fn>).mockResolvedValue(undefined)
+    ;(findSlugRegistryBySlugForUpdate as ReturnType<typeof vi.fn>).mockReturnValue(null)
+    ;(insertSlugRegistry as ReturnType<typeof vi.fn>).mockReturnValue(undefined)
   })
 
   it('restore re-indexes a published post after invalidating content caches', async () => {
     const db = fakeDb()
-    ;(findPostMetaById as ReturnType<typeof vi.fn>).mockResolvedValue(publishedMeta)
-    ;(restorePostMeta as ReturnType<typeof vi.fn>).mockResolvedValue(true)
-    ;(findContentById as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 2n, body: validBody })
+    ;(findPostMetaById as ReturnType<typeof vi.fn>).mockReturnValue(publishedMeta)
+    ;(restorePostMeta as ReturnType<typeof vi.fn>).mockReturnValue(true)
+    ;(findContentById as ReturnType<typeof vi.fn>).mockReturnValue({ id: 2, body: validBody })
 
-    const result = await restorePost(db, 100n)
+    const result = await restorePost(db, 100)
 
     expect(result).toEqual({ restored: true, warning: undefined })
     expect(invalidateContent).toHaveBeenCalledWith(db, { entity: 'post' })
@@ -312,12 +331,12 @@ describe('posts mutate — post-state-change side effects', () => {
 
   it('restore returns the exact index-failure warning when re-indexing fails', async () => {
     const db = fakeDb()
-    ;(findPostMetaById as ReturnType<typeof vi.fn>).mockResolvedValue(publishedMeta)
-    ;(restorePostMeta as ReturnType<typeof vi.fn>).mockResolvedValue(true)
-    ;(findContentById as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 2n, body: validBody })
+    ;(findPostMetaById as ReturnType<typeof vi.fn>).mockReturnValue(publishedMeta)
+    ;(restorePostMeta as ReturnType<typeof vi.fn>).mockReturnValue(true)
+    ;(findContentById as ReturnType<typeof vi.fn>).mockReturnValue({ id: 2, body: validBody })
     ;(indexPost as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('embedding down'))
 
-    const result = await restorePost(db, 100n)
+    const result = await restorePost(db, 100)
 
     expect(result.restored).toBe(true)
     expect(result.warning).toBe('搜索索引更新失败，该文章可能不会出现在搜索结果中。')
@@ -325,17 +344,17 @@ describe('posts mutate — post-state-change side effects', () => {
 
   it('restore prepends the slug warning ahead of the index warning', async () => {
     const db = fakeDb()
-    ;(findPostMetaById as ReturnType<typeof vi.fn>).mockResolvedValue(publishedMeta)
-    ;(restorePostMeta as ReturnType<typeof vi.fn>).mockResolvedValue(true)
-    ;(findSlugRegistryBySlugForUpdate as ReturnType<typeof vi.fn>).mockResolvedValue({
+    ;(findPostMetaById as ReturnType<typeof vi.fn>).mockReturnValue(publishedMeta)
+    ;(restorePostMeta as ReturnType<typeof vi.fn>).mockReturnValue(true)
+    ;(findSlugRegistryBySlugForUpdate as ReturnType<typeof vi.fn>).mockReturnValue({
       entityType: 'page',
-      entityId: 2n,
+      entityId: 2,
       slug: 'hello',
     })
-    ;(findContentById as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 2n, body: validBody })
+    ;(findContentById as ReturnType<typeof vi.fn>).mockReturnValue({ id: 2, body: validBody })
     ;(indexPost as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('embedding down'))
 
-    const result = await restorePost(db, 100n)
+    const result = await restorePost(db, 100)
 
     expect(result.warning).toBe(
       'slug "hello" 已被另一个页面占用，恢复后该 URL 不会指向此文章。请修改 slug 或先处理占用方。 搜索索引更新失败，该文章可能不会出现在搜索结果中。',
@@ -344,31 +363,31 @@ describe('posts mutate — post-state-change side effects', () => {
 
   it('unpublish invalidates content caches and removes the index row', async () => {
     const db = fakeDb()
-    ;(findPostMetaById as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 100n })
-    ;(updatePostMetaById as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 100n })
+    ;(findPostMetaById as ReturnType<typeof vi.fn>).mockReturnValue({ id: 100 })
+    ;(updatePostMetaById as ReturnType<typeof vi.fn>).mockReturnValue({ id: 100 })
 
-    await unpublishPost(db, 100n)
+    await unpublishPost(db, 100)
 
     expect(invalidateContent).toHaveBeenCalledWith(db, { entity: 'post' })
-    expect(removePostIndex).toHaveBeenCalledWith(db, 100n)
+    expect(removePostIndex).toHaveBeenCalledWith(db, 100)
     expect(indexPost).not.toHaveBeenCalled()
   })
 
   it('unpublish swallows an index-removal failure', async () => {
     const db = fakeDb()
-    ;(findPostMetaById as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 100n })
-    ;(updatePostMetaById as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 100n })
+    ;(findPostMetaById as ReturnType<typeof vi.fn>).mockReturnValue({ id: 100 })
+    ;(updatePostMetaById as ReturnType<typeof vi.fn>).mockReturnValue({ id: 100 })
     ;(removePostIndex as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('index down'))
 
-    await expect(unpublishPost(db, 100n)).resolves.toMatchObject({ id: 100n })
+    await expect(unpublishPost(db, 100)).resolves.toMatchObject({ id: 100 })
   })
 
   it('delete invalidates content caches; the index row goes inside the transaction', async () => {
     const db = fakeDb()
-    ;(findPostMetaById as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 100n })
-    ;(softDeletePostMeta as ReturnType<typeof vi.fn>).mockResolvedValue(true)
+    ;(findPostMetaById as ReturnType<typeof vi.fn>).mockReturnValue({ id: 100 })
+    ;(softDeletePostMeta as ReturnType<typeof vi.fn>).mockReturnValue(true)
 
-    const result = await deletePost(db, 100n)
+    const result = await deletePost(db, 100)
 
     expect(result.deleted).toBe(true)
     expect(removePostIndex).toHaveBeenCalledTimes(1)

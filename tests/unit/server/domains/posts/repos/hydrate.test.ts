@@ -1,7 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
 import type { ContentRow, PostMetaRow } from '@/server/infra/db/types'
 
 // Unit matrix for the post-list assembly pipeline (`hydratePostList`):
@@ -43,12 +42,12 @@ const { findTagNamesByPostIds } = await import('@/server/infra/db/operations/pos
 const { findCategoryNamesByIds } = await import('@/server/infra/db/operations/category')
 const { hydratePostList } = await import('@/server/domains/posts/repos/hydrate')
 
-const db = {} as NodePgDatabase
+const db = {} as Database
 
 function metaRow(overrides: Partial<PostMetaRow> = {}): PostMetaRow {
   const now = overrides.createdAt ?? new Date('2026-05-01T00:00:00.000Z')
   return {
-    id: overrides.id ?? 1n,
+    id: overrides.id ?? 1,
     slug: overrides.slug ?? 'hello',
     title: overrides.title ?? 'Hello',
     summary: overrides.summary ?? '',
@@ -63,7 +62,7 @@ function metaRow(overrides: Partial<PostMetaRow> = {}): PostMetaRow {
     publishedRevisionId: overrides.publishedRevisionId ?? null,
     firstPublishedAt: overrides.firstPublishedAt ?? null,
     authorId: overrides.authorId ?? null,
-    categoryId: overrides.categoryId === undefined ? 1n : overrides.categoryId,
+    categoryId: overrides.categoryId === undefined ? 1 : overrides.categoryId,
     alias: overrides.alias ?? [],
     pinnedAt: overrides.pinnedAt ?? null,
     createdAt: now,
@@ -75,9 +74,9 @@ function metaRow(overrides: Partial<PostMetaRow> = {}): PostMetaRow {
 function contentRow(overrides: Partial<ContentRow> = {}): ContentRow {
   const now = overrides.createdAt ?? new Date('2026-05-01T00:00:00.000Z')
   return {
-    id: overrides.id ?? 100n,
+    id: overrides.id ?? 100,
     type: overrides.type ?? 'post',
-    ownerId: overrides.ownerId ?? 1n,
+    ownerId: overrides.ownerId ?? 1,
     revisionNo: overrides.revisionNo ?? 1,
     status: overrides.status ?? 'published',
     body: overrides.body ?? [],
@@ -104,29 +103,29 @@ describe('posts/repos/hydrate — hydratePostList matrix', () => {
   })
 
   it('resolves category names through the id batch; null and dangling ids yield an empty string', async () => {
-    vi.mocked(findCategoryNamesByIds).mockResolvedValue(new Map([[1n, 'Tech']]))
+    vi.mocked(findCategoryNamesByIds).mockResolvedValue(new Map([[1, 'Tech']]))
     const posts = await hydratePostList(db, [
-      metaRow({ id: 1n, categoryId: 1n }),
-      metaRow({ id: 2n, categoryId: null }),
-      metaRow({ id: 3n, categoryId: 999n }),
+      metaRow({ id: 1, categoryId: 1 }),
+      metaRow({ id: 2, categoryId: null }),
+      metaRow({ id: 3, categoryId: 999 }),
     ])
-    expect(findCategoryNamesByIds).toHaveBeenCalledWith(db, [1n, 999n])
+    expect(findCategoryNamesByIds).toHaveBeenCalledWith(db, [1, 999])
     expect(posts[0]?.category).toBe('Tech')
     expect(posts[1]?.category).toBe('')
     expect(posts[2]?.category).toBe('')
   })
 
   it('revision:none + images (defaults): tag batch + covers, empty body', async () => {
-    vi.mocked(findTagNamesByPostIds).mockResolvedValue(new Map([[1n, ['react']]]))
-    const posts = await hydratePostList(db, [metaRow({ id: 1n, publishedRevisionId: 100n })])
-    expect(findTagNamesByPostIds).toHaveBeenCalledWith(db, [1n])
+    vi.mocked(findTagNamesByPostIds).mockResolvedValue(new Map([[1, ['react']]]))
+    const posts = await hydratePostList(db, [metaRow({ id: 1, publishedRevisionId: 100 })])
+    expect(findTagNamesByPostIds).toHaveBeenCalledWith(db, [1])
     expect(hydratePublishedRevisions).not.toHaveBeenCalled()
     expect(hydrateImageRefs).toHaveBeenCalledTimes(1)
     expect(posts[0]?.tags).toEqual(['react'])
     expect(posts[0]?.body).toEqual([])
     expect(posts[0]?.headings).toEqual([])
     expect(posts[0]?.imageSources).toEqual([])
-    expect(posts[0]?.publishedRevisionId).toBe(100n)
+    expect(posts[0]?.publishedRevisionId).toBe(100)
     expect(posts[0]?.cover).toBe('https://cdn/cover.png')
     expect(posts[0]?.coverThumbhash).toBe('th')
   })
@@ -145,9 +144,9 @@ describe('posts/repos/hydrate — hydratePostList matrix', () => {
     ]
     const headings = [{ depth: 2, text: 'Hi', slug: 'hi' }]
     vi.mocked(hydratePublishedRevisions).mockResolvedValue(
-      new Map([[100n, contentRow({ id: 100n, body, headings, imageSources: ['images/x.jpg'] })]]),
+      new Map([[100, contentRow({ id: 100, body, headings, imageSources: ['images/x.jpg'] })]]),
     )
-    const metas = [metaRow({ id: 1n, publishedRevisionId: 100n }), metaRow({ id: 2n, slug: 'two' })]
+    const metas = [metaRow({ id: 1, publishedRevisionId: 100 }), metaRow({ id: 2, slug: 'two' })]
     const posts = await hydratePostList(db, metas, { revision: 'published' })
     expect(hydratePublishedRevisions).toHaveBeenCalledWith(db, metas)
     expect(hydrateImageRefs).toHaveBeenCalledTimes(1)
@@ -159,8 +158,8 @@ describe('posts/repos/hydrate — hydratePostList matrix', () => {
   })
 
   it('revision:published + images:false: joins revisions but skips covers', async () => {
-    vi.mocked(hydratePublishedRevisions).mockResolvedValue(new Map([[100n, contentRow({ id: 100n })]]))
-    const posts = await hydratePostList(db, [metaRow({ publishedRevisionId: 100n })], {
+    vi.mocked(hydratePublishedRevisions).mockResolvedValue(new Map([[100, contentRow({ id: 100 })]]))
+    const posts = await hydratePostList(db, [metaRow({ publishedRevisionId: 100 })], {
       revision: 'published',
       images: false,
     })

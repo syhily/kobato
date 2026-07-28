@@ -1,8 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import type { BlogSession, SessionUser } from '@/server/domains/auth/session-storage'
 import type { RequestContext } from '@/server/http/request-context'
+import type { Database } from '@/server/infra/db/database'
 
 import { regularSession } from '#/_helpers/session'
 import { extractRequestFacts, normalizeDocumentUrl } from '@/server/http/utils/request-facts'
@@ -22,8 +20,7 @@ export interface MakeRequestContextOptions {
   /** `undefined` derives the viewer from `session.data.user`; explicit `null` forces anonymous. */
   user?: SessionUser | null
   clientAddress?: string
-  db?: NodePgDatabase
-  pool?: Pool
+  db?: Database
   cspNonce?: string
   markSessionDirty?: () => void
 }
@@ -34,7 +31,6 @@ export function makeRequestContext({
   user,
   clientAddress = '127.0.0.1',
   db,
-  pool,
   cspNonce = 'test-csp-nonce',
   markSessionDirty = () => {},
 }: MakeRequestContextOptions = {}): RequestContext {
@@ -45,8 +41,7 @@ export function makeRequestContext({
     clientAddress,
     url: normalizeDocumentUrl(new URL(request.url)),
     requestFacts: extractRequestFacts(request),
-    db: (db ?? {}) as NodePgDatabase,
-    pool: (pool ?? {}) as Pool,
+    db: (db ?? {}) as Database,
     cspNonce,
     markSessionDirty,
   }

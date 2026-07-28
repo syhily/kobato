@@ -1,27 +1,25 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { and } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
+
 import { clearAllTables } from '#/_helpers/integration-db'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { buildAdminListConditions } from '@/server/domains/comments/repos/shared'
 import { liveContentWhere } from '@/server/domains/content/schemas/live-gate'
 import { bumpCounter } from '@/server/infra/cache/registry'
 import { ilikeEscape } from '@/server/infra/db/ilike-escape'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { comment } from '@/server/infra/db/schema/comment'
 import { postSearchIndex } from '@/server/infra/db/schema/content'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
 import { searchPosts } from '@/server/infra/search/search'
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {
@@ -132,8 +130,8 @@ describe('ilikeEscape — comments repository', () => {
       .values({ name: 'Admin', email: 'admin@test.com', password: 'x' })
       .returning({ id: user.id })
     await db.insert(comment).values([
-      { content: 'Discount is 50% off', type: 'post', ownerId: 1n, userId: u.id, rid: 1 },
-      { content: 'Price is 500 yen', type: 'post', ownerId: 1n, userId: u.id, rid: 2 },
+      { content: 'Discount is 50% off', type: 'post', ownerId: 1, userId: u.id, rid: 1 },
+      { content: 'Price is 500 yen', type: 'post', ownerId: 1, userId: u.id, rid: 2 },
     ])
 
     const conditions = buildAdminListConditions({ q: '50%' })
@@ -152,8 +150,8 @@ describe('ilikeEscape — comments repository', () => {
       .values({ name: 'Admin', email: 'admin@test.com', password: 'x' })
       .returning({ id: user.id })
     await db.insert(comment).values([
-      { content: 'Variable name is foo_bar', type: 'post', ownerId: 1n, userId: u.id, rid: 1 },
-      { content: 'Variable name is foobar', type: 'post', ownerId: 1n, userId: u.id, rid: 2 },
+      { content: 'Variable name is foo_bar', type: 'post', ownerId: 1, userId: u.id, rid: 1 },
+      { content: 'Variable name is foobar', type: 'post', ownerId: 1, userId: u.id, rid: 2 },
     ])
 
     const conditions = buildAdminListConditions({ q: 'foo_bar' })
@@ -172,8 +170,8 @@ describe('ilikeEscape — comments repository', () => {
       .values({ name: 'Admin', email: 'admin@test.com', password: 'x' })
       .returning({ id: user.id })
     await db.insert(comment).values([
-      { content: 'Contains 50% discount', type: 'post', ownerId: 1n, userId: u.id, rid: 1 },
-      { content: 'Just regular text', type: 'post', ownerId: 1n, userId: u.id, rid: 2 },
+      { content: 'Contains 50% discount', type: 'post', ownerId: 1, userId: u.id, rid: 1 },
+      { content: 'Just regular text', type: 'post', ownerId: 1, userId: u.id, rid: 2 },
     ])
 
     const conditions = buildAdminListConditions({ q: '50%', match: 'does-not-contain' })
@@ -190,12 +188,12 @@ describe('ilikeEscape — comments repository', () => {
 describe('ilikeEscape — search posts', () => {
   it('finds posts by title with escaped wildcards', async () => {
     await db.insert(post).values([
-      { slug: 'post-1', title: 'How to get 50% off', summary: '', cover: '', publishedRevisionId: 1n },
-      { slug: 'post-2', title: '500 reasons to code', summary: '', cover: '', publishedRevisionId: 2n },
+      { slug: 'post-1', title: 'How to get 50% off', summary: '', cover: '', publishedRevisionId: 1 },
+      { slug: 'post-2', title: '500 reasons to code', summary: '', cover: '', publishedRevisionId: 2 },
     ])
     await db.insert(postSearchIndex).values([
-      { postId: 1n, plainText: 'How to get 50% off' },
-      { postId: 2n, plainText: '500 reasons to code' },
+      { postId: 1, plainText: 'How to get 50% off' },
+      { postId: 2, plainText: '500 reasons to code' },
     ])
 
     const result = await searchPosts(db, liveWhere(), '50% off', 10)
@@ -205,12 +203,12 @@ describe('ilikeEscape — search posts', () => {
 
   it('finds posts by summary with escaped wildcards', async () => {
     await db.insert(post).values([
-      { slug: 'post-1', title: 'Guide', summary: 'Save 50% today', cover: '', publishedRevisionId: 1n },
-      { slug: 'post-2', title: 'Guide 2', summary: 'Save 500 today', cover: '', publishedRevisionId: 2n },
+      { slug: 'post-1', title: 'Guide', summary: 'Save 50% today', cover: '', publishedRevisionId: 1 },
+      { slug: 'post-2', title: 'Guide 2', summary: 'Save 500 today', cover: '', publishedRevisionId: 2 },
     ])
     await db.insert(postSearchIndex).values([
-      { postId: 1n, plainText: 'Save 50% today' },
-      { postId: 2n, plainText: 'Save 500 today' },
+      { postId: 1, plainText: 'Save 50% today' },
+      { postId: 2, plainText: 'Save 500 today' },
     ])
 
     const result = await searchPosts(db, liveWhere(), '50%', 10)
@@ -220,12 +218,12 @@ describe('ilikeEscape — search posts', () => {
 
   it('finds posts by title with escaped underscores', async () => {
     await db.insert(post).values([
-      { slug: 'post-1', title: 'Guide to foo_bar', summary: '', cover: '', publishedRevisionId: 1n },
-      { slug: 'post-2', title: 'Guide to foobar', summary: '', cover: '', publishedRevisionId: 2n },
+      { slug: 'post-1', title: 'Guide to foo_bar', summary: '', cover: '', publishedRevisionId: 1 },
+      { slug: 'post-2', title: 'Guide to foobar', summary: '', cover: '', publishedRevisionId: 2 },
     ])
     await db.insert(postSearchIndex).values([
-      { postId: 1n, plainText: '' },
-      { postId: 2n, plainText: '' },
+      { postId: 1, plainText: '' },
+      { postId: 2, plainText: '' },
     ])
 
     const result = await searchPosts(db, liveWhere(), 'foo_bar', 10)

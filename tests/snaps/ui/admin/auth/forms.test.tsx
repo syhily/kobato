@@ -91,22 +91,4 @@ describe('snapshot: AdminInstallForm (install form fields)', () => {
     expect(html).toContain('id="install-title"')
     expect(html).toContain('disabled=""')
   })
-
-  it('renders the pgToolsAvailable=false warning when restore mode is forced but unavailable', () => {
-    // pgToolsAvailable=false surfaces the "缺少 postgresql-client" copy
-    // ONLY when mode === 'restore'. The mode defaults to install, so we
-    // assert the negative here: the warning copy must NOT appear in the
-    // default render even when pgTools is unavailable. The restore-mode
-    // warning branch is gated behind an interactive state flip and is
-    // covered by integration tests.
-    navigationState.state = 'idle'
-    navigationState.formMethod = 'GET'
-    const html = stableHtml(renderInRouter(<AdminInstallForm pgToolsAvailable={false} />, '/setup'))
-    expect(html).toContain('从备份恢复')
-    // The restore-tab disabled affordance is present.
-    expect(html).toContain('cursor-not-allowed')
-    // The restore-mode warning copy is gated on mode === 'restore' and
-    // stays hidden in the default install-mode render.
-    expect(html).not.toContain('当前运行环境缺少 postgresql-client')
-  })
 })

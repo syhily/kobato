@@ -64,7 +64,7 @@ Configuration:
   Environment variables    Override config values and are written back into
                            the file. Names follow the nested path with a
                            double underscore, e.g.:
-                             database.url           → database__url
+                             storage.database       → storage__database
                              security.sessionSecret → security__sessionSecret
                              security.encryptionKey → security__encryptionKey
                              storage.data           → storage__data

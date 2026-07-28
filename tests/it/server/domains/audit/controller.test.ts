@@ -79,9 +79,9 @@ describe('audit/controller helpers', () => {
   describe('toAuditLogItemDto', () => {
     it('maps a row to the item DTO', () => {
       const row = {
-        id: 1n,
+        id: 1,
         action: 'login',
-        actorId: 42n,
+        actorId: 42,
         actorRole: 'admin',
         resourceType: 'session',
         resourceId: 's1',
@@ -104,7 +104,7 @@ describe('audit/controller helpers', () => {
 
     it('handles null actorId and missing actorName', () => {
       const row = {
-        id: 2n,
+        id: 2,
         action: 'search',
         actorId: null,
         actorRole: null,

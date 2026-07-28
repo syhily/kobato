@@ -1,21 +1,20 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { call } from '@orpc/server'
 import { eq } from 'drizzle-orm'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import type { Database } from '@/server/infra/db/database'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { installFetch } from '#/_helpers/fetch'
 import { clearAllTables } from '#/_helpers/integration-db'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { makeAuthedCtx, makePublicCtx } from '#/_helpers/mock-ctx'
 import { callRpc } from '#/_helpers/rpc-call'
 import { flushAuditLog } from '@/server/domains/audit/services/batcher'
 import { listPublicFriends } from '@/server/domains/friends/service'
 import { adminFriendsRouter } from '@/server/http/controllers/admin/friends.controller'
 import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { friend } from '@/server/infra/db/schema/friend'
 import { user } from '@/server/infra/db/schema/user'
 import { invalidateMailTransportCache } from '@/server/infra/email/sender'
@@ -25,16 +24,15 @@ vi.mock('@/server/domains/images/services/enhance', () => ({
   hydrateImageRefs: vi.fn(async () => undefined),
 }))
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 const mockFetch = installFetch()
 
 const ADMIN_EMAIL = TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.author.email
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 // Zeabur transport against the mocked fetch — one enqueued response
@@ -69,7 +67,7 @@ beforeEach(async () => {
 })
 
 async function apply(input: Record<string, unknown>): Promise<Response> {
-  return callRpc('/friends/apply', input, makePublicCtx({ db, pool }))
+  return callRpc('/friends/apply', input, makePublicCtx({ db }))
 }
 
 async function friendRows(): Promise<(typeof friend.$inferSelect)[]> {
@@ -84,7 +82,7 @@ function lastMailBody(): { to: string[]; subject: string; html: string } {
 
 // audit_log.actor_id references user.id — the admin actor must be a
 // real row or the audit insert dead-letters on the FK.
-async function seedAdmin(): Promise<bigint> {
+async function seedAdmin(): Promise<number> {
   const rows = await db
     .insert(user)
     .values({
@@ -97,8 +95,8 @@ async function seedAdmin(): Promise<bigint> {
   return rows[0]!.id
 }
 
-function adminCtx(adminId: bigint) {
-  return makeAuthedCtx({ userId: adminId.toString(), role: 'admin', db, pool })
+function adminCtx(adminId: number) {
+  return makeAuthedCtx({ userId: adminId.toString(), role: 'admin', db })
 }
 
 describe('integration / friends apply', () => {
@@ -217,7 +215,7 @@ describe('integration / friends apply', () => {
 
 describe('integration / friends apply → admin approve', () => {
   beforeEach(() => {
-    initAllBatchers(pool, db)
+    initAllBatchers(handle)
   })
 
   afterEach(async () => {

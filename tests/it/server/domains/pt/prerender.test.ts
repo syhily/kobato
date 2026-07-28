@@ -1,13 +1,11 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
 import type { EnrichedMusicPlayerBlock } from '@/shared/pt/enriched'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
 import { clearAllTables } from '#/_helpers/integration-db'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { music } from '@/server/infra/db/schema/media'
 
 const { setBlogSettingsBundleForTests } = await import('#/_helpers/blog-settings')
@@ -27,15 +25,14 @@ const ops = await import('@/server/infra/db/operations/music')
 const { DEFAULT_MUSIC_COVER_URL, getPublicMusicMetasByIds } = await import('@/server/domains/music/services/read')
 const { prerenderMusicPlayerBlocks } = await import('@/server/domains/pt/prerender')
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 // The PT embed seam wired the same way the SSR routes wire it.
 const resolveMusicEmbeds = (playerIds: readonly string[]) => getPublicMusicMetasByIds(db, playerIds)
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {

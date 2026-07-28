@@ -1,7 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { and, eq, isNull } from 'drizzle-orm'
 
+import type { Database } from '@/server/infra/db/database'
 import type { BrandingObjectRef } from '@/shared/config/types'
 
 import {
@@ -47,7 +46,7 @@ export interface MigrationResult extends MigrationStats {
 }
 
 /** Count local-driver assets of each type — drives the migration card + run summary. */
-export async function getLocalStorageMigrationStats(db: NodePgDatabase): Promise<MigrationStats> {
+export async function getLocalStorageMigrationStats(db: Database): Promise<MigrationStats> {
   const localImages = await db
     .select({ path: image.storagePath })
     .from(image)
@@ -84,7 +83,7 @@ export async function getLocalStorageMigrationStats(db: NodePgDatabase): Promise
  * Precondition: S3 is configured (`activeBackend().driver === 's3'`). The
  * oRPC procedure enforces this before calling.
  */
-export async function migrateLocalToS3(db: NodePgDatabase): Promise<MigrationResult> {
+export async function migrateLocalToS3(db: Database): Promise<MigrationResult> {
   const result: MigrationResult = { images: 0, music: 0, branding: 0, backups: 0, skipped: 0, failed: 0 }
 
   // --- Images ---
@@ -194,8 +193,8 @@ export async function migrateLocalToS3(db: NodePgDatabase): Promise<MigrationRes
 }
 
 /** Copy every local-driver branding slot to S3 and flip the persisted ref. */
-async function migrateBranding(db: NodePgDatabase, result: MigrationResult): Promise<void> {
-  const existing = await findSettingByScope(db, SECTION_REGISTRY.assets.scope)
+async function migrateBranding(db: Database, result: MigrationResult): Promise<void> {
+  const existing = findSettingByScope(db, SECTION_REGISTRY.assets.scope)
   if (existing === null) {
     return
   }
@@ -245,7 +244,7 @@ async function migrateBranding(db: NodePgDatabase, result: MigrationResult): Pro
 
   if (changed) {
     data.branding = branding
-    await upsertSetting(db, data, null, SECTION_REGISTRY.assets.scope)
+    upsertSetting(db, data, null, SECTION_REGISTRY.assets.scope)
     await refreshBlogSettings(db)
   }
 }

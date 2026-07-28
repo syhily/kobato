@@ -1,4 +1,4 @@
-import { bigserial, boolean, index, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core'
+import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
 // Friend links for the public grid (`<Friends />` in posts, `show_friends` on
 // pages). CRUD at `/admin/taxonomy/friends`.
@@ -14,22 +14,22 @@ import { bigserial, boolean, index, pgTable, text, timestamp, varchar } from 'dr
 //   (CLI import + admin upsert): a strict DB UNIQUE would reject
 //   protocol/trailing-slash variants the editor probably meant as
 //   updates.
-export const friend = pgTable(
+export const friend = sqliteTable(
   'friend',
   {
-    id: bigserial('id', { mode: 'bigint' }).primaryKey().notNull(),
-    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
+    id: integer('id').primaryKey({ autoIncrement: true }).notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' })
       .notNull()
       .$defaultFn(() => new Date()),
-    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+    updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
       .notNull()
       .$defaultFn(() => new Date()),
-    website: varchar('website', { length: 80 }).notNull(),
+    website: text('website').notNull(),
     description: text('description'),
     homepage: text('homepage').notNull(),
     poster: text('poster').notNull(),
     rssUrl: text('rss_url'),
-    visible: boolean('visible').default(true).notNull(),
+    visible: integer('visible', { mode: 'boolean' }).default(true).notNull(),
   },
   (table) => [index('idx_friend_visible').on(table.visible), index('idx_friend_homepage').on(table.homepage)],
 )

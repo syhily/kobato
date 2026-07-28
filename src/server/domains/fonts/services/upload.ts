@@ -1,7 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { createHash } from 'node:crypto'
 
+import type { Database } from '@/server/infra/db/database'
 import type { FontRow } from '@/server/infra/db/schema/font'
 import type { AdminFontDto } from '@/shared/contracts/fonts'
 
@@ -91,7 +90,7 @@ export interface UploadFontInput {
  * if a font row with the same sha256 already exists, it is returned without
  * re-slicing or re-storing (the dedup fast path).
  */
-export async function uploadFont(db: NodePgDatabase, input: UploadFontInput): Promise<AdminFontDto> {
+export async function uploadFont(db: Database, input: UploadFontInput): Promise<AdminFontDto> {
   const { buffer, sourceName, familyName } = input
 
   const trimmedFamily = familyName.trim()

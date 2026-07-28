@@ -24,7 +24,7 @@ const log = getLogger('auth.magic-link')
 export async function sendMagicLink(
   ctx: SigninFlowContext,
   request: Request,
-  dbUser: { id: bigint; name: string; email: string },
+  dbUser: { id: number; name: string; email: string },
   redirectTo: string,
   origin: string,
 ): Promise<{ message: string } | null> {
@@ -37,7 +37,7 @@ export async function sendMagicLink(
     return { message: '发送过于频繁，请稍后再试。' }
   }
 
-  const { token } = await issueSignInLinkToken(db, dbUser.id)
+  const { token } = issueSignInLinkToken(db, dbUser.id)
   const link = `${origin}/admin/signin?action=magiclink&token=${encodeURIComponent(token)}&redirect_to=${encodeURIComponent(redirectTo)}`
 
   try {

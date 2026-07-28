@@ -31,7 +31,7 @@ function makeFacts(overrides: Partial<RequestFacts> = {}): RequestFacts {
   }
 }
 
-const POST_TARGET = { type: 'post' as const, ownerId: 1n }
+const POST_TARGET = { type: 'post' as const, ownerId: 1 }
 const BOT_UA = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
 const CHROME_UA =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36'
@@ -96,7 +96,7 @@ describe('analytics/track — trackPageView', () => {
     const event = pushAccessEvent.mock.calls[0]![0]
     expect(event.path).toBe('/post/1')
     expect(event.entityType).toBe('post')
-    expect(event.entityId).toBe(1n)
+    expect(event.entityId).toBe(1)
   })
 
   it('skips only the counter when the target is null (homepage)', async () => {

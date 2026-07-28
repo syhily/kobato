@@ -101,22 +101,13 @@ describe('snapshot: AdminInstallForm', () => {
   })
 
   it('renders restore mode', () => {
-    const html = stableHtml(renderInRouter(<AdminInstallForm pgToolsAvailable={true} />, '/?mode=restore'))
+    const html = stableHtml(renderInRouter(<AdminInstallForm />, '/?mode=restore'))
     // Mode state defaults to install; the component does not read URL mode.
     // We just assert both modes are selectable and restore instructions appear after click in integration tests.
     expect(html).toContain('全新安装')
     expect(html).toContain('从备份恢复')
   })
 
-  it('disables restore when pgToolsAvailable is false', () => {
-    const html = stableHtml(renderInRouter(<AdminInstallForm pgToolsAvailable={false} />))
-    expect(html).toContain('从备份恢复')
-    expect(html).toContain('disabled')
-    expect(html).toContain('cursor-not-allowed')
-  })
-})
-
-describe('snapshot: SetupTokenVerifyForm', () => {
   it('renders token input and error', () => {
     const html = stableHtml(
       renderInRouter(

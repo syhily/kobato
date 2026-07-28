@@ -1,21 +1,19 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
+
 import { clearAllTables } from '#/_helpers/integration-db'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 import { callRpc, parseRpcJson } from '#/_helpers/rpc-call'
 import { findSlugRegistryBySlug } from '@/server/infra/db/operations/slug-registry'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { slugRegistry } from '@/server/infra/db/schema/config'
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {
@@ -24,7 +22,7 @@ beforeEach(async () => {
 
 describe('integration / admin posts restore', () => {
   it('returns a warning when the slug was claimed by another post during deletion', async () => {
-    const ctx = makeAuthedCtx({ role: 'admin', db, pool })
+    const ctx = makeAuthedCtx({ role: 'admin', db })
 
     // 1. Create post A with slug "shared-slug"
     const createA = await callRpc(
@@ -46,7 +44,7 @@ describe('integration / admin posts restore', () => {
     await db.insert(slugRegistry).values({
       slug: 'shared-slug',
       entityType: 'post',
-      entityId: 999999n,
+      entityId: 999999,
     })
 
     // 4. Restore post A — expect warning
@@ -61,11 +59,11 @@ describe('integration / admin posts restore', () => {
     const owner = await findSlugRegistryBySlug(db, 'shared-slug')
     expect(owner).not.toBeNull()
     expect(owner?.entityType).toBe('post')
-    expect(owner?.entityId).toBe(999999n)
+    expect(owner?.entityId).toBe(999999)
   })
 
   it('restores cleanly when no conflict exists', async () => {
-    const ctx = makeAuthedCtx({ role: 'admin', db, pool })
+    const ctx = makeAuthedCtx({ role: 'admin', db })
 
     // Create a post, then delete it
     const createRes = await callRpc(
@@ -90,11 +88,11 @@ describe('integration / admin posts restore', () => {
     const owner = await findSlugRegistryBySlug(db, 'lonely-post')
     expect(owner).not.toBeNull()
     expect(owner?.entityType).toBe('post')
-    expect(owner?.entityId).toBe(BigInt(created.post.id))
+    expect(owner?.entityId).toBe(Number(created.post.id))
   })
 
   it('returns a warning when the slug was claimed by a page during deletion', async () => {
-    const ctx = makeAuthedCtx({ role: 'admin', db, pool })
+    const ctx = makeAuthedCtx({ role: 'admin', db })
 
     // 1. Create post A with slug "cross-slug"
     const createPost = await callRpc(
@@ -130,6 +128,6 @@ describe('integration / admin posts restore', () => {
     // 5. Page B still owns the slug
     const owner = await findSlugRegistryBySlug(db, 'cross-slug')
     expect(owner?.entityType).toBe('page')
-    expect(owner?.entityId).toBe(BigInt(page.page.id))
+    expect(owner?.entityId).toBe(Number(page.page.id))
   })
 })

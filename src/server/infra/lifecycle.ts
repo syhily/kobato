@@ -1,9 +1,10 @@
 import type { ServerType } from '@hono/node-server'
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { Hono } from 'hono'
 
 import { serve } from '@hono/node-server'
 import { Server as NodeHttpServer } from 'node:http'
+
+import type { Database } from '@/server/infra/db/database'
 
 import { serverConfig } from '@/server/infra/config'
 import { getLogger } from '@/server/infra/logger'
@@ -29,7 +30,7 @@ interface ShutdownHook {
   priority: number
 }
 
-type RefreshSettingsFn = (db: NodePgDatabase) => Promise<unknown>
+type RefreshSettingsFn = (db: Database) => Promise<unknown>
 
 // Typed DI container that replaces the previous 10 module-level `let`
 // bindings. The explicit interface makes the container shape reviewable
@@ -40,7 +41,7 @@ export interface LifecycleContainer {
   shuttingDown: boolean
   hooks: ShutdownHook[]
   currentApp: Hono<any> | null
-  currentDb: NodePgDatabase | null
+  currentDb: Database | null
   restartQueue: Promise<void>
   restartPromise: Promise<void> | null
   restoreState: RestoreState
@@ -202,7 +203,7 @@ export function setRestartApp(app: Hono<any>): void {
   container.currentApp = app
 }
 
-export function setRestartDb(db: NodePgDatabase): void {
+export function setRestartDb(db: Database): void {
   container.currentDb = db
 }
 

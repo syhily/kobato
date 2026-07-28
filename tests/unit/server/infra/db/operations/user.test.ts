@@ -1,6 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { describe, expect, it, vi } from 'vitest'
+
+import type { Database } from '@/server/infra/db/database'
 
 // The SafeUser projections (`findSafeUserById` / `findSafeUserByEmail`)
 // are the single owner of the "never leaves the server" field list:
@@ -40,7 +40,7 @@ function createSelectCapture(rows: unknown[]) {
         }),
       }
     }),
-  } as unknown as NodePgDatabase
+  } as unknown as Database
   return { db, captured }
 }
 
@@ -48,7 +48,7 @@ describe('infra/db/operations/user — SafeUser projections', () => {
   it('findSafeUserById selects exactly the SafeUser whitelist (no sensitive columns)', async () => {
     const { findSafeUserById } = await import('@/server/infra/db/operations/user')
     const { db, captured } = createSelectCapture([])
-    await findSafeUserById(db, 1n)
+    await findSafeUserById(db, 1)
     const keys = Object.keys(captured.projections[0]!)
     expect(keys.sort()).toEqual([...SAFE_USER_COLUMNS].sort())
     expect(keys).not.toContain('password')
@@ -65,10 +65,10 @@ describe('infra/db/operations/user — SafeUser projections', () => {
 
   it('returns the row when found and null when missing', async () => {
     const { findSafeUserById } = await import('@/server/infra/db/operations/user')
-    const row = { id: 1n, name: 'Alice' }
+    const row = { id: 1, name: 'Alice' }
     const found = createSelectCapture([row])
-    expect(await findSafeUserById(found.db, 1n)).toBe(row)
+    expect(await findSafeUserById(found.db, 1)).toBe(row)
     const missing = createSelectCapture([])
-    expect(await findSafeUserById(missing.db, 1n)).toBeNull()
+    expect(await findSafeUserById(missing.db, 1)).toBeNull()
   })
 })

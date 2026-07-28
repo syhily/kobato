@@ -1,21 +1,22 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { and, count, desc, eq, gte, inArray } from 'drizzle-orm'
 
 import type { ParentCommentRow } from '@/server/domains/comments/repos/shared'
+import type { Database } from '@/server/infra/db/database'
 
 import { comment } from '@/server/infra/db/schema/comment'
 import { user } from '@/server/infra/db/schema/user'
 
-export async function countApprovedCommentsByUser(db: NodePgDatabase, userId: bigint): Promise<number> {
-  const rows = await db
+// Sync (node:sqlite): called inside the comment persist transaction.
+export function countApprovedCommentsByUser(db: Database, userId: number): number {
+  const rows = db
     .select({ count: count() })
     .from(comment)
     .where(and(eq(comment.userId, userId), eq(comment.isPending, false)))
+    .all()
   return rows.length > 0 ? rows[0].count : 0
 }
 
-export async function recentCommentsForUserDedupe(db: NodePgDatabase, userId: bigint, since: Date, limit: number) {
+export async function recentCommentsForUserDedupe(db: Database, userId: number, since: Date, limit: number) {
   return db
     .select({ contentHash: comment.contentHash })
     .from(comment)
@@ -24,7 +25,7 @@ export async function recentCommentsForUserDedupe(db: NodePgDatabase, userId: bi
     .limit(limit)
 }
 
-export async function findCommentWithSourceUser(db: NodePgDatabase, id: bigint) {
+export async function findCommentWithSourceUser(db: Database, id: number) {
   const rows = await db
     .select()
     .from(comment)
@@ -34,10 +35,7 @@ export async function findCommentWithSourceUser(db: NodePgDatabase, id: bigint) 
   return rows[0] ?? null
 }
 
-export async function findParentCommentsByIds(
-  db: NodePgDatabase,
-  ids: bigint[],
-): Promise<Map<string, ParentCommentRow>> {
+export async function findParentCommentsByIds(db: Database, ids: number[]): Promise<Map<string, ParentCommentRow>> {
   const out = new Map<string, ParentCommentRow>()
   if (ids.length === 0) {
     return out

@@ -1,10 +1,10 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { SuperJSONResult } from 'superjson'
 
 import { and, eq, gt, inArray } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
 import superjson from 'superjson'
 
+import type { Database } from '@/server/infra/db/database'
 import type { CommentTokenCookie, CommentTokenCookieEntry } from '@/shared/utils/comment-token'
 
 import { oneTimeToken } from '@/server/infra/db/schema/one-time-token'
@@ -65,9 +65,9 @@ function decodeTokenPayload(raw: unknown): CommentTokenPayload | null {
 }
 
 export async function issueCommentToken(
-  db: NodePgDatabase,
-  commentId: bigint | string,
-  userId: bigint | string,
+  db: Database,
+  commentId: number | string,
+  userId: number | string,
   pageKey: string,
   ttlSeconds?: number,
 ): Promise<string> {
@@ -87,7 +87,7 @@ export async function issueCommentToken(
   return token
 }
 
-export async function verifyCommentToken(db: NodePgDatabase, token: string): Promise<CommentTokenPayload | null> {
+export async function verifyCommentToken(db: Database, token: string): Promise<CommentTokenPayload | null> {
   const rows = await db
     .select({ payload: oneTimeToken.payload })
     .from(oneTimeToken)
@@ -100,7 +100,7 @@ export async function verifyCommentToken(db: NodePgDatabase, token: string): Pro
   return decodeTokenPayload(row.payload)
 }
 
-export async function revokeCommentToken(db: NodePgDatabase, token: string): Promise<void> {
+export async function revokeCommentToken(db: Database, token: string): Promise<void> {
   await db.delete(oneTimeToken).where(eq(oneTimeToken.key, `${TOKEN_KEY_PREFIX}${token}`))
 }
 
@@ -110,7 +110,7 @@ export async function revokeCommentToken(db: NodePgDatabase, token: string): Pro
  * Returns the cleaned cookie payload and the list of still-valid tokens with payloads.
  */
 export async function cleanupExpiredTokens(
-  db: NodePgDatabase,
+  db: Database,
   cookie: CommentTokenCookie,
 ): Promise<{
   cleaned: CommentTokenCookie
@@ -184,7 +184,7 @@ export function appendCommentToken(
  * dropped.
  */
 export async function verifyCommentOwnership(
-  db: NodePgDatabase,
+  db: Database,
   cookie: CommentTokenCookie,
   commentId: string,
 ): Promise<{ token: string | null; cleaned: CommentTokenCookie }> {

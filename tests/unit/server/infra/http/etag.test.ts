@@ -22,7 +22,7 @@ describe('server/infra/http/etag — weakEtag', () => {
   })
 
   it('handles bigint parts', () => {
-    expect(weakEtag([1n])).toBe(weakEtag([1n]))
+    expect(weakEtag([1])).toBe(weakEtag([1]))
   })
 })
 

@@ -1,7 +1,7 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { Buffer } from 'node:buffer'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import type { Database } from '@/server/infra/db/database'
 
 const { warnMock, imageWidthMock, cacheGetMock, cacheSetMock, findEmailByIdMock } = vi.hoisted(() => ({
   warnMock: vi.fn(),
@@ -46,7 +46,7 @@ import { encodedEmail } from '@/shared/utils/security'
 
 // The db handle is only forwarded to the mocked cache registry — a
 // stand-in is enough for the unit scope.
-const db = {} as NodePgDatabase
+const db = {} as Database
 
 beforeEach(() => {
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)

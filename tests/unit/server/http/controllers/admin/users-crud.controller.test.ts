@@ -43,7 +43,7 @@ async function call(path: string, input: unknown) {
 describe('admin users-crud controller', () => {
   beforeEach(() => {
     updateUserById.mockReset()
-    updateUserById.mockResolvedValue({ id: 1n })
+    updateUserById.mockResolvedValue({ id: 1 })
   })
 
   describe('update', () => {
@@ -58,7 +58,7 @@ describe('admin users-crud controller', () => {
       expect(body.success).toBe(true)
       expect(updateUserById).toHaveBeenCalledWith(
         expect.anything(),
-        1n,
+        1,
         expect.objectContaining({ link: 'https://example.com' }),
       )
     })
@@ -81,10 +81,10 @@ describe('admin users-crud controller', () => {
         name: 'Alice',
       })
       expect(response.status).toBe(200)
-      expect(updateUserById).toHaveBeenCalledWith(expect.anything(), 1n, { name: 'Alice' })
+      expect(updateUserById).toHaveBeenCalledWith(expect.anything(), 1, { name: 'Alice' })
       expect(updateUserById).not.toHaveBeenCalledWith(
         expect.anything(),
-        1n,
+        1,
         expect.objectContaining({ email: expect.anything() }),
       )
     })

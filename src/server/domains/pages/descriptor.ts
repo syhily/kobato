@@ -53,7 +53,7 @@ export const pageDescriptor: MetaEntityDescriptor<
   preview: {
     project: (meta, revision) => toCmsPage(meta, revision),
     async afterPublish(db) {
-      await invalidateContent(db, { entity: 'page' })
+      invalidateContent(db, { entity: 'page' })
     },
   },
   adminDto: {
@@ -67,10 +67,10 @@ export const pageDescriptor: MetaEntityDescriptor<
       showFriends: input.showFriends ?? existing.showFriends,
     }),
     async afterMutation(db) {
-      await invalidateContent(db, { entity: 'page' })
+      invalidateContent(db, { entity: 'page' })
     },
     async afterRestore(db) {
-      await invalidateContent(db, { entity: 'page' })
+      invalidateContent(db, { entity: 'page' })
       return undefined
     },
   },

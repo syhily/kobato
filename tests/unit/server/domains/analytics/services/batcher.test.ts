@@ -1,17 +1,8 @@
-import { Writable } from 'node:stream'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const poolMock = {
-  connect: vi.fn(),
-}
+import type { DatabaseHandle } from '@/server/infra/db/database'
 
-vi.mock('@/server/infra/db/copy-batcher', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/server/infra/db/copy-batcher')>()
-  return {
-    ...actual,
-    CopyBatcher: actual.CopyBatcher,
-  }
-})
+import { closeTestDatabase, createTestDatabase } from '#/_helpers/integration-db'
 
 vi.mock('@/server/infra/logger', () => ({
   getLogger: vi.fn(() => ({
@@ -29,13 +20,11 @@ vi.mock('@/server/infra/paths', () => ({
   ANALYTICS_DEAD_LETTER_PATH: '/tmp/dead-letter.log',
 }))
 
-import {
-  csvRow,
-  flushAccessLog,
-  pushAccessEvent,
-  replayDeadLetterAccessLog,
-} from '@/server/domains/analytics/services/batcher'
+import { flushAccessLog, pushAccessEvent, replayDeadLetterAccessLog } from '@/server/domains/analytics/services/batcher'
 import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
+import { accessLog } from '@/server/infra/db/schema/config'
+
+let handle: DatabaseHandle
 
 function makeEvent(
   overrides: Partial<Parameters<typeof pushAccessEvent>[0]> = {},
@@ -47,7 +36,7 @@ function makeEvent(
     ip: '127.0.0.1',
     path: '/',
     entityType: 'post',
-    entityId: 1n,
+    entityId: 1,
     referer: '',
     refererHost: '',
     country: '',
@@ -69,47 +58,36 @@ function makeEvent(
   }
 }
 
-function mockPoolForCopy() {
-  const writable = new Writable({
-    write(_chunk, _encoding, callback) {
-      callback()
-    },
-  })
-  const client = {
-    query: vi.fn(() => writable),
-    release: vi.fn(),
-  }
-  poolMock.connect.mockResolvedValue(client)
-}
-
 describe('analytics batcher', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     resetAllBatchers()
+    handle?.closed === false && closeTestDatabase(handle)
+    handle = createTestDatabase()
+    handle.db.delete(accessLog).run()
+    initAllBatchers(handle)
   })
 
-  it('serializes an event to csv', () => {
-    const row = csvRow(makeEvent({ entityId: 42n, latitude: 1.5, longitude: 2.5, isBot: true }))
-    expect(row).toContain('42')
-    expect(row).toContain('1.5')
-    expect(row).toContain('2.5')
-    expect(row).toContain('t')
-    expect(row.endsWith('\n')).toBe(true)
+  afterAll(() => {
+    resetAllBatchers()
+    closeTestDatabase(handle)
   })
 
   it('flushes an empty batch immediately', async () => {
-    initAllBatchers(poolMock as never, {} as never)
     const result = await flushAccessLog()
     expect(result).toEqual({ committed: 0, deadLettered: 0 })
   })
 
-  it('pushes and flushes events', async () => {
-    mockPoolForCopy()
-    initAllBatchers(poolMock as never, {} as never)
+  it('pushes and flushes events into access_log', async () => {
     pushAccessEvent(makeEvent())
     const result = await flushAccessLog()
-    expect(result.committed).toBe(1)
-    expect(result.deadLettered).toBe(0)
+    expect(result).toEqual({ committed: 1, deadLettered: 0 })
+
+    const rows = handle.db.select().from(accessLog).all()
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!.path).toBe('/')
+    expect(rows[0]!.entityId).toBe(1)
+    expect(rows[0]!.isBot).toBe(false)
   })
 
   it('throws when pushing before initialization', () => {
@@ -117,28 +95,7 @@ describe('analytics batcher', () => {
     expect(() => pushAccessEvent(makeEvent())).toThrow('not initialized')
   })
 
-  it('dead-letters events when COPY fails', async () => {
-    const client = {
-      query: vi.fn(() => {
-        const stream = new Writable({
-          write(_chunk, _encoding, callback) {
-            callback(new Error('copy failed'))
-          },
-        })
-        return stream
-      }),
-      release: vi.fn(),
-    }
-    poolMock.connect.mockResolvedValue(client)
-    initAllBatchers(poolMock as never, {} as never)
-    pushAccessEvent(makeEvent())
-    const result = await flushAccessLog()
-    expect(result.deadLettered).toBe(1)
-  })
-
-  it('replays dead-letter events', async () => {
-    mockPoolForCopy()
-    initAllBatchers(poolMock as never, {} as never)
+  it('replays dead-letter events (none on disk → no-op)', async () => {
     const result = await replayDeadLetterAccessLog('/nonexistent')
     expect(result.replayed).toBe(0)
   })

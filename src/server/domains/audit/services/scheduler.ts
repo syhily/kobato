@@ -1,4 +1,4 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Database } from '@/server/infra/db/database'
 
 import { runArchiveJob } from '@/server/domains/audit/services/archive'
 import { registerShutdownHook } from '@/server/infra/lifecycle'
@@ -20,9 +20,9 @@ let archiveTimer: NodeJS.Timeout | null = null
 // recreated pool (restore completion) is picked up without being
 // captured in module state. Same injection discipline as
 // `setRestartDb` / `setRestartRefreshSettings` in `@/server/infra/lifecycle`.
-let resolveDb: (() => NodePgDatabase) | null = null
+let resolveDb: (() => Database) | null = null
 
-export function wireArchiveScheduler(deps: { getDb: () => NodePgDatabase }): void {
+export function wireArchiveScheduler(deps: { getDb: () => Database }): void {
   resolveDb = deps.getDb
 }
 

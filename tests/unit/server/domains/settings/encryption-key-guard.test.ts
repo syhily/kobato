@@ -1,6 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import type { Database } from '@/server/infra/db/database'
 
 const mockState = vi.hoisted(() => ({
   encryptionKey: 'test-encryption-key-32-chars-long!!' as string | undefined,
@@ -15,9 +15,6 @@ vi.mock('@/server/infra/config', () => ({
       server: { host: '0.0.0.0', port: 4321, loggingLevel: 'error' },
       database: {
         url: 'postgresql://localhost:5434/test',
-        poolMax: 20,
-        statementTimeoutMs: 30000,
-        restoreRole: undefined,
       },
       security: {
         sessionSecret: ['test-session-secret-must-be-32-chars-long!'],
@@ -76,8 +73,8 @@ vi.mock('@/server/domains/settings/services/hydrate', () => ({
 }))
 
 const db = {
-  transaction: vi.fn(async (fn: (tx: NodePgDatabase) => Promise<unknown>) => fn(db as unknown as NodePgDatabase)),
-} as unknown as NodePgDatabase
+  transaction: vi.fn(async (fn: (tx: Database) => Promise<unknown>) => fn(db as unknown as Database)),
+} as unknown as Database
 const pool = {} as any
 
 const { updateBlogSettingsSection } = await import('@/server/domains/settings/services/core')
@@ -95,7 +92,7 @@ describe('settings service — ENCRYPTION_KEY guard', () => {
     mockState.encryptionKey = undefined
     mockState.findSettingsByScopePrefix.mockResolvedValue([])
     mockState.upsertSetting.mockResolvedValue({
-      id: 1n,
+      id: 1,
       scope: 'blog.general',
       data: {},
       updatedAt: new Date(),
@@ -104,7 +101,6 @@ describe('settings service — ENCRYPTION_KEY guard', () => {
 
     const result = await updateBlogSettingsSection(
       db,
-      pool,
       'general',
       {
         title: 'Test',

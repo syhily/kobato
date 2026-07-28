@@ -11,7 +11,7 @@ describe('services/backup — key validation', () => {
   it('rejects invalid keys', () => {
     expect(isValidBackupKey('../etc/passwd')).toBe(false)
     expect(isValidBackupKey('backup/../../secret')).toBe(false)
-    expect(isValidBackupKey('backup/x.sql.gz')).toBe(false)
+    expect(isValidBackupKey('backup/x.db.gz')).toBe(false)
     expect(isValidBackupKey('')).toBe(false)
     expect(isValidBackupKey('abc')).toBe(false)
     expect(isValidBackupKey('2026-06-05')).toBe(false)
@@ -19,6 +19,6 @@ describe('services/backup — key validation', () => {
   })
 
   it('builds correct S3 key from timestamp', () => {
-    expect(buildBackupS3Key('2026-06-05T12-34-56')).toBe('backup/backup-2026-06-05T12-34-56.sql.gz')
+    expect(buildBackupS3Key('2026-06-05T12-34-56')).toBe('backup/backup-2026-06-05T12-34-56.db.gz')
   })
 })

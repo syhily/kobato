@@ -43,13 +43,7 @@ const setSlot = adminProc
   .input(setFontSlotInputDto)
   .output(z.object({}).optional())
   .handler(async ({ input, context }) => {
-    await setFontSlot(
-      context.db,
-      context.pool,
-      input.slot,
-      input.fontIds,
-      context.viewer ? idFromString(context.viewer.id) : null,
-    )
+    await setFontSlot(context.db, input.slot, input.fontIds, context.viewer ? idFromString(context.viewer.id) : null)
     recordAuditEventFromContext(context, {
       action: 'font_slot_updated',
       resourceType: 'font',

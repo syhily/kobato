@@ -1,10 +1,10 @@
 import { sql, type SQL } from 'drizzle-orm'
 
 import type { AnalyticsQueryInput } from '@/server/domains/analytics/services/query-parser'
-import type { AggregateSource, MetricType } from '@/shared/contracts/analytics'
+import type { MetricType } from '@/shared/contracts/analytics'
 
 import { DomainError } from '@/server/infra/http/errors'
-import { METRIC_TYPES, pickAggregateSource } from '@/shared/contracts/analytics'
+import { METRIC_TYPES } from '@/shared/contracts/analytics'
 
 const METRIC_SET = new Set<string>(METRIC_TYPES)
 
@@ -53,11 +53,13 @@ export function quoteIdent(name: MetricType): SQL {
   return sql.raw(`"${col}"`)
 }
 
+// `ts` is an epoch-ms integer (timestamp_ms storage); range inputs are
+// epoch seconds, so the bounds multiply up.
 export function whereClause(input: AnalyticsQueryInput): SQL {
   const conditions: SQL[] = [
     sql`is_bot = FALSE`,
-    sql`ts >= to_timestamp(${input.range.startAt})`,
-    sql`ts < to_timestamp(${input.range.endAt})`,
+    sql`ts >= ${input.range.startAt * 1000}`,
+    sql`ts < ${input.range.endAt * 1000}`,
   ]
   if (input.entityType) {
     conditions.push(sql`entity_type = ${input.entityType}`)
@@ -67,46 +69,6 @@ export function whereClause(input: AnalyticsQueryInput): SQL {
   }
   for (const [type, value] of Object.entries(input.filters)) {
     if (!isMetricType(type) || !value) {
-      continue
-    }
-    conditions.push(sql`${quoteIdent(type)} = ${value}`)
-  }
-  return sql.join(conditions, sql` AND `)
-}
-
-/** Dimensions available in the hourly continuous aggregate. */
-export const STATS_HOURLY_DIMENSIONS = new Set<MetricType>([
-  'country',
-  'browser',
-  'browserType',
-  'os',
-  'deviceType',
-  'path',
-])
-
-/** Dimensions available in the daily continuous aggregate. */
-export const STATS_DAILY_DIMENSIONS = new Set<MetricType>(['country', 'path'])
-
-export function cagWhereClause(input: AnalyticsQueryInput, source?: AggregateSource): SQL {
-  const effectiveSource = source ?? pickAggregateSource(input.range)
-  const conditions: SQL[] = [
-    sql`bucket >= to_timestamp(${input.range.startAt})`,
-    sql`bucket < to_timestamp(${input.range.endAt})`,
-  ]
-  if (input.entityType) {
-    conditions.push(sql`entity_type = ${input.entityType}`)
-  }
-  if (input.entityId !== undefined) {
-    conditions.push(sql`entity_id = ${input.entityId}`)
-  }
-  const usable =
-    effectiveSource === 'stats_hourly'
-      ? STATS_HOURLY_DIMENSIONS
-      : effectiveSource === 'stats_daily'
-        ? STATS_DAILY_DIMENSIONS
-        : new Set<MetricType>(METRIC_TYPES)
-  for (const [type, value] of Object.entries(input.filters)) {
-    if (!isMetricType(type) || !value || !usable.has(type)) {
       continue
     }
     conditions.push(sql`${quoteIdent(type)} = ${value}`)

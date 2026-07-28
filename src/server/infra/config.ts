@@ -5,9 +5,9 @@
 // consumer reads.
 //
 //   - ONE declarative table (CONFIG_TABLE) is the single source of truth:
-//     each row maps a nested config path (`database.url`) to a Zod schema.
+//     each row maps a nested config path (`storage.database`) to a Zod schema.
 //     The process env var name is derived by convention: `path.join('__')`
-//     → `database__url`.
+//     → `storage__database`.
 //   - Precedence: schema defaults < config file < env vars. Values coming
 //     from env that differ from the file are WRITTEN BACK into the file —
 //     env is the injection mechanism, the file converges to the effective
@@ -57,18 +57,6 @@ export const CONFIG_TABLE = [
     schema: z.enum(['debug', 'info', 'warn', 'error', 'silent']).optional(),
     fileDefault: 'info',
   },
-  { path: ['database', 'url'], schema: z.url(), fileDefault: '' },
-  {
-    path: ['database', 'poolMax'],
-    schema: z.coerce.number().int().min(1).max(100).optional().default(20),
-    fileDefault: 20,
-  },
-  {
-    path: ['database', 'statementTimeoutMs'],
-    schema: z.coerce.number().int().min(1_000).max(120_000).optional().default(30_000),
-    fileDefault: 30_000,
-  },
-  { path: ['database', 'restoreRole'], schema: z.string().min(1).optional(), fileDefault: '' },
   {
     path: ['security', 'sessionSecret'],
     schema: z
@@ -79,6 +67,14 @@ export const CONFIG_TABLE = [
   },
   { path: ['security', 'encryptionKey'], schema: z.string().min(32), fileDefault: '' },
   { path: ['storage', 'data'], schema: z.string().min(1), fileDefault: './data' },
+  {
+    path: ['storage', 'database'],
+    // Empty resolves to `<storage.data>/kobato.db` at open time, so the
+    // default tracks a custom `storage.data` without duplicating it.
+    // `:memory:` is allowed for tests.
+    schema: z.string(),
+    fileDefault: '',
+  },
   {
     path: ['storage', 'defaultFont'],
     schema: z.string().min(1).optional(),
@@ -339,6 +335,14 @@ export function migrateLegacyKeys(data: Record<string, unknown>): { migrated: bo
     notes.push('redis(已删除)')
   }
 
+  // database: the Postgres era. `database.url` has no meaningful mapping
+  // to a SQLite file path, so the section is dropped (like redis) rather
+  // than auto-moved — the new `storage.database` default applies.
+  if ('database' in data) {
+    delete data.database
+    notes.push('database(已删除)')
+  }
+
   return { migrated: notes.length > 0, notes }
 }
 
@@ -346,7 +350,7 @@ export function migrateLegacyKeys(data: Record<string, unknown>): { migrated: bo
 
 /**
  * Resolve the effective raw values, keyed by dotted config path
- * (`'database.url'`): schema defaults < config file < env vars,
+ * (`'storage.database'`): schema defaults < config file < env vars,
  * persisting env overrides back into the file. Fails the process
  * (clear Chinese message) on unreadable/invalid config files.
  *
@@ -455,12 +459,6 @@ export interface ServerConfig {
     port: number
     loggingLevel?: 'debug' | 'info' | 'warn' | 'error' | 'silent' | undefined
   }
-  database: {
-    url: string
-    poolMax: number
-    statementTimeoutMs: number
-    restoreRole?: string | undefined
-  }
   security: {
     /** Cookie-signing secrets for the session storage (rotatable, comma-separated in the file). */
     sessionSecret: string[]
@@ -468,6 +466,8 @@ export interface ServerConfig {
   }
   storage: {
     data: string
+    /** SQLite database file path. Empty → `<storage.data>/kobato.db`. */
+    database: string
     defaultFont?: string | undefined
   }
 }
@@ -509,7 +509,7 @@ export function loadServerConfig(): ServerConfig {
         'Please ensure the following values are set in kobato.config.json',
         '(or passed as `__`-style environment variables):',
         '',
-        '    database.url             — PostgreSQL connection URL',
+        '    storage.database         — SQLite database file path (default: <storage.data>/kobato.db)',
         '    security.sessionSecret   — Session signing secret',
         '    security.encryptionKey   - The encryption key for sensitive content',
         '    storage.data             - Root directory for all local filesystem data',

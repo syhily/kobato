@@ -1,20 +1,18 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { and, eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
+
 import { clearAllTables } from '#/_helpers/integration-db'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { incrementMetricPvBatch } from '@/server/infra/db/operations/metric'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { metric } from '@/server/infra/db/schema/metric'
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {
@@ -24,8 +22,8 @@ beforeEach(async () => {
 describe('db/query/metric', () => {
   it('increments pv for valid batched deltas', async () => {
     await db.insert(metric).values([
-      { type: 'post', ownerId: 1n, pv: 0 },
-      { type: 'page', ownerId: 2n, pv: 0 },
+      { type: 'post', ownerId: 1, pv: 0 },
+      { type: 'page', ownerId: 2, pv: 0 },
     ])
 
     await incrementMetricPvBatch(
@@ -39,12 +37,12 @@ describe('db/query/metric', () => {
     const postRow = await db
       .select({ pv: metric.pv })
       .from(metric)
-      .where(and(eq(metric.type, 'post'), eq(metric.ownerId, 1n)))
+      .where(and(eq(metric.type, 'post'), eq(metric.ownerId, 1)))
       .limit(1)
     const pageRow = await db
       .select({ pv: metric.pv })
       .from(metric)
-      .where(and(eq(metric.type, 'page'), eq(metric.ownerId, 2n)))
+      .where(and(eq(metric.type, 'page'), eq(metric.ownerId, 2)))
       .limit(1)
 
     expect(postRow[0]?.pv).toBe(1)
@@ -52,7 +50,7 @@ describe('db/query/metric', () => {
   })
 
   it('skips empty and non-positive batched view deltas', async () => {
-    await db.insert(metric).values([{ type: 'post', ownerId: 1n, pv: 5 }])
+    await db.insert(metric).values([{ type: 'post', ownerId: 1, pv: 5 }])
 
     await incrementMetricPvBatch(
       db,
@@ -65,13 +63,13 @@ describe('db/query/metric', () => {
     const rows = await db
       .select({ pv: metric.pv })
       .from(metric)
-      .where(and(eq(metric.type, 'post'), eq(metric.ownerId, 1n)))
+      .where(and(eq(metric.type, 'post'), eq(metric.ownerId, 1)))
       .limit(1)
     expect(rows[0]?.pv).toBe(5)
   })
 
   it('skips malformed composite keys (no colon, unknown type, empty id)', async () => {
-    await db.insert(metric).values([{ type: 'post', ownerId: 1n, pv: 10 }])
+    await db.insert(metric).values([{ type: 'post', ownerId: 1, pv: 10 }])
 
     await incrementMetricPvBatch(
       db,
@@ -85,7 +83,7 @@ describe('db/query/metric', () => {
     const rows = await db
       .select({ pv: metric.pv })
       .from(metric)
-      .where(and(eq(metric.type, 'post'), eq(metric.ownerId, 1n)))
+      .where(and(eq(metric.type, 'post'), eq(metric.ownerId, 1)))
       .limit(1)
     expect(rows[0]?.pv).toBe(10)
   })

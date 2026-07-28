@@ -95,14 +95,14 @@ function makeValidReplyInput() {
 
 function makeMockComment(input: { page_key: string; name: string; email: string; body: unknown; rid?: number }) {
   return {
-    id: 1n,
+    id: 1,
     createAt: new Date(),
     updatedAt: new Date(),
     deleteAt: null,
     body: input.body,
     type: 'post' as const,
     ownerId: null,
-    userId: 1n,
+    userId: 1,
     isVerified: false,
     rid: input.rid ?? 0,
     isCollapsed: false,
@@ -160,7 +160,7 @@ describe('commentsRouter.loadComments', () => {
   })
 
   it('throws BAD_GATEWAY when the comment loader fails', async () => {
-    vi.mocked(shared.resolveMetricTarget).mockResolvedValueOnce({ type: 'post', ownerId: 1n })
+    vi.mocked(shared.resolveMetricTarget).mockResolvedValueOnce({ type: 'post', ownerId: 1 })
     vi.mocked(publicQuery.loadComments).mockResolvedValueOnce(null)
     const ctx = makePublicCtx()
     await expect(

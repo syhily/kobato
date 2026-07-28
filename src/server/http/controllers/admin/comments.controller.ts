@@ -113,11 +113,11 @@ const searchAuthors = adminProc
   .input(filterAutocompleteInput)
   .output(z.object({ authors: z.array(z.object({ id: z.string(), name: z.string() })) }))
   .handler(async ({ input, context }) => {
-    function parseBigIntIds(raw: string | undefined): bigint[] | undefined {
+    function parseBigIntIds(raw: string | undefined): number[] | undefined {
       if (!raw || raw.length === 0) {
         return undefined
       }
-      const out: bigint[] = []
+      const out: number[] = []
       for (const value of raw.split(',')) {
         const trimmed = value.trim()
         if (!trimmed) {

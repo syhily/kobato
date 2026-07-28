@@ -1,7 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { and, count, desc, eq, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm'
 
+import type { Database } from '@/server/infra/db/database'
 import type { EntityTarget } from '@/server/infra/db/target'
 
 import { commentWithUser, whereTarget } from '@/server/domains/comments/repos/shared'
@@ -13,7 +12,7 @@ import { user } from '@/server/infra/db/schema/user'
 // has no pending delete request — or when it is the viewer's own comment
 // still awaiting approval or deletion, so its author keeps seeing it with
 // its moderation state.
-function whereViewerVisible(pendingValues: boolean[], currentUserId?: bigint) {
+function whereViewerVisible(pendingValues: boolean[], currentUserId?: number) {
   return or(
     and(inArray(comment.isPending, pendingValues), isNull(comment.deleteRequestedAt)),
     currentUserId !== undefined
@@ -25,10 +24,10 @@ function whereViewerVisible(pendingValues: boolean[], currentUserId?: bigint) {
 // Computes both totals in a single round-trip using a filtered aggregate so
 // loaders don't issue two near-identical queries on every comment render.
 export async function countCommentsAndRoots(
-  db: NodePgDatabase,
+  db: Database,
   target: EntityTarget,
   pendingValues: boolean[],
-  currentUserId?: bigint,
+  currentUserId?: number,
 ): Promise<{ total: number; roots: number }> {
   const baseConditions = [whereTarget(target), whereViewerVisible(pendingValues, currentUserId)]
   const rows = await db
@@ -43,14 +42,14 @@ export async function countCommentsAndRoots(
 }
 
 export async function findRootComments(
-  db: NodePgDatabase,
+  db: Database,
   target: EntityTarget,
   pendingValues: boolean[],
   offset: number,
   limit: number,
-  currentUserId?: bigint,
+  currentUserId?: number,
 ) {
-  const baseConditions = [whereTarget(target), eq(comment.rootId, 0n), whereViewerVisible(pendingValues, currentUserId)]
+  const baseConditions = [whereTarget(target), eq(comment.rootId, 0), whereViewerVisible(pendingValues, currentUserId)]
   return db
     .select(commentWithUser)
     .from(comment)
@@ -62,11 +61,11 @@ export async function findRootComments(
 }
 
 export async function findChildComments(
-  db: NodePgDatabase,
+  db: Database,
   target: EntityTarget,
   pendingValues: boolean[],
-  rootIds: bigint[],
-  currentUserId?: bigint,
+  rootIds: number[],
+  currentUserId?: number,
 ) {
   if (rootIds.length === 0) {
     return []
@@ -83,7 +82,7 @@ export async function findChildComments(
     .where(and(...baseConditions))
 }
 
-export async function findCommentRootId(db: NodePgDatabase, id: bigint): Promise<bigint | null> {
+export async function findCommentRootId(db: Database, id: number): Promise<number | null> {
   const rows = await db.select({ rootId: comment.rootId }).from(comment).where(eq(comment.id, id)).limit(1)
   return rows[0]?.rootId ?? null
 }

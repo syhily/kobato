@@ -1,24 +1,21 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
 import type { ClearCacheTarget } from '@/shared/types/cache'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { clearAllTables } from '#/_helpers/integration-db'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { clearAdminCache, getAdminCacheStats } from '@/server/infra/cache/admin-ops'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { kvCache } from '@/server/infra/db/schema/kv-cache'
 import { session } from '@/server/infra/db/schema/session'
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 async function seedKvRow(key: string, bucket: string, opts: { expired?: boolean } = {}): Promise<void> {

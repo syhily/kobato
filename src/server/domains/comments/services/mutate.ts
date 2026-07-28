@@ -1,10 +1,8 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
-import { sql } from 'drizzle-orm'
 import { createHash } from 'node:crypto'
 
 import type { BlogSession } from '@/server/domains/auth/session-storage'
 import type { MetricTarget } from '@/server/domains/comments/services/shared'
+import type { Database } from '@/server/infra/db/database'
 import type { NewComment } from '@/server/infra/db/types'
 import type { RequestFacts } from '@/server/infra/http/request-facts'
 import type { CommentAndUser, CommentReq } from '@/shared/types/comments'
@@ -49,11 +47,11 @@ interface ValidatedSubmission {
   canonicalBody: NewComment['body']
   markdownSnapshot: string
   contentHash: string
-  rootId: bigint
+  rootId: number
 }
 
 async function validateSubmission(
-  db: NodePgDatabase,
+  db: Database,
   commentReq: CommentReq,
   facts: RequestFacts,
   clientAddress: string,
@@ -107,11 +105,11 @@ async function validateSubmission(
 
   await updateLastLogin(db, u.id, clientAddress, facts.userAgent)
 
-  let rootId = 0n
+  let rootId = 0
   if (commentReq.rid !== undefined && commentReq.rid !== 0) {
     const ridBig = idFromString(commentReq.rid)
     const parentRoot = await findCommentRootId(db, ridBig)
-    rootId = parentRoot !== null && parentRoot !== 0n ? parentRoot : ridBig
+    rootId = parentRoot !== null && parentRoot !== 0 ? parentRoot : ridBig
   }
 
   return { target, user: u, canonicalBody, markdownSnapshot, contentHash, rootId }
@@ -120,23 +118,18 @@ async function validateSubmission(
 // --- Step 2: Persist --------------------------------------------------------
 
 async function persistComment(
-  db: NodePgDatabase,
+  db: Database,
   commentReq: CommentReq,
   sub: ValidatedSubmission,
   ua: string | null,
   ip: string,
 ): Promise<CommentAndUser> {
-  // Transactional with advisory lock: two concurrent comment creations
-  // from the same user cannot both read count=0 and bypass moderation.
-  // The lock key is a 64-bit hash of the string 'comment_approval:<userId>'.
-  // Scope is per-user (not per-post) so the gate also covers cross-post
-  // first-comments. `pg_advisory_xact_lock` is released automatically when
-  // the transaction commits or rolls back — no explicit unlock needed.
-  const lockKey = `comment_approval:${sub.user.id}`
-  return db.transaction(async (tx) => {
-    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`)
-
-    const approvedCount = await countApprovedCommentsByUser(tx, sub.user.id)
+  // Transactional, sync (node:sqlite): two concurrent comment creations
+  // from the same user cannot both read count=0 and bypass moderation —
+  // the transaction itself serialises the read+write (the old
+  // `pg_advisory_xact_lock` is unnecessary on a single-writer engine).
+  return db.transaction((tx) => {
+    const approvedCount = countApprovedCommentsByUser(tx, sub.user.id)
     const isPending = approvedCount === 0
 
     const newComment: NewComment = {
@@ -157,7 +150,7 @@ async function persistComment(
       voteDown: 0,
       rootId: sub.rootId,
     }
-    const cr = await insertComment(tx, newComment)
+    const cr = insertComment(tx, newComment)
     if (cr === null) {
       throw new DomainError('INTERNAL', '系统错误，评论创建失败。')
     }
@@ -180,7 +173,7 @@ async function persistComment(
 
 // --- Step 3: Notify ---------------------------------------------------------
 
-async function notifyCommentCreated(db: NodePgDatabase, info: CommentAndUser, target: MetricTarget): Promise<void> {
+async function notifyCommentCreated(db: Database, info: CommentAndUser, target: MetricTarget): Promise<void> {
   if (info.email !== requireBlogSettingsSection('siteIdentity').author.email) {
     fireAndForgetNotify(sendNewComment(db, info, target), log, 'new comment')
   }
@@ -197,7 +190,7 @@ async function notifyCommentCreated(db: NodePgDatabase, info: CommentAndUser, ta
 // --- Public entry point -----------------------------------------------------
 
 export async function createComment(
-  db: NodePgDatabase,
+  db: Database,
   commentReq: CommentReq,
   facts: RequestFacts,
   clientAddress: string,

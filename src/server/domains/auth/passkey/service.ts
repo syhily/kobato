@@ -4,7 +4,6 @@ import type {
   PublicKeyCredentialRequestOptionsJSON,
   RegistrationResponseJSON,
 } from '@simplewebauthn/server'
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { SuperJSONResult } from 'superjson'
 
 import {
@@ -16,6 +15,7 @@ import {
 import { and, eq, gt } from 'drizzle-orm'
 import superjson from 'superjson'
 
+import type { Database } from '@/server/infra/db/database'
 import type { SafeUser } from '@/server/infra/db/operations/user'
 import type { PasskeyCredentialRow } from '@/server/infra/db/types'
 import type { LoginMethod } from '@/shared/contracts/users'
@@ -49,7 +49,7 @@ function rpConfig() {
 }
 
 async function storeChallenge(
-  db: NodePgDatabase,
+  db: Database,
   prefix: string,
   challenge: string,
   data: Record<string, unknown>,
@@ -71,7 +71,7 @@ async function storeChallenge(
  * replayed under concurrency. Expired rows consume as misses.
  */
 async function consumeChallenge(
-  db: NodePgDatabase,
+  db: Database,
   prefix: string,
   challenge: string,
 ): Promise<Record<string, unknown> | null> {
@@ -102,7 +102,7 @@ export interface RegistrationBeginResult {
 }
 
 export async function generateRegistrationOptions(
-  db: NodePgDatabase,
+  db: Database,
   dbUser: SafeUser,
   deviceName?: string,
 ): Promise<RegistrationBeginResult> {
@@ -143,7 +143,7 @@ export interface RegistrationFinishInput {
 }
 
 export async function verifyRegistrationResponse(
-  db: NodePgDatabase,
+  db: Database,
   dbUser: SafeUser,
   input: RegistrationFinishInput,
 ): Promise<PasskeyCredentialRow> {
@@ -204,10 +204,7 @@ export interface AuthenticationBeginResult {
   options: PublicKeyCredentialRequestOptionsJSON
 }
 
-export async function generateAuthenticationOptions(
-  db: NodePgDatabase,
-  email?: string,
-): Promise<AuthenticationBeginResult> {
+export async function generateAuthenticationOptions(db: Database, email?: string): Promise<AuthenticationBeginResult> {
   const { rpID } = rpConfig()
 
   let allowCredentials: { id: string; transports?: ('ble' | 'hybrid' | 'internal' | 'nfc' | 'usb')[] }[] | undefined
@@ -244,7 +241,7 @@ export interface AuthenticationFinishResult {
 }
 
 export async function verifyAuthenticationResponse(
-  db: NodePgDatabase,
+  db: Database,
   response: AuthenticationResponseJSON,
   challenge: string,
 ): Promise<AuthenticationFinishResult> {
@@ -308,7 +305,7 @@ export interface CredentialMeta {
   backedUp: boolean
 }
 
-export async function listCredentials(db: NodePgDatabase, userId: bigint): Promise<CredentialMeta[]> {
+export async function listCredentials(db: Database, userId: number): Promise<CredentialMeta[]> {
   const rows = await db
     .select({
       id: passkeyCredential.id,
@@ -332,7 +329,7 @@ export async function listCredentials(db: NodePgDatabase, userId: bigint): Promi
 // Invariant: `loginMethod = 'passkey'` must not outlive credentials — a
 // user whose method is passkey with zero passkeys would lock themselves
 // out. Every credential-deletion path runs this check so callers inherit it.
-async function revertMethodWhenNoCredentials(db: NodePgDatabase, userId: bigint): Promise<void> {
+async function revertMethodWhenNoCredentials(db: Database, userId: number): Promise<void> {
   const remaining = await db
     .select({ id: passkeyCredential.id })
     .from(passkeyCredential)
@@ -346,7 +343,7 @@ async function revertMethodWhenNoCredentials(db: NodePgDatabase, userId: bigint)
   }
 }
 
-export async function deleteCredential(db: NodePgDatabase, credentialId: string, userId: bigint): Promise<boolean> {
+export async function deleteCredential(db: Database, credentialId: string, userId: number): Promise<boolean> {
   const result = await db
     .delete(passkeyCredential)
     .where(and(eq(passkeyCredential.credentialId, credentialId), eq(passkeyCredential.userId, userId)))
@@ -358,7 +355,7 @@ export async function deleteCredential(db: NodePgDatabase, credentialId: string,
   return true
 }
 
-export async function deleteAllCredentials(db: NodePgDatabase, userId: bigint): Promise<number> {
+export async function deleteAllCredentials(db: Database, userId: number): Promise<number> {
   const result = await db
     .delete(passkeyCredential)
     .where(eq(passkeyCredential.userId, userId))
@@ -367,7 +364,7 @@ export async function deleteAllCredentials(db: NodePgDatabase, userId: bigint): 
   return result.length
 }
 
-export async function setLoginMethod(db: NodePgDatabase, userId: bigint, method: LoginMethod): Promise<void> {
+export async function setLoginMethod(db: Database, userId: number, method: LoginMethod): Promise<void> {
   if (method === 'passkey') {
     const credentials = await db
       .select({ id: passkeyCredential.id })

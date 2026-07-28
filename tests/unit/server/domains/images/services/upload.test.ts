@@ -1,6 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import type { Database } from '@/server/infra/db/database'
 
 // upload.ts wires together pure validation (mime sniffing, size guard,
 // kind → key resolution) with IO (image processing, S3 put, DB upsert).
@@ -29,7 +29,7 @@ vi.mock('@/server/infra/logger', () => ({ getLogger: () => ({ info: vi.fn(), err
 
 const { assertImageUploadAllowed, uploadImage } = await import('@/server/domains/images/services/upload')
 
-const fakeDb = {} as NodePgDatabase
+const fakeDb = {} as Database
 
 // Buffer builders for each sniffed format. Magic bytes matter — uploadImage
 // rejects anything whose first 12 bytes don't match a known signature.
@@ -303,11 +303,11 @@ describe('images/services/upload — pure validation + mime detection', () => {
       await uploadImage(fakeDb, {
         kind: { kind: 'generic' },
         buffer: jpeg(),
-        uploader: { id: 42n, name: 'alice' },
+        uploader: { id: 42, name: 'alice' },
         maxBytes: 1000,
         jpegQuality: 80,
       })
-      expect(insertImageMock.mock.calls[0]![1]).toMatchObject({ uploaderId: 42n })
+      expect(insertImageMock.mock.calls[0]![1]).toMatchObject({ uploaderId: 42 })
       expect(toAdminImageDtoMock).toHaveBeenCalledWith(expect.anything(), 'alice')
     })
 

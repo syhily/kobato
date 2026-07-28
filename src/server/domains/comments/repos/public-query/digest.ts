@@ -1,7 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { and, desc, eq, inArray, sql } from 'drizzle-orm'
 
+import type { Database } from '@/server/infra/db/database'
 import type { EntityType } from '@/server/infra/db/target'
 
 import { targetSlugTitleSubquery, type PendingCommentRow } from '@/server/domains/comments/repos/shared'
@@ -10,7 +9,7 @@ import { user } from '@/server/infra/db/schema/user'
 import { idFromString } from '@/shared/utils/id'
 import { isRecord } from '@/shared/utils/type-guards'
 
-export async function pendingComments(db: NodePgDatabase, limit: number): Promise<PendingCommentRow[]> {
+export async function pendingComments(db: Database, limit: number): Promise<PendingCommentRow[]> {
   const entity = targetSlugTitleSubquery(db)
   const rows = await db
     .select({
@@ -33,7 +32,7 @@ export async function pendingComments(db: NodePgDatabase, limit: number): Promis
     .map((r) => ({
       id: r.id,
       type: r.type as EntityType,
-      ownerId: r.ownerId as bigint,
+      ownerId: r.ownerId as number,
       slug: r.slug,
       title: r.title,
       author: r.author,
@@ -41,16 +40,12 @@ export async function pendingComments(db: NodePgDatabase, limit: number): Promis
     }))
 }
 
-export async function adminUserIds(db: NodePgDatabase): Promise<bigint[]> {
+export async function adminUserIds(db: Database): Promise<number[]> {
   const rows = await db.select({ id: user.id }).from(user).where(eq(user.role, 'admin'))
   return rows.map((r) => r.id)
 }
 
-export async function latestDistinctCommentIds(
-  db: NodePgDatabase,
-  adminIds: bigint[],
-  limit: number,
-): Promise<bigint[]> {
+export async function latestDistinctCommentIds(db: Database, adminIds: number[], limit: number): Promise<number[]> {
   const userFilter = adminIds.length > 0 ? sql`${comment.userId} NOT IN (${sql.join(adminIds, sql`, `)})` : sql`1 = 1`
   const query = sql`SELECT    id
   FROM      (
@@ -66,14 +61,14 @@ export async function latestDistinctCommentIds(
   WHERE     rn = 1
   ORDER BY  created_at DESC
   LIMIT     ${limit}`
-  const result = await db.execute(query)
-  return result.rows.map((row) => {
+  const rows = db.all(query)
+  return rows.map((row) => {
     const id = isRecord(row) ? row.id : undefined
     return idFromString(String(id))
   })
 }
 
-export async function commentsByIds(db: NodePgDatabase, ids: bigint[], limit: number): Promise<PendingCommentRow[]> {
+export async function commentsByIds(db: Database, ids: number[], limit: number): Promise<PendingCommentRow[]> {
   if (ids.length === 0) {
     return []
   }
@@ -99,7 +94,7 @@ export async function commentsByIds(db: NodePgDatabase, ids: bigint[], limit: nu
     .map((r) => ({
       id: r.id,
       type: r.type as EntityType,
-      ownerId: r.ownerId as bigint,
+      ownerId: r.ownerId as number,
       slug: r.slug,
       title: r.title,
       author: r.author,

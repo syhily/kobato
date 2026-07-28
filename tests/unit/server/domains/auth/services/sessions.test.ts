@@ -1,8 +1,7 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { SessionMeta } from '@/server/domains/auth/repo'
+import type { Database } from '@/server/infra/db/database'
 
 // auth/services/sessions.ts orchestrates the repo's session-table primitives and
 // the user-table join. The pure surface we exercise here is:
@@ -29,9 +28,9 @@ vi.mock('@/server/infra/db/operations/user', () => ({
 const { revokeAllSessionsOfUser, listSessionsByUser, listAllSessions } =
   await import('@/server/domains/auth/services/sessions')
 
-const fakeDb = {} as NodePgDatabase
+const fakeDb = {} as Database
 
-function meta(userId: bigint, sid = 's1', ip = '1.1.1.1', ua = 'ua'): SessionMeta {
+function meta(userId: number, sid = 's1', ip = '1.1.1.1', ua = 'ua'): SessionMeta {
   return {
     sid,
     userId,
@@ -55,29 +54,29 @@ beforeEach(() => {
 describe('auth/services/sessions — revokeAllSessionsOfUser', () => {
   it('delegates to the repo with db + userId and returns the deleted count', async () => {
     repoMocks.deleteSessionsOfUser.mockResolvedValue(3)
-    const count = await revokeAllSessionsOfUser(fakeDb, 1n)
-    expect(repoMocks.deleteSessionsOfUser).toHaveBeenCalledWith(fakeDb, 1n, undefined)
+    const count = await revokeAllSessionsOfUser(fakeDb, 1)
+    expect(repoMocks.deleteSessionsOfUser).toHaveBeenCalledWith(fakeDb, 1, undefined)
     expect(count).toBe(3)
   })
 
   it('passes exceptSessionId through so the caller session survives', async () => {
     repoMocks.deleteSessionsOfUser.mockResolvedValue(2)
-    const count = await revokeAllSessionsOfUser(fakeDb, 1n, 'keep-me')
-    expect(repoMocks.deleteSessionsOfUser).toHaveBeenCalledWith(fakeDb, 1n, 'keep-me')
+    const count = await revokeAllSessionsOfUser(fakeDb, 1, 'keep-me')
+    expect(repoMocks.deleteSessionsOfUser).toHaveBeenCalledWith(fakeDb, 1, 'keep-me')
     expect(count).toBe(2)
   })
 })
 
 describe('auth/services/sessions — listSessionsByUser', () => {
   it('returns [] when the user has no live sessions', async () => {
-    const result = await listSessionsByUser(fakeDb, 1n)
-    expect(repoMocks.listLiveSessionsByUser).toHaveBeenCalledWith(fakeDb, 1n)
+    const result = await listSessionsByUser(fakeDb, 1)
+    expect(repoMocks.listLiveSessionsByUser).toHaveBeenCalledWith(fakeDb, 1)
     expect(result).toEqual([])
   })
 
   it('returns the repo metas verbatim', async () => {
-    repoMocks.listLiveSessionsByUser.mockResolvedValue([meta(1n, 's1'), meta(1n, 's2')])
-    const result = await listSessionsByUser(fakeDb, 1n)
+    repoMocks.listLiveSessionsByUser.mockResolvedValue([meta(1, 's1'), meta(1, 's2')])
+    const result = await listSessionsByUser(fakeDb, 1)
     expect(result.map((s) => s.sid)).toEqual(['s1', 's2'])
   })
 })
@@ -90,8 +89,8 @@ describe('auth/services/sessions — listAllSessions', () => {
   })
 
   it('joins live metas with users', async () => {
-    repoMocks.listLiveSessions.mockResolvedValue([meta(5n, 's1', '2.2.2.2', 'ua2')])
-    findUsersByIdsMock.mockResolvedValue([{ id: 5n, name: 'Alice', email: 'a@x', role: 'admin' }])
+    repoMocks.listLiveSessions.mockResolvedValue([meta(5, 's1', '2.2.2.2', 'ua2')])
+    findUsersByIdsMock.mockResolvedValue([{ id: 5, name: 'Alice', email: 'a@x', role: 'admin' }])
     const result = await listAllSessions(fakeDb)
     expect(result).toHaveLength(1)
     expect(result[0]!.userName).toBe('Alice')
@@ -100,15 +99,15 @@ describe('auth/services/sessions — listAllSessions', () => {
   })
 
   it('dedups user ids before the bulk user read', async () => {
-    repoMocks.listLiveSessions.mockResolvedValue([meta(5n, 's1'), meta(5n, 's2')])
-    findUsersByIdsMock.mockResolvedValue([{ id: 5n, name: 'Alice', email: 'a@x', role: 'admin' }])
+    repoMocks.listLiveSessions.mockResolvedValue([meta(5, 's1'), meta(5, 's2')])
+    findUsersByIdsMock.mockResolvedValue([{ id: 5, name: 'Alice', email: 'a@x', role: 'admin' }])
     const result = await listAllSessions(fakeDb)
-    expect(findUsersByIdsMock).toHaveBeenCalledWith(fakeDb, [5n])
+    expect(findUsersByIdsMock).toHaveBeenCalledWith(fakeDb, [5])
     expect(result).toHaveLength(2)
   })
 
   it('uses the deleted-user fallback when no user row matches', async () => {
-    repoMocks.listLiveSessions.mockResolvedValue([meta(9n, 's1', '3.3.3.3', '')])
+    repoMocks.listLiveSessions.mockResolvedValue([meta(9, 's1', '3.3.3.3', '')])
     findUsersByIdsMock.mockResolvedValue([])
     const result = await listAllSessions(fakeDb)
     expect(result[0]!.userName).toBe('已删除的用户')

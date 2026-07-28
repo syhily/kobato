@@ -1,7 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
 import type { CommentAndUser } from '@/shared/types/comments'
 
 // `commentBodyToHtml` pulls in the whole PT prerender pipeline (Shiki,
@@ -18,7 +17,7 @@ vi.mock('@/server/domains/content/entities/slug-title', () => ({
   findEntitySlugTitle: vi.fn(async () => ({ slug: 'hi', title: 'Hi' })),
 }))
 
-const db = {} as NodePgDatabase
+const db = {} as Database
 
 const { setBlogSettingsBundleForTests } = await import('#/_helpers/blog-settings')
 const { sendNewComment } = await import('@/server/domains/comments/services/email')
@@ -57,12 +56,12 @@ afterEach(() => {
 describe('email/sender — internalSend (via sendNewComment)', () => {
   // Fixture row used by every comment-fired test below.
   const commentInfo = {
-    id: 7n,
+    id: 7,
     content: 'hello',
     isPending: false,
-    user: { id: 1n, name: 'visitor', email: 'visitor@example.com' },
+    user: { id: 1, name: 'visitor', email: 'visitor@example.com' },
   } as unknown as CommentAndUser
-  const target = { type: 'post' as const, ownerId: 1n }
+  const target = { type: 'post' as const, ownerId: 1 }
 
   it('skips with reason=disabled when the master switch is off', async () => {
     setMail({
@@ -160,12 +159,12 @@ describe('email/sender — internalSend (via sendNewComment)', () => {
 
 describe('comments email — sendNewComment maps onto the admin-notification seam', () => {
   const commentInfo = {
-    id: 7n,
+    id: 7,
     content: 'hello',
     isPending: false,
-    user: { id: 1n, name: 'visitor', email: 'visitor@example.com' },
+    user: { id: 1, name: 'visitor', email: 'visitor@example.com' },
   } as unknown as CommentAndUser
-  const target = { type: 'post' as const, ownerId: 1n }
+  const target = { type: 'post' as const, ownerId: 1 }
 
   function sentBody(): Record<string, unknown> {
     const [, init] = fetchMock.mock.calls[0]

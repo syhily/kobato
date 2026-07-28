@@ -1,4 +1,4 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Database } from '@/server/infra/db/database'
 
 import { findSlugRegistryBySlugForUpdate } from '@/server/infra/db/operations/slug-registry'
 import { DomainError } from '@/server/infra/http/errors'
@@ -23,21 +23,22 @@ export const RESERVED_SLUGS = new Set<string>([
 ])
 
 export interface SlugReservationDeps {
-  findOwnMetaBySlugForUpdate: (tx: NodePgDatabase, slug: string) => Promise<{ id: bigint } | null>
+  findOwnMetaBySlugForUpdate: (tx: Database, slug: string) => { id: number } | null
 }
 
-export async function reserveSlugInTransaction(
-  tx: NodePgDatabase,
+// Sync (node:sqlite): called inside entity transactions.
+export function reserveSlugInTransaction(
+  tx: Database,
   entityType: EntityType,
   slug: string,
-  ownEntityId: bigint | undefined,
+  ownEntityId: number | undefined,
   deps: SlugReservationDeps,
-): Promise<void> {
-  const ownMeta = await deps.findOwnMetaBySlugForUpdate(tx, slug)
+): void {
+  const ownMeta = deps.findOwnMetaBySlugForUpdate(tx, slug)
   if (ownMeta !== null && ownMeta.id !== ownEntityId) {
     throw new DomainError('CONFLICT', `slug "${slug}" 已被其它${entityType === 'post' ? '文章' : '页面'}占用。`)
   }
-  const crossCollision = await findSlugRegistryBySlugForUpdate(tx, slug)
+  const crossCollision = findSlugRegistryBySlugForUpdate(tx, slug)
   if (crossCollision !== null && crossCollision.entityType !== entityType) {
     const otherEntity = crossCollision.entityType === 'post' ? '文章' : '页面'
     throw new DomainError('CONFLICT', `slug "${slug}" 已被其它${otherEntity}占用。`)

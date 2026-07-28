@@ -1,12 +1,13 @@
 import { Link } from 'react-router'
 
 import { loadPostAnalyticsData } from '@/server/http/loaders/post-analytics'
+import { idFromString } from '@/shared/utils/id'
 import { PostAnalyticsHeader, PostAnalyticsView } from '@/ui/admin/analytics/PostAnalyticsView'
 
 import type { Route } from './+types/analytics'
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
-  return loadPostAnalyticsData({ request, context, postId: BigInt(params.id) })
+  return loadPostAnalyticsData({ request, context, postId: idFromString(params.id) })
 }
 
 export default function EditorPostAnalyticsPage({ loaderData }: Route.ComponentProps) {

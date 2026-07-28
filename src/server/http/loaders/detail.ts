@@ -1,6 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { LoaderFunctionArgs } from 'react-router'
 
+import type { Database } from '@/server/infra/db/database'
 import type { EntityTarget } from '@/server/infra/db/target'
 import type { DetailPageComments } from '@/shared/types/comments'
 
@@ -18,7 +18,7 @@ export interface PublicDetailData extends PublicDetailCritical {
 }
 
 export async function loadPublicDetailData(
-  db: NodePgDatabase,
+  db: Database,
   {
     request,
     context,

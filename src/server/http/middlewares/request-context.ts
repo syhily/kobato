@@ -4,7 +4,7 @@ import { randomBytes } from 'node:crypto'
 import type { Env } from '@/server/http/context'
 import type { RequestContext } from '@/server/http/request-context'
 
-import { getDb, getPool } from '@/server/bootstrap/db-lifecycle'
+import { getDb } from '@/server/bootstrap/db-lifecycle'
 import { ensureCsrfToken } from '@/server/domains/auth/csrf'
 import { resolveSessionContext } from '@/server/domains/auth/primitives'
 import { commitSessionWithMaxAge, SESSION_COOKIE_NAME } from '@/server/domains/auth/session-storage'
@@ -39,9 +39,8 @@ export async function deriveRequestContext(input: {
   directRemoteAddress: string | undefined
 }): Promise<DerivedRequest> {
   const { request } = input
-  // Per-request resolution keeps pool recreation (backup restore) visible.
+  // Per-request resolution keeps database reopen (backup restore) visible.
   const db = getDb()
-  const pool = getPool()
 
   let dirty = false
   const sessionCtx = await resolveSessionContext(db, request)
@@ -57,7 +56,6 @@ export async function deriveRequestContext(input: {
     url: normalizeDocumentUrl(rawUrl),
     requestFacts: extractRequestFacts(request),
     db,
-    pool,
     cspNonce: randomBytes(16).toString('base64'),
     markSessionDirty() {
       dirty = true

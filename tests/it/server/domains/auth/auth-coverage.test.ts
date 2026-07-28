@@ -1,12 +1,12 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { eq } from 'drizzle-orm'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import type { Database } from '@/server/infra/db/database'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { clearAllTables } from '#/_helpers/integration-db'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { flushAuditLog } from '@/server/domains/audit/services/batcher'
 import { establishLoginSession, logout, userSession } from '@/server/domains/auth/primitives'
 import { requireRole, requireUserRole, isPostOwner, canEditPost } from '@/server/domains/auth/rbac'
@@ -39,17 +39,15 @@ import {
   verifyOtpToken,
 } from '@/server/domains/auth/verification-tokens'
 import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { session as sessionTable } from '@/server/infra/db/schema/session'
 import { verification } from '@/server/infra/db/schema/user'
 import { user } from '@/server/infra/db/schema/user'
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 // The audit batcher is a process-level singleton that production code
@@ -58,7 +56,7 @@ afterAll(async () => {
 // wire the batcher up so the event lands, and flush it before the next
 // test's `clearAllTables` truncates the user rows it references.
 beforeEach(async () => {
-  initAllBatchers(pool, db)
+  initAllBatchers(handle)
   await clearAllTables(db)
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
 })
@@ -76,7 +74,7 @@ async function seedUser(role: 'admin' | 'visitor' | 'author' = 'admin', email = 
 
 /** Seed a bare session row — `recordSessionLogin` is UPDATE-only, so the
  * row must already exist with its owner stamped. */
-async function seedSessionRow(sid: string, userId: bigint | null, expiresAt?: Date) {
+async function seedSessionRow(sid: string, userId: number | null, expiresAt?: Date) {
   await db.insert(sessionTable).values({
     id: sid,
     userId,
@@ -196,14 +194,14 @@ describe('auth/verification-tokens — purgeExpired', () => {
       {
         id: 'staleid000000000000001',
         purpose: 'password-reset',
-        userId: 1n,
+        userId: 1,
         value: 'stalevalue1',
         expiresAt: stale,
       },
       {
         id: 'staleid000000000000002',
         purpose: 'password-reset',
-        userId: 2n,
+        userId: 2,
         value: 'stalevalue2',
         expiresAt: stale,
       },
@@ -234,7 +232,7 @@ describe('auth/verification-tokens — OTP', () => {
   })
 
   it('returns null when no OTP row exists for the user', async () => {
-    expect(await verifyOtpToken(db, 99_999n, '123456')).toBeNull()
+    expect(await verifyOtpToken(db, 99_999, '123456')).toBeNull()
   })
 
   it('deletes and rejects an expired OTP', async () => {
@@ -314,17 +312,17 @@ describe('auth/rbac — predicates', () => {
 
   it('isPostOwner compares authorId to viewer.id', () => {
     const viewer = { id: '5', role: 'admin' as const }
-    expect(isPostOwner(viewer, { authorId: 5n })).toBe(true)
-    expect(isPostOwner(viewer, { authorId: 6n })).toBe(false)
+    expect(isPostOwner(viewer, { authorId: 5 })).toBe(true)
+    expect(isPostOwner(viewer, { authorId: 6 })).toBe(false)
     expect(isPostOwner(viewer, { authorId: null })).toBe(false)
   })
 
   it('canEditPost is true for admin OR owner', () => {
     const admin = { id: '1', role: 'admin' as const }
     const author = { id: '5', role: 'author' as const }
-    expect(canEditPost(admin, { authorId: 99n })).toBe(true)
-    expect(canEditPost(author, { authorId: 5n })).toBe(true)
-    expect(canEditPost(author, { authorId: 6n })).toBe(false)
+    expect(canEditPost(admin, { authorId: 99 })).toBe(true)
+    expect(canEditPost(author, { authorId: 5 })).toBe(true)
+    expect(canEditPost(author, { authorId: 6 })).toBe(false)
   })
 })
 
