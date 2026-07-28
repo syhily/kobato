@@ -34,33 +34,6 @@ CREATE TABLE `comment` (
 	`delete_requested_by` integer
 );
 --> statement-breakpoint
-CREATE TABLE `access_log` (
-	`ts` integer NOT NULL,
-	`visitor_hash` text NOT NULL,
-	`session_id` text,
-	`ip` text,
-	`path` text NOT NULL,
-	`entity_type` text,
-	`entity_id` integer,
-	`referer` text,
-	`referer_host` text,
-	`country` text,
-	`region` text,
-	`city` text,
-	`latitude` real,
-	`longitude` real,
-	`timezone` text,
-	`language` text,
-	`ua` text,
-	`browser` text,
-	`browser_version` text,
-	`os` text,
-	`os_version` text,
-	`device` text,
-	`device_type` text,
-	`is_bot` integer DEFAULT false NOT NULL
-);
---> statement-breakpoint
 CREATE TABLE `audit_log` (
 	`id` integer PRIMARY KEY AUTOINCREMENT,
 	`action` text NOT NULL,
@@ -169,7 +142,7 @@ CREATE TABLE `music` (
 	`deleted_at` integer,
 	`source` text NOT NULL,
 	`source_id` text NOT NULL,
-	`player_id` text NOT NULL,
+	`player_id` text NOT NULL UNIQUE,
 	`name` text NOT NULL,
 	`artist` text NOT NULL,
 	`album` text NOT NULL,
@@ -331,7 +304,7 @@ CREATE TABLE `user` (
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer,
 	`name` text NOT NULL,
-	`email` text NOT NULL,
+	`email` text NOT NULL UNIQUE,
 	`email_verified` integer DEFAULT false NOT NULL,
 	`link` text,
 	`password` text NOT NULL,
@@ -385,12 +358,6 @@ CREATE INDEX `idx_comment_deleted_at` ON `comment` (`deleted_at`);--> statement-
 CREATE INDEX `idx_comment_delete_requested_at` ON `comment` (`delete_requested_at`);--> statement-breakpoint
 CREATE INDEX `idx_comment_thread` ON `comment` (`type`,`owner_id`,`root_id`);--> statement-breakpoint
 CREATE INDEX `idx_comment_content_hash` ON `comment` (`content_hash`);--> statement-breakpoint
-CREATE INDEX `idx_access_log_entity_ts` ON `access_log` (`entity_type`,`entity_id`,`ts`);--> statement-breakpoint
-CREATE INDEX `idx_access_log_path_ts` ON `access_log` (`path`,`ts`);--> statement-breakpoint
-CREATE INDEX `idx_access_log_country_ts` ON `access_log` (`country`,`ts`);--> statement-breakpoint
-CREATE INDEX `idx_access_log_visitor_ts` ON `access_log` (`visitor_hash`,`ts`);--> statement-breakpoint
-CREATE INDEX `idx_access_log_referer_host_ts` ON `access_log` (`referer_host`,`ts`);--> statement-breakpoint
-CREATE INDEX `idx_access_log_is_bot_ts` ON `access_log` (`is_bot`,`ts`);--> statement-breakpoint
 CREATE INDEX `idx_audit_log_actor` ON `audit_log` (`actor_id`);--> statement-breakpoint
 CREATE INDEX `idx_audit_log_resource` ON `audit_log` (`resource_type`,`resource_id`);--> statement-breakpoint
 CREATE INDEX `idx_audit_log_created_at` ON `audit_log` (`created_at`);--> statement-breakpoint
@@ -409,7 +376,6 @@ CREATE INDEX `idx_kv_cache_expires_at` ON `kv_cache` (`expires_at`);--> statemen
 CREATE INDEX `idx_image_created_at` ON `image` (`created_at`);--> statement-breakpoint
 CREATE INDEX `idx_image_deleted_at` ON `image` (`deleted_at`);--> statement-breakpoint
 CREATE UNIQUE INDEX `uq_music_source_source_id` ON `music` (`source`,`source_id`);--> statement-breakpoint
-CREATE INDEX `idx_music_player_id` ON `music` (`player_id`);--> statement-breakpoint
 CREATE INDEX `idx_music_created_at` ON `music` (`created_at`);--> statement-breakpoint
 CREATE INDEX `idx_music_deleted_at` ON `music` (`deleted_at`);--> statement-breakpoint
 CREATE INDEX `idx_like_token` ON `like` (`token`);--> statement-breakpoint
@@ -437,7 +403,6 @@ CREATE INDEX `idx_post_author_id` ON `post` (`author_id`);--> statement-breakpoi
 CREATE INDEX `idx_session_user_id` ON `session` (`user_id`);--> statement-breakpoint
 CREATE INDEX `idx_session_expires_at` ON `session` (`expires_at`);--> statement-breakpoint
 CREATE INDEX `idx_category_sort_order` ON `category` (`sort_order`);--> statement-breakpoint
-CREATE INDEX `idx_users_email` ON `user` (`email`);--> statement-breakpoint
 CREATE INDEX `idx_users_name` ON `user` (`name`);--> statement-breakpoint
 CREATE INDEX `idx_users_deleted_at` ON `user` (`deleted_at`);--> statement-breakpoint
 CREATE INDEX `idx_user_role` ON `user` (`role`) WHERE role IS NOT NULL;--> statement-breakpoint

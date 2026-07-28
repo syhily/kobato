@@ -43,7 +43,9 @@ export const user = sqliteTable(
     loginMethod: text('login_method').$type<LoginMethod>().default('password').notNull(),
   },
   (table) => [
-    index('idx_users_email').on(table.email),
+    // No `idx_users_email`: the email UNIQUE constraint creates an
+    // implicit index — and a redundant non-unique index here makes
+    // drizzle-kit DROP the constraint from the generated DDL.
     index('idx_users_name').on(table.name),
     index('idx_users_deleted_at').on(table.deletedAt),
     // Partial: skip anonymous placeholder rows (role IS NULL) — they're 80%+
