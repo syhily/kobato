@@ -15,7 +15,6 @@ import type {
   NavigationSettings,
   NewsletterSettings,
   RateLimitSettings,
-  SearchSettings,
   SecuritySettings,
   SeoSettings,
   SidebarSettings,
@@ -52,7 +51,6 @@ const mailContext = makeCtx<MailSettings>('mailContext')
 const newsletterContext = makeCtx<NewsletterSettings>('newsletterContext')
 const cacheContext = makeCtx<CacheSettings>('cacheContext')
 const rateLimitContext = makeCtx<RateLimitSettings>('rateLimitContext')
-const searchContext = makeCtx<SearchSettings>('searchContext')
 const fontsContext = makeCtx<FontsSettings>('fontsContext')
 const backupContext = makeCtx<BackupSettings>('backupContext')
 const limitsContext = makeCtx<LimitsSettings>('limitsContext')
@@ -72,7 +70,6 @@ const SECTION_CONTEXTS_ANY: Record<BundleKey, Context<any>> = {
   newsletter: newsletterContext,
   cache: cacheContext,
   rateLimit: rateLimitContext,
-  search: searchContext,
   fonts: fontsContext,
   backup: backupContext,
   limits: limitsContext,
@@ -196,13 +193,6 @@ export function useRateLimitSettings(): RateLimitSettings {
 }
 export function useRateLimitSettingsOptional(): RateLimitSettings | undefined {
   return useSectionOptional(rateLimitContext)
-}
-
-export function useSearchSettings(): SearchSettings {
-  return useSection('useSearchSettings', searchContext)
-}
-export function useSearchSettingsOptional(): SearchSettings | undefined {
-  return useSectionOptional(searchContext)
 }
 
 export function useFontsSettings(): FontsSettings {

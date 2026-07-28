@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import type { AssetsLoaderShape, MailLoaderShape, SearchLoaderShape } from '@/shared/config/projection'
+import type { AssetsLoaderShape, MailLoaderShape } from '@/shared/config/projection'
 import type {
   AnalyticsSettings,
   CommentsSettings,
@@ -25,7 +25,6 @@ import { GeneralForm } from '@/ui/admin/settings/GeneralForm'
 import { LimitsForm } from '@/ui/admin/settings/LimitsForm'
 import { MailForm } from '@/ui/admin/settings/MailForm'
 import { NavigationEditor } from '@/ui/admin/settings/NavigationEditor'
-import { SearchForm } from '@/ui/admin/settings/SearchForm'
 import { SecurityForm } from '@/ui/admin/settings/SecurityForm'
 import { SeoForm } from '@/ui/admin/settings/SeoForm'
 import { SidebarForm } from '@/ui/admin/settings/SidebarForm'
@@ -162,19 +161,6 @@ const baseNavigation: NavigationSettings = {
     ],
     footerNav: [{ type: 'themeToggle' }],
   },
-}
-
-const baseSearch: SearchLoaderShape = {
-  search: {
-    enabled: false,
-    mode: 'like',
-    endpoint: '',
-    apiKey: '',
-    model: 'text-embedding-3-small',
-    similarityThreshold: 0.5,
-    trgmThreshold: 0.3,
-  },
-  apiKeyMask: null,
 }
 
 const baseSecurity: SecuritySettings = {
@@ -318,13 +304,6 @@ describe('snapshot: admin settings forms', () => {
     expect(html).toContain('底部导航菜单')
     expect(html).toContain('id="nav-text-0"')
     expect(html).toContain('主题切换')
-  })
-
-  it('SearchForm renders mode, OpenAI and reindex cards', () => {
-    const html = stableHtml(renderToHtml(<SearchForm search={baseSearch} />))
-    expect(html).toContain('搜索模式')
-    expect(html).toContain('OpenAI 配置')
-    expect(html).toContain('索引管理')
   })
 
   it('SecurityForm renders CSRF, CORS and passkey cards', () => {

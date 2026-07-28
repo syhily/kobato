@@ -29,10 +29,10 @@ describe('server/domains/settings/services/install-flow', () => {
   })
 
   describe('buildInstallSectionRows', () => {
-    it('builds validated rows for all 18 sections — general and assets first, the rest in registry order', () => {
+    it('builds validated rows for all 17 sections — general and assets first, the rest in registry order', () => {
       const rows = builtRows()
 
-      expect(rows).toHaveLength(18)
+      expect(rows).toHaveLength(17)
       expect(rows[0]?.scope).toBe('blog.general')
       expect(rows[1]?.scope).toBe('blog.assets')
       const remainingScopes = SETTINGS_SECTIONS.filter((section) => section !== 'general' && section !== 'assets').map(
@@ -95,7 +95,7 @@ describe('server/domains/settings/services/install-flow', () => {
       await seedInstallSections(tx, rows, 7n)
 
       const calls = vi.mocked(settingQuery.upsertSetting).mock.calls
-      expect(calls).toHaveLength(18)
+      expect(calls).toHaveLength(17)
       for (const [index, [handle, payload, updatedBy, scope]] of calls.entries()) {
         expect(handle).toBe(tx)
         expect(payload).toBe(rows[index]?.payload)

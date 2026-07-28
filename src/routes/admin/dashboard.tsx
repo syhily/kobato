@@ -6,6 +6,7 @@ import { roleLabel } from '@/shared/utils/roles'
 import { QuickActions } from '@/ui/admin/dashboard/QuickActions'
 import { RecentDraftsCard } from '@/ui/admin/dashboard/RecentDraftsCard'
 import { RecentPublishedCard } from '@/ui/admin/dashboard/RecentPublishedCard'
+import { SearchReindexCard } from '@/ui/admin/dashboard/SearchReindexCard'
 import { StatsGrid } from '@/ui/admin/dashboard/StatsGrid'
 import { PendingModerationPanel } from '@/ui/admin/welcome/PendingModerationPanel'
 import { VisitSummaryCard } from '@/ui/admin/welcome/VisitSummaryCard'
@@ -91,6 +92,7 @@ export default function DashboardRoute({ loaderData }: Route.ComponentProps) {
         </div>
       )}
       <StatsGrid stats={stats} />
+      {isAdmin && <SearchReindexCard />}
       <div className="grid gap-4 lg:grid-cols-2">
         <RecentPublishedCard posts={recentPublished} />
         <RecentDraftsCard drafts={recentDrafts} />

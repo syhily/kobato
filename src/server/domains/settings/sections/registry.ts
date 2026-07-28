@@ -17,7 +17,6 @@ import { mailSection } from '@/server/domains/settings/sections/mail'
 import { navigationSection } from '@/server/domains/settings/sections/navigation'
 import { newsletterSection } from '@/server/domains/settings/sections/newsletter'
 import { rateLimitSection } from '@/server/domains/settings/sections/rate-limit'
-import { searchSection } from '@/server/domains/settings/sections/search'
 import { securitySection } from '@/server/domains/settings/sections/security'
 import { seoSection } from '@/server/domains/settings/sections/seo'
 import { sidebarSection } from '@/server/domains/settings/sections/sidebar'
@@ -54,7 +53,6 @@ export const SECTION_REGISTRY = {
   newsletter: newsletterSection,
   cache: cacheSection,
   rateLimit: rateLimitSection,
-  search: searchSection,
   fonts: fontsSection,
   backup: backupSection,
   limits: limitsSection,

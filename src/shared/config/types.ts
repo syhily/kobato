@@ -255,18 +255,6 @@ export interface RateLimitSettings {
   passkeyDeleteIp: RateLimitBucket
 }
 
-export interface SearchSettings {
-  search: {
-    enabled: boolean
-    mode: 'vector' | 'like' | 'trgm'
-    endpoint: string
-    apiKey?: string | undefined
-    model: string
-    similarityThreshold: number
-    trgmThreshold: number
-  }
-}
-
 export interface FontsSettings {
   og: { family: string }
   calendar: { family: string }
@@ -326,7 +314,6 @@ export interface SecretMasks {
   mailSmtpPassMask: string | null
   mailMailgunApiKeyMask: string | null
   assetsSecretAccessKeyMask: string | null
-  searchApiKeyMask: string | null
 }
 
 export interface BlogSettingsBundle {
@@ -342,7 +329,6 @@ export interface BlogSettingsBundle {
   newsletter: NewsletterSettings | null
   cache: CacheSettings | null
   rateLimit: RateLimitSettings | null
-  search: SearchSettings | null
   fonts: FontsSettings | null
   backup: BackupSettings | null
   limits: LimitsSettings | null

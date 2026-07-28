@@ -109,8 +109,8 @@ describe('migrateSecretsEncryption', () => {
 
     mockState.findSettingsByScopePrefix.mockResolvedValue([
       {
-        scope: 'blog.search',
-        data: { search: { apiKey: ciphertext } },
+        scope: 'blog.mail',
+        data: { mail: { apiKey: ciphertext } },
       },
     ])
 

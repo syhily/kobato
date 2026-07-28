@@ -87,12 +87,6 @@ export const SECTION_DISPLAY: Record<SettingsSection, SectionDisplayMeta> = {
     group: 'service',
     icon: 'Mails',
   },
-  search: {
-    label: '文章搜索',
-    description: 'AI 向量搜索与关键词搜索切换、OpenAI 配置',
-    group: 'service',
-    icon: 'SearchCode',
-  },
   cache: {
     label: '缓存管理',
     description: 'OG 图 / 头像 / 日历的服务端缓存',

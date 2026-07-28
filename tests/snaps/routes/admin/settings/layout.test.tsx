@@ -26,7 +26,6 @@ const MASKS = {
   mailApiKeyMask: '',
   mailSmtpPassMask: '',
   mailMailgunApiKeyMask: '',
-  searchApiKeyMask: '',
 }
 
 const testQueryClient = new QueryClient({

@@ -135,17 +135,6 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
   // bucket through `setBlogSettingsBundleForTests({ ..., rateLimit:
   // { ...rateLimit, signInIp: { windowSeconds: 60, maxAttempts: 1 } } })`.
   rateLimit: rateLimitDefaults,
-  search: {
-    search: {
-      enabled: false,
-      mode: 'like',
-      endpoint: '',
-      apiKey: '',
-      model: 'text-embedding-3-small',
-      similarityThreshold: 0.5,
-      trgmThreshold: 0.3,
-    },
-  },
   fonts: {
     og: { family: '' },
     calendar: { family: '' },

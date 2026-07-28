@@ -68,19 +68,6 @@ export const mailLoaderShapeSchema = z.object({
   }),
 })
 
-export const searchLoaderShapeSchema = z.object({
-  search: z.object({
-    enabled: z.boolean(),
-    mode: z.enum(['vector', 'like', 'trgm']),
-    endpoint: z.string(),
-    apiKey: z.string(),
-    model: z.string(),
-    similarityThreshold: z.number(),
-    trgmThreshold: z.number(),
-  }),
-  apiKeyMask: z.string().nullable(),
-})
-
 export interface AssetsLoaderShape {
   asset: { host: string; scheme: 'http' | 'https' }
   storage: {
@@ -112,19 +99,6 @@ export interface AssetsLoaderShape {
     /** robots.txt content (inline configuration, not an S3-backed asset). */
     robotsTxt: string
   }
-}
-
-export interface SearchLoaderShape {
-  search: {
-    enabled: boolean
-    mode: 'vector' | 'like' | 'trgm'
-    endpoint: string
-    apiKey: string
-    model: string
-    similarityThreshold: number
-    trgmThreshold: number
-  }
-  apiKeyMask: string | null
 }
 
 // Mirrors `MailSettings` but with the three secrets swapped for their
@@ -235,52 +209,6 @@ export function projectAssetsForAdmin(
 }
 
 /**
- * Project the raw `SearchSettings` (from the settings bundle) into the
- * shape `<SearchForm>` expects, with API key masking.
- */
-export function projectSearchForAdmin(
-  search:
-    | {
-        search: {
-          enabled?: boolean
-          mode?: 'vector' | 'like' | 'trgm'
-          endpoint?: string
-          apiKey?: string
-          model?: string
-          similarityThreshold?: number
-          trgmThreshold?: number
-        }
-      }
-    | undefined,
-  apiKeyMask?: string | null,
-): SearchLoaderShape {
-  const s = search ?? {
-    search: {
-      enabled: false,
-      mode: 'trgm' as const,
-      endpoint: '',
-      apiKey: '',
-      model: 'text-embedding-3-small',
-      similarityThreshold: 0.5,
-      trgmThreshold: 0.3,
-    },
-  }
-  const apiKey = typeof s.search.apiKey === 'string' ? s.search.apiKey : ''
-  return {
-    search: {
-      enabled: s.search.enabled === true,
-      mode: s.search.mode === 'vector' || s.search.mode === 'trgm' ? s.search.mode : 'like',
-      endpoint: s.search.endpoint ?? '',
-      apiKey: '',
-      model: s.search.model ?? 'text-embedding-3-small',
-      similarityThreshold: s.search.similarityThreshold ?? 0.5,
-      trgmThreshold: s.search.trgmThreshold ?? 0.3,
-    },
-    apiKeyMask: apiKeyMask ?? (apiKey === '' ? null : apiKey.slice(-4)),
-  }
-}
-
-/**
  * Project the raw `MailSettings` into the shape `<MailForm>` expects:
  * the three encrypted secrets are swapped for their masks, and both SMTP
  * TLS flags are forwarded. The input is the post-hydration bundle slice,
@@ -320,4 +248,3 @@ export function projectMailForAdmin(
 // validating a different shape than the one the UI expects.
 type _assetsShapeParity = Assert<Equals<z.infer<typeof assetsLoaderShapeSchema>, AssetsLoaderShape>>
 type _mailShapeParity = Assert<Equals<z.infer<typeof mailLoaderShapeSchema>, MailLoaderShape>>
-type _searchShapeParity = Assert<Equals<z.infer<typeof searchLoaderShapeSchema>, SearchLoaderShape>>
