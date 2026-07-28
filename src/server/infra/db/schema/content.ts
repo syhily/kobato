@@ -11,7 +11,6 @@ import {
   uniqueIndex,
   uuid,
   varchar,
-  vector,
 } from 'drizzle-orm/pg-core'
 import { randomUUID } from 'node:crypto'
 
@@ -57,17 +56,13 @@ export const content = pgTable(
   ],
 )
 
-// Plain text + embedding kept separate so the main `post` table stays narrow.
-export const postSearchIndex = pgTable(
-  'post_search_index',
-  {
-    postId: bigint('post_id', { mode: 'bigint' }).primaryKey().notNull(),
-    plainText: text('plain_text').notNull().default(''),
-    embedding: vector('embedding', { dimensions: 1536 }),
-    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
-      .notNull()
-      .default(sql`now()`)
-      .$defaultFn(() => new Date()),
-  },
-  (table) => [index('idx_post_search_embedding').using('hnsw', table.embedding.op('vector_cosine_ops'))],
-)
+// Plain text kept separate so the main `post` table stays narrow. LIKE
+// search joins this table for the body corpus (vector search removed).
+export const postSearchIndex = pgTable('post_search_index', {
+  postId: bigint('post_id', { mode: 'bigint' }).primaryKey().notNull(),
+  plainText: text('plain_text').notNull().default(''),
+  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+    .notNull()
+    .default(sql`now()`)
+    .$defaultFn(() => new Date()),
+})
