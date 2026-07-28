@@ -71,8 +71,10 @@ export const CONFIG_TABLE = [
     path: ['storage', 'database'],
     // Empty resolves to `<storage.data>/kobato.db` at open time, so the
     // default tracks a custom `storage.data` without duplicating it.
-    // `:memory:` is allowed for tests.
-    schema: z.string(),
+    // `:memory:` is allowed for tests. The `.default('')` matters for
+    // config files written before this key existed (PG-era files carry
+    // no `storage.database`).
+    schema: z.string().default(''),
     fileDefault: '',
   },
   {
