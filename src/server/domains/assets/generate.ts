@@ -1,8 +1,9 @@
 import sharp from 'sharp'
-import { encode as encodeIco } from 'sharp-ico'
 
-// Statically imported and bundled; under SEA the bundler plugin redirects
-// the packages' own platform loads to `nativeRequire` (see
+import { encodeIco } from '@/server/domains/assets/ico'
+
+// sharp is statically imported and bundled; under SEA the bundler plugin
+// redirects the package's own platform loads to `nativeRequire` (see
 // `scripts/sea/redirect-native-requires.ts`).
 
 // Caller (settings service) is responsible for uploading each buffer to

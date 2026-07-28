@@ -2,7 +2,6 @@ import type { RenderToPipeableStreamOptions } from 'react-dom/server'
 import type { EntryContext, RouterContextProvider } from 'react-router'
 
 import { createReadableStreamFromReadable } from '@react-router/node'
-import { isbot } from 'isbot'
 
 import '@/shared/zod-config'
 
@@ -12,6 +11,7 @@ import { ServerRouter } from 'react-router'
 
 import { requestContext } from '@/server/http/request-context'
 import { getLogger } from '@/server/infra/logger'
+import { isBot } from '@/shared/utils/is-bot'
 
 export const streamTimeout = 5_000
 
@@ -53,7 +53,7 @@ export default function handleRequest(
     // Ensure requests from bots and SPA Mode renders wait for all content to load before responding
     // https://react.dev/reference/react-dom/server/renderToPipeableStream#waiting-for-all-content-to-load-for-crawlers-and-static-generation
     const readyOption: keyof RenderToPipeableStreamOptions =
-      (userAgent && isbot(userAgent)) || routerContext.isSpaMode ? 'onAllReady' : 'onShellReady'
+      isBot(userAgent) || routerContext.isSpaMode ? 'onAllReady' : 'onShellReady'
 
     // Abort the rendering stream after the `streamTimeout` so it has time to
     // flush down the rejected boundaries

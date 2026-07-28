@@ -1399,11 +1399,11 @@ describe('contract: module and bundle boundaries', () => {
   })
 
   it('routes the native packages through static imports + the bundler redirect plugin', () => {
-    // The native packages (sharp, sharp-ico, @napi-rs/canvas) are
-    // STATICALLY imported and inlined into the SEA bundles; the
+    // The native packages (sharp, @napi-rs/canvas) are STATICALLY
+    // imported and inlined into the SEA bundles; the
     // redirect-native-requires plugin rewrites their internal platform
     // loads to `nativeRequire` (see `src/server/infra/native-require.ts`).
-    // The inverted hazard: a `requireExternal('sharp' | 'sharp-ico' |
+    // The inverted hazard: a `requireExternal('sharp' |
     // '@napi-rs/canvas')` call site would hide the package from the
     // bundler and crash under SEA (no node_modules tree to resolve
     // against). Pin both halves of the mechanism:
@@ -1414,8 +1414,7 @@ describe('contract: module and bundle boundaries', () => {
     //      without it the static imports would drag the platform `.node`
     //      loads into the bundle and the build would fail.
     const offenders: string[] = []
-    const nativeRequireExternal =
-      /requireExternal(?:<[^>]*>)?\(\s*['"](?:sharp|sharp-ico|@napi-rs\/canvas)(?:\/[^'"]*)?['"]/
+    const nativeRequireExternal = /requireExternal(?:<[^>]*>)?\(\s*['"](?:sharp|@napi-rs\/canvas)(?:\/[^'"]*)?['"]/
     for (const file of files('src', '-g', '*.ts', '-g', '*.tsx')) {
       const source = readFileSync(file, 'utf8')
       if (nativeRequireExternal.test(source)) {

@@ -9,7 +9,7 @@ import {
 } from '../../../../scripts/sea/redirect-native-requires.ts'
 
 // Contract test: the platform require call sites inside the INSTALLED
-// sharp / sharp-ico / @napi-rs/canvas packages must stay exactly the set
+// sharp / @napi-rs/canvas packages must stay exactly the set
 // the SEA redirect machinery knows about. A future sharp/canvas release
 // that adds a new platform specifier shape fails HERE at upgrade time —
 // not at `sea:smoke` or in production. Two halves:
@@ -118,7 +118,6 @@ function enumerateCallSites(): CallSite[] {
     ...['index.js', 'js-binding.js', 'geometry.js', 'load-image.js', 'node-canvas.js'].map((name) =>
       join(packageRoot('@napi-rs/canvas'), name),
     ),
-    join(packageRoot('sharp-ico'), 'index.js'),
   ]
   const sites: CallSite[] = []
   for (const file of files) {

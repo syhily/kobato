@@ -66,7 +66,8 @@ function checkBundle(bundlePath: string) {
     // failed/externalized CJS require survives into the bundle (a plain-
     // `require` scan cannot see it). Only node builtins may ride it —
     // anything else is a `Cannot find module` at runtime inside the
-    // binary (the sharp-ico → require("sharp") failure shape).
+    // binary (the historical failure shape: a bundled package's require
+    // of a sibling package surviving externalization).
     for (const match of line.matchAll(/__require\(\s*["']([^"']+)["']\s*\)/g)) {
       const specifier = match[1]
       if (specifier.startsWith('.') || specifier.startsWith('/')) {

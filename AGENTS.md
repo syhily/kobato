@@ -126,7 +126,7 @@ The rpath patch runs at build time on a staged copy
 (`install_name_tool -change @rpath/X @loader_path/X` on darwin,
 `patchelf --set-rpath '$ORIGIN'` on linux — patchelf is in the Dockerfile
 build stage and guarded in the linux CI job; nothing on win32). sharp /
-sharp-ico / @napi-rs/canvas are **statically imported and bundled**;
+@napi-rs/canvas are **statically imported and bundled**;
 `scripts/sea/redirect-native-requires.ts` (a Vite plugin) rewrites the
 packages' own platform-specifier `require(...)` call sites to
 `nativeRequire(...)`, which resolves them against the flat dir plus
@@ -205,7 +205,7 @@ embedded `natives-meta/*` metadata assets
 
 Runtime rules:
 
-- Native packages (sharp, sharp-ico, @napi-rs/canvas) are statically
+- Native packages (sharp, @napi-rs/canvas) are statically
   imported like any other dependency — the bundler inlines them and the
   redirect plugin rewrites their platform loads. The inverted hazard is
   the OLD pattern: a `requireExternal('sharp' | ...)` call site hides the

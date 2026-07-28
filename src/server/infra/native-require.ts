@@ -1,7 +1,7 @@
 // Redirected native require — the runtime half of the SEA native-module
 // strategy (the build half is `scripts/sea/redirect-native-requires.ts`).
 //
-// sharp, sharp-ico and @napi-rs/canvas are statically imported and bundled
+// sharp and @napi-rs/canvas are statically imported and bundled
 // into the server/worker bundles; the bundler plugin rewrites the
 // packages' own platform-specifier `require(...)` call sites to
 // `nativeRequire(...)`. This module resolves exactly the enumerated
@@ -116,8 +116,8 @@ function readEmbeddedMetadata<T>(key: string): T {
 
 /**
  * Resolve one redirected platform specifier. Only ever called from the
- * rewritten call sites inside the bundled sharp / sharp-ico /
- * @napi-rs/canvas modules — never from project code directly.
+ * rewritten call sites inside the bundled sharp / @napi-rs/canvas
+ * modules — never from project code directly.
  */
 export function nativeRequire<T>(specifier: string): T {
   const nativesDir = process.env.KOBATO_NATIVES_DIR

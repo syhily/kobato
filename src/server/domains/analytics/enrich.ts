@@ -1,10 +1,10 @@
-import { isbot } from 'isbot'
 import { createHash } from 'node:crypto'
 
 import type { EnrichedAccessEvent, RawAccessEvent } from '@/server/domains/analytics/types'
 
 import { lookupCity } from '@/server/domains/analytics/geoip'
 import { getDailySalt } from '@/server/domains/analytics/salt'
+import { isBot } from '@/shared/utils/is-bot'
 
 // Take a raw request signal and produce a row-shaped event for the COPY
 // pipeline. Never touches request/response objects; failures degrade to
@@ -42,10 +42,7 @@ function parsePrimaryLanguage(header: string | null): string | null {
 }
 
 function isBotUa(ua: string): boolean {
-  if (!ua) {
-    return false
-  }
-  return isbot(ua)
+  return isBot(ua)
 }
 
 export async function enrichEvent(raw: RawAccessEvent): Promise<EnrichedAccessEvent> {

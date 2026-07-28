@@ -1,6 +1,6 @@
 // Bundler plugin: redirect the native packages' platform requires.
 //
-// sharp, sharp-ico and @napi-rs/canvas are statically imported by the
+// sharp and @napi-rs/canvas are statically imported by the
 // server/worker graphs and inlined into the SEA bundles (`ssr.noExternal:
 // true`). Their own platform loading must NOT resolve at bundle time —
 // the `.node` addons and libvips metadata live outside the bundle (the
@@ -36,14 +36,14 @@ const NATIVE_REQUIRE_BINDING = 'nativeRequire'
 const NATIVE_REQUIRE_MODULE = '@/server/infra/native-require'
 
 /**
- * Modules this plugin transforms: any file inside the sharp, sharp-ico or
+ * Modules this plugin transforms: any file inside the sharp or
  * @napi-rs/canvas package directories (pnpm store or flat node_modules —
  * both layouts contain a `/node_modules/<pkg>/` segment). Platform
  * packages (`@img/*`, `@napi-rs/canvas-*`) never enter the module graph —
  * their only references were rewritten away — so they need no scope.
  */
 const SCOPED_MODULE =
-  /[\\/]node_modules[\\/](?:\.pnpm[\\/][^\\/]+[\\/]node_modules[\\/])?(?:sharp|sharp-ico|@napi-rs[\\/]canvas)[\\/]/
+  /[\\/]node_modules[\\/](?:\.pnpm[\\/][^\\/]+[\\/]node_modules[\\/])?(?:sharp|@napi-rs[\\/]canvas)[\\/]/
 
 /**
  * Arguments that mark a platform-specifier require: `@img/sharp…` (the
@@ -86,8 +86,8 @@ export function redirectNativeRequires(code: string, id: string): string | null 
   }
   // The renamed call sites need the binding in scope. `.mjs` sources are
   // ESM (sharp's dist); everything else in the scoped packages is CJS
-  // (canvas, sharp-ico, sharp's .cjs flavor) and gets the require form —
-  // the bundler's CJS interop resolves it like any other require.
+  // (canvas, sharp's .cjs flavor) and gets the require form — the
+  // bundler's CJS interop resolves it like any other require.
   const binding = id.endsWith('.mjs')
     ? `import { ${NATIVE_REQUIRE_BINDING} } from '${NATIVE_REQUIRE_MODULE}';\n`
     : `const { ${NATIVE_REQUIRE_BINDING} } = require('${NATIVE_REQUIRE_MODULE}');\n`

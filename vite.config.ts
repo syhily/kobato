@@ -52,13 +52,9 @@ export default defineConfig(({ command }) => ({
           noExternal: true,
           target: 'node',
           // sharp / @napi-rs/canvas can never be bundled (their .node
-          // loads are unloadable); sharp-ico must stay external too: it
-          // is pure JS and WOULD inline, but its internal
-          // `require("sharp")` would then be preserved as a runtime
-          // external — which the SEA second-pass build can no longer
-          // resolve. External here, inlined (and redirected) by
-          // vite.sea.config.ts there.
-          external: ['sharp', '@napi-rs/canvas', 'sharp-ico'],
+          // loads are unloadable). External here, inlined (and
+          // redirected) by vite.sea.config.ts there.
+          external: ['sharp', '@napi-rs/canvas'],
         },
   environments: {
     ssr: {

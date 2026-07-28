@@ -4,26 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { MailgunConfig } from '@/server/infra/email/transports/mailgun'
 
-// Mock the mailgun.js SDK before importing the transport — the transport
-// instantiates a client at construction time, so the mock has to be in
-// place before `new MailgunTransport(...)`.
-const createMock = vi.fn()
-const clientMock = { messages: { create: createMock } }
-vi.mock('mailgun.js', () => {
-  return {
-    default: class FakeMailgun {
-      // The transport passes the global FormData constructor through.
-      // We accept and ignore it here — the SDK only uses it to wrap the
-      // outgoing multipart body, which the mock short-circuits anyway.
-      constructor() {}
-      client() {
-        return clientMock
-      }
-    },
-  }
-})
-
-const { MailgunTransport } = await import('@/server/infra/email/transports/mailgun')
+import { MailgunTransport } from '@/server/infra/email/transports/mailgun'
 
 const baseConfig: MailgunConfig = {
   enabled: true,
@@ -32,19 +13,34 @@ const baseConfig: MailgunConfig = {
   sender: 'noreply@mg.example.com',
 }
 
+// The transport talks to the Mailgun v3 API with native fetch — stub the
+// global instead of the old SDK client.
+const fetchMock = vi.fn()
+
+function formDataEntries(body: unknown): Record<string, string[]> {
+  expect(body).toBeInstanceOf(FormData)
+  const entries: Record<string, string[]> = {}
+  for (const [key, value] of (body as FormData).entries()) {
+    entries[key] = [...(entries[key] ?? []), String(value)]
+  }
+  return entries
+}
+
 describe('MailgunTransport', () => {
   let errorSpy: MockInstance
   beforeEach(() => {
-    createMock.mockReset()
+    fetchMock.mockReset()
+    vi.stubGlobal('fetch', fetchMock)
     // The dispatcher logs every failure; silence those in test output.
     errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
   })
   afterEach(() => {
+    vi.unstubAllGlobals()
     errorSpy.mockRestore()
   })
 
   describe('skip branches', () => {
-    it('returns reason=disabled without touching the SDK when enabled=false', async () => {
+    it('returns reason=disabled without calling the API when enabled=false', async () => {
       const transport = new MailgunTransport({ ...baseConfig, enabled: false })
 
       const result = await transport.send({ to: 'to@example.com', subject: 'hi', html: '<p/>' })
@@ -54,7 +50,7 @@ describe('MailgunTransport', () => {
         expect(result.reason).toBe('disabled')
         expect(result.message).toContain('关闭')
       }
-      expect(createMock).not.toHaveBeenCalled()
+      expect(fetchMock).not.toHaveBeenCalled()
     })
 
     it('returns reason=unconfigured when domain is missing', async () => {
@@ -67,7 +63,7 @@ describe('MailgunTransport', () => {
         expect(result.reason).toBe('unconfigured')
         expect(result.message).toContain('Domain')
       }
-      expect(createMock).not.toHaveBeenCalled()
+      expect(fetchMock).not.toHaveBeenCalled()
     })
 
     it('returns reason=unconfigured when apiKey is missing', async () => {
@@ -79,7 +75,7 @@ describe('MailgunTransport', () => {
       if (result.ok === false) {
         expect(result.reason).toBe('unconfigured')
       }
-      expect(createMock).not.toHaveBeenCalled()
+      expect(fetchMock).not.toHaveBeenCalled()
     })
 
     it('returns reason=unconfigured when sender is missing', async () => {
@@ -91,13 +87,13 @@ describe('MailgunTransport', () => {
       if (result.ok === false) {
         expect(result.reason).toBe('unconfigured')
       }
-      expect(createMock).not.toHaveBeenCalled()
+      expect(fetchMock).not.toHaveBeenCalled()
     })
   })
 
   describe('happy path', () => {
-    it('calls messages.create on the configured domain and returns ok=true', async () => {
-      createMock.mockResolvedValueOnce({ id: '<id@mg.example.com>', message: 'Queued. Thank you.', status: 200 })
+    it('POSTs multipart form data to the configured domain and returns ok=true', async () => {
+      fetchMock.mockResolvedValueOnce(new Response('{"id":"<id@mg.example.com>"}', { status: 200 }))
       const transport = new MailgunTransport(baseConfig)
 
       const result = await transport.send(
@@ -106,43 +102,44 @@ describe('MailgunTransport', () => {
       )
 
       expect(result.ok).toBe(true)
-      expect(createMock).toHaveBeenCalledOnce()
-      const [domain, payload] = createMock.mock.calls[0]
-      expect(domain).toBe('mg.example.com')
-      expect(payload.from).toBe('noreply@mg.example.com')
+      expect(fetchMock).toHaveBeenCalledOnce()
+      const [url, init] = fetchMock.mock.calls[0]
+      expect(url).toBe('https://api.mailgun.net/v3/mg.example.com/messages')
+      expect(init.method).toBe('POST')
+      expect(init.headers.Authorization).toBe(`Basic ${Buffer.from('api:SECRET').toString('base64')}`)
+
+      const payload = formDataEntries(init.body)
+      expect(payload.from).toEqual(['noreply@mg.example.com'])
       expect(payload.to).toEqual(['to@example.com'])
       expect(payload.bcc).toEqual(['audit@example.com'])
-      expect(payload.subject).toBe('hi')
-      expect(payload.html).toBe('<p>body</p>')
+      expect(payload.subject).toEqual(['hi'])
+      expect(payload.html).toEqual(['<p>body</p>'])
     })
 
     it('omits bcc from the payload when the option is absent', async () => {
-      createMock.mockResolvedValueOnce({ status: 200 })
+      fetchMock.mockResolvedValueOnce(new Response('{}', { status: 200 }))
       const transport = new MailgunTransport(baseConfig)
 
       await transport.send({ to: 'to@example.com', subject: 'hi', html: '<p/>' })
 
-      const [, payload] = createMock.mock.calls[0]
-      expect(payload.bcc).toBeUndefined()
+      const [, init] = fetchMock.mock.calls[0]
+      expect(formDataEntries(init.body).bcc).toBeUndefined()
     })
 
     it('omits bcc from the payload when the option is an empty array', async () => {
-      createMock.mockResolvedValueOnce({ status: 200 })
+      fetchMock.mockResolvedValueOnce(new Response('{}', { status: 200 }))
       const transport = new MailgunTransport(baseConfig)
 
       await transport.send({ to: 'to@example.com', subject: 'hi', html: '<p/>' }, { bcc: [] })
 
-      const [, payload] = createMock.mock.calls[0]
-      expect(payload.bcc).toBeUndefined()
+      const [, init] = fetchMock.mock.calls[0]
+      expect(formDataEntries(init.body).bcc).toBeUndefined()
     })
   })
 
   describe('failure branches', () => {
-    it('surfaces an SDK APIError (with .status) as reason=upstream with the status', async () => {
-      // mailgun.js throws APIError carrying { status, message, details } on
-      // any non-2xx upstream response. We reconstruct the shape here.
-      const apiError = Object.assign(new Error('Bad Request'), { status: 400, details: 'invalid from' })
-      createMock.mockRejectedValueOnce(apiError)
+    it('surfaces a non-2xx response as reason=upstream with the status', async () => {
+      fetchMock.mockResolvedValueOnce(new Response('invalid from', { status: 400, statusText: 'Bad Request' }))
       const transport = new MailgunTransport(baseConfig)
 
       const result = await transport.send({ to: 'to@example.com', subject: 'hi', html: '<p/>' })
@@ -158,8 +155,8 @@ describe('MailgunTransport', () => {
       }
     })
 
-    it('surfaces a plain SDK throw (no .status) as reason=network', async () => {
-      createMock.mockRejectedValueOnce(new Error('ECONNREFUSED'))
+    it('surfaces a fetch throw as reason=network', async () => {
+      fetchMock.mockRejectedValueOnce(new Error('ECONNREFUSED'))
       const transport = new MailgunTransport(baseConfig)
 
       const result = await transport.send({ to: 'to@example.com', subject: 'hi', html: '<p/>' })

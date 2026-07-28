@@ -47,7 +47,6 @@
 //   - the `natives-meta/*` metadata JSON the redirected probes answer
 //     from memory (libvips/sharp platform package.json + versions.json —
 //     the subsets that exist on this platform).
-// sharp-ico embeds nothing: it is pure JS and rides inside the bundles.
 
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs'

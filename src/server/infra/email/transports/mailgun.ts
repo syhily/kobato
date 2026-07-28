@@ -1,22 +1,20 @@
 // Mailgun transport.
 //
-// Wraps the official `mailgun.js` SDK behind the same `MailTransport`
-// interface the Zeabur and SMTP transports implement, so the dispatcher
-// in `sender.ts` can route to it with no special-casing. Mirrors
-// `zebaur-zsend.ts` line-by-line for skip / send / error-classification
-// behaviour so every HTTP-based transport speaks the same vocabulary.
+// Talks to the Mailgun v3 API directly with native `fetch` + `FormData` —
+// the official `mailgun.js` SDK was a thin wrapper around exactly this one
+// multipart POST, so the SDK (and its axios/form-data dependency tree) is
+// gone. Mirrors `zeabur-zsend.ts` line-by-line for skip / send /
+// error-classification behaviour so every HTTP-based transport speaks the
+// same vocabulary.
 //
 //   - `disabled` short-circuits with a debug log.
 //   - missing domain / apiKey / sender short-circuits with `unconfigured`.
-//   - SDK throws an `APIError` (carrying `.status`) on a non-2xx upstream
-//     response — surfaced as `reason=upstream` with the status.
-//   - any other throw (DNS / TCP / timeout) surfaces as `reason=network`.
+//   - upstream non-2xx surfaces as `reason=upstream` with the status.
+//   - fetch throw (DNS / TCP / timeout) surfaces as `reason=network`.
 //
-// US region only — `mailgun.client` defaults to `https://api.mailgun.net`.
-// EU customers would need to pass `url: 'https://api.eu.mailgun.net'` to
-// the client constructor; the admin UI does not expose a region selector.
-
-import Mailgun from 'mailgun.js'
+// US region only — the endpoint is hardcoded to `https://api.mailgun.net`.
+// EU customers would need `https://api.eu.mailgun.net`; the admin UI does
+// not expose a region selector.
 
 import type {
   EmailMessage,
@@ -38,12 +36,7 @@ export interface MailgunConfig extends MailTransportConfig {
 export class MailgunTransport implements MailTransport {
   readonly name = 'mailgun'
 
-  private readonly client: ReturnType<Mailgun['client']>
-
-  constructor(private readonly config: MailgunConfig) {
-    const mg = new Mailgun(FormData)
-    this.client = mg.client({ username: 'api', key: config.apiKey })
-  }
+  constructor(private readonly config: MailgunConfig) {}
 
   async send(message: EmailMessage, options: SendOptions = {}): Promise<SendResult> {
     const { enabled, domain, apiKey, sender } = this.config
@@ -61,37 +54,50 @@ export class MailgunTransport implements MailTransport {
       }
     }
 
+    const { to, subject, html } = message
+    const body = new FormData()
+    body.append('from', sender)
+    body.append('to', to)
+    if (options.bcc) {
+      for (const recipient of options.bcc) {
+        body.append('bcc', recipient)
+      }
+    }
+    body.append('subject', subject)
+    body.append('html', html)
+
+    let response: Response
     try {
-      await this.client.messages.create(domain, {
-        from: sender,
-        to: [message.to],
-        ...(options.bcc && options.bcc.length > 0 ? { bcc: options.bcc } : {}),
-        subject: message.subject,
-        html: message.html,
+      response = await fetch(`https://api.mailgun.net/v3/${domain}/messages`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Basic ${Buffer.from(`api:${apiKey}`).toString('base64')}`,
+        },
+        body,
+        signal: AbortSignal.timeout(30_000),
       })
-      return { ok: true }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
-      // `mailgun.js` throws an `APIError` that carries `.status` on any
-      // non-2xx upstream response; everything else (DNS, TCP, timeout)
-      // is a plain Error we classify as `network`.
-      if (error !== null && typeof error === 'object' && 'status' in error && typeof error.status === 'number') {
-        const status = error.status
-        log.error('Mailgun send failed: upstream rejected', {
-          status,
-          to: message.to,
-          subject: message.subject,
-          error,
-        })
-        return {
-          ok: false,
-          reason: 'upstream',
-          status,
-          message: `${status} ${errorMessage}`,
-        }
-      }
-      log.error('Mailgun send failed: network error', { to: message.to, subject: message.subject, error })
+      log.error('Mailgun send failed: network error', { to, subject, error })
       return { ok: false, reason: 'network', message: errorMessage }
     }
+
+    if (!response.ok) {
+      const responseBody = await response.text().catch(() => '')
+      log.error('Mailgun send failed: upstream rejected', {
+        status: response.status,
+        statusText: response.statusText,
+        body: responseBody,
+        to,
+        subject,
+      })
+      return {
+        ok: false,
+        reason: 'upstream',
+        status: response.status,
+        message: `${response.status} ${response.statusText}`,
+      }
+    }
+    return { ok: true }
   }
 }

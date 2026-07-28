@@ -22,7 +22,6 @@
  * review whether it belongs in NODE_ONLY_PACKAGES below.
  *
  * Verified isomorphic and therefore intentionally NOT denied (2026-07):
- * - `isbot` — ships a `browser` export condition; used server-side only.
  * - `superjson` — pure JS, single isomorphic entry; used server-side only.
  */
 import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
@@ -102,7 +101,6 @@ const NODE_ONLY_PACKAGES: readonly NodeOnlyPackage[] = [
   { name: 'pg', reason: 'data layer, server-only' },
   { name: 'drizzle-orm', reason: 'data layer, server-only' },
   { name: 'nodemailer', reason: 'mail delivery, server-only' },
-  { name: 'mailgun.js', reason: 'mail delivery, node-conditional exports' },
   { name: 'bcryptjs', reason: 'auth hashing, server-only' },
   { name: 'sharp', reason: 'native binary, ssr-external' },
   { name: '@napi-rs/canvas', reason: 'native binary, ssr-external' },
