@@ -117,7 +117,7 @@ describe('adminMusicRouter.update', () => {
     expect(metadataService.updateMusicMetadata).toHaveBeenCalledWith(
       ctx.db,
       {
-        id: 1n,
+        id: 1,
         name: 'Updated Song',
         artist: ['Artist'],
         album: 'Album',

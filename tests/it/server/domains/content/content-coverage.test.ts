@@ -1,10 +1,10 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
+
 import { clearAllTables } from '#/_helpers/integration-db'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { saveDraftRevision, publishLatestRevision } from '@/server/domains/content/repos/mutate'
 import {
   findContentById,
@@ -13,18 +13,16 @@ import {
   findLatestDraft,
   listRevisions,
 } from '@/server/domains/content/revisions'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { page as pageMetaTable } from '@/server/infra/db/schema/page'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { DomainError } from '@/server/infra/http/errors'
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {
@@ -49,7 +47,7 @@ describe('content/repos/mutate — saveDraftRevision', () => {
   it('throws NOT_FOUND when the meta row does not exist', async () => {
     await expect(
       saveDraftRevision(db, 'post', {
-        ownerId: 999n,
+        ownerId: 999,
         body,
         imageSources: [],
         headings: [],
@@ -218,7 +216,7 @@ describe('content/repos/mutate — publishLatestRevision', () => {
 
 describe('content/repos/query — basic lookups', () => {
   it('findContentById returns null for an unknown id', async () => {
-    expect(await findContentById(db, 9999n)).toBeNull()
+    expect(await findContentById(db, 9999)).toBeNull()
   })
 
   it('findContentsByIds returns an empty list for empty input', async () => {
@@ -228,13 +226,13 @@ describe('content/repos/query — basic lookups', () => {
   it('findContentsByIds returns matching rows', async () => {
     const [a] = await db
       .insert(contentTable)
-      .values({ type: 'post', ownerId: 1n, revisionNo: 1, status: 'draft', body: [], imageSources: [], headings: [] })
+      .values({ type: 'post', ownerId: 1, revisionNo: 1, status: 'draft', body: [], imageSources: [], headings: [] })
       .returning()
     const [b] = await db
       .insert(contentTable)
       .values({
         type: 'post',
-        ownerId: 1n,
+        ownerId: 1,
         revisionNo: 2,
         status: 'published',
         body: [],
@@ -248,21 +246,21 @@ describe('content/repos/query — basic lookups', () => {
 
   it('findLatestRevision returns the highest revisionNo', async () => {
     await db.insert(contentTable).values([
-      { type: 'post', ownerId: 5n, revisionNo: 1, status: 'draft', body: [], imageSources: [], headings: [] },
-      { type: 'post', ownerId: 5n, revisionNo: 3, status: 'published', body: [], imageSources: [], headings: [] },
-      { type: 'post', ownerId: 5n, revisionNo: 2, status: 'draft', body: [], imageSources: [], headings: [] },
+      { type: 'post', ownerId: 5, revisionNo: 1, status: 'draft', body: [], imageSources: [], headings: [] },
+      { type: 'post', ownerId: 5, revisionNo: 3, status: 'published', body: [], imageSources: [], headings: [] },
+      { type: 'post', ownerId: 5, revisionNo: 2, status: 'draft', body: [], imageSources: [], headings: [] },
     ])
-    const latest = await findLatestRevision(db, 'post', 5n)
+    const latest = await findLatestRevision(db, 'post', 5)
     expect(latest).not.toBeNull()
     expect(latest!.revisionNo).toBe(3)
   })
 
   it('findLatestDraft returns the latest draft only', async () => {
     await db.insert(contentTable).values([
-      { type: 'page', ownerId: 7n, revisionNo: 1, status: 'published', body: [], imageSources: [], headings: [] },
-      { type: 'page', ownerId: 7n, revisionNo: 2, status: 'draft', body: [], imageSources: [], headings: [] },
+      { type: 'page', ownerId: 7, revisionNo: 1, status: 'published', body: [], imageSources: [], headings: [] },
+      { type: 'page', ownerId: 7, revisionNo: 2, status: 'draft', body: [], imageSources: [], headings: [] },
     ])
-    const draft = await findLatestDraft(db, 'page', 7n)
+    const draft = await findLatestDraft(db, 'page', 7)
     expect(draft).not.toBeNull()
     expect(draft!.status).toBe('draft')
     expect(draft!.revisionNo).toBe(2)
@@ -270,11 +268,11 @@ describe('content/repos/query — basic lookups', () => {
 
   it('listRevisions returns revisions in descending order with limit', async () => {
     await db.insert(contentTable).values([
-      { type: 'post', ownerId: 9n, revisionNo: 1, status: 'published', body: [], imageSources: [], headings: [] },
-      { type: 'post', ownerId: 9n, revisionNo: 2, status: 'published', body: [], imageSources: [], headings: [] },
-      { type: 'post', ownerId: 9n, revisionNo: 3, status: 'draft', body: [], imageSources: [], headings: [] },
+      { type: 'post', ownerId: 9, revisionNo: 1, status: 'published', body: [], imageSources: [], headings: [] },
+      { type: 'post', ownerId: 9, revisionNo: 2, status: 'published', body: [], imageSources: [], headings: [] },
+      { type: 'post', ownerId: 9, revisionNo: 3, status: 'draft', body: [], imageSources: [], headings: [] },
     ])
-    const list = await listRevisions(db, 'post', 9n, 2)
+    const list = await listRevisions(db, 'post', 9, 2)
     expect(list).toHaveLength(2)
     expect(list[0]!.revisionNo).toBe(3)
     expect(list[1]!.revisionNo).toBe(2)

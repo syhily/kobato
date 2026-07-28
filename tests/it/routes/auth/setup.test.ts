@@ -333,7 +333,7 @@ describe('routes/setup', () => {
 
       expect(flows.signUpInitialAdminWithSession).toHaveBeenCalledOnce()
       const call = vi.mocked(flows.signUpInitialAdminWithSession).mock.calls[0]!
-      expect(call[2]).toMatchObject({
+      expect(call[1]).toMatchObject({
         title: 'Blog',
         name: 'A',
         email: 'a@b.com',

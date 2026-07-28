@@ -34,7 +34,7 @@ const update = adminProc
     const editorId = safeBigInt(context.viewer.id)
     // DomainError translation lives in orpc-base's domainErrorGuard —
     // no per-controller catch here.
-    const bundle = await updateBlogSettingsSection(context.db, context.pool, input.section, input.payload, editorId)
+    const bundle = await updateBlogSettingsSection(context.db, input.section, input.payload, editorId)
     recordAuditEventFromContext(context, {
       action: 'settings_updated',
       resourceType: 'setting',

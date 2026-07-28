@@ -4,9 +4,8 @@
 // vocabulary. Revocation policy ("who may revoke whose session") lives
 // in `session-guard.ts`.
 
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import type { SessionMeta, SessionWithUser } from '@/server/domains/auth/repo'
+import type { Database } from '@/server/infra/db/database'
 
 import { deleteSessionsOfUser, listLiveSessions, listLiveSessionsByUser } from '@/server/domains/auth/repo'
 import { findUsersByIds } from '@/server/infra/db/operations/user'
@@ -24,11 +23,7 @@ const MAX_SESSIONS_LISTED = 10_000
  *
  * Returns the number of revoked sessions.
  */
-export async function revokeAllSessionsOfUser(
-  db: NodePgDatabase,
-  userId: bigint,
-  exceptSessionId?: string,
-): Promise<number> {
+export async function revokeAllSessionsOfUser(db: Database, userId: number, exceptSessionId?: string): Promise<number> {
   return deleteSessionsOfUser(db, userId, exceptSessionId)
 }
 
@@ -38,7 +33,7 @@ export async function revokeAllSessionsOfUser(
  * `recordSessionLogin`) are filtered out — they would render as empty
  * rows in the UI.
  */
-export async function listSessionsByUser(db: NodePgDatabase, userId: bigint): Promise<SessionMeta[]> {
+export async function listSessionsByUser(db: Database, userId: number): Promise<SessionMeta[]> {
   return listLiveSessionsByUser(db, userId)
 }
 
@@ -49,7 +44,7 @@ export async function listSessionsByUser(db: NodePgDatabase, userId: bigint): Pr
  * Soft-capped at `MAX_SESSIONS_LISTED` rows to bound memory usage on
  * long-running deployments.
  */
-export async function listAllSessions(db: NodePgDatabase): Promise<SessionWithUser[]> {
+export async function listAllSessions(db: Database): Promise<SessionWithUser[]> {
   const metas = await listLiveSessions(db, MAX_SESSIONS_LISTED)
   if (metas.length === 0) {
     return []

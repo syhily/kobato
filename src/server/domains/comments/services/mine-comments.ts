@@ -1,7 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { and, count, eq, sql } from 'drizzle-orm'
 
+import type { Database } from '@/server/infra/db/database'
 import type { EntityType } from '@/server/infra/db/target'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
@@ -53,8 +52,8 @@ function makeExcerpt(raw: string): string {
 }
 
 export async function loadMineCommentsPage(
-  db: NodePgDatabase,
-  userId: bigint,
+  db: Database,
+  userId: number,
   offset: number,
   limit: number,
   filters: MyCommentsFilters = {},
@@ -68,17 +67,12 @@ export async function loadMineCommentsPage(
   ])
 
   const entityPairs = rows
-    .filter((c): c is typeof c & { type: EntityType; ownerId: bigint } => c.type !== null && c.ownerId !== null)
+    .filter((c): c is typeof c & { type: EntityType; ownerId: number } => c.type !== null && c.ownerId !== null)
     .map((c) => ({ type: c.type, ownerId: c.ownerId }))
 
   const parentIds = Array.from(
-    new Set(
-      rows
-        .map((c) => c.rid)
-        .filter((rid): rid is number => typeof rid === 'number' && rid !== 0)
-        .map((rid) => String(rid)),
-    ),
-  ).map((id) => BigInt(id))
+    new Set(rows.map((c) => c.rid).filter((rid): rid is number => typeof rid === 'number' && rid !== 0)),
+  )
 
   const [entityMap, parentMap] = await Promise.all([
     resolveEntitiesForComments(db, entityPairs),
@@ -120,8 +114,8 @@ export async function loadMineCommentsPage(
 }
 
 export async function listMyCommentEntities(
-  db: NodePgDatabase,
-  userId: bigint,
+  db: Database,
+  userId: number,
   options: { q?: string; cutoff?: Date } = {},
 ): Promise<MyCommentEntity[]> {
   const q = options.q?.trim() ?? ''
@@ -151,8 +145,8 @@ export async function listMyCommentEntities(
 }
 
 export async function countMyComments(
-  db: NodePgDatabase,
-  userId: bigint,
+  db: Database,
+  userId: number,
   filters: MyCommentsFilters = {},
   cutoff: Date = mineSoftDeleteCutoff(),
 ): Promise<{ total: number; pending: number; deleteRequested: number; deleted: number }> {

@@ -13,7 +13,7 @@ import type { AdminCommentWire, AdminPendingDashboardDto, CommentItemWire } from
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
 export interface CommentAndUser {
-  id: bigint
+  id: number
   createAt: Date
   updatedAt: Date
   deleteAt: Date | null
@@ -42,8 +42,8 @@ export interface CommentAndUser {
    * accommodate orphan rows that have not yet been backfilled.
    */
   type: 'post' | 'page' | null
-  ownerId: bigint | null
-  userId: bigint
+  ownerId: number | null
+  userId: number
   isVerified: boolean | null
   ua: string | null
   ip: string | null
@@ -53,7 +53,7 @@ export interface CommentAndUser {
   isPinned: boolean | null
   voteUp: number | null
   voteDown: number | null
-  rootId: bigint | null
+  rootId: number | null
   name: string
   email: string
   emailVerified: boolean
@@ -165,7 +165,7 @@ export interface FilterAutocompleteInput {
 // Output DTOs below intentionally use the **wire** comment types
 // (`CommentItemWire` / `AdminCommentWire` from `@/shared/contracts/comments`)
 // rather than the earlier `CommentItem` / `AdminComment` interfaces. The
-// wire shapes match what `JSON.stringify` actually emits: bigint ids
+// wire shapes match what `JSON.stringify` actually emits: number ids
 // stringified, Date timestamps ISO-encoded. The earlier interfaces are
 // kept for the server-side query layer.
 

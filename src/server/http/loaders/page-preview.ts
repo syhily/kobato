@@ -1,6 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { LoaderFunctionArgs } from 'react-router'
 
+import type { Database } from '@/server/infra/db/database'
 import type { PortableTextBody } from '@/shared/pt/schema'
 import type { DraftMarker } from '@/shared/types/catalog'
 import type { ResolvedImageMeta } from '@/shared/types/images'
@@ -50,13 +50,16 @@ export async function loadPagePreview({
   request,
   context,
 }: {
-  db: NodePgDatabase
+  db: Database
   slug: string
   wantsDraftPreview: boolean
   request: Request
   context: LoaderFunctionArgs['context']
 }): Promise<PagePreviewResult> {
-  const [postMeta, page] = await Promise.all([findPublicPostMetaBySlug(db, slug), findPageBySlug(db, slug)])
+  // findPublicPostMetaBySlug is sync (node:sqlite); findPageBySlug stays
+  // async — no Promise.all needed.
+  const postMeta = findPublicPostMetaBySlug(db, slug)
+  const page = await findPageBySlug(db, slug)
 
   // If the slug belongs to a live post (not deleted, published, not
   // scheduled), redirect to the canonical post URL. Matches the old

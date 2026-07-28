@@ -1,15 +1,15 @@
-import { bigint, index, pgTable, primaryKey } from 'drizzle-orm/pg-core'
+import { index, integer, primaryKey, sqliteTable } from 'drizzle-orm/sqlite-core'
 
 import { post } from '@/server/infra/db/schema/post'
 import { tag } from '@/server/infra/db/schema/taxonomy'
 
-export const postTag = pgTable(
+export const postTag = sqliteTable(
   'post_tag',
   {
-    postId: bigint('post_id', { mode: 'bigint' })
+    postId: integer('post_id')
       .notNull()
       .references(() => post.id, { onDelete: 'cascade' }),
-    tagId: bigint('tag_id', { mode: 'bigint' })
+    tagId: integer('tag_id')
       .notNull()
       .references(() => tag.id, { onDelete: 'cascade' }),
   },

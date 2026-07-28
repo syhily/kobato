@@ -1,8 +1,7 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
 import type { z } from 'zod'
 
 import type { SectionMeta } from '@/server/domains/settings/sections/registry'
+import type { Database } from '@/server/infra/db/database'
 import type { Setting } from '@/server/infra/db/types'
 import type { SettingsSection } from '@/shared/config/sections'
 import type { BlogSettingsBundle, SecretMasks } from '@/shared/config/types'
@@ -31,26 +30,27 @@ import { unsafeCast } from '@/shared/utils/unsafe-cast'
 const log = getLogger('settings.service')
 
 export async function updateBlogSettingsSection<S extends SettingsSection>(
-  db: NodePgDatabase,
-  pool: Pool,
+  db: Database,
   section: S,
   payload: unknown,
-  updatedBy: bigint | null,
+  updatedBy: number | null,
 ): Promise<BlogSettingsBundle | null> {
   const meta = SECTION_REGISTRY[section]
   // Strict key check before any DB work: unknown keys (loader mask
   // fields, renamed keys) are a client bug — 400 with the issue list.
   assertSectionPatchKeys(section, payload)
 
-  const bundle = await db.transaction(async (tx) => {
+  // Sync transaction (node:sqlite). The snapshot refresh runs right
+  // after commit — same macrotask, so no reader can interleave.
+  db.transaction((tx) => {
     // The stored row is the only honest write base: merge the patch onto
     // it (objects merge, arrays replace), then validate the merged
     // section. This single read also feeds the secret/branding
     // preservation in `applySectionPatch`.
-    const storedRow = (await findSettingByScope(tx, meta.scope)) ?? null
+    const storedRow = findSettingByScope(tx, meta.scope) ?? null
     const base = resolveMergeBase(meta, storedRow)
     const merged = mergeSectionPatch(base, unsafeCast<Record<string, unknown>>(payload))
-    const parsed = await meta.schema.safeParseAsync(merged)
+    const parsed = meta.schema.safeParse(merged)
     if (!parsed.success) {
       throw new DomainError(
         'BAD_REQUEST',
@@ -81,15 +81,14 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
     const nextRow = applySectionPatch(section, parsed.data, storedRow)
 
     const encryptedRow = encryptSecretsInRow(section, nextRow)
-    await upsertSetting(tx, encryptedRow, updatedBy, meta.scope)
-
-    return refreshBlogSettings(tx)
+    upsertSetting(tx, encryptedRow, updatedBy, meta.scope)
   })
+  const bundle = await refreshBlogSettings(db)
 
   const handler = SECTION_CHANGE_HANDLERS.get(section)
   if (handler) {
     try {
-      await handler(pool)
+      await handler()
     } catch (e: unknown) {
       log.error('Section change handler failed', { section, error: String(e) })
     }

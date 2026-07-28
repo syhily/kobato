@@ -1,10 +1,9 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
+
 import { clearAllTables } from '#/_helpers/integration-db'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { DomainError } from '@/server/infra/http/errors'
 
 // Section-change dispatch is covered by the unit tests; keep the
@@ -13,12 +12,11 @@ vi.mock('@/server/domains/settings/services/section-changes', () => ({
   SECTION_CHANGE_HANDLERS: new Map(),
 }))
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {
@@ -35,7 +33,7 @@ describe('services/settings — passkey domain validation', () => {
     } as any)
 
     await expect(
-      updateBlogSettingsSection(db, pool, 'security', { passkey: { enabled: true } }, null),
+      updateBlogSettingsSection(db, 'security', { passkey: { enabled: true } }, null),
     ).rejects.toBeInstanceOf(DomainError)
   })
 
@@ -45,7 +43,7 @@ describe('services/settings — passkey domain validation', () => {
     } as any)
 
     await expect(
-      updateBlogSettingsSection(db, pool, 'security', { passkey: { enabled: true } }, null),
+      updateBlogSettingsSection(db, 'security', { passkey: { enabled: true } }, null),
     ).rejects.toBeInstanceOf(DomainError)
   })
 
@@ -55,7 +53,7 @@ describe('services/settings — passkey domain validation', () => {
     } as any)
 
     await expect(
-      updateBlogSettingsSection(db, pool, 'security', { passkey: { enabled: true } }, null),
+      updateBlogSettingsSection(db, 'security', { passkey: { enabled: true } }, null),
     ).rejects.toBeInstanceOf(DomainError)
   })
 
@@ -65,7 +63,7 @@ describe('services/settings — passkey domain validation', () => {
     } as any)
 
     await expect(
-      updateBlogSettingsSection(db, pool, 'security', { passkey: { enabled: true } }, null),
+      updateBlogSettingsSection(db, 'security', { passkey: { enabled: true } }, null),
     ).rejects.toBeInstanceOf(DomainError)
   })
 
@@ -75,7 +73,7 @@ describe('services/settings — passkey domain validation', () => {
     } as any)
 
     await expect(
-      updateBlogSettingsSection(db, pool, 'security', { passkey: { enabled: true } }, null),
+      updateBlogSettingsSection(db, 'security', { passkey: { enabled: true } }, null),
     ).rejects.toBeInstanceOf(DomainError)
   })
 
@@ -87,7 +85,6 @@ describe('services/settings — passkey domain validation', () => {
     await expect(
       updateBlogSettingsSection(
         db,
-        pool,
         'security',
         { csrf: { enabled: true, exemptPaths: [] }, passkey: { enabled: true } },
         null,
@@ -103,7 +100,6 @@ describe('services/settings — passkey domain validation', () => {
     await expect(
       updateBlogSettingsSection(
         db,
-        pool,
         'security',
         { csrf: { enabled: true, exemptPaths: [] }, passkey: { enabled: false } },
         null,
@@ -117,7 +113,7 @@ describe('services/settings — passkey domain validation', () => {
     } as any)
 
     await expect(
-      updateBlogSettingsSection(db, pool, 'security', { passkey: { enabled: true } }, null),
+      updateBlogSettingsSection(db, 'security', { passkey: { enabled: true } }, null),
     ).rejects.toBeInstanceOf(DomainError)
   })
 
@@ -127,7 +123,7 @@ describe('services/settings — passkey domain validation', () => {
     } as any)
 
     await expect(
-      updateBlogSettingsSection(db, pool, 'security', { passkey: { enabled: true } }, null),
+      updateBlogSettingsSection(db, 'security', { passkey: { enabled: true } }, null),
     ).rejects.toBeInstanceOf(DomainError)
   })
 
@@ -137,7 +133,7 @@ describe('services/settings — passkey domain validation', () => {
     } as any)
 
     await expect(
-      updateBlogSettingsSection(db, pool, 'security', { passkey: { enabled: true } }, null),
+      updateBlogSettingsSection(db, 'security', { passkey: { enabled: true } }, null),
     ).rejects.toBeInstanceOf(DomainError)
   })
 
@@ -149,7 +145,6 @@ describe('services/settings — passkey domain validation', () => {
     await expect(
       updateBlogSettingsSection(
         db,
-        pool,
         'security',
         { csrf: { enabled: true, exemptPaths: [] }, passkey: { enabled: true } },
         null,
@@ -163,7 +158,7 @@ describe('services/settings — passkey domain validation', () => {
     } as any)
 
     await expect(
-      updateBlogSettingsSection(db, pool, 'security', { passkey: { enabled: true } }, null),
+      updateBlogSettingsSection(db, 'security', { passkey: { enabled: true } }, null),
     ).rejects.toBeInstanceOf(DomainError)
   })
 })

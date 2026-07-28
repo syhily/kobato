@@ -1,12 +1,11 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
+
 import { clearAllTables } from '#/_helpers/integration-db'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { latestComments } from '@/server/domains/comments/services/public-query'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { comment } from '@/server/infra/db/schema/comment'
 import { kvCache } from '@/server/infra/db/schema/kv-cache'
 import { post } from '@/server/infra/db/schema/post'
@@ -34,12 +33,11 @@ const { bulkApproveCommentsByUser, bulkDeleteCommentsByUser } =
 // directly; the cache invalidation is sunk into the mutation itself.
 const { softDeleteCommentById } = await import('@/server/domains/comments/services/moderate')
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {
@@ -53,7 +51,7 @@ async function latestCommentsRow() {
   return rows[0] ?? null
 }
 
-async function seedUser(overrides: Partial<typeof user.$inferInsert> = {}): Promise<bigint> {
+async function seedUser(overrides: Partial<typeof user.$inferInsert> = {}): Promise<number> {
   const rows = await db
     .insert(user)
     .values({
@@ -67,7 +65,7 @@ async function seedUser(overrides: Partial<typeof user.$inferInsert> = {}): Prom
   return rows[0]!.id
 }
 
-async function seedPost(slug: string): Promise<bigint> {
+async function seedPost(slug: string): Promise<number> {
   const rows = await db
     .insert(post)
     .values({
@@ -75,13 +73,13 @@ async function seedPost(slug: string): Promise<bigint> {
       title: `Post ${slug}`,
       summary: '',
       published: true,
-      publishedRevisionId: 1n,
+      publishedRevisionId: 1,
     })
     .returning({ id: post.id })
   return rows[0]!.id
 }
 
-async function seedComment(userId: bigint, ownerId: bigint, isPending: boolean): Promise<bigint> {
+async function seedComment(userId: number, ownerId: number, isPending: boolean): Promise<number> {
   const rows = await db
     .insert(comment)
     .values({
@@ -91,7 +89,7 @@ async function seedComment(userId: bigint, ownerId: bigint, isPending: boolean):
       content: 'hello',
       body: [],
       rid: 0,
-      rootId: 0n,
+      rootId: 0,
       isPending,
     })
     .returning({ id: comment.id })

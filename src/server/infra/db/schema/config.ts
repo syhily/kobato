@@ -1,49 +1,39 @@
-import { sql } from 'drizzle-orm'
-import {
-  bigint,
-  bigserial,
-  boolean,
-  doublePrecision,
-  index,
-  inet,
-  jsonb,
-  pgTable,
-  text,
-  timestamp,
-  uniqueIndex,
-  varchar,
-} from 'drizzle-orm/pg-core'
+import { index, integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 
 import { user } from '@/server/infra/db/schema/user'
 
-export const setting = pgTable('setting', {
-  id: bigserial('id', { mode: 'bigint' }).primaryKey().notNull(),
-  scope: varchar('scope', { length: 64 }).unique().notNull().default('blog'),
-  data: jsonb('data')
+export const setting = sqliteTable('setting', {
+  id: integer('id').primaryKey({ autoIncrement: true }).notNull(),
+  scope: text('scope').unique().notNull().default('blog'),
+  data: text('data', { mode: 'json' })
     .notNull()
-    .default(sql`'{}'::jsonb`),
-  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+    .$defaultFn(() => ({})),
+  updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
     .notNull()
     .$defaultFn(() => new Date()),
-  updatedBy: bigint('updated_by', { mode: 'bigint' }),
+  updatedBy: integer('updated_by'),
 })
 
-// TimescaleDB hypertable; retention/compression live in the migration.
-export const accessLog = pgTable(
+// Append-only page-view telemetry. TEMPORARY home: this table moves to
+// the embedded DuckDB sidecar (see docs/plans/sqlite-migration.md §1.5)
+// in the analytics phase — it stays here only so the analytics domain
+// keeps compiling until then. Retention runs in the daily maintenance
+// job (not a DB policy).
+export const accessLog = sqliteTable(
   'access_log',
   {
-    ts: timestamp('ts', { withTimezone: true, mode: 'date' })
+    ts: integer('ts', { mode: 'timestamp_ms' })
       .notNull()
       .$defaultFn(() => new Date()),
 
     visitorHash: text('visitor_hash').notNull(),
     sessionId: text('session_id'),
 
-    ip: inet('ip'),
+    ip: text('ip'),
 
     path: text('path').notNull(),
-    entityType: varchar('entity_type', { length: 16 }).$type<'post' | 'page'>(),
-    entityId: bigint('entity_id', { mode: 'bigint' }),
+    entityType: text('entity_type').$type<'post' | 'page'>(),
+    entityId: integer('entity_id'),
 
     referer: text('referer'),
     refererHost: text('referer_host'),
@@ -51,8 +41,8 @@ export const accessLog = pgTable(
     country: text('country'),
     region: text('region'),
     city: text('city'),
-    latitude: doublePrecision('latitude'),
-    longitude: doublePrecision('longitude'),
+    latitude: real('latitude'),
+    longitude: real('longitude'),
     timezone: text('timezone'),
 
     language: text('language'),
@@ -65,7 +55,7 @@ export const accessLog = pgTable(
     device: text('device'),
     deviceType: text('device_type'),
 
-    isBot: boolean('is_bot').notNull().default(false),
+    isBot: integer('is_bot', { mode: 'boolean' }).notNull().default(false),
   },
   (table) => [
     index('idx_access_log_entity_ts').on(table.entityType, table.entityId, table.ts),
@@ -80,21 +70,21 @@ export const accessLog = pgTable(
 export type AccessLogRow = typeof accessLog.$inferSelect
 export type NewAccessLog = typeof accessLog.$inferInsert
 
-export const auditLog = pgTable(
+export const auditLog = sqliteTable(
   'audit_log',
   {
-    id: bigserial('id', { mode: 'bigint' }).primaryKey(),
-    action: varchar('action', { length: 50 }).notNull(),
-    actorId: bigint('actor_id', { mode: 'bigint' }).references(() => user.id, {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    action: text('action').notNull(),
+    actorId: integer('actor_id').references(() => user.id, {
       onDelete: 'set null',
     }),
-    actorRole: varchar('actor_role', { length: 20 }),
-    resourceType: varchar('resource_type', { length: 50 }).notNull(),
-    resourceId: varchar('resource_id', { length: 100 }),
-    details: jsonb('details'),
-    ipAddress: inet('ip_address'),
+    actorRole: text('actor_role'),
+    resourceType: text('resource_type').notNull(),
+    resourceId: text('resource_id'),
+    details: text('details', { mode: 'json' }),
+    ipAddress: text('ip_address'),
     userAgent: text('user_agent'),
-    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
+    createdAt: integer('created_at', { mode: 'timestamp_ms' })
       .notNull()
       .$defaultFn(() => new Date()),
   },
@@ -108,14 +98,14 @@ export const auditLog = pgTable(
 )
 
 // Cross-table slug uniqueness guard (complements per-table UNIQUE).
-export const slugRegistry = pgTable(
+export const slugRegistry = sqliteTable(
   'slug_registry',
   {
-    id: bigserial('id', { mode: 'bigint' }).primaryKey().notNull(),
-    slug: varchar('slug', { length: 80 }).notNull(),
-    entityType: varchar('entity_type', { length: 16 }).$type<'page' | 'post'>().notNull(),
-    entityId: bigint('entity_id', { mode: 'bigint' }).notNull(),
-    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
+    id: integer('id').primaryKey({ autoIncrement: true }).notNull(),
+    slug: text('slug').notNull(),
+    entityType: text('entity_type').$type<'page' | 'post'>().notNull(),
+    entityId: integer('entity_id').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' })
       .notNull()
       .$defaultFn(() => new Date()),
   },

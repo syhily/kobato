@@ -13,6 +13,7 @@ import { countPostMetas, listPostMetas } from '@/server/domains/posts/services/a
 import { getRequestContext } from '@/server/http/request-context'
 import { computeDateRange } from '@/shared/contracts/analytics'
 import { pickEmptyStateLine } from '@/shared/contracts/dashboard'
+import { idFromString } from '@/shared/utils/id'
 
 export interface AdminDashboardData {
   name: string
@@ -56,7 +57,7 @@ export async function loadAdminDashboardData({
   const db = rc.db
   const now = new Date()
 
-  const userId = BigInt(ctx.user.id)
+  const userId = idFromString(ctx.user.id)
   const authorId = userId
   const admin = ctx.user.role === 'admin'
 

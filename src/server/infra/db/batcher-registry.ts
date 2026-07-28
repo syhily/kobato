@@ -1,5 +1,4 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
+import type { DatabaseHandle } from '@/server/infra/db/database'
 
 import { getLogger } from '@/server/infra/logger'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
@@ -10,8 +9,8 @@ const log = getLogger('batcher-registry')
 // audit log). Each batcher module self-registers at import time with a
 // factory; the bootstrap lifecycle (`@/server/bootstrap/db-lifecycle`)
 // then drives every registered batcher through one vocabulary —
-// `initAllBatchers` on pool (re)creation, `flushAllBatchers` +
-// `resetAllBatchers` before the pool is swapped — with no per-domain
+// `initAllBatchers` on database (re)open, `flushAllBatchers` +
+// `resetAllBatchers` before the database is swapped — with no per-domain
 // calls and no hand-maintained order.
 //
 // Flush order is registration order; the batchers write independent
@@ -20,8 +19,8 @@ const log = getLogger('batcher-registry')
 //
 // Shutdown flushing is NOT routed through this registry — each
 // constructed batcher registers its own shutdown hook at priority 100
-// (see `CopyBatcher` / `PageViewBatcher`), which runs before the
-// pool-close hook at priority 0.
+// (see `InsertBatcher` / `PageViewBatcher`), which runs before the
+// database-close hook at priority 0.
 
 /** The slice of a running batcher the registry drives. */
 interface RegisteredBatcher {
@@ -30,7 +29,7 @@ interface RegisteredBatcher {
 
 interface BatcherEntry {
   name: string
-  init: (pool: Pool, db: NodePgDatabase) => RegisteredBatcher
+  init: (handle: DatabaseHandle) => RegisteredBatcher
   instance: RegisteredBatcher | undefined
 }
 
@@ -42,10 +41,7 @@ const entries: BatcherEntry[] = []
  * the previous instance — HMR-safe: a re-evaluated module re-registers
  * its factory instead of duplicating it.
  */
-export function registerBatcher<T extends RegisteredBatcher>(
-  name: string,
-  init: (pool: Pool, db: NodePgDatabase) => T,
-): void {
+export function registerBatcher<T extends RegisteredBatcher>(name: string, init: (handle: DatabaseHandle) => T): void {
   const index = entries.findIndex((entry) => entry.name === name)
   const entry: BatcherEntry = { name, init, instance: undefined }
   if (index === -1) {
@@ -55,16 +51,17 @@ export function registerBatcher<T extends RegisteredBatcher>(
   }
 }
 
-/** (Re)construct every registered batcher against the given connections. */
-export function initAllBatchers(pool: Pool, db: NodePgDatabase): void {
+/** (Re)construct every registered batcher against the given handle. */
+export function initAllBatchers(handle: DatabaseHandle): void {
   for (const entry of entries) {
-    entry.instance = entry.init(pool, db)
+    entry.instance = entry.init(handle)
   }
+  log.debug('batchers initialized', { count: entries.length })
 }
 
 /**
- * Flush every initialized batcher. Failures are logged and isolated so
- * one failing batcher never blocks the rest; never rejects.
+ * Flush every batcher, isolating failures per batcher so one stuck
+ * batcher never blocks the rest (or the database swap that follows).
  */
 export async function flushAllBatchers(): Promise<void> {
   for (const entry of entries) {
@@ -73,39 +70,31 @@ export async function flushAllBatchers(): Promise<void> {
     }
     try {
       await entry.instance.flush()
-    } catch (err) {
+    } catch (error) {
       log.warn('batcher flush failed; continuing with the rest', {
         batcher: entry.name,
-        err: err instanceof Error ? err.message : String(err),
+        err: error instanceof Error ? error.message : String(error),
       })
     }
   }
 }
 
-/** Drop every batcher instance. Registrations are kept. */
+/** Drop every instance (after a flush, before a database swap). */
 export function resetAllBatchers(): void {
   for (const entry of entries) {
     entry.instance = undefined
   }
 }
 
-/** Look up a running batcher by name; `undefined` until initialized. */
 export function getBatcher<T extends RegisteredBatcher>(name: string): T | undefined {
-  for (const entry of entries) {
-    if (entry.name === name) {
-      // The factory registered under `name` fixes the instance type; the
-      // registry stores heterogeneous batchers behind one shape.
-      return unsafeCast<T | undefined>(entry.instance)
-    }
-  }
-  return undefined
+  const entry = entries.find((candidate) => candidate.name === name)
+  return entry?.instance === undefined ? undefined : unsafeCast<T>(entry.instance)
 }
 
-/** Like `getBatcher`, but throws when the batcher is not initialized. */
 export function requireBatcher<T extends RegisteredBatcher>(name: string): T {
-  const instance = getBatcher<T>(name)
-  if (!instance) {
-    throw new Error(`${name} not initialized — call initAllBatchers(pool, db) first`)
+  const batcher = getBatcher<T>(name)
+  if (!batcher) {
+    throw new Error(`${name} not initialized — call initAllBatchers(handle) first`)
   }
-  return instance
+  return batcher
 }

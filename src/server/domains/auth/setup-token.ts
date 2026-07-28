@@ -1,9 +1,10 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { SuperJSONResult } from 'superjson'
 
 import { and, eq, gt } from 'drizzle-orm'
 import { randomBytes, timingSafeEqual } from 'node:crypto'
 import superjson from 'superjson'
+
+import type { Database } from '@/server/infra/db/database'
 
 import { oneTimeToken } from '@/server/infra/db/schema/one-time-token'
 import { boxLog } from '@/server/infra/logger/box-console'
@@ -19,7 +20,7 @@ const TTL_SECONDS = 7 * 24 * 60 * 60 // 7 days
 let tokenInvalidated = false
 
 /** Read the live setup token row, or null when missing/expired. */
-async function readSetupToken(db: NodePgDatabase): Promise<string | null> {
+async function readSetupToken(db: Database): Promise<string | null> {
   const rows = await db
     .select({ payload: oneTimeToken.payload })
     .from(oneTimeToken)
@@ -49,7 +50,7 @@ async function readSetupToken(db: NodePgDatabase): Promise<string | null> {
  * it is printed to stdout (terminal / `docker logs`) and returned to
  * the caller (install wizard) without entering the logging pipeline.
  */
-export async function getSetupToken(db: NodePgDatabase): Promise<string> {
+export async function getSetupToken(db: Database): Promise<string> {
   if (tokenInvalidated) {
     throw new Error('Setup token has been invalidated — an admin already exists')
   }
@@ -70,13 +71,13 @@ export async function getSetupToken(db: NodePgDatabase): Promise<string> {
 }
 
 /** Call after the first admin is created to invalidate the token. */
-export async function invalidateSetupToken(db: NodePgDatabase): Promise<void> {
+export async function invalidateSetupToken(db: Database): Promise<void> {
   tokenInvalidated = true
   await db.delete(oneTimeToken).where(eq(oneTimeToken.key, TOKEN_KEY))
 }
 
 /** Verify a setup token presented by the client. */
-export async function verifySetupToken(db: NodePgDatabase, candidate: string): Promise<boolean> {
+export async function verifySetupToken(db: Database, candidate: string): Promise<boolean> {
   if (tokenInvalidated) {
     return false
   }
@@ -93,7 +94,7 @@ export async function verifySetupToken(db: NodePgDatabase, candidate: string): P
 /** Check whether the setup token still exists (i.e. has not expired and
  * has not been invalidated). Used as a second layer of defense so a
  * stale session flag cannot bypass domain-level checks. */
-export async function isSetupTokenActive(db: NodePgDatabase): Promise<boolean> {
+export async function isSetupTokenActive(db: Database): Promise<boolean> {
   const token = await readSetupToken(db)
   return token !== null
 }

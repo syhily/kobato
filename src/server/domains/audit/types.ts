@@ -1,14 +1,14 @@
 import type { RequestFacts } from '@/server/infra/http/request-facts'
 
 export interface AuditContext {
-  viewer: { id: bigint | string; role?: string } | null
+  viewer: { id: number | string; role?: string } | null
   clientAddress: string
   requestFacts: RequestFacts
 }
 
 export interface AuditEventInput {
   action: string
-  actorId?: bigint | string | null
+  actorId?: number | string | null
   actorRole?: string | null
   resourceType: string
   resourceId?: string | null

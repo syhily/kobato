@@ -1,6 +1,5 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import type { UpsertCategoryInputs } from '@/server/domains/taxonomies/categories/projection'
+import type { Database } from '@/server/infra/db/database'
 import type { AdminCategoryDto } from '@/shared/contracts/categories'
 
 import { invalidateContent } from '@/server/domains/content/invalidate'
@@ -25,7 +24,7 @@ import { DomainError } from '@/server/infra/http/errors'
 import { resolveSlug } from '@/server/infra/slug/resolve'
 import { idFromString } from '@/shared/utils/id'
 
-export async function upsertAdminCategory(db: NodePgDatabase, input: UpsertCategoryInputs): Promise<AdminCategoryDto> {
+export async function upsertAdminCategory(db: Database, input: UpsertCategoryInputs): Promise<AdminCategoryDto> {
   const slug = resolveSlug(input.slug, input.name, { entity: 'taxonomy' })
 
   if (input.id === undefined) {
@@ -44,7 +43,7 @@ export async function upsertAdminCategory(db: NodePgDatabase, input: UpsertCateg
       description: input.description,
       ...(input.sortOrder !== undefined ? { sortOrder: input.sortOrder } : {}),
     })
-    await invalidateContent(db, { entity: 'category' })
+    invalidateContent(db, { entity: 'category' })
     const counts = await countPostsByTaxonomy(db, { kind: 'category', gate: 'admin', name: row.name })
     return toAdminCategoryDto(row, counts.get(row.name) ?? 0)
   }
@@ -74,15 +73,12 @@ export async function upsertAdminCategory(db: NodePgDatabase, input: UpsertCateg
   if (updated === null) {
     throw new DomainError('NOT_FOUND', '分类不存在')
   }
-  await invalidateContent(db, { entity: 'category' })
+  invalidateContent(db, { entity: 'category' })
   const counts = await countPostsByTaxonomy(db, { kind: 'category', gate: 'admin', name: updated.name })
   return toAdminCategoryDto(updated, counts.get(updated.name) ?? 0)
 }
 
-export async function reorderAdminCategories(
-  db: NodePgDatabase,
-  orderedIds: readonly string[],
-): Promise<AdminCategoryDto[]> {
+export async function reorderAdminCategories(db: Database, orderedIds: readonly string[]): Promise<AdminCategoryDto[]> {
   const seen = new Set<string>()
   for (const id of orderedIds) {
     if (seen.has(id)) {
@@ -109,18 +105,18 @@ export async function reorderAdminCategories(
     ),
     countPostsByTaxonomy(db, { kind: 'category', gate: 'admin' }),
   ])
-  await invalidateContent(db, { entity: 'category' })
+  invalidateContent(db, { entity: 'category' })
   return updated.map((row) => toAdminCategoryDto(row, counts.get(row.name) ?? 0))
 }
 
-export async function deleteAdminCategory(db: NodePgDatabase, id: bigint): Promise<boolean> {
+export async function deleteAdminCategory(db: Database, id: number): Promise<boolean> {
   const result = await deleteAdminTaxonomy(id, '分类', {
     findById: (id) => findCategoryById(db, id),
     deleteRow: (id) => deleteCategoryRow(db, id),
     listPostTitles: (row) => listPostTitlesByCategoryId(db, row.id),
   })
   if (result) {
-    await invalidateContent(db, { entity: 'category' })
+    invalidateContent(db, { entity: 'category' })
   }
   return result
 }

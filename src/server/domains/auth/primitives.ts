@@ -1,5 +1,4 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
+import type { Database } from '@/server/infra/db/database'
 import type { SafeUser } from '@/server/infra/db/operations/user'
 import type { Role } from '@/shared/utils/roles'
 
@@ -48,7 +47,7 @@ export interface EstablishedLoginSession {
  * just-destroyed anonymous sid.
  */
 export async function establishLoginSession(
-  db: NodePgDatabase,
+  db: Database,
   session: BlogSession,
   dbUser: SafeUser,
   request: Request,
@@ -126,7 +125,7 @@ export async function logout(session: BlogSession): Promise<void> {
 }
 
 export async function resolveSessionContext(
-  db: NodePgDatabase,
+  db: Database,
   request: Request,
 ): Promise<SessionContext & { dirty: boolean }> {
   const session = await getRequestSession(request)

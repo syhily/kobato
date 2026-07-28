@@ -4,7 +4,6 @@ import { validateCsrfForAction } from '@/server/domains/auth/csrf'
 import { signUpAdminSchema } from '@/server/domains/auth/schema'
 import { signUpInitialAdminWithSession } from '@/server/domains/auth/services/setup'
 import { getSetupToken, isSetupTokenActive, verifySetupToken } from '@/server/domains/auth/setup-token'
-import { checkPgToolsAvailable } from '@/server/domains/backup/services/shared'
 import { ensureNoAdminOrRedirect } from '@/server/domains/settings/install-gate'
 import { getRequestContext } from '@/server/http/request-context'
 import { tryKeyedRateLimit } from '@/server/infra/rate-limit'
@@ -38,7 +37,6 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
   const { session } = rc
   return data({
-    pgToolsAvailable: await checkPgToolsAvailable(),
     setupTokenVerified: session.get('setupTokenVerified') === true,
     csrfToken: session.get('csrfToken'),
   })
@@ -47,7 +45,6 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 export async function action({ request, context }: Route.ActionArgs) {
   const rc = getRequestContext({ request, context })
   const db = rc.db
-  const pool = rc.pool
   // Same gate as the loader. A POST that races a concurrent install
   // would still be caught by `signUpInitialAdminWithSession`'s own
   // `hasAdmin()` check (returns 409), so the redirect here is a UX
@@ -115,7 +112,7 @@ export async function action({ request, context }: Route.ActionArgs) {
       return data({ error: '请填写完整的管理员账号信息。' })
     }
 
-    const result = await signUpInitialAdminWithSession(db, pool, {
+    const result = await signUpInitialAdminWithSession(db, {
       ...parsed.data,
       session,
       request,
@@ -170,7 +167,7 @@ export default function AdminInstallRoute({ actionData, loaderData }: Route.Comp
       {!loaderData.setupTokenVerified ? (
         <SetupTokenVerifyForm isSubmitting={isSubmitting} csrfToken={csrfToken} actionData={actionData} />
       ) : (
-        <AdminInstallForm pgToolsAvailable={loaderData.pgToolsAvailable} />
+        <AdminInstallForm />
       )}
     </div>
   )

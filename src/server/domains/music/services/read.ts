@@ -1,5 +1,4 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
+import type { Database } from '@/server/infra/db/database'
 import type { MusicRow } from '@/server/infra/db/types'
 import type { AdminMusicDto, ListMusicOutput, PublicMusicMeta } from '@/shared/contracts/music'
 import type { ListMusicInput } from '@/shared/types/music'
@@ -15,7 +14,7 @@ import {
 } from '@/server/infra/db/operations/music'
 import { safeResolveAssetUrl } from '@/server/infra/storage/public-url'
 
-export async function listMusicForAdmin(db: NodePgDatabase, input: ListMusicInput = {}): Promise<ListMusicOutput> {
+export async function listMusicForAdmin(db: Database, input: ListMusicInput = {}): Promise<ListMusicOutput> {
   const offset = clampOffset(input.offset)
   const limit = clampLimit(input.limit)
 
@@ -36,7 +35,7 @@ export async function listMusicForAdmin(db: NodePgDatabase, input: ListMusicInpu
   }
 }
 
-export async function findMusicDtoById(db: NodePgDatabase, id: bigint): Promise<AdminMusicDto | null> {
+export async function findMusicDtoById(db: Database, id: number): Promise<AdminMusicDto | null> {
   const row = await findAdminMusicRowById(db, id)
   if (row === null) {
     return null
@@ -79,7 +78,7 @@ function toPublicMusicMeta(row: MusicRow): PublicMusicMeta | null {
  * `GET music.get` route. Returns `null` when the row is missing or
  * soft-deleted so the player can render a no-op placeholder.
  */
-export async function getMusicMetaForPlayer(db: NodePgDatabase, playerId: string): Promise<PublicMusicMeta | null> {
+export async function getMusicMetaForPlayer(db: Database, playerId: string): Promise<PublicMusicMeta | null> {
   const row = await findMusicByPlayerId(db, playerId)
   return row === null ? null : toPublicMusicMeta(row)
 }
@@ -91,7 +90,7 @@ export async function getMusicMetaForPlayer(db: NodePgDatabase, playerId: string
  * domain.
  */
 export async function getPublicMusicMetasByIds(
-  db: NodePgDatabase,
+  db: Database,
   playerIds: readonly string[],
 ): Promise<Map<string, PublicMusicMeta>> {
   const rows = await findMusicByPlayerIds(db, playerIds)

@@ -3,14 +3,13 @@
 // (sparse dims + thumbhash, no public URL — the block keeps its own src),
 // `hydrateImageRefs` rewrites cover/poster fields on list DTOs.
 
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
+import type { Database } from '@/server/infra/db/database'
 import type { ResolvedImageMeta } from '@/shared/types/images'
 
 import { resolveImageRefs, type ResolvedImageRef } from '@/server/domains/images/services/resolve'
 
 export async function resolveImageMetaBySources(
-  db: NodePgDatabase,
+  db: Database,
   links: string[],
 ): Promise<Map<string, ResolvedImageMeta>> {
   const refs = await resolveImageRefs(db, links)
@@ -26,7 +25,7 @@ export async function resolveImageMetaBySources(
 }
 
 export async function hydrateImageRefs<T>(
-  db: NodePgDatabase,
+  db: Database,
   items: T[],
   getUrl: (item: T) => string,
   apply: (item: T, lookup: ResolvedImageRef | null) => void,

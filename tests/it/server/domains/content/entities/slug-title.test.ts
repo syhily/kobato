@@ -1,27 +1,25 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
+
 import { clearAllTables } from '#/_helpers/integration-db'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { findEntitySlugTitle, resolveEntitiesForComments } from '@/server/domains/content/entities/slug-title'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { page } from '@/server/infra/db/schema/page'
 import { post } from '@/server/infra/db/schema/post'
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {
   await clearAllTables(db)
 })
 
-async function seedPost(slug: string): Promise<bigint> {
+async function seedPost(slug: string): Promise<number> {
   const rows = await db
     .insert(post)
     .values({
@@ -29,13 +27,13 @@ async function seedPost(slug: string): Promise<bigint> {
       title: `Post ${slug}`,
       summary: '',
       published: true,
-      publishedRevisionId: 1n,
+      publishedRevisionId: 1,
     })
     .returning({ id: post.id })
   return rows[0]!.id
 }
 
-async function seedPageEntity(slug: string): Promise<bigint> {
+async function seedPageEntity(slug: string): Promise<number> {
   const rows = await db
     .insert(page)
     .values({ slug, title: `Page ${slug}` })
@@ -57,7 +55,7 @@ describe('content/entities/slug-title — findEntitySlugTitle', () => {
   })
 
   it('returns null when the target points at nothing (orphan)', async () => {
-    expect(await findEntitySlugTitle(db, { type: 'post', ownerId: 9999n })).toBeNull()
+    expect(await findEntitySlugTitle(db, { type: 'post', ownerId: 9999 })).toBeNull()
   })
 })
 
@@ -83,7 +81,7 @@ describe('content/entities/slug-title — resolveEntitiesForComments', () => {
     const out = await resolveEntitiesForComments(db, [
       { type: 'post', ownerId: pid },
       { type: 'post', ownerId: pid },
-      { type: 'page', ownerId: 9998n },
+      { type: 'page', ownerId: 9998 },
     ])
     expect(out.size).toBe(1)
     expect(out.get(`post:${pid}`)?.slug).toBe('dedupe-post')

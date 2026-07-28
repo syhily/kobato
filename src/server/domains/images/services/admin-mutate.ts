@@ -1,5 +1,4 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
+import type { Database } from '@/server/infra/db/database'
 import type { AdminImageDto } from '@/shared/contracts/images'
 
 import { canEditImage, type ViewerIdentity } from '@/server/domains/auth/rbac'
@@ -22,7 +21,7 @@ const log = getLogger('images.service')
 
 export type ImageViewerContext = ViewerIdentity
 
-export async function deleteImage(db: NodePgDatabase, id: bigint, viewer?: ImageViewerContext): Promise<void> {
+export async function deleteImage(db: Database, id: number, viewer?: ImageViewerContext): Promise<void> {
   const existing = await findImageById(db, id)
   if (existing === null) {
     throw new DomainError('NOT_FOUND', '图片不存在')
@@ -50,8 +49,8 @@ export async function deleteImage(db: NodePgDatabase, id: bigint, viewer?: Image
 }
 
 export async function updateImageNote(
-  db: NodePgDatabase,
-  id: bigint,
+  db: Database,
+  id: number,
   note: string | null,
   viewer?: ImageViewerContext,
 ): Promise<AdminImageDto> {
@@ -70,8 +69,8 @@ export async function updateImageNote(
 }
 
 export async function recalculateImageThumbhash(
-  db: NodePgDatabase,
-  id: bigint,
+  db: Database,
+  id: number,
   viewer?: ImageViewerContext,
 ): Promise<AdminImageDto> {
   const existing = await findAdminImageRowById(db, id)

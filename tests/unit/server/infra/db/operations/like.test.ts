@@ -1,6 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import type { Database } from '@/server/infra/db/database'
 
 class FakeQuery {
   rows: unknown[] = []
@@ -43,6 +43,12 @@ class FakeQuery {
   returning() {
     return this
   }
+  all() {
+    return this.rows
+  }
+  run() {
+    return { changes: 1, lastInsertRowid: 1 }
+  }
 
   withRows(rows: unknown[]) {
     this.rows = rows
@@ -59,15 +65,15 @@ class FakeQuery {
   }
 }
 
-function fakeDb(rows: unknown[] = []): NodePgDatabase {
+function fakeDb(rows: unknown[] = []): Database {
   const query = new FakeQuery().withRows(rows)
   return {
     select: () => query.select(),
     insert: () => query.insert(),
     update: () => query.update(),
     delete: () => query.delete(),
-    transaction: async (fn: (tx: NodePgDatabase) => Promise<unknown>) => fn(fakeDb(rows) as NodePgDatabase),
-  } as unknown as NodePgDatabase
+    transaction: (fn: (tx: Database) => unknown) => fn(fakeDb(rows) as Database),
+  } as unknown as Database
 }
 
 import {
@@ -87,31 +93,31 @@ describe('like operations', () => {
 
   it('records a like and returns the new count', async () => {
     const db = fakeDb([{ voteUp: 5 }])
-    const count = await recordLikeAndCount(db, 'token', { type: 'post', ownerId: 1n })
+    const count = await recordLikeAndCount(db, 'token', { type: 'post', ownerId: 1 })
     expect(count).toBe(5)
   })
 
   it('consumes an active like token', async () => {
-    const db = fakeDb([{ id: 1n }])
-    const consumed = await consumeActiveLikeToken(db, { type: 'post', ownerId: 1n }, 'token')
+    const db = fakeDb([{ id: 1 }])
+    const consumed = await consumeActiveLikeToken(db, { type: 'post', ownerId: 1 }, 'token')
     expect(consumed).toBe(true)
   })
 
   it('returns false when no token is consumed', async () => {
     const db = fakeDb([])
-    const consumed = await consumeActiveLikeToken(db, { type: 'post', ownerId: 1n }, 'token')
+    const consumed = await consumeActiveLikeToken(db, { type: 'post', ownerId: 1 }, 'token')
     expect(consumed).toBe(false)
   })
 
   it('reads the current vote-up count', async () => {
     const db = fakeDb([{ like: 10 }])
-    const count = await metricVoteUp(db, { type: 'post', ownerId: 1n })
+    const count = await metricVoteUp(db, { type: 'post', ownerId: 1 })
     expect(count).toBe(10)
   })
 
   it('returns metrics by owner ids', async () => {
-    const db = fakeDb([{ type: 'post', ownerId: 1n, publicId: 'p1', like: 5, view: 100 }])
-    const rows = await metricsByOwnerIds(db, 'post', [1n])
+    const db = fakeDb([{ type: 'post', ownerId: 1, publicId: 'p1', like: 5, view: 100 }])
+    const rows = await metricsByOwnerIds(db, 'post', [1])
     expect(rows).toHaveLength(1)
     expect(rows[0].like).toBe(5)
   })
@@ -123,8 +129,8 @@ describe('like operations', () => {
   })
 
   it('returns comment counts by owner ids', async () => {
-    const db = fakeDb([{ ownerId: 1n, count: 3 }])
-    const rows = await commentCountsByOwnerIds(db, 'post', [1n])
+    const db = fakeDb([{ ownerId: 1, count: 3 }])
+    const rows = await commentCountsByOwnerIds(db, 'post', [1])
     expect(rows).toHaveLength(1)
     expect(rows[0].count).toBe(3)
   })
@@ -141,8 +147,8 @@ describe('like operations', () => {
   })
 
   it('checks whether an active like token exists', async () => {
-    const db = fakeDb([{ id: 1n }])
-    const exists = await existsActiveLikeToken(db, { type: 'post', ownerId: 1n }, 'token')
+    const db = fakeDb([{ id: 1 }])
+    const exists = await existsActiveLikeToken(db, { type: 'post', ownerId: 1 }, 'token')
     expect(exists).toBe(true)
   })
 })

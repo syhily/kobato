@@ -1,7 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { and, count, eq, gt, isNull, or } from 'drizzle-orm'
 
+import type { Database } from '@/server/infra/db/database'
 import type { CacheBucketStats, ReservedCacheBucketStats } from '@/shared/contracts/cache'
 import type { CacheBucket, CacheBucketId, ReservedCacheBucketId } from '@/shared/types/cache'
 
@@ -55,7 +54,7 @@ function liveEntries() {
 }
 
 /** Count live `kv_cache` rows carrying the bucket label. */
-export async function countBucket(db: NodePgDatabase, bucket: CacheBucket): Promise<number> {
+export async function countBucket(db: Database, bucket: CacheBucket): Promise<number> {
   const rows = await db
     .select({ value: count() })
     .from(kvCache)
@@ -64,13 +63,13 @@ export async function countBucket(db: NodePgDatabase, bucket: CacheBucket): Prom
 }
 
 /** Delete every `kv_cache` row carrying the bucket label; returns the number removed. */
-export async function clearBucket(db: NodePgDatabase, bucket: CacheBucket): Promise<number> {
+export async function clearBucket(db: Database, bucket: CacheBucket): Promise<number> {
   const result = await db.delete(kvCache).where(eq(kvCache.bucket, bucket.id))
-  return result.rowCount ?? 0
+  return Number(result.changes)
 }
 
 /** Aggregate counts across every registered bucket. */
-export async function snapshotAllBuckets(db: NodePgDatabase): Promise<CacheBucketStats[]> {
+export async function snapshotAllBuckets(db: Database): Promise<CacheBucketStats[]> {
   return Promise.all(
     getCacheBuckets().map(async (bucket) => ({
       id: bucket.id,
@@ -84,7 +83,7 @@ export async function snapshotAllBuckets(db: NodePgDatabase): Promise<CacheBucke
   )
 }
 
-async function countReservedBucket(db: NodePgDatabase, id: ReservedCacheBucketId): Promise<number> {
+async function countReservedBucket(db: Database, id: ReservedCacheBucketId): Promise<number> {
   if (id === 'session') {
     const rows = await db.select({ value: count() }).from(session).where(gt(session.expiresAt, new Date()))
     return rows[0]?.value ?? 0
@@ -98,7 +97,7 @@ async function countReservedBucket(db: NodePgDatabase, id: ReservedCacheBucketId
  * the admin cache page can surface them for visibility without exposing
  * a clear button.
  */
-export async function snapshotReservedBuckets(db: NodePgDatabase): Promise<ReservedCacheBucketStats[]> {
+export async function snapshotReservedBuckets(db: Database): Promise<ReservedCacheBucketStats[]> {
   return Promise.all(
     RESERVED_CACHE_BUCKETS.map(async (bucket) => ({
       id: bucket.id,
@@ -110,7 +109,7 @@ export async function snapshotReservedBuckets(db: NodePgDatabase): Promise<Reser
 }
 
 /** Clear every registered bucket; returns the per-bucket removed counts. */
-export async function clearAllBuckets(db: NodePgDatabase): Promise<Record<CacheBucketId, number>> {
+export async function clearAllBuckets(db: Database): Promise<Record<CacheBucketId, number>> {
   const buckets = getCacheBuckets()
   const entries = await Promise.all(buckets.map(async (bucket) => [bucket.id, await clearBucket(db, bucket)] as const))
   // CACHE_BUCKET_IDS covers every bucket id — the literal-keyed Record

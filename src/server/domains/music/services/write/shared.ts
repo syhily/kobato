@@ -1,7 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { randomBytes } from 'node:crypto'
 
+import type { Database } from '@/server/infra/db/database'
 import type { SafeFetchFailure } from '@/server/infra/safe-fetch'
 
 import { findMusicByPlayerId } from '@/server/infra/db/operations/music'
@@ -35,7 +34,7 @@ export const COVER_JPEG_QUALITY = 85
 const MUSIC_DOWNLOAD_UA =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36'
 
-export async function generateUniquePlayerId(db: NodePgDatabase): Promise<string> {
+export async function generateUniquePlayerId(db: Database): Promise<string> {
   for (let attempt = 0; attempt < PLAYER_ID_RETRY_LIMIT; attempt += 1) {
     const candidate = generatePlayerId()
     const collision = await findMusicByPlayerId(db, candidate)

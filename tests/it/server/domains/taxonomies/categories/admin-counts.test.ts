@@ -1,10 +1,9 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
+
 import { clearAllTables } from '#/_helpers/integration-db'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { post } from '@/server/infra/db/schema/post'
 import { category } from '@/server/infra/db/schema/taxonomy'
 
@@ -12,12 +11,11 @@ vi.mock('@/server/domains/images/services/enhance', () => ({
   hydrateImageRefs: vi.fn(async () => undefined),
 }))
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {
@@ -48,7 +46,7 @@ describe('listCategoriesForAdmin', () => {
         visible: true,
         published: true,
         publishedAt: past,
-        publishedRevisionId: 1n,
+        publishedRevisionId: 1,
       },
       // counted: hidden but includeHidden=true
       {
@@ -60,7 +58,7 @@ describe('listCategoriesForAdmin', () => {
         visible: false,
         published: true,
         publishedAt: past,
-        publishedRevisionId: 2n,
+        publishedRevisionId: 2,
       },
       // counted: future-dated but includeScheduled=true
       {
@@ -72,7 +70,7 @@ describe('listCategoriesForAdmin', () => {
         visible: true,
         published: true,
         publishedAt: future,
-        publishedRevisionId: 3n,
+        publishedRevisionId: 3,
       },
       // not counted: published but no published revision (a draft state)
       {
@@ -118,7 +116,7 @@ describe('listCategoriesForAdmin', () => {
         visible: true,
         published: true,
         publishedAt: past,
-        publishedRevisionId: 4n,
+        publishedRevisionId: 4,
       },
       // not counted: no category
       {
@@ -130,7 +128,7 @@ describe('listCategoriesForAdmin', () => {
         visible: true,
         published: true,
         publishedAt: past,
-        publishedRevisionId: 5n,
+        publishedRevisionId: 5,
       },
     ])
 
@@ -174,7 +172,7 @@ describe('listCategoriesForAdmin', () => {
         visible: true,
         published: true,
         publishedAt: past,
-        publishedRevisionId: 1n,
+        publishedRevisionId: 1,
       },
       {
         slug: 'tech-draft',

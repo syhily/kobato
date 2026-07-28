@@ -29,27 +29,26 @@ describe('analytics/pv-batcher', () => {
 
   it('throws when bumpPageView is called before init', async () => {
     const { bumpPageView } = await freshBatcher()
-    expect(() => bumpPageView({ type: 'post', ownerId: 1n })).toThrow('PageViewBatcher not initialized')
+    expect(() => bumpPageView({ type: 'post', ownerId: 1 })).toThrow('PageViewBatcher not initialized')
   })
 
   it('adds snapshot back to new buffer on flush failure (not double-count)', async () => {
     incrementMetricPvBatch.mockRejectedValueOnce(new Error('DB down'))
 
     const { bumpPageView, flushPageViews } = await freshBatcher()
-    const db = {} as any
-    initAllBatchers({} as any, db)
+    initAllBatchers({ db: {} as any, client: {} as any, path: ':memory:', closed: false } as never)
 
     // 3 increments before flush
-    bumpPageView({ type: 'post', ownerId: 1n })
-    bumpPageView({ type: 'post', ownerId: 1n })
-    bumpPageView({ type: 'post', ownerId: 2n })
+    bumpPageView({ type: 'post', ownerId: 1 })
+    bumpPageView({ type: 'post', ownerId: 1 })
+    bumpPageView({ type: 'post', ownerId: 2 })
 
     // Start flush; during the async window, 2 more increments land
     const flushPromise = flushPageViews()
 
     // These go into the NEW buffer while snapshot is in-flight
-    bumpPageView({ type: 'post', ownerId: 1n })
-    bumpPageView({ type: 'post', ownerId: 2n })
+    bumpPageView({ type: 'post', ownerId: 1 })
+    bumpPageView({ type: 'post', ownerId: 2 })
 
     await flushPromise
 
@@ -70,10 +69,9 @@ describe('analytics/pv-batcher', () => {
     incrementMetricPvBatch.mockResolvedValueOnce(undefined)
 
     const { bumpPageView, flushPageViews } = await freshBatcher()
-    const db = {} as any
-    initAllBatchers({} as any, db)
+    initAllBatchers({ db: {} as any, client: {} as any, path: ':memory:', closed: false } as never)
 
-    bumpPageView({ type: 'post', ownerId: 1n })
+    bumpPageView({ type: 'post', ownerId: 1 })
     await flushPageViews()
 
     // Second flush should be a no-op because buffer is empty

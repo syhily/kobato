@@ -246,7 +246,7 @@ describe('adminCommentsRouter.searchPages', () => {
 
 describe('adminCommentsRouter.searchAuthors', () => {
   it('returns authors matching query', async () => {
-    vi.mocked(adminQuery.searchAuthorOptions).mockResolvedValueOnce([{ id: 1n, name: 'Alice' }])
+    vi.mocked(adminQuery.searchAuthorOptions).mockResolvedValueOnce([{ id: 1, name: 'Alice' }])
     const ctx = makeAuthedCtx()
     const res = await call(adminCommentsRouter.searchAuthors, { q: 'alice' }, { context: ctx })
     expect(res.authors).toHaveLength(1)

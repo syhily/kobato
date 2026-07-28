@@ -1,27 +1,25 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { call } from '@orpc/server'
 import { eq } from 'drizzle-orm'
 import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
+
 import { clearAllTables } from '#/_helpers/integration-db'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 import { flushAuditLog } from '@/server/domains/audit/services/batcher'
 import { adminWebmentionsRouter } from '@/server/http/controllers/admin/webmentions.controller'
 import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
 import { insertWebmention } from '@/server/infra/db/operations/webmention'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { auditLog } from '@/server/infra/db/schema/config'
 import { user } from '@/server/infra/db/schema/user'
 import { webmention } from '@/server/infra/db/schema/webmention'
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {
@@ -30,7 +28,7 @@ beforeEach(async () => {
 
 // audit_log.actor_id references user.id — the admin actor must be a
 // real row or the audit insert dead-letters on the FK.
-async function seedAdmin(): Promise<bigint> {
+async function seedAdmin(): Promise<number> {
   const rows = await db
     .insert(user)
     .values({
@@ -43,17 +41,17 @@ async function seedAdmin(): Promise<bigint> {
   return rows[0]!.id
 }
 
-function adminCtx(adminId: bigint) {
-  return makeAuthedCtx({ userId: adminId.toString(), role: 'admin', db, pool })
+function adminCtx(adminId: number) {
+  return makeAuthedCtx({ userId: adminId.toString(), role: 'admin', db })
 }
 
-async function seedMention(status: 'pending' | 'approved' | 'rejected', slug = 'wm-target'): Promise<bigint> {
+async function seedMention(status: 'pending' | 'approved' | 'rejected', slug = 'wm-target'): Promise<number> {
   const row = await insertWebmention(db, {
     sourceUrl: `https://sender.example/${slug}-${status}`,
     targetUrl: `https://example.com/posts/${slug}/`,
     status,
     targetType: 'post',
-    targetOwnerId: 1n,
+    targetOwnerId: 1,
     fetchedAt: new Date(),
     authorName: 'Jane Doe',
     title: `Mention ${status}`,
@@ -115,7 +113,7 @@ describe('integration / admin webmentions moderation', () => {
       call(
         adminWebmentionsRouter.loadAll,
         { offset: 0, limit: 10 },
-        { context: makeAuthedCtx({ role: 'visitor', db, pool }) },
+        { context: makeAuthedCtx({ role: 'visitor', db }) },
       ),
     ).rejects.toThrow()
   })
@@ -123,7 +121,7 @@ describe('integration / admin webmentions moderation', () => {
 
 describe('integration / admin webmentions approve + reject', () => {
   beforeEach(() => {
-    initAllBatchers(pool, db)
+    initAllBatchers(handle)
   })
 
   afterEach(async () => {

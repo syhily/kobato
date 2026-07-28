@@ -26,7 +26,7 @@ export interface EnrichedAccessEvent {
   ip: string | null
   path: string
   entityType: 'post' | 'page' | null
-  entityId: bigint | null
+  entityId: number | null
   referer: string | null
   refererHost: string | null
   country: string | null

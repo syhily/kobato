@@ -1,9 +1,8 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { and, eq, isNotNull, isNull } from 'drizzle-orm'
 
 import type { AuditContext } from '@/server/domains/audit/types'
 import type { ViewerIdentity } from '@/server/domains/auth/rbac'
+import type { Database } from '@/server/infra/db/database'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
@@ -37,33 +36,33 @@ const adminLog = getLogger('comments.admin')
 // deliberately does NOT emit: they only touch `deleteRequestedAt`,
 // which the latest-comments query does not filter on.
 
-export async function approveCommentById(db: NodePgDatabase, id: bigint): Promise<void> {
+export async function approveCommentById(db: Database, id: number): Promise<void> {
   await db.update(comment).set({ isPending: false }).where(eq(comment.id, id))
-  await invalidateContent(db, { entity: 'comment' })
+  invalidateContent(db, { entity: 'comment' })
 }
 
-export async function deleteCommentById(db: NodePgDatabase, id: bigint): Promise<void> {
+export async function deleteCommentById(db: Database, id: number): Promise<void> {
   await db.delete(comment).where(eq(comment.id, id))
-  await invalidateContent(db, { entity: 'comment' })
+  invalidateContent(db, { entity: 'comment' })
 }
 
-export async function softDeleteCommentById(db: NodePgDatabase, id: bigint): Promise<void> {
+export async function softDeleteCommentById(db: Database, id: number): Promise<void> {
   await db.update(comment).set({ deletedAt: new Date() }).where(eq(comment.id, id))
-  await invalidateContent(db, { entity: 'comment' })
+  invalidateContent(db, { entity: 'comment' })
 }
 
-export async function bulkApprovePendingByUser(db: NodePgDatabase, userId: bigint): Promise<number> {
+export async function bulkApprovePendingByUser(db: Database, userId: number): Promise<number> {
   // Returns the number of pending comments that were just approved.
   const updated = await db
     .update(comment)
     .set({ isPending: false })
     .where(and(eq(comment.userId, userId), eq(comment.isPending, true), isNull(comment.deletedAt)))
     .returning({ id: comment.id })
-  await invalidateContent(db, { entity: 'comment' })
+  invalidateContent(db, { entity: 'comment' })
   return updated.length
 }
 
-export async function bulkSoftDeleteCommentsByUser(db: NodePgDatabase, userId: bigint): Promise<number> {
+export async function bulkSoftDeleteCommentsByUser(db: Database, userId: number): Promise<number> {
   // Soft-deletion mirrors the per-row delete used by the existing admin
   // page. We avoid the hard `DELETE` so moderation actions remain
   // recoverable and downstream like-counts stay consistent.
@@ -72,18 +71,18 @@ export async function bulkSoftDeleteCommentsByUser(db: NodePgDatabase, userId: b
     .set({ deletedAt: new Date() })
     .where(and(eq(comment.userId, userId), isNull(comment.deletedAt)))
     .returning({ id: comment.id })
-  await invalidateContent(db, { entity: 'comment' })
+  invalidateContent(db, { entity: 'comment' })
   return updated.length
 }
 
-export async function requestDeleteComment(db: NodePgDatabase, id: bigint, userId: bigint): Promise<void> {
+export async function requestDeleteComment(db: Database, id: number, userId: number): Promise<void> {
   await db
     .update(comment)
     .set({ deleteRequestedAt: new Date(), deleteRequestedBy: userId })
     .where(and(eq(comment.id, id), isNull(comment.deletedAt)))
 }
 
-export async function clearDeleteRequest(db: NodePgDatabase, id: bigint, userId: bigint): Promise<boolean> {
+export async function clearDeleteRequest(db: Database, id: number, userId: number): Promise<boolean> {
   const updated = await db
     .update(comment)
     .set({ deleteRequestedAt: null, deleteRequestedBy: null })
@@ -104,7 +103,7 @@ export async function clearDeleteRequest(db: NodePgDatabase, id: bigint, userId:
  * delete request regardless of who originated it. Used by the
  * "reject delete request" admin action.
  */
-export async function adminClearDeleteRequest(db: NodePgDatabase, id: bigint): Promise<boolean> {
+export async function adminClearDeleteRequest(db: Database, id: number): Promise<boolean> {
   const updated = await db
     .update(comment)
     .set({ deleteRequestedAt: null, deleteRequestedBy: null })
@@ -121,7 +120,7 @@ export async function adminClearDeleteRequest(db: NodePgDatabase, id: bigint): P
  * codes/messages are the wire contract — do not reword.
  */
 export async function resolveCommentDeleteRequest(
-  db: NodePgDatabase,
+  db: Database,
   rid: string,
   approve: boolean,
   audit: AuditContext,
@@ -151,7 +150,7 @@ export async function resolveCommentDeleteRequest(
   }
 }
 
-export async function approveComment(db: NodePgDatabase, rid: string) {
+export async function approveComment(db: Database, rid: string) {
   const id = idFromString(rid)
   await approveCommentById(db, id)
   const c = await findCommentWithUserAndTarget(db, id)
@@ -165,7 +164,7 @@ export async function approveComment(db: NodePgDatabase, rid: string) {
   }
 }
 
-export async function updateComment(db: NodePgDatabase, rid: string, newBody: CommentBody) {
+export async function updateComment(db: Database, rid: string, newBody: CommentBody) {
   const id = idFromString(rid)
   const { body, content } = await canonicalizeCommentBody(newBody)
   await updateCommentBodyAndContent(db, id, body, content)
@@ -178,7 +177,7 @@ export async function updateComment(db: NodePgDatabase, rid: string, newBody: Co
   return { ...withCommentBadgeTextColor(r), content: null }
 }
 
-export async function updateOwnComment(db: NodePgDatabase, rid: string, newBody: CommentBody) {
+export async function updateOwnComment(db: Database, rid: string, newBody: CommentBody) {
   const id = idFromString(rid)
   const existing = await findCommentWithUserById(db, id)
   if (existing === null) {
@@ -224,7 +223,7 @@ export async function updateOwnComment(db: NodePgDatabase, rid: string, newBody:
  * success. Error codes/messages are the wire contract — do not reword.
  */
 export async function editOwnComment(
-  db: NodePgDatabase,
+  db: Database,
   rid: string,
   newBody: CommentBody,
   viewer: ViewerIdentity,
@@ -265,7 +264,7 @@ export async function editOwnComment(
  * do not reword.
  */
 export async function requestOwnCommentDeletion(
-  db: NodePgDatabase,
+  db: Database,
   rid: string,
   viewer: ViewerIdentity,
   audit: AuditContext,
@@ -301,12 +300,7 @@ export async function requestOwnCommentDeletion(
  * re-fetch the fresh row. Error codes/messages are the wire contract —
  * do not reword.
  */
-export async function cancelOwnCommentDeletion(
-  db: NodePgDatabase,
-  rid: string,
-  viewer: ViewerIdentity,
-  audit: AuditContext,
-) {
+export async function cancelOwnCommentDeletion(db: Database, rid: string, viewer: ViewerIdentity, audit: AuditContext) {
   const id = idFromString(rid)
   const existing = await findCommentWithUserById(db, id)
   if (existing === null || !isCommentOwner(viewer, existing)) {
@@ -331,12 +325,12 @@ export async function cancelOwnCommentDeletion(
 // comments repos stay internal to the comments domain — cross-domain
 // callers (users admin) go through these named services.
 
-export async function bulkApproveCommentsByUser(db: NodePgDatabase, userId: bigint): Promise<{ approved: number }> {
+export async function bulkApproveCommentsByUser(db: Database, userId: number): Promise<{ approved: number }> {
   const approved = await bulkApprovePendingByUser(db, userId)
   return { approved }
 }
 
-export async function bulkDeleteCommentsByUser(db: NodePgDatabase, userId: bigint): Promise<{ deleted: number }> {
+export async function bulkDeleteCommentsByUser(db: Database, userId: number): Promise<{ deleted: number }> {
   const deleted = await bulkSoftDeleteCommentsByUser(db, userId)
   return { deleted }
 }

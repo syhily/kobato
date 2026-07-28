@@ -1,18 +1,16 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { call } from '@orpc/server'
 import { eq } from 'drizzle-orm'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
 import type { FontRow } from '@/server/infra/db/schema/font'
 
 import { clearAllTables } from '#/_helpers/integration-db'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { makeAuthedCtx, makePublicCtx } from '#/_helpers/mock-ctx'
 import { flushAuditLog } from '@/server/domains/audit/services/batcher'
 import { adminFontsRouter } from '@/server/http/controllers/admin/fonts.controller'
 import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { auditLog, setting } from '@/server/infra/db/schema/config'
 import { font } from '@/server/infra/db/schema/font'
 import { user } from '@/server/infra/db/schema/user'
@@ -30,17 +28,16 @@ vi.mock('@/server/domains/settings/services/section-changes', () => ({
   SECTION_CHANGE_HANDLERS: new Map(),
 }))
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {
   await clearAllTables(db)
-  initAllBatchers(pool, db)
+  initAllBatchers(handle)
 })
 
 afterEach(() => {
@@ -70,7 +67,7 @@ async function seedFont(overrides: Partial<typeof font.$inferInsert> = {}): Prom
 
 // audit_log.actor_id references user.id, so the admin viewer must be a real
 // row for the batched audit insert to survive the FK.
-async function seedAdmin(): Promise<bigint> {
+async function seedAdmin(): Promise<number> {
   const [row] = await db
     .insert(user)
     .values({ name: 'Admin', email: `admin-${++seq}@example.com`, password: 'hashed', role: 'admin' })
@@ -78,8 +75,8 @@ async function seedAdmin(): Promise<bigint> {
   return row.id
 }
 
-function adminCtx(userId: bigint) {
-  return makeAuthedCtx({ userId: String(userId), role: 'admin', db, pool })
+function adminCtx(userId: number) {
+  return makeAuthedCtx({ userId: String(userId), role: 'admin', db })
 }
 
 describe('adminFontsRouter.list', () => {
@@ -151,11 +148,11 @@ describe('adminFontsRouter.setSlot', () => {
 
 describe('adminFontsRouter — auth gate', () => {
   it('rejects unauthenticated and non-admin callers', async () => {
-    await expect(call(adminFontsRouter.list, {}, { context: makePublicCtx({ db, pool }) })).rejects.toMatchObject({
+    await expect(call(adminFontsRouter.list, {}, { context: makePublicCtx({ db }) })).rejects.toMatchObject({
       code: 'UNAUTHORIZED',
     })
     await expect(
-      call(adminFontsRouter.list, {}, { context: makeAuthedCtx({ role: 'visitor', db, pool }) }),
+      call(adminFontsRouter.list, {}, { context: makeAuthedCtx({ role: 'visitor', db }) }),
     ).rejects.toMatchObject({ code: 'FORBIDDEN' })
   })
 })

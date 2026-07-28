@@ -1,6 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import type { Database } from '@/server/infra/db/database'
 
 const mocks = vi.hoisted(() => ({
   findTagByName: vi.fn(),
@@ -48,7 +48,7 @@ function createMockDb(rows: Array<Record<string, unknown>> = []) {
     },
   )
 
-  return dbProxy as unknown as NodePgDatabase
+  return dbProxy as unknown as Database
 }
 
 beforeEach(() => {
@@ -57,7 +57,7 @@ beforeEach(() => {
 
 describe('server/domains/taxonomies/tags/service — findTagBySlug', () => {
   it('returns the row when present', async () => {
-    await expect(findTagBySlug(createMockDb([{ id: 1n }]), 'react')).resolves.toEqual({ id: 1n })
+    await expect(findTagBySlug(createMockDb([{ id: 1 }]), 'react')).resolves.toEqual({ id: 1 })
   })
 
   it('returns null when absent', async () => {
@@ -67,14 +67,14 @@ describe('server/domains/taxonomies/tags/service — findTagBySlug', () => {
 
 describe('server/domains/taxonomies/tags/service — resolveTagBySlugOrName', () => {
   it('returns the row on a slug hit without consulting the name lookup', async () => {
-    const row = { id: 1n, name: 'React', slug: 'react' } as unknown as TagRow
+    const row = { id: 1, name: 'React', slug: 'react' } as unknown as TagRow
 
     await expect(resolveTagBySlugOrName(createMockDb([row]), 'react')).resolves.toBe(row)
     expect(mocks.findTagByName).not.toHaveBeenCalled()
   })
 
   it('falls back to the name lookup when the slug misses', async () => {
-    const row = { id: 1n, name: 'React', slug: 'react' } as unknown as TagRow
+    const row = { id: 1, name: 'React', slug: 'react' } as unknown as TagRow
     mocks.findTagByName.mockResolvedValue(row)
 
     await expect(resolveTagBySlugOrName(createMockDb([]), 'React')).resolves.toBe(row)

@@ -33,7 +33,7 @@ const publishedPost = {
   ...makePost({ slug: 'hello', title: 'Hello', permalink: '/posts/hello' }),
   body: publishedBody,
   imageSources: [],
-  publishedRevisionId: 42n,
+  publishedRevisionId: 42,
 }
 
 const draftPost = {

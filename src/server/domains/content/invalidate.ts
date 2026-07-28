@@ -1,4 +1,4 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Database } from '@/server/infra/db/database'
 
 import { bumpCounter, clear } from '@/server/infra/cache/registry'
 
@@ -25,28 +25,29 @@ export type ContentInvalidationEvent =
   | { entity: 'tag' }
   | { entity: 'comment' }
 
-export async function invalidateContent(db: NodePgDatabase, event: ContentInvalidationEvent): Promise<void> {
+// Sync (node:sqlite): called inside entity transactions (comment persist).
+export function invalidateContent(db: Database, event: ContentInvalidationEvent): void {
   switch (event.entity) {
     case 'post':
-      await clear(db, 'feed')
-      await clear(db, 'tags')
-      await clear(db, 'categories')
-      await clear(db, 'sitemap')
-      await bumpCounter(db, 'searchResult')
+      clear(db, 'feed')
+      clear(db, 'tags')
+      clear(db, 'categories')
+      clear(db, 'sitemap')
+      bumpCounter(db, 'searchResult')
       return
     case 'page':
-      await clear(db, 'sitemap')
+      clear(db, 'sitemap')
       return
     case 'category':
-      await clear(db, 'categories')
-      await clear(db, 'feed')
+      clear(db, 'categories')
+      clear(db, 'feed')
       return
     case 'tag':
-      await clear(db, 'tags')
-      await clear(db, 'feed')
+      clear(db, 'tags')
+      clear(db, 'feed')
       return
     case 'comment':
-      await clear(db, 'comments')
+      clear(db, 'comments')
       return
   }
 }

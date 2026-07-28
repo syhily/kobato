@@ -1,18 +1,18 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { and, desc, eq, inArray } from 'drizzle-orm'
 
 import type { ContentType } from '@/server/domains/content/schemas/revision'
+import type { Database } from '@/server/infra/db/database'
 import type { ContentRow } from '@/server/infra/db/types'
 
 import { content as contentTable } from '@/server/infra/db/schema/content'
 
-export async function findContentById(db: NodePgDatabase, id: bigint): Promise<ContentRow | null> {
-  const rows = await db.select().from(contentTable).where(eq(contentTable.id, id)).limit(1)
+// Sync (node:sqlite): called inside the restore transaction.
+export function findContentById(db: Database, id: number): ContentRow | null {
+  const rows = db.select().from(contentTable).where(eq(contentTable.id, id)).limit(1).all()
   return rows[0] ?? null
 }
 
-export async function findContentsByIds(db: NodePgDatabase, ids: bigint[]): Promise<ContentRow[]> {
+export async function findContentsByIds(db: Database, ids: number[]): Promise<ContentRow[]> {
   if (ids.length === 0) {
     return []
   }
@@ -26,11 +26,11 @@ export async function findContentsByIds(db: NodePgDatabase, ids: bigint[]): Prom
  * revision id so callers resolve `meta.publishedRevisionId` in O(1).
  */
 export async function hydratePublishedRevisions(
-  db: NodePgDatabase,
-  rows: readonly { publishedRevisionId: bigint | null }[],
-): Promise<Map<bigint, ContentRow>> {
-  const map = new Map<bigint, ContentRow>()
-  const ids = rows.map((row) => row.publishedRevisionId).filter((id): id is bigint => id !== null)
+  db: Database,
+  rows: readonly { publishedRevisionId: number | null }[],
+): Promise<Map<number, ContentRow>> {
+  const map = new Map<number, ContentRow>()
+  const ids = rows.map((row) => row.publishedRevisionId).filter((id): id is number => id !== null)
   if (ids.length === 0) {
     return map
   }
@@ -41,11 +41,7 @@ export async function hydratePublishedRevisions(
   return map
 }
 
-export async function findLatestRevision(
-  db: NodePgDatabase,
-  type: ContentType,
-  ownerId: bigint,
-): Promise<ContentRow | null> {
+export async function findLatestRevision(db: Database, type: ContentType, ownerId: number): Promise<ContentRow | null> {
   const rows = await db
     .select()
     .from(contentTable)
@@ -55,11 +51,7 @@ export async function findLatestRevision(
   return rows[0] ?? null
 }
 
-export async function findLatestDraft(
-  db: NodePgDatabase,
-  type: ContentType,
-  ownerId: bigint,
-): Promise<ContentRow | null> {
+export async function findLatestDraft(db: Database, type: ContentType, ownerId: number): Promise<ContentRow | null> {
   const rows = await db
     .select()
     .from(contentTable)
@@ -70,9 +62,9 @@ export async function findLatestDraft(
 }
 
 export async function listRevisions(
-  db: NodePgDatabase,
+  db: Database,
   type: ContentType,
-  ownerId: bigint,
+  ownerId: number,
   limit = 100,
 ): Promise<ContentRow[]> {
   return db

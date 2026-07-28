@@ -112,7 +112,7 @@ describe('snapshot: BackupView', () => {
     expect(html).toContain('暂无备份文件')
     // The manual-restore section is always mounted.
     expect(html).toContain('手动还原')
-    expect(html).toContain('上传 .sql 或 .gz 备份文件进行还原')
+    expect(html).toContain('上传 .db 或 .db.gz 备份文件进行还原')
     expect(html).toContain('选择文件')
     expect(html).toContain('上传并还原')
   })
@@ -190,7 +190,6 @@ describe('snapshot: BackupFileList', () => {
           isCreating={false}
           onCreate={() => {}}
           restorePending={false}
-          pgToolsAvailable={true}
           onRestore={() => {}}
           onDelete={() => {}}
           deletePending={false}
@@ -223,7 +222,6 @@ describe('snapshot: BackupFileList', () => {
           isCreating={false}
           onCreate={() => {}}
           restorePending={false}
-          pgToolsAvailable={true}
           onRestore={() => {}}
           onDelete={() => {}}
           deletePending={false}
@@ -247,7 +245,6 @@ describe('snapshot: BackupFileList', () => {
           isCreating={false}
           onCreate={() => {}}
           restorePending={false}
-          pgToolsAvailable={true}
           onRestore={() => {}}
           onDelete={() => {}}
           deletePending={false}

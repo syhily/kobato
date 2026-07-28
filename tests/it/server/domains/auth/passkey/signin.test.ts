@@ -1,9 +1,8 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { SigninFlowContext } from '@/server/domains/auth/services/shared'
 import type { BlogSession } from '@/server/domains/auth/session-storage'
+import type { Database } from '@/server/infra/db/database'
 
 // Flow-seam tests for `domains/auth/passkey/signin`. The WebAuthn ceremony
 // itself lives in `passkey/service` (covered by `service.test.ts`); here
@@ -45,7 +44,7 @@ vi.mock('@/server/domains/audit/services/record', () => ({
 
 import { signInWithPasskey } from '@/server/domains/auth/passkey/signin'
 
-const db = {} as NodePgDatabase
+const db = {} as Database
 const session = { id: 'sess-1' } as unknown as BlogSession
 const CLIENT = '203.0.113.7'
 
@@ -113,7 +112,7 @@ describe('auth/passkey/signin — signInWithPasskey', () => {
 
   it('on success: establishes a passkey session, touches last-login, audits, redirects', async () => {
     mocks.verifyAuthenticationResponse.mockResolvedValueOnce({
-      user: { id: 9n, name: 'Admin', email: 'admin@example.com', role: 'admin' },
+      user: { id: 9, name: 'Admin', email: 'admin@example.com', role: 'admin' },
       authMethod: 'passkey',
     })
 
@@ -125,7 +124,7 @@ describe('auth/passkey/signin — signInWithPasskey', () => {
     expect(mocks.establishLoginSession).toHaveBeenCalledWith(
       db,
       session,
-      expect.objectContaining({ id: 9n }),
+      expect.objectContaining({ id: 9 }),
       req,
       CLIENT,
       { authMethod: 'passkey' },

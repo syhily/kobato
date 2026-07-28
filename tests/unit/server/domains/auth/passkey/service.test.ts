@@ -1,8 +1,7 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import superjson from 'superjson'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
 import type { SafeUser } from '@/server/infra/db/operations/user'
 import type { PasskeyCredentialRow } from '@/server/infra/db/types'
 
@@ -40,7 +39,7 @@ vi.mock('@/server/infra/db/operations/user', () => ({
   findSafeUserById: vi.fn(),
 }))
 
-const db = {} as unknown as NodePgDatabase
+const db = {} as unknown as Database
 
 const passkeyService = await import('@/server/domains/auth/passkey/service')
 const userOps = await import('@/server/infra/db/operations/user')
@@ -78,7 +77,7 @@ interface ChallengeCapture {
 }
 
 /** db double whose insert chain captures one_time_token writes. */
-function dbWithTokenInsert(capture: ChallengeCapture, selectRows: unknown[] = []): NodePgDatabase {
+function dbWithTokenInsert(capture: ChallengeCapture, selectRows: unknown[] = []): Database {
   return {
     select: vi.fn(() => ({ from: vi.fn(() => ({ where: vi.fn(() => selectRows) })) })),
     insert: vi.fn(() => ({
@@ -89,12 +88,12 @@ function dbWithTokenInsert(capture: ChallengeCapture, selectRows: unknown[] = []
         return { onConflictDoUpdate: vi.fn(async () => undefined) }
       }),
     })),
-  } as unknown as NodePgDatabase
+  } as unknown as Database
 }
 
 /** db double whose delete chain serves the consume-challenge rows. */
 function dbWithChallengeConsume(consumeRows: { payload: unknown }[]): {
-  db: NodePgDatabase
+  db: Database
   deleteSpy: ReturnType<typeof vi.fn>
 } {
   const deleteSpy = vi.fn(() => ({
@@ -102,7 +101,7 @@ function dbWithChallengeConsume(consumeRows: { payload: unknown }[]): {
       returning: vi.fn(async () => consumeRows),
     })),
   }))
-  return { db: { delete: deleteSpy } as unknown as NodePgDatabase, deleteSpy }
+  return { db: { delete: deleteSpy } as unknown as Database, deleteSpy }
 }
 
 beforeEach(() => {
@@ -163,8 +162,8 @@ describe('passkey/service — verifyRegistrationResponse', () => {
     })
 
     const inserted: PasskeyCredentialRow = {
-      id: 1n,
-      userId: 1n,
+      id: 1,
+      userId: 1,
       credentialId: 'cred-id',
       publicKey: Buffer.from([1, 2, 3]),
       counter: 0,
@@ -182,7 +181,7 @@ describe('passkey/service — verifyRegistrationResponse', () => {
           returning: vi.fn(() => [inserted]),
         })),
       })),
-    } as unknown as NodePgDatabase
+    } as unknown as Database
 
     const result = await passkeyService.verifyRegistrationResponse(dbWithOps, testUser(), {
       response: {
@@ -235,7 +234,7 @@ describe('passkey/service — verifyRegistrationResponse', () => {
           }),
         })),
       })),
-    } as unknown as NodePgDatabase
+    } as unknown as Database
 
     await expect(
       passkeyService.verifyRegistrationResponse(dbWithConflict, testUser(), {
@@ -255,7 +254,7 @@ describe('passkey/service — verifyRegistrationResponse', () => {
     const { db: consumeDb } = dbWithChallengeConsume([{ payload: challengePayload({ userId: '999' }) }])
 
     await expect(
-      passkeyService.verifyRegistrationResponse(consumeDb, testUser({ id: 1n } as any), {
+      passkeyService.verifyRegistrationResponse(consumeDb, testUser({ id: 1 } as any), {
         response: {
           id: 'x',
           rawId: 'x',
@@ -306,7 +305,7 @@ describe('passkey/service — generateAuthenticationOptions', () => {
   it('returns options with allowCredentials for known email', async () => {
     swaMocks.generateAuthenticationOptions.mockResolvedValue({ challenge: 'auth-c2', rpId: 'example.com' })
     vi.mocked(userOps.findUserByEmail).mockResolvedValue({
-      id: 1n,
+      id: 1,
       email: 'test@example.com',
       name: 'Test',
       role: 'admin',
@@ -348,8 +347,8 @@ describe('passkey/service — verifyAuthenticationResponse', () => {
           where: vi.fn(() => ({
             limit: vi.fn(() => [
               {
-                id: 1n,
-                userId: 1n,
+                id: 1,
+                userId: 1,
                 credentialId: 'cred-1',
                 publicKey: Buffer.from([1, 2, 3]),
                 counter: 0,
@@ -367,9 +366,9 @@ describe('passkey/service — verifyAuthenticationResponse', () => {
           where: vi.fn(() => Promise.resolve()),
         })),
       })),
-    } as unknown as NodePgDatabase
+    } as unknown as Database
 
-    vi.mocked(userOps.findSafeUserById).mockResolvedValue(testUser({ id: 1n, role: 'admin' }) as any)
+    vi.mocked(userOps.findSafeUserById).mockResolvedValue(testUser({ id: 1, role: 'admin' }) as any)
 
     const result = await passkeyService.verifyAuthenticationResponse(
       dbWithOps,
@@ -383,7 +382,7 @@ describe('passkey/service — verifyAuthenticationResponse', () => {
       'auth-c',
     )
 
-    expect(result.user.id).toBe(1n)
+    expect(result.user.id).toBe(1)
     expect(result.authMethod).toBe('passkey')
     // The returned user is the SafeUser accessor result verbatim — the
     // hand-rolled sensitive-field strip is gone.
@@ -422,7 +421,7 @@ describe('passkey/service — verifyAuthenticationResponse', () => {
           })),
         })),
       })),
-    } as unknown as NodePgDatabase
+    } as unknown as Database
 
     await expect(
       passkeyService.verifyAuthenticationResponse(
@@ -452,8 +451,8 @@ describe('passkey/service — verifyAuthenticationResponse', () => {
           where: vi.fn(() => ({
             limit: vi.fn(() => [
               {
-                id: 1n,
-                userId: 1n,
+                id: 1,
+                userId: 1,
                 credentialId: 'cred-1',
                 publicKey: Buffer.from([1, 2, 3]),
                 counter: 0,
@@ -466,7 +465,7 @@ describe('passkey/service — verifyAuthenticationResponse', () => {
           })),
         })),
       })),
-    } as unknown as NodePgDatabase
+    } as unknown as Database
 
     await expect(
       passkeyService.verifyAuthenticationResponse(
@@ -487,8 +486,8 @@ describe('passkey/service — verifyAuthenticationResponse', () => {
 describe('passkey/service — credential management', () => {
   it('lists credentials ordered by createdAt', async () => {
     const rows = [
-      { id: 1n, credentialId: 'c1', deviceName: 'Phone', createdAt: new Date('2024-01-01'), backedUp: false },
-      { id: 2n, credentialId: 'c2', deviceName: 'Laptop', createdAt: new Date('2024-01-02'), backedUp: true },
+      { id: 1, credentialId: 'c1', deviceName: 'Phone', createdAt: new Date('2024-01-01'), backedUp: false },
+      { id: 2, credentialId: 'c2', deviceName: 'Laptop', createdAt: new Date('2024-01-02'), backedUp: true },
     ]
     const dbWithSelect = {
       select: vi.fn(() => ({
@@ -498,9 +497,9 @@ describe('passkey/service — credential management', () => {
           })),
         })),
       })),
-    } as unknown as NodePgDatabase
+    } as unknown as Database
 
-    const result = await passkeyService.listCredentials(dbWithSelect, 1n)
+    const result = await passkeyService.listCredentials(dbWithSelect, 1)
     expect(result).toHaveLength(2)
     expect(result[0].id).toBe('c1')
     expect(result[1].id).toBe('c2')
@@ -510,19 +509,19 @@ describe('passkey/service — credential management', () => {
     const dbWithOps = {
       delete: vi.fn(() => ({
         where: vi.fn(() => ({
-          returning: vi.fn(() => [{ id: 1n }]),
+          returning: vi.fn(() => [{ id: 1 }]),
         })),
       })),
       select: vi.fn(() => ({
         from: vi.fn(() => ({
           where: vi.fn(() => ({
-            limit: vi.fn(() => [{ id: 2n }]),
+            limit: vi.fn(() => [{ id: 2 }]),
           })),
         })),
       })),
-    } as unknown as NodePgDatabase
+    } as unknown as Database
 
-    const result = await passkeyService.deleteCredential(dbWithOps, 'c1', 1n)
+    const result = await passkeyService.deleteCredential(dbWithOps, 'c1', 1)
     expect(result).toBe(true)
   })
 
@@ -530,7 +529,7 @@ describe('passkey/service — credential management', () => {
     const dbWithOps = {
       delete: vi.fn(() => ({
         where: vi.fn(() => ({
-          returning: vi.fn(() => [{ id: 1n }, { id: 2n }]),
+          returning: vi.fn(() => [{ id: 1 }, { id: 2 }]),
         })),
       })),
       select: vi.fn(() => ({
@@ -545,9 +544,9 @@ describe('passkey/service — credential management', () => {
           where: vi.fn(() => Promise.resolve()),
         })),
       })),
-    } as unknown as NodePgDatabase
+    } as unknown as Database
 
-    const result = await passkeyService.deleteAllCredentials(dbWithOps, 1n)
+    const result = await passkeyService.deleteAllCredentials(dbWithOps, 1)
     expect(result).toBe(2)
   })
 
@@ -557,15 +556,15 @@ describe('passkey/service — credential management', () => {
         where: vi.fn(() => Promise.resolve()),
       })),
     }))
-    const dbWithUpdate = { update: updateSpy } as unknown as NodePgDatabase
+    const dbWithUpdate = { update: updateSpy } as unknown as Database
 
-    await passkeyService.setLoginMethod(dbWithUpdate, 1n, 'password')
+    await passkeyService.setLoginMethod(dbWithUpdate, 1, 'password')
     expect(updateSpy).toHaveBeenCalledTimes(1)
   })
 })
 
 describe('passkey/service — login-method/credential invariant', () => {
-  function dbWithCredentialCount(remaining: { id: bigint }[]) {
+  function dbWithCredentialCount(remaining: { id: number }[]) {
     const updateSpy = vi.fn(() => ({
       set: vi.fn(() => ({
         where: vi.fn(() => Promise.resolve()),
@@ -581,25 +580,25 @@ describe('passkey/service — login-method/credential invariant', () => {
     const db = {
       delete: vi.fn(() => ({
         where: vi.fn(() => ({
-          returning: vi.fn(() => [{ id: 1n }]),
+          returning: vi.fn(() => [{ id: 1 }]),
         })),
       })),
       select: selectSpy,
       update: updateSpy,
-    } as unknown as NodePgDatabase
+    } as unknown as Database
     return { db, selectSpy, updateSpy }
   }
 
   it('reverts loginMethod to password when deleteCredential removes the last credential', async () => {
     const { db, updateSpy } = dbWithCredentialCount([])
-    const result = await passkeyService.deleteCredential(db, 'c1', 1n)
+    const result = await passkeyService.deleteCredential(db, 'c1', 1)
     expect(result).toBe(true)
     expect(updateSpy).toHaveBeenCalledTimes(1)
   })
 
   it('preserves loginMethod when credentials remain after deleteCredential', async () => {
-    const { db, updateSpy } = dbWithCredentialCount([{ id: 2n }])
-    const result = await passkeyService.deleteCredential(db, 'c1', 1n)
+    const { db, updateSpy } = dbWithCredentialCount([{ id: 2 }])
+    const result = await passkeyService.deleteCredential(db, 'c1', 1)
     expect(result).toBe(true)
     expect(updateSpy).not.toHaveBeenCalled()
   })
@@ -610,9 +609,9 @@ describe('passkey/service — login-method/credential invariant', () => {
       where: vi.fn(() => ({
         returning: vi.fn(() => []),
       })),
-    })) as unknown as NodePgDatabase['delete']
+    })) as unknown as Database['delete']
 
-    const result = await passkeyService.deleteCredential(db, 'nope', 1n)
+    const result = await passkeyService.deleteCredential(db, 'nope', 1)
     expect(result).toBe(false)
     expect(selectSpy).not.toHaveBeenCalled()
     expect(updateSpy).not.toHaveBeenCalled()
@@ -620,26 +619,26 @@ describe('passkey/service — login-method/credential invariant', () => {
 
   it('reverts loginMethod to password after deleteAllCredentials leaves zero credentials', async () => {
     const { db, updateSpy } = dbWithCredentialCount([])
-    const result = await passkeyService.deleteAllCredentials(db, 1n)
+    const result = await passkeyService.deleteAllCredentials(db, 1)
     expect(result).toBe(1)
     expect(updateSpy).toHaveBeenCalledTimes(1)
   })
 
   it('rejects choosing passkey when no credentials exist', async () => {
     const { db, updateSpy } = dbWithCredentialCount([])
-    await expect(passkeyService.setLoginMethod(db, 1n, 'passkey')).rejects.toBeInstanceOf(DomainError)
+    await expect(passkeyService.setLoginMethod(db, 1, 'passkey')).rejects.toBeInstanceOf(DomainError)
     expect(updateSpy).not.toHaveBeenCalled()
   })
 
   it('chooses passkey when at least one credential exists', async () => {
-    const { db, updateSpy } = dbWithCredentialCount([{ id: 1n }])
-    await passkeyService.setLoginMethod(db, 1n, 'passkey')
+    const { db, updateSpy } = dbWithCredentialCount([{ id: 1 }])
+    await passkeyService.setLoginMethod(db, 1, 'passkey')
     expect(updateSpy).toHaveBeenCalledTimes(1)
   })
 
   it('switches back to password without checking credentials', async () => {
     const { db, selectSpy, updateSpy } = dbWithCredentialCount([])
-    await passkeyService.setLoginMethod(db, 1n, 'password')
+    await passkeyService.setLoginMethod(db, 1, 'password')
     expect(selectSpy).not.toHaveBeenCalled()
     expect(updateSpy).toHaveBeenCalledTimes(1)
   })

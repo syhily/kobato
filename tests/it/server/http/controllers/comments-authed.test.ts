@@ -1,32 +1,30 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { call } from '@orpc/server'
 import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
+
 import { clearAllTables } from '#/_helpers/integration-db'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 import { commentsAuthedRouter } from '@/server/http/controllers/comments-authed.controller'
 import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { comment } from '@/server/infra/db/schema/comment'
 import { page } from '@/server/infra/db/schema/page'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {
   await clearAllTables(db)
 })
 
-async function seedVisitor(opts: Partial<typeof user.$inferInsert> = {}): Promise<bigint> {
+async function seedVisitor(opts: Partial<typeof user.$inferInsert> = {}): Promise<number> {
   const rows = await db
     .insert(user)
     .values({
@@ -40,7 +38,7 @@ async function seedVisitor(opts: Partial<typeof user.$inferInsert> = {}): Promis
   return rows[0]!.id
 }
 
-async function seedPost(title: string, slug: string): Promise<bigint> {
+async function seedPost(title: string, slug: string): Promise<number> {
   const rows = await db
     .insert(post)
     .values({
@@ -48,28 +46,28 @@ async function seedPost(title: string, slug: string): Promise<bigint> {
       title,
       summary: '',
       published: true,
-      publishedRevisionId: 1n,
+      publishedRevisionId: 1,
     })
     .returning({ id: post.id })
   return rows[0]!.id
 }
 
-async function seedPage(title: string, slug: string): Promise<bigint> {
+async function seedPage(title: string, slug: string): Promise<number> {
   const rows = await db.insert(page).values({ slug, title }).returning({ id: page.id })
   return rows[0]!.id
 }
 
-async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Promise<bigint> {
+async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Promise<number> {
   const rows = await db
     .insert(comment)
     .values({
       type: opts.type ?? 'post',
-      ownerId: opts.ownerId ?? 1n,
-      userId: opts.userId ?? 1n,
+      ownerId: opts.ownerId ?? 1,
+      userId: opts.userId ?? 1,
       content: opts.content ?? 'hello',
       body: opts.body ?? [],
       rid: opts.rid ?? 0,
-      rootId: opts.rootId ?? 0n,
+      rootId: opts.rootId ?? 0,
       isPending: opts.isPending ?? false,
       ...opts,
     })
@@ -77,8 +75,8 @@ async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Pro
   return rows[0]!.id
 }
 
-function ctxFor(userId: bigint) {
-  return makeAuthedCtx({ userId: String(userId), role: 'visitor', db, pool })
+function ctxFor(userId: number) {
+  return makeAuthedCtx({ userId: String(userId), role: 'visitor', db })
 }
 
 describe('commentsAuthedRouter.searchMineEntities', () => {
@@ -126,7 +124,7 @@ describe('commentsAuthedRouter.searchMineEntities', () => {
 // `tests/it/server/domains/comments/moderation-flows.test.ts`.
 describe('commentsAuthedRouter — delete-request wire shape', () => {
   beforeEach(() => {
-    initAllBatchers(pool, db)
+    initAllBatchers(handle)
   })
 
   afterEach(() => {
@@ -167,7 +165,7 @@ describe('commentsAuthedRouter — delete-request wire shape', () => {
 
 describe('commentsAuthedRouter.updateOwn', () => {
   beforeEach(() => {
-    initAllBatchers(pool, db)
+    initAllBatchers(handle)
   })
 
   afterEach(() => {

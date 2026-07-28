@@ -1,19 +1,17 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
+
 import { clearAllTables } from '#/_helpers/integration-db'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 import { callRpc, parseRpcJson } from '#/_helpers/rpc-call'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {
@@ -22,7 +20,7 @@ beforeEach(async () => {
 
 describe('integration / draft publish flow', () => {
   it('creates a post, saves a draft, and publishes it', async () => {
-    const ctx = makeAuthedCtx({ role: 'admin', db, pool })
+    const ctx = makeAuthedCtx({ role: 'admin', db })
 
     // 1. Create post meta
     const createRes = await callRpc('/admin/posts/upsertMeta', { title: 'Draft Post', summary: '', tags: [] }, ctx)

@@ -13,14 +13,12 @@ describe('requestContextMiddleware', () => {
   })
 
   const fakeDb = {}
-  const fakePool = {}
 
   async function buildApp(mocks: { sessionCtx?: { dirty?: boolean } } = {}) {
     const user = adminUser()
     const session = makeSession({ user })
     vi.doMock('@/server/bootstrap/db-lifecycle', () => ({
       getDb: vi.fn(() => fakeDb),
-      getPool: vi.fn(() => fakePool),
     }))
     vi.doMock('@/server/domains/auth/primitives', () => ({
       resolveSessionContext: vi.fn().mockResolvedValue({
@@ -63,7 +61,6 @@ describe('requestContextMiddleware', () => {
     expect(captured?.url.search).toBe('')
     expect(captured?.requestFacts).toMatchObject({ path: '/posts', isDataRequest: true })
     expect(captured?.db).toBe(fakeDb)
-    expect(captured?.pool).toBe(fakePool)
     expect(captured?.cspNonce).toEqual(expect.any(String))
     expect(captured?.markSessionDirty).toEqual(expect.any(Function))
   })

@@ -1,23 +1,21 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
+
 import { clearAllTables } from '#/_helpers/integration-db'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { kvCache } from '@/server/infra/db/schema/kv-cache'
 
 vi.mock('@/server/domains/images/services/enhance', () => ({
   hydrateImageRefs: vi.fn(async () => undefined),
 }))
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {
@@ -38,7 +36,7 @@ describe('taxonomy cache invalidation', () => {
     const primed = await listAllTags(db)
     expect(primed.map((t) => t.name)).toContain('OldName')
 
-    await upsertAdminTag(db, { id: BigInt(created.id), name: 'NewName' })
+    await upsertAdminTag(db, { id: Number(created.id), name: 'NewName' })
 
     const after = await listAllTags(db)
     expect(after.map((t) => t.name)).toContain('NewName')
@@ -55,7 +53,7 @@ describe('taxonomy cache invalidation', () => {
     await set(db, 'feed', { scope: 'cat:feedcat' }, '<xml>cat</xml>')
     expect(await feedRowCount()).toBe(2)
 
-    await upsertAdminCategory(db, { id: BigInt(created.id), name: 'FeedCatRenamed', cover: '', description: '' })
+    await upsertAdminCategory(db, { id: Number(created.id), name: 'FeedCatRenamed', cover: '', description: '' })
 
     expect(await feedRowCount()).toBe(0)
   })
@@ -75,7 +73,7 @@ describe('taxonomy cache invalidation', () => {
       db,
       postLifecycleAdapter,
       {
-        entityId: BigInt(created.id),
+        entityId: Number(created.id),
         body: [
           {
             _type: 'block',

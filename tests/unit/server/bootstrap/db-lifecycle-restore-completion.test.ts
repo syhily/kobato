@@ -2,8 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockMigrateDatabase = vi.hoisted(() => vi.fn())
 const mockRestartServer = vi.hoisted(() => vi.fn())
-const mockCreateDbPool = vi.hoisted(() => vi.fn(() => ({ db: {}, pool: {} })))
-const mockClosePool = vi.hoisted(() => vi.fn())
+const mockOpenDatabase = vi.hoisted(() => vi.fn(() => ({ db: {}, client: {}, path: ':memory:', closed: false })))
+const mockCloseDatabase = vi.hoisted(() => vi.fn())
 const mockRegisterShutdownHook = vi.hoisted(() => vi.fn())
 const mockSetRestartDb = vi.hoisted(() => vi.fn())
 const mockSetRestartRefreshSettings = vi.hoisted(() => vi.fn())
@@ -31,9 +31,10 @@ vi.mock('@/server/infra/db/migrate', () => ({
   migrateDatabase: mockMigrateDatabase,
 }))
 
-vi.mock('@/server/infra/db/pool', () => ({
-  createDbPool: mockCreateDbPool,
-  closePool: mockClosePool,
+vi.mock('@/server/infra/db/database', () => ({
+  openDatabase: mockOpenDatabase,
+  closeDatabase: mockCloseDatabase,
+  resolveDatabasePath: () => ':memory:',
 }))
 
 vi.mock('@/server/infra/lifecycle', () => ({

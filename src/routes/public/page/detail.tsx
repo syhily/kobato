@@ -13,6 +13,7 @@ import { getRequestContext } from '@/server/http/request-context'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { bundleFromMatches, routeMeta, seoForPage } from '@/shared/seo/meta'
 import { resolveFootnotesSectionTitle } from '@/shared/utils/footnotes-section-title'
+import { idFromString } from '@/shared/utils/id'
 import { Friends } from '@/ui/pt/blocks/Friends'
 import { PortableTextBody } from '@/ui/pt/render'
 import { FriendApplyForm } from '@/ui/public/friends/FriendApplyForm'
@@ -41,7 +42,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   const { detail } = await loadPublicDetailData(db, {
     request,
     context,
-    target: { type: 'page', ownerId: BigInt(preview.page.id) },
+    target: { type: 'page', ownerId: idFromString(preview.page.id) },
   })
 
   return data(

@@ -1,6 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import type { Database } from '@/server/infra/db/database'
 
 // The migration copies local objects to S3 and flips each row's driver. We
 // mock the two backends + the settings/DB helpers so the test exercises only
@@ -46,7 +46,7 @@ interface FakeTable {
 // Minimal stand-in for the Drizzle chain shapes the migration uses:
 // `db.select(...).from(t).where()` → Promise<row[]>,
 // `db.update(t).set(...).where()` → Promise<void>.
-function makeFakeDb(tables: Map<unknown, FakeTable>): NodePgDatabase {
+function makeFakeDb(tables: Map<unknown, FakeTable>): Database {
   return {
     select: () => ({
       from: (t: unknown) => ({
@@ -60,7 +60,7 @@ function makeFakeDb(tables: Map<unknown, FakeTable>): NodePgDatabase {
         },
       }),
     }),
-  } as unknown as NodePgDatabase
+  } as unknown as Database
 }
 
 describe('storage/migration — counting (no double-count)', () => {
@@ -81,9 +81,9 @@ describe('storage/migration — counting (no double-count)', () => {
         music,
         {
           rows: [
-            { id: 1n, audio: 'musics/a-a.mp3', cover: 'musics/a-c.jpg' },
-            { id: 2n, audio: 'musics/b-a.mp3', cover: 'musics/b-c.jpg' },
-            { id: 3n, audio: 'musics/c-a.mp3', cover: 'musics/c-c.jpg' },
+            { id: 1, audio: 'musics/a-a.mp3', cover: 'musics/a-c.jpg' },
+            { id: 2, audio: 'musics/b-a.mp3', cover: 'musics/b-c.jpg' },
+            { id: 3, audio: 'musics/c-a.mp3', cover: 'musics/c-c.jpg' },
           ],
           updates: [],
         },
@@ -137,8 +137,8 @@ describe('storage/migration — counting (no double-count)', () => {
         backupTable,
         {
           rows: [
-            { id: 1n, path: 'backup/old.sql.gz' },
-            { id: 2n, path: 'backup/new.sql.gz' },
+            { id: 1, path: 'backup/old.sql.gz' },
+            { id: 2, path: 'backup/new.sql.gz' },
           ],
           updates: [],
         },

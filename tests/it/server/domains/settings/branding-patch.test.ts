@@ -1,14 +1,13 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import type { Database } from '@/server/infra/db/database'
 
 import { resetBlogSettingsForTests } from '#/_helpers/blog-settings'
 import { clearAllTables } from '#/_helpers/integration-db'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 import { callRpc, parseRpcJson } from '#/_helpers/rpc-call'
 import { hydrateBlogSettings } from '@/server/domains/settings/services/hydrate'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { setting } from '@/server/infra/db/schema/config'
 
 // Section-change dispatch is covered by the unit tests; keep the
@@ -17,12 +16,11 @@ vi.mock('@/server/domains/settings/services/section-changes', () => ({
   SECTION_CHANGE_HANDLERS: new Map(),
 }))
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 // Asset uploads (SVG / ICO / PNG) flow through the dedicated
@@ -95,7 +93,7 @@ beforeEach(async () => {
 
 describe('integration / branding settings', () => {
   it('persists robots.txt through the assets PATCH', async () => {
-    const ctx = makeAuthedCtx({ role: 'admin', db, pool })
+    const ctx = makeAuthedCtx({ role: 'admin', db })
 
     const updateRes = await callRpc(
       '/admin/settings/update',
@@ -115,7 +113,7 @@ describe('integration / branding settings', () => {
   })
 
   it('preserves uploaded asset ObjectRefs when the assets section is patched without branding', async () => {
-    const ctx = makeAuthedCtx({ role: 'admin', db, pool })
+    const ctx = makeAuthedCtx({ role: 'admin', db })
 
     // Edit just the host — no branding in the PATCH payload.
     const updateRes = await callRpc(
@@ -145,7 +143,7 @@ describe('integration / branding settings', () => {
   })
 
   it('merges robots.txt with persisted asset ObjectRefs without wiping them', async () => {
-    const ctx = makeAuthedCtx({ role: 'admin', db, pool })
+    const ctx = makeAuthedCtx({ role: 'admin', db })
 
     await callRpc(
       '/admin/settings/update',

@@ -48,7 +48,7 @@ const myComments = publicProc
   .use(commentTokenCookie)
   .handler(async ({ input, context }) => {
     const { cleaned, validEntries } = await cleanupExpiredTokens(context.db, context.commentTokens.cookie)
-    const commentIds: bigint[] = []
+    const commentIds: number[] = []
     for (const entry of validEntries) {
       if (entry.payload.pageKey === input.page_key) {
         commentIds.push(idFromString(entry.payload.commentId))

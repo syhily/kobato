@@ -1,6 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { and, count, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
+
+import type { Database } from '@/server/infra/db/database'
 
 import {
   adminPendingWhere,
@@ -22,7 +22,7 @@ import { comment } from '@/server/infra/db/schema/comment'
 import { metric } from '@/server/infra/db/schema/metric'
 import { user } from '@/server/infra/db/schema/user'
 
-export async function findCommentWithUserAndTarget(db: NodePgDatabase, id: bigint) {
+export async function findCommentWithUserAndTarget(db: Database, id: number) {
   const entity = targetSlugTitleSubquery(db)
   const rows = await db
     .select({
@@ -43,7 +43,7 @@ export async function findCommentWithUserAndTarget(db: NodePgDatabase, id: bigin
 
 // Page-title autocomplete for the comment-moderation filter Combobox.
 export async function searchPages(
-  db: NodePgDatabase,
+  db: Database,
   q: string | undefined,
   limit: number,
   publicIds?: string[],
@@ -67,10 +67,10 @@ export async function searchPages(
 
 // Comment-author autocomplete.
 export async function searchCommentAuthors(
-  db: NodePgDatabase,
+  db: Database,
   q: string | undefined,
   limit: number,
-  ids?: bigint[],
+  ids?: number[],
 ): Promise<CommentAuthor[]> {
   const conditions = [isNull(comment.deletedAt)]
   if (ids && ids.length > 0) {
@@ -87,7 +87,7 @@ export async function searchCommentAuthors(
     .limit(limit)
 }
 
-export async function countAllComments(db: NodePgDatabase, filters: AdminListFilters): Promise<number> {
+export async function countAllComments(db: Database, filters: AdminListFilters): Promise<number> {
   const conditions = buildAdminListConditions(filters)
   const rows = await db
     .select({ counts: count() })
@@ -101,7 +101,7 @@ export async function countAllComments(db: NodePgDatabase, filters: AdminListFil
 // times. The base conditions (target, userId, text filter, date bounds)
 // are applied in the WHERE; each SELECT arm further narrows by status.
 export async function countAdminComments(
-  db: NodePgDatabase,
+  db: Database,
   baseFilters: Omit<AdminListFilters, 'status'>,
 ): Promise<{ all: number; pending: number; approved: number; deleteRequested: number }> {
   const conditions = buildAdminListConditions({ ...baseFilters, status: 'all' })
@@ -122,7 +122,7 @@ export async function countAdminComments(
   }
 }
 
-export async function listAdminComments(db: NodePgDatabase, offset: number, limit: number, filters: AdminListFilters) {
+export async function listAdminComments(db: Database, offset: number, limit: number, filters: AdminListFilters) {
   const conditions = buildAdminListConditions(filters)
   const entity = targetSlugTitleSubquery(db)
   return db
@@ -145,7 +145,7 @@ export async function listAdminComments(db: NodePgDatabase, offset: number, limi
 }
 
 export async function listAdminPendingDashboard(
-  db: NodePgDatabase,
+  db: Database,
   kind: AdminPendingKind,
   offset: number,
   limit: number,
@@ -176,8 +176,8 @@ export async function listAdminPendingDashboard(
 }
 
 export async function listMyComments(
-  db: NodePgDatabase,
-  userId: bigint,
+  db: Database,
+  userId: number,
   offset: number,
   limit: number,
   filters: MyCommentsFilters = {},

@@ -1,7 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
 import type { Setting } from '@/server/infra/db/types'
 
 // Storage registry + setting repo + snapshot refresh + favicon-pack
@@ -29,7 +28,7 @@ vi.mock('@/server/domains/assets/generate', () => ({
   generateFaviconPack: vi.fn(),
 }))
 
-const db = {} as NodePgDatabase
+const db = {} as Database
 
 const settings = await import('@/server/infra/db/operations/setting')
 const { generateFaviconPack } = await import('@/server/domains/assets/generate')
@@ -42,7 +41,7 @@ const ICO_BYTES = Buffer.from([0x00, 0x00, 0x01, 0x00, 0x01, 0x00])
 const SVG_BYTES = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><rect/></svg>', 'utf8')
 
 const baseAssetsRow: Setting = {
-  id: 1n,
+  id: 1,
   scope: 'blog.assets',
   data: {
     asset: { host: 'cdn.example.com', scheme: 'https' },

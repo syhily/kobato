@@ -1,6 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { Buffer } from 'node:buffer'
+
+import type { Database } from '@/server/infra/db/database'
 
 import { type AvatarEntry, AvatarStatus, get, set } from '@/server/infra/cache/registry'
 import { findEmailById } from '@/server/infra/db/operations/user'
@@ -181,7 +181,7 @@ export async function fetchQQAvatarImage(email: string, size: number): Promise<B
  *  (HAVE_AVATAR) or a negative entry (NO_AVATAR) when the upstream has
  *  no avatar. Non-QQ emails leave the cache alone: the avatar endpoint
  *  fetches from the gravatar mirror lazily per requested size. */
-export async function resolveAvatarForEmail(db: NodePgDatabase, email: string): Promise<string> {
+export async function resolveAvatarForEmail(db: Database, email: string): Promise<string> {
   const hash = await encodedEmail(email)
   if (isQQEmail(email)) {
     const buffer = await fetchQQAvatarImage(email, DEFAULT_AVATAR_SIZE)
@@ -203,7 +203,7 @@ export async function resolveAvatarForEmail(db: NodePgDatabase, email: string): 
  *  can short-circuit to a "no avatar" cache entry without hitting any
  *  external mirror at all. */
 export async function resolveAvatarInfo(
-  db: NodePgDatabase,
+  db: Database,
   rawHash: string,
 ): Promise<{ email: string | null; hash: string | null }> {
   if (isNumeric(rawHash)) {
@@ -240,7 +240,7 @@ export type ServedAvatar = { kind: 'png'; buffer: Buffer } | { kind: 'redirect' 
  *  module, so a hot avatar (e.g. the site owner appearing in every
  *  comment thread) only round-trips kv_cache once per concurrent burst
  *  instead of once per requesting comment. */
-export async function serveAvatar(db: NodePgDatabase, hash: string, size: number): Promise<ServedAvatar> {
+export async function serveAvatar(db: Database, hash: string, size: number): Promise<ServedAvatar> {
   const { email, hash: canonical } = await resolveAvatarInfo(db, hash)
   if (canonical === null) {
     // Numeric id with no user row — no upstream to ask, record the

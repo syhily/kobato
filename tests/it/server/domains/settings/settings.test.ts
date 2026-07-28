@@ -1,7 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
 import type { Setting } from '@/server/infra/db/types'
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
@@ -41,9 +40,9 @@ vi.mock('@/server/domains/settings/services/section-changes', () => ({
 }))
 
 const db = {
-  transaction: vi.fn(async (fn: (tx: NodePgDatabase) => Promise<unknown>) => fn(db)),
-} as unknown as NodePgDatabase
-const pool = {} as any
+  // Sync — production calls db.transaction synchronously (node:sqlite).
+  transaction: vi.fn((fn: (tx: Database) => unknown) => fn(db)),
+} as unknown as Database
 
 const settingQueries = await import('@/server/infra/db/operations/setting')
 const { updateBlogSettingsSection } = await import('@/server/domains/settings/services/core')
@@ -214,7 +213,7 @@ function bundleRows(bundle: BlogSettingsBundle): Setting[] {
     security: 'blog.security',
   }
   const rows: Setting[] = []
-  let id = 1n
+  let id = 1
   for (const key of Object.keys(map) as (keyof BlogSettingsBundle)[]) {
     const value = bundle[key]
     if (value === null) {
@@ -241,7 +240,7 @@ beforeEach(async () => {
 
 describe('services/settings — hydrateBlogSettings', () => {
   it('returns null when no DB rows exist (pre-install)', async () => {
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue([])
+    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue([])
 
     const bundle = await hydrateBlogSettings(db)
 
@@ -249,7 +248,7 @@ describe('services/settings — hydrateBlogSettings', () => {
   })
 
   it('returns the assembled bundle when every section row passes schema validation', async () => {
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue(bundleRows(fixtureBundle))
+    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue(bundleRows(fixtureBundle))
 
     const bundle = await hydrateBlogSettings(db)
 
@@ -261,9 +260,9 @@ describe('services/settings — hydrateBlogSettings', () => {
   it('treats a deployment as uninstalled when only some sections exist', async () => {
     // Only siteIdentity present; the snapshot module requires both
     // siteIdentity AND assets to consider the deployment installed.
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue([
+    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue([
       {
-        id: 1n,
+        id: 1,
         scope: 'blog.general',
         data: fixtureBundle.siteIdentity as unknown as Record<string, unknown>,
         updatedAt: new Date(),
@@ -279,36 +278,33 @@ describe('services/settings — hydrateBlogSettings', () => {
 
 describe('services/settings — updateBlogSettingsSection', () => {
   it('rejects an invalid section payload with DomainError(400)', async () => {
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue([])
+    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue([])
 
-    await expect(updateBlogSettingsSection(db, pool, 'general', { title: '' }, null)).rejects.toBeInstanceOf(
-      DomainError,
-    )
+    await expect(updateBlogSettingsSection(db, 'general', { title: '' }, null)).rejects.toBeInstanceOf(DomainError)
     expect(settingQueries.upsertSetting).not.toHaveBeenCalled()
   })
 
   it("writes the validated general payload to scope='blog.general' verbatim", async () => {
     // Mock react-to upsert so post-write re-hydration sees the new value.
     let currentRows = bundleRows(fixtureBundle)
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockImplementation(async () => currentRows)
-    vi.mocked(settingQueries.upsertSetting).mockImplementation(async (_db, data, updatedBy, scope) => {
+    vi.mocked(settingQueries.findSettingsByScopePrefix).mockImplementation(() => currentRows)
+    vi.mocked(settingQueries.upsertSetting).mockImplementation((_db, data, updatedBy, scope) => {
       currentRows = currentRows
         .filter((row) => row.scope !== scope)
         .concat([
           {
-            id: 99n,
+            id: 99,
             scope,
             data: data as Record<string, unknown>,
             updatedAt: new Date(),
             updatedBy,
           } as Setting,
         ])
-      return { id: 99n, scope, data: data as Record<string, unknown>, updatedAt: new Date(), updatedBy }
+      return { id: 99, scope, data: data as Record<string, unknown>, updatedAt: new Date(), updatedBy }
     })
 
     const next = await updateBlogSettingsSection(
       db,
-      pool,
       'general',
       {
         title: '雨帆',
@@ -321,7 +317,7 @@ describe('services/settings — updateBlogSettingsSection', () => {
         timeFormat: 'yyyy-LL-dd HH:mm',
         initialYear: 2024,
       },
-      42n,
+      42,
     )
 
     expect(settingQueries.upsertSetting).toHaveBeenCalledOnce()
@@ -329,7 +325,7 @@ describe('services/settings — updateBlogSettingsSection', () => {
     expect(scope).toBe('blog.general')
     expect((data as Record<string, unknown>).title).toBe('雨帆')
     expect((data as Record<string, unknown>).settings).toBeUndefined()
-    expect(updatedBy).toBe(42n)
+    expect(updatedBy).toBe(42)
     expect(next?.siteIdentity?.title).toBe('雨帆')
   })
 
@@ -348,12 +344,12 @@ describe('services/settings — updateBlogSettingsSection', () => {
           } as Setting)
         : row,
     )
-    vi.mocked(settingQueries.findSettingByScope).mockResolvedValueOnce(
+    vi.mocked(settingQueries.findSettingByScope).mockReturnValueOnce(
       existing.find((row) => row.scope === 'blog.assets')!,
     )
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue(existing)
-    vi.mocked(settingQueries.upsertSetting).mockResolvedValue({
-      id: 1n,
+    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue(existing)
+    vi.mocked(settingQueries.upsertSetting).mockReturnValue({
+      id: 1,
       scope: 'blog.general',
       data: {},
       updatedAt: new Date(),
@@ -362,7 +358,6 @@ describe('services/settings — updateBlogSettingsSection', () => {
 
     await updateBlogSettingsSection(
       db,
-      pool,
       'assets',
       {
         asset: { host: 'cdn.test.example', scheme: 'https' },
@@ -391,10 +386,10 @@ describe('services/settings — updateBlogSettingsSection', () => {
   })
 
   it('reads only its own section row when patching a single section (write isolation)', async () => {
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue(bundleRows(fixtureBundle))
-    vi.mocked(settingQueries.findSettingByScope).mockResolvedValue(null)
-    vi.mocked(settingQueries.upsertSetting).mockResolvedValue({
-      id: 1n,
+    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue(bundleRows(fixtureBundle))
+    vi.mocked(settingQueries.findSettingByScope).mockReturnValue(null)
+    vi.mocked(settingQueries.upsertSetting).mockReturnValue({
+      id: 1,
       scope: 'blog.general',
       data: {},
       updatedAt: new Date(),
@@ -403,7 +398,6 @@ describe('services/settings — updateBlogSettingsSection', () => {
 
     await updateBlogSettingsSection(
       db,
-      pool,
       'navigation',
       { navigation: { sideNav: [{ text: 'Home', link: '/' }], footerNav: [] } },
       null,
@@ -423,10 +417,10 @@ describe('services/settings — updateBlogSettingsSection', () => {
 
 describe('services/settings — mail section', () => {
   it("writes the full mail patch to scope='blog.mail' and encrypts every provided secret", async () => {
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue(bundleRows(fixtureBundle))
-    vi.mocked(settingQueries.findSettingByScope).mockResolvedValue(null)
-    vi.mocked(settingQueries.upsertSetting).mockResolvedValue({
-      id: 1n,
+    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue(bundleRows(fixtureBundle))
+    vi.mocked(settingQueries.findSettingByScope).mockReturnValue(null)
+    vi.mocked(settingQueries.upsertSetting).mockReturnValue({
+      id: 1,
       scope: 'blog.general',
       data: {},
       updatedAt: new Date(),
@@ -435,7 +429,6 @@ describe('services/settings — mail section', () => {
 
     await updateBlogSettingsSection(
       db,
-      pool,
       'mail',
       {
         mail: {
@@ -468,8 +461,8 @@ describe('services/settings — mail section', () => {
   })
 
   it("preserves the existing apiKey by reading scope='blog.mail' when omitted", async () => {
-    vi.mocked(settingQueries.findSettingByScope).mockResolvedValueOnce({
-      id: 1n,
+    vi.mocked(settingQueries.findSettingByScope).mockReturnValueOnce({
+      id: 1,
       scope: 'blog.mail',
       data: {
         mail: { enabled: true, host: 'old.example.com', apiKey: 'STORED', sender: 'a@b.co' },
@@ -477,9 +470,9 @@ describe('services/settings — mail section', () => {
       updatedAt: new Date(),
       updatedBy: null,
     } as Setting)
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue(bundleRows(fixtureBundle))
-    vi.mocked(settingQueries.upsertSetting).mockResolvedValue({
-      id: 1n,
+    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue(bundleRows(fixtureBundle))
+    vi.mocked(settingQueries.upsertSetting).mockReturnValue({
+      id: 1,
       scope: 'blog.general',
       data: {},
       updatedAt: new Date(),
@@ -488,7 +481,6 @@ describe('services/settings — mail section', () => {
 
     await updateBlogSettingsSection(
       db,
-      pool,
       'mail',
       {
         mail: { enabled: true, host: 'api.zeabur.com', sender: 'noreply@example.com' },
@@ -507,12 +499,11 @@ describe('services/settings — mail section', () => {
   })
 
   it('rejects a sender that is not a valid email', async () => {
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue([])
+    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue([])
 
     await expect(
       updateBlogSettingsSection(
         db,
-        pool,
         'mail',
         { mail: { enabled: false, host: 'api.zeabur.com', apiKey: '', sender: 'not-an-email' } },
         null,
@@ -522,8 +513,8 @@ describe('services/settings — mail section', () => {
   })
 
   it("preserves the existing smtpPass by reading scope='blog.mail' when omitted", async () => {
-    vi.mocked(settingQueries.findSettingByScope).mockResolvedValueOnce({
-      id: 1n,
+    vi.mocked(settingQueries.findSettingByScope).mockReturnValueOnce({
+      id: 1,
       scope: 'blog.mail',
       data: {
         mail: {
@@ -542,9 +533,9 @@ describe('services/settings — mail section', () => {
       updatedAt: new Date(),
       updatedBy: null,
     } as Setting)
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue(bundleRows(fixtureBundle))
-    vi.mocked(settingQueries.upsertSetting).mockResolvedValue({
-      id: 1n,
+    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue(bundleRows(fixtureBundle))
+    vi.mocked(settingQueries.upsertSetting).mockReturnValue({
+      id: 1,
       scope: 'blog.general',
       data: {},
       updatedAt: new Date(),
@@ -553,7 +544,6 @@ describe('services/settings — mail section', () => {
 
     await updateBlogSettingsSection(
       db,
-      pool,
       'mail',
       {
         mail: {
@@ -586,8 +576,8 @@ describe('services/settings — mail section', () => {
   })
 
   it("preserves the existing mailgunApiKey by reading scope='blog.mail' when omitted", async () => {
-    vi.mocked(settingQueries.findSettingByScope).mockResolvedValueOnce({
-      id: 1n,
+    vi.mocked(settingQueries.findSettingByScope).mockReturnValueOnce({
+      id: 1,
       scope: 'blog.mail',
       data: {
         mail: {
@@ -608,9 +598,9 @@ describe('services/settings — mail section', () => {
       updatedAt: new Date(),
       updatedBy: null,
     } as Setting)
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue(bundleRows(fixtureBundle))
-    vi.mocked(settingQueries.upsertSetting).mockResolvedValue({
-      id: 1n,
+    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue(bundleRows(fixtureBundle))
+    vi.mocked(settingQueries.upsertSetting).mockReturnValue({
+      id: 1,
       scope: 'blog.general',
       data: {},
       updatedAt: new Date(),
@@ -619,7 +609,6 @@ describe('services/settings — mail section', () => {
 
     await updateBlogSettingsSection(
       db,
-      pool,
       'mail',
       {
         mail: {
@@ -650,25 +639,24 @@ describe('services/settings — mail section', () => {
 describe('services/settings — rateLimit section', () => {
   it("writes a valid rateLimit patch to scope='blog.rateLimit' verbatim", async () => {
     let currentRows = bundleRows(fixtureBundle)
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockImplementation(async () => currentRows)
-    vi.mocked(settingQueries.upsertSetting).mockImplementation(async (_db, data, updatedBy, scope) => {
+    vi.mocked(settingQueries.findSettingsByScopePrefix).mockImplementation(() => currentRows)
+    vi.mocked(settingQueries.upsertSetting).mockImplementation((_db, data, updatedBy, scope) => {
       currentRows = currentRows
         .filter((row) => row.scope !== scope)
         .concat([
           {
-            id: 99n,
+            id: 99,
             scope,
             data: data as Record<string, unknown>,
             updatedAt: new Date(),
             updatedBy,
           } as Setting,
         ])
-      return { id: 99n, scope, data: data as Record<string, unknown>, updatedAt: new Date(), updatedBy }
+      return { id: 99, scope, data: data as Record<string, unknown>, updatedAt: new Date(), updatedBy }
     })
 
     const next = await updateBlogSettingsSection(
       db,
-      pool,
       'rateLimit',
       {
         signInIp: { windowSeconds: 600, maxAttempts: 3 },
@@ -693,12 +681,12 @@ describe('services/settings — rateLimit section', () => {
         passkeySetForceIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
         passkeyDeleteIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
       },
-      11n,
+      11,
     )
 
     const [, data, updatedBy, scope] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
     expect(scope).toBe('blog.rateLimit')
-    expect(updatedBy).toBe(11n)
+    expect(updatedBy).toBe(11)
     expect(data).toMatchObject({
       signInIp: { windowSeconds: 600, maxAttempts: 3 },
       likeIncreaseIp: { windowSeconds: 60 * 5, maxAttempts: 100 },
@@ -707,12 +695,11 @@ describe('services/settings — rateLimit section', () => {
   })
 
   it('rejects a window shorter than 60s', async () => {
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue([])
+    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue([])
 
     await expect(
       updateBlogSettingsSection(
         db,
-        pool,
         'rateLimit',
         {
           signInIp: { windowSeconds: 30, maxAttempts: 5 },
@@ -729,12 +716,11 @@ describe('services/settings — rateLimit section', () => {
   })
 
   it('rejects maxAttempts of 0 (the deny-everyone footgun)', async () => {
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue([])
+    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue([])
 
     await expect(
       updateBlogSettingsSection(
         db,
-        pool,
         'rateLimit',
         {
           signInIp: { windowSeconds: 1800, maxAttempts: 5 },
@@ -752,10 +738,10 @@ describe('services/settings — rateLimit section', () => {
 
   it('merges a partial rateLimit patch into the stored row', async () => {
     const stored = bundleRows(fixtureBundle).find((row) => row.scope === 'blog.rateLimit')!
-    vi.mocked(settingQueries.findSettingByScope).mockResolvedValue(stored)
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue(bundleRows(fixtureBundle))
-    vi.mocked(settingQueries.upsertSetting).mockResolvedValue({
-      id: 1n,
+    vi.mocked(settingQueries.findSettingByScope).mockReturnValue(stored)
+    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue(bundleRows(fixtureBundle))
+    vi.mocked(settingQueries.upsertSetting).mockReturnValue({
+      id: 1,
       scope: 'blog.general',
       data: {},
       updatedAt: new Date(),
@@ -764,7 +750,6 @@ describe('services/settings — rateLimit section', () => {
 
     await updateBlogSettingsSection(
       db,
-      pool,
       'rateLimit',
       {
         signInIp: { windowSeconds: 600, maxAttempts: 3 },
@@ -786,9 +771,9 @@ describe('services/settings — rateLimit section', () => {
 
 describe('services/settings — cache section', () => {
   it("writes a valid cache patch to scope='blog.cache' and refreshes the snapshot", async () => {
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue(bundleRows(fixtureBundle))
-    vi.mocked(settingQueries.upsertSetting).mockResolvedValue({
-      id: 1n,
+    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue(bundleRows(fixtureBundle))
+    vi.mocked(settingQueries.upsertSetting).mockReturnValue({
+      id: 1,
       scope: 'blog.general',
       data: {},
       updatedAt: new Date(),
@@ -797,7 +782,6 @@ describe('services/settings — cache section', () => {
 
     await updateBlogSettingsSection(
       db,
-      pool,
       'cache',
       {
         cache: {
@@ -820,12 +804,11 @@ describe('services/settings — cache section', () => {
   })
 
   it('rejects two buckets sharing the same prefix', async () => {
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue([])
+    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue([])
 
     await expect(
       updateBlogSettingsSection(
         db,
-        pool,
         'cache',
         {
           cache: {
@@ -842,12 +825,11 @@ describe('services/settings — cache section', () => {
   })
 
   it('rejects a bucket whose prefix is a strict prefix of another', async () => {
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue([])
+    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue([])
 
     await expect(
       updateBlogSettingsSection(
         db,
-        pool,
         'cache',
         {
           cache: {
@@ -867,12 +849,11 @@ describe('services/settings — cache section', () => {
   })
 
   it('rejects a prefix that collides with the reserved session: surface', async () => {
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue([])
+    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue([])
 
     await expect(
       updateBlogSettingsSection(
         db,
-        pool,
         'cache',
         {
           cache: {
@@ -888,12 +869,11 @@ describe('services/settings — cache section', () => {
   })
 
   it('rejects a prefix that collides with the reserved rate-limit: surface', async () => {
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue([])
+    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue([])
 
     await expect(
       updateBlogSettingsSection(
         db,
-        pool,
         'cache',
         {
           cache: {
@@ -910,12 +890,11 @@ describe('services/settings — cache section', () => {
   })
 
   it('rejects a prefix that does not end with `:`', async () => {
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue([])
+    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue([])
 
     await expect(
       updateBlogSettingsSection(
         db,
-        pool,
         'cache',
         {
           cache: {
@@ -931,12 +910,11 @@ describe('services/settings — cache section', () => {
   })
 
   it('rejects TTL below 1 hour or above 30 days', async () => {
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue([])
+    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue([])
 
     await expect(
       updateBlogSettingsSection(
         db,
-        pool,
         'cache',
         {
           cache: {
@@ -953,7 +931,6 @@ describe('services/settings — cache section', () => {
     await expect(
       updateBlogSettingsSection(
         db,
-        pool,
         'cache',
         {
           cache: {
@@ -972,25 +949,24 @@ describe('services/settings — cache section', () => {
 describe('services/settings — security section', () => {
   it("writes the full security payload to scope='blog.security' verbatim", async () => {
     let currentRows = bundleRows(fixtureBundle)
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockImplementation(async () => currentRows)
-    vi.mocked(settingQueries.upsertSetting).mockImplementation(async (_db, data, updatedBy, scope) => {
+    vi.mocked(settingQueries.findSettingsByScopePrefix).mockImplementation(() => currentRows)
+    vi.mocked(settingQueries.upsertSetting).mockImplementation((_db, data, updatedBy, scope) => {
       currentRows = currentRows
         .filter((row) => row.scope !== scope)
         .concat([
           {
-            id: 99n,
+            id: 99,
             scope,
             data: data as Record<string, unknown>,
             updatedAt: new Date(),
             updatedBy,
           } as Setting,
         ])
-      return { id: 99n, scope, data: data as Record<string, unknown>, updatedAt: new Date(), updatedBy }
+      return { id: 99, scope, data: data as Record<string, unknown>, updatedAt: new Date(), updatedBy }
     })
 
     const next = await updateBlogSettingsSection(
       db,
-      pool,
       'security',
       {
         csrf: { enabled: true, exemptPaths: [] },
@@ -1014,12 +990,11 @@ describe('services/settings — security section', () => {
   })
 
   it('rejects an origin that is not a valid URL-like string (min length)', async () => {
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue([])
+    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue([])
 
     await expect(
       updateBlogSettingsSection(
         db,
-        pool,
         'security',
         {
           csrf: { enabled: true, exemptPaths: [] },
@@ -1034,12 +1009,11 @@ describe('services/settings — security section', () => {
   })
 
   it('rejects more than 20 origins', async () => {
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue([])
+    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue([])
 
     await expect(
       updateBlogSettingsSection(
         db,
-        pool,
         'security',
         {
           csrf: { enabled: true, exemptPaths: [] },
@@ -1056,16 +1030,16 @@ describe('services/settings — security section', () => {
 
 describe('services/settings — section patch merge', () => {
   function mockStoredRow(scope: string, data: Record<string, unknown>): void {
-    vi.mocked(settingQueries.findSettingByScope).mockResolvedValue({
-      id: 1n,
+    vi.mocked(settingQueries.findSettingByScope).mockReturnValue({
+      id: 1,
       scope,
       data,
       updatedAt: new Date(),
       updatedBy: null,
     } as Setting)
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue(bundleRows(fixtureBundle))
-    vi.mocked(settingQueries.upsertSetting).mockResolvedValue({
-      id: 1n,
+    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue(bundleRows(fixtureBundle))
+    vi.mocked(settingQueries.upsertSetting).mockReturnValue({
+      id: 1,
       scope: 'blog.general',
       data: {},
       updatedAt: new Date(),
@@ -1093,7 +1067,7 @@ describe('services/settings — section patch merge', () => {
       },
     })
 
-    await updateBlogSettingsSection(db, pool, 'mail', { mail: { host: 'api.zeabur.com' } }, null)
+    await updateBlogSettingsSection(db, 'mail', { mail: { host: 'api.zeabur.com' } }, null)
 
     const [, data, , scope] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
     expect(scope).toBe('blog.mail')
@@ -1109,7 +1083,6 @@ describe('services/settings — section patch merge', () => {
   it('rejects an unknown key inside a nested bucket with the issue list', async () => {
     const error = await updateBlogSettingsSection(
       db,
-      pool,
       'mail',
       { mail: { host: 'api.zeabur.com', bogus: 1 } },
       null,
@@ -1124,7 +1097,7 @@ describe('services/settings — section patch merge', () => {
   })
 
   it('rejects an unknown key at the section root with the issue list', async () => {
-    const error = await updateBlogSettingsSection(db, pool, 'mail', { bogus: {} }, null).catch((e: unknown) => e)
+    const error = await updateBlogSettingsSection(db, 'mail', { bogus: {} }, null).catch((e: unknown) => e)
 
     expect(error).toBeInstanceOf(DomainError)
     expect((error as InstanceType<typeof DomainError>).code).toBe('BAD_REQUEST')
@@ -1141,7 +1114,7 @@ describe('services/settings — section patch merge', () => {
       passkey: { enabled: false },
     })
 
-    await updateBlogSettingsSection(db, pool, 'security', { csrf: { exemptPaths: ['/webhook/github'] } }, null)
+    await updateBlogSettingsSection(db, 'security', { csrf: { exemptPaths: ['/webhook/github'] } }, null)
 
     const [, data] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
     const csrf = (data as Record<string, unknown>).csrf as Record<string, unknown>
@@ -1152,13 +1125,7 @@ describe('services/settings — section patch merge', () => {
   it('replaces sidebar widgets wholesale (array of objects)', async () => {
     mockStoredRow('blog.sidebar', fixtureBundle.sidebar as unknown as Record<string, unknown>)
 
-    await updateBlogSettingsSection(
-      db,
-      pool,
-      'sidebar',
-      { sidebar: { widgets: [{ type: 'search', enabled: false }] } },
-      null,
-    )
+    await updateBlogSettingsSection(db, 'sidebar', { sidebar: { widgets: [{ type: 'search', enabled: false }] } }, null)
 
     const [, data] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
     const sidebar = (data as Record<string, unknown>).sidebar as Record<string, unknown>
@@ -1172,7 +1139,7 @@ describe('services/settings — section patch merge', () => {
       passkey: { enabled: false },
     })
 
-    await updateBlogSettingsSection(db, pool, 'security', { cors: { enabled: true } }, null)
+    await updateBlogSettingsSection(db, 'security', { cors: { enabled: true } }, null)
 
     const [, data] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
     const row = data as Record<string, unknown>
@@ -1182,10 +1149,10 @@ describe('services/settings — section patch merge', () => {
   })
 
   it('accepts a complete fonts payload and writes it verbatim', async () => {
-    vi.mocked(settingQueries.findSettingByScope).mockResolvedValue(null)
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue(bundleRows(fixtureBundle))
-    vi.mocked(settingQueries.upsertSetting).mockResolvedValue({
-      id: 1n,
+    vi.mocked(settingQueries.findSettingByScope).mockReturnValue(null)
+    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue(bundleRows(fixtureBundle))
+    vi.mocked(settingQueries.upsertSetting).mockReturnValue({
+      id: 1,
       scope: 'blog.general',
       data: {},
       updatedAt: new Date(),
@@ -1201,7 +1168,7 @@ describe('services/settings — section patch merge', () => {
       code: ['1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d'],
     }
 
-    await updateBlogSettingsSection(db, pool, 'fonts', fontsPayload, null)
+    await updateBlogSettingsSection(db, 'fonts', fontsPayload, null)
 
     const [, data, , scope] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
     expect(scope).toBe('blog.fonts')
@@ -1256,7 +1223,7 @@ describe('services/settings — snapshot reader', () => {
     // before `imageMeta` was added passed the old probe, then crashed
     // `<BucketCard>` on `allBuckets.imageMeta.prefix`.
     const legacyRow: Setting = {
-      id: 99n,
+      id: 99,
       scope: 'blog.cache',
       data: {
         cache: {
@@ -1269,9 +1236,9 @@ describe('services/settings — snapshot reader', () => {
       updatedBy: null,
     } as Setting
     const completeRows = bundleRows(fixtureBundle).filter((row) => row.scope !== 'blog.cache')
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue([...completeRows, legacyRow])
-    vi.mocked(settingQueries.upsertSetting).mockResolvedValue({
-      id: 1n,
+    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue([...completeRows, legacyRow])
+    vi.mocked(settingQueries.upsertSetting).mockReturnValue({
+      id: 1,
       scope: 'blog.general',
       data: {},
       updatedAt: new Date(),

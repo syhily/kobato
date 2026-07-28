@@ -1,8 +1,7 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { asc, eq, inArray } from 'drizzle-orm'
 
 import type { AdminCategoriesListResult } from '@/server/domains/taxonomies/categories/projection'
+import type { Database } from '@/server/infra/db/database'
 import type { CategoryRow } from '@/server/infra/db/types'
 import type { Category } from '@/shared/types/catalog'
 
@@ -18,7 +17,7 @@ import {
 import { category as categoryTable } from '@/server/infra/db/schema/taxonomy'
 
 export async function listCategoriesForAdmin(
-  db: NodePgDatabase,
+  db: Database,
   filters: AdminCategoriesListFilters,
 ): Promise<AdminCategoriesListResult> {
   const [rows, counts] = await Promise.all([
@@ -31,7 +30,7 @@ export async function listCategoriesForAdmin(
   }
 }
 
-async function hydrateCategoryImages(db: NodePgDatabase, categories: Category[]): Promise<void> {
+async function hydrateCategoryImages(db: Database, categories: Category[]): Promise<void> {
   await hydrateImageRefs(
     db,
     categories,
@@ -45,11 +44,11 @@ async function hydrateCategoryImages(db: NodePgDatabase, categories: Category[])
   )
 }
 
-export async function listAllCategories(db: NodePgDatabase): Promise<Category[]> {
+export async function listAllCategories(db: Database): Promise<Category[]> {
   return through(db, 'categories', {}, () => queryAllCategories(db))
 }
 
-async function queryAllCategories(db: NodePgDatabase): Promise<Category[]> {
+async function queryAllCategories(db: Database): Promise<Category[]> {
   const rows = await db
     .select({
       name: categoryTable.name,
@@ -75,12 +74,12 @@ async function queryAllCategories(db: NodePgDatabase): Promise<Category[]> {
   return categories
 }
 
-export async function getCategoryLink(db: NodePgDatabase, name: string): Promise<string> {
+export async function getCategoryLink(db: Database, name: string): Promise<string> {
   const category = await findCategoryByName(db, name)
   return category ? `/cats/${category.slug}` : ''
 }
 
-export async function getCategoryLinks(db: NodePgDatabase, names: readonly string[]): Promise<Record<string, string>> {
+export async function getCategoryLinks(db: Database, names: readonly string[]): Promise<Record<string, string>> {
   const uniqueNames = [...new Set(names.filter((n): n is string => Boolean(n)))]
   if (uniqueNames.length === 0) {
     return {}
@@ -104,7 +103,7 @@ export async function getCategoryLinks(db: NodePgDatabase, names: readonly strin
 // `mutate.ts`, the feed resolver below) all live on this surface.
 // Public routes resolve strictly by slug — the feed's
 // slug-or-name fallback composes this with `findCategoryByName`.
-export async function findCategoryBySlug(db: NodePgDatabase, slug: string): Promise<CategoryRow | null> {
+export async function findCategoryBySlug(db: Database, slug: string): Promise<CategoryRow | null> {
   const rows = await db.select().from(categoryTable).where(eq(categoryTable.slug, slug)).limit(1)
   return rows[0] ?? null
 }
@@ -112,6 +111,6 @@ export async function findCategoryBySlug(db: NodePgDatabase, slug: string): Prom
 // Feed-only resolution rule: feed URLs accept a category slug, but
 // legacy subscribers may carry the display name. Public routes stay
 // slug-only. Deliberately shallow: one composition, no state, no cache.
-export async function resolveCategoryBySlugOrName(db: NodePgDatabase, value: string): Promise<CategoryRow | null> {
+export async function resolveCategoryBySlugOrName(db: Database, value: string): Promise<CategoryRow | null> {
   return (await findCategoryBySlug(db, value)) ?? (await findCategoryByName(db, value))
 }

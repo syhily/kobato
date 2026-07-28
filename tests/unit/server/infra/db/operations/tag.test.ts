@@ -1,6 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { describe, expect, it } from 'vitest'
+
+import type { Database } from '@/server/infra/db/database'
 
 type ResultRow = Record<string, unknown>
 
@@ -33,13 +33,13 @@ function createMockDb(rows: ResultRow[] = []) {
     },
   )
 
-  return dbProxy as unknown as NodePgDatabase
+  return dbProxy as unknown as Database
 }
 
 describe('infra/db/operations/tag — listAdminTagRows', () => {
   it('returns rows from the builder', async () => {
     const { listAdminTagRows } = await import('@/server/infra/db/operations/tag')
-    expect(await listAdminTagRows(createMockDb([{ id: 1n }]), {})).toHaveLength(1)
+    expect(await listAdminTagRows(createMockDb([{ id: 1 }]), {})).toHaveLength(1)
   })
 
   it('applies limit and offset', async () => {
@@ -88,17 +88,17 @@ describe('infra/db/operations/tag — countAdminTags', () => {
 describe('infra/db/operations/tag — single-row lookups', () => {
   it('findTagById returns the row when present', async () => {
     const { findTagById } = await import('@/server/infra/db/operations/tag')
-    expect(await findTagById(createMockDb([{ id: 1n }]), 1n)).toEqual({ id: 1n })
+    expect(await findTagById(createMockDb([{ id: 1 }]), 1)).toEqual({ id: 1 })
   })
 
   it('findTagById returns null when absent', async () => {
     const { findTagById } = await import('@/server/infra/db/operations/tag')
-    expect(await findTagById(createMockDb([]), 1n)).toBeNull()
+    expect(await findTagById(createMockDb([]), 1)).toBeNull()
   })
 
   it('findTagByName returns the row when present', async () => {
     const { findTagByName } = await import('@/server/infra/db/operations/tag')
-    expect(await findTagByName(createMockDb([{ id: 1n }]), 'react')).toEqual({ id: 1n })
+    expect(await findTagByName(createMockDb([{ id: 1 }]), 'react')).toEqual({ id: 1 })
   })
 
   it('findTagByName returns null when absent', async () => {
@@ -110,46 +110,46 @@ describe('infra/db/operations/tag — single-row lookups', () => {
 describe('infra/db/operations/tag — findTagsByNames', () => {
   it('short-circuits on empty input', async () => {
     const { findTagsByNames } = await import('@/server/infra/db/operations/tag')
-    expect(await findTagsByNames(createMockDb([{ id: 1n }]), [])).toEqual([])
+    expect(await findTagsByNames(createMockDb([{ id: 1 }]), [])).toEqual([])
   })
 
   it('queries for non-empty names', async () => {
     const { findTagsByNames } = await import('@/server/infra/db/operations/tag')
-    expect(await findTagsByNames(createMockDb([{ id: 1n }]), ['a', 'b'])).toEqual([{ id: 1n }])
+    expect(await findTagsByNames(createMockDb([{ id: 1 }]), ['a', 'b'])).toEqual([{ id: 1 }])
   })
 })
 
 describe('infra/db/operations/tag — insertTag / updateTag / deleteTag', () => {
   it('inserts and returns the row', async () => {
     const { insertTag } = await import('@/server/infra/db/operations/tag')
-    expect(await insertTag(createMockDb([{ id: 1n }]), { name: 'react', slug: 'react' } as never)).toEqual({ id: 1n })
+    expect(await insertTag(createMockDb([{ id: 1 }]), { name: 'react', slug: 'react' } as never)).toEqual({ id: 1 })
   })
 
   it('updateTag returns the row when present', async () => {
     const { updateTag } = await import('@/server/infra/db/operations/tag')
-    expect(await updateTag(createMockDb([{ id: 1n }]), 1n, { name: 'x' } as never)).toEqual({ id: 1n })
+    expect(await updateTag(createMockDb([{ id: 1 }]), 1, { name: 'x' } as never)).toEqual({ id: 1 })
   })
 
   it('updateTag returns null when absent', async () => {
     const { updateTag } = await import('@/server/infra/db/operations/tag')
-    expect(await updateTag(createMockDb([]), 1n, { name: 'x' } as never)).toBeNull()
+    expect(await updateTag(createMockDb([]), 1, { name: 'x' } as never)).toBeNull()
   })
 
   it('deleteTag returns true when a row was deleted', async () => {
     const { deleteTag } = await import('@/server/infra/db/operations/tag')
-    expect(await deleteTag(createMockDb([{ id: 1n }]), 1n)).toBe(true)
+    expect(await deleteTag(createMockDb([{ id: 1 }]), 1)).toBe(true)
   })
 
   it('deleteTag returns false when no row was deleted', async () => {
     const { deleteTag } = await import('@/server/infra/db/operations/tag')
-    expect(await deleteTag(createMockDb([]), 1n)).toBe(false)
+    expect(await deleteTag(createMockDb([]), 1)).toBe(false)
   })
 })
 
 describe('infra/db/operations/tag — seedTagIfMissing / seedTagsIfMissing', () => {
   it('seedTagIfMissing returns true when a new row was inserted', async () => {
     const { seedTagIfMissing } = await import('@/server/infra/db/operations/tag')
-    expect(await seedTagIfMissing(createMockDb([{ id: 1n }]), { name: 'x', slug: 'x' } as never)).toBe(true)
+    expect(await seedTagIfMissing(createMockDb([{ id: 1 }]), { name: 'x', slug: 'x' } as never)).toBe(true)
   })
 
   it('seedTagIfMissing returns false when the row already existed', async () => {
@@ -159,13 +159,13 @@ describe('infra/db/operations/tag — seedTagIfMissing / seedTagsIfMissing', () 
 
   it('seedTagsIfMissing short-circuits on empty input', async () => {
     const { seedTagsIfMissing } = await import('@/server/infra/db/operations/tag')
-    await expect(seedTagsIfMissing(createMockDb([]), [])).resolves.toBeUndefined()
+    expect(() => seedTagsIfMissing(createMockDb([]), [])).not.toThrow()
   })
 
   it('seedTagsIfMissing inserts non-empty input', async () => {
     const { seedTagsIfMissing } = await import('@/server/infra/db/operations/tag')
-    await expect(
+    expect(() =>
       seedTagsIfMissing(createMockDb([]), [{ name: 'a', slug: 'a' } as never, { name: 'b', slug: 'b' } as never]),
-    ).resolves.toBeUndefined()
+    ).not.toThrow()
   })
 })

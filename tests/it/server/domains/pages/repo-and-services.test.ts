@@ -1,11 +1,10 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
+
 import { clearAllTables } from '#/_helpers/integration-db'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { content } from '@/server/infra/db/schema/content'
 import { page as pageMetaTable } from '@/server/infra/db/schema/page'
 import { user } from '@/server/infra/db/schema/user'
@@ -25,12 +24,11 @@ const adminQuery = await import('@/server/domains/pages/services/admin-query')
 const lifecycle = await import('@/server/domains/content/lifecycle')
 const { pageLifecycleAdapter } = await import('@/server/domains/pages/services/lifecycle-adapter')
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {
@@ -50,7 +48,7 @@ async function seedPage(overrides: Partial<typeof pageMetaTable.$inferInsert> = 
   return rows[0]
 }
 
-async function seedRevision(ownerId: bigint, status: 'draft' | 'published' = 'published') {
+async function seedRevision(ownerId: number, status: 'draft' | 'published' = 'published') {
   const rows = await db
     .insert(content)
     .values({
@@ -161,7 +159,7 @@ describe('pages/repo — countPageMetas', () => {
 
 describe('pages/repo — findPageMetaById / findPageMetaBySlug', () => {
   it('returns null for unknown id', async () => {
-    expect(await repo.findPageMetaById(db, 9999n)).toBeNull()
+    expect(await repo.findPageMetaById(db, 9999)).toBeNull()
   })
 
   it('returns null for unknown slug', async () => {
@@ -206,7 +204,7 @@ describe('pages/services/public-query — listPublicPageMetas', () => {
 
 describe('pages/services/public-query — listSitemapPages', () => {
   it('returns published, non-deleted pages with revision', async () => {
-    const rev = await seedRevision(0n)
+    const rev = await seedRevision(0)
     await seedPage({ slug: 'live', published: true, publishedRevisionId: rev.id })
     await seedPage({ slug: 'no-rev', published: true, publishedRevisionId: null })
     await seedPage({ slug: 'unpub', published: false, publishedRevisionId: rev.id })
@@ -217,7 +215,7 @@ describe('pages/services/public-query — listSitemapPages', () => {
   })
 
   it('filters out future-dated pages', async () => {
-    const rev = await seedRevision(0n)
+    const rev = await seedRevision(0)
     const future = new Date()
     future.setHours(future.getHours() + 24)
     await seedPage({ slug: 'future', published: true, publishedRevisionId: rev.id, publishedAt: future })
@@ -288,7 +286,7 @@ describe('pages/services/mutate — updatePageMeta', () => {
   })
 
   it('throws NOT_FOUND when page missing', async () => {
-    await expect(mutate.updatePageMeta(db, { id: 9999n, title: 'X' })).rejects.toThrow(/页面不存在/)
+    await expect(mutate.updatePageMeta(db, { id: 9999, title: 'X' })).rejects.toThrow(/页面不存在/)
   })
 
   it('updates title and slug', async () => {
@@ -317,10 +315,10 @@ describe('pages/services/mutate — updatePageMeta', () => {
 describe('pages/services/mutate — deletePage / restorePage', () => {
   it('deletes and restores a page', async () => {
     const dto = await mutate.createPage(db, { title: 'ToDelete' }, null)
-    const r1 = await mutate.deletePage(db, BigInt(dto.id))
+    const r1 = await mutate.deletePage(db, Number(dto.id))
     expect(r1.deleted).toBe(true)
 
-    const r2 = await mutate.restorePage(db, BigInt(dto.id))
+    const r2 = await mutate.restorePage(db, Number(dto.id))
     expect(r2.restored).toBe(true)
   })
 
@@ -334,7 +332,7 @@ describe('pages/services/mutate — deletePage / restorePage', () => {
 
 describe('pages/services/mutate — unpublishPage', () => {
   it('throws NOT_FOUND when missing', async () => {
-    await expect(mutate.unpublishPage(db, 9999n)).rejects.toThrow(/页面不存在/)
+    await expect(mutate.unpublishPage(db, 9999)).rejects.toThrow(/页面不存在/)
   })
 
   it('flips published to false', async () => {
@@ -363,7 +361,7 @@ describe('pages/services/admin-query — listPagesForAdmin', () => {
 
 describe('pages/services/admin-query — getPageDetailForAdmin', () => {
   it('throws NOT_FOUND for unknown id', async () => {
-    await expect(adminQuery.getPageDetailForAdmin(db, 9999n)).rejects.toMatchObject({ code: 'NOT_FOUND' })
+    await expect(adminQuery.getPageDetailForAdmin(db, 9999)).rejects.toMatchObject({ code: 'NOT_FOUND' })
   })
 
   it('returns page with null revisions when none exist', async () => {
@@ -388,7 +386,7 @@ describe('pages/services/admin-query — listRevisionsForAdmin', () => {
     // Unified with the posts mirror (and pages' own getPageDetailForAdmin):
     // a missing entity surfaces the service-level NOT_FOUND instead of an
     // empty revision list.
-    await expect(adminQuery.listRevisionsForAdmin(db, 9999n)).rejects.toMatchObject({ code: 'NOT_FOUND' })
+    await expect(adminQuery.listRevisionsForAdmin(db, 9999)).rejects.toMatchObject({ code: 'NOT_FOUND' })
   })
 
   it('returns revisions for a known page', async () => {
@@ -405,7 +403,7 @@ describe('content/lifecycle (page adapter) — loadDraftPreviewBySlug', () => {
   })
 
   it('returns the page with hasNewerDraft=false when only a published revision exists', async () => {
-    const rev = await seedRevision(0n)
+    const rev = await seedRevision(0)
     await seedPage({ slug: 'pub', published: true, publishedRevisionId: rev.id })
     const r = await lifecycle.loadDraftPreviewBySlug(db, pageLifecycleAdapter, 'pub')
     expect(r).not.toBeNull()

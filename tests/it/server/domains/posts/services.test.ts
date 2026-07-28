@@ -1,11 +1,10 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
+
 import { clearAllTables } from '#/_helpers/integration-db'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { postTag } from '@/server/infra/db/schema/post-tag'
@@ -15,12 +14,11 @@ vi.mock('@/server/domains/images/services/enhance', () => ({
   hydrateImageRefs: vi.fn(async () => undefined),
 }))
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {
@@ -28,7 +26,7 @@ beforeEach(async () => {
   vi.clearAllMocks()
 })
 
-async function seedPost(opts: Partial<typeof postMetaTable.$inferInsert> = {}): Promise<bigint> {
+async function seedPost(opts: Partial<typeof postMetaTable.$inferInsert> = {}): Promise<number> {
   const rows = await db
     .insert(postMetaTable)
     .values({
@@ -44,12 +42,12 @@ async function seedPost(opts: Partial<typeof postMetaTable.$inferInsert> = {}): 
   return rows[0]!.id
 }
 
-async function seedContent(opts: Partial<typeof contentTable.$inferInsert> = {}): Promise<bigint> {
+async function seedContent(opts: Partial<typeof contentTable.$inferInsert> = {}): Promise<number> {
   const rows = await db
     .insert(contentTable)
     .values({
       type: opts.type ?? 'post',
-      ownerId: opts.ownerId ?? 1n,
+      ownerId: opts.ownerId ?? 1,
       revisionNo: opts.revisionNo ?? 1,
       status: opts.status ?? 'published',
       body: opts.body ?? [],
@@ -59,7 +57,7 @@ async function seedContent(opts: Partial<typeof contentTable.$inferInsert> = {})
   return rows[0]!.id
 }
 
-async function seedCategory(name: string, slug?: string): Promise<bigint> {
+async function seedCategory(name: string, slug?: string): Promise<number> {
   const rows = await db
     .insert(categoryTable)
     .values({ name, slug: slug ?? name.toLowerCase(), cover: '' })
@@ -67,7 +65,7 @@ async function seedCategory(name: string, slug?: string): Promise<bigint> {
   return rows[0]!.id
 }
 
-async function seedTag(name: string, slug?: string): Promise<bigint> {
+async function seedTag(name: string, slug?: string): Promise<number> {
   const rows = await db
     .insert(tagTable)
     .values({ name, slug: slug ?? name.toLowerCase() })
@@ -75,7 +73,7 @@ async function seedTag(name: string, slug?: string): Promise<bigint> {
   return rows[0]!.id
 }
 
-async function linkTag(postId: bigint, tagId: bigint): Promise<void> {
+async function linkTag(postId: number, tagId: number): Promise<void> {
   await db.insert(postTag).values({ postId, tagId })
 }
 
@@ -87,15 +85,15 @@ describe('posts/services/admin-query — listPostsForAdmin', () => {
     expect(r.total).toBe(0)
   })
   it('returns posts + total', async () => {
-    await seedPost({ slug: 'a', publishedRevisionId: 1n })
-    await seedPost({ slug: 'b', publishedRevisionId: 1n })
+    await seedPost({ slug: 'a', publishedRevisionId: 1 })
+    await seedPost({ slug: 'b', publishedRevisionId: 1 })
     const { listPostsForAdmin } = await import('@/server/domains/posts/services/admin-query')
     const r = await listPostsForAdmin(db, { offset: 0, limit: 10 })
     expect(r.total).toBe(2)
     expect(r.posts).toHaveLength(2)
   })
   it('filters by lifecycle=draft', async () => {
-    await seedPost({ slug: 'pub', published: true, publishedRevisionId: 1n })
+    await seedPost({ slug: 'pub', published: true, publishedRevisionId: 1 })
     await seedPost({ slug: 'drf', published: false })
     const { listPostsForAdmin } = await import('@/server/domains/posts/services/admin-query')
     const r = await listPostsForAdmin(db, { lifecycle: 'draft' })
@@ -106,7 +104,7 @@ describe('posts/services/admin-query — listPostsForAdmin', () => {
 describe('posts/services/admin-query — getPostDetailForAdmin', () => {
   it('throws NOT_FOUND when the post does not exist', async () => {
     const { getPostDetailForAdmin } = await import('@/server/domains/posts/services/admin-query')
-    await expect(getPostDetailForAdmin(db, 9999n)).rejects.toMatchObject({ code: 'NOT_FOUND' })
+    await expect(getPostDetailForAdmin(db, 9999)).rejects.toMatchObject({ code: 'NOT_FOUND' })
   })
   it('returns the post with revision + tags', async () => {
     const revId = await seedContent({ type: 'post', revisionNo: 1, status: 'published' })
@@ -156,7 +154,7 @@ describe('content/lifecycle (post adapter) — loadDraftPreviewBySlug', () => {
 describe('posts/services/search-index — removePostIndex', () => {
   it('deletes the search index row without error', async () => {
     const { removePostIndex } = await import('@/server/domains/posts/services/search-index')
-    await expect(removePostIndex(db, 9999n)).resolves.toBeUndefined()
+    expect(() => removePostIndex(db, 9999)).not.toThrow()
   })
 })
 
@@ -224,7 +222,7 @@ describe('posts/services/mutate — updatePostMeta', () => {
   it('updates title and slug together', async () => {
     const { createPost, updatePostMeta } = await import('@/server/domains/posts/services/mutate')
     const created = await createPost(db, { title: 'Old Title' }, null)
-    const dto = await updatePostMeta(db, { id: BigInt(created.id), title: 'New Title' })
+    const dto = await updatePostMeta(db, { id: Number(created.id), title: 'New Title' })
     expect(dto.title).toBe('New Title')
     expect(dto.slug).toBe('new-title')
   })
@@ -238,14 +236,14 @@ describe('posts/services/mutate — deletePost / restorePost / unpublishPost', (
   it('soft-deletes a post', async () => {
     const { createPost, deletePost } = await import('@/server/domains/posts/services/mutate')
     const created = await createPost(db, { title: 'To Delete' }, null)
-    const r = await deletePost(db, BigInt(created.id))
+    const r = await deletePost(db, Number(created.id))
     expect(r.deleted).toBe(true)
   })
   it('restores a soft-deleted post', async () => {
     const { createPost, deletePost, restorePost } = await import('@/server/domains/posts/services/mutate')
     const created = await createPost(db, { title: 'To Restore' }, null)
-    await deletePost(db, BigInt(created.id))
-    const r = await restorePost(db, BigInt(created.id))
+    await deletePost(db, Number(created.id))
+    const r = await restorePost(db, Number(created.id))
     expect(r.restored).toBe(true)
   })
   it('unpublishes a published post', async () => {
@@ -253,9 +251,9 @@ describe('posts/services/mutate — deletePost / restorePost / unpublishPost', (
     const created = await createPost(db, { title: 'To Unpublish' }, null)
     await db
       .update(postMetaTable)
-      .set({ published: true, publishedRevisionId: 1n })
-      .where(eq(postMetaTable.id, BigInt(created.id)))
-    const dto = await unpublishPost(db, BigInt(created.id))
+      .set({ published: true, publishedRevisionId: 1 })
+      .where(eq(postMetaTable.id, Number(created.id)))
+    const dto = await unpublishPost(db, Number(created.id))
     expect(dto.published).toBe(false)
   })
 })
@@ -270,7 +268,7 @@ describe('content/lifecycle (post adapter) — saveBody draft / publish', () => 
       db,
       postLifecycleAdapter,
       {
-        entityId: BigInt(created.id),
+        entityId: Number(created.id),
         body: [
           {
             _type: 'block',
@@ -294,7 +292,7 @@ describe('content/lifecycle (post adapter) — saveBody draft / publish', () => 
       db,
       postLifecycleAdapter,
       {
-        entityId: BigInt(created.id),
+        entityId: Number(created.id),
         body: [
           {
             _type: 'block',
@@ -312,7 +310,7 @@ describe('content/lifecycle (post adapter) — saveBody draft / publish', () => 
   it('audits a force save against the latest revision of any status (not just drafts)', async () => {
     const { createPost } = await import('@/server/domains/posts/services/mutate')
     const created = await createPost(db, { title: 'Force Audit' }, null)
-    const pid = BigInt(created.id)
+    const pid = Number(created.id)
     // Only a published revision exists: the old posts track looked up the
     // latest *draft* here and skipped the audit; the merged pipeline reads
     // the latest revision regardless of status.
@@ -440,8 +438,8 @@ describe('posts/services/single — findPostBySlugForAdmin', () => {
 
 describe('posts/services/public-query — listPublicPosts', () => {
   it('applies limit + offset', async () => {
-    await seedPost({ slug: 'a', publishedRevisionId: 1n, firstPublishedAt: new Date('2026-01-01') })
-    await seedPost({ slug: 'b', publishedRevisionId: 1n, firstPublishedAt: new Date('2026-02-01') })
+    await seedPost({ slug: 'a', publishedRevisionId: 1, firstPublishedAt: new Date('2026-01-01') })
+    await seedPost({ slug: 'b', publishedRevisionId: 1, firstPublishedAt: new Date('2026-02-01') })
     const { listPublicPosts } = await import('@/server/domains/posts/services/public-query')
     const rows = await listPublicPosts(db, { limit: 1 })
     expect(rows).toHaveLength(1)
@@ -449,8 +447,8 @@ describe('posts/services/public-query — listPublicPosts', () => {
   it('filters by category', async () => {
     const techId = await seedCategory('tech')
     const lifeId = await seedCategory('life')
-    await seedPost({ slug: 'a', publishedRevisionId: 1n, categoryId: techId })
-    await seedPost({ slug: 'b', publishedRevisionId: 1n, categoryId: lifeId })
+    await seedPost({ slug: 'a', publishedRevisionId: 1, categoryId: techId })
+    await seedPost({ slug: 'b', publishedRevisionId: 1, categoryId: lifeId })
     const { listPublicPosts } = await import('@/server/domains/posts/services/public-query')
     const rows = await listPublicPosts(db, { categoryId: techId })
     expect(rows).toHaveLength(1)
@@ -459,8 +457,8 @@ describe('posts/services/public-query — listPublicPosts', () => {
 
 describe('posts/services/public-query — countPublicPosts', () => {
   it('counts rows matching filters', async () => {
-    await seedPost({ slug: 'a', publishedRevisionId: 1n })
-    await seedPost({ slug: 'b', publishedRevisionId: 1n })
+    await seedPost({ slug: 'a', publishedRevisionId: 1 })
+    await seedPost({ slug: 'b', publishedRevisionId: 1 })
     const { countPublicPosts } = await import('@/server/domains/posts/services/public-query')
     expect(await countPublicPosts(db)).toBe(2)
   })
@@ -468,21 +466,21 @@ describe('posts/services/public-query — countPublicPosts', () => {
 
 describe('posts/services/public-query — listPublicPostCards / Paginated / listClientPosts', () => {
   it('lists post cards (no tags)', async () => {
-    await seedPost({ slug: 'card', publishedRevisionId: 1n })
+    await seedPost({ slug: 'card', publishedRevisionId: 1 })
     const { listPublicPostCards } = await import('@/server/domains/posts/services/public-query')
     const cards = await listPublicPostCards(db)
     expect(cards[0]?.slug).toBe('card')
   })
   it('paginates post cards', async () => {
     for (let i = 0; i < 3; i++) {
-      await seedPost({ slug: `pg-${i}`, publishedRevisionId: 1n })
+      await seedPost({ slug: `pg-${i}`, publishedRevisionId: 1 })
     }
     const { listPublicPostCardsPaginated } = await import('@/server/domains/posts/services/public-query')
     const cards = await listPublicPostCardsPaginated(db, 1, 2)
     expect(cards).toHaveLength(2)
   })
   it('listClientPosts returns posts with empty body', async () => {
-    await seedPost({ slug: 'cl', publishedRevisionId: 1n })
+    await seedPost({ slug: 'cl', publishedRevisionId: 1 })
     const { listClientPosts } = await import('@/server/domains/posts/services/public-query')
     const posts = await listClientPosts(db)
     expect(posts[0]?.slug).toBe('cl')
@@ -495,7 +493,7 @@ describe('posts/services/public-query — getClientPostsWithMetadata', () => {
     expect(await getClientPostsWithMetadata(db, [], { likes: true, views: true, comments: true })).toEqual([])
   })
   it('joins likes/views/comments metadata per post', async () => {
-    const pid = await seedPost({ slug: 'meta', publishedRevisionId: 1n })
+    const pid = await seedPost({ slug: 'meta', publishedRevisionId: 1 })
     const { getClientPostsWithMetadata } = await import('@/server/domains/posts/services/public-query')
     const out = await getClientPostsWithMetadata(db, [{ id: String(pid) }], {
       likes: true,
@@ -525,9 +523,9 @@ describe('posts/services/featured — selectFeaturePosts', () => {
     }
     BLOG_SETTINGS_SNAPSHOT_SLOT.write(tweaked)
     try {
-      await seedPost({ slug: 'pin1', publishedRevisionId: 1n, pinnedAt: new Date('2026-01-01'), cover: '/c.png' })
-      await seedPost({ slug: 'pin2', publishedRevisionId: 1n, pinnedAt: new Date('2026-01-02'), cover: '/c.png' })
-      await seedPost({ slug: 'pin3', publishedRevisionId: 1n, pinnedAt: new Date('2026-01-03'), cover: '/c.png' })
+      await seedPost({ slug: 'pin1', publishedRevisionId: 1, pinnedAt: new Date('2026-01-01'), cover: '/c.png' })
+      await seedPost({ slug: 'pin2', publishedRevisionId: 1, pinnedAt: new Date('2026-01-02'), cover: '/c.png' })
+      await seedPost({ slug: 'pin3', publishedRevisionId: 1, pinnedAt: new Date('2026-01-03'), cover: '/c.png' })
       const { selectFeaturePosts } = await import('@/server/domains/posts/services/featured')
       const out = await selectFeaturePosts(db, 'seed')
       expect(out).toHaveLength(3)
@@ -547,11 +545,11 @@ describe('posts/services/featured — selectFeaturePosts', () => {
     }
     BLOG_SETTINGS_SNAPSHOT_SLOT.write(tweaked)
     try {
-      await seedPost({ slug: 'pin1', publishedRevisionId: 1n, pinnedAt: new Date('2026-01-01'), cover: '/c.png' })
+      await seedPost({ slug: 'pin1', publishedRevisionId: 1, pinnedAt: new Date('2026-01-01'), cover: '/c.png' })
       for (let i = 0; i < 20; i++) {
         await seedPost({
           slug: `cov-${i}`,
-          publishedRevisionId: 1n,
+          publishedRevisionId: 1,
           cover: '/c.png',
           firstPublishedAt: new Date('2025-01-01'),
         })
@@ -572,7 +570,7 @@ describe('posts/services/featured — selectSidebarPosts', () => {
     expect(await selectSidebarPosts(db, 0)).toEqual([])
   })
   it('returns posts when published + revision exists', async () => {
-    await seedPost({ slug: 'side', publishedRevisionId: 1n, publishedAt: new Date('2020-01-01') })
+    await seedPost({ slug: 'side', publishedRevisionId: 1, publishedAt: new Date('2020-01-01') })
     const { selectSidebarPosts } = await import('@/server/domains/posts/services/featured')
     const rows = await selectSidebarPosts(db, 5)
     expect(rows[0]?.slug).toBe('side')
@@ -581,7 +579,7 @@ describe('posts/services/featured — selectSidebarPosts', () => {
 
 describe('posts/services/public-query — listSitemapPosts', () => {
   it('returns rows with slug + dates for published posts', async () => {
-    await seedPost({ slug: 'sm', publishedRevisionId: 1n })
+    await seedPost({ slug: 'sm', publishedRevisionId: 1 })
     const { listSitemapPosts } = await import('@/server/domains/posts/services/public-query')
     const rows = await listSitemapPosts(db)
     expect(rows[0]?.slug).toBe('sm')
@@ -594,7 +592,7 @@ describe('posts/services/public-query — getPostsBySlugs', () => {
     expect(await getPostsBySlugs(db, [])).toEqual([])
   })
   it('returns posts by slug', async () => {
-    await seedPost({ slug: 'slug-a', publishedRevisionId: 1n, published: true })
+    await seedPost({ slug: 'slug-a', publishedRevisionId: 1, published: true })
     const { getPostsBySlugs } = await import('@/server/domains/posts/services/public-query')
     const posts = await getPostsBySlugs(db, ['slug-a'])
     expect(posts).toHaveLength(1)
@@ -603,7 +601,7 @@ describe('posts/services/public-query — getPostsBySlugs', () => {
 
 describe('posts/services/public-query — listAllPosts', () => {
   it('returns posts (no body projection)', async () => {
-    await seedPost({ slug: 'all', publishedRevisionId: 1n })
+    await seedPost({ slug: 'all', publishedRevisionId: 1 })
     const { listAllPosts } = await import('@/server/domains/posts/services/public-query')
     const posts = await listAllPosts(db)
     expect(posts[0]?.slug).toBe('all')
@@ -613,14 +611,14 @@ describe('posts/services/public-query — listAllPosts', () => {
 describe('posts/services/taxonomy — listPostsByTaxonomy', () => {
   it('lists posts by category', async () => {
     const techId = await seedCategory('tech')
-    await seedPost({ slug: 'c', publishedRevisionId: 1n, categoryId: techId })
+    await seedPost({ slug: 'c', publishedRevisionId: 1, categoryId: techId })
     const { listPostsByTaxonomy } = await import('@/server/domains/posts/services/taxonomy')
     const posts = await listPostsByTaxonomy(db, 'category', 'tech')
     expect(posts[0]?.slug).toBe('c')
   })
   it('lists posts by tag', async () => {
     const tid = await seedTag('React')
-    const pid = await seedPost({ slug: 't', publishedRevisionId: 1n })
+    const pid = await seedPost({ slug: 't', publishedRevisionId: 1 })
     await linkTag(pid, tid)
     const { listPostsByTaxonomy } = await import('@/server/domains/posts/services/taxonomy')
     const posts = await listPostsByTaxonomy(db, 'tag', 'React')
@@ -632,23 +630,23 @@ describe('posts/services/taxonomy — listPostTitlesByCategoryId / listPostTitle
   it('returns only titles, including hidden and scheduled posts', async () => {
     const techId = await seedCategory('tech')
     const lifeId = await seedCategory('life')
-    await seedPost({ slug: 'vis', title: 'Visible', publishedRevisionId: 1n, categoryId: techId })
-    await seedPost({ slug: 'hid', title: 'Hidden', publishedRevisionId: 1n, categoryId: techId, visible: false })
+    await seedPost({ slug: 'vis', title: 'Visible', publishedRevisionId: 1, categoryId: techId })
+    await seedPost({ slug: 'hid', title: 'Hidden', publishedRevisionId: 1, categoryId: techId, visible: false })
     await seedPost({
       slug: 'sch',
       title: 'Scheduled',
-      publishedRevisionId: 1n,
+      publishedRevisionId: 1,
       categoryId: techId,
       publishedAt: new Date('2099-01-01'),
     })
-    await seedPost({ slug: 'other', title: 'Other', publishedRevisionId: 1n, categoryId: lifeId })
+    await seedPost({ slug: 'other', title: 'Other', publishedRevisionId: 1, categoryId: lifeId })
     const { listPostTitlesByCategoryId } = await import('@/server/domains/posts/services/taxonomy')
     const titles = await listPostTitlesByCategoryId(db, techId)
     expect(titles.sort()).toEqual(['Hidden', 'Scheduled', 'Visible'])
   })
   it('excludes drafts (no published revision) and matches tags by name', async () => {
     const tid = await seedTag('React')
-    const livePid = await seedPost({ slug: 'live', title: 'Live', publishedRevisionId: 1n })
+    const livePid = await seedPost({ slug: 'live', title: 'Live', publishedRevisionId: 1 })
     const draftPid = await seedPost({ slug: 'draft', title: 'Draft', published: false, publishedRevisionId: null })
     await linkTag(livePid, tid)
     await linkTag(draftPid, tid)

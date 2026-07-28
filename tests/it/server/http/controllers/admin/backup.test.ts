@@ -24,6 +24,7 @@ vi.mock('@/server/domains/backup/services/restore', () => ({
 
 vi.mock('@/server/domains/backup/restore-orchestrator', () => ({
   performSafeRestore: vi.fn(),
+  registerRestoreComplete: vi.fn(),
 }))
 
 vi.mock('@/server/infra/storage/registry', () => ({
@@ -36,21 +37,21 @@ vi.mock('@/server/infra/lifecycle', () => ({
   setServerPhase: vi.fn(),
   restartServer: vi.fn(),
   getRestoreState: vi.fn(() => ({ phase: 'idle' })),
+  setRestartDb: vi.fn(),
+  setRestartRefreshSettings: vi.fn(),
 }))
 
-const shared = await import('@/server/domains/backup/services/shared')
 const backupService = await import('@/server/domains/backup/services/backup')
 const orchestrator = await import('@/server/domains/backup/restore-orchestrator')
 const registry = await import('@/server/infra/storage/registry')
 const { adminBackupRouter } = await import('@/server/http/controllers/admin/backup.controller')
 
 describe('adminBackupRouter.status', () => {
-  it('returns the active primary driver and pgToolsAvailable', async () => {
+  it('returns the active primary driver', async () => {
     vi.mocked(registry.activeBackend).mockReturnValue({ backend: {} as never, driver: 's3' })
-    vi.mocked(shared.checkPgToolsAvailable).mockResolvedValueOnce(true)
     const ctx = makeAuthedCtx()
     const res = await call(adminBackupRouter.status, undefined, { context: ctx })
-    expect(res).toEqual({ primaryDriver: 's3', pgToolsAvailable: true })
+    expect(res).toEqual({ primaryDriver: 's3' })
   })
 })
 
@@ -110,7 +111,7 @@ describe('adminBackupRouter.restore', () => {
     const res = await call(adminBackupRouter.restore, { key: '2026-01-01T00-00-00' }, { context: ctx })
     expect(res).toEqual({ accepted: true })
     expect(orchestrator.performSafeRestore).toHaveBeenCalledWith(
-      { pool: ctx.pool, log: expect.any(Object) },
+      { closeCurrentDatabase: expect.any(Function), log: expect.any(Object) },
       expect.any(Function),
     )
   })

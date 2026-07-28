@@ -4,18 +4,13 @@
     "port": 4321,
     "loggingLevel": "info"
   },
-  "database": {
-    "url": "postgres://user:password@localhost:5432/kobato",
-    "poolMax": 20,
-    "statementTimeoutMs": 30000,
-    "restoreRole": ""
-  },
   "security": {
     "sessionSecret": "",
     "encryptionKey": ""
   },
   "storage": {
     "data": "./data",
-    "defaultFont": ""
+    "defaultFont": "",
+    "database": ""
   }
 }

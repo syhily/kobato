@@ -1,40 +1,39 @@
-import { sql } from 'drizzle-orm'
-import { bigint, bigserial, boolean, index, jsonb, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core'
+import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
-export const comment = pgTable(
+export const comment = sqliteTable(
   'comment',
   {
-    id: bigserial('id', { mode: 'bigint' }).primaryKey().notNull(),
-    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
+    id: integer('id').primaryKey({ autoIncrement: true }).notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' })
       .notNull()
       .$defaultFn(() => new Date()),
-    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+    updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
       .notNull()
       .$defaultFn(() => new Date()),
-    deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+    deletedAt: integer('deleted_at', { mode: 'timestamp_ms' }),
     content: text('content').default(''),
-    body: jsonb('body')
+    body: text('body', { mode: 'json' })
       .$type<CommentBody>()
       .notNull()
-      .default(sql`'[]'::jsonb`),
-    type: varchar('type', { length: 16 }).$type<'post' | 'page'>().notNull(),
-    ownerId: bigint('owner_id', { mode: 'bigint' }).notNull(),
-    userId: bigint('user_id', { mode: 'bigint' }).notNull(),
-    isVerified: boolean('is_verified').default(false),
+      .$defaultFn(() => []),
+    type: text('type').$type<'post' | 'page'>().notNull(),
+    ownerId: integer('owner_id').notNull(),
+    userId: integer('user_id').notNull(),
+    isVerified: integer('is_verified', { mode: 'boolean' }).default(false),
     ua: text('ua'),
     ip: text('ip'),
-    rid: bigint('rid', { mode: 'number' }).notNull().default(0),
-    isCollapsed: boolean('is_collapsed').default(false),
-    isPending: boolean('is_pending').default(false),
-    isPinned: boolean('is_pinned').default(false),
-    contentHash: varchar('content_hash', { length: 64 }),
-    voteUp: bigint('vote_up', { mode: 'number' }).notNull().default(0),
-    voteDown: bigint('vote_down', { mode: 'number' }).notNull().default(0),
-    rootId: bigint('root_id', { mode: 'bigint' }),
-    deleteRequestedAt: timestamp('delete_requested_at', { withTimezone: true, mode: 'date' }),
-    deleteRequestedBy: bigint('delete_requested_by', { mode: 'bigint' }),
+    rid: integer('rid').notNull().default(0),
+    isCollapsed: integer('is_collapsed', { mode: 'boolean' }).default(false),
+    isPending: integer('is_pending', { mode: 'boolean' }).default(false),
+    isPinned: integer('is_pinned', { mode: 'boolean' }).default(false),
+    contentHash: text('content_hash'),
+    voteUp: integer('vote_up').notNull().default(0),
+    voteDown: integer('vote_down').notNull().default(0),
+    rootId: integer('root_id'),
+    deleteRequestedAt: integer('delete_requested_at', { mode: 'timestamp_ms' }),
+    deleteRequestedBy: integer('delete_requested_by'),
   },
   (table) => [
     index('idx_comment_root_id').on(table.rootId),

@@ -1,14 +1,13 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
-import { spawn } from 'node:child_process'
-import { PassThrough, Transform } from 'node:stream'
-import { pipeline } from 'node:stream/promises'
+import { sql } from 'drizzle-orm'
+import { createReadStream } from 'node:fs'
+import { unlink } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
 import { createGzip } from 'node:zlib'
 
+import type { Database } from '@/server/infra/db/database'
 import type { BackupFileDto } from '@/shared/types/backup'
 
-import { ensurePgTools, getPgConnectionOptions } from '@/server/domains/backup/services/shared'
-import { BACKUP_HEADER_MARKER } from '@/server/domains/backup/services/validate'
 import {
   deleteBackupRow,
   findBackupByTimestamp,
@@ -30,11 +29,11 @@ export function isValidBackupKey(key: string): boolean {
 }
 
 export function buildBackupS3Key(timestamp: string): string {
-  return `backup/backup-${timestamp}.sql.gz`
+  return `backup/backup-${timestamp}.db.gz`
 }
 
 function parseTimestampFromKey(key: string): string | null {
-  const match = key.match(/^backup\/backup-(.+)\.sql\.gz$/)
+  const match = key.match(/^backup\/backup-(.+)\.db\.gz$/)
   if (match === null) {
     return null
   }
@@ -42,13 +41,13 @@ function parseTimestampFromKey(key: string): string | null {
 }
 
 /**
- * Self-healing reconcile: scan both backends for `backup/*.sql.gz` objects
+ * Self-healing reconcile: scan both backends for `backup/*.db.gz` objects
  * that have no DB row and insert them. Picks up pre-existing S3 backups on
  * first run after upgrade, plus any files a migration left behind. Cheap
  * (the `backup/` prefix holds a handful of objects) and idempotent via the
  * `storage_path` unique constraint.
  */
-async function reconcileBackups(db: NodePgDatabase): Promise<void> {
+async function reconcileBackups(db: Database): Promise<void> {
   const known = new Set(await listBackupStoragePaths(db))
   const candidates: { key: string; size: number; driver: 's3' | 'local' }[] = []
   // Scan every registered backend (s3 first, then local — a key present in
@@ -83,80 +82,36 @@ async function reconcileBackups(db: NodePgDatabase): Promise<void> {
 }
 
 export async function createBackup(
-  db: NodePgDatabase,
-  createdBy: bigint | null = null,
+  db: Database,
+  createdBy: number | null = null,
 ): Promise<{ fileName: string; size: number; timestamp: string }> {
-  await ensurePgTools()
-  const { args: connArgs, env } = getPgConnectionOptions()
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
   const key = buildBackupS3Key(timestamp)
+  const stagingPath = path.join(tmpdir(), `kobato-backup-${timestamp}.db`)
 
   log.info('Starting backup', { key })
 
-  const pgDump = spawn(
-    'pg_dump',
-    ['--no-owner', '--no-acl', '--clean', '--if-exists', '--exclude-table-data=audit_log', ...connArgs],
-    { env },
-  )
-
-  const gzip = createGzip()
-
-  // Prepend the project-specific header so restore can verify the file origin.
-  const header = Buffer.from(BACKUP_HEADER_MARKER + '\n')
-  let headerSent = false
-  const headerTransform = new Transform({
-    transform(chunk: Buffer, _encoding, callback) {
-      if (!headerSent) {
-        headerSent = true
-        callback(null, Buffer.concat([header, chunk]))
-      } else {
-        callback(null, chunk)
-      }
-    },
-  })
-
-  let uploadedBytes = 0
-  const counter = new Transform({
-    transform(chunk: Buffer, _encoding, callback) {
-      uploadedBytes += chunk.length
-      callback(null, chunk)
-    },
-  })
-
-  // Decouple the upload stream from the pipeline destination so the storage
-  // backend is the sole consumer of the readable side (mirrors the original
-  // S3 pipeline rationale).
-  const uploadStream = new PassThrough()
-
-  const streamDone = pipeline(pgDump.stdout, headerTransform, gzip, counter, uploadStream)
-
-  const stderrChunks: Buffer[] = []
-  pgDump.stderr.on('data', (chunk: Buffer) => {
-    stderrChunks.push(chunk)
-  })
-
-  const pgDumpDone = new Promise<void>((resolve, reject) => {
-    pgDump.on('error', reject)
-    pgDump.on('close', (code) => {
-      if (code !== 0) {
-        const stderr = Buffer.concat(stderrChunks).toString('utf-8').trim()
-        log.error('pg_dump failed', { code, key, stderr: stderr || undefined })
-        reject(new Error(`pg_dump 退出码 ${code}${stderr ? `: ${stderr}` : ''}`))
-      } else {
-        resolve()
-      }
-    })
-  })
+  // `VACUUM INTO` produces a consistent, fully-checkpointed copy of the
+  // live database in one step — no WAL sidecars to chase, and (as a
+  // defragmented rewrite) a smaller file than the live one.
+  db.run(sql.raw(`VACUUM INTO '${stagingPath.replaceAll("'", "''")}'`))
 
   const { backend, driver } = activeBackend()
-  const uploadDone = backend.putStream({
-    key,
-    body: uploadStream,
-    contentType: 'application/gzip',
-    visibility: 'private',
-  })
-
-  await Promise.all([streamDone, pgDumpDone, uploadDone])
+  let uploadedBytes = 0
+  try {
+    const gzip = createGzip()
+    gzip.on('data', (chunk: Buffer) => {
+      uploadedBytes += chunk.length
+    })
+    await backend.putStream({
+      key,
+      body: createReadStream(stagingPath).pipe(gzip),
+      contentType: 'application/gzip',
+      visibility: 'private',
+    })
+  } finally {
+    await unlink(stagingPath).catch(() => undefined)
+  }
 
   await insertBackup(db, {
     timestamp,
@@ -171,7 +126,7 @@ export async function createBackup(
 }
 
 export async function listBackups(
-  db: NodePgDatabase,
+  db: Database,
   limit?: number,
   continuationToken?: string,
 ): Promise<{ files: BackupFileDto[]; nextContinuationToken?: string }> {
@@ -197,7 +152,7 @@ function parseOffset(token: string | undefined): number | null {
   return Number.isFinite(n) && n >= 0 ? n : null
 }
 
-export async function getBackupBuffer(db: NodePgDatabase, timestamp: string): Promise<Buffer> {
+export async function getBackupBuffer(db: Database, timestamp: string): Promise<Buffer> {
   const row = await findBackupByTimestamp(db, timestamp)
   if (row === null) {
     throw new Error(`Backup row not found for timestamp ${timestamp}`)
@@ -205,7 +160,7 @@ export async function getBackupBuffer(db: NodePgDatabase, timestamp: string): Pr
   return backendFor(row.storageDriver).get(row.storagePath)
 }
 
-export async function deleteBackup(db: NodePgDatabase, timestamp: string): Promise<void> {
+export async function deleteBackup(db: Database, timestamp: string): Promise<void> {
   const row = await findBackupByTimestamp(db, timestamp)
   if (row === null) {
     log.warn('Backup delete: row not found; nothing to delete', { timestamp })
@@ -230,7 +185,7 @@ export async function deleteBackup(db: NodePgDatabase, timestamp: string): Promi
   log.info('Backup deleted', { timestamp, driver: row.storageDriver })
 }
 
-export async function cleanupOldBackups(db: NodePgDatabase, days: number): Promise<void> {
+export async function cleanupOldBackups(db: Database, days: number): Promise<void> {
   const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
   const rows = await findOldBackupRows(db, cutoff)
   if (rows.length === 0) {

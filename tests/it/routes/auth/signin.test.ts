@@ -9,10 +9,10 @@ const state = vi.hoisted(() => {
     passkeyEnabled: false,
     mailReady: false,
     otpCode: '123456',
-    otpVerifyResult: null as { userId: bigint } | null,
+    otpVerifyResult: null as { userId: number } | null,
     findUserByEmailResult: null as Record<string, unknown> | null,
     verifyUserPasswordResult: null as {
-      id: bigint
+      id: number
       name: string
       email: string
       role: string
@@ -79,7 +79,7 @@ vi.mock('@/server/infra/db/operations/user', () => ({
   verifyUserPassword: vi.fn(async () => state.verifyUserPasswordResult),
   findUserByEmail: vi.fn(async () => state.findUserByEmailResult),
   findUserById: vi.fn(async () => ({
-    id: BigInt(1),
+    id: Number(1),
     name: 'admin',
     email: 'admin@example.com',
     role: 'admin',
@@ -302,7 +302,7 @@ describe('routes/signin — OTP', () => {
   validLogin.set('password', '0123456789')
 
   const dbUser = {
-    id: BigInt(1),
+    id: Number(1),
     name: 'admin',
     email: 'admin@example.com',
     role: 'admin' as const,
@@ -372,7 +372,7 @@ describe('routes/signin — OTP', () => {
       expiresAt: Date.now() + 5 * 60 * 1000,
       sentAt: Date.now(),
     })
-    state.otpVerifyResult = { userId: BigInt(1) }
+    state.otpVerifyResult = { userId: Number(1) }
 
     const otpBody = new FormData()
     otpBody.set('otp_code', '123456')
@@ -382,7 +382,7 @@ describe('routes/signin — OTP', () => {
     expect(vi.mocked(establishLoginSession)).toHaveBeenCalledWith(
       expect.anything(),
       expect.anything(),
-      expect.objectContaining({ id: BigInt(1) }),
+      expect.objectContaining({ id: Number(1) }),
       expect.anything(),
       expect.anything(),
       expect.objectContaining({ authMethod: 'otp' }),
@@ -482,7 +482,7 @@ describe('routes/signin — OTP', () => {
     const { tryOtpVerifyRateLimit } = await import('@/server/infra/rate-limit')
     vi.mocked(tryOtpVerifyRateLimit).mockResolvedValueOnce({ count: 6, exceeded: true })
 
-    state.otpVerifyResult = { userId: BigInt(1) }
+    state.otpVerifyResult = { userId: Number(1) }
     const otpBody = new FormData()
     otpBody.set('otp_code', '123456')
     await action(postFormData(otpBody, '?action=verifyotp'))
@@ -578,7 +578,7 @@ describe('routes/signin — OTP', () => {
       expiresAt: Date.now() + 5 * 60 * 1000,
       sentAt: Date.now(),
     })
-    state.otpVerifyResult = { userId: BigInt(1) }
+    state.otpVerifyResult = { userId: Number(1) }
 
     const { findUserById } = await import('@/server/infra/db/operations/user')
     vi.mocked(findUserById).mockResolvedValueOnce(null)
@@ -604,7 +604,7 @@ describe('routes/signin — OTP', () => {
       sentAt: Date.now(),
     })
     state.session.set('otpFailCount', 2)
-    state.otpVerifyResult = { userId: BigInt(1) }
+    state.otpVerifyResult = { userId: Number(1) }
 
     const otpBody = new FormData()
     otpBody.set('otp_code', '123456')
@@ -723,7 +723,7 @@ describe('routes/signin — identify', () => {
 
   it('returns method=password for a regular user', async () => {
     state.findUserByEmailResult = {
-      id: BigInt(1),
+      id: Number(1),
       email: 'admin@example.com',
       role: 'admin',
       deletedAt: null,
@@ -737,7 +737,7 @@ describe('routes/signin — identify', () => {
   it('returns method=passkey for a passkey-method user when passkey is enabled', async () => {
     state.passkeyEnabled = true
     state.findUserByEmailResult = {
-      id: BigInt(1),
+      id: Number(1),
       email: 'admin@example.com',
       role: 'admin',
       deletedAt: null,
@@ -751,7 +751,7 @@ describe('routes/signin — identify', () => {
   it('degrades a passkey-method user to password when the global switch is off', async () => {
     state.passkeyEnabled = false
     state.findUserByEmailResult = {
-      id: BigInt(1),
+      id: Number(1),
       email: 'admin@example.com',
       role: 'admin',
       deletedAt: null,
@@ -765,7 +765,7 @@ describe('routes/signin — identify', () => {
   it('sends a magic link for a magic-link user when mail is ready', async () => {
     state.mailReady = true
     state.findUserByEmailResult = {
-      id: BigInt(1),
+      id: Number(1),
       name: 'admin',
       email: 'admin@example.com',
       role: 'admin',
@@ -778,7 +778,7 @@ describe('routes/signin — identify', () => {
 
     const { issueSignInLinkToken } = await import('@/server/domains/auth/verification-tokens')
     const { sendSignInLink } = await import('@/server/infra/email/sender')
-    expect(vi.mocked(issueSignInLinkToken)).toHaveBeenCalledWith(expect.anything(), BigInt(1))
+    expect(vi.mocked(issueSignInLinkToken)).toHaveBeenCalledWith(expect.anything(), Number(1))
     expect(vi.mocked(sendSignInLink)).toHaveBeenCalledWith(
       expect.objectContaining({ email: 'admin@example.com' }),
       expect.stringContaining('action=magiclink'),
@@ -788,7 +788,7 @@ describe('routes/signin — identify', () => {
   it('degrades a magic-link user to password when mail is not ready', async () => {
     state.mailReady = false
     state.findUserByEmailResult = {
-      id: BigInt(1),
+      id: Number(1),
       email: 'admin@example.com',
       role: 'admin',
       deletedAt: null,
@@ -824,7 +824,7 @@ describe('routes/signin — magic-link consume', () => {
 
   it('establishes a session for a valid token', async () => {
     const { consumeToken } = await import('@/server/domains/auth/verification-tokens')
-    vi.mocked(consumeToken).mockResolvedValueOnce({ userId: BigInt(1) })
+    vi.mocked(consumeToken).mockResolvedValueOnce({ userId: Number(1) })
 
     const fd = new FormData()
     fd.set('magic_token', 'valid-token')
@@ -834,7 +834,7 @@ describe('routes/signin — magic-link consume', () => {
     expect(vi.mocked(establishLoginSession)).toHaveBeenCalledWith(
       expect.anything(),
       expect.anything(),
-      expect.objectContaining({ id: BigInt(1) }),
+      expect.objectContaining({ id: Number(1) }),
       expect.anything(),
       expect.anything(),
       expect.objectContaining({ authMethod: 'magic-link' }),

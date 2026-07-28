@@ -15,12 +15,12 @@ import { BackupView } from '@/ui/admin/settings/BackupView'
 //   1. `source = backup ?? FALLBACK_BACKUP` — the `backup={null}` branch
 //      that falls back to the disabled-schedule default.
 //   2. `canConfigure` resolving `true` on the render path (status query
-//      resolved with S3 + pg tools available). This is computed every
+//      resolved with S3 as the primary driver). This is computed every
 //      render from `statusData`, so it threads through to the schedule
 //      form + file list props WITHOUT depending on the file-list effect.
 //
-// The warning banners (`缺少 postgresql-client`, `请先前往存储配置启用 S3
-// 存储`) and the populated file list are gated behind `!isInitialLoading`,
+// The info banner (`未启用 S3 存储`) and the populated file list are
+// gated behind `!isInitialLoading`,
 // where `isInitialLoading = backupFiles === undefined` and `backupFiles`
 // is only populated inside a `useEffect` — those branches do not fire
 // under the SSR renderers and remain covered by the parent file's
@@ -30,7 +30,7 @@ import { BackupView } from '@/ui/admin/settings/BackupView'
 
 const queryMocks = vi.hoisted(() => ({
   query: {
-    data: undefined as { primaryDriver: 's3' | 'local'; pgToolsAvailable: boolean } | undefined,
+    data: undefined as { primaryDriver: 's3' | 'local' } | undefined,
     isPending: true,
     error: null as unknown,
   },
@@ -113,18 +113,15 @@ describe('snapshot: BackupView branches', () => {
     expect(html).toContain('未选择文件')
   })
 
-  it('threads canConfigure=true to the schedule form when the status query resolves with pg tools available', () => {
-    // `canConfigure = pgToolsAvailable` is computed every render from
-    // `statusData` (S3 being off no longer disables backups — they fall
-    // back to local storage, so `primaryDriver` only drives the info
-    // banner). With the status query resolved and pg tools present, the
-    // schedule form receives `canConfigure={true}` and its inputs are NOT
-    // disabled. (The info/warning banners stay hidden because
-    // `isInitialLoading` is still true on SSR — the file-list effect
-    // never fires — so this case isolates the canConfigure render branch
-    // from the effect-gated banner branches.)
+  it('threads canConfigure=true to the schedule form when the status query resolves', () => {
+    // `canConfigure` is always true now (file-based backups need no
+    // external tooling); `primaryDriver` only drives the info banner.
+    // (The info/warning banners stay hidden because `isInitialLoading` is
+    // still true on SSR — the file-list effect never fires — so this case
+    // isolates the canConfigure render branch from the effect-gated
+    // banner branches.)
     queryMocks.query = {
-      data: { primaryDriver: 's3', pgToolsAvailable: true },
+      data: { primaryDriver: 's3' },
       isPending: false,
       error: null,
     }
@@ -141,13 +138,10 @@ describe('snapshot: BackupView branches', () => {
     expect(html).toContain('保留策略')
     // The schedule inputs carry no `disabled` attribute (the
     // status-loading case in the parent suite leaves them disabled).
-    // The manual-restore file input is gated on pgToolsAvailable too,
-    // so with pg tools present its button is enabled.
     expect(html).toContain('选择文件')
     expect(html).toContain('上传并还原')
-    // No warning banner leaks while the file list is still loading
+    // No info banner leaks while the file list is still loading
     // (effect-gated branch, asserted absent here).
-    expect(html).not.toContain('缺少 postgresql-client')
     expect(html).not.toContain('未启用 S3 存储')
   })
 
@@ -165,38 +159,13 @@ describe('snapshot: BackupView branches', () => {
 
     // Section heading + description.
     expect(html).toContain('手动还原')
-    expect(html).toContain('上传 .sql 或 .gz 备份文件进行还原')
+    expect(html).toContain('上传 .db 或 .db.gz 备份文件进行还原')
     // Default-branch button label + hint copy.
     expect(html).toContain('选择文件')
     expect(html).toContain('未选择文件')
     // The upload button is present but disabled until a file is chosen
-    // (`!selectedFile`) AND pg tools are available.
+    // (`!selectedFile`).
     expect(html).toContain('上传并还原')
     expect(html).toContain('disabled')
-  })
-
-  it('disables the manual-restore inputs when pg tools are missing (resolved status)', () => {
-    // `pgToolsAvailable=false` from the resolved status drives the
-    // `disabled={!pgToolsAvailable || …}` render branch on the file
-    // input + upload button. This is a render-path branch (computed off
-    // statusData) distinct from the loading-state default.
-    queryMocks.query = {
-      data: { primaryDriver: 's3', pgToolsAvailable: false },
-      isPending: false,
-      error: null,
-    }
-
-    const html = stableHtml(
-      renderInRouter(<BackupView backup={disabledBackup} timeZone="Asia/Shanghai" />, '/admin/settings'),
-    )
-
-    expect(html).toContain('手动还原')
-    expect(html).toContain('选择文件')
-    expect(html).toContain('上传并还原')
-    // Inputs are disabled because pgToolsAvailable is false.
-    expect(html).toContain('disabled')
-    // The missing-pg-tools warning banner stays hidden because the
-    // file-list effect has not resolved `backupFiles` (effect-gated).
-    expect(html).not.toContain('当前运行环境缺少 postgresql-client')
   })
 })

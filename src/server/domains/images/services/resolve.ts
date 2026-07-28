@@ -8,7 +8,7 @@
 // origin-relative `/storage/…` and `/images/…` srcs still resolve — and
 // never fails the render.
 
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Database } from '@/server/infra/db/database'
 
 import { readManyMeta, resolveSrcToStoragePath, type CachedImageMeta } from '@/server/domains/images/services/cache'
 import { getLogger } from '@/server/infra/logger'
@@ -30,7 +30,7 @@ export interface ResolvedImageRef {
  * several URLs (e.g. transform variants `x.jpg!w400`) share one storage
  * path — the path is read once either way.
  */
-export async function resolveImageRefs(db: NodePgDatabase, urls: string[]): Promise<Map<string, ResolvedImageRef>> {
+export async function resolveImageRefs(db: Database, urls: string[]): Promise<Map<string, ResolvedImageRef>> {
   const out = new Map<string, ResolvedImageRef>()
   if (urls.length === 0) {
     return out
@@ -76,7 +76,7 @@ export async function resolveImageRefs(db: NodePgDatabase, urls: string[]): Prom
 }
 
 /** Single-URL entry over the batch pipeline. */
-export async function resolveImageRef(db: NodePgDatabase, src: string): Promise<ResolvedImageRef | null> {
+export async function resolveImageRef(db: Database, src: string): Promise<ResolvedImageRef | null> {
   if (src === '') {
     return null
   }

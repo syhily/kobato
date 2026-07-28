@@ -1,5 +1,3 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
 import type { Mock } from 'vitest'
 
 import bcrypt from 'bcryptjs'
@@ -7,14 +5,15 @@ import { and, eq } from 'drizzle-orm'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { BlogSession } from '@/server/domains/auth/session-storage'
+import type { Database } from '@/server/infra/db/database'
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { clearAllTables } from '#/_helpers/integration-db'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { makeRequestContext } from '#/_helpers/request-context'
 import { makeSession } from '#/_helpers/session'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { user, verification } from '@/server/infra/db/schema/user'
 import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 
@@ -70,12 +69,11 @@ vi.mock('@/server/domains/audit/services/record', () => ({
 
 // ── Real infrastructure ─────────────────────────────────────────────────────
 
-const poolDb = createDbPool()
-const db: NodePgDatabase = poolDb.db
-const pool: Pool = poolDb.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 // ── Settings bundle with a ready mail transport ─────────────────────────────
@@ -128,7 +126,6 @@ beforeEach(async () => {
     makeRequestContext({
       session: testSession,
       db,
-      pool,
       request: new Request('http://localhost/admin/signin'),
       markSessionDirty,
     }),
@@ -175,7 +172,7 @@ function setContext(action: string | null, redirectTo = '/admin', clientAddress 
   params.set('redirect_to', redirectTo)
   const url = new URL(`http://localhost/admin/signin?${params.toString()}`)
   mockHandles.getRequestContext.mockReturnValue(
-    makeRequestContext({ session: testSession, clientAddress, db, pool, request: new Request(url), markSessionDirty }),
+    makeRequestContext({ session: testSession, clientAddress, db, request: new Request(url), markSessionDirty }),
   )
   return url
 }
@@ -210,7 +207,7 @@ async function callAction(
 async function callLoader(search: string): Promise<Response & { data?: any }> {
   const url = new URL(`http://localhost/admin/signin${search}`)
   mockHandles.getRequestContext.mockReturnValue(
-    makeRequestContext({ session: testSession, db, pool, request: new Request(url), markSessionDirty }),
+    makeRequestContext({ session: testSession, db, request: new Request(url), markSessionDirty }),
   )
   try {
     return (await loader({
@@ -234,7 +231,7 @@ function emailFormData(email = 'admin@example.com') {
   return fd
 }
 
-async function getLinkRow(userId: bigint) {
+async function getLinkRow(userId: number) {
   const rows = await db
     .select()
     .from(verification)

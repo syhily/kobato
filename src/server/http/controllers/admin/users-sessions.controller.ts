@@ -31,7 +31,7 @@ const revokeAllSessions = adminProc
   .input(userIdInput)
   .output(successOutput)
   .handler(async ({ input, context }) => {
-    let targetId: bigint
+    let targetId: number
     try {
       targetId = idFromString(input.userId)
     } catch {

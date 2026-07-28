@@ -1,7 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { and, desc, eq, sql } from 'drizzle-orm'
 
+import type { Database } from '@/server/infra/db/database'
 import type { Post, PostVisibilityOptions } from '@/shared/types/catalog'
 
 import { livePostWhere } from '@/server/domains/posts/live-gate'
@@ -20,7 +19,7 @@ import { category as categoryTable, tag as tagTable } from '@/server/infra/db/sc
  * reference categories by id.
  */
 export async function listPostsByTaxonomy(
-  db: NodePgDatabase,
+  db: Database,
   kind: 'category' | 'tag',
   name: string,
   options?: PostVisibilityOptions,
@@ -45,7 +44,7 @@ export async function listPostsByTaxonomy(
  * Selects only `title`: no tag batch, no revision join, no cover/thumbhash
  * hydration — the 409 message needs nothing else.
  */
-export async function listPostTitlesByTaxonomy(db: NodePgDatabase, kind: 'tag', name: string): Promise<string[]> {
+export async function listPostTitlesByTaxonomy(db: Database, kind: 'tag', name: string): Promise<string[]> {
   const where = buildPublicPostsWhere({ tag: name, includeHidden: true, includeScheduled: true })
   const rows = await db
     .select({ title: postMetaTable.title })
@@ -60,7 +59,7 @@ export async function listPostTitlesByTaxonomy(db: NodePgDatabase, kind: 'tag', 
  * title-only shape and full-inclusion gate, keyed by the category row id
  * posts reference.
  */
-export async function listPostTitlesByCategoryId(db: NodePgDatabase, id: bigint): Promise<string[]> {
+export async function listPostTitlesByCategoryId(db: Database, id: number): Promise<string[]> {
   const where = buildPublicPostsWhere({ categoryId: id, includeHidden: true, includeScheduled: true })
   const rows = await db
     .select({ title: postMetaTable.title })
@@ -90,7 +89,7 @@ export interface CountPostsByTaxonomyOptions {
  * no matching posts are absent (callers default to 0).
  */
 export async function countPostsByTaxonomy(
-  db: NodePgDatabase,
+  db: Database,
   options: CountPostsByTaxonomyOptions,
 ): Promise<Map<string, number>> {
   const gate =
@@ -100,7 +99,7 @@ export async function countPostsByTaxonomy(
 
   if (options.kind === 'category') {
     const base = db
-      .select({ name: categoryTable.name, count: sql<number>`count(${postMetaTable.id})::int` })
+      .select({ name: categoryTable.name, count: sql<number>`count(${postMetaTable.id})` })
       .from(categoryTable)
       .leftJoin(postMetaTable, and(eq(postMetaTable.categoryId, categoryTable.id), gate))
       .$dynamic()
@@ -115,7 +114,7 @@ export async function countPostsByTaxonomy(
   }
 
   const base = db
-    .select({ name: tagTable.name, count: sql<number>`count(${postMetaTable.id})::int` })
+    .select({ name: tagTable.name, count: sql<number>`count(${postMetaTable.id})` })
     .from(tagTable)
     .leftJoin(postTag, eq(postTag.tagId, tagTable.id))
     .leftJoin(postMetaTable, and(eq(postMetaTable.id, postTag.postId), gate))

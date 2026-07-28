@@ -1,5 +1,4 @@
-import { sql } from 'drizzle-orm'
-import { bigint, bigserial, index, pgTable, timestamp, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core'
+import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 import { randomUUID } from 'node:crypto'
 
 // Per-entity metric counters keyed on `(type, owner_id)` where `type` is
@@ -10,32 +9,31 @@ import { randomUUID } from 'node:crypto'
 // the request/response envelope) so numeric ids never reach the browser.
 // `(type, owner_id)` is the application-side join key; `public_id` is
 // the wire-side identifier — both are unique.
-export const metric = pgTable(
+export const metric = sqliteTable(
   'metric',
   {
-    id: bigserial('id', { mode: 'bigint' }).primaryKey().notNull(),
-    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
+    id: integer('id').primaryKey({ autoIncrement: true }).notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' })
       .notNull()
       .$defaultFn(() => new Date()),
-    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+    updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
       .notNull()
       .$defaultFn(() => new Date()),
-    deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+    deletedAt: integer('deleted_at', { mode: 'timestamp_ms' }),
     // Populated by `ensureMetric(type, ownerId)` on every metric
     // upsert. `publicId` is the opaque UUID surfaced to public clients
     // in place of the historical URL-based `key`. `type` mirrors the
-    // `content` table convention (`varchar(16)`, no DB enum, see the
-    // `content` discriminator comment block below) so future entity
-    // types extend without a `pg_enum_add` migration.
-    type: varchar('type', { length: 16 }).$type<'post' | 'page'>().notNull(),
-    ownerId: bigint('owner_id', { mode: 'bigint' }).notNull(),
-    publicId: uuid('public_id')
+    // `content` table convention (`text`, no DB enum, see the `content`
+    // discriminator comment block below) so future entity types extend
+    // without a migration.
+    type: text('type').$type<'post' | 'page'>().notNull(),
+    ownerId: integer('owner_id').notNull(),
+    publicId: text('public_id')
       .notNull()
-      .default(sql`gen_random_uuid()`)
       .$defaultFn(() => randomUUID()),
-    voteUp: bigint('vote_up', { mode: 'number' }),
-    voteDown: bigint('vote_down', { mode: 'number' }),
-    pv: bigint('pv', { mode: 'number' }),
+    voteUp: integer('vote_up'),
+    voteDown: integer('vote_down'),
+    pv: integer('pv'),
   },
   (table) => [
     uniqueIndex('uq_metric_public_id').on(table.publicId),
@@ -44,16 +42,16 @@ export const metric = pgTable(
   ],
 )
 
-export const like = pgTable(
+export const like = sqliteTable(
   'like',
   {
-    id: bigserial('id', { mode: 'bigint' }).primaryKey().notNull(),
-    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).$defaultFn(() => new Date()),
-    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).$defaultFn(() => new Date()),
-    deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
-    token: varchar('token', { length: 255 }),
-    type: varchar('type', { length: 16 }).$type<'post' | 'page'>().notNull(),
-    ownerId: bigint('owner_id', { mode: 'bigint' }).notNull(),
+    id: integer('id').primaryKey({ autoIncrement: true }).notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' }).$defaultFn(() => new Date()),
+    updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).$defaultFn(() => new Date()),
+    deletedAt: integer('deleted_at', { mode: 'timestamp_ms' }),
+    token: text('token'),
+    type: text('type').$type<'post' | 'page'>().notNull(),
+    ownerId: integer('owner_id').notNull(),
   },
   (table) => [index('idx_like_token').on(table.token), index('idx_like_owner').on(table.type, table.ownerId)],
 )

@@ -1,21 +1,19 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import bcrypt from 'bcryptjs'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
+
 import { clearAllTables } from '#/_helpers/integration-db'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { passkeyCredential } from '@/server/infra/db/schema/passkey'
 import { user } from '@/server/infra/db/schema/user'
 
-const poolDb = createDbPool()
-const db: NodePgDatabase = poolDb.db
-const pool: Pool = poolDb.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 // ── Mock @simplewebauthn/server ─────────────────────────────────────────────
@@ -49,7 +47,7 @@ vi.mock('@/shared/config/getters', async (importOriginal) => {
 
 const passkeyService = await import('@/server/domains/auth/passkey/service')
 
-async function seedUser(overrides: Record<string, unknown> = {}): Promise<bigint> {
+async function seedUser(overrides: Record<string, unknown> = {}): Promise<number> {
   const hashed = await bcrypt.hash('Password123!', 12)
   const [inserted] = await db
     .insert(user)

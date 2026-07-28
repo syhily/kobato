@@ -75,7 +75,7 @@ describe('infra/config — loadConfig', () => {
     expect(statSync(path).mode & 0o777).toBe(0o600)
     const written = JSON.parse(readFileSync(path, 'utf-8'))
     expect(written.server.port).toBe(4321)
-    expect(written.database.poolMax).toBe(20)
+    expect(written.storage.database).toBe('')
     expect(written.security.sessionSecret).toBe('')
 
     // The auto-created file (empty strings for unset secrets) must pass
@@ -86,28 +86,28 @@ describe('infra/config — loadConfig', () => {
   it('reads values from the config file', () => {
     const dir = makeTmpDir()
     const path = configPathIn(dir)
-    writeConfig(path, { database: { url: 'postgres://from-file/db' } })
+    writeConfig(path, { storage: { database: '/data/from-file.db' } })
     withConfigArg(path)
 
     const env = loadConfig()
-    expect(env['database.url']).toBe('postgres://from-file/db')
+    expect(env['storage.database']).toBe('/data/from-file.db')
     expect(env['server.port']).toBeUndefined() // not in file, no env → schema default later
   })
 
   it('env vars override the file and are written back', () => {
     const dir = makeTmpDir()
     const path = configPathIn(dir)
-    writeConfig(path, { database: { url: 'postgres://from-file/db' }, server: { port: 4000 } })
+    writeConfig(path, { storage: { database: '/data/from-file.db' }, server: { port: 4000 } })
     withConfigArg(path)
-    vi.stubEnv('database__url', 'postgres://from-env/db')
+    vi.stubEnv('storage__database', '/data/from-env.db')
     vi.stubEnv('server__port', '5000')
 
     const env = loadConfig()
-    expect(env['database.url']).toBe('postgres://from-env/db')
+    expect(env['storage.database']).toBe('/data/from-env.db')
     expect(env['server.port']).toBe('5000')
 
     const written = JSON.parse(readFileSync(path, 'utf-8'))
-    expect(written.database.url).toBe('postgres://from-env/db')
+    expect(written.storage.database).toBe('/data/from-env.db')
     // parseValues: numeric strings land as native JSON numbers
     expect(written.server.port).toBe(5000)
   })
@@ -115,17 +115,17 @@ describe('infra/config — loadConfig', () => {
   it('survives an unwritable config location (warns, keeps effective values in memory)', () => {
     const dir = makeTmpDir()
     const path = configPathIn(dir)
-    writeConfig(path, { database: { url: 'postgres://from-file/db' } })
+    writeConfig(path, { storage: { database: '/data/from-file.db' } })
     // The write-back goes tmp+rename — a read-only FILE doesn't stop it
     // (the tmp file is new), but a read-only DIRECTORY does.
     chmodSync(dir, 0o500)
     withConfigArg(path)
-    vi.stubEnv('database__url', 'postgres://from-env/db')
+    vi.stubEnv('storage__database', '/data/from-env.db')
 
     const warn = vi.spyOn(process.stderr, 'write').mockImplementation(() => true)
     try {
       const env = loadConfig()
-      expect(env['database.url']).toBe('postgres://from-env/db')
+      expect(env['storage.database']).toBe('/data/from-env.db')
       expect(warn).toHaveBeenCalledWith(expect.stringContaining('无法将环境变量覆盖写回配置文件'))
     } finally {
       chmodSync(dir, 0o700)
@@ -165,7 +165,7 @@ describe('infra/config — loadConfig', () => {
   it('fails on unknown keys with the offending path', () => {
     const dir = makeTmpDir()
     const path = configPathIn(dir)
-    writeConfig(path, { database: { url: 'postgres://x/db', nope: true } })
+    writeConfig(path, { storage: { database: '/x.db', nope: true } })
     withConfigArg(path)
 
     const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true)
@@ -176,13 +176,13 @@ describe('infra/config — loadConfig', () => {
   it('supports -c and --config=<path> forms', () => {
     const dir = makeTmpDir()
     const path = configPathIn(dir)
-    writeConfig(path, { database: { url: 'postgres://flag/db' } })
+    writeConfig(path, { storage: { database: '/flag.db' } })
 
     process.argv = [realArgv[0]!, realArgv[1]!, '-c', path]
-    expect(loadConfig()['database.url']).toBe('postgres://flag/db')
+    expect(loadConfig()['storage.database']).toBe('/flag.db')
 
     process.argv = [realArgv[0]!, realArgv[1]!, `--config=${path}`]
-    expect(loadConfig()['database.url']).toBe('postgres://flag/db')
+    expect(loadConfig()['storage.database']).toBe('/flag.db')
   })
 
   it('returns env-only values without --config under VITEST (no file access)', () => {
@@ -193,10 +193,10 @@ describe('infra/config — loadConfig', () => {
     process.chdir(dir)
     try {
       process.argv = [realArgv[0]!, realArgv[1]!]
-      vi.stubEnv('database__url', 'postgres://env-only/db')
+      vi.stubEnv('storage__database', ':memory:')
 
       const env = loadConfig()
-      expect(env['database.url']).toBe('postgres://env-only/db')
+      expect(env['storage.database']).toBe(':memory:')
       expect(existsSync(configPathIn(dir))).toBe(false)
     } finally {
       process.chdir(realCwd)
@@ -206,12 +206,12 @@ describe('infra/config — loadConfig', () => {
   it('ignores flat legacy env names — only the __ convention is read', () => {
     const dir = makeTmpDir()
     const path = configPathIn(dir)
-    writeConfig(path, { database: { url: 'postgres://from-file/db' } })
+    writeConfig(path, { storage: { database: '/from-file.db' } })
     withConfigArg(path)
     // The pre-rename flat name must NOT take effect.
     vi.stubEnv('DATABASE_URL', 'postgres://legacy-flat/db')
 
-    expect(loadConfig()['database.url']).toBe('postgres://from-file/db')
+    expect(loadConfig()['storage.database']).toBe('/from-file.db')
   })
 
   it('migrates legacy keys on load, rewrites the file, and keeps booting', () => {
@@ -245,7 +245,6 @@ describe('infra/config — loadConfig', () => {
     // The file was rewritten in the new shape — old sections and redis gone.
     const written = JSON.parse(readFileSync(path, 'utf-8'))
     expect(written).toEqual({
-      database: { url: 'postgres://from-file/db' },
       security: { sessionSecret: 'a-secret-that-is-at-least-32-characters-long' },
       storage: { data: '/var/lib/kobato', defaultFont: '/usr/share/fonts/x.ttf' },
       server: { loggingLevel: 'debug' },
@@ -274,7 +273,7 @@ describe('infra/config — loadServerConfig', () => {
 
   function stubRequiredEnv(): void {
     process.argv = [realArgv[0]!, realArgv[1]!]
-    vi.stubEnv('database__url', 'postgres://test:test@localhost:5434/test')
+    vi.stubEnv('storage__database', ':memory:')
     vi.stubEnv('security__sessionSecret', 'vitest-session-secret-must-be-at-least-32-chars-long-ok')
     vi.stubEnv('security__encryptionKey', 'vitest-encryption-key-must-be-at-least-32-chars-long-ok')
     vi.stubEnv('storage__data', '/tmp/kobato-data')
@@ -285,9 +284,7 @@ describe('infra/config — loadServerConfig', () => {
 
     const config = loadServerConfig()
 
-    expect(config.database.url).toBe('postgres://test:test@localhost:5434/test')
-    expect(config.database.poolMax).toBe(20)
-    expect(config.database.statementTimeoutMs).toBe(30_000)
+    expect(config.storage.database).toBe(':memory:')
     expect(config.server.host).toBe('0.0.0.0')
     expect(config.server.port).toBe(4321)
     expect(config.storage.data).toBe('/tmp/kobato-data')
@@ -309,20 +306,18 @@ describe('infra/config — loadServerConfig', () => {
     const dir = makeTmpDir()
     const path = configPathIn(dir)
     writeConfig(path, {
-      database: { url: 'postgres://test:test@localhost:5434/test', restoreRole: '' },
       security: {
         sessionSecret: 'a-secret-that-is-at-least-32-characters-long',
         encryptionKey: 'an-encryption-key-at-least-32-chars-long',
       },
-      storage: { data: '/tmp/kobato-data', defaultFont: '' },
+      storage: { data: '/tmp/kobato-data', database: '/tmp/kobato.db', defaultFont: '' },
     })
     withConfigArg(path)
 
     const config = loadServerConfig()
 
-    expect(config.database.restoreRole).toBeUndefined()
     expect(config.storage.defaultFont).toBeUndefined()
-    expect(config.database.url).toBe('postgres://test:test@localhost:5434/test')
+    expect(config.storage.database).toBe('/tmp/kobato.db')
   })
 
   it('fails with the Chinese bootstrap hint when a required value is missing', () => {
@@ -330,12 +325,12 @@ describe('infra/config — loadServerConfig', () => {
     const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true)
 
     expect(() => loadServerConfig()).toThrow('process.exit called')
-    expect(stderr).toHaveBeenCalledWith(expect.stringContaining('database.url'))
+    expect(stderr).toHaveBeenCalledWith(expect.stringContaining('storage.database'))
   })
 
   it('fails when an env override does not satisfy its schema', () => {
     stubRequiredEnv()
-    vi.stubEnv('database__url', 'not-a-url')
+    vi.stubEnv('server__port', 'not-a-number')
     const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true)
 
     expect(() => loadServerConfig()).toThrow('process.exit called')

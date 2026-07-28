@@ -27,15 +27,15 @@ const adminQueryRepo = await import('@/server/domains/comments/repos/admin-query
 const { loadAllComments } = await import('@/server/domains/comments/services/admin-query')
 
 const baseComment = {
-  id: 1n,
+  id: 1,
   createAt: new Date(),
   updatedAt: new Date(),
   deleteAt: null,
   content: 'hello',
   body: [],
   type: 'post' as const,
-  ownerId: 1n,
-  userId: 1n,
+  ownerId: 1,
+  userId: 1,
   isVerified: true,
   ua: 'Mozilla',
   ip: '127.0.0.1',

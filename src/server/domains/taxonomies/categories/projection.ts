@@ -22,7 +22,7 @@ export interface AdminCategoriesListResult {
 }
 
 export interface UpsertCategoryInputs {
-  id?: bigint
+  id?: number
   name: string
   slug?: string
   cover: string

@@ -32,20 +32,17 @@ describe('server/domains/settings/services/section-changes', () => {
   })
 
   it('dispatches backup to rescheduleBackup', async () => {
-    const pool = {} as unknown as Pool
-    await SECTION_CHANGE_HANDLERS.get('backup')?.(pool)
+    await SECTION_CHANGE_HANDLERS.get('backup')?.()
     expect(mocks.rescheduleBackup).toHaveBeenCalledTimes(1)
   })
 
-  it('dispatches limits to rescheduleArchive with the pool', async () => {
-    const pool = {} as unknown as Pool
-    await SECTION_CHANGE_HANDLERS.get('limits')?.(pool)
-    expect(mocks.rescheduleArchive).toHaveBeenCalledWith(pool)
+  it('dispatches limits to rescheduleArchive', async () => {
+    await SECTION_CHANGE_HANDLERS.get('limits')?.()
+    expect(mocks.rescheduleArchive).toHaveBeenCalledTimes(1)
   })
 
   it('dispatches mail to invalidateMailTransportCache', async () => {
-    const pool = {} as unknown as Pool
-    await SECTION_CHANGE_HANDLERS.get('mail')?.(pool)
+    await SECTION_CHANGE_HANDLERS.get('mail')?.()
     expect(mocks.invalidateMailTransportCache).toHaveBeenCalledTimes(1)
   })
 })

@@ -6,7 +6,7 @@ import { setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 // The storage seam stays real (registry → S3 backend); only the AWS SDK is
 // mocked at the boundary. That keeps the availability checks honest — the
 // half-configured cases below exercise the backend's real `isAvailable()`.
-const dbDeleteWhere = vi.fn(() => Promise.resolve({ rowCount: 0 })) as ReturnType<typeof vi.fn>
+const dbDeleteWhere = vi.fn(() => ({ changes: 0 }))
 const dbSelectLimit = vi.fn(() => Promise.resolve([])) as ReturnType<typeof vi.fn>
 const dbSelectOrderBy = vi.fn(() => ({ limit: dbSelectLimit })) as ReturnType<typeof vi.fn>
 const dbSelectWhere = vi.fn(() => ({ orderBy: dbSelectOrderBy })) as ReturnType<typeof vi.fn>
@@ -121,9 +121,9 @@ describe('audit/archive', () => {
 
       const rows = [
         {
-          id: 1n,
+          id: 1,
           action: 'login',
-          actorId: 1n,
+          actorId: 1,
           actorRole: 'admin',
           resourceType: 'session',
           resourceId: 's1',
@@ -136,7 +136,7 @@ describe('audit/archive', () => {
       dbSelectWhere.mockReturnValueOnce({ orderBy: dbSelectOrderBy })
       dbSelectLimit.mockReturnValueOnce(Promise.resolve(rows))
 
-      dbDeleteWhere.mockResolvedValueOnce({ rowCount: 1 })
+      dbDeleteWhere.mockReturnValueOnce({ changes: 1 })
       sendMock.mockResolvedValue({})
 
       const result = await archiveExpiredAuditLogs(db)
@@ -152,7 +152,7 @@ describe('audit/archive', () => {
     it('purges expired rows without archiving when S3 is disabled', async () => {
       setS3Storage({ enabled: false })
 
-      dbDeleteWhere.mockResolvedValueOnce({ rowCount: 42 })
+      dbDeleteWhere.mockReturnValueOnce({ changes: 42 })
 
       const result = await archiveExpiredAuditLogs(db)
       expect(result).toEqual({ archivedDays: 0, archivedRows: 0, deletedRows: 42 })
@@ -163,7 +163,7 @@ describe('audit/archive', () => {
     it('purges expired rows without archiving when S3 secret key is empty', async () => {
       setS3Storage({ secretAccessKey: '' })
 
-      dbDeleteWhere.mockResolvedValueOnce({ rowCount: 10 })
+      dbDeleteWhere.mockReturnValueOnce({ changes: 10 })
 
       const result = await archiveExpiredAuditLogs(db)
       expect(result).toEqual({ archivedDays: 0, archivedRows: 0, deletedRows: 10 })
@@ -176,7 +176,7 @@ describe('audit/archive', () => {
     it('purges expired rows when S3 is half-configured (endpoint missing)', async () => {
       setS3Storage({ endpoint: '' })
 
-      dbDeleteWhere.mockResolvedValueOnce({ rowCount: 7 })
+      dbDeleteWhere.mockReturnValueOnce({ changes: 7 })
 
       const result = await archiveExpiredAuditLogs(db)
       expect(result).toEqual({ archivedDays: 0, archivedRows: 0, deletedRows: 7 })

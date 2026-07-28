@@ -1,6 +1,5 @@
 import { getDb } from '@/server/bootstrap/db-lifecycle'
 import { createBackup, cleanupOldBackups } from '@/server/domains/backup/services/backup'
-import { checkPgToolsAvailable } from '@/server/domains/backup/services/shared'
 import { registerShutdownHook } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
 import { computeNextRun } from '@/server/infra/scheduler-utils'
@@ -13,7 +12,6 @@ let hydrationRetryAttempt = 0
 
 async function runBackupJob(): Promise<void> {
   try {
-    await checkPgToolsAvailable()
     const db = getDb()
     const result = await createBackup(db, null)
     log.info('Scheduled backup created', result)

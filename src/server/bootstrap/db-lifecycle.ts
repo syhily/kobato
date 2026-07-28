@@ -5,8 +5,14 @@ import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { wireKvSweepScheduler } from '@/server/infra/cache/kv-maintenance'
 import { isVitest } from '@/server/infra/config'
 import { flushAllBatchers, initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
+import {
+  closeDatabase,
+  openDatabase,
+  resolveDatabasePath,
+  type Database,
+  type DatabaseHandle,
+} from '@/server/infra/db/database'
 import { migrateDatabase } from '@/server/infra/db/migrate'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { registerShutdownHook, restartServer, setRestartDb, setRestartRefreshSettings } from '@/server/infra/lifecycle'
 import { root } from '@/server/infra/logger'
 import { isRecord } from '@/shared/utils/type-guards'
@@ -21,55 +27,51 @@ import '@/server/domains/audit/services/batcher'
 // ─── HMR-safe resource creation ──────────────────────────
 // In dev, React Router re-evaluates server.ts on every HMR cycle.
 // import.meta.hot.data persists across those re-evaluations so the
-// Pool, Drizzle instance, and migration flag survive without
+// handle, Drizzle instance, and migration flag survive without
 // leaking connections or re-running completed migrations.
 
 function isHmrData(value: unknown): value is {
-  pool?: ReturnType<typeof createDbPool>['pool']
-  db?: ReturnType<typeof createDbPool>['db']
+  handle?: DatabaseHandle
   migrationsRan?: boolean
 } {
   if (!isRecord(value)) {
     return false
   }
-  const { pool, db, migrationsRan } = value
+  const { handle, migrationsRan } = value
   return (
-    (pool === undefined || typeof pool === 'object') &&
-    (db === undefined || typeof db === 'object') &&
+    (handle === undefined || typeof handle === 'object') &&
     (migrationsRan === undefined || typeof migrationsRan === 'boolean')
   )
 }
 
 const hmr = isHmrData(import.meta.hot?.data) ? import.meta.hot.data : undefined
 
-let db!: ReturnType<typeof createDbPool>['db']
-let pool!: ReturnType<typeof createDbPool>['pool']
+let current!: DatabaseHandle
 
-function wirePool(instance: ReturnType<typeof createDbPool>): ReturnType<typeof createDbPool> {
-  db = instance.db
-  pool = instance.pool
+function wireDatabase(handle: DatabaseHandle): DatabaseHandle {
+  current = handle
   const hot = import.meta.hot
   if (hot && hmr) {
-    hmr.db = db
-    hmr.pool = pool
+    hmr.handle = handle
   }
-  setRestartDb(db)
+  setRestartDb(handle.db)
   setRestartRefreshSettings(refreshBlogSettings)
   wireArchiveScheduler({ getDb })
   wireKvSweepScheduler({ getDb })
-  initAllBatchers(pool, db)
-  startLikeTokenSweep(db)
-  return instance
+  initAllBatchers(handle)
+  startLikeTokenSweep(handle.db)
+  return handle
 }
 
-function initPool() {
-  wirePool(hmr?.db && hmr?.pool ? { db: hmr.db, pool: hmr.pool } : createDbPool())
+function initDatabase() {
+  wireDatabase(hmr?.handle ?? openDatabase(resolveDatabasePath()))
 }
 
-initPool()
+initDatabase()
 
 // ─── Restore completion ──────────────────────────────────
-// Register restore completion: recreate pool, restart server, reset state.
+// Register restore completion: reopen the database on the swapped file,
+// restart server, reset state.
 
 registerRestoreComplete(async (success, err) => {
   if (!success) {
@@ -80,12 +82,12 @@ registerRestoreComplete(async (success, err) => {
 
   let recreated = false
   try {
-    await recreatePool()
+    await reopenDatabase()
     recreated = true
   } catch (recreateErr) {
     root.error(
       { err: recreateErr instanceof Error ? recreateErr.message : String(recreateErr) },
-      'Pool recreation failed during restore completion',
+      'Database reopen failed during restore completion',
     )
   }
 
@@ -102,7 +104,7 @@ registerRestoreComplete(async (success, err) => {
 
   try {
     try {
-      await migrateDatabase()
+      await migrateDatabase(getDb())
       root.info('Database migrations completed after restore')
     } catch (migrateErr) {
       root.error(
@@ -125,7 +127,7 @@ registerRestoreComplete(async (success, err) => {
 
 if (!hmr?.migrationsRan) {
   if (!isVitest()) {
-    await migrateDatabase()
+    await migrateDatabase(current.db)
   }
   const hot = import.meta.hot
   if (hot && hmr) {
@@ -134,24 +136,31 @@ if (!hmr?.migrationsRan) {
 }
 
 // ─── Shutdown ────────────────────────────────────────────
-// Priority 0 so all batchers (priority 100) flush before the pool is closed.
+// Priority 0 so all batchers (priority 100) flush before close.
 
-registerShutdownHook(() => closePool(pool), 0)
+registerShutdownHook(async () => {
+  closeDatabase(current)
+}, 0)
 
-export async function recreatePool(): Promise<{ db: typeof db; pool: typeof pool }> {
+/**
+ * Reopen the database on (possibly swapped) files. Used by the restore
+ * flow after the backup file replaced the live one.
+ */
+export async function reopenDatabase(): Promise<DatabaseHandle> {
   // flushAllBatchers isolates per-batcher failures internally — a
-  // failing flush never blocks the remaining batchers or the pool swap.
+  // failing flush never blocks the remaining batchers or the swap.
   await flushAllBatchers()
 
   resetAllBatchers()
   resetLikeTokenSweep()
-  return wirePool(createDbPool())
+  closeDatabase(current)
+  return wireDatabase(openDatabase(resolveDatabasePath()))
 }
 
-export function getDb(): typeof db {
-  return db
+export function getDb(): Database {
+  return current.db
 }
 
-export function getPool(): typeof pool {
-  return pool
+export function getDatabaseHandle(): DatabaseHandle {
+  return current
 }

@@ -1,6 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { redirect } from 'react-router'
+
+import type { Database } from '@/server/infra/db/database'
 
 import { hasAdmin } from '@/server/infra/db/operations/user'
 
@@ -24,7 +24,7 @@ export type InstallState = 'noAdmin' | 'installed'
  * outside React Server Components `cache()` is a pure pass-through, so
  * the dedup never happens.
  */
-export async function getInstallState(db: NodePgDatabase): Promise<InstallState> {
+export async function getInstallState(db: Database): Promise<InstallState> {
   if (!(await hasAdmin(db))) {
     return 'noAdmin'
   }
@@ -34,7 +34,7 @@ export async function getInstallState(db: NodePgDatabase): Promise<InstallState>
 /**
  * Convenience: `true` iff the deployment has finished installing.
  */
-export async function isInstalled(db: NodePgDatabase): Promise<boolean> {
+export async function isInstalled(db: Database): Promise<boolean> {
   return (await getInstallState(db)) === 'installed'
 }
 
@@ -44,7 +44,7 @@ export async function isInstalled(db: NodePgDatabase): Promise<boolean> {
  *   noAdmin   → resolve, render the admin-credentials form.
  *   installed → throw 303 → `/admin/signin`.
  */
-export async function ensureNoAdminOrRedirect(db: NodePgDatabase): Promise<null> {
+export async function ensureNoAdminOrRedirect(db: Database): Promise<null> {
   const state = await getInstallState(db)
   if (state === 'noAdmin') {
     return null
@@ -58,7 +58,7 @@ export async function ensureNoAdminOrRedirect(db: NodePgDatabase): Promise<null>
  *   noAdmin   → throw 303 → `/admin/setup` (nothing to log into yet).
  *   installed → resolve, render the login form.
  */
-export async function ensureInstalledOrRedirect(db: NodePgDatabase): Promise<null> {
+export async function ensureInstalledOrRedirect(db: Database): Promise<null> {
   const state = await getInstallState(db)
   if (state === 'noAdmin') {
     throw redirect('/admin/setup', { status: 303 })

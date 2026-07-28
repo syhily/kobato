@@ -1,6 +1,5 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import type { BlogSession } from '@/server/domains/auth/session-storage'
+import type { Database } from '@/server/infra/db/database'
 import type { EntityTarget } from '@/server/infra/db/target'
 import type { CommentAndUser, CommentItem, Comments, LatestComment } from '@/shared/types/comments'
 
@@ -29,7 +28,7 @@ import { groupBy } from '@/shared/utils/tools'
 
 const log = getLogger('comments.parse')
 
-export async function pendingComments(db: NodePgDatabase): Promise<LatestComment[]> {
+export async function pendingComments(db: Database): Promise<LatestComment[]> {
   const rows = await pendingCommentsRepo(
     db,
     getSidebarWidgetCount(requireBlogSettingsSection('sidebar'), 'recentComments'),
@@ -43,11 +42,11 @@ export async function pendingComments(db: NodePgDatabase): Promise<LatestComment
  * signin flow that lets an anonymous commenter claim their account via
  * password reset.
  */
-export async function hasApprovedComments(db: NodePgDatabase, userId: bigint): Promise<boolean> {
-  return (await countApprovedCommentsByUser(db, userId)) >= 1
+export async function hasApprovedComments(db: Database, userId: number): Promise<boolean> {
+  return countApprovedCommentsByUser(db, userId) >= 1
 }
 
-export async function latestComments(db: NodePgDatabase): Promise<LatestComment[]> {
+export async function latestComments(db: Database): Promise<LatestComment[]> {
   return through(db, 'comments', {}, async () => {
     const limit = getSidebarWidgetCount(requireBlogSettingsSection('sidebar'), 'recentComments')
     const ids = await adminUserIds(db)
@@ -58,7 +57,7 @@ export async function latestComments(db: NodePgDatabase): Promise<LatestComment[
 }
 
 export async function loadComments(
-  db: NodePgDatabase,
+  db: Database,
   session: BlogSession,
   target: EntityTarget,
   offset: number,

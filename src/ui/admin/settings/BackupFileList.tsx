@@ -19,7 +19,6 @@ interface BackupFileListProps {
   isCreating: boolean
   onCreate: () => void
   restorePending: boolean
-  pgToolsAvailable: boolean
   onRestore: (key: string) => void
   onDelete: (key: string) => void
   deletePending: boolean
@@ -53,7 +52,6 @@ export function BackupFileList({
   isCreating,
   onCreate,
   restorePending,
-  pgToolsAvailable,
   onRestore,
   onDelete,
   deletePending,
@@ -105,7 +103,7 @@ export function BackupFileList({
                         type="button"
                         variant="destructive-soft"
                         size="sm"
-                        disabled={restorePending || !pgToolsAvailable}
+                        disabled={restorePending}
                         onClick={() => onRestore(file.key)}
                       >
                         还原

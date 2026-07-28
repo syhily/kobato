@@ -1,13 +1,12 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
+
 import { resetBlogSettingsForTests } from '#/_helpers/blog-settings'
 import { clearAllTables } from '#/_helpers/integration-db'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { updateBlogSettingsSection } from '@/server/domains/settings/services/core'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { setting } from '@/server/infra/db/schema/config'
 
 // Section-change dispatch is covered by the unit tests; keep the
@@ -16,12 +15,11 @@ vi.mock('@/server/domains/settings/services/section-changes', () => ({
   SECTION_CHANGE_HANDLERS: new Map(),
 }))
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {
@@ -34,7 +32,6 @@ describe('services/settings — write isolation', () => {
     await Promise.all([
       updateBlogSettingsSection(
         db,
-        pool,
         'mail',
         {
           mail: { enabled: true, host: 'api.zeabur.com', apiKey: 'KEY-A', sender: 'a@example.com' },
@@ -43,7 +40,6 @@ describe('services/settings — write isolation', () => {
       ),
       updateBlogSettingsSection(
         db,
-        pool,
         'cache',
         {
           cache: {
@@ -77,7 +73,6 @@ describe('services/settings — write isolation', () => {
   it('saving sidebar does not read or rewrite the mail row', async () => {
     await updateBlogSettingsSection(
       db,
-      pool,
       'sidebar',
       {
         sidebar: {
@@ -109,7 +104,6 @@ describe('services/settings — write isolation', () => {
 
     await updateBlogSettingsSection(
       db,
-      pool,
       'mail',
       { mail: { enabled: true, host: 'api.zeabur.com', sender: 'noreply@example.com' } },
       null,

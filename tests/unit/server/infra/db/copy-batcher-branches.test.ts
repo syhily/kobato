@@ -1,80 +1,101 @@
-import type { Pool } from 'pg'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { afterAll, describe, expect, it, vi } from 'vitest'
 
-import { describe, expect, it } from 'vitest'
+import type { Database } from '@/server/infra/db/database'
 
-import { CopyBatcher, type FlushResult } from '@/server/infra/db/copy-batcher'
+vi.mock('@/server/infra/logger', () => ({
+  getLogger: vi.fn(() => ({
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+  })),
+}))
 
-// Minimal Pool stub — the constructor stores it but never invokes it during
-// validation, so an empty object is sufficient.
-function fakePool(): Pool {
-  return {} as Pool
+vi.mock('@/server/infra/lifecycle', () => ({
+  registerShutdownHook: vi.fn(),
+}))
+
+import { InsertBatcher, type FlushResult, replayDeadLetter, writeDeadLetter } from '@/server/infra/db/insert-batcher'
+
+const tmp = mkdtempSync(join(tmpdir(), 'insert-batcher-test-'))
+afterAll(() => rmSync(tmp, { recursive: true, force: true }))
+
+function fakeDb(): Database {
+  return {} as Database
 }
 
-class TestBatcher extends CopyBatcher<string> {
-  protected toCsvRow(event: string): string {
-    return event
+class TestBatcher extends InsertBatcher<string> {
+  static inserted: string[][] = []
+  static failNext = false
+
+  protected insertBatch(_db: Database, events: string[]): void {
+    if (TestBatcher.failNext) {
+      TestBatcher.failNext = false
+      throw new Error('insert failed')
+    }
+    TestBatcher.inserted.push(events)
   }
-  protected async onCopyFailed(): Promise<FlushResult> {
-    return { committed: 0, deadLettered: 0 }
+
+  protected async onInsertFailed(events: string[]): Promise<FlushResult> {
+    await writeDeadLetter(events, (es) => es.join('\n') + '\n', join(tmp, 'dead-letter.jsonl'), {
+      info: vi.fn(),
+      error: vi.fn(),
+    } as never)
+    return { committed: 0, deadLettered: events.length }
   }
 }
 
-describe('server/infra/db/copy-batcher — constructor identifier validation', () => {
-  it('accepts a valid table name and column names', () => {
-    expect(
-      () =>
-        new TestBatcher({ flushIntervalMs: 1000, flushThreshold: 10 }, 'events', ['id', 'payload'], 'test', fakePool()),
-    ).not.toThrow()
+describe('server/infra/db/insert-batcher — flush mechanics', () => {
+  it('flushes the whole buffer as one batch at the threshold', async () => {
+    TestBatcher.inserted = []
+    const batcher = new TestBatcher({ flushIntervalMs: 60_000, flushThreshold: 3 }, 'test', fakeDb())
+    batcher.push('a')
+    batcher.push('b')
+    batcher.push('c')
+    const result = await batcher.flush()
+    expect(result).toEqual({ committed: 3, deadLettered: 0 })
+    expect(TestBatcher.inserted).toEqual([['a', 'b', 'c']])
   })
 
-  it('accepts underscore-prefixed and digit-containing identifiers', () => {
-    expect(
-      () =>
-        new TestBatcher(
-          { flushIntervalMs: 1000, flushThreshold: 10 },
-          '_event_log',
-          ['_id', 'col_1', 'x9'],
-          'test',
-          fakePool(),
-        ),
-    ).not.toThrow()
+  it('routes a failed batch to onInsertFailed (dead-letter) and clears the buffer', async () => {
+    TestBatcher.inserted = []
+    const batcher = new TestBatcher({ flushIntervalMs: 60_000, flushThreshold: 2 }, 'test', fakeDb())
+    batcher.push('x')
+    TestBatcher.failNext = true
+    batcher.push('y')
+    const result = await batcher.flush()
+    expect(result).toEqual({ committed: 0, deadLettered: 2 })
+    expect(TestBatcher.inserted).toEqual([])
+    expect(readFileSync(join(tmp, 'dead-letter.jsonl'), 'utf-8')).toContain('x\ny')
   })
 
-  it('throws when the table name fails the identifier check', () => {
-    expect(
-      () => new TestBatcher({ flushIntervalMs: 1000, flushThreshold: 10 }, 'bad-table!', ['id'], 'test', fakePool()),
-    ).toThrow(/Invalid table name for COPY: bad-table!/)
+  it('replays a dead-letter file back through ingest and truncates it', async () => {
+    writeFileSync(join(tmp, 'replay.jsonl'), 'r1\nr2\n')
+    const batcher = new TestBatcher({ flushIntervalMs: 60_000, flushThreshold: 10 }, 'test', fakeDb())
+    TestBatcher.inserted = []
+    const log = { info: vi.fn(), error: vi.fn() } as never
+    const result = await replayDeadLetter(
+      join(tmp, 'replay.jsonl'),
+      (line) => line,
+      (events) => batcher.ingest(events),
+      log,
+    )
+    expect(result).toEqual({ replayed: 2, failed: 0 })
+    expect(TestBatcher.inserted).toEqual([['r1', 'r2']])
+    expect(readFileSync(join(tmp, 'replay.jsonl'), 'utf-8')).toBe('')
   })
 
-  it('throws when the table name starts with a digit', () => {
-    expect(
-      () => new TestBatcher({ flushIntervalMs: 1000, flushThreshold: 10 }, '1events', ['id'], 'test', fakePool()),
-    ).toThrow(/Invalid table name for COPY: 1events/)
-  })
-
-  it('throws when any column name fails the identifier check', () => {
-    expect(
-      () =>
-        new TestBatcher({ flushIntervalMs: 1000, flushThreshold: 10 }, 'events', ['id', 'bad col'], 'test', fakePool()),
-    ).toThrow(/Invalid column name for COPY: bad col/)
-  })
-
-  it('throws on the first invalid column (uppercase rejected)', () => {
-    expect(
-      () =>
-        new TestBatcher({ flushIntervalMs: 1000, flushThreshold: 10 }, 'events', ['id', 'BadCol'], 'test', fakePool()),
-    ).toThrow(/Invalid column name for COPY: BadCol/)
-  })
-
-  it('rejects an empty table name', () => {
-    expect(
-      () => new TestBatcher({ flushIntervalMs: 1000, flushThreshold: 10 }, '', ['id'], 'test', fakePool()),
-    ).toThrow(/Invalid table name for COPY:/)
-  })
-
-  it('rejects a column name containing a space', () => {
-    expect(
-      () => new TestBatcher({ flushIntervalMs: 1000, flushThreshold: 10 }, 'events', [' id'], 'test', fakePool()),
-    ).toThrow(/Invalid column name for COPY:  id/)
+  it('reports a missing dead-letter file as a no-op', async () => {
+    const log = { info: vi.fn(), error: vi.fn() } as never
+    const result = await replayDeadLetter(
+      join(tmp, 'does-not-exist.jsonl'),
+      (line) => line,
+      () => undefined,
+      log,
+    )
+    expect(result).toEqual({ replayed: 0, failed: 0 })
   })
 })

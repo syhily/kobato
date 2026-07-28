@@ -22,11 +22,11 @@ function getSigningKey(): Buffer {
   return cachedKey
 }
 
-export function signUnsubscribeId(id: bigint): string {
+export function signUnsubscribeId(id: number): string {
   return createHmac('sha256', getSigningKey()).update(`newsletter-unsubscribe:${id.toString()}`).digest('hex')
 }
 
-export function verifyUnsubscribeSignature(id: bigint, signature: string): boolean {
+export function verifyUnsubscribeSignature(id: number, signature: string): boolean {
   if (!/^[0-9a-f]{64}$/.test(signature)) {
     return false
   }

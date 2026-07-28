@@ -1,13 +1,12 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { eq, sql } from 'drizzle-orm'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
+
 import { makeRouteContext } from '#/_helpers/context'
 import { clearAllTables } from '#/_helpers/integration-db'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { emptySession } from '#/_helpers/session'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { setting } from '@/server/infra/db/schema/config'
 import { user } from '@/server/infra/db/schema/user'
 
@@ -16,12 +15,11 @@ vi.mock('@/server/http/request-context', async () => {
   return createRequestContextMockModule()
 })
 
-const poolDb = createDbPool()
-const db: NodePgDatabase = poolDb.db
-const pool: Pool = poolDb.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 vi.mock('@/server/domains/settings/install-gate', () => ({
@@ -69,7 +67,6 @@ beforeAll(() => {
   vi.mocked(mockContext.getRequestContext).mockImplementation((args) => ({
     ...fromProvider!(args),
     db,
-    pool,
   }))
 })
 
@@ -146,7 +143,8 @@ describe('integration: /admin/setup full install flow', () => {
       .select()
       .from(setting)
       .where(sql`${setting.scope} like 'blog.%'`)
-    expect(settingRows.length).toBe(18)
+    // 17 sections — `blog.search` was removed.
+    expect(settingRows.length).toBe(17)
 
     const scopes = new Set(settingRows.map((r) => r.scope))
     const EXPECTED_SECTIONS = [
@@ -162,7 +160,6 @@ describe('integration: /admin/setup full install flow', () => {
       'blog.newsletter',
       'blog.cache',
       'blog.rateLimit',
-      'blog.search',
       'blog.fonts',
       'blog.backup',
       'blog.limits',

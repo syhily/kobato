@@ -1,10 +1,10 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { eq } from 'drizzle-orm'
 import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
+
 import { clearAllTables } from '#/_helpers/integration-db'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 import { flushAuditLog } from '@/server/domains/audit/services/batcher'
 import {
@@ -14,7 +14,6 @@ import {
   resolveCommentDeleteRequest,
 } from '@/server/domains/comments/services/moderate'
 import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { comment } from '@/server/infra/db/schema/comment'
 import { auditLog } from '@/server/infra/db/schema/config'
 import { post } from '@/server/infra/db/schema/post'
@@ -39,24 +38,23 @@ import { user } from '@/server/infra/db/schema/user'
 // and the oRPC `domainErrorGuard` now translates these `DomainError`s
 // into the byte-identical wire shape.
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {
   await clearAllTables(db)
-  initAllBatchers(pool, db)
+  initAllBatchers(handle)
 })
 
 afterEach(() => {
   resetAllBatchers()
 })
 
-async function seedVisitor(opts: Partial<typeof user.$inferInsert> = {}): Promise<bigint> {
+async function seedVisitor(opts: Partial<typeof user.$inferInsert> = {}): Promise<number> {
   const rows = await db
     .insert(user)
     .values({
@@ -70,7 +68,7 @@ async function seedVisitor(opts: Partial<typeof user.$inferInsert> = {}): Promis
   return rows[0]!.id
 }
 
-async function seedPost(title: string, slug: string): Promise<bigint> {
+async function seedPost(title: string, slug: string): Promise<number> {
   const rows = await db
     .insert(post)
     .values({
@@ -78,23 +76,23 @@ async function seedPost(title: string, slug: string): Promise<bigint> {
       title,
       summary: '',
       published: true,
-      publishedRevisionId: 1n,
+      publishedRevisionId: 1,
     })
     .returning({ id: post.id })
   return rows[0]!.id
 }
 
-async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Promise<bigint> {
+async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Promise<number> {
   const rows = await db
     .insert(comment)
     .values({
       type: opts.type ?? 'post',
-      ownerId: opts.ownerId ?? 1n,
-      userId: opts.userId ?? 1n,
+      ownerId: opts.ownerId ?? 1,
+      userId: opts.userId ?? 1,
       content: opts.content ?? 'hello',
       body: opts.body ?? [],
       rid: opts.rid ?? 0,
-      rootId: opts.rootId ?? 0n,
+      rootId: opts.rootId ?? 0,
       isPending: opts.isPending ?? false,
       ...opts,
     })
@@ -102,11 +100,11 @@ async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Pro
   return rows[0]!.id
 }
 
-function ctxFor(userId: bigint) {
-  return makeAuthedCtx({ userId: String(userId), role: 'visitor', db, pool })
+function ctxFor(userId: number) {
+  return makeAuthedCtx({ userId: String(userId), role: 'visitor', db })
 }
 
-async function seedAdmin(opts: Partial<typeof user.$inferInsert> = {}): Promise<bigint> {
+async function seedAdmin(opts: Partial<typeof user.$inferInsert> = {}): Promise<number> {
   // The audit row's actor_id FK requires a real user row — a synthetic id
   // would silently dead-letter the batched insert.
   return seedVisitor({
@@ -117,8 +115,8 @@ async function seedAdmin(opts: Partial<typeof user.$inferInsert> = {}): Promise<
   })
 }
 
-function adminCtxFor(adminId: bigint) {
-  return makeAuthedCtx({ userId: String(adminId), role: 'admin', db, pool })
+function adminCtxFor(adminId: number) {
+  return makeAuthedCtx({ userId: String(adminId), role: 'admin', db })
 }
 
 const EDITED_BODY = [

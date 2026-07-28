@@ -1,12 +1,11 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import type { ViewerIdentity } from '@/server/domains/auth/rbac'
+import type { Database } from '@/server/infra/db/database'
 
 import { findMusicById, softDeleteMusic } from '@/server/infra/db/operations/music'
 import { DomainError, ErrorMessages } from '@/server/infra/http/errors'
 import { backendFor } from '@/server/infra/storage/registry'
 
-export async function deleteMusic(db: NodePgDatabase, id: bigint, viewer?: ViewerIdentity): Promise<void> {
+export async function deleteMusic(db: Database, id: number, viewer?: ViewerIdentity): Promise<void> {
   const existing = await findMusicById(db, id)
   if (existing === null) {
     throw new DomainError('NOT_FOUND', '音乐不存在')

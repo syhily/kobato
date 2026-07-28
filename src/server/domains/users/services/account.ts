@@ -1,7 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import bcrypt from 'bcryptjs'
 
+import type { Database } from '@/server/infra/db/database'
 import type { LoginMethod } from '@/shared/contracts/users'
 
 import { revokeAllSessionsOfUser } from '@/server/domains/auth/services/sessions'
@@ -34,7 +33,7 @@ export interface AccountProfile {
   loginMethod: LoginMethod
 }
 
-export async function getAccountProfile(db: NodePgDatabase, userId: bigint): Promise<AccountProfile> {
+export async function getAccountProfile(db: Database, userId: number): Promise<AccountProfile> {
   const dbUser = await findUserById(db, userId)
   return {
     id: String(userId),
@@ -52,8 +51,8 @@ export async function getAccountProfile(db: NodePgDatabase, userId: bigint): Pro
 }
 
 export async function updateAccountProfile(
-  db: NodePgDatabase,
-  userId: bigint,
+  db: Database,
+  userId: number,
   input: AccountProfileInput,
   viewerRole: string | null | undefined,
 ) {
@@ -93,8 +92,8 @@ export async function updateAccountProfile(
 }
 
 export async function updateAccountPassword(
-  db: NodePgDatabase,
-  userId: bigint,
+  db: Database,
+  userId: number,
   oldPassword: string,
   newPassword: string,
   currentSessionId?: string,

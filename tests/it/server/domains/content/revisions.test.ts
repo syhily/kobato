@@ -1,20 +1,18 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
+
 import { clearAllTables } from '#/_helpers/integration-db'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 
 const query = await import('@/server/domains/content/revisions')
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {
@@ -24,7 +22,7 @@ beforeEach(async () => {
 /** Seed a content row and return it. */
 async function seedContent(overrides: {
   type: 'post' | 'page'
-  ownerId: bigint
+  ownerId: number
   revisionNo: number
   status?: 'draft' | 'published'
   body?: unknown
@@ -48,28 +46,28 @@ async function seedContent(overrides: {
 
 describe('content/repos/query — findContentById', () => {
   it('returns the row when id exists', async () => {
-    const seeded = await seedContent({ type: 'post', ownerId: 1n, revisionNo: 1 })
+    const seeded = await seedContent({ type: 'post', ownerId: 1, revisionNo: 1 })
 
     const result = await query.findContentById(db, seeded.id)
 
     expect(result).not.toBeNull()
     expect(result!.id).toBe(seeded.id)
     expect(result!.type).toBe('post')
-    expect(result!.ownerId).toBe(1n)
+    expect(result!.ownerId).toBe(1)
     expect(result!.revisionNo).toBe(1)
   })
 
   it('returns null when id does not exist', async () => {
-    const result = await query.findContentById(db, 999999n)
+    const result = await query.findContentById(db, 999999)
     expect(result).toBeNull()
   })
 })
 
 describe('content/repos/query — findContentsByIds', () => {
   it('returns matching rows', async () => {
-    const a = await seedContent({ type: 'post', ownerId: 1n, revisionNo: 1 })
-    const b = await seedContent({ type: 'post', ownerId: 2n, revisionNo: 1 })
-    await seedContent({ type: 'page', ownerId: 3n, revisionNo: 1 })
+    const a = await seedContent({ type: 'post', ownerId: 1, revisionNo: 1 })
+    const b = await seedContent({ type: 'post', ownerId: 2, revisionNo: 1 })
+    await seedContent({ type: 'page', ownerId: 3, revisionNo: 1 })
 
     const rows = await query.findContentsByIds(db, [a.id, b.id])
 
@@ -87,7 +85,7 @@ describe('content/repos/query — findContentsByIds', () => {
 
 describe('content/repos/query — findLatestRevision', () => {
   it('returns the row with the highest revision number', async () => {
-    const ownerId = 10n
+    const ownerId = 10
     await seedContent({ type: 'post', ownerId, revisionNo: 1, status: 'published' })
     await seedContent({ type: 'post', ownerId, revisionNo: 2, status: 'draft' })
     await seedContent({ type: 'post', ownerId, revisionNo: 3, status: 'published' })
@@ -99,12 +97,12 @@ describe('content/repos/query — findLatestRevision', () => {
   })
 
   it('returns null when no content rows exist for the owner', async () => {
-    const result = await query.findLatestRevision(db, 'post', 999n)
+    const result = await query.findLatestRevision(db, 'post', 999)
     expect(result).toBeNull()
   })
 
   it('scopes results to the given content type', async () => {
-    const ownerId = 20n
+    const ownerId = 20
     await seedContent({ type: 'post', ownerId, revisionNo: 1 })
     await seedContent({ type: 'post', ownerId, revisionNo: 5 })
     await seedContent({ type: 'page', ownerId, revisionNo: 10 })
@@ -119,7 +117,7 @@ describe('content/repos/query — findLatestRevision', () => {
 
 describe('content/repos/query — findLatestDraft', () => {
   it('returns the latest draft revision', async () => {
-    const ownerId = 30n
+    const ownerId = 30
     await seedContent({ type: 'post', ownerId, revisionNo: 1, status: 'published' })
     await seedContent({ type: 'post', ownerId, revisionNo: 2, status: 'draft' })
     await seedContent({ type: 'post', ownerId, revisionNo: 3, status: 'published' })
@@ -133,7 +131,7 @@ describe('content/repos/query — findLatestDraft', () => {
   })
 
   it('returns null when no draft exists', async () => {
-    const ownerId = 31n
+    const ownerId = 31
     await seedContent({ type: 'post', ownerId, revisionNo: 1, status: 'published' })
 
     const result = await query.findLatestDraft(db, 'post', ownerId)
@@ -141,7 +139,7 @@ describe('content/repos/query — findLatestDraft', () => {
   })
 
   it('returns null when no content rows exist', async () => {
-    const result = await query.findLatestDraft(db, 'post', 999n)
+    const result = await query.findLatestDraft(db, 'post', 999)
     expect(result).toBeNull()
   })
 })

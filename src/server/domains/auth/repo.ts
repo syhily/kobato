@@ -9,10 +9,9 @@
 // `services/sessions.ts`. This module is limited to raw session-table
 // reads/writes and their helpers.
 
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { and, eq, gt, isNotNull, ne } from 'drizzle-orm'
 
+import type { Database } from '@/server/infra/db/database'
 import type { SessionRow } from '@/server/infra/db/types'
 import type { Role } from '@/shared/utils/roles'
 
@@ -26,7 +25,7 @@ const USER_AGENT_MAX_LENGTH = 512
 
 export interface SessionMeta {
   sid: string
-  userId: bigint
+  userId: number
   userAgent: string
   platformHint: string | null
   ip: string
@@ -43,7 +42,7 @@ export interface SessionWithUser extends SessionMeta {
 
 interface RecordLoginInput {
   sid: string
-  userId: bigint
+  userId: number
   userAgent: string | null
   platformHint?: string | null
   ip: string
@@ -64,7 +63,7 @@ function truncateUserAgent(ua: string | null): string {
  * committed (so the row exists with its `user_id` already set); the
  * UPDATE is a no-op when the row is gone.
  */
-export async function recordSessionLogin(db: NodePgDatabase, input: RecordLoginInput): Promise<void> {
+export async function recordSessionLogin(db: Database, input: RecordLoginInput): Promise<void> {
   const now = input.loginAt ?? new Date()
   await db
     .update(sessionTable)
@@ -87,7 +86,7 @@ export async function recordSessionLogin(db: NodePgDatabase, input: RecordLoginI
  * sliding-refresh: as long as the user is active, the session row gets
  * pushed forward by `SESSION_MAX_AGE`.
  */
-export function recordSessionActivity(db: NodePgDatabase, sid: string): void {
+export function recordSessionActivity(db: Database, sid: string): void {
   const now = new Date()
   const expiresAt = new Date(now.getTime() + resolveSessionMaxAge() * 1000)
   void db
@@ -128,7 +127,7 @@ function sessionRowToMeta(row: SessionRow | undefined): SessionMeta | null {
  * Role-blind: callers must go through `session-guard.ts` (own / admin /
  * bulk scopes) for the perimeter check.
  */
-export async function revokeSessionById(db: NodePgDatabase, sid: string, userId: bigint): Promise<void> {
+export async function revokeSessionById(db: Database, sid: string, userId: number): Promise<void> {
   await db.delete(sessionTable).where(and(eq(sessionTable.id, sid), eq(sessionTable.userId, userId)))
 }
 
@@ -138,7 +137,7 @@ export async function revokeSessionById(db: NodePgDatabase, sid: string, userId:
  * revoked, or never completed login). Used by the API actions to
  * confirm ownership before deleting.
  */
-export async function findSessionMeta(db: NodePgDatabase, sid: string): Promise<SessionMeta | null> {
+export async function findSessionMeta(db: Database, sid: string): Promise<SessionMeta | null> {
   const rows = await db
     .select()
     .from(sessionTable)
@@ -148,7 +147,7 @@ export async function findSessionMeta(db: NodePgDatabase, sid: string): Promise<
 }
 
 /** Live (unexpired, owner-stamped) sessions belonging to one user. */
-export async function listLiveSessionsByUser(db: NodePgDatabase, userId: bigint): Promise<SessionMeta[]> {
+export async function listLiveSessionsByUser(db: Database, userId: number): Promise<SessionMeta[]> {
   const rows = await db
     .select()
     .from(sessionTable)
@@ -157,7 +156,7 @@ export async function listLiveSessionsByUser(db: NodePgDatabase, userId: bigint)
 }
 
 /** Live sessions across the site, soft-capped at `maxRows`. */
-export async function listLiveSessions(db: NodePgDatabase, maxRows: number): Promise<SessionMeta[]> {
+export async function listLiveSessions(db: Database, maxRows: number): Promise<SessionMeta[]> {
   const rows = await db
     .select()
     .from(sessionTable)
@@ -171,13 +170,9 @@ export async function listLiveSessions(db: NodePgDatabase, maxRows: number): Pro
  * an optional exemption for the caller's own session. Returns the number
  * of deleted rows.
  */
-export async function deleteSessionsOfUser(
-  db: NodePgDatabase,
-  userId: bigint,
-  exceptSessionId?: string,
-): Promise<number> {
+export async function deleteSessionsOfUser(db: Database, userId: number, exceptSessionId?: string): Promise<number> {
   const result = await db
     .delete(sessionTable)
     .where(and(eq(sessionTable.userId, userId), exceptSessionId ? ne(sessionTable.id, exceptSessionId) : undefined))
-  return result.rowCount ?? 0
+  return Number(result.changes)
 }

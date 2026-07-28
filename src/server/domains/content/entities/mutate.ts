@@ -1,11 +1,10 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import type { ViewerIdentity } from '@/server/domains/auth/rbac'
 import type {
   MetaEntityDescriptor,
   MetaRowBase,
   UpsertMetaInputBase,
 } from '@/server/domains/content/entities/descriptor'
+import type { Database } from '@/server/infra/db/database'
 
 import { rethrowSlugConflict } from '@/server/domains/content/slug-conflict'
 import { reclaimSlugOnRestore } from '@/server/domains/content/slug-reclaim'
@@ -20,11 +19,11 @@ import { resolveSlug } from '@/server/infra/slug/resolve'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 export interface EntityMutations<TInput extends UpsertMetaInputBase, TAdminDto> {
-  create: (db: NodePgDatabase, input: TInput, authorId: bigint | null, viewer?: ViewerIdentity) => Promise<TAdminDto>
-  update: (db: NodePgDatabase, input: TInput & { id: bigint }, viewer?: ViewerIdentity) => Promise<TAdminDto>
-  remove: (db: NodePgDatabase, id: bigint, viewer?: ViewerIdentity) => Promise<{ deleted: boolean }>
-  restore: (db: NodePgDatabase, id: bigint, viewer?: ViewerIdentity) => Promise<{ restored: boolean; warning?: string }>
-  unpublish: (db: NodePgDatabase, id: bigint, viewer?: ViewerIdentity) => Promise<TAdminDto>
+  create: (db: Database, input: TInput, authorId: number | null, viewer?: ViewerIdentity) => Promise<TAdminDto>
+  update: (db: Database, input: TInput & { id: number }, viewer?: ViewerIdentity) => Promise<TAdminDto>
+  remove: (db: Database, id: number, viewer?: ViewerIdentity) => Promise<{ deleted: boolean }>
+  restore: (db: Database, id: number, viewer?: ViewerIdentity) => Promise<{ restored: boolean; warning?: string }>
+  unpublish: (db: Database, id: number, viewer?: ViewerIdentity) => Promise<TAdminDto>
 }
 
 /**
@@ -47,10 +46,20 @@ export function makeEntityMutations<
 ): EntityMutations<TInput, TAdminDto> {
   const { repos, mutations } = descriptor
 
+  /**
+   * `db.transaction` without drizzle's Promise-guard conditional — the
+   * guard refuses UNRESOLVED generic returns even when the callback is
+   * provably sync (drizzle can't know `TMeta` isn't a Promise). Every
+   * callback here is sync by construction (node:sqlite).
+   */
+  function syncTransaction<T>(db: Database, fn: (tx: Database) => T): T {
+    return unsafeCast<(fn: (tx: Database) => T) => T>(db.transaction.bind(db))(fn)
+  }
+
   async function create(
-    db: NodePgDatabase,
+    db: Database,
     input: TInput,
-    authorId: bigint | null,
+    authorId: number | null,
     viewer?: ViewerIdentity,
   ): Promise<TAdminDto> {
     const resolvedAuthorId = mutations.resolveAuthorId?.(authorId, viewer) ?? authorId
@@ -58,12 +67,14 @@ export function makeEntityMutations<
     await mutations.preflightUpsert?.(db, input)
     const now = new Date()
     try {
-      const row = await db.transaction(async (tx) => {
-        // Lock slug rows so concurrent creation with the same slug serialises.
-        await reserveSlugInTransaction(tx, descriptor.entityType, slug, undefined, {
+      const row = syncTransaction(db, (tx) => {
+        // Slug rows are checked + inserted in one transaction; writers
+        // serialise on the single connection, so concurrent creation with
+        // the same slug serialises.
+        reserveSlugInTransaction(tx, descriptor.entityType, slug, undefined, {
           findOwnMetaBySlugForUpdate: repos.findMetaBySlugForUpdate,
         })
-        const inserted = await repos.insertMeta(
+        const inserted = repos.insertMeta(
           tx,
           // Shared columns + insertExtras build the row structurally; the
           // table union guarantees the shape at runtime.
@@ -82,8 +93,8 @@ export function makeEntityMutations<
             ...mutations.insertExtras(input),
           }),
         )
-        await mutations.syncRelations?.(tx, inserted.id, input)
-        await insertSlugRegistry(tx, { slug, entityType: descriptor.entityType, entityId: inserted.id })
+        mutations.syncRelations?.(tx, inserted.id, input)
+        insertSlugRegistry(tx, { slug, entityType: descriptor.entityType, entityId: inserted.id })
         return inserted
       })
       await mutations.afterMutation?.(db, row, 'create')
@@ -94,24 +105,20 @@ export function makeEntityMutations<
     }
   }
 
-  async function update(
-    db: NodePgDatabase,
-    input: TInput & { id: bigint },
-    viewer?: ViewerIdentity,
-  ): Promise<TAdminDto> {
+  async function update(db: Database, input: TInput & { id: number }, viewer?: ViewerIdentity): Promise<TAdminDto> {
     const id = input.id
     const slug = resolveSlug(input.slug, input.title, { entity: descriptor.entityType })
-    const existing = await repos.findMetaById(db, id)
+    const existing = repos.findMetaById(db, id)
     descriptor.access.assertAccess(existing, viewer)
     await mutations.preflightUpsert?.(db, input)
     try {
-      const updated = await db.transaction(async (tx) => {
+      const updated = syncTransaction(db, (tx) => {
         if (existing.slug !== slug) {
-          await reserveSlugInTransaction(tx, descriptor.entityType, slug, id, {
+          reserveSlugInTransaction(tx, descriptor.entityType, slug, id, {
             findOwnMetaBySlugForUpdate: repos.findMetaBySlugForUpdate,
           })
         }
-        const result = await repos.updateMetaById(tx, id, {
+        const result = repos.updateMetaById(tx, id, {
           slug,
           title: input.title,
           summary: input.summary ?? existing.summary,
@@ -124,9 +131,9 @@ export function makeEntityMutations<
           ...mutations.updateExtras(input, existing),
         } as Partial<Omit<TNew, 'id' | 'createdAt'>>)
         if (result !== null) {
-          await mutations.syncRelations?.(tx, id, input)
+          mutations.syncRelations?.(tx, id, input)
           if (existing.slug !== slug) {
-            await updateSlugRegistryByEntity(tx, { entityType: descriptor.entityType, entityId: id, slug })
+            updateSlugRegistryByEntity(tx, { entityType: descriptor.entityType, entityId: id, slug })
           }
         }
         return result
@@ -142,14 +149,14 @@ export function makeEntityMutations<
     }
   }
 
-  async function remove(db: NodePgDatabase, id: bigint, viewer?: ViewerIdentity): Promise<{ deleted: boolean }> {
-    const meta = await repos.findMetaById(db, id)
+  async function remove(db: Database, id: number, viewer?: ViewerIdentity): Promise<{ deleted: boolean }> {
+    const meta = repos.findMetaById(db, id)
     descriptor.access.assertAccess(meta, viewer)
-    const deleted = await db.transaction(async (tx) => {
-      const ok = await repos.softDeleteMeta(tx, id)
+    const deleted = db.transaction((tx) => {
+      const ok = repos.softDeleteMeta(tx, id)
       if (ok) {
-        await mutations.deleteRelations?.(tx, id)
-        await deleteSlugRegistryByEntity(tx, { entityType: descriptor.entityType, entityId: id })
+        mutations.deleteRelations?.(tx, id)
+        deleteSlugRegistryByEntity(tx, { entityType: descriptor.entityType, entityId: id })
       }
       return ok
     })
@@ -160,25 +167,25 @@ export function makeEntityMutations<
   }
 
   async function restore(
-    db: NodePgDatabase,
-    id: bigint,
+    db: Database,
+    id: number,
     viewer?: ViewerIdentity,
   ): Promise<{ restored: boolean; warning?: string }> {
-    const meta = await repos.findMetaById(db, id)
+    const meta = repos.findMetaById(db, id)
     descriptor.access.assertAccess(meta, viewer)
 
     // Gather everything the post-commit side effects need inside the
     // transaction so a failed restore never touches external state
     // (posts: the search index).
-    const { restored, slugWarning, ctx } = await db.transaction(async (tx) => {
-      const ok = await repos.restoreMeta(tx, id)
+    const { restored, slugWarning, ctx } = db.transaction((tx) => {
+      const ok = repos.restoreMeta(tx, id)
       let slugConflict: string | undefined
-      let restoreCtx: TRestore | undefined
+      let restoreCtx: TRestore | null | undefined
       if (ok) {
-        const restoredMeta = await repos.findMetaById(tx, id)
+        const restoredMeta = repos.findMetaById(tx, id)
         if (restoredMeta !== null) {
-          slugConflict = await reclaimSlugOnRestore(tx, descriptor.entityType, id, restoredMeta.slug)
-          restoreCtx = await mutations.prepareRestore?.(tx, restoredMeta)
+          slugConflict = reclaimSlugOnRestore(tx, descriptor.entityType, id, restoredMeta.slug)
+          restoreCtx = mutations.prepareRestore?.(tx, restoredMeta)
         }
       }
       return { restored: ok, slugWarning: slugConflict, ctx: restoreCtx }
@@ -193,10 +200,10 @@ export function makeEntityMutations<
     return { restored, warning }
   }
 
-  async function unpublish(db: NodePgDatabase, id: bigint, viewer?: ViewerIdentity): Promise<TAdminDto> {
-    const existing = await repos.findMetaById(db, id)
+  async function unpublish(db: Database, id: number, viewer?: ViewerIdentity): Promise<TAdminDto> {
+    const existing = repos.findMetaById(db, id)
     descriptor.access.assertAccess(existing, viewer)
-    const updated = await repos.updateMetaById(
+    const updated = repos.updateMetaById(
       db,
       id,
       // Single-column patch; structural across the table union.

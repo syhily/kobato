@@ -75,14 +75,14 @@ describe('audit/service', () => {
   describe('buildAuditContext', () => {
     it('extracts actor, role, ip and ua from AuditContext', () => {
       const context = {
-        viewer: { id: 1n, role: 'admin' },
+        viewer: { id: 1, role: 'admin' },
         clientAddress: '192.168.1.1',
         requestFacts: makeRequestFacts({ userAgent: 'TestBot/1.0' }),
       } as unknown as AuditContext
 
       const result = buildAuditContext(context)
       expect(result).toEqual({
-        actorId: 1n,
+        actorId: 1,
         actorRole: 'admin',
         ipAddress: '192.168.1.1',
         userAgent: 'TestBot/1.0',
@@ -109,7 +109,7 @@ describe('audit/service', () => {
   describe('recordAuditEventFromContext', () => {
     it('combines buildAuditContext and recordAuditEvent', () => {
       const context = {
-        viewer: { id: 42n, role: 'author' },
+        viewer: { id: 42, role: 'author' },
         clientAddress: '10.0.0.1',
         requestFacts: makeRequestFacts({ userAgent: 'Mozilla/5.0' }),
       } as unknown as AuditContext
@@ -123,7 +123,7 @@ describe('audit/service', () => {
       expect(pushAuditEvent).toHaveBeenCalledOnce()
       const call = pushAuditEvent.mock.calls[0][0]
       expect(call.action).toBe('post_published')
-      expect(call.actorId).toBe(42n)
+      expect(call.actorId).toBe(42)
       expect(call.actorRole).toBe('author')
       expect(call.ipAddress).toBe('10.0.0.1')
       expect(call.userAgent).toBe('Mozilla/5.0')

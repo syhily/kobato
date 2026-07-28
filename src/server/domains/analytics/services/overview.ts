@@ -1,6 +1,5 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import type { AnalyticsQueryInput } from '@/server/domains/analytics/services/query-parser'
+import type { Database } from '@/server/infra/db/database'
 import type { CountersDto, HeatmapCell, MetricRow, MetricType, ViewsPoint } from '@/shared/contracts/analytics'
 
 import { queryCounters } from '@/server/domains/analytics/services/counters'
@@ -24,10 +23,7 @@ export interface AnalyticsOverviewData {
  * (site-wide vs per-post) lives entirely in `input`, so callers only
  * resolve their `AnalyticsQueryInput` and hand it over.
  */
-export async function loadAnalyticsOverview(
-  db: NodePgDatabase,
-  input: AnalyticsQueryInput,
-): Promise<AnalyticsOverviewData> {
+export async function loadAnalyticsOverview(db: Database, input: AnalyticsQueryInput): Promise<AnalyticsOverviewData> {
   const initialMetricTypes = METRIC_GROUPS.map((g) => METRIC_GROUP_TABS[g][0]!)
 
   const [counters, views, heatmap, ...metricRows] = await Promise.all([

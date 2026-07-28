@@ -23,6 +23,7 @@ import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { getSidebarWidgetCount } from '@/shared/config/utils'
 import { bundleFromMatches, routeMeta, seoForPost } from '@/shared/seo/meta'
 import { toClientPost, toDetailPostShell } from '@/shared/types/catalog'
+import { idFromString } from '@/shared/utils/id'
 import { canonicalPostPath } from '@/shared/utils/paths'
 import { PortableTextBody } from '@/ui/pt/render'
 import { PostDetailBody } from '@/ui/public/post/PostDetailBody'
@@ -77,7 +78,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   const { detail } = await loadPublicDetailData(db, {
     request,
     context,
-    target: { type: 'post', ownerId: BigInt(post.id) },
+    target: { type: 'post', ownerId: idFromString(post.id) },
   })
 
   return data(

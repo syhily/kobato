@@ -3,12 +3,10 @@
 // Imported by the per-project setup files so individual tests can
 // re-import it cheaply.
 
-// Postgres base URL — the actual test database URL is created per-worker
-// in `tests/it/setup.ts` via `createWorkerDatabase()`.
-const POSTGRES_BASE_URL = 'postgres://test:test@localhost:5434/test'
-
+// In-memory placeholder — integration tests point `storage.database` at a
+// per-worker temp FILE via `tests/it/setup.ts` (`createWorkerDatabase()`).
 export const TEST_ENV = {
-  database__url: POSTGRES_BASE_URL,
+  storage__database: ':memory:',
   security__sessionSecret: 'vitest-session-secret-must-be-at-least-32-chars-long-ok',
   security__encryptionKey: 'vitest-encryption-key-must-be-at-least-32-chars-long-ok',
   storage__data: '/tmp/kobato-data',
@@ -17,8 +15,15 @@ export const TEST_ENV = {
 
 export function ensureTestEnv(): void {
   // Always overwrite so that a `.env` file loaded by Vite/Vitest does
-  // not leak production credentials into the test suite.
+  // not leak production credentials into the test suite — EXCEPT
+  // `storage__database`, which the integration setup assigns to a
+  // per-worker temp file before this module is imported (the config
+  // module freezes the value at first load, so the assignment must
+  // win).
   for (const [key, value] of Object.entries(TEST_ENV)) {
+    if (key === 'storage__database' && process.env[key] !== undefined) {
+      continue
+    }
     process.env[key] = value
   }
 }

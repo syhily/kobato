@@ -1,8 +1,7 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import bcrypt from 'bcryptjs'
 import { and, count, eq, inArray, isNull, ne, or } from 'drizzle-orm'
 
+import type { Database } from '@/server/infra/db/database'
 import type { NewUser, User } from '@/server/infra/db/types'
 import type { LoginMethod } from '@/shared/contracts/users'
 
@@ -15,7 +14,7 @@ export const PASSWORD_HASH_ROUNDS = 12
 
 const DUMMY_HASH = '$2b$12$EIX9MbHN0xG0yKqfNR4XPezHbhVzQzMn/37uD.LR8VgNTbQjD/II.'
 
-export async function hasAdmin(db: NodePgDatabase): Promise<boolean> {
+export async function hasAdmin(db: Database): Promise<boolean> {
   const res = await db
     .select({ count: count() })
     .from(user)
@@ -23,7 +22,7 @@ export async function hasAdmin(db: NodePgDatabase): Promise<boolean> {
   return res.length > 0 && res[0].count > 0
 }
 
-export async function findFirstAdminUser(db: NodePgDatabase): Promise<User | null> {
+export async function findFirstAdminUser(db: Database): Promise<User | null> {
   const rows = await db
     .select()
     .from(user)
@@ -32,12 +31,12 @@ export async function findFirstAdminUser(db: NodePgDatabase): Promise<User | nul
   return rows[0] ?? null
 }
 
-export async function findUserByEmail(db: NodePgDatabase, email: string): Promise<User | null> {
+export async function findUserByEmail(db: Database, email: string): Promise<User | null> {
   const rows = await db.select().from(user).where(eq(user.email, email)).limit(1)
   return rows[0] ?? null
 }
 
-export async function findUserById(db: NodePgDatabase, id: bigint): Promise<User | null> {
+export async function findUserById(db: Database, id: number): Promise<User | null> {
   const rows = await db.select().from(user).where(eq(user.id, id)).limit(1)
   return rows[0] ?? null
 }
@@ -60,17 +59,17 @@ const safeUserColumns = {
   loginMethod: user.loginMethod,
 }
 
-export async function findSafeUserByEmail(db: NodePgDatabase, email: string): Promise<SafeUser | null> {
+export async function findSafeUserByEmail(db: Database, email: string): Promise<SafeUser | null> {
   const rows = await db.select(safeUserColumns).from(user).where(eq(user.email, email)).limit(1)
   return rows[0] ?? null
 }
 
-export async function findSafeUserById(db: NodePgDatabase, id: bigint): Promise<SafeUser | null> {
+export async function findSafeUserById(db: Database, id: number): Promise<SafeUser | null> {
   const rows = await db.select(safeUserColumns).from(user).where(eq(user.id, id)).limit(1)
   return rows[0] ?? null
 }
 
-export async function hasRegisteredAccount(db: NodePgDatabase, email: string): Promise<boolean> {
+export async function hasRegisteredAccount(db: Database, email: string): Promise<boolean> {
   const rows = await db
     .select({ id: user.id })
     .from(user)
@@ -85,7 +84,7 @@ export async function hasRegisteredAccount(db: NodePgDatabase, email: string): P
  * a single round trip. Returns rows in whatever order Postgres picks —
  * the caller indexes by `id` rather than relying on input order.
  */
-export async function findUsersByIds(db: NodePgDatabase, ids: bigint[]): Promise<User[]> {
+export async function findUsersByIds(db: Database, ids: number[]): Promise<User[]> {
   if (ids.length === 0) {
     return []
   }
@@ -97,7 +96,7 @@ function timingFuzz(): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-export async function verifyUserPassword(db: NodePgDatabase, email: string, password: string): Promise<User | null> {
+export async function verifyUserPassword(db: Database, email: string, password: string): Promise<User | null> {
   const u = await findUserByEmail(db, email)
   if (u === null || u.deletedAt !== null || u.password === null || u.password === '') {
     await bcrypt.compare('dummy', DUMMY_HASH)
@@ -111,7 +110,7 @@ export async function verifyUserPassword(db: NodePgDatabase, email: string, pass
   return ok ? u : null
 }
 
-export async function findEmailById(db: NodePgDatabase, id: bigint): Promise<string | null> {
+export async function findEmailById(db: Database, id: number): Promise<string | null> {
   const rows = await db.select({ email: user.email }).from(user).where(eq(user.id, id)).limit(1)
   return rows[0]?.email ?? null
 }
@@ -120,14 +119,19 @@ export interface InsertAdminOptions {
   link?: string
 }
 
-export async function insertAdmin(
-  db: NodePgDatabase,
+export async function hashAdminPassword(password: string): Promise<string> {
+  return bcrypt.hash(password, PASSWORD_HASH_ROUNDS)
+}
+
+// Sync (node:sqlite): the bcrypt hash is deliberately NOT done here —
+// hashing is async and must happen outside the surrounding transaction.
+export function insertAdmin(
+  db: Database,
   name: string,
   email: string,
-  password: string,
+  hashedPassword: string,
   options: InsertAdminOptions = {},
-): Promise<SafeUser[]> {
-  const hashedPassword = await bcrypt.hash(password, PASSWORD_HASH_ROUNDS)
+): SafeUser[] {
   const admin: NewUser = {
     name,
     email,
@@ -139,10 +143,11 @@ export async function insertAdmin(
     badgeColor: '#007a82',
     receiveEmail: true,
   }
-  return db.insert(user).values(admin).returning(safeUserColumns)
+  return db.insert(user).values(admin).returning(safeUserColumns).all()
 }
 
-export async function insertAuthor(db: NodePgDatabase, name: string, email: string): Promise<User[]> {
+// Sync (node:sqlite): called inside the invite transaction.
+export function insertAuthor(db: Database, name: string, email: string): User[] {
   const author: NewUser = {
     name,
     email,
@@ -154,11 +159,11 @@ export async function insertAuthor(db: NodePgDatabase, name: string, email: stri
     badgeColor: '#007a82',
     receiveEmail: true,
   }
-  return db.insert(user).values(author).returning()
+  return db.insert(user).values(author).returning().all()
 }
 
 export async function insertCommentUser(
-  db: NodePgDatabase,
+  db: Database,
   name: string,
   email: string,
   website: string,
@@ -181,12 +186,7 @@ export async function insertCommentUser(
   return res[0] ?? null
 }
 
-export async function updateLastLogin(
-  db: NodePgDatabase,
-  id: bigint,
-  ip: string,
-  userAgent: string | null,
-): Promise<void> {
+export async function updateLastLogin(db: Database, id: number, ip: string, userAgent: string | null): Promise<void> {
   await db.update(user).set({ lastIp: ip, lastUa: userAgent }).where(eq(user.id, id))
 }
 
@@ -209,7 +209,7 @@ export interface UserUpdate {
 
 const BCRYPT_HASH_RE = /^\$2[aby]?\$\d+\$/
 
-export async function updateUserById(db: NodePgDatabase, id: bigint, patch: UserUpdate): Promise<User | null> {
+export async function updateUserById(db: Database, id: number, patch: UserUpdate): Promise<User | null> {
   // Defensive: reject plaintext passwords that were not pre-hashed.
   // Callers that intend to change a password must hash it with bcrypt
   // before passing it here.
@@ -220,7 +220,7 @@ export async function updateUserById(db: NodePgDatabase, id: bigint, patch: User
   return updated[0] ?? null
 }
 
-export async function softDeleteUserById(db: NodePgDatabase, id: bigint): Promise<boolean> {
+export async function softDeleteUserById(db: Database, id: number): Promise<boolean> {
   const updated = await db
     .update(user)
     .set({ deletedAt: new Date() })
@@ -229,12 +229,12 @@ export async function softDeleteUserById(db: NodePgDatabase, id: bigint): Promis
   return updated.length > 0
 }
 
-export async function restoreUserById(db: NodePgDatabase, id: bigint): Promise<boolean> {
+export async function restoreUserById(db: Database, id: number): Promise<boolean> {
   const updated = await db.update(user).set({ deletedAt: null }).where(eq(user.id, id)).returning({ id: user.id })
   return updated.length > 0
 }
 
-export async function setUserMuted(db: NodePgDatabase, id: bigint, muted: boolean): Promise<User | null> {
+export async function setUserMuted(db: Database, id: number, muted: boolean): Promise<User | null> {
   const updated = await db
     .update(user)
     .set({ isMuted: muted })
@@ -243,7 +243,7 @@ export async function setUserMuted(db: NodePgDatabase, id: bigint, muted: boolea
   return updated[0] ?? null
 }
 
-export async function countAdmins(db: NodePgDatabase): Promise<number> {
+export async function countAdmins(db: Database): Promise<number> {
   const rows = await db
     .select({ count: count() })
     .from(user)
@@ -252,8 +252,8 @@ export async function countAdmins(db: NodePgDatabase): Promise<number> {
 }
 
 export async function updateUserRole(
-  db: NodePgDatabase,
-  id: bigint,
+  db: Database,
+  id: number,
   role: 'admin' | 'author' | 'visitor' | null,
 ): Promise<User | null> {
   const updated = await db.update(user).set({ role }).where(eq(user.id, id)).returning()

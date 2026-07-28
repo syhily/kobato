@@ -1,11 +1,12 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { eq, and } from 'drizzle-orm'
+
+import type { Database } from '@/server/infra/db/database'
 
 import { slugRegistry } from '@/server/infra/db/schema/config'
 
-export async function insertSlugRegistry(
-  db: NodePgDatabase,
+// Sync (node:sqlite): called inside entity transactions.
+export function insertSlugRegistry(
+  db: Database,
   {
     slug,
     entityType,
@@ -13,52 +14,55 @@ export async function insertSlugRegistry(
   }: {
     slug: string
     entityType: 'page' | 'post'
-    entityId: bigint
+    entityId: number
   },
 ) {
-  const rows = await db.insert(slugRegistry).values({ slug, entityType, entityId }).returning()
+  const rows = db.insert(slugRegistry).values({ slug, entityType, entityId }).returning().all()
   return rows[0]
 }
 
-export async function updateSlugRegistryByEntity(
-  db: NodePgDatabase,
+export function updateSlugRegistryByEntity(
+  db: Database,
   {
     entityType,
     entityId,
     slug,
   }: {
     entityType: 'page' | 'post'
-    entityId: bigint
+    entityId: number
     slug: string
   },
 ) {
-  const rows = await db
+  const rows = db
     .update(slugRegistry)
     .set({ slug })
     .where(and(eq(slugRegistry.entityType, entityType), eq(slugRegistry.entityId, entityId)))
     .returning()
+    .all()
   return rows[0] ?? null
 }
 
-export async function deleteSlugRegistryByEntity(
-  db: NodePgDatabase,
+export function deleteSlugRegistryByEntity(
+  db: Database,
   {
     entityType,
     entityId,
   }: {
     entityType: 'page' | 'post'
-    entityId: bigint
+    entityId: number
   },
 ) {
-  await db.delete(slugRegistry).where(and(eq(slugRegistry.entityType, entityType), eq(slugRegistry.entityId, entityId)))
+  db.delete(slugRegistry)
+    .where(and(eq(slugRegistry.entityType, entityType), eq(slugRegistry.entityId, entityId)))
+    .run()
 }
 
-export async function findSlugRegistryBySlug(db: NodePgDatabase, slug: string) {
-  const rows = await db.select().from(slugRegistry).where(eq(slugRegistry.slug, slug)).limit(1)
+export function findSlugRegistryBySlug(db: Database, slug: string) {
+  const rows = db.select().from(slugRegistry).where(eq(slugRegistry.slug, slug)).limit(1).all()
   return rows[0] ?? null
 }
 
-export async function findSlugRegistryBySlugForUpdate(db: NodePgDatabase, slug: string) {
-  const rows = await db.select().from(slugRegistry).where(eq(slugRegistry.slug, slug)).for('update').limit(1)
+export function findSlugRegistryBySlugForUpdate(db: Database, slug: string) {
+  const rows = db.select().from(slugRegistry).where(eq(slugRegistry.slug, slug)).limit(1).all()
   return rows[0] ?? null
 }

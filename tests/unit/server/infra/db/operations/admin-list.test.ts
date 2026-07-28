@@ -1,7 +1,7 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { SQL, isNull } from 'drizzle-orm'
 import { describe, expect, it } from 'vitest'
+
+import type { Database } from '@/server/infra/db/database'
 
 import { image } from '@/server/infra/db/schema/media'
 
@@ -36,7 +36,7 @@ function createMockDb(rows: ResultRow[] = []) {
     },
   )
 
-  return dbProxy as unknown as NodePgDatabase
+  return dbProxy as unknown as Database
 }
 
 // A stand-in for the Drizzle select tail that records the pagination
@@ -84,8 +84,8 @@ describe('infra/db/operations/admin-list — assembleWhere', () => {
 describe('infra/db/operations/admin-list — applyPage', () => {
   it('returns rows from the builder untouched when no page is given', async () => {
     const { applyPage } = await import('@/server/infra/db/operations/admin-list')
-    const { query, calls } = createFakeQuery([{ id: 1n }])
-    expect(await applyPage(query, {})).toEqual([{ id: 1n }])
+    const { query, calls } = createFakeQuery([{ id: 1 }])
+    expect(await applyPage(query, {})).toEqual([{ id: 1 }])
     expect(calls).toEqual([])
   })
 
@@ -139,31 +139,31 @@ describe('infra/db/operations/admin-list — withUploader', () => {
 
   it('selectJoined returns rows from the builder', async () => {
     const uploader = await createImageUploader()
-    const rows = await uploader.selectJoined(createMockDb([{ id: 1n, uploaderName: 'u' }]))
+    const rows = await uploader.selectJoined(createMockDb([{ id: 1, uploaderName: 'u' }]))
     expect(rows).toHaveLength(1)
   })
 
   it('findJoinedRowById returns the first matching row', async () => {
     const uploader = await createImageUploader()
-    expect(await uploader.findJoinedRowById(createMockDb([{ id: 5n }]), 5n)).toEqual({ id: 5n })
+    expect(await uploader.findJoinedRowById(createMockDb([{ id: 5 }]), 5)).toEqual({ id: 5 })
   })
 
   it('findJoinedRowById returns null when no rows', async () => {
     const uploader = await createImageUploader()
-    expect(await uploader.findJoinedRowById(createMockDb([]), 5n)).toBeNull()
+    expect(await uploader.findJoinedRowById(createMockDb([]), 5)).toBeNull()
   })
 
   it('updateThenRefetch re-reads the joined row after a successful update', async () => {
     const uploader = await createImageUploader()
-    const result = await uploader.updateThenRefetch(createMockDb([{ id: 1n, uploaderName: 'u' }]), 1n, async () => ({
-      id: 1n,
+    const result = await uploader.updateThenRefetch(createMockDb([{ id: 1, uploaderName: 'u' }]), 1, async () => ({
+      id: 1,
     }))
-    expect(result).toEqual({ id: 1n, uploaderName: 'u' })
+    expect(result).toEqual({ id: 1, uploaderName: 'u' })
   })
 
   it('updateThenRefetch returns null without a refetch when the update matched no row', async () => {
     const uploader = await createImageUploader()
-    const result = await uploader.updateThenRefetch(createMockDb([{ id: 1n }]), 1n, async () => null)
+    const result = await uploader.updateThenRefetch(createMockDb([{ id: 1 }]), 1, async () => null)
     expect(result).toBeNull()
   })
 })

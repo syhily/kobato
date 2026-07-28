@@ -1,6 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import { and, count, desc, eq, gte, inArray, isNotNull, lt, sql } from 'drizzle-orm'
 
-import { and, count, desc, eq, gte, ilike, inArray, isNotNull, lt, sql } from 'drizzle-orm'
+import type { Database } from '@/server/infra/db/database'
 
 import { clampDateToRetention, parseDate } from '@/server/domains/audit/projection'
 import { auditLog } from '@/server/infra/db/schema/config'
@@ -29,7 +29,7 @@ export function buildAuditLogWhere(input: AuditLogFilterInput) {
     conditions.push(eq(auditLog.actorId, idFromString(input.actorId)))
   }
   if (input.ip) {
-    conditions.push(ilike(sql`${auditLog.ipAddress}::text`, `%${input.ip}%`))
+    conditions.push(sql`${auditLog.ipAddress} LIKE ${`%${input.ip}%`}`)
   }
   const dateFrom = clampDateToRetention(parseDate(input.dateFrom))
   if (dateFrom) {
@@ -45,13 +45,13 @@ export function buildAuditLogWhere(input: AuditLogFilterInput) {
   return conditions.length > 0 ? and(...conditions) : undefined
 }
 
-export async function countAuditLogs(db: NodePgDatabase, filters: AuditLogFilterInput): Promise<number> {
+export async function countAuditLogs(db: Database, filters: AuditLogFilterInput): Promise<number> {
   const where = buildAuditLogWhere(filters)
   const countResult = await db.select({ value: count() }).from(auditLog).where(where)
   return countResult[0]?.value ?? 0
 }
 
-export async function listAuditLogs(db: NodePgDatabase, filters: AuditLogFilterInput, offset: number, limit: number) {
+export async function listAuditLogs(db: Database, filters: AuditLogFilterInput, offset: number, limit: number) {
   const where = buildAuditLogWhere(filters)
   const rows = await db
     .select()
@@ -64,10 +64,10 @@ export async function listAuditLogs(db: NodePgDatabase, filters: AuditLogFilterI
 }
 
 export async function fetchAuditLogActorMap(
-  db: NodePgDatabase,
+  db: Database,
   rows: Array<typeof auditLog.$inferSelect>,
 ): Promise<Map<string, string>> {
-  const actorIds = rows.map((r) => r.actorId).filter((id): id is bigint => id !== null)
+  const actorIds = rows.map((r) => r.actorId).filter((id): id is number => id !== null)
   const uniqueActorIds = [...new Set(actorIds)]
 
   if (uniqueActorIds.length === 0) {
@@ -78,14 +78,14 @@ export async function fetchAuditLogActorMap(
   return new Map(users.map((u) => [String(u.id), u.name]))
 }
 
-export async function fetchAuditLogActors(db: NodePgDatabase) {
+export async function fetchAuditLogActors(db: Database) {
   const actorRows = await db
     .select({ actorId: auditLog.actorId })
     .from(auditLog)
     .where(isNotNull(auditLog.actorId))
     .groupBy(auditLog.actorId)
 
-  const actorIds = actorRows.map((r) => r.actorId).filter((id): id is bigint => id !== null)
+  const actorIds = actorRows.map((r) => r.actorId).filter((id): id is number => id !== null)
 
   if (actorIds.length === 0) {
     return []

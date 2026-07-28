@@ -34,14 +34,14 @@ describe('server/domains/comments/services/access — verifyCommentAccess', () =
 
   it('falls back to session ownership when token proves nothing', async () => {
     vi.mocked(verifyCommentOwnership).mockResolvedValueOnce({ token: null, cleaned: cookie })
-    vi.mocked(findCommentWithUserById).mockResolvedValueOnce({ userId: 42n } as never)
+    vi.mocked(findCommentWithUserById).mockResolvedValueOnce({ userId: 42 } as never)
     const result = await verifyCommentAccess(db, cookie, '1', { id: '42', role: 'visitor' })
     expect(result.ok).toBe(true)
   })
 
   it('returns ok=false when session id does not match the comment author', async () => {
     vi.mocked(verifyCommentOwnership).mockResolvedValueOnce({ token: null, cleaned: cookie })
-    vi.mocked(findCommentWithUserById).mockResolvedValueOnce({ userId: 99n } as never)
+    vi.mocked(findCommentWithUserById).mockResolvedValueOnce({ userId: 99 } as never)
     const result = await verifyCommentAccess(db, cookie, '1', { id: '42', role: 'visitor' })
     expect(result.ok).toBe(false)
   })

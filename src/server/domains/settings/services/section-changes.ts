@@ -1,12 +1,10 @@
-import type { Pool } from 'pg'
-
 import type { SettingsSection } from '@/shared/config/sections'
 
 import { rescheduleArchive } from '@/server/domains/audit/services/scheduler'
 import { rescheduleBackup } from '@/server/domains/backup/scheduler'
 import { invalidateMailTransportCache } from '@/server/infra/email/sender'
 
-export type SectionChangeHandler = (pool: Pool) => void | Promise<void>
+export type SectionChangeHandler = () => void | Promise<void>
 
 // Side effects that run after a settings section is persisted. Every
 // handler is imported explicitly in one place so activation never

@@ -1,4 +1,4 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Database } from '@/server/infra/db/database'
 
 import { findLivePageBySlug } from '@/server/domains/pages/services/public-query'
 import { findLivePostBySlug } from '@/server/domains/posts/services/single'
@@ -8,7 +8,7 @@ import { tryParseUrl } from '@/shared/utils/safe-url'
 
 export interface WebmentionTarget {
   type: 'post' | 'page'
-  ownerId: bigint
+  ownerId: number
   slug: string
   title: string
   /** Canonical site URL with trailing slash (comment-URL convention). */
@@ -33,7 +33,7 @@ function decodeSegment(segment: string | undefined): string | null {
  * (draft / scheduled / trashed / missing). The mention is rejected at
  * the route with 404 in that case.
  */
-export async function resolveWebmentionTarget(db: NodePgDatabase, rawTarget: string): Promise<WebmentionTarget | null> {
+export async function resolveWebmentionTarget(db: Database, rawTarget: string): Promise<WebmentionTarget | null> {
   const target = tryParseUrl(rawTarget)
   if (target === null || (target.protocol !== 'http:' && target.protocol !== 'https:')) {
     return null

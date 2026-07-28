@@ -1,11 +1,10 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
+
 import { clearAllTables } from '#/_helpers/integration-db'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { comment } from '@/server/infra/db/schema/comment'
 import { user } from '@/server/infra/db/schema/user'
 
@@ -25,12 +24,11 @@ const account = await import('@/server/domains/users/services/account')
 const adminQuery = await import('@/server/domains/users/repos/admin-query')
 const userOps = await import('@/server/infra/db/operations/user')
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {
@@ -53,12 +51,12 @@ async function seedUser(overrides: Partial<typeof user.$inferInsert> = {}) {
   return rows[0]
 }
 
-async function seedComment(userId: bigint, overrides: Partial<typeof comment.$inferInsert> = {}) {
+async function seedComment(userId: number, overrides: Partial<typeof comment.$inferInsert> = {}) {
   const rows = await db
     .insert(comment)
     .values({
       type: 'post',
-      ownerId: 1n,
+      ownerId: 1,
       userId,
       body: [],
       isPending: overrides.isPending ?? false,
@@ -145,7 +143,7 @@ describe('users/repos/admin-query — listAdminUsers', () => {
 
 describe('users/repos/admin-query — findAdminUserById', () => {
   it('returns null for unknown id', async () => {
-    expect(await adminQuery.findAdminUserById(db, 9999n)).toBeNull()
+    expect(await adminQuery.findAdminUserById(db, 9999)).toBeNull()
   })
 
   it('returns aggregated row for a known id', async () => {
@@ -221,7 +219,7 @@ describe('infra/db/operations/user — setUserMuted', () => {
 
 describe('users/services/admin — muteUser', () => {
   it('throws NOT_FOUND for an unknown target', async () => {
-    await expect(admin.muteUser(db, 9999n, true)).rejects.toThrow(/用户不存在或为管理员/)
+    await expect(admin.muteUser(db, 9999, true)).rejects.toThrow(/用户不存在或为管理员/)
   })
 
   it('throws NOT_FOUND when targeting an admin (admins cannot be muted)', async () => {
@@ -249,7 +247,7 @@ describe('users/services/admin — updateUserRoleWithGuard', () => {
   })
 
   it('throws NOT_FOUND for unknown target', async () => {
-    await expect(admin.updateUserRoleWithGuard(db, 9999n, 'author', '1')).rejects.toThrow(/用户不存在/)
+    await expect(admin.updateUserRoleWithGuard(db, 9999, 'author', '1')).rejects.toThrow(/用户不存在/)
   })
 
   it('throws CONFLICT when demoting the only admin', async () => {
@@ -367,7 +365,7 @@ describe('infra/db/operations/user — updateUserById', () => {
 
 describe('users/services/account — updateAccountProfile', () => {
   it('throws NOT_FOUND when user does not exist', async () => {
-    await expect(account.updateAccountProfile(db, 9999n, {}, 'admin')).rejects.toThrow(/用户不存在/)
+    await expect(account.updateAccountProfile(db, 9999, {}, 'admin')).rejects.toThrow(/用户不存在/)
   })
 
   it('throws NOT_FOUND when user is soft-deleted', async () => {
@@ -410,7 +408,7 @@ describe('users/services/account — updateAccountProfile', () => {
 
 describe('users/services/account — updateAccountPassword', () => {
   it('throws NOT_FOUND when user does not exist', async () => {
-    await expect(account.updateAccountPassword(db, 9999n, 'old', 'new')).rejects.toThrow(/用户不存在/)
+    await expect(account.updateAccountPassword(db, 9999, 'old', 'new')).rejects.toThrow(/用户不存在/)
   })
 
   it('throws FORBIDDEN when old password is wrong', async () => {

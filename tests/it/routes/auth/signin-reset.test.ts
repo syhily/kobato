@@ -84,7 +84,7 @@ vi.mock('@/server/domains/auth/verification-tokens', () => tokenMocks)
 
 const userQueryMocks = vi.hoisted(() => ({
   findUserById: vi.fn(),
-  updateUserById: vi.fn(async () => ({ id: 42n })),
+  updateUserById: vi.fn(async () => ({ id: 42 })),
   findUserByEmail: vi.fn(async () => null),
   PASSWORD_HASH_ROUNDS: 12,
 }))
@@ -141,9 +141,9 @@ describe('routes/signin — password-reset session-revocation', () => {
   })
 
   it('calls establishLoginSession with revokeOtherSessions: true on a successful reset', async () => {
-    tokenMocks.consumeToken.mockResolvedValueOnce({ userId: 42n })
+    tokenMocks.consumeToken.mockResolvedValueOnce({ userId: 42 })
     userQueryMocks.findUserById.mockResolvedValueOnce({
-      id: 42n,
+      id: 42,
       role: 'visitor',
       name: 'tester',
       email: 'tester@example.com',

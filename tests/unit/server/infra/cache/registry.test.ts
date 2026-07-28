@@ -1,7 +1,7 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { Buffer } from 'node:buffer'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import type { Database } from '@/server/infra/db/database'
 
 const kvStoreMock = vi.hoisted(() => ({
   getItem: vi.fn<(db: unknown, key: string) => Promise<unknown>>(),
@@ -34,7 +34,7 @@ import {
 // The db handle is only forwarded to the mocked kv-store (and to the
 // delete/execute chains, which get their own stand-ins below) — a plain
 // object is enough for the unit scope.
-const db = {} as NodePgDatabase
+const db = {} as Database
 
 // devBypass caches (og / calendar) skip reads outside production, so pin
 // PROD on by default and flip it off only in the devBypass tests.
@@ -279,7 +279,7 @@ describe('cache registry — get / set / remove / clear', () => {
   it('clear deletes by bucket column, not by prefix scan', async () => {
     const where = vi.fn().mockResolvedValue(undefined)
     const deleteFn = vi.fn(() => ({ where }))
-    const dbMock = { delete: deleteFn } as unknown as NodePgDatabase
+    const dbMock = { delete: deleteFn } as unknown as Database
 
     await clear(dbMock, 'feed')
 
@@ -340,32 +340,35 @@ describe('cache registry — throughMany', () => {
 })
 
 describe('cache registry — counters', () => {
-  function counterDb(rows: unknown[], executeRows: unknown[] = []) {
-    const limit = vi.fn().mockResolvedValue(rows)
+  function counterDb(rows: unknown[]) {
+    const limit = vi.fn(() => ({ all: () => rows }))
     const where = vi.fn(() => ({ limit }))
     const from = vi.fn(() => ({ where }))
     const select = vi.fn(() => ({ from }))
-    const execute = vi.fn().mockResolvedValue({ rows: executeRows })
-    return { db: { select, execute } as unknown as NodePgDatabase, select, execute }
+    const run = vi.fn()
+    const onConflictDoUpdate = vi.fn(() => ({ run }))
+    const values = vi.fn(() => ({ onConflictDoUpdate }))
+    const insert = vi.fn(() => ({ values }))
+    return { db: { select, insert } as unknown as Database, select, insert }
   }
 
-  it('rejects buckets that declare no counter', async () => {
-    // getCounter is synchronous up to the memoized read — the guard throws.
+  it('rejects buckets that declare no counter', () => {
     expect(() => getCounter(db, 'og')).toThrow("cache 'og' declares no counter")
-    await expect(bumpCounter(db, 'feed')).rejects.toThrow("cache 'feed' declares no counter")
+    expect(() => bumpCounter(db, 'feed')).toThrow("cache 'feed' declares no counter")
   })
 
   it('memoizes the generation and refreshes it on bump', async () => {
-    const { db: dbMock, select, execute } = counterDb([{ value: 7 }], [{ value: 8 }])
+    const { db: dbMock, select, insert } = counterDb([{ value: 7 }])
 
     await expect(getCounter(dbMock, 'searchResult')).resolves.toBe(7)
     await expect(getCounter(dbMock, 'searchResult')).resolves.toBe(7)
     expect(select).toHaveBeenCalledTimes(1)
 
-    await bumpCounter(dbMock, 'searchResult')
-    expect(execute).toHaveBeenCalledTimes(1)
+    bumpCounter(dbMock, 'searchResult')
+    expect(insert).toHaveBeenCalledTimes(1)
     await expect(getCounter(dbMock, 'searchResult')).resolves.toBe(8)
-    expect(select).toHaveBeenCalledTimes(1)
+    // The bump itself re-reads the counter (read-modify-write).
+    expect(select).toHaveBeenCalledTimes(2)
   })
 
   it('re-reads the counter after the test reset', async () => {

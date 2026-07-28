@@ -14,7 +14,7 @@ export function formatBlockMessage(kind: string, name: string, titles: readonly 
 }
 
 // Pre-flight uniqueness guard for create.
-export async function ensureUniqueOnCreateTaxonomy<T extends { id: bigint }>(
+export async function ensureUniqueOnCreateTaxonomy<T extends { id: number }>(
   findByName: (name: string) => Promise<T | null>,
   findBySlug: (slug: string) => Promise<T | null>,
   name: string,
@@ -35,10 +35,10 @@ export async function ensureUniqueOnCreateTaxonomy<T extends { id: bigint }>(
 
 // Pre-flight uniqueness guard for update. Skips the name / slug queries
 // when the value hasn't changed.
-export async function ensureUniqueOnUpdateTaxonomy<T extends { id: bigint }>(
+export async function ensureUniqueOnUpdateTaxonomy<T extends { id: number }>(
   findByName: (name: string) => Promise<T | null>,
   findBySlug: (slug: string) => Promise<T | null>,
-  id: bigint,
+  id: number,
   newName: string,
   existingName: string,
   newSlug: string,
@@ -67,12 +67,12 @@ export async function ensureUniqueOnUpdateTaxonomy<T extends { id: bigint }>(
 // just to name the referencing posts. It receives the whole row:
 // categories count references by `row.id`, tags by `row.name` (the
 // `post_tag` join key).
-export async function deleteAdminTaxonomy<T extends { id: bigint; name: string }>(
-  id: bigint,
+export async function deleteAdminTaxonomy<T extends { id: number; name: string }>(
+  id: number,
   entityLabel: string,
   deps: {
-    findById: (id: bigint) => Promise<T | null>
-    deleteRow: (id: bigint) => Promise<boolean>
+    findById: (id: number) => Promise<T | null>
+    deleteRow: (id: number) => Promise<boolean>
     listPostTitles: (row: T) => Promise<string[]>
   },
 ): Promise<boolean> {

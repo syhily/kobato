@@ -1,10 +1,9 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
+
 import { clearAllTables } from '#/_helpers/integration-db'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { post } from '@/server/infra/db/schema/post'
 import { postTag } from '@/server/infra/db/schema/post-tag'
 import { category, tag } from '@/server/infra/db/schema/taxonomy'
@@ -13,12 +12,11 @@ vi.mock('@/server/domains/images/services/enhance', () => ({
   hydrateImageRefs: vi.fn(async () => undefined),
 }))
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {
@@ -71,12 +69,12 @@ describe('listAllCategories', () => {
       .values({ name: 'GatedCat', slug: 'gated-cat', cover: '', description: '', sortOrder: 0 })
       .returning()
     await db.insert(post).values([
-      { slug: 'live-c', title: 'Live', categoryId: gatedCat.id, publishedRevisionId: 1n },
+      { slug: 'live-c', title: 'Live', categoryId: gatedCat.id, publishedRevisionId: 1 },
       {
         slug: 'sched-c',
         title: 'Sched',
         categoryId: gatedCat.id,
-        publishedRevisionId: 2n,
+        publishedRevisionId: 2,
         publishedAt: new Date(Date.now() + 86_400_000),
       },
       { slug: 'norev-c', title: 'NoRev', categoryId: gatedCat.id },
@@ -162,14 +160,14 @@ describe('listAllTags', () => {
     const [tagRow] = await db.insert(tag).values({ name: 'Gated', slug: 'gated' }).returning()
     const [livePost] = await db
       .insert(post)
-      .values({ slug: 'live-t', title: 'Live', publishedRevisionId: 1n })
+      .values({ slug: 'live-t', title: 'Live', publishedRevisionId: 1 })
       .returning()
     const [schedPost] = await db
       .insert(post)
       .values({
         slug: 'sched-t',
         title: 'Sched',
-        publishedRevisionId: 2n,
+        publishedRevisionId: 2,
         publishedAt: new Date(Date.now() + 86_400_000),
       })
       .returning()

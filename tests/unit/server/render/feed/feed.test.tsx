@@ -1,6 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import type { Database } from '@/server/infra/db/database'
 
 // `generateFeeds` threads a real `feed` package output, the
 // content catalog, and `prerenderToNodeStream` together. We mock the catalog
@@ -55,14 +55,14 @@ vi.mock('@/shared/config/getters', () => ({
   getBlogSettingsBundleSync: vi.fn(() => ({})),
 }))
 
-const db = {} as NodePgDatabase
+const db = {} as Database
 
 const { generateFeeds } = await import('@/server/render/feed/generator')
 
 function fakeCatalog(
   opts: {
     posts?: unknown[]
-    categories?: { id?: bigint; name: string; slug: string }[]
+    categories?: { id?: number; name: string; slug: string }[]
     tags?: { name: string; slug: string }[]
   } = {},
 ) {

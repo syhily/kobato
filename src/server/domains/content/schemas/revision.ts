@@ -9,11 +9,11 @@ import type { ContentRow } from '@/server/infra/db/types'
 export type ContentType = 'page' | 'post'
 
 export interface SaveDraftInput {
-  ownerId: bigint
+  ownerId: number
   body: unknown
   imageSources: string[]
   headings: unknown
-  authorId: bigint | null
+  authorId: number | null
   expectedClientRevisionToken?: string | null
   force?: boolean
 }

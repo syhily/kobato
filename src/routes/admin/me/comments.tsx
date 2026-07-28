@@ -9,6 +9,7 @@ import { resolveEntitiesForComments } from '@/server/domains/content/entities/sl
 import { getRequestContext } from '@/server/http/request-context'
 import { titleMeta } from '@/shared/seo/title-meta'
 import { parseCommentEntity, serializeCommentEntity } from '@/shared/utils/comments'
+import { idFromString } from '@/shared/utils/id'
 import { MyCommentsView } from '@/ui/admin/my/MyCommentsView'
 
 import type { Route } from './+types/comments'
@@ -57,7 +58,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const ctx = { user: rc.viewer ?? undefined, role: rc.viewer?.role ?? null }
   // Self-service path — any logged-in role can see their own comments.
   requireRole(ctx, 'visitor')
-  const userId = BigInt(ctx.user.id)
+  const userId = idFromString(ctx.user.id)
   const url = new URL(request.url)
   const status = parseStatus(url.searchParams.get('status'))
   const q = (url.searchParams.get('q') ?? '').trim()

@@ -5,11 +5,11 @@ import { parseCommentEntity, serializeCommentEntity } from '@/shared/utils/comme
 describe('shared/utils/comments', () => {
   describe('parseCommentEntity', () => {
     it('parses a valid post entity', () => {
-      expect(parseCommentEntity('post:42')).toEqual({ type: 'post', ownerId: 42n })
+      expect(parseCommentEntity('post:42')).toEqual({ type: 'post', ownerId: 42 })
     })
 
     it('parses a valid page entity', () => {
-      expect(parseCommentEntity('page:7')).toEqual({ type: 'page', ownerId: 7n })
+      expect(parseCommentEntity('page:7')).toEqual({ type: 'page', ownerId: 7 })
     })
 
     it('returns null for missing or empty input', () => {
@@ -37,12 +37,12 @@ describe('shared/utils/comments', () => {
 
   describe('serializeCommentEntity', () => {
     it('serializes a parsed entity back to the wire form', () => {
-      expect(serializeCommentEntity({ type: 'post', ownerId: 42n })).toBe('post:42')
-      expect(serializeCommentEntity({ type: 'page', ownerId: 7n })).toBe('page:7')
+      expect(serializeCommentEntity({ type: 'post', ownerId: 42 })).toBe('post:42')
+      expect(serializeCommentEntity({ type: 'page', ownerId: 7 })).toBe('page:7')
     })
 
     it('round-trips through parseCommentEntity', () => {
-      const original = { type: 'post' as const, ownerId: 123n }
+      const original = { type: 'post' as const, ownerId: 123 }
       expect(parseCommentEntity(serializeCommentEntity(original))).toEqual(original)
     })
   })

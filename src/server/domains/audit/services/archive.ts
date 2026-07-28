@@ -1,10 +1,9 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { and, gt, gte, inArray, lt, sql } from 'drizzle-orm'
 import { createGzip } from 'node:zlib'
 import superjson from 'superjson'
 
 import type { ArchiveResult, CleanupResult } from '@/server/domains/audit/types'
+import type { Database } from '@/server/infra/db/database'
 
 import { recordAuditEvent } from '@/server/domains/audit/services/record'
 import { auditLog } from '@/server/infra/db/schema/config'
@@ -32,7 +31,7 @@ function s3ArchiveAvailable(): boolean {
 
 // Archive expired audit logs to S3
 
-export async function archiveExpiredAuditLogs(db: NodePgDatabase): Promise<ArchiveResult> {
+export async function archiveExpiredAuditLogs(db: Database): Promise<ArchiveResult> {
   const bundle = getBlogSettingsBundleSync()
   const dbRetentionDays = bundle?.limits?.auditLogDbRetentionDays ?? 30
 
@@ -49,7 +48,7 @@ export async function archiveExpiredAuditLogs(db: NodePgDatabase): Promise<Archi
     log.warn('S3 storage unavailable; purging expired audit logs without archiving')
 
     const deleteResult = await db.delete(auditLog).where(lt(auditLog.createdAt, cutoff))
-    const deleted = Number(deleteResult.rowCount ?? 0)
+    const deleted = Number(deleteResult.changes)
     log.info('Purge-only mode completed', { deletedRows: deleted })
     return { archivedDays: 0, archivedRows: 0, deletedRows: deleted }
   }
@@ -57,13 +56,15 @@ export async function archiveExpiredAuditLogs(db: NodePgDatabase): Promise<Archi
   // Count how many days have data to archive
   const dayRows = await db
     .select({
-      day: sql<string>`date(${auditLog.createdAt})`,
-      count: sql<number>`count(*)::int`,
+      // createdAt is epoch ms — `date(x)` alone reads it as a Julian day
+      // (NULL); divide down to seconds for `unixepoch`.
+      day: sql<string>`date(${auditLog.createdAt} / 1000, 'unixepoch')`,
+      count: sql<number>`count(*)`,
     })
     .from(auditLog)
     .where(lt(auditLog.createdAt, cutoff))
-    .groupBy(sql`date(${auditLog.createdAt})`)
-    .orderBy(sql`date(${auditLog.createdAt})`)
+    .groupBy(sql`date(${auditLog.createdAt} / 1000, 'unixepoch')`)
+    .orderBy(sql`date(${auditLog.createdAt} / 1000, 'unixepoch')`)
 
   if (dayRows.length === 0) {
     log.info('No audit logs to archive')
@@ -100,7 +101,7 @@ export async function archiveExpiredAuditLogs(db: NodePgDatabase): Promise<Archi
   return { archivedDays, archivedRows, deletedRows }
 }
 
-async function archiveDay(db: NodePgDatabase, day: string, dayStart: Date, dayEnd: Date): Promise<number> {
+async function archiveDay(db: Database, day: string, dayStart: Date, dayEnd: Date): Promise<number> {
   const key = `${S3_ARCHIVE_PREFIX}${day}.jsonl.gz`
 
   // Stream pages through gzip to avoid loading everything into memory.
@@ -114,8 +115,8 @@ async function archiveDay(db: NodePgDatabase, day: string, dayStart: Date, dayEn
   })
 
   let totalRows = 0
-  let cursorId: bigint | undefined
-  const archivedIds: bigint[] = []
+  let cursorId: number | undefined
+  const archivedIds: number[] = []
 
   // Paginate through the day's data in batches using id as cursor
   // (createdAt is not unique, so id is the tie-breaker).
@@ -183,7 +184,7 @@ async function archiveDay(db: NodePgDatabase, day: string, dayStart: Date, dayEn
   // between read and delete are not silently destroyed.
   const deleteResult = await db.delete(auditLog).where(inArray(auditLog.id, archivedIds))
 
-  const deleted = Number(deleteResult.rowCount ?? 0)
+  const deleted = Number(deleteResult.changes)
   return deleted
 }
 
@@ -220,7 +221,7 @@ export async function cleanupExpiredArchives(): Promise<CleanupResult> {
 
 // Run the full archive job
 
-export async function runArchiveJob(db: NodePgDatabase): Promise<void> {
+export async function runArchiveJob(db: Database): Promise<void> {
   try {
     const archiveResult = await archiveExpiredAuditLogs(db)
     const cleanupResult = await cleanupExpiredArchives()

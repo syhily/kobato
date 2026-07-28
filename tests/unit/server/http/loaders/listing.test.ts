@@ -1,6 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { describe, expect, it, vi } from 'vitest'
+
+import type { Database } from '@/server/infra/db/database'
 
 vi.mock('@/server/domains/posts/services/public-query', () => ({
   getClientPostsWithMetadata: vi.fn(async (_db: unknown, posts: unknown[]) => posts),
@@ -16,7 +16,7 @@ describe('listingLoader', () => {
   it('owns the stable offset when a tail merge expands the final page limit', async () => {
     const fetchPage = vi.fn(async () => [])
 
-    await listingLoader({} as NodePgDatabase, {
+    await listingLoader({} as Database, {
       rawNum: '2',
       totalPosts: 13,
       pageSize: 5,

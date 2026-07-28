@@ -2,17 +2,16 @@ import { asc } from 'drizzle-orm'
 import { describe, expect, it, afterAll, beforeEach } from 'vitest'
 
 import { clearAllTables } from '#/_helpers/integration-db'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { reorderAdminCategories } from '@/server/domains/taxonomies/categories/services/mutate'
 import { reorderCategories } from '@/server/infra/db/operations/category'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { category } from '@/server/infra/db/schema/taxonomy'
 
-const poolManager = createDbPool()
-const db = poolManager.db
-const pool = poolManager.pool
+const handle = createTestDatabase()
+const db = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {

@@ -1,24 +1,8 @@
-import { Writable } from 'node:stream'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const poolMock = {
-  connect: vi.fn(),
-}
+import type { DatabaseHandle } from '@/server/infra/db/database'
 
-let insertResult: Promise<unknown> = Promise.resolve(undefined)
-const valuesFn = vi.fn(() => insertResult)
-
-const dbMock = {
-  insert: vi.fn(() => ({ values: valuesFn })),
-}
-
-vi.mock('@/server/infra/db/copy-batcher', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/server/infra/db/copy-batcher')>()
-  return {
-    ...actual,
-    CopyBatcher: actual.CopyBatcher,
-  }
-})
+import { closeTestDatabase, createTestDatabase } from '#/_helpers/integration-db'
 
 vi.mock('@/server/infra/logger', () => ({
   getLogger: vi.fn(() => ({
@@ -38,13 +22,17 @@ vi.mock('@/server/infra/paths', () => ({
 
 import { flushAuditLog, pushAuditEvent, replayDeadLetterAuditLog } from '@/server/domains/audit/services/batcher'
 import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
+import { auditLog } from '@/server/infra/db/schema/config'
+import { user } from '@/server/infra/db/schema/user'
+
+let handle: DatabaseHandle
 
 function makeEvent(
   overrides: Partial<Parameters<typeof pushAuditEvent>[0]> = {},
 ): Parameters<typeof pushAuditEvent>[0] {
   return {
     action: 'post.create',
-    actorId: 1n,
+    actorId: 1,
     actorRole: 'admin',
     resourceType: 'post',
     resourceId: '2',
@@ -56,73 +44,61 @@ function makeEvent(
   }
 }
 
-function mockPoolForCopy() {
-  const writable = new Writable({
-    write(_chunk, _encoding, callback) {
-      callback()
-    },
-  })
-  const client = {
-    query: vi.fn(() => writable),
-    release: vi.fn(),
-  }
-  poolMock.connect.mockResolvedValue(client)
-}
-
-function mockPoolForFailure() {
-  const client = {
-    query: vi.fn(() => {
-      const stream = new Writable({
-        write(_chunk, _encoding, callback) {
-          callback(new Error('copy failed'))
-        },
-      })
-      return stream
-    }),
-    release: vi.fn(),
-  }
-  poolMock.connect.mockResolvedValue(client)
-}
-
 describe('audit batcher', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     resetAllBatchers()
-    insertResult = Promise.resolve(undefined)
+    handle?.closed === false && closeTestDatabase(handle)
+    handle = createTestDatabase()
+    handle.db.delete(auditLog).run()
+    // audit_log.actorId FK → user.id: seed the actor.
+    handle.db.insert(user).values({ name: 'Admin', email: 'admin@test.dev', password: 'x', role: 'admin' }).run()
+    initAllBatchers(handle)
+  })
+
+  afterAll(() => {
+    resetAllBatchers()
+    closeTestDatabase(handle)
   })
 
   it('flushes an empty batch immediately', async () => {
-    initAllBatchers(poolMock as never, dbMock as never)
     const result = await flushAuditLog()
     expect(result).toEqual({ committed: 0, deadLettered: 0 })
   })
 
-  it('pushes and flushes events via COPY', async () => {
-    mockPoolForCopy()
-    initAllBatchers(poolMock as never, dbMock as never)
+  it('pushes and flushes events into audit_log', async () => {
     pushAuditEvent(makeEvent())
     const result = await flushAuditLog()
-    expect(result.committed).toBe(1)
-    expect(result.deadLettered).toBe(0)
+    expect(result).toEqual({ committed: 1, deadLettered: 0 })
+
+    const rows = handle.db.select().from(auditLog).all()
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!.action).toBe('post.create')
+    expect(rows[0]!.actorId).toBe(1)
   })
 
-  it('falls back to batch insert when COPY fails', async () => {
-    mockPoolForFailure()
-    initAllBatchers(poolMock as never, dbMock as never)
-    pushAuditEvent(makeEvent())
+  it('flushes multiple events as one batch', async () => {
+    pushAuditEvent(makeEvent({ action: 'a' }))
+    pushAuditEvent(makeEvent({ action: 'b' }))
     const result = await flushAuditLog()
-    expect(result.committed).toBe(1)
-    expect(valuesFn).toHaveBeenCalled()
+    expect(result).toEqual({ committed: 2, deadLettered: 0 })
+    expect(handle.db.select().from(auditLog).all()).toHaveLength(2)
   })
 
-  it('falls back to per-row insert when batch insert fails', async () => {
-    mockPoolForFailure()
-    insertResult = Promise.reject(new Error('batch insert failed'))
-    initAllBatchers(poolMock as never, dbMock as never)
-    pushAuditEvent(makeEvent())
+  it('falls back to per-row inserts when the batch fails (bad row dead-letters, good row commits)', async () => {
+    // One NOT NULL violation (action) inside the batch: the multi-row
+    // insert fails wholesale, the per-row fallback commits the good
+    // event and dead-letters the bad one.
+    pushAuditEvent(makeEvent({ action: 'good.action' }))
+    pushAuditEvent(makeEvent({ action: null as never }))
+
     const result = await flushAuditLog()
-    expect(result.committed).toBe(0)
+
+    expect(result.committed).toBe(1)
     expect(result.deadLettered).toBe(1)
+    const rows = handle.db.select().from(auditLog).all()
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!.action).toBe('good.action')
   })
 
   it('throws when pushing before initialization', () => {
@@ -130,9 +106,7 @@ describe('audit batcher', () => {
     expect(() => pushAuditEvent(makeEvent())).toThrow('not initialized')
   })
 
-  it('replays dead-letter events', async () => {
-    mockPoolForCopy()
-    initAllBatchers(poolMock as never, dbMock as never)
+  it('replays dead-letter events (none on disk → no-op)', async () => {
     const result = await replayDeadLetterAuditLog('/nonexistent')
     expect(result.replayed).toBe(0)
   })

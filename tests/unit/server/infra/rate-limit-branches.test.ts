@@ -124,8 +124,8 @@ describe('rate-limit — bucket routing', () => {
   })
 
   it('routes admin+email and target-user-id buckets to their namespaces', async () => {
-    await tryInviteByEmailRateLimit(42n, 'admin+peer@example.com')
-    await tryPasswordResetByTargetRateLimit(99n)
+    await tryInviteByEmailRateLimit(42, 'admin+peer@example.com')
+    await tryPasswordResetByTargetRateLimit(99)
 
     const keys = __rateLimitKeysForTests()
     expect(keys[0].startsWith('rate-limit:invite-email:42:')).toBe(true)
@@ -135,10 +135,10 @@ describe('rate-limit — bucket routing', () => {
 
   it('scopes invite-email counters per admin', async () => {
     const email = 'peer@example.com'
-    expect((await tryInviteByEmailRateLimit(1n, email)).count).toBe(1)
+    expect((await tryInviteByEmailRateLimit(1, email)).count).toBe(1)
     // Same mailbox, different admin → a fresh counter.
-    expect((await tryInviteByEmailRateLimit(2n, email)).count).toBe(1)
-    expect((await tryInviteByEmailRateLimit(1n, email)).count).toBe(2)
+    expect((await tryInviteByEmailRateLimit(2, email)).count).toBe(1)
+    expect((await tryInviteByEmailRateLimit(1, email)).count).toBe(2)
   })
 })
 
@@ -168,8 +168,8 @@ describe('rate-limit — window + exceed branches', () => {
 
   it('reports exceeded=false exactly at the threshold (count === maxAttempts)', async () => {
     // inviteEmail has maxAttempts=1; count of 1 is allowed (strict >).
-    expect(await tryInviteByEmailRateLimit(7n, 'a@b.c')).toEqual({ count: 1, exceeded: false })
-    expect((await tryInviteByEmailRateLimit(7n, 'a@b.c')).exceeded).toBe(true)
+    expect(await tryInviteByEmailRateLimit(7, 'a@b.c')).toEqual({ count: 1, exceeded: false })
+    expect((await tryInviteByEmailRateLimit(7, 'a@b.c')).exceeded).toBe(true)
   })
 
   it('applies the settings-driven windowSeconds to the window length', async () => {

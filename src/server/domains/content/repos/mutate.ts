@@ -1,5 +1,3 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { and, desc, eq } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
 import { isDeepStrictEqual } from 'node:util'
@@ -11,6 +9,7 @@ import type {
   SaveDraftInput,
   SaveDraftResult,
 } from '@/server/domains/content/schemas/revision'
+import type { Database } from '@/server/infra/db/database'
 import type { ContentRow, NewContent } from '@/server/infra/db/types'
 
 import { content as contentTable } from '@/server/infra/db/schema/content'
@@ -21,44 +20,46 @@ import { arePortableTextBodiesEquivalent } from '@/shared/pt/bridge/canonicalize
 import { portableTextBodySchema } from '@/shared/pt/schema'
 
 /** The tx handle handed to a `db.transaction(...)` callback. */
-type RevisionTx = Parameters<Parameters<NodePgDatabase['transaction']>[0]>[0]
+type RevisionTx = Parameters<Parameters<Database['transaction']>[0]>[0]
 
 function metaTableFor(type: ContentType) {
   return type === 'page' ? pageMetaTable : postMetaTable
 }
 
 export interface LockedMeta {
-  id: bigint
+  id: number
   firstPublishedAt: Date | null
 }
 
 /**
- * Shared transaction prologue for the revision mutations: lock the owner
- * meta row (`SELECT … FOR UPDATE`, throwing NOT_FOUND when it is gone)
- * and load the latest content revision (any status).
+ * Shared transaction prologue for the revision mutations: load the owner
+ * meta row (throwing NOT_FOUND when it is gone) and the latest content
+ * revision (any status). Sync — node:sqlite; writers serialise on the
+ * connection, so the old `FOR UPDATE` row lock is unnecessary.
  */
-export async function lockMetaAndLoadLatest(
+export function lockMetaAndLoadLatest(
   tx: RevisionTx,
   type: ContentType,
-  ownerId: bigint,
-): Promise<{ meta: LockedMeta; latest: ContentRow | undefined }> {
+  ownerId: number,
+): { meta: LockedMeta; latest: ContentRow | undefined } {
   const metaTable = metaTableFor(type)
-  const lockRows = await tx
+  const lockRows = tx
     .select({ id: metaTable.id, firstPublishedAt: metaTable.firstPublishedAt })
     .from(metaTable)
     .where(eq(metaTable.id, ownerId))
-    .for('update')
+    .all()
   const locked = lockRows[0]
   if (locked === undefined) {
     throw new DomainError('NOT_FOUND', `${type} meta row ${ownerId} not found`)
   }
 
-  const latestRows = await tx
+  const latestRows = tx
     .select()
     .from(contentTable)
     .where(and(eq(contentTable.type, type), eq(contentTable.ownerId, ownerId)))
     .orderBy(desc(contentTable.revisionNo))
     .limit(1)
+    .all()
   return { meta: locked, latest: latestRows[0] }
 }
 
@@ -89,13 +90,13 @@ export function checkTokenConflict(
 }
 
 export async function saveDraftRevision(
-  db: NodePgDatabase,
+  db: Database,
   type: ContentType,
   input: SaveDraftInput,
 ): Promise<SaveDraftResult> {
   const metaTable = metaTableFor(type)
-  return db.transaction(async (tx) => {
-    const { latest } = await lockMetaAndLoadLatest(tx, type, input.ownerId)
+  return db.transaction((tx) => {
+    const { latest } = lockMetaAndLoadLatest(tx, type, input.ownerId)
 
     const nextToken = randomUUID()
     const now = new Date()
@@ -108,7 +109,7 @@ export async function saveDraftRevision(
       if (conflict !== null) {
         return conflict
       }
-      const updated = await tx
+      const updated = tx
         .update(contentTable)
         .set({
           updatedAt: now,
@@ -120,7 +121,8 @@ export async function saveDraftRevision(
         })
         .where(eq(contentTable.id, latest.id))
         .returning()
-      await tx.update(metaTable).set({ updatedAt: now }).where(eq(metaTable.id, input.ownerId))
+        .all()
+      tx.update(metaTable).set({ updatedAt: now }).where(eq(metaTable.id, input.ownerId)).run()
       return { status: 'saved' as const, row: updated[0] }
     }
 
@@ -155,20 +157,20 @@ export async function saveDraftRevision(
       authorId: input.authorId,
       clientRevisionToken: nextToken,
     }
-    const inserted = await tx.insert(contentTable).values(insert).returning()
-    await tx.update(metaTable).set({ updatedAt: now }).where(eq(metaTable.id, input.ownerId))
+    const inserted = tx.insert(contentTable).values(insert).returning().all()
+    tx.update(metaTable).set({ updatedAt: now }).where(eq(metaTable.id, input.ownerId)).run()
     return { status: 'saved' as const, row: inserted[0] }
   })
 }
 
 export async function publishLatestRevision(
-  db: NodePgDatabase,
+  db: Database,
   type: ContentType,
   input: PublishLatestInput,
 ): Promise<PublishLatestResult> {
   const metaTable = metaTableFor(type)
-  return db.transaction(async (tx) => {
-    const { meta, latest } = await lockMetaAndLoadLatest(tx, type, input.ownerId)
+  return db.transaction((tx) => {
+    const { meta, latest } = lockMetaAndLoadLatest(tx, type, input.ownerId)
 
     const nextToken = randomUUID()
     const now = new Date()
@@ -180,7 +182,7 @@ export async function publishLatestRevision(
       if (conflict !== null) {
         return conflict
       }
-      const updated = await tx
+      const updated = tx
         .update(contentTable)
         .set({
           updatedAt: now,
@@ -193,6 +195,7 @@ export async function publishLatestRevision(
         })
         .where(eq(contentTable.id, latest.id))
         .returning()
+        .all()
       savedRow = updated[0]
     } else {
       const conflict = checkTokenConflict(latest, input)
@@ -211,12 +214,11 @@ export async function publishLatestRevision(
         authorId: input.authorId,
         clientRevisionToken: nextToken,
       }
-      const inserted = await tx.insert(contentTable).values(insert).returning()
+      const inserted = tx.insert(contentTable).values(insert).returning().all()
       savedRow = inserted[0]
     }
 
-    await tx
-      .update(metaTable)
+    tx.update(metaTable)
       .set({
         publishedRevisionId: savedRow.id,
         published: true,
@@ -225,6 +227,7 @@ export async function publishLatestRevision(
         updatedAt: now,
       })
       .where(eq(metaTable.id, input.ownerId))
+      .run()
 
     return { status: 'published' as const, row: savedRow }
   })

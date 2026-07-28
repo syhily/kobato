@@ -71,7 +71,6 @@ export function createApiApp(): Hono<Env> {
       clientAddress: rc.clientAddress,
       responseHeaders,
       db: rc.db,
-      pool: rc.pool,
     }
     const result = await handler.handle(c.req.raw, { prefix: '/rpc', context })
     if (!result.matched) {

@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 const closeHttpServer = vi.fn().mockResolvedValue(undefined)
 const setServerPhase = vi.fn()
 const setRestoreState = vi.fn()
-const closePool = vi.fn().mockResolvedValue(undefined)
+const closeCurrentDatabaseMock = vi.hoisted(() => vi.fn())
 
 vi.mock('@/server/infra/lifecycle', () => ({
   closeHttpServer,
@@ -11,10 +11,6 @@ vi.mock('@/server/infra/lifecycle', () => ({
   getServerPhase: vi.fn().mockReturnValue('restarting'),
   setRestoreState,
   getRestoreState: vi.fn().mockReturnValue({ phase: 'idle', startedAt: '' }),
-}))
-
-vi.mock('@/server/infra/db/pool', () => ({
-  closePool,
 }))
 
 describe('backup/restore-orchestrator', () => {
@@ -35,7 +31,7 @@ describe('backup/restore-orchestrator', () => {
     const restoreFn = vi.fn().mockResolvedValue(undefined)
     const log = { error: vi.fn(), warn: vi.fn(), info: vi.fn() } as any
 
-    performSafeRestore({ pool: {} as any, log }, restoreFn)
+    performSafeRestore({ closeCurrentDatabase: closeCurrentDatabaseMock, log }, restoreFn)
 
     // Drain the microtask queue to let the fire-and-forget IIFE complete
     await new Promise((r) => setTimeout(r, 50))
@@ -44,7 +40,7 @@ describe('backup/restore-orchestrator', () => {
     expect(setServerPhase).toHaveBeenCalledWith('restarting')
     expect(closeHttpServer).toHaveBeenCalled()
     expect(restoreFn).toHaveBeenCalled()
-    expect(closePool).toHaveBeenCalled()
+    expect(closeCurrentDatabaseMock).toHaveBeenCalled()
     expect(setRestoreState).toHaveBeenCalledWith('completed')
     expect(complete).toHaveBeenCalledWith(true, undefined)
   })
@@ -57,7 +53,7 @@ describe('backup/restore-orchestrator', () => {
     const restoreFn = vi.fn().mockRejectedValue(new Error('psql failed'))
     const log = { error: vi.fn(), warn: vi.fn(), info: vi.fn() } as any
 
-    performSafeRestore({ pool: {} as any, log }, restoreFn)
+    performSafeRestore({ closeCurrentDatabase: closeCurrentDatabaseMock, log }, restoreFn)
     await new Promise((r) => setTimeout(r, 50))
 
     expect(setRestoreState).toHaveBeenCalledWith('failed', 'psql failed')
@@ -69,14 +65,16 @@ describe('backup/restore-orchestrator', () => {
     const restoreFn = vi.fn().mockResolvedValue(undefined)
     const log = { error: vi.fn(), warn: vi.fn(), info: vi.fn() } as any
 
-    performSafeRestore({ pool: {} as any, log }, restoreFn)
+    performSafeRestore({ closeCurrentDatabase: closeCurrentDatabaseMock, log }, restoreFn)
     await new Promise((r) => setTimeout(r, 50))
 
     expect(log.error).toHaveBeenCalledWith('No restore completion handler registered')
   })
 
-  it('continues to completion even if pool close throws', async () => {
-    closePool.mockRejectedValueOnce(new Error('pool already closed'))
+  it('aborts the restore when the database close throws', async () => {
+    closeCurrentDatabaseMock.mockImplementationOnce(() => {
+      throw new Error('database already closed')
+    })
     const { performSafeRestore, registerRestoreComplete } = await import('@/server/domains/backup/restore-orchestrator')
     const complete = vi.fn().mockResolvedValue(undefined)
     registerRestoreComplete(complete)
@@ -84,12 +82,15 @@ describe('backup/restore-orchestrator', () => {
     const restoreFn = vi.fn().mockResolvedValue(undefined)
     const log = { error: vi.fn(), warn: vi.fn(), info: vi.fn() } as any
 
-    performSafeRestore({ pool: {} as any, log }, restoreFn)
+    performSafeRestore({ closeCurrentDatabase: closeCurrentDatabaseMock, log }, restoreFn)
     await new Promise((r) => setTimeout(r, 50))
 
-    expect(closePool).toHaveBeenCalled()
-    expect(restoreFn).toHaveBeenCalled()
-    expect(complete).toHaveBeenCalledWith(true, undefined)
+    // The close guards the file swap — if it fails, the restore must NOT
+    // run (swapping under an open handle would corrupt state).
+    expect(closeCurrentDatabaseMock).toHaveBeenCalled()
+    expect(restoreFn).not.toHaveBeenCalled()
+    expect(setRestoreState).toHaveBeenCalledWith('failed', 'database already closed')
+    expect(complete).toHaveBeenCalledWith(false, expect.any(Error))
   })
 
   it('handles errors before the try block via the .catch() handler', async () => {
@@ -105,7 +106,7 @@ describe('backup/restore-orchestrator', () => {
     const restoreFn = vi.fn().mockResolvedValue(undefined)
     const log = { error: vi.fn(), warn: vi.fn(), info: vi.fn() } as any
 
-    performSafeRestore({ pool: {} as any, log }, restoreFn)
+    performSafeRestore({ closeCurrentDatabase: closeCurrentDatabaseMock, log }, restoreFn)
     await new Promise((r) => setTimeout(r, 50))
 
     // The .catch() handler should have logged the crash
@@ -126,7 +127,7 @@ describe('backup/restore-orchestrator', () => {
     const restoreFn = vi.fn().mockResolvedValue(undefined)
     const log = { error: vi.fn(), warn: vi.fn(), info: vi.fn() } as any
 
-    performSafeRestore({ pool: {} as any, log }, restoreFn)
+    performSafeRestore({ closeCurrentDatabase: closeCurrentDatabaseMock, log }, restoreFn)
     await new Promise((r) => setTimeout(r, 50))
 
     expect(first).not.toHaveBeenCalled()

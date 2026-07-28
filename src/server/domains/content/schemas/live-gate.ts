@@ -6,7 +6,7 @@ import type { post as postMetaTable } from '@/server/infra/db/schema/post'
 export interface LiveMeta {
   deletedAt: Date | null
   published: boolean
-  publishedRevisionId: bigint | null
+  publishedRevisionId: number | null
   publishedAt: Date
 }
 
@@ -76,14 +76,16 @@ export function liveContentWhere(columns: LiveContentColumns, options: LiveConte
   ]
   if (!options.includeScheduled) {
     const asOf = options.asOf ?? new Date()
-    conditions.push(sql`${columns.publishedAt} <= ${asOf}`)
+    // Raw `sql` params carry no column mapping — bind epoch ms
+    // (a bare Date is not bindable by node:sqlite).
+    conditions.push(sql`${columns.publishedAt} <= ${asOf.getTime()}`)
   }
   return and(...conditions)!
 }
 
 export interface PromotedMeta {
   published: boolean
-  publishedRevisionId: bigint | null
+  publishedRevisionId: number | null
 }
 
 /**
@@ -98,7 +100,7 @@ export interface PromotedMeta {
  * narrows to non-null `bigint` for the caller (e.g. `restorePost`
  * fetching the published revision right after the check).
  */
-export function isPromoted(meta: PromotedMeta): meta is PromotedMeta & { publishedRevisionId: bigint } {
+export function isPromoted(meta: PromotedMeta): meta is PromotedMeta & { publishedRevisionId: number } {
   return meta.published && meta.publishedRevisionId !== null
 }
 

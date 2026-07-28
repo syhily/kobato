@@ -1,29 +1,27 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
+
 import { clearAllTables } from '#/_helpers/integration-db'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { friend } from '@/server/infra/db/schema/friend'
 
 vi.mock('@/server/domains/images/services/enhance', () => ({
   hydrateImageRefs: vi.fn(async () => undefined),
 }))
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {
   await clearAllTables(db)
 })
 
-async function seedFriend(opts: Partial<typeof friend.$inferInsert> = {}): Promise<bigint> {
+async function seedFriend(opts: Partial<typeof friend.$inferInsert> = {}): Promise<number> {
   const rows = await db
     .insert(friend)
     .values({
@@ -42,7 +40,7 @@ describe('friends/service — toPublicFriend', () => {
   it('projects a row to the public DTO', async () => {
     const { toPublicFriend } = await import('@/server/domains/friends/service')
     const dto = toPublicFriend({
-      id: 1n,
+      id: 1,
       createdAt: new Date(),
       updatedAt: new Date(),
       website: 'W',
@@ -60,7 +58,7 @@ describe('friends/service — toPublicFriend', () => {
   it('coerces null description to undefined', async () => {
     const { toPublicFriend } = await import('@/server/domains/friends/service')
     const dto = toPublicFriend({
-      id: 1n,
+      id: 1,
       createdAt: new Date(),
       updatedAt: new Date(),
       website: 'W',
@@ -80,7 +78,7 @@ describe('friends/service — toAdminFriendDto', () => {
     const updatedAt = new Date('2026-02-01')
     const { toAdminFriendDto } = await import('@/server/domains/friends/service')
     const dto = toAdminFriendDto({
-      id: 7n,
+      id: 7,
       createdAt,
       updatedAt,
       website: 'W',
@@ -203,7 +201,7 @@ describe('friends/service — upsertAdminFriend (update)', () => {
     const { upsertAdminFriend } = await import('@/server/domains/friends/service')
     await expect(
       upsertAdminFriend(db, {
-        id: 9999n,
+        id: 9999,
         website: 'X',
         homepage: 'https://x.com',
         poster: '/p.png',
@@ -247,7 +245,7 @@ describe('friends/service — deleteAdminFriend', () => {
   })
   it('returns false when the row does not exist', async () => {
     const { deleteAdminFriend } = await import('@/server/domains/friends/service')
-    expect(await deleteAdminFriend(db, 9999n)).toBe(false)
+    expect(await deleteAdminFriend(db, 9999)).toBe(false)
   })
 })
 

@@ -86,8 +86,8 @@ describe('admin users-admin controller', () => {
     fetchAdminUserDto.mockResolvedValue(makeAdminUserDto())
     muteUser.mockResolvedValue(makeAdminUserDto())
     updateUserRoleWithGuard.mockResolvedValue({ role: 'visitor' })
-    inviteAuthorWithRollback.mockResolvedValue({ userId: 2n })
-    sendPasswordResetToUser.mockResolvedValue({ userId: 3n })
+    inviteAuthorWithRollback.mockResolvedValue({ userId: 2 })
+    sendPasswordResetToUser.mockResolvedValue({ userId: 3 })
   })
 
   it('mutes a user', async () => {
@@ -95,7 +95,7 @@ describe('admin users-admin controller', () => {
     expect(response.status).toBe(200)
     const body = await parseRpcJson<{ user: unknown }>(response)
     expect(body.user).toBeDefined()
-    expect(muteUser).toHaveBeenCalledWith(expect.anything(), 1n, true)
+    expect(muteUser).toHaveBeenCalledWith(expect.anything(), 1, true)
   })
 
   it('returns 404 when muting a non-existent user or an admin', async () => {
@@ -110,7 +110,7 @@ describe('admin users-admin controller', () => {
     expect(response.status).toBe(200)
     const body = await parseRpcJson<{ user: unknown }>(response)
     expect(body.user).toBeDefined()
-    expect(updateUserRoleWithGuard).toHaveBeenCalledWith(expect.anything(), 1n, 'visitor', '1')
+    expect(updateUserRoleWithGuard).toHaveBeenCalledWith(expect.anything(), 1, 'visitor', '1')
   })
 
   it('invites an author', async () => {
@@ -151,6 +151,6 @@ describe('admin users-admin controller', () => {
     expect(body.user).toBeDefined()
     // Force clearing is owned by deleteAllCredentials itself (service-level
     // invariant, covered in passkey/service.test.ts).
-    expect(deleteAllCredentials).toHaveBeenCalledWith(expect.anything(), 1n)
+    expect(deleteAllCredentials).toHaveBeenCalledWith(expect.anything(), 1)
   })
 })

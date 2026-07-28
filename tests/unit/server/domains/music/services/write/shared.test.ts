@@ -1,6 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import type { Database } from '@/server/infra/db/database'
 
 // music/services/write/shared.ts has a clean pure surface:
 //   - generateUniquePlayerId — retry-until-unique loop with collision log.
@@ -21,7 +21,7 @@ vi.mock('@/server/infra/logger', () => ({
 const { generateUniquePlayerId, downloadBinary, MAX_AUDIO_BYTES, MAX_COVER_BYTES, PLAYER_ID_RETRY_LIMIT } =
   await import('@/server/domains/music/services/write/shared')
 
-const fakeDb = {} as NodePgDatabase
+const fakeDb = {} as Database
 
 describe('music/write/shared — generateUniquePlayerId', () => {
   beforeEach(() => {
@@ -37,8 +37,8 @@ describe('music/write/shared — generateUniquePlayerId', () => {
 
   it('retries on collision until a free id is found', async () => {
     findMusicByPlayerIdMock
-      .mockResolvedValueOnce({ id: 1n }) // collision
-      .mockResolvedValueOnce({ id: 2n }) // collision
+      .mockResolvedValueOnce({ id: 1 }) // collision
+      .mockResolvedValueOnce({ id: 2 }) // collision
       .mockResolvedValue(null)
     const id = await generateUniquePlayerId(fakeDb)
     expect(id).toMatch(/^[a-z0-9]{16}$/)
@@ -46,7 +46,7 @@ describe('music/write/shared — generateUniquePlayerId', () => {
   })
 
   it('throws after PLAYER_ID_RETRY_LIMIT consecutive collisions', async () => {
-    findMusicByPlayerIdMock.mockResolvedValue({ id: 1n })
+    findMusicByPlayerIdMock.mockResolvedValue({ id: 1 })
     await expect(generateUniquePlayerId(fakeDb)).rejects.toThrow(/playerId 生成失败/)
     expect(findMusicByPlayerIdMock).toHaveBeenCalledTimes(PLAYER_ID_RETRY_LIMIT)
   })

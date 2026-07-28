@@ -14,7 +14,7 @@ export type PostMetaWithAuthor = PostMetaRow & { authorName: string | null }
 
 export interface ListPostsFilters extends MetaListFiltersBase {
   /** Filter by category id. */
-  categoryId?: bigint
+  categoryId?: number
   /** Filter by tag name (JSONB contains). */
   tag?: string
   /** Filter by visible flag. */
@@ -81,7 +81,7 @@ export function buildPostsOrderBy(filters: ListPostsFilters) {
 }
 
 export interface ListPublicPostsFilters {
-  categoryId?: bigint
+  categoryId?: number
   tag?: string
   includeHidden?: boolean
   includeScheduled?: boolean

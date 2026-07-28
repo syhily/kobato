@@ -1,7 +1,7 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { sql } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import type { Database } from '@/server/infra/db/database'
 
 const mocks = vi.hoisted(() => ({
   through: vi.fn(),
@@ -46,7 +46,7 @@ import { searchPosts } from '@/server/infra/search/search'
 
 // The cache and like modules are mocked, so the Drizzle handle is never
 // touched — it only satisfies the signature.
-const db = {} as unknown as NodePgDatabase
+const db = {} as unknown as Database
 const where = sql`true`
 
 beforeEach(() => {

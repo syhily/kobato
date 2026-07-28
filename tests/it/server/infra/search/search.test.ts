@@ -1,19 +1,17 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
+
 import { clearAllTables } from '#/_helpers/integration-db'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { postSearchIndex } from '@/server/infra/db/schema/content'
 import { post } from '@/server/infra/db/schema/post'
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 const { searchPosts } = await import('@/server/infra/search/search')
@@ -47,7 +45,7 @@ async function seedPost({ plainText, ...overrides }: Partial<typeof post.$inferI
       title: 'Test Post',
       summary: 'A test summary',
       publishedAt: overrides.publishedAt ?? new Date(),
-      publishedRevisionId: 1n,
+      publishedRevisionId: 1,
       ...overrides,
     })
     .returning()
@@ -176,7 +174,7 @@ describe('services/search — getPostsBySlugs', () => {
       published: true,
       publishedRevisionId: null,
     })
-    await seedPost({ slug: 'promoted-live', title: 'Promoted Live', publishedRevisionId: 1n })
+    await seedPost({ slug: 'promoted-live', title: 'Promoted Live', publishedRevisionId: 1 })
 
     const posts = await getPostsBySlugs(db, ['never-promoted', 'promoted-live'], searchPostOptions())
 

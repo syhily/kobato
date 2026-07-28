@@ -1,7 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { eq, inArray } from 'drizzle-orm'
 
+import type { Database } from '@/server/infra/db/database'
 import type { EntityType } from '@/server/infra/db/target'
 
 import { page } from '@/server/infra/db/schema/page'
@@ -21,8 +20,8 @@ export interface EntitySlugTitle {
  * hard-deleted or the target points at nothing (orphan).
  */
 export async function findEntitySlugTitle(
-  db: NodePgDatabase,
-  target: { type: 'post' | 'page'; ownerId: bigint },
+  db: Database,
+  target: { type: 'post' | 'page'; ownerId: number },
 ): Promise<{ slug: string; title: string } | null> {
   if (target.type === 'post') {
     const rows = await db
@@ -48,15 +47,15 @@ export async function findEntitySlugTitle(
  * are absent.
  */
 export async function resolveEntitiesForComments(
-  db: NodePgDatabase,
-  pairs: ReadonlyArray<{ type: EntityType; ownerId: bigint }>,
+  db: Database,
+  pairs: ReadonlyArray<{ type: EntityType; ownerId: number }>,
 ): Promise<Map<string, EntitySlugTitle>> {
   const out = new Map<string, EntitySlugTitle>()
   if (pairs.length === 0) {
     return out
   }
-  const postIds: bigint[] = []
-  const pageIds: bigint[] = []
+  const postIds: number[] = []
+  const pageIds: number[] = []
   const seen = new Set<string>()
   for (const p of pairs) {
     const key = `${p.type}:${p.ownerId}`

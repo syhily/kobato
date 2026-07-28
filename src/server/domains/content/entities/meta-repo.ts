@@ -1,9 +1,8 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { and, desc, eq, getColumns, isNotNull, isNull, or, sql, type Column, type SQL } from 'drizzle-orm'
 
 import type { MetaCrud, MetaRowBase } from '@/server/domains/content/entities/descriptor'
 import type { LimitOffset } from '@/server/domains/content/pagination'
+import type { Database } from '@/server/infra/db/database'
 import type { page as pageMetaTable } from '@/server/infra/db/schema/page'
 import type { post as postMetaTable } from '@/server/infra/db/schema/post'
 import type { NewPageMeta, NewPostMeta } from '@/server/infra/db/types'
@@ -34,60 +33,64 @@ export function makeMetaCrud<TMeta extends MetaRowBase, TNew extends AnyNewMeta>
   table: MetaTable,
 ): MetaCrud<TMeta, TNew> {
   return {
-    async findMetaById(db, id) {
-      const rows: unknown[] = await db.select().from(table).where(eq(table.id, id)).limit(1)
+    findMetaById(db, id) {
+      const rows: unknown[] = db.select().from(table).where(eq(table.id, id)).limit(1).all()
       return unsafeCast<TMeta | null>(rows[0] ?? null)
     },
 
-    async findMetaBySlug(db, slug) {
-      const rows: unknown[] = await db.select().from(table).where(eq(table.slug, slug)).limit(1)
+    findMetaBySlug(db, slug) {
+      const rows: unknown[] = db.select().from(table).where(eq(table.slug, slug)).limit(1).all()
       return unsafeCast<TMeta | null>(rows[0] ?? null)
     },
 
-    async findMetaBySlugForUpdate(db, slug) {
-      const rows: unknown[] = await db.select().from(table).where(eq(table.slug, slug)).for('update').limit(1)
+    findMetaBySlugForUpdate(db, slug) {
+      const rows: unknown[] = db.select().from(table).where(eq(table.slug, slug)).limit(1).all()
       return unsafeCast<TMeta | null>(rows[0] ?? null)
     },
 
-    async findPublicMetaBySlug(db, slug) {
-      const rows: unknown[] = await db
+    findPublicMetaBySlug(db, slug) {
+      const rows: unknown[] = db
         .select()
         .from(table)
         .where(and(eq(table.slug, slug), isNull(table.deletedAt)))
         .limit(1)
+        .all()
       return unsafeCast<TMeta | null>(rows[0] ?? null)
     },
 
-    async insertMeta(db, values) {
-      const rows: unknown[] = await db.insert(table).values(values).returning()
+    insertMeta(db, values) {
+      const rows: unknown[] = db.insert(table).values(values).returning().all()
       return unsafeCast<TMeta>(rows[0])
     },
 
-    async updateMetaById(db, id, patch) {
-      const rows: unknown[] = await db
+    updateMetaById(db, id, patch) {
+      const rows: unknown[] = db
         .update(table)
         .set(unsafeCast<AnyNewMeta>({ ...patch, updatedAt: new Date() }))
         .where(eq(table.id, id))
         .returning()
+        .all()
       return unsafeCast<TMeta | null>(rows[0] ?? null)
     },
 
-    async softDeleteMeta(db, id) {
+    softDeleteMeta(db, id) {
       const now = new Date()
-      const rows = await db
+      const rows = db
         .update(table)
         .set(unsafeCast<AnyNewMeta>({ deletedAt: now, updatedAt: now }))
         .where(and(eq(table.id, id), isNull(table.deletedAt)))
         .returning({ id: table.id })
+        .all()
       return rows.length > 0
     },
 
-    async restoreMeta(db, id) {
-      const rows = await db
+    restoreMeta(db, id) {
+      const rows = db
         .update(table)
         .set(unsafeCast<AnyNewMeta>({ deletedAt: null, updatedAt: new Date() }))
         .where(eq(table.id, id))
         .returning({ id: table.id })
+        .all()
       return rows.length > 0
     },
   }
@@ -102,7 +105,7 @@ export interface MetaListFiltersBase extends LimitOffset {
   /** Filter by published flag. */
   published?: boolean
   /** Filter by author id. */
-  authorId?: bigint
+  authorId?: number
 }
 
 /**
@@ -150,8 +153,8 @@ export interface MetaListQueriesOptions<TFilters extends LimitOffset> {
 }
 
 export interface MetaListQueries<TMeta extends MetaRowBase, TFilters extends LimitOffset> {
-  listMetas: (db: NodePgDatabase, filters: TFilters) => Promise<(TMeta & { authorName: string | null })[]>
-  countMetas: (db: NodePgDatabase, filters: TFilters) => Promise<number>
+  listMetas: (db: Database, filters: TFilters) => Promise<(TMeta & { authorName: string | null })[]>
+  countMetas: (db: Database, filters: TFilters) => Promise<number>
 }
 
 /**
@@ -180,10 +183,10 @@ export function makeMetaListQueries<TMeta extends MetaRowBase, TFilters extends 
       const where = options.buildWhere(filters)
       const builder = where
         ? db
-            .select({ count: sql<number>`count(*)::int` })
+            .select({ count: sql<number>`count(*)` })
             .from(table)
             .where(where)
-        : db.select({ count: sql<number>`count(*)::int` }).from(table)
+        : db.select({ count: sql<number>`count(*)` }).from(table)
       const rows = await builder
       return rows[0]?.count ?? 0
     },

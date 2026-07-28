@@ -1,7 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
 import type { MusicRow } from '@/server/infra/db/types'
 
 // music/services/read.ts — the row→meta mapping is the single owner of music
@@ -24,11 +23,11 @@ vi.mock('@/server/infra/storage/public-url', () => publicUrlMock)
 const { DEFAULT_MUSIC_COVER_URL, getMusicMetaForPlayer, getPublicMusicMetasByIds } =
   await import('@/server/domains/music/services/read')
 
-const fakeDb = {} as NodePgDatabase
+const fakeDb = {} as Database
 
 function makeRow(overrides: Partial<MusicRow> = {}): MusicRow {
   return {
-    id: 1n,
+    id: 1,
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: null,
@@ -107,7 +106,7 @@ describe('music/services/read — getPublicMusicMetasByIds', () => {
   })
 
   it('resolves every row in one batch query, keyed by playerId', async () => {
-    opsMock.findMusicByPlayerIds.mockResolvedValue([makeRow(), makeRow({ id: 2n, playerId: 'p2', name: 'Two' })])
+    opsMock.findMusicByPlayerIds.mockResolvedValue([makeRow(), makeRow({ id: 2, playerId: 'p2', name: 'Two' })])
     const metas = await getPublicMusicMetasByIds(fakeDb, ['p1', 'p2', 'missing'])
     expect(opsMock.findMusicByPlayerIds).toHaveBeenCalledTimes(1)
     expect(opsMock.findMusicByPlayerIds).toHaveBeenCalledWith(fakeDb, ['p1', 'p2', 'missing'])

@@ -1,23 +1,24 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { eq, inArray } from 'drizzle-orm'
+
+import type { Database } from '@/server/infra/db/database'
 
 import { postTag } from '@/server/infra/db/schema/post-tag'
 import { tag } from '@/server/infra/db/schema/taxonomy'
 
-export async function setPostTags(db: NodePgDatabase, postId: bigint, tagIds: bigint[]): Promise<void> {
-  await db.delete(postTag).where(eq(postTag.postId, postId))
+// Sync (node:sqlite): called inside the upsert transaction.
+export function setPostTags(db: Database, postId: number, tagIds: number[]): void {
+  db.delete(postTag).where(eq(postTag.postId, postId)).run()
   if (tagIds.length === 0) {
     return
   }
-  await db
-    .insert(postTag)
+  db.insert(postTag)
     .values(tagIds.map((tagId) => ({ postId, tagId })))
     .onConflictDoNothing()
+    .run()
 }
 
-export async function findTagNamesByPostIds(db: NodePgDatabase, postIds: bigint[]): Promise<Map<bigint, string[]>> {
-  const map = new Map<bigint, string[]>()
+export async function findTagNamesByPostIds(db: Database, postIds: number[]): Promise<Map<number, string[]>> {
+  const map = new Map<number, string[]>()
   if (postIds.length === 0) {
     return map
   }
@@ -38,7 +39,7 @@ export async function findTagNamesByPostIds(db: NodePgDatabase, postIds: bigint[
   return map
 }
 
-export async function findTagNamesByPostId(db: NodePgDatabase, postId: bigint): Promise<string[]> {
+export async function findTagNamesByPostId(db: Database, postId: number): Promise<string[]> {
   const rows = await db
     .select({ name: tag.name })
     .from(postTag)

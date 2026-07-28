@@ -1,11 +1,11 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
+
+import type { Database } from '@/server/infra/db/database'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { clearAllTables } from '#/_helpers/integration-db'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { enrichEvent } from '@/server/domains/analytics/enrich'
 import { queryHeatmap } from '@/server/domains/analytics/services/heatmap'
 import { queryMetric } from '@/server/domains/analytics/services/metric'
@@ -14,16 +14,14 @@ import { queryRealtimeTail } from '@/server/domains/analytics/services/realtime'
 import { queryViews } from '@/server/domains/analytics/services/views'
 import { KOBATO_AID_COOKIE } from '@/server/domains/analytics/track'
 import { resolveVisitorCookie } from '@/server/domains/analytics/visitor-cookie'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { accessLog } from '@/server/infra/db/schema/config'
 import { DomainError } from '@/server/infra/http/errors'
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {
@@ -95,7 +93,7 @@ describe('analytics/query-parser — parseAnalyticsSearch', () => {
   it('extracts entityType and entityId when both are valid', () => {
     const input = parseAnalyticsSearch(new URLSearchParams({ entityType: 'post', entityId: '42' }))
     expect(input.entityType).toBe('post')
-    expect(input.entityId).toBe(42n)
+    expect(input.entityId).toBe(42)
   })
 
   it('ignores an unknown entityType', () => {
@@ -241,7 +239,7 @@ describe('analytics/enrich — enrichEvent', () => {
       path: '/post/1',
       referer: 'https://example.com/page',
       acceptLanguage: 'zh-CN,zh;q=0.9,en;q=0.8',
-      target: { type: 'post', ownerId: 1n },
+      target: { type: 'post', ownerId: 1 },
       sessionId: 'sess-1',
     })
     expect(event.ip).toBeNull()
@@ -250,7 +248,7 @@ describe('analytics/enrich — enrichEvent', () => {
     expect(event.language).toBe('zh-CN')
     expect(event.isBot).toBe(true)
     expect(event.entityType).toBe('post')
-    expect(event.entityId).toBe(1n)
+    expect(event.entityId).toBe(1)
   })
 
   it('returns null fields when referer is malformed', async () => {

@@ -1,17 +1,15 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { sql } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
+
 import { clearAllTables } from '#/_helpers/integration-db'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { queryCounters } from '@/server/domains/analytics/services/counters'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { accessLog } from '@/server/infra/db/schema/config'
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 const DAY = 24 * 60 * 60
 
@@ -23,20 +21,8 @@ function unixAt(iso: string): number {
   return Math.floor(dateAt(iso).getTime() / 1000)
 }
 
-async function refreshContinuousAggregates(): Promise<void> {
-  await db.execute(sql`CALL refresh_continuous_aggregate('stats_hourly', NULL, NULL)`)
-  await db.execute(sql`CALL refresh_continuous_aggregate('stats_daily', NULL, NULL)`)
-}
-
-async function hasTimescaleDb(): Promise<boolean> {
-  const result = await db.execute(sql`
-    SELECT 1 FROM pg_available_extensions WHERE name = 'timescaledb'
-  `)
-  return result.rows.length > 0
-}
-
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {

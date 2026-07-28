@@ -1,11 +1,11 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import type { Database } from '@/server/infra/db/database'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { clearAllTables } from '#/_helpers/integration-db'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { archiveExpiredAuditLogs, cleanupExpiredArchives, runArchiveJob } from '@/server/domains/audit/services/archive'
 import { flushAuditLog, pushAuditEvent } from '@/server/domains/audit/services/batcher'
 import {
@@ -18,16 +18,14 @@ import {
 import { recordAuditEvent } from '@/server/domains/audit/services/record'
 import { scheduleNextArchive, stopArchiveScheduler } from '@/server/domains/audit/services/scheduler'
 import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { auditLog } from '@/server/infra/db/schema/config'
 import { user } from '@/server/infra/db/schema/user'
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {
@@ -47,7 +45,7 @@ async function seedUser(role: 'admin' | 'visitor' = 'admin', name = 'T', email =
 }
 
 async function seedAuditRow(
-  overrides: Partial<{ action: string; resourceType: string; actorId: bigint; createdAt: Date }> = {},
+  overrides: Partial<{ action: string; resourceType: string; actorId: number; createdAt: Date }> = {},
 ) {
   const [row] = await db
     .insert(auditLog)
@@ -157,7 +155,7 @@ describe('audit/repos/batcher — flushAuditLog', () => {
   })
 
   it('flushes pushed events via COPY and writes them to the audit_log table', async () => {
-    initAllBatchers(pool, db)
+    initAllBatchers(handle)
     pushAuditEvent({ action: 'login', resourceType: 'session' })
     pushAuditEvent({ action: 'logout', resourceType: 'session' })
     const result = await flushAuditLog()
@@ -176,7 +174,7 @@ describe('audit/services/record — recordAuditEvent', () => {
 
   it('routes the event into the batcher when initialized', async () => {
     const u = await seedUser('admin', 'Recorder', 'recorder@example.com')
-    initAllBatchers(pool, db)
+    initAllBatchers(handle)
     recordAuditEvent({
       action: 'login',
       resourceType: 'session',

@@ -1,5 +1,4 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
+import type { Database } from '@/server/infra/db/database'
 import type { FriendRow } from '@/server/infra/db/types'
 import type { AdminFriendDto } from '@/shared/contracts/friends'
 import type { Friend } from '@/shared/types/catalog'
@@ -58,7 +57,7 @@ export function toAdminFriendDto(row: FriendRow): AdminFriendDto {
   }
 }
 
-export async function listPublicFriends(db: NodePgDatabase): Promise<PublicFriend[]> {
+export async function listPublicFriends(db: Database): Promise<PublicFriend[]> {
   const rows = await listPublicFriendRows(db)
   return rows.map(toPublicFriend)
 }
@@ -74,7 +73,7 @@ export interface AdminFriendsListResult {
 // full filtered count (independent of `offset`/`limit`) so the client
 // can render the correct number of pagination buttons.
 export async function listFriendsForAdmin(
-  db: NodePgDatabase,
+  db: Database,
   filters: AdminFriendsListFilters,
 ): Promise<AdminFriendsListResult> {
   const offset = filters.offset ?? 0
@@ -90,7 +89,7 @@ export async function listFriendsForAdmin(
 }
 
 export interface UpsertFriendInputs {
-  id?: bigint
+  id?: number
   website: string
   description?: string | null
   homepage: string
@@ -104,7 +103,7 @@ export interface UpsertFriendInputs {
 // `homepage` against existing rows to nudge the editor away from
 // accidental duplicates (a hard UNIQUE constraint would reject benign
 // protocol/trailing-slash variants).
-export async function upsertAdminFriend(db: NodePgDatabase, input: UpsertFriendInputs): Promise<AdminFriendDto> {
+export async function upsertAdminFriend(db: Database, input: UpsertFriendInputs): Promise<AdminFriendDto> {
   const description = normaliseNullable(input.description)
   const rssUrl = normaliseNullable(input.rssUrl)
 
@@ -155,7 +154,7 @@ export async function upsertAdminFriend(db: NodePgDatabase, input: UpsertFriendI
   return toAdminFriendDto(updated)
 }
 
-export async function deleteAdminFriend(db: NodePgDatabase, id: bigint): Promise<boolean> {
+export async function deleteAdminFriend(db: Database, id: number): Promise<boolean> {
   return deleteFriendRow(db, id)
 }
 
@@ -173,7 +172,7 @@ export interface ApplyFriendInputs {
 // as `visible: false` (pending) — approval is the admin flipping the
 // flag. The admin notification is fire-and-forget: a mail-pipeline
 // hiccup must never fail the application.
-export async function applyFriend(db: NodePgDatabase, input: ApplyFriendInputs): Promise<void> {
+export async function applyFriend(db: Database, input: ApplyFriendInputs): Promise<void> {
   const dup = await findFriendByHomepage(db, input.homepage)
   if (dup !== null) {
     throw new DomainError('CONFLICT', '该主页已经提交过友链申请，请勿重复提交。', [
@@ -207,7 +206,7 @@ function normaliseNullable(value: string | null | undefined): string | null {
 
 // --- Public catalog queries -------------------------------------------------
 
-async function hydrateFriendImages(db: NodePgDatabase, friends: Friend[]): Promise<void> {
+async function hydrateFriendImages(db: Database, friends: Friend[]): Promise<void> {
   await hydrateImageRefs(
     db,
     friends,
@@ -221,7 +220,7 @@ async function hydrateFriendImages(db: NodePgDatabase, friends: Friend[]): Promi
   )
 }
 
-export async function listAllFriends(db: NodePgDatabase): Promise<Friend[]> {
+export async function listAllFriends(db: Database): Promise<Friend[]> {
   const rows = await listPublicFriends(db)
   const friends = rows.map((row) => ({
     website: row.website,

@@ -1,7 +1,7 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
-import { and, eq, lt, sql } from 'drizzle-orm'
+import { and, eq, lt } from 'drizzle-orm'
 import { createHash, randomBytes, randomInt, timingSafeEqual } from 'node:crypto'
+
+import type { Database } from '@/server/infra/db/database'
 
 import { generateToken, sha256, TOKEN_LEN_RE } from '@/server/infra/crypto/tokens'
 import { verification } from '@/server/infra/db/schema/user'
@@ -23,11 +23,11 @@ export interface TokenResult {
   expiresAt: Date
 }
 
-export async function issueResetToken(db: NodePgDatabase, userId: bigint): Promise<TokenResult> {
+export function issueResetToken(db: Database, userId: number): TokenResult {
   return issueToken(db, userId, 'password-reset', RESET_TTL_MS)
 }
 
-export async function issueSetupToken(db: NodePgDatabase, userId: bigint): Promise<TokenResult> {
+export function issueSetupToken(db: Database, userId: number): TokenResult {
   return issueToken(db, userId, 'author-invite', SETUP_TTL_MS)
 }
 
@@ -35,16 +35,12 @@ const SIGNIN_LINK_TTL_MS = 15 * 60 * 1000
 export const SIGNIN_LINK_TTL_MINUTES = SIGNIN_LINK_TTL_MS / (60 * 1000)
 
 /** One-time magic-link signin token. High-entropy, so the generic path suffices. */
-export async function issueSignInLinkToken(db: NodePgDatabase, userId: bigint): Promise<TokenResult> {
+export function issueSignInLinkToken(db: Database, userId: number): TokenResult {
   return issueToken(db, userId, 'signin-link', SIGNIN_LINK_TTL_MS)
 }
 
-async function issueToken(
-  db: NodePgDatabase,
-  userId: bigint,
-  purpose: TokenPurpose,
-  ttlMs: number,
-): Promise<TokenResult> {
+// Sync (node:sqlite): called inside the invite transaction.
+function issueToken(db: Database, userId: number, purpose: TokenPurpose, ttlMs: number): TokenResult {
   const raw = generateToken()
   const value = sha256(raw)
   const expiresAt = new Date(Date.now() + ttlMs)
@@ -53,23 +49,23 @@ async function issueToken(
   // Single-token-per-(purpose, user) invariant, enforced by the
   // `uq_verification_purpose_user` unique index; the UPSERT rotates the
   // live token in-place on re-issue.
-  await db
-    .insert(verification)
+  db.insert(verification)
     .values({ id, purpose, userId, value, expiresAt })
     .onConflictDoUpdate({
       target: [verification.purpose, verification.userId],
       set: { id, value, expiresAt, updatedAt: new Date() },
     })
+    .run()
 
   return { token: raw, expiresAt }
 }
 
 interface ValidatedToken {
-  userId: bigint
+  userId: number
 }
 
 function validatedTokenRow(
-  row: { purpose: string; userId: bigint; expiresAt: Date } | undefined,
+  row: { purpose: string; userId: number; expiresAt: Date } | undefined,
   purpose: TokenPurpose,
 ): ValidatedToken | null {
   if (!row) {
@@ -90,11 +86,7 @@ function validatedTokenRow(
  * this to short-circuit a form before the user submits a password.
  * The destructive {@link consumeToken} is reserved for the action.
  */
-export async function peekToken(
-  db: NodePgDatabase,
-  rawToken: string,
-  purpose: TokenPurpose,
-): Promise<ValidatedToken | null> {
+export async function peekToken(db: Database, rawToken: string, purpose: TokenPurpose): Promise<ValidatedToken | null> {
   if (!TOKEN_LEN_RE.test(rawToken)) {
     return null
   }
@@ -122,7 +114,7 @@ export async function peekToken(
  * subsequent call with the same token returns `null`.
  */
 export async function consumeToken(
-  db: NodePgDatabase,
+  db: Database,
   rawToken: string,
   purpose: TokenPurpose,
 ): Promise<ValidatedToken | null> {
@@ -143,13 +135,13 @@ export async function consumeToken(
   }
 }
 
-export async function revokeTokensFor(db: NodePgDatabase, userId: bigint, purpose: TokenPurpose): Promise<void> {
+export async function revokeTokensFor(db: Database, userId: number, purpose: TokenPurpose): Promise<void> {
   await db.delete(verification).where(and(eq(verification.purpose, purpose), eq(verification.userId, userId)))
 }
 
-export async function purgeExpired(db: NodePgDatabase): Promise<number> {
-  const result = await db.delete(verification).where(lt(verification.expiresAt, sql`now() - interval '1 day'`))
-  return result.rowCount ?? 0
+export async function purgeExpired(db: Database): Promise<number> {
+  const result = await db.delete(verification).where(lt(verification.expiresAt, new Date(Date.now() - 86_400_000)))
+  return Number(result.changes)
 }
 
 // ── OTP (signin-otp) — separate path from generic tokens ───────────────────
@@ -185,7 +177,7 @@ export interface OtpTokenResult {
  * Stored as `salt:hash` in the `value` column; queried by
  * `(purpose='signin-otp', userId)` rather than by value.
  */
-export async function issueOtpToken(db: NodePgDatabase, userId: bigint): Promise<OtpTokenResult> {
+export async function issueOtpToken(db: Database, userId: number): Promise<OtpTokenResult> {
   const otpCode = generateOtpCode()
   const salt = generateSalt()
   const value = `${salt}:${hashOtp(otpCode, salt)}`
@@ -208,14 +200,13 @@ export async function issueOtpToken(db: NodePgDatabase, userId: bigint): Promise
  * Looks up by `(purpose='signin-otp', userId)`, compares the salted
  * hash, and **deletes the row on success** (single-use).
  */
-export async function verifyOtpToken(
-  db: NodePgDatabase,
-  userId: bigint,
-  rawOtpCode: string,
-): Promise<ValidatedToken | null> {
+export async function verifyOtpToken(db: Database, userId: number, rawOtpCode: string): Promise<ValidatedToken | null> {
   try {
-    return await db.transaction(async (tx) => {
-      const rows = await tx
+    // Sync transaction (node:sqlite): the delete-on-success single-use
+    // semantics are preserved; writers serialise on the connection, so
+    // the old `FOR UPDATE` row lock is unnecessary.
+    return db.transaction((tx) => {
+      const rows = tx
         .select({
           id: verification.id,
           userId: verification.userId,
@@ -225,14 +216,14 @@ export async function verifyOtpToken(
         .from(verification)
         .where(and(eq(verification.purpose, 'signin-otp'), eq(verification.userId, userId)))
         .limit(1)
-        .for('update')
+        .all()
 
       const row = rows[0]
       if (!row) {
         return null
       }
       if (row.expiresAt.getTime() < Date.now()) {
-        await tx.delete(verification).where(eq(verification.id, row.id))
+        tx.delete(verification).where(eq(verification.id, row.id)).run()
         return null
       }
 
@@ -249,7 +240,7 @@ export async function verifyOtpToken(
         return null
       }
 
-      await tx.delete(verification).where(eq(verification.id, row.id))
+      tx.delete(verification).where(eq(verification.id, row.id)).run()
       return { userId: row.userId }
     })
   } catch (error) {

@@ -1,9 +1,10 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { Buffer } from 'node:buffer'
 import type { SuperJSONResult } from 'superjson'
 
 import { and, eq, gt, inArray, isNull, or } from 'drizzle-orm'
 import superjson from 'superjson'
+
+import type { Database } from '@/server/infra/db/database'
 
 import { kvCache } from '@/server/infra/db/schema/kv-cache'
 import { isRecord } from '@/shared/utils/type-guards'
@@ -60,7 +61,7 @@ function deserializeValue<T>(value: unknown): T | null {
   }
 }
 
-export async function getItem<T>(db: NodePgDatabase, key: string): Promise<T | null> {
+export async function getItem<T>(db: Database, key: string): Promise<T | null> {
   const rows = await db
     .select({ value: kvCache.value })
     .from(kvCache)
@@ -73,7 +74,7 @@ export async function getItem<T>(db: NodePgDatabase, key: string): Promise<T | n
   return deserializeValue<T>(row.value)
 }
 
-export async function setItem(db: NodePgDatabase, key: string, value: unknown, opts: KvStoreSetOptions): Promise<void> {
+export async function setItem(db: Database, key: string, value: unknown, opts: KvStoreSetOptions): Promise<void> {
   const serialized = superjson.serialize(value)
   const expiresAt = expiryFrom(opts)
   await db
@@ -85,7 +86,7 @@ export async function setItem(db: NodePgDatabase, key: string, value: unknown, o
     })
 }
 
-export async function getItemRaw(db: NodePgDatabase, key: string): Promise<Buffer | null> {
+export async function getItemRaw(db: Database, key: string): Promise<Buffer | null> {
   const rows = await db
     .select({ blob: kvCache.blob })
     .from(kvCache)
@@ -94,12 +95,7 @@ export async function getItemRaw(db: NodePgDatabase, key: string): Promise<Buffe
   return rows[0]?.blob ?? null
 }
 
-export async function setItemRaw(
-  db: NodePgDatabase,
-  key: string,
-  value: Buffer,
-  opts: KvStoreSetOptions,
-): Promise<void> {
+export async function setItemRaw(db: Database, key: string, value: Buffer, opts: KvStoreSetOptions): Promise<void> {
   const expiresAt = expiryFrom(opts)
   await db
     .insert(kvCache)
@@ -110,11 +106,11 @@ export async function setItemRaw(
     })
 }
 
-export async function removeItem(db: NodePgDatabase, key: string): Promise<void> {
+export async function removeItem(db: Database, key: string): Promise<void> {
   await db.delete(kvCache).where(eq(kvCache.key, key))
 }
 
-export async function getItems<T>(db: NodePgDatabase, keys: string[]): Promise<{ key: string; value: T | null }[]> {
+export async function getItems<T>(db: Database, keys: string[]): Promise<{ key: string; value: T | null }[]> {
   if (keys.length === 0) {
     return []
   }

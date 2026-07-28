@@ -2,7 +2,7 @@
 // (cheap, produced from the request, no I/O) → `EnrichedAccessEvent`
 // (after geo/UA/bot enrichment; what the batcher flushes to `access_log`).
 // Both mirror the `accessLog` columns 1:1 — adding a column means updating
-// both interfaces plus the batcher's `COPY_COLUMNS`.
+// both interfaces plus the batcher's insert mapping.
 
 import type { EntityTarget } from '@/server/infra/db/target'
 
@@ -32,7 +32,7 @@ export interface EnrichedAccessEvent {
   ip: string | null
   path: string
   entityType: 'post' | 'page' | null
-  entityId: bigint | null
+  entityId: number | null
   referer: string | null
   refererHost: string | null
   country: string | null

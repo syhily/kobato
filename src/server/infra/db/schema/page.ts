@@ -1,37 +1,37 @@
-import { bigint, bigserial, boolean, index, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core'
+import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
 // Page metadata table. The PT body lives in `content`; `page` only
 // points to the published revision. Slugs share a global namespace with
 // posts; cross-table collisions are caught at the app layer.
-export const page = pgTable(
+export const page = sqliteTable(
   'page',
   {
-    id: bigserial('id', { mode: 'bigint' }).primaryKey().notNull(),
-    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
+    id: integer('id').primaryKey({ autoIncrement: true }).notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' })
       .notNull()
       .$defaultFn(() => new Date()),
-    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+    updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
       .notNull()
       .$defaultFn(() => new Date()),
-    deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
-    slug: varchar('slug', { length: 80 }).unique().notNull(),
-    title: varchar('title', { length: 200 }).notNull(),
+    deletedAt: integer('deleted_at', { mode: 'timestamp_ms' }),
+    slug: text('slug').unique().notNull(),
+    title: text('title').notNull(),
     summary: text('summary').notNull().default(''),
     cover: text('cover').notNull().default(''),
     og: text('og'),
-    published: boolean('published').notNull().default(true),
-    commentsEnabled: boolean('comments_enabled').notNull().default(true),
-    showToc: boolean('show_toc').notNull().default(false),
-    showUpdated: boolean('show_updated').notNull().default(false),
-    showFriends: boolean('show_friends').notNull().default(false),
-    publishedAt: timestamp('published_at', { withTimezone: true, mode: 'date' })
+    published: integer('published', { mode: 'boolean' }).notNull().default(true),
+    commentsEnabled: integer('comments_enabled', { mode: 'boolean' }).notNull().default(true),
+    showToc: integer('show_toc', { mode: 'boolean' }).notNull().default(false),
+    showUpdated: integer('show_updated', { mode: 'boolean' }).notNull().default(false),
+    showFriends: integer('show_friends', { mode: 'boolean' }).notNull().default(false),
+    publishedAt: integer('published_at', { mode: 'timestamp_ms' })
       .notNull()
       .$defaultFn(() => new Date()),
-    publishedRevisionId: bigint('published_revision_id', { mode: 'bigint' }),
+    publishedRevisionId: integer('published_revision_id'),
     /** The timestamp of the first publication. Immutable after set. */
-    firstPublishedAt: timestamp('first_published_at', { withTimezone: true, mode: 'date' }),
+    firstPublishedAt: integer('first_published_at', { mode: 'timestamp_ms' }),
     /** Author who created the page. NULL for legacy migrated pages. */
-    authorId: bigint('author_id', { mode: 'bigint' }),
+    authorId: integer('author_id'),
   },
   (table) => [
     index('idx_page_deleted_at').on(table.deletedAt),

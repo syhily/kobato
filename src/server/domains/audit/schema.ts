@@ -1,6 +1,6 @@
 export interface AuditEventInput {
   action: string
-  actorId?: bigint | string | null
+  actorId?: number | string | null
   actorRole?: string | null
   resourceType: string
   resourceId?: string | null

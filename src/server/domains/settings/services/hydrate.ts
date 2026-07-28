@@ -1,5 +1,4 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
+import type { Database } from '@/server/infra/db/database'
 import type { BundleKey, SettingsSection } from '@/shared/config/sections'
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
@@ -48,8 +47,8 @@ function decryptSecretsInBundle(bundle: BlogSettingsBundle): void {
   }
 }
 
-async function loadSettingsFromDb(db: NodePgDatabase): Promise<BlogSettingsBundle | null> {
-  const rows = await findSettingsByScopePrefix(db, SETTINGS_SCOPE_PREFIX)
+function loadSettingsFromDb(db: Database): BlogSettingsBundle | null {
+  const rows = findSettingsByScopePrefix(db, SETTINGS_SCOPE_PREFIX)
   if (rows.length === 0) {
     return null
   }
@@ -79,12 +78,12 @@ async function loadSettingsFromDb(db: NodePgDatabase): Promise<BlogSettingsBundl
     return null
   }
 
-  await backfillMissingSectionDefaults(bundle, db)
+  backfillMissingSectionDefaults(bundle, db)
   decryptSecretsInBundle(bundle)
   return bundle
 }
 
-async function backfillMissingSectionDefaults(bundle: BlogSettingsBundle, db: NodePgDatabase): Promise<void> {
+function backfillMissingSectionDefaults(bundle: BlogSettingsBundle, db: Database): void {
   let candidates: { section: SettingsSection; payload: Record<string, unknown> }[]
   try {
     candidates = buildDefaultSectionPayloads()
@@ -100,7 +99,7 @@ async function backfillMissingSectionDefaults(bundle: BlogSettingsBundle, db: No
     }
 
     try {
-      await upsertSetting(db, payload, null, meta.scope)
+      upsertSetting(db, payload, null, meta.scope)
       bundleSet(bundle, meta.key, payload)
       log.info('Backfilled missing section with registry default', { scope: meta.scope })
     } catch (error) {
@@ -109,7 +108,7 @@ async function backfillMissingSectionDefaults(bundle: BlogSettingsBundle, db: No
   }
 }
 
-export async function hydrateBlogSettings(db: NodePgDatabase): Promise<BlogSettingsBundle | null> {
+export async function hydrateBlogSettings(db: Database): Promise<BlogSettingsBundle | null> {
   // Single-process deployment model: the in-process snapshot is always
   // authoritative once loaded.
   //
@@ -124,7 +123,7 @@ export async function hydrateBlogSettings(db: NodePgDatabase): Promise<BlogSetti
 
   const newPending = (async () => {
     try {
-      const value = await loadSettingsFromDb(db)
+      const value = loadSettingsFromDb(db)
       BLOG_SETTINGS_SNAPSHOT_SLOT.write(value)
       return value
     } catch (error) {
@@ -136,7 +135,7 @@ export async function hydrateBlogSettings(db: NodePgDatabase): Promise<BlogSetti
   return newPending
 }
 
-export async function refreshBlogSettings(db: NodePgDatabase): Promise<BlogSettingsBundle | null> {
+export async function refreshBlogSettings(db: Database): Promise<BlogSettingsBundle | null> {
   BLOG_SETTINGS_SNAPSHOT_SLOT.writeHydration(undefined)
   return hydrateBlogSettings(db)
 }
@@ -153,7 +152,7 @@ export async function refreshBlogSettings(db: NodePgDatabase): Promise<BlogSetti
  * the shell's per-navigation read with the raw registry defaults.
  */
 export async function backfillSettingsSections(
-  db: NodePgDatabase,
+  db: Database,
   bundle: BlogSettingsBundle,
 ): Promise<Record<string, unknown>> {
   const mutable: Record<string, unknown> = {}
@@ -174,7 +173,7 @@ export async function backfillSettingsSections(
       continue
     }
     try {
-      await upsertSetting(db, meta.defaults, null, meta.scope)
+      upsertSetting(db, meta.defaults, null, meta.scope)
       mutable[key] = meta.defaults
     } catch {
       // Best-effort; the caller's assert surfaces still-missing sections.

@@ -1,10 +1,9 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import bcrypt from 'bcryptjs'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { SigninFlowContext } from '@/server/domains/auth/services/shared'
 import type { BlogSession } from '@/server/domains/auth/session-storage'
+import type { Database } from '@/server/infra/db/database'
 
 // Flow-seam tests for `domains/auth/password-flow`. Everything below the
 // flow (repos, tokens, mail, rate limit, passkey cleanup, session
@@ -16,7 +15,7 @@ import type { BlogSession } from '@/server/domains/auth/session-storage'
 // (`PasswordResetFlowDeps`), so it is stubbed directly — no module mock.
 
 const mocks = vi.hoisted(() => ({
-  issueResetToken: vi.fn(async () => ({ token: 'tok-abc', expiresAt: new Date() })),
+  issueResetToken: vi.fn(() => ({ token: 'tok-abc', expiresAt: new Date() })),
   consumeToken: vi.fn(),
   findUserByEmail: vi.fn(async () => null),
   findUserById: vi.fn(async () => null),
@@ -72,7 +71,7 @@ vi.mock('@/shared/config/getters', () => ({
 
 import { requestPasswordReset, resetPasswordWithToken } from '@/server/domains/auth/services/password-reset'
 
-const db = {} as NodePgDatabase
+const db = {} as Database
 const session = { id: 'sess-1' } as unknown as BlogSession
 const CLIENT = '203.0.113.7'
 const GENERIC = '如果该邮箱存在且符合要求，重置邮件已发送。'
@@ -133,7 +132,7 @@ describe('auth/password-flow — requestPasswordReset', () => {
 
   it('issues one token, sends one email, and audits once for an existing user', async () => {
     mocks.findUserByEmail.mockResolvedValueOnce({
-      id: 7n,
+      id: 7,
       name: 'Vis',
       email: 'vis@example.com',
       role: 'visitor',
@@ -145,7 +144,7 @@ describe('auth/password-flow — requestPasswordReset', () => {
 
     expect(result).toEqual({ type: 'success', message: GENERIC })
     expect(mocks.issueResetToken).toHaveBeenCalledTimes(1)
-    expect(mocks.issueResetToken).toHaveBeenCalledWith(db, 7n)
+    expect(mocks.issueResetToken).toHaveBeenCalledWith(db, 7)
     expect(mocks.sendPasswordReset).toHaveBeenCalledTimes(1)
     const [sentUser, link] = mocks.sendPasswordReset.mock.calls[0]!
     expect(sentUser).toMatchObject({ email: 'vis@example.com' })
@@ -156,7 +155,7 @@ describe('auth/password-flow — requestPasswordReset', () => {
         action: 'password_reset_requested',
         resourceType: 'user',
         resourceId: '7',
-        actorId: 7n,
+        actorId: 7,
         actorRole: 'visitor',
         ipAddress: CLIENT,
         userAgent: 'vitest',
@@ -167,7 +166,7 @@ describe('auth/password-flow — requestPasswordReset', () => {
   it('falls back to the request origin when no site website is configured', async () => {
     mocks.getBlogSettingsBundleSync.mockReturnValueOnce(undefined)
     mocks.findUserByEmail.mockResolvedValueOnce({
-      id: 7n,
+      id: 7,
       name: 'Vis',
       email: 'vis@example.com',
       role: 'visitor',
@@ -198,7 +197,7 @@ describe('auth/password-flow — requestPasswordReset', () => {
 
   it('stays silent for a deleted user', async () => {
     mocks.findUserByEmail.mockResolvedValueOnce({
-      id: 7n,
+      id: 7,
       name: 'Gone',
       email: 'gone@example.com',
       role: 'visitor',
@@ -215,7 +214,7 @@ describe('auth/password-flow — requestPasswordReset', () => {
 
   it('does NOT upgrade an anonymous commenter without any approved comment', async () => {
     mocks.findUserByEmail.mockResolvedValueOnce({
-      id: 8n,
+      id: 8,
       name: 'Anon',
       email: 'anon@example.com',
       role: null,
@@ -227,7 +226,7 @@ describe('auth/password-flow — requestPasswordReset', () => {
     const result = await requestPasswordReset(db, CLIENT, request(), formWith({ email: 'anon@example.com' }), resetDeps)
 
     expect(result).toEqual({ type: 'success', message: GENERIC })
-    expect(mocks.hasApprovedComments).toHaveBeenCalledWith(db, 8n)
+    expect(mocks.hasApprovedComments).toHaveBeenCalledWith(db, 8)
     expect(mocks.updateUserById).not.toHaveBeenCalled()
     expect(mocks.issueResetToken).not.toHaveBeenCalled()
     expect(mocks.sendPasswordReset).not.toHaveBeenCalled()
@@ -236,7 +235,7 @@ describe('auth/password-flow — requestPasswordReset', () => {
 
   it('claims the account (role → visitor) before emailing when ≥1 approved comment exists', async () => {
     mocks.findUserByEmail.mockResolvedValueOnce({
-      id: 8n,
+      id: 8,
       name: 'Anon',
       email: 'anon@example.com',
       role: null,
@@ -248,14 +247,14 @@ describe('auth/password-flow — requestPasswordReset', () => {
     const result = await requestPasswordReset(db, CLIENT, request(), formWith({ email: 'anon@example.com' }), resetDeps)
 
     expect(result).toEqual({ type: 'success', message: GENERIC })
-    expect(mocks.updateUserById).toHaveBeenCalledWith(db, 8n, { role: 'visitor' })
+    expect(mocks.updateUserById).toHaveBeenCalledWith(db, 8, { role: 'visitor' })
     // The role upgrade must land before the token is issued.
     expect(mocks.updateUserById.mock.invocationCallOrder[0]!).toBeLessThan(
       mocks.issueResetToken.mock.invocationCallOrder[0]!,
     )
     expect(mocks.sendPasswordReset).toHaveBeenCalledTimes(1)
     expect(mocks.recordAuditEvent).toHaveBeenCalledWith(
-      expect.objectContaining({ action: 'password_reset_requested', actorId: 8n, actorRole: 'visitor' }),
+      expect.objectContaining({ action: 'password_reset_requested', actorId: 8, actorRole: 'visitor' }),
     )
   })
 })
@@ -310,9 +309,9 @@ describe('auth/password-flow — resetPasswordWithToken', () => {
   })
 
   it('on success: rehashes, clears passkeys, revokes other sessions, audits, redirects', async () => {
-    mocks.consumeToken.mockResolvedValueOnce({ userId: 42n })
+    mocks.consumeToken.mockResolvedValueOnce({ userId: 42 })
     mocks.findUserById.mockResolvedValueOnce({
-      id: 42n,
+      id: 42,
       name: 'Vis',
       email: 'vis@example.com',
       role: 'visitor',
@@ -333,7 +332,7 @@ describe('auth/password-flow — resetPasswordWithToken', () => {
 
     // Passkey cleanup runs after the password update, before the session
     // is established with revokeOtherSessions.
-    expect(mocks.deleteAllCredentials).toHaveBeenCalledWith(db, 42n)
+    expect(mocks.deleteAllCredentials).toHaveBeenCalledWith(db, 42)
     expect(mocks.updateUserById.mock.invocationCallOrder[0]!).toBeLessThan(
       mocks.deleteAllCredentials.mock.invocationCallOrder[0]!,
     )
@@ -343,7 +342,7 @@ describe('auth/password-flow — resetPasswordWithToken', () => {
     expect(mocks.establishLoginSession).toHaveBeenCalledWith(
       db,
       session,
-      expect.objectContaining({ id: 42n }),
+      expect.objectContaining({ id: 42 }),
       req,
       CLIENT,
       {
@@ -357,17 +356,17 @@ describe('auth/password-flow — resetPasswordWithToken', () => {
         action: 'password_reset_complete',
         resourceType: 'user',
         resourceId: '42',
-        actorId: 42n,
+        actorId: 42,
         actorRole: 'visitor',
       }),
     )
   })
 
   it('still succeeds when passkey cleanup fails (best-effort)', async () => {
-    mocks.consumeToken.mockResolvedValueOnce({ userId: 42n })
+    mocks.consumeToken.mockResolvedValueOnce({ userId: 42 })
     mocks.deleteAllCredentials.mockRejectedValueOnce(new Error('db down'))
     mocks.findUserById.mockResolvedValueOnce({
-      id: 42n,
+      id: 42,
       name: 'Vis',
       email: 'vis@example.com',
       role: 'visitor',
@@ -381,7 +380,7 @@ describe('auth/password-flow — resetPasswordWithToken', () => {
   })
 
   it('returns 账户状态异常 when the user is gone after token consume', async () => {
-    mocks.consumeToken.mockResolvedValueOnce({ userId: 42n })
+    mocks.consumeToken.mockResolvedValueOnce({ userId: 42 })
     mocks.findUserById.mockResolvedValueOnce(null)
 
     const result = await resetPasswordWithToken(flowCtx(), request(), validForm(), '/admin', 'password-reset')

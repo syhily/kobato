@@ -1,7 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { createElement } from 'react'
 
+import type { Database } from '@/server/infra/db/database'
 import type { EntityTarget } from '@/server/infra/db/target'
 import type { Comment, User } from '@/server/infra/db/types'
 import type { SendResult } from '@/server/infra/email/types'
@@ -21,7 +20,7 @@ import { entityCommentUrl } from '@/shared/utils/paths'
 
 const log = getLogger('comments.email')
 
-async function resolveEntity(db: NodePgDatabase, target: EntityTarget): Promise<{ title: string; url: string } | null> {
+async function resolveEntity(db: Database, target: EntityTarget): Promise<{ title: string; url: string } | null> {
   const entity = await findEntitySlugTitle(db, target)
   if (entity === null) {
     return null
@@ -31,7 +30,7 @@ async function resolveEntity(db: NodePgDatabase, target: EntityTarget): Promise<
 
 // Sent to the administrator whenever a new comment is posted.
 export async function sendNewComment(
-  db: NodePgDatabase,
+  db: Database,
   commentInfo: CommentAndUser,
   target: EntityTarget,
 ): Promise<SendResult> {
@@ -56,7 +55,7 @@ export async function sendNewComment(
 
 // Sent to the original commenter when one of their comments receives a reply.
 export async function sendNewReply(
-  db: NodePgDatabase,
+  db: Database,
   sourceUser: User,
   source: Comment,
   reply: CommentAndUser,
@@ -88,7 +87,7 @@ export async function sendNewReply(
 
 // Sent to the commenter when an admin approves their previously pending comment.
 export async function sendApprovedComment(
-  db: NodePgDatabase,
+  db: Database,
   comment: Comment,
   user: User,
   target: EntityTarget,

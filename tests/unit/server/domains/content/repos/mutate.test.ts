@@ -1,20 +1,20 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { describe, expect, it } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
 import type { ContentRow } from '@/server/infra/db/types'
 
 import { checkTokenConflict, lockMetaAndLoadLatest } from '@/server/domains/content/repos/mutate'
+import { DomainError } from '@/server/infra/http/errors'
 
 /** The tx handle handed to a `db.transaction(...)` callback — same alias as in the module under test. */
-type RevisionTx = Parameters<Parameters<NodePgDatabase['transaction']>[0]>[0]
+type RevisionTx = Parameters<Parameters<Database['transaction']>[0]>[0]
 
 function contentRow(overrides: Partial<ContentRow> = {}): ContentRow {
   const now = overrides.createdAt ?? new Date('2026-05-01T00:00:00.000Z')
   return {
-    id: overrides.id ?? 100n,
+    id: overrides.id ?? 100,
     type: overrides.type ?? 'post',
-    ownerId: overrides.ownerId ?? 1n,
+    ownerId: overrides.ownerId ?? 1,
     revisionNo: overrides.revisionNo ?? 1,
     status: overrides.status ?? 'draft',
     body: overrides.body ?? [],
@@ -63,7 +63,7 @@ describe('content/repos/mutate — checkTokenConflict', () => {
 
 interface FakeTxOptions {
   /** Meta rows returned by the locking select; empty means the owner is gone. */
-  lockRows: { id: bigint; firstPublishedAt: Date | null }[]
+  lockRows: { id: number; firstPublishedAt: Date | null }[]
   /** Latest-revision rows returned by the content select. */
   latestRows: ContentRow[]
 }
@@ -79,6 +79,7 @@ function makeFakeTx(options: FakeTxOptions): RevisionTx {
     from: () => lockChain,
     where: () => lockChain,
     for: () => lockChain,
+    all: () => options.lockRows,
     then: (resolve: (rows: FakeTxOptions['lockRows']) => unknown) => Promise.resolve(options.lockRows).then(resolve),
   }
   const latestChain = {
@@ -86,6 +87,7 @@ function makeFakeTx(options: FakeTxOptions): RevisionTx {
     where: () => latestChain,
     orderBy: () => latestChain,
     limit: () => latestChain,
+    all: () => options.latestRows,
     then: (resolve: (rows: ContentRow[]) => unknown) => Promise.resolve(options.latestRows).then(resolve),
   }
   const tx = {
@@ -97,22 +99,22 @@ function makeFakeTx(options: FakeTxOptions): RevisionTx {
 describe('content/repos/mutate — lockMetaAndLoadLatest', () => {
   it('throws DomainError NOT_FOUND when the meta row is missing', async () => {
     const tx = makeFakeTx({ lockRows: [], latestRows: [] })
-    await expect(lockMetaAndLoadLatest(tx, 'post', 42n)).rejects.toMatchObject({ code: 'NOT_FOUND' })
+    expect(() => lockMetaAndLoadLatest(tx, 'post', 42)).toThrowError(DomainError)
   })
 
   it('returns the locked meta row and the latest revision', async () => {
     const firstPublishedAt = new Date('2026-01-01T00:00:00.000Z')
     const latest = contentRow({ revisionNo: 7 })
-    const tx = makeFakeTx({ lockRows: [{ id: 42n, firstPublishedAt }], latestRows: [latest] })
-    const result = await lockMetaAndLoadLatest(tx, 'post', 42n)
-    expect(result.meta).toEqual({ id: 42n, firstPublishedAt })
+    const tx = makeFakeTx({ lockRows: [{ id: 42, firstPublishedAt }], latestRows: [latest] })
+    const result = await lockMetaAndLoadLatest(tx, 'post', 42)
+    expect(result.meta).toEqual({ id: 42, firstPublishedAt })
     expect(result.latest).toBe(latest)
   })
 
   it('returns latest=undefined when the owner has no revisions yet', async () => {
-    const tx = makeFakeTx({ lockRows: [{ id: 42n, firstPublishedAt: null }], latestRows: [] })
-    const result = await lockMetaAndLoadLatest(tx, 'page', 42n)
-    expect(result.meta.id).toBe(42n)
+    const tx = makeFakeTx({ lockRows: [{ id: 42, firstPublishedAt: null }], latestRows: [] })
+    const result = await lockMetaAndLoadLatest(tx, 'page', 42)
+    expect(result.meta.id).toBe(42)
     expect(result.latest).toBeUndefined()
   })
 })

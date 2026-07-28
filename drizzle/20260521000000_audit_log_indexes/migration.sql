@@ -1,2 +1,0 @@
-CREATE INDEX "idx_audit_log_action_created_at" ON "audit_log" ("action","created_at");--> statement-breakpoint
-ALTER TABLE "audit_log" DROP CONSTRAINT "audit_log_actor_id_user_id_fkey", ADD CONSTRAINT "audit_log_actor_id_user_id_fkey" FOREIGN KEY ("actor_id") REFERENCES "user"("id") ON DELETE SET NULL;

@@ -1,7 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import type { AdminPostDto } from '@/server/domains/posts/projection'
 import type { UpsertPostMetaInput, ViewerContext } from '@/server/domains/posts/services/shared'
+import type { Database } from '@/server/infra/db/database'
 
 import { makeEntityMutations } from '@/server/domains/content/entities/mutate'
 import { postDescriptor } from '@/server/domains/posts/descriptor'
@@ -18,7 +17,7 @@ export const restorePost = mutations.restore
 export const unpublishPost = mutations.unpublish
 
 export async function updatePostMeta(
-  db: NodePgDatabase,
+  db: Database,
   input: UpsertPostMetaInput,
   viewer?: ViewerContext,
 ): Promise<AdminPostDto> {

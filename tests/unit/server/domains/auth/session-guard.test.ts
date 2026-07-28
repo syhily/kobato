@@ -1,8 +1,7 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { ViewerIdentity } from '@/server/domains/auth/rbac'
+import type { Database } from '@/server/infra/db/database'
 
 // auth/session-guard.ts owns the "who may revoke whose session" policy
 // for all three scopes (own / admin / bulk). We stub the role-blind
@@ -31,7 +30,7 @@ const { revokeOwnSessionWithGuard, revokeSessionWithGuard, revokeAllSessionsWith
   await import('@/server/domains/auth/session-guard')
 const { DomainError } = await import('@/server/infra/http/errors')
 
-const fakeDb = {} as NodePgDatabase
+const fakeDb = {} as Database
 
 function actor(id: string, role: ViewerIdentity['role'] = 'admin'): ViewerIdentity {
   return { id, role }
@@ -51,14 +50,14 @@ describe('auth/session-guard — revokeOwnSessionWithGuard (own scope)', () => {
   })
 
   it('revokes when the actor owns the session', async () => {
-    findSessionMetaMock.mockResolvedValue({ userId: 1n, sid: 'sid' })
+    findSessionMetaMock.mockResolvedValue({ userId: 1, sid: 'sid' })
     const result = await revokeOwnSessionWithGuard(fakeDb, 'sid', actor('1', 'visitor'))
-    expect(result.targetUserId).toBe(1n)
-    expect(revokeSessionByIdMock).toHaveBeenCalledWith(fakeDb, 'sid', 1n)
+    expect(result.targetUserId).toBe(1)
+    expect(revokeSessionByIdMock).toHaveBeenCalledWith(fakeDb, 'sid', 1)
   })
 
   it('throws FORBIDDEN when the session belongs to another user — even for an admin actor (no bypass)', async () => {
-    findSessionMetaMock.mockResolvedValue({ userId: 999n, sid: 'sid' })
+    findSessionMetaMock.mockResolvedValue({ userId: 999, sid: 'sid' })
     await expect(revokeOwnSessionWithGuard(fakeDb, 'sid', actor('1', 'admin'))).rejects.toThrow('无权操作该会话。')
     expect(revokeSessionByIdMock).not.toHaveBeenCalled()
   })
@@ -79,23 +78,23 @@ describe('auth/session-guard — revokeSessionWithGuard (admin scope)', () => {
   })
 
   it('revokes immediately when the actor owns the session', async () => {
-    findSessionMetaMock.mockResolvedValue({ userId: 1n, sid: 'sid' })
+    findSessionMetaMock.mockResolvedValue({ userId: 1, sid: 'sid' })
     const result = await revokeSessionWithGuard(fakeDb, 'sid', actor('1'))
-    expect(result.targetUserId).toBe(1n)
-    expect(revokeSessionByIdMock).toHaveBeenCalledWith(fakeDb, 'sid', 1n)
+    expect(result.targetUserId).toBe(1)
+    expect(revokeSessionByIdMock).toHaveBeenCalledWith(fakeDb, 'sid', 1)
     expect(findSafeUserByIdMock).not.toHaveBeenCalled()
   })
 
   it('revokes when a non-admin actor targets another user (unreachable via adminProc; no guard fires)', async () => {
-    findSessionMetaMock.mockResolvedValue({ userId: 2n, sid: 'sid' })
+    findSessionMetaMock.mockResolvedValue({ userId: 2, sid: 'sid' })
     const result = await revokeSessionWithGuard(fakeDb, 'sid', actor('1', 'visitor'))
-    expect(result.targetUserId).toBe(2n)
+    expect(result.targetUserId).toBe(2)
     expect(revokeSessionByIdMock).toHaveBeenCalled()
   })
 
   it('throws FORBIDDEN when an admin targets another live admin', async () => {
-    findSessionMetaMock.mockResolvedValue({ userId: 2n, sid: 'sid' })
-    findSafeUserByIdMock.mockResolvedValue({ id: 2n, role: 'admin', deletedAt: null })
+    findSessionMetaMock.mockResolvedValue({ userId: 2, sid: 'sid' })
+    findSafeUserByIdMock.mockResolvedValue({ id: 2, role: 'admin', deletedAt: null })
     await expect(revokeSessionWithGuard(fakeDb, 'sid', actor('1'))).rejects.toThrow(
       new DomainError('FORBIDDEN', '无权撤销其他管理员的会话。'),
     )
@@ -103,18 +102,18 @@ describe('auth/session-guard — revokeSessionWithGuard (admin scope)', () => {
   })
 
   it('revokes when the target admin has been soft-deleted', async () => {
-    findSessionMetaMock.mockResolvedValue({ userId: 2n, sid: 'sid' })
-    findSafeUserByIdMock.mockResolvedValue({ id: 2n, role: 'admin', deletedAt: new Date() })
+    findSessionMetaMock.mockResolvedValue({ userId: 2, sid: 'sid' })
+    findSafeUserByIdMock.mockResolvedValue({ id: 2, role: 'admin', deletedAt: new Date() })
     const result = await revokeSessionWithGuard(fakeDb, 'sid', actor('1'))
-    expect(result.targetUserId).toBe(2n)
+    expect(result.targetUserId).toBe(2)
     expect(revokeSessionByIdMock).toHaveBeenCalled()
   })
 
   it('revokes when the target is a non-admin user', async () => {
-    findSessionMetaMock.mockResolvedValue({ userId: 2n, sid: 'sid' })
-    findSafeUserByIdMock.mockResolvedValue({ id: 2n, role: 'visitor', deletedAt: null })
+    findSessionMetaMock.mockResolvedValue({ userId: 2, sid: 'sid' })
+    findSafeUserByIdMock.mockResolvedValue({ id: 2, role: 'visitor', deletedAt: null })
     const result = await revokeSessionWithGuard(fakeDb, 'sid', actor('1'))
-    expect(result.targetUserId).toBe(2n)
+    expect(result.targetUserId).toBe(2)
     expect(revokeSessionByIdMock).toHaveBeenCalled()
   })
 })
@@ -127,34 +126,34 @@ describe('auth/session-guard — revokeAllSessionsWithGuard (bulk scope)', () =>
   })
 
   it('allows an admin to bulk-revoke their own sessions', async () => {
-    findSafeUserByIdMock.mockResolvedValue({ id: 1n, role: 'admin', deletedAt: null })
-    await revokeAllSessionsWithGuard(fakeDb, 1n, actor('1'))
-    expect(revokeAllSessionsOfUserMock).toHaveBeenCalledWith(fakeDb, 1n)
+    findSafeUserByIdMock.mockResolvedValue({ id: 1, role: 'admin', deletedAt: null })
+    await revokeAllSessionsWithGuard(fakeDb, 1, actor('1'))
+    expect(revokeAllSessionsOfUserMock).toHaveBeenCalledWith(fakeDb, 1)
   })
 
   it('allows an admin to bulk-revoke a non-admin user', async () => {
-    findSafeUserByIdMock.mockResolvedValue({ id: 2n, role: 'visitor', deletedAt: null })
-    await revokeAllSessionsWithGuard(fakeDb, 2n, actor('1'))
-    expect(revokeAllSessionsOfUserMock).toHaveBeenCalledWith(fakeDb, 2n)
+    findSafeUserByIdMock.mockResolvedValue({ id: 2, role: 'visitor', deletedAt: null })
+    await revokeAllSessionsWithGuard(fakeDb, 2, actor('1'))
+    expect(revokeAllSessionsOfUserMock).toHaveBeenCalledWith(fakeDb, 2)
   })
 
   it('throws FORBIDDEN when an admin bulk-revokes another admin', async () => {
-    findSafeUserByIdMock.mockResolvedValue({ id: 2n, role: 'admin', deletedAt: null })
-    await expect(revokeAllSessionsWithGuard(fakeDb, 2n, actor('1'))).rejects.toThrow(
+    findSafeUserByIdMock.mockResolvedValue({ id: 2, role: 'admin', deletedAt: null })
+    await expect(revokeAllSessionsWithGuard(fakeDb, 2, actor('1'))).rejects.toThrow(
       new DomainError('FORBIDDEN', '无权撤销其他管理员的全部会话。'),
     )
     expect(revokeAllSessionsOfUserMock).not.toHaveBeenCalled()
   })
 
   it('still throws FORBIDDEN when the other admin is soft-deleted (no exemption in bulk scope)', async () => {
-    findSafeUserByIdMock.mockResolvedValue({ id: 2n, role: 'admin', deletedAt: new Date() })
-    await expect(revokeAllSessionsWithGuard(fakeDb, 2n, actor('1'))).rejects.toThrow('无权撤销其他管理员的全部会话。')
+    findSafeUserByIdMock.mockResolvedValue({ id: 2, role: 'admin', deletedAt: new Date() })
+    await expect(revokeAllSessionsWithGuard(fakeDb, 2, actor('1'))).rejects.toThrow('无权撤销其他管理员的全部会话。')
     expect(revokeAllSessionsOfUserMock).not.toHaveBeenCalled()
   })
 
   it('proceeds when the target user row is missing', async () => {
     findSafeUserByIdMock.mockResolvedValue(null)
-    await revokeAllSessionsWithGuard(fakeDb, 2n, actor('1'))
-    expect(revokeAllSessionsOfUserMock).toHaveBeenCalledWith(fakeDb, 2n)
+    await revokeAllSessionsWithGuard(fakeDb, 2, actor('1'))
+    expect(revokeAllSessionsOfUserMock).toHaveBeenCalledWith(fakeDb, 2)
   })
 })

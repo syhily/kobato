@@ -31,11 +31,11 @@ describe('buildAdminListConditions — text filter', () => {
     expect(conditions).toHaveLength(1)
   })
 
-  it('adds an `ILIKE` predicate by default (`match` omitted)', () => {
+  it('adds a `LIKE` predicate by default (`match` omitted)', () => {
     const conditions = buildAdminListConditions({ q: 'foo' })
     expect(conditions).toHaveLength(2)
     const { sql, params } = render(conditions[1]!)
-    expect(sql).toMatch(/\bcontent\b.*\bilike\b/i)
+    expect(sql).toMatch(/\bcontent\b.*\blike\b/i)
     expect(sql).toMatch(/escape\s+'\\'/i)
     expect(sql).not.toMatch(/\bNOT\b/i)
     expect(params).toEqual(['%foo%'])
@@ -45,7 +45,7 @@ describe('buildAdminListConditions — text filter', () => {
     const conditions = buildAdminListConditions({ q: 'foo', match: 'contains' })
     expect(conditions).toHaveLength(2)
     const { sql, params } = render(conditions[1]!)
-    expect(sql).toMatch(/\bcontent\b.*\bilike\b/i)
+    expect(sql).toMatch(/\bcontent\b.*\blike\b/i)
     expect(sql).toMatch(/escape\s+'\\'/i)
     expect(sql).not.toMatch(/\bNOT\b/i)
     expect(params).toEqual(['%foo%'])
@@ -56,7 +56,7 @@ describe('buildAdminListConditions — text filter', () => {
     expect(conditions).toHaveLength(2)
     const { sql, params } = render(conditions[1]!)
     expect(sql).toMatch(/\bNOT\b/i)
-    expect(sql).toMatch(/\bcontent\b.*\bilike\b/i)
+    expect(sql).toMatch(/\bcontent\b.*\blike\b/i)
     expect(sql).toMatch(/escape\s+'\\'/i)
     expect(params).toEqual(['%spam%'])
   })
@@ -123,9 +123,8 @@ describe('buildAdminListConditions — date filter', () => {
     // `"comment"."created_at" >= $1`. The regex is order-tolerant so
     // it still matches if Drizzle ever flips the order.
     expect(sql).toMatch(/(created_at.*>=|>=.*created_at)/i)
-    // Drizzle parameterises `Date` values as their ISO-8601 string,
-    // not the original `Date` object — match the rendered form.
-    expect(params).toEqual([after.toISOString()])
+    // timestamp_ms columns parameterise `Date` values as epoch ms.
+    expect(params).toEqual([after.getTime()])
   })
 
   it('adds a `createdAt <= ?` condition when `createdBefore` is set', () => {
@@ -133,7 +132,7 @@ describe('buildAdminListConditions — date filter', () => {
     expect(conditions).toHaveLength(2)
     const { sql, params } = render(conditions[1]!)
     expect(sql).toMatch(/(created_at.*<=|<=.*created_at)/i)
-    expect(params).toEqual([before.toISOString()])
+    expect(params).toEqual([before.getTime()])
   })
 
   it('stacks both bounds alongside the text predicate', () => {

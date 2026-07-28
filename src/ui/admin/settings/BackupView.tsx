@@ -147,7 +147,6 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
   }, [])
 
   const primaryDriver = statusData?.primaryDriver ?? 'local'
-  const pgToolsAvailable = statusData?.pgToolsAvailable ?? false
 
   const source = backup ?? FALLBACK_BACKUP
 
@@ -239,20 +238,14 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
     }
   }, [selectedFile, csrfToken])
 
-  // Backups are usable as long as the postgres client tools are present —
-  // they land in S3 when configured and in local storage otherwise, so S3
-  // being off no longer disables the feature. `primaryDriver` only drives
+  // File-based backups need no external tooling — they land in S3 when
+  // configured and in local storage otherwise. `primaryDriver` only drives
   // the informational banner below.
-  const canConfigure = pgToolsAvailable
+  const canConfigure = true
 
   return (
     <div className="flex flex-col gap-6">
       {(statusLoading || isInitialLoading) && <div className="text-sm text-muted-foreground">正在读取备份信息…</div>}
-      {!statusLoading && !isInitialLoading && !pgToolsAvailable && (
-        <div className="rounded-xl border border-status-warn-border/30 bg-status-warn-bg/50 p-4 text-sm text-status-warn-fg">
-          当前运行环境缺少 postgresql-client，备份与还原功能不可用。
-        </div>
-      )}
       {!statusLoading && !isInitialLoading && primaryDriver !== 's3' && (
         <div className="rounded-xl border border-status-info-border/30 bg-status-info-bg/50 p-4 text-sm text-status-info-fg">
           未启用 S3 存储，备份将写入服务器本地存储。建议配置 S3 以实现异地备份与更长的保留期。
@@ -268,7 +261,6 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
         isCreating={createMutation.isPending}
         onCreate={() => createMutation.mutate()}
         restorePending={restoreMutation.isPending}
-        pgToolsAvailable={pgToolsAvailable}
         onRestore={(key) => {
           setRestoreKey(key)
           setRestorePhase('confirm')
@@ -294,20 +286,20 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
         />
       )}
 
-      <SettingGroup title="手动还原" description="上传 .sql 或 .gz 备份文件进行还原。">
+      <SettingGroup title="手动还原" description="上传 .db 或 .db.gz 备份文件进行还原。">
         <div className="flex flex-col gap-3">
           <input
             ref={fileInputRef}
             type="file"
-            accept=".sql,.gz,application/gzip"
-            disabled={!pgToolsAvailable || uploading}
+            accept=".db,.gz,application/gzip"
+            disabled={uploading}
             onChange={(e) => {
               const file = e.target.files?.[0] ?? null
               if (file) {
                 const name = file.name
-                const isValid = /\.sql$/i.test(name) || /\.sql\.gz$/i.test(name) || /^[^.]+\.gz$/i.test(name)
+                const isValid = /\.db$/i.test(name) || /\.db\.gz$/i.test(name) || /^[^.]+\.gz$/i.test(name)
                 if (!isValid) {
-                  toast.error('仅支持 .sql、.sql.gz 或 .gz 格式的备份文件')
+                  toast.error('仅支持 .db、.db.gz 或 .gz 格式的备份文件')
                   e.target.value = ''
                   setSelectedFile(null)
                   return
@@ -323,7 +315,7 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
               type="button"
               variant="outline"
               size="sm"
-              disabled={!pgToolsAvailable || uploading}
+              disabled={uploading}
               onClick={() => fileInputRef.current?.click()}
             >
               {selectedFile ? '重新选择' : '选择文件'}
@@ -335,11 +327,7 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
             )}
           </div>
           <div className="flex gap-2">
-            <Button
-              type="button"
-              disabled={!pgToolsAvailable || uploading || !selectedFile}
-              onClick={() => void handleUploadRestore()}
-            >
+            <Button type="button" disabled={uploading || !selectedFile} onClick={() => void handleUploadRestore()}>
               {uploading ? '上传还原中…' : '上传并还原'}
             </Button>
           </div>

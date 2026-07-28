@@ -145,10 +145,10 @@ describe('rate-limit', () => {
     const callables: Array<() => Promise<RateLimitResult>> = [
       () => tryRateLimit('127.0.0.1'),
       () => tryInviteRateLimit('127.0.0.1'),
-      () => tryInviteByEmailRateLimit(1n, 'a@example.com'),
+      () => tryInviteByEmailRateLimit(1, 'a@example.com'),
       () => tryPasswordResetRateLimit('127.0.0.1'),
       () => tryPasswordResetByEmailRateLimit('a@example.com'),
-      () => tryPasswordResetByTargetRateLimit(2n),
+      () => tryPasswordResetByTargetRateLimit(2),
       () => tryCommentPostRateLimit('127.0.0.1'),
       () => tryCommentPostRateLimitByEmail('a@example.com'),
       () => tryLikeIncreaseRateLimit('127.0.0.1'),

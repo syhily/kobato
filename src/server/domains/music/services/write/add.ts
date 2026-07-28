@@ -1,6 +1,5 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import type { ProviderTrack } from '@/server/domains/music/providers/types'
+import type { Database } from '@/server/infra/db/database'
 import type { MusicRow, NewMusic } from '@/server/infra/db/types'
 import type { AdminMusicDto } from '@/shared/contracts/music'
 
@@ -25,7 +24,7 @@ const log = getLogger('music.service')
 export interface AddMusicInputs {
   source: string
   sourceId: string
-  uploader: { id: bigint; name: string } | null
+  uploader: { id: number; name: string } | null
   /**
    * Optional pre-resolved metadata + asset URLs. The historical-import
    * script preloads this from the legacy assets JSON so it skips the
@@ -50,7 +49,7 @@ export interface AddMusicPrefill {
  * its existing row instead of re-uploading, so the import script is
  * safe to re-run.
  */
-export async function addMusic(db: NodePgDatabase, input: AddMusicInputs): Promise<AdminMusicDto> {
+export async function addMusic(db: Database, input: AddMusicInputs): Promise<AdminMusicDto> {
   // Idempotency: skip the upload-and-insert dance if we already imported
   // this song. The caller decides whether to surface "already exists" (UI)
   // or "skip" (importer).

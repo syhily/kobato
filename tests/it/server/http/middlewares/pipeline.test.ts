@@ -43,7 +43,6 @@ function makeContextStub(overrides: Record<string, unknown> = {}) {
           session: { get: () => undefined } as unknown as BlogSession,
           clientAddress: '127.0.0.1',
           db: { id: 'db-stub' } as never,
-          pool: { id: 'pool-stub' } as never,
           cspNonce: 'test-nonce-123',
         }),
         ...overrides,

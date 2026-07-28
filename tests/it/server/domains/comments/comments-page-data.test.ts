@@ -1,6 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import type { Database } from '@/server/infra/db/database'
 
 import { seedMetric } from '#/_helpers/db'
 import { regularSession } from '#/_helpers/session'
@@ -29,11 +29,11 @@ const likes = await import('@/server/domains/comments/services/likes')
 const sidebar = await import('@/server/http/loaders/sidebar')
 const { loadDetailPageStreaming } = await import('@/server/http/loaders/comments')
 
-const POST_TIMING = { type: 'post' as const, ownerId: 1n }
-const POST_EMPTY = { type: 'post' as const, ownerId: 2n }
-const POST_ONE_UPSERT = { type: 'post' as const, ownerId: 3n }
+const POST_TIMING = { type: 'post' as const, ownerId: 1 }
+const POST_EMPTY = { type: 'post' as const, ownerId: 2 }
+const POST_ONE_UPSERT = { type: 'post' as const, ownerId: 3 }
 
-const mockDb = {} as NodePgDatabase
+const mockDb = {} as Database
 
 function delay<T>(value: T, ms: number): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(value), ms))

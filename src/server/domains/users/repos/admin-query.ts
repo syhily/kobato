@@ -1,7 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { and, count, desc, eq, isNull, max, or, sql } from 'drizzle-orm'
 
+import type { Database } from '@/server/infra/db/database'
 import type { LoginMethod } from '@/shared/contracts/users'
 
 import { ilikeEscape } from '@/server/infra/db/ilike-escape'
@@ -21,7 +20,7 @@ export interface AdminUsersListFilters {
 }
 
 export interface AdminUserRow {
-  id: bigint
+  id: number
   name: string
   email: string
   link: string | null
@@ -68,7 +67,7 @@ function buildAdminUsersConditions(filters: AdminUsersListFilters) {
   return conditions
 }
 
-export async function countAdminUsers(db: NodePgDatabase, filters: AdminUsersListFilters): Promise<number> {
+export async function countAdminUsers(db: Database, filters: AdminUsersListFilters): Promise<number> {
   const conditions = buildAdminUsersConditions(filters)
   const rows = await db
     .select({ counts: count() })
@@ -84,7 +83,7 @@ function lastCommentAtAggregate() {
 }
 
 export async function listAdminUsers(
-  db: NodePgDatabase,
+  db: Database,
   offset: number,
   limit: number,
   filters: AdminUsersListFilters,
@@ -131,7 +130,7 @@ export async function listAdminUsers(
   }))
 }
 
-export async function findAdminUserById(db: NodePgDatabase, id: bigint): Promise<AdminUserRow | null> {
+export async function findAdminUserById(db: Database, id: number): Promise<AdminUserRow | null> {
   const rows = await db
     .select({
       id: user.id,

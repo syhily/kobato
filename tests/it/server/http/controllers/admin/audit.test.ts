@@ -20,7 +20,7 @@ const { auditLogRouter } = await import('@/server/http/controllers/admin/audit.c
 const ctx = makeAuthedCtx({ role: 'admin' })
 
 const baseRow = {
-  id: 1n,
+  id: 1,
   action: 'login',
   resourceType: 'session',
   actorId: null,
@@ -112,8 +112,8 @@ describe('auditLogRouter.actors', () => {
 
   it('returns distinct actors as DTOs', async () => {
     vi.mocked(query.fetchAuditLogActors).mockResolvedValue([
-      { id: 1n, name: 'Alice', email: 'alice@example.com' },
-      { id: 2n, name: 'Bob', email: 'bob@example.com' },
+      { id: 1, name: 'Alice', email: 'alice@example.com' },
+      { id: 2, name: 'Bob', email: 'bob@example.com' },
     ])
 
     const result = await call(auditLogRouter.actors, {}, { context: ctx })

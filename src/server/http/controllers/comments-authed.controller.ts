@@ -19,8 +19,8 @@ const updateOwn = authedProc
   .input(z.object({ commentId: z.string(), body: commentBodySchema }))
   .output(ownCommentMutationDto)
   .handler(async ({ input, context }) => {
-    const commentId = input.commentId ? idFromString(input.commentId) : 0n
-    if (commentId === 0n) {
+    const commentId = input.commentId ? idFromString(input.commentId) : 0
+    if (commentId === 0) {
       throw new ORPCError('BAD_REQUEST', { message: '缺少 commentId' })
     }
     // The edit-lock flow (ownership, delete-request fence, has-replies

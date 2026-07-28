@@ -1,5 +1,4 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
+import type { Database } from '@/server/infra/db/database'
 import type { ImageBlock, PortableTextBody } from '@/shared/pt/schema'
 
 import { findImagesByIds, updateImageNote } from '@/server/infra/db/operations/image'
@@ -13,7 +12,7 @@ import { idFromString } from '@/shared/utils/id'
 // `image.note`. External blocks are left alone (third-party `src`; never
 // fetched or projected). Mutates the body in place; failures are
 // swallowed — canonicalising a single block isn't worth blocking the save.
-export async function syncLibraryImageBlocks(db: NodePgDatabase, body: PortableTextBody): Promise<void> {
+export async function syncLibraryImageBlocks(db: Database, body: PortableTextBody): Promise<void> {
   const targets: ImageBlock[] = []
   visitNestedBlocks(body, (block) => {
     if (block._type === 'image') {
@@ -25,7 +24,7 @@ export async function syncLibraryImageBlocks(db: NodePgDatabase, body: PortableT
   }
 
   // Batch-resolve imageIds to bigint ids so we can fetch all rows in one query.
-  const idTargets: { id: bigint; target: ImageBlock }[] = []
+  const idTargets: { id: number; target: ImageBlock }[] = []
   for (const target of targets) {
     if (target.imageId === undefined || target.imageId === '') {
       continue

@@ -1,11 +1,10 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
+
 import { clearAllTables } from '#/_helpers/integration-db'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { image } from '@/server/infra/db/schema/media'
 
 const { setBlogSettingsBundleForTests } = await import('#/_helpers/blog-settings')
@@ -18,12 +17,11 @@ const upload = await import('@/server/domains/images/services/upload')
 const resolve = await import('@/server/domains/images/services/resolve')
 const enhance = await import('@/server/domains/images/services/enhance')
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {
@@ -142,7 +140,7 @@ describe('images/services/admin-read — listImagesForAdmin', () => {
 
 describe('images/services/admin-read — findImageDtoById', () => {
   it('returns null for unknown id', async () => {
-    expect(await adminRead.findImageDtoById(db, 9999n)).toBeNull()
+    expect(await adminRead.findImageDtoById(db, 9999)).toBeNull()
   })
 
   it('returns dto for known id', async () => {
@@ -177,7 +175,7 @@ describe('images/services/admin-read — toAdminImageDto', () => {
 
 describe('images/services/admin-mutate — updateImageNote', () => {
   it('throws NOT_FOUND for unknown id', async () => {
-    await expect(adminMutate.updateImageNote(db, 9999n, 'x')).rejects.toThrow(/图片不存在/)
+    await expect(adminMutate.updateImageNote(db, 9999, 'x')).rejects.toThrow(/图片不存在/)
   })
 
   it('updates the note and returns the dto', async () => {
@@ -195,7 +193,7 @@ describe('images/services/admin-mutate — updateImageNote', () => {
 
 describe('images/services/admin-mutate — deleteImage', () => {
   it('throws NOT_FOUND for unknown id', async () => {
-    await expect(adminMutate.deleteImage(db, 9999n)).rejects.toThrow(/图片不存在/)
+    await expect(adminMutate.deleteImage(db, 9999)).rejects.toThrow(/图片不存在/)
   })
 
   it('soft-deletes the image', async () => {

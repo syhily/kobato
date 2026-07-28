@@ -1,5 +1,4 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
+import type { Database } from '@/server/infra/db/database'
 import type { BrandingObjectRef } from '@/shared/config/types'
 
 import { type BinarySlot } from '@/server/assets/defaults'
@@ -37,7 +36,7 @@ const FAVICON_DERIVED_SLOTS = [
 // settings upsert; on any failure we delete every object we just put so
 // no stale bytes or partial pack are left behind.
 export async function uploadBrandingAsset(
-  db: NodePgDatabase,
+  db: Database,
   slot: BrandingSlot,
   buffer: Buffer,
 ): Promise<BrandingObjectRef> {
@@ -78,7 +77,7 @@ export async function uploadBrandingAsset(
 // derived icons so admins don't end up with a mismatched favicon SVG +
 // stale PNG/ICO pack. Each slot's bytes are deleted from the backend its
 // ref records, so a local-uploaded asset is removed from disk.
-export async function clearBrandingAsset(db: NodePgDatabase, slot: BrandingSlot): Promise<void> {
+export async function clearBrandingAsset(db: Database, slot: BrandingSlot): Promise<void> {
   const slotsToClear: BrandingSlot[] = slot === 'faviconSvg' ? [slot, ...FAVICON_DERIVED_SLOTS] : [slot]
   const row = await readAssetsRow(db)
   const branding = unsafeCast<Record<string, BrandingObjectRef>>(row.branding ?? {})
@@ -88,32 +87,32 @@ export async function clearBrandingAsset(db: NodePgDatabase, slot: BrandingSlot)
 
 // --- Settings-row helpers ---
 
-async function readAssetsRow(db: NodePgDatabase): Promise<Record<string, unknown>> {
-  const existing = await findSettingByScope(db, SECTION_REGISTRY.assets.scope)
+async function readAssetsRow(db: Database): Promise<Record<string, unknown>> {
+  const existing = findSettingByScope(db, SECTION_REGISTRY.assets.scope)
   if (!existing) {
     throw new ActionFailure(409, '尚未安装站点设置，无法上传品牌素材')
   }
   return { ...unsafeCast<Record<string, unknown>>(existing.data) }
 }
 
-async function persistBranding(db: NodePgDatabase, refs: Record<string, BrandingObjectRef>): Promise<void> {
+async function persistBranding(db: Database, refs: Record<string, BrandingObjectRef>): Promise<void> {
   const row = await readAssetsRow(db)
   const branding = { ...unsafeCast<Record<string, unknown> | undefined>(row.branding) }
   for (const [slot, ref] of Object.entries(refs)) {
     branding[slot] = ref
   }
   row.branding = branding
-  await upsertSetting(db, row, null, SECTION_REGISTRY.assets.scope)
+  upsertSetting(db, row, null, SECTION_REGISTRY.assets.scope)
   await refreshBlogSettings(db)
 }
 
-async function persistBrandingDelete(db: NodePgDatabase, slots: BrandingSlot[]): Promise<void> {
+async function persistBrandingDelete(db: Database, slots: BrandingSlot[]): Promise<void> {
   const row = await readAssetsRow(db)
   const branding = { ...unsafeCast<Record<string, unknown> | undefined>(row.branding) }
   for (const slot of slots) {
     delete branding[slot]
   }
   row.branding = branding
-  await upsertSetting(db, row, null, SECTION_REGISTRY.assets.scope)
+  upsertSetting(db, row, null, SECTION_REGISTRY.assets.scope)
   await refreshBlogSettings(db)
 }

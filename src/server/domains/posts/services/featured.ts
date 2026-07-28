@@ -1,7 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { and, desc, eq, isNotNull, sql } from 'drizzle-orm'
 
+import type { Database } from '@/server/infra/db/database'
 import type { PostMetaRow } from '@/server/infra/db/types'
 import type { ClientPost, SidebarPostLink } from '@/shared/types/catalog'
 
@@ -17,11 +16,11 @@ import { shuffle } from '@/shared/utils/tools'
 
 const FEATURE_POST_COUNT = 3
 
-function categoryIdsOf(metas: readonly PostMetaRow[]): bigint[] {
-  return metas.map((m) => m.categoryId).filter((id): id is bigint => id !== null)
+function categoryIdsOf(metas: readonly PostMetaRow[]): number[] {
+  return metas.map((m) => m.categoryId).filter((id): id is number => id !== null)
 }
 
-export async function selectFeaturePosts(db: NodePgDatabase, seed: string): Promise<ClientPost[]> {
+export async function selectFeaturePosts(db: Database, seed: string): Promise<ClientPost[]> {
   const content = requireBlogSettingsSection('content')
   if (!content.post.featureEnabled) {
     return []
@@ -46,7 +45,7 @@ export async function selectFeaturePosts(db: NodePgDatabase, seed: string): Prom
       findCategoryNamesByIds(db, categoryIdsOf(pinnedMetas)),
     ])
     const pinned = pinnedMetas.map((meta) =>
-      toClientPostFromMeta(meta, pinnedTagMap.get(meta.id) ?? [], pinnedCategoryMap.get(meta.categoryId ?? -1n) ?? ''),
+      toClientPostFromMeta(meta, pinnedTagMap.get(meta.id) ?? [], pinnedCategoryMap.get(meta.categoryId ?? -1) ?? ''),
     )
     await hydratePostImages(db, pinned)
     return pinned
@@ -86,7 +85,7 @@ export async function selectFeaturePosts(db: NodePgDatabase, seed: string): Prom
     ),
     findCategoryNamesByIds(db, categoryIdsOf([...pinnedMetas, ...candidateMetas])),
   ])
-  const categoryNameOf = (id: bigint | null): string => categoryMap.get(id ?? -1n) ?? ''
+  const categoryNameOf = (id: number | null): string => categoryMap.get(id ?? -1) ?? ''
   const pinned = pinnedMetas.map((meta) =>
     toClientPostFromMeta(meta, pinnedTagMap.get(meta.id) ?? [], categoryNameOf(meta.categoryId)),
   )
@@ -110,7 +109,7 @@ export async function selectFeaturePosts(db: NodePgDatabase, seed: string): Prom
   return result
 }
 
-export async function selectSidebarPosts(db: NodePgDatabase, count: number): Promise<SidebarPostLink[]> {
+export async function selectSidebarPosts(db: Database, count: number): Promise<SidebarPostLink[]> {
   if (count <= 0) {
     return []
   }
@@ -122,7 +121,10 @@ export async function selectSidebarPosts(db: NodePgDatabase, count: number): Pro
     .select()
     .from(postMetaTable)
     .where(and(livePostWhere(), eq(postMetaTable.visible, true)))
-    .orderBy(sql`md5(${postMetaTable.id}::text || ${seed})`)
+    // Deterministic pseudo-random order (SQLite has no md5()): multiply
+    // the id by the seed and take the residue — uniform enough for a
+    // 'featured N posts' pick.
+    .orderBy(sql`(${postMetaTable.id} * ${seed}) % 2147483647`)
     .limit(count)
   const posts = await hydratePostList(db, metas, { images: false })
   return posts.map(toSidebarPostLink)

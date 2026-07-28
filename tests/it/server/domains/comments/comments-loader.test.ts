@@ -1,6 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import type { Database } from '@/server/infra/db/database'
 
 import { seedMetric } from '#/_helpers/db'
 import { adminSession, regularSession } from '#/_helpers/session'
@@ -79,7 +79,7 @@ vi.mock('@/shared/config/getters', () => ({
   },
 }))
 
-const db = {} as NodePgDatabase
+const db = {} as Database
 
 const adminQueries = await import('@/server/domains/comments/repos/public-query/digest')
 const threadQueries = await import('@/server/domains/comments/repos/public-query/threads')
@@ -87,13 +87,13 @@ const metricQueries = await import('@/server/infra/db/operations/metric')
 const { loadComments, latestComments, pendingComments } =
   await import('@/server/domains/comments/services/public-query')
 
-const POST_HELLO = { type: 'post' as const, ownerId: 1n }
-const POST_NEW = { type: 'post' as const, ownerId: 2n }
-const POST_PARALLEL = { type: 'post' as const, ownerId: 3n }
+const POST_HELLO = { type: 'post' as const, ownerId: 1 }
+const POST_NEW = { type: 'post' as const, ownerId: 2 }
+const POST_PARALLEL = { type: 'post' as const, ownerId: 3 }
 
 function row(overrides: Record<string, unknown> = {}) {
   return {
-    id: 1n,
+    id: 1,
     createAt: new Date('2024-01-01T00:00:00.000Z'),
     updatedAt: new Date('2024-01-01T00:00:00.000Z'),
     deleteAt: null,
@@ -107,8 +107,8 @@ function row(overrides: Record<string, unknown> = {}) {
       },
     ],
     type: 'post' as const,
-    ownerId: 1n,
-    userId: 7n,
+    ownerId: 1,
+    userId: 7,
     isVerified: true,
     ua: '',
     ip: '',
@@ -118,7 +118,7 @@ function row(overrides: Record<string, unknown> = {}) {
     isPinned: false,
     voteUp: 0,
     voteDown: 0,
-    rootId: 0n,
+    rootId: 0,
     deleteRequestedAt: null,
     deleteRequestedBy: null,
     name: 'Alice',
@@ -149,8 +149,8 @@ describe('services/comments/loader — loadComments', () => {
 
     await loadComments(db, regularSession(), POST_HELLO, 0)
 
-    expect(threadQueries.countCommentsAndRoots).toHaveBeenCalledWith(db, POST_HELLO, [false], 2n)
-    expect(threadQueries.findRootComments).toHaveBeenCalledWith(db, POST_HELLO, [false], 0, expect.any(Number), 2n)
+    expect(threadQueries.countCommentsAndRoots).toHaveBeenCalledWith(db, POST_HELLO, [false], 2)
+    expect(threadQueries.findRootComments).toHaveBeenCalledWith(db, POST_HELLO, [false], 0, expect.any(Number), 2)
   })
 
   it('admins additionally see pending comments (pending=[false,true])', async () => {
@@ -161,24 +161,17 @@ describe('services/comments/loader — loadComments', () => {
 
     await loadComments(db, adminSession(), POST_HELLO, 0)
 
-    expect(threadQueries.countCommentsAndRoots).toHaveBeenCalledWith(db, POST_HELLO, [false, true], 1n)
-    expect(threadQueries.findRootComments).toHaveBeenCalledWith(
-      db,
-      POST_HELLO,
-      [false, true],
-      0,
-      expect.any(Number),
-      1n,
-    )
+    expect(threadQueries.countCommentsAndRoots).toHaveBeenCalledWith(db, POST_HELLO, [false, true], 1)
+    expect(threadQueries.findRootComments).toHaveBeenCalledWith(db, POST_HELLO, [false, true], 0, expect.any(Number), 1)
   })
 
   it('returns the union of root + child comments and the aggregated counts', async () => {
     vi.mocked(threadQueries.countCommentsAndRoots).mockResolvedValue({ total: 5, roots: 2 })
-    vi.mocked(threadQueries.findRootComments).mockResolvedValue([row({ id: 1n }), row({ id: 2n })])
+    vi.mocked(threadQueries.findRootComments).mockResolvedValue([row({ id: 1 }), row({ id: 2 })])
     vi.mocked(threadQueries.findChildComments).mockResolvedValue([
-      row({ id: 3n, rid: 1, rootId: 1n }),
-      row({ id: 4n, rid: 1, rootId: 1n }),
-      row({ id: 5n, rid: 2, rootId: 2n }),
+      row({ id: 3, rid: 1, rootId: 1 }),
+      row({ id: 4, rid: 1, rootId: 1 }),
+      row({ id: 5, rid: 2, rootId: 2 }),
     ])
     vi.mocked(metricQueries.ensureMetric).mockResolvedValue(seedMetric())
 
@@ -188,7 +181,7 @@ describe('services/comments/loader — loadComments', () => {
     expect(result?.roots_count).toBe(2)
     expect(result?.comments).toHaveLength(5)
     // Verify the join: child fetch was called with the root ids only.
-    expect(threadQueries.findChildComments).toHaveBeenCalledWith(db, POST_HELLO, [false], [1n, 2n], 2n)
+    expect(threadQueries.findChildComments).toHaveBeenCalledWith(db, POST_HELLO, [false], [1, 2], 2)
   })
 
   it('upserts the metric even when the page has zero comments', async () => {
@@ -228,22 +221,22 @@ describe('services/comments/loader — loadComments', () => {
 
 describe('services/comments/loader — latestComments / pendingComments', () => {
   it('latestComments resolves authors and skips admins from the pool', async () => {
-    vi.mocked(adminQueries.adminUserIds).mockResolvedValue([99n])
-    vi.mocked(adminQueries.latestDistinctCommentIds).mockResolvedValue([10n, 20n])
+    vi.mocked(adminQueries.adminUserIds).mockResolvedValue([99])
+    vi.mocked(adminQueries.latestDistinctCommentIds).mockResolvedValue([10, 20])
     vi.mocked(adminQueries.commentsByIds).mockResolvedValue([
       {
-        id: 10n,
+        id: 10,
         type: 'post',
-        ownerId: 1n,
+        ownerId: 1,
         slug: 'a',
         title: 'A',
         author: 'Alice',
         authorLink: '',
       },
       {
-        id: 20n,
+        id: 20,
         type: 'post',
-        ownerId: 2n,
+        ownerId: 2,
         slug: 'b',
         title: null,
         author: null,
@@ -254,7 +247,7 @@ describe('services/comments/loader — latestComments / pendingComments', () => 
     const list = await latestComments(db)
 
     expect(adminQueries.adminUserIds).toHaveBeenCalledOnce()
-    expect(adminQueries.latestDistinctCommentIds).toHaveBeenCalledWith(db, [99n], expect.any(Number))
+    expect(adminQueries.latestDistinctCommentIds).toHaveBeenCalledWith(db, [99], expect.any(Number))
     expect(list).toHaveLength(2)
     expect(list[0].permalink).toBe('/posts/a/#user-comment-10')
     // Null author/title fall back to empty string (sidebar must never crash).

@@ -1,14 +1,12 @@
-import { DatabaseError } from 'pg'
 import { describe, expect, it } from 'vitest'
 
 import { rethrowSlugConflict } from '@/server/domains/content/slug-conflict'
 import { DomainError } from '@/server/infra/http/errors'
 
-function uniqueViolation(constraint: string): DatabaseError {
-  return Object.assign(new DatabaseError('duplicate key value violates unique constraint', 0, 'error'), {
-    code: '23505',
-    constraint,
-  })
+function uniqueViolation(failed: string): Error {
+  // node:sqlite unique violations carry errcode 2067 and name the
+  // offending columns (or the named unique index) in the message.
+  return Object.assign(new Error(`UNIQUE constraint failed: ${failed}`), { errcode: 2067 })
 }
 
 function catchThrown(fn: () => never): unknown {
@@ -22,8 +20,8 @@ function catchThrown(fn: () => never): unknown {
 
 describe('rethrowSlugConflict', () => {
   it.each([
-    { entityType: 'post' as const, constraint: 'post_slug_key' },
-    { entityType: 'page' as const, constraint: 'page_slug_key' },
+    { entityType: 'post' as const, constraint: 'post.slug' },
+    { entityType: 'page' as const, constraint: 'page.slug' },
   ])('maps the $constraint violation to CONFLICT', ({ entityType, constraint }) => {
     const thrown = catchThrown(() => rethrowSlugConflict(uniqueViolation(constraint), entityType, 'hello'))
 
@@ -46,7 +44,7 @@ describe('rethrowSlugConflict', () => {
   )
 
   it('maps a driver error wrapped in a DrizzleQueryError cause to CONFLICT', () => {
-    const wrapped = Object.assign(new Error('Failed query'), { cause: uniqueViolation('page_slug_key') })
+    const wrapped = Object.assign(new Error('Failed query'), { cause: uniqueViolation('page.slug') })
 
     const thrown = catchThrown(() => rethrowSlugConflict(wrapped, 'page', 'hello'))
 
@@ -67,7 +65,7 @@ describe('rethrowSlugConflict', () => {
     expect(catchThrown(() => rethrowSlugConflict(wrapped, 'page', 'hello'))).toBe(wrapped)
   })
 
-  it('rethrows a non-23505 error unchanged', () => {
+  it('rethrows a non-constraint error unchanged', () => {
     const original = new Error('connection lost')
 
     expect(catchThrown(() => rethrowSlugConflict(original, 'page', 'hello'))).toBe(original)

@@ -1,7 +1,8 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { PgColumn, PgTable, SelectedFields } from 'drizzle-orm/pg-core'
+import type { SelectedFields, SQLiteColumn, SQLiteTable } from 'drizzle-orm/sqlite-core'
 
 import { and, eq, type SQL } from 'drizzle-orm'
+
+import type { Database } from '@/server/infra/db/database'
 
 import { user } from '@/server/infra/db/schema/user'
 
@@ -82,23 +83,23 @@ export function applyPage<TRow>(query: PageableQuery<TRow>, page: AdminListPage)
  */
 export function withUploader<TColumns extends SelectedFields>(options: {
   /** Entity table the projection selects from. */
-  table: PgTable
+  table: SQLiteTable
   /** The table's primary-key column, matched by `findJoinedRowById`. */
-  idColumn: PgColumn
+  idColumn: SQLiteColumn
   /** The table's FK column the `user` join hangs off. */
-  uploaderIdColumn: PgColumn
+  uploaderIdColumn: SQLiteColumn
   /** Entity-specific column selection, WITHOUT `uploaderName`. */
   columns: TColumns
 }) {
   const columns = { ...options.columns, uploaderName: user.name } as const
 
   /** Base `<entity> LEFT JOIN user` select; callers chain `.where()` / `.orderBy()` as needed. */
-  function selectJoined(db: NodePgDatabase) {
+  function selectJoined(db: Database) {
     return db.select(columns).from(options.table).leftJoin(user, eq(user.id, options.uploaderIdColumn))
   }
 
   /** Single-row read through the joined projection, keyed by `idColumn`. */
-  async function findJoinedRowById(db: NodePgDatabase, id: bigint) {
+  async function findJoinedRowById(db: Database, id: number) {
     const rows = await selectJoined(db).where(eq(options.idColumn, id)).limit(1)
     return rows[0] ?? null
   }
@@ -110,9 +111,9 @@ export function withUploader<TColumns extends SelectedFields>(options: {
    * follow-up read when the update matched no row.
    */
   async function updateThenRefetch<TUpdated>(
-    db: NodePgDatabase,
-    id: bigint,
-    update: (db: NodePgDatabase, id: bigint) => Promise<TUpdated | null>,
+    db: Database,
+    id: number,
+    update: (db: Database, id: number) => Promise<TUpdated | null>,
   ) {
     const updated = await update(db, id)
     if (updated === null) {

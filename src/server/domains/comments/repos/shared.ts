@@ -1,7 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { and, eq, gte, isNotNull, isNull, lte, not, or, sql } from 'drizzle-orm'
 
+import type { Database } from '@/server/infra/db/database'
 import type { EntityTarget, EntityType } from '@/server/infra/db/target'
 import type { MyCommentsStatus } from '@/shared/types/comments'
 
@@ -53,16 +52,16 @@ export function whereTarget(target: EntityTarget) {
 }
 
 export interface PendingCommentRow {
-  id: bigint
+  id: number
   type: EntityType
-  ownerId: bigint
+  ownerId: number
   slug: string | null
   title: string | null
   author: string | null
   authorLink: string | null
 }
 
-export function targetSlugTitleSubquery(db: NodePgDatabase) {
+export function targetSlugTitleSubquery(db: Database) {
   return db
     .select({
       type: sql<EntityType>`'post'`.as('type'),
@@ -92,13 +91,13 @@ export interface PageOption {
 }
 
 export interface CommentAuthor {
-  id: bigint
+  id: number
   name: string
 }
 
 export interface AdminListFilters {
   target?: EntityTarget
-  userId?: bigint
+  userId?: number
   status?: 'all' | 'pending' | 'approved' | 'deleteRequested'
   q?: string
   match?: 'contains' | 'does-not-contain'
@@ -154,13 +153,13 @@ export function adminPendingWhere(kind: AdminPendingKind) {
 }
 
 export interface AdminPendingRow {
-  id: bigint
+  id: number
   createdAt: Date
   deleteRequestedAt: Date | null
   isPending: boolean | null
   content: string | null
   type: EntityType | null
-  ownerId: bigint | null
+  ownerId: number | null
   pageSlug: string | null
   pageTitle: string | null
   authorName: string
@@ -178,7 +177,7 @@ export function mineSoftDeleteCutoff(now: Date = new Date()): Date {
   return new Date(now.getTime() - MY_COMMENTS_SOFT_DELETE_GRACE_MS)
 }
 
-export function mineVisibleClause(userId: bigint, cutoff: Date = mineSoftDeleteCutoff()) {
+export function mineVisibleClause(userId: number, cutoff: Date = mineSoftDeleteCutoff()) {
   return and(eq(comment.userId, userId), or(isNull(comment.deletedAt), gte(comment.deletedAt, cutoff)))
 }
 
@@ -189,10 +188,10 @@ export interface MyCommentsFilters {
    * Narrow the result to a specific post / page the user has commented
    * on. URL-driven via `?entity=<type>:<ownerId>` on `/admin/me/comments`.
    */
-  entity?: { type: EntityType; ownerId: bigint }
+  entity?: { type: EntityType; ownerId: number }
 }
 
-export function mineWhere(userId: bigint, filters: MyCommentsFilters = {}, cutoff: Date = mineSoftDeleteCutoff()) {
+export function mineWhere(userId: number, filters: MyCommentsFilters = {}, cutoff: Date = mineSoftDeleteCutoff()) {
   const clauses = [mineVisibleClause(userId, cutoff)]
   if (filters.status === 'pending') {
     clauses.push(eq(comment.isPending, true))
@@ -213,7 +212,7 @@ export function mineWhere(userId: bigint, filters: MyCommentsFilters = {}, cutof
 
 export interface MyCommentEntity {
   type: EntityType
-  ownerId: bigint
+  ownerId: number
   slug: string
   title: string
 }
@@ -221,8 +220,8 @@ export interface MyCommentEntity {
 export const MY_COMMENT_ENTITY_LIMIT = 20
 
 export interface ParentCommentRow {
-  id: bigint
-  userId: bigint
+  id: number
+  userId: number
   name: string
   content: string
   deletedAt: Date | null

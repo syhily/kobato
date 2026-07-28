@@ -1,7 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { and, eq, sql } from 'drizzle-orm'
 
+import type { Database } from '@/server/infra/db/database'
 import type { EntityTarget } from '@/server/infra/db/target'
 import type { MetricRow, NewMetric } from '@/server/infra/db/types'
 
@@ -27,7 +26,7 @@ function whereTarget(target: EntityTarget) {
  *   semantics. (No counter or `publicId` rewrite — those are
  *   handled by their own paths.)
  */
-export async function ensureMetric(db: NodePgDatabase, target: EntityTarget): Promise<MetricRow> {
+export async function ensureMetric(db: Database, target: EntityTarget): Promise<MetricRow> {
   const np: NewMetric = {
     type: target.type,
     ownerId: target.ownerId,
@@ -47,7 +46,7 @@ export async function ensureMetric(db: NodePgDatabase, target: EntityTarget): Pr
 }
 
 /** Batch upsert of metric rows. One SQL round-trip regardless of batch size. */
-export async function ensureMetricsBatch(db: NodePgDatabase, targets: EntityTarget[]): Promise<MetricRow[]> {
+export async function ensureMetricsBatch(db: Database, targets: EntityTarget[]): Promise<MetricRow[]> {
   if (targets.length === 0) {
     return []
   }
@@ -68,25 +67,25 @@ export async function ensureMetricsBatch(db: NodePgDatabase, targets: EntityTarg
     .returning()
 }
 
-export async function findMetricByPublicId(db: NodePgDatabase, publicId: string): Promise<MetricRow | null> {
+export async function findMetricByPublicId(db: Database, publicId: string): Promise<MetricRow | null> {
   const rows = await db.select().from(metric).where(eq(metric.publicId, publicId)).limit(1)
   return rows[0] ?? null
 }
 
-export async function findMetricByTarget(db: NodePgDatabase, target: EntityTarget): Promise<MetricRow | null> {
+export async function findMetricByTarget(db: Database, target: EntityTarget): Promise<MetricRow | null> {
   const rows = await db.select().from(metric).where(whereTarget(target)).limit(1)
   return rows[0] ?? null
 }
 
 /**
- * Apply many `pv += delta` updates in a single SQL statement using
- * `UPDATE ... FROM (VALUES ...)` so the round-trip count is one
- * regardless of batch size. The map is keyed on the composite string
+ * Apply many `pv += delta` updates as per-row increments inside one sync
+ * transaction (the batch is bounded — ≤ 50 keys per flush — so N tiny
+ * updates cost microseconds). The map is keyed on the composite string
  * `"<type>:<ownerId>"` (see `targetKey`) so callers can use a regular
  * `Map<string, number>` without juggling tuples.
  */
-export async function incrementMetricPvBatch(db: NodePgDatabase, deltas: Map<string, number>): Promise<void> {
-  const positive: Array<[string, string, number]> = []
+export async function incrementMetricPvBatch(db: Database, deltas: Map<string, number>): Promise<void> {
+  const positive: Array<['post' | 'page', number, number]> = []
   for (const [composite, delta] of deltas) {
     if (delta <= 0) {
       continue
@@ -96,8 +95,8 @@ export async function incrementMetricPvBatch(db: NodePgDatabase, deltas: Map<str
       continue
     }
     const type = composite.slice(0, idx)
-    const ownerId = composite.slice(idx + 1)
-    if ((type !== 'post' && type !== 'page') || ownerId === '') {
+    const ownerId = Number(composite.slice(idx + 1))
+    if ((type !== 'post' && type !== 'page') || !Number.isSafeInteger(ownerId)) {
       continue
     }
     positive.push([type, ownerId, delta])
@@ -106,23 +105,24 @@ export async function incrementMetricPvBatch(db: NodePgDatabase, deltas: Map<str
     return
   }
 
-  const rows = sql.join(
-    positive.map(([type, ownerId, delta]) => sql`(${type}::varchar(16), ${ownerId}::bigint, ${delta}::bigint)`),
-    sql`, `,
-  )
-
-  await db.execute(sql`
-    UPDATE ${metric}
-    SET    pv = COALESCE(${metric.pv}, 0) + v.delta
-    FROM   (VALUES ${rows}) AS v(type, owner_id, delta)
-    WHERE  ${metric.type} = v.type
-      AND  ${metric.ownerId} = v.owner_id
-  `)
+  // Per-row increments in one sync transaction — SQLite has no typed
+  // VALUES-column aliasing for the old UPDATE…FROM shape, and the flush
+  // is bounded (≤ 50 keys) so N tiny updates cost microseconds.
+  db.transaction((tx) => {
+    for (const [type, ownerId, delta] of positive) {
+      tx.update(metric)
+        .set({ pv: sql`COALESCE(${metric.pv}, 0) + ${delta}` })
+        .where(and(eq(metric.type, type), eq(metric.ownerId, ownerId)))
+        .run()
+    }
+  })
 }
 
-export async function decrementMetricVotes(db: NodePgDatabase, target: EntityTarget): Promise<void> {
-  await db
-    .update(metric)
-    .set({ voteUp: sql`GREATEST(${metric.voteUp} - 1, 0)` })
+// Sync (node:sqlite): called inside the unlike transaction. `MAX(a, b)`
+// is SQLite's scalar GREATEST.
+export function decrementMetricVotes(db: Database, target: EntityTarget): void {
+  db.update(metric)
+    .set({ voteUp: sql`MAX(${metric.voteUp} - 1, 0)` })
     .where(whereTarget(target))
+    .run()
 }

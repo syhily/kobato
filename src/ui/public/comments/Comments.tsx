@@ -34,7 +34,7 @@ export interface CommentsProps {
   user?: CommentFormUser
 }
 
-function asKey(value: bigint | string | number): string {
+function asKey(value: number | string): string {
   return String(value)
 }
 
@@ -246,8 +246,8 @@ function CommentsRoot({ commentKey, initialItems, rootsCount, totalCount, user, 
   )
   const onCancelReply = useCallback(() => dispatch({ type: 'setReplyTo', rid: 0 }), [])
   const onEdited = useCallback((comment: CommentItemType) => dispatch({ type: 'updateComment', comment }), [])
-  const onApproved = useCallback((id: bigint | string) => dispatch({ type: 'approveComment', id }), [])
-  const onDeleted = useCallback((id: bigint | string) => dispatch({ type: 'removeComment', id }), [])
+  const onApproved = useCallback((id: number | string) => dispatch({ type: 'approveComment', id }), [])
+  const onDeleted = useCallback((id: number | string) => dispatch({ type: 'removeComment', id }), [])
   const { mutate: revokeToken } = useMutation({
     ...orpcQuery.comments.revokeToken.mutationOptions(),
   })
@@ -258,7 +258,7 @@ function CommentsRoot({ commentKey, initialItems, rootsCount, totalCount, user, 
   const activeReplyToId = replyTarget ? state.replyToId : 0
 
   const onDismissMyComment = useCallback(
-    (id: bigint | string) => {
+    (id: number | string) => {
       const key = asKey(id)
       revokeToken({ rid: key })
       dispatch({ type: 'dismissMyComment', id: key })

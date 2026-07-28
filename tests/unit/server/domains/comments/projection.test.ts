@@ -4,7 +4,7 @@ import type { CommentAndUser, CommentItem } from '@/shared/types/comments'
 
 import { asAdminCommentsWire, asCommentItemsWire, asCommentItemWire } from '@/server/domains/comments/projection'
 
-// The wire helpers bridge `CommentAndUser` (Drizzle row shape: bigint
+// The wire helpers bridge `CommentAndUser` (Drizzle row shape: number
 // ids, Date timestamps) onto the contract DTO (`CommentItemWire`:
 // string ids, ISO timestamps). Without this projection, the response
 // runtime validator in the adapter rejects every comment-listing
@@ -13,15 +13,15 @@ import { asAdminCommentsWire, asCommentItemsWire, asCommentItemWire } from '@/se
 
 function makeRow(overrides: Partial<CommentAndUser> = {}): CommentAndUser {
   return {
-    id: 7n,
+    id: 7,
     createAt: new Date('2024-01-15T08:30:00.000Z'),
     updatedAt: new Date('2024-01-16T08:30:00.000Z'),
     deleteAt: null,
     body: [],
     content: null,
     type: 'post',
-    ownerId: 42n,
-    userId: 9n,
+    ownerId: 42,
+    userId: 9,
     isVerified: true,
     ua: null,
     ip: null,
@@ -72,15 +72,15 @@ describe('asCommentItemWire', () => {
   })
 
   it('recurses into the children tree', () => {
-    const child: CommentItem = { ...makeRow({ id: 8n, rid: 7 }), children: [] }
-    const root: CommentItem = { ...makeRow({ id: 7n }), children: [child] }
+    const child: CommentItem = { ...makeRow({ id: 8, rid: 7 }), children: [] }
+    const root: CommentItem = { ...makeRow({ id: 7 }), children: [child] }
     const wire = asCommentItemWire(root)
     expect(wire.children?.[0]?.id).toBe('8')
     expect(typeof wire.children?.[0]?.id).toBe('string')
   })
 
   it('idempotent against pre-converted string input', () => {
-    const pre = makeRow({ id: '7' as unknown as bigint })
+    const pre = makeRow({ id: '7' as unknown as number })
     const wire = asCommentItemWire(pre)
     expect(wire.id).toBe('7')
   })
@@ -88,7 +88,7 @@ describe('asCommentItemWire', () => {
 
 describe('asCommentItemsWire', () => {
   it('maps an array of rows through the projection', () => {
-    const wire = asCommentItemsWire([makeRow({ id: 1n }), makeRow({ id: 2n })])
+    const wire = asCommentItemsWire([makeRow({ id: 1 }), makeRow({ id: 2 })])
     expect(wire.map((c) => c.id)).toEqual(['1', '2'])
   })
 })
@@ -97,7 +97,7 @@ describe('asAdminCommentsWire', () => {
   it('adds pageTitle / pagePublicId on top of the base projection', () => {
     const wire = asAdminCommentsWire([
       {
-        ...makeRow({ id: 3n }),
+        ...makeRow({ id: 3 }),
         pageTitle: '我的页面',
         pagePublicId: 'public-uuid',
         pageCover: null,
@@ -110,7 +110,7 @@ describe('asAdminCommentsWire', () => {
 
   it('preserves PII fields (ua, ip, email) on admin wire', () => {
     const wire = asAdminCommentsWire([
-      { ...makeRow({ id: 3n }), pageTitle: null, pagePublicId: null, pageCover: null, pagePermalink: null },
+      { ...makeRow({ id: 3 }), pageTitle: null, pagePublicId: null, pageCover: null, pagePermalink: null },
     ])
     expect(wire[0]?.ua).toBeNull()
     expect(wire[0]?.ip).toBeNull()

@@ -1,30 +1,27 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
 import type { NewsletterSubscriberRow } from '@/server/infra/db/types'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { installFetch } from '#/_helpers/fetch'
 import { clearAllTables } from '#/_helpers/integration-db'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { makePublicCtx } from '#/_helpers/mock-ctx'
 import { callRpc } from '#/_helpers/rpc-call'
 import { signUnsubscribeId } from '@/server/domains/newsletter/signing'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { newsletterSubscriber } from '@/server/infra/db/schema/newsletter'
 import { invalidateMailTransportCache } from '@/server/infra/email/sender'
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 const mockFetch = installFetch()
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 function enableNewsletter() {
@@ -74,7 +71,7 @@ function extractConfirmToken(): string {
 
 describe('integration / newsletter', () => {
   it('subscribe → confirm round trip flips the row to confirmed and clears the token', async () => {
-    const ctx = makePublicCtx({ db, pool })
+    const ctx = makePublicCtx({ db })
 
     const subscribeRes = await callRpc('/newsletter/subscribe', { email: 'Reader@Example.com' }, ctx)
     expect(subscribeRes.status).toBe(200)
@@ -99,7 +96,7 @@ describe('integration / newsletter', () => {
   })
 
   it('dedupes by normalized email and rotates the token on re-subscribe', async () => {
-    const ctx = makePublicCtx({ db, pool })
+    const ctx = makePublicCtx({ db })
 
     await callRpc('/newsletter/subscribe', { email: 'dup@example.com' }, ctx)
     mockFetch.enqueue('https://mail.test/api/v1/zsend/emails', new Response(null, { status: 200 }))
@@ -119,7 +116,7 @@ describe('integration / newsletter', () => {
   })
 
   it('does not resend confirmation to an already-confirmed subscriber', async () => {
-    const ctx = makePublicCtx({ db, pool })
+    const ctx = makePublicCtx({ db })
 
     await callRpc('/newsletter/subscribe', { email: 'stay@example.com' }, ctx)
     await callRpc('/newsletter/confirm', { token: extractConfirmToken() }, ctx)
@@ -132,7 +129,7 @@ describe('integration / newsletter', () => {
   })
 
   it('rejects a bad confirm token and a replayed (single-use) one', async () => {
-    const ctx = makePublicCtx({ db, pool })
+    const ctx = makePublicCtx({ db })
 
     const bad = await callRpc('/newsletter/confirm', { token: 'not-a-real-token' }, ctx)
     expect(bad.status).toBe(400)
@@ -145,7 +142,7 @@ describe('integration / newsletter', () => {
   })
 
   it('unsubscribes via the signed link and stays idempotent on re-click', async () => {
-    const ctx = makePublicCtx({ db, pool })
+    const ctx = makePublicCtx({ db })
 
     await callRpc('/newsletter/subscribe', { email: 'bye@example.com' }, ctx)
     await callRpc('/newsletter/confirm', { token: extractConfirmToken() }, ctx)
@@ -169,12 +166,12 @@ describe('integration / newsletter', () => {
     expect(second.status).toBe(200)
 
     // Unknown id — also a quiet success (no enumeration).
-    const unknown = await callRpc('/newsletter/unsubscribe', { id: '999999', sig: signUnsubscribeId(999999n) }, ctx)
+    const unknown = await callRpc('/newsletter/unsubscribe', { id: '999999', sig: signUnsubscribeId(999999) }, ctx)
     expect(unknown.status).toBe(200)
   })
 
   it('rejects bot submissions via the honeypot field', async () => {
-    const ctx = makePublicCtx({ db, pool })
+    const ctx = makePublicCtx({ db })
     const res = await callRpc('/newsletter/subscribe', { email: 'bot@example.com', subtitle: 'spammy' }, ctx)
     expect(res.status).toBe(400)
     expect(await findRow('bot@example.com')).toBeNull()
@@ -183,7 +180,7 @@ describe('integration / newsletter', () => {
 
   it('rejects subscribe when the section is disabled', async () => {
     setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
-    const ctx = makePublicCtx({ db, pool })
+    const ctx = makePublicCtx({ db })
     const res = await callRpc('/newsletter/subscribe', { email: 'off@example.com' }, ctx)
     expect(res.status).toBe(400)
     expect(await findRow('off@example.com')).toBeNull()

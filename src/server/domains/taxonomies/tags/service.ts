@@ -1,8 +1,7 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { asc, eq, inArray } from 'drizzle-orm'
 
 import type { ViewerIdentity } from '@/server/domains/auth/rbac'
+import type { Database } from '@/server/infra/db/database'
 import type { TagRow } from '@/server/infra/db/types'
 import type { AdminTagDto } from '@/shared/contracts/tags'
 import type { Tag } from '@/shared/types/catalog'
@@ -56,10 +55,7 @@ export interface AdminTagsListResult {
 // COUNT(*), and the per-term counts. `total` is the full filtered count
 // (independent of `offset`/`limit`) so the client can render the correct
 // number of pagination buttons.
-export async function listTagsForAdmin(
-  db: NodePgDatabase,
-  filters: AdminTagsListFilters,
-): Promise<AdminTagsListResult> {
+export async function listTagsForAdmin(db: Database, filters: AdminTagsListFilters): Promise<AdminTagsListResult> {
   const offset = filters.offset ?? 0
   const [rows, total, counts] = await Promise.all([
     listAdminTagRows(db, filters),
@@ -74,14 +70,14 @@ export async function listTagsForAdmin(
 }
 
 export interface UpsertTagInputs {
-  id?: bigint
+  id?: number
   name: string
   slug?: string
   ogImage?: string
 }
 
 export async function upsertAdminTag(
-  db: NodePgDatabase,
+  db: Database,
   input: UpsertTagInputs,
   viewer?: ViewerIdentity,
 ): Promise<AdminTagDto> {
@@ -96,7 +92,7 @@ export async function upsertAdminTag(
       '标签',
     )
     const row = await insertTag(db, { name: input.name, slug, ogImage: input.ogImage ?? '' })
-    await invalidateContent(db, { entity: 'tag' })
+    invalidateContent(db, { entity: 'tag' })
     const counts = await countPostsByTaxonomy(db, { kind: 'tag', gate: 'admin', name: row.name })
     return toAdminTagDto(row, counts.get(row.name) ?? 0)
   }
@@ -124,7 +120,7 @@ export async function upsertAdminTag(
   if (updated === null) {
     throw new DomainError('NOT_FOUND', '标签不存在')
   }
-  await invalidateContent(db, { entity: 'tag' })
+  invalidateContent(db, { entity: 'tag' })
   const counts = await countPostsByTaxonomy(db, { kind: 'tag', gate: 'admin', name: updated.name })
   return toAdminTagDto(updated, counts.get(updated.name) ?? 0)
 }
@@ -133,14 +129,14 @@ export async function upsertAdminTag(
 // to remove a tag while any post still references it — a deliberate
 // stricter-than-RBAC fence so posts are never orphaned, even for an
 // admin. Same contract as `deleteAdminCategory`.
-export async function deleteAdminTag(db: NodePgDatabase, id: bigint, _viewer?: ViewerIdentity): Promise<boolean> {
+export async function deleteAdminTag(db: Database, id: number, _viewer?: ViewerIdentity): Promise<boolean> {
   const deleted = await deleteAdminTaxonomy(id, '标签', {
     findById: (id) => findTagById(db, id),
     deleteRow: (id) => deleteTagRow(db, id),
     listPostTitles: (row) => listPostTitlesByTaxonomy(db, 'tag', row.name),
   })
   if (deleted) {
-    await invalidateContent(db, { entity: 'tag' })
+    invalidateContent(db, { entity: 'tag' })
   }
   return deleted
 }
@@ -152,12 +148,12 @@ export async function deleteAdminTag(db: NodePgDatabase, id: bigint, _viewer?: V
 // the ensure-unique guards above, the feed resolver below) all live on
 // this surface. Public routes resolve strictly by slug —
 // the feed's slug-or-name fallback composes this with `findTagByName`.
-export async function findTagBySlug(db: NodePgDatabase, slug: string): Promise<TagRow | null> {
+export async function findTagBySlug(db: Database, slug: string): Promise<TagRow | null> {
   const rows = await db.select().from(tagTable).where(eq(tagTable.slug, slug)).limit(1)
   return rows[0] ?? null
 }
 
-export async function listAllTags(db: NodePgDatabase): Promise<Tag[]> {
+export async function listAllTags(db: Database): Promise<Tag[]> {
   return through(db, 'tags', {}, async () => {
     const tagRows = await db
       .select({ name: tagTable.name, slug: tagTable.slug })
@@ -179,7 +175,7 @@ export async function listAllTags(db: NodePgDatabase): Promise<Tag[]> {
   })
 }
 
-export async function getTagsByNames(db: NodePgDatabase, names: readonly string[]): Promise<Tag[]> {
+export async function getTagsByNames(db: Database, names: readonly string[]): Promise<Tag[]> {
   if (names.length === 0) {
     return []
   }
@@ -214,6 +210,6 @@ export async function getTagsByNames(db: NodePgDatabase, names: readonly string[
 // Feed-only resolution rule: feed URLs accept a tag slug, but legacy
 // subscribers may carry the display name. Public routes stay slug-only
 // (plan 080, Q1). Deliberately shallow: one composition, no state, no cache.
-export async function resolveTagBySlugOrName(db: NodePgDatabase, value: string): Promise<TagRow | null> {
+export async function resolveTagBySlugOrName(db: Database, value: string): Promise<TagRow | null> {
   return (await findTagBySlug(db, value)) ?? (await findTagByName(db, value))
 }

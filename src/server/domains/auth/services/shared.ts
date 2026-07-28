@@ -4,9 +4,8 @@
 // Previously one `signin-flow.ts` held every flow; the split is by
 // use-case, with this module holding the vocabulary they all speak.
 
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import type { BlogSession } from '@/server/domains/auth/session-storage'
+import type { Database } from '@/server/infra/db/database'
 
 import { checkMailReady } from '@/server/infra/email/sender'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
@@ -29,7 +28,7 @@ export type AuthFlowResult =
  * same-session commits.
  */
 export interface SigninFlowContext {
-  db: NodePgDatabase
+  db: Database
   session: BlogSession
   clientAddress: string
   markSessionDirty(): void

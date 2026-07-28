@@ -1,8 +1,7 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import type { ViewerIdentity } from '@/server/domains/auth/rbac'
 import type { ContentType } from '@/server/domains/content/schemas/revision'
 import type { AdminListEngagement } from '@/server/domains/content/services/admin-list'
+import type { Database } from '@/server/infra/db/database'
 import type { ContentRow } from '@/server/infra/db/types'
 import type { PortableTextBody } from '@/shared/pt/schema'
 import type { RoleOrNull } from '@/shared/utils/roles'
@@ -15,7 +14,7 @@ import type { RoleOrNull } from '@/shared/utils/roles'
  * (like `LiveMeta` in `content/schemas/live-gate.ts`), so both row types satisfy it.
  */
 export interface MetaRowBase {
-  id: bigint
+  id: number
   createdAt: Date
   updatedAt: Date
   deletedAt: Date | null
@@ -29,9 +28,9 @@ export interface MetaRowBase {
   showToc: boolean
   showUpdated: boolean
   publishedAt: Date
-  publishedRevisionId: bigint | null
+  publishedRevisionId: number | null
   firstPublishedAt: Date | null
-  authorId: bigint | null
+  authorId: number | null
 }
 
 /**
@@ -40,7 +39,7 @@ export interface MetaRowBase {
  * `UpsertPostMetaInput` / `UpsertPageMetaInput`.
  */
 export interface UpsertMetaInputBase {
-  id?: bigint
+  id?: number
   slug?: string
   title: string
   summary?: string
@@ -59,21 +58,18 @@ export interface UpsertMetaInputBase {
  * descriptor wires the bindings through the entity's own surface modules
  * so unit tests keep their per-entity mock seams.
  */
+// Sync returns (node:sqlite): these run inside entity transactions.
 export interface MetaCrud<TMeta extends MetaRowBase, TNew> {
-  findMetaById: (db: NodePgDatabase, id: bigint) => Promise<TMeta | null>
-  findMetaBySlug: (db: NodePgDatabase, slug: string) => Promise<TMeta | null>
-  findMetaBySlugForUpdate: (db: NodePgDatabase, slug: string) => Promise<TMeta | null>
+  findMetaById: (db: Database, id: number) => TMeta | null
+  findMetaBySlug: (db: Database, slug: string) => TMeta | null
+  findMetaBySlugForUpdate: (db: Database, slug: string) => TMeta | null
   /** Slug lookup that excludes soft-deleted rows (public read path). */
-  findPublicMetaBySlug: (db: NodePgDatabase, slug: string) => Promise<TMeta | null>
-  insertMeta: (db: NodePgDatabase, values: TNew) => Promise<TMeta>
-  updateMetaById: (
-    db: NodePgDatabase,
-    id: bigint,
-    patch: Partial<Omit<TNew, 'id' | 'createdAt'>>,
-  ) => Promise<TMeta | null>
+  findPublicMetaBySlug: (db: Database, slug: string) => TMeta | null
+  insertMeta: (db: Database, values: TNew) => TMeta
+  updateMetaById: (db: Database, id: number, patch: Partial<Omit<TNew, 'id' | 'createdAt'>>) => TMeta | null
   /** Stamps `deleted_at`; false when the row was already deleted. */
-  softDeleteMeta: (db: NodePgDatabase, id: bigint) => Promise<boolean>
-  restoreMeta: (db: NodePgDatabase, id: bigint) => Promise<boolean>
+  softDeleteMeta: (db: Database, id: number) => boolean
+  restoreMeta: (db: Database, id: number) => boolean
 }
 
 /** `adminExtras` source: upsert mutations carry the input (tags live there); unpublish reads relations from the DB. */
@@ -132,7 +128,7 @@ export interface MetaEntityDescriptor<
     /** Catalog projection of meta + revision (toCmsPost / toCmsPage). */
     project: (meta: TMeta, revision: ContentRow | null) => TPreview
     /** Post-publish side effects: invalidation for both entities; posts also refresh the search index. */
-    afterPublish: (db: NodePgDatabase, meta: TMeta, body: PortableTextBody, warnings: string[]) => Promise<void>
+    afterPublish: (db: Database, meta: TMeta, body: PortableTextBody, warnings: string[]) => Promise<void>
   }
 
   adminDto: {
@@ -142,40 +138,40 @@ export interface MetaEntityDescriptor<
       options?: Partial<AdminListEngagement> & Partial<TExtras>,
     ) => TAdminDto
     /** Batch extras for the admin list (posts: tag + category names), keyed by row id. */
-    loadListExtras?: (db: NodePgDatabase, rows: TMeta[]) => Promise<Map<bigint, TExtras>>
+    loadListExtras?: (db: Database, rows: TMeta[]) => Promise<Map<number, TExtras>>
     /** Extras for the admin detail projection (posts: tag + category names). */
-    loadDetailExtras?: (db: NodePgDatabase, meta: TMeta) => Promise<TExtras>
+    loadDetailExtras?: (db: Database, meta: TMeta) => Promise<TExtras>
   }
 
   mutations: {
     /** Create-time author override — posts pin non-admin viewers to themselves. */
-    resolveAuthorId?: (authorId: bigint | null, viewer?: ViewerIdentity) => bigint | null
+    resolveAuthorId?: (authorId: number | null, viewer?: ViewerIdentity) => number | null
     /** Pre-transaction validation shared by create + update (posts: category existence pre-flight). */
-    preflightUpsert?: (db: NodePgDatabase, input: TInput) => Promise<void>
+    preflightUpsert?: (db: Database, input: TInput) => Promise<void>
     /** Entity INSERT columns beyond the shared set (post: visible/pinnedAt/categoryId/alias; page: showFriends). */
     insertExtras: (input: TInput) => Partial<TNew>
     /** Entity UPDATE columns beyond the shared set, with `existing` supplying the ?? fallbacks. */
     updateExtras: (input: TInput, existing: TMeta) => Partial<TNew>
     /** In-transaction relation writes after the meta row write (posts: seed/resolve/link tags). */
-    syncRelations?: (tx: NodePgDatabase, metaId: bigint, input: TInput) => Promise<void>
+    syncRelations?: (tx: Database, metaId: number, input: TInput) => void
     /** In-transaction relation teardown on delete, before the slug-registry row goes (posts: search-index row). */
-    deleteRelations?: (tx: NodePgDatabase, metaId: bigint) => Promise<void>
+    deleteRelations?: (tx: Database, metaId: number) => void
     /** DTO extras after a mutation (posts: tags + category name). */
-    mutationExtras?: (db: NodePgDatabase, meta: TMeta, source: MutationExtrasSource<TInput>) => Promise<TExtras>
+    mutationExtras?: (db: Database, meta: TMeta, source: MutationExtrasSource<TInput>) => Promise<TExtras>
     /**
      * Post-commit side effects. Pages invalidate on every event; posts
      * only on delete/unpublish (create/update of an unpublished row
      * change no public surface) and drop the search-index row on
      * unpublish.
      */
-    afterMutation?: (db: NodePgDatabase, meta: TMeta, event: MetaMutationEvent) => Promise<void>
+    afterMutation?: (db: Database, meta: TMeta, event: MetaMutationEvent) => Promise<void>
     /**
      * In-transaction restore gathering (posts: the published body for
      * re-indexing, collected inside the tx so a failed restore never
      * touches the external index). Runs after the slug reclaim.
      */
-    prepareRestore?: (tx: NodePgDatabase, meta: TMeta) => Promise<TRestore>
+    prepareRestore?: (tx: Database, meta: TMeta) => TRestore | null
     /** Post-commit restore side effects; may return a warning that follows the slug warning. */
-    afterRestore?: (db: NodePgDatabase, ctx: TRestore) => Promise<string | undefined>
+    afterRestore?: (db: Database, ctx: TRestore) => Promise<string | undefined>
   }
 }

@@ -2,7 +2,7 @@ export type CatalogEntryType = 'page' | 'post'
 
 export interface CatalogEntry {
   type: CatalogEntryType
-  id: bigint
+  id: number
   slug: string
 }
 

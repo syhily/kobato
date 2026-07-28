@@ -14,7 +14,7 @@ export interface AnalyticsQueryInput {
   range: DateRange
   filters: Filters
   entityType?: 'post' | 'page'
-  entityId?: bigint
+  entityId?: number
 }
 
 /**

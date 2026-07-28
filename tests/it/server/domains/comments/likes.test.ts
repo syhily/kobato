@@ -1,6 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import type { Database } from '@/server/infra/db/database'
 
 vi.mock('@/server/infra/db/operations/like', () => ({
   recordLikeAndCount: vi.fn(async () => 0),
@@ -16,16 +16,16 @@ vi.mock('@/server/infra/db/operations/metric', () => ({
   decrementMetricVotes: vi.fn(async () => undefined),
 }))
 
-const db = { transaction: vi.fn(async (fn) => fn(db)) } as unknown as NodePgDatabase
+const db = { transaction: vi.fn(async (fn) => fn(db)) } as unknown as Database
 
 const likeQueries = await import('@/server/infra/db/operations/like')
 const metricQueries = await import('@/server/infra/db/operations/metric')
 const { increaseLikes, decreaseLikes, purgeStaleLikeTokens, queryLikes, queryMetadata, validateLikeToken } =
   await import('@/server/domains/comments/services/likes')
 
-const POST_A = { type: 'post' as const, ownerId: 1n }
-const POST_B = { type: 'post' as const, ownerId: 2n }
-const POST_X = { type: 'post' as const, ownerId: 9n }
+const POST_A = { type: 'post' as const, ownerId: 1 }
+const POST_B = { type: 'post' as const, ownerId: 2 }
+const POST_X = { type: 'post' as const, ownerId: 9 }
 
 beforeEach(() => {
   for (const fn of Object.values({ ...likeQueries, ...metricQueries })) {
@@ -63,7 +63,7 @@ describe('services/comments/likes — increaseLikes', () => {
 
 describe('services/comments/likes — decreaseLikes', () => {
   it("no-ops when the token doesn't exist (anonymous undo of someone else's like)", async () => {
-    vi.mocked(likeQueries.consumeActiveLikeToken).mockResolvedValue(false)
+    vi.mocked(likeQueries.consumeActiveLikeToken).mockReturnValue(false)
 
     await decreaseLikes(db, POST_X, 'stale-token')
 
@@ -72,7 +72,7 @@ describe('services/comments/likes — decreaseLikes', () => {
   })
 
   it('decrements the page counter only when the token is consumed', async () => {
-    vi.mocked(likeQueries.consumeActiveLikeToken).mockResolvedValue(true)
+    vi.mocked(likeQueries.consumeActiveLikeToken).mockReturnValue(true)
 
     await decreaseLikes(db, POST_X, 'good-token')
 

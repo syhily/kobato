@@ -1,21 +1,19 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
+
 import { clearAllTables } from '#/_helpers/integration-db'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 
 const service = await import('@/server/domains/posts/services/mutate')
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {
@@ -49,10 +47,10 @@ describe('cms/posts/service — updatePostMeta ignores published', () => {
     await db
       .update(postMetaTable)
       .set({ published: true })
-      .where(eq(postMetaTable.id, BigInt(created.id)))
+      .where(eq(postMetaTable.id, Number(created.id)))
 
     const dto = await service.updatePostMeta(db, {
-      id: BigInt(created.id),
+      id: Number(created.id),
       slug: 'hello-world',
       title: 'Updated',
       published: false,
@@ -62,7 +60,7 @@ describe('cms/posts/service — updatePostMeta ignores published', () => {
     const rows = await db
       .select()
       .from(postMetaTable)
-      .where(eq(postMetaTable.id, BigInt(created.id)))
+      .where(eq(postMetaTable.id, Number(created.id)))
     expect(rows[0]?.published).toBe(true)
   })
 
@@ -70,7 +68,7 @@ describe('cms/posts/service — updatePostMeta ignores published', () => {
     const created = await service.createPost(db, { title: 'Hello World', slug: 'hello-world' }, null)
 
     const dto = await service.updatePostMeta(db, {
-      id: BigInt(created.id),
+      id: Number(created.id),
       slug: 'hello-world',
       title: 'Updated',
       published: true,
@@ -80,7 +78,7 @@ describe('cms/posts/service — updatePostMeta ignores published', () => {
     const rows = await db
       .select()
       .from(postMetaTable)
-      .where(eq(postMetaTable.id, BigInt(created.id)))
+      .where(eq(postMetaTable.id, Number(created.id)))
     expect(rows[0]?.published).toBe(false)
   })
 })

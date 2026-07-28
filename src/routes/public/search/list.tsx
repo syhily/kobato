@@ -10,7 +10,7 @@ import type { Route } from './+types/list'
 
 export async function loader({ request, params, context }: Route.LoaderArgs): Promise<ListingPageLoaderData> {
   const rc = getRequestContext({ request, context })
-  return searchLoader(rc.db, rc.pool, { keyword: params.keyword, num: params.num, auditContext: rc })
+  return searchLoader(rc.db, { keyword: params.keyword, num: params.num, auditContext: rc })
 }
 
 export const headers = listingHeaders

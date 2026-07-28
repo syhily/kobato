@@ -1,28 +1,26 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import bcrypt from 'bcryptjs'
 import { eq } from 'drizzle-orm'
 import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
+
 import { clearAllTables } from '#/_helpers/integration-db'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { emptySession } from '#/_helpers/session'
 import { flushAuditLog } from '@/server/domains/audit/services/batcher'
 import { establishLoginSession } from '@/server/domains/auth/primitives'
 import { revokeAllSessionsOfUser } from '@/server/domains/auth/services/sessions'
 import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { auditLog } from '@/server/infra/db/schema/config'
 import { session as sessionTable } from '@/server/infra/db/schema/session'
 import { user } from '@/server/infra/db/schema/user'
 import { DomainError } from '@/server/infra/http/errors'
 
-const poolDb = createDbPool()
-const db: NodePgDatabase = poolDb.db
-const pool: Pool = poolDb.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 // The audit batcher is a process-level singleton that production code
@@ -34,7 +32,7 @@ afterAll(async () => {
 // references a user row that the next test's `clearAllTables` will
 // truncate (FK violation).
 beforeEach(() => {
-  initAllBatchers(pool, db)
+  initAllBatchers(handle)
 })
 
 afterEach(async () => {
@@ -44,7 +42,7 @@ afterEach(async () => {
 
 // ── Fixtures ──────────────────────────────────────────────────────────────
 
-async function seedUser(overrides: Record<string, unknown> = {}): Promise<bigint> {
+async function seedUser(overrides: Record<string, unknown> = {}): Promise<number> {
   const hashed = await bcrypt.hash('Password123!', 12)
   const [inserted] = await db
     .insert(user)

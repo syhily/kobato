@@ -1306,7 +1306,7 @@ describe('contract: module and bundle boundaries', () => {
 
   it('keeps pool wiring and low-level test helpers at their canonical owners', () => {
     const lifecycle = readFileSync('src/server/bootstrap/db-lifecycle.ts', 'utf8')
-    expect(lifecycle).toMatch(/function wirePool\(/)
+    expect(lifecycle).toMatch(/function wireDatabase\(/)
 
     expect(existsSync('tests/_helpers/request.ts')).toBe(false)
     const dbHelper = readFileSync('tests/_helpers/db.ts', 'utf8')

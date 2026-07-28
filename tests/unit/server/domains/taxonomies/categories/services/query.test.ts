@@ -1,6 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import type { Database } from '@/server/infra/db/database'
 
 const mocks = vi.hoisted(() => ({
   findCategoryByName: vi.fn(),
@@ -48,7 +48,7 @@ function createMockDb(rows: Array<Record<string, unknown>> = []) {
     },
   )
 
-  return dbProxy as unknown as NodePgDatabase
+  return dbProxy as unknown as Database
 }
 
 beforeEach(() => {
@@ -57,7 +57,7 @@ beforeEach(() => {
 
 describe('server/domains/taxonomies/categories/services/query — findCategoryBySlug', () => {
   it('returns the row when present', async () => {
-    await expect(findCategoryBySlug(createMockDb([{ id: 1n }]), 'tech')).resolves.toEqual({ id: 1n })
+    await expect(findCategoryBySlug(createMockDb([{ id: 1 }]), 'tech')).resolves.toEqual({ id: 1 })
   })
 
   it('returns null when absent', async () => {
@@ -67,14 +67,14 @@ describe('server/domains/taxonomies/categories/services/query — findCategoryBy
 
 describe('server/domains/taxonomies/categories/services/query — resolveCategoryBySlugOrName', () => {
   it('returns the row on a slug hit without consulting the name lookup', async () => {
-    const row = { id: 1n, name: '技术', slug: 'tech' } as unknown as CategoryRow
+    const row = { id: 1, name: '技术', slug: 'tech' } as unknown as CategoryRow
 
     await expect(resolveCategoryBySlugOrName(createMockDb([row]), 'tech')).resolves.toBe(row)
     expect(mocks.findCategoryByName).not.toHaveBeenCalled()
   })
 
   it('falls back to the name lookup when the slug misses', async () => {
-    const row = { id: 1n, name: '技术', slug: 'tech' } as unknown as CategoryRow
+    const row = { id: 1, name: '技术', slug: 'tech' } as unknown as CategoryRow
     mocks.findCategoryByName.mockResolvedValue(row)
 
     await expect(resolveCategoryBySlugOrName(createMockDb([]), '技术')).resolves.toBe(row)

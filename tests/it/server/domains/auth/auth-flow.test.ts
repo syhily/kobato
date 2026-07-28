@@ -1,6 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import type { Database } from '@/server/infra/db/database'
 
 import { emptySession } from '#/_helpers/session'
 
@@ -38,7 +38,8 @@ vi.mock('@/server/bootstrap/db-lifecycle', () => {
 
 vi.mock('@/server/infra/db/operations/user', () => ({
   hasAdmin: vi.fn(async () => false),
-  insertAdmin: vi.fn(async () => []),
+  hashAdminPassword: vi.fn(async () => 'hashed'),
+  insertAdmin: vi.fn(() => []),
   verifyUserPassword: vi.fn(),
   updateLastLogin: vi.fn(async () => undefined),
 }))
@@ -63,11 +64,11 @@ vi.mock('@/server/domains/audit/services/record', () => ({
 }))
 
 const db = {
-  transaction: async <T>(callback: (tx: NodePgDatabase) => Promise<T>) => callback(db as NodePgDatabase),
+  transaction: <T>(callback: (tx: Database) => T) => callback(db as Database),
   // `invalidateSetupToken` deletes the setup-token row on successful
   // install; the row itself lives nowhere in this file's mocked world.
   delete: () => ({ where: async () => {} }),
-} as unknown as NodePgDatabase
+} as unknown as Database
 const pool = {} as any
 
 const userQuery = await import('@/server/infra/db/operations/user')
@@ -82,7 +83,7 @@ const verifyUserPasswordMock = vi.mocked(userQuery.verifyUserPassword)
 
 function testUser(partial: Partial<User> = {}): User {
   return {
-    id: 1n,
+    id: 1,
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: null,
@@ -109,7 +110,7 @@ beforeEach(async () => {
   vi.mocked(userQuery.hasAdmin).mockReset()
   vi.mocked(userQuery.hasAdmin).mockResolvedValue(false)
   vi.mocked(userQuery.insertAdmin).mockReset()
-  vi.mocked(userQuery.insertAdmin).mockResolvedValue([])
+  vi.mocked(userQuery.insertAdmin).mockReturnValue([])
   vi.mocked(settingQuery.upsertSetting).mockReset()
   vi.mocked(settingsSnapshot.refreshBlogSettings).mockReset()
   vi.mocked(rateLimit.tryRateLimit).mockReset()
@@ -129,12 +130,12 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1)
   }
 
   it('creates the admin row, seeds all settings, and redirects to /admin', async () => {
-    vi.mocked(userQuery.insertAdmin).mockResolvedValue([
-      testUser({ id: 7n, name: 'Admin', email: 'admin@example.com', link: '', role: 'admin' }),
+    vi.mocked(userQuery.insertAdmin).mockReturnValue([
+      testUser({ id: 7, name: 'Admin', email: 'admin@example.com', link: '', role: 'admin' }),
     ])
     const request = buildRequest()
 
-    const result = await signUpInitialAdminWithSession(db, pool, {
+    const result = await signUpInitialAdminWithSession(db, {
       ...baseSeed,
       session: emptySession(),
       request,
@@ -145,12 +146,14 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1)
     if (result.type === 'redirect') {
       expect(result.to).toBe('/admin')
     }
-    expect(userQuery.insertAdmin).toHaveBeenCalledWith(db, 'Admin', 'admin@example.com', baseSeed.password)
+    // insertAdmin receives the PRE-HASHED password (bcrypt moved out of
+    // the transaction).
+    expect(userQuery.insertAdmin).toHaveBeenCalledWith(db, 'Admin', 'admin@example.com', 'hashed')
 
     // All settings sections are seeded in one pass.
     expect(settingQuery.upsertSetting).toHaveBeenCalled()
     const calls = vi.mocked(settingQuery.upsertSetting).mock.calls
-    const byScope = new Map<string, { data: Record<string, unknown>; updatedBy: bigint | null }>()
+    const byScope = new Map<string, { data: Record<string, unknown>; updatedBy: number | null }>()
     for (const [_1, data, updatedBy, scope] of calls) {
       byScope.set(scope, { data: data as Record<string, unknown>, updatedBy })
     }
@@ -167,7 +170,6 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1)
       'blog.mail',
       'blog.cache',
       'blog.rateLimit',
-      'blog.search',
       'blog.fonts',
       'blog.backup',
       'blog.limits',
@@ -194,7 +196,7 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1)
     vi.mocked(userQuery.hasAdmin).mockResolvedValue(true)
     const request = buildRequest()
 
-    const result = await signUpInitialAdminWithSession(db, pool, {
+    const result = await signUpInitialAdminWithSession(db, {
       ...baseSeed,
       session: emptySession(),
       request,
@@ -210,7 +212,7 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1)
 
   it('returns 500 when the request body is invalid', async () => {
     await expect(
-      signUpInitialAdminWithSession(db, pool, {
+      signUpInitialAdminWithSession(db, {
         ...baseSeed,
         session: emptySession(),
         request: new Request('http://localhost/admin/setup', { method: 'POST' }),
@@ -220,11 +222,11 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1)
   })
 
   it('returns 500 and never seeds when insertAdmin yields an empty result', async () => {
-    vi.mocked(userQuery.insertAdmin).mockResolvedValue([])
+    vi.mocked(userQuery.insertAdmin).mockReturnValue([])
     const request = buildRequest()
 
     await expect(
-      signUpInitialAdminWithSession(db, pool, {
+      signUpInitialAdminWithSession(db, {
         ...baseSeed,
         session: emptySession(),
         request,
@@ -243,7 +245,7 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1)
     const request = buildRequest()
 
     await expect(
-      signUpInitialAdminWithSession(db, pool, {
+      signUpInitialAdminWithSession(db, {
         ...baseSeed,
         session: emptySession(),
         request,

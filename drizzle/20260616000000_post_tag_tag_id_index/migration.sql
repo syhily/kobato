@@ -1,1 +1,0 @@
-CREATE INDEX "idx_post_tag_tag_id" ON "post_tag" ("tag_id");

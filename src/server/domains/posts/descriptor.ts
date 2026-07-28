@@ -1,6 +1,5 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import type { MetaEntityDescriptor } from '@/server/domains/content/entities/descriptor'
+import type { Database } from '@/server/infra/db/database'
 import type { NewPostMeta, PostMetaRow } from '@/server/infra/db/types'
 import type { Post } from '@/shared/types/catalog'
 
@@ -42,32 +41,34 @@ export interface PostAdminExtras {
 
 /** Everything the search re-index needs, gathered inside the restore transaction. */
 interface IndexablePostData {
-  id: bigint
+  id: number
   title: string
   summary: string
   body: unknown
 }
 
-async function ensureTagsExist(db: NodePgDatabase, tagNames: string[]): Promise<void> {
+// Sync (node:sqlite): called inside the upsert transaction.
+function ensureTagsExist(db: Database, tagNames: string[]): void {
   if (tagNames.length === 0) {
     return
   }
-  await seedTagsIfMissing(
+  seedTagsIfMissing(
     db,
     tagNames.map((name) => ({ name, slug: resolveSlug(undefined, name, { entity: 'taxonomy' }) })),
   )
 }
 
-async function resolveTagIdsForNames(db: NodePgDatabase, names: string[]): Promise<bigint[]> {
+// Sync (node:sqlite): called inside the upsert transaction.
+function resolveTagIdsForNames(db: Database, names: string[]): number[] {
   if (names.length === 0) {
     return []
   }
-  const rows = await findTagsByNames(db, names)
+  const rows = findTagsByNames(db, names)
   const byName = new Map(rows.map((r) => [r.name, r.id]))
-  return names.map((name) => byName.get(name)).filter((id): id is bigint => id !== undefined)
+  return names.map((name) => byName.get(name)).filter((id): id is number => id !== undefined)
 }
 
-async function resolveCategoryName(db: NodePgDatabase, categoryId: bigint | null): Promise<string> {
+async function resolveCategoryName(db: Database, categoryId: number | null): Promise<string> {
   if (categoryId === null) {
     return ''
   }
@@ -116,7 +117,7 @@ export const postDescriptor: MetaEntityDescriptor<
   preview: {
     project: (meta, revision) => toCmsPost(meta, revision),
     async afterPublish(db, meta, body, warnings) {
-      await invalidateContent(db, { entity: 'post' })
+      invalidateContent(db, { entity: 'post' })
       // Index the canonical body already in scope rather than re-reading the
       // row from the DB: `body` is freshly canonicalized + prerendered, so it
       // matches what `publishLatestRevision` persisted — a re-read would only
@@ -139,7 +140,7 @@ export const postDescriptor: MetaEntityDescriptor<
         ),
         findCategoryNamesByIds(
           db,
-          rows.map((row) => row.categoryId).filter((id): id is bigint => id !== null),
+          rows.map((row) => row.categoryId).filter((id): id is number => id !== null),
         ),
       ])
       return new Map(
@@ -147,7 +148,7 @@ export const postDescriptor: MetaEntityDescriptor<
           row.id,
           {
             tags: tagMap.get(row.id) ?? [],
-            categoryName: categoryMap.get(row.categoryId ?? -1n) ?? '',
+            categoryName: categoryMap.get(row.categoryId ?? -1) ?? '',
           },
         ]),
       )
@@ -181,16 +182,16 @@ export const postDescriptor: MetaEntityDescriptor<
       categoryId: input.categoryId === undefined ? existing.categoryId : input.categoryId,
       alias: input.alias ?? existing.alias,
     }),
-    async syncRelations(tx, metaId, input) {
+    syncRelations(tx, metaId, input) {
       const tagNames = input.tags ?? []
-      await ensureTagsExist(tx, tagNames)
-      const tagIds = await resolveTagIdsForNames(tx, tagNames)
-      await setPostTags(tx, metaId, tagIds)
+      ensureTagsExist(tx, tagNames)
+      const tagIds = resolveTagIdsForNames(tx, tagNames)
+      setPostTags(tx, metaId, tagIds)
     },
     // The index row goes inside the delete transaction so a rolled-back
     // delete never loses it.
-    async deleteRelations(tx, metaId) {
-      await removePostIndex(tx, metaId)
+    deleteRelations(tx, metaId) {
+      removePostIndex(tx, metaId)
     },
     async mutationExtras(db, meta, source) {
       const [tags, categoryName] = await Promise.all([
@@ -206,25 +207,27 @@ export const postDescriptor: MetaEntityDescriptor<
       if (event === 'create' || event === 'update') {
         return
       }
-      await invalidateContent(db, { entity: 'post' })
+      invalidateContent(db, { entity: 'post' })
       if (event === 'unpublish') {
-        await removePostIndex(db, meta.id).catch((err: unknown) => {
+        try {
+          removePostIndex(db, meta.id)
+        } catch (err: unknown) {
           log.warn('remove post index failed', { postId: meta.id, error: err })
-        })
+        }
       }
     },
-    async prepareRestore(tx, meta) {
+    prepareRestore(tx, meta) {
       if (!isPromoted(meta)) {
         return null
       }
-      const revision = await findContentById(tx, meta.publishedRevisionId)
+      const revision = findContentById(tx, meta.publishedRevisionId)
       if (revision === null) {
         return null
       }
       return { id: meta.id, title: meta.title, summary: meta.summary, body: revision.body }
     },
     async afterRestore(db, indexable) {
-      await invalidateContent(db, { entity: 'post' })
+      invalidateContent(db, { entity: 'post' })
       if (indexable === null) {
         return undefined
       }

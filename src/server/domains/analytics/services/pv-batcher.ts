@@ -1,5 +1,4 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
+import type { Database } from '@/server/infra/db/database'
 import type { EntityTarget } from '@/server/infra/db/target'
 
 import { getBatcher, registerBatcher, requireBatcher } from '@/server/infra/db/batcher-registry'
@@ -34,7 +33,7 @@ class PageViewBatcher {
 
   constructor(
     private readonly opts: BatcherOptions,
-    private readonly db: NodePgDatabase,
+    private readonly db: Database,
   ) {
     registerShutdownHook(() => this.flush(), 100)
   }
@@ -105,20 +104,20 @@ class PageViewBatcher {
 
 const BATCHER_NAME = 'PageViewBatcher'
 
-// Second implementation of the batching seam alongside `CopyBatcher`:
-// COPY batchers buffer whole rows, while this one aggregates counters in
+// Second implementation of the batching seam alongside `InsertBatcher`:
+// insert batchers buffer whole rows, while this one aggregates counters in
 // a Map and flushes upserts with merge-back retry instead of dead-letter.
 // Both self-register on the same registry so the bootstrap lifecycle
 // drives them through one vocabulary.
 registerBatcher(
   BATCHER_NAME,
-  (_pool, db) =>
+  (handle) =>
     new PageViewBatcher(
       {
         flushIntervalMs: 60_000,
         flushThreshold: 50,
       },
-      db,
+      handle.db,
     ),
 )
 

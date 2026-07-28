@@ -57,10 +57,10 @@ export function requireRole(
 // trap of collapsing them into one — see RBAC-REVIEW §R1.
 
 // Factory: build an ownership predicate keyed off a single bigint(-or-null)
-// column. `bigint` is assignable to `bigint | null`, so non-null callers
-// (e.g. `{ userId: bigint }` for comments) still satisfy the constraint.
+// column. `bigint` is assignable to `number | null`, so non-null callers
+// (e.g. `{ userId: number }` for comments) still satisfy the constraint.
 function ownerOf<K extends string>(field: K) {
-  return <T extends Record<K, bigint | null>>(viewer: ViewerIdentity, row: T): boolean => {
+  return <T extends Record<K, number | null>>(viewer: ViewerIdentity, row: T): boolean => {
     const owner = row[field]
     if (owner === null) {
       return false
@@ -78,14 +78,14 @@ export function isAdmin(viewer: { role: Role }): boolean {
   return viewer.role === 'admin'
 }
 
-export function canEditPost(viewer: ViewerIdentity, post: { authorId: bigint | null }): boolean {
+export function canEditPost(viewer: ViewerIdentity, post: { authorId: number | null }): boolean {
   return isAdmin(viewer) || isPostOwner(viewer, post)
 }
 
-export function canEditImage(viewer: ViewerIdentity, img: { uploaderId: bigint | null }): boolean {
+export function canEditImage(viewer: ViewerIdentity, img: { uploaderId: number | null }): boolean {
   return isAdmin(viewer) || isImageOwner(viewer, img)
 }
 
-export function canEditMusic(viewer: ViewerIdentity, m: { uploaderId: bigint | null }): boolean {
+export function canEditMusic(viewer: ViewerIdentity, m: { uploaderId: number | null }): boolean {
   return isAdmin(viewer) || isMusicOwner(viewer, m)
 }

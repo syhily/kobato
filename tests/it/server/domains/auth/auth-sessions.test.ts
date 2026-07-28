@@ -1,21 +1,19 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
+
 import { clearAllTables } from '#/_helpers/integration-db'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { recordSessionLogin } from '@/server/domains/auth/repo'
 import { listSessionsByUser } from '@/server/domains/auth/services/sessions'
-import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { session as sessionTable } from '@/server/infra/db/schema/session'
 import { user } from '@/server/infra/db/schema/user'
 
-const poolManager = createDbPool()
-const db: NodePgDatabase = poolManager.db
-const pool: Pool = poolManager.pool
+const handle = createTestDatabase()
+const db: Database = handle.db
 
 afterAll(async () => {
-  await closePool(pool)
+  closeTestDatabase(handle)
 })
 
 beforeEach(async () => {
@@ -62,7 +60,7 @@ describe('listSessionsByUser', () => {
   })
 
   it('returns empty when no sessions are registered', async () => {
-    const sessions = await listSessionsByUser(db, 7n)
+    const sessions = await listSessionsByUser(db, 7)
     expect(sessions).toEqual([])
   })
 })

@@ -1,7 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import { and, desc, eq, isNull } from 'drizzle-orm'
 
+import type { Database } from '@/server/infra/db/database'
 import type { NewPageMeta, PageMetaRow } from '@/server/infra/db/types'
 import type { Page } from '@/shared/types/catalog'
 
@@ -23,7 +22,7 @@ const crud = makeMetaCrud<PageMetaRow, NewPageMeta>(pageMetaTable)
 export const findPublicPageMetaBySlug = crud.findPublicMetaBySlug
 
 /** All non-deleted page meta rows; cataloged at startup. */
-export async function listPublicPageMetas(db: NodePgDatabase, limit = 500): Promise<PageMetaRow[]> {
+export async function listPublicPageMetas(db: Database, limit = 500): Promise<PageMetaRow[]> {
   return db
     .select()
     .from(pageMetaTable)
@@ -38,10 +37,7 @@ export async function listPublicPageMetas(db: NodePgDatabase, limit = 500): Prom
  * page (webmention target resolution) mount this instead of opening a
  * page-table query of their own.
  */
-export async function findLivePageBySlug(
-  db: NodePgDatabase,
-  slug: string,
-): Promise<{ id: bigint; title: string } | null> {
+export async function findLivePageBySlug(db: Database, slug: string): Promise<{ id: number; title: string } | null> {
   const rows = await db
     .select({ id: pageMetaTable.id, title: pageMetaTable.title })
     .from(pageMetaTable)
@@ -62,7 +58,7 @@ export interface SitemapPageRow {
  * `livePageWhere`, selecting only the columns the sitemap needs so it
  * skips the revision-join + image-hydration of the full `listAllPages`.
  */
-export async function listSitemapPages(db: NodePgDatabase, now = new Date()): Promise<SitemapPageRow[]> {
+export async function listSitemapPages(db: Database, now = new Date()): Promise<SitemapPageRow[]> {
   return db
     .select({
       slug: pageMetaTable.slug,
@@ -74,7 +70,7 @@ export async function listSitemapPages(db: NodePgDatabase, now = new Date()): Pr
     .orderBy(desc(pageMetaTable.firstPublishedAt))
 }
 
-async function hydratePageImages(db: NodePgDatabase, pages: Page[]): Promise<void> {
+async function hydratePageImages(db: Database, pages: Page[]): Promise<void> {
   await hydrateImageRefs(
     db,
     pages,
@@ -90,19 +86,19 @@ async function hydratePageImages(db: NodePgDatabase, pages: Page[]): Promise<voi
   )
 }
 
-export async function findPageBySlug(db: NodePgDatabase, slug: string): Promise<Page | null> {
-  const meta = await findPublicPageMetaBySlug(db, slug)
+export async function findPageBySlug(db: Database, slug: string): Promise<Page | null> {
+  const meta = findPublicPageMetaBySlug(db, slug)
   if (meta === null || !isLive(meta)) {
     return null
   }
-  const revision = meta.publishedRevisionId === null ? null : await findContentById(db, meta.publishedRevisionId)
+  const revision = meta.publishedRevisionId === null ? null : findContentById(db, meta.publishedRevisionId)
   // `toCmsPage` already returns the shared `Page` DTO — no promotion step.
   const page = toCmsPage(meta, revision)
   await hydratePageImages(db, [page])
   return page
 }
 
-export async function listAllPages(db: NodePgDatabase): Promise<Page[]> {
+export async function listAllPages(db: Database): Promise<Page[]> {
   const metas = await listPublicPageMetas(db)
   const asOf = new Date()
   const visible = metas.filter((meta) => isLive(meta, { asOf }))

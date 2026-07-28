@@ -1,8 +1,9 @@
 // Parse a string to BigInt, returning null on failure instead of throwing.
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
-export function safeBigInt(value: string): bigint | null {
+export function safeBigInt(value: string): number | null {
   try {
-    return BigInt(value)
+    const parsed = Number(value)
+    return Number.isInteger(parsed) && Number.isFinite(parsed) ? parsed : null
   } catch {
     return null
   }
@@ -25,7 +26,7 @@ export function readStringArray(value: unknown): string[] {
 // DTOs ship strings. `idStr` accepts all three so call sites stay uniform
 // whether the id arrived from the server (bigint per TS, string at
 // runtime) or from a wire response (string at both levels).
-export function idStr(value: bigint | number | string): string {
+export function idStr(value: number | string): string {
   return String(value)
 }
 

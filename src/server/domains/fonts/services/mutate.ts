@@ -1,8 +1,6 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
-
 import { eq, inArray } from 'drizzle-orm'
 
+import type { Database } from '@/server/infra/db/database'
 import type { FontRow } from '@/server/infra/db/schema/font'
 import type { FontsSettings } from '@/shared/config/types'
 import type { FontSlot } from '@/shared/contracts/fonts'
@@ -25,8 +23,8 @@ import { unsafeCast } from '@/shared/utils/unsafe-cast'
  * Read the current `fonts` settings section from the DB (within the caller's
  * transaction). Used by slot edits (merge base) and by delete (slot-usage check).
  */
-async function readCurrentFonts(db: NodePgDatabase): Promise<FontsSettings> {
-  const row = await findSettingByScope(db, SECTION_REGISTRY.fonts.scope)
+async function readCurrentFonts(db: Database): Promise<FontsSettings> {
+  const row = findSettingByScope(db, SECTION_REGISTRY.fonts.scope)
   const data = row?.data
   if (data) {
     const parsed = SECTION_REGISTRY.fonts.schema.safeParse(data)
@@ -47,25 +45,24 @@ async function readCurrentFonts(db: NodePgDatabase): Promise<FontsSettings> {
  * in the library for the user to delete explicitly.
  */
 export async function setFontSlot(
-  db: NodePgDatabase,
-  pool: Pool,
+  db: Database,
   slot: FontSlot,
   fontIds: readonly string[],
-  updatedBy: bigint | null,
+  updatedBy: number | null,
 ): Promise<void> {
   const current = await readCurrentFonts(db)
   const next: FontsSettings = {
     ...current,
     [slot]: [...fontIds],
   }
-  await updateBlogSettingsSection(db, pool, 'fonts', next, updatedBy)
+  await updateBlogSettingsSection(db, 'fonts', next, updatedBy)
 }
 
 /**
  * Delete a font (storage package + DB row). Refuses with 409 if any slot
  * still references it — the user must detach it from every slot first.
  */
-export async function deleteFont(db: NodePgDatabase, fontId: string): Promise<FontRow> {
+export async function deleteFont(db: Database, fontId: string): Promise<FontRow> {
   const row = await db.select().from(font).where(eq(font.id, fontId)).limit(1)
   const target = row[0]
   if (!target) {
@@ -97,7 +94,7 @@ export async function deleteFont(db: NodePgDatabase, fontId: string): Promise<Fo
  * the storage side: a missing object is logged but does not roll back the
  * row delete (the DB row is the source of truth for "this font exists").
  */
-async function gcFonts(db: NodePgDatabase, fontIds: readonly string[]): Promise<void> {
+async function gcFonts(db: Database, fontIds: readonly string[]): Promise<void> {
   if (fontIds.length === 0) {
     return
   }

@@ -1,6 +1,5 @@
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-
 import type { BlogSession, SessionUser } from '@/server/domains/auth/session-storage'
+import type { Database } from '@/server/infra/db/database'
 import type { EntityTarget } from '@/server/infra/db/target'
 import type { CommentFormUser } from '@/shared/types/catalog'
 import type { DetailPageComments } from '@/shared/types/comments'
@@ -35,7 +34,7 @@ function toCommentFormUser(user: SessionUser | undefined): CommentFormUser | und
 // per-row work in `parseComments` is now just projection — but the
 // network/DB round-trip is still worth deferring.
 async function loadCommentsAndItems(
-  db: NodePgDatabase,
+  db: Database,
   session: BlogSession,
   target: EntityTarget,
 ): Promise<DetailPageComments> {
@@ -48,7 +47,7 @@ async function loadCommentsAndItems(
 // (post body, likes, sidebar, current-user identity for the reply form).
 // Comments are intentionally excluded so the loader can stream them
 // alongside the SSR HTML.
-async function loadDetailPageCritical(db: NodePgDatabase, session: BlogSession, target: EntityTarget) {
+async function loadDetailPageCritical(db: Database, session: BlogSession, target: EntityTarget) {
   const user = userSession(session)
   const currentUser = toCommentFormUser(user)
 
@@ -68,7 +67,7 @@ async function loadDetailPageCritical(db: NodePgDatabase, session: BlogSession, 
 
 // Detail data with the comments promise split out, ready to stream through
 // React Router's `defer`-style return + `<Await>` consumer.
-export async function loadDetailPageStreaming(db: NodePgDatabase, session: BlogSession, target: EntityTarget) {
+export async function loadDetailPageStreaming(db: Database, session: BlogSession, target: EntityTarget) {
   const comments = loadCommentsAndItems(db, session, target)
   const critical = await loadDetailPageCritical(db, session, target)
   return { critical, comments }

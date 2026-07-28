@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { performSafeRestore } from '@/server/domains/backup/restore-orchestrator'
 import {
@@ -10,8 +11,8 @@ import {
   listBackups,
 } from '@/server/domains/backup/services/backup'
 import { restoreFromBackup } from '@/server/domains/backup/services/restore'
-import { checkPgToolsAvailable } from '@/server/domains/backup/services/shared'
 import { adminProc } from '@/server/http/orpc-base'
+import { closeDatabase } from '@/server/infra/db/database'
 import { ActionFailure } from '@/server/infra/http/errors'
 import { getRestoreState } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
@@ -28,15 +29,13 @@ const backupFileDto = z.object({
 
 const status = adminProc
   .route({ method: 'GET', path: '/admin/backup/status' })
-  .output(z.object({ primaryDriver: z.enum(['s3', 'local']), pgToolsAvailable: z.boolean() }))
+  .output(z.object({ primaryDriver: z.enum(['s3', 'local']) }))
   .handler(async () => {
     // Backups run regardless of storage: when S3 is unconfigured they land
     // in local storage. `primaryDriver` is informational only (shown in the
-    // UI as "where new backups go"); `pgToolsAvailable` is the sole gate
-    // for whether backups can be created/restored at all.
-    const primaryDriver = activeBackend().driver
-    const pgToolsAvailable = await checkPgToolsAvailable()
-    return { primaryDriver, pgToolsAvailable }
+    // UI as "where new backups go"); file-based backups need no external
+    // tooling, so there is no availability gate anymore.
+    return { primaryDriver: activeBackend().driver }
   })
 
 const list = adminProc
@@ -90,11 +89,11 @@ const restore = adminProc
       throw new ActionFailure(409, '已有还原任务正在进行，请等待完成后再试。')
     }
 
-    const { db, pool } = context
+    const { db } = context
     const buffer = await getBackupBuffer(db, input.key)
 
-    performSafeRestore({ pool, log }, async () => {
-      await restoreFromBackup(db, buffer, input.key)
+    performSafeRestore({ closeCurrentDatabase: () => closeDatabase(getDatabaseHandle()), log }, async () => {
+      await restoreFromBackup(buffer, input.key)
       recordAuditEventFromContext(context, {
         action: 'backup_restored',
         resourceType: 'backup',

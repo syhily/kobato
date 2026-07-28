@@ -27,8 +27,8 @@ export type CommentTreeAction =
   | { type: 'append'; items: CommentItemType[]; rootsLoaded: number }
   | { type: 'insertReply'; comment: CommentItemType; rid: number }
   | { type: 'updateComment'; comment: CommentItemType }
-  | { type: 'removeComment'; id: bigint | string }
-  | { type: 'approveComment'; id: bigint | string }
+  | { type: 'removeComment'; id: number | string }
+  | { type: 'approveComment'; id: number | string }
   | { type: 'setReplyTo'; rid: number }
   | { type: 'mergeMyComments'; comments: CommentItemType[]; expiresAt: Record<string, number> }
   | { type: 'dismissMyComment'; id: string }
@@ -67,9 +67,9 @@ export interface CommentsActionsContextValue {
   onReply: (rid: number) => void
   onCancelReply: () => void
   onEdited: (comment: CommentItemType) => void
-  onApproved: (id: bigint | string) => void
-  onDeleted: (id: bigint | string) => void
-  onDismissMyComment: (id: bigint | string) => void
+  onApproved: (id: number | string) => void
+  onDeleted: (id: number | string) => void
+  onDismissMyComment: (id: number | string) => void
   dispatch: React.Dispatch<CommentTreeAction>
 }
 

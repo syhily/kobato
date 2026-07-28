@@ -20,8 +20,7 @@ import {
   resetAllBatchers,
 } from '@/server/infra/db/batcher-registry'
 
-const pool = {} as never
-const db = {} as never
+const handle = { db: {}, client: {}, path: ':memory:', closed: false } as never
 
 function fakeBatcher() {
   return { flush: vi.fn(async () => ({ committed: 0, deadLettered: 0 })) }
@@ -37,14 +36,14 @@ describe('server/infra/db/batcher-registry', () => {
     resetAllBatchers()
   })
 
-  it('initAllBatchers constructs every registered batcher with (pool, db)', () => {
+  it('initAllBatchers constructs every registered batcher with the handle', () => {
     const batcher = fakeBatcher()
     const init = vi.fn(() => batcher)
     registerBatcher('test-init', init)
 
-    initAllBatchers(pool, db)
+    initAllBatchers(handle)
 
-    expect(init).toHaveBeenCalledWith(pool, db)
+    expect(init).toHaveBeenCalledWith(handle)
     expect(getBatcher('test-init')).toBe(batcher)
   })
 
@@ -53,7 +52,7 @@ describe('server/infra/db/batcher-registry', () => {
 
     expect(getBatcher('test-uninitialized')).toBeUndefined()
     expect(() => requireBatcher('test-uninitialized')).toThrow(
-      'test-uninitialized not initialized — call initAllBatchers(pool, db) first',
+      'test-uninitialized not initialized — call initAllBatchers(handle) first',
     )
   })
 
@@ -61,14 +60,14 @@ describe('server/infra/db/batcher-registry', () => {
     const first = fakeBatcher()
     const second = fakeBatcher()
     registerBatcher('test-reregister', () => first)
-    initAllBatchers(pool, db)
+    initAllBatchers(handle)
     expect(requireBatcher('test-reregister')).toBe(first)
 
     registerBatcher('test-reregister', () => second)
     // The old instance is dropped until the next initAllBatchers.
     expect(getBatcher('test-reregister')).toBeUndefined()
 
-    initAllBatchers(pool, db)
+    initAllBatchers(handle)
     expect(requireBatcher('test-reregister')).toBe(second)
   })
 
@@ -77,7 +76,7 @@ describe('server/infra/db/batcher-registry', () => {
     const second = fakeBatcher()
     registerBatcher('test-order-1', () => first)
     registerBatcher('test-order-2', () => second)
-    initAllBatchers(pool, db)
+    initAllBatchers(handle)
 
     await flushAllBatchers()
 
@@ -91,7 +90,7 @@ describe('server/infra/db/batcher-registry', () => {
     const healthy = fakeBatcher()
     registerBatcher('test-fail', () => failing)
     registerBatcher('test-healthy', () => healthy)
-    initAllBatchers(pool, db)
+    initAllBatchers(handle)
 
     await expect(flushAllBatchers()).resolves.toBeUndefined()
 
@@ -116,14 +115,14 @@ describe('server/infra/db/batcher-registry', () => {
     const batcher = fakeBatcher()
     const init = vi.fn(() => batcher)
     registerBatcher('test-reset', init)
-    initAllBatchers(pool, db)
+    initAllBatchers(handle)
     expect(requireBatcher('test-reset')).toBe(batcher)
 
     resetAllBatchers()
     expect(() => requireBatcher('test-reset')).toThrow('test-reset not initialized')
 
     // Re-init works without re-registering.
-    initAllBatchers(pool, db)
+    initAllBatchers(handle)
     expect(init).toHaveBeenCalledTimes(2)
     expect(requireBatcher('test-reset')).toBe(batcher)
   })
