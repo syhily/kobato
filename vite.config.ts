@@ -51,10 +51,10 @@ export default defineConfig(({ command }) => ({
       : {
           noExternal: true,
           target: 'node',
-          // sharp / @napi-rs/canvas can never be bundled (their .node
-          // loads are unloadable). External here, inlined (and
-          // redirected) by vite.sea.config.ts there.
-          external: ['sharp', '@napi-rs/canvas'],
+          // sharp / @napi-rs/canvas / @duckdb/node-api can never be
+          // bundled (their .node loads are unloadable). External here,
+          // inlined (and redirected) by vite.sea.config.ts there.
+          external: ['sharp', '@napi-rs/canvas', '@duckdb/node-api'],
         },
   environments: {
     ssr: {

@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 
 import type { Env } from '@/server/http/context'
 
+import { getAnalyticsHandle } from '@/server/bootstrap/analytics-lifecycle'
 import {
   acquireRealtimeConnection,
   queryRealtimeTail,
@@ -77,7 +78,7 @@ export const analyticsEventsRouter = new Hono<Env>().get('/api/analytics/events'
         pollInProgress = true
         void (async () => {
           try {
-            const rows = await queryRealtimeTail(c.var.requestContext.db, lastSeen)
+            const rows = await queryRealtimeTail(getAnalyticsHandle().reader, lastSeen)
             if (rows.length > 0) {
               const ordered = [...rows].reverse()
               lastSeen = new Date(ordered[ordered.length - 1]!.ts)

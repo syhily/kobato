@@ -1,15 +1,12 @@
-import { sql } from 'drizzle-orm'
-
+import type { AnalyticsReader } from '@/server/domains/analytics/services/duckdb-sql'
 import type { AnalyticsQueryInput } from '@/server/domains/analytics/services/query-parser'
-import type { Database } from '@/server/infra/db/database'
 import type { MetricRow, MetricType } from '@/shared/contracts/analytics'
 
-import { whereClause, quoteIdent, METRIC_SET } from '@/server/domains/analytics/services/shared-sql'
+import { METRIC_SET, quoteIdent, whereClause } from '@/server/domains/analytics/services/duckdb-sql'
 import { DomainError } from '@/server/infra/http/errors'
-import { isRecord } from '@/shared/utils/type-guards'
 
 export async function queryMetric(
-  db: Database,
+  reader: AnalyticsReader,
   input: AnalyticsQueryInput,
   type: MetricType,
   limit = 20,
@@ -18,26 +15,22 @@ export async function queryMetric(
     throw new DomainError('BAD_REQUEST', `unknown metric type: ${type}`)
   }
   const where = whereClause(input)
-  const groupExpr = sql`COALESCE(NULLIF(${quoteIdent(type)}, ''), '(unknown)')`
-  const rows = db.all(sql`
-    SELECT
-      ${groupExpr} AS name,
+  const result = await reader.runAndReadAll(
+    `SELECT
+      COALESCE(NULLIF(${quoteIdent(type)}, ''), '(unknown)') AS name,
       COUNT(*) AS visits,
       COUNT(DISTINCT visitor_hash) AS visitors
     FROM access_log
-    WHERE ${where}
+    WHERE ${where.sql}
     GROUP BY name
     ORDER BY visits DESC
-    LIMIT ${limit}
-  `)
-  return rows.map((row) => {
-    if (!isRecord(row)) {
-      return { name: '', visits: 0, visitors: 0 }
-    }
-    return {
-      name: typeof row.name === 'string' ? row.name : '',
-      visits: Number(row.visits),
-      visitors: Number(row.visitors),
-    }
-  })
+    LIMIT ?`,
+    [...where.params, BigInt(limit)],
+  )
+  const rows = result.getRowObjects()
+  return rows.map((row) => ({
+    name: typeof row.name === 'string' ? row.name : '',
+    visits: Number(row.visits),
+    visitors: Number(row.visitors),
+  }))
 }

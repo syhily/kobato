@@ -1,4 +1,4 @@
-import { sql, type SQL } from 'drizzle-orm'
+import type { DuckDBConnection, DuckDBValue } from '@duckdb/node-api'
 
 import type { AnalyticsQueryInput } from '@/server/domains/analytics/services/query-parser'
 import type { MetricType } from '@/shared/contracts/analytics'
@@ -45,35 +45,56 @@ const METRIC_COLUMN: Record<MetricType, string> = {
  * The parameter type is constrained to MetricType so only columns from
  * the hard-coded METRIC_COLUMN map can be passed — never user input.
  */
-export function quoteIdent(name: MetricType): SQL {
+export function quoteIdent(name: MetricType): string {
   const col = METRIC_COLUMN[name]
   if (!col) {
     throw new DomainError('BAD_REQUEST', `invalid identifier: ${name}`)
   }
-  return sql.raw(`"${col}"`)
+  return `"${col}"`
 }
 
-// `ts` is an epoch-ms integer (timestamp_ms storage); range inputs are
-// epoch seconds, so the bounds multiply up.
-export function whereClause(input: AnalyticsQueryInput): SQL {
-  const conditions: SQL[] = [
-    sql`is_bot = FALSE`,
-    sql`ts >= ${input.range.startAt * 1000}`,
-    sql`ts < ${input.range.endAt * 1000}`,
-  ]
+export interface WhereParts {
+  sql: string
+  params: DuckDBValue[]
+}
+
+// `ts` is a DuckDB TIMESTAMP; range inputs are epoch seconds, bound as
+// epoch-ms BIGINTs through `epoch_ms(?::BIGINT)`.
+export function whereClause(input: AnalyticsQueryInput): WhereParts {
+  const conditions: string[] = ['is_bot = FALSE', 'ts >= epoch_ms(?::BIGINT)', 'ts < epoch_ms(?::BIGINT)']
+  const params: DuckDBValue[] = [BigInt(input.range.startAt * 1000), BigInt(input.range.endAt * 1000)]
   if (input.entityType) {
-    conditions.push(sql`entity_type = ${input.entityType}`)
+    conditions.push('entity_type = ?')
+    params.push(input.entityType)
   }
   if (input.entityId !== undefined) {
-    conditions.push(sql`entity_id = ${input.entityId}`)
+    conditions.push('entity_id = ?')
+    params.push(BigInt(input.entityId))
   }
   for (const [type, value] of Object.entries(input.filters)) {
     if (!isMetricType(type) || !value) {
       continue
     }
-    conditions.push(sql`${quoteIdent(type)} = ${value}`)
+    conditions.push(`${quoteIdent(type)} = ?`)
+    params.push(value)
   }
-  return sql.join(conditions, sql` AND `)
+  return { sql: conditions.join(' AND '), params }
+}
+
+/** The dashboard read connection type (DuckDB MVCC reader). */
+export type AnalyticsReader = DuckDBConnection
+
+/** Convert a DuckDB TIMESTAMP result cell to epoch milliseconds. The
+ *  node API surfaces timestamps as microseconds since epoch — either a
+ *  raw bigint or an object carrying a `micros` bigint. */
+export function timestampToMs(value: DuckDBValue): number {
+  if (typeof value === 'bigint') {
+    return Number(value / 1000n)
+  }
+  if (value !== null && typeof value === 'object' && 'micros' in value && typeof value.micros === 'bigint') {
+    return Number(value.micros / 1000n)
+  }
+  return 0
 }
 
 export { METRIC_SET, METRIC_COLUMN }

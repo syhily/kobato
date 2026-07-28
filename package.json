@@ -58,6 +58,7 @@
     "zeabur:publish": "pnpx zeabur@latest template update -c TK7XLK -f zeabur-template.yml"
   },
   "dependencies": {
+    "@duckdb/node-api": "1.5.5-r.2",
     "@napi-rs/canvas": "^1.0.2",
     "sharp": "^0.35.3"
   },

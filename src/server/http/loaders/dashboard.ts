@@ -4,6 +4,7 @@ import type { CountersDto, ViewsPoint } from '@/shared/contracts/analytics'
 import type { DraftSummary } from '@/shared/contracts/dashboard'
 import type { ListPendingDashboardOutput } from '@/shared/types/comments'
 
+import { getAnalyticsHandle } from '@/server/bootstrap/analytics-lifecycle'
 import { queryCounters } from '@/server/domains/analytics/services/counters'
 import { queryViews } from '@/server/domains/analytics/services/views'
 import { requireRole } from '@/server/domains/auth/rbac'
@@ -79,8 +80,8 @@ export async function loadAdminDashboardData({
     recentPublishedRows,
   ] = await Promise.all([
     admin ? loadAdminPendingDashboard(db, 'all', 0, PENDING_PAGE_SIZE) : Promise.resolve(null),
-    admin ? queryCounters(db, { range: dayRange, filters: {} }) : Promise.resolve(null),
-    admin ? queryViews(db, { range: weekRange, filters: {} }) : Promise.resolve(null),
+    admin ? queryCounters(getAnalyticsHandle().reader, { range: dayRange, filters: {} }) : Promise.resolve(null),
+    admin ? queryViews(getAnalyticsHandle().reader, { range: weekRange, filters: {} }) : Promise.resolve(null),
     countPostMetas(db, { authorId, deletedStatus: 'normal', lifecycle: 'draft' }),
     countPostMetas(db, { authorId, deletedStatus: 'normal', lifecycle: 'published' }),
     countMyComments(db, userId),

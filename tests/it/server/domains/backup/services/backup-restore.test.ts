@@ -101,16 +101,21 @@ describe('backup and restore integration', () => {
     expect(downloaded.equals(buffer!)).toBe(true)
 
     // The seeded row is inside the backup: a fresh database opened on the
-    // extracted bytes finds it.
-    const restored = createTestDatabase()
+    // extracted bytes finds it. (Written to a NEW path — overwriting an
+    // open handle's file would corrupt it.)
+    const { mkdtempSync, writeFileSync } = await import('node:fs')
+    const { tmpdir } = await import('node:os')
+    const { join } = await import('node:path')
+    const { openDatabase, closeDatabase } = await import('@/server/infra/db/database')
+    const dir = mkdtempSync(join(tmpdir(), 'kobato-restore-it-'))
+    const restored = openDatabase(join(dir, 'restored.db'))
     try {
-      const { writeFileSync } = await import('node:fs')
       writeFileSync(restored.path, raw)
       const rows = restored.db.select().from(category).where(eq(category.slug, 'backup-cat')).all()
       expect(rows).toHaveLength(1)
       expect(rows[0]!.name).toBe('BackupCat')
     } finally {
-      closeTestDatabase(restored)
+      closeDatabase(restored)
     }
   })
 

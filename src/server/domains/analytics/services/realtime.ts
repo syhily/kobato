@@ -1,9 +1,9 @@
-import { sql } from 'drizzle-orm'
 import { createHash } from 'node:crypto'
 
-import type { Database } from '@/server/infra/db/database'
+import type { AnalyticsReader } from '@/server/domains/analytics/services/duckdb-sql'
 import type { RealtimeEvent } from '@/shared/contracts/analytics'
 
+import { timestampToMs } from '@/server/domains/analytics/services/duckdb-sql'
 import { isRecord } from '@/shared/utils/type-guards'
 
 // ─── SSE connection registry ─────────────────────────────────────────────
@@ -55,10 +55,9 @@ export function acquireRealtimeConnection(key: string): (() => void) | null {
   }
 }
 
-export async function queryRealtimeTail(db: Database, sinceTs: Date, limit = 50): Promise<RealtimeEvent[]> {
-  // `ts` is an epoch-ms integer column.
-  const rows = db.all(sql`
-    SELECT
+export async function queryRealtimeTail(reader: AnalyticsReader, sinceTs: Date, limit = 50): Promise<RealtimeEvent[]> {
+  const result = await reader.runAndReadAll(
+    `SELECT
       ts,
       path,
       country,
@@ -68,20 +67,18 @@ export async function queryRealtimeTail(db: Database, sinceTs: Date, limit = 50)
       device_type AS "deviceType",
       is_bot AS "isBot"
     FROM access_log
-    WHERE ts > ${sinceTs.getTime()}
+    WHERE ts > epoch_ms(?::BIGINT)
     ORDER BY ts DESC
-    LIMIT ${limit}
-  `)
+    LIMIT ?`,
+    [BigInt(sinceTs.getTime()), BigInt(limit)],
+  )
+  const rows = result.getRowObjects()
   return rows.map((row) => {
     if (!isRecord(row)) {
       return { ts: '', path: '', country: null, city: null, browser: null, os: null, deviceType: null, isBot: false }
     }
-    const ts = row.ts
     return {
-      ts: (ts instanceof Date
-        ? ts
-        : new Date(typeof ts === 'string' || typeof ts === 'number' ? ts : String(ts))
-      ).toISOString(),
+      ts: new Date(timestampToMs(row.ts)).toISOString(),
       path: typeof row.path === 'string' ? row.path : '',
       country: row.country === null || typeof row.country === 'string' ? row.country : null,
       city: row.city === null || typeof row.city === 'string' ? row.city : null,

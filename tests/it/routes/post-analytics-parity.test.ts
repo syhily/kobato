@@ -41,6 +41,10 @@ const sampleMeta = {
 
 const metricRows: Record<string, MetricRow[]> = {}
 
+vi.mock('@/server/bootstrap/analytics-lifecycle', () => ({
+  getAnalyticsHandle: () => ({ reader: {}, writer: {}, instance: {}, path: ':memory:', closed: false }),
+}))
+
 vi.mock('@/server/domains/posts/services/single', () => ({
   findPostMetaById: vi.fn((_db: unknown, id: number) => (id === 7 ? sampleMeta : null)),
 }))

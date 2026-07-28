@@ -1,5 +1,5 @@
+import type { AnalyticsReader } from '@/server/domains/analytics/services/duckdb-sql'
 import type { AnalyticsQueryInput } from '@/server/domains/analytics/services/query-parser'
-import type { Database } from '@/server/infra/db/database'
 import type { CountersDto, HeatmapCell, MetricRow, MetricType, ViewsPoint } from '@/shared/contracts/analytics'
 
 import { queryCounters } from '@/server/domains/analytics/services/counters'
@@ -23,14 +23,17 @@ export interface AnalyticsOverviewData {
  * (site-wide vs per-post) lives entirely in `input`, so callers only
  * resolve their `AnalyticsQueryInput` and hand it over.
  */
-export async function loadAnalyticsOverview(db: Database, input: AnalyticsQueryInput): Promise<AnalyticsOverviewData> {
+export async function loadAnalyticsOverview(
+  reader: AnalyticsReader,
+  input: AnalyticsQueryInput,
+): Promise<AnalyticsOverviewData> {
   const initialMetricTypes = METRIC_GROUPS.map((g) => METRIC_GROUP_TABS[g][0]!)
 
   const [counters, views, heatmap, ...metricRows] = await Promise.all([
-    queryCounters(db, input),
-    queryViews(db, input),
-    queryHeatmap(db, input),
-    ...initialMetricTypes.map((t) => queryMetric(db, input, t, 10)),
+    queryCounters(reader, input),
+    queryViews(reader, input),
+    queryHeatmap(reader, input),
+    ...initialMetricTypes.map((t) => queryMetric(reader, input, t, 10)),
   ])
 
   const initialMetrics: Partial<Record<MetricType, MetricRow[]>> = {}

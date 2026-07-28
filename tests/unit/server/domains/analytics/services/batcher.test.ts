@@ -1,7 +1,9 @@
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { AnalyticsHandle } from '@/server/infra/analytics/duckdb'
 import type { DatabaseHandle } from '@/server/infra/db/database'
 
+import { closeTestAnalyticsDb, createTestAnalyticsDb } from '#/_helpers/analytics-db'
 import { closeTestDatabase, createTestDatabase } from '#/_helpers/integration-db'
 
 vi.mock('@/server/infra/logger', () => ({
@@ -20,9 +22,14 @@ vi.mock('@/server/infra/paths', () => ({
   ANALYTICS_DEAD_LETTER_PATH: '/tmp/dead-letter.log',
 }))
 
+let analyticsHandle: AnalyticsHandle
+
+vi.mock('@/server/bootstrap/analytics-lifecycle', () => ({
+  getAnalyticsHandle: () => analyticsHandle,
+}))
+
 import { flushAccessLog, pushAccessEvent, replayDeadLetterAccessLog } from '@/server/domains/analytics/services/batcher'
 import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
-import { accessLog } from '@/server/infra/db/schema/config'
 
 let handle: DatabaseHandle
 
@@ -58,19 +65,26 @@ function makeEvent(
   }
 }
 
-describe('analytics batcher', () => {
-  beforeEach(() => {
+describe('analytics batcher (DuckDB appender)', () => {
+  beforeEach(async () => {
     vi.clearAllMocks()
     resetAllBatchers()
-    handle?.closed === false && closeTestDatabase(handle)
+    if (handle?.closed === false) {
+      closeTestDatabase(handle)
+    }
+    if (analyticsHandle?.closed === false) {
+      await closeTestAnalyticsDb(analyticsHandle)
+    }
     handle = createTestDatabase()
-    handle.db.delete(accessLog).run()
+    analyticsHandle = await createTestAnalyticsDb()
+    await analyticsHandle.writer.run('DELETE FROM access_log')
     initAllBatchers(handle)
   })
 
-  afterAll(() => {
+  afterAll(async () => {
     resetAllBatchers()
     closeTestDatabase(handle)
+    await closeTestAnalyticsDb(analyticsHandle)
   })
 
   it('flushes an empty batch immediately', async () => {
@@ -78,16 +92,17 @@ describe('analytics batcher', () => {
     expect(result).toEqual({ committed: 0, deadLettered: 0 })
   })
 
-  it('pushes and flushes events into access_log', async () => {
+  it('pushes and flushes events into DuckDB access_log', async () => {
     pushAccessEvent(makeEvent())
     const result = await flushAccessLog()
     expect(result).toEqual({ committed: 1, deadLettered: 0 })
 
-    const rows = handle.db.select().from(accessLog).all()
-    expect(rows).toHaveLength(1)
-    expect(rows[0]!.path).toBe('/')
-    expect(rows[0]!.entityId).toBe(1)
-    expect(rows[0]!.isBot).toBe(false)
+    const rows = await analyticsHandle.reader.runAndReadAll('SELECT path, entity_id, is_bot FROM access_log')
+    const objects = await rows.getRowObjects()
+    expect(objects).toHaveLength(1)
+    expect(objects[0]!.path).toBe('/')
+    expect(objects[0]!.entity_id).toBe(1n)
+    expect(objects[0]!.is_bot).toBe(false)
   })
 
   it('throws when pushing before initialization', () => {

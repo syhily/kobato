@@ -1,6 +1,7 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
+import { getAnalyticsHandle } from '@/server/bootstrap/analytics-lifecycle'
 import { queryCounters } from '@/server/domains/analytics/services/counters'
 import { queryHeatmap } from '@/server/domains/analytics/services/heatmap'
 import { queryMetric } from '@/server/domains/analytics/services/metric'
@@ -56,29 +57,29 @@ const counters = adminProc
   .route({ method: 'GET', path: '/analytics/counters' })
   .input(analyticsInput)
   .output(countersOutput)
-  .handler(({ input, context }) => queryCounters(context.db, parseAnalyticsInput(input)))
+  .handler(({ input }) => queryCounters(getAnalyticsHandle().reader, parseAnalyticsInput(input)))
 
 const views = adminProc
   .route({ method: 'GET', path: '/analytics/views' })
   .input(analyticsInput)
   .output(z.array(viewsPointOutput))
-  .handler(({ input, context }) => queryViews(context.db, parseAnalyticsInput(input)))
+  .handler(({ input }) => queryViews(getAnalyticsHandle().reader, parseAnalyticsInput(input)))
 
 const heatmap = adminProc
   .route({ method: 'GET', path: '/analytics/heatmap' })
   .input(analyticsInput)
   .output(z.array(heatmapCellOutput))
-  .handler(({ input, context }) => queryHeatmap(context.db, parseAnalyticsInput(input)))
+  .handler(({ input }) => queryHeatmap(getAnalyticsHandle().reader, parseAnalyticsInput(input)))
 
 const metrics = adminProc
   .route({ method: 'GET', path: '/analytics/metrics' })
   .input(metricsInput)
   .output(z.array(metricRowOutput))
-  .handler(({ input, context }) => {
+  .handler(({ input }) => {
     if (!METRIC_SET.has(input.type)) {
       throw new ORPCError('BAD_REQUEST', { message: `unknown metric type: ${input.type}` })
     }
-    return queryMetric(context.db, parseAnalyticsInput(input), input.type, input.limit)
+    return queryMetric(getAnalyticsHandle().reader, parseAnalyticsInput(input), input.type, input.limit)
   })
 
 export const analyticsRouter = { counters, views, heatmap, metrics }

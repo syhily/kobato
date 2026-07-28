@@ -1,22 +1,22 @@
-import { sql } from 'drizzle-orm'
-
+import type { AnalyticsReader } from '@/server/domains/analytics/services/duckdb-sql'
 import type { AnalyticsQueryInput } from '@/server/domains/analytics/services/query-parser'
-import type { Database } from '@/server/infra/db/database'
 import type { CountersDto } from '@/shared/contracts/analytics'
 
-import { whereClause } from '@/server/domains/analytics/services/shared-sql'
+import { whereClause } from '@/server/domains/analytics/services/duckdb-sql'
 
-export async function queryCounters(db: Database, input: AnalyticsQueryInput): Promise<CountersDto> {
+export async function queryCounters(reader: AnalyticsReader, input: AnalyticsQueryInput): Promise<CountersDto> {
   const where = whereClause(input)
-  const rows = db.all(sql`
-    SELECT
+  const result = await reader.runAndReadAll(
+    `SELECT
       COUNT(*) AS visits,
       COUNT(DISTINCT visitor_hash) AS visitors,
-      COUNT(DISTINCT CASE WHEN referer_host IS NOT NULL AND referer_host <> '' THEN referer_host END) AS referers
+      COUNT(DISTINCT referer_host) FILTER (WHERE referer_host IS NOT NULL AND referer_host <> '') AS referers
     FROM access_log
-    WHERE ${where}
-  `)
-  const row = rows[0] as { visits?: number | null; visitors?: number | null; referers?: number | null } | undefined
+    WHERE ${where.sql}`,
+    where.params,
+  )
+  const rows = result.getRowObjects()
+  const row = rows[0] as { visits?: bigint | null; visitors?: bigint | null; referers?: bigint | null } | undefined
   return {
     visits: Number(row?.visits ?? 0),
     visitors: Number(row?.visitors ?? 0),

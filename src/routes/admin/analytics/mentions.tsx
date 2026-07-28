@@ -1,3 +1,4 @@
+import { getAnalyticsHandle } from '@/server/bootstrap/analytics-lifecycle'
 import { queryMetric } from '@/server/domains/analytics/services/metric'
 import { parseAnalyticsSearch } from '@/server/domains/analytics/services/query-parser'
 import { requireRole } from '@/server/domains/auth/rbac'
@@ -17,8 +18,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const url = new URL(request.url)
   const input = parseAnalyticsSearch(url.searchParams)
 
-  const db = rc.db
-  const referers = await queryMetric(db, input, 'referer', 50)
+  const referers = await queryMetric(getAnalyticsHandle().reader, input, 'referer', 50)
 
   return { referers }
 }
