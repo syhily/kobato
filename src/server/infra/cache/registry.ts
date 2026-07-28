@@ -440,11 +440,10 @@ function counterKey(id: CacheBucketId): string {
 }
 
 // The counter row lives in `kv_cache` at the `${prefix}generation` key
-// with a raw integer JSONB in `value` and NULL `expires_at` (never
-// swept). It deliberately bypasses kv-store's `getItem`, which only
-// decodes the superjson envelope and would read a raw scalar as a miss
-// (the raw-scalar refusal contract stays — this module is the only
-// kv-store consumer and reaches the counter with direct SQL).
+// with a raw integer JSON in `value` and NULL `expires_at` (never
+// swept). It deliberately bypasses kv-store's `getItem`/`setItem` —
+// this module is the only kv-store consumer and reaches the counter
+// with direct SQL.
 function parseCounter(value: unknown): number {
   const parsed = typeof value === 'number' ? value : Number.parseInt(String(value), 10)
   return Number.isNaN(parsed) ? 0 : parsed

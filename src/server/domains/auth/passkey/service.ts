@@ -4,7 +4,6 @@ import type {
   PublicKeyCredentialRequestOptionsJSON,
   RegistrationResponseJSON,
 } from '@simplewebauthn/server'
-import type { SuperJSONResult } from 'superjson'
 
 import {
   generateAuthenticationOptions as swaGenerateAuthenticationOptions,
@@ -13,7 +12,6 @@ import {
   verifyRegistrationResponse as swaVerifyRegistrationResponse,
 } from '@simplewebauthn/server'
 import { and, eq, gt } from 'drizzle-orm'
-import superjson from 'superjson'
 
 import type { Database } from '@/server/infra/db/database'
 import type { SafeUser } from '@/server/infra/db/operations/user'
@@ -54,7 +52,9 @@ async function storeChallenge(
   challenge: string,
   data: Record<string, unknown>,
 ): Promise<void> {
-  const payload = superjson.serialize(data)
+  // Plain JSON (superjson was dropped with the SQLite migration — the
+  // challenge payloads are `{ userId, deviceName }` / `{ email }`).
+  const payload = data
   const expiresAt = new Date(Date.now() + CHALLENGE_TTL_SECONDS * 1000)
   await db
     .insert(oneTimeToken)
@@ -82,13 +82,9 @@ async function consumeChallenge(
       .where(and(eq(oneTimeToken.key, key), gt(oneTimeToken.expiresAt, new Date())))
       .returning({ payload: oneTimeToken.payload })
     const payload = rows[0]?.payload
-    // Rows written by `storeChallenge` always carry the superjson
-    // envelope (`{ json, meta? }`); anything else reads as a miss.
-    if (!isRecord(payload) || !('json' in payload)) {
-      return null
-    }
-    const data = superjson.deserialize<Record<string, unknown>>(unsafeCast<SuperJSONResult>(payload))
-    return isRecord(data) ? data : null
+    // Rows written by `storeChallenge` carry the plain-JSON payload;
+    // anything but an object reads as a miss.
+    return isRecord(payload) ? payload : null
   } catch (error) {
     log.error('Failed to consume passkey challenge', { key, error })
     return null

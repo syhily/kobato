@@ -1,6 +1,5 @@
 import { and, gt, gte, inArray, lt, sql } from 'drizzle-orm'
 import { createGzip } from 'node:zlib'
-import superjson from 'superjson'
 
 import type { ArchiveResult, CleanupResult } from '@/server/domains/audit/types'
 import type { Database } from '@/server/infra/db/database'
@@ -10,6 +9,7 @@ import { auditLog } from '@/server/infra/db/schema/config'
 import { getLogger } from '@/server/infra/logger'
 import { backendFor } from '@/server/infra/storage/registry'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
+import { toJsonSafe } from '@/shared/utils/to-json-safe'
 
 const log = getLogger('audit.archive')
 
@@ -137,19 +137,23 @@ async function archiveDay(db: Database, day: string, dayStart: Date, dayEnd: Dat
       break
     }
 
+    // Plain-JSON lines (superjson was dropped with the SQLite
+    // migration): `toJsonSafe` renders Dates as epoch ms.
     const lines = rows.map((row) =>
-      superjson.stringify({
-        id: row.id,
-        action: row.action,
-        actorId: row.actorId,
-        actorRole: row.actorRole,
-        resourceType: row.resourceType,
-        resourceId: row.resourceId,
-        details: row.details,
-        ipAddress: row.ipAddress,
-        userAgent: row.userAgent,
-        createdAt: row.createdAt,
-      }),
+      JSON.stringify(
+        toJsonSafe({
+          id: row.id,
+          action: row.action,
+          actorId: row.actorId,
+          actorRole: row.actorRole,
+          resourceType: row.resourceType,
+          resourceId: row.resourceId,
+          details: row.details,
+          ipAddress: row.ipAddress,
+          userAgent: row.userAgent,
+          createdAt: row.createdAt,
+        }),
+      ),
     )
 
     gzip.write(lines.join('\n') + '\n')

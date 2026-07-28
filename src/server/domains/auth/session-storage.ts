@@ -1,9 +1,7 @@
 import type { Session } from 'react-router'
-import type { SuperJSONResult } from 'superjson'
 
 import { and, eq, gt } from 'drizzle-orm'
 import { createSession, createSessionStorage } from 'react-router'
-import superjson from 'superjson'
 
 import type { Role } from '@/shared/utils/roles'
 
@@ -98,12 +96,13 @@ const storage = createSessionStorage<BlogSessionData>({
       return null
     }
     try {
-      // Rows written by `writeSession` always carry the superjson
-      // envelope (`{ json, meta? }`); anything else reads as a miss.
-      if (!isRecord(row.data) || !('json' in row.data)) {
+      // `data` is plain JSON (superjson was dropped with the SQLite
+      // migration — BlogSessionData is all strings/numbers/booleans).
+      // Anything but an object reads as a miss.
+      if (!isRecord(row.data)) {
         return null
       }
-      return superjson.deserialize<BlogSessionData>(unsafeCast<SuperJSONResult>(row.data))
+      return unsafeCast<BlogSessionData>(row.data)
     } catch {
       log.warn('session parse failed', { id })
       return null
@@ -119,7 +118,8 @@ const storage = createSessionStorage<BlogSessionData>({
 
 async function writeSession(id: string, data: BlogSessionData, expires: Date | undefined): Promise<void> {
   const db = getDb()
-  const payload = superjson.serialize(data)
+  // The json-mode column serializes the (JSON-native) payload itself.
+  const payload = data
   const expiresAt = expires ?? new Date(Date.now() + resolveSessionMaxAge() * 1000)
   // The `user_id` column is derived from the payload on every write: an
   // OTP-pending session carries only `pendingOtpUser` (NULL); once the

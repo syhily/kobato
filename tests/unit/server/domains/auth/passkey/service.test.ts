@@ -1,4 +1,3 @@
-import superjson from 'superjson'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Database } from '@/server/infra/db/database'
@@ -65,9 +64,9 @@ function testUser(partial: Partial<SafeUser> = {}): SafeUser {
   } as SafeUser
 }
 
-/** superjson envelope, exactly as `storeChallenge` writes it. */
+/** Plain-JSON payload, exactly as `storeChallenge` writes it. */
 function challengePayload(data: Record<string, unknown>) {
-  return superjson.serialize(data)
+  return data
 }
 
 interface ChallengeCapture {

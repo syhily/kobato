@@ -1,8 +1,5 @@
-import type { SuperJSONResult } from 'superjson'
-
 import { and, eq, gt, inArray } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
-import superjson from 'superjson'
 
 import type { Database } from '@/server/infra/db/database'
 import type { CommentTokenCookie, CommentTokenCookieEntry } from '@/shared/utils/comment-token'
@@ -11,7 +8,6 @@ import { oneTimeToken } from '@/server/infra/db/schema/one-time-token'
 import { getLogger } from '@/server/infra/logger'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { isRecord } from '@/shared/utils/type-guards'
-import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const log = getLogger('comments.token')
 
@@ -37,27 +33,22 @@ function isCommentTokenPayload(value: unknown): value is CommentTokenPayload {
 }
 
 /**
- * Single codec for the `one_time_token` payloads. superjson both ways —
- * the guard runs after decode as a second-line check against shape drift.
+ * Single codec for the `one_time_token` payloads. Plain JSON both ways
+ * (superjson was dropped with the SQLite migration — the payload is all
+ * strings and epoch-ms numbers); the guard runs after decode as a
+ * second-line check against shape drift.
  */
-function encodeTokenPayload(payload: CommentTokenPayload): SuperJSONResult {
-  return superjson.serialize(payload)
+function encodeTokenPayload(payload: CommentTokenPayload): CommentTokenPayload {
+  return payload
 }
 
 function decodeTokenPayload(raw: unknown): CommentTokenPayload | null {
-  // Rows written by `issueCommentToken` always carry the superjson
-  // envelope (`{ json, meta? }`); anything else in the column reads as a
-  // miss.
-  if (!isRecord(raw) || !('json' in raw)) {
-    return null
-  }
   try {
-    const parsed: unknown = superjson.deserialize(unsafeCast<SuperJSONResult>(raw))
-    if (!isCommentTokenPayload(parsed)) {
+    if (!isCommentTokenPayload(raw)) {
       log.warn('Invalid comment token payload shape')
       return null
     }
-    return parsed
+    return raw
   } catch (error) {
     log.warn('Failed to parse comment token payload', { error })
     return null
