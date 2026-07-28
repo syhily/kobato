@@ -40,17 +40,6 @@ Docker is recommended for local development.
 pnpm run docker:dev
 ```
 
-Copy `.env.example` to `.env` and set the database URL (variable
-names follow the nested config path with a double underscore — see
-[Configuration](#configuration)):
-
-```bash
-cp .env.example .env
-# database__url=postgres://postgres:postgres@localhost:5433/kobato
-# security__sessionSecret=$(openssl rand -hex 32)
-# security__encryptionKey=$(openssl rand -hex 32)
-```
-
 Install dependencies and start the dev server:
 
 ```bash
@@ -58,11 +47,22 @@ pnpm install
 pnpm run dev
 ```
 
-On first boot the values from `.env` are written into a freshly created
-`kobato.config.json` in the repo root (gitignored) — subsequent boots read
-the file, so `.env` is only needed once. Open `/admin/setup` and enter the
-setup token printed in the console to create the admin account.
-Settings are seeded automatically.
+On first boot a `kobato.config.json` is created in the repo root
+(gitignored) — edit it to point at the dev database and generate the two
+secrets (see [Configuration](#configuration) for the file shape):
+
+```jsonc
+{
+  "database": { "url": "postgres://postgres:postgres@localhost:5433/kobato" },
+  "security": {
+    "sessionSecret": "", // openssl rand -hex 32
+    "encryptionKey": "", // openssl rand -hex 32
+  },
+}
+```
+
+Open `/admin/setup` and enter the setup token printed in the console to
+create the admin account. Settings are seeded automatically.
 
 ## Configuration
 
@@ -95,8 +95,7 @@ nested config path joined with a double underscore:
 | `storage__defaultFont`         | `storage.defaultFont`         | Optional fallback font file copied into `<data>/fonts`           |
 | `server__loggingLevel`         | `server.loggingLevel`         | `debug` / `info` / `warn` / `error` / `silent`                   |
 
-See `.env.example` for the full list of options and
-`kobato.config.example.json` for the file shape.
+See `kobato.config.example.json` for the annotated file shape.
 
 ## Testing
 

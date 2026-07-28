@@ -186,12 +186,21 @@ describe('infra/config — loadConfig', () => {
   })
 
   it('returns env-only values without --config under VITEST (no file access)', () => {
-    process.argv = [realArgv[0]!, realArgv[1]!]
-    vi.stubEnv('database__url', 'postgres://env-only/db')
+    // Run from a scratch cwd so the assertion does not depend on whether
+    // the developer's repo happens to have a kobato.config.json.
+    const dir = makeTmpDir()
+    const realCwd = process.cwd()
+    process.chdir(dir)
+    try {
+      process.argv = [realArgv[0]!, realArgv[1]!]
+      vi.stubEnv('database__url', 'postgres://env-only/db')
 
-    const env = loadConfig()
-    expect(env['database.url']).toBe('postgres://env-only/db')
-    expect(existsSync(configPathIn(process.cwd()))).toBe(false)
+      const env = loadConfig()
+      expect(env['database.url']).toBe('postgres://env-only/db')
+      expect(existsSync(configPathIn(dir))).toBe(false)
+    } finally {
+      process.chdir(realCwd)
+    }
   })
 
   it('ignores flat legacy env names — only the __ convention is read', () => {

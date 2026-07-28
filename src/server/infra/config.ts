@@ -367,7 +367,10 @@ export function loadConfig(): Record<string, unknown> {
   }
   const candidates = configCandidates(process.argv.slice(2))
 
-  const filePath = candidates.find((candidate) => existsSync(candidate)) ?? candidates[0]
+  // An explicit --config is a directive, not a candidate: use it even
+  // when the file doesn't exist yet (it is created there), instead of
+  // falling through to a config found in the cwd or home directory.
+  const filePath = explicit ?? candidates.find((candidate) => existsSync(candidate)) ?? candidates[0]
 
   let fileData: Record<string, unknown>
   if (!existsSync(filePath)) {

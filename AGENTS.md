@@ -16,7 +16,7 @@ Infrastructure configuration lives in `kobato.config.json` — auto-created with
 - Precedence: schema defaults < config file < env vars. Env values differing from the file are written back.
 - `VITEST=true` without `--config` → env-only, zero filesystem access.
 - Tooling that spawns the binary MUST pass `--config <tempDir>/…` to avoid persisting throwaway config next to the binary.
-- Adding a config value: add a `CONFIG_TABLE` row → update `kobato.config.example.json` + `.env.example` → cover it in `tests/unit/server/infra/config.test.ts`.
+- Adding a config value: add a `CONFIG_TABLE` row → update `kobato.config.example.json` → cover it in `tests/unit/server/infra/config.test.ts`.
 
 ## Subdirectory conventions
 
