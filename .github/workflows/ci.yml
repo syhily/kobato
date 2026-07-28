@@ -17,22 +17,7 @@ jobs:
     name: lint + typecheck + test + coverage
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    services:
-      postgres:
-        image: timescale/timescaledb-ha:pg17
-        env:
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: test
-        ports:
-          - 5434:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 5s
-          --health-timeout 3s
-          --health-retries 5
     env:
-      database__url: postgres://test:test@localhost:5434/test
       security__sessionSecret: ci-session-secret
     steps:
       - uses: actions/checkout@v7
@@ -42,13 +27,6 @@ jobs:
           node-version: 26
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
-      - name: Install PostgreSQL 17 client tools
-        run: |
-          sudo install -d /usr/share/postgresql-common/pgdg
-          sudo curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
-          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
-          sudo apt-get update
-          sudo apt-get install -y postgresql-client-17
       - run: pnpm run type
       - run: pnpm run fmt:check
       - run: pnpm run lint

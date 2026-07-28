@@ -4,7 +4,7 @@ kind: Template
 metadata:
   name: Kobato
 spec:
-  description: A self-hosted blog CMS powered by React Router 7, Hono, and oRPC.
+  description: A self-hosted blog CMS powered by React Router 8, Hono, and oRPC.
   icon: https://raw.githubusercontent.com/syhily/kobato/main/src/server/assets/defaults/favicon.svg
   tags:
     - Blog
@@ -25,16 +25,15 @@ spec:
   readme: |
     # Kobato on Zeabur
 
-    [Kobato](https://github.com/syhily/kobato) is a self-hosted blog CMS built with React Router 7, Hono, and oRPC.
+    [Kobato](https://github.com/syhily/kobato) is a self-hosted blog CMS built with React Router 8, Hono, and oRPC.
 
     This template provisions everything you need in one click:
 
-    - **Kobato** — the blog CMS (pre-built image from GHCR)
-    - **TimescaleDB** — PostgreSQL with time-series support for content and analytics
+    - **Kobato** — the blog CMS (pre-built image from GHCR), fully self-contained: content lives in an embedded SQLite database, analytics in an embedded DuckDB sidecar, both on the service's `/data` volume.
 
     ## After deployment
 
-    1. Wait until all services report healthy in the dashboard.
+    1. Wait until the service reports healthy in the dashboard.
     2. Open the public domain you bound during deployment.
     3. You will be redirected to `/admin/setup` to create the admin account.
     4. Start writing posts from the built-in admin console at `/admin`.
@@ -52,56 +51,10 @@ spec:
 
     Kobato is licensed under [MIT](https://github.com/syhily/kobato/blob/main/LICENSE).
   services:
-    - name: timescaledb
-      icon: https://avatars.githubusercontent.com/u/8986001?s=200&v=4
-      template: PREBUILT
-      spec:
-        id: timescaledb
-        source:
-          image: timescale/timescaledb:latest-pg17
-        ports:
-          - id: database
-            port: 5432
-            type: TCP
-        volumes:
-          - id: data
-            dir: /var/lib/postgresql/data
-        instructions:
-          - title: Command to connect to your TimescaleDB
-            content: psql -h ${PORT_FORWARDED_HOSTNAME} -p ${DATABASE_PORT_FORWARDED_PORT} -U ${POSTGRES_USER} -d ${POSTGRES_DB}
-          - title: TimescaleDB username
-            content: ${POSTGRES_USER}
-          - title: TimescaleDB password
-            content: ${POSTGRES_PASSWORD}
-          - title: TimescaleDB database
-            content: ${POSTGRES_DB}
-          - title: TimescaleDB host
-            content: ${PORT_FORWARDED_HOSTNAME}
-          - title: TimescaleDB port
-            content: ${DATABASE_PORT_FORWARDED_PORT}
-        env:
-          POSTGRES_DB:
-            default: kobato
-            expose: true
-          POSTGRES_HOST:
-            default: ${CONTAINER_HOSTNAME}
-            expose: true
-          POSTGRES_PASSWORD:
-            default: ${PASSWORD}
-            expose: true
-          POSTGRES_PORT:
-            default: ${DATABASE_PORT}
-            expose: true
-          POSTGRES_USER:
-            default: postgres
-            expose: true
-
     - name: kobato
       icon: https://raw.githubusercontent.com/syhily/kobato/main/src/server/assets/defaults/favicon.svg
       template: PREBUILT
       domainKey: PUBLIC_DOMAIN
-      dependencies:
-        - timescaledb
       spec:
         source:
           image: ghcr.io/syhily/kobato:latest
@@ -115,24 +68,22 @@ spec:
           - id: config
             dir: /etc/kobato
         env:
-          database__url:
-            default: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
           server__host:
             default: 0.0.0.0
           server__port:
             default: '4321'
           server__loggingLevel:
             default: info
-          database__poolMax:
-            default: '20'
-          database__statementTimeoutMs:
-            default: '30000'
           security__sessionSecret:
             default: ${SESSION_SECRET}
           security__encryptionKey:
             default: ${ENCRYPTION_KEY}
           storage__data:
             default: /data
+          storage__database:
+            default: /data/kobato.db
+          storage__analyticsDatabase:
+            default: /data/analytics.duckdb
           storage__defaultFont:
             default: /usr/share/fonts/noto/NotoSansCJK-Regular.ttc
           NODE_ENV:

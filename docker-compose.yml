@@ -1,5 +1,9 @@
 name: kobato
 
+# The whole product is one container: the content database (SQLite) and
+# the analytics sidecar (DuckDB) are embedded files on the kobato_data
+# volume — no database service, no internal network.
+
 services:
   app:
     image: ghcr.io/syhily/kobato:latest
@@ -10,30 +14,23 @@ services:
       NODE_ENV: production
       server__host: ${HOST:-0.0.0.0}
       server__port: ${PORT:-4321}
-      # Database
-      database__url: postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/kobato
-      database__poolMax: ${DB_POOL_MAX:-20}
-      database__statementTimeoutMs: ${DB_STATEMENT_TIMEOUT_MS:-30000}
       # Security
       security__sessionSecret: ${SESSION_SECRET:?SESSION_SECRET is required}
       security__encryptionKey: ${ENCRYPTION_KEY:?ENCRYPTION_KEY is required}
       # Logging
       server__loggingLevel: ${LOG_LEVEL:-info}
-      # Data directory
+      # Data directory (SQLite + DuckDB files, fonts, uploads staging)
       storage__data: /data
+      storage__database: /data/kobato.db
+      storage__analyticsDatabase: /data/analytics.duckdb
     volumes:
       - kobato_data:/data
       - kobato_config:/etc/kobato
-    depends_on:
-      postgres:
-        condition: service_healthy
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
-    networks:
-      - kobato
     deploy:
       resources:
         limits:
@@ -43,36 +40,6 @@ services:
           cpus: '0.5'
           memory: 256M
 
-  postgres:
-    image: timescale/timescaledb-ha:pg17
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
-      POSTGRES_DB: kobato
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ['CMD', 'pg_isready', '-U', 'postgres']
-      interval: 5s
-      timeout: 3s
-      retries: 5
-    restart: unless-stopped
-    networks:
-      - kobato
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 1G
-        reservations:
-          cpus: '0.25'
-          memory: 256M
-
 volumes:
-  postgres_data:
   kobato_data:
   kobato_config:
-
-networks:
-  kobato:
-    driver: bridge

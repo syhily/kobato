@@ -28,24 +28,8 @@ jobs:
             target: linux-x64
           - os: ubuntu-24.04-arm
             target: linux-arm64
-    # The deep smoke boots the server against real services; the image must
-    # carry pgvector + timescaledb (same as docker/docker-compose.test.yml).
-    services:
-      postgres:
-        image: timescale/timescaledb-ha:pg17
-        env:
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U test"
-          --health-interval 5s
-          --health-timeout 3s
-          --health-retries 5
-    env:
-      database__url: postgres://test:test@127.0.0.1:5432/test
+    # The deep smoke boots the server against per-run temp files (SQLite +
+    # DuckDB — embedded, no service container needed on any platform).
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
@@ -70,8 +54,9 @@ jobs:
           mv kobato "$BIN"
           rm kobato.sha256
       - run: pnpm run sea:smoke "dist-sea/kobato-${{ matrix.target }}"
-      # True HTTP e2e against the SEA-booted instance (tests/e2e). Only on
-      # Linux — the darwin/win32 jobs have no Postgres service.
+      # True HTTP e2e against the SEA-booted instance (tests/e2e). Linux
+      # only — the e2e suite needs no services but the extra minutes buy
+      # nothing the darwin/win32 smokes don't already cover.
       - run: pnpm run sea:e2e "dist-sea/kobato-${{ matrix.target }}"
       - name: Package tar.gz with checksum
         env:
@@ -89,11 +74,9 @@ jobs:
             dist-sea/kobato-${{ matrix.target }}.tar.gz
             dist-sea/kobato-${{ matrix.target }}.tar.gz.sha256
 
-  # macOS targets: separate job because GitHub service containers (the
-  # Postgres the deep smoke boots against) only run on Linux. The
-  # macOS smoke is therefore binary-only (--version / --smoke-natives /
-  # --smoke-worker); the full server lifecycle stays covered by the Linux
-  # targets above.
+  # macOS targets: separate job for the runner image only. The smoke is
+  # the FULL managed lifecycle — the embedded databases need no service
+  # container, so macOS coverage matches Linux (minus the e2e suite).
   build-darwin:
     name: build (${{ matrix.target }})
     runs-on: ${{ matrix.os }}
@@ -122,7 +105,7 @@ jobs:
           shasum -a 256 -c kobato.sha256
           mv kobato "$BIN"
           rm kobato.sha256
-      - run: pnpm run sea:smoke --binary-only "dist-sea/kobato-${{ matrix.target }}"
+      - run: pnpm run sea:smoke "dist-sea/kobato-${{ matrix.target }}"
       - name: Package tar.gz with checksum
         env:
           BIN: kobato-${{ matrix.target }}
@@ -139,10 +122,10 @@ jobs:
             dist-sea/kobato-${{ matrix.target }}.tar.gz
             dist-sea/kobato-${{ matrix.target }}.tar.gz.sha256
 
-  # Windows targets: same split as macOS — the deep smoke needs Linux
-  # service containers, and Windows runners can only run Windows
-  # containers, so the smoke is binary-only here too. The rename/package
-  # steps run under Git Bash (sha256sum/tar); the binary is kobato.exe.
+  # Windows targets: same split as macOS — separate job for the runner
+  # image, full managed smoke (no service container needed). The
+  # rename/package steps run under Git Bash (sha256sum/tar); the binary
+  # is kobato.exe.
   build-windows:
     name: build (${{ matrix.target }})
     runs-on: ${{ matrix.os }}
@@ -173,7 +156,7 @@ jobs:
           sha256sum -c kobato.sha256
           mv kobato.exe "$BIN.exe"
           rm kobato.sha256
-      - run: pnpm run sea:smoke --binary-only "dist-sea/kobato-${{ matrix.target }}.exe"
+      - run: pnpm run sea:smoke "dist-sea/kobato-${{ matrix.target }}.exe"
       - name: Package tar.gz with checksum
         env:
           BIN: kobato-${{ matrix.target }}

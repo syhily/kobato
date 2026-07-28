@@ -8,7 +8,7 @@ Tests are split into three Vitest workspace projects. **All three mirror the `sr
 
 - **`tests/unit/`** — Pure logic, no DB, fastest feedback loop.
   If you test `src/shared/utils/paths.ts`, the test lives at `tests/unit/shared/utils/paths.test.ts`.
-- **`tests/it/`** — Integration / end-to-end tests that need real Postgres.
+- **`tests/it/`** — Integration / end-to-end tests that need a real database.
   If you test `src/server/domains/posts/services/cms-posts.ts`, the test lives at `tests/it/server/domains/posts/services/cms-posts.test.ts`.
 - **`tests/snaps/`** — React SSR snapshot tests (render-to-string, no DB).
   If you test `src/ui/public/post/PostListViews.tsx`, the test lives at `tests/snaps/ui/public/post/post-list-views.test.tsx`.
@@ -36,17 +36,14 @@ Cross-cutting integration tests still live inside `tests/it/` under the primary 
 
 ## Infrastructure requirements
 
-Only `tests/it/` is hard-dependent on real Postgres. `tests/unit/` and `tests/snaps/` skip the DB bootstrap entirely.
+Zero services. `tests/it/` runs against per-worker temp files — a SQLite
+content DB (`tests/_helpers/integration-db.ts`) and, for analytics tests,
+a DuckDB sidecar (`tests/_helpers/analytics-db.ts`). `tests/unit/` and
+`tests/snaps/` skip the DB bootstrap entirely.
 
 ### Local development
 
-Start the test infrastructure:
-
-```bash
-docker compose -f docker/docker-compose.test.yml up -d
-```
-
-Then run tests normally:
+Run tests normally — no Docker, no env setup:
 
 ```bash
 pnpm run test
@@ -60,17 +57,18 @@ npx vitest run --project it
 npx vitest run --project snaps
 ```
 
-Services:
-
-- `postgres-test` — PostgreSQL 17 (TimescaleDB), host port `5434` (container-internal `5432`)
-
 ### CI
 
-GitHub Actions already defines a `postgres` service container in `.github/workflows/ci.yml`. No extra env vars are required.
+GitHub Actions needs no service containers — the suite is self-contained.
 
 ### Worker isolation (integration only)
 
-- **Postgres**: each worker gets its own database (`kobato_test_${workerId}_${timestamp}`), created by `tests/_helpers/integration-db.ts` and dropped in `afterAll`.
+- **SQLite**: each worker gets its own content database file (a `mkdtemp`
+  path under the OS temp dir), created by `tests/_helpers/integration-db.ts`
+  and removed in `afterAll`.
+- **DuckDB**: analytics tests open a per-run sidecar file via
+  `createTestAnalyticsDb()` from `#/_helpers/analytics-db` and close it
+  with `closeTestAnalyticsDb(handle)`.
 - Tests that write tables should call `clearAllTables(db)` in `beforeEach` to reset state between cases within the same worker.
 - Tests that exercise the real (unmocked) rate limiter should additionally call `__resetRateLimitsForTests()` from `@/server/infra/rate-limit` in `beforeEach` — the limiter is a process-level Map, so per-IP/email budgets otherwise leak across tests within a file.
 
@@ -95,6 +93,8 @@ ceremony:
   - `#/_helpers/render` — SSR render helpers (snapshots)
   - `#/_helpers/blog-settings` — test settings bundle
   - `#/_helpers/integration-db` — DB creation / teardown (integration only)
+  - `#/_helpers/analytics-db` — DuckDB sidecar creation / seeding / teardown
+    (analytics integration tests)
   - `#/_helpers/db` — query helpers (integration only)
   - `#/_helpers/mock-ctx` — mock auth context (integration only)
   - `#/_helpers/request-context` — `makeRequestContext`, the single
