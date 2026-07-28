@@ -1,7 +1,7 @@
 {
   "version": "7",
   "dialect": "sqlite",
-  "id": "05fe9b01-c9b1-47e5-ac62-61bef4afeeeb",
+  "id": "a64f41c7-8860-4ccc-9d35-1a31057ff23f",
   "prevIds": [
     "00000000-0000-0000-0000-000000000000"
   ],
@@ -12,10 +12,6 @@
     },
     {
       "name": "comment",
-      "entityType": "tables"
-    },
-    {
-      "name": "access_log",
       "entityType": "tables"
     },
     {
@@ -403,246 +399,6 @@
       "name": "delete_requested_by",
       "entityType": "columns",
       "table": "comment"
-    },
-    {
-      "type": "integer",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "ts",
-      "entityType": "columns",
-      "table": "access_log"
-    },
-    {
-      "type": "text",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "visitor_hash",
-      "entityType": "columns",
-      "table": "access_log"
-    },
-    {
-      "type": "text",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "session_id",
-      "entityType": "columns",
-      "table": "access_log"
-    },
-    {
-      "type": "text",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "ip",
-      "entityType": "columns",
-      "table": "access_log"
-    },
-    {
-      "type": "text",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "path",
-      "entityType": "columns",
-      "table": "access_log"
-    },
-    {
-      "type": "text",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "entity_type",
-      "entityType": "columns",
-      "table": "access_log"
-    },
-    {
-      "type": "integer",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "entity_id",
-      "entityType": "columns",
-      "table": "access_log"
-    },
-    {
-      "type": "text",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "referer",
-      "entityType": "columns",
-      "table": "access_log"
-    },
-    {
-      "type": "text",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "referer_host",
-      "entityType": "columns",
-      "table": "access_log"
-    },
-    {
-      "type": "text",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "country",
-      "entityType": "columns",
-      "table": "access_log"
-    },
-    {
-      "type": "text",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "region",
-      "entityType": "columns",
-      "table": "access_log"
-    },
-    {
-      "type": "text",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "city",
-      "entityType": "columns",
-      "table": "access_log"
-    },
-    {
-      "type": "real",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "latitude",
-      "entityType": "columns",
-      "table": "access_log"
-    },
-    {
-      "type": "real",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "longitude",
-      "entityType": "columns",
-      "table": "access_log"
-    },
-    {
-      "type": "text",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "timezone",
-      "entityType": "columns",
-      "table": "access_log"
-    },
-    {
-      "type": "text",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "language",
-      "entityType": "columns",
-      "table": "access_log"
-    },
-    {
-      "type": "text",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "ua",
-      "entityType": "columns",
-      "table": "access_log"
-    },
-    {
-      "type": "text",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "browser",
-      "entityType": "columns",
-      "table": "access_log"
-    },
-    {
-      "type": "text",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "browser_version",
-      "entityType": "columns",
-      "table": "access_log"
-    },
-    {
-      "type": "text",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "os",
-      "entityType": "columns",
-      "table": "access_log"
-    },
-    {
-      "type": "text",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "os_version",
-      "entityType": "columns",
-      "table": "access_log"
-    },
-    {
-      "type": "text",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "device",
-      "entityType": "columns",
-      "table": "access_log"
-    },
-    {
-      "type": "text",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "device_type",
-      "entityType": "columns",
-      "table": "access_log"
-    },
-    {
-      "type": "integer",
-      "notNull": true,
-      "autoincrement": false,
-      "default": "false",
-      "generated": null,
-      "name": "is_bot",
-      "entityType": "columns",
-      "table": "access_log"
     },
     {
       "type": "integer",
@@ -3424,118 +3180,6 @@
     {
       "columns": [
         {
-          "value": "entity_type",
-          "isExpression": false
-        },
-        {
-          "value": "entity_id",
-          "isExpression": false
-        },
-        {
-          "value": "ts",
-          "isExpression": false
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "origin": "manual",
-      "name": "idx_access_log_entity_ts",
-      "entityType": "indexes",
-      "table": "access_log"
-    },
-    {
-      "columns": [
-        {
-          "value": "path",
-          "isExpression": false
-        },
-        {
-          "value": "ts",
-          "isExpression": false
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "origin": "manual",
-      "name": "idx_access_log_path_ts",
-      "entityType": "indexes",
-      "table": "access_log"
-    },
-    {
-      "columns": [
-        {
-          "value": "country",
-          "isExpression": false
-        },
-        {
-          "value": "ts",
-          "isExpression": false
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "origin": "manual",
-      "name": "idx_access_log_country_ts",
-      "entityType": "indexes",
-      "table": "access_log"
-    },
-    {
-      "columns": [
-        {
-          "value": "visitor_hash",
-          "isExpression": false
-        },
-        {
-          "value": "ts",
-          "isExpression": false
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "origin": "manual",
-      "name": "idx_access_log_visitor_ts",
-      "entityType": "indexes",
-      "table": "access_log"
-    },
-    {
-      "columns": [
-        {
-          "value": "referer_host",
-          "isExpression": false
-        },
-        {
-          "value": "ts",
-          "isExpression": false
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "origin": "manual",
-      "name": "idx_access_log_referer_host_ts",
-      "entityType": "indexes",
-      "table": "access_log"
-    },
-    {
-      "columns": [
-        {
-          "value": "is_bot",
-          "isExpression": false
-        },
-        {
-          "value": "ts",
-          "isExpression": false
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "origin": "manual",
-      "name": "idx_access_log_is_bot_ts",
-      "entityType": "indexes",
-      "table": "access_log"
-    },
-    {
-      "columns": [
-        {
           "value": "actor_id",
           "isExpression": false
         }
@@ -3814,20 +3458,6 @@
       "where": null,
       "origin": "manual",
       "name": "uq_music_source_source_id",
-      "entityType": "indexes",
-      "table": "music"
-    },
-    {
-      "columns": [
-        {
-          "value": "player_id",
-          "isExpression": false
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "origin": "manual",
-      "name": "idx_music_player_id",
       "entityType": "indexes",
       "table": "music"
     },
@@ -4236,20 +3866,6 @@
     {
       "columns": [
         {
-          "value": "email",
-          "isExpression": false
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "origin": "manual",
-      "name": "idx_users_email",
-      "entityType": "indexes",
-      "table": "user"
-    },
-    {
-      "columns": [
-        {
           "value": "name",
           "isExpression": false
         }
@@ -4396,6 +4012,15 @@
     },
     {
       "columns": [
+        "player_id"
+      ],
+      "nameExplicit": false,
+      "name": "music_player_id_unique",
+      "entityType": "uniques",
+      "table": "music"
+    },
+    {
+      "columns": [
         "audio_storage_path"
       ],
       "nameExplicit": false,
@@ -4474,6 +4099,15 @@
       "name": "tag_slug_unique",
       "entityType": "uniques",
       "table": "tag"
+    },
+    {
+      "columns": [
+        "email"
+      ],
+      "nameExplicit": false,
+      "name": "user_email_unique",
+      "entityType": "uniques",
+      "table": "user"
     },
     {
       "value": "\"storage_driver\" IN ('s3', 'local')",
