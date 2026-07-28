@@ -1,4 +1,4 @@
-import { index, integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
+import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 
 import { user } from '@/server/infra/db/schema/user'
 
@@ -13,62 +13,6 @@ export const setting = sqliteTable('setting', {
     .$defaultFn(() => new Date()),
   updatedBy: integer('updated_by'),
 })
-
-// Append-only page-view telemetry. TEMPORARY home: this table moves to
-// the embedded DuckDB sidecar (see docs/plans/sqlite-migration.md §1.5)
-// in the analytics phase — it stays here only so the analytics domain
-// keeps compiling until then. Retention runs in the daily maintenance
-// job (not a DB policy).
-export const accessLog = sqliteTable(
-  'access_log',
-  {
-    ts: integer('ts', { mode: 'timestamp_ms' })
-      .notNull()
-      .$defaultFn(() => new Date()),
-
-    visitorHash: text('visitor_hash').notNull(),
-    sessionId: text('session_id'),
-
-    ip: text('ip'),
-
-    path: text('path').notNull(),
-    entityType: text('entity_type').$type<'post' | 'page'>(),
-    entityId: integer('entity_id'),
-
-    referer: text('referer'),
-    refererHost: text('referer_host'),
-
-    country: text('country'),
-    region: text('region'),
-    city: text('city'),
-    latitude: real('latitude'),
-    longitude: real('longitude'),
-    timezone: text('timezone'),
-
-    language: text('language'),
-
-    ua: text('ua'),
-    browser: text('browser'),
-    browserVersion: text('browser_version'),
-    os: text('os'),
-    osVersion: text('os_version'),
-    device: text('device'),
-    deviceType: text('device_type'),
-
-    isBot: integer('is_bot', { mode: 'boolean' }).notNull().default(false),
-  },
-  (table) => [
-    index('idx_access_log_entity_ts').on(table.entityType, table.entityId, table.ts),
-    index('idx_access_log_path_ts').on(table.path, table.ts),
-    index('idx_access_log_country_ts').on(table.country, table.ts),
-    index('idx_access_log_visitor_ts').on(table.visitorHash, table.ts),
-    index('idx_access_log_referer_host_ts').on(table.refererHost, table.ts),
-    index('idx_access_log_is_bot_ts').on(table.isBot, table.ts),
-  ],
-)
-
-export type AccessLogRow = typeof accessLog.$inferSelect
-export type NewAccessLog = typeof accessLog.$inferInsert
 
 export const auditLog = sqliteTable(
   'audit_log',

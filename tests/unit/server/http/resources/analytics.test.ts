@@ -5,6 +5,10 @@ import type { Env } from '@/server/http/context'
 
 const queryRealtimeTail = vi.fn().mockResolvedValue([])
 
+vi.mock('@/server/bootstrap/analytics-lifecycle', () => ({
+  getAnalyticsHandle: () => ({ reader: {}, writer: {}, instance: {}, path: ':memory:', closed: false }),
+}))
+
 vi.mock('@/server/domains/analytics/services/realtime', async (importOriginal) => ({
   // Keep the real connection registry + cap policy — these tests drive it
   // through the Hono resource — and stub only the tail query the poll

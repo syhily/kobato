@@ -3,6 +3,7 @@ import type { LoaderFunctionArgs } from 'react-router'
 import type { AnalyticsOverviewData } from '@/server/domains/analytics/services/overview'
 import type { AdminPostDto } from '@/shared/contracts/posts'
 
+import { getAnalyticsHandle } from '@/server/bootstrap/analytics-lifecycle'
 import { loadAnalyticsOverview } from '@/server/domains/analytics/services/overview'
 import { parseAnalyticsSearch } from '@/server/domains/analytics/services/query-parser'
 import { requireRole } from '@/server/domains/auth/rbac'
@@ -39,7 +40,11 @@ export async function loadPostAnalyticsData({
   const url = new URL(request.url)
   const input = parseAnalyticsSearch(url.searchParams)
 
-  const overview = await loadAnalyticsOverview(db, { ...input, entityType: 'post', entityId: postId })
+  const overview = await loadAnalyticsOverview(getAnalyticsHandle().reader, {
+    ...input,
+    entityType: 'post',
+    entityId: postId,
+  })
 
   return { post, ...overview }
 }

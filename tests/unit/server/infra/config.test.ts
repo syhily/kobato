@@ -274,6 +274,7 @@ describe('infra/config — loadServerConfig', () => {
   function stubRequiredEnv(): void {
     process.argv = [realArgv[0]!, realArgv[1]!]
     vi.stubEnv('storage__database', ':memory:')
+    vi.stubEnv('storage__analyticsDatabase', ':memory:')
     vi.stubEnv('security__sessionSecret', 'vitest-session-secret-must-be-at-least-32-chars-long-ok')
     vi.stubEnv('security__encryptionKey', 'vitest-encryption-key-must-be-at-least-32-chars-long-ok')
     vi.stubEnv('storage__data', '/tmp/kobato-data')

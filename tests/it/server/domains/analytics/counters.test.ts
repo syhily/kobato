@@ -1,15 +1,9 @@
-import { sql } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
-import type { Database } from '@/server/infra/db/database'
-
-import { clearAllTables } from '#/_helpers/integration-db'
-import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
+import { clearAccessLog, closeTestAnalyticsDb, createTestAnalyticsDb, seedAccessEvents } from '#/_helpers/analytics-db'
 import { queryCounters } from '@/server/domains/analytics/services/counters'
-import { accessLog } from '@/server/infra/db/schema/config'
 
-const handle = createTestDatabase()
-const db: Database = handle.db
+const handle = await createTestAnalyticsDb()
 
 const DAY = 24 * 60 * 60
 
@@ -22,11 +16,11 @@ function unixAt(iso: string): number {
 }
 
 afterAll(async () => {
-  closeTestDatabase(handle)
+  await closeTestAnalyticsDb(handle)
 })
 
 beforeEach(async () => {
-  await clearAllTables(db)
+  await clearAccessLog(handle)
 })
 
 describe('analytics counters from raw access_log', () => {
@@ -34,14 +28,14 @@ describe('analytics counters from raw access_log', () => {
     const now = unixAt('2026-01-15T12:00:00.000Z')
     const startAt = now - DAY
 
-    await db.insert(accessLog).values([
+    await seedAccessEvents(handle, [
       { ts: dateAt('2026-01-15T11:00:00.000Z'), visitorHash: 'a', path: '/' },
       { ts: dateAt('2026-01-15T10:00:00.000Z'), visitorHash: 'b', path: '/post/1' },
       // Outside the 24-hour window.
       { ts: dateAt('2026-01-14T11:59:59.000Z'), visitorHash: 'c', path: '/' },
     ])
 
-    const result = await queryCounters(db, { range: { startAt, endAt: now }, filters: {} })
+    const result = await queryCounters(handle.reader, { range: { startAt, endAt: now }, filters: {} })
 
     expect(result).toEqual({ visits: 2, visitors: 2, referers: 0 })
   })
@@ -50,7 +44,7 @@ describe('analytics counters from raw access_log', () => {
     const now = unixAt('2026-01-15T12:00:00.000Z')
     const startAt = now - DAY
 
-    await db.insert(accessLog).values([
+    await seedAccessEvents(handle, [
       { ts: dateAt('2026-01-15T11:00:00.000Z'), visitorHash: 'a', path: '/', refererHost: 'google.com' },
       { ts: dateAt('2026-01-15T10:00:00.000Z'), visitorHash: 'b', path: '/', refererHost: 'google.com' },
       { ts: dateAt('2026-01-15T09:00:00.000Z'), visitorHash: 'c', path: '/', refererHost: 'x.com' },
@@ -58,8 +52,22 @@ describe('analytics counters from raw access_log', () => {
       { ts: dateAt('2026-01-15T07:00:00.000Z'), visitorHash: 'e', path: '/', refererHost: '' },
     ])
 
-    const result = await queryCounters(db, { range: { startAt, endAt: now }, filters: {} })
+    const result = await queryCounters(handle.reader, { range: { startAt, endAt: now }, filters: {} })
 
     expect(result).toEqual({ visits: 5, visitors: 5, referers: 2 })
+  })
+
+  it('applies metric filters to the where clause', async () => {
+    const now = unixAt('2026-01-15T12:00:00.000Z')
+    const startAt = now - DAY
+
+    await seedAccessEvents(handle, [
+      { ts: dateAt('2026-01-15T11:00:00.000Z'), visitorHash: 'a', path: '/', country: 'US' },
+      { ts: dateAt('2026-01-15T10:00:00.000Z'), visitorHash: 'b', path: '/', country: 'CN' },
+    ])
+
+    const result = await queryCounters(handle.reader, { range: { startAt, endAt: now }, filters: { country: 'US' } })
+
+    expect(result).toEqual({ visits: 1, visitors: 1, referers: 0 })
   })
 })

@@ -1,3 +1,4 @@
+import { initAnalyticsDatabase } from '@/server/bootstrap/analytics-lifecycle'
 import { scheduleNextArchive, wireArchiveScheduler } from '@/server/domains/audit/services/scheduler'
 import { registerRestoreComplete } from '@/server/domains/backup/restore-orchestrator'
 import { resetLikeTokenSweep, startLikeTokenSweep } from '@/server/domains/comments/services/likes'
@@ -68,6 +69,12 @@ function initDatabase() {
 }
 
 initDatabase()
+
+// The DuckDB sidecar opens alongside the content database (its own
+// shutdown hook at priority 0 runs after the batcher flushes at 100).
+if (!isVitest()) {
+  await initAnalyticsDatabase()
+}
 
 // ─── Restore completion ──────────────────────────────────
 // Register restore completion: reopen the database on the swapped file,

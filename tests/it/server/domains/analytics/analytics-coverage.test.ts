@@ -1,11 +1,8 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
-import type { Database } from '@/server/infra/db/database'
-
+import { clearAccessLog, closeTestAnalyticsDb, createTestAnalyticsDb, seedAccessEvents } from '#/_helpers/analytics-db'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
-import { clearAllTables } from '#/_helpers/integration-db'
-import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { enrichEvent } from '@/server/domains/analytics/enrich'
 import { queryHeatmap } from '@/server/domains/analytics/services/heatmap'
 import { queryMetric } from '@/server/domains/analytics/services/metric'
@@ -14,18 +11,16 @@ import { queryRealtimeTail } from '@/server/domains/analytics/services/realtime'
 import { queryViews } from '@/server/domains/analytics/services/views'
 import { KOBATO_AID_COOKIE } from '@/server/domains/analytics/track'
 import { resolveVisitorCookie } from '@/server/domains/analytics/visitor-cookie'
-import { accessLog } from '@/server/infra/db/schema/config'
 import { DomainError } from '@/server/infra/http/errors'
 
-const handle = createTestDatabase()
-const db: Database = handle.db
+const handle = await createTestAnalyticsDb()
 
 afterAll(async () => {
-  closeTestDatabase(handle)
+  await closeTestAnalyticsDb(handle)
 })
 
 beforeEach(async () => {
-  await clearAllTables(db)
+  await clearAccessLog(handle)
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
 })
 
@@ -113,18 +108,18 @@ describe('analytics/query-parser — parseAnalyticsSearch', () => {
 describe('analytics/views — queryViews', () => {
   it('returns empty array when no rows match', async () => {
     const now = Math.floor(Date.now() / 1000)
-    const result = await queryViews(db, { range: { startAt: now - 3600, endAt: now }, filters: {} })
+    const result = await queryViews(handle.reader, { range: { startAt: now - 3600, endAt: now }, filters: {} })
     expect(result).toEqual([])
   })
 
   it('returns bucketed points when access_log rows exist', async () => {
     const start = ts('2026-01-15T11:00:00Z')
-    await db.insert(accessLog).values([
+    await seedAccessEvents(handle, [
       { ts: ts('2026-01-15T11:05:00Z'), visitorHash: 'a', path: '/' },
       { ts: ts('2026-01-15T11:15:00Z'), visitorHash: 'a', path: '/' },
       { ts: ts('2026-01-15T11:25:00Z'), visitorHash: 'b', path: '/' },
     ])
-    const result = await queryViews(db, {
+    const result = await queryViews(handle.reader, {
       range: { startAt: Math.floor(start.getTime() / 1000), endAt: Math.floor(start.getTime() / 1000) + 3600 },
       filters: {},
     })
@@ -135,7 +130,7 @@ describe('analytics/views — queryViews', () => {
 
 describe('analytics/realtime — queryRealtimeTail', () => {
   it('returns rows newer than sinceTs in descending order', async () => {
-    await db.insert(accessLog).values([
+    await seedAccessEvents(handle, [
       {
         ts: ts('2026-01-15T11:00:00Z'),
         visitorHash: 'a',
@@ -148,7 +143,7 @@ describe('analytics/realtime — queryRealtimeTail', () => {
       { ts: ts('2026-01-15T11:01:00Z'), visitorHash: 'b', path: '/p2' },
     ])
     const since = ts('2026-01-15T10:55:00Z')
-    const result = await queryRealtimeTail(db, since, 10)
+    const result = await queryRealtimeTail(handle.reader, since, 10)
     expect(result.length).toBeGreaterThanOrEqual(2)
     expect(result[0]!.path).toBe('/p2')
     expect(result[0]!.ts).toMatch(/^\d{4}-/)
@@ -156,21 +151,21 @@ describe('analytics/realtime — queryRealtimeTail', () => {
   })
 
   it('returns an empty array when no rows match', async () => {
-    const result = await queryRealtimeTail(db, new Date('2030-01-01T00:00:00Z'), 10)
+    const result = await queryRealtimeTail(handle.reader, new Date('2030-01-01T00:00:00Z'), 10)
     expect(result).toEqual([])
   })
 })
 
 describe('analytics/metric — queryMetric', () => {
   it('groups visits by metric column', async () => {
-    await db.insert(accessLog).values([
+    await seedAccessEvents(handle, [
       { ts: ts('2026-01-15T11:00:00Z'), visitorHash: 'a', path: '/', country: 'US' },
       { ts: ts('2026-01-15T11:01:00Z'), visitorHash: 'b', path: '/', country: 'US' },
       { ts: ts('2026-01-15T11:02:00Z'), visitorHash: 'c', path: '/', country: 'CN' },
       { ts: ts('2026-01-15T11:03:00Z'), visitorHash: 'd', path: '/', country: '' },
     ])
     const now = Math.floor(Date.now() / 1000)
-    const result = await queryMetric(db, { range: { startAt: 0, endAt: now }, filters: {} }, 'country')
+    const result = await queryMetric(handle.reader, { range: { startAt: 0, endAt: now }, filters: {} }, 'country')
     expect(result.length).toBeGreaterThan(0)
     // Empty-string rows show up as '(unknown)'.
     const unknown = result.find((r) => r.name === '(unknown)')
@@ -180,19 +175,19 @@ describe('analytics/metric — queryMetric', () => {
   it('throws BAD_REQUEST for an unknown metric type', async () => {
     const now = Math.floor(Date.now() / 1000)
     await expect(
-      queryMetric(db, { range: { startAt: 0, endAt: now }, filters: {} }, 'bogus' as any),
+      queryMetric(handle.reader, { range: { startAt: 0, endAt: now }, filters: {} }, 'bogus' as any),
     ).rejects.toBeInstanceOf(DomainError)
   })
 })
 
 describe('analytics/heatmap — queryHeatmap', () => {
   it('returns weekday/hour buckets', async () => {
-    await db.insert(accessLog).values([
+    await seedAccessEvents(handle, [
       { ts: ts('2026-01-15T11:00:00Z'), visitorHash: 'a', path: '/' },
       { ts: ts('2026-01-15T11:30:00Z'), visitorHash: 'b', path: '/' },
     ])
     const now = Math.floor(Date.now() / 1000)
-    const result = await queryHeatmap(db, { range: { startAt: 0, endAt: now }, filters: {} })
+    const result = await queryHeatmap(handle.reader, { range: { startAt: 0, endAt: now }, filters: {} })
     expect(result.length).toBeGreaterThan(0)
     const cell = result[0]!
     expect(cell.weekday).toBeGreaterThanOrEqual(0)

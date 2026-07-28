@@ -76,6 +76,12 @@ export const CONFIG_TABLE = [
     fileDefault: '',
   },
   {
+    path: ['storage', 'analyticsDatabase'],
+    // DuckDB analytics file. Empty resolves to `<storage.data>/analytics.duckdb`.
+    schema: z.string().default(''),
+    fileDefault: '',
+  },
+  {
     path: ['storage', 'defaultFont'],
     schema: z.string().min(1).optional(),
     fileDefault: '',
@@ -468,6 +474,8 @@ export interface ServerConfig {
     data: string
     /** SQLite database file path. Empty → `<storage.data>/kobato.db`. */
     database: string
+    /** DuckDB analytics file path. Empty → `<storage.data>/analytics.duckdb`. */
+    analyticsDatabase: string
     defaultFont?: string | undefined
   }
 }

@@ -1,11 +1,32 @@
 import { readFile, rename, writeFile } from 'node:fs/promises'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { AnalyticsHandle } from '@/server/infra/analytics/duckdb'
+
+import { closeTestAnalyticsDb, createTestAnalyticsDb } from '#/_helpers/analytics-db'
 import { replayDeadLetterAccessLog } from '@/server/domains/analytics/services/batcher'
 import { initAllBatchers } from '@/server/infra/db/batcher-registry'
 
 // Mock fs/promises so dead-letter file contents are controlled without
-// touching the real filesystem.
+// touching the real filesystem. The analytics handle is a REAL DuckDB
+// sidecar — replay appends through the same Appender protocol as
+// production — with a failure gate on `createAppender` so the
+// ingest-failure cases stay deterministic.
+let analyticsHandle: AnalyticsHandle
+let ingestShouldFail = false
+
+vi.mock('@/server/bootstrap/analytics-lifecycle', () => ({
+  getAnalyticsHandle: () => ({
+    ...analyticsHandle,
+    writer: {
+      createAppender: async (table: string) => {
+        if (ingestShouldFail) throw new Error('ingest down')
+        return analyticsHandle.writer.createAppender(table)
+      },
+    },
+  }),
+}))
+
 vi.mock('node:fs/promises', async () => {
   const actual = await vi.importActual<typeof import('node:fs/promises')>('node:fs/promises')
   return {
@@ -45,7 +66,13 @@ const makeEvent = (path: string) =>
     isBot: false,
   })
 
-let ingestShouldFail = false
+beforeAll(async () => {
+  analyticsHandle = await createTestAnalyticsDb()
+})
+
+afterAll(async () => {
+  await closeTestAnalyticsDb(analyticsHandle)
+})
 
 beforeEach(() => {
   ingestShouldFail = false
@@ -53,17 +80,9 @@ beforeEach(() => {
 
 describe('replayDeadLetter', () => {
   // The batcher must be initialized (via the shared registry) before
-  // replay operations.
-  ingestShouldFail = false
-  const dbStub = {
-    insert: () => ({
-      values: () => ({
-        run: () => {
-          if (ingestShouldFail) throw new Error('ingest down')
-        },
-      }),
-    }),
-  }
+  // replay operations. The db stub is inert — AccessLogBatcher writes
+  // through the analytics handle, not the relational db.
+  const dbStub = {}
   initAllBatchers({ db: dbStub, client: {}, path: ':memory:', closed: false } as never)
 
   it('returns replayed=0 failed=0 when file does not exist', async () => {

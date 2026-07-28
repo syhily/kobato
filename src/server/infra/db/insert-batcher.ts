@@ -46,8 +46,9 @@ export abstract class InsertBatcher<T> {
     }, 100)
   }
 
-  /** Insert the whole batch in one transaction. Sync — node:sqlite. */
-  protected abstract insertBatch(db: Database, events: T[]): void
+  /** Insert the whole batch in one transaction. Sync for node:sqlite;
+   * may be async for engines with an async client (DuckDB). */
+  protected abstract insertBatch(db: Database, events: T[]): void | Promise<void>
 
   /** Called when the batch insert fails. Implement per-row fallback or dead-letter here. */
   protected abstract onInsertFailed(events: T[], error: unknown): Promise<FlushResult>
@@ -86,7 +87,7 @@ export abstract class InsertBatcher<T> {
 
     this.flushing = (async () => {
       try {
-        this.insertBatch(this.db, snapshot)
+        await this.insertBatch(this.db, snapshot)
         this.log.debug('flushed batch', { count: snapshot.length })
         return { committed: snapshot.length, deadLettered: 0 } as FlushResult
       } catch (err) {
@@ -104,8 +105,8 @@ export abstract class InsertBatcher<T> {
   }
 
   /** Write events directly (used by dead-letter replay). */
-  ingest(events: T[]): void {
-    this.insertBatch(this.db, events)
+  ingest(events: T[]): void | Promise<void> {
+    return this.insertBatch(this.db, events)
   }
 }
 
@@ -131,7 +132,7 @@ export async function writeDeadLetter<T>(
 export async function replayDeadLetter<T>(
   path: string,
   deserialize: (line: string) => T | null,
-  reingest: (events: T[]) => void,
+  reingest: (events: T[]) => void | Promise<void>,
   log: Logger,
 ): Promise<{ replayed: number; failed: number }> {
   let content: string
@@ -161,7 +162,7 @@ export async function replayDeadLetter<T>(
   let replayed = 0
   if (events.length > 0) {
     try {
-      reingest(events)
+      await reingest(events)
       log.info('replayed dead-letter batch', { count: events.length, path })
       const tmp = `${path}.replayed`
       await writeFile(tmp, '', 'utf-8')
