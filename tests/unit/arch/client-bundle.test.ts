@@ -20,9 +20,6 @@
  *
  * Maintenance: when a new Node-only dependency enters devDependencies,
  * review whether it belongs in NODE_ONLY_PACKAGES below.
- *
- * Verified isomorphic and therefore intentionally NOT denied (2026-07):
- * - `superjson` — pure JS, single isomorphic entry; used server-side only.
  */
 import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -98,12 +95,13 @@ const NODE_ONLY_PACKAGES: readonly NodeOnlyPackage[] = [
   { name: 'shiki', reason: 'server-side syntax highlighting' },
   { name: 'katex', reason: 'server-side math rendering' },
   { name: 'pinyin-pro', reason: '~150KB CJK tables, server-side slug romanisation' },
-  { name: 'pg', reason: 'data layer, server-only' },
+  { name: 'pg', reason: 'Phase 11 data-pump script only (devDependency)' },
   { name: 'drizzle-orm', reason: 'data layer, server-only' },
   { name: 'nodemailer', reason: 'mail delivery, server-only' },
   { name: 'bcryptjs', reason: 'auth hashing, server-only' },
   { name: 'sharp', reason: 'native binary, ssr-external' },
   { name: '@napi-rs/canvas', reason: 'native binary, ssr-external' },
+  { name: '@duckdb/node-api', reason: 'native binary, ssr-external' },
   { name: 'feed', reason: 'feed generation, server-only' },
   // Not currently installed; pre-armed for the WordPress/feeds server chain.
   { name: 'fast-xml-parser', reason: 'XML parsing, server-only' },

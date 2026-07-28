@@ -4,7 +4,7 @@ Repository conventions for AI agents and contributors.
 
 ## Quick orientation
 
-- React Router 8 Framework Mode with SSR (`appDirectory: 'src'`), React 19 TSX/TS only, Postgres.
+- React Router 8 Framework Mode with SSR (`appDirectory: 'src'`), React 19 TSX/TS only, SQLite (node:sqlite) + a DuckDB analytics sidecar.
 - Path alias `@/*` → `./src/*`.
 - Five layers under `src/`: `routes/` (orchestration), `server/` (SSR), `client/` (browser), `ui/` (components), `shared/` (isomorphic).
 
@@ -117,19 +117,21 @@ as the codec registry (`{key, path, sha256(raw), codec, size}`);
 The smoke budgets the binary at 190 MB — `--build-sea` leaves no
 standalone blob, so the compressed payload is sized inside the binary.
 
-**Natives = dynamic libraries ONLY.** The extraction writes exactly 3
-files (4 on win32) into the FLAT `<cache>/natives-<manifest-hash>/` dir:
+**Natives = dynamic libraries ONLY.** The extraction writes exactly 5
+files (6 on win32) into the FLAT `<cache>/natives-<manifest-hash>/` dir:
 the rpath-patched sharp addon (`sharp.node`), the libvips files (one
 `libvips-cpp.*` on darwin/linux; win32 splits libvips into two DLLs
-inside the sharp platform package), and the skia addon (`skia.node`).
-The rpath patch runs at build time on a staged copy
+inside the sharp platform package), the skia addon (`skia.node`), and
+the rpath-patched DuckDB addon (`duckdb.node`) plus its libduckdb
+library (`libduckdb.dylib`/`.so`; `duckdb.dll` on win32). The rpath
+patch runs at build time on a staged copy
 (`install_name_tool -change @rpath/X @loader_path/X` on darwin,
 `patchelf --set-rpath '$ORIGIN'` on linux — patchelf is in the Dockerfile
 build stage and guarded in the linux CI job; nothing on win32). sharp /
-@napi-rs/canvas are **statically imported and bundled**;
-`scripts/sea/redirect-native-requires.ts` (a Vite plugin) rewrites the
-packages' own platform-specifier `require(...)` call sites to
-`nativeRequire(...)`, which resolves them against the flat dir plus
+@napi-rs/canvas / @duckdb/node-api are **statically imported and
+bundled**; `scripts/sea/redirect-native-requires.ts` (a Vite plugin)
+rewrites the packages' own platform-specifier `require(...)` call sites
+to `nativeRequire(...)`, which resolves them against the flat dir plus
 embedded `natives-meta/*` metadata assets
 (`src/server/infra/native-require.ts`).
 
@@ -144,28 +146,29 @@ embedded `natives-meta/*` metadata assets
   compress-then-inject destroys the sentinel fuse so `--build-sea`
   refuses; and Node finds the blob via `dl_iterate_phdr` on the in-memory
   phdrs, which a packed stub does not present. Do not re-add an UPX step.
-- `pnpm run sea:smoke [binary]` — 20-check deep smoke: binary budget, version, natives, the flat 3-file extraction layout,
-  `--smoke-worker` (a real sharp job round-tripping through the
-  `worker_threads` image pool), boot + migrations on a per-run
-  `kobato_smoke_<rand>` database (created on the same Postgres server,
-  dropped in cleanup — the shared `test` DB is never touched),
-  fresh-install gate, SSR, embedded asset, **config-file convergence**
-  (the env-driven boot writes `database.url` + secrets back into
-  `--config`'s temp file), SQL seed (one minimal admin row plus the
-  `blog.general` / `blog.assets` roots — hydration backfills the rest),
-  a graceful restart on a **reduced env that proves the converged file
-  alone boots the server** (the settings snapshot only loads at boot;
-  the install gate is evaluated per request), installed `/health` and
-  `/` SSR, the @napi-rs/canvas calendar endpoint over HTTP, SIGTERM ×2,
+- `pnpm run sea:smoke [binary]` — deep smoke: binary budget, version,
+  natives, the flat 5-file extraction layout, `--smoke-worker` (a real
+  sharp job round-tripping through the `worker_threads` image pool),
+  boot + migrations on per-run temp files (the SQLite content DB and the
+  DuckDB analytics sidecar both live under one mkdtemp root — no
+  external services on any platform), fresh-install gate, SSR, embedded
+  asset, **config-file convergence** (the env-driven boot writes
+  `storage.database` + secrets back into `--config`'s temp file), SQL
+  seed via node:sqlite (one minimal admin row plus the `blog.general` /
+  `blog.assets` roots — hydration backfills the rest), a graceful
+  restart on a **reduced env that proves the converged file alone boots
+  the server** (the settings snapshot only loads at boot; the install
+  gate is evaluated per request), installed `/health` and `/` SSR, the
+  @napi-rs/canvas calendar endpoint over HTTP, browser-UA page views +
+  a **DuckDB analytics round-trip** (rows landed in `access_log`,
+  verified by scanning the sidecar file after shutdown), SIGTERM ×2,
   natives-cache reuse ×2. `--external <url>` runs only the HTTP checks
   against an already-running server (e.g. a container), seeds nothing,
   and reports the calendar check as SKIP on uninstalled instances.
   `--binary-only [binary]` runs just the service-free checks (budget,
-  version, natives, layout, worker pool) — the mode the macOS and
-  Windows CI targets use (neither can host the Postgres
-  service container).
+  version, natives, layout, worker pool).
 - `pnpm run sea:e2e [binary]` — boots the binary like the managed smoke
-  (per-run database, migrations, seeded admin with a KNOWN random
+  (per-run database files, migrations, seeded admin with a KNOWN random
   password), then runs `tests/e2e` against the live server over real
   HTTP: signin flow, public pages/feed/sitemap, and an admin
   create→render→delete round-trip via oRPC. The instance lifecycle is
@@ -184,11 +187,12 @@ embedded `natives-meta/*` metadata assets
   `--build-sea` segfaulted on 26.5.0, #63466-class).
 - Delivery targets are linux-x64 / linux-arm64 / darwin-arm64 /
   win32-x64 / win32-arm64, built by
-  `.github/workflows/sea.yml`. The deep managed smoke stays Linux-only;
-  the darwin and win32 matrix jobs run `--binary-only`. The darwin jobs
-  need the `shasum -a 256` spelling (macOS has no `sha256sum`); the
-  win32 jobs run the rename/package steps under Git Bash (`shell: bash`)
-  and ship `kobato.exe`. Local macOS builds need an official Node.js 26
+  `.github/workflows/sea.yml`. Every matrix job runs the full managed
+  smoke (the embedded databases need no service container); the Linux
+  jobs additionally run `sea:e2e`. The darwin jobs need the
+  `shasum -a 256` spelling (macOS has no `sha256sum`); the win32 jobs
+  run the rename/package steps under Git Bash (`shell: bash`) and ship
+  `kobato.exe`. Local macOS builds need an official Node.js 26
   distribution — Homebrew's node lacks the SEA sentinel fuse
   (`scripts/sea/inject.ts` preflights this).
 - Windows runtime notes: the binary is `kobato.exe` (no extension →
@@ -205,17 +209,18 @@ embedded `natives-meta/*` metadata assets
 
 Runtime rules:
 
-- Native packages (sharp, @napi-rs/canvas) are statically
-  imported like any other dependency — the bundler inlines them and the
-  redirect plugin rewrites their platform loads. The inverted hazard is
-  the OLD pattern: a `requireExternal('sharp' | ...)` call site hides the
-  package from the bundler and crashes under SEA. Enforcement: the
-  boundaries contract test bans native `requireExternal(...)` call sites
-  and pins the plugin's existence (`tests/unit/shared/contracts/
+- Native packages (sharp, @napi-rs/canvas, @duckdb/node-api) are
+  statically imported like any other dependency — the bundler inlines
+  them and the redirect plugin rewrites their platform loads. The
+  inverted hazard is the OLD pattern: a `requireExternal('sharp' | ...)`
+  call site hides the package from the bundler and crashes under SEA.
+  Enforcement: the boundaries contract test bans native
+  `requireExternal(...)` call sites and pins the plugin's existence
+  (`tests/unit/shared/contracts/
 boundaries.test.ts`), and the native-specifiers contract test
   enumerates every platform `require` in the installed packages so a
-  future sharp/canvas release introducing a new specifier fails at
-  upgrade time (`tests/unit/shared/contracts/
+  future sharp/canvas/duckdb release introducing a new specifier fails
+  at upgrade time (`tests/unit/shared/contracts/
 native-specifiers.test.ts`). `requireExternal` remains only as
   `nativeRequire`'s resolver (absolute `.node` paths under SEA, regular
   node_modules resolution outside it).
@@ -280,6 +285,8 @@ Only packages that are **required at production runtime AND ship a native
 dynamic library** belong in `package.json`'s `dependencies`:
 
 - `@napi-rs/canvas`, `sharp` — native binaries fetched per platform.
+- `@duckdb/node-api` — the DuckDB analytics engine (`duckdb.node` +
+  libduckdb fetched per platform).
 
 Every other dependency belongs in `devDependencies`, even if the server or
 client bundle imports it in production. The production image ships a SEA

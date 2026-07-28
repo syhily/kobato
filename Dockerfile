@@ -32,20 +32,12 @@ RUN pnpm run sea:build --codec brotli
 FROM debian:bookworm-slim AS runtime
 
 # tini — PID 1 init for proper signal handling.
-# postgresql-client-18 — for pg_dump / psql in backup jobs. bookworm only
-# ships client 15 (pg_dump refuses newer servers), so use the PGDG repo —
-# the same source the official postgres images use. Matches the pg18
-# client the old alpine-based image shipped.
 # libstdc++6 + libatomic1 — the official Node 26 binary the SEA executable
 # is copied from links against both dynamically; debian:bookworm-slim
 # ships neither.
 # wget — for the HEALTHCHECK below.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates wget \
-    && wget -qO /usr/share/keyrings/pgdg.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc \
-    && echo 'deb [signed-by=/usr/share/keyrings/pgdg.asc] http://apt.postgresql.org/pub/repos/apt bookworm-pgdg main' > /etc/apt/sources.list.d/pgdg.list \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends postgresql-client-18 tini libstdc++6 libatomic1 \
+    && apt-get install -y --no-install-recommends ca-certificates wget tini libstdc++6 libatomic1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Non-root runtime user. uid/gid 1000 matches the `node` user of the old
