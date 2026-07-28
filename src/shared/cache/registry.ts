@@ -63,19 +63,10 @@ export const CACHE_DECLARATIONS = [
     tunable: true,
   },
   {
-    id: 'embeddingSearch',
-    label: '搜索 Embedding 缓存',
-    description: (prefix) =>
-      `向量搜索时查询文本的 Embedding 结果，键形如 ${prefix}<sha256(text)>。切换 Embedding 模型或维度后应清理一次。`,
-    defaultPrefix: 'embedding-search:',
-    defaultTtlSeconds: 60 * 60 * 24 * 7,
-    tunable: true,
-  },
-  {
     id: 'searchResult',
     label: '搜索结果缓存',
     description: (prefix) =>
-      `搜索查询返回的文章 slug 列表，键形如 ${prefix}<generation>:<sha256(mode+query+threshold+model)>。分页时直接命中缓存，避免重复查询数据库。`,
+      `搜索查询返回的文章 slug 列表，键形如 ${prefix}<generation>:<sha256(query)>。分页时直接命中缓存，避免重复查询数据库。`,
     defaultPrefix: 'search-result:',
     defaultTtlSeconds: 60 * 60,
     tunable: true,

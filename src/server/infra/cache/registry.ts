@@ -41,7 +41,6 @@ interface CacheParamsMap {
   calendar: { date: string; theme: 'light' | 'dark' }
   avatar: { size: number; email: string }
   imageMeta: { storagePath: string }
-  embeddingSearch: { text: string }
   searchResult: { generation: number; parts: readonly string[] }
   feed: { scope: string }
   sitemap: Record<string, never>
@@ -113,22 +112,6 @@ function decodeAvatar(raw: Buffer): AvatarEntry | null {
   return null
 }
 
-// Embedding cache: binary Float32Array storage to minimise serialisation
-// cost and memory footprint. 1536 floats @ 4 bytes each = 6144 bytes per
-// key, versus ~12 KB for JSON stringified number[].
-function encodeEmbedding(value: unknown): Buffer {
-  // The embeddingSearch declaration only ever stores number[] values.
-  return Buffer.from(new Float32Array(unsafeCast<number[]>(value)).buffer)
-}
-
-function decodeEmbedding(raw: Buffer): number[] | null {
-  if (raw.length === 0 || raw.length % 4 !== 0) {
-    return null
-  }
-  const view = new Float32Array(raw.buffer, raw.byteOffset, raw.length / 4)
-  return Array.from(view)
-}
-
 const BEHAVIORS: { [K in CacheBucketId]: CacheBehavior<CacheParamsMap[K]> } = {
   og: {
     kind: 'binary',
@@ -159,15 +142,6 @@ const BEHAVIORS: { [K in CacheBucketId]: CacheBehavior<CacheParamsMap[K]> } = {
   imageMeta: {
     kind: 'json',
     key: ({ storagePath }) => storagePath,
-  },
-  embeddingSearch: {
-    kind: 'binary',
-    key: ({ text }) => createHash('sha256').update(text).digest('hex'),
-    encode: encodeEmbedding,
-    decode: decodeEmbedding,
-    // A failed embedding call reads as null and must never be cached —
-    // the next search retries the API.
-    cacheWhen: (value) => value !== null,
   },
   searchResult: {
     kind: 'json',

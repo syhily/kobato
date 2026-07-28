@@ -8,9 +8,6 @@ import { clearAllTables } from '#/_helpers/integration-db'
 import { createDbPool, closePool } from '@/server/infra/db/pool'
 import { kvCache } from '@/server/infra/db/schema/kv-cache'
 
-vi.mock('@/server/infra/search/openai', () => ({
-  generateEmbedding: vi.fn(async () => null),
-}))
 vi.mock('@/server/domains/images/services/enhance', () => ({
   hydrateImageRefs: vi.fn(async () => undefined),
 }))

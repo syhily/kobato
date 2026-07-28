@@ -140,7 +140,6 @@ const fixtureBundle: BlogSettingsBundle = {
       calendar: { prefix: 'calendar:', ttlSeconds: 3600 },
       avatar: { prefix: 'avatar:', ttlSeconds: 3600 },
       imageMeta: { prefix: 'image-meta:', ttlSeconds: 3600 },
-      embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
       searchResult: { prefix: 'search-result:', ttlSeconds: 60 * 60 },
     },
   },
@@ -818,7 +817,6 @@ describe('services/settings — cache section', () => {
           calendar: { prefix: 'cal:', ttlSeconds: 60 * 60 * 12 },
           avatar: { prefix: 'gravatar:', ttlSeconds: 60 * 60 * 24 * 3 },
           imageMeta: { prefix: 'image-meta:', ttlSeconds: 60 * 60 },
-          embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
           searchResult: { prefix: 'search-result:', ttlSeconds: 60 * 60 },
         },
       },
@@ -847,7 +845,6 @@ describe('services/settings — cache section', () => {
             calendar: { prefix: 'shared:', ttlSeconds: 60 * 60 },
             avatar: { prefix: 'avatar:', ttlSeconds: 60 * 60 },
             imageMeta: { prefix: 'image-meta:', ttlSeconds: 60 * 60 },
-            embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
           },
         },
         null,
@@ -872,7 +869,6 @@ describe('services/settings — cache section', () => {
             // must-end-with-`:` pattern, so the perimeter refuses it.
             avatar: { prefix: 'og', ttlSeconds: 60 * 60 },
             imageMeta: { prefix: 'image-meta:', ttlSeconds: 60 * 60 },
-            embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
             searchResult: { prefix: 'search-result:', ttlSeconds: 60 * 60 },
           },
         },
@@ -896,7 +892,6 @@ describe('services/settings — cache section', () => {
             calendar: { prefix: 'calendar:', ttlSeconds: 60 * 60 },
             avatar: { prefix: 'avatar:', ttlSeconds: 60 * 60 },
             imageMeta: { prefix: 'image-meta:', ttlSeconds: 60 * 60 },
-            embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
           },
         },
         null,
@@ -918,7 +913,6 @@ describe('services/settings — cache section', () => {
             calendar: { prefix: 'calendar:', ttlSeconds: 60 * 60 },
             avatar: { prefix: 'avatar:', ttlSeconds: 60 * 60 },
             imageMeta: { prefix: 'image-meta:', ttlSeconds: 60 * 60 },
-            embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
             searchResult: { prefix: 'search-result:', ttlSeconds: 60 * 60 },
           },
         },
@@ -941,7 +935,6 @@ describe('services/settings — cache section', () => {
             calendar: { prefix: 'calendar:', ttlSeconds: 60 * 60 },
             avatar: { prefix: 'avatar:', ttlSeconds: 60 * 60 },
             imageMeta: { prefix: 'image-meta:', ttlSeconds: 60 * 60 },
-            embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
           },
         },
         null,
@@ -963,7 +956,6 @@ describe('services/settings — cache section', () => {
             calendar: { prefix: 'calendar:', ttlSeconds: 60 * 60 },
             avatar: { prefix: 'avatar:', ttlSeconds: 60 * 60 },
             imageMeta: { prefix: 'image-meta:', ttlSeconds: 60 * 60 },
-            embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
           },
         },
         null,
@@ -981,7 +973,6 @@ describe('services/settings — cache section', () => {
             calendar: { prefix: 'calendar:', ttlSeconds: 60 * 60 },
             avatar: { prefix: 'avatar:', ttlSeconds: 60 * 60 * 24 * 365 },
             imageMeta: { prefix: 'image-meta:', ttlSeconds: 60 * 60 },
-            embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
           },
         },
         null,
@@ -1270,14 +1261,6 @@ describe('services/settings — snapshot reader', () => {
     expect(cache.calendar).toEqual({ prefix: 'legacy-calendar:', ttlSeconds: 5678 })
     expect(cache.avatar).toEqual({ prefix: 'legacy-avatar:', ttlSeconds: 4321 })
     expect(cache.imageMeta).toEqual({ prefix: 'image-meta:', ttlSeconds: 60 * 60 })
-    expect(cache.embeddingSearch).toEqual({
-      prefix: 'embedding-search:',
-      ttlSeconds: 60 * 60 * 24 * 7,
-    })
-    expect(cache.embeddingSearch).toEqual({
-      prefix: 'embedding-search:',
-      ttlSeconds: 60 * 60 * 24 * 7,
-    })
   })
 
   it('hydrate rejects legacy 3-bucket cache rows so the registry default backfills the section', async () => {
