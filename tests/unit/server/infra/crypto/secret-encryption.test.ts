@@ -1,12 +1,17 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-// Must mock before importing the module under test because ENCRYPTION_KEY
-// is read at module evaluation time.
+// Must mock before importing the module under test because the encryption
+// key is read at module evaluation time.
 const MOCK_KEY = 'a'.repeat(32)
 
 function importModule(key: string | undefined) {
-  vi.doMock('@/server/infra/env', () => ({
-    ENCRYPTION_KEY: key,
+  vi.doMock('@/server/infra/config', () => ({
+    serverConfig: {
+      server: {},
+      database: {},
+      security: { encryptionKey: key },
+      storage: {},
+    },
   }))
   vi.doMock('@/server/infra/logger', () => ({
     getLogger: () => ({ warn: vi.fn(), error: vi.fn() }),
@@ -15,7 +20,7 @@ function importModule(key: string | undefined) {
 }
 
 function clean() {
-  vi.doUnmock('@/server/infra/env')
+  vi.doUnmock('@/server/infra/config')
   vi.doUnmock('@/server/infra/logger')
   vi.resetModules()
 }

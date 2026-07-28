@@ -1,9 +1,11 @@
 import { createDecipheriv, createHash, createCipheriv, hkdfSync, randomBytes } from 'node:crypto'
 
-import { ENCRYPTION_KEY } from '@/server/infra/env'
+import { serverConfig } from '@/server/infra/config'
 import { getLogger } from '@/server/infra/logger'
 
 const log = getLogger('crypto')
+
+const encryptionKey = serverConfig.security.encryptionKey
 
 const ALGORITHM = 'aes-256-gcm'
 const IV_BYTES = 12
@@ -21,7 +23,7 @@ function getLegacyKey(): Buffer {
   if (cachedLegacyKey !== undefined) {
     return cachedLegacyKey
   }
-  cachedLegacyKey = createHash('sha256').update(ENCRYPTION_KEY).digest()
+  cachedLegacyKey = createHash('sha256').update(encryptionKey).digest()
   return cachedLegacyKey
 }
 
@@ -29,19 +31,19 @@ function getLegacyV2Key(): Buffer {
   if (cachedLegacyV2Key !== undefined) {
     return cachedLegacyV2Key
   }
-  cachedLegacyV2Key = Buffer.from(hkdfSync('sha256', ENCRYPTION_KEY, LEGACY_HKDF_SALT, HKDF_INFO, 32))
+  cachedLegacyV2Key = Buffer.from(hkdfSync('sha256', encryptionKey, LEGACY_HKDF_SALT, HKDF_INFO, 32))
   return cachedLegacyV2Key
 }
 
 function deriveDeploymentSalt(): Buffer {
-  return Buffer.from(createHash('sha256').update(ENCRYPTION_KEY).update('kobato-deployment-salt').digest('hex'))
+  return Buffer.from(createHash('sha256').update(encryptionKey).update('kobato-deployment-salt').digest('hex'))
 }
 
 function getDeploymentKey(): Buffer {
   if (cachedDeploymentKey !== undefined) {
     return cachedDeploymentKey
   }
-  cachedDeploymentKey = Buffer.from(hkdfSync('sha256', ENCRYPTION_KEY, deriveDeploymentSalt(), HKDF_INFO, 32))
+  cachedDeploymentKey = Buffer.from(hkdfSync('sha256', encryptionKey, deriveDeploymentSalt(), HKDF_INFO, 32))
   return cachedDeploymentKey
 }
 

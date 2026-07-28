@@ -74,7 +74,7 @@ vi.mock('@/server/domains/comments/services/likes', () => ({
   resetLikeTokenSweep: mockResetLikeTokenSweep,
 }))
 
-vi.mock('@/server/infra/env', () => ({
+vi.mock('@/server/infra/config', () => ({
   isVitest: vi.fn(() => true),
 }))
 

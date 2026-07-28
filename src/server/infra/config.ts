@@ -1,10 +1,13 @@
 // Configuration file (`kobato.config.json`) — the default configuration
-// source, always present (auto-created when missing).
+// source, always present (auto-created when missing). This module is the
+// single configuration entry point: it resolves the effective values,
+// validates them, and exposes the nested `serverConfig` object every
+// consumer reads.
 //
 //   - ONE declarative table (CONFIG_TABLE) is the single source of truth:
-//     each row maps a nested config path (`database.url`) to a TS export
-//     name (`DATABASE_URL`) and a Zod schema. The process env var name is
-//     derived by convention: `path.join('__')` → `database__url`.
+//     each row maps a nested config path (`database.url`) to a Zod schema.
+//     The process env var name is derived by convention: `path.join('__')`
+//     → `database__url`.
 //   - Precedence: schema defaults < config file < env vars. Values coming
 //     from env that differ from the file are WRITTEN BACK into the file —
 //     env is the injection mechanism, the file converges to the effective
@@ -26,6 +29,7 @@
 import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
+import process from 'node:process'
 import { z } from 'zod'
 
 import { isSea } from '@/server/infra/sea'
@@ -36,64 +40,51 @@ export const CONFIG_FILE_NAME = 'kobato.config.json'
 export interface ConfigEntry {
   /** Nested path inside the config file, e.g. ['database', 'url']. */
   path: readonly string[]
-  /** Flat TS export name on `@/server/infra/env` (unchanged contract). */
-  export: string
   schema: z.ZodType
   /** Value written into a freshly created config file. */
   fileDefault: unknown
 }
 
 export const CONFIG_TABLE = [
-  { path: ['server', 'host'], export: 'HOST', schema: z.string().min(1).default('0.0.0.0'), fileDefault: '0.0.0.0' },
+  { path: ['server', 'host'], schema: z.string().min(1).default('0.0.0.0'), fileDefault: '0.0.0.0' },
   {
     path: ['server', 'port'],
-    export: 'PORT',
     schema: z.coerce.number().int().min(1).max(65535).default(4321),
     fileDefault: 4321,
   },
   {
     path: ['server', 'loggingLevel'],
-    export: 'LOG_LEVEL',
     schema: z.enum(['debug', 'info', 'warn', 'error', 'silent']).optional(),
     fileDefault: 'info',
   },
-  { path: ['database', 'url'], export: 'DATABASE_URL', schema: z.url(), fileDefault: '' },
+  { path: ['database', 'url'], schema: z.url(), fileDefault: '' },
   {
     path: ['database', 'poolMax'],
-    export: 'DB_POOL_MAX',
     schema: z.coerce.number().int().min(1).max(100).optional().default(20),
     fileDefault: 20,
   },
   {
     path: ['database', 'statementTimeoutMs'],
-    export: 'DB_STATEMENT_TIMEOUT_MS',
     schema: z.coerce.number().int().min(1_000).max(120_000).optional().default(30_000),
     fileDefault: 30_000,
   },
-  { path: ['database', 'restoreRole'], export: 'RESTORE_ROLE', schema: z.string().min(1).optional(), fileDefault: '' },
+  { path: ['database', 'restoreRole'], schema: z.string().min(1).optional(), fileDefault: '' },
   {
     path: ['security', 'sessionSecret'],
-    export: 'SESSION_SECRET',
     schema: z
       .string()
       .min(32)
       .transform((val) => val.split(',').map((s) => s.trim())),
     fileDefault: '',
   },
-  { path: ['security', 'encryptionKey'], export: 'ENCRYPTION_KEY', schema: z.string().min(32), fileDefault: '' },
-  { path: ['storage', 'data'], export: 'DATA_PATH', schema: z.string().min(1), fileDefault: './data' },
+  { path: ['security', 'encryptionKey'], schema: z.string().min(32), fileDefault: '' },
+  { path: ['storage', 'data'], schema: z.string().min(1), fileDefault: './data' },
   {
     path: ['storage', 'defaultFont'],
-    export: 'DEFAULT_FONT_PATH',
     schema: z.string().min(1).optional(),
     fileDefault: '',
   },
 ] as const satisfies readonly ConfigEntry[]
-
-/** env.ts's flat server schema, keyed by the table's TS export names. */
-export type TableServerSchema = {
-  [E in (typeof CONFIG_TABLE)[number] as E['export']]: E['schema']
-}
 
 /** Process env var name for a table entry — `__` separator convention. */
 export function configEnvName(path: readonly string[]): string {
@@ -354,9 +345,14 @@ export function migrateLegacyKeys(data: Record<string, unknown>): { migrated: bo
 // ─── Main entry ──────────────────────────────────────────────────────────
 
 /**
- * Resolve the effective flat runtime env: schema defaults < config file <
- * env vars, persisting env overrides back into the file. Fails the process
+ * Resolve the effective raw values, keyed by dotted config path
+ * (`'database.url'`): schema defaults < config file < env vars,
+ * persisting env overrides back into the file. Fails the process
  * (clear Chinese message) on unreadable/invalid config files.
+ *
+ * The values are RAW (untransformed) — the per-entry schema parse
+ * (defaults, coercion, transforms) runs downstream in
+ * {@link loadServerConfig}, exactly once.
  */
 export function loadConfig(): Record<string, unknown> {
   const explicit = argvConfigPath(process.argv.slice(2))
@@ -365,7 +361,9 @@ export function loadConfig(): Record<string, unknown> {
   // repo root and persist test secrets. An explicit --config opts into
   // the full behavior (tests point it at a temp dir).
   if (process.env.VITEST === 'true' && explicit === null) {
-    return Object.fromEntries(CONFIG_TABLE.map((entry) => [entry.export, process.env[configEnvName(entry.path)]]))
+    return Object.fromEntries(
+      CONFIG_TABLE.map((entry) => [entry.path.join('.'), process.env[configEnvName(entry.path)]]),
+    )
   }
   const candidates = configCandidates(process.argv.slice(2))
 
@@ -422,7 +420,7 @@ export function loadConfig(): Record<string, unknown> {
   for (const entry of CONFIG_TABLE) {
     const envRaw = process.env[configEnvName(entry.path)]
     const fileValue = getPath(fileData, entry.path)
-    runtimeEnv[entry.export] = envRaw ?? fileValue
+    runtimeEnv[entry.path.join('.')] = envRaw ?? fileValue
     if (envRaw !== undefined && envRaw !== fileValue) {
       overrides.push({ path: entry.path, value: parseEnvValue(envRaw) })
     }
@@ -444,3 +442,98 @@ export function loadConfig(): Record<string, unknown> {
 
   return runtimeEnv
 }
+
+// ─── Validated runtime configuration ─────────────────────────────────────
+
+/** The nested, validated configuration every consumer reads. */
+export interface ServerConfig {
+  server: {
+    host: string
+    port: number
+    loggingLevel?: 'debug' | 'info' | 'warn' | 'error' | 'silent' | undefined
+  }
+  database: {
+    url: string
+    poolMax: number
+    statementTimeoutMs: number
+    restoreRole?: string | undefined
+  }
+  security: {
+    /** Cookie-signing secrets for the session storage (rotatable, comma-separated in the file). */
+    sessionSecret: string[]
+    encryptionKey: string
+  }
+  storage: {
+    data: string
+    defaultFont?: string | undefined
+  }
+}
+
+/**
+ * Parse every CONFIG_TABLE entry exactly once (defaults, coercion and
+ * transforms apply here) and assemble the nested {@link ServerConfig}.
+ * Validation failures are fatal with a Chinese bootstrap hint — the
+ * logger is not available this early, so the message goes to stderr.
+ */
+export function loadServerConfig(): ServerConfig {
+  const raw = loadConfig()
+  const config: Record<string, unknown> = {}
+  const issues: string[] = []
+  for (const entry of CONFIG_TABLE) {
+    const key = entry.path.join('.')
+    // '' means "unset" (same convention as stripEmptyStrings on the file
+    // side) — an auto-created file holds '' for optional values, and those
+    // must fall through to the schema default, not fail min(1).
+    const value = raw[key] === '' ? undefined : raw[key]
+    try {
+      setPath(config, entry.path, entry.schema.parse(value))
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        for (const issue of error.issues) {
+          issues.push(`  - ${key}: ${issue.message}`)
+        }
+      } else {
+        issues.push(`  - ${key}: ${String(error)}`)
+      }
+    }
+  }
+  if (issues.length > 0) {
+    process.stderr.write(
+      [
+        'Environment validation failed:',
+        issues.join('\n'),
+        '',
+        'Please ensure the following values are set in kobato.config.json',
+        '(or passed as `__`-style environment variables):',
+        '',
+        '    database.url             — PostgreSQL connection URL',
+        '    security.sessionSecret   — Session signing secret',
+        '    security.encryptionKey   - The encryption key for sensitive content',
+        '    storage.data             - Root directory for all local filesystem data',
+        '',
+      ].join('\n'),
+    )
+    process.exit(1)
+  }
+  return unsafeCast<ServerConfig>(config)
+}
+
+/** The validated runtime configuration, evaluated once at module load. */
+export const serverConfig: ServerConfig = loadServerConfig()
+
+// NODE_ENV stays process-env-only: it selects the process mode, not a
+// deployment setting, so it never enters the config file.
+export const NODE_ENV = z
+  .enum(['development', 'production', 'test'])
+  .optional()
+  .default('production')
+  .parse(process.env.NODE_ENV)
+
+export function isVitest(): boolean {
+  return process.env.VITEST === 'true'
+}
+
+/** Full `process.env` snapshot (undefined values filtered) for child-process spawning (e.g. pg_dump). */
+export const processEnv: Record<string, string> = Object.fromEntries(
+  Object.entries(process.env).filter((entry): entry is [string, string] => entry[1] !== undefined),
+)

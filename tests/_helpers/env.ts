@@ -1,7 +1,7 @@
 // Centralised env defaults used by every test that pulls in server
-// modules (which read `@/server/infra/env` at module-load time). Imported
-// by the per-project setup files so individual tests can re-import it
-// cheaply.
+// modules (which read `@/server/infra/config` at module-load time).
+// Imported by the per-project setup files so individual tests can
+// re-import it cheaply.
 
 // Postgres base URL — the actual test database URL is created per-worker
 // in `tests/it/setup.ts` via `createWorkerDatabase()`.

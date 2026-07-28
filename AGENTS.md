@@ -10,7 +10,7 @@ Repository conventions for AI agents and contributors.
 
 ## Config file
 
-Infrastructure configuration lives in `kobato.config.json` — auto-created with defaults when missing. `src/server/infra/config.ts`'s `CONFIG_TABLE` maps nested config paths to TS exports with Zod schemas; env var names are derived by convention (`path.join('__')` → `database__url`).
+Infrastructure configuration lives in `kobato.config.json` — auto-created with defaults when missing. `src/server/infra/config.ts`'s `CONFIG_TABLE` maps nested config paths to Zod schemas; the validated `serverConfig` object exported from that module is what consumers read. Env var names are derived by convention (`path.join('__')` → `database__url`).
 
 - Location order: `--config <path>` → SEA `<execDir>/kobato.config.json` → `./kobato.config.json` → `~/.config/kobato.config.json`. First existing wins.
 - Precedence: schema defaults < config file < env vars. Env values differing from the file are written back.
@@ -174,7 +174,7 @@ embedded `natives-meta/*` metadata assets
 - Binary CLI flags: `--version`, `--help`, `--smoke-natives`,
   `--smoke-worker`. The first three need zero environment; the last one
   requires the full server configuration because the pool graph pulls in
-  `@/server/infra/env` at import time — it validates but never connects.
+  `@/server/infra/config` at import time — it validates but never connects.
 - Injection is single-path (`scripts/sea/inject.ts`): **`--build-sea` is
   the only injector** — it regenerates the blob itself from the
   sea-config (whose `output` is the final binary), does NOT codesign on

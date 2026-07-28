@@ -3,7 +3,7 @@ import type { City, ReaderModel } from '@maxmind/geoip2-node'
 import { Reader } from '@maxmind/geoip2-node'
 import { existsSync } from 'node:fs'
 
-import { DATA_PATH } from '@/server/infra/env'
+import { serverConfig } from '@/server/infra/config'
 import { getLogger } from '@/server/infra/logger'
 import { MAXMIND_DB_PATH, isPathInside } from '@/server/infra/paths'
 
@@ -12,10 +12,11 @@ const log = getLogger('analytics.geoip')
 let readerPromise: Promise<ReaderModel | null> | undefined
 
 async function openReader(): Promise<ReaderModel | null> {
-  if (!isPathInside(MAXMIND_DB_PATH, DATA_PATH)) {
+  const dataPath = serverConfig.storage.data
+  if (!isPathInside(MAXMIND_DB_PATH, dataPath)) {
     log.warn('MaxMind DB path is outside data directory; geo enrichment disabled', {
       path: MAXMIND_DB_PATH,
-      dataPath: DATA_PATH,
+      dataPath,
     })
     return null
   }

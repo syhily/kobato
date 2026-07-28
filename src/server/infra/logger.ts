@@ -17,14 +17,15 @@
 import { Writable } from 'node:stream'
 import pino from 'pino'
 
-import { LOG_LEVEL, NODE_ENV } from '@/server/infra/env'
+import { NODE_ENV, serverConfig, type ServerConfig } from '@/server/infra/config'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
-type Level = NonNullable<typeof LOG_LEVEL>
+type Level = NonNullable<ServerConfig['server']['loggingLevel']>
 
 function resolveLevel(): Level {
-  if (LOG_LEVEL) {
-    return LOG_LEVEL
+  const level = serverConfig.server.loggingLevel
+  if (level) {
+    return level
   }
   // NODE_ENV, not import.meta.env.PROD — this module also lands in the CJS
   // worker bundles where import.meta is replaced with {}.

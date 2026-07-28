@@ -11,9 +11,14 @@ const mockState = vi.hoisted(() => ({
   upsertSetting: vi.fn(),
 }))
 
-vi.mock('@/server/infra/env', () => ({
-  get ENCRYPTION_KEY() {
-    return mockState.encryptionKey
+vi.mock('@/server/infra/config', () => ({
+  get serverConfig() {
+    return {
+      server: {},
+      database: {},
+      security: { encryptionKey: mockState.encryptionKey },
+      storage: {},
+    }
   },
   isVitest() {
     return mockState.vitest

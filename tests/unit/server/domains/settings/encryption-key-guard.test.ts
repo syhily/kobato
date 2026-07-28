@@ -9,40 +9,28 @@ const mockState = vi.hoisted(() => ({
   upsertSetting: vi.fn(),
 }))
 
-vi.mock('@/server/infra/env', () => ({
-  get ENCRYPTION_KEY() {
-    return mockState.encryptionKey
+vi.mock('@/server/infra/config', () => ({
+  get serverConfig() {
+    return {
+      server: { host: '0.0.0.0', port: 4321, loggingLevel: 'error' },
+      database: {
+        url: 'postgresql://localhost:5434/test',
+        poolMax: 20,
+        statementTimeoutMs: 30000,
+        restoreRole: undefined,
+      },
+      security: {
+        sessionSecret: ['test-session-secret-must-be-32-chars-long!'],
+        encryptionKey: mockState.encryptionKey,
+      },
+      storage: { data: '/tmp/kobato-data', defaultFont: undefined },
+    }
   },
   isVitest() {
     return false
   },
-  DATA_PATH: '/tmp/kobato-data',
-  get DATABASE_URL() {
-    return 'postgresql://localhost:5434/test'
-  },
-  get SESSION_SECRET() {
-    return 'test-session-secret-must-be-32-chars-long!'
-  },
-  get HOST() {
-    return '0.0.0.0'
-  },
-  get PORT() {
-    return 4321
-  },
   get NODE_ENV() {
     return 'test'
-  },
-  get LOG_LEVEL() {
-    return 'error'
-  },
-  get DB_POOL_MAX() {
-    return 20
-  },
-  get DB_STATEMENT_TIMEOUT_MS() {
-    return 30000
-  },
-  get DEFAULT_FONT_PATH() {
-    return undefined
   },
 }))
 

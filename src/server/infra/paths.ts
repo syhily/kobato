@@ -1,7 +1,9 @@
 import { copyFileSync, existsSync, mkdirSync } from 'node:fs'
 import path from 'node:path'
 
-import { DEFAULT_FONT_PATH, DATA_PATH } from '@/server/infra/env'
+import { serverConfig } from '@/server/infra/config'
+
+const { data: DATA_PATH, defaultFont: DEFAULT_FONT_PATH } = serverConfig.storage
 
 export const FONT_DIR = path.resolve(DATA_PATH, 'fonts')
 export const ANALYTICS_DEAD_LETTER_PATH = path.resolve(DATA_PATH, 'analytics', 'dead-letter.jsonl')

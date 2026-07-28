@@ -31,8 +31,8 @@ describe('contract: session cookie configuration', () => {
     expect(source).toContain('secure: import.meta.env.PROD')
   })
 
-  it('uses SESSION_SECRET from env (never a hard-coded literal)', () => {
-    expect(source).toContain('secrets: SESSION_SECRET')
+  it('uses the session secret from the config module (never a hard-coded literal)', () => {
+    expect(source).toContain('secrets: serverConfig.security.sessionSecret')
     expect(source).not.toMatch(/secrets: \[/)
   })
 })

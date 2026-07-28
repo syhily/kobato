@@ -188,8 +188,8 @@ function checkNatives(binaryPath: string, cacheDir: string) {
 }
 
 /**
- * `--smoke-worker` validates the full server env at import time (the pool
- * graph pulls in `@/server/infra/env`) but never connects to anything, so
+ * `--smoke-worker` validates the full server config at import time (the pool
+ * graph pulls in `@/server/infra/config`) but never connects to anything, so
  * the same env the server boot gets is passed here. The `--config` points
  * at the temp cache dir — without it env loading would auto-create
  * `kobato.config.json` next to the binary and persist the throwaway

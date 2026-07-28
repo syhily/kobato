@@ -7,8 +7,8 @@
 //   kobato --smoke-natives   extract + load the native libraries and exit
 //   kobato --smoke-worker    round-trip a real sharp job through the
 //                            worker_threads pool and exit (needs the
-//                            server env vars — the pool graph validates
-//                            env at import time)
+//                            server config — the pool graph validates
+//                            it at import time)
 //   (anything else)          fall through — `@/server/infra/sea-bootstrap`
 //                            and then the server graph evaluate next
 //
@@ -115,8 +115,8 @@ async function smokeNatives(): Promise<void> {
  * `--smoke-worker`: prove a real sharp job round-trips through the
  * production `worker_threads` image pool inside the binary — the gap
  * `--smoke-natives` (in-process load) cannot cover. The embedded
- * smoke-worker text pulls the env-validated graph (the pool registers its
- * teardown via `@/server/infra/lifecycle` → `@/server/infra/env`), so
+ * smoke-worker text pulls the config-validated graph (the pool registers its
+ * teardown via `@/server/infra/lifecycle` → `@/server/infra/config`), so
  * this flag legitimately requires the full server environment —
  * validated, never connected to. The worker inherits this process's env
  * at spawn, so the natives dir set above is visible to it.

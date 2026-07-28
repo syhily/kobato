@@ -32,7 +32,7 @@ vi.mock('@/server/infra/db/migrate', () => ({
   migrateDatabase: (...args: unknown[]) => migrateDatabase(...args),
 }))
 
-vi.mock('@/server/infra/env', () => ({
+vi.mock('@/server/infra/config', () => ({
   isVitest: () => true,
 }))
 

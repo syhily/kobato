@@ -11,8 +11,8 @@ import { migrateSecretsEncryption } from '@/server/domains/settings/services/mig
 import { wrapFetchWithLeakedResponseHandler } from '@/server/http/leaked-response'
 import { buildLoadContext, configureMiddleware } from '@/server/http/middleware-pipeline'
 import { scheduleNextKvSweep } from '@/server/infra/cache/kv-maintenance'
+import { serverConfig } from '@/server/infra/config'
 import { hasAdmin } from '@/server/infra/db/operations/user'
-import { PORT } from '@/server/infra/env'
 import { createHonoServer } from '@/server/infra/hono/node'
 import { getProcessPool } from '@/server/infra/image/process-pool'
 import { setHttpServer, setRestartApp, setServerPhase } from '@/server/infra/lifecycle'
@@ -106,7 +106,7 @@ if (import.meta.env.PROD) {
 // ─── Start HTTP server ───────────────────────────────────
 
 const httpServer = import.meta.env.PROD
-  ? serve({ fetch: app.fetch.bind(app), port: PORT }, (info) => {
+  ? serve({ fetch: app.fetch.bind(app), port: serverConfig.server.port }, (info) => {
       root.info(`🚀 Server started on port ${info.port}`)
       root.info(`🌍 http://127.0.0.1:${info.port}`)
       root.info(`🏎️ Server started`)

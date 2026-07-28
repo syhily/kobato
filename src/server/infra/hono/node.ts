@@ -11,7 +11,7 @@ import { createRequestHandler } from 'react-router'
 import type { HonoServerOptionsBase } from '@/server/infra/hono/types/hono-server-options-base'
 import type { CreateNodeServerOptions } from '@/server/infra/hono/types/node.https'
 
-import { PORT } from '@/server/infra/env'
+import { serverConfig } from '@/server/infra/config'
 import { getViteDevServer } from '@/server/infra/hono/dev-server-ref'
 import { bindIncomingRequestSocketInfo, getBuildMode, importBuild } from '@/server/infra/hono/helpers'
 import { cache } from '@/server/infra/hono/middleware'
@@ -119,7 +119,7 @@ export async function createHonoServer<E extends Env = BlankEnv>(options?: HonoS
 
         log.info(`🏎️ Server started in ${Date.now() - startTime}ms`)
       }),
-    port: options?.port || PORT,
+    port: options?.port || serverConfig.server.port,
     overrideGlobalObjects: options?.overrideGlobalObjects ?? false,
   }
   const mode = getBuildMode()

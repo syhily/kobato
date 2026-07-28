@@ -1360,21 +1360,20 @@ describe('contract: module and bundle boundaries', () => {
     expect(baseLayout).toMatch(/\btransform-gpu\b/)
   })
 
-  it('centralises all process.env access in env.ts, hono/dev.ts, and the SEA runtime modules', () => {
+  it('centralises all process.env access in config.ts, hono/dev.ts, and the SEA runtime modules', () => {
     const offenders: string[] = []
-    // Exceptions beyond env.ts / dev.ts:
+    // Exceptions beyond config.ts / dev.ts:
     // - sea.ts / sea-natives.ts / native-require.ts (SEA packaging):
     //   `KOBATO_NATIVES_DIR` is runtime state written by the SEA
     //   bootstrap (`bootstrapSeaRuntime`) and read lazily by
-    //   `requireExternal` / `nativeRequire` at call time — a parsed
-    //   createEnv snapshot cannot model a value assigned after module
-    //   load. `KOBATO_CACHE_DIR` / `XDG_CACHE_HOME` are read before the
-    //   env module's validation runs. These modules must also stay
-    //   dependency-light because the SEA bundles inline them ahead of
-    //   the app graph.
+    //   `requireExternal` / `nativeRequire` at call time — the validated
+    //   `serverConfig` snapshot cannot model a value assigned after
+    //   module load. `KOBATO_CACHE_DIR` / `XDG_CACHE_HOME` are read
+    //   before the config module's validation runs. These modules must
+    //   also stay dependency-light because the SEA bundles inline them
+    //   ahead of the app graph.
     const allowed = new Set([
-      'src/server/infra/env.ts',
-      // The config-file loader is part of the env subsystem: it resolves
+      // The configuration module owns the process.env reads: it resolves
       // `__`-convention env vars over kobato.config.json at module load.
       'src/server/infra/config.ts',
       'src/server/infra/hono/dev.ts',

@@ -8,8 +8,8 @@ import superjson from 'superjson'
 import type { Role } from '@/shared/utils/roles'
 
 import { getDb } from '@/server/bootstrap/db-lifecycle'
+import { serverConfig } from '@/server/infra/config'
 import { session as sessionTable } from '@/server/infra/db/schema/session'
-import { SESSION_SECRET } from '@/server/infra/env'
 import { getLogger } from '@/server/infra/logger'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { idFromString } from '@/shared/utils/id'
@@ -78,7 +78,7 @@ const storage = createSessionStorage<BlogSessionData>({
     path: '/',
     sameSite: 'lax',
     secure: import.meta.env.PROD,
-    secrets: SESSION_SECRET,
+    secrets: serverConfig.security.sessionSecret,
   },
   async createData(data, expires) {
     const id = crypto.randomUUID()

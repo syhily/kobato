@@ -8,7 +8,7 @@ import { migrate } from 'drizzle-orm/node-postgres/migrator'
 import { migrate as migratePg } from 'drizzle-orm/pg-core/async/session'
 import { createHash } from 'node:crypto'
 
-import { DATABASE_URL } from '@/server/infra/env'
+import { serverConfig } from '@/server/infra/config'
 import { getLogger } from '@/server/infra/logger'
 import { getEmbeddedAsset, isSea, listEmbeddedAssetKeys } from '@/server/infra/sea'
 import { requireEmbeddedAssetText } from '@/server/infra/sea-asset'
@@ -95,7 +95,7 @@ export async function runEmbeddedMigrations(
 export async function migrateDatabase(): Promise<void> {
   const migrationDb = drizzle({
     connection: {
-      connectionString: DATABASE_URL,
+      connectionString: serverConfig.database.url,
       max: 1,
     },
   })

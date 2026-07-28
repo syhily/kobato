@@ -5,7 +5,7 @@ import type { Hono } from 'hono'
 import { serve } from '@hono/node-server'
 import { Server as NodeHttpServer } from 'node:http'
 
-import { PORT } from '@/server/infra/env'
+import { serverConfig } from '@/server/infra/config'
 import { getLogger } from '@/server/infra/logger'
 
 const log = getLogger('lifecycle')
@@ -234,7 +234,7 @@ export async function restartServer(): Promise<void> {
     try {
       await closeHttpServer()
 
-      const newServer = serve({ fetch: app.fetch.bind(app), port: PORT }, (info) => {
+      const newServer = serve({ fetch: app.fetch.bind(app), port: serverConfig.server.port }, (info) => {
         restartLog.info(`Server restarted on port ${info.port}`)
       })
       setHttpServer(newServer)

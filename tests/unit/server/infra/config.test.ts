@@ -3,7 +3,14 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { CONFIG_TABLE, configCandidates, configEnvName, loadConfig, migrateLegacyKeys } from '@/server/infra/config'
+import {
+  CONFIG_TABLE,
+  configCandidates,
+  configEnvName,
+  loadConfig,
+  loadServerConfig,
+  migrateLegacyKeys,
+} from '@/server/infra/config'
 
 // The config loader is exercised with argv/env/FS permutations. Under
 // VITEST without --config, loadConfig never touches the filesystem — so
@@ -83,8 +90,8 @@ describe('infra/config — loadConfig', () => {
     withConfigArg(path)
 
     const env = loadConfig()
-    expect(env.DATABASE_URL).toBe('postgres://from-file/db')
-    expect(env.PORT).toBeUndefined() // not in file, no env → schema default later
+    expect(env['database.url']).toBe('postgres://from-file/db')
+    expect(env['server.port']).toBeUndefined() // not in file, no env → schema default later
   })
 
   it('env vars override the file and are written back', () => {
@@ -96,8 +103,8 @@ describe('infra/config — loadConfig', () => {
     vi.stubEnv('server__port', '5000')
 
     const env = loadConfig()
-    expect(env.DATABASE_URL).toBe('postgres://from-env/db')
-    expect(env.PORT).toBe('5000')
+    expect(env['database.url']).toBe('postgres://from-env/db')
+    expect(env['server.port']).toBe('5000')
 
     const written = JSON.parse(readFileSync(path, 'utf-8'))
     expect(written.database.url).toBe('postgres://from-env/db')
@@ -118,7 +125,7 @@ describe('infra/config — loadConfig', () => {
     const warn = vi.spyOn(process.stderr, 'write').mockImplementation(() => true)
     try {
       const env = loadConfig()
-      expect(env.DATABASE_URL).toBe('postgres://from-env/db')
+      expect(env['database.url']).toBe('postgres://from-env/db')
       expect(warn).toHaveBeenCalledWith(expect.stringContaining('无法将环境变量覆盖写回配置文件'))
     } finally {
       chmodSync(dir, 0o700)
@@ -132,9 +139,10 @@ describe('infra/config — loadConfig', () => {
     withConfigArg(path)
 
     // sessionSecret's schema transforms string → string[]; loadConfig must
-    // return the RAW file value (the transform runs once, in createEnv).
+    // return the RAW file value (the transform runs once, downstream in
+    // loadServerConfig).
     const env = loadConfig()
-    expect(env.SESSION_SECRET).toBe('a-secret-that-is-at-least-32-characters-long')
+    expect(env['security.sessionSecret']).toBe('a-secret-that-is-at-least-32-characters-long')
 
     // An env override writes a raw string back — never the transformed shape.
     vi.stubEnv('security__sessionSecret', 'another-secret-that-is-at-least-32-chars')
@@ -171,10 +179,10 @@ describe('infra/config — loadConfig', () => {
     writeConfig(path, { database: { url: 'postgres://flag/db' } })
 
     process.argv = [realArgv[0]!, realArgv[1]!, '-c', path]
-    expect(loadConfig().DATABASE_URL).toBe('postgres://flag/db')
+    expect(loadConfig()['database.url']).toBe('postgres://flag/db')
 
     process.argv = [realArgv[0]!, realArgv[1]!, `--config=${path}`]
-    expect(loadConfig().DATABASE_URL).toBe('postgres://flag/db')
+    expect(loadConfig()['database.url']).toBe('postgres://flag/db')
   })
 
   it('returns env-only values without --config under VITEST (no file access)', () => {
@@ -182,7 +190,7 @@ describe('infra/config — loadConfig', () => {
     vi.stubEnv('database__url', 'postgres://env-only/db')
 
     const env = loadConfig()
-    expect(env.DATABASE_URL).toBe('postgres://env-only/db')
+    expect(env['database.url']).toBe('postgres://env-only/db')
     expect(existsSync(configPathIn(process.cwd()))).toBe(false)
   })
 
@@ -194,7 +202,7 @@ describe('infra/config — loadConfig', () => {
     // The pre-rename flat name must NOT take effect.
     vi.stubEnv('DATABASE_URL', 'postgres://legacy-flat/db')
 
-    expect(loadConfig().DATABASE_URL).toBe('postgres://from-file/db')
+    expect(loadConfig()['database.url']).toBe('postgres://from-file/db')
   })
 
   it('migrates legacy keys on load, rewrites the file, and keeps booting', () => {
@@ -213,10 +221,10 @@ describe('infra/config — loadConfig', () => {
 
     const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true)
     const env = loadConfig()
-    expect(env.SESSION_SECRET).toBe('a-secret-that-is-at-least-32-characters-long')
-    expect(env.DATA_PATH).toBe('/var/lib/kobato')
-    expect(env.DEFAULT_FONT_PATH).toBe('/usr/share/fonts/x.ttf')
-    expect(env.LOG_LEVEL).toBe('debug')
+    expect(env['security.sessionSecret']).toBe('a-secret-that-is-at-least-32-characters-long')
+    expect(env['storage.data']).toBe('/var/lib/kobato')
+    expect(env['storage.defaultFont']).toBe('/usr/share/fonts/x.ttf')
+    expect(env['server.loggingLevel']).toBe('debug')
 
     // One Chinese summary line naming every applied migration.
     expect(stderr).toHaveBeenCalledWith(
@@ -238,6 +246,91 @@ describe('infra/config — loadConfig', () => {
     stderr.mockClear()
     expect(() => loadConfig()).not.toThrow()
     expect(stderr).not.toHaveBeenCalledWith(expect.stringContaining('已迁移配置文件'))
+  })
+})
+
+describe('infra/config — loadServerConfig', () => {
+  beforeEach(() => {
+    clearConfigEnv()
+    vi.spyOn(process, 'exit').mockImplementation((() => {
+      throw new Error('process.exit called')
+    }) as never)
+  })
+
+  afterEach(() => {
+    process.argv = realArgv
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+  })
+
+  function stubRequiredEnv(): void {
+    process.argv = [realArgv[0]!, realArgv[1]!]
+    vi.stubEnv('database__url', 'postgres://test:test@localhost:5434/test')
+    vi.stubEnv('security__sessionSecret', 'vitest-session-secret-must-be-at-least-32-chars-long-ok')
+    vi.stubEnv('security__encryptionKey', 'vitest-encryption-key-must-be-at-least-32-chars-long-ok')
+    vi.stubEnv('storage__data', '/tmp/kobato-data')
+  }
+
+  it('assembles the nested validated config with schema defaults applied', () => {
+    stubRequiredEnv()
+
+    const config = loadServerConfig()
+
+    expect(config.database.url).toBe('postgres://test:test@localhost:5434/test')
+    expect(config.database.poolMax).toBe(20)
+    expect(config.database.statementTimeoutMs).toBe(30_000)
+    expect(config.server.host).toBe('0.0.0.0')
+    expect(config.server.port).toBe(4321)
+    expect(config.storage.data).toBe('/tmp/kobato-data')
+  })
+
+  it('runs the sessionSecret transform exactly once (string → string[])', () => {
+    stubRequiredEnv()
+    vi.stubEnv('security__sessionSecret', 'first-secret-at-least-32-characters!!, second-secret-at-least-32-chars!')
+
+    const config = loadServerConfig()
+
+    expect(config.security.sessionSecret).toEqual([
+      'first-secret-at-least-32-characters!!',
+      'second-secret-at-least-32-chars!',
+    ])
+  })
+
+  it('treats empty-string optional values as unset (an auto-created file boots)', () => {
+    const dir = makeTmpDir()
+    const path = configPathIn(dir)
+    writeConfig(path, {
+      database: { url: 'postgres://test:test@localhost:5434/test', restoreRole: '' },
+      security: {
+        sessionSecret: 'a-secret-that-is-at-least-32-characters-long',
+        encryptionKey: 'an-encryption-key-at-least-32-chars-long',
+      },
+      storage: { data: '/tmp/kobato-data', defaultFont: '' },
+    })
+    withConfigArg(path)
+
+    const config = loadServerConfig()
+
+    expect(config.database.restoreRole).toBeUndefined()
+    expect(config.storage.defaultFont).toBeUndefined()
+    expect(config.database.url).toBe('postgres://test:test@localhost:5434/test')
+  })
+
+  it('fails with the Chinese bootstrap hint when a required value is missing', () => {
+    process.argv = [realArgv[0]!, realArgv[1]!]
+    const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true)
+
+    expect(() => loadServerConfig()).toThrow('process.exit called')
+    expect(stderr).toHaveBeenCalledWith(expect.stringContaining('database.url'))
+  })
+
+  it('fails when an env override does not satisfy its schema', () => {
+    stubRequiredEnv()
+    vi.stubEnv('database__url', 'not-a-url')
+    const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true)
+
+    expect(() => loadServerConfig()).toThrow('process.exit called')
+    expect(stderr).toHaveBeenCalledWith(expect.stringContaining('Environment validation failed'))
   })
 })
 

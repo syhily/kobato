@@ -2,9 +2,9 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { SECRET_FIELDS } from '@/server/domains/settings/secrets'
 import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
+import { isVitest } from '@/server/infra/config'
 import { decryptIfNeeded, encryptIfNeeded, isEncrypted } from '@/server/infra/crypto/secret-encryption'
 import { findSettingsByScopePrefix, upsertSetting } from '@/server/infra/db/operations/setting'
-import { isVitest } from '@/server/infra/env'
 import { getLogger } from '@/server/infra/logger'
 import { isRecord } from '@/shared/utils/type-guards'
 

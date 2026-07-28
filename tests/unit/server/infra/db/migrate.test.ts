@@ -20,8 +20,13 @@ vi.mock('drizzle-orm/node-postgres/migrator', () => ({
   migrate: migrateMock,
 }))
 
-vi.mock('@/server/infra/env', () => ({
-  DATABASE_URL: 'postgres://test:test@localhost:5432/test',
+vi.mock('@/server/infra/config', () => ({
+  serverConfig: {
+    server: {},
+    database: { url: 'postgres://test:test@localhost:5432/test' },
+    security: {},
+    storage: {},
+  },
 }))
 
 vi.mock('@/server/infra/logger', () => ({

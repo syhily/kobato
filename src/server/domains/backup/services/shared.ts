@@ -3,7 +3,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 
-import { DATABASE_URL, processEnv, RESTORE_ROLE } from '@/server/infra/env'
+import { processEnv, serverConfig } from '@/server/infra/config'
 import { ActionFailure, DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 
@@ -36,9 +36,9 @@ export async function ensurePgTools(): Promise<void> {
 }
 
 export function getPgConnectionOptions(): { args: string[]; env: Record<string, string> } {
-  const url = DATABASE_URL
+  const url = serverConfig.database.url
   if (!url) {
-    throw new DomainError('INTERNAL', 'DATABASE_URL 未配置')
+    throw new DomainError('INTERNAL', '数据库连接（database.url）未配置')
   }
   const parsed = new URL(url)
   const env: Record<string, string> = {
@@ -51,8 +51,8 @@ export function getPgConnectionOptions(): { args: string[]; env: Record<string, 
   if (parsed.password) {
     env.PGPASSWORD = parsed.password
   }
-  if (RESTORE_ROLE) {
-    env.RESTORE_ROLE = RESTORE_ROLE
+  if (serverConfig.database.restoreRole) {
+    env.RESTORE_ROLE = serverConfig.database.restoreRole
   }
   const args = [
     `--host=${parsed.hostname}`,

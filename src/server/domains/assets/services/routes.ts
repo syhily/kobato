@@ -8,7 +8,7 @@ import {
   type SvgSlot,
 } from '@/server/assets/defaults'
 import { fetchBrandingObject, SLOT_CONTENT_TYPE } from '@/server/domains/assets/services/storage'
-import { NODE_ENV } from '@/server/infra/env'
+import { NODE_ENV } from '@/server/infra/config'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 interface SvgRoute {
