@@ -124,7 +124,6 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
       avatar: { ...CACHE_BUCKET_FALLBACKS.avatar, ttlSeconds: 60 * 60 * 24 * 7 },
       imageMeta: { ...CACHE_BUCKET_FALLBACKS.imageMeta },
 
-      embeddingSearch: { ...CACHE_BUCKET_FALLBACKS.embeddingSearch },
       searchResult: { ...CACHE_BUCKET_FALLBACKS.searchResult },
     },
   },

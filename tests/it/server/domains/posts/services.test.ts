@@ -11,9 +11,6 @@ import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { postTag } from '@/server/infra/db/schema/post-tag'
 import { category as categoryTable, tag as tagTable } from '@/server/infra/db/schema/taxonomy'
 
-vi.mock('@/server/infra/search/openai', () => ({
-  generateEmbedding: vi.fn(async () => null),
-}))
 vi.mock('@/server/domains/images/services/enhance', () => ({
   hydrateImageRefs: vi.fn(async () => undefined),
 }))
@@ -374,22 +371,6 @@ describe('posts/services/search-index — indexPost', () => {
     const rows = await db.select().from(postSearchIndex)
     expect(rows).toHaveLength(1)
     expect(rows[0]?.plainText).toBe('body')
-  })
-  it('truncates over-long embeddings to the target dimension', async () => {
-    const { generateEmbedding } = await import('@/server/infra/search/openai')
-    vi.mocked(generateEmbedding).mockResolvedValueOnce(Array.from({ length: 2000 }, () => 0.1))
-    const pid = await seedPost({ slug: 'idx-trunc' })
-    const { indexPost } = await import('@/server/domains/posts/services/search-index')
-    await indexPost(db, pid, 'T', 'S', [])
-    expect(true).toBe(true)
-  })
-  it('pads short embeddings to the target dimension', async () => {
-    const { generateEmbedding } = await import('@/server/infra/search/openai')
-    vi.mocked(generateEmbedding).mockResolvedValueOnce([0.1, 0.2, 0.3])
-    const pid = await seedPost({ slug: 'idx-pad' })
-    const { indexPost } = await import('@/server/domains/posts/services/search-index')
-    await indexPost(db, pid, 'T', 'S', [])
-    expect(true).toBe(true)
   })
 })
 

@@ -8,7 +8,6 @@ const mocks = vi.hoisted(() => ({
   getCounter: vi.fn(),
   runLikeSearch: vi.fn(),
   info: vi.fn(),
-  warn: vi.fn(),
 }))
 
 vi.mock('@/server/infra/cache/registry', () => ({
@@ -16,23 +15,9 @@ vi.mock('@/server/infra/cache/registry', () => ({
   getCounter: mocks.getCounter,
 }))
 
-vi.mock('@/server/infra/search/openai', () => ({
-  generateEmbedding: vi.fn(async () => null),
-}))
-
 vi.mock('@/server/infra/search/like', () => ({
-  likeCacheKeyParts: vi.fn((_settings: unknown, query: string) => ['like', query]),
+  likeCacheKeyParts: vi.fn((query: string) => [query]),
   runLikeSearch: mocks.runLikeSearch,
-}))
-
-vi.mock('@/server/infra/search/trgm', () => ({
-  trgmCacheKeyParts: vi.fn((_settings: unknown, query: string) => ['trgm', query, '0.3']),
-  runTrgmSearch: vi.fn(async () => ['slug-trgm']),
-}))
-
-vi.mock('@/server/infra/search/vector', () => ({
-  vectorCacheKeyParts: vi.fn((_settings: unknown, query: string) => ['vector', query]),
-  runVectorSearch: vi.fn(async () => ['slug-vector']),
 }))
 
 vi.mock('@/server/infra/logger', () => {
@@ -48,7 +33,7 @@ vi.mock('@/server/infra/logger', () => {
   const makeStub = (): LoggerStub => ({
     debug: vi.fn(),
     info: mocks.info,
-    warn: mocks.warn,
+    warn: vi.fn(),
     error: vi.fn(),
     fatal: vi.fn(),
     child: () => makeStub(),
@@ -59,11 +44,9 @@ vi.mock('@/server/infra/logger', () => {
 
 import { searchPosts } from '@/server/infra/search/search'
 
-// The cache module is mocked, so the Drizzle handle only serves the trgm
-// availability probe (`db.execute`).
-const db = {
-  execute: vi.fn(async () => ({ rows: [{ extname: 'pg_trgm' }] })),
-} as unknown as NodePgDatabase
+// The cache and like modules are mocked, so the Drizzle handle is never
+// touched — it only satisfies the signature.
+const db = {} as unknown as NodePgDatabase
 const where = sql`true`
 
 beforeEach(() => {
@@ -89,9 +72,8 @@ describe('infra/search — searchPosts', () => {
     expect(dbArg).toBe(db)
     expect(id).toBe('searchResult')
     expect(params.generation).toBe(7)
-    // No settings bundle is hydrated in the unit scope, so the infra
-    // defaults apply — LIKE mode folds only the mode and the query in.
-    expect(params.parts).toEqual(['like', 'hello'])
+    // LIKE-only: only the query is hashed into the cache key.
+    expect(params.parts).toEqual(['hello'])
     expect(loader).toBeTypeOf('function')
     expect(options.onHit).toBeTypeOf('function')
     expect(result.hits).toEqual(['slug-a', 'slug-b', 'slug-c'])

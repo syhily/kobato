@@ -195,12 +195,8 @@ describe('cache registry — key shapes', () => {
     expect(kvStoreMock.setItemRaw.mock.calls[0]?.[1]).toBe('avatar:120:a@b.c')
   })
 
-  it('hashes the embedding text and the search key parts', async () => {
-    await set(db, 'embeddingSearch', { text: 'hello' }, [1, 2, 3])
-    const embeddingKey = kvStoreMock.setItemRaw.mock.calls[0]?.[1] as string
-    expect(embeddingKey).toMatch(/^embedding-search:[0-9a-f]{64}$/)
-
-    await set(db, 'searchResult', { generation: 7, parts: ['like', 'foo'] }, ['a'])
+  it('hashes the search key parts', async () => {
+    await set(db, 'searchResult', { generation: 7, parts: ['foo'] }, ['a'])
     const searchKey = kvStoreMock.setItem.mock.calls[0]?.[1] as string
     expect(searchKey).toMatch(/^search-result:7:[0-9a-f]{64}$/)
   })
@@ -256,36 +252,6 @@ describe('cache registry — avatar sentinel codec', () => {
   it('reads an unknown sentinel byte as a miss', async () => {
     kvStoreMock.getItemRaw.mockResolvedValueOnce(Buffer.from([7, 1, 2, 3]))
     await expect(get(db, 'avatar', { size: 80, email: 'a@b.c' })).resolves.toBeNull()
-  })
-})
-
-describe('cache registry — embedding codec', () => {
-  it('stores embeddings as raw Float32 bytes', async () => {
-    await set(db, 'embeddingSearch', { text: 'hello' }, [1, 2, 3])
-
-    const blob = kvStoreMock.setItemRaw.mock.calls[0]?.[2] as Buffer
-    expect(blob.length).toBe(12)
-    expect(Array.from(new Float32Array(blob.buffer, blob.byteOffset, 3))).toEqual([1, 2, 3])
-  })
-
-  it('decodes a cached embedding back to a number array', async () => {
-    const raw = Buffer.from(new Float32Array([0.5, 0.25]).buffer)
-    kvStoreMock.getItemRaw.mockResolvedValue(raw)
-    const loader = vi.fn()
-
-    const value = await through(db, 'embeddingSearch', { text: 'hello' }, loader)
-
-    expect(value).toEqual([0.5, 0.25])
-    expect(loader).not.toHaveBeenCalled()
-  })
-
-  it('never caches a failed (null) embedding', async () => {
-    const loader = vi.fn().mockResolvedValue(null)
-
-    const value = await through(db, 'embeddingSearch', { text: 'hello' }, loader)
-
-    expect(value).toBeNull()
-    expect(kvStoreMock.setItemRaw).not.toHaveBeenCalled()
   })
 })
 
