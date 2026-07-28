@@ -30,8 +30,8 @@
 // is codec-agnostic.
 //
 // Native selection: the native packages' JS (sharp, sharp-ico,
-// @napi-rs/canvas) is bundled into the server/worker bundles with its
-// platform loads redirected to `nativeRequire` (see
+// @napi-rs/canvas, @duckdb/node-api) is bundled into the server/worker
+// bundles with its platform loads redirected to `nativeRequire` (see
 // scripts/sea/redirect-native-requires.ts), so the blob carries ONLY the
 // files that cannot ride in JS:
 //   - the platform sharp addon (`@img/sharp-<platform>`'s `*.node`),
@@ -44,6 +44,11 @@
 //   - the libvips library files (one on darwin/linux, two DLLs on win32,
 //     where they ship inside the sharp platform package itself);
 //   - the platform skia addon (`@napi-rs/canvas-<triple>`'s `skia.*.node`);
+//   - the platform DuckDB addon (`@duckdb/node-bindings-<platform>`'s
+//     `duckdb.node`), rpath-patched exactly like sharp (it links
+//     `@rpath/libduckdb.<ext>`), plus the libduckdb library file that
+//     ships beside it (`libduckdb.dylib`/`.so`; `duckdb.dll` on win32,
+//     where the DLL search covers the module's own directory);
 //   - the `natives-meta/*` metadata JSON the redirected probes answer
 //     from memory (libvips/sharp platform package.json + versions.json —
 //     the subsets that exist on this platform).
@@ -62,6 +67,7 @@ import {
   SEA_DRIZZLE_ASSET_PREFIX,
   SEA_MANIFEST_KEY,
   SEA_NATIVE_ASSET_PREFIX,
+  SEA_NATIVE_DUCKDB_ADDON_KEY,
   SEA_NATIVE_META_LIBVIPS_PACKAGE_KEY,
   SEA_NATIVE_META_LIBVIPS_VERSIONS_KEY,
   SEA_NATIVE_META_SHARP_PACKAGE_KEY,
@@ -213,12 +219,19 @@ async function listFiles(root: string) {
 /**
  * Real path of an installed package's root directory. `pkg/package.json`
  * is tried first; packages whose exports map hides it (sharp does) fall
- * back to realpath'ing the top-level node_modules symlink.
+ * back to realpath'ing the top-level node_modules symlink. Transitive
+ * packages with no top-level symlink under pnpm (e.g.
+ * `@duckdb/node-bindings`, which rides inside `@duckdb/node-api`)
+ * resolve from within a dependent package (`resolveVia`).
  */
-function resolvePackageRoot(name: string) {
+function resolvePackageRoot(name: string, resolveVia?: string) {
   try {
     return realpathSync(dirname(requireFromRepo.resolve(`${name}/package.json`)))
   } catch {
+    if (resolveVia !== undefined) {
+      const requireFromDep = createRequire(requireFromRepo.resolve(`${resolveVia}/package.json`))
+      return realpathSync(dirname(requireFromDep.resolve(`${name}/package.json`)))
+    }
     return realpathSync(join(repoRoot, 'node_modules', name))
   }
 }
@@ -241,11 +254,11 @@ interface InstalledPackage {
 function findPlatformPackage(
   entryName: string,
   match: (dep: string) => boolean,
-  { required }: { required: boolean },
+  { required, resolveVia }: { required: boolean; resolveVia?: string },
 ): InstalledPackage | null {
   let entryRoot: string
   try {
-    entryRoot = resolvePackageRoot(entryName)
+    entryRoot = resolvePackageRoot(entryName, resolveVia)
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error)
     fail(`Native package ${entryName} is not installed. Run pnpm install first.\n${reason}`)
@@ -313,10 +326,32 @@ function patchSharpAddonRpath(stagedAddon: string, libvipsFileNames: string[]) {
 }
 
 /**
+ * Patch the STAGED DuckDB addon copy so the OS loader finds libduckdb in
+ * the same flat dir — the same recipe as sharp (duckdb.node links
+ * `@rpath/libduckdb.<ext>`); the node_modules original is never touched.
+ * win32 needs nothing (the DLL search covers the module's own dir).
+ */
+function patchDuckdbAddonRpath(stagedAddon: string, libduckdbFileName: string) {
+  if (process.platform === 'darwin') {
+    run('install_name_tool', [
+      '-change',
+      `@rpath/${libduckdbFileName}`,
+      `@loader_path/${libduckdbFileName}`,
+      stagedAddon,
+    ])
+    return
+  }
+  if (process.platform === 'linux') {
+    run('patchelf', ['--set-rpath', '$ORIGIN', stagedAddon])
+  }
+}
+
+/**
  * Collect the native dynamic libraries + platform metadata. Exactly what
  * the flat extraction dir holds at runtime: the (rpath-patched) sharp
- * addon, the libvips library files, and the skia addon — 3 files on
- * darwin/linux, 4 on win32 (libvips splits into two DLLs there). No
+ * addon, the libvips library files, the skia addon, and the
+ * (rpath-patched) DuckDB addon + the libduckdb library — 5 files on
+ * darwin/linux, 6 on win32 (libvips splits into two DLLs there). No
  * node_modules tree, no npm package files, no generated shims.
  */
 async function addNativeAssets(assets: Map<string, string>, files: ManifestFileEntry[], ctx: PackContext) {
@@ -328,6 +363,10 @@ async function addNativeAssets(assets: Map<string, string>, files: ManifestFileE
   const libvipsPkg = findPlatformPackage('sharp', (dep) => dep.startsWith('@img/sharp-libvips-'), { required: false })
   const canvasPkg = findPlatformPackage('@napi-rs/canvas', (dep) => dep.startsWith('@napi-rs/canvas-'), {
     required: true,
+  })!
+  const duckdbPkg = findPlatformPackage('@duckdb/node-bindings', (dep) => dep.startsWith('@duckdb/node-bindings-'), {
+    required: true,
+    resolveVia: '@duckdb/node-api',
   })!
 
   // The platform addons + the libvips library files.
@@ -342,18 +381,32 @@ async function addNativeAssets(assets: Map<string, string>, files: ManifestFileE
   }
   const skiaAddon = await singleFile(canvasPkg.root, /^skia\..*\.node$/, `${canvasPkg.name} addon (skia.*.node)`)
 
-  // Stage + rpath-patch the sharp addon (copy only — see above).
+  // The DuckDB addon + the libduckdb library shipping beside it
+  // (libduckdb.dylib/.so; duckdb.dll on win32).
+  const duckdbAddon = await singleFile(duckdbPkg.root, /^duckdb\.node$/, `${duckdbPkg.name} addon (duckdb.node)`)
+  const libduckdbName = await singleFile(
+    duckdbPkg.root,
+    /^(?:libduckdb\.(?:dylib|so)|duckdb\.dll)$/,
+    `${duckdbPkg.name} libduckdb library`,
+  ).then((path) => path.split(/[\\/]/).pop()!)
+
+  // Stage + rpath-patch the addons (copies only — see above).
   const stagedDir = seaStagedNativesDir()
   await mkdir(stagedDir, { recursive: true })
   const stagedAddon = join(stagedDir, 'sharp.node')
   await copyFile(sharpAddon, stagedAddon)
   patchSharpAddonRpath(stagedAddon, libvipsFileNames)
+  const stagedDuckdbAddon = join(stagedDir, 'duckdb.node')
+  await copyFile(duckdbAddon, stagedDuckdbAddon)
+  patchDuckdbAddonRpath(stagedDuckdbAddon, libduckdbName)
 
   await addAsset(assets, files, SEA_NATIVE_SHARP_ADDON_KEY, stagedAddon, ctx)
   for (const name of libvipsFileNames) {
     await addAsset(assets, files, `${SEA_NATIVE_ASSET_PREFIX}${name}`, join(libvipsDir, name), ctx)
   }
   await addAsset(assets, files, SEA_NATIVE_SKIA_ADDON_KEY, skiaAddon, ctx)
+  await addAsset(assets, files, SEA_NATIVE_DUCKDB_ADDON_KEY, stagedDuckdbAddon, ctx)
+  await addAsset(assets, files, `${SEA_NATIVE_ASSET_PREFIX}${libduckdbName}`, join(duckdbPkg.root, libduckdbName), ctx)
 
   // Metadata the redirected probes answer from memory (`natives-meta/*`).
   // Each entry rides only when the source file exists on this platform:
@@ -468,9 +521,10 @@ export async function collectSeaAssets({ wasmPath, codec = 'zstd' }: { wasmPath:
   // mechanism (see `@/server/infra/sea-cli`).
   await addAsset(assets, files, SEA_SMOKE_WORKER_BUNDLE_KEY, seaSmokeWorkerBundlePath(), ctx)
 
-  // Native dynamic libraries (rpath-patched sharp addon, libvips, skia)
-  // + the platform metadata the redirected native probes answer — the
-  // only assets extracted to disk at runtime (see the header comment).
+  // Native dynamic libraries (rpath-patched sharp + DuckDB addons,
+  // libvips, libduckdb, skia) + the platform metadata the redirected
+  // native probes answer — the only assets extracted to disk at runtime
+  // (see the header comment).
   await addNativeAssets(assets, files, ctx)
 
   // Manifest: sorted for deterministic bytes (the runtime natives dir is

@@ -1,4 +1,5 @@
 import { readdirSync, readFileSync, realpathSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
@@ -9,10 +10,11 @@ import {
 } from '../../../../scripts/sea/redirect-native-requires.ts'
 
 // Contract test: the platform require call sites inside the INSTALLED
-// sharp / @napi-rs/canvas packages must stay exactly the set
-// the SEA redirect machinery knows about. A future sharp/canvas release
-// that adds a new platform specifier shape fails HERE at upgrade time —
-// not at `sea:smoke` or in production. Two halves:
+// sharp / @napi-rs/canvas / @duckdb/node-bindings packages must stay
+// exactly the set the SEA redirect machinery knows about. A future
+// sharp/canvas/duckdb release that adds a new platform specifier shape
+// fails HERE at upgrade time — not at `sea:smoke` or in production. Two
+// halves:
 //
 //   1. enumerate every `require(...)` call site carrying a platform
 //      marker in the packages' dist files and classify its shape —
@@ -28,14 +30,22 @@ import {
 // — are captured whole (the plugin's own rename re-emits them verbatim;
 // this enumeration must see the full specifier to classify it).
 const NATIVE_REQUIRE_REGEX =
-  /(?<![\w$.])require\(((?:[^()]|\([^()]*\))*?(?:@img\/sharp|@napi-rs\/canvas-|\.node|src\/build|skia\.wasi\.cjs)(?:[^()]|\([^()]*\))*?)\)/g
+  /(?<![\w$.])require\(((?:[^()]|\([^()]*\))*?(?:@img\/sharp|@napi-rs\/canvas-|@duckdb\/node-bindings-|\.node|src\/build|skia\.wasi\.cjs)(?:[^()]|\([^()]*\))*?)\)/g
 
 /** Real path of an installed package root (exports maps hide package.json on some). */
 function packageRoot(name: string): string {
   try {
     return realpathSync(join(process.cwd(), 'node_modules', name))
   } catch {
-    throw new Error(`${name} is not installed — run pnpm install first`)
+    // Transitive packages have no top-level node_modules symlink under
+    // pnpm (e.g. @duckdb/node-bindings rides inside @duckdb/node-api) —
+    // fall back to module resolution.
+    try {
+      const requireFromRepo = createRequire(join(process.cwd(), 'package.json'))
+      return realpathSync(dirname(requireFromRepo.resolve(`${name}/package.json`)))
+    } catch {
+      throw new Error(`${name} is not installed — run pnpm install first`)
+    }
   }
 }
 
@@ -80,6 +90,9 @@ function classify(spec: string): SpecifierClass {
   if (/^@napi-rs\/canvas-(?!wasm32)[^/]+$/.test(spec)) {
     return 'answered'
   }
+  if (/^@duckdb\/node-bindings-[^/]+\/duckdb\.node$/.test(spec)) {
+    return 'answered'
+  }
   // Metadata probes nativeRequire answers from the embedded assets.
   if (/^@img\/sharp-libvips-[^/]+\/(versions|package|lib)$/.test(spec)) {
     return 'answered'
@@ -118,6 +131,7 @@ function enumerateCallSites(): CallSite[] {
     ...['index.js', 'js-binding.js', 'geometry.js', 'load-image.js', 'node-canvas.js'].map((name) =>
       join(packageRoot('@napi-rs/canvas'), name),
     ),
+    join(packageRoot('@duckdb/node-bindings'), 'duckdb.js'),
   ]
   const sites: CallSite[] = []
   for (const file of files) {
@@ -135,18 +149,19 @@ describe('contract: native platform specifiers', () => {
 
   it('finds the platform require call sites in the installed packages', () => {
     // A scanner regression must never pass vacuously: sharp's switch alone
-    // carries ~30 call sites, canvas's ~50.
+    // carries ~30 call sites, canvas's ~50, duckdb's ~7.
     expect(sites.length).toBeGreaterThanOrEqual(50)
-    // Both addon shapes are present (otherwise the enumeration is broken).
+    // All three addon shapes are present (otherwise the enumeration is broken).
     expect(sites.some((site) => site.normalized.includes('/sharp.node'))).toBe(true)
     expect(sites.some((site) => site.normalized.startsWith('@napi-rs/canvas-'))).toBe(true)
+    expect(sites.some((site) => site.normalized.includes('/duckdb.node'))).toBe(true)
   })
 
   it('every call site is a known shape — no unhandled specifiers', () => {
     const unknown = sites.filter((site) => site.klass === 'unknown')
     expect(
       unknown.map((site) => `${site.file}: require(${site.arg})`),
-      'a new sharp/canvas platform specifier shape appeared — extend native-require.ts + the plugin',
+      'a new sharp/canvas/duckdb platform specifier shape appeared — extend native-require.ts + the plugin',
     ).toEqual([])
   })
 
@@ -155,6 +170,7 @@ describe('contract: native platform specifiers', () => {
       ...distFiles(packageRoot('sharp')),
       join(packageRoot('@napi-rs/canvas'), 'js-binding.js'),
       join(packageRoot('@napi-rs/canvas'), 'index.js'),
+      join(packageRoot('@duckdb/node-bindings'), 'duckdb.js'),
     ]) {
       const source = readFileSync(file, 'utf-8')
       const before = platformRequireArgs(source).length

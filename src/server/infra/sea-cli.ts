@@ -49,7 +49,8 @@ Usage:
   kobato --version, -v     Print the version and exit
   kobato --help, -h        Print this help and exit
   kobato --smoke-natives   Extract and load the native packages (sharp,
-                           @napi-rs/canvas), run a tiny render, and exit
+                           @napi-rs/canvas, @duckdb/node-api), run a tiny
+                           render + a tiny aggregate, and exit
   kobato --smoke-worker    Round-trip a real sharp job through the
                            worker_threads image pool and exit. Requires
                            the full configuration (validated, never
@@ -77,12 +78,12 @@ Optional environment variables:
 /**
  * `--smoke-natives`: prove the embedded native libraries extract and load.
  * Runs the same code path as server startup (`bootstrapSeaRuntime`, then
- * sharp / @napi-rs/canvas with their platform loads redirected to the
- * flat natives dir) plus one real operation per native library, so CI can
- * validate a freshly built binary without a database. Also works outside
- * SEA mode (resolves node_modules directly). The dynamic imports are
- * deliberate: sharp's platform detection runs at module evaluation and
- * needs `KOBATO_NATIVES_DIR` set first.
+ * sharp / @napi-rs/canvas / @duckdb/node-api with their platform loads
+ * redirected to the flat natives dir) plus one real operation per native
+ * library, so CI can validate a freshly built binary without a database.
+ * Also works outside SEA mode (resolves node_modules directly). The
+ * dynamic imports are deliberate: sharp's platform detection runs at
+ * module evaluation and needs `KOBATO_NATIVES_DIR` set first.
  */
 async function smokeNatives(): Promise<void> {
   bootstrapSeaRuntime()
@@ -106,6 +107,20 @@ async function smokeNatives(): Promise<void> {
   context.fillRect(0, 0, 8, 8)
   if (canvas.toBuffer('image/png').byteLength === 0) {
     throw new Error('@napi-rs/canvas PNG encode produced an empty buffer')
+  }
+
+  // @duckdb/node-api: in-memory instance, one row in, one aggregate out.
+  const { DuckDBInstance } = await import('@duckdb/node-api')
+  const duckdb = await DuckDBInstance.create()
+  const connection = await duckdb.connect()
+  await connection.run('CREATE TABLE smoke (n INTEGER)')
+  await connection.run('INSERT INTO smoke VALUES (1), (2), (3)')
+  const result = await connection.runAndReadAll('SELECT sum(n) AS total FROM smoke')
+  const total = result.getRowObjects()[0]?.total
+  connection.closeSync()
+  duckdb.closeSync()
+  if (Number(total) !== 6) {
+    throw new Error(`@duckdb/node-api aggregate returned ${String(total)}, expected 6`)
   }
 
   process.stdout.write(`SEA natives smoke passed: ${process.platform}-${process.arch}\n`)
