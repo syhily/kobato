@@ -1,24 +1,21 @@
 import type { Buffer } from 'node:buffer'
-import type { SuperJSONResult } from 'superjson'
 
 import { and, eq, gt, inArray, isNull, or } from 'drizzle-orm'
-import superjson from 'superjson'
 
 import type { Database } from '@/server/infra/db/database'
 
 import { kvCache } from '@/server/infra/db/schema/kv-cache'
-import { isRecord } from '@/shared/utils/type-guards'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 /**
- * Postgres-backed row-access plane for the cache module
+ * SQLite-backed row-access plane for the cache module
  * (`@/server/infra/cache/registry`) — the ONLY consumer. JSON payloads
- * are superjson-serialized into the `value` JSONB column — structured
- * storage, so `serialize`/`deserialize` rather than the string-oriented
- * `stringify`/`parse` pair the Redis wrapper uses. Binary payloads go to
- * the `blob` BYTEA column. A row holds one or the other: both writers
- * null out the sibling column so an overwrite never leaves a stale
- * payload of the other kind behind.
+ * ride the `value` json-mode column as PLAIN JSON (superjson was dropped
+ * with the SQLite migration: every bucket payload is JSON-native — the
+ * one Date-bearing shape, image metadata, carries `updatedAtMs` as an
+ * epoch number). Binary payloads go to the `blob` BLOB column. A row
+ * holds one or the other: both writers null out the sibling column so an
+ * overwrite never leaves a stale payload of the other kind behind.
  */
 
 export interface KvStoreSetOptions {
@@ -40,25 +37,15 @@ function expiryFrom(opts: KvStoreSetOptions): Date | null {
   return opts.ttlSeconds ? new Date(Date.now() + opts.ttlSeconds * 1000) : null
 }
 
-// The JSONB round-trip preserves exactly the object `superjson.serialize`
-// produced, so the cast to SuperJSONResult is shape-safe. `deserialize`
-// still sits behind try/catch because a hand-edited or partially-migrated
-// row can be malformed — a bad entry reads as a miss, same as the Redis
-// wrapper's parse failure.
+// The json-mode column already parsed the stored text, so the value
+// comes back as plain JSON. The cast to T is the declaration's own
+// contract (the registry validates reads against the bucket schema where
+// one exists); `undefined` reads as a miss.
 function deserializeValue<T>(value: unknown): T | null {
-  // Rows written by `setItem` always carry the superjson envelope
-  // (`{ json, meta? }`). Anything else in the column — a hand edit, or a
-  // raw scalar written by direct SQL (e.g. the search generation
-  // counter) — is not ours to decode and reads as a miss.
-  if (!isRecord(value) || !('json' in value)) {
+  if (value === null || value === undefined) {
     return null
   }
-  try {
-    const result = superjson.deserialize<T>(unsafeCast<SuperJSONResult>(value))
-    return result === undefined ? null : result
-  } catch {
-    return null
-  }
+  return unsafeCast<T>(value)
 }
 
 export async function getItem<T>(db: Database, key: string): Promise<T | null> {
@@ -75,7 +62,8 @@ export async function getItem<T>(db: Database, key: string): Promise<T | null> {
 }
 
 export async function setItem(db: Database, key: string, value: unknown, opts: KvStoreSetOptions): Promise<void> {
-  const serialized = superjson.serialize(value)
+  // Plain JSON storage: the json-mode column serializes the value itself.
+  const serialized = value
   const expiresAt = expiryFrom(opts)
   await db
     .insert(kvCache)

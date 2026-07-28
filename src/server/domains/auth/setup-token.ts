@@ -1,15 +1,10 @@
-import type { SuperJSONResult } from 'superjson'
-
 import { and, eq, gt } from 'drizzle-orm'
 import { randomBytes, timingSafeEqual } from 'node:crypto'
-import superjson from 'superjson'
 
 import type { Database } from '@/server/infra/db/database'
 
 import { oneTimeToken } from '@/server/infra/db/schema/one-time-token'
 import { boxLog } from '@/server/infra/logger/box-console'
-import { isRecord } from '@/shared/utils/type-guards'
-import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const TOKEN_KEY = 'setup_token'
 const TTL_SECONDS = 7 * 24 * 60 * 60 // 7 days
@@ -27,14 +22,10 @@ async function readSetupToken(db: Database): Promise<string | null> {
     .where(and(eq(oneTimeToken.key, TOKEN_KEY), gt(oneTimeToken.expiresAt, new Date())))
     .limit(1)
   const payload = rows[0]?.payload
-  // Rows written below always carry the superjson envelope
-  // (`{ json, meta? }`); anything else reads as a miss.
-  if (!isRecord(payload) || !('json' in payload)) {
-    return null
-  }
+  // Rows written below carry the plain-JSON token string (superjson was
+  // dropped with the SQLite migration); anything else reads as a miss.
   try {
-    const token = superjson.deserialize<string>(unsafeCast<SuperJSONResult>(payload))
-    return typeof token === 'string' ? token : null
+    return typeof payload === 'string' ? payload : null
   } catch {
     return null
   }
@@ -57,7 +48,7 @@ export async function getSetupToken(db: Database): Promise<string> {
   let token = await readSetupToken(db)
   if (!token) {
     token = randomBytes(32).toString('hex')
-    const payload = superjson.serialize(token)
+    const payload = token
     const expiresAt = new Date(Date.now() + TTL_SECONDS * 1000)
     await db.insert(oneTimeToken).values({ key: TOKEN_KEY, payload, expiresAt }).onConflictDoUpdate({
       target: oneTimeToken.key,

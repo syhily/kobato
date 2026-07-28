@@ -1,5 +1,4 @@
 import { randomUUID } from 'node:crypto'
-import superjson from 'superjson'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Database } from '@/server/infra/db/database'
@@ -253,7 +252,7 @@ describe('comments/services/token — cleanupExpiredTokens', () => {
     expect(r.cleaned).toEqual({})
     expect(r.validEntries).toEqual([])
   })
-  it('accepts a real token issued by issueCommentToken (superjson wire format)', async () => {
+  it('accepts a real token issued by issueCommentToken (plain-JSON wire format)', async () => {
     const { issueCommentToken, cleanupExpiredTokens } = await import('@/server/domains/comments/services/token')
     const token = await issueCommentToken(db, 42, 7, 'post:1', 60)
     const r = await cleanupExpiredTokens(db, {
@@ -263,14 +262,14 @@ describe('comments/services/token — cleanupExpiredTokens', () => {
     expect(r.validEntries[0]?.payload.commentId).toBe('42')
     expect(r.cleaned['post:1']).toHaveLength(1)
   })
-  it('skips entries whose stored payload is not a superjson envelope', async () => {
+  it('skips entries whose stored payload is not a payload object', async () => {
     const { cleanupExpiredTokens } = await import('@/server/domains/comments/services/token')
     const token = 'bad-json-' + Math.random().toString(36).slice(2)
-    // The jsonb column accepts a bare JSON string; the envelope guard
-    // (`isRecord + 'json' in`) reads it as a miss.
+    // The json column accepts a bare JSON string; the shape guard reads
+    // it as a miss.
     await db.insert(oneTimeToken).values({
       key: `comment:token:${token}`,
-      payload: 'not-an-envelope',
+      payload: 'not-a-payload-object',
       expiresAt: new Date(Date.now() + 60_000),
     })
     const r = await cleanupExpiredTokens(db, {
@@ -284,7 +283,7 @@ describe('comments/services/token — cleanupExpiredTokens', () => {
     const token = 'bad-shape-' + Math.random().toString(36).slice(2)
     await db.insert(oneTimeToken).values({
       key: `comment:token:${token}`,
-      payload: superjson.serialize({ foo: 'bar' }),
+      payload: { foo: 'bar' },
       expiresAt: new Date(Date.now() + 60_000),
     })
     const r = await cleanupExpiredTokens(db, {

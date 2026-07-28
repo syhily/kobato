@@ -28,15 +28,19 @@ async function findRow(key: string): Promise<KvCacheRow | null> {
 const past = () => new Date(Date.now() - 60_000)
 
 describe('kv-store — JSON entries', () => {
-  it('round-trips plain objects, Dates and bigints through superjson', async () => {
-    const at = new Date('2026-07-01T12:00:00.000Z')
-    await setItem(db, 'k:plain', { name: 'kobato', at, id: 9007199254740993 }, { bucket: 'feed' })
+  it('round-trips JSON-native values with plain-JSON semantics', async () => {
+    // Plain JSON (superjson was dropped with the SQLite migration): Dates
+    // and bigints are no longer special — bucket payloads are JSON-native
+    // by contract, and a Date stored anyway comes back as its ISO string.
+    await setItem(
+      db,
+      'k:plain',
+      { name: 'kobato', atMs: 1782907200000, tags: ['a', 'b'], pinned: false },
+      { bucket: 'feed' },
+    )
 
-    const result = await getItem<{ name: string; at: Date; id: number }>(db, 'k:plain')
-    expect(result?.name).toBe('kobato')
-    expect(result?.at).toEqual(at)
-    expect(result?.at instanceof Date).toBe(true)
-    expect(result?.id).toBe(9007199254740993)
+    const result = await getItem<{ name: string; atMs: number; tags: string[]; pinned: boolean }>(db, 'k:plain')
+    expect(result).toEqual({ name: 'kobato', atMs: 1782907200000, tags: ['a', 'b'], pinned: false })
   })
 
   it('returns null for missing keys', async () => {
@@ -87,11 +91,12 @@ describe('kv-store — JSON entries', () => {
     expect(await getItem(db, 'k:swap')).toEqual({ meta: true })
   })
 
-  it('treats a non-superjson payload (raw scalar) as a miss', async () => {
-    // Mirrors rows written by direct SQL (e.g. the cache generation
-    // counters) — `getItem` must not decode them.
+  it('round-trips a raw scalar payload written by direct SQL', async () => {
+    // Mirrors rows written by direct SQL (the cache generation counters):
+    // plain-JSON storage means the scalar reads back as-is. Only the
+    // registry's counter path reads these keys — never `getItem`.
     await db.insert(kvCache).values({ key: 'k:counter', bucket: 'searchResult', value: 5 })
-    expect(await getItem(db, 'k:counter')).toBeNull()
+    expect(await getItem(db, 'k:counter')).toBe(5)
   })
 
   it('removeItem deletes the entry', async () => {
