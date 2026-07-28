@@ -78,16 +78,16 @@ afterAll(async () => {
   await closePool(pool)
 })
 
-// ── Settings bundle with OTP enabled ────────────────────────────────────────
+// ── Settings bundle with a ready mail transport (OTP now follows mail) ──────
 
 const OTP_TEST_BUNDLE = {
   ...TEST_BLOG_SETTINGS_BUNDLE,
-  security: {
-    ...TEST_BLOG_SETTINGS_BUNDLE.security,
-    otp: { enabled: true },
-  },
   mail: {
-    mail: { enabled: true, host: 'api.zeabur.com', apiKey: 'test-key', sender: 'noreply@example.com' },
+    mail: {
+      ...TEST_BLOG_SETTINGS_BUNDLE.mail!.mail,
+      enabled: true,
+      apiKey: 'test-key',
+    },
   },
   rateLimit: {
     ...TEST_BLOG_SETTINGS_BUNDLE.rateLimit,

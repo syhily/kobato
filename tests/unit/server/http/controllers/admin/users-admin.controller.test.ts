@@ -76,7 +76,7 @@ function makeAdminUserDto() {
     pendingCount: 0,
     lastCommentAt: null,
     passkeyCount: 0,
-    passkeyForce: false,
+    loginMethod: 'password' as const,
   }
 }
 

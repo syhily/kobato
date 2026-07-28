@@ -102,10 +102,11 @@ describe('admin routes — Component SSR renders', () => {
               createdAt: '2024-01-01T00:00:00.000Z',
               lastIp: '127.0.0.1',
               lastUa: 'curl/8',
-              passkeyForce: false,
+              loginMethod: 'password',
             },
             counts: { total: 7, pending: 2, deleteRequested: 0 },
             passkeyEnabled: true,
+            mailReady: false,
           }}
         />,
         '/admin/me/profile',

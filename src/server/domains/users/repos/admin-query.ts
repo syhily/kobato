@@ -2,6 +2,8 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { and, count, desc, eq, isNull, max, or, sql } from 'drizzle-orm'
 
+import type { LoginMethod } from '@/shared/contracts/users'
+
 import { ilikeEscape } from '@/server/infra/db/ilike-escape'
 import { comment } from '@/server/infra/db/schema/comment'
 import { page } from '@/server/infra/db/schema/page'
@@ -35,7 +37,7 @@ export interface AdminUserRow {
   pendingCount: number
   lastCommentAt: Date | null
   passkeyCount: number
-  passkeyForce: boolean
+  loginMethod: LoginMethod
 }
 
 function buildAdminUsersConditions(filters: AdminUsersListFilters) {
@@ -108,7 +110,7 @@ export async function listAdminUsers(
       pendingCount: sql<number>`COUNT(${comment.id}) FILTER (WHERE ${comment.deletedAt} IS NULL AND ${comment.isPending} = TRUE)`,
       lastCommentAt: lastCommentAtAggregate(),
       passkeyCount: sql<number>`(SELECT COUNT(*) FROM passkey_credential WHERE passkey_credential.user_id = ${user.id})`,
-      passkeyForce: user.passkeyForce,
+      loginMethod: user.loginMethod,
     })
     .from(user)
     .leftJoin(comment, eq(comment.userId, user.id))
@@ -148,7 +150,7 @@ export async function findAdminUserById(db: NodePgDatabase, id: bigint): Promise
       pendingCount: sql<number>`COUNT(${comment.id}) FILTER (WHERE ${comment.deletedAt} IS NULL AND ${comment.isPending} = TRUE)`,
       lastCommentAt: lastCommentAtAggregate(),
       passkeyCount: sql<number>`(SELECT COUNT(*) FROM passkey_credential WHERE passkey_credential.user_id = ${user.id})`,
-      passkeyForce: user.passkeyForce,
+      loginMethod: user.loginMethod,
     })
     .from(user)
     .leftJoin(comment, eq(comment.userId, user.id))

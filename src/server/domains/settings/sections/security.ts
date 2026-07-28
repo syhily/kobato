@@ -25,11 +25,6 @@ export const securitySchema = z.object({
       origins: z.array(z.string().trim().min(1).max(253)).max(20).default([]),
     })
     .default({ enabled: false, origins: [] }),
-  otp: z
-    .object({
-      enabled: coerceBoolean,
-    })
-    .default({ enabled: false }),
   passkey: z
     .object({
       enabled: coerceBoolean,
@@ -40,7 +35,6 @@ export const securitySchema = z.object({
 export const securityDefaults = {
   csrf: { enabled: true, exemptPaths: [] },
   cors: { enabled: false, origins: [] },
-  otp: { enabled: false },
   passkey: { enabled: false },
 } as const
 

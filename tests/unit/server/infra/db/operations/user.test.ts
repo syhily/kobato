@@ -24,7 +24,7 @@ const SAFE_USER_COLUMNS = [
   'role',
   'isMuted',
   'receiveEmail',
-  'passkeyForce',
+  'loginMethod',
 ]
 
 function createSelectCapture(rows: unknown[]) {

@@ -26,25 +26,27 @@ const AdminInstallRoute = asRoute(AdminInstallRouteRaw)
 const AdminLayoutRoute = asRoute(AdminLayoutRouteRaw)
 
 // Base loader fixture: every field the route's default Component reads
-// (csrfToken, action, passkeyEnabled, authError, tokenError, resetToken).
+// (csrfToken, action, magicToken, authError, tokenError, resetToken).
 // Each test spreads in overrides to hit a different branch.
 const baseLoader = {
   redirectTo: '/',
   action: 'login' as const,
   tokenError: null as string | null,
   resetToken: null as string | null,
+  magicToken: null as string | null,
   authError: null as string | null,
-  passkeyEnabled: false,
   csrfToken: 'csrf-test',
 }
 
 describe('routes/auth/signin — Component SSR branches', () => {
   describe('login action', () => {
-    it('renders the login form for the default login action', () => {
+    it('renders the identifier-first login form (email only) for the default login action', () => {
       const html = stableHtml(renderInRouter(<LoginRoute loaderData={baseLoader} />, '/signin'))
       expect(html).toContain('登陆')
       expect(html).toContain('邮箱')
-      expect(html).toContain('忘记')
+      // The password step only appears after the identify round-trip.
+      expect(html).not.toContain('忘记')
+      expect(html).not.toContain('name="password"')
     })
 
     it('renders the login form when action is omitted from url (defaults to login)', () => {
@@ -122,6 +124,42 @@ describe('routes/auth/signin — Component SSR branches', () => {
         ),
       )
       expect(html).not.toContain('验证码')
+    })
+  })
+
+  describe('magiclink action', () => {
+    it('renders the magic-link confirm form when action is magiclink and a token is present', () => {
+      const html = stableHtml(
+        renderInRouter(
+          <LoginRoute
+            loaderData={{
+              ...baseLoader,
+              action: 'magiclink',
+              magicToken: 'magic-token-abc',
+            }}
+          />,
+          '/signin?action=magiclink&token=magic-token-abc',
+        ),
+      )
+      expect(html).toContain('确认登陆')
+      expect(html).toContain('magic_token')
+      expect(html).not.toContain('验证码')
+    })
+
+    it('does not render the confirm form when the magic token is missing', () => {
+      const html = stableHtml(
+        renderInRouter(
+          <LoginRoute
+            loaderData={{
+              ...baseLoader,
+              action: 'magiclink',
+              magicToken: null,
+            }}
+          />,
+          '/signin?action=magiclink',
+        ),
+      )
+      expect(html).not.toContain('确认登陆')
     })
   })
 

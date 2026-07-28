@@ -3,11 +3,14 @@ import { SaveIcon } from 'lucide-react'
 import { useState } from 'react'
 import { useRevalidator } from 'react-router'
 
+import type { LoginMethod } from '@/shared/contracts/users'
+
 import { orpcQuery } from '@/client/api/orpc-query'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { avatarImageUrl } from '@/shared/utils/avatar'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { roleLabel } from '@/shared/utils/roles'
+import { LoginMethodCard } from '@/ui/admin/my/LoginMethodCard'
 import { PasskeyManagementCard } from '@/ui/admin/my/PasskeyManagementCard'
 import { PasswordChangeForm } from '@/ui/admin/my/PasswordChangeForm'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
@@ -34,7 +37,7 @@ export interface MyProfileUser {
   createdAt: string | null
   lastIp: string | null
   lastUa: string | null
-  passkeyForce: boolean
+  loginMethod: LoginMethod
 }
 
 export interface MyProfileCounts {
@@ -47,9 +50,10 @@ export interface MyProfileViewProps {
   user: MyProfileUser
   counts: MyProfileCounts
   passkeyEnabled: boolean
+  mailReady: boolean
 }
 
-export function MyProfileView({ user, counts, passkeyEnabled }: MyProfileViewProps) {
+export function MyProfileView({ user, counts, passkeyEnabled, mailReady }: MyProfileViewProps) {
   const config = useSiteIdentity()
   const revalidator = useRevalidator()
 
@@ -243,7 +247,8 @@ export function MyProfileView({ user, counts, passkeyEnabled }: MyProfileViewPro
           </Card>
 
           <PasswordChangeForm />
-          <PasskeyManagementCard userId={user.id} passkeyForce={user.passkeyForce} passkeyEnabled={passkeyEnabled} />
+          <LoginMethodCard loginMethod={user.loginMethod} passkeyEnabled={passkeyEnabled} mailReady={mailReady} />
+          <PasskeyManagementCard userId={user.id} passkeyEnabled={passkeyEnabled} />
         </div>
       </div>
     </AdminListPage>

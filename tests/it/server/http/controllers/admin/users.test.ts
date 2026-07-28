@@ -81,7 +81,7 @@ describe('adminUsersRouter.list', () => {
       pendingCount: 0,
       lastCommentAt: null,
       passkeyCount: 0,
-      passkeyForce: false,
+      loginMethod: 'password',
     }
     vi.mocked(usersService.listUsersForAdmin).mockResolvedValueOnce({
       users: [userRow as unknown as AdminUserRow],

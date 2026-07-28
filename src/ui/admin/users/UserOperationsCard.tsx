@@ -187,7 +187,7 @@ export function UserOperationsCard({ user, currentUserId, passkeyEnabled, onDele
               onClick={() =>
                 setConfirm({
                   title: `清除 ${user.name} 的 Passkey？`,
-                  description: '清除后该用户的所有 Passkey 将被删除，强制登录开关也将关闭。',
+                  description: '清除后该用户的所有 Passkey 将被删除，登陆方式将重置为密码登陆。',
                   actionLabel: '清除',
                   destructive: true,
                   actionIcon: <FingerprintIcon data-icon />,

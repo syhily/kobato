@@ -324,10 +324,11 @@ describe('auth/password-flow — resetPasswordWithToken', () => {
 
     expect(result).toEqual({ type: 'redirect', to: '/admin', setCookie: '__session=abc' })
 
-    // Password stored as a bcrypt hash of the new password, passkeyForce cleared.
+    // Password stored as a bcrypt hash of the new password, login method
+    // reverted to password.
     expect(mocks.updateUserById).toHaveBeenCalledTimes(1)
-    const patch = mocks.updateUserById.mock.calls[0]![2] as { password: string; passkeyForce: boolean }
-    expect(patch.passkeyForce).toBe(false)
+    const patch = mocks.updateUserById.mock.calls[0]![2] as { password: string; loginMethod: string }
+    expect(patch.loginMethod).toBe('password')
     expect(await bcrypt.compare('LongEnough1', patch.password)).toBe(true)
 
     // Passkey cleanup runs after the password update, before the session

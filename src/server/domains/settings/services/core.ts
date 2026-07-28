@@ -14,7 +14,6 @@ import { SECTION_CHANGE_HANDLERS } from '@/server/domains/settings/services/sect
 import { assertSectionPatchKeys } from '@/server/domains/settings/services/section-patch'
 import { encryptIfNeeded } from '@/server/infra/crypto/secret-encryption'
 import { findSettingByScope, upsertSetting } from '@/server/infra/db/operations/setting'
-import { checkMailReady } from '@/server/infra/email/sender'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
@@ -65,18 +64,7 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
       )
     }
     if (section === 'security') {
-      const securityPayload = unsafeCast<{ otp?: { enabled?: boolean }; passkey?: { enabled?: boolean } }>(parsed.data)
-      if (securityPayload.otp?.enabled) {
-        const current = getBlogSettingsBundleSync()
-        const mail = current?.mail?.mail
-        if (!mail) {
-          throw new DomainError('BAD_REQUEST', '开启 OTP 前请先完成邮件服务配置（接入域名、API Key、发件人邮箱）')
-        }
-        const ready = checkMailReady(mail)
-        if (!ready.ready) {
-          throw new DomainError('BAD_REQUEST', `开启 OTP 前请先完成邮件服务配置：${ready.message}`)
-        }
-      }
+      const securityPayload = unsafeCast<{ passkey?: { enabled?: boolean } }>(parsed.data)
       if (securityPayload.passkey?.enabled) {
         const current = getBlogSettingsBundleSync()
         const website = current?.siteIdentity?.website

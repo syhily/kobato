@@ -4,6 +4,7 @@ import type { MySessionItem } from '@/routes/admin/me/sessions'
 import type { MyProfileUser, MyProfileCounts } from '@/ui/admin/my/MyProfileView'
 
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
+import { LoginMethodCard } from '@/ui/admin/my/LoginMethodCard'
 import { MyProfileView } from '@/ui/admin/my/MyProfileView'
 import { MySessionsView } from '@/ui/admin/my/MySessionsView'
 import { PasskeyManagementCard } from '@/ui/admin/my/PasskeyManagementCard'
@@ -30,7 +31,7 @@ function makeMyProfileUser(overrides: Partial<MyProfileUser> = {}): MyProfileUse
     createdAt: overrides.createdAt ?? '2024-01-01T00:00:00.000Z',
     lastIp: overrides.lastIp ?? '127.0.0.1',
     lastUa: overrides.lastUa ?? 'Mozilla/5.0',
-    passkeyForce: overrides.passkeyForce ?? false,
+    loginMethod: overrides.loginMethod ?? 'password',
   }
 }
 
@@ -58,7 +59,9 @@ function makeSession(overrides: Partial<MySessionItem> = {}): MySessionItem {
 describe('snapshot: MyProfileView', () => {
   it('renders profile and stats for admin', () => {
     const html = stableHtml(
-      renderInRouter(<MyProfileView user={makeMyProfileUser()} counts={makeCounts()} passkeyEnabled={false} />),
+      renderInRouter(
+        <MyProfileView user={makeMyProfileUser()} counts={makeCounts()} passkeyEnabled={false} mailReady={false} />,
+      ),
     )
     expect(html).toContain('个人信息')
     expect(html).toContain('Alice')
@@ -71,7 +74,12 @@ describe('snapshot: MyProfileView', () => {
   it('renders badge fields for privileged role', () => {
     const html = stableHtml(
       renderInRouter(
-        <MyProfileView user={makeMyProfileUser({ role: 'author' })} counts={makeCounts()} passkeyEnabled={false} />,
+        <MyProfileView
+          user={makeMyProfileUser({ role: 'author' })}
+          counts={makeCounts()}
+          passkeyEnabled={false}
+          mailReady={false}
+        />,
       ),
     )
     expect(html).toContain('徽章名称')
@@ -81,7 +89,12 @@ describe('snapshot: MyProfileView', () => {
   it('hides badge fields for visitor', () => {
     const html = stableHtml(
       renderInRouter(
-        <MyProfileView user={makeMyProfileUser({ role: 'visitor' })} counts={makeCounts()} passkeyEnabled={false} />,
+        <MyProfileView
+          user={makeMyProfileUser({ role: 'visitor' })}
+          counts={makeCounts()}
+          passkeyEnabled={false}
+          mailReady={false}
+        />,
       ),
     )
     expect(html).not.toContain('徽章名称')
@@ -114,12 +127,42 @@ describe('snapshot: PasswordChangeForm', () => {
 
 describe('snapshot: PasskeyManagementCard', () => {
   it('renders loading state when passkey is enabled', () => {
-    const html = stableHtml(
-      renderInRouter(<PasskeyManagementCard userId="user-1" passkeyForce={false} passkeyEnabled={true} />),
-    )
+    const html = stableHtml(renderInRouter(<PasskeyManagementCard userId="user-1" passkeyEnabled={true} />))
     expect(html).toContain('Passkey 管理')
     expect(html).toContain('加载中')
     expect(html).toContain('添加新设备')
-    expect(html).toContain('强制使用 Passkey 登录')
+  })
+})
+
+describe('snapshot: LoginMethodCard', () => {
+  // The passkeyList query stays pending under SSR (no queryFn runs), so the
+  // passkey option always renders its "register a passkey first" disabled
+  // hint; only the mailReady / passkeyEnabled branches are exercisable here.
+  it('renders the disabled hints when mail is not ready', () => {
+    const html = stableHtml(
+      renderInRouter(<LoginMethodCard loginMethod="password" passkeyEnabled={true} mailReady={false} />),
+    )
+    expect(html).toContain('登陆方式')
+    expect(html).toContain('密码登陆')
+    expect(html).toContain('邮箱链接登陆')
+    expect(html).toContain('Passkey 登陆')
+    // magic-link disabled: points at the mail settings.
+    expect(html).toContain('需要管理员先在「设置 → 邮件服务」完成邮件配置。')
+    // passkeyList pending => passkeyCount 0 => "register one first" hint.
+    expect(html).toContain('需要先在下方「Passkey 管理」中注册至少一个 Passkey。')
+  })
+
+  it('shows the magic-link description when mail is ready', () => {
+    const html = stableHtml(
+      renderInRouter(<LoginMethodCard loginMethod="magic-link" passkeyEnabled={true} mailReady={true} />),
+    )
+    expect(html).toContain('每次登陆时向你的邮箱发送一次性登陆链接，点击链接即可登陆，无需密码。')
+  })
+
+  it('shows the passkey-disabled hint when the passkey feature is off', () => {
+    const html = stableHtml(
+      renderInRouter(<LoginMethodCard loginMethod="password" passkeyEnabled={false} mailReady={true} />),
+    )
+    expect(html).toContain('Passkey 功能未启用，请联系管理员在「设置 → 安全」中开启。')
   })
 })

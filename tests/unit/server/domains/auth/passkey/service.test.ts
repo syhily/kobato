@@ -61,7 +61,7 @@ function testUser(partial: Partial<SafeUser> = {}): SafeUser {
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: null,
-    passkeyForce: false,
+    loginMethod: 'password',
     ...partial,
   } as SafeUser
 }
@@ -551,7 +551,7 @@ describe('passkey/service — credential management', () => {
     expect(result).toBe(2)
   })
 
-  it('sets passkeyForce', async () => {
+  it('sets the login method', async () => {
     const updateSpy = vi.fn(() => ({
       set: vi.fn(() => ({
         where: vi.fn(() => Promise.resolve()),
@@ -559,12 +559,12 @@ describe('passkey/service — credential management', () => {
     }))
     const dbWithUpdate = { update: updateSpy } as unknown as NodePgDatabase
 
-    await passkeyService.setPasskeyForce(dbWithUpdate, 1n, false)
+    await passkeyService.setLoginMethod(dbWithUpdate, 1n, 'password')
     expect(updateSpy).toHaveBeenCalledTimes(1)
   })
 })
 
-describe('passkey/service — force/credential invariant', () => {
+describe('passkey/service — login-method/credential invariant', () => {
   function dbWithCredentialCount(remaining: { id: bigint }[]) {
     const updateSpy = vi.fn(() => ({
       set: vi.fn(() => ({
@@ -590,21 +590,21 @@ describe('passkey/service — force/credential invariant', () => {
     return { db, selectSpy, updateSpy }
   }
 
-  it('clears passkeyForce when deleteCredential removes the last credential', async () => {
+  it('reverts loginMethod to password when deleteCredential removes the last credential', async () => {
     const { db, updateSpy } = dbWithCredentialCount([])
     const result = await passkeyService.deleteCredential(db, 'c1', 1n)
     expect(result).toBe(true)
     expect(updateSpy).toHaveBeenCalledTimes(1)
   })
 
-  it('preserves passkeyForce when credentials remain after deleteCredential', async () => {
+  it('preserves loginMethod when credentials remain after deleteCredential', async () => {
     const { db, updateSpy } = dbWithCredentialCount([{ id: 2n }])
     const result = await passkeyService.deleteCredential(db, 'c1', 1n)
     expect(result).toBe(true)
     expect(updateSpy).not.toHaveBeenCalled()
   })
 
-  it('does not touch passkeyForce when deleteCredential matches nothing', async () => {
+  it('does not touch loginMethod when deleteCredential matches nothing', async () => {
     const { db, selectSpy, updateSpy } = dbWithCredentialCount([])
     db.delete = vi.fn(() => ({
       where: vi.fn(() => ({
@@ -618,28 +618,28 @@ describe('passkey/service — force/credential invariant', () => {
     expect(updateSpy).not.toHaveBeenCalled()
   })
 
-  it('clears passkeyForce after deleteAllCredentials leaves zero credentials', async () => {
+  it('reverts loginMethod to password after deleteAllCredentials leaves zero credentials', async () => {
     const { db, updateSpy } = dbWithCredentialCount([])
     const result = await passkeyService.deleteAllCredentials(db, 1n)
     expect(result).toBe(1)
     expect(updateSpy).toHaveBeenCalledTimes(1)
   })
 
-  it('rejects enabling force when no credentials exist', async () => {
+  it('rejects choosing passkey when no credentials exist', async () => {
     const { db, updateSpy } = dbWithCredentialCount([])
-    await expect(passkeyService.setPasskeyForce(db, 1n, true)).rejects.toBeInstanceOf(DomainError)
+    await expect(passkeyService.setLoginMethod(db, 1n, 'passkey')).rejects.toBeInstanceOf(DomainError)
     expect(updateSpy).not.toHaveBeenCalled()
   })
 
-  it('enables force when at least one credential exists', async () => {
+  it('chooses passkey when at least one credential exists', async () => {
     const { db, updateSpy } = dbWithCredentialCount([{ id: 1n }])
-    await passkeyService.setPasskeyForce(db, 1n, true)
+    await passkeyService.setLoginMethod(db, 1n, 'passkey')
     expect(updateSpy).toHaveBeenCalledTimes(1)
   })
 
-  it('disables force without checking credentials', async () => {
+  it('switches back to password without checking credentials', async () => {
     const { db, selectSpy, updateSpy } = dbWithCredentialCount([])
-    await passkeyService.setPasskeyForce(db, 1n, false)
+    await passkeyService.setLoginMethod(db, 1n, 'password')
     expect(selectSpy).not.toHaveBeenCalled()
     expect(updateSpy).toHaveBeenCalledTimes(1)
   })

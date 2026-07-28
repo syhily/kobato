@@ -316,9 +316,6 @@ export interface SecuritySettings {
     enabled: boolean
     origins: string[]
   }
-  otp: {
-    enabled: boolean
-  }
   passkey: {
     enabled: boolean
   }

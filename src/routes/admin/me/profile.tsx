@@ -2,6 +2,7 @@ import { data } from 'react-router'
 
 import { isPasskeyEnabled } from '@/server/domains/auth/passkey/gate'
 import { requireRole } from '@/server/domains/auth/rbac'
+import { isMailLoginReady } from '@/server/domains/auth/services/shared'
 import { countMyComments } from '@/server/domains/comments/services/mine-comments'
 import { getAccountProfile } from '@/server/domains/users/services/account'
 import { getRequestContext } from '@/server/http/request-context'
@@ -24,9 +25,17 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     user: profile,
     counts,
     passkeyEnabled: isPasskeyEnabled(),
+    mailReady: isMailLoginReady(),
   })
 }
 
 export default function WpAdminMyProfileRoute({ loaderData }: Route.ComponentProps) {
-  return <MyProfileView user={loaderData.user} counts={loaderData.counts} passkeyEnabled={loaderData.passkeyEnabled} />
+  return (
+    <MyProfileView
+      user={loaderData.user}
+      counts={loaderData.counts}
+      passkeyEnabled={loaderData.passkeyEnabled}
+      mailReady={loaderData.mailReady}
+    />
+  )
 }

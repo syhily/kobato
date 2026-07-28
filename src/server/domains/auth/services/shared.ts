@@ -8,6 +8,9 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import type { BlogSession } from '@/server/domains/auth/session-storage'
 
+import { checkMailReady } from '@/server/infra/email/sender'
+import { getBlogSettingsBundleSync } from '@/shared/config/getters'
+
 export type AuthFlowResult =
   | { type: 'redirect'; to: string; setCookie?: string }
   | { type: 'error'; message: string; setCookie?: string }
@@ -35,4 +38,14 @@ export interface SigninFlowContext {
 export function formFieldString(formData: FormData, key: string): string {
   const value = formData.get(key)
   return typeof value === 'string' ? value.trim() : ''
+}
+
+/**
+ * Whether mail-dependent signin steps (the post-password OTP code and
+ * magic-link delivery) can run right now. There is deliberately no
+ * on/off toggle: a ready mail transport enables them automatically.
+ */
+export function isMailLoginReady(): boolean {
+  const mail = getBlogSettingsBundleSync()?.mail?.mail
+  return mail !== undefined && checkMailReady(mail).ready
 }

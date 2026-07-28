@@ -3,7 +3,6 @@ import type { LoaderFunctionArgs } from 'react-router'
 import { data, redirect } from 'react-router'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
-import { isPasskeyEnabled } from '@/server/domains/auth/passkey/gate'
 import { logout } from '@/server/domains/auth/primitives'
 import { readLivePendingOtp } from '@/server/domains/auth/services/otp'
 import { destroySession } from '@/server/domains/auth/session-storage'
@@ -68,6 +67,24 @@ export async function loadSigninData({ request, context }: Pick<LoaderFunctionAr
     }
   }
 
+  // Magic-link landing: same peek-then-confirm pattern — the GET only
+  // validates the token (mail scanners must not consume it); the POST
+  // from the confirm form consumes it.
+  let magicToken: string | null = null
+  if (action === 'magiclink') {
+    const rawToken = url.searchParams.get('token')
+    if (!rawToken) {
+      tokenError = '链接无效或已过期。'
+    } else {
+      const result = await peekToken(db, rawToken, 'signin-link')
+      if (result === null) {
+        tokenError = '链接无效或已过期。'
+      } else {
+        magicToken = rawToken
+      }
+    }
+  }
+
   // OTP pending state: the domain owns the session keys and the expiry
   // rule — the loader only consumes the projection.
   const otpState = readLivePendingOtp(session)
@@ -85,10 +102,10 @@ export async function loadSigninData({ request, context }: Pick<LoaderFunctionAr
       action: 'verifyotp',
       tokenError,
       resetToken,
+      magicToken,
       pendingOtpEmail: pendingOtpUser.email,
       pendingOtpSentAt: pendingOtpUser.sentAt,
       authError: url.searchParams.get('error'),
-      passkeyEnabled: isPasskeyEnabled(),
       csrfToken: session.get('csrfToken'),
     })
   }
@@ -99,8 +116,8 @@ export async function loadSigninData({ request, context }: Pick<LoaderFunctionAr
     action: action ?? 'login',
     tokenError,
     resetToken,
+    magicToken,
     authError,
-    passkeyEnabled: isPasskeyEnabled(),
     csrfToken: session.get('csrfToken'),
   })
 }

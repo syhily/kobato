@@ -4,14 +4,16 @@ import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
+import { isPasskeyEnabled } from '@/server/domains/auth/passkey/gate'
 import {
   deleteCredential,
   generateRegistrationOptions,
   listCredentials,
-  setPasskeyForce,
+  setLoginMethod,
   verifyRegistrationResponse,
 } from '@/server/domains/auth/passkey/service'
 import { MIN_PASSWORD_LENGTH, PASSWORD_COMPLEXITY_RE } from '@/server/domains/auth/schema'
+import { isMailLoginReady } from '@/server/domains/auth/services/shared'
 import { revokeOwnSessionWithGuard } from '@/server/domains/auth/session-guard'
 import { updateAccountPassword, updateAccountProfile } from '@/server/domains/users/services/account'
 import { authedProc, passkeyGuard } from '@/server/http/orpc-base'
@@ -23,6 +25,7 @@ import {
   tryPasskeySetForceRateLimit,
   tryRateLimit,
 } from '@/server/infra/rate-limit'
+import { loginMethodSchema } from '@/shared/contracts/users'
 import { idFromString } from '@/shared/utils/id'
 import { isRecord } from '@/shared/utils/type-guards'
 
@@ -256,23 +259,28 @@ const passkeyDelete = authedProc
     return { success: true }
   })
 
-const passkeySetForce = authedProc
-  .route({ method: 'POST', path: '/account/passkeys/set-force' })
-  .input(z.object({ force: z.boolean() }))
+const setLoginMethodProc = authedProc
+  .route({ method: 'POST', path: '/account/login-method' })
+  .input(z.object({ method: loginMethodSchema }))
   .output(z.object({ success: z.boolean() }))
-  .use(passkeyGuard)
   .handler(async ({ input, context }) => {
     const { db, viewer, clientAddress } = context
     const limit = await tryPasskeySetForceRateLimit(clientAddress)
     if (limit.exceeded) {
       throw new ORPCError('TOO_MANY_REQUESTS', { message: '操作过于频繁，请稍后再试。' })
     }
-    await setPasskeyForce(db, idFromString(viewer.id), input.force)
+    if (input.method === 'passkey' && !isPasskeyEnabled()) {
+      throw new ORPCError('BAD_REQUEST', { message: 'Passkey 登录未启用。' })
+    }
+    if (input.method === 'magic-link' && !isMailLoginReady()) {
+      throw new ORPCError('BAD_REQUEST', { message: '请先在设置中配置邮件服务。' })
+    }
+    await setLoginMethod(db, idFromString(viewer.id), input.method)
     recordAuditEventFromContext(context, {
-      action: 'passkey_force_changed',
+      action: 'login_method_changed',
       resourceType: 'user',
       resourceId: viewer.id,
-      details: { force: input.force },
+      details: { method: input.method },
     })
     return { success: true }
   })
@@ -285,5 +293,5 @@ export const accountRouter = {
   passkeyRegisterBegin,
   passkeyRegisterFinish,
   passkeyDelete,
-  passkeySetForce,
+  setLoginMethod: setLoginMethodProc,
 }

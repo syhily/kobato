@@ -15,8 +15,6 @@ import { Button } from '@/ui/components/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/components/card'
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
-import { Separator } from '@/ui/components/separator'
-import { Switch } from '@/ui/components/switch'
 
 const DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 
@@ -40,13 +38,6 @@ function usePasskeyManagement(_userId: string, revalidator: ReturnType<typeof us
   })
   const deleteMutation = useMutation({
     ...orpcQuery.account.passkeyDelete.mutationOptions(),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: orpcQuery.account.passkeyList.key() })
-      void revalidator.revalidate()
-    },
-  })
-  const setForceMutation = useMutation({
-    ...orpcQuery.account.passkeySetForce.mutationOptions(),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: orpcQuery.account.passkeyList.key() })
       void revalidator.revalidate()
@@ -103,7 +94,6 @@ function usePasskeyManagement(_userId: string, revalidator: ReturnType<typeof us
     registerMessage,
     handleRegister,
     handleDelete,
-    setForceMutation,
     deletePending: deleteMutation.isPending,
     registerPending: registerBeginMutation.isPending || registerFinishMutation.isPending,
   }
@@ -111,11 +101,10 @@ function usePasskeyManagement(_userId: string, revalidator: ReturnType<typeof us
 
 interface PasskeyManagementCardProps {
   userId: string
-  passkeyForce: boolean
   passkeyEnabled: boolean
 }
 
-export function PasskeyManagementCard({ userId, passkeyForce, passkeyEnabled }: PasskeyManagementCardProps) {
+export function PasskeyManagementCard({ userId, passkeyEnabled }: PasskeyManagementCardProps) {
   const config = useSiteIdentity()
   const revalidator = useRevalidator()
   const webAuthnSupported = useWebAuthnSupported()
@@ -130,7 +119,7 @@ export function PasskeyManagementCard({ userId, passkeyForce, passkeyEnabled }: 
     <Card>
       <CardHeader>
         <CardTitle>Passkey 管理</CardTitle>
-        <CardDescription>管理你的 Passkey 凭据与登录偏好。</CardDescription>
+        <CardDescription>管理你的 Passkey 凭据；选择 Passkey 登陆请到上方「登陆方式」。</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         {passkey.isLoading ? (
@@ -187,22 +176,6 @@ export function PasskeyManagementCard({ userId, passkeyForce, passkeyEnabled }: 
         </div>
         {!!passkey.registerError && <p className="text-sm text-destructive">{passkey.registerError}</p>}
         {!!passkey.registerMessage && <p className="text-sm text-status-success-fg">{passkey.registerMessage}</p>}
-
-        <Separator />
-
-        <div className="flex items-center justify-between">
-          <div className="flex flex-col gap-1">
-            <span className="text-sm font-medium">强制使用 Passkey 登录</span>
-            <span className="text-xs text-muted-foreground">
-              开启后密码登录将被禁用，忘记密码会同时清除所有 Passkey。
-            </span>
-          </div>
-          <Switch
-            checked={passkeyForce}
-            disabled={passkey.credentials.length === 0 || passkey.setForceMutation.isPending}
-            onCheckedChange={(val) => passkey.setForceMutation.mutate({ force: val })}
-          />
-        </div>
       </CardContent>
     </Card>
   )

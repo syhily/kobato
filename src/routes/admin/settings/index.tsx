@@ -134,9 +134,7 @@ const SECTION_CONFIGS = [
   },
   {
     id: 'security',
-    render: (bundle, _tz, masks) => (
-      <SecurityForm security={bundle.security} mail={bundle.mail.mail} mailMasks={masks} />
-    ),
+    render: (bundle) => <SecurityForm security={bundle.security} />,
   },
   {
     id: 'backup',

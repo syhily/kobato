@@ -37,7 +37,7 @@ function makeAdminUser(overrides: Partial<AdminUserDto> = {}): AdminUserDto {
     pendingCount: pick('pendingCount', 0),
     lastCommentAt: pick('lastCommentAt', null),
     passkeyCount: pick('passkeyCount', 0),
-    passkeyForce: pick('passkeyForce', false),
+    loginMethod: pick('loginMethod', 'password'),
   }
 }
 

@@ -1,7 +1,7 @@
 import { PlusIcon, Trash2Icon } from 'lucide-react'
 import { Controller, useFieldArray } from 'react-hook-form'
 
-import type { MailSettings, SecretMasks, SecuritySettings } from '@/shared/config/types'
+import type { SecuritySettings } from '@/shared/config/types'
 
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { isValidPasskeyDomain } from '@/shared/utils/safe-url'
@@ -26,8 +26,6 @@ interface OriginRow {
 
 interface SecurityFormProps {
   security: SecuritySettings
-  mail: MailSettings['mail']
-  mailMasks: Pick<SecretMasks, 'mailApiKeyMask' | 'mailSmtpPassMask' | 'mailMailgunApiKeyMask'>
 }
 
 const MAX_EXEMPT_PATHS = 20
@@ -236,66 +234,6 @@ function CorsPolicyCard({ security }: { security: SecuritySettings }) {
   )
 }
 
-function OtpToggleCard({ security, mail, mailMasks }: SecurityFormProps) {
-  const transport = mail.transport
-  const mailReady =
-    transport === 'smtp'
-      ? mail.enabled && mail.smtpHost && mail.smtpUser && mailMasks.mailSmtpPassMask !== null && mail.sender
-      : transport === 'mailgun'
-        ? mail.enabled && mail.mailgunDomain && mailMasks.mailMailgunApiKeyMask !== null && mail.sender
-        : mail.enabled && mail.host && mailMasks.mailApiKeyMask !== null && mail.sender
-  const missingHint =
-    transport === 'smtp'
-      ? '邮件服务未配置完整，无法开启 OTP。请先前往「邮件服务」选择 SMTP 并配置服务器地址、用户名、密码和发件人邮箱。'
-      : transport === 'mailgun'
-        ? '邮件服务未配置完整，无法开启 OTP。请先前往「邮件服务」选择 Mailgun 并配置发送域名、API Key 和发件人邮箱。'
-        : '邮件服务未配置完整，无法开启 OTP。请先前往「邮件服务」选择 Zeabur ZSend 并配置接入域名、API Key 和发件人邮箱。'
-
-  const { form, settingGroupProps, save } = useSettingsCard<SecuritySettings, { enabled: boolean }>({
-    section: 'security',
-    source: security,
-    toState: (source) => ({ enabled: source.otp?.enabled ?? false }),
-    fromState: (state) => ({
-      otp: { enabled: state.enabled },
-    }),
-  })
-
-  return (
-    <SettingGroup
-      title="登录 OTP 验证"
-      description="开启后，所有用户登录时需要额外输入邮箱收到的 6 位数字验证码。"
-      {...settingGroupProps}
-    >
-      <SettingGroupContent>
-        <SettingsRow
-          label="启用 OTP 验证"
-          hint={mailReady ? '开启后密码验证通过将发送 OTP 邮件。' : '开启 OTP 前请先配置邮件服务。'}
-        >
-          <Controller
-            control={form.control}
-            name="enabled"
-            render={({ field }) => (
-              <div className="flex items-center gap-3">
-                <SettingsSwitch
-                  id="otp-enabled"
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                  save={save}
-                  disabled={!mailReady && !field.value}
-                />
-                <FieldLabel htmlFor="otp-enabled" className="font-normal">
-                  {field.value ? '已开启' : '已关闭'}
-                </FieldLabel>
-              </div>
-            )}
-          />
-        </SettingsRow>
-        {!mailReady && <p className="text-sm text-muted-foreground">{missingHint}</p>}
-      </SettingGroupContent>
-    </SettingGroup>
-  )
-}
-
 function PasskeyToggleCard({ security }: { security: SecuritySettings }) {
   const siteIdentity = useSiteIdentity()
   const website = siteIdentity?.website ?? ''
@@ -354,13 +292,12 @@ function PasskeyToggleCard({ security }: { security: SecuritySettings }) {
   )
 }
 
-export function SecurityForm({ security, mail, mailMasks }: SecurityFormProps) {
+export function SecurityForm({ security }: SecurityFormProps) {
   return (
     <div className="flex flex-col gap-5">
       <CsrfToggleCard security={security} />
       <CsrfExemptPathsCard security={security} />
       <CorsPolicyCard security={security} />
-      <OtpToggleCard security={security} mail={mail} mailMasks={mailMasks} />
       <PasskeyToggleCard security={security} />
     </div>
   )

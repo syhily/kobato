@@ -1,7 +1,13 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
-import { LoginForm, LostPasswordForm, OtpForm, ResetPasswordForm } from '@/ui/admin/auth/AdminCredentialsForm'
+import {
+  LoginForm,
+  LostPasswordForm,
+  MagicLinkConfirmForm,
+  OtpForm,
+  ResetPasswordForm,
+} from '@/ui/admin/auth/AdminCredentialsForm'
 import { AdminInstallForm } from '@/ui/admin/auth/AdminInstallForm'
 import { SetupTokenVerifyForm } from '@/ui/admin/auth/SetupTokenVerifyForm'
 
@@ -11,16 +17,47 @@ vi.mock('@simplewebauthn/browser', () => ({
 }))
 
 describe('snapshot: LoginForm', () => {
-  it('renders email and password fields', () => {
+  it('renders the email step (identifier-first)', () => {
     const html = stableHtml(renderInRouter(<LoginForm isSubmitting={false} />))
     expect(html).toContain('邮箱')
-    expect(html).toContain('密码')
     expect(html).toContain('登陆')
+    expect(html).toContain('?action=identify')
+    // Password field only appears after the identify round-trip.
+    expect(html).not.toContain('name="password"')
+    expect(html).not.toContain('忘记')
+  })
+
+  it('renders the password step after identify answers method=password', () => {
+    const html = stableHtml(renderInRouter(<LoginForm isSubmitting={false} actionData={{ method: 'password' }} />))
+    expect(html).toContain('密码')
     expect(html).toContain('忘记')
+    expect(html).toContain('更换邮箱')
+    expect(html).toContain('name="password"')
+  })
+
+  it('renders the passkey step after identify answers method=passkey', () => {
+    const html = stableHtml(renderInRouter(<LoginForm isSubmitting={false} actionData={{ method: 'passkey' }} />))
+    expect(html).toContain('Passkey')
+    expect(html).toContain('重试')
+    expect(html).toContain('返回')
   })
 
   it('renders submitting state', () => {
     const html = stableHtml(renderInRouter(<LoginForm isSubmitting={true} />))
+    expect(html).toContain('登陆中')
+  })
+})
+
+describe('snapshot: MagicLinkConfirmForm', () => {
+  it('renders the confirm button and hidden token', () => {
+    const html = stableHtml(renderInRouter(<MagicLinkConfirmForm token="magic-token-1" isSubmitting={false} />))
+    expect(html).toContain('确认登陆')
+    expect(html).toContain('magic_token')
+    expect(html).toContain('magic-token-1')
+  })
+
+  it('renders submitting state', () => {
+    const html = stableHtml(renderInRouter(<MagicLinkConfirmForm token="magic-token-1" isSubmitting={true} />))
     expect(html).toContain('登陆中')
   })
 })

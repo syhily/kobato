@@ -137,7 +137,10 @@ export async function resetPasswordWithToken(
   }
 
   const hashed = await bcrypt.hash(newPasswordStr, PASSWORD_HASH_ROUNDS)
-  await updateUserById(db, result.userId, { password: hashed, passkeyForce: false })
+  // Resetting the password also returns the account to password signin —
+  // the account-recovery escape hatch must not leave the user locked
+  // behind a lost passkey or a dead mailbox.
+  await updateUserById(db, result.userId, { password: hashed, loginMethod: 'password' })
   try {
     await deleteAllCredentials(db, result.userId)
   } catch {

@@ -18,6 +18,7 @@ import superjson from 'superjson'
 
 import type { SafeUser } from '@/server/infra/db/operations/user'
 import type { PasskeyCredentialRow } from '@/server/infra/db/types'
+import type { LoginMethod } from '@/shared/contracts/users'
 
 import { findSafeUserById, findUserByEmail } from '@/server/infra/db/operations/user'
 import { oneTimeToken } from '@/server/infra/db/schema/one-time-token'
@@ -328,17 +329,20 @@ export async function listCredentials(db: NodePgDatabase, userId: bigint): Promi
   }))
 }
 
-// Invariant: `passkeyForce` must not outlive credentials — a user with
-// force enabled and zero passkeys would lock themselves out. Every
-// credential-deletion path runs this check so callers inherit it.
-async function clearForceWhenNoCredentials(db: NodePgDatabase, userId: bigint): Promise<void> {
+// Invariant: `loginMethod = 'passkey'` must not outlive credentials — a
+// user whose method is passkey with zero passkeys would lock themselves
+// out. Every credential-deletion path runs this check so callers inherit it.
+async function revertMethodWhenNoCredentials(db: NodePgDatabase, userId: bigint): Promise<void> {
   const remaining = await db
     .select({ id: passkeyCredential.id })
     .from(passkeyCredential)
     .where(eq(passkeyCredential.userId, userId))
     .limit(1)
   if (remaining.length === 0) {
-    await db.update(user).set({ passkeyForce: false }).where(eq(user.id, userId))
+    await db
+      .update(user)
+      .set({ loginMethod: 'password' })
+      .where(and(eq(user.id, userId), eq(user.loginMethod, 'passkey')))
   }
 }
 
@@ -350,7 +354,7 @@ export async function deleteCredential(db: NodePgDatabase, credentialId: string,
   if (result.length === 0) {
     return false
   }
-  await clearForceWhenNoCredentials(db, userId)
+  await revertMethodWhenNoCredentials(db, userId)
   return true
 }
 
@@ -359,20 +363,20 @@ export async function deleteAllCredentials(db: NodePgDatabase, userId: bigint): 
     .delete(passkeyCredential)
     .where(eq(passkeyCredential.userId, userId))
     .returning({ id: passkeyCredential.id })
-  await clearForceWhenNoCredentials(db, userId)
+  await revertMethodWhenNoCredentials(db, userId)
   return result.length
 }
 
-export async function setPasskeyForce(db: NodePgDatabase, userId: bigint, force: boolean): Promise<void> {
-  if (force) {
+export async function setLoginMethod(db: NodePgDatabase, userId: bigint, method: LoginMethod): Promise<void> {
+  if (method === 'passkey') {
     const credentials = await db
       .select({ id: passkeyCredential.id })
       .from(passkeyCredential)
       .where(eq(passkeyCredential.userId, userId))
       .limit(1)
     if (credentials.length === 0) {
-      throw new DomainError('BAD_REQUEST', '必须至少注册一个 Passkey 才能开启强制登录。')
+      throw new DomainError('BAD_REQUEST', '必须至少注册一个 Passkey 才能选择 Passkey 登陆。')
     }
   }
-  await db.update(user).set({ passkeyForce: force }).where(eq(user.id, userId))
+  await db.update(user).set({ loginMethod: method }).where(eq(user.id, userId))
 }

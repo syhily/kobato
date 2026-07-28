@@ -16,7 +16,7 @@ const SETUP_TTL_MS = 7 * 24 * 60 * 60 * 1000
 // `varchar(32)` so the set has plenty of headroom for future flows
 // (e.g. `'email-change'`), but new values must be added here so the
 // type system catches typos at call sites.
-export type TokenPurpose = 'password-reset' | 'author-invite' | 'signin-otp'
+export type TokenPurpose = 'password-reset' | 'author-invite' | 'signin-otp' | 'signin-link'
 
 export interface TokenResult {
   token: string
@@ -29,6 +29,14 @@ export async function issueResetToken(db: NodePgDatabase, userId: bigint): Promi
 
 export async function issueSetupToken(db: NodePgDatabase, userId: bigint): Promise<TokenResult> {
   return issueToken(db, userId, 'author-invite', SETUP_TTL_MS)
+}
+
+const SIGNIN_LINK_TTL_MS = 15 * 60 * 1000
+export const SIGNIN_LINK_TTL_MINUTES = SIGNIN_LINK_TTL_MS / (60 * 1000)
+
+/** One-time magic-link signin token. High-entropy, so the generic path suffices. */
+export async function issueSignInLinkToken(db: NodePgDatabase, userId: bigint): Promise<TokenResult> {
+  return issueToken(db, userId, 'signin-link', SIGNIN_LINK_TTL_MS)
 }
 
 async function issueToken(

@@ -4,7 +4,6 @@ import type {
   CacheSettings,
   FontsSettings,
   FooterNavItem,
-  MailSettings,
   NavigationSettings,
   SecuritySettings,
   SocialItem,
@@ -80,31 +79,6 @@ vi.mock('@/client/api/client', () => ({
   },
 }))
 
-// ───────────────────────────── fixtures ─────────────────────────────
-
-const baseMail: MailSettings['mail'] = {
-  enabled: true,
-  host: 'api.zeabur.com',
-  apiKey: 'key',
-  sender: 'noreply@example.com',
-  transport: 'zeabur',
-  smtpHost: '',
-  smtpPort: 587,
-  smtpUser: '',
-  smtpPass: '',
-  smtpSecure: false,
-  smtpRequireTls: true,
-  smtpRejectUnauthorized: true,
-  mailgunDomain: '',
-  mailgunApiKey: '',
-}
-
-const mailMasks = {
-  mailApiKeyMask: '••••key',
-  mailSmtpPassMask: null,
-  mailMailgunApiKeyMask: null,
-} as const
-
 // ────────────────────────────── FontsForm ───────────────────────────
 
 const populatedFonts: FontsSettings = {
@@ -166,14 +140,13 @@ describe('snapshot: FontsForm', () => {
 // ───────────────────────────── SecurityForm ────────────────────────
 
 describe('snapshot: SecurityForm', () => {
-  it('renders CSRF enabled, CORS disabled, OTP ready and Passkey eligible states', () => {
+  it('renders CSRF enabled, CORS disabled and Passkey eligible states', () => {
     const security: SecuritySettings = {
       csrf: { enabled: true, exemptPaths: ['/rpc/public.comments'] },
       cors: { enabled: false, origins: [] },
-      otp: { enabled: false },
       passkey: { enabled: false },
     }
-    const html = stableHtml(renderToHtml(<SecurityForm security={security} mail={baseMail} mailMasks={mailMasks} />))
+    const html = stableHtml(renderToHtml(<SecurityForm security={security} />))
     // CSRF card: switch id + exempt-paths card heading + populated row.
     // (Toggle label text comes from Controller field.value which hydrates
     // post-render, so assert on structural signals instead.)
@@ -186,81 +159,29 @@ describe('snapshot: SecurityForm', () => {
     expect(html).toContain('CORS 策略')
     expect(html).toContain('镜像模式：将自动允许所有请求来源。')
     expect(html).toContain('添加来源')
-    // OTP card: mail is ready (zeabur transport, enabled + sender + key mask),
-    // so the "未配置完整" warning must NOT show and the hint is the ready copy.
-    expect(html).toContain('登录 OTP 验证')
-    expect(html).toContain('开启后密码验证通过将发送 OTP 邮件。')
-    expect(html).not.toContain('邮件服务未配置完整')
     // Passkey card: test blog fixture has a valid https domain.
     expect(html).toContain('Passkey 登录')
     expect(html).toContain('开启后用户可在个人资料中注册 Passkey。')
   })
 
-  it('renders CSRF disabled, CORS enabled with origins, and OTP / Passkey blocked states', () => {
+  it('renders CSRF disabled, CORS enabled with origins, and Passkey enabled states', () => {
     const security: SecuritySettings = {
       csrf: { enabled: false, exemptPaths: [] },
       cors: {
         enabled: true,
         origins: ['https://friend.example.com', 'https://alt.example.com'],
       },
-      otp: { enabled: true },
       passkey: { enabled: true },
     }
-    // Mail is NOT ready: disabled + no API key mask. This forces the OTP
-    // card down its "未配置完整" branch for the zeabur transport.
-    const unreadyMail: MailSettings['mail'] = { ...baseMail, enabled: false, apiKey: '' }
-    const unreadyMasks = { ...mailMasks, mailApiKeyMask: null }
-    const html = stableHtml(
-      renderToHtml(<SecurityForm security={security} mail={unreadyMail} mailMasks={unreadyMasks} />),
-    )
+    const html = stableHtml(renderToHtml(<SecurityForm security={security} />))
     // Empty exempt paths copy (no rows -> the empty <p> branch).
     expect(html).toContain('无豁免路径。所有 /rpc/* 请求均需携带令牌。')
     // CORS enabled: two origin rows emitted (values themselves are
     // uncontrolled, so assert on the field-array row names instead).
     expect(html).toContain('name="origins.0.url"')
     expect(html).toContain('name="origins.1.url"')
-    // OTP card blocked because mail not ready — shows the zeabur hint +
-    // warning text (these are static <p> nodes, not form values).
-    expect(html).toContain('开启 OTP 前请先配置邮件服务。')
-    expect(html).toContain('邮件服务未配置完整，无法开启 OTP。')
-    expect(html).toContain('请先前往「邮件服务」选择 Zeabur ZSend')
     // The passkey domain is still valid, so the invalid-domain warning is absent.
     expect(html).not.toContain('当前站点域名不满足 Passkey 要求')
-  })
-
-  it('shows the SMTP transport hint when mail is incomplete via SMTP', () => {
-    const security: SecuritySettings = {
-      csrf: { enabled: true, exemptPaths: [] },
-      cors: { enabled: false, origins: [] },
-      otp: { enabled: false },
-      passkey: { enabled: false },
-    }
-    const smtpMail: MailSettings['mail'] = {
-      ...baseMail,
-      transport: 'smtp',
-      enabled: true,
-      smtpHost: '',
-      smtpUser: '',
-    }
-    const html = stableHtml(renderToHtml(<SecurityForm security={security} mail={smtpMail} mailMasks={mailMasks} />))
-    expect(html).toContain('请先前往「邮件服务」选择 SMTP 并配置服务器地址')
-  })
-
-  it('shows the Mailgun transport hint when mail is incomplete via Mailgun', () => {
-    const security: SecuritySettings = {
-      csrf: { enabled: true, exemptPaths: [] },
-      cors: { enabled: false, origins: [] },
-      otp: { enabled: false },
-      passkey: { enabled: false },
-    }
-    const mailgunMail: MailSettings['mail'] = {
-      ...baseMail,
-      transport: 'mailgun',
-      enabled: true,
-      mailgunDomain: '',
-    }
-    const html = stableHtml(renderToHtml(<SecurityForm security={security} mail={mailgunMail} mailMasks={mailMasks} />))
-    expect(html).toContain('请先前往「邮件服务」选择 Mailgun 并配置发送域名')
   })
 })
 

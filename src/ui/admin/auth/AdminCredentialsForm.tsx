@@ -1,8 +1,8 @@
 import type { PublicKeyCredentialRequestOptionsJSON } from '@simplewebauthn/browser'
 
 import { startAuthentication } from '@simplewebauthn/browser'
-import { ArrowRightIcon, EyeIcon, EyeOffIcon, FingerprintIcon, RotateCcwIcon, SendIcon } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { ArrowRightIcon, EyeIcon, EyeOffIcon, RotateCcwIcon, SendIcon } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Form, Link } from 'react-router'
 
 import { orpc } from '@/client/api/client'
@@ -28,13 +28,19 @@ function PasswordToggle({ show, onToggle }: { show: boolean; onToggle: () => voi
   )
 }
 
-// ── Login form ──────────────────────────────────────────────────────────────
+// ── Login form (identifier-first: email → passkey / mailbox / password) ─────
+
+export interface LoginActionData {
+  method?: 'passkey' | 'password'
+  message?: string
+  error?: string
+}
 
 export interface LoginFormProps {
   action?: string
-  passkeyEnabled?: boolean
   isSubmitting: boolean
   csrfToken?: string
+  actionData?: LoginActionData | null
 }
 
 export function useWebAuthnSupported(): boolean {
@@ -68,27 +74,46 @@ function extractAuthOptions(value: unknown): PublicKeyCredentialRequestOptionsJS
   throw new Error('Passkey 服务返回数据格式错误')
 }
 
-export function LoginForm({ action, passkeyEnabled, isSubmitting, csrfToken }: LoginFormProps) {
+type LoginStep = 'email' | 'password' | 'passkey'
+
+export function LoginForm({ action, isSubmitting, csrfToken, actionData }: LoginFormProps) {
+  // Initial step derives from the identify answer so a fresh mount (or
+  // SSR) lands on the right step, not just actionData *changes*.
+  const [step, setStep] = useState<LoginStep>(() =>
+    actionData?.method === 'password' ? 'password' : actionData?.method === 'passkey' ? 'passkey' : 'email',
+  )
+  const [email, setEmail] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const webAuthnSupported = useWebAuthnSupported()
   const [passkeyError, setPasskeyError] = useState<string | null>(null)
-  const emailRef = useRef<HTMLInputElement>(null)
-  const formRef = useRef<HTMLFormElement>(null)
+  const passkeyFormRef = useRef<HTMLFormElement>(null)
+  const passwordRef = useRef<HTMLInputElement>(null)
+  const passkeyStartedRef = useRef(false)
 
-  const handlePasskeyLogin = async () => {
+  // actionData-driven step transitions (same sync-during-render pattern as
+  // OtpForm): the identify answer picks the next step.
+  const [lastActionData, setLastActionData] = useState(actionData)
+  if (actionData !== lastActionData) {
+    setLastActionData(actionData)
+    if (actionData?.method === 'password') {
+      setStep('password')
+    } else if (actionData?.method === 'passkey') {
+      setStep('passkey')
+    }
+  }
+
+  const runPasskey = useCallback(async () => {
     setPasskeyError(null)
     try {
-      const email = emailRef.current?.value?.trim()
-      const result: unknown = await orpc.passkey.authBegin({ email })
+      const result: unknown = await orpc.passkey.authBegin({ email: email.trim() })
       const options = extractAuthOptions(result)
       const challenge = options.challenge
       const assertion = await startAuthentication({ optionsJSON: options })
       // Submit via a hidden form so the React Router action handles session creation
-      const form = formRef.current
+      const form = passkeyFormRef.current
       if (!form) {
         return
       }
-      // Remove any previous passkey inputs
       form.querySelectorAll('input[name^="passkey_"]').forEach((el) => el.remove())
       const responseInput = document.createElement('input')
       responseInput.type = 'hidden'
@@ -100,7 +125,6 @@ export function LoginForm({ action, passkeyEnabled, isSubmitting, csrfToken }: L
       challengeInput.name = 'passkey_challenge'
       challengeInput.value = challenge
       form.appendChild(challengeInput)
-      form.action = `${action ?? ''}?action=passkey`
       form.requestSubmit()
     } catch (err) {
       let message = 'Passkey 登录失败，请重试。'
@@ -115,26 +139,88 @@ export function LoginForm({ action, passkeyEnabled, isSubmitting, csrfToken }: L
       }
       setPasskeyError(message)
     }
+  }, [email])
+
+  // Auto-launch the WebAuthn prompt when the passkey step opens. The
+  // browser owns the actual UI (platform prompt, or the cross-device QR
+  // code). Guarded against strict-mode double effects and repeated runs.
+  useEffect(() => {
+    if (step === 'passkey' && webAuthnSupported && !passkeyStartedRef.current) {
+      passkeyStartedRef.current = true
+      void runPasskey()
+    }
+    if (step !== 'passkey') {
+      passkeyStartedRef.current = false
+    }
+  }, [step, webAuthnSupported, runPasskey])
+
+  // Focus the password field when the password step opens.
+  useEffect(() => {
+    if (step === 'password') {
+      passwordRef.current?.focus()
+    }
+  }, [step])
+
+  if (step === 'passkey') {
+    return (
+      <div className="flex w-full flex-col gap-6">
+        <p className="text-center text-sm text-muted-foreground">
+          正在验证 <span className="font-medium text-foreground">{email}</span> 的
+          Passkey，请按浏览器提示完成验证（跨设备登陆可扫码）。
+        </p>
+        <Form method="post" action="?action=passkey" ref={passkeyFormRef} className="hidden">
+          {csrfToken ? <input type="hidden" name="csrf_token" value={csrfToken} /> : null}
+        </Form>
+        {!webAuthnSupported && (
+          <p role="alert" className="text-center text-sm text-destructive">
+            当前浏览器不支持 Passkey。
+          </p>
+        )}
+        {passkeyError && (
+          <p role="alert" aria-live="polite" className="text-center text-sm text-destructive">
+            {passkeyError}
+          </p>
+        )}
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => {
+              void runPasskey()
+            }}
+            disabled={!webAuthnSupported || isSubmitting}
+            className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <RotateCcwIcon size={14} />
+            重试
+          </button>
+          <button
+            type="button"
+            onClick={() => setStep('email')}
+            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            返回
+          </button>
+        </div>
+      </div>
+    )
   }
 
-  return (
-    <>
-      <Form method="post" action={action} id="loginForm" ref={formRef} className="flex w-full flex-col gap-6">
+  if (step === 'password') {
+    return (
+      <Form method="post" action={action} id="loginForm" className="flex w-full flex-col gap-6">
         {csrfToken ? <input type="hidden" name="csrf_token" value={csrfToken} /> : null}
-        <div className="flex w-full flex-col gap-2">
-          <Label htmlFor="loginForm-email" className="font-semibold text-(--text-admin-base)">
-            邮箱
-          </Label>
-          <Input
-            id="loginForm-email"
-            ref={emailRef}
-            name="email"
-            type="email"
-            autoComplete="email"
-            placeholder="your@email.com"
-            disabled={isSubmitting}
-            className={inputClasses}
-          />
+        <input type="hidden" name="email" value={email} />
+        <div className="flex w-full items-center justify-between gap-2">
+          <span className="truncate text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">{email}</span>
+          </span>
+          <button
+            type="button"
+            onClick={() => setStep('email')}
+            className="shrink-0 text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            更换邮箱
+          </button>
         </div>
         <div className="flex w-full flex-col gap-2">
           <Label htmlFor="loginForm-password" className="font-semibold text-(--text-admin-base)">
@@ -143,6 +229,7 @@ export function LoginForm({ action, passkeyEnabled, isSubmitting, csrfToken }: L
           <div className="relative w-full">
             <Input
               id="loginForm-password"
+              ref={passwordRef}
               name="password"
               type={showPassword ? 'text' : 'password'}
               autoComplete="current-password"
@@ -177,28 +264,80 @@ export function LoginForm({ action, passkeyEnabled, isSubmitting, csrfToken }: L
           )}
         </Button>
       </Form>
-      {passkeyEnabled && webAuthnSupported && (
-        <div className="flex flex-col gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            disabled={isSubmitting}
-            onClick={() => {
-              void handlePasskeyLogin()
-            }}
-            className="h-(--spacing-auth-btn) w-full rounded-xl text-xl font-normal"
-          >
-            <FingerprintIcon className="mr-1 inline-block" size={18} />
-            使用 Passkey 登录
-          </Button>
-          {passkeyError && (
-            <p role="alert" aria-live="polite" className="text-center text-sm text-destructive">
-              {passkeyError}
-            </p>
-          )}
-        </div>
-      )}
-    </>
+    )
+  }
+
+  return (
+    <Form method="post" action="?action=identify" id="identifyForm" className="flex w-full flex-col gap-6">
+      {csrfToken ? <input type="hidden" name="csrf_token" value={csrfToken} /> : null}
+      <div className="flex w-full flex-col gap-2">
+        <Label htmlFor="identifyForm-email" className="font-semibold text-(--text-admin-base)">
+          邮箱
+        </Label>
+        <Input
+          id="identifyForm-email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          placeholder="your@email.com"
+          required
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          disabled={isSubmitting}
+          className={inputClasses}
+        />
+      </div>
+      <Button
+        type="submit"
+        disabled={isSubmitting}
+        className="mt-7 h-(--spacing-auth-btn) w-full rounded-xl bg-brand text-xl font-normal text-white hover:opacity-90"
+      >
+        {isSubmitting ? (
+          '登陆中...'
+        ) : (
+          <>
+            登陆 <ArrowRightIcon className="ml-1 inline-block" size={18} />
+          </>
+        )}
+      </Button>
+    </Form>
+  )
+}
+
+// ── Magic-link confirm form ─────────────────────────────────────────────────
+
+export interface MagicLinkConfirmFormProps {
+  action?: string
+  token: string
+  isSubmitting: boolean
+  csrfToken?: string
+}
+
+export function MagicLinkConfirmForm({ action, token, isSubmitting, csrfToken }: MagicLinkConfirmFormProps) {
+  return (
+    <Form
+      method="post"
+      action={action ?? '?action=magiclink'}
+      id="magicLinkForm"
+      className="flex w-full flex-col gap-6"
+    >
+      <input type="hidden" name="magic_token" value={token} />
+      {csrfToken ? <input type="hidden" name="csrf_token" value={csrfToken} /> : null}
+      <p className="text-center text-sm text-muted-foreground">点击下方按钮完成登录，链接仅可使用一次。</p>
+      <Button
+        type="submit"
+        disabled={isSubmitting}
+        className="mt-7 h-(--spacing-auth-btn) w-full rounded-xl bg-brand text-xl font-normal text-white hover:opacity-90"
+      >
+        {isSubmitting ? (
+          '登陆中...'
+        ) : (
+          <>
+            确认登陆 <ArrowRightIcon className="ml-1 inline-block" size={18} />
+          </>
+        )}
+      </Button>
+    </Form>
   )
 }
 
@@ -312,7 +451,7 @@ export interface OtpFormProps {
   sentAt: number
   isSubmitting: boolean
   csrfToken?: string
-  actionData?: { message?: string; error?: string } | null
+  actionData?: LoginActionData | null
 }
 
 const RESEND_COOLDOWN_SECONDS = 60

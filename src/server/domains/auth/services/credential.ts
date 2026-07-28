@@ -1,29 +1,27 @@
-// Credential signin flow — email + password, with the passkey-force
-// refusal and the OTP staging branch when OTP is enabled.
+// Credential signin flow — email + password, with the passkey-method
+// refusal and the OTP staging branch when mail is ready.
 
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { recordAuditEvent } from '@/server/domains/audit/services/record'
+import { isPasskeySigninUser } from '@/server/domains/auth/passkey/gate'
 import { establishLoginSession } from '@/server/domains/auth/primitives'
 import { signInSchema } from '@/server/domains/auth/schema'
 import { sendOtpAndStageSession } from '@/server/domains/auth/services/otp'
-import { formFieldString, type AuthFlowResult, type SigninFlowContext } from '@/server/domains/auth/services/shared'
+import {
+  formFieldString,
+  isMailLoginReady,
+  type AuthFlowResult,
+  type SigninFlowContext,
+} from '@/server/domains/auth/services/shared'
 import { findUserByEmail, verifyUserPassword } from '@/server/infra/db/operations/user'
-import { checkMailReady } from '@/server/infra/email/sender'
 import { tryRateLimit, trySignInByEmailRateLimit } from '@/server/infra/rate-limit'
-import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 function parseLoginInput(formData: FormData): { email: string; password: string } | null {
   const email = formFieldString(formData, 'email')
   const password = formFieldString(formData, 'password')
   const parsed = signInSchema.safeParse({ email, password })
   return parsed.success ? parsed.data : null
-}
-
-function isOtpEnabled(): boolean {
-  const bundle = getBlogSettingsBundleSync()
-  const mail = bundle?.mail?.mail
-  return bundle?.security?.otp?.enabled === true && mail !== undefined && checkMailReady(mail).ready
 }
 
 async function checkLoginRateLimits(clientAddress: string, email: string): Promise<{ exceeded: boolean }> {
@@ -34,13 +32,9 @@ async function checkLoginRateLimits(clientAddress: string, email: string): Promi
   return { exceeded: loginLimit.exceeded || signInEmailLimit.exceeded }
 }
 
-async function checkPasskeyForce(db: NodePgDatabase, email: string): Promise<boolean> {
-  const bundle = getBlogSettingsBundleSync()
-  if (bundle?.security?.passkey?.enabled !== true) {
-    return false
-  }
+async function checkPasskeyMethod(db: NodePgDatabase, email: string): Promise<boolean> {
   const existingUser = await findUserByEmail(db, email)
-  return existingUser !== null && Boolean(existingUser.passkeyForce) && Boolean(existingUser.role)
+  return isPasskeySigninUser(existingUser)
 }
 
 export async function handleCredentialLogin(
@@ -63,11 +57,11 @@ export async function handleCredentialLogin(
     }
   }
 
-  const passkeyForced = await checkPasskeyForce(db, input.email)
-  if (passkeyForced) {
+  const passkeyMethod = await checkPasskeyMethod(db, input.email)
+  if (passkeyMethod) {
     return {
       type: 'error',
-      message: '该账户已强制使用 Passkey 登录，请使用 Passkey 方式登录。',
+      message: '该账户已选择 Passkey 登陆，请使用 Passkey 方式登陆。',
     }
   }
 
@@ -81,7 +75,7 @@ export async function handleCredentialLogin(
       userAgent: request.headers.get('User-Agent'),
       details: { email: input.email, reason: 'invalid_credentials' },
     })
-    if (isOtpEnabled()) {
+    if (isMailLoginReady()) {
       return {
         type: 'redirect',
         to: `/admin/signin?error=invalid_credentials&redirect_to=${encodeURIComponent(redirectTo)}`,
@@ -93,7 +87,7 @@ export async function handleCredentialLogin(
     }
   }
 
-  if (isOtpEnabled()) {
+  if (isMailLoginReady()) {
     return sendOtpAndStageSession(ctx, request, dbUser, redirectTo)
   }
 

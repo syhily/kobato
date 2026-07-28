@@ -7,7 +7,7 @@ import { parseRpcJson } from '#/_helpers/rpc-call'
 // handlers themselves stay real — we exercise their branching (rate-limit,
 // passkey-enabled gate, guard propagation, missing-user, invalid-response,
 // domain-error propagation) by shaping the mock return values per test.
-// The passkey force/credential invariant itself lives in passkey/service
+// The passkey login-method/credential invariant itself lives in passkey/service
 // and is covered by tests/unit/server/domains/auth/passkey/service.test.ts;
 // the revocation policy lives in session-guard and is covered by
 // tests/unit/server/domains/auth/session-guard.test.ts.
@@ -19,6 +19,7 @@ const tryPasskeyDeleteRateLimitMock = vi.hoisted(() => vi.fn(async () => ({ exce
 const tryPasskeySetForceRateLimitMock = vi.hoisted(() => vi.fn(async () => ({ exceeded: false })))
 
 const isPasskeyEnabledMock = vi.hoisted(() => vi.fn(() => true))
+const isMailLoginReadyMock = vi.hoisted(() => vi.fn(() => true))
 
 const updateAccountProfileMock = vi.hoisted(() => vi.fn())
 const updateAccountPasswordMock = vi.hoisted(() => vi.fn())
@@ -29,7 +30,7 @@ const generateRegistrationOptionsMock = vi.hoisted(() => vi.fn())
 const verifyRegistrationResponseMock = vi.hoisted(() => vi.fn())
 const listCredentialsMock = vi.hoisted(() => vi.fn())
 const deleteCredentialMock = vi.hoisted(() => vi.fn())
-const setPasskeyForceMock = vi.hoisted(() => vi.fn())
+const setLoginMethodMock = vi.hoisted(() => vi.fn())
 
 const recordAuditEventFromContextMock = vi.hoisted(() => vi.fn())
 
@@ -42,6 +43,8 @@ vi.mock('@/server/infra/rate-limit', () => ({
 }))
 
 vi.mock('@/server/domains/auth/passkey/gate', () => ({ isPasskeyEnabled: isPasskeyEnabledMock }))
+
+vi.mock('@/server/domains/auth/services/shared', () => ({ isMailLoginReady: isMailLoginReadyMock }))
 
 vi.mock('@/server/domains/users/services/account', () => ({
   updateAccountPassword: updateAccountPasswordMock,
@@ -60,7 +63,7 @@ vi.mock('@/server/domains/auth/passkey/service', () => ({
   deleteCredential: deleteCredentialMock,
   generateRegistrationOptions: generateRegistrationOptionsMock,
   listCredentials: listCredentialsMock,
-  setPasskeyForce: setPasskeyForceMock,
+  setLoginMethod: setLoginMethodMock,
   verifyRegistrationResponse: verifyRegistrationResponseMock,
 }))
 
@@ -102,6 +105,7 @@ describe('account controller', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     isPasskeyEnabledMock.mockReturnValue(true)
+    isMailLoginReadyMock.mockReturnValue(true)
     tryRateLimitMock.mockResolvedValue({ exceeded: false })
     tryPasskeyRegisterBeginRateLimitMock.mockResolvedValue({ exceeded: false })
     tryPasskeyRegisterFinishRateLimitMock.mockResolvedValue({ exceeded: false })
@@ -116,7 +120,7 @@ describe('account controller', () => {
     revokeOwnSessionWithGuardMock.mockResolvedValue({ targetUserId: null })
     listCredentialsMock.mockResolvedValue([])
     deleteCredentialMock.mockResolvedValue(true)
-    setPasskeyForceMock.mockResolvedValue(undefined)
+    setLoginMethodMock.mockResolvedValue(undefined)
     generateRegistrationOptionsMock.mockResolvedValue({ options: { challenge: 'c' } })
     verifyRegistrationResponseMock.mockResolvedValue(undefined)
     updateAccountProfileMock.mockResolvedValue({
@@ -364,36 +368,60 @@ describe('account controller', () => {
     })
   })
 
-  // ─── passkey set-force ───────────────────────────────────
-  describe('passkeySetForce', () => {
-    it('propagates the domain rejection when forcing on with no credentials', async () => {
-      setPasskeyForceMock.mockRejectedValue(
-        new DomainError('BAD_REQUEST', '必须至少注册一个 Passkey 才能开启强制登录。'),
+  // ─── set login method ────────────────────────────────────
+  describe('setLoginMethod', () => {
+    it('propagates the domain rejection when choosing passkey with no credentials', async () => {
+      setLoginMethodMock.mockRejectedValue(
+        new DomainError('BAD_REQUEST', '必须至少注册一个 Passkey 才能选择 Passkey 登陆。'),
       )
-      const response = await call('/passkeySetForce', { force: true })
+      const response = await call('/setLoginMethod', { method: 'passkey' })
       expect(response.status).toBe(400)
       expect(recordAuditEventFromContextMock).not.toHaveBeenCalled()
     })
 
-    it('enables force and records an audit event', async () => {
-      const response = await call('/passkeySetForce', { force: true })
+    it('switches to passkey and records an audit event', async () => {
+      const response = await call('/setLoginMethod', { method: 'passkey' })
       expect(response.status).toBe(200)
-      expect(setPasskeyForceMock).toHaveBeenCalledWith(expect.anything(), 1n, true)
+      expect(setLoginMethodMock).toHaveBeenCalledWith(expect.anything(), 1n, 'passkey')
       expect(recordAuditEventFromContextMock).toHaveBeenCalledWith(
         expect.anything(),
-        expect.objectContaining({ action: 'passkey_force_changed', details: { force: true } }),
+        expect.objectContaining({ action: 'login_method_changed', details: { method: 'passkey' } }),
       )
     })
 
-    it('disables force', async () => {
-      const response = await call('/passkeySetForce', { force: false })
+    it('switches back to password', async () => {
+      const response = await call('/setLoginMethod', { method: 'password' })
       expect(response.status).toBe(200)
-      expect(setPasskeyForceMock).toHaveBeenCalledWith(expect.anything(), 1n, false)
+      expect(setLoginMethodMock).toHaveBeenCalledWith(expect.anything(), 1n, 'password')
+    })
+
+    it('throws BAD_REQUEST when choosing passkey while passkeys are disabled', async () => {
+      isPasskeyEnabledMock.mockReturnValue(false)
+      const response = await call('/setLoginMethod', { method: 'passkey' })
+      expect(response.status).toBe(400)
+      expect(setLoginMethodMock).not.toHaveBeenCalled()
+    })
+
+    it('throws BAD_REQUEST when choosing magic-link while mail is not configured', async () => {
+      isMailLoginReadyMock.mockReturnValue(false)
+      const response = await call('/setLoginMethod', { method: 'magic-link' })
+      expect(response.status).toBe(400)
+      expect(setLoginMethodMock).not.toHaveBeenCalled()
+    })
+
+    it('switches to magic-link when mail is ready', async () => {
+      const response = await call('/setLoginMethod', { method: 'magic-link' })
+      expect(response.status).toBe(200)
+      expect(setLoginMethodMock).toHaveBeenCalledWith(expect.anything(), 1n, 'magic-link')
+      expect(recordAuditEventFromContextMock).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ action: 'login_method_changed', details: { method: 'magic-link' } }),
+      )
     })
 
     it('throws TOO_MANY_REQUESTS when rate-limited', async () => {
       tryPasskeySetForceRateLimitMock.mockResolvedValue({ exceeded: true })
-      const response = await call('/passkeySetForce', { force: false })
+      const response = await call('/setLoginMethod', { method: 'password' })
       expect(response.status).toBe(429)
     })
   })

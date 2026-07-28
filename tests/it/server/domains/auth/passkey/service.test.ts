@@ -236,9 +236,9 @@ describe('passkey — authentication round-trip', () => {
   })
 })
 
-describe('passkey — force blocks password login', () => {
-  it('blocks credential login when passkeyForce is true', async () => {
-    await seedUser({ email: 'forced@example.com', passkeyForce: true })
+describe('passkey — passkey login method blocks password login', () => {
+  it('blocks credential login when loginMethod is passkey', async () => {
+    await seedUser({ email: 'forced@example.com', loginMethod: 'passkey' })
 
     const { handleCredentialLogin } = await import('@/server/domains/auth/services/credential')
     const formData = new FormData()
@@ -262,15 +262,15 @@ describe('passkey — force blocks password login', () => {
     if (result.type === 'error') {
       expect(result.message).toContain('Passkey')
     }
-    // passkeyForce 是「无 mutation 的错误结果」：既不携带 setCookie，也不标脏会话。
+    // loginMethod='passkey' 是「无 mutation 的错误结果」：既不携带 setCookie，也不标脏会话。
     expect(result.setCookie).toBeUndefined()
     expect(markSessionDirty).not.toHaveBeenCalled()
   })
 })
 
 describe('passkey — password reset clears passkeys', () => {
-  it('deletes all credentials and disables passkeyForce on password reset', async () => {
-    const userId = await seedUser({ passkeyForce: true })
+  it('deletes all credentials and resets loginMethod on password reset', async () => {
+    const userId = await seedUser({ loginMethod: 'passkey' })
 
     // Insert a credential
     await db.insert(passkeyCredential).values({
@@ -288,7 +288,7 @@ describe('passkey — password reset clears passkeys', () => {
     expect(creds).toHaveLength(1)
 
     // Simulate password reset clearing passkeys
-    await db.update(user).set({ passkeyForce: false }).where(eq(user.id, userId))
+    await db.update(user).set({ loginMethod: 'password' }).where(eq(user.id, userId))
     await passkeyService.deleteAllCredentials(db, userId)
 
     // Verify cleared
@@ -301,13 +301,13 @@ describe('passkey — password reset clears passkeys', () => {
       .where(eq(user.id, userId))
       .limit(1)
       .then((r) => r[0])
-    expect(dbUser.passkeyForce).toBe(false)
+    expect(dbUser.loginMethod).toBe('password')
   })
 })
 
-describe('passkey — deleting last credential auto-disables force', () => {
-  it('turns off passkeyForce when the user deletes their only credential', async () => {
-    const userId = await seedUser({ passkeyForce: true })
+describe('passkey — deleting last credential reverts to password login', () => {
+  it('reverts loginMethod to password when the user deletes their only credential', async () => {
+    const userId = await seedUser({ loginMethod: 'passkey' })
 
     // Register one credential
     swaMocks.generateRegistrationOptions.mockResolvedValue({
@@ -345,7 +345,7 @@ describe('passkey — deleting last credential auto-disables force', () => {
       challenge: 'reg-c-force',
     })
 
-    // Verify credential exists and force is still on
+    // Verify credential exists and the method is still passkey
     let creds = await db.select().from(passkeyCredential).where(eq(passkeyCredential.userId, userId))
     expect(creds).toHaveLength(1)
 
@@ -355,21 +355,21 @@ describe('passkey — deleting last credential auto-disables force', () => {
       .where(eq(user.id, userId))
       .limit(1)
       .then((r) => r[0])
-    expect(dbUserRow.passkeyForce).toBe(true)
+    expect(dbUserRow.loginMethod).toBe('passkey')
 
     // Delete the only credential — the service owns the invariant and
-    // clears force itself.
+    // reverts the login method itself.
     const ok = await passkeyService.deleteCredential(db, 'cred-force', userId)
     expect(ok).toBe(true)
 
-    // Verify force was disabled
+    // Verify the method reverted to password
     dbUserRow = await db
       .select()
       .from(user)
       .where(eq(user.id, userId))
       .limit(1)
       .then((r) => r[0])
-    expect(dbUserRow.passkeyForce).toBe(false)
+    expect(dbUserRow.loginMethod).toBe('password')
   })
 })
 

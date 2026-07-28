@@ -96,7 +96,7 @@ function testUser(partial: Partial<User> = {}): User {
     badgeTextColor: null,
     lastIp: null,
     lastUa: null,
-    passkeyForce: false,
+    loginMethod: 'password',
     role: 'admin',
     isMuted: false,
     receiveEmail: true,

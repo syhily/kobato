@@ -6,7 +6,6 @@ import type {
   CommentsSettings,
   ContentSettings,
   LimitsSettings,
-  MailSettings,
   NavigationSettings,
   RateLimitSettings,
   SecuritySettings,
@@ -137,23 +136,6 @@ const baseLimits: LimitsSettings = {
   auditLogArchiveRetentionDays: 180,
 }
 
-const baseSecurityMail: MailSettings['mail'] = {
-  enabled: false,
-  host: 'api.zeabur.com',
-  apiKey: '',
-  sender: 'noreply@example.com',
-  transport: 'zeabur',
-  smtpHost: '',
-  smtpPort: 587,
-  smtpUser: '',
-  smtpPass: '',
-  smtpSecure: false,
-  smtpRequireTls: true,
-  smtpRejectUnauthorized: true,
-  mailgunDomain: '',
-  mailgunApiKey: '',
-}
-
 const baseMail: MailLoaderShape = {
   mail: {
     enabled: false,
@@ -199,7 +181,6 @@ const baseSearch: SearchLoaderShape = {
 const baseSecurity: SecuritySettings = {
   csrf: { enabled: true, exemptPaths: [] },
   cors: { enabled: false, origins: [] },
-  otp: { enabled: false },
   passkey: { enabled: false },
 }
 
@@ -347,20 +328,11 @@ describe('snapshot: admin settings forms', () => {
     expect(html).toContain('索引管理')
   })
 
-  it('SecurityForm renders CSRF, CORS, OTP and passkey cards', () => {
-    const html = stableHtml(
-      renderToHtml(
-        <SecurityForm
-          security={baseSecurity}
-          mail={baseSecurityMail}
-          mailMasks={{ mailApiKeyMask: null, mailSmtpPassMask: null, mailMailgunApiKeyMask: null }}
-        />,
-      ),
-    )
+  it('SecurityForm renders CSRF, CORS and passkey cards', () => {
+    const html = stableHtml(renderToHtml(<SecurityForm security={baseSecurity} />))
     expect(html).toContain('CSRF 防护')
     expect(html).toContain('路径豁免')
     expect(html).toContain('CORS 策略')
-    expect(html).toContain('登录 OTP 验证')
     expect(html).toContain('Passkey 登录')
   })
 

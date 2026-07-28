@@ -161,7 +161,6 @@ const fixture: BlogSettingsBundle = {
   security: {
     csrf: { enabled: true, exemptPaths: [] },
     cors: { enabled: false, origins: [] },
-    otp: { enabled: false },
     passkey: { enabled: false },
   },
 }

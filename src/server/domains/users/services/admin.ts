@@ -3,6 +3,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { count } from 'drizzle-orm'
 
 import type { User } from '@/server/infra/db/types'
+import type { LoginMethod } from '@/shared/contracts/users'
 import type { UserSortOrder } from '@/shared/types/users'
 
 import { revokeAllSessionsOfUser } from '@/server/domains/auth/services/sessions'
@@ -58,7 +59,7 @@ export interface AdminUserDto {
   pendingCount: number
   lastCommentAt: string | null
   passkeyCount: number
-  passkeyForce: boolean
+  loginMethod: LoginMethod
 }
 
 export function toAdminUserDto(row: AdminUserRow): AdminUserDto {
@@ -79,7 +80,7 @@ export function toAdminUserDto(row: AdminUserRow): AdminUserDto {
     pendingCount: row.pendingCount,
     lastCommentAt: row.lastCommentAt ? row.lastCommentAt.toISOString() : null,
     passkeyCount: row.passkeyCount,
-    passkeyForce: row.passkeyForce,
+    loginMethod: row.loginMethod,
   }
 }
 

@@ -2,6 +2,8 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import bcrypt from 'bcryptjs'
 
+import type { LoginMethod } from '@/shared/contracts/users'
+
 import { revokeAllSessionsOfUser } from '@/server/domains/auth/services/sessions'
 import { findUserById, PASSWORD_HASH_ROUNDS, updateUserById } from '@/server/infra/db/operations/user'
 import { DomainError } from '@/server/infra/http/errors'
@@ -29,7 +31,7 @@ export interface AccountProfile {
   createdAt: string | null
   lastIp: string | null
   lastUa: string | null
-  passkeyForce: boolean
+  loginMethod: LoginMethod
 }
 
 export async function getAccountProfile(db: NodePgDatabase, userId: bigint): Promise<AccountProfile> {
@@ -45,7 +47,7 @@ export async function getAccountProfile(db: NodePgDatabase, userId: bigint): Pro
     createdAt: dbUser?.createdAt ? dbUser.createdAt.toISOString() : null,
     lastIp: dbUser?.lastIp ?? null,
     lastUa: dbUser?.lastUa ?? null,
-    passkeyForce: dbUser?.passkeyForce ?? false,
+    loginMethod: dbUser?.loginMethod ?? 'password',
   }
 }
 

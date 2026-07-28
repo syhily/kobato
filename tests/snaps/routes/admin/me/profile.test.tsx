@@ -22,10 +22,11 @@ describe('snapshot: routes/admin/me/profile', () => {
               createdAt: '2024-01-01T00:00:00.000Z',
               lastIp: null,
               lastUa: null,
-              passkeyForce: false,
+              loginMethod: 'password',
             },
             counts: { total: 0, pending: 0, deleted: 0, deleteRequested: 0 },
             passkeyEnabled: false,
+            mailReady: false,
           }}
         />,
         '/admin/me/profile',

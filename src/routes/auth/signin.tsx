@@ -5,6 +5,8 @@ import type { AuthFlowResult } from '@/server/domains/auth/services/shared'
 import { validateCsrfForAction } from '@/server/domains/auth/csrf'
 import { signInWithPasskey } from '@/server/domains/auth/passkey/signin'
 import { handleCredentialLogin } from '@/server/domains/auth/services/credential'
+import { handleIdentify } from '@/server/domains/auth/services/identify'
+import { handleMagicLinkConsume } from '@/server/domains/auth/services/magic-link'
 import { handleOtpCancel, handleOtpResend, handleOtpVerify } from '@/server/domains/auth/services/otp'
 import { requestPasswordReset, resetPasswordWithToken } from '@/server/domains/auth/services/password-reset'
 import { hasApprovedComments } from '@/server/domains/comments/services/public-query'
@@ -14,7 +16,13 @@ import { getRequestContext } from '@/server/http/request-context'
 import { titleMeta } from '@/shared/seo/title-meta'
 import { safeRedirectPath } from '@/shared/utils/safe-url'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
-import { LoginForm, LostPasswordForm, OtpForm, ResetPasswordForm } from '@/ui/admin/auth/AdminCredentialsForm'
+import {
+  LoginForm,
+  LostPasswordForm,
+  MagicLinkConfirmForm,
+  OtpForm,
+  ResetPasswordForm,
+} from '@/ui/admin/auth/AdminCredentialsForm'
 import { BrandLogo } from '@/ui/public/chrome/BrandLogo'
 
 import type { Route } from './+types/signin'
@@ -101,6 +109,25 @@ export async function action({ request, context }: Route.ActionArgs) {
     return toActionResult(await signInWithPasskey(rc, request, formData, redirectTo))
   }
 
+  if (action === 'identify') {
+    const result = await handleIdentify(rc, request, formData, redirectTo, url.origin)
+    switch (result.kind) {
+      case 'passkey':
+        return data({ method: 'passkey' as const })
+      case 'password':
+        return data({ method: 'password' as const })
+      case 'magic-link-sent':
+        // Deliberately generic — never reveals whether the mailbox is registered.
+        return data({ message: '如果该邮箱已注册，登录链接已发送，请查收邮箱。' })
+      case 'error':
+        return data({ error: result.message })
+    }
+  }
+
+  if (action === 'magiclink') {
+    return toActionResult(await handleMagicLinkConsume(rc, request, formData, redirectTo))
+  }
+
   return toActionResult(await handleCredentialLogin(rc, request, formData, redirectTo), {
     redirectTo,
   })
@@ -155,7 +182,10 @@ export default function LoginRoute({ actionData, loaderData }: Route.ComponentPr
       ) : null}
 
       {loaderData.action === 'login' && (
-        <LoginForm passkeyEnabled={loaderData.passkeyEnabled} isSubmitting={isSubmitting} csrfToken={csrfToken} />
+        <LoginForm isSubmitting={isSubmitting} csrfToken={csrfToken} actionData={actionData} />
+      )}
+      {loaderData.action === 'magiclink' && loaderData.magicToken && (
+        <MagicLinkConfirmForm token={loaderData.magicToken} isSubmitting={isSubmitting} csrfToken={csrfToken} />
       )}
       {loaderData.action === 'verifyotp' && 'pendingOtpEmail' in loaderData && 'pendingOtpSentAt' in loaderData && (
         <OtpForm

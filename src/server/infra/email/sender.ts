@@ -3,6 +3,7 @@ import type { MailTransport, SendOptions, SendResult } from '@/server/infra/emai
 import { render } from '@/server/infra/email/render'
 import AuthorInvite from '@/server/infra/email/templates/AuthorInvite'
 import PasswordReset from '@/server/infra/email/templates/PasswordReset'
+import SignInLink from '@/server/infra/email/templates/SignInLink'
 import SignInOtp from '@/server/infra/email/templates/SignInOtp'
 import { MailgunTransport } from '@/server/infra/email/transports/mailgun'
 import { SmtpTransport } from '@/server/infra/email/transports/smtp'
@@ -16,6 +17,8 @@ const log = getLogger('email')
 // OTP TTL mirrored from auth domain so the email layer does not import
 // a business domain. Kept in sync with OTP_TTL_MS in verification-tokens.ts.
 const OTP_TTL_MINUTES = 5
+// Same mirror for the magic-link TTL (SIGNIN_LINK_TTL_MS).
+const SIGNIN_LINK_TTL_MINUTES = 15
 
 interface MailConfig {
   enabled: boolean
@@ -240,6 +243,19 @@ export async function sendSignInOtp(user: { name: string; email: string }, otpCo
     }),
   )
   return sendEmail(user.email, `【${siteIdentity.title}】登录验证码`, html)
+}
+
+// Sent when a user whose login method is magic-link asks to sign in.
+export async function sendSignInLink(user: { name: string; email: string }, link: string): Promise<SendResult> {
+  const siteIdentity = requireBlogSettingsSection('siteIdentity')
+  const html = render(
+    SignInLink({
+      receiver: user.name,
+      link,
+      expiresMinutes: SIGNIN_LINK_TTL_MINUTES,
+    }),
+  )
+  return sendEmail(user.email, `【${siteIdentity.title}】登录链接`, html)
 }
 
 // `enabled` master switch on purpose: an editor needs to verify the

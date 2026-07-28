@@ -229,8 +229,8 @@ export const BUCKET_META: Record<
     ],
   },
   passkeySetForceIp: {
-    title: 'Passkey 强制开关限流（按 IP）',
-    description: 'Passkey 强制登录开关操作按客户端 IP 计数。',
+    title: '登陆方式变更限流（按 IP）',
+    description: '切换登陆方式（密码 / 邮箱链接 / Passkey）按客户端 IP 计数。',
     group: '认证与登录',
     quickWindowOptions: [
       { label: '1分', seconds: 60 },

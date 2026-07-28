@@ -201,7 +201,6 @@ const fixtureBundle: BlogSettingsBundle = {
   security: {
     csrf: { enabled: true, exemptPaths: [] },
     cors: { enabled: false, origins: [] },
-    otp: { enabled: false },
     passkey: { enabled: false },
   },
 }
@@ -1160,7 +1159,6 @@ describe('services/settings — section patch merge', () => {
     mockStoredRow('blog.security', {
       csrf: { enabled: true, exemptPaths: ['/webhook/github', '/webhook/stripe'] },
       cors: { enabled: false, origins: [] },
-      otp: { enabled: false },
       passkey: { enabled: false },
     })
 
@@ -1192,7 +1190,6 @@ describe('services/settings — section patch merge', () => {
     mockStoredRow('blog.security', {
       csrf: { enabled: true, exemptPaths: ['/webhook/github'] },
       cors: { enabled: false, origins: ['https://a.example.com', 'https://b.example.com'] },
-      otp: { enabled: false },
       passkey: { enabled: false },
     })
 
@@ -1202,7 +1199,6 @@ describe('services/settings — section patch merge', () => {
     const row = data as Record<string, unknown>
     expect(row.cors).toEqual({ enabled: true, origins: ['https://a.example.com', 'https://b.example.com'] })
     expect(row.csrf).toEqual({ enabled: true, exemptPaths: ['/webhook/github'] })
-    expect(row.otp).toEqual({ enabled: false })
     expect(row.passkey).toEqual({ enabled: false })
   })
 

@@ -31,6 +31,7 @@ import {
   issueOtpToken,
   issueResetToken,
   issueSetupToken,
+  issueSignInLinkToken,
   consumeToken,
   peekToken,
   purgeExpired,
@@ -144,6 +145,38 @@ describe('auth/verification-tokens — issueSetupToken', () => {
     const u = await seedUser('author', 'invite@example.com')
     const { token } = await issueSetupToken(db, u.id)
     expect(await peekToken(db, token, 'author-invite')).not.toBeNull()
+  })
+})
+
+describe('auth/verification-tokens — signin-link', () => {
+  it('issues a signin-link token that peeks, consumes once, and rejects replay', async () => {
+    const u = await seedUser('admin', 'magic@example.com')
+    const { token } = await issueSignInLinkToken(db, u.id)
+
+    // Peek is read-only.
+    expect(await peekToken(db, token, 'signin-link')).not.toBeNull()
+    expect(await peekToken(db, token, 'signin-link')).not.toBeNull()
+
+    const consumed = await consumeToken(db, token, 'signin-link')
+    expect(consumed).not.toBeNull()
+    expect(consumed!.userId).toBe(u.id)
+    expect(await consumeToken(db, token, 'signin-link')).toBeNull()
+  })
+
+  it('does not peek under a different purpose', async () => {
+    const u = await seedUser('admin', 'magic2@example.com')
+    const { token } = await issueSignInLinkToken(db, u.id)
+    expect(await peekToken(db, token, 'password-reset')).toBeNull()
+    expect(await peekToken(db, token, 'signin-link')).not.toBeNull()
+  })
+
+  it('re-issue rotates the live token in place', async () => {
+    const u = await seedUser('admin', 'magic3@example.com')
+    const first = await issueSignInLinkToken(db, u.id)
+    const second = await issueSignInLinkToken(db, u.id)
+    expect(second.token).not.toBe(first.token)
+    expect(await peekToken(db, first.token, 'signin-link')).toBeNull()
+    expect(await peekToken(db, second.token, 'signin-link')).not.toBeNull()
   })
 })
 

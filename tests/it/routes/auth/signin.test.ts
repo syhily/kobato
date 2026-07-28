@@ -6,10 +6,11 @@ const state = vi.hoisted(() => {
   const store = new Map<string, unknown>()
   return {
     loggedIn: false,
-    otpEnabled: false,
+    passkeyEnabled: false,
     mailReady: false,
     otpCode: '123456',
     otpVerifyResult: null as { userId: bigint } | null,
+    findUserByEmailResult: null as Record<string, unknown> | null,
     verifyUserPasswordResult: null as {
       id: bigint
       name: string
@@ -76,6 +77,7 @@ vi.mock('@/server/domains/settings/install-gate', () => ({
 
 vi.mock('@/server/infra/db/operations/user', () => ({
   verifyUserPassword: vi.fn(async () => state.verifyUserPasswordResult),
+  findUserByEmail: vi.fn(async () => state.findUserByEmailResult),
   findUserById: vi.fn(async () => ({
     id: BigInt(1),
     name: 'admin',
@@ -91,6 +93,7 @@ vi.mock('@/server/domains/auth/verification-tokens', () => ({
   consumeToken: vi.fn(async () => null),
   peekToken: vi.fn(async () => null),
   issueResetToken: vi.fn(async () => ({ token: 'reset-token', expiresAt: new Date() })),
+  issueSignInLinkToken: vi.fn(async () => ({ token: 'magic-token', expiresAt: new Date() })),
   issueOtpToken: vi.fn(async () => ({
     otpCode: state.otpCode,
     expiresAt: new Date(Date.now() + 5 * 60 * 1000),
@@ -100,6 +103,7 @@ vi.mock('@/server/domains/auth/verification-tokens', () => ({
 
 vi.mock('@/server/infra/email/sender', () => ({
   sendSignInOtp: vi.fn(async () => ({ ok: true })),
+  sendSignInLink: vi.fn(async () => ({ ok: true })),
   sendPasswordReset: vi.fn(async () => ({ ok: true })),
   checkMailReady: vi.fn(() =>
     state.mailReady
@@ -141,7 +145,7 @@ vi.mock('@/server/domains/comments/services/public-query', () => ({
 vi.mock('@/shared/config/getters', () => ({
   getBlogSettingsBundleSync: vi.fn(() => ({
     security: {
-      otp: { enabled: state.otpEnabled },
+      passkey: { enabled: state.passkeyEnabled },
       csrf: { enabled: true, exemptPaths: [] },
       cors: { enabled: false, origins: [] },
     },
@@ -166,10 +170,11 @@ const { action, loader } = await import('@/routes/auth/signin')
 
 function resetState() {
   state.loggedIn = false
-  state.otpEnabled = false
+  state.passkeyEnabled = false
   state.mailReady = false
   state.otpCode = '123456'
   state.otpVerifyResult = null
+  state.findUserByEmailResult = null
   state.verifyUserPasswordResult = null
   state.session.unset('pendingOtpUser')
   state.session.unset('otpFailCount')
@@ -306,12 +311,11 @@ describe('routes/signin — OTP', () => {
   }
 
   beforeEach(() => {
-    state.otpEnabled = true
     state.mailReady = true
     state.verifyUserPasswordResult = dbUser
   })
 
-  it('issues OTP and sends email when OTP is enabled and mail is ready', async () => {
+  it('issues OTP and sends email when mail is ready', async () => {
     const result = await action(postFormData(validLogin))
 
     const { issueOtpToken } = await import('@/server/domains/auth/verification-tokens')
@@ -331,22 +335,6 @@ describe('routes/signin — OTP', () => {
 
   it('does NOT trigger OTP when mail is not ready', async () => {
     state.mailReady = false
-    const result = await action(postFormData(validLogin))
-
-    const { issueOtpToken } = await import('@/server/domains/auth/verification-tokens')
-    const { sendSignInOtp } = await import('@/server/infra/email/sender')
-    const { establishLoginSession } = await import('@/server/domains/auth/primitives')
-
-    expect(vi.mocked(issueOtpToken)).not.toHaveBeenCalled()
-    expect(vi.mocked(sendSignInOtp)).not.toHaveBeenCalled()
-    expect(vi.mocked(establishLoginSession)).toHaveBeenCalled()
-    // Sid rotation keeps its explicit Set-Cookie channel.
-    expect(setCookieOf(result)).toBe('blog_session=test')
-    expect(state.markSessionDirty).not.toHaveBeenCalled()
-  })
-
-  it('does NOT trigger OTP when otp.enabled is false', async () => {
-    state.otpEnabled = false
     const result = await action(postFormData(validLogin))
 
     const { issueOtpToken } = await import('@/server/domains/auth/verification-tokens')
@@ -708,5 +696,150 @@ describe('routes/signin — OTP', () => {
     const response = result as Response
     expect(response.status).toBe(302)
     expect(response.headers.get('location')).toContain(encodeURIComponent('/admin/posts'))
+  })
+})
+
+describe('routes/signin — identify', () => {
+  function emailForm(email: string): FormData {
+    const fd = new FormData()
+    fd.set('email', email)
+    return fd
+  }
+
+  it('rejects malformed email', async () => {
+    const result = await action(postFormData(emailForm('not-an-email'), '?action=identify'))
+    expect(extractData(result).error).toBe('请填写正确的邮箱地址。')
+  })
+
+  it('returns method=password for unknown email without leaking existence', async () => {
+    state.findUserByEmailResult = null
+
+    const result = await action(postFormData(emailForm('ghost@example.com'), '?action=identify'))
+    expect(extractData(result).method).toBe('password')
+
+    const { issueSignInLinkToken } = await import('@/server/domains/auth/verification-tokens')
+    expect(vi.mocked(issueSignInLinkToken)).not.toHaveBeenCalled()
+  })
+
+  it('returns method=password for a regular user', async () => {
+    state.findUserByEmailResult = {
+      id: BigInt(1),
+      email: 'admin@example.com',
+      role: 'admin',
+      deletedAt: null,
+      loginMethod: 'password',
+    }
+
+    const result = await action(postFormData(emailForm('admin@example.com'), '?action=identify'))
+    expect(extractData(result).method).toBe('password')
+  })
+
+  it('returns method=passkey for a passkey-method user when passkey is enabled', async () => {
+    state.passkeyEnabled = true
+    state.findUserByEmailResult = {
+      id: BigInt(1),
+      email: 'admin@example.com',
+      role: 'admin',
+      deletedAt: null,
+      loginMethod: 'passkey',
+    }
+
+    const result = await action(postFormData(emailForm('admin@example.com'), '?action=identify'))
+    expect(extractData(result).method).toBe('passkey')
+  })
+
+  it('degrades a passkey-method user to password when the global switch is off', async () => {
+    state.passkeyEnabled = false
+    state.findUserByEmailResult = {
+      id: BigInt(1),
+      email: 'admin@example.com',
+      role: 'admin',
+      deletedAt: null,
+      loginMethod: 'passkey',
+    }
+
+    const result = await action(postFormData(emailForm('admin@example.com'), '?action=identify'))
+    expect(extractData(result).method).toBe('password')
+  })
+
+  it('sends a magic link for a magic-link user when mail is ready', async () => {
+    state.mailReady = true
+    state.findUserByEmailResult = {
+      id: BigInt(1),
+      name: 'admin',
+      email: 'admin@example.com',
+      role: 'admin',
+      deletedAt: null,
+      loginMethod: 'magic-link',
+    }
+
+    const result = await action(postFormData(emailForm('admin@example.com'), '?action=identify'))
+    expect(extractData(result).message).toBe('如果该邮箱已注册，登录链接已发送，请查收邮箱。')
+
+    const { issueSignInLinkToken } = await import('@/server/domains/auth/verification-tokens')
+    const { sendSignInLink } = await import('@/server/infra/email/sender')
+    expect(vi.mocked(issueSignInLinkToken)).toHaveBeenCalledWith(expect.anything(), BigInt(1))
+    expect(vi.mocked(sendSignInLink)).toHaveBeenCalledWith(
+      expect.objectContaining({ email: 'admin@example.com' }),
+      expect.stringContaining('action=magiclink'),
+    )
+  })
+
+  it('degrades a magic-link user to password when mail is not ready', async () => {
+    state.mailReady = false
+    state.findUserByEmailResult = {
+      id: BigInt(1),
+      email: 'admin@example.com',
+      role: 'admin',
+      deletedAt: null,
+      loginMethod: 'magic-link',
+    }
+
+    const result = await action(postFormData(emailForm('admin@example.com'), '?action=identify'))
+    expect(extractData(result).method).toBe('password')
+
+    const { issueSignInLinkToken } = await import('@/server/domains/auth/verification-tokens')
+    expect(vi.mocked(issueSignInLinkToken)).not.toHaveBeenCalled()
+  })
+
+  it('blocks identify when rate limit is exceeded', async () => {
+    const { tryRateLimit } = await import('@/server/infra/rate-limit')
+    vi.mocked(tryRateLimit).mockResolvedValueOnce({ count: 10, exceeded: true })
+
+    const result = await action(postFormData(emailForm('admin@example.com'), '?action=identify'))
+    expect(extractData(result).error).toBe('登录失败次数过多，请稍后再试。')
+  })
+})
+
+describe('routes/signin — magic-link consume', () => {
+  it('rejects an invalid or expired token', async () => {
+    const fd = new FormData()
+    fd.set('magic_token', 'bogus-token')
+    const result = await action(postFormData(fd, '?action=magiclink'))
+    expect(extractData(result).error).toBe('链接无效或已过期，请重新获取。')
+
+    const { establishLoginSession } = await import('@/server/domains/auth/primitives')
+    expect(vi.mocked(establishLoginSession)).not.toHaveBeenCalled()
+  })
+
+  it('establishes a session for a valid token', async () => {
+    const { consumeToken } = await import('@/server/domains/auth/verification-tokens')
+    vi.mocked(consumeToken).mockResolvedValueOnce({ userId: BigInt(1) })
+
+    const fd = new FormData()
+    fd.set('magic_token', 'valid-token')
+    const result = await action(postFormData(fd, '?action=magiclink'))
+
+    const { establishLoginSession } = await import('@/server/domains/auth/primitives')
+    expect(vi.mocked(establishLoginSession)).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      expect.objectContaining({ id: BigInt(1) }),
+      expect.anything(),
+      expect.anything(),
+      expect.objectContaining({ authMethod: 'magic-link' }),
+    )
+    expect((result as Response).status).toBe(302)
+    expect(setCookieOf(result)).toBe('blog_session=test')
   })
 })

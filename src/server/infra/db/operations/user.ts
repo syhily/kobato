@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs'
 import { and, count, eq, inArray, isNull, ne, or } from 'drizzle-orm'
 
 import type { NewUser, User } from '@/server/infra/db/types'
+import type { LoginMethod } from '@/shared/contracts/users'
 
 import { user } from '@/server/infra/db/schema/user'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
@@ -56,7 +57,7 @@ const safeUserColumns = {
   role: user.role,
   isMuted: user.isMuted,
   receiveEmail: user.receiveEmail,
-  passkeyForce: user.passkeyForce,
+  loginMethod: user.loginMethod,
 }
 
 export async function findSafeUserByEmail(db: NodePgDatabase, email: string): Promise<SafeUser | null> {
@@ -203,7 +204,7 @@ export interface UserUpdate {
   // (which means "do not touch the column on this update").
   badgeTextColor?: string | null
   receiveEmail?: boolean
-  passkeyForce?: boolean
+  loginMethod?: LoginMethod
 }
 
 const BCRYPT_HASH_RE = /^\$2[aby]?\$\d+\$/

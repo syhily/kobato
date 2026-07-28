@@ -1,6 +1,8 @@
 import { sql } from 'drizzle-orm'
 import { bigint, bigserial, boolean, index, pgTable, text, timestamp, uniqueIndex, varchar } from 'drizzle-orm/pg-core'
 
+import type { LoginMethod } from '@/shared/contracts/users'
+
 import { userRoleEnum } from '@/server/infra/db/schema/shared'
 
 // RBAC role enum. Declared as a real Postgres ENUM (not a CHECK
@@ -38,7 +40,10 @@ export const user = pgTable(
     role: userRoleEnum('role'),
     isMuted: boolean('is_muted').default(false).notNull(),
     receiveEmail: boolean('receive_email').default(true),
-    passkeyForce: boolean('passkey_force').default(false).notNull(),
+    // Unified per-user signin method: 'password' (default), 'magic-link',
+    // or 'passkey'. Replaces the old passkey_force boolean — the migration
+    // backfills forced users to 'passkey'.
+    loginMethod: varchar('login_method', { length: 16 }).$type<LoginMethod>().default('password').notNull(),
   },
   (table) => [
     index('idx_users_email').on(table.email),

@@ -2,6 +2,14 @@ import { z } from 'zod'
 
 import { idString, isoDateTime } from '@/shared/contracts/primitives'
 
+// Per-user signin method. `password` is the default; `magic-link` emails a
+// one-time signin link (requires a ready mail transport); `passkey` skips
+// credentials entirely (requires a registered passkey and the global
+// passkey switch). Owned by the user row's `login_method` column.
+export const LOGIN_METHODS = ['password', 'magic-link', 'passkey'] as const
+export const loginMethodSchema = z.enum(LOGIN_METHODS)
+export type LoginMethod = z.infer<typeof loginMethodSchema>
+
 export const adminUserDto = z.object({
   id: idString,
   name: z.string(),
@@ -19,6 +27,6 @@ export const adminUserDto = z.object({
   pendingCount: z.number().int().nonnegative(),
   lastCommentAt: isoDateTime.nullable(),
   passkeyCount: z.number().int().nonnegative(),
-  passkeyForce: z.boolean(),
+  loginMethod: loginMethodSchema,
 })
 export type AdminUserDto = z.infer<typeof adminUserDto>
