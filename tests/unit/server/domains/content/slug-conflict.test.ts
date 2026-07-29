@@ -5,7 +5,7 @@ import { DomainError } from '@/server/infra/http/errors'
 
 function uniqueViolation(failed: string): Error {
   // node:sqlite unique violations carry errcode 2067 and name the
-  // offending columns (or the named unique index) in the message.
+  // offending COLUMNS in the message — never the index name.
   return Object.assign(new Error(`UNIQUE constraint failed: ${failed}`), { errcode: 2067 })
 }
 
@@ -33,9 +33,7 @@ describe('rethrowSlugConflict', () => {
   it.each([{ entityType: 'post' as const }, { entityType: 'page' as const }])(
     'maps the slug-registry constraint to CONFLICT ($entityType)',
     ({ entityType }) => {
-      const thrown = catchThrown(() =>
-        rethrowSlugConflict(uniqueViolation('uq_slug_registry_slug'), entityType, 'hello'),
-      )
+      const thrown = catchThrown(() => rethrowSlugConflict(uniqueViolation('slug_registry.slug'), entityType, 'hello'))
 
       expect(thrown).toBeInstanceOf(DomainError)
       expect((thrown as DomainError).code).toBe('CONFLICT')

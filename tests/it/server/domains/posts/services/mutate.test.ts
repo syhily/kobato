@@ -124,6 +124,19 @@ describe('posts/services/mutate — createPost', () => {
       'slug "cross" 已被其它页面占用。',
     )
   })
+
+  it('throws CONFLICT when a stale registry row owns the slug (the registry constraint leg)', async () => {
+    // A leftover registry row for a post that no longer has a meta row:
+    // the reservation pre-check passes (no meta conflict, same entity
+    // type), so the registry insert itself must surface as a clean
+    // CONFLICT — SQLite names the columns, never the index name.
+    await db.insert(slugRegistry).values({ slug: 'stale', entityType: 'post', entityId: 999 })
+
+    await expect(createPost(db, { slug: 'stale', title: 'Stale' }, 1)).rejects.toMatchObject({
+      code: 'CONFLICT',
+    })
+    await expect(createPost(db, { slug: 'stale', title: 'Stale' }, 1)).rejects.toThrow('slug "stale" 已被占用。')
+  })
 })
 
 describe('posts/services/mutate — updatePostMeta', () => {

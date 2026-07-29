@@ -30,7 +30,9 @@ export function reclaimSlugOnRestore(
   try {
     insertSlugRegistry(tx, { slug, entityType, entityId })
   } catch (err) {
-    if (!isUniqueConstraintError(err, 'uq_slug_registry_slug')) {
+    // SQLite names columns, not the index — `uq_slug_registry_slug`
+    // would never match.
+    if (!isUniqueConstraintError(err, 'slug_registry.slug')) {
       throw err
     }
     return `slug "${slug}" 在恢复过程中被其它内容占用，URL 不会指向此${ENTITY_LABEL[entityType]}。`
