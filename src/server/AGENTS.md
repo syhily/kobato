@@ -70,7 +70,7 @@ Two embedded engines, zero services:
 
 - **Content DB** — SQLite via `node:sqlite` + drizzle (`sqlite-core`), one file at `storage.database` (default `<storage.data>/kobato.db`). Sync driver: awaited builders typecheck OUTSIDE transactions, but `db.transaction(async …)` is a compile error — transactions are sync callbacks. Timestamps are `integer({ mode: 'timestamp_ms' })` (epoch ms), booleans `integer({ mode: 'boolean' })`, JSON `text({ mode: 'json' })`, binary `blob({ mode: 'buffer' })`; `LIKE`, not `ILIKE`.
 - **Analytics sidecar** — DuckDB via `@duckdb/node-api`, one file at `storage.analyticsDatabase` (default `<storage.data>/analytics.duckdb`). Holds `access_log` only (append-heavy telemetry + dashboard scans); expendable — excluded from backups and recreated empty when missing. The batcher writes through the Appender protocol; queries run on a dedicated MVCC reader connection.
-- **Daily maintenance** (04:30 site timezone): SQLite `incremental_vacuum` + `optimize` with page/freelist logging (`infra/db/maintenance.ts`); DuckDB 180-day retention DELETE + `CHECKPOINT` with row/file-size logging (`bootstrap/analytics-lifecycle.ts`). Pure `ANALYZE` additionally runs after every bulk load (install seed, backup restore, the `db:pump` script).
+- **Daily maintenance** (04:30 site timezone): SQLite `incremental_vacuum` + `optimize` with page/freelist logging (`infra/db/maintenance.ts`); DuckDB 180-day retention DELETE + `CHECKPOINT` with row/file-size logging (`bootstrap/analytics-lifecycle.ts`). Pure `ANALYZE` additionally runs after every bulk load (install seed, backup restore).
 
 ## Configuration & Install Gate
 
