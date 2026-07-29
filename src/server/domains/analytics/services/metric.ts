@@ -2,8 +2,7 @@ import type { AnalyticsReader } from '@/server/domains/analytics/services/duckdb
 import type { AnalyticsQueryInput } from '@/server/domains/analytics/services/query-parser'
 import type { MetricRow, MetricType } from '@/shared/contracts/analytics'
 
-import { METRIC_SET, quoteIdent, whereClause } from '@/server/domains/analytics/services/duckdb-sql'
-import { DomainError } from '@/server/infra/http/errors'
+import { queryAnalyticsRows, quoteIdent, whereClause } from '@/server/domains/analytics/services/duckdb-sql'
 
 export async function queryMetric(
   reader: AnalyticsReader,
@@ -11,11 +10,10 @@ export async function queryMetric(
   type: MetricType,
   limit = 20,
 ): Promise<MetricRow[]> {
-  if (!METRIC_SET.has(type)) {
-    throw new DomainError('BAD_REQUEST', `unknown metric type: ${type}`)
-  }
+  // `type` arrives already validated at the wire boundary (zod enum).
   const where = whereClause(input)
-  const result = await reader.runAndReadAll(
+  const rows = await queryAnalyticsRows(
+    reader,
     `SELECT
       COALESCE(NULLIF(${quoteIdent(type)}, ''), '(unknown)') AS name,
       COUNT(*) AS visits,
@@ -27,7 +25,6 @@ export async function queryMetric(
     LIMIT ?`,
     [...where.params, BigInt(limit)],
   )
-  const rows = result.getRowObjects()
   return rows.map((row) => ({
     name: typeof row.name === 'string' ? row.name : '',
     visits: Number(row.visits),

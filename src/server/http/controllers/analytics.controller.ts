@@ -1,9 +1,7 @@
-import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { getAnalyticsReader } from '@/server/bootstrap/analytics-lifecycle'
 import { queryCounters } from '@/server/domains/analytics/services/counters'
-import { METRIC_SET } from '@/server/domains/analytics/services/duckdb-sql'
 import { queryHeatmap } from '@/server/domains/analytics/services/heatmap'
 import { queryMetric } from '@/server/domains/analytics/services/metric'
 import { parseAnalyticsInput } from '@/server/domains/analytics/services/query-parser'
@@ -75,9 +73,8 @@ const metrics = adminProc
   .input(metricsInput)
   .output(z.array(metricRowOutput))
   .handler(({ input }) => {
-    if (!METRIC_SET.has(input.type)) {
-      throw new ORPCError('BAD_REQUEST', { message: `unknown metric type: ${input.type}` })
-    }
+    // `input.type` is already validated by the zod enum at the wire
+    // boundary — no second guard here.
     return queryMetric(getAnalyticsReader(), parseAnalyticsInput(input), input.type, input.limit)
   })
 

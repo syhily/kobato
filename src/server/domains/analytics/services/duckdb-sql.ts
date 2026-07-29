@@ -3,7 +3,6 @@ import type { DuckDBConnection, DuckDBValue } from '@duckdb/node-api'
 import type { AnalyticsQueryInput } from '@/server/domains/analytics/services/query-parser'
 import type { MetricType } from '@/shared/contracts/analytics'
 
-import { DomainError } from '@/server/infra/http/errors'
 import { METRIC_TYPES } from '@/shared/contracts/analytics'
 
 const METRIC_SET = new Set<string>(METRIC_TYPES)
@@ -28,16 +27,12 @@ const METRIC_COLUMN: Record<MetricType, string> = {
 }
 
 /**
- * Quote a column identifier for use in raw SQL.
- * The parameter type is constrained to MetricType so only columns from
+ * Quote a column identifier for use in raw SQL. Total by construction:
+ * the parameter type is constrained to MetricType so only columns from
  * the hard-coded METRIC_COLUMN map can be passed — never user input.
  */
 export function quoteIdent(name: MetricType): string {
-  const col = METRIC_COLUMN[name]
-  if (!col) {
-    throw new DomainError('BAD_REQUEST', `invalid identifier: ${name}`)
-  }
-  return `"${col}"`
+  return `"${METRIC_COLUMN[name]}"`
 }
 
 export interface WhereParts {
@@ -52,6 +47,50 @@ export interface WhereParts {
  * analytics query needs it and a typo silently breaks the predicate.
  */
 export const EPOCH_MS_PARAM = 'epoch_ms(?::BIGINT)'
+
+/** The parameter-side companion of EPOCH_MS_PARAM: a Date as the
+ *  epoch-ms BIGINT the fragment casts. The pair travels together — a
+ *  hand-rolled `BigInt(d.getTime())` at the call site breaks the
+ *  predicate just as silently as a fragment typo would. */
+export function epochMsParam(d: Date): bigint {
+  return BigInt(d.getTime())
+}
+
+/**
+ * Run a read query and materialize row objects. The one owner of the
+ * runAndReadAll → getRowObjects idiom every analytics query module
+ * used to re-implement; modules keep only their SQL and row mapper.
+ */
+export async function queryAnalyticsRows(
+  reader: AnalyticsReader,
+  sql: string,
+  params: DuckDBValue[],
+): Promise<Record<string, DuckDBValue>[]> {
+  const result = await reader.runAndReadAll(sql, params)
+  return result.getRowObjects()
+}
+
+const BUCKET_INTERVAL: Record<number, string> = {
+  60_000: '1 minute',
+  900_000: '15 minutes',
+  3_600_000: '1 hour',
+  86_400_000: '1 day',
+}
+
+/**
+ * The DuckDB INTERVAL literal for a `pickTimeBucketMs` width. The
+ * bucket vocabulary has exactly one owner per side: the shared
+ * contract picks the width in ms, this map turns it into SQL — an
+ * unmapped width fails loudly here instead of producing
+ * `INTERVAL 'undefined'`.
+ */
+export function timeBucketInterval(bucketMs: number): string {
+  const interval = BUCKET_INTERVAL[bucketMs]
+  if (interval === undefined) {
+    throw new Error(`unmapped time bucket width: ${bucketMs}ms`)
+  }
+  return interval
+}
 
 // `ts` is a DuckDB TIMESTAMP; range inputs are epoch seconds, bound as
 // epoch-ms BIGINTs through `epoch_ms(?::BIGINT)`.

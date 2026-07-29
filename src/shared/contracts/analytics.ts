@@ -51,10 +51,11 @@ export function computeDateRange(preset: PresetKey, now: Date = new Date()): Dat
 }
 
 /**
- * Time bucket width in milliseconds for the views time series. The
- * bucket boundaries are computed with integer epoch-ms division in SQL
- * (`(ts / bucket) * bucket`), so this is a plain number — no interval
- * type needed.
+ * Time bucket width in milliseconds for the views time series — the
+ * shared (isomorphic) half of the bucket vocabulary. The SQL half is
+ * `timeBucketInterval` in `domains/analytics/services/duckdb-sql`,
+ * which maps this width to the DuckDB `time_bucket` INTERVAL literal;
+ * an unmapped width fails loudly there.
  */
 export function pickTimeBucketMs(range: DateRange): number {
   const span = range.endAt - range.startAt

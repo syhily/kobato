@@ -3,7 +3,12 @@ import { createHash } from 'node:crypto'
 import type { AnalyticsReader } from '@/server/domains/analytics/services/duckdb-sql'
 import type { RealtimeEvent } from '@/shared/contracts/analytics'
 
-import { EPOCH_MS_PARAM, timestampToMs } from '@/server/domains/analytics/services/duckdb-sql'
+import {
+  EPOCH_MS_PARAM,
+  epochMsParam,
+  queryAnalyticsRows,
+  timestampToMs,
+} from '@/server/domains/analytics/services/duckdb-sql'
 import { isRecord } from '@/shared/utils/type-guards'
 
 // ─── SSE connection registry ─────────────────────────────────────────────
@@ -56,7 +61,8 @@ export function acquireRealtimeConnection(key: string): (() => void) | null {
 }
 
 export async function queryRealtimeTail(reader: AnalyticsReader, sinceTs: Date, limit = 50): Promise<RealtimeEvent[]> {
-  const result = await reader.runAndReadAll(
+  const rows = await queryAnalyticsRows(
+    reader,
     `SELECT
       ts,
       path,
@@ -70,22 +76,19 @@ export async function queryRealtimeTail(reader: AnalyticsReader, sinceTs: Date, 
     WHERE ts > ${EPOCH_MS_PARAM}
     ORDER BY ts DESC
     LIMIT ?`,
-    [BigInt(sinceTs.getTime()), BigInt(limit)],
+    [epochMsParam(sinceTs), BigInt(limit)],
   )
-  const rows = result.getRowObjects()
-  return rows.map((row) => {
-    if (!isRecord(row)) {
-      return { ts: '', path: '', country: null, city: null, browser: null, os: null, deviceType: null, isBot: false }
-    }
-    return {
-      ts: new Date(timestampToMs(row.ts)).toISOString(),
-      path: typeof row.path === 'string' ? row.path : '',
-      country: row.country === null || typeof row.country === 'string' ? row.country : null,
-      city: row.city === null || typeof row.city === 'string' ? row.city : null,
-      browser: row.browser === null || typeof row.browser === 'string' ? row.browser : null,
-      os: row.os === null || typeof row.os === 'string' ? row.os : null,
-      deviceType: row.deviceType === null || typeof row.deviceType === 'string' ? row.deviceType : null,
-      isBot: Boolean(row.isBot),
-    }
-  })
+  // Non-record rows are skipped, never manufactured: a placeholder with
+  // `ts: ''` would surface downstream as an Invalid Date and a NaN
+  // epoch binding on the next poll.
+  return rows.filter(isRecord).map((row) => ({
+    ts: new Date(timestampToMs(row.ts)).toISOString(),
+    path: typeof row.path === 'string' ? row.path : '',
+    country: row.country === null || typeof row.country === 'string' ? row.country : null,
+    city: row.city === null || typeof row.city === 'string' ? row.city : null,
+    browser: row.browser === null || typeof row.browser === 'string' ? row.browser : null,
+    os: row.os === null || typeof row.os === 'string' ? row.os : null,
+    deviceType: row.deviceType === null || typeof row.deviceType === 'string' ? row.deviceType : null,
+    isBot: Boolean(row.isBot),
+  }))
 }

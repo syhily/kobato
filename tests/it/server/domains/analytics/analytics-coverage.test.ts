@@ -172,12 +172,9 @@ describe('analytics/metric — queryMetric', () => {
     expect(unknown).toBeDefined()
   })
 
-  it('throws BAD_REQUEST for an unknown metric type', async () => {
-    const now = Math.floor(Date.now() / 1000)
-    await expect(
-      queryMetric(handle.reader, { range: { startAt: 0, endAt: now }, filters: {} }, 'bogus' as any),
-    ).rejects.toBeInstanceOf(DomainError)
-  })
+  // Metric-type validation lives at the wire boundary only (the zod
+  // enum in analytics.controller) — pinned in
+  // tests/it/server/http/controllers/analytics.test.ts.
 })
 
 describe('analytics/heatmap — queryHeatmap', () => {

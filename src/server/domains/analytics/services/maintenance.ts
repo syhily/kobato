@@ -3,7 +3,7 @@ import { stat } from 'node:fs/promises'
 import type { AnalyticsHandle } from '@/server/infra/analytics/duckdb'
 
 import { ACCESS_LOG_RETENTION_DAYS } from '@/server/domains/analytics/services/access-log'
-import { EPOCH_MS_PARAM } from '@/server/domains/analytics/services/duckdb-sql'
+import { EPOCH_MS_PARAM, epochMsParam } from '@/server/domains/analytics/services/duckdb-sql'
 import { getLogger } from '@/server/infra/logger'
 
 const log = getLogger('analytics.maintenance')
@@ -32,7 +32,7 @@ export async function runAccessLogRetention(handle: AnalyticsHandle): Promise<vo
     const beforeSize = await analyticsFileSize(handle)
 
     const cutoff = new Date(Date.now() - ACCESS_LOG_RETENTION_DAYS * 24 * 60 * 60 * 1000)
-    await handle.writer.runAndReadAll(`DELETE FROM access_log WHERE ts < ${EPOCH_MS_PARAM}`, [BigInt(cutoff.getTime())])
+    await handle.writer.runAndReadAll(`DELETE FROM access_log WHERE ts < ${EPOCH_MS_PARAM}`, [epochMsParam(cutoff)])
     await handle.writer.run('CHECKPOINT')
 
     const after = await handle.reader.runAndReadAll('SELECT count(*) AS c FROM access_log')

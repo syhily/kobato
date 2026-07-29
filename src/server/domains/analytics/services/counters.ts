@@ -2,11 +2,12 @@ import type { AnalyticsReader } from '@/server/domains/analytics/services/duckdb
 import type { AnalyticsQueryInput } from '@/server/domains/analytics/services/query-parser'
 import type { CountersDto } from '@/shared/contracts/analytics'
 
-import { whereClause } from '@/server/domains/analytics/services/duckdb-sql'
+import { queryAnalyticsRows, whereClause } from '@/server/domains/analytics/services/duckdb-sql'
 
 export async function queryCounters(reader: AnalyticsReader, input: AnalyticsQueryInput): Promise<CountersDto> {
   const where = whereClause(input)
-  const result = await reader.runAndReadAll(
+  const rows = await queryAnalyticsRows(
+    reader,
     `SELECT
       COUNT(*) AS visits,
       COUNT(DISTINCT visitor_hash) AS visitors,
@@ -15,8 +16,7 @@ export async function queryCounters(reader: AnalyticsReader, input: AnalyticsQue
     WHERE ${where.sql}`,
     where.params,
   )
-  const rows = result.getRowObjects()
-  const row = rows[0] as { visits?: bigint | null; visitors?: bigint | null; referers?: bigint | null } | undefined
+  const row = rows[0]
   return {
     visits: Number(row?.visits ?? 0),
     visitors: Number(row?.visitors ?? 0),

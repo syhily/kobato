@@ -1,8 +1,9 @@
-import { and, count, desc, eq, gte, inArray, isNotNull, lt, sql } from 'drizzle-orm'
+import { and, count, desc, eq, gte, inArray, isNotNull, lt } from 'drizzle-orm'
 
 import type { Database } from '@/server/infra/db/database'
 
 import { clampDateToRetention, parseDate } from '@/server/domains/audit/projection'
+import { likeEscape } from '@/server/infra/db/like-escape'
 import { auditLog } from '@/server/infra/db/schema/config'
 import { user } from '@/server/infra/db/schema/user'
 import { idFromString } from '@/shared/utils/id'
@@ -29,7 +30,9 @@ export function buildAuditLogWhere(input: AuditLogFilterInput) {
     conditions.push(eq(auditLog.actorId, idFromString(input.actorId)))
   }
   if (input.ip) {
-    conditions.push(sql`${auditLog.ipAddress} LIKE ${`%${input.ip}%`}`)
+    // Route through the shared safe-LIKE seam: `%`/`_` in the filter
+    // are escaped, not widened into match-anything patterns.
+    conditions.push(likeEscape(auditLog.ipAddress, input.ip))
   }
   const dateFrom = clampDateToRetention(parseDate(input.dateFrom))
   if (dateFrom) {
