@@ -18,8 +18,8 @@ const setRestartDb = vi.fn()
 const setRestartRefreshSettings = vi.fn()
 const closeDatabase = vi.fn()
 const registerShutdownHook = vi.fn((fn: () => unknown) => fn())
-const registerRestoreComplete = vi.fn((cb: (success: boolean, err?: Error) => Promise<void>) => {
-  restoreCallback = cb
+const wireRestoreMachine = vi.fn((deps: { complete: (success: boolean, err?: Error) => Promise<void> }) => {
+  restoreCallback = deps.complete
 })
 
 vi.mock('@/server/infra/db/database', () => ({
@@ -41,7 +41,6 @@ vi.mock('@/server/infra/config', () => ({
 
 vi.mock('@/server/infra/lifecycle', () => ({
   registerShutdownHook: (fn: () => unknown) => registerShutdownHook(fn),
-  registerRestoreComplete: (cb: (success: boolean, err?: Error) => Promise<void>) => registerRestoreComplete(cb),
   restartServer: (...args: unknown[]) => restartServer(...args),
   setRestartDb: (...args: unknown[]) => setRestartDb(...args),
   setRestartRefreshSettings: (...args: unknown[]) => setRestartRefreshSettings(...args),
@@ -77,8 +76,9 @@ vi.mock('@/server/domains/audit/services/scheduler', () => ({
   wireArchiveScheduler: vi.fn(),
 }))
 
-vi.mock('@/server/domains/backup/restore-orchestrator', () => ({
-  registerRestoreComplete: (cb: (success: boolean, err?: Error) => Promise<void>) => registerRestoreComplete(cb),
+vi.mock('@/server/domains/backup/restore-machine', () => ({
+  wireRestoreMachine: (deps: { complete: (success: boolean, err?: Error) => Promise<void> }) =>
+    wireRestoreMachine(deps),
 }))
 
 vi.mock('@/server/domains/comments/services/likes', () => ({

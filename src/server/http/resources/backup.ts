@@ -3,11 +3,15 @@ import { bodyLimit } from 'hono/body-limit'
 
 import type { Env } from '@/server/http/context'
 
-import { prepareDatabaseForRestore, reopenDatabaseAndGetDb } from '@/server/bootstrap/db-lifecycle'
 import { recordAuditEvent } from '@/server/domains/audit/services/record'
 import { CSRF_HEADER, validateCsrfToken } from '@/server/domains/auth/csrf'
 import { isSetupTokenActive } from '@/server/domains/auth/setup-token'
-import { performSafeRestore } from '@/server/domains/backup/restore-orchestrator'
+import {
+  abortRestoreClaim,
+  getRestoreJobStatus,
+  startRestoreJob,
+  tryBeginRestore,
+} from '@/server/domains/backup/restore-machine'
 import { getBackupBuffer, isValidBackupKey } from '@/server/domains/backup/services/backup'
 import { assertBackupContainsAdmin, restoreFromBackup } from '@/server/domains/backup/services/restore'
 import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
@@ -15,20 +19,15 @@ import { csrfGuard } from '@/server/http/middlewares/csrf'
 import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'
 import { rateLimitByIp } from '@/server/http/middlewares/rate-limit'
 import { findFirstAdminUser, hasAdmin } from '@/server/infra/db/operations/user'
-import { getRestoreState, resetRestoreState, tryBeginRestore } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
 
 const log = getLogger('backup.upload')
 
 export const backupRouter = new Hono<Env>()
   .get('/api/admin/backup/restore-status', requireRoleMw('admin'), (c) => {
-    const restore = getRestoreState()
-    // Only terminal states are consumed — resetting a mid-flight phase
-    // would free the slot while a restore is still running.
-    if (restore.phase === 'completed' || restore.phase === 'failed') {
-      resetRestoreState()
-    }
-    return c.json(restore)
+    // Pure projection of the restore machine: the running phase while a
+    // job is in flight, the terminal report once (consumed on read).
+    return c.json(getRestoreJobStatus())
   })
   .get('/api/admin/backup/download/:timestamp{[^/]+}', requireRoleMw('admin'), async (c) => {
     const timestamp = c.req.param('timestamp')
@@ -63,24 +62,21 @@ export const backupRouter = new Hono<Env>()
         const body = await c.req.parseBody({ all: false })
         const file = body.file
         if (!(file instanceof File)) {
-          resetRestoreState()
+          abortRestoreClaim()
           return c.json({ error: { message: '请上传文件' } }, 400)
         }
         buffer = Buffer.from(await file.arrayBuffer())
         fileName = file.name
       } catch (error) {
         // A claimed slot must never leak (aborted upload, body error).
-        resetRestoreState()
+        abortRestoreClaim()
         throw error
       }
 
-      performSafeRestore(
-        { prepareForSwap: prepareDatabaseForRestore, reopenAfterSwap: reopenDatabaseAndGetDb, log },
-        async () => {
-          await restoreFromBackup(buffer, fileName)
-          log.info('Restore from uploaded backup completed')
-        },
-      )
+      startRestoreJob(async () => {
+        await restoreFromBackup(buffer, fileName)
+        log.info('Restore from uploaded backup completed')
+      })
 
       return c.json({ accepted: true })
     },
@@ -136,7 +132,7 @@ export const backupRouter = new Hono<Env>()
         return c.json({ error: { message: '备份文件无效或不包含管理员账号。' } }, 400)
       }
 
-      // Claim the slot as late as possible but BEFORE the orchestrator
+      // Claim the slot as late as possible but BEFORE the machine's
       // chain starts (see upload-restore above).
       if (!tryBeginRestore()) {
         return c.json({ error: { message: '已有还原任务正在进行，请等待完成后再试。' } }, 409)
@@ -146,8 +142,7 @@ export const backupRouter = new Hono<Env>()
       const userAgent = c.req.raw.headers.get('User-Agent')
       const fileName = file.name
 
-      performSafeRestore(
-        { prepareForSwap: prepareDatabaseForRestore, reopenAfterSwap: reopenDatabaseAndGetDb, log },
+      startRestoreJob(
         async () => {
           await restoreFromBackup(buffer, fileName)
         },

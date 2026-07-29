@@ -17,14 +17,6 @@ const DEFAULT_CLOSE_TIMEOUT_MS = 30_000
 
 export type ServerPhase = 'booting' | 'running' | 'restarting' | 'failed' | 'shutting-down'
 
-export type RestorePhase = 'idle' | 'draining' | 'restoring' | 'completed' | 'failed'
-
-export interface RestoreState {
-  phase: RestorePhase
-  startedAt: string
-  error?: string
-}
-
 interface ShutdownHook {
   fn: () => Promise<void>
   priority: number
@@ -44,7 +36,6 @@ export interface LifecycleContainer {
   currentDb: Database | null
   restartQueue: Promise<void>
   restartPromise: Promise<void> | null
-  restoreState: RestoreState
   refreshSettingsFn: RefreshSettingsFn | null
 }
 
@@ -57,7 +48,6 @@ const container: LifecycleContainer = {
   currentDb: null,
   restartQueue: Promise.resolve(),
   restartPromise: null,
-  restoreState: { phase: 'idle', startedAt: '' },
   refreshSettingsFn: null,
 }
 
@@ -192,36 +182,6 @@ export function setServerPhase(newPhase: ServerPhase): void {
   }
   container.serverPhase = newPhase
   log.info('Server phase changed', { phase: newPhase })
-}
-
-// ─── Restore State ───────────────────────────────────────
-
-export function setRestoreState(phase: RestorePhase, error?: string): void {
-  container.restoreState = { phase, startedAt: new Date().toISOString(), error }
-  log.info('Restore state changed', { phase, err: error })
-}
-
-/**
- * Atomically claim the restore slot: returns true and marks the state
- * non-idle ('draining') when no restore is running, false otherwise.
- * Route handlers must call this BEFORE any await (a 500 MB upload body
- * takes seconds to read — a check-then-act guard there lets a second
- * restore start while the first is still reading).
- */
-export function tryBeginRestore(): boolean {
-  if (container.restoreState.phase !== 'idle') {
-    return false
-  }
-  setRestoreState('draining')
-  return true
-}
-
-export function getRestoreState(): RestoreState {
-  return container.restoreState
-}
-
-export function resetRestoreState(): void {
-  container.restoreState = { phase: 'idle', startedAt: '' }
 }
 
 // ─── DI setters ──────────────────────────────────────────

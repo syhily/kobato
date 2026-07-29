@@ -26,9 +26,6 @@ const {
   requestShutdown,
   getServerPhase,
   setServerPhase,
-  setRestoreState,
-  getRestoreState,
-  resetRestoreState,
   setRestartApp,
   setRestartDb,
   setRestartRefreshSettings,
@@ -46,7 +43,6 @@ describe('lifecycle', () => {
     c.currentDb = null
     c.restartPromise = null
     c.restartQueue = Promise.resolve()
-    c.restoreState = { phase: 'idle', startedAt: '' }
     c.refreshSettingsFn = null
     vi.clearAllMocks()
   })
@@ -96,15 +92,6 @@ describe('lifecycle', () => {
     registerShutdownHook(fn)
     expect(fn).not.toHaveBeenCalled()
     expect(getContainer().hooks).toHaveLength(0)
-  })
-
-  it('manages restore state', () => {
-    setRestoreState('draining')
-    expect(getRestoreState().phase).toBe('draining')
-    setRestoreState('failed', 'boom')
-    expect(getRestoreState().error).toBe('boom')
-    resetRestoreState()
-    expect(getRestoreState().phase).toBe('idle')
   })
 
   it('sets DI references', () => {
