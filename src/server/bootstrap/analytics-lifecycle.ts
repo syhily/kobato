@@ -10,7 +10,7 @@ import {
 } from '@/server/infra/analytics/duckdb'
 import { registerShutdownHook } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
-import { computeNextRun } from '@/server/infra/scheduler-utils'
+import { computeNextRun, scheduleJob, type ScheduledJob } from '@/server/infra/scheduler-utils'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 const log = getLogger('analytics.lifecycle')
@@ -25,7 +25,7 @@ const log = getLogger('analytics.lifecycle')
  * the audit archive (04:00).
  */
 let current: AnalyticsHandle | null = null
-let maintenanceTimer: NodeJS.Timeout | null = null
+let maintenanceJob: ScheduledJob | null = null
 
 async function analyticsFileSize(handle: AnalyticsHandle): Promise<number | null> {
   if (handle.path === ':memory:') {
@@ -61,25 +61,19 @@ export async function runAnalyticsMaintenance(handle: AnalyticsHandle): Promise<
 }
 
 export function scheduleNextAnalyticsMaintenance(): void {
-  if (maintenanceTimer !== null) {
-    clearTimeout(maintenanceTimer)
-    maintenanceTimer = null
-  }
-  const bundle = getBlogSettingsBundleSync()
-  const timeZone = bundle?.siteIdentity?.timeZone ?? 'UTC'
-  const nextRun = computeNextRun({ frequency: 'daily', hour: 4, minute: 30 }, timeZone, new Date())
-  maintenanceTimer = setTimeout(() => {
-    void (async () => {
-      try {
-        if (current !== null) {
-          await runAnalyticsMaintenance(current)
-        }
-      } finally {
-        scheduleNextAnalyticsMaintenance()
+  maintenanceJob ??= scheduleJob({
+    name: 'analytics.maintenance',
+    nextDelayMs: () => {
+      const timeZone = getBlogSettingsBundleSync()?.siteIdentity?.timeZone ?? 'UTC'
+      return computeNextRun({ frequency: 'daily', hour: 4, minute: 30 }, timeZone, new Date()).getTime() - Date.now()
+    },
+    run: async () => {
+      if (current !== null) {
+        await runAnalyticsMaintenance(current)
       }
-    })()
-  }, nextRun.getTime() - Date.now())
-  maintenanceTimer.unref()
+    },
+  })
+  maintenanceJob.reschedule()
 }
 
 // HMR-safe handle reuse: in dev, server.ts re-evaluates on every cycle —
@@ -112,10 +106,6 @@ export function getAnalyticsHandle(): AnalyticsHandle {
 }
 
 registerShutdownHook(async () => {
-  if (maintenanceTimer !== null) {
-    clearTimeout(maintenanceTimer)
-    maintenanceTimer = null
-  }
   if (current !== null) {
     await closeAnalyticsDatabase(current)
     current = null

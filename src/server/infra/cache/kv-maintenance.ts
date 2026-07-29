@@ -5,8 +5,8 @@ import type { Database } from '@/server/infra/db/database'
 import { kvCache } from '@/server/infra/db/schema/kv-cache'
 import { oneTimeToken } from '@/server/infra/db/schema/one-time-token'
 import { session } from '@/server/infra/db/schema/session'
-import { registerShutdownHook } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
+import { scheduleJob, type ScheduledJob } from '@/server/infra/scheduler-utils'
 
 const log = getLogger('kv.maintenance')
 
@@ -28,16 +28,14 @@ export async function sweepExpiredKvEntries(db: Database): Promise<void> {
 }
 
 // ─── Scheduler ───────────────────────────────────────────
-// Same structure as `@/server/domains/audit/services/scheduler`: a single
-// self-rescheduling timeout, stopped via a shutdown hook.
-
-let sweepTimer: NodeJS.Timeout | null = null
-
 // The db getter is injected by the composition root
-// (`@/server/bootstrap/db-lifecycle`) at pool-wire time — a direct import
-// of db-lifecycle here would make infra depend on bootstrap. The getter is
-// invoked when the timer fires, so a recreated pool (restore completion)
-// is picked up without being captured in module state.
+// (`@/server/bootstrap/db-lifecycle`) at wire time — a direct import of
+// db-lifecycle here would make infra depend on bootstrap. The getter is
+// invoked when the job fires, so a reopened handle (restore completion)
+// is picked up without being captured in module state. Timer mechanics
+// live in the shared `scheduleJob` seam.
+
+let job: ScheduledJob | null = null
 let resolveDb: (() => Database) | null = null
 
 export function wireKvSweepScheduler(deps: { getDb: () => Database }): void {
@@ -45,35 +43,23 @@ export function wireKvSweepScheduler(deps: { getDb: () => Database }): void {
 }
 
 export function scheduleNextKvSweep(): void {
-  if (sweepTimer) {
-    clearTimeout(sweepTimer)
-    sweepTimer = null
-  }
-
-  sweepTimer = setTimeout(() => {
-    void (async () => {
-      try {
-        if (!resolveDb) {
-          throw new Error('kv sweep fired before wireKvSweepScheduler')
-        }
-        await sweepExpiredKvEntries(resolveDb())
-        log.info('Expired kv entries swept')
-      } catch (error) {
-        log.error('KV sweep failed', { error })
-      } finally {
-        scheduleNextKvSweep()
+  job ??= scheduleJob({
+    name: 'kv.maintenance',
+    nextDelayMs: () => SWEEP_INTERVAL_MS,
+    run: async () => {
+      if (!resolveDb) {
+        throw new Error('kv sweep fired before wireKvSweepScheduler')
       }
-    })()
-  }, SWEEP_INTERVAL_MS)
+      await sweepExpiredKvEntries(resolveDb())
+      log.info('Expired kv entries swept')
+    },
+  })
+  job.reschedule()
 }
 
 export function stopKvSweepScheduler(): void {
-  if (sweepTimer) {
-    clearTimeout(sweepTimer)
-    sweepTimer = null
-  }
+  job?.stop()
+  // Drop the reference: the next schedule creates a fresh job (a
+  // stopped job's reschedule() is a no-op by design).
+  job = null
 }
-
-registerShutdownHook(async () => {
-  stopKvSweepScheduler()
-}, 0)
