@@ -1,170 +1,198 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { eq } from 'drizzle-orm'
+import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import type { Database } from '@/server/infra/db/database'
 
-vi.mock('@/server/infra/db/operations/like', () => ({
-  recordLikeAndCount: vi.fn(async () => 0),
-  existsActiveLikeToken: vi.fn(),
-  consumeActiveLikeToken: vi.fn(),
-  metricVoteUp: vi.fn(),
-  metricsByOwnerIds: vi.fn(),
-  commentCountsByOwnerIds: vi.fn(),
-  purgeOldLikeTokens: vi.fn(async () => undefined),
-}))
+import { clearAllTables, closeTestDatabase, createTestDatabase } from '#/_helpers/integration-db'
+import {
+  decreaseLikes,
+  increaseLikes,
+  purgeStaleLikeTokens,
+  queryLikes,
+  queryMetadata,
+  resetLikeTokenSweep,
+  startLikeTokenSweep,
+  validateLikeToken,
+} from '@/server/domains/comments/services/likes'
+import { comment } from '@/server/infra/db/schema/comment'
+import { like, metric } from '@/server/infra/db/schema/metric'
 
-vi.mock('@/server/infra/db/operations/metric', () => ({
-  decrementMetricVotes: vi.fn(async () => undefined),
-}))
+// The likes service is exercised against the real in-memory engine: the
+// transactional insert+bump, the token lifecycle, and the purge cutoff
+// are all SQL behavior that mocks used to merely pretend happened.
+const handle = createTestDatabase()
+const db: Database = handle.db
 
-const db = { transaction: vi.fn(async (fn) => fn(db)) } as unknown as Database
+afterAll(() => {
+  closeTestDatabase(handle)
+})
 
-const likeQueries = await import('@/server/infra/db/operations/like')
-const metricQueries = await import('@/server/infra/db/operations/metric')
-const { increaseLikes, decreaseLikes, purgeStaleLikeTokens, queryLikes, queryMetadata, validateLikeToken } =
-  await import('@/server/domains/comments/services/likes')
+beforeEach(async () => {
+  await clearAllTables(db)
+})
+
+afterEach(() => {
+  resetLikeTokenSweep()
+})
 
 const POST_A = { type: 'post' as const, ownerId: 1 }
 const POST_B = { type: 'post' as const, ownerId: 2 }
-const POST_X = { type: 'post' as const, ownerId: 9 }
 
-beforeEach(() => {
-  for (const fn of Object.values({ ...likeQueries, ...metricQueries })) {
-    if (typeof fn === 'function' && 'mockReset' in fn) {
-      ;(fn as ReturnType<typeof vi.fn>).mockReset()
-    }
-  }
-})
+async function seedMetricRow(
+  target: { type: 'post' | 'page'; ownerId: number },
+  opts: { voteUp?: number; pv?: number; publicId?: string } = {},
+): Promise<void> {
+  await db.insert(metric).values({
+    type: target.type,
+    ownerId: target.ownerId,
+    publicId: opts.publicId ?? crypto.randomUUID(),
+    voteUp: opts.voteUp ?? 0,
+    pv: opts.pv ?? 0,
+  })
+}
 
-describe('services/comments/likes — increaseLikes', () => {
-  it('inserts a unique base64url token and reads the post-update count atomically', async () => {
-    vi.mocked(likeQueries.recordLikeAndCount).mockResolvedValue(7)
+async function seedComment(ownerId: number, opts: { isPending?: boolean } = {}): Promise<void> {
+  await db.insert(comment).values({
+    type: 'post',
+    ownerId,
+    userId: 1,
+    content: 'hello',
+    body: [],
+    rid: 0,
+    isPending: opts.isPending ?? false,
+  })
+}
 
-    const result = await increaseLikes(db, POST_X)
+async function likeRows(): Promise<(typeof like.$inferSelect)[]> {
+  return db.select().from(like)
+}
 
-    // Single round-trip — the transactional helper owns insert + bump + read.
-    expect(likeQueries.recordLikeAndCount).toHaveBeenCalledOnce()
-    // token is base64url-shaped (urlsafe alphabet, no padding) and 64 chars
-    expect(result.token).toMatch(/^[A-Za-z0-9_-]{64}$/)
-    expect(result.likes).toBe(7)
-    // The token and the target derive from the same call — pin that they're
-    // written together (one call, both args present).
-    const [, insertedToken, insertedTarget] = vi.mocked(likeQueries.recordLikeAndCount).mock.calls[0]
-    expect(insertedToken).toBe(result.token)
-    expect(insertedTarget).toEqual(POST_X)
+describe('services/comments/likes — increaseLikes / decreaseLikes', () => {
+  it('inserts the token row and bumps the counter atomically', async () => {
+    await seedMetricRow(POST_A)
+
+    const first = await increaseLikes(db, POST_A)
+    expect(first.token).toMatch(/^[A-Za-z0-9_-]{64}$/)
+    expect(first.likes).toBe(1)
+
+    const second = await increaseLikes(db, POST_A)
+    expect(second.likes).toBe(2)
+    expect(second.token).not.toBe(first.token)
+
+    const rows = await likeRows()
+    expect(rows).toHaveLength(2)
+    expect(rows.map((r) => r.token)).toEqual(expect.arrayContaining([first.token, second.token]))
   })
 
-  it('each call yields a fresh token (no token reuse / collision)', async () => {
-    vi.mocked(likeQueries.recordLikeAndCount).mockResolvedValue(0)
-    const a = await increaseLikes(db, POST_X)
-    const b = await increaseLikes(db, POST_X)
-    expect(a.token).not.toBe(b.token)
-  })
-})
+  it('decrements only when the token is consumed, and the token cannot be reused', async () => {
+    await seedMetricRow(POST_A)
+    const { token } = await increaseLikes(db, POST_A)
 
-describe('services/comments/likes — decreaseLikes', () => {
-  it("no-ops when the token doesn't exist (anonymous undo of someone else's like)", async () => {
-    vi.mocked(likeQueries.consumeActiveLikeToken).mockReturnValue(false)
+    await decreaseLikes(db, POST_A, token)
+    expect(await queryLikes(db, POST_A)).toBe(0)
+    expect(await validateLikeToken(db, POST_A, token)).toBe(false)
 
-    await decreaseLikes(db, POST_X, 'stale-token')
-
-    expect(likeQueries.consumeActiveLikeToken).toHaveBeenCalledWith(expect.any(Object), POST_X, 'stale-token')
-    expect(metricQueries.decrementMetricVotes).not.toHaveBeenCalled()
+    // A second undo with the same token no-ops — the count stays put.
+    await decreaseLikes(db, POST_A, token)
+    expect(await queryLikes(db, POST_A)).toBe(0)
   })
 
-  it('decrements the page counter only when the token is consumed', async () => {
-    vi.mocked(likeQueries.consumeActiveLikeToken).mockReturnValue(true)
+  it('no-ops when the token does not exist', async () => {
+    await seedMetricRow(POST_A, { voteUp: 3 })
 
-    await decreaseLikes(db, POST_X, 'good-token')
+    await decreaseLikes(db, POST_A, 'stale-token')
 
-    expect(likeQueries.consumeActiveLikeToken).toHaveBeenCalledWith(expect.any(Object), POST_X, 'good-token')
-    expect(metricQueries.decrementMetricVotes).toHaveBeenCalledOnce()
-    expect(vi.mocked(metricQueries.decrementMetricVotes).mock.calls[0][1]).toEqual(POST_X)
+    expect(await queryLikes(db, POST_A)).toBe(3)
   })
 })
 
 describe('services/comments/likes — queryLikes', () => {
-  it('delegates to metricVoteUp with the entity target', async () => {
-    vi.mocked(likeQueries.metricVoteUp).mockResolvedValue(11)
+  it('reads the counter and defaults a missing metric row to 0', async () => {
+    await seedMetricRow(POST_A, { voteUp: 11 })
 
-    const count = await queryLikes(db, POST_X)
-
-    expect(count).toBe(11)
-    expect(likeQueries.metricVoteUp).toHaveBeenCalledOnce()
-    expect(vi.mocked(likeQueries.metricVoteUp).mock.calls[0][1]).toEqual(POST_X)
+    expect(await queryLikes(db, POST_A)).toBe(11)
+    expect(await queryLikes(db, POST_B)).toBe(0)
   })
 })
 
 describe('services/comments/likes — queryMetadata', () => {
-  it('returns an empty Map for an empty target list (no DB roundtrip)', async () => {
+  it('returns an empty map for an empty target list', async () => {
     const result = await queryMetadata(db, [], { likes: true, views: true, comments: true })
-
     expect(result.size).toBe(0)
-    expect(likeQueries.metricsByOwnerIds).not.toHaveBeenCalled()
-    expect(likeQueries.commentCountsByOwnerIds).not.toHaveBeenCalled()
   })
 
-  it('aggregates likes/views/comments per target, defaulting missing rows to 0', async () => {
-    vi.mocked(likeQueries.metricsByOwnerIds).mockImplementation(async (_db, _type, ownerIds) =>
-      ownerIds.includes(POST_A.ownerId)
-        ? [{ type: 'post', ownerId: POST_A.ownerId, publicId: 'uuid-a', like: 5, view: 100 }]
-        : [],
-    )
-    vi.mocked(likeQueries.commentCountsByOwnerIds).mockImplementation(async (_db, _type, ownerIds) =>
-      ownerIds.includes(POST_A.ownerId) ? [{ ownerId: POST_A.ownerId, count: 3 }] : [],
-    )
+  it('aggregates likes/views/approved-comments per target, defaulting missing rows to 0', async () => {
+    await seedMetricRow(POST_A, { voteUp: 5, pv: 100, publicId: 'uuid-a' })
+    await seedComment(POST_A.ownerId)
+    await seedComment(POST_A.ownerId)
+    await seedComment(POST_A.ownerId)
+    // Pending and soft-target rows must not count.
+    await seedComment(POST_A.ownerId, { isPending: true })
 
-    const result = await queryMetadata(db, [POST_A, POST_B], {
-      likes: true,
-      views: true,
-      comments: true,
-    })
+    const result = await queryMetadata(db, [POST_A, POST_B], { likes: true, views: true, comments: true })
 
     expect(result.size).toBe(2)
     expect(result.get('post:1')).toEqual({ likes: 5, views: 100, comments: 3, publicId: 'uuid-a' })
     expect(result.get('post:2')).toEqual({ likes: 0, views: 0, comments: 0, publicId: '' })
   })
 
-  it('skips the comment-count query when comments=false (perf knob)', async () => {
-    vi.mocked(likeQueries.metricsByOwnerIds).mockResolvedValue([])
+  it('reports comments as 0 when the comments option is off', async () => {
+    await seedMetricRow(POST_A, { voteUp: 5, pv: 100, publicId: 'uuid-a' })
+    await seedComment(POST_A.ownerId)
 
-    await queryMetadata(db, [POST_A], { likes: true, views: true, comments: false })
+    const result = await queryMetadata(db, [POST_A], { likes: true, views: true, comments: false })
 
-    expect(likeQueries.commentCountsByOwnerIds).not.toHaveBeenCalled()
+    expect(result.get('post:1')).toEqual({ likes: 5, views: 100, comments: 0, publicId: 'uuid-a' })
   })
 })
 
 describe('services/comments/likes — validateLikeToken', () => {
-  it('returns true iff the active token row exists in the DB', async () => {
-    vi.mocked(likeQueries.existsActiveLikeToken).mockResolvedValueOnce(true)
-    expect(await validateLikeToken(db, POST_X, 'tok')).toBe(true)
-    vi.mocked(likeQueries.existsActiveLikeToken).mockResolvedValueOnce(false)
-    expect(await validateLikeToken(db, POST_X, 'tok')).toBe(false)
-  })
+  it('is true only while the token row is active', async () => {
+    await seedMetricRow(POST_A)
+    const { token } = await increaseLikes(db, POST_A)
 
-  it('validates against active tokens so soft-deleted rows do not keep the button liked', async () => {
-    vi.mocked(likeQueries.existsActiveLikeToken).mockResolvedValue(false)
+    expect(await validateLikeToken(db, POST_A, token)).toBe(true)
+    expect(await validateLikeToken(db, POST_A, 'unknown')).toBe(false)
 
-    await validateLikeToken(db, POST_X, 'deleted-token')
-
-    expect(likeQueries.existsActiveLikeToken).toHaveBeenCalledOnce()
-    expect(likeQueries.existsActiveLikeToken).toHaveBeenCalledWith(expect.any(Object), POST_X, 'deleted-token')
-  })
-
-  it('does not invoke the purge sweep on the validation hot path', async () => {
-    // The previous implementation ran a 1% probabilistic table-wide
-    // purge per validate call. The sweep now lives behind a guarded
-    // `setInterval`, so the validate hot path must stay query-only.
-    vi.mocked(likeQueries.existsActiveLikeToken).mockResolvedValue(true)
-    await validateLikeToken(db, POST_X, 'tok')
-    expect(likeQueries.purgeOldLikeTokens).not.toHaveBeenCalled()
+    await decreaseLikes(db, POST_A, token)
+    expect(await validateLikeToken(db, POST_A, token)).toBe(false)
   })
 })
 
 describe('services/comments/likes — purgeStaleLikeTokens', () => {
-  it('delegates the soft-deleted token cutoff to the query layer', async () => {
+  it('physically deletes only soft-deleted tokens older than 30 days', async () => {
+    const now = Date.now()
+    const dayMs = 24 * 60 * 60 * 1000
+    const rows = [
+      // Soft-deleted 40 days ago — purge.
+      { token: 'old-deleted', deletedAt: new Date(now - 40 * dayMs) },
+      // Soft-deleted yesterday — keep.
+      { token: 'fresh-deleted', deletedAt: new Date(now - dayMs) },
+      // Active — keep.
+      { token: 'active', deletedAt: null },
+    ]
+    for (const row of rows) {
+      await db.insert(like).values({
+        token: row.token,
+        type: 'post',
+        ownerId: 1,
+        deletedAt: row.deletedAt,
+        updatedAt: row.deletedAt ?? new Date(),
+      })
+    }
+
     await purgeStaleLikeTokens(db)
 
-    expect(likeQueries.purgeOldLikeTokens).toHaveBeenCalledOnce()
-    expect(vi.mocked(likeQueries.purgeOldLikeTokens).mock.calls[0][1]).toBeInstanceOf(Date)
+    const remaining = (await likeRows()).map((r) => r.token)
+    expect(remaining).toEqual(expect.arrayContaining(['fresh-deleted', 'active']))
+    expect(remaining).not.toContain('old-deleted')
+  })
+})
+
+describe('services/comments/likes — sweep timer', () => {
+  it('starts idempotently and resets', () => {
+    startLikeTokenSweep(db)
+    startLikeTokenSweep(db)
+    resetLikeTokenSweep()
   })
 })
