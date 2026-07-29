@@ -2,53 +2,60 @@ import type { Database } from '@/server/infra/db/database'
 import type { EntityTarget } from '@/server/infra/db/target'
 
 import { getBatcher, registerBatcher, requireBatcher } from '@/server/infra/db/batcher-registry'
+import { FlushLoop } from '@/server/infra/db/insert-batcher'
 import { incrementMetricPvBatch } from '@/server/infra/db/operations/metric'
 import { targetKey } from '@/server/infra/db/target'
-import { registerShutdownHook, unregisterShutdownHook } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
 
-// In-memory aggregator for high-frequency counters. We currently track page
-// views (every request to a post page bumps the same counter) but the same
-// pattern could apply to other "fire and forget" stats.
-//
-// Flush triggers:
-//  - The buffered count for any single key reaches `flushThreshold`.
-//  - Time since last flush exceeds `flushIntervalMs` (lazy timer set on the
-//    first increment after a flush).
-//  - The Node process gets SIGTERM/SIGINT/exit (best-effort flush).
+const log = getLogger('metrics.batcher')
 
 interface BatcherOptions {
   flushIntervalMs: number
   flushThreshold: number
 }
 
-const log = getLogger('metrics.batcher')
-
-class PageViewBatcher {
+// In-memory counter aggregator for high-frequency page views (every
+// post-page request bumps the same counters). Shares the FlushLoop
+// skeleton with the insert batchers; its own payload is the MAP
+// aggregation and the failure policy — merge the snapshot back for a
+// retry instead of dead-lettering rows.
+class PageViewBatcher extends FlushLoop<Map<string, number>, void> {
   private buffer = new Map<string, number>()
-  /** Counts from the last failed flush that still need to be written. */
-  private failed = new Map<string, number>()
-  private timer: NodeJS.Timeout | null = null
-  private flushing: Promise<void> | null = null
-  private readonly shutdownHook: () => Promise<void>
 
   constructor(
     private readonly opts: BatcherOptions,
     private readonly db: Database,
   ) {
-    this.shutdownHook = () => this.flush()
-    registerShutdownHook(this.shutdownHook, 100)
+    super(opts.flushIntervalMs, 'metrics.batcher', undefined)
   }
 
-  /** Detach the shutdown hook (registry reset on restore — see InsertBatcher). */
-  dispose(): void {
-    if (this.buffer.size > 0 || this.failed.size > 0) {
-      log.warn('page-view batcher dropped with unflushed counts', {
-        buffered: this.buffer.size,
-        retryPending: this.failed.size,
-      })
+  protected takePending(): Map<string, number> | null {
+    if (this.buffer.size === 0) {
+      return null
     }
-    unregisterShutdownHook(this.shutdownHook)
+    const snapshot = this.buffer
+    this.buffer = new Map()
+    return snapshot
+  }
+
+  protected async writePending(pending: Map<string, number>): Promise<void> {
+    await incrementMetricPvBatch(this.db, pending)
+    log.debug('flushed page views', { keys: pending.size })
+  }
+
+  protected onWriteFailed(pending: Map<string, number>, error: unknown): void {
+    log.error('flush failed; counts retry with the next batch', {
+      err: error instanceof Error ? error.message : String(error),
+      keys: pending.size,
+    })
+    // Merge the snapshot back — increments that arrived during the
+    // failed flush live in the fresh buffer, so counts can't
+    // double-count. Re-arm so the retry isn't lost when no new
+    // increments arrive before shutdown.
+    for (const [key, count] of pending) {
+      this.buffer.set(key, (this.buffer.get(key) ?? 0) + count)
+    }
+    this.armFlushTimer()
   }
 
   increment(key: string): void {
@@ -60,68 +67,26 @@ class PageViewBatcher {
       return
     }
 
-    if (this.timer === null) {
-      this.timer = setTimeout(() => {
-        void this.flush()
-      }, this.opts.flushIntervalMs)
-      // Don't keep the event loop alive solely for this timer.
-      this.timer.unref()
-    }
+    this.armFlushTimer()
   }
 
-  async flush(): Promise<void> {
-    if (this.flushing) {
-      return this.flushing
+  /** Detach the shutdown hook (registry reset on restore — see InsertBatcher). */
+  override dispose(): void {
+    if (this.buffer.size > 0) {
+      log.warn('page-view batcher dropped with unflushed counts', {
+        keys: this.buffer.size,
+      })
     }
-
-    // Merge any previously-failed counts back into the buffer before
-    // taking a new snapshot.  This keeps the failed queue isolated so
-    // increments that arrive while a flush is in flight never get mixed
-    // with the snapshot in a way that could double-count.
-    for (const [k, v] of this.failed) {
-      this.buffer.set(k, (this.buffer.get(k) ?? 0) + v)
-    }
-    this.failed.clear()
-
-    if (this.buffer.size === 0) {
-      return
-    }
-
-    if (this.timer) {
-      clearTimeout(this.timer)
-      this.timer = null
-    }
-
-    const snapshot = this.buffer
-    this.buffer = new Map()
-
-    this.flushing = (async () => {
-      try {
-        await incrementMetricPvBatch(this.db, snapshot)
-        log.debug('flushed page views', { keys: snapshot.size })
-      } catch (err) {
-        log.error('flush failed; queuing for retry', { err: String(err), keys: snapshot.size })
-        // Stash the snapshot in `failed` so the next flush attempt
-        // retries these counts without contaminating new increments.
-        for (const [k, v] of snapshot) {
-          this.failed.set(k, (this.failed.get(k) ?? 0) + v)
-        }
-      } finally {
-        this.flushing = null
-      }
-    })()
-
-    return this.flushing
+    super.dispose()
   }
 }
 
 const BATCHER_NAME = 'PageViewBatcher'
 
-// Second implementation of the batching seam alongside `InsertBatcher`:
-// insert batchers buffer whole rows, while this one aggregates counters in
-// a Map and flushes upserts with merge-back retry instead of dead-letter.
-// Both self-register on the same registry so the bootstrap lifecycle
-// drives them through one vocabulary.
+// Self-register on the same registry seam as the insert batchers, so
+// the bootstrap lifecycle drives every batcher through one vocabulary
+// (`initAllBatchers` / `flushAllBatchers` / `resetAllBatchers` /
+// `replayAllDeadLetters`).
 registerBatcher(
   BATCHER_NAME,
   (handle) =>

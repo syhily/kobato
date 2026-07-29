@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import type { EnrichedAccessEvent } from '@/server/domains/analytics/types'
 import type { AnalyticsHandle } from '@/server/infra/analytics/duckdb'
 
-import { ACCESS_LOG_DDL, appendAccessEvent } from '@/server/domains/analytics/services/access-log'
+import { ACCESS_LOG_DDL, appendAccessEvents } from '@/server/domains/analytics/services/access-log'
 import { closeAnalyticsDatabase, openAnalyticsDatabase } from '@/server/infra/analytics/duckdb'
 
 const handles: AnalyticsHandle[] = []
@@ -72,38 +72,33 @@ export interface SeedAccessEvent {
 
 /** Seed rows through the same Appender protocol the batcher uses. */
 export async function seedAccessEvents(handle: AnalyticsHandle, events: SeedAccessEvent[]): Promise<void> {
-  const appender = await handle.writer.createAppender('access_log')
-  for (const e of events) {
-    const event: EnrichedAccessEvent = {
-      ts: e.ts,
-      visitorHash: e.visitorHash ?? 'visitor',
-      sessionId: e.sessionId ?? null,
-      ip: e.ip ?? null,
-      path: e.path ?? '/',
-      entityType: e.entityType === 'post' || e.entityType === 'page' ? e.entityType : null,
-      entityId: e.entityId ?? null,
-      referer: e.referer ?? null,
-      refererHost: e.refererHost ?? null,
-      country: e.country ?? null,
-      region: e.region ?? null,
-      city: e.city ?? null,
-      latitude: e.latitude ?? null,
-      longitude: e.longitude ?? null,
-      timezone: e.timezone ?? null,
-      language: e.language ?? null,
-      ua: e.ua ?? null,
-      browser: e.browser ?? null,
-      browserVersion: e.browserVersion ?? null,
-      os: e.os ?? null,
-      osVersion: e.osVersion ?? null,
-      device: e.device ?? null,
-      deviceType: e.deviceType ?? null,
-      isBot: e.isBot ?? false,
-    }
-    appendAccessEvent(appender, event)
-    appender.endRow()
-  }
-  appender.closeSync()
+  const enriched: EnrichedAccessEvent[] = events.map((e) => ({
+    ts: e.ts,
+    visitorHash: e.visitorHash ?? 'visitor',
+    sessionId: e.sessionId ?? null,
+    ip: e.ip ?? null,
+    path: e.path ?? '/',
+    entityType: e.entityType === 'post' || e.entityType === 'page' ? e.entityType : null,
+    entityId: e.entityId ?? null,
+    referer: e.referer ?? null,
+    refererHost: e.refererHost ?? null,
+    country: e.country ?? null,
+    region: e.region ?? null,
+    city: e.city ?? null,
+    latitude: e.latitude ?? null,
+    longitude: e.longitude ?? null,
+    timezone: e.timezone ?? null,
+    language: e.language ?? null,
+    ua: e.ua ?? null,
+    browser: e.browser ?? null,
+    browserVersion: e.browserVersion ?? null,
+    os: e.os ?? null,
+    osVersion: e.osVersion ?? null,
+    device: e.device ?? null,
+    deviceType: e.deviceType ?? null,
+    isBot: e.isBot ?? false,
+  }))
+  await appendAccessEvents(handle.writer, enriched)
 }
 
 /** Wipe the access_log table between cases. */

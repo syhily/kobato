@@ -93,9 +93,12 @@ async function insertPerRow(db: Database, events: AuditEventInput[]): Promise<Fl
 }
 
 // Self-register on the infra batching seam: the bootstrap lifecycle
-// drives init/flush/reset through the registry (`initAllBatchers` /
-// `flushAllBatchers` / `resetAllBatchers`) with no per-domain calls.
-registerBatcher(BATCHER_NAME, (handle) => new AuditLogBatcher(handle.db))
+// drives init/flush/reset/replay through the registry (`initAllBatchers`
+// / `flushAllBatchers` / `resetAllBatchers` / `replayAllDeadLetters`)
+// with no per-domain calls.
+registerBatcher(BATCHER_NAME, (handle) => new AuditLogBatcher(handle.db), {
+  replayDeadLetter: () => replayDeadLetterAuditLog(),
+})
 
 export function pushAuditEvent(event: AuditEventInput): void {
   requireBatcher<AuditLogBatcher>(BATCHER_NAME).push(event)
