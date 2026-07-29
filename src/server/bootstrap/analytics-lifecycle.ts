@@ -1,6 +1,6 @@
 import { stat } from 'node:fs/promises'
 
-import { ACCESS_LOG_DDL, ACCESS_LOG_RETENTION_DAYS } from '@/server/domains/analytics/services/access-log-ddl'
+import { ACCESS_LOG_DDL, ACCESS_LOG_RETENTION_DAYS } from '@/server/domains/analytics/services/access-log'
 import {
   type AnalyticsHandle,
   closeAnalyticsDatabase,

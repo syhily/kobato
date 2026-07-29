@@ -24,10 +24,6 @@ function deadLetterPath(): string {
   return AUDIT_DEAD_LETTER_PATH
 }
 
-function serializeForDeadLetter(events: AuditEventInput[]): string {
-  return serializeDeadLetterJsonLines(events)
-}
-
 function deserializeFromDeadLetter(line: string): AuditEventInput | null {
   return deserializeDeadLetterJsonLine(line, (raw) => {
     if (typeof raw.createdAt === 'number') {
@@ -90,7 +86,7 @@ async function insertPerRow(db: Database, events: AuditEventInput[]): Promise<Fl
       successCount,
       failCount: failedEvents.length,
     })
-    await writeDeadLetter(failedEvents, serializeForDeadLetter, deadLetterPath(), log)
+    await writeDeadLetter(failedEvents, serializeDeadLetterJsonLines, deadLetterPath(), log)
   }
 
   return { committed: successCount, deadLettered: failedEvents.length }

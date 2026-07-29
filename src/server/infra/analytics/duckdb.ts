@@ -36,13 +36,16 @@ export function resolveAnalyticsPath(): string {
  *  `:memory:` opens an in-memory database (tests). The DDL is injected
  *  because infra carries zero business knowledge — the access_log table
  *  shape is owned by the analytics domain
- *  (`@/server/domains/analytics/services/access-log-ddl`). */
+ *  (`@/server/domains/analytics/services/access-log`). */
 export async function openAnalyticsDatabase(analyticsPath: string, ddl: string): Promise<AnalyticsHandle> {
-  const instance =
-    analyticsPath === ':memory:' ? await DuckDBInstance.create() : await DuckDBInstance.create(analyticsPath)
+  // mkdir FIRST (same order as openDatabase): a custom
+  // storage.analyticsDatabase in a missing directory must be created
+  // before DuckDB tries to open the file.
   if (analyticsPath !== ':memory:') {
     mkdirSync(path.dirname(analyticsPath), { recursive: true })
   }
+  const instance =
+    analyticsPath === ':memory:' ? await DuckDBInstance.create() : await DuckDBInstance.create(analyticsPath)
   const writer = await instance.connect()
   const reader = await instance.connect()
   await writer.run(ddl)

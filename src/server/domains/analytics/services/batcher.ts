@@ -1,8 +1,9 @@
-import { DuckDBTimestampMillisecondsValue, type DuckDBConnection } from '@duckdb/node-api'
+import { type DuckDBConnection } from '@duckdb/node-api'
 
 import type { EnrichedAccessEvent } from '@/server/domains/analytics/types'
 
 import { getAnalyticsHandle } from '@/server/bootstrap/analytics-lifecycle'
+import { appendAccessEvent } from '@/server/domains/analytics/services/access-log'
 import { getBatcher, registerBatcher, requireBatcher } from '@/server/infra/db/batcher-registry'
 import {
   deserializeDeadLetterJsonLine,
@@ -20,10 +21,6 @@ const BATCHER_NAME = 'AccessLogBatcher'
 
 function deadLetterPath(): string {
   return ANALYTICS_DEAD_LETTER_PATH
-}
-
-function serializeForDeadLetter(events: EnrichedAccessEvent[]): string {
-  return serializeDeadLetterJsonLines(events)
 }
 
 function deserializeFromDeadLetter(line: string): EnrichedAccessEvent | null {
@@ -48,43 +45,7 @@ class AccessLogBatcher extends InsertBatcher<EnrichedAccessEvent, DuckDBConnecti
     const appender = await writer.createAppender('access_log')
     let count = 0
     for (const e of events) {
-      appender.appendTimestampMilliseconds(new DuckDBTimestampMillisecondsValue(BigInt(e.ts.getTime())))
-      const s = (v: string | null) => (v === null ? appender.appendNull() : appender.appendVarchar(v))
-      s(e.visitorHash)
-      s(e.sessionId)
-      s(e.ip)
-      s(e.path)
-      s(e.entityType)
-      if (e.entityId === null) {
-        appender.appendNull()
-      } else {
-        appender.appendBigInt(BigInt(e.entityId))
-      }
-      s(e.referer)
-      s(e.refererHost)
-      s(e.country)
-      s(e.region)
-      s(e.city)
-      if (e.latitude === null) {
-        appender.appendNull()
-      } else {
-        appender.appendDouble(e.latitude)
-      }
-      if (e.longitude === null) {
-        appender.appendNull()
-      } else {
-        appender.appendDouble(e.longitude)
-      }
-      s(e.timezone)
-      s(e.language)
-      s(e.ua)
-      s(e.browser)
-      s(e.browserVersion)
-      s(e.os)
-      s(e.osVersion)
-      s(e.device)
-      s(e.deviceType)
-      appender.appendBoolean(e.isBot)
+      appendAccessEvent(appender, e)
       appender.endRow()
       count++
       if (count % 2048 === 0) {
@@ -95,7 +56,7 @@ class AccessLogBatcher extends InsertBatcher<EnrichedAccessEvent, DuckDBConnecti
   }
 
   protected async onInsertFailed(events: EnrichedAccessEvent[]): Promise<FlushResult> {
-    await writeDeadLetter(events, serializeForDeadLetter, deadLetterPath(), this.log)
+    await writeDeadLetter(events, serializeDeadLetterJsonLines, deadLetterPath(), this.log)
     return { committed: 0, deadLettered: events.length }
   }
 }
