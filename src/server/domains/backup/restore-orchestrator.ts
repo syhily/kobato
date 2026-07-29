@@ -1,3 +1,4 @@
+import type { Database } from '@/server/infra/db/database'
 import type { Logger } from '@/server/infra/logger'
 
 import { closeHttpServer, setRestoreState, setServerPhase } from '@/server/infra/lifecycle'
@@ -17,21 +18,36 @@ export function resetRestoreComplete(): void {
 }
 
 export interface RestoreOrchestratorDeps {
-  /** Close the live database handle. MUST run before `restoreFn` swaps
-   * the database files — SQLite keeps the file open, and on Windows a
-   * replaced-under-foot file would fail outright (on POSIX it would
-   * silently keep writing to an unlinked inode). */
-  closeCurrentDatabase(): void
+  /** Flush batchers and close the live database handle. MUST run before
+   * `restoreFn` swaps the database files — SQLite keeps the file open,
+   * and on Windows a replaced-under-foot file would fail outright (on
+   * POSIX it would silently keep writing to an unlinked inode). The
+   * flush is part of the contract: batchers flushed AFTER the close
+   * would dead-letter buffered events against the dead handle. */
+  prepareForSwap(): Promise<void> | void
+  /** Open a fresh handle on the swapped file. Runs between the swap and
+   * `afterReopenFn`, so post-restore validation/queries always hit the
+   * NEW database — never the just-closed request-scoped handle. */
+  reopenAfterSwap(): Promise<Database>
   log: Logger
 }
 
 /**
  * Fire-and-forget restore that drains the HTTP server before running the
  * restore, so no new requests arrive while the backup file replaces the
- * live one. The completion callback reopens the database on the new file
- * and restarts the server.
+ * live one. Ordering contract:
+ *   1. drain HTTP,  2. prepareForSwap (flush + close),  3. restoreFn
+ *   (the file swap ONLY — no queries),  4. reopenAfterSwap (always —
+ *   post-restore work must never hit the just-closed handle),
+ *   5. afterReopenFn (validation, settings refresh, audit events —
+ *   against the NEW database),  6. completion callback (migrations,
+ *   ANALYZE, server restart; recovery reopen on failure).
  */
-export function performSafeRestore(deps: RestoreOrchestratorDeps, restoreFn: () => Promise<void>): void {
+export function performSafeRestore(
+  deps: RestoreOrchestratorDeps,
+  restoreFn: () => Promise<void>,
+  afterReopenFn?: (db: Database) => Promise<void>,
+): void {
   // Capture the promise so callers (tests) can await completion, and so we
   // don't silently swallow rejections.
   const promise = (async () => {
@@ -45,10 +61,14 @@ export function performSafeRestore(deps: RestoreOrchestratorDeps, restoreFn: () 
       // 1. Close HTTP server (stop accepting, drain in-flight)
       await closeHttpServer()
 
-      // 2. Close the database handle, then swap the files.
-      deps.closeCurrentDatabase()
+      // 2. Flush batchers, close the database handle, swap the files.
+      await deps.prepareForSwap()
       setRestoreState('restoring')
       await restoreFn()
+
+      // 3. Reopen on the NEW file, then run post-restore work against it.
+      const db = await deps.reopenAfterSwap()
+      await afterReopenFn?.(db)
 
       setRestoreState('completed')
       deps.log.info('Restore completed successfully')
@@ -59,8 +79,8 @@ export function performSafeRestore(deps: RestoreOrchestratorDeps, restoreFn: () 
       setRestoreState('failed', error.message)
     }
 
-    // 3. Run completion callback (reopens the database, restarts the
-    //    server, resets batchers).
+    // 4. Run completion callback (migrations + ANALYZE + server restart;
+    //    reopens the ORIGINAL file for recovery when the restore failed).
     if (completeFn) {
       try {
         await completeFn(success, error)

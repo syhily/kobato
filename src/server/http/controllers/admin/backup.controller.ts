@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
+import { prepareDatabaseForRestore, reopenDb } from '@/server/bootstrap/db-lifecycle'
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { performSafeRestore } from '@/server/domains/backup/restore-orchestrator'
 import {
@@ -12,7 +12,6 @@ import {
 } from '@/server/domains/backup/services/backup'
 import { restoreFromBackup } from '@/server/domains/backup/services/restore'
 import { adminProc } from '@/server/http/orpc-base'
-import { closeDatabase } from '@/server/infra/db/database'
 import { ActionFailure } from '@/server/infra/http/errors'
 import { getRestoreState } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
@@ -92,15 +91,22 @@ const restore = adminProc
     const { db } = context
     const buffer = await getBackupBuffer(db, input.key)
 
-    performSafeRestore({ closeCurrentDatabase: () => closeDatabase(getDatabaseHandle()), log }, async () => {
-      await restoreFromBackup(buffer, input.key)
-      recordAuditEventFromContext(context, {
-        action: 'backup_restored',
-        resourceType: 'backup',
-        resourceId: input.key,
-      })
-      log.info('Restore completed', { key: input.key })
-    })
+    performSafeRestore(
+      { prepareForSwap: prepareDatabaseForRestore, reopenAfterSwap: reopenDb, log },
+      async () => {
+        await restoreFromBackup(buffer, input.key)
+      },
+      async () => {
+        // The audit event buffers into the re-initialized batcher, which
+        // writes to the restored database.
+        recordAuditEventFromContext(context, {
+          action: 'backup_restored',
+          resourceType: 'backup',
+          resourceId: input.key,
+        })
+        log.info('Restore completed', { key: input.key })
+      },
+    )
 
     return { accepted: true }
   })

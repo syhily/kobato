@@ -79,8 +79,11 @@ if (!isVitest()) {
 }
 
 // ─── Restore completion ──────────────────────────────────
-// Register restore completion: reopen the database on the swapped file,
-// restart server, reset state.
+// Register restore completion: reopen the database when the restore
+// flow didn't already (the orchestrator reopens itself on the success
+// path so post-restore validation runs against the NEW file; a failed
+// restore still needs the ORIGINAL file reopened for recovery), run
+// migrations + ANALYZE on it, then restart the server.
 
 registerRestoreComplete(async (success, err) => {
   if (!success) {
@@ -91,6 +94,8 @@ registerRestoreComplete(async (success, err) => {
 
   let recreated = false
   try {
+    // Idempotent: the orchestrator already reopened on the success path;
+    // a failed restore reopens the ORIGINAL file here for recovery.
     await reopenDatabase()
     recreated = true
   } catch (recreateErr) {
@@ -109,6 +114,14 @@ registerRestoreComplete(async (success, err) => {
         'Failed to reschedule archive after restore',
       )
     }
+  }
+
+  if (!recreated) {
+    // Never restart into a dead handle — the server stays down (phase
+    // 'restarting', install gate closed) rather than 500ing every
+    // request against the closed database.
+    root.error('Restore completion aborted: no live database handle; server not restarted')
+    return
   }
 
   try {
@@ -155,18 +168,37 @@ registerShutdownHook(async () => {
 }, 0)
 
 /**
- * Reopen the database on (possibly swapped) files. Used by the restore
- * flow after the backup file replaced the live one.
+ * Prepare the live database for a file swap (the restore flow's step
+ * one): flush every batcher BEFORE the handle closes — buffered audit /
+ * page-view rows must land in the pre-swap database, not dead-letter
+ * against a closed handle — then reset and close.
+ * `flushAllBatchers` isolates per-batcher failures internally, so one
+ * stuck batcher never blocks the rest or the swap.
  */
-export async function reopenDatabase(): Promise<DatabaseHandle> {
-  // flushAllBatchers isolates per-batcher failures internally — a
-  // failing flush never blocks the remaining batchers or the swap.
+export async function prepareDatabaseForRestore(): Promise<void> {
   await flushAllBatchers()
-
   resetAllBatchers()
   resetLikeTokenSweep()
   closeDatabase(current)
+}
+
+/**
+ * Reopen the database on (possibly swapped) files. Called by the restore
+ * orchestrator after the swap (so post-restore validation runs against
+ * the NEW file) and by the completion handler for recovery after a
+ * failed restore — the handle is only reopened when closed.
+ */
+export async function reopenDatabase(): Promise<DatabaseHandle> {
+  if (!current.closed) {
+    return current
+  }
   return wireDatabase(openDatabase(resolveDatabasePath()))
+}
+
+/** `reopenDatabase` for consumers that only need the drizzle instance (the restore orchestrator's `reopenAfterSwap`). */
+export async function reopenDb(): Promise<Database> {
+  const handle = await reopenDatabase()
+  return handle.db
 }
 
 export function getDb(): Database {

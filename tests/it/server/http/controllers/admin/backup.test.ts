@@ -34,6 +34,7 @@ vi.mock('@/server/infra/storage/registry', () => ({
 vi.mock('@/server/infra/lifecycle', () => ({
   requestShutdown: vi.fn(),
   registerShutdownHook: vi.fn(),
+  unregisterShutdownHook: vi.fn(),
   setServerPhase: vi.fn(),
   restartServer: vi.fn(),
   getRestoreState: vi.fn(() => ({ phase: 'idle' })),
@@ -111,7 +112,8 @@ describe('adminBackupRouter.restore', () => {
     const res = await call(adminBackupRouter.restore, { key: '2026-01-01T00-00-00' }, { context: ctx })
     expect(res).toEqual({ accepted: true })
     expect(orchestrator.performSafeRestore).toHaveBeenCalledWith(
-      { closeCurrentDatabase: expect.any(Function), log: expect.any(Object) },
+      { prepareForSwap: expect.any(Function), reopenAfterSwap: expect.any(Function), log: expect.any(Object) },
+      expect.any(Function),
       expect.any(Function),
     )
   })
