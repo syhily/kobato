@@ -1,15 +1,15 @@
 import { sql } from 'drizzle-orm'
-import { copyFile, readFile, unlink } from 'node:fs/promises'
+import { statSync } from 'node:fs'
+import { copyFile, unlink } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { Readable } from 'node:stream'
-import { gzipSync } from 'node:zlib'
+import { createGzip } from 'node:zlib'
 
 import type { Database } from '@/server/infra/db/database'
 import type { BackupFileDto } from '@/shared/types/backup'
 
 import { getAnalyticsHandle } from '@/server/bootstrap/analytics-lifecycle'
-import { packTar, type TarEntry } from '@/server/domains/backup/services/tar'
+import { createTarReadStream } from '@/server/domains/backup/services/tar'
 import {
   deleteBackupRow,
   findBackupByTimestamp,
@@ -105,13 +105,13 @@ export async function createBackup(
   db.run(sql.raw(`VACUUM INTO '${stagingPath.replaceAll("'", "''")}'`))
 
   try {
-    let analyticsBytes: Buffer | null = null
+    const entries: { name: string; path: string; size: number }[] = []
     try {
       const analytics = getAnalyticsHandle()
       if (analytics.path !== ':memory:') {
         await analytics.writer.run('CHECKPOINT')
         await copyFile(analytics.path, analyticsStagingPath)
-        analyticsBytes = await readFile(analyticsStagingPath)
+        entries.push({ name: 'analytics.duckdb', path: analyticsStagingPath, size: 0 })
       }
     } catch (error) {
       // The sidecar is expendable telemetry: a missing/closed analytics
@@ -121,16 +121,21 @@ export async function createBackup(
       })
     }
 
-    const entries: TarEntry[] = [{ name: 'kobato.db', data: await readFile(stagingPath) }]
-    if (analyticsBytes !== null) {
-      entries.push({ name: 'analytics.duckdb', data: analyticsBytes })
+    // Streaming archive: tar headers + file contents flow through gzip
+    // into the backend — a full database file is never held in memory.
+    entries.unshift({ name: 'kobato.db', path: stagingPath, size: 0 })
+    for (const entry of entries) {
+      entry.size = statSync(entry.path).size
     }
-    const packed = gzipSync(packTar(entries))
-
+    const gzip = createGzip()
+    let uploadedBytes = 0
+    gzip.on('data', (chunk: Buffer) => {
+      uploadedBytes += chunk.length
+    })
     const { backend, driver } = activeBackend()
     await backend.putStream({
       key,
-      body: Readable.from(packed),
+      body: createTarReadStream(entries).pipe(gzip),
       contentType: 'application/gzip',
       visibility: 'private',
     })
@@ -139,12 +144,12 @@ export async function createBackup(
       timestamp,
       storagePath: key,
       storageDriver: driver,
-      byteSize: packed.length,
+      byteSize: uploadedBytes,
       createdBy,
     })
 
-    log.info('Backup completed', { key, driver, size: packed.length, entries: entries.length })
-    return { fileName: key.split('/').pop()!, size: packed.length, timestamp }
+    log.info('Backup completed', { key, driver, size: uploadedBytes, entries: entries.length })
+    return { fileName: key.split('/').pop()!, size: uploadedBytes, timestamp }
   } finally {
     await unlink(stagingPath).catch(() => undefined)
     await unlink(analyticsStagingPath).catch(() => undefined)

@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import { bodyLimit } from 'hono/body-limit'
+import { rmSync } from 'node:fs'
 
 import type { Env } from '@/server/http/context'
 
@@ -14,9 +15,11 @@ import {
 } from '@/server/domains/backup/restore-machine'
 import { getBackupBuffer, isValidBackupKey } from '@/server/domains/backup/services/backup'
 import {
-  assertBackupContainsAdmin,
-  extractBackupFile,
+  type StagedBackup,
+  assertStagedBackupContainsAdmin,
   restoreFromBackup,
+  restoreFromStagedBackup,
+  stageBackup,
 } from '@/server/domains/backup/services/restore'
 import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { csrfGuard } from '@/server/http/middlewares/csrf'
@@ -127,23 +130,30 @@ export const backupRouter = new Hono<Env>()
 
       const buffer = Buffer.from(await file.arrayBuffer())
 
-      // Extract ONCE (gunzip + magic check), then pre-validate the
-      // backup's contents (a backup without an admin can never complete
-      // setup) BEFORE claiming the restore slot — post-swap validation
-      // must be infallible, because the original file no longer exists
-      // at that point. The raw bytes flow to both the validation and
-      // the swap so the payload is decompressed a single time.
-      let raw: Buffer
+      // Stage the upload on disk ONCE (streamed decompression), then
+      // pre-validate the backup's contents (a backup without an admin
+      // can never complete setup) BEFORE claiming the restore slot —
+      // post-swap validation must be infallible, because the original
+      // file no longer exists at that point. The staged files serve
+      // both the validation and the swap, so the payload is
+      // decompressed a single time and never fully held in memory.
+      let staged: StagedBackup
       try {
-        raw = extractBackupFile(buffer)
-        await assertBackupContainsAdmin(raw)
+        staged = await stageBackup(buffer)
       } catch {
+        return c.json({ error: { message: '备份文件无效或已损坏。' } }, 400)
+      }
+      try {
+        await assertStagedBackupContainsAdmin(staged)
+      } catch {
+        rmSync(staged.dir, { recursive: true, force: true })
         return c.json({ error: { message: '备份文件无效或不包含管理员账号。' } }, 400)
       }
 
       // Claim the slot as late as possible but BEFORE the machine's
       // chain starts (see upload-restore above).
       if (!tryBeginRestore()) {
+        rmSync(staged.dir, { recursive: true, force: true })
         return c.json({ error: { message: '已有还原任务正在进行，请等待完成后再试。' } }, 409)
       }
 
@@ -153,7 +163,10 @@ export const backupRouter = new Hono<Env>()
 
       startRestoreJob(
         async () => {
-          await restoreFromBackup(raw, fileName)
+          // Setup applies the content database only — a fresh install
+          // never inherits an old site's telemetry, even when the
+          // upload is a two-file archive.
+          await restoreFromStagedBackup(staged, fileName, { withAnalytics: false })
         },
         async (db) => {
           // Post-restore work runs against the FRESH handle on the

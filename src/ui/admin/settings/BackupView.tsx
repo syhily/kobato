@@ -292,7 +292,10 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
         />
       )}
 
-      <SettingGroup title="手动还原" description="上传 .db.tar.gz（或旧版 .db.gz）备份文件进行还原。">
+      <SettingGroup
+        title="手动还原"
+        description="上传备份文件还原：.db.tar.gz 归档（内容 + 访问统计）、单独的 .db 内容数据库，或 .duckdb 访问统计文件。"
+      >
         <div className="flex flex-col gap-3">
           <input
             ref={fileInputRef}
@@ -303,9 +306,9 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
               const file = e.target.files?.[0] ?? null
               if (file) {
                 const name = file.name
-                const isValid = /\.db$/i.test(name) || /\.db\.gz$/i.test(name) || /^[^.]+\.gz$/i.test(name)
+                const isValid = /\.(db|duckdb)$/i.test(name) || /\.(db\.tar\.gz|db\.gz|gz)$/i.test(name)
                 if (!isValid) {
-                  toast.error('仅支持 .db.tar.gz、.db.gz 或 .gz 格式的备份文件')
+                  toast.error('仅支持 .db.tar.gz、.db.gz、.db、.duckdb 或 .gz 格式的备份文件')
                   e.target.value = ''
                   setSelectedFile(null)
                   return
