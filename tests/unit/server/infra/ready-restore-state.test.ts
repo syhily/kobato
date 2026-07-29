@@ -47,13 +47,13 @@ describe('/ready endpoint restore-state behaviour', () => {
     getRestoreJobStatus.mockReturnValue({
       phase: 'failed',
       startedAt: '2026-01-01T00:00:00.000Z',
-      error: 'psql exited with code 1',
+      error: 'restore exited with code 1',
     })
     const res = readyResponse()
     expect(res.status).toBe('restarting')
     expect(res.code).toBe(503)
     expect(res.restore.phase).toBe('failed')
-    expect(res.restore.error).toBe('psql exited with code 1')
+    expect(res.restore.error).toBe('restore exited with code 1')
   })
 
   it('returns restarting 503 when only restart state is active', () => {

@@ -4,7 +4,7 @@ import type { Database } from '@/server/infra/db/database'
 
 // `generateFeeds` threads a real `feed` package output, the
 // content catalog, and `prerenderToNodeStream` together. We mock the catalog
-// (no real Postgres), keep the actual `feed` package, and pin the channel-level
+// (no real database), keep the actual `feed` package, and pin the channel-level
 // envelope so a future refactor of `generator.tsx` cannot silently change
 // the RSS/Atom output that downstream subscribers depend on.
 

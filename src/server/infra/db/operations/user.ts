@@ -81,7 +81,7 @@ export async function hasRegisteredAccount(db: Database, email: string): Promise
 /**
  * Bulk fetch of users by id list. Used by the admin session-management
  * view to join `session_meta:<sid>` records against the `user` table in
- * a single round trip. Returns rows in whatever order Postgres picks —
+ * a single round trip. Returns rows in whatever order the engine picks —
  * the caller indexes by `id` rather than relying on input order.
  */
 export async function findUsersByIds(db: Database, ids: number[]): Promise<User[]> {

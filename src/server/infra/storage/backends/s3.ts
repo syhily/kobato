@@ -119,7 +119,7 @@ async function resolveS3Context(options?: { requireEnabled?: boolean }): Promise
     responseChecksumValidation: 'WHEN_REQUIRED' as const,
     // AWS SDK v3 (>= 3.729.0) defaults to computing request checksums for
     // every PutObject. For streams of unknown length (e.g. the gzipped
-    // pg_dump backup) the checksum middleware sets `x-amz-decoded-content-length`
+    // database backup) the checksum middleware sets `x-amz-decoded-content-length`
     // to `undefined`, which Node rejects with "Invalid value undefined for
     // header x-amz-decoded-content-length" and surfaces as "An error was
     // encountered in a non-retryable streaming request." WHEN_REQUIRED keeps

@@ -10,7 +10,7 @@ Repository conventions for AI agents and contributors.
 
 ## Config file
 
-Infrastructure configuration lives in `kobato.config.json` — auto-created with defaults when missing. `src/server/infra/config.ts`'s `CONFIG_TABLE` maps nested config paths to Zod schemas; the validated `serverConfig` object exported from that module is what consumers read. Env var names are derived by convention (`path.join('__')` → `database__url`).
+Infrastructure configuration lives in `kobato.config.json` — auto-created with defaults when missing. `src/server/infra/config.ts`'s `CONFIG_TABLE` maps nested config paths to Zod schemas; the validated `serverConfig` object exported from that module is what consumers read. Env var names are derived by convention (`path.join('__')` → `storage__database`).
 
 - Location order: `--config <path>` → SEA `<execDir>/kobato.config.json` → `./kobato.config.json` → `~/.config/kobato.config.json`. First existing wins.
 - Precedence: schema defaults < config file < env vars. Env values differing from the file are written back.

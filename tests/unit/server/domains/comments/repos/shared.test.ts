@@ -74,7 +74,7 @@ describe('buildAdminListConditions — text filter', () => {
     const conditions = buildAdminListConditions({ q: 'C:\\Users' })
     expect(conditions).toHaveLength(2)
     const { params } = render(conditions[1]!)
-    // Backslashes are doubled so PostgreSQL treats them as literal.
+    // Backslashes are doubled so the LIKE matcher treats them as literal.
     expect(params).toEqual(['%C:\\\\Users%'])
   })
 })
