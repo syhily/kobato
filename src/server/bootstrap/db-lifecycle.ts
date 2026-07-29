@@ -1,4 +1,6 @@
 import { initAnalyticsDatabase } from '@/server/bootstrap/analytics-lifecycle'
+import { replayDeadLetterAccessLog } from '@/server/domains/analytics/services/batcher'
+import { replayDeadLetterAuditLog } from '@/server/domains/audit/services/batcher'
 import { scheduleNextArchive, wireArchiveScheduler } from '@/server/domains/audit/services/scheduler'
 import { registerRestoreComplete } from '@/server/domains/backup/restore-orchestrator'
 import { resetLikeTokenSweep, startLikeTokenSweep } from '@/server/domains/comments/services/likes'
@@ -15,16 +17,14 @@ import {
 } from '@/server/infra/db/database'
 import { wireDbMaintenanceScheduler } from '@/server/infra/db/maintenance'
 import { migrateDatabase } from '@/server/infra/db/migrate'
-import { registerShutdownHook, restartServer, setRestartDb, setRestartRefreshSettings } from '@/server/infra/lifecycle'
-import { root } from '@/server/infra/logger'
-import { isRecord } from '@/shared/utils/type-guards'
 // Load-bearing side-effect imports: each batcher module self-registers
 // on the infra batching seam (`@/server/infra/db/batcher-registry`) at
 // import time, so `initAllBatchers` / `flushAllBatchers` /
 // `resetAllBatchers` below cover every batcher with no per-domain calls.
-import '@/server/domains/analytics/services/batcher'
 import '@/server/domains/analytics/services/pv-batcher'
-import '@/server/domains/audit/services/batcher'
+import { registerShutdownHook, restartServer, setRestartDb, setRestartRefreshSettings } from '@/server/infra/lifecycle'
+import { root } from '@/server/infra/logger'
+import { isRecord } from '@/shared/utils/type-guards'
 
 // ─── HMR-safe resource creation ──────────────────────────
 // In dev, React Router re-evaluates server.ts on every HMR cycle.
@@ -74,8 +74,17 @@ initDatabase()
 
 // The DuckDB sidecar opens alongside the content database (its own
 // shutdown hook at priority 0 runs after the batcher flushes at 100).
+// Dead-letter replay follows: batch files written by a crashed flush
+// are re-ingested once per boot (fire-and-forget — the replay logs its
+// own failures and keeps the file on error).
 if (!isVitest()) {
   await initAnalyticsDatabase()
+  void replayDeadLetterAccessLog().catch((error: unknown) => {
+    root.warn({ err: error instanceof Error ? error.message : String(error) }, 'Access-log dead-letter replay failed')
+  })
+  void replayDeadLetterAuditLog().catch((error: unknown) => {
+    root.warn({ err: error instanceof Error ? error.message : String(error) }, 'Audit-log dead-letter replay failed')
+  })
 }
 
 // ─── Restore completion ──────────────────────────────────
@@ -196,7 +205,7 @@ export async function reopenDatabase(): Promise<DatabaseHandle> {
 }
 
 /** `reopenDatabase` for consumers that only need the drizzle instance (the restore orchestrator's `reopenAfterSwap`). */
-export async function reopenDb(): Promise<Database> {
+export async function reopenDatabaseAndGetDb(): Promise<Database> {
   const handle = await reopenDatabase()
   return handle.db
 }

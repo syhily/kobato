@@ -9,8 +9,11 @@
 // Method and fairness notes:
 //   - Same logical dataset on both stacks (deterministic LCG, seed 42):
 //     categories, tags, posts, post_tag links, comments, and access_log
-//     events. The PG baseline gets the PRE-MIGRATION schema (hand-written
-//     here, mirroring the retired drizzle migrations, indexes included);
+//     events. Content rows are generated ONCE and shared verbatim; the
+//     access_log events are drawn per engine from the same seeded
+//     distribution (statistically identical, not byte-identical). The PG
+//     baseline gets the PRE-MIGRATION schema (hand-written here,
+//     mirroring the retired drizzle migrations, indexes included);
 //     SQLite runs the repo's real migrations; DuckDB the real DDL.
 //   - PG runs in the dev Docker stack over loopback TCP. The network hop
 //     is INCLUDED on purpose — removing it is part of what the migration
@@ -195,6 +198,11 @@ interface BenchResult {
   note?: string
 }
 
+/** Which column a throughput time belongs to (labels name the engine). */
+function columnFor(label: string): 'baseline' | 'new' {
+  return label.startsWith('postgres') ? 'baseline' : 'new'
+}
+
 const results: BenchResult[] = []
 
 function median(values: number[]): number {
@@ -237,9 +245,13 @@ async function runThroughput(
     const t0 = performance.now()
     await fn()
     const elapsed = performance.now() - t0
-    // Throughput rows carry ONE time (the label names the engine) — newMs
-    // stays 0 and renders as '—'.
-    results.push({ group, workload: `${workload} — ${label}`, baselineMs: elapsed, newMs: 0 })
+    // Throughput rows carry ONE time in the column the label names.
+    results.push({
+      group,
+      workload: `${workload} — ${label}`,
+      baselineMs: columnFor(label) === 'baseline' ? elapsed : 0,
+      newMs: columnFor(label) === 'new' ? elapsed : 0,
+    })
   }
 }
 
@@ -510,421 +522,428 @@ async function main() {
   const dbName = `kobato_bench_${Math.random().toString(16).slice(2, 10)}`
   const admin = new pg.Client({ connectionString: PG_BASE_URL })
   await admin.connect()
-  await admin.query(`DROP DATABASE IF EXISTS "${dbName}"`)
-  await admin.query(`CREATE DATABASE "${dbName}"`)
   const url = new URL(PG_BASE_URL)
   url.pathname = `/${dbName}`
   const client = new pg.Client({ connectionString: url.toString() })
-  await client.connect()
-  await client.query(PG_DDL)
-  await seedPostgres(client)
-
-  // Fresh SQLite + DuckDB.
   const dir = mkdtempSync(join(tmpdir(), 'kobato-bench-'))
   const handle = openDatabase(join(dir, 'kobato.db'))
-  migrate(handle.db, { migrationsFolder: './drizzle', migrationsTable: '__drizzle_migrations' })
-  seedSqlite(handle)
-  const analytics = await openAnalyticsDatabase(join(dir, 'analytics.duckdb'), ACCESS_LOG_DDL)
-  console.log('    seeding duckdb…')
-  {
-    const appender = await analytics.writer.createAppender('access_log')
-    for (let i = 0; i < SCALE.events; i++) {
-      appendAccessEvent(appender, makeAccessEvent())
-      appender.endRow()
-      if ((i + 1) % 2048 === 0) {
-        appender.flushSync()
+  let analytics: Awaited<ReturnType<typeof openAnalyticsDatabase>> | null = null
+
+  try {
+    await admin.query(`DROP DATABASE IF EXISTS "${dbName}"`)
+    await admin.query(`CREATE DATABASE "${dbName}"`)
+    await client.connect()
+    await client.query(PG_DDL)
+    await seedPostgres(client)
+
+    // Fresh SQLite + DuckDB.
+    migrate(handle.db, { migrationsFolder: './drizzle', migrationsTable: '__drizzle_migrations' })
+    seedSqlite(handle)
+    analytics = await openAnalyticsDatabase(join(dir, 'analytics.duckdb'), ACCESS_LOG_DDL)
+    console.log('    seeding duckdb…')
+    {
+      const appender = await analytics!.writer.createAppender('access_log')
+      for (let i = 0; i < SCALE.events; i++) {
+        appendAccessEvent(appender, makeAccessEvent())
+        appender.endRow()
+        if ((i + 1) % 2048 === 0) {
+          appender.flushSync()
+        }
       }
+      appender.closeSync()
     }
-    appender.closeSync()
-  }
 
-  const sqlite = handle.client
-  const duck = analytics.reader
-  const windowStart = nowMs - 30 * DAY_MS
+    const sqlite = handle.client
+    const duck = analytics!.reader
+    const windowStart = nowMs - 30 * DAY_MS
 
-  // ── Content reads: PG vs SQLite ──
+    // ── Content reads: PG vs SQLite ──
 
-  await runRead(
-    'content',
-    'point read post by slug',
-    async () => {
-      await client.query('SELECT * FROM post WHERE slug = $1', [pick(posts).slug])
-    },
-    () => {
-      sqlite.prepare('SELECT * FROM post WHERE slug = ?').get(pick(posts).slug)
-    },
-  )
+    await runRead(
+      'content',
+      'point read post by slug',
+      async () => {
+        await client.query('SELECT * FROM post WHERE slug = $1', [pick(posts).slug])
+      },
+      () => {
+        sqlite.prepare('SELECT * FROM post WHERE slug = ?').get(pick(posts).slug)
+      },
+    )
 
-  await runRead(
-    'content',
-    'catalog page (latest 20 published)',
-    async () => {
-      await client.query(
-        'SELECT id, slug, title, published_at FROM post WHERE published AND deleted_at IS NULL ORDER BY published_at DESC LIMIT 20',
-      )
-    },
-    () => {
-      sqlite
-        .prepare(
+    await runRead(
+      'content',
+      'catalog page (latest 20 published)',
+      async () => {
+        await client.query(
           'SELECT id, slug, title, published_at FROM post WHERE published AND deleted_at IS NULL ORDER BY published_at DESC LIMIT 20',
         )
-        .all()
-    },
-  )
+      },
+      () => {
+        sqlite
+          .prepare(
+            'SELECT id, slug, title, published_at FROM post WHERE published AND deleted_at IS NULL ORDER BY published_at DESC LIMIT 20',
+          )
+          .all()
+      },
+    )
 
-  await runRead(
-    'content',
-    'post comments (latest 50)',
-    async () => {
-      await client.query(
-        "SELECT id, content, created_at, user_id, root_id FROM comment WHERE type = 'post' AND owner_id = $1 ORDER BY created_at DESC LIMIT 50",
-        [pick(posts).id],
-      )
-    },
-    () => {
-      sqlite
-        .prepare(
-          "SELECT id, content, created_at, user_id, root_id FROM comment WHERE type = 'post' AND owner_id = ? ORDER BY created_at DESC LIMIT 50",
+    await runRead(
+      'content',
+      'post comments (latest 50)',
+      async () => {
+        await client.query(
+          "SELECT id, content, created_at, user_id, root_id FROM comment WHERE type = 'post' AND owner_id = $1 ORDER BY created_at DESC LIMIT 50",
+          [pick(posts).id],
         )
-        .all(pick(posts).id)
-    },
-  )
+      },
+      () => {
+        sqlite
+          .prepare(
+            "SELECT id, content, created_at, user_id, root_id FROM comment WHERE type = 'post' AND owner_id = ? ORDER BY created_at DESC LIMIT 50",
+          )
+          .all(pick(posts).id)
+      },
+    )
 
-  await runRead(
-    'content',
-    'text search (ILIKE vs LIKE)',
-    async () => {
-      await client.query(
-        "SELECT id FROM post WHERE published AND deleted_at IS NULL AND (title ILIKE '%sqlite%' OR summary ILIKE '%sqlite%') LIMIT 20",
-      )
-    },
-    () => {
-      sqlite
-        .prepare(
-          "SELECT id FROM post WHERE published AND deleted_at IS NULL AND (title LIKE '%sqlite%' OR summary LIKE '%sqlite%') LIMIT 20",
+    await runRead(
+      'content',
+      'text search (ILIKE vs LIKE)',
+      async () => {
+        await client.query(
+          "SELECT id FROM post WHERE published AND deleted_at IS NULL AND (title ILIKE '%sqlite%' OR summary ILIKE '%sqlite%') LIMIT 20",
         )
-        .all()
-    },
-    'old app used ILIKE; new app uses LIKE',
-  )
+      },
+      () => {
+        sqlite
+          .prepare(
+            "SELECT id FROM post WHERE published AND deleted_at IS NULL AND (title LIKE '%sqlite%' OR summary LIKE '%sqlite%') LIMIT 20",
+          )
+          .all()
+      },
+      'old app used ILIKE; new app uses LIKE',
+    )
 
-  await runRead(
-    'content',
-    'tag page (join post_tag)',
-    async () => {
-      await client.query(
-        `SELECT p.id, p.slug, p.title FROM post p JOIN post_tag pt ON pt.post_id = p.id
-         WHERE pt.tag_id = $1 AND p.published AND p.deleted_at IS NULL ORDER BY p.published_at DESC LIMIT 20`,
-        [rngInt(TAGS) + 1],
-      )
-    },
-    () => {
-      sqlite
-        .prepare(
+    await runRead(
+      'content',
+      'tag page (join post_tag)',
+      async () => {
+        await client.query(
           `SELECT p.id, p.slug, p.title FROM post p JOIN post_tag pt ON pt.post_id = p.id
+         WHERE pt.tag_id = $1 AND p.published AND p.deleted_at IS NULL ORDER BY p.published_at DESC LIMIT 20`,
+          [rngInt(TAGS) + 1],
+        )
+      },
+      () => {
+        sqlite
+          .prepare(
+            `SELECT p.id, p.slug, p.title FROM post p JOIN post_tag pt ON pt.post_id = p.id
            WHERE pt.tag_id = ? AND p.published AND p.deleted_at IS NULL ORDER BY p.published_at DESC LIMIT 20`,
-        )
-        .all(rngInt(TAGS) + 1)
-    },
-  )
-
-  // ── Content writes ──
-
-  await runThroughput('content', 'single-row comment insert ×500', [
-    [
-      'postgres (autocommit)',
-      async () => {
-        for (let i = 0; i < 500; i++) {
-          const cm = comments[i]!
-          await client.query(
-            "INSERT INTO comment (created_at, updated_at, content, type, owner_id, user_id) VALUES ($1, $2, $3, 'post', $4, $5)",
-            [new Date(cm.createdAt), new Date(cm.createdAt), cm.content, cm.postId, cm.userId],
           )
-        }
+          .all(rngInt(TAGS) + 1)
       },
-    ],
-    [
-      'sqlite (autocommit)',
-      () => {
-        const insert = sqlite.prepare(
-          "INSERT INTO comment (created_at, updated_at, content, body, type, owner_id, user_id) VALUES (?, ?, ?, '[]', 'post', ?, ?)",
-        )
-        for (let i = 0; i < 500; i++) {
-          const cm = comments[i]!
-          insert.run(cm.createdAt, cm.createdAt, cm.content, cm.postId, cm.userId)
-        }
-      },
-    ],
-  ])
+    )
 
-  await runThroughput('content', 'batch insert 10k comments (200/txn)', [
-    [
-      'postgres (multi-row VALUES)',
-      async () => {
-        await pgInsertChunks(
-          client,
-          (from, to) => {
-            const values: string[] = []
-            const params: unknown[] = []
-            for (let i = from; i < to; i++) {
-              const cm = comments[i % comments.length]!
-              values.push(
-                `($${params.length + 1}, $${params.length + 2}, $${params.length + 3}, $${params.length + 4}, $${params.length + 5}, $${params.length + 6})`,
-              )
-              params.push(new Date(cm.createdAt), new Date(cm.createdAt), cm.content, 'post', cm.postId, cm.userId)
-            }
-            return [
-              `INSERT INTO comment (created_at, updated_at, content, type, owner_id, user_id) VALUES ${values.join(',')}`,
-              params,
-            ]
-          },
-          10_000,
-          200,
-        )
-      },
-    ],
-    [
-      'sqlite (multi-row VALUES)',
-      () => {
-        for (let from = 0; from < 10_000; from += 200) {
-          const rows: string[] = []
-          const params: (string | number)[] = []
-          for (let i = from; i < Math.min(from + 200, 10_000); i++) {
-            const cm = comments[i % comments.length]!
-            rows.push('(?, ?, ?, ?, ?, ?, ?)')
-            params.push(cm.createdAt, cm.createdAt, cm.content, '[]', 'post', cm.postId, cm.userId)
-          }
-          sqlite.exec('BEGIN')
-          sqlite
-            .prepare(
-              `INSERT INTO comment (created_at, updated_at, content, body, type, owner_id, user_id) VALUES ${rows.join(',')}`,
+    // ── Content writes ──
+
+    await runThroughput('content', 'single-row comment insert ×500', [
+      [
+        'postgres (autocommit)',
+        async () => {
+          for (let i = 0; i < 500; i++) {
+            const cm = comments[i]!
+            await client.query(
+              "INSERT INTO comment (created_at, updated_at, content, type, owner_id, user_id) VALUES ($1, $2, $3, 'post', $4, $5)",
+              [new Date(cm.createdAt), new Date(cm.createdAt), cm.content, cm.postId, cm.userId],
             )
-            .run(...params)
-          sqlite.exec('COMMIT')
-        }
-      },
-    ],
-  ])
-
-  // ── Analytics appends ──
-
-  await runThroughput('analytics', `append ${SCALE.appends} events`, [
-    [
-      'postgres (multi-row VALUES)',
-      async () => {
-        await pgInsertChunks(
-          client,
-          (from, to) => {
-            const values: string[] = []
-            const params: unknown[] = []
-            for (let i = from; i < to; i++) {
-              const e = makeAccessEvent()
-              values.push(
-                `($${params.length + 1}, $${params.length + 2}, $${params.length + 3}, $${params.length + 4}, $${params.length + 5}, $${params.length + 6}, $${params.length + 7}, $${params.length + 8})`,
-              )
-              params.push(e.ts, e.visitorHash, e.path, e.entityType, e.entityId, e.country, e.browser, e.isBot)
-            }
-            return [
-              `INSERT INTO access_log (ts, visitor_hash, path, entity_type, entity_id, country, browser, is_bot) VALUES ${values.join(',')}`,
-              params,
-            ]
-          },
-          SCALE.appends,
-          500,
-        )
-      },
-    ],
-    [
-      'postgres (COPY FROM STDIN — the old batcher)',
-      async () => {
-        const escape = (v: string | null): string =>
-          v === null ? '\\N' : v.replace(/\\/g, '\\\\').replace(/\t/g, '\\t').replace(/\n/g, '\\n')
-        const lines: string[] = []
-        for (let i = 0; i < SCALE.appends; i++) {
-          const e = makeAccessEvent()
-          lines.push(
-            [
-              e.ts.toISOString(),
-              escape(e.visitorHash),
-              escape(e.sessionId),
-              escape(e.ip),
-              escape(e.path),
-              escape(e.entityType),
-              e.entityId === null ? '\\N' : String(e.entityId),
-              escape(e.referer),
-              escape(e.refererHost),
-              escape(e.country),
-              escape(e.region),
-              escape(e.city),
-              e.latitude === null ? '\\N' : String(e.latitude),
-              e.longitude === null ? '\\N' : String(e.longitude),
-              escape(e.timezone),
-              escape(e.language),
-              escape(e.ua),
-              escape(e.browser),
-              escape(e.browserVersion),
-              escape(e.os),
-              escape(e.osVersion),
-              escape(e.device),
-              escape(e.deviceType),
-              e.isBot ? 't' : 'f',
-            ].join('\t'),
-          )
-        }
-        const stream = client.query(
-          copyFrom.from(
-            `COPY access_log (ts, visitor_hash, session_id, ip, path, entity_type, entity_id, referer, referer_host, country, region, city, latitude, longitude, timezone, language, ua, browser, browser_version, os, os_version, device, device_type, is_bot) FROM STDIN`,
-          ),
-        )
-        await new Promise<void>((resolvePromise, rejectPromise) => {
-          stream.on('error', rejectPromise)
-          stream.on('finish', resolvePromise)
-          stream.write(lines.join('\n') + '\n')
-          stream.end()
-        })
-      },
-    ],
-    [
-      'duckdb (Appender — the new batcher)',
-      async () => {
-        const appender = await analytics.writer.createAppender('access_log')
-        for (let i = 0; i < SCALE.appends; i++) {
-          appendAccessEvent(appender, makeAccessEvent())
-          appender.endRow()
-          if ((i + 1) % 2048 === 0) {
-            appender.flushSync()
           }
-        }
-        appender.closeSync()
-      },
-    ],
-  ])
+        },
+      ],
+      [
+        'sqlite (autocommit)',
+        () => {
+          const insert = sqlite.prepare(
+            "INSERT INTO comment (created_at, updated_at, content, body, type, owner_id, user_id) VALUES (?, ?, ?, '[]', 'post', ?, ?)",
+          )
+          for (let i = 0; i < 500; i++) {
+            const cm = comments[i]!
+            insert.run(cm.createdAt, cm.createdAt, cm.content, cm.postId, cm.userId)
+          }
+        },
+      ],
+    ])
 
-  // ── Analytics reads: PG (btree indexes) vs DuckDB (zone maps) ──
+    await runThroughput('content', 'batch insert 10k comments (200/txn)', [
+      [
+        'postgres (multi-row VALUES)',
+        async () => {
+          await pgInsertChunks(
+            client,
+            (from, to) => {
+              const values: string[] = []
+              const params: unknown[] = []
+              for (let i = from; i < to; i++) {
+                const cm = comments[i % comments.length]!
+                values.push(
+                  `($${params.length + 1}, $${params.length + 2}, $${params.length + 3}, $${params.length + 4}, $${params.length + 5}, $${params.length + 6})`,
+                )
+                params.push(new Date(cm.createdAt), new Date(cm.createdAt), cm.content, 'post', cm.postId, cm.userId)
+              }
+              return [
+                `INSERT INTO comment (created_at, updated_at, content, type, owner_id, user_id) VALUES ${values.join(',')}`,
+                params,
+              ]
+            },
+            10_000,
+            200,
+          )
+        },
+      ],
+      [
+        'sqlite (multi-row VALUES)',
+        () => {
+          for (let from = 0; from < 10_000; from += 200) {
+            const rows: string[] = []
+            const params: (string | number)[] = []
+            for (let i = from; i < Math.min(from + 200, 10_000); i++) {
+              const cm = comments[i % comments.length]!
+              rows.push('(?, ?, ?, ?, ?, ?, ?)')
+              params.push(cm.createdAt, cm.createdAt, cm.content, '[]', 'post', cm.postId, cm.userId)
+            }
+            sqlite.exec('BEGIN')
+            sqlite
+              .prepare(
+                `INSERT INTO comment (created_at, updated_at, content, body, type, owner_id, user_id) VALUES ${rows.join(',')}`,
+              )
+              .run(...params)
+            sqlite.exec('COMMIT')
+          }
+        },
+      ],
+    ])
 
-  await runRead(
-    'analytics',
-    'counters (visits/visitors/referers, 30d)',
-    async () => {
-      await client.query(
-        `SELECT COUNT(*) AS visits, COUNT(DISTINCT visitor_hash) AS visitors,
+    // ── Analytics appends ──
+
+    await runThroughput('analytics', `append ${SCALE.appends} events`, [
+      [
+        'postgres (multi-row VALUES)',
+        async () => {
+          await pgInsertChunks(
+            client,
+            (from, to) => {
+              const values: string[] = []
+              const params: unknown[] = []
+              for (let i = from; i < to; i++) {
+                const e = makeAccessEvent()
+                values.push(
+                  `($${params.length + 1}, $${params.length + 2}, $${params.length + 3}, $${params.length + 4}, $${params.length + 5}, $${params.length + 6}, $${params.length + 7}, $${params.length + 8})`,
+                )
+                params.push(e.ts, e.visitorHash, e.path, e.entityType, e.entityId, e.country, e.browser, e.isBot)
+              }
+              return [
+                `INSERT INTO access_log (ts, visitor_hash, path, entity_type, entity_id, country, browser, is_bot) VALUES ${values.join(',')}`,
+                params,
+              ]
+            },
+            SCALE.appends,
+            500,
+          )
+        },
+      ],
+      [
+        'postgres (COPY FROM STDIN — the old batcher)',
+        async () => {
+          const escape = (v: string | null): string =>
+            v === null ? '\\N' : v.replace(/\\/g, '\\\\').replace(/\t/g, '\\t').replace(/\n/g, '\\n')
+          const lines: string[] = []
+          for (let i = 0; i < SCALE.appends; i++) {
+            const e = makeAccessEvent()
+            lines.push(
+              [
+                e.ts.toISOString(),
+                escape(e.visitorHash),
+                escape(e.sessionId),
+                escape(e.ip),
+                escape(e.path),
+                escape(e.entityType),
+                e.entityId === null ? '\\N' : String(e.entityId),
+                escape(e.referer),
+                escape(e.refererHost),
+                escape(e.country),
+                escape(e.region),
+                escape(e.city),
+                e.latitude === null ? '\\N' : String(e.latitude),
+                e.longitude === null ? '\\N' : String(e.longitude),
+                escape(e.timezone),
+                escape(e.language),
+                escape(e.ua),
+                escape(e.browser),
+                escape(e.browserVersion),
+                escape(e.os),
+                escape(e.osVersion),
+                escape(e.device),
+                escape(e.deviceType),
+                e.isBot ? 't' : 'f',
+              ].join('\t'),
+            )
+          }
+          const stream = client.query(
+            copyFrom.from(
+              `COPY access_log (ts, visitor_hash, session_id, ip, path, entity_type, entity_id, referer, referer_host, country, region, city, latitude, longitude, timezone, language, ua, browser, browser_version, os, os_version, device, device_type, is_bot) FROM STDIN`,
+            ),
+          )
+          await new Promise<void>((resolvePromise, rejectPromise) => {
+            stream.on('error', rejectPromise)
+            stream.on('finish', resolvePromise)
+            stream.write(lines.join('\n') + '\n')
+            stream.end()
+          })
+        },
+      ],
+      [
+        'duckdb (Appender — the new batcher)',
+        async () => {
+          const appender = await analytics!.writer.createAppender('access_log')
+          for (let i = 0; i < SCALE.appends; i++) {
+            appendAccessEvent(appender, makeAccessEvent())
+            appender.endRow()
+            if ((i + 1) % 2048 === 0) {
+              appender.flushSync()
+            }
+          }
+          appender.closeSync()
+        },
+      ],
+    ])
+
+    // ── Analytics reads: PG (btree indexes) vs DuckDB (zone maps) ──
+
+    await runRead(
+      'analytics',
+      'counters (visits/visitors/referers, 30d)',
+      async () => {
+        await client.query(
+          `SELECT COUNT(*) AS visits, COUNT(DISTINCT visitor_hash) AS visitors,
                 COUNT(DISTINCT referer_host) FILTER (WHERE referer_host IS NOT NULL AND referer_host <> '') AS referers
          FROM access_log WHERE is_bot = false AND ts >= $1 AND ts < $2`,
-        [new Date(windowStart), new Date(nowMs)],
-      )
-    },
-    async () => {
-      await duck.runAndReadAll(
-        `SELECT COUNT(*) AS visits, COUNT(DISTINCT visitor_hash) AS visitors,
+          [new Date(windowStart), new Date(nowMs)],
+        )
+      },
+      async () => {
+        await duck.runAndReadAll(
+          `SELECT COUNT(*) AS visits, COUNT(DISTINCT visitor_hash) AS visitors,
                 COUNT(DISTINCT referer_host) FILTER (WHERE referer_host IS NOT NULL AND referer_host <> '') AS referers
          FROM access_log WHERE is_bot = FALSE AND ts >= epoch_ms(?::BIGINT) AND ts < epoch_ms(?::BIGINT)`,
-        [BigInt(windowStart), BigInt(nowMs)],
-      )
-    },
-  )
-
-  await runRead(
-    'analytics',
-    'views buckets (30 × 1-day)',
-    async () => {
-      await client.query(
-        `SELECT date_trunc('day', ts) AS bucket, COUNT(*), COUNT(DISTINCT visitor_hash)
-         FROM access_log WHERE is_bot = false AND ts >= $1 AND ts < $2 GROUP BY 1 ORDER BY 1`,
-        [new Date(windowStart), new Date(nowMs)],
-      )
-    },
-    async () => {
-      await duck.runAndReadAll(
-        `SELECT time_bucket(INTERVAL '1 day', ts) AS bucket, COUNT(*), COUNT(DISTINCT visitor_hash)
-         FROM access_log WHERE is_bot = FALSE AND ts >= epoch_ms(?::BIGINT) AND ts < epoch_ms(?::BIGINT) GROUP BY 1 ORDER BY 1`,
-        [BigInt(windowStart), BigInt(nowMs)],
-      )
-    },
-  )
-
-  await runRead(
-    'analytics',
-    'metric group-by (top 20 countries)',
-    async () => {
-      await client.query(
-        `SELECT COALESCE(NULLIF(country, ''), '(unknown)') AS name, COUNT(*), COUNT(DISTINCT visitor_hash)
-         FROM access_log WHERE is_bot = false AND ts >= $1 AND ts < $2 GROUP BY 1 ORDER BY 2 DESC LIMIT 20`,
-        [new Date(windowStart), new Date(nowMs)],
-      )
-    },
-    async () => {
-      await duck.runAndReadAll(
-        `SELECT COALESCE(NULLIF(country, ''), '(unknown)') AS name, COUNT(*), COUNT(DISTINCT visitor_hash)
-         FROM access_log WHERE is_bot = FALSE AND ts >= epoch_ms(?::BIGINT) AND ts < epoch_ms(?::BIGINT) GROUP BY 1 ORDER BY 2 DESC LIMIT 20`,
-        [BigInt(windowStart), BigInt(nowMs)],
-      )
-    },
-  )
-
-  await runRead(
-    'analytics',
-    'heatmap (7 × 24 cells)',
-    async () => {
-      await client.query(
-        `SELECT EXTRACT(dow FROM ts) AS weekday, EXTRACT(hour FROM ts) AS hour, COUNT(*), COUNT(DISTINCT visitor_hash)
-         FROM access_log WHERE is_bot = false AND ts >= $1 AND ts < $2 GROUP BY 1, 2`,
-        [new Date(windowStart), new Date(nowMs)],
-      )
-    },
-    async () => {
-      await duck.runAndReadAll(
-        `SELECT EXTRACT(dow FROM ts) AS weekday, EXTRACT(hour FROM ts) AS hour, COUNT(*), COUNT(DISTINCT visitor_hash)
-         FROM access_log WHERE is_bot = FALSE AND ts >= epoch_ms(?::BIGINT) AND ts < epoch_ms(?::BIGINT) GROUP BY 1, 2`,
-        [BigInt(windowStart), BigInt(nowMs)],
-      )
-    },
-  )
-
-  await runRead(
-    'analytics',
-    'realtime tail (latest 50)',
-    async () => {
-      await client.query(
-        'SELECT ts, path, country, city, browser, os, device_type, is_bot FROM access_log WHERE ts > $1 ORDER BY ts DESC LIMIT 50',
-        [new Date(nowMs - 60_000)],
-      )
-    },
-    async () => {
-      await duck.runAndReadAll(
-        'SELECT ts, path, country, city, browser, os, device_type, is_bot FROM access_log WHERE ts > epoch_ms(?::BIGINT) ORDER BY ts DESC LIMIT 50',
-        [BigInt(nowMs - 60_000)],
-      )
-    },
-  )
-
-  // ── Report ──
-
-  console.log('\n| group | workload | postgres | new engine | speedup |')
-  console.log('| --- | --- | ---: | ---: | ---: |')
-  const fmt = (ms: number) => (ms >= 1000 ? `${(ms / 1000).toFixed(2)} s` : `${ms.toFixed(1)} ms`)
-  for (const r of results) {
-    const speedup = r.baselineMs > 0 && r.newMs > 0 ? `${(r.baselineMs / r.newMs).toFixed(2)}×` : '—'
-    console.log(
-      `| ${r.group} | ${r.workload} | ${fmt(r.baselineMs)} | ${r.newMs > 0 ? fmt(r.newMs) : '—'} | ${speedup} |`,
+          [BigInt(windowStart), BigInt(nowMs)],
+        )
+      },
     )
-  }
-  console.log(
-    '\nNotes: PG ran in the dev Docker stack over loopback TCP (the hop is included on purpose).\n' +
-      'Reads: median of 7 measured iterations after 2 warmups. Appends: single shot.\n' +
-      `Dataset: ${SCALE.posts} posts, ${SCALE.comments} comments, ${SCALE.events} access_log events (seed 42).`,
-  )
 
-  // ── Cleanup ──
-  await client.end()
-  closeDatabase(handle)
-  await closeAnalyticsDatabase(analytics)
-  if (KEEP) {
-    console.log(`\nkept: PG database "${dbName}", temp dir ${dir}`)
-  } else {
-    await admin.query(`DROP DATABASE IF EXISTS "${dbName}"`)
-    rmSync(dir, { recursive: true, force: true })
+    await runRead(
+      'analytics',
+      'views buckets (30 × 1-day)',
+      async () => {
+        await client.query(
+          `SELECT date_trunc('day', ts) AS bucket, COUNT(*), COUNT(DISTINCT visitor_hash)
+         FROM access_log WHERE is_bot = false AND ts >= $1 AND ts < $2 GROUP BY 1 ORDER BY 1`,
+          [new Date(windowStart), new Date(nowMs)],
+        )
+      },
+      async () => {
+        await duck.runAndReadAll(
+          `SELECT time_bucket(INTERVAL '1 day', ts) AS bucket, COUNT(*), COUNT(DISTINCT visitor_hash)
+         FROM access_log WHERE is_bot = FALSE AND ts >= epoch_ms(?::BIGINT) AND ts < epoch_ms(?::BIGINT) GROUP BY 1 ORDER BY 1`,
+          [BigInt(windowStart), BigInt(nowMs)],
+        )
+      },
+    )
+
+    await runRead(
+      'analytics',
+      'metric group-by (top 20 countries)',
+      async () => {
+        await client.query(
+          `SELECT COALESCE(NULLIF(country, ''), '(unknown)') AS name, COUNT(*), COUNT(DISTINCT visitor_hash)
+         FROM access_log WHERE is_bot = false AND ts >= $1 AND ts < $2 GROUP BY 1 ORDER BY 2 DESC LIMIT 20`,
+          [new Date(windowStart), new Date(nowMs)],
+        )
+      },
+      async () => {
+        await duck.runAndReadAll(
+          `SELECT COALESCE(NULLIF(country, ''), '(unknown)') AS name, COUNT(*), COUNT(DISTINCT visitor_hash)
+         FROM access_log WHERE is_bot = FALSE AND ts >= epoch_ms(?::BIGINT) AND ts < epoch_ms(?::BIGINT) GROUP BY 1 ORDER BY 2 DESC LIMIT 20`,
+          [BigInt(windowStart), BigInt(nowMs)],
+        )
+      },
+    )
+
+    await runRead(
+      'analytics',
+      'heatmap (7 × 24 cells)',
+      async () => {
+        await client.query(
+          `SELECT EXTRACT(dow FROM ts) AS weekday, EXTRACT(hour FROM ts) AS hour, COUNT(*), COUNT(DISTINCT visitor_hash)
+         FROM access_log WHERE is_bot = false AND ts >= $1 AND ts < $2 GROUP BY 1, 2`,
+          [new Date(windowStart), new Date(nowMs)],
+        )
+      },
+      async () => {
+        await duck.runAndReadAll(
+          `SELECT EXTRACT(dow FROM ts) AS weekday, EXTRACT(hour FROM ts) AS hour, COUNT(*), COUNT(DISTINCT visitor_hash)
+         FROM access_log WHERE is_bot = FALSE AND ts >= epoch_ms(?::BIGINT) AND ts < epoch_ms(?::BIGINT) GROUP BY 1, 2`,
+          [BigInt(windowStart), BigInt(nowMs)],
+        )
+      },
+    )
+
+    await runRead(
+      'analytics',
+      'realtime tail (latest 50)',
+      async () => {
+        await client.query(
+          'SELECT ts, path, country, city, browser, os, device_type, is_bot FROM access_log WHERE ts > $1 ORDER BY ts DESC LIMIT 50',
+          [new Date(nowMs - 60_000)],
+        )
+      },
+      async () => {
+        await duck.runAndReadAll(
+          'SELECT ts, path, country, city, browser, os, device_type, is_bot FROM access_log WHERE ts > epoch_ms(?::BIGINT) ORDER BY ts DESC LIMIT 50',
+          [BigInt(nowMs - 60_000)],
+        )
+      },
+    )
+
+    // ── Report ──
+
+    console.log('\n| group | workload | postgres | new engine | speedup |')
+    console.log('| --- | --- | ---: | ---: | ---: |')
+    const fmt = (ms: number) => (ms >= 1000 ? `${(ms / 1000).toFixed(2)} s` : `${ms.toFixed(1)} ms`)
+    for (const r of results) {
+      const speedup = r.baselineMs > 0 && r.newMs > 0 ? `${(r.baselineMs / r.newMs).toFixed(2)}×` : '—'
+      console.log(
+        `| ${r.group} | ${r.workload} | ${r.baselineMs > 0 ? fmt(r.baselineMs) : '—'} | ${r.newMs > 0 ? fmt(r.newMs) : '—'} | ${speedup} |`,
+      )
+    }
+    console.log(
+      '\nNotes: PG ran in the dev Docker stack over loopback TCP (the hop is included on purpose).\n' +
+        'Reads: median of 7 measured iterations after 2 warmups. Appends: single shot.\n' +
+        `Dataset: ${SCALE.posts} posts, ${SCALE.comments} comments, ${SCALE.events} access_log events (seed 42).`,
+    )
+  } finally {
+    // Cleanup is unconditional: a mid-bench crash must never leak the
+    // kobato_bench_* database, the temp dir, or open handles.
+    await client.end().catch(() => undefined)
+    closeDatabase(handle)
+    if (analytics !== null) {
+      await closeAnalyticsDatabase(analytics).catch(() => undefined)
+    }
+    if (KEEP) {
+      console.log(`\nkept: PG database "${dbName}", temp dir ${dir}`)
+    } else {
+      await admin.query(`DROP DATABASE IF EXISTS "${dbName}"`).catch(() => undefined)
+      rmSync(dir, { recursive: true, force: true })
+    }
+    await admin.end().catch(() => undefined)
   }
-  await admin.end()
 }
 
 await main()
