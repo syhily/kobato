@@ -31,6 +31,7 @@ import {
   makeTempDirs,
   readConvergedConfig,
   scanAccessLog,
+  scrubbedParentEnv,
   seedInstalledInstance,
   sleep,
   smokeDatabases,
@@ -178,15 +179,6 @@ async function checkNativesLayout(cacheDir: string) {
     throw new Error(`unexpected files in the extraction: ${names.join(', ')}`)
   }
   return `${names.length} flat files: ${names.join(', ')}`
-}
-
-/** Parent env minus config (`__`) and KOBATO_* runtime vars — same
- *  scrub as bootServer so leaked vars can't redirect extraction or
- *  config resolution away from the per-run temp dirs. */
-function scrubbedParentEnv(): Record<string, string | undefined> {
-  return Object.fromEntries(
-    Object.entries(process.env).filter(([key]) => !key.includes('__') && !key.startsWith('KOBATO_')),
-  )
 }
 
 function checkNatives(binaryPath: string, cacheDir: string) {
