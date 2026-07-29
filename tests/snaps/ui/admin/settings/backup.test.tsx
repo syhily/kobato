@@ -112,7 +112,7 @@ describe('snapshot: BackupView', () => {
     expect(html).toContain('暂无备份文件')
     // The manual-restore section is always mounted.
     expect(html).toContain('手动还原')
-    expect(html).toContain('上传 .db 或 .db.gz 备份文件进行还原')
+    expect(html).toContain('上传 .db.tar.gz（或旧版 .db.gz）备份文件进行还原')
     expect(html).toContain('选择文件')
     expect(html).toContain('上传并还原')
   })

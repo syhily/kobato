@@ -19,6 +19,6 @@ describe('services/backup — key validation', () => {
   })
 
   it('builds correct S3 key from timestamp', () => {
-    expect(buildBackupS3Key('2026-06-05T12-34-56')).toBe('backup/backup-2026-06-05T12-34-56.db.gz')
+    expect(buildBackupS3Key('2026-06-05T12-34-56')).toBe('backup/backup-2026-06-05T12-34-56.db.tar.gz')
   })
 })

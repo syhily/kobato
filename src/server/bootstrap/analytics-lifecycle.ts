@@ -67,6 +67,24 @@ export function getAnalyticsHandle(): AnalyticsHandle {
   return current
 }
 
+/**
+ * Close the sidecar for the restore machine's file swap and forget the
+ * handle (the maintenance job is stopped first so it can't fire against
+ * a closing file). The content database's prepare step calls this after
+ * the batcher flush; the reopen happens via `initAnalyticsDatabase`.
+ */
+export async function closeAnalyticsForRestore(): Promise<void> {
+  if (maintenanceJob !== null) {
+    maintenanceJob.stop()
+    maintenanceJob = null
+  }
+  if (current !== null) {
+    const handle = current
+    current = null
+    await closeAnalyticsDatabase(handle)
+  }
+}
+
 registerShutdownHook(async () => {
   if (current !== null) {
     await closeAnalyticsDatabase(current)

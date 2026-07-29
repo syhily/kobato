@@ -40,7 +40,8 @@ CREATE TABLE IF NOT EXISTS access_log (
 `
 
 /** 180-day telemetry retention (plan §1.11) — fixed by design, not a
- *  setting: access_log is expendable telemetry, never backup-restored. */
+ *  setting: access_log is expendable telemetry (a missing file is
+ *  recreated empty; backups archive it but never require it). */
 export const ACCESS_LOG_RETENTION_DAYS = 180
 
 /**

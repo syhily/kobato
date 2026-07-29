@@ -1,7 +1,8 @@
 import { createGzip } from 'node:zlib'
 import { describe, expect, it } from 'vitest'
 
-import { extractBackupFile } from '@/server/domains/backup/services/restore'
+import { extractBackupFile, unpackBackupPayload } from '@/server/domains/backup/services/restore'
+import { packTar } from '@/server/domains/backup/services/tar'
 import { ActionFailure } from '@/server/infra/http/errors'
 
 async function gzipBytes(input: Buffer): Promise<Buffer> {
@@ -21,31 +22,71 @@ function fakeSqliteFile(size = 512): Buffer {
   return Buffer.concat([SQLITE_HEADER, Buffer.alloc(size - SQLITE_HEADER.length, 0)])
 }
 
+function fakeDuckdbFile(size = 512): Buffer {
+  const buffer = Buffer.alloc(size, 0)
+  buffer.write('DUCK', 8, 'latin1')
+  return buffer
+}
+
 describe('services/backup — extractBackupFile', () => {
-  it('passes a raw SQLite file through unchanged', () => {
+  it('passes a raw payload through unchanged', () => {
     const raw = fakeSqliteFile()
     const out = extractBackupFile(raw)
     expect(out.equals(raw)).toBe(true)
   })
 
-  it('gunzips a gzipped SQLite file', async () => {
+  it('gunzips a gzipped payload', async () => {
     const raw = fakeSqliteFile()
     const zipped = await gzipBytes(raw)
     const out = extractBackupFile(zipped)
     expect(out.equals(raw)).toBe(true)
   })
+})
+
+describe('services/backup — unpackBackupPayload', () => {
+  it('accepts a legacy raw SQLite payload as content-only', () => {
+    const raw = fakeSqliteFile()
+    const payload = unpackBackupPayload(raw)
+    expect(payload.content.equals(raw)).toBe(true)
+    expect(payload.analytics).toBeNull()
+  })
+
+  it('unpacks a two-file tar archive with both engine files', () => {
+    const content = fakeSqliteFile()
+    const analytics = fakeDuckdbFile()
+    const archive = packTar([
+      { name: 'kobato.db', data: content },
+      { name: 'analytics.duckdb', data: analytics },
+    ])
+    const payload = unpackBackupPayload(archive)
+    expect(payload.content.equals(content)).toBe(true)
+    expect(payload.analytics!.equals(analytics)).toBe(true)
+  })
+
+  it('rejects an archive missing the content entry', () => {
+    const archive = packTar([{ name: 'analytics.duckdb', data: fakeDuckdbFile() }])
+    expect(() => unpackBackupPayload(archive)).toThrow('kobato.db')
+  })
+
+  it('rejects an archive with a corrupt analytics entry', () => {
+    const archive = packTar([
+      { name: 'kobato.db', data: fakeSqliteFile() },
+      { name: 'analytics.duckdb', data: Buffer.alloc(512, 1) },
+    ])
+    expect(() => unpackBackupPayload(archive)).toThrow('DuckDB')
+  })
 
   it('rejects a payload without the SQLite magic header', () => {
-    expect(() => extractBackupFile(Buffer.from('not a database at all'))).toThrow(ActionFailure)
-    expect(() => extractBackupFile(Buffer.from('not a database at all'))).toThrow('SQLite')
+    expect(() => unpackBackupPayload(Buffer.from('not a database at all'))).toThrow(ActionFailure)
+    expect(() => unpackBackupPayload(Buffer.from('not a database at all'))).toThrow('SQLite')
   })
 
   it('rejects an empty payload', () => {
-    expect(() => extractBackupFile(Buffer.alloc(0))).toThrow(ActionFailure)
+    expect(() => unpackBackupPayload(Buffer.alloc(0))).toThrow(ActionFailure)
   })
 
   it('rejects an oversize payload', () => {
     const big = Buffer.concat([SQLITE_HEADER, Buffer.alloc(501 * 1024 * 1024, 0)])
-    expect(() => extractBackupFile(big)).toThrow(ActionFailure)
+    expect(() => unpackBackupPayload(big)).toThrow(ActionFailure)
   })
 })

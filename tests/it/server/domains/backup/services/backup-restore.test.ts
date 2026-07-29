@@ -2,11 +2,20 @@ import { eq } from 'drizzle-orm'
 import { Readable } from 'node:stream'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { AnalyticsHandle } from '@/server/infra/analytics/duckdb'
 import type { Database, DatabaseHandle } from '@/server/infra/db/database'
 
+import { closeTestAnalyticsDb, createTestAnalyticsDb, seedAccessEvents } from '#/_helpers/analytics-db'
 import { clearAllTables, closeTestDatabase, createTestDatabase } from '#/_helpers/integration-db'
+
+let analyticsHandle: AnalyticsHandle
+
+vi.mock('@/server/bootstrap/analytics-lifecycle', () => ({
+  getAnalyticsHandle: () => analyticsHandle,
+}))
+
 import { createBackup, getBackupBuffer } from '@/server/domains/backup/services/backup'
-import { extractBackupFile } from '@/server/domains/backup/services/restore'
+import { extractBackupFile, unpackBackupPayload } from '@/server/domains/backup/services/restore'
 import { category } from '@/server/infra/db/schema/taxonomy'
 import { ActionFailure } from '@/server/infra/http/errors'
 
@@ -65,25 +74,31 @@ vi.mock('@/server/infra/storage/registry', () => {
 const handle: DatabaseHandle = createTestDatabase()
 const db: Database = handle.db
 
-afterAll(() => {
-  closeTestDatabase(handle)
-})
-
 beforeEach(async () => {
+  analyticsHandle = await createTestAnalyticsDb()
   await clearAllTables(db)
   s3Mock.clearStore()
 })
 
+afterAll(async () => {
+  closeTestDatabase(handle)
+  await closeTestAnalyticsDb(analyticsHandle)
+})
+
 describe('backup and restore integration', () => {
-  it('creates a gzipped SQLite backup that round-trips through the storage backend', async () => {
+  it('creates a two-file tar.gz archive (content + analytics) that round-trips through the storage backend', async () => {
     await db
       .insert(category)
       .values({ name: 'BackupCat', slug: 'backup-cat', cover: '', description: '', sortOrder: 0 })
       .run()
+    await seedAccessEvents(analyticsHandle, [
+      { ts: new Date(), path: '/one', visitorHash: 'v1' },
+      { ts: new Date(), path: '/two', visitorHash: 'v2' },
+    ])
 
     const { fileName, size, timestamp } = await createBackup(db)
 
-    expect(fileName).toMatch(/^backup-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.db\.gz$/)
+    expect(fileName).toMatch(/^backup-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.db\.tar\.gz$/)
     expect(size).toBeGreaterThan(0)
 
     const key = `backup/${fileName}`
@@ -91,18 +106,20 @@ describe('backup and restore integration', () => {
     expect(buffer).toBeDefined()
     expect(buffer!.subarray(0, 2)).toEqual(Buffer.from([0x1f, 0x8b]))
 
-    // The payload is a real SQLite database once decompressed — and it
-    // carries the seeded row.
-    const raw = extractBackupFile(buffer!)
-    expect(raw.subarray(0, 16).toString('latin1')).toBe('SQLite format 3\0')
+    // The decompressed payload is a tar archive with both engine files,
+    // each magic-valid.
+    const payload = unpackBackupPayload(extractBackupFile(buffer!))
+    expect(payload.content.subarray(0, 16).toString('latin1')).toBe('SQLite format 3\0')
+    expect(payload.analytics).not.toBeNull()
+    expect(payload.analytics!.subarray(8, 12).toString('latin1')).toBe('DUCK')
 
     // The backup row is listed and downloadable through the same backend.
     const downloaded = await getBackupBuffer(db, timestamp)
     expect(downloaded.equals(buffer!)).toBe(true)
 
-    // The seeded row is inside the backup: a fresh database opened on the
-    // extracted bytes finds it. (Written to a NEW path — overwriting an
-    // open handle's file would corrupt it.)
+    // The seeded category is inside the archived content file: a fresh
+    // database opened on the extracted bytes finds it. (Written to a NEW
+    // path — overwriting an open handle's file would corrupt it.)
     const { mkdtempSync, writeFileSync } = await import('node:fs')
     const { tmpdir } = await import('node:os')
     const { join } = await import('node:path')
@@ -110,32 +127,45 @@ describe('backup and restore integration', () => {
     const dir = mkdtempSync(join(tmpdir(), 'kobato-restore-it-'))
     const restored = openDatabase(join(dir, 'restored.db'))
     try {
-      writeFileSync(restored.path, raw)
+      writeFileSync(restored.path, payload.content)
       const rows = restored.db.select().from(category).where(eq(category.slug, 'backup-cat')).all()
       expect(rows).toHaveLength(1)
       expect(rows[0]!.name).toBe('BackupCat')
     } finally {
       closeDatabase(restored)
     }
+
+    // The seeded access events are inside the archived sidecar file.
+    const { openAnalyticsDatabase, closeAnalyticsDatabase } = await import('@/server/infra/analytics/duckdb')
+    const { ACCESS_LOG_DDL } = await import('@/server/domains/analytics/services/access-log')
+    writeFileSync(join(dir, 'restored.duckdb'), payload.analytics!)
+    const restoredAnalytics = await openAnalyticsDatabase(join(dir, 'restored.duckdb'), ACCESS_LOG_DDL)
+    try {
+      const result = await restoredAnalytics.reader.runAndReadAll('SELECT count(*) AS c FROM access_log')
+      expect(Number(result.getRowObjects()[0]?.c)).toBe(2)
+    } finally {
+      await closeAnalyticsDatabase(restoredAnalytics)
+    }
   })
 
   it('rejects a payload that is not a SQLite database', () => {
-    expect(() => extractBackupFile(Buffer.from([0x00, 0x00, 0x00, 0x00]))).toThrow(ActionFailure)
-    expect(() => extractBackupFile(Buffer.from([0x00, 0x00, 0x00, 0x00]))).toThrow('SQLite')
+    expect(() => unpackBackupPayload(Buffer.from([0x00, 0x00, 0x00, 0x00]))).toThrow(ActionFailure)
+    expect(() => unpackBackupPayload(Buffer.from([0x00, 0x00, 0x00, 0x00]))).toThrow('SQLite')
   })
 
   it('rejects an oversize payload', () => {
     const big = Buffer.concat([Buffer.from('SQLite format 3\0', 'latin1'), Buffer.alloc(501 * 1024 * 1024, 0)])
-    expect(() => extractBackupFile(big)).toThrow(ActionFailure)
+    expect(() => unpackBackupPayload(big)).toThrow(ActionFailure)
   })
 
-  it('passes a raw (ungzipped) SQLite file through', async () => {
+  it('passes a legacy raw (ungzipped) SQLite file through as content-only', async () => {
     const fresh = createTestDatabase()
     try {
       const { readFileSync } = await import('node:fs')
       const bytes: Buffer = readFileSync(fresh.path)
-      const out = extractBackupFile(bytes)
-      expect(out.subarray(0, 16).toString('latin1')).toBe('SQLite format 3\0')
+      const payload = unpackBackupPayload(extractBackupFile(bytes))
+      expect(payload.content.subarray(0, 16).toString('latin1')).toBe('SQLite format 3\0')
+      expect(payload.analytics).toBeNull()
     } finally {
       closeTestDatabase(fresh)
     }
