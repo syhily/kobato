@@ -1,13 +1,15 @@
 import { sql } from 'drizzle-orm'
-import { createReadStream } from 'node:fs'
-import { unlink } from 'node:fs/promises'
+import { copyFile, readFile, unlink } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { createGzip } from 'node:zlib'
+import { Readable } from 'node:stream'
+import { gzipSync } from 'node:zlib'
 
 import type { Database } from '@/server/infra/db/database'
 import type { BackupFileDto } from '@/shared/types/backup'
 
+import { getAnalyticsHandle } from '@/server/bootstrap/analytics-lifecycle'
+import { packTar, type TarEntry } from '@/server/domains/backup/services/tar'
 import {
   deleteBackupRow,
   findBackupByTimestamp,
@@ -29,11 +31,13 @@ export function isValidBackupKey(key: string): boolean {
 }
 
 export function buildBackupS3Key(timestamp: string): string {
-  return `backup/backup-${timestamp}.db.gz`
+  return `backup/backup-${timestamp}.db.tar.gz`
 }
 
 function parseTimestampFromKey(key: string): string | null {
-  const match = key.match(/^backup\/backup-(.+)\.db\.gz$/)
+  // Both archive generations: the two-file `.db.tar.gz` and the legacy
+  // content-only `.db.gz` (still restorable — see services/restore).
+  const match = key.match(/^backup\/backup-(.+)\.db(?:\.tar)?\.gz$/)
   if (match === null) {
     return null
   }
@@ -41,11 +45,12 @@ function parseTimestampFromKey(key: string): string | null {
 }
 
 /**
- * Self-healing reconcile: scan both backends for `backup/*.db.gz` objects
- * that have no DB row and insert them. Picks up pre-existing S3 backups on
- * first run after upgrade, plus any files a migration left behind. Cheap
- * (the `backup/` prefix holds a handful of objects) and idempotent via the
- * `storage_path` unique constraint.
+ * Self-healing reconcile: scan both backends for `backup/*.db.gz` and
+ * `backup/*.db.tar.gz` objects that have no DB row and insert them.
+ * Picks up pre-existing S3 backups on first run after upgrade, plus any
+ * files a migration left behind. Cheap (the `backup/` prefix holds a
+ * handful of objects) and idempotent via the `storage_path` unique
+ * constraint.
  */
 async function reconcileBackups(db: Database): Promise<void> {
   const known = new Set(await listBackupStoragePaths(db))
@@ -88,41 +93,62 @@ export async function createBackup(
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
   const key = buildBackupS3Key(timestamp)
   const stagingPath = path.join(tmpdir(), `kobato-backup-${timestamp}.db`)
+  const analyticsStagingPath = path.join(tmpdir(), `kobato-backup-${timestamp}.duckdb`)
 
   log.info('Starting backup', { key })
 
   // `VACUUM INTO` produces a consistent, fully-checkpointed copy of the
-  // live database in one step — no WAL sidecars to chase, and (as a
-  // defragmented rewrite) a smaller file than the live one.
+  // live content database in one step — no WAL sidecars to chase, and
+  // (as a defragmented rewrite) a smaller file than the live one. The
+  // DuckDB sidecar checkpoints through its writer and is copied
+  // byte-for-byte — append-only telemetry tolerates the handoff.
   db.run(sql.raw(`VACUUM INTO '${stagingPath.replaceAll("'", "''")}'`))
 
-  const { backend, driver } = activeBackend()
-  let uploadedBytes = 0
   try {
-    const gzip = createGzip()
-    gzip.on('data', (chunk: Buffer) => {
-      uploadedBytes += chunk.length
-    })
+    let analyticsBytes: Buffer | null = null
+    try {
+      const analytics = getAnalyticsHandle()
+      if (analytics.path !== ':memory:') {
+        await analytics.writer.run('CHECKPOINT')
+        await copyFile(analytics.path, analyticsStagingPath)
+        analyticsBytes = await readFile(analyticsStagingPath)
+      }
+    } catch (error) {
+      // The sidecar is expendable telemetry: a missing/closed analytics
+      // handle never blocks the content backup.
+      log.warn('Backup: analytics sidecar unavailable; archiving content only', {
+        err: error instanceof Error ? error.message : String(error),
+      })
+    }
+
+    const entries: TarEntry[] = [{ name: 'kobato.db', data: await readFile(stagingPath) }]
+    if (analyticsBytes !== null) {
+      entries.push({ name: 'analytics.duckdb', data: analyticsBytes })
+    }
+    const packed = gzipSync(packTar(entries))
+
+    const { backend, driver } = activeBackend()
     await backend.putStream({
       key,
-      body: createReadStream(stagingPath).pipe(gzip),
+      body: Readable.from(packed),
       contentType: 'application/gzip',
       visibility: 'private',
     })
+
+    await insertBackup(db, {
+      timestamp,
+      storagePath: key,
+      storageDriver: driver,
+      byteSize: packed.length,
+      createdBy,
+    })
+
+    log.info('Backup completed', { key, driver, size: packed.length, entries: entries.length })
+    return { fileName: key.split('/').pop()!, size: packed.length, timestamp }
   } finally {
     await unlink(stagingPath).catch(() => undefined)
+    await unlink(analyticsStagingPath).catch(() => undefined)
   }
-
-  await insertBackup(db, {
-    timestamp,
-    storagePath: key,
-    storageDriver: driver,
-    byteSize: uploadedBytes,
-    createdBy,
-  })
-
-  log.info('Backup completed', { key, driver, size: uploadedBytes })
-  return { fileName: key.split('/').pop()!, size: uploadedBytes, timestamp }
 }
 
 export async function listBackups(

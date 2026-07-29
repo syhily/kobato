@@ -132,8 +132,9 @@ into `/etc/kobato/config.json` on first boot and persist in the
 - `LOG_LEVEL` — default `info`
 
 Migrations run automatically at boot. Backups copy the content database
-file (`/data/kobato.db`) — the admin console's backup job does exactly
-that; the analytics sidecar is expendable telemetry and excluded.
+file (`/data/kobato.db`) — the admin console's backup job packs both
+database files (content + the analytics sidecar) into a single
+`.tar.gz` archive. Legacy content-only backups stay restorable.
 
 ### Build your own image
 

@@ -1,4 +1,4 @@
-import { initAnalyticsDatabase } from '@/server/bootstrap/analytics-lifecycle'
+import { closeAnalyticsForRestore, initAnalyticsDatabase } from '@/server/bootstrap/analytics-lifecycle'
 import { scheduleNextArchive, wireArchiveScheduler } from '@/server/domains/audit/services/scheduler'
 import { wireRestoreMachine } from '@/server/domains/backup/restore-machine'
 import { resetLikeTokenSweep, startLikeTokenSweep } from '@/server/domains/comments/services/likes'
@@ -200,6 +200,9 @@ export async function prepareDatabaseForRestore(): Promise<void> {
   resetAllBatchers()
   resetLikeTokenSweep()
   closeDatabase(current)
+  // The analytics sidecar swaps too (two-file backup archive): close it
+  // after the batcher flush so the buffered access events land first.
+  await closeAnalyticsForRestore()
 }
 
 /**
@@ -212,7 +215,11 @@ export async function reopenDatabase(): Promise<DatabaseHandle> {
   if (!current.closed) {
     return current
   }
-  return wireDatabase(openDatabase(resolveDatabasePath()))
+  const handle = wireDatabase(openDatabase(resolveDatabasePath()))
+  // The analytics sidecar reopens with the content database (closed by
+  // prepareDatabaseForRestore; init is a no-op when already open).
+  await initAnalyticsDatabase()
+  return handle
 }
 
 /** `reopenDatabase` for consumers that only need the drizzle instance (the restore orchestrator's `reopenAfterSwap`). */

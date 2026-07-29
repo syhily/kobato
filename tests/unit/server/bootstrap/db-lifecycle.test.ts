@@ -81,6 +81,11 @@ vi.mock('@/server/domains/backup/restore-machine', () => ({
     wireRestoreMachine(deps),
 }))
 
+vi.mock('@/server/bootstrap/analytics-lifecycle', () => ({
+  initAnalyticsDatabase: vi.fn(),
+  closeAnalyticsForRestore: vi.fn(),
+}))
+
 vi.mock('@/server/domains/comments/services/likes', () => ({
   resetLikeTokenSweep: (...args: unknown[]) => resetLikeTokenSweep(...args),
   startLikeTokenSweep: (...args: unknown[]) => startLikeTokenSweep(...args),

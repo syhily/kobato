@@ -9,8 +9,9 @@ import { serverConfig } from '@/server/infra/config'
  * read connection + one write connection (DuckDB MVCC allows a reader
  * while the writer commits). `access_log` lives here — append-heavy
  * page-view telemetry plus the dashboard aggregation scans, the one
- * workload DuckDB is built for. The content DB stays small; telemetry
- * bulk is excluded from backups (expendable by design).
+ * workload DuckDB is built for. Backups archive this file alongside
+ * the content DB (two-file tar.gz), but a missing file is always
+ * recreated empty — restore is a bonus, never a requirement.
  */
 export interface AnalyticsHandle {
   instance: DuckDBInstance

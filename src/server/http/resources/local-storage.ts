@@ -9,7 +9,7 @@ export const localStorageRouter = new Hono<Env>()
 
 // Only these namespaces are reachable through the unauthenticated public
 // route — the media the site actually embeds. Everything else written under
-// STORAGE_DIR (most critically `backup/backup-<ts>.db.gz`, a full database
+// STORAGE_DIR (most critically `backup/backup-<ts>.db.tar.gz`, a full database
 // dump of password hashes / sessions / PII) MUST stay private.
 //
 // This is a positive allowlist, not a denylist, on purpose: a namespace

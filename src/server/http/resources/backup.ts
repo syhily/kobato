@@ -41,7 +41,7 @@ export const backupRouter = new Hono<Env>()
       return c.json({ error: { message: '无效的备份标识。' } }, 400)
     }
     const buffer = await getBackupBuffer(c.var.requestContext.db, timestamp)
-    const fileName = `backup-${timestamp}.db.gz`
+    const fileName = `backup-${timestamp}.db.tar.gz`
     c.header('Content-Type', 'application/gzip')
     c.header('Content-Disposition', `attachment; filename="${fileName}"`)
     return c.body(new Uint8Array(buffer))
