@@ -27,7 +27,7 @@ vi.mock('@/server/infra/logger', () => ({
   root: logs,
 }))
 
-import { runAnalyticsMaintenance } from '@/server/bootstrap/analytics-lifecycle'
+import { runAccessLogRetention } from '@/server/domains/analytics/services/maintenance'
 import { runDbMaintenance } from '@/server/infra/db/maintenance'
 
 function pragmaNumber(handle: DatabaseHandle, pragma: string): number {
@@ -100,7 +100,7 @@ describe('db maintenance — DuckDB retention + checkpoint (plan §1.11)', () =>
       { ts: recent, path: '/recent', visitorHash: 'recent-visitor' },
     ])
 
-    await runAnalyticsMaintenance(analyticsHandle)
+    await runAccessLogRetention(analyticsHandle)
 
     const result = await analyticsHandle.reader.runAndReadAll('SELECT path FROM access_log ORDER BY path')
     const paths = result.getRowObjects().map((row) => row.path)

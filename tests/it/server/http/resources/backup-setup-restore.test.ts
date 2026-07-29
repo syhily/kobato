@@ -41,6 +41,7 @@ vi.mock('@/server/http/middlewares/rate-limit', () => ({
 }))
 
 vi.mock('@/server/domains/backup/services/restore', () => ({
+  extractBackupFile: (buffer: unknown) => buffer,
   restoreFromBackup: (...args: unknown[]) => mockRestoreFromBackup(...args),
   assertBackupContainsAdmin: (...args: unknown[]) => mockAssertBackupContainsAdmin(...args),
 }))

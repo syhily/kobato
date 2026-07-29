@@ -57,9 +57,3 @@ export async function rescheduleArchive(): Promise<void> {
   log.info('Rescheduling audit archive due to settings change')
   scheduleNextArchive()
 }
-
-export function stopArchiveScheduler(): void {
-  job?.stop()
-  // Drop the reference: the next schedule creates a fresh job.
-  job = null
-}

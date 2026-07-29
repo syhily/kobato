@@ -84,9 +84,3 @@ export async function rescheduleBackup(): Promise<void> {
   hydrationRetryAttempt = 0
   scheduleNextBackup()
 }
-
-export function stopBackupScheduler(): void {
-  job?.stop()
-  // Drop the reference: the next schedule creates a fresh job.
-  job = null
-}

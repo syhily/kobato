@@ -20,7 +20,8 @@ vi.mock('@/server/infra/lifecycle', () => ({
   registerShutdownHook: vi.fn(),
 }))
 
-const { scheduleNextBackup, stopBackupScheduler, rescheduleBackup } = await import('@/server/domains/backup/scheduler')
+const { scheduleNextBackup, rescheduleBackup } = await import('@/server/domains/backup/scheduler')
+const { stopAllScheduledJobs } = await import('@/server/infra/scheduler-utils')
 
 describe('backup/scheduler — scheduleNextBackup', () => {
   beforeEach(() => {
@@ -29,7 +30,7 @@ describe('backup/scheduler — scheduleNextBackup', () => {
   })
 
   afterEach(() => {
-    stopBackupScheduler()
+    stopAllScheduledJobs()
     vi.useRealTimers()
   })
 
@@ -98,7 +99,7 @@ describe('backup/scheduler — scheduleNextBackup', () => {
     expect(vi.getTimerCount()).toBeGreaterThan(0)
   })
 
-  it('stopBackupScheduler clears any pending timer', () => {
+  it('stopAllScheduledJobs clears any pending timer', () => {
     setBlogSettingsBundleForTests({
       ...TEST_BLOG_SETTINGS_BUNDLE,
       backup: {
@@ -107,7 +108,7 @@ describe('backup/scheduler — scheduleNextBackup', () => {
       },
     })
     scheduleNextBackup()
-    stopBackupScheduler()
+    stopAllScheduledJobs()
     expect(vi.getTimerCount()).toBe(0)
   })
 })

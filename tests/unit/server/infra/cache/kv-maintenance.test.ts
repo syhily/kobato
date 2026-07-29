@@ -20,8 +20,9 @@ vi.mock('@/server/infra/logger', () => ({
   getLogger: vi.fn(() => logger),
 }))
 
-const { scheduleNextKvSweep, stopKvSweepScheduler, sweepExpiredKvEntries, wireKvSweepScheduler } =
+const { scheduleNextKvSweep, sweepExpiredKvEntries, wireKvSweepScheduler } =
   await import('@/server/infra/cache/kv-maintenance')
+const { stopAllScheduledJobs } = await import('@/server/infra/scheduler-utils')
 
 const SWEEP_INTERVAL_MS = 60 * 60 * 1000
 
@@ -29,12 +30,12 @@ describe('kv-maintenance scheduler', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     getDb.mockReturnValue(db)
-    stopKvSweepScheduler()
+    stopAllScheduledJobs()
     wireKvSweepScheduler({ getDb })
   })
 
   afterEach(() => {
-    stopKvSweepScheduler()
+    stopAllScheduledJobs()
   })
 
   it('sweeps all three tables when the hourly timer fires', async () => {
@@ -79,7 +80,7 @@ describe('kv-maintenance scheduler', () => {
   it('stops the scheduler', () => {
     scheduleNextKvSweep()
     expect(vi.getTimerCount()).toBe(1)
-    stopKvSweepScheduler()
+    stopAllScheduledJobs()
     expect(vi.getTimerCount()).toBe(0)
   })
 })
