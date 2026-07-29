@@ -11,7 +11,7 @@
 // Audit log convention: loggers named `audit.<domain>` (e.g. `audit.user`,
 // `audit.comment`, `audit.cms.posts`) are for operational visibility only.
 // Durable audit records are written via `recordAuditEvent()` to the
-// `audit_log` PostgreSQL table through a COPY batcher, not through this
+// `audit_log` table through the insert batcher, not through this
 // logger. `getLogger('audit.*')` calls remain informational stdout output.
 
 import { Writable } from 'node:stream'

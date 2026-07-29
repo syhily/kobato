@@ -10,10 +10,9 @@ const mockHasAdmin = vi.fn()
 const mockFindFirstAdminUser = vi.fn()
 const mockIsSetupTokenActive = vi.fn()
 const mockValidateCsrfToken = vi.fn()
-const mockCheckPgToolsAvailable = vi.fn()
+
 const mockRestoreFromBackup = vi.fn()
 const mockAssertBackupContainsAdmin = vi.fn()
-const mockValidateBackupSql = vi.fn()
 const mockStartRestoreJob = vi.fn()
 const mockTryBeginRestore = vi.fn()
 const mockRefreshBlogSettings = vi.fn()
@@ -41,17 +40,9 @@ vi.mock('@/server/http/middlewares/rate-limit', () => ({
   rateLimitByIp: vi.fn(() => async (_c: unknown, next: () => unknown) => next()),
 }))
 
-vi.mock('@/server/domains/backup/services/shared', () => ({
-  checkPgToolsAvailable: (...args: unknown[]) => mockCheckPgToolsAvailable(...args),
-}))
-
 vi.mock('@/server/domains/backup/services/restore', () => ({
   restoreFromBackup: (...args: unknown[]) => mockRestoreFromBackup(...args),
   assertBackupContainsAdmin: (...args: unknown[]) => mockAssertBackupContainsAdmin(...args),
-}))
-
-vi.mock('@/server/domains/backup/services/validate', () => ({
-  validateBackupSql: (...args: unknown[]) => mockValidateBackupSql(...args),
 }))
 
 vi.mock('@/server/domains/backup/restore-machine', () => ({
@@ -214,7 +205,6 @@ describe('/api/setup/restore', () => {
     mockHasAdmin.mockResolvedValue(false)
     mockIsSetupTokenActive.mockResolvedValue(true)
     mockValidateCsrfToken.mockReturnValue(true)
-    mockCheckPgToolsAvailable.mockResolvedValue(true)
     mockAssertBackupContainsAdmin.mockResolvedValue(undefined)
     mockFindFirstAdminUser.mockResolvedValue({ id: 1, role: 'admin' })
     mockStartRestoreJob.mockImplementation(

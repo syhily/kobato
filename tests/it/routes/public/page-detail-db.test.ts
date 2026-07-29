@@ -6,7 +6,7 @@ import { makePage } from '#/_helpers/catalog'
 import { makeLoaderArgs, unwrapLoaderData } from '#/_helpers/context'
 import { regularSession } from '#/_helpers/session'
 
-// Pages live exclusively in the `page` + `content` Postgres tables,
+// Pages live exclusively in the `page` + `content` tables,
 // so this test pins the contract that the `page.detail` loader
 // returns the row's PortableText body straight through (the React
 // component renders it via `<PortableTextBody>`).
@@ -90,7 +90,7 @@ vi.mock('@/shared/types/catalog', async () => {
 
 // Stub out the comments/data loader the same way `detail.test.ts` does —
 // the page.detail route awaits this for every request and we don't want
-// it hitting Postgres.
+// it hitting the database.
 vi.mock('@/server/http/loaders/comments', () => ({
   loadDetailPageStreaming: vi.fn(async () => ({
     critical: {
@@ -108,7 +108,7 @@ vi.mock('@/server/http/loaders/comments', () => ({
   })),
 }))
 
-// Image-meta resolution would otherwise hit Postgres for the
+// Image-meta resolution would otherwise hit the database for the
 // thumbhash lookup; we don't need it for this contract.
 vi.mock('@/server/domains/images/services/enhance', () => ({
   resolveImageMetaBySources: vi.fn(async () => new Map()),

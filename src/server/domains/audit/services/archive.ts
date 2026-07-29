@@ -43,7 +43,7 @@ export async function archiveExpiredAuditLogs(db: Database): Promise<ArchiveResu
   log.info('Starting audit log archive', { cutoff: cutoff.toISOString(), dbRetentionDays })
 
   // If S3 is not configured, fall back to purge-only mode so expired rows
-  // do not accumulate indefinitely in Postgres.
+  // do not accumulate indefinitely in the database.
   if (!s3ArchiveAvailable()) {
     log.warn('S3 storage unavailable; purging expired audit logs without archiving')
 

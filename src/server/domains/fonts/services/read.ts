@@ -7,7 +7,7 @@ import type { AdminFontDto } from '@/shared/contracts/fonts'
 import { font } from '@/server/infra/db/schema/font'
 
 // Read side of the fonts domain. Pure DB queries — no mutation, no audit,
-// no I/O beyond Postgres. The DTO mapping lives here so both the oRPC
+// no I/O beyond the database. The DTO mapping lives here so both the oRPC
 // `fonts.list` handler and the SSR bundle resolver share one mapper.
 
 export function toAdminFontDto(row: FontRow): AdminFontDto {

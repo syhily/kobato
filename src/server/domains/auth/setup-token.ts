@@ -33,9 +33,8 @@ async function readSetupToken(db: Database): Promise<string | null> {
 
 /**
  * Generate (or retrieve) the one-time setup token used to authenticate
- * the initial setup-restore endpoint. The token is stored in Postgres so
- * multi-instance deployments share it; it is valid only until the first
- * admin is created.
+ * the initial setup-restore endpoint. The token is stored in the
+ * database; it is valid only until the first admin is created.
  *
  * Security note: the full token is NEVER written to structured logs —
  * it is printed to stdout (terminal / `docker logs`) and returned to

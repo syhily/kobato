@@ -24,9 +24,9 @@ const tempDirs: string[] = []
 export function createTestDatabase(): DatabaseHandle {
   // When the integration setup has assigned a worker database file, open
   // THAT file — the lifecycle global (`db-lifecycle`) uses it too, so
-  // per-file handles and the global see one shared database (exactly the
-  // old "one Postgres database, many connections" semantics; WAL permits
-  // multiple in-process connections). Otherwise (unit tests, `:memory:`)
+  // per-file handles and the global see one shared database (the
+  // "one database, many connections" semantics; WAL permits multiple
+  // in-process connections). Otherwise (unit tests, `:memory:`)
   // create a fresh, migrated temp file.
   const configured = process.env.storage__database
   const shared = configured !== undefined && configured !== ':memory:' && configured !== ''

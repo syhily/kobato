@@ -34,7 +34,7 @@ describe('downloadBinary', () => {
   it('rejects localhost', async () => {
     const fetchSpy = vi.fn()
     vi.stubGlobal('fetch', fetchSpy)
-    await expect(downloadBinary('http://localhost:5432/x', 1000, 'cover')).rejects.toThrow(DomainError)
+    await expect(downloadBinary('http://localhost:8432/x', 1000, 'cover')).rejects.toThrow(DomainError)
     expect(fetchSpy).not.toHaveBeenCalled()
   })
 
