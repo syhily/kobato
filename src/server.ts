@@ -12,6 +12,7 @@ import { wrapFetchWithLeakedResponseHandler } from '@/server/http/leaked-respons
 import { buildLoadContext, configureMiddleware } from '@/server/http/middleware-pipeline'
 import { scheduleNextKvSweep } from '@/server/infra/cache/kv-maintenance'
 import { serverConfig } from '@/server/infra/config'
+import { scheduleNextDbMaintenance } from '@/server/infra/db/maintenance'
 import { hasAdmin } from '@/server/infra/db/operations/user'
 import { createHonoServer } from '@/server/infra/hono/node'
 import { getProcessPool } from '@/server/infra/image/process-pool'
@@ -63,6 +64,7 @@ if (!hmr?.secretsMigrated) {
   initBackupScheduler()
   scheduleNextArchive()
   scheduleNextKvSweep()
+  scheduleNextDbMaintenance()
 
   if (hmr) {
     hmr.secretsMigrated = true

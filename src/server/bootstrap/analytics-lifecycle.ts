@@ -1,3 +1,6 @@
+import { stat } from 'node:fs/promises'
+
+import { ACCESS_LOG_DDL, ACCESS_LOG_RETENTION_DAYS } from '@/server/domains/analytics/services/access-log-ddl'
 import {
   type AnalyticsHandle,
   closeAnalyticsDatabase,
@@ -6,59 +9,83 @@ import {
 } from '@/server/infra/analytics/duckdb'
 import { registerShutdownHook } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
+import { computeNextRun } from '@/server/infra/scheduler-utils'
+import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 const log = getLogger('analytics.lifecycle')
 
 /**
  * Boot-time owner of the DuckDB sidecar: opens it alongside the content
  * database, closes it after every batcher has flushed (priority 0 —
- * batchers flush at 100, this runs after). The daily maintenance job
- * (retention DELETE + CHECKPOINT) is wired here too — same lifecycle
- * timer seam as the other sweeps.
+ * batchers flush at 100, this runs after). The DuckDB half of the daily
+ * DB maintenance job (plan §1.11: 180-day retention DELETE + CHECKPOINT,
+ * row-count and file-size logging) is wired here too — daily at 04:30 in
+ * the site's configured timezone, the same wall-clock scheduler seam as
+ * the audit archive (04:00).
  */
 let current: AnalyticsHandle | null = null
 let maintenanceTimer: NodeJS.Timeout | null = null
 
-const RETENTION_DAYS = 180
-const MAINTENANCE_INTERVAL_MS = 24 * 60 * 60 * 1000
+async function analyticsFileSize(handle: AnalyticsHandle): Promise<number | null> {
+  if (handle.path === ':memory:') {
+    return null
+  }
+  const stats = await stat(handle.path).catch(() => null)
+  return stats?.size ?? null
+}
 
-async function runMaintenance(handle: AnalyticsHandle): Promise<void> {
+export async function runAnalyticsMaintenance(handle: AnalyticsHandle): Promise<void> {
   try {
     const before = await handle.reader.runAndReadAll('SELECT count(*) AS c FROM access_log')
     const beforeCount = before.getRowObjects()[0]?.c
+    const beforeSize = await analyticsFileSize(handle)
 
-    const cutoff = new Date(Date.now() - RETENTION_DAYS * 24 * 60 * 60 * 1000)
-    const deleted = await handle.writer.runAndReadAll(`DELETE FROM access_log WHERE ts < epoch_ms(?::BIGINT)`, [
+    const cutoff = new Date(Date.now() - ACCESS_LOG_RETENTION_DAYS * 24 * 60 * 60 * 1000)
+    await handle.writer.runAndReadAll(`DELETE FROM access_log WHERE ts < epoch_ms(?::BIGINT)`, [
       BigInt(cutoff.getTime()),
     ])
-    void deleted
     await handle.writer.run('CHECKPOINT')
 
     const after = await handle.reader.runAndReadAll('SELECT count(*) AS c FROM access_log')
     const afterCount = after.getRowObjects()[0]?.c
+    const afterSize = await analyticsFileSize(handle)
     log.info('analytics maintenance completed', {
-      retentionDays: RETENTION_DAYS,
+      retentionDays: ACCESS_LOG_RETENTION_DAYS,
       rowsBefore: beforeCount,
       rowsAfter: afterCount,
+      bytesBefore: beforeSize,
+      bytesAfter: afterSize,
     })
   } catch (error) {
     log.error('analytics maintenance failed', { error: error instanceof Error ? error.message : String(error) })
   }
 }
 
-function wireMaintenance(handle: AnalyticsHandle): void {
+export function scheduleNextAnalyticsMaintenance(): void {
   if (maintenanceTimer !== null) {
     clearTimeout(maintenanceTimer)
+    maintenanceTimer = null
   }
-  maintenanceTimer = setInterval(() => {
-    void runMaintenance(handle)
-  }, MAINTENANCE_INTERVAL_MS)
+  const bundle = getBlogSettingsBundleSync()
+  const timeZone = bundle?.siteIdentity?.timeZone ?? 'UTC'
+  const nextRun = computeNextRun({ frequency: 'daily', hour: 4, minute: 30 }, timeZone, new Date())
+  maintenanceTimer = setTimeout(() => {
+    void (async () => {
+      try {
+        if (current !== null) {
+          await runAnalyticsMaintenance(current)
+        }
+      } finally {
+        scheduleNextAnalyticsMaintenance()
+      }
+    })()
+  }, nextRun.getTime() - Date.now())
   maintenanceTimer.unref()
 }
 
 export async function initAnalyticsDatabase(): Promise<void> {
-  current = await openAnalyticsDatabase(resolveAnalyticsPath())
-  wireMaintenance(current)
+  current = await openAnalyticsDatabase(resolveAnalyticsPath(), ACCESS_LOG_DDL)
+  scheduleNextAnalyticsMaintenance()
 }
 
 export function getAnalyticsHandle(): AnalyticsHandle {
@@ -70,7 +97,7 @@ export function getAnalyticsHandle(): AnalyticsHandle {
 
 registerShutdownHook(async () => {
   if (maintenanceTimer !== null) {
-    clearInterval(maintenanceTimer)
+    clearTimeout(maintenanceTimer)
     maintenanceTimer = null
   }
   if (current !== null) {

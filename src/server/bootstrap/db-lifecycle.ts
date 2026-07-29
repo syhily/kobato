@@ -13,6 +13,7 @@ import {
   type Database,
   type DatabaseHandle,
 } from '@/server/infra/db/database'
+import { wireDbMaintenanceScheduler } from '@/server/infra/db/maintenance'
 import { migrateDatabase } from '@/server/infra/db/migrate'
 import { registerShutdownHook, restartServer, setRestartDb, setRestartRefreshSettings } from '@/server/infra/lifecycle'
 import { root } from '@/server/infra/logger'
@@ -59,6 +60,7 @@ function wireDatabase(handle: DatabaseHandle): DatabaseHandle {
   setRestartRefreshSettings(refreshBlogSettings)
   wireArchiveScheduler({ getDb })
   wireKvSweepScheduler({ getDb })
+  wireDbMaintenanceScheduler({ getHandle: () => current })
   initAllBatchers(handle)
   startLikeTokenSweep(handle.db)
   return handle
@@ -113,6 +115,9 @@ registerRestoreComplete(async (success, err) => {
     try {
       await migrateDatabase(getDb())
       root.info('Database migrations completed after restore')
+      // Restore is a bulk load — refresh planner statistics for the
+      // swapped-in file (plan §1.9).
+      getDatabaseHandle().client.exec('ANALYZE')
     } catch (migrateErr) {
       root.error(
         { err: migrateErr instanceof Error ? migrateErr.message : String(migrateErr) },

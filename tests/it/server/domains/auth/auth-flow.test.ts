@@ -68,6 +68,8 @@ const db = {
   // `invalidateSetupToken` deletes the setup-token row on successful
   // install; the row itself lives nowhere in this file's mocked world.
   delete: () => ({ where: async () => {} }),
+  // Post-seed `ANALYZE` (plan §1.9) — a no-op against the mock.
+  run: () => undefined,
 } as unknown as Database
 const pool = {} as any
 
