@@ -110,13 +110,14 @@ describe('db-lifecycle', () => {
   })
 
   it('prepares the database for the file swap (flush + reset + close, in order)', async () => {
+    const handle = getDatabaseHandle()
     await prepareDatabaseForRestore()
 
     expect(flushAllBatchers).toHaveBeenCalled()
     expect(resetAllBatchers).toHaveBeenCalled()
     expect(resetLikeTokenSweep).toHaveBeenCalled()
     expect(closeDatabase).toHaveBeenCalled()
-    expect(getDatabaseHandle().closed).toBe(true)
+    expect(handle.closed).toBe(true)
 
     const order = [flushAllBatchers, resetAllBatchers, resetLikeTokenSweep, closeDatabase].map(
       (mock) => mock.mock.invocationCallOrder[0],
@@ -125,8 +126,14 @@ describe('db-lifecycle', () => {
   })
 
   it('reopens a closed handle, reinitializes batchers, and stays idempotent', async () => {
+    // The previous case left the engine closed (module state persists
+    // across cases in a file) — bring it back before exercising the
+    // close/reopen cycle, and discount its wiring from the counts.
+    await reopenDatabase()
+    initAllBatchers.mockClear()
+    const handle = getDatabaseHandle()
     await prepareDatabaseForRestore()
-    expect(getDatabaseHandle().closed).toBe(true)
+    expect(handle.closed).toBe(true)
 
     const instance = await reopenDatabase()
     expect(instance.db).toBe(dbMock)

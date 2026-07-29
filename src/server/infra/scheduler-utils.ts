@@ -4,6 +4,7 @@ import { addDays, addMonths, isAfter } from 'date-fns'
 import { DomainError } from '@/server/infra/http/errors'
 import { registerShutdownHook } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
+import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 export function computeNextRun(
   settings: {
@@ -77,6 +78,18 @@ export function computeNextRun(
     candidate = addMonths(candidate, 1)
   }
   return candidate
+}
+
+/**
+ * The one owner of the daily-maintenance wall-clock slot: 04:30 in the
+ * site's configured timezone (the audit archive runs at 04:00). Both
+ * engine maintenance jobs — SQLite (infra/db/maintenance) and DuckDB
+ * (bootstrap/analytics-lifecycle) — compute their delay here so the
+ * two halves of one conceptual job can never drift apart.
+ */
+export function nextDailyMaintenanceDelayMs(): number {
+  const timeZone = getBlogSettingsBundleSync()?.siteIdentity?.timeZone ?? 'UTC'
+  return computeNextRun({ frequency: 'daily', hour: 4, minute: 30 }, timeZone, new Date()).getTime() - Date.now()
 }
 
 // ─── Scheduled jobs ──────────────────────────────────────

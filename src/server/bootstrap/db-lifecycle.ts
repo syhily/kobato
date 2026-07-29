@@ -1,4 +1,5 @@
 import { closeAnalyticsForRestore, initAnalyticsDatabase } from '@/server/bootstrap/analytics-lifecycle'
+import { ManagedEngine } from '@/server/bootstrap/managed-engine'
 import { scheduleNextArchive, wireArchiveScheduler } from '@/server/domains/audit/services/scheduler'
 import { wireRestoreMachine } from '@/server/domains/backup/restore-machine'
 import { resetLikeTokenSweep, startLikeTokenSweep } from '@/server/domains/comments/services/likes'
@@ -30,7 +31,6 @@ import '@/server/domains/analytics/services/pv-batcher'
 import '@/server/domains/audit/services/batcher'
 import {
   closeHttpServer,
-  registerShutdownHook,
   restartServer,
   setRestartDb,
   setRestartRefreshSettings,
@@ -42,48 +42,47 @@ import { isRecord } from '@/shared/utils/type-guards'
 // ─── HMR-safe resource creation ──────────────────────────
 // In dev, React Router re-evaluates server.ts on every HMR cycle.
 // import.meta.hot.data persists across those re-evaluations so the
-// handle, Drizzle instance, and migration flag survive without
-// leaking connections or re-running completed migrations.
+// handle and the migration flag survive without leaking connections
+// or re-running completed migrations. The handle slot is owned by the
+// ManagedEngine below ('handle'); this module owns only
+// 'migrationsRan'.
 
-function isHmrData(value: unknown): value is {
-  handle?: DatabaseHandle
-  migrationsRan?: boolean
-} {
-  if (!isRecord(value)) {
-    return false
-  }
-  const { handle, migrationsRan } = value
-  return (
-    (handle === undefined || typeof handle === 'object') &&
-    (migrationsRan === undefined || typeof migrationsRan === 'boolean')
-  )
+function migrationsRanInHmr(): boolean {
+  const data: unknown = import.meta.hot?.data
+  return isRecord(data) && data.migrationsRan === true
 }
 
-const hmr = isHmrData(import.meta.hot?.data) ? import.meta.hot.data : undefined
+function markMigrationsRanInHmr(): void {
+  const hot = import.meta.hot
+  if (hot && isRecord(hot.data)) {
+    hot.data.migrationsRan = true
+  }
+}
 
-let current!: DatabaseHandle
+const engine = new ManagedEngine<DatabaseHandle>(
+  {
+    open: () => openDatabase(resolveDatabasePath()),
+    close: closeDatabase,
+  },
+  'handle',
+)
 
 function wireDatabase(handle: DatabaseHandle): DatabaseHandle {
-  current = handle
-  const hot = import.meta.hot
-  if (hot && hmr) {
-    hmr.handle = handle
-  }
   setRestartDb(handle.db)
   setRestartRefreshSettings(refreshBlogSettings)
   wireArchiveScheduler({ getDb })
   wireKvSweepScheduler({ getDb })
-  wireDbMaintenanceScheduler({ getHandle: () => current })
+  wireDbMaintenanceScheduler({ getHandle: () => engine.get() })
   initAllBatchers(handle)
   startLikeTokenSweep(handle.db)
   return handle
 }
 
-function initDatabase() {
-  wireDatabase(hmr?.handle ?? openDatabase(resolveDatabasePath()))
+async function initDatabase(): Promise<void> {
+  wireDatabase(await engine.init())
 }
 
-initDatabase()
+await initDatabase()
 
 // The DuckDB sidecar opens alongside the content database (its own
 // shutdown hook at priority 0 runs after the batcher flushes at 100).
@@ -179,25 +178,18 @@ wireRestoreMachine({
 })
 
 // ─── Migration ───────────────────────────────────────────
-// Run migrations once per process (HMR-safe via hmr.migrationsRan).
-// Always on: vitest workers get an isolated `:memory:` database per
-// module graph, so every test file's global must migrate itself —
+// Run migrations once per process (HMR-safe via the 'migrationsRan'
+// slot). Always on: vitest workers get an isolated `:memory:` database
+// per module graph, so every test file's global must migrate itself —
 // idempotent everywhere else.
 
-if (!hmr?.migrationsRan) {
-  await migrateDatabase(current.db)
-  const hot = import.meta.hot
-  if (hot && hmr) {
-    hmr.migrationsRan = true
-  }
+if (!migrationsRanInHmr()) {
+  await migrateDatabase(getDb())
+  markMigrationsRanInHmr()
 }
 
-// ─── Shutdown ────────────────────────────────────────────
-// Priority 0 so all batchers (priority 100) flush before close.
-
-registerShutdownHook(async () => {
-  closeDatabase(current)
-}, 0)
+// The shutdown hook (priority 0, after the priority-100 batcher
+// flushes) lives inside the ManagedEngine.
 
 /**
  * Prepare the live database for a file swap (the restore flow's step
@@ -211,25 +203,27 @@ export async function prepareDatabaseForRestore(): Promise<void> {
   await flushAllBatchers()
   resetAllBatchers()
   resetLikeTokenSweep()
-  closeDatabase(current)
+  await engine.closeForSwap()
   // The analytics sidecar swaps too (two-file backup archive): close it
   // after the batcher flush so the buffered access events land first.
   await closeAnalyticsForRestore()
 }
 
 /**
- * Reopen the database on (possibly swapped) files. Called by the restore
- * orchestrator after the swap (so post-restore validation runs against
- * the NEW file) and by the completion handler for recovery after a
- * failed restore — the handle is only reopened when closed.
+ * Reopen BOTH databases on (possibly swapped) files — the analytics
+ * sidecar reopens with the content database (closed by
+ * prepareDatabaseForRestore; init is a no-op when already open).
+ * Called by the restore orchestrator after the swap (so post-restore
+ * validation runs against the NEW file) and by the completion handler
+ * for recovery after a failed restore — the handle is only reopened
+ * when closed.
  */
 export async function reopenDatabase(): Promise<DatabaseHandle> {
-  if (!current.closed) {
-    return current
+  const open = engine.peek()
+  if (open !== null) {
+    return open
   }
-  const handle = wireDatabase(openDatabase(resolveDatabasePath()))
-  // The analytics sidecar reopens with the content database (closed by
-  // prepareDatabaseForRestore; init is a no-op when already open).
+  const handle = wireDatabase(await engine.init())
   await initAnalyticsDatabase()
   return handle
 }
@@ -241,9 +235,9 @@ export async function reopenDatabaseAndGetDb(): Promise<Database> {
 }
 
 export function getDb(): Database {
-  return current.db
+  return engine.get().db
 }
 
 export function getDatabaseHandle(): DatabaseHandle {
-  return current
+  return engine.get()
 }

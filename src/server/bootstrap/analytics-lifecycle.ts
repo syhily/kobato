@@ -2,6 +2,7 @@ import { copyFile } from 'node:fs/promises'
 
 import type { AnalyticsReader } from '@/server/domains/analytics/services/duckdb-sql'
 
+import { ManagedEngine } from '@/server/bootstrap/managed-engine'
 import { ACCESS_LOG_DDL } from '@/server/domains/analytics/services/access-log'
 import { runAccessLogRetention } from '@/server/domains/analytics/services/maintenance'
 import {
@@ -10,65 +11,49 @@ import {
   openAnalyticsDatabase,
   resolveAnalyticsPath,
 } from '@/server/infra/analytics/duckdb'
-import { registerShutdownHook } from '@/server/infra/lifecycle'
-import { computeNextRun, scheduleJob, type ScheduledJob } from '@/server/infra/scheduler-utils'
-import { getBlogSettingsBundleSync } from '@/shared/config/getters'
+import { nextDailyMaintenanceDelayMs, scheduleJob, type ScheduledJob } from '@/server/infra/scheduler-utils'
 
 /**
  * Boot-time owner of the DuckDB sidecar: opens it alongside the content
- * database, closes it after every batcher has flushed (priority 0 —
- * batchers flush at 100, this runs after). The DuckDB half of the daily
- * DB maintenance job (plan §1.11: 180-day retention DELETE + CHECKPOINT,
- * row-count and file-size logging) is wired here too — daily at 04:30 in
- * the site's configured timezone, the same wall-clock scheduler seam as
- * the audit archive (04:00).
+ * database, closes it after every batcher has flushed (the engine's
+ * priority-0 shutdown hook runs after the priority-100 flushes). The
+ * DuckDB half of the daily DB maintenance job (180-day retention
+ * DELETE + CHECKPOINT, row-count and file-size logging) is wired here
+ * too — daily at 04:30 in the site's configured timezone, the same
+ * wall-clock slot as the SQLite half (one policy owner:
+ * `nextDailyMaintenanceDelayMs`).
  */
-let current: AnalyticsHandle | null = null
+const engine = new ManagedEngine<AnalyticsHandle>(
+  {
+    open: () => openAnalyticsDatabase(resolveAnalyticsPath(), ACCESS_LOG_DDL),
+    close: closeAnalyticsDatabase,
+  },
+  'analyticsHandle',
+)
+
 let maintenanceJob: ScheduledJob | null = null
 
 export function scheduleNextAnalyticsMaintenance(): void {
   maintenanceJob ??= scheduleJob({
     name: 'analytics.maintenance',
-    nextDelayMs: () => {
-      const timeZone = getBlogSettingsBundleSync()?.siteIdentity?.timeZone ?? 'UTC'
-      return computeNextRun({ frequency: 'daily', hour: 4, minute: 30 }, timeZone, new Date()).getTime() - Date.now()
-    },
+    nextDelayMs: nextDailyMaintenanceDelayMs,
     run: async () => {
-      if (current !== null) {
-        await runAccessLogRetention(current)
+      const handle = engine.peek()
+      if (handle !== null) {
+        await runAccessLogRetention(handle)
       }
     },
   })
   maintenanceJob.reschedule()
 }
 
-// HMR-safe handle reuse: in dev, server.ts re-evaluates on every cycle —
-// the content-DB handle survives via import.meta.hot.data (see
-// db-lifecycle), and the sidecar needs the same treatment (a second
-// DuckDBInstance on the same file plus duplicate maintenance timers).
-function isAnalyticsHmrData(value: unknown): value is { analyticsHandle?: AnalyticsHandle } {
-  return value !== null && typeof value === 'object'
-}
-const hmrData: unknown = import.meta.hot?.data
-const hmr = isAnalyticsHmrData(hmrData) ? hmrData : undefined
-
 export async function initAnalyticsDatabase(): Promise<void> {
-  if (hmr?.analyticsHandle) {
-    current = hmr.analyticsHandle
-  } else {
-    current = await openAnalyticsDatabase(resolveAnalyticsPath(), ACCESS_LOG_DDL)
-    if (hmr) {
-      hmr.analyticsHandle = current
-    }
-  }
+  await engine.init()
   scheduleNextAnalyticsMaintenance()
 }
 
 export function getAnalyticsHandle(): AnalyticsHandle {
-  if (current === null) {
-    throw new Error('Analytics database not initialized')
-  }
-  return current
+  return engine.get()
 }
 
 /**
@@ -108,16 +93,5 @@ export async function closeAnalyticsForRestore(): Promise<void> {
     maintenanceJob.stop()
     maintenanceJob = null
   }
-  if (current !== null) {
-    const handle = current
-    current = null
-    await closeAnalyticsDatabase(handle)
-  }
+  await engine.closeForSwap()
 }
-
-registerShutdownHook(async () => {
-  if (current !== null) {
-    await closeAnalyticsDatabase(current)
-    current = null
-  }
-}, 0)

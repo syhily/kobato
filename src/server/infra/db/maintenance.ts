@@ -1,8 +1,7 @@
 import type { DatabaseHandle } from '@/server/infra/db/database'
 
 import { getLogger } from '@/server/infra/logger'
-import { computeNextRun, scheduleJob, type ScheduledJob } from '@/server/infra/scheduler-utils'
-import { getBlogSettingsBundleSync } from '@/shared/config/getters'
+import { nextDailyMaintenanceDelayMs, scheduleJob, type ScheduledJob } from '@/server/infra/scheduler-utils'
 
 const log = getLogger('db.maintenance')
 
@@ -70,10 +69,7 @@ export function wireDbMaintenanceScheduler(deps: { getHandle: () => DatabaseHand
 export function scheduleNextDbMaintenance(): void {
   job ??= scheduleJob({
     name: 'db.maintenance',
-    nextDelayMs: () => {
-      const timeZone = getBlogSettingsBundleSync()?.siteIdentity?.timeZone ?? 'UTC'
-      return computeNextRun({ frequency: 'daily', hour: 4, minute: 30 }, timeZone, new Date()).getTime() - Date.now()
-    },
+    nextDelayMs: nextDailyMaintenanceDelayMs,
     run: () => {
       if (resolveHandle === null) {
         throw new Error('db maintenance fired before wireDbMaintenanceScheduler')
