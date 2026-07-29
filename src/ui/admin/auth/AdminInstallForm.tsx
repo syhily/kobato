@@ -67,8 +67,8 @@ export function AdminInstallForm() {
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0] ?? null
-    if (file && !/\.(sql|sql\.gz)$/i.test(file.name)) {
-      setRestoreError('仅支持 .sql 或 .sql.gz 格式的备份文件')
+    if (file && !/\.(db|db\.tar\.gz|db\.gz|gz)$/i.test(file.name)) {
+      setRestoreError('仅支持 .db.tar.gz、.db.gz、.db 或 .gz 格式的备份文件')
       setSelectedFile(null)
       e.target.value = ''
       return
@@ -292,7 +292,7 @@ export function AdminInstallForm() {
               id="restore-file"
               name="file"
               type="file"
-              accept=".sql,.gz,application/gzip"
+              accept=".db,.gz,application/gzip"
               required
               disabled={isRestoring}
               onChange={handleFileChange}

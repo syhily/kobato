@@ -47,7 +47,7 @@ describe('services/backup — unpackBackupPayload', () => {
   it('accepts a legacy raw SQLite payload as content-only', () => {
     const raw = fakeSqliteFile()
     const payload = unpackBackupPayload(raw)
-    expect(payload.content.equals(raw)).toBe(true)
+    expect(payload.content!.equals(raw)).toBe(true)
     expect(payload.analytics).toBeNull()
   })
 
@@ -59,8 +59,20 @@ describe('services/backup — unpackBackupPayload', () => {
       { name: 'analytics.duckdb', data: analytics },
     ])
     const payload = unpackBackupPayload(archive)
-    expect(payload.content.equals(content)).toBe(true)
+    expect(payload.content!.equals(content)).toBe(true)
     expect(payload.analytics!.equals(analytics)).toBe(true)
+  })
+
+  it('accepts a raw DuckDB payload as an analytics-only restore', () => {
+    const analytics = fakeDuckdbFile()
+    const payload = unpackBackupPayload(analytics)
+    expect(payload.content).toBeNull()
+    expect(payload.analytics!.equals(analytics)).toBe(true)
+  })
+
+  it('rejects an analytics-only upload for the setup admin check', async () => {
+    const { assertBackupContainsAdmin } = await import('@/server/domains/backup/services/restore')
+    await expect(assertBackupContainsAdmin(fakeDuckdbFile())).rejects.toThrow('备份中不包含管理员账号')
   })
 
   it('rejects an archive missing the content entry', () => {

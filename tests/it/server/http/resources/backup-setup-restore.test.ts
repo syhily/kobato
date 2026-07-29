@@ -11,8 +11,9 @@ const mockFindFirstAdminUser = vi.fn()
 const mockIsSetupTokenActive = vi.fn()
 const mockValidateCsrfToken = vi.fn()
 
-const mockRestoreFromBackup = vi.fn()
-const mockAssertBackupContainsAdmin = vi.fn()
+const mockRestoreFromStagedBackup = vi.fn()
+const mockAssertStagedBackupContainsAdmin = vi.fn()
+const mockStageBackup = vi.fn()
 const mockStartRestoreJob = vi.fn()
 const mockTryBeginRestore = vi.fn()
 const mockRefreshBlogSettings = vi.fn()
@@ -41,9 +42,9 @@ vi.mock('@/server/http/middlewares/rate-limit', () => ({
 }))
 
 vi.mock('@/server/domains/backup/services/restore', () => ({
-  extractBackupFile: (buffer: unknown) => buffer,
-  restoreFromBackup: (...args: unknown[]) => mockRestoreFromBackup(...args),
-  assertBackupContainsAdmin: (...args: unknown[]) => mockAssertBackupContainsAdmin(...args),
+  stageBackup: (...args: unknown[]) => mockStageBackup(...args),
+  restoreFromStagedBackup: (...args: unknown[]) => mockRestoreFromStagedBackup(...args),
+  assertStagedBackupContainsAdmin: (...args: unknown[]) => mockAssertStagedBackupContainsAdmin(...args),
 }))
 
 vi.mock('@/server/domains/backup/restore-machine', () => ({
@@ -95,7 +96,12 @@ describe('/api/admin/backup/upload-restore', () => {
     vi.clearAllMocks()
     mockTryBeginRestore.mockReturnValue(true)
     mockValidateCsrfToken.mockReturnValue(true)
-    mockAssertBackupContainsAdmin.mockResolvedValue(undefined)
+    mockAssertStagedBackupContainsAdmin.mockResolvedValue(undefined)
+    mockStageBackup.mockResolvedValue({
+      dir: '/tmp/fake-staged',
+      content: '/tmp/fake-staged/kobato.db',
+      analytics: null,
+    })
     mockStartRestoreJob.mockImplementation(
       async (fn: () => Promise<void>, afterReopenFn?: (db: unknown) => Promise<void>) => {
         await fn()
@@ -206,7 +212,12 @@ describe('/api/setup/restore', () => {
     mockHasAdmin.mockResolvedValue(false)
     mockIsSetupTokenActive.mockResolvedValue(true)
     mockValidateCsrfToken.mockReturnValue(true)
-    mockAssertBackupContainsAdmin.mockResolvedValue(undefined)
+    mockAssertStagedBackupContainsAdmin.mockResolvedValue(undefined)
+    mockStageBackup.mockResolvedValue({
+      dir: '/tmp/fake-staged',
+      content: '/tmp/fake-staged/kobato.db',
+      analytics: null,
+    })
     mockFindFirstAdminUser.mockResolvedValue({ id: 1, role: 'admin' })
     mockStartRestoreJob.mockImplementation(
       async (fn: () => Promise<void>, afterReopenFn?: (db: unknown) => Promise<void>) => {
@@ -283,10 +294,10 @@ describe('/api/setup/restore', () => {
     expect(body.error.message).toBe('站点已安装，请直接登录后通过后台还原备份。')
   })
 
-  it('returns accepted on successful restore', async () => {
+  it('returns accepted on successful restore — and applies content only (withAnalytics: false)', async () => {
     const app = await buildApp(makeSession({ setupTokenVerified: true, csrfToken: 'valid-csrf' }))
     const formData = new FormData()
-    formData.set('file', new File(['content'], 'test.sql'))
+    formData.set('file', new File(['content'], 'test.db.tar.gz'))
 
     const res = await app.request('/api/setup/restore', {
       method: 'POST',
@@ -298,6 +309,13 @@ describe('/api/setup/restore', () => {
     const body = (await res.json()) as { accepted: boolean }
     expect(body.accepted).toBe(true)
     expect(mockStartRestoreJob).toHaveBeenCalledOnce()
+    // The setup restore applies the content database only — a fresh
+    // install never inherits an old site's telemetry.
+    expect(mockRestoreFromStagedBackup).toHaveBeenCalledWith(
+      expect.objectContaining({ dir: expect.any(String) }),
+      'test.db.tar.gz',
+      { withAnalytics: false },
+    )
   })
 
   it('returns 409 when a restore is already running', async () => {

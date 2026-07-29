@@ -109,7 +109,7 @@ describe('backup and restore integration', () => {
     // The decompressed payload is a tar archive with both engine files,
     // each magic-valid.
     const payload = unpackBackupPayload(extractBackupFile(buffer!))
-    expect(payload.content.subarray(0, 16).toString('latin1')).toBe('SQLite format 3\0')
+    expect(payload.content!.subarray(0, 16).toString('latin1')).toBe('SQLite format 3\0')
     expect(payload.analytics).not.toBeNull()
     expect(payload.analytics!.subarray(8, 12).toString('latin1')).toBe('DUCK')
 
@@ -127,7 +127,7 @@ describe('backup and restore integration', () => {
     const dir = mkdtempSync(join(tmpdir(), 'kobato-restore-it-'))
     const restored = openDatabase(join(dir, 'restored.db'))
     try {
-      writeFileSync(restored.path, payload.content)
+      writeFileSync(restored.path, payload.content!)
       const rows = restored.db.select().from(category).where(eq(category.slug, 'backup-cat')).all()
       expect(rows).toHaveLength(1)
       expect(rows[0]!.name).toBe('BackupCat')
@@ -145,6 +145,28 @@ describe('backup and restore integration', () => {
       expect(Number(result.getRowObjects()[0]?.c)).toBe(2)
     } finally {
       await closeAnalyticsDatabase(restoredAnalytics)
+    }
+
+    // The staged (streaming) restore path extracts the same archive
+    // without holding it in memory — both staged files validate and the
+    // staged content file opens as a real database.
+    const { stageBackup } = await import('@/server/domains/backup/services/restore')
+    const staged = await stageBackup(buffer!)
+    const { rmSync } = await import('node:fs')
+    try {
+      expect(staged.content).not.toBeNull()
+      expect(staged.analytics).not.toBeNull()
+      const stagedDb = openDatabase(join(dir, 'staged-copy.db'))
+      try {
+        const { copyFileSync } = await import('node:fs')
+        copyFileSync(staged.content!, stagedDb.path)
+        const rows = stagedDb.db.select().from(category).where(eq(category.slug, 'backup-cat')).all()
+        expect(rows).toHaveLength(1)
+      } finally {
+        closeDatabase(stagedDb)
+      }
+    } finally {
+      rmSync(staged.dir, { recursive: true, force: true })
     }
   })
 
@@ -164,7 +186,7 @@ describe('backup and restore integration', () => {
       const { readFileSync } = await import('node:fs')
       const bytes: Buffer = readFileSync(fresh.path)
       const payload = unpackBackupPayload(extractBackupFile(bytes))
-      expect(payload.content.subarray(0, 16).toString('latin1')).toBe('SQLite format 3\0')
+      expect(payload.content!.subarray(0, 16).toString('latin1')).toBe('SQLite format 3\0')
       expect(payload.analytics).toBeNull()
     } finally {
       closeTestDatabase(fresh)
