@@ -1,8 +1,7 @@
 import { z } from 'zod'
 
-import { prepareDatabaseForRestore, reopenDatabaseAndGetDb } from '@/server/bootstrap/db-lifecycle'
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
-import { performSafeRestore } from '@/server/domains/backup/restore-orchestrator'
+import { abortRestoreClaim, startRestoreJob, tryBeginRestore } from '@/server/domains/backup/restore-machine'
 import {
   createBackup,
   deleteBackup,
@@ -13,7 +12,6 @@ import {
 import { restoreFromBackup } from '@/server/domains/backup/services/restore'
 import { adminProc } from '@/server/http/orpc-base'
 import { ActionFailure } from '@/server/infra/http/errors'
-import { resetRestoreState, tryBeginRestore } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
 import { activeBackend } from '@/server/infra/storage/registry'
 
@@ -96,12 +94,11 @@ const restore = adminProc
     try {
       buffer = await getBackupBuffer(db, input.key)
     } catch (error) {
-      resetRestoreState()
+      abortRestoreClaim()
       throw error
     }
 
-    performSafeRestore(
-      { prepareForSwap: prepareDatabaseForRestore, reopenAfterSwap: reopenDatabaseAndGetDb, log },
+    startRestoreJob(
       async () => {
         await restoreFromBackup(buffer, input.key)
       },

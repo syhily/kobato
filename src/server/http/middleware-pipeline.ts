@@ -9,6 +9,7 @@ import { RouterContextProvider } from 'react-router'
 import type { Env } from '@/server/http/context'
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
+import { getRestoreJobStatus } from '@/server/domains/backup/restore-machine'
 import { hydrateBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { createApiApp } from '@/server/http/app'
 import { onErrorHandler } from '@/server/http/errors'
@@ -35,7 +36,7 @@ import { musicProxyRouter } from '@/server/http/resources/music-proxy'
 import { redirectsRouter } from '@/server/http/resources/redirects'
 import { sitemapRouter } from '@/server/http/resources/sitemap'
 import { webmentionRouter } from '@/server/http/resources/webmention'
-import { getRestoreState, getServerPhase } from '@/server/infra/lifecycle'
+import { getServerPhase } from '@/server/infra/lifecycle'
 import { root } from '@/server/infra/logger'
 import { sanitizeReqHeaders, resBindings } from '@/server/infra/logger/sanitizer'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
@@ -168,7 +169,7 @@ export function configureMiddleware(app: Hono<Env>): void {
   app.get('/ready', (c) => {
     const phase = getServerPhase()
     if (phase !== 'running') {
-      return c.json({ status: phase, restore: getRestoreState() }, 503)
+      return c.json({ status: phase, restore: getRestoreJobStatus() }, 503)
     }
     return c.json({ status: 'ok' })
   })

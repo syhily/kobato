@@ -1,13 +1,16 @@
 import { initAnalyticsDatabase } from '@/server/bootstrap/analytics-lifecycle'
-import { replayDeadLetterAccessLog } from '@/server/domains/analytics/services/batcher'
-import { replayDeadLetterAuditLog } from '@/server/domains/audit/services/batcher'
 import { scheduleNextArchive, wireArchiveScheduler } from '@/server/domains/audit/services/scheduler'
-import { registerRestoreComplete } from '@/server/domains/backup/restore-orchestrator'
+import { wireRestoreMachine } from '@/server/domains/backup/restore-machine'
 import { resetLikeTokenSweep, startLikeTokenSweep } from '@/server/domains/comments/services/likes'
 import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { wireKvSweepScheduler } from '@/server/infra/cache/kv-maintenance'
 import { isVitest } from '@/server/infra/config'
-import { flushAllBatchers, initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
+import {
+  flushAllBatchers,
+  initAllBatchers,
+  replayAllDeadLetters,
+  resetAllBatchers,
+} from '@/server/infra/db/batcher-registry'
 import {
   closeDatabase,
   openDatabase,
@@ -20,8 +23,11 @@ import { migrateDatabase } from '@/server/infra/db/migrate'
 // Load-bearing side-effect imports: each batcher module self-registers
 // on the infra batching seam (`@/server/infra/db/batcher-registry`) at
 // import time, so `initAllBatchers` / `flushAllBatchers` /
-// `resetAllBatchers` below cover every batcher with no per-domain calls.
+// `resetAllBatchers` / `replayAllDeadLetters` below cover every batcher
+// with no per-domain calls.
+import '@/server/domains/analytics/services/batcher'
 import '@/server/domains/analytics/services/pv-batcher'
+import '@/server/domains/audit/services/batcher'
 import { registerShutdownHook, restartServer, setRestartDb, setRestartRefreshSettings } from '@/server/infra/lifecycle'
 import { root } from '@/server/infra/logger'
 import { isRecord } from '@/shared/utils/type-guards'
@@ -75,85 +81,82 @@ initDatabase()
 // The DuckDB sidecar opens alongside the content database (its own
 // shutdown hook at priority 0 runs after the batcher flushes at 100).
 // Dead-letter replay follows: batch files written by a crashed flush
-// are re-ingested once per boot (fire-and-forget — the replay logs its
-// own failures and keeps the file on error).
+// are re-ingested once per boot through the registry (fire-and-forget
+// — each replay logs its own failures and keeps the file on error).
 if (!isVitest()) {
   await initAnalyticsDatabase()
-  void replayDeadLetterAccessLog().catch((error: unknown) => {
-    root.warn({ err: error instanceof Error ? error.message : String(error) }, 'Access-log dead-letter replay failed')
-  })
-  void replayDeadLetterAuditLog().catch((error: unknown) => {
-    root.warn({ err: error instanceof Error ? error.message : String(error) }, 'Audit-log dead-letter replay failed')
-  })
+  void replayAllDeadLetters()
 }
 
-// ─── Restore completion ──────────────────────────────────
-// Register restore completion: reopen the database when the restore
-// flow didn't already (the orchestrator reopens itself on the success
-// path so post-restore validation runs against the NEW file; a failed
-// restore still needs the ORIGINAL file reopened for recovery), run
-// migrations + ANALYZE on it, then restart the server.
+// ─── Restore machine wiring ──────────────────────────────
+// The composition root wires the restore machine's engine specifics:
+// prepare (flush + close), reopen, and completion (recovery reopen
+// when the job failed, migrations + ANALYZE, then the restart).
 
-registerRestoreComplete(async (success, err) => {
-  if (!success) {
-    root.error({ err: err?.message }, 'Restore failed, restarting server for recovery')
-  } else {
-    root.info('Restore succeeded, restarting server')
-  }
-
-  let recreated = false
-  try {
-    // Idempotent: the orchestrator already reopened on the success path;
-    // a failed restore reopens the ORIGINAL file here for recovery.
-    await reopenDatabase()
-    recreated = true
-  } catch (recreateErr) {
-    root.error(
-      { err: recreateErr instanceof Error ? recreateErr.message : String(recreateErr) },
-      'Database reopen failed during restore completion',
-    )
-  }
-
-  if (recreated) {
-    try {
-      scheduleNextArchive()
-    } catch (schedErr) {
-      root.warn(
-        { err: schedErr instanceof Error ? schedErr.message : String(schedErr) },
-        'Failed to reschedule archive after restore',
-      )
+wireRestoreMachine({
+  prepareForSwap: prepareDatabaseForRestore,
+  reopenAfterSwap: reopenDatabaseAndGetDb,
+  complete: async (success, err) => {
+    if (!success) {
+      root.error({ err: err?.message }, 'Restore failed, restarting server for recovery')
+    } else {
+      root.info('Restore succeeded, restarting server')
     }
-  }
 
-  if (!recreated) {
-    // Never restart into a dead handle — the server stays down (phase
-    // 'restarting', install gate closed) rather than 500ing every
-    // request against the closed database.
-    root.error('Restore completion aborted: no live database handle; server not restarted')
-    return
-  }
-
-  try {
+    let recreated = false
     try {
-      await migrateDatabase(getDb())
-      root.info('Database migrations completed after restore')
-      // Restore is a bulk load — refresh planner statistics for the
-      // swapped-in file (plan §1.9).
-      getDatabaseHandle().client.exec('ANALYZE')
-    } catch (migrateErr) {
+      // Idempotent: the orchestrator already reopened on the success path;
+      // a failed restore reopens the ORIGINAL file here for recovery.
+      await reopenDatabase()
+      recreated = true
+    } catch (recreateErr) {
       root.error(
-        { err: migrateErr instanceof Error ? migrateErr.message : String(migrateErr) },
-        'Database migrations failed after restore',
+        { err: recreateErr instanceof Error ? recreateErr.message : String(recreateErr) },
+        'Database reopen failed during restore completion',
       )
     }
-    await restartServer()
-    root.info('Restore completion finished, server back online')
-  } catch (restartErr) {
-    root.error(
-      { err: restartErr instanceof Error ? restartErr.message : String(restartErr) },
-      'Server restart failed during restore completion',
-    )
-  }
+
+    if (recreated) {
+      try {
+        scheduleNextArchive()
+      } catch (schedErr) {
+        root.warn(
+          { err: schedErr instanceof Error ? schedErr.message : String(schedErr) },
+          'Failed to reschedule archive after restore',
+        )
+      }
+    }
+
+    if (!recreated) {
+      // Never restart into a dead handle — the server stays down (phase
+      // 'restarting', install gate closed) rather than 500ing every
+      // request against the closed database.
+      root.error('Restore completion aborted: no live database handle; server not restarted')
+      return
+    }
+
+    try {
+      try {
+        await migrateDatabase(getDb())
+        root.info('Database migrations completed after restore')
+        // Restore is a bulk load — refresh planner statistics for the
+        // swapped-in file (plan §1.9).
+        getDatabaseHandle().client.exec('ANALYZE')
+      } catch (migrateErr) {
+        root.error(
+          { err: migrateErr instanceof Error ? migrateErr.message : String(migrateErr) },
+          'Database migrations failed after restore',
+        )
+      }
+      await restartServer()
+      root.info('Restore completion finished, server back online')
+    } catch (restartErr) {
+      root.error(
+        { err: restartErr instanceof Error ? restartErr.message : String(restartErr) },
+        'Server restart failed during restore completion',
+      )
+    }
+  },
 })
 
 // ─── Migration ───────────────────────────────────────────

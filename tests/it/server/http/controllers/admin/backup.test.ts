@@ -22,9 +22,10 @@ vi.mock('@/server/domains/backup/services/restore', () => ({
   restoreFromBackup: vi.fn(),
 }))
 
-vi.mock('@/server/domains/backup/restore-orchestrator', () => ({
-  performSafeRestore: vi.fn(),
-  registerRestoreComplete: vi.fn(),
+vi.mock('@/server/domains/backup/restore-machine', () => ({
+  startRestoreJob: vi.fn(),
+  tryBeginRestore: vi.fn(() => true),
+  abortRestoreClaim: vi.fn(),
 }))
 
 vi.mock('@/server/infra/storage/registry', () => ({
@@ -37,15 +38,12 @@ vi.mock('@/server/infra/lifecycle', () => ({
   unregisterShutdownHook: vi.fn(),
   setServerPhase: vi.fn(),
   restartServer: vi.fn(),
-  getRestoreState: vi.fn(() => ({ phase: 'idle' })),
-  tryBeginRestore: vi.fn(() => true),
-  resetRestoreState: vi.fn(),
   setRestartDb: vi.fn(),
   setRestartRefreshSettings: vi.fn(),
 }))
 
 const backupService = await import('@/server/domains/backup/services/backup')
-const orchestrator = await import('@/server/domains/backup/restore-orchestrator')
+const restoreMachine = await import('@/server/domains/backup/restore-machine')
 const registry = await import('@/server/infra/storage/registry')
 const { adminBackupRouter } = await import('@/server/http/controllers/admin/backup.controller')
 
@@ -113,11 +111,7 @@ describe('adminBackupRouter.restore', () => {
     const ctx = makeAuthedCtx()
     const res = await call(adminBackupRouter.restore, { key: '2026-01-01T00-00-00' }, { context: ctx })
     expect(res).toEqual({ accepted: true })
-    expect(orchestrator.performSafeRestore).toHaveBeenCalledWith(
-      { prepareForSwap: expect.any(Function), reopenAfterSwap: expect.any(Function), log: expect.any(Object) },
-      expect.any(Function),
-      expect.any(Function),
-    )
+    expect(restoreMachine.startRestoreJob).toHaveBeenCalledWith(expect.any(Function), expect.any(Function))
   })
 
   it('rejects invalid key formats', async () => {
@@ -128,8 +122,7 @@ describe('adminBackupRouter.restore', () => {
   })
 
   it('rejects concurrent restore requests', async () => {
-    const lifecycle = await import('@/server/infra/lifecycle')
-    vi.mocked(lifecycle.tryBeginRestore).mockReturnValueOnce(false)
+    vi.mocked(restoreMachine.tryBeginRestore).mockReturnValueOnce(false)
     const ctx = makeAuthedCtx()
     await expect(call(adminBackupRouter.restore, { key: '2026-01-01T00-00-00' }, { context: ctx })).rejects.toThrow(
       ORPCError,

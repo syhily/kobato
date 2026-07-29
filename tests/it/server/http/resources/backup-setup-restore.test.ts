@@ -14,11 +14,10 @@ const mockCheckPgToolsAvailable = vi.fn()
 const mockRestoreFromBackup = vi.fn()
 const mockAssertBackupContainsAdmin = vi.fn()
 const mockValidateBackupSql = vi.fn()
-const mockPerformSafeRestore = vi.fn()
+const mockStartRestoreJob = vi.fn()
 const mockTryBeginRestore = vi.fn()
 const mockRefreshBlogSettings = vi.fn()
 const mockRecordAuditEvent = vi.fn()
-const mockGetRestoreState = vi.fn()
 
 vi.mock('@/server/infra/db/operations/user', () => ({
   hasAdmin: (...args: unknown[]) => mockHasAdmin(...args),
@@ -55,9 +54,10 @@ vi.mock('@/server/domains/backup/services/validate', () => ({
   validateBackupSql: (...args: unknown[]) => mockValidateBackupSql(...args),
 }))
 
-vi.mock('@/server/domains/backup/restore-orchestrator', () => ({
-  performSafeRestore: (...args: unknown[]) => mockPerformSafeRestore(...args),
-  registerRestoreComplete: vi.fn(),
+vi.mock('@/server/domains/backup/restore-machine', () => ({
+  startRestoreJob: (...args: unknown[]) => mockStartRestoreJob(...args),
+  tryBeginRestore: () => mockTryBeginRestore(),
+  abortRestoreClaim: vi.fn(),
 }))
 
 vi.mock('@/server/domains/settings/services/hydrate', () => ({
@@ -72,9 +72,6 @@ vi.mock('@/server/infra/lifecycle', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/server/infra/lifecycle')>()
   return {
     ...actual,
-    getRestoreState: () => mockGetRestoreState(),
-    resetRestoreState: vi.fn(),
-    tryBeginRestore: () => mockTryBeginRestore(),
   }
 })
 
@@ -104,14 +101,13 @@ async function buildApp(session: ReturnType<typeof makeSession>) {
 describe('/api/admin/backup/upload-restore', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockGetRestoreState.mockReturnValue({ phase: 'idle' })
     mockTryBeginRestore.mockReturnValue(true)
     mockValidateCsrfToken.mockReturnValue(true)
     mockAssertBackupContainsAdmin.mockResolvedValue(undefined)
-    mockPerformSafeRestore.mockImplementation(
-      async (_ctx: unknown, fn: () => Promise<void>, afterReopenFn?: (db: unknown) => Promise<void>) => {
+    mockStartRestoreJob.mockImplementation(
+      async (fn: () => Promise<void>, afterReopenFn?: (db: unknown) => Promise<void>) => {
         await fn()
-        // The real orchestrator passes the freshly reopened handle.
+        // The real machine passes the freshly reopened handle.
         await afterReopenFn?.({ fake: 'db' })
       },
     )
@@ -214,7 +210,6 @@ describe('/api/admin/backup/upload-restore', () => {
 describe('/api/setup/restore', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockGetRestoreState.mockReturnValue({ phase: 'idle' })
     mockTryBeginRestore.mockReturnValue(true)
     mockHasAdmin.mockResolvedValue(false)
     mockIsSetupTokenActive.mockResolvedValue(true)
@@ -222,10 +217,10 @@ describe('/api/setup/restore', () => {
     mockCheckPgToolsAvailable.mockResolvedValue(true)
     mockAssertBackupContainsAdmin.mockResolvedValue(undefined)
     mockFindFirstAdminUser.mockResolvedValue({ id: 1, role: 'admin' })
-    mockPerformSafeRestore.mockImplementation(
-      async (_ctx: unknown, fn: () => Promise<void>, afterReopenFn?: (db: unknown) => Promise<void>) => {
+    mockStartRestoreJob.mockImplementation(
+      async (fn: () => Promise<void>, afterReopenFn?: (db: unknown) => Promise<void>) => {
         await fn()
-        // The real orchestrator passes the freshly reopened handle.
+        // The real machine passes the freshly reopened handle.
         await afterReopenFn?.({ fake: 'db' })
       },
     )
@@ -311,7 +306,7 @@ describe('/api/setup/restore', () => {
     expect(res.status).toBe(200)
     const body = (await res.json()) as { accepted: boolean }
     expect(body.accepted).toBe(true)
-    expect(mockPerformSafeRestore).toHaveBeenCalledOnce()
+    expect(mockStartRestoreJob).toHaveBeenCalledOnce()
   })
 
   it('returns 409 when a restore is already running', async () => {

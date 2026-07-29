@@ -19,13 +19,11 @@ const restoreState = vi.hoisted(() => ({
   callback: null as ((success: boolean, err?: Error) => Promise<void>) | null,
 }))
 
-const mockRegisterRestoreComplete = vi.hoisted(() =>
-  vi.fn((fn: (success: boolean, err?: Error) => Promise<void>) => {
-    restoreState.callback = fn
+const mockWireRestoreMachine = vi.hoisted(() =>
+  vi.fn((deps: { complete: (success: boolean, err?: Error) => Promise<void> }) => {
+    restoreState.callback = deps.complete
   }),
 )
-
-const mockResetRestoreComplete = vi.hoisted(() => vi.fn())
 
 vi.mock('@/server/infra/db/migrate', () => ({
   migrateDatabase: mockMigrateDatabase,
@@ -44,9 +42,8 @@ vi.mock('@/server/infra/lifecycle', () => ({
   setRestartRefreshSettings: mockSetRestartRefreshSettings,
 }))
 
-vi.mock('@/server/domains/backup/restore-orchestrator', () => ({
-  registerRestoreComplete: mockRegisterRestoreComplete,
-  resetRestoreComplete: mockResetRestoreComplete,
+vi.mock('@/server/domains/backup/restore-machine', () => ({
+  wireRestoreMachine: mockWireRestoreMachine,
 }))
 
 vi.mock('@/server/domains/settings/services/hydrate', () => ({
@@ -92,7 +89,7 @@ vi.mock('@/server/infra/logger', () => ({
   })),
 }))
 
-// Import the module to trigger module-level side effects (registerRestoreComplete).
+// Import the module to trigger module-level side effects (wireRestoreMachine).
 import '@/server/bootstrap/db-lifecycle'
 
 describe('db-lifecycle restore completion', () => {

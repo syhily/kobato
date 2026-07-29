@@ -197,3 +197,15 @@ except documented explicit wiring (settings rescheduling audit/backup,
 auth emitting audit events).
 _Avoid_: growing a new cross-domain import INTO a platform service —
 compose at the perimeter instead
+
+**Restore machine**:
+The single owner of a restore job's lifecycle
+(`domains/backup/restore-machine.ts`): claim → drain → swap → reopen →
+validate → complete → release. Two separate states: the running job
+(the slot, claimed atomically by `tryBeginRestore`, released when the
+chain finishes) and the terminal report (consumed once by the status
+projection). Engine specifics (flush/close/reopen/migrate/restart) are
+injected once by the composition root via `wireRestoreMachine`; routes
+pass a buffer, never handles or phase names.
+_Avoid_: restore orchestrator (retired — the chain was split across
+lifecycle/orchestrator/db-lifecycle/routes before consolidation)
