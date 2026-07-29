@@ -1,11 +1,11 @@
-import { DuckDBTimestampMillisecondsValue } from '@duckdb/node-api'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
+import type { EnrichedAccessEvent } from '@/server/domains/analytics/types'
 import type { AnalyticsHandle } from '@/server/infra/analytics/duckdb'
 
-import { ACCESS_LOG_DDL } from '@/server/domains/analytics/services/access-log-ddl'
+import { ACCESS_LOG_DDL, appendAccessEvent } from '@/server/domains/analytics/services/access-log'
 import { closeAnalyticsDatabase, openAnalyticsDatabase } from '@/server/infra/analytics/duckdb'
 
 const handles: AnalyticsHandle[] = []
@@ -74,31 +74,33 @@ export interface SeedAccessEvent {
 export async function seedAccessEvents(handle: AnalyticsHandle, events: SeedAccessEvent[]): Promise<void> {
   const appender = await handle.writer.createAppender('access_log')
   for (const e of events) {
-    appender.appendTimestampMilliseconds(new DuckDBTimestampMillisecondsValue(BigInt(e.ts.getTime())))
-    const s = (v: string | null | undefined) => (v == null ? appender.appendNull() : appender.appendVarchar(v))
-    s(e.visitorHash ?? 'visitor')
-    s(e.sessionId ?? null)
-    s(e.ip ?? null)
-    s(e.path ?? '/')
-    s(e.entityType ?? null)
-    e.entityId == null ? appender.appendNull() : appender.appendBigInt(BigInt(e.entityId))
-    s(e.referer ?? null)
-    s(e.refererHost ?? null)
-    s(e.country ?? null)
-    s(e.region ?? null)
-    s(e.city ?? null)
-    e.latitude == null ? appender.appendNull() : appender.appendDouble(e.latitude)
-    e.longitude == null ? appender.appendNull() : appender.appendDouble(e.longitude)
-    s(e.timezone ?? null)
-    s(e.language ?? null)
-    s(e.ua ?? null)
-    s(e.browser ?? null)
-    s(e.browserVersion ?? null)
-    s(e.os ?? null)
-    s(e.osVersion ?? null)
-    s(e.device ?? null)
-    s(e.deviceType ?? null)
-    appender.appendBoolean(e.isBot ?? false)
+    const event: EnrichedAccessEvent = {
+      ts: e.ts,
+      visitorHash: e.visitorHash ?? 'visitor',
+      sessionId: e.sessionId ?? null,
+      ip: e.ip ?? null,
+      path: e.path ?? '/',
+      entityType: e.entityType === 'post' || e.entityType === 'page' ? e.entityType : null,
+      entityId: e.entityId ?? null,
+      referer: e.referer ?? null,
+      refererHost: e.refererHost ?? null,
+      country: e.country ?? null,
+      region: e.region ?? null,
+      city: e.city ?? null,
+      latitude: e.latitude ?? null,
+      longitude: e.longitude ?? null,
+      timezone: e.timezone ?? null,
+      language: e.language ?? null,
+      ua: e.ua ?? null,
+      browser: e.browser ?? null,
+      browserVersion: e.browserVersion ?? null,
+      os: e.os ?? null,
+      osVersion: e.osVersion ?? null,
+      device: e.device ?? null,
+      deviceType: e.deviceType ?? null,
+      isBot: e.isBot ?? false,
+    }
+    appendAccessEvent(appender, event)
     appender.endRow()
   }
   appender.closeSync()

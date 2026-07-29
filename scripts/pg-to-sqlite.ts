@@ -33,16 +33,16 @@
 // Runs under vite-node (`pnpm run db:pump`) so the `@/` alias resolves —
 // the drizzle schema and `openDatabase` are imported, never duplicated.
 
-import { DuckDBTimestampMillisecondsValue } from '@duckdb/node-api'
 import { getColumns, getTableName } from 'drizzle-orm'
 import { migrate } from 'drizzle-orm/node-sqlite/migrator'
 import { existsSync, rmSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import pg from 'pg'
 
+import type { EnrichedAccessEvent } from '@/server/domains/analytics/types'
 import type { Database } from '@/server/infra/db/database'
 
-import { ACCESS_LOG_DDL } from '@/server/domains/analytics/services/access-log-ddl'
+import { ACCESS_LOG_DDL, appendAccessEvent } from '@/server/domains/analytics/services/access-log'
 import { closeAnalyticsDatabase, openAnalyticsDatabase } from '@/server/infra/analytics/duckdb'
 import { closeDatabase, openDatabase } from '@/server/infra/db/database'
 import { backup } from '@/server/infra/db/schema/backup'
@@ -155,11 +155,43 @@ async function pumpTable(client: pg.Client, db: Database, table: AnyTable): Prom
   return { table: name, rows: rows.length, skipped: false }
 }
 
+/** Project a PG access_log row (snake_case) onto an EnrichedAccessEvent. */
+function toAccessEvent(row: Record<string, unknown>): EnrichedAccessEvent {
+  const str = (v: unknown): string | null => (typeof v === 'string' ? v : null)
+  const num = (v: unknown): number | null => (typeof v === 'number' ? v : null)
+  return {
+    ts: unsafeCast<Date>(row.ts),
+    visitorHash: str(row.visitor_hash) ?? '',
+    sessionId: str(row.session_id),
+    ip: str(row.ip),
+    path: str(row.path) ?? '/',
+    entityType: row.entity_type === 'post' || row.entity_type === 'page' ? row.entity_type : null,
+    entityId: num(row.entity_id),
+    referer: str(row.referer),
+    refererHost: str(row.referer_host),
+    country: str(row.country),
+    region: str(row.region),
+    city: str(row.city),
+    latitude: num(row.latitude),
+    longitude: num(row.longitude),
+    timezone: str(row.timezone),
+    language: str(row.language),
+    ua: str(row.ua),
+    browser: str(row.browser),
+    browserVersion: str(row.browser_version),
+    os: str(row.os),
+    osVersion: str(row.os_version),
+    device: str(row.device),
+    deviceType: str(row.device_type),
+    isBot: row.is_bot === true,
+  }
+}
+
 /**
  * Pump access_log into the DuckDB sidecar (--include-analytics). Rows
  * come back from pg with ts as Date and entity_id as number (the int8
- * parser above); the appender protocol is the same one the production
- * batcher uses.
+ * parser above); the row write goes through the domain's shared
+ * appender (`appendAccessEvent`) so the column order has one owner.
  */
 async function pumpAnalytics(client: pg.Client, analyticsPath: string): Promise<number> {
   let rows: Record<string, unknown>[]
@@ -182,45 +214,7 @@ async function pumpAnalytics(client: pg.Client, analyticsPath: string): Promise<
     const appender = await handle.writer.createAppender('access_log')
     let count = 0
     for (const row of rows) {
-      appender.appendTimestampMilliseconds(
-        new DuckDBTimestampMillisecondsValue(BigInt(unsafeCast<Date>(row.ts).getTime())),
-      )
-      const s = (v: unknown) => (typeof v === 'string' ? appender.appendVarchar(v) : appender.appendNull())
-      s(row.visitor_hash)
-      s(row.session_id)
-      s(row.ip)
-      s(row.path)
-      s(row.entity_type)
-      if (typeof row.entity_id === 'number') {
-        appender.appendBigInt(BigInt(row.entity_id))
-      } else {
-        appender.appendNull()
-      }
-      s(row.referer)
-      s(row.referer_host)
-      s(row.country)
-      s(row.region)
-      s(row.city)
-      if (typeof row.latitude === 'number') {
-        appender.appendDouble(row.latitude)
-      } else {
-        appender.appendNull()
-      }
-      if (typeof row.longitude === 'number') {
-        appender.appendDouble(row.longitude)
-      } else {
-        appender.appendNull()
-      }
-      s(row.timezone)
-      s(row.language)
-      s(row.ua)
-      s(row.browser)
-      s(row.browser_version)
-      s(row.os)
-      s(row.os_version)
-      s(row.device)
-      s(row.device_type)
-      appender.appendBoolean(row.is_bot === true)
+      appendAccessEvent(appender, toAccessEvent(row))
       appender.endRow()
       count++
       if (count % 2048 === 0) {

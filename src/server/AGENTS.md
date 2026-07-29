@@ -15,7 +15,7 @@ server/
 Pure primitives; imports nothing from `domains/`, `http/`, or `render/`.
 
 - `db/` — `database.ts` (node:sqlite `DatabaseSync` open/close + pragma block), `migrate.ts`, drizzle schema, `operations/<entity>.ts` raw helpers; `insert-batcher` + `batcher-registry` for process-level write batchers; `maintenance.ts` daily vacuum/optimize job.
-- `analytics/` — the DuckDB sidecar wrapper (`duckdb.ts`: open/close/path — zero business knowledge; the access_log DDL lives in `domains/analytics/services/access-log-ddl`).
+- `analytics/` — the DuckDB sidecar wrapper (`duckdb.ts`: open/close/path — zero business knowledge; the access_log DDL + appender live in `domains/analytics/services/access-log`).
 - `cache/` — `registry` behavior plane; `through`/`get`/`set`/`remove`/`clear`/`throughMany` verbs, generation counters, `kv-maintenance` hourly expiry sweep, `inflight` request coalescing.
 - `http/` — `etag`, `headers`, `status`, `errors` with `DomainError` / `ActionFailure`.
 - `email/`, `search/` (LIKE-only dispatcher), `image/` (worker_threads pool), `crypto/`, `config.ts`, `logger.ts`, `rate-limit.ts`, `slug/`.
