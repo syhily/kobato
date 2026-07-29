@@ -259,6 +259,22 @@ describe('routes/signin', () => {
     expect((result as { data?: Record<string, unknown> }).data).toMatchObject({ redirectTo: '/admin' })
   })
 
+  it('falls back to the login view for POST-only action names', async () => {
+    // The router navigates to the submitted form's action URL, so the
+    // loader revalidates against e.g. `?action=identify` right after the
+    // identify round-trip. Those names are POST handlers, not views —
+    // resolving them as views would unmount the login form on commit.
+    for (const name of ['identify', 'passkey', 'verifyotp', 'resendotp', 'cancelotp']) {
+      const result = await loader(getLoader(`?action=${name}`))
+      expect(extractData(result).action).toBe('login')
+    }
+  })
+
+  it('keeps GET view actions as views', async () => {
+    const result = await loader(getLoader('?action=lostpassword'))
+    expect(extractData(result).action).toBe('lostpassword')
+  })
+
   it('returns verifyotp action when pendingOtpUser exists', async () => {
     state.session.set('pendingOtpUser', {
       userId: '1',

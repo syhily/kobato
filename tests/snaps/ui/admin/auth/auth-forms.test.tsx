@@ -53,6 +53,36 @@ describe('snapshot: LoginForm', () => {
     const html = stableHtml(renderInRouter(<LoginForm isSubmitting={true} />))
     expect(html).toContain('登陆中')
   })
+
+  it('carries the redirect target through the identify and passkey step URLs', () => {
+    const html = stableHtml(
+      renderInRouter(<LoginForm isSubmitting={false} redirectTo="/admin/posts" />, '/admin/signin'),
+    )
+    // Each step POSTs to its own handler URL — the router navigates to the
+    // submitted URL, so every step must carry `action` + `redirect_to`.
+    expect(html).toContain('action="/admin/signin?action=identify&amp;redirect_to=%2Fadmin%2Fposts"')
+  })
+
+  it('posts the password step to the credential handler with the redirect target', () => {
+    const html = stableHtml(
+      renderInRouter(
+        <LoginForm isSubmitting={false} redirectTo="/admin/posts" actionData={{ method: 'password' }} />,
+        '/admin/signin?action=identify',
+      ),
+    )
+    // A bare <Form> would re-post to the identify URL and loop the flow.
+    expect(html).toContain('action="/admin/signin?redirect_to=%2Fadmin%2Fposts"')
+  })
+
+  it('posts the passkey completion form to its handler with the redirect target', () => {
+    const html = stableHtml(
+      renderInRouter(
+        <LoginForm isSubmitting={false} redirectTo="/admin/posts" actionData={{ method: 'passkey' }} />,
+        '/admin/signin?action=identify',
+      ),
+    )
+    expect(html).toContain('action="/admin/signin?action=passkey&amp;redirect_to=%2Fadmin%2Fposts"')
+  })
 })
 
 describe('snapshot: MagicLinkConfirmForm', () => {

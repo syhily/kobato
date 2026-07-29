@@ -37,10 +37,27 @@ export interface LoginActionData {
 }
 
 export interface LoginFormProps {
-  action?: string
+  redirectTo?: string
   isSubmitting: boolean
   csrfToken?: string
   actionData?: LoginActionData | null
+}
+
+// Every step's form POSTs to its own handler URL: the router navigates to
+// the submitted URL, so a bare <Form> would re-hit the previous step's
+// `action` param (after identify, the password form would loop through
+// identify instead of reaching the credential handler). Each URL also
+// carries the redirect target so it survives the whole multi-step flow.
+function signinActionUrl(handler: 'identify' | 'passkey' | null, redirectTo?: string): string {
+  const params = new URLSearchParams()
+  if (handler !== null) {
+    params.set('action', handler)
+  }
+  if (redirectTo && redirectTo !== '/') {
+    params.set('redirect_to', redirectTo)
+  }
+  const query = params.toString()
+  return query ? `?${query}` : '.'
 }
 
 export function useWebAuthnSupported(): boolean {
@@ -83,7 +100,7 @@ type LoginStep = 'email' | 'password' | 'passkey'
 // visible error instead of freezing on "正在验证…".
 const PASSKEY_TIMEOUT_MS = 120_000
 
-export function LoginForm({ action, isSubmitting, csrfToken, actionData }: LoginFormProps) {
+export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: LoginFormProps) {
   // Initial step derives from the identify answer so a fresh mount (or
   // SSR) lands on the right step, not just actionData *changes*.
   const [step, setStep] = useState<LoginStep>(() =>
@@ -210,7 +227,12 @@ export function LoginForm({ action, isSubmitting, csrfToken, actionData }: Login
 
   if (step === 'password') {
     return (
-      <Form method="post" action={action} id="loginForm" className="flex w-full flex-col gap-6">
+      <Form
+        method="post"
+        action={signinActionUrl(null, redirectTo)}
+        id="loginForm"
+        className="flex w-full flex-col gap-6"
+      >
         {csrfToken ? <input type="hidden" name="csrf_token" value={csrfToken} /> : null}
         <input type="hidden" name="email" value={email} />
         <div className="flex w-full items-center justify-between gap-2">
@@ -277,7 +299,12 @@ export function LoginForm({ action, isSubmitting, csrfToken, actionData }: Login
   const isPasskeyStep = step === 'passkey'
   return (
     <div className="flex w-full flex-col gap-6">
-      <Form method="post" action="?action=identify" id="identifyForm" className="flex w-full flex-col gap-6">
+      <Form
+        method="post"
+        action={signinActionUrl('identify', redirectTo)}
+        id="identifyForm"
+        className="flex w-full flex-col gap-6"
+      >
         {csrfToken ? <input type="hidden" name="csrf_token" value={csrfToken} /> : null}
         <div className="flex w-full flex-col gap-2">
           <div className="flex items-center justify-between">
@@ -353,7 +380,7 @@ export function LoginForm({ action, isSubmitting, csrfToken, actionData }: Login
       </Form>
       {isPasskeyStep && (
         <>
-          <Form method="post" action="?action=passkey" ref={passkeyFormRef} className="hidden">
+          <Form method="post" action={signinActionUrl('passkey', redirectTo)} ref={passkeyFormRef} className="hidden">
             {csrfToken ? <input type="hidden" name="csrf_token" value={csrfToken} /> : null}
           </Form>
           {!webAuthnSupported && (

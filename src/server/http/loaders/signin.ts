@@ -17,6 +17,14 @@ import { safeRedirectPath } from '@/shared/utils/safe-url'
 // this one call, and rendering. Redirects are thrown (logout, already
 // signed-in, expired OTP); the two `data(...)` payload shapes drive the
 // login / verify-otp / lost-password / reset-password forms.
+
+// Only these URL actions name a GET view. Every other action name is a
+// POST handler (identify, passkey, verifyotp, …) — the router navigates
+// to the submitted form's action URL, so the loader revalidates against
+// e.g. `?action=identify` right after the identify round-trip. Treating
+// those names as views would unmount the login form the instant that
+// revalidation commits; they must fall back to the login view instead.
+const VIEW_ACTIONS = new Set(['magiclink', 'lostpassword', 'resetpassword', 'accept-invite'])
 export async function loadSigninData({ request, context }: Pick<LoaderFunctionArgs, 'request' | 'context'>) {
   const rc = getRequestContext({ request, context })
   const db = rc.db
@@ -113,7 +121,7 @@ export async function loadSigninData({ request, context }: Pick<LoaderFunctionAr
   const authError = url.searchParams.get('error')
   return data({
     redirectTo,
-    action: action ?? 'login',
+    action: action !== null && VIEW_ACTIONS.has(action) ? action : 'login',
     tokenError,
     resetToken,
     magicToken,

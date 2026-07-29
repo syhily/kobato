@@ -182,7 +182,12 @@ export default function LoginRoute({ actionData, loaderData }: Route.ComponentPr
       ) : null}
 
       {loaderData.action === 'login' && (
-        <LoginForm isSubmitting={isSubmitting} csrfToken={csrfToken} actionData={actionData} />
+        <LoginForm
+          redirectTo={loaderData.redirectTo}
+          isSubmitting={isSubmitting}
+          csrfToken={csrfToken}
+          actionData={actionData}
+        />
       )}
       {loaderData.action === 'magiclink' && loaderData.magicToken && (
         <MagicLinkConfirmForm token={loaderData.magicToken} isSubmitting={isSubmitting} csrfToken={csrfToken} />
