@@ -5,11 +5,11 @@ import { withRestoreClaim } from '@/server/domains/backup/restore-machine'
 import {
   createBackup,
   deleteBackup,
-  getBackupBuffer,
+  getBackupStream,
   isValidBackupKey,
   listBackups,
 } from '@/server/domains/backup/services/backup'
-import { restoreFromBackup } from '@/server/domains/backup/services/restore'
+import { restoreFromStagedBackup, stageBackup } from '@/server/domains/backup/services/restore'
 import { adminProc } from '@/server/http/orpc-base'
 import { ActionFailure } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
@@ -86,10 +86,11 @@ const restore = adminProc
     // check-then-act across an await races a second restore into the
     // same staging path. The machine owns the claim/abort choreography.
     const outcome = await withRestoreClaim(async () => {
-      const buffer = await getBackupBuffer(context.db, input.key)
+      const stream = await getBackupStream(context.db, input.key)
+      const staged = await stageBackup(stream)
       return {
         restoreFn: async () => {
-          await restoreFromBackup(buffer, input.key)
+          await restoreFromStagedBackup(staged, input.key)
         },
         afterReopenFn: async () => {
           // The audit event buffers into the re-initialized batcher, which

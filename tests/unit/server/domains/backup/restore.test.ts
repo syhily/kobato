@@ -1,8 +1,8 @@
 import { createGzip } from 'node:zlib'
 import { describe, expect, it } from 'vitest'
 
-import { extractBackupFile, unpackBackupPayload } from '@/server/domains/backup/services/restore'
-import { packTar } from '@/server/domains/backup/services/tar'
+import { extractBackupFile, unpackBackupPayload } from '#/_helpers/backup-buffer'
+import { packTar } from '#/_helpers/backup-buffer'
 import { ActionFailure } from '@/server/infra/http/errors'
 
 async function gzipBytes(input: Buffer): Promise<Buffer> {
@@ -71,7 +71,7 @@ describe('services/backup — unpackBackupPayload', () => {
   })
 
   it('rejects an analytics-only upload for the setup admin check', async () => {
-    const { assertBackupContainsAdmin } = await import('@/server/domains/backup/services/restore')
+    const { assertBackupContainsAdmin } = await import('#/_helpers/backup-buffer')
     await expect(assertBackupContainsAdmin(fakeDuckdbFile())).rejects.toThrow('备份中不包含管理员账号')
   })
 

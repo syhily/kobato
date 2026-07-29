@@ -42,8 +42,8 @@ vi.mock('@/server/http/middlewares/rate-limit', () => ({
 }))
 
 vi.mock('@/server/domains/backup/services/restore', () => ({
+  MAX_BACKUP_FILE_SIZE: 500 * 1024 * 1024,
   stageBackup: (...args: unknown[]) => mockStageBackup(...args),
-  restoreFromBackup: vi.fn(async () => undefined),
   restoreFromStagedBackup: (...args: unknown[]) => mockRestoreFromStagedBackup(...args),
   assertStagedBackupContainsAdmin: (...args: unknown[]) => mockAssertStagedBackupContainsAdmin(...args),
 }))

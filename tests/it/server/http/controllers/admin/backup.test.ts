@@ -10,12 +10,14 @@ vi.mock('@/server/domains/backup/services/backup', async (importOriginal) => {
     createBackup: vi.fn(),
     deleteBackup: vi.fn(),
     getBackupBuffer: vi.fn(),
+    getBackupStream: vi.fn(),
     listBackups: vi.fn(),
   }
 })
 
 vi.mock('@/server/domains/backup/services/restore', () => ({
-  restoreFromBackup: vi.fn(),
+  stageBackup: vi.fn(async () => ({ dir: '/tmp/staged', content: '/tmp/staged/kobato.db', analytics: null })),
+  restoreFromStagedBackup: vi.fn(async () => undefined),
 }))
 
 vi.mock('@/server/domains/backup/restore-machine', () => ({
@@ -118,8 +120,8 @@ describe('adminBackupRouter.delete', () => {
 
 describe('adminBackupRouter.restore', () => {
   it('returns accepted after restoring backup', async () => {
-    const buffer = Buffer.from('sql')
-    vi.mocked(backupService.getBackupBuffer).mockResolvedValueOnce(buffer)
+    const { Readable } = await import('node:stream')
+    vi.mocked(backupService.getBackupStream).mockResolvedValueOnce(Readable.from(['archive-bytes']))
     const ctx = makeAuthedCtx()
     const res = await call(adminBackupRouter.restore, { key: '2026-01-01T00-00-00' }, { context: ctx })
     expect(res).toEqual({ accepted: true })

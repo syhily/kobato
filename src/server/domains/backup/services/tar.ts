@@ -10,17 +10,16 @@ import { ActionFailure } from '@/server/infra/http/errors'
  * a tar entry is a 512-byte header + 512-padded payload; the archive
  * ends with two zero blocks. Only the fields we write are parsed back.
  *
- * Production paths are STREAMING (`createTarReadStream` /
- * `listTarEntriesInFile`) — whole-file packing (`packTar`) and
- * subarray views (`unpackTar`) are for tests and tiny payloads.
+ * Everything here is STREAMING (`createTarReadStream` /
+ * `listTarEntriesInFile`) — the whole-file packing (`packTar`) and
+ * subarray views (`unpackTar`) are the test tier and live in
+ * tests/_helpers/backup-buffer.ts.
  */
 
-export interface TarEntry {
-  name: string
-  data: Buffer
-}
-
-const BLOCK = 512
+/** The tar block size — exported for the test-tier reader in
+ *  tests/_helpers/backup-buffer.ts (its offset math shares the constant). */
+export const TAR_BLOCK = 512
+const BLOCK = TAR_BLOCK
 const USTAR_OFFSET = 257
 
 function writeString(target: Buffer, offset: number, length: number, value: string): void {
@@ -74,20 +73,6 @@ export function tarPaddingSize(size: number): number {
   return remainder === 0 ? 0 : BLOCK - remainder
 }
 
-export function packTar(entries: TarEntry[]): Buffer {
-  const blocks: Buffer[] = []
-  for (const entry of entries) {
-    blocks.push(tarEntryHeader(entry.name, entry.data.length))
-    blocks.push(entry.data)
-    const padding = tarPaddingSize(entry.data.length)
-    if (padding !== 0) {
-      blocks.push(Buffer.alloc(padding))
-    }
-  }
-  blocks.push(Buffer.alloc(BLOCK * 2))
-  return Buffer.concat(blocks)
-}
-
 /**
  * Stream an archive: headers, file contents, and padding flow through
  * without ever holding a full database file in memory. Yields header
@@ -118,12 +103,12 @@ export interface TarEntryMeta {
 }
 
 /** Read a NUL-terminated latin1 string (tar's fixed-width fields). */
-function readCString(buffer: Buffer): string {
+export function readCString(buffer: Buffer): string {
   const end = buffer.indexOf(0)
   return buffer.toString('latin1', 0, end === -1 ? buffer.length : end)
 }
 
-function readOctal(buffer: Buffer, offset: number, length: number): number {
+export function readOctal(buffer: Buffer, offset: number, length: number): number {
   return Number.parseInt(readCString(buffer.subarray(offset, offset + length)).trim(), 8)
 }
 
@@ -155,34 +140,4 @@ export async function listTarEntriesInFile(rawPath: string): Promise<TarEntryMet
   } finally {
     await handle.close()
   }
-}
-
-function isZeroBlock(buffer: Buffer, offset: number): boolean {
-  for (let i = offset; i < offset + BLOCK; i++) {
-    if (buffer[i] !== 0) {
-      return false
-    }
-  }
-  return true
-}
-
-export function unpackTar(buffer: Buffer): TarEntry[] {
-  if (!isTarArchive(buffer)) {
-    throw new ActionFailure(400, '备份文件不是有效的归档格式')
-  }
-  const entries: TarEntry[] = []
-  let offset = 0
-  while (offset + BLOCK <= buffer.length) {
-    if (isZeroBlock(buffer, offset)) {
-      break
-    }
-    const name = readCString(buffer.subarray(offset, offset + 100))
-    const size = readOctal(buffer, offset + 124, 12)
-    if (name === '' || Number.isNaN(size) || size < 0 || offset + BLOCK + size > buffer.length) {
-      throw new ActionFailure(400, '备份归档内容损坏')
-    }
-    entries.push({ name, data: buffer.subarray(offset + BLOCK, offset + BLOCK + size) })
-    offset += BLOCK + Math.ceil(size / BLOCK) * BLOCK
-  }
-  return entries
 }

@@ -1,3 +1,5 @@
+import type { Readable } from 'node:stream'
+
 import { sql } from 'drizzle-orm'
 import { statSync } from 'node:fs'
 import { unlink } from 'node:fs/promises'
@@ -186,6 +188,19 @@ export async function getBackupBuffer(db: Database, timestamp: string): Promise<
     throw new Error(`Backup row not found for timestamp ${timestamp}`)
   }
   return backendFor(row.storageDriver).get(row.storagePath)
+}
+
+/**
+ * The restore path's read: a stream, so the staging pipeline never
+ * holds the archive in memory. (The download endpoint keeps the
+ * buffered variant — it serves the file as one response body.)
+ */
+export async function getBackupStream(db: Database, timestamp: string): Promise<Readable> {
+  const row = await findBackupByTimestamp(db, timestamp)
+  if (row === null) {
+    throw new Error(`Backup row not found for timestamp ${timestamp}`)
+  }
+  return backendFor(row.storageDriver).getStream(row.storagePath)
 }
 
 export async function deleteBackup(db: Database, timestamp: string): Promise<void> {

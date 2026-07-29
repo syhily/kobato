@@ -24,8 +24,8 @@ vi.mock('@/server/bootstrap/analytics-lifecycle', () => ({
   },
 }))
 
+import { extractBackupFile, unpackBackupPayload } from '#/_helpers/backup-buffer'
 import { createBackup, getBackupBuffer } from '@/server/domains/backup/services/backup'
-import { extractBackupFile, unpackBackupPayload } from '@/server/domains/backup/services/restore'
 import { category } from '@/server/infra/db/schema/taxonomy'
 import { ActionFailure } from '@/server/infra/http/errors'
 

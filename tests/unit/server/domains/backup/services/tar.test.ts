@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { isTarArchive, packTar, unpackTar } from '@/server/domains/backup/services/tar'
+import { packTar, unpackTar } from '#/_helpers/backup-buffer'
+import { isTarArchive } from '@/server/domains/backup/services/tar'
 
 describe('backup/services/tar', () => {
   it('round-trips entries with byte-exact payloads', () => {

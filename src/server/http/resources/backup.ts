@@ -1,6 +1,9 @@
+import type { ReadableStream as WebReadableStream } from 'node:stream/web'
+
 import { Hono } from 'hono'
 import { bodyLimit } from 'hono/body-limit'
 import { rmSync } from 'node:fs'
+import { Readable } from 'node:stream'
 
 import type { Env } from '@/server/http/context'
 
@@ -12,7 +15,7 @@ import { getBackupBuffer, isValidBackupKey } from '@/server/domains/backup/servi
 import {
   type StagedBackup,
   assertStagedBackupContainsAdmin,
-  restoreFromBackup,
+  MAX_BACKUP_FILE_SIZE,
   restoreFromStagedBackup,
   stageBackup,
 } from '@/server/domains/backup/services/restore'
@@ -22,6 +25,7 @@ import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'
 import { rateLimitByIp } from '@/server/http/middlewares/rate-limit'
 import { findFirstAdminUser, hasAdmin } from '@/server/infra/db/operations/user'
 import { getLogger } from '@/server/infra/logger'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const log = getLogger('backup.upload')
 
@@ -49,7 +53,7 @@ export const backupRouter = new Hono<Env>()
     requireRoleMw('admin'),
     csrfGuard,
     bodyLimit({
-      maxSize: 500 * 1024 * 1024, // 500 MB
+      maxSize: MAX_BACKUP_FILE_SIZE,
       onError: (c) => c.json({ error: { message: '上传文件过大' } }, 413),
     }),
     async (c) => {
@@ -65,11 +69,11 @@ export const backupRouter = new Hono<Env>()
           missingFile = true
           return null
         }
-        const buffer = Buffer.from(await file.arrayBuffer())
+        const staged = await stageBackup(Readable.fromWeb(unsafeCast<WebReadableStream>(file.stream())))
         const fileName = file.name
         return {
           restoreFn: async () => {
-            await restoreFromBackup(buffer, fileName)
+            await restoreFromStagedBackup(staged, fileName)
             log.info('Restore from uploaded backup completed')
           },
         }
@@ -88,7 +92,7 @@ export const backupRouter = new Hono<Env>()
     '/api/setup/restore',
     rateLimitByIp('setupRestore', { windowSeconds: 3600, maxAttempts: 5 }),
     bodyLimit({
-      maxSize: 500 * 1024 * 1024, // 500 MB
+      maxSize: MAX_BACKUP_FILE_SIZE,
       onError: (c) => c.json({ error: { message: '上传文件过大' } }, 413),
     }),
     async (c) => {
@@ -122,8 +126,6 @@ export const backupRouter = new Hono<Env>()
         return c.json({ error: { message: '请上传文件' } }, 400)
       }
 
-      const buffer = Buffer.from(await file.arrayBuffer())
-
       // Stage the upload on disk ONCE (streamed decompression), then
       // pre-validate the backup's contents (a backup without an admin
       // can never complete setup) BEFORE claiming the restore slot —
@@ -133,7 +135,7 @@ export const backupRouter = new Hono<Env>()
       // decompressed a single time and never fully held in memory.
       let staged: StagedBackup
       try {
-        staged = await stageBackup(buffer)
+        staged = await stageBackup(Readable.fromWeb(unsafeCast<WebReadableStream>(file.stream())))
       } catch {
         return c.json({ error: { message: '备份文件无效或已损坏。' } }, 400)
       }

@@ -1,19 +1,14 @@
-import { createReadStream, createWriteStream, mkdtempSync, rmSync } from 'node:fs'
+import type { Readable } from 'node:stream'
+
+import { createReadStream, createWriteStream, rmSync } from 'node:fs'
 import { copyFile, mkdtemp, open, rename, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import { pipeline } from 'node:stream/promises'
-import { createGunzip, gunzipSync } from 'node:zlib'
+import { createGunzip } from 'node:zlib'
 
-import {
-  MAX_BACKUP_FILE_SIZE,
-  assertDuckdbBackup,
-  assertSqliteBackup,
-  hasDuckdbMagic,
-  hasSqliteMagic,
-} from '@/server/domains/backup/services/shared'
-import { isTarArchive, listTarEntriesInFile, unpackTar } from '@/server/domains/backup/services/tar'
+import { isTarArchive, listTarEntriesInFile } from '@/server/domains/backup/services/tar'
 import { resolveAnalyticsPath } from '@/server/infra/analytics/duckdb'
 import { isInMemoryPath, resolveDatabasePath } from '@/server/infra/db/database'
 import { ActionFailure } from '@/server/infra/http/errors'
@@ -21,63 +16,63 @@ import { getLogger } from '@/server/infra/logger'
 
 const log = getLogger('backup.service')
 
+// Decompressed backup size cap: 500 MB.
+export const MAX_BACKUP_FILE_SIZE = 500 * 1024 * 1024
+
+/** The 16-byte magic header every SQLite database file starts with. */
+const SQLITE_MAGIC = Buffer.from('SQLite format 3\0', 'latin1')
+
+/** DuckDB's storage magic: 4 ASCII bytes after the 8-byte checksum. */
+const DUCKDB_MAGIC_OFFSET = 8
+const DUCKDB_MAGIC = 'DUCK'
+
 const GZIP_MAGIC_1 = 0x1f
 const GZIP_MAGIC_2 = 0x8b
 const HEAD_BYTES = 600
 
-/**
- * Decompress an uploaded/downloaded backup payload: gunzip when the
- * payload is gzipped (the `createBackup` format), pass through when it
- * is already a raw archive/database file. In-memory, for small payloads
- * and tests — the production restore path streams decompression to
- * disk (`stageBackup`).
- */
-export function extractBackupFile(buffer: Buffer): Buffer {
-  return buffer.length >= 2 && buffer[0] === GZIP_MAGIC_1 && buffer[1] === GZIP_MAGIC_2 ? gunzipSync(buffer) : buffer
+/** Whether a (prefix of a) payload starts with the SQLite header magic. */
+export function hasSqliteMagic(buffer: Buffer): boolean {
+  return buffer.length >= SQLITE_MAGIC.length && buffer.subarray(0, SQLITE_MAGIC.length).equals(SQLITE_MAGIC)
 }
 
-export interface BackupPayload {
-  /** The SQLite content database — null on an analytics-only restore. */
-  content: Buffer | null
-  /** The DuckDB analytics sidecar — null when the upload carries none. */
-  analytics: Buffer | null
+/** Whether a (prefix of a) payload carries DuckDB's storage magic. */
+export function hasDuckdbMagic(buffer: Buffer): boolean {
+  return (
+    buffer.length >= DUCKDB_MAGIC_OFFSET + DUCKDB_MAGIC.length &&
+    buffer.subarray(DUCKDB_MAGIC_OFFSET, DUCKDB_MAGIC_OFFSET + DUCKDB_MAGIC.length).toString('latin1') === DUCKDB_MAGIC
+  )
 }
 
 /**
- * Unpack a decompressed backup into its engine payloads, in memory
- * (subarray views — no copies). Accepted shapes: the two-file tar
- * archive, a raw SQLite file (content-only), a raw DuckDB file
- * (analytics-only). Used by tests and the setup probe on small
- * payloads; production restores go through `stageBackup` instead.
+ * Validate a (decompressed) payload as a real SQLite database file.
+ * This is the entire restore-file security surface: unlike the old
+ * pg_dump SQL restores — which needed a statement-level validator —
+ * a database file is data, not code; nothing in it is ever executed as
+ * SQL by the restore path.
  */
-export function unpackBackupPayload(raw: Buffer): BackupPayload {
-  if (isTarArchive(raw)) {
-    const entries = unpackTar(raw)
-    const content = entries.find((entry) => entry.name === 'kobato.db')
-    if (content === undefined) {
-      throw new ActionFailure(400, '备份归档中缺少内容数据库 kobato.db')
-    }
-    assertSqliteBackup(content.data)
-    const analytics = entries.find((entry) => entry.name === 'analytics.duckdb')
-    if (analytics !== undefined) {
-      assertDuckdbBackup(analytics.data)
-    }
-    return { content: content.data, analytics: analytics?.data ?? null }
+export function assertSqliteBackup(buffer: Buffer): void {
+  if (buffer.length > MAX_BACKUP_FILE_SIZE) {
+    throw new ActionFailure(400, '备份文件过大，请确认文件未损坏。')
   }
-  if (hasDuckdbMagic(raw)) {
-    assertDuckdbBackup(raw)
-    return { content: null, analytics: raw }
+  if (!hasSqliteMagic(buffer)) {
+    throw new ActionFailure(400, '备份文件不是有效的 SQLite 数据库文件')
   }
-  // Legacy content-only shape: raw SQLite bytes.
-  assertSqliteBackup(raw)
-  return { content: raw, analytics: null }
+}
+
+/** Validate a payload as a real DuckDB database file (the analytics sidecar). */
+export function assertDuckdbBackup(buffer: Buffer): void {
+  if (!hasDuckdbMagic(buffer)) {
+    throw new ActionFailure(400, '备份归档中的 analytics.duckdb 不是有效的 DuckDB 数据库文件')
+  }
 }
 
 // ─── Staged (streaming) restore ──────────────────────────
-// The production path: the upload (bounded at 500 MB by the multipart
-// layer) streams to disk, decompresses through the pipeline, and tar
-// entries extract via ranged reads — a full database file is never
-// held in memory.
+// The production path: the upload (bounded at MAX_BACKUP_FILE_SIZE by
+// the multipart layer) streams to disk, decompresses through the
+// pipeline, and tar entries extract via ranged reads — a full database
+// file is never held in memory. The in-memory buffer tier
+// (extractBackupFile / unpackBackupPayload / packTar / unpackTar) lives
+// in tests/_helpers/backup-buffer.ts.
 
 export interface StagedBackup {
   /** Temp dir holding the decompressed payload + extracted entries. */
@@ -107,16 +102,23 @@ async function copyRange(sourcePath: string, offset: number, size: number, destP
  * Stage an uploaded backup on disk: stream it to a temp dir,
  * decompress through the pipeline, and extract the engine payloads as
  * files (magic-validated from their prefixes). Memory use stays
- * O(chunk) regardless of backup size. The caller owns `dir`'s cleanup
- * (restoreFromStagedBackup and the route's error paths handle it).
+ * O(chunk) regardless of backup size — the source may be a download or
+ * multipart stream (production) or a Buffer (tests). The caller owns
+ * `dir`'s cleanup (restoreFromStagedBackup and the route's error paths
+ * handle it).
  */
-export async function stageBackup(buffer: Buffer): Promise<StagedBackup> {
+export async function stageBackup(source: Buffer | Readable): Promise<StagedBackup> {
   const dir = await mkdtemp(join(tmpdir(), 'kobato-restore-'))
   const uploadPath = join(dir, 'upload.bin')
   const rawPath = join(dir, 'payload')
   try {
-    await writeFile(uploadPath, buffer)
-    if (buffer.length >= 2 && buffer[0] === GZIP_MAGIC_1 && buffer[1] === GZIP_MAGIC_2) {
+    if (Buffer.isBuffer(source)) {
+      await writeFile(uploadPath, source)
+    } else {
+      await pipeline(source, createWriteStream(uploadPath))
+    }
+    const magic = await readPrefix(uploadPath, 2)
+    if (magic.length >= 2 && magic[0] === GZIP_MAGIC_1 && magic[1] === GZIP_MAGIC_2) {
       await pipeline(createReadStream(uploadPath), createGunzip(), createWriteStream(rawPath))
     } else {
       await copyFile(uploadPath, rawPath)
@@ -135,17 +137,13 @@ export async function stageBackup(buffer: Buffer): Promise<StagedBackup> {
       }
       const contentPath = join(dir, 'kobato.db')
       await copyRange(rawPath, content.offset, content.size, contentPath)
-      if (!hasSqliteMagic(await readPrefix(contentPath, 16))) {
-        throw new ActionFailure(400, '备份归档中的 kobato.db 不是有效的 SQLite 数据库文件')
-      }
+      assertSqliteBackup(await readPrefix(contentPath, 16))
       let analyticsPath: string | null = null
       const analytics = entries.find((entry) => entry.name === 'analytics.duckdb')
       if (analytics !== undefined) {
         analyticsPath = join(dir, 'analytics.duckdb')
         await copyRange(rawPath, analytics.offset, analytics.size, analyticsPath)
-        if (!hasDuckdbMagic(await readPrefix(analyticsPath, 12))) {
-          throw new ActionFailure(400, '备份归档中的 analytics.duckdb 不是有效的 DuckDB 数据库文件')
-        }
+        assertDuckdbBackup(await readPrefix(analyticsPath, 12))
       }
       return { dir, content: contentPath, analytics: analyticsPath }
     }
@@ -154,9 +152,7 @@ export async function stageBackup(buffer: Buffer): Promise<StagedBackup> {
       await copyFile(rawPath, analyticsPath)
       return { dir, content: null, analytics: analyticsPath }
     }
-    if (!hasSqliteMagic(head)) {
-      throw new ActionFailure(400, '备份文件不是有效的 SQLite 数据库文件')
-    }
+    assertSqliteBackup(head)
     const contentPath = join(dir, 'kobato.db')
     await copyFile(rawPath, contentPath)
     return { dir, content: contentPath, analytics: null }
@@ -190,22 +186,6 @@ export async function assertStagedBackupContainsAdmin(staged: StagedBackup): Pro
     }
   } finally {
     db.close()
-  }
-}
-
-/** Buffer-based variant for tests and small payloads. */
-export async function assertBackupContainsAdmin(buffer: Buffer): Promise<void> {
-  const { content } = unpackBackupPayload(extractBackupFile(buffer))
-  if (content === null) {
-    throw new ActionFailure(400, '备份中不包含管理员账号')
-  }
-  const dir = mkdtempSync(join(tmpdir(), 'kobato-restore-check-'))
-  try {
-    const probe = join(dir, 'probe.db')
-    await writeFile(probe, content)
-    await assertStagedBackupContainsAdmin({ dir, content: probe, analytics: null })
-  } finally {
-    rmSync(dir, { recursive: true, force: true })
   }
 }
 
@@ -274,16 +254,5 @@ export async function restoreFromStagedBackup(
     log.info('Restore completed successfully', { fileName })
   } finally {
     rmSync(staged.dir, { recursive: true, force: true })
-  }
-}
-
-/** Buffer-in convenience wrapper (admin + upload restore paths). */
-export async function restoreFromBackup(buffer: Buffer, fileName: string, options: RestoreOptions = {}): Promise<void> {
-  const staged = await stageBackup(buffer)
-  try {
-    await restoreFromStagedBackup(staged, fileName, options)
-  } catch (error) {
-    rmSync(staged.dir, { recursive: true, force: true })
-    throw error
   }
 }
