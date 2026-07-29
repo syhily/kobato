@@ -20,8 +20,24 @@ vi.mock('@/server/domains/backup/services/restore', () => ({
 
 vi.mock('@/server/domains/backup/restore-machine', () => ({
   startRestoreJob: vi.fn(),
-  tryBeginRestore: vi.fn(() => true),
-  abortRestoreClaim: vi.fn(),
+  // The default honors the real contract (prepare → start → 'started');
+  // individual cases override with 'busy'.
+  withRestoreClaim: vi.fn(
+    async (
+      prepare: () => Promise<{
+        restoreFn: () => Promise<void>
+        afterReopenFn?: () => Promise<void>
+      } | null>,
+    ) => {
+      const job = await prepare()
+      if (job === null) {
+        return 'declined'
+      }
+      const machine = await import('@/server/domains/backup/restore-machine')
+      machine.startRestoreJob(job.restoreFn, job.afterReopenFn)
+      return 'started'
+    },
+  ),
 }))
 
 vi.mock('@/server/infra/storage/registry', () => ({
@@ -118,7 +134,7 @@ describe('adminBackupRouter.restore', () => {
   })
 
   it('rejects concurrent restore requests', async () => {
-    vi.mocked(restoreMachine.tryBeginRestore).mockReturnValueOnce(false)
+    vi.mocked(restoreMachine.withRestoreClaim).mockResolvedValueOnce('busy')
     const ctx = makeAuthedCtx()
     await expect(call(adminBackupRouter.restore, { key: '2026-01-01T00-00-00' }, { context: ctx })).rejects.toThrow(
       ORPCError,

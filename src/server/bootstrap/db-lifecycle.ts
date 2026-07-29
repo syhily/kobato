@@ -28,7 +28,14 @@ import { migrateDatabase } from '@/server/infra/db/migrate'
 import '@/server/domains/analytics/services/batcher'
 import '@/server/domains/analytics/services/pv-batcher'
 import '@/server/domains/audit/services/batcher'
-import { registerShutdownHook, restartServer, setRestartDb, setRestartRefreshSettings } from '@/server/infra/lifecycle'
+import {
+  closeHttpServer,
+  registerShutdownHook,
+  restartServer,
+  setRestartDb,
+  setRestartRefreshSettings,
+  setServerPhase,
+} from '@/server/infra/lifecycle'
 import { root } from '@/server/infra/logger'
 import { isRecord } from '@/shared/utils/type-guards'
 
@@ -162,6 +169,10 @@ export async function completeRestore(success: boolean, err?: Error): Promise<vo
 }
 
 wireRestoreMachine({
+  drain: async () => {
+    setServerPhase('restarting')
+    await closeHttpServer()
+  },
   prepareForSwap: prepareDatabaseForRestore,
   reopenAfterSwap: reopenDatabaseAndGetDb,
   complete: completeRestore,

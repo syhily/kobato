@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
-import { abortRestoreClaim, startRestoreJob, tryBeginRestore } from '@/server/domains/backup/restore-machine'
+import { withRestoreClaim } from '@/server/domains/backup/restore-machine'
 import {
   createBackup,
   deleteBackup,
@@ -84,35 +84,28 @@ const restore = adminProc
     }
     // Claim the restore slot BEFORE the (potentially large) download —
     // check-then-act across an await races a second restore into the
-    // same staging path.
-    if (!tryBeginRestore()) {
+    // same staging path. The machine owns the claim/abort choreography.
+    const outcome = await withRestoreClaim(async () => {
+      const buffer = await getBackupBuffer(context.db, input.key)
+      return {
+        restoreFn: async () => {
+          await restoreFromBackup(buffer, input.key)
+        },
+        afterReopenFn: async () => {
+          // The audit event buffers into the re-initialized batcher, which
+          // writes to the restored database.
+          recordAuditEventFromContext(context, {
+            action: 'backup_restored',
+            resourceType: 'backup',
+            resourceId: input.key,
+          })
+          log.info('Restore completed', { key: input.key })
+        },
+      }
+    })
+    if (outcome === 'busy') {
       throw new ActionFailure(409, '已有还原任务正在进行，请等待完成后再试。')
     }
-
-    const { db } = context
-    let buffer: Buffer
-    try {
-      buffer = await getBackupBuffer(db, input.key)
-    } catch (error) {
-      abortRestoreClaim()
-      throw error
-    }
-
-    startRestoreJob(
-      async () => {
-        await restoreFromBackup(buffer, input.key)
-      },
-      async () => {
-        // The audit event buffers into the re-initialized batcher, which
-        // writes to the restored database.
-        recordAuditEventFromContext(context, {
-          action: 'backup_restored',
-          resourceType: 'backup',
-          resourceId: input.key,
-        })
-        log.info('Restore completed', { key: input.key })
-      },
-    )
 
     return { accepted: true }
   })

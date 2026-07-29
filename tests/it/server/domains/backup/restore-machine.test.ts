@@ -1,16 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const closeHttpServer = vi.fn().mockResolvedValue(undefined)
-const setServerPhase = vi.fn()
+const drainMock = vi.hoisted(() => vi.fn().mockResolvedValue(undefined))
 const prepareForSwapMock = vi.hoisted(() => vi.fn())
 const reopenAfterSwapMock = vi.hoisted(() => vi.fn().mockResolvedValue({ fake: 'db' }))
 const completeMock = vi.hoisted(() => vi.fn().mockResolvedValue(undefined))
-
-vi.mock('@/server/infra/lifecycle', () => ({
-  closeHttpServer,
-  setServerPhase,
-  getServerPhase: vi.fn().mockReturnValue('restarting'),
-}))
 
 const logger = vi.hoisted(() => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }))
 
@@ -22,6 +15,7 @@ const machine = await import('@/server/domains/backup/restore-machine')
 
 function wire() {
   machine.wireRestoreMachine({
+    drain: drainMock,
     prepareForSwap: prepareForSwapMock,
     reopenAfterSwap: reopenAfterSwapMock,
     complete: completeMock,
@@ -65,7 +59,7 @@ describe('backup/restore-machine', () => {
 
   it('runs the chain in order: drain → prepare → swap → reopen → after → complete', async () => {
     const order: string[] = []
-    closeHttpServer.mockImplementationOnce(async () => void order.push('drain'))
+    drainMock.mockImplementationOnce(async () => void order.push('drain'))
     prepareForSwapMock.mockImplementationOnce(() => void order.push('prepare'))
     reopenAfterSwapMock.mockImplementationOnce(async () => {
       order.push('reopen')
@@ -154,15 +148,59 @@ describe('backup/restore-machine', () => {
     expect(completeMock).not.toHaveBeenCalled()
   })
 
+  describe('withRestoreClaim', () => {
+    it('starts the prepared job and reports started', async () => {
+      const restoreFn = vi.fn().mockResolvedValue(undefined)
+      const outcome = await machine.withRestoreClaim(async () => ({ restoreFn }))
+      await settle()
+
+      expect(outcome).toBe('started')
+      expect(restoreFn).toHaveBeenCalledOnce()
+      expect(machine.consumeRestoreJobReport().phase).toBe('completed')
+    })
+
+    it('returns busy without running prepare while a job is in flight', async () => {
+      expect(machine.tryBeginRestore()).toBe(true)
+      const prepare = vi.fn()
+
+      const outcome = await machine.withRestoreClaim(prepare)
+
+      expect(outcome).toBe('busy')
+      expect(prepare).not.toHaveBeenCalled()
+    })
+
+    it('releases the claim when prepare throws — the slot never leaks', async () => {
+      await expect(
+        machine.withRestoreClaim(async () => {
+          throw new Error('body parse failed')
+        }),
+      ).rejects.toThrow('body parse failed')
+
+      // The slot is free again.
+      expect(machine.tryBeginRestore()).toBe(true)
+      machine.abortRestoreClaim()
+    })
+
+    it('releases the claim and reports declined when prepare passes on the request', async () => {
+      const outcome = await machine.withRestoreClaim(async () => null)
+
+      expect(outcome).toBe('declined')
+      expect(machine.tryBeginRestore()).toBe(true)
+      machine.abortRestoreClaim()
+    })
+  })
+
   it('re-registration replaces the wiring (HMR safety)', async () => {
     const first = vi.fn().mockResolvedValue(undefined)
     const second = vi.fn().mockResolvedValue(undefined)
     machine.wireRestoreMachine({
+      drain: drainMock,
       prepareForSwap: prepareForSwapMock,
       reopenAfterSwap: reopenAfterSwapMock,
       complete: first,
     })
     machine.wireRestoreMachine({
+      drain: drainMock,
       prepareForSwap: prepareForSwapMock,
       reopenAfterSwap: reopenAfterSwapMock,
       complete: second,

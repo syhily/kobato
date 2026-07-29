@@ -1,6 +1,5 @@
 import type { Database } from '@/server/infra/db/database'
 
-import { closeHttpServer, setServerPhase } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
 
 /**
@@ -34,6 +33,9 @@ export interface RestoreJobStatus {
 }
 
 export interface RestoreMachineDeps {
+  /** Stop accepting requests and drain in-flight ones (HTTP close +
+   * server phase) — the chain's first step. */
+  drain(): Promise<void> | void
   /** Flush batchers and close the live database handle. MUST run before
    * the swap — SQLite keeps the file open, and on Windows a
    * replaced-under-foot file would fail outright (on POSIX it would
@@ -97,6 +99,45 @@ export function abortRestoreClaim(): void {
   }
 }
 
+export interface RestoreJobInput {
+  restoreFn: () => Promise<void>
+  afterReopenFn?: (db: Database) => Promise<void>
+}
+
+/**
+ * The one guarded entry into the claim lifecycle for route handlers.
+ * Claims the slot BEFORE `prepare` runs (a slow body read or download
+ * must never race a second restore into the slot), aborts the claim
+ * when `prepare` throws (the error propagates) or declines by
+ * returning null, and hands the prepared job to the machine. The
+ * claim/abort choreography used to be hand-copied at every route —
+ * getting it wrong leaks the slot, so it lives here now.
+ *
+ * Outcomes: 'busy' (another restore holds the slot), 'declined'
+ * (prepare passed on the request; the claim is released), 'started'
+ * (the job is running).
+ */
+export async function withRestoreClaim(
+  prepare: () => Promise<RestoreJobInput | null>,
+): Promise<'busy' | 'declined' | 'started'> {
+  if (!tryBeginRestore()) {
+    return 'busy'
+  }
+  let job: RestoreJobInput | null
+  try {
+    job = await prepare()
+  } catch (error) {
+    abortRestoreClaim()
+    throw error
+  }
+  if (job === null) {
+    abortRestoreClaim()
+    return 'declined'
+  }
+  startRestoreJob(job.restoreFn, job.afterReopenFn)
+  return 'started'
+}
+
 /**
  * Non-consuming status projection for liveness readers (`/ready`
  * polls): the running phase while a job is in flight, the terminal
@@ -152,14 +193,12 @@ export function startRestoreJob(restoreFn: () => Promise<void>, afterReopenFn?: 
   const machineDeps = deps
 
   const promise = (async () => {
-    setServerPhase('restarting')
-
     let success = false
     let error: Error | undefined
 
     try {
       // 1. Close HTTP server (stop accepting, drain in-flight)
-      await closeHttpServer()
+      await machineDeps.drain()
 
       // 2. Flush batchers, close the database handle, swap the files.
       await machineDeps.prepareForSwap()

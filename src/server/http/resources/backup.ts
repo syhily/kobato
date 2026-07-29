@@ -7,12 +7,7 @@ import type { Env } from '@/server/http/context'
 import { recordAuditEvent } from '@/server/domains/audit/services/record'
 import { CSRF_HEADER, validateCsrfToken } from '@/server/domains/auth/csrf'
 import { isSetupTokenActive } from '@/server/domains/auth/setup-token'
-import {
-  abortRestoreClaim,
-  consumeRestoreJobReport,
-  startRestoreJob,
-  tryBeginRestore,
-} from '@/server/domains/backup/restore-machine'
+import { consumeRestoreJobReport, withRestoreClaim } from '@/server/domains/backup/restore-machine'
 import { getBackupBuffer, isValidBackupKey } from '@/server/domains/backup/services/backup'
 import {
   type StagedBackup,
@@ -60,32 +55,31 @@ export const backupRouter = new Hono<Env>()
     async (c) => {
       // Claim the restore slot BEFORE reading the body — the upload can
       // take seconds, and a check-then-act guard here would let a second
-      // restore start during the read.
-      if (!tryBeginRestore()) {
-        return c.json({ error: { message: '已有还原任务正在进行，请等待完成后再试。' } }, 409)
-      }
-
-      let buffer: Buffer
-      let fileName: string
-      try {
+      // restore start during the read. The machine owns the claim/abort
+      // choreography (body errors release the slot automatically).
+      let missingFile = false
+      const outcome = await withRestoreClaim(async () => {
         const body = await c.req.parseBody({ all: false })
         const file = body.file
         if (!(file instanceof File)) {
-          abortRestoreClaim()
-          return c.json({ error: { message: '请上传文件' } }, 400)
+          missingFile = true
+          return null
         }
-        buffer = Buffer.from(await file.arrayBuffer())
-        fileName = file.name
-      } catch (error) {
-        // A claimed slot must never leak (aborted upload, body error).
-        abortRestoreClaim()
-        throw error
-      }
-
-      startRestoreJob(async () => {
-        await restoreFromBackup(buffer, fileName)
-        log.info('Restore from uploaded backup completed')
+        const buffer = Buffer.from(await file.arrayBuffer())
+        const fileName = file.name
+        return {
+          restoreFn: async () => {
+            await restoreFromBackup(buffer, fileName)
+            log.info('Restore from uploaded backup completed')
+          },
+        }
       })
+      if (outcome === 'busy') {
+        return c.json({ error: { message: '已有还原任务正在进行，请等待完成后再试。' } }, 409)
+      }
+      if (missingFile) {
+        return c.json({ error: { message: '请上传文件' } }, 400)
+      }
 
       return c.json({ accepted: true })
     },
@@ -150,25 +144,20 @@ export const backupRouter = new Hono<Env>()
         return c.json({ error: { message: '备份文件无效或不包含管理员账号。' } }, 400)
       }
 
-      // Claim the slot as late as possible but BEFORE the machine's
-      // chain starts (see upload-restore above).
-      if (!tryBeginRestore()) {
-        rmSync(staged.dir, { recursive: true, force: true })
-        return c.json({ error: { message: '已有还原任务正在进行，请等待完成后再试。' } }, 409)
-      }
-
+      // Claim the slot as late as possible (staging + validation above
+      // need no slot) — contention cleans up the staged files.
       const clientAddress = c.var.requestContext.clientAddress
       const userAgent = c.req.raw.headers.get('User-Agent')
       const fileName = file.name
 
-      startRestoreJob(
-        async () => {
+      const outcome = await withRestoreClaim(async () => ({
+        restoreFn: async () => {
           // Setup applies the content database only — a fresh install
           // never inherits an old site's telemetry, even when the
           // upload is a two-file archive.
           await restoreFromStagedBackup(staged, fileName, { withAnalytics: false })
         },
-        async (db) => {
+        afterReopenFn: async (db) => {
           // Post-restore work runs against the FRESH handle on the
           // swapped file — and it must be INFALLIBLE: the original file
           // no longer exists, so a throw here would mark the restore
@@ -203,7 +192,11 @@ export const backupRouter = new Hono<Env>()
 
           log.info('Setup restore completed', { adminId: String(admin.id) })
         },
-      )
+      }))
+      if (outcome === 'busy') {
+        rmSync(staged.dir, { recursive: true, force: true })
+        return c.json({ error: { message: '已有还原任务正在进行，请等待完成后再试。' } }, 409)
+      }
 
       return c.json({ accepted: true })
     },

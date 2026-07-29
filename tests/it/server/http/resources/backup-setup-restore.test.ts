@@ -15,7 +15,7 @@ const mockRestoreFromStagedBackup = vi.fn()
 const mockAssertStagedBackupContainsAdmin = vi.fn()
 const mockStageBackup = vi.fn()
 const mockStartRestoreJob = vi.fn()
-const mockTryBeginRestore = vi.fn()
+const mockWithRestoreClaim = vi.fn()
 const mockRefreshBlogSettings = vi.fn()
 const mockRecordAuditEvent = vi.fn()
 
@@ -43,14 +43,14 @@ vi.mock('@/server/http/middlewares/rate-limit', () => ({
 
 vi.mock('@/server/domains/backup/services/restore', () => ({
   stageBackup: (...args: unknown[]) => mockStageBackup(...args),
+  restoreFromBackup: vi.fn(async () => undefined),
   restoreFromStagedBackup: (...args: unknown[]) => mockRestoreFromStagedBackup(...args),
   assertStagedBackupContainsAdmin: (...args: unknown[]) => mockAssertStagedBackupContainsAdmin(...args),
 }))
 
 vi.mock('@/server/domains/backup/restore-machine', () => ({
   startRestoreJob: (...args: unknown[]) => mockStartRestoreJob(...args),
-  tryBeginRestore: () => mockTryBeginRestore(),
-  abortRestoreClaim: vi.fn(),
+  withRestoreClaim: (...args: unknown[]) => mockWithRestoreClaim(...args),
 }))
 
 vi.mock('@/server/domains/settings/services/hydrate', () => ({
@@ -94,7 +94,22 @@ async function buildApp(session: ReturnType<typeof makeSession>) {
 describe('/api/admin/backup/upload-restore', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockTryBeginRestore.mockReturnValue(true)
+    // The default honors the real contract: prepare → start → 'started'.
+    mockWithRestoreClaim.mockImplementation(
+      async (
+        prepare: () => Promise<{
+          restoreFn: () => Promise<void>
+          afterReopenFn?: (db: unknown) => Promise<void>
+        } | null>,
+      ) => {
+        const job = await prepare()
+        if (job === null) {
+          return 'declined'
+        }
+        await mockStartRestoreJob(job.restoreFn, job.afterReopenFn)
+        return 'started'
+      },
+    )
     mockValidateCsrfToken.mockReturnValue(true)
     mockAssertStagedBackupContainsAdmin.mockResolvedValue(undefined)
     mockStageBackup.mockResolvedValue({
@@ -173,7 +188,7 @@ describe('/api/admin/backup/upload-restore', () => {
   })
 
   it('returns 409 when a restore is already running', async () => {
-    mockTryBeginRestore.mockReturnValue(false)
+    mockWithRestoreClaim.mockResolvedValueOnce('busy')
     const { backupRouter } = await import('@/server/http/resources/backup')
     const app = new Hono<Env>()
     app.use('*', async (c, next) => {
@@ -208,7 +223,22 @@ describe('/api/admin/backup/upload-restore', () => {
 describe('/api/setup/restore', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockTryBeginRestore.mockReturnValue(true)
+    // The default honors the real contract: prepare → start → 'started'.
+    mockWithRestoreClaim.mockImplementation(
+      async (
+        prepare: () => Promise<{
+          restoreFn: () => Promise<void>
+          afterReopenFn?: (db: unknown) => Promise<void>
+        } | null>,
+      ) => {
+        const job = await prepare()
+        if (job === null) {
+          return 'declined'
+        }
+        await mockStartRestoreJob(job.restoreFn, job.afterReopenFn)
+        return 'started'
+      },
+    )
     mockHasAdmin.mockResolvedValue(false)
     mockIsSetupTokenActive.mockResolvedValue(true)
     mockValidateCsrfToken.mockReturnValue(true)
@@ -319,7 +349,7 @@ describe('/api/setup/restore', () => {
   })
 
   it('returns 409 when a restore is already running', async () => {
-    mockTryBeginRestore.mockReturnValue(false)
+    mockWithRestoreClaim.mockResolvedValueOnce('busy')
     const app = await buildApp(makeSession({ setupTokenVerified: true, csrfToken: 'valid-csrf' }))
     const formData = new FormData()
     formData.set('file', new File(['content'], 'test.sql'))
