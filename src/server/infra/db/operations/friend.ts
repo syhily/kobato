@@ -3,7 +3,7 @@ import { count, desc, eq, or, type SQL } from 'drizzle-orm'
 import type { Database } from '@/server/infra/db/database'
 import type { FriendRow, NewFriend } from '@/server/infra/db/types'
 
-import { ilikeEscape } from '@/server/infra/db/ilike-escape'
+import { likeEscape } from '@/server/infra/db/like-escape'
 import { applyPage, assembleWhere } from '@/server/infra/db/operations/admin-list'
 import { friend } from '@/server/infra/db/schema/friend'
 
@@ -49,11 +49,7 @@ function buildAdminFriendConditions(filters: AdminFriendsListFilters): SQL[] {
   }
   if (filters.q && filters.q.trim() !== '') {
     const q = filters.q.trim()
-    const search = or(
-      ilikeEscape(friend.website, q),
-      ilikeEscape(friend.description, q),
-      ilikeEscape(friend.homepage, q),
-    )
+    const search = or(likeEscape(friend.website, q), likeEscape(friend.description, q), likeEscape(friend.homepage, q))
     if (search) {
       conditions.push(search)
     }
@@ -64,7 +60,7 @@ function buildAdminFriendConditions(filters: AdminFriendsListFilters): SQL[] {
 // Admin list view. Newest entries surface first so the most recently
 // added friend is one click away. The optional `q` matches against
 // `website`, `description`, and `homepage` with case-insensitive
-// `ILIKE` so admins can find a row by either the display name or the
+// `LIKE` so admins can find a row by either the display name or the
 // URL. `includeHidden` flips whether `visible=false` rows appear; the
 // default mirrors the public site (visible only). When `offset` /
 // `limit` are supplied we paginate server-side.

@@ -4,7 +4,7 @@ import type { Database } from '@/server/infra/db/database'
 import type { EntityTarget, EntityType } from '@/server/infra/db/target'
 import type { MyCommentsStatus } from '@/shared/types/comments'
 
-import { ilikeEscape } from '@/server/infra/db/ilike-escape'
+import { likeEscape } from '@/server/infra/db/like-escape'
 import { comment } from '@/server/infra/db/schema/comment'
 import { page } from '@/server/infra/db/schema/page'
 import { post } from '@/server/infra/db/schema/post'
@@ -125,9 +125,9 @@ export function buildAdminListConditions(filters: AdminListFilters) {
   if (filters.q && filters.q.trim() !== '') {
     const q = filters.q.trim()
     if (filters.match === 'does-not-contain') {
-      conditions.push(not(ilikeEscape(comment.content, q)))
+      conditions.push(not(likeEscape(comment.content, q)))
     } else {
-      conditions.push(ilikeEscape(comment.content, q))
+      conditions.push(likeEscape(comment.content, q))
     }
   }
   if (filters.createdAfter) {
@@ -205,7 +205,7 @@ export function mineWhere(userId: number, filters: MyCommentsFilters = {}, cutof
     clauses.push(eq(comment.ownerId, filters.entity.ownerId))
   }
   if (filters.q && filters.q.trim() !== '') {
-    clauses.push(ilikeEscape(comment.content, filters.q.trim()))
+    clauses.push(likeEscape(comment.content, filters.q.trim()))
   }
   return and(...clauses)
 }

@@ -16,7 +16,7 @@ import {
   type MyCommentsFilters,
 } from '@/server/domains/comments/repos/shared'
 import { resolveEntitiesForComments } from '@/server/domains/content/entities/slug-title'
-import { ilikeEscape } from '@/server/infra/db/ilike-escape'
+import { likeEscape } from '@/server/infra/db/like-escape'
 import { comment } from '@/server/infra/db/schema/comment'
 import { entityPermalink } from '@/shared/utils/paths'
 
@@ -122,7 +122,7 @@ export async function listMyCommentEntities(
   const entity = targetSlugTitleSubquery(db)
   const conditions = [mineVisibleClause(userId, options.cutoff ?? mineSoftDeleteCutoff())]
   if (q !== '') {
-    conditions.push(ilikeEscape(entity.title, q))
+    conditions.push(likeEscape(entity.title, q))
   }
   const rows = await db
     .selectDistinct({

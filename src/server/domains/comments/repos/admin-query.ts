@@ -17,7 +17,7 @@ import {
   type MyCommentsFilters,
   type PageOption,
 } from '@/server/domains/comments/repos/shared'
-import { ilikeEscape } from '@/server/infra/db/ilike-escape'
+import { likeEscape } from '@/server/infra/db/like-escape'
 import { comment } from '@/server/infra/db/schema/comment'
 import { metric } from '@/server/infra/db/schema/metric'
 import { user } from '@/server/infra/db/schema/user'
@@ -53,7 +53,7 @@ export async function searchPages(
   if (publicIds && publicIds.length > 0) {
     conditions.push(inArray(metric.publicId, publicIds))
   } else if (q) {
-    conditions.push(ilikeEscape(entity.title, q))
+    conditions.push(likeEscape(entity.title, q))
   }
   const rows = await db
     .select({ key: metric.publicId, title: entity.title })
@@ -76,7 +76,7 @@ export async function searchCommentAuthors(
   if (ids && ids.length > 0) {
     conditions.push(inArray(user.id, ids))
   } else if (q) {
-    conditions.push(ilikeEscape(user.name, q))
+    conditions.push(likeEscape(user.name, q))
   }
   return db
     .selectDistinct({ id: user.id, name: user.name })

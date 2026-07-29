@@ -45,10 +45,18 @@ export interface WhereParts {
   params: DuckDBValue[]
 }
 
+/**
+ * Bind expression for an epoch-ms BIGINT parameter as a DuckDB
+ * TIMESTAMP. JS bigints bind as HUGEINT in the node API, so the
+ * `?::BIGINT` cast is load-bearing — centralised here because every
+ * analytics query needs it and a typo silently breaks the predicate.
+ */
+export const EPOCH_MS_PARAM = 'epoch_ms(?::BIGINT)'
+
 // `ts` is a DuckDB TIMESTAMP; range inputs are epoch seconds, bound as
 // epoch-ms BIGINTs through `epoch_ms(?::BIGINT)`.
 export function whereClause(input: AnalyticsQueryInput): WhereParts {
-  const conditions: string[] = ['is_bot = FALSE', 'ts >= epoch_ms(?::BIGINT)', 'ts < epoch_ms(?::BIGINT)']
+  const conditions: string[] = ['is_bot = FALSE', `ts >= ${EPOCH_MS_PARAM}`, `ts < ${EPOCH_MS_PARAM}`]
   const params: DuckDBValue[] = [BigInt(input.range.startAt * 1000), BigInt(input.range.endAt * 1000)]
   if (input.entityType) {
     conditions.push('entity_type = ?')

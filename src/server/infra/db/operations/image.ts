@@ -3,7 +3,7 @@ import { and, count, desc, eq, inArray, isNull, like, or, type SQL, sql } from '
 import type { Database } from '@/server/infra/db/database'
 import type { ImageRow, NewImage } from '@/server/infra/db/types'
 
-import { ilikeEscape } from '@/server/infra/db/ilike-escape'
+import { likeEscape } from '@/server/infra/db/like-escape'
 import { applyPage, assembleWhere, withUploader } from '@/server/infra/db/operations/admin-list'
 import { image } from '@/server/infra/db/schema/media'
 
@@ -66,7 +66,7 @@ function buildAdminImageConditions(filters: AdminImagesListFilters): SQL[] {
 
   if (filters.q && filters.q.trim() !== '') {
     const q = filters.q.trim()
-    const search = or(ilikeEscape(image.storagePath, q), ilikeEscape(image.note, q))
+    const search = or(likeEscape(image.storagePath, q), likeEscape(image.note, q))
     if (search) {
       conditions.push(search)
     }

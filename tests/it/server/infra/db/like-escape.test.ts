@@ -8,7 +8,7 @@ import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db
 import { buildAdminListConditions } from '@/server/domains/comments/repos/shared'
 import { liveContentWhere } from '@/server/domains/content/schemas/live-gate'
 import { bumpCounter } from '@/server/infra/cache/registry'
-import { ilikeEscape } from '@/server/infra/db/ilike-escape'
+import { likeEscape } from '@/server/infra/db/like-escape'
 import { comment } from '@/server/infra/db/schema/comment'
 import { postSearchIndex } from '@/server/infra/db/schema/content'
 import { post } from '@/server/infra/db/schema/post'
@@ -37,7 +37,7 @@ function liveWhere() {
   })
 }
 
-describe('ilikeEscape — direct SQL against database', () => {
+describe('likeEscape — direct SQL against database', () => {
   it('finds users by normal substring', async () => {
     await db.insert(user).values([
       { name: 'Alice Smith', email: 'alice@test.com', password: 'x' },
@@ -45,7 +45,7 @@ describe('ilikeEscape — direct SQL against database', () => {
       { name: 'Charlie', email: 'charlie@test.com', password: 'x' },
     ])
 
-    const rows = await db.select({ name: user.name }).from(user).where(ilikeEscape(user.name, 'Smith'))
+    const rows = await db.select({ name: user.name }).from(user).where(likeEscape(user.name, 'Smith'))
 
     expect(rows.map((r) => r.name)).toEqual(['Alice Smith'])
   })
@@ -56,7 +56,7 @@ describe('ilikeEscape — direct SQL against database', () => {
       { name: '500 dollars', email: 'b@test.com', password: 'x' },
     ])
 
-    const rows = await db.select({ name: user.name }).from(user).where(ilikeEscape(user.name, '50%'))
+    const rows = await db.select({ name: user.name }).from(user).where(likeEscape(user.name, '50%'))
 
     const names = rows.map((r) => r.name)
     expect(names).toContain('50% off sale')
@@ -70,7 +70,7 @@ describe('ilikeEscape — direct SQL against database', () => {
       { name: 'A__B', email: 'c@test.com', password: 'x' },
     ])
 
-    const rows = await db.select({ name: user.name }).from(user).where(ilikeEscape(user.name, 'A_B'))
+    const rows = await db.select({ name: user.name }).from(user).where(likeEscape(user.name, 'A_B'))
 
     const names = rows.map((r) => r.name)
     expect(names).toContain('A_B_test')
@@ -85,7 +85,7 @@ describe('ilikeEscape — direct SQL against database', () => {
       { name: 'ab', email: 'b@test.com', password: 'x' },
     ])
 
-    const rows = await db.select({ name: user.name }).from(user).where(ilikeEscape(user.name, 'a\\b'))
+    const rows = await db.select({ name: user.name }).from(user).where(likeEscape(user.name, 'a\\b'))
 
     const names = rows.map((r) => r.name)
     expect(names).toContain('a\\b')
@@ -99,7 +99,7 @@ describe('ilikeEscape — direct SQL against database', () => {
       { name: '100 percent', email: 'c@test.com', password: 'x' },
     ])
 
-    const rows = await db.select({ name: user.name }).from(user).where(ilikeEscape(user.name, '100%_'))
+    const rows = await db.select({ name: user.name }).from(user).where(likeEscape(user.name, '100%_'))
 
     const names = rows.map((r) => r.name)
     expect(names).toContain('100%_complete')
@@ -114,7 +114,7 @@ describe('ilikeEscape — direct SQL against database', () => {
       { name: 'MiXeD', email: 'c@test.com', password: 'x' },
     ])
 
-    const rows = await db.select({ name: user.name }).from(user).where(ilikeEscape(user.name, 'mixed'))
+    const rows = await db.select({ name: user.name }).from(user).where(likeEscape(user.name, 'mixed'))
 
     const names = rows.map((r) => r.name)
     expect(names).toContain('MiXeD')
@@ -123,7 +123,7 @@ describe('ilikeEscape — direct SQL against database', () => {
   })
 })
 
-describe('ilikeEscape — comments repository', () => {
+describe('likeEscape — comments repository', () => {
   it('filters comments containing literal % in content', async () => {
     const [u] = await db
       .insert(user)
@@ -185,7 +185,7 @@ describe('ilikeEscape — comments repository', () => {
   })
 })
 
-describe('ilikeEscape — search posts', () => {
+describe('likeEscape — search posts', () => {
   it('finds posts by title with escaped wildcards', async () => {
     await db.insert(post).values([
       { slug: 'post-1', title: 'How to get 50% off', summary: '', cover: '', publishedRevisionId: 1 },

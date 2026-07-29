@@ -3,7 +3,7 @@ import { asc, eq, inArray, or, sql, type SQL } from 'drizzle-orm'
 import type { Database } from '@/server/infra/db/database'
 import type { CategoryRow, NewCategory } from '@/server/infra/db/types'
 
-import { ilikeEscape } from '@/server/infra/db/ilike-escape'
+import { likeEscape } from '@/server/infra/db/like-escape'
 import { assembleWhere } from '@/server/infra/db/operations/admin-list'
 import { category } from '@/server/infra/db/schema/taxonomy'
 
@@ -31,11 +31,7 @@ export async function listAdminCategoryRows(
   const conditions: SQL[] = []
   if (filters.q && filters.q.trim() !== '') {
     const q = filters.q.trim()
-    const search = or(
-      ilikeEscape(category.name, q),
-      ilikeEscape(category.slug, q),
-      ilikeEscape(category.description, q),
-    )
+    const search = or(likeEscape(category.name, q), likeEscape(category.slug, q), likeEscape(category.description, q))
     if (search) {
       conditions.push(search)
     }

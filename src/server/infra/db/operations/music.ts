@@ -3,7 +3,7 @@ import { and, asc, count, desc, eq, isNull, or, type SQL } from 'drizzle-orm'
 import type { Database } from '@/server/infra/db/database'
 import type { MusicRow, NewMusic } from '@/server/infra/db/types'
 
-import { ilikeEscape } from '@/server/infra/db/ilike-escape'
+import { likeEscape } from '@/server/infra/db/like-escape'
 import { applyPage, assembleWhere, withUploader } from '@/server/infra/db/operations/admin-list'
 import { music } from '@/server/infra/db/schema/media'
 
@@ -67,11 +67,11 @@ function buildAdminMusicConditions(filters: AdminMusicListFilters): SQL[] {
   if (filters.q && filters.q.trim() !== '') {
     const q = filters.q.trim()
     const search = or(
-      ilikeEscape(music.name, q),
-      ilikeEscape(music.artist, q),
-      ilikeEscape(music.album, q),
-      ilikeEscape(music.sourceId, q),
-      ilikeEscape(music.playerId, q),
+      likeEscape(music.name, q),
+      likeEscape(music.artist, q),
+      likeEscape(music.album, q),
+      likeEscape(music.sourceId, q),
+      likeEscape(music.playerId, q),
     )
     if (search) {
       conditions.push(search)
