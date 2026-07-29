@@ -2,6 +2,8 @@ import { TZDate } from '@date-fns/tz'
 import { addDays, addMonths, isAfter } from 'date-fns'
 
 import { DomainError } from '@/server/infra/http/errors'
+import { registerShutdownHook } from '@/server/infra/lifecycle'
+import { getLogger } from '@/server/infra/logger'
 
 export function computeNextRun(
   settings: {
@@ -76,3 +78,98 @@ export function computeNextRun(
   }
   return candidate
 }
+
+// ─── Scheduled jobs ──────────────────────────────────────
+// One self-rescheduling-timer seam for every periodic job (kv sweep,
+// audit archive, backup, and the two engine maintenance jobs). The
+// domain owns its POLICY through two closures — when to fire next and
+// what to do — while this module owns the MECHANICS: timer lifecycle,
+// `.unref()`, self-reschedule after every fire, error logging, and one
+// shutdown hook that stops every registered job. The db-handle getter
+// each job closes over is about FRESHNESS (a reopened handle after
+// restore must be picked up), never about import cycles.
+
+export interface ScheduledJobOptions {
+  /** Logger scope. */
+  name: string
+  /**
+   * Milliseconds until the next fire, or `null` to suspend — the job
+   * re-evaluates after `suspendedRetryMs` (settings not hydrated yet,
+   * feature disabled, …). Computed fresh after every run and on every
+   * `reschedule()`, so settings changes apply by rescheduling.
+   */
+  nextDelayMs: () => number | null
+  run: () => Promise<void> | void
+  /** Re-check delay while suspended (default 30s). */
+  suspendedRetryMs?: number
+}
+
+export interface ScheduledJob {
+  /** Clear the pending fire and recompute (settings changed, boot). */
+  reschedule(): void
+  stop(): void
+}
+
+const registeredJobs: ScheduledJob[] = []
+
+export function scheduleJob(options: ScheduledJobOptions): ScheduledJob {
+  const log = getLogger(options.name)
+  const suspendedRetryMs = options.suspendedRetryMs ?? 30_000
+  let timer: NodeJS.Timeout | null = null
+  let stopped = false
+
+  const job: ScheduledJob = {
+    reschedule() {
+      if (stopped) {
+        return
+      }
+      if (timer !== null) {
+        clearTimeout(timer)
+        timer = null
+      }
+      let delayMs: number | null
+      try {
+        delayMs = options.nextDelayMs()
+      } catch (error) {
+        log.error('scheduled job failed to compute its next run', {
+          err: error instanceof Error ? error.message : String(error),
+        })
+        delayMs = suspendedRetryMs
+      }
+      if (delayMs === null) {
+        // Suspended: re-evaluate later WITHOUT running the job.
+        timer = setTimeout(() => job.reschedule(), suspendedRetryMs)
+      } else {
+        timer = setTimeout(() => {
+          void (async () => {
+            try {
+              await options.run()
+            } catch (error) {
+              log.error('scheduled job run failed', { err: error instanceof Error ? error.message : String(error) })
+            } finally {
+              job.reschedule()
+            }
+          })()
+        }, delayMs)
+      }
+      timer.unref()
+    },
+    stop() {
+      stopped = true
+      if (timer !== null) {
+        clearTimeout(timer)
+        timer = null
+      }
+    },
+  }
+
+  registeredJobs.push(job)
+  job.reschedule()
+  return job
+}
+
+registerShutdownHook(async () => {
+  for (const job of registeredJobs) {
+    job.stop()
+  }
+}, 0)

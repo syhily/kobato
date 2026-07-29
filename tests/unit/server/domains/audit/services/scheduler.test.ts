@@ -26,9 +26,13 @@ vi.mock('@/shared/config/getters', () => ({
   getBlogSettingsBundleSync: vi.fn(() => bundle),
 }))
 
-vi.mock('@/server/infra/scheduler-utils', () => ({
-  computeNextRun: vi.fn((_settings, _tz, now: Date) => new Date(now.getTime() + 3_600_000)),
-}))
+vi.mock('@/server/infra/scheduler-utils', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/server/infra/scheduler-utils')>()
+  return {
+    ...actual,
+    computeNextRun: vi.fn((_settings, _tz, now: Date) => new Date(now.getTime() + 3_600_000)),
+  }
+})
 
 const { scheduleNextArchive, rescheduleArchive, stopArchiveScheduler, wireArchiveScheduler } =
   await import('@/server/domains/audit/services/scheduler')

@@ -1,8 +1,7 @@
 import type { DatabaseHandle } from '@/server/infra/db/database'
 
-import { registerShutdownHook } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
-import { computeNextRun } from '@/server/infra/scheduler-utils'
+import { computeNextRun, scheduleJob, type ScheduledJob } from '@/server/infra/scheduler-utils'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 const log = getLogger('db.maintenance')
@@ -54,13 +53,14 @@ export function runDbMaintenance(handle: DatabaseHandle): void {
 }
 
 // ─── Scheduler ───────────────────────────────────────────
-// Same structure as the kv sweep / audit archive: the handle getter is
-// injected by the composition root (`@/server/bootstrap/db-lifecycle`)
-// at wire time and invoked when the timer fires, so a reopened handle
-// (restore completion) is picked up without being captured in module
-// state.
+// The handle getter is injected by the composition root
+// (`@/server/bootstrap/db-lifecycle`) at wire time and invoked when the
+// job fires, so a reopened handle (restore completion) is picked up
+// without being captured in module state. Timer mechanics live in the
+// shared `scheduleJob` seam; this module owns only the policy (04:30
+// site time, what to run).
 
-let maintenanceTimer: NodeJS.Timeout | null = null
+let job: ScheduledJob | null = null
 let resolveHandle: (() => DatabaseHandle) | null = null
 
 export function wireDbMaintenanceScheduler(deps: { getHandle: () => DatabaseHandle }): void {
@@ -68,35 +68,18 @@ export function wireDbMaintenanceScheduler(deps: { getHandle: () => DatabaseHand
 }
 
 export function scheduleNextDbMaintenance(): void {
-  if (maintenanceTimer !== null) {
-    clearTimeout(maintenanceTimer)
-    maintenanceTimer = null
-  }
-  const bundle = getBlogSettingsBundleSync()
-  const timeZone = bundle?.siteIdentity?.timeZone ?? 'UTC'
-  const nextRun = computeNextRun({ frequency: 'daily', hour: 4, minute: 30 }, timeZone, new Date())
-  maintenanceTimer = setTimeout(() => {
-    try {
+  job ??= scheduleJob({
+    name: 'db.maintenance',
+    nextDelayMs: () => {
+      const timeZone = getBlogSettingsBundleSync()?.siteIdentity?.timeZone ?? 'UTC'
+      return computeNextRun({ frequency: 'daily', hour: 4, minute: 30 }, timeZone, new Date()).getTime() - Date.now()
+    },
+    run: () => {
       if (resolveHandle === null) {
         throw new Error('db maintenance fired before wireDbMaintenanceScheduler')
       }
       runDbMaintenance(resolveHandle())
-    } catch (error) {
-      log.error('db maintenance callback failed', { error: error instanceof Error ? error.message : String(error) })
-    } finally {
-      scheduleNextDbMaintenance()
-    }
-  }, nextRun.getTime() - Date.now())
-  maintenanceTimer.unref()
+    },
+  })
+  job.reschedule()
 }
-
-export function stopDbMaintenanceScheduler(): void {
-  if (maintenanceTimer !== null) {
-    clearTimeout(maintenanceTimer)
-    maintenanceTimer = null
-  }
-}
-
-registerShutdownHook(async () => {
-  stopDbMaintenanceScheduler()
-}, 0)

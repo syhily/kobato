@@ -36,12 +36,19 @@ vi.mock('@/shared/config/getters', () => ({
   getBlogSettingsBundleSync: vi.fn(() => bundle),
 }))
 
-vi.mock('@/server/infra/scheduler-utils', () => ({
-  computeNextRun: vi.fn((_settings, _tz, now) => new Date(now.getTime() + 3_600_000)),
-}))
+vi.mock('@/server/infra/scheduler-utils', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/server/infra/scheduler-utils')>()
+  return {
+    ...actual,
+    computeNextRun: vi.fn((_settings, _tz, now) => new Date(now.getTime() + 3_600_000)),
+  }
+})
 
-const { scheduleNextBackup, rescheduleBackup, stopBackupScheduler, initBackupScheduler } =
-  await import('@/server/domains/backup/scheduler')
+const { scheduleNextBackup, rescheduleBackup, stopBackupScheduler } = await import('@/server/domains/backup/scheduler')
+
+// The scheduleJob seam registers its stop-all hook once, at module
+// import — capture it here, before beforeEach clears the mock.
+const sharedJobStopHook = registerShutdownHook.mock.calls[0]?.[0] as (() => void | Promise<void>) | undefined
 
 describe('backup scheduler', () => {
   beforeEach(() => {
@@ -59,13 +66,16 @@ describe('backup scheduler', () => {
     expect(vi.getTimerCount()).toBeGreaterThan(0)
   })
 
-  it('does nothing when scheduled backup or asset storage is disabled', () => {
+  it('never runs the backup when scheduled backup is disabled', async () => {
     bundle = {
       backup: { scheduled: { enabled: false }, retention: { enabled: false } },
       assets: { storage: { enabled: true } },
     }
     scheduleNextBackup()
-    expect(vi.getTimerCount()).toBe(0)
+    // Suspended: the seam arms only its re-evaluation retry — the backup
+    // job itself never fires, even far past the retry window.
+    await vi.advanceTimersByTimeAsync(10 * 60_000)
+    expect(createBackup).not.toHaveBeenCalled()
   })
 
   it('schedules and runs a backup job', async () => {
@@ -115,12 +125,12 @@ describe('backup scheduler', () => {
     expect(vi.getTimerCount()).toBe(0)
   })
 
-  it('initializes the scheduler and registers a shutdown hook', () => {
-    initBackupScheduler()
-    expect(registerShutdownHook).toHaveBeenCalledWith(expect.any(Function), 0)
+  it('registers the shared job-stop shutdown hook at import', () => {
+    // The scheduleJob seam registers one hook that stops every job.
+    expect(sharedJobStopHook).toBeDefined()
   })
 
-  it('stops the scheduler when the shutdown hook runs', async () => {
+  it('stops the scheduler when the shared shutdown hook runs', async () => {
     bundle = {
       backup: { scheduled: { enabled: true, frequency: 'daily' }, retention: { enabled: false } },
       assets: { storage: { enabled: true } },
@@ -128,9 +138,7 @@ describe('backup scheduler', () => {
     }
     scheduleNextBackup()
     expect(vi.getTimerCount()).toBe(1)
-    initBackupScheduler()
-    const [hook] = registerShutdownHook.mock.calls[0] as Array<() => void | Promise<void>>
-    await hook()
+    await sharedJobStopHook?.()
     expect(vi.getTimerCount()).toBe(0)
   })
 

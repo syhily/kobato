@@ -39,7 +39,7 @@ describe('backup/scheduler — scheduleNextBackup', () => {
     expect(vi.getTimerCount()).toBeGreaterThan(0)
   })
 
-  it('does nothing when scheduled.enabled is false', () => {
+  it('never runs the backup when scheduled.enabled is false', async () => {
     setBlogSettingsBundleForTests({
       ...TEST_BLOG_SETTINGS_BUNDLE,
       backup: {
@@ -48,7 +48,12 @@ describe('backup/scheduler — scheduleNextBackup', () => {
       },
     })
     scheduleNextBackup()
-    expect(vi.getTimerCount()).toBe(0)
+    // Suspended: the seam arms only its re-evaluation retry — the backup
+    // job itself never fires, even far past the retry window.
+    const { createBackup } = await import('@/server/domains/backup/services/backup')
+    vi.mocked(createBackup).mockClear()
+    await vi.advanceTimersByTimeAsync(10 * 60_000)
+    expect(createBackup).not.toHaveBeenCalled()
   })
 
   it('schedules even when storage is not enabled (backups fall back to local)', () => {

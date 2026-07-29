@@ -5,7 +5,7 @@ import type { Env } from '@/server/http/context'
 import { getDb } from '@/server/bootstrap/db-lifecycle'
 import { scheduleNextArchive } from '@/server/domains/audit/services/scheduler'
 import { getSetupToken } from '@/server/domains/auth/setup-token'
-import { initBackupScheduler, scheduleNextBackup } from '@/server/domains/backup/scheduler'
+import { scheduleNextBackup } from '@/server/domains/backup/scheduler'
 import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { migrateSecretsEncryption } from '@/server/domains/settings/services/migrate-secrets'
 import { wrapFetchWithLeakedResponseHandler } from '@/server/http/leaked-response'
@@ -61,7 +61,6 @@ if (!hmr?.secretsMigrated) {
   await refreshBlogSettings(getDb())
 
   scheduleNextBackup()
-  initBackupScheduler()
   scheduleNextArchive()
   scheduleNextKvSweep()
   scheduleNextDbMaintenance()

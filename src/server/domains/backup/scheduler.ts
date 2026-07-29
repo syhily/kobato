@@ -1,13 +1,12 @@
 import { getDb } from '@/server/bootstrap/db-lifecycle'
 import { createBackup, cleanupOldBackups } from '@/server/domains/backup/services/backup'
-import { registerShutdownHook } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
-import { computeNextRun } from '@/server/infra/scheduler-utils'
+import { computeNextRun, scheduleJob, type ScheduledJob } from '@/server/infra/scheduler-utils'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 const log = getLogger('backup.scheduler')
 
-let backupTimer: NodeJS.Timeout | null = null
+let job: ScheduledJob | null = null
 let hydrationRetryAttempt = 0
 
 async function runBackupJob(): Promise<void> {
@@ -26,12 +25,10 @@ async function runBackupJob(): Promise<void> {
   }
 }
 
-export function scheduleNextBackup(): void {
-  if (backupTimer) {
-    clearTimeout(backupTimer)
-    backupTimer = null
-  }
-
+// The domain's scheduling POLICY as one closure (hydration backoff,
+// enable gate, past-time fallback); the shared `scheduleJob` seam owns
+// the timer mechanics.
+function nextBackupDelayMs(): number | null {
   const bundle = getBlogSettingsBundleSync()
   if (!bundle) {
     // Settings not hydrated yet (boot-time race). Retry with
@@ -42,8 +39,7 @@ export function scheduleNextBackup(): void {
       attempt: hydrationRetryAttempt,
       delayMs,
     })
-    backupTimer = setTimeout(() => scheduleNextBackup(), delayMs)
-    return
+    return delayMs
   }
   hydrationRetryAttempt = 0
 
@@ -51,7 +47,9 @@ export function scheduleNextBackup(): void {
   // Scheduled backups run regardless of whether S3 is enabled — when S3 is
   // off, backups land in local storage under `$DATA_PATH/storage/backup/`.
   if (!backupSettings?.scheduled.enabled) {
-    return
+    // Suspended: the seam re-evaluates periodically, so toggling the
+    // setting on takes effect without an explicit reschedule too.
+    return null
   }
 
   const timeZone = bundle.siteIdentity?.timeZone ?? 'UTC'
@@ -61,17 +59,7 @@ export function scheduleNextBackup(): void {
   if (delayMs <= 0) {
     // Immediate fallback: if calculated time is in the past, run in 1 minute
     log.warn('Calculated next backup time is in the past; scheduling in 1 minute')
-    backupTimer = setTimeout(() => {
-      void (async () => {
-        try {
-          await runBackupJob()
-          scheduleNextBackup()
-        } catch (error) {
-          log.error('Backup scheduler callback failed', { error })
-        }
-      })()
-    }, 60_000)
-    return
+    return 60_000
   }
 
   log.info('Next backup scheduled', {
@@ -79,17 +67,16 @@ export function scheduleNextBackup(): void {
     delayMs,
     frequency: backupSettings.scheduled.frequency,
   })
+  return delayMs
+}
 
-  backupTimer = setTimeout(() => {
-    void (async () => {
-      try {
-        await runBackupJob()
-        scheduleNextBackup()
-      } catch (error) {
-        log.error('Backup scheduler callback failed', { error })
-      }
-    })()
-  }, delayMs)
+export function scheduleNextBackup(): void {
+  job ??= scheduleJob({
+    name: 'backup.scheduler',
+    nextDelayMs: nextBackupDelayMs,
+    run: runBackupJob,
+  })
+  job.reschedule()
 }
 
 export async function rescheduleBackup(): Promise<void> {
@@ -99,14 +86,7 @@ export async function rescheduleBackup(): Promise<void> {
 }
 
 export function stopBackupScheduler(): void {
-  if (backupTimer) {
-    clearTimeout(backupTimer)
-    backupTimer = null
-  }
-}
-
-export function initBackupScheduler(): void {
-  registerShutdownHook(async () => {
-    stopBackupScheduler()
-  }, 0)
+  job?.stop()
+  // Drop the reference: the next schedule creates a fresh job.
+  job = null
 }
