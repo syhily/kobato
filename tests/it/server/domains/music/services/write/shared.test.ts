@@ -1,62 +1,93 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Database } from '@/server/infra/db/database'
 
-// music/services/write/shared.ts has a clean pure surface:
-//   - generateUniquePlayerId — retry-until-unique loop with collision log.
-//   - downloadBinary — URL validation, redirect chasing (manual redirect),
-//     max-redirect cap, missing-location error, content-length pre-check,
-//     byte-size post-check, and the audio/cover message branching.
-// We stub the DB lookup, global fetch, and keep isBlockedFetchHost real.
+// music/services/write/shared.ts has two surfaces:
+//   - generateUniquePlayerId — retry-until-unique loop against the REAL
+//     music table. `randomBytes` is stubbed so the candidate sequence is
+//     deterministic and collisions can be seeded as real rows.
+//   - downloadBinary — a thin DomainError-mapping wrapper over safeFetch;
+//     the network stays a true external, so global fetch is stubbed.
+import { clearAllTables } from '#/_helpers/integration-db'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
+import { music } from '@/server/infra/db/schema/media'
 
-const findMusicByPlayerIdMock = vi.hoisted(() => vi.fn())
+const randomBytesMock = vi.hoisted(() => vi.fn())
 
-vi.mock('@/server/infra/db/operations/music', () => ({
-  findMusicByPlayerId: findMusicByPlayerIdMock,
-}))
-vi.mock('@/server/infra/logger', () => ({
-  getLogger: () => ({ info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() }),
-}))
+vi.mock('node:crypto', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:crypto')>()
+  return { ...actual, randomBytes: randomBytesMock }
+})
 
 const { generateUniquePlayerId, downloadBinary, MAX_AUDIO_BYTES, MAX_COVER_BYTES, PLAYER_ID_RETRY_LIMIT } =
   await import('@/server/domains/music/services/write/shared')
 
-const fakeDb = {} as Database
+const handle = createTestDatabase()
+const db: Database = handle.db
+
+afterAll(async () => {
+  closeTestDatabase(handle)
+})
+
+beforeEach(async () => {
+  await clearAllTables(db)
+  vi.clearAllMocks()
+  // Default: no collision control needed — hand back real random bytes.
+  randomBytesMock.mockImplementation((size: number) => Buffer.alloc(size, 7))
+})
+
+// A byte value of `b` yields the candidate id `PLAYER_ID_ALPHABET[b % 36]`
+// repeated 16 times — e.g. 7 → '7777777777777777', 8 → '8888...'.
+function candidateFor(byte: number): string {
+  const alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789'
+  return alphabet[byte % alphabet.length]!.repeat(16)
+}
+
+async function seedMusicWithPlayerId(playerId: string): Promise<void> {
+  await db.insert(music).values({
+    source: 'netease',
+    sourceId: `sid-${playerId}`,
+    playerId,
+    name: 'Collision Song',
+    artist: 'Artist',
+    album: 'Album',
+    audioStoragePath: `musics/${playerId}.mp3`,
+    coverStoragePath: `musics/${playerId}.jpg`,
+  })
+}
 
 describe('music/write/shared — generateUniquePlayerId', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
+  it('returns the first candidate when the table has no collision', async () => {
+    const id = await generateUniquePlayerId(db)
+    expect(id).toBe(candidateFor(7))
+    expect(id).toMatch(/^[a-z0-9]{16}$/)
   })
 
-  it('returns the first non-colliding candidate', async () => {
-    findMusicByPlayerIdMock.mockResolvedValue(null)
-    const id = await generateUniquePlayerId(fakeDb)
-    expect(id).toMatch(/^[a-z0-9]{16}$/)
-    expect(findMusicByPlayerIdMock).toHaveBeenCalledTimes(1)
-  })
-
-  it('retries on collision until a free id is found', async () => {
-    findMusicByPlayerIdMock
-      .mockResolvedValueOnce({ id: 1 }) // collision
-      .mockResolvedValueOnce({ id: 2 }) // collision
-      .mockResolvedValue(null)
-    const id = await generateUniquePlayerId(fakeDb)
-    expect(id).toMatch(/^[a-z0-9]{16}$/)
-    expect(findMusicByPlayerIdMock).toHaveBeenCalledTimes(3)
+  it('retries on a real row collision until a free id is found', async () => {
+    await seedMusicWithPlayerId(candidateFor(1))
+    await seedMusicWithPlayerId(candidateFor(2))
+    randomBytesMock
+      .mockImplementationOnce(() => Buffer.alloc(16, 1)) // collision
+      .mockImplementationOnce(() => Buffer.alloc(16, 2)) // collision
+      .mockImplementation(() => Buffer.alloc(16, 3)) // free
+    const id = await generateUniquePlayerId(db)
+    expect(id).toBe(candidateFor(3))
   })
 
   it('throws after PLAYER_ID_RETRY_LIMIT consecutive collisions', async () => {
-    findMusicByPlayerIdMock.mockResolvedValue({ id: 1 })
-    await expect(generateUniquePlayerId(fakeDb)).rejects.toThrow(/playerId 生成失败/)
-    expect(findMusicByPlayerIdMock).toHaveBeenCalledTimes(PLAYER_ID_RETRY_LIMIT)
+    for (let attempt = 0; attempt < PLAYER_ID_RETRY_LIMIT; attempt += 1) {
+      await seedMusicWithPlayerId(candidateFor(attempt + 1))
+    }
+    let call = 0
+    randomBytesMock.mockImplementation(() => {
+      call += 1
+      return Buffer.alloc(16, call) // 1..5 — all seeded above
+    })
+    await expect(generateUniquePlayerId(db)).rejects.toThrow(/playerId 生成失败/)
   })
 })
 
 describe('music/write/shared — downloadBinary URL validation', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-  })
-
   it('rejects an unparseable audio URL', async () => {
     await expect(downloadBinary('not-a-url', 1000, 'audio')).rejects.toThrow(/音频地址无效/)
   })
@@ -83,10 +114,6 @@ describe('music/write/shared — downloadBinary URL validation', () => {
 })
 
 describe('music/write/shared — downloadBinary fetch + redirect branches', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-  })
-
   function fakeFetchHandler(handler: (url: string) => Response | Promise<Response>) {
     globalThis.fetch = vi.fn(async (input: RequestInfo | URL) => {
       const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
@@ -151,10 +178,6 @@ describe('music/write/shared — downloadBinary fetch + redirect branches', () =
 })
 
 describe('music/write/shared — downloadBinary size enforcement', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-  })
-
   it('rejects early when content-length advertises a size over the limit', async () => {
     globalThis.fetch = vi.fn(
       async () =>

@@ -1,17 +1,25 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { asc } from 'drizzle-orm'
+import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 import type { Database } from '@/server/infra/db/database'
 
+import { clearAllTables, closeTestDatabase, createTestDatabase } from '#/_helpers/integration-db'
 import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
 import { buildInstallSectionRows, seedInstallSections } from '@/server/domains/settings/services/install-flow'
+import { setting } from '@/server/infra/db/schema/config'
 import { DomainError } from '@/server/infra/http/errors'
 import { SETTINGS_SECTIONS } from '@/shared/config/sections'
 
-vi.mock('@/server/infra/db/operations/setting', () => ({
-  upsertSetting: vi.fn(async () => undefined),
-}))
+const handle = createTestDatabase()
+const db: Database = handle.db
 
-const settingQuery = await import('@/server/infra/db/operations/setting')
+afterAll(() => {
+  closeTestDatabase(handle)
+})
+
+beforeEach(async () => {
+  await clearAllTables(db)
+})
 
 const INPUT = { title: 'My Blog', name: 'Admin', email: 'admin@example.com', hostname: 'localhost' }
 
@@ -24,10 +32,6 @@ function builtRows() {
 }
 
 describe('server/domains/settings/services/install-flow', () => {
-  beforeEach(() => {
-    vi.mocked(settingQuery.upsertSetting).mockClear()
-  })
-
   describe('buildInstallSectionRows', () => {
     it('builds validated rows for all 17 sections — general and assets first, the rest in registry order', () => {
       const rows = builtRows()
@@ -86,32 +90,39 @@ describe('server/domains/settings/services/install-flow', () => {
   })
 
   describe('seedInstallSections', () => {
-    it('upserts every row through the caller-supplied handle, in order', async () => {
+    it('persists every row inside the caller-supplied transaction, in order', async () => {
       // The handle IS the atomicity contract: the install flow passes its
       // admin-insert transaction, so every upsert must go through it.
-      const tx = { marker: 'admin-insert-tx' } as unknown as Database
       const rows = builtRows()
 
-      await seedInstallSections(tx, rows, 7)
+      db.transaction((tx) => {
+        seedInstallSections(tx, rows, 7)
+      })
 
-      const calls = vi.mocked(settingQuery.upsertSetting).mock.calls
-      expect(calls).toHaveLength(17)
-      for (const [index, [handle, payload, updatedBy, scope]] of calls.entries()) {
-        expect(handle).toBe(tx)
-        expect(payload).toBe(rows[index]?.payload)
-        expect(updatedBy).toBe(7)
-        expect(scope).toBe(rows[index]?.scope)
+      const stored = await db.select().from(setting).orderBy(asc(setting.id))
+      expect(stored).toHaveLength(17)
+      expect(stored.map((row) => row.scope)).toEqual(rows.map((row) => row.scope))
+      for (const [index, row] of stored.entries()) {
+        expect(row.data).toEqual(rows[index]?.payload)
+        expect(row.updatedBy).toBe(7)
       }
     })
 
     it('propagates a persist failure so the caller transaction rolls back', async () => {
-      vi.mocked(settingQuery.upsertSetting).mockImplementationOnce(() => {
-        throw new Error('connection lost')
-      })
+      // A payload the JSON column cannot serialize fails the INSERT for
+      // real — the same propagation the admin-insert transaction relies
+      // on. The two rows seeded before it must roll back with it.
+      const circular: Record<string, unknown> = {}
+      circular.self = circular
+      const rows = [...builtRows().slice(0, 2), { scope: 'blog.mail', payload: circular }]
 
       expect(() =>
-        seedInstallSections({} as unknown as Database, [{ scope: 'blog.general', payload: {} }], null),
-      ).toThrow('connection lost')
+        db.transaction((tx) => {
+          seedInstallSections(tx, rows, null)
+        }),
+      ).toThrow()
+
+      expect(await db.select().from(setting)).toHaveLength(0)
     })
   })
 })

@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Database } from '@/server/infra/db/database'
@@ -8,7 +8,7 @@ import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { postTag } from '@/server/infra/db/schema/post-tag'
-import { tag as tagTable } from '@/server/infra/db/schema/taxonomy'
+import { category as categoryTable, tag as tagTable } from '@/server/infra/db/schema/taxonomy'
 vi.mock('@/server/domains/images/services/enhance', () => ({
   hydrateImageRefs: vi.fn(
     async (_db: unknown, items: unknown[], _getUrl: unknown, apply: (item: unknown, lookup: unknown) => void) => {
@@ -70,6 +70,14 @@ async function seedTag(name: string, slug?: string): Promise<number> {
     .insert(tagTable)
     .values({ name, slug: slug ?? name.toLowerCase() })
     .returning({ id: tagTable.id })
+  return rows[0]!.id
+}
+
+async function seedCategory(name: string, slug?: string): Promise<number> {
+  const rows = await db
+    .insert(categoryTable)
+    .values({ name, slug: slug ?? name.toLowerCase(), cover: '' })
+    .returning({ id: categoryTable.id })
   return rows[0]!.id
 }
 
@@ -249,5 +257,78 @@ describe('posts/repos/hydrate — hydratePostList', () => {
     const posts = await hydratePostList(db, rows, { images: false })
     expect(posts[0]?.cover).toBe('/c.png')
     expect(posts[0]?.coverThumbhash).toBeUndefined()
+  })
+  it('hydrates covers through hydrateImageRefs by default (revision: none)', async () => {
+    const revId = await seedContent({ type: 'post', revisionNo: 1, status: 'published' })
+    const pid = await seedPost({ slug: 'h-cover', publishedRevisionId: revId, cover: '/images/cover.png' })
+    const rows = await db.select().from(postMetaTable).where(eq(postMetaTable.id, pid))
+    const { hydratePostList } = await import('@/server/domains/posts/repos/hydrate')
+    const posts = await hydratePostList(db, rows)
+    // The hydrateImageRefs mock above rewrites cover/coverThumbhash.
+    expect(posts[0]?.cover).toBe('https://cdn/x.png')
+    expect(posts[0]?.coverThumbhash).toBe('t')
+    // revision defaults to 'none': no body join even though a published
+    // revision exists.
+    expect(posts[0]?.body).toEqual([])
+    expect(posts[0]?.headings).toEqual([])
+    expect(posts[0]?.imageSources).toEqual([])
+    expect(posts[0]?.publishedRevisionId).toBe(revId)
+  })
+  it('resolves category names; null and dangling ids yield an empty string', async () => {
+    const techId = await seedCategory('Tech')
+    const ghostId = await seedCategory('Ghost')
+    await seedPost({ slug: 'h-cat', categoryId: techId })
+    await seedPost({ slug: 'h-cat-null', categoryId: null })
+    await seedPost({ slug: 'h-cat-dangling', categoryId: ghostId })
+    // Dangling FK: remove the category behind p3's back (FK checks off, as
+    // legacy data would look after a pre-FK-era delete).
+    db.run(sql`PRAGMA foreign_keys = OFF`)
+    try {
+      await db.delete(categoryTable).where(eq(categoryTable.id, ghostId))
+    } finally {
+      db.run(sql`PRAGMA foreign_keys = ON`)
+    }
+    const rows = await db.select().from(postMetaTable)
+    const { hydratePostList } = await import('@/server/domains/posts/repos/hydrate')
+    const posts = await hydratePostList(db, rows)
+    const bySlug = new Map(posts.map((p) => [p.slug, p]))
+    expect(bySlug.get('h-cat')?.category).toBe('Tech')
+    expect(bySlug.get('h-cat-null')?.category).toBe('')
+    expect(bySlug.get('h-cat-dangling')?.category).toBe('')
+  })
+  it('joins bodies/headings/imageSources from the published revision', async () => {
+    const body = [
+      { _type: 'block', _key: 'b1', style: 'normal', children: [{ _type: 'span', _key: 's1', text: 'Hi' }] },
+    ]
+    const headings = [{ depth: 2, text: 'Hi', slug: 'hi' }]
+    const revId = await seedContent({
+      type: 'post',
+      revisionNo: 1,
+      status: 'published',
+      body,
+      headings,
+      imageSources: ['images/x.jpg'],
+    })
+    await seedPost({ slug: 'h-rev', publishedRevisionId: revId })
+    await seedPost({ slug: 'h-rev-none', publishedRevisionId: null })
+    const rows = await db.select().from(postMetaTable)
+    const { hydratePostList } = await import('@/server/domains/posts/repos/hydrate')
+    const posts = await hydratePostList(db, rows, { revision: 'published' })
+    const bySlug = new Map(posts.map((p) => [p.slug, p]))
+    expect(bySlug.get('h-rev')?.body).toEqual(body)
+    expect(bySlug.get('h-rev')?.headings).toEqual(headings)
+    expect(bySlug.get('h-rev')?.imageSources).toEqual(['images/x.jpg'])
+    // Meta without a published revision id still projects, with an empty body.
+    expect(bySlug.get('h-rev-none')?.body).toEqual([])
+  })
+  it('joins revisions but skips covers with revision: published + images: false', async () => {
+    const revId = await seedContent({ type: 'post', revisionNo: 1, status: 'published' })
+    const pid = await seedPost({ slug: 'h-rev-noimg', publishedRevisionId: revId, cover: '/images/cover.png' })
+    const rows = await db.select().from(postMetaTable).where(eq(postMetaTable.id, pid))
+    const { hydratePostList } = await import('@/server/domains/posts/repos/hydrate')
+    const posts = await hydratePostList(db, rows, { revision: 'published', images: false })
+    expect(posts[0]?.cover).toBe('/images/cover.png')
+    expect(posts[0]?.coverThumbhash).toBeUndefined()
+    expect(posts[0]?.publishedRevisionId).toBe(revId)
   })
 })

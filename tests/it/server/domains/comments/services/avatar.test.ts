@@ -1,36 +1,26 @@
 import { Buffer } from 'node:buffer'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import sharp from 'sharp'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Database } from '@/server/infra/db/database'
 
-const { warnMock, imageWidthMock, cacheGetMock, cacheSetMock, findEmailByIdMock } = vi.hoisted(() => ({
+const { warnMock } = vi.hoisted(() => ({
   warnMock: vi.fn(),
-  imageWidthMock: vi.fn(),
-  cacheGetMock: vi.fn(),
-  cacheSetMock: vi.fn(),
-  findEmailByIdMock: vi.fn(),
 }))
-vi.mock('@/server/infra/logger', () => ({
-  getLogger: () => ({ warn: warnMock }),
-}))
+// The logger stays mocked so the "degrade to the default avatar" warn
+// paths are assertable; every other dependency below is real — the
+// in-memory SQLite engine, the DB-backed kv cache registry, and real
+// sharp image processing.
+vi.mock('@/server/infra/logger', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/server/infra/logger')>()
+  return {
+    ...actual,
+    getLogger: () => ({ warn: warnMock, info: vi.fn(), error: vi.fn(), debug: vi.fn() }),
+  }
+})
 
-vi.mock('@/server/infra/cache/registry', () => ({
-  AvatarStatus: { HAVE_AVATAR: 0, NO_AVATAR: 1 },
-  get: cacheGetMock,
-  set: cacheSetMock,
-}))
-
-vi.mock('@/server/infra/db/operations/user', () => ({
-  findEmailById: findEmailByIdMock,
-}))
-
-vi.mock('@/server/infra/image/compress', () => ({
-  compressImage: (buf: Buffer) => Promise.resolve(buf),
-  imageWidth: imageWidthMock,
-}))
-
-import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
-import { setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
+import { clearAllTables, closeTestDatabase, createTestDatabase } from '#/_helpers/integration-db'
 import {
   defaultAvatarUrl,
   fetchAvatarImage,
@@ -42,27 +32,49 @@ import {
   resolveAvatarSize,
   serveAvatar,
 } from '@/server/domains/comments/services/avatar'
+import { type AvatarEntry, AvatarStatus, get, set } from '@/server/infra/cache/registry'
+import { user } from '@/server/infra/db/schema/user'
+import { imageWidth } from '@/server/infra/image/compress'
+import { DEFAULT_AVATAR_SIZE } from '@/shared/utils/avatar'
 import { encodedEmail } from '@/shared/utils/security'
 
-// The db handle is only forwarded to the mocked cache registry — a
-// stand-in is enough for the unit scope.
-const db = {} as Database
+const handle = createTestDatabase()
+const db: Database = handle.db
 
-beforeEach(() => {
+afterAll(() => {
+  closeTestDatabase(handle)
+})
+
+beforeEach(async () => {
+  await clearAllTables(db)
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
   warnMock.mockClear()
-  cacheGetMock.mockReset()
-  // Default: a cache miss.
-  cacheGetMock.mockResolvedValue(null)
-  cacheSetMock.mockReset()
-  cacheSetMock.mockResolvedValue(undefined)
-  findEmailByIdMock.mockReset()
-  // Default: no user row — only the numeric-id serving paths consult it.
-  findEmailByIdMock.mockResolvedValue(null)
-  imageWidthMock.mockReset()
-  // Default: upstream serves a large-enough image so the size guard passes.
-  imageWidthMock.mockResolvedValue(512)
 })
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
+
+/** A real square PNG — the upstream fixtures are decoded by real sharp,
+ *  so the Postgres-era fake magic-byte buffers are gone. */
+async function pngOfSize(width: number): Promise<Buffer> {
+  return sharp({ create: { width, height: width, channels: 3, background: { r: 32, g: 128, b: 200 } } })
+    .png()
+    .toBuffer()
+}
+
+async function seedUser(opts: Partial<typeof user.$inferInsert> = {}): Promise<number> {
+  const rows = await db
+    .insert(user)
+    .values({
+      name: opts.name ?? 'Alice',
+      email: opts.email ?? `alice-${Math.random().toString(36).slice(2)}@example.com`,
+      password: 'hashed',
+      ...opts,
+    })
+    .returning({ id: user.id })
+  return rows[0]!.id
+}
 
 function withAllowedMirror<T>(fn: () => Promise<T>): Promise<T> {
   const comments = TEST_BLOG_SETTINGS_BUNDLE.comments!
@@ -87,6 +99,11 @@ function mockFetch(responses: Array<Response | (() => Response)>) {
   })
   vi.stubGlobal('fetch', fn)
   return fn
+}
+
+/** Read the real kv_cache-backed avatar entry the service wrote. */
+async function cachedAvatar(size: number, email: string): Promise<AvatarEntry | null> {
+  return get<'avatar', AvatarEntry>(db, 'avatar', { size, email })
 }
 
 describe('domains/comments/services/avatar — resolveAvatarSize', () => {
@@ -144,10 +161,6 @@ describe('domains/comments/services/avatar — defaultAvatarUrl', () => {
 })
 
 describe('domains/comments/services/avatar — fetchAvatarImage', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
   it('returns null when the mirror is not on the SSRF allowlist', async () => {
     const fetchSpy = vi.fn()
     vi.stubGlobal('fetch', fetchSpy)
@@ -163,13 +176,16 @@ describe('domains/comments/services/avatar — fetchAvatarImage', () => {
     })
     expect(await fetchAvatarImage('abc', 120)).toBeNull()
     expect(fetchSpy).not.toHaveBeenCalled()
+    expect(warnMock).toHaveBeenCalledWith('avatar mirror url rejected by ssrf guard')
   })
 
   it('returns the compressed bytes on a 2xx response', async () => {
-    const body = Buffer.from([0x89, 0x50, 0x4e, 0x47])
-    mockFetch([new Response(body, { status: 200, headers: { 'Content-Type': 'image/png' } })])
+    const body = await pngOfSize(512)
+    mockFetch([new Response(new Uint8Array(body), { status: 200, headers: { 'Content-Type': 'image/png' } })])
     const result = await withAllowedMirror(() => fetchAvatarImage('hash', 120))
     expect(result).not.toBeNull()
+    // Real sharp round-trip: the compressed payload stays a 512px image.
+    expect(await imageWidth(result!)).toBe(512)
   })
 
   it('returns null when the mirror redirects to the default avatar URL', async () => {
@@ -179,31 +195,28 @@ describe('domains/comments/services/avatar — fetchAvatarImage', () => {
   })
 
   it('returns null when the upstream image is narrower than the requested size (inline placeholder)', async () => {
-    imageWidthMock.mockResolvedValue(24)
-    const body = Buffer.from([0x89, 0x50, 0x4e, 0x47])
-    mockFetch([new Response(body, { status: 200, headers: { 'Content-Type': 'image/png' } })])
+    const body = await pngOfSize(24)
+    mockFetch([new Response(new Uint8Array(body), { status: 200, headers: { 'Content-Type': 'image/png' } })])
     expect(await withAllowedMirror(() => fetchAvatarImage('hash', 120))).toBeNull()
   })
 
   it('accepts an upstream image at exactly the requested size', async () => {
-    imageWidthMock.mockResolvedValue(120)
-    const body = Buffer.from([0x89, 0x50, 0x4e, 0x47])
-    mockFetch([new Response(body, { status: 200, headers: { 'Content-Type': 'image/png' } })])
+    const body = await pngOfSize(120)
+    mockFetch([new Response(new Uint8Array(body), { status: 200, headers: { 'Content-Type': 'image/png' } })])
     expect(await withAllowedMirror(() => fetchAvatarImage('hash', 120))).not.toBeNull()
   })
 
   it('returns null when the upstream body is not a decodable image', async () => {
-    imageWidthMock.mockResolvedValue(undefined)
     const body = Buffer.from('<html>not an image</html>')
-    mockFetch([new Response(body, { status: 200 })])
+    mockFetch([new Response(new Uint8Array(body), { status: 200 })])
     expect(await withAllowedMirror(() => fetchAvatarImage('hash', 120))).toBeNull()
   })
 
   it('follows a non-default redirect', async () => {
-    const body = Buffer.from([0x89, 0x50])
+    const body = await pngOfSize(512)
     mockFetch([
       new Response(null, { status: 302, headers: { location: 'https://gravatar.com/avatar/real?d=x' } }),
-      new Response(body, { status: 200 }),
+      new Response(new Uint8Array(body), { status: 200 }),
     ])
     expect(await withAllowedMirror(() => fetchAvatarImage('hash', 120))).not.toBeNull()
   })
@@ -238,10 +251,6 @@ describe('domains/comments/services/avatar — fetchAvatarImage', () => {
 })
 
 describe('domains/comments/services/avatar — fetchQQAvatarImage', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
   it('returns null for non-QQ emails without calling fetch', async () => {
     const spy = vi.fn()
     vi.stubGlobal('fetch', spy)
@@ -250,8 +259,8 @@ describe('domains/comments/services/avatar — fetchQQAvatarImage', () => {
   })
 
   it('returns bytes on a 2xx response', async () => {
-    const body = Buffer.from([0xff, 0xd8])
-    mockFetch([new Response(body, { status: 200 })])
+    const body = await pngOfSize(100)
+    mockFetch([new Response(new Uint8Array(body), { status: 200 })])
     expect(await fetchQQAvatarImage('12345@qq.com', 120)).not.toBeNull()
   })
 
@@ -308,10 +317,6 @@ describe('domains/comments/services/avatar — fetchGithubAvatarDataUrl (sunk fr
 })
 
 describe('domains/comments/services/avatar — resolveAvatarForEmail', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
   it('resolves a non-QQ email to its hash without fetching or warming the cache', async () => {
     const spy = vi.fn()
     vi.stubGlobal('fetch', spy)
@@ -320,21 +325,19 @@ describe('domains/comments/services/avatar — resolveAvatarForEmail', () => {
 
     expect(hash).toMatch(/^[0-9a-f]{64}$/)
     expect(spy).not.toHaveBeenCalled()
-    expect(cacheSetMock).not.toHaveBeenCalled()
+    // Real cache: nothing was written for any size.
+    expect(await cachedAvatar(DEFAULT_AVATAR_SIZE, hash)).toBeNull()
   })
 
   it('pre-warms a HAVE_AVATAR entry at the default size when the QQ fetch succeeds', async () => {
-    const body = Buffer.from([0xff, 0xd8])
-    mockFetch([new Response(body, { status: 200 })])
+    const body = await pngOfSize(100)
+    mockFetch([new Response(new Uint8Array(body), { status: 200 })])
 
     const hash = await resolveAvatarForEmail(db, '12345@qq.com')
 
-    expect(cacheSetMock).toHaveBeenCalledWith(
-      db,
-      'avatar',
-      { size: 120, email: hash },
-      { status: 0, buffer: expect.any(Buffer) },
-    )
+    const entry = await cachedAvatar(DEFAULT_AVATAR_SIZE, hash)
+    expect(entry?.status).toBe(AvatarStatus.HAVE_AVATAR)
+    expect(entry?.buffer).toBeInstanceOf(Buffer)
   })
 
   it('pre-warms the NO_AVATAR sentinel when the QQ upstream has no avatar', async () => {
@@ -342,78 +345,85 @@ describe('domains/comments/services/avatar — resolveAvatarForEmail', () => {
 
     const hash = await resolveAvatarForEmail(db, '12345@qq.com')
 
-    expect(cacheSetMock).toHaveBeenCalledWith(db, 'avatar', { size: 120, email: hash }, { status: 1, buffer: null })
+    expect(await cachedAvatar(DEFAULT_AVATAR_SIZE, hash)).toEqual({
+      status: AvatarStatus.NO_AVATAR,
+      buffer: null,
+    })
   })
 })
 
 describe('domains/comments/services/avatar — serveAvatar', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
   it('writes a negative entry and redirects when the hash resolves to no user', async () => {
+    const fetchSpy = vi.fn()
+    vi.stubGlobal('fetch', fetchSpy)
+
     // Numeric id with no user row: nothing to ask upstream, so the raw
     // param itself keys the negative entry.
     const result = await serveAvatar(db, '42', 120)
 
     expect(result).toEqual({ kind: 'redirect' })
-    expect(cacheSetMock).toHaveBeenCalledWith(db, 'avatar', { size: 120, email: '42' }, { status: 1, buffer: null })
-    expect(cacheGetMock).not.toHaveBeenCalled()
+    expect(await cachedAvatar(120, '42')).toEqual({ status: AvatarStatus.NO_AVATAR, buffer: null })
+    expect(fetchSpy).not.toHaveBeenCalled()
   })
 
-  it('serves a QQ hit as png and overwrites the cache with HAVE_AVATAR — without ever reading it', async () => {
-    findEmailByIdMock.mockResolvedValue('12345@qq.com')
-    mockFetch([new Response(Buffer.from([0xff, 0xd8]), { status: 200 })])
-
-    const result = await serveAvatar(db, '42', 120)
-
-    expect(result).toEqual({ kind: 'png', buffer: expect.any(Buffer) })
-    // The QQ policy is deliberately not read-through: no cache read.
-    expect(cacheGetMock).not.toHaveBeenCalled()
+  it('serves a QQ hit as png and overwrites a stale cache entry — the QQ policy never reads the cache', async () => {
+    const id = await seedUser({ email: '12345@qq.com' })
     const hash = await encodedEmail('12345@qq.com')
-    expect(cacheSetMock).toHaveBeenCalledWith(
-      db,
-      'avatar',
-      { size: 120, email: hash },
-      { status: 0, buffer: expect.any(Buffer) },
-    )
+    // Pre-warm a stale positive entry: a read-through policy would serve
+    // it without ever calling the upstream.
+    const stale = Buffer.from('stale-bytes')
+    await set(db, 'avatar', { size: 120, email: hash }, { status: AvatarStatus.HAVE_AVATAR, buffer: stale })
+    const fetchFn = mockFetch([new Response(new Uint8Array(await pngOfSize(100)), { status: 200 })])
+
+    const result = await serveAvatar(db, String(id), 120)
+
+    expect(result.kind).toBe('png')
+    expect(fetchFn).toHaveBeenCalledTimes(1)
+    if (result.kind === 'png') {
+      expect(result.buffer.equals(stale)).toBe(false)
+      // The cache was overwritten with the freshly fetched bytes.
+      const entry = await cachedAvatar(120, hash)
+      expect(entry?.status).toBe(AvatarStatus.HAVE_AVATAR)
+      expect(entry?.buffer?.equals(result.buffer)).toBe(true)
+    }
   })
 
   it('overwrites the cache with a negative entry and redirects on a QQ miss', async () => {
-    findEmailByIdMock.mockResolvedValue('12345@qq.com')
+    const id = await seedUser({ email: '12345@qq.com' })
     mockFetch([new Response(null, { status: 404 })])
 
-    const result = await serveAvatar(db, '42', 120)
+    const result = await serveAvatar(db, String(id), 120)
 
     expect(result).toEqual({ kind: 'redirect' })
-    expect(cacheGetMock).not.toHaveBeenCalled()
     const hash = await encodedEmail('12345@qq.com')
-    expect(cacheSetMock).toHaveBeenCalledWith(db, 'avatar', { size: 120, email: hash }, { status: 1, buffer: null })
+    expect(await cachedAvatar(120, hash)).toEqual({ status: AvatarStatus.NO_AVATAR, buffer: null })
   })
 
   it('serves a gravatar cache hit as png without fetching upstream', async () => {
     const spy = vi.fn()
     vi.stubGlobal('fetch', spy)
-    cacheGetMock.mockResolvedValue({ status: 0, buffer: Buffer.from('av') })
+    await set(
+      db,
+      'avatar',
+      { size: 120, email: 'abc' },
+      { status: AvatarStatus.HAVE_AVATAR, buffer: Buffer.from('av') },
+    )
 
     const result = await serveAvatar(db, 'abc', 120)
 
     expect(result).toEqual({ kind: 'png', buffer: Buffer.from('av') })
-    expect(cacheGetMock).toHaveBeenCalledWith(db, 'avatar', { size: 120, email: 'abc' })
     expect(spy).not.toHaveBeenCalled()
-    expect(cacheSetMock).not.toHaveBeenCalled()
   })
 
   it('redirects on a gravatar negative-cache entry without fetching upstream', async () => {
     const spy = vi.fn()
     vi.stubGlobal('fetch', spy)
-    cacheGetMock.mockResolvedValue({ status: 1, buffer: null })
+    await set(db, 'avatar', { size: 120, email: 'abc' }, { status: AvatarStatus.NO_AVATAR, buffer: null })
 
     const result = await serveAvatar(db, 'abc', 120)
 
     expect(result).toEqual({ kind: 'redirect' })
     expect(spy).not.toHaveBeenCalled()
-    expect(cacheSetMock).not.toHaveBeenCalled()
   })
 
   it('writes a negative entry and redirects when the gravatar fetch misses', async () => {
@@ -422,30 +432,34 @@ describe('domains/comments/services/avatar — serveAvatar', () => {
     const result = await withAllowedMirror(() => serveAvatar(db, 'abc', 120))
 
     expect(result).toEqual({ kind: 'redirect' })
-    expect(cacheSetMock).toHaveBeenCalledWith(db, 'avatar', { size: 120, email: 'abc' }, { status: 1, buffer: null })
+    expect(await cachedAvatar(120, 'abc')).toEqual({ status: AvatarStatus.NO_AVATAR, buffer: null })
   })
 
   it('serves the fetched bytes and caches HAVE_AVATAR on a gravatar fetch hit', async () => {
-    mockFetch([new Response(Buffer.from([0x89, 0x50, 0x4e, 0x47]), { status: 200 })])
+    mockFetch([new Response(new Uint8Array(await pngOfSize(512)), { status: 200 })])
 
     const result = await withAllowedMirror(() => serveAvatar(db, 'abc', 120))
 
-    expect(result).toEqual({ kind: 'png', buffer: expect.any(Buffer) })
-    expect(cacheSetMock).toHaveBeenCalledWith(
-      db,
-      'avatar',
-      { size: 120, email: 'abc' },
-      { status: 0, buffer: expect.any(Buffer) },
-    )
+    expect(result.kind).toBe('png')
+    if (result.kind === 'png') {
+      const entry = await cachedAvatar(120, 'abc')
+      expect(entry?.status).toBe(AvatarStatus.HAVE_AVATAR)
+      expect(entry?.buffer?.equals(result.buffer)).toBe(true)
+    }
   })
 
-  it('treats a HAVE_AVATAR entry with a null buffer as a miss and records the negative on fetch failure', async () => {
-    cacheGetMock.mockResolvedValue({ status: 0, buffer: null })
-    mockFetch([new Response(null, { status: 404 })])
+  it('persists a HAVE_AVATAR entry with a null buffer as NO_AVATAR and redirects without fetching', async () => {
+    // The avatar codec normalizes a payload-less positive to the negative
+    // sentinel byte (encodeAvatar), so the mocked-unit-test "null buffer
+    // treated as a miss, refetch upstream" scenario cannot be persisted:
+    // the entry reads back as NO_AVATAR and short-circuits.
+    const spy = vi.fn()
+    vi.stubGlobal('fetch', spy)
+    await set(db, 'avatar', { size: 120, email: 'abc' }, { status: AvatarStatus.HAVE_AVATAR, buffer: null })
 
     const result = await withAllowedMirror(() => serveAvatar(db, 'abc', 120))
 
     expect(result).toEqual({ kind: 'redirect' })
-    expect(cacheSetMock).toHaveBeenCalledWith(db, 'avatar', { size: 120, email: 'abc' }, { status: 1, buffer: null })
+    expect(spy).not.toHaveBeenCalled()
   })
 })

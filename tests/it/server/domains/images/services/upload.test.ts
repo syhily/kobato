@@ -1,35 +1,64 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { eq } from 'drizzle-orm'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Database } from '@/server/infra/db/database'
 
 // upload.ts wires together pure validation (mime sniffing, size guard,
-// kind → key resolution) with IO (image processing, S3 put, DB upsert).
-// We mock the IO surface so the pure branches — mime-type detection per
-// format, size-limit enforcement, kind routing, note trimming — are the
-// only things actually exercised here.
+// kind → key resolution) with IO (image processing, storage put, DB
+// insert/upsert). The DB side is REAL here — rows land in the shared
+// in-memory SQLite — while sharp (`processImageBuffer`) and the storage
+// backend stay mocked as true externals (an in-memory Map backend behind
+// the registry seam).
+import { clearAllTables } from '#/_helpers/integration-db'
+import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
+import { buildObjectKey } from '@/server/domains/images/key'
+import { image } from '@/server/infra/db/schema/media'
 
 const processImageBufferMock = vi.hoisted(() => vi.fn())
-const storagePutMock = vi.hoisted(() => vi.fn())
-const insertImageMock = vi.hoisted(() => vi.fn())
-const upsertImageByStoragePathMock = vi.hoisted(() => vi.fn())
-const invalidateCacheMock = vi.hoisted(() => vi.fn())
-const toAdminImageDtoMock = vi.hoisted(() => vi.fn())
 
 vi.mock('@/server/infra/image/process', () => ({ processImageBuffer: processImageBufferMock }))
+
+const storageMock = vi.hoisted(() => {
+  const store = new Map<string, { body: Buffer; contentType: string }>()
+  return {
+    store,
+    clearStore: () => store.clear(),
+    backend: {
+      put: async ({ key, body, contentType }: { key: string; body: Buffer; contentType: string }) => {
+        store.set(key, { body, contentType })
+        return { key, size: body.length }
+      },
+    },
+  }
+})
+
 vi.mock('@/server/infra/storage/registry', () => ({
-  activeBackend: () => ({ backend: { put: storagePutMock }, driver: 's3' }),
+  activeBackend: () => ({ backend: storageMock.backend, driver: 's3' }),
+  backendFor: () => storageMock.backend,
 }))
-vi.mock('@/server/infra/db/operations/image', () => ({
-  insertImage: insertImageMock,
-  upsertImageByStoragePath: upsertImageByStoragePathMock,
-}))
-vi.mock('@/server/domains/images/services/cache', () => ({ invalidateImageEnhanceCacheFor: invalidateCacheMock }))
-vi.mock('@/server/domains/images/services/admin-read', () => ({ toAdminImageDto: toAdminImageDtoMock }))
-vi.mock('@/server/infra/logger', () => ({ getLogger: () => ({ info: vi.fn(), error: vi.fn(), warn: vi.fn() }) }))
 
 const { assertImageUploadAllowed, uploadImage } = await import('@/server/domains/images/services/upload')
 
-const fakeDb = {} as Database
+const handle = createTestDatabase()
+const db: Database = handle.db
+
+afterAll(async () => {
+  closeTestDatabase(handle)
+})
+
+beforeEach(async () => {
+  await clearAllTables(db)
+  storageMock.clearStore()
+  vi.clearAllMocks()
+  // Echo the input buffer back so the processed size matches the sniffed one.
+  processImageBufferMock.mockImplementation(async ({ buffer }: { buffer: Buffer }) => ({
+    buffer,
+    width: 100,
+    height: 100,
+    byteSize: buffer.length,
+    thumbhash: Buffer.from([0]),
+  }))
+})
 
 // Buffer builders for each sniffed format. Magic bytes matter — uploadImage
 // rejects anything whose first 12 bytes don't match a known signature.
@@ -56,34 +85,16 @@ function avif(brand = 'avif'): Buffer {
   return buf
 }
 
-function okProcessed(buffer: Buffer) {
-  return {
-    buffer,
-    width: 100,
-    height: 100,
-    byteSize: buffer.length,
-    thumbhash: Buffer.from([0]),
-  }
+async function allImageRows() {
+  return db.select().from(image)
 }
 
 describe('images/services/upload — pure validation + mime detection', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-    processImageBufferMock.mockReset()
-    storagePutMock.mockResolvedValue({ key: 'images/x.jpg', size: 0 })
-    insertImageMock.mockReset()
-    upsertImageByStoragePathMock.mockReset()
-    invalidateCacheMock.mockResolvedValue(undefined)
-    toAdminImageDtoMock.mockReturnValue({ id: '1', storagePath: 'x' })
-    // Echo the input buffer back so processed size matches the sniffed one.
-    processImageBufferMock.mockImplementation(async ({ buffer }: { buffer: Buffer }) => okProcessed(buffer))
-  })
-
   describe('rejects unsupported / malformed buffers', () => {
     it('throws when the buffer is shorter than 12 bytes', async () => {
       const buf = Buffer.from([1, 2, 3])
       await expect(
-        uploadImage(fakeDb, {
+        uploadImage(db, {
           kind: { kind: 'generic' },
           buffer: buf,
           maxBytes: 1000,
@@ -96,7 +107,7 @@ describe('images/services/upload — pure validation + mime detection', () => {
     it('throws when the magic bytes match no known format', async () => {
       const buf = Buffer.from([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
       await expect(
-        uploadImage(fakeDb, {
+        uploadImage(db, {
           kind: { kind: 'generic' },
           buffer: buf,
           maxBytes: 1000,
@@ -110,7 +121,7 @@ describe('images/services/upload — pure validation + mime detection', () => {
       // ftyp + 'mif1' — recognised box but not an allowed brand.
       const buf = avif('mif1')
       await expect(
-        uploadImage(fakeDb, {
+        uploadImage(db, {
           kind: { kind: 'generic' },
           buffer: buf,
           maxBytes: 1000,
@@ -125,7 +136,7 @@ describe('images/services/upload — pure validation + mime detection', () => {
       const buf = Buffer.alloc(12)
       buf.write('ftyp', 8, 'ascii') // ftypIndex = 8, ftypIndex + 4 = 12 === length → brand read empty
       await expect(
-        uploadImage(fakeDb, {
+        uploadImage(db, {
           kind: { kind: 'generic' },
           buffer: buf,
           maxBytes: 1000,
@@ -138,8 +149,7 @@ describe('images/services/upload — pure validation + mime detection', () => {
 
   describe('accepts each supported format', () => {
     async function run(buf: Buffer) {
-      insertImageMock.mockResolvedValue({ storagePath: 'images/x.jpg' })
-      return uploadImage(fakeDb, {
+      return uploadImage(db, {
         kind: { kind: 'generic' },
         buffer: buf,
         maxBytes: 1000,
@@ -163,7 +173,7 @@ describe('images/services/upload — pure validation + mime detection', () => {
     it('throws BAD_REQUEST when the input buffer exceeds maxBytes', async () => {
       const buf = png()
       await expect(
-        uploadImage(fakeDb, {
+        uploadImage(db, {
           kind: { kind: 'generic' },
           buffer: buf,
           maxBytes: buf.length - 1,
@@ -185,7 +195,7 @@ describe('images/services/upload — pure validation + mime detection', () => {
         thumbhash: Buffer.from([0]),
       })
       await expect(
-        uploadImage(fakeDb, {
+        uploadImage(db, {
           kind: { kind: 'generic' },
           buffer: original,
           maxBytes: original.length + 10,
@@ -193,74 +203,115 @@ describe('images/services/upload — pure validation + mime detection', () => {
           uploader: null,
         }),
       ).rejects.toThrow(/重编码后体积超过上限/)
-      expect(storagePutMock).not.toHaveBeenCalled()
+      // Nothing reached the backend or the database.
+      expect(storageMock.store.size).toBe(0)
+      expect(await allImageRows()).toHaveLength(0)
     })
   })
 
   describe('kind routing — generic insert vs state-key upsert', () => {
-    it('uses insertImage for the generic kind', async () => {
-      insertImageMock.mockResolvedValue({ storagePath: 'images/g.jpg' })
-      const buf = jpeg()
-      await uploadImage(fakeDb, {
+    it('inserts a new row for the generic kind', async () => {
+      const dto = await uploadImage(db, {
         kind: { kind: 'generic' },
-        buffer: buf,
+        buffer: jpeg(),
         maxBytes: 1000,
         jpegQuality: 80,
         uploader: null,
       })
-      expect(insertImageMock).toHaveBeenCalledTimes(1)
-      expect(upsertImageByStoragePathMock).not.toHaveBeenCalled()
+      const rows = await allImageRows()
+      expect(rows).toHaveLength(1)
+      expect(rows[0].storagePath).toMatch(/^images\/\d{4}\/\d{2}\/\d{16}\.jpg$/)
+      expect(rows[0].storageDriver).toBe('s3')
+      expect(dto.storagePath).toBe(rows[0].storagePath)
+      // The bytes landed on the backend under the row's key.
+      expect(storageMock.store.has(rows[0].storagePath)).toBe(true)
     })
 
     it('swallows a duplicate-key insert failure into a friendly DomainError', async () => {
-      insertImageMock.mockRejectedValue(new Error('unique constraint violation'))
-      const buf = jpeg()
-      await expect(
-        uploadImage(fakeDb, {
-          kind: { kind: 'generic' },
-          buffer: buf,
-          maxBytes: 1000,
-          jpegQuality: 80,
-          uploader: null,
-        }),
-      ).rejects.toThrow(/图片元数据写入失败/)
+      // Freeze the clock so the generic key is deterministic, then occupy
+      // it with a real row — the second insert hits the UNIQUE constraint.
+      vi.useFakeTimers()
+      try {
+        vi.setSystemTime(new Date('2026-07-30T12:34:56.789Z'))
+        const key = buildObjectKey({ kind: 'generic', now: new Date() })
+        await db.insert(image).values({
+          storagePath: key,
+          storageDriver: 's3',
+          mimeType: 'image/jpeg',
+          width: 1,
+          height: 1,
+          byteSize: 1,
+        })
+        await expect(
+          uploadImage(db, {
+            kind: { kind: 'generic' },
+            buffer: jpeg(),
+            maxBytes: 1000,
+            jpegQuality: 80,
+            uploader: null,
+          }),
+        ).rejects.toThrow(/图片元数据写入失败/)
+        // Still exactly one row — the failed insert left nothing behind.
+        expect(await allImageRows()).toHaveLength(1)
+      } finally {
+        vi.useRealTimers()
+      }
     })
 
-    it('uses upsertImageByStoragePath for a category kind', async () => {
-      upsertImageByStoragePathMock.mockResolvedValue({ storagePath: 'images/categories/x.jpg' })
-      const buf = jpeg()
-      await uploadImage(fakeDb, {
+    it('upserts on the state key for a category kind', async () => {
+      const dto = await uploadImage(db, {
         kind: { kind: 'category', slug: 'my-slug' },
-        buffer: buf,
+        buffer: jpeg(),
         maxBytes: 1000,
         jpegQuality: 80,
         uploader: null,
       })
-      expect(upsertImageByStoragePathMock).toHaveBeenCalledTimes(1)
-      expect(insertImageMock).not.toHaveBeenCalled()
-      const arg = upsertImageByStoragePathMock.mock.calls[0]![1] as { storagePath: string }
-      expect(arg.storagePath).toBe('images/categories/my-slug.jpg')
+      expect(dto.storagePath).toBe('images/categories/my-slug.jpg')
+      const rows = await allImageRows()
+      expect(rows).toHaveLength(1)
+      expect(rows[0].storagePath).toBe('images/categories/my-slug.jpg')
     })
 
-    it('uses upsertImageByStoragePath for a friend kind', async () => {
-      upsertImageByStoragePathMock.mockResolvedValue({ storagePath: 'images/links/h.jpg' })
-      const buf = jpeg()
-      await uploadImage(fakeDb, {
-        kind: { kind: 'friend', host: 'example.com' },
-        buffer: buf,
+    it('re-uploading the same category slug overwrites instead of duplicating', async () => {
+      await uploadImage(db, {
+        kind: { kind: 'category', slug: 'my-slug' },
+        buffer: jpeg(),
+        note: 'first',
         maxBytes: 1000,
         jpegQuality: 80,
         uploader: null,
       })
-      const arg = upsertImageByStoragePathMock.mock.calls[0]![1] as { storagePath: string }
-      expect(arg.storagePath).toBe('images/links/example.com.jpg')
+      await uploadImage(db, {
+        kind: { kind: 'category', slug: 'my-slug' },
+        buffer: jpeg(),
+        note: 'second',
+        maxBytes: 1000,
+        jpegQuality: 80,
+        uploader: null,
+      })
+      const rows = await allImageRows()
+      expect(rows).toHaveLength(1)
+      expect(rows[0].note).toBe('second')
+    })
+
+    it('upserts on the state key for a friend kind', async () => {
+      const dto = await uploadImage(db, {
+        kind: { kind: 'friend', host: 'example.com' },
+        buffer: jpeg(),
+        maxBytes: 1000,
+        jpegQuality: 80,
+        uploader: null,
+      })
+      expect(dto.storagePath).toBe('images/links/example.com.jpg')
+      const rows = await allImageRows()
+      expect(rows).toHaveLength(1)
+      expect(rows[0].storagePath).toBe('images/links/example.com.jpg')
     })
   })
 
   describe('note normalisation', () => {
     it('trims a note and stores it when non-empty', async () => {
-      insertImageMock.mockResolvedValue({ storagePath: 'images/g.jpg' })
-      await uploadImage(fakeDb, {
+      const dto = await uploadImage(db, {
         kind: { kind: 'generic' },
         buffer: jpeg(),
         note: '   hello   ',
@@ -268,12 +319,13 @@ describe('images/services/upload — pure validation + mime detection', () => {
         jpegQuality: 80,
         uploader: null,
       })
-      expect(insertImageMock.mock.calls[0]![1]).toMatchObject({ note: 'hello' })
+      expect(dto.note).toBe('hello')
+      const rows = await db.select().from(image).where(eq(image.storagePath, dto.storagePath))
+      expect(rows[0].note).toBe('hello')
     })
 
     it('stores null for a whitespace-only note', async () => {
-      insertImageMock.mockResolvedValue({ storagePath: 'images/g.jpg' })
-      await uploadImage(fakeDb, {
+      const dto = await uploadImage(db, {
         kind: { kind: 'generic' },
         buffer: jpeg(),
         note: '   ',
@@ -281,47 +333,46 @@ describe('images/services/upload — pure validation + mime detection', () => {
         jpegQuality: 80,
         uploader: null,
       })
-      expect(insertImageMock.mock.calls[0]![1]).toMatchObject({ note: null })
+      expect(dto.note).toBeNull()
     })
 
     it('stores null when no note is supplied', async () => {
-      insertImageMock.mockResolvedValue({ storagePath: 'images/g.jpg' })
-      await uploadImage(fakeDb, {
+      const dto = await uploadImage(db, {
         kind: { kind: 'generic' },
         buffer: jpeg(),
         maxBytes: 1000,
         jpegQuality: 80,
         uploader: null,
       })
-      expect(insertImageMock.mock.calls[0]![1]).toMatchObject({ note: null })
+      expect(dto.note).toBeNull()
     })
   })
 
   describe('uploader plumbing', () => {
-    it('passes uploader.id to insertImage and uploader.name to the DTO', async () => {
-      insertImageMock.mockResolvedValue({ storagePath: 'images/g.jpg' })
-      await uploadImage(fakeDb, {
+    it('persists uploader.id on the row and uploader.name on the DTO', async () => {
+      const dto = await uploadImage(db, {
         kind: { kind: 'generic' },
         buffer: jpeg(),
         uploader: { id: 42, name: 'alice' },
         maxBytes: 1000,
         jpegQuality: 80,
       })
-      expect(insertImageMock.mock.calls[0]![1]).toMatchObject({ uploaderId: 42 })
-      expect(toAdminImageDtoMock).toHaveBeenCalledWith(expect.anything(), 'alice')
+      expect(dto.uploaderId).toBe('42')
+      expect(dto.uploaderName).toBe('alice')
+      const rows = await db.select().from(image).where(eq(image.storagePath, dto.storagePath))
+      expect(rows[0].uploaderId).toBe(42)
     })
 
-    it('passes null uploaderId/name when uploader is absent', async () => {
-      insertImageMock.mockResolvedValue({ storagePath: 'images/g.jpg' })
-      await uploadImage(fakeDb, {
+    it('persists null uploaderId/name when uploader is absent', async () => {
+      const dto = await uploadImage(db, {
         kind: { kind: 'generic' },
         buffer: jpeg(),
         uploader: null,
         maxBytes: 1000,
         jpegQuality: 80,
       })
-      expect(insertImageMock.mock.calls[0]![1]).toMatchObject({ uploaderId: null })
-      expect(toAdminImageDtoMock).toHaveBeenCalledWith(expect.anything(), null)
+      expect(dto.uploaderId).toBeNull()
+      expect(dto.uploaderName).toBeNull()
     })
   })
 })
