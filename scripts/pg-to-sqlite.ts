@@ -135,18 +135,32 @@ function mapRow(table: AnyTable, row: Record<string, unknown>): Record<string, u
  *  multi-million-row tables (comment, image, access_log). */
 const READ_PAGE = 5_000
 
+/**
+ * Keyset pagination needs a monotonic INTEGER column. The old PG schema
+ * is not uniform here — `font.id` is uuid and `verification.id` is a
+ * random text token — so column presence is not enough: ask the source
+ * what type `id` actually is. Non-integer ids fall back to a single
+ * read (those tables are small by design).
+ */
+async function hasIntegerId(client: pg.Client, table: string): Promise<boolean> {
+  const result = await client.query(
+    `SELECT data_type FROM information_schema.columns WHERE table_name = $1 AND column_name = 'id'`,
+    [table],
+  )
+  const dataType = unsafeCast<{ data_type?: string } | undefined>(result.rows[0])?.data_type
+  return dataType === 'integer' || dataType === 'bigint'
+}
+
 async function pumpTable(client: pg.Client, db: Database, table: AnyTable): Promise<PumpStats> {
   const name = getTableName(table)
   const columns = Object.values(getColumns(table))
-  // Keyset pagination needs a monotonic column: `id` when the table has
-  // one, otherwise fall back to a single read (the id-less tables are
-  // small by design — post_tag junctions and the like).
   const keyColumn = columns.find((column) => column.name === 'id')
+  const keyset = keyColumn !== undefined && (await hasIntegerId(client, name))
   let total = 0
   try {
     let lastKey = 0
     for (;;) {
-      const result = keyColumn
+      const result = keyset
         ? await client.query(`SELECT * FROM "${name}" WHERE id > $1 ORDER BY id LIMIT ${READ_PAGE}`, [lastKey])
         : await client.query(`SELECT * FROM "${name}"`)
       const rows = unsafeCast<Record<string, unknown>[]>(result.rows)
@@ -160,10 +174,10 @@ async function pumpTable(client: pg.Client, db: Database, table: AnyTable): Prom
         }
       })
       total += rows.length
-      if (keyColumn) {
+      if (keyset && keyColumn) {
         lastKey = Number(rows[rows.length - 1]![keyColumn.name])
       }
-      if (rows.length < READ_PAGE || !keyColumn) {
+      if (rows.length < READ_PAGE || !keyset) {
         break
       }
     }
