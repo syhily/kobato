@@ -83,7 +83,7 @@ describe('LoginForm passkey chain', () => {
     // The identify form stays in place — the input is locked and the
     // account's passkey requirement is explained.
     expect(screen.getByLabelText('邮箱')).toBeDisabled()
-    expect(screen.getByText('此账号已启用 Passkey 验证，请点击下方按钮完成登陆。')).toBeInTheDocument()
+    expect(screen.getByText('此账号已启用 Passkey 验证，请点击上方按钮完成登陆。')).toBeInTheDocument()
 
     // No network or ceremony has started — the browser requires a user
     // gesture for modal WebAuthn.

@@ -334,13 +334,6 @@ export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: L
             className={inputClasses}
           />
         </div>
-        {isPasskeyStep && (
-          <p className="text-center text-sm text-muted-foreground">
-            {passkeyPending
-              ? '正在验证 Passkey，请按浏览器提示完成验证（跨设备登陆可扫码）。'
-              : '此账号已启用 Passkey 验证，请点击下方按钮完成登陆。'}
-          </p>
-        )}
         {isPasskeyStep ? (
           /* The ceremony launches from this button's click — a user gesture
              keeps the call inside the browser's transient-activation
@@ -393,6 +386,11 @@ export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: L
               {passkeyError}
             </p>
           )}
+          <p className="text-center text-sm text-muted-foreground">
+            {passkeyPending
+              ? '正在验证 Passkey，请按浏览器提示完成验证（跨设备登陆可扫码）。'
+              : '此账号已启用 Passkey 验证，请点击上方按钮完成登陆。'}
+          </p>
           {/* Account recovery: a passkey-only account with a failing
               ceremony is otherwise a lockout — identify always routes back
               to this state. */}

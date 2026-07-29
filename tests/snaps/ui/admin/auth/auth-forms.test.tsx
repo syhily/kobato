@@ -38,7 +38,7 @@ describe('snapshot: LoginForm', () => {
   it('renders the passkey step after identify answers method=passkey', () => {
     const html = stableHtml(renderInRouter(<LoginForm isSubmitting={false} actionData={{ method: 'passkey' }} />))
     // The identify form stays in place: locked input + passkey notice.
-    expect(html).toContain('此账号已启用 Passkey 验证')
+    expect(html).toContain('此账号已启用 Passkey 验证，请点击上方按钮完成登陆。')
     expect(html).toContain('disabled')
     // The ceremony launches from the primary button's click (user
     // gesture), not on mount.
