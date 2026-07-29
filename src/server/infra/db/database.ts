@@ -17,8 +17,15 @@ export interface DatabaseHandle {
   client: DatabaseSync
   /** The path the handle was opened with (`:memory:` included). */
   path: string
+  /** Decided once at open: the in-memory special case, so consumers read a flag instead of re-deriving it from `path`. */
+  inMemory: boolean
   /** Set by `closeDatabase` — close is idempotent (restore may close early). */
   closed: boolean
+}
+
+/** The single owner of the `:memory:` convention, shared by both engines. */
+export function isInMemoryPath(p: string): boolean {
+  return p === ':memory:'
 }
 
 /**
@@ -28,7 +35,7 @@ export interface DatabaseHandle {
  */
 export function resolveDatabasePath(): string {
   const configured = serverConfig.storage.database
-  if (configured === ':memory:') {
+  if (isInMemoryPath(configured)) {
     return configured
   }
   return path.resolve(configured === '' ? path.join(serverConfig.storage.data, 'kobato.db') : configured)
@@ -43,7 +50,8 @@ export function resolveDatabasePath(): string {
  * connection and the migration connection.
  */
 export function openDatabase(databasePath: string): DatabaseHandle {
-  if (databasePath !== ':memory:') {
+  const inMemory = isInMemoryPath(databasePath)
+  if (!inMemory) {
     mkdirSync(path.dirname(databasePath), { recursive: true })
   }
   const client = new DatabaseSync(databasePath)
@@ -56,7 +64,7 @@ export function openDatabase(databasePath: string): DatabaseHandle {
   client.exec('PRAGMA cache_size = -20000')
   client.exec('PRAGMA temp_store = MEMORY')
   client.exec('PRAGMA mmap_size = 268435456')
-  return { db: drizzle({ client }), client, path: databasePath, closed: false }
+  return { db: drizzle({ client }), client, path: databasePath, inMemory, closed: false }
 }
 
 /**
@@ -71,7 +79,7 @@ export function closeDatabase(handle: DatabaseHandle): void {
   }
   handle.closed = true
   handle.client.exec('PRAGMA optimize')
-  if (handle.path !== ':memory:') {
+  if (!handle.inMemory) {
     handle.client.exec('PRAGMA wal_checkpoint(TRUNCATE)')
   }
   handle.client.close()

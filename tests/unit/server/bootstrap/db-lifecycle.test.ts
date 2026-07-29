@@ -23,7 +23,7 @@ const wireRestoreMachine = vi.fn((deps: { complete: (success: boolean, err?: Err
 })
 
 vi.mock('@/server/infra/db/database', () => ({
-  openDatabase: vi.fn(() => ({ db: dbMock, client: clientMock, path: ':memory:', closed: false })),
+  openDatabase: vi.fn(() => ({ db: dbMock, client: clientMock, path: ':memory:', inMemory: true, closed: false })),
   closeDatabase: (handle: { closed: boolean }) => {
     closeDatabase(handle)
     handle.closed = true

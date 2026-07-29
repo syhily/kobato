@@ -20,7 +20,7 @@ import {
   resetAllBatchers,
 } from '@/server/infra/db/batcher-registry'
 
-const handle = { db: {}, client: {}, path: ':memory:', closed: false } as never
+const handle = { db: {}, client: {}, path: ':memory:', inMemory: true, closed: false } as never
 
 function fakeBatcher() {
   return { flush: vi.fn(async () => ({ committed: 0, deadLettered: 0 })) }

@@ -18,7 +18,7 @@ const log = getLogger('analytics.maintenance')
  */
 
 async function analyticsFileSize(handle: AnalyticsHandle): Promise<number | null> {
-  if (handle.path === ':memory:') {
+  if (handle.inMemory) {
     return null
   }
   const stats = await stat(handle.path).catch(() => null)

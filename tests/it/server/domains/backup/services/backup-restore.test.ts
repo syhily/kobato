@@ -19,7 +19,7 @@ vi.mock('@/server/bootstrap/analytics-lifecycle', () => ({
   // Same contract as the real seam, driven against the test's real
   // temp-file DuckDB handle.
   snapshotAnalyticsTo: async (stagingPath: string) => {
-    if (analyticsHandle.path === ':memory:') {
+    if (analyticsHandle.inMemory) {
       return false
     }
     await analyticsHandle.writer.run('CHECKPOINT')

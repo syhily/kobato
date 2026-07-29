@@ -89,7 +89,7 @@ export function getAnalyticsReader(): AnalyticsReader {
  */
 export async function snapshotAnalyticsTo(stagingPath: string): Promise<boolean> {
   const handle = getAnalyticsHandle()
-  if (handle.path === ':memory:') {
+  if (handle.inMemory) {
     return false
   }
   await handle.writer.run('CHECKPOINT')

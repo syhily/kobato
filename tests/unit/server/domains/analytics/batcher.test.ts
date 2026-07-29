@@ -83,7 +83,7 @@ describe('replayDeadLetter', () => {
   // replay operations. The db stub is inert — AccessLogBatcher writes
   // through the analytics handle, not the relational db.
   const dbStub = {}
-  initAllBatchers({ db: dbStub, client: {}, path: ':memory:', closed: false } as never)
+  initAllBatchers({ db: dbStub, client: {}, path: ':memory:', inMemory: true, closed: false } as never)
 
   it('returns replayed=0 failed=0 when file does not exist', async () => {
     vi.mocked(readFile).mockRejectedValue(new Error('ENOENT'))

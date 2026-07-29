@@ -3,6 +3,7 @@ import { mkdirSync } from 'node:fs'
 import path from 'node:path'
 
 import { serverConfig } from '@/server/infra/config'
+import { isInMemoryPath } from '@/server/infra/db/database'
 
 /**
  * The embedded DuckDB analytics sidecar: one file, one instance, one
@@ -21,13 +22,21 @@ export interface AnalyticsHandle {
   reader: DuckDBConnection
   /** The path the handle was opened with. */
   path: string
+  /** Decided once at open: the in-memory special case, so consumers read a flag instead of re-deriving it from `path`. */
+  inMemory: boolean
   closed: boolean
 }
 
 /** The effective analytics file path: `storage.analyticsDatabase` when
- *  set, otherwise `<storage.data>/analytics.duckdb`. */
+ *  set, otherwise `<storage.data>/analytics.duckdb`. `:memory:` passes
+ *  through (mirroring `resolveDatabasePath`) — without the passthrough
+ *  `path.resolve(':memory:')` would silently yield a file named
+ *  `<cwd>/:memory:`. */
 export function resolveAnalyticsPath(): string {
   const configured = serverConfig.storage.analyticsDatabase
+  if (isInMemoryPath(configured)) {
+    return configured
+  }
   return path.resolve(configured === '' ? path.join(serverConfig.storage.data, 'analytics.duckdb') : configured)
 }
 
@@ -42,15 +51,15 @@ export async function openAnalyticsDatabase(analyticsPath: string, ddl: string):
   // mkdir FIRST (same order as openDatabase): a custom
   // storage.analyticsDatabase in a missing directory must be created
   // before DuckDB tries to open the file.
-  if (analyticsPath !== ':memory:') {
+  const inMemory = isInMemoryPath(analyticsPath)
+  if (!inMemory) {
     mkdirSync(path.dirname(analyticsPath), { recursive: true })
   }
-  const instance =
-    analyticsPath === ':memory:' ? await DuckDBInstance.create() : await DuckDBInstance.create(analyticsPath)
+  const instance = inMemory ? await DuckDBInstance.create() : await DuckDBInstance.create(analyticsPath)
   const writer = await instance.connect()
   const reader = await instance.connect()
   await writer.run(ddl)
-  return { instance, writer, reader, path: analyticsPath, closed: false }
+  return { instance, writer, reader, path: analyticsPath, inMemory, closed: false }
 }
 
 export async function closeAnalyticsDatabase(handle: AnalyticsHandle): Promise<void> {

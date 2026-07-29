@@ -15,7 +15,7 @@ import {
 } from '@/server/domains/backup/services/shared'
 import { isTarArchive, listTarEntriesInFile, unpackTar } from '@/server/domains/backup/services/tar'
 import { resolveAnalyticsPath } from '@/server/infra/analytics/duckdb'
-import { resolveDatabasePath } from '@/server/infra/db/database'
+import { isInMemoryPath, resolveDatabasePath } from '@/server/infra/db/database'
 import { ActionFailure } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 
@@ -258,17 +258,17 @@ export async function restoreFromStagedBackup(
   try {
     if (staged.content !== null) {
       const dbPath = resolveDatabasePath()
-      if (dbPath === ':memory:') {
+      if (isInMemoryPath(dbPath)) {
         throw new ActionFailure(400, '内存数据库不支持备份还原')
       }
       await swapStagedFile(staged.content, dbPath)
     }
     if (staged.analytics !== null && withAnalytics) {
       const analyticsPath = resolveAnalyticsPath()
-      if (analyticsPath !== ':memory:') {
-        await swapStagedFile(staged.analytics, analyticsPath)
-      } else {
+      if (isInMemoryPath(analyticsPath)) {
         log.warn('Restore: upload carries an analytics file but the sidecar is in-memory; skipping it')
+      } else {
+        await swapStagedFile(staged.analytics, analyticsPath)
       }
     }
     log.info('Restore completed successfully', { fileName })

@@ -37,7 +37,7 @@ describe('analytics/pv-batcher', () => {
     incrementMetricPvBatch.mockRejectedValueOnce(new Error('DB down'))
 
     const { bumpPageView, flushPageViews } = await freshBatcher()
-    initAllBatchers({ db: {} as any, client: {} as any, path: ':memory:', closed: false } as never)
+    initAllBatchers({ db: {} as any, client: {} as any, path: ':memory:', inMemory: true, closed: false } as never)
 
     // 3 increments before flush
     bumpPageView({ type: 'post', ownerId: 1 })
@@ -70,7 +70,7 @@ describe('analytics/pv-batcher', () => {
     incrementMetricPvBatch.mockResolvedValueOnce(undefined)
 
     const { bumpPageView, flushPageViews } = await freshBatcher()
-    initAllBatchers({ db: {} as any, client: {} as any, path: ':memory:', closed: false } as never)
+    initAllBatchers({ db: {} as any, client: {} as any, path: ':memory:', inMemory: true, closed: false } as never)
 
     bumpPageView({ type: 'post', ownerId: 1 })
     await flushPageViews()

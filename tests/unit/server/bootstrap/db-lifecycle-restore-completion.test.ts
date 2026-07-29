@@ -2,7 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockMigrateDatabase = vi.hoisted(() => vi.fn())
 const mockRestartServer = vi.hoisted(() => vi.fn())
-const mockOpenDatabase = vi.hoisted(() => vi.fn(() => ({ db: {}, client: {}, path: ':memory:', closed: false })))
+const mockOpenDatabase = vi.hoisted(() =>
+  vi.fn(() => ({ db: {}, client: {}, path: ':memory:', inMemory: true, closed: false })),
+)
 const mockCloseDatabase = vi.hoisted(() => vi.fn())
 const mockRegisterShutdownHook = vi.hoisted(() => vi.fn())
 const mockSetRestartDb = vi.hoisted(() => vi.fn())
