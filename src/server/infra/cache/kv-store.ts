@@ -3,6 +3,7 @@ import type { Buffer } from 'node:buffer'
 import { and, eq, gt, inArray, isNull, or } from 'drizzle-orm'
 
 import type { Database } from '@/server/infra/db/database'
+import type { JsonValue } from '@/shared/utils/json-value'
 
 import { kvCache } from '@/server/infra/db/schema/kv-cache'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
@@ -61,8 +62,10 @@ export async function getItem<T>(db: Database, key: string): Promise<T | null> {
   return deserializeValue<T>(row.value)
 }
 
-export async function setItem(db: Database, key: string, value: unknown, opts: KvStoreSetOptions): Promise<void> {
-  // Plain JSON storage: the json-mode column serializes the value itself.
+export async function setItem(db: Database, key: string, value: JsonValue, opts: KvStoreSetOptions): Promise<void> {
+  // Plain JSON storage: the json-mode column serializes the value
+  // itself, and the JsonValue bound (plan §1.12) makes a Date/bigint
+  // payload a compile error at the call site.
   const serialized = value
   const expiresAt = expiryFrom(opts)
   await db

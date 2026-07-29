@@ -180,12 +180,21 @@ async function checkNativesLayout(cacheDir: string) {
   return `${names.length} flat files: ${names.join(', ')}`
 }
 
+/** Parent env minus config (`__`) and KOBATO_* runtime vars — same
+ *  scrub as bootServer so leaked vars can't redirect extraction or
+ *  config resolution away from the per-run temp dirs. */
+function scrubbedParentEnv(): Record<string, string | undefined> {
+  return Object.fromEntries(
+    Object.entries(process.env).filter(([key]) => !key.includes('__') && !key.startsWith('KOBATO_')),
+  )
+}
+
 function checkNatives(binaryPath: string, cacheDir: string) {
   const expected = `SEA natives smoke passed: ${process.platform}-${process.arch}`
   const result = spawnSync(binaryPath, ['--smoke-natives'], {
     encoding: 'utf-8',
     timeout: NATIVES_TIMEOUT_MS,
-    env: { ...process.env, KOBATO_CACHE_DIR: cacheDir },
+    env: { ...scrubbedParentEnv(), KOBATO_CACHE_DIR: cacheDir },
   })
   if (result.error) {
     throw new Error(`spawn failed: ${result.error.message}`)
@@ -216,7 +225,7 @@ function checkWorker(binaryPath: string, env: Record<string, string>) {
     {
       encoding: 'utf-8',
       timeout: NATIVES_TIMEOUT_MS,
-      env: { ...process.env, ...env },
+      env: { ...scrubbedParentEnv(), ...env },
     },
   )
   if (result.error) {

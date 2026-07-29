@@ -21,7 +21,7 @@ export interface AdminCategoriesListFilters {
 // Admin list view. Mirrors `listAdminFriendRows` in spirit but uses
 // `(sort_order ASC, id ASC)` ordering so the table reflects the live
 // public order; admins editing `sortOrder` see the change immediately.
-// `q` matches name / slug / description (case-insensitive `ILIKE`) so
+// `q` matches name / slug / description (case-insensitive `LIKE`) so
 // the search box on the toolbar finds rows by either the Chinese name
 // or the URL slug.
 export async function listAdminCategoryRows(

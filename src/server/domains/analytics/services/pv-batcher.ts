@@ -42,6 +42,12 @@ class PageViewBatcher {
 
   /** Detach the shutdown hook (registry reset on restore — see InsertBatcher). */
   dispose(): void {
+    if (this.buffer.size > 0 || this.failed.size > 0) {
+      log.warn('page-view batcher dropped with unflushed counts', {
+        buffered: this.buffer.size,
+        retryPending: this.failed.size,
+      })
+    }
     unregisterShutdownHook(this.shutdownHook)
   }
 

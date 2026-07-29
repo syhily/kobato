@@ -47,17 +47,22 @@ const entries: BatcherEntry[] = []
  */
 export function registerBatcher<T extends RegisteredBatcher>(name: string, init: (handle: DatabaseHandle) => T): void {
   const index = entries.findIndex((entry) => entry.name === name)
-  const entry: BatcherEntry = { name, init, instance: undefined }
-  if (index === -1) {
-    entries.push(entry)
-  } else {
-    entries[index] = entry
+  if (index !== -1) {
+    // HMR re-registration: the replaced factory's live instance must
+    // dispose its shutdown hook before being orphaned.
+    entries[index]!.instance?.dispose?.()
+    entries[index] = { name, init, instance: undefined }
+    return
   }
+  entries.push({ name, init, instance: undefined })
 }
 
 /** (Re)construct every registered batcher against the given handle. */
 export function initAllBatchers(handle: DatabaseHandle): void {
   for (const entry of entries) {
+    // HMR path: a replaced instance must dispose its shutdown hook, or
+    // every dev re-evaluation leaks one (same contract as reset).
+    entry.instance?.dispose?.()
     entry.instance = entry.init(handle)
   }
   log.debug('batchers initialized', { count: entries.length })

@@ -27,7 +27,7 @@ import type { RequestFacts } from '@/server/infra/http/request-facts'
  *  - proxy-aware client address (`clientAddress`)
  *  - session → identity projection (`viewer` IS the `SessionUser`)
  *  - URL normalization (`url` is the document URL — `.data` stripped)
- *  - per-request db/pool handles (pool recreation stays visible)
+ *  - the per-request db handle (recreation on restore stays visible)
  *  - the single CSP nonce
  *  - session dirty tracking (`markSessionDirty` → one commit at the seam)
  */

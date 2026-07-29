@@ -6,6 +6,7 @@ import { createHash } from 'node:crypto'
 
 import type { Database } from '@/server/infra/db/database'
 import type { CacheBucketId } from '@/shared/types/cache'
+import type { JsonValue } from '@/shared/utils/json-value'
 
 import { createInflight } from '@/server/infra/cache/inflight'
 import { getItem, getItemRaw, getItems, removeItem, setItem, setItemRaw } from '@/server/infra/cache/kv-store'
@@ -257,7 +258,10 @@ async function writeEntry(db: Database, id: CacheBucketId, key: string, slot: Re
       await setItemRaw(db, key, encode(value), { ttlSeconds: slot.ttlSeconds, bucket: id })
       return
     }
-    await setItem(db, key, value, { ttlSeconds: slot.ttlSeconds, bucket: id })
+    // Bucket payloads are JSON-native by declaration contract (the one
+    // former Date-bearer, imageMeta, stores `updatedAtMs` as a number) —
+    // the cast documents the boundary; setItem enforces it downstream.
+    await setItem(db, key, unsafeCast<JsonValue>(value), { ttlSeconds: slot.ttlSeconds, bucket: id })
   } catch (error) {
     log.warn('cache write failed; continuing without warmth', { bucket: id, error })
   }
