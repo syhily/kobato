@@ -98,12 +98,29 @@ export function abortRestoreClaim(): void {
 }
 
 /**
- * The status projection for `/ready` and the restore-status endpoint:
- * the running phase while a job is in flight; the terminal report
- * ONCE (consumed on read); idle otherwise. Reading never frees the
- * slot — the chain itself releases it.
+ * Non-consuming status projection for liveness readers (`/ready`
+ * polls): the running phase while a job is in flight, the terminal
+ * report WITHOUT consuming it, idle otherwise. Reading never frees
+ * the slot and never eats the report.
  */
-export function getRestoreJobStatus(): RestoreJobStatus {
+export function peekRestoreJobPhase(): RestoreJobStatus {
+  if (current !== null) {
+    return current
+  }
+  if (last !== null) {
+    return last
+  }
+  return { phase: 'idle', startedAt: '' }
+}
+
+/**
+ * The restore-status endpoint's read: the running phase while a job
+ * is in flight; the terminal report ONCE (consumed on read); idle
+ * otherwise. The consuming verb is deliberately separate from
+ * `peekRestoreJobPhase` — a liveness poll must never eat the report
+ * the admin endpoint is waiting to show.
+ */
+export function consumeRestoreJobReport(): RestoreJobStatus {
   if (current !== null) {
     return current
   }

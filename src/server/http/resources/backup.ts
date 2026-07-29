@@ -8,12 +8,16 @@ import { CSRF_HEADER, validateCsrfToken } from '@/server/domains/auth/csrf'
 import { isSetupTokenActive } from '@/server/domains/auth/setup-token'
 import {
   abortRestoreClaim,
-  getRestoreJobStatus,
+  consumeRestoreJobReport,
   startRestoreJob,
   tryBeginRestore,
 } from '@/server/domains/backup/restore-machine'
 import { getBackupBuffer, isValidBackupKey } from '@/server/domains/backup/services/backup'
-import { assertBackupContainsAdmin, restoreFromBackup } from '@/server/domains/backup/services/restore'
+import {
+  assertBackupContainsAdmin,
+  extractBackupFile,
+  restoreFromBackup,
+} from '@/server/domains/backup/services/restore'
 import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { csrfGuard } from '@/server/http/middlewares/csrf'
 import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'
@@ -27,7 +31,9 @@ export const backupRouter = new Hono<Env>()
   .get('/api/admin/backup/restore-status', requireRoleMw('admin'), (c) => {
     // Pure projection of the restore machine: the running phase while a
     // job is in flight, the terminal report once (consumed on read).
-    return c.json(getRestoreJobStatus())
+    // Liveness readers (/ready) use peekRestoreJobPhase instead, so a
+    // poll can never eat the report this endpoint is waiting to show.
+    return c.json(consumeRestoreJobReport())
   })
   .get('/api/admin/backup/download/:timestamp{[^/]+}', requireRoleMw('admin'), async (c) => {
     const timestamp = c.req.param('timestamp')
@@ -121,13 +127,16 @@ export const backupRouter = new Hono<Env>()
 
       const buffer = Buffer.from(await file.arrayBuffer())
 
-      // Pre-validate the backup's contents against the staging file
-      // (a backup without an admin can never complete setup) BEFORE
-      // claiming the restore slot — post-swap validation must be
-      // infallible, because the original file no longer exists at that
-      // point.
+      // Extract ONCE (gunzip + magic check), then pre-validate the
+      // backup's contents (a backup without an admin can never complete
+      // setup) BEFORE claiming the restore slot — post-swap validation
+      // must be infallible, because the original file no longer exists
+      // at that point. The raw bytes flow to both the validation and
+      // the swap so the payload is decompressed a single time.
+      let raw: Buffer
       try {
-        await assertBackupContainsAdmin(buffer)
+        raw = extractBackupFile(buffer)
+        await assertBackupContainsAdmin(raw)
       } catch {
         return c.json({ error: { message: '备份文件无效或不包含管理员账号。' } }, 400)
       }
@@ -144,7 +153,7 @@ export const backupRouter = new Hono<Env>()
 
       startRestoreJob(
         async () => {
-          await restoreFromBackup(buffer, fileName)
+          await restoreFromBackup(raw, fileName)
         },
         async (db) => {
           // Post-restore work runs against the FRESH handle on the

@@ -88,8 +88,22 @@ describe('backup/restore-machine', () => {
     machine.startRestoreJob(vi.fn().mockResolvedValue(undefined))
     await settle()
 
-    expect(machine.getRestoreJobStatus().phase).toBe('completed')
-    expect(machine.getRestoreJobStatus().phase).toBe('idle')
+    expect(machine.consumeRestoreJobReport().phase).toBe('completed')
+    expect(machine.consumeRestoreJobReport().phase).toBe('idle')
+  })
+
+  it('peek never consumes the terminal report — the /ready race', async () => {
+    // The aborted-completion path keeps the server in 'restarting'
+    // while /ready polls: a liveness read must not eat the failed
+    // report the admin endpoint is waiting to show.
+    expect(machine.tryBeginRestore()).toBe(true)
+    machine.startRestoreJob(vi.fn().mockRejectedValue(new Error('swap failed')))
+    await settle()
+
+    expect(machine.peekRestoreJobPhase().phase).toBe('failed')
+    expect(machine.peekRestoreJobPhase().phase).toBe('failed')
+    expect(machine.consumeRestoreJobReport().phase).toBe('failed')
+    expect(machine.consumeRestoreJobReport().phase).toBe('idle')
   })
 
   it('marks the job failed when the swap throws and completes with the error', async () => {
@@ -97,7 +111,7 @@ describe('backup/restore-machine', () => {
     machine.startRestoreJob(vi.fn().mockRejectedValue(new Error('swap failed')))
     await settle()
 
-    const status = machine.getRestoreJobStatus()
+    const status = machine.consumeRestoreJobReport()
     expect(status.phase).toBe('failed')
     expect(status.error).toBe('swap failed')
     expect(completeMock).toHaveBeenCalledWith(false, expect.any(Error))
@@ -114,7 +128,7 @@ describe('backup/restore-machine', () => {
     )
     await settle()
 
-    expect(machine.getRestoreJobStatus().phase).toBe('failed')
+    expect(machine.consumeRestoreJobReport().phase).toBe('failed')
     expect(completeMock).toHaveBeenCalledWith(false, expect.any(Error))
   })
 
@@ -129,7 +143,7 @@ describe('backup/restore-machine', () => {
     await settle()
 
     expect(restoreFn).not.toHaveBeenCalled()
-    expect(machine.getRestoreJobStatus().phase).toBe('failed')
+    expect(machine.consumeRestoreJobReport().phase).toBe('failed')
     expect(completeMock).toHaveBeenCalledWith(false, expect.any(Error))
   })
 
