@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { prepareDatabaseForRestore, reopenDb } from '@/server/bootstrap/db-lifecycle'
+import { prepareDatabaseForRestore, reopenDatabaseAndGetDb } from '@/server/bootstrap/db-lifecycle'
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { performSafeRestore } from '@/server/domains/backup/restore-orchestrator'
 import {
@@ -13,7 +13,7 @@ import {
 import { restoreFromBackup } from '@/server/domains/backup/services/restore'
 import { adminProc } from '@/server/http/orpc-base'
 import { ActionFailure } from '@/server/infra/http/errors'
-import { getRestoreState } from '@/server/infra/lifecycle'
+import { resetRestoreState, tryBeginRestore } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
 import { activeBackend } from '@/server/infra/storage/registry'
 
@@ -84,15 +84,24 @@ const restore = adminProc
     if (!isValidBackupKey(input.key)) {
       throw new ActionFailure(400, '无效的备份标识。')
     }
-    if (getRestoreState().phase !== 'idle') {
+    // Claim the restore slot BEFORE the (potentially large) download —
+    // check-then-act across an await races a second restore into the
+    // same staging path.
+    if (!tryBeginRestore()) {
       throw new ActionFailure(409, '已有还原任务正在进行，请等待完成后再试。')
     }
 
     const { db } = context
-    const buffer = await getBackupBuffer(db, input.key)
+    let buffer: Buffer
+    try {
+      buffer = await getBackupBuffer(db, input.key)
+    } catch (error) {
+      resetRestoreState()
+      throw error
+    }
 
     performSafeRestore(
-      { prepareForSwap: prepareDatabaseForRestore, reopenAfterSwap: reopenDb, log },
+      { prepareForSwap: prepareDatabaseForRestore, reopenAfterSwap: reopenDatabaseAndGetDb, log },
       async () => {
         await restoreFromBackup(buffer, input.key)
       },

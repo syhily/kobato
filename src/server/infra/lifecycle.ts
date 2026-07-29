@@ -201,6 +201,21 @@ export function setRestoreState(phase: RestorePhase, error?: string): void {
   log.info('Restore state changed', { phase, err: error })
 }
 
+/**
+ * Atomically claim the restore slot: returns true and marks the state
+ * non-idle ('draining') when no restore is running, false otherwise.
+ * Route handlers must call this BEFORE any await (a 500 MB upload body
+ * takes seconds to read — a check-then-act guard there lets a second
+ * restore start while the first is still reading).
+ */
+export function tryBeginRestore(): boolean {
+  if (container.restoreState.phase !== 'idle') {
+    return false
+  }
+  setRestoreState('draining')
+  return true
+}
+
 export function getRestoreState(): RestoreState {
   return container.restoreState
 }

@@ -3,19 +3,19 @@ import { bodyLimit } from 'hono/body-limit'
 
 import type { Env } from '@/server/http/context'
 
-import { prepareDatabaseForRestore, reopenDb } from '@/server/bootstrap/db-lifecycle'
+import { prepareDatabaseForRestore, reopenDatabaseAndGetDb } from '@/server/bootstrap/db-lifecycle'
 import { recordAuditEvent } from '@/server/domains/audit/services/record'
 import { CSRF_HEADER, validateCsrfToken } from '@/server/domains/auth/csrf'
 import { isSetupTokenActive } from '@/server/domains/auth/setup-token'
 import { performSafeRestore } from '@/server/domains/backup/restore-orchestrator'
 import { getBackupBuffer, isValidBackupKey } from '@/server/domains/backup/services/backup'
-import { restoreFromBackup } from '@/server/domains/backup/services/restore'
+import { assertBackupContainsAdmin, restoreFromBackup } from '@/server/domains/backup/services/restore'
 import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { csrfGuard } from '@/server/http/middlewares/csrf'
 import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'
 import { rateLimitByIp } from '@/server/http/middlewares/rate-limit'
 import { findFirstAdminUser, hasAdmin } from '@/server/infra/db/operations/user'
-import { getRestoreState, resetRestoreState } from '@/server/infra/lifecycle'
+import { getRestoreState, resetRestoreState, tryBeginRestore } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
 
 const log = getLogger('backup.upload')
@@ -23,7 +23,11 @@ const log = getLogger('backup.upload')
 export const backupRouter = new Hono<Env>()
   .get('/api/admin/backup/restore-status', requireRoleMw('admin'), (c) => {
     const restore = getRestoreState()
-    resetRestoreState()
+    // Only terminal states are consumed — resetting a mid-flight phase
+    // would free the slot while a restore is still running.
+    if (restore.phase === 'completed' || restore.phase === 'failed') {
+      resetRestoreState()
+    }
     return c.json(restore)
   })
   .get('/api/admin/backup/download/:timestamp{[^/]+}', requireRoleMw('admin'), async (c) => {
@@ -46,22 +50,37 @@ export const backupRouter = new Hono<Env>()
       onError: (c) => c.json({ error: { message: '上传文件过大' } }, 413),
     }),
     async (c) => {
-      if (getRestoreState().phase !== 'idle') {
+      // Claim the restore slot BEFORE reading the body — the upload can
+      // take seconds, and a check-then-act guard here would let a second
+      // restore start during the read.
+      if (!tryBeginRestore()) {
         return c.json({ error: { message: '已有还原任务正在进行，请等待完成后再试。' } }, 409)
       }
 
-      const body = await c.req.parseBody({ all: false })
-      const file = body.file
-      if (!(file instanceof File)) {
-        return c.json({ error: { message: '请上传文件' } }, 400)
+      let buffer: Buffer
+      let fileName: string
+      try {
+        const body = await c.req.parseBody({ all: false })
+        const file = body.file
+        if (!(file instanceof File)) {
+          resetRestoreState()
+          return c.json({ error: { message: '请上传文件' } }, 400)
+        }
+        buffer = Buffer.from(await file.arrayBuffer())
+        fileName = file.name
+      } catch (error) {
+        // A claimed slot must never leak (aborted upload, body error).
+        resetRestoreState()
+        throw error
       }
 
-      const buffer = Buffer.from(await file.arrayBuffer())
-
-      performSafeRestore({ prepareForSwap: prepareDatabaseForRestore, reopenAfterSwap: reopenDb, log }, async () => {
-        await restoreFromBackup(buffer, file.name)
-        log.info('Restore from uploaded backup completed')
-      })
+      performSafeRestore(
+        { prepareForSwap: prepareDatabaseForRestore, reopenAfterSwap: reopenDatabaseAndGetDb, log },
+        async () => {
+          await restoreFromBackup(buffer, fileName)
+          log.info('Restore from uploaded backup completed')
+        },
+      )
 
       return c.json({ accepted: true })
     },
@@ -104,29 +123,47 @@ export const backupRouter = new Hono<Env>()
         return c.json({ error: { message: '请上传文件' } }, 400)
       }
 
-      if (getRestoreState().phase !== 'idle') {
-        return c.json({ error: { message: '已有还原任务正在进行，请等待完成后再试。' } }, 409)
+      const buffer = Buffer.from(await file.arrayBuffer())
+
+      // Pre-validate the backup's contents against the staging file
+      // (a backup without an admin can never complete setup) BEFORE
+      // claiming the restore slot — post-swap validation must be
+      // infallible, because the original file no longer exists at that
+      // point.
+      try {
+        await assertBackupContainsAdmin(buffer)
+      } catch {
+        return c.json({ error: { message: '备份文件无效或不包含管理员账号。' } }, 400)
       }
 
-      const buffer = Buffer.from(await file.arrayBuffer())
+      // Claim the slot as late as possible but BEFORE the orchestrator
+      // chain starts (see upload-restore above).
+      if (!tryBeginRestore()) {
+        return c.json({ error: { message: '已有还原任务正在进行，请等待完成后再试。' } }, 409)
+      }
 
       const clientAddress = c.var.requestContext.clientAddress
       const userAgent = c.req.raw.headers.get('User-Agent')
       const fileName = file.name
 
       performSafeRestore(
-        { prepareForSwap: prepareDatabaseForRestore, reopenAfterSwap: reopenDb, log },
+        { prepareForSwap: prepareDatabaseForRestore, reopenAfterSwap: reopenDatabaseAndGetDb, log },
         async () => {
           await restoreFromBackup(buffer, fileName)
         },
         async (db) => {
           // Post-restore work runs against the FRESH handle on the
-          // swapped file — never the request-scoped handle the
-          // orchestrator already closed.
+          // swapped file — and it must be INFALLIBLE: the original file
+          // no longer exists, so a throw here would mark the restore
+          // failed while the server restarts on the swapped one. The
+          // admin guarantee was pre-validated against the upload, so
+          // everything here is best-effort by construction.
           const admin = await findFirstAdminUser(db)
           if (!admin) {
-            log.error('Setup restore: no admin found after restore', { fileName })
-            throw new Error('Setup restore: no admin found after restore')
+            log.warn('Setup restore: admin vanished between validation and swap — skipping the audit event', {
+              fileName,
+            })
+            return
           }
 
           try {

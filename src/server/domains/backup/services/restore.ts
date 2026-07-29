@@ -1,4 +1,8 @@
+import { mkdtempSync, rmSync } from 'node:fs'
 import { rename, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { DatabaseSync } from 'node:sqlite'
 import { gunzipSync } from 'node:zlib'
 
 import { assertSqliteBackup } from '@/server/domains/backup/services/shared'
@@ -21,6 +25,38 @@ export function extractBackupFile(buffer: Buffer): Buffer {
     buffer.length >= 2 && buffer[0] === GZIP_MAGIC_1 && buffer[1] === GZIP_MAGIC_2 ? gunzipSync(buffer) : buffer
   assertSqliteBackup(raw)
   return raw
+}
+
+/**
+ * Pre-swap content check for the setup restore: the backup must contain
+ * an admin row (the install gate counts `role = 'admin' AND deleted_at
+ * IS NULL`). Runs against a THROWAWAY temp file — the live database is
+ * untouched, so this can run before the restore slot is even claimed.
+ * Post-swap validation would be too late: by then the original file no
+ * longer exists.
+ */
+export async function assertBackupContainsAdmin(buffer: Buffer): Promise<void> {
+  const raw = extractBackupFile(buffer)
+  const dir = mkdtempSync(join(tmpdir(), 'kobato-restore-check-'))
+  try {
+    const probe = join(dir, 'probe.db')
+    await writeFile(probe, raw)
+    const db = new DatabaseSync(probe, { readOnly: true })
+    try {
+      const row: unknown = db
+        .prepare(`SELECT count(*) AS admins FROM "user" WHERE "role" = 'admin' AND "deleted_at" IS NULL`)
+        .get()
+      const admins =
+        row !== null && typeof row === 'object' && 'admins' in row && typeof row.admins === 'number' ? row.admins : 0
+      if (admins < 1) {
+        throw new ActionFailure(400, '备份中不包含管理员账号')
+      }
+    } finally {
+      db.close()
+    }
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
 }
 
 /**

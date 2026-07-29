@@ -38,6 +38,8 @@ vi.mock('@/server/infra/lifecycle', () => ({
   setServerPhase: vi.fn(),
   restartServer: vi.fn(),
   getRestoreState: vi.fn(() => ({ phase: 'idle' })),
+  tryBeginRestore: vi.fn(() => true),
+  resetRestoreState: vi.fn(),
   setRestartDb: vi.fn(),
   setRestartRefreshSettings: vi.fn(),
 }))
@@ -127,9 +129,7 @@ describe('adminBackupRouter.restore', () => {
 
   it('rejects concurrent restore requests', async () => {
     const lifecycle = await import('@/server/infra/lifecycle')
-    vi.mocked(lifecycle.getRestoreState).mockReturnValueOnce({ phase: 'restoring' } as ReturnType<
-      typeof lifecycle.getRestoreState
-    >)
+    vi.mocked(lifecycle.tryBeginRestore).mockReturnValueOnce(false)
     const ctx = makeAuthedCtx()
     await expect(call(adminBackupRouter.restore, { key: '2026-01-01T00-00-00' }, { context: ctx })).rejects.toThrow(
       ORPCError,
