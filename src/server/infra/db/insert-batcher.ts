@@ -4,6 +4,8 @@ import type { Database } from '@/server/infra/db/database'
 
 import { registerShutdownHook } from '@/server/infra/lifecycle'
 import { getLogger, type Logger } from '@/server/infra/logger'
+import { toJsonSafe } from '@/shared/utils/to-json-safe'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 export interface InsertBatcherOptions {
   flushIntervalMs: number
@@ -22,6 +24,11 @@ export interface FlushResult {
 // `insertBatch()` for the write itself and `onInsertFailed()` for
 // domain-specific error handling (dead-letter, per-row fallback, etc.).
 //
+// The writer is a LAZY GETTER, not a constructor-captured handle: some
+// writers don't exist at batcher-construction time (the DuckDB sidecar
+// opens after the batchers register), and a reopened handle (restore
+// completion) must be picked up without re-registration.
+//
 // Flush triggers:
 //   - Buffer reaches `flushThreshold`.
 //   - `flushIntervalMs` elapses since the first push after the last
@@ -29,7 +36,7 @@ export interface FlushResult {
 //   - Process receives SIGTERM / SIGINT / `beforeExit` (via
 //     `registerShutdownHook` with priority 100 so flushers run before
 //     the database-close hook at priority 0).
-export abstract class InsertBatcher<T> {
+export abstract class InsertBatcher<T, W = Database> {
   private buffer: T[] = []
   private timer: NodeJS.Timeout | null = null
   private flushing: Promise<FlushResult> | null = null
@@ -38,7 +45,7 @@ export abstract class InsertBatcher<T> {
   constructor(
     private readonly opts: InsertBatcherOptions,
     scope: string,
-    private readonly db: Database,
+    private readonly resolveWriter: () => W,
   ) {
     this.log = getLogger(scope)
     registerShutdownHook(async () => {
@@ -48,7 +55,7 @@ export abstract class InsertBatcher<T> {
 
   /** Insert the whole batch in one transaction. Sync for node:sqlite;
    * may be async for engines with an async client (DuckDB). */
-  protected abstract insertBatch(db: Database, events: T[]): void | Promise<void>
+  protected abstract insertBatch(writer: W, events: T[]): void | Promise<void>
 
   /** Called when the batch insert fails. Implement per-row fallback or dead-letter here. */
   protected abstract onInsertFailed(events: T[], error: unknown): Promise<FlushResult>
@@ -87,7 +94,7 @@ export abstract class InsertBatcher<T> {
 
     this.flushing = (async () => {
       try {
-        await this.insertBatch(this.db, snapshot)
+        await this.insertBatch(this.resolveWriter(), snapshot)
         this.log.debug('flushed batch', { count: snapshot.length })
         return { committed: snapshot.length, deadLettered: 0 } as FlushResult
       } catch (err) {
@@ -106,11 +113,38 @@ export abstract class InsertBatcher<T> {
 
   /** Write events directly (used by dead-letter replay). */
   ingest(events: T[]): void | Promise<void> {
-    return this.insertBatch(this.db, events)
+    return this.insertBatch(this.resolveWriter(), events)
   }
 }
 
 // ─── dead-letter helpers ──────────────────────────────────
+
+// The shared dead-letter wire format: one plain-JSON object per line,
+// Dates rendered as epoch ms (superjson was dropped with the
+// migration). Per-domain code supplies only the revive step (Date
+// revival + validation) — the envelope mechanics live here.
+
+/** Serialize a batch to JSON-lines (trailing newline included). */
+export function serializeDeadLetterJsonLines<T>(events: T[]): string {
+  return events.map((event) => JSON.stringify(toJsonSafe(event))).join('\n') + '\n'
+}
+
+/**
+ * Parse one dead-letter line. `revive` receives the parsed raw object
+ * and returns the domain event (reviving Dates, validating shape), or
+ * null to count the line as a parse failure.
+ */
+export function deserializeDeadLetterJsonLine<T>(
+  line: string,
+  revive: (raw: Record<string, unknown>) => T | null,
+): T | null {
+  try {
+    const raw = unsafeCast<Record<string, unknown>>(JSON.parse(line))
+    return revive(raw)
+  } catch {
+    return null
+  }
+}
 
 export async function writeDeadLetter<T>(
   events: T[],

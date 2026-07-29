@@ -30,43 +30,14 @@ export function resolveAnalyticsPath(): string {
   return path.resolve(configured === '' ? path.join(serverConfig.storage.data, 'analytics.duckdb') : configured)
 }
 
-// The access_log DDL. No secondary indexes — zone maps + columnar scans
-// replace the six btree indexes the Postgres schema carried (prototype-
-// verified: 0.5 ms full count, 22–35 ms dashboard queries at 1M rows).
-const ACCESS_LOG_DDL = `
-CREATE TABLE IF NOT EXISTS access_log (
-  ts              TIMESTAMP NOT NULL,
-  visitor_hash    VARCHAR NOT NULL,
-  session_id      VARCHAR,
-  ip              VARCHAR,
-  path            VARCHAR NOT NULL,
-  entity_type     VARCHAR,
-  entity_id       BIGINT,
-  referer         VARCHAR,
-  referer_host    VARCHAR,
-  country         VARCHAR,
-  region          VARCHAR,
-  city            VARCHAR,
-  latitude        DOUBLE,
-  longitude       DOUBLE,
-  timezone        VARCHAR,
-  language        VARCHAR,
-  ua              VARCHAR,
-  browser         VARCHAR,
-  browser_version VARCHAR,
-  os              VARCHAR,
-  os_version      VARCHAR,
-  device          VARCHAR,
-  device_type     VARCHAR,
-  is_bot          BOOLEAN NOT NULL
-)
-`
-
-/** Open the sidecar and ensure the schema exists. Idempotent DDL — a
+/** Open the sidecar and apply the caller's DDL. Idempotent DDL — a
  *  missing file is created empty at boot (the expendable-telemetry
  *  contract: restore never brings it back, boot just recreates it).
- *  `:memory:` opens an in-memory database (tests). */
-export async function openAnalyticsDatabase(analyticsPath: string): Promise<AnalyticsHandle> {
+ *  `:memory:` opens an in-memory database (tests). The DDL is injected
+ *  because infra carries zero business knowledge — the access_log table
+ *  shape is owned by the analytics domain
+ *  (`@/server/domains/analytics/services/access-log-ddl`). */
+export async function openAnalyticsDatabase(analyticsPath: string, ddl: string): Promise<AnalyticsHandle> {
   const instance =
     analyticsPath === ':memory:' ? await DuckDBInstance.create() : await DuckDBInstance.create(analyticsPath)
   if (analyticsPath !== ':memory:') {
@@ -74,7 +45,7 @@ export async function openAnalyticsDatabase(analyticsPath: string): Promise<Anal
   }
   const writer = await instance.connect()
   const reader = await instance.connect()
-  await writer.run(ACCESS_LOG_DDL)
+  await writer.run(ddl)
   return { instance, writer, reader, path: analyticsPath, closed: false }
 }
 

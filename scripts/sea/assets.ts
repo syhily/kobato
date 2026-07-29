@@ -306,39 +306,20 @@ async function singleFile(dir: string, pattern: RegExp, what: string): Promise<s
 }
 
 /**
- * Patch the STAGED sharp addon copy so the OS loader finds libvips in the
- * same flat dir (the S1 spike recipe); the node_modules original is never
- * touched. darwin rewrites the `@rpath` reference to `@loader_path`;
- * linux sets the rpath to `$ORIGIN` (needs patchelf — Dockerfile build
- * stage and the linux CI runners carry it); win32 needs nothing — the
- * DLL search order covers the loaded module's own directory.
+ * Patch a STAGED addon copy so the OS loader finds its companion
+ * libraries in the same flat dir (the S1 spike recipe); the node_modules
+ * originals are never touched. darwin rewrites each `@rpath` reference
+ * to `@loader_path`; linux sets the rpath to `$ORIGIN` (needs patchelf —
+ * Dockerfile build stage and the linux CI runners carry it); win32 needs
+ * nothing — the DLL search order covers the loaded module's own
+ * directory. Used for sharp (against the libvips files) and duckdb.node
+ * (against libduckdb).
  */
-function patchSharpAddonRpath(stagedAddon: string, libvipsFileNames: string[]) {
+function patchAddonRpath(stagedAddon: string, libraryFileNames: string[]) {
   if (process.platform === 'darwin') {
-    for (const name of libvipsFileNames) {
+    for (const name of libraryFileNames) {
       run('install_name_tool', ['-change', `@rpath/${name}`, `@loader_path/${name}`, stagedAddon])
     }
-    return
-  }
-  if (process.platform === 'linux') {
-    run('patchelf', ['--set-rpath', '$ORIGIN', stagedAddon])
-  }
-}
-
-/**
- * Patch the STAGED DuckDB addon copy so the OS loader finds libduckdb in
- * the same flat dir — the same recipe as sharp (duckdb.node links
- * `@rpath/libduckdb.<ext>`); the node_modules original is never touched.
- * win32 needs nothing (the DLL search covers the module's own dir).
- */
-function patchDuckdbAddonRpath(stagedAddon: string, libduckdbFileName: string) {
-  if (process.platform === 'darwin') {
-    run('install_name_tool', [
-      '-change',
-      `@rpath/${libduckdbFileName}`,
-      `@loader_path/${libduckdbFileName}`,
-      stagedAddon,
-    ])
     return
   }
   if (process.platform === 'linux') {
@@ -395,10 +376,10 @@ async function addNativeAssets(assets: Map<string, string>, files: ManifestFileE
   await mkdir(stagedDir, { recursive: true })
   const stagedAddon = join(stagedDir, 'sharp.node')
   await copyFile(sharpAddon, stagedAddon)
-  patchSharpAddonRpath(stagedAddon, libvipsFileNames)
+  patchAddonRpath(stagedAddon, libvipsFileNames)
   const stagedDuckdbAddon = join(stagedDir, 'duckdb.node')
   await copyFile(duckdbAddon, stagedDuckdbAddon)
-  patchDuckdbAddonRpath(stagedDuckdbAddon, libduckdbName)
+  patchAddonRpath(stagedDuckdbAddon, [libduckdbName])
 
   await addAsset(assets, files, SEA_NATIVE_SHARP_ADDON_KEY, stagedAddon, ctx)
   for (const name of libvipsFileNames) {

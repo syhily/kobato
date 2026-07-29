@@ -51,7 +51,7 @@ class TestBatcher extends InsertBatcher<string> {
 describe('server/infra/db/insert-batcher — flush mechanics', () => {
   it('flushes the whole buffer as one batch at the threshold', async () => {
     TestBatcher.inserted = []
-    const batcher = new TestBatcher({ flushIntervalMs: 60_000, flushThreshold: 3 }, 'test', fakeDb())
+    const batcher = new TestBatcher({ flushIntervalMs: 60_000, flushThreshold: 3 }, 'test', () => fakeDb())
     batcher.push('a')
     batcher.push('b')
     batcher.push('c')
@@ -62,7 +62,7 @@ describe('server/infra/db/insert-batcher — flush mechanics', () => {
 
   it('routes a failed batch to onInsertFailed (dead-letter) and clears the buffer', async () => {
     TestBatcher.inserted = []
-    const batcher = new TestBatcher({ flushIntervalMs: 60_000, flushThreshold: 2 }, 'test', fakeDb())
+    const batcher = new TestBatcher({ flushIntervalMs: 60_000, flushThreshold: 2 }, 'test', () => fakeDb())
     batcher.push('x')
     TestBatcher.failNext = true
     batcher.push('y')
@@ -74,7 +74,7 @@ describe('server/infra/db/insert-batcher — flush mechanics', () => {
 
   it('replays a dead-letter file back through ingest and truncates it', async () => {
     writeFileSync(join(tmp, 'replay.jsonl'), 'r1\nr2\n')
-    const batcher = new TestBatcher({ flushIntervalMs: 60_000, flushThreshold: 10 }, 'test', fakeDb())
+    const batcher = new TestBatcher({ flushIntervalMs: 60_000, flushThreshold: 10 }, 'test', () => fakeDb())
     TestBatcher.inserted = []
     const log = { info: vi.fn(), error: vi.fn() } as never
     const result = await replayDeadLetter(
