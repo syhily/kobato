@@ -112,6 +112,7 @@ vi.mock('@/server/infra/lifecycle', () => ({
   getServerPhase: () => getServerPhase(),
   getRestoreState: () => getRestoreState(),
   registerShutdownHook: vi.fn(),
+  unregisterShutdownHook: vi.fn(),
 }))
 
 vi.mock('@/server/infra/logger', () => ({

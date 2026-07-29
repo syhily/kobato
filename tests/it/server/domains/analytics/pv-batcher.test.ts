@@ -14,6 +14,7 @@ vi.mock('@/server/infra/logger', () => ({
 
 vi.mock('@/server/infra/lifecycle', () => ({
   registerShutdownHook: vi.fn(),
+  unregisterShutdownHook: vi.fn(),
 }))
 
 async function freshBatcher() {

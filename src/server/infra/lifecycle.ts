@@ -113,6 +113,18 @@ export function registerShutdownHook(hook: () => Promise<void>, priority = 0): v
   container.hooks.sort((a, b) => b.priority - a.priority)
 }
 
+/**
+ * Remove a previously registered hook by identity. Batchers re-created
+ * on every database reopen (restore flow) dispose their old hooks this
+ * way so the hook list can't grow unboundedly across restores.
+ */
+export function unregisterShutdownHook(hook: () => Promise<void>): void {
+  const index = container.hooks.findIndex((entry) => entry.fn === hook)
+  if (index !== -1) {
+    container.hooks.splice(index, 1)
+  }
+}
+
 export function requestShutdown(reason: string): void {
   if (container.shuttingDown) {
     return
