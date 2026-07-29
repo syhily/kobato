@@ -45,7 +45,6 @@
     "sea:smoke": "node scripts/sea/smoke.ts",
     "start": "node ./build/server/index.js",
     "test": "vitest run",
-    "test:fast": "vitest run --project unit --project snaps",
     "test:it": "vitest run --project it",
     "test:snaps": "vitest run --project snaps",
     "test:unit": "vitest run --project unit",
