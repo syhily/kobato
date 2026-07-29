@@ -114,7 +114,7 @@ three sea.yml jobs; local builds stay zstd) into
 `dist-sea/intermediates/packed/<key>`. `manifest.json` rides uncompressed
 as the codec registry (`{key, path, sha256(raw), codec, size}`);
 `getEmbeddedAsset` parses it once and decodes lazily, memoized per key.
-The smoke budgets the binary at 190 MB — `--build-sea` leaves no
+The smoke budgets the binary at 230 MB — `--build-sea` leaves no
 standalone blob, so the compressed payload is sized inside the binary.
 
 **Natives = dynamic libraries ONLY.** The extraction writes exactly 5

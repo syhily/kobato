@@ -1,7 +1,7 @@
 // Install-time seed of every settings section — the strict counterpart
-// to hydrate.ts's lazy backfill: writes all 18 section rows for a FRESH
+// to hydrate.ts's lazy backfill: writes all 17 section rows for a FRESH
 // install in one all-or-nothing pass (`blog.general` and `blog.assets`
-// from the install-form identity, the other 16 from registry defaults).
+// from the install-form identity, the other 15 from registry defaults).
 // `buildInstallSectionRows` validates every section BEFORE any write so
 // a failure produces a form error with zero DB side effects;
 // `seedInstallSections` persists the validated rows on the caller's
@@ -33,7 +33,7 @@ export interface InstallSectionRow {
 export type InstallSectionRowsResult = { ok: true; rows: InstallSectionRow[] } | { ok: false; message: string }
 
 /**
- * Build and validate all 18 section rows for a fresh install. Returns
+ * Build and validate all 17 section rows for a fresh install. Returns
  * the first validation failure as a user-facing message; a registry
  * default that drifted from its schema keeps `buildDefaultSectionPayloads`'
  * thrown DomainError (a build bug, identical to the hydration backfill

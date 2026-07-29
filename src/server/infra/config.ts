@@ -545,8 +545,3 @@ export const NODE_ENV = z
 export function isVitest(): boolean {
   return process.env.VITEST === 'true'
 }
-
-/** Full `process.env` snapshot (undefined values filtered) for child-process spawning (e.g. pg_dump). */
-export const processEnv: Record<string, string> = Object.fromEntries(
-  Object.entries(process.env).filter((entry): entry is [string, string] => entry[1] !== undefined),
-)
