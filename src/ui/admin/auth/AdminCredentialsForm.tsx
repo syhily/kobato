@@ -1,7 +1,7 @@
 import type { PublicKeyCredentialRequestOptionsJSON } from '@simplewebauthn/browser'
 
-import { startAuthentication } from '@simplewebauthn/browser'
-import { ArrowRightIcon, EyeIcon, EyeOffIcon, RotateCcwIcon, SendIcon } from 'lucide-react'
+import { startAuthentication, WebAuthnAbortService } from '@simplewebauthn/browser'
+import { ArrowRightIcon, EyeIcon, EyeOffIcon, FingerprintIcon, RotateCcwIcon, SendIcon } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Form, Link } from 'react-router'
 
@@ -76,6 +76,13 @@ function extractAuthOptions(value: unknown): PublicKeyCredentialRequestOptionsJS
 
 type LoginStep = 'email' | 'password' | 'passkey'
 
+// A cross-device (QR) ceremony can leave the browser's promise pending
+// forever — the phone approves but the hybrid tunnel never delivers the
+// assertion to the desktop. Two minutes is generous for a phone unlock;
+// past that we retire the run, dismiss the native prompt, and surface a
+// visible error instead of freezing on "正在验证…".
+const PASSKEY_TIMEOUT_MS = 120_000
+
 export function LoginForm({ action, isSubmitting, csrfToken, actionData }: LoginFormProps) {
   // Initial step derives from the identify answer so a fresh mount (or
   // SSR) lands on the right step, not just actionData *changes*.
@@ -86,9 +93,13 @@ export function LoginForm({ action, isSubmitting, csrfToken, actionData }: Login
   const [showPassword, setShowPassword] = useState(false)
   const webAuthnSupported = useWebAuthnSupported()
   const [passkeyError, setPasskeyError] = useState<string | null>(null)
+  const [passkeyPending, setPasskeyPending] = useState(false)
   const passkeyFormRef = useRef<HTMLFormElement>(null)
   const passwordRef = useRef<HTMLInputElement>(null)
-  const passkeyStartedRef = useRef(false)
+  // Monotonic run id: a retry or timeout retires the in-flight ceremony so
+  // a late-resolving (or late-rejecting) promise can never submit the form
+  // or overwrite a newer error state.
+  const passkeyRunRef = useRef(0)
 
   // actionData-driven step transitions (same sync-during-render pattern as
   // OtpForm): the identify answer picks the next step.
@@ -102,16 +113,40 @@ export function LoginForm({ action, isSubmitting, csrfToken, actionData }: Login
     }
   }
 
+  // The ceremony MUST launch from a user gesture (the verify button):
+  // modal WebAuthn requires transient activation in every browser, and an
+  // auto-launch after the identify round-trip fires outside that window.
   const runPasskey = useCallback(async () => {
     setPasskeyError(null)
+    setPasskeyPending(true)
+    const runId = ++passkeyRunRef.current
+    const isCurrent = () => passkeyRunRef.current === runId
+    const timeoutId = setTimeout(() => {
+      if (!isCurrent()) {
+        return
+      }
+      // Retire the run first: the abort below rejects the pending promise
+      // and its catch must land as stale rather than overwrite this error.
+      passkeyRunRef.current += 1
+      // Dismiss the native prompt so the QR sheet doesn't linger behind
+      // the error state (a no-op when no ceremony is active).
+      WebAuthnAbortService.cancelCeremony()
+      setPasskeyPending(false)
+      setPasskeyError('Passkey 验证超时，请重试。多次失败可通过下方链接改用邮箱登录。')
+    }, PASSKEY_TIMEOUT_MS)
     try {
       const result: unknown = await orpc.passkey.authBegin({ email: email.trim() })
       const options = extractAuthOptions(result)
       const challenge = options.challenge
       const assertion = await startAuthentication({ optionsJSON: options })
+      clearTimeout(timeoutId)
+      if (!isCurrent()) {
+        return
+      }
       // Submit via a hidden form so the React Router action handles session creation
       const form = passkeyFormRef.current
       if (!form) {
+        setPasskeyPending(false)
         return
       }
       form.querySelectorAll('input[name^="passkey_"]').forEach((el) => el.remove())
@@ -125,8 +160,15 @@ export function LoginForm({ action, isSubmitting, csrfToken, actionData }: Login
       challengeInput.name = 'passkey_challenge'
       challengeInput.value = challenge
       form.appendChild(challengeInput)
+      // The router's `isSubmitting` takes over the disabled state from here.
       form.requestSubmit()
+      setPasskeyPending(false)
     } catch (err) {
+      clearTimeout(timeoutId)
+      if (!isCurrent()) {
+        return
+      }
+      setPasskeyPending(false)
       let message = 'Passkey 登录失败，请重试。'
       if (err instanceof DOMException) {
         if (err.name === 'NotAllowedError') {
@@ -141,18 +183,23 @@ export function LoginForm({ action, isSubmitting, csrfToken, actionData }: Login
     }
   }, [email])
 
-  // Auto-launch the WebAuthn prompt when the passkey step opens. The
-  // browser owns the actual UI (platform prompt, or the cross-device QR
-  // code). Guarded against strict-mode double effects and repeated runs.
+  // Leaving the passkey step (更换邮箱) abandons any in-flight ceremony:
+  // retire the run so a late phone-side approval can't act on a view the
+  // user already left, and dismiss the lingering native prompt.
+  const backToEmail = () => {
+    passkeyRunRef.current += 1
+    WebAuthnAbortService.cancelCeremony()
+    setPasskeyPending(false)
+    setPasskeyError(null)
+    setStep('email')
+  }
+
+  // Unmounting retires any in-flight ceremony for the same reason.
   useEffect(() => {
-    if (step === 'passkey' && webAuthnSupported && !passkeyStartedRef.current) {
-      passkeyStartedRef.current = true
-      void runPasskey()
+    return () => {
+      passkeyRunRef.current += 1
     }
-    if (step !== 'passkey') {
-      passkeyStartedRef.current = false
-    }
-  }, [step, webAuthnSupported, runPasskey])
+  }, [])
 
   // Focus the password field when the password step opens.
   useEffect(() => {
@@ -160,50 +207,6 @@ export function LoginForm({ action, isSubmitting, csrfToken, actionData }: Login
       passwordRef.current?.focus()
     }
   }, [step])
-
-  if (step === 'passkey') {
-    return (
-      <div className="flex w-full flex-col gap-6">
-        <p className="text-center text-sm text-muted-foreground">
-          正在验证 <span className="font-medium text-foreground">{email}</span> 的
-          Passkey，请按浏览器提示完成验证（跨设备登陆可扫码）。
-        </p>
-        <Form method="post" action="?action=passkey" ref={passkeyFormRef} className="hidden">
-          {csrfToken ? <input type="hidden" name="csrf_token" value={csrfToken} /> : null}
-        </Form>
-        {!webAuthnSupported && (
-          <p role="alert" className="text-center text-sm text-destructive">
-            当前浏览器不支持 Passkey。
-          </p>
-        )}
-        {passkeyError && (
-          <p role="alert" aria-live="polite" className="text-center text-sm text-destructive">
-            {passkeyError}
-          </p>
-        )}
-        <div className="flex items-center justify-between">
-          <button
-            type="button"
-            onClick={() => {
-              void runPasskey()
-            }}
-            disabled={!webAuthnSupported || isSubmitting}
-            className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <RotateCcwIcon size={14} />
-            重试
-          </button>
-          <button
-            type="button"
-            onClick={() => setStep('email')}
-            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            返回
-          </button>
-        </div>
-      </div>
-    )
-  }
 
   if (step === 'password') {
     return (
@@ -216,7 +219,7 @@ export function LoginForm({ action, isSubmitting, csrfToken, actionData }: Login
           </span>
           <button
             type="button"
-            onClick={() => setStep('email')}
+            onClick={backToEmail}
             className="shrink-0 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             更换邮箱
@@ -267,40 +270,117 @@ export function LoginForm({ action, isSubmitting, csrfToken, actionData }: Login
     )
   }
 
+  // The email and passkey states share the identify form's layout: the
+  // server has identified the account, so the input locks (greyed out)
+  // and the primary button becomes the scenario's action — identify for
+  // the email state, the passkey ceremony for the passkey state.
+  const isPasskeyStep = step === 'passkey'
   return (
-    <Form method="post" action="?action=identify" id="identifyForm" className="flex w-full flex-col gap-6">
-      {csrfToken ? <input type="hidden" name="csrf_token" value={csrfToken} /> : null}
-      <div className="flex w-full flex-col gap-2">
-        <Label htmlFor="identifyForm-email" className="font-semibold text-(--text-admin-base)">
-          邮箱
-        </Label>
-        <Input
-          id="identifyForm-email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          placeholder="your@email.com"
-          required
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          disabled={isSubmitting}
-          className={inputClasses}
-        />
-      </div>
-      <Button
-        type="submit"
-        disabled={isSubmitting}
-        className="mt-7 h-(--spacing-auth-btn) w-full rounded-xl bg-brand text-xl font-normal text-white hover:opacity-90"
-      >
-        {isSubmitting ? (
-          '登陆中...'
-        ) : (
-          <>
-            登陆 <ArrowRightIcon className="ml-1 inline-block" size={18} />
-          </>
+    <div className="flex w-full flex-col gap-6">
+      <Form method="post" action="?action=identify" id="identifyForm" className="flex w-full flex-col gap-6">
+        {csrfToken ? <input type="hidden" name="csrf_token" value={csrfToken} /> : null}
+        <div className="flex w-full flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="identifyForm-email" className="font-semibold text-(--text-admin-base)">
+              邮箱
+            </Label>
+            {isPasskeyStep && (
+              <button
+                type="button"
+                onClick={backToEmail}
+                className="shrink-0 text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
+                更换邮箱
+              </button>
+            )}
+          </div>
+          <Input
+            id="identifyForm-email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            placeholder="your@email.com"
+            required
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            disabled={isSubmitting || isPasskeyStep}
+            className={inputClasses}
+          />
+        </div>
+        {isPasskeyStep && (
+          <p className="text-center text-sm text-muted-foreground">
+            {passkeyPending
+              ? '正在验证 Passkey，请按浏览器提示完成验证（跨设备登陆可扫码）。'
+              : '此账号已启用 Passkey 验证，请点击下方按钮完成登陆。'}
+          </p>
         )}
-      </Button>
-    </Form>
+        {isPasskeyStep ? (
+          /* The ceremony launches from this button's click — a user gesture
+             keeps the call inside the browser's transient-activation
+             window, which modal WebAuthn requires in every browser. */
+          <Button
+            type="button"
+            disabled={!webAuthnSupported || isSubmitting || passkeyPending}
+            onClick={() => {
+              void runPasskey()
+            }}
+            className="mt-7 h-(--spacing-auth-btn) w-full rounded-xl bg-brand text-xl font-normal text-white hover:opacity-90"
+          >
+            {passkeyPending ? (
+              '等待验证器…'
+            ) : (
+              <>
+                {passkeyError ? '重试 Passkey 登陆' : '使用 Passkey 登陆'}
+                <FingerprintIcon className="ml-1 inline-block" size={18} />
+              </>
+            )}
+          </Button>
+        ) : (
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+            className="mt-7 h-(--spacing-auth-btn) w-full rounded-xl bg-brand text-xl font-normal text-white hover:opacity-90"
+          >
+            {isSubmitting ? (
+              '登陆中...'
+            ) : (
+              <>
+                登陆 <ArrowRightIcon className="ml-1 inline-block" size={18} />
+              </>
+            )}
+          </Button>
+        )}
+      </Form>
+      {isPasskeyStep && (
+        <>
+          <Form method="post" action="?action=passkey" ref={passkeyFormRef} className="hidden">
+            {csrfToken ? <input type="hidden" name="csrf_token" value={csrfToken} /> : null}
+          </Form>
+          {!webAuthnSupported && (
+            <p role="alert" className="text-center text-sm text-destructive">
+              当前浏览器不支持 Passkey。
+            </p>
+          )}
+          {passkeyError && (
+            <p role="alert" aria-live="polite" className="text-center text-sm text-destructive">
+              {passkeyError}
+            </p>
+          )}
+          {/* Account recovery: a passkey-only account with a failing
+              ceremony is otherwise a lockout — identify always routes back
+              to this state. */}
+          <p className="text-center text-sm text-muted-foreground">
+            无法使用 Passkey？
+            <Link
+              to="?action=lostpassword"
+              className="underline-offset-2 transition-colors hover:text-foreground hover:underline"
+            >
+              通过邮箱重置密码
+            </Link>
+          </p>
+        </>
+      )}
+    </div>
   )
 }
 
