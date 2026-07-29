@@ -44,7 +44,8 @@ vi.mock('@/server/infra/scheduler-utils', async (importOriginal) => {
   }
 })
 
-const { scheduleNextBackup, rescheduleBackup, stopBackupScheduler } = await import('@/server/domains/backup/scheduler')
+const { scheduleNextBackup, rescheduleBackup } = await import('@/server/domains/backup/scheduler')
+const { stopAllScheduledJobs } = await import('@/server/infra/scheduler-utils')
 
 // The scheduleJob seam registers its stop-all hook once, at module
 // import — capture it here, before beforeEach clears the mock.
@@ -54,11 +55,11 @@ describe('backup scheduler', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     bundle = null
-    stopBackupScheduler()
+    stopAllScheduledJobs()
   })
 
   afterEach(() => {
-    stopBackupScheduler()
+    stopAllScheduledJobs()
   })
 
   it('retries when settings are not hydrated', () => {
@@ -121,7 +122,7 @@ describe('backup scheduler', () => {
     }
     scheduleNextBackup()
     expect(vi.getTimerCount()).toBe(1)
-    stopBackupScheduler()
+    stopAllScheduledJobs()
     expect(vi.getTimerCount()).toBe(0)
   })
 

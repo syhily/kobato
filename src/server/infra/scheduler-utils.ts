@@ -116,16 +116,18 @@ export function scheduleJob(options: ScheduledJobOptions): ScheduledJob {
   const log = getLogger(options.name)
   const suspendedRetryMs = options.suspendedRetryMs ?? 30_000
   let timer: NodeJS.Timeout | null = null
-  let stopped = false
 
   const job: ScheduledJob = {
     reschedule() {
-      if (stopped) {
-        return
-      }
       if (timer !== null) {
         clearTimeout(timer)
         timer = null
+      }
+      // Re-arming re-registers after a stop() — stop() is "clear the
+      // pending fire", never a permanent kill (tests and settings
+      // toggles rely on resurrection via the public schedule verbs).
+      if (!registeredJobs.includes(job)) {
+        registeredJobs.push(job)
       }
       let delayMs: number | null
       try {
@@ -155,10 +157,13 @@ export function scheduleJob(options: ScheduledJobOptions): ScheduledJob {
       timer.unref()
     },
     stop() {
-      stopped = true
       if (timer !== null) {
         clearTimeout(timer)
         timer = null
+      }
+      const index = registeredJobs.indexOf(job)
+      if (index !== -1) {
+        registeredJobs.splice(index, 1)
       }
     },
   }
@@ -168,8 +173,20 @@ export function scheduleJob(options: ScheduledJobOptions): ScheduledJob {
   return job
 }
 
-registerShutdownHook(async () => {
-  for (const job of registeredJobs) {
-    job.stop()
+/**
+ * Stop every registered job. Used by the shutdown hook — and by tests
+ * cleaning up between cases, which is why it exists as a public verb:
+ * the per-domain `stop*Scheduler` wrappers that predated it were
+ * deleted (the seam owns stopping).
+ */
+export function stopAllScheduledJobs(): void {
+  // Backwards iteration: stop() deregisters the job from the array,
+  // so forward iteration would skip entries.
+  for (let i = registeredJobs.length - 1; i >= 0; i--) {
+    registeredJobs[i]!.stop()
   }
+}
+
+registerShutdownHook(async () => {
+  stopAllScheduledJobs()
 }, 0)

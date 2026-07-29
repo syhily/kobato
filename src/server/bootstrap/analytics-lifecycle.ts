@@ -1,7 +1,5 @@
-import { stat } from 'node:fs/promises'
-
-import { ACCESS_LOG_DDL, ACCESS_LOG_RETENTION_DAYS } from '@/server/domains/analytics/services/access-log'
-import { EPOCH_MS_PARAM } from '@/server/domains/analytics/services/duckdb-sql'
+import { ACCESS_LOG_DDL } from '@/server/domains/analytics/services/access-log'
+import { runAccessLogRetention } from '@/server/domains/analytics/services/maintenance'
 import {
   type AnalyticsHandle,
   closeAnalyticsDatabase,
@@ -9,11 +7,8 @@ import {
   resolveAnalyticsPath,
 } from '@/server/infra/analytics/duckdb'
 import { registerShutdownHook } from '@/server/infra/lifecycle'
-import { getLogger } from '@/server/infra/logger'
 import { computeNextRun, scheduleJob, type ScheduledJob } from '@/server/infra/scheduler-utils'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
-
-const log = getLogger('analytics.lifecycle')
 
 /**
  * Boot-time owner of the DuckDB sidecar: opens it alongside the content
@@ -27,39 +22,6 @@ const log = getLogger('analytics.lifecycle')
 let current: AnalyticsHandle | null = null
 let maintenanceJob: ScheduledJob | null = null
 
-async function analyticsFileSize(handle: AnalyticsHandle): Promise<number | null> {
-  if (handle.path === ':memory:') {
-    return null
-  }
-  const stats = await stat(handle.path).catch(() => null)
-  return stats?.size ?? null
-}
-
-export async function runAnalyticsMaintenance(handle: AnalyticsHandle): Promise<void> {
-  try {
-    const before = await handle.reader.runAndReadAll('SELECT count(*) AS c FROM access_log')
-    const beforeCount = before.getRowObjects()[0]?.c
-    const beforeSize = await analyticsFileSize(handle)
-
-    const cutoff = new Date(Date.now() - ACCESS_LOG_RETENTION_DAYS * 24 * 60 * 60 * 1000)
-    await handle.writer.runAndReadAll(`DELETE FROM access_log WHERE ts < ${EPOCH_MS_PARAM}`, [BigInt(cutoff.getTime())])
-    await handle.writer.run('CHECKPOINT')
-
-    const after = await handle.reader.runAndReadAll('SELECT count(*) AS c FROM access_log')
-    const afterCount = after.getRowObjects()[0]?.c
-    const afterSize = await analyticsFileSize(handle)
-    log.info('analytics maintenance completed', {
-      retentionDays: ACCESS_LOG_RETENTION_DAYS,
-      rowsBefore: beforeCount,
-      rowsAfter: afterCount,
-      bytesBefore: beforeSize,
-      bytesAfter: afterSize,
-    })
-  } catch (error) {
-    log.error('analytics maintenance failed', { error: error instanceof Error ? error.message : String(error) })
-  }
-}
-
 export function scheduleNextAnalyticsMaintenance(): void {
   maintenanceJob ??= scheduleJob({
     name: 'analytics.maintenance',
@@ -69,7 +31,7 @@ export function scheduleNextAnalyticsMaintenance(): void {
     },
     run: async () => {
       if (current !== null) {
-        await runAnalyticsMaintenance(current)
+        await runAccessLogRetention(current)
       }
     },
   })

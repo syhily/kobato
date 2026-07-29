@@ -34,20 +34,21 @@ vi.mock('@/server/infra/scheduler-utils', async (importOriginal) => {
   }
 })
 
-const { scheduleNextArchive, rescheduleArchive, stopArchiveScheduler, wireArchiveScheduler } =
+const { scheduleNextArchive, rescheduleArchive, wireArchiveScheduler } =
   await import('@/server/domains/audit/services/scheduler')
+const { stopAllScheduledJobs } = await import('@/server/infra/scheduler-utils')
 
 describe('audit scheduler', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     getDb.mockReturnValue(db)
     bundle = null
-    stopArchiveScheduler()
+    stopAllScheduledJobs()
     wireArchiveScheduler({ getDb })
   })
 
   afterEach(() => {
-    stopArchiveScheduler()
+    stopAllScheduledJobs()
   })
 
   it('retries shortly when settings are not hydrated', () => {
@@ -105,7 +106,7 @@ describe('audit scheduler', () => {
     bundle = { siteIdentity: { timeZone: 'UTC' } }
     scheduleNextArchive()
     expect(vi.getTimerCount()).toBe(1)
-    stopArchiveScheduler()
+    stopAllScheduledJobs()
     expect(vi.getTimerCount()).toBe(0)
   })
 })

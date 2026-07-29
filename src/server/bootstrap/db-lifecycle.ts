@@ -93,70 +93,78 @@ if (!isVitest()) {
 // prepare (flush + close), reopen, and completion (recovery reopen
 // when the job failed, migrations + ANALYZE, then the restart).
 
+/**
+ * The restore machine's completion chain, named so tests invoke it
+ * directly instead of capturing a closure off the wire. Idempotent
+ * reopen: the machine already reopened on the success path, so this
+ * only reopens for recovery after a failed job. Only the archive job
+ * is rescheduled here — the other periodic jobs survive the reopen
+ * through their handle getters and need nothing.
+ */
+export async function completeRestore(success: boolean, err?: Error): Promise<void> {
+  if (!success) {
+    root.error({ err: err?.message }, 'Restore failed, restarting server for recovery')
+  } else {
+    root.info('Restore succeeded, restarting server')
+  }
+
+  let recreated = false
+  try {
+    await reopenDatabase()
+    recreated = true
+  } catch (recreateErr) {
+    root.error(
+      { err: recreateErr instanceof Error ? recreateErr.message : String(recreateErr) },
+      'Database reopen failed during restore completion',
+    )
+  }
+
+  if (recreated) {
+    try {
+      scheduleNextArchive()
+    } catch (schedErr) {
+      root.warn(
+        { err: schedErr instanceof Error ? schedErr.message : String(schedErr) },
+        'Failed to reschedule archive after restore',
+      )
+    }
+  }
+
+  if (!recreated) {
+    // Never restart into a dead handle — the server stays down (phase
+    // 'restarting', install gate closed) rather than 500ing every
+    // request against the closed database.
+    root.error('Restore completion aborted: no live database handle; server not restarted')
+    return
+  }
+
+  try {
+    try {
+      await migrateDatabase(getDb())
+      root.info('Database migrations completed after restore')
+      // Restore is a bulk load — refresh planner statistics for the
+      // swapped-in file (plan §1.9).
+      getDatabaseHandle().client.exec('ANALYZE')
+    } catch (migrateErr) {
+      root.error(
+        { err: migrateErr instanceof Error ? migrateErr.message : String(migrateErr) },
+        'Database migrations failed after restore',
+      )
+    }
+    await restartServer()
+    root.info('Restore completion finished, server back online')
+  } catch (restartErr) {
+    root.error(
+      { err: restartErr instanceof Error ? restartErr.message : String(restartErr) },
+      'Server restart failed during restore completion',
+    )
+  }
+}
+
 wireRestoreMachine({
   prepareForSwap: prepareDatabaseForRestore,
   reopenAfterSwap: reopenDatabaseAndGetDb,
-  complete: async (success, err) => {
-    if (!success) {
-      root.error({ err: err?.message }, 'Restore failed, restarting server for recovery')
-    } else {
-      root.info('Restore succeeded, restarting server')
-    }
-
-    let recreated = false
-    try {
-      // Idempotent: the orchestrator already reopened on the success path;
-      // a failed restore reopens the ORIGINAL file here for recovery.
-      await reopenDatabase()
-      recreated = true
-    } catch (recreateErr) {
-      root.error(
-        { err: recreateErr instanceof Error ? recreateErr.message : String(recreateErr) },
-        'Database reopen failed during restore completion',
-      )
-    }
-
-    if (recreated) {
-      try {
-        scheduleNextArchive()
-      } catch (schedErr) {
-        root.warn(
-          { err: schedErr instanceof Error ? schedErr.message : String(schedErr) },
-          'Failed to reschedule archive after restore',
-        )
-      }
-    }
-
-    if (!recreated) {
-      // Never restart into a dead handle — the server stays down (phase
-      // 'restarting', install gate closed) rather than 500ing every
-      // request against the closed database.
-      root.error('Restore completion aborted: no live database handle; server not restarted')
-      return
-    }
-
-    try {
-      try {
-        await migrateDatabase(getDb())
-        root.info('Database migrations completed after restore')
-        // Restore is a bulk load — refresh planner statistics for the
-        // swapped-in file (plan §1.9).
-        getDatabaseHandle().client.exec('ANALYZE')
-      } catch (migrateErr) {
-        root.error(
-          { err: migrateErr instanceof Error ? migrateErr.message : String(migrateErr) },
-          'Database migrations failed after restore',
-        )
-      }
-      await restartServer()
-      root.info('Restore completion finished, server back online')
-    } catch (restartErr) {
-      root.error(
-        { err: restartErr instanceof Error ? restartErr.message : String(restartErr) },
-        'Server restart failed during restore completion',
-      )
-    }
-  },
+  complete: completeRestore,
 })
 
 // ─── Migration ───────────────────────────────────────────

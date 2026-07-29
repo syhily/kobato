@@ -56,10 +56,3 @@ export function scheduleNextKvSweep(): void {
   })
   job.reschedule()
 }
-
-export function stopKvSweepScheduler(): void {
-  job?.stop()
-  // Drop the reference: the next schedule creates a fresh job (a
-  // stopped job's reschedule() is a no-op by design).
-  job = null
-}

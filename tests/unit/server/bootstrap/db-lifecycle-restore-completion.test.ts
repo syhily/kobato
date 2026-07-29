@@ -90,22 +90,22 @@ vi.mock('@/server/infra/logger', () => ({
 }))
 
 // Import the module to trigger module-level side effects (wireRestoreMachine).
-import '@/server/bootstrap/db-lifecycle'
+import { completeRestore } from '@/server/bootstrap/db-lifecycle'
 
 describe('db-lifecycle restore completion', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  it('registers a restore completion callback', () => {
-    expect(restoreState.callback).not.toBeNull()
+  it('wires the machine with completeRestore', () => {
+    expect(restoreState.callback).toBe(completeRestore)
   })
 
   it('runs migrations after successful restore', async () => {
     mockMigrateDatabase.mockResolvedValue(undefined)
     mockRestartServer.mockResolvedValue(undefined)
 
-    await restoreState.callback!(true, undefined)
+    await completeRestore(true, undefined)
 
     expect(mockMigrateDatabase).toHaveBeenCalledTimes(1)
     expect(mockRestartServer).toHaveBeenCalledTimes(1)
@@ -115,7 +115,7 @@ describe('db-lifecycle restore completion', () => {
     mockMigrateDatabase.mockResolvedValue(undefined)
     mockRestartServer.mockResolvedValue(undefined)
 
-    await restoreState.callback!(false, new Error('restore failed'))
+    await completeRestore(false, new Error('restore failed'))
 
     expect(mockMigrateDatabase).toHaveBeenCalledTimes(1)
     expect(mockRestartServer).toHaveBeenCalledTimes(1)
@@ -125,7 +125,7 @@ describe('db-lifecycle restore completion', () => {
     mockMigrateDatabase.mockRejectedValue(new Error('migration failed'))
     mockRestartServer.mockResolvedValue(undefined)
 
-    await restoreState.callback!(true, undefined)
+    await completeRestore(true, undefined)
 
     expect(mockMigrateDatabase).toHaveBeenCalledTimes(1)
     expect(mockRestartServer).toHaveBeenCalledTimes(1)

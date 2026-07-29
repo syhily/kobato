@@ -16,10 +16,11 @@ import {
   fetchAuditLogActors,
 } from '@/server/domains/audit/services/query'
 import { recordAuditEvent } from '@/server/domains/audit/services/record'
-import { scheduleNextArchive, stopArchiveScheduler } from '@/server/domains/audit/services/scheduler'
+import { scheduleNextArchive } from '@/server/domains/audit/services/scheduler'
 import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
 import { auditLog } from '@/server/infra/db/schema/config'
 import { user } from '@/server/infra/db/schema/user'
+import { stopAllScheduledJobs } from '@/server/infra/scheduler-utils'
 
 const handle = createTestDatabase()
 const db: Database = handle.db
@@ -35,7 +36,7 @@ beforeEach(async () => {
 
 afterEach(() => {
   resetAllBatchers()
-  stopArchiveScheduler()
+  stopAllScheduledJobs()
   vi.useRealTimers()
 })
 
@@ -265,11 +266,11 @@ describe('audit/services/scheduler — scheduleNextArchive', () => {
     expect(vi.getTimerCount()).toBeGreaterThan(0)
   })
 
-  it('stopArchiveScheduler clears the pending timer', () => {
+  it('stopAllScheduledJobs clears the pending timer', () => {
     vi.useFakeTimers()
     setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
     scheduleNextArchive()
-    stopArchiveScheduler()
+    stopAllScheduledJobs()
     expect(vi.getTimerCount()).toBe(0)
   })
 })
