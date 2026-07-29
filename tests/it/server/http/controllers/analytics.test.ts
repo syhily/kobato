@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 
 vi.mock('@/server/bootstrap/analytics-lifecycle', () => ({
-  getAnalyticsHandle: () => ({ reader: {}, writer: {}, instance: {}, path: ':memory:', closed: false }),
+  getAnalyticsReader: () => ({}),
 }))
 
 vi.mock('@/server/domains/analytics/services/query-parser', () => ({

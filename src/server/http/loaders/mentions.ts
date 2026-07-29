@@ -1,4 +1,4 @@
-import { getAnalyticsHandle } from '@/server/bootstrap/analytics-lifecycle'
+import { getAnalyticsReader } from '@/server/bootstrap/analytics-lifecycle'
 import { queryMetric } from '@/server/domains/analytics/services/metric'
 import { parseAnalyticsSearch } from '@/server/domains/analytics/services/query-parser'
 
@@ -9,6 +9,6 @@ import { parseAnalyticsSearch } from '@/server/domains/analytics/services/query-
  */
 export async function loadMentionsReferers(searchParams: URLSearchParams) {
   const input = parseAnalyticsSearch(searchParams)
-  const referers = await queryMetric(getAnalyticsHandle().reader, input, 'referer', 50)
+  const referers = await queryMetric(getAnalyticsReader(), input, 'referer', 50)
   return { referers }
 }

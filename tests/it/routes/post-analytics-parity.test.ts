@@ -42,7 +42,7 @@ const sampleMeta = {
 const metricRows: Record<string, MetricRow[]> = {}
 
 vi.mock('@/server/bootstrap/analytics-lifecycle', () => ({
-  getAnalyticsHandle: () => ({ reader: {}, writer: {}, instance: {}, path: ':memory:', closed: false }),
+  getAnalyticsReader: () => ({}),
 }))
 
 vi.mock('@/server/domains/posts/services/single', () => ({

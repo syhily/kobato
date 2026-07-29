@@ -1,3 +1,7 @@
+import { copyFile } from 'node:fs/promises'
+
+import type { AnalyticsReader } from '@/server/domains/analytics/services/duckdb-sql'
+
 import { ACCESS_LOG_DDL } from '@/server/domains/analytics/services/access-log'
 import { runAccessLogRetention } from '@/server/domains/analytics/services/maintenance'
 import {
@@ -65,6 +69,32 @@ export function getAnalyticsHandle(): AnalyticsHandle {
     throw new Error('Analytics database not initialized')
   }
   return current
+}
+
+/**
+ * The MVCC-safe read connection for dashboard/report queries. The
+ * writer/reader split is a private implementation detail of this module
+ * — query call sites never see the handle, and the writer stays
+ * reachable only through the batcher's lazy getter.
+ */
+export function getAnalyticsReader(): AnalyticsReader {
+  return getAnalyticsHandle().reader
+}
+
+/**
+ * Checkpoint the sidecar and copy it to `stagingPath` for a backup
+ * archive. Returns false when there is nothing to archive (an in-memory
+ * handle in tests). Errors propagate — the caller decides whether the
+ * sidecar is expendable (backup) or load-bearing (nothing else is).
+ */
+export async function snapshotAnalyticsTo(stagingPath: string): Promise<boolean> {
+  const handle = getAnalyticsHandle()
+  if (handle.path === ':memory:') {
+    return false
+  }
+  await handle.writer.run('CHECKPOINT')
+  await copyFile(handle.path, stagingPath)
+  return true
 }
 
 /**

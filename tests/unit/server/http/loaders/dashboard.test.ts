@@ -12,7 +12,7 @@ import { EMPTY_STATE_LINES } from '@/shared/contracts/dashboard'
 const pendingDashboard = { items: [], total: 0, counts: { all: 0 }, hasMore: false }
 
 vi.mock('@/server/bootstrap/analytics-lifecycle', () => ({
-  getAnalyticsHandle: () => ({ reader: {}, writer: {}, instance: {}, path: ':memory:', closed: false }),
+  getAnalyticsReader: () => ({}),
 }))
 
 vi.mock('@/server/domains/comments/services/admin-query', () => ({

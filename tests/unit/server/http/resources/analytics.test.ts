@@ -6,7 +6,7 @@ import type { Env } from '@/server/http/context'
 const queryRealtimeTail = vi.fn().mockResolvedValue([])
 
 vi.mock('@/server/bootstrap/analytics-lifecycle', () => ({
-  getAnalyticsHandle: () => ({ reader: {}, writer: {}, instance: {}, path: ':memory:', closed: false }),
+  getAnalyticsReader: () => ({}),
 }))
 
 vi.mock('@/server/domains/analytics/services/realtime', async (importOriginal) => ({

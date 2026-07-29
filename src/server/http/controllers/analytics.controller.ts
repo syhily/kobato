@@ -1,7 +1,7 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
-import { getAnalyticsHandle } from '@/server/bootstrap/analytics-lifecycle'
+import { getAnalyticsReader } from '@/server/bootstrap/analytics-lifecycle'
 import { queryCounters } from '@/server/domains/analytics/services/counters'
 import { METRIC_SET } from '@/server/domains/analytics/services/duckdb-sql'
 import { queryHeatmap } from '@/server/domains/analytics/services/heatmap'
@@ -56,19 +56,19 @@ const counters = adminProc
   .route({ method: 'GET', path: '/analytics/counters' })
   .input(analyticsInput)
   .output(countersOutput)
-  .handler(({ input }) => queryCounters(getAnalyticsHandle().reader, parseAnalyticsInput(input)))
+  .handler(({ input }) => queryCounters(getAnalyticsReader(), parseAnalyticsInput(input)))
 
 const views = adminProc
   .route({ method: 'GET', path: '/analytics/views' })
   .input(analyticsInput)
   .output(z.array(viewsPointOutput))
-  .handler(({ input }) => queryViews(getAnalyticsHandle().reader, parseAnalyticsInput(input)))
+  .handler(({ input }) => queryViews(getAnalyticsReader(), parseAnalyticsInput(input)))
 
 const heatmap = adminProc
   .route({ method: 'GET', path: '/analytics/heatmap' })
   .input(analyticsInput)
   .output(z.array(heatmapCellOutput))
-  .handler(({ input }) => queryHeatmap(getAnalyticsHandle().reader, parseAnalyticsInput(input)))
+  .handler(({ input }) => queryHeatmap(getAnalyticsReader(), parseAnalyticsInput(input)))
 
 const metrics = adminProc
   .route({ method: 'GET', path: '/analytics/metrics' })
@@ -78,7 +78,7 @@ const metrics = adminProc
     if (!METRIC_SET.has(input.type)) {
       throw new ORPCError('BAD_REQUEST', { message: `unknown metric type: ${input.type}` })
     }
-    return queryMetric(getAnalyticsHandle().reader, parseAnalyticsInput(input), input.type, input.limit)
+    return queryMetric(getAnalyticsReader(), parseAnalyticsInput(input), input.type, input.limit)
   })
 
 export const analyticsRouter = { counters, views, heatmap, metrics }

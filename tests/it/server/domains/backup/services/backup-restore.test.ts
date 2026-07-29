@@ -16,7 +16,17 @@ import {
 let analyticsHandle: AnalyticsHandle
 
 vi.mock('@/server/bootstrap/analytics-lifecycle', () => ({
-  getAnalyticsHandle: () => analyticsHandle,
+  // Same contract as the real seam, driven against the test's real
+  // temp-file DuckDB handle.
+  snapshotAnalyticsTo: async (stagingPath: string) => {
+    if (analyticsHandle.path === ':memory:') {
+      return false
+    }
+    await analyticsHandle.writer.run('CHECKPOINT')
+    const { copyFile } = await import('node:fs/promises')
+    await copyFile(analyticsHandle.path, stagingPath)
+    return true
+  },
 }))
 
 import { createBackup, getBackupBuffer } from '@/server/domains/backup/services/backup'

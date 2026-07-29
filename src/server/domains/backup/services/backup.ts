@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm'
 import { statSync } from 'node:fs'
-import { copyFile, unlink } from 'node:fs/promises'
+import { unlink } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { createGzip } from 'node:zlib'
@@ -8,7 +8,7 @@ import { createGzip } from 'node:zlib'
 import type { Database } from '@/server/infra/db/database'
 import type { BackupFileDto } from '@/shared/types/backup'
 
-import { getAnalyticsHandle } from '@/server/bootstrap/analytics-lifecycle'
+import { snapshotAnalyticsTo } from '@/server/bootstrap/analytics-lifecycle'
 import { createTarReadStream } from '@/server/domains/backup/services/tar'
 import {
   deleteBackupRow,
@@ -107,10 +107,7 @@ export async function createBackup(
   try {
     const entries: { name: string; path: string; size: number }[] = []
     try {
-      const analytics = getAnalyticsHandle()
-      if (analytics.path !== ':memory:') {
-        await analytics.writer.run('CHECKPOINT')
-        await copyFile(analytics.path, analyticsStagingPath)
+      if (await snapshotAnalyticsTo(analyticsStagingPath)) {
         entries.push({ name: 'analytics.duckdb', path: analyticsStagingPath, size: 0 })
       }
     } catch (error) {
