@@ -17,36 +17,30 @@ export interface FlushResult {
   deadLettered: number
 }
 
-// Generic in-memory batcher that flushes rows via one multi-row INSERT
-// in a single sync transaction — the shape SQLite excels at, and the
-// replacement for the old Postgres `COPY FROM STDIN` path with no loss
-// of durability (WAL + one commit per batch). Subclasses provide
-// `insertBatch()` for the write itself and `onInsertFailed()` for
-// domain-specific error handling (dead-letter, per-row fallback, etc.).
-//
-// The writer is a LAZY GETTER, not a constructor-captured handle: some
-// writers don't exist at batcher-construction time (the DuckDB sidecar
-// opens after the batchers register), and a reopened handle (restore
-// completion) must be picked up without re-registration.
+// The shared flush-loop skeleton for every buffered writer (insert
+// batchers that buffer whole rows, and the page-view batcher that
+// aggregates counters): a lazy unref'd interval timer, singleflight
+// flush with snapshot detach, and the shutdown-hook registration with
+// disposal. Subclasses own the payload: how a pending batch is
+// detached (`takePending`), written (`writePending`), and recovered
+// (`onWriteFailed` — dead-letter for rows, merge-back retry for
+// counters).
 //
 // Flush triggers:
-//   - Buffer reaches `flushThreshold`.
-//   - `flushIntervalMs` elapses since the first push after the last
-//     flush (lazy timer, `.unref()` so it doesn't keep Node alive).
+//   - The subclass arms a flush (threshold, interval via `armFlushTimer`).
 //   - Process receives SIGTERM / SIGINT / `beforeExit` (via
 //     `registerShutdownHook` with priority 100 so flushers run before
 //     the database-close hook at priority 0).
-export abstract class InsertBatcher<T, W = Database> {
-  private buffer: T[] = []
+export abstract class FlushLoop<Pending, Result> {
   private timer: NodeJS.Timeout | null = null
-  private flushing: Promise<FlushResult> | null = null
+  private flushing: Promise<Result> | null = null
   protected readonly log: Logger
   private readonly shutdownHook: () => Promise<void>
 
   constructor(
-    private readonly opts: InsertBatcherOptions,
+    private readonly flushIntervalMs: number,
     scope: string,
-    private readonly resolveWriter: () => W,
+    private readonly emptyResult: Result,
   ) {
     this.log = getLogger(scope)
     this.shutdownHook = async () => {
@@ -64,6 +58,95 @@ export abstract class InsertBatcher<T, W = Database> {
     unregisterShutdownHook(this.shutdownHook)
   }
 
+  /** Detach the pending payload for a flush (null = nothing pending). */
+  protected abstract takePending(): Pending | null
+
+  /** Write the detached batch. */
+  protected abstract writePending(pending: Pending): Result | Promise<Result>
+
+  /** Recover from a failed write (dead-letter, merge-back retry, …). */
+  protected abstract onWriteFailed(pending: Pending, error: unknown): Result | Promise<Result>
+
+  /** Arm the lazy interval flush — idempotent while a timer is pending. */
+  protected armFlushTimer(): void {
+    if (this.timer === null) {
+      this.timer = setTimeout(() => {
+        void this.flush()
+      }, this.flushIntervalMs)
+      this.timer.unref()
+    }
+  }
+
+  async flush(): Promise<Result> {
+    if (this.flushing) {
+      return this.flushing
+    }
+    if (this.timer) {
+      clearTimeout(this.timer)
+      this.timer = null
+    }
+    const pending = this.takePending()
+    if (pending === null) {
+      return this.emptyResult
+    }
+    this.flushing = (async () => {
+      try {
+        return await this.writePending(pending)
+      } catch (error) {
+        return await this.onWriteFailed(pending, error)
+      } finally {
+        this.flushing = null
+      }
+    })()
+    return this.flushing
+  }
+}
+
+// Generic in-memory batcher that flushes rows via one multi-row INSERT
+// in a single sync transaction — the shape SQLite excels at, and the
+// replacement for the old Postgres `COPY FROM STDIN` path with no loss
+// of durability (WAL + one commit per batch). Subclasses provide
+// `insertBatch()` for the write itself and `onInsertFailed()` for
+// domain-specific error handling (dead-letter, per-row fallback, etc.).
+//
+// The writer is a LAZY GETTER, not a constructor-captured handle: some
+// writers don't exist at batcher-construction time (the DuckDB sidecar
+// opens after the batchers register), and a reopened handle (restore
+// completion) must be picked up without re-registration.
+export abstract class InsertBatcher<T, W = Database> extends FlushLoop<T[], FlushResult> {
+  private buffer: T[] = []
+
+  constructor(
+    private readonly opts: InsertBatcherOptions,
+    scope: string,
+    private readonly resolveWriter: () => W,
+  ) {
+    super(opts.flushIntervalMs, scope, { committed: 0, deadLettered: 0 })
+  }
+
+  protected takePending(): T[] | null {
+    if (this.buffer.length === 0) {
+      return null
+    }
+    const snapshot = this.buffer
+    this.buffer = []
+    return snapshot
+  }
+
+  protected async writePending(pending: T[]): Promise<FlushResult> {
+    await this.insertBatch(this.resolveWriter(), pending)
+    this.log.debug('flushed batch', { count: pending.length })
+    return { committed: pending.length, deadLettered: 0 }
+  }
+
+  protected async onWriteFailed(pending: T[], error: unknown): Promise<FlushResult> {
+    this.log.error('batch insert failed', {
+      err: error instanceof Error ? error.message : String(error),
+      count: pending.length,
+    })
+    return this.onInsertFailed(pending, error)
+  }
+
   /** Insert the whole batch in one transaction. Sync for node:sqlite;
    * may be async for engines with an async client (DuckDB). */
   protected abstract insertBatch(writer: W, events: T[]): void | Promise<void>
@@ -79,47 +162,7 @@ export abstract class InsertBatcher<T, W = Database> {
       return
     }
 
-    if (this.timer === null) {
-      this.timer = setTimeout(() => {
-        void this.flush()
-      }, this.opts.flushIntervalMs)
-      this.timer.unref()
-    }
-  }
-
-  async flush(): Promise<FlushResult> {
-    if (this.flushing) {
-      return this.flushing
-    }
-    if (this.buffer.length === 0) {
-      return { committed: 0, deadLettered: 0 }
-    }
-
-    if (this.timer) {
-      clearTimeout(this.timer)
-      this.timer = null
-    }
-
-    const snapshot = this.buffer
-    this.buffer = []
-
-    this.flushing = (async () => {
-      try {
-        await this.insertBatch(this.resolveWriter(), snapshot)
-        this.log.debug('flushed batch', { count: snapshot.length })
-        return { committed: snapshot.length, deadLettered: 0 } as FlushResult
-      } catch (err) {
-        this.log.error('batch insert failed', {
-          err: err instanceof Error ? err.message : String(err),
-          count: snapshot.length,
-        })
-        return await this.onInsertFailed(snapshot, err)
-      } finally {
-        this.flushing = null
-      }
-    })()
-
-    return this.flushing
+    this.armFlushTimer()
   }
 
   /** Write events directly (used by dead-letter replay). */

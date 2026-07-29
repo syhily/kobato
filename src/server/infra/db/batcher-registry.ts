@@ -34,6 +34,9 @@ interface RegisteredBatcher {
 interface BatcherEntry {
   name: string
   init: (handle: DatabaseHandle) => RegisteredBatcher
+  /** Boot-time dead-letter replay for this batcher (optional — batchers
+   *  without a dead-letter file simply don't fill the slot). */
+  replayDeadLetter?: () => Promise<unknown>
   instance: RegisteredBatcher | undefined
 }
 
@@ -45,16 +48,20 @@ const entries: BatcherEntry[] = []
  * the previous instance — HMR-safe: a re-evaluated module re-registers
  * its factory instead of duplicating it.
  */
-export function registerBatcher<T extends RegisteredBatcher>(name: string, init: (handle: DatabaseHandle) => T): void {
+export function registerBatcher<T extends RegisteredBatcher>(
+  name: string,
+  init: (handle: DatabaseHandle) => T,
+  options: { replayDeadLetter?: () => Promise<unknown> } = {},
+): void {
   const index = entries.findIndex((entry) => entry.name === name)
   if (index !== -1) {
     // HMR re-registration: the replaced factory's live instance must
     // dispose its shutdown hook before being orphaned.
     entries[index]!.instance?.dispose?.()
-    entries[index] = { name, init, instance: undefined }
+    entries[index] = { name, init, replayDeadLetter: options.replayDeadLetter, instance: undefined }
     return
   }
-  entries.push({ name, init, instance: undefined })
+  entries.push({ name, init, replayDeadLetter: options.replayDeadLetter, instance: undefined })
 }
 
 /** (Re)construct every registered batcher against the given handle. */
@@ -93,6 +100,29 @@ export function resetAllBatchers(): void {
   for (const entry of entries) {
     entry.instance?.dispose?.()
     entry.instance = undefined
+  }
+}
+
+/**
+ * Replay every registered batcher's dead-letter file — the boot-time
+ * counterpart of `initAllBatchers`, so bootstrap drives replay through
+ * the same registry vocabulary instead of importing per-domain replay
+ * functions. Failures are isolated per batcher (each replay keeps its
+ * file on error by contract).
+ */
+export async function replayAllDeadLetters(): Promise<void> {
+  for (const entry of entries) {
+    if (!entry.replayDeadLetter) {
+      continue
+    }
+    try {
+      await entry.replayDeadLetter()
+    } catch (error) {
+      log.warn('dead-letter replay failed; continuing with the rest', {
+        batcher: entry.name,
+        err: error instanceof Error ? error.message : String(error),
+      })
+    }
   }
 }
 

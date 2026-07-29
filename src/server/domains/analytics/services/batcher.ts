@@ -3,7 +3,7 @@ import { type DuckDBConnection } from '@duckdb/node-api'
 import type { EnrichedAccessEvent } from '@/server/domains/analytics/types'
 
 import { getAnalyticsHandle } from '@/server/bootstrap/analytics-lifecycle'
-import { appendAccessEvent } from '@/server/domains/analytics/services/access-log'
+import { appendAccessEvents } from '@/server/domains/analytics/services/access-log'
 import { getBatcher, registerBatcher, requireBatcher } from '@/server/infra/db/batcher-registry'
 import {
   deserializeDeadLetterJsonLine,
@@ -30,9 +30,6 @@ function deserializeFromDeadLetter(line: string): EnrichedAccessEvent | null {
   })
 }
 
-// DuckDB Appender protocol (prototype-learned): `endRow()` terminates
-// every row, `flushSync()` lands a chunk (≤ 2048 rows), `closeSync()`
-// commits the tail. Flushes are ~62k rows/s — 9× prepared INSERTs.
 // The writer getter is lazy: the sidecar opens AFTER the batchers
 // register (db-lifecycle order), so the connection resolves at flush
 // time, never at construction.
@@ -42,24 +39,7 @@ class AccessLogBatcher extends InsertBatcher<EnrichedAccessEvent, DuckDBConnecti
   }
 
   protected async insertBatch(writer: DuckDBConnection, events: EnrichedAccessEvent[]): Promise<void> {
-    const appender = await writer.createAppender('access_log')
-    try {
-      let count = 0
-      for (const e of events) {
-        appendAccessEvent(appender, e)
-        appender.endRow()
-        count++
-        if (count % 2048 === 0) {
-          appender.flushSync()
-        }
-      }
-    } finally {
-      // closeSync commits whatever was flushed — a mid-batch failure
-      // leaves those rows visible while the whole batch also lands in
-      // the dead-letter file, so a replay can duplicate them. Telemetry
-      // is at-least-once by design; losing rows is worse.
-      appender.closeSync()
-    }
+    await appendAccessEvents(writer, events)
   }
 
   protected async onInsertFailed(events: EnrichedAccessEvent[]): Promise<FlushResult> {
@@ -69,9 +49,12 @@ class AccessLogBatcher extends InsertBatcher<EnrichedAccessEvent, DuckDBConnecti
 }
 
 // Self-register on the infra batching seam: the bootstrap lifecycle
-// drives init/flush/reset through the registry (`initAllBatchers` /
-// `flushAllBatchers` / `resetAllBatchers`) with no per-domain calls.
-registerBatcher(BATCHER_NAME, () => new AccessLogBatcher())
+// drives init/flush/reset/replay through the registry (`initAllBatchers`
+// / `flushAllBatchers` / `resetAllBatchers` / `replayAllDeadLetters`)
+// with no per-domain calls.
+registerBatcher(BATCHER_NAME, () => new AccessLogBatcher(), {
+  replayDeadLetter: () => replayDeadLetterAccessLog(),
+})
 
 export function pushAccessEvent(event: EnrichedAccessEvent): void {
   requireBatcher<AccessLogBatcher>(BATCHER_NAME).push(event)

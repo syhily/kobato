@@ -1,4 +1,4 @@
-import { DuckDBTimestampMillisecondsValue, type DuckDBAppender } from '@duckdb/node-api'
+import { DuckDBTimestampMillisecondsValue, type DuckDBAppender, type DuckDBConnection } from '@duckdb/node-api'
 
 import type { EnrichedAccessEvent } from '@/server/domains/analytics/types'
 
@@ -89,4 +89,30 @@ export function appendAccessEvent(appender: DuckDBAppender, e: EnrichedAccessEve
   s(e.device)
   s(e.deviceType)
   appender.appendBoolean(e.isBot)
+}
+
+/**
+ * Append a whole batch through the Appender protocol — THE single owner
+ * of it (the batcher, the `--include-analytics` pump, the benchmark
+ * seeder, and the test seeder all write through this): `endRow()` per
+ * row, `flushSync()` per ≤2048-row chunk, `closeSync()` in a finally.
+ * closeSync commits whatever was flushed, so a mid-batch failure leaves
+ * those rows visible while the batch also lands in the dead-letter
+ * file — telemetry is at-least-once by design; losing rows is worse.
+ */
+export async function appendAccessEvents(writer: DuckDBConnection, events: EnrichedAccessEvent[]): Promise<void> {
+  const appender = await writer.createAppender('access_log')
+  try {
+    let count = 0
+    for (const event of events) {
+      appendAccessEvent(appender, event)
+      appender.endRow()
+      count++
+      if (count % 2048 === 0) {
+        appender.flushSync()
+      }
+    }
+  } finally {
+    appender.closeSync()
+  }
 }
