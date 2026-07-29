@@ -1,7 +1,5 @@
-import { getAnalyticsHandle } from '@/server/bootstrap/analytics-lifecycle'
-import { queryMetric } from '@/server/domains/analytics/services/metric'
-import { parseAnalyticsSearch } from '@/server/domains/analytics/services/query-parser'
 import { requireRole } from '@/server/domains/auth/rbac'
+import { loadMentionsReferers } from '@/server/http/loaders/mentions'
 import { getRequestContext } from '@/server/http/request-context'
 import { DateRangePicker } from '@/ui/admin/analytics/DateRangePicker'
 import { useAnalyticsState } from '@/ui/admin/analytics/use-analytics-state'
@@ -16,11 +14,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   requireRole({ user, role }, 'admin')
 
   const url = new URL(request.url)
-  const input = parseAnalyticsSearch(url.searchParams)
-
-  const referers = await queryMetric(getAnalyticsHandle().reader, input, 'referer', 50)
-
-  return { referers }
+  return loadMentionsReferers(url.searchParams)
 }
 
 export default function MentionsPage({ loaderData }: Route.ComponentProps) {

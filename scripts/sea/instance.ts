@@ -88,6 +88,23 @@ export async function fetchManual(url: string) {
   return fetch(url, { redirect: 'manual', signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) })
 }
 
+/**
+ * Parent env minus what a smoke child must NOT inherit: config vars
+ * (`__`-suffixed — a leaked value silently overrides the converged config
+ * file, env > file) and KOBATO_* runtime vars (an operator-set
+ * KOBATO_NATIVES_DIR would redirect the child's native extraction away
+ * from the per-run cache and false-fail the layout checks). Deliberate
+ * vars are re-injected explicitly by each spawn call.
+ */
+export function scrubbedParentEnv(): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(process.env).filter(
+      (entry): entry is [string, string] =>
+        entry[1] !== undefined && !entry[0].includes('__') && !entry[0].startsWith('KOBATO_'),
+    ),
+  )
+}
+
 export async function makeTempDirs(): Promise<TempDirs> {
   const root = await mkdtemp(join(tmpdir(), 'kobato-smoke-'))
   const dirs = { root, data: join(root, 'data'), cache: join(root, 'cache'), cwd: join(root, 'cwd') }
@@ -261,13 +278,7 @@ export async function bootServer(
   // file-only restart would then boot against a foreign database instead
   // of the per-run smoke one. Config reaches the child only through the
   // explicit `env` argument (and server__port below).
-  // KOBATO_* runtime vars (natives dir, cache dir) must also stay out:
-  // an operator-set KOBATO_NATIVES_DIR would redirect the child's native
-  // extraction away from the per-run cache and false-fail the layout
-  // checks.
-  const parentEnv = Object.fromEntries(
-    Object.entries(process.env).filter(([key]) => !key.includes('__') && !key.startsWith('KOBATO_')),
-  )
+  const parentEnv = scrubbedParentEnv()
   const child = spawn(binaryPath, ['--config', join(dirs.root, 'kobato.config.json')], {
     cwd: dirs.cwd,
     env: { ...parentEnv, ...env, server__port: String(port) },
