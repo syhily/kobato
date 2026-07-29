@@ -6,17 +6,21 @@ import type { DatabaseHandle } from '@/server/infra/db/database'
 import { closeTestAnalyticsDb, createTestAnalyticsDb } from '#/_helpers/analytics-db'
 import { closeTestDatabase, createTestDatabase } from '#/_helpers/integration-db'
 
-vi.mock('@/server/infra/logger', () => ({
-  getLogger: vi.fn(() => ({
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    debug: vi.fn(),
-    child: vi.fn(function (this: unknown) {
-      return this
-    }),
-  })),
-}))
+vi.mock('@/server/infra/logger', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/server/infra/logger')>()
+  return {
+    ...actual,
+    getLogger: vi.fn(() => ({
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      debug: vi.fn(),
+      child: vi.fn(function (this: unknown) {
+        return this
+      }),
+    })),
+  }
+})
 
 vi.mock('@/server/infra/paths', () => ({
   ANALYTICS_DEAD_LETTER_PATH: '/tmp/dead-letter.log',

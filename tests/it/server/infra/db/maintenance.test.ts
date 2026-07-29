@@ -14,18 +14,22 @@ const logs = vi.hoisted(() => ({
   child: vi.fn(),
 }))
 
-vi.mock('@/server/infra/logger', () => ({
-  getLogger: vi.fn(() => ({
-    info: logs.info,
-    warn: logs.warn,
-    error: logs.error,
-    debug: logs.debug,
-    child: vi.fn(function (this: unknown) {
-      return this
-    }),
-  })),
-  root: logs,
-}))
+vi.mock('@/server/infra/logger', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/server/infra/logger')>()
+  return {
+    ...actual,
+    getLogger: vi.fn(() => ({
+      info: logs.info,
+      warn: logs.warn,
+      error: logs.error,
+      debug: logs.debug,
+      child: vi.fn(function (this: unknown) {
+        return this
+      }),
+    })),
+    root: logs,
+  }
+})
 
 import { runAccessLogRetention } from '@/server/domains/analytics/services/maintenance'
 import { runDbMaintenance } from '@/server/infra/db/maintenance'

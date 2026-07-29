@@ -169,11 +169,12 @@ wireRestoreMachine({
 
 // ─── Migration ───────────────────────────────────────────
 // Run migrations once per process (HMR-safe via hmr.migrationsRan).
+// Always on: vitest workers get an isolated `:memory:` database per
+// module graph, so every test file's global must migrate itself —
+// idempotent everywhere else.
 
 if (!hmr?.migrationsRan) {
-  if (!isVitest()) {
-    await migrateDatabase(current.db)
-  }
+  await migrateDatabase(current.db)
   const hot = import.meta.hot
   if (hot && hmr) {
     hmr.migrationsRan = true

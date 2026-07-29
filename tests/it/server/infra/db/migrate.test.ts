@@ -7,7 +7,7 @@ import { afterAll, describe, expect, it } from 'vitest'
 import type { Database, DatabaseHandle } from '@/server/infra/db/database'
 import type { EmbeddedMigrationAssets } from '@/server/infra/db/migrate'
 
-import { closeTestDatabase, createTestDatabase } from '#/_helpers/integration-db'
+import { closeTestDatabase, createTestDatabaseFile } from '#/_helpers/integration-db'
 import { openDatabase } from '@/server/infra/db/database'
 import { runEmbeddedMigrations } from '@/server/infra/db/migrate'
 
@@ -105,7 +105,8 @@ describe('folder vs embedded migrations (sqlite)', () => {
   })
 
   it('applies the pragma set the runtime relies on', () => {
-    const handle = createTestDatabase()
+    // journal_mode=wal only exists on a real file — use the file variant.
+    const handle = createTestDatabaseFile()
     handles.push(handle)
     expect(handle.db.get(sql`PRAGMA auto_vacuum`)).toEqual({ auto_vacuum: 2 })
     expect(handle.db.get(sql`PRAGMA journal_mode`)).toEqual({ journal_mode: 'wal' })

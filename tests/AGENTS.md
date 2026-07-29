@@ -36,10 +36,13 @@ Cross-cutting integration tests still live inside `tests/it/` under the primary 
 
 ## Infrastructure requirements
 
-Zero services. `tests/it/` runs against per-worker temp files — a SQLite
-content DB (`tests/_helpers/integration-db.ts`) and, for analytics tests,
-a DuckDB sidecar (`tests/_helpers/analytics-db.ts`). `tests/unit/` and
-`tests/snaps/` skip the DB bootstrap entirely.
+Zero services. `tests/it/` runs on a shared in-memory SQLite database
+per test file (`createTestDatabase()` returns the lifecycle global —
+integration tests behave like unit tests with a real engine); flows
+that need a real file (backup/restore, WAL assertions) opt into
+`createTestDatabaseFile()` explicitly. Analytics tests use a per-run
+DuckDB sidecar file (`tests/_helpers/analytics-db.ts`). `tests/unit/`
+and `tests/snaps/` skip the DB bootstrap entirely.
 
 ### Local development
 
@@ -63,9 +66,15 @@ GitHub Actions needs no service containers — the suite is self-contained.
 
 ### Worker isolation (integration only)
 
-- **SQLite**: each worker gets its own content database file (a `mkdtemp`
-  path under the OS temp dir), created by `tests/_helpers/integration-db.ts`
-  and removed in `afterAll`.
+- **SQLite**: one in-memory database per test file (`:memory:` is
+  per-connection; the harness returns the lifecycle global so direct
+  users and `getDb()` consumers share it; db-lifecycle migrates it at
+  import). `closeTestDatabase` is a no-op on the global — its lifetime
+  is the module graph's. `clearAllTables(db)` also resets
+  `sqlite_sequence` so seeded ids restart at 1.
+- **File-backed flows**: `createTestDatabaseFile()` returns a fresh
+  migrated temp file — required for backup/restore (VACUUM INTO, file
+  swaps) and WAL/pragma assertions.
 - **DuckDB**: analytics tests open a per-run sidecar file via
   `createTestAnalyticsDb()` from `#/_helpers/analytics-db` and close it
   with `closeTestAnalyticsDb(handle)`.
