@@ -1,6 +1,8 @@
 // Initial-setup flow — create the first admin and seed every settings
 // section in one transaction, then establish the session.
 
+import { sql } from 'drizzle-orm'
+
 import type { AuthFlowResult } from '@/server/domains/auth/services/shared'
 import type { BlogSession } from '@/server/domains/auth/session-storage'
 import type { Database } from '@/server/infra/db/database'
@@ -44,7 +46,7 @@ export async function signUpInitialAdminWithSession(
   }
 
   // Composition only: the settings domain owns the section seed
-  // (`services/install-flow` builds and validates all 18 rows); here the
+  // (`services/install-flow` builds and validates all 17 rows); here the
   // admin insert and the seed share one transaction so a fresh install
   // commits — or rolls back — atomically.
   const seedRows = buildInstallSectionRows({ title, name, email, hostname: new URL(request.url).hostname })
@@ -73,6 +75,10 @@ export async function signUpInitialAdminWithSession(
 
   await refreshBlogSettings(db)
   await invalidateSetupToken(db)
+
+  // The install seed is a bulk load — refresh planner statistics
+  // afterwards (plan §1.9).
+  db.run(sql`ANALYZE`)
 
   return {
     type: 'redirect',
