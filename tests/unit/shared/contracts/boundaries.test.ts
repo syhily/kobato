@@ -219,6 +219,31 @@ describe('contract: module and bundle boundaries', () => {
     expect(offenders).toEqual([])
   })
 
+  it('keeps the Postgres-era drivers and async transactions out of src', () => {
+    // The SQLite migration (node:sqlite + the DuckDB sidecar) retired the
+    // pg driver stack: `pg`, `pg-copy-streams`, and
+    // `drizzle-orm/node-postgres` must never re-enter src/ — the data
+    // pump keeps `pg` in `scripts/` only, as a devDependency. And
+    // node:sqlite transactions are SYNC: a `transaction(async` callback
+    // commits before its awaited work runs — a silent data-loss bug the
+    // drizzle types reject (DrizzleTypeError); this scan is the belt to
+    // that type-level suspender.
+    const BANNED_DRIVERS = ['pg', 'pg-copy-streams', 'drizzle-orm/node-postgres']
+    const offenders: string[] = []
+    for (const file of files('src', '-g', '*.ts', '-g', '*.tsx')) {
+      const source = stripComments(readFileSync(file, 'utf8'))
+      for (const specifier of importSpecifiers(source)) {
+        if (BANNED_DRIVERS.some((banned) => specifier === banned || specifier.startsWith(`${banned}/`))) {
+          offenders.push(`${file}: ${specifier}`)
+        }
+      }
+      if (/\.transaction\(\s*async/.test(source)) {
+        offenders.push(`${file}: .transaction(async …) — node:sqlite transactions are sync`)
+      }
+    }
+    expect(offenders).toEqual([])
+  })
+
   it('keeps the cross-domain import graph acyclic', () => {
     // Domains compose in one direction only: a cycle (auth ↔ comments,
     // pt → music → … → pt) makes every domain inside it impossible to

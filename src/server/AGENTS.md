@@ -14,10 +14,11 @@ server/
 
 Pure primitives; imports nothing from `domains/`, `http/`, or `render/`.
 
-- `db/` — Drizzle pool, schema, migrations, `operations/<entity>.ts` raw helpers; `copy-batcher` + `batcher-registry` for process-level write batchers.
+- `db/` — `database.ts` (node:sqlite `DatabaseSync` open/close + pragma block), `migrate.ts`, drizzle schema, `operations/<entity>.ts` raw helpers; `insert-batcher` + `batcher-registry` for process-level write batchers; `maintenance.ts` daily vacuum/optimize job.
+- `analytics/` — the DuckDB sidecar wrapper (`duckdb.ts`: open/close/path — zero business knowledge; the access_log DDL lives in `domains/analytics/services/access-log-ddl`).
 - `cache/` — `registry` behavior plane; `through`/`get`/`set`/`remove`/`clear`/`throughMany` verbs, generation counters, `kv-maintenance` hourly expiry sweep, `inflight` request coalescing.
 - `http/` — `etag`, `headers`, `status`, `errors` with `DomainError` / `ActionFailure`.
-- `email/`, `search/` (LIKE / pg_trgm / vector drivers), `image/` (worker_threads pool), `crypto/`, `env.ts`, `logger.ts`, `rate-limit.ts`, `slug.ts`.
+- `email/`, `search/` (LIKE-only dispatcher), `image/` (worker_threads pool), `crypto/`, `config.ts`, `logger.ts`, `rate-limit.ts`, `slug/`.
 
 ## domains/
 
@@ -61,13 +62,21 @@ SSR output products: `seo/`, `feed/`, `og/`, `calendar/`, `canvas-fonts.ts`, `pt
 
 ## Sessions & Request Context
 
-One perimeter middleware derives the canonical `RequestContext` once per request — session, viewer, client address, normalized URL, request facts, db/pool, CSP nonce. Every surface (oRPC bridge, RR `buildLoadContext`, resource routers) projects from it. Same-session mutations call `markSessionDirty()`; the middleware commits `Set-Cookie` after the response. ADR-0003.
+One perimeter middleware derives the canonical `RequestContext` once per request — session, viewer, client address, normalized URL, request facts, db, CSP nonce. Every surface (oRPC bridge, RR `buildLoadContext`, resource routers) projects from it. Same-session mutations call `markSessionDirty()`; the middleware commits `Set-Cookie` after the response. ADR-0003.
+
+## Databases
+
+Two embedded engines, zero services:
+
+- **Content DB** — SQLite via `node:sqlite` + drizzle (`sqlite-core`), one file at `storage.database` (default `<storage.data>/kobato.db`). Sync driver: awaited builders typecheck OUTSIDE transactions, but `db.transaction(async …)` is a compile error — transactions are sync callbacks. Timestamps are `integer({ mode: 'timestamp_ms' })` (epoch ms), booleans `integer({ mode: 'boolean' })`, JSON `text({ mode: 'json' })`, binary `blob({ mode: 'buffer' })`; `LIKE`, not `ILIKE`.
+- **Analytics sidecar** — DuckDB via `@duckdb/node-api`, one file at `storage.analyticsDatabase` (default `<storage.data>/analytics.duckdb`). Holds `access_log` only (append-heavy telemetry + dashboard scans); expendable — excluded from backups and recreated empty when missing. The batcher writes through the Appender protocol; queries run on a dedicated MVCC reader connection.
+- **Daily maintenance** (04:30 site timezone): SQLite `incremental_vacuum` + `optimize` with page/freelist logging (`infra/db/maintenance.ts`); DuckDB 180-day retention DELETE + `CHECKPOINT` with row/file-size logging (`bootstrap/analytics-lifecycle.ts`). Pure `ANALYZE` additionally runs after every bulk load (install seed, backup restore, the `db:pump` script).
 
 ## Configuration & Install Gate
 
-- Source of truth: `setting` table — one JSONB row per section, `scope='blog.<section>'`. 18 sections defined in `SECTION_REGISTRY` (`domains/settings/sections/registry.ts`). Adding a section = one new module + one registry line.
+- Source of truth: `setting` table — one plain-JSON row per section, `scope='blog.<section>'`. 17 sections defined in `SECTION_REGISTRY` (`domains/settings/sections/registry.ts`). Adding a section = one new module + one registry line.
 - In-memory: `BlogSettingsBundle` (`@/shared/config/types`). SSR reads slices via `requireBlogSettingsSection('<key>')`; UI uses per-section hooks. New UI MUST NOT read the whole bundle.
-- Install flow: (1) `/admin/setup` creates first admin; (2) sets `blog.general` + `blog.assets`, seeds remaining 16 sections from registry defaults.
+- Install flow: (1) `/admin/setup` creates first admin; (2) sets `blog.general` + `blog.assets`, seeds remaining 15 sections from registry defaults.
 - `honoInstallGateMiddleware`: no admin → `/admin/setup`; installed → through. "Has admin" == "installed".
 - Admin saves: each card POSTs a Section patch; server strict-checks keys, deep-merges, validates against `SECTION_REGISTRY[section].schema`, writes ONLY that row.
 
@@ -87,7 +96,7 @@ One perimeter middleware derives the canonical `RequestContext` once per request
 
 ### Images
 
-- Postgres `image` table; bytes in the active storage backend (`infra/storage/registry::activeBackend` — S3 when configured, local filesystem otherwise). Each row persists `storageDriver` so a local→S3 switch keeps old rows readable.
+- `image` table; bytes in the active storage backend (`infra/storage/registry::activeBackend` — S3 when configured, local filesystem otherwise). Each row persists `storageDriver` so a local→S3 switch keeps old rows readable.
 - Writes use `activeBackend()`, reads/deletes `backendFor(driver)`. Whole-fleet scans iterate `allBackends()` — never import a backend directly.
 - All URL → image-meta resolution flows through `domains/images/services/resolve`.
 
@@ -97,7 +106,7 @@ One perimeter middleware derives the canonical `RequestContext` once per request
 - **How**: `recordAuditEventFromContext` from `@/server/domains/audit/services/record`, called after the mutation succeeds.
 - **Naming**: kebab-case present-tense `<entity>_<verb>`. Never inline the context extraction.
 - **Retention**: DB rows kept `auditLogDbRetentionDays` (default 30), archived daily to S3, then deleted; S3 archives kept `auditLogArchiveRetentionDays` (default 180).
-- **Batcher**: buffered in memory (50 events / 500ms), written via `COPY FROM STDIN`; self-registers with `infra/db/batcher-registry`; flushed on `SIGTERM` / `SIGINT` / `beforeExit`.
+- **Batcher**: buffered in memory (50 events / 500ms), flushed as one multi-row INSERT in a single sync transaction (`infra/db/insert-batcher`); self-registers with `infra/db/batcher-registry`; flushed on `SIGTERM` / `SIGINT` / `beforeExit`.
 
 ## Server layering constraints
 
