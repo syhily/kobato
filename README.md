@@ -219,7 +219,6 @@ pnpm run fmt         # formatting
 pnpm run lint        # lint
 pnpm run type        # TypeScript check
 pnpm run db:gen      # generate Drizzle migrations
-pnpm run docker:dev  # start the legacy Postgres dev stack (unused by the SQLite dev flow)
 ```
 
 ## Design assets

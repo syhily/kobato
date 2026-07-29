@@ -40,7 +40,7 @@ export function resolveDatabasePath(): string {
  * silently ignored on a database already in WAL mode, so it must come
  * first; on a fresh file it must also precede any DDL (migrations run
  * after open). The same pragma block serves every handle — the request
- * connection, the migration connection, and the pump's output file.
+ * connection and the migration connection.
  */
 export function openDatabase(databasePath: string): DatabaseHandle {
   if (databasePath !== ':memory:') {

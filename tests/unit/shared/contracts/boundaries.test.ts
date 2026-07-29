@@ -222,8 +222,9 @@ describe('contract: module and bundle boundaries', () => {
   it('keeps the Postgres-era drivers and async transactions out of src', () => {
     // The SQLite migration (node:sqlite + the DuckDB sidecar) retired the
     // pg driver stack: `pg`, `pg-copy-streams`, and
-    // `drizzle-orm/node-postgres` must never re-enter src/ — the data
-    // pump keeps `pg` in `scripts/` only, as a devDependency. And
+    // `drizzle-orm/node-postgres` must never re-enter src/ — the
+    // one-shot data pump lives in the standalone kobato-pg-pump
+    // project, outside this repository entirely. And
     // node:sqlite transactions are SYNC: a `transaction(async` callback
     // commits before its awaited work runs — a silent data-loss bug the
     // drizzle types reject (DrizzleTypeError); this scan is the belt to
