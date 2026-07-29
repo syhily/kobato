@@ -66,6 +66,10 @@ import { unsafeCast } from '@/shared/utils/unsafe-cast'
 // PG int8 (OID 20) parses as string by default — ids and counts were
 // bigint in Postgres and are plain numbers in the new schema.
 pg.types.setTypeParser(20, (value: string | null) => (value === null ? null : Number(value)))
+// Naive `timestamp` (OID 1114 — verification.created_at/updated_at) has
+// no zone; the old app wrote UTC, so parse it AS UTC instead of the pump
+// host's local zone. timestamptz (1184) is absolute and needs nothing.
+pg.types.setTypeParser(1114, (value: string | null) => (value === null ? null : new Date(`${value}Z`)))
 
 // Dependency order (parents before children). FK enforcement is also
 // suspended for the load and verified afterwards, so a mistake here
@@ -127,12 +131,42 @@ function mapRow(table: AnyTable, row: Record<string, unknown>): Record<string, u
   return values
 }
 
+/** Rows per read page — keyset pagination keeps memory flat on the
+ *  multi-million-row tables (comment, image, access_log). */
+const READ_PAGE = 5_000
+
 async function pumpTable(client: pg.Client, db: Database, table: AnyTable): Promise<PumpStats> {
   const name = getTableName(table)
-  let rows: Record<string, unknown>[]
+  const columns = Object.values(getColumns(table))
+  // Keyset pagination needs a monotonic column: `id` when the table has
+  // one, otherwise fall back to a single read (the id-less tables are
+  // small by design — post_tag junctions and the like).
+  const keyColumn = columns.find((column) => column.name === 'id')
+  let total = 0
   try {
-    const result = await client.query(`SELECT * FROM "${name}"`)
-    rows = unsafeCast<Record<string, unknown>[]>(result.rows)
+    let lastKey = 0
+    for (;;) {
+      const result = keyColumn
+        ? await client.query(`SELECT * FROM "${name}" WHERE id > $1 ORDER BY id LIMIT ${READ_PAGE}`, [lastKey])
+        : await client.query(`SELECT * FROM "${name}"`)
+      const rows = unsafeCast<Record<string, unknown>[]>(result.rows)
+      if (rows.length === 0) {
+        break
+      }
+      db.transaction((tx) => {
+        for (let i = 0; i < rows.length; i += INSERT_CHUNK) {
+          const chunk = rows.slice(i, i + INSERT_CHUNK).map((row) => mapRow(table, row))
+          tx.insert(table).values(unsafeCast<never>(chunk)).run()
+        }
+      })
+      total += rows.length
+      if (keyColumn) {
+        lastKey = Number(rows[rows.length - 1]![keyColumn.name])
+      }
+      if (rows.length < READ_PAGE || !keyColumn) {
+        break
+      }
+    }
   } catch (error) {
     // 42P01 undefined_table — the source deployment predates this table.
     // Skipping is safe: brand-new tables start empty on a fresh install
@@ -143,16 +177,7 @@ async function pumpTable(client: pg.Client, db: Database, table: AnyTable): Prom
     }
     throw error
   }
-  if (rows.length === 0) {
-    return { table: name, rows: 0, skipped: false }
-  }
-  db.transaction((tx) => {
-    for (let i = 0; i < rows.length; i += INSERT_CHUNK) {
-      const chunk = rows.slice(i, i + INSERT_CHUNK).map((row) => mapRow(table, row))
-      tx.insert(table).values(unsafeCast<never>(chunk)).run()
-    }
-  })
-  return { table: name, rows: rows.length, skipped: false }
+  return { table: name, rows: total, skipped: false }
 }
 
 /** Project a PG access_log row (snake_case) onto an EnrichedAccessEvent. */
@@ -194,69 +219,113 @@ function toAccessEvent(row: Record<string, unknown>): EnrichedAccessEvent {
  * appender (`appendAccessEvent`) so the column order has one owner.
  */
 async function pumpAnalytics(client: pg.Client, analyticsPath: string): Promise<number> {
-  let rows: Record<string, unknown>[]
-  try {
-    const result = await client.query('SELECT * FROM "access_log" ORDER BY ts')
-    rows = unsafeCast<Record<string, unknown>[]>(result.rows)
-  } catch (error) {
-    // 42P01 undefined_table — nothing to carry over.
-    if (unsafeCast<{ code?: string }>(error).code === '42P01') {
-      console.warn('  WARN  access_log: not present in the source database — skipped')
-      return 0
-    }
-    throw error
-  }
-  if (rows.length === 0) {
-    return 0
-  }
   const handle = await openAnalyticsDatabase(analyticsPath, ACCESS_LOG_DDL)
   try {
-    const appender = await handle.writer.createAppender('access_log')
     let count = 0
-    for (const row of rows) {
-      appendAccessEvent(appender, toAccessEvent(row))
-      appender.endRow()
-      count++
-      if (count % 2048 === 0) {
-        appender.flushSync()
+    for (;;) {
+      let rows: Record<string, unknown>[]
+      try {
+        // OFFSET paging (no id column on access_log; a ts keyset could
+        // skip same-millisecond rows at a page boundary).
+        const result = await client.query(`SELECT * FROM "access_log" ORDER BY ts LIMIT ${READ_PAGE} OFFSET ${count}`)
+        rows = unsafeCast<Record<string, unknown>[]>(result.rows)
+      } catch (error) {
+        // 42P01 undefined_table — nothing to carry over.
+        if (unsafeCast<{ code?: string }>(error).code === '42P01') {
+          console.warn('  WARN  access_log: not present in the source database — skipped')
+          return 0
+        }
+        throw error
+      }
+      if (rows.length === 0) {
+        return count
+      }
+      const appender = await handle.writer.createAppender('access_log')
+      try {
+        for (const row of rows) {
+          appendAccessEvent(appender, toAccessEvent(row))
+          appender.endRow()
+          count++
+          if (count % 2048 === 0) {
+            appender.flushSync()
+          }
+        }
+      } finally {
+        appender.closeSync()
       }
     }
-    appender.closeSync()
-    return count
   } finally {
     await closeAnalyticsDatabase(handle)
   }
 }
 
-async function main() {
-  const args = process.argv.slice(2).filter((arg) => !arg.startsWith('--'))
-  const [pgUrl, outputPath] = args
-  const force = process.argv.includes('--force')
-  const includeAnalytics = process.argv.includes('--include-analytics')
-  const analyticsFlagIndex = process.argv.indexOf('--analytics')
-  const analyticsPath =
-    analyticsFlagIndex !== -1
-      ? process.argv[analyticsFlagIndex + 1]
-      : join(dirname(outputPath ?? ''), 'analytics.duckdb')
-  if (!pgUrl || !outputPath || (analyticsFlagIndex !== -1 && !analyticsPath)) {
+/** Remove a database file and its WAL/SHM sidecars (a crashed earlier
+ *  run leaves them behind, and a stale WAL would recover old frames
+ *  into the fresh file). */
+function rmWithSidecars(path: string): void {
+  for (const suffix of ['', '-wal', '-shm', '.wal']) {
+    rmSync(`${path}${suffix}`, { force: true })
+  }
+}
+
+function parseArgs(): {
+  pgUrl: string
+  outputPath: string
+  force: boolean
+  includeAnalytics: boolean
+  analyticsPath: string
+} {
+  const argv = process.argv.slice(2)
+  const positional: string[] = []
+  let force = false
+  let includeAnalytics = false
+  let analyticsOverride: string | undefined
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i]!
+    if (arg === '--force') {
+      force = true
+    } else if (arg === '--include-analytics') {
+      includeAnalytics = true
+    } else if (arg === '--analytics') {
+      analyticsOverride = argv[++i]
+    } else if (!arg.startsWith('--')) {
+      positional.push(arg)
+    } else {
+      console.error(`Unknown flag: ${arg}`)
+      process.exit(1)
+    }
+  }
+  const [pgUrl, outputPath] = positional
+  if (!pgUrl || !outputPath) {
     console.error(
       'Usage: pnpm run db:pump -- <postgres-url> <output-sqlite-path> [--force] [--include-analytics [--analytics <duckdb-path>]]',
     )
     process.exit(1)
   }
+  return {
+    pgUrl,
+    outputPath,
+    force,
+    includeAnalytics,
+    analyticsPath: analyticsOverride ?? join(dirname(outputPath), 'analytics.duckdb'),
+  }
+}
+
+async function main() {
+  const { pgUrl, outputPath, force, includeAnalytics, analyticsPath } = parseArgs()
   if (existsSync(outputPath)) {
     if (!force) {
       console.error(`Refusing to overwrite ${outputPath} — pass --force to replace it.`)
       process.exit(1)
     }
-    rmSync(outputPath)
+    rmWithSidecars(outputPath)
   }
   if (includeAnalytics && existsSync(analyticsPath)) {
     if (!force) {
       console.error(`Refusing to overwrite ${analyticsPath} — pass --force to replace it.`)
       process.exit(1)
     }
-    rmSync(analyticsPath)
+    rmWithSidecars(analyticsPath)
   }
 
   console.log(`==> PG → SQLite pump`)
@@ -264,57 +333,62 @@ async function main() {
   console.log(`    output: ${outputPath}`)
 
   const handle = openDatabase(outputPath)
-  console.log('    applying migrations to the fresh file…')
-  migrate(handle.db, { migrationsFolder: './drizzle', migrationsTable: '__drizzle_migrations' })
-
-  const client = new pg.Client({ connectionString: pgUrl })
-  await client.connect()
   try {
-    // Suspend FK enforcement for the load (the standard SQLite restore
-    // pattern); integrity is verified explicitly below.
-    handle.client.exec('PRAGMA foreign_keys = OFF')
-    const stats: PumpStats[] = []
-    for (const table of TABLES) {
-      const stat = await pumpTable(client, handle.db, table)
-      stats.push(stat)
-      if (!stat.skipped) {
-        console.log(`    ${stat.table}: ${stat.rows} rows`)
+    console.log('    applying migrations to the fresh file…')
+    migrate(handle.db, { migrationsFolder: './drizzle', migrationsTable: '__drizzle_migrations' })
+
+    const client = new pg.Client({ connectionString: pgUrl })
+    await client.connect()
+    try {
+      // Suspend FK enforcement for the load (the standard SQLite restore
+      // pattern); integrity is verified explicitly below.
+      handle.client.exec('PRAGMA foreign_keys = OFF')
+      const stats: PumpStats[] = []
+      for (const table of TABLES) {
+        const stat = await pumpTable(client, handle.db, table)
+        stats.push(stat)
+        if (!stat.skipped) {
+          console.log(`    ${stat.table}: ${stat.rows} rows`)
+        }
       }
+
+      const violations = unsafeCast<{ rowid?: unknown }[]>(
+        unsafeCast<unknown[]>(handle.client.prepare('PRAGMA foreign_key_check').all()),
+      )
+      handle.client.exec('PRAGMA foreign_keys = ON')
+      if (violations.length > 0) {
+        throw new Error(`foreign_key_check reported ${violations.length} violations — the output is NOT trustworthy`)
+      }
+
+      if (includeAnalytics) {
+        const events = await pumpAnalytics(client, analyticsPath)
+        console.log(`    access_log: ${events} events → ${analyticsPath}`)
+      }
+
+      const copied = stats.filter((s) => !s.skipped).reduce((sum, s) => sum + s.rows, 0)
+      const skipped = stats.filter((s) => s.skipped).map((s) => s.table)
+      console.log(`==> copied ${copied} rows across ${stats.length - skipped.length} tables`)
+      if (skipped.length > 0) {
+        console.log(`    skipped (missing in source): ${skipped.join(', ')}`)
+      }
+      console.log(
+        includeAnalytics
+          ? '    ephemeral tables (session, kv_cache, one_time_token) intentionally not copied'
+          : '    ephemeral tables (session, kv_cache, one_time_token) and access_log intentionally not copied',
+      )
+    } finally {
+      await client.end()
     }
 
-    const violations = unsafeCast<{ rowid?: unknown }[]>(
-      unsafeCast<unknown[]>(handle.client.prepare('PRAGMA foreign_key_check').all()),
-    )
-    handle.client.exec('PRAGMA foreign_keys = ON')
-    if (violations.length > 0) {
-      throw new Error(`foreign_key_check reported ${violations.length} violations — the output is NOT trustworthy`)
-    }
-
-    if (includeAnalytics) {
-      const events = await pumpAnalytics(client, analyticsPath)
-      console.log(`    access_log: ${events} events → ${analyticsPath}`)
-    }
-
-    const copied = stats.filter((s) => !s.skipped).reduce((sum, s) => sum + s.rows, 0)
-    const skipped = stats.filter((s) => s.skipped).map((s) => s.table)
-    console.log(`==> copied ${copied} rows across ${stats.length - skipped.length} tables`)
-    if (skipped.length > 0) {
-      console.log(`    skipped (missing in source): ${skipped.join(', ')}`)
-    }
-    console.log(
-      includeAnalytics
-        ? '    ephemeral tables (session, kv_cache, one_time_token) intentionally not copied'
-        : '    ephemeral tables (session, kv_cache, one_time_token) and access_log intentionally not copied',
-    )
+    // Refresh planner statistics, then close — closeDatabase folds the WAL
+    // (wal_checkpoint(TRUNCATE)) so the output is one clean file.
+    handle.client.exec('ANALYZE')
+    console.log('==> done — output is a compact, statistics-fresh single file')
   } finally {
-    await client.end()
+    // Idempotent close, even on a crash mid-pump: the WAL is folded so a
+    // rerun never inherits stale frames (rmWithSidecars covers the rest).
+    closeDatabase(handle)
   }
-
-  // Refresh planner statistics, then close — closeDatabase folds the WAL
-  // (wal_checkpoint(TRUNCATE)) so the output is one clean file.
-  handle.client.exec('ANALYZE')
-  closeDatabase(handle)
-  console.log('==> done — output is a compact, statistics-fresh single file')
 }
 
 await main()

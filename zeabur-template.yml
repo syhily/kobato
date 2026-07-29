@@ -84,7 +84,5 @@ spec:
             default: /data/kobato.db
           storage__analyticsDatabase:
             default: /data/analytics.duckdb
-          storage__defaultFont:
-            default: /usr/share/fonts/noto/NotoSansCJK-Regular.ttc
           NODE_ENV:
             default: production

@@ -548,6 +548,12 @@ async function runManaged(binaryPath: string) {
                 throw new Error(`page view ${i + 1}: expected 200, got ${res.status}`)
               }
             }
+            // Wait out the batcher's 1s flush interval so the rows are
+            // committed BEFORE the shutdown: on win32 the kill below maps
+            // to TerminateProcess (no shutdown hooks, no flush), and even
+            // on POSIX a fast SSR would race the interval. 1.5s of slack
+            // makes the round-trip deterministic on every platform.
+            await sleep(1_500)
             return `${PAGE_VIEWS} GET / with a browser UA`
           })
           await check('SIGTERM clean shutdown (seeded install)', () => checkShutdown(seededServer))
