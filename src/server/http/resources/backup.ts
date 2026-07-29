@@ -3,7 +3,7 @@ import { bodyLimit } from 'hono/body-limit'
 
 import type { Env } from '@/server/http/context'
 
-import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
+import { prepareDatabaseForRestore, reopenDb } from '@/server/bootstrap/db-lifecycle'
 import { recordAuditEvent } from '@/server/domains/audit/services/record'
 import { CSRF_HEADER, validateCsrfToken } from '@/server/domains/auth/csrf'
 import { isSetupTokenActive } from '@/server/domains/auth/setup-token'
@@ -14,7 +14,6 @@ import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { csrfGuard } from '@/server/http/middlewares/csrf'
 import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'
 import { rateLimitByIp } from '@/server/http/middlewares/rate-limit'
-import { closeDatabase } from '@/server/infra/db/database'
 import { findFirstAdminUser, hasAdmin } from '@/server/infra/db/operations/user'
 import { getRestoreState, resetRestoreState } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
@@ -59,7 +58,7 @@ export const backupRouter = new Hono<Env>()
 
       const buffer = Buffer.from(await file.arrayBuffer())
 
-      performSafeRestore({ closeCurrentDatabase: () => closeDatabase(getDatabaseHandle()), log }, async () => {
+      performSafeRestore({ prepareForSwap: prepareDatabaseForRestore, reopenAfterSwap: reopenDb, log }, async () => {
         await restoreFromBackup(buffer, file.name)
         log.info('Restore from uploaded backup completed')
       })
@@ -115,35 +114,42 @@ export const backupRouter = new Hono<Env>()
       const userAgent = c.req.raw.headers.get('User-Agent')
       const fileName = file.name
 
-      performSafeRestore({ closeCurrentDatabase: () => closeDatabase(getDatabaseHandle()), log }, async () => {
-        await restoreFromBackup(buffer, fileName)
+      performSafeRestore(
+        { prepareForSwap: prepareDatabaseForRestore, reopenAfterSwap: reopenDb, log },
+        async () => {
+          await restoreFromBackup(buffer, fileName)
+        },
+        async (db) => {
+          // Post-restore work runs against the FRESH handle on the
+          // swapped file — never the request-scoped handle the
+          // orchestrator already closed.
+          const admin = await findFirstAdminUser(db)
+          if (!admin) {
+            log.error('Setup restore: no admin found after restore', { fileName })
+            throw new Error('Setup restore: no admin found after restore')
+          }
 
-        const admin = await findFirstAdminUser(c.var.requestContext.db)
-        if (!admin) {
-          log.error('Setup restore: no admin found after restore', { fileName })
-          throw new Error('Setup restore: no admin found after restore')
-        }
+          try {
+            await refreshBlogSettings(db)
+          } catch (err) {
+            log.warn('refreshBlogSettings failed after setup restore; continuing', {
+              err: err instanceof Error ? err.message : String(err),
+            })
+          }
 
-        try {
-          await refreshBlogSettings(c.var.requestContext.db)
-        } catch (err) {
-          log.warn('refreshBlogSettings failed after setup restore; continuing', {
-            err: err instanceof Error ? err.message : String(err),
+          recordAuditEvent({
+            action: 'setup_restored',
+            resourceType: 'backup',
+            resourceId: fileName,
+            actorId: admin.id,
+            actorRole: admin.role,
+            ipAddress: clientAddress,
+            userAgent,
           })
-        }
 
-        recordAuditEvent({
-          action: 'setup_restored',
-          resourceType: 'backup',
-          resourceId: fileName,
-          actorId: admin.id,
-          actorRole: admin.role,
-          ipAddress: clientAddress,
-          userAgent,
-        })
-
-        log.info('Setup restore completed', { adminId: String(admin.id) })
-      })
+          log.info('Setup restore completed', { adminId: String(admin.id) })
+        },
+      )
 
       return c.json({ accepted: true })
     },

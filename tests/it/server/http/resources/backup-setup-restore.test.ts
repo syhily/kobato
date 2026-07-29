@@ -105,9 +105,13 @@ describe('/api/admin/backup/upload-restore', () => {
     mockGetRestoreState.mockReturnValue({ phase: 'idle' })
     mockValidateCsrfToken.mockReturnValue(true)
     mockExtractBackupSql.mockResolvedValue('CREATE TABLE test (id INT);')
-    mockPerformSafeRestore.mockImplementation(async (_ctx: unknown, fn: () => Promise<void>) => {
-      await fn()
-    })
+    mockPerformSafeRestore.mockImplementation(
+      async (_ctx: unknown, fn: () => Promise<void>, afterReopenFn?: (db: unknown) => Promise<void>) => {
+        await fn()
+        // The real orchestrator passes the freshly reopened handle.
+        await afterReopenFn?.({ fake: 'db' })
+      },
+    )
   })
 
   it('returns 403 when CSRF token is missing or invalid', async () => {
@@ -214,9 +218,13 @@ describe('/api/setup/restore', () => {
     mockCheckPgToolsAvailable.mockResolvedValue(true)
     mockExtractBackupSql.mockResolvedValue('CREATE TABLE test (id INT);')
     mockFindFirstAdminUser.mockResolvedValue({ id: 1, role: 'admin' })
-    mockPerformSafeRestore.mockImplementation(async (_ctx: unknown, fn: () => Promise<void>) => {
-      await fn()
-    })
+    mockPerformSafeRestore.mockImplementation(
+      async (_ctx: unknown, fn: () => Promise<void>, afterReopenFn?: (db: unknown) => Promise<void>) => {
+        await fn()
+        // The real orchestrator passes the freshly reopened handle.
+        await afterReopenFn?.({ fake: 'db' })
+      },
+    )
   })
 
   it('returns 403 when session is not verified', async () => {
