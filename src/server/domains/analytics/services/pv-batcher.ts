@@ -4,7 +4,7 @@ import type { EntityTarget } from '@/server/infra/db/target'
 import { getBatcher, registerBatcher, requireBatcher } from '@/server/infra/db/batcher-registry'
 import { incrementMetricPvBatch } from '@/server/infra/db/operations/metric'
 import { targetKey } from '@/server/infra/db/target'
-import { registerShutdownHook } from '@/server/infra/lifecycle'
+import { registerShutdownHook, unregisterShutdownHook } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
 
 // In-memory aggregator for high-frequency counters. We currently track page
@@ -30,12 +30,19 @@ class PageViewBatcher {
   private failed = new Map<string, number>()
   private timer: NodeJS.Timeout | null = null
   private flushing: Promise<void> | null = null
+  private readonly shutdownHook: () => Promise<void>
 
   constructor(
     private readonly opts: BatcherOptions,
     private readonly db: Database,
   ) {
-    registerShutdownHook(() => this.flush(), 100)
+    this.shutdownHook = () => this.flush()
+    registerShutdownHook(this.shutdownHook, 100)
+  }
+
+  /** Detach the shutdown hook (registry reset on restore — see InsertBatcher). */
+  dispose(): void {
+    unregisterShutdownHook(this.shutdownHook)
   }
 
   increment(key: string): void {

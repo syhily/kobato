@@ -43,16 +43,23 @@ class AccessLogBatcher extends InsertBatcher<EnrichedAccessEvent, DuckDBConnecti
 
   protected async insertBatch(writer: DuckDBConnection, events: EnrichedAccessEvent[]): Promise<void> {
     const appender = await writer.createAppender('access_log')
-    let count = 0
-    for (const e of events) {
-      appendAccessEvent(appender, e)
-      appender.endRow()
-      count++
-      if (count % 2048 === 0) {
-        appender.flushSync()
+    try {
+      let count = 0
+      for (const e of events) {
+        appendAccessEvent(appender, e)
+        appender.endRow()
+        count++
+        if (count % 2048 === 0) {
+          appender.flushSync()
+        }
       }
+    } finally {
+      // closeSync commits whatever was flushed — a mid-batch failure
+      // leaves those rows visible while the whole batch also lands in
+      // the dead-letter file, so a replay can duplicate them. Telemetry
+      // is at-least-once by design; losing rows is worse.
+      appender.closeSync()
     }
-    appender.closeSync()
   }
 
   protected async onInsertFailed(events: EnrichedAccessEvent[]): Promise<FlushResult> {

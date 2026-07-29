@@ -1,6 +1,7 @@
 import { stat } from 'node:fs/promises'
 
 import { ACCESS_LOG_DDL, ACCESS_LOG_RETENTION_DAYS } from '@/server/domains/analytics/services/access-log'
+import { EPOCH_MS_PARAM } from '@/server/domains/analytics/services/duckdb-sql'
 import {
   type AnalyticsHandle,
   closeAnalyticsDatabase,
@@ -41,9 +42,7 @@ export async function runAnalyticsMaintenance(handle: AnalyticsHandle): Promise<
     const beforeSize = await analyticsFileSize(handle)
 
     const cutoff = new Date(Date.now() - ACCESS_LOG_RETENTION_DAYS * 24 * 60 * 60 * 1000)
-    await handle.writer.runAndReadAll(`DELETE FROM access_log WHERE ts < epoch_ms(?::BIGINT)`, [
-      BigInt(cutoff.getTime()),
-    ])
+    await handle.writer.runAndReadAll(`DELETE FROM access_log WHERE ts < ${EPOCH_MS_PARAM}`, [BigInt(cutoff.getTime())])
     await handle.writer.run('CHECKPOINT')
 
     const after = await handle.reader.runAndReadAll('SELECT count(*) AS c FROM access_log')
@@ -83,8 +82,25 @@ export function scheduleNextAnalyticsMaintenance(): void {
   maintenanceTimer.unref()
 }
 
+// HMR-safe handle reuse: in dev, server.ts re-evaluates on every cycle —
+// the content-DB handle survives via import.meta.hot.data (see
+// db-lifecycle), and the sidecar needs the same treatment (a second
+// DuckDBInstance on the same file plus duplicate maintenance timers).
+function isAnalyticsHmrData(value: unknown): value is { analyticsHandle?: AnalyticsHandle } {
+  return value !== null && typeof value === 'object'
+}
+const hmrData: unknown = import.meta.hot?.data
+const hmr = isAnalyticsHmrData(hmrData) ? hmrData : undefined
+
 export async function initAnalyticsDatabase(): Promise<void> {
-  current = await openAnalyticsDatabase(resolveAnalyticsPath(), ACCESS_LOG_DDL)
+  if (hmr?.analyticsHandle) {
+    current = hmr.analyticsHandle
+  } else {
+    current = await openAnalyticsDatabase(resolveAnalyticsPath(), ACCESS_LOG_DDL)
+    if (hmr) {
+      hmr.analyticsHandle = current
+    }
+  }
   scheduleNextAnalyticsMaintenance()
 }
 

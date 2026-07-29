@@ -16,6 +16,7 @@ vi.mock('@/server/infra/logger', () => ({
 
 vi.mock('@/server/infra/lifecycle', () => ({
   registerShutdownHook: vi.fn(),
+  unregisterShutdownHook: vi.fn(),
 }))
 
 import { InsertBatcher, type FlushResult, replayDeadLetter, writeDeadLetter } from '@/server/infra/db/insert-batcher'

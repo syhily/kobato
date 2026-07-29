@@ -2,7 +2,7 @@ import { appendFile, readFile, rename, writeFile } from 'node:fs/promises'
 
 import type { Database } from '@/server/infra/db/database'
 
-import { registerShutdownHook } from '@/server/infra/lifecycle'
+import { registerShutdownHook, unregisterShutdownHook } from '@/server/infra/lifecycle'
 import { getLogger, type Logger } from '@/server/infra/logger'
 import { toJsonSafe } from '@/shared/utils/to-json-safe'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
@@ -41,6 +41,7 @@ export abstract class InsertBatcher<T, W = Database> {
   private timer: NodeJS.Timeout | null = null
   private flushing: Promise<FlushResult> | null = null
   protected readonly log: Logger
+  private readonly shutdownHook: () => Promise<void>
 
   constructor(
     private readonly opts: InsertBatcherOptions,
@@ -48,9 +49,19 @@ export abstract class InsertBatcher<T, W = Database> {
     private readonly resolveWriter: () => W,
   ) {
     this.log = getLogger(scope)
-    registerShutdownHook(async () => {
+    this.shutdownHook = async () => {
       void (await this.flush())
-    }, 100)
+    }
+    registerShutdownHook(this.shutdownHook, 100)
+  }
+
+  /**
+   * Detach this instance's shutdown hook. Called by the registry on
+   * reset (restore flow re-creates batchers against the new handle) so
+   * stale hooks can't accumulate across restores.
+   */
+  dispose(): void {
+    unregisterShutdownHook(this.shutdownHook)
   }
 
   /** Insert the whole batch in one transaction. Sync for node:sqlite;

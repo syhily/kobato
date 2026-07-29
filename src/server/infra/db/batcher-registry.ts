@@ -25,6 +25,10 @@ const log = getLogger('batcher-registry')
 /** The slice of a running batcher the registry drives. */
 interface RegisteredBatcher {
   flush(): Promise<unknown>
+  /** Detach process-level registrations (shutdown hooks) before the
+   *  instance is dropped — restore flow re-creates batchers, and stale
+   *  hooks must not accumulate. */
+  dispose?(): void
 }
 
 interface BatcherEntry {
@@ -82,6 +86,7 @@ export async function flushAllBatchers(): Promise<void> {
 /** Drop every instance (after a flush, before a database swap). */
 export function resetAllBatchers(): void {
   for (const entry of entries) {
+    entry.instance?.dispose?.()
     entry.instance = undefined
   }
 }
