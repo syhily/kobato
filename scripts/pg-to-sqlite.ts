@@ -23,21 +23,27 @@
 //   - session / kv_cache / one_time_token — ephemeral: users re-login,
 //     caches rebuild, tokens expire. Skipping them also avoids
 //     unwrapping legacy superjson envelopes.
-//   - access_log — analytics moved to the DuckDB sidecar; old telemetry
-//     is not carried over.
+//   - access_log — analytics moved to the DuckDB sidecar; skipped by
+//     DEFAULT. Operators who want to keep telemetry history pass
+//     `--include-analytics`, which pumps access_log into a DuckDB file
+//     (`--analytics <path>`, default `<output dir>/analytics.duckdb`).
 // Columns that no longer exist (post.embedding) are ignored: the pump
 // maps only columns present in the new schema.
 //
 // Runs under vite-node (`pnpm run db:pump`) so the `@/` alias resolves —
 // the drizzle schema and `openDatabase` are imported, never duplicated.
 
+import { DuckDBTimestampMillisecondsValue } from '@duckdb/node-api'
 import { getColumns, getTableName } from 'drizzle-orm'
 import { migrate } from 'drizzle-orm/node-sqlite/migrator'
 import { existsSync, rmSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import pg from 'pg'
 
 import type { Database } from '@/server/infra/db/database'
 
+import { ACCESS_LOG_DDL } from '@/server/domains/analytics/services/access-log-ddl'
+import { closeAnalyticsDatabase, openAnalyticsDatabase } from '@/server/infra/analytics/duckdb'
 import { closeDatabase, openDatabase } from '@/server/infra/db/database'
 import { backup } from '@/server/infra/db/schema/backup'
 import { comment } from '@/server/infra/db/schema/comment'
@@ -149,11 +155,99 @@ async function pumpTable(client: pg.Client, db: Database, table: AnyTable): Prom
   return { table: name, rows: rows.length, skipped: false }
 }
 
+/**
+ * Pump access_log into the DuckDB sidecar (--include-analytics). Rows
+ * come back from pg with ts as Date and entity_id as number (the int8
+ * parser above); the appender protocol is the same one the production
+ * batcher uses.
+ */
+async function pumpAnalytics(client: pg.Client, analyticsPath: string): Promise<number> {
+  let rows: Record<string, unknown>[]
+  try {
+    const result = await client.query('SELECT * FROM "access_log" ORDER BY ts')
+    rows = unsafeCast<Record<string, unknown>[]>(result.rows)
+  } catch (error) {
+    // 42P01 undefined_table — nothing to carry over.
+    if (unsafeCast<{ code?: string }>(error).code === '42P01') {
+      console.warn('  WARN  access_log: not present in the source database — skipped')
+      return 0
+    }
+    throw error
+  }
+  if (rows.length === 0) {
+    return 0
+  }
+  const handle = await openAnalyticsDatabase(analyticsPath, ACCESS_LOG_DDL)
+  try {
+    const appender = await handle.writer.createAppender('access_log')
+    let count = 0
+    for (const row of rows) {
+      appender.appendTimestampMilliseconds(
+        new DuckDBTimestampMillisecondsValue(BigInt(unsafeCast<Date>(row.ts).getTime())),
+      )
+      const s = (v: unknown) => (typeof v === 'string' ? appender.appendVarchar(v) : appender.appendNull())
+      s(row.visitor_hash)
+      s(row.session_id)
+      s(row.ip)
+      s(row.path)
+      s(row.entity_type)
+      if (typeof row.entity_id === 'number') {
+        appender.appendBigInt(BigInt(row.entity_id))
+      } else {
+        appender.appendNull()
+      }
+      s(row.referer)
+      s(row.referer_host)
+      s(row.country)
+      s(row.region)
+      s(row.city)
+      if (typeof row.latitude === 'number') {
+        appender.appendDouble(row.latitude)
+      } else {
+        appender.appendNull()
+      }
+      if (typeof row.longitude === 'number') {
+        appender.appendDouble(row.longitude)
+      } else {
+        appender.appendNull()
+      }
+      s(row.timezone)
+      s(row.language)
+      s(row.ua)
+      s(row.browser)
+      s(row.browser_version)
+      s(row.os)
+      s(row.os_version)
+      s(row.device)
+      s(row.device_type)
+      appender.appendBoolean(row.is_bot === true)
+      appender.endRow()
+      count++
+      if (count % 2048 === 0) {
+        appender.flushSync()
+      }
+    }
+    appender.closeSync()
+    return count
+  } finally {
+    await closeAnalyticsDatabase(handle)
+  }
+}
+
 async function main() {
-  const [pgUrl, outputPath] = process.argv.slice(2)
+  const args = process.argv.slice(2).filter((arg) => !arg.startsWith('--'))
+  const [pgUrl, outputPath] = args
   const force = process.argv.includes('--force')
-  if (!pgUrl || !outputPath) {
-    console.error('Usage: pnpm run db:pump -- <postgres-url> <output-sqlite-path> [--force]')
+  const includeAnalytics = process.argv.includes('--include-analytics')
+  const analyticsFlagIndex = process.argv.indexOf('--analytics')
+  const analyticsPath =
+    analyticsFlagIndex !== -1
+      ? process.argv[analyticsFlagIndex + 1]
+      : join(dirname(outputPath ?? ''), 'analytics.duckdb')
+  if (!pgUrl || !outputPath || (analyticsFlagIndex !== -1 && !analyticsPath)) {
+    console.error(
+      'Usage: pnpm run db:pump -- <postgres-url> <output-sqlite-path> [--force] [--include-analytics [--analytics <duckdb-path>]]',
+    )
     process.exit(1)
   }
   if (existsSync(outputPath)) {
@@ -162,6 +256,13 @@ async function main() {
       process.exit(1)
     }
     rmSync(outputPath)
+  }
+  if (includeAnalytics && existsSync(analyticsPath)) {
+    if (!force) {
+      console.error(`Refusing to overwrite ${analyticsPath} — pass --force to replace it.`)
+      process.exit(1)
+    }
+    rmSync(analyticsPath)
   }
 
   console.log(`==> PG → SQLite pump`)
@@ -195,13 +296,22 @@ async function main() {
       throw new Error(`foreign_key_check reported ${violations.length} violations — the output is NOT trustworthy`)
     }
 
+    if (includeAnalytics) {
+      const events = await pumpAnalytics(client, analyticsPath)
+      console.log(`    access_log: ${events} events → ${analyticsPath}`)
+    }
+
     const copied = stats.filter((s) => !s.skipped).reduce((sum, s) => sum + s.rows, 0)
     const skipped = stats.filter((s) => s.skipped).map((s) => s.table)
     console.log(`==> copied ${copied} rows across ${stats.length - skipped.length} tables`)
     if (skipped.length > 0) {
       console.log(`    skipped (missing in source): ${skipped.join(', ')}`)
     }
-    console.log('    ephemeral tables (session, kv_cache, one_time_token) and access_log intentionally not copied')
+    console.log(
+      includeAnalytics
+        ? '    ephemeral tables (session, kv_cache, one_time_token) intentionally not copied'
+        : '    ephemeral tables (session, kv_cache, one_time_token) and access_log intentionally not copied',
+    )
   } finally {
     await client.end()
   }
