@@ -9,20 +9,7 @@ import { METRIC_TYPES } from '@/shared/contracts/analytics'
 const METRIC_SET = new Set<string>(METRIC_TYPES)
 
 function isMetricType(key: string): key is MetricType {
-  return (
-    key === 'country' ||
-    key === 'region' ||
-    key === 'city' ||
-    key === 'referer' ||
-    key === 'language' ||
-    key === 'timezone' ||
-    key === 'os' ||
-    key === 'browser' ||
-    key === 'browserType' ||
-    key === 'device' ||
-    key === 'deviceType' ||
-    key === 'path'
-  )
+  return METRIC_SET.has(key)
 }
 
 const METRIC_COLUMN: Record<MetricType, string> = {

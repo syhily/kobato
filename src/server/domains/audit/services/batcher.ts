@@ -2,40 +2,39 @@ import type { AuditEventInput } from '@/server/domains/audit/types'
 import type { Database } from '@/server/infra/db/database'
 
 import { getBatcher, registerBatcher, requireBatcher } from '@/server/infra/db/batcher-registry'
-import { type FlushResult, InsertBatcher, replayDeadLetter, writeDeadLetter } from '@/server/infra/db/insert-batcher'
+import {
+  deserializeDeadLetterJsonLine,
+  type FlushResult,
+  InsertBatcher,
+  replayDeadLetter,
+  serializeDeadLetterJsonLines,
+  writeDeadLetter,
+} from '@/server/infra/db/insert-batcher'
 import { auditLog } from '@/server/infra/db/schema/config'
 import { getLogger } from '@/server/infra/logger'
 import { AUDIT_DEAD_LETTER_PATH } from '@/server/infra/paths'
 import { idFromString } from '@/shared/utils/id'
-import { toJsonSafe } from '@/shared/utils/to-json-safe'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const log = getLogger('audit.batcher')
 
 const BATCHER_NAME = 'AuditLogBatcher'
 
-const DEAD_LETTER_SEP = '\n'
-
 function deadLetterPath(): string {
   return AUDIT_DEAD_LETTER_PATH
 }
 
-// Dead-letter wire format: one plain-JSON object per line (Dates as
-// epoch ms via `toJsonSafe` — superjson was dropped with the migration).
 function serializeForDeadLetter(events: AuditEventInput[]): string {
-  return events.map((e) => JSON.stringify(toJsonSafe(e))).join(DEAD_LETTER_SEP) + DEAD_LETTER_SEP
+  return serializeDeadLetterJsonLines(events)
 }
 
 function deserializeFromDeadLetter(line: string): AuditEventInput | null {
-  try {
-    const raw = unsafeCast<Record<string, unknown>>(JSON.parse(line))
+  return deserializeDeadLetterJsonLine(line, (raw) => {
     if (typeof raw.createdAt === 'number') {
       raw.createdAt = new Date(raw.createdAt)
     }
     return unsafeCast<AuditEventInput>(raw)
-  } catch {
-    return null
-  }
+  })
 }
 
 function toRow(e: AuditEventInput) {
@@ -54,7 +53,7 @@ function toRow(e: AuditEventInput) {
 
 class AuditLogBatcher extends InsertBatcher<AuditEventInput> {
   constructor(private readonly auditDb: Database) {
-    super({ flushIntervalMs: 500, flushThreshold: 50 }, 'audit.batcher', auditDb)
+    super({ flushIntervalMs: 500, flushThreshold: 50 }, 'audit.batcher', () => auditDb)
   }
 
   protected insertBatch(db: Database, events: AuditEventInput[]): void {

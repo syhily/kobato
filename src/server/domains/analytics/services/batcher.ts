@@ -1,55 +1,51 @@
-import { DuckDBTimestampMillisecondsValue } from '@duckdb/node-api'
+import { DuckDBTimestampMillisecondsValue, type DuckDBConnection } from '@duckdb/node-api'
 
 import type { EnrichedAccessEvent } from '@/server/domains/analytics/types'
-import type { Database } from '@/server/infra/db/database'
 
 import { getAnalyticsHandle } from '@/server/bootstrap/analytics-lifecycle'
 import { getBatcher, registerBatcher, requireBatcher } from '@/server/infra/db/batcher-registry'
 import {
+  deserializeDeadLetterJsonLine,
   type FlushResult,
   InsertBatcher,
   replayDeadLetter as replayFromInfra,
+  serializeDeadLetterJsonLines,
   writeDeadLetter,
 } from '@/server/infra/db/insert-batcher'
 import { getLogger } from '@/server/infra/logger'
 import { ANALYTICS_DEAD_LETTER_PATH } from '@/server/infra/paths'
-import { toJsonSafe } from '@/shared/utils/to-json-safe'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const BATCHER_NAME = 'AccessLogBatcher'
-
-const DEAD_LETTER_SEP = '\n'
 
 function deadLetterPath(): string {
   return ANALYTICS_DEAD_LETTER_PATH
 }
 
-// Dead-letter wire format: one plain-JSON object per line (Dates as
-// epoch ms via `toJsonSafe` — superjson was dropped with the migration).
 function serializeForDeadLetter(events: EnrichedAccessEvent[]): string {
-  return events.map((e) => JSON.stringify(toJsonSafe(e))).join(DEAD_LETTER_SEP) + DEAD_LETTER_SEP
+  return serializeDeadLetterJsonLines(events)
 }
 
 function deserializeFromDeadLetter(line: string): EnrichedAccessEvent | null {
-  try {
-    const raw = unsafeCast<Record<string, unknown>>(JSON.parse(line))
+  return deserializeDeadLetterJsonLine(line, (raw) => {
     raw.ts = new Date(unsafeCast<number>(raw.ts))
     return unsafeCast<EnrichedAccessEvent>(raw)
-  } catch {
-    return null
-  }
+  })
 }
 
 // DuckDB Appender protocol (prototype-learned): `endRow()` terminates
 // every row, `flushSync()` lands a chunk (≤ 2048 rows), `closeSync()`
 // commits the tail. Flushes are ~62k rows/s — 9× prepared INSERTs.
-class AccessLogBatcher extends InsertBatcher<EnrichedAccessEvent> {
-  constructor(db: Database) {
-    super({ flushIntervalMs: 1000, flushThreshold: 100 }, 'analytics.batcher', db)
+// The writer getter is lazy: the sidecar opens AFTER the batchers
+// register (db-lifecycle order), so the connection resolves at flush
+// time, never at construction.
+class AccessLogBatcher extends InsertBatcher<EnrichedAccessEvent, DuckDBConnection> {
+  constructor() {
+    super({ flushIntervalMs: 1000, flushThreshold: 100 }, 'analytics.batcher', () => getAnalyticsHandle().writer)
   }
 
-  protected async insertBatch(_db: Database, events: EnrichedAccessEvent[]): Promise<void> {
-    const appender = await getAnalyticsHandle().writer.createAppender('access_log')
+  protected async insertBatch(writer: DuckDBConnection, events: EnrichedAccessEvent[]): Promise<void> {
+    const appender = await writer.createAppender('access_log')
     let count = 0
     for (const e of events) {
       appender.appendTimestampMilliseconds(new DuckDBTimestampMillisecondsValue(BigInt(e.ts.getTime())))
@@ -107,7 +103,7 @@ class AccessLogBatcher extends InsertBatcher<EnrichedAccessEvent> {
 // Self-register on the infra batching seam: the bootstrap lifecycle
 // drives init/flush/reset through the registry (`initAllBatchers` /
 // `flushAllBatchers` / `resetAllBatchers`) with no per-domain calls.
-registerBatcher(BATCHER_NAME, (handle) => new AccessLogBatcher(handle.db))
+registerBatcher(BATCHER_NAME, () => new AccessLogBatcher())
 
 export function pushAccessEvent(event: EnrichedAccessEvent): void {
   requireBatcher<AccessLogBatcher>(BATCHER_NAME).push(event)

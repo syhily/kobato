@@ -5,6 +5,7 @@ import { join } from 'node:path'
 
 import type { AnalyticsHandle } from '@/server/infra/analytics/duckdb'
 
+import { ACCESS_LOG_DDL } from '@/server/domains/analytics/services/access-log-ddl'
 import { closeAnalyticsDatabase, openAnalyticsDatabase } from '@/server/infra/analytics/duckdb'
 
 const handles: AnalyticsHandle[] = []
@@ -15,7 +16,7 @@ const dirs: string[] = []
 export async function createTestAnalyticsDb(): Promise<AnalyticsHandle> {
   const dir = mkdtempSync(join(tmpdir(), 'kobato-duckdb-it-'))
   dirs.push(dir)
-  const handle = await openAnalyticsDatabase(join(dir, 'analytics.duckdb'))
+  const handle = await openAnalyticsDatabase(join(dir, 'analytics.duckdb'), ACCESS_LOG_DDL)
   handles.push(handle)
   return handle
 }

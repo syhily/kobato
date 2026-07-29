@@ -3,12 +3,13 @@ import { z } from 'zod'
 
 import { getAnalyticsHandle } from '@/server/bootstrap/analytics-lifecycle'
 import { queryCounters } from '@/server/domains/analytics/services/counters'
+import { METRIC_SET } from '@/server/domains/analytics/services/duckdb-sql'
 import { queryHeatmap } from '@/server/domains/analytics/services/heatmap'
 import { queryMetric } from '@/server/domains/analytics/services/metric'
 import { parseAnalyticsInput } from '@/server/domains/analytics/services/query-parser'
 import { queryViews } from '@/server/domains/analytics/services/views'
 import { adminProc } from '@/server/http/orpc-base'
-import { METRIC_TYPE_VALUES, METRIC_TYPES, PRESET_KEY_VALUES } from '@/shared/contracts/analytics'
+import { METRIC_TYPE_VALUES, PRESET_KEY_VALUES } from '@/shared/contracts/analytics'
 
 const presetKey = z.enum(PRESET_KEY_VALUES)
 
@@ -50,8 +51,6 @@ const metricRowOutput = z.object({
   visits: z.number().int().nonnegative(),
   visitors: z.number().int().nonnegative(),
 })
-
-const METRIC_SET = new Set<string>(METRIC_TYPES)
 
 const counters = adminProc
   .route({ method: 'GET', path: '/analytics/counters' })
