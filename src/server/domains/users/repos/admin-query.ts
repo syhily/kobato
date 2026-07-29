@@ -3,7 +3,7 @@ import { and, count, desc, eq, isNull, max, or, sql } from 'drizzle-orm'
 import type { Database } from '@/server/infra/db/database'
 import type { LoginMethod } from '@/shared/contracts/users'
 
-import { ilikeEscape } from '@/server/infra/db/ilike-escape'
+import { likeEscape } from '@/server/infra/db/like-escape'
 import { comment } from '@/server/infra/db/schema/comment'
 import { page } from '@/server/infra/db/schema/page'
 import { post } from '@/server/infra/db/schema/post'
@@ -56,7 +56,7 @@ function buildAdminUsersConditions(filters: AdminUsersListFilters) {
   }
   if (filters.q && filters.q.trim() !== '') {
     const q = filters.q.trim()
-    conditions.push(or(ilikeEscape(user.name, q), ilikeEscape(user.email, q)))
+    conditions.push(or(likeEscape(user.name, q), likeEscape(user.email, q)))
   }
   if (filters.hasPosts) {
     conditions.push(sql`EXISTS (SELECT 1 FROM ${post} WHERE ${eq(post.authorId, user.id)})`)

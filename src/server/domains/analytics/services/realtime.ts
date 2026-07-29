@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto'
 import type { AnalyticsReader } from '@/server/domains/analytics/services/duckdb-sql'
 import type { RealtimeEvent } from '@/shared/contracts/analytics'
 
-import { timestampToMs } from '@/server/domains/analytics/services/duckdb-sql'
+import { EPOCH_MS_PARAM, timestampToMs } from '@/server/domains/analytics/services/duckdb-sql'
 import { isRecord } from '@/shared/utils/type-guards'
 
 // ─── SSE connection registry ─────────────────────────────────────────────
@@ -67,7 +67,7 @@ export async function queryRealtimeTail(reader: AnalyticsReader, sinceTs: Date, 
       device_type AS "deviceType",
       is_bot AS "isBot"
     FROM access_log
-    WHERE ts > epoch_ms(?::BIGINT)
+    WHERE ts > ${EPOCH_MS_PARAM}
     ORDER BY ts DESC
     LIMIT ?`,
     [BigInt(sinceTs.getTime()), BigInt(limit)],

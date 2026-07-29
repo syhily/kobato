@@ -10,8 +10,8 @@ vi.mock('drizzle-orm', async (importOriginal) => {
   }
 })
 
-vi.mock('@/server/infra/db/ilike-escape', () => ({
-  ilikeEscape: vi.fn((column, value) => ({ column, value })),
+vi.mock('@/server/infra/db/like-escape', () => ({
+  likeEscape: vi.fn((column, value) => ({ column, value })),
 }))
 
 vi.mock('@/server/infra/db/schema/page', () => ({

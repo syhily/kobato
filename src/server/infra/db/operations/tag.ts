@@ -3,7 +3,7 @@ import { asc, count, eq, inArray, or, type SQL } from 'drizzle-orm'
 import type { Database } from '@/server/infra/db/database'
 import type { NewTag, TagRow } from '@/server/infra/db/types'
 
-import { ilikeEscape } from '@/server/infra/db/ilike-escape'
+import { likeEscape } from '@/server/infra/db/like-escape'
 import { tag } from '@/server/infra/db/schema/taxonomy'
 
 export interface AdminTagsListFilters {
@@ -22,14 +22,14 @@ export interface AdminTagsListFilters {
 function buildAdminTagWhere(filters: AdminTagsListFilters): SQL | undefined {
   if (filters.q && filters.q.trim() !== '') {
     const q = filters.q.trim()
-    return or(ilikeEscape(tag.name, q), ilikeEscape(tag.slug, q))
+    return or(likeEscape(tag.name, q), likeEscape(tag.slug, q))
   }
   return undefined
 }
 
 // Admin list view. `name ASC` matches the public listing so admins
 // can find a row by its Chinese name without an extra mental sort
-// step. Optional `q` matches `name` or `slug` with `ILIKE`. When
+// step. Optional `q` matches `name` or `slug` with `LIKE`. When
 // `offset`/`limit` are supplied we paginate server-side; otherwise we
 // return the full filtered set (the catalog backfill and tests rely
 // on the latter).

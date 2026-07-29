@@ -251,6 +251,11 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
           未启用 S3 存储，备份将写入服务器本地存储。建议配置 S3 以实现异地备份与更长的保留期。
         </div>
       )}
+      {!statusLoading && !isInitialLoading && (
+        <div className="text-sm text-muted-foreground">
+          备份仅包含内容数据库（文章、页面、评论、设置等）。访问统计（analytics.duckdb）属于可再生的遥测数据，不包含在备份中，还原后将从空表重新累积。
+        </div>
+      )}
 
       <BackupScheduleForm backup={source} canConfigure={canConfigure} />
 

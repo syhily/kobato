@@ -9,6 +9,6 @@ import { escapeLikePattern } from '@/shared/utils/escape-like'
  *  case-insensitive for ASCII, which matches the old Postgres `ILIKE`
  *  semantics for the latin corpus; drop-in replacement for Drizzle's
  *  `ilike()` which lacks the ESCAPE clause. */
-export function ilikeEscape<T>(column: T, raw: string): SQL {
+export function likeEscape<T>(column: T, raw: string): SQL {
   return sql`${column} LIKE ${`%${escapeLikePattern(raw)}%`} ESCAPE '\\'`
 }

@@ -8,7 +8,7 @@ import type { post as postMetaTable } from '@/server/infra/db/schema/post'
 import type { NewPageMeta, NewPostMeta } from '@/server/infra/db/types'
 
 import { applyLimitOffset } from '@/server/domains/content/pagination'
-import { ilikeEscape } from '@/server/infra/db/ilike-escape'
+import { likeEscape } from '@/server/infra/db/like-escape'
 import { user } from '@/server/infra/db/schema/user'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
@@ -126,7 +126,7 @@ export function buildMetaListWhere(
     conditions.push(isNull(table.deletedAt))
   }
   if (filters.q && filters.q.trim() !== '') {
-    const search = or(ilikeEscape(table.slug, filters.q.trim()), ilikeEscape(table.title, filters.q.trim()))
+    const search = or(likeEscape(table.slug, filters.q.trim()), likeEscape(table.title, filters.q.trim()))
     if (search) {
       conditions.push(search)
     }

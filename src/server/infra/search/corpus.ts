@@ -1,6 +1,6 @@
 import { sql, type SQL } from 'drizzle-orm'
 
-import { ilikeEscape } from '@/server/infra/db/ilike-escape'
+import { likeEscape } from '@/server/infra/db/like-escape'
 import { postSearchIndex } from '@/server/infra/db/schema/content'
 import { post } from '@/server/infra/db/schema/post'
 
@@ -12,9 +12,9 @@ import { post } from '@/server/infra/db/schema/post'
 const corpusFields = [post.title, post.summary, sql`COALESCE(${postSearchIndex.plainText}, '')`]
 
 /**
- * Verbatim-substring ILIKE disjuncts over the corpus — the whole result
+ * Verbatim-substring LIKE disjuncts over the corpus — the whole result
  * set. Search is LIKE-only: verbatim substring match, newest first.
  */
-export function corpusIlikeDisjuncts(query: string): SQL[] {
-  return corpusFields.map((field) => ilikeEscape(field, query))
+export function corpusLikeDisjuncts(query: string): SQL[] {
+  return corpusFields.map((field) => likeEscape(field, query))
 }
