@@ -20,7 +20,7 @@ vi.mock('@/server/infra/logger', async (importOriginal) => {
 })
 
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
-import { clearAllTables, closeTestDatabase, createTestDatabase } from '#/_helpers/integration-db'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import {
   defaultAvatarUrl,
   fetchAvatarImage,
@@ -38,12 +38,7 @@ import { imageWidth } from '@/server/infra/image/compress'
 import { DEFAULT_AVATAR_SIZE } from '@/shared/utils/avatar'
 import { encodedEmail } from '@/shared/utils/security'
 
-const handle = createTestDatabase()
-const db: Database = handle.db
-
-afterAll(() => {
-  closeTestDatabase(handle)
-})
+const db = getTestDb()
 
 beforeEach(async () => {
   await clearAllTables(db)

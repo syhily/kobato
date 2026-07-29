@@ -4,7 +4,7 @@ import type { AnalyticsHandle } from '@/server/infra/analytics/duckdb'
 import type { DatabaseHandle } from '@/server/infra/db/database'
 
 import { closeTestAnalyticsDb, createTestAnalyticsDb } from '#/_helpers/analytics-db'
-import { closeTestDatabase, createTestDatabase } from '#/_helpers/integration-db'
+import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
 
 vi.mock('@/server/infra/logger', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/server/infra/logger')>()
@@ -73,13 +73,10 @@ describe('analytics batcher (DuckDB appender)', () => {
   beforeEach(async () => {
     vi.clearAllMocks()
     resetAllBatchers()
-    if (handle?.closed === false) {
-      closeTestDatabase(handle)
-    }
     if (analyticsHandle?.closed === false) {
       await closeTestAnalyticsDb(analyticsHandle)
     }
-    handle = createTestDatabase()
+    handle = getDatabaseHandle()
     analyticsHandle = await createTestAnalyticsDb()
     await analyticsHandle.writer.run('DELETE FROM access_log')
     initAllBatchers(handle)
@@ -87,7 +84,6 @@ describe('analytics batcher (DuckDB appender)', () => {
 
   afterAll(async () => {
     resetAllBatchers()
-    closeTestDatabase(handle)
     await closeTestAnalyticsDb(analyticsHandle)
   })
 

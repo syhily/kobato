@@ -10,8 +10,7 @@ import type { BlogSettingsBundle } from '@/shared/config/types'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
-import { clearAllTables } from '#/_helpers/integration-db'
-import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { makeRequestContext } from '#/_helpers/request-context'
 import { makeSession } from '#/_helpers/session'
 import { user, verification } from '@/server/infra/db/schema/user'
@@ -69,12 +68,7 @@ vi.mock('@/server/domains/audit/services/record', () => ({
 
 // ── Real infrastructure ─────────────────────────────────────────────────────
 
-const handle = createTestDatabase()
-const db: Database = handle.db
-
-afterAll(async () => {
-  closeTestDatabase(handle)
-})
+const db = getTestDb()
 
 // ── Settings bundle with a ready mail transport (OTP now follows mail) ──────
 

@@ -4,8 +4,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import type { Database } from '@/server/infra/db/database'
 
-import { clearAllTables } from '#/_helpers/integration-db'
-import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import {
   countAllComments,
   countAdminComments,
@@ -70,12 +69,7 @@ import { page } from '@/server/infra/db/schema/page'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
 
-const handle = createTestDatabase()
-const db: Database = handle.db
-
-afterAll(async () => {
-  closeTestDatabase(handle)
-})
+const db = getTestDb()
 
 beforeEach(async () => {
   await clearAllTables(db)

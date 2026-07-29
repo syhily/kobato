@@ -3,7 +3,7 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Database } from '@/server/infra/db/database'
 
-import { clearAllTables, closeTestDatabase, createTestDatabase } from '#/_helpers/integration-db'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { image as imageTable } from '@/server/infra/db/schema/media'
 
 // Only the storage public-URL seam stays mocked (it reads the deployment's
@@ -14,12 +14,7 @@ vi.mock('@/server/infra/storage/public-url', () => ({ getPublicBaseUrl: getPubli
 
 const { syncLibraryImageBlocks } = await import('@/server/domains/content/services/image-sync')
 
-const handle = createTestDatabase()
-const db: Database = handle.db
-
-afterAll(() => {
-  closeTestDatabase(handle)
-})
+const db = getTestDb()
 
 beforeEach(async () => {
   await clearAllTables(db)

@@ -3,7 +3,7 @@ import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 import type { Database } from '@/server/infra/db/database'
 
-import { clearAllTables, closeTestDatabase, createTestDatabase } from '#/_helpers/integration-db'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { listAllSessions, revokeAllSessionsOfUser } from '@/server/domains/auth/services/sessions'
 import { session as sessionTable } from '@/server/infra/db/schema/session'
 import { user } from '@/server/infra/db/schema/user'
@@ -15,12 +15,7 @@ import { user } from '@/server/infra/db/schema/user'
 // revocation, the multi-session-per-user join, the deleted-user fallback,
 // and the 10k soft cap.
 
-const handle = createTestDatabase()
-const db: Database = handle.db
-
-afterAll(() => {
-  closeTestDatabase(handle)
-})
+const db = getTestDb()
 
 beforeEach(async () => {
   await clearAllTables(db)

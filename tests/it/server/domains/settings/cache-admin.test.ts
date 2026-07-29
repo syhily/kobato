@@ -5,18 +5,12 @@ import type { ClearCacheTarget } from '@/shared/types/cache'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
-import { clearAllTables } from '#/_helpers/integration-db'
-import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { clearAdminCache, getAdminCacheStats } from '@/server/infra/cache/admin-ops'
 import { kvCache } from '@/server/infra/db/schema/kv-cache'
 import { session } from '@/server/infra/db/schema/session'
 
-const handle = createTestDatabase()
-const db: Database = handle.db
-
-afterAll(async () => {
-  closeTestDatabase(handle)
-})
+const db = getTestDb()
 
 async function seedKvRow(key: string, bucket: string, opts: { expired?: boolean } = {}): Promise<void> {
   await db.insert(kvCache).values({

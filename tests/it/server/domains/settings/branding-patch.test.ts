@@ -3,8 +3,7 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Database } from '@/server/infra/db/database'
 
 import { resetBlogSettingsForTests } from '#/_helpers/blog-settings'
-import { clearAllTables } from '#/_helpers/integration-db'
-import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 import { callRpc, parseRpcJson } from '#/_helpers/rpc-call'
 import { hydrateBlogSettings } from '@/server/domains/settings/services/hydrate'
@@ -16,12 +15,7 @@ vi.mock('@/server/domains/settings/services/section-changes', () => ({
   SECTION_CHANGE_HANDLERS: new Map(),
 }))
 
-const handle = createTestDatabase()
-const db: Database = handle.db
-
-afterAll(async () => {
-  closeTestDatabase(handle)
-})
+const db = getTestDb()
 
 // Asset uploads (SVG / ICO / PNG) flow through the dedicated
 // /api/admin/branding/upload endpoint, which requires real S3 — so

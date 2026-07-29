@@ -7,10 +7,10 @@ import type { Database } from '@/server/infra/db/database'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { installFetch } from '#/_helpers/fetch'
-import { clearAllTables } from '#/_helpers/integration-db'
-import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { makeAuthedCtx, makePublicCtx } from '#/_helpers/mock-ctx'
 import { callRpc } from '#/_helpers/rpc-call'
+import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
 import { flushAuditLog } from '@/server/domains/audit/services/batcher'
 import { listPublicFriends } from '@/server/domains/friends/service'
 import { adminFriendsRouter } from '@/server/http/controllers/admin/friends.controller'
@@ -24,16 +24,11 @@ vi.mock('@/server/domains/images/services/enhance', () => ({
   hydrateImageRefs: vi.fn(async () => undefined),
 }))
 
-const handle = createTestDatabase()
-const db: Database = handle.db
+const db = getTestDb()
 
 const mockFetch = installFetch()
 
 const ADMIN_EMAIL = TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.author.email
-
-afterAll(async () => {
-  closeTestDatabase(handle)
-})
 
 // Zeabur transport against the mocked fetch — one enqueued response
 // covers one notification email. Tests that expect a send additionally
@@ -215,7 +210,7 @@ describe('integration / friends apply', () => {
 
 describe('integration / friends apply → admin approve', () => {
   beforeEach(() => {
-    initAllBatchers(handle)
+    initAllBatchers(getDatabaseHandle())
   })
 
   afterEach(async () => {

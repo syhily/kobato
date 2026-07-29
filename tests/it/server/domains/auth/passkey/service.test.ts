@@ -5,20 +5,14 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Database } from '@/server/infra/db/database'
 import type { SafeUser } from '@/server/infra/db/operations/user'
 
-import { clearAllTables } from '#/_helpers/integration-db'
-import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { oneTimeToken } from '@/server/infra/db/schema/one-time-token'
 import { passkeyCredential } from '@/server/infra/db/schema/passkey'
 import { user } from '@/server/infra/db/schema/user'
 import { DomainError } from '@/server/infra/http/errors'
 import { requireBlogSettingsBundle } from '@/shared/config/getters'
 
-const handle = createTestDatabase()
-const db: Database = handle.db
-
-afterAll(async () => {
-  closeTestDatabase(handle)
-})
+const db = getTestDb()
 
 // ── Mock @simplewebauthn/server ─────────────────────────────────────────────
 

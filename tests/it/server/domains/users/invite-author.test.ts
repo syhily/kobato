@@ -3,8 +3,7 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Database } from '@/server/infra/db/database'
 
-import { clearAllTables } from '#/_helpers/integration-db'
-import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { user, verification } from '@/server/infra/db/schema/user'
 
 // `sendAuthorInvite` is the external side effect (SMTP/HTTP call). In
@@ -37,12 +36,7 @@ vi.mock('@/server/domains/auth/verification-tokens', () => ({
 // mocked bindings propagate through its import graph.
 const { inviteAuthorWithRollback } = await import('@/server/domains/users/services/admin')
 
-const handle = createTestDatabase()
-const db: Database = handle.db
-
-afterAll(async () => {
-  closeTestDatabase(handle)
-})
+const db = getTestDb()
 
 beforeEach(async () => {
   await clearAllTables(db)

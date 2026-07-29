@@ -6,12 +6,7 @@ import type { AnalyticsHandle } from '@/server/infra/analytics/duckdb'
 import type { Database, DatabaseHandle } from '@/server/infra/db/database'
 
 import { closeTestAnalyticsDb, createTestAnalyticsDb, seedAccessEvents } from '#/_helpers/analytics-db'
-import {
-  clearAllTables,
-  closeTestDatabase,
-  createTestDatabase,
-  createTestDatabaseFile,
-} from '#/_helpers/integration-db'
+import { clearAllTables, createTestDatabaseFile, getTestDb } from '#/_helpers/integration-db'
 
 let analyticsHandle: AnalyticsHandle
 
@@ -86,8 +81,7 @@ vi.mock('@/server/infra/storage/registry', () => {
   return { activeBackend: () => ({ backend, driver: 's3' }), backendFor: () => backend }
 })
 
-const handle: DatabaseHandle = createTestDatabase()
-const db: Database = handle.db
+const db = getTestDb()
 
 beforeEach(async () => {
   analyticsHandle = await createTestAnalyticsDb()
@@ -96,7 +90,6 @@ beforeEach(async () => {
 })
 
 afterAll(async () => {
-  closeTestDatabase(handle)
   await closeTestAnalyticsDb(analyticsHandle)
 })
 
@@ -196,15 +189,12 @@ describe('backup and restore integration', () => {
   })
 
   it('passes a legacy raw (ungzipped) SQLite file through as content-only', async () => {
+    // createTestDatabaseFile self-cleans through the harness registry.
     const fresh = createTestDatabaseFile()
-    try {
-      const { readFileSync } = await import('node:fs')
-      const bytes: Buffer = readFileSync(fresh.path)
-      const payload = unpackBackupPayload(extractBackupFile(bytes))
-      expect(payload.content!.subarray(0, 16).toString('latin1')).toBe('SQLite format 3\0')
-      expect(payload.analytics).toBeNull()
-    } finally {
-      closeTestDatabase(fresh)
-    }
+    const { readFileSync } = await import('node:fs')
+    const bytes: Buffer = readFileSync(fresh.path)
+    const payload = unpackBackupPayload(extractBackupFile(bytes))
+    expect(payload.content!.subarray(0, 16).toString('latin1')).toBe('SQLite format 3\0')
+    expect(payload.analytics).toBeNull()
   })
 })

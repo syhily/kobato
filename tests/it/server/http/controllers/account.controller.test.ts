@@ -7,8 +7,9 @@ import type { Database } from '@/server/infra/db/database'
 import type { BlogSettingsBundle, RateLimitSettings } from '@/shared/config/types'
 
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
-import { clearAllTables, closeTestDatabase, createTestDatabase } from '#/_helpers/integration-db'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
+import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
 import { flushAuditLog } from '@/server/domains/audit/services/batcher'
 import { accountRouter } from '@/server/http/controllers/account.controller'
 import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
@@ -38,16 +39,11 @@ vi.mock('@simplewebauthn/server', () => ({
   verifyAuthenticationResponse: vi.fn((...args: unknown[]) => swaMocks.verifyAuthenticationResponse(...args)),
 }))
 
-const handle = createTestDatabase()
-const db: Database = handle.db
-
-afterAll(() => {
-  closeTestDatabase(handle)
-})
+const db = getTestDb()
 
 beforeEach(async () => {
   await clearAllTables(db)
-  initAllBatchers(handle)
+  initAllBatchers(getDatabaseHandle())
   __resetRateLimitsForTests()
   vi.clearAllMocks()
 })

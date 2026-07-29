@@ -5,8 +5,8 @@ import type { Database } from '@/server/infra/db/database'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
-import { clearAllTables } from '#/_helpers/integration-db'
-import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
 import { flushAuditLog } from '@/server/domains/audit/services/batcher'
 import { establishLoginSession, logout, userSession } from '@/server/domains/auth/primitives'
 import { requireRole, requireUserRole, isPostOwner, canEditPost } from '@/server/domains/auth/rbac'
@@ -43,12 +43,7 @@ import { session as sessionTable } from '@/server/infra/db/schema/session'
 import { verification } from '@/server/infra/db/schema/user'
 import { user } from '@/server/infra/db/schema/user'
 
-const handle = createTestDatabase()
-const db: Database = handle.db
-
-afterAll(async () => {
-  closeTestDatabase(handle)
-})
+const db = getTestDb()
 
 // The audit batcher is a process-level singleton that production code
 // initialises during bootstrap. Tests below exercise
@@ -56,7 +51,7 @@ afterAll(async () => {
 // wire the batcher up so the event lands, and flush it before the next
 // test's `clearAllTables` truncates the user rows it references.
 beforeEach(async () => {
-  initAllBatchers(handle)
+  initAllBatchers(getDatabaseHandle())
   await clearAllTables(db)
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
 })

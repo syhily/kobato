@@ -3,7 +3,7 @@ import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import type { Database } from '@/server/infra/db/database'
 
-import { clearAllTables, closeTestDatabase, createTestDatabase } from '#/_helpers/integration-db'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import {
   decreaseLikes,
   increaseLikes,
@@ -20,12 +20,7 @@ import { like, metric } from '@/server/infra/db/schema/metric'
 // The likes service is exercised against the real in-memory engine: the
 // transactional insert+bump, the token lifecycle, and the purge cutoff
 // are all SQL behavior that mocks used to merely pretend happened.
-const handle = createTestDatabase()
-const db: Database = handle.db
-
-afterAll(() => {
-  closeTestDatabase(handle)
-})
+const db = getTestDb()
 
 beforeEach(async () => {
   await clearAllTables(db)

@@ -4,7 +4,7 @@ import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 import type { ViewerIdentity } from '@/server/domains/auth/rbac'
 import type { Database } from '@/server/infra/db/database'
 
-import { clearAllTables, closeTestDatabase, createTestDatabase } from '#/_helpers/integration-db'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { findSessionMeta, recordSessionLogin } from '@/server/domains/auth/repo'
 import {
   revokeAllSessionsWithGuard,
@@ -23,12 +23,7 @@ import { DomainError } from '@/server/infra/http/errors'
 // own-scope and bulk-scope suites plus the two remaining admin-scope
 // branches (non-admin actor, soft-deleted target admin).
 
-const handle = createTestDatabase()
-const db: Database = handle.db
-
-afterAll(() => {
-  closeTestDatabase(handle)
-})
+const db = getTestDb()
 
 beforeEach(async () => {
   await clearAllTables(db)

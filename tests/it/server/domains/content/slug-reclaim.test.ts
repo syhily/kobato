@@ -3,7 +3,7 @@ import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 import type { Database } from '@/server/infra/db/database'
 
-import { clearAllTables, closeTestDatabase, createTestDatabase } from '#/_helpers/integration-db'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { reclaimSlugOnRestore } from '@/server/domains/content/slug-reclaim'
 import { slugRegistry } from '@/server/infra/db/schema/config'
 import { isUniqueConstraintError } from '@/server/infra/http/errors'
@@ -13,12 +13,7 @@ import { isUniqueConstraintError } from '@/server/infra/http/errors'
 // engine serialises writers, so the Postgres-era "stolen mid-restore"
 // interleaving the old mocks simulated cannot occur — a same-entity row at
 // insert time means the row was already there at pre-check time.
-const handle = createTestDatabase()
-const db: Database = handle.db
-
-afterAll(() => {
-  closeTestDatabase(handle)
-})
+const db = getTestDb()
 
 beforeEach(async () => {
   await clearAllTables(db)

@@ -2,14 +2,13 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Database } from '@/server/infra/db/database'
 
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 // music/services/write/shared.ts has two surfaces:
 //   - generateUniquePlayerId — retry-until-unique loop against the REAL
 //     music table. `randomBytes` is stubbed so the candidate sequence is
 //     deterministic and collisions can be seeded as real rows.
 //   - downloadBinary — a thin DomainError-mapping wrapper over safeFetch;
 //     the network stays a true external, so global fetch is stubbed.
-import { clearAllTables } from '#/_helpers/integration-db'
-import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { music } from '@/server/infra/db/schema/media'
 
 const randomBytesMock = vi.hoisted(() => vi.fn())
@@ -22,12 +21,7 @@ vi.mock('node:crypto', async (importOriginal) => {
 const { generateUniquePlayerId, downloadBinary, MAX_AUDIO_BYTES, MAX_COVER_BYTES, PLAYER_ID_RETRY_LIMIT } =
   await import('@/server/domains/music/services/write/shared')
 
-const handle = createTestDatabase()
-const db: Database = handle.db
-
-afterAll(async () => {
-  closeTestDatabase(handle)
-})
+const db = getTestDb()
 
 beforeEach(async () => {
   await clearAllTables(db)

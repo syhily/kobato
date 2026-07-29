@@ -7,8 +7,7 @@ import type { Database } from '@/server/infra/db/database'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { installFetch } from '#/_helpers/fetch'
-import { clearAllTables } from '#/_helpers/integration-db'
-import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { makeRequestContext } from '#/_helpers/request-context'
 import { onErrorHandler } from '@/server/http/errors'
 import { webmentionRouter } from '@/server/http/resources/webmention'
@@ -17,14 +16,9 @@ import { post } from '@/server/infra/db/schema/post'
 import { webmention } from '@/server/infra/db/schema/webmention'
 import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 
-const handle = createTestDatabase()
-const db: Database = handle.db
+const db = getTestDb()
 
 const mockFetch = installFetch()
-
-afterAll(async () => {
-  closeTestDatabase(handle)
-})
 
 beforeEach(async () => {
   await clearAllTables(db)

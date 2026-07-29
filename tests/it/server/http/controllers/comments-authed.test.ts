@@ -3,9 +3,9 @@ import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import type { Database } from '@/server/infra/db/database'
 
-import { clearAllTables } from '#/_helpers/integration-db'
-import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
+import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
 import { commentsAuthedRouter } from '@/server/http/controllers/comments-authed.controller'
 import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
 import { comment } from '@/server/infra/db/schema/comment'
@@ -13,12 +13,7 @@ import { page } from '@/server/infra/db/schema/page'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
 
-const handle = createTestDatabase()
-const db: Database = handle.db
-
-afterAll(async () => {
-  closeTestDatabase(handle)
-})
+const db = getTestDb()
 
 beforeEach(async () => {
   await clearAllTables(db)
@@ -124,7 +119,7 @@ describe('commentsAuthedRouter.searchMineEntities', () => {
 // `tests/it/server/domains/comments/moderation-flows.test.ts`.
 describe('commentsAuthedRouter — delete-request wire shape', () => {
   beforeEach(() => {
-    initAllBatchers(handle)
+    initAllBatchers(getDatabaseHandle())
   })
 
   afterEach(() => {
@@ -165,7 +160,7 @@ describe('commentsAuthedRouter — delete-request wire shape', () => {
 
 describe('commentsAuthedRouter.updateOwn', () => {
   beforeEach(() => {
-    initAllBatchers(handle)
+    initAllBatchers(getDatabaseHandle())
   })
 
   afterEach(() => {

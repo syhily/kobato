@@ -2,7 +2,7 @@ import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 import type { Database } from '@/server/infra/db/database'
 
-import { clearAllTables, closeTestDatabase, createTestDatabase } from '#/_helpers/integration-db'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { findPageMetaBySlugForUpdate } from '@/server/domains/pages/repo'
 import { findPostMetaBySlugForUpdate } from '@/server/domains/posts/services/single'
 import { slugRegistry } from '@/server/infra/db/schema/config'
@@ -14,12 +14,7 @@ import { reserveSlugInTransaction } from '@/server/infra/slug/reservation'
 // The reservation guard runs against the real engine: the own-meta lookup
 // and the cross-entity registry read are plain SELECTs on seeded rows, so
 // the mock seams from the Postgres era are gone.
-const handle = createTestDatabase()
-const db: Database = handle.db
-
-afterAll(() => {
-  closeTestDatabase(handle)
-})
+const db = getTestDb()
 
 beforeEach(async () => {
   await clearAllTables(db)

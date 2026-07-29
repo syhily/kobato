@@ -3,8 +3,7 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Database } from '@/server/infra/db/database'
 
-import { clearAllTables } from '#/_helpers/integration-db'
-import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { image } from '@/server/infra/db/schema/media'
 
 const { setBlogSettingsBundleForTests } = await import('#/_helpers/blog-settings')
@@ -17,12 +16,7 @@ const upload = await import('@/server/domains/images/services/upload')
 const resolve = await import('@/server/domains/images/services/resolve')
 const enhance = await import('@/server/domains/images/services/enhance')
 
-const handle = createTestDatabase()
-const db: Database = handle.db
-
-afterAll(async () => {
-  closeTestDatabase(handle)
-})
+const db = getTestDb()
 
 beforeEach(async () => {
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)

@@ -4,7 +4,7 @@ import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 import type { Database } from '@/server/infra/db/database'
 
 import { resetBlogSettingsForTests } from '#/_helpers/blog-settings'
-import { clearAllTables, closeTestDatabase, createTestDatabase } from '#/_helpers/integration-db'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { updateBlogSettingsSection } from '@/server/domains/settings/services/core'
 import { setting } from '@/server/infra/db/schema/config'
 
@@ -15,12 +15,7 @@ import { setting } from '@/server/infra/db/schema/config'
 // config mock; the real-engine version exercises the same write end to
 // end — no secret field means `encryptSecretsInRow` is a no-op on this
 // path, and the row lands in the `setting` table for real.
-const handle = createTestDatabase()
-const db: Database = handle.db
-
-afterAll(() => {
-  closeTestDatabase(handle)
-})
+const db = getTestDb()
 
 beforeEach(async () => {
   await clearAllTables(db)

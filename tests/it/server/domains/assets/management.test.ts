@@ -3,13 +3,12 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Database } from '@/server/infra/db/database'
 import type { BrandingObjectRef } from '@/shared/config/types'
 
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 // uploadBrandingAsset / clearBrandingAsset orchestration against the REAL
 // settings table: objects go to an in-memory storage backend (a true
 // external — S3/local disk), the favicon-pack generator stays mocked
 // (sharp), and every settings write is asserted by reading the row back
 // from SQLite.
-import { clearAllTables } from '#/_helpers/integration-db'
-import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
 import { findSettingByScope, upsertSetting } from '@/server/infra/db/operations/setting'
 
@@ -56,12 +55,7 @@ vi.mock('@/server/domains/assets/generate', () => ({
 
 const { uploadBrandingAsset, clearBrandingAsset } = await import('@/server/domains/assets/management')
 
-const handle = createTestDatabase()
-const db: Database = handle.db
-
-afterAll(async () => {
-  closeTestDatabase(handle)
-})
+const db = getTestDb()
 
 // PNG magic-byte prefix. Padded to a few extra bytes so size > 0 checks
 // pass and the magic-byte sniff returns 'image/png'.

@@ -7,22 +7,16 @@ import type { NewsletterSubscriberRow } from '@/server/infra/db/types'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { installFetch } from '#/_helpers/fetch'
-import { clearAllTables } from '#/_helpers/integration-db'
-import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { makePublicCtx } from '#/_helpers/mock-ctx'
 import { callRpc } from '#/_helpers/rpc-call'
 import { signUnsubscribeId } from '@/server/domains/newsletter/signing'
 import { newsletterSubscriber } from '@/server/infra/db/schema/newsletter'
 import { invalidateMailTransportCache } from '@/server/infra/email/sender'
 
-const handle = createTestDatabase()
-const db: Database = handle.db
+const db = getTestDb()
 
 const mockFetch = installFetch()
-
-afterAll(async () => {
-  closeTestDatabase(handle)
-})
 
 function enableNewsletter() {
   setBlogSettingsBundleForTests({

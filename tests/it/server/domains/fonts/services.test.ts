@@ -4,8 +4,7 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Database } from '@/server/infra/db/database'
 import type { FontRow } from '@/server/infra/db/schema/font'
 
-import { clearAllTables } from '#/_helpers/integration-db'
-import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { deleteFont, setFontSlot } from '@/server/domains/fonts/services/mutate'
 import { deleteFontPackage } from '@/server/domains/fonts/storage'
 import { setting } from '@/server/infra/db/schema/config'
@@ -27,12 +26,7 @@ vi.mock('@/server/domains/settings/services/section-changes', () => ({
   SECTION_CHANGE_HANDLERS: new Map(),
 }))
 
-const handle = createTestDatabase()
-const db: Database = handle.db
-
-afterAll(async () => {
-  closeTestDatabase(handle)
-})
+const db = getTestDb()
 
 beforeEach(async () => {
   await clearAllTables(db)

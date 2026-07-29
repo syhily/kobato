@@ -3,8 +3,7 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Database } from '@/server/infra/db/database'
 
-import { clearAllTables } from '#/_helpers/integration-db'
-import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { latestComments } from '@/server/domains/comments/services/public-query'
 import { comment } from '@/server/infra/db/schema/comment'
 import { kvCache } from '@/server/infra/db/schema/kv-cache'
@@ -33,12 +32,7 @@ const { bulkApproveCommentsByUser, bulkDeleteCommentsByUser } =
 // directly; the cache invalidation is sunk into the mutation itself.
 const { softDeleteCommentById } = await import('@/server/domains/comments/services/moderate')
 
-const handle = createTestDatabase()
-const db: Database = handle.db
-
-afterAll(async () => {
-  closeTestDatabase(handle)
-})
+const db = getTestDb()
 
 beforeEach(async () => {
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)

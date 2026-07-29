@@ -3,7 +3,7 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Database } from '@/server/infra/db/database'
 
-import { clearAllTables, closeTestDatabase, createTestDatabase } from '#/_helpers/integration-db'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { slugRegistry } from '@/server/infra/db/schema/config'
 import { content as contentTable, postSearchIndex } from '@/server/infra/db/schema/content'
 import { page as pageTable } from '@/server/infra/db/schema/page'
@@ -32,12 +32,7 @@ const { indexPost, removePostIndex } = await import('@/server/domains/posts/serv
 const indexPostMock = vi.mocked(indexPost)
 const removePostIndexMock = vi.mocked(removePostIndex)
 
-const handle = createTestDatabase()
-const db: Database = handle.db
-
-afterAll(() => {
-  closeTestDatabase(handle)
-})
+const db = getTestDb()
 
 beforeEach(async () => {
   await clearAllTables(db)

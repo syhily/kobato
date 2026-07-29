@@ -4,9 +4,9 @@ import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import type { Database } from '@/server/infra/db/database'
 
-import { clearAllTables } from '#/_helpers/integration-db'
-import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { emptySession } from '#/_helpers/session'
+import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
 import { flushAuditLog } from '@/server/domains/audit/services/batcher'
 import { establishLoginSession } from '@/server/domains/auth/primitives'
 import { revokeAllSessionsOfUser } from '@/server/domains/auth/services/sessions'
@@ -16,12 +16,7 @@ import { session as sessionTable } from '@/server/infra/db/schema/session'
 import { user } from '@/server/infra/db/schema/user'
 import { DomainError } from '@/server/infra/http/errors'
 
-const handle = createTestDatabase()
-const db: Database = handle.db
-
-afterAll(async () => {
-  closeTestDatabase(handle)
-})
+const db = getTestDb()
 
 // The audit batcher is a process-level singleton that production code
 // initialises during bootstrap via the batcher registry. Integration
@@ -32,7 +27,7 @@ afterAll(async () => {
 // references a user row that the next test's `clearAllTables` will
 // truncate (FK violation).
 beforeEach(() => {
-  initAllBatchers(handle)
+  initAllBatchers(getDatabaseHandle())
 })
 
 afterEach(async () => {

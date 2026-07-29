@@ -3,14 +3,13 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Database } from '@/server/infra/db/database'
 
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 // upload.ts wires together pure validation (mime sniffing, size guard,
 // kind → key resolution) with IO (image processing, storage put, DB
 // insert/upsert). The DB side is REAL here — rows land in the shared
 // in-memory SQLite — while sharp (`processImageBuffer`) and the storage
 // backend stay mocked as true externals (an in-memory Map backend behind
 // the registry seam).
-import { clearAllTables } from '#/_helpers/integration-db'
-import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { buildObjectKey } from '@/server/domains/images/key'
 import { image } from '@/server/infra/db/schema/media'
 
@@ -39,12 +38,7 @@ vi.mock('@/server/infra/storage/registry', () => ({
 
 const { assertImageUploadAllowed, uploadImage } = await import('@/server/domains/images/services/upload')
 
-const handle = createTestDatabase()
-const db: Database = handle.db
-
-afterAll(async () => {
-  closeTestDatabase(handle)
-})
+const db = getTestDb()
 
 beforeEach(async () => {
   await clearAllTables(db)

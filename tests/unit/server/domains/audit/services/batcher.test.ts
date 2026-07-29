@@ -2,7 +2,8 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { DatabaseHandle } from '@/server/infra/db/database'
 
-import { clearAllTables, closeTestDatabase, createTestDatabase } from '#/_helpers/integration-db'
+import { clearAllTables } from '#/_helpers/integration-db'
+import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
 
 vi.mock('@/server/infra/logger', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/server/infra/logger')>()
@@ -52,7 +53,7 @@ describe('audit batcher', () => {
   beforeEach(async () => {
     vi.clearAllMocks()
     resetAllBatchers()
-    handle = createTestDatabase()
+    handle = getDatabaseHandle()
     await clearAllTables(handle.db)
     // audit_log.actorId FK → user.id: seed the actor.
     handle.db.insert(user).values({ name: 'Admin', email: 'admin@test.dev', password: 'x', role: 'admin' }).run()
@@ -61,7 +62,6 @@ describe('audit batcher', () => {
 
   afterAll(() => {
     resetAllBatchers()
-    closeTestDatabase(handle)
   })
 
   it('flushes an empty batch immediately', async () => {

@@ -2,14 +2,13 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Database } from '@/server/infra/db/database'
 
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 // music/services/read.ts — the row→meta mapping is the single owner of music
 // URL building. These tests pin the default-cover semantics against REAL
 // music rows: an unbuildable cover falls back to the bundled default vinyl
 // image (the track stays playable), while an unbuildable audio URL drops
 // the entry entirely. The public-URL seam stays mocked (storage backends
 // are a true external); the database is real.
-import { clearAllTables } from '#/_helpers/integration-db'
-import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
 import { music } from '@/server/infra/db/schema/media'
 
 const publicUrlMock = vi.hoisted(() => ({
@@ -24,12 +23,7 @@ vi.mock('@/server/infra/storage/public-url', () => publicUrlMock)
 const { DEFAULT_MUSIC_COVER_URL, getMusicMetaForPlayer, getPublicMusicMetasByIds } =
   await import('@/server/domains/music/services/read')
 
-const handle = createTestDatabase()
-const db: Database = handle.db
-
-afterAll(async () => {
-  closeTestDatabase(handle)
-})
+const db = getTestDb()
 
 beforeEach(async () => {
   await clearAllTables(db)

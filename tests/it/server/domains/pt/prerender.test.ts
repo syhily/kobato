@@ -4,8 +4,7 @@ import type { Database } from '@/server/infra/db/database'
 import type { EnrichedMusicPlayerBlock } from '@/shared/pt/enriched'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
-import { clearAllTables } from '#/_helpers/integration-db'
-import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { music } from '@/server/infra/db/schema/media'
 
 const { setBlogSettingsBundleForTests } = await import('#/_helpers/blog-settings')
@@ -25,15 +24,10 @@ const ops = await import('@/server/infra/db/operations/music')
 const { DEFAULT_MUSIC_COVER_URL, getPublicMusicMetasByIds } = await import('@/server/domains/music/services/read')
 const { prerenderMusicPlayerBlocks } = await import('@/server/domains/pt/prerender')
 
-const handle = createTestDatabase()
-const db: Database = handle.db
+const db = getTestDb()
 
 // The PT embed seam wired the same way the SSR routes wire it.
 const resolveMusicEmbeds = (playerIds: readonly string[]) => getPublicMusicMetasByIds(db, playerIds)
-
-afterAll(async () => {
-  closeTestDatabase(handle)
-})
 
 beforeEach(async () => {
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)

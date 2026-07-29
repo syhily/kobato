@@ -15,26 +15,23 @@ const MIGRATIONS_TABLE = '__drizzle_migrations'
 
 /**
  * Integration-test database harness — no server, no docker, and no
- * Postgres-era per-worker temp files by default. `createTestDatabase`
- * returns the SHARED in-memory database the lifecycle global owns
- * (`:memory:` is per-connection, so this is the one handle that keeps
- * direct users and domain code reading `getDb()` on the same data;
- * db-lifecycle migrates it at import). `createTestDatabaseFile` is the
- * explicit opt-in for file-backed flows — backup/restore (VACUUM INTO,
- * file swaps) and anything asserting on-disk behavior. A per-worker
- * registry lets `setup.ts` close the stragglers a test file forgot.
+ * Postgres-era per-worker temp files by default. `getTestDb` returns
+ * the SHARED in-memory database the lifecycle global owns (`:memory:`
+ * is per-connection, so this is the one handle that keeps direct users
+ * and domain code reading `getDb()` on the same data; db-lifecycle
+ * migrates it at import). `createTestDatabaseFile` is the explicit
+ * opt-in for file-backed flows — backup/restore (VACUUM INTO, file
+ * swaps) and anything asserting on-disk behavior; file handles
+ * self-clean via the registry below (the afterAll at the bottom of
+ * this module). Files needing the handle itself (rare — raw client
+ * pragmas, file paths) import `getDatabaseHandle` from db-lifecycle.
  */
 const openHandles: DatabaseHandle[] = []
 const tempDirs: string[] = []
 
-export function createTestDatabase(): DatabaseHandle {
-  // The lifecycle global: the ONE in-memory database this module graph
-  // shares. It is migrated at db-lifecycle import.
-  const handle = getDatabaseHandle()
-  if (!openHandles.includes(handle)) {
-    openHandles.push(handle)
-  }
-  return handle
+/** The ONE in-memory database this module graph shares (migrated at import). */
+export function getTestDb(): Database {
+  return getDatabaseHandle().db
 }
 
 /** A fresh, migrated temp FILE — for flows that need a real file on disk. */
@@ -47,20 +44,7 @@ export function createTestDatabaseFile(): DatabaseHandle {
   return handle
 }
 
-export function closeTestDatabase(handle: DatabaseHandle): void {
-  const index = openHandles.indexOf(handle)
-  if (index !== -1) {
-    openHandles.splice(index, 1)
-  }
-  // Never close the shared in-memory global — its lifetime is the module
-  // graph's, not the test's. File-backed handles close normally.
-  if (handle === getDatabaseHandle()) {
-    return
-  }
-  closeDatabase(handle)
-}
-
-/** Test-teardown hook: close every handle still registered. */
+/** Test-teardown hook: close every file-backed handle still registered. */
 export function closeAllTestDatabases(): void {
   for (const handle of openHandles.splice(0)) {
     try {

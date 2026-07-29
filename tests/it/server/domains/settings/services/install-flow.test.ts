@@ -3,19 +3,14 @@ import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 import type { Database } from '@/server/infra/db/database'
 
-import { clearAllTables, closeTestDatabase, createTestDatabase } from '#/_helpers/integration-db'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
 import { buildInstallSectionRows, seedInstallSections } from '@/server/domains/settings/services/install-flow'
 import { setting } from '@/server/infra/db/schema/config'
 import { DomainError } from '@/server/infra/http/errors'
 import { SETTINGS_SECTIONS } from '@/shared/config/sections'
 
-const handle = createTestDatabase()
-const db: Database = handle.db
-
-afterAll(() => {
-  closeTestDatabase(handle)
-})
+const db = getTestDb()
 
 beforeEach(async () => {
   await clearAllTables(db)

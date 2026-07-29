@@ -4,8 +4,8 @@ import type { Database } from '@/server/infra/db/database'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
-import { clearAllTables } from '#/_helpers/integration-db'
-import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
 import { archiveExpiredAuditLogs, cleanupExpiredArchives, runArchiveJob } from '@/server/domains/audit/services/archive'
 import { flushAuditLog, pushAuditEvent } from '@/server/domains/audit/services/batcher'
 import {
@@ -22,12 +22,7 @@ import { auditLog } from '@/server/infra/db/schema/config'
 import { user } from '@/server/infra/db/schema/user'
 import { stopAllScheduledJobs } from '@/server/infra/scheduler-utils'
 
-const handle = createTestDatabase()
-const db: Database = handle.db
-
-afterAll(async () => {
-  closeTestDatabase(handle)
-})
+const db = getTestDb()
 
 beforeEach(async () => {
   await clearAllTables(db)
@@ -156,7 +151,7 @@ describe('audit/repos/batcher — flushAuditLog', () => {
   })
 
   it('flushes pushed events via COPY and writes them to the audit_log table', async () => {
-    initAllBatchers(handle)
+    initAllBatchers(getDatabaseHandle())
     pushAuditEvent({ action: 'login', resourceType: 'session' })
     pushAuditEvent({ action: 'logout', resourceType: 'session' })
     const result = await flushAuditLog()
@@ -175,7 +170,7 @@ describe('audit/services/record — recordAuditEvent', () => {
 
   it('routes the event into the batcher when initialized', async () => {
     const u = await seedUser('admin', 'Recorder', 'recorder@example.com')
-    initAllBatchers(handle)
+    initAllBatchers(getDatabaseHandle())
     recordAuditEvent({
       action: 'login',
       resourceType: 'session',

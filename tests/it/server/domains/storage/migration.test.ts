@@ -7,8 +7,7 @@ import type { BlogSettingsBundle, BrandingObjectRef } from '@/shared/config/type
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
-import { clearAllTables } from '#/_helpers/integration-db'
-import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { getLocalStorageMigrationStats, migrateLocalToS3 } from '@/server/domains/storage/migration'
 import { backup as backupTable } from '@/server/infra/db/schema/backup'
 import { image, music } from '@/server/infra/db/schema/media'
@@ -90,12 +89,7 @@ vi.mock('@/server/infra/storage/registry', () => ({
 // exactly what the admin migration card and the migration run summary
 // display. `migrateLocalToS3` additionally drives the mocked backends above
 // and asserts the driver flips as real row updates.
-const handle = createTestDatabase()
-const db: Database = handle.db
-
-afterAll(async () => {
-  closeTestDatabase(handle)
-})
+const db = getTestDb()
 
 beforeEach(async () => {
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)

@@ -7,8 +7,8 @@ import { afterAll, describe, expect, it } from 'vitest'
 import type { Database, DatabaseHandle } from '@/server/infra/db/database'
 import type { EmbeddedMigrationAssets } from '@/server/infra/db/migrate'
 
-import { closeTestDatabase, createTestDatabaseFile } from '#/_helpers/integration-db'
-import { openDatabase } from '@/server/infra/db/database'
+import { createTestDatabaseFile } from '#/_helpers/integration-db'
+import { closeDatabase, openDatabase } from '@/server/infra/db/database'
 import { runEmbeddedMigrations } from '@/server/infra/db/migrate'
 
 // Folder path vs embedded path equivalence. The SEA binary ships no
@@ -70,10 +70,12 @@ function readDbShape(db: Database): DbShape {
   return { tables, migrations }
 }
 
+// Handles opened directly (not via the harness) close locally; the
+// createTestDatabaseFile handle self-cleans through the harness registry.
 const handles: DatabaseHandle[] = []
 afterAll(() => {
   for (const handle of handles.splice(0)) {
-    closeTestDatabase(handle)
+    closeDatabase(handle)
   }
 })
 
@@ -107,7 +109,6 @@ describe('folder vs embedded migrations (sqlite)', () => {
   it('applies the pragma set the runtime relies on', () => {
     // journal_mode=wal only exists on a real file — use the file variant.
     const handle = createTestDatabaseFile()
-    handles.push(handle)
     expect(handle.db.get(sql`PRAGMA auto_vacuum`)).toEqual({ auto_vacuum: 2 })
     expect(handle.db.get(sql`PRAGMA journal_mode`)).toEqual({ journal_mode: 'wal' })
     expect(handle.db.get(sql`PRAGMA foreign_keys`)).toEqual({ foreign_keys: 1 })

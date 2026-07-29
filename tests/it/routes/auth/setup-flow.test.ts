@@ -4,8 +4,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 import type { Database } from '@/server/infra/db/database'
 
 import { makeRouteContext } from '#/_helpers/context'
-import { clearAllTables } from '#/_helpers/integration-db'
-import { createTestDatabase, closeTestDatabase } from '#/_helpers/integration-db'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { emptySession } from '#/_helpers/session'
 import { setting } from '@/server/infra/db/schema/config'
 import { user } from '@/server/infra/db/schema/user'
@@ -15,12 +14,7 @@ vi.mock('@/server/http/request-context', async () => {
   return createRequestContextMockModule()
 })
 
-const handle = createTestDatabase()
-const db: Database = handle.db
-
-afterAll(async () => {
-  closeTestDatabase(handle)
-})
+const db = getTestDb()
 
 vi.mock('@/server/domains/settings/install-gate', () => ({
   ensureNoAdminOrRedirect: vi.fn(async () => null),

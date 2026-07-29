@@ -5,7 +5,7 @@ import type { Database } from '@/server/infra/db/database'
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
 import { resetBlogSettingsForTests } from '#/_helpers/blog-settings'
-import { clearAllTables, closeTestDatabase, createTestDatabase } from '#/_helpers/integration-db'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { SECRET_FIELDS } from '@/server/domains/settings/secrets'
 import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
 import { computeSecretMasks, updateBlogSettingsSection } from '@/server/domains/settings/services/core'
@@ -33,12 +33,7 @@ vi.mock('@/server/infra/logger', () => ({
   L3_KEYS: new Set<string>(),
 }))
 
-const handle = createTestDatabase()
-const db: Database = handle.db
-
-afterAll(() => {
-  closeTestDatabase(handle)
-})
+const db = getTestDb()
 
 beforeEach(async () => {
   await clearAllTables(db)

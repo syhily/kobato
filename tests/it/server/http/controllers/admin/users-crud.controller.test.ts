@@ -4,8 +4,9 @@ import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import type { Database } from '@/server/infra/db/database'
 
-import { clearAllTables, closeTestDatabase, createTestDatabase } from '#/_helpers/integration-db'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
+import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
 import { flushAuditLog } from '@/server/domains/audit/services/batcher'
 import { adminUsersCrudRouter } from '@/server/http/controllers/admin/users-crud.controller'
 import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
@@ -15,16 +16,11 @@ import { user as userTable } from '@/server/infra/db/schema/user'
 // The update procedure against the real engine: the patch projection,
 // the safe-URL input schema, and the audit write are all exercised
 // through seeded rows — no mocked operations layer.
-const handle = createTestDatabase()
-const db: Database = handle.db
-
-afterAll(() => {
-  closeTestDatabase(handle)
-})
+const db = getTestDb()
 
 beforeEach(async () => {
   await clearAllTables(db)
-  initAllBatchers(handle)
+  initAllBatchers(getDatabaseHandle())
 })
 
 afterEach(() => {

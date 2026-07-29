@@ -4,7 +4,7 @@ import type { AnalyticsHandle } from '@/server/infra/analytics/duckdb'
 import type { DatabaseHandle } from '@/server/infra/db/database'
 
 import { closeTestAnalyticsDb, createTestAnalyticsDb, seedAccessEvents } from '#/_helpers/analytics-db'
-import { closeTestDatabase, createTestDatabase } from '#/_helpers/integration-db'
+import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
 
 const logs = vi.hoisted(() => ({
   info: vi.fn(),
@@ -42,11 +42,7 @@ function pragmaNumber(handle: DatabaseHandle, pragma: string): number {
 
 // ─── SQLite (content DB) ─────────────────────────────────
 
-const handle = createTestDatabase()
-
-afterAll(() => {
-  closeTestDatabase(handle)
-})
+const handle = getDatabaseHandle()
 
 beforeEach(() => {
   vi.clearAllMocks()
