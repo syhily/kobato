@@ -322,7 +322,7 @@ export function AdminInstallForm() {
           <div className="rounded-xl border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
             <p className="mb-2 font-medium text-foreground">恢复说明</p>
             <ul className="flex list-disc flex-col gap-1 pl-4">
-              <li>支持 .sql 和 .sql.gz 格式的备份文件。</li>
+              <li>支持 .db、.db.gz 或 .db.tar.gz 格式的备份文件。</li>
               <li>备份文件仅还原数据库内容（文章、设置、评论等）。</li>
               <li>S3 上的图片、音乐、品牌资产等不会自动恢复，需单独处理。</li>
             </ul>

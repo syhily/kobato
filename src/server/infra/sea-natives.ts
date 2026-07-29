@@ -6,8 +6,9 @@
 // inside the injected server bundle with its platform loads redirected to
 // `nativeRequire` (`@/server/infra/native-require`). Native `.node` /
 // `.so` / `.dylib` / `.dll` files cannot be dlopen'ed from memory, so on
-// first run the embedded libraries (the rpath-patched sharp addon, the
-// libvips files, the skia addon — 3 files on darwin/linux, 4 on win32)
+// first run the embedded libraries (the rpath-patched sharp + duckdb
+// addons, the libvips + libduckdb files, the skia addon — 5 files on
+// darwin/linux, 6 on win32)
 // are extracted to a FLAT `<cacheDir>/natives-<manifest-hash>/` dir with
 // per-file sha256 verification and atomic (tmp + rename) writes. The
 // bootstrap (the `@/server/infra/sea-bootstrap` side-effect import ahead

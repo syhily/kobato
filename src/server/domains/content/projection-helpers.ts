@@ -6,9 +6,9 @@ import { validatePortableTextBody } from '@/shared/pt/utils'
 import { readStringArray } from '@/shared/utils/tools'
 import { isRecord } from '@/shared/utils/type-guards'
 
-// `content.body` is `jsonb` so Drizzle hands it to us as `unknown`.
-// Round-trip through `validatePortableTextBody` so a corrupted blob
-// (e.g. a direct INSERT) never blanks the public site.
+// `content.body` is `text({ mode: 'json' })` so Drizzle hands it to us
+// as `unknown`. Round-trip through `validatePortableTextBody` so a
+// corrupted blob (e.g. a direct INSERT) never blanks the public site.
 export function readBody(value: unknown): PortableTextBody {
   if (value === null || value === undefined) {
     return []

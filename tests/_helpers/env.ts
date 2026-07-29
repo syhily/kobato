@@ -3,8 +3,9 @@
 // Imported by the per-project setup files so individual tests can
 // re-import it cheaply.
 
-// In-memory placeholder — integration tests point `storage.database` at a
-// per-worker temp FILE via `tests/it/setup.ts` (`createWorkerDatabase()`).
+// The single owner of test storage env: both databases are in-memory —
+// integration tests share the lifecycle global per file, and file-backed
+// flows (backup/restore) opt into temp files via `createTestDatabaseFile`.
 export const TEST_ENV = {
   storage__database: ':memory:',
   storage__analyticsDatabase: ':memory:',
@@ -16,15 +17,8 @@ export const TEST_ENV = {
 
 export function ensureTestEnv(): void {
   // Always overwrite so that a `.env` file loaded by Vite/Vitest does
-  // not leak production credentials into the test suite — EXCEPT
-  // `storage__database`, which the integration setup assigns to a
-  // per-worker temp file before this module is imported (the config
-  // module freezes the value at first load, so the assignment must
-  // win).
+  // not leak production credentials into the test suite.
   for (const [key, value] of Object.entries(TEST_ENV)) {
-    if (key === 'storage__database' && process.env[key] !== undefined) {
-      continue
-    }
     process.env[key] = value
   }
 }

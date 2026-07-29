@@ -46,11 +46,11 @@ export const ACCESS_LOG_RETENTION_DAYS = 180
 
 /**
  * Append one event as an access_log row. THE single owner of the column
- * order — it must match ACCESS_LOG_DDL above (the batcher, the
- * `--include-analytics` pump, and the test seeder all write through
- * this). Callers own the Appender protocol around it: `endRow()` per
- * row, `flushSync()` per ≤2048-row chunk, `closeSync()` to commit the
- * tail (~62k rows/s — 9× prepared INSERTs, prototype-verified).
+ * order — it must match ACCESS_LOG_DDL above (the batcher and the test
+ * seeder both write through this). Callers own the Appender protocol
+ * around it: `endRow()` per row, `flushSync()` per ≤2048-row chunk,
+ * `closeSync()` to commit the tail (~62k rows/s — 9× prepared INSERTs,
+ * prototype-verified).
  */
 export function appendAccessEvent(appender: DuckDBAppender, e: EnrichedAccessEvent): void {
   appender.appendTimestampMilliseconds(new DuckDBTimestampMillisecondsValue(BigInt(e.ts.getTime())))
@@ -94,9 +94,9 @@ export function appendAccessEvent(appender: DuckDBAppender, e: EnrichedAccessEve
 
 /**
  * Append a whole batch through the Appender protocol — THE single owner
- * of it (the batcher, the `--include-analytics` pump, the benchmark
- * seeder, and the test seeder all write through this): `endRow()` per
- * row, `flushSync()` per ≤2048-row chunk, `closeSync()` in a finally.
+ * of it (the batcher and the test seeder both write through this):
+ * `endRow()` per row, `flushSync()` per ≤2048-row chunk, `closeSync()`
+ * in a finally.
  * closeSync commits whatever was flushed, so a mid-batch failure leaves
  * those rows visible while the batch also lands in the dead-letter
  * file — telemetry is at-least-once by design; losing rows is worse.

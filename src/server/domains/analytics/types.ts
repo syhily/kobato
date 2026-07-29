@@ -2,7 +2,8 @@
 // (cheap, produced from the request, no I/O) → `EnrichedAccessEvent`
 // (after geo/UA/bot enrichment; what the batcher flushes to `access_log`).
 // Both mirror the `accessLog` columns 1:1 — adding a column means updating
-// both interfaces plus the batcher's insert mapping.
+// both interfaces plus the insert mapping in `appendAccessEvent`
+// (`services/access-log.ts`).
 
 import type { EntityTarget } from '@/server/infra/db/target'
 

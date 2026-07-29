@@ -8,10 +8,6 @@ vi.mock('@/server/domains/backup/services/backup', () => ({
   cleanupOldBackups: vi.fn(async () => undefined),
 }))
 
-vi.mock('@/server/domains/backup/services/shared', () => ({
-  checkPgToolsAvailable: vi.fn(async () => true),
-}))
-
 vi.mock('@/server/bootstrap/db-lifecycle', () => ({
   getDb: vi.fn(() => ({})),
 }))

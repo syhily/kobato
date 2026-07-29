@@ -3,14 +3,8 @@
 // FILE — vitest isolates module graphs), so integration tests behave
 // like unit tests with a real engine. File-backed flows (backup /
 // restore) opt into temp files explicitly via `createTestDatabaseFile`.
-
-// The in-memory database choice MUST land before any import that could
-// evaluate `@/server/infra/config` — the config module freezes
-// `storage.database` at first load. `:memory:` is per-connection, and
-// the harness returns the lifecycle global (`getDatabaseHandle`) so the
-// whole file shares exactly one database; db-lifecycle migrates it at
-// import.
-process.env.storage__database = ':memory:'
+// The `:memory:` choice itself is owned by `#/_helpers/env` (imported
+// below — it lands before `@/server/infra/config` can evaluate).
 
 import { afterEach } from 'vitest'
 

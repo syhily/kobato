@@ -3,10 +3,6 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 
-vi.mock('@/server/domains/backup/services/shared', () => ({
-  checkPgToolsAvailable: vi.fn(),
-}))
-
 vi.mock('@/server/domains/backup/services/backup', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/server/domains/backup/services/backup')>()
   return {

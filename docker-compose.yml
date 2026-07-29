@@ -19,10 +19,10 @@ services:
       security__encryptionKey: ${ENCRYPTION_KEY:?ENCRYPTION_KEY is required}
       # Logging
       server__loggingLevel: ${LOG_LEVEL:-info}
-      # Data directory (SQLite + DuckDB files, fonts, uploads staging)
+      # Data directory (SQLite + DuckDB files, fonts, uploads staging).
+      # The per-file paths default to <storage.data>/kobato.db and
+      # <storage.data>/analytics.duckdb — no need to restate them here.
       storage__data: /data
-      storage__database: /data/kobato.db
-      storage__analyticsDatabase: /data/analytics.duckdb
     volumes:
       - kobato_data:/data
       - kobato_config:/etc/kobato
