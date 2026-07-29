@@ -2,19 +2,23 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { DatabaseHandle } from '@/server/infra/db/database'
 
-import { closeTestDatabase, createTestDatabase } from '#/_helpers/integration-db'
+import { clearAllTables, closeTestDatabase, createTestDatabase } from '#/_helpers/integration-db'
 
-vi.mock('@/server/infra/logger', () => ({
-  getLogger: vi.fn(() => ({
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    debug: vi.fn(),
-    child: vi.fn(function (this: unknown) {
-      return this
-    }),
-  })),
-}))
+vi.mock('@/server/infra/logger', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/server/infra/logger')>()
+  return {
+    ...actual,
+    getLogger: vi.fn(() => ({
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      debug: vi.fn(),
+      child: vi.fn(function (this: unknown) {
+        return this
+      }),
+    })),
+  }
+})
 
 vi.mock('@/server/infra/paths', () => ({
   AUDIT_DEAD_LETTER_PATH: '/tmp/audit-dead-letter.log',
@@ -45,12 +49,11 @@ function makeEvent(
 }
 
 describe('audit batcher', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks()
     resetAllBatchers()
-    handle?.closed === false && closeTestDatabase(handle)
     handle = createTestDatabase()
-    handle.db.delete(auditLog).run()
+    await clearAllTables(handle.db)
     // audit_log.actorId FK → user.id: seed the actor.
     handle.db.insert(user).values({ name: 'Admin', email: 'admin@test.dev', password: 'x', role: 'admin' }).run()
     initAllBatchers(handle)

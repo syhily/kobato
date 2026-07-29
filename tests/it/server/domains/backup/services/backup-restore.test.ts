@@ -6,7 +6,12 @@ import type { AnalyticsHandle } from '@/server/infra/analytics/duckdb'
 import type { Database, DatabaseHandle } from '@/server/infra/db/database'
 
 import { closeTestAnalyticsDb, createTestAnalyticsDb, seedAccessEvents } from '#/_helpers/analytics-db'
-import { clearAllTables, closeTestDatabase, createTestDatabase } from '#/_helpers/integration-db'
+import {
+  clearAllTables,
+  closeTestDatabase,
+  createTestDatabase,
+  createTestDatabaseFile,
+} from '#/_helpers/integration-db'
 
 let analyticsHandle: AnalyticsHandle
 
@@ -181,7 +186,7 @@ describe('backup and restore integration', () => {
   })
 
   it('passes a legacy raw (ungzipped) SQLite file through as content-only', async () => {
-    const fresh = createTestDatabase()
+    const fresh = createTestDatabaseFile()
     try {
       const { readFileSync } = await import('node:fs')
       const bytes: Buffer = readFileSync(fresh.path)
