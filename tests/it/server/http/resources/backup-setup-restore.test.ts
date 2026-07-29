@@ -11,10 +11,11 @@ const mockFindFirstAdminUser = vi.fn()
 const mockIsSetupTokenActive = vi.fn()
 const mockValidateCsrfToken = vi.fn()
 const mockCheckPgToolsAvailable = vi.fn()
-const mockExtractBackupSql = vi.fn()
-const mockRestoreFromSql = vi.fn()
+const mockRestoreFromBackup = vi.fn()
+const mockAssertBackupContainsAdmin = vi.fn()
 const mockValidateBackupSql = vi.fn()
 const mockPerformSafeRestore = vi.fn()
+const mockTryBeginRestore = vi.fn()
 const mockRefreshBlogSettings = vi.fn()
 const mockRecordAuditEvent = vi.fn()
 const mockGetRestoreState = vi.fn()
@@ -46,8 +47,8 @@ vi.mock('@/server/domains/backup/services/shared', () => ({
 }))
 
 vi.mock('@/server/domains/backup/services/restore', () => ({
-  extractBackupSql: (...args: unknown[]) => mockExtractBackupSql(...args),
-  restoreFromSql: (...args: unknown[]) => mockRestoreFromSql(...args),
+  restoreFromBackup: (...args: unknown[]) => mockRestoreFromBackup(...args),
+  assertBackupContainsAdmin: (...args: unknown[]) => mockAssertBackupContainsAdmin(...args),
 }))
 
 vi.mock('@/server/domains/backup/services/validate', () => ({
@@ -73,6 +74,7 @@ vi.mock('@/server/infra/lifecycle', async (importOriginal) => {
     ...actual,
     getRestoreState: () => mockGetRestoreState(),
     resetRestoreState: vi.fn(),
+    tryBeginRestore: () => mockTryBeginRestore(),
   }
 })
 
@@ -103,8 +105,9 @@ describe('/api/admin/backup/upload-restore', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockGetRestoreState.mockReturnValue({ phase: 'idle' })
+    mockTryBeginRestore.mockReturnValue(true)
     mockValidateCsrfToken.mockReturnValue(true)
-    mockExtractBackupSql.mockResolvedValue('CREATE TABLE test (id INT);')
+    mockAssertBackupContainsAdmin.mockResolvedValue(undefined)
     mockPerformSafeRestore.mockImplementation(
       async (_ctx: unknown, fn: () => Promise<void>, afterReopenFn?: (db: unknown) => Promise<void>) => {
         await fn()
@@ -176,7 +179,7 @@ describe('/api/admin/backup/upload-restore', () => {
   })
 
   it('returns 409 when a restore is already running', async () => {
-    mockGetRestoreState.mockReturnValue({ phase: 'restoring' })
+    mockTryBeginRestore.mockReturnValue(false)
     const { backupRouter } = await import('@/server/http/resources/backup')
     const app = new Hono<Env>()
     app.use('*', async (c, next) => {
@@ -212,11 +215,12 @@ describe('/api/setup/restore', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockGetRestoreState.mockReturnValue({ phase: 'idle' })
+    mockTryBeginRestore.mockReturnValue(true)
     mockHasAdmin.mockResolvedValue(false)
     mockIsSetupTokenActive.mockResolvedValue(true)
     mockValidateCsrfToken.mockReturnValue(true)
     mockCheckPgToolsAvailable.mockResolvedValue(true)
-    mockExtractBackupSql.mockResolvedValue('CREATE TABLE test (id INT);')
+    mockAssertBackupContainsAdmin.mockResolvedValue(undefined)
     mockFindFirstAdminUser.mockResolvedValue({ id: 1, role: 'admin' })
     mockPerformSafeRestore.mockImplementation(
       async (_ctx: unknown, fn: () => Promise<void>, afterReopenFn?: (db: unknown) => Promise<void>) => {
@@ -311,7 +315,7 @@ describe('/api/setup/restore', () => {
   })
 
   it('returns 409 when a restore is already running', async () => {
-    mockGetRestoreState.mockReturnValue({ phase: 'restoring' })
+    mockTryBeginRestore.mockReturnValue(false)
     const app = await buildApp(makeSession({ setupTokenVerified: true, csrfToken: 'valid-csrf' }))
     const formData = new FormData()
     formData.set('file', new File(['content'], 'test.sql'))
