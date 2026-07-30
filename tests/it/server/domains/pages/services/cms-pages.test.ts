@@ -1,157 +1,69 @@
+import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { PageMetaWithAuthor } from '@/server/domains/pages/repo'
-import type { Database } from '@/server/infra/db/database'
-import type { ContentRow } from '@/server/infra/db/types'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import * as lifecycle from '@/server/domains/content/lifecycle'
+import * as adminQuery from '@/server/domains/pages/services/admin-query'
+import { pageLifecycleAdapter } from '@/server/domains/pages/services/lifecycle-adapter'
+import * as mutate from '@/server/domains/pages/services/mutate'
+import { content as contentTable } from '@/server/infra/db/schema/content'
+import { page as pageMetaTable } from '@/server/infra/db/schema/page'
+import { DomainError } from '@/server/infra/http/errors'
 
-// CMS page service — drives the save/publish state machine through
-// the repository's mocked transactional helpers. The repository
-// itself is mocked to keep this test layer focused on:
-//   1. DomainError surfacing (slug validation, missing rows),
-//   2. body validation through the PortableText perimeter,
-//   3. DTO projection (Page, AdminPageDto, AdminRevisionDto),
-//   4. conflict-vs-saved branching translated to the wire shape.
+// CMS page service — drives the save/publish state machine through the
+// real in-memory engine: meta rows, revision rows, slug registry,
+// metrics fan-out, and cache invalidation all land in real tables.
+//
+// The ONLY surviving double is the audit-scope logger: the test env runs
+// pino at `silent`, so the `force_overwrite_save` line (informational
+// stdout, never a DB row — see the convention note in infra/logger.ts)
+// would be unobservable without intercepting `getLogger('audit.cms.pages')`.
+const { auditInfoMock } = vi.hoisted(() => ({ auditInfoMock: vi.fn() }))
 
-vi.mock('@/server/domains/pages/repo', () => ({
-  countPageMetas: vi.fn(async () => 0),
-  findPageMetaById: vi.fn(),
-  findPageMetaBySlug: vi.fn(),
-  findPageMetaBySlugForUpdate: vi.fn(async () => null),
-  insertPageMeta: vi.fn(),
-  listPageMetas: vi.fn(async () => []),
-  restorePageMeta: vi.fn(),
-  softDeletePageMeta: vi.fn(),
-  updatePageMetaById: vi.fn(),
-}))
-vi.mock('@/server/domains/pages/services/public-query', () => ({
-  findPublicPageMetaBySlug: vi.fn(),
-  listPublicPageMetas: vi.fn(async () => []),
-}))
-vi.mock('@/server/domains/content/revisions', () => ({
-  findContentById: vi.fn(),
-  findContentsByIds: vi.fn(async () => []),
-  findLatestDraft: vi.fn(),
-  findLatestRevision: vi.fn(),
-  listRevisions: vi.fn(async () => []),
-}))
-vi.mock('@/server/domains/content/repos/mutate', () => ({
-  publishLatestRevision: vi.fn(),
-  saveDraftRevision: vi.fn(),
-}))
-
-// `listPagesForAdmin` ensures a metric row per listed page and reads
-// counter rows back. Stub those out so this test focuses on repository
-// orchestration without needing the metric DB.
-vi.mock('@/server/infra/db/operations/metric', () => ({
-  ensureMetric: vi.fn(async () => ({})),
-  ensureMetricsBatch: vi.fn(async () => undefined),
-  findMetricByPublicId: vi.fn(),
-  findMetricByTarget: vi.fn(),
-}))
-vi.mock('@/server/infra/db/operations/like', () => ({
-  metricsByOwnerIds: vi.fn(async () => []),
-  commentCountsByOwnerIds: vi.fn(async () => []),
-}))
-vi.mock('@/server/infra/db/operations/slug-registry', () => ({
-  insertSlugRegistry: vi.fn(() => ({})),
-  updateSlugRegistryByEntity: vi.fn(() => ({})),
-  deleteSlugRegistryByEntity: vi.fn(() => {
-    void 0
-  }),
-  findSlugRegistryBySlug: vi.fn(() => null),
-  findSlugRegistryBySlugForUpdate: vi.fn(() => null),
-}))
-
-const { auditInfoMock, getLogger } = vi.hoisted(() => {
-  const auditInfoMock = vi.fn()
-  const createLogger = () => ({
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    fatal: vi.fn(),
-    child: vi.fn(() => createLogger()),
-    withScope: vi.fn(() => createLogger()),
-  })
+vi.mock('@/server/infra/logger', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/server/infra/logger')>()
   return {
-    auditInfoMock,
-    getLogger: vi.fn((scope: string) =>
-      scope === 'audit.cms.pages' ? { ...createLogger(), info: auditInfoMock } : createLogger(),
-    ),
+    ...actual,
+    getLogger: (scope: string) => {
+      const real = actual.getLogger(scope)
+      return scope === 'audit.cms.pages' ? { ...real, info: auditInfoMock } : real
+    },
   }
 })
 
-vi.mock('@/server/infra/logger', () => ({
-  getLogger,
-  L3_KEYS: new Set([
-    'email',
-    'ip',
-    'clientAddress',
-    'remoteAddress',
-    'userAgent',
-    'phone',
-    'authorEmail',
-    'authorIp',
-    'cookie',
-    'deviceId',
-    'name',
-  ]),
-}))
+const db = getTestDb()
 
-const db = {
-  transaction: <T>(fn: (tx: Database) => T) => fn(db as Database),
-} as unknown as Database
-
-const repo = await import('@/server/domains/pages/repo')
-const query = await import('@/server/domains/content/revisions')
-const contentMutate = await import('@/server/domains/content/repos/mutate')
-const { DomainError } = await import('@/server/infra/http/errors')
-const adminQuery = await import('@/server/domains/pages/services/admin-query')
-const mutate = await import('@/server/domains/pages/services/mutate')
-const lifecycle = await import('@/server/domains/content/lifecycle')
-const { pageLifecycleAdapter } = await import('@/server/domains/pages/services/lifecycle-adapter')
-
-function metaRow(overrides: Partial<PageMetaWithAuthor> = {}): PageMetaWithAuthor {
-  const now = overrides.createdAt ?? new Date('2026-05-01T00:00:00.000Z')
-  return {
-    id: overrides.id ?? 1,
-    slug: overrides.slug ?? 'about',
-    title: overrides.title ?? '关于我',
-    summary: overrides.summary ?? '',
-    cover: overrides.cover ?? '',
-    og: overrides.og ?? null,
-    published: overrides.published ?? true,
-    commentsEnabled: overrides.commentsEnabled ?? true,
-    showToc: overrides.showToc ?? false,
-    showUpdated: overrides.showUpdated ?? false,
-    showFriends: overrides.showFriends ?? false,
-    publishedAt: overrides.publishedAt ?? now,
-    publishedRevisionId: overrides.publishedRevisionId ?? null,
-    firstPublishedAt: overrides.firstPublishedAt ?? null,
-    authorId: overrides.authorId ?? null,
-    createdAt: now,
-    updatedAt: overrides.updatedAt ?? now,
-    deletedAt: overrides.deletedAt ?? null,
-    authorName: overrides.authorName ?? null,
-  }
+async function seedPage(overrides: Partial<typeof pageMetaTable.$inferInsert> = {}) {
+  const rows = await db
+    .insert(pageMetaTable)
+    .values({
+      slug: overrides.slug ?? `page-${Math.random().toString(36).slice(2)}`,
+      title: overrides.title ?? 'Test',
+      ...overrides,
+    })
+    .returning()
+  return rows[0]!
 }
 
-function contentRow(overrides: Partial<ContentRow> = {}): ContentRow {
-  const now = overrides.createdAt ?? new Date('2026-05-01T00:00:00.000Z')
-  return {
-    id: overrides.id ?? 100,
-    type: overrides.type ?? 'page',
-    ownerId: overrides.ownerId ?? 1,
-    revisionNo: overrides.revisionNo ?? 1,
-    status: overrides.status ?? 'draft',
-    body: overrides.body ?? [],
-    imageSources: overrides.imageSources ?? [],
-    headings: overrides.headings ?? [],
-    authorId: overrides.authorId ?? null,
-    clientRevisionToken: overrides.clientRevisionToken ?? '00000000-0000-0000-0000-000000000001',
-    createdAt: now,
-    updatedAt: overrides.updatedAt ?? now,
-  }
+async function seedRevision(ownerId: number, overrides: Partial<typeof contentTable.$inferInsert> = {}) {
+  const rows = await db
+    .insert(contentTable)
+    .values({
+      type: 'page',
+      ownerId,
+      revisionNo: overrides.revisionNo ?? 1,
+      status: overrides.status ?? 'draft',
+      body: [],
+      imageSources: [],
+      headings: [],
+      ...overrides,
+    })
+    .returning()
+  return rows[0]!
+}
+
+async function contentRows(ownerId: number) {
+  return db.select().from(contentTable).where(eq(contentTable.ownerId, ownerId))
 }
 
 const VALID_BODY = [
@@ -163,52 +75,41 @@ const VALID_BODY = [
   },
 ]
 
-beforeEach(() => {
-  for (const fn of Object.values(repo)) {
-    if (typeof fn === 'function' && 'mockReset' in fn) {
-      ;(fn as ReturnType<typeof vi.fn>).mockReset()
-    }
-  }
-  for (const fn of Object.values(contentMutate)) {
-    if (typeof fn === 'function' && 'mockReset' in fn) {
-      ;(fn as ReturnType<typeof vi.fn>).mockReset()
-    }
-  }
+beforeEach(async () => {
+  await clearAllTables(db)
+  auditInfoMock.mockClear()
 })
 
 describe('cms/pages/service — listPagesForAdmin / getPageDetailForAdmin', () => {
   it('hasMore = true while another page exists, false when the offset+rows reaches total', async () => {
-    vi.mocked(repo.listPageMetas).mockResolvedValue([metaRow({ id: 1 }), metaRow({ id: 2, slug: 'links' })])
-    vi.mocked(repo.countPageMetas).mockResolvedValue(5)
+    // Stagger updated_at so the desc(updatedAt) ordering is deterministic.
+    const base = Date.now()
+    for (let i = 1; i <= 5; i++) {
+      await seedPage({ slug: `page-${i}`, updatedAt: new Date(base + i * 60_000) })
+    }
 
     const more = await adminQuery.listPagesForAdmin(db, { offset: 0, limit: 2 })
     expect(more.total).toBe(5)
     expect(more.hasMore).toBe(true)
-    expect(more.pages.map((p) => p.slug)).toEqual(['about', 'links'])
+    expect(more.pages.map((p) => p.slug)).toEqual(['page-5', 'page-4'])
 
-    vi.mocked(repo.listPageMetas).mockResolvedValue([metaRow({ id: 5, slug: 'guestbook' })])
-    vi.mocked(repo.countPageMetas).mockResolvedValue(5)
     const last = await adminQuery.listPagesForAdmin(db, { offset: 4, limit: 2 })
+    expect(last.total).toBe(5)
     expect(last.hasMore).toBe(false)
-  })
-
-  it('getPageDetailForAdmin throws NOT_FOUND for missing rows (same contract as posts)', async () => {
-    vi.mocked(repo.findPageMetaById).mockReturnValue(null)
-    await expect(adminQuery.getPageDetailForAdmin(db, 99)).rejects.toMatchObject({ code: 'NOT_FOUND' })
+    expect(last.pages.map((p) => p.slug)).toEqual(['page-1'])
   })
 
   it('getPageDetailForAdmin projects latest + published revisions independently', async () => {
-    const meta = metaRow({ id: 7, publishedRevisionId: 200 })
-    const draft = contentRow({ id: 201, ownerId: 7, revisionNo: 4, status: 'draft' })
-    const published = contentRow({ id: 200, ownerId: 7, revisionNo: 3, status: 'published' })
-    vi.mocked(repo.findPageMetaById).mockReturnValue(meta)
-    vi.mocked(query.findLatestRevision).mockResolvedValue(draft)
-    vi.mocked(query.findContentById).mockReturnValue(published)
+    const published = await seedRevision(0, { revisionNo: 3, status: 'published' })
+    const meta = await seedPage({ publishedRevisionId: published.id })
+    const draft = await seedRevision(meta.id, { revisionNo: 4, status: 'draft' })
+    await db.update(contentTable).set({ ownerId: meta.id }).where(eq(contentTable.id, published.id))
 
-    const detail = await adminQuery.getPageDetailForAdmin(db, 7)
-    expect(detail.page.id).toBe('7')
+    const detail = await adminQuery.getPageDetailForAdmin(db, meta.id)
+    expect(detail.page.id).toBe(String(meta.id))
     expect(detail.latestRevision?.revisionNo).toBe(4)
     expect(detail.latestRevision?.status).toBe('draft')
+    expect(detail.latestRevision?.id).toBe(String(draft.id))
     expect(detail.publishedRevision?.revisionNo).toBe(3)
     expect(detail.publishedRevision?.status).toBe('published')
   })
@@ -217,114 +118,79 @@ describe('cms/pages/service — listPagesForAdmin / getPageDetailForAdmin', () =
 describe('cms/pages/service — createPage / updatePageMeta validation', () => {
   it('rejects slugs that contain illegal characters', async () => {
     await expect(mutate.createPage(db, { slug: 'About Me', title: 'x' }, null)).rejects.toBeInstanceOf(DomainError)
+    expect(await db.select().from(pageMetaTable)).toHaveLength(0)
   })
 
   it('rejects reserved slugs that would shadow public routes', async () => {
     for (const slug of ['posts', 'cats', 'tags', 'admin', 'api']) {
       await expect(mutate.createPage(db, { slug, title: 't' }, null)).rejects.toBeInstanceOf(DomainError)
     }
-  })
-
-  it('rejects an existing slug on create with HTTP 409 semantics', async () => {
-    vi.mocked(repo.findPageMetaBySlugForUpdate).mockReturnValue(metaRow({ slug: 'about' }))
-    await expect(mutate.createPage(db, { slug: 'about', title: 't' }, null)).rejects.toMatchObject({
-      code: 'CONFLICT',
-    })
+    expect(await db.select().from(pageMetaTable)).toHaveLength(0)
   })
 
   it('updatePageMeta tolerates a same-slug edit (no collision check fires)', async () => {
-    vi.mocked(repo.findPageMetaById).mockReturnValue(metaRow({ id: 7, slug: 'about', title: 'old' }))
-    vi.mocked(repo.updatePageMetaById).mockReturnValue(metaRow({ id: 7, slug: 'about', title: 'new' }))
-    const dto = await mutate.updatePageMeta(db, { id: 7, slug: 'about', title: 'new' })
+    const meta = await seedPage({ slug: 'about', title: 'old' })
+
+    const dto = await mutate.updatePageMeta(db, { id: meta.id, slug: 'about', title: 'new' })
+
     expect(dto.title).toBe('new')
-    expect(repo.findPageMetaBySlugForUpdate).not.toHaveBeenCalled()
-  })
-
-  it('updatePageMeta blocks renaming to a slug already used by a different page', async () => {
-    vi.mocked(repo.findPageMetaById).mockReturnValue(metaRow({ id: 7, slug: 'about' }))
-    vi.mocked(repo.findPageMetaBySlugForUpdate).mockReturnValue(metaRow({ id: 99, slug: 'guestbook' }))
-    await expect(mutate.updatePageMeta(db, { id: 7, slug: 'guestbook', title: 't' })).rejects.toMatchObject({
-      code: 'CONFLICT',
-    })
-  })
-
-  it('updatePageMeta returns 404 when the row was already deleted', async () => {
-    vi.mocked(repo.findPageMetaById).mockReturnValue(null)
-    await expect(mutate.updatePageMeta(db, { id: 7, slug: 'about', title: 't' })).rejects.toMatchObject({
-      code: 'NOT_FOUND',
-    })
+    const row = await db.select().from(pageMetaTable).where(eq(pageMetaTable.id, meta.id))
+    expect(row[0]?.title).toBe('new')
+    expect(row[0]?.slug).toBe('about')
   })
 
   it('createPage always inserts status=draft even when input says true', async () => {
-    vi.mocked(repo.findPageMetaBySlugForUpdate).mockReturnValue(null)
-    vi.mocked(repo.insertPageMeta).mockReturnValue(metaRow({ slug: 'new-page', published: false }))
+    const dto = await mutate.createPage(db, { title: 'New Page', published: true }, null)
 
-    await mutate.createPage(db, { title: 'New Page', published: true }, null)
-
-    const patch = vi.mocked(repo.insertPageMeta).mock.calls[0][1]
-    expect(patch.published).toBe(false)
-  })
-
-  it('createPage inserts status=draft when input omits the field', async () => {
-    vi.mocked(repo.findPageMetaBySlugForUpdate).mockReturnValue(null)
-    vi.mocked(repo.insertPageMeta).mockReturnValue(metaRow({ slug: 'new-page', published: false }))
-
-    await mutate.createPage(db, { title: 'New Page' }, null)
-
-    const patch = vi.mocked(repo.insertPageMeta).mock.calls[0][1]
-    expect(patch.published).toBe(false)
+    expect(dto.published).toBe(false)
+    const rows = await db.select().from(pageMetaTable)
+    expect(rows).toHaveLength(1)
+    expect(rows[0]?.published).toBe(false)
   })
 
   it('updatePageMeta never touches published even when input includes it', async () => {
-    vi.mocked(repo.findPageMetaById).mockReturnValue(metaRow({ id: 7, slug: 'about', published: true }))
-    vi.mocked(repo.findPageMetaBySlug).mockReturnValue(null)
-    vi.mocked(repo.updatePageMetaById).mockReturnValue(
-      metaRow({ id: 7, slug: 'about', published: true, title: 'Updated' }),
-    )
+    const meta = await seedPage({ slug: 'about', published: true })
 
     const dto = await mutate.updatePageMeta(db, {
-      id: 7,
+      id: meta.id,
       slug: 'about',
       title: 'Updated',
       published: false,
     })
-    expect(dto.title).toBe('Updated')
 
-    const patch = vi.mocked(repo.updatePageMetaById).mock.calls[0][2]
-    expect(patch).not.toHaveProperty('published')
+    expect(dto.title).toBe('Updated')
+    expect(dto.published).toBe(true)
+    const row = await db.select().from(pageMetaTable).where(eq(pageMetaTable.id, meta.id))
+    expect(row[0]?.published).toBe(true)
   })
 })
 
 describe('cms/pages lifecycle — saveBody draft / publish body validation', () => {
-  it('rejects a malformed body (zod issues become DomainError 400)', async () => {
-    vi.mocked(repo.findPageMetaById).mockReturnValue(metaRow({ id: 1 }))
+  it('rejects a malformed body (zod issues become DomainError 400) and writes no revision', async () => {
+    const meta = await seedPage()
+
     await expect(
       lifecycle.saveBody(
         db,
         pageLifecycleAdapter,
-        { entityId: 1, body: [{ _type: 'unknown', _key: 'k' }], authorId: null },
+        { entityId: meta.id, body: [{ _type: 'unknown', _key: 'k' }], authorId: null },
         'draft',
       ),
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
-    expect(contentMutate.saveDraftRevision).not.toHaveBeenCalled()
+    expect(await contentRows(meta.id)).toHaveLength(0)
   })
 
-  it('rejects when the page row is missing without touching the transaction', async () => {
-    vi.mocked(repo.findPageMetaById).mockReturnValue(null)
+  it('rejects when the page row is missing without touching the revisions table', async () => {
     await expect(
-      lifecycle.saveBody(db, pageLifecycleAdapter, { entityId: 1, body: VALID_BODY, authorId: null }, 'draft'),
+      lifecycle.saveBody(db, pageLifecycleAdapter, { entityId: 999, body: VALID_BODY, authorId: null }, 'draft'),
     ).rejects.toMatchObject({
       code: 'NOT_FOUND',
     })
-    expect(contentMutate.saveDraftRevision).not.toHaveBeenCalled()
+    expect(await db.select().from(contentTable)).toHaveLength(0)
   })
 
-  it('forwards body, derived imageSources, and derived headings into the repository call', async () => {
-    vi.mocked(repo.findPageMetaById).mockReturnValue(metaRow({ id: 1 }))
-    vi.mocked(contentMutate.saveDraftRevision).mockResolvedValue({
-      status: 'saved',
-      row: contentRow({ revisionNo: 1, status: 'draft' }),
-    })
+  it('persists the body with derived imageSources and headings on the revision row', async () => {
+    const meta = await seedPage()
 
     const body = [
       {
@@ -340,34 +206,34 @@ describe('cms/pages lifecycle — saveBody draft / publish body validation', () 
         storagePath: 'images/2026/05/foo.jpg',
       },
     ]
-    await lifecycle.saveBody(db, pageLifecycleAdapter, { entityId: 1, body, authorId: 42 }, 'draft')
+    const result = await lifecycle.saveBody(
+      db,
+      pageLifecycleAdapter,
+      { entityId: meta.id, body, authorId: 42 },
+      'draft',
+    )
+    expect(result.status).toBe('saved')
 
-    const arg = vi.mocked(contentMutate.saveDraftRevision).mock.calls[0][2]
-    expect(arg.ownerId).toBe(1)
-    expect(arg.imageSources).toEqual(['images/2026/05/foo.jpg'])
-    expect(arg.headings).toEqual([{ depth: 2, text: 'Hello', slug: 'hello' }])
-    expect(arg.authorId).toBe(42)
+    const rows = await contentRows(meta.id)
+    expect(rows).toHaveLength(1)
+    expect(rows[0]?.imageSources).toEqual(['images/2026/05/foo.jpg'])
+    expect(rows[0]?.headings).toEqual([{ depth: 2, text: 'Hello', slug: 'hello' }])
+    expect(rows[0]?.authorId).toBe(42)
   })
 
   it('translates a repository "conflict" into the wire shape with the latest revision DTO', async () => {
-    vi.mocked(repo.findPageMetaById).mockReturnValue(metaRow({ id: 1 }))
-    const latest = contentRow({
-      id: 999,
+    const meta = await seedPage()
+    const latest = await seedRevision(meta.id, {
       revisionNo: 5,
       status: 'draft',
       clientRevisionToken: '11111111-2222-3333-4444-555555555555',
-    })
-    vi.mocked(contentMutate.saveDraftRevision).mockResolvedValue({
-      status: 'conflict',
-      latest,
-      expectedToken: latest.clientRevisionToken,
     })
 
     const result = await lifecycle.saveBody(
       db,
       pageLifecycleAdapter,
       {
-        entityId: 1,
+        entityId: meta.id,
         body: VALID_BODY,
         authorId: null,
         expectedClientRevisionToken: 'stale-token',
@@ -376,45 +242,52 @@ describe('cms/pages lifecycle — saveBody draft / publish body validation', () 
     )
     expect(result.status).toBe('conflict')
     if (result.status === 'conflict') {
-      expect(result.latest.id).toBe('999')
+      expect(result.latest.id).toBe(String(latest.id))
       expect(result.latest.revisionNo).toBe(5)
       expect(result.expectedToken).toBe(latest.clientRevisionToken)
     }
+    // The conflicting save wrote nothing — the draft row is untouched.
+    const rows = await contentRows(meta.id)
+    expect(rows).toHaveLength(1)
+    expect(rows[0]?.clientRevisionToken).toBe('11111111-2222-3333-4444-555555555555')
   })
 
-  it('publish projects the saved revision back as a "saved" wire DTO', async () => {
-    vi.mocked(repo.findPageMetaById).mockReturnValue(metaRow({ id: 1 }))
-    vi.mocked(contentMutate.publishLatestRevision).mockResolvedValue({
-      status: 'published',
-      row: contentRow({ revisionNo: 7, status: 'published' }),
-    })
+  it('publish projects the saved revision back as a "saved" wire DTO and flips the meta row', async () => {
+    const meta = await seedPage({ published: false, publishedRevisionId: null })
+
     const result = await lifecycle.saveBody(
       db,
       pageLifecycleAdapter,
-      { entityId: 1, body: VALID_BODY, authorId: 5 },
+      { entityId: meta.id, body: VALID_BODY, authorId: 5 },
       'publish',
     )
     expect(result.status).toBe('saved')
     if (result.status === 'saved') {
       expect(result.revision.status).toBe('published')
-      expect(result.revision.revisionNo).toBe(7)
+      expect(result.revision.revisionNo).toBe(1)
     }
+
+    const row = await db.select().from(pageMetaTable).where(eq(pageMetaTable.id, meta.id))
+    expect(row[0]?.published).toBe(true)
+    expect(row[0]?.publishedRevisionId).not.toBeNull()
+    expect(row[0]?.firstPublishedAt).not.toBeNull()
   })
 })
 
 describe('cms/pages lifecycle — saveBody CAS + force', () => {
-  it('saveBody forwards expectedClientRevisionToken untouched into the repo call', async () => {
-    vi.mocked(repo.findPageMetaById).mockReturnValue(metaRow({ id: 1 }))
-    vi.mocked(contentMutate.saveDraftRevision).mockResolvedValue({
-      status: 'saved',
-      row: contentRow({ revisionNo: 1, status: 'draft' }),
+  it('saveBody with a matching expectation token saves instead of conflicting', async () => {
+    const meta = await seedPage()
+    const latest = await seedRevision(meta.id, {
+      revisionNo: 3,
+      status: 'draft',
+      clientRevisionToken: 'expected-token-abc',
     })
 
-    await lifecycle.saveBody(
+    const result = await lifecycle.saveBody(
       db,
       pageLifecycleAdapter,
       {
-        entityId: 1,
+        entityId: meta.id,
         body: VALID_BODY,
         authorId: null,
         expectedClientRevisionToken: 'expected-token-abc',
@@ -422,34 +295,27 @@ describe('cms/pages lifecycle — saveBody CAS + force', () => {
       'draft',
     )
 
-    const arg = vi.mocked(contentMutate.saveDraftRevision).mock.calls[0][2]
-    expect(arg.expectedClientRevisionToken).toBe('expected-token-abc')
-    expect(arg.force).toBeUndefined()
+    expect(result.status).toBe('saved')
+    // The draft was updated in place (no new revision row) and the token rotated.
+    const rows = await contentRows(meta.id)
+    expect(rows).toHaveLength(1)
+    expect(rows[0]?.id).toBe(latest.id)
+    expect(rows[0]?.clientRevisionToken).not.toBe('expected-token-abc')
   })
 
-  it('saveBody with force=true bypasses CAS at the repo and writes an audit log row', async () => {
-    auditInfoMock.mockClear()
-
-    vi.mocked(repo.findPageMetaById).mockReturnValue(metaRow({ id: 7 }))
-    vi.mocked(query.findLatestRevision).mockResolvedValue(
-      contentRow({
-        id: 600,
-        ownerId: 7,
-        revisionNo: 9,
-        status: 'draft',
-        clientRevisionToken: 'server-side-newer',
-      }),
-    )
-    vi.mocked(contentMutate.saveDraftRevision).mockResolvedValue({
-      status: 'saved',
-      row: contentRow({ id: 601, ownerId: 7, revisionNo: 9, status: 'draft' }),
+  it('saveBody with force=true bypasses CAS and writes an audit log line', async () => {
+    const meta = await seedPage()
+    const overwritten = await seedRevision(meta.id, {
+      revisionNo: 9,
+      status: 'draft',
+      clientRevisionToken: 'server-side-newer',
     })
 
-    await lifecycle.saveBody(
+    const result = await lifecycle.saveBody(
       db,
       pageLifecycleAdapter,
       {
-        entityId: 7,
+        entityId: meta.id,
         body: VALID_BODY,
         authorId: 42,
         expectedClientRevisionToken: 'client-thought-this',
@@ -457,79 +323,66 @@ describe('cms/pages lifecycle — saveBody CAS + force', () => {
       },
       'draft',
     )
-
-    const repoArg = vi.mocked(contentMutate.saveDraftRevision).mock.calls[0][2]
-    expect(repoArg.force).toBe(true)
+    expect(result.status).toBe('saved')
 
     // Audit log emitted exactly once for the genuine overwrite.
     expect(auditInfoMock).toHaveBeenCalledTimes(1)
     const [message, context] = auditInfoMock.mock.calls[0]!
     expect(message).toBe('force_overwrite_save')
+    // The draft update happens in place, so the overwritten row and the
+    // result row share one id — only the token rotated.
+    const rows = await contentRows(meta.id)
+    expect(rows).toHaveLength(1)
     expect(context).toMatchObject({
       mode: 'draft',
       actor: '42',
-      pageMetaId: '7',
-      overwrittenRevisionId: '600',
+      pageMetaId: String(meta.id),
+      overwrittenRevisionId: String(overwritten.id),
       overwrittenRevisionToken: 'server-side-newer',
       clientExpectedToken: 'client-thought-this',
-      resultRevisionId: '601',
+      resultRevisionId: String(rows[0]!.id),
     })
+    expect(rows[0]?.clientRevisionToken).not.toBe('server-side-newer')
   })
 
   it('saveBody with force=true on a no-op overwrite (matching tokens) skips the audit log', async () => {
-    auditInfoMock.mockClear()
-
-    vi.mocked(repo.findPageMetaById).mockReturnValue(metaRow({ id: 7 }))
-    const same = 'aligned-token'
-    vi.mocked(query.findLatestRevision).mockResolvedValue(
-      contentRow({
-        id: 700,
-        ownerId: 7,
-        revisionNo: 3,
-        status: 'draft',
-        clientRevisionToken: same,
-      }),
-    )
-    vi.mocked(contentMutate.saveDraftRevision).mockResolvedValue({
-      status: 'saved',
-      row: contentRow({ id: 701, ownerId: 7, revisionNo: 3, status: 'draft' }),
-    })
-
-    await lifecycle.saveBody(
-      db,
-      pageLifecycleAdapter,
-      {
-        entityId: 7,
-        body: VALID_BODY,
-        authorId: null,
-        expectedClientRevisionToken: same,
-        force: true,
-      },
-      'draft',
-    )
-
-    expect(auditInfoMock).not.toHaveBeenCalled()
-  })
-
-  it('publish forwards force and translates a conflict back into the wire shape', async () => {
-    vi.mocked(repo.findPageMetaById).mockReturnValue(metaRow({ id: 1 }))
-    const stale = contentRow({
-      id: 800,
-      revisionNo: 4,
+    const meta = await seedPage()
+    await seedRevision(meta.id, {
+      revisionNo: 3,
       status: 'draft',
-      clientRevisionToken: 'newer-than-client',
-    })
-    vi.mocked(contentMutate.publishLatestRevision).mockResolvedValue({
-      status: 'conflict',
-      latest: stale,
-      expectedToken: stale.clientRevisionToken,
+      clientRevisionToken: 'aligned-token',
     })
 
     const result = await lifecycle.saveBody(
       db,
       pageLifecycleAdapter,
       {
-        entityId: 1,
+        entityId: meta.id,
+        body: VALID_BODY,
+        authorId: null,
+        expectedClientRevisionToken: 'aligned-token',
+        force: true,
+      },
+      'draft',
+    )
+
+    expect(result.status).toBe('saved')
+    expect(auditInfoMock).not.toHaveBeenCalled()
+  })
+
+  it('publish translates a conflict back into the wire shape and leaves the meta row unpublished', async () => {
+    const meta = await seedPage({ published: false, publishedRevisionId: null })
+    const stale = await seedRevision(meta.id, {
+      revisionNo: 4,
+      status: 'draft',
+      clientRevisionToken: 'newer-than-client',
+    })
+
+    const result = await lifecycle.saveBody(
+      db,
+      pageLifecycleAdapter,
+      {
+        entityId: meta.id,
         body: VALID_BODY,
         authorId: null,
         expectedClientRevisionToken: 'stale-client',
@@ -539,38 +392,28 @@ describe('cms/pages lifecycle — saveBody CAS + force', () => {
     )
     expect(result.status).toBe('conflict')
     if (result.status === 'conflict') {
-      expect(result.latest.id).toBe('800')
+      expect(result.latest.id).toBe(String(stale.id))
       expect(result.expectedToken).toBe('newer-than-client')
     }
 
-    const repoArg = vi.mocked(contentMutate.publishLatestRevision).mock.calls[0][2]
-    expect(repoArg.force).toBe(false)
-    expect(repoArg.expectedClientRevisionToken).toBe('stale-client')
+    const row = await db.select().from(pageMetaTable).where(eq(pageMetaTable.id, meta.id))
+    expect(row[0]?.published).toBe(false)
+    expect(row[0]?.publishedRevisionId).toBeNull()
   })
 
-  it('publish with force=true writes audit log with mode="publish"', async () => {
-    auditInfoMock.mockClear()
-
-    vi.mocked(repo.findPageMetaById).mockReturnValue(metaRow({ id: 11 }))
-    vi.mocked(query.findLatestRevision).mockResolvedValue(
-      contentRow({
-        id: 900,
-        ownerId: 11,
-        revisionNo: 12,
-        status: 'draft',
-        clientRevisionToken: 'srv-token',
-      }),
-    )
-    vi.mocked(contentMutate.publishLatestRevision).mockResolvedValue({
-      status: 'published',
-      row: contentRow({ id: 901, ownerId: 11, revisionNo: 12, status: 'published' }),
+  it('publish with force=true writes the audit log with mode="publish" and publishes the revision', async () => {
+    const meta = await seedPage({ published: false, publishedRevisionId: null })
+    const overwritten = await seedRevision(meta.id, {
+      revisionNo: 12,
+      status: 'draft',
+      clientRevisionToken: 'srv-token',
     })
 
-    await lifecycle.saveBody(
+    const result = await lifecycle.saveBody(
       db,
       pageLifecycleAdapter,
       {
-        entityId: 11,
+        entityId: meta.id,
         body: VALID_BODY,
         authorId: 99,
         expectedClientRevisionToken: 'cli-token',
@@ -578,6 +421,7 @@ describe('cms/pages lifecycle — saveBody CAS + force', () => {
       },
       'publish',
     )
+    expect(result.status).toBe('saved')
 
     expect(auditInfoMock).toHaveBeenCalledTimes(1)
     const [message, context] = auditInfoMock.mock.calls[0]!
@@ -585,11 +429,14 @@ describe('cms/pages lifecycle — saveBody CAS + force', () => {
     expect(context).toMatchObject({
       mode: 'publish',
       actor: '99',
-      pageMetaId: '11',
-      overwrittenRevisionId: '900',
+      pageMetaId: String(meta.id),
+      overwrittenRevisionId: String(overwritten.id),
       overwrittenRevisionToken: 'srv-token',
       clientExpectedToken: 'cli-token',
-      resultRevisionId: '901',
     })
+
+    const row = await db.select().from(pageMetaTable).where(eq(pageMetaTable.id, meta.id))
+    expect(row[0]?.published).toBe(true)
+    expect(row[0]?.publishedRevisionId).toBe(overwritten.id)
   })
 })

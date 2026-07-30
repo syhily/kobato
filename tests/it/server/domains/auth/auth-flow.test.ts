@@ -1,164 +1,85 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import bcrypt from 'bcryptjs'
+import { eq } from 'drizzle-orm'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import type { Database } from '@/server/infra/db/database'
-
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { emptySession } from '#/_helpers/session'
-
-// `signInWithSession` is the single entry-point both the public admin login
-// route and integration-style harnesses use to authenticate. We pin the two
-// behavioural guarantees that are easy to silently regress:
-//
-//   1. The successful response carries BOTH a `__session` cookie (so the
-//      browser persists the new login) AND a rotated `csrf-token` cookie
-//      (so any concurrently-open admin tab picks up a fresh, session-bound
-//      token without having to re-fetch the form).
-//   2. The rate limiter only round-trips once per attempt (the legacy
-//      `exceedLimit` + `incrLimit` pair was collapsed into
-//      `tryRateLimit`).
-//
-// Session storage stays real (signed cookie round-trip), but its session
-// rows are stubbed at `getDb()` — `insertAdmin` is mocked, so a real
-// session-table INSERT would FK-violate on the missing user row. Other DB
-// operations stay mocked so boundary-condition tests (empty insertAdmin
-// result, concurrent-install race) remain possible without heavy fixture
-// setup.
-
-vi.mock('@/server/bootstrap/db-lifecycle', () => {
-  const fakeDb = {
-    insert: () => ({ values: () => ({ onConflictDoUpdate: async () => {} }) }),
-    delete: () => ({ where: async () => {} }),
-    update: () => ({ set: () => ({ where: async () => {} }) }),
-    select: () => ({ from: () => ({ where: () => ({ limit: async () => [] }) }) }),
-  }
-  return {
-    getDb: () => fakeDb,
-    getPool: () => ({}),
-  }
-})
-
-vi.mock('@/server/infra/db/operations/user', () => ({
-  hasAdmin: vi.fn(async () => false),
-  hashAdminPassword: vi.fn(async () => 'hashed'),
-  insertAdmin: vi.fn(() => []),
-  verifyUserPassword: vi.fn(),
-  updateLastLogin: vi.fn(async () => undefined),
-}))
-
-vi.mock('@/server/infra/db/operations/setting', () => ({
-  upsertSetting: vi.fn(async () => undefined),
-  findSettingByScope: vi.fn(async () => null),
-}))
-
-vi.mock('@/server/domains/settings/services/hydrate', () => ({
-  refreshBlogSettings: vi.fn(async () => null),
-}))
-
-vi.mock('@/server/infra/rate-limit', () => ({
-  tryRateLimit: vi.fn(async () => ({ count: 1, exceeded: false })),
-}))
-
-vi.mock('@/server/domains/audit/services/record', () => ({
-  recordAuditEvent: vi.fn(),
-  buildAuditContext: vi.fn(),
-  recordAuditEventFromContext: vi.fn(),
-}))
-
-const db = {
-  transaction: <T>(callback: (tx: Database) => T) => callback(db as Database),
-  // `invalidateSetupToken` deletes the setup-token row on successful
-  // install; the row itself lives nowhere in this file's mocked world.
-  delete: () => ({ where: async () => {} }),
-  // Post-seed `ANALYZE` (plan §1.9) — a no-op against the mock.
-  run: () => undefined,
-} as unknown as Database
-const pool = {} as any
-
-const userQuery = await import('@/server/infra/db/operations/user')
-const settingQuery = await import('@/server/infra/db/operations/setting')
-const settingsSnapshot = await import('@/server/domains/settings/services/hydrate')
-const rateLimit = await import('@/server/infra/rate-limit')
-import type { User } from '@/server/infra/db/types'
-
+import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
+import { flushAuditLog } from '@/server/domains/audit/services/batcher'
 import { signUpInitialAdminWithSession } from '@/server/domains/auth/services/setup'
+import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
+import { auditLog, setting } from '@/server/infra/db/schema/config'
+import { session as sessionTable } from '@/server/infra/db/schema/session'
+import { user as userTable } from '@/server/infra/db/schema/user'
+import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
-const verifyUserPasswordMock = vi.mocked(userQuery.verifyUserPassword)
+// `signUpInitialAdminWithSession` against the real engine: the admin
+// insert, the 17-section settings seed, the session establish, the
+// settings re-hydration, and the login audit all run for real against
+// the shared in-memory database. Nothing is mocked — the concurrent-
+// install race is reproduced with a real unique-constraint collision,
+// which also proves the transaction rolls the seed back atomically.
+//
+// The two legacy boundary cases that mocked `insertAdmin` returning []
+// are gone: with the real engine a successful INSERT always returns the
+// row, so that boundary is a mock artifact, not reachable behaviour.
 
-function testUser(partial: Partial<User> = {}): User {
-  return {
-    id: 1,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: null,
-    name: 'Test',
-    email: 'test@example.com',
-    emailVerified: false,
-    link: null,
-    password: 'hashed',
-    badgeName: null,
-    badgeColor: null,
-    badgeTextColor: null,
-    lastIp: null,
-    lastUa: null,
-    loginMethod: 'password',
-    role: 'admin',
-    isMuted: false,
-    receiveEmail: true,
-    ...partial,
-  }
-}
+const db = getTestDb()
 
 beforeEach(async () => {
-  verifyUserPasswordMock.mockReset()
-  vi.mocked(userQuery.hasAdmin).mockReset()
-  vi.mocked(userQuery.hasAdmin).mockResolvedValue(false)
-  vi.mocked(userQuery.insertAdmin).mockReset()
-  vi.mocked(userQuery.insertAdmin).mockReturnValue([])
-  vi.mocked(settingQuery.upsertSetting).mockReset()
-  vi.mocked(settingsSnapshot.refreshBlogSettings).mockReset()
-  vi.mocked(rateLimit.tryRateLimit).mockReset()
-  vi.mocked(rateLimit.tryRateLimit).mockResolvedValue({ count: 1, exceeded: false })
+  await clearAllTables(db)
+  initAllBatchers(getDatabaseHandle())
+})
+
+afterEach(async () => {
+  // Flush BEFORE dropping the batcher: InsertBatcher.dispose() leaves an
+  // armed flush timer behind, so an unflushed queue would otherwise
+  // insert this case's stale events mid-next-test.
+  await flushAuditLog()
+  resetAllBatchers()
 })
 
 function buildRequest(): Request {
   return new Request('http://localhost/admin/signin', { method: 'POST' })
 }
 
-describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1)', () => {
-  const baseSeed = {
-    title: 'My Blog',
-    name: 'Admin',
-    email: 'admin@example.com',
-    password: 'CorrectHorse1',
-  }
+const baseSeed = {
+  title: 'My Blog',
+  name: 'Admin',
+  email: 'admin@example.com',
+  password: 'CorrectHorse1',
+}
 
-  it('creates the admin row, seeds all settings, and redirects to /admin', async () => {
-    vi.mocked(userQuery.insertAdmin).mockReturnValue([
-      testUser({ id: 7, name: 'Admin', email: 'admin@example.com', link: '', role: 'admin' }),
-    ])
-    const request = buildRequest()
+async function settingRows() {
+  return db.select().from(setting)
+}
 
+describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1, real db)', () => {
+  it('creates the admin row, seeds all settings, establishes the session, and redirects to /admin', async () => {
     const result = await signUpInitialAdminWithSession(db, {
       ...baseSeed,
       session: emptySession(),
-      request,
+      request: buildRequest(),
       clientAddress: '127.0.0.1',
     })
 
     expect(result.type).toBe('redirect')
-    if (result.type === 'redirect') {
-      expect(result.to).toBe('/admin')
+    if (result.type !== 'redirect') {
+      throw new Error('expected redirect')
     }
-    // insertAdmin receives the PRE-HASHED password (bcrypt moved out of
-    // the transaction).
-    expect(userQuery.insertAdmin).toHaveBeenCalledWith(db, 'Admin', 'admin@example.com', 'hashed')
+    expect(result.to).toBe('/admin')
+    expect(result.setCookie).toMatch(/^__session=/)
+
+    // The admin row landed, with a real bcrypt hash of the password.
+    const users = await db.select().from(userTable)
+    expect(users).toHaveLength(1)
+    const admin = users[0]!
+    expect(admin).toMatchObject({ name: 'Admin', email: 'admin@example.com', role: 'admin' })
+    expect(await bcrypt.compare('CorrectHorse1', admin.password)).toBe(true)
 
     // All settings sections are seeded in one pass.
-    expect(settingQuery.upsertSetting).toHaveBeenCalled()
-    const calls = vi.mocked(settingQuery.upsertSetting).mock.calls
-    const byScope = new Map<string, { data: Record<string, unknown>; updatedBy: number | null }>()
-    for (const [_1, data, updatedBy, scope] of calls) {
-      byScope.set(scope, { data: data as Record<string, unknown>, updatedBy })
-    }
+    const rows = await settingRows()
+    const byScope = new Map(rows.map((row) => [row.scope, row]))
 
     const EXPECTED_SECTIONS = [
       'blog.general',
@@ -177,31 +98,45 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1)
       'blog.limits',
     ]
     for (const scope of EXPECTED_SECTIONS) {
-      expect(byScope.has(scope)).toBe(true)
+      expect(byScope.has(scope), `missing settings scope ${scope}`).toBe(true)
     }
 
-    const general = byScope.get('blog.general')
-    expect(general?.data.title).toBe('My Blog')
-    expect(general?.data.locale).toBe('zh-CN')
-    expect(general?.data.author).toMatchObject({
-      name: 'Admin',
-      email: 'admin@example.com',
-    })
+    const general = byScope.get('blog.general')!.data as Record<string, any>
+    expect(general.title).toBe('My Blog')
+    expect(general.locale).toBe('zh-CN')
+    expect(general.author).toMatchObject({ name: 'Admin', email: 'admin@example.com' })
 
-    const assets = byScope.get('blog.assets')
-    expect(assets?.data.asset).toEqual({ host: 'localhost', scheme: 'https' })
+    const assets = byScope.get('blog.assets')!.data as Record<string, any>
+    expect(assets.asset).toEqual({ host: 'localhost', scheme: 'https' })
 
-    expect(settingsSnapshot.refreshBlogSettings).toHaveBeenCalledWith(db)
+    // refreshBlogSettings ran: the in-process snapshot now reflects the seed.
+    expect(getBlogSettingsBundleSync()?.siteIdentity?.title).toBe('My Blog')
+
+    // The session primitive minted a real session row owned by the admin.
+    const sessions = await db.select().from(sessionTable)
+    expect(sessions).toHaveLength(1)
+    expect(sessions[0]!.userId).toBe(admin.id)
+
+    // Exactly one login audit, attributed to the new session.
+    await flushAuditLog()
+    const logins = await db.select().from(auditLog).where(eq(auditLog.action, 'login'))
+    expect(logins).toHaveLength(1)
+    expect(logins[0]!.actorId).toBe(admin.id)
   })
 
-  it('refuses a duplicate stage-1 install (returns 409, no DB writes)', async () => {
-    vi.mocked(userQuery.hasAdmin).mockResolvedValue(true)
-    const request = buildRequest()
+  it('refuses a duplicate stage-1 install (no DB writes)', async () => {
+    // An admin already exists → the gate trips before any write.
+    await db.insert(userTable).values({
+      name: 'Existing',
+      email: 'existing@example.com',
+      password: 'hashed',
+      role: 'admin',
+    })
 
     const result = await signUpInitialAdminWithSession(db, {
       ...baseSeed,
       session: emptySession(),
-      request,
+      request: buildRequest(),
       clientAddress: '127.0.0.1',
     })
 
@@ -209,53 +144,48 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1)
     if (result.type === 'error') {
       expect(result.message).toContain('管理员账号已存在')
     }
-    expect(userQuery.insertAdmin).not.toHaveBeenCalled()
+    expect(await db.select().from(userTable)).toHaveLength(1)
+    expect(await settingRows()).toHaveLength(0)
   })
 
-  it('returns 500 when the request body is invalid', async () => {
-    await expect(
-      signUpInitialAdminWithSession(db, {
-        ...baseSeed,
-        session: emptySession(),
-        request: new Request('http://localhost/admin/setup', { method: 'POST' }),
-        clientAddress: '127.0.0.1',
-      }),
-    ).rejects.toThrow('创建管理员账号失败')
-  })
-
-  it('returns 500 and never seeds when insertAdmin yields an empty result', async () => {
-    vi.mocked(userQuery.insertAdmin).mockReturnValue([])
-    const request = buildRequest()
-
-    await expect(
-      signUpInitialAdminWithSession(db, {
-        ...baseSeed,
-        session: emptySession(),
-        request,
-        clientAddress: '127.0.0.1',
-      }),
-    ).rejects.toThrow('创建管理员账号失败')
-
-    expect(settingQuery.upsertSetting).not.toHaveBeenCalled()
-    expect(settingsSnapshot.refreshBlogSettings).not.toHaveBeenCalled()
-  })
-
-  it('propagates the error when insertAdmin throws (simulated concurrent install race)', async () => {
-    vi.mocked(userQuery.insertAdmin).mockImplementation(() => {
-      throw new Error('unique constraint on email')
+  it('rejects an invalid install seed without touching the db', async () => {
+    const result = await signUpInitialAdminWithSession(db, {
+      ...baseSeed,
+      title: '',
+      session: emptySession(),
+      request: buildRequest(),
+      clientAddress: '127.0.0.1',
     })
-    const request = buildRequest()
+
+    expect(result.type).toBe('error')
+    expect(await db.select().from(userTable)).toHaveLength(0)
+    expect(await settingRows()).toHaveLength(0)
+  })
+
+  it('propagates the insert failure and rolls the seed back (concurrent install race)', async () => {
+    // A non-admin account holding the same email: `hasAdmin` passes,
+    // then `insertAdmin` collides with the real UNIQUE constraint on
+    // user.email — exactly the concurrent-install race.
+    await db.insert(userTable).values({
+      name: 'Squatter',
+      email: 'admin@example.com',
+      password: 'hashed',
+      role: 'visitor',
+    })
 
     await expect(
       signUpInitialAdminWithSession(db, {
         ...baseSeed,
         session: emptySession(),
-        request,
+        request: buildRequest(),
         clientAddress: '127.0.0.1',
       }),
-    ).rejects.toThrow('unique constraint on email')
+    ).rejects.toThrow()
 
-    expect(settingQuery.upsertSetting).not.toHaveBeenCalled()
-    expect(settingsSnapshot.refreshBlogSettings).not.toHaveBeenCalled()
+    // The transaction rolled back atomically: no admin row, no settings.
+    const users = await db.select().from(userTable)
+    expect(users).toHaveLength(1)
+    expect(users[0]!.role).toBe('visitor')
+    expect(await settingRows()).toHaveLength(0)
   })
 })

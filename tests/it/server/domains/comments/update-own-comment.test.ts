@@ -1,198 +1,207 @@
-import type { Mock } from 'vitest'
-
+import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { CommentWithUser } from '@/server/domains/comments/repos/shared'
-import type { Database } from '@/server/infra/db/database'
+import type { CommentBody } from '@/shared/pt/comment-schema'
+
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { comment } from '@/server/infra/db/schema/comment'
+import { post } from '@/server/infra/db/schema/post'
+import { user } from '@/server/infra/db/schema/user'
 
 // `updateOwnComment` (visitor self-edit of their own comment) delegates
 // the grace-window branch to the pure `decideOwnEdit` decider — see
 // `tests/unit/server/domains/comments/services/policy.test.ts` for the
-// timestamp matrix. This file pins what remains at the persistence
-// seam:
+// timestamp matrix. This file pins what remains at the persistence seam,
+// against the real in-memory engine:
 //
 //   * the decision drives WHICH optimistic-lock write runs
 //     (`updateOwnCommentBody` vs `updateOwnCommentBodyAndPending`) and
 //     whether the admin notification fires;
 //   * a lost optimistic-lock race (0 rows affected) rejects CONFLICT;
-//   * a row that vanishes mid-edit returns null without writing.
-
-vi.mock('@/server/domains/comments/services/lookup', () => ({
-  findCommentWithUserById: vi.fn(),
-}))
-vi.mock('@/server/domains/comments/repos/admin-query', () => ({
-  findCommentWithUserAndTarget: vi.fn(),
-}))
-
-vi.mock('@/server/domains/comments/repos/mutate', () => ({
-  updateOwnCommentBody: vi.fn(async () => 1),
-  updateOwnCommentBodyAndPending: vi.fn(async () => 1),
-  updateCommentBodyAndContent: vi.fn(),
-}))
-
-vi.mock('@/server/infra/db/operations/metric', () => ({
-  findMetricByPublicId: vi.fn(),
-}))
+//   * a row that vanished mid-edit returns null without writing.
+//
+// The canonicalize pipeline is real too (plain paragraph bodies skip the
+// Shiki / KaTeX renderers); only the outbound admin email stays mocked.
 
 vi.mock('@/server/domains/comments/services/email', () => ({
   sendApprovedComment: vi.fn(async () => undefined),
   sendNewComment: vi.fn(async () => undefined),
+  sendNewReply: vi.fn(async () => undefined),
 }))
 
-// The canonicalize pipeline runs Shiki / KaTeX / Markdown
-// projection — heavy, and orthogonal to the moderation-state branch
-// we're testing. Stub it to a deterministic shape.
-vi.mock('@/server/domains/comments/services/canonicalize', () => ({
-  canonicalizeCommentBody: vi.fn(async (input: unknown) => ({
-    body: input,
-    content: 'edited markdown',
-  })),
-}))
-
-const db = {} as Database
-
-const lookup = await import('@/server/domains/comments/services/lookup')
-await import('@/server/domains/comments/repos/admin-query')
-const mutateRepo = await import('@/server/domains/comments/repos/mutate')
+const { canonicalizeCommentBody } = await import('@/server/domains/comments/services/canonicalize')
 const emails = await import('@/server/domains/comments/services/email')
 const { updateOwnComment } = await import('@/server/domains/comments/services/moderate')
 
-// `findCommentWithUserById` returns a deep Drizzle-inferred shape whose
-// `body` union covers every PT block variant. The test rows are
-// structurally compatible (single `'block'` paragraph) but TS doesn't
-// widen the literal back into the union — a typed re-cast lets the
-// fixture rows feed `mockResolvedValueOnce` without sprinkling extra
-// casts at every call site.
-const findCommentMock = lookup.findCommentWithUserById as unknown as Mock<
-  (id: number) => Promise<CommentWithUser | null>
->
+const db = getTestDb()
 
-function row(overrides: Partial<CommentWithUser> = {}): CommentWithUser {
-  return {
-    id: 42,
-    createAt: new Date('2024-01-01T00:00:00.000Z'),
-    updatedAt: new Date('2024-01-01T00:00:00.000Z'),
-    deleteAt: null,
-    content: 'old markdown',
-    body: [
-      {
-        _type: 'block',
-        _key: 'b1',
-        style: 'normal',
-        children: [{ _type: 'span', _key: 's1', text: 'old' }],
-      },
-    ],
-    type: 'post',
-    ownerId: 1,
-    userId: 7,
-    isVerified: true,
-    ua: '',
-    ip: '',
-    rid: 0,
-    isCollapsed: false,
-    isPending: false,
-    isPinned: false,
-    voteUp: 0,
-    voteDown: 0,
-    rootId: 0,
-    deleteRequestedAt: null,
-    deleteRequestedBy: null,
-    name: 'reader',
-    email: 'reader@example.com',
-    emailVerified: null,
-    link: null,
-    badgeName: null,
-    badgeColor: null,
-    badgeTextColor: null,
-    ...overrides,
-  } as CommentWithUser
-}
-
-const NEW_BODY = [
-  {
-    _type: 'block' as const,
-    _key: 'b2',
-    style: 'normal' as const,
-    children: [{ _type: 'span' as const, _key: 's2', text: 'edited' }],
-  },
-]
-
-beforeEach(() => {
+beforeEach(async () => {
+  await clearAllTables(db)
   vi.clearAllMocks()
 })
 
+async function seedUser(opts: Partial<typeof user.$inferInsert> = {}): Promise<number> {
+  const rows = await db
+    .insert(user)
+    .values({
+      name: opts.name ?? 'reader',
+      email: opts.email ?? `reader-${Math.random().toString(36).slice(2)}@example.com`,
+      password: 'hashed',
+      ...opts,
+    })
+    .returning({ id: user.id })
+  return rows[0]!.id
+}
+
+async function seedPost(slug: string): Promise<number> {
+  const rows = await db
+    .insert(post)
+    .values({
+      slug,
+      title: `Post ${slug}`,
+      summary: '',
+      published: true,
+      publishedRevisionId: 1,
+    })
+    .returning({ id: post.id })
+  return rows[0]!.id
+}
+
+const OLD_BODY: CommentBody = [
+  {
+    _type: 'block',
+    _key: 'b1',
+    style: 'normal',
+    children: [{ _type: 'span', _key: 's1', text: 'old', marks: [] }],
+    markDefs: [],
+  },
+]
+
+const NEW_BODY: CommentBody = [
+  {
+    _type: 'block',
+    _key: 'b2',
+    style: 'normal',
+    children: [{ _type: 'span', _key: 's2', text: 'edited', marks: [] }],
+    markDefs: [],
+  },
+]
+
+async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Promise<number> {
+  const rows = await db
+    .insert(comment)
+    .values({
+      type: 'post',
+      ownerId: 1,
+      userId: 1,
+      content: 'old markdown',
+      body: OLD_BODY,
+      rid: 0,
+      rootId: 0,
+      isPending: false,
+      ...opts,
+    })
+    .returning({ id: comment.id })
+  return rows[0]!.id
+}
+
+async function readRow(id: number) {
+  const rows = await db.select().from(comment).where(eq(comment.id, id))
+  return rows[0]
+}
+
 describe('updateOwnComment — decision wiring', () => {
   it('a silent-edit decision rewrites the body in place and skips the admin email', async () => {
+    const uid = await seedUser()
+    const pid = await seedPost('p1')
     const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000)
-    const existing = row({ createAt: tenMinutesAgo, isPending: false })
-    findCommentMock.mockResolvedValueOnce(existing).mockResolvedValueOnce(existing)
+    const id = await seedComment({ userId: uid, ownerId: pid, createdAt: tenMinutesAgo, isPending: false })
+    const expected = await canonicalizeCommentBody(NEW_BODY)
 
-    const result = await updateOwnComment(db, '42', NEW_BODY)
+    const result = await updateOwnComment(db, String(id), NEW_BODY)
 
-    expect(mutateRepo.updateOwnCommentBody).toHaveBeenCalledTimes(1)
-    expect(mutateRepo.updateOwnCommentBody).toHaveBeenCalledWith(
-      db,
-      42,
-      NEW_BODY,
-      'edited markdown',
-      existing.updatedAt,
-    )
-    expect(mutateRepo.updateOwnCommentBodyAndPending).not.toHaveBeenCalled()
+    const stored = await readRow(id)
+    expect(stored?.content).toBe(expected.content)
+    expect(stored?.body).toEqual(expected.body)
+    // The moderation state is untouched inside the grace window.
+    expect(stored?.isPending).toBe(false)
     expect(emails.sendNewComment).not.toHaveBeenCalled()
     expect(result).not.toBeNull()
     expect(result?.isPending).toBe(false)
   })
 
   it('a re-pend decision re-queues the comment and notifies the admin', async () => {
+    const uid = await seedUser()
+    const pid = await seedPost('p2')
     const hourAgo = new Date(Date.now() - 60 * 60 * 1000)
-    const existing = row({ createAt: hourAgo, isPending: false })
-    const refetched = row({ createAt: hourAgo, isPending: true })
-    findCommentMock.mockResolvedValueOnce(existing).mockResolvedValueOnce(refetched)
+    const id = await seedComment({ userId: uid, ownerId: pid, createdAt: hourAgo, isPending: false })
+    const expected = await canonicalizeCommentBody(NEW_BODY)
 
-    const result = await updateOwnComment(db, '42', NEW_BODY)
+    const result = await updateOwnComment(db, String(id), NEW_BODY)
 
-    expect(mutateRepo.updateOwnCommentBodyAndPending).toHaveBeenCalledTimes(1)
-    expect(mutateRepo.updateOwnCommentBodyAndPending).toHaveBeenCalledWith(
-      db,
-      42,
-      NEW_BODY,
-      'edited markdown',
-      existing.updatedAt,
-    )
-    expect(mutateRepo.updateOwnCommentBody).not.toHaveBeenCalled()
+    const stored = await readRow(id)
+    expect(stored?.content).toBe(expected.content)
+    expect(stored?.body).toEqual(expected.body)
+    expect(stored?.isPending).toBe(true)
     expect(emails.sendNewComment).toHaveBeenCalledTimes(1)
     // The notification carries the refetched (now-pending) row + its
     // (type, ownerId) target so the moderation inbox links back to
     // the correct post / page.
-    const [, commentArg, targetArg] = vi.mocked(emails.sendNewComment).mock.calls[0]
+    const [, commentArg, targetArg] = vi.mocked(emails.sendNewComment).mock.calls[0]!
     expect(commentArg.isPending).toBe(true)
-    expect(targetArg).toEqual({ type: 'post', ownerId: 1 })
+    expect(targetArg).toEqual({ type: 'post', ownerId: pid })
     expect(result?.isPending).toBe(true)
   })
 })
 
 describe('updateOwnComment — persistence edges', () => {
   it('throws CONFLICT when the optimistic lock loses the race', async () => {
+    const uid = await seedUser()
+    const pid = await seedPost('p3')
     const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000)
-    const existing = row({ createAt: tenMinutesAgo })
-    findCommentMock.mockResolvedValueOnce(existing)
-    vi.mocked(mutateRepo.updateOwnCommentBody).mockResolvedValueOnce(0)
+    const id = await seedComment({ userId: uid, ownerId: pid, createdAt: tenMinutesAgo })
 
-    await expect(updateOwnComment(db, '42', NEW_BODY)).rejects.toThrow(/评论已被修改/)
+    // A real lost race: two concurrent edits of the same comment. Both
+    // initial SELECTs execute before either write (the second read's
+    // execution is queued ahead of the first edit's canonicalize
+    // continuation), so both writes carry the same expected
+    // `updated_at` — the first one wins and bumps it, the second one
+    // matches 0 rows and rejects CONFLICT.
+    const OTHER_BODY: CommentBody = [
+      {
+        _type: 'block',
+        _key: 'b3',
+        style: 'normal',
+        children: [{ _type: 'span', _key: 's3', text: 'edited concurrently', marks: [] }],
+        markDefs: [],
+      },
+    ]
+    const results = await Promise.allSettled([
+      updateOwnComment(db, String(id), NEW_BODY),
+      updateOwnComment(db, String(id), OTHER_BODY),
+    ])
 
-    // A rejected write must not trigger the refetch or the admin email.
-    expect(findCommentMock).toHaveBeenCalledTimes(1)
+    const rejected = results.filter((r) => r.status === 'rejected')
+    const fulfilled = results.filter((r) => r.status === 'fulfilled')
+    expect(rejected).toHaveLength(1)
+    expect((rejected[0] as PromiseRejectedResult).reason).toBeInstanceOf(Error)
+    expect(((rejected[0] as PromiseRejectedResult).reason as Error).message).toMatch(/评论已被修改/)
+    expect(fulfilled).toHaveLength(1)
+
+    // Exactly one write landed; the row carries one of the two edits.
+    const stored = await readRow(id)
+    expect(['edited', 'edited concurrently']).toContain(
+      (stored?.body as Array<{ children: Array<{ text: string }> }>)[0]?.children[0]?.text,
+    )
     expect(emails.sendNewComment).not.toHaveBeenCalled()
   })
 
   it('returns null and skips writes when the row vanished mid-edit', async () => {
-    findCommentMock.mockResolvedValueOnce(null)
-
-    const result = await updateOwnComment(db, '42', NEW_BODY)
+    const result = await updateOwnComment(db, '9999', NEW_BODY)
 
     expect(result).toBeNull()
-    expect(mutateRepo.updateOwnCommentBody).not.toHaveBeenCalled()
-    expect(mutateRepo.updateOwnCommentBodyAndPending).not.toHaveBeenCalled()
     expect(emails.sendNewComment).not.toHaveBeenCalled()
+    const rows = await db.select({ id: comment.id }).from(comment)
+    expect(rows).toHaveLength(0)
   })
 })

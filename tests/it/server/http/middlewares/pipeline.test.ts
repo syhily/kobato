@@ -11,7 +11,6 @@ const routerContextSetMock = vi.hoisted(() => vi.fn())
 
 vi.mock('@/server/bootstrap/db-lifecycle', () => ({
   getDb: () => ({ id: 'db-mock' }),
-  getPool: () => ({ id: 'pool-mock' }),
 }))
 
 vi.mock('@/server/domains/settings/services/hydrate', () => ({

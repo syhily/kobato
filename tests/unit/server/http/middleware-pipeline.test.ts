@@ -8,7 +8,6 @@ import { emptySession } from '#/_helpers/session'
 
 vi.mock('@/server/bootstrap/db-lifecycle', () => ({
   getDb: vi.fn(() => ({})),
-  getPool: vi.fn(() => ({})),
 }))
 
 vi.mock('@/server/domains/settings/services/hydrate', () => ({

@@ -1,263 +1,200 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
-import type { Database } from '@/server/infra/db/database'
-
-import { seedMetric } from '#/_helpers/db'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { adminSession, regularSession } from '#/_helpers/session'
+import { latestComments, loadComments, pendingComments } from '@/server/domains/comments/services/public-query'
+import { findMetricByTarget } from '@/server/infra/db/operations/metric'
+import { comment } from '@/server/infra/db/schema/comment'
+import { post } from '@/server/infra/db/schema/post'
+import { user } from '@/server/infra/db/schema/user'
 
 // `loadComments` is the most-called server function on the site (every post
-// view runs it). It coordinates 4 DB queries and 1 page upsert, with
-// admin-vs-public visibility flipping which `pending` rows are visible. We
-// pin the contract by mocking the DB query module — the real Drizzle calls
-// are out of scope for this layer.
+// view runs it). It coordinates the thread queries, the metric upsert, and
+// the admin-vs-public pending-visibility flip. Everything below runs against
+// the real in-memory engine — visibility, counts, the metric row, and the
+// sidebar digest are all asserted from real seeded rows. The blog-settings
+// snapshot (sidebar recentComments count = 5, comments.size = 10) comes from
+// the it-project setup; the kv-backed `comments` cache bucket is real too
+// (cleared with every other table in `beforeEach`).
 
-vi.mock('@/server/domains/comments/repos/public-query/digest', () => ({
-  pendingComments: vi.fn(),
-  adminUserIds: vi.fn(),
-  latestDistinctCommentIds: vi.fn(),
-  commentsByIds: vi.fn(),
-}))
-vi.mock('@/server/domains/comments/repos/public-query/threads', () => ({
-  countCommentsAndRoots: vi.fn(),
-  findRootComments: vi.fn(),
-  findChildComments: vi.fn(),
-}))
+const db = getTestDb()
 
-// `latestComments` reads/writes the sidebar list through the cache
-// module, which needs a real Drizzle handle. Same contract as the repo
-// mocks above: the cache always misses (the loader runs) so the db
-// stand-in is never dereferenced.
-vi.mock('@/server/infra/cache/registry', () => ({
-  through: vi.fn((_db: unknown, _id: unknown, _params: unknown, loader: () => unknown) => loader()),
-  get: vi.fn(async () => null),
-  set: vi.fn(async () => undefined),
-  remove: vi.fn(async () => undefined),
-  clear: vi.fn(async () => undefined),
-}))
-
-vi.mock('@/server/infra/db/operations/metric', () => ({
-  ensureMetric: vi.fn(async () => seedMetric()),
-  findMetricByPublicId: vi.fn(),
-  findMetricByTarget: vi.fn(),
-}))
-
-vi.mock('@/server/domains/analytics/services/pv-batcher', () => ({
-  bumpPageView: vi.fn(),
-}))
-
-vi.mock('@/server/domains/comments/services/email', () => ({
-  sendApprovedComment: vi.fn(async () => undefined),
-  sendNewComment: vi.fn(async () => undefined),
-  sendNewReply: vi.fn(async () => undefined),
-}))
-
-// `loader.ts`'s sidebar-row → permalink projection reads
-// `siteIdentity.website` via the blog-config bundle. Stub it so the
-// public detail loader produces deterministic URLs.
-vi.mock('@/shared/config/getters', () => ({
-  requireBlogSettingsSection: (key: string) => {
-    if (key === 'siteIdentity') {
-      return { website: 'https://example.com', title: 'Yufan' }
-    }
-    if (key === 'sidebar') {
-      return {
-        sidebar: {
-          widgets: [
-            { type: 'search', enabled: true },
-            { type: 'recentPosts', enabled: true, count: 5 },
-            { type: 'recentComments', enabled: true, count: 5 },
-            { type: 'randomTags', enabled: true, count: 20 },
-            { type: 'todayCalendar', enabled: true },
-          ],
-        },
-      }
-    }
-    if (key === 'comments') {
-      return { comments: { size: 20 } }
-    }
-    return {}
-  },
-}))
-
-const db = {} as Database
-
-const adminQueries = await import('@/server/domains/comments/repos/public-query/digest')
-const threadQueries = await import('@/server/domains/comments/repos/public-query/threads')
-const metricQueries = await import('@/server/infra/db/operations/metric')
-const { loadComments, latestComments, pendingComments } =
-  await import('@/server/domains/comments/services/public-query')
-
-const POST_HELLO = { type: 'post' as const, ownerId: 1 }
-const POST_NEW = { type: 'post' as const, ownerId: 2 }
-const POST_PARALLEL = { type: 'post' as const, ownerId: 3 }
-
-function row(overrides: Record<string, unknown> = {}) {
-  return {
-    id: 1,
-    createAt: new Date('2024-01-01T00:00:00.000Z'),
-    updatedAt: new Date('2024-01-01T00:00:00.000Z'),
-    deleteAt: null,
-    content: 'x',
-    body: [
-      {
-        _type: 'block' as const,
-        _key: 'b1',
-        style: 'normal' as const,
-        children: [{ _type: 'span' as const, _key: 's1', text: 'x' }],
-      },
-    ],
-    type: 'post' as const,
-    ownerId: 1,
-    userId: 7,
-    isVerified: true,
-    ua: '',
-    ip: '',
-    rid: 0,
-    isCollapsed: false,
-    isPending: false,
-    isPinned: false,
-    voteUp: 0,
-    voteDown: 0,
-    rootId: 0,
-    deleteRequestedAt: null,
-    deleteRequestedBy: null,
-    name: 'Alice',
-    email: 'a@example.com',
-    emailVerified: true,
-    link: '',
-    badgeName: null,
-    badgeColor: null,
-    badgeTextColor: null,
-    ...overrides,
-  }
-}
-
-beforeEach(() => {
-  for (const fn of Object.values({ ...adminQueries, ...threadQueries, ...metricQueries })) {
-    if (typeof fn === 'function' && 'mockReset' in fn) {
-      ;(fn as ReturnType<typeof vi.fn>).mockReset()
-    }
-  }
+beforeEach(async () => {
+  await clearAllTables(db)
 })
 
+async function seedUser(opts: Partial<typeof user.$inferInsert> = {}): Promise<number> {
+  const rows = await db
+    .insert(user)
+    .values({
+      name: opts.name ?? 'Alice',
+      email: opts.email ?? `alice-${Math.random().toString(36).slice(2)}@example.com`,
+      password: 'hashed',
+      ...opts,
+    })
+    .returning({ id: user.id })
+  return rows[0]!.id
+}
+
+async function seedPost(slug: string, title?: string): Promise<number> {
+  const rows = await db
+    .insert(post)
+    .values({
+      slug,
+      title: title ?? `Post ${slug}`,
+      summary: '',
+      published: true,
+      publishedRevisionId: 1,
+    })
+    .returning({ id: post.id })
+  return rows[0]!.id
+}
+
+async function seedComment(opts: Partial<typeof comment.$inferInsert> = {}): Promise<number> {
+  const rows = await db
+    .insert(comment)
+    .values({
+      type: opts.type ?? 'post',
+      ownerId: opts.ownerId ?? 1,
+      userId: opts.userId ?? 1,
+      content: opts.content ?? 'hello',
+      body: opts.body ?? [],
+      rid: opts.rid ?? 0,
+      rootId: opts.rootId ?? 0,
+      isPending: opts.isPending ?? false,
+      ...opts,
+    })
+    .returning({ id: comment.id })
+  return rows[0]!.id
+}
+
 describe('services/comments/loader — loadComments', () => {
-  it('non-admins only see approved comments (pending=[false])', async () => {
-    vi.mocked(threadQueries.countCommentsAndRoots).mockResolvedValue({ total: 0, roots: 0 })
-    vi.mocked(threadQueries.findRootComments).mockResolvedValue([])
-    vi.mocked(threadQueries.findChildComments).mockResolvedValue([])
-    vi.mocked(metricQueries.ensureMetric).mockResolvedValue(seedMetric())
+  it('non-admins only see approved comments', async () => {
+    const uid = await seedUser({ name: 'Alice', email: 'alice@example.com' })
+    const pid = await seedPost('hello')
+    await seedComment({ userId: uid, ownerId: pid, content: 'approved', isPending: false })
+    await seedComment({ userId: uid, ownerId: pid, content: 'pending', isPending: true })
 
-    await loadComments(db, regularSession(), POST_HELLO, 0)
+    // The regular session's user (id '2') is not the comment author, so
+    // the viewer-visibility escape hatch for own pending rows does not
+    // apply.
+    const result = await loadComments(db, regularSession(), { type: 'post', ownerId: pid }, 0)
 
-    expect(threadQueries.countCommentsAndRoots).toHaveBeenCalledWith(db, POST_HELLO, [false], 2)
-    expect(threadQueries.findRootComments).toHaveBeenCalledWith(db, POST_HELLO, [false], 0, expect.any(Number), 2)
+    expect(result?.count).toBe(1)
+    expect(result?.roots_count).toBe(1)
+    expect(result?.comments).toHaveLength(1)
+    expect(result?.comments[0]?.content).toBe('approved')
+    expect(result?.comments[0]?.isPending).toBe(false)
   })
 
-  it('admins additionally see pending comments (pending=[false,true])', async () => {
-    vi.mocked(threadQueries.countCommentsAndRoots).mockResolvedValue({ total: 0, roots: 0 })
-    vi.mocked(threadQueries.findRootComments).mockResolvedValue([])
-    vi.mocked(threadQueries.findChildComments).mockResolvedValue([])
-    vi.mocked(metricQueries.ensureMetric).mockResolvedValue(seedMetric())
+  it('admins additionally see pending comments', async () => {
+    const uid = await seedUser({ name: 'Alice', email: 'alice@example.com' })
+    const pid = await seedPost('hello')
+    await seedComment({ userId: uid, ownerId: pid, content: 'approved', isPending: false })
+    await seedComment({ userId: uid, ownerId: pid, content: 'pending', isPending: true })
 
-    await loadComments(db, adminSession(), POST_HELLO, 0)
+    const result = await loadComments(db, adminSession(), { type: 'post', ownerId: pid }, 0)
 
-    expect(threadQueries.countCommentsAndRoots).toHaveBeenCalledWith(db, POST_HELLO, [false, true], 1)
-    expect(threadQueries.findRootComments).toHaveBeenCalledWith(db, POST_HELLO, [false, true], 0, expect.any(Number), 1)
+    expect(result?.count).toBe(2)
+    expect(result?.roots_count).toBe(2)
+    expect(result?.comments).toHaveLength(2)
+    expect(result?.comments.map((c) => c.content).sort()).toEqual(['approved', 'pending'])
   })
 
   it('returns the union of root + child comments and the aggregated counts', async () => {
-    vi.mocked(threadQueries.countCommentsAndRoots).mockResolvedValue({ total: 5, roots: 2 })
-    vi.mocked(threadQueries.findRootComments).mockResolvedValue([row({ id: 1 }), row({ id: 2 })])
-    vi.mocked(threadQueries.findChildComments).mockResolvedValue([
-      row({ id: 3, rid: 1, rootId: 1 }),
-      row({ id: 4, rid: 1, rootId: 1 }),
-      row({ id: 5, rid: 2, rootId: 2 }),
-    ])
-    vi.mocked(metricQueries.ensureMetric).mockResolvedValue(seedMetric())
+    const uid = await seedUser({ name: 'Alice', email: 'alice@example.com' })
+    const pid = await seedPost('hello')
+    const root1 = await seedComment({ userId: uid, ownerId: pid, content: 'root-1', rootId: 0 })
+    const root2 = await seedComment({ userId: uid, ownerId: pid, content: 'root-2', rootId: 0 })
+    const child1 = await seedComment({ userId: uid, ownerId: pid, content: 'child-1', rid: root1, rootId: root1 })
+    const child2 = await seedComment({ userId: uid, ownerId: pid, content: 'child-2', rid: root1, rootId: root1 })
+    const child3 = await seedComment({ userId: uid, ownerId: pid, content: 'child-3', rid: root2, rootId: root2 })
 
-    const result = await loadComments(db, regularSession(), POST_HELLO, 0)
+    const result = await loadComments(db, regularSession(), { type: 'post', ownerId: pid }, 0)
 
     expect(result?.count).toBe(5)
     expect(result?.roots_count).toBe(2)
-    expect(result?.comments).toHaveLength(5)
-    // Verify the join: child fetch was called with the root ids only.
-    expect(threadQueries.findChildComments).toHaveBeenCalledWith(db, POST_HELLO, [false], [1, 2], 2)
+    expect(result?.comments.map((c) => c.id).sort((a, b) => a - b)).toEqual([root1, root2, child1, child2, child3])
   })
 
   it('upserts the metric even when the page has zero comments', async () => {
-    vi.mocked(threadQueries.countCommentsAndRoots).mockResolvedValue({ total: 0, roots: 0 })
-    vi.mocked(threadQueries.findRootComments).mockResolvedValue([])
-    vi.mocked(threadQueries.findChildComments).mockResolvedValue([])
-    vi.mocked(metricQueries.ensureMetric).mockResolvedValue(seedMetric())
+    const pid = await seedPost('fresh')
+    const target = { type: 'post' as const, ownerId: pid }
 
-    await loadComments(db, regularSession(), POST_NEW, 0)
+    const result = await loadComments(db, regularSession(), target, 0)
 
-    expect(metricQueries.ensureMetric).toHaveBeenCalledWith(db, POST_NEW)
+    expect(result?.count).toBe(0)
+    expect(result?.roots_count).toBe(0)
+    expect(result?.comments).toEqual([])
+    const metricRow = await findMetricByTarget(db, target)
+    expect(metricRow).not.toBeNull()
+    expect(metricRow?.publicId).toBeTruthy()
   })
 
-  it('issues metric upsert + counts + root listing in parallel (single tick)', async () => {
-    let inflight = 0
-    let peak = 0
-    function tracked<T>(value: T) {
-      return new Promise<T>((resolve) => {
-        inflight += 1
-        peak = Math.max(peak, inflight)
-        setTimeout(() => {
-          inflight -= 1
-          resolve(value)
-        }, 20)
-      })
-    }
-    vi.mocked(metricQueries.ensureMetric).mockImplementation(() => tracked(seedMetric()))
-    vi.mocked(threadQueries.countCommentsAndRoots).mockImplementation(() => tracked({ total: 0, roots: 0 }))
-    vi.mocked(threadQueries.findRootComments).mockImplementation(() => tracked([]))
-    vi.mocked(threadQueries.findChildComments).mockResolvedValue([])
+  it('separates comment threads per target page', async () => {
+    const uid = await seedUser({ name: 'Alice', email: 'alice@example.com' })
+    const pidA = await seedPost('page-a')
+    const pidB = await seedPost('page-b')
+    await seedComment({ userId: uid, ownerId: pidA, content: 'on-a' })
+    await seedComment({ userId: uid, ownerId: pidB, content: 'on-b' })
 
-    await loadComments(db, regularSession(), POST_PARALLEL, 0)
+    const result = await loadComments(db, regularSession(), { type: 'post', ownerId: pidA }, 0)
 
-    expect(peak).toBe(3)
+    expect(result?.count).toBe(1)
+    expect(result?.comments[0]?.content).toBe('on-a')
   })
 })
 
 describe('services/comments/loader — latestComments / pendingComments', () => {
   it('latestComments resolves authors and skips admins from the pool', async () => {
-    vi.mocked(adminQueries.adminUserIds).mockResolvedValue([99])
-    vi.mocked(adminQueries.latestDistinctCommentIds).mockResolvedValue([10, 20])
-    vi.mocked(adminQueries.commentsByIds).mockResolvedValue([
-      {
-        id: 10,
-        type: 'post',
-        ownerId: 1,
-        slug: 'a',
-        title: 'A',
-        author: 'Alice',
-        authorLink: '',
-      },
-      {
-        id: 20,
-        type: 'post',
-        ownerId: 2,
-        slug: 'b',
-        title: null,
-        author: null,
-        authorLink: null,
-      },
-    ])
+    const alice = await seedUser({ name: 'Alice', email: 'alice@example.com' })
+    const bob = await seedUser({ name: 'Bob', email: 'bob@example.com' })
+    const admin = await seedUser({ name: 'Admin', email: 'admin@example.com', role: 'admin' })
+    const pidA = await seedPost('a', 'A')
+    const pidB = await seedPost('b', 'B')
+    const aliceComment = await seedComment({ userId: alice, ownerId: pidA })
+    const bobComment = await seedComment({ userId: bob, ownerId: pidB })
+    await seedComment({ userId: admin, ownerId: pidA })
 
     const list = await latestComments(db)
 
-    expect(adminQueries.adminUserIds).toHaveBeenCalledOnce()
-    expect(adminQueries.latestDistinctCommentIds).toHaveBeenCalledWith(db, [99], expect.any(Number))
     expect(list).toHaveLength(2)
-    expect(list[0].permalink).toBe('/posts/a/#user-comment-10')
-    // Null author/title fall back to empty string (sidebar must never crash).
-    expect(list[1].author).toBe('')
-    expect(list[1].title).toBe('')
+    // The admin's comment is excluded from the sidebar pool entirely.
+    expect(list.some((c) => c.author === 'Admin')).toBe(false)
+    const fromAlice = list.find((c) => c.author === 'Alice')
+    const fromBob = list.find((c) => c.author === 'Bob')
+    expect(fromAlice?.permalink).toBe(`/posts/a/#user-comment-${aliceComment}`)
+    expect(fromAlice?.title).toBe('A')
+    expect(fromBob?.permalink).toBe(`/posts/b/#user-comment-${bobComment}`)
+    expect(fromBob?.title).toBe('B')
   })
 
-  it('pendingComments forwards the configured sidebar size', async () => {
-    vi.mocked(adminQueries.pendingComments).mockResolvedValue([])
-    await pendingComments(db)
-    expect(adminQueries.pendingComments).toHaveBeenCalledWith(db, expect.any(Number))
+  it('latestComments caps the pool at the configured sidebar count', async () => {
+    // The seeded settings bundle configures recentComments count = 5.
+    const pid = await seedPost('c', 'C')
+    for (let i = 0; i < 7; i++) {
+      const uid = await seedUser({ name: `U${i}`, email: `u${i}@example.com` })
+      await seedComment({ userId: uid, ownerId: pid })
+    }
+
+    const list = await latestComments(db)
+
+    expect(list).toHaveLength(5)
+  })
+
+  it('pendingComments caps the digest at the configured sidebar count', async () => {
+    const uid = await seedUser({ name: 'Alice', email: 'alice@example.com' })
+    const pid = await seedPost('d', 'D')
+    for (let i = 0; i < 6; i++) {
+      await seedComment({ userId: uid, ownerId: pid, isPending: true, content: `pending-${i}` })
+    }
+
+    const rows = await pendingComments(db)
+
+    expect(rows).toHaveLength(5)
+    // Digest rows carry the entity title and the comment permalink.
+    expect(rows[0]?.title).toBe('D')
+    expect(rows[0]?.author).toBe('Alice')
+    expect(rows[0]?.permalink).toMatch(/^\/posts\/d\/#user-comment-\d+$/)
   })
 })

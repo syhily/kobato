@@ -3,11 +3,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Env } from '@/server/http/context'
 import type { RequestContext } from '@/server/http/request-context'
+import type { Database } from '@/server/infra/db/database'
 
+import { clearAllTables, createTestDatabaseFile, getTestDb } from '#/_helpers/integration-db'
 import { makeRequestContext } from '#/_helpers/request-context'
+import { user as userTable } from '@/server/infra/db/schema/user'
 
-const mockHasAdmin = vi.fn()
-const mockFindFirstAdminUser = vi.fn()
 const mockIsSetupTokenActive = vi.fn()
 const mockValidateCsrfToken = vi.fn()
 
@@ -18,11 +19,6 @@ const mockStartRestoreJob = vi.fn()
 const mockWithRestoreClaim = vi.fn()
 const mockRefreshBlogSettings = vi.fn()
 const mockRecordAuditEvent = vi.fn()
-
-vi.mock('@/server/infra/db/operations/user', () => ({
-  hasAdmin: (...args: unknown[]) => mockHasAdmin(...args),
-  findFirstAdminUser: (...args: unknown[]) => mockFindFirstAdminUser(...args),
-}))
 
 vi.mock('@/server/domains/auth/setup-token', () => ({
   isSetupTokenActive: (...args: unknown[]) => mockIsSetupTokenActive(...args),
@@ -51,6 +47,9 @@ vi.mock('@/server/domains/backup/services/restore', () => ({
 vi.mock('@/server/domains/backup/restore-machine', () => ({
   startRestoreJob: (...args: unknown[]) => mockStartRestoreJob(...args),
   withRestoreClaim: (...args: unknown[]) => mockWithRestoreClaim(...args),
+  // db-lifecycle wires the machine at module scope (imported transitively
+  // via the integration-db harness) — the wiring is a no-op under the seam.
+  wireRestoreMachine: () => undefined,
 }))
 
 vi.mock('@/server/domains/settings/services/hydrate', () => ({
@@ -76,8 +75,31 @@ function makeSession(data: Partial<BlogSessionData> = {}) {
   return createSession<BlogSessionData, BlogSessionData>(data, 'test-session')
 }
 
+// The install gate (`hasAdmin`) and the post-restore hook
+// (`findFirstAdminUser`) run against the real engine — seeded user
+// rows, no mocked operations layer. The restore-machine / stageBackup
+// stubs stay: they are the seam around the actual file swap.
+const db = getTestDb()
+
+beforeEach(async () => {
+  await clearAllTables(db)
+})
+
+async function seedAdmin(target: Database = db): Promise<number> {
+  const rows = await target
+    .insert(userTable)
+    .values({
+      name: 'Admin',
+      email: `admin-${Math.random().toString(36).slice(2)}@example.com`,
+      password: 'hashed',
+      role: 'admin',
+    })
+    .returning({ id: userTable.id })
+  return rows[0]!.id
+}
+
 function makeRc(session: ReturnType<typeof makeSession>): RequestContext {
-  return makeRequestContext({ session })
+  return makeRequestContext({ session, db })
 }
 
 async function buildApp(session: ReturnType<typeof makeSession>) {
@@ -121,7 +143,7 @@ describe('/api/admin/backup/upload-restore', () => {
       async (fn: () => Promise<void>, afterReopenFn?: (db: unknown) => Promise<void>) => {
         await fn()
         // The real machine passes the freshly reopened handle.
-        await afterReopenFn?.({ fake: 'db' })
+        await afterReopenFn?.(db)
       },
     )
   })
@@ -239,7 +261,6 @@ describe('/api/setup/restore', () => {
         return 'started'
       },
     )
-    mockHasAdmin.mockResolvedValue(false)
     mockIsSetupTokenActive.mockResolvedValue(true)
     mockValidateCsrfToken.mockReturnValue(true)
     mockAssertStagedBackupContainsAdmin.mockResolvedValue(undefined)
@@ -248,12 +269,12 @@ describe('/api/setup/restore', () => {
       content: '/tmp/fake-staged/kobato.db',
       analytics: null,
     })
-    mockFindFirstAdminUser.mockResolvedValue({ id: 1, role: 'admin' })
     mockStartRestoreJob.mockImplementation(
       async (fn: () => Promise<void>, afterReopenFn?: (db: unknown) => Promise<void>) => {
         await fn()
-        // The real machine passes the freshly reopened handle.
-        await afterReopenFn?.({ fake: 'db' })
+        // The real machine passes the freshly reopened handle. The
+        // shared test db has no admin rows — the warn-and-skip branch.
+        await afterReopenFn?.(db)
       },
     )
   })
@@ -308,7 +329,7 @@ describe('/api/setup/restore', () => {
   })
 
   it('returns 409 when admin already exists', async () => {
-    mockHasAdmin.mockResolvedValue(true)
+    await seedAdmin()
     const app = await buildApp(makeSession({ setupTokenVerified: true, csrfToken: 'valid-csrf' }))
     const formData = new FormData()
     formData.set('file', new File(['content'], 'test.sql'))
@@ -325,6 +346,18 @@ describe('/api/setup/restore', () => {
   })
 
   it('returns accepted on successful restore — and applies content only (withAnalytics: false)', async () => {
+    // The post-restore hook runs against the freshly swapped file —
+    // modelled here with a real file-backed database seeded with the
+    // admin the restore is guaranteed to contain.
+    const restored = createTestDatabaseFile()
+    const adminId = await seedAdmin(restored.db)
+    mockStartRestoreJob.mockImplementation(
+      async (fn: () => Promise<void>, afterReopenFn?: (db: unknown) => Promise<void>) => {
+        await fn()
+        await afterReopenFn?.(restored.db)
+      },
+    )
+
     const app = await buildApp(makeSession({ setupTokenVerified: true, csrfToken: 'valid-csrf' }))
     const formData = new FormData()
     formData.set('file', new File(['content'], 'test.db.tar.gz'))
@@ -346,6 +379,36 @@ describe('/api/setup/restore', () => {
       'test.db.tar.gz',
       { withAnalytics: false },
     )
+    // The admin found on the swapped file owns the audit event.
+    expect(mockRecordAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'setup_restored',
+        resourceType: 'backup',
+        resourceId: 'test.db.tar.gz',
+        actorId: adminId,
+        actorRole: 'admin',
+      }),
+    )
+  })
+
+  it('still accepts when the swapped file yields no admin row — the audit event is skipped', async () => {
+    // Default seam: the post-restore hook runs against the shared
+    // (empty) test database, so `findFirstAdminUser` returns null and
+    // the hook takes the warn-and-continue branch.
+    const app = await buildApp(makeSession({ setupTokenVerified: true, csrfToken: 'valid-csrf' }))
+    const formData = new FormData()
+    formData.set('file', new File(['content'], 'test.db.tar.gz'))
+
+    const res = await app.request('/api/setup/restore', {
+      method: 'POST',
+      body: formData,
+      headers: { 'x-csrf-token': 'valid-csrf' },
+    })
+
+    expect(res.status).toBe(200)
+    const body = (await res.json()) as { accepted: boolean }
+    expect(body.accepted).toBe(true)
+    expect(mockRecordAuditEvent).not.toHaveBeenCalled()
   })
 
   it('returns 409 when a restore is already running', async () => {

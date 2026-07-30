@@ -1,59 +1,32 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Database } from '@/server/infra/db/database'
-import type { Setting } from '@/server/infra/db/types'
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
-const { getLogger } = vi.hoisted(() => {
-  const loggerMock = { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() }
-  return { loggerMock, getLogger: vi.fn(() => loggerMock) }
-})
-
-vi.mock('@/server/infra/db/operations/setting', () => ({
-  findSettingByScope: vi.fn(),
-  findSettingsByScopePrefix: vi.fn(),
-  upsertSetting: vi.fn(),
-}))
-
-vi.mock('@/server/infra/logger', () => ({
-  getLogger,
-  L3_KEYS: new Set([
-    'email',
-    'ip',
-    'clientAddress',
-    'remoteAddress',
-    'userAgent',
-    'phone',
-    'authorEmail',
-    'authorIp',
-    'cookie',
-    'deviceId',
-    'name',
-  ]),
-}))
+import { resetBlogSettingsForTests, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { updateBlogSettingsSection } from '@/server/domains/settings/services/core'
+import { hydrateBlogSettings } from '@/server/domains/settings/services/hydrate'
+import { decryptIfNeeded } from '@/server/infra/crypto/secret-encryption'
+import { findSettingByScope } from '@/server/infra/db/operations/setting'
+import { setting } from '@/server/infra/db/schema/config'
+import { DomainError } from '@/server/infra/http/errors'
+import { getBlogSettingsBundleSync, getCacheSettings } from '@/shared/config/getters'
 
 // Section-change dispatch (backup/audit reschedule, mail transport
-// invalidation) is covered by the unit tests; keep it out of these
-// persistence-focused cases.
+// invalidation) is covered by the unit tests; keep the schedulers out of
+// these persistence-focused cases. Everything else — the settings reads,
+// the merge, the UPSERT, the secret encryption, the post-write snapshot
+// refresh — runs against the real in-memory engine.
 vi.mock('@/server/domains/settings/services/section-changes', () => ({
   SECTION_CHANGE_HANDLERS: new Map(),
 }))
 
-const db = {
-  // Sync — production calls db.transaction synchronously (node:sqlite).
-  transaction: vi.fn((fn: (tx: Database) => unknown) => fn(db)),
-} as unknown as Database
-
-const settingQueries = await import('@/server/infra/db/operations/setting')
-const { updateBlogSettingsSection } = await import('@/server/domains/settings/services/core')
-const { hydrateBlogSettings } = await import('@/server/domains/settings/services/hydrate')
-const { resetBlogSettingsForTests, setBlogSettingsBundleForTests } = await import('#/_helpers/blog-settings')
-const { getBlogSettingsBundleSync, getCacheSettings } = await import('@/shared/config/getters')
-const { DomainError } = await import('@/server/infra/http/errors')
+const db: Database = getTestDb()
 
 // Bucketed settings fixture. The DB stores one row per section so
-// `bundleRows()` projects this fully-populated bundle into the per-row
-// format that `findSettingsByScopePrefix` returns.
+// `seedSections()` projects this fully-populated bundle into per-scope
+// rows, mirroring what an installed deployment persists.
 const fixtureBundle: BlogSettingsBundle = {
   siteIdentity: {
     title: 'fixture title',
@@ -192,63 +165,72 @@ const fixtureBundle: BlogSettingsBundle = {
   },
 }
 
-function bundleRows(bundle: BlogSettingsBundle): Setting[] {
-  const map: Record<keyof BlogSettingsBundle, string> = {
-    siteIdentity: 'blog.general',
-    assets: 'blog.assets',
-    backup: 'blog.backup',
-    navigation: 'blog.navigation',
-    socials: 'blog.socials',
-    content: 'blog.content',
-    sidebar: 'blog.sidebar',
-    comments: 'blog.comments',
-    seo: 'blog.seo',
-    mail: 'blog.mail',
-    newsletter: 'blog.newsletter',
-    cache: 'blog.cache',
-    rateLimit: 'blog.rateLimit',
-    fonts: 'blog.fonts',
-    limits: 'blog.limits',
-    analytics: 'blog.analytics',
-    security: 'blog.security',
-  }
-  const rows: Setting[] = []
-  let id = 1
-  for (const key of Object.keys(map) as (keyof BlogSettingsBundle)[]) {
-    const value = bundle[key]
-    if (value === null) {
+const BUNDLE_SCOPES: Record<keyof BlogSettingsBundle, string> = {
+  siteIdentity: 'blog.general',
+  assets: 'blog.assets',
+  backup: 'blog.backup',
+  navigation: 'blog.navigation',
+  socials: 'blog.socials',
+  content: 'blog.content',
+  sidebar: 'blog.sidebar',
+  comments: 'blog.comments',
+  seo: 'blog.seo',
+  mail: 'blog.mail',
+  newsletter: 'blog.newsletter',
+  cache: 'blog.cache',
+  rateLimit: 'blog.rateLimit',
+  fonts: 'blog.fonts',
+  limits: 'blog.limits',
+  analytics: 'blog.analytics',
+  security: 'blog.security',
+}
+
+/**
+ * Seed the fixture bundle as per-scope rows. `except` skips scopes,
+ * `override` replaces a scope's payload (for stored-row variants with
+ * plaintext secrets or legacy shapes).
+ */
+async function seedSections(
+  bundle: BlogSettingsBundle = fixtureBundle,
+  opts: { except?: string[]; override?: Record<string, Record<string, unknown>> } = {},
+): Promise<void> {
+  for (const key of Object.keys(BUNDLE_SCOPES) as (keyof BlogSettingsBundle)[]) {
+    const scope = BUNDLE_SCOPES[key]
+    if (opts.except?.includes(scope)) {
       continue
     }
-    rows.push({
-      id: id++,
-      scope: map[key],
-      data: value as unknown as Record<string, unknown>,
-      updatedAt: new Date(),
-      updatedBy: null,
-    } as Setting)
+    const data = opts.override?.[scope] ?? (bundle[key] as unknown as Record<string, unknown> | null)
+    if (data === null) {
+      continue
+    }
+    await db.insert(setting).values({ scope, data })
   }
-  return rows
+}
+
+function readRow(scope: string) {
+  const row = findSettingByScope(db, scope)
+  expect(row).not.toBeNull()
+  return row!
+}
+
+function readBucket(scope: string, bucket: string): Record<string, unknown> {
+  return (readRow(scope).data as Record<string, unknown>)[bucket] as Record<string, unknown>
 }
 
 beforeEach(async () => {
-  vi.mocked(settingQueries.findSettingByScope).mockReset()
-  vi.mocked(settingQueries.findSettingsByScopePrefix).mockReset()
-  vi.mocked(settingQueries.upsertSetting).mockReset()
-  vi.clearAllMocks()
+  await clearAllTables(db)
   resetBlogSettingsForTests()
 })
 
 describe('services/settings — hydrateBlogSettings', () => {
   it('returns null when no DB rows exist (pre-install)', async () => {
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue([])
-
     const bundle = await hydrateBlogSettings(db)
 
     expect(bundle).toBeNull()
   })
 
   it('returns the assembled bundle when every section row passes schema validation', async () => {
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue(bundleRows(fixtureBundle))
+    await seedSections()
 
     const bundle = await hydrateBlogSettings(db)
 
@@ -260,15 +242,10 @@ describe('services/settings — hydrateBlogSettings', () => {
   it('treats a deployment as uninstalled when only some sections exist', async () => {
     // Only siteIdentity present; the snapshot module requires both
     // siteIdentity AND assets to consider the deployment installed.
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue([
-      {
-        id: 1,
-        scope: 'blog.general',
-        data: fixtureBundle.siteIdentity as unknown as Record<string, unknown>,
-        updatedAt: new Date(),
-        updatedBy: null,
-      } as Setting,
-    ])
+    await db.insert(setting).values({
+      scope: 'blog.general',
+      data: fixtureBundle.siteIdentity as unknown as Record<string, unknown>,
+    })
 
     const bundle = await hydrateBlogSettings(db)
 
@@ -277,31 +254,13 @@ describe('services/settings — hydrateBlogSettings', () => {
 })
 
 describe('services/settings — updateBlogSettingsSection', () => {
-  it('rejects an invalid section payload with DomainError(400)', async () => {
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue([])
-
+  it('rejects an invalid section payload with DomainError(400) and writes nothing', async () => {
     await expect(updateBlogSettingsSection(db, 'general', { title: '' }, null)).rejects.toBeInstanceOf(DomainError)
-    expect(settingQueries.upsertSetting).not.toHaveBeenCalled()
+    expect(findSettingByScope(db, 'blog.general')).toBeNull()
   })
 
   it("writes the validated general payload to scope='blog.general' verbatim", async () => {
-    // Mock react-to upsert so post-write re-hydration sees the new value.
-    let currentRows = bundleRows(fixtureBundle)
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockImplementation(() => currentRows)
-    vi.mocked(settingQueries.upsertSetting).mockImplementation((_db, data, updatedBy, scope) => {
-      currentRows = currentRows
-        .filter((row) => row.scope !== scope)
-        .concat([
-          {
-            id: 99,
-            scope,
-            data: data as Record<string, unknown>,
-            updatedAt: new Date(),
-            updatedBy,
-          } as Setting,
-        ])
-      return { id: 99, scope, data: data as Record<string, unknown>, updatedAt: new Date(), updatedBy }
-    })
+    await seedSections()
 
     const next = await updateBlogSettingsSection(
       db,
@@ -320,41 +279,27 @@ describe('services/settings — updateBlogSettingsSection', () => {
       42,
     )
 
-    expect(settingQueries.upsertSetting).toHaveBeenCalledOnce()
-    const [, data, updatedBy, scope] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
-    expect(scope).toBe('blog.general')
-    expect((data as Record<string, unknown>).title).toBe('雨帆')
-    expect((data as Record<string, unknown>).settings).toBeUndefined()
-    expect(updatedBy).toBe(42)
+    const row = readRow('blog.general')
+    expect(row.updatedBy).toBe(42)
+    const data = row.data as Record<string, unknown>
+    expect(data.title).toBe('雨帆')
+    expect(data.settings).toBeUndefined()
+    // The post-write snapshot refresh re-read the database.
     expect(next?.siteIdentity?.title).toBe('雨帆')
   })
 
   it("writes the assets patch to scope='blog.assets' only and preserves the unchanged secret", async () => {
-    const existing = bundleRows(fixtureBundle).map((row) =>
-      row.scope === 'blog.assets'
-        ? ({
-            ...row,
-            data: {
-              ...(row.data as Record<string, unknown>),
-              storage: {
-                ...((row.data as Record<string, unknown>).storage as Record<string, unknown>),
-                secretAccessKey: 'STORED',
-              },
-            },
-          } as Setting)
-        : row,
-    )
-    vi.mocked(settingQueries.findSettingByScope).mockReturnValueOnce(
-      existing.find((row) => row.scope === 'blog.assets')!,
-    )
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue(existing)
-    vi.mocked(settingQueries.upsertSetting).mockReturnValue({
-      id: 1,
-      scope: 'blog.general',
-      data: {},
-      updatedAt: new Date(),
-      updatedBy: null,
-    } as Setting)
+    await seedSections(fixtureBundle, {
+      override: {
+        'blog.assets': {
+          ...(fixtureBundle.assets as unknown as Record<string, unknown>),
+          storage: {
+            ...(fixtureBundle.assets!.storage as unknown as Record<string, unknown>),
+            secretAccessKey: 'STORED',
+          },
+        },
+      },
+    })
 
     await updateBlogSettingsSection(
       db,
@@ -375,26 +320,19 @@ describe('services/settings — updateBlogSettingsSection', () => {
       null,
     )
 
-    const [, data, , scope] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
-    expect(scope).toBe('blog.assets')
-    const payload = data as Record<string, unknown>
+    const row = readRow('blog.assets')
+    const payload = row.data as Record<string, unknown>
     expect(payload.asset).toEqual({ host: 'cdn.test.example', scheme: 'https' })
+    // The omitted secret survived the patch — preserved from the stored
+    // row, then routed through encryptSecretsInRow like any plaintext.
     const storage = payload.storage as Record<string, unknown>
-    expect(typeof storage.secretAccessKey).toBe('string')
-    expect((storage.secretAccessKey as string).length).toBeGreaterThan(0)
-    expect(settingQueries.findSettingByScope).toHaveBeenCalledWith(db, 'blog.assets')
+    expect(storage.secretAccessKey).toMatch(/^enc2:/)
+    expect(decryptIfNeeded(storage.secretAccessKey as string)).toBe('STORED')
   })
 
-  it('reads only its own section row when patching a single section (write isolation)', async () => {
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue(bundleRows(fixtureBundle))
-    vi.mocked(settingQueries.findSettingByScope).mockReturnValue(null)
-    vi.mocked(settingQueries.upsertSetting).mockReturnValue({
-      id: 1,
-      scope: 'blog.general',
-      data: {},
-      updatedAt: new Date(),
-      updatedBy: null,
-    } as Setting)
+  it('writes only its own section row when patching a single section (write isolation)', async () => {
+    await seedSections()
+    const mailBefore = readRow('blog.mail').data
 
     await updateBlogSettingsSection(
       db,
@@ -403,29 +341,19 @@ describe('services/settings — updateBlogSettingsSection', () => {
       null,
     )
 
-    // The merge base costs exactly one read of the section's own row.
-    expect(settingQueries.findSettingByScope).toHaveBeenCalledExactlyOnceWith(db, 'blog.navigation')
-
-    const [, data, , scope] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
-    expect(scope).toBe('blog.navigation')
-    expect((data as Record<string, unknown>).navigation).toEqual({
+    const row = readRow('blog.navigation')
+    expect((row.data as Record<string, unknown>).navigation).toEqual({
       sideNav: [{ text: 'Home', link: '/' }],
       footerNav: [],
     })
+    // No other section row was rewritten by the navigation save.
+    expect(readRow('blog.mail').data).toEqual(mailBefore)
   })
 })
 
 describe('services/settings — mail section', () => {
   it("writes the full mail patch to scope='blog.mail' and encrypts every provided secret", async () => {
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue(bundleRows(fixtureBundle))
-    vi.mocked(settingQueries.findSettingByScope).mockReturnValue(null)
-    vi.mocked(settingQueries.upsertSetting).mockReturnValue({
-      id: 1,
-      scope: 'blog.general',
-      data: {},
-      updatedAt: new Date(),
-      updatedBy: null,
-    } as Setting)
+    await seedSections()
 
     await updateBlogSettingsSection(
       db,
@@ -443,64 +371,19 @@ describe('services/settings — mail section', () => {
       null,
     )
 
-    const [, data, , scope] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
-    expect(scope).toBe('blog.mail')
-    const mail = (data as Record<string, unknown>).mail as Record<string, unknown>
+    const mail = readBucket('blog.mail', 'mail')
     expect(mail.enabled).toBe(true)
     expect(mail.host).toBe('api.zeabur.com')
-    expect(typeof mail.apiKey).toBe('string')
-    expect((mail.apiKey as string).length).toBeGreaterThan(0)
-    expect(String(mail.apiKey).startsWith('enc2:')).toBe(true)
-    expect(typeof mail.smtpPass).toBe('string')
-    expect(String(mail.smtpPass).startsWith('enc2:')).toBe(true)
-    expect(typeof mail.mailgunApiKey).toBe('string')
-    expect(String(mail.mailgunApiKey).startsWith('enc2:')).toBe(true)
+    expect(mail.apiKey).toMatch(/^enc2:/)
+    expect(decryptIfNeeded(mail.apiKey as string)).toBe('NEWKEY')
+    expect(mail.smtpPass).toMatch(/^enc2:/)
+    expect(decryptIfNeeded(mail.smtpPass as string)).toBe('NEWSMTPPASS')
+    expect(mail.mailgunApiKey).toMatch(/^enc2:/)
+    expect(decryptIfNeeded(mail.mailgunApiKey as string)).toBe('NEWMAILGUNKEY')
     expect(mail.sender).toBe('noreply@example.com')
-    // Every write reads its own section row once for the merge base.
-    expect(settingQueries.findSettingByScope).toHaveBeenCalledExactlyOnceWith(db, 'blog.mail')
   })
 
-  it("preserves the existing apiKey by reading scope='blog.mail' when omitted", async () => {
-    vi.mocked(settingQueries.findSettingByScope).mockReturnValueOnce({
-      id: 1,
-      scope: 'blog.mail',
-      data: {
-        mail: { enabled: true, host: 'old.example.com', apiKey: 'STORED', sender: 'a@b.co' },
-      },
-      updatedAt: new Date(),
-      updatedBy: null,
-    } as Setting)
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue(bundleRows(fixtureBundle))
-    vi.mocked(settingQueries.upsertSetting).mockReturnValue({
-      id: 1,
-      scope: 'blog.general',
-      data: {},
-      updatedAt: new Date(),
-      updatedBy: null,
-    } as Setting)
-
-    await updateBlogSettingsSection(
-      db,
-      'mail',
-      {
-        mail: { enabled: true, host: 'api.zeabur.com', sender: 'noreply@example.com' },
-      },
-      null,
-    )
-
-    expect(settingQueries.findSettingByScope).toHaveBeenCalledExactlyOnceWith(db, 'blog.mail')
-    const [, data] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
-    const mail = (data as Record<string, unknown>).mail as Record<string, unknown>
-    expect(typeof mail.apiKey).toBe('string')
-    expect((mail.apiKey as string).length).toBeGreaterThan(0)
-    expect(mail.host).toBe('api.zeabur.com')
-    expect(mail.sender).toBe('noreply@example.com')
-    expect(mail.enabled).toBe(true)
-  })
-
-  it('rejects a sender that is not a valid email', async () => {
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue([])
-
+  it('rejects a sender that is not a valid email and writes nothing', async () => {
     await expect(
       updateBlogSettingsSection(
         db,
@@ -509,12 +392,15 @@ describe('services/settings — mail section', () => {
         null,
       ),
     ).rejects.toBeInstanceOf(DomainError)
-    expect(settingQueries.upsertSetting).not.toHaveBeenCalled()
+    expect(findSettingByScope(db, 'blog.mail')).toBeNull()
   })
 
   it("preserves the existing smtpPass by reading scope='blog.mail' when omitted", async () => {
-    vi.mocked(settingQueries.findSettingByScope).mockReturnValueOnce({
-      id: 1,
+    await seedSections(fixtureBundle, {
+      except: ['blog.mail'],
+      override: {},
+    })
+    await db.insert(setting).values({
       scope: 'blog.mail',
       data: {
         mail: {
@@ -530,17 +416,7 @@ describe('services/settings — mail section', () => {
           smtpSecure: false,
         },
       },
-      updatedAt: new Date(),
-      updatedBy: null,
-    } as Setting)
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue(bundleRows(fixtureBundle))
-    vi.mocked(settingQueries.upsertSetting).mockReturnValue({
-      id: 1,
-      scope: 'blog.general',
-      data: {},
-      updatedAt: new Date(),
-      updatedBy: null,
-    } as Setting)
+    })
 
     await updateBlogSettingsSection(
       db,
@@ -560,24 +436,23 @@ describe('services/settings — mail section', () => {
       null,
     )
 
-    const [, data] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
-    const mail = (data as Record<string, unknown>).mail as Record<string, unknown>
-    expect(typeof mail.smtpPass).toBe('string')
-    expect((mail.smtpPass as string).length).toBeGreaterThan(0)
+    const mail = readBucket('blog.mail', 'mail')
+    // smtpPass was omitted from the patch: preserved from the stored row,
+    // then encrypted alongside the other mail secrets.
+    expect(mail.smtpPass).toMatch(/^enc2:/)
+    expect(decryptIfNeeded(mail.smtpPass as string)).toBe('STOREDSMTPPASS')
     expect(mail.smtpHost).toBe('smtp.example.com')
     expect(mail.smtpUser).toBe('user')
     expect(mail.smtpSecure).toBe(true)
-    // apiKey is preserved (not in the patch) and then re-encrypted
-    // alongside smtpPass — both secrets in the mail section are now
-    // routed through `encryptSecretsInRow`, not just the first one.
-    expect(typeof mail.apiKey).toBe('string')
-    expect(mail.apiKey).not.toBe('ZEABURKEY')
-    expect(String(mail.apiKey).startsWith('enc2:')).toBe(true)
+    // apiKey is preserved (not in the patch) and re-encrypted — every
+    // secret in the mail section routes through `encryptSecretsInRow`.
+    expect(mail.apiKey).toMatch(/^enc2:/)
+    expect(decryptIfNeeded(mail.apiKey as string)).toBe('ZEABURKEY')
   })
 
   it("preserves the existing mailgunApiKey by reading scope='blog.mail' when omitted", async () => {
-    vi.mocked(settingQueries.findSettingByScope).mockReturnValueOnce({
-      id: 1,
+    await seedSections(fixtureBundle, { except: ['blog.mail'] })
+    await db.insert(setting).values({
       scope: 'blog.mail',
       data: {
         mail: {
@@ -595,17 +470,7 @@ describe('services/settings — mail section', () => {
           mailgunApiKey: 'STOREDMAILGUNKEY',
         },
       },
-      updatedAt: new Date(),
-      updatedBy: null,
-    } as Setting)
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue(bundleRows(fixtureBundle))
-    vi.mocked(settingQueries.upsertSetting).mockReturnValue({
-      id: 1,
-      scope: 'blog.general',
-      data: {},
-      updatedAt: new Date(),
-      updatedBy: null,
-    } as Setting)
+    })
 
     await updateBlogSettingsSection(
       db,
@@ -622,38 +487,22 @@ describe('services/settings — mail section', () => {
       null,
     )
 
-    const [, data] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
-    const mail = (data as Record<string, unknown>).mail as Record<string, unknown>
+    const mail = readBucket('blog.mail', 'mail')
     expect(mail.mailgunDomain).toBe('mg.example.com')
     expect(mail.sender).toBe('noreply@mg.example.com')
     // mailgunApiKey was omitted from the patch and preserved from the
     // existing row, then routed through encryptSecretsInRow.
-    expect(typeof mail.mailgunApiKey).toBe('string')
-    expect(mail.mailgunApiKey).not.toBe('STOREDMAILGUNKEY')
-    expect(String(mail.mailgunApiKey).startsWith('enc2:')).toBe(true)
-    // The other two mail secrets were preserved too.
-    expect(String(mail.apiKey).startsWith('enc2:')).toBe(true)
+    expect(mail.mailgunApiKey).toMatch(/^enc2:/)
+    expect(decryptIfNeeded(mail.mailgunApiKey as string)).toBe('STOREDMAILGUNKEY')
+    // The Zeabur secret was preserved and re-encrypted too.
+    expect(mail.apiKey).toMatch(/^enc2:/)
+    expect(decryptIfNeeded(mail.apiKey as string)).toBe('ZEABURKEY')
   })
 })
 
 describe('services/settings — rateLimit section', () => {
   it("writes a valid rateLimit patch to scope='blog.rateLimit' verbatim", async () => {
-    let currentRows = bundleRows(fixtureBundle)
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockImplementation(() => currentRows)
-    vi.mocked(settingQueries.upsertSetting).mockImplementation((_db, data, updatedBy, scope) => {
-      currentRows = currentRows
-        .filter((row) => row.scope !== scope)
-        .concat([
-          {
-            id: 99,
-            scope,
-            data: data as Record<string, unknown>,
-            updatedAt: new Date(),
-            updatedBy,
-          } as Setting,
-        ])
-      return { id: 99, scope, data: data as Record<string, unknown>, updatedAt: new Date(), updatedBy }
-    })
+    await seedSections()
 
     const next = await updateBlogSettingsSection(
       db,
@@ -684,10 +533,9 @@ describe('services/settings — rateLimit section', () => {
       11,
     )
 
-    const [, data, updatedBy, scope] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
-    expect(scope).toBe('blog.rateLimit')
-    expect(updatedBy).toBe(11)
-    expect(data).toMatchObject({
+    const row = readRow('blog.rateLimit')
+    expect(row.updatedBy).toBe(11)
+    expect(row.data).toMatchObject({
       signInIp: { windowSeconds: 600, maxAttempts: 3 },
       likeIncreaseIp: { windowSeconds: 60 * 5, maxAttempts: 100 },
     })
@@ -695,8 +543,6 @@ describe('services/settings — rateLimit section', () => {
   })
 
   it('rejects a window shorter than 60s', async () => {
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue([])
-
     await expect(
       updateBlogSettingsSection(
         db,
@@ -712,12 +558,10 @@ describe('services/settings — rateLimit section', () => {
         null,
       ),
     ).rejects.toBeInstanceOf(DomainError)
-    expect(settingQueries.upsertSetting).not.toHaveBeenCalled()
+    expect(findSettingByScope(db, 'blog.rateLimit')).toBeNull()
   })
 
   it('rejects maxAttempts of 0 (the deny-everyone footgun)', async () => {
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue([])
-
     await expect(
       updateBlogSettingsSection(
         db,
@@ -733,20 +577,11 @@ describe('services/settings — rateLimit section', () => {
         null,
       ),
     ).rejects.toBeInstanceOf(DomainError)
-    expect(settingQueries.upsertSetting).not.toHaveBeenCalled()
+    expect(findSettingByScope(db, 'blog.rateLimit')).toBeNull()
   })
 
   it('merges a partial rateLimit patch into the stored row', async () => {
-    const stored = bundleRows(fixtureBundle).find((row) => row.scope === 'blog.rateLimit')!
-    vi.mocked(settingQueries.findSettingByScope).mockReturnValue(stored)
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue(bundleRows(fixtureBundle))
-    vi.mocked(settingQueries.upsertSetting).mockReturnValue({
-      id: 1,
-      scope: 'blog.general',
-      data: {},
-      updatedAt: new Date(),
-      updatedBy: null,
-    } as Setting)
+    await seedSections()
 
     await updateBlogSettingsSection(
       db,
@@ -757,9 +592,7 @@ describe('services/settings — rateLimit section', () => {
       null,
     )
 
-    const [, data, , scope] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
-    expect(scope).toBe('blog.rateLimit')
-    const row = data as Record<string, unknown>
+    const row = readRow('blog.rateLimit').data as Record<string, unknown>
     // The patched bucket is overwritten...
     expect(row.signInIp).toEqual({ windowSeconds: 600, maxAttempts: 3 })
     // ...and every bucket the patch omits survives from the stored row.
@@ -771,16 +604,9 @@ describe('services/settings — rateLimit section', () => {
 
 describe('services/settings — cache section', () => {
   it("writes a valid cache patch to scope='blog.cache' and refreshes the snapshot", async () => {
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue(bundleRows(fixtureBundle))
-    vi.mocked(settingQueries.upsertSetting).mockReturnValue({
-      id: 1,
-      scope: 'blog.general',
-      data: {},
-      updatedAt: new Date(),
-      updatedBy: null,
-    } as Setting)
+    await seedSections()
 
-    await updateBlogSettingsSection(
+    const next = await updateBlogSettingsSection(
       db,
       'cache',
       {
@@ -795,17 +621,14 @@ describe('services/settings — cache section', () => {
       null,
     )
 
-    const [, data, , scope] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
-    expect(scope).toBe('blog.cache')
-    const cache = (data as Record<string, unknown>).cache as Record<string, unknown>
+    const cache = readBucket('blog.cache', 'cache')
     expect((cache.og as Record<string, unknown>).prefix).toBe('opengraph:')
     expect((cache.calendar as Record<string, unknown>).prefix).toBe('cal:')
     expect((cache.avatar as Record<string, unknown>).prefix).toBe('gravatar:')
+    expect(next?.cache?.cache.og.prefix).toBe('opengraph:')
   })
 
   it('rejects two buckets sharing the same prefix', async () => {
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue([])
-
     await expect(
       updateBlogSettingsSection(
         db,
@@ -821,12 +644,10 @@ describe('services/settings — cache section', () => {
         null,
       ),
     ).rejects.toBeInstanceOf(DomainError)
-    expect(settingQueries.upsertSetting).not.toHaveBeenCalled()
+    expect(findSettingByScope(db, 'blog.cache')).toBeNull()
   })
 
   it('rejects a bucket whose prefix is a strict prefix of another', async () => {
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue([])
-
     await expect(
       updateBlogSettingsSection(
         db,
@@ -845,12 +666,10 @@ describe('services/settings — cache section', () => {
         null,
       ),
     ).rejects.toBeInstanceOf(DomainError)
-    expect(settingQueries.upsertSetting).not.toHaveBeenCalled()
+    expect(findSettingByScope(db, 'blog.cache')).toBeNull()
   })
 
   it('rejects a prefix that collides with the reserved session: surface', async () => {
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue([])
-
     await expect(
       updateBlogSettingsSection(
         db,
@@ -866,11 +685,10 @@ describe('services/settings — cache section', () => {
         null,
       ),
     ).rejects.toBeInstanceOf(DomainError)
+    expect(findSettingByScope(db, 'blog.cache')).toBeNull()
   })
 
   it('rejects a prefix that collides with the reserved rate-limit: surface', async () => {
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue([])
-
     await expect(
       updateBlogSettingsSection(
         db,
@@ -887,11 +705,10 @@ describe('services/settings — cache section', () => {
         null,
       ),
     ).rejects.toBeInstanceOf(DomainError)
+    expect(findSettingByScope(db, 'blog.cache')).toBeNull()
   })
 
   it('rejects a prefix that does not end with `:`', async () => {
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue([])
-
     await expect(
       updateBlogSettingsSection(
         db,
@@ -907,11 +724,10 @@ describe('services/settings — cache section', () => {
         null,
       ),
     ).rejects.toBeInstanceOf(DomainError)
+    expect(findSettingByScope(db, 'blog.cache')).toBeNull()
   })
 
   it('rejects TTL below 1 hour or above 30 days', async () => {
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue([])
-
     await expect(
       updateBlogSettingsSection(
         db,
@@ -943,27 +759,13 @@ describe('services/settings — cache section', () => {
         null,
       ),
     ).rejects.toBeInstanceOf(DomainError)
+    expect(findSettingByScope(db, 'blog.cache')).toBeNull()
   })
 })
 
 describe('services/settings — security section', () => {
   it("writes the full security payload to scope='blog.security' verbatim", async () => {
-    let currentRows = bundleRows(fixtureBundle)
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockImplementation(() => currentRows)
-    vi.mocked(settingQueries.upsertSetting).mockImplementation((_db, data, updatedBy, scope) => {
-      currentRows = currentRows
-        .filter((row) => row.scope !== scope)
-        .concat([
-          {
-            id: 99,
-            scope,
-            data: data as Record<string, unknown>,
-            updatedAt: new Date(),
-            updatedBy,
-          } as Setting,
-        ])
-      return { id: 99, scope, data: data as Record<string, unknown>, updatedAt: new Date(), updatedBy }
-    })
+    await seedSections()
 
     const next = await updateBlogSettingsSection(
       db,
@@ -978,10 +780,8 @@ describe('services/settings — security section', () => {
       null,
     )
 
-    expect(settingQueries.upsertSetting).toHaveBeenCalledOnce()
-    const [, data, , scope] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
-    expect(scope).toBe('blog.security')
-    expect((data as Record<string, unknown>).cors).toEqual({
+    const data = readRow('blog.security').data as Record<string, unknown>
+    expect(data.cors).toEqual({
       enabled: true,
       origins: ['https://example.com', 'https://app.example.com'],
     })
@@ -990,8 +790,6 @@ describe('services/settings — security section', () => {
   })
 
   it('rejects an origin that is not a valid URL-like string (min length)', async () => {
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue([])
-
     await expect(
       updateBlogSettingsSection(
         db,
@@ -1006,11 +804,10 @@ describe('services/settings — security section', () => {
         null,
       ),
     ).rejects.toBeInstanceOf(DomainError)
+    expect(findSettingByScope(db, 'blog.security')).toBeNull()
   })
 
   it('rejects more than 20 origins', async () => {
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue([])
-
     await expect(
       updateBlogSettingsSection(
         db,
@@ -1025,59 +822,45 @@ describe('services/settings — security section', () => {
         null,
       ),
     ).rejects.toBeInstanceOf(DomainError)
+    expect(findSettingByScope(db, 'blog.security')).toBeNull()
   })
 })
 
 describe('services/settings — section patch merge', () => {
-  function mockStoredRow(scope: string, data: Record<string, unknown>): void {
-    vi.mocked(settingQueries.findSettingByScope).mockReturnValue({
-      id: 1,
-      scope,
-      data,
-      updatedAt: new Date(),
-      updatedBy: null,
-    } as Setting)
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue(bundleRows(fixtureBundle))
-    vi.mocked(settingQueries.upsertSetting).mockReturnValue({
-      id: 1,
-      scope: 'blog.general',
-      data: {},
-      updatedAt: new Date(),
-      updatedBy: null,
-    } as Setting)
-  }
-
   it('keeps the stored SMTP TLS flags when a Zeabur-style patch only carries host', async () => {
     // Regression for the mail TLS drift: the loader projection may not
     // carry every field, so a focused patch must never reset the stored
     // row's untouched fields.
-    mockStoredRow('blog.mail', {
-      mail: {
-        enabled: true,
-        host: 'old.zeabur.com',
-        apiKey: 'STORED-ZEABUR-KEY',
-        sender: 'a@b.co',
-        transport: 'smtp',
-        smtpHost: 'smtp.example.com',
-        smtpPort: 465,
-        smtpUser: 'user',
-        smtpSecure: true,
-        smtpRequireTls: false,
-        smtpRejectUnauthorized: false,
+    await seedSections(fixtureBundle, { except: ['blog.mail'] })
+    await db.insert(setting).values({
+      scope: 'blog.mail',
+      data: {
+        mail: {
+          enabled: true,
+          host: 'old.zeabur.com',
+          apiKey: 'STORED-ZEABUR-KEY',
+          sender: 'a@b.co',
+          transport: 'smtp',
+          smtpHost: 'smtp.example.com',
+          smtpPort: 465,
+          smtpUser: 'user',
+          smtpSecure: true,
+          smtpRequireTls: false,
+          smtpRejectUnauthorized: false,
+        },
       },
     })
 
     await updateBlogSettingsSection(db, 'mail', { mail: { host: 'api.zeabur.com' } }, null)
 
-    const [, data, , scope] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
-    expect(scope).toBe('blog.mail')
-    const mail = (data as Record<string, unknown>).mail as Record<string, unknown>
+    const mail = readBucket('blog.mail', 'mail')
     expect(mail.host).toBe('api.zeabur.com')
     expect(mail.smtpSecure).toBe(true)
     expect(mail.smtpRequireTls).toBe(false)
     expect(mail.smtpRejectUnauthorized).toBe(false)
     expect(mail.transport).toBe('smtp')
-    expect(String(mail.apiKey).startsWith('enc2:')).toBe(true)
+    expect(mail.apiKey).toMatch(/^enc2:/)
+    expect(decryptIfNeeded(mail.apiKey as string)).toBe('STORED-ZEABUR-KEY')
   })
 
   it('rejects an unknown key inside a nested bucket with the issue list', async () => {
@@ -1093,7 +876,7 @@ describe('services/settings — section patch merge', () => {
     expect((error as InstanceType<typeof DomainError>).issues).toEqual([
       { message: 'Unrecognized key: "bogus"', path: ['mail', 'bogus'] },
     ])
-    expect(settingQueries.upsertSetting).not.toHaveBeenCalled()
+    expect(findSettingByScope(db, 'blog.mail')).toBeNull()
   })
 
   it('rejects an unknown key at the section root with the issue list', async () => {
@@ -1104,60 +887,57 @@ describe('services/settings — section patch merge', () => {
     expect((error as InstanceType<typeof DomainError>).issues).toEqual([
       { message: 'Unrecognized key: "bogus"', path: ['bogus'] },
     ])
-    expect(settingQueries.upsertSetting).not.toHaveBeenCalled()
+    expect(findSettingByScope(db, 'blog.mail')).toBeNull()
   })
 
   it('replaces csrf.exemptPaths wholesale instead of concatenating', async () => {
-    mockStoredRow('blog.security', {
-      csrf: { enabled: true, exemptPaths: ['/webhook/github', '/webhook/stripe'] },
-      cors: { enabled: false, origins: [] },
-      passkey: { enabled: false },
+    await seedSections(fixtureBundle, { except: ['blog.security'] })
+    await db.insert(setting).values({
+      scope: 'blog.security',
+      data: {
+        csrf: { enabled: true, exemptPaths: ['/webhook/github', '/webhook/stripe'] },
+        cors: { enabled: false, origins: [] },
+        passkey: { enabled: false },
+      },
     })
 
     await updateBlogSettingsSection(db, 'security', { csrf: { exemptPaths: ['/webhook/github'] } }, null)
 
-    const [, data] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
-    const csrf = (data as Record<string, unknown>).csrf as Record<string, unknown>
+    const csrf = readBucket('blog.security', 'csrf')
     expect(csrf.exemptPaths).toEqual(['/webhook/github'])
     expect(csrf.enabled).toBe(true)
   })
 
   it('replaces sidebar widgets wholesale (array of objects)', async () => {
-    mockStoredRow('blog.sidebar', fixtureBundle.sidebar as unknown as Record<string, unknown>)
+    await seedSections()
 
     await updateBlogSettingsSection(db, 'sidebar', { sidebar: { widgets: [{ type: 'search', enabled: false }] } }, null)
 
-    const [, data] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
-    const sidebar = (data as Record<string, unknown>).sidebar as Record<string, unknown>
+    const sidebar = readBucket('blog.sidebar', 'sidebar')
     expect(sidebar.widgets).toEqual([{ type: 'search', enabled: false }])
   })
 
   it('merges a nested cors patch and preserves the sibling buckets', async () => {
-    mockStoredRow('blog.security', {
-      csrf: { enabled: true, exemptPaths: ['/webhook/github'] },
-      cors: { enabled: false, origins: ['https://a.example.com', 'https://b.example.com'] },
-      passkey: { enabled: false },
+    await seedSections(fixtureBundle, { except: ['blog.security'] })
+    await db.insert(setting).values({
+      scope: 'blog.security',
+      data: {
+        csrf: { enabled: true, exemptPaths: ['/webhook/github'] },
+        cors: { enabled: false, origins: ['https://a.example.com', 'https://b.example.com'] },
+        passkey: { enabled: false },
+      },
     })
 
     await updateBlogSettingsSection(db, 'security', { cors: { enabled: true } }, null)
 
-    const [, data] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
-    const row = data as Record<string, unknown>
+    const row = readRow('blog.security').data as Record<string, unknown>
     expect(row.cors).toEqual({ enabled: true, origins: ['https://a.example.com', 'https://b.example.com'] })
     expect(row.csrf).toEqual({ enabled: true, exemptPaths: ['/webhook/github'] })
     expect(row.passkey).toEqual({ enabled: false })
   })
 
   it('accepts a complete fonts payload and writes it verbatim', async () => {
-    vi.mocked(settingQueries.findSettingByScope).mockReturnValue(null)
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue(bundleRows(fixtureBundle))
-    vi.mocked(settingQueries.upsertSetting).mockReturnValue({
-      id: 1,
-      scope: 'blog.general',
-      data: {},
-      updatedAt: new Date(),
-      updatedBy: null,
-    } as Setting)
+    await seedSections(fixtureBundle, { except: ['blog.fonts'] })
     // The fonts domain's setFontSlot path posts a full FontsSettings —
     // a complete object is a valid patch.
     const fontsPayload = {
@@ -1170,9 +950,7 @@ describe('services/settings — section patch merge', () => {
 
     await updateBlogSettingsSection(db, 'fonts', fontsPayload, null)
 
-    const [, data, , scope] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
-    expect(scope).toBe('blog.fonts')
-    expect(data).toEqual(fontsPayload)
+    expect(readRow('blog.fonts').data).toEqual(fontsPayload)
   })
 })
 
@@ -1222,8 +1000,8 @@ describe('services/settings — snapshot reader', () => {
     // Reproduces the prod crash where a legacy `blog.cache` row stored
     // before `imageMeta` was added passed the old probe, then crashed
     // `<BucketCard>` on `allBuckets.imageMeta.prefix`.
-    const legacyRow: Setting = {
-      id: 99,
+    await seedSections(fixtureBundle, { except: ['blog.cache'] })
+    await db.insert(setting).values({
       scope: 'blog.cache',
       data: {
         cache: {
@@ -1231,26 +1009,15 @@ describe('services/settings — snapshot reader', () => {
           calendar: { prefix: 'calendar:', ttlSeconds: 3600 },
           avatar: { prefix: 'avatar:', ttlSeconds: 3600 },
         },
-      } as unknown as Record<string, unknown>,
-      updatedAt: new Date(),
-      updatedBy: null,
-    } as Setting
-    const completeRows = bundleRows(fixtureBundle).filter((row) => row.scope !== 'blog.cache')
-    vi.mocked(settingQueries.findSettingsByScopePrefix).mockReturnValue([...completeRows, legacyRow])
-    vi.mocked(settingQueries.upsertSetting).mockReturnValue({
-      id: 1,
-      scope: 'blog.general',
-      data: {},
-      updatedAt: new Date(),
-      updatedBy: null,
-    } as Setting)
+      },
+    })
 
     const bundle = await hydrateBlogSettings(db)
 
     expect(bundle).not.toBeNull()
-    const cache = bundle!.cache!.cache
+    expect(bundle!.cache!.cache.imageMeta).toEqual({ prefix: 'image-meta:', ttlSeconds: 60 * 60 })
+    // The backfill rewrote the legacy row in the database itself.
+    const cache = readBucket('blog.cache', 'cache')
     expect(cache.imageMeta).toEqual({ prefix: 'image-meta:', ttlSeconds: 60 * 60 })
-    const upsertCalls = vi.mocked(settingQueries.upsertSetting).mock.calls
-    expect(upsertCalls.some((call) => call[3] === 'blog.cache')).toBe(true)
   })
 })

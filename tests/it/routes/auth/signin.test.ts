@@ -1,72 +1,49 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { Mock } from 'vitest'
 
-import type { RequestContext } from '@/server/http/request-context'
+import bcrypt from 'bcryptjs'
+import { and, eq } from 'drizzle-orm'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const state = vi.hoisted(() => {
-  const store = new Map<string, unknown>()
-  return {
-    loggedIn: false,
-    passkeyEnabled: false,
-    mailReady: false,
-    otpCode: '123456',
-    otpVerifyResult: null as { userId: number } | null,
-    findUserByEmailResult: null as Record<string, unknown> | null,
-    verifyUserPasswordResult: null as {
-      id: number
-      name: string
-      email: string
-      role: string
-      link: string | null
-      password: string
-    } | null,
-    markSessionDirty: vi.fn(),
-    session: {
-      get(key: string) {
-        return store.get(key)
-      },
-      set(key: string, value: unknown) {
-        store.set(key, value)
-      },
-      unset(key: string) {
-        store.delete(key)
-      },
-    },
-  }
-})
+import type { BlogSession } from '@/server/domains/auth/session-storage'
+import type { BlogSettingsBundle } from '@/shared/config/types'
 
-vi.mock('@/server/http/request-context', async () => {
-  const actual = await vi.importActual<typeof import('@/server/http/request-context')>('@/server/http/request-context')
-  const { makeRequestContext } = await import('#/_helpers/request-context')
-  return {
-    ...actual,
-    getRequestContext: vi.fn(
-      ({ request }: { request: Request }): RequestContext =>
-        makeRequestContext({
-          request,
-          session: state.session as RequestContext['session'],
-          markSessionDirty: state.markSessionDirty,
-          user: state.loggedIn
-            ? { id: '1', name: 'admin', email: 'admin@example.com', website: null, role: 'admin' as const }
-            : undefined,
-        }),
-    ),
-  }
-})
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { makeRequestContext } from '#/_helpers/request-context'
+import { adminUser, makeSession } from '#/_helpers/session'
+import { issueSignInLinkToken } from '@/server/domains/auth/verification-tokens'
+import { user, verification } from '@/server/infra/db/schema/user'
+import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 
-vi.mock('@/server/domains/auth/session-storage', async () => {
-  const actual = await vi.importActual<typeof import('@/server/domains/auth/session-storage')>(
-    '@/server/domains/auth/session-storage',
-  )
-  return {
-    ...actual,
-    commitSessionWithMaxAge: vi.fn(async () => 'blog_session=stub'),
-    destroySession: vi.fn(async () => 'blog_session=deleted'),
-  }
-})
+// routes/auth/signin against the real engine: users are real rows with
+// real bcrypt passwords, OTP / magic-link / reset tokens are real
+// single-use rows in `verification`, and the rate limiter is the real
+// in-process one (tripped via settings-bucket overrides). The kept
+// mocks follow the established signin-route pattern (signin-otp /
+// signin-magiclink): the request-context seam, the install gate, CSRF,
+// email DELIVERY (a true external), the session-establish seam, and
+// the audit sink.
 
-vi.mock('@/server/domains/auth/csrf', () => ({
-  validateCsrfForAction: vi.fn(() => true),
+// ── Mock handles ────────────────────────────────────────────────────────────
+
+const mockHandles = vi.hoisted(() => ({
+  getRequestContext: vi.fn<any>(),
+  sendSignInOtp: vi.fn<any>(),
+  sendSignInLink: vi.fn<any>(),
+  sendPasswordReset: vi.fn<any>(),
+  establishLoginSession: vi.fn<any>(),
+  recordAuditEvent: vi.fn<any>(),
 }))
+
+// ── Module mocks ────────────────────────────────────────────────────────────
+
+vi.mock('@/server/http/request-context', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/server/http/request-context')>()
+  return {
+    ...actual,
+    getRequestContext: mockHandles.getRequestContext,
+  }
+})
 
 vi.mock('@/server/domains/settings/install-gate', () => ({
   ensureInstalledOrRedirect: vi.fn(async () => null),
@@ -75,188 +52,294 @@ vi.mock('@/server/domains/settings/install-gate', () => ({
   getInstallState: vi.fn(async () => 'installed' as const),
 }))
 
-vi.mock('@/server/infra/db/operations/user', () => ({
-  verifyUserPassword: vi.fn(async () => state.verifyUserPasswordResult),
-  findUserByEmail: vi.fn(async () => state.findUserByEmailResult),
-  findUserById: vi.fn(async () => ({
-    id: Number(1),
-    name: 'admin',
-    email: 'admin@example.com',
-    role: 'admin',
-    link: null,
-    password: 'hashed',
-  })),
-  updateUserById: vi.fn(async () => null),
+vi.mock('@/server/domains/auth/csrf', () => ({
+  validateCsrfForAction: vi.fn(() => true),
 }))
 
-vi.mock('@/server/domains/auth/verification-tokens', () => ({
-  consumeToken: vi.fn(async () => null),
-  peekToken: vi.fn(async () => null),
-  issueResetToken: vi.fn(async () => ({ token: 'reset-token', expiresAt: new Date() })),
-  issueSignInLinkToken: vi.fn(async () => ({ token: 'magic-token', expiresAt: new Date() })),
-  issueOtpToken: vi.fn(async () => ({
-    otpCode: state.otpCode,
-    expiresAt: new Date(Date.now() + 5 * 60 * 1000),
-  })),
-  verifyOtpToken: vi.fn(async () => state.otpVerifyResult),
-}))
-
-vi.mock('@/server/infra/email/sender', () => ({
-  sendSignInOtp: vi.fn(async () => ({ ok: true })),
-  sendSignInLink: vi.fn(async () => ({ ok: true })),
-  sendPasswordReset: vi.fn(async () => ({ ok: true })),
-  checkMailReady: vi.fn(() =>
-    state.mailReady
-      ? ({ ready: true } as const)
-      : ({ ready: false, reason: 'disabled', message: '邮件发送已在管理面板中关闭' } as const),
-  ),
-}))
-
-vi.mock('@/server/infra/rate-limit', () => ({
-  tryRateLimit: vi.fn(async () => ({ count: 1, exceeded: false })),
-  tryPasswordResetRateLimit: vi.fn(async () => ({ count: 1, exceeded: false })),
-  tryPasswordResetByEmailRateLimit: vi.fn(async () => ({ count: 1, exceeded: false })),
-  tryOtpSendRateLimit: vi.fn(async () => ({ count: 1, exceeded: false })),
-  tryOtpSendByEmailRateLimit: vi.fn(async () => ({ count: 1, exceeded: false })),
-  tryOtpVerifyRateLimit: vi.fn(async () => ({ count: 1, exceeded: false })),
-  tryOtpVerifyByEmailRateLimit: vi.fn(async () => ({ count: 1, exceeded: false })),
-  trySignInByEmailRateLimit: vi.fn(async () => ({ count: 1, exceeded: false })),
-}))
-
-vi.mock('@/server/domains/auth/primitives', async () => {
-  const actual = await vi.importActual<typeof import('@/server/domains/auth/primitives')>(
-    '@/server/domains/auth/primitives',
-  )
+vi.mock('@/server/infra/email/sender', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/server/infra/email/sender')>()
   return {
     ...actual,
-    establishLoginSession: vi.fn(async () => ({ sid: 'test-sid', setCookie: 'blog_session=test' })),
-    logout: vi.fn(async () => undefined),
+    sendSignInOtp: mockHandles.sendSignInOtp,
+    sendSignInLink: mockHandles.sendSignInLink,
+    sendPasswordReset: mockHandles.sendPasswordReset,
   }
 })
 
-vi.mock('@/server/domains/audit/services/record', () => ({
-  recordAuditEvent: vi.fn(() => undefined),
-}))
+vi.mock('@/server/domains/auth/primitives', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/server/domains/auth/primitives')>()
+  return {
+    ...actual,
+    establishLoginSession: mockHandles.establishLoginSession,
+  }
+})
 
-vi.mock('@/server/domains/comments/services/public-query', () => ({
-  hasApprovedComments: vi.fn(async () => false),
-}))
+vi.mock('@/server/domains/audit/services/record', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/server/domains/audit/services/record')>()
+  return {
+    ...actual,
+    recordAuditEvent: mockHandles.recordAuditEvent,
+  }
+})
 
-vi.mock('@/shared/config/getters', () => ({
-  getBlogSettingsBundleSync: vi.fn(() => ({
-    security: {
-      passkey: { enabled: state.passkeyEnabled },
-      csrf: { enabled: true, exemptPaths: [] },
-      cors: { enabled: false, origins: [] },
-    },
+// ── Real infrastructure ─────────────────────────────────────────────────────
+
+const db = getTestDb()
+
+// ── Settings bundles ────────────────────────────────────────────────────────
+
+// Mail transport ready + roomy rate buckets (OTP now follows mail).
+const MAIL_READY_BUNDLE = {
+  ...TEST_BLOG_SETTINGS_BUNDLE,
+  mail: {
     mail: {
-      mail: {
-        enabled: state.mailReady,
-        host: 'api.zeabur.com',
-        apiKey: 'key',
-        sender: 'noreply@example.com',
-        transport: 'zeabur',
-        smtpHost: '',
-        smtpPort: 587,
-        smtpUser: '',
-        smtpPass: '',
-        smtpSecure: false,
-      },
+      ...TEST_BLOG_SETTINGS_BUNDLE.mail!.mail,
+      enabled: true,
+      apiKey: 'test-key',
     },
-  })),
-}))
+  },
+  rateLimit: {
+    ...TEST_BLOG_SETTINGS_BUNDLE.rateLimit,
+    signInIp: { windowSeconds: 60, maxAttempts: 10 },
+    signInEmail: { windowSeconds: 60, maxAttempts: 10 },
+    otpSendIp: { windowSeconds: 60, maxAttempts: 10 },
+    otpSendEmail: { windowSeconds: 60, maxAttempts: 10 },
+    otpVerifyIp: { windowSeconds: 60, maxAttempts: 10 },
+    otpVerifyEmail: { windowSeconds: 60, maxAttempts: 10 },
+  },
+} as BlogSettingsBundle
+
+const PASSKEY_ON_BUNDLE = {
+  ...TEST_BLOG_SETTINGS_BUNDLE,
+  security: { ...TEST_BLOG_SETTINGS_BUNDLE.security!, passkey: { enabled: true } },
+} as BlogSettingsBundle
+
+function withBucket(
+  base: BlogSettingsBundle,
+  bucket: keyof NonNullable<BlogSettingsBundle['rateLimit']>,
+  maxAttempts: number,
+): BlogSettingsBundle {
+  return {
+    ...base,
+    rateLimit: { ...base.rateLimit!, [bucket]: { windowSeconds: 60, maxAttempts } },
+  } as BlogSettingsBundle
+}
+
+// ── Import route under test ─────────────────────────────────────────────────
 
 const { action, loader } = await import('@/routes/auth/signin')
 
-function resetState() {
-  state.loggedIn = false
-  state.passkeyEnabled = false
-  state.mailReady = false
-  state.otpCode = '123456'
-  state.otpVerifyResult = null
-  state.findUserByEmailResult = null
-  state.verifyUserPasswordResult = null
-  state.session.unset('pendingOtpUser')
-  state.session.unset('otpFailCount')
-}
+// ── Test setup ──────────────────────────────────────────────────────────────
 
-beforeEach(() => {
-  vi.clearAllMocks()
-  resetState()
+let testSession: BlogSession
+let markSessionDirty: Mock<() => void>
+
+beforeAll(() => {
+  mockHandles.sendSignInOtp.mockResolvedValue({ ok: true })
+  mockHandles.sendSignInLink.mockResolvedValue({ ok: true })
+  mockHandles.sendPasswordReset.mockResolvedValue({ ok: true })
+  mockHandles.establishLoginSession.mockResolvedValue({
+    sid: 'test-sid',
+    setCookie: '__session=test-cookie; Path=/',
+  })
 })
 
-async function catchResponse(promise: Promise<unknown>): Promise<Response> {
+beforeEach(async () => {
+  await clearAllTables(db)
+  // The rate limiter is a process-level Map — reset it or earlier tests
+  // (same email/IP) exhaust the budgets for later ones.
+  __resetRateLimitsForTests()
+  testSession = makeSession({})
+  markSessionDirty = vi.fn<() => void>()
+  mockHandles.getRequestContext.mockReturnValue(
+    makeRequestContext({
+      session: testSession,
+      db,
+      request: new Request('http://localhost/admin/signin'),
+      markSessionDirty,
+    }),
+  )
+  mockHandles.sendSignInOtp.mockClear()
+  mockHandles.sendSignInLink.mockClear()
+  mockHandles.sendPasswordReset.mockClear()
+  mockHandles.establishLoginSession.mockClear()
+  mockHandles.recordAuditEvent.mockClear()
+  mockHandles.sendSignInOtp.mockResolvedValue({ ok: true })
+  mockHandles.sendSignInLink.mockResolvedValue({ ok: true })
+  mockHandles.sendPasswordReset.mockResolvedValue({ ok: true })
+  mockHandles.establishLoginSession.mockResolvedValue({
+    sid: 'test-sid',
+    setCookie: '__session=test-cookie; Path=/',
+  })
+})
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
+
+const TEST_PASSWORD = 'correcthorsebatterystaple'
+
+async function seedUser(overrides: Record<string, unknown> = {}) {
+  const hashedPassword = await bcrypt.hash(TEST_PASSWORD, 12)
+  const [inserted] = await db
+    .insert(user)
+    .values({
+      name: 'Admin',
+      email: 'admin@example.com',
+      emailVerified: true,
+      link: '',
+      password: hashedPassword,
+      role: 'admin',
+      receiveEmail: true,
+      ...overrides,
+    })
+    .returning()
+  return inserted!
+}
+
+function setContext(action: string | null, redirectTo: string | null = '/admin', clientAddress = '127.0.0.1') {
+  const params = new URLSearchParams()
+  if (action) {
+    params.set('action', action)
+  }
+  if (redirectTo !== null) {
+    params.set('redirect_to', redirectTo)
+  }
+  const url = new URL(`http://localhost/admin/signin?${params.toString()}`)
+  mockHandles.getRequestContext.mockReturnValue(
+    makeRequestContext({ session: testSession, clientAddress, db, request: new Request(url), markSessionDirty }),
+  )
+  return url
+}
+
+async function callAction(
+  actionName: string | null,
+  formData: FormData,
+  redirectTo: string | null = '/admin',
+  clientAddress = '127.0.0.1',
+): Promise<Response & { data?: any }> {
+  const url = setContext(actionName, redirectTo, clientAddress)
+  const request = new Request(url, { method: 'POST', body: formData })
   try {
-    await promise
+    return (await action({
+      request,
+      url,
+      context: new Map(),
+      params: {},
+      pattern: 'admin/signin',
+    })) as Response & { data?: any }
   } catch (error) {
     if (error instanceof Response) {
       return error
     }
     throw error
   }
-  throw new Error('Expected route to throw a Response')
 }
 
-function postFormData(body: FormData, search = ''): Parameters<typeof action>[0] {
-  return {
-    request: new Request(`http://localhost/admin/signin${search}`, {
-      method: 'POST',
-      body,
-    }),
-  } as unknown as Parameters<typeof action>[0]
+async function callLoader(search: string): Promise<Response & { data?: any }> {
+  const url = new URL(`http://localhost/admin/signin${search}`)
+  mockHandles.getRequestContext.mockReturnValue(
+    makeRequestContext({ session: testSession, db, request: new Request(url), markSessionDirty }),
+  )
+  try {
+    return (await loader({
+      request: new Request(url),
+      url,
+      context: new Map(),
+      params: {},
+      pattern: 'admin/signin',
+    })) as unknown as Response & { data?: any }
+  } catch (error) {
+    if (error instanceof Response) {
+      return error
+    }
+    throw error
+  }
 }
 
-function getLoader(search = ''): Parameters<typeof loader>[0] {
-  return {
-    request: new Request(`http://localhost/admin/signin${search}`),
-  } as unknown as Parameters<typeof loader>[0]
+function loginFormData(email = 'admin@example.com', password = TEST_PASSWORD) {
+  const fd = new FormData()
+  fd.set('email', email)
+  fd.set('password', password)
+  return fd
+}
+
+function otpFormData(code: string) {
+  const fd = new FormData()
+  fd.set('otp_code', code)
+  return fd
+}
+
+function emailFormData(email: string) {
+  const fd = new FormData()
+  fd.set('email', email)
+  return fd
+}
+
+// `redirect()` results are real Responses; `data()` results keep their
+// headers under `.init` (React Router's DataWithResponseInit).
+function getSetCookie(result: Response & { data?: any }): string | null {
+  if (result.headers instanceof Headers) {
+    return result.headers.get('Set-Cookie')
+  }
+  const init = (result as { init?: { headers?: Record<string, string> } }).init
+  return init?.headers?.['Set-Cookie'] ?? null
 }
 
 function extractData(result: unknown): Record<string, unknown> {
   return (result as { data?: Record<string, unknown> }).data ?? {}
 }
 
-// The Set-Cookie contract differs per channel: same-session mutations go
-// through markSessionDirty and the perimeter middleware commits after the
-// response (no header when the route is called directly); sid rotations
-// keep their explicit Set-Cookie on the result.
-function setCookieOf(result: unknown): string | null {
-  if (result instanceof Response) {
-    return result.headers.get('Set-Cookie')
-  }
-  const init = (result as { init?: ResponseInit | null }).init
-  return new Headers(init?.headers).get('Set-Cookie')
+/** Login (password verified, mail ready) and return the emailed OTP code. */
+async function doLogin(clientAddress = '127.0.0.1'): Promise<string> {
+  await callAction(null, loginFormData(), '/admin', clientAddress)
+  expect(mockHandles.sendSignInOtp).toHaveBeenCalled()
+  return mockHandles.sendSignInOtp.mock.calls[0]![1] as string
 }
+
+/** A 6-digit OTP guaranteed different from `code`. */
+function wrongOtp(code: string): string {
+  return code === '000000' ? '111111' : '000000'
+}
+
+async function getOtpRow(userId: number) {
+  const rows = await db
+    .select()
+    .from(verification)
+    .where(and(eq(verification.purpose, 'signin-otp'), eq(verification.userId, userId)))
+  return rows[0] ?? null
+}
+
+function stagePendingOtp(userId: number | string, overrides: Record<string, unknown> = {}) {
+  testSession.set('pendingOtpUser', {
+    userId: String(userId),
+    email: 'admin@example.com',
+    expiresAt: Date.now() + 5 * 60 * 1000,
+    sentAt: Date.now(),
+    ...overrides,
+  })
+}
+
+// ── Tests ───────────────────────────────────────────────────────────────────
 
 describe('routes/signin', () => {
   it('sanitizes external logout redirect targets', async () => {
-    const response = await catchResponse(
-      loader({
-        request: new Request('http://localhost/admin/signin?action=logout&redirect_to=https://evil.example/phish'),
-      } as unknown as Parameters<typeof loader>[0]),
-    )
+    const response = await callLoader('?action=logout&redirect_to=https://evil.example/phish')
 
     expect(response.status).toBe(302)
     expect(response.headers.get('location')).toBe('/')
   })
 
   it('sanitizes external already-logged-in redirect targets', async () => {
-    state.loggedIn = true
-    const response = await catchResponse(
-      loader({
-        request: new Request('http://localhost/admin/signin?redirect_to=//evil.example/phish'),
-      } as unknown as Parameters<typeof loader>[0]),
-    )
+    testSession.set('user', adminUser())
+    const response = await callLoader('?redirect_to=//evil.example/phish')
 
     expect(response.status).toBe(302)
     expect(response.headers.get('location')).toBe('/')
   })
 
   it('passes only a sanitized redirect target into login form handling', async () => {
-    const result = await action(postFormData(new FormData(), '?redirect_to=https://evil.example/phish'))
+    const result = await callAction(null, new FormData(), 'https://evil.example/phish')
 
-    expect(result).toBeInstanceOf(Object)
-    expect((result as { data?: Record<string, unknown> }).data).toMatchObject({ redirectTo: '/admin' })
+    expect(extractData(result).redirectTo).toBe('/admin')
   })
 
   it('falls back to the login view for POST-only action names', async () => {
@@ -265,25 +348,20 @@ describe('routes/signin', () => {
     // identify round-trip. Those names are POST handlers, not views —
     // resolving them as views would unmount the login form on commit.
     for (const name of ['identify', 'passkey', 'verifyotp', 'resendotp', 'cancelotp']) {
-      const result = await loader(getLoader(`?action=${name}`))
+      const result = await callLoader(`?action=${name}`)
       expect(extractData(result).action).toBe('login')
     }
   })
 
   it('keeps GET view actions as views', async () => {
-    const result = await loader(getLoader('?action=lostpassword'))
+    const result = await callLoader('?action=lostpassword')
     expect(extractData(result).action).toBe('lostpassword')
   })
 
   it('returns verifyotp action when pendingOtpUser exists', async () => {
-    state.session.set('pendingOtpUser', {
-      userId: '1',
-      email: 'admin@example.com',
-      expiresAt: Date.now() + 5 * 60 * 1000,
-      sentAt: Date.now(),
-    })
+    stagePendingOtp(1)
 
-    const result = await loader(getLoader())
+    const result = await callLoader('')
     const d = extractData(result)
 
     expect(d.action).toBe('verifyotp')
@@ -292,570 +370,456 @@ describe('routes/signin', () => {
   })
 
   it('redirects to login when pendingOtpUser is expired', async () => {
-    state.session.set('pendingOtpUser', {
-      userId: '1',
-      email: 'admin@example.com',
-      expiresAt: Date.now() - 1,
-      sentAt: Date.now() - 10 * 60 * 1000,
-    })
+    stagePendingOtp(1, { expiresAt: Date.now() - 1, sentAt: Date.now() - 10 * 60 * 1000 })
 
-    const response = await catchResponse(loader(getLoader()))
+    const response = await callLoader('')
 
     expect(response.status).toBe(302)
     expect(response.headers.get('location')).toBe('/admin/signin?redirect_to=%2F')
     // Expiry cleanup marks the session dirty; the redirect carries no
     // Set-Cookie — the middleware commits after the response resolves.
-    expect(state.markSessionDirty).toHaveBeenCalledTimes(1)
+    expect(markSessionDirty).toHaveBeenCalledTimes(1)
     expect(response.headers.get('Set-Cookie')).toBeNull()
-    expect(state.session.get('pendingOtpUser')).toBeUndefined()
-    expect(state.session.get('otpFailCount')).toBeUndefined()
+    expect(testSession.get('pendingOtpUser')).toBeUndefined()
+    expect(testSession.get('otpFailCount')).toBeUndefined()
   })
 })
 
-describe('routes/signin — OTP', () => {
-  const validLogin = new FormData()
-  validLogin.set('email', 'admin@example.com')
-  validLogin.set('password', '0123456789')
-
-  const dbUser = {
-    id: Number(1),
-    name: 'admin',
-    email: 'admin@example.com',
-    role: 'admin' as const,
-    link: null,
-    password: 'hashed',
-  }
-
+describe('routes/signin — OTP (real db + tokens)', () => {
   beforeEach(() => {
-    state.mailReady = true
-    state.verifyUserPasswordResult = dbUser
+    setBlogSettingsBundleForTests(MAIL_READY_BUNDLE)
   })
 
   it('issues OTP and sends email when mail is ready', async () => {
-    const result = await action(postFormData(validLogin))
+    const admin = await seedUser()
 
-    const { issueOtpToken } = await import('@/server/domains/auth/verification-tokens')
-    const { sendSignInOtp } = await import('@/server/infra/email/sender')
+    const result = await callAction(null, loginFormData())
 
-    expect(vi.mocked(issueOtpToken)).toHaveBeenCalled()
-    expect(vi.mocked(sendSignInOtp)).toHaveBeenCalledWith(
+    expect(mockHandles.sendSignInOtp).toHaveBeenCalledTimes(1)
+    const otpCode = mockHandles.sendSignInOtp.mock.calls[0]![1] as string
+    expect(mockHandles.sendSignInOtp).toHaveBeenCalledWith(
       expect.objectContaining({ email: 'admin@example.com' }),
-      state.otpCode,
+      otpCode,
     )
-    expect(state.session.get('pendingOtpUser')).toBeDefined()
-    expect(state.session.get('otpFailCount')).toBe(0)
+    expect(testSession.get('pendingOtpUser')).toEqual(
+      expect.objectContaining({ userId: String(admin.id), email: 'admin@example.com' }),
+    )
+    expect(testSession.get('otpFailCount')).toBe(0)
     // Staging is a same-session mutation: dirty-marked, no Set-Cookie.
-    expect(state.markSessionDirty).toHaveBeenCalled()
-    expect(setCookieOf(result)).toBeNull()
+    expect(markSessionDirty).toHaveBeenCalled()
+    expect(getSetCookie(result)).toBeNull()
+    // The OTP row is real, and never stores the code in plaintext.
+    const row = await getOtpRow(admin.id)
+    expect(row).not.toBeNull()
+    expect(row!.value).not.toContain(otpCode)
   })
 
   it('does NOT trigger OTP when mail is not ready', async () => {
-    state.mailReady = false
-    const result = await action(postFormData(validLogin))
+    setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
+    await seedUser()
 
-    const { issueOtpToken } = await import('@/server/domains/auth/verification-tokens')
-    const { sendSignInOtp } = await import('@/server/infra/email/sender')
-    const { establishLoginSession } = await import('@/server/domains/auth/primitives')
+    const result = await callAction(null, loginFormData())
 
-    expect(vi.mocked(issueOtpToken)).not.toHaveBeenCalled()
-    expect(vi.mocked(sendSignInOtp)).not.toHaveBeenCalled()
-    expect(vi.mocked(establishLoginSession)).toHaveBeenCalled()
+    expect(mockHandles.sendSignInOtp).not.toHaveBeenCalled()
+    expect(mockHandles.establishLoginSession).toHaveBeenCalled()
     // Sid rotation keeps its explicit Set-Cookie channel.
-    expect(setCookieOf(result)).toBe('blog_session=test')
-    expect(state.markSessionDirty).not.toHaveBeenCalled()
+    expect(getSetCookie(result)).toBe('__session=test-cookie; Path=/')
+    expect(markSessionDirty).not.toHaveBeenCalled()
+    // No OTP row was ever written.
+    expect(await db.select().from(verification)).toHaveLength(0)
   })
 
   it('blocks OTP send when rate limit is exceeded', async () => {
-    const { tryOtpSendRateLimit } = await import('@/server/infra/rate-limit')
-    vi.mocked(tryOtpSendRateLimit).mockResolvedValueOnce({ count: 4, exceeded: true })
+    setBlogSettingsBundleForTests(withBucket(MAIL_READY_BUNDLE, 'otpSendIp', 1))
+    await seedUser()
 
-    const { issueOtpToken } = await import('@/server/domains/auth/verification-tokens')
-    const { sendSignInOtp } = await import('@/server/infra/email/sender')
+    // First login consumes the single-slot budget and sends.
+    await callAction(null, loginFormData())
+    expect(mockHandles.sendSignInOtp).toHaveBeenCalledTimes(1)
+    testSession.unset('pendingOtpUser')
+    testSession.unset('otpFailCount')
+    markSessionDirty.mockClear()
 
-    const result = await action(postFormData(validLogin))
+    const result = await callAction(null, loginFormData())
 
-    expect(vi.mocked(issueOtpToken)).not.toHaveBeenCalled()
-    expect(vi.mocked(sendSignInOtp)).not.toHaveBeenCalled()
+    expect(extractData(result).error).toBe('发送过于频繁，请稍后再试。')
+    expect(mockHandles.sendSignInOtp).toHaveBeenCalledTimes(1)
     // Rate-limit error carries no mutation: not dirty, no Set-Cookie.
-    expect(state.markSessionDirty).not.toHaveBeenCalled()
-    expect(setCookieOf(result)).toBeNull()
+    expect(markSessionDirty).not.toHaveBeenCalled()
+    expect(getSetCookie(result)).toBeNull()
   })
 
   it('verifies OTP successfully and establishes session', async () => {
-    state.session.set('pendingOtpUser', {
-      userId: '1',
-      email: 'admin@example.com',
-      expiresAt: Date.now() + 5 * 60 * 1000,
-      sentAt: Date.now(),
-    })
-    state.otpVerifyResult = { userId: Number(1) }
+    const admin = await seedUser()
+    const otpCode = await doLogin()
 
-    const otpBody = new FormData()
-    otpBody.set('otp_code', '123456')
-    const result = await action(postFormData(otpBody, '?action=verifyotp'))
+    const result = await callAction('verifyotp', otpFormData(otpCode))
 
-    const { establishLoginSession } = await import('@/server/domains/auth/primitives')
-    expect(vi.mocked(establishLoginSession)).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.anything(),
-      expect.objectContaining({ id: Number(1) }),
-      expect.anything(),
-      expect.anything(),
+    expect(mockHandles.establishLoginSession).toHaveBeenCalledWith(
+      db,
+      testSession,
+      expect.objectContaining({ id: admin.id }),
+      expect.any(Request),
+      '127.0.0.1',
       expect.objectContaining({ authMethod: 'otp' }),
     )
 
     // pendingOtpUser should be cleaned up
-    expect(state.session.get('pendingOtpUser')).toBeUndefined()
+    expect(testSession.get('pendingOtpUser')).toBeUndefined()
     // Cleanup marks dirty; the sid rotation still carries its own cookie.
-    expect(state.markSessionDirty).toHaveBeenCalled()
-    expect(setCookieOf(result)).toBe('blog_session=test')
+    expect(markSessionDirty).toHaveBeenCalled()
+    expect(getSetCookie(result)).toBe('__session=test-cookie; Path=/')
+    // Single-use: the OTP row is gone.
+    expect(await getOtpRow(admin.id)).toBeNull()
   })
 
   it('fails verification with wrong OTP code', async () => {
-    state.session.set('pendingOtpUser', {
-      userId: '1',
-      email: 'admin@example.com',
-      expiresAt: Date.now() + 5 * 60 * 1000,
-      sentAt: Date.now(),
-    })
-    state.otpVerifyResult = null
+    const admin = await seedUser()
+    const otpCode = await doLogin()
+    markSessionDirty.mockClear()
 
-    const otpBody = new FormData()
-    otpBody.set('otp_code', '000000')
-    const result = await action(postFormData(otpBody, '?action=verifyotp'))
+    const result = await callAction('verifyotp', otpFormData(wrongOtp(otpCode)))
 
     // otpFailCount should increment
-    expect(state.session.get('otpFailCount')).toBe(1)
+    expect(testSession.get('otpFailCount')).toBe(1)
     // Fail-counter mutation marks dirty; the error carries no Set-Cookie.
-    expect(state.markSessionDirty).toHaveBeenCalled()
-    expect(setCookieOf(result)).toBeNull()
+    expect(markSessionDirty).toHaveBeenCalled()
+    expect(getSetCookie(result)).toBeNull()
+    // The OTP row survives a failed attempt.
+    expect(await getOtpRow(admin.id)).not.toBeNull()
   })
 
   it('locks out after 3 failed OTP attempts', async () => {
-    state.session.set('pendingOtpUser', {
-      userId: '1',
-      email: 'admin@example.com',
-      expiresAt: Date.now() + 5 * 60 * 1000,
-      sentAt: Date.now(),
-    })
-    state.otpVerifyResult = null
-
-    const otpBody = new FormData()
-    otpBody.set('otp_code', '000000')
+    await seedUser()
+    const otpCode = await doLogin()
 
     for (let i = 0; i < 3; i++) {
-      await action(postFormData(otpBody, '?action=verifyotp'))
+      await callAction('verifyotp', otpFormData(wrongOtp(otpCode)))
     }
 
     // pendingOtpUser should be cleared (locked out)
-    expect(state.session.get('pendingOtpUser')).toBeUndefined()
-    expect(state.markSessionDirty).toHaveBeenCalled()
+    expect(testSession.get('pendingOtpUser')).toBeUndefined()
+    expect(markSessionDirty).toHaveBeenCalled()
   })
 
   it('resends OTP and resets fail count', async () => {
-    state.session.set('otpFailCount', 2)
-    state.session.set('pendingOtpUser', {
-      userId: '1',
-      email: 'admin@example.com',
-      expiresAt: Date.now() + 5 * 60 * 1000,
-      sentAt: Date.now(),
-    })
+    await seedUser()
+    const oldCode = await doLogin()
+    testSession.set('otpFailCount', 2)
+    markSessionDirty.mockClear()
 
-    const result = await action(postFormData(new FormData(), '?action=resendotp'))
+    const result = await callAction('resendotp', new FormData())
 
-    const { sendSignInOtp } = await import('@/server/infra/email/sender')
-    expect(vi.mocked(sendSignInOtp)).toHaveBeenCalled()
-    expect(state.session.get('otpFailCount')).toBe(0)
+    expect(mockHandles.sendSignInOtp).toHaveBeenCalledTimes(2)
+    const newCode = mockHandles.sendSignInOtp.mock.calls[1]![1] as string
+    expect(newCode).not.toBe(oldCode)
+    expect(testSession.get('otpFailCount')).toBe(0)
     // Resend re-stages the pending entry: dirty-marked, no Set-Cookie.
-    expect(state.markSessionDirty).toHaveBeenCalled()
-    expect(setCookieOf(result)).toBeNull()
+    expect(markSessionDirty).toHaveBeenCalled()
+    expect(getSetCookie(result)).toBeNull()
   })
 
   it('cancels OTP flow and clears pending state', async () => {
-    state.session.set('pendingOtpUser', {
-      userId: '1',
-      email: 'admin@example.com',
-      expiresAt: Date.now() + 5 * 60 * 1000,
-      sentAt: Date.now(),
-    })
+    await seedUser()
+    await doLogin()
 
-    const result = await action(postFormData(new FormData(), '?action=cancelotp'))
+    const result = await callAction('cancelotp', new FormData())
 
-    expect(state.session.get('pendingOtpUser')).toBeUndefined()
-    expect(state.session.get('otpFailCount')).toBeUndefined()
-    expect(state.markSessionDirty).toHaveBeenCalled()
-    expect(setCookieOf(result)).toBeNull()
+    expect(testSession.get('pendingOtpUser')).toBeUndefined()
+    expect(testSession.get('otpFailCount')).toBeUndefined()
+    expect(markSessionDirty).toHaveBeenCalled()
+    expect(getSetCookie(result)).toBeNull()
   })
 
   it('blocks OTP verify when rate limit is exceeded', async () => {
-    state.session.set('pendingOtpUser', {
-      userId: '1',
-      email: 'admin@example.com',
-      expiresAt: Date.now() + 5 * 60 * 1000,
-      sentAt: Date.now(),
-    })
+    setBlogSettingsBundleForTests(withBucket(MAIL_READY_BUNDLE, 'otpVerifyIp', 2))
+    await seedUser()
+    const otpCode = await doLogin()
 
-    const { tryOtpVerifyRateLimit } = await import('@/server/infra/rate-limit')
-    vi.mocked(tryOtpVerifyRateLimit).mockResolvedValueOnce({ count: 6, exceeded: true })
+    // Two wrong attempts consume the verify budget (failCount 1 and 2 —
+    // below the lockout threshold).
+    await callAction('verifyotp', otpFormData(wrongOtp(otpCode)))
+    await callAction('verifyotp', otpFormData(wrongOtp(otpCode)))
+    markSessionDirty.mockClear()
 
-    state.otpVerifyResult = { userId: Number(1) }
-    const otpBody = new FormData()
-    otpBody.set('otp_code', '123456')
-    await action(postFormData(otpBody, '?action=verifyotp'))
+    // The third attempt — even with the CORRECT code — is throttled
+    // before the token check runs.
+    await callAction('verifyotp', otpFormData(otpCode))
 
-    const { establishLoginSession } = await import('@/server/domains/auth/primitives')
-    // establishLoginSession should NOT be called because rate limit blocked it
-    expect(vi.mocked(establishLoginSession)).not.toHaveBeenCalled()
-    expect(state.markSessionDirty).not.toHaveBeenCalled()
+    expect(mockHandles.establishLoginSession).not.toHaveBeenCalled()
+    expect(markSessionDirty).not.toHaveBeenCalled()
   })
 
   // ── Login edge cases ─────────────────────────────────────────────────────
 
   it('rejects invalid email/password (schema validation)', async () => {
-    const badForm = new FormData()
-    badForm.set('email', 'not-an-email')
-    badForm.set('password', '')
+    const result = await callAction(null, loginFormData('not-an-email', ''))
 
-    const result = await action(postFormData(badForm))
-    const d = extractData(result)
-
-    expect(d.error).toBe('请填写正确的邮箱和密码。')
-    expect(state.markSessionDirty).not.toHaveBeenCalled()
+    expect(extractData(result).error).toBe('请填写正确的邮箱和密码。')
+    expect(markSessionDirty).not.toHaveBeenCalled()
   })
 
   it('blocks login when login rate limit exceeded', async () => {
-    const { tryRateLimit } = await import('@/server/infra/rate-limit')
-    vi.mocked(tryRateLimit).mockResolvedValueOnce({ count: 10, exceeded: true })
+    setBlogSettingsBundleForTests(withBucket(MAIL_READY_BUNDLE, 'signInIp', 1))
+    await seedUser()
 
-    const result = await action(postFormData(validLogin))
-    const d = extractData(result)
+    // First attempt consumes the single-slot budget (and stages an OTP,
+    // hence the dirty mark — cleared before the throttled attempt).
+    await callAction(null, loginFormData())
+    markSessionDirty.mockClear()
 
-    expect(d.error).toBe('登录失败次数过多，请稍后再试。')
-    expect(state.markSessionDirty).not.toHaveBeenCalled()
+    const result = await callAction(null, loginFormData())
+
+    expect(extractData(result).error).toBe('登录失败次数过多，请稍后再试。')
+    expect(markSessionDirty).not.toHaveBeenCalled()
   })
 
   it('wrong password returns redirect without triggering OTP', async () => {
-    state.verifyUserPasswordResult = null
+    await seedUser()
 
-    const result = await action(postFormData(validLogin))
-    expect(result).toBeInstanceOf(Response)
-    expect((result as Response).status).toBe(302)
-    expect((result as Response).headers.get('Location')).toContain('error=invalid_credentials')
+    const result = await callAction(null, loginFormData('admin@example.com', 'wrong-password-123'))
+
+    expect(result.status).toBe(302)
+    expect(result.headers.get('Location')).toContain('error=invalid_credentials')
     // Invalid-credentials redirect carries no mutation: no Set-Cookie.
-    expect(setCookieOf(result)).toBeNull()
-    expect(state.markSessionDirty).not.toHaveBeenCalled()
-
-    const { issueOtpToken } = await import('@/server/domains/auth/verification-tokens')
-    expect(vi.mocked(issueOtpToken)).not.toHaveBeenCalled()
+    expect(getSetCookie(result)).toBeNull()
+    expect(markSessionDirty).not.toHaveBeenCalled()
+    expect(mockHandles.sendSignInOtp).not.toHaveBeenCalled()
+    expect(await db.select().from(verification)).toHaveLength(0)
   })
 
   it('returns error when first-time OTP email send fails', async () => {
-    const { sendSignInOtp } = await import('@/server/infra/email/sender')
-    vi.mocked(sendSignInOtp).mockResolvedValueOnce({ ok: false, reason: 'upstream', status: 500, message: 'fail' })
+    await seedUser()
+    mockHandles.sendSignInOtp.mockResolvedValueOnce({ ok: false, reason: 'upstream', status: 500, message: 'fail' })
 
-    const result = await action(postFormData(validLogin))
-    const d = extractData(result)
+    const result = await callAction(null, loginFormData())
 
-    expect(d.error).toBe('验证码发送失败，请稍后重试。')
-    expect(state.session.get('pendingOtpUser')).toBeUndefined()
+    expect(extractData(result).error).toBe('验证码发送失败，请稍后重试。')
+    expect(testSession.get('pendingOtpUser')).toBeUndefined()
     // Send failed before staging: no mutation, not dirty.
-    expect(state.markSessionDirty).not.toHaveBeenCalled()
+    expect(markSessionDirty).not.toHaveBeenCalled()
   })
 
   it('returns error when first-time OTP email throws', async () => {
-    const { sendSignInOtp } = await import('@/server/infra/email/sender')
-    vi.mocked(sendSignInOtp).mockRejectedValueOnce(new Error('network timeout'))
+    await seedUser()
+    mockHandles.sendSignInOtp.mockRejectedValueOnce(new Error('network timeout'))
 
-    const result = await action(postFormData(validLogin))
-    const d = extractData(result)
+    const result = await callAction(null, loginFormData())
 
-    expect(d.error).toBe('验证码发送失败，请稍后重试。')
-    expect(state.session.get('pendingOtpUser')).toBeUndefined()
+    expect(extractData(result).error).toBe('验证码发送失败，请稍后重试。')
+    expect(testSession.get('pendingOtpUser')).toBeUndefined()
     // Send failed before staging: no mutation, not dirty.
-    expect(state.markSessionDirty).not.toHaveBeenCalled()
+    expect(markSessionDirty).not.toHaveBeenCalled()
   })
 
   // ── verifyotp edge cases ─────────────────────────────────────────────────
 
   it('rejects verifyotp when no pendingOtpUser in session', async () => {
-    const otpBody = new FormData()
-    otpBody.set('otp_code', '123456')
-    const result = await action(postFormData(otpBody, '?action=verifyotp'))
-    const d = extractData(result)
+    const result = await callAction('verifyotp', otpFormData('123456'))
 
-    expect(d.error).toBe('请先完成登录。')
-    expect(state.markSessionDirty).not.toHaveBeenCalled()
+    expect(extractData(result).error).toBe('请先完成登录。')
+    expect(markSessionDirty).not.toHaveBeenCalled()
   })
 
   it('returns error when OTP valid but user not found', async () => {
-    state.session.set('pendingOtpUser', {
-      userId: '1',
-      email: 'admin@example.com',
-      expiresAt: Date.now() + 5 * 60 * 1000,
-      sentAt: Date.now(),
-    })
-    state.otpVerifyResult = { userId: Number(1) }
+    const admin = await seedUser()
+    const otpCode = await doLogin()
+    // Hard-delete the user: `verification` carries no FK, so the OTP row
+    // survives and verifies — the user lookup then misses.
+    await db.delete(user).where(eq(user.id, admin.id))
+    markSessionDirty.mockClear()
 
-    const { findUserById } = await import('@/server/infra/db/operations/user')
-    vi.mocked(findUserById).mockResolvedValueOnce(null)
+    const result = await callAction('verifyotp', otpFormData(otpCode))
 
-    const otpBody = new FormData()
-    otpBody.set('otp_code', '123456')
-    const result = await action(postFormData(otpBody, '?action=verifyotp'))
-    const d = extractData(result)
-
-    expect(d.error).toBe('账户状态异常，无法登录。')
+    expect(extractData(result).error).toBe('账户状态异常，无法登录。')
     // The pending entry was cleared before the user lookup failed.
-    expect(state.markSessionDirty).toHaveBeenCalled()
-    expect(setCookieOf(result)).toBeNull()
-    const { establishLoginSession } = await import('@/server/domains/auth/primitives')
-    expect(vi.mocked(establishLoginSession)).not.toHaveBeenCalled()
+    expect(markSessionDirty).toHaveBeenCalled()
+    expect(getSetCookie(result)).toBeNull()
+    expect(mockHandles.establishLoginSession).not.toHaveBeenCalled()
   })
 
   it('cleans up otpFailCount on successful verification', async () => {
-    state.session.set('pendingOtpUser', {
-      userId: '1',
-      email: 'admin@example.com',
-      expiresAt: Date.now() + 5 * 60 * 1000,
-      sentAt: Date.now(),
-    })
-    state.session.set('otpFailCount', 2)
-    state.otpVerifyResult = { userId: Number(1) }
+    await seedUser()
+    const otpCode = await doLogin()
+    testSession.set('otpFailCount', 2)
 
-    const otpBody = new FormData()
-    otpBody.set('otp_code', '123456')
-    const result = await action(postFormData(otpBody, '?action=verifyotp'))
+    const result = await callAction('verifyotp', otpFormData(otpCode))
 
-    expect(state.session.get('otpFailCount')).toBeUndefined()
-    expect(state.markSessionDirty).toHaveBeenCalled()
-    expect(setCookieOf(result)).toBe('blog_session=test')
+    expect(testSession.get('otpFailCount')).toBeUndefined()
+    expect(markSessionDirty).toHaveBeenCalled()
+    expect(getSetCookie(result)).toBe('__session=test-cookie; Path=/')
   })
 
   // ── resendotp edge cases ─────────────────────────────────────────────────
 
   it('rejects resend when no pendingOtpUser in session', async () => {
-    const result = await action(postFormData(new FormData(), '?action=resendotp'))
-    const d = extractData(result)
+    const result = await callAction('resendotp', new FormData())
 
-    expect(d.error).toBe('请先完成登录。')
-    expect(state.markSessionDirty).not.toHaveBeenCalled()
+    expect(extractData(result).error).toBe('请先完成登录。')
+    expect(markSessionDirty).not.toHaveBeenCalled()
   })
 
   it('returns error when email send fails on resend', async () => {
-    state.session.set('pendingOtpUser', {
-      userId: '1',
-      email: 'admin@example.com',
-      expiresAt: Date.now() + 5 * 60 * 1000,
-      sentAt: Date.now(),
-    })
+    await seedUser()
+    await doLogin()
+    mockHandles.sendSignInOtp.mockResolvedValueOnce({ ok: false, reason: 'upstream', status: 500, message: 'fail' })
+    markSessionDirty.mockClear()
 
-    const { sendSignInOtp } = await import('@/server/infra/email/sender')
-    vi.mocked(sendSignInOtp).mockResolvedValueOnce({ ok: false, reason: 'upstream', status: 500, message: 'fail' })
+    const result = await callAction('resendotp', new FormData())
 
-    const result = await action(postFormData(new FormData(), '?action=resendotp'))
-    const d = extractData(result)
-
-    expect(d.error).toBe('验证码发送失败，请稍后重试。')
-    expect(state.markSessionDirty).not.toHaveBeenCalled()
+    expect(extractData(result).error).toBe('验证码发送失败，请稍后重试。')
+    expect(markSessionDirty).not.toHaveBeenCalled()
   })
 
   it('updates pendingOtpUser with new expiresAt and sentAt on resend', async () => {
+    const admin = await seedUser()
+    await doLogin()
     const oldExpires = Date.now() + 60 * 1000
     const oldSent = Date.now() - 4 * 60 * 1000
-    state.session.set('pendingOtpUser', {
-      userId: '1',
-      email: 'admin@example.com',
-      expiresAt: oldExpires,
-      sentAt: oldSent,
-    })
+    stagePendingOtp(admin.id, { expiresAt: oldExpires, sentAt: oldSent })
 
-    await action(postFormData(new FormData(), '?action=resendotp'))
+    await callAction('resendotp', new FormData())
 
-    const updated = state.session.get('pendingOtpUser') as { expiresAt: number; sentAt: number }
+    const updated = testSession.get('pendingOtpUser') as { expiresAt: number; sentAt: number }
     expect(updated.expiresAt).toBeGreaterThan(oldExpires)
     expect(updated.sentAt).toBeGreaterThan(oldSent)
-    expect(state.markSessionDirty).toHaveBeenCalled()
+    expect(markSessionDirty).toHaveBeenCalled()
   })
 
   it('blocks resend when rate limit exceeded', async () => {
-    state.session.set('pendingOtpUser', {
-      userId: '1',
-      email: 'admin@example.com',
-      expiresAt: Date.now() + 5 * 60 * 1000,
-      sentAt: Date.now(),
-    })
+    setBlogSettingsBundleForTests(withBucket(MAIL_READY_BUNDLE, 'otpSendIp', 1))
+    await seedUser()
+    // The initial login already consumed the single-slot send budget.
+    await doLogin()
+    markSessionDirty.mockClear()
 
-    const { tryOtpSendRateLimit } = await import('@/server/infra/rate-limit')
-    vi.mocked(tryOtpSendRateLimit).mockResolvedValueOnce({ count: 4, exceeded: true })
+    const result = await callAction('resendotp', new FormData())
 
-    const result = await action(postFormData(new FormData(), '?action=resendotp'))
-    const d = extractData(result)
-
-    expect(d.error).toBe('发送过于频繁，请稍后再试。')
-    const { issueOtpToken } = await import('@/server/domains/auth/verification-tokens')
-    expect(vi.mocked(issueOtpToken)).not.toHaveBeenCalled()
-    expect(state.markSessionDirty).not.toHaveBeenCalled()
+    expect(extractData(result).error).toBe('发送过于频繁，请稍后再试。')
+    expect(mockHandles.sendSignInOtp).toHaveBeenCalledTimes(1)
+    expect(markSessionDirty).not.toHaveBeenCalled()
   })
 
   // ── cancelotp edge cases ─────────────────────────────────────────────────
 
   it('preserves redirectTo in cancel redirect', async () => {
-    state.session.set('pendingOtpUser', {
-      userId: '1',
-      email: 'admin@example.com',
-      expiresAt: Date.now() + 5 * 60 * 1000,
-      sentAt: Date.now(),
-    })
+    await seedUser()
+    await doLogin()
 
-    const result = await action(postFormData(new FormData(), '?action=cancelotp&redirect_to=/admin/posts'))
+    const result = await callAction('cancelotp', new FormData(), '/admin/posts')
 
-    const response = result as Response
-    expect(response.status).toBe(302)
-    expect(response.headers.get('location')).toContain(encodeURIComponent('/admin/posts'))
+    expect(result.status).toBe(302)
+    expect(result.headers.get('location')).toContain(encodeURIComponent('/admin/posts'))
   })
 })
 
-describe('routes/signin — identify', () => {
-  function emailForm(email: string): FormData {
-    const fd = new FormData()
-    fd.set('email', email)
-    return fd
-  }
-
+describe('routes/signin — identify (real db)', () => {
   it('rejects malformed email', async () => {
-    const result = await action(postFormData(emailForm('not-an-email'), '?action=identify'))
+    const result = await callAction('identify', emailFormData('not-an-email'))
     expect(extractData(result).error).toBe('请填写正确的邮箱地址。')
   })
 
   it('returns method=password for unknown email without leaking existence', async () => {
-    state.findUserByEmailResult = null
-
-    const result = await action(postFormData(emailForm('ghost@example.com'), '?action=identify'))
+    const result = await callAction('identify', emailFormData('ghost@example.com'))
     expect(extractData(result).method).toBe('password')
 
-    const { issueSignInLinkToken } = await import('@/server/domains/auth/verification-tokens')
-    expect(vi.mocked(issueSignInLinkToken)).not.toHaveBeenCalled()
+    expect(mockHandles.sendSignInLink).not.toHaveBeenCalled()
+    expect(await db.select().from(verification)).toHaveLength(0)
   })
 
   it('returns method=password for a regular user', async () => {
-    state.findUserByEmailResult = {
-      id: Number(1),
-      email: 'admin@example.com',
-      role: 'admin',
-      deletedAt: null,
-      loginMethod: 'password',
-    }
+    await seedUser({ loginMethod: 'password' })
 
-    const result = await action(postFormData(emailForm('admin@example.com'), '?action=identify'))
+    const result = await callAction('identify', emailFormData('admin@example.com'))
     expect(extractData(result).method).toBe('password')
   })
 
   it('returns method=passkey for a passkey-method user when passkey is enabled', async () => {
-    state.passkeyEnabled = true
-    state.findUserByEmailResult = {
-      id: Number(1),
-      email: 'admin@example.com',
-      role: 'admin',
-      deletedAt: null,
-      loginMethod: 'passkey',
-    }
+    setBlogSettingsBundleForTests(PASSKEY_ON_BUNDLE)
+    await seedUser({ loginMethod: 'passkey' })
 
-    const result = await action(postFormData(emailForm('admin@example.com'), '?action=identify'))
+    const result = await callAction('identify', emailFormData('admin@example.com'))
     expect(extractData(result).method).toBe('passkey')
   })
 
   it('degrades a passkey-method user to password when the global switch is off', async () => {
-    state.passkeyEnabled = false
-    state.findUserByEmailResult = {
-      id: Number(1),
-      email: 'admin@example.com',
-      role: 'admin',
-      deletedAt: null,
-      loginMethod: 'passkey',
-    }
+    await seedUser({ loginMethod: 'passkey' })
 
-    const result = await action(postFormData(emailForm('admin@example.com'), '?action=identify'))
+    const result = await callAction('identify', emailFormData('admin@example.com'))
     expect(extractData(result).method).toBe('password')
   })
 
   it('sends a magic link for a magic-link user when mail is ready', async () => {
-    state.mailReady = true
-    state.findUserByEmailResult = {
-      id: Number(1),
-      name: 'admin',
-      email: 'admin@example.com',
-      role: 'admin',
-      deletedAt: null,
-      loginMethod: 'magic-link',
-    }
+    setBlogSettingsBundleForTests(MAIL_READY_BUNDLE)
+    const admin = await seedUser({ loginMethod: 'magic-link' })
 
-    const result = await action(postFormData(emailForm('admin@example.com'), '?action=identify'))
+    const result = await callAction('identify', emailFormData('admin@example.com'))
     expect(extractData(result).message).toBe('如果该邮箱已注册，登录链接已发送，请查收邮箱。')
 
-    const { issueSignInLinkToken } = await import('@/server/domains/auth/verification-tokens')
-    const { sendSignInLink } = await import('@/server/infra/email/sender')
-    expect(vi.mocked(issueSignInLinkToken)).toHaveBeenCalledWith(expect.anything(), Number(1))
-    expect(vi.mocked(sendSignInLink)).toHaveBeenCalledWith(
-      expect.objectContaining({ email: 'admin@example.com' }),
-      expect.stringContaining('action=magiclink'),
-    )
+    expect(mockHandles.sendSignInLink).toHaveBeenCalledTimes(1)
+    const [recipient, link] = mockHandles.sendSignInLink.mock.calls[0]! as [{ email: string }, string]
+    expect(recipient.email).toBe('admin@example.com')
+    expect(link).toContain('action=magiclink')
+    // A real signin-link token row backs the emailed link.
+    const rows = await db
+      .select()
+      .from(verification)
+      .where(and(eq(verification.purpose, 'signin-link'), eq(verification.userId, admin.id)))
+    expect(rows).toHaveLength(1)
   })
 
   it('degrades a magic-link user to password when mail is not ready', async () => {
-    state.mailReady = false
-    state.findUserByEmailResult = {
-      id: Number(1),
-      email: 'admin@example.com',
-      role: 'admin',
-      deletedAt: null,
-      loginMethod: 'magic-link',
-    }
+    await seedUser({ loginMethod: 'magic-link' })
 
-    const result = await action(postFormData(emailForm('admin@example.com'), '?action=identify'))
+    const result = await callAction('identify', emailFormData('admin@example.com'))
     expect(extractData(result).method).toBe('password')
 
-    const { issueSignInLinkToken } = await import('@/server/domains/auth/verification-tokens')
-    expect(vi.mocked(issueSignInLinkToken)).not.toHaveBeenCalled()
+    expect(mockHandles.sendSignInLink).not.toHaveBeenCalled()
+    expect(await db.select().from(verification)).toHaveLength(0)
   })
 
   it('blocks identify when rate limit is exceeded', async () => {
-    const { tryRateLimit } = await import('@/server/infra/rate-limit')
-    vi.mocked(tryRateLimit).mockResolvedValueOnce({ count: 10, exceeded: true })
+    setBlogSettingsBundleForTests(withBucket(TEST_BLOG_SETTINGS_BUNDLE, 'signInIp', 1))
 
-    const result = await action(postFormData(emailForm('admin@example.com'), '?action=identify'))
+    // First identify consumes the single-slot budget.
+    await callAction('identify', emailFormData('admin@example.com'))
+
+    const result = await callAction('identify', emailFormData('admin@example.com'))
     expect(extractData(result).error).toBe('登录失败次数过多，请稍后再试。')
   })
 })
 
-describe('routes/signin — magic-link consume', () => {
+describe('routes/signin — magic-link consume (real db + tokens)', () => {
   it('rejects an invalid or expired token', async () => {
     const fd = new FormData()
     fd.set('magic_token', 'bogus-token')
-    const result = await action(postFormData(fd, '?action=magiclink'))
+    const result = await callAction('magiclink', fd)
     expect(extractData(result).error).toBe('链接无效或已过期，请重新获取。')
 
-    const { establishLoginSession } = await import('@/server/domains/auth/primitives')
-    expect(vi.mocked(establishLoginSession)).not.toHaveBeenCalled()
+    expect(mockHandles.establishLoginSession).not.toHaveBeenCalled()
   })
 
   it('establishes a session for a valid token', async () => {
-    const { consumeToken } = await import('@/server/domains/auth/verification-tokens')
-    vi.mocked(consumeToken).mockResolvedValueOnce({ userId: Number(1) })
+    const admin = await seedUser({ loginMethod: 'magic-link' })
+    const { token } = issueSignInLinkToken(db, admin.id)
 
     const fd = new FormData()
-    fd.set('magic_token', 'valid-token')
-    const result = await action(postFormData(fd, '?action=magiclink'))
+    fd.set('magic_token', token)
+    const result = await callAction('magiclink', fd)
 
-    const { establishLoginSession } = await import('@/server/domains/auth/primitives')
-    expect(vi.mocked(establishLoginSession)).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.anything(),
-      expect.objectContaining({ id: Number(1) }),
-      expect.anything(),
-      expect.anything(),
+    expect(mockHandles.establishLoginSession).toHaveBeenCalledWith(
+      db,
+      testSession,
+      expect.objectContaining({ id: admin.id }),
+      expect.any(Request),
+      '127.0.0.1',
       expect.objectContaining({ authMethod: 'magic-link' }),
     )
-    expect((result as Response).status).toBe(302)
-    expect(setCookieOf(result)).toBe('blog_session=test')
+    expect(result.status).toBe(302)
+    expect(getSetCookie(result)).toBe('__session=test-cookie; Path=/')
+
+    // Single-use: a replay with the same token fails.
+    const replay = await callAction('magiclink', fd)
+    expect(extractData(replay).error).toBe('链接无效或已过期，请重新获取。')
   })
 })
