@@ -1,154 +1,225 @@
-import { ORPCError, call } from '@orpc/server'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { call } from '@orpc/server'
+import bcrypt from 'bcryptjs'
+import { eq } from 'drizzle-orm'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
+import type { BlogSettingsBundle, RateLimitSettings } from '@/shared/config/types'
+
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
+import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
+import { accountRouter } from '@/server/http/controllers/account.controller'
+import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
+import { session as sessionTable } from '@/server/infra/db/schema/session'
+import { user as userTable } from '@/server/infra/db/schema/user'
+import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 
-// Stub bcrypt so tests stay sync-friendly and don't pay for key
-// derivation. The controller only cares about boolean compare.
-vi.mock('bcryptjs', () => ({
-  default: {
-    compare: vi.fn().mockResolvedValue(true),
-    hash: vi.fn().mockResolvedValue('hashed:new-password'),
-  },
-}))
+// The account controller's profile / password / session procedures
+// against the real engine: seeded user + session rows, real bcrypt
+// compares, and the real in-process rate limiter. (The passkey
+// procedures and their `@simplewebauthn/server` stub live in
+// account.controller.test.ts.)
 
-vi.mock('@/server/infra/db/operations/user', () => ({
-  findUserById: vi.fn(),
-  findSafeUserById: vi.fn(),
-  updateUserById: vi.fn(),
-  PASSWORD_HASH_ROUNDS: 12,
-}))
+const db = getTestDb()
 
-vi.mock('@/server/domains/auth/services/sessions', () => ({
-  revokeAllSessionsOfUser: vi.fn().mockResolvedValue(0),
-}))
+beforeEach(async () => {
+  await clearAllTables(db)
+  initAllBatchers(getDatabaseHandle())
+  __resetRateLimitsForTests()
+})
 
-vi.mock('@/server/domains/auth/repo', () => ({
-  findSessionMeta: vi.fn(),
-  revokeSessionById: vi.fn().mockResolvedValue(true),
-}))
+afterEach(() => {
+  resetAllBatchers()
+})
 
-vi.mock('@/server/infra/rate-limit', () => ({
-  tryRateLimit: vi.fn().mockResolvedValue({ count: 1, exceeded: false }),
-}))
-
-const { findUserById, updateUserById } = await import('@/server/infra/db/operations/user')
-const { revokeAllSessionsOfUser } = await import('@/server/domains/auth/services/sessions')
-const { revokeSessionById } = await import('@/server/domains/auth/repo')
-const { accountRouter } = await import('@/server/http/controllers/account.controller')
-
-const dbUserStub = {
-  id: 1,
-  name: 'Alice',
-  email: 'alice@example.com',
-  link: null,
-  password: 'hashed:old-password',
-  badgeName: null,
-  badgeColor: null,
-  badgeTextColor: null,
-  role: 'visitor' as const,
-  receiveEmail: true,
-  emailVerified: true,
+function withBucket(
+  base: BlogSettingsBundle,
+  bucket: keyof RateLimitSettings,
+  maxAttempts: number,
+): BlogSettingsBundle {
+  return {
+    ...base,
+    rateLimit: { ...base.rateLimit!, [bucket]: { windowSeconds: 60, maxAttempts } },
+  }
 }
 
-const updatedUserStub = {
-  id: '1',
-  name: 'Alice',
-  email: 'alice@example.com',
-  link: null,
-  badgeName: null,
-  badgeColor: null,
-  badgeTextColor: null,
-  role: 'visitor' as const,
-  receiveEmail: true,
-  emailVerified: true,
+let ipCounter = 0
+function nextIp(): string {
+  ipCounter += 1
+  return `10.0.0.${ipCounter}`
+}
+
+function ctxFor(
+  userId: number | string,
+  opts: { role?: 'admin' | 'author' | 'visitor'; sessionId?: string; ip?: string } = {},
+) {
+  return makeAuthedCtx({
+    db,
+    userId: String(userId),
+    role: opts.role ?? 'visitor',
+    sessionId: opts.sessionId ?? 'session-1',
+    clientAddress: opts.ip ?? nextIp(),
+  })
+}
+
+async function seedUser(opts: Partial<typeof userTable.$inferInsert> = {}): Promise<number> {
+  const rows = await db
+    .insert(userTable)
+    .values({
+      name: opts.name ?? 'Alice',
+      email: opts.email ?? `alice-${Math.random().toString(36).slice(2)}@example.com`,
+      password: opts.password ?? 'hashed',
+      role: opts.role ?? 'visitor',
+      ...opts,
+    })
+    .returning({ id: userTable.id })
+  return rows[0]!.id
+}
+
+async function userRow(id: number): Promise<typeof userTable.$inferSelect> {
+  const rows = await db.select().from(userTable).where(eq(userTable.id, id))
+  return rows[0]!
+}
+
+async function seedSession(sid: string, userId: number): Promise<void> {
+  await db.insert(sessionTable).values({
+    id: sid,
+    userId,
+    data: {},
+    userAgent: 'vitest',
+    ip: '127.0.0.1',
+    loginAt: new Date(),
+    lastActiveAt: new Date(),
+    expiresAt: new Date(Date.now() + 3_600_000),
+  })
+}
+
+async function sessionRow(sid: string): Promise<typeof sessionTable.$inferSelect | undefined> {
+  const rows = await db.select().from(sessionTable).where(eq(sessionTable.id, sid))
+  return rows[0]
 }
 
 describe('accountRouter.updateProfile', () => {
-  beforeEach(() => {
-    vi.mocked(findUserById).mockResolvedValue(dbUserStub as unknown as Awaited<ReturnType<typeof findUserById>>)
-    vi.mocked(updateUserById).mockResolvedValue(
-      updatedUserStub as unknown as Awaited<ReturnType<typeof updateUserById>>,
-    )
-  })
+  it('updates name when supplied and persists the patch', async () => {
+    const id = await seedUser({ name: 'Alice' })
 
-  it('updates name when supplied and returns the projected user', async () => {
-    const ctx = makeAuthedCtx({ userId: '1', role: 'visitor' })
-    const res = await call(accountRouter.updateProfile, { name: 'Alice the Updated' }, { context: ctx })
-    expect(res.user).toBeDefined()
-    expect(vi.mocked(updateUserById)).toHaveBeenCalledWith(
-      expect.any(Object),
-      1,
-      expect.objectContaining({ name: 'Alice the Updated' }),
+    const res = await call(
+      accountRouter.updateProfile,
+      { name: 'Alice the Updated' },
+      { context: ctxFor(id, { role: 'visitor' }) },
     )
+
+    expect(res.user.name).toBe('Alice the Updated')
+    expect((await userRow(id)).name).toBe('Alice the Updated')
   })
 
   it('refuses to set badge fields for a non-admin visitor', async () => {
-    const ctx = makeAuthedCtx({ userId: '1', role: 'visitor' })
-    await call(accountRouter.updateProfile, { badgeName: 'visitor-cannot-set' }, { context: ctx })
-    const callPatch = vi.mocked(updateUserById).mock.calls.at(-1)?.[2]
-    expect(callPatch).not.toHaveProperty('badgeName')
+    const id = await seedUser({ role: 'visitor' })
+
+    const res = await call(
+      accountRouter.updateProfile,
+      { name: 'Still Alice', badgeName: 'visitor-cannot-set' },
+      { context: ctxFor(id, { role: 'visitor' }) },
+    )
+
+    expect(res.user.badgeName).toBeNull()
+    const row = await userRow(id)
+    expect(row.name).toBe('Still Alice')
+    expect(row.badgeName).toBeNull()
+  })
+
+  it('treats a badge-only patch from a visitor as a graceful no-op, not a 500', async () => {
+    // Badge writes are admin/author-only, so stripping leaves an EMPTY
+    // patch — this used to hit drizzle's "No values to set".
+    const id = await seedUser({ role: 'visitor' })
+
+    const res = await call(
+      accountRouter.updateProfile,
+      { badgeName: 'visitor-cannot-set', badgeColor: '#fff' },
+      { context: ctxFor(id, { role: 'visitor' }) },
+    )
+
+    expect(res.user.badgeName).toBeNull()
+    const row = await userRow(id)
+    expect(row.badgeName).toBeNull()
   })
 
   it('throws NOT_FOUND when the underlying user row is missing', async () => {
-    vi.mocked(findUserById).mockResolvedValueOnce(null)
-    const ctx = makeAuthedCtx({ userId: '404' })
-    await expect(call(accountRouter.updateProfile, {}, { context: ctx })).rejects.toMatchObject({
+    await expect(call(accountRouter.updateProfile, {}, { context: ctxFor(404) })).rejects.toMatchObject({
       code: 'NOT_FOUND',
-    } satisfies Partial<ORPCError<string, unknown>>)
+    })
   })
 })
 
 describe('accountRouter.updatePassword', () => {
-  beforeEach(() => {
-    vi.mocked(findUserById).mockResolvedValue(dbUserStub as unknown as Awaited<ReturnType<typeof findUserById>>)
-    vi.mocked(updateUserById).mockResolvedValue(
-      updatedUserStub as unknown as Awaited<ReturnType<typeof updateUserById>>,
-    )
-  })
-
   it('hashes the new password, persists it, and revokes other sessions', async () => {
-    const ctx = makeAuthedCtx({ userId: '1', sessionId: 'keep-me' })
+    const id = await seedUser({ password: await bcrypt.hash('OldPass1234', 4) })
+    await seedSession('keep-me', id)
+    await seedSession('other-session', id)
+
     const res = await call(
       accountRouter.updatePassword,
-      { oldPassword: 'whatever', newPassword: 'New-password-1' },
-      { context: ctx },
+      { oldPassword: 'OldPass1234', newPassword: 'New-password-1' },
+      { context: ctxFor(id, { sessionId: 'keep-me' }) },
     )
+
     expect(res.success).toBe(true)
-    expect(vi.mocked(updateUserById)).toHaveBeenCalledWith(
-      expect.any(Object),
-      1,
-      expect.objectContaining({ password: 'hashed:new-password' }),
-    )
-    expect(vi.mocked(revokeAllSessionsOfUser)).toHaveBeenCalledWith(expect.anything(), 1, 'keep-me')
+    expect(await bcrypt.compare('New-password-1', (await userRow(id)).password)).toBe(true)
+    // Other sessions are revoked; the caller's own survives.
+    expect(await sessionRow('other-session')).toBeUndefined()
+    expect(await sessionRow('keep-me')).toBeDefined()
   })
 
   it('throws FORBIDDEN when the original password does not match', async () => {
-    const bcryptModule = await import('bcryptjs')
-    const bcrypt = bcryptModule.default
-    vi.mocked(bcrypt.compare as (password: string, hash: string) => Promise<boolean>).mockResolvedValueOnce(false)
-    const ctx = makeAuthedCtx({ userId: '1' })
+    const id = await seedUser({ password: await bcrypt.hash('OldPass1234', 4) })
+
     await expect(
-      call(accountRouter.updatePassword, { oldPassword: 'wrong', newPassword: 'New-password-1' }, { context: ctx }),
+      call(
+        accountRouter.updatePassword,
+        { oldPassword: 'wrong', newPassword: 'New-password-1' },
+        { context: ctxFor(id) },
+      ),
     ).rejects.toMatchObject({ code: 'FORBIDDEN' })
+
+    // The rejected attempt never rewrote the stored hash.
+    expect(await bcrypt.compare('OldPass1234', (await userRow(id)).password)).toBe(true)
   })
 
   it('throws TOO_MANY_REQUESTS when the rate limit is exceeded', async () => {
-    const rateLimitModule = await import('@/server/infra/rate-limit')
-    vi.mocked(rateLimitModule.tryRateLimit).mockResolvedValueOnce({ count: 6, exceeded: true })
+    setBlogSettingsBundleForTests(withBucket(TEST_BLOG_SETTINGS_BUNDLE, 'signInIp', 1))
+    const id = await seedUser({ password: await bcrypt.hash('OldPass1234', 4) })
+    const ip = nextIp()
 
-    const ctx = makeAuthedCtx({ userId: '1' })
+    // First attempt consumes the single-slot budget and succeeds.
+    await call(
+      accountRouter.updatePassword,
+      { oldPassword: 'OldPass1234', newPassword: 'New-password-1' },
+      { context: ctxFor(id, { ip }) },
+    )
     await expect(
-      call(accountRouter.updatePassword, { oldPassword: 'old', newPassword: 'New-password-1' }, { context: ctx }),
+      call(
+        accountRouter.updatePassword,
+        { oldPassword: 'New-password-1', newPassword: 'Another-pass-1' },
+        { context: ctxFor(id, { ip }) },
+      ),
     ).rejects.toMatchObject({ code: 'TOO_MANY_REQUESTS' })
+
+    // The rejected attempt never reached the password change.
+    expect(await bcrypt.compare('New-password-1', (await userRow(id)).password)).toBe(true)
   })
 })
 
 describe('accountRouter.revokeSession', () => {
   it('returns `currentSession: false` when the revoked id is not the caller session', async () => {
-    vi.mocked(revokeSessionById).mockResolvedValue(undefined)
-    const ctx = makeAuthedCtx({ userId: '1', sessionId: 'caller-session' })
-    const res = await call(accountRouter.revokeSession, { id: 'other-session' }, { context: ctx })
+    const id = await seedUser()
+
+    const res = await call(
+      accountRouter.revokeSession,
+      { id: 'other-session' },
+      { context: ctxFor(id, { sessionId: 'caller-session' }) },
+    )
+
     expect(res).toEqual({ success: true, currentSession: false })
   })
 })

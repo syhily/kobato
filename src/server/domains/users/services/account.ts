@@ -84,6 +84,13 @@ export async function updateAccountProfile(
     }
   }
 
+  // A visitor submitting ONLY badge fields ends up with nothing to
+  // update (badge writes are admin/author-only) — a graceful no-op,
+  // never drizzle's "No values to set" 500.
+  if (Object.keys(patch).length === 0) {
+    return dbUser
+  }
+
   const updated = await updateUserById(db, userId, patch)
   if (!updated) {
     throw new DomainError('NOT_FOUND', '用户不存在。')
