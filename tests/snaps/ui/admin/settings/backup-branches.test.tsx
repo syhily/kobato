@@ -2,8 +2,23 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { BackupSettings } from '@/shared/config/types'
 
+import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { BackupView } from '@/ui/admin/settings/BackupView'
+
+const queryMocks = mockTanstackQuery()
+
+queryMocks.query = {
+  data: undefined as { primaryDriver: 's3' | 'local' } | undefined,
+  isPending: true,
+  error: null as unknown,
+}
+
+queryMocks.mutation = {
+  mutate: vi.fn(),
+  mutateAsync: vi.fn(),
+  isPending: false,
+}
 
 // The companion `backup.test.tsx` covers the BackupView loading /
 // schedule-populated / schedule-disabled branches (all rendered with the
@@ -26,30 +41,6 @@ import { BackupView } from '@/ui/admin/settings/BackupView'
 // under the SSR renderers and remain covered by the parent file's
 // `.skip` documentation and the child-component snapshots.
 
-// ─────────────────────── react-query mock ───────────────────────────
-
-const queryMocks = vi.hoisted(() => ({
-  query: {
-    data: undefined as { primaryDriver: 's3' | 'local' } | undefined,
-    isPending: true,
-    error: null as unknown,
-  },
-  mutation: {
-    mutate: vi.fn(),
-    mutateAsync: vi.fn(),
-    isPending: false,
-  },
-}))
-
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
-  return {
-    ...actual,
-    useQuery: () => queryMocks.query,
-    useMutation: () => queryMocks.mutation,
-  }
-})
-
 vi.mock('react-router', async () => {
   const actual = await vi.importActual<typeof import('react-router')>('react-router')
   return {
@@ -57,18 +48,6 @@ vi.mock('react-router', async () => {
     useRouteLoaderData: () => ({ csrfToken: 'test-csrf-token' }),
   }
 })
-
-vi.mock('@/ui/admin/settings/useSettingsMutation', () => ({
-  useSettingsMutation: () => ({
-    commit: vi.fn(),
-    resetStatus: vi.fn(),
-    revalidate: vi.fn(),
-    isPending: false,
-    status: 'idle',
-  }),
-}))
-
-vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
 
 // ───────────────────────────── fixtures ─────────────────────────────
 

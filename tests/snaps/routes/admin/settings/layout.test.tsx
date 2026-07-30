@@ -4,7 +4,7 @@ import type { RouteObject } from 'react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { createMemoryRouter, Outlet, RouterProvider, useOutletContext } from 'react-router'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { asRoute } from '#/_helpers/route-test-utils'
@@ -15,10 +15,6 @@ import { ThemeProvider } from '@/ui/lib/ThemeProvider'
 // The layout's loader path imports the settings service, whose
 // section-change wiring pulls in the backup/audit schedulers (and
 // transitively the DB bootstrap) — irrelevant to these snapshots.
-vi.mock('@/server/domains/settings/services/section-changes', () => ({
-  SECTION_CHANGE_HANDLERS: new Map(),
-}))
-
 const CURRENT_USER = { id: '1', name: 'Alice', email: 'alice@example.com' }
 
 const MASKS = {

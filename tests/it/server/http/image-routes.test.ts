@@ -1,7 +1,12 @@
+import { eq } from 'drizzle-orm'
 import { Hono } from 'hono'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Env } from '@/server/http/context'
+
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { content as contentTable } from '@/server/infra/db/schema/content'
+import { post as postTable } from '@/server/infra/db/schema/post'
 
 // Regression net for the Hono path-parser footgun that was silently
 // degrading every `/images/*.png` endpoint to its fallback branch.
@@ -17,59 +22,40 @@ import type { Env } from '@/server/http/context'
 // The fix in `src/server/http/resources/images.ts` declares each route
 // with an explicit `{[^/]+\\.png}` constraint and strips the extension
 // in the handler. These tests pin both halves.
+//
+// Real engine: the OG slug lookups run against seeded post rows, the
+// in-process rate limiter and the kv-backed cache registry run for real.
+// The kept seams are the heavy/external backends: gravatar avatar
+// fetching (network), OG canvas rendering, and the calendar renderer —
+// each stub echoes its arguments onto the wire so param extraction is
+// asserted through response bodies, not mock call args.
 
-// Stub the heavy backends so we can assert routing without running the
-// real rendering pipeline.
-vi.mock('@/server/infra/cache/registry', () => ({
-  AvatarStatus: { HAVE_AVATAR: 0, NO_AVATAR: 1 },
-  get: vi.fn().mockResolvedValue(null),
-  set: vi.fn().mockResolvedValue(undefined),
-  through: vi.fn((_db: unknown, _id: unknown, _params: unknown, loader: () => unknown) => loader()),
-}))
-// catalog/catalog was removed; images.ts now resolves slugs via
-// findPublicPostMetaBySlug / findPublicPageMetaBySlug (mocked below).
-vi.mock('@/server/domains/comments/services/avatar', () => ({
-  defaultAvatarUrl: () => 'https://example.test/images/default-avatar.png',
-  serveAvatar: vi.fn().mockResolvedValue({ kind: 'redirect' }),
-  resolveAvatarSize: vi.fn((raw: string | undefined) => (raw === undefined || raw === '' ? 120 : Number(raw))),
-}))
+vi.mock('@/server/domains/comments/services/avatar', async (importActual) => {
+  const actual = await importActual<typeof import('@/server/domains/comments/services/avatar')>()
+  return {
+    ...actual,
+    // Echo stub: the route maps a `png` outcome straight onto the wire,
+    // so the extracted hash + size are observable in the response body.
+    serveAvatar: vi.fn(async (_db: unknown, hash: string, size: number) => ({
+      kind: 'png' as const,
+      buffer: Buffer.from(`${hash}:${size}`),
+    })),
+  }
+})
 vi.mock('@/server/render/og/render', () => ({
   drawOpenGraph: vi.fn().mockResolvedValue(Buffer.from([0x89, 0x50, 0x4e, 0x47])),
 }))
 vi.mock('@/server/http/resources/calendar', () => ({
   serveCalendar: vi.fn().mockImplementation(
-    async (_db: unknown, params: { year?: string; time?: string }) =>
-      new Response(JSON.stringify(params), {
+    async (_db: unknown, params: { year?: string; time?: string }, theme: string) =>
+      new Response(JSON.stringify({ params, theme }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
       }),
   ),
 }))
-vi.mock('@/server/domains/pages/services/public-query', () => ({
-  listPublicPageMetas: vi.fn(async () => []),
-  findPublicPageMetaBySlug: vi.fn(),
-}))
-vi.mock('@/server/domains/posts/services/single', () => ({
-  findPublicPostMetaBySlug: vi.fn(),
-}))
-vi.mock('@/shared/config/getters', () => ({
-  requireBlogSettingsSection: (section: string) => {
-    if (section === 'siteIdentity') {
-      return { website: 'https://example.test', description: 'desc' }
-    }
-    if (section === 'cache') {
-      return { cache: { og: { prefix: 'og:', ttlSeconds: 3600 } } }
-    }
-    if (section === 'rateLimit') {
-      return { rateLimit: { resourceIp: { windowSeconds: 60, maxAttempts: 60 } } }
-    }
-    return {}
-  },
-  getCacheSettings: () => ({ cache: { og: { prefix: 'og:', ttlSeconds: 3600 } } }),
-  getBlogSettingsBundleSync: () => ({
-    rateLimit: { resourceIp: { windowSeconds: 60, maxAttempts: 60 } },
-  }),
-}))
+
+const db = getTestDb()
 
 const { imagesRouter } = await import('@/server/http/resources/images')
 
@@ -81,26 +67,51 @@ const app = new Hono<Env>()
 app.use('*', async (c, next) => {
   c.set('requestContext', {
     clientAddress: '127.0.0.1',
-    db: undefined,
+    db,
   } as unknown as Env['Variables']['requestContext'])
   await next()
 })
 app.route('/', imagesRouter)
 
+beforeEach(async () => {
+  await clearAllTables(db)
+})
+
+async function seedLivePost(slug: string): Promise<number> {
+  const rows = await db
+    .insert(postTable)
+    .values({
+      slug,
+      title: slug,
+      published: true,
+      publishedAt: new Date('2024-01-01'),
+      firstPublishedAt: new Date('2024-01-01'),
+      visible: true,
+    })
+    .returning({ id: postTable.id })
+  const postId = rows[0]!.id
+  const revisions = await db
+    .insert(contentTable)
+    .values({ type: 'post', ownerId: postId, revisionNo: 1, status: 'published', body: [] })
+    .returning({ id: contentTable.id })
+  await db.update(postTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(postTable.id, postId))
+  return postId
+}
+
 describe('imagesRouter avatar', () => {
   it('extracts the bare hash from `/images/avatar/<hash>.png`', async () => {
-    const { serveAvatar } = await import('@/server/domains/comments/services/avatar')
     const res = await app.request('/images/avatar/abcdef0123456789.png')
     // Route does NOT 404 (it now resolves the hash; the path-parser bug
     // would have driven this into the missing-param fallback).
-    expect(res.status).toBeLessThan(500)
-    expect(vi.mocked(serveAvatar)).toHaveBeenCalledWith(undefined, 'abcdef0123456789', 120)
+    expect(res.status).toBe(200)
+    expect(res.headers.get('Content-Type')).toBe('image/png')
+    expect(await res.text()).toBe('abcdef0123456789:120')
   })
 
   it('matches numeric ids the same way', async () => {
-    const { serveAvatar } = await import('@/server/domains/comments/services/avatar')
-    await app.request('/images/avatar/42.png')
-    expect(vi.mocked(serveAvatar)).toHaveBeenNthCalledWith(2, undefined, '42', 120)
+    const res = await app.request('/images/avatar/42.png')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('42:120')
   })
 
   it('rejects non-png extensions with 404', async () => {
@@ -110,35 +121,35 @@ describe('imagesRouter avatar', () => {
 })
 
 describe('imagesRouter og', () => {
-  it('looks up slug via findPublicPostMetaBySlug and findPublicPageMetaBySlug in parallel', async () => {
-    const { findPublicPostMetaBySlug } = await import('@/server/domains/posts/services/single')
-    const { findPublicPageMetaBySlug } = await import('@/server/domains/pages/services/public-query')
-    await app.request('/images/og/hello-world.png')
-    expect(vi.mocked(findPublicPostMetaBySlug)).toHaveBeenCalledWith(undefined, 'hello-world')
-    expect(vi.mocked(findPublicPageMetaBySlug)).toHaveBeenCalledWith(undefined, 'hello-world')
+  it('renders an OG image when the slug matches a live post row', async () => {
+    await seedLivePost('hello-world')
+
+    const res = await app.request('/images/og/hello-world.png')
+    expect(res.status).toBe(200)
+    expect(res.headers.get('Content-Type')).toBe('image/png')
+  })
+
+  it('falls back to the site OG image when no post or page matches the slug', async () => {
+    const res = await app.request('/images/og/missing.png')
+    expect(res.status).toBe(302)
+    expect(res.headers.get('Location')).toBe('https://example.com/images/open-graph.png')
   })
 })
 
 describe('imagesRouter calendar', () => {
   it('extracts year + time from `/images/calendar/<year>/<time>.png`', async () => {
-    const { serveCalendar } = await import('@/server/http/resources/calendar')
-    await app.request('/images/calendar/2024/12-25.png')
-    expect(vi.mocked(serveCalendar)).toHaveBeenCalledWith(
-      undefined,
-      { year: '2024', time: '12-25' },
-      'light',
-      expect.anything(),
-    )
+    const res = await app.request('/images/calendar/2024/12-25.png')
+    expect(res.status).toBe(200)
+    const body = (await res.json()) as { params: { year: string; time: string }; theme: string }
+    expect(body.params).toEqual({ year: '2024', time: '12-25' })
+    expect(body.theme).toBe('light')
   })
 
   it('routes the dark variant to the dark theme', async () => {
-    const { serveCalendar } = await import('@/server/http/resources/calendar')
-    await app.request('/images/calendar/dark/2024/01-01.png')
-    expect(vi.mocked(serveCalendar)).toHaveBeenCalledWith(
-      undefined,
-      { year: '2024', time: '01-01' },
-      'dark',
-      expect.anything(),
-    )
+    const res = await app.request('/images/calendar/dark/2024/01-01.png')
+    expect(res.status).toBe(200)
+    const body = (await res.json()) as { params: { year: string; time: string }; theme: string }
+    expect(body.params).toEqual({ year: '2024', time: '01-01' })
+    expect(body.theme).toBe('dark')
   })
 })

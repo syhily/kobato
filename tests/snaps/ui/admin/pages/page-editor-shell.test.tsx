@@ -5,8 +5,30 @@ import type { AdminUserDto } from '@/shared/contracts/users'
 import type { PageFilterFieldKey } from '@/ui/admin/pages/filter-fields'
 import type { ActiveFilter } from '@/ui/admin/shared/filterPillsReducer'
 
+import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { PagesView } from '@/ui/admin/pages/PagesView'
+
+const queryMocks = mockTanstackQuery()
+
+queryMocks.infinite = {
+  data: undefined as { pages: { pages: AdminPageDto[]; total: number; hasMore: boolean }[] } | undefined,
+  isLoading: true,
+  error: null as Error | null,
+  hasNextPage: false,
+  isFetchingNextPage: false,
+  fetchNextPage: vi.fn(),
+}
+
+queryMocks.query = {
+  data: null as unknown,
+  isPending: false,
+  error: null as unknown,
+}
+
+queryMocks.filters = [] as ActiveFilter<PageFilterFieldKey>[]
+
+queryMocks.dispatch = vi.fn()
 
 // `PagesView` drives its rows from `useInfiniteQuery` (`admin.pages.list` —
 // server state lives in the TanStack cache), its author options from a
@@ -17,23 +39,6 @@ import { PagesView } from '@/ui/admin/pages/PagesView'
 // module mock swaps ONLY the hook (capturing the view-built field specs so
 // the real `<FilterPillBar>` still renders them), mirroring the
 // audit-branches pattern.
-const queryMocks = vi.hoisted(() => ({
-  infinite: {
-    data: undefined as { pages: { pages: AdminPageDto[]; total: number; hasMore: boolean }[] } | undefined,
-    isLoading: true,
-    error: null as Error | null,
-    hasNextPage: false,
-    isFetchingNextPage: false,
-    fetchNextPage: vi.fn(),
-  },
-  users: {
-    data: null as unknown,
-    isPending: false,
-    error: null as unknown,
-  },
-  filters: [] as ActiveFilter<PageFilterFieldKey>[],
-  dispatch: vi.fn(),
-}))
 
 vi.mock('@/ui/admin/shared/filter-bar/useFilterPills', async () => {
   const actual = await vi.importActual<typeof import('@/ui/admin/shared/filter-bar/useFilterPills')>(
@@ -60,34 +65,6 @@ vi.mock('@/ui/admin/shared/filter-bar/useFilterPills', async () => {
     }),
   }
 })
-
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
-  return {
-    ...actual,
-    useInfiniteQuery: () => queryMocks.infinite,
-    useQuery: () => queryMocks.users,
-  }
-})
-
-vi.mock('@/client/api/orpc-query', () => ({
-  orpcQuery: {
-    admin: {
-      pages: {
-        list: {
-          infiniteOptions: (args: unknown) => ({ queryKey: ['pages', 'list', args], queryFn: async () => ({}) }),
-        },
-      },
-      users: {
-        list: {
-          queryOptions: (args: unknown) => ({ queryKey: ['users', 'list', args], queryFn: async () => ({}) }),
-        },
-      },
-    },
-  },
-}))
-
-vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
 
 // ───────────────────────────── fixtures ─────────────────────────────
 
@@ -150,7 +127,7 @@ describe('snapshot: PagesView', () => {
       isFetchingNextPage: false,
       fetchNextPage: vi.fn(),
     }
-    queryMocks.users = { data: { users: [makeAdminUser()], total: 1 }, isPending: false, error: null }
+    queryMocks.query = { data: { users: [makeAdminUser()], total: 1 }, isPending: false, error: null }
     queryMocks.filters = []
     queryMocks.dispatch = vi.fn()
   })
@@ -205,7 +182,7 @@ describe('snapshot: PagesView', () => {
   it('renders the author pill with the label resolved from the seeded author list', () => {
     // The users query resolves with one admin user; the author field's
     // options are built from it, so the pill editor shows the name.
-    queryMocks.users = { data: { users: [makeAdminUser({ name: '雨帆' })], total: 1 }, isPending: false, error: null }
+    queryMocks.query = { data: { users: [makeAdminUser({ name: '雨帆' })], total: 1 }, isPending: false, error: null }
     queryMocks.filters = [{ field: 'author', value: '1', label: '雨帆' }]
     const html = renderView()
     expect(html).toContain('作者')

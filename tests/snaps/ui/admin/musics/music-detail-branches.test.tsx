@@ -2,8 +2,29 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AdminMusicDto } from '@/shared/contracts/music'
 
+import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { MusicDetailView } from '@/ui/admin/musics/MusicDetailView'
+
+const queryMocks = mockTanstackQuery()
+
+queryMocks.query = {
+  data: null as { music: AdminMusicDto } | null,
+  isLoading: false,
+  isPending: false,
+  isFetching: false,
+  isError: false,
+  error: null as unknown,
+  refetch: vi.fn(),
+}
+
+queryMocks.mutation = { mutate: vi.fn(), isPending: false }
+
+queryMocks.queryClient = {
+  invalidateQueries: vi.fn(),
+  setQueryData: vi.fn(),
+  removeQueries: vi.fn(),
+}
 
 // `MusicDetailView` is already covered by `musics-branches.test.tsx` for the
 // loading / error / not-found / resolved / no-cover / empty-lyrics branches.
@@ -28,52 +49,6 @@ vi.mock('@/ui/admin/musics/MusicPlayerContext', () => ({
   }),
   useMusicPlayerTime: () => playerState.currentTime,
 }))
-
-const queryMocks = vi.hoisted(() => ({
-  query: {
-    data: null as { music: AdminMusicDto } | null,
-    isLoading: false,
-    isPending: false,
-    isFetching: false,
-    isError: false,
-    error: null as unknown,
-    refetch: vi.fn(),
-  },
-  mutation: { mutate: vi.fn(), isPending: false },
-  queryClient: {
-    invalidateQueries: vi.fn(),
-    setQueryData: vi.fn(),
-    removeQueries: vi.fn(),
-  },
-}))
-
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
-  return {
-    ...actual,
-    useQuery: () => queryMocks.query,
-    useMutation: () => queryMocks.mutation,
-    useQueryClient: () => queryMocks.queryClient,
-  }
-})
-
-vi.mock('@/client/api/orpc-query', () => ({
-  orpcQuery: {
-    admin: {
-      music: {
-        get: {
-          queryOptions: (args: unknown) => ({
-            queryKey: ['music', 'get', args],
-            queryFn: async () => ({}),
-          }),
-          key: (args: unknown) => ['music', 'get', args],
-        },
-      },
-    },
-  },
-}))
-
-vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
 
 function makeAdminMusic(overrides: Partial<AdminMusicDto> = {}): AdminMusicDto {
   return {

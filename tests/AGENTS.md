@@ -100,6 +100,22 @@ ceremony:
 - Import helpers using the `#/_helpers/<name>` alias:
   - `#/_helpers/catalog` — mock data factories
   - `#/_helpers/render` — SSR render helpers (snapshots)
+  - `#/_helpers/mock-react-query` — `mockTanstackQuery()`, the canonical
+    `@tanstack/react-query` module mock. Import it before the component
+    imports, call once at module scope, and rebind slots on the returned
+    control singleton per test. Only hand-roll a `vi.mock` for react-query
+    when the mock must BEHAVE (call-order routing, option capture,
+    `initialData` pass-through).
+  - `#/_helpers/stubs/dialog` — SSR-safe `@/ui/components/dialog` double:
+    `vi.mock('@/ui/components/dialog', () => import('#/_helpers/stubs/dialog'))`
+- Setup stubs the noise, `_helpers` owns the doubles. `tests/unit/setup.ts`
+  and `tests/snaps/setup.ts` register inert global stubs for `sonner` and
+  `@/ui/admin/settings/useSettingsMutation` — do NOT copy those `vi.mock`
+  blocks into new test files. A file declares its own mock for them only
+  when it asserts on `toast` or programs `commit` (a file-level `vi.mock`
+  overrides the setup-level one). The real `useDebouncedSearch` returns
+  `['', setter]` under SSR — never stub it with that exact value; stub it
+  only when a test drives the search text.
   - `#/_helpers/blog-settings` — test settings bundle
   - `#/_helpers/integration-db` — DB creation / teardown (integration only)
   - `#/_helpers/analytics-db` — DuckDB sidecar creation / seeding / teardown

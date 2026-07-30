@@ -1,33 +1,34 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { ActionFailure } from '@/server/infra/http/errors'
+import { getPublicBaseUrl, resolveAssetUrl, safeResolveAssetUrl } from '@/server/infra/storage/public-url'
 
-// `resolveAssetUrl` reads the CDN host + site origin off the settings
-// bundle via `requireBlogSettingsSection`. Stub the getter so each test
-// controls the two sections it cares about.
-vi.mock('@/shared/config/getters', () => ({
-  // Return type `unknown` keeps the mock loosely typed so per-test overrides
-  // can return partial section shapes without fighting the real (big) union.
-  requireBlogSettingsSection: vi.fn((_section: string): unknown => ({})),
-}))
-
-const { requireBlogSettingsSection } = (await import('@/shared/config/getters')) as unknown as {
-  // Cast to a loose mock type so per-test overrides can return partial
-  // section shapes without matching the real (large) section union.
-  requireBlogSettingsSection: ReturnType<typeof vi.fn>
+// `resolveAssetUrl` reads the CDN host + site origin off the real settings
+// snapshot. The baseline below keeps the historical fixture hosts so the
+// expected URLs stay byte-for-byte stable; individual tests override the
+// one section they care about.
+function seedSettings(overrides: { assetHost?: string; storageEnabled?: boolean; website?: string | null } = {}) {
+  setBlogSettingsBundleForTests({
+    ...TEST_BLOG_SETTINGS_BUNDLE,
+    siteIdentity: {
+      ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!,
+      // Nullable on purpose — the unset-website path is under test; the section type is string.
+      website: (overrides.website === undefined ? 'https://site.example.com' : overrides.website) as string,
+    },
+    assets: {
+      ...TEST_BLOG_SETTINGS_BUNDLE.assets!,
+      asset: { scheme: 'https', host: overrides.assetHost ?? 'cdn.example.com' },
+      storage: {
+        ...TEST_BLOG_SETTINGS_BUNDLE.assets!.storage,
+        enabled: overrides.storageEnabled ?? true,
+      },
+    },
+  })
 }
-const { resolveAssetUrl, safeResolveAssetUrl, getPublicBaseUrl } = await import('@/server/infra/storage/public-url')
 
 beforeEach(() => {
-  requireBlogSettingsSection.mockImplementation((section: string) => {
-    if (section === 'assets') {
-      return { asset: { scheme: 'https', host: 'cdn.example.com' } }
-    }
-    if (section === 'siteIdentity') {
-      return { website: 'https://site.example.com' }
-    }
-    return {}
-  })
+  seedSettings()
 })
 
 describe('getPublicBaseUrl', () => {
@@ -36,23 +37,17 @@ describe('getPublicBaseUrl', () => {
   })
 
   it('follows asset host updates immediately', () => {
-    requireBlogSettingsSection.mockImplementation((section: string) =>
-      section === 'assets' ? { asset: { scheme: 'https', host: 'assets2.example.com' } } : {},
-    )
+    seedSettings({ assetHost: 'assets2.example.com' })
     expect(getPublicBaseUrl()).toBe('https://assets2.example.com')
   })
 
   it('keeps reporting the host-derived base when uploads are OFF (so SSR can still render historical s3 rows)', () => {
-    requireBlogSettingsSection.mockImplementation((section: string) =>
-      section === 'assets' ? { asset: { scheme: 'https', host: 'cdn.example.com' }, storage: { enabled: false } } : {},
-    )
+    seedSettings({ storageEnabled: false })
     expect(getPublicBaseUrl()).toBe('https://cdn.example.com')
   })
 
   it('returns null when the CDN host is empty', () => {
-    requireBlogSettingsSection.mockImplementation((section: string) =>
-      section === 'assets' ? { asset: { scheme: 'https', host: '' } } : {},
-    )
+    seedSettings({ assetHost: '' })
     expect(getPublicBaseUrl()).toBeNull()
   })
 })
@@ -79,26 +74,22 @@ describe('resolveAssetUrl — driver dispatch', () => {
 
 describe('resolveAssetUrl — missing-base guards', () => {
   it('throws ActionFailure(503) for an s3 asset when the CDN host is empty', () => {
-    requireBlogSettingsSection.mockImplementation((section: string) =>
-      section === 'assets' ? { asset: { scheme: 'https', host: '' } } : { website: 'https://site.example.com' },
-    )
+    seedSettings({ assetHost: '' })
     expect(() => resolveAssetUrl('s3', 'images/a.jpg')).toThrow(ActionFailure)
     expect(safeResolveAssetUrl('s3', 'images/a.jpg')).toBeNull()
   })
 
   it('throws ActionFailure(503) for a local asset when the site origin is empty (no relative URL)', () => {
-    requireBlogSettingsSection.mockImplementation((section: string) =>
-      section === 'siteIdentity' ? { website: '' } : { asset: { scheme: 'https', host: 'cdn.example.com' } },
-    )
+    seedSettings({ website: '' })
     expect(() => resolveAssetUrl('local', 'images/a.jpg')).toThrow(ActionFailure)
     expect(safeResolveAssetUrl('local', 'images/a.jpg')).toBeNull()
   })
 
   it('re-throws non-ActionFailure errors from safeResolveAssetUrl', () => {
-    requireBlogSettingsSection.mockImplementation(() => {
-      throw new Error('boom')
-    })
-    expect(() => safeResolveAssetUrl('s3', 'images/a.jpg')).toThrow('boom')
+    // An unhydrated snapshot makes the real getter throw a plain Error —
+    // safeResolveAssetUrl must not swallow it as an ActionFailure.
+    setBlogSettingsBundleForTests(null)
+    expect(() => safeResolveAssetUrl('s3', 'images/a.jpg')).toThrow('not been hydrated')
   })
 })
 
@@ -136,9 +127,7 @@ describe('resolveAssetUrl — local route override (font options bag)', () => {
   })
 
   it('still throws ActionFailure(503) for local when the site origin is empty', () => {
-    requireBlogSettingsSection.mockImplementation((section: string) =>
-      section === 'siteIdentity' ? { website: '' } : { asset: { scheme: 'https', host: 'cdn.example.com' } },
-    )
+    seedSettings({ website: '' })
     expect(() => resolveAssetUrl('local', CSS_KEY, undefined, FONT_OPTIONS)).toThrow(ActionFailure)
     expect(() => resolveAssetUrl('local', CSS_KEY, undefined, FONT_OPTIONS)).toThrow(
       '请先在 /admin/settings/general 配置站点网址（siteIdentity.website）',
@@ -146,9 +135,7 @@ describe('resolveAssetUrl — local route override (font options bag)', () => {
   })
 
   it('still throws ActionFailure(503) for s3 when the CDN host is empty (options ignored)', () => {
-    requireBlogSettingsSection.mockImplementation((section: string) =>
-      section === 'assets' ? { asset: { scheme: 'https', host: '' } } : { website: 'https://site.example.com' },
-    )
+    seedSettings({ assetHost: '' })
     expect(() => resolveAssetUrl('s3', CSS_KEY, undefined, FONT_OPTIONS)).toThrow(ActionFailure)
     expect(() => resolveAssetUrl('s3', CSS_KEY, undefined, FONT_OPTIONS)).toThrow(
       '请先在 /admin/settings/assets 配置 S3 公共访问基地址',

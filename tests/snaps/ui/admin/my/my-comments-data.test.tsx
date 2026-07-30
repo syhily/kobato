@@ -3,54 +3,44 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { MyCommentItem } from '@/routes/admin/me/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
+import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { MyCommentsView } from '@/ui/admin/my/MyCommentsView'
+
+const queryMocks = mockTanstackQuery()
+
+queryMocks.query = {
+  data: null as unknown,
+  isLoading: false,
+  isPending: false,
+  isFetching: false,
+  isError: false,
+  error: null as unknown,
+  refetch: vi.fn(),
+}
+
+queryMocks.mutation = { mutate: vi.fn(), isPending: false }
+
+queryMocks.infinite = {
+  data: { pages: [] as { items: MyCommentItem[]; total: number; hasMore: boolean }[] },
+  isLoading: false,
+  isPending: false,
+  isFetching: false,
+  isFetchingNextPage: false,
+  hasNextPage: false,
+  error: null as unknown,
+  fetchNextPage: vi.fn(),
+}
+
+queryMocks.queryClient = { invalidateQueries: vi.fn() }
 
 // `MyCommentsView` pulls its comment list through `useInfiniteQuery` against
 // `orpc.comments.loadMine`. The query options builder is imported from
 // `@/client/api/orpc-query` and shipped to the hook — but as long as the
 // tanstack/react-query hook is stubbed, the option builder's network path
-// never runs and we control the rendered state from the hoisted `infinite`
-// singleton below. Mirrors the established pattern in
-// `tags.test.tsx` / `musics-view.test.tsx`.
-
-const queryMocks = vi.hoisted(() => ({
-  query: {
-    data: null as unknown,
-    isLoading: false,
-    isPending: false,
-    isFetching: false,
-    isError: false,
-    error: null as unknown,
-    refetch: vi.fn(),
-  },
-  mutation: { mutate: vi.fn(), isPending: false },
-  infinite: {
-    data: { pages: [] as { items: MyCommentItem[]; total: number; hasMore: boolean }[] },
-    isLoading: false,
-    isPending: false,
-    isFetching: false,
-    isFetchingNextPage: false,
-    hasNextPage: false,
-    error: null as unknown,
-    fetchNextPage: vi.fn(),
-  },
-  queryClient: { invalidateQueries: vi.fn() },
-}))
-
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
-  return {
-    ...actual,
-    useQuery: () => queryMocks.query,
-    useQueries: ({ queries }: { queries: unknown[] }) => queries.map(() => queryMocks.query),
-    useMutation: () => queryMocks.mutation,
-    useInfiniteQuery: () => queryMocks.infinite,
-    useQueryClient: () => queryMocks.queryClient,
-  }
-})
-
-vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
+// never runs and we control the rendered state from the `infinite` slot of
+// the `#/_helpers/mock-react-query` singleton above. Mirrors the
+// established pattern in `tags.test.tsx` / `musics-view.test.tsx`.
 
 // The edit dialog pulls in `CommentBodyEditor` which itself imports a lazy
 // markdown editor; under SSR that lazy boundary leaves a placeholder that

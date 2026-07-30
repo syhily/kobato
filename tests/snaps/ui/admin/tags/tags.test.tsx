@@ -3,69 +3,38 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AdminTagDto } from '@/shared/contracts/tags'
 
+import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { EditTagDialog } from '@/ui/admin/tags/EditTagDialog'
 import { TagRow, TagsSkeleton } from '@/ui/admin/tags/TagRows'
 import { TagsView } from '@/ui/admin/tags/TagsView'
+
+const queryMocks = mockTanstackQuery()
+
+queryMocks.mutation = {
+  mutate: vi.fn(),
+  isPending: false,
+}
+
+queryMocks.infinite = {
+  data: undefined as { pages: { tags: AdminTagDto[]; total: number; hasMore: boolean }[] } | undefined,
+  isLoading: false,
+  error: null as Error | null,
+  hasNextPage: false,
+  isFetchingNextPage: false,
+  fetchNextPage: vi.fn(),
+}
+
+queryMocks.queryClient = {
+  invalidateQueries: vi.fn(),
+}
 
 // TagsView drives its rows from `useAdminInfiniteList` (server state lives
 // in the TanStack cache, via an internal `useInfiniteQuery`). The list query
 // is stubbed through a hoisted slot so each test can pick the branch; the
 // delete mutation and the query client are stubbed alongside.
 
-const queryMocks = vi.hoisted(() => ({
-  mutation: {
-    mutate: vi.fn(),
-    isPending: false,
-  },
-  infinite: {
-    data: undefined as { pages: { tags: AdminTagDto[]; total: number; hasMore: boolean }[] } | undefined,
-    isLoading: false,
-    error: null as Error | null,
-    hasNextPage: false,
-    isFetchingNextPage: false,
-    fetchNextPage: vi.fn(),
-  },
-  queryClient: {
-    invalidateQueries: vi.fn(),
-  },
-}))
-
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
-  return {
-    ...actual,
-    useMutation: () => queryMocks.mutation,
-    useInfiniteQuery: () => queryMocks.infinite,
-    useQueryClient: () => queryMocks.queryClient,
-  }
-})
-
-vi.mock('sonner', () => ({
-  toast: { error: vi.fn(), success: vi.fn() },
-}))
-
-vi.mock('@/ui/admin/shared/useDebouncedSearch', () => ({
-  useDebouncedSearch: () => ['', vi.fn()],
-}))
-
-vi.mock('@/ui/components/dialog', () => ({
-  Dialog: ({ open, children }: { open: boolean; children: React.ReactNode }) =>
-    open ? <div data-slot="dialog">{children}</div> : null,
-  DialogContent: ({ children, className }: { children: React.ReactNode; className?: string }) => (
-    <div data-slot="dialog-content" className={className}>
-      {children}
-    </div>
-  ),
-  DialogDescription: ({ children }: { children: React.ReactNode }) => <p data-slot="dialog-description">{children}</p>,
-  DialogFooter: ({ children, className }: { children: React.ReactNode; className?: string }) => (
-    <div data-slot="dialog-footer" className={className}>
-      {children}
-    </div>
-  ),
-  DialogHeader: ({ children }: { children: React.ReactNode }) => <div data-slot="dialog-header">{children}</div>,
-  DialogTitle: ({ children }: { children: React.ReactNode }) => <h2 data-slot="dialog-title">{children}</h2>,
-}))
+vi.mock('@/ui/components/dialog', () => import('#/_helpers/stubs/dialog'))
 
 function makeAdminTag(overrides: Partial<AdminTagDto> = {}): AdminTagDto {
   return {

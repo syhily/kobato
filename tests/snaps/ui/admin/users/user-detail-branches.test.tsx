@@ -62,43 +62,6 @@ vi.mock('@tanstack/react-query', async () => {
 
 const queryCounter = vi.hoisted(() => ({ n: 0 }))
 
-vi.mock('@/client/api/orpc-query', () => ({
-  orpcQuery: {
-    admin: {
-      users: {
-        get: {
-          queryOptions: (args: unknown) => ({
-            queryKey: ['user', args],
-            queryFn: async () => ({}),
-          }),
-        },
-        sendPasswordReset: {
-          mutationOptions: () => ({ mutationKey: ['reset'] }),
-        },
-        revokeAllSessions: {
-          mutationOptions: () => ({ mutationKey: ['revoke'] }),
-        },
-        bulkApproveComments: {
-          mutationOptions: () => ({ mutationKey: ['approve'] }),
-        },
-        bulkDeleteComments: {
-          mutationOptions: () => ({ mutationKey: ['bulkDel'] }),
-        },
-      },
-      comments: {
-        loadAll: {
-          queryOptions: (args: unknown) => ({
-            queryKey: ['comments', args],
-            queryFn: async () => ({}),
-          }),
-        },
-      },
-    },
-  },
-}))
-
-vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
-
 // ───────────────────────────── fixtures ─────────────────────────────
 
 function makeAdminUser(overrides: Partial<AdminUserDto> = {}): AdminUserDto {

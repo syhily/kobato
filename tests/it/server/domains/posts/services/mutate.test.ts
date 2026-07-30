@@ -20,10 +20,6 @@ vi.mock('@/server/domains/posts/services/search-index', async (importOriginal) =
   }
 })
 
-vi.mock('@/server/domains/images/services/enhance', () => ({
-  hydrateImageRefs: vi.fn(async () => undefined),
-}))
-
 const { createPost, deletePost, restorePost, unpublishPost, updatePostMeta } =
   await import('@/server/domains/posts/services/mutate')
 const { indexPost, removePostIndex } = await import('@/server/domains/posts/services/search-index')

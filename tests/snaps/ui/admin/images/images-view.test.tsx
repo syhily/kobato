@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AdminImageDto } from '@/shared/contracts/images'
 import type { ActiveImageFilter } from '@/ui/admin/images/useImagesReducer'
 
+import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { ImageDetailDialog } from '@/ui/admin/images/ImageDetailDialog'
 import { ImagesFilterBar } from '@/ui/admin/images/ImagesFilterBar'
@@ -13,48 +14,34 @@ import {
   JustifiedImageGridSkeleton,
 } from '@/ui/admin/images/JustifiedImageGrid'
 
+const queryMocks = mockTanstackQuery()
+
+queryMocks.infinite = {
+  data: { pages: [] as { images: AdminImageDto[]; total: number; hasMore: boolean }[] },
+  isLoading: true,
+  isPending: true,
+  isFetching: false,
+  isFetchingNextPage: false,
+  hasNextPage: false,
+  error: null as unknown,
+  fetchNextPage: vi.fn(),
+}
+
+queryMocks.mutation = {
+  mutate: vi.fn(),
+  isPending: false,
+}
+
+queryMocks.queryClient = {
+  invalidateQueries: vi.fn(),
+}
+
 // `ImagesView` fetches the image library through `useInfiniteQuery` against
 // `orpc.admin.images.list`. To exercise the DATA-LOADED render paths (the
 // `.map` over images + the empty-state branch) we stub the query layer with
 // a hoisted mutable singleton — the same pattern used by tags / friends /
 // musics snapshot suites. The infinite-query mock defaults to the pending
 // state so the existing loading-state test keeps passing unchanged.
-
-const queryMocks = vi.hoisted(() => ({
-  infinite: {
-    data: { pages: [] as { images: AdminImageDto[]; total: number; hasMore: boolean }[] },
-    isLoading: true,
-    isPending: true,
-    isFetching: false,
-    isFetchingNextPage: false,
-    hasNextPage: false,
-    error: null as unknown,
-    fetchNextPage: vi.fn(),
-  },
-  mutation: {
-    mutate: vi.fn(),
-    isPending: false,
-  },
-  queryClient: {
-    invalidateQueries: vi.fn(),
-  },
-}))
-
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
-  return {
-    ...actual,
-    useInfiniteQuery: () => queryMocks.infinite,
-    useMutation: () => queryMocks.mutation,
-    useQueryClient: () => queryMocks.queryClient,
-  }
-})
-
-vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
-
-vi.mock('@/ui/admin/shared/useDebouncedSearch', () => ({
-  useDebouncedSearch: () => ['', vi.fn()],
-}))
 
 // Canonical AdminImageDto fixture used by the snapshot tests below.
 // Dimensions are intentionally varied so the justified-rows algorithm

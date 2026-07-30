@@ -1,10 +1,13 @@
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
 import type { Comments as CommentsData } from '@/shared/types/comments'
 
+import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { Comments } from '@/ui/public/comments/Comments'
+
+mockTanstackQuery()
 
 // `Comments` is a pure-render orchestrator: it takes a pre-loaded
 // `comments` aggregate + `items` array and hydrates a `useReducer` tree
@@ -16,20 +19,6 @@ import { Comments } from '@/ui/public/comments/Comments'
 // merge, load-more) from `@tanstack/react-query`. Effects that fire
 // those mutations don't run under SSR, but the hook itself is called
 // during render, so we stub it to avoid real network plumbing.
-
-const queryMocks = vi.hoisted(() => ({
-  mutation: { mutate: vi.fn(), isPending: false },
-  mutationWithSuccess: { mutate: vi.fn(), isPending: false },
-}))
-
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
-  return {
-    ...actual,
-    // All `useMutation` callers in `Comments` get the same inert stub.
-    useMutation: () => queryMocks.mutation,
-  }
-})
 
 // `useCommentsSettings` reads the page-size used by the LoadMore button.
 // The BlogSettingsProvider in the render helper already supplies a bundle,

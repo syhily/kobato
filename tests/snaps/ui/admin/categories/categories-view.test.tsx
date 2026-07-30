@@ -1,45 +1,34 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { CategoriesView } from '@/ui/admin/categories/CategoriesView'
 import { EditCategoryDialog } from '@/ui/admin/categories/EditCategoryDialog'
+
+const queryMocks = mockTanstackQuery()
+
+queryMocks.query = {
+  data: null as unknown,
+  isPending: true,
+  isFetching: false,
+  error: null,
+  refetch: vi.fn(),
+}
+
+queryMocks.mutation = {
+  mutate: vi.fn(),
+  isPending: false,
+}
+
+queryMocks.queryClient = {
+  invalidateQueries: vi.fn(),
+  setQueryData: vi.fn(),
+}
 
 // CategoriesView reads its rows straight from the list `useQuery` data
 // (TanStack single-track) plus delete/reorder mutations and a dnd-kit DnD
 // context. We neutralize the queries and DnD primitives so SSR can stream
 // the chrome.
-
-const queryMocks = vi.hoisted(() => ({
-  query: {
-    data: null as unknown,
-    isPending: true,
-    isFetching: false,
-    error: null,
-    refetch: vi.fn(),
-  },
-  mutation: {
-    mutate: vi.fn(),
-    isPending: false,
-  },
-  queryClient: {
-    invalidateQueries: vi.fn(),
-    setQueryData: vi.fn(),
-  },
-}))
-
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
-  return {
-    ...actual,
-    useQuery: () => queryMocks.query,
-    useMutation: () => queryMocks.mutation,
-    useQueryClient: () => queryMocks.queryClient,
-  }
-})
-
-vi.mock('sonner', () => ({
-  toast: { error: vi.fn(), success: vi.fn() },
-}))
 
 // dnd-kit's DragDropManager touches `document`/DOM measurements at mount; the
 // snapshots only need the tree structure so we shim each primitive to render
@@ -61,23 +50,7 @@ vi.mock('@dnd-kit/modifiers', () => ({
   restrictToVerticalAxis: () => ({}),
 }))
 
-vi.mock('@/ui/components/dialog', () => ({
-  Dialog: ({ open, children }: { open: boolean; children: React.ReactNode }) =>
-    open ? <div data-slot="dialog">{children}</div> : null,
-  DialogContent: ({ children, className }: { children: React.ReactNode; className?: string }) => (
-    <div data-slot="dialog-content" className={className}>
-      {children}
-    </div>
-  ),
-  DialogDescription: ({ children }: { children: React.ReactNode }) => <p data-slot="dialog-description">{children}</p>,
-  DialogFooter: ({ children, className }: { children: React.ReactNode; className?: string }) => (
-    <div data-slot="dialog-footer" className={className}>
-      {children}
-    </div>
-  ),
-  DialogHeader: ({ children }: { children: React.ReactNode }) => <div data-slot="dialog-header">{children}</div>,
-  DialogTitle: ({ children }: { children: React.ReactNode }) => <h2 data-slot="dialog-title">{children}</h2>,
-}))
+vi.mock('@/ui/components/dialog', () => import('#/_helpers/stubs/dialog'))
 
 describe('snapshot: CategoriesView', () => {
   beforeEach(() => {

@@ -2,24 +2,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AdminUserDto } from '@/shared/contracts/users'
 
+import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { UserDetailView } from '@/ui/admin/users/UserDetailView'
 import { UserEditForm } from '@/ui/admin/users/UserEditForm'
 import { UserOperationsCard } from '@/ui/admin/users/UserOperationsCard'
 
+const queryMocks = mockTanstackQuery()
+
+queryMocks.mutation = { mutate: vi.fn(), isPending: false, error: null as { message: string } | null }
+
 // The cards own their TanStack mutations now. Stub `useMutation` with a
 // shared fixture so the update-error branch can be driven from the test.
-const mutationMock = vi.hoisted(() => ({
-  state: { mutate: vi.fn(), isPending: false, error: null as { message: string } | null },
-}))
-
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
-  return {
-    ...actual,
-    useMutation: () => mutationMock.state,
-  }
-})
 
 function makeAdminUser(overrides: Partial<AdminUserDto> = {}): AdminUserDto {
   const id = overrides.id ?? `user-${Math.random().toString(36).slice(2, 8)}`
@@ -45,7 +39,7 @@ function makeAdminUser(overrides: Partial<AdminUserDto> = {}): AdminUserDto {
 }
 
 beforeEach(() => {
-  mutationMock.state = { mutate: vi.fn(), isPending: false, error: null }
+  queryMocks.mutation = { mutate: vi.fn(), isPending: false, error: null }
 })
 
 describe('snapshot: UserEditForm', () => {
@@ -68,7 +62,7 @@ describe('snapshot: UserEditForm', () => {
   })
 
   it('renders with update error', () => {
-    mutationMock.state = {
+    queryMocks.mutation = {
       mutate: vi.fn(),
       isPending: false,
       error: { message: '邮箱已被占用' },

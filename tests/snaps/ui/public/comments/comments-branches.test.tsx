@@ -3,8 +3,13 @@ import { describe, expect, it, vi } from 'vitest'
 import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
 import type { Comments as CommentsData } from '@/shared/types/comments'
 
+import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { Comments } from '@/ui/public/comments/Comments'
+
+const queryMocks = mockTanstackQuery()
+
+queryMocks.mutation = { mutate: vi.fn(), isPending: false }
 
 // Companion to `comments-data.test.tsx`. This file targets additional
 // render-path branches of the public `Comments` orchestrator that the
@@ -24,16 +29,6 @@ import { Comments } from '@/ui/public/comments/Comments'
 // load-more) from `@tanstack/react-query`. The mutation hooks themselves
 // run during render; we stub them with a hoisted singleton so we can flip
 // the load-more `isPending` flag to cover the "加载中…" copy.
-
-const mutationState = vi.hoisted(() => ({ mutate: vi.fn(), isPending: false }))
-
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
-  return {
-    ...actual,
-    useMutation: () => mutationState,
-  }
-})
 
 // --- fixtures ----------------------------------------------------------------
 
@@ -154,7 +149,7 @@ describe('snapshot: Comments render branches', () => {
   })
 
   it('renders the load-more button in its loading state via the mutation isPending flag', () => {
-    mutationState.isPending = true
+    queryMocks.mutation.isPending = true
     const items = [makeComment({ id: '1', name: 'Solo' })]
     // count=10, only 1 root shipped → LoadMore renders.
     const html = stableHtml(
@@ -167,7 +162,7 @@ describe('snapshot: Comments render branches', () => {
     // pending, and the button is disabled.
     expect(html).toContain('加载中…')
     expect(html).toContain('disabled=""')
-    mutationState.isPending = false
+    queryMocks.mutation.isPending = false
   })
 
   it('renders the load-more button while fewer roots are loaded than the total', () => {

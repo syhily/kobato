@@ -8,12 +8,16 @@ import { user } from '@/server/infra/db/schema/user'
 const { setBlogSettingsBundleForTests } = await import('#/_helpers/blog-settings')
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('#/_helpers/blog-settings')
 
-const sendAuthorInvite = vi.fn()
-const sendPasswordReset = vi.fn()
+const emailMocks = vi.hoisted(() => ({
+  sendAuthorInvite: vi.fn(),
+  sendPasswordReset: vi.fn(),
+}))
+const { sendAuthorInvite, sendPasswordReset } = emailMocks
 
 vi.mock('@/server/infra/email/sender', () => ({
-  sendAuthorInvite,
-  sendPasswordReset,
+  sendAuthorInvite: emailMocks.sendAuthorInvite,
+  sendPasswordReset: emailMocks.sendPasswordReset,
+  invalidateMailTransportCache: vi.fn(),
 }))
 
 const admin = await import('@/server/domains/users/services/admin')

@@ -2,8 +2,29 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AdminTagDto } from '@/shared/contracts/tags'
 
+import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { TagsView } from '@/ui/admin/tags/TagsView'
+
+const queryMocks = mockTanstackQuery()
+
+queryMocks.mutation = {
+  mutate: vi.fn(),
+  isPending: false,
+}
+
+queryMocks.infinite = {
+  data: undefined as { pages: { tags: AdminTagDto[]; total: number; hasMore: boolean }[] } | undefined,
+  isLoading: true,
+  error: null as Error | null,
+  hasNextPage: false,
+  isFetchingNextPage: false,
+  fetchNextPage: vi.fn(),
+}
+
+queryMocks.queryClient = {
+  invalidateQueries: vi.fn(),
+}
 
 // TagsView drives its rows from `useAdminInfiniteList` (server state lives
 // in the TanStack cache, via an internal `useInfiniteQuery`), with the search
@@ -12,62 +33,16 @@ import { TagsView } from '@/ui/admin/tags/TagsView'
 // populated rows (the `rows.map` callback branch), the error state, and the
 // search-active state.
 
-const queryMocks = vi.hoisted(() => ({
-  mutation: {
-    mutate: vi.fn(),
-    isPending: false,
-  },
-  infinite: {
-    data: undefined as { pages: { tags: AdminTagDto[]; total: number; hasMore: boolean }[] } | undefined,
-    isLoading: true,
-    error: null as Error | null,
-    hasNextPage: false,
-    isFetchingNextPage: false,
-    fetchNextPage: vi.fn(),
-  },
-  queryClient: {
-    invalidateQueries: vi.fn(),
-  },
-}))
-
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
-  return {
-    ...actual,
-    useMutation: () => queryMocks.mutation,
-    useInfiniteQuery: () => queryMocks.infinite,
-    useQueryClient: () => queryMocks.queryClient,
-  }
-})
-
-vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
-
 vi.mock('@/ui/admin/shared/useDebouncedSearch', () => ({
   // Return a hoisted pair so each test can drive the search-input value.
   useDebouncedSearch: () => [debouncedSearch.value, debouncedSearch.setInput],
 }))
 
+vi.mock('@/ui/components/dialog', () => import('#/_helpers/stubs/dialog'))
+
 const debouncedSearch = vi.hoisted(() => ({
   value: '',
   setInput: vi.fn(),
-}))
-
-vi.mock('@/ui/components/dialog', () => ({
-  Dialog: ({ open, children }: { open: boolean; children: React.ReactNode }) =>
-    open ? <div data-slot="dialog">{children}</div> : null,
-  DialogContent: ({ children, className }: { children: React.ReactNode; className?: string }) => (
-    <div data-slot="dialog-content" className={className}>
-      {children}
-    </div>
-  ),
-  DialogDescription: ({ children }: { children: React.ReactNode }) => <p data-slot="dialog-description">{children}</p>,
-  DialogFooter: ({ children, className }: { children: React.ReactNode; className?: string }) => (
-    <div data-slot="dialog-footer" className={className}>
-      {children}
-    </div>
-  ),
-  DialogHeader: ({ children }: { children: React.ReactNode }) => <div data-slot="dialog-header">{children}</div>,
-  DialogTitle: ({ children }: { children: React.ReactNode }) => <h2 data-slot="dialog-title">{children}</h2>,
 }))
 
 // ───────────────────────────── fixtures ─────────────────────────────

@@ -1,11 +1,33 @@
 import { describe, expect, it, vi } from 'vitest'
 
+import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { UploadImageDialog } from '@/ui/admin/shared/UploadImageDialog'
 import { AdminSearchDialog } from '@/ui/admin/shell/AdminSearchDialog'
 import { AdminShell } from '@/ui/admin/shell/AdminShell'
 import { NavMenuItem } from '@/ui/admin/shell/NavMenuItem'
 import { SidebarProvider } from '@/ui/components/sidebar'
+
+const queryMocks = mockTanstackQuery()
+
+queryMocks.query = {
+  data: null as unknown,
+  isPending: false,
+  isFetching: false,
+  error: null as unknown,
+  refetch: vi.fn(),
+}
+
+queryMocks.mutation = {
+  mutate: vi.fn(),
+  isPending: false,
+}
+
+queryMocks.queryClient = {
+  invalidateQueries: vi.fn(),
+  setQueryData: vi.fn(),
+  removeQueries: vi.fn(),
+}
 
 // UploadImageDialog wraps its body in a Base UI Dialog portal. The portal only
 // mounts its content after the open animation runs (client-only), so an *open*
@@ -16,60 +38,6 @@ import { SidebarProvider } from '@/ui/components/sidebar'
 // we stub @tanstack/react-query so SSR never hits the network.
 
 const noop = () => undefined
-
-const queryMocks = vi.hoisted(() => ({
-  query: {
-    data: null as unknown,
-    isPending: false,
-    isFetching: false,
-    error: null as unknown,
-    refetch: vi.fn(),
-  },
-  mutation: {
-    mutate: vi.fn(),
-    isPending: false,
-  },
-  queryClient: {
-    invalidateQueries: vi.fn(),
-    setQueryData: vi.fn(),
-    removeQueries: vi.fn(),
-  },
-}))
-
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
-  return {
-    ...actual,
-    useQuery: () => queryMocks.query,
-    useMutation: () => queryMocks.mutation,
-    useQueryClient: () => queryMocks.queryClient,
-  }
-})
-
-// orpcQuery builds option objects; stub so imports stay cheap and the option
-// builders referenced by AdminSearchDialog / VersionDialog don't try to build
-// real keys.
-vi.mock('@/client/api/orpc-query', () => ({
-  orpcQuery: {
-    admin: {
-      posts: { list: { queryOptions: (args: unknown) => ({ queryKey: ['posts', args], queryFn: async () => ({}) }) } },
-      pages: { list: { queryOptions: (args: unknown) => ({ queryKey: ['pages', args], queryFn: async () => ({}) }) } },
-      music: { list: { queryOptions: (args: unknown) => ({ queryKey: ['music', args], queryFn: async () => ({}) }) } },
-      update: {
-        status: { queryOptions: (args: unknown) => ({ queryKey: ['update-status', args], queryFn: async () => ({}) }) },
-      },
-    },
-    github: {
-      avatar: { queryOptions: (args: unknown) => ({ queryKey: ['github-avatar', args], queryFn: async () => ({}) }) },
-    },
-  },
-}))
-
-vi.mock('sonner', () => ({
-  toast: { error: vi.fn(), success: vi.fn() },
-  // AdminShell renders <Toaster />; provide a no-op SSR-safe stub.
-  Toaster: () => null,
-}))
 
 // ─────────────────────────── UploadImageDialog ─────────────────────────────
 

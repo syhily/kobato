@@ -1,11 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { friend } from '@/server/infra/db/schema/friend'
-
-vi.mock('@/server/domains/images/services/enhance', () => ({
-  hydrateImageRefs: vi.fn(async () => undefined),
-}))
 
 const db = getTestDb()
 

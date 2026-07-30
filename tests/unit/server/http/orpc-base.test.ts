@@ -3,11 +3,8 @@ import { RPCHandler } from '@orpc/server/fetch'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { z } from 'zod'
 
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { makePublicCtx } from '#/_helpers/mock-ctx'
-
-vi.mock('@/server/infra/rate-limit', () => ({
-  tryResourceRateLimit: vi.fn(),
-}))
 
 vi.mock('@/server/domains/auth/passkey/gate', () => ({
   isPasskeyEnabled: vi.fn(),
@@ -16,11 +13,21 @@ vi.mock('@/server/domains/auth/passkey/gate', () => ({
 import { isPasskeyEnabled } from '@/server/domains/auth/passkey/gate'
 import { commentTokenCookie, passkeyGuard, publicProc, resourceRateLimit } from '@/server/http/orpc-base'
 import { ActionFailure, DomainError } from '@/server/infra/http/errors'
-import { tryResourceRateLimit } from '@/server/infra/rate-limit'
+import { __rateLimitKeysForTests, __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 import { parseCommentTokensCookie } from '@/shared/utils/comment-token'
 
-const tryResourceRateLimitMock = vi.mocked(tryResourceRateLimit)
 const isPasskeyEnabledMock = vi.mocked(isPasskeyEnabled)
+
+/** Shrink the `resourceIp` bucket so the second hit in a window trips. */
+function seedSingleAttemptResourceBucket() {
+  setBlogSettingsBundleForTests({
+    ...TEST_BLOG_SETTINGS_BUNDLE,
+    rateLimit: {
+      ...TEST_BLOG_SETTINGS_BUNDLE.rateLimit!,
+      resourceIp: { windowSeconds: 60, maxAttempts: 1 },
+    },
+  })
+}
 
 // Miniature router in the shape `orpc-base.ts` produces in production:
 // a public procedure with the shared `resourceRateLimit` guard mounted
@@ -53,8 +60,7 @@ async function callPing(input: unknown) {
 
 describe('resourceRateLimit oRPC middleware', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    tryResourceRateLimitMock.mockResolvedValue({ count: 1, exceeded: false })
+    __resetRateLimitsForTests()
   })
 
   it('passes through under the budget, reading the client address from the context', async () => {
@@ -63,11 +69,12 @@ describe('resourceRateLimit oRPC middleware', () => {
     expect(res.status).toBe(200)
     const body = (await res.json()) as { json: { echoed: string } }
     expect(body.json.echoed).toBe('hi')
-    expect(tryResourceRateLimitMock).toHaveBeenCalledWith('127.0.0.1')
+    expect(__rateLimitKeysForTests()).toEqual(['rate-limit:resource:127.0.0.1'])
   })
 
   it('answers 429 with the ORPCError shape when exceeded', async () => {
-    tryResourceRateLimitMock.mockResolvedValue({ count: 100, exceeded: true })
+    seedSingleAttemptResourceBucket()
+    expect((await callPing({ msg: 'hi' })).status).toBe(200)
 
     const res = await callPing({ msg: 'hi' })
 
@@ -78,17 +85,17 @@ describe('resourceRateLimit oRPC middleware', () => {
   })
 
   it('validates the input before the guard, matching the old inline order', async () => {
-    tryResourceRateLimitMock.mockResolvedValue({ count: 100, exceeded: true })
+    seedSingleAttemptResourceBucket()
 
     const res = await callPing({ msg: '' })
 
     // The guard used to be the first statement of the handler — after
-    // input validation. An over-budget IP sending invalid input must
-    // still see the validation error, not 429.
+    // input validation. Invalid input must still see the validation
+    // error, not 429, and never reach the counter.
     expect(res.status).not.toBe(429)
     expect(res.status).toBeGreaterThanOrEqual(400)
     expect(res.status).toBeLessThan(500)
-    expect(tryResourceRateLimitMock).not.toHaveBeenCalled()
+    expect(__rateLimitKeysForTests()).toEqual([])
   })
 })
 

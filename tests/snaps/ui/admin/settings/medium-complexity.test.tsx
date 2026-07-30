@@ -15,6 +15,7 @@ import type {
   SocialsSettings,
 } from '@/shared/config/types'
 
+import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderToHtml, stableHtml } from '#/_helpers/render'
 import { AnalyticsForm } from '@/ui/admin/settings/AnalyticsForm'
 import { AssetsForm } from '@/ui/admin/settings/AssetsForm'
@@ -31,15 +32,7 @@ import { SidebarForm } from '@/ui/admin/settings/SidebarForm'
 import { SocialsEditor } from '@/ui/admin/settings/SocialsEditor'
 import { ThresholdForm } from '@/ui/admin/settings/ThresholdForm'
 
-vi.mock('@/ui/admin/settings/useSettingsMutation', () => ({
-  useSettingsMutation: () => ({
-    commit: vi.fn(),
-    resetStatus: vi.fn(),
-    revalidate: vi.fn(),
-    isPending: false,
-    status: 'idle',
-  }),
-}))
+mockTanstackQuery()
 
 vi.mock('react-router', async () => {
   const actual = await vi.importActual<typeof import('react-router')>('react-router')
@@ -49,16 +42,6 @@ vi.mock('react-router', async () => {
     useRouteLoaderData: () => ({ csrfToken: 'test-csrf-token' }),
   }
 })
-
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
-  return {
-    ...actual,
-    useQuery: () => ({ data: null, isPending: false, error: null }),
-  }
-})
-
-vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
 
 const baseSiteIdentity: SiteIdentitySettings = {
   title: '且听书吟',

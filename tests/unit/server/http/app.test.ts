@@ -41,12 +41,6 @@ vi.mock('@/server/http/middlewares/dynamic-body-limit', () => ({
   }),
 }))
 
-vi.mock('@/shared/config/getters', () => ({
-  getBlogSettingsBundleSync: vi.fn(() => ({
-    limits: { maxRequestBodySize: 10 * 1024 * 1024 },
-  })),
-}))
-
 describe('createApiApp', () => {
   beforeEach(() => {
     vi.clearAllMocks()

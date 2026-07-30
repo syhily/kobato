@@ -2,34 +2,23 @@ import { describe, expect, it, vi } from 'vitest'
 
 import type { MailLoaderShape } from '@/shared/config/projection'
 
+import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderToHtml, stableHtml } from '#/_helpers/render'
 import { MailForm } from '@/ui/admin/settings/MailForm'
+
+const queryMocks = mockTanstackQuery()
+
+queryMocks.mutation = { isPending: false, mutate: vi.fn() }
 
 // `useSettingsMutation` (consumed by every `useSettingsCard`) fires a real
 // `useMutation` against the settings ORPC endpoint. Stubbed inert so the
 // forms render without a network stack — the same pattern used by
 // `admin/settings/forms.test.tsx`.
-vi.mock('@/ui/admin/settings/useSettingsMutation', () => ({
-  useSettingsMutation: () => ({
-    commit: vi.fn(),
-    resetStatus: vi.fn(),
-    revalidate: vi.fn(),
-    isPending: false,
-    status: 'idle',
-  }),
-}))
 
-// MailTestCard calls `useMutation(orpc.admin.mail.sendTest, …)`. The mock
-// below returns an inert mutation tuple so the test-send button renders
-// without a network call. `@tanstack/react-query` is otherwise left intact.
-const mailTestMutation = vi.hoisted(() => ({ isPending: false, mutate: vi.fn() }))
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
-  return {
-    ...actual,
-    useMutation: () => mailTestMutation,
-  }
-})
+// MailTestCard calls `useMutation(orpc.admin.mail.sendTest, …)`. The
+// `#/_helpers/mock-react-query` singleton returns an inert mutation tuple so
+// the test-send button renders without a network call.
+// `@tanstack/react-query` is otherwise left intact.
 
 // `orpc` is only reached when a mutation actually fires; the mock above
 // intercepts before invocation, but keep the import resolvable & inert.
@@ -212,14 +201,14 @@ describe('snapshot: MailForm', () => {
   })
 
   it('renders the pending test-send state', () => {
-    mailTestMutation.isPending = true
+    queryMocks.mutation.isPending = true
     try {
       const html = stableHtml(renderToHtml(<MailForm mail={zeaburPopulated} />))
       // Pending mutation → button label swaps to "发送中…" and stays disabled.
       expect(html).toContain('发送中…')
       expect(html).toContain('disabled=""')
     } finally {
-      mailTestMutation.isPending = false
+      queryMocks.mutation.isPending = false
     }
   })
 })

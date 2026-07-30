@@ -5,8 +5,38 @@ import type { PostFilterFieldKey } from '@/ui/admin/posts/filter-fields'
 import type { ActiveFilter } from '@/ui/admin/shared/filterPillsReducer'
 
 import { makeAdminPost } from '#/_helpers/catalog'
+import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { PostsView } from '@/ui/admin/posts/PostsView'
+
+const mocks = mockTanstackQuery()
+
+mocks.filters = [] as ActiveFilter<PostFilterFieldKey>[]
+
+mocks.dispatch = vi.fn()
+
+mocks.sources = {
+  categories: [] as { id: string; name: string }[],
+  tags: [] as string[],
+  authors: [] as { id: string; name: string }[],
+}
+
+mocks.infinite = {
+  data: undefined as { pages: { posts: AdminPostDto[]; total: number; hasMore: boolean }[] } | undefined,
+  isLoading: true,
+  error: null as Error | null,
+  hasNextPage: false,
+  isFetchingNextPage: false,
+  fetchNextPage: vi.fn(),
+}
+
+mocks.query = {
+  data: null as unknown,
+  isPending: false,
+  isFetching: false,
+  error: null,
+  refetch: vi.fn(),
+}
 
 // PostsView drives its rows from `useInfiniteQuery` (server state lives in
 // the TanStack cache) and its filter surface from the shared `useFilterPills`
@@ -15,31 +45,6 @@ import { PostsView } from '@/ui/admin/posts/PostsView'
 // hook — the real `<FilterPillBar>` still renders the pills), a hoisted
 // slot for the infinite list query, and a shared slot for the three
 // option-list queries.
-
-const mocks = vi.hoisted(() => ({
-  filters: [] as ActiveFilter<PostFilterFieldKey>[],
-  dispatch: vi.fn(),
-  sources: {
-    categories: [] as { id: string; name: string }[],
-    tags: [] as string[],
-    authors: [] as { id: string; name: string }[],
-  },
-  list: {
-    data: undefined as { pages: { posts: AdminPostDto[]; total: number; hasMore: boolean }[] } | undefined,
-    isLoading: true,
-    error: null as Error | null,
-    hasNextPage: false,
-    isFetchingNextPage: false,
-    fetchNextPage: vi.fn(),
-  },
-  aux: {
-    data: null as unknown,
-    isPending: false,
-    isFetching: false,
-    error: null,
-    refetch: vi.fn(),
-  },
-}))
 
 vi.mock('@/ui/admin/shared/filter-bar/useFilterPills', async () => {
   const { buildPostFilterFields } = await vi.importActual<typeof import('@/ui/admin/posts/filter-fields')>(
@@ -66,19 +71,6 @@ vi.mock('@/ui/admin/shared/filter-bar/useFilterPills', async () => {
   }
 })
 
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
-  return {
-    ...actual,
-    useQuery: () => mocks.aux,
-    useQueries: ({ queries }: { queries: unknown[] }) => queries.map(() => mocks.aux),
-    useInfiniteQuery: () => mocks.list,
-    useQueryClient: () => ({ invalidateQueries: vi.fn(), setQueryData: vi.fn(), removeQueries: vi.fn() }),
-  }
-})
-
-vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
-
 // ───────────────────────────── fixtures ─────────────────────────────
 
 function makePost(overrides: Partial<AdminPostDto> = {}): AdminPostDto {
@@ -91,20 +83,20 @@ function makePost(overrides: Partial<AdminPostDto> = {}): AdminPostDto {
 }
 
 function setList(posts: AdminPostDto[], total = posts.length): void {
-  mocks.list.data = { pages: [{ posts, total, hasMore: false }] }
-  mocks.list.isLoading = false
-  mocks.list.error = null
+  mocks.infinite.data = { pages: [{ posts, total, hasMore: false }] }
+  mocks.infinite.isLoading = false
+  mocks.infinite.error = null
 }
 
 function resetQueries(): void {
-  mocks.list.data = undefined
-  mocks.list.isLoading = true
-  mocks.list.error = null
-  mocks.list.hasNextPage = false
-  mocks.list.isFetchingNextPage = false
-  mocks.aux.data = null
-  mocks.aux.isPending = false
-  mocks.aux.isFetching = false
+  mocks.infinite.data = undefined
+  mocks.infinite.isLoading = true
+  mocks.infinite.error = null
+  mocks.infinite.hasNextPage = false
+  mocks.infinite.isFetchingNextPage = false
+  mocks.query.data = null
+  mocks.query.isPending = false
+  mocks.query.isFetching = false
 }
 
 // ─────────────────────────── shared setup ───────────────────────────
@@ -148,9 +140,9 @@ describe('snapshot: PostsView branches', () => {
   // ────────────────────────────── error ──────────────────────────────
 
   it('still renders the chrome when the list query errors (toast path)', () => {
-    mocks.list.isLoading = false
-    mocks.list.error = new Error('boom')
-    mocks.list.data = undefined
+    mocks.infinite.isLoading = false
+    mocks.infinite.error = new Error('boom')
+    mocks.infinite.data = undefined
     const html = stableHtml(renderInRouter(<PostsView />, '/admin/posts'))
     // Header + empty body still render; the toast is mocked.
     expect(html).toContain('文章管理')

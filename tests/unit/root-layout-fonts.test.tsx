@@ -10,10 +10,6 @@ vi.mock('virtual:route-warmup-script', () => ({ default: '' }))
 
 // The section-change wiring pulls in the backup/audit schedulers (and
 // transitively the DB bootstrap) — irrelevant to the document shell.
-vi.mock('@/server/domains/settings/services/section-changes', () => ({
-  SECTION_CHANGE_HANDLERS: new Map(),
-}))
-
 // The document-shell pieces (Meta/Links/Scripts/ScrollRestoration) depend on
 // the framework build manifest, which a memory router doesn't have. They are
 // irrelevant to the font-slot contract, so stub them and keep everything

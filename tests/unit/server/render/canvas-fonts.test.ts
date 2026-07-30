@@ -1,6 +1,7 @@
 import { Buffer } from 'node:buffer'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { ensureCanvasFont, resetCanvasFont, resetFontCache } from '@/server/render/canvas-fonts'
 
 // Unit tests for the canvas font single-flight (`ensureCanvasFont`). The
@@ -15,8 +16,6 @@ const mocks = vi.hoisted(() => ({
   readFile: vi.fn<(path: string) => Promise<Buffer>>(),
   fontsHas: vi.fn<(family: string) => boolean>(() => false),
   fontsRegister: vi.fn<(buffer: Buffer, family: string) => void>(),
-  families: { og: '', calendar: '' } as Record<'og' | 'calendar', string>,
-  throwOnSection: false,
 }))
 
 vi.mock('node:fs/promises', () => ({
@@ -33,22 +32,21 @@ vi.mock('@napi-rs/canvas', () => ({
   },
 }))
 
-vi.mock('@/shared/config/getters', () => ({
-  requireBlogSettingsSection: vi.fn((section: string) => {
-    if (mocks.throwOnSection) {
-      throw new Error('settings not hydrated')
-    }
-    if (section === 'fonts') {
-      return {
-        og: { family: mocks.families.og },
-        calendar: { family: mocks.families.calendar },
-      }
-    }
-    throw new Error(`unexpected settings section: ${section}`)
-  }),
-}))
-
 const TTF_BUFFER = Buffer.from('fake-ttf-bytes')
+
+// Drive the fonts section through the real settings snapshot — the slot
+// loader re-reads it synchronously on every call, which is exactly what
+// the admin-edit scenarios below rely on.
+function seedFontFamilies(families: { og?: string; calendar?: string }) {
+  setBlogSettingsBundleForTests({
+    ...TEST_BLOG_SETTINGS_BUNDLE,
+    fonts: {
+      ...TEST_BLOG_SETTINGS_BUNDLE.fonts!,
+      og: { family: families.og ?? '' },
+      calendar: { family: families.calendar ?? '' },
+    },
+  })
+}
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -56,9 +54,6 @@ beforeEach(() => {
   // Drop the in-process buffer cache too so `readFile` call counts are
   // deterministic per test (it otherwise survives across cases).
   resetFontCache()
-  mocks.families.og = ''
-  mocks.families.calendar = ''
-  mocks.throwOnSection = false
   mocks.fontsHas.mockReturnValue(false)
   // Default fs state: a .ttf exists for every slot and reads fine.
   mocks.access.mockResolvedValue(undefined)
@@ -67,7 +62,7 @@ beforeEach(() => {
 
 describe('render/canvas-fonts — ensureCanvasFont', () => {
   it('coalesces concurrent calls into a single TTF read and one registration', async () => {
-    mocks.families.og = 'OPPO Sans'
+    seedFontFamilies({ og: 'OPPO Sans' })
 
     const [a, b, c] = await Promise.all([ensureCanvasFont('og'), ensureCanvasFont('og'), ensureCanvasFont('og')])
 
@@ -80,7 +75,7 @@ describe('render/canvas-fonts — ensureCanvasFont', () => {
   })
 
   it('clears the flight when the load throws so the next call retries', async () => {
-    mocks.families.og = 'OPPO Sans'
+    seedFontFamilies({ og: 'OPPO Sans' })
     mocks.fontsRegister.mockImplementationOnce(() => {
       throw new Error('native register blew up')
     })
@@ -99,7 +94,7 @@ describe('render/canvas-fonts — ensureCanvasFont', () => {
     expect(mocks.fontsRegister).not.toHaveBeenCalled()
 
     // Admin configures the family afterwards: the very next render loads it.
-    mocks.families.calendar = 'OPPO Serif'
+    seedFontFamilies({ calendar: 'OPPO Serif' })
     const slot = await ensureCanvasFont('calendar')
     expect(slot).toEqual({ buffer: TTF_BUFFER, family: 'OPPO Serif' })
     expect(mocks.fontsRegister).toHaveBeenCalledTimes(1)
@@ -110,7 +105,7 @@ describe('render/canvas-fonts — ensureCanvasFont', () => {
     // the registry already knows the family before our load finishes. The
     // slot must still be assigned — otherwise every render falls back to
     // the system font despite the custom font being registered.
-    mocks.families.calendar = 'OPPO Serif'
+    seedFontFamilies({ calendar: 'OPPO Serif' })
     mocks.fontsHas.mockReturnValue(true)
 
     const slot = await ensureCanvasFont('calendar')
@@ -124,7 +119,7 @@ describe('render/canvas-fonts — ensureCanvasFont', () => {
   })
 
   it('keeps slots independent — og state does not leak into calendar', async () => {
-    mocks.families.og = 'OPPO Sans'
+    seedFontFamilies({ og: 'OPPO Sans' })
 
     await expect(ensureCanvasFont('calendar')).resolves.toBeNull()
     const ogSlot = await ensureCanvasFont('og')
@@ -133,8 +128,7 @@ describe('render/canvas-fonts — ensureCanvasFont', () => {
   })
 
   it('resetCanvasFont(slot) clears only that slot', async () => {
-    mocks.families.og = 'OPPO Sans'
-    mocks.families.calendar = 'OPPO Serif'
+    seedFontFamilies({ og: 'OPPO Sans', calendar: 'OPPO Serif' })
     mocks.fontsHas.mockReturnValue(true)
 
     await ensureCanvasFont('og')
@@ -150,7 +144,7 @@ describe('render/canvas-fonts — ensureCanvasFont', () => {
   })
 
   it('drops the cached slot when the settings family changes — edit takes effect without restart', async () => {
-    mocks.families.og = 'OPPO Sans'
+    seedFontFamilies({ og: 'OPPO Sans' })
     await ensureCanvasFont('og')
     expect(mocks.fontsRegister).toHaveBeenCalledWith(TTF_BUFFER, 'OPPO Sans')
 
@@ -158,7 +152,7 @@ describe('render/canvas-fonts — ensureCanvasFont', () => {
     mocks.fontsHas.mockImplementation((family) => family === 'OPPO Sans')
 
     // Admin edits the family in settings: the very next render reloads.
-    mocks.families.og = 'OPPO Serif'
+    seedFontFamilies({ og: 'OPPO Serif' })
     const slot = await ensureCanvasFont('og')
     expect(slot).toEqual({ buffer: TTF_BUFFER, family: 'OPPO Serif' })
     expect(mocks.fontsRegister).toHaveBeenCalledTimes(2)
@@ -174,14 +168,14 @@ describe('render/canvas-fonts — ensureCanvasFont', () => {
   })
 
   it('falls back to the system font when the settings family is cleared — no cached slot retained', async () => {
-    mocks.families.og = 'OPPO Sans'
+    seedFontFamilies({ og: 'OPPO Sans' })
     await ensureCanvasFont('og')
     expect(mocks.fontsRegister).toHaveBeenCalledTimes(1)
 
     // Admin clears the family: the stale slot must be dropped and the
     // render resolves null (Canvas falls back to its system font).
     mocks.fontsHas.mockReturnValue(true)
-    mocks.families.og = ''
+    seedFontFamilies({ og: '' })
     await expect(ensureCanvasFont('og')).resolves.toBeNull()
     // The empty family short-circuits before any disk access…
     expect(mocks.readFile).toHaveBeenCalledTimes(1)

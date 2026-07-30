@@ -1,17 +1,15 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { __clearSectionChangeHandlersForTests } from '@/server/domains/settings/services/section-changes'
 import { DomainError } from '@/server/infra/http/errors'
 
 // Section-change dispatch is covered by the unit tests; keep the
 // backup/audit schedulers out of these persistence-focused cases.
-vi.mock('@/server/domains/settings/services/section-changes', () => ({
-  SECTION_CHANGE_HANDLERS: new Map(),
-}))
-
 const db = getTestDb()
 
 beforeEach(async () => {
+  __clearSectionChangeHandlersForTests()
   await clearAllTables(db)
 })
 

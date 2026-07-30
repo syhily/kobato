@@ -19,6 +19,7 @@ import { user as userTable } from '@/server/infra/db/schema/user'
 vi.mock('@/server/infra/email/sender', () => ({
   sendAuthorInvite: vi.fn(),
   sendPasswordReset: vi.fn(),
+  invalidateMailTransportCache: vi.fn(),
 }))
 
 const db = getTestDb()

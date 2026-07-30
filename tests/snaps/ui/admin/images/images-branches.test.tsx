@@ -3,9 +3,27 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AdminImageDto } from '@/shared/contracts/images'
 import type { ActiveImageFilter } from '@/ui/admin/images/useImagesReducer'
 
+import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { ImagesView } from '@/ui/admin/images/ImagesView'
 import { ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
+
+const queryMocks = mockTanstackQuery()
+
+queryMocks.infinite = {
+  data: { pages: [] as { images: AdminImageDto[]; total: number; hasMore: boolean }[] },
+  isLoading: false,
+  isPending: false,
+  isFetching: false,
+  isFetchingNextPage: false,
+  hasNextPage: false,
+  error: null as unknown,
+  fetchNextPage: vi.fn(),
+}
+
+queryMocks.mutation = { mutate: vi.fn(), isPending: false }
+
+queryMocks.queryClient = { invalidateQueries: vi.fn() }
 
 // `ImagesView` threads filter state through `useImagesReducer` and page
 // data through `useInfiniteQuery`. The companion `images-view.test.tsx`
@@ -38,41 +56,6 @@ vi.mock('@/ui/admin/images/useImagesReducer', () => ({
   useImagesReducer: () => controller,
 }))
 
-// ─────────────────────── react-query mock ───────────────────────────
-
-const infinite = vi.hoisted(() => ({
-  data: { pages: [] as { images: AdminImageDto[]; total: number; hasMore: boolean }[] },
-  isLoading: false,
-  isPending: false,
-  isFetching: false,
-  isFetchingNextPage: false,
-  hasNextPage: false,
-  error: null as unknown,
-  fetchNextPage: vi.fn(),
-}))
-
-const mutation = vi.hoisted(() => ({ mutate: vi.fn(), isPending: false }))
-const queryClient = vi.hoisted(() => ({ invalidateQueries: vi.fn() }))
-
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
-  return {
-    ...actual,
-    useInfiniteQuery: () => infinite,
-    useMutation: () => mutation,
-    useQueryClient: () => queryClient,
-  }
-})
-
-vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
-
-// `useDebouncedSearch` keeps a useState under the hood and is only
-// consumed by the (unmountable in SSR) event handlers, so a no-op stub
-// keeps the render path clean.
-vi.mock('@/ui/admin/shared/useDebouncedSearch', () => ({
-  useDebouncedSearch: () => ['', vi.fn()],
-}))
-
 // ───────────────────────────── fixtures ─────────────────────────────
 
 function makeImage(overrides: Partial<AdminImageDto> & { id: string }): AdminImageDto {
@@ -101,13 +84,13 @@ describe('snapshot: ImagesView branches', () => {
     controller.q = ''
     controller.kind = 'all'
     controller.activeFilters = []
-    infinite.data = { pages: [] }
-    infinite.isLoading = false
-    infinite.isPending = false
-    infinite.isFetching = false
-    infinite.isFetchingNextPage = false
-    infinite.hasNextPage = false
-    infinite.error = null
+    queryMocks.infinite.data = { pages: [] }
+    queryMocks.infinite.isLoading = false
+    queryMocks.infinite.isPending = false
+    queryMocks.infinite.isFetching = false
+    queryMocks.infinite.isFetchingNextPage = false
+    queryMocks.infinite.hasNextPage = false
+    queryMocks.infinite.error = null
   })
 
   it('renders the active-filter chips (q + kind) so the filter-bar pill branches run', () => {
@@ -123,7 +106,9 @@ describe('snapshot: ImagesView branches', () => {
     ]
     // Populate the grid so the data-loaded branch (not the empty card)
     // renders alongside the chips.
-    infinite.data = { pages: [{ images: [makeImage({ id: 'a', kind: 'friend' })], total: 1, hasMore: false }] }
+    queryMocks.infinite.data = {
+      pages: [{ images: [makeImage({ id: 'a', kind: 'friend' })], total: 1, hasMore: false }],
+    }
 
     const html = stableHtml(renderInRouter(<ImagesView />, '/admin/library/images'))
 
@@ -144,11 +129,11 @@ describe('snapshot: ImagesView branches', () => {
   it('renders the "加载中…" spinner when the next page is fetching', () => {
     // `hasNextPage` true AND `isFetchingNextPage` true hits the spinner
     // render branch inside the sentinel footer.
-    infinite.data = {
+    queryMocks.infinite.data = {
       pages: [{ images: [makeImage({ id: 'a' })], total: 5, hasMore: true }],
     }
-    infinite.hasNextPage = true
-    infinite.isFetchingNextPage = true
+    queryMocks.infinite.hasNextPage = true
+    queryMocks.infinite.isFetchingNextPage = true
 
     const html = stableHtml(renderInRouter(<ImagesView />, '/admin/library/images'))
 
@@ -161,10 +146,10 @@ describe('snapshot: ImagesView branches', () => {
   it('renders the end-of-list footer when there is no next page and images exist', () => {
     // Data-loaded + `!hasNextPage` + `allImages.length > 0` → the
     // "已加载全部 N 张图片" branch.
-    infinite.data = {
+    queryMocks.infinite.data = {
       pages: [{ images: [makeImage({ id: 'a' }), makeImage({ id: 'b' })], total: 2, hasMore: false }],
     }
-    infinite.hasNextPage = false
+    queryMocks.infinite.hasNextPage = false
 
     const html = stableHtml(renderInRouter(<ImagesView />, '/admin/library/images'))
 
@@ -172,7 +157,7 @@ describe('snapshot: ImagesView branches', () => {
   })
 
   it('renders the empty-state card when the resolved list has no images', () => {
-    infinite.data = { pages: [{ images: [], total: 0, hasMore: false }] }
+    queryMocks.infinite.data = { pages: [{ images: [], total: 0, hasMore: false }] }
 
     const html = stableHtml(renderInRouter(<ImagesView />, '/admin/library/images'))
 
@@ -182,7 +167,7 @@ describe('snapshot: ImagesView branches', () => {
   })
 
   it('renders the loading skeleton while the first page is pending', () => {
-    infinite.isLoading = true
+    queryMocks.infinite.isLoading = true
 
     const html = renderInRouter(<ImagesView />, '/admin/library/images')
 
@@ -194,11 +179,11 @@ describe('snapshot: ImagesView branches', () => {
   })
 
   it('still renders the grid when an error is present alongside data', () => {
-    // `listQuery.error` only feeds a useEffect → toast (which we've
+    // `queryMocks.infinite.error` only feeds a useEffect → toast (which we've
     // stubbed); the render path falls through to the data branch when
     // pages exist. Assert the grid body renders despite the error flag.
-    infinite.error = new Error('boom')
-    infinite.data = {
+    queryMocks.infinite.error = new Error('boom')
+    queryMocks.infinite.data = {
       pages: [{ images: [makeImage({ id: 'a' })], total: 1, hasMore: false }],
     }
 

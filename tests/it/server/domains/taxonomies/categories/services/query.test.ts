@@ -1,14 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { findCategoryBySlug, resolveCategoryBySlugOrName } from '@/server/domains/taxonomies/categories/services/query'
 import { category } from '@/server/infra/db/schema/taxonomy'
-
-// Sibling taxonomy it files stub the hydration seam the same way; the
-// slug resolvers under test never reach it, but the module graph does.
-vi.mock('@/server/domains/images/services/enhance', () => ({
-  hydrateImageRefs: vi.fn(async () => undefined),
-}))
 
 const db = getTestDb()
 

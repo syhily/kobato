@@ -1,12 +1,8 @@
 import { eq } from 'drizzle-orm'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { kvCache } from '@/server/infra/db/schema/kv-cache'
-
-vi.mock('@/server/domains/images/services/enhance', () => ({
-  hydrateImageRefs: vi.fn(async () => undefined),
-}))
 
 const db = getTestDb()
 

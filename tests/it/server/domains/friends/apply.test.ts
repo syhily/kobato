@@ -17,10 +17,6 @@ import { user } from '@/server/infra/db/schema/user'
 import { invalidateMailTransportCache } from '@/server/infra/email/sender'
 import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 
-vi.mock('@/server/domains/images/services/enhance', () => ({
-  hydrateImageRefs: vi.fn(async () => undefined),
-}))
-
 const db = getTestDb()
 
 const mockFetch = installFetch()

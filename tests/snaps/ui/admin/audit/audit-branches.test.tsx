@@ -4,8 +4,36 @@ import type { AuditLogActorDto, AuditLogItemDto } from '@/shared/contracts/audit
 import type { AuditLogFilterFieldKey } from '@/ui/admin/audit/filter-fields'
 import type { ActiveFilter } from '@/ui/admin/shared/filterPillsReducer'
 
+import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { AuditLogView } from '@/ui/admin/audit/AuditLogView'
+
+const mocks = mockTanstackQuery()
+
+mocks.filters = [] as ActiveFilter<AuditLogFilterFieldKey>[]
+
+mocks.dispatch = vi.fn()
+
+mocks.actors = [] as AuditLogActorDto[]
+
+mocks.infinite = {
+  data: undefined as { pages: { items: AuditLogItemDto[]; total: number; hasMore: boolean }[] } | undefined,
+  isLoading: false,
+  error: null as Error | null,
+  hasNextPage: false,
+  isFetchingNextPage: false,
+  fetchNextPage: vi.fn(),
+}
+
+mocks.query = {
+  data: undefined as AuditLogActorDto[] | undefined,
+}
+
+mocks.mutation = {
+  mutate: vi.fn(),
+  mutateAsync: vi.fn(),
+  isPending: false,
+}
 
 // The companion `audit-view.test.tsx` covers the empty-state shell (no
 // filters, no rows) and exercises `AuditLogRow` / the shared filter-pill
@@ -19,28 +47,6 @@ import { AuditLogView } from '@/ui/admin/audit/AuditLogView'
 // `useFilterPills`; the module mock swaps ONLY that hook for a hoisted
 // slot so tests can inject active filters — the real `<FilterPillBar>`
 // still renders them.
-
-const mocks = vi.hoisted(() => ({
-  filters: [] as ActiveFilter<AuditLogFilterFieldKey>[],
-  dispatch: vi.fn(),
-  actors: [] as AuditLogActorDto[],
-  infinite: {
-    data: undefined as { pages: { items: AuditLogItemDto[]; total: number; hasMore: boolean }[] } | undefined,
-    isLoading: false,
-    error: null as Error | null,
-    hasNextPage: false,
-    isFetchingNextPage: false,
-    fetchNextPage: vi.fn(),
-  },
-  query: {
-    data: undefined as AuditLogActorDto[] | undefined,
-  },
-  mutation: {
-    mutate: vi.fn(),
-    mutateAsync: vi.fn(),
-    isPending: false,
-  },
-}))
 
 vi.mock('@/ui/admin/shared/filter-bar/useFilterPills', async () => {
   const { buildAuditFilterFields } = await vi.importActual<typeof import('@/ui/admin/audit/filter-fields')>(
@@ -66,33 +72,6 @@ vi.mock('@/ui/admin/shared/filter-bar/useFilterPills', async () => {
     }),
   }
 })
-
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
-  return {
-    ...actual,
-    useQuery: () => mocks.query,
-    useQueries: ({ queries }: { queries: unknown[] }) => queries.map(() => mocks.query),
-    useMutation: () => mocks.mutation,
-    useInfiniteQuery: () => mocks.infinite,
-  }
-})
-
-// `orpcQuery` builds the query/mutation option objects the hooks above
-// consume; stub the option builders so the import stays side-effect free.
-vi.mock('@/client/api/orpc-query', () => ({
-  orpcQuery: {
-    admin: {
-      auditLog: {
-        list: { infiniteOptions: () => ({ queryKey: ['auditLog', 'list'] }) },
-        actors: { queryOptions: () => ({ queryKey: ['actors'], queryFn: async () => [] }) },
-        exportCsv: { mutationOptions: () => ({ mutationKey: ['exportCsv'] }) },
-      },
-    },
-  },
-}))
-
-vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
 
 // ───────────────────────────── fixtures ─────────────────────────────
 

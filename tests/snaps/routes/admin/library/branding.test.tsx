@@ -13,8 +13,6 @@ vi.mock('react-router', async () => {
   }
 })
 
-vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
-
 describe('snapshot: routes/admin/library/branding', () => {
   it('renders the branding route', () => {
     const Route = asRoute(BrandingRoute)

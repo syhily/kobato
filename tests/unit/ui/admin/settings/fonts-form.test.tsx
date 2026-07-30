@@ -24,16 +24,6 @@ vi.mock('@/client/hooks/use-file-upload', () => ({
   },
 }))
 
-vi.mock('@/ui/admin/settings/useSettingsMutation', () => ({
-  useSettingsMutation: () => ({
-    commit: vi.fn(),
-    resetStatus: vi.fn(),
-    revalidate: vi.fn(),
-    isPending: false,
-    status: 'idle',
-  }),
-}))
-
 import { FontsForm } from '@/ui/admin/settings/FontsForm'
 
 const fonts: FontsSettings = {

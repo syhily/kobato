@@ -2,8 +2,30 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AdminFriendDto } from '@/shared/contracts/friends'
 
+import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { FriendsView } from '@/ui/admin/friends/FriendsView'
+
+const queryMocks = mockTanstackQuery()
+
+queryMocks.infinite = {
+  data: { pages: [] as { friends: AdminFriendDto[]; total: number; hasMore: boolean }[] } as unknown,
+  isLoading: true,
+  isFetching: false,
+  isFetchingNextPage: false,
+  hasNextPage: false,
+  error: null as Error | null,
+  fetchNextPage: vi.fn(),
+}
+
+queryMocks.mutation = {
+  mutate: vi.fn(),
+  isPending: false,
+}
+
+queryMocks.queryClient = {
+  invalidateQueries: vi.fn(),
+}
 
 // FriendsView derives its rows directly from `useInfiniteQuery` pages and
 // inlines its `{ q, includeHidden }` filter state via `useState` (the old
@@ -14,62 +36,15 @@ import { FriendsView } from '@/ui/admin/friends/FriendsView'
 // event-driven (`onCheckedChange` flips inlined state), which SSR cannot
 // drive, so it is intentionally not covered here.
 
-const queryMocks = vi.hoisted(() => ({
-  infinite: {
-    data: { pages: [] as { friends: AdminFriendDto[]; total: number; hasMore: boolean }[] } as unknown,
-    isLoading: true,
-    isFetching: false,
-    isFetchingNextPage: false,
-    hasNextPage: false,
-    error: null as Error | null,
-    fetchNextPage: vi.fn(),
-  },
-  mutation: {
-    mutate: vi.fn(),
-    isPending: false,
-  },
-  queryClient: {
-    invalidateQueries: vi.fn(),
-  },
-}))
-
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
-  return {
-    ...actual,
-    useInfiniteQuery: () => queryMocks.infinite,
-    useMutation: () => queryMocks.mutation,
-    useQueryClient: () => queryMocks.queryClient,
-  }
-})
-
-vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
-
 vi.mock('@/ui/admin/shared/useDebouncedSearch', () => ({
   useDebouncedSearch: () => [debouncedSearch.value, debouncedSearch.setInput],
 }))
 
+vi.mock('@/ui/components/dialog', () => import('#/_helpers/stubs/dialog'))
+
 const debouncedSearch = vi.hoisted(() => ({
   value: '',
   setInput: vi.fn(),
-}))
-
-vi.mock('@/ui/components/dialog', () => ({
-  Dialog: ({ open, children }: { open: boolean; children: React.ReactNode }) =>
-    open ? <div data-slot="dialog">{children}</div> : null,
-  DialogContent: ({ children, className }: { children: React.ReactNode; className?: string }) => (
-    <div data-slot="dialog-content" className={className}>
-      {children}
-    </div>
-  ),
-  DialogDescription: ({ children }: { children: React.ReactNode }) => <p data-slot="dialog-description">{children}</p>,
-  DialogFooter: ({ children, className }: { children: React.ReactNode; className?: string }) => (
-    <div data-slot="dialog-footer" className={className}>
-      {children}
-    </div>
-  ),
-  DialogHeader: ({ children }: { children: React.ReactNode }) => <div data-slot="dialog-header">{children}</div>,
-  DialogTitle: ({ children }: { children: React.ReactNode }) => <h2 data-slot="dialog-title">{children}</h2>,
 }))
 
 // ───────────────────────────── fixtures ─────────────────────────────

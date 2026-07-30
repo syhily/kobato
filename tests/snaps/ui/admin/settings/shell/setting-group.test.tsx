@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
@@ -13,16 +13,6 @@ import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { ScrollSpyProvider } from '@/ui/admin/settings/shell/useSettingsScrollSpy'
 import { SettingsSearchProvider } from '@/ui/admin/settings/shell/useSettingsSearch'
 import { Input } from '@/ui/components/input'
-
-vi.mock('@/ui/admin/settings/useSettingsMutation', () => ({
-  useSettingsMutation: () => ({
-    commit: vi.fn(),
-    resetStatus: vi.fn(),
-    revalidate: vi.fn(),
-    isPending: false,
-    status: 'idle',
-  }),
-}))
 
 describe('snapshot: SettingGroup', () => {
   it('renders a group with title and description', () => {

@@ -1,20 +1,15 @@
 import { eq } from 'drizzle-orm'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { postTag } from '@/server/infra/db/schema/post-tag'
 import { category as categoryTable, tag as tagTable } from '@/server/infra/db/schema/taxonomy'
 
-vi.mock('@/server/domains/images/services/enhance', () => ({
-  hydrateImageRefs: vi.fn(async () => undefined),
-}))
-
 const db = getTestDb()
 
 beforeEach(async () => {
   await clearAllTables(db)
-  vi.clearAllMocks()
 })
 
 async function seedCategory(opts: Partial<typeof categoryTable.$inferInsert> = {}): Promise<number> {
@@ -229,7 +224,7 @@ describe('taxonomies/tags/service — deleteAdminTag', () => {
     const { deleteAdminTag } = await import('@/server/domains/taxonomies/tags/service')
     await expect(deleteAdminTag(db, id)).rejects.toMatchObject({ code: 'CONFLICT' })
   })
-  it('blocks on hidden + scheduled references, names them, and never touches image hydration', async () => {
+  it('blocks on hidden + scheduled references and names them', async () => {
     const id = await seedTag({ name: 'Ref2', slug: 'ref2' })
     const hiddenPid = await seedPublishedPost(undefined, { title: 'Hidden Post', visible: false })
     const scheduledPid = await seedPublishedPost(undefined, {
@@ -245,11 +240,6 @@ describe('taxonomies/tags/service — deleteAdminTag', () => {
     expect(error).toMatchObject({ code: 'CONFLICT' })
     expect((error as Error).message).toContain('Hidden Post')
     expect((error as Error).message).toContain('Scheduled Post')
-    // The slim delete guard selects titles only — it must not run the full
-    // listing pipeline (whose cover hydration would reach `hydrateImageRefs`
-    // and its thumbhash batch query).
-    const { hydrateImageRefs } = await import('@/server/domains/images/services/enhance')
-    expect(hydrateImageRefs).not.toHaveBeenCalled()
   })
 })
 

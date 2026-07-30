@@ -4,10 +4,36 @@ import type { AdminCommentWire as AdminComment } from '@/shared/contracts/commen
 import type { CommentBody } from '@/shared/pt/comment-schema'
 import type { CommentActions } from '@/ui/admin/comments/useCommentsController'
 
+import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { AdminCommentRow } from '@/ui/admin/comments/AdminCommentRow'
 import { CommentsView } from '@/ui/admin/comments/CommentsView'
 import { EditUserDialog } from '@/ui/admin/comments/EditUserDialog'
+
+const queryMocks = mockTanstackQuery()
+
+queryMocks.query = {
+  data: null as unknown,
+  isPending: false,
+  isLoading: false,
+  isFetching: false,
+  error: null,
+  refetch: vi.fn(),
+}
+
+queryMocks.mutation = { mutate: vi.fn(), isPending: false }
+
+queryMocks.infinite = {
+  data: { pages: [] as unknown[] },
+  isLoading: false,
+  isFetching: false,
+  isFetchingNextPage: false,
+  hasNextPage: false,
+  error: null,
+  fetchNextPage: vi.fn(),
+}
+
+queryMocks.queryClient = { invalidateQueries: vi.fn() }
 
 // Silence the harmless "IntersectionObserver is not defined" warning that
 // the CommentsView effect logs under SSR — it is expected in this
@@ -88,42 +114,6 @@ vi.mock('@/ui/admin/comments/useCommentsController', async () => {
 // prop) still calls react-query for the page/author autocomplete lookups —
 // stub the query hooks with inert defaults so the chrome renders without
 // issuing network calls.
-
-const queryMocks = vi.hoisted(() => ({
-  query: {
-    data: null as unknown,
-    isPending: false,
-    isLoading: false,
-    isFetching: false,
-    error: null,
-    refetch: vi.fn(),
-  },
-  mutation: { mutate: vi.fn(), isPending: false },
-  infinite: {
-    data: { pages: [] as unknown[] },
-    isLoading: false,
-    isFetching: false,
-    isFetchingNextPage: false,
-    hasNextPage: false,
-    error: null,
-    fetchNextPage: vi.fn(),
-  },
-  queryClient: { invalidateQueries: vi.fn() },
-}))
-
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
-  return {
-    ...actual,
-    useQuery: () => queryMocks.query,
-    useQueries: ({ queries }: { queries: unknown[] }) => queries.map(() => queryMocks.query),
-    useMutation: () => queryMocks.mutation,
-    useInfiniteQuery: () => queryMocks.infinite,
-    useQueryClient: () => queryMocks.queryClient,
-  }
-})
-
-vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
 
 // --- Fixtures ----------------------------------------------------------------
 

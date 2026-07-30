@@ -1,116 +1,115 @@
+import { eq } from 'drizzle-orm'
 import { Hono } from 'hono'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Env } from '@/server/http/context'
 
-vi.mock('@/server/domains/content/schemas/live-gate', () => ({
-  isLive: vi.fn(() => true),
-}))
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { content as contentTable } from '@/server/infra/db/schema/content'
+import { page as pageTable } from '@/server/infra/db/schema/page'
+import { post as postTable } from '@/server/infra/db/schema/post'
+import { category as categoryTable } from '@/server/infra/db/schema/taxonomy'
 
-vi.mock('@/server/domains/pages/services/public-query', () => ({
-  findPublicPageMetaBySlug: vi.fn(),
-}))
-
-vi.mock('@/server/domains/posts/services/single', () => ({
-  findPublicPostMetaBySlug: vi.fn(),
-}))
+// `imagesRouter` outcome-mapping tests against the real engine: slug
+// resolution (posts / pages / categories) hits seeded rows, the live
+// gate, the in-process rate limiter, and the kv-backed cache registry
+// all run for real. The kept seams are the heavy/external backends:
+// gravatar avatar fetching (network), OG canvas rendering, and the
+// calendar renderer.
 
 vi.mock('@/server/http/resources/calendar', () => ({
   serveCalendar: vi.fn(),
 }))
 
-vi.mock('@/server/domains/taxonomies/categories/services/query', () => ({
-  findCategoryBySlug: vi.fn(),
-}))
-
-vi.mock('@/server/infra/rate-limit', () => ({
-  readBucket: vi.fn(() => ({ windowSeconds: 60, maxAttempts: 60 })),
-  tryKeyedRateLimit: vi.fn().mockResolvedValue({ exceeded: false, count: 1 }),
-}))
-
-vi.mock('@/server/infra/cache/registry', () => ({
-  through: vi.fn(),
-}))
-
-vi.mock('@/server/domains/comments/services/avatar', () => ({
-  defaultAvatarUrl: vi.fn(() => '/images/default-avatar.png'),
-  serveAvatar: vi.fn(),
-  // Pass-through stub so the tests can watch `?s=` flow into the domain
-  // call; the clamping rules live in the service's own unit tests.
-  resolveAvatarSize: vi.fn((raw: string | undefined) => (raw === undefined || raw === '' ? 120 : Number(raw))),
-}))
+vi.mock('@/server/domains/comments/services/avatar', async (importActual) => {
+  const actual = await importActual<typeof import('@/server/domains/comments/services/avatar')>()
+  return {
+    ...actual,
+    serveAvatar: vi.fn(),
+  }
+})
 
 vi.mock('@/server/render/og/render', () => ({
   drawOpenGraph: vi.fn().mockResolvedValue(Buffer.from('png')),
 }))
 
-vi.mock('@/shared/config/getters', () => ({
-  requireBlogSettingsSection: vi.fn((section: string) =>
-    section === 'siteIdentity' ? { website: 'https://example.com', description: 'desc' } : {},
-  ),
-}))
-
-vi.mock('@/shared/utils/urls', () => ({
-  joinUrl: vi.fn((base: string, path: string) => `${base}${path}`),
-}))
-
 import { serveAvatar } from '@/server/domains/comments/services/avatar'
-import { findPublicPageMetaBySlug } from '@/server/domains/pages/services/public-query'
-import { findPublicPostMetaBySlug } from '@/server/domains/posts/services/single'
-import { findCategoryBySlug } from '@/server/domains/taxonomies/categories/services/query'
 import { serveCalendar } from '@/server/http/resources/calendar'
 import { imagesRouter } from '@/server/http/resources/images'
-import { through } from '@/server/infra/cache/registry'
-import { readBucket, tryKeyedRateLimit } from '@/server/infra/rate-limit'
+
+const db = getTestDb()
 
 function requestImages(url: string) {
   const app = new Hono<Env>()
   app.use('*', async (c, next) => {
-    c.set('requestContext', { db: {}, clientAddress: '127.0.0.1' } as never)
+    c.set('requestContext', { db, clientAddress: '127.0.0.1' } as never)
     await next()
   })
   app.route('/', imagesRouter)
   return app.request(url)
 }
 
+async function seedLivePost(slug: string): Promise<void> {
+  const rows = await db
+    .insert(postTable)
+    .values({
+      slug,
+      title: 'Post',
+      summary: 'Summary',
+      cover: 'cover.jpg',
+      published: true,
+      publishedAt: new Date('2024-01-01'),
+      firstPublishedAt: new Date('2024-01-01'),
+      visible: true,
+    })
+    .returning({ id: postTable.id })
+  const revisions = await db
+    .insert(contentTable)
+    .values({ type: 'post', ownerId: rows[0]!.id, revisionNo: 1, status: 'published', body: [] })
+    .returning({ id: contentTable.id })
+  await db.update(postTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(postTable.id, rows[0]!.id))
+}
+
+async function seedLivePage(slug: string): Promise<void> {
+  const rows = await db
+    .insert(pageTable)
+    .values({
+      slug,
+      title: 'Page',
+      summary: 'Page summary',
+      cover: 'cover.jpg',
+      published: true,
+      publishedAt: new Date('2024-01-01'),
+      firstPublishedAt: new Date('2024-01-01'),
+    })
+    .returning({ id: pageTable.id })
+  const revisions = await db
+    .insert(contentTable)
+    .values({ type: 'page', ownerId: rows[0]!.id, revisionNo: 1, status: 'published', body: [] })
+    .returning({ id: contentTable.id })
+  await db.update(pageTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(pageTable.id, rows[0]!.id))
+}
+
 describe('images resource', () => {
   beforeEach(async () => {
-    vi.resetAllMocks()
-    ;(readBucket as ReturnType<typeof vi.fn>).mockReturnValue({ windowSeconds: 60, maxAttempts: 60 })
-    ;(tryKeyedRateLimit as ReturnType<typeof vi.fn>).mockResolvedValue({ exceeded: false, count: 1 })
-    // Default: a cache miss — run the loader and return its value.
-    ;(through as unknown as ReturnType<typeof vi.fn>).mockImplementation(
-      (_db: unknown, _id: unknown, _params: unknown, loader: () => unknown) => loader(),
-    )
+    await clearAllTables(db)
+    vi.clearAllMocks()
     ;(serveCalendar as ReturnType<typeof vi.fn>).mockResolvedValue(
       new Response('cal', { headers: { 'Content-Type': 'image/png' } }),
     )
-    ;(findPublicPostMetaBySlug as ReturnType<typeof vi.fn>).mockReturnValue(undefined)
-    ;(findPublicPageMetaBySlug as ReturnType<typeof vi.fn>).mockReturnValue(undefined)
-    ;(findCategoryBySlug as ReturnType<typeof vi.fn>).mockReturnValue(undefined)
     // Default: the domain reports "no avatar" — the redirect mapping tests
     // override per case.
     ;(serveAvatar as ReturnType<typeof vi.fn>).mockResolvedValue({ kind: 'redirect' })
   })
 
   it('renders an OG image for a post', async () => {
-    ;(findPublicPostMetaBySlug as ReturnType<typeof vi.fn>).mockReturnValue({
-      title: 'Post',
-      summary: 'Summary',
-      cover: 'cover.jpg',
-      published: true,
-      publishedRevisionId: 1,
-    })
+    await seedLivePost('post')
     const res = await requestImages('http://localhost/images/og/post.png')
     expect(res.status).toBe(200)
   })
 
   it('renders an OG image for a page', async () => {
-    ;(findPublicPageMetaBySlug as ReturnType<typeof vi.fn>).mockReturnValue({
-      title: 'Page',
-      summary: 'Page summary',
-      cover: 'cover.jpg',
-    })
+    await seedLivePage('page')
     const res = await requestImages('http://localhost/images/og/page.png')
     expect(res.status).toBe(200)
   })
@@ -121,7 +120,7 @@ describe('images resource', () => {
   })
 
   it('renders an OG image for a category', async () => {
-    ;(findCategoryBySlug as ReturnType<typeof vi.fn>).mockReturnValue({ name: 'Code', description: '', cover: '' })
+    await db.insert(categoryTable).values({ name: 'Code', slug: 'code', description: '', cover: '' })
     const res = await requestImages('http://localhost/images/og/cats/code.png')
     expect(res.status).toBe(200)
   })
@@ -149,15 +148,15 @@ describe('images resource', () => {
     ;(serveAvatar as ReturnType<typeof vi.fn>).mockResolvedValue({ kind: 'redirect' })
     const res = await requestImages('http://localhost/images/avatar/abc.png')
     expect(res.status).toBe(302)
-    expect(res.headers.get('Location')).toBe('/images/default-avatar.png')
+    expect(res.headers.get('Location')).toBe('https://example.com/images/default-avatar.png')
   })
 
   it('threads the `?s=` size into the domain call, defaulting to 120', async () => {
     const res = await requestImages('http://localhost/images/avatar/abc.png?s=256')
     expect(res.status).toBe(302)
-    expect(serveAvatar).toHaveBeenCalledWith({}, 'abc', 256)
+    expect(serveAvatar).toHaveBeenCalledWith(expect.anything(), 'abc', 256)
     ;(serveAvatar as ReturnType<typeof vi.fn>).mockClear()
     await requestImages('http://localhost/images/avatar/abc.png')
-    expect(serveAvatar).toHaveBeenCalledWith({}, 'abc', 120)
+    expect(serveAvatar).toHaveBeenCalledWith(expect.anything(), 'abc', 120)
   })
 })

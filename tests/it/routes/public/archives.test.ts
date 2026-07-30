@@ -1,52 +1,64 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { eq } from 'drizzle-orm'
+import { beforeEach, describe, expect, it } from 'vitest'
 
-import { makePost } from '#/_helpers/catalog'
-const mocks = vi.hoisted(() => ({
-  listClientPosts: vi.fn(),
-  listAllPosts: vi.fn(),
-  getClientPostsWithMetadata: vi.fn(async (_db: unknown, posts: unknown[]) => posts),
-}))
+import { makeLoaderArgs } from '#/_helpers/context'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { content as contentTable } from '@/server/infra/db/schema/content'
+import { post as postTable } from '@/server/infra/db/schema/post'
 
-vi.mock('@/server/http/request-context', async () => {
-  const { createRequestContextMockModule } = await import('#/_helpers/auth-context-mock')
-  return createRequestContextMockModule()
+// Archives promises completeness: every live post, including hidden ones.
+// Real engine — seeded live rows prove the hidden inclusion and the
+// scheduled exclusion fall out of the shared live gate, not a mock.
+
+const db = getTestDb()
+
+beforeEach(async () => {
+  await clearAllTables(db)
 })
 
-vi.mock('@/server/domains/posts/services/public-query', () => ({
-  listClientPosts: mocks.listClientPosts,
-  getClientPostsWithMetadata: mocks.getClientPostsWithMetadata,
-  listAllPosts: mocks.listAllPosts,
-}))
-vi.mock('@/shared/types/catalog', async () => {
-  const actual = await vi.importActual<typeof import('@/shared/types/catalog')>('@/shared/types/catalog')
-  return {
-    ...actual,
-    toClientPost: (post: unknown) => post,
-    toListingPostCard: (post: unknown) => post,
-  }
-})
+async function seedPost(opts: {
+  slug: string
+  visible?: boolean
+  firstPublishedAt: Date
+  publishedAt?: Date
+}): Promise<number> {
+  const rows = await db
+    .insert(postTable)
+    .values({
+      slug: opts.slug,
+      title: opts.slug,
+      published: true,
+      publishedAt: opts.publishedAt ?? opts.firstPublishedAt,
+      firstPublishedAt: opts.firstPublishedAt,
+      visible: opts.visible ?? true,
+    })
+    .returning({ id: postTable.id })
+  const postId = rows[0]!.id
+  const revisions = await db
+    .insert(contentTable)
+    .values({ type: 'post', ownerId: postId, revisionNo: 1, status: 'published', body: [] })
+    .returning({ id: contentTable.id })
+  await db.update(postTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(postTable.id, postId))
+  return postId
+}
 
 const { loader } = await import('@/routes/public/archives')
 
-const visiblePost = makePost({ slug: 'visible-post' })
-const hiddenPost = makePost({ slug: 'hidden-post', visible: false })
-
-beforeEach(() => {
-  vi.clearAllMocks()
-  mocks.listClientPosts.mockResolvedValue([visiblePost, hiddenPost])
-})
-
 describe('routes/archives loader', () => {
   it('includes visible=false posts while still excluding scheduled posts', async () => {
-    const result = (await loader({
-      request: new Request('http://localhost/archives'),
-    } as unknown as Parameters<typeof loader>[0])) as { resolvedPosts: Array<{ slug: string }>; listingNowIso: string }
-
-    expect(mocks.listClientPosts).toHaveBeenCalledWith(expect.any(Object), {
-      includeHidden: true,
-      includeScheduled: false,
-      limit: 10_000,
+    await seedPost({ slug: 'visible-post', firstPublishedAt: new Date('2024-01-02') })
+    await seedPost({ slug: 'hidden-post', visible: false, firstPublishedAt: new Date('2024-01-01') })
+    // Live in every respect except a future publishedAt — the scheduled leg
+    // of the live gate must keep it out of the archive.
+    await seedPost({
+      slug: 'scheduled-post',
+      firstPublishedAt: new Date('2024-01-03'),
+      publishedAt: new Date('2099-01-01'),
     })
+
+    const result = await loader(makeLoaderArgs({ request: new Request('http://localhost/archives'), db }))
+
+    // firstPublishedAt desc.
     expect(result.resolvedPosts.map((post) => post.slug)).toEqual(['visible-post', 'hidden-post'])
     expect(typeof result.listingNowIso).toBe('string')
     expect(result.listingNowIso).toMatch(/^\d{4}-\d{2}-\d{2}T/)

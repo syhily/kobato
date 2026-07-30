@@ -27,8 +27,6 @@ vi.mock('@tanstack/react-query', async () => {
   }
 })
 
-vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
-
 const approvalItem: AdminPendingItemDto = {
   id: 'c1',
   kind: 'approval',

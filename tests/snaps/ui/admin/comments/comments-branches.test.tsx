@@ -6,8 +6,34 @@ import type { CommentFilterFieldKey } from '@/ui/admin/comments/filter-fields'
 import type { CommentActions } from '@/ui/admin/comments/useCommentsController'
 import type { ActiveFilter } from '@/ui/admin/shared/filterPillsReducer'
 
+import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { CommentsView } from '@/ui/admin/comments/CommentsView'
+
+const queryMocks = mockTanstackQuery()
+
+queryMocks.query = {
+  data: null as unknown,
+  isPending: false,
+  isLoading: false,
+  isFetching: false,
+  error: null,
+  refetch: vi.fn(),
+}
+
+queryMocks.mutation = { mutate: vi.fn(), isPending: false }
+
+queryMocks.infinite = {
+  data: { pages: [] as unknown[] },
+  isLoading: false,
+  isFetching: false,
+  isFetchingNextPage: false,
+  hasNextPage: false,
+  error: null,
+  fetchNextPage: vi.fn(),
+}
+
+queryMocks.queryClient = { invalidateQueries: vi.fn() }
 
 // The load-more sentinel is observed from `useInfiniteScrollSentinel` inside
 // `useCommentsController`. Effects never run during synchronous SSR, but the
@@ -96,46 +122,10 @@ vi.mock('@/ui/admin/comments/useCommentsController', async () => {
 // --- react-query singleton ---------------------------------------------------
 //
 // The pill hook fires its search + rehydrate lookups through `useQueries`.
-// The mock below returns the same hoisted object for every query, so we
-// pack both `.pages` and `.authors` arrays onto the shared `data` field.
-// Each test reassigns the singleton to control which option list is
-// populated.
-
-const queryMocks = vi.hoisted(() => ({
-  query: {
-    data: null as unknown,
-    isPending: false,
-    isLoading: false,
-    isFetching: false,
-    error: null,
-    refetch: vi.fn(),
-  },
-  mutation: { mutate: vi.fn(), isPending: false },
-  infinite: {
-    data: { pages: [] as unknown[] },
-    isLoading: false,
-    isFetching: false,
-    isFetchingNextPage: false,
-    hasNextPage: false,
-    error: null,
-    fetchNextPage: vi.fn(),
-  },
-  queryClient: { invalidateQueries: vi.fn() },
-}))
-
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
-  return {
-    ...actual,
-    useQuery: () => queryMocks.query,
-    useQueries: ({ queries }: { queries: unknown[] }) => queries.map(() => queryMocks.query),
-    useMutation: () => queryMocks.mutation,
-    useInfiniteQuery: () => queryMocks.infinite,
-    useQueryClient: () => queryMocks.queryClient,
-  }
-})
-
-vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
+// The `#/_helpers/mock-react-query` mock returns the same control object
+// for every query, so we pack both `.pages` and `.authors` arrays onto the
+// shared `data` field. Each test reassigns the slot to control which
+// option list is populated.
 
 // --- fixtures ----------------------------------------------------------------
 

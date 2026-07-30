@@ -4,6 +4,7 @@ import type { AuditLogActorDto, AuditLogItemDto } from '@/shared/contracts/audit
 import type { AuditLogFilterFieldKey } from '@/ui/admin/audit/filter-fields'
 import type { ActiveFilter } from '@/ui/admin/shared/filterPillsReducer'
 
+import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { AuditLogRow } from '@/ui/admin/audit/AuditLogRow'
 import { AuditLogView } from '@/ui/admin/audit/AuditLogView'
@@ -11,56 +12,31 @@ import { buildAuditFilterFields } from '@/ui/admin/audit/filter-fields'
 import { FilterAddButton } from '@/ui/admin/shared/filter-bar/add-button'
 import { FilterPill } from '@/ui/admin/shared/filter-bar/pill'
 
+const queryMocks = mockTanstackQuery()
+
+queryMocks.infinite = {
+  data: undefined as { pages: { items: AuditLogItemDto[]; total: number; hasMore: boolean }[] } | undefined,
+  isLoading: false,
+  error: null as Error | null,
+  hasNextPage: false,
+  isFetchingNextPage: false,
+  fetchNextPage: vi.fn(),
+}
+
+queryMocks.query = {
+  data: undefined as AuditLogActorDto[] | undefined,
+}
+
+queryMocks.mutation = {
+  mutate: vi.fn(),
+  mutateAsync: vi.fn(),
+  isPending: false,
+}
+
 // AuditLogView drives its rows from `useAdminInfiniteList` (server state
 // lives in the TanStack cache, via an internal `useInfiniteQuery`). The list
 // query is stubbed through a hoisted slot so each test can pick the branch;
 // the actors query and the export mutation are stubbed alongside.
-
-const queryMocks = vi.hoisted(() => ({
-  infinite: {
-    data: undefined as { pages: { items: AuditLogItemDto[]; total: number; hasMore: boolean }[] } | undefined,
-    isLoading: false,
-    error: null as Error | null,
-    hasNextPage: false,
-    isFetchingNextPage: false,
-    fetchNextPage: vi.fn(),
-  },
-  query: {
-    data: undefined as AuditLogActorDto[] | undefined,
-  },
-  mutation: {
-    mutate: vi.fn(),
-    mutateAsync: vi.fn(),
-    isPending: false,
-  },
-}))
-
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
-  return {
-    ...actual,
-    useQuery: () => queryMocks.query,
-    useQueries: ({ queries }: { queries: unknown[] }) => queries.map(() => queryMocks.query),
-    useMutation: () => queryMocks.mutation,
-    useInfiniteQuery: () => queryMocks.infinite,
-  }
-})
-
-// `orpcQuery` builds the query/mutation option objects the hooks above
-// consume; stub the option builders so the import stays side-effect free.
-vi.mock('@/client/api/orpc-query', () => ({
-  orpcQuery: {
-    admin: {
-      auditLog: {
-        list: { infiniteOptions: () => ({ queryKey: ['auditLog', 'list'] }) },
-        actors: { queryOptions: () => ({ queryKey: ['actors'], queryFn: async () => [] }) },
-        exportCsv: { mutationOptions: () => ({ mutationKey: ['exportCsv'] }) },
-      },
-    },
-  },
-}))
-
-vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
 
 // Canonical fixtures shared by the snapshot tests below. Shapes mirror
 // `AuditLogItemDto` / `AuditLogActorDto` exactly so changing the wire

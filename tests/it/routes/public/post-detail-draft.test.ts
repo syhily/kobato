@@ -1,15 +1,30 @@
+import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { BlogSession } from '@/server/domains/auth/session-storage'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
-import { makePost } from '#/_helpers/catalog'
 import { makeLoaderArgs, unwrapLoaderData } from '#/_helpers/context'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { adminSession, authorSession, regularSession } from '#/_helpers/session'
+import { content as contentTable } from '@/server/infra/db/schema/content'
+import { post as postTable } from '@/server/infra/db/schema/post'
 
 // Draft-preview contract for `routes/post.detail`.
 //
 //   - `status=draft` posts are invisible to anonymous/regular users (404).
-//   - Admin and author users see the draft via `loadDraftPreviewBySlug`
+//   - Admin and author users see the draft via `loadDraftPreviewBySlug`.
+//
+// Real engine: posts are seeded meta rows with real published/draft
+// content revisions, so the live gate and the draft-preview lifecycle
+// run against actual rows instead of mock projections.
+
+// Presentational seam — the loader contract under test never renders.
+vi.mock('@/ui/pt/render', () => ({
+  PortableTextBody: () => null,
+}))
+
+const db = getTestDb()
 
 const publishedBody: PortableTextBody = [
   {
@@ -29,89 +44,55 @@ const draftBody: PortableTextBody = [
   },
 ]
 
-const publishedPost = {
-  ...makePost({ slug: 'hello', title: 'Hello', permalink: '/posts/hello' }),
-  body: publishedBody,
-  imageSources: [],
-  publishedRevisionId: 42,
-}
-
-const draftPost = {
-  ...makePost({
-    slug: 'secret',
-    title: 'Secret',
-    permalink: '/posts/secret',
-    published: false,
-    visible: false,
-  }),
-  body: draftBody,
-  imageSources: [],
-  publishedRevisionId: null,
-}
-
-let currentSession = regularSession()
-
-vi.mock('@/server/domains/posts/services/single', () => ({
-  findPostMetaById: vi.fn(async () => null),
-  findPostMetaBySlug: vi.fn(async () => null),
-  findPostMetaBySlugForUpdate: vi.fn(async () => null),
-  findPublicPostMetaBySlug: vi.fn(async () => null),
-  findPostBySlug: vi.fn(async (_db: unknown, slug: string) => {
-    if (slug === 'hello') {
-      return publishedPost
-    }
-    // never-published is status=published but publishedRevisionId=null;
-    // the real findPostBySlug now returns null for this case.
-    return null
-  }),
-}))
-vi.mock('@/server/domains/posts/services/featured', () => ({
-  selectSidebarPosts: vi.fn(async () => []),
-}))
-vi.mock('@/server/domains/posts/services/public-query', () => ({}))
-vi.mock('@/server/domains/taxonomies/tags/service', () => ({
-  getTagsByNames: vi.fn(async () => []),
-  listAllTags: vi.fn(async () => []),
-  selectSidebarTags: vi.fn(async () => []),
-}))
-vi.mock('@/server/domains/content/lifecycle', () => ({
-  loadDraftPreviewBySlug: vi.fn(),
-}))
-vi.mock('@/shared/types/catalog', async () => {
-  const actual = await vi.importActual<typeof import('@/shared/types/catalog')>('@/shared/types/catalog')
-  return {
-    ...actual,
-    toClientPost: (p: unknown) => p,
-    toDetailPostShell: (p: unknown) => p,
-  }
+beforeEach(async () => {
+  await clearAllTables(db)
 })
 
-vi.mock('@/server/http/loaders/comments', () => ({
-  loadDetailPageStreaming: vi.fn(async () => ({
-    critical: {
-      admin: false,
-      likes: { count: 0, liked: false },
-      currentUser: null,
-      commentKey: 'https://example.com/posts/hello/',
-      recentComments: [],
-      pendingComments: [],
-    },
-    comments: Promise.resolve({
-      commentData: { totalCount: 0, totalPages: 0, currentPage: 1 },
-      commentItems: [],
-    }),
-  })),
-}))
+/** A live post whose published revision carries `publishedBody`. */
+async function seedPublishedPost(slug: string, title: string): Promise<number> {
+  const rows = await db
+    .insert(postTable)
+    .values({
+      slug,
+      title,
+      published: true,
+      publishedAt: new Date('2024-01-01'),
+      firstPublishedAt: new Date('2024-01-01'),
+      visible: true,
+    })
+    .returning({ id: postTable.id })
+  const postId = rows[0]!.id
+  const revisions = await db
+    .insert(contentTable)
+    .values({ type: 'post', ownerId: postId, revisionNo: 1, status: 'published', body: publishedBody })
+    .returning({ id: contentTable.id })
+  await db.update(postTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(postTable.id, postId))
+  return postId
+}
 
-vi.mock('@/server/domains/images/services/enhance', () => ({
-  resolveImageMetaBySources: vi.fn(async () => new Map()),
-}))
+/** A draft post: unpublished, hidden, no published revision pointer, one draft revision. */
+async function seedDraftPost(slug: string, title: string): Promise<number> {
+  const rows = await db
+    .insert(postTable)
+    .values({ slug, title, published: false, visible: false, publishedRevisionId: null })
+    .returning({ id: postTable.id })
+  const postId = rows[0]!.id
+  await db
+    .insert(contentTable)
+    .values({ type: 'post', ownerId: postId, revisionNo: 1, status: 'draft', body: draftBody })
+  return postId
+}
+
+/** `published = true` but never promoted: no published revision id, no revisions. */
+async function seedNeverPublishedPost(slug: string): Promise<number> {
+  const rows = await db
+    .insert(postTable)
+    .values({ slug, title: slug, published: true, publishedRevisionId: null })
+    .returning({ id: postTable.id })
+  return rows[0]!.id
+}
 
 const postRoute = await import('@/routes/public/post/detail')
-const lifecycle = await import('@/server/domains/content/lifecycle')
-const draftPreviewMock = vi.mocked(lifecycle.loadDraftPreviewBySlug)
-const postsSingle = await import('@/server/domains/posts/services/single')
-const findPostBySlugMock = vi.mocked(postsSingle.findPostBySlug)
 
 type LoaderResult = {
   post: { title: string }
@@ -119,138 +100,81 @@ type LoaderResult = {
   draftMarker: 'draft' | 'unpublished-draft' | 'published-draft' | null
 }
 
-beforeEach(() => {
-  vi.clearAllMocks()
-  currentSession = regularSession()
-})
+function loadPost(slug: string, session: BlogSession) {
+  return postRoute.loader(
+    makeLoaderArgs({
+      request: new Request(`http://localhost/posts/${slug}`),
+      session,
+      db,
+      params: { slug },
+    }),
+  )
+}
+
+async function expectNotFound(slug: string, session: BlogSession) {
+  let thrown: unknown
+  try {
+    await loadPost(slug, session)
+  } catch (error) {
+    thrown = error
+  }
+  expect(thrown).toBeInstanceOf(Response)
+  expect((thrown as Response).status).toBe(404)
+}
 
 describe('routes/post.detail draft visibility', () => {
   it('serves the published post for anonymous visitors', async () => {
-    const result = unwrapLoaderData<LoaderResult>(
-      await postRoute.loader(
-        makeLoaderArgs({
-          request: new Request('http://localhost/posts/hello'),
-          session: currentSession,
-          params: { slug: 'hello' },
-        }),
-      ),
-    )
+    await seedPublishedPost('hello', 'Hello')
+
+    const result = unwrapLoaderData<LoaderResult>(await loadPost('hello', regularSession()))
 
     expect(result.body).toEqual(publishedBody)
     expect(result.draftMarker).toBeNull()
-    expect(draftPreviewMock).not.toHaveBeenCalled()
   })
 
   it('404s anonymous visitors on a draft post (status=draft)', async () => {
-    let thrown: unknown
-    try {
-      await postRoute.loader(
-        makeLoaderArgs({
-          request: new Request('http://localhost/posts/secret'),
-          session: currentSession,
-          params: { slug: 'secret' },
-        }),
-      )
-    } catch (error) {
-      thrown = error
-    }
-    expect(thrown).toBeInstanceOf(Response)
-    expect((thrown as Response).status).toBe(404)
-    expect(findPostBySlugMock).toHaveBeenCalledWith(expect.any(Object), 'secret')
-    expect(draftPreviewMock).not.toHaveBeenCalled()
+    await seedDraftPost('secret', 'Secret')
+
+    await expectNotFound('secret', regularSession())
   })
 
   it('404s anonymous visitors on a post with status=published but no published revision', async () => {
-    let thrown: unknown
-    try {
-      await postRoute.loader(
-        makeLoaderArgs({
-          request: new Request('http://localhost/posts/never-published'),
-          session: currentSession,
-          params: { slug: 'never-published' },
-        }),
-      )
-    } catch (error) {
-      thrown = error
-    }
-    expect(thrown).toBeInstanceOf(Response)
-    expect((thrown as Response).status).toBe(404)
-    expect(findPostBySlugMock).toHaveBeenCalledWith(expect.any(Object), 'never-published')
-    expect(draftPreviewMock).not.toHaveBeenCalled()
+    await seedNeverPublishedPost('never-published')
+
+    await expectNotFound('never-published', regularSession())
   })
 
   it('404s regular logged-in visitors on a draft post', async () => {
-    currentSession = regularSession()
-    let thrown: unknown
-    try {
-      await postRoute.loader(
-        makeLoaderArgs({
-          request: new Request('http://localhost/posts/secret'),
-          session: currentSession,
-          params: { slug: 'secret' },
-        }),
-      )
-    } catch (error) {
-      thrown = error
-    }
-    expect(thrown).toBeInstanceOf(Response)
-    expect((thrown as Response).status).toBe(404)
-    expect(draftPreviewMock).not.toHaveBeenCalled()
+    await seedDraftPost('secret', 'Secret')
+
+    await expectNotFound('secret', regularSession())
   })
 
   it('shows 【草稿】 for an admin viewing a draft post', async () => {
-    currentSession = adminSession()
-    draftPreviewMock.mockResolvedValueOnce({ preview: draftPost, hasNewerDraft: true })
+    await seedDraftPost('secret', 'Secret')
 
-    const result = unwrapLoaderData<LoaderResult>(
-      await postRoute.loader(
-        makeLoaderArgs({
-          request: new Request('http://localhost/posts/secret'),
-          session: currentSession,
-          params: { slug: 'secret' },
-        }),
-      ),
-    )
+    const result = unwrapLoaderData<LoaderResult>(await loadPost('secret', adminSession()))
 
+    expect(result.post.title).toBe('Secret')
     expect(result.body).toEqual(draftBody)
     expect(result.draftMarker).toBe('draft')
-    expect(draftPreviewMock).toHaveBeenCalledWith(expect.any(Object), expect.anything(), 'secret')
   })
 
   it('shows 【草稿】 for an author viewing a draft post', async () => {
-    currentSession = authorSession()
-    draftPreviewMock.mockResolvedValueOnce({ preview: draftPost, hasNewerDraft: true })
+    await seedDraftPost('secret', 'Secret')
 
-    const result = unwrapLoaderData<LoaderResult>(
-      await postRoute.loader(
-        makeLoaderArgs({
-          request: new Request('http://localhost/posts/secret'),
-          session: currentSession,
-          params: { slug: 'secret' },
-        }),
-      ),
-    )
+    const result = unwrapLoaderData<LoaderResult>(await loadPost('secret', authorSession()))
 
     expect(result.body).toEqual(draftBody)
     expect(result.draftMarker).toBe('draft')
-    expect(draftPreviewMock).toHaveBeenCalledWith(expect.any(Object), expect.anything(), 'secret')
   })
 
   it('does not paint a marker on a published post (admin session)', async () => {
-    currentSession = adminSession()
+    await seedPublishedPost('hello', 'Hello')
 
-    const result = unwrapLoaderData<LoaderResult>(
-      await postRoute.loader(
-        makeLoaderArgs({
-          request: new Request('http://localhost/posts/hello'),
-          session: currentSession,
-          params: { slug: 'hello' },
-        }),
-      ),
-    )
+    const result = unwrapLoaderData<LoaderResult>(await loadPost('hello', adminSession()))
 
     expect(result.body).toEqual(publishedBody)
     expect(result.draftMarker).toBeNull()
-    expect(draftPreviewMock).not.toHaveBeenCalled()
   })
 })

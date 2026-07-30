@@ -8,6 +8,7 @@ import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { makeAuthedCtx, makePublicCtx } from '#/_helpers/mock-ctx'
 import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
 import { flushAuditLog } from '@/server/domains/audit/services/batcher'
+import { __clearSectionChangeHandlersForTests } from '@/server/domains/settings/services/section-changes'
 import { adminFontsRouter } from '@/server/http/controllers/admin/fonts.controller'
 import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
 import { auditLog, setting } from '@/server/infra/db/schema/config'
@@ -23,13 +24,10 @@ vi.mock('@/server/domains/fonts/storage', () => ({
 // Section-change dispatch (backup/audit reschedule, mail transport
 // invalidation) is covered by the unit tests; keep it out of these
 // persistence-focused cases.
-vi.mock('@/server/domains/settings/services/section-changes', () => ({
-  SECTION_CHANGE_HANDLERS: new Map(),
-}))
-
 const db = getTestDb()
 
 beforeEach(async () => {
+  __clearSectionChangeHandlersForTests()
   await clearAllTables(db)
   initAllBatchers(getDatabaseHandle())
 })

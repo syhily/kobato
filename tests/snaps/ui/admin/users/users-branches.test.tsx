@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AdminUserDto } from '@/shared/contracts/users'
 import type { UsersFilters } from '@/ui/admin/users/useUsersFilters'
 
+import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { UsersView } from '@/ui/admin/users/UsersView'
 
@@ -46,39 +47,19 @@ vi.mock('@/ui/admin/users/useUsersFilters', async (importOriginal) => {
   }
 })
 
-// ─────────────────────── react-query mock ───────────────────────────
+const queryMocks = mockTanstackQuery()
 
-const listQuery = vi.hoisted(() => ({
+queryMocks.infinite = {
   data: undefined as { pages: { users: AdminUserDto[]; total: number; hasMore: boolean }[] } | undefined,
   isLoading: true,
   error: null as Error | null,
   hasNextPage: false,
   isFetchingNextPage: false,
   fetchNextPage: vi.fn(),
-}))
+}
 
-const queryMocks = vi.hoisted(() => ({
-  mutation: {
-    mutate: vi.fn(),
-    isPending: false,
-  },
-  queryClient: {
-    invalidateQueries: vi.fn(),
-  },
-}))
-
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
-  return {
-    ...actual,
-    useInfiniteQuery: () => listQuery,
-    useMutation: () => queryMocks.mutation,
-    useQueryClient: () => queryMocks.queryClient,
-  }
-})
-
-vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
-
+// `useDebouncedSearch` is driven (one test types a keyword), so it keeps a
+// file-level stub instead of relying on the real hook's SSR default.
 vi.mock('@/ui/admin/shared/useDebouncedSearch', () => ({
   useDebouncedSearch: () => [debouncedSearch.value, debouncedSearch.setInput],
 }))
@@ -124,9 +105,9 @@ function setFilters(overrides: Partial<UsersFilters> = {}): void {
 }
 
 function setList(users: AdminUserDto[], total = users.length): void {
-  listQuery.data = { pages: [{ users, total, hasMore: false }] }
-  listQuery.isLoading = false
-  listQuery.error = null
+  queryMocks.infinite.data = { pages: [{ users, total, hasMore: false }] }
+  queryMocks.infinite.isLoading = false
+  queryMocks.infinite.error = null
 }
 
 function renderUsers(): string {
@@ -144,11 +125,11 @@ describe('snapshot: UsersView branches', () => {
       pageSize: 20,
       includeDeleted: false,
     }
-    listQuery.data = undefined
-    listQuery.isLoading = true
-    listQuery.error = null
-    listQuery.hasNextPage = false
-    listQuery.isFetchingNextPage = false
+    queryMocks.infinite.data = undefined
+    queryMocks.infinite.isLoading = true
+    queryMocks.infinite.error = null
+    queryMocks.infinite.hasNextPage = false
+    queryMocks.infinite.isFetchingNextPage = false
     queryMocks.mutation = { mutate: vi.fn(), isPending: false }
     debouncedSearch.value = ''
     debouncedSearch.setInput = vi.fn()
@@ -191,9 +172,9 @@ describe('snapshot: UsersView branches', () => {
   })
 
   it('still renders the chrome when the list query errors (toast path)', () => {
-    listQuery.isLoading = false
-    listQuery.error = new Error('lookup failed')
-    listQuery.data = undefined
+    queryMocks.infinite.isLoading = false
+    queryMocks.infinite.error = new Error('lookup failed')
+    queryMocks.infinite.data = undefined
     const html = renderUsers()
     expect(html).toContain('用户管理')
     expect(html).toContain('未找到用户')
@@ -210,7 +191,7 @@ describe('snapshot: UsersView branches', () => {
   it('renders the load-more sentinel when hasNextPage is true', () => {
     const a = makeAdminUser({ id: 'user-3', name: 'Carol' })
     setList([a], 50)
-    listQuery.hasNextPage = true
+    queryMocks.infinite.hasNextPage = true
     const html = renderUsers()
     expect(html).toContain('Carol')
     expect(html).toContain('class="h-1"')

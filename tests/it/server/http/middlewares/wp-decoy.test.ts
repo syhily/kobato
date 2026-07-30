@@ -1,11 +1,12 @@
+import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { makePage, makePost } from '#/_helpers/catalog'
 import { makeLoaderArgs, unwrapLoaderData } from '#/_helpers/context'
-import { regularSession, regularUser } from '#/_helpers/session'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { regularSession } from '#/_helpers/session'
 import { isWordPressDecoyPath } from '@/server/http/middlewares/wp-decoy'
-import { requestContext } from '@/server/http/request-context'
-import { extractRequestFacts } from '@/server/http/utils/request-facts'
+import { content as contentTable } from '@/server/infra/db/schema/content'
+import { page as pageTable } from '@/server/infra/db/schema/page'
 
 // WordPress probe decoy contract. Two things under test:
 //   1. `isWordPressDecoyPath` — pure predicate matching the patterns the
@@ -14,99 +15,42 @@ import { extractRequestFacts } from '@/server/http/utils/request-facts'
 //      loader and answers hits with the canonical `404 Not WordPress`.
 //   2. `routes/public/page/detail.tsx` — sanity check that real page slugs still
 //      resolve through the page-detail loader (the middleware is what
-//      handles probes; the loader never re-checks).
+//      handles probes; the loader never re-checks). Real engine: the page
+//      is a seeded meta row + published content revision.
 
+const db = getTestDb()
 const session = regularSession()
 
-const fixtures = vi.hoisted(() => ({
-  samplePost: { slug: 'hello', mdxPath: '2024/2024-01-01-hello.mdx' } as Record<string, unknown>,
-  samplePage: { slug: 'about' } as Record<string, unknown>,
-}))
-fixtures.samplePost = {
-  ...makePost({ slug: 'hello', alias: ['hello-old'] }),
-  mdxPath: '2024/2024-01-01-hello.mdx',
-  body: () => null,
-  imageSources: [],
-}
-fixtures.samplePage = {
-  ...makePage({ slug: 'about' }),
-  body: [],
-  imageSources: [],
-  publishedRevisionId: null,
-}
-
-// catalog/catalog removed; slug routing now runs through
-// `http/loaders/page-preview` (findPublicPostMetaBySlug + findPageBySlug in
-// parallel) — hence the posts/pages seams mocked below.
-vi.mock('@/server/domains/posts/services/public-query', () => ({}))
-vi.mock('@/server/domains/posts/services/single', () => ({
-  findPostMetaById: vi.fn(async () => null),
-  findPostMetaBySlug: vi.fn(async () => null),
-  findPostMetaBySlugForUpdate: vi.fn(async () => null),
-  findPostBySlug: vi.fn(async (_db: unknown, slug: string) => (slug === 'hello' ? fixtures.samplePost : null)),
-  findPublicPostMetaBySlug: vi.fn(async (_db: unknown, slug: string) =>
-    slug === 'hello'
-      ? { slug, published: true, deletedAt: null, publishedRevisionId: 1, publishedAt: new Date() }
-      : null,
-  ),
-}))
-vi.mock('@/server/domains/pages/repo', () => ({
-  findPageMetaById: vi.fn(async () => null),
-  findPageMetaBySlug: vi.fn(async () => null),
-  findPageMetaBySlugForUpdate: vi.fn(async () => null),
-  insertPageMeta: vi.fn(async () => null),
-  updatePageMetaById: vi.fn(async () => null),
-  softDeletePageMeta: vi.fn(async () => false),
-  restorePageMeta: vi.fn(async () => false),
-}))
-vi.mock('@/server/domains/pages/services/public-query', () => ({
-  listPublicPageMetas: vi.fn(async () => []),
-  findPublicPageMetaBySlug: vi.fn(async () => null),
-  findPageBySlug: vi.fn(async (_db: unknown, slug: string) => (slug === 'about' ? fixtures.samplePage : null)),
-}))
-vi.mock('@/server/domains/friends/service', () => ({
-  listAllFriends: vi.fn(async () => []),
-}))
-vi.mock('@/shared/types/catalog', async () => {
-  const actual = await vi.importActual<typeof import('@/shared/types/catalog')>('@/shared/types/catalog')
-  return {
-    ...actual,
-    toClientPost: (p: unknown) => p,
-    toClientPage: (p: unknown) => p,
-    toDetailPostShell: (p: unknown) => p,
-    toDetailPageShell: (p: unknown) => p,
-    toSidebarPostLink: (p: unknown) => p,
-  }
-})
-
+// Presentational seam — the loader contract under test never renders.
 vi.mock('@/ui/pt/render', () => ({
   PortableTextBody: () => null,
 }))
 
-vi.mock('@/server/http/loaders/comments', () => ({
-  // The detail loader streams comments through `<Await>`; mock the
-  // streaming helper so the page-detail route resolves under test.
-  loadDetailPageStreaming: vi.fn(async () => ({
-    critical: {
-      admin: false,
-      likes: { count: 0, liked: false },
-      currentUser: null,
-      commentKey: 'https://example.com/about/',
-      recentComments: [],
-      pendingComments: [],
-    },
-    comments: Promise.resolve({
-      commentData: { totalCount: 0, totalPages: 0, currentPage: 1 },
-      commentItems: [],
-    }),
-  })),
-}))
+beforeEach(async () => {
+  await clearAllTables(db)
+})
+
+async function seedPage(slug: string, title: string): Promise<number> {
+  const rows = await db
+    .insert(pageTable)
+    .values({
+      slug,
+      title,
+      published: true,
+      publishedAt: new Date('2024-01-01'),
+      firstPublishedAt: new Date('2024-01-01'),
+    })
+    .returning({ id: pageTable.id })
+  const pageId = rows[0]!.id
+  const revisions = await db
+    .insert(contentTable)
+    .values({ type: 'page', ownerId: pageId, revisionNo: 1, status: 'published', body: [] })
+    .returning({ id: contentTable.id })
+  await db.update(pageTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(pageTable.id, pageId))
+  return pageId
+}
 
 const pageDetailRoute = await import('@/routes/public/page/detail')
-
-beforeEach(() => {
-  vi.clearAllMocks()
-})
 
 describe('isWordPressDecoyPath', () => {
   it('matches WordPress probe patterns', () => {
@@ -163,24 +107,18 @@ describe('isWordPressDecoyPath', () => {
 
 describe('routes/page.detail loader (probe interception lives in the middleware)', () => {
   it('still serves real page slugs', async () => {
-    const request = new Request('http://localhost/about')
-    const args = makeLoaderArgs({
-      request,
-      session,
-      params: { slug: 'about' },
-    })
-    // The loader chain resolves the canonical RequestContext via
-    // `getRequestContext` (`loadPublicDetailData` reads `session` /
-    // `viewer` / `clientAddress` / `requestFacts` from it), so the
-    // hand-built provider must carry the canonical key alongside the
-    // legacy ones `makeLoaderArgs` sets.
-    args.context.set(requestContext, {
-      session,
-      viewer: regularUser(),
-      clientAddress: '127.0.0.1',
-      requestFacts: extractRequestFacts(request),
-    })
-    const data = unwrapLoaderData<{ page: { permalink: string } }>(await pageDetailRoute.loader(args))
+    await seedPage('about', 'About')
+
+    const data = unwrapLoaderData<{ page: { permalink: string } }>(
+      await pageDetailRoute.loader(
+        makeLoaderArgs({
+          request: new Request('http://localhost/about'),
+          session,
+          db,
+          params: { slug: 'about' },
+        }),
+      ),
+    )
     expect(data.page.permalink).toBe('/about')
   })
 })

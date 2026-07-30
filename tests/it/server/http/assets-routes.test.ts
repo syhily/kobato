@@ -1,16 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import type { BlogSettingsBundle, BrandingObjectRef } from '@/shared/config/types'
+import type { BrandingObjectRef } from '@/shared/config/types'
 
-vi.mock('@/shared/config/getters', () => ({
-  getBlogSettingsBundleSync: vi.fn(),
-  requireBlogSettingsSection: vi.fn((section: string) => {
-    if (section === 'siteIdentity') {
-      return { title: 'Test Blog', website: 'https://example.com' }
-    }
-    return {}
-  }),
-}))
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
+
 vi.mock('@/server/domains/assets/services/storage', async (importActual) => {
   const actual = (await importActual()) as typeof import('@/server/domains/assets/services/storage')
   return {
@@ -19,12 +12,7 @@ vi.mock('@/server/domains/assets/services/storage', async (importActual) => {
   }
 })
 
-const { getBlogSettingsBundleSync } = await import('@/shared/config/getters')
 const { assetsRouter } = await import('@/server/http/resources/assets')
-
-function bundleWith(overrides: Partial<BlogSettingsBundle> = {}): BlogSettingsBundle {
-  return overrides as unknown as BlogSettingsBundle
-}
 
 function ref(etag: string, contentType: string): BrandingObjectRef {
   return { etag, contentType, size: 1024, updatedAt: '2024-01-01T00:00:00.000Z', driver: 's3' }
@@ -32,7 +20,7 @@ function ref(etag: string, contentType: string): BrandingObjectRef {
 
 describe('assetsRouter static paths', () => {
   it('returns 200 for /favicon.svg with ETag + revalidate cache headers', async () => {
-    vi.mocked(getBlogSettingsBundleSync).mockReturnValue(null)
+    setBlogSettingsBundleForTests(null)
     const res = await assetsRouter.request('/favicon.svg')
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('image/svg+xml')
@@ -41,7 +29,7 @@ describe('assetsRouter static paths', () => {
   })
 
   it('returns 304 when If-None-Match matches', async () => {
-    vi.mocked(getBlogSettingsBundleSync).mockReturnValue(null)
+    setBlogSettingsBundleForTests(null)
     const first = await assetsRouter.request('/favicon.svg')
     const etag = first.headers.get('ETag')!
     const second = await assetsRouter.request('/favicon.svg', { headers: { 'If-None-Match': etag } })
@@ -51,55 +39,55 @@ describe('assetsRouter static paths', () => {
   })
 
   it('returns 200 for /favicon.ico (bundled default)', async () => {
-    vi.mocked(getBlogSettingsBundleSync).mockReturnValue(null)
+    setBlogSettingsBundleForTests(null)
     const res = await assetsRouter.request('/favicon.ico')
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('image/x-icon')
   })
 
   it('returns 200 for /apple-touch-icon.png', async () => {
-    vi.mocked(getBlogSettingsBundleSync).mockReturnValue(null)
+    setBlogSettingsBundleForTests(null)
     const res = await assetsRouter.request('/apple-touch-icon.png')
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('image/png')
   })
 
   it('returns 200 for /logo.svg', async () => {
-    vi.mocked(getBlogSettingsBundleSync).mockReturnValue(null)
+    setBlogSettingsBundleForTests(null)
     const res = await assetsRouter.request('/logo.svg')
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('image/svg+xml')
   })
 
   it('returns 200 for /logo-dark.svg', async () => {
-    vi.mocked(getBlogSettingsBundleSync).mockReturnValue(null)
+    setBlogSettingsBundleForTests(null)
     const res = await assetsRouter.request('/logo-dark.svg')
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('image/svg+xml')
   })
 
   it('returns 200 for /images/icon-192.png', async () => {
-    vi.mocked(getBlogSettingsBundleSync).mockReturnValue(null)
+    setBlogSettingsBundleForTests(null)
     const res = await assetsRouter.request('/images/icon-192.png')
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('image/png')
   })
 
   it('returns 200 for /images/icon-512.png', async () => {
-    vi.mocked(getBlogSettingsBundleSync).mockReturnValue(null)
+    setBlogSettingsBundleForTests(null)
     const res = await assetsRouter.request('/images/icon-512.png')
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('image/png')
   })
 
   it('falls back to default when S3 fetch fails for a configured ref', async () => {
-    vi.mocked(getBlogSettingsBundleSync).mockReturnValue(
-      bundleWith({
-        assets: {
-          branding: { faviconSvg: ref('cafe', 'image/svg+xml') },
-        } as unknown as BlogSettingsBundle['assets'],
-      }),
-    )
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      assets: {
+        ...TEST_BLOG_SETTINGS_BUNDLE.assets!,
+        branding: { faviconSvg: ref('cafe', 'image/svg+xml') },
+      },
+    })
     const res = await assetsRouter.request('/favicon.svg')
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('image/svg+xml')
@@ -109,7 +97,7 @@ describe('assetsRouter static paths', () => {
   })
 
   it('returns 404 for unregistered paths', async () => {
-    vi.mocked(getBlogSettingsBundleSync).mockReturnValue(null)
+    setBlogSettingsBundleForTests(null)
     const res = await assetsRouter.request('/images/unknown.png')
     expect(res.status).toBe(404)
   })
@@ -117,9 +105,10 @@ describe('assetsRouter static paths', () => {
 
 describe('assetsRouter manifest', () => {
   it('returns a valid webmanifest using site identity title', async () => {
-    vi.mocked(getBlogSettingsBundleSync).mockReturnValue(
-      bundleWith({ siteIdentity: { title: 'Test Blog' } as unknown as BlogSettingsBundle['siteIdentity'] }),
-    )
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, title: 'Test Blog' },
+    })
     const res = await assetsRouter.request('/manifest.webmanifest')
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toContain('application/json')
@@ -130,22 +119,20 @@ describe('assetsRouter manifest', () => {
   })
 
   it('falls back to a default name when the bundle is null (early boot)', async () => {
-    vi.mocked(getBlogSettingsBundleSync).mockReturnValue(null)
+    setBlogSettingsBundleForTests(null)
     const res = await assetsRouter.request('/manifest.webmanifest')
     expect(res.status).toBe(200)
     const json = await res.json()
     expect(json.name).toBe('Site')
   })
 })
-
 describe('assetsRouter robots.txt', () => {
   it('returns default robots.txt when no custom branding', async () => {
-    vi.mocked(getBlogSettingsBundleSync).mockReturnValue(
-      bundleWith({
-        siteIdentity: { website: 'https://example.com' } as unknown as BlogSettingsBundle['siteIdentity'],
-        assets: { branding: {} } as unknown as BlogSettingsBundle['assets'],
-      }),
-    )
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, website: 'https://example.com' },
+      assets: { ...TEST_BLOG_SETTINGS_BUNDLE.assets!, branding: {} },
+    })
 
     const res = await assetsRouter.request('/robots.txt')
     expect(res.status).toBe(200)
@@ -155,13 +142,13 @@ describe('assetsRouter robots.txt', () => {
   })
 
   it('returns custom robots.txt when branding override exists', async () => {
-    vi.mocked(getBlogSettingsBundleSync).mockReturnValue(
-      bundleWith({
-        assets: {
-          branding: { robotsTxt: 'User-agent: *\nDisallow: /' },
-        } as unknown as BlogSettingsBundle['assets'],
-      }),
-    )
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      assets: {
+        ...TEST_BLOG_SETTINGS_BUNDLE.assets!,
+        branding: { robotsTxt: 'User-agent: *\nDisallow: /' },
+      },
+    })
 
     const res = await assetsRouter.request('/robots.txt')
     expect(res.status).toBe(200)
@@ -170,7 +157,7 @@ describe('assetsRouter robots.txt', () => {
   })
 
   it('falls back to a safe minimum when the bundle is null', async () => {
-    vi.mocked(getBlogSettingsBundleSync).mockReturnValue(null)
+    setBlogSettingsBundleForTests(null)
     const res = await assetsRouter.request('/robots.txt')
     expect(res.status).toBe(200)
     const text = await res.text()

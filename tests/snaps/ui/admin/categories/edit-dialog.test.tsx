@@ -3,8 +3,13 @@ import { describe, expect, it, vi } from 'vitest'
 
 import type { AdminCategoryDto } from '@/shared/contracts/categories'
 
+import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderToHtml, stableHtml } from '#/_helpers/render'
 import { EditCategoryDialog } from '@/ui/admin/categories/EditCategoryDialog'
+
+const queryMocks = mockTanstackQuery()
+
+queryMocks.mutation = { isPending: false, mutate: vi.fn() }
 
 // `EditCategoryDialog` issues `useMutation(orpc.admin.categories.upsert)`
 // on submit. We mock `@tanstack/react-query`'s `useMutation` with a hoisted
@@ -12,43 +17,14 @@ import { EditCategoryDialog } from '@/ui/admin/categories/EditCategoryDialog'
 // per-test without firing a real request. The base create / edit render
 // paths are already covered by `categories.test.tsx`; this file adds the
 // pending, error, and dialog-still-open-after-error branches.
-const mutationState = vi.hoisted(() => ({ isPending: false, mutate: vi.fn() }))
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
-  return {
-    ...actual,
-    useMutation: () => mutationState,
-  }
-})
-
-// `orpcQuery.admin.categories.upsert.mutationOptions` is invoked eagerly to
-// build the mutation options; mocked inert so the option builder never runs.
-vi.mock('@/client/api/orpc-query', () => ({
-  orpcQuery: {
-    admin: {
-      categories: {
-        upsert: { mutationOptions: () => ({ mutationKey: ['admin', 'categories', 'upsert'] }) },
-      },
-    },
-  },
-}))
-
-vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
 
 // `@/ui/components/dialog` is a Base UI portal that mounts content only when
-// open. The dialog itself is controlled by the `category` prop (`open =
+// open — the `#/_helpers/stubs/dialog` double renders it inline instead. The
+// dialog itself is controlled by the `category` prop (`open =
 // category !== undefined`) so we render with `category=null` (create) or a
 // category object (edit) to keep content on screen — mirroring the pattern in
 // the existing `categories.test.tsx`.
-vi.mock('@/ui/components/dialog', () => ({
-  Dialog: ({ open, children }: { open: boolean; children: React.ReactNode }) =>
-    open ? <div data-slot="dialog">{children}</div> : null,
-  DialogContent: ({ children }: { children: React.ReactNode }) => <div data-slot="dialog-content">{children}</div>,
-  DialogDescription: ({ children }: { children: React.ReactNode }) => <p data-slot="dialog-description">{children}</p>,
-  DialogFooter: ({ children }: { children: React.ReactNode }) => <div data-slot="dialog-footer">{children}</div>,
-  DialogHeader: ({ children }: { children: React.ReactNode }) => <div data-slot="dialog-header">{children}</div>,
-  DialogTitle: ({ children }: { children: React.ReactNode }) => <h2 data-slot="dialog-title">{children}</h2>,
-}))
+vi.mock('@/ui/components/dialog', () => import('#/_helpers/stubs/dialog'))
 
 function makeAdminCategory(overrides: Partial<AdminCategoryDto> = {}): AdminCategoryDto {
   return {
@@ -79,7 +55,7 @@ function OpenDialog({ category }: { category: AdminCategoryDto | null }) {
 
 describe('snapshot: EditCategoryDialog (extra branches)', () => {
   it('renders the 保存中… submit copy while the upsert mutation is pending', () => {
-    mutationState.isPending = true
+    queryMocks.mutation.isPending = true
     try {
       const html = stableHtml(renderToHtml(<OpenDialog category={null} />))
       // Create mode header + the pending submit copy.
@@ -88,7 +64,7 @@ describe('snapshot: EditCategoryDialog (extra branches)', () => {
       // The submit button is disabled while pending.
       expect(html).toContain('disabled=""')
     } finally {
-      mutationState.isPending = false
+      queryMocks.mutation.isPending = false
     }
   })
 

@@ -1,12 +1,6 @@
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import type { AuditLogRow } from '@/server/infra/db/schema/config'
-
-vi.mock('@/shared/config/getters', () => ({
-  getBlogSettingsBundleSync: vi.fn(() => ({
-    limits: { auditLogDbRetentionDays: 30, auditLogArchiveRetentionDays: 180 },
-  })),
-}))
 
 const { parseDate, clampDateToRetention, toAuditLogItemDto } = await import('@/server/domains/audit/projection')
 const { buildAuditLogWhere } = await import('@/server/domains/audit/services/query')

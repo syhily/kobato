@@ -1,13 +1,15 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { MemoryBackend } from '#/_helpers/memory-storage'
+
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 // upload.ts wires together pure validation (mime sniffing, size guard,
 // kind → key resolution) with IO (image processing, storage put, DB
 // insert/upsert). The DB side is REAL here — rows land in the shared
 // in-memory SQLite — while sharp (`processImageBuffer`) and the storage
-// backend stay mocked as true externals (an in-memory Map backend behind
-// the registry seam).
+// backend stay mocked as true externals (the shared in-memory backend
+// behind the registry seam).
 import { buildObjectKey } from '@/server/domains/images/key'
 import { image } from '@/server/infra/db/schema/media'
 
@@ -15,24 +17,16 @@ const processImageBufferMock = vi.hoisted(() => vi.fn())
 
 vi.mock('@/server/infra/image/process', () => ({ processImageBuffer: processImageBufferMock }))
 
-const storageMock = vi.hoisted(() => {
-  const store = new Map<string, { body: Buffer; contentType: string }>()
+const storageMock = vi.hoisted(() => ({ current: undefined as unknown as MemoryBackend }))
+
+vi.mock('@/server/infra/storage/registry', async () => {
+  const { makeMemoryBackend } = await import('#/_helpers/memory-storage')
+  storageMock.current = makeMemoryBackend()
   return {
-    store,
-    clearStore: () => store.clear(),
-    backend: {
-      put: async ({ key, body, contentType }: { key: string; body: Buffer; contentType: string }) => {
-        store.set(key, { body, contentType })
-        return { key, size: body.length }
-      },
-    },
+    activeBackend: () => ({ backend: storageMock.current.backend, driver: 's3' }),
+    backendFor: () => storageMock.current.backend,
   }
 })
-
-vi.mock('@/server/infra/storage/registry', () => ({
-  activeBackend: () => ({ backend: storageMock.backend, driver: 's3' }),
-  backendFor: () => storageMock.backend,
-}))
 
 const { assertImageUploadAllowed, uploadImage } = await import('@/server/domains/images/services/upload')
 
@@ -40,7 +34,7 @@ const db = getTestDb()
 
 beforeEach(async () => {
   await clearAllTables(db)
-  storageMock.clearStore()
+  storageMock.current.reset()
   vi.clearAllMocks()
   // Echo the input buffer back so the processed size matches the sniffed one.
   processImageBufferMock.mockImplementation(async ({ buffer }: { buffer: Buffer }) => ({
@@ -196,7 +190,7 @@ describe('images/services/upload — pure validation + mime detection', () => {
         }),
       ).rejects.toThrow(/重编码后体积超过上限/)
       // Nothing reached the backend or the database.
-      expect(storageMock.store.size).toBe(0)
+      expect(storageMock.current.store.size).toBe(0)
       expect(await allImageRows()).toHaveLength(0)
     })
   })
@@ -216,7 +210,7 @@ describe('images/services/upload — pure validation + mime detection', () => {
       expect(rows[0].storageDriver).toBe('s3')
       expect(dto.storagePath).toBe(rows[0].storagePath)
       // The bytes landed on the backend under the row's key.
-      expect(storageMock.store.has(rows[0].storagePath)).toBe(true)
+      expect(storageMock.current.store.has(rows[0].storagePath)).toBe(true)
     })
 
     it('swallows a duplicate-key insert failure into a friendly DomainError', async () => {

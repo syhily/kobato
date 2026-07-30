@@ -10,24 +10,30 @@ import type {
 } from '@/shared/config/types'
 import type { AdminCacheStatsDto } from '@/shared/contracts/cache'
 
+import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { CacheView } from '@/ui/admin/settings/CacheView'
 import { FontsForm } from '@/ui/admin/settings/FontsForm'
 import { NavigationEditor } from '@/ui/admin/settings/NavigationEditor'
 import { SecurityForm } from '@/ui/admin/settings/SecurityForm'
 
+const cacheQueryMocks = mockTanstackQuery()
+
+cacheQueryMocks.query = {
+  data: null as AdminCacheStatsDto | null,
+  isPending: false,
+  error: null as unknown,
+}
+
+cacheQueryMocks.mutation = {
+  mutate: vi.fn(),
+  isPending: false,
+}
+
 // `useSettingsMutation` powers every `useSettingsCard` and would otherwise
-// fire a `useMutation` against the settings ORPC endpoint. Stubbed inert so
-// forms render without a network stack.
-vi.mock('@/ui/admin/settings/useSettingsMutation', () => ({
-  useSettingsMutation: () => ({
-    commit: vi.fn(),
-    resetStatus: vi.fn(),
-    revalidate: vi.fn(),
-    isPending: false,
-    status: 'idle',
-  }),
-}))
+// fire a `useMutation` against the settings ORPC endpoint. The inert global
+// stub from `tests/snaps/setup.ts` keeps forms rendering without a network
+// stack.
 
 // `FontsForm` reads a csrf token off the root loader; supply a stable one.
 vi.mock('react-router', async () => {
@@ -39,34 +45,12 @@ vi.mock('react-router', async () => {
   }
 })
 
-vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
-
 // `CacheView` queries cache stats via `@tanstack/react-query` and the orpc
-// client. We hoist singletons (mirroring musics-view) so each test can swap
-// the resolved stats / mutation result without re-mocking.
-const cacheQueryMocks = vi.hoisted(() => ({
-  query: {
-    data: null as AdminCacheStatsDto | null,
-    isPending: false,
-    error: null as unknown,
-  },
-  mutation: {
-    mutate: vi.fn(),
-    isPending: false,
-  },
-}))
-
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
-  return {
-    ...actual,
-    useQuery: () => cacheQueryMocks.query,
-    useMutation: () => cacheQueryMocks.mutation,
-  }
-})
+// client. The `#/_helpers/mock-react-query` singleton (mirroring musics-view)
+// lets each test swap the resolved stats / mutation result without re-mocking.
 
 // The orpc client is only reached when the query / mutation actually fires;
-// the react-query mock above intercepts before invocation, but keep the
+// the react-query mock intercepts before invocation, but keep the
 // import resolvable & side-effect free.
 vi.mock('@/client/api/client', () => ({
   orpc: {

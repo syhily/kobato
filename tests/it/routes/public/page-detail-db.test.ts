@@ -1,16 +1,28 @@
+import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { PortableTextBody } from '@/shared/pt/schema'
 
-import { makePage } from '#/_helpers/catalog'
 import { makeLoaderArgs, unwrapLoaderData } from '#/_helpers/context'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { regularSession } from '#/_helpers/session'
+import { content as contentTable } from '@/server/infra/db/schema/content'
+import { page as pageTable } from '@/server/infra/db/schema/page'
 
 // Pages live exclusively in the `page` + `content` tables,
 // so this test pins the contract that the `page.detail` loader
 // returns the row's PortableText body straight through (the React
-// component renders it via `<PortableTextBody>`).
+// component renders it via `<PortableTextBody>`) — real engine: the
+// page is a seeded meta row + published content revision and the
+// loader, music prerender, image-meta resolution, and comments
+// streaming all run for real.
 
+// Presentational seam — the loader contract under test never renders.
+vi.mock('@/ui/pt/render', () => ({
+  PortableTextBody: () => null,
+}))
+
+const db = getTestDb()
 const session = regularSession()
 
 const dbPageBody: PortableTextBody = [
@@ -39,95 +51,49 @@ const dbPageBody: PortableTextBody = [
   },
 ]
 
-const dbPage = {
-  ...makePage({
-    slug: 'about',
-    title: 'About',
-    permalink: '/about',
-    cover: '/images/about.jpg',
-    comments: false,
-    toc: false,
-  }),
-  body: dbPageBody,
-  imageSources: ['https://cdn.example.com/photo.jpg'],
-  publishedRevisionId: 42,
-}
+const dbPageHeadings = [{ depth: 2, text: 'About', slug: 'about' }]
 
-vi.mock('@/server/domains/pages/repo', () => ({
-  findPageMetaById: vi.fn(async () => null),
-  findPageMetaBySlug: vi.fn(async () => null),
-  findPageMetaBySlugForUpdate: vi.fn(async () => null),
-  insertPageMeta: vi.fn(async () => null),
-  updatePageMetaById: vi.fn(async () => null),
-  softDeletePageMeta: vi.fn(async () => false),
-  restorePageMeta: vi.fn(async () => false),
-}))
-vi.mock('@/server/domains/pages/services/public-query', () => ({
-  listPublicPageMetas: vi.fn(async () => []),
-  findPublicPageMetaBySlug: vi.fn(async () => null),
-  findPageBySlug: vi.fn(async (_db: unknown, slug: string) => (slug === 'about' ? dbPage : null)),
-}))
-vi.mock('@/server/domains/posts/services/public-query', () => ({}))
-vi.mock('@/server/domains/posts/services/single', () => ({
-  findPostMetaById: vi.fn(async () => null),
-  findPostMetaBySlug: vi.fn(async () => null),
-  findPostMetaBySlugForUpdate: vi.fn(async () => null),
-  findPostBySlug: vi.fn(async () => null),
-  findPublicPostMetaBySlug: vi.fn(async () => null),
-}))
-vi.mock('@/server/domains/friends/service', () => ({
-  listAllFriends: vi.fn(async () => []),
-}))
-vi.mock('@/shared/types/catalog', async () => {
-  const actual = await vi.importActual<typeof import('@/shared/types/catalog')>('@/shared/types/catalog')
-  return {
-    ...actual,
-    toClientPage: (p: unknown) => p,
-    toDetailPageShell: (p: unknown) => p,
-    toDetailPostShell: (p: unknown) => p,
-  }
+beforeEach(async () => {
+  await clearAllTables(db)
 })
 
-// Stub out the comments/data loader the same way `detail.test.ts` does —
-// the page.detail route awaits this for every request and we don't want
-// it hitting the database.
-vi.mock('@/server/http/loaders/comments', () => ({
-  loadDetailPageStreaming: vi.fn(async () => ({
-    critical: {
-      admin: false,
-      likes: { count: 0, liked: false },
-      currentUser: null,
-      commentKey: 'https://example.com/about/',
-      recentComments: [],
-      pendingComments: [],
-    },
-    comments: Promise.resolve({
-      commentData: { totalCount: 0, totalPages: 0, currentPage: 1 },
-      commentItems: [],
-    }),
-  })),
-}))
-
-// Image-meta resolution would otherwise hit the database for the
-// thumbhash lookup; we don't need it for this contract.
-vi.mock('@/server/domains/images/services/enhance', () => ({
-  resolveImageMetaBySources: vi.fn(async () => new Map()),
-}))
-// The music prerender resolves players through the injected embed seam;
-// this test pins the page-body contract, not music resolution, so pass
-// the body straight through.
-vi.mock('@/server/domains/pt/prerender', () => ({
-  prerenderMusicPlayerBlocks: vi.fn(async (body: unknown) => body),
-}))
+async function seedAboutPage(): Promise<number> {
+  const rows = await db
+    .insert(pageTable)
+    .values({
+      slug: 'about',
+      title: 'About',
+      cover: '/images/about.jpg',
+      commentsEnabled: false,
+      showToc: false,
+      published: true,
+      publishedAt: new Date('2024-01-01'),
+      firstPublishedAt: new Date('2024-01-01'),
+    })
+    .returning({ id: pageTable.id })
+  const pageId = rows[0]!.id
+  const revisions = await db
+    .insert(contentTable)
+    .values({
+      type: 'page',
+      ownerId: pageId,
+      revisionNo: 1,
+      status: 'published',
+      body: dbPageBody,
+      imageSources: ['https://cdn.example.com/photo.jpg'],
+      headings: dbPageHeadings,
+    })
+    .returning({ id: contentTable.id })
+  await db.update(pageTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(pageTable.id, pageId))
+  return pageId
+}
 
 const pageRoute = await import('@/routes/public/page/detail')
 
-beforeEach(() => {
-  vi.clearAllMocks()
-})
-
 describe('routes/page.detail loader (DB-backed page)', () => {
   it('returns the page row body as PortableText', async () => {
+    await seedAboutPage()
+
     const result = unwrapLoaderData<{
       page: { permalink: string; title: string }
       body: PortableTextBody
@@ -137,20 +103,26 @@ describe('routes/page.detail loader (DB-backed page)', () => {
         makeLoaderArgs({
           request: new Request('http://localhost/about'),
           session,
+          db,
           params: { slug: 'about' },
         }),
       ),
     )
 
     expect(result.page.permalink).toBe('/about')
-    // The PortableText body shape is preserved end-to-end.
+    // The PortableText body shape is preserved end-to-end. The musicPlayer
+    // block resolves no players (empty music table) so the prerender
+    // passes the body straight through.
     expect(result.body).toEqual(dbPageBody)
-    // Image meta resolution still happens (mocked to empty), proving
-    // the loader doesn't short-circuit it for DB pages.
+    // Image meta resolution runs for real: the external CDN src matches no
+    // stored image rows, so the map comes back empty rather than the
+    // loader short-circuiting it.
     expect(result.imageMeta).toEqual({})
   })
 
   it('preserves headings + permalink so SEO + URL-stable consumers keep working', async () => {
+    await seedAboutPage()
+
     const result = unwrapLoaderData<{
       page: { headings: unknown[]; permalink: string; title: string }
     }>(
@@ -158,6 +130,7 @@ describe('routes/page.detail loader (DB-backed page)', () => {
         makeLoaderArgs({
           request: new Request('http://localhost/about'),
           session,
+          db,
           params: { slug: 'about' },
         }),
       ),
@@ -165,6 +138,6 @@ describe('routes/page.detail loader (DB-backed page)', () => {
 
     expect(result.page.permalink).toBe('/about')
     expect(result.page.title).toBe('About')
-    expect(Array.isArray(result.page.headings)).toBe(true)
+    expect(result.page.headings).toEqual(dbPageHeadings)
   })
 })

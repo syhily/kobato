@@ -1,12 +1,32 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { makeAdminPost } from '#/_helpers/catalog'
+import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderToHtml, stableHtml, renderInRouter } from '#/_helpers/render'
 import { ImageField } from '@/ui/admin/editor-shared/ImageField'
 import { PublishStatusRow } from '@/ui/admin/editor-shared/PublishStatusRow'
 import { PostsSkeleton } from '@/ui/admin/posts/PostsSkeleton'
 import { PostsView } from '@/ui/admin/posts/PostsView'
 import { StatusBadge } from '@/ui/admin/posts/StatusBadge'
+
+const queryMocks = mockTanstackQuery()
+
+queryMocks.infinite = {
+  data: undefined as unknown,
+  isLoading: true,
+  error: null as Error | null,
+  hasNextPage: false,
+  isFetchingNextPage: false,
+  fetchNextPage: vi.fn(),
+}
+
+queryMocks.query = {
+  data: null as unknown,
+  isPending: false,
+  isFetching: false,
+  error: null,
+  refetch: vi.fn(),
+}
 
 // PostsView wires three option-list useQuery calls (categories + tags +
 // users) via orpcQuery; the list itself is a useInfiniteQuery behind
@@ -15,39 +35,6 @@ import { StatusBadge } from '@/ui/admin/posts/StatusBadge'
 // pill bar (the real `useFilterPills`, uncontrolled) — the view reads
 // `useLocation` for the URL seed, so we mount under a memory router at the
 // admin posts path.
-
-const queryMocks = vi.hoisted(() => ({
-  list: {
-    data: undefined as unknown,
-    isLoading: true,
-    error: null as Error | null,
-    hasNextPage: false,
-    isFetchingNextPage: false,
-    fetchNextPage: vi.fn(),
-  },
-  aux: {
-    data: null as unknown,
-    isPending: false,
-    isFetching: false,
-    error: null,
-    refetch: vi.fn(),
-  },
-}))
-
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
-  return {
-    ...actual,
-    useQuery: () => queryMocks.aux,
-    useQueries: ({ queries }: { queries: unknown[] }) => queries.map(() => queryMocks.aux),
-    useInfiniteQuery: () => queryMocks.list,
-    useQueryClient: () => ({ invalidateQueries: vi.fn(), setQueryData: vi.fn(), removeQueries: vi.fn() }),
-  }
-})
-
-vi.mock('sonner', () => ({
-  toast: { error: vi.fn(), success: vi.fn() },
-}))
 
 describe('snapshot: PostsView', () => {
   it('renders list chrome and skeleton while the initial query is pending', () => {

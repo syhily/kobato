@@ -205,23 +205,6 @@ vi.mock('@tanstack/react-query', async () => {
 // Hoisted call-order counter; reset before each UserDetailView render.
 const queryCounter = vi.hoisted(() => ({ n: 0 }))
 
-vi.mock('@/client/api/orpc-query', () => ({
-  orpcQuery: {
-    admin: {
-      users: {
-        get: { queryOptions: (args: unknown) => ({ queryKey: ['user', args], queryFn: async () => ({}) }) },
-        sendPasswordReset: { mutationOptions: () => ({ mutationKey: ['reset'] }) },
-        revokeAllSessions: { mutationOptions: () => ({ mutationKey: ['revoke'] }) },
-        bulkApproveComments: { mutationOptions: () => ({ mutationKey: ['approve'] }) },
-        bulkDeleteComments: { mutationOptions: () => ({ mutationKey: ['bulkDel'] }) },
-      },
-      comments: {
-        loadAll: { queryOptions: (args: unknown) => ({ queryKey: ['comments', args], queryFn: async () => ({}) }) },
-      },
-    },
-  },
-}))
-
 describe('snapshot: UserDetailView', () => {
   beforeEach(() => {
     // Reset the call-order counter so the first useQuery in each test maps to

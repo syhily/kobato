@@ -1,22 +1,19 @@
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
+import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderToHtml, stableHtml } from '#/_helpers/render'
 import { TagsField } from '@/ui/admin/posts/meta/TagsField'
 
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
-  return {
-    ...actual,
-    useQuery: () => ({
-      data: [
-        { id: '1', name: 'React' },
-        { id: '2', name: 'TypeScript' },
-      ],
-      isLoading: false,
-      error: null,
-    }),
-  }
-})
+const queryMocks = mockTanstackQuery()
+
+queryMocks.query = {
+  data: [
+    { id: '1', name: 'React' },
+    { id: '2', name: 'TypeScript' },
+  ],
+  isLoading: false,
+  error: null,
+}
 
 describe('ui/admin/posts/meta/TagsField', () => {
   it('renders the input and existing tag badges', () => {

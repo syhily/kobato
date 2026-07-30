@@ -2,9 +2,19 @@ import { describe, expect, it, vi } from 'vitest'
 
 import type { AdminRevisionDto } from '@/shared/contracts/revision'
 
+import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderToHtml, stableHtml } from '#/_helpers/render'
 import { DateTimePicker } from '@/ui/admin/editor-shell/DateTimePicker'
 import { RevisionHistoryDrawer } from '@/ui/admin/editor-shell/RevisionsDrawer'
+
+const queryMocks = mockTanstackQuery()
+
+queryMocks.query = {
+  data: null as { revisions: AdminRevisionDto[] } | null,
+  isFetching: false,
+  error: null as unknown,
+  refetch: vi.fn(),
+}
 
 // DateTimePicker is fully props-driven (value/onChange). The calendar popover
 // content lives behind a Base UI Popover that only mounts its popup on click
@@ -66,42 +76,6 @@ describe('snapshot: DateTimePicker', () => {
 
 // ──────────────────────────── RevisionsDrawer ──────────────────────────────
 
-const queryMocks = vi.hoisted(() => ({
-  list: {
-    data: null as { revisions: AdminRevisionDto[] } | null,
-    isFetching: false,
-    error: null as unknown,
-    refetch: vi.fn(),
-  },
-}))
-
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
-  return {
-    ...actual,
-    useQuery: () => queryMocks.list,
-  }
-})
-
-vi.mock('@/client/api/orpc-query', () => ({
-  orpcQuery: {
-    admin: {
-      posts: {
-        listRevisions: {
-          queryOptions: (args: unknown) => ({ queryKey: ['revisions', args], queryFn: async () => ({}) }),
-        },
-      },
-      pages: {
-        listRevisions: {
-          queryOptions: (args: unknown) => ({ queryKey: ['revisions', args], queryFn: async () => ({}) }),
-        },
-      },
-    },
-  },
-}))
-
-vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
-
 function makeRevision(overrides: Partial<AdminRevisionDto> = {}): AdminRevisionDto {
   return {
     id: overrides.id ?? 'rev-1',
@@ -119,7 +93,7 @@ function makeRevision(overrides: Partial<AdminRevisionDto> = {}): AdminRevisionD
 
 describe('snapshot: RevisionHistoryDrawer', () => {
   it('renders the "历史版本" trigger button (closed sheet emits no body on SSR)', () => {
-    queryMocks.list = { data: null, isFetching: false, error: null, refetch: vi.fn() }
+    queryMocks.query = { data: null, isFetching: false, error: null, refetch: vi.fn() }
     const html = stableHtml(
       renderToHtml(
         <RevisionHistoryDrawer
@@ -136,7 +110,7 @@ describe('snapshot: RevisionHistoryDrawer', () => {
   })
 
   it('renders the page-variant trigger', () => {
-    queryMocks.list = { data: null, isFetching: false, error: null, refetch: vi.fn() }
+    queryMocks.query = { data: null, isFetching: false, error: null, refetch: vi.fn() }
     const html = stableHtml(
       renderToHtml(
         <RevisionHistoryDrawer
@@ -160,7 +134,7 @@ describe('snapshot: RevisionHistoryDrawer', () => {
       makeRevision({ id: 'r1', revisionNo: 3, status: 'published', clientRevisionToken: 'tok-3' }),
       makeRevision({ id: 'r2', revisionNo: 2, status: 'draft', clientRevisionToken: 'tok-2' }),
     ]
-    queryMocks.list = { data: { revisions }, isFetching: false, error: null, refetch: vi.fn() }
+    queryMocks.query = { data: { revisions }, isFetching: false, error: null, refetch: vi.fn() }
     const html = stableHtml(
       renderToHtml(
         <RevisionHistoryDrawer
@@ -184,7 +158,7 @@ describe('snapshot: RevisionHistoryDrawer', () => {
   })
 
   it('renders the empty-history row when the query resolves with no revisions', () => {
-    queryMocks.list = { data: { revisions: [] }, isFetching: false, error: null, refetch: vi.fn() }
+    queryMocks.query = { data: { revisions: [] }, isFetching: false, error: null, refetch: vi.fn() }
     const html = stableHtml(
       renderToHtml(
         <RevisionHistoryDrawer

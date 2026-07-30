@@ -6,6 +6,7 @@ import type { FontRow } from '@/server/infra/db/schema/font'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { deleteFont, setFontSlot } from '@/server/domains/fonts/services/mutate'
 import { deleteFontPackage } from '@/server/domains/fonts/storage'
+import { __clearSectionChangeHandlersForTests } from '@/server/domains/settings/services/section-changes'
 import { setting } from '@/server/infra/db/schema/config'
 import { font } from '@/server/infra/db/schema/font'
 import { DomainError } from '@/server/infra/http/errors'
@@ -21,13 +22,10 @@ vi.mock('@/server/domains/fonts/storage', () => ({
 // Section-change dispatch (backup/audit reschedule, mail transport
 // invalidation) is covered by the unit tests; keep it out of these
 // persistence-focused cases.
-vi.mock('@/server/domains/settings/services/section-changes', () => ({
-  SECTION_CHANGE_HANDLERS: new Map(),
-}))
-
 const db = getTestDb()
 
 beforeEach(async () => {
+  __clearSectionChangeHandlersForTests()
   await clearAllTables(db)
   vi.mocked(deleteFontPackage).mockClear()
 })

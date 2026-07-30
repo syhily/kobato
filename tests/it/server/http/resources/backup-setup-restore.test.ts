@@ -17,7 +17,6 @@ const mockAssertStagedBackupContainsAdmin = vi.fn()
 const mockStageBackup = vi.fn()
 const mockStartRestoreJob = vi.fn()
 const mockWithRestoreClaim = vi.fn()
-const mockRefreshBlogSettings = vi.fn()
 const mockRecordAuditEvent = vi.fn()
 
 vi.mock('@/server/domains/auth/setup-token', () => ({
@@ -52,20 +51,9 @@ vi.mock('@/server/domains/backup/restore-machine', () => ({
   wireRestoreMachine: () => undefined,
 }))
 
-vi.mock('@/server/domains/settings/services/hydrate', () => ({
-  refreshBlogSettings: (...args: unknown[]) => mockRefreshBlogSettings(...args),
-}))
-
 vi.mock('@/server/domains/audit/services/record', () => ({
   recordAuditEvent: (...args: unknown[]) => mockRecordAuditEvent(...args),
 }))
-
-vi.mock('@/server/infra/lifecycle', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/server/infra/lifecycle')>()
-  return {
-    ...actual,
-  }
-})
 
 import { createSession } from 'react-router'
 

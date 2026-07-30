@@ -3,68 +3,37 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AdminFriendDto } from '@/shared/contracts/friends'
 
+import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { EditFriendDialog } from '@/ui/admin/friends/EditFriendDialog'
 import { FriendsView } from '@/ui/admin/friends/FriendsView'
+
+const queryMocks = mockTanstackQuery()
+
+queryMocks.infinite = {
+  data: { pages: [] as unknown[] } as unknown,
+  isLoading: true,
+  isFetching: false,
+  isFetchingNextPage: false,
+  hasNextPage: false,
+  error: null,
+  fetchNextPage: vi.fn(),
+}
+
+queryMocks.mutation = {
+  mutate: vi.fn(),
+  isPending: false,
+}
+
+queryMocks.queryClient = {
+  invalidateQueries: vi.fn(),
+}
 
 // FriendsView relies on an infinite-query list (no reducer) plus a delete
 // mutation and a debounced search hook. We neutralize the queries so SSR
 // emits the loading chrome.
 
-const queryMocks = vi.hoisted(() => ({
-  infinite: {
-    data: { pages: [] as unknown[] } as unknown,
-    isLoading: true,
-    isFetching: false,
-    isFetchingNextPage: false,
-    hasNextPage: false,
-    error: null,
-    fetchNextPage: vi.fn(),
-  },
-  mutation: {
-    mutate: vi.fn(),
-    isPending: false,
-  },
-  queryClient: {
-    invalidateQueries: vi.fn(),
-  },
-}))
-
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
-  return {
-    ...actual,
-    useInfiniteQuery: () => queryMocks.infinite,
-    useMutation: () => queryMocks.mutation,
-    useQueryClient: () => queryMocks.queryClient,
-  }
-})
-
-vi.mock('sonner', () => ({
-  toast: { error: vi.fn(), success: vi.fn() },
-}))
-
-vi.mock('@/ui/admin/shared/useDebouncedSearch', () => ({
-  useDebouncedSearch: () => ['', vi.fn()],
-}))
-
-vi.mock('@/ui/components/dialog', () => ({
-  Dialog: ({ open, children }: { open: boolean; children: React.ReactNode }) =>
-    open ? <div data-slot="dialog">{children}</div> : null,
-  DialogContent: ({ children, className }: { children: React.ReactNode; className?: string }) => (
-    <div data-slot="dialog-content" className={className}>
-      {children}
-    </div>
-  ),
-  DialogDescription: ({ children }: { children: React.ReactNode }) => <p data-slot="dialog-description">{children}</p>,
-  DialogFooter: ({ children, className }: { children: React.ReactNode; className?: string }) => (
-    <div data-slot="dialog-footer" className={className}>
-      {children}
-    </div>
-  ),
-  DialogHeader: ({ children }: { children: React.ReactNode }) => <div data-slot="dialog-header">{children}</div>,
-  DialogTitle: ({ children }: { children: React.ReactNode }) => <h2 data-slot="dialog-title">{children}</h2>,
-}))
+vi.mock('@/ui/components/dialog', () => import('#/_helpers/stubs/dialog'))
 
 function makeAdminFriend(overrides: Partial<AdminFriendDto> = {}): AdminFriendDto {
   return {

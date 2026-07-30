@@ -1,18 +1,27 @@
+import { eq } from 'drizzle-orm'
 import { RouterContextProvider } from 'react-router'
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import type { SessionUser } from '@/server/domains/auth/session-storage'
-import type { Database } from '@/server/infra/db/database'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
-import { makePage } from '#/_helpers/catalog'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { makeRequestContext } from '#/_helpers/request-context'
 import { adminUser } from '#/_helpers/session'
 import { requestContext } from '@/server/http/request-context'
+import { content as contentTable } from '@/server/infra/db/schema/content'
+import { page as pageTable } from '@/server/infra/db/schema/page'
+import { post as postTable } from '@/server/infra/db/schema/post'
 
 // Tests for `loadPagePreview` in `@/server/http/loaders/page-preview`.
 // The loader uses parallel DB lookups (findPublicPostMetaBySlug +
 // findPageBySlug) instead of the old catalog cache (getEntryBySlug).
+//
+// Real engine: posts/pages are seeded meta rows (+ content revisions),
+// so the live gate, the post-wins redirect, and the admin draft preview
+// all run against actual rows.
+
+const db = getTestDb()
 
 const pageBody: PortableTextBody = [
   {
@@ -23,76 +32,77 @@ const pageBody: PortableTextBody = [
   },
 ]
 
-function makePostMeta(
-  overrides: Partial<{
-    slug: string
-    deletedAt: Date | null
-    published: boolean
-    publishedRevisionId: number | null
-    publishedAt: Date
-  }> = {},
-) {
-  return {
-    id: 1,
-    slug: 'test-post',
-    title: 'Test Post',
-    deletedAt: null as Date | null,
-    published: true,
-    publishedRevisionId: 1,
-    publishedAt: new Date('2024-01-01'),
-    ...overrides,
+beforeEach(async () => {
+  await clearAllTables(db)
+})
+
+async function seedPost(opts: {
+  slug: string
+  title?: string
+  published?: boolean
+  publishedAt?: Date
+  deletedAt?: Date | null
+  withRevision?: boolean
+}): Promise<number> {
+  const rows = await db
+    .insert(postTable)
+    .values({
+      slug: opts.slug,
+      title: opts.title ?? opts.slug,
+      published: opts.published ?? true,
+      publishedAt: opts.publishedAt ?? new Date('2024-01-01'),
+      firstPublishedAt: new Date('2024-01-01'),
+      deletedAt: opts.deletedAt ?? null,
+      visible: true,
+    })
+    .returning({ id: postTable.id })
+  const postId = rows[0]!.id
+  if (opts.withRevision ?? true) {
+    const revisions = await db
+      .insert(contentTable)
+      .values({ type: 'post', ownerId: postId, revisionNo: 1, status: 'published', body: [] })
+      .returning({ id: contentTable.id })
+    await db.update(postTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(postTable.id, postId))
   }
+  return postId
 }
 
-function makeDbPage(overrides: Record<string, unknown> = {}) {
-  return {
-    ...makePage({ slug: 'test-page', title: 'Test Page', permalink: '/test-page' }),
-    body: pageBody,
-    imageSources: [] as string[],
-    publishedRevisionId: 10,
-    ...overrides,
+async function seedPage(opts: {
+  slug: string
+  title: string
+  published?: boolean
+  body?: PortableTextBody
+  draftBody?: PortableTextBody
+}): Promise<number> {
+  const rows = await db
+    .insert(pageTable)
+    .values({
+      slug: opts.slug,
+      title: opts.title,
+      published: opts.published ?? true,
+      publishedAt: new Date('2024-01-01'),
+      firstPublishedAt: new Date('2024-01-01'),
+    })
+    .returning({ id: pageTable.id })
+  const pageId = rows[0]!.id
+  if (opts.published ?? true) {
+    const revisions = await db
+      .insert(contentTable)
+      .values({ type: 'page', ownerId: pageId, revisionNo: 1, status: 'published', body: opts.body ?? [] })
+      .returning({ id: contentTable.id })
+    await db.update(pageTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(pageTable.id, pageId))
   }
+  if (opts.draftBody !== undefined) {
+    await db.insert(contentTable).values({
+      type: 'page',
+      ownerId: pageId,
+      revisionNo: (opts.published ?? true) ? 2 : 1,
+      status: 'draft',
+      body: opts.draftBody,
+    })
+  }
+  return pageId
 }
-
-const mockDb = {} as Database
-
-const mocks = vi.hoisted(() => ({
-  findPublicPostMetaBySlug: vi.fn((): unknown => null),
-  findPageBySlug: vi.fn(async (): Promise<unknown> => null),
-  loadDraftPreviewBySlug: vi.fn(async (): Promise<unknown> => null),
-  resolveImageMetaBySources: vi.fn(async () => []),
-}))
-
-vi.mock('@/server/domains/posts/services/single', () => ({
-  findPostMetaById: vi.fn(() => null),
-  findPostMetaBySlug: vi.fn(() => null),
-  findPostMetaBySlugForUpdate: vi.fn(() => null),
-  findPublicPostMetaBySlug: mocks.findPublicPostMetaBySlug,
-}))
-vi.mock('@/server/domains/pages/repo', () => ({
-  findPageMetaById: vi.fn(() => null),
-  findPageMetaBySlug: vi.fn(() => null),
-  findPageMetaBySlugForUpdate: vi.fn(() => null),
-  insertPageMeta: vi.fn(() => null),
-  updatePageMetaById: vi.fn(() => null),
-  softDeletePageMeta: vi.fn(() => false),
-  restorePageMeta: vi.fn(() => false),
-}))
-vi.mock('@/server/domains/pages/services/public-query', () => ({
-  findPageBySlug: mocks.findPageBySlug,
-  findPublicPageMetaBySlug: vi.fn(() => null),
-}))
-vi.mock('@/server/domains/content/lifecycle', () => ({
-  loadDraftPreviewBySlug: mocks.loadDraftPreviewBySlug,
-}))
-vi.mock('@/server/infra/http/etag', () => ({
-  ifNoneMatch: () => false,
-  weakEtag: () => 'etag',
-  notModifiedResponse: (etag: string) => new Response(null, { status: 304, headers: { ETag: etag } }),
-}))
-vi.mock('@/server/domains/images/services/enhance', () => ({
-  resolveImageMetaBySources: mocks.resolveImageMetaBySources,
-}))
 
 function makeArgs(slug: string, viewer: SessionUser | null = null) {
   const context = new RouterContextProvider()
@@ -100,7 +110,7 @@ function makeArgs(slug: string, viewer: SessionUser | null = null) {
   // context (draft-preview role gating).
   context.set(requestContext, makeRequestContext({ user: viewer }))
   return {
-    db: mockDb,
+    db,
     slug,
     wantsDraftPreview: false,
     request: new Request(`http://localhost/${slug}`),
@@ -108,47 +118,35 @@ function makeArgs(slug: string, viewer: SessionUser | null = null) {
   }
 }
 
-beforeEach(() => {
-  vi.clearAllMocks()
-  mocks.findPublicPostMetaBySlug.mockImplementation(() => null)
-  mocks.findPageBySlug.mockImplementation(async () => null)
-  mocks.loadDraftPreviewBySlug.mockImplementation(async () => null)
-})
-
-let loadPagePreview: (typeof import('@/server/http/loaders/page-preview'))['loadPagePreview']
-
-beforeAll(async () => {
-  const mod = await import('@/server/http/loaders/page-preview')
-  loadPagePreview = mod.loadPagePreview
-})
+const { loadPagePreview } = await import('@/server/http/loaders/page-preview')
 
 describe('loadPagePreview — slug redirect logic', () => {
   it('redirects to /posts/slug when a published post matches', async () => {
-    mocks.findPublicPostMetaBySlug.mockImplementation(() => makePostMeta({ slug: 'hello' }))
+    await seedPost({ slug: 'hello' })
 
-    await expect(loadPagePreview(makeArgs('hello'))).rejects.toThrow()
-    // The thrown response should be a 301 redirect
     try {
       await loadPagePreview(makeArgs('hello'))
+      expect.unreachable('should have thrown')
     } catch (err) {
+      // The thrown response should be a 301 redirect
       expect(err).toMatchObject({ status: 301 })
     }
   })
 
   it('does not redirect for an unpublished post (status=draft)', async () => {
-    mocks.findPublicPostMetaBySlug.mockImplementation(() => makePostMeta({ published: false }))
+    await seedPost({ slug: 'draft-post', published: false, withRevision: false })
 
     await expect(loadPagePreview(makeArgs('draft-post'))).rejects.toMatchObject({ status: 404 })
   })
 
   it('does not redirect for a deleted post (deletedAt set)', async () => {
-    mocks.findPublicPostMetaBySlug.mockImplementation(() => makePostMeta({ deletedAt: new Date() }))
+    await seedPost({ slug: 'deleted-post', deletedAt: new Date() })
 
     await expect(loadPagePreview(makeArgs('deleted-post'))).rejects.toMatchObject({ status: 404 })
   })
 
   it('does not redirect for a scheduled post (publishedAt in future)', async () => {
-    mocks.findPublicPostMetaBySlug.mockImplementation(() => makePostMeta({ publishedAt: new Date('2099-01-01') }))
+    await seedPost({ slug: 'scheduled-post', publishedAt: new Date('2099-01-01') })
 
     await expect(loadPagePreview(makeArgs('scheduled-post'))).rejects.toMatchObject({
       status: 404,
@@ -156,19 +154,19 @@ describe('loadPagePreview — slug redirect logic', () => {
   })
 
   it('returns page data when slug matches a published page', async () => {
-    const dbPage = makeDbPage({ slug: 'about', title: 'About' })
-    mocks.findPageBySlug.mockImplementation(async () => dbPage)
+    await seedPage({ slug: 'about', title: 'About', body: pageBody })
 
     const result = await loadPagePreview(makeArgs('about'))
 
     expect(result.page.title).toBe('About')
     expect(result.page.slug).toBe('about')
+    expect(result.body).toEqual(pageBody)
     expect(result.draftMarker).toBeNull()
   })
 
   it('redirects when both published post and page match (post wins)', async () => {
-    mocks.findPublicPostMetaBySlug.mockImplementation(() => makePostMeta({ slug: 'collision' }))
-    mocks.findPageBySlug.mockImplementation(async () => makeDbPage({ slug: 'collision' }))
+    await seedPost({ slug: 'collision' })
+    await seedPage({ slug: 'collision', title: 'Collision Page' })
 
     try {
       await loadPagePreview(makeArgs('collision'))
@@ -179,16 +177,13 @@ describe('loadPagePreview — slug redirect logic', () => {
   })
 
   it('shows draft to admin when slug has no published page', async () => {
-    const draftPage = makeDbPage({ slug: 'new-page', title: 'New Page Draft' })
-    mocks.loadDraftPreviewBySlug.mockImplementation(async () => ({
-      preview: draftPage,
-      hasNewerDraft: false,
-    }))
+    await seedPage({ slug: 'new-page', title: 'New Page Draft', published: false, draftBody: pageBody })
 
     const result = await loadPagePreview(makeArgs('new-page', adminUser()))
 
     expect(result.draftMarker).toBe('draft')
     expect(result.page.title).toBe('New Page Draft')
+    expect(result.body).toEqual(pageBody)
   })
 
   it('returns 404 when slug matches nothing and no admin session', async () => {

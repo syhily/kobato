@@ -1,20 +1,18 @@
 import { eq } from 'drizzle-orm'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { resetBlogSettingsForTests } from '#/_helpers/blog-settings'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { updateBlogSettingsSection } from '@/server/domains/settings/services/core'
+import { __clearSectionChangeHandlersForTests } from '@/server/domains/settings/services/section-changes'
 import { setting } from '@/server/infra/db/schema/config'
 
 // Section-change dispatch is covered by the unit tests; keep the
 // backup/audit schedulers out of these persistence-focused cases.
-vi.mock('@/server/domains/settings/services/section-changes', () => ({
-  SECTION_CHANGE_HANDLERS: new Map(),
-}))
-
 const db = getTestDb()
 
 beforeEach(async () => {
+  __clearSectionChangeHandlersForTests()
   await clearAllTables(db)
   resetBlogSettingsForTests()
 })

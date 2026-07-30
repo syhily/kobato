@@ -1,4 +1,8 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+
+// The setup file registers an inert `sonner` stub for every suite; this one
+// snapshots the real `<Toaster />` primitive, so restore the actual module.
+vi.mock('sonner', async (importOriginal) => importOriginal<typeof import('sonner')>())
 
 import { renderToHtml } from '#/_helpers/render'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/avatar'

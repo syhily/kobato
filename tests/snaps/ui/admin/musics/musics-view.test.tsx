@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AdminMusicDto, MetingSearchHit } from '@/shared/contracts/music'
 
+import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { AddMusicView } from '@/ui/admin/musics/AddMusicView'
 import { AdminMusicPlayerFloat } from '@/ui/admin/musics/AdminMusicPlayerFloat'
@@ -14,94 +15,52 @@ import { MusicPlayerProvider } from '@/ui/admin/musics/MusicPlayerContext'
 import { MusicsView } from '@/ui/admin/musics/MusicsView'
 import { ProgressSlider } from '@/ui/admin/musics/ProgressSlider'
 
+const queryMocks = mockTanstackQuery()
+
+queryMocks.query = {
+  data: null as unknown,
+  isLoading: false,
+  isPending: false,
+  isFetching: false,
+  isError: false,
+  error: null as unknown,
+  refetch: vi.fn(),
+}
+
+queryMocks.mutation = {
+  mutate: vi.fn(),
+  isPending: false,
+}
+
+queryMocks.infinite = {
+  data: { pages: [] as { musics: AdminMusicDto[]; total: number; hasMore: boolean }[] } as {
+    pages: { musics: AdminMusicDto[]; total: number; hasMore: boolean }[]
+  },
+  isLoading: false,
+  isPending: false,
+  isFetching: false,
+  isFetchingNextPage: false,
+  hasNextPage: false,
+  error: null as unknown,
+  fetchNextPage: vi.fn(),
+}
+
+queryMocks.queryClient = {
+  invalidateQueries: vi.fn(),
+  setQueryData: vi.fn(),
+  removeQueries: vi.fn(),
+}
+
 // `MusicsView` inlines its sort/search state via `useState` (the old
 // `useMusicsReducer` pass-through was deleted); the defaults — q '',
 // sortBy 'createdAt', sortOrder 'desc', page size 24 — are exactly what
 // these SSR snapshots assert. `MusicsView` also calls `useInfiniteQuery`
 // against `orpc.admin.music.list`, which would hit the network, so we
-// stub out tanstack/react-query's fetch hooks below.
-
-// TanStack Query hooks: return inert values so the views never issue real
-// network calls. The `data` field is mutated per test by reassigning the
-// hoisted singleton; react-query returns the same object reference on every
-// render which is all SSR needs.
-
-const queryMocks = vi.hoisted(() => ({
-  query: {
-    data: null as unknown,
-    isLoading: false,
-    isPending: false,
-    isFetching: false,
-    isError: false,
-    error: null as unknown,
-    refetch: vi.fn(),
-  },
-  mutation: {
-    mutate: vi.fn(),
-    isPending: false,
-  },
-  infinite: {
-    data: { pages: [] as { musics: AdminMusicDto[]; total: number; hasMore: boolean }[] } as {
-      pages: { musics: AdminMusicDto[]; total: number; hasMore: boolean }[]
-    },
-    isLoading: false,
-    isPending: false,
-    isFetching: false,
-    isFetchingNextPage: false,
-    hasNextPage: false,
-    error: null as unknown,
-    fetchNextPage: vi.fn(),
-  },
-  queryClient: {
-    invalidateQueries: vi.fn(),
-    setQueryData: vi.fn(),
-    removeQueries: vi.fn(),
-  },
-}))
-
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
-  return {
-    ...actual,
-    useQuery: () => queryMocks.query,
-    useMutation: () => queryMocks.mutation,
-    useInfiniteQuery: () => queryMocks.infinite,
-    useQueryClient: () => queryMocks.queryClient,
-  }
-})
-
-// `sonner` is pulled in by AddMusicView / MusicDetailView for toasts. SSR
-// safe to no-op.
-vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
-
-// `orpcQuery` builds query options objects; the mocks above intercept the
-// hooks before they execute, so the option builders never run their network
-// path — but they're still imported, so we stub them to return stable
-// option objects to keep imports cheap and side-effect free.
-vi.mock('@/client/api/orpc-query', () => ({
-  orpcQuery: {
-    admin: {
-      music: {
-        get: {
-          queryOptions: (args: unknown) => ({ queryKey: ['music', 'get', args], queryFn: async () => ({}) }),
-          key: (args: unknown) => ['music', 'get', args],
-        },
-        list: {
-          queryOptions: (args: unknown) => ({ queryKey: ['music', 'list', args], queryFn: async () => ({}) }),
-          infiniteOptions: (args: unknown) => ({ queryKey: ['music', 'list', args], queryFn: async () => ({}) }),
-          key: (args: unknown) => ['music', 'list', args],
-        },
-        search: {
-          queryOptions: (args: unknown) => ({ queryKey: ['music', 'search', args], queryFn: async () => ({}) }),
-          key: (args: unknown) => ['music', 'search', args],
-        },
-        add: {
-          mutationOptions: () => ({ mutationKey: ['music', 'add'] }),
-        },
-      },
-    },
-  },
-}))
+// stub out tanstack/react-query's fetch hooks. The TanStack hook seams are
+// owned by `#/_helpers/mock-react-query` (the `data` field is mutated per
+// test by reassigning a slot on the returned singleton); `sonner` is an
+// inert global stub from `tests/snaps/setup.ts`; the `orpcQuery` option
+// builders run for real but never execute — the mocked hooks swallow them.
 
 // The meting search machine now lives in `useMetingMusicSearch` (covered by
 // `tests/unit/ui/admin/musics/use-meting-music-search.test.tsx`). Stub it so

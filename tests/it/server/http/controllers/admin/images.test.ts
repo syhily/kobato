@@ -1,6 +1,7 @@
 import { call } from '@orpc/server'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 
 vi.mock('@/server/domains/images/services/admin-read', () => ({
@@ -19,18 +20,9 @@ vi.mock('@/server/domains/images/services/upload', () => ({
 }))
 
 // The upload handler reads `assets.upload.{maxBytes,jpegQuality}` from the
-// settings bundle; pin the section so the orchestration assertions below
-// can check the exact values handed to the domain service.
-vi.mock('@/shared/config/getters', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@/shared/config/getters')>()),
-  requireBlogSettingsSection: vi.fn((section: string) => {
-    if (section === 'assets') {
-      return { upload: { maxBytes: 1024, jpegQuality: 80 } }
-    }
-    throw new Error(`unexpected settings section: ${section}`)
-  }),
-}))
-
+// real settings snapshot; the upload describe below pins the section via
+// the test bundle so the orchestration assertions can check the exact
+// values handed to the domain service.
 const adminRead = await import('@/server/domains/images/services/admin-read')
 const adminMutate = await import('@/server/domains/images/services/admin-mutate')
 const uploadService = await import('@/server/domains/images/services/upload')
@@ -104,6 +96,16 @@ describe('adminImagesRouter.upload — orchestration only', () => {
   // tests/unit/server/domains/images/services/upload.test.ts; here we only
   // pin that the controller wires the declared file + settings into the
   // domain and routes the kind dispatch.
+  beforeEach(() => {
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      assets: {
+        ...TEST_BLOG_SETTINGS_BUNDLE.assets!,
+        upload: { maxBytes: 1024, jpegQuality: 80 },
+      },
+    })
+  })
+
   it('validates the declared file against the configured cap, then uploads', async () => {
     vi.mocked(uploadService.uploadImage).mockResolvedValueOnce(image)
     const ctx = makeAuthedCtx()

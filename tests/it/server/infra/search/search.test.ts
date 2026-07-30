@@ -1,13 +1,17 @@
+import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { postSearchIndex } from '@/server/infra/db/schema/content'
+import { kvCache } from '@/server/infra/db/schema/kv-cache'
 import { post } from '@/server/infra/db/schema/post'
 
 const db = getTestDb()
 
 const { searchPosts } = await import('@/server/infra/search/search')
-const { bumpCounter } = await import('@/server/infra/cache/registry')
+const { bumpCounter, getCounter, resolveCacheSlot, __resetCacheCountersForTests } =
+  await import('@/server/infra/cache/registry')
+const { __logCaptureForTests, __clearLogCaptureForTests } = await import('@/server/infra/logger')
 const { getPostsBySlugs } = await import('@/server/domains/posts/services/public-query')
 const { searchPostOptions } = await import('@/server/infra/search/options')
 const { liveContentWhere } = await import('@/server/domains/content/schemas/live-gate')
@@ -27,6 +31,10 @@ function liveWhere() {
 beforeEach(async () => {
   await clearAllTables(db)
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
+  // The generation counter is memoized process-wide; drop the memo so
+  // each test re-reads the freshly cleared kv_cache table.
+  __resetCacheCountersForTests()
+  __clearLogCaptureForTests()
 })
 
 async function seedPost({ plainText, ...overrides }: Partial<typeof post.$inferInsert> & { plainText?: string } = {}) {
@@ -136,6 +144,54 @@ describe('services/search — search result cache invalidation', () => {
     await bumpCounter(db, 'searchResult')
     const freshAgain = await searchPosts(db, liveWhere(), 'cache', 10)
     expect(freshAgain.hits).toEqual(['cache-gamma', 'cache-beta', 'cache-alpha'])
+  })
+})
+
+describe('services/search — searchResult cache rows (real registry)', () => {
+  it('stamps cached entries with the current generation and never writes the counter on reads', async () => {
+    await seedPost({ slug: 'gen-post', title: 'Generation Probe' })
+
+    // The counter starts at 0 — a read must NOT create the row.
+    expect(await getCounter(db, 'searchResult')).toBe(0)
+
+    const result = await searchPosts(db, liveWhere(), 'generation', 10)
+    expect(result.hits).toEqual(['gen-post'])
+
+    const prefix = resolveCacheSlot('searchResult').prefix
+    const rows = await db.select().from(kvCache).where(eq(kvCache.bucket, 'searchResult'))
+    expect(rows).toHaveLength(1)
+    expect(rows[0].key.startsWith(`${prefix}0:`)).toBe(true)
+    expect(rows.some((row) => row.key === `${prefix}generation`)).toBe(false)
+  })
+
+  it('serves a later page from the same cached slug list without a second entry', async () => {
+    const now = new Date()
+    await seedPost({ slug: 'page-a', title: 'Paged A', publishedAt: new Date(now.getTime() - 2000) })
+    await seedPost({ slug: 'page-b', title: 'Paged B', publishedAt: new Date(now.getTime() - 1000) })
+    await seedPost({ slug: 'page-c', title: 'Paged C', publishedAt: now })
+
+    const first = await searchPosts(db, liveWhere(), 'paged', 2, 0)
+    expect(first.hits).toEqual(['page-c', 'page-b'])
+
+    const second = await searchPosts(db, liveWhere(), 'paged', 2, 2)
+    expect(second.hits).toEqual(['page-a'])
+    expect(second.page).toBe(2)
+    expect(second.totalPages).toBe(2)
+
+    // Both pages read the ONE cached slug list — no per-page entry.
+    const rows = await db.select().from(kvCache).where(eq(kvCache.bucket, 'searchResult'))
+    expect(rows).toHaveLength(1)
+  })
+
+  it('logs a cache hit on a repeated identical query', async () => {
+    await seedPost({ slug: 'hit-post', title: 'Hit Probe' })
+
+    await searchPosts(db, liveWhere(), 'hit probe', 10)
+    await searchPosts(db, liveWhere(), 'hit probe', 10)
+
+    const hits = __logCaptureForTests().filter((entry) => entry.msg === 'Search result cache hit')
+    expect(hits).toHaveLength(1)
+    expect(hits[0].ctx).toEqual({ query: 'hit probe', total: 1 })
   })
 })
 

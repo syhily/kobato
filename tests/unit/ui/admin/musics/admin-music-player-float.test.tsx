@@ -5,14 +5,16 @@ import type { AdminMusicDto } from '@/shared/contracts/music'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 
 // `AdminMusicPlayerFloat` is a pure consumer of three hooks exported from
-// `MusicPlayerContext` plus `useLocation` from react-router. The provider
-// itself can't seed a current track in a single SSR pass (its state lives
-// in `useState` and the only way to populate it is through `load()`, which
-// requires the audio element an effect creates — and effects don't run
-// here). So instead of mounting the real provider we stub the three hooks
-// with a hoisted mutable singleton and rebind its fields per test. That
-// lets us drive the collapsed / expanded / hidden-on-music-page branches
-// directly, which is where the float's function coverage actually lives.
+// `MusicPlayerContext` plus `useLocation` from react-router — the router
+// side is already controlled by `renderInRouter`'s `initialPath`, so no
+// react-router mock is needed. The provider itself can't seed a current
+// track in a single SSR pass (its state lives in `useState` and the only
+// way to populate it is through `load()`, which requires the audio element
+// an effect creates — and effects don't run here). So instead of mounting
+// the real provider we stub the three hooks with a hoisted mutable
+// singleton and rebind its fields per test. That lets us drive the
+// collapsed / expanded / hidden-on-music-page branches directly, which is
+// where the float's function coverage actually lives.
 
 const track: AdminMusicDto = {
   id: 'm1',
@@ -65,27 +67,15 @@ const player = vi.hoisted(() => ({
   },
 }))
 
-const router = vi.hoisted(() => ({
-  pathname: '/admin/dashboard',
-}))
-
 vi.mock('@/ui/admin/musics/MusicPlayerContext', () => ({
   useMusicPlayerState: () => player.state,
   useMusicPlayerTime: () => player.time,
   useMusicPlayerActions: () => player.actions,
 }))
 
-vi.mock('react-router', async () => {
-  const actual = await vi.importActual<typeof import('react-router')>('react-router')
-  return {
-    ...actual,
-    useLocation: () => ({ pathname: router.pathname }),
-  }
-})
-
 // Drive the import lazily *after* the mocks are registered so the module
 // under test picks up the stubbed hooks.
-async function renderFloat(initialPath = router.pathname) {
+async function renderFloat(initialPath = '/admin/dashboard') {
   const { AdminMusicPlayerFloat } = await import('@/ui/admin/musics/AdminMusicPlayerFloat')
   return stableHtml(renderInRouter(<AdminMusicPlayerFloat />, initialPath))
 }
@@ -106,7 +96,6 @@ describe('ui/admin/musics/AdminMusicPlayerFloat', () => {
     for (const fn of Object.values(player.actions)) {
       fn.mockClear()
     }
-    router.pathname = '/admin/dashboard'
   })
 
   describe('visibility gate', () => {
@@ -117,7 +106,6 @@ describe('ui/admin/musics/AdminMusicPlayerFloat', () => {
 
     it('renders nothing on the music library page even with a current track', async () => {
       player.state.currentTrack = track
-      router.pathname = '/admin/library/music'
       const html = await renderFloat('/admin/library/music')
       // `visible = currentTrack !== null && !isMusicPage` — the music
       // page branch suppresses the float so the full-page player owns
@@ -127,7 +115,6 @@ describe('ui/admin/musics/AdminMusicPlayerFloat', () => {
 
     it('renders nothing on a nested music route', async () => {
       player.state.currentTrack = track
-      router.pathname = '/admin/library/music/m1'
       const html = await renderFloat('/admin/library/music/m1')
       expect(html).toBe('')
     })

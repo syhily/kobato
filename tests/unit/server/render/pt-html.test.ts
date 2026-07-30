@@ -6,12 +6,6 @@ vi.mock('@/server/infra/slug/derive', () => ({
   deriveSlug: vi.fn((text: string) => `slug-${text}`),
 }))
 
-vi.mock('@/shared/config/getters', () => ({
-  requireBlogSettingsSection: vi.fn((section: string) =>
-    section === 'siteIdentity' ? { website: 'https://example.com' } : {},
-  ),
-}))
-
 // NOTE: the heading-slot collector and the slots→slug zip are NOT mocked —
 // the suite exercises the real single-owned modules in `@/shared/pt/utils`
 // (the mock that reimplemented them was removed when ownership moved).

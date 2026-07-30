@@ -2,20 +2,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { BlogSession } from '@/server/domains/auth/session-storage'
 
-import { resetBlogSettingsForTests } from '#/_helpers/blog-settings'
+import { resetBlogSettingsForTests, TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
+import { clearAllTables, createTestDatabaseFile, getTestDb } from '#/_helpers/integration-db'
 import { makeRequestContext } from '#/_helpers/request-context'
-import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@/shared/config/snapshot'
+import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
+import { closeDatabase } from '@/server/infra/db/database'
+import { upsertSetting } from '@/server/infra/db/operations/setting'
+import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
-const hydrateMock = vi.hoisted(() => vi.fn())
 const routerContextSetMock = vi.hoisted(() => vi.fn())
-
-vi.mock('@/server/bootstrap/db-lifecycle', () => ({
-  getDb: () => ({ id: 'db-mock' }),
-}))
-
-vi.mock('@/server/domains/settings/services/hydrate', () => ({
-  hydrateBlogSettings: hydrateMock,
-}))
 
 vi.mock('react-router', async () => {
   const actual = await vi.importActual<typeof import('react-router')>('react-router')
@@ -29,11 +24,16 @@ vi.mock('react-router', async () => {
 
 const { buildLoadContext } = await import('@/server/http/middleware-pipeline')
 
-// The perimeter middleware derives the canonical RequestContext
+// The hydration is REAL: `buildLoadContext` awaits `hydrateBlogSettings`
+// against the it harness's shared in-memory database (db-lifecycle is
+// initialized at import) — no getDb/hydrate doubles. The perimeter
+// middleware derives the canonical RequestContext
 // (`@/server/http/request-context`) once per request; `buildLoadContext`
 // sets it on the RouterContextProvider as-is. These tests hand it a stub
 // carrying the canonical fields (`session` / `viewer` / `clientAddress` /
-// `url`) plus the pass-through handles (`db` / `pool` / `cspNonce`).
+// `url`) plus the pass-through handles (`db` / `cspNonce`).
+const db = getTestDb()
+
 function makeContextStub(overrides: Record<string, unknown> = {}) {
   return {
     var: {
@@ -41,7 +41,7 @@ function makeContextStub(overrides: Record<string, unknown> = {}) {
         ...makeRequestContext({
           session: { get: () => undefined } as unknown as BlogSession,
           clientAddress: '127.0.0.1',
-          db: { id: 'db-stub' } as never,
+          db,
           cspNonce: 'test-nonce-123',
         }),
         ...overrides,
@@ -52,45 +52,54 @@ function makeContextStub(overrides: Record<string, unknown> = {}) {
 }
 
 describe('middleware-pipeline / buildLoadContext', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks()
+    await clearAllTables(db)
+    // Restore the pre-install state so the real hydrate re-reads the
+    // setting table instead of resolving the worker's seeded bundle.
     resetBlogSettingsForTests()
   })
 
-  it('awaits hydrateBlogSettings before returning the context', async () => {
-    let hydrationResolved = false
+  it('populates the settings snapshot from the real setting table before returning', async () => {
+    upsertSetting(
+      db,
+      TEST_BLOG_SETTINGS_BUNDLE.siteIdentity as unknown as Record<string, unknown>,
+      null,
+      SECTION_REGISTRY.general.scope,
+    )
+    upsertSetting(
+      db,
+      TEST_BLOG_SETTINGS_BUNDLE.assets as unknown as Record<string, unknown>,
+      null,
+      SECTION_REGISTRY.assets.scope,
+    )
+    expect(getBlogSettingsBundleSync()).toBeNull()
 
-    hydrateMock.mockImplementation(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 10))
-      hydrationResolved = true
-      BLOG_SETTINGS_SNAPSHOT_SLOT.write({ siteIdentity: { title: 'Test' } } as any)
-    })
+    const context = await buildLoadContext(makeContextStub())
 
-    const c = makeContextStub()
-
-    const promise = buildLoadContext(c)
-
-    // The promise must NOT resolve while hydration is still in flight.
-    const immediate = await Promise.race([promise.then(() => 'resolved'), Promise.resolve('pending')])
-    expect(immediate).toBe('pending')
-    expect(hydrationResolved).toBe(false)
-
-    // After awaiting, hydration must have finished.
-    const context = await promise
-    expect(hydrationResolved).toBe(true)
+    // The awaited hydration wrote the snapshot before the context
+    // returned — loaders can now read sections synchronously.
     expect(context).toBeDefined()
+    const bundle = getBlogSettingsBundleSync()
+    expect(bundle?.siteIdentity?.title).toBe(TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.title)
+    expect(bundle?.assets).not.toBeNull()
+  })
+
+  it('resolves to a null snapshot on an empty setting table — the pre-install state', async () => {
+    await buildLoadContext(makeContextStub())
+    expect(getBlogSettingsBundleSync()).toBeNull()
   })
 
   it('does not swallow a hydration failure — it propagates so the request becomes a 500', async () => {
-    hydrateMock.mockRejectedValue(new Error('DB pool exhausted'))
+    // A real failure mode: the database handle is closed underneath the
+    // hydration query.
+    const closed = createTestDatabaseFile()
+    closeDatabase(closed)
 
-    await expect(buildLoadContext(makeContextStub())).rejects.toThrow('DB pool exhausted')
+    await expect(buildLoadContext(makeContextStub({ db: closed.db }))).rejects.toThrow()
   })
 
   it('sets the canonical RequestContext as the single React Router context value', async () => {
-    hydrateMock.mockResolvedValue(undefined)
-    BLOG_SETTINGS_SNAPSHOT_SLOT.write({ siteIdentity: { title: 'Test' } } as any)
-
     const c = makeContextStub()
     await buildLoadContext(c)
 

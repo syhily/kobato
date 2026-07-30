@@ -3,8 +3,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AdminTagDto } from '@/shared/contracts/tags'
 
+import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderToHtml, stableHtml } from '#/_helpers/render'
 import { EditTagDialog } from '@/ui/admin/tags/EditTagDialog'
+
+const queryMocks = mockTanstackQuery()
+
+queryMocks.mutation = { mutate: vi.fn(), isPending: false }
 
 // `EditTagDialog` is already covered by `tags.test.tsx` for the closed /
 // create / edit states. This suite adds the remaining render-path branches
@@ -12,33 +17,7 @@ import { EditTagDialog } from '@/ui/admin/tags/EditTagDialog'
 //   - the submit button label flips to "保存中…" / "创建中…" when pending,
 //   - both the create and edit pending label arms are exercised.
 
-const mutationState = vi.hoisted(() => ({ mutate: vi.fn(), isPending: false }))
-
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
-  return {
-    ...actual,
-    useMutation: () => mutationState,
-  }
-})
-
-vi.mock('@/ui/components/dialog', () => ({
-  Dialog: ({ open, children }: { open: boolean; children: React.ReactNode }) =>
-    open ? <div data-slot="dialog">{children}</div> : null,
-  DialogContent: ({ children, className }: { children: React.ReactNode; className?: string }) => (
-    <div data-slot="dialog-content" className={className}>
-      {children}
-    </div>
-  ),
-  DialogDescription: ({ children }: { children: React.ReactNode }) => <p data-slot="dialog-description">{children}</p>,
-  DialogFooter: ({ children, className }: { children: React.ReactNode; className?: string }) => (
-    <div data-slot="dialog-footer" className={className}>
-      {children}
-    </div>
-  ),
-  DialogHeader: ({ children }: { children: React.ReactNode }) => <div data-slot="dialog-header">{children}</div>,
-  DialogTitle: ({ children }: { children: React.ReactNode }) => <h2 data-slot="dialog-title">{children}</h2>,
-}))
+vi.mock('@/ui/components/dialog', () => import('#/_helpers/stubs/dialog'))
 
 function makeAdminTag(overrides: Partial<AdminTagDto> = {}): AdminTagDto {
   return {
@@ -55,8 +34,8 @@ function makeAdminTag(overrides: Partial<AdminTagDto> = {}): AdminTagDto {
 
 describe('snapshot: EditTagDialog branches', () => {
   beforeEach(() => {
-    mutationState.mutate = vi.fn()
-    mutationState.isPending = false
+    queryMocks.mutation.mutate = vi.fn()
+    queryMocks.mutation.isPending = false
   })
 
   it('renders nothing while closed', () => {
@@ -67,7 +46,7 @@ describe('snapshot: EditTagDialog branches', () => {
   })
 
   it('renders the pending label in create mode', () => {
-    mutationState.isPending = true
+    queryMocks.mutation.isPending = true
     function Wrapper() {
       const [target, setTarget] = useState<null | undefined>(undefined)
       if (target === undefined) {
@@ -81,7 +60,7 @@ describe('snapshot: EditTagDialog branches', () => {
   })
 
   it('renders the pending label in edit mode', () => {
-    mutationState.isPending = true
+    queryMocks.mutation.isPending = true
     const tag = makeAdminTag({
       name: 'React',
       slug: 'react',

@@ -21,19 +21,6 @@ vi.mock('@/server/domains/settings/install-gate', () => ({
   getInstallState: vi.fn(async () => 'noAdmin' as const),
 }))
 
-vi.mock('@/server/domains/settings/services/hydrate', () => ({
-  refreshBlogSettings: vi.fn(async () => null),
-}))
-
-vi.mock('@/server/infra/rate-limit', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/server/infra/rate-limit')>()
-  return {
-    ...actual,
-    tryRateLimit: vi.fn(async () => ({ count: 1, exceeded: false })),
-    tryKeyedRateLimit: vi.fn(async () => ({ count: 1, exceeded: false })),
-  }
-})
-
 vi.mock('@/server/domains/auth/csrf', () => ({
   validateCsrfForAction: vi.fn(() => true),
 }))
@@ -64,6 +51,8 @@ beforeAll(() => {
 
 beforeEach(async () => {
   await clearAllTables(db)
+  const { __resetRateLimitsForTests } = await import('@/server/infra/rate-limit')
+  __resetRateLimitsForTests()
 })
 
 describe('integration: /admin/setup full install flow', () => {
@@ -161,6 +150,11 @@ describe('integration: /admin/setup full install flow', () => {
     for (const scope of EXPECTED_SECTIONS) {
       expect(scopes.has(scope)).toBe(true)
     }
+
+    // The install action's refreshBlogSettings is REAL: the in-process
+    // snapshot now reflects the rows the install just wrote.
+    const { getBlogSettingsBundleSync } = await import('@/shared/config/getters')
+    expect(getBlogSettingsBundleSync()?.siteIdentity?.title).toBe('My Blog')
 
     const cookies = response.headers.getSetCookie()
     expect(cookies.some((c) => c.startsWith('__session='))).toBe(true)

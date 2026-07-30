@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AdminTagDto } from '@/shared/contracts/tags'
 
+import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { EditTagDialog } from '@/ui/admin/tags/EditTagDialog'
 import { TagsView } from '@/ui/admin/tags/TagsView'
@@ -9,61 +10,23 @@ import { TagsView } from '@/ui/admin/tags/TagsView'
 // The view drives its rows from `useInfiniteQuery` (server state lives in
 // the TanStack cache) plus a delete `useMutation`, with the search box wired
 // through `useDebouncedSearch`. We stub the list query so SSR can emit the
-// loading / empty chrome.
+// loading / empty chrome. The TanStack hook seams are owned by
+// `#/_helpers/mock-react-query`; `sonner` and `useSettingsMutation` are
+// inert global stubs registered in `tests/snaps/setup.ts`; the dialog double
+// lives in `#/_helpers/stubs/dialog`.
 
-const queryMocks = vi.hoisted(() => ({
-  mutation: {
-    mutate: vi.fn(),
-    isPending: false,
-  },
-  infinite: {
-    data: undefined as { pages: { tags: AdminTagDto[]; total: number; hasMore: boolean }[] } | undefined,
-    isLoading: true,
-    error: null as Error | null,
-    hasNextPage: false,
-    isFetchingNextPage: false,
-    fetchNextPage: vi.fn(),
-  },
-  queryClient: {
-    invalidateQueries: vi.fn(),
-  },
-}))
+const queryMocks = mockTanstackQuery()
 
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
-  return {
-    ...actual,
-    useMutation: () => queryMocks.mutation,
-    useInfiniteQuery: () => queryMocks.infinite,
-    useQueryClient: () => queryMocks.queryClient,
-  }
-})
+queryMocks.infinite = {
+  data: undefined as { pages: { tags: AdminTagDto[]; total: number; hasMore: boolean }[] } | undefined,
+  isLoading: true,
+  error: null as Error | null,
+  hasNextPage: false,
+  isFetchingNextPage: false,
+  fetchNextPage: vi.fn(),
+}
 
-vi.mock('sonner', () => ({
-  toast: { error: vi.fn(), success: vi.fn() },
-}))
-
-vi.mock('@/ui/admin/shared/useDebouncedSearch', () => ({
-  useDebouncedSearch: () => ['', vi.fn()],
-}))
-
-vi.mock('@/ui/components/dialog', () => ({
-  Dialog: ({ open, children }: { open: boolean; children: React.ReactNode }) =>
-    open ? <div data-slot="dialog">{children}</div> : null,
-  DialogContent: ({ children, className }: { children: React.ReactNode; className?: string }) => (
-    <div data-slot="dialog-content" className={className}>
-      {children}
-    </div>
-  ),
-  DialogDescription: ({ children }: { children: React.ReactNode }) => <p data-slot="dialog-description">{children}</p>,
-  DialogFooter: ({ children, className }: { children: React.ReactNode; className?: string }) => (
-    <div data-slot="dialog-footer" className={className}>
-      {children}
-    </div>
-  ),
-  DialogHeader: ({ children }: { children: React.ReactNode }) => <div data-slot="dialog-header">{children}</div>,
-  DialogTitle: ({ children }: { children: React.ReactNode }) => <h2 data-slot="dialog-title">{children}</h2>,
-}))
+vi.mock('@/ui/components/dialog', () => import('#/_helpers/stubs/dialog'))
 
 describe('snapshot: TagsView', () => {
   beforeEach(() => {

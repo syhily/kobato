@@ -4,10 +4,7 @@ import { installFetch, jsonResponse } from '#/_helpers/fetch'
 import { makePublicCtx } from '#/_helpers/mock-ctx'
 import { parseRpcJson } from '#/_helpers/rpc-call'
 import { githubRouter } from '@/server/http/controllers/github.controller'
-
-vi.mock('@/server/infra/rate-limit', () => ({
-  tryResourceRateLimit: vi.fn(async () => ({ exceeded: false })),
-}))
+import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 
 // The avatar fetch + base64 inlining lives in the comments domain
 // (pinned in tests/unit/server/domains/comments/services/avatar.test.ts);
@@ -41,6 +38,7 @@ describe('github controller', () => {
 
   beforeEach(() => {
     mockFetch.reset()
+    __resetRateLimitsForTests()
     vi.mocked(avatarService.fetchGithubAvatarDataUrl).mockReset()
     globalThis.fetch = mockFetch.fetch as unknown as typeof globalThis.fetch
   })

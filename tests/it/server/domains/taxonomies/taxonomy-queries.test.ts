@@ -1,13 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { image } from '@/server/infra/db/schema/media'
 import { post } from '@/server/infra/db/schema/post'
 import { postTag } from '@/server/infra/db/schema/post-tag'
 import { category, tag } from '@/server/infra/db/schema/taxonomy'
-
-vi.mock('@/server/domains/images/services/enhance', () => ({
-  hydrateImageRefs: vi.fn(async () => undefined),
-}))
 
 const db = getTestDb()
 
@@ -37,16 +34,29 @@ describe('listAllCategories', () => {
     await db.insert(category).values({
       name: 'A',
       slug: 'a',
-      cover: '/a.jpg',
+      cover: '/storage/images/categories/coding.jpg',
       description: '',
       sortOrder: 0,
     })
+    const [row] = await db
+      .insert(image)
+      .values({
+        storagePath: 'images/categories/coding.jpg',
+        mimeType: 'image/jpeg',
+        width: 1280,
+        height: 425,
+        byteSize: 0,
+        thumbhash: 'cover-hash',
+      })
+      .returning()
 
     const { listAllCategories } = await import('@/server/domains/taxonomies/categories/services/query')
-    await listAllCategories(db)
+    const cats = await listAllCategories(db)
 
-    const { hydrateImageRefs } = await import('@/server/domains/images/services/enhance')
-    expect(hydrateImageRefs).toHaveBeenCalled()
+    // Real hydration: the cover resolves against the seeded image row and
+    // the DTO picks up the thumbhash + versioned public URL.
+    expect(cats[0].coverThumbhash).toBe('cover-hash')
+    expect(cats[0].cover).toBe(`https://assets.example.com/images/categories/coding.jpg?v=${row.updatedAt.getTime()}`)
   })
 
   it('empty result → empty array', async () => {

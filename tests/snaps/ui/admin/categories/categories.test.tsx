@@ -3,55 +3,40 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AdminCategoryDto } from '@/shared/contracts/categories'
 
+import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { CategoriesView } from '@/ui/admin/categories/CategoriesView'
 import { CategoriesSkeleton, CategoryRow } from '@/ui/admin/categories/CategoryRow'
 import { EditCategoryDialog } from '@/ui/admin/categories/EditCategoryDialog'
 
-const queryMocks = vi.hoisted(() => ({
-  query: {
-    data: null as unknown,
-    isPending: false,
-    isFetching: false,
-    error: null,
-    refetch: vi.fn(),
-  },
-  mutation: {
-    mutate: vi.fn(),
-    isPending: false,
-  },
-  infinite: {
-    data: { pages: [] as unknown[] },
-    isLoading: false,
-    isFetching: false,
-    isFetchingNextPage: false,
-    hasNextPage: false,
-    error: null,
-    fetchNextPage: vi.fn(),
-  },
-  queryClient: {
-    invalidateQueries: vi.fn(),
-  },
-}))
+const queryMocks = mockTanstackQuery()
 
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
-  return {
-    ...actual,
-    useQuery: () => queryMocks.query,
-    useMutation: () => queryMocks.mutation,
-    useInfiniteQuery: () => queryMocks.infinite,
-    useQueryClient: () => queryMocks.queryClient,
-  }
-})
+queryMocks.query = {
+  data: null as unknown,
+  isPending: false,
+  isFetching: false,
+  error: null,
+  refetch: vi.fn(),
+}
 
-vi.mock('sonner', () => ({
-  toast: { error: vi.fn(), success: vi.fn() },
-}))
+queryMocks.mutation = {
+  mutate: vi.fn(),
+  isPending: false,
+}
 
-vi.mock('@/ui/admin/shared/useDebouncedSearch', () => ({
-  useDebouncedSearch: () => ['', vi.fn()],
-}))
+queryMocks.infinite = {
+  data: { pages: [] as unknown[] },
+  isLoading: false,
+  isFetching: false,
+  isFetchingNextPage: false,
+  hasNextPage: false,
+  error: null,
+  fetchNextPage: vi.fn(),
+}
+
+queryMocks.queryClient = {
+  invalidateQueries: vi.fn(),
+}
 
 vi.mock('@dnd-kit/core', () => ({
   DndContext: ({ children }: { children: React.ReactNode }) => children,
@@ -89,23 +74,7 @@ vi.mock('@dnd-kit/utilities', () => ({
   },
 }))
 
-vi.mock('@/ui/components/dialog', () => ({
-  Dialog: ({ open, children }: { open: boolean; children: React.ReactNode }) =>
-    open ? <div data-slot="dialog">{children}</div> : null,
-  DialogContent: ({ children, className }: { children: React.ReactNode; className?: string }) => (
-    <div data-slot="dialog-content" className={className}>
-      {children}
-    </div>
-  ),
-  DialogDescription: ({ children }: { children: React.ReactNode }) => <p data-slot="dialog-description">{children}</p>,
-  DialogFooter: ({ children, className }: { children: React.ReactNode; className?: string }) => (
-    <div data-slot="dialog-footer" className={className}>
-      {children}
-    </div>
-  ),
-  DialogHeader: ({ children }: { children: React.ReactNode }) => <div data-slot="dialog-header">{children}</div>,
-  DialogTitle: ({ children }: { children: React.ReactNode }) => <h2 data-slot="dialog-title">{children}</h2>,
-}))
+vi.mock('@/ui/components/dialog', () => import('#/_helpers/stubs/dialog'))
 
 function makeAdminCategory(overrides: Partial<AdminCategoryDto> = {}): AdminCategoryDto {
   return {

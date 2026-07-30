@@ -1,23 +1,34 @@
 import { call } from '@orpc/server'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { makePublicCtx } from '#/_helpers/mock-ctx'
-
-vi.mock('@/server/infra/rate-limit', () => ({
-  tryResourceRateLimit: vi.fn().mockResolvedValue({ exceeded: false }),
-}))
 
 vi.mock('@/server/domains/images/services/resolve', () => ({
   resolveImageRef: vi.fn(),
 }))
 
 const imageMeta = await import('@/server/domains/images/services/resolve')
-const rateLimitMod = await import('@/server/infra/rate-limit')
+const { __resetRateLimitsForTests, tryResourceRateLimit } = await import('@/server/infra/rate-limit')
 const { imageRouter } = await import('@/server/http/controllers/image.controller')
+
+beforeEach(() => {
+  __resetRateLimitsForTests()
+})
 
 describe('imageRouter.resolveThumbhash', () => {
   it('throws TOO_MANY_REQUESTS when the rate limit is exceeded', async () => {
-    vi.mocked(rateLimitMod.tryResourceRateLimit).mockResolvedValueOnce({ count: 100, exceeded: true })
+    // Shrink the resource bucket so one seeded hit exhausts it; the
+    // controller's own hit is the one that exceeds.
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      rateLimit: {
+        ...TEST_BLOG_SETTINGS_BUNDLE.rateLimit!,
+        resourceIp: { windowSeconds: 60, maxAttempts: 1 },
+      },
+    })
+    await tryResourceRateLimit('127.0.0.1')
+
     const ctx = makePublicCtx()
     await expect(
       call(imageRouter.resolveThumbhash, { src: 'https://cdn.example.com/images/test.jpg' }, { context: ctx }),

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 import { parseRpcJson } from '#/_helpers/rpc-call'
 
@@ -30,17 +31,9 @@ vi.mock('@/server/domains/auth/passkey/service', () => ({
   deleteAllCredentials,
 }))
 
-vi.mock('@/server/infra/rate-limit', () => ({
-  tryInviteRateLimit: vi.fn().mockResolvedValue({ exceeded: false }),
-  tryInviteByEmailRateLimit: vi.fn().mockResolvedValue({ exceeded: false }),
-}))
-
-vi.mock('@/shared/config/getters', () => ({
-  getBlogSettingsBundleSync: vi.fn(() => ({ siteIdentity: { website: 'https://example.com' } })),
-}))
-
 const { RPCHandler } = await import('@orpc/server/fetch')
 const { adminUsersAdminRouter } = await import('@/server/http/controllers/admin/users-admin.controller')
+const { __resetRateLimitsForTests } = await import('@/server/infra/rate-limit')
 const handler = new RPCHandler(adminUsersAdminRouter)
 
 async function call(path: string, input: unknown) {
@@ -83,6 +76,7 @@ function makeAdminUserDto() {
 describe('admin users-admin controller', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    __resetRateLimitsForTests()
     fetchAdminUserDto.mockResolvedValue(makeAdminUserDto())
     muteUser.mockResolvedValue(makeAdminUserDto())
     updateUserRoleWithGuard.mockResolvedValue({ role: 'visitor' })
@@ -130,8 +124,19 @@ describe('admin users-admin controller', () => {
   })
 
   it('rejects an invite when rate limited', async () => {
-    const { tryInviteRateLimit } = await import('@/server/infra/rate-limit')
-    ;(tryInviteRateLimit as ReturnType<typeof vi.fn>).mockResolvedValue({ exceeded: true })
+    // Shrink the per-IP invite bucket so the second invite in the window
+    // trips; keep the per-email bucket out of the way so the 429 is
+    // attributable to the IP guard.
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      rateLimit: {
+        ...TEST_BLOG_SETTINGS_BUNDLE.rateLimit!,
+        inviteIp: { windowSeconds: 60, maxAttempts: 1 },
+        inviteEmail: { windowSeconds: 60, maxAttempts: 100 },
+      },
+    })
+    expect((await call('/inviteAuthor', { email: 'bob@example.com', name: 'Bob' })).status).toBe(200)
+
     const response = await call('/inviteAuthor', { email: 'bob@example.com', name: 'Bob' })
     expect(response.status).toBe(429)
   })

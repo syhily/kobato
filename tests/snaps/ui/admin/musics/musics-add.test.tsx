@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AdminMusicDto, MetingSearchHit } from '@/shared/contracts/music'
 
+import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { AddMusicDialog } from '@/ui/admin/musics/AddMusicDialog'
 import { AddMusicView } from '@/ui/admin/musics/AddMusicView'
@@ -10,15 +11,38 @@ import { MusicPlayerProvider } from '@/ui/admin/musics/MusicPlayerContext'
 import { SearchAlbumCard } from '@/ui/admin/musics/SearchAlbumCard'
 import { SearchResultItem } from '@/ui/admin/musics/SearchResultItem'
 
+const queryMocks = mockTanstackQuery()
+
+queryMocks.query = {
+  data: null as unknown,
+  isLoading: false,
+  isPending: false,
+  isFetching: false,
+  isError: false,
+  error: null as unknown,
+  refetch: vi.fn(),
+}
+
+queryMocks.mutation = {
+  mutate: vi.fn(),
+  isPending: false,
+}
+
+queryMocks.queryClient = {
+  invalidateQueries: vi.fn(),
+  setQueryData: vi.fn(),
+  removeQueries: vi.fn(),
+}
+
 // ──────────────────────────── mocking strategy ────────────────────────────
 //
 // This file mirrors the data-mock pattern already used in
 // `tests/snaps/ui/admin/musics/musics-view.test.tsx`:
-//   - hoist mutable query/mutation singletons so each test can rebind them,
-//   - stub `@tanstack/react-query` so the views never issue real network
-//     calls,
-//   - stub `sonner` so toast imports stay SSR-safe,
-//   - stub `@/client/api/orpc-query` so option builders are inert.
+//   - the TanStack hook seams come from `#/_helpers/mock-react-query` — a
+//     mutable control singleton each test can rebind,
+//   - `sonner` is an inert global stub from `tests/snaps/setup.ts`,
+//   - the `orpcQuery` option builders run for real but never execute — the
+//     mocked hooks swallow their output.
 //
 // Additionally the Dialog primitives from `@/ui/components/dialog` are
 // stubbed the same way the admin tags/friends view specs do: when `open`
@@ -26,63 +50,6 @@ import { SearchResultItem } from '@/ui/admin/musics/SearchResultItem'
 // real Base UI dialog mounts its content through a portal guarded by an
 // effect, which never fires during SSR — so to assert the open-state
 // chrome of `AddMusicDialog` we need the stub.
-
-const queryMocks = vi.hoisted(() => ({
-  query: {
-    data: null as unknown,
-    isLoading: false,
-    isPending: false,
-    isFetching: false,
-    isError: false,
-    error: null as unknown,
-    refetch: vi.fn(),
-  },
-  mutation: {
-    mutate: vi.fn(),
-    isPending: false,
-  },
-  queryClient: {
-    invalidateQueries: vi.fn(),
-    setQueryData: vi.fn(),
-    removeQueries: vi.fn(),
-  },
-}))
-
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
-  return {
-    ...actual,
-    useQuery: () => queryMocks.query,
-    useMutation: () => queryMocks.mutation,
-    useQueryClient: () => queryMocks.queryClient,
-  }
-})
-
-vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
-
-vi.mock('@/client/api/orpc-query', () => ({
-  orpcQuery: {
-    admin: {
-      music: {
-        get: {
-          queryOptions: (args: unknown) => ({ queryKey: ['music', 'get', args], queryFn: async () => ({}) }),
-          key: (args: unknown) => ['music', 'get', args],
-        },
-        list: {
-          queryOptions: (args: unknown) => ({ queryKey: ['music', 'list', args], queryFn: async () => ({}) }),
-          key: (args: unknown) => ['music', 'list', args],
-        },
-        search: {
-          queryOptions: (args: unknown) => ({ queryKey: ['music', 'search', args], queryFn: async () => ({}) }),
-          key: (args: unknown) => ['music', 'search', args],
-        },
-        add: {
-          mutationOptions: () => ({ mutationKey: ['music', 'add'] }),
-        },
-      },
-    },
-  },
-}))
 
 // The meting search machine now lives in `useMetingMusicSearch` (covered by
 // `tests/unit/ui/admin/musics/use-meting-music-search.test.tsx`). Stub it so
@@ -121,23 +88,6 @@ function resetSearchHookMock(): void {
 // Dialog primitives — same approach as the admin tags/friends specs. The
 // `Dialog` wrapper renders its children only when `open` is true so the
 // snapshot reflects the open dialog body without a browser portal.
-vi.mock('@/ui/components/dialog', () => ({
-  Dialog: ({ open, children }: { open: boolean; children: React.ReactNode }) =>
-    open ? <div data-slot="dialog">{children}</div> : null,
-  DialogContent: ({ children, className }: { children: React.ReactNode; className?: string }) => (
-    <div data-slot="dialog-content" className={className}>
-      {children}
-    </div>
-  ),
-  DialogDescription: ({ children }: { children: React.ReactNode }) => <p data-slot="dialog-description">{children}</p>,
-  DialogFooter: ({ children, className }: { children: React.ReactNode; className?: string }) => (
-    <div data-slot="dialog-footer" className={className}>
-      {children}
-    </div>
-  ),
-  DialogHeader: ({ children }: { children: React.ReactNode }) => <div data-slot="dialog-header">{children}</div>,
-  DialogTitle: ({ children }: { children: React.ReactNode }) => <h2 data-slot="dialog-title">{children}</h2>,
-}))
 
 // `motion/react` is imported by `AddMusicView` / `MusicDetailView` for
 // page-level transitions. SSR-safe passthrough so the inner children
@@ -194,6 +144,8 @@ vi.mock('motion/react', async () => {
     ),
   }
 })
+
+vi.mock('@/ui/components/dialog', () => import('#/_helpers/stubs/dialog'))
 
 // ─────────────────────────────── fixtures ─────────────────────────────────
 

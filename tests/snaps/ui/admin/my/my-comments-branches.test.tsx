@@ -3,21 +3,49 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { MyCommentItem } from '@/routes/admin/me/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
+import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { MyCommentsView } from '@/ui/admin/my/MyCommentsView'
+
+const queryMocks = mockTanstackQuery()
+
+queryMocks.infinite = {
+  data: { pages: [] as { items: MyCommentItem[]; total: number; hasMore: boolean }[] },
+  isLoading: false,
+  isPending: false,
+  isFetching: false,
+  isFetchingNextPage: false,
+  hasNextPage: false,
+  error: null as unknown,
+  fetchNextPage: vi.fn(),
+}
+
+queryMocks.query = {
+  data: null as unknown,
+  isLoading: false,
+  isPending: false,
+  isFetching: false,
+  isError: false,
+  error: null as unknown,
+  refetch: vi.fn(),
+}
+
+queryMocks.mutation = { mutate: vi.fn(), isPending: false }
+
+queryMocks.queryClient = { invalidateQueries: vi.fn() }
 
 // `MyCommentsView` reads its row list from a `useInfiniteQuery` against
 // `orpc.comments.loadMine` and its entity picker from the pill hook's
 // `useQueries` against `orpc.comments.searchMineEntities`. Both go through
-// `@tanstack/react-query`, so we stub the hooks with hoisted singletons
-// (mirroring `musics-view.test.tsx`) and mutate the resolved data between
-// cases.
+// `@tanstack/react-query`, so we stub the hooks through the
+// `#/_helpers/mock-react-query` singleton (mirroring `musics-view.test.tsx`)
+// and mutate the resolved data between cases.
 //
 // The render-path branches we target here:
 //   - the URL-derived pill derivation (controlled `useFilterPills`),
 //   - the entity search items: loader-provided `entityOptions` branch, live
 //     search-results branch, and the `current not in items` pinning,
-//   - `items` memo flatMap over `listQuery.data.pages`,
+//   - `items` memo flatMap over the infinite slot's `data.pages`,
 //   - the loading skeleton / empty-state / populated row map branches,
 //   - the `hasNextPage` sentinel + the "加载中…" / "已加载全部评论" copies,
 //   - per-row conditional branches: pending / delete-requested / deleted
@@ -32,45 +60,6 @@ vi.stubGlobal(
     disconnect() {}
   },
 )
-
-const infiniteState = vi.hoisted(() => ({
-  data: { pages: [] as { items: MyCommentItem[]; total: number; hasMore: boolean }[] },
-  isLoading: false,
-  isPending: false,
-  isFetching: false,
-  isFetchingNextPage: false,
-  hasNextPage: false,
-  error: null as unknown,
-  fetchNextPage: vi.fn(),
-}))
-
-const queryState = vi.hoisted(() => ({
-  data: null as unknown,
-  isLoading: false,
-  isPending: false,
-  isFetching: false,
-  isError: false,
-  error: null as unknown,
-  refetch: vi.fn(),
-}))
-
-const mutationState = vi.hoisted(() => ({ mutate: vi.fn(), isPending: false }))
-
-const queryClientState = vi.hoisted(() => ({ invalidateQueries: vi.fn() }))
-
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
-  return {
-    ...actual,
-    useInfiniteQuery: () => infiniteState,
-    useQuery: () => queryState,
-    useQueries: ({ queries }: { queries: unknown[] }) => queries.map(() => queryState),
-    useMutation: () => mutationState,
-    useQueryClient: () => queryClientState,
-  }
-})
-
-vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
 
 // --- fixtures ----------------------------------------------------------------
 
@@ -114,13 +103,13 @@ function renderMy(props: Partial<Parameters<typeof MyCommentsView>[0]> = {}) {
 }
 
 function resetInfinite() {
-  infiniteState.data = { pages: [] }
-  infiniteState.isLoading = false
-  infiniteState.isPending = false
-  infiniteState.isFetching = false
-  infiniteState.isFetchingNextPage = false
-  infiniteState.hasNextPage = false
-  infiniteState.error = null
+  queryMocks.infinite.data = { pages: [] }
+  queryMocks.infinite.isLoading = false
+  queryMocks.infinite.isPending = false
+  queryMocks.infinite.isFetching = false
+  queryMocks.infinite.isFetchingNextPage = false
+  queryMocks.infinite.hasNextPage = false
+  queryMocks.infinite.error = null
 }
 
 // --- render-branch coverage --------------------------------------------------
@@ -129,17 +118,17 @@ describe('snapshot: MyCommentsView render branches', () => {
   beforeEach(() => {
     itemSeq = 0
     resetInfinite()
-    queryState.data = null
-    queryState.isLoading = false
-    queryState.isPending = false
-    queryState.isFetching = false
-    queryState.isError = false
-    queryState.error = null
+    queryMocks.query.data = null
+    queryMocks.query.isLoading = false
+    queryMocks.query.isPending = false
+    queryMocks.query.isFetching = false
+    queryMocks.query.isError = false
+    queryMocks.query.error = null
   })
 
   it('renders the loading skeleton while the list query is pending', () => {
-    infiniteState.isLoading = true
-    infiniteState.isPending = true
+    queryMocks.infinite.isLoading = true
+    queryMocks.infinite.isPending = true
     const html = renderMy()
     expect(html).toContain('我的评论')
     // Skeleton branch — three pulse placeholders.
@@ -150,7 +139,7 @@ describe('snapshot: MyCommentsView render branches', () => {
   })
 
   it('renders the empty-state branch when the list resolves with no items', () => {
-    infiniteState.data = {
+    queryMocks.infinite.data = {
       pages: [{ items: [], total: 0, hasMore: false }],
     }
     const html = renderMy()
@@ -162,7 +151,7 @@ describe('snapshot: MyCommentsView render branches', () => {
   })
 
   it('runs the items.map branch with a populated list and the end-of-list sentinel', () => {
-    infiniteState.data = {
+    queryMocks.infinite.data = {
       pages: [
         {
           items: [
@@ -192,7 +181,7 @@ describe('snapshot: MyCommentsView render branches', () => {
   })
 
   it('renders the pending badge and the entity hint for a pending item', () => {
-    infiniteState.data = {
+    queryMocks.infinite.data = {
       pages: [
         {
           items: [makeItem({ id: '3', isPending: true })],
@@ -209,7 +198,7 @@ describe('snapshot: MyCommentsView render branches', () => {
   })
 
   it('renders the delete-requested badge and the cancel-delete action', () => {
-    infiniteState.data = {
+    queryMocks.infinite.data = {
       pages: [
         {
           items: [
@@ -232,7 +221,7 @@ describe('snapshot: MyCommentsView render branches', () => {
   })
 
   it('renders the deleted badge and hides the action row entirely', () => {
-    infiniteState.data = {
+    queryMocks.infinite.data = {
       pages: [
         {
           items: [
@@ -255,7 +244,7 @@ describe('snapshot: MyCommentsView render branches', () => {
   })
 
   it('renders the parent-reply hint pointing at a live parent comment', () => {
-    infiniteState.data = {
+    queryMocks.infinite.data = {
       pages: [
         {
           items: [
@@ -277,7 +266,7 @@ describe('snapshot: MyCommentsView render branches', () => {
   })
 
   it('renders the parent-reply hint with the deleted-parent fallback', () => {
-    infiniteState.data = {
+    queryMocks.infinite.data = {
       pages: [
         {
           items: [
@@ -298,7 +287,7 @@ describe('snapshot: MyCommentsView render branches', () => {
   })
 
   it('renders a row whose entity is null (orphaned post) without the entity anchor', () => {
-    infiniteState.data = {
+    queryMocks.infinite.data = {
       pages: [
         {
           items: [makeItem({ id: '8', entity: null })],
@@ -314,10 +303,10 @@ describe('snapshot: MyCommentsView render branches', () => {
   })
 
   it('renders the load-more sentinel and hides the end-of-list copy when hasNextPage is true', () => {
-    infiniteState.data = {
+    queryMocks.infinite.data = {
       pages: [{ items: [makeItem({ id: '9' })], total: 50, hasMore: true }],
     }
-    infiniteState.hasNextPage = true
+    queryMocks.infinite.hasNextPage = true
     const html = renderMy()
     // IntersectionObserver sentinel div.
     expect(html).toContain('class="h-1"')
@@ -326,17 +315,17 @@ describe('snapshot: MyCommentsView render branches', () => {
   })
 
   it('renders the fetching-next-page copy when isFetchingNextPage is true', () => {
-    infiniteState.data = {
+    queryMocks.infinite.data = {
       pages: [{ items: [makeItem({ id: '10' })], total: 50, hasMore: true }],
     }
-    infiniteState.hasNextPage = true
-    infiniteState.isFetchingNextPage = true
+    queryMocks.infinite.hasNextPage = true
+    queryMocks.infinite.isFetchingNextPage = true
     const html = renderMy()
     expect(html).toContain('加载中')
   })
 
   it('renders the active-filter body slot when status / entity / q props pin filters', () => {
-    infiniteState.data = {
+    queryMocks.infinite.data = {
       pages: [{ items: [makeItem({ id: '11' })], total: 1, hasMore: false }],
     }
     const html = renderMy({
@@ -354,7 +343,7 @@ describe('snapshot: MyCommentsView render branches', () => {
   })
 
   it('runs the entity items memo over the loader-provided entityOptions when no live search is active', () => {
-    infiniteState.data = {
+    queryMocks.infinite.data = {
       pages: [{ items: [makeItem({ id: '12' })], total: 1, hasMore: false }],
     }
     // Pass multiple entityOptions so the hook's items derivation runs over them.
@@ -370,7 +359,7 @@ describe('snapshot: MyCommentsView render branches', () => {
   })
 
   it('runs the entity items pinning branch when the pinned entity is not in entityOptions', () => {
-    infiniteState.data = {
+    queryMocks.infinite.data = {
       pages: [{ items: [makeItem({ id: '13' })], total: 1, hasMore: false }],
     }
     const html = renderMy({
@@ -385,8 +374,8 @@ describe('snapshot: MyCommentsView render branches', () => {
   })
 
   it('renders the error-state branch when the list query errors', () => {
-    infiniteState.error = new Error('boom')
-    infiniteState.data = { pages: [] }
+    queryMocks.infinite.error = new Error('boom')
+    queryMocks.infinite.data = { pages: [] }
     const html = renderMy()
     // The view still renders its chrome — the error surfaces via a toast
     // inside an effect, but the render path falls through to the empty

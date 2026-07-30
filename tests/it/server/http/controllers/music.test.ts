@@ -1,11 +1,8 @@
 import { call } from '@orpc/server'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { makePublicCtx } from '#/_helpers/mock-ctx'
-
-vi.mock('@/server/infra/rate-limit', () => ({
-  tryResourceRateLimit: vi.fn().mockResolvedValue({ exceeded: false }),
-}))
+import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 
 vi.mock('@/server/domains/music/services/read', () => ({
   getMusicMetaForPlayer: vi.fn(),
@@ -13,6 +10,10 @@ vi.mock('@/server/domains/music/services/read', () => ({
 
 const musicService = await import('@/server/domains/music/services/read')
 const { musicRouter } = await import('@/server/http/controllers/music.controller')
+
+beforeEach(() => {
+  __resetRateLimitsForTests()
+})
 
 describe('musicRouter.get', () => {
   it('returns music meta on hit', async () => {

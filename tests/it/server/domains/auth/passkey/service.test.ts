@@ -4,12 +4,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { SafeUser } from '@/server/infra/db/operations/user'
 
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { oneTimeToken } from '@/server/infra/db/schema/one-time-token'
 import { passkeyCredential } from '@/server/infra/db/schema/passkey'
 import { user } from '@/server/infra/db/schema/user'
 import { DomainError } from '@/server/infra/http/errors'
-import { requireBlogSettingsBundle } from '@/shared/config/getters'
 
 const db = getTestDb()
 
@@ -29,18 +29,18 @@ vi.mock('@simplewebauthn/server', () => ({
   verifyAuthenticationResponse: vi.fn((...args: unknown[]) => swaMocks.verifyAuthenticationResponse(...args)),
 }))
 
-vi.mock('@/shared/config/getters', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/shared/config/getters')>()
-  const testBundle = {
-    siteIdentity: { title: 'Test', website: 'https://example.com' },
-    security: { passkey: { enabled: true } },
-  }
+// The passkey service reads rpName/rpID/origin and the passkey gate off
+// the real settings snapshot — seed it through the test bundle.
+function bundleWithWebsite(website: string) {
   return {
-    ...actual,
-    requireBlogSettingsBundle: vi.fn(() => testBundle),
-    getBlogSettingsBundleSync: vi.fn(() => testBundle),
+    ...TEST_BLOG_SETTINGS_BUNDLE,
+    siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, title: 'Test', website },
+    security: {
+      ...TEST_BLOG_SETTINGS_BUNDLE.security!,
+      passkey: { ...TEST_BLOG_SETTINGS_BUNDLE.security!.passkey, enabled: true },
+    },
   }
-})
+}
 
 const passkeyService = await import('@/server/domains/auth/passkey/service')
 
@@ -62,6 +62,7 @@ async function seedUser(overrides: Record<string, unknown> = {}): Promise<number
 beforeEach(async () => {
   await clearAllTables(db)
   vi.clearAllMocks()
+  setBlogSettingsBundleForTests(bundleWithWebsite('https://example.com'))
 })
 
 describe('passkey — registration round-trip', () => {
@@ -587,13 +588,6 @@ describe('passkey — credential management', () => {
 })
 
 describe('passkey — rpConfig validation', () => {
-  function bundleWithWebsite(website: string) {
-    return {
-      siteIdentity: { title: 'Test', website },
-      security: { passkey: { enabled: true } },
-    }
-  }
-
   async function freshUser() {
     const userId = await seedUser({ email: `rp-${crypto.randomUUID()}@example.com` })
     return db
@@ -609,7 +603,7 @@ describe('passkey — rpConfig validation', () => {
     ['private IPv4 192.168.x', 'https://192.168.1.1'],
     ['IPv6 ULA fc00::1', 'https://[fc00::1]'],
   ])('rejects %s', async (_label, website) => {
-    vi.mocked(requireBlogSettingsBundle).mockReturnValueOnce(bundleWithWebsite(website) as never)
+    setBlogSettingsBundleForTests(bundleWithWebsite(website))
     const dbUser = await freshUser()
 
     await expect(passkeyService.generateRegistrationOptions(db, dbUser)).rejects.toThrow(
@@ -619,7 +613,7 @@ describe('passkey — rpConfig validation', () => {
   })
 
   it('allows a valid public HTTPS domain', async () => {
-    vi.mocked(requireBlogSettingsBundle).mockReturnValueOnce(bundleWithWebsite('https://blog.example.com') as never)
+    setBlogSettingsBundleForTests(bundleWithWebsite('https://blog.example.com'))
     const dbUser = await freshUser()
     swaMocks.generateRegistrationOptions.mockResolvedValue({
       challenge: 'rp-ok',

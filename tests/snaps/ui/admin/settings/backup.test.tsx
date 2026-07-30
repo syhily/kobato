@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { BackupSettings } from '@/shared/config/types'
 import type { CacheBucketStats } from '@/shared/contracts/cache'
 
+import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { BackupFileList } from '@/ui/admin/settings/BackupFileList'
 import { BackupScheduleForm } from '@/ui/admin/settings/BackupScheduleForm'
@@ -10,33 +11,25 @@ import { BackupView } from '@/ui/admin/settings/BackupView'
 import { BucketCard } from '@/ui/admin/settings/cache/BucketCard'
 import { idleClearStatus } from '@/ui/admin/settings/cache/cache-status'
 
+const queryMocks = mockTanstackQuery()
+
+queryMocks.query = {
+  data: undefined as { primaryDriver: 's3' | 'local'; pgToolsAvailable: boolean } | undefined,
+  isPending: true,
+  error: null as unknown,
+}
+
+queryMocks.mutation = {
+  mutate: vi.fn(),
+  mutateAsync: vi.fn(),
+  isPending: false,
+}
+
 // BackupView wires up react-query + route loader. We stub the query layer
 // with a hoisted mutable singleton so individual cases can flip the status
 // query between pending / resolved, exercising the data-loaded branches
 // (warning banners + schedule form enabled state). `useMutation` returns
 // the real pending flags so BackupFileList props thread through unchanged.
-
-const queryMocks = vi.hoisted(() => ({
-  query: {
-    data: undefined as { primaryDriver: 's3' | 'local'; pgToolsAvailable: boolean } | undefined,
-    isPending: true,
-    error: null as unknown,
-  },
-  mutation: {
-    mutate: vi.fn(),
-    mutateAsync: vi.fn(),
-    isPending: false,
-  },
-}))
-
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
-  return {
-    ...actual,
-    useQuery: () => queryMocks.query,
-    useMutation: () => queryMocks.mutation,
-  }
-})
 
 vi.mock('react-router', async () => {
   const actual = await vi.importActual<typeof import('react-router')>('react-router')
@@ -47,18 +40,8 @@ vi.mock('react-router', async () => {
 })
 
 // BackupScheduleForm (and BucketCard) save through the settings mutation
-// hook; stub it so the form renders without a live API surface.
-vi.mock('@/ui/admin/settings/useSettingsMutation', () => ({
-  useSettingsMutation: () => ({
-    commit: vi.fn(),
-    resetStatus: vi.fn(),
-    revalidate: vi.fn(),
-    isPending: false,
-    status: 'idle',
-  }),
-}))
-
-vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
+// hook; the inert global stub from `tests/snaps/setup.ts` keeps the forms
+// rendering without a live API surface.
 
 const scheduledBackup: BackupSettings = {
   scheduled: { enabled: true, frequency: 'weekly', hour: 3, minute: 30, dayOfWeek: 1 },

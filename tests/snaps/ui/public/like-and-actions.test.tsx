@@ -3,51 +3,21 @@ import { describe, expect, it, vi } from 'vitest'
 import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
 
 import { makeLeafContext } from '#/_helpers/comments-leaf'
+import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { CommentActions } from '@/ui/public/comments/comment-item/CommentActions'
 import { CommentReplyForm } from '@/ui/public/comments/CommentReplyForm'
 import { LikeButton, LikeShare } from '@/ui/public/LikeActions'
+
+const queryMocks = mockTanstackQuery()
+
+queryMocks.mutation = { isPending: false, mutate: vi.fn(), mutateAsync: vi.fn() }
 
 // LikeButton + CommentActions + CommentReplyForm each drive `useMutation`
 // against the like / comment oRPC procedures. We mock `@tanstack/react-
 // query`'s `useMutation` to an inert pending-toggleable singleton (same
 // hoisted-singleton pattern as musics-view) so the views never issue real
 // network calls and the pending branch is reachable per-test.
-const mutationState = vi.hoisted(() => ({ isPending: false, mutate: vi.fn(), mutateAsync: vi.fn() }))
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query')
-  return {
-    ...actual,
-    useMutation: () => mutationState,
-  }
-})
-
-// `orpcQuery` builds mutation option objects; mocked inert so the option
-// builders never execute their network path.
-vi.mock('@/client/api/orpc-query', () => ({
-  orpcQuery: {
-    likes: {
-      validate: { mutationOptions: () => ({ mutationKey: ['likes', 'validate'] }) },
-      increase: { mutationOptions: () => ({ mutationKey: ['likes', 'increase'] }) },
-      decrease: { mutationOptions: () => ({ mutationKey: ['likes', 'decrease'] }) },
-    },
-    admin: {
-      comments: {
-        approve: { mutationOptions: () => ({ mutationKey: ['admin', 'comments', 'approve'] }) },
-        delete: { mutationOptions: () => ({ mutationKey: ['admin', 'comments', 'delete'] }) },
-      },
-    },
-    comments: {
-      replyComment: { mutationOptions: () => ({ mutationKey: ['comments', 'reply'] }) },
-      requestDeleteOwn: { mutationOptions: () => ({ mutationKey: ['comments', 'requestDeleteOwn'] }) },
-      cancelDeleteOwn: { mutationOptions: () => ({ mutationKey: ['comments', 'cancelDeleteOwn'] }) },
-    },
-    avatar: { find: { mutationOptions: () => ({ mutationKey: ['avatar', 'find'] }) } },
-  },
-}))
-
-// `sonner` toast is imported by the reply form. SSR safe to no-op.
-vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
 
 // `useCommentGuest` (read by CommentReplyForm) reads localStorage; supply a
 // stable no-guest default so the SSR render does not touch storage.
@@ -130,14 +100,14 @@ describe('snapshot: LikeButton', () => {
   })
 
   it('disables the button while a like/unlike request is pending', () => {
-    mutationState.isPending = true
+    queryMocks.mutation.isPending = true
     try {
       const html = stableHtml(renderToHtml(<LikeButton permalink="/posts/hello" commentKey="post-1" likes={42} />))
       expect(html).toContain('disabled=""')
       // Copy stays the same; only the disabled flag toggles.
       expect(html).toContain('点赞')
     } finally {
-      mutationState.isPending = false
+      queryMocks.mutation.isPending = false
     }
   })
 })
@@ -336,7 +306,7 @@ describe('snapshot: CommentReplyForm', () => {
   })
 
   it('renders the submitting (pending) state', () => {
-    mutationState.isPending = true
+    queryMocks.mutation.isPending = true
     try {
       const html = stableHtml(
         renderInRouter(
@@ -348,7 +318,7 @@ describe('snapshot: CommentReplyForm', () => {
       expect(html).toContain('发表中…')
       expect(html).toContain('disabled=""')
     } finally {
-      mutationState.isPending = false
+      queryMocks.mutation.isPending = false
     }
   })
 })

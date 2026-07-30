@@ -1,11 +1,8 @@
 import { call } from '@orpc/server'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { makePublicCtx } from '#/_helpers/mock-ctx'
-
-vi.mock('@/server/infra/rate-limit', () => ({
-  tryResourceRateLimit: vi.fn().mockResolvedValue({ exceeded: false }),
-}))
 
 vi.mock('@/server/domains/comments/services/avatar', () => ({
   // Delegate to the real email hash so the hash-shape / determinism
@@ -17,20 +14,17 @@ vi.mock('@/server/domains/comments/services/avatar', () => ({
   }),
 }))
 
-vi.mock('@/shared/config/getters', () => ({
-  requireBlogSettingsSection: (section: string) => {
-    if (section === 'siteIdentity') {
-      return { website: 'https://example.test' }
-    }
-    return {}
-  },
-}))
-
 const { avatarRouter } = await import('@/server/http/controllers/avatar.controller')
+const { __resetRateLimitsForTests } = await import('@/server/infra/rate-limit')
 
 describe('avatarRouter.find', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    __resetRateLimitsForTests()
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, website: 'https://example.test' },
+    })
   })
 
   it('returns a hash-based avatar path', async () => {

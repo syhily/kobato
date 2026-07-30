@@ -7,7 +7,7 @@ export default defineConfig({
     node: true,
     es2022: true,
   },
-  ignorePatterns: ['.agents/skills/*', 'drizzle/**/*', 'tests/**/*'],
+  ignorePatterns: ['.agents/skills/*', 'drizzle/**/*'],
   settings: {
     react: {
       version: '19.2.5',
@@ -206,6 +206,46 @@ export default defineConfig({
     'jsx-a11y/prefer-tag-over-role': 'off',
   },
   overrides: [
+    {
+      files: ['tests/**/*.ts', 'tests/**/*.tsx'],
+      rules: {
+        // Test code gets a deliberately lighter rule set: mocks, fixtures,
+        // and deliberately-awkward components make the type-aware unsafe
+        // family and friends fire constantly without finding real bugs.
+        // oxlint overrides cannot disable whole categories — only named
+        // rules — so the noisy offenders are listed explicitly.
+        'typescript/no-unsafe-argument': 'off',
+        'typescript/no-unsafe-assignment': 'off',
+        'typescript/no-unsafe-call': 'off',
+        'typescript/no-unsafe-member-access': 'off',
+        'typescript/no-unsafe-return': 'off',
+        'typescript/no-unsafe-type-assertion': 'off',
+        // Mocked contexts and sync test doubles are routinely awaited.
+        'typescript/await-thenable': 'off',
+        // Tests intentionally pin the behavior of deprecated APIs.
+        'typescript/no-deprecated': 'off',
+        // Fire-and-forget calls are normal in tests.
+        'typescript/no-floating-promises': 'off',
+        // Fixture objects stringified for assertions.
+        'typescript/no-base-to-string': 'off',
+        // `expect(mock.method)` reads are how vitest assertions work.
+        'typescript/unbound-method': 'off',
+        // `vi.fn()` stubs and empty lifecycle hooks.
+        'no-empty-function': 'off',
+        // Mock helper classes with no state.
+        'no-extraneous-class': 'off',
+        // `(await foo).bar` chains are idiomatic in assertions.
+        'unicorn/no-await-expression-member': 'off',
+        // Mock thenables used to drive async code paths.
+        'unicorn/no-thenable': 'off',
+        // Fixture components deliberately break compiler rules.
+        'react/react-compiler': 'off',
+        // Fixture markup with placeholder roles.
+        'jsx-a11y/aria-role': 'off',
+        // Wildcard imports of schemas/helpers are idiomatic in tests.
+        'import/no-namespace': 'off',
+      },
+    },
     {
       files: ['scripts/**/*.ts'],
       rules: {

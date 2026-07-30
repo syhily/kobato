@@ -22,16 +22,6 @@ vi.mock('@/client/hooks/use-file-upload', () => ({
   },
 }))
 
-vi.mock('@/ui/admin/settings/useSettingsMutation', () => ({
-  useSettingsMutation: () => ({
-    commit: vi.fn(),
-    resetStatus: vi.fn(),
-    revalidate: vi.fn(),
-    isPending: false,
-    status: 'idle',
-  }),
-}))
-
 import { AnalyticsForm } from '@/ui/admin/settings/AnalyticsForm'
 
 const analytics: AnalyticsSettings = {

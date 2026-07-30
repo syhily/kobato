@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import type { Database } from '@/server/infra/db/database'
 import type { BlogSettingsBundle } from '@/shared/config/types'
@@ -7,6 +7,7 @@ import { resetBlogSettingsForTests, setBlogSettingsBundleForTests } from '#/_hel
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { updateBlogSettingsSection } from '@/server/domains/settings/services/core'
 import { hydrateBlogSettings } from '@/server/domains/settings/services/hydrate'
+import { __clearSectionChangeHandlersForTests } from '@/server/domains/settings/services/section-changes'
 import { decryptIfNeeded } from '@/server/infra/crypto/secret-encryption'
 import { findSettingByScope } from '@/server/infra/db/operations/setting'
 import { setting } from '@/server/infra/db/schema/config'
@@ -18,10 +19,6 @@ import { getBlogSettingsBundleSync, getCacheSettings } from '@/shared/config/get
 // these persistence-focused cases. Everything else — the settings reads,
 // the merge, the UPSERT, the secret encryption, the post-write snapshot
 // refresh — runs against the real in-memory engine.
-vi.mock('@/server/domains/settings/services/section-changes', () => ({
-  SECTION_CHANGE_HANDLERS: new Map(),
-}))
-
 const db: Database = getTestDb()
 
 // Bucketed settings fixture. The DB stores one row per section so
@@ -218,6 +215,7 @@ function readBucket(scope: string, bucket: string): Record<string, unknown> {
 }
 
 beforeEach(async () => {
+  __clearSectionChangeHandlersForTests()
   await clearAllTables(db)
   resetBlogSettingsForTests()
 })

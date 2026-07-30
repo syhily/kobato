@@ -16,8 +16,6 @@ vi.mock('react-router', async () => {
   }
 })
 
-vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
-
 // Build the full branding fixture. `etag` non-empty → "已自定义", empty →
 // "使用默认". The cast is a documented escape hatch for the partial map;
 // every slot must be present per `AssetsLoaderShape['branding']`.

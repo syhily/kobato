@@ -1,94 +1,80 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { eq } from 'drizzle-orm'
+import { beforeEach, describe, expect, it } from 'vitest'
 
-import { makeCategory, makePostList, makeTag } from '#/_helpers/catalog'
 import { makeLoaderArgs } from '#/_helpers/context'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { regularSession } from '#/_helpers/session'
+import { content as contentTable } from '@/server/infra/db/schema/content'
+import { post as postTable } from '@/server/infra/db/schema/post'
+import { category as categoryTable, tag as tagTable } from '@/server/infra/db/schema/taxonomy'
 
 // `home` loader is the SSR fan-out for `/` and `/page/:num`. The route is
 // part of the public URL surface (`AGENTS.md`: "/" canonical, "/page/N"
-// 30x to /N=1 etc.) so we pin its three observable contracts:
+// 30x to /N=1 etc.) so we pin its three observable contracts against the
+// real engine (seeded posts, real pagination, real sidebar/taxonomy
+// queries, real listing SEO):
 //
 //   1. /page/1 redirects to / (canonical collapse).
 //   2. The 3-block payload (listing, sidebar, seo) is shaped correctly
 //      for both the canonical / and the deep-paginated /page/N case.
 //   3. Out-of-range pagination triggers a redirect to the last real page.
 
+const db = getTestDb()
 const session = regularSession()
 
-// Fixture size and pagination: the home loader's tail-merge guard
-// folds an orphan last page into its predecessor when the tail is
-// strictly smaller than `pageSize - 2`. The test blog-config fixture
-// pins `pagination.posts = 6`, so threshold = 4 and a 7-post catalogue
-// (tail = 1) would now merge into a single page, which would break
-// the deep-paginated payload assertion below. We size the fixture at
-// 10 posts so the natural page-2 tail is exactly 4, which fails the
-// strict-less-than check and preserves the two-page split.
-const allPosts = makePostList(10, { slug: 'post' })
-const sampleCategory = makeCategory({ name: 'general', slug: 'general' })
-const sampleTag = makeTag({ name: 'typescript', slug: 'typescript' })
-
-const mocks = vi.hoisted(() => ({
-  listClientPosts: vi.fn(),
-  listAllTags: vi.fn(),
-  postCount: 10,
-  paginatedPosts: vi.fn(async (_db: unknown, pageNum: number, pageSize: number) => {
-    const posts = mocks.listClientPosts() ?? []
-    const start = (pageNum - 1) * pageSize
-    return posts.slice(start, start + pageSize)
-  }),
-}))
-
-vi.mock('@/server/domains/taxonomies/tags/service', () => ({
-  listAllTags: mocks.listAllTags,
-}))
-vi.mock('@/server/domains/taxonomies/categories/services/query', () => ({
-  getCategoryLink: vi.fn((name: string) => (name === sampleCategory.name ? sampleCategory.permalink : '')),
-  getCategoryLinks: vi.fn(async (_db: unknown, names: string[]) =>
-    Object.fromEntries(names.filter((n) => n === sampleCategory.name).map((n) => [n, sampleCategory.permalink])),
-  ),
-}))
-
-vi.mock('@/shared/types/catalog', async () => {
-  const actual = await vi.importActual<typeof import('@/shared/types/catalog')>('@/shared/types/catalog')
-  return {
-    ...actual,
-    toClientPost: (p: unknown) => p,
-    toListingPostCard: (p: unknown) => p,
-    toSidebarPostLink: (p: unknown) => p,
-  }
+beforeEach(async () => {
+  await clearAllTables(db)
 })
 
-vi.mock('@/server/domains/posts/services/public-query', () => ({
-  listClientPosts: mocks.listClientPosts,
-  countPublicPosts: vi.fn(async () => mocks.postCount),
-  listPublicPostCardsPaginated: mocks.paginatedPosts,
-  getClientPostsWithMetadata: vi.fn(async (_db: unknown, posts: unknown[]) =>
-    (posts as Array<{ slug: string; permalink: string }>).map((p) => ({
-      ...p,
-      meta: { likes: 0, views: 0, comments: 0 },
-    })),
-  ),
-}))
-vi.mock('@/server/domains/posts/services/featured', () => ({
-  selectFeaturePosts: vi.fn(async () => []),
-  selectSidebarPosts: vi.fn(async () => []),
-}))
+async function seedCategory(name: string, slug: string): Promise<number> {
+  const rows = await db.insert(categoryTable).values({ name, slug, cover: '' }).returning({ id: categoryTable.id })
+  return rows[0]!.id
+}
 
-vi.mock('@/server/http/loaders/sidebar', () => ({
-  loadSidebarData: vi.fn(async () => ({
-    admin: false,
-    recentComments: [],
-    pendingComments: [],
-  })),
-}))
+async function seedTag(name: string, slug: string): Promise<number> {
+  const rows = await db.insert(tagTable).values({ name, slug }).returning({ id: tagTable.id })
+  return rows[0]!.id
+}
+
+// The home loader's tail-merge guard folds an orphan last page into its
+// predecessor when the tail is strictly smaller than `pageSize - 2`. The
+// test settings fixture pins `pagination.posts = 6`, so threshold = 4.
+async function seedPost(opts: {
+  slug: string
+  title?: string
+  categoryId?: number | null
+  day?: number
+}): Promise<number> {
+  const date = new Date(Date.UTC(2024, 0, opts.day ?? 1))
+  const rows = await db
+    .insert(postTable)
+    .values({
+      slug: opts.slug,
+      title: opts.title ?? opts.slug,
+      published: true,
+      publishedAt: date,
+      firstPublishedAt: date,
+      categoryId: opts.categoryId ?? null,
+      visible: true,
+    })
+    .returning({ id: postTable.id })
+  const postId = rows[0]!.id
+  const revisions = await db
+    .insert(contentTable)
+    .values({ type: 'post', ownerId: postId, revisionNo: 1, status: 'published', body: [] })
+    .returning({ id: contentTable.id })
+  await db.update(postTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(postTable.id, postId))
+  return postId
+}
+
+/** Seed `count` live posts (slug prefix + index), newest first by day. */
+async function seedCatalog(count: number, slugPrefix: string, categoryId?: number): Promise<void> {
+  for (let i = 0; i < count; i++) {
+    await seedPost({ slug: `${slugPrefix}-${i}`, categoryId: categoryId ?? null, day: i + 1 })
+  }
+}
 
 const { loader } = await import('@/routes/public/home')
-
-beforeEach(() => {
-  vi.clearAllMocks()
-  mocks.listClientPosts.mockReturnValue(allPosts)
-  mocks.listAllTags.mockReturnValue([sampleTag])
-})
 
 describe('routes/home loader', () => {
   it('/page/1 collapses to / (canonical) via 30x redirect', async () => {
@@ -97,6 +83,7 @@ describe('routes/home loader', () => {
         makeLoaderArgs({
           request: new Request('http://localhost/page/1'),
           session,
+          db,
           params: { num: '1' },
         }),
       ),
@@ -104,36 +91,48 @@ describe('routes/home loader', () => {
   })
 
   it('returns the unified listing payload (resolvedPosts, extra.sidebar, empty seo) on /', async () => {
+    const categoryId = await seedCategory('general', 'general')
+    await seedTag('typescript', 'typescript')
+    // 10 posts at pageSize 6 fan out to 6 + 4. The tail-merge threshold is
+    // `pageSize - 2 = 4` and the strict less-than check keeps a tail of
+    // exactly 4 on its own page, so /page/2 renders instead of redirecting.
+    await seedCatalog(10, 'post', categoryId)
+
     const result = await loader(
       makeLoaderArgs({
         request: new Request('http://localhost/'),
         session,
+        db,
         params: {},
       }),
     )
 
     expect(result.pageNum).toBe(1)
     expect(result.seo).toEqual([])
-    expect(result.totalPage).toBeGreaterThan(0)
-    expect(Array.isArray(result.resolvedPosts)).toBe(true)
+    expect(result.totalPage).toBe(2)
+    expect(result.resolvedPosts).toHaveLength(6)
+    // Newest first (firstPublishedAt desc).
+    expect(result.resolvedPosts[0]?.slug).toBe('post-9')
     expect(Object.keys(result.extra.categoryLinks)).toContain('general')
+    expect(result.extra.categoryLinks.general).toBe('/cats/general')
     expect(result.extra.sidebar.recentComments).toEqual([])
   })
 
   it('returns the deep-paginated payload (with seo populated) on /page/N', async () => {
-    // 10 posts at pageSize 6 fan out to 6 + 4. The home tail-merge
-    // guard's threshold is `pageSize - 2 = 4`, and the strict less-than
-    // check keeps a tail of exactly 4 on its own page so /page/2 still
-    // renders the four-post stub instead of redirecting.
+    await seedCatalog(10, 'post')
+
     const result = await loader(
       makeLoaderArgs({
         request: new Request('http://localhost/page/2'),
         session,
+        db,
         params: { num: '2' },
       }),
     )
 
     expect(result.pageNum).toBe(2)
+    // Page 2 renders the four-post tail (10 = 6 + 4).
+    expect(result.resolvedPosts).toHaveLength(4)
     expect(Array.isArray(result.seo)).toBe(true)
     expect(result.seo.length).toBeGreaterThan(0)
     const canonical = result.seo.find(
@@ -152,11 +151,14 @@ describe('routes/home loader', () => {
   })
 
   it('redirects /page/N to the last valid page when N overflows', async () => {
+    await seedCatalog(10, 'post')
+
     await expect(
       loader(
         makeLoaderArgs({
           request: new Request('http://localhost/page/9999'),
           session,
+          db,
           params: { num: '9999' },
         }),
       ),
@@ -164,24 +166,18 @@ describe('routes/home loader', () => {
   })
 })
 
-// Tail-merge guard. The fixture above carries 10 posts at pageSize 6
-// so we keep two pages; this describe block re-mocks the catalogue
-// with a smaller list to exercise the merge branch.
+// Tail-merge guard. 7 posts at pageSize 6 naturally split 6 + 1; the
+// threshold of 4 collapses the trailing single post into page 1.
 describe('routes/home loader — tail-merge guard', () => {
   it('absorbs a 1-post tail into the previous page so /page/2 redirects to /', async () => {
-    const sevenPosts = makePostList(7, { slug: 'short' })
-    mocks.listClientPosts.mockReturnValue(sevenPosts)
-    mocks.postCount = 7
+    await seedCatalog(7, 'short')
 
-    // 7 posts at pageSize 6 naturally split 6 + 1; threshold = 4; merge
-    // collapses the trailing single post into page 1 so /page/2 now
-    // redirects through the shared overflow handler instead of
-    // rendering the orphan card alone.
     await expect(
       loader(
         makeLoaderArgs({
           request: new Request('http://localhost/page/2'),
           session,
+          db,
           params: { num: '2' },
         }),
       ),
@@ -189,14 +185,13 @@ describe('routes/home loader — tail-merge guard', () => {
   })
 
   it('returns all posts on / when the merge collapses the full catalogue into one page', async () => {
-    const sevenPosts = makePostList(7, { slug: 'short' })
-    mocks.listClientPosts.mockReturnValue(sevenPosts)
-    mocks.postCount = 7
+    await seedCatalog(7, 'short')
 
     const result = await loader(
       makeLoaderArgs({
         request: new Request('http://localhost/'),
         session,
+        db,
         params: {},
       }),
     )

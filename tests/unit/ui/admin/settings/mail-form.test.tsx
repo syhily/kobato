@@ -3,25 +3,9 @@ import { describe, expect, it, vi } from 'vitest'
 
 import type { MailLoaderShape } from '@/shared/config/projection'
 
-vi.mock('@/ui/admin/settings/useSettingsMutation', () => ({
-  useSettingsMutation: () => ({
-    commit: vi.fn().mockResolvedValue({ ok: false }),
-    resetStatus: vi.fn(),
-    revalidate: vi.fn(),
-    isPending: false,
-    status: 'idle',
-  }),
-}))
+import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 
-vi.mock('@tanstack/react-query', () => ({
-  useMutation: () => ({
-    mutate: vi.fn(),
-    mutateAsync: vi.fn(),
-    isPending: false,
-    isError: false,
-    isSuccess: false,
-  }),
-}))
+mockTanstackQuery()
 
 vi.mock('@/shared/lib/blog-config-context', async () => {
   const actual = await vi.importActual<typeof import('@/shared/lib/blog-config-context')>(

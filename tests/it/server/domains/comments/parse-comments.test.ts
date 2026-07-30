@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import type { CommentAndUser, CommentItem } from '@/shared/types/comments'
 
@@ -9,15 +9,10 @@ import type { CommentAndUser, CommentItem } from '@/shared/types/comments'
 // `rid` chain and re-attach to the nearest non-deleted ancestor, or become
 // roots if every ancestor up to `rid=0` is deleted.
 //
-// We stub the blog-config bundle because `withCommentBadgeTextColor` (used
-// inside the loader's projection pass) reaches it for the default badge
-// colour. The exact value is irrelevant — we only assert on tree shape.
-
-vi.mock('@/shared/config/getters', () => ({
-  requireBlogSettingsSection: () => ({}),
-  requireBlogSettingsBundle: () => ({}),
-}))
-
+// `withCommentBadgeTextColor` (used inside the loader's projection pass)
+// reads the default badge colour off the real settings snapshot seeded by
+// the it setup. The exact value is irrelevant — we only assert on tree
+// shape.
 const { parseComments } = await import('@/server/domains/comments/services/public-query')
 
 function row(overrides: Omit<Partial<CommentAndUser>, 'id'> & { id: number }): CommentAndUser {

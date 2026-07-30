@@ -22,14 +22,6 @@ vi.mock('@/server/domains/auth/csrf', () => ({
   validateCsrfForAction: vi.fn(() => true),
 }))
 
-vi.mock('@/server/infra/rate-limit', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/server/infra/rate-limit')>()
-  return {
-    ...actual,
-    tryKeyedRateLimit: vi.fn(async () => ({ count: 1, exceeded: false })),
-  }
-})
-
 vi.mock('@/server/domains/auth/setup-token', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/server/domains/auth/setup-token')>()
   return {
@@ -50,11 +42,12 @@ vi.mock('@/server/domains/settings/install-gate', () => ({
 const installGate = await import('@/server/domains/settings/install-gate')
 const flows = await import('@/server/domains/auth/services/setup')
 const setupToken = await import('@/server/domains/auth/setup-token')
-const rateLimit = await import('@/server/infra/rate-limit')
+const { __resetRateLimitsForTests, tryKeyedRateLimit } = await import('@/server/infra/rate-limit')
 const { action, loader } = await import('@/routes/auth/setup/index')
 
 beforeEach(() => {
   vi.clearAllMocks()
+  __resetRateLimitsForTests()
   vi.mocked(installGate.ensureNoAdminOrRedirect).mockImplementation(async () => null)
   vi.mocked(flows.signUpInitialAdminWithSession).mockResolvedValue({ type: 'redirect', to: '/admin' })
   vi.mocked(setupToken.isSetupTokenActive).mockResolvedValue(true)
@@ -196,7 +189,12 @@ describe('routes/setup', () => {
     })
 
     it('returns 429 when rate limited', async () => {
-      vi.mocked(rateLimit.tryKeyedRateLimit).mockResolvedValue({ count: 11, exceeded: true })
+      // Trip the real fixed-window counter: the route's setup-verify
+      // bucket allows 10 attempts per hour per client IP, so ten seeded
+      // hits make the action's own hit the one that exceeds.
+      for (let i = 0; i < 10; i += 1) {
+        await tryKeyedRateLimit('rate-limit:setup-verify:127.0.0.1', { windowSeconds: 3600, maxAttempts: 10 })
+      }
 
       const formData = new FormData()
       formData.set('intent', 'verify-token')

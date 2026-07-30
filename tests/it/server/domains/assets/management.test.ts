@@ -1,51 +1,27 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { MemoryBackend } from '#/_helpers/memory-storage'
 import type { BrandingObjectRef } from '@/shared/config/types'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 // uploadBrandingAsset / clearBrandingAsset orchestration against the REAL
-// settings table: objects go to an in-memory storage backend (a true
-// external — S3/local disk), the favicon-pack generator stays mocked
+// settings table: objects go to the shared in-memory storage backend (a
+// true external — S3/local disk), the favicon-pack generator stays mocked
 // (sharp), and every settings write is asserted by reading the row back
 // from SQLite.
 import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
 import { findSettingByScope, upsertSetting } from '@/server/infra/db/operations/setting'
 
-const storageMock = vi.hoisted(() => {
-  const store = new Map<string, { body: Buffer; contentType: string }>()
-  const deletedKeys: string[] = []
-  const backend = {
-    put: async ({ key, body, contentType }: { key: string; body: Buffer; contentType: string }) => {
-      store.set(key, { body, contentType })
-      return { key, size: body.length }
-    },
-    get: async (key: string) => {
-      const entry = store.get(key)
-      if (entry === undefined) {
-        throw new Error(`storage mock: object not found: ${key}`)
-      }
-      return entry.body
-    },
-    delete: async (key: string) => {
-      deletedKeys.push(key)
-      store.delete(key)
-    },
-  }
+const storageMock = vi.hoisted(() => ({ current: undefined as unknown as MemoryBackend }))
+
+vi.mock('@/server/infra/storage/registry', async () => {
+  const { makeMemoryBackend } = await import('#/_helpers/memory-storage')
+  storageMock.current = makeMemoryBackend()
   return {
-    store,
-    deletedKeys,
-    backend,
-    reset: () => {
-      store.clear()
-      deletedKeys.length = 0
-    },
+    activeBackend: () => ({ backend: storageMock.current.backend, driver: 's3' }),
+    backendFor: () => storageMock.current.backend,
   }
 })
-
-vi.mock('@/server/infra/storage/registry', () => ({
-  activeBackend: () => ({ backend: storageMock.backend, driver: 's3' }),
-  backendFor: () => storageMock.backend,
-}))
 
 const generateFaviconPackMock = vi.hoisted(() => vi.fn())
 vi.mock('@/server/domains/assets/generate', () => ({
@@ -91,7 +67,7 @@ function readBranding(): Record<string, unknown> {
 
 beforeEach(async () => {
   await clearAllTables(db)
-  storageMock.reset()
+  storageMock.current.reset()
   vi.clearAllMocks()
   generateFaviconPackMock.mockResolvedValue({
     faviconIco: ICO_BYTES,
@@ -111,7 +87,7 @@ describe('uploadBrandingAsset', () => {
     expect(ref.size).toBe(PNG_BYTES.length)
     expect(ref.driver).toBe('s3')
 
-    const stored = storageMock.store.get('branding/apple-touch-icon.png')
+    const stored = storageMock.current.store.get('branding/apple-touch-icon.png')
     expect(stored).toBeDefined()
     expect(stored!.body.equals(PNG_BYTES)).toBe(true)
     expect(stored!.contentType).toBe('image/png')
@@ -123,7 +99,7 @@ describe('uploadBrandingAsset', () => {
     await uploadBrandingAsset(db, 'faviconSvg', SVG_BYTES)
 
     expect(generateFaviconPackMock).toHaveBeenCalledTimes(1)
-    expect([...storageMock.store.keys()].sort()).toEqual(
+    expect([...storageMock.current.store.keys()].sort()).toEqual(
       [
         'branding/favicon.svg',
         'branding/favicon.ico',
@@ -146,8 +122,8 @@ describe('uploadBrandingAsset', () => {
     await expect(uploadBrandingAsset(db, 'faviconSvg', SVG_BYTES)).rejects.toThrow('sharp failed')
 
     // The primary SVG put has already happened — rollback must remove it.
-    expect(storageMock.deletedKeys).toContain('branding/favicon.svg')
-    expect(storageMock.store.has('branding/favicon.svg')).toBe(false)
+    expect(storageMock.current.deletedKeys).toContain('branding/favicon.svg')
+    expect(storageMock.current.store.has('branding/favicon.svg')).toBe(false)
     // No settings write: the row carries no branding section at all.
     expect(readBranding()).toEqual({})
   })
@@ -155,27 +131,27 @@ describe('uploadBrandingAsset', () => {
   it('rejects mismatched content for a binary slot', async () => {
     // PNG bytes in an ICO slot should fail the magic-byte check.
     await expect(uploadBrandingAsset(db, 'faviconIco', PNG_BYTES)).rejects.toThrow(/image\/x-icon/)
-    expect(storageMock.store.size).toBe(0)
+    expect(storageMock.current.store.size).toBe(0)
   })
 
   it('rejects an SVG that contains a script tag', async () => {
     const hostile = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>', 'utf8')
     await expect(uploadBrandingAsset(db, 'logoSvg', hostile)).rejects.toThrow(/脚本|事件处理器/)
-    expect(storageMock.store.size).toBe(0)
+    expect(storageMock.current.store.size).toBe(0)
   })
 })
 
 describe('clearBrandingAsset', () => {
   it('clears a single slot and removes the field from the settings row', async () => {
     seedAssetsRow({ appleTouchIcon: { etag: 'x', contentType: 'image/png', size: 1, updatedAt: '', driver: 's3' } })
-    storageMock.reset() // drop the legacy-key deletes recorded during seeding — none happen, but keep counts honest
+    storageMock.current.reset() // drop the legacy-key deletes recorded during seeding — none happen, but keep counts honest
 
     await clearBrandingAsset(db, 'appleTouchIcon')
 
     // Deletes both the current key and the legacy (extensionless) key.
-    expect(storageMock.deletedKeys).toHaveLength(2)
-    expect(storageMock.deletedKeys).toContain('branding/apple-touch-icon.png')
-    expect(storageMock.deletedKeys).toContain('branding/apple-touch-icon')
+    expect(storageMock.current.deletedKeys).toHaveLength(2)
+    expect(storageMock.current.deletedKeys).toContain('branding/apple-touch-icon.png')
+    expect(storageMock.current.deletedKeys).toContain('branding/apple-touch-icon')
 
     expect(readBranding().appleTouchIcon).toBeUndefined()
   })
@@ -184,8 +160,8 @@ describe('clearBrandingAsset', () => {
     await clearBrandingAsset(db, 'faviconSvg')
 
     // 5 slots × 2 keys (current + legacy) = 10 deletes
-    expect(storageMock.deletedKeys).toHaveLength(10)
-    expect(storageMock.deletedKeys).toEqual(
+    expect(storageMock.current.deletedKeys).toHaveLength(10)
+    expect(storageMock.current.deletedKeys).toEqual(
       expect.arrayContaining([
         'branding/favicon.svg',
         'branding/favicon-svg',

@@ -2,23 +2,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { FontRow } from '@/server/infra/db/schema/font'
 
-// `resolveAssetUrl` reads the CDN host + site origin off the settings
-// bundle via `requireBlogSettingsSection` — stub the getter so each test
-// controls the two sections it cares about (same pattern as the
-// public-url suite). `findFontsByIds` is the DB boundary: stub it and keep
-// the pure `resolveSlotOrder` real.
-vi.mock('@/shared/config/getters', () => ({
-  requireBlogSettingsSection: vi.fn((_section: string): unknown => ({})),
-}))
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 
+// `resolveAssetUrl` reads the CDN host + site origin off the real settings
+// snapshot (same pattern as the public-url suite). `findFontsByIds` is the
+// DB boundary: stub it and keep the pure `resolveSlotOrder` real.
 vi.mock('@/server/domains/fonts/services/read', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/server/domains/fonts/services/read')>()
   return { ...actual, findFontsByIds: vi.fn() }
 })
 
-const { requireBlogSettingsSection } = (await import('@/shared/config/getters')) as unknown as {
-  requireBlogSettingsSection: ReturnType<typeof vi.fn>
-}
 const { findFontsByIds } = (await import('@/server/domains/fonts/services/read')) as unknown as {
   findFontsByIds: ReturnType<typeof vi.fn>
 }
@@ -56,17 +49,21 @@ function settings(global: string[], post: string[] = [], code: string[] = []) {
   return { og: { family: '' }, calendar: { family: '' }, global, post, code }
 }
 
+function seedSettings(website: string | null = 'https://site.example.com') {
+  setBlogSettingsBundleForTests({
+    ...TEST_BLOG_SETTINGS_BUNDLE,
+    // Null website exercises the unconfigured path; the section type is string.
+    siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, website: website as string },
+    assets: {
+      ...TEST_BLOG_SETTINGS_BUNDLE.assets!,
+      asset: { scheme: 'https', host: 'cdn.example.com' },
+    },
+  })
+}
+
 beforeEach(() => {
   findFontsByIds.mockReset()
-  requireBlogSettingsSection.mockImplementation((section: string) => {
-    if (section === 'assets') {
-      return { asset: { scheme: 'https', host: 'cdn.example.com' } }
-    }
-    if (section === 'siteIdentity') {
-      return { website: 'https://site.example.com' }
-    }
-    return {}
-  })
+  seedSettings()
 })
 
 describe('resolveFontsForRender — cssKey consumption', () => {
@@ -88,7 +85,7 @@ describe('resolveFontsForRender — cssKey consumption', () => {
   })
 
   it('degrades to an empty href when the URL base is unconfigured', async () => {
-    requireBlogSettingsSection.mockImplementation(() => ({ website: '' }))
+    seedSettings('')
     findFontsByIds.mockResolvedValue(new Map([['font-1', fontRow()]]))
     const resolved = await resolveFontsForRender(db, settings(['font-1']), false)
     expect(resolved.global).toEqual([{ family: 'Test Serif', href: '' }])

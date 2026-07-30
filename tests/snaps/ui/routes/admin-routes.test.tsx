@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { Outlet, useOutletContext, createMemoryRouter, RouterProvider, type RouteObject } from 'react-router'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 // SSR-render the remaining admin route `Component` exports. Each route
 // splits I/O into `loader`; the Component is pure given loaderData /
 // outlet context, so we drive it directly with fixture data and assert
@@ -41,10 +41,6 @@ import { ThemeProvider } from '@/ui/lib/ThemeProvider'
 // The settings layout's loader path imports the settings service, whose
 // section-change wiring pulls in the backup/audit schedulers (and
 // transitively the DB bootstrap) — irrelevant to these snapshots.
-vi.mock('@/server/domains/settings/services/section-changes', () => ({
-  SECTION_CHANGE_HANDLERS: new Map(),
-}))
-
 // Generated `Route.ComponentProps` types are strict (params/matches/…).
 // `asRoute` widens the prop bag so tests only need the fields each branch
 // actually reads (loaderData / actionData / outlet context).

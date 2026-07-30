@@ -14,6 +14,7 @@ import { user } from '@/server/infra/db/schema/user'
 vi.mock('@/server/infra/email/sender', () => ({
   sendAuthorInvite: vi.fn(),
   sendPasswordReset: vi.fn(),
+  invalidateMailTransportCache: vi.fn(),
 }))
 
 const { setBlogSettingsBundleForTests } = await import('#/_helpers/blog-settings')

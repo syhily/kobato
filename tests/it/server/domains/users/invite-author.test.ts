@@ -8,11 +8,12 @@ import { user, verification } from '@/server/infra/db/schema/user'
 // production it runs AFTER the DB transaction commits. Here we stub it
 // at the module boundary so each test can dial the outcome without
 // touching the network.
-const sendAuthorInvite = vi.fn()
+const sendAuthorInvite = vi.hoisted(() => vi.fn())
 
 vi.mock('@/server/infra/email/sender', () => ({
   sendAuthorInvite,
   sendPasswordReset: vi.fn(),
+  invalidateMailTransportCache: vi.fn(),
 }))
 
 // `issueSetupToken` is wrapped so individual tests can make it throw

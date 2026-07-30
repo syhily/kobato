@@ -1,10 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { BlogSettingsBundle, BrandingObjectRef } from '@/shared/config/types'
+import type { BrandingObjectRef, SiteAssetBranding } from '@/shared/config/types'
 
-vi.mock('@/shared/config/getters', () => ({
-  getBlogSettingsBundleSync: vi.fn(),
-}))
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
+
 vi.mock('@/server/domains/assets/services/storage', async (importActual) => {
   const actual = (await importActual()) as typeof import('@/server/domains/assets/services/storage')
   return {
@@ -13,12 +12,14 @@ vi.mock('@/server/domains/assets/services/storage', async (importActual) => {
   }
 })
 
-const { getBlogSettingsBundleSync } = await import('@/shared/config/getters')
 const { fetchBrandingObject } = await import('@/server/domains/assets/services/storage')
 const { resolveSiteAsset } = await import('@/server/domains/assets/services/routes')
 
-function bundleWith(branding: Record<string, unknown>): BlogSettingsBundle {
-  return { assets: { branding } } as unknown as BlogSettingsBundle
+function seedBranding(branding: SiteAssetBranding): void {
+  setBlogSettingsBundleForTests({
+    ...TEST_BLOG_SETTINGS_BUNDLE,
+    assets: { ...TEST_BLOG_SETTINGS_BUNDLE.assets!, branding },
+  })
 }
 
 function ref(etag: string, contentType: string, bytes: number): BrandingObjectRef {
@@ -27,7 +28,7 @@ function ref(etag: string, contentType: string, bytes: number): BrandingObjectRe
 
 describe('resolveSiteAsset', () => {
   beforeEach(() => {
-    vi.mocked(getBlogSettingsBundleSync).mockReturnValue(bundleWith({}))
+    seedBranding({})
     vi.mocked(fetchBrandingObject).mockReset()
   })
 
@@ -37,9 +38,7 @@ describe('resolveSiteAsset', () => {
   })
 
   it('serves the custom SVG fetched from S3 when an ObjectRef is configured', async () => {
-    vi.mocked(getBlogSettingsBundleSync).mockReturnValue(
-      bundleWith({ faviconSvg: ref('etag-svg', 'image/svg+xml', 42) }),
-    )
+    seedBranding({ faviconSvg: ref('etag-svg', 'image/svg+xml', 42) })
     vi.mocked(fetchBrandingObject).mockResolvedValue(Buffer.from('<svg>custom</svg>', 'utf8'))
 
     const result = await resolveSiteAsset('/favicon.svg')
@@ -50,9 +49,7 @@ describe('resolveSiteAsset', () => {
   })
 
   it('serves the custom binary fetched from S3 when an ObjectRef is configured', async () => {
-    vi.mocked(getBlogSettingsBundleSync).mockReturnValue(
-      bundleWith({ appleTouchIcon: ref('etag-png', 'image/png', 99) }),
-    )
+    seedBranding({ appleTouchIcon: ref('etag-png', 'image/png', 99) })
     const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
     vi.mocked(fetchBrandingObject).mockResolvedValue(png)
 
@@ -64,7 +61,7 @@ describe('resolveSiteAsset', () => {
   })
 
   it('falls back to default SVG when no ObjectRef configured', async () => {
-    vi.mocked(getBlogSettingsBundleSync).mockReturnValue(bundleWith({}))
+    seedBranding({})
 
     const result = await resolveSiteAsset('/favicon.svg')
     expect(result).not.toBeNull()
@@ -74,7 +71,7 @@ describe('resolveSiteAsset', () => {
   })
 
   it('falls back to default binary when no ObjectRef configured', async () => {
-    vi.mocked(getBlogSettingsBundleSync).mockReturnValue(bundleWith({}))
+    seedBranding({})
 
     const result = await resolveSiteAsset('/images/icon-192.png')
     expect(result).not.toBeNull()
@@ -84,9 +81,7 @@ describe('resolveSiteAsset', () => {
   })
 
   it('falls back to default when S3 fetch returns null', async () => {
-    vi.mocked(getBlogSettingsBundleSync).mockReturnValue(
-      bundleWith({ logoSvg: ref('etag-broken', 'image/svg+xml', 7) }),
-    )
+    seedBranding({ logoSvg: ref('etag-broken', 'image/svg+xml', 7) })
     vi.mocked(fetchBrandingObject).mockResolvedValue(null)
 
     const result = await resolveSiteAsset('/logo.svg')
@@ -96,7 +91,7 @@ describe('resolveSiteAsset', () => {
   })
 
   it('falls back to default when assets section is missing', async () => {
-    vi.mocked(getBlogSettingsBundleSync).mockReturnValue({ assets: null } as unknown as BlogSettingsBundle)
+    setBlogSettingsBundleForTests({ ...TEST_BLOG_SETTINGS_BUNDLE, assets: null })
 
     const result = await resolveSiteAsset('/logo.svg')
     expect(result).not.toBeNull()
