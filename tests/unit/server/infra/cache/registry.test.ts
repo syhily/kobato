@@ -14,10 +14,6 @@ const kvStoreMock = vi.hoisted(() => ({
 
 vi.mock('@/server/infra/cache/kv-store', () => kvStoreMock)
 
-vi.mock('@/server/infra/logger', () => ({
-  getLogger: () => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }),
-}))
-
 import {
   __resetCacheCountersForTests,
   AvatarStatus,

@@ -66,7 +66,20 @@ vi.mock('@/server/domains/audit/services/batcher', () => ({}))
 
 vi.mock('@/server/domains/audit/services/scheduler', () => ({
   scheduleNextArchive: mockScheduleNextArchive,
+  rescheduleArchive: vi.fn(),
   wireArchiveScheduler: vi.fn(),
+}))
+
+vi.mock('@/server/domains/backup/scheduler', () => ({
+  rescheduleBackup: vi.fn(),
+}))
+
+vi.mock('@/server/infra/email/sender', () => ({
+  invalidateMailTransportCache: vi.fn(),
+}))
+
+vi.mock('@/server/domains/settings/services/section-changes', () => ({
+  registerSectionChangeHandler: vi.fn(),
 }))
 
 vi.mock('@/server/domains/comments/services/likes', () => ({
@@ -74,21 +87,9 @@ vi.mock('@/server/domains/comments/services/likes', () => ({
   resetLikeTokenSweep: mockResetLikeTokenSweep,
 }))
 
-vi.mock('@/server/infra/config', () => ({
+vi.mock('@/server/infra/config', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/server/infra/config')>()),
   isVitest: vi.fn(() => true),
-}))
-
-vi.mock('@/server/infra/logger', () => ({
-  root: {
-    info: vi.fn(),
-    error: vi.fn(),
-    warn: vi.fn(),
-  },
-  getLogger: vi.fn(() => ({
-    info: vi.fn(),
-    error: vi.fn(),
-    warn: vi.fn(),
-  })),
 }))
 
 // Import the module to trigger module-level side effects (wireRestoreMachine).

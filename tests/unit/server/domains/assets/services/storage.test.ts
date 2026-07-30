@@ -14,15 +14,6 @@ vi.mock('@/server/infra/storage/registry', () => ({
   backendFor: () => backend,
 }))
 
-vi.mock('@/server/infra/logger', () => ({
-  getLogger: vi.fn(() => ({
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    debug: vi.fn(),
-  })),
-}))
-
 import {
   deleteBrandingObject,
   ensureMatchesSlot,

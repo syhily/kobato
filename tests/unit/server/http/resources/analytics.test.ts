@@ -24,14 +24,6 @@ vi.mock('@/server/http/middlewares/hono-rbac', () => ({
   },
 }))
 
-vi.mock('@/server/infra/logger', () => ({
-  getLogger: vi.fn(() => ({
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-  })),
-}))
-
 import { analyticsEventsRouter } from '@/server/http/resources/analytics'
 
 const makeApp = (sessionId?: string) => {

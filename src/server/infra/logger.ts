@@ -17,7 +17,7 @@
 import { Writable } from 'node:stream'
 import pino from 'pino'
 
-import { NODE_ENV, serverConfig, type ServerConfig } from '@/server/infra/config'
+import { isVitest, NODE_ENV, serverConfig, type ServerConfig } from '@/server/infra/config'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 type Level = NonNullable<ServerConfig['server']['loggingLevel']>
@@ -157,16 +157,69 @@ export interface Logger {
   withScope(scope: string): Logger
 }
 
+// ─── Test capture seam ──────────────────────────────────────────────
+// Under vitest the level is 'silent', so log output vanishes into a
+// black hole and every assertion on logging used to need a module mock
+// of this whole surface. The capture ring keeps the last N entries —
+// POST privacy-tagging, so assertions run against the real pipeline —
+// and lets tests assert on real output. Gated on the same env flag the
+// config module uses for test detection; production never allocates it.
+
+export interface LogCaptureEntry {
+  scope: string
+  level: 'debug' | 'info' | 'warn' | 'error' | 'fatal'
+  msg: string
+  ctx: LogContext
+}
+
+const CAPTURE_ENABLED = isVitest()
+const CAPTURE_LIMIT = 200
+const captureRing: LogCaptureEntry[] = []
+
+/** Test-only: the bounded ring of captured entries (oldest first). */
+export function __logCaptureForTests(): LogCaptureEntry[] {
+  return captureRing
+}
+
+/** Test-only: reset the ring between cases. */
+export function __clearLogCaptureForTests(): void {
+  captureRing.length = 0
+}
+
 function makeLogger(scope: string, base: LogContext = {}): Logger {
   const pinoChild = root.child({ scope, ...base })
   const wrap = (ctx?: LogContext): Record<string, unknown> => (ctx ? applyPrivacyTagsRecursive(ctx) : {})
+  const capture = (level: LogCaptureEntry['level'], msg: string, ctx?: LogContext) => {
+    if (!CAPTURE_ENABLED) {
+      return
+    }
+    captureRing.push({ scope, level, msg, ctx: ctx ?? {} })
+    if (captureRing.length > CAPTURE_LIMIT) {
+      captureRing.shift()
+    }
+  }
 
   return {
-    debug: (msg, ctx) => pinoChild.debug(wrap(ctx), msg),
-    info: (msg, ctx) => pinoChild.info(wrap(ctx), msg),
-    warn: (msg, ctx) => pinoChild.warn(wrap(ctx), msg),
-    error: (msg, ctx) => pinoChild.error(wrap(ctx), msg),
-    fatal: (msg, ctx) => pinoChild.fatal(wrap(ctx), msg),
+    debug: (msg, ctx) => {
+      capture('debug', msg, ctx)
+      pinoChild.debug(wrap(ctx), msg)
+    },
+    info: (msg, ctx) => {
+      capture('info', msg, ctx)
+      pinoChild.info(wrap(ctx), msg)
+    },
+    warn: (msg, ctx) => {
+      capture('warn', msg, ctx)
+      pinoChild.warn(wrap(ctx), msg)
+    },
+    error: (msg, ctx) => {
+      capture('error', msg, ctx)
+      pinoChild.error(wrap(ctx), msg)
+    },
+    fatal: (msg, ctx) => {
+      capture('fatal', msg, ctx)
+      pinoChild.fatal(wrap(ctx), msg)
+    },
     child: (extra) => makeLogger(scope, { ...base, ...extra }),
     withScope: (newScope) => makeLogger(newScope, base),
   }

@@ -5,15 +5,6 @@ import { afterAll, describe, expect, it, vi } from 'vitest'
 
 import type { Database } from '@/server/infra/db/database'
 
-vi.mock('@/server/infra/logger', () => ({
-  getLogger: vi.fn(() => ({
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    debug: vi.fn(),
-  })),
-}))
-
 vi.mock('@/server/infra/lifecycle', () => ({
   registerShutdownHook: vi.fn(),
   unregisterShutdownHook: vi.fn(),

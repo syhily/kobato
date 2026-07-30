@@ -18,10 +18,6 @@ vi.mock('@react-router/node', () => ({
   createReadableStreamFromReadable: vi.fn((stream: unknown) => stream),
 }))
 
-vi.mock('@/server/infra/logger', () => ({
-  getLogger: () => ({ error: vi.fn(), info: vi.fn(), warn: vi.fn() }),
-}))
-
 const { default: handleRequest } = await import('@/entry.server')
 
 describe('entry.server.tsx / handleRequest', () => {

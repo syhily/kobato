@@ -4,27 +4,6 @@ import type { DatabaseHandle } from '@/server/infra/db/database'
 
 import { clearAllTables } from '#/_helpers/integration-db'
 import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
-
-vi.mock('@/server/infra/logger', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/server/infra/logger')>()
-  return {
-    ...actual,
-    getLogger: vi.fn(() => ({
-      info: vi.fn(),
-      warn: vi.fn(),
-      error: vi.fn(),
-      debug: vi.fn(),
-      child: vi.fn(function (this: unknown) {
-        return this
-      }),
-    })),
-  }
-})
-
-vi.mock('@/server/infra/paths', () => ({
-  AUDIT_DEAD_LETTER_PATH: '/tmp/audit-dead-letter.log',
-}))
-
 import { flushAuditLog, pushAuditEvent, replayDeadLetterAuditLog } from '@/server/domains/audit/services/batcher'
 import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
 import { auditLog } from '@/server/infra/db/schema/config'

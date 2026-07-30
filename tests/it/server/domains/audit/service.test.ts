@@ -16,34 +16,18 @@ function makeRequestFacts(overrides: Partial<RequestFacts> = {}): RequestFacts {
   }
 }
 
+import { __clearLogCaptureForTests, __logCaptureForTests } from '@/server/infra/logger'
+
 const pushAuditEvent = vi.fn()
-const loggerMock = { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() }
-const getLogger = vi.fn(() => loggerMock)
 
 vi.mock('@/server/domains/audit/services/batcher', () => ({ pushAuditEvent }))
-vi.mock('@/server/infra/logger', () => ({
-  getLogger,
-  L3_KEYS: new Set([
-    'email',
-    'ip',
-    'clientAddress',
-    'remoteAddress',
-    'userAgent',
-    'phone',
-    'authorEmail',
-    'authorIp',
-    'cookie',
-    'deviceId',
-    'name',
-  ]),
-}))
-
 const { recordAuditEvent, buildAuditContext, recordAuditEventFromContext } =
   await import('@/server/domains/audit/services/record')
 
 describe('audit/service', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    __clearLogCaptureForTests()
   })
 
   describe('recordAuditEvent', () => {
@@ -68,7 +52,8 @@ describe('audit/service', () => {
 
       expect(() => recordAuditEvent({ action: 'post_deleted', resourceType: 'post' })).not.toThrow()
 
-      expect(getLogger().error).toHaveBeenCalled()
+      // The real logger, observed through the capture ring.
+      expect(__logCaptureForTests().some((e) => e.level === 'error')).toBe(true)
     })
   })
 

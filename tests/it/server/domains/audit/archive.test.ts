@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
+import { __clearLogCaptureForTests, __logCaptureForTests } from '@/server/infra/logger'
 
 // The storage seam stays real (registry → S3 backend); only the AWS SDK is
 // mocked at the boundary. That keeps the availability checks honest — the
@@ -35,12 +36,6 @@ vi.mock('@aws-sdk/client-s3', () => {
   return { S3Client, PutObjectCommand, ListObjectsV2Command, DeleteObjectsCommand }
 })
 
-const logSpies = vi.hoisted(() => ({ error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() }))
-
-vi.mock('@/server/infra/logger', () => ({
-  getLogger: () => logSpies,
-}))
-
 vi.mock('@/server/domains/audit/services/record', () => ({ recordAuditEvent: vi.fn() }))
 
 const db = {
@@ -74,6 +69,7 @@ const { archiveExpiredAuditLogs, cleanupExpiredArchives } = await import('@/serv
 describe('audit/archive', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    __clearLogCaptureForTests()
     setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
   })
 
@@ -180,9 +176,14 @@ describe('audit/archive', () => {
       const result = await archiveExpiredAuditLogs(db)
       expect(result).toEqual({ archivedDays: 0, archivedRows: 0, deletedRows: 7 })
       expect(sendMock).not.toHaveBeenCalled()
-      expect(logSpies.warn).toHaveBeenCalledTimes(1)
-      expect(logSpies.warn).toHaveBeenCalledWith('S3 storage unavailable; purging expired audit logs without archiving')
-      expect(logSpies.error).not.toHaveBeenCalled()
+      expect(__logCaptureForTests().filter((e) => e.level === 'warn')).toHaveLength(1)
+      expect(__logCaptureForTests()).toContainEqual(
+        expect.objectContaining({
+          level: 'warn',
+          msg: 'S3 storage unavailable; purging expired audit logs without archiving',
+        }),
+      )
+      expect(__logCaptureForTests().some((e) => e.level === 'error')).toBe(false)
     })
   })
 

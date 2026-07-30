@@ -1,10 +1,6 @@
 import type { Hono } from 'hono'
 
-import { describe, expect, it, vi } from 'vitest'
-
-vi.mock('@/server/infra/logger', () => ({
-  getLogger: () => ({ warn: vi.fn(), info: vi.fn(), error: vi.fn(), debug: vi.fn() }),
-}))
+import { describe, expect, it } from 'vitest'
 
 import { wrapFetchWithLeakedResponseHandler } from '@/server/http/leaked-response'
 

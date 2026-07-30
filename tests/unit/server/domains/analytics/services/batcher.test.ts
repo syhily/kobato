@@ -4,33 +4,10 @@ import type { AnalyticsHandle } from '@/server/infra/analytics/duckdb'
 import type { DatabaseHandle } from '@/server/infra/db/database'
 
 import { closeTestAnalyticsDb, createTestAnalyticsDb } from '#/_helpers/analytics-db'
+import { __adoptAnalyticsHandleForTests, __resetAnalyticsEngineForTests } from '@/server/bootstrap/analytics-lifecycle'
 import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
 
-vi.mock('@/server/infra/logger', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/server/infra/logger')>()
-  return {
-    ...actual,
-    getLogger: vi.fn(() => ({
-      info: vi.fn(),
-      warn: vi.fn(),
-      error: vi.fn(),
-      debug: vi.fn(),
-      child: vi.fn(function (this: unknown) {
-        return this
-      }),
-    })),
-  }
-})
-
-vi.mock('@/server/infra/paths', () => ({
-  ANALYTICS_DEAD_LETTER_PATH: '/tmp/dead-letter.log',
-}))
-
 let analyticsHandle: AnalyticsHandle
-
-vi.mock('@/server/bootstrap/analytics-lifecycle', () => ({
-  getAnalyticsHandle: () => analyticsHandle,
-}))
 
 import { flushAccessLog, pushAccessEvent, replayDeadLetterAccessLog } from '@/server/domains/analytics/services/batcher'
 import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
@@ -78,12 +55,15 @@ describe('analytics batcher (DuckDB appender)', () => {
     }
     handle = getDatabaseHandle()
     analyticsHandle = await createTestAnalyticsDb()
+    __resetAnalyticsEngineForTests()
+    __adoptAnalyticsHandleForTests(analyticsHandle)
     await analyticsHandle.writer.run('DELETE FROM access_log')
     initAllBatchers(handle)
   })
 
   afterAll(async () => {
     resetAllBatchers()
+    __resetAnalyticsEngineForTests()
     await closeTestAnalyticsDb(analyticsHandle)
   })
 

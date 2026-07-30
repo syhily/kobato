@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
@@ -8,37 +8,26 @@ import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { SECRET_FIELDS } from '@/server/domains/settings/secrets'
 import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
 import { computeSecretMasks, updateBlogSettingsSection } from '@/server/domains/settings/services/core'
+// Non-DB seams only: handlers register through the real registry (a
+// throwing handler without waking the real backup/audit schedulers),
+// and the failure log is asserted through the logger's capture ring.
+// Every settings read/write goes through the real in-memory engine.
+import {
+  __clearSectionChangeHandlersForTests,
+  registerSectionChangeHandler,
+} from '@/server/domains/settings/services/section-changes'
 import { setting } from '@/server/infra/db/schema/config'
 import { DomainError } from '@/server/infra/http/errors'
+import { __clearLogCaptureForTests, __logCaptureForTests } from '@/server/infra/logger'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
-
-// Non-DB seams only: the change-handler map is doubled so a test can
-// register a throwing handler without waking the real backup/audit
-// schedulers, and the logger is doubled to assert the failure log. Every
-// settings read/write goes through the real in-memory engine.
-const mocks = vi.hoisted(() => ({
-  sectionChangeHandlers: new Map<string, () => void | Promise<void>>(),
-  loggerError: vi.fn(),
-}))
-
-vi.mock('@/server/domains/settings/services/section-changes', () => ({
-  SECTION_CHANGE_HANDLERS: mocks.sectionChangeHandlers,
-}))
-
-vi.mock('@/server/infra/logger', () => ({
-  getLogger: () => ({ info: vi.fn(), error: mocks.loggerError, warn: vi.fn(), debug: vi.fn() }),
-  root: { info: vi.fn(), error: vi.fn(), warn: vi.fn() },
-  logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() },
-  L3_KEYS: new Set<string>(),
-}))
 
 const db = getTestDb()
 
 beforeEach(async () => {
   await clearAllTables(db)
   resetBlogSettingsForTests()
-  mocks.sectionChangeHandlers.clear()
-  mocks.loggerError.mockClear()
+  __clearSectionChangeHandlersForTests()
+  __clearLogCaptureForTests()
   // Seed the rows the snapshot treats as the "installed" baseline so the
   // post-write refresh returns a bundle (general + assets).
   await db.insert(setting).values([
@@ -107,7 +96,7 @@ describe('server/domains/settings/services/core', () => {
     // refreshBlogSettings had not completed first, it would see the old
     // value (or no value) instead of the just-saved one.
     let observed: number | undefined
-    mocks.sectionChangeHandlers.set('limits', () => {
+    registerSectionChangeHandler('limits', () => {
       observed = getBlogSettingsBundleSync()?.limits?.maxRequestBodySize
     })
 
@@ -119,17 +108,20 @@ describe('server/domains/settings/services/core', () => {
 
   it('awaits the handler and does not swallow synchronous errors', async () => {
     const error = new Error('sync handler failed')
-    mocks.sectionChangeHandlers.set('limits', () => {
+    registerSectionChangeHandler('limits', () => {
       throw error
     })
 
     const result = await updateBlogSettingsSection(db, 'limits', { maxRequestBodySize: 2048 }, null)
 
     expect(result?.limits?.maxRequestBodySize).toBe(2048)
-    expect(mocks.loggerError).toHaveBeenCalledWith('Section change handler failed', {
-      section: 'limits',
-      error: String(error),
-    })
+    expect(__logCaptureForTests()).toContainEqual(
+      expect.objectContaining({
+        level: 'error',
+        msg: 'Section change handler failed',
+        ctx: { section: 'limits', error: String(error) },
+      }),
+    )
     // The write itself committed — a handler failure cannot roll it back.
     const rows = await db.select().from(setting).where(eq(setting.scope, 'blog.limits'))
     expect(rows).toHaveLength(1)
@@ -138,17 +130,20 @@ describe('server/domains/settings/services/core', () => {
 
   it('awaits the handler and does not swallow asynchronous rejections', async () => {
     const error = new Error('async handler failed')
-    mocks.sectionChangeHandlers.set('limits', async () => {
+    registerSectionChangeHandler('limits', async () => {
       throw error
     })
 
     const result = await updateBlogSettingsSection(db, 'limits', { maxRequestBodySize: 2048 }, null)
 
     expect(result?.limits?.maxRequestBodySize).toBe(2048)
-    expect(mocks.loggerError).toHaveBeenCalledWith('Section change handler failed', {
-      section: 'limits',
-      error: String(error),
-    })
+    expect(__logCaptureForTests()).toContainEqual(
+      expect.objectContaining({
+        level: 'error',
+        msg: 'Section change handler failed',
+        ctx: { section: 'limits', error: String(error) },
+      }),
+    )
   })
 })
 

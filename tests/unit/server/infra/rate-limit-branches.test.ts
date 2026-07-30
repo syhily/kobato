@@ -4,17 +4,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 // through the test-only key snapshot instead of a mocked external
 // store: asserting the tracked keys pins both the key constructors and
 // the bucket selection in `readBucket`.
-vi.mock('@/server/infra/logger', () => ({
-  getLogger: vi.fn(() => ({
-    warn: vi.fn(),
-    info: vi.fn(),
-    error: vi.fn(),
-    child: vi.fn(function (this: unknown) {
-      return this
-    }),
-  })),
-}))
-
 import {
   tryCommentPostRateLimit,
   tryCommentPostRateLimitByEmail,

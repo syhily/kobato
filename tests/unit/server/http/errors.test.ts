@@ -1,11 +1,7 @@
 import { Hono } from 'hono'
 import { HTTPException } from 'hono/http-exception'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
-
-vi.mock('@/server/infra/logger', () => ({
-  getLogger: () => ({ error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() }),
-}))
 
 import { onErrorHandler } from '@/server/http/errors'
 import { ActionFailure, DomainError } from '@/server/infra/http/errors'

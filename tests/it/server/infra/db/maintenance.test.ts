@@ -5,34 +5,9 @@ import type { DatabaseHandle } from '@/server/infra/db/database'
 
 import { closeTestAnalyticsDb, createTestAnalyticsDb, seedAccessEvents } from '#/_helpers/analytics-db'
 import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
-
-const logs = vi.hoisted(() => ({
-  info: vi.fn(),
-  warn: vi.fn(),
-  error: vi.fn(),
-  debug: vi.fn(),
-  child: vi.fn(),
-}))
-
-vi.mock('@/server/infra/logger', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/server/infra/logger')>()
-  return {
-    ...actual,
-    getLogger: vi.fn(() => ({
-      info: logs.info,
-      warn: logs.warn,
-      error: logs.error,
-      debug: logs.debug,
-      child: vi.fn(function (this: unknown) {
-        return this
-      }),
-    })),
-    root: logs,
-  }
-})
-
 import { runAccessLogRetention } from '@/server/domains/analytics/services/maintenance'
 import { runDbMaintenance } from '@/server/infra/db/maintenance'
+import { __clearLogCaptureForTests, __logCaptureForTests } from '@/server/infra/logger'
 
 function pragmaNumber(handle: DatabaseHandle, pragma: string): number {
   const row = handle.client.prepare(`PRAGMA ${pragma}`).get()
@@ -46,6 +21,7 @@ const handle = getDatabaseHandle()
 
 beforeEach(() => {
   vi.clearAllMocks()
+  __clearLogCaptureForTests()
   handle.client.exec('DROP TABLE IF EXISTS maintenance_probe')
 })
 
@@ -67,13 +43,16 @@ describe('db maintenance — SQLite freelist drain (plan §1.11)', () => {
     runDbMaintenance(handle)
 
     expect(pragmaNumber(handle, 'freelist_count')).toBeLessThan(freelistBefore)
-    expect(logs.info).toHaveBeenCalledWith(
-      'database maintenance completed',
+    expect(__logCaptureForTests()).toContainEqual(
       expect.objectContaining({
-        pagesBefore: expect.any(Number),
-        pagesAfter: expect.any(Number),
-        freelistBefore,
-        freelistAfter: expect.any(Number),
+        level: 'info',
+        msg: 'database maintenance completed',
+        ctx: expect.objectContaining({
+          pagesBefore: expect.any(Number),
+          pagesAfter: expect.any(Number),
+          freelistBefore,
+          freelistAfter: expect.any(Number),
+        }),
       }),
     )
   })
@@ -105,15 +84,18 @@ describe('db maintenance — DuckDB retention + checkpoint (plan §1.11)', () =>
     const result = await analyticsHandle.reader.runAndReadAll('SELECT path FROM access_log ORDER BY path')
     const paths = result.getRowObjects().map((row) => row.path)
     expect(paths).toEqual(['/recent'])
-    expect(logs.info).toHaveBeenCalledWith(
-      'analytics maintenance completed',
+    expect(__logCaptureForTests()).toContainEqual(
       expect.objectContaining({
-        retentionDays: 180,
-        rowsBefore: 2n,
-        rowsAfter: 1n,
-        // File-backed handle → real file sizes logged (null on :memory:).
-        bytesBefore: expect.any(Number),
-        bytesAfter: expect.any(Number),
+        level: 'info',
+        msg: 'analytics maintenance completed',
+        ctx: expect.objectContaining({
+          retentionDays: 180,
+          rowsBefore: 2n,
+          rowsAfter: 1n,
+          // File-backed handle → real file sizes logged (null on :memory:).
+          bytesBefore: expect.any(Number),
+          bytesAfter: expect.any(Number),
+        }),
       }),
     )
 

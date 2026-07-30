@@ -37,10 +37,6 @@ vi.mock('react-router', async () => {
   }
 })
 
-vi.mock('@/server/infra/logger', () => ({
-  getLogger: () => ({ info: vi.fn(), error: vi.fn(), warn: vi.fn() }),
-}))
-
 const { createHonoServer } = await import('@/server/infra/hono/node')
 
 describe('hono node server / createHonoServer', () => {

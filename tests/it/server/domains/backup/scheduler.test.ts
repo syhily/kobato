@@ -2,8 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.useFakeTimers()
 
-const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
-
 const createBackup = vi.fn().mockResolvedValue({ path: '/backup' })
 const cleanupOldBackups = vi.fn().mockResolvedValue(undefined)
 const registerShutdownHook = vi.fn()
@@ -16,11 +14,6 @@ vi.mock('@/server/domains/backup/services/backup', () => ({
 vi.mock('@/server/infra/lifecycle', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/server/infra/lifecycle')>()),
   registerShutdownHook: (...args: unknown[]) => registerShutdownHook(...args),
-}))
-
-vi.mock('@/server/infra/logger', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@/server/infra/logger')>()),
-  getLogger: vi.fn(() => logger),
 }))
 
 vi.mock('@/server/infra/scheduler-utils', async (importOriginal) => {

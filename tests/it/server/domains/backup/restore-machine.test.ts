@@ -5,11 +5,7 @@ const prepareForSwapMock = vi.hoisted(() => vi.fn())
 const reopenAfterSwapMock = vi.hoisted(() => vi.fn().mockResolvedValue({ fake: 'db' }))
 const completeMock = vi.hoisted(() => vi.fn().mockResolvedValue(undefined))
 
-const logger = vi.hoisted(() => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }))
-
-vi.mock('@/server/infra/logger', () => ({
-  getLogger: vi.fn(() => logger),
-}))
+import { __clearLogCaptureForTests, __logCaptureForTests } from '@/server/infra/logger'
 
 const machine = await import('@/server/domains/backup/restore-machine')
 
@@ -29,6 +25,7 @@ async function settle() {
 describe('backup/restore-machine', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    __clearLogCaptureForTests()
     machine.resetRestoreMachine()
     wire()
   })
@@ -144,7 +141,9 @@ describe('backup/restore-machine', () => {
   it('ignores startRestoreJob without a claimed slot', async () => {
     machine.startRestoreJob(vi.fn().mockResolvedValue(undefined))
     await settle()
-    expect(logger.error).toHaveBeenCalledWith('startRestoreJob without a claimed slot — ignored')
+    expect(__logCaptureForTests()).toContainEqual(
+      expect.objectContaining({ level: 'error', msg: 'startRestoreJob without a claimed slot — ignored' }),
+    )
     expect(completeMock).not.toHaveBeenCalled()
   })
 

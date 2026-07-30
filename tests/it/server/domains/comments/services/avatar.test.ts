@@ -2,21 +2,6 @@ import { Buffer } from 'node:buffer'
 import sharp from 'sharp'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { warnMock } = vi.hoisted(() => ({
-  warnMock: vi.fn(),
-}))
-// The logger stays mocked so the "degrade to the default avatar" warn
-// paths are assertable; every other dependency below is real — the
-// in-memory SQLite engine, the DB-backed kv cache registry, and real
-// sharp image processing.
-vi.mock('@/server/infra/logger', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/server/infra/logger')>()
-  return {
-    ...actual,
-    getLogger: () => ({ warn: warnMock, info: vi.fn(), error: vi.fn(), debug: vi.fn() }),
-  }
-})
-
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import {
@@ -33,6 +18,10 @@ import {
 import { type AvatarEntry, AvatarStatus, get, set } from '@/server/infra/cache/registry'
 import { user } from '@/server/infra/db/schema/user'
 import { imageWidth } from '@/server/infra/image/compress'
+// paths are assertable; every other dependency below is real — the
+// in-memory SQLite engine, the DB-backed kv cache registry, and real
+// sharp image processing.
+import { __clearLogCaptureForTests, __logCaptureForTests } from '@/server/infra/logger'
 import { DEFAULT_AVATAR_SIZE } from '@/shared/utils/avatar'
 import { encodedEmail } from '@/shared/utils/security'
 
@@ -41,7 +30,7 @@ const db = getTestDb()
 beforeEach(async () => {
   await clearAllTables(db)
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
-  warnMock.mockClear()
+  __clearLogCaptureForTests()
 })
 
 afterEach(() => {
@@ -169,7 +158,9 @@ describe('domains/comments/services/avatar — fetchAvatarImage', () => {
     })
     expect(await fetchAvatarImage('abc', 120)).toBeNull()
     expect(fetchSpy).not.toHaveBeenCalled()
-    expect(warnMock).toHaveBeenCalledWith('avatar mirror url rejected by ssrf guard')
+    expect(__logCaptureForTests()).toContainEqual(
+      expect.objectContaining({ level: 'warn', msg: 'avatar mirror url rejected by ssrf guard' }),
+    )
   })
 
   it('returns the compressed bytes on a 2xx response', async () => {
@@ -239,7 +230,9 @@ describe('domains/comments/services/avatar — fetchAvatarImage', () => {
       },
     ])
     expect(await withAllowedMirror(() => fetchAvatarImage('hash', 120))).toBeNull()
-    expect(warnMock).toHaveBeenCalledWith('avatar fetch failed', { error: 'fetch failed' })
+    expect(__logCaptureForTests()).toContainEqual(
+      expect.objectContaining({ level: 'warn', msg: 'avatar fetch failed', ctx: { error: 'fetch failed' } }),
+    )
   })
 })
 
@@ -269,7 +262,9 @@ describe('domains/comments/services/avatar — fetchQQAvatarImage', () => {
       },
     ])
     expect(await fetchQQAvatarImage('12345@qq.com', 120)).toBeNull()
-    expect(warnMock).toHaveBeenCalledWith('avatar fetch failed', { error: 'fetch failed' })
+    expect(__logCaptureForTests()).toContainEqual(
+      expect.objectContaining({ level: 'warn', msg: 'avatar fetch failed', ctx: { error: 'fetch failed' } }),
+    )
   })
 
   it('rejects a redirect response instead of following it', async () => {

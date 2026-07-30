@@ -1,16 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const warn = vi.hoisted(() => vi.fn())
-
-vi.mock('@/server/infra/logger', () => ({
-  getLogger: vi.fn(() => ({
-    info: vi.fn(),
-    warn,
-    error: vi.fn(),
-    debug: vi.fn(),
-  })),
-}))
-
 import {
   flushAllBatchers,
   getBatcher,
@@ -19,6 +8,7 @@ import {
   requireBatcher,
   resetAllBatchers,
 } from '@/server/infra/db/batcher-registry'
+import { __clearLogCaptureForTests, __logCaptureForTests } from '@/server/infra/logger'
 
 const handle = { db: {}, client: {}, path: ':memory:', inMemory: true, closed: false } as never
 
@@ -33,6 +23,7 @@ function fakeBatcher() {
 describe('server/infra/db/batcher-registry', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    __clearLogCaptureForTests()
     resetAllBatchers()
   })
 
@@ -95,10 +86,13 @@ describe('server/infra/db/batcher-registry', () => {
     await expect(flushAllBatchers()).resolves.toBeUndefined()
 
     expect(healthy.flush).toHaveBeenCalledOnce()
-    expect(warn).toHaveBeenCalledWith('batcher flush failed; continuing with the rest', {
-      batcher: 'test-fail',
-      err: 'flush exploded',
-    })
+    expect(__logCaptureForTests()).toContainEqual(
+      expect.objectContaining({
+        level: 'warn',
+        msg: 'batcher flush failed; continuing with the rest',
+        ctx: { batcher: 'test-fail', err: 'flush exploded' },
+      }),
+    )
   })
 
   it('flushAllBatchers skips batchers that are not initialized', async () => {
@@ -108,7 +102,7 @@ describe('server/infra/db/batcher-registry', () => {
     await flushAllBatchers()
 
     expect(batcher.flush).not.toHaveBeenCalled()
-    expect(warn).not.toHaveBeenCalled()
+    expect(__logCaptureForTests().some((e) => e.level === 'warn')).toBe(false)
   })
 
   it('resetAllBatchers drops instances but keeps registrations', () => {

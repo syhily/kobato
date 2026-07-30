@@ -1,25 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const loggerMocks = vi.hoisted(() => ({
-  warn: vi.fn(),
-}))
-
-vi.mock('@/server/infra/logger', () => ({
-  getLogger: vi.fn(() => ({
-    warn: loggerMocks.warn,
-    info: vi.fn(),
-    error: vi.fn(),
-    child: vi.fn(function (this: unknown) {
-      return this
-    }),
-  })),
-}))
-
-let bundle: Record<string, unknown> | null = null
-vi.mock('@/shared/config/getters', () => ({
-  getBlogSettingsBundleSync: vi.fn(() => bundle),
-}))
-
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
+import { __clearLogCaptureForTests, __logCaptureForTests } from '@/server/infra/logger'
 import {
   tryRateLimit,
   tryInviteRateLimit,
@@ -48,16 +30,17 @@ import {
   __resetRateLimitsForTests,
   type RateLimitResult,
 } from '@/server/infra/rate-limit'
+import { rateLimitDefaults } from '@/shared/config/defaults'
 
 const sampleBucket = { windowSeconds: 60, maxAttempts: 3 }
 const T0 = new Date('2026-01-01T00:00:00.000Z').getTime()
 
 describe('rate-limit', () => {
   beforeEach(() => {
+    __clearLogCaptureForTests()
     vi.useFakeTimers()
     vi.setSystemTime(T0)
     vi.clearAllMocks()
-    bundle = null
     __resetRateLimitsForTests()
   })
 
@@ -66,11 +49,15 @@ describe('rate-limit', () => {
   })
 
   it('readBucket prefers live settings and falls back to defaults', () => {
-    bundle = { rateLimit: { signInIp: sampleBucket } }
-    expect(readBucket('signInIp')).toBe(sampleBucket)
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      rateLimit: { ...TEST_BLOG_SETTINGS_BUNDLE.rateLimit!, signInIp: sampleBucket },
+    })
+    expect(readBucket('signInIp')).toEqual(sampleBucket)
 
-    bundle = { rateLimit: {} }
-    expect(readBucket('signInIp')).toEqual(expect.objectContaining({ maxAttempts: 5 }))
+    // Snapshot not hydrated → the conservative registry defaults apply.
+    setBlogSettingsBundleForTests(null)
+    expect(readBucket('signInIp')).toEqual(rateLimitDefaults.signInIp)
   })
 
   it('counts post-increment within a window and trips strictly above maxAttempts', async () => {
@@ -122,7 +109,7 @@ describe('rate-limit', () => {
     vi.setSystemTime(T0 + 61_000)
     await tryKeyedRateLimit('spray:new', bucket)
     expect(rateLimitEntryCount()).toBe(1)
-    expect(loggerMocks.warn).not.toHaveBeenCalled()
+    expect(__logCaptureForTests().some((e) => e.level === 'warn')).toBe(false)
   })
 
   it('evicts the oldest windows and warns when the map is full of live entries', async () => {
@@ -135,7 +122,7 @@ describe('rate-limit', () => {
     // resetAt) to make room.
     await tryKeyedRateLimit('spray:overflow', bucket)
     expect(rateLimitEntryCount()).toBe(10_000)
-    expect(loggerMocks.warn).toHaveBeenCalledTimes(1)
+    expect(__logCaptureForTests().filter((e) => e.level === 'warn')).toHaveLength(1)
     // The overflow key is tracked; the evicted key restarts at count 1.
     expect(await tryKeyedRateLimit('spray:overflow', bucket)).toEqual({ count: 2, exceeded: false })
     expect(await tryKeyedRateLimit('spray:0', bucket)).toEqual({ count: 1, exceeded: false })

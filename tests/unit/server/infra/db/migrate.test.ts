@@ -17,14 +17,6 @@ vi.mock('@/server/infra/sea', () => ({
   listEmbeddedAssetKeys: vi.fn(() => []),
 }))
 
-vi.mock('@/server/infra/logger', () => ({
-  getLogger: () => ({
-    info: vi.fn(),
-    error: vi.fn(),
-    warn: vi.fn(),
-  }),
-}))
-
 const { isSea } = await import('@/server/infra/sea')
 
 describe('migrateDatabase', () => {

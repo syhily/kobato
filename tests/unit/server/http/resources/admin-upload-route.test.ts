@@ -5,10 +5,10 @@ import type { Env } from '@/server/http/context'
 
 import { adminSession, adminUser } from '#/_helpers/session'
 import { extractRequestFacts } from '@/server/http/utils/request-facts'
+import { __clearLogCaptureForTests, __logCaptureForTests } from '@/server/infra/logger'
 
 const mocks = vi.hoisted(() => ({
   recordAuditEventFromContext: vi.fn(),
-  info: vi.fn(),
 }))
 
 vi.mock('@/server/domains/audit/services/record', () => ({
@@ -17,10 +17,6 @@ vi.mock('@/server/domains/audit/services/record', () => ({
 
 vi.mock('@/server/http/middlewares/csrf', () => ({
   csrfGuard: async (_c: unknown, next: () => Promise<void>) => next(),
-}))
-
-vi.mock('@/server/infra/logger', () => ({
-  getLogger: vi.fn(() => ({ info: mocks.info })),
 }))
 
 const { adminUploadRoute } = await import('@/server/http/resources/admin-upload-route')
@@ -87,7 +83,9 @@ describe('adminUploadRoute', () => {
         resourceId: 'avatar',
       },
     )
-    expect(mocks.info).toHaveBeenCalledWith('Uploaded test file', { kind: 'avatar', size: 3 })
+    expect(__logCaptureForTests()).toContainEqual(
+      expect.objectContaining({ level: 'info', msg: 'Uploaded test file', ctx: { kind: 'avatar', size: 3 } }),
+    )
   })
 
   it('preserves route-specific validation before the shared missing-file response', async () => {

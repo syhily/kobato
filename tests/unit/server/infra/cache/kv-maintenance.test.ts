@@ -2,9 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Database } from '@/server/infra/db/database'
 
+import { __clearLogCaptureForTests, __logCaptureForTests } from '@/server/infra/logger'
+
 vi.useFakeTimers()
 
-const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
 const registerShutdownHook = vi.fn()
 
 // Stub just enough of the Drizzle chain for `db.delete(table).where(…)`.
@@ -16,10 +17,6 @@ vi.mock('@/server/infra/lifecycle', () => ({
   registerShutdownHook: (...args: unknown[]) => registerShutdownHook(...args),
 }))
 
-vi.mock('@/server/infra/logger', () => ({
-  getLogger: vi.fn(() => logger),
-}))
-
 const { scheduleNextKvSweep, sweepExpiredKvEntries, wireKvSweepScheduler } =
   await import('@/server/infra/cache/kv-maintenance')
 const { stopAllScheduledJobs } = await import('@/server/infra/scheduler-utils')
@@ -29,6 +26,7 @@ const SWEEP_INTERVAL_MS = 60 * 60 * 1000
 describe('kv-maintenance scheduler', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    __clearLogCaptureForTests()
     getDb.mockReturnValue(db)
     stopAllScheduledJobs()
     wireKvSweepScheduler({ getDb })
@@ -73,7 +71,7 @@ describe('kv-maintenance scheduler', () => {
     where.mockRejectedValueOnce(new Error('sweep failed'))
     scheduleNextKvSweep()
     await vi.advanceTimersByTimeAsync(SWEEP_INTERVAL_MS)
-    expect(logger.error).toHaveBeenCalled()
+    expect(__logCaptureForTests().some((e) => e.level === 'error')).toBe(true)
     expect(vi.getTimerCount()).toBe(1)
   })
 

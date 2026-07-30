@@ -7,17 +7,6 @@ vi.mock('@hono/node-server', () => ({
   serve: (...args: unknown[]) => serveMock(...args),
 }))
 
-vi.mock('@/server/infra/logger', () => ({
-  getLogger: vi.fn(() => ({
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    child: vi.fn(function (this: unknown) {
-      return this
-    }),
-  })),
-}))
-
 const {
   __getLifecycleContainer: getContainer,
   setHttpServer,

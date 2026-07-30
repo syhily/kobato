@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.useFakeTimers()
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
+import { __clearLogCaptureForTests, __logCaptureForTests } from '@/server/infra/logger'
 
-const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+vi.useFakeTimers()
 
 const runArchiveJob = vi.fn().mockResolvedValue(undefined)
 const registerShutdownHook = vi.fn()
@@ -17,15 +18,6 @@ vi.mock('@/server/infra/lifecycle', () => ({
   registerShutdownHook: (...args: unknown[]) => registerShutdownHook(...args),
 }))
 
-vi.mock('@/server/infra/logger', () => ({
-  getLogger: vi.fn(() => logger),
-}))
-
-let bundle: Record<string, unknown> | null = null
-vi.mock('@/shared/config/getters', () => ({
-  getBlogSettingsBundleSync: vi.fn(() => bundle),
-}))
-
 vi.mock('@/server/infra/scheduler-utils', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/server/infra/scheduler-utils')>()
   return {
@@ -38,11 +30,20 @@ const { scheduleNextArchive, rescheduleArchive, wireArchiveScheduler } =
   await import('@/server/domains/audit/services/scheduler')
 const { stopAllScheduledJobs } = await import('@/server/infra/scheduler-utils')
 
+/** Hydrate the real settings snapshot with the timeZone the scheduler reads. */
+function seedHydratedSettings() {
+  setBlogSettingsBundleForTests({
+    ...TEST_BLOG_SETTINGS_BUNDLE,
+    siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!, timeZone: 'UTC' },
+  })
+}
+
 describe('audit scheduler', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    __clearLogCaptureForTests()
     getDb.mockReturnValue(db)
-    bundle = null
+    setBlogSettingsBundleForTests(null)
     stopAllScheduledJobs()
     wireArchiveScheduler({ getDb })
   })
@@ -58,14 +59,14 @@ describe('audit scheduler', () => {
   })
 
   it('schedules the next 04:00 run when settings are hydrated', () => {
-    bundle = { siteIdentity: { timeZone: 'UTC' } }
+    seedHydratedSettings()
     scheduleNextArchive()
     expect(vi.getTimerCount()).toBe(1)
     expect(runArchiveJob).not.toHaveBeenCalled()
   })
 
   it('runs the archive job with the lazily-resolved db when the timer fires', async () => {
-    bundle = { siteIdentity: { timeZone: 'UTC' } }
+    seedHydratedSettings()
     scheduleNextArchive()
 
     // The db is read via getDb() at fire time, not captured at schedule
@@ -79,7 +80,7 @@ describe('audit scheduler', () => {
   })
 
   it('reschedules the next run after the job completes', async () => {
-    bundle = { siteIdentity: { timeZone: 'UTC' } }
+    seedHydratedSettings()
     scheduleNextArchive()
     await vi.advanceTimersByTimeAsync(3_600_000)
     expect(runArchiveJob).toHaveBeenCalledTimes(1)
@@ -90,20 +91,20 @@ describe('audit scheduler', () => {
 
   it('logs an error when the archive job fails', async () => {
     runArchiveJob.mockRejectedValueOnce(new Error('archive failed'))
-    bundle = { siteIdentity: { timeZone: 'UTC' } }
+    seedHydratedSettings()
     scheduleNextArchive()
     await vi.advanceTimersByTimeAsync(3_600_000)
-    expect(logger.error).toHaveBeenCalled()
+    expect(__logCaptureForTests().some((e) => e.level === 'error')).toBe(true)
   })
 
   it('reschedules on settings change', () => {
-    bundle = { siteIdentity: { timeZone: 'UTC' } }
+    seedHydratedSettings()
     rescheduleArchive()
     expect(vi.getTimerCount()).toBe(1)
   })
 
   it('stops the scheduler', () => {
-    bundle = { siteIdentity: { timeZone: 'UTC' } }
+    seedHydratedSettings()
     scheduleNextArchive()
     expect(vi.getTimerCount()).toBe(1)
     stopAllScheduledJobs()
