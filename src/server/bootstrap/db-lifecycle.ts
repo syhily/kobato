@@ -1,9 +1,11 @@
 import { closeAnalyticsForRestore, initAnalyticsDatabase } from '@/server/bootstrap/analytics-lifecycle'
 import { ManagedEngine } from '@/server/bootstrap/managed-engine'
-import { scheduleNextArchive, wireArchiveScheduler } from '@/server/domains/audit/services/scheduler'
+import { rescheduleArchive, scheduleNextArchive, wireArchiveScheduler } from '@/server/domains/audit/services/scheduler'
 import { wireRestoreMachine } from '@/server/domains/backup/restore-machine'
+import { rescheduleBackup } from '@/server/domains/backup/scheduler'
 import { resetLikeTokenSweep, startLikeTokenSweep } from '@/server/domains/comments/services/likes'
 import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
+import { registerSectionChangeHandler } from '@/server/domains/settings/services/section-changes'
 import { wireKvSweepScheduler } from '@/server/infra/cache/kv-maintenance'
 import { isVitest } from '@/server/infra/config'
 import {
@@ -21,6 +23,7 @@ import {
 } from '@/server/infra/db/database'
 import { wireDbMaintenanceScheduler } from '@/server/infra/db/maintenance'
 import { migrateDatabase } from '@/server/infra/db/migrate'
+import { invalidateMailTransportCache } from '@/server/infra/email/sender'
 // Load-bearing side-effect imports: each batcher module self-registers
 // on the infra batching seam (`@/server/infra/db/batcher-registry`) at
 // import time, so `initAllBatchers` / `flushAllBatchers` /
@@ -176,6 +179,13 @@ wireRestoreMachine({
   reopenAfterSwap: reopenDatabaseAndGetDb,
   complete: completeRestore,
 })
+
+// Section-change side effects register here — the composition root —
+// so the settings registry module stays inert on import (no scheduler
+// or mail graphs leak into settings-UI consumers).
+registerSectionChangeHandler('backup', rescheduleBackup)
+registerSectionChangeHandler('limits', rescheduleArchive)
+registerSectionChangeHandler('mail', invalidateMailTransportCache)
 
 // ─── Migration ───────────────────────────────────────────
 // Run migrations once per process (HMR-safe via the 'migrationsRan'

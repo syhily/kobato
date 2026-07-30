@@ -9,7 +9,7 @@ import type { BlogSettingsBundle, SecretMasks } from '@/shared/config/types'
 import { SECRET_FIELDS } from '@/server/domains/settings/secrets'
 import { SECTION_REGISTRY, validateSectionDefaults } from '@/server/domains/settings/sections/registry'
 import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
-import { SECTION_CHANGE_HANDLERS } from '@/server/domains/settings/services/section-changes'
+import { sectionChangeHandler } from '@/server/domains/settings/services/section-changes'
 import { assertSectionPatchKeys } from '@/server/domains/settings/services/section-patch'
 import { encryptIfNeeded } from '@/server/infra/crypto/secret-encryption'
 import { findSettingByScope, upsertSetting } from '@/server/infra/db/operations/setting'
@@ -85,7 +85,7 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
   })
   const bundle = await refreshBlogSettings(db)
 
-  const handler = SECTION_CHANGE_HANDLERS.get(section)
+  const handler = sectionChangeHandler(section)
   if (handler) {
     try {
       await handler()

@@ -1,46 +1,48 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const mocks = vi.hoisted(() => ({
-  rescheduleBackup: vi.fn(),
-  rescheduleArchive: vi.fn(),
-  invalidateMailTransportCache: vi.fn(),
-}))
+import {
+  __clearSectionChangeHandlersForTests,
+  registerSectionChangeHandler,
+  sectionChangeHandler,
+} from '@/server/domains/settings/services/section-changes'
 
-vi.mock('@/server/domains/backup/scheduler', () => ({
-  rescheduleBackup: mocks.rescheduleBackup,
-}))
-
-vi.mock('@/server/domains/audit/services/scheduler', () => ({
-  rescheduleArchive: mocks.rescheduleArchive,
-}))
-
-vi.mock('@/server/infra/email/sender', () => ({
-  invalidateMailTransportCache: mocks.invalidateMailTransportCache,
-}))
-
-const { SECTION_CHANGE_HANDLERS } = await import('@/server/domains/settings/services/section-changes')
-
+// The registry is inert on import — handlers arrive from the
+// bootstrap composition root (the db-lifecycle wiring is covered by
+// the bootstrap tests, not here).
 describe('server/domains/settings/services/section-changes', () => {
-  it('wires exactly the backup, limits, and mail sections', () => {
-    expect([...SECTION_CHANGE_HANDLERS.keys()].sort()).toEqual(['backup', 'limits', 'mail'])
+  beforeEach(() => {
+    __clearSectionChangeHandlersForTests()
   })
 
-  it('exposes a frozen read-only map', () => {
-    expect(Object.isFrozen(SECTION_CHANGE_HANDLERS)).toBe(true)
+  it('is empty before registration (no import-time side effects)', () => {
+    expect(sectionChangeHandler('backup')).toBeUndefined()
   })
 
-  it('dispatches backup to rescheduleBackup', async () => {
-    await SECTION_CHANGE_HANDLERS.get('backup')?.()
-    expect(mocks.rescheduleBackup).toHaveBeenCalledTimes(1)
+  it('returns a registered handler per section', () => {
+    const handler = vi.fn()
+    registerSectionChangeHandler('backup', handler)
+
+    expect(sectionChangeHandler('backup')).toBe(handler)
+    expect(sectionChangeHandler('limits')).toBeUndefined()
   })
 
-  it('dispatches limits to rescheduleArchive', async () => {
-    await SECTION_CHANGE_HANDLERS.get('limits')?.()
-    expect(mocks.rescheduleArchive).toHaveBeenCalledTimes(1)
+  it('re-registration replaces the handler', async () => {
+    const first = vi.fn()
+    const second = vi.fn()
+    registerSectionChangeHandler('mail', first)
+    registerSectionChangeHandler('mail', second)
+
+    await sectionChangeHandler('mail')?.()
+    expect(first).not.toHaveBeenCalled()
+    expect(second).toHaveBeenCalledTimes(1)
   })
 
-  it('dispatches mail to invalidateMailTransportCache', async () => {
-    await SECTION_CHANGE_HANDLERS.get('mail')?.()
-    expect(mocks.invalidateMailTransportCache).toHaveBeenCalledTimes(1)
+  it('clears all registrations (the test seam)', () => {
+    registerSectionChangeHandler('backup', vi.fn())
+    registerSectionChangeHandler('limits', vi.fn())
+    __clearSectionChangeHandlersForTests()
+
+    expect(sectionChangeHandler('backup')).toBeUndefined()
+    expect(sectionChangeHandler('limits')).toBeUndefined()
   })
 })
