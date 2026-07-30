@@ -61,6 +61,21 @@ export class ManagedEngine<THandle> {
     return this.current
   }
 
+  /**
+   * Test seam: place an externally-created handle inside the engine
+   * (a real temp-file database owned by the test) without open() or
+   * any scheduling side effects. Pair with {@link reset} between
+   * cases — adoption persists as module state otherwise.
+   */
+  adopt(handle: THandle): void {
+    this.current = handle
+  }
+
+  /** Test seam: forget the current handle without closing it. */
+  reset(): void {
+    this.current = null
+  }
+
   /** The handle, throwing while closed. */
   get(): THandle {
     if (this.current === null) {

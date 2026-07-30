@@ -1,94 +1,46 @@
 import { eq } from 'drizzle-orm'
-import { Readable } from 'node:stream'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { MemoryBackend } from '#/_helpers/memory-storage'
 import type { AnalyticsHandle } from '@/server/infra/analytics/duckdb'
 
 import { closeTestAnalyticsDb, createTestAnalyticsDb, seedAccessEvents } from '#/_helpers/analytics-db'
 import { clearAllTables, createTestDatabaseFile, getTestDb } from '#/_helpers/integration-db'
+import { __adoptAnalyticsHandleForTests, __resetAnalyticsEngineForTests } from '@/server/bootstrap/analytics-lifecycle'
 
 let analyticsHandle: AnalyticsHandle
-
-vi.mock('@/server/bootstrap/analytics-lifecycle', () => ({
-  // Same contract as the real seam, driven against the test's real
-  // temp-file DuckDB handle.
-  snapshotAnalyticsTo: async (stagingPath: string) => {
-    if (analyticsHandle.inMemory) {
-      return false
-    }
-    await analyticsHandle.writer.run('CHECKPOINT')
-    const { copyFile } = await import('node:fs/promises')
-    await copyFile(analyticsHandle.path, stagingPath)
-    return true
-  },
-}))
 
 import { extractBackupFile, unpackBackupPayload } from '#/_helpers/backup-buffer'
 import { createBackup, getBackupBuffer } from '@/server/domains/backup/services/backup'
 import { category } from '@/server/infra/db/schema/taxonomy'
 import { ActionFailure } from '@/server/infra/http/errors'
 
-const s3Mock = vi.hoisted(() => {
-  const store = new Map<string, Buffer>()
-  return {
-    store,
-    clearStore: () => store.clear(),
-  }
-})
+// Route the storage registry at the shared in-memory backend so
+// createBackup/getBackupBuffer round-trip without real S3 or settings.
+const s3Mock = vi.hoisted(() => ({ current: undefined as unknown as MemoryBackend }))
 
-// Route the storage registry at an in-memory backend backed by `s3Mock.store`
-// so createBackup/getBackupBuffer round-trip without real S3 or settings.
-vi.mock('@/server/infra/storage/registry', () => {
-  const drain = async (body: AsyncIterable<unknown>): Promise<Buffer> => {
-    const chunks: Buffer[] = []
-    for await (const chunk of body) {
-      chunks.push(chunk as Buffer)
-    }
-    return Buffer.concat(chunks)
+vi.mock('@/server/infra/storage/registry', async () => {
+  const { makeMemoryBackend } = await import('#/_helpers/memory-storage')
+  s3Mock.current = makeMemoryBackend()
+  return {
+    activeBackend: () => ({ backend: s3Mock.current.backend, driver: 's3' }),
+    backendFor: () => s3Mock.current.backend,
   }
-  const backend = {
-    driver: 's3',
-    isAvailable: () => true,
-    put: async ({ key, body }: { key: string; body: Buffer }) => {
-      s3Mock.store.set(key, body)
-      return { key, size: body.length }
-    },
-    putStream: async ({ key, body }: { key: string; body: AsyncIterable<unknown> }) => {
-      const buf = await drain(body)
-      s3Mock.store.set(key, buf)
-      return { key, size: buf.length }
-    },
-    get: async (key: string) => {
-      const b = s3Mock.store.get(key)
-      if (b === undefined) {
-        throw new Error(`S3 mock: object not found: ${key}`)
-      }
-      return b
-    },
-    getStream: async (key: string) => {
-      const b = s3Mock.store.get(key)
-      if (b === undefined) {
-        throw new Error(`S3 mock: object not found: ${key}`)
-      }
-      return Readable.from([b])
-    },
-    delete: async () => {},
-    deleteMany: async () => {},
-    exists: async () => false,
-    list: async () => [],
-  }
-  return { activeBackend: () => ({ backend, driver: 's3' }), backendFor: () => backend }
 })
 
 const db = getTestDb()
 
 beforeEach(async () => {
   analyticsHandle = await createTestAnalyticsDb()
+  // The real snapshotAnalyticsTo runs against the adopted handle.
+  __resetAnalyticsEngineForTests()
+  __adoptAnalyticsHandleForTests(analyticsHandle)
   await clearAllTables(db)
-  s3Mock.clearStore()
+  s3Mock.current.reset()
 })
 
 afterAll(async () => {
+  __resetAnalyticsEngineForTests()
   await closeTestAnalyticsDb(analyticsHandle)
 })
 
@@ -109,7 +61,7 @@ describe('backup and restore integration', () => {
     expect(size).toBeGreaterThan(0)
 
     const key = `backup/${fileName}`
-    const buffer = s3Mock.store.get(key)
+    const buffer = s3Mock.current.store.get(key)?.body
     expect(buffer).toBeDefined()
     expect(buffer!.subarray(0, 2)).toEqual(Buffer.from([0x1f, 0x8b]))
 

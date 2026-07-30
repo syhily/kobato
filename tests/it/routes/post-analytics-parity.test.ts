@@ -3,15 +3,14 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PostAnalyticsData } from '@/server/http/loaders/post-analytics'
 import type { AnalyticsHandle } from '@/server/infra/analytics/duckdb'
 
-import { clearAccessLog, closeTestAnalyticsDb, seedAccessEvents } from '#/_helpers/analytics-db'
+import { clearAccessLog, closeTestAnalyticsDb, createTestAnalyticsDb, seedAccessEvents } from '#/_helpers/analytics-db'
 import { makeLoaderArgs, unwrapLoaderData } from '#/_helpers/context'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { authorSession } from '#/_helpers/session'
+import { __adoptAnalyticsHandleForTests, __resetAnalyticsEngineForTests } from '@/server/bootstrap/analytics-lifecycle'
 import { post as postTable } from '@/server/infra/db/schema/post'
 import { postTag } from '@/server/infra/db/schema/post-tag'
 import { tag as tagTable } from '@/server/infra/db/schema/taxonomy'
-import { METRIC_GROUPS, METRIC_GROUP_TABS } from '@/shared/contracts/analytics'
-
 // Parity net for plan 062: /admin/posts/:postId/analytics and
 // /editor/post/:id/analytics share `loadPostAnalyticsData`. This test
 // pins both routes to identical loader data for the same post so a
@@ -19,17 +18,12 @@ import { METRIC_GROUPS, METRIC_GROUP_TABS } from '@/shared/contracts/analytics'
 //
 // Real engine: the post + tags are real rows in the content database
 // and every analytics query (counters / views / heatmap / metrics)
-// runs for real against a seeded DuckDB sidecar. The only kept seams
-// are `getAnalyticsReader` (the lifecycle global — pointed at the real
-// sidecar here) and the presentational view module.
+// runs for real against a seeded DuckDB sidecar — ADOPTED into the
+// lifecycle engine (no module mock). The only kept seam is the
+// presentational view module.
+import { METRIC_GROUPS, METRIC_GROUP_TABS } from '@/shared/contracts/analytics'
 
 const analytics = vi.hoisted(() => ({ handle: null as unknown as AnalyticsHandle }))
-
-vi.mock('@/server/bootstrap/analytics-lifecycle', async () => {
-  const { createTestAnalyticsDb } = await import('#/_helpers/analytics-db')
-  analytics.handle = await createTestAnalyticsDb()
-  return { getAnalyticsReader: () => analytics.handle.reader }
-})
 
 // Keep the parity test on the loader surface; the shared view is covered
 // by the route snapshots.
@@ -40,6 +34,9 @@ vi.mock('@/ui/admin/analytics/PostAnalyticsView', () => ({
 
 const db = getTestDb()
 const session = authorSession()
+
+analytics.handle = await createTestAnalyticsDb()
+__adoptAnalyticsHandleForTests(analytics.handle)
 
 const adminRoute = await import('@/routes/admin/posts/analytics')
 const editorRoute = await import('@/routes/editor/post/analytics')
@@ -53,6 +50,7 @@ beforeEach(async () => {
 })
 
 afterAll(async () => {
+  __resetAnalyticsEngineForTests()
   await closeTestAnalyticsDb(analytics.handle)
 })
 

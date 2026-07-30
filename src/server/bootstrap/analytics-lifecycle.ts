@@ -56,6 +56,18 @@ export function getAnalyticsHandle(): AnalyticsHandle {
   return engine.get()
 }
 
+/** Test seam: place a test-owned handle (a real temp-file DuckDB)
+ *  inside the engine so getAnalyticsHandle/getAnalyticsReader/
+ *  snapshotAnalyticsTo run for real. Reset between cases. */
+export function __adoptAnalyticsHandleForTests(handle: AnalyticsHandle): void {
+  engine.adopt(handle)
+}
+
+/** Test seam: forget the adopted handle (does not close it). */
+export function __resetAnalyticsEngineForTests(): void {
+  engine.reset()
+}
+
 /**
  * The MVCC-safe read connection for dashboard/report queries. The
  * writer/reader split is a private implementation detail of this module

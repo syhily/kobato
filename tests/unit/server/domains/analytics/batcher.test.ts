@@ -4,30 +4,17 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 import type { AnalyticsHandle } from '@/server/infra/analytics/duckdb'
 
 import { closeTestAnalyticsDb, createTestAnalyticsDb } from '#/_helpers/analytics-db'
-import { replayDeadLetterAccessLog } from '@/server/domains/analytics/services/batcher'
-import { initAllBatchers } from '@/server/infra/db/batcher-registry'
-
 // Mock fs/promises so dead-letter file contents are controlled without
 // touching the real filesystem. The analytics handle is a REAL DuckDB
 // sidecar — replay appends through the same Appender protocol as
-// production — with a failure gate on `createAppender` so the
-// ingest-failure cases stay deterministic.
+// production — ADOPTED into the lifecycle engine with a failure gate on
+// `createAppender` so the ingest-failure cases stay deterministic.
+import { __adoptAnalyticsHandleForTests, __resetAnalyticsEngineForTests } from '@/server/bootstrap/analytics-lifecycle'
+import { replayDeadLetterAccessLog } from '@/server/domains/analytics/services/batcher'
+import { initAllBatchers } from '@/server/infra/db/batcher-registry'
+
 let analyticsHandle: AnalyticsHandle
 let ingestShouldFail = false
-
-vi.mock('@/server/bootstrap/analytics-lifecycle', () => ({
-  getAnalyticsHandle: () => ({
-    ...analyticsHandle,
-    writer: {
-      createAppender: async (table: string) => {
-        if (ingestShouldFail) {
-          throw new Error('ingest down')
-        }
-        return analyticsHandle.writer.createAppender(table)
-      },
-    },
-  }),
-}))
 
 vi.mock('node:fs/promises', async () => {
   const actual = await vi.importActual<typeof import('node:fs/promises')>('node:fs/promises')
@@ -73,11 +60,26 @@ beforeAll(async () => {
 })
 
 afterAll(async () => {
+  __resetAnalyticsEngineForTests()
   await closeTestAnalyticsDb(analyticsHandle)
 })
 
 beforeEach(() => {
   ingestShouldFail = false
+  // Adopt a decorated handle: the writer's createAppender carries the
+  // deterministic failure gate; everything else is the real sidecar.
+  __resetAnalyticsEngineForTests()
+  __adoptAnalyticsHandleForTests({
+    ...analyticsHandle,
+    writer: {
+      createAppender: async (table: string) => {
+        if (ingestShouldFail) {
+          throw new Error('ingest down')
+        }
+        return analyticsHandle.writer.createAppender(table)
+      },
+    } as AnalyticsHandle['writer'],
+  })
 })
 
 describe('replayDeadLetter', () => {
