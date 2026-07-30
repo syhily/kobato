@@ -1,13 +1,23 @@
+import { eq } from 'drizzle-orm'
 import { RouterContextProvider } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { makePage, makePost, makePostList, makeTag } from '#/_helpers/catalog'
+import type { PortableTextBody } from '@/shared/pt/schema'
+
 import { makeLoaderArgs, unwrapLoaderData } from '#/_helpers/context'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { emptySession, regularSession } from '#/_helpers/session'
+import { content as contentTable } from '@/server/infra/db/schema/content'
+import { page as pageTable } from '@/server/infra/db/schema/page'
+import { post as postTable } from '@/server/infra/db/schema/post'
 
 // post.detail / page.detail loaders form the most-trafficked SSR endpoints.
-// Pin the alias 301 redirect, the page-vs-post-slug fallback redirect, and
-// the 404 contracts that protect against catalog drift.
+// Real engine: posts/pages are seeded rows (meta + published content
+// revision) and the loaders, projections, live gate, comments streaming, and
+// redirect contracts all run against the in-memory database. The only kept
+// seams are the presentational PT renderer and a wrapped (not replaced)
+// `resolveSessionContext` so the "no session re-resolution fallback" test
+// can assert the loaders never consult it.
 
 const mocks = vi.hoisted(() => ({
   resolveSessionContext: vi.fn(),
@@ -22,138 +32,98 @@ vi.mock('@/server/domains/auth/primitives', async () => {
   return { ...actual, resolveSessionContext: mocks.resolveSessionContext }
 })
 
-const session = regularSession()
-const samplePost = {
-  ...makePost({ slug: 'hello', alias: ['hello-old'] }),
-  body: [],
-  imageSources: [],
-}
-const samplePage = {
-  ...makePage({ slug: 'about' }),
-  body: [],
-  imageSources: [],
-  publishedRevisionId: null,
-}
-const sampleTag = makeTag({ name: 'typescript', slug: 'typescript' })
-const sidebarSamples = makePostList(3, { slug: 'sidebar' })
-
-vi.mock('@/server/domains/posts/services/single', () => ({
-  findPostMetaById: vi.fn(() => null),
-  findPostMetaBySlug: vi.fn(() => null),
-  findPostMetaBySlugForUpdate: vi.fn(() => null),
-  findPostBySlug: vi.fn(async (_db: unknown, slug: string) => {
-    if (slug === 'hello' || slug === 'hello-old') {
-      return samplePost
-    }
-    return null
-  }),
-  findPublicPostMetaBySlug: vi.fn((_db: unknown, slug: string) => {
-    if (slug === 'hello' || slug === 'hello-old') {
-      return {
-        slug,
-        published: true,
-        deletedAt: null,
-        publishedRevisionId: 1,
-        publishedAt: new Date(),
-      }
-    }
-    return null
-  }),
-}))
-vi.mock('@/server/domains/posts/services/public-query', () => ({
-  listClientPosts: vi.fn(async () => sidebarSamples),
-}))
-vi.mock('@/server/domains/posts/services/featured', () => ({
-  selectSidebarPosts: vi.fn(async () => sidebarSamples),
-}))
-vi.mock('@/server/domains/pages/repo', () => ({
-  findPageMetaById: vi.fn(async () => null),
-  findPageMetaBySlug: vi.fn(async () => null),
-  findPageMetaBySlugForUpdate: vi.fn(async () => null),
-  insertPageMeta: vi.fn(async () => null),
-  updatePageMetaById: vi.fn(async () => null),
-  softDeletePageMeta: vi.fn(async () => false),
-  restorePageMeta: vi.fn(async () => false),
-}))
-vi.mock('@/server/domains/pages/services/public-query', () => ({
-  listPublicPageMetas: vi.fn(async () => []),
-  findPublicPageMetaBySlug: vi.fn(async () => null),
-  findPageBySlug: vi.fn(async (_db: unknown, slug: string) => {
-    if (slug === 'about') {
-      return samplePage
-    }
-    return null
-  }),
-}))
-vi.mock('@/server/domains/friends/service', () => ({
-  listAllFriends: vi.fn(async () => []),
-}))
-vi.mock('@/server/domains/taxonomies/tags/service', () => ({
-  getTagsByNames: vi.fn(async () => [sampleTag]),
-  listAllTags: vi.fn(async () => [sampleTag]),
-}))
-vi.mock('@/shared/types/catalog', async () => {
-  const actual = await vi.importActual<typeof import('@/shared/types/catalog')>('@/shared/types/catalog')
-  return {
-    ...actual,
-    toClientPost: (p: unknown) => p,
-    toClientPage: (p: unknown) => p,
-    toListingPostCard: (p: unknown) => p,
-    toDetailPostShell: (p: unknown) => p,
-    toDetailPageShell: (p: unknown) => p,
-    toSidebarPostLink: (p: unknown) => p,
-  }
-})
-
+// Presentational seam — the loader contract under test never renders.
 vi.mock('@/ui/pt/render', () => ({
   PortableTextBody: () => null,
 }))
 
-vi.mock('@/server/http/loaders/comments', () => ({
-  // The detail loader reads `loadDetailPageStreaming`; comments ride
-  // along as a Promise so the loader can stream them through `<Await>`.
-  loadDetailPageStreaming: vi.fn(async () => ({
-    critical: {
-      admin: false,
-      likes: { count: 0, liked: false },
-      currentUser: null,
-      commentKey: 'https://example.com/posts/hello/',
-      recentComments: [],
-      pendingComments: [],
-    },
-    comments: Promise.resolve({
-      commentData: { totalCount: 0, totalPages: 0, currentPage: 1 },
-      commentItems: [],
-    }),
-  })),
-}))
+const db = getTestDb()
+const session = regularSession()
+
+beforeEach(async () => {
+  await clearAllTables(db)
+  vi.clearAllMocks()
+})
+
+async function seedPost(
+  opts: Partial<typeof postTable.$inferInsert> & { body?: PortableTextBody } = {},
+): Promise<number> {
+  const { body, ...meta } = opts
+  const rows = await db
+    .insert(postTable)
+    .values({
+      slug: meta.slug ?? `post-${Math.random().toString(36).slice(2)}`,
+      title: meta.title ?? 'Untitled',
+      published: meta.published ?? true,
+      publishedAt: meta.publishedAt ?? new Date('2024-01-01'),
+      firstPublishedAt: meta.firstPublishedAt ?? new Date('2024-01-01'),
+      visible: meta.visible ?? true,
+      ...meta,
+    })
+    .returning({ id: postTable.id })
+  const postId = rows[0]!.id
+  const revisions = await db
+    .insert(contentTable)
+    .values({ type: 'post', ownerId: postId, revisionNo: 1, status: 'published', body: body ?? [] })
+    .returning({ id: contentTable.id })
+  await db.update(postTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(postTable.id, postId))
+  return postId
+}
+
+async function seedPage(
+  opts: Partial<typeof pageTable.$inferInsert> & { body?: PortableTextBody } = {},
+): Promise<number> {
+  const { body, ...meta } = opts
+  const rows = await db
+    .insert(pageTable)
+    .values({
+      slug: meta.slug ?? `page-${Math.random().toString(36).slice(2)}`,
+      title: meta.title ?? 'Untitled',
+      published: meta.published ?? true,
+      publishedAt: meta.publishedAt ?? new Date('2024-01-01'),
+      firstPublishedAt: meta.firstPublishedAt ?? new Date('2024-01-01'),
+      ...meta,
+    })
+    .returning({ id: pageTable.id })
+  const pageId = rows[0]!.id
+  const revisions = await db
+    .insert(contentTable)
+    .values({ type: 'page', ownerId: pageId, revisionNo: 1, status: 'published', body: body ?? [] })
+    .returning({ id: contentTable.id })
+  await db.update(pageTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(pageTable.id, pageId))
+  return pageId
+}
 
 const postRoute = await import('@/routes/public/post/detail')
 const pageRoute = await import('@/routes/public/page/detail')
 
-beforeEach(() => {
-  vi.clearAllMocks()
-})
-
 describe('routes/post.detail loader', () => {
-  it('301-redirects from a post alias to the canonical slug', async () => {
-    await expect(
-      postRoute.loader(
+  it('301-redirects a post alias to the canonical slug', async () => {
+    await seedPost({ slug: 'hello', alias: ['hello-old'] })
+    const result = await postRoute
+      .loader(
         makeLoaderArgs({
           request: new Request('http://localhost/posts/hello-old'),
           session,
+          db,
           params: { slug: 'hello-old' },
         }),
-      ),
-    ).rejects.toMatchObject({ status: 301 })
+      )
+      .then(
+        () => null,
+        (response: unknown) => response,
+      )
+    expect(result).toMatchObject({ status: 301 })
+    expect((result as Response).headers.get('Location')).toBe('/posts/hello')
   })
 
-  it("404s when the slug isn't a known post or alias", async () => {
+  it("404s when the slug isn't a known post", async () => {
     await expect(
       postRoute.loader(
         makeLoaderArgs({
           request: new Request('http://localhost/posts/missing'),
           session,
+          db,
           params: { slug: 'missing' },
         }),
       ),
@@ -168,6 +138,7 @@ describe('routes/post.detail loader', () => {
         makeLoaderArgs({
           request: new Request('http://localhost/posts/missing'),
           session: emptySession(),
+          db,
           params: { slug: 'missing' },
         }),
       ),
@@ -175,6 +146,8 @@ describe('routes/post.detail loader', () => {
   })
 
   it('returns the canonical post payload for a real slug', async () => {
+    await seedPost({ slug: 'hello', title: 'Hello' })
+
     const data = unwrapLoaderData<{
       post: { title: string; permalink: string }
       body: unknown[]
@@ -183,12 +156,13 @@ describe('routes/post.detail loader', () => {
         makeLoaderArgs({
           request: new Request('http://localhost/posts/hello'),
           session,
+          db,
           params: { slug: 'hello' },
         }),
       ),
     )
 
-    expect(data.post.title).toBe(samplePost.title)
+    expect(data.post.title).toBe('Hello')
     expect(data.post.permalink).toBe('/posts/hello')
     expect(data.body).toEqual([])
   })
@@ -196,11 +170,14 @@ describe('routes/post.detail loader', () => {
 
 describe('routes/page.detail loader', () => {
   it('returns the canonical page payload for a real page slug', async () => {
+    await seedPage({ slug: 'about', title: 'About' })
+
     const data = unwrapLoaderData<{ page: { permalink: string } }>(
       await pageRoute.loader(
         makeLoaderArgs({
           request: new Request('http://localhost/about'),
           session,
+          db,
           params: { slug: 'about' },
         }),
       ),
@@ -227,11 +204,14 @@ describe('routes/page.detail loader', () => {
   })
 
   it('301-redirects to /posts/:slug when a page slug actually belongs to a post', async () => {
+    await seedPost({ slug: 'hello' })
+
     try {
       await pageRoute.loader(
         makeLoaderArgs({
           request: new Request('http://localhost/hello'),
           session,
+          db,
           params: { slug: 'hello' },
         }),
       )
@@ -250,6 +230,7 @@ describe('routes/page.detail loader', () => {
         makeLoaderArgs({
           request: new Request('http://localhost/missing'),
           session,
+          db,
           params: { slug: 'missing' },
         }),
       ),

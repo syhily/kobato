@@ -1,4 +1,4 @@
-import { and, eq, type SQL } from 'drizzle-orm'
+import { and, eq, sql, type SQL } from 'drizzle-orm'
 
 import type { Database } from '@/server/infra/db/database'
 import type { ContentRow, NewPostMeta, PostMetaRow } from '@/server/infra/db/types'
@@ -37,22 +37,41 @@ export async function findLivePostBySlug(db: Database, slug: string): Promise<{ 
   return rows[0] ?? null
 }
 
-async function findPostWithRevisionBySlug(
+async function findPostWithRevisionWhere(
   db: Database,
-  slug: string,
-  extraWhere?: SQL,
+  where: SQL | undefined,
 ): Promise<{ meta: PostMetaRow; revision: ContentRow | null } | null> {
   const rows = await db
     .select()
     .from(postMetaTable)
     .leftJoin(contentTable, eq(postMetaTable.publishedRevisionId, contentTable.id))
-    .where(extraWhere ? and(eq(postMetaTable.slug, slug), extraWhere) : eq(postMetaTable.slug, slug))
+    .where(where)
     .limit(1)
   if (rows.length === 0) {
     return null
   }
   const { post, content } = rows[0]
   return { meta: post as PostMetaRow, revision: content as ContentRow | null }
+}
+
+async function findPostWithRevisionBySlug(
+  db: Database,
+  slug: string,
+  extraWhere?: SQL,
+): Promise<{ meta: PostMetaRow; revision: ContentRow | null } | null> {
+  return findPostWithRevisionWhere(
+    db,
+    extraWhere ? and(eq(postMetaTable.slug, slug), extraWhere) : eq(postMetaTable.slug, slug),
+  )
+}
+
+/** Slug OR alias match for the live-gated public lookup: a request to an
+ *  old alias resolves to the same post (the route then 301s to the
+ *  canonical slug via `canonicalPostPath`). json_each unpacks the
+ *  JSON-array alias column in SQL. */
+function findPostWithRevisionBySlugOrAlias(db: Database, slug: string, extraWhere?: SQL) {
+  const aliasWhere = sql`EXISTS (SELECT 1 FROM json_each(${postMetaTable.alias}) WHERE json_each.value = ${slug})`
+  return findPostWithRevisionWhere(db, extraWhere ? and(aliasWhere, extraWhere) : aliasWhere)
 }
 
 async function resolveCategoryName(db: Database, categoryId: number | null): Promise<string> {
@@ -64,7 +83,9 @@ async function resolveCategoryName(db: Database, categoryId: number | null): Pro
 }
 
 export async function findPostBySlug(db: Database, slug: string): Promise<Post | null> {
-  const result = await findPostWithRevisionBySlug(db, slug, livePostWhere())
+  const result =
+    (await findPostWithRevisionBySlug(db, slug, livePostWhere())) ??
+    (await findPostWithRevisionBySlugOrAlias(db, slug, livePostWhere()))
   if (result === null) {
     return null
   }
