@@ -9,7 +9,6 @@ import { RouterContextProvider } from 'react-router'
 import type { Env } from '@/server/http/context'
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
-import { peekRestoreJobPhase } from '@/server/domains/backup/restore-machine'
 import { hydrateBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { createApiApp } from '@/server/http/app'
 import { onErrorHandler } from '@/server/http/errors'
@@ -20,6 +19,7 @@ import { requestTimeout } from '@/server/http/middlewares/request-timeout'
 import { trailingSlashNormaliser } from '@/server/http/middlewares/trailing-slash'
 import { honoVisitorCookieMiddleware } from '@/server/http/middlewares/visitor-cookie'
 import { honoWpDecoyMiddleware } from '@/server/http/middlewares/wp-decoy'
+import { readyHandler } from '@/server/http/ready'
 import { requestContext } from '@/server/http/request-context'
 import { analyticsEventsRouter } from '@/server/http/resources/analytics'
 import { assetsRouter } from '@/server/http/resources/assets'
@@ -36,7 +36,6 @@ import { musicProxyRouter } from '@/server/http/resources/music-proxy'
 import { redirectsRouter } from '@/server/http/resources/redirects'
 import { sitemapRouter } from '@/server/http/resources/sitemap'
 import { webmentionRouter } from '@/server/http/resources/webmention'
-import { getServerPhase } from '@/server/infra/lifecycle'
 import { root } from '@/server/infra/logger'
 import { sanitizeReqHeaders, resBindings } from '@/server/infra/logger/sanitizer'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
@@ -166,13 +165,7 @@ export function configureMiddleware(app: Hono<Env>): void {
 
   // Health probes
   app.get('/health', (c) => c.json({ status: 'ok' }))
-  app.get('/ready', (c) => {
-    const phase = getServerPhase()
-    if (phase !== 'running') {
-      return c.json({ status: phase, restore: peekRestoreJobPhase() }, 503)
-    }
-    return c.json({ status: 'ok' })
-  })
+  app.get('/ready', readyHandler)
 
   // Admin large-file resource routes — mounted BEFORE createApiApp so
   // their bodyLimit middleware is not overridden by the 10 MB global limit.

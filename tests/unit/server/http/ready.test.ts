@@ -3,53 +3,66 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Env } from '@/server/http/context'
 
-const getServerPhase = vi.fn().mockReturnValue('running')
-const setServerPhase = vi.fn()
+const mocks = vi.hoisted(() => ({
+  getServerPhase: vi.fn(),
+  peekRestoreJobPhase: vi.fn(),
+}))
+const { getServerPhase, peekRestoreJobPhase } = mocks
 
 vi.mock('@/server/infra/lifecycle', () => ({
-  getServerPhase,
-  setServerPhase,
+  getServerPhase: mocks.getServerPhase,
 }))
+
+vi.mock('@/server/domains/backup/restore-machine', () => ({
+  peekRestoreJobPhase: mocks.peekRestoreJobPhase,
+}))
+
+import { readyHandler } from '@/server/http/ready'
+
+// The /ready probe against the REAL handler (extracted to
+// '@/server/http/ready' — these tests used to pin inline copies of it).
+function app(): Hono<Env> {
+  return new Hono<Env>().get('/ready', readyHandler)
+}
 
 describe('/ready endpoint', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    getServerPhase.mockReturnValue('running')
+    peekRestoreJobPhase.mockReturnValue({ phase: 'idle', startedAt: '' })
   })
 
   it('returns 200 when phase is running', async () => {
-    getServerPhase.mockReturnValue('running')
-
-    const app = new Hono<Env>()
-    app.get('/ready', (c) => {
-      const phase = getServerPhase()
-      if (phase !== 'running') {
-        return c.json({ status: phase }, 503)
-      }
-      return c.json({ status: 'ok' })
-    })
-
-    const res = await app.request('/ready')
+    const res = await app().request('/ready')
     expect(res.status).toBe(200)
     const body = (await res.json()) as { status: string }
     expect(body.status).toBe('ok')
   })
 
-  it('returns 503 when phase is restarting', async () => {
+  it('returns 503 with the restore projection when phase is restarting', async () => {
     getServerPhase.mockReturnValue('restarting')
+    peekRestoreJobPhase.mockReturnValue({ phase: 'draining', startedAt: '2026-01-01T00:00:00.000Z' })
 
-    const app = new Hono<Env>()
-    app.get('/ready', (c) => {
-      const phase = getServerPhase()
-      if (phase !== 'running') {
-        return c.json({ status: phase }, 503)
-      }
-      return c.json({ status: 'ok' })
+    const res = await app().request('/ready')
+    expect(res.status).toBe(503)
+    const body = (await res.json()) as { status: string; restore: { phase: string } }
+    expect(body.status).toBe('restarting')
+    expect(body.restore.phase).toBe('draining')
+  })
+
+  it('returns 503 with failed restore details', async () => {
+    getServerPhase.mockReturnValue('restarting')
+    peekRestoreJobPhase.mockReturnValue({
+      phase: 'failed',
+      startedAt: '2026-01-01T00:00:00.000Z',
+      error: 'restore exited with code 1',
     })
 
-    const res = await app.request('/ready')
+    const res = await app().request('/ready')
     expect(res.status).toBe(503)
-    const body = (await res.json()) as { status: string }
-    expect(body.status).toBe('restarting')
+    const body = (await res.json()) as { status: string; restore: { phase: string; error?: string } }
+    expect(body.restore.phase).toBe('failed')
+    expect(body.restore.error).toBe('restore exited with code 1')
   })
 
   it('is exempt from install-gate middleware', async () => {
@@ -61,20 +74,20 @@ describe('/ready endpoint', () => {
 
     try {
       const { honoInstallGateMiddleware } = await import('@/server/http/middlewares/install-gate')
-      const app = new Hono<Env>()
+      const gated = new Hono<Env>()
       // Stub the canonical per-request context — the gate reads
       // `requestContext.url` and `requestContext.db`.
-      app.use('*', async (c, next) => {
+      gated.use('*', async (c, next) => {
         c.set('requestContext', {
           url: new URL(c.req.url),
           db: {},
         } as unknown as Env['Variables']['requestContext'])
         await next()
       })
-      app.use(honoInstallGateMiddleware)
-      app.get('/ready', (c) => c.json({ status: 'ok' }))
+      gated.use(honoInstallGateMiddleware)
+      gated.get('/ready', readyHandler)
 
-      const res = await app.request('/ready')
+      const res = await gated.request('/ready')
       expect(res.status).toBe(200)
     } finally {
       vi.doUnmock('@/server/infra/db/operations/user')
