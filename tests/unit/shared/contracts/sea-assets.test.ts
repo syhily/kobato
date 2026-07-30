@@ -12,6 +12,7 @@ import {
   SEA_NATIVE_META_SHARP_VERSIONS_KEY,
   SEA_NATIVE_SHARP_ADDON_KEY,
   SEA_NATIVE_SKIA_ADDON_KEY,
+  SEA_NATIVE_SKIA_ICU_KEY,
   SEA_PROCESS_WORKER_BUNDLE_KEY,
   SEA_SMOKE_WORKER_BUNDLE_KEY,
   SEA_WASM_CNFS_KEY,
@@ -41,6 +42,7 @@ const PARTIES: { file: string; names: string[]; forbiddenLiterals: string[] }[] 
       'SEA_NATIVE_ASSET_PREFIX',
       'SEA_NATIVE_SHARP_ADDON_KEY',
       'SEA_NATIVE_SKIA_ADDON_KEY',
+      'SEA_NATIVE_SKIA_ICU_KEY',
       'SEA_NATIVE_META_LIBVIPS_VERSIONS_KEY',
       'SEA_NATIVE_META_LIBVIPS_PACKAGE_KEY',
       'SEA_NATIVE_META_SHARP_PACKAGE_KEY',
@@ -54,6 +56,7 @@ const PARTIES: { file: string; names: string[]; forbiddenLiterals: string[] }[] 
       `'wasm/cnfs.wasm'`,
       `'natives/sharp.node'`,
       `'natives/skia.node'`,
+      `'natives/icudtl.dat'`,
       `'natives-meta/`,
     ],
   },
@@ -135,6 +138,7 @@ describe('contract: SEA embedded-asset keys', () => {
     expect(SEA_NATIVE_ASSET_PREFIX).toBe('natives/')
     expect(SEA_NATIVE_SHARP_ADDON_KEY).toBe('natives/sharp.node')
     expect(SEA_NATIVE_SKIA_ADDON_KEY).toBe('natives/skia.node')
+    expect(SEA_NATIVE_SKIA_ICU_KEY).toBe('natives/icudtl.dat')
     expect(SEA_NATIVE_META_LIBVIPS_VERSIONS_KEY).toBe('natives-meta/libvips-versions.json')
     expect(SEA_NATIVE_META_LIBVIPS_PACKAGE_KEY).toBe('natives-meta/libvips-package.json')
     expect(SEA_NATIVE_META_SHARP_PACKAGE_KEY).toBe('natives-meta/sharp-platform-package.json')

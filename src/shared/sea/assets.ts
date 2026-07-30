@@ -12,8 +12,9 @@
 //   worker/smoke-worker.mjs             bundled --smoke-worker entry (text)
 //   natives/<file>                      native dynamic libraries (sharp.node,
 //                                       skia.node, duckdb.node, libvips*,
-//                                       libduckdb*) — the only assets
-//                                       extracted to disk at runtime
+//                                       libduckdb*) plus skia's win32 ICU
+//                                       datafile (icudtl.dat) — the only
+//                                       assets extracted to disk at runtime
 //   natives-meta/<file>.json            platform-package metadata the
 //                                       redirected native requires answer
 //                                       from memory (never extracted)
@@ -60,7 +61,9 @@ export const SEA_DRIZZLE_ASSET_PREFIX = 'drizzle/'
  * Prefix of the native dynamic libraries — the ONLY assets extracted to
  * disk at runtime (the OS `dlopen` needs real files). Exactly the
  * platform's sharp addon, the skia (canvas) addon, the DuckDB addon +
- * libduckdb library, and the libvips library files ride under it; all
+ * libduckdb library, the libvips library files, and skia's win32 ICU
+ * datafile (`icudtl.dat` — a datafile, but skia probes for it next to
+ * the loaded module, so it must sit in the same flat dir) ride under it; all
  * package JS is bundled into the server/worker bundles instead (see
  * `scripts/sea/assets.ts`). The extraction path is the key with this
  * prefix stripped — the natives cache dir is flat.
@@ -72,6 +75,17 @@ export const SEA_NATIVE_SHARP_ADDON_KEY = 'natives/sharp.node'
 
 /** Key of the platform skia addon (`@napi-rs/canvas-<triple>`'s `skia.*.node`). */
 export const SEA_NATIVE_SKIA_ADDON_KEY = 'natives/skia.node'
+
+/**
+ * Key of skia's ICU datafile (`@napi-rs/canvas-win32-*`'s `icudtl.dat`).
+ * Win32-only: the Windows skia builds load ICU from a datafile probed
+ * next to the loaded module — a missing file is a FATAL error the first
+ * time a paragraph is built (SkIcuLoader → `check(fUnicode)`), killing
+ * the whole process. Extracting it into the flat natives dir puts it
+ * exactly where the probe looks. darwin/linux skia builds carry ICU
+ * internally, so the key is absent there.
+ */
+export const SEA_NATIVE_SKIA_ICU_KEY = 'natives/icudtl.dat'
 
 /** Key of the platform DuckDB addon (`@duckdb/node-bindings-<platform>`'s `duckdb.node`, rpath-patched at build time). */
 export const SEA_NATIVE_DUCKDB_ADDON_KEY = 'natives/duckdb.node'

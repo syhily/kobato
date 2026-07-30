@@ -117,13 +117,18 @@ as the codec registry (`{key, path, sha256(raw), codec, size}`);
 The smoke budgets the binary at 230 MB — `--build-sea` leaves no
 standalone blob, so the compressed payload is sized inside the binary.
 
-**Natives = dynamic libraries ONLY.** The extraction writes exactly 5
-files (6 on win32) into the FLAT `<cache>/natives-<manifest-hash>/` dir:
+**Natives = dynamic libraries + one datafile.** The extraction writes
+exactly 5 files (7 on win32) into the FLAT
+`<cache>/natives-<manifest-hash>/` dir:
 the rpath-patched sharp addon (`sharp.node`), the libvips files (one
 `libvips-cpp.*` on darwin/linux; win32 splits libvips into two DLLs
 inside the sharp platform package), the skia addon (`skia.node`), and
 the rpath-patched DuckDB addon (`duckdb.node`) plus its libduckdb
-library (`libduckdb.dylib`/`.so`; `duckdb.dll` on win32). The rpath
+library (`libduckdb.dylib`/`.so`; `duckdb.dll` on win32) — and, win32
+only, skia's `icudtl.dat` ICU datafile: the Windows skia builds probe
+for it next to the loaded module and a missing file is FATAL on the
+first paragraph build (`SkIcuLoader` → `check(fUnicode)` takes the
+whole process down; darwin/linux skia builds carry ICU internally). The rpath
 patch runs at build time on a staged copy
 (`install_name_tool -change @rpath/X @loader_path/X` on darwin,
 `patchelf --set-rpath '$ORIGIN'` on linux — patchelf is in the Dockerfile
@@ -147,7 +152,7 @@ embedded `natives-meta/*` metadata assets
   refuses; and Node finds the blob via `dl_iterate_phdr` on the in-memory
   phdrs, which a packed stub does not present. Do not re-add an UPX step.
 - `pnpm run sea:smoke [binary]` — deep smoke: binary budget, version,
-  natives, the flat 5-file extraction layout, `--smoke-worker` (a real
+  natives, the flat extraction layout, `--smoke-worker` (a real
   sharp job round-tripping through the `worker_threads` image pool),
   boot + migrations on per-run temp files (the SQLite content DB and the
   DuckDB analytics sidecar both live under one mkdtemp root — no

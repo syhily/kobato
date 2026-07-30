@@ -43,7 +43,12 @@
 //     node_modules original;
 //   - the libvips library files (one on darwin/linux, two DLLs on win32,
 //     where they ship inside the sharp platform package itself);
-//   - the platform skia addon (`@napi-rs/canvas-<triple>`'s `skia.*.node`);
+//   - the platform skia addon (`@napi-rs/canvas-<triple>`'s `skia.*.node`),
+//     plus — win32 only — the `icudtl.dat` ICU datafile shipping beside
+//     it: the Windows skia builds probe for it next to the loaded module
+//     and a missing file is fatal on the first paragraph build
+//     (SkIcuLoader → `check(fUnicode)` takes the whole process down).
+//     darwin/linux skia builds carry ICU internally and ship no datafile;
 //   - the platform DuckDB addon (`@duckdb/node-bindings-<platform>`'s
 //     `duckdb.node`), rpath-patched exactly like sharp (it links
 //     `@rpath/libduckdb.<ext>`), plus the libduckdb library file that
@@ -74,6 +79,7 @@ import {
   SEA_NATIVE_META_SHARP_VERSIONS_KEY,
   SEA_NATIVE_SHARP_ADDON_KEY,
   SEA_NATIVE_SKIA_ADDON_KEY,
+  SEA_NATIVE_SKIA_ICU_KEY,
   SEA_PROCESS_WORKER_BUNDLE_KEY,
   SEA_SMOKE_WORKER_BUNDLE_KEY,
   SEA_WASM_CNFS_KEY,
@@ -332,7 +338,8 @@ function patchAddonRpath(stagedAddon: string, libraryFileNames: string[]) {
  * the flat extraction dir holds at runtime: the (rpath-patched) sharp
  * addon, the libvips library files, the skia addon, and the
  * (rpath-patched) DuckDB addon + the libduckdb library — 5 files on
- * darwin/linux, 6 on win32 (libvips splits into two DLLs there). No
+ * darwin/linux, 7 on win32 (libvips splits into two DLLs there, and
+ * skia's `icudtl.dat` ICU datafile must sit next to skia.node). No
  * node_modules tree, no npm package files, no generated shims.
  */
 async function addNativeAssets(assets: Map<string, string>, files: ManifestFileEntry[], ctx: PackContext) {
@@ -386,6 +393,13 @@ async function addNativeAssets(assets: Map<string, string>, files: ManifestFileE
     await addAsset(assets, files, `${SEA_NATIVE_ASSET_PREFIX}${name}`, join(libvipsDir, name), ctx)
   }
   await addAsset(assets, files, SEA_NATIVE_SKIA_ADDON_KEY, skiaAddon, ctx)
+  // skia's ICU datafile rides only where the platform package ships one
+  // (win32 — see the header comment); it extracts into the same flat dir
+  // as skia.node, which is exactly where SkIcuLoader probes for it.
+  const skiaIcuData = join(canvasPkg.root, 'icudtl.dat')
+  if (existsSync(skiaIcuData)) {
+    await addAsset(assets, files, SEA_NATIVE_SKIA_ICU_KEY, skiaIcuData, ctx)
+  }
   await addAsset(assets, files, SEA_NATIVE_DUCKDB_ADDON_KEY, stagedDuckdbAddon, ctx)
   await addAsset(assets, files, `${SEA_NATIVE_ASSET_PREFIX}${libduckdbName}`, join(duckdbPkg.root, libduckdbName), ctx)
 

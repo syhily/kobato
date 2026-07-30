@@ -136,12 +136,14 @@ function checkVersion(binaryPath: string) {
  * The extraction dir is FLAT and holds exactly the native dynamic
  * libraries: sharp.node + skia.node + duckdb.node + the libvips files
  * (one on darwin/linux, two DLLs on win32) + the libduckdb library
- * (libduckdb.dylib/.so; duckdb.dll on win32) — no node_modules tree, no
- * package files. The materialized bundles (server.mjs, smoke-worker.mjs)
- * share the dir by design and are excluded from the count. Assert the
- * layout right after `--smoke-natives` populated it.
+ * (libduckdb.dylib/.so; duckdb.dll on win32) + skia's ICU datafile
+ * (icudtl.dat — win32 only; the Windows skia builds probe for it next to
+ * the loaded module and crash fatally without it) — no node_modules
+ * tree, no package files. The materialized bundles (server.mjs,
+ * smoke-worker.mjs) share the dir by design and are excluded from the
+ * count. Assert the layout right after `--smoke-natives` populated it.
  */
-const NATIVES_FILE_COUNT = process.platform === 'win32' ? 6 : 5
+const NATIVES_FILE_COUNT = process.platform === 'win32' ? 7 : 5
 
 function isExpectedNativeFile(name: string): boolean {
   return (
@@ -149,6 +151,7 @@ function isExpectedNativeFile(name: string): boolean {
     name === 'skia.node' ||
     name === 'duckdb.node' ||
     name === 'duckdb.dll' ||
+    name === 'icudtl.dat' ||
     name.startsWith('libvips') ||
     name.startsWith('libduckdb')
   )
@@ -174,6 +177,9 @@ async function checkNativesLayout(cacheDir: string) {
   }
   if (!names.includes('sharp.node') || !names.includes('skia.node') || !names.includes('duckdb.node')) {
     throw new Error(`sharp.node / skia.node / duckdb.node missing from the extraction: ${names.join(', ')}`)
+  }
+  if (process.platform === 'win32' && !names.includes('icudtl.dat')) {
+    throw new Error(`icudtl.dat missing from the extraction (win32 skia crashes without it): ${names.join(', ')}`)
   }
   if (!names.every(isExpectedNativeFile)) {
     throw new Error(`unexpected files in the extraction: ${names.join(', ')}`)
