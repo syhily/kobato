@@ -50,12 +50,22 @@ export abstract class FlushLoop<Pending, Result> {
   }
 
   /**
-   * Detach this instance's shutdown hook. Called by the registry on
+   * Detach this instance's shutdown hook, disarm any pending flush
+   * timer, and drop the pending payload. Called by the registry on
    * reset (restore flow re-creates batchers against the new handle) so
-   * stale hooks can't accumulate across restores.
+   * stale hooks can't accumulate across restores — and so an orphaned
+   * timer can never flush a pre-reset batch into a post-reset database
+   * (a restored file, or the next test's state).
    */
   dispose(): void {
     unregisterShutdownHook(this.shutdownHook)
+    if (this.timer !== null) {
+      clearTimeout(this.timer)
+      this.timer = null
+    }
+    // Detach-and-discard: reset semantics are "start empty", and the
+    // restore flow already flushed before resetting.
+    this.takePending()
   }
 
   /** Detach the pending payload for a flush (null = nothing pending). */

@@ -61,6 +61,27 @@ describe('server/infra/db/insert-batcher — flush mechanics', () => {
     expect(TestBatcher.inserted).toEqual([['a', 'b', 'c']])
   })
 
+  it('dispose disarms the flush timer and drops the pending batch', async () => {
+    vi.useFakeTimers()
+    try {
+      TestBatcher.inserted = []
+      const batcher = new TestBatcher({ flushIntervalMs: 1_000, flushThreshold: 100 }, 'test', () => fakeDb())
+      batcher.push('a')
+      batcher.push('b')
+
+      batcher.dispose()
+
+      // The orphaned-timer hazard: a disposed batcher must never flush
+      // its stale batch into a post-reset database.
+      await vi.advanceTimersByTimeAsync(60_000)
+      expect(TestBatcher.inserted).toEqual([])
+      const result = await batcher.flush()
+      expect(result).toEqual({ committed: 0, deadLettered: 0 })
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('routes a failed batch to onInsertFailed (dead-letter) and clears the buffer', async () => {
     TestBatcher.inserted = []
     const batcher = new TestBatcher({ flushIntervalMs: 60_000, flushThreshold: 2 }, 'test', () => fakeDb())
