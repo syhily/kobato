@@ -48,8 +48,7 @@ vi.mock('@/server/infra/email/templates/SignInOtp', () => ({
   default: (props: unknown) => `otp:${JSON.stringify(props)}`,
 }))
 
-import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
-import { setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import {
   checkMailReady,
   invalidateMailTransportCache,

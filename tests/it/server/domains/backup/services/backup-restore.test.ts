@@ -3,7 +3,6 @@ import { Readable } from 'node:stream'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AnalyticsHandle } from '@/server/infra/analytics/duckdb'
-import type { Database, DatabaseHandle } from '@/server/infra/db/database'
 
 import { closeTestAnalyticsDb, createTestAnalyticsDb, seedAccessEvents } from '#/_helpers/analytics-db'
 import { clearAllTables, createTestDatabaseFile, getTestDb } from '#/_helpers/integration-db'

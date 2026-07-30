@@ -1,6 +1,6 @@
 import type { NavigateFunction } from 'react-router'
 
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { makeAdminPost } from '#/_helpers/catalog'
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'

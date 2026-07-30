@@ -56,7 +56,7 @@ class FakeQuery {
   inserted: Record<string, unknown> | null = null
   updated: Record<string, unknown> | null = null
 
-  select(columns?: unknown) {
+  select(_columns?: unknown) {
     return this
   }
   from() {

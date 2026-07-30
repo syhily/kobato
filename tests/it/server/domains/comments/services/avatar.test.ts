@@ -1,8 +1,6 @@
 import { Buffer } from 'node:buffer'
 import sharp from 'sharp'
-import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import type { Database } from '@/server/infra/db/database'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const { warnMock } = vi.hoisted(() => ({
   warnMock: vi.fn(),

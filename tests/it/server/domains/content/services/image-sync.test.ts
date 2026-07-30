@@ -1,7 +1,5 @@
 import { eq } from 'drizzle-orm'
-import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import type { Database } from '@/server/infra/db/database'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { image as imageTable } from '@/server/infra/db/schema/media'

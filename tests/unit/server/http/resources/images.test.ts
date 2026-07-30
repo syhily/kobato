@@ -62,7 +62,6 @@ import { serveCalendar } from '@/server/http/resources/calendar'
 import { imagesRouter } from '@/server/http/resources/images'
 import { through } from '@/server/infra/cache/registry'
 import { readBucket, tryKeyedRateLimit } from '@/server/infra/rate-limit'
-import { drawOpenGraph } from '@/server/render/og/render'
 
 function requestImages(url: string) {
   const app = new Hono<Env>()

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
+import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { SearchBar, SearchIconButton } from '@/ui/public/Search'
 
 // `Search` (public) has no existing snapshot coverage. These tests cover the

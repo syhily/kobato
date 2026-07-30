@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react'
 import type { RouteObject } from 'react-router'
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'

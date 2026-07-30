@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AdminFriendDto } from '@/shared/contracts/friends'
 
-import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
+import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { FriendsView } from '@/ui/admin/friends/FriendsView'
 
 // FriendsView derives its rows directly from `useInfiniteQuery` pages and

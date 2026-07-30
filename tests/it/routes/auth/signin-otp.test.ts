@@ -2,14 +2,12 @@ import type { Mock } from 'vitest'
 
 import bcrypt from 'bcryptjs'
 import { and, eq } from 'drizzle-orm'
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { BlogSession } from '@/server/domains/auth/session-storage'
-import type { Database } from '@/server/infra/db/database'
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
-import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
-import { setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { makeRequestContext } from '#/_helpers/request-context'
 import { makeSession } from '#/_helpers/session'

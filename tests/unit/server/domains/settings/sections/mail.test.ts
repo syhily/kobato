@@ -13,7 +13,9 @@ describe('settings/sections/mail', () => {
       },
     })
     expect(result.success).toBe(true)
-    if (!result.success) return
+    if (!result.success) {
+      return
+    }
     expect(result.data.mail.transport).toBe('zeabur')
     expect(result.data.mail.smtpHost).toBe('')
     expect(result.data.mail.smtpPort).toBe(587)
@@ -38,7 +40,9 @@ describe('settings/sections/mail', () => {
       },
     })
     expect(result.success).toBe(true)
-    if (!result.success) return
+    if (!result.success) {
+      return
+    }
     expect(result.data.mail.transport).toBe('smtp')
     expect(result.data.mail.smtpPort).toBe(465)
     expect(result.data.mail.smtpSecure).toBe(true)
@@ -67,7 +71,9 @@ describe('settings/sections/mail', () => {
       },
     })
     expect(result.success).toBe(true)
-    if (!result.success) return
+    if (!result.success) {
+      return
+    }
     expect(result.data.mail.transport).toBe('mailgun')
     expect(result.data.mail.mailgunDomain).toBe('mg.example.com')
     expect(result.data.mail.mailgunApiKey).toBe('mg-key')
@@ -98,7 +104,9 @@ describe('settings/sections/mail', () => {
       },
     })
     expect(result.success).toBe(true)
-    if (!result.success) return
+    if (!result.success) {
+      return
+    }
     expect(result.data.mail.apiKey).toBeUndefined()
     expect(result.data.mail.smtpPass).toBeUndefined()
   })

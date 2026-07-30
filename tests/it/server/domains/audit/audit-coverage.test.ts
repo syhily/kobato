@@ -1,9 +1,6 @@
-import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { Database } from '@/server/infra/db/database'
-
-import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
-import { setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
 import { archiveExpiredAuditLogs, cleanupExpiredArchives, runArchiveJob } from '@/server/domains/audit/services/archive'

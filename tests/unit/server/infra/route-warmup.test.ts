@@ -32,8 +32,6 @@ vi.mock('node:fs', () => ({
   },
 }))
 
-import { join } from 'node:path'
-
 import type { RouteManifest } from '@/shared/constants/route-warmup'
 
 import routes from '@/routes'

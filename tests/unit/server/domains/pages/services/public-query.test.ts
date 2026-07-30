@@ -42,7 +42,7 @@ import { toCmsPage } from '@/server/domains/pages/projection'
 class FakeQuery {
   rows: unknown[] = []
 
-  select(columns?: unknown) {
+  select(_columns?: unknown) {
     return this
   }
   from() {
@@ -111,7 +111,13 @@ describe('pages services/public-query', () => {
     const db = fakeDb([{ id: 1, slug: 'hello', publishedRevisionId: 2, deletedAt: null }])
     ;(findContentById as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 2, body: [] })
     ;(toCmsPage as ReturnType<typeof vi.fn>).mockReturnValue({
-      ...{ id: 1, slug: 'hello', body: [], cover: '', coverThumbhash: null, coverWidth: null, coverHeight: null },
+      id: 1,
+      slug: 'hello',
+      body: [],
+      cover: '',
+      coverThumbhash: null,
+      coverWidth: null,
+      coverHeight: null,
     })
     const page = await findPageBySlug(db, 'hello')
     expect(page).not.toBeNull()

@@ -1,8 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { clearAccessLog, closeTestAnalyticsDb, createTestAnalyticsDb, seedAccessEvents } from '#/_helpers/analytics-db'
-import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
-import { setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { enrichEvent } from '@/server/domains/analytics/enrich'
 import { queryHeatmap } from '@/server/domains/analytics/services/heatmap'
 import { queryMetric } from '@/server/domains/analytics/services/metric'
@@ -11,7 +10,6 @@ import { queryRealtimeTail } from '@/server/domains/analytics/services/realtime'
 import { queryViews } from '@/server/domains/analytics/services/views'
 import { KOBATO_AID_COOKIE } from '@/server/domains/analytics/track'
 import { resolveVisitorCookie } from '@/server/domains/analytics/visitor-cookie'
-import { DomainError } from '@/server/infra/http/errors'
 
 const handle = await createTestAnalyticsDb()
 

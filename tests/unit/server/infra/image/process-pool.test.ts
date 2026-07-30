@@ -29,11 +29,9 @@ function createFakeWorker(): Worker {
   return new FakeWorker() as unknown as Worker
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function workersOf(
   pool: InstanceType<typeof WorkerPool>,
 ): Array<{ worker: FakeWorker; busy: boolean; currentJobId: number | null }> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (pool as any).workers
 }
 

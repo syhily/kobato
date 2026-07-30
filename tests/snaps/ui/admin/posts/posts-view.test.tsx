@@ -1,8 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { makeAdminPost } from '#/_helpers/catalog'
-import { renderToHtml, stableHtml } from '#/_helpers/render'
-import { renderInRouter } from '#/_helpers/render'
+import { renderToHtml, stableHtml, renderInRouter } from '#/_helpers/render'
 import { ImageField } from '@/ui/admin/editor-shared/ImageField'
 import { PublishStatusRow } from '@/ui/admin/editor-shared/PublishStatusRow'
 import { PostsSkeleton } from '@/ui/admin/posts/PostsSkeleton'

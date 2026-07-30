@@ -1,8 +1,7 @@
 import { eq } from 'drizzle-orm'
-import { afterAll, beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import type { ViewerIdentity } from '@/server/domains/auth/rbac'
-import type { Database } from '@/server/infra/db/database'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { findSessionMeta, recordSessionLogin } from '@/server/domains/auth/repo'

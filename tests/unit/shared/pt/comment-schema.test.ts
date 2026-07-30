@@ -142,13 +142,17 @@ describe('safeValidateCommentBody', () => {
   it('returns ok:true for a valid body', () => {
     const result = safeValidateCommentBody(validBody)
     expect(result.ok).toBe(true)
-    if (result.ok) expect(result.body).toEqual(validBody)
+    if (result.ok) {
+      expect(result.body).toEqual(validBody)
+    }
   })
 
   it('returns ok:false with a ZodError for an invalid body', () => {
     const result = safeValidateCommentBody([{ _type: 'image', _key: 'i1', src: '/x.png' }])
     expect(result.ok).toBe(false)
-    if (!result.ok) expect(result.error).toBeInstanceOf(z.ZodError)
+    if (!result.ok) {
+      expect(result.error).toBeInstanceOf(z.ZodError)
+    }
   })
 })
 

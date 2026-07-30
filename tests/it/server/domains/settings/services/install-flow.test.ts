@@ -1,7 +1,5 @@
 import { asc } from 'drizzle-orm'
-import { afterAll, beforeEach, describe, expect, it } from 'vitest'
-
-import type { Database } from '@/server/infra/db/database'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
@@ -53,7 +51,8 @@ describe('server/domains/settings/services/install-flow', () => {
       const assets = builtRows()[1]?.payload
 
       expect(assets?.asset).toEqual({ host: 'localhost', scheme: 'https' })
-      expect((assets?.storage as { enabled: boolean }).enabled).toBe(false)
+      const storage = assets?.storage as { enabled: boolean }
+      expect(storage.enabled).toBe(false)
     })
 
     it('fails softly with the section scope and issue path when a form-derived section is invalid', () => {

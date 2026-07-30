@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
+import { renderInRouter, stableHtml } from '#/_helpers/render'
 import {
   LoginForm,
   LostPasswordForm,

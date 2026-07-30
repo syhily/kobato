@@ -174,7 +174,6 @@ describe('useCreateDraft — synchronous return shape', () => {
     // multiple awaits (setDraft, removeDraft, sessionStorage.removeItem).
     // Flush the microtask queue thoroughly before asserting.
     for (let i = 0; i < 5; i++) {
-      // eslint-disable-next-line no-await-in-loop
       await Promise.resolve()
     }
     // The edit-keyed setDraft call writes the post-edit record.

@@ -36,7 +36,9 @@ function makeTarGz(name: string, payload: string): Buffer {
   header.write('0', 156, 'latin1') // regular file
   header.write('ustar\0', 257, 'latin1')
   let sum = 0
-  for (const byte of header) sum += byte
+  for (const byte of header) {
+    sum += byte
+  }
   header.write(`${sum.toString(8).padStart(6, '0')}\0 `, 148, 'latin1')
   const padding = Buffer.alloc((512 - (data.length % 512)) % 512)
   const end = Buffer.alloc(1024)
@@ -134,7 +136,9 @@ describe('update/pipeline', () => {
         tagName: 'v9.9.9',
         execPath,
         onState: (state) => {
-          if (state === 'swapping') chmodSync(stageDir, 0o555)
+          if (state === 'swapping') {
+            chmodSync(stageDir, 0o555)
+          }
         },
       }),
     ).rejects.toThrow()

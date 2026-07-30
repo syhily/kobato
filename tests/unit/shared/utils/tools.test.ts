@@ -62,7 +62,7 @@ describe('shared/utils/tools — shuffle', () => {
   it('returns a new array with the same multiset', () => {
     const input = [1, 2, 3, 4, 5]
     const out = shuffle(input, 'seed-1')
-    expect(out.slice().sort()).toEqual(input)
+    expect(out.slice().sort((a, b) => a - b)).toEqual(input)
     expect(input).toEqual([1, 2, 3, 4, 5])
   })
 
@@ -86,7 +86,7 @@ describe('shared/utils/tools — sampleSize', () => {
   it('returns a shuffled copy when n >= input length', () => {
     const input = [1, 2, 3]
     const out = sampleSize(input, 5, 's')
-    expect(out.slice().sort()).toEqual(input)
+    expect(out.slice().sort((a, b) => a - b)).toEqual(input)
   })
 
   it('returns exactly n distinct items', () => {

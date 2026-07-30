@@ -2,8 +2,7 @@ import type { ReactNode } from 'react'
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { Outlet, useOutletContext } from 'react-router'
-import { createMemoryRouter, RouterProvider, type RouteObject } from 'react-router'
+import { Outlet, useOutletContext, createMemoryRouter, RouterProvider, type RouteObject } from 'react-router'
 import { describe, expect, it } from 'vitest'
 // SSR-render the editor route `Component` exports. These routes render
 // TipTap-based editors that cannot fully SSR, but the route wrapper

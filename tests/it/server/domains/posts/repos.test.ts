@@ -1,7 +1,5 @@
 import { eq, sql } from 'drizzle-orm'
-import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import type { Database } from '@/server/infra/db/database'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { content as contentTable } from '@/server/infra/db/schema/content'

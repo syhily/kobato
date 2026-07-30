@@ -4,7 +4,7 @@ import type { Database } from '@/server/infra/db/database'
 
 class FakeQuery {
   rows: unknown[] = []
-  private resolveValue: unknown | null = null
+  private resolveValue: unknown = null
 
   select() {
     return this

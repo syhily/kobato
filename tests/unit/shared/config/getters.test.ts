@@ -46,7 +46,9 @@ describe('shared/config/getters — requireBlogSettingsSection', () => {
   it('returns every populated section of the test bundle', () => {
     for (const key of SECTION_KEYS) {
       const value = TEST_BLOG_SETTINGS_BUNDLE[key]
-      if (value === null) continue
+      if (value === null) {
+        continue
+      }
       expect(requireBlogSettingsSection(key)).toBe(value)
     }
   })

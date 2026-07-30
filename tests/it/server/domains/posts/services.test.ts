@@ -1,7 +1,5 @@
 import { eq } from 'drizzle-orm'
-import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import type { Database } from '@/server/infra/db/database'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { content as contentTable } from '@/server/infra/db/schema/content'
@@ -241,7 +239,7 @@ describe('posts/services/mutate — deletePost / restorePost / unpublishPost', (
     expect(r.restored).toBe(true)
   })
   it('unpublishes a published post', async () => {
-    const { createPost, updatePostMeta, unpublishPost } = await import('@/server/domains/posts/services/mutate')
+    const { createPost, unpublishPost } = await import('@/server/domains/posts/services/mutate')
     const created = await createPost(db, { title: 'To Unpublish' }, null)
     await db
       .update(postMetaTable)

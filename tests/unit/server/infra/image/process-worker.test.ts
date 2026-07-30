@@ -47,7 +47,7 @@ function mockSharp(opts: {
       }),
     }),
   }
-  return (input: unknown) => {
+  return (_input: unknown) => {
     if (opts.throwOnConstruct) {
       throw new Error('construct fail')
     }

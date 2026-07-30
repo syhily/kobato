@@ -1,7 +1,5 @@
 import { eq, sql } from 'drizzle-orm'
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import type { Database } from '@/server/infra/db/database'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { makeRouteContext } from '#/_helpers/context'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'

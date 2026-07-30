@@ -1,9 +1,8 @@
 import { call } from '@orpc/server'
 import bcrypt from 'bcryptjs'
 import { eq } from 'drizzle-orm'
-import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { Database } from '@/server/infra/db/database'
 import type { BlogSettingsBundle, RateLimitSettings } from '@/shared/config/types'
 
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'

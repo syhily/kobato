@@ -1,4 +1,4 @@
-import { describe, expect, it, afterAll, beforeEach } from 'vitest'
+import { describe, expect, it, beforeEach } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { findTagNamesByPostId, findTagNamesByPostIds, setPostTags } from '@/server/infra/db/operations/post-tag'

@@ -1,7 +1,5 @@
 import { eq } from 'drizzle-orm'
-import { afterAll, beforeEach, describe, expect, it } from 'vitest'
-
-import type { Database } from '@/server/infra/db/database'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { saveDraftRevision, publishLatestRevision } from '@/server/domains/content/repos/mutate'
@@ -93,7 +91,9 @@ describe('content/repos/mutate — saveDraftRevision', () => {
       headings: [],
       authorId: null,
     })
-    if (first.status !== 'saved') throw new Error('expected saved')
+    if (first.status !== 'saved') {
+      throw new Error('expected saved')
+    }
     const second = await saveDraftRevision(db, 'post', {
       ownerId: meta.id,
       body,
@@ -195,7 +195,9 @@ describe('content/repos/mutate — publishLatestRevision', () => {
       headings: [],
       authorId: null,
     })
-    if (first.status !== 'published') throw new Error('expected published')
+    if (first.status !== 'published') {
+      throw new Error('expected published')
+    }
     const second = await publishLatestRevision(db, 'post', {
       ownerId: meta.id,
       body,

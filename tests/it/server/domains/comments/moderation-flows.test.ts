@@ -1,7 +1,5 @@
 import { eq } from 'drizzle-orm'
-import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
-
-import type { Database } from '@/server/infra/db/database'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'

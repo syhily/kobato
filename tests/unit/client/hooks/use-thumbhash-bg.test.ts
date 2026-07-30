@@ -106,7 +106,7 @@ describe('client/hooks/useThumbhashBackground — input transitions', () => {
 // fresh module-level cache). The top-level beforeEach already resets the
 // registry; doMock callers register their mock before invoking this.
 async function importModule() {
-  return await import('@/client/hooks/use-thumbhash-bg')
+  return import('@/client/hooks/use-thumbhash-bg')
 }
 
 // Decode a base64 thumbhash string into the Uint8Array the decoder expects.

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
-import { UploadImageDialog, type UploadKind } from '@/ui/admin/shared/UploadImageDialog'
+import { UploadImageDialog } from '@/ui/admin/shared/UploadImageDialog'
 import { AdminSearchDialog } from '@/ui/admin/shell/AdminSearchDialog'
 import { AdminShell } from '@/ui/admin/shell/AdminShell'
 import { NavMenuItem } from '@/ui/admin/shell/NavMenuItem'

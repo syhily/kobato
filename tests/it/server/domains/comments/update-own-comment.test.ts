@@ -190,9 +190,8 @@ describe('updateOwnComment — persistence edges', () => {
 
     // Exactly one write landed; the row carries one of the two edits.
     const stored = await readRow(id)
-    expect(['edited', 'edited concurrently']).toContain(
-      (stored?.body as Array<{ children: Array<{ text: string }> }>)[0]?.children[0]?.text,
-    )
+    const body = stored?.body as Array<{ children: Array<{ text: string }> }>
+    expect(['edited', 'edited concurrently']).toContain(body[0]?.children[0]?.text)
     expect(emails.sendNewComment).not.toHaveBeenCalled()
   })
 

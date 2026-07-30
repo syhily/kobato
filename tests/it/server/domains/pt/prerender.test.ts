@@ -1,6 +1,5 @@
-import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { Database } from '@/server/infra/db/database'
 import type { EnrichedMusicPlayerBlock } from '@/shared/pt/enriched'
 import type { PortableTextBody } from '@/shared/pt/schema'
 

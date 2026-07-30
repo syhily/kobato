@@ -136,7 +136,9 @@ function getValueSpecifiers(source: string): string[] {
   const fromRegex =
     /import\s+(type\s+)?(?:[\w$]+\s*,\s*)?(?:\{[^}]*\}|\*\s+as\s+[\w$]+)?(?:[\w$]+)?\s+from\s+['"]([^'"]+)['"]/g
   while ((match = fromRegex.exec(source)) !== null) {
-    if (!match[1]) specifiers.push(match[2])
+    if (!match[1]) {
+      specifiers.push(match[2])
+    }
   }
   // side-effect: import '…'
   const sideEffectRegex = /import\s+['"]([^'"]+)['"]/g
@@ -152,7 +154,9 @@ function getValueSpecifiers(source: string): string[] {
 }
 
 function isNodeBuiltin(specifier: string): boolean {
-  if (specifier.startsWith('node:')) return true
+  if (specifier.startsWith('node:')) {
+    return true
+  }
   return NODE_BUILTINS.some((name) => specifier === name || specifier.startsWith(`${name}/`))
 }
 

@@ -20,7 +20,9 @@ vi.mock('@/server/bootstrap/analytics-lifecycle', () => ({
     ...analyticsHandle,
     writer: {
       createAppender: async (table: string) => {
-        if (ingestShouldFail) throw new Error('ingest down')
+        if (ingestShouldFail) {
+          throw new Error('ingest down')
+        }
         return analyticsHandle.writer.createAppender(table)
       },
     },

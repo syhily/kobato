@@ -3,19 +3,6 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { decodeHtmlEntities, tencentProvider } from '@/server/domains/music/providers/tencent'
 
-function mockFetchText(response: string) {
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(() =>
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve(JSON.parse(response)),
-        text: () => Promise.resolve(response),
-      }),
-    ),
-  )
-}
-
 function mockFetchJson(response: unknown) {
   vi.stubGlobal(
     'fetch',

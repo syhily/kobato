@@ -1,6 +1,5 @@
-import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { Database } from '@/server/infra/db/database'
 import type { BrandingObjectRef } from '@/shared/config/types'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'

@@ -1,5 +1,5 @@
 import { asc } from 'drizzle-orm'
-import { describe, expect, it, afterAll, beforeEach } from 'vitest'
+import { describe, expect, it, beforeEach } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { reorderAdminCategories } from '@/server/domains/taxonomies/categories/services/mutate'

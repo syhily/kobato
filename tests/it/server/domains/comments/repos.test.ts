@@ -1,8 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
-
-import type { Database } from '@/server/infra/db/database'
+import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import {
@@ -65,7 +63,6 @@ import {
 } from '@/server/domains/comments/services/moderate'
 import { comment } from '@/server/infra/db/schema/comment'
 import { metric } from '@/server/infra/db/schema/metric'
-import { page } from '@/server/infra/db/schema/page'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
 
@@ -100,14 +97,6 @@ async function seedPost(slug: string): Promise<number> {
       publishedRevisionId: 1,
     })
     .returning({ id: post.id })
-  return rows[0]!.id
-}
-
-async function seedPageEntity(slug: string): Promise<number> {
-  const rows = await db
-    .insert(page)
-    .values({ slug, title: `Page ${slug}` })
-    .returning({ id: page.id })
   return rows[0]!.id
 }
 

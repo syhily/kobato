@@ -5,12 +5,12 @@ import { describe, expect, it } from 'vitest'
 
 import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
-import type { CommentFilterFieldKey } from '@/ui/admin/comments/filter-fields'
 import type { ActiveFilter } from '@/ui/admin/shared/filterPillsReducer'
 
 import { renderHook } from '#/_helpers/hook'
 import { orpcQuery } from '@/client/api/orpc-query'
 import {
+  type CommentFilterFieldKey,
   COMMENT_FILTER_FIELDS,
   type CommentsFilterQuery,
   isTextFilterOperator,

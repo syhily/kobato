@@ -1,6 +1,4 @@
-import { afterAll, beforeEach, describe, expect, it } from 'vitest'
-
-import type { Database } from '@/server/infra/db/database'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { findEntitySlugTitle, resolveEntitiesForComments } from '@/server/domains/content/entities/slug-title'

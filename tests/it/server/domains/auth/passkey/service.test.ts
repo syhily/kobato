@@ -1,8 +1,7 @@
 import bcrypt from 'bcryptjs'
 import { eq } from 'drizzle-orm'
-import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { Database } from '@/server/infra/db/database'
 import type { SafeUser } from '@/server/infra/db/operations/user'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'

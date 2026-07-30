@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import type { AdminRevisionDto } from '@/shared/contracts/revision'
 
-import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
+import { renderToHtml, stableHtml } from '#/_helpers/render'
 import { DateTimePicker } from '@/ui/admin/editor-shell/DateTimePicker'
 import { RevisionHistoryDrawer } from '@/ui/admin/editor-shell/RevisionsDrawer'
 

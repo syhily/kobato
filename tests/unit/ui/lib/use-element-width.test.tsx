@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useElementWidth } from '@/ui/lib/use-element-width'
 
 function WidthIndicator() {
-  const { ref, width } = useElementWidth<HTMLDivElement>()
+  const { ref, width } = useElementWidth()
   return (
     <div ref={ref} data-width={width}>
       {width}px

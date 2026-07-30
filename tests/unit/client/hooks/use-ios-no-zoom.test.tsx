@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { renderHook } from '#/_helpers/hook'
 import { useIosNoZoomOnFocus } from '@/client/hooks/use-ios-no-zoom'

@@ -4,9 +4,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { gunzipSync } from 'node:zlib'
 
-import type { StagedBackup } from '@/server/domains/backup/services/restore'
-
 import {
+  type StagedBackup,
   assertDuckdbBackup,
   assertSqliteBackup,
   assertStagedBackupContainsAdmin,

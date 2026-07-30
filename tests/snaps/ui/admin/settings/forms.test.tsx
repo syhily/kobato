@@ -8,7 +8,7 @@ import type {
   SecuritySettings,
   SocialItem,
 } from '@/shared/config/types'
-import type { AdminCacheStatsDto, ClearCacheResultDto } from '@/shared/contracts/cache'
+import type { AdminCacheStatsDto } from '@/shared/contracts/cache'
 
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { CacheView } from '@/ui/admin/settings/CacheView'

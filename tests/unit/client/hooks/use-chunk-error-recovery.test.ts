@@ -1,11 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { renderHook } from '#/_helpers/hook'
-import {
-  subscribeChunkReload,
-  triggerChunkReload,
-  useReloadOnChunkError,
-} from '@/client/hooks/use-chunk-error-recovery'
+import { subscribeChunkReload, useReloadOnChunkError } from '@/client/hooks/use-chunk-error-recovery'
 import { isChunkLoadError } from '@/shared/utils/chunk-error'
 
 // useChunkErrorRecovery (the hook) and useReloadOnChunkError attach

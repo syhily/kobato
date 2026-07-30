@@ -67,7 +67,7 @@ describe('resolveSlug — explicit value wins and is validated', () => {
 
 describe('resolveSlug — the route-prefix fence applies to post/page only', () => {
   it('rejects every reserved slug for posts and pages, with field-path issues', () => {
-    for (const slug of [...RESERVED_SLUGS]) {
+    for (const slug of RESERVED_SLUGS) {
       expectSlugFailure(() => resolveSlug(slug, 'name', { entity: 'post' }))
       expectSlugFailure(() => resolveSlug(slug, 'name', { entity: 'page' }))
     }

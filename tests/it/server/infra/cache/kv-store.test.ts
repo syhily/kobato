@@ -1,7 +1,6 @@
 import { eq } from 'drizzle-orm'
-import { afterAll, beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
-import type { Database } from '@/server/infra/db/database'
 import type { KvCacheRow } from '@/server/infra/db/types'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'

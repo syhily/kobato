@@ -29,13 +29,14 @@ vi.mock('@/server/infra/hono/dev-server-ref', () => ({
 
 // Capture NODE_ENV manipulation across runs.
 const originalNodeEnv = process.env.NODE_ENV
+const originalStderrWrite = process.stderr.write
 
 function captureStderr() {
   process.stderr.write = stderrWriteMock as typeof process.stderr.write
 }
 
 function restoreStderr() {
-  process.stderr.write = process.stderr.write
+  process.stderr.write = originalStderrWrite
 }
 
 // Build a minimal React-Router plugin context shape that resolvePluginConfig

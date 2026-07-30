@@ -39,13 +39,11 @@ interface FakeWindow {
   localStorage: StorageLike
 }
 
-let savedWindow: unknown
 let savedDescriptor: PropertyDescriptor | undefined
 
 beforeEach(() => {
   // Snapshot the current globalThis.window state so afterEach can
   // restore it cleanly. Under node this is `undefined`.
-  savedWindow = (globalThis as { window?: unknown }).window
   savedDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'window')
 })
 

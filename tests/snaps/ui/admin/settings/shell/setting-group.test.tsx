@@ -1,7 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import type { SettingsSection } from '@/shared/config/sections'
-
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'

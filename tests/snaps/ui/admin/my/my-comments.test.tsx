@@ -1,8 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import type { MyCommentItem } from '@/routes/admin/me/comments'
-import type { CommentBody } from '@/shared/pt/comment-schema'
-
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { MyCommentsView } from '@/ui/admin/my/MyCommentsView'
 import { MyEditCommentDialog } from '@/ui/admin/my/MyEditCommentDialog'
@@ -10,33 +7,6 @@ import { MyEditCommentDialog } from '@/ui/admin/my/MyEditCommentDialog'
 vi.mock('@/ui/public/comments/CommentBodyEditor', () => ({
   CommentBodyEditor: () => <div data-testid="comment-body-editor">CommentBodyEditor</div>,
 }))
-
-const EMPTY_BODY: CommentBody = []
-
-function makeCommentBody(text: string): CommentBody {
-  return [
-    {
-      _type: 'block',
-      _key: 'b1',
-      style: 'normal',
-      children: [{ _type: 'span', _key: 's1', text, marks: [] }],
-      markDefs: [],
-    },
-  ]
-}
-
-function makeMyCommentItem(overrides: Partial<MyCommentItem> = {}): MyCommentItem {
-  return {
-    id: overrides.id ?? 'comment-1',
-    body: overrides.body ?? makeCommentBody('Hello'),
-    createdAtIso: overrides.createdAtIso ?? '2024-01-01T00:00:00.000Z',
-    deletedAtIso: overrides.deletedAtIso ?? null,
-    deleteRequestedAtIso: overrides.deleteRequestedAtIso ?? null,
-    isPending: overrides.isPending ?? false,
-    entity: overrides.entity ?? { title: 'Post One', permalink: '/posts/one' },
-    parent: overrides.parent ?? null,
-  }
-}
 
 const currentUser = { id: 'user-1', name: 'Alice', email: 'alice@example.com' }
 

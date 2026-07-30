@@ -1,4 +1,3 @@
-/* oxlint-disable typescript/no-unsafe-type-assertion */
 import { describe, expect, it } from 'vitest'
 
 import type { FootnoteDefinitionBlock, NonRecursiveBlock } from '@/shared/pt/schema'

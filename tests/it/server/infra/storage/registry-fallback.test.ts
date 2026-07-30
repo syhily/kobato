@@ -4,8 +4,7 @@ import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
-import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
-import { setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { TEST_ENV } from '#/_helpers/env'
 import { STORAGE_DIR } from '@/server/infra/paths'
 import { localBackend, resolveLocalPath } from '@/server/infra/storage/backends/local'

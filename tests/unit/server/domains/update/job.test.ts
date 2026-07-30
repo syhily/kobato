@@ -7,7 +7,7 @@ vi.mock('@/server/domains/update/pipeline', () => ({ runSelfUpdate: pipelineMock
 // job.ts holds module-level job state; reset the registry and re-import per
 // test so each case starts from a clean machine.
 async function loadJob() {
-  return await import('@/server/domains/update/job')
+  return import('@/server/domains/update/job')
 }
 
 function deferred<T>() {
