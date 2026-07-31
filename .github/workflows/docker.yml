@@ -15,7 +15,12 @@ jobs:
   build-and-push:
     name: build and push image
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # Multi-arch: the arm64 leg runs under QEMU emulation, so the whole
+    # SEA build (pnpm install + vite bundles + brotli-11 packing) is
+    # several times slower than a native build. If this becomes painful,
+    # switch to per-arch native runners (ubuntu-24.04-arm, like sea.yml)
+    # pushing by digest, plus a manifest-merge job.
+    timeout-minutes: 90
     permissions:
       contents: read
       packages: write
@@ -39,12 +44,20 @@ jobs:
             type=semver,pattern={{version}},enable=${{ github.event_name == 'release' }}
             type=semver,pattern={{major}}.{{minor}},enable=${{ github.event_name == 'release' }}
 
+      # QEMU provides the arm64 emulator for the multi-platform build;
+      # buildx then runs the Dockerfile once per listed platform.
+      - uses: docker/setup-qemu-action@v4
+
       - uses: docker/setup-buildx-action@v4
 
       - uses: docker/build-push-action@v7
         id: push
         with:
           context: .
+          # amd64 + arm64: sea.yml already ships linux-arm64 binaries, so
+          # the image must not strand ARM Docker hosts with exec format
+          # errors.
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
