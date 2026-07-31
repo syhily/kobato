@@ -45,14 +45,20 @@ function makeTarGz(name: string, payload: string): Buffer {
   return gzipSync(Buffer.concat([header, data, padding, end]))
 }
 
-function serveUpdate(payload: string | Buffer, shaText?: string) {
+function serveUpdate(payload: string | Buffer, sidecars: { archiveShaText?: string; binaryShaText?: string } = {}) {
   const binaryName = `kobato-linux-${process.arch}`
   const archive = typeof payload === 'string' ? makeTarGz(binaryName, payload) : payload
-  const hash = sha256(archive)
+  const archiveHash = sha256(archive)
+  // Raw-binary sidecar: meaningless for non-string payloads (corrupt
+  // archive fixtures), but those tests never reach the binary check.
+  const binaryHash = typeof payload === 'string' ? sha256(Buffer.from(payload)) : '0'.repeat(64)
   fetchMock.mockImplementation(async (input: unknown) => {
     const url = String(input)
+    if (url.endsWith('.tar.gz.sha256')) {
+      return new Response(sidecars.archiveShaText ?? `${archiveHash}  ${binaryName}.tar.gz\n`)
+    }
     if (url.endsWith('.sha256')) {
-      return new Response(shaText ?? `${hash}  ${binaryName}.tar.gz\n`)
+      return new Response(sidecars.binaryShaText ?? `${binaryHash}  ${binaryName}\n`)
     }
     return new Response(new Uint8Array(archive))
   })
@@ -91,12 +97,25 @@ describe('update/pipeline', () => {
     const urls = fetchMock.mock.calls.map((call) => String(call[0]))
     expect(urls[0]).toContain(`/releases/download/v9.9.9/kobato-linux-${process.arch}.tar.gz`)
     expect(urls[1]).toBe(`${urls[0]}.sha256`)
+    expect(urls[2]).toContain(`/releases/download/v9.9.9/kobato-linux-${process.arch}.sha256`)
   })
 
   it('aborts on sha256 mismatch without touching the live binary', async () => {
-    serveUpdate(NEW_BINARY, `${'0'.repeat(64)}  kobato-linux-${process.arch}.tar.gz\n`)
+    serveUpdate(NEW_BINARY, { archiveShaText: `${'0'.repeat(64)}  kobato-linux-${process.arch}.tar.gz\n` })
 
     await expect(runSelfUpdate({ tagName: 'v9.9.9', execPath })).rejects.toThrow('校验失败')
+
+    expect(await readFile(execPath, 'utf8')).toBe('old-binary-v1')
+    await expect(stat(`${execPath}.bak`)).rejects.toThrow()
+    expect(await readdir(dir)).not.toContain('.kobato-update')
+  })
+
+  it('aborts when the extracted binary fails its own checksum', async () => {
+    // The archive hash matches, so extraction "succeeds" — only the raw
+    // binary sidecar can catch a defective/tampered extraction.
+    serveUpdate(NEW_BINARY, { binaryShaText: `${'1'.repeat(64)}  kobato-linux-${process.arch}\n` })
+
+    await expect(runSelfUpdate({ tagName: 'v9.9.9', execPath })).rejects.toThrow('内容校验失败')
 
     expect(await readFile(execPath, 'utf8')).toBe('old-binary-v1')
     await expect(stat(`${execPath}.bak`)).rejects.toThrow()

@@ -1,10 +1,13 @@
-// Self-update pipeline: stage → download → verify → extract → chmod →
-// backup → swap, with best-effort restore and manual post-restart rollback
-// via the `<binary>.bak` sibling.
+// Self-update pipeline: stage → download → verify → extract → verify →
+// chmod → backup → swap, with best-effort restore and manual post-restart
+// rollback via the `<binary>.bak` sibling.
 //
 // The release asset is a `kobato-linux-<arch>.tar.gz` (built by sea.yml)
-// containing the bare binary; its `.sha256` sidecar hashes the archive, so
-// verification runs before extraction.
+// containing the bare binary. Two sidecars authenticate it end to end:
+// `<asset>.tar.gz.sha256` hashes the archive (checked before extraction)
+// and `<asset>.sha256` hashes the raw binary (checked on the EXTRACTED
+// file) — so an extraction defect can never swap in a corrupt executable
+// that a valid archive hash would otherwise wave through.
 
 import type { ReadableStream as WebReadableStream } from 'node:stream/web'
 
@@ -38,6 +41,11 @@ export interface RunSelfUpdateOptions {
 
 function assetName(): string {
   return `kobato-linux-${process.arch}.tar.gz`
+}
+
+/** Sidecar hashing the raw binary inside the archive (`kobato-linux-<arch>.sha256`). */
+function binaryHashAssetName(): string {
+  return assetName().replace(/\.tar\.gz$/, '.sha256')
 }
 
 async function downloadToFile(url: string, dest: string): Promise<void> {
@@ -105,9 +113,10 @@ async function extractBinaryFromTarGz(archivePath: string, destPath: string): Pr
   }
 }
 
-// The `.sha256` sidecar is produced by `sha256sum` in `sea.yml` over the
-// `.tar.gz` archive: `<hash>  <name>`. If the workflow changes the format,
-// this parser must change in lockstep.
+// The `.sha256` sidecars are produced by `sha256sum` in `sea.yml` — one
+// over the `.tar.gz` archive, one over the raw binary — both in the
+// `<hash>  <name>` format. If the workflow changes the format, this
+// parser must change in lockstep.
 export function parseSha256Sidecar(text: string): string {
   const hash = text.trim().split(/\s+/)[0] ?? ''
   if (!/^[0-9a-f]{64}$/i.test(hash)) {
@@ -122,7 +131,8 @@ export async function runSelfUpdate({ tagName, execPath = process.execPath, onSt
   const stagedArchivePath = join(stageDir, STAGED_ARCHIVE_NAME)
   const stagedPath = join(stageDir, STAGED_BINARY_NAME)
   const backupPath = execPath + BACKUP_SUFFIX
-  const assetUrl = `${APP_REPOSITORY}/releases/download/${tagName}/${assetName()}`
+  const assetBaseUrl = `${APP_REPOSITORY}/releases/download/${tagName}`
+  const assetUrl = `${assetBaseUrl}/${assetName()}`
 
   // Clean any stale stage dir from an interrupted run, then re-create.
   await rm(stageDir, { recursive: true, force: true })
@@ -134,11 +144,16 @@ export async function runSelfUpdate({ tagName, execPath = process.execPath, onSt
     await downloadToFile(assetUrl, stagedArchivePath)
 
     onState?.('verifying')
-    const shaRes = await fetch(`${assetUrl}.sha256`, { signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS) })
-    if (!shaRes.ok) {
-      throw new Error(`下载校验文件失败（HTTP ${shaRes.status}）`)
+    const [shaRes, binShaRes] = await Promise.all([
+      fetch(`${assetUrl}.sha256`, { signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS) }),
+      fetch(`${assetBaseUrl}/${binaryHashAssetName()}`, { signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS) }),
+    ])
+    if (!shaRes.ok || !binShaRes.ok) {
+      const status = shaRes.ok ? binShaRes.status : shaRes.status
+      throw new Error(`下载校验文件失败（HTTP ${status}）`)
     }
     const expected = parseSha256Sidecar(await shaRes.text())
+    const expectedBinary = parseSha256Sidecar(await binShaRes.text())
     const actual = await sha256File(stagedArchivePath)
     if (actual !== expected) {
       throw new Error('更新包校验失败，已中止')
@@ -147,6 +162,13 @@ export async function runSelfUpdate({ tagName, execPath = process.execPath, onSt
       await extractBinaryFromTarGz(stagedArchivePath, stagedPath)
     } catch (err) {
       throw new Error('更新包解压失败，已中止', { cause: err })
+    }
+    // The archive hash authenticates the container, not its contents —
+    // only this second check proves the bytes about to be exec'd are the
+    // bytes CI produced.
+    const actualBinary = await sha256File(stagedPath)
+    if (actualBinary !== expectedBinary) {
+      throw new Error('更新包内容校验失败，已中止')
     }
     await chmod(stagedPath, 0o755)
 

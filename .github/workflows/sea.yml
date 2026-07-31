@@ -58,6 +58,10 @@ jobs:
       # only — the e2e suite needs no services but the extra minutes buy
       # nothing the darwin/win32 smokes don't already cover.
       - run: pnpm run sea:e2e "dist-sea/kobato-${{ matrix.target }}"
+      # Two checksums ship per target: one over the archive (verified
+      # pre-extraction) and one over the raw binary (verified on the
+      # extracted file) — the self-update pipeline checks both, so a
+      # defective extraction can never swap in a corrupt executable.
       - name: Package tar.gz with checksum
         env:
           BIN: kobato-${{ matrix.target }}
@@ -66,6 +70,7 @@ jobs:
           tar -czf "$BIN.tar.gz" "$BIN"
           sha256sum "$BIN.tar.gz" > "$BIN.tar.gz.sha256"
           sha256sum -c "$BIN.tar.gz.sha256"
+          sha256sum "$BIN" > "$BIN.sha256"
       - uses: actions/upload-artifact@v7
         with:
           name: kobato-${{ matrix.target }}
@@ -73,6 +78,7 @@ jobs:
           path: |
             dist-sea/kobato-${{ matrix.target }}.tar.gz
             dist-sea/kobato-${{ matrix.target }}.tar.gz.sha256
+            dist-sea/kobato-${{ matrix.target }}.sha256
 
   # macOS targets: separate job for the runner image only. The smoke is
   # the FULL managed lifecycle — the embedded databases need no service
@@ -114,6 +120,7 @@ jobs:
           tar -czf "$BIN.tar.gz" "$BIN"
           shasum -a 256 "$BIN.tar.gz" > "$BIN.tar.gz.sha256"
           shasum -a 256 -c "$BIN.tar.gz.sha256"
+          shasum -a 256 "$BIN" > "$BIN.sha256"
       - uses: actions/upload-artifact@v7
         with:
           name: kobato-${{ matrix.target }}
@@ -121,6 +128,7 @@ jobs:
           path: |
             dist-sea/kobato-${{ matrix.target }}.tar.gz
             dist-sea/kobato-${{ matrix.target }}.tar.gz.sha256
+            dist-sea/kobato-${{ matrix.target }}.sha256
 
   # Windows targets: same split as macOS — separate job for the runner
   # image, full managed smoke (no service container needed). The
@@ -166,6 +174,7 @@ jobs:
           tar -czf "$BIN.tar.gz" "$BIN.exe"
           sha256sum "$BIN.tar.gz" > "$BIN.tar.gz.sha256"
           sha256sum -c "$BIN.tar.gz.sha256"
+          sha256sum "$BIN.exe" > "$BIN.sha256"
       - uses: actions/upload-artifact@v7
         with:
           name: kobato-${{ matrix.target }}
@@ -173,6 +182,7 @@ jobs:
           path: |
             dist-sea/kobato-${{ matrix.target }}.tar.gz
             dist-sea/kobato-${{ matrix.target }}.tar.gz.sha256
+            dist-sea/kobato-${{ matrix.target }}.sha256
 
   # Release assets are uploaded only for release events, in a separate job
   # so the elevated contents:write token never reaches the build matrix.
