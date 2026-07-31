@@ -33,15 +33,12 @@ function isCommentTokenPayload(value: unknown): value is CommentTokenPayload {
 }
 
 /**
- * Single codec for the `one_time_token` payloads. Plain JSON both ways
+ * Decode guard for `one_time_token` payloads. The row stores plain JSON
  * (superjson was dropped with the SQLite migration — the payload is all
- * strings and epoch-ms numbers); the guard runs after decode as a
- * second-line check against shape drift.
+ * strings and epoch-ms numbers), so writes pass the object straight to
+ * Drizzle's JSON column; the guard runs after decode as a second-line
+ * check against shape drift.
  */
-function encodeTokenPayload(payload: CommentTokenPayload): CommentTokenPayload {
-  return payload
-}
-
 function decodeTokenPayload(raw: unknown): CommentTokenPayload | null {
   try {
     if (!isCommentTokenPayload(raw)) {
@@ -72,7 +69,7 @@ export async function issueCommentToken(
   const ttl = ttlSeconds ?? requireBlogSettingsSection('comments').comments.tokenTtlSeconds
   await db.insert(oneTimeToken).values({
     key: `${TOKEN_KEY_PREFIX}${token}`,
-    payload: encodeTokenPayload(payload),
+    payload,
     expiresAt: new Date(Date.now() + ttl * 1000),
   })
   return token

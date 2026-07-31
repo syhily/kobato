@@ -44,6 +44,14 @@ export function makeMetaCrud<TMeta extends MetaRowBase, TNew extends AnyNewMeta>
     },
 
     findMetaBySlugForUpdate(db, slug) {
+      // Identical SQL to `findMetaBySlug` — the "ForUpdate" name is a
+      // PG-era fossil (`SELECT … FOR UPDATE` had no SQLite mapping to
+      // emit). The lock it promises is still real, just inherited:
+      // node:sqlite serializes writers on one connection, so a read
+      // inside a `db.transaction` cannot interleave with another write.
+      // The separate name survives so call sites state their intent —
+      // "I am about to mutate this row" — and the reservation probe
+      // stays greppable.
       const rows: unknown[] = db.select().from(table).where(eq(table.slug, slug)).limit(1).all()
       return unsafeCast<TMeta | null>(rows[0] ?? null)
     },
