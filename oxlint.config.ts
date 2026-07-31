@@ -10,7 +10,10 @@ export default defineConfig({
   ignorePatterns: ['.agents/skills/*', 'drizzle/**/*'],
   settings: {
     react: {
-      version: '19.2.5',
+      // Keep aligned with the installed `react` version in package.json —
+      // oxlint has no "detect" option, and a stale baseline silently
+      // evaluates version-gated rules against the wrong React.
+      version: '19.2.8',
       formComponents: [{ name: 'Form', attribute: 'action' }],
       linkComponents: [
         { name: 'Link', attribute: 'to' },
