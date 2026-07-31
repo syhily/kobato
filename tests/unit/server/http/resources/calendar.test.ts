@@ -1,3 +1,4 @@
+import { HTTPException } from 'hono/http-exception'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Database } from '@/server/infra/db/database'
@@ -18,9 +19,6 @@ describe('serveCalendar', () => {
 
   it('returns a png response for a valid date', async () => {
     vi.doMock('@/server/infra/http/status', () => ({
-      notFound: vi.fn(() => {
-        throw new Error('notFound should not be called')
-      }),
       pngResponse: vi.fn(
         (buffer: Buffer) => new Response(new Uint8Array(buffer), { headers: { 'Content-Type': 'image/png' } }),
       ),
@@ -43,9 +41,6 @@ describe('serveCalendar', () => {
   it('caches through the calendar declaration with the parsed date and theme', async () => {
     const through = vi.fn().mockResolvedValue(Buffer.from('dark-png'))
     vi.doMock('@/server/infra/http/status', () => ({
-      notFound: vi.fn(() => {
-        throw new Error('notFound should not be called')
-      }),
       pngResponse: vi.fn(
         (buffer: Buffer) => new Response(new Uint8Array(buffer), { headers: { 'Content-Type': 'image/png' } }),
       ),
@@ -61,54 +56,30 @@ describe('serveCalendar', () => {
   })
 
   it('throws 404 for malformed year', async () => {
-    const notFound = vi.fn(() => {
-      throw new Response('Not Found', { status: 404 })
-    })
-    vi.doMock('@/server/infra/http/status', () => ({ notFound, pngResponse: vi.fn() }))
-
     const serveCalendar = await importServeCalendar()
-    await expect(serveCalendar(db, { year: 'ab' }, 'light', {})).rejects.toMatchObject({
-      status: 404,
-    })
-    expect(notFound).toHaveBeenCalled()
+    const error = await serveCalendar(db, { year: 'ab' }, 'light', {}).catch((err: unknown) => err)
+    expect(error).toBeInstanceOf(HTTPException)
+    expect(error).toMatchObject({ status: 404 })
   })
 
   it('throws 404 for invalid calendar date', async () => {
-    const notFound = vi.fn(() => {
-      throw new Response('Not Found', { status: 404 })
-    })
-    vi.doMock('@/server/infra/http/status', () => ({ notFound, pngResponse: vi.fn() }))
-
     const serveCalendar = await importServeCalendar()
     await expect(serveCalendar(db, { year: '2026', time: '0230' }, 'light', {})).rejects.toMatchObject({
       status: 404,
     })
-    expect(notFound).toHaveBeenCalled()
   })
 
   it('throws 404 for an invalid time', async () => {
-    const notFound = vi.fn(() => {
-      throw new Response('Not Found', { status: 404 })
-    })
-    vi.doMock('@/server/infra/http/status', () => ({ notFound, pngResponse: vi.fn() }))
-
     const serveCalendar = await importServeCalendar()
     await expect(serveCalendar(db, { year: '2026', time: 'abcd' }, 'light', {})).rejects.toMatchObject({
       status: 404,
     })
-    expect(notFound).toHaveBeenCalled()
   })
 
   it('throws 404 for a date that rolls over', async () => {
-    const notFound = vi.fn(() => {
-      throw new Response('Not Found', { status: 404 })
-    })
-    vi.doMock('@/server/infra/http/status', () => ({ notFound, pngResponse: vi.fn() }))
-
     const serveCalendar = await importServeCalendar()
     await expect(serveCalendar(db, { year: '2026', time: '1399' }, 'light', {})).rejects.toMatchObject({
       status: 404,
     })
-    expect(notFound).toHaveBeenCalled()
   })
 })

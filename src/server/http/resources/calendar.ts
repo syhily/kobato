@@ -1,12 +1,21 @@
 import { format, isValid, parse } from 'date-fns'
+import { HTTPException } from 'hono/http-exception'
 
 import type { Database } from '@/server/infra/db/database'
 
 import { through } from '@/server/infra/cache/registry'
-import { notFound, pngResponse } from '@/server/infra/http/status'
+import { pngResponse } from '@/server/infra/http/status'
 import { type CalendarTheme, renderCalendar } from '@/server/render/calendar/render'
 
 const timeRegex = /^\d{4}$/
+
+// Hono-land 404: `HTTPException` is the only thrown shape the pipeline's
+// error handler maps to a real response (`onErrorHandler`). The RR-style
+// `notFound()` helper throws a raw `Response`, which Hono does NOT catch
+// — it escapes as an unhandled rejection and surfaces as a 500.
+function httpNotFound(): never {
+  throw new HTTPException(404, { message: 'Not Found' })
+}
 
 export async function serveCalendar(
   db: Database,
@@ -16,7 +25,7 @@ export async function serveCalendar(
 ): Promise<Response> {
   const { year, time } = params
   if (year === undefined || !timeRegex.test(year) || time === undefined || !timeRegex.test(time)) {
-    notFound()
+    httpNotFound()
   }
 
   // `time` is `MMdd`, e.g. `0424`. Reassemble into the full string
@@ -28,7 +37,7 @@ export async function serveCalendar(
   const rawDate = `${year}-${time}`
   const date = parse(rawDate, 'yyyy-MMdd', new Date())
   if (!isValid(date) || format(date, 'yyyy-MMdd') !== rawDate) {
-    notFound()
+    httpNotFound()
   }
 
   const buffer = await through(db, 'calendar', { date: format(date, 'yyyy-MM-dd'), theme }, () =>
