@@ -2,7 +2,7 @@ import { closeAnalyticsForRestore, initAnalyticsDatabase } from '@/server/bootst
 import { ManagedEngine } from '@/server/bootstrap/managed-engine'
 import { rescheduleArchive, scheduleNextArchive, wireArchiveScheduler } from '@/server/domains/audit/services/scheduler'
 import { wireRestoreMachine } from '@/server/domains/backup/restore-machine'
-import { rescheduleBackup } from '@/server/domains/backup/scheduler'
+import { rescheduleBackup, wireBackupScheduler } from '@/server/domains/backup/scheduler'
 import { resetLikeTokenSweep, startLikeTokenSweep } from '@/server/domains/comments/services/likes'
 import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { registerSectionChangeHandler } from '@/server/domains/settings/services/section-changes'
@@ -74,6 +74,7 @@ function wireDatabase(handle: DatabaseHandle): DatabaseHandle {
   setRestartDb(handle.db)
   setRestartRefreshSettings(refreshBlogSettings)
   wireArchiveScheduler({ getDb })
+  wireBackupScheduler({ getDb })
   wireKvSweepScheduler({ getDb })
   wireDbMaintenanceScheduler({ getHandle: () => engine.get() })
   initAllBatchers(handle)

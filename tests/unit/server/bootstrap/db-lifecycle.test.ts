@@ -67,6 +67,7 @@ vi.mock('@/server/domains/audit/services/scheduler', () => ({
 
 vi.mock('@/server/domains/backup/scheduler', () => ({
   rescheduleBackup: vi.fn(),
+  wireBackupScheduler: vi.fn(),
 }))
 
 vi.mock('@/server/infra/email/sender', () => ({

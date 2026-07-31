@@ -1,4 +1,5 @@
-import { getDb } from '@/server/bootstrap/db-lifecycle'
+import type { Database } from '@/server/infra/db/database'
+
 import { createBackup, cleanupOldBackups } from '@/server/domains/backup/services/backup'
 import { getLogger } from '@/server/infra/logger'
 import { computeNextRun, scheduleJob, type ScheduledJob } from '@/server/infra/scheduler-utils'
@@ -6,12 +7,27 @@ import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 const log = getLogger('backup.scheduler')
 
+// The db getter is injected by the composition root
+// (`@/server/bootstrap/db-lifecycle`, which imports this module) at
+// wire time — a direct import of db-lifecycle here would close an
+// import cycle. The getter is invoked when the job fires, so a
+// recreated handle (restore completion) is picked up without being
+// captured in module state. Same injection discipline as
+// `wireArchiveScheduler` in `@/server/domains/audit/services/scheduler`.
+let resolveDb: (() => Database) | null = null
 let job: ScheduledJob | null = null
 let hydrationRetryAttempt = 0
 
+export function wireBackupScheduler(deps: { getDb: () => Database }): void {
+  resolveDb = deps.getDb
+}
+
 async function runBackupJob(): Promise<void> {
+  if (!resolveDb) {
+    throw new Error('backup scheduler fired before wireBackupScheduler')
+  }
   try {
-    const db = getDb()
+    const db = resolveDb()
     const result = await createBackup(db, null)
     log.info('Scheduled backup created', result)
 

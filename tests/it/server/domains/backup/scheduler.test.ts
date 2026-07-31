@@ -26,8 +26,18 @@ vi.mock('@/server/infra/scheduler-utils', async (importOriginal) => {
 
 import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 
-const { scheduleNextBackup, rescheduleBackup } = await import('@/server/domains/backup/scheduler')
+const { scheduleNextBackup, rescheduleBackup, wireBackupScheduler } = await import('@/server/domains/backup/scheduler')
 const { stopAllScheduledJobs } = await import('@/server/infra/scheduler-utils')
+
+// The scheduler's db getter is injected at wire time (the composition
+// root does this in production); with the import cycle gone the test
+// wires it explicitly — the real in-memory handle, as before. Dynamic
+// import: a static one would evaluate the db-lifecycle graph before the
+// mock-capture consts above initialize (hoisted vi.mock factories read
+// them).
+const { getTestDb } = await import('#/_helpers/integration-db')
+const testDb = getTestDb()
+wireBackupScheduler({ getDb: () => testDb })
 
 // The scheduleJob seam registers its stop-all hook once, at module
 // import — capture it here, before beforeEach clears the mock.
