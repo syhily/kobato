@@ -170,12 +170,22 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
       }
       startTransition(async () => {
         addOptimistic('unlike')
-        await decreaseMutateAsync({ key: commentKey, token })
+        try {
+          await decreaseMutateAsync({ key: commentKey, token })
+        } catch {
+          // Rejected (e.g. the server found the token already consumed):
+          // React Query records the error and the optimistic toggle
+          // reverts with the transition — no base state was committed.
+        }
       })
     } else {
       startTransition(async () => {
         addOptimistic('like')
-        await increaseMutateAsync({ key: commentKey })
+        try {
+          await increaseMutateAsync({ key: commentKey })
+        } catch {
+          // Same contract as the unlike path (e.g. rate-limited).
+        }
       })
     }
   }, [isPending, state.liked, permalink, addOptimistic, decreaseMutateAsync, increaseMutateAsync, commentKey])

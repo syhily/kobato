@@ -162,6 +162,41 @@ describe('likesRouter.increase', () => {
   })
 })
 
+describe('likesRouter.decrease', () => {
+  it('consumes the token and returns the decremented count', async () => {
+    const pid = await seedPost('unlikeable')
+    await seedMetricRow('post', pid, 'pk-unlike')
+    const ctx = makePublicCtx({ db, clientAddress: '1.2.3.4' })
+
+    const { token } = await call(likesRouter.increase, { key: 'pk-unlike' }, { context: ctx })
+    const result = await call(likesRouter.decrease, { key: 'pk-unlike', token: token! }, { context: ctx })
+    expect(result).toMatchObject({ key: 'pk-unlike', likes: 0 })
+  })
+
+  it('rejects with BAD_REQUEST when the token is stale instead of reporting a phantom count', async () => {
+    const pid = await seedPost('stale-unlike')
+    await seedMetricRow('post', pid, 'pk-stale')
+    const ctx = makePublicCtx({ db, clientAddress: '1.2.3.4' })
+
+    await call(likesRouter.increase, { key: 'pk-stale' }, { context: ctx })
+    await expect(
+      call(likesRouter.decrease, { key: 'pk-stale', token: 'never-issued' }, { context: ctx }),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+  })
+
+  it('rejects when the same token is unliked twice', async () => {
+    const pid = await seedPost('double-unlike')
+    await seedMetricRow('post', pid, 'pk-double')
+    const ctx = makePublicCtx({ db, clientAddress: '1.2.3.4' })
+
+    const { token } = await call(likesRouter.increase, { key: 'pk-double' }, { context: ctx })
+    await call(likesRouter.decrease, { key: 'pk-double', token: token! }, { context: ctx })
+    await expect(
+      call(likesRouter.decrease, { key: 'pk-double', token: token! }, { context: ctx }),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+  })
+})
+
 describe('avatarRouter.find', () => {
   it('returns the resolved avatar URL for non-QQ email', async () => {
     const ctx = makePublicCtx({ db })

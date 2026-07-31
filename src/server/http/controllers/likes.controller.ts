@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { decreaseLikes, increaseLikes, queryLikes, validateLikeToken } from '@/server/domains/comments/services/likes'
 import { resolveMetricTarget, safeResolveMetricTarget } from '@/server/domains/comments/services/shared'
 import { publicProc } from '@/server/http/orpc-base'
+import { DomainError } from '@/server/infra/http/errors'
 import { tryLikeIncreaseRateLimit } from '@/server/infra/rate-limit'
 
 const increaseLike = publicProc
@@ -31,7 +32,13 @@ const decreaseLike = publicProc
   .output(z.object({ key: z.string(), likes: z.number().int().nonnegative() }))
   .handler(async ({ input, context }) => {
     const target = await resolveMetricTarget(context.db, input.key)
-    await decreaseLikes(context.db, target, input.token)
+    const consumed = await decreaseLikes(context.db, target, input.token)
+    if (!consumed) {
+      // Unknown / already-consumed / purged token: the count did NOT
+      // change, so a 200 carrying the current count would tell the
+      // client a lie it would persist as truth.
+      throw new DomainError('BAD_REQUEST', '点赞状态已失效，请刷新页面后重试')
+    }
     return { key: input.key, likes: await queryLikes(context.db, target) }
   })
 

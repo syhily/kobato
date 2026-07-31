@@ -80,19 +80,20 @@ describe('services/comments/likes — increaseLikes / decreaseLikes', () => {
     await seedMetricRow(POST_A)
     const { token } = await increaseLikes(db, POST_A)
 
-    await decreaseLikes(db, POST_A, token)
+    await expect(decreaseLikes(db, POST_A, token)).resolves.toBe(true)
     expect(await queryLikes(db, POST_A)).toBe(0)
     expect(await validateLikeToken(db, POST_A, token)).toBe(false)
 
-    // A second undo with the same token no-ops — the count stays put.
-    await decreaseLikes(db, POST_A, token)
+    // A second undo with the same token reports the no-op honestly —
+    // the count stays put and the caller learns nothing was consumed.
+    await expect(decreaseLikes(db, POST_A, token)).resolves.toBe(false)
     expect(await queryLikes(db, POST_A)).toBe(0)
   })
 
-  it('no-ops when the token does not exist', async () => {
+  it('reports false when the token does not exist', async () => {
     await seedMetricRow(POST_A, { voteUp: 3 })
 
-    await decreaseLikes(db, POST_A, 'stale-token')
+    await expect(decreaseLikes(db, POST_A, 'stale-token')).resolves.toBe(false)
 
     expect(await queryLikes(db, POST_A)).toBe(3)
   })

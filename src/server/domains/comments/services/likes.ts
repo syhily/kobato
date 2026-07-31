@@ -29,15 +29,22 @@ export async function increaseLikes(db: Database, target: EntityTarget): Promise
   return { likes, token }
 }
 
-export async function decreaseLikes(db: Database, target: EntityTarget, token: string) {
+/**
+ * Consume a like token and decrement the counter. Returns `true` when
+ * the token was live and the decrement landed; `false` when the token
+ * was unknown, already consumed, or purged — in which case the count is
+ * untouched and the caller must NOT report a successful unlike.
+ */
+export async function decreaseLikes(db: Database, target: EntityTarget, token: string): Promise<boolean> {
   // Transactional: consume + decrement run as one unit so a crash
   // between them cannot leave the count inflated while the token is
   // already gone.
-  db.transaction((tx) => {
+  return db.transaction((tx) => {
     const consumed = consumeActiveLikeToken(tx, target, token)
     if (consumed) {
       decrementMetricVotes(tx, target)
     }
+    return consumed
   })
 }
 
