@@ -3,6 +3,7 @@ import { startOfDay, subDays } from 'date-fns'
 import type { Database } from '@/server/infra/db/database'
 import type { EntityTarget } from '@/server/infra/db/target'
 
+import { pendingViewDelta } from '@/server/domains/analytics/services/pv-batcher'
 import {
   commentCountsByOwnerIds,
   consumeActiveLikeToken,
@@ -58,6 +59,10 @@ export async function queryLikes(db: Database, target: EntityTarget): Promise<nu
  * keyed on `targetKey(target)` so callers look up an entry without
  * juggling `(type, ownerId)` tuples; each value also carries the
  * metric `publicId` UUID for downstream wire-format usage.
+ *
+ * `views` is read-time merged: the stored `metric.pv` lags by up to one
+ * flush interval, so the page-view batcher's unflushed delta is added
+ * back (`pendingViewDelta`) to serve the exact count.
  */
 export async function queryMetadata(
   db: Database,
@@ -99,7 +104,7 @@ export async function queryMetadata(
     const m = metricByTarget.get(key)
     out.set(key, {
       likes: m?.like ?? 0,
-      views: m?.view ?? 0,
+      views: (m?.view ?? 0) + pendingViewDelta(target),
       comments: commentCountByTarget.get(key) ?? 0,
       publicId: m?.publicId ?? '',
     })

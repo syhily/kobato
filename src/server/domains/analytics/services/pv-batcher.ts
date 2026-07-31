@@ -70,6 +70,15 @@ class PageViewBatcher extends FlushLoop<Map<string, number>, void> {
     this.armFlushTimer()
   }
 
+  /**
+   * Unflushed delta for one key — the read-time-merge half of the
+   * batcher. Peeks without detaching, so a peek never disturbs the
+   * pending flush.
+   */
+  pendingDelta(key: string): number {
+    return this.buffer.get(key) ?? 0
+  }
+
   /** Detach the shutdown hook (registry reset on restore — see InsertBatcher). */
   override dispose(): void {
     if (this.buffer.size > 0) {
@@ -101,6 +110,16 @@ registerBatcher(
 
 export function bumpPageView(target: EntityTarget): void {
   requireBatcher<PageViewBatcher>(BATCHER_NAME).increment(targetKey(target))
+}
+
+/**
+ * Read-time merge for view counters: the stored `metric.pv` lags by up
+ * to one flush interval, so readers add the unflushed delta to serve an
+ * exact count. Returns 0 when the batcher is not running (pre-bootstrap,
+ * tests) — the same guard posture as `flushPageViews`.
+ */
+export function pendingViewDelta(target: EntityTarget): number {
+  return getBatcher<PageViewBatcher>(BATCHER_NAME)?.pendingDelta(targetKey(target)) ?? 0
 }
 
 export function flushPageViews(): Promise<void> {

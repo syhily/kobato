@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
+import { bumpPageView, flushPageViews } from '@/server/domains/analytics/services/pv-batcher'
 import {
   decreaseLikes,
   increaseLikes,
@@ -11,6 +13,7 @@ import {
   startLikeTokenSweep,
   validateLikeToken,
 } from '@/server/domains/comments/services/likes'
+import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
 import { comment } from '@/server/infra/db/schema/comment'
 import { like, metric } from '@/server/infra/db/schema/metric'
 
@@ -25,6 +28,7 @@ beforeEach(async () => {
 
 afterEach(() => {
   resetLikeTokenSweep()
+  resetAllBatchers()
 })
 
 const POST_A = { type: 'post' as const, ownerId: 1 }
@@ -136,6 +140,26 @@ describe('services/comments/likes — queryMetadata', () => {
     const result = await queryMetadata(db, [POST_A], { likes: true, views: true, comments: false })
 
     expect(result.get('post:1')).toEqual({ likes: 5, views: 100, comments: 0, publicId: 'uuid-a' })
+  })
+
+  it('merges the unflushed page-view delta into views, without double-counting after the flush', async () => {
+    await seedMetricRow(POST_A, { pv: 100, publicId: 'uuid-a' })
+    initAllBatchers(getDatabaseHandle())
+
+    bumpPageView(POST_A)
+    bumpPageView(POST_A)
+    bumpPageView(POST_B)
+
+    const merged = await queryMetadata(db, [POST_A, POST_B], { likes: true, views: true, comments: false })
+    expect(merged.get('post:1')?.views).toBe(102)
+    // POST_B has no metric row at all — the pending delta still surfaces.
+    expect(merged.get('post:2')?.views).toBe(1)
+
+    // Once the flush lands, the stored count carries the delta and the
+    // merge adds nothing on top.
+    await flushPageViews()
+    const flushed = await queryMetadata(db, [POST_A], { likes: true, views: true, comments: false })
+    expect(flushed.get('post:1')?.views).toBe(102)
   })
 })
 

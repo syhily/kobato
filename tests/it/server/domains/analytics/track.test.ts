@@ -1,19 +1,34 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 
+import type { AnalyticsHandle } from '@/server/infra/analytics/duckdb'
 import type { RequestFacts } from '@/server/infra/http/request-facts'
 
+import { clearAccessLog, closeTestAnalyticsDb, createTestAnalyticsDb } from '#/_helpers/analytics-db'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { __adoptAnalyticsHandleForTests, __resetAnalyticsEngineForTests } from '@/server/bootstrap/analytics-lifecycle'
+import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
+import { flushAccessLog } from '@/server/domains/analytics/services/batcher'
+import { flushPageViews } from '@/server/domains/analytics/services/pv-batcher'
+import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
+import { ensureMetric, findMetricByTarget } from '@/server/infra/db/operations/metric'
+import { metric } from '@/server/infra/db/schema/metric'
+import { __clearLogCaptureForTests, __logCaptureForTests } from '@/server/infra/logger'
 
 // `trackPageView` is the single owner of "what counts as a view": one gate
 // (prefetch via `facts.purpose`, admin exemption with the `trackAdmin`
 // settings override) covering BOTH signals — the per-entity counter
 // (`bumpPageView`) and the time-series (`pushAccessEvent`). These tests
-// pin the fan-out: a rejected view writes neither signal, a homepage view
-// (null target) writes only the time-series, and a normal view writes both.
-const pushAccessEvent = vi.fn()
-vi.mock('@/server/domains/analytics/services/batcher', () => ({ pushAccessEvent }))
-const bumpPageView = vi.fn()
-vi.mock('@/server/domains/analytics/services/pv-batcher', () => ({ bumpPageView }))
+// pin the fan-out against the real engine: the counter lands in the real
+// `metric` table after `flushPageViews()`, the time-series lands as real
+// access_log rows in an ADOPTED DuckDB sidecar after `flushAccessLog()`.
+// No mocks at all — the defensive try/catch case exercises the real
+// 'PageViewBatcher not initialized' throw by leaving the batchers down.
+
+const db = getTestDb()
+
+const analyticsHandle: AnalyticsHandle = await createTestAnalyticsDb()
+__adoptAnalyticsHandleForTests(analyticsHandle)
 
 const { trackPageView, KOBATO_AID_COOKIE } = await import('@/server/domains/analytics/track')
 
@@ -36,13 +51,39 @@ const CHROME_UA =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36'
 
 beforeEach(async () => {
-  vi.clearAllMocks()
+  initAllBatchers(getDatabaseHandle())
+  await clearAllTables(db)
+  await clearAccessLog(analyticsHandle)
+  __clearLogCaptureForTests()
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
 })
 
-afterEach(() => {
-  vi.restoreAllMocks()
+afterEach(async () => {
+  // Flush BEFORE dropping the batchers so no pending event lands
+  // mid-next-test; the flushed rows are wiped by the next beforeEach.
+  await flushPageViews()
+  await flushAccessLog()
+  resetAllBatchers()
 })
+
+afterAll(async () => {
+  __resetAnalyticsEngineForTests()
+  await closeTestAnalyticsDb(analyticsHandle)
+})
+
+/** Stored pv for POST_TARGET after a flush (0 when the row never landed). */
+async function pvOfPostTarget(): Promise<number> {
+  await flushPageViews()
+  const row = await findMetricByTarget(db, POST_TARGET)
+  return row?.pv ?? 0
+}
+
+/** Real access_log rows in the sidecar after a flush. */
+async function accessLogRows(): Promise<Record<string, unknown>[]> {
+  await flushAccessLog()
+  const result = await analyticsHandle.reader.runAndReadAll('SELECT * FROM access_log')
+  return result.getRowObjects()
+}
 
 describe('analytics/track — trackPageView', () => {
   it('returns early when the admin visitor is excluded by settings — neither signal writes', async () => {
@@ -50,9 +91,10 @@ describe('analytics/track — trackPageView', () => {
       ...TEST_BLOG_SETTINGS_BUNDLE,
       analytics: { analytics: { trackAdmin: false, keepBotRows: false } },
     })
+    await ensureMetric(db, POST_TARGET)
     await trackPageView(makeFacts(), POST_TARGET, { isAdmin: true })
-    expect(bumpPageView).not.toHaveBeenCalled()
-    expect(pushAccessEvent).not.toHaveBeenCalled()
+    expect(await pvOfPostTarget()).toBe(0)
+    expect(await accessLogRows()).toHaveLength(0)
   })
 
   it('records an admin visit on both signals when trackAdmin is true', async () => {
@@ -60,22 +102,24 @@ describe('analytics/track — trackPageView', () => {
       ...TEST_BLOG_SETTINGS_BUNDLE,
       analytics: { analytics: { trackAdmin: true, keepBotRows: false } },
     })
+    await ensureMetric(db, POST_TARGET)
     await trackPageView(makeFacts(), POST_TARGET, { isAdmin: true })
-    expect(bumpPageView).toHaveBeenCalledTimes(1)
-    expect(bumpPageView).toHaveBeenCalledWith(POST_TARGET)
-    expect(pushAccessEvent).toHaveBeenCalledTimes(1)
+    expect(await pvOfPostTarget()).toBe(1)
+    expect(await accessLogRows()).toHaveLength(1)
   })
 
   it('skips prefetch requests — neither signal writes', async () => {
+    await ensureMetric(db, POST_TARGET)
     await trackPageView(makeFacts({ purpose: 'prefetch' }), POST_TARGET)
-    expect(bumpPageView).not.toHaveBeenCalled()
-    expect(pushAccessEvent).not.toHaveBeenCalled()
+    expect(await pvOfPostTarget()).toBe(0)
+    expect(await accessLogRows()).toHaveLength(0)
   })
 
   it('skips bot traffic in the time-series when keepBotRows is false, but still bumps the counter', async () => {
+    await ensureMetric(db, POST_TARGET)
     await trackPageView(makeFacts({ userAgent: BOT_UA }), POST_TARGET)
-    expect(bumpPageView).toHaveBeenCalledTimes(1)
-    expect(pushAccessEvent).not.toHaveBeenCalled()
+    expect(await pvOfPostTarget()).toBe(1)
+    expect(await accessLogRows()).toHaveLength(0)
   })
 
   it('records bot traffic when keepBotRows is true', async () => {
@@ -84,24 +128,30 @@ describe('analytics/track — trackPageView', () => {
       analytics: { analytics: { trackAdmin: false, keepBotRows: true } },
     })
     await trackPageView(makeFacts({ userAgent: BOT_UA }), POST_TARGET)
-    expect(pushAccessEvent).toHaveBeenCalledTimes(1)
+    const rows = await accessLogRows()
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!.is_bot).toBe(true)
   })
 
   it('records a normal visit on both signals', async () => {
+    await ensureMetric(db, POST_TARGET)
     await trackPageView(makeFacts({ userAgent: CHROME_UA }), POST_TARGET)
-    expect(bumpPageView).toHaveBeenCalledTimes(1)
-    expect(bumpPageView).toHaveBeenCalledWith(POST_TARGET)
-    expect(pushAccessEvent).toHaveBeenCalledTimes(1)
-    const event = pushAccessEvent.mock.calls[0]![0]
-    expect(event.path).toBe('/post/1')
-    expect(event.entityType).toBe('post')
-    expect(event.entityId).toBe(1)
+    expect(await pvOfPostTarget()).toBe(1)
+    const rows = await accessLogRows()
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!.path).toBe('/post/1')
+    expect(rows[0]!.entity_type).toBe('post')
+    expect(rows[0]!.entity_id).toBe(1n)
   })
 
   it('skips only the counter when the target is null (homepage)', async () => {
     await trackPageView(makeFacts({ userAgent: CHROME_UA }), null)
-    expect(bumpPageView).not.toHaveBeenCalled()
-    expect(pushAccessEvent).toHaveBeenCalledTimes(1)
+    // No metric row is ever created for a null target.
+    expect(await db.select().from(metric)).toHaveLength(0)
+    const rows = await accessLogRows()
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!.entity_type).toBeNull()
+    expect(rows[0]!.entity_id).toBeNull()
   })
 
   it('exports KOBATO_AID_COOKIE constant', () => {
@@ -109,9 +159,10 @@ describe('analytics/track — trackPageView', () => {
   })
 
   it('never throws on internal failure (defensive try/catch)', async () => {
-    pushAccessEvent.mockImplementationOnce(() => {
-      throw new Error('boom')
-    })
-    await expect(trackPageView(makeFacts({ userAgent: CHROME_UA }), null)).resolves.toBeUndefined()
+    // Leave the batchers down: the real bumpPageView throws
+    // 'PageViewBatcher not initialized' and the track catch swallows it.
+    resetAllBatchers()
+    await expect(trackPageView(makeFacts({ userAgent: CHROME_UA }), POST_TARGET)).resolves.toBeUndefined()
+    expect(__logCaptureForTests().some((e) => e.level === 'error')).toBe(true)
   })
 })

@@ -105,4 +105,23 @@ describe('analytics/pv-batcher', () => {
     await flushPageViews()
     expect(await pvOf('post', 1)).toBe(1)
   })
+
+  it('reports the unflushed delta via pendingViewDelta, and zero after the flush lands', async () => {
+    const { bumpPageView, flushPageViews, pendingViewDelta } = await freshBatcher()
+
+    // Pre-init the guard degenerates to 0 — readers never throw.
+    expect(pendingViewDelta({ type: 'post', ownerId: 1 })).toBe(0)
+
+    initAllBatchers(getDatabaseHandle())
+    await ensureMetric(db, { type: 'post', ownerId: 1 })
+
+    bumpPageView({ type: 'post', ownerId: 1 })
+    bumpPageView({ type: 'post', ownerId: 1 })
+    expect(pendingViewDelta({ type: 'post', ownerId: 1 })).toBe(2)
+    expect(pendingViewDelta({ type: 'post', ownerId: 2 })).toBe(0)
+
+    await flushPageViews()
+    expect(pendingViewDelta({ type: 'post', ownerId: 1 })).toBe(0)
+    expect(await pvOf('post', 1)).toBe(2)
+  })
 })
