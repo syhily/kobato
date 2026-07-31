@@ -65,7 +65,20 @@ export const CONFIG_TABLE = [
       .transform((val) => val.split(',').map((s) => s.trim())),
     fileDefault: '',
   },
-  { path: ['security', 'encryptionKey'], schema: z.string().min(32), fileDefault: '' },
+  {
+    path: ['security', 'encryptionKey'],
+    // min(32) alone passes trivially weak keys ('aaaa…'). The distinct-
+    // character floor blocks single-character and short-pattern repeats
+    // while comfortably accepting real random keys (hex/base64 output of
+    // `openssl rand` sits well above it).
+    schema: z
+      .string()
+      .min(32)
+      .refine((val) => new Set(val).size >= 10, {
+        message: 'encryptionKey is too weak (needs 10+ distinct characters) — generate one with: openssl rand -hex 32',
+      }),
+    fileDefault: '',
+  },
   { path: ['storage', 'data'], schema: z.string().min(1), fileDefault: './data' },
   {
     path: ['storage', 'database'],

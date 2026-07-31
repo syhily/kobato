@@ -337,6 +337,25 @@ describe('infra/config — loadServerConfig', () => {
     expect(() => loadServerConfig()).toThrow('process.exit called')
     expect(stderr).toHaveBeenCalledWith(expect.stringContaining('Environment validation failed'))
   })
+
+  it('rejects a low-entropy encryptionKey even at 32+ characters', () => {
+    stubRequiredEnv()
+    vi.stubEnv('security__encryptionKey', 'a'.repeat(40))
+    const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true)
+
+    expect(() => loadServerConfig()).toThrow('process.exit called')
+    expect(stderr).toHaveBeenCalledWith(expect.stringContaining('encryptionKey is too weak'))
+  })
+
+  it('accepts a hex encryptionKey from openssl rand (16 distinct characters)', () => {
+    stubRequiredEnv()
+    const hexKey = '3f8a1c9e2b7d4056a8c1e3f5b9d2046789abcdef01234567890abcdef1234567'
+    vi.stubEnv('security__encryptionKey', hexKey)
+
+    const config = loadServerConfig()
+
+    expect(config.security.encryptionKey).toBe(hexKey)
+  })
 })
 
 describe('infra/config — migrateLegacyKeys', () => {
