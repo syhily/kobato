@@ -135,6 +135,26 @@ describe('infra/image/process-worker — processImageInWorker', () => {
     await expect(run()).rejects.toBeInstanceOf(WorkerDomainError)
   })
 
+  it('rejects decompression bombs whose decoded pixels exceed the cap', async () => {
+    // 10000×10000 = 100 MP — a tiny PNG can decode to this.
+    sharpMock.fn.__setMock(mockSharp({ width: 10_000, height: 10_000 }))
+    await expect(run()).rejects.toThrow('图片尺寸过大')
+  })
+
+  it('accepts images exactly at the pixel ceiling', async () => {
+    // 50 MP exactly — the cap is inclusive of the largest allowed bitmap.
+    sharpMock.fn.__setMock(
+      mockSharp({
+        width: 10_000,
+        height: 5_000,
+        buffer: Buffer.from([0xff, 0xd8, 0xff]),
+        rgba: { data: Buffer.alloc(4), width: 1, height: 1 },
+      }),
+    )
+    const result = await run()
+    expect(result.width).toBe(10_000)
+  })
+
   it('WorkerDomainError serialises code / message / issues', () => {
     const err = new WorkerDomainError('BAD_REQUEST', 'boom', [{ message: 'x' }])
     expect(err.code).toBe('BAD_REQUEST')

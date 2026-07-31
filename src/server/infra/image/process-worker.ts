@@ -1,4 +1,4 @@
-import type { Sharp } from 'sharp'
+import type { Metadata, Sharp } from 'sharp'
 
 import { parentPort, workerData } from 'node:worker_threads'
 import sharp from 'sharp'
@@ -18,7 +18,12 @@ import { rgbaToThumbHash } from '../../../shared/utils/thumbhash.ts'
 // (see `scripts/sea/redirect-native-requires.ts`).
 
 const THUMBHASH_MAX_DIMENSION = 100
-const MAX_INPUT_PIXELS = 16384 * 16384
+// Decoded-pixel ceiling: 50 MP ≈ 200 MB of RGBA in the worker. Generous
+// for full-frame camera photos, but bounded so a small, heavily
+// compressed upload (a "decompression bomb") cannot exhaust worker
+// memory — the byte cap enforced by callers bounds the ENCODED size
+// only, never the decoded bitmap.
+const MAX_INPUT_PIXELS = 50_000_000
 
 export interface ProcessImageResize {
   width: number
@@ -103,6 +108,29 @@ export class WorkerDomainError extends Error {
  * behaviour regardless of where the work runs.
  */
 export async function processImageInWorker(input: ProcessImageInput): Promise<ProcessedImage> {
+  // Pre-flight the headers: reject undecodable buffers and oversized
+  // dimensions BEFORE any pixels are decoded. Reading metadata is a
+  // header-only operation, so a decompression bomb is rejected for the
+  // cost of a few bytes. The `limitInputPixels` option below re-enforces
+  // the same ceiling at decode time as defense in depth, in case a
+  // format's header metadata understates the real bitmap size.
+  let inputMeta: Metadata
+  try {
+    inputMeta = await sharp(input.buffer, { failOn: 'error' }).metadata()
+  } catch (error) {
+    throw new WorkerDomainError('BAD_REQUEST', '无法解析图片数据', [
+      { message: error instanceof Error ? error.message : String(error) },
+    ])
+  }
+  const inputWidth = inputMeta.width ?? 0
+  const inputHeight = inputMeta.height ?? 0
+  if (!Number.isFinite(inputWidth) || inputWidth <= 0 || !Number.isFinite(inputHeight) || inputHeight <= 0) {
+    throw new WorkerDomainError('BAD_REQUEST', '图片尺寸无效')
+  }
+  if (inputWidth * inputHeight > MAX_INPUT_PIXELS) {
+    throw new WorkerDomainError('BAD_REQUEST', `图片尺寸过大（上限 ${MAX_INPUT_PIXELS / 1_000_000} 百万像素）`)
+  }
+
   let pipeline: Sharp
   try {
     pipeline = sharp(input.buffer, {
