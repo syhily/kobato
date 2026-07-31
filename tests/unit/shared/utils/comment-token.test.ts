@@ -48,6 +48,14 @@ describe('client: comment token cookie utilities', () => {
       expect(cookie).toMatch(/Max-Age=604800/)
     })
 
+    it('omits the Secure attribute outside production (vitest runs with PROD=false)', () => {
+      // Pins the PROD-conditional pattern shared with the session and
+      // visitor cookies: plain-HTTP deployments must be able to store
+      // the commenter token jar.
+      expect(serializeCommentTokensCookie(sample)).not.toContain('Secure')
+      expect(clearCommentTokensCookie()).not.toContain('Secure')
+    })
+
     it('round-trips through parse', () => {
       const serialized = serializeCommentTokensCookie(sample)
       const valueOnly = serialized.split(';')[0] as string
