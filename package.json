@@ -154,5 +154,5 @@
       "oxlint -c oxlint.config.ts --fix --no-error-on-unmatched-pattern"
     ]
   },
-  "packageManager": "pnpm@11.17.0"
+  "packageManager": "pnpm@11.18.0"
 }
