@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto'
+
 import type { MailTransport, SendOptions, SendResult } from '@/server/infra/email/types'
 
 import { render } from '@/server/infra/email/render'
@@ -149,19 +151,32 @@ interface InternalSendOptions {
 let cachedTransport: { transport: MailTransport; fingerprint: string } | null = null
 
 function computeMailFingerprint(mail: MailConfig): string {
-  return JSON.stringify({
-    transport: mail.transport,
-    enabled: mail.enabled,
-    sender: mail.sender,
-    host: mail.host,
-    apiKey: mail.apiKey,
-    smtpHost: mail.smtpHost,
-    smtpPort: mail.smtpPort,
-    smtpUser: mail.smtpUser,
-    smtpSecure: mail.smtpSecure,
-    mailgunDomain: mail.mailgunDomain,
-    mailgunApiKey: mail.mailgunApiKey,
-  })
+  // Hash the config material rather than caching the JSON itself: the
+  // fingerprint sits in module memory next to the transport for the
+  // process lifetime, and the plain JSON would retain raw credentials
+  // (apiKey, mailgunApiKey, smtpPass) alongside it. Equality semantics
+  // are unchanged. All transport-shaping fields are included so any
+  // config drift rebuilds the transport.
+  return createHash('sha256')
+    .update(
+      JSON.stringify({
+        transport: mail.transport,
+        enabled: mail.enabled,
+        sender: mail.sender,
+        host: mail.host,
+        apiKey: mail.apiKey,
+        smtpHost: mail.smtpHost,
+        smtpPort: mail.smtpPort,
+        smtpUser: mail.smtpUser,
+        smtpPass: mail.smtpPass,
+        smtpSecure: mail.smtpSecure,
+        smtpRequireTls: mail.smtpRequireTls,
+        smtpRejectUnauthorized: mail.smtpRejectUnauthorized,
+        mailgunDomain: mail.mailgunDomain,
+        mailgunApiKey: mail.mailgunApiKey,
+      }),
+    )
+    .digest('hex')
 }
 
 export function invalidateMailTransportCache(): void {
