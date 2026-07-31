@@ -1,30 +1,31 @@
 import { createSession } from 'react-router'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import type { BlogSessionData } from '@/server/domains/auth/session-storage'
 import type { Env } from '@/server/http/context'
 
-const mockIsPathExempt = vi.fn().mockReturnValue(false)
+import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 
-vi.mock('@/server/domains/auth/csrf', () => ({
-  isPathExempt: (path: string) => mockIsPathExempt(path),
-  validateCsrfToken: (session: { get: (k: string) => string | undefined }, header: string | null) => {
-    const token = session.get('csrfToken')
-    return !!(token && header && token === header)
-  },
-  CSRF_HEADER: 'x-csrf-token',
-}))
+// The csrf module runs for real: `validateCsrfToken` is a pure
+// constant-time comparison and `isPathExempt` reads the settings bundle,
+// so the exempt-path cases seed a bundle instead of mocking the module.
+// (The it setup's afterEach restores the default bundle automatically.)
 
 function makeSession(data: Partial<BlogSessionData> = {}) {
   return createSession<BlogSessionData, BlogSessionData>(data, 'test-session')
 }
 
-describe('csrfGuard middleware', () => {
-  beforeEach(async () => {
-    vi.clearAllMocks()
-    mockIsPathExempt.mockReturnValue(false)
+function seedExemptPaths(exemptPaths: string[]): void {
+  setBlogSettingsBundleForTests({
+    ...TEST_BLOG_SETTINGS_BUNDLE,
+    security: {
+      ...TEST_BLOG_SETTINGS_BUNDLE.security!,
+      csrf: { enabled: true, exemptPaths },
+    },
   })
+}
 
+describe('csrfGuard middleware', () => {
   async function setupApp() {
     const { Hono } = await import('hono')
     const { csrfGuard } = await import('@/server/http/middlewares/csrf')
@@ -67,14 +68,14 @@ describe('csrfGuard middleware', () => {
   })
 
   it('passes through when path matches an exempt prefix', async () => {
-    mockIsPathExempt.mockImplementation((path: string) => path.startsWith('/rpc/webhook'))
+    seedExemptPaths(['/rpc/webhook'])
     const app = await setupApp()
     const res = await app.request('/rpc/webhook/event', { method: 'POST' })
     expect(res.status).toBe(200)
   })
 
   it('still validates when path does not match any exempt prefix', async () => {
-    mockIsPathExempt.mockImplementation((path: string) => path.startsWith('/rpc/webhook'))
+    seedExemptPaths(['/rpc/webhook'])
     const app = await setupApp()
     const res = await app.request('/rpc/test', { method: 'POST' })
     expect(res.status).toBe(403)

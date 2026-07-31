@@ -1,23 +1,20 @@
 import { eq } from 'drizzle-orm'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { image as imageTable } from '@/server/infra/db/schema/media'
 
-// Only the storage public-URL seam stays mocked (it reads the deployment's
-// bucket config); the image rows are real, so the id batch lookup, the
-// block rewriting, and the alt→note write-back all run against the engine.
-const getPublicBaseUrlMock = vi.hoisted(() => vi.fn((): string | null => 'https://cdn.test'))
-vi.mock('@/server/infra/storage/public-url', () => ({ getPublicBaseUrl: getPublicBaseUrlMock }))
-
+// No mocks at the module boundary: the image rows are real, the public base
+// URL comes from the real settings snapshot (TEST_BLOG_SETTINGS_BUNDLE's
+// assets.example.com), so the id batch lookup, the block rewriting, and the
+// alt→note write-back all run against the engine.
 const { syncLibraryImageBlocks } = await import('@/server/domains/content/services/image-sync')
 
 const db = getTestDb()
 
 beforeEach(async () => {
   await clearAllTables(db)
-  vi.clearAllMocks()
-  getPublicBaseUrlMock.mockReturnValue('https://cdn.test')
 })
 
 function img(_key: string, overrides: Record<string, unknown> = {}) {
@@ -76,7 +73,7 @@ describe('content/services/image-sync — collectImageBlocks routing', () => {
     await syncLibraryImageBlocks(db, body)
 
     const block = (body[0] as { children: Array<{ src: string; storagePath: string; thumbhash: string }> }).children[0]!
-    expect(block.src).toBe('https://cdn.test/p/1.jpg')
+    expect(block.src).toBe('https://assets.example.com/p/1.jpg')
     expect(block.storagePath).toBe('p/1.jpg')
     expect(block.thumbhash).toBe('th')
   })
@@ -161,8 +158,16 @@ describe('content/services/image-sync — row resolution', () => {
     expect((body[0] as { thumbhash: string }).thumbhash).toBe('original')
   })
 
-  it('leaves src untouched when getPublicBaseUrl returns null', async () => {
-    getPublicBaseUrlMock.mockReturnValue(null)
+  it('leaves src untouched when the asset base URL is unconfigured', async () => {
+    // Host '' makes the real getPublicBaseUrl() return null; the it setup's
+    // afterEach restores the default bundle automatically.
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      assets: {
+        ...TEST_BLOG_SETTINGS_BUNDLE.assets!,
+        asset: { ...TEST_BLOG_SETTINGS_BUNDLE.assets!.asset, host: '' },
+      },
+    })
     const id = await seedImage({ storagePath: 'p/1.jpg' })
     const body = [img('i1', { imageId: String(id), src: 'external' })] as never
 
@@ -170,7 +175,7 @@ describe('content/services/image-sync — row resolution', () => {
 
     const block = body[0] as { src: string; storagePath: string }
     expect(block.src).toBe('external')
-    // storagePath is canonicalised regardless of the URL seam.
+    // storagePath is canonicalised regardless of the base-URL configuration.
     expect(block.storagePath).toBe('p/1.jpg')
   })
 })

@@ -1,35 +1,55 @@
 import { Hono } from 'hono'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Env } from '@/server/http/context'
+import type { Database } from '@/server/infra/db/database'
+import type { ServerPhase } from '@/server/infra/lifecycle'
 
-const mocks = vi.hoisted(() => ({
-  getServerPhase: vi.fn(),
-  peekRestoreJobPhase: vi.fn(),
-}))
-const { getServerPhase, peekRestoreJobPhase } = mocks
-
-vi.mock('@/server/infra/lifecycle', () => ({
-  getServerPhase: mocks.getServerPhase,
-}))
-
-vi.mock('@/server/domains/backup/restore-machine', () => ({
-  peekRestoreJobPhase: mocks.peekRestoreJobPhase,
-}))
-
+import {
+  peekRestoreJobPhase,
+  resetRestoreMachine,
+  startRestoreJob,
+  tryBeginRestore,
+  wireRestoreMachine,
+  type RestoreMachineDeps,
+} from '@/server/domains/backup/restore-machine'
 import { readyHandler } from '@/server/http/ready'
+import { __getLifecycleContainer, setServerPhase } from '@/server/infra/lifecycle'
 
-// The /ready probe against the REAL handler (extracted to
-// '@/server/http/ready' — these tests used to pin inline copies of it).
+// The /ready probe against the REAL handler and the REAL state machines:
+// the server phase comes from `setServerPhase` transitions (no mock), and
+// the restore projection comes from a genuinely wired restore machine.
+// Only the machine's engine deps (drain/swap/reopen/complete) are no-op
+// test doubles — the phases under assertion are the machine's own.
+
+function resetPhaseTo(phase: ServerPhase): void {
+  __getLifecycleContainer().serverPhase = phase
+}
+
+function wireNoopMachine(): void {
+  const deps: RestoreMachineDeps = {
+    drain: () => {},
+    prepareForSwap: () => {},
+    reopenAfterSwap: async () => ({}) as Database,
+    complete: async () => {},
+  }
+  wireRestoreMachine(deps)
+}
+
 function app(): Hono<Env> {
   return new Hono<Env>().get('/ready', readyHandler)
 }
 
 describe('/ready endpoint', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    getServerPhase.mockReturnValue('running')
-    peekRestoreJobPhase.mockReturnValue({ phase: 'idle', startedAt: '' })
+    resetPhaseTo('booting')
+    setServerPhase('running')
+    resetRestoreMachine()
+  })
+
+  afterEach(() => {
+    resetPhaseTo('booting')
+    resetRestoreMachine()
   })
 
   it('returns 200 when phase is running', async () => {
@@ -40,8 +60,10 @@ describe('/ready endpoint', () => {
   })
 
   it('returns 503 with the restore projection when phase is restarting', async () => {
-    getServerPhase.mockReturnValue('restarting')
-    peekRestoreJobPhase.mockReturnValue({ phase: 'draining', startedAt: '2026-01-01T00:00:00.000Z' })
+    setServerPhase('restarting')
+    wireNoopMachine()
+    // A real claim leaves the machine in the draining phase.
+    expect(tryBeginRestore()).toBe(true)
 
     const res = await app().request('/ready')
     expect(res.status).toBe(503)
@@ -51,11 +73,15 @@ describe('/ready endpoint', () => {
   })
 
   it('returns 503 with failed restore details', async () => {
-    getServerPhase.mockReturnValue('restarting')
-    peekRestoreJobPhase.mockReturnValue({
-      phase: 'failed',
-      startedAt: '2026-01-01T00:00:00.000Z',
-      error: 'restore exited with code 1',
+    setServerPhase('restarting')
+    wireNoopMachine()
+    expect(tryBeginRestore()).toBe(true)
+    // Run the real machine to its failed terminal report.
+    startRestoreJob(async () => {
+      throw new Error('restore exited with code 1')
+    })
+    await vi.waitFor(() => {
+      expect(peekRestoreJobPhase().phase).toBe('failed')
     })
 
     const res = await app().request('/ready')

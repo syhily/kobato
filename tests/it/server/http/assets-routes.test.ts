@@ -1,21 +1,16 @@
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import type { BrandingObjectRef } from '@/shared/config/types'
 
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 
-vi.mock('@/server/domains/assets/services/storage', async (importActual) => {
-  const actual = (await importActual()) as typeof import('@/server/domains/assets/services/storage')
-  return {
-    ...actual,
-    fetchBrandingObject: vi.fn().mockResolvedValue(null),
-  }
-})
-
 const { assetsRouter } = await import('@/server/http/resources/assets')
 
 function ref(etag: string, contentType: string): BrandingObjectRef {
-  return { etag, contentType, size: 1024, updatedAt: '2024-01-01T00:00:00.000Z', driver: 's3' }
+  // 'local': the real local backend misses the branding key in the test
+  // storage root (and the legacy key too), so fetchBrandingObject genuinely
+  // returns null — no service-level mock needed.
+  return { etag, contentType, size: 1024, updatedAt: '2024-01-01T00:00:00.000Z', driver: 'local' }
 }
 
 describe('assetsRouter static paths', () => {
@@ -80,7 +75,7 @@ describe('assetsRouter static paths', () => {
     expect(res.headers.get('Content-Type')).toBe('image/png')
   })
 
-  it('falls back to default when S3 fetch fails for a configured ref', async () => {
+  it('falls back to default when the configured ref has no stored object', async () => {
     setBlogSettingsBundleForTests({
       ...TEST_BLOG_SETTINGS_BUNDLE,
       assets: {
@@ -91,8 +86,9 @@ describe('assetsRouter static paths', () => {
     const res = await assetsRouter.request('/favicon.svg')
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('image/svg+xml')
-    // fetchBrandingObject returns null → server falls back to bundled
-    // default whose etag is sha256 hex (not "cafe").
+    // fetchBrandingObject returns null (object missing on the local
+    // backend) → server falls back to bundled default whose etag is
+    // sha256 hex (not "cafe").
     expect(res.headers.get('ETag')).toMatch(/^"[a-f0-9]{64}"$/)
   })
 

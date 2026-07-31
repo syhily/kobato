@@ -1,11 +1,11 @@
 import { eq } from 'drizzle-orm'
-import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import type { MemoryBackend } from '#/_helpers/memory-storage'
 import type { AnalyticsHandle } from '@/server/infra/analytics/duckdb'
 
 import { closeTestAnalyticsDb, createTestAnalyticsDb, seedAccessEvents } from '#/_helpers/analytics-db'
 import { clearAllTables, createTestDatabaseFile, getTestDb } from '#/_helpers/integration-db'
+import { makeMemoryBackend } from '#/_helpers/memory-storage'
 import { __adoptAnalyticsHandleForTests, __resetAnalyticsEngineForTests } from '@/server/bootstrap/analytics-lifecycle'
 
 let analyticsHandle: AnalyticsHandle
@@ -14,29 +14,27 @@ import { extractBackupFile, unpackBackupPayload } from '#/_helpers/backup-buffer
 import { createBackup, getBackupBuffer } from '@/server/domains/backup/services/backup'
 import { category } from '@/server/infra/db/schema/taxonomy'
 import { ActionFailure } from '@/server/infra/http/errors'
+import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@/server/infra/storage/registry'
 
-// Route the storage registry at the shared in-memory backend so
-// createBackup/getBackupBuffer round-trip without real S3 or settings.
-const s3Mock = vi.hoisted(() => ({ current: undefined as unknown as MemoryBackend }))
-
-vi.mock('@/server/infra/storage/registry', async () => {
-  const { makeMemoryBackend } = await import('#/_helpers/memory-storage')
-  s3Mock.current = makeMemoryBackend()
-  return {
-    activeBackend: () => ({ backend: s3Mock.current.backend, driver: 's3' }),
-    backendFor: () => s3Mock.current.backend,
-  }
-})
+// Route the storage registry at the shared in-memory backend (injected as
+// 's3', so it is also the ACTIVE backend) — createBackup/getBackupBuffer
+// round-trip without real S3 or settings.
+const mem = makeMemoryBackend()
 
 const db = getTestDb()
 
 beforeEach(async () => {
+  __setStorageBackendForTests('s3', mem.backend)
   analyticsHandle = await createTestAnalyticsDb()
   // The real snapshotAnalyticsTo runs against the adopted handle.
   __resetAnalyticsEngineForTests()
   __adoptAnalyticsHandleForTests(analyticsHandle)
   await clearAllTables(db)
-  s3Mock.current.reset()
+})
+
+afterEach(() => {
+  __resetStorageBackendsForTests()
+  mem.reset()
 })
 
 afterAll(async () => {
@@ -61,7 +59,7 @@ describe('backup and restore integration', () => {
     expect(size).toBeGreaterThan(0)
 
     const key = `backup/${fileName}`
-    const buffer = s3Mock.current.store.get(key)?.body
+    const buffer = mem.store.get(key)?.body
     expect(buffer).toBeDefined()
     expect(buffer!.subarray(0, 2)).toEqual(Buffer.from([0x1f, 0x8b]))
 

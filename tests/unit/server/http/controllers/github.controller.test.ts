@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { installFetch, jsonResponse } from '#/_helpers/fetch'
 import { makePublicCtx } from '#/_helpers/mock-ctx'
@@ -7,13 +7,9 @@ import { githubRouter } from '@/server/http/controllers/github.controller'
 import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 
 // The avatar fetch + base64 inlining lives in the comments domain
-// (pinned in tests/unit/server/domains/comments/services/avatar.test.ts);
-// the controller only maps the service result onto the wire shape.
-vi.mock('@/server/domains/comments/services/avatar', () => ({
-  fetchGithubAvatarDataUrl: vi.fn(),
-}))
-
-const avatarService = await import('@/server/domains/comments/services/avatar')
+// (pinned in tests/it/server/domains/comments/services/avatar.test.ts);
+// the controller maps the REAL service result onto the wire shape, with
+// the upstream avatar bytes enqueued through the fetch helper.
 
 const { RPCHandler } = await import('@orpc/server/fetch')
 const handler = new RPCHandler(githubRouter)
@@ -39,12 +35,18 @@ describe('github controller', () => {
   beforeEach(() => {
     mockFetch.reset()
     __resetRateLimitsForTests()
-    vi.mocked(avatarService.fetchGithubAvatarDataUrl).mockReset()
     globalThis.fetch = mockFetch.fetch as unknown as typeof globalThis.fetch
   })
 
   it('avatar returns the data URL produced by the domain service', async () => {
-    vi.mocked(avatarService.fetchGithubAvatarDataUrl).mockResolvedValueOnce('data:image/png;base64,iVBORw==')
+    // PNG magic bytes → 'iVBORw==' in base64.
+    mockFetch.enqueue(
+      /avatars\.githubusercontent\.com/,
+      new Response(new Uint8Array([0x89, 0x50, 0x4e, 0x47]).buffer, {
+        status: 200,
+        headers: { 'Content-Type': 'image/png' },
+      }),
+    )
 
     const response = await call('/avatar', {})
     expect(response.status).toBe(200)
@@ -53,7 +55,7 @@ describe('github controller', () => {
   })
 
   it('avatar passes through the empty-string fallback for a failed upstream', async () => {
-    vi.mocked(avatarService.fetchGithubAvatarDataUrl).mockResolvedValueOnce('')
+    mockFetch.enqueue(/avatars\.githubusercontent\.com/, new Response('not found', { status: 404 }))
 
     const response = await call('/avatar', {})
     expect(response.status).toBe(200)

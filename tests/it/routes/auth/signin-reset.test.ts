@@ -2,15 +2,20 @@ import type { Mock } from 'vitest'
 
 import bcrypt from 'bcryptjs'
 import { and, eq } from 'drizzle-orm'
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { BlogSession } from '@/server/domains/auth/session-storage'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { makeRequestContext } from '#/_helpers/request-context'
 import { makeSession } from '#/_helpers/session'
+import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
+import { flushAuditLog } from '@/server/domains/audit/services/batcher'
 import { issueResetToken } from '@/server/domains/auth/verification-tokens'
+import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
+import { auditLog } from '@/server/infra/db/schema/config'
 import { passkeyCredential } from '@/server/infra/db/schema/passkey'
+import { session as sessionTable } from '@/server/infra/db/schema/session'
 import { user, verification } from '@/server/infra/db/schema/user'
 import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 
@@ -25,16 +30,17 @@ import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 //   survive the recovery flow.
 //
 // Real engine: the user is a real row, the reset token is a real
-// single-use `verification` row, and the rate limiter is the real
-// in-process one. `establishLoginSession` stays mocked — it IS the
-// seam whose call contract this file pins. Email delivery and the
-// audit sink are true externals.
+// single-use `verification` row, the rate limiter is the real in-process
+// one, the install gate reads the real `user` table, CSRF is the real
+// session-token check, and `establishLoginSession` now runs for real —
+// the revocation invariant is asserted on the session TABLE (seeded old
+// rows gone, one new row owned by the user) instead of a mock's call
+// args. Audit events land in `audit_log` through the real batcher. Email
+// delivery stays mocked (a true external).
 
 const mockHandles = vi.hoisted(() => ({
   getRequestContext: vi.fn<any>(),
   sendPasswordReset: vi.fn<any>(),
-  establishLoginSession: vi.fn<any>(),
-  recordAuditEvent: vi.fn<any>(),
 }))
 
 vi.mock('@/server/http/request-context', async (importOriginal) => {
@@ -45,17 +51,6 @@ vi.mock('@/server/http/request-context', async (importOriginal) => {
   }
 })
 
-vi.mock('@/server/domains/settings/install-gate', () => ({
-  ensureInstalledOrRedirect: vi.fn(async () => null),
-  ensureNoAdminOrRedirect: vi.fn(async () => null),
-  isInstalled: vi.fn(async () => true),
-  getInstallState: vi.fn(async () => 'installed' as const),
-}))
-
-vi.mock('@/server/domains/auth/csrf', () => ({
-  validateCsrfForAction: vi.fn(() => true),
-}))
-
 vi.mock('@/server/infra/email/sender', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/server/infra/email/sender')>()
   return {
@@ -64,50 +59,42 @@ vi.mock('@/server/infra/email/sender', async (importOriginal) => {
   }
 })
 
-vi.mock('@/server/domains/auth/primitives', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/server/domains/auth/primitives')>()
-  return {
-    ...actual,
-    establishLoginSession: mockHandles.establishLoginSession,
-  }
-})
-
-vi.mock('@/server/domains/audit/services/record', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/server/domains/audit/services/record')>()
-  return {
-    ...actual,
-    recordAuditEvent: mockHandles.recordAuditEvent,
-  }
-})
-
 const db = getTestDb()
+
+const CSRF_TOKEN = 'signin-reset-csrf-token'
 
 const { action } = await import('@/routes/auth/signin')
 
 let testSession: BlogSession
 let markSessionDirty: Mock<() => void>
 
-beforeAll(() => {
-  mockHandles.sendPasswordReset.mockResolvedValue({ ok: true })
-  mockHandles.establishLoginSession.mockResolvedValue({
-    sid: 'test-sid',
-    setCookie: '__session=test-cookie; Path=/',
-  })
-})
-
 beforeEach(async () => {
+  // The real audit pipeline: resetPasswordWithToken records
+  // password_reset_complete and establishLoginSession records login —
+  // both through the process-level batcher. Flush before teardown so no
+  // pending event references a user row the next clearAllTables wipes.
+  initAllBatchers(getDatabaseHandle())
   await clearAllTables(db)
+  // The real install gate needs an installed deployment: seed one admin
+  // (this file's seedUser defaults to role 'visitor', which hasAdmin
+  // does NOT count).
+  await db.insert(user).values({
+    name: 'Gatekeeper',
+    email: 'gatekeeper@example.com',
+    password: 'not-a-real-hash',
+    role: 'admin',
+  })
   __resetRateLimitsForTests()
   testSession = makeSession({})
+  testSession.set('csrfToken', CSRF_TOKEN)
   markSessionDirty = vi.fn<() => void>()
   mockHandles.sendPasswordReset.mockClear()
-  mockHandles.establishLoginSession.mockClear()
-  mockHandles.recordAuditEvent.mockClear()
   mockHandles.sendPasswordReset.mockResolvedValue({ ok: true })
-  mockHandles.establishLoginSession.mockResolvedValue({
-    sid: 'test-sid',
-    setCookie: '__session=test-cookie; Path=/',
-  })
+})
+
+afterEach(async () => {
+  await flushAuditLog()
+  resetAllBatchers()
 })
 
 async function seedUser(overrides: Record<string, unknown> = {}) {
@@ -133,7 +120,7 @@ async function callResetAction(body: Record<string, string>): Promise<unknown> {
   const request = new Request(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams(body).toString(),
+    body: new URLSearchParams({ ...body, csrf_token: CSRF_TOKEN }).toString(),
   })
   try {
     return await action({ request, context: new Map(), params: {} } as unknown as Parameters<typeof action>[0])
@@ -159,10 +146,11 @@ describe('routes/signin — password-reset session-revocation (real db + tokens)
       callResetAction({ reset_token: 'bogus-token', password: 'LongEnough1' }),
     )
     expect(result.error).toBe('链接无效或已过期。')
-    expect(mockHandles.establishLoginSession).not.toHaveBeenCalled()
+    // No session was established.
+    expect(await db.select().from(sessionTable)).toHaveLength(0)
   })
 
-  it('calls establishLoginSession with revokeOtherSessions: true on a successful reset', async () => {
+  it('revokes every pre-existing session on a successful reset (the §1.2 invariant, on the real table)', async () => {
     const admin = await seedUser({ loginMethod: 'passkey' })
     await db.insert(passkeyCredential).values({
       userId: admin.id,
@@ -171,17 +159,29 @@ describe('routes/signin — password-reset session-revocation (real db + tokens)
       counter: 0,
       transports: [],
     })
+    // Two pre-existing sessions — the reset invariant must destroy both.
+    for (const sid of ['old-sid-1', 'old-sid-2']) {
+      await db.insert(sessionTable).values({
+        id: sid,
+        userId: admin.id,
+        data: {},
+        expiresAt: new Date(Date.now() + 3_600_000),
+      })
+    }
     const { token } = issueResetToken(db, admin.id)
 
     // Action returns a redirect Response on success; both `data(...)` and
     // `redirect(...)` flow through the same call surface.
-    await callResetAction({ reset_token: token, password: 'LongEnough1' })
+    const response = (await callResetAction({ reset_token: token, password: 'LongEnough1' })) as Response
+    expect(response.status).toBe(302)
+    expect(response.headers.get('Set-Cookie')).toMatch(/^__session=/)
 
-    // Whichever path it took, the security invariant is the same:
-    expect(mockHandles.establishLoginSession).toHaveBeenCalledTimes(1)
-    const callArgs = mockHandles.establishLoginSession.mock.calls[0]!
-    // Last positional arg is `{ revokeOtherSessions: true }`.
-    expect(callArgs[callArgs.length - 1]).toEqual({ revokeOtherSessions: true })
+    // The revocation invariant on the real session table: both old
+    // sessions destroyed, exactly one new session owned by the user.
+    const sessions = await db.select().from(sessionTable)
+    expect(sessions).toHaveLength(1)
+    expect(sessions[0]!.userId).toBe(admin.id)
+    expect(['old-sid-1', 'old-sid-2']).not.toContain(sessions[0]!.id)
 
     // The rotation really landed: new bcrypt hash, login method reverted,
     // passkey credentials cleared through the real cleanup, token gone.
@@ -194,5 +194,16 @@ describe('routes/signin — password-reset session-revocation (real db + tokens)
       .from(verification)
       .where(and(eq(verification.purpose, 'password-reset'), eq(verification.userId, admin.id)))
     expect(tokens).toHaveLength(0)
+
+    // The audit trail really landed: the completion event and the login
+    // event (credential-rotation method) attributed to the new sid.
+    await flushAuditLog()
+    const completes = await db.select().from(auditLog).where(eq(auditLog.action, 'password_reset_complete'))
+    expect(completes).toHaveLength(1)
+    expect(completes[0]!.resourceId).toBe(String(admin.id))
+    const logins = await db.select().from(auditLog).where(eq(auditLog.action, 'login'))
+    expect(logins).toHaveLength(1)
+    expect(logins[0]!.resourceId).toBe(sessions[0]!.id)
+    expect(logins[0]!.details).toMatchObject({ method: 'credential_rotation' })
   })
 })

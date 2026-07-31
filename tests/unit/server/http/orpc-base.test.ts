@@ -1,22 +1,14 @@
 import { call } from '@orpc/server'
 import { RPCHandler } from '@orpc/server/fetch'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { z } from 'zod'
 
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { makePublicCtx } from '#/_helpers/mock-ctx'
-
-vi.mock('@/server/domains/auth/passkey/gate', () => ({
-  isPasskeyEnabled: vi.fn(),
-}))
-
-import { isPasskeyEnabled } from '@/server/domains/auth/passkey/gate'
 import { commentTokenCookie, passkeyGuard, publicProc, resourceRateLimit } from '@/server/http/orpc-base'
 import { ActionFailure, DomainError } from '@/server/infra/http/errors'
 import { __rateLimitKeysForTests, __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 import { parseCommentTokensCookie } from '@/shared/utils/comment-token'
-
-const isPasskeyEnabledMock = vi.mocked(isPasskeyEnabled)
 
 /** Shrink the `resourceIp` bucket so the second hit in a window trips. */
 function seedSingleAttemptResourceBucket() {
@@ -128,13 +120,18 @@ async function callPasskeyPing(input: unknown) {
   return result.response
 }
 
-describe('passkeyGuard oRPC middleware', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-    isPasskeyEnabledMock.mockReturnValue(true)
+/** Flip the real passkey gate by seeding the settings snapshot. */
+function seedPasskeyBundle(enabled: boolean) {
+  setBlogSettingsBundleForTests({
+    ...TEST_BLOG_SETTINGS_BUNDLE,
+    security: { ...TEST_BLOG_SETTINGS_BUNDLE.security!, passkey: { enabled } },
   })
+}
 
+describe('passkeyGuard oRPC middleware', () => {
   it('passes through when the passkey feature is enabled', async () => {
+    seedPasskeyBundle(true)
+
     const res = await callPasskeyPing({})
 
     expect(res.status).toBe(200)
@@ -143,7 +140,7 @@ describe('passkeyGuard oRPC middleware', () => {
   })
 
   it('answers 400 with the canonical DomainError shape when disabled', async () => {
-    isPasskeyEnabledMock.mockReturnValue(false)
+    seedPasskeyBundle(false)
 
     const res = await callPasskeyPing({})
 

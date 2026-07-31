@@ -1,19 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The branding repo talks to storage exclusively through the registry seam,
-// so the tests mock that seam with an in-memory backend and assert on the
-// `StorageBackend` calls — never on S3 internals.
-const backend = vi.hoisted(() => ({
-  put: vi.fn(async (input: { key: string; body: Buffer }) => ({ key: input.key, size: input.body.length })),
-  get: vi.fn(),
-  delete: vi.fn(async (_key: string) => {}),
-}))
-
-vi.mock('@/server/infra/storage/registry', () => ({
-  activeBackend: () => ({ backend, driver: 's3' }),
-  backendFor: () => backend,
-}))
-
+import { makeMemoryBackend } from '#/_helpers/memory-storage'
 import {
   deleteBrandingObject,
   ensureMatchesSlot,
@@ -24,14 +11,27 @@ import {
   putBrandingObject,
   s3KeyForSlot,
 } from '@/server/domains/assets/services/storage'
-import { StorageObjectNotFound } from '@/server/infra/storage/backend'
+import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@/server/infra/storage/registry'
+
+// The branding repo talks to storage exclusively through the registry, so
+// the tests substitute the seam's 's3' backend with the shared in-memory
+// one and assert on observable state — stored objects, put/delete history —
+// never on S3 internals. vi.spyOn on the memory backend is used only to
+// inject failures the in-memory store cannot produce on its own.
+const mem = makeMemoryBackend()
 
 const pngHeader = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 const svgBuffer = Buffer.from('<?xml version="1.0"?><svg></svg>')
 
 describe('assets storage', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    __setStorageBackendForTests('s3', mem.backend)
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+    __resetStorageBackendsForTests()
+    mem.reset()
   })
 
   it('classifies branding slots', () => {
@@ -77,42 +77,34 @@ describe('assets storage', () => {
   it('uploads a branding object', async () => {
     const ref = await putBrandingObject('icon192', pngHeader)
     expect(ref.contentType).toBe('image/png')
-    expect(backend.put).toHaveBeenCalledWith({
-      key: 'branding/icon-192.png',
-      body: pngHeader,
-      contentType: 'image/png',
-      visibility: 'private',
-    })
+    expect(ref.driver).toBe('s3')
+    expect(mem.putKeys).toEqual(['branding/icon-192.png'])
+    const stored = mem.store.get('branding/icon-192.png')
+    expect(stored?.body.equals(pngHeader)).toBe(true)
+    expect(stored?.contentType).toBe('image/png')
   })
 
   it('deletes a branding object and swallows backend errors', async () => {
-    backend.delete.mockRejectedValue(new Error('not found'))
+    vi.spyOn(mem.backend, 'delete').mockRejectedValue(new Error('not found'))
     await expect(deleteBrandingObject('icon192')).resolves.toBeUndefined()
   })
 
   it('fetches a branding object from cache or the backend', async () => {
-    backend.get.mockResolvedValue(pngHeader)
-    const buffer = await fetchBrandingObject('icon192', {
-      etag: 'a',
-      contentType: 'image/png',
-      size: 8,
-      updatedAt: '',
-      driver: 's3',
-    })
+    mem.store.set('branding/icon-192.png', { body: pngHeader, contentType: 'image/png' })
+    const ref = { etag: 'a', contentType: 'image/png', size: 8, updatedAt: '', driver: 's3' as const }
+
+    const buffer = await fetchBrandingObject('icon192', ref)
     expect(buffer).toBe(pngHeader)
-    // second call should hit cache
-    const cached = await fetchBrandingObject('icon192', {
-      etag: 'a',
-      contentType: 'image/png',
-      size: 8,
-      updatedAt: '',
-      driver: 's3',
-    })
+
+    // Drop the stored object: the second call must come from the in-process
+    // cache.
+    mem.store.delete('branding/icon-192.png')
+    const cached = await fetchBrandingObject('icon192', ref)
     expect(cached).toBe(pngHeader)
   })
 
   it('returns null when the backend fetch fails', async () => {
-    backend.get.mockRejectedValue(new Error('down'))
+    const getSpy = vi.spyOn(mem.backend, 'get').mockRejectedValueOnce(new Error('down'))
     const buffer = await fetchBrandingObject('icon192', {
       etag: 'b',
       contentType: 'image/png',
@@ -123,15 +115,14 @@ describe('assets storage', () => {
     expect(buffer).toBeNull()
     // A non-not-found failure must NOT probe the legacy key — only the
     // seam's typed `StorageObjectNotFound` triggers the auto-migration.
-    expect(backend.get).toHaveBeenCalledTimes(1)
+    expect(getSpy).toHaveBeenCalledTimes(1)
   })
 
   it('auto-migrates from legacy extensionless key when new key is not found', async () => {
-    // First call (new key `branding/icon-192.png`) → not found.
-    // Second call (legacy key `branding/icon-192`) → found → auto-migrate.
-    backend.get
-      .mockRejectedValueOnce(new StorageObjectNotFound('branding/icon-192.png'))
-      .mockResolvedValueOnce(pngHeader)
+    // The legacy extensionless key holds the bytes; the current key is
+    // absent, so the memory backend's StorageObjectNotFound triggers the
+    // migration path.
+    mem.store.set('branding/icon-192', { body: pngHeader, contentType: 'image/png' })
 
     const buffer = await fetchBrandingObject('icon192', {
       etag: 'c',
@@ -142,25 +133,17 @@ describe('assets storage', () => {
     })
 
     expect(buffer).toBe(pngHeader)
-    expect(backend.get).toHaveBeenCalledTimes(2)
-    expect(backend.get).toHaveBeenNthCalledWith(1, 'branding/icon-192.png')
-    expect(backend.get).toHaveBeenNthCalledWith(2, 'branding/icon-192')
-    // Migration: copy to new key + delete legacy
-    expect(backend.put).toHaveBeenCalledWith({
-      key: 'branding/icon-192.png',
-      body: pngHeader,
-      contentType: 'image/png',
-      visibility: 'private',
-    })
-    expect(backend.delete).toHaveBeenCalledWith('branding/icon-192')
+    // Migration: the bytes were copied to the current key and the legacy
+    // object was deleted.
+    expect(mem.putKeys).toEqual(['branding/icon-192.png'])
+    expect(mem.store.get('branding/icon-192.png')?.body).toBe(pngHeader)
+    expect(mem.deletedKeys).toEqual(['branding/icon-192'])
+    expect(mem.store.has('branding/icon-192')).toBe(false)
   })
 
   it('auto-migrates and still returns null when both keys are missing', async () => {
-    // Both new and legacy keys are absent from the backend.
-    backend.get
-      .mockRejectedValueOnce(new StorageObjectNotFound('branding/icon-192.png'))
-      .mockRejectedValueOnce(new StorageObjectNotFound('branding/icon-192'))
-
+    // Both new and legacy keys are absent — the memory backend rejects
+    // missing-key reads with StorageObjectNotFound on its own.
     const buffer = await fetchBrandingObject('icon192', {
       etag: 'd',
       contentType: 'image/png',
@@ -170,8 +153,7 @@ describe('assets storage', () => {
     })
 
     expect(buffer).toBeNull()
-    expect(backend.get).toHaveBeenCalledTimes(2)
-    expect(backend.put).not.toHaveBeenCalled()
-    expect(backend.delete).not.toHaveBeenCalled()
+    expect(mem.putKeys).toHaveLength(0)
+    expect(mem.deletedKeys).toHaveLength(0)
   })
 })

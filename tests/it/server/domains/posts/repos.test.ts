@@ -1,26 +1,17 @@
 import { eq, sql } from 'drizzle-orm'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { content as contentTable } from '@/server/infra/db/schema/content'
+import { image as imageTable } from '@/server/infra/db/schema/media'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { postTag } from '@/server/infra/db/schema/post-tag'
 import { category as categoryTable, tag as tagTable } from '@/server/infra/db/schema/taxonomy'
-vi.mock('@/server/domains/images/services/enhance', () => ({
-  hydrateImageRefs: vi.fn(
-    async (_db: unknown, items: unknown[], _getUrl: unknown, apply: (item: unknown, lookup: unknown) => void) => {
-      for (const item of items as object[]) {
-        apply(item, { thumbhash: 't', publicUrl: 'https://cdn/x.png' })
-      }
-    },
-  ),
-}))
 
 const db = getTestDb()
 
 beforeEach(async () => {
   await clearAllTables(db)
-  vi.clearAllMocks()
 })
 
 async function seedPost(opts: Partial<typeof postMetaTable.$inferInsert> = {}): Promise<number> {
@@ -75,6 +66,28 @@ async function seedCategory(name: string, slug?: string): Promise<number> {
 
 async function linkTag(postId: number, tagId: number): Promise<void> {
   await db.insert(postTag).values({ postId, tagId })
+}
+
+async function seedImage(overrides: Partial<typeof imageTable.$inferInsert> = {}) {
+  const rows = await db
+    .insert(imageTable)
+    .values({
+      storagePath: 'images/cover.png',
+      storageDriver: 's3',
+      mimeType: 'image/png',
+      width: 10,
+      height: 20,
+      byteSize: 1234,
+      thumbhash: 't',
+      ...overrides,
+    })
+    .returning()
+  return rows[0]!
+}
+
+/** The CDN public URL the real hydrateImageRefs writes for a seeded row. */
+function coverUrl(row: typeof imageTable.$inferSelect): string {
+  return `https://assets.example.com/${row.storagePath}?v=${row.updatedAt.getTime()}`
 }
 
 describe('posts/repos/shared — buildPostsWhere', () => {
@@ -192,18 +205,28 @@ describe('posts/repos/hydrate — hydratePostImages', () => {
     const { hydratePostImages } = await import('@/server/domains/posts/repos/hydrate')
     await expect(hydratePostImages(db, [])).resolves.toBeUndefined()
   })
-  it('invokes hydrateImageRefs for a non-empty post list', async () => {
+  it('rewrites a resolvable cover to its CDN public URL', async () => {
+    const row = await seedImage()
     const { hydratePostImages } = await import('@/server/domains/posts/repos/hydrate')
-    await hydratePostImages(db, [{ cover: '/c.png' } as never])
-    const { hydrateImageRefs } = await import('@/server/domains/images/services/enhance')
-    expect(hydrateImageRefs).toHaveBeenCalled()
+    const item = { cover: '/images/cover.png' } as { cover: string; coverThumbhash?: string }
+    await hydratePostImages(db, [item])
+    expect(item.cover).toBe(coverUrl(row))
+    expect(item.coverThumbhash).toBe('t')
   })
   it('hydrates any post-shaped projection (ClientPost included)', async () => {
+    const row = await seedImage()
     const { hydratePostImages } = await import('@/server/domains/posts/repos/hydrate')
-    const clientPost = { cover: '/c.png' } as never
+    const clientPost = { cover: '/images/cover.png' } as { cover: string; coverThumbhash?: string }
     await hydratePostImages(db, [clientPost])
-    const { hydrateImageRefs } = await import('@/server/domains/images/services/enhance')
-    expect(hydrateImageRefs).toHaveBeenCalled()
+    expect(clientPost.cover).toBe(coverUrl(row))
+    expect(clientPost.coverThumbhash).toBe('t')
+  })
+  it('leaves an unresolvable cover untouched', async () => {
+    const { hydratePostImages } = await import('@/server/domains/posts/repos/hydrate')
+    const item = { cover: '/c.png' } as { cover: string; coverThumbhash?: string }
+    await hydratePostImages(db, [item])
+    expect(item.cover).toBe('/c.png')
+    expect(item.coverThumbhash).toBeUndefined()
   })
 })
 
@@ -250,14 +273,16 @@ describe('posts/repos/hydrate — hydratePostList', () => {
     expect(posts[0]?.cover).toBe('/c.png')
     expect(posts[0]?.coverThumbhash).toBeUndefined()
   })
-  it('hydrates covers through hydrateImageRefs by default (revision: none)', async () => {
+  it('hydrates covers to CDN URLs by default (revision: none)', async () => {
+    const imageRow = await seedImage()
     const revId = await seedContent({ type: 'post', revisionNo: 1, status: 'published' })
     const pid = await seedPost({ slug: 'h-cover', publishedRevisionId: revId, cover: '/images/cover.png' })
     const rows = await db.select().from(postMetaTable).where(eq(postMetaTable.id, pid))
     const { hydratePostList } = await import('@/server/domains/posts/repos/hydrate')
     const posts = await hydratePostList(db, rows)
-    // The hydrateImageRefs mock above rewrites cover/coverThumbhash.
-    expect(posts[0]?.cover).toBe('https://cdn/x.png')
+    // The real hydrateImageRefs rewrites cover/coverThumbhash from the
+    // seeded image row.
+    expect(posts[0]?.cover).toBe(coverUrl(imageRow))
     expect(posts[0]?.coverThumbhash).toBe('t')
     // revision defaults to 'none': no body join even though a published
     // revision exists.

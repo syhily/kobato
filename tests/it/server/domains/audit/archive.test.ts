@@ -1,18 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { auditLog } from '@/server/infra/db/schema/config'
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@/server/infra/logger'
 
-// The storage seam stays real (registry → S3 backend); only the AWS SDK is
-// mocked at the boundary. That keeps the availability checks honest — the
+// Real in-memory engine for the DB side: expired rows are real
+// `audit_log` rows and every assertion reads the table back. The storage
+// seam stays real too (registry → S3 backend); only the AWS SDK is mocked
+// at the boundary. That keeps the availability checks honest — the
 // half-configured cases below exercise the backend's real `isAvailable()`.
-const dbDeleteWhere = vi.fn(() => ({ changes: 0 }))
-const dbSelectLimit = vi.fn(() => Promise.resolve([])) as ReturnType<typeof vi.fn>
-const dbSelectOrderBy = vi.fn(() => ({ limit: dbSelectLimit })) as ReturnType<typeof vi.fn>
-const dbSelectWhere = vi.fn(() => ({ orderBy: dbSelectOrderBy })) as ReturnType<typeof vi.fn>
-const dbSelectFrom = vi.fn(() => ({ where: dbSelectWhere })) as ReturnType<typeof vi.fn>
-const dbSelect = vi.fn(() => ({ from: dbSelectFrom })) as ReturnType<typeof vi.fn>
-
 const sendMock = vi.fn<(command: { input: unknown }) => Promise<unknown>>()
 const destroyMock = vi.fn()
 const middlewareStack = { addRelativeTo: vi.fn() }
@@ -36,12 +33,14 @@ vi.mock('@aws-sdk/client-s3', () => {
   return { S3Client, PutObjectCommand, ListObjectsV2Command, DeleteObjectsCommand }
 })
 
-vi.mock('@/server/domains/audit/services/record', () => ({ recordAuditEvent: vi.fn() }))
+const db = getTestDb()
 
-const db = {
-  delete: vi.fn(() => ({ where: dbDeleteWhere })),
-  select: dbSelect,
-} as any
+// Comfortably older than any retention cutoff the fixture can produce.
+const OLD_DAY = new Date('2026-01-01T12:00:00Z')
+
+async function seedAuditRow(overrides: Partial<typeof auditLog.$inferInsert> = {}): Promise<void> {
+  await db.insert(auditLog).values({ action: 'login', resourceType: 'session', createdAt: OLD_DAY, ...overrides })
+}
 
 type StorageOverrides = Partial<NonNullable<(typeof TEST_BLOG_SETTINGS_BUNDLE)['assets']>['storage']>
 
@@ -67,102 +66,65 @@ function commandInput(call: number): SentCommandInput {
 const { archiveExpiredAuditLogs, cleanupExpiredArchives } = await import('@/server/domains/audit/services/archive')
 
 describe('audit/archive', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks()
     __clearLogCaptureForTests()
     setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
+    await clearAllTables(db)
   })
 
   describe('archiveExpiredAuditLogs', () => {
-    it('returns zeroes when no days need archiving', async () => {
-      dbSelectFrom.mockReturnValueOnce({
-        where: vi.fn(() => ({
-          groupBy: vi.fn(() => ({ orderBy: vi.fn(() => Promise.resolve([])) })),
-        })),
-      })
+    it('returns zeroes when no rows are past the retention cutoff', async () => {
+      await seedAuditRow({ createdAt: new Date(), action: 'fresh' })
 
       const result = await archiveExpiredAuditLogs(db)
       expect(result).toEqual({ archivedDays: 0, archivedRows: 0, deletedRows: 0 })
-    })
-
-    it('skips upload when no rows are found for a day (idempotency)', async () => {
-      const oldDay = '2026-01-01'
-      dbSelectFrom.mockReturnValueOnce({
-        where: vi.fn(() => ({
-          groupBy: vi.fn(() => ({
-            orderBy: vi.fn(() => Promise.resolve([{ day: oldDay, count: 0 }])),
-          })),
-        })),
-      })
-
-      // Second select (pagination) returns empty
-      dbSelectWhere.mockReturnValueOnce({ orderBy: dbSelectOrderBy })
-      dbSelectLimit.mockReturnValueOnce(Promise.resolve([]))
-
-      const result = await archiveExpiredAuditLogs(db)
-      expect(result.archivedDays).toBe(1)
       expect(sendMock).not.toHaveBeenCalled()
+      expect(await db.select().from(auditLog)).toHaveLength(1)
     })
 
-    it('archives rows and deletes them after successful upload', async () => {
-      const oldDay = '2026-01-01'
-      dbSelectFrom.mockReturnValueOnce({
-        where: vi.fn(() => ({
-          groupBy: vi.fn(() => ({
-            orderBy: vi.fn(() => Promise.resolve([{ day: oldDay, count: 3 }])),
-          })),
-        })),
-      })
-
-      const rows = [
-        {
-          id: 1,
-          action: 'login',
-          actorId: 1,
-          actorRole: 'admin',
-          resourceType: 'session',
-          resourceId: 's1',
-          details: null,
-          ipAddress: null,
-          userAgent: null,
-          createdAt: new Date('2026-01-01T12:00:00Z'),
-        },
-      ]
-      dbSelectWhere.mockReturnValueOnce({ orderBy: dbSelectOrderBy })
-      dbSelectLimit.mockReturnValueOnce(Promise.resolve(rows))
-
-      dbDeleteWhere.mockReturnValueOnce({ changes: 1 })
+    it('archives expired rows and deletes them after a successful upload', async () => {
+      await seedAuditRow({ action: 'login' })
+      await seedAuditRow({ action: 'logout' })
+      await seedAuditRow({ createdAt: new Date(), action: 'fresh' })
       sendMock.mockResolvedValue({})
 
       const result = await archiveExpiredAuditLogs(db)
-      expect(result.archivedRows).toBe(1)
+      expect(result).toEqual({ archivedDays: 1, archivedRows: 2, deletedRows: 2 })
       expect(sendMock).toHaveBeenCalledOnce()
       const input = commandInput(0)
       expect(input.Key).toBe('audit-log/archive/2026-01-01.jsonl.gz')
       expect(input.ContentType).toBe('application/gzip')
       expect(input.CacheControl).toContain('private')
-      expect(dbDeleteWhere).toHaveBeenCalledOnce()
+
+      // Only the archived rows are gone; the fresh row is untouched.
+      const remaining = await db.select().from(auditLog)
+      expect(remaining).toHaveLength(1)
+      expect(remaining[0]?.action).toBe('fresh')
     })
 
     it('purges expired rows without archiving when S3 is disabled', async () => {
       setS3Storage({ enabled: false })
-
-      dbDeleteWhere.mockReturnValueOnce({ changes: 42 })
+      await seedAuditRow()
+      await seedAuditRow()
+      await seedAuditRow({ createdAt: new Date(), action: 'fresh' })
 
       const result = await archiveExpiredAuditLogs(db)
-      expect(result).toEqual({ archivedDays: 0, archivedRows: 0, deletedRows: 42 })
+      expect(result).toEqual({ archivedDays: 0, archivedRows: 0, deletedRows: 2 })
       expect(sendMock).not.toHaveBeenCalled()
-      expect(dbDeleteWhere).toHaveBeenCalledOnce()
+      const remaining = await db.select().from(auditLog)
+      expect(remaining).toHaveLength(1)
+      expect(remaining[0]?.action).toBe('fresh')
     })
 
     it('purges expired rows without archiving when S3 secret key is empty', async () => {
       setS3Storage({ secretAccessKey: '' })
-
-      dbDeleteWhere.mockReturnValueOnce({ changes: 10 })
+      await seedAuditRow()
 
       const result = await archiveExpiredAuditLogs(db)
-      expect(result).toEqual({ archivedDays: 0, archivedRows: 0, deletedRows: 10 })
+      expect(result).toEqual({ archivedDays: 0, archivedRows: 0, deletedRows: 1 })
       expect(sendMock).not.toHaveBeenCalled()
+      expect(await db.select().from(auditLog)).toHaveLength(0)
     })
 
     // Q4: a half-configured bucket (enabled + keys present, endpoint missing)
@@ -170,12 +132,12 @@ describe('audit/archive', () => {
     // attempting the archive and logging an error every daily run.
     it('purges expired rows when S3 is half-configured (endpoint missing)', async () => {
       setS3Storage({ endpoint: '' })
-
-      dbDeleteWhere.mockReturnValueOnce({ changes: 7 })
+      await seedAuditRow()
 
       const result = await archiveExpiredAuditLogs(db)
-      expect(result).toEqual({ archivedDays: 0, archivedRows: 0, deletedRows: 7 })
+      expect(result).toEqual({ archivedDays: 0, archivedRows: 0, deletedRows: 1 })
       expect(sendMock).not.toHaveBeenCalled()
+      expect(await db.select().from(auditLog)).toHaveLength(0)
       expect(__logCaptureForTests().filter((e) => e.level === 'warn')).toHaveLength(1)
       expect(__logCaptureForTests()).toContainEqual(
         expect.objectContaining({

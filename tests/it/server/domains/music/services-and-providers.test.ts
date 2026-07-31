@@ -1,22 +1,25 @@
 import { eq } from 'drizzle-orm'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest'
+
+import type { StorageBackend } from '@/server/infra/storage/backend'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { makeMemoryBackend } from '#/_helpers/memory-storage'
 import { music } from '@/server/infra/db/schema/media'
 import { user } from '@/server/infra/db/schema/user'
+import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@/server/infra/storage/registry'
 
 const { setBlogSettingsBundleForTests } = await import('#/_helpers/blog-settings')
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('#/_helpers/blog-settings')
 
-const storageBackendMock = vi.hoisted(() => ({
-  put: vi.fn(async () => ({ key: 'mock', size: 0 })),
-  delete: vi.fn(async () => undefined),
-}))
-
-vi.mock('@/server/infra/storage/registry', () => ({
-  activeBackend: vi.fn(() => ({ backend: storageBackendMock, driver: 's3' })),
-  backendFor: vi.fn(() => storageBackendMock),
-}))
+// The storage registry is NOT module-mocked: both driver slots route at
+// the shared in-memory backend through the registry test seam. `put` on
+// the 's3' slot is a spy wrapping the real memory implementation so the
+// addMusic happy path can still pin the visibility/content-type arguments
+// — spying on a real implementation, not stubbing the module.
+const s3Memory = makeMemoryBackend({ driver: 's3' })
+const localMemory = makeMemoryBackend({ driver: 'local' })
+let s3Put: Mock<StorageBackend['put']>
 
 vi.mock('@/server/infra/storage/public-url', () => ({
   resolveAssetUrl: vi.fn((_driver: string, p: string) => `https://assets.example.com/${p}`),
@@ -50,6 +53,18 @@ beforeEach(async () => {
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
   await clearAllTables(db)
   vi.clearAllMocks()
+  // After clearAllMocks so the spy starts empty. The 's3' memory backend
+  // is available, so the real registry resolves it as the active backend;
+  // 'local' is swapped too so backendFor('local') never touches disk.
+  s3Put = vi.fn(s3Memory.backend.put)
+  __setStorageBackendForTests('s3', { ...s3Memory.backend, put: s3Put })
+  __setStorageBackendForTests('local', localMemory.backend)
+})
+
+afterEach(() => {
+  __resetStorageBackendsForTests()
+  s3Memory.reset()
+  localMemory.reset()
 })
 
 async function seedMusic(overrides: Partial<typeof music.$inferInsert> = {}) {
@@ -306,13 +321,16 @@ describe('music/services/write/add — addMusic', () => {
     expect(resolveCoverUrl).toHaveBeenCalledTimes(1)
     expect(resolveCoverUrl).toHaveBeenCalledWith(track)
     // Both assets land on the active backend with their fixed content types
-    // (MP3 audio, JPEG cover) — previously pinned at the music/storage seam.
-    expect(storageBackendMock.put).toHaveBeenCalledWith(
+    // (MP3 audio, JPEG cover) and public visibility — asserted on a spy
+    // wrapping the real memory backend, and backed by store state.
+    expect(s3Put).toHaveBeenCalledWith(
       expect.objectContaining({ key: r.audioStoragePath, contentType: 'audio/mpeg', visibility: 'public' }),
     )
-    expect(storageBackendMock.put).toHaveBeenCalledWith(
+    expect(s3Put).toHaveBeenCalledWith(
       expect.objectContaining({ key: r.coverStoragePath, contentType: 'image/jpeg', visibility: 'public' }),
     )
+    expect(s3Memory.store.has(r.audioStoragePath)).toBe(true)
+    expect(s3Memory.store.has(r.coverStoragePath)).toBe(true)
   })
 })
 

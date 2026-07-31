@@ -1,66 +1,87 @@
 import { call } from '@orpc/server'
-import { describe, expect, it, vi } from 'vitest'
+import { eq } from 'drizzle-orm'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
+import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
+import { flushAuditLog } from '@/server/domains/audit/services/batcher'
+import { adminFriendsRouter } from '@/server/http/controllers/admin/friends.controller'
+import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
+import { friend } from '@/server/infra/db/schema/friend'
+import { user } from '@/server/infra/db/schema/user'
 
-vi.mock('@/server/domains/friends/service', () => ({
-  deleteAdminFriend: vi.fn(),
-  listFriendsForAdmin: vi.fn(),
-  upsertAdminFriend: vi.fn(),
-}))
+// adminFriendsRouter against the real engine: the friends service runs
+// against real friend rows (homepage soft-uniqueness, visibility
+// buckets), and writes record real audit rows flushed from the batcher.
+const db = getTestDb()
 
-const service = await import('@/server/domains/friends/service')
-const { adminFriendsRouter } = await import('@/server/http/controllers/admin/friends.controller')
+let adminId = 0
 
-const friend = {
-  id: '1',
-  website: 'Example',
-  description: 'An example site',
-  homepage: 'https://example.com',
-  poster: 'https://example.com/poster.jpg',
-  rssUrl: null,
-  visible: true,
-  createdAt: '2026-01-01T00:00:00.000Z',
-  updatedAt: '2026-01-01T00:00:00.000Z',
+// audit_log.actor_id references user.id, so the editor must be a real
+// row for the batched audit insert to survive the FK on flush.
+async function seedAdmin(): Promise<number> {
+  const [row] = await db
+    .insert(user)
+    .values({ name: 'Admin', email: 'admin@example.com', password: 'hashed', role: 'admin' })
+    .returning({ id: user.id })
+  return row.id
 }
 
-describe('adminFriendsRouter.list', () => {
-  it('returns friends, total and hasMore', async () => {
-    vi.mocked(service.listFriendsForAdmin).mockResolvedValueOnce({
-      friends: [friend],
-      total: 1,
-      hasMore: false,
+function adminCtx() {
+  return makeAuthedCtx({ userId: String(adminId), role: 'admin', db })
+}
+
+async function seedFriend(website: string, visible: boolean): Promise<number> {
+  const slug = website.toLowerCase()
+  const [row] = await db
+    .insert(friend)
+    .values({
+      website,
+      homepage: `https://${slug}.example.com`,
+      poster: `https://${slug}.example.com/poster.jpg`,
+      visible,
     })
-    const ctx = makeAuthedCtx()
-    const res = await call(adminFriendsRouter.list, { q: 'example' }, { context: ctx })
+    .returning({ id: friend.id })
+  return row.id
+}
+
+beforeEach(async () => {
+  await clearAllTables(db)
+  initAllBatchers(getDatabaseHandle())
+  adminId = await seedAdmin()
+})
+
+afterEach(async () => {
+  await flushAuditLog()
+  resetAllBatchers()
+})
+
+describe('adminFriendsRouter.list', () => {
+  it('returns only visible friends by default (hidden stay in the pending bucket)', async () => {
+    await seedFriend('Example', true)
+    await seedFriend('Pending', false)
+
+    const res = await call(adminFriendsRouter.list, {}, { context: adminCtx() })
     expect(res.friends).toHaveLength(1)
+    expect(res.friends[0]).toMatchObject({ website: 'Example', visible: true })
     expect(res.total).toBe(1)
     expect(res.hasMore).toBe(false)
   })
 
-  it('forwards the visible filter (pending bucket) to the service', async () => {
-    vi.mocked(service.listFriendsForAdmin).mockResolvedValueOnce({
-      friends: [],
-      total: 0,
-      hasMore: false,
-    })
-    const ctx = makeAuthedCtx()
-    await call(adminFriendsRouter.list, { visible: false }, { context: ctx })
-    expect(service.listFriendsForAdmin).toHaveBeenCalledWith(expect.anything(), {
-      q: undefined,
-      // The domain schema defaults `includeHidden` at the wire boundary.
-      includeHidden: false,
-      visible: false,
-      offset: undefined,
-      limit: undefined,
-    })
+  it('returns the pending bucket when visible=false is requested', async () => {
+    await seedFriend('Example', true)
+    await seedFriend('Pending', false)
+
+    const res = await call(adminFriendsRouter.list, { visible: false }, { context: adminCtx() })
+    expect(res.friends).toHaveLength(1)
+    expect(res.friends[0]).toMatchObject({ website: 'Pending', visible: false })
+    expect(res.total).toBe(1)
   })
 })
 
 describe('adminFriendsRouter.upsert', () => {
-  it('returns the upserted friend', async () => {
-    vi.mocked(service.upsertAdminFriend).mockResolvedValueOnce(friend)
-    const ctx = makeAuthedCtx()
+  it('creates a real friend row and returns its DTO', async () => {
     const res = await call(
       adminFriendsRouter.upsert,
       {
@@ -68,24 +89,28 @@ describe('adminFriendsRouter.upsert', () => {
         homepage: 'https://example.com',
         poster: 'https://example.com/poster.jpg',
       },
-      { context: ctx },
+      { context: adminCtx() },
     )
-    expect(res.friend.id).toBe('1')
+
+    expect(res.friend).toMatchObject({ website: 'Example', homepage: 'https://example.com', visible: true })
+    const rows = await db.select().from(friend).where(eq(friend.homepage, 'https://example.com'))
+    expect(rows).toHaveLength(1)
   })
 })
 
 describe('adminFriendsRouter.delete', () => {
-  it('resolves to undefined on success', async () => {
-    vi.mocked(service.deleteAdminFriend).mockResolvedValueOnce(true)
-    const ctx = makeAuthedCtx()
-    const res = await call(adminFriendsRouter.delete, { id: '1' }, { context: ctx })
+  it('removes the row and resolves to undefined on success', async () => {
+    const id = await seedFriend('Example', true)
+
+    const res = await call(adminFriendsRouter.delete, { id: String(id) }, { context: adminCtx() })
     expect(res).toBeUndefined()
+
+    const remaining = await db.select().from(friend).where(eq(friend.id, id))
+    expect(remaining).toHaveLength(0)
   })
 
-  it('throws NOT_FOUND when service returns false', async () => {
-    vi.mocked(service.deleteAdminFriend).mockResolvedValueOnce(false)
-    const ctx = makeAuthedCtx()
-    await expect(call(adminFriendsRouter.delete, { id: '999' }, { context: ctx })).rejects.toMatchObject({
+  it('throws NOT_FOUND for a missing friend id', async () => {
+    await expect(call(adminFriendsRouter.delete, { id: '999' }, { context: adminCtx() })).rejects.toMatchObject({
       code: 'NOT_FOUND',
     })
   })

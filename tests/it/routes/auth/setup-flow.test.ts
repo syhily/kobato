@@ -1,10 +1,14 @@
 import { eq, sql } from 'drizzle-orm'
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { makeRouteContext } from '#/_helpers/context'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { emptySession } from '#/_helpers/session'
+import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
+import { flushAuditLog } from '@/server/domains/audit/services/batcher'
+import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
 import { setting } from '@/server/infra/db/schema/config'
+import { oneTimeToken } from '@/server/infra/db/schema/one-time-token'
 import { user } from '@/server/infra/db/schema/user'
 
 vi.mock('@/server/http/request-context', async () => {
@@ -14,26 +18,14 @@ vi.mock('@/server/http/request-context', async () => {
 
 const db = getTestDb()
 
-vi.mock('@/server/domains/settings/install-gate', () => ({
-  ensureNoAdminOrRedirect: vi.fn(async () => null),
-  ensureInstalledOrRedirect: vi.fn(async () => null),
-  isInstalled: vi.fn(async () => false),
-  getInstallState: vi.fn(async () => 'noAdmin' as const),
-}))
-
-vi.mock('@/server/domains/auth/csrf', () => ({
-  validateCsrfForAction: vi.fn(() => true),
-}))
-
-vi.mock('@/server/domains/auth/setup-token', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/server/domains/auth/setup-token')>()
-  return {
-    ...actual,
-    verifySetupToken: vi.fn(async () => true),
-    getSetupToken: vi.fn(async () => 'test-setup-token'),
-    isSetupTokenActive: vi.fn(async () => true),
-  }
-})
+// Everything else runs against the REAL engine: the install gate derives
+// its state from the `user` table (a cleared table is the noAdmin branch),
+// the setup token is a real row in `one_time_token` (the loader mints it
+// on the first visit; its boxLog stdout noise is expected), and CSRF is
+// the real session-token check (session + form field below). The real
+// install also fires the login audit through the process-level batcher,
+// so this file keeps the batcher lifecycle hygiene.
+const CSRF_TOKEN = 'setup-flow-csrf-token'
 
 const mockContext = await import('@/server/http/request-context')
 const { action, loader } = await import('@/routes/auth/setup/index')
@@ -50,16 +42,31 @@ beforeAll(() => {
 })
 
 beforeEach(async () => {
+  initAllBatchers(getDatabaseHandle())
   await clearAllTables(db)
   const { __resetRateLimitsForTests } = await import('@/server/infra/rate-limit')
   __resetRateLimitsForTests()
 })
 
+afterEach(async () => {
+  await flushAuditLog()
+  resetAllBatchers()
+})
+
+/** Read the setup token the loader minted into `one_time_token`. */
+async function readMintedSetupToken(): Promise<string> {
+  const rows = await db.select().from(oneTimeToken).where(eq(oneTimeToken.key, 'setup_token'))
+  expect(rows).toHaveLength(1)
+  return rows[0]!.payload as string
+}
+
 describe('integration: /admin/setup full install flow', () => {
   it('verifies token then installs and redirects to /admin', async () => {
     const session = emptySession()
+    session.set('csrfToken', CSRF_TOKEN)
 
-    // 1. Loader returns unverified state
+    // 1. Loader returns unverified state (and mints the real setup token
+    //    into `one_time_token` as a side effect).
     const loaderResult = await loader({
       request: new Request('http://localhost/admin/setup'),
       url: new URL('http://localhost/admin/setup'),
@@ -71,10 +78,12 @@ describe('integration: /admin/setup full install flow', () => {
     const loaderPayload = (loaderResult as { data: Record<string, unknown> }).data
     expect(loaderPayload.setupTokenVerified).toBe(false)
 
-    // 2. Submit setup token verification
+    // 2. Submit setup token verification with the real minted token.
+    const setupToken = await readMintedSetupToken()
     const verifyFormData = new FormData()
     verifyFormData.set('intent', 'verify-token')
-    verifyFormData.set('setup_token', 'test-setup-token')
+    verifyFormData.set('setup_token', setupToken)
+    verifyFormData.set('csrf_token', CSRF_TOKEN)
 
     const verifyResult = await action({
       request: new Request('http://localhost/admin/setup', {
@@ -97,6 +106,7 @@ describe('integration: /admin/setup full install flow', () => {
     installFormData.set('name', 'Admin')
     installFormData.set('email', 'admin@example.com')
     installFormData.set('password', 'CorrectHorse1')
+    installFormData.set('csrf_token', CSRF_TOKEN)
 
     const response = (await action({
       request: new Request('http://localhost/admin/setup', {
@@ -156,17 +166,24 @@ describe('integration: /admin/setup full install flow', () => {
     const { getBlogSettingsBundleSync } = await import('@/shared/config/getters')
     expect(getBlogSettingsBundleSync()?.siteIdentity?.title).toBe('My Blog')
 
+    // The install consumed the setup token: the row is gone.
+    expect(await db.select().from(oneTimeToken).where(eq(oneTimeToken.key, 'setup_token'))).toHaveLength(0)
+
     const cookies = response.headers.getSetCookie()
     expect(cookies.some((c) => c.startsWith('__session='))).toBe(true)
   })
 
   it('install action without verification returns error', async () => {
+    const session = emptySession()
+    session.set('csrfToken', CSRF_TOKEN)
+
     const formData = new FormData()
     formData.set('intent', 'install')
     formData.set('title', 'My Blog')
     formData.set('name', 'Admin')
     formData.set('email', 'admin@example.com')
     formData.set('password', 'CorrectHorse1')
+    formData.set('csrf_token', CSRF_TOKEN)
 
     const result = await action({
       request: new Request('http://localhost/admin/setup', {
@@ -174,7 +191,7 @@ describe('integration: /admin/setup full install flow', () => {
         body: formData,
       }),
       url: new URL('http://localhost/admin/setup'),
-      context: makeRouteContext(),
+      context: makeRouteContext({ session }),
       params: {},
       pattern: 'admin/setup',
     })

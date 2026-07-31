@@ -1,40 +1,58 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { adminSession, regularSession } from '#/_helpers/session'
+import { loadSidebarData } from '@/server/http/loaders/sidebar'
+import { comment } from '@/server/infra/db/schema/comment'
+import { post } from '@/server/infra/db/schema/post'
+import { user } from '@/server/infra/db/schema/user'
 
-const mockDb = {} as any
+// loadSidebarData fans out to the real latestComments digest (kv-backed
+// `comments` cache bucket included — cleared with every other table in
+// `beforeEach`). The seeded rows below pin the digest projection: one
+// non-admin commenter, one approved comment on a real post row.
 
-vi.mock('@/server/domains/comments/services/public-query', () => ({
-  latestComments: vi.fn(),
-}))
+const db = getTestDb()
 
-const publicQuery = await import('@/server/domains/comments/services/public-query')
-const { loadSidebarData } = await import('@/server/http/loaders/sidebar')
+beforeEach(async () => {
+  await clearAllTables(db)
 
-beforeEach(() => {
-  vi.mocked(publicQuery.latestComments).mockReset()
-  vi.mocked(publicQuery.latestComments).mockResolvedValue([
-    {
-      title: 'Hello',
-      author: 'Alice',
-      authorLink: '',
-      permalink: '/posts/hello#user-comment-1',
-    },
-  ])
+  const [commenter] = await db
+    .insert(user)
+    .values({ name: 'Alice', email: 'alice@example.com', password: 'hashed', role: 'visitor' })
+    .returning({ id: user.id })
+  const [p] = await db
+    .insert(post)
+    .values({ slug: 'hello', title: 'Hello', summary: '', published: true, publishedRevisionId: 1 })
+    .returning({ id: post.id })
+  await db.insert(comment).values({
+    type: 'post',
+    ownerId: p.id,
+    userId: commenter.id,
+    content: 'hello',
+    body: [],
+    rid: 0,
+    rootId: 0,
+    isPending: false,
+  })
 })
 
 describe('services/sidebar/load — loadSidebarData', () => {
   it('non-admin session reports admin=false and returns latest comments', async () => {
-    const data = await loadSidebarData(mockDb, regularSession())
+    const data = await loadSidebarData(db, regularSession())
 
     expect(data.admin).toBe(false)
     expect(data.recentComments).toHaveLength(1)
+    expect(data.recentComments[0]?.author).toBe('Alice')
+    expect(data.recentComments[0]?.permalink).toMatch(/^\/posts\/hello\/#user-comment-\d+$/)
   })
 
   it('admin session reports admin=true and returns latest comments', async () => {
-    const data = await loadSidebarData(mockDb, adminSession())
+    const data = await loadSidebarData(db, adminSession())
 
     expect(data.admin).toBe(true)
     expect(data.recentComments).toHaveLength(1)
+    expect(data.recentComments[0]?.author).toBe('Alice')
+    expect(data.recentComments[0]?.permalink).toMatch(/^\/posts\/hello\/#user-comment-\d+$/)
   })
 })

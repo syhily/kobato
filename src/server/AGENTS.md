@@ -70,6 +70,7 @@ Two embedded engines, zero services:
 
 - **Content DB** — SQLite via `node:sqlite` + drizzle (`sqlite-core`), one file at `storage.database` (default `<storage.data>/kobato.db`). Sync driver: awaited builders typecheck OUTSIDE transactions, but `db.transaction(async …)` is a compile error — transactions are sync callbacks. Timestamps are `integer({ mode: 'timestamp_ms' })` (epoch ms), booleans `integer({ mode: 'boolean' })`, JSON `text({ mode: 'json' })`, binary `blob({ mode: 'buffer' })`; `LIKE`, not `ILIKE`.
 - **Analytics sidecar** — DuckDB via `@duckdb/node-api`, one file at `storage.analyticsDatabase` (default `<storage.data>/analytics.duckdb`). Holds `access_log` only (append-heavy telemetry + dashboard scans); recreated empty when missing, but INCLUDED in backups (the two-file `.tar.gz` archive alongside the content DB). The batcher writes through the Appender protocol; queries run on a dedicated MVCC reader connection.
+- **Page-view counters** — `metric.pv` is written through the in-memory `PageViewBatcher` (`domains/analytics/services/pv-batcher`: flush on 50 bumps of one key or 60s). Reads merge the unflushed delta via `pendingViewDelta`, so served counts stay exact despite the batched write; `domains/comments/services/likes::queryMetadata` is the single read funnel.
 - **Daily maintenance** (04:30 site timezone): SQLite `incremental_vacuum` + `optimize` with page/freelist logging (`infra/db/maintenance.ts`); DuckDB 180-day retention DELETE + `CHECKPOINT` with row/file-size logging (`bootstrap/analytics-lifecycle.ts`). Pure `ANALYZE` additionally runs after every bulk load (install seed, backup restore).
 
 ## Configuration & Install Gate
@@ -98,6 +99,7 @@ Two embedded engines, zero services:
 
 - `image` table; bytes in the active storage backend (`infra/storage/registry::activeBackend` — S3 when configured, local filesystem otherwise). Each row persists `storageDriver` so a local→S3 switch keeps old rows readable.
 - Writes use `activeBackend()`, reads/deletes `backendFor(driver)`. Whole-fleet scans iterate `allBackends()` — never import a backend directly.
+- Test seam: `__setStorageBackendForTests` / `__resetStorageBackendsForTests` substitute a driver→backend mapping (e.g. `tests/_helpers/memory-storage.ts`) so storage-touching tests run without mocking the registry.
 - All URL → image-meta resolution flows through `domains/images/services/resolve`.
 
 ### Audit Log

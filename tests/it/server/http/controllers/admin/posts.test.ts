@@ -1,107 +1,143 @@
 import { call } from '@orpc/server'
-import { describe, expect, it, vi } from 'vitest'
+import { eq } from 'drizzle-orm'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
-import { DomainError } from '@/server/infra/http/errors'
+import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
+import { flushAuditLog } from '@/server/domains/audit/services/batcher'
+import { adminPostsRouter } from '@/server/http/controllers/admin/posts.controller'
+import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
+import { auditLog } from '@/server/infra/db/schema/config'
+import { content as contentTable } from '@/server/infra/db/schema/content'
+import { post as postTable } from '@/server/infra/db/schema/post'
+import { user } from '@/server/infra/db/schema/user'
 
-vi.mock('@/server/domains/posts/services/mutate', () => ({
-  createPost: vi.fn(),
-  deletePost: vi.fn(),
-  restorePost: vi.fn(),
-  unpublishPost: vi.fn(),
-  updatePostMeta: vi.fn(),
-}))
-
-vi.mock('@/server/domains/posts/services/admin-query', () => ({
-  getPostDetailForAdmin: vi.fn(),
-  listPostsForAdmin: vi.fn(),
-  listRevisionsForAdmin: vi.fn(),
-}))
-
+// Only the body lifecycle stays mocked: saveBody/previewBody are the
+// composition-root neighbours of this controller and are covered by the
+// content-domain integration tests. The admin query, the meta mutations,
+// and the audit pipeline all run against the real in-memory db.
 vi.mock('@/server/domains/content/lifecycle', () => ({
   previewBody: vi.fn(),
   saveBody: vi.fn(),
 }))
 
-vi.mock('@/server/domains/posts/preview', () => ({
-  renderPortableTextToHtml: vi.fn(),
-}))
-
-const mutateService = await import('@/server/domains/posts/services/mutate')
-const adminQueryService = await import('@/server/domains/posts/services/admin-query')
 const lifecycle = await import('@/server/domains/content/lifecycle')
-const { adminPostsRouter } = await import('@/server/http/controllers/admin/posts.controller')
+
+const db = getTestDb()
+
+let seq = 0
+
+beforeEach(async () => {
+  await clearAllTables(db)
+  initAllBatchers(getDatabaseHandle())
+  vi.clearAllMocks()
+})
+
+afterEach(async () => {
+  // Flush BEFORE dropping the batcher so no stale events leak into the
+  // next case's queue (see auth/password-flow for the full rationale).
+  await flushAuditLog()
+  resetAllBatchers()
+})
+
+// audit_log.actor_id references user.id, so the admin viewer must be a
+// real row for the batched audit insert to survive the FK.
+async function seedAdmin(): Promise<number> {
+  const [row] = await db
+    .insert(user)
+    .values({ name: 'Admin', email: `admin-${++seq}@example.com`, password: 'hashed', role: 'admin' })
+    .returning({ id: user.id })
+  return row.id
+}
+
+async function seedPost(overrides: Partial<typeof postTable.$inferInsert> = {}) {
+  const [row] = await db
+    .insert(postTable)
+    .values({
+      slug: `post-${++seq}`,
+      title: 'Seeded Post',
+      published: true,
+      publishedAt: new Date('2026-01-01'),
+      ...overrides,
+    })
+    .returning()
+  return row
+}
+
+// The double-table fixture: a post row plus a content/revision row the
+// post points at via published_revision_id.
+async function seedPublishedRevision(postId: number): Promise<number> {
+  const [rev] = await db
+    .insert(contentTable)
+    .values({ type: 'post', ownerId: postId, revisionNo: 1, status: 'published', body: [] })
+    .returning({ id: contentTable.id })
+  await db.update(postTable).set({ publishedRevisionId: rev.id }).where(eq(postTable.id, postId))
+  return rev.id
+}
+
+function adminCtx(userId: number) {
+  return makeAuthedCtx({ userId: String(userId), role: 'admin', db })
+}
 
 describe('adminPostsRouter.get', () => {
-  it('surfaces NOT_FOUND when the service throws a DomainError', async () => {
-    vi.mocked(adminQueryService.getPostDetailForAdmin).mockRejectedValueOnce(new DomainError('NOT_FOUND'))
-    const ctx = makeAuthedCtx()
-    await expect(call(adminPostsRouter.get, { id: '999' }, { context: ctx })).rejects.toMatchObject({
+  it('surfaces NOT_FOUND for a real missing id', async () => {
+    await expect(call(adminPostsRouter.get, { id: '999' }, { context: makeAuthedCtx({ db }) })).rejects.toMatchObject({
       code: 'NOT_FOUND',
     })
   })
 
-  it('passes through the detail dto on hit', async () => {
-    const post = {
-      id: '1',
-      slug: 's',
-      title: 't',
-      summary: '',
-      cover: '',
-      og: null,
-      published: false,
-      commentsEnabled: true,
-      showToc: true,
-      showUpdated: true,
-      visible: true,
-      publishedAt: '2026-01-01T00:00:00.000Z',
-      publishedRevisionId: null,
-      createdAt: '2026-01-01T00:00:00.000Z',
-      updatedAt: '2026-01-01T00:00:00.000Z',
-      deletedAt: null,
-      category: 'general',
-      categoryId: null,
-      tags: [],
-      alias: [],
-      authorId: null,
-      authorName: null,
-      pinnedAt: null,
-      firstPublishedAt: null,
-      commentCount: 0,
-      commentPublicId: 'pid-1',
-    }
-    vi.mocked(adminQueryService.getPostDetailForAdmin).mockResolvedValueOnce({
-      post: post,
-      latestRevision: null,
-      publishedRevision: null,
+  it('returns the detail dto for the seeded post + published revision', async () => {
+    const seeded = await seedPost({ slug: 'hello-world', title: 'Hello World' })
+    const revisionId = await seedPublishedRevision(seeded.id)
+
+    const res = await call(adminPostsRouter.get, { id: String(seeded.id) }, { context: makeAuthedCtx({ db }) })
+
+    expect(res.post).toMatchObject({
+      id: String(seeded.id),
+      slug: 'hello-world',
+      title: 'Hello World',
+      publishedRevisionId: String(revisionId),
     })
-    const ctx = makeAuthedCtx()
-    const res = (await call(adminPostsRouter.get, { id: '1' }, { context: ctx })) as {
-      post: { id: string }
-    }
-    expect(res.post.id).toBe('1')
+    expect(res.publishedRevision?.id).toBe(String(revisionId))
+    expect(res.latestRevision?.id).toBe(String(revisionId))
   })
 })
 
 describe('adminPostsRouter.delete', () => {
-  it('throws NOT_FOUND when deletePost yields { deleted: false }', async () => {
-    vi.mocked(mutateService.deletePost).mockResolvedValueOnce({ deleted: false })
-    const ctx = makeAuthedCtx()
-    await expect(call(adminPostsRouter.delete, { id: '1' }, { context: ctx })).rejects.toMatchObject({
+  it('throws NOT_FOUND when deletePost yields { deleted: false } (real missing id)', async () => {
+    const admin = await seedAdmin()
+    await expect(call(adminPostsRouter.delete, { id: '999' }, { context: adminCtx(admin) })).rejects.toMatchObject({
       code: 'NOT_FOUND',
     })
   })
 
-  it('resolves to undefined when deletePost succeeds (z.void output)', async () => {
-    vi.mocked(mutateService.deletePost).mockResolvedValueOnce({ deleted: true })
-    const ctx = makeAuthedCtx()
-    const res = await call(adminPostsRouter.delete, { id: '1' }, { context: ctx })
+  it('soft-deletes the row, resolves to undefined (z.void output), and audits post_deleted', async () => {
+    const admin = await seedAdmin()
+    const seeded = await seedPost()
+
+    const res = await call(adminPostsRouter.delete, { id: String(seeded.id) }, { context: adminCtx(admin) })
+
     expect(res).toBeUndefined()
+    const [row] = await db.select().from(postTable).where(eq(postTable.id, seeded.id))
+    expect(row).toBeDefined()
+    expect(row!.deletedAt).not.toBeNull()
+
+    await flushAuditLog()
+    const rows = await db.select().from(auditLog).where(eq(auditLog.action, 'post_deleted'))
+    expect(rows).toHaveLength(1)
+    expect(rows[0]).toMatchObject({
+      resourceType: 'post',
+      resourceId: String(seeded.id),
+      actorId: admin,
+      actorRole: 'admin',
+    })
   })
 })
 
 describe('adminPostsRouter.saveDraft', () => {
   it('discriminates `saved` and `conflict` shapes on the union response', async () => {
+    const admin = await seedAdmin()
     const revision = {
       id: '1',
       revisionNo: 1,
@@ -118,12 +154,18 @@ describe('adminPostsRouter.saveDraft', () => {
       status: 'saved',
       revision: revision,
     })
-    const ctx = makeAuthedCtx()
+
     const res = (await call(
       adminPostsRouter.saveDraft,
       { id: '1', body: [], expectedClientRevisionToken: '00000000-0000-4000-8000-000000000000' },
-      { context: ctx },
+      { context: adminCtx(admin) },
     )) as { status: string }
     expect(res.status).toBe('saved')
+
+    // The `saved` branch records a draft audit through the real batcher.
+    await flushAuditLog()
+    const rows = await db.select().from(auditLog).where(eq(auditLog.action, 'post_draft_saved'))
+    expect(rows).toHaveLength(1)
+    expect(rows[0]).toMatchObject({ resourceType: 'post', resourceId: '1', actorId: admin })
   })
 })

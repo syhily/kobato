@@ -1,13 +1,21 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { makeRouteContext } from '#/_helpers/context'
-import { emptySession, makeSession } from '#/_helpers/session'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { makeSession } from '#/_helpers/session'
+import { getSetupToken } from '@/server/domains/auth/setup-token'
+import { oneTimeToken } from '@/server/infra/db/schema/one-time-token'
+import { user } from '@/server/infra/db/schema/user'
 
 vi.mock('@/server/http/request-context', async () => {
   const { createRequestContextMockModule } = await import('#/_helpers/auth-context-mock')
   return createRequestContextMockModule()
 })
 
+// The only surviving mock: the composition-root wiring of the install
+// service. The route's contract is "parsed form + context in, AuthFlowResult
+// out" — the service's real behavior is covered end-to-end by
+// setup-flow.test.ts against the same route.
 vi.mock('@/server/domains/auth/services/setup', async () => {
   const actual = await vi.importActual<typeof import('@/server/domains/auth/services/setup')>(
     '@/server/domains/auth/services/setup',
@@ -18,39 +26,36 @@ vi.mock('@/server/domains/auth/services/setup', async () => {
   }
 })
 
-vi.mock('@/server/domains/auth/csrf', () => ({
-  validateCsrfForAction: vi.fn(() => true),
-}))
+// Install gate, setup token and CSRF all run REAL: the gate reads the
+// `user` table (a cleared table is noAdmin; a seeded admin row is
+// installed), the token lives in `one_time_token` (minted via the real
+// getSetupToken — boxLog stdout noise is expected), and CSRF is the real
+// session-token check (session carries csrfToken, forms carry csrf_token).
+const CSRF_TOKEN = 'setup-route-csrf-token'
 
-vi.mock('@/server/domains/auth/setup-token', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/server/domains/auth/setup-token')>()
-  return {
-    ...actual,
-    verifySetupToken: vi.fn(),
-    getSetupToken: vi.fn(async () => 'test-setup-token'),
-    isSetupTokenActive: vi.fn(async () => true),
-  }
-})
+const db = getTestDb()
 
-vi.mock('@/server/domains/settings/install-gate', () => ({
-  ensureNoAdminOrRedirect: vi.fn(async () => null),
-  ensureInstalledOrRedirect: vi.fn(async () => null),
-  isInstalled: vi.fn(async () => false),
-  getInstallState: vi.fn(async () => 'noAdmin' as const),
-}))
-
-const installGate = await import('@/server/domains/settings/install-gate')
+const mockContext = await import('@/server/http/request-context')
 const flows = await import('@/server/domains/auth/services/setup')
-const setupToken = await import('@/server/domains/auth/setup-token')
 const { __resetRateLimitsForTests, tryKeyedRateLimit } = await import('@/server/infra/rate-limit')
 const { action, loader } = await import('@/routes/auth/setup/index')
 
-beforeEach(() => {
+beforeAll(() => {
+  // The factory mock derives the RequestContext from the RouterContextProvider
+  // on each call (the per-test session keeps flowing through); overlay the
+  // real db handle so the gate / token / CSRF code hits the integration db.
+  const fromProvider = vi.mocked(mockContext.getRequestContext).getMockImplementation()
+  vi.mocked(mockContext.getRequestContext).mockImplementation((args) => ({
+    ...fromProvider!(args),
+    db,
+  }))
+})
+
+beforeEach(async () => {
+  await clearAllTables(db)
   vi.clearAllMocks()
   __resetRateLimitsForTests()
-  vi.mocked(installGate.ensureNoAdminOrRedirect).mockImplementation(async () => null)
   vi.mocked(flows.signUpInitialAdminWithSession).mockResolvedValue({ type: 'redirect', to: '/admin' })
-  vi.mocked(setupToken.isSetupTokenActive).mockResolvedValue(true)
 })
 
 async function catchResponse(promise: Promise<unknown>): Promise<Response> {
@@ -63,6 +68,30 @@ async function catchResponse(promise: Promise<unknown>): Promise<Response> {
     throw error
   }
   throw new Error('Expected route to throw a Response')
+}
+
+/** A session carrying the CSRF token the real validateCsrfForAction checks. */
+function csrfSession(extra: Record<string, unknown> = {}) {
+  return makeSession({ csrfToken: CSRF_TOKEN, ...extra })
+}
+
+function withCsrf(formData: FormData): FormData {
+  formData.set('csrf_token', CSRF_TOKEN)
+  return formData
+}
+
+/** Mint the real setup token row the verify/install branches check against. */
+async function mintSetupToken(): Promise<string> {
+  return getSetupToken(db)
+}
+
+async function seedAdminRow() {
+  await db.insert(user).values({
+    name: 'Admin',
+    email: 'admin@example.com',
+    password: 'not-a-real-hash',
+    role: 'admin',
+  })
 }
 
 describe('routes/setup', () => {
@@ -97,10 +126,8 @@ describe('routes/setup', () => {
     })
 
     it('redirects to /admin/signin when installed', async () => {
-      const { ensureNoAdminOrRedirect } = await import('@/server/domains/settings/install-gate')
-      vi.mocked(ensureNoAdminOrRedirect).mockImplementation(async () => {
-        throw new Response(null, { status: 303, headers: { Location: '/admin/signin' } })
-      })
+      // The real gate: an admin row flips the install state to installed.
+      await seedAdminRow()
 
       const response = await catchResponse(
         loader({
@@ -119,21 +146,21 @@ describe('routes/setup', () => {
 
   describe('action: verify-token', () => {
     it('returns setupTokenVerified: true for valid token', async () => {
-      vi.mocked(setupToken.verifySetupToken).mockResolvedValue(true)
+      const token = await mintSetupToken()
 
       const formData = new FormData()
       formData.set('intent', 'verify-token')
-      formData.set('setup_token', 'valid-token')
+      formData.set('setup_token', token)
 
       const result = await action({
         request: new Request('http://localhost/admin/setup', {
           method: 'POST',
-          body: formData,
+          body: withCsrf(formData),
         }),
         url: new URL('http://localhost/admin/setup'),
         // Anonymous session — the action commits it, and the session
         // table's user_id FK rejects the helper's default fake user.
-        context: makeRouteContext({ session: emptySession() }),
+        context: makeRouteContext({ session: csrfSession() }),
         params: {},
         pattern: 'admin/setup',
       })
@@ -143,17 +170,17 @@ describe('routes/setup', () => {
     })
 
     it('stores only the boolean flag in session, never the plaintext token', async () => {
-      vi.mocked(setupToken.verifySetupToken).mockResolvedValue(true)
-      const session = emptySession()
+      const token = await mintSetupToken()
+      const session = csrfSession()
 
       const formData = new FormData()
       formData.set('intent', 'verify-token')
-      formData.set('setup_token', 'valid-token')
+      formData.set('setup_token', token)
 
       await action({
         request: new Request('http://localhost/admin/setup', {
           method: 'POST',
-          body: formData,
+          body: withCsrf(formData),
         }),
         url: new URL('http://localhost/admin/setup'),
         context: makeRouteContext({ session }),
@@ -167,7 +194,7 @@ describe('routes/setup', () => {
     })
 
     it('returns error for invalid token', async () => {
-      vi.mocked(setupToken.verifySetupToken).mockResolvedValue(false)
+      await mintSetupToken()
 
       const formData = new FormData()
       formData.set('intent', 'verify-token')
@@ -176,10 +203,10 @@ describe('routes/setup', () => {
       const result = await action({
         request: new Request('http://localhost/admin/setup', {
           method: 'POST',
-          body: formData,
+          body: withCsrf(formData),
         }),
         url: new URL('http://localhost/admin/setup'),
-        context: makeRouteContext(),
+        context: makeRouteContext({ session: csrfSession() }),
         params: {},
         pattern: 'admin/setup',
       })
@@ -203,10 +230,10 @@ describe('routes/setup', () => {
       const result = await action({
         request: new Request('http://localhost/admin/setup', {
           method: 'POST',
-          body: formData,
+          body: withCsrf(formData),
         }),
         url: new URL('http://localhost/admin/setup'),
-        context: makeRouteContext(),
+        context: makeRouteContext({ session: csrfSession() }),
         params: {},
         pattern: 'admin/setup',
       })
@@ -230,10 +257,10 @@ describe('routes/setup', () => {
       const result = await action({
         request: new Request('http://localhost/admin/setup', {
           method: 'POST',
-          body: formData,
+          body: withCsrf(formData),
         }),
         url: new URL('http://localhost/admin/setup'),
-        context: makeRouteContext(),
+        context: makeRouteContext({ session: csrfSession() }),
         params: {},
         pattern: 'admin/setup',
       })
@@ -253,10 +280,10 @@ describe('routes/setup', () => {
       const result = await action({
         request: new Request('http://localhost/admin/setup', {
           method: 'POST',
-          body: formData,
+          body: withCsrf(formData),
         }),
         url: new URL('http://localhost/admin/setup'),
-        context: makeRouteContext(),
+        context: makeRouteContext({ session: csrfSession() }),
         params: {},
         pattern: 'admin/setup',
       })
@@ -266,7 +293,12 @@ describe('routes/setup', () => {
     })
 
     it('returns error when setup token has expired', async () => {
-      vi.mocked(setupToken.isSetupTokenActive).mockResolvedValue(false)
+      // A real but expired token row: isSetupTokenActive reads it as a miss.
+      await db.insert(oneTimeToken).values({
+        key: 'setup_token',
+        payload: 'expired-token',
+        expiresAt: new Date(Date.now() - 1000),
+      })
 
       const formData = new FormData()
       formData.set('intent', 'install')
@@ -278,10 +310,10 @@ describe('routes/setup', () => {
       const result = await action({
         request: new Request('http://localhost/admin/setup', {
           method: 'POST',
-          body: formData,
+          body: withCsrf(formData),
         }),
         url: new URL('http://localhost/admin/setup'),
-        context: makeRouteContext({ session: makeSession({ setupTokenVerified: true }) }),
+        context: makeRouteContext({ session: csrfSession({ setupTokenVerified: true }) }),
         params: {},
         pattern: 'admin/setup',
       })
@@ -291,6 +323,8 @@ describe('routes/setup', () => {
     })
 
     it('returns error when schema validation fails', async () => {
+      await mintSetupToken()
+
       const formData = new FormData()
       formData.set('intent', 'install')
       // missing required fields
@@ -298,10 +332,10 @@ describe('routes/setup', () => {
       const result = await action({
         request: new Request('http://localhost/admin/setup', {
           method: 'POST',
-          body: formData,
+          body: withCsrf(formData),
         }),
         url: new URL('http://localhost/admin/setup'),
-        context: makeRouteContext({ session: makeSession({ setupTokenVerified: true }) }),
+        context: makeRouteContext({ session: csrfSession({ setupTokenVerified: true }) }),
         params: {},
         pattern: 'admin/setup',
       })
@@ -311,6 +345,8 @@ describe('routes/setup', () => {
     })
 
     it('calls signUpInitialAdminWithSession with parsed data and context', async () => {
+      await mintSetupToken()
+
       const formData = new FormData()
       formData.set('intent', 'install')
       formData.set('title', 'Blog')
@@ -321,10 +357,10 @@ describe('routes/setup', () => {
       await action({
         request: new Request('http://localhost/admin/setup', {
           method: 'POST',
-          body: formData,
+          body: withCsrf(formData),
         }),
         url: new URL('http://localhost/admin/setup'),
-        context: makeRouteContext({ session: makeSession({ setupTokenVerified: true }) }),
+        context: makeRouteContext({ session: csrfSession({ setupTokenVerified: true }) }),
         params: {},
         pattern: 'admin/setup',
       })

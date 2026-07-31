@@ -29,13 +29,15 @@ export function backendFor(driver: StorageDriver): StorageBackend {
  */
 export function activeBackend(): { backend: StorageBackend; driver: StorageDriver } {
   try {
-    if (s3Backend.isAvailable()) {
-      return { backend: s3Backend, driver: 's3' }
+    // Read through the registry (not the import directly) so the test seam
+    // below can substitute an in-memory backend.
+    if (backends.s3.isAvailable()) {
+      return { backend: backends.s3, driver: 's3' }
     }
   } catch {
     // Settings snapshot not hydrated yet — fall back to local.
   }
-  return { backend: localBackend, driver: 'local' }
+  return { backend: backends.local, driver: 'local' }
 }
 
 /**
@@ -56,4 +58,19 @@ export function allBackends(): { driver: StorageDriver; backend: StorageBackend 
 /** True when S3 is configured as the primary backend for new uploads. */
 export function isS3Primary(): boolean {
   return activeBackend().driver === 's3'
+}
+
+/**
+ * Test seam: substitute the backend a driver resolves to. Production code
+ * never calls this; tests pair it with `__resetStorageBackendsForTests` in
+ * afterEach so substitutions never leak between files.
+ */
+export function __setStorageBackendForTests(driver: StorageDriver, backend: StorageBackend): void {
+  backends[driver] = backend
+}
+
+/** Test seam: restore the real backends registered at module load. */
+export function __resetStorageBackendsForTests(): void {
+  backends.s3 = s3Backend
+  backends.local = localBackend
 }

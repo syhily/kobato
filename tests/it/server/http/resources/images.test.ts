@@ -13,12 +13,13 @@ import { category as categoryTable } from '@/server/infra/db/schema/taxonomy'
 // `imagesRouter` outcome-mapping tests against the real engine: slug
 // resolution (posts / pages / categories) hits seeded rows, the live
 // gate, the in-process rate limiter, and the kv-backed cache registry
-// all run for real. The kept seams are the heavy/external backends:
-// gravatar avatar fetching (network), OG canvas rendering, and the
-// calendar renderer.
+// all run for real — including the real `serveCalendar` (date validation
+// + `through()` cache registration). The kept seams are the
+// heavy/external backends: gravatar avatar fetching (network), OG canvas
+// rendering, and the native-canvas calendar renderer.
 
-vi.mock('@/server/http/resources/calendar', () => ({
-  serveCalendar: vi.fn(),
+vi.mock('@/server/render/calendar/render', () => ({
+  renderCalendar: vi.fn(),
 }))
 
 vi.mock('@/server/domains/comments/services/avatar', async (importActual) => {
@@ -34,8 +35,8 @@ vi.mock('@/server/render/og/render', () => ({
 }))
 
 import { serveAvatar } from '@/server/domains/comments/services/avatar'
-import { serveCalendar } from '@/server/http/resources/calendar'
 import { imagesRouter } from '@/server/http/resources/images'
+import { renderCalendar } from '@/server/render/calendar/render'
 
 const db = getTestDb()
 
@@ -94,9 +95,7 @@ describe('images resource', () => {
   beforeEach(async () => {
     await clearAllTables(db)
     vi.clearAllMocks()
-    ;(serveCalendar as ReturnType<typeof vi.fn>).mockResolvedValue(
-      new Response('cal', { headers: { 'Content-Type': 'image/png' } }),
-    )
+    ;(renderCalendar as ReturnType<typeof vi.fn>).mockResolvedValue(Buffer.from('cal'))
     // Default: the domain reports "no avatar" — the redirect mapping tests
     // override per case.
     ;(serveAvatar as ReturnType<typeof vi.fn>).mockResolvedValue({ kind: 'redirect' })
@@ -126,13 +125,21 @@ describe('images resource', () => {
   })
 
   it('serves a calendar image', async () => {
-    const res = await requestImages('http://localhost/images/calendar/2026/now.png')
+    const res = await requestImages('http://localhost/images/calendar/2026/0424.png')
     expect(res.status).toBe(200)
   })
 
   it('serves a dark calendar image', async () => {
-    const res = await requestImages('http://localhost/images/calendar/dark/2026/now.png')
+    const res = await requestImages('http://localhost/images/calendar/dark/2026/0424.png')
     expect(res.status).toBe(200)
+  })
+
+  it('rejects an invalid MMdd calendar date with a 404 (real serveCalendar date validation)', async () => {
+    // Month 13 passes the shape regex but rolls over in the date-fns parse
+    // and fails the round-trip check — the real `HTTPException(404)` is
+    // mapped to a proper 404 response by Hono's error handling.
+    const res = await requestImages('http://localhost/images/calendar/2026/1332.png')
+    expect(res.status).toBe(404)
   })
 
   it('maps a png outcome to a 200 image/png response', async () => {

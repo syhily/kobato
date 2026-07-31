@@ -1,75 +1,118 @@
 import { call } from '@orpc/server'
-import { describe, expect, it, vi } from 'vitest'
+import { eq } from 'drizzle-orm'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
+import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
-import { DomainError } from '@/server/infra/http/errors'
+import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
+import { flushAuditLog } from '@/server/domains/audit/services/batcher'
+import { __clearSectionChangeHandlersForTests } from '@/server/domains/settings/services/section-changes'
+import { adminSettingsRouter } from '@/server/http/controllers/admin/settings.controller'
+import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
+import { auditLog, setting } from '@/server/infra/db/schema/config'
+import { user } from '@/server/infra/db/schema/user'
 
-vi.mock('@/server/domains/settings/services/core', () => ({
-  updateBlogSettingsSection: vi.fn(),
-  computeSecretMasks: vi.fn(() => ({})),
-  projectSectionForAdmin: vi.fn(() => ({ projected: true })),
-}))
+// adminSettingsRouter.update against the real engine: the section write,
+// secret encryption, snapshot refresh, and admin projection all run for
+// real against the in-memory database. Section-change dispatch
+// (backup/audit reschedule, mail transport invalidation) is covered by
+// the unit tests and stays unregistered here.
+const db = getTestDb()
 
-const { updateBlogSettingsSection } = await import('@/server/domains/settings/services/core')
-const { adminSettingsRouter } = await import('@/server/http/controllers/admin/settings.controller')
+let adminId = 0
 
-const bundleStub = {
-  siteIdentity: null,
-  assets: null,
-  navigation: null,
-  socials: null,
-  content: null,
-  sidebar: null,
-  comments: null,
-  seo: null,
-  mail: null,
-  cache: null,
-  backup: null,
-  rateLimit: null,
-  search: null,
-  fonts: null,
-  limits: null,
-  analytics: null,
+// `refreshBlogSettings` refuses to build a bundle while the two
+// setup-owned sections (siteIdentity / assets) have no stored row, so
+// every update test seeds them first.
+async function seedBaselineSettings(): Promise<void> {
+  await db.insert(setting).values([
+    { scope: 'blog.general', data: TEST_BLOG_SETTINGS_BUNDLE.siteIdentity },
+    { scope: 'blog.assets', data: TEST_BLOG_SETTINGS_BUNDLE.assets },
+  ])
 }
 
+// audit_log.actor_id references user.id, so the editor must be a real
+// row for the batched audit insert to survive the FK on flush.
+async function seedAdmin(): Promise<number> {
+  const [row] = await db
+    .insert(user)
+    .values({ name: 'Admin', email: 'admin@example.com', password: 'hashed', role: 'admin' })
+    .returning({ id: user.id })
+  return row.id
+}
+
+function adminCtx() {
+  return makeAuthedCtx({ userId: String(adminId), role: 'admin', db })
+}
+
+beforeEach(async () => {
+  __clearSectionChangeHandlersForTests()
+  await clearAllTables(db)
+  initAllBatchers(getDatabaseHandle())
+  await seedBaselineSettings()
+  adminId = await seedAdmin()
+})
+
+afterEach(async () => {
+  await flushAuditLog()
+  resetAllBatchers()
+  // The real update refreshes the in-process settings snapshot from the
+  // test database; the it setup's afterEach re-seeds the fixture bundle.
+})
+
 describe('adminSettingsRouter.update', () => {
-  it('updates a section with a valid payload', async () => {
-    vi.mocked(updateBlogSettingsSection).mockResolvedValueOnce(
-      bundleStub as unknown as Awaited<ReturnType<typeof updateBlogSettingsSection>>,
-    )
-    const ctx = makeAuthedCtx()
+  it('updates a section with a valid payload and returns the real admin projection', async () => {
     const res = await call(
       adminSettingsRouter.update,
       {
         section: 'mail',
         payload: {
-          mail: { enabled: false, host: 'api.zeabur.com', sender: 'noreply@example.com' },
+          mail: { enabled: false, host: 'api.zeabur.com', sender: 'noreply@example.com', apiKey: 'zsend-secret-1234' },
         },
       },
-      { context: ctx },
+      { context: adminCtx() },
     )
-    expect(res.section).toEqual({ projected: true })
+
+    // The response is the merged section in the admin display shape:
+    // secrets redacted, only the last-4 mask merged in.
+    expect(res.section).toMatchObject({
+      mail: {
+        enabled: false,
+        host: 'api.zeabur.com',
+        sender: 'noreply@example.com',
+        apiKeyMask: '1234',
+      },
+    })
+    expect((res.section as { mail: Record<string, unknown> }).mail).not.toHaveProperty('apiKey')
+
+    // The secret rests encrypted in the stored row.
+    const [row] = await db.select().from(setting).where(eq(setting.scope, 'blog.mail'))
+    expect((row.data as { mail: { apiKey: string } }).mail.apiKey).toMatch(/^enc2:/)
+
+    // The write records a real audit row (flushed from the batcher).
+    await flushAuditLog()
+    const auditRows = await db.select().from(auditLog).where(eq(auditLog.action, 'settings_updated'))
+    expect(auditRows).toHaveLength(1)
+    expect(auditRows[0]!.resourceType).toBe('setting')
+    expect(auditRows[0]!.resourceId).toBe('mail')
+    expect(auditRows[0]!.actorId).toBe(adminId)
   })
 
   it('throws BAD_REQUEST for an invalid payload', async () => {
-    vi.mocked(updateBlogSettingsSection).mockRejectedValueOnce(new DomainError('BAD_REQUEST', '设置数据无效'))
-    const ctx = makeAuthedCtx()
     await expect(
       call(
         adminSettingsRouter.update,
         {
           section: 'mail',
-          payload: { mail: { enabled: false, host: '', sender: '' } },
+          payload: { mail: { enabled: false, host: '', sender: 'not-an-email' } },
         },
-        { context: ctx },
+        { context: adminCtx() },
       ),
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
   })
 
   it('surfaces the strict-patch issue list on the ORPCError data', async () => {
-    const issues = [{ message: 'Unrecognized key: "bogus"', path: ['mail', 'bogus'] }]
-    vi.mocked(updateBlogSettingsSection).mockRejectedValueOnce(new DomainError('BAD_REQUEST', '设置数据无效', issues))
-    const ctx = makeAuthedCtx()
     await expect(
       call(
         adminSettingsRouter.update,
@@ -77,8 +120,11 @@ describe('adminSettingsRouter.update', () => {
           section: 'mail',
           payload: { mail: { host: 'api.zeabur.com', bogus: 1 } },
         },
-        { context: ctx },
+        { context: adminCtx() },
       ),
-    ).rejects.toMatchObject({ code: 'BAD_REQUEST', data: issues })
+    ).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+      data: [{ message: 'Unrecognized key: "bogus"', path: ['mail', 'bogus'] }],
+    })
   })
 })

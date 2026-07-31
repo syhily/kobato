@@ -1,23 +1,26 @@
 import { eq } from 'drizzle-orm'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import type { FontRow } from '@/server/infra/db/schema/font'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { makeMemoryBackend } from '#/_helpers/memory-storage'
 import { deleteFont, setFontSlot } from '@/server/domains/fonts/services/mutate'
-import { deleteFontPackage } from '@/server/domains/fonts/storage'
 import { __clearSectionChangeHandlersForTests } from '@/server/domains/settings/services/section-changes'
 import { setting } from '@/server/infra/db/schema/config'
 import { font } from '@/server/infra/db/schema/font'
 import { DomainError } from '@/server/infra/http/errors'
+import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@/server/infra/storage/registry'
 
-// The storage mock is the ONLY mock at the module boundary — DB and settings
-// stay real, which is the point of this coverage. `deleteFontPackage` is the
-// single seam `mutate.ts` uses, so asserting on it pins the delete→GC
-// pipeline without touching the local/S3 backends.
-vi.mock('@/server/domains/fonts/storage', () => ({
-  deleteFontPackage: vi.fn(async () => undefined),
-}))
+// The storage registry is the ONLY substituted boundary — DB and settings
+// stay real, which is the point of this coverage. The real
+// `deleteFontPackage` runs against a shared in-memory backend (a true
+// external — S3/local disk) injected through the registry's test seam, so
+// the delete→GC pipeline is pinned by the objects actually disappearing
+// from the store. Font rows here are all driver 'local', so the seam
+// substitutes the 'local' driver only (S3 stays unconfigured, which keeps
+// the active backend local).
+const mem = makeMemoryBackend({ driver: 'local' })
 
 // Section-change dispatch (backup/audit reschedule, mail transport
 // invalidation) is covered by the unit tests; keep it out of these
@@ -25,9 +28,14 @@ vi.mock('@/server/domains/fonts/storage', () => ({
 const db = getTestDb()
 
 beforeEach(async () => {
+  __setStorageBackendForTests('local', mem.backend)
   __clearSectionChangeHandlersForTests()
   await clearAllTables(db)
-  vi.mocked(deleteFontPackage).mockClear()
+})
+
+afterEach(() => {
+  __resetStorageBackendsForTests()
+  mem.reset()
 })
 
 let hashCounter = 0
@@ -51,6 +59,17 @@ async function seedFont(overrides: Partial<typeof font.$inferInsert> = {}): Prom
   return row
 }
 
+/** Mirror what putFont would have written: result.css + the woff2 chunks. */
+function seedFontPackage(hash: string): void {
+  for (const name of ['result.css', 'chunk-0.woff2', 'chunk-1.woff2', 'chunk-2.woff2']) {
+    mem.store.set(`fonts/${hash}/${name}`, { body: Buffer.from(name), contentType: 'application/octet-stream' })
+  }
+}
+
+function packageKeys(hash: string): string[] {
+  return [...mem.store.keys()].filter((key) => key.startsWith(`fonts/${hash}/`))
+}
+
 async function readFontsSettingsData(): Promise<Record<string, unknown> | null> {
   const rows = await db.select().from(setting).where(eq(setting.scope, 'blog.fonts'))
   return (rows[0]?.data as Record<string, unknown> | undefined) ?? null
@@ -72,20 +91,25 @@ describe('fonts/services/mutate — setFontSlot', () => {
 })
 
 describe('fonts/services/mutate — deleteFont', () => {
-  it('deletes an unreferenced font row and attempts the storage-package delete', async () => {
+  it('deletes an unreferenced font row and clears its storage package', async () => {
     const target = await seedFont()
+    seedFontPackage(target.hash)
 
     const deleted = await deleteFont(db, target.id)
 
     expect(deleted.id).toBe(target.id)
-    expect(deleteFontPackage).toHaveBeenCalledTimes(1)
-    expect(deleteFontPackage).toHaveBeenCalledWith(target.hash, 'local')
     const remaining = await db.select().from(font).where(eq(font.id, target.id))
     expect(remaining).toHaveLength(0)
+    // The real deleteFontPackage ran against the memory backend: every
+    // object under fonts/<hash>/ is gone, via deletePrefix.
+    expect(packageKeys(target.hash)).toHaveLength(0)
+    expect(mem.deletedKeys).toContain(`fonts/${target.hash}/result.css`)
+    expect(mem.deletedKeys).toContain(`fonts/${target.hash}/chunk-0.woff2`)
   })
 
   it('refuses to delete a slot-referenced font with CONFLICT naming the slot', async () => {
     const target = await seedFont()
+    seedFontPackage(target.hash)
     await setFontSlot(db, 'global', [target.id], null)
 
     const error: unknown = await deleteFont(db, target.id).catch((e: unknown) => e)
@@ -95,7 +119,9 @@ describe('fonts/services/mutate — deleteFont', () => {
     expect((error as DomainError).message).toContain('global')
     const remaining = await db.select().from(font).where(eq(font.id, target.id))
     expect(remaining).toHaveLength(1)
-    expect(deleteFontPackage).not.toHaveBeenCalled()
+    // The refusal happened before the storage GC: the package is untouched.
+    expect(packageKeys(target.hash)).toHaveLength(4)
+    expect(mem.deletedKeys).toHaveLength(0)
   })
 
   it('rejects a missing font id with NOT_FOUND', async () => {

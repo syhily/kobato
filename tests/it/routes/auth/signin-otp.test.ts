@@ -2,7 +2,7 @@ import type { Mock } from 'vitest'
 
 import bcrypt from 'bcryptjs'
 import { and, eq } from 'drizzle-orm'
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { BlogSession } from '@/server/domains/auth/session-storage'
 import type { BlogSettingsBundle } from '@/shared/config/types'
@@ -11,16 +11,28 @@ import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_hel
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { makeRequestContext } from '#/_helpers/request-context'
 import { makeSession } from '#/_helpers/session'
+import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
+import { flushAuditLog } from '@/server/domains/audit/services/batcher'
+import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
+import { auditLog } from '@/server/infra/db/schema/config'
+import { session as sessionTable } from '@/server/infra/db/schema/session'
 import { user, verification } from '@/server/infra/db/schema/user'
 import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 
 // ── Mock handles ────────────────────────────────────────────────────────────
+//
+// Everything runs REAL except the two sanctioned doubles: the
+// request-context seam and email DELIVERY (a true external that doubles
+// as the plaintext OTP extraction channel / failure-path inducer). The
+// install gate reads the real `user` table (a gate admin is seeded per
+// test), CSRF is the real session-token check, establishLoginSession runs
+// for real (asserted via the session table + the real Set-Cookie), and
+// audit events land in `audit_log` through the real batcher (asserted
+// after a flush).
 
 const mockHandles = vi.hoisted(() => ({
   getRequestContext: vi.fn<any>(),
   sendSignInOtp: vi.fn<any>(),
-  establishLoginSession: vi.fn<any>(),
-  recordAuditEvent: vi.fn<any>(),
 }))
 
 // ── Module mocks ────────────────────────────────────────────────────────────
@@ -33,17 +45,6 @@ vi.mock('@/server/http/request-context', async (importOriginal) => {
   }
 })
 
-vi.mock('@/server/domains/settings/install-gate', () => ({
-  ensureInstalledOrRedirect: vi.fn(async () => null),
-  ensureNoAdminOrRedirect: vi.fn(async () => null),
-  isInstalled: vi.fn(async () => true),
-  getInstallState: vi.fn(async () => 'installed' as const),
-}))
-
-vi.mock('@/server/domains/auth/csrf', () => ({
-  validateCsrfForAction: vi.fn(() => true),
-}))
-
 vi.mock('@/server/infra/email/sender', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/server/infra/email/sender')>()
   return {
@@ -52,21 +53,11 @@ vi.mock('@/server/infra/email/sender', async (importOriginal) => {
   }
 })
 
-vi.mock('@/server/domains/auth/primitives', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/server/domains/auth/primitives')>()
-  return {
-    ...actual,
-    establishLoginSession: mockHandles.establishLoginSession,
-  }
-})
-
-vi.mock('@/server/domains/audit/services/record', () => ({
-  recordAuditEvent: mockHandles.recordAuditEvent,
-}))
-
 // ── Real infrastructure ─────────────────────────────────────────────────────
 
 const db = getTestDb()
+
+const CSRF_TOKEN = 'signin-otp-csrf-token'
 
 // ── Settings bundle with a ready mail transport (OTP now follows mail) ──────
 
@@ -98,21 +89,20 @@ const { action } = await import('@/routes/auth/signin')
 let testSession: BlogSession
 let markSessionDirty: Mock<() => void>
 
-beforeAll(() => {
-  mockHandles.sendSignInOtp.mockResolvedValue({ ok: true })
-  mockHandles.establishLoginSession.mockResolvedValue({
-    sid: 'test-sid',
-    setCookie: '__session=test-cookie; Path=/',
-  })
-})
-
 beforeEach(async () => {
+  // The real audit pipeline: recordAuditEvent pushes into the
+  // process-level batcher; flush before teardown so no pending event
+  // references a user row the next clearAllTables will wipe (FK).
+  initAllBatchers(getDatabaseHandle())
   setBlogSettingsBundleForTests(OTP_TEST_BUNDLE)
   await clearAllTables(db)
+  // The real install gate needs an installed deployment: seed one admin.
+  await seedGateAdmin()
   // The rate limiter is a process-level Map — reset it or earlier tests
   // (same email/IP) exhaust the otpSend* budgets for later ones.
   __resetRateLimitsForTests()
   testSession = makeSession({})
+  testSession.set('csrfToken', CSRF_TOKEN)
   markSessionDirty = vi.fn<() => void>()
   mockHandles.getRequestContext.mockReturnValue(
     makeRequestContext({
@@ -123,18 +113,28 @@ beforeEach(async () => {
     }),
   )
   mockHandles.sendSignInOtp.mockClear()
-  mockHandles.establishLoginSession.mockClear()
-  mockHandles.recordAuditEvent.mockClear()
   mockHandles.sendSignInOtp.mockResolvedValue({ ok: true })
-  mockHandles.establishLoginSession.mockResolvedValue({
-    sid: 'test-sid',
-    setCookie: '__session=test-cookie; Path=/',
-  })
+})
+
+afterEach(async () => {
+  await flushAuditLog()
+  resetAllBatchers()
 })
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 const TEST_PASSWORD = 'correcthorsebatterystaple'
+
+/** Satisfies the real install gate (hasAdmin) without colliding with the
+ * per-test `admin@example.com` seeds. */
+async function seedGateAdmin() {
+  await db.insert(user).values({
+    name: 'Gatekeeper',
+    email: 'gatekeeper@example.com',
+    password: 'not-a-real-hash',
+    role: 'admin',
+  })
+}
 
 async function seedAdminUser() {
   const hashedPassword = await bcrypt.hash(TEST_PASSWORD, 12)
@@ -195,17 +195,22 @@ async function callAction(
   }
 }
 
+function withCsrf(fd: FormData = new FormData()): FormData {
+  fd.set('csrf_token', CSRF_TOKEN)
+  return fd
+}
+
 function loginFormData(email = 'admin@example.com', password = TEST_PASSWORD) {
   const fd = new FormData()
   fd.set('email', email)
   fd.set('password', password)
-  return fd
+  return withCsrf(fd)
 }
 
 function otpFormData(code: string) {
   const fd = new FormData()
   fd.set('otp_code', code)
-  return fd
+  return withCsrf(fd)
 }
 
 // `redirect()` results are real Responses; `data()` results keep their
@@ -230,6 +235,17 @@ async function getOtpRow(userId: number) {
     .from(verification)
     .where(and(eq(verification.purpose, 'signin-otp'), eq(verification.userId, userId)))
   return rows[0] ?? null
+}
+
+/** The session rows the real establishLoginSession wrote for a user. */
+async function sessionRowsFor(userId: number) {
+  return db.select().from(sessionTable).where(eq(sessionTable.userId, userId))
+}
+
+/** Audit rows of one action, flushed first so the batcher has drained. */
+async function auditRowsFor(actionName: string) {
+  await flushAuditLog()
+  return db.select().from(auditLog).where(eq(auditLog.action, actionName))
 }
 
 // ── Tests ───────────────────────────────────────────────────────────────────
@@ -269,19 +285,24 @@ describe('integration: OTP login flow (real DB)', () => {
     // Step 2: Verify OTP
     const result = await callAction('verifyotp', otpFormData(otpCode))
 
-    expect(mockHandles.establishLoginSession).toHaveBeenCalledWith(
-      db,
-      testSession,
-      expect.objectContaining({ id: admin.id, role: 'admin' }),
-      expect.any(Request),
-      '127.0.0.1',
-      { authMethod: 'otp' },
-    )
-
     expect(result.status).toBe(302)
     expect(result.headers.get('Location')).toBe('/admin')
-    // sid rotation keeps the explicit Set-Cookie channel.
-    expect(result.headers.get('Set-Cookie')).toBe('__session=test-cookie; Path=/')
+    // sid rotation keeps the explicit Set-Cookie channel — a REAL cookie
+    // minted by the real establishLoginSession.
+    expect(result.headers.get('Set-Cookie')).toMatch(/^__session=/)
+
+    // The real establish wrote a session row owned by the admin.
+    const sessions = await sessionRowsFor(admin.id)
+    expect(sessions).toHaveLength(1)
+    expect(sessions[0]!.loginAt).not.toBeNull()
+
+    // …and recorded the login audit with the OTP method.
+    const logins = await auditRowsFor('login')
+    expect(logins).toHaveLength(1)
+    expect(logins[0]!.resourceType).toBe('session')
+    expect(logins[0]!.resourceId).toBe(sessions[0]!.id)
+    expect(logins[0]!.actorId).toBe(admin.id)
+    expect(logins[0]!.details).toMatchObject({ method: 'otp' })
 
     // OTP row deleted (single-use)
     const rowAfter = await getOtpRow(admin.id)
@@ -340,13 +361,11 @@ describe('integration: OTP login flow (real DB)', () => {
     // marked dirty along the way.
     expect(markSessionDirty).toHaveBeenCalled()
 
-    // Audit event with lockout recorded
-    const lockoutCall = mockHandles.recordAuditEvent.mock.calls.find(
-      (call: any[]) => call[0]?.details?.lockedOut === true,
-    ) as unknown as [Record<string, unknown>] | undefined
-    expect(lockoutCall).toBeDefined()
-    expect(lockoutCall![0].action).toBe('otp_failed')
-    expect((lockoutCall![0].details as Record<string, unknown>).failCount).toBe(3)
+    // The lockout audit event really landed in audit_log.
+    const failures = await auditRowsFor('otp_failed')
+    const lockout = failures.find((row) => (row.details as Record<string, unknown> | null)?.lockedOut === true)
+    expect(lockout).toBeDefined()
+    expect((lockout!.details as Record<string, unknown>).failCount).toBe(3)
   })
 
   it('wrong password records a credential_login_failed audit event without the password', async () => {
@@ -362,27 +381,26 @@ describe('integration: OTP login flow (real DB)', () => {
     expect(result.headers.get('Set-Cookie')).toBeNull()
 
     // Failed credential logins are audited; the password must never appear.
-    const failCall = mockHandles.recordAuditEvent.mock.calls.find(
-      (call: any[]) => call[0]?.action === 'credential_login_failed',
-    ) as unknown as [Record<string, unknown>] | undefined
-    expect(failCall).toBeDefined()
-    const payload = failCall![0]
-    expect(payload.resourceType).toBe('user')
-    expect(payload.resourceId).toBeNull()
-    const details = payload.details as Record<string, unknown>
-    expect(details.email).toBe('admin@example.com')
+    const fails = await auditRowsFor('credential_login_failed')
+    expect(fails).toHaveLength(1)
+    const row = fails[0]!
+    expect(row.resourceType).toBe('user')
+    expect(row.resourceId).toBeNull()
+    const details = row.details as Record<string, unknown>
     expect(details.reason).toBe('invalid_credentials')
+    // The email lands L3-tagged ({E}…{/E}) but present.
+    expect(JSON.stringify(details)).toContain('admin@example.com')
     expect(details).not.toHaveProperty('password')
-    expect(JSON.stringify(payload)).not.toContain(wrongPassword)
+    expect(JSON.stringify(details)).not.toContain(wrongPassword)
   })
 
   it('resend issues new OTP and invalidates old one', async () => {
-    await seedAdminUser()
+    const admin = await seedAdminUser()
     const oldOtp = await doLogin()
 
     // Resend — re-staging is a same-session mutation: the session is
     // marked dirty and the data result carries no Set-Cookie.
-    const resendResult = await callAction('resendotp', new FormData())
+    const resendResult = await callAction('resendotp', withCsrf())
     expect(resendResult.data?.message).toBe('验证码已重新发送。')
     expect(markSessionDirty).toHaveBeenCalled()
     expect(getSetCookie(resendResult)).toBeNull()
@@ -396,18 +414,15 @@ describe('integration: OTP login flow (real DB)', () => {
     const oldResult = await callAction('verifyotp', otpFormData(oldOtp))
     expect(oldResult.data?.error).toBe('验证码无效或已过期。')
 
-    // New OTP code accepted — sid rotation keeps the explicit Set-Cookie.
+    // New OTP code accepted — the real establish rotates the sid and
+    // writes the admin's session row.
     const newResult = await callAction('verifyotp', otpFormData(newOtp))
     expect(newResult.status).toBe(302)
-    expect(newResult.headers.get('Set-Cookie')).toBe('__session=test-cookie; Path=/')
-    expect(mockHandles.establishLoginSession).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.anything(),
-      expect.objectContaining({ role: 'admin' }),
-      expect.anything(),
-      expect.anything(),
-      { authMethod: 'otp' },
-    )
+    expect(newResult.headers.get('Set-Cookie')).toMatch(/^__session=/)
+    expect(await sessionRowsFor(admin.id)).toHaveLength(1)
+    const logins = await auditRowsFor('login')
+    expect(logins).toHaveLength(1)
+    expect(logins[0]!.details).toMatchObject({ method: 'otp' })
   })
 
   it('expired OTP is rejected and cleaned up', async () => {
@@ -463,7 +478,7 @@ describe('integration: OTP login flow (real DB)', () => {
     expect(testSession.get('pendingOtpUser')).toBeDefined()
     expect(testSession.get('otpFailCount')).toBe(0)
 
-    const result = await callAction('cancelotp', new FormData())
+    const result = await callAction('cancelotp', withCsrf())
     expect(result.status).toBe(302)
     expect(result.headers.get('Location')).toContain('/admin/signin')
     // Clearing the pending state is a same-session mutation — the domain

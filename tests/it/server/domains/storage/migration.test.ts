@@ -1,47 +1,49 @@
 import { eq } from 'drizzle-orm'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import type { MemoryBackend } from '#/_helpers/memory-storage'
 import type { BlogSettingsBundle, BrandingObjectRef } from '@/shared/config/types'
 
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
-import { getLocalStorageMigrationStats, migrateLocalToS3 } from '@/server/domains/storage/migration'
+import { makeMemoryBackend } from '#/_helpers/memory-storage'
 import { backup as backupTable } from '@/server/infra/db/schema/backup'
 import { image, music } from '@/server/infra/db/schema/media'
+import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@/server/infra/storage/registry'
 
 // The migration copies objects between the two registered backends; S3 and
 // the local disk are true externals, so both are the shared in-memory
-// backend behind the registry seam. `migrateLocalToS3` resolves them via
-// `backendFor(...)` at module scope, so this mock must land before the
-// migration module loads.
-const storageMock = vi.hoisted(() => ({
-  local: undefined as unknown as MemoryBackend,
-  s3: undefined as unknown as MemoryBackend,
-}))
+// backend injected through the registry seam. `migrateLocalToS3` captures
+// `backendFor(...)` at module scope, so the seam must be set BEFORE the
+// migration module loads — hence the dynamic import below, after the
+// substitutions.
+const localMem = makeMemoryBackend({ driver: 'local' })
+const s3Mem = makeMemoryBackend()
+__setStorageBackendForTests('local', localMem.backend)
+__setStorageBackendForTests('s3', s3Mem.backend)
 
-vi.mock('@/server/infra/storage/registry', async () => {
-  const { makeMemoryBackend } = await import('#/_helpers/memory-storage')
-  storageMock.local = makeMemoryBackend({ driver: 'local' })
-  storageMock.s3 = makeMemoryBackend()
-  return {
-    activeBackend: () => ({ backend: storageMock.s3.backend, driver: 's3' }),
-    backendFor: (driver: 's3' | 'local') => (driver === 's3' ? storageMock.s3.backend : storageMock.local.backend),
-  }
-})
+const { getLocalStorageMigrationStats, migrateLocalToS3 } = await import('@/server/domains/storage/migration')
 
 // The stats read real image/music/backup rows through the worker database,
 // and the branding count comes from the in-process settings snapshot —
 // exactly what the admin migration card and the migration run summary
-// display. `migrateLocalToS3` additionally drives the mocked backends above
-// and asserts the driver flips as real row updates.
+// display. `migrateLocalToS3` additionally drives the injected backends
+// above and asserts the driver flips as real row updates.
 const db = getTestDb()
 
 beforeEach(async () => {
+  // Re-set after each afterEach reset, so the registry never points at the
+  // real adapters while a test is running.
+  __setStorageBackendForTests('local', localMem.backend)
+  __setStorageBackendForTests('s3', s3Mem.backend)
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
   await clearAllTables(db)
-  storageMock.local.reset()
-  storageMock.s3.reset()
+})
+
+afterEach(() => {
+  __resetStorageBackendsForTests()
+  localMem.reset()
+  s3Mem.reset()
 })
 
 let rowCounter = 0
@@ -180,12 +182,12 @@ describe('storage/migration — migrateLocalToS3 counting (no double-count)', ()
     const b = await seedMusic({ audioStoragePath: 'musics/b-a.mp3', coverStoragePath: 'musics/b-c.jpg' })
     const c = await seedMusic({ audioStoragePath: 'musics/c-a.mp3', coverStoragePath: 'musics/c-c.jpg' })
     for (const key of ['a-a.mp3', 'a-c.jpg', 'b-a.mp3', 'b-c.jpg', 'c-a.mp3', 'c-c.jpg']) {
-      seedObject(storageMock.local, `musics/${key}`)
+      seedObject(localMem, `musics/${key}`)
     }
     // A's audio+cover exist; B's neither; C's audio exists, cover does not.
-    seedObject(storageMock.s3, 'musics/a-a.mp3')
-    seedObject(storageMock.s3, 'musics/a-c.jpg')
-    seedObject(storageMock.s3, 'musics/c-a.mp3')
+    seedObject(s3Mem, 'musics/a-a.mp3')
+    seedObject(s3Mem, 'musics/a-c.jpg')
+    seedObject(s3Mem, 'musics/c-a.mp3')
 
     const result = await migrateLocalToS3(db)
 
@@ -193,7 +195,7 @@ describe('storage/migration — migrateLocalToS3 counting (no double-count)', ()
     expect(result.skipped).toBe(1) // A only
     expect(result.failed).toBe(0)
     // The three missing halves were PUT; the pre-existing ones were not re-uploaded.
-    expect([...storageMock.s3.putKeys].sort()).toEqual(['musics/b-a.mp3', 'musics/b-c.jpg', 'musics/c-c.jpg'])
+    expect([...s3Mem.putKeys].sort()).toEqual(['musics/b-a.mp3', 'musics/b-c.jpg', 'musics/c-c.jpg'])
     // Every local-driver music row got its driver flipped to s3 — a real row update.
     for (const row of [a, b, c]) {
       const reread = await db.select().from(music).where(eq(music.id, row.id))
@@ -204,9 +206,9 @@ describe('storage/migration — migrateLocalToS3 counting (no double-count)', ()
   it('counts an image as skipped when it pre-exists, migrated otherwise', async () => {
     await seedImage({ storagePath: 'images/old.jpg' })
     await seedImage({ storagePath: 'images/new.jpg' })
-    seedObject(storageMock.local, 'images/old.jpg')
-    seedObject(storageMock.local, 'images/new.jpg')
-    seedObject(storageMock.s3, 'images/old.jpg')
+    seedObject(localMem, 'images/old.jpg')
+    seedObject(localMem, 'images/new.jpg')
+    seedObject(s3Mem, 'images/old.jpg')
 
     const result = await migrateLocalToS3(db)
 
@@ -214,7 +216,7 @@ describe('storage/migration — migrateLocalToS3 counting (no double-count)', ()
     expect(result.skipped).toBe(1)
     expect(result.failed).toBe(0)
     // Only the missing image is PUT; the pre-existing one is not re-uploaded.
-    expect(storageMock.s3.putKeys).toEqual(['images/new.jpg'])
+    expect(s3Mem.putKeys).toEqual(['images/new.jpg'])
     // Both rows flipped — even the skipped one's driver is corrected.
     const rows = await db.select().from(image)
     expect(rows).toHaveLength(2)
@@ -224,16 +226,16 @@ describe('storage/migration — migrateLocalToS3 counting (no double-count)', ()
   it('counts a backup as skipped when it pre-exists, migrated otherwise', async () => {
     const oldBackup = await seedBackup({ storagePath: 'backup/old.sql.gz' })
     const newBackup = await seedBackup({ storagePath: 'backup/new.sql.gz' })
-    seedObject(storageMock.local, 'backup/old.sql.gz')
-    seedObject(storageMock.local, 'backup/new.sql.gz')
-    seedObject(storageMock.s3, 'backup/old.sql.gz')
+    seedObject(localMem, 'backup/old.sql.gz')
+    seedObject(localMem, 'backup/new.sql.gz')
+    seedObject(s3Mem, 'backup/old.sql.gz')
 
     const result = await migrateLocalToS3(db)
 
     expect(result.backups).toBe(1)
     expect(result.skipped).toBe(1)
     expect(result.failed).toBe(0)
-    expect(storageMock.s3.putKeys).toEqual(['backup/new.sql.gz'])
+    expect(s3Mem.putKeys).toEqual(['backup/new.sql.gz'])
     for (const row of [oldBackup, newBackup]) {
       const reread = await db.select().from(backupTable).where(eq(backupTable.id, row.id))
       expect(reread[0].storageDriver).toBe('s3')

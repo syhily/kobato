@@ -1,10 +1,11 @@
 import { call } from '@orpc/server'
 import { eq } from 'drizzle-orm'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import type { FontRow } from '@/server/infra/db/schema/font'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { makeMemoryBackend } from '#/_helpers/memory-storage'
 import { makeAuthedCtx, makePublicCtx } from '#/_helpers/mock-ctx'
 import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
 import { flushAuditLog } from '@/server/domains/audit/services/batcher'
@@ -14,12 +15,15 @@ import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-reg
 import { auditLog, setting } from '@/server/infra/db/schema/config'
 import { font } from '@/server/infra/db/schema/font'
 import { user } from '@/server/infra/db/schema/user'
+import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@/server/infra/storage/registry'
 
-// Mock only the storage boundary so `delete` never touches the local/S3
-// backends; the DB, settings, and audit pipelines stay real.
-vi.mock('@/server/domains/fonts/storage', () => ({
-  deleteFontPackage: vi.fn(async () => undefined),
-}))
+// No module mocks left: the DB, settings, audit, and the real
+// `deleteFontPackage` all run for real. The storage registry is pointed at
+// a shared in-memory backend (a true external — local disk/S3) via the
+// registry seam, so `delete` is pinned by the package objects actually
+// disappearing from the store. Seeded fonts carry storageDriver 'local',
+// matching this backend's driver.
+const memory = makeMemoryBackend({ driver: 'local' })
 
 // Section-change dispatch (backup/audit reschedule, mail transport
 // invalidation) is covered by the unit tests; keep it out of these
@@ -27,12 +31,19 @@ vi.mock('@/server/domains/fonts/storage', () => ({
 const db = getTestDb()
 
 beforeEach(async () => {
+  __setStorageBackendForTests('local', memory.backend)
   __clearSectionChangeHandlersForTests()
   await clearAllTables(db)
   initAllBatchers(getDatabaseHandle())
 })
 
-afterEach(() => {
+afterEach(async () => {
+  __resetStorageBackendsForTests()
+  memory.reset()
+  // Flush BEFORE dropping the batcher: InsertBatcher.dispose() leaves an
+  // armed flush timer behind, so an unflushed queue would otherwise
+  // insert this case's stale events mid-next-test.
+  await flushAuditLog()
   resetAllBatchers()
 })
 
@@ -90,9 +101,17 @@ describe('adminFontsRouter.list', () => {
 })
 
 describe('adminFontsRouter.delete', () => {
-  it('returns the deleted DTO and records a font_deleted audit row', async () => {
+  it('returns the deleted DTO, removes the storage package, and records a font_deleted audit row', async () => {
     const admin = await seedAdmin()
     const seeded = await seedFont()
+    // Mirror what putFont would have written: result.css + the woff2 chunks.
+    const packageFiles = ['result.css', 'chunk-0.woff2', 'chunk-1.woff2', 'chunk-2.woff2']
+    for (const name of packageFiles) {
+      memory.store.set(`fonts/${seeded.hash}/${name}`, {
+        body: Buffer.from(name),
+        contentType: 'application/octet-stream',
+      })
+    }
 
     const res = await call(adminFontsRouter.delete, { fontId: seeded.id }, { context: adminCtx(admin) })
 
@@ -100,6 +119,14 @@ describe('adminFontsRouter.delete', () => {
     expect(res.font.familyName).toBe(seeded.familyName)
     const remaining = await db.select().from(font).where(eq(font.id, seeded.id))
     expect(remaining).toHaveLength(0)
+
+    // The real deleteFontPackage ran against the memory backend: every
+    // object under fonts/<hash>/ is gone and each delete was recorded.
+    const packageKeys = packageFiles.map((name) => `fonts/${seeded.hash}/${name}`)
+    expect(memory.deletedKeys).toEqual(expect.arrayContaining(packageKeys))
+    for (const key of packageKeys) {
+      expect(memory.store.has(key)).toBe(false)
+    }
 
     await flushAuditLog()
     const rows = await db.select().from(auditLog).where(eq(auditLog.action, 'font_deleted'))

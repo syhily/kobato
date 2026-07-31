@@ -147,6 +147,13 @@ describe('pages/repo — countPageMetas', () => {
     await seedPage({ title: 'B', published: false })
     expect(await repo.countPageMetas(db, { published: true })).toBe(1)
   })
+
+  it('respects the deletedStatus filter', async () => {
+    await seedPage({ title: 'A', deletedAt: new Date() })
+    await seedPage({ title: 'B' })
+    expect(await repo.countPageMetas(db, { deletedStatus: 'deleted' })).toBe(1)
+    expect(await repo.countPageMetas(db, { deletedStatus: 'normal' })).toBe(1)
+  })
 })
 
 describe('pages/repo — findPageMetaById / findPageMetaBySlug', () => {
@@ -167,6 +174,12 @@ describe('pages/repo — findPageMetaById / findPageMetaBySlug', () => {
   it('returns row by slug', async () => {
     const p = await seedPage({ slug: 'find-me', title: 'Hi' })
     const r = await repo.findPageMetaBySlug(db, 'find-me')
+    expect(r?.id).toBe(p.id)
+  })
+
+  it('returns row by slug for update', async () => {
+    const p = await seedPage({ slug: 'lock-me', title: 'Hi' })
+    const r = await repo.findPageMetaBySlugForUpdate(db, 'lock-me')
     expect(r?.id).toBe(p.id)
   })
 })

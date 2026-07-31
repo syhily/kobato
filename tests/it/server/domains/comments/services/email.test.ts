@@ -1,28 +1,21 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { Database } from '@/server/infra/db/database'
 import type { CommentAndUser } from '@/shared/types/comments'
 
-// `commentBodyToHtml` pulls in the whole PT prerender pipeline (Shiki,
-// KaTeX, …) — stub it so the test can focus on the sender's transport /
-// config branches and the admin-notification mapping.
-vi.mock('@/server/domains/pt/services/comment-to-html', () => ({
-  commentBodyToHtml: vi.fn(() => '<p>stub</p>'),
-}))
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { sendNewComment } from '@/server/domains/comments/services/email'
+import { post } from '@/server/infra/db/schema/post'
+import { sendTestMail } from '@/server/infra/email/sender'
 
-// `sender.ts` resolves the entity's current slug + title at send time.
-// Stub the lookup so the test doesn't need a real DB; the e2e tests pin
-// the full resolver path.
-vi.mock('@/server/domains/content/entities/slug-title', () => ({
-  findEntitySlugTitle: vi.fn(async () => ({ slug: 'hi', title: 'Hi' })),
-}))
+// `sendNewComment` against the real engine: the slug/title lookup hits a
+// seeded post row and `commentBodyToHtml` renders the fixture's real PT
+// body — both were module mocks in the unit era, but the unit-era claim
+// that the renderer drags in Shiki/KaTeX was stale (it is a pure
+// string builder). The only stub left is `fetch`: the Zeabur ZSend
+// HTTPS call is a genuine external boundary.
 
-const db = {} as Database
-
-const { setBlogSettingsBundleForTests } = await import('#/_helpers/blog-settings')
-const { sendNewComment } = await import('@/server/domains/comments/services/email')
-const { sendTestMail } = await import('@/server/infra/email/sender')
-const { TEST_BLOG_SETTINGS_BUNDLE } = await import('#/_helpers/blog-settings')
+const db = getTestDb()
 
 interface MailFixture {
   enabled: boolean
@@ -38,9 +31,20 @@ function setMail(mail: Partial<MailFixture>) {
   })
 }
 
+// The post every comment-fired test below points at: slug `hi`, title
+// `Hi`, resolved through the real `findEntitySlugTitle`.
+async function seedTargetPost(): Promise<number> {
+  const rows = await db
+    .insert(post)
+    .values({ slug: 'hi', title: 'Hi', summary: '', published: true, publishedRevisionId: 1 })
+    .returning({ id: post.id })
+  return rows[0]!.id
+}
+
 const fetchMock = vi.fn<typeof fetch>()
 
-beforeEach(() => {
+beforeEach(async () => {
+  await clearAllTables(db)
   fetchMock.mockReset()
   vi.stubGlobal('fetch', fetchMock)
 })
@@ -54,14 +58,14 @@ afterEach(() => {
 })
 
 describe('email/sender — internalSend (via sendNewComment)', () => {
-  // Fixture row used by every comment-fired test below.
+  // Fixture row used by every comment-fired test below. `body` is a real
+  // PortableText body rendered by the real `commentBodyToHtml`.
   const commentInfo = {
     id: 7,
-    content: 'hello',
+    body: [{ _type: 'block', children: [{ _type: 'span', text: 'hello' }] }],
     isPending: false,
     user: { id: 1, name: 'visitor', email: 'visitor@example.com' },
   } as unknown as CommentAndUser
-  const target = { type: 'post' as const, ownerId: 1 }
 
   it('skips with reason=disabled when the master switch is off', async () => {
     setMail({
@@ -70,8 +74,9 @@ describe('email/sender — internalSend (via sendNewComment)', () => {
       apiKey: 'KEY',
       sender: 'noreply@example.com',
     })
+    const ownerId = await seedTargetPost()
 
-    const result = await sendNewComment(db, commentInfo, target)
+    const result = await sendNewComment(db, commentInfo, { type: 'post', ownerId })
 
     expect(result.ok).toBe(false)
     if (result.ok === false) {
@@ -82,8 +87,9 @@ describe('email/sender — internalSend (via sendNewComment)', () => {
 
   it('skips with reason=unconfigured when API key is empty even if enabled', async () => {
     setMail({ enabled: true, host: 'api.zeabur.com', apiKey: '', sender: 'noreply@example.com' })
+    const ownerId = await seedTargetPost()
 
-    const result = await sendNewComment(db, commentInfo, target)
+    const result = await sendNewComment(db, commentInfo, { type: 'post', ownerId })
 
     expect(result.ok).toBe(false)
     if (result.ok === false) {
@@ -100,8 +106,9 @@ describe('email/sender — internalSend (via sendNewComment)', () => {
       sender: 'noreply@example.com',
     })
     fetchMock.mockResolvedValueOnce(new Response(null, { status: 200 }))
+    const ownerId = await seedTargetPost()
 
-    const result = await sendNewComment(db, commentInfo, target)
+    const result = await sendNewComment(db, commentInfo, { type: 'post', ownerId })
 
     expect(result.ok).toBe(true)
     expect(fetchMock).toHaveBeenCalledOnce()
@@ -123,8 +130,9 @@ describe('email/sender — internalSend (via sendNewComment)', () => {
       sender: 'noreply@example.com',
     })
     fetchMock.mockResolvedValueOnce(new Response('quota exceeded', { status: 429, statusText: 'Too Many Requests' }))
+    const ownerId = await seedTargetPost()
 
-    const result = await sendNewComment(db, commentInfo, target)
+    const result = await sendNewComment(db, commentInfo, { type: 'post', ownerId })
 
     expect(result.ok).toBe(false)
     if (result.ok === false && result.reason === 'upstream') {
@@ -144,8 +152,9 @@ describe('email/sender — internalSend (via sendNewComment)', () => {
       sender: 'noreply@example.com',
     })
     fetchMock.mockRejectedValueOnce(new Error('ECONNREFUSED'))
+    const ownerId = await seedTargetPost()
 
-    const result = await sendNewComment(db, commentInfo, target)
+    const result = await sendNewComment(db, commentInfo, { type: 'post', ownerId })
 
     expect(result.ok).toBe(false)
     if (result.ok === false) {
@@ -160,11 +169,10 @@ describe('email/sender — internalSend (via sendNewComment)', () => {
 describe('comments email — sendNewComment maps onto the admin-notification seam', () => {
   const commentInfo = {
     id: 7,
-    content: 'hello',
+    body: [{ _type: 'block', children: [{ _type: 'span', text: 'hello' }] }],
     isPending: false,
     user: { id: 1, name: 'visitor', email: 'visitor@example.com' },
   } as unknown as CommentAndUser
-  const target = { type: 'post' as const, ownerId: 1 }
 
   function sentBody(): Record<string, unknown> {
     const [, init] = fetchMock.mock.calls[0]
@@ -182,7 +190,9 @@ describe('comments email — sendNewComment maps onto the admin-notification sea
   })
 
   it('sends the comment card to the author under the shared subject convention', async () => {
-    await sendNewComment(db, commentInfo, target)
+    const ownerId = await seedTargetPost()
+
+    await sendNewComment(db, commentInfo, { type: 'post', ownerId })
 
     const body = sentBody()
     expect(body.to).toEqual([TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.author.email])
@@ -190,18 +200,20 @@ describe('comments email — sendNewComment maps onto the admin-notification sea
     const html = body.html as string
     expect(html).toContain('新留言')
     expect(html).toContain('留言文章：')
-    // Resolved entity fixture: slug `hi`, title `Hi`.
+    // Resolved from the seeded post row: slug `hi`, title `Hi`.
     expect(html).toContain('>Hi</a>')
     expect(html).toContain('href="https://example.com/posts/hi/"')
-    // The `commentBodyToHtml` stub renders raw inside the card.
-    expect(html).toContain('<p>stub</p>')
+    // The real `commentBodyToHtml` renders the fixture's PT body inline.
+    expect(html).toContain('<p>hello</p>')
     expect(html).toContain('href="https://example.com/posts/hi/#user-comment-7"')
     // Not pending → no approval note.
     expect(html).not.toContain('该留言需要审核')
   })
 
   it('adds the approval note for pending comments', async () => {
-    await sendNewComment(db, { ...commentInfo, isPending: true }, target)
+    const ownerId = await seedTargetPost()
+
+    await sendNewComment(db, { ...commentInfo, isPending: true }, { type: 'post', ownerId })
 
     expect(sentBody().html).toContain('该留言需要审核')
   })

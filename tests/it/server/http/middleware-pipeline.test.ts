@@ -8,46 +8,17 @@ import { getTestDb } from '#/_helpers/integration-db'
 import { makeRequestContext } from '#/_helpers/request-context'
 import { emptySession } from '#/_helpers/session'
 
+// All seven perimeter middlewares (cors / install-gate / request-context /
+// request-timeout / trailing-slash / visitor-cookie / wp-decoy) run for REAL
+// against the it harness: `requestContextMiddleware` derives from the
+// harness-initialized db-lifecycle, `install-gate` reads the real install
+// state (`hasAdmin` against the empty user table), and the remaining four
+// are pure per-request functions. The kept seams are the composition root
+// (`createApiApp`), the resource routers (their own suites cover them),
+// and the logging trio (log noise).
+
 vi.mock('@/server/http/app', () => ({
   createApiApp: vi.fn(() => new Hono()),
-}))
-
-vi.mock('@/server/http/errors', () => ({
-  onErrorHandler: vi.fn(),
-}))
-
-vi.mock('@/server/http/middlewares/cors', () => ({
-  corsMiddleware: vi.fn(() => async (_c: unknown, next: () => Promise<void>) => next()),
-}))
-
-vi.mock('@/server/http/middlewares/install-gate', () => ({
-  // Mounted directly (`app.use(honoInstallGateMiddleware)`) — the mock must
-  // BE the pass-through middleware, not a factory returning one.
-  honoInstallGateMiddleware: vi.fn(async (_c: unknown, next: () => Promise<void>) => next()),
-}))
-
-vi.mock('@/server/http/middlewares/request-context', () => ({
-  // Mounted directly (`app.use(requestContextMiddleware)`) — see above.
-  requestContextMiddleware: vi.fn(async (_c: unknown, next: () => Promise<void>) => next()),
-}))
-
-vi.mock('@/server/http/middlewares/request-timeout', () => ({
-  requestTimeout: vi.fn(() => async (_c: unknown, next: () => Promise<void>) => next()),
-}))
-
-vi.mock('@/server/http/middlewares/trailing-slash', () => ({
-  // Mounted directly (`app.use(trailingSlashNormaliser)`) — see above.
-  trailingSlashNormaliser: vi.fn(async (_c: unknown, next: () => Promise<void>) => next()),
-}))
-
-vi.mock('@/server/http/middlewares/visitor-cookie', () => ({
-  // Mounted directly (`app.use(honoVisitorCookieMiddleware)`) — see above.
-  honoVisitorCookieMiddleware: vi.fn(async (_c: unknown, next: () => Promise<void>) => next()),
-}))
-
-vi.mock('@/server/http/middlewares/wp-decoy', () => ({
-  // Mounted directly (`app.use(honoWpDecoyMiddleware)`) — see above.
-  honoWpDecoyMiddleware: vi.fn(async (_c: unknown, next: () => Promise<void>) => next()),
 }))
 
 vi.mock('@/server/http/resources/analytics', () => ({
@@ -97,18 +68,6 @@ vi.mock('@/server/http/resources/redirects', () => ({
 vi.mock('@/server/http/resources/sitemap', () => ({
   sitemapRouter: new Hono(),
 }))
-
-const getServerPhase = vi.fn().mockReturnValue('running')
-
-vi.mock('@/server/infra/lifecycle', async (importOriginal) => {
-  // The real db-lifecycle (initialized by the it harness) wires itself
-  // against this module — keep every export and pin only the phase.
-  const actual = await importOriginal<typeof import('@/server/infra/lifecycle')>()
-  return {
-    ...actual,
-    getServerPhase: () => getServerPhase(),
-  }
-})
 
 vi.mock('@/server/infra/logger', () => ({
   root: {},
@@ -171,31 +130,46 @@ describe('configureMiddleware', () => {
 })
 
 describe('dynamic CSP middleware', () => {
-  it('keeps the static secureHeaders CSP when no RequestContext was derived (early short-circuit)', async () => {
+  it('keeps the static secureHeaders CSP when the real WP decoy short-circuits before the RequestContext is derived', async () => {
     const app = new Hono<Env>()
     configureMiddleware(app)
-    // The mocked requestContextMiddleware never sets c.var.requestContext,
-    // which is exactly the state early short-circuits registered before it
-    // (trailing-slash 301 redirect, WP decoy 404) leave behind — the dynamic
-    // CSP overwrite must skip instead of crashing on the missing nonce.
-    const res = await app.request('/health')
-    expect(res.status).toBe(200)
+    // The REAL pipeline: the wp-decoy middleware answers /wp-login.php with
+    // a 404 before `requestContextMiddleware` ever runs, so
+    // `c.var.requestContext` is undefined — the dynamic overwrite must skip
+    // and leave the static CSP from `secureHeaders` in place (the
+    // middleware-pipeline.ts:112-115 regression scenario).
+    const res = await app.request('/wp-login.php')
+    expect(res.status).toBe(404)
     const csp = res.headers.get('Content-Security-Policy')
     expect(csp).toContain("default-src 'self'")
     // Marker only present in the dynamic policy from buildCspHeader.
     expect(csp).not.toContain("base-uri 'self'")
   })
 
-  it('overwrites with the dynamic policy when the RequestContext exists', async () => {
+  it('overwrites with the dynamic policy once the real request-context middleware derived a RequestContext', async () => {
     const app = new Hono<Env>()
     configureMiddleware(app)
-    app.use((c, next) => {
-      c.set('requestContext', makeRequestContext({ session: emptySession(), cspNonce: 'test-nonce-xyz' }))
-      return next()
-    })
-    const res = await app.request('/any-path')
+    // /health survives the wp-decoy and trailing-slash passes, so the real
+    // `requestContextMiddleware` derives a RequestContext (harness db) and
+    // the dynamic overwrite fires. The real install gate then redirects
+    // pre-install (no admin row) — irrelevant to the header assertion.
+    const res = await app.request('/health')
     const csp = res.headers.get('Content-Security-Policy')
     expect(csp).toContain("base-uri 'self'")
+  })
+})
+
+describe('readiness probe', () => {
+  it('reports 503 with the real phase — the it harness never leaves booting', async () => {
+    const app = new Hono<Env>()
+    configureMiddleware(app)
+    // No phase mock: `setServerPhase('running')` is only called by the
+    // production bootstrap / restart flow, never by the db-lifecycle the
+    // it harness initializes. `/ready` is exempt from the real install
+    // gate, so the real `readyHandler` projects the booting phase.
+    const res = await app.request('/ready')
+    expect(res.status).toBe(503)
+    expect(await res.json()).toMatchObject({ status: 'booting' })
   })
 })
 

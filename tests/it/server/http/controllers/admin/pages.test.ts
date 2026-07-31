@@ -1,54 +1,89 @@
 import { call } from '@orpc/server'
-import { describe, expect, it, vi } from 'vitest'
+import { eq } from 'drizzle-orm'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
-import { DomainError } from '@/server/infra/http/errors'
+import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
+import { flushAuditLog } from '@/server/domains/audit/services/batcher'
+import { saveBody, previewBody } from '@/server/domains/content/lifecycle'
+import { adminPagesRouter } from '@/server/http/controllers/admin/pages.controller'
+import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
+import { auditLog } from '@/server/infra/db/schema/config'
+import { content } from '@/server/infra/db/schema/content'
+import { page as pageTable } from '@/server/infra/db/schema/page'
+import { user } from '@/server/infra/db/schema/user'
 
-vi.mock('@/server/domains/pages/services/mutate', () => ({
-  createPage: vi.fn(),
-  deletePage: vi.fn(),
-  restorePage: vi.fn(),
-  unpublishPage: vi.fn(),
-  updatePageMeta: vi.fn(),
-}))
-
-vi.mock('@/server/domains/pages/services/admin-query', () => ({
-  getPageDetailForAdmin: vi.fn(),
-  listPagesForAdmin: vi.fn(),
-  listRevisionsForAdmin: vi.fn(),
-}))
-
+// The body lifecycle (saveBody/previewBody) stays mocked — it is covered
+// end-to-end by the content/lifecycle integration suites; everything else
+// (meta mutations, admin queries, audit, slug registry) runs against the
+// real in-memory engine.
 vi.mock('@/server/domains/content/lifecycle', () => ({
   previewBody: vi.fn(),
   saveBody: vi.fn(),
 }))
 
-const mutateService = await import('@/server/domains/pages/services/mutate')
-const adminQueryService = await import('@/server/domains/pages/services/admin-query')
-const lifecycle = await import('@/server/domains/content/lifecycle')
-const { adminPagesRouter } = await import('@/server/http/controllers/admin/pages.controller')
+const db = getTestDb()
 
-const pageStub = {
-  id: '1',
-  slug: 'about',
-  title: 'About',
-  summary: '',
-  cover: '',
-  og: null,
-  published: false,
-  commentsEnabled: true,
-  showToc: false,
-  showUpdated: false,
-  showFriends: false,
-  publishedAt: '2026-01-01T00:00:00.000Z',
-  publishedRevisionId: null,
-  createdAt: '2026-01-01T00:00:00.000Z',
-  updatedAt: '2026-01-01T00:00:00.000Z',
-  deletedAt: null,
-  authorId: '1',
-  authorName: 'Admin',
-  commentCount: 0,
-  commentPublicId: 'pid-1',
+beforeEach(async () => {
+  await clearAllTables(db)
+  initAllBatchers(getDatabaseHandle())
+})
+
+afterEach(async () => {
+  // Flush BEFORE dropping the batcher so no armed timer leaks this case's
+  // queued audit events into the next test.
+  await flushAuditLog()
+  resetAllBatchers()
+})
+
+let seq = 0
+
+async function seedPage(overrides: Partial<typeof pageTable.$inferInsert> = {}) {
+  const [row] = await db
+    .insert(pageTable)
+    .values({
+      slug: overrides.slug ?? `page-${++seq}-${Math.random().toString(36).slice(2)}`,
+      title: overrides.title ?? 'Test',
+      ...overrides,
+    })
+    .returning()
+  return row!
+}
+
+async function seedRevision(ownerId: number, revisionNo: number, status: 'draft' | 'published' = 'published') {
+  const [row] = await db
+    .insert(content)
+    .values({
+      type: 'page',
+      ownerId,
+      revisionNo,
+      status,
+      body: [],
+      imageSources: [],
+      headings: [],
+    })
+    .returning()
+  return row!
+}
+
+// audit_log.actor_id references user.id, so the admin viewer must be a
+// real row for the batched audit insert to survive the FK.
+async function seedAdmin(): Promise<number> {
+  const [row] = await db
+    .insert(user)
+    .values({ name: 'Admin', email: `admin-${++seq}@example.com`, password: 'hashed', role: 'admin' })
+    .returning({ id: user.id })
+  return row!.id
+}
+
+function adminCtx(userId: number) {
+  return makeAuthedCtx({ userId: String(userId), role: 'admin', db })
+}
+
+async function auditRowsFor(action: string) {
+  await flushAuditLog()
+  return db.select().from(auditLog).where(eq(auditLog.action, action))
 }
 
 const revisionStub = {
@@ -65,125 +100,170 @@ const revisionStub = {
 }
 
 describe('adminPagesRouter.get', () => {
-  it('surfaces NOT_FOUND when the service throws a DomainError', async () => {
-    vi.mocked(adminQueryService.getPageDetailForAdmin).mockRejectedValueOnce(new DomainError('NOT_FOUND'))
-    const ctx = makeAuthedCtx()
+  it('surfaces NOT_FOUND for a missing page', async () => {
+    const ctx = makeAuthedCtx({ db })
     await expect(call(adminPagesRouter.get, { id: '999' }, { context: ctx })).rejects.toMatchObject({
       code: 'NOT_FOUND',
     })
   })
 
-  it('passes through the detail dto on hit', async () => {
-    vi.mocked(adminQueryService.getPageDetailForAdmin).mockResolvedValueOnce({
-      page: pageStub,
-      latestRevision: null,
-      publishedRevision: null,
+  it('passes through the detail dto of the seeded page', async () => {
+    const seeded = await seedPage({ slug: 'about', title: 'About', published: true })
+    const ctx = makeAuthedCtx({ db })
+    const res = await call(adminPagesRouter.get, { id: String(seeded.id) }, { context: ctx })
+    expect(res.page).toMatchObject({
+      id: String(seeded.id),
+      slug: 'about',
+      title: 'About',
+      published: true,
     })
-    const ctx = makeAuthedCtx()
-    const res = (await call(adminPagesRouter.get, { id: '1' }, { context: ctx })) as {
-      page: { id: string }
-    }
-    expect(res.page.id).toBe('1')
+    expect(res.latestRevision).toBeNull()
+    expect(res.publishedRevision).toBeNull()
   })
 })
 
 describe('adminPagesRouter.delete', () => {
-  it('throws NOT_FOUND when deletePage yields { deleted: false }', async () => {
-    vi.mocked(mutateService.deletePage).mockResolvedValueOnce({ deleted: false })
-    const ctx = makeAuthedCtx()
-    await expect(call(adminPagesRouter.delete, { id: '1' }, { context: ctx })).rejects.toMatchObject({
+  it('throws NOT_FOUND for a missing page', async () => {
+    const ctx = makeAuthedCtx({ db })
+    await expect(call(adminPagesRouter.delete, { id: '999' }, { context: ctx })).rejects.toMatchObject({
       code: 'NOT_FOUND',
     })
   })
 
-  it('resolves to undefined when deletePage succeeds', async () => {
-    vi.mocked(mutateService.deletePage).mockResolvedValueOnce({ deleted: true })
-    const ctx = makeAuthedCtx()
-    const res = await call(adminPagesRouter.delete, { id: '1' }, { context: ctx })
+  it('soft-deletes the row and records a page_deleted audit row', async () => {
+    const admin = await seedAdmin()
+    const seeded = await seedPage()
+
+    const res = await call(adminPagesRouter.delete, { id: String(seeded.id) }, { context: adminCtx(admin) })
+
     expect(res).toBeUndefined()
+    const [row] = await db.select().from(pageTable).where(eq(pageTable.id, seeded.id))
+    expect(row!.deletedAt).not.toBeNull()
+
+    const audits = await auditRowsFor('page_deleted')
+    expect(audits).toHaveLength(1)
+    expect(audits[0]).toMatchObject({
+      resourceType: 'page',
+      resourceId: String(seeded.id),
+      actorId: admin,
+    })
   })
 })
 
 describe('adminPagesRouter.restore', () => {
-  it('returns { success: true } when restore succeeds', async () => {
-    vi.mocked(mutateService.restorePage).mockResolvedValueOnce({ restored: true })
-    const ctx = makeAuthedCtx()
-    const res = await call(adminPagesRouter.restore, { id: '1' }, { context: ctx })
+  it('restores a soft-deleted page and records a page_restored audit row', async () => {
+    const admin = await seedAdmin()
+    const seeded = await seedPage({ deletedAt: new Date() })
+
+    const res = await call(adminPagesRouter.restore, { id: String(seeded.id) }, { context: adminCtx(admin) })
+
     expect(res).toEqual({ success: true })
+    const [row] = await db.select().from(pageTable).where(eq(pageTable.id, seeded.id))
+    expect(row!.deletedAt).toBeNull()
+
+    const audits = await auditRowsFor('page_restored')
+    expect(audits).toHaveLength(1)
+    expect(audits[0]).toMatchObject({
+      resourceType: 'page',
+      resourceId: String(seeded.id),
+      actorId: admin,
+    })
   })
 
-  it('throws NOT_FOUND when restore yields { restored: false }', async () => {
-    vi.mocked(mutateService.restorePage).mockResolvedValueOnce({ restored: false })
-    const ctx = makeAuthedCtx()
-    await expect(call(adminPagesRouter.restore, { id: '1' }, { context: ctx })).rejects.toMatchObject({
+  it('throws NOT_FOUND for a missing page', async () => {
+    const ctx = makeAuthedCtx({ db })
+    await expect(call(adminPagesRouter.restore, { id: '999' }, { context: ctx })).rejects.toMatchObject({
       code: 'NOT_FOUND',
     })
   })
 })
 
 describe('adminPagesRouter.unpublish', () => {
-  it('returns the unpublished page', async () => {
-    vi.mocked(mutateService.unpublishPage).mockResolvedValueOnce(pageStub)
-    const ctx = makeAuthedCtx()
-    const res = await call(adminPagesRouter.unpublish, { id: '1' }, { context: ctx })
-    expect(res.page.id).toBe('1')
+  it('flips the published flag for real and records a page_unpublished audit row', async () => {
+    const admin = await seedAdmin()
+    const seeded = await seedPage({ published: true })
+
+    const res = await call(adminPagesRouter.unpublish, { id: String(seeded.id) }, { context: adminCtx(admin) })
+
+    expect(res.page.id).toBe(String(seeded.id))
+    expect(res.page.published).toBe(false)
+    const [row] = await db.select().from(pageTable).where(eq(pageTable.id, seeded.id))
+    expect(row!.published).toBe(false)
+
+    const audits = await auditRowsFor('page_unpublished')
+    expect(audits).toHaveLength(1)
+    expect(audits[0]).toMatchObject({
+      resourceType: 'page',
+      resourceId: String(seeded.id),
+      actorId: admin,
+    })
   })
 })
 
 describe('adminPagesRouter.saveDraft', () => {
-  it('returns saved status on success', async () => {
-    vi.mocked(lifecycle.saveBody).mockResolvedValueOnce({
+  it('returns saved status on success and records a page_draft_saved audit row', async () => {
+    const admin = await seedAdmin()
+    vi.mocked(saveBody).mockResolvedValueOnce({
       status: 'saved',
       revision: revisionStub,
     })
-    const ctx = makeAuthedCtx()
-    const res = (await call(
+    const res = await call(
       adminPagesRouter.saveDraft,
       { id: '1', body: [], expectedClientRevisionToken: '00000000-0000-4000-8000-000000000000' },
-      { context: ctx },
-    )) as { status: string }
+      { context: adminCtx(admin) },
+    )
     expect(res.status).toBe('saved')
+
+    const audits = await auditRowsFor('page_draft_saved')
+    expect(audits).toHaveLength(1)
+    expect(audits[0]).toMatchObject({ resourceType: 'page', resourceId: '1', actorId: admin })
   })
 
-  it('returns conflict status when tokens mismatch', async () => {
-    vi.mocked(lifecycle.saveBody).mockResolvedValueOnce({
+  it('returns conflict status when tokens mismatch (and records no audit)', async () => {
+    const admin = await seedAdmin()
+    vi.mocked(saveBody).mockResolvedValueOnce({
       status: 'conflict',
       latest: revisionStub,
       expectedToken: '11111111-1111-4000-8000-000000000000',
     })
-    const ctx = makeAuthedCtx()
-    const res = (await call(
+    const res = await call(
       adminPagesRouter.saveDraft,
       { id: '1', body: [], expectedClientRevisionToken: '00000000-0000-4000-8000-000000000000' },
-      { context: ctx },
-    )) as { status: string }
+      { context: adminCtx(admin) },
+    )
     expect(res.status).toBe('conflict')
+
+    expect(await auditRowsFor('page_draft_saved')).toHaveLength(0)
   })
 })
 
 describe('adminPagesRouter.publishLatest', () => {
-  it('returns saved status on success', async () => {
-    vi.mocked(lifecycle.saveBody).mockResolvedValueOnce({
+  it('returns saved status on success and records a page_published audit row', async () => {
+    const admin = await seedAdmin()
+    vi.mocked(saveBody).mockResolvedValueOnce({
       status: 'saved',
       revision: revisionStub,
     })
-    const ctx = makeAuthedCtx()
-    const res = (await call(
+    const res = await call(
       adminPagesRouter.publishLatest,
       { id: '1', body: [], expectedClientRevisionToken: '00000000-0000-4000-8000-000000000000' },
-      { context: ctx },
-    )) as { status: string }
+      { context: adminCtx(admin) },
+    )
     expect(res.status).toBe('saved')
+
+    const audits = await auditRowsFor('page_published')
+    expect(audits).toHaveLength(1)
+    expect(audits[0]).toMatchObject({ resourceType: 'page', resourceId: '1', actorId: admin })
   })
 })
 
 describe('adminPagesRouter.preview', () => {
   it('returns html and headings', async () => {
-    vi.mocked(lifecycle.previewBody).mockResolvedValueOnce({
+    vi.mocked(previewBody).mockResolvedValueOnce({
       html: '<p>hello</p>',
       headings: [{ text: 'Hello', depth: 2, slug: 'hello' }],
     })
-    const ctx = makeAuthedCtx()
+    const ctx = makeAuthedCtx({ db })
     const res = await call(adminPagesRouter.preview, { body: [] }, { context: ctx })
     expect(res.html).toBe('<p>hello</p>')
     expect(res.headings).toHaveLength(1)
@@ -191,9 +271,8 @@ describe('adminPagesRouter.preview', () => {
 })
 
 describe('adminPagesRouter.upsertMeta', () => {
-  it('creates a page when id is omitted', async () => {
-    vi.mocked(mutateService.createPage).mockResolvedValueOnce(pageStub)
-    const ctx = makeAuthedCtx()
+  it('creates a real page row when id is omitted', async () => {
+    const admin = await seedAdmin()
     const res = await call(
       adminPagesRouter.upsertMeta,
       {
@@ -208,41 +287,70 @@ describe('adminPagesRouter.upsertMeta', () => {
         showUpdated: false,
         showFriends: false,
       },
-      { context: ctx },
+      { context: adminCtx(admin) },
     )
-    expect(res.page.id).toBe('1')
+    expect(res.page.slug).toBe('about')
+    expect(res.page.title).toBe('About')
+
+    const rows = await db.select().from(pageTable).where(eq(pageTable.slug, 'about'))
+    expect(rows).toHaveLength(1)
+    expect(rows[0]).toMatchObject({ title: 'About', published: false, authorId: admin })
+
+    const audits = await auditRowsFor('page_created')
+    expect(audits).toHaveLength(1)
+    expect(audits[0]).toMatchObject({
+      resourceType: 'page',
+      resourceId: String(res.page.id),
+      actorId: admin,
+    })
   })
 
-  it('updates a page when id is provided', async () => {
-    vi.mocked(mutateService.updatePageMeta).mockResolvedValueOnce(pageStub)
-    const ctx = makeAuthedCtx()
+  it('updates the seeded row when id is provided', async () => {
+    const admin = await seedAdmin()
+    const seeded = await seedPage({ slug: 'about', title: 'Old' })
+
     const res = await call(
       adminPagesRouter.upsertMeta,
       {
-        id: '1',
+        id: String(seeded.id),
         slug: 'about',
-        title: 'About',
-        summary: '',
+        title: 'New',
+        summary: 'updated',
         cover: '',
         og: null,
         published: false,
         commentsEnabled: true,
-        showToc: false,
+        showToc: true,
         showUpdated: false,
         showFriends: false,
       },
-      { context: ctx },
+      { context: adminCtx(admin) },
     )
-    expect(res.page.id).toBe('1')
+    expect(res.page.id).toBe(String(seeded.id))
+    expect(res.page.title).toBe('New')
+
+    const [row] = await db.select().from(pageTable).where(eq(pageTable.id, seeded.id))
+    expect(row).toMatchObject({ slug: 'about', title: 'New', summary: 'updated', showToc: true })
+
+    const audits = await auditRowsFor('page_meta_updated')
+    expect(audits).toHaveLength(1)
+    expect(audits[0]).toMatchObject({
+      resourceType: 'page',
+      resourceId: String(seeded.id),
+      actorId: admin,
+    })
   })
 })
 
 describe('adminPagesRouter.listRevisions', () => {
-  it('returns revisions for the page', async () => {
-    vi.mocked(adminQueryService.listRevisionsForAdmin).mockResolvedValueOnce([revisionStub])
-    const ctx = makeAuthedCtx()
-    const res = await call(adminPagesRouter.listRevisions, { id: '1' }, { context: ctx })
-    expect(res.revisions).toHaveLength(1)
-    expect(res.revisions[0].id).toBe('1')
+  it('returns the real revision rows for the page', async () => {
+    const seeded = await seedPage()
+    const rev1 = await seedRevision(seeded.id, 1)
+    const rev2 = await seedRevision(seeded.id, 2, 'draft')
+
+    const ctx = makeAuthedCtx({ db })
+    const res = await call(adminPagesRouter.listRevisions, { id: String(seeded.id) }, { context: ctx })
+    expect(res.revisions).toHaveLength(2)
+    expect(res.revisions.map((r) => r.id).sort()).toEqual([String(rev1.id), String(rev2.id)].sort())
   })
 })

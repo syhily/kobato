@@ -1,24 +1,40 @@
+import { eq } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { CommentBody } from '@/shared/pt/comment-schema'
+
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { comment } from '@/server/infra/db/schema/comment'
+import { kvCache } from '@/server/infra/db/schema/kv-cache'
 import { metric } from '@/server/infra/db/schema/metric'
 import { oneTimeToken } from '@/server/infra/db/schema/one-time-token'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
 
-vi.mock('@/server/domains/content/invalidate', () => ({ invalidateContent: vi.fn(async () => undefined) }))
+// Everything runs against the real engine — the canonicalize pipeline is
+// real (plain paragraph bodies skip the Shiki / KaTeX renderers) and the
+// content-invalidation door really clears the `kv_cache` bucket. Only the
+// outbound email stays mocked (a true external).
 vi.mock('@/server/domains/comments/services/email', () => ({
   sendApprovedComment: vi.fn(async () => undefined),
   sendNewComment: vi.fn(async () => undefined),
   sendNewReply: vi.fn(async () => undefined),
 }))
-vi.mock('@/server/domains/comments/services/canonicalize', () => ({
-  canonicalizeCommentBody: vi.fn(async (input: unknown) => ({ body: input, content: 'md' })),
-}))
+
+const { canonicalizeCommentBody } = await import('@/server/domains/comments/services/canonicalize')
 
 const db = getTestDb()
+
+const NEW_BODY: CommentBody = [
+  {
+    _type: 'block',
+    _key: 'b2',
+    style: 'normal',
+    children: [{ _type: 'span', _key: 's2', text: 'edited', marks: [] }],
+    markDefs: [],
+  },
+]
 
 beforeEach(async () => {
   await clearAllTables(db)
@@ -63,15 +79,23 @@ describe('comments/services/lookup — findCommentWithUserById', () => {
 })
 
 describe('comments/services/moderate — approveComment', () => {
-  it('flips is_pending=false and emits comment invalidation from the repo', async () => {
+  it('flips is_pending=false and clears the comments cache bucket', async () => {
     const u1 = await seedUser()
     const id = await seedComment({ userId: u1, isPending: true })
+    // Pre-seed the bucket the `{ entity: 'comment' }` invalidation must
+    // clear, plus a control row in another bucket that must survive.
+    await db
+      .insert(kvCache)
+      .values({ key: 'comments:latest', bucket: 'comments', value: [], blob: null, expiresAt: null })
+    await db.insert(kvCache).values({ key: 'feed:all', bucket: 'feed', value: {}, blob: null, expiresAt: null })
+
     const { approveComment } = await import('@/server/domains/comments/services/moderate')
     await approveComment(db, String(id))
+
     const rows = await db.select({ isPending: comment.isPending }).from(comment)
     expect(rows[0]?.isPending).toBe(false)
-    const { invalidateContent } = await import('@/server/domains/content/invalidate')
-    expect(invalidateContent).toHaveBeenCalledWith(db, { entity: 'comment' })
+    expect(await db.select().from(kvCache).where(eq(kvCache.bucket, 'comments'))).toHaveLength(0)
+    expect(await db.select().from(kvCache).where(eq(kvCache.bucket, 'feed'))).toHaveLength(1)
   })
 })
 
@@ -87,18 +111,20 @@ describe('comments/services/moderate — deleteCommentById', () => {
 })
 
 describe('comments/services/moderate — updateComment', () => {
-  it('rewrites the body/content and clears cache', async () => {
+  it('rewrites the body/content through the real canonicalize pipeline', async () => {
     const u1 = await seedUser()
     const id = await seedComment({ userId: u1, content: 'old' })
+    const expected = await canonicalizeCommentBody(NEW_BODY)
     const { updateComment } = await import('@/server/domains/comments/services/moderate')
-    const r = await updateComment(db, String(id), [])
+    const r = await updateComment(db, String(id), NEW_BODY)
     expect(r).not.toBeNull()
-    const rows = await db.select({ content: comment.content }).from(comment)
-    expect(rows[0]?.content).toBe('md')
+    const rows = await db.select({ content: comment.content, body: comment.body }).from(comment)
+    expect(rows[0]?.content).toBe(expected.content)
+    expect(rows[0]?.body).toEqual(expected.body)
   })
   it('returns null when the comment does not exist', async () => {
     const { updateComment } = await import('@/server/domains/comments/services/moderate')
-    expect(await updateComment(db, '9999', [])).toBeNull()
+    expect(await updateComment(db, '9999', NEW_BODY)).toBeNull()
   })
 })
 
@@ -112,7 +138,7 @@ describe('comments/services/moderate — updateOwnComment', () => {
     const now = new Date()
     const id = await seedComment({ userId: u1, updatedAt: now, createdAt: now })
     const { updateOwnComment } = await import('@/server/domains/comments/services/moderate')
-    const r = await updateOwnComment(db, String(id), [])
+    const r = await updateOwnComment(db, String(id), NEW_BODY)
     expect(r).not.toBeNull()
     const rows = await db.select({ isPending: comment.isPending }).from(comment)
     expect(rows[0]?.isPending).toBe(false)
@@ -122,7 +148,7 @@ describe('comments/services/moderate — updateOwnComment', () => {
     const old = new Date(Date.now() - 60 * 60 * 1000)
     const id = await seedComment({ userId: u1, createdAt: old, updatedAt: old })
     const { updateOwnComment } = await import('@/server/domains/comments/services/moderate')
-    const r = await updateOwnComment(db, String(id), [])
+    const r = await updateOwnComment(db, String(id), NEW_BODY)
     expect(r).not.toBeNull()
     const rows = await db.select({ isPending: comment.isPending }).from(comment)
     expect(rows[0]?.isPending).toBe(true)
@@ -306,10 +332,29 @@ describe('comments/services/token — verifyCommentOwnership', () => {
 })
 
 describe('comments/services/access — verifyCommentAccess', () => {
-  it('short-circuits with ok=true for an admin session', async () => {
+  it('short-circuits with ok=true for an admin session, no token rows needed', async () => {
+    // Behavioral pin for the admin bypass: the cookie passes through
+    // untouched and access is granted with an empty token jar — the
+    // ownership lookup never has anything to verify.
     const { verifyCommentAccess } = await import('@/server/domains/comments/services/access')
     const r = await verifyCommentAccess(db, {}, '1', { id: '1', role: 'admin' })
     expect(r.ok).toBe(true)
+    expect(r.cleaned).toEqual({})
+  })
+  it('returns ok=true with the cleaned cookie when a real token proves ownership', async () => {
+    const u1 = await seedUser()
+    const id = await seedComment({ userId: u1 })
+    const { issueCommentToken, appendCommentToken } = await import('@/server/domains/comments/services/token')
+    const { verifyCommentAccess } = await import('@/server/domains/comments/services/access')
+    const token = await issueCommentToken(db, id, u1, 'post:1', 60)
+    // A second, un-backed entry must be dropped by the cleanup passthrough.
+    const cookie = appendCommentToken(appendCommentToken({}, 'post:9', 'ghost-token', 60), 'post:1', token, 60)
+
+    const r = await verifyCommentAccess(db, cookie, String(id))
+
+    expect(r.ok).toBe(true)
+    expect(r.cleaned['post:1']?.[0]?.token).toBe(token)
+    expect(r.cleaned['post:9']).toBeUndefined()
   })
   it('returns ok=false when no token and no session ownership', async () => {
     const { verifyCommentAccess } = await import('@/server/domains/comments/services/access')
@@ -328,6 +373,11 @@ describe('comments/services/access — verifyCommentAccess', () => {
     const id = await seedComment({ userId: u1 })
     const { verifyCommentAccess } = await import('@/server/domains/comments/services/access')
     const r = await verifyCommentAccess(db, {}, String(id), { id: '99999', role: 'visitor' })
+    expect(r.ok).toBe(false)
+  })
+  it('returns ok=false when the comment does not exist for the session user', async () => {
+    const { verifyCommentAccess } = await import('@/server/domains/comments/services/access')
+    const r = await verifyCommentAccess(db, {}, '9999', { id: '42', role: 'visitor' })
     expect(r.ok).toBe(false)
   })
 })

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import type { BlogSession } from '@/server/domains/auth/session-storage'
 
@@ -6,21 +6,10 @@ import { resetBlogSettingsForTests, TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers
 import { clearAllTables, createTestDatabaseFile, getTestDb } from '#/_helpers/integration-db'
 import { makeRequestContext } from '#/_helpers/request-context'
 import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
+import { requestContext } from '@/server/http/request-context'
 import { closeDatabase } from '@/server/infra/db/database'
 import { upsertSetting } from '@/server/infra/db/operations/setting'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
-
-const routerContextSetMock = vi.hoisted(() => vi.fn())
-
-vi.mock('react-router', async () => {
-  const actual = await vi.importActual<typeof import('react-router')>('react-router')
-  return {
-    ...actual,
-    RouterContextProvider: vi.fn(function () {
-      return { set: routerContextSetMock }
-    }),
-  }
-})
 
 const { buildLoadContext } = await import('@/server/http/middleware-pipeline')
 
@@ -53,7 +42,6 @@ function makeContextStub(overrides: Record<string, unknown> = {}) {
 
 describe('middleware-pipeline / buildLoadContext', () => {
   beforeEach(async () => {
-    vi.clearAllMocks()
     await clearAllTables(db)
     // Restore the pre-install state so the real hydrate re-reads the
     // setting table instead of resolving the worker's seeded bundle.
@@ -101,13 +89,12 @@ describe('middleware-pipeline / buildLoadContext', () => {
 
   it('sets the canonical RequestContext as the single React Router context value', async () => {
     const c = makeContextStub()
-    await buildLoadContext(c)
+    const context = await buildLoadContext(c)
 
-    // Exactly one context.set call, carrying the canonical RequestContext
-    // itself (identity) — the CSP nonce rides inside it.
-    expect(routerContextSetMock).toHaveBeenCalledTimes(1)
-    const rc = routerContextSetMock.mock.calls[0]![1]
-    expect(rc).toBe(c.var.requestContext)
-    expect(rc.cspNonce).toBe('test-nonce-123')
+    // The REAL RouterContextProvider carries the canonical RequestContext
+    // itself (identity) under the single canonical key — the CSP nonce
+    // rides inside it.
+    expect(context.get(requestContext)).toBe(c.var.requestContext)
+    expect(context.get(requestContext)?.cspNonce).toBe('test-nonce-123')
   })
 })

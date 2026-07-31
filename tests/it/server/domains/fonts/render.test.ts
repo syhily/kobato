@@ -1,23 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { FontRow } from '@/server/infra/db/schema/font'
-
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { font } from '@/server/infra/db/schema/font'
 
 // `resolveAssetUrl` reads the CDN host + site origin off the real settings
-// snapshot (same pattern as the public-url suite). `findFontsByIds` is the
-// DB boundary: stub it and keep the pure `resolveSlotOrder` real.
-vi.mock('@/server/domains/fonts/services/read', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/server/domains/fonts/services/read')>()
-  return { ...actual, findFontsByIds: vi.fn() }
-})
+// snapshot, and `findFontsByIds` now runs against the real in-memory SQLite
+// (spied only so the "no slot reference ⇒ no DB read" case can assert the
+// short-circuit). `resolveSlotOrder` stays real.
+vi.mock('@/server/domains/fonts/services/read', { spy: true })
 
-const { findFontsByIds } = (await import('@/server/domains/fonts/services/read')) as unknown as {
-  findFontsByIds: ReturnType<typeof vi.fn>
-}
+const { findFontsByIds } = await import('@/server/domains/fonts/services/read')
 const { resolveFontsForRender } = await import('@/server/domains/fonts/services/render')
 
-const db = {} as Parameters<typeof resolveFontsForRender>[0]
+const db = getTestDb()
 
 const HASH = 'a'.repeat(64)
 // Deliberately NOT `fontCssKey(HASH)` — a cssKey pointing at a different
@@ -28,20 +24,24 @@ const CSS_KEY = `fonts/${'c'.repeat(64)}/result.css`
 const ETAG = `deadbeef${'0'.repeat(56)}`
 const VERSION = 3735928559
 
-function fontRow(overrides: Partial<FontRow> = {}): FontRow {
-  return {
-    id: 'font-1',
-    familyName: 'Test Serif',
-    sourceName: 'test-serif.ttf',
-    hash: HASH,
-    cssKey: CSS_KEY,
-    storageDriver: 'local',
-    chunkCount: 3,
-    totalBytes: 1024,
-    etag: ETAG,
-    createdAt: new Date('2026-01-01T00:00:00.000Z'),
-    ...overrides,
-  }
+async function seedFont(overrides: Partial<typeof font.$inferInsert> = {}) {
+  const rows = await db
+    .insert(font)
+    .values({
+      id: 'font-1',
+      familyName: 'Test Serif',
+      sourceName: 'test-serif.ttf',
+      hash: HASH,
+      cssKey: CSS_KEY,
+      storageDriver: 'local',
+      chunkCount: 3,
+      totalBytes: 1024,
+      etag: ETAG,
+      createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      ...overrides,
+    })
+    .returning()
+  return rows[0]!
 }
 
 // Full FontsSettings shape; only the three slot lists matter to the resolver.
@@ -61,14 +61,15 @@ function seedSettings(website: string | null = 'https://site.example.com') {
   })
 }
 
-beforeEach(() => {
-  findFontsByIds.mockReset()
+beforeEach(async () => {
+  vi.mocked(findFontsByIds).mockClear()
   seedSettings()
+  await clearAllTables(db)
 })
 
 describe('resolveFontsForRender — cssKey consumption', () => {
   it('builds the local href from the persisted cssKey via the embedded route', async () => {
-    findFontsByIds.mockResolvedValue(new Map([['font-1', fontRow()]]))
+    await seedFont()
     const resolved = await resolveFontsForRender(db, settings(['font-1']), false)
     expect(resolved.global).toEqual([
       {
@@ -79,14 +80,14 @@ describe('resolveFontsForRender — cssKey consumption', () => {
   })
 
   it('builds the s3 href from the persisted cssKey on the raw storage key', async () => {
-    findFontsByIds.mockResolvedValue(new Map([['font-1', fontRow({ storageDriver: 's3' })]]))
+    await seedFont({ storageDriver: 's3' })
     const resolved = await resolveFontsForRender(db, settings(['font-1']), false)
     expect(resolved.global).toEqual([{ family: 'Test Serif', href: `https://cdn.example.com/${CSS_KEY}?v=${VERSION}` }])
   })
 
   it('degrades to an empty href when the URL base is unconfigured', async () => {
     seedSettings('')
-    findFontsByIds.mockResolvedValue(new Map([['font-1', fontRow()]]))
+    await seedFont()
     const resolved = await resolveFontsForRender(db, settings(['font-1']), false)
     expect(resolved.global).toEqual([{ family: 'Test Serif', href: '' }])
   })
@@ -100,14 +101,12 @@ describe('resolveFontsForRender — slot resolution', () => {
   })
 
   it('drops stale ids that no longer resolve to a row', async () => {
-    findFontsByIds.mockResolvedValue(new Map())
     const resolved = await resolveFontsForRender(db, settings(['gone']), false)
     expect(resolved.global).toEqual([])
   })
 
   it('resolves post/code slots only when wantsPostFonts is set', async () => {
-    const row = fontRow()
-    findFontsByIds.mockResolvedValue(new Map([['font-1', row]]))
+    await seedFont()
     const off = await resolveFontsForRender(db, settings([], ['font-1'], ['font-1']), false)
     expect(off.post).toEqual([])
     expect(off.code).toEqual([])

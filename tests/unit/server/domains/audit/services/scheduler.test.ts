@@ -18,13 +18,11 @@ vi.mock('@/server/infra/lifecycle', () => ({
   registerShutdownHook: (...args: unknown[]) => registerShutdownHook(...args),
 }))
 
-vi.mock('@/server/infra/scheduler-utils', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/server/infra/scheduler-utils')>()
-  return {
-    ...actual,
-    computeNextRun: vi.fn((_settings, _tz, now: Date) => new Date(now.getTime() + 3_600_000)),
-  }
-})
+// `computeNextRun` runs for real: the hydrated settings pin timeZone=UTC,
+// and the fake timers make the 04:00 daily schedule deterministic — the
+// next fire always lands within 24h, so advancing a full day + margin
+// crosses exactly one fire.
+const ADVANCE_TO_NEXT_RUN_MS = 86_400_000 + 1_000
 
 const { scheduleNextArchive, rescheduleArchive, wireArchiveScheduler } =
   await import('@/server/domains/audit/services/scheduler')
@@ -74,7 +72,7 @@ describe('audit scheduler', () => {
     const freshDb = {}
     getDb.mockReturnValue(freshDb)
 
-    await vi.advanceTimersByTimeAsync(3_600_000)
+    await vi.advanceTimersByTimeAsync(ADVANCE_TO_NEXT_RUN_MS)
     expect(runArchiveJob).toHaveBeenCalledTimes(1)
     expect(runArchiveJob).toHaveBeenCalledWith(freshDb)
   })
@@ -82,10 +80,10 @@ describe('audit scheduler', () => {
   it('reschedules the next run after the job completes', async () => {
     seedHydratedSettings()
     scheduleNextArchive()
-    await vi.advanceTimersByTimeAsync(3_600_000)
+    await vi.advanceTimersByTimeAsync(ADVANCE_TO_NEXT_RUN_MS)
     expect(runArchiveJob).toHaveBeenCalledTimes(1)
     expect(vi.getTimerCount()).toBe(1)
-    await vi.advanceTimersByTimeAsync(3_600_000)
+    await vi.advanceTimersByTimeAsync(ADVANCE_TO_NEXT_RUN_MS)
     expect(runArchiveJob).toHaveBeenCalledTimes(2)
   })
 
@@ -93,7 +91,7 @@ describe('audit scheduler', () => {
     runArchiveJob.mockRejectedValueOnce(new Error('archive failed'))
     seedHydratedSettings()
     scheduleNextArchive()
-    await vi.advanceTimersByTimeAsync(3_600_000)
+    await vi.advanceTimersByTimeAsync(ADVANCE_TO_NEXT_RUN_MS)
     expect(__logCaptureForTests().some((e) => e.level === 'error')).toBe(true)
   })
 

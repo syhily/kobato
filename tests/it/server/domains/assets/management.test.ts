@@ -1,27 +1,19 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { MemoryBackend } from '#/_helpers/memory-storage'
 import type { BrandingObjectRef } from '@/shared/config/types'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { makeMemoryBackend } from '#/_helpers/memory-storage'
 // uploadBrandingAsset / clearBrandingAsset orchestration against the REAL
 // settings table: objects go to the shared in-memory storage backend (a
-// true external — S3/local disk), the favicon-pack generator stays mocked
-// (sharp), and every settings write is asserted by reading the row back
-// from SQLite.
+// true external — S3/local disk, injected through the registry seam as the
+// active 's3' backend), the favicon-pack generator stays mocked (sharp),
+// and every settings write is asserted by reading the row back from SQLite.
 import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
 import { findSettingByScope, upsertSetting } from '@/server/infra/db/operations/setting'
+import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@/server/infra/storage/registry'
 
-const storageMock = vi.hoisted(() => ({ current: undefined as unknown as MemoryBackend }))
-
-vi.mock('@/server/infra/storage/registry', async () => {
-  const { makeMemoryBackend } = await import('#/_helpers/memory-storage')
-  storageMock.current = makeMemoryBackend()
-  return {
-    activeBackend: () => ({ backend: storageMock.current.backend, driver: 's3' }),
-    backendFor: () => storageMock.current.backend,
-  }
-})
+const mem = makeMemoryBackend()
 
 const generateFaviconPackMock = vi.hoisted(() => vi.fn())
 vi.mock('@/server/domains/assets/generate', () => ({
@@ -66,8 +58,8 @@ function readBranding(): Record<string, unknown> {
 }
 
 beforeEach(async () => {
+  __setStorageBackendForTests('s3', mem.backend)
   await clearAllTables(db)
-  storageMock.current.reset()
   vi.clearAllMocks()
   generateFaviconPackMock.mockResolvedValue({
     faviconIco: ICO_BYTES,
@@ -76,6 +68,11 @@ beforeEach(async () => {
     icon512: PNG_BYTES,
   })
   seedAssetsRow()
+})
+
+afterEach(() => {
+  __resetStorageBackendsForTests()
+  mem.reset()
 })
 
 describe('uploadBrandingAsset', () => {
@@ -87,7 +84,7 @@ describe('uploadBrandingAsset', () => {
     expect(ref.size).toBe(PNG_BYTES.length)
     expect(ref.driver).toBe('s3')
 
-    const stored = storageMock.current.store.get('branding/apple-touch-icon.png')
+    const stored = mem.store.get('branding/apple-touch-icon.png')
     expect(stored).toBeDefined()
     expect(stored!.body.equals(PNG_BYTES)).toBe(true)
     expect(stored!.contentType).toBe('image/png')
@@ -99,7 +96,7 @@ describe('uploadBrandingAsset', () => {
     await uploadBrandingAsset(db, 'faviconSvg', SVG_BYTES)
 
     expect(generateFaviconPackMock).toHaveBeenCalledTimes(1)
-    expect([...storageMock.current.store.keys()].sort()).toEqual(
+    expect([...mem.store.keys()].sort()).toEqual(
       [
         'branding/favicon.svg',
         'branding/favicon.ico',
@@ -122,8 +119,8 @@ describe('uploadBrandingAsset', () => {
     await expect(uploadBrandingAsset(db, 'faviconSvg', SVG_BYTES)).rejects.toThrow('sharp failed')
 
     // The primary SVG put has already happened — rollback must remove it.
-    expect(storageMock.current.deletedKeys).toContain('branding/favicon.svg')
-    expect(storageMock.current.store.has('branding/favicon.svg')).toBe(false)
+    expect(mem.deletedKeys).toContain('branding/favicon.svg')
+    expect(mem.store.has('branding/favicon.svg')).toBe(false)
     // No settings write: the row carries no branding section at all.
     expect(readBranding()).toEqual({})
   })
@@ -131,27 +128,27 @@ describe('uploadBrandingAsset', () => {
   it('rejects mismatched content for a binary slot', async () => {
     // PNG bytes in an ICO slot should fail the magic-byte check.
     await expect(uploadBrandingAsset(db, 'faviconIco', PNG_BYTES)).rejects.toThrow(/image\/x-icon/)
-    expect(storageMock.current.store.size).toBe(0)
+    expect(mem.store.size).toBe(0)
   })
 
   it('rejects an SVG that contains a script tag', async () => {
     const hostile = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>', 'utf8')
     await expect(uploadBrandingAsset(db, 'logoSvg', hostile)).rejects.toThrow(/脚本|事件处理器/)
-    expect(storageMock.current.store.size).toBe(0)
+    expect(mem.store.size).toBe(0)
   })
 })
 
 describe('clearBrandingAsset', () => {
   it('clears a single slot and removes the field from the settings row', async () => {
     seedAssetsRow({ appleTouchIcon: { etag: 'x', contentType: 'image/png', size: 1, updatedAt: '', driver: 's3' } })
-    storageMock.current.reset() // drop the legacy-key deletes recorded during seeding — none happen, but keep counts honest
+    mem.reset() // drop the legacy-key deletes recorded during seeding — none happen, but keep counts honest
 
     await clearBrandingAsset(db, 'appleTouchIcon')
 
     // Deletes both the current key and the legacy (extensionless) key.
-    expect(storageMock.current.deletedKeys).toHaveLength(2)
-    expect(storageMock.current.deletedKeys).toContain('branding/apple-touch-icon.png')
-    expect(storageMock.current.deletedKeys).toContain('branding/apple-touch-icon')
+    expect(mem.deletedKeys).toHaveLength(2)
+    expect(mem.deletedKeys).toContain('branding/apple-touch-icon.png')
+    expect(mem.deletedKeys).toContain('branding/apple-touch-icon')
 
     expect(readBranding().appleTouchIcon).toBeUndefined()
   })
@@ -160,8 +157,8 @@ describe('clearBrandingAsset', () => {
     await clearBrandingAsset(db, 'faviconSvg')
 
     // 5 slots × 2 keys (current + legacy) = 10 deletes
-    expect(storageMock.current.deletedKeys).toHaveLength(10)
-    expect(storageMock.current.deletedKeys).toEqual(
+    expect(mem.deletedKeys).toHaveLength(10)
+    expect(mem.deletedKeys).toEqual(
       expect.arrayContaining([
         'branding/favicon.svg',
         'branding/favicon-svg',
