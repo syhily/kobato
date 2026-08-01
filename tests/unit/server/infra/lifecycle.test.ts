@@ -19,7 +19,10 @@ const {
   setRestartDb,
   setRestartRefreshSettings,
   restartServer,
+  handleUnhandledRejection,
 } = await import('@/server/infra/lifecycle')
+const { __logCaptureForTests: logCapture, __clearLogCaptureForTests: clearLogCapture } =
+  await import('@/server/infra/logger')
 
 describe('lifecycle', () => {
   beforeEach(() => {
@@ -192,5 +195,27 @@ describe('lifecycle', () => {
     await restartServer()
     expect(refresh).toHaveBeenCalledWith(db)
     expect(getServerPhase()).toBe('running')
+  })
+
+  it('logs unhandled rejections loudly instead of crashing', () => {
+    // The handler exists so a streamed loader promise (detail-page comments)
+    // rejecting before turbo-stream subscribes cannot take the process down
+    // (ADR-0005). Only the pure function is exercised — the `process.on`
+    // registration itself is not touched to avoid polluting the global.
+    clearLogCapture()
+    handleUnhandledRejection(new Error('comments query failed'))
+
+    const entries = logCapture().filter((e) => e.scope === 'lifecycle' && e.msg === 'Unhandled promise rejection')
+    expect(entries).toHaveLength(1)
+    expect(entries[0]).toMatchObject({ level: 'error', ctx: { err: 'comments query failed' } })
+  })
+
+  it('stringifies non-Error rejection reasons', () => {
+    clearLogCapture()
+    handleUnhandledRejection('plain rejection')
+
+    const entries = logCapture().filter((e) => e.scope === 'lifecycle' && e.msg === 'Unhandled promise rejection')
+    expect(entries).toHaveLength(1)
+    expect(entries[0].ctx).toMatchObject({ err: 'plain rejection' })
   })
 })

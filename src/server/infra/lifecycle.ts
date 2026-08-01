@@ -162,6 +162,22 @@ process.once('SIGINT', () => requestShutdown('SIGINT'))
 process.once('SIGHUP', () => requestShutdown('SIGHUP'))
 process.once('SIGBREAK', () => requestShutdown('SIGBREAK'))
 
+// Streamed loader promises (the detail page's comments promise,
+// `src/server/http/loaders/comments.ts`, consumed via `<Await>`) are only
+// tracked by React Router once turbo-stream serializes them — a rejection
+// before that point has no listener, and Node's default unhandledRejection
+// mode ('throw') would take the whole process down for a single failed
+// comment query. Log-and-continue is a deliberate trade-off (ADR-0005): a
+// streamed query failure is a per-request, recoverable fault and must not
+// kill every in-flight request; the cost (masking genuine bugs) is hedged
+// by making this log line loud and structured. Do NOT remove this handler
+// while any loader returns an un-awaited promise.
+export function handleUnhandledRejection(error: unknown): void {
+  log.error('Unhandled promise rejection', { err: error instanceof Error ? error.message : String(error) })
+}
+
+process.on('unhandledRejection', handleUnhandledRejection)
+
 // ─── Server Phase ────────────────────────────────────────
 
 export function getServerPhase(): ServerPhase {

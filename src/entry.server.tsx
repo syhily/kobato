@@ -7,7 +7,7 @@ import '@/shared/zod-config'
 
 import { PassThrough } from 'node:stream'
 import { renderToPipeableStream } from 'react-dom/server'
-import { ServerRouter } from 'react-router'
+import { ServerRouter, isRouteErrorResponse } from 'react-router'
 
 import { requestContext } from '@/server/http/request-context'
 import { getLogger } from '@/server/infra/logger'
@@ -16,6 +16,33 @@ import { isBot } from '@/shared/utils/is-bot'
 export const streamTimeout = 5_000
 
 const log = getLogger('entry.server')
+
+// Server-side error reporting hook called by the React Router runtime for
+// loader/action errors (and shell-rendering failures rejected upstream).
+// Without this export RR falls back to a default handler that writes a bare
+// `console.error`, bypassing the structured pino pipeline. The runtime only
+// calls this for non-Response errors (and RouteErrorResponses carrying an
+// `error`), so deliberately thrown 4xx/5xx Responses stay silent. Streaming
+// errors after the shell are NOT routed here — they are logged in the
+// `onError` callback of `renderToPipeableStream` below.
+export function handleError(error: unknown, { request }: { request: Request }) {
+  // Client-aborted requests (cancelled navigation, closed tab) are not
+  // server faults — skip them.
+  if (request.signal.aborted) {
+    return
+  }
+  // Mirror the runtime's default handler: unwrap RouteErrorResponses that
+  // carry the original error before extracting the message, so the log
+  // never degrades to "[object Object]". The runtime only forwards
+  // RouteErrorResponses when their `.error` is set (always an Error), but
+  // the field is `private` in RR's type declarations — hence the `in`
+  // narrowing instead of direct property access.
+  const cause = isRouteErrorResponse(error) && 'error' in error && error.error instanceof Error ? error.error : error
+  log.error('Router request error', {
+    error: cause instanceof Error ? cause.message : String(cause),
+    url: request.url,
+  })
+}
 
 export default function handleRequest(
   request: Request,

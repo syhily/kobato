@@ -287,6 +287,9 @@ These patterns are banned:
 - `@/ui/admin/shadcn/components/ui/` nesting.
 - Preserve public URLs, feed URLs, image endpoints, WordPress compatibility routes, and pagination routes.
 - `*.server.ts` suffix is redundant inside `src/server/`.
+- Streamed loader promises (a loader returning an un-awaited promise) require
+  the process-level `unhandledRejection` handler in
+  `src/server/infra/lifecycle.ts` — do not remove it (ADR-0005).
 
 `src/assets/scripts` is intentionally absent. All interactivity lives in
 React hooks/components under `src/client/` and `src/ui/`.
