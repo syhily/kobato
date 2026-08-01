@@ -1,7 +1,6 @@
-import NumberFlow from '@number-flow/react'
 import { useMutation } from '@tanstack/react-query'
 import { HeartIcon } from 'lucide-react'
-import { startTransition, useCallback, useEffect, useOptimistic, useRef, useState } from 'react'
+import { Suspense, lazy, startTransition, useCallback, useEffect, useOptimistic, useRef, useState } from 'react'
 
 import type { DecreaseLikeOutput, IncreaseLikeOutput, ValidateLikeTokenOutput } from '@/shared/types/likes'
 
@@ -23,6 +22,15 @@ export interface LikeButtonProps {
 }
 
 const LIKE_TOKENS_KEY = 'like-tokens'
+
+// `@number-flow/react` is interaction-only chrome: the digit-roll animation
+// matters when the count changes on a like/unlike, not on first paint. Load
+// it lazily so it stays out of the public pages' synchronous bundle. The
+// Suspense fallback is the plain number, so SSR output and the first
+// hydrated render are byte-identical (no hydration mismatch, no layout
+// shift), and the displayed count stays correct if it changes while the
+// chunk is still in flight.
+const NumberFlow = lazy(() => import('@number-flow/react'))
 
 function isRecordOfStrings(value: unknown): value is Record<string, string> {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
@@ -94,10 +102,20 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
   const [state, addOptimistic] = useOptimistic(baseState, applyLikeOptimistic)
 
   const tokenRef = useRef<string | null>(null)
+  // Interaction sequencing: every like/unlike dispatch bumps
+  // `interactionSeqRef`, and a validate request snapshots it on the way
+  // out. If the user interacted while the request was in flight, the
+  // verdict predates the current state and is discarded — it must not
+  // flip the button back or delete the freshly issued token.
+  const interactionSeqRef = useRef(0)
+  const validateSeqRef = useRef(0)
 
   const validate = useMutation({
     ...orpcQuery.likes.validate.mutationOptions(),
     onSuccess: (data: ValidateLikeTokenOutput) => {
+      if (validateSeqRef.current !== interactionSeqRef.current) {
+        return
+      }
       setBaseState((prev) => (data.key === prev.commentKey ? { ...prev, liked: data.valid } : prev))
       if (data.valid) {
         const stored = readLikeToken(permalink)
@@ -150,6 +168,7 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
       return
     }
     tokenRef.current = token
+    validateSeqRef.current = interactionSeqRef.current
     validateMutate({ key: commentKey, token })
     // Re-validate when permalink changes; identity-stable refs only.
   }, [permalink, commentKey, validateMutate])
@@ -168,6 +187,7 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
       if (!token) {
         return
       }
+      interactionSeqRef.current += 1
       startTransition(async () => {
         addOptimistic('unlike')
         try {
@@ -179,6 +199,7 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
         }
       })
     } else {
+      interactionSeqRef.current += 1
       startTransition(async () => {
         addOptimistic('like')
         try {
@@ -218,7 +239,9 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
           strokeWidth={0}
           aria-hidden
         />
-        <NumberFlow value={state.likes} />
+        <Suspense fallback={<span>{state.likes}</span>}>
+          <NumberFlow value={state.likes} />
+        </Suspense>
       </Button>
     </div>
   )

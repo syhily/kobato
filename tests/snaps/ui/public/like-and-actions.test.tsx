@@ -86,14 +86,14 @@ describe('snapshot: LikeButton', () => {
     expect(html).toContain('aria-label="点赞"')
     expect(html).toContain('aria-pressed="false"')
     expect(html).toContain('data-liked="false"')
-    // NumberFlow renders each digit as a column with aria-label carrying the
-    // full value.
-    expect(html).toContain('aria-label="42"')
+    // NumberFlow is lazy-loaded (interaction-only chrome), so SSR renders
+    // the Suspense fallback: the plain count.
+    expect(html).toContain('<span>42</span>')
   })
 
   it('renders the zero-count state without crashing', () => {
     const html = stableHtml(renderToHtml(<LikeButton permalink="/posts/hello" commentKey="post-1" likes={0} />))
-    expect(html).toContain('aria-label="0"')
+    expect(html).toContain('<span>0</span>')
     expect(html).toContain('点赞')
     // Button is not disabled in the idle (non-pending) state.
     expect(html).not.toContain('disabled=""')
