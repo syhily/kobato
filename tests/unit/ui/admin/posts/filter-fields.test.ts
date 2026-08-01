@@ -108,6 +108,10 @@ describe('ui/admin/posts/postFiltersFromSearch', () => {
     expect(pills[0]).toMatchObject({ field: 'status', value })
   })
 
+  it('maps the pre-rename hidden status to unlisted (fix-review)', () => {
+    expect(postFiltersFromSearch('?status=hidden')).toEqual([{ field: 'status', value: 'unlisted', label: '不列出' }])
+  })
+
   it('ignores unknown and all statuses', () => {
     expect(postFiltersFromSearch('?status=unknown')).toEqual([])
     expect(postFiltersFromSearch('?status=all')).toEqual([])

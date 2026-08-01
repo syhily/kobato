@@ -117,11 +117,20 @@ export function postFiltersFromSearch(search: string): ActiveFilter<PostFilterFi
   const params = new URLSearchParams(search)
   const pills: ActiveFilter<PostFilterFieldKey>[] = []
   const status = params.get('status')
-  if (status === 'published' || status === 'draft' || status === 'unlisted' || status === 'deleted') {
+  // Deep links bookmarked before the P2-11 rename still carry the old
+  // `hidden` key — map it to `unlisted` so they keep their filter
+  // instead of silently landing unfiltered (fix-review).
+  const normalizedStatus = status === 'hidden' ? 'unlisted' : status
+  if (
+    normalizedStatus === 'published' ||
+    normalizedStatus === 'draft' ||
+    normalizedStatus === 'unlisted' ||
+    normalizedStatus === 'deleted'
+  ) {
     pills.push({
       field: 'status',
-      value: status,
-      label: POST_STATUS_OPTIONS.find((o) => o.value === status)?.label ?? status,
+      value: normalizedStatus,
+      label: POST_STATUS_OPTIONS.find((o) => o.value === normalizedStatus)?.label ?? normalizedStatus,
     })
   }
   const category = params.get('category')
