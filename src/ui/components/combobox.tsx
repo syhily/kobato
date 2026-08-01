@@ -2,9 +2,9 @@ import type { ComponentProps } from 'react'
 
 import { Combobox as BaseCombobox } from '@base-ui/react/combobox'
 import { CheckIcon, ChevronDownIcon, SearchIcon } from 'lucide-react'
-import { motion } from 'motion/react'
 
 import { transitions } from '@/client/lib/motion'
+import { LazyMotionDiv } from '@/ui/components/lazy-motion'
 import { cn } from '@/ui/lib/cn'
 
 function Combobox<Value>(props: ComponentProps<typeof BaseCombobox.Root<Value, false>>) {
@@ -67,7 +67,7 @@ function ComboboxContent<Item>({
           )}
           {...props}
         >
-          <motion.div
+          <LazyMotionDiv
             initial={{ y: 6, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ ...transitions.menu, delay: 0.02 }}
@@ -95,7 +95,7 @@ function ComboboxContent<Item>({
             <BaseCombobox.List className="flex max-h-[min(var(--available-height),20rem)] flex-col gap-0.5 overflow-y-auto p-1">
               {children}
             </BaseCombobox.List>
-          </motion.div>
+          </LazyMotionDiv>
         </BaseCombobox.Popup>
       </BaseCombobox.Positioner>
     </BaseCombobox.Portal>

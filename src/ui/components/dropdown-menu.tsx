@@ -2,9 +2,9 @@ import type { ComponentProps } from 'react'
 
 import { Menu as BaseMenu } from '@base-ui/react/menu'
 import { CheckIcon, ChevronRightIcon, CircleIcon } from 'lucide-react'
-import { motion } from 'motion/react'
 
 import { transitions } from '@/client/lib/motion'
+import { LazyMotionDiv } from '@/ui/components/lazy-motion'
 import { cn } from '@/ui/lib/cn'
 
 function DropdownMenu({ ...props }: ComponentProps<typeof BaseMenu.Root>) {
@@ -40,14 +40,14 @@ function DropdownMenuContent({
           )}
           {...props}
         >
-          <motion.div
+          <LazyMotionDiv
             initial={{ y: 6, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ ...transitions.menu, delay: 0.02 }}
             className="contents"
           >
             <DropdownMenuGroup>{children}</DropdownMenuGroup>
-          </motion.div>
+          </LazyMotionDiv>
         </BaseMenu.Popup>
       </BaseMenu.Positioner>
     </DropdownMenuPortal>
@@ -198,14 +198,14 @@ function DropdownMenuSubContent({ className, children, ...props }: ComponentProp
           )}
           {...props}
         >
-          <motion.div
+          <LazyMotionDiv
             initial={{ y: 4, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ ...transitions.menu, delay: 0.02 }}
             className="contents"
           >
             {children}
-          </motion.div>
+          </LazyMotionDiv>
         </BaseMenu.Popup>
       </BaseMenu.Positioner>
     </BaseMenu.Portal>

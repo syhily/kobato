@@ -2,7 +2,6 @@ import '@/shared/zod-config'
 import type { MiddlewareFunction, ShouldRevalidateFunctionArgs } from 'react-router'
 
 import { QueryClientProvider } from '@tanstack/react-query'
-import { MotionConfig } from 'motion/react'
 import { lazy, Suspense, useLayoutEffect, useState } from 'react'
 import { preconnect, prefetchDNS } from 'react-dom'
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useMatches, useRouteLoaderData } from 'react-router'
@@ -15,13 +14,14 @@ import { useFocusHash } from '@/client/hooks/use-focus-hash'
 import { useIosNoZoomOnFocus } from '@/client/hooks/use-ios-no-zoom'
 import { defaultTransition } from '@/client/lib/motion'
 import { resolveFontsForRender } from '@/server/domains/fonts/services/render'
-import { redactSecretsFromBundle } from '@/server/domains/settings/services/core'
+import { redactSecretsFromBundle } from '@/server/domains/settings/services/masks'
 import { getRequestContext } from '@/server/http/request-context'
 import { getCriticalChunksForPathname, getWarmupManifest } from '@/server/render/warmup/manifest'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { BlogSettingsProvider } from '@/shared/lib/blog-config-context'
 import { bundleFromMatches, routeMeta } from '@/shared/seo/meta'
 import { isRecord } from '@/shared/utils/type-guards'
+import { LazyMotionConfig } from '@/ui/components/lazy-motion'
 import { ThemeProvider, THEME_COOKIE } from '@/ui/lib/ThemeProvider'
 import { ChunkReloadOverlay } from '@/ui/public/chrome/ChunkReloadOverlay'
 import { ErrorView } from '@/ui/public/chrome/ErrorView'
@@ -266,10 +266,10 @@ export default function App({ loaderData }: Route.ComponentProps) {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider initialResolved={loaderData.theme ?? undefined}>
         <BlogSettingsProvider value={loaderData.blogSettings ?? undefined}>
-          <MotionConfig reducedMotion="user" transition={defaultTransition}>
+          <LazyMotionConfig reducedMotion="user" transition={defaultTransition}>
             <NavigationSplash />
             <Outlet />
-          </MotionConfig>
+          </LazyMotionConfig>
         </BlogSettingsProvider>
       </ThemeProvider>
     </QueryClientProvider>
@@ -286,7 +286,7 @@ export function ErrorBoundary({ error, loaderData }: Route.ErrorBoundaryProps) {
   return (
     <ThemeProvider initialResolved={loaderData?.theme ?? undefined}>
       <BlogSettingsProvider value={blogSettings ?? undefined}>
-        <MotionConfig reducedMotion="user" transition={defaultTransition}>
+        <LazyMotionConfig reducedMotion="user" transition={defaultTransition}>
           {blogSettings ? (
             <Suspense fallback={body}>
               <PublicErrorLayout currentUser={loaderData?.currentUser ?? null} pathname="/" search="">
@@ -296,7 +296,7 @@ export function ErrorBoundary({ error, loaderData }: Route.ErrorBoundaryProps) {
           ) : (
             body
           )}
-        </MotionConfig>
+        </LazyMotionConfig>
       </BlogSettingsProvider>
     </ThemeProvider>
   )

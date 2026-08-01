@@ -9,7 +9,7 @@ import { Button } from '@/ui/components/button'
 import { IconButtonContent } from '@/ui/components/icon-button-content'
 import { Input } from '@/ui/components/input'
 import { cn } from '@/ui/lib/cn'
-import { Popup } from '@/ui/public/widgets/Popup'
+import { LazyPopup as Popup } from '@/ui/public/widgets/LazyPopup'
 
 const sidebarSearchInputClass = cn(
   'relative block w-full',

@@ -1,9 +1,9 @@
 import type { ComponentProps } from 'react'
 
 import { Popover as BasePopover } from '@base-ui/react/popover'
-import { motion } from 'motion/react'
 
 import { transitions } from '@/client/lib/motion'
+import { LazyMotionDiv } from '@/ui/components/lazy-motion'
 import { cn } from '@/ui/lib/cn'
 
 function Popover({ ...props }: ComponentProps<typeof BasePopover.Root>) {
@@ -42,14 +42,14 @@ function PopoverContent({
           )}
           {...props}
         >
-          <motion.div
+          <LazyMotionDiv
             initial={{ y: 6, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ ...transitions.menu, delay: 0.02 }}
             className="contents"
           >
             {children}
-          </motion.div>
+          </LazyMotionDiv>
         </BasePopover.Popup>
       </BasePopover.Positioner>
     </BasePopover.Portal>

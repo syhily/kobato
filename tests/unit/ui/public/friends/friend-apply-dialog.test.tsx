@@ -53,15 +53,17 @@ function renderForm() {
 
 function openDialog() {
   fireEvent.click(screen.getByRole('button', { name: '申请友链' }))
-  return screen.getByRole('dialog')
+  // The Popup is lazy-loaded (the motion runtime sits behind its lazy
+  // boundary), so the dialog appears only once the chunk resolves.
+  return screen.findByRole('dialog')
 }
 
 describe('FriendApplyForm dialog', () => {
-  it('opens the dialog with the application fields and the honeypot tucked away', () => {
+  it('opens the dialog with the application fields and the honeypot tucked away', async () => {
     renderForm()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 
-    openDialog()
+    await openDialog()
 
     expect(screen.getByPlaceholderText('站名')).toBeInTheDocument()
     expect(screen.getByPlaceholderText('主页 URL')).toBeInTheDocument()
@@ -73,13 +75,13 @@ describe('FriendApplyForm dialog', () => {
     expect(honeypot).toHaveAttribute('tabindex', '-1')
   })
 
-  it('closes on Escape and reopens with the form (state resets on close)', () => {
+  it('closes on Escape and reopens with the form (state resets on close)', async () => {
     renderForm()
-    openDialog()
+    await openDialog()
     fireEvent.keyDown(document, { key: 'Escape' })
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 
-    openDialog()
+    await openDialog()
     expect(screen.getByPlaceholderText('站名')).toBeInTheDocument()
   })
 })

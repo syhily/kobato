@@ -7,7 +7,7 @@ import type { VariantProps } from '@/ui/lib/cva'
 
 import { Button, buttonVariants } from '@/ui/components/button'
 import { IconButtonContent } from '@/ui/components/icon-button-content'
-import { Popup } from '@/ui/public/widgets/Popup'
+import { LazyPopup as Popup } from '@/ui/public/widgets/LazyPopup'
 
 export interface QRDialogProps extends VariantProps<typeof buttonVariants> {
   url: string

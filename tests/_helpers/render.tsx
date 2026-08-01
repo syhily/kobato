@@ -103,6 +103,32 @@ export async function prerenderToHtml(element: ReactNode): Promise<string> {
 }
 
 /**
+ * The router-wrapped counterpart of `prerenderToHtml`: stream-render under
+ * a memory router so Suspense boundaries resolve the way production SSR
+ * delivers them (shell first, resolved boundary streamed in). Use this —
+ * not `renderInRouter` — when the tree contains a lazily-loaded component
+ * (the synchronous helper can only render the boundary's fallback).
+ */
+export async function prerenderInRouter(node: ReactNode, initialPath: string = '/'): Promise<string> {
+  const routes: RouteObject[] = [{ path: '*', element: <>{node}</> }]
+  const router = createMemoryRouter(routes, { initialEntries: [initialPath] })
+  const { prelude } = await prerenderToNodeStream(
+    <QueryClientProvider client={testQueryClient}>
+      <ThemeProvider>
+        <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>
+          <RouterProvider router={router} />
+        </BlogSettingsProvider>
+      </ThemeProvider>
+    </QueryClientProvider>,
+  )
+  const chunks: Buffer[] = []
+  for await (const chunk of prelude) {
+    chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : (chunk as Buffer))
+  }
+  return Buffer.concat(chunks).toString('utf8')
+}
+
+/**
  * Strip volatile React server attributes (`data-react-*`, hydration markers,
  * source-map URL fragments) so snapshots survive React minor upgrades.
  * Pure regex-based; does not rebuild the DOM.

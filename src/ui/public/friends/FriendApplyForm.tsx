@@ -5,7 +5,7 @@ import { orpcQuery } from '@/client/api/orpc-query'
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
 import { Textarea } from '@/ui/components/textarea'
-import { Popup } from '@/ui/public/widgets/Popup'
+import { LazyPopup as Popup } from '@/ui/public/widgets/LazyPopup'
 
 // Public friend-link application below the friend grid: a signup button opens a
 // Popup holding the form, an off-screen honeypot (`contact`), and a success state.
