@@ -356,6 +356,9 @@ describe('ui/admin/editor-shell/useEditorShellPersist — manual save advances t
       draft: { body: divergedBody },
     })
     const { result } = renderHook(() => useEditorShellPersist(args))
+    // Discount the mount-time opening-body seed (covered by its own suite);
+    // this test asserts the manual save's baseline advance only.
+    autosaveMockReturns.markPersisted.mockClear()
     act(() => result.current.persistSave())
 
     act(() => slots[1].config?.onSuccess?.(savedPayload({ body: divergedBody }) as never))
@@ -372,6 +375,7 @@ describe('ui/admin/editor-shell/useEditorShellPersist — manual save advances t
       draft: { body: [block('b1', 'same')] },
     })
     const { result } = renderHook(() => useEditorShellPersist(args))
+    autosaveMockReturns.markPersisted.mockClear() // mount-time seed; see the seed suite
     act(() => result.current.persistSave())
     act(() => slots[0].config?.onSuccess?.(savedEntity() as never))
     expect(autosaveMockReturns.markPersisted).not.toHaveBeenCalled()
@@ -383,6 +387,7 @@ describe('ui/admin/editor-shell/useEditorShellPersist — manual save advances t
       draft: { body: [block('new', 'new text')] },
     })
     const { result } = renderHook(() => useEditorShellPersist(args))
+    autosaveMockReturns.markPersisted.mockClear() // mount-time seed; see the seed suite
     act(() => result.current.persistSave())
 
     act(() =>
@@ -398,6 +403,43 @@ describe('ui/admin/editor-shell/useEditorShellPersist — manual save advances t
     // user resolves the conflict must not mark a stale body reference.
     act(() => slots[1].config?.onSuccess?.(savedPayload() as never))
     expect(autosaveMockReturns.markPersisted).not.toHaveBeenCalled()
+  })
+})
+
+describe('ui/admin/editor-shell/useEditorShellPersist — opening body seeds the autosave baseline', () => {
+  // Audit P1-1: with the baseline starting null, the first debounce tick 5 s
+  // after every editor open fired an unconditional PATCH even with zero
+  // edits. Seeding the engine with the opening body makes that tick hit the
+  // reference check instead.
+  it('marks the opening body persisted on mount so the first autosave tick is a no-op', () => {
+    const openingBody = [block('b1', 'server state')]
+    const args = makeArgs({
+      detail: makeDetail(openingBody),
+      draft: { body: openingBody },
+    })
+    renderHook(() => useEditorShellPersist(args))
+    expect(autosaveMockReturns.markPersisted).toHaveBeenCalledTimes(1)
+    expect(autosaveMockReturns.markPersisted).toHaveBeenCalledWith(openingBody)
+  })
+
+  it('does not seed the baseline in create mode (no server state to compare against)', () => {
+    renderHook(() => useEditorShellPersist(makeArgs()))
+    expect(autosaveMockReturns.markPersisted).not.toHaveBeenCalled()
+  })
+
+  it('seeds only once — a later body change must not re-seed the baseline', () => {
+    const openingBody = [block('b1', 'server state')]
+    const args = makeArgs({
+      detail: makeDetail(openingBody),
+      draft: { body: openingBody },
+    })
+    const { rerender } = renderHook((props: { args: Args }) => useEditorShellPersist(props.args), {
+      initialProps: { args },
+    })
+    expect(autosaveMockReturns.markPersisted).toHaveBeenCalledTimes(1)
+
+    rerender({ args: { ...args, draft: { ...args.draft, body: [block('b2', 'user edit')] } } })
+    expect(autosaveMockReturns.markPersisted).toHaveBeenCalledTimes(1)
   })
 })
 

@@ -33,20 +33,38 @@ function sanitizeNode(node: Node): Node {
     return node
   }
 
+  // Return the original node when nothing changed so callers can detect a
+  // no-op sanitization by reference (the drop guard relies on this).
+  let changed = false
   const sanitized: Node[] = []
   node.forEach((child) => {
-    sanitized.push(sanitizeNode(child))
+    const next = sanitizeNode(child)
+    if (next !== child) {
+      changed = true
+    }
+    sanitized.push(next)
   })
 
+  if (!changed) {
+    return node
+  }
   return node.copy(Fragment.from(sanitized))
 }
 
 function sanitizeSlice(slice: Slice): Slice {
+  let changed = false
   const sanitized: Node[] = []
   slice.content.forEach((child) => {
-    sanitized.push(sanitizeNode(child))
+    const next = sanitizeNode(child)
+    if (next !== child) {
+      changed = true
+    }
+    sanitized.push(next)
   })
 
+  if (!changed) {
+    return slice
+  }
   return new Slice(Fragment.from(sanitized), slice.openStart, slice.openEnd)
 }
 
@@ -74,6 +92,9 @@ export const TableCellGuardExtension = Extension.create({
               return false
             }
             const sanitized = sanitizeSlice(slice)
+            // Reference-equal means nothing was stripped: leave the drop to
+            // ProseMirror's default handling (selection placement,
+            // openStart/openEnd semantics) and only intercept real changes.
             if (sanitized === slice) {
               return false
             }

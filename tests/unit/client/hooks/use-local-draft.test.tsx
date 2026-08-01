@@ -9,12 +9,14 @@ const draftStore = vi.hoisted(() => ({
   get: vi.fn<(key: string) => Promise<unknown>>(),
   set: vi.fn<(key: string, record: unknown) => Promise<void>>(),
   remove: vi.fn<(key: string) => Promise<void>>(),
+  removeByPrefix: vi.fn<(prefix: string) => Promise<void>>(),
 }))
 
 vi.mock('@/client/lib/draft-store', () => ({
   getDraft: (key: string) => draftStore.get(key),
   setDraft: (key: string, record: unknown) => draftStore.set(key, record),
   removeDraft: (key: string) => draftStore.remove(key),
+  removeDraftsByPrefix: (prefix: string) => draftStore.removeByPrefix(prefix),
 }))
 
 vi.stubGlobal('BroadcastChannel', FakeBroadcastChannel)
@@ -94,12 +96,16 @@ describe('useLocalDraft — synchronous render branches', () => {
     expect(draftStore.remove).not.toHaveBeenCalled()
   })
 
-  it('clearDraft removes the draft from storage and broadcasts the clear once a key is derived', () => {
+  it('clearDraft sweeps every rotated-token draft for the entity and broadcasts the clear once a key is derived', () => {
+    // Audit P1-15: the key embeds the clientRevisionToken, so clearing only
+    // the current-token key orphans every rotated predecessor. The edit
+    // adapter clears by entity prefix instead.
     const result = renderHook(() =>
       useLocalDraft(config, { entityId: '1', clientRevisionToken: 'rev1', body: emptyBody }),
     )
     result.clearDraft()
-    expect(draftStore.remove).toHaveBeenCalledWith('cms-post-draft:1:rev1')
+    expect(draftStore.removeByPrefix).toHaveBeenCalledWith('cms-post-draft:1:')
+    expect(draftStore.remove).not.toHaveBeenCalled()
     // A BroadcastChannel was opened to fan out the clear event.
     expect(FakeBroadcastChannel.instances.length).toBeGreaterThan(0)
   })

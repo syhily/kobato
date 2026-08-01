@@ -306,6 +306,23 @@ export function useEditorShellPersist<
     markPersistedRef.current = markAutosavePersisted
   }, [markAutosavePersisted])
 
+  // Seed the engine's persisted baseline with the opening body (audit P1-1):
+  // the editor mounts with server state, so the first debounce tick with zero
+  // edits must hit the reference check and no-op instead of firing an
+  // unconditional PATCH (which also rotates the revision token server-side
+  // and orphans the previous IndexedDB draft — P1-15). Seeded once per edit
+  // session: later body changes are real edits the engine must flush.
+  const seededOpeningBodyRef = useRef(false)
+  useEffect(() => {
+    if (!isEditing || seededOpeningBodyRef.current) {
+      return
+    }
+    seededOpeningBodyRef.current = true
+    markPersistedRef.current(body)
+    // markPersistedRef is synced by the effect above; the ref guard keeps
+    // the seed once-only even though this re-runs on every body change.
+  }, [isEditing, body])
+
   // --- Persist handlers ----------------------------------------------------
   const persistCreate = useCallback(async () => {
     if (isEditing || isCreating) {

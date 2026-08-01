@@ -166,3 +166,28 @@ export async function removeDraft(key: string): Promise<void> {
     // Silently ignore.
   }
 }
+
+/**
+ * Remove every draft whose key starts with `prefix`. Edit-mode keys embed
+ * the rotating clientRevisionToken (`<prefix><entityId>:<token>`), so a
+ * per-key clear orphans every rotated predecessor (audit P1-15); the edit
+ * adapter clears with the stable `<keyPrefix><entityId>:` prefix instead.
+ */
+export async function removeDraftsByPrefix(prefix: string): Promise<void> {
+  try {
+    const db = await getDb()
+    const keys = await db.getAllKeys(STORE_NAME, IDBKeyRange.bound(prefix, `${prefix}\uffff`))
+    // The range end pads the prefix with U+FFFF so every key starting with
+    // `prefix` falls inside the bound.
+    if (keys.length === 0) {
+      return
+    }
+    const tx = db.transaction(STORE_NAME, 'readwrite')
+    for (const key of keys) {
+      void tx.store.delete(key)
+    }
+    await tx.done
+  } catch {
+    // Silently ignore.
+  }
+}

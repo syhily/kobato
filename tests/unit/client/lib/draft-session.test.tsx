@@ -12,12 +12,14 @@ const draftStore = vi.hoisted(() => ({
   get: vi.fn<(key: string) => Promise<unknown>>(),
   set: vi.fn<(key: string, record: unknown) => Promise<void>>(),
   remove: vi.fn<(key: string) => Promise<void>>(),
+  removeByPrefix: vi.fn<(prefix: string) => Promise<void>>(),
 }))
 
 vi.mock('@/client/lib/draft-store', () => ({
   getDraft: (key: string) => draftStore.get(key),
   setDraft: (key: string, record: unknown) => draftStore.set(key, record),
   removeDraft: (key: string) => draftStore.remove(key),
+  removeDraftsByPrefix: (prefix: string) => draftStore.removeByPrefix(prefix),
 }))
 
 vi.stubGlobal('BroadcastChannel', FakeBroadcastChannel)
@@ -81,6 +83,7 @@ beforeEach(() => {
   draftStore.get.mockResolvedValue(null)
   draftStore.set.mockResolvedValue(undefined)
   draftStore.remove.mockResolvedValue(undefined)
+  draftStore.removeByPrefix.mockResolvedValue(undefined)
 })
 
 describe('draft-session — key derivation', () => {
@@ -239,6 +242,21 @@ describe('useDraftSession — broadcast clear protocol', () => {
     expect(draftStore.remove).toHaveBeenCalledWith(KEY)
     expect(first.result.current.loadedDraft).toBeNull()
     expect(second.result.current.loadedDraft).toBeNull()
+  })
+
+  it('clearDraft sweeps every key under clearPrefix when one is supplied (audit P1-15)', async () => {
+    // The edit key embeds the clientRevisionToken, so each rotation leaves
+    // an orphan draft; the edit adapter clears by entity prefix, not by the
+    // current-token key alone.
+    const { result } = renderHook(() => useDraftSession(makeArgs({ clearPrefix: 'cms-post-draft:1:' })))
+    await flushDraftEffects()
+
+    act(() => {
+      result.current.clearDraft()
+    })
+
+    expect(draftStore.removeByPrefix).toHaveBeenCalledWith('cms-post-draft:1:')
+    expect(draftStore.remove).not.toHaveBeenCalled()
   })
 
   it('does not throw when BroadcastChannel is unavailable', async () => {

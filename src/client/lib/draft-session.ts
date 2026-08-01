@@ -2,7 +2,14 @@ import type { ZodType } from 'zod'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { getDraft, removeDraft, setDraft, type DraftRecord, type DraftType } from '@/client/lib/draft-store'
+import {
+  getDraft,
+  removeDraft,
+  removeDraftsByPrefix,
+  setDraft,
+  type DraftRecord,
+  type DraftType,
+} from '@/client/lib/draft-store'
 
 /**
  * One owner for the draft-record lifecycle: load → version/schema-check →
@@ -27,6 +34,13 @@ interface BroadcastMessage {
 export interface UseDraftSessionArgs<TBody, TLoaded> {
   /** Storage key for this session, or null while the draft surface is inactive. */
   key: string | null
+  /**
+   * When the key embeds a rotating token (`<prefix><entityId>:<token>`),
+   * the adapter supplies the stable entity prefix here so `clearDraft`
+   * sweeps orphaned rotated predecessors, not just the current-token key
+   * (audit P1-15). Omit for token-free keys — the clear stays per-key.
+   */
+  clearPrefix?: string
   broadcastName: string
   draftType: DraftType
   bodySchema: ZodType<TBody>
@@ -48,6 +62,7 @@ export interface UseDraftSessionResult<TLoaded> {
 
 export function useDraftSession<TBody, TLoaded>({
   key,
+  clearPrefix,
   broadcastName,
   draftType,
   bodySchema,
@@ -195,7 +210,11 @@ export function useDraftSession<TBody, TLoaded>({
     if (key === null) {
       return
     }
-    void removeDraft(key)
+    if (clearPrefix !== undefined) {
+      void removeDraftsByPrefix(clearPrefix)
+    } else {
+      void removeDraft(key)
+    }
     setLoadedDraft(null)
     try {
       const bc = new BroadcastChannel(broadcastName)
@@ -205,7 +224,7 @@ export function useDraftSession<TBody, TLoaded>({
     } catch {
       // Ignore.
     }
-  }, [key, broadcastName])
+  }, [key, clearPrefix, broadcastName])
 
   return { loadedDraft, clearDraft }
 }

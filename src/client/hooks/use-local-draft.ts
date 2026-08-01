@@ -62,6 +62,10 @@ export function useLocalDraft<TBody>(
 
   const { loadedDraft, clearDraft } = useDraftSession<TBody, StoredDraft<TBody>>({
     key,
+    // The clear prefix is the stable `<keyPrefix><entityId>:` portion: the
+    // key embeds the rotating revision token, so clearing by prefix also
+    // sweeps orphaned drafts written under rotated-out tokens (audit P1-15).
+    clearPrefix: entityId === null ? undefined : `${config.keyPrefix}${entityId}:`,
     broadcastName: config.broadcastName,
     draftType: config.editType,
     bodySchema: config.bodySchema,

@@ -1,5 +1,5 @@
 import { MaximizeIcon, MinimizeIcon } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { useCallback, useSyncExternalStore } from 'react'
 
 import { ToolbarButton } from '@/ui/admin/editor/toolbar/ToolbarButton'
 
@@ -7,41 +7,71 @@ export type ToolbarDensity = 'compact' | 'full'
 
 const TOOLBAR_DENSITY_STORAGE_KEY = 'kobato/admin/page-editor/toolbar-density'
 
-// Persistent toolbar density preference. Defaults to `'full'` so SSR +
-// hydration agree on the initial render; the outer `flex-wrap` container
-// grows to more rows when space is tight.
-export function useToolbarDensityPreference(): [ToolbarDensity, (next: ToolbarDensity) => void] {
-  // Lazy initializer so SSR + first client render agree on the default
-  // (the linter-friendly alternative to setState-in-effect).
-  const [density, setDensityState] = useState<ToolbarDensity>(readDensity)
-  const setDensity = useCallback((next: ToolbarDensity) => {
-    setDensityState(next)
-    if (typeof window === 'undefined') {
-      return
-    }
+// Snapshot cache: `useSyncExternalStore` requires `getSnapshot` to return a
+// referentially stable value between store changes, so the parsed density
+// is cached against the raw storage string (same idiom as
+// `use-comment-guest.ts`).
+let cachedRaw: string | null | undefined
+let cachedDensity: ToolbarDensity = 'full'
+
+function getSnapshot(): ToolbarDensity {
+  let raw: string | null = null
+  if (typeof window !== 'undefined') {
     try {
-      window.localStorage.setItem(TOOLBAR_DENSITY_STORAGE_KEY, next)
+      raw = window.localStorage.getItem(TOOLBAR_DENSITY_STORAGE_KEY)
     } catch {
-      // localStorage may throw in private mode / quota-exceeded; the
-      // preference is best-effort, so silently move on.
+      // localStorage may throw in private mode — treat as nothing stored.
+      raw = null
     }
-  }, [])
-  return [density, setDensity]
+  }
+  if (raw !== cachedRaw) {
+    cachedRaw = raw
+    cachedDensity = raw === 'compact' || raw === 'full' ? raw : 'full'
+  }
+  return cachedDensity
 }
 
-function readDensity(): ToolbarDensity {
-  if (typeof window === 'undefined') {
-    return 'full'
-  }
-  try {
-    const raw = window.localStorage.getItem(TOOLBAR_DENSITY_STORAGE_KEY)
-    if (raw === 'compact' || raw === 'full') {
-      return raw
-    }
-  } catch {
-    // ignore — return the safe default.
-  }
+function getServerSnapshot(): ToolbarDensity {
   return 'full'
+}
+
+const listeners = new Set<() => void>()
+
+function subscribe(listener: () => void): () => void {
+  listeners.add(listener)
+  return () => {
+    listeners.delete(listener)
+  }
+}
+
+function emitChange(): void {
+  for (const listener of listeners) {
+    listener()
+  }
+}
+
+// Persistent toolbar density preference. SSR-consistent via
+// `useSyncExternalStore` (audit P1-4): the server snapshot is always
+// `'full'`, so SSR and the hydration render agree even for users WITH a
+// stored preference, and React swaps to the stored value right after
+// hydration — no mismatch. SPA navigations mount client-side and read the
+// client snapshot on the first render, so the preference applies instantly
+// there. The outer `flex-wrap` container grows to more rows when space is
+// tight.
+export function useToolbarDensityPreference(): [ToolbarDensity, (next: ToolbarDensity) => void] {
+  const density = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
+  const setDensity = useCallback((next: ToolbarDensity) => {
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage.setItem(TOOLBAR_DENSITY_STORAGE_KEY, next)
+      } catch {
+        // localStorage may throw in private mode / quota-exceeded; the
+        // preference is best-effort, so silently move on.
+      }
+    }
+    emitChange()
+  }, [])
+  return [density, setDensity]
 }
 
 interface DensityToggleButtonProps {
