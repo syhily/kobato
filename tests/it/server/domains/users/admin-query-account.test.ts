@@ -257,6 +257,23 @@ describe('users/services/admin — updateUserRoleWithGuard', () => {
     const updated = await admin.updateUserRoleWithGuard(db, b.id, 'visitor', String(a.id))
     expect(updated?.role).toBe('visitor')
   })
+
+  it('leaves exactly one admin when the last two admins are demoted concurrently', async () => {
+    const a = await seedUser({ name: 'A', email: 'race-a@example.com', role: 'admin' })
+    const b = await seedUser({ name: 'B', email: 'race-b@example.com', role: 'admin' })
+
+    const results = await Promise.allSettled([
+      admin.updateUserRoleWithGuard(db, a.id, 'author', String(b.id)),
+      admin.updateUserRoleWithGuard(db, b.id, 'author', String(a.id)),
+    ])
+
+    const fulfilled = results.filter((r) => r.status === 'fulfilled')
+    const rejected = results.filter((r) => r.status === 'rejected')
+    expect(fulfilled).toHaveLength(1)
+    expect(rejected).toHaveLength(1)
+    expect(((rejected[0] as PromiseRejectedResult).reason as Error).message).toMatch(/不能降级唯一的管理员/)
+    expect(userOps.countAdmins(db)).toBe(1)
+  })
 })
 
 describe('users/services/admin — softDeleteUserWithGuard', () => {
@@ -275,6 +292,23 @@ describe('users/services/admin — softDeleteUserWithGuard', () => {
     const b = await seedUser({ name: 'B', email: 'b@example.com', role: 'author' })
     const result = await admin.softDeleteUserWithGuard(db, b.id, String(a.id))
     expect(result.previousRole).toBe('author')
+  })
+
+  it('leaves exactly one admin when the last two admins are deleted concurrently', async () => {
+    const a = await seedUser({ name: 'A', email: 'race-a@example.com', role: 'admin' })
+    const b = await seedUser({ name: 'B', email: 'race-b@example.com', role: 'admin' })
+
+    const results = await Promise.allSettled([
+      admin.softDeleteUserWithGuard(db, a.id, String(b.id)),
+      admin.softDeleteUserWithGuard(db, b.id, String(a.id)),
+    ])
+
+    const fulfilled = results.filter((r) => r.status === 'fulfilled')
+    const rejected = results.filter((r) => r.status === 'rejected')
+    expect(fulfilled).toHaveLength(1)
+    expect(rejected).toHaveLength(1)
+    expect(((rejected[0] as PromiseRejectedResult).reason as Error).message).toMatch(/不能删除唯一的管理员/)
+    expect(userOps.countAdmins(db)).toBe(1)
   })
 })
 

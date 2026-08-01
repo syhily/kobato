@@ -41,6 +41,12 @@ export async function findUserById(db: Database, id: number): Promise<User | nul
   return rows[0] ?? null
 }
 
+// Sync (node:sqlite): called inside the last-admin guard transactions.
+export function findUserByIdForUpdate(db: Database, id: number): User | null {
+  const rows = db.select().from(user).where(eq(user.id, id)).limit(1).all()
+  return rows[0] ?? null
+}
+
 const safeUserColumns = {
   id: user.id,
   createdAt: user.createdAt,
@@ -220,12 +226,15 @@ export async function updateUserById(db: Database, id: number, patch: UserUpdate
   return updated[0] ?? null
 }
 
-export async function softDeleteUserById(db: Database, id: number): Promise<boolean> {
-  const updated = await db
+// Sync (node:sqlite): called inside the last-admin guard transaction,
+// and directly by the invite rollback path.
+export function softDeleteUserById(db: Database, id: number): boolean {
+  const updated = db
     .update(user)
     .set({ deletedAt: new Date() })
     .where(and(eq(user.id, id), isNull(user.deletedAt)))
     .returning({ id: user.id })
+    .all()
   return updated.length > 0
 }
 
@@ -243,19 +252,18 @@ export async function setUserMuted(db: Database, id: number, muted: boolean): Pr
   return updated[0] ?? null
 }
 
-export async function countAdmins(db: Database): Promise<number> {
-  const rows = await db
+// Sync (node:sqlite): called inside the last-admin guard transactions.
+export function countAdmins(db: Database): number {
+  const rows = db
     .select({ count: count() })
     .from(user)
     .where(and(eq(user.role, 'admin'), isNull(user.deletedAt)))
+    .all()
   return rows[0]?.count ?? 0
 }
 
-export async function updateUserRole(
-  db: Database,
-  id: number,
-  role: 'admin' | 'author' | 'visitor' | null,
-): Promise<User | null> {
-  const updated = await db.update(user).set({ role }).where(eq(user.id, id)).returning()
+// Sync (node:sqlite): called inside the last-admin guard transaction.
+export function updateUserRole(db: Database, id: number, role: 'admin' | 'author' | 'visitor' | null): User | null {
+  const updated = db.update(user).set({ role }).where(eq(user.id, id)).returning().all()
   return updated[0] ?? null
 }

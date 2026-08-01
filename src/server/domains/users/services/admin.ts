@@ -17,7 +17,7 @@ import {
 import {
   countAdmins,
   findUserByEmail,
-  findUserById,
+  findUserByIdForUpdate,
   insertAuthor,
   setUserMuted,
   softDeleteUserById,
@@ -135,17 +135,22 @@ export async function updateUserRoleWithGuard(
   if (actorId === String(targetId)) {
     throw new DomainError('FORBIDDEN', '不能修改自己的角色。')
   }
-  const target = await findUserById(db, targetId)
-  if (!target) {
-    throw new DomainError('NOT_FOUND', '用户不存在。')
-  }
-  if (target.role === 'admin' && newRole !== 'admin') {
-    const adminCount = await countAdmins(db)
-    if (adminCount <= 1) {
-      throw new DomainError('CONFLICT', '不能降级唯一的管理员。')
+  // Last-admin guard and the role write share ONE sync transaction
+  // (node:sqlite): two concurrent demotions can no longer both pass the
+  // count check and zero the admin set (check-then-act race).
+  const updated = db.transaction((tx) => {
+    const target = findUserByIdForUpdate(tx, targetId)
+    if (!target) {
+      throw new DomainError('NOT_FOUND', '用户不存在。')
     }
-  }
-  const updated = await updateUserRole(db, targetId, newRole)
+    if (target.role === 'admin' && newRole !== 'admin') {
+      const adminCount = countAdmins(tx)
+      if (adminCount <= 1) {
+        throw new DomainError('CONFLICT', '不能降级唯一的管理员。')
+      }
+    }
+    return updateUserRole(tx, targetId, newRole)
+  })
   if (updated) {
     await revokeAllSessionsOfUser(db, targetId)
   }
@@ -187,7 +192,7 @@ export async function inviteAuthorWithRollback(
   const sendResult = await sendAuthorInvite(user, link, inviterName, inviterEmail)
   if (!sendResult.ok) {
     try {
-      await softDeleteUserById(db, user.id)
+      softDeleteUserById(db, user.id)
     } catch (cleanupErr) {
       log.error('author invite cleanup failed — orphaned user row', {
         userId: String(user.id),
@@ -234,20 +239,26 @@ export async function softDeleteUserWithGuard(
   if (actorId === String(targetId)) {
     throw new DomainError('FORBIDDEN', '不能删除自己。')
   }
-  const target = await findUserById(db, targetId)
-  if (!target) {
-    throw new DomainError('NOT_FOUND', '用户不存在')
-  }
-  if (target.role === 'admin') {
-    const adminCount = await countAdmins(db)
-    if (adminCount <= 1) {
-      throw new DomainError('CONFLICT', '不能删除唯一的管理员。')
+  // Same transaction shape as the demote guard above: the count check
+  // and the delete are atomic, so concurrent deletes can't zero the
+  // admin set.
+  const result = db.transaction((tx) => {
+    const target = findUserByIdForUpdate(tx, targetId)
+    if (!target) {
+      throw new DomainError('NOT_FOUND', '用户不存在')
     }
-  }
-  const ok = await softDeleteUserById(db, targetId)
-  if (!ok) {
-    throw new DomainError('NOT_FOUND', '用户不存在或已被删除')
-  }
+    if (target.role === 'admin') {
+      const adminCount = countAdmins(tx)
+      if (adminCount <= 1) {
+        throw new DomainError('CONFLICT', '不能删除唯一的管理员。')
+      }
+    }
+    const ok = softDeleteUserById(tx, targetId)
+    if (!ok) {
+      throw new DomainError('NOT_FOUND', '用户不存在或已被删除')
+    }
+    return { previousRole: target.role }
+  })
   await revokeAllSessionsOfUser(db, targetId)
-  return { previousRole: target.role }
+  return result
 }
