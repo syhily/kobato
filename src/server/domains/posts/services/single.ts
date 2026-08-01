@@ -69,9 +69,43 @@ async function findPostWithRevisionBySlug(
  *  old alias resolves to the same post (the route then 301s to the
  *  canonical slug via `canonicalPostPath`). json_each unpacks the
  *  JSON-array alias column in SQL. */
+function whereSlugOrAlias(slug: string): SQL {
+  return sql`EXISTS (SELECT 1 FROM json_each(${postMetaTable.alias}) WHERE json_each.value = ${slug})`
+}
+
 function findPostWithRevisionBySlugOrAlias(db: Database, slug: string, extraWhere?: SQL) {
-  const aliasWhere = sql`EXISTS (SELECT 1 FROM json_each(${postMetaTable.alias}) WHERE json_each.value = ${slug})`
-  return findPostWithRevisionWhere(db, extraWhere ? and(aliasWhere, extraWhere) : aliasWhere)
+  return findPostWithRevisionWhere(db, extraWhere ? and(whereSlugOrAlias(slug), extraWhere) : whereSlugOrAlias(slug))
+}
+
+/**
+ * Slim live-by-slug ETag probe — `id` + `slug` + `publishedAt` only, the
+ * exact inputs of the public detail route's weak ETag (`post.updated`
+ * projects `meta.publishedAt`). Lets the loader answer a matching
+ * If-None-Match with 304 after one indexed meta read instead of the full
+ * meta+revision+taxonomy load. Slug OR alias match, mirroring
+ * `findPostBySlug`; on an alias hit the returned `slug` differs from the
+ * requested one so the caller skips the early 304 and lets the full load
+ * issue the canonical 301.
+ */
+export async function findPostEtagInputBySlug(
+  db: Database,
+  slug: string,
+): Promise<{ id: number; slug: string; publishedAt: Date } | null> {
+  const columns = { id: postMetaTable.id, slug: postMetaTable.slug, publishedAt: postMetaTable.publishedAt }
+  const rows = await db
+    .select(columns)
+    .from(postMetaTable)
+    .where(and(eq(postMetaTable.slug, slug), livePostWhere()))
+    .limit(1)
+  if (rows[0] !== undefined) {
+    return rows[0]
+  }
+  const aliasRows = await db
+    .select(columns)
+    .from(postMetaTable)
+    .where(and(whereSlugOrAlias(slug), livePostWhere()))
+    .limit(1)
+  return aliasRows[0] ?? null
 }
 
 async function resolveCategoryName(db: Database, categoryId: number | null): Promise<string> {

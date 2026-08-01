@@ -185,7 +185,10 @@ export async function getTagsByNames(db: Database, names: readonly string[]): Pr
     .select({ name: tagTable.name, slug: tagTable.slug })
     .from(tagTable)
     .where(inArray(tagTable.name, uniqueNames))
-  const countsMapPromise = countPostsByTaxonomy(db, { kind: 'tag', gate: 'public' })
+  // Narrow the aggregate to the requested names — counting the whole
+  // taxonomy on every post detail page is a 3-table full scan for a
+  // handful of chips.
+  const countsMapPromise = countPostsByTaxonomy(db, { kind: 'tag', gate: 'public', names: uniqueNames })
   const [tagRows, countsMap] = await Promise.all([tagRowsPromise, countsMapPromise])
 
   if (tagRows.length === 0) {

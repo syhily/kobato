@@ -10,6 +10,7 @@ import { emptySession, regularSession } from '#/_helpers/session'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { page as pageTable } from '@/server/infra/db/schema/page'
 import { post as postTable } from '@/server/infra/db/schema/post'
+import { weakEtag } from '@/server/infra/http/etag'
 
 // post.detail / page.detail loaders form the most-trafficked SSR endpoints.
 // Real engine: posts/pages are seeded rows (meta + published content
@@ -21,6 +22,7 @@ import { post as postTable } from '@/server/infra/db/schema/post'
 
 const mocks = vi.hoisted(() => ({
   resolveSessionContext: vi.fn(),
+  findPostBySlug: vi.fn(),
 }))
 
 // Wrapped (not replaced) so the "no session re-resolution fallback" test
@@ -30,6 +32,17 @@ vi.mock('@/server/domains/auth/primitives', async () => {
     '@/server/domains/auth/primitives',
   )
   return { ...actual, resolveSessionContext: mocks.resolveSessionContext }
+})
+
+// Wrapped (not replaced): the ETag-probe tests assert the full meta load
+// is skipped on a 304 while every other export (the probe itself included)
+// runs for real against the seeded rows.
+vi.mock('@/server/domains/posts/services/single', async () => {
+  const actual = await vi.importActual<typeof import('@/server/domains/posts/services/single')>(
+    '@/server/domains/posts/services/single',
+  )
+  mocks.findPostBySlug.mockImplementation(actual.findPostBySlug)
+  return { ...actual, findPostBySlug: mocks.findPostBySlug }
 })
 
 // Presentational seam — the loader contract under test never renders.
@@ -165,6 +178,98 @@ describe('routes/post.detail loader', () => {
     expect(data.post.title).toBe('Hello')
     expect(data.post.permalink).toBe('/posts/hello')
     expect(data.body).toEqual([])
+  })
+})
+
+// React Router `data()` keeps the loader's response init (status/headers)
+// under `.init` — the ETag the loader stamps on a 200 lives there.
+function loaderEtag(result: unknown): string | null {
+  const init = (result as { init?: { headers?: Record<string, string> } }).init
+  return init?.headers?.ETag ?? null
+}
+
+describe('routes/post.detail loader — ETag probe', () => {
+  it('answers 304 from the slim probe when If-None-Match matches, skipping the full load', async () => {
+    const postId = await seedPost({ slug: 'hello', publishedAt: new Date('2024-01-01') })
+
+    const first = await postRoute.loader(
+      makeLoaderArgs({
+        request: new Request('http://localhost/posts/hello'),
+        session,
+        db,
+        params: { slug: 'hello' },
+      }),
+    )
+    const etag = loaderEtag(first)
+    expect(etag).toBe(weakEtag(['post', String(postId), new Date('2024-01-01')]))
+
+    mocks.findPostBySlug.mockClear()
+    const second = await postRoute
+      .loader(
+        makeLoaderArgs({
+          request: new Request('http://localhost/posts/hello', { headers: { 'If-None-Match': etag! } }),
+          session,
+          db,
+          params: { slug: 'hello' },
+        }),
+      )
+      .then(
+        () => null,
+        (response: unknown) => response,
+      )
+
+    expect(second).toMatchObject({ status: 304 })
+    expect((second as Response).headers.get('ETag')).toBe(etag)
+    // The 304 came from the probe — the full meta+revision load never ran.
+    expect(mocks.findPostBySlug).not.toHaveBeenCalled()
+  })
+
+  it('re-runs the full load and stamps a fresh ETag after the post is republished', async () => {
+    const postId = await seedPost({ slug: 'hello', publishedAt: new Date('2024-01-01') })
+    const staleEtag = weakEtag(['post', String(postId), new Date('2024-01-01')])
+
+    // A republication bumps `published_at` — the ETag input.
+    await db
+      .update(postTable)
+      .set({ publishedAt: new Date('2024-06-01') })
+      .where(eq(postTable.id, postId))
+
+    mocks.findPostBySlug.mockClear()
+    const result = await postRoute.loader(
+      makeLoaderArgs({
+        request: new Request('http://localhost/posts/hello', { headers: { 'If-None-Match': staleEtag } }),
+        session,
+        db,
+        params: { slug: 'hello' },
+      }),
+    )
+
+    expect(mocks.findPostBySlug).toHaveBeenCalled()
+    const freshEtag = loaderEtag(result)
+    expect(freshEtag).not.toBe(staleEtag)
+    expect(freshEtag).toBe(weakEtag(['post', String(postId), new Date('2024-06-01')]))
+  })
+
+  it('does not short-circuit an alias hit — the canonical 301 still fires', async () => {
+    const postId = await seedPost({ slug: 'hello', alias: ['hello-old'], publishedAt: new Date('2024-01-01') })
+    const etag = weakEtag(['post', String(postId), new Date('2024-01-01')])
+
+    const result = await postRoute
+      .loader(
+        makeLoaderArgs({
+          request: new Request('http://localhost/posts/hello-old', { headers: { 'If-None-Match': etag } }),
+          session,
+          db,
+          params: { slug: 'hello-old' },
+        }),
+      )
+      .then(
+        () => null,
+        (response: unknown) => response,
+      )
+
+    expect(result).toMatchObject({ status: 301 })
+    expect((result as Response).headers.get('Location')).toBe('/posts/hello')
   })
 })
 

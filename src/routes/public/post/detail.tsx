@@ -9,7 +9,7 @@ import { resolveImageMetaBySources } from '@/server/domains/images/services/enha
 import { getPublicMusicMetasByIds } from '@/server/domains/music/services/read'
 import { selectSidebarPosts } from '@/server/domains/posts/services/featured'
 import { postLifecycleAdapter } from '@/server/domains/posts/services/lifecycle-adapter'
-import { findPostBySlug } from '@/server/domains/posts/services/single'
+import { findPostBySlug, findPostEtagInputBySlug } from '@/server/domains/posts/services/single'
 import { prerenderMusicPlayerBlocks } from '@/server/domains/pt/prerender'
 import { getTagsByNames, listAllTags } from '@/server/domains/taxonomies/tags/service'
 import { loadPublicDetailData } from '@/server/http/loaders/detail'
@@ -36,6 +36,21 @@ export const headers = detailHeaders
 export async function loader({ request, context, params }: Route.LoaderArgs) {
   const rc = getRequestContext({ request, context })
   const db = rc.db
+
+  // Cheap ETag probe: a repeat request whose If-None-Match still matches
+  // is answered 304 from one slim meta read, before the full load below
+  // (meta+revision join, tags, category, image hydration) ever runs. The
+  // probe inputs — id + publishedAt — are exactly the ETag parts recomputed
+  // on the full path. Alias hits carry a different slug and fall through
+  // to the full load so the canonical 301 still fires.
+  const etagInput = await findPostEtagInputBySlug(db, params.slug)
+  if (etagInput !== null && etagInput.slug === params.slug) {
+    const probeEtag = weakEtag(['post', String(etagInput.id), etagInput.publishedAt])
+    if (ifNoneMatch(request, probeEtag)) {
+      throw notModifiedResponse(probeEtag)
+    }
+  }
+
   let sourcePost = (await findPostBySlug(db, params.slug)) ?? undefined
   let draftMarker: DraftMarker = null
 
@@ -62,6 +77,8 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
 
   const post = toDetailPostShell(clientPost)
 
+  // Same inputs as the early probe above (id + publishedAt) — keep the
+  // two weakEtag calls in sync or repeat visits never see a 304.
   const etag = weakEtag(['post', clientPost.id, post.updated])
   if (ifNoneMatch(request, etag)) {
     throw notModifiedResponse(etag)

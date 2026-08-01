@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, sql } from 'drizzle-orm'
 
 import type { Database } from '@/server/infra/db/database'
 import type { Post, PostVisibilityOptions } from '@/shared/types/catalog'
@@ -79,6 +79,8 @@ export interface CountPostsByTaxonomyOptions {
   gate: 'admin' | 'public'
   /** Narrow the count to a single taxonomy term (e.g. the just-upserted row). */
   name?: string
+  /** Narrow the count to a set of terms (e.g. the tag names a page renders). */
+  names?: readonly string[]
 }
 
 /**
@@ -97,15 +99,23 @@ export async function countPostsByTaxonomy(
       ? livePostWhere({ includeScheduled: true })
       : and(livePostWhere(), eq(postMetaTable.visible, true))!
 
+  if (options.names !== undefined && options.names.length === 0) {
+    return new Map()
+  }
+
   if (options.kind === 'category') {
     const base = db
       .select({ name: categoryTable.name, count: sql<number>`count(${postMetaTable.id})` })
       .from(categoryTable)
       .leftJoin(postMetaTable, and(eq(postMetaTable.categoryId, categoryTable.id), gate))
       .$dynamic()
-    const rows = await (options.name !== undefined ? base.where(eq(categoryTable.name, options.name)) : base).groupBy(
-      categoryTable.name,
-    )
+    const narrowed =
+      options.name !== undefined
+        ? base.where(eq(categoryTable.name, options.name))
+        : options.names !== undefined
+          ? base.where(inArray(categoryTable.name, [...options.names]))
+          : base
+    const rows = await narrowed.groupBy(categoryTable.name)
     const counts = new Map<string, number>()
     for (const row of rows) {
       counts.set(row.name, row.count)
@@ -119,9 +129,13 @@ export async function countPostsByTaxonomy(
     .leftJoin(postTag, eq(postTag.tagId, tagTable.id))
     .leftJoin(postMetaTable, and(eq(postMetaTable.id, postTag.postId), gate))
     .$dynamic()
-  const rows = await (options.name !== undefined ? base.where(eq(tagTable.name, options.name)) : base).groupBy(
-    tagTable.name,
-  )
+  const narrowed =
+    options.name !== undefined
+      ? base.where(eq(tagTable.name, options.name))
+      : options.names !== undefined
+        ? base.where(inArray(tagTable.name, [...options.names]))
+        : base
+  const rows = await narrowed.groupBy(tagTable.name)
   const counts = new Map<string, number>()
   for (const row of rows) {
     counts.set(row.name, row.count)

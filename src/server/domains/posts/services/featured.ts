@@ -1,4 +1,5 @@
-import { and, desc, eq, isNotNull, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, isNotNull, sql } from 'drizzle-orm'
+import { randomInt } from 'node:crypto'
 
 import type { Database } from '@/server/infra/db/database'
 import type { PostMetaRow } from '@/server/infra/db/types'
@@ -113,19 +114,40 @@ export async function selectSidebarPosts(db: Database, count: number): Promise<S
   if (count <= 0) {
     return []
   }
-  // Per-request seed so the sidebar randomises on every page load, matching
-  // the tag-cloud behaviour. Avoids module-level shared state between SSR
-  // requests while keeping the deterministic md5 ordering.
-  const seed = `${Date.now()}:${Math.random()}`
-  const metas = await db
-    .select()
+  const where = and(livePostWhere(), eq(postMetaTable.visible, true))
+  // COUNT + random OFFSET: the previous ORDER BY (id*seed) expression
+  // sort evaluated and ordered the whole table per request, and the
+  // `Date.now():Math.random()` seed string silently degraded to a
+  // millisecond timestamp under SQLite's numeric-prefix parsing. Picking
+  // distinct random offsets touches only the rows actually returned, and
+  // the pick is uniform per request (sidebar randomises on every load).
+  const [totalRow] = await db
+    .select({ total: sql<number>`count(*)` })
     .from(postMetaTable)
-    .where(and(livePostWhere(), eq(postMetaTable.visible, true)))
-    // Deterministic pseudo-random order (SQLite has no md5()): multiply
-    // the id by the seed and take the residue — uniform enough for a
-    // 'featured N posts' pick.
-    .orderBy(sql`(${postMetaTable.id} * ${seed}) % 2147483647`)
-    .limit(count)
+    .where(where)
+  const total = totalRow?.total ?? 0
+  if (total === 0) {
+    return []
+  }
+  const pick = Math.min(count, total)
+  const offsets = new Set<number>()
+  while (offsets.size < pick) {
+    offsets.add(randomInt(total))
+  }
+  const rows = await Promise.all(
+    [...offsets].map(async (offset) => {
+      const [row] = await db
+        .select()
+        .from(postMetaTable)
+        .where(where)
+        // A stable key so OFFSET addressing is deterministic per pick.
+        .orderBy(asc(postMetaTable.id))
+        .limit(1)
+        .offset(offset)
+      return row
+    }),
+  )
+  const metas = rows.filter((row): row is PostMetaRow => row !== undefined)
   const posts = await hydratePostList(db, metas, { images: false })
   return posts.map(toSidebarPostLink)
 }

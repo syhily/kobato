@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
 import { makePost, makeTag } from '#/_helpers/catalog'
-import { renderInRouter, stableHtml } from '#/_helpers/render'
+import { prerenderInRouter, stableHtml } from '#/_helpers/render'
 import { asRoute } from '#/_helpers/route-test-utils'
 import PostDetailRoute from '@/routes/public/post/detail'
 import { toDetailPostShell } from '@/shared/types/catalog'
 
 describe('snapshot: routes/public/post/detail', () => {
-  it('renders the post detail route', () => {
+  it('renders the post detail route', async () => {
     const Route = asRoute(PostDetailRoute)
     const post = toDetailPostShell(
       makePost({
@@ -20,8 +20,11 @@ describe('snapshot: routes/public/post/detail', () => {
       }),
     )
     const visibleTags = [makeTag({ name: 'typescript', slug: 'typescript' })]
+    // Stream-rendered (not renderInRouter): the TOC sits behind a lazy
+    // boundary, so only the streamed SSR output carries it — the same
+    // delivery a browser/bot gets in production.
     const html = stableHtml(
-      renderInRouter(
+      await prerenderInRouter(
         <Route
           loaderData={{
             post,

@@ -223,6 +223,33 @@ describe('getTagsByNames', () => {
   })
 })
 
+describe('countPostsByTaxonomy — names narrowing', () => {
+  it('counts only the requested terms, not the whole taxonomy', async () => {
+    const [react] = await db.insert(tag).values({ name: 'React', slug: 'react' }).returning()
+    const [vue] = await db.insert(tag).values({ name: 'Vue', slug: 'vue' }).returning()
+    const [p1] = await db.insert(post).values({ slug: 'p1', title: 'P1', publishedRevisionId: 1 }).returning()
+    const [p2] = await db.insert(post).values({ slug: 'p2', title: 'P2', publishedRevisionId: 2 }).returning()
+    await db.insert(postTag).values([
+      { postId: p1.id, tagId: react.id },
+      { postId: p2.id, tagId: vue.id },
+    ])
+
+    const { countPostsByTaxonomy } = await import('@/server/domains/posts/services/taxonomy')
+    const counts = await countPostsByTaxonomy(db, { kind: 'tag', gate: 'public', names: ['React'] })
+
+    // The unrequested term never enters the aggregate (its posts are
+    // invisible to the query), and the requested term counts its own.
+    expect(counts.get('React')).toBe(1)
+    expect(counts.has('Vue')).toBe(false)
+  })
+
+  it('returns an empty map for an empty names list without querying', async () => {
+    const { countPostsByTaxonomy } = await import('@/server/domains/posts/services/taxonomy')
+    const counts = await countPostsByTaxonomy(db, { kind: 'tag', gate: 'public', names: [] })
+    expect(counts.size).toBe(0)
+  })
+})
+
 describe('listAllFriends', () => {
   it('is exported from friends service', async () => {
     const { listAllFriends } = await import('@/server/domains/friends/service')
