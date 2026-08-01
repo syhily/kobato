@@ -1,5 +1,5 @@
 import { PencilIcon } from 'lucide-react'
-import { type ReactNode, Suspense } from 'react'
+import { type ReactNode, lazy, Suspense } from 'react'
 import { Await, Link } from 'react-router'
 
 import type { SiteIdentitySettings } from '@/shared/config/types'
@@ -13,7 +13,16 @@ import { Comments } from '@/ui/public/comments/Comments'
 import { CommentsSkeleton } from '@/ui/public/comments/CommentsSkeleton'
 import { LikeButton } from '@/ui/public/LikeActions'
 import { postMetaClass, postMetaDateClass, postTitleClass } from '@/ui/public/post/postChrome'
-import { TableOfContents } from '@/ui/public/post/TableOfContents'
+
+// The TOC drawer is orchestrated motion (animated toggle, drawer, backdrop)
+// and pure progressive-enhancement chrome, so it loads behind a lazy
+// boundary instead of pulling the motion runtime into the public bundle.
+// The null fallback matches the closed drawer's SSR invisibility; the
+// streamed boundary fills in once the chunk resolves (see entry.server's
+// onShellReady streaming — the Comments boundary below works the same way).
+const TableOfContents = lazy(() =>
+  import('@/ui/public/post/TableOfContents').then((module) => ({ default: module.TableOfContents })),
+)
 
 const DRAFT_MARKER_LABELS: Record<Exclude<DraftMarker, null>, { sr: string; visible: string }> = {
   draft: { sr: '未发布草稿：', visible: '【草稿】' },
@@ -113,7 +122,9 @@ export function DetailBodyChrome({
         </div>
         {metaExtra}
       </div>
-      <TableOfContents headings={headings} toc={toc ? 'enabled' : 'disabled'} />
+      <Suspense fallback={null}>
+        <TableOfContents headings={headings} toc={toc ? 'enabled' : 'disabled'} />
+      </Suspense>
       <div className={contentWrapperClassName}>
         <div ref={postContentRef} className={cn('post-content', 'prose-blog prose prose-lg max-w-none')}>
           {children}
