@@ -25,6 +25,10 @@ const log = getLogger('batcher-registry')
 /** The slice of a running batcher the registry drives. */
 interface RegisteredBatcher {
   flush(): Promise<unknown>
+  /** Drain + hold flushes for an external consistency window (analytics backup). */
+  pause?(): Promise<unknown>
+  /** Release a pause — buffered payloads flush immediately. */
+  resume?(): void
   /** Detach process-level registrations (shutdown hooks) before the
    *  instance is dropped — restore flow re-creates batchers, and stale
    *  hooks must not accumulate. */

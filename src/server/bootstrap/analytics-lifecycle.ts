@@ -11,6 +11,7 @@ import {
   openAnalyticsDatabase,
   resolveAnalyticsPath,
 } from '@/server/infra/analytics/duckdb'
+import { getBatcher } from '@/server/infra/db/batcher-registry'
 import { nextDailyMaintenanceDelayMs, scheduleJob, type ScheduledJob } from '@/server/infra/scheduler-utils'
 
 /**
@@ -33,16 +34,47 @@ const engine = new ManagedEngine<AnalyticsHandle>(
 
 let maintenanceJob: ScheduledJob | null = null
 
+// One mutation window at a time across the two multi-statement DuckDB
+// jobs: the backup's CHECKPOINT + file copy and the daily retention
+// DELETE + CHECKPOINT. DuckDB's single writer serializes individual
+// statements, but the backup's copyFile is EXTERNAL to the writer — a
+// retention DELETE landing between the backup's CHECKPOINT and its copy
+// would archive a file that straddles a mutation. A promise chain
+// suffices: both jobs are async, neither window is long, and neither
+// body re-enters the lock (the batcher's paused flush writes directly).
+let analyticsMutationLock: Promise<void> = Promise.resolve()
+
+async function withAnalyticsMutationLock<T>(fn: () => Promise<T>): Promise<T> {
+  const previous = analyticsMutationLock
+  let release!: () => void
+  analyticsMutationLock = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  await previous
+  try {
+    return await fn()
+  } finally {
+    release()
+  }
+}
+
+/** The maintenance job's body, one path for the scheduler and for tests:
+ *  the retention DELETE + CHECKPOINT runs under the same mutation lock
+ *  as a backup snapshot, so a backup firing at 04:30 cannot copy a file
+ *  the retention job is mid-DELETE on. */
+export async function runAnalyticsMaintenance(): Promise<void> {
+  const handle = engine.peek()
+  if (handle === null) {
+    return
+  }
+  await withAnalyticsMutationLock(() => runAccessLogRetention(handle))
+}
+
 export function scheduleNextAnalyticsMaintenance(): void {
   maintenanceJob ??= scheduleJob({
     name: 'analytics.maintenance',
     nextDelayMs: nextDailyMaintenanceDelayMs,
-    run: async () => {
-      const handle = engine.peek()
-      if (handle !== null) {
-        await runAccessLogRetention(handle)
-      }
-    },
+    run: runAnalyticsMaintenance,
   })
   maintenanceJob.reschedule()
 }
@@ -83,15 +115,35 @@ export function getAnalyticsReader(): AnalyticsReader {
  * archive. Returns false when there is nothing to archive (an in-memory
  * handle in tests). Errors propagate — the caller decides whether the
  * sidecar is expendable (backup) or load-bearing (nothing else is).
+ *
+ * The access-log batcher is PAUSED across the CHECKPOINT + copy window
+ * (drain first, then hold appends) so the archived file can't straddle
+ * an in-flight batch insert; the finally-resume runs even when the
+ * checkpoint or copy throws. The whole window runs under the module's
+ * mutation lock, so the daily retention DELETE + CHECKPOINT (which holds
+ * the same lock) can never interleave a mutation between the backup's
+ * checkpoint and its copy either.
  */
 export async function snapshotAnalyticsTo(stagingPath: string): Promise<boolean> {
   const handle = getAnalyticsHandle()
   if (handle.inMemory) {
     return false
   }
-  await handle.writer.run('CHECKPOINT')
-  await copyFile(handle.path, stagingPath)
-  return true
+  return withAnalyticsMutationLock(async () => {
+    // Reached through the registry, not a direct import of the batcher
+    // module — that module reads `getAnalyticsHandle` here, and a direct
+    // import would close an import cycle. The name is the batcher's own
+    // registration key (`domains/analytics/services/batcher.ts`).
+    const batcher = getBatcher('AccessLogBatcher')
+    await batcher?.pause?.()
+    try {
+      await handle.writer.run('CHECKPOINT')
+      await copyFile(handle.path, stagingPath)
+    } finally {
+      batcher?.resume?.()
+    }
+    return true
+  })
 }
 
 /**
