@@ -30,6 +30,27 @@ function parseRefererHost(referer: string | null): string | null {
   }
 }
 
+// Data minimisation: the dashboard only reads `referer_host`, yet the raw
+// referer can carry tokens in its query and is persisted for months.
+// Strip query/hash (and any userinfo) before storage; an unparseable
+// referer cannot be inspected, so per this file's degrade-to-null
+// convention nothing is persisted.
+function minimizeReferer(referer: string | null): string | null {
+  if (!referer) {
+    return null
+  }
+  try {
+    const url = new URL(referer)
+    url.username = ''
+    url.password = ''
+    url.search = ''
+    url.hash = ''
+    return url.toString()
+  } catch {
+    return null
+  }
+}
+
 // Minimal `Accept-Language` first-tag parser. The dashboard only cares
 // about the primary preference, so first tag wins; empty/malformed input
 // degrades to `null` like every other enrichment column.
@@ -67,7 +88,7 @@ export async function enrichEvent(raw: RawAccessEvent): Promise<EnrichedAccessEv
     path: raw.path,
     entityType: raw.target?.type ?? null,
     entityId: raw.target?.ownerId ?? null,
-    referer: raw.referer,
+    referer: minimizeReferer(raw.referer),
     refererHost: parseRefererHost(raw.referer),
     country,
     region,

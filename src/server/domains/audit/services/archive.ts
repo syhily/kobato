@@ -15,6 +15,9 @@ const log = getLogger('audit.archive')
 
 const S3_ARCHIVE_PREFIX = 'audit-log/archive/'
 const ARCHIVE_PAGE_SIZE = 5000
+// A day's archived IDs can run into the millions; one DELETE with an IN
+// list that long would blow past SQLite's bound-parameter limit (32766).
+const DELETE_BATCH_SIZE = 5000
 
 // Whether the archive job can write to S3. Goes through the backend's strict
 // `isAvailable()` (enabled + endpoint + bucket + both keys) so a
@@ -186,9 +189,22 @@ async function archiveDay(db: Database, day: string, dayStart: Date, dayEnd: Dat
   // Only delete from DB after successful upload.
   // Delete by the exact row IDs we collected so that events inserted
   // between read and delete are not silently destroyed.
-  const deleteResult = await db.delete(auditLog).where(inArray(auditLog.id, archivedIds))
+  return deleteArchivedRows(db, archivedIds)
+}
 
-  const deleted = Number(deleteResult.changes)
+/** Delete rows by id in batches of `batchSize` (test seam — production
+ *  uses DELETE_BATCH_SIZE) so the IN list never approaches SQLite's
+ *  bound-parameter limit. Returns the total number of deleted rows. */
+export async function deleteArchivedRows(
+  db: Database,
+  ids: readonly number[],
+  batchSize = DELETE_BATCH_SIZE,
+): Promise<number> {
+  let deleted = 0
+  for (let start = 0; start < ids.length; start += batchSize) {
+    const result = await db.delete(auditLog).where(inArray(auditLog.id, ids.slice(start, start + batchSize)))
+    deleted += Number(result.changes)
+  }
   return deleted
 }
 

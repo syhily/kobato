@@ -6,6 +6,7 @@ import { pushAccessEvent } from '@/server/domains/analytics/services/batcher'
 import { bumpPageView } from '@/server/domains/analytics/services/pv-batcher'
 import { getLogger } from '@/server/infra/logger'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
+import { isBot } from '@/shared/utils/is-bot'
 
 // Single owner of "what counts as a view" for the whole analytics domain.
 // Callers fire `void trackPageView(facts, target, options)` and the gate
@@ -84,20 +85,26 @@ export async function trackPageView(
     }
 
     const ip = options.clientAddress ?? 'unknown'
+    const ua = facts.userAgent ?? ''
+
+    // Bot gate BEFORE enrichment: a row keepBotRows would drop anyway
+    // must not pay for the GeoIP lookup + salted IP hash. The counter
+    // above already fired (counters carry no bot dimension), and when
+    // keepBotRows is on the row is still enriched and stored below.
+    if (isBot(ua) && !analytics.keepBotRows && !options.skipBotFilter) {
+      return
+    }
+
     const event = await enrichEvent({
       ts: options.now ?? new Date(),
       ip,
-      ua: facts.userAgent ?? '',
+      ua,
       path: facts.path,
       referer: facts.referer,
       acceptLanguage: facts.acceptLanguage,
       target,
       sessionId: readVisitorCookie(facts.cookie),
     })
-
-    if (event.isBot && !analytics.keepBotRows && !options.skipBotFilter) {
-      return
-    }
 
     pushAccessEvent(event)
   } catch (err) {

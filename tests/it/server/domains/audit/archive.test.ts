@@ -63,7 +63,8 @@ function commandInput(call: number): SentCommandInput {
   return (sendMock.mock.calls[call]![0] as { input: SentCommandInput }).input
 }
 
-const { archiveExpiredAuditLogs, cleanupExpiredArchives } = await import('@/server/domains/audit/services/archive')
+const { archiveExpiredAuditLogs, cleanupExpiredArchives, deleteArchivedRows } =
+  await import('@/server/domains/audit/services/archive')
 
 describe('audit/archive', () => {
   beforeEach(async () => {
@@ -146,6 +147,32 @@ describe('audit/archive', () => {
         }),
       )
       expect(__logCaptureForTests().some((e) => e.level === 'error')).toBe(false)
+    })
+  })
+
+  describe('deleteArchivedRows', () => {
+    it('deletes in batches when the id list exceeds one batch', async () => {
+      // Five rows with a batch size of two → three DELETE statements,
+      // every row gone by the end.
+      for (let i = 0; i < 5; i++) {
+        await seedAuditRow()
+      }
+      const ids = (await db.select({ id: auditLog.id }).from(auditLog)).map((row) => row.id)
+      expect(ids).toHaveLength(5)
+      const deleteSpy = vi.spyOn(db, 'delete')
+
+      const deleted = await deleteArchivedRows(db, ids, 2)
+
+      expect(deleted).toBe(5)
+      expect(deleteSpy).toHaveBeenCalledTimes(3)
+      expect(await db.select().from(auditLog)).toHaveLength(0)
+    })
+
+    it('deletes nothing for an empty id list', async () => {
+      const deleteSpy = vi.spyOn(db, 'delete')
+
+      expect(await deleteArchivedRows(db, [])).toBe(0)
+      expect(deleteSpy).not.toHaveBeenCalled()
     })
   })
 

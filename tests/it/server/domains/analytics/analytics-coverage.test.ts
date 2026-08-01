@@ -241,6 +241,22 @@ describe('analytics/enrich — enrichEvent', () => {
     expect(event.entityId).toBe(1)
   })
 
+  it('strips query, hash and userinfo from the persisted referer', async () => {
+    const event = await enrichEvent({
+      ts: new Date(),
+      ip: '127.0.0.1',
+      ua: '',
+      path: '/',
+      referer: 'https://user:pw@example.com/page?token=secret&q=1#frag',
+      acceptLanguage: null,
+      target: null,
+      sessionId: null,
+    })
+    expect(event.referer).toBe('https://example.com/page')
+    expect(event.referer).not.toContain('token')
+    expect(event.refererHost).toBe('example.com')
+  })
+
   it('returns null fields when referer is malformed', async () => {
     const event = await enrichEvent({
       ts: new Date(),
@@ -253,6 +269,7 @@ describe('analytics/enrich — enrichEvent', () => {
       sessionId: null,
     })
     expect(event.refererHost).toBeNull()
+    expect(event.referer).toBeNull()
     expect(event.language).toBeNull()
   })
 
