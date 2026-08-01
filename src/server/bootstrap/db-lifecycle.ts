@@ -3,9 +3,17 @@ import { ManagedEngine } from '@/server/bootstrap/managed-engine'
 import { rescheduleArchive, scheduleNextArchive, wireArchiveScheduler } from '@/server/domains/audit/services/scheduler'
 import { wireRestoreMachine } from '@/server/domains/backup/restore-machine'
 import { rescheduleBackup, wireBackupScheduler } from '@/server/domains/backup/scheduler'
+import {
+  cleanupPreRestoreFiles,
+  rollbackPreRestoreFiles,
+  sweepStaleRestoreDirs,
+} from '@/server/domains/backup/services/restore'
 import { resetLikeTokenSweep, startLikeTokenSweep } from '@/server/domains/comments/services/likes'
+import { wireScheduledPublishScheduler } from '@/server/domains/content/scheduled-publish'
 import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { registerSectionChangeHandler } from '@/server/domains/settings/services/section-changes'
+import { wireWebmentionPostPublishHook } from '@/server/domains/webmentions/enqueue'
+import { wireWebmentionOutboxScheduler } from '@/server/domains/webmentions/outbox-scheduler'
 import { wireKvSweepScheduler } from '@/server/infra/cache/kv-maintenance'
 import { isVitest } from '@/server/infra/config'
 import {
@@ -75,6 +83,9 @@ function wireDatabase(handle: DatabaseHandle): DatabaseHandle {
   setRestartRefreshSettings(refreshBlogSettings)
   wireArchiveScheduler({ getDb })
   wireBackupScheduler({ getDb })
+  wireScheduledPublishScheduler({ getDb })
+  wireWebmentionOutboxScheduler({ getDb })
+  wireWebmentionPostPublishHook()
   wireKvSweepScheduler({ getDb })
   wireDbMaintenanceScheduler({ getHandle: () => engine.get() })
   initAllBatchers(handle)
@@ -96,6 +107,11 @@ await initDatabase()
 if (!isVitest()) {
   await initAnalyticsDatabase()
   void replayAllDeadLetters()
+  // Fire-and-forget (same as the dead-letter replay): drop staged-restore
+  // temp dirs a crash mid-restore orphaned — the in-chain cleanups can't
+  // run when the process dies. The sweep only touches `kobato-restore-*`
+  // directories and logs its own per-entry failures.
+  void sweepStaleRestoreDirs()
 }
 
 // ─── Restore machine wiring ──────────────────────────────
@@ -114,6 +130,17 @@ if (!isVitest()) {
 export async function completeRestore(success: boolean, err?: Error): Promise<void> {
   if (!success) {
     root.error({ err: err?.message }, 'Restore failed, restarting server for recovery')
+    // Roll the pre-restore originals back BEFORE the recovery reopen —
+    // reopening the just-swapped (corrupt) payload again would leave the
+    // server wedged in `restarting` with the original file already gone.
+    try {
+      await rollbackPreRestoreFiles()
+    } catch (rollbackErr) {
+      root.error(
+        { err: rollbackErr instanceof Error ? rollbackErr.message : String(rollbackErr) },
+        'Pre-restore rollback failed during restore completion',
+      )
+    }
   } else {
     root.info('Restore succeeded, restarting server')
   }
@@ -163,6 +190,18 @@ export async function completeRestore(success: boolean, err?: Error): Promise<vo
     }
     await restartServer()
     root.info('Restore completion finished, server back online')
+    // The chain finished on the new files — drop the pre-restore
+    // originals the swap kept for the failure path.
+    if (success) {
+      try {
+        await cleanupPreRestoreFiles()
+      } catch (cleanupErr) {
+        root.warn(
+          { err: cleanupErr instanceof Error ? cleanupErr.message : String(cleanupErr) },
+          'Failed to clean pre-restore originals after a successful restore',
+        )
+      }
+    }
   } catch (restartErr) {
     root.error(
       { err: restartErr instanceof Error ? restartErr.message : String(restartErr) },

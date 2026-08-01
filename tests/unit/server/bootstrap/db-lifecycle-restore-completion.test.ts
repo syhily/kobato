@@ -16,6 +16,8 @@ const mockScheduleNextArchive = vi.hoisted(() => vi.fn())
 const mockStartLikeTokenSweep = vi.hoisted(() => vi.fn())
 const mockResetLikeTokenSweep = vi.hoisted(() => vi.fn())
 const mockRefreshBlogSettings = vi.hoisted(() => vi.fn())
+const mockRollbackPreRestoreFiles = vi.hoisted(() => vi.fn())
+const mockCleanupPreRestoreFiles = vi.hoisted(() => vi.fn())
 
 const restoreState = vi.hoisted(() => ({
   callback: null as ((success: boolean, err?: Error) => Promise<void>) | null,
@@ -73,6 +75,11 @@ vi.mock('@/server/domains/audit/services/scheduler', () => ({
 vi.mock('@/server/domains/backup/scheduler', () => ({
   rescheduleBackup: vi.fn(),
   wireBackupScheduler: vi.fn(),
+}))
+
+vi.mock('@/server/domains/backup/services/restore', () => ({
+  rollbackPreRestoreFiles: mockRollbackPreRestoreFiles,
+  cleanupPreRestoreFiles: mockCleanupPreRestoreFiles,
 }))
 
 vi.mock('@/server/infra/email/sender', () => ({
@@ -133,5 +140,33 @@ describe('db-lifecycle restore completion', () => {
 
     expect(mockMigrateDatabase).toHaveBeenCalledTimes(1)
     expect(mockRestartServer).toHaveBeenCalledTimes(1)
+  })
+
+  it('rolls back the pre-restore originals before restarting on failure', async () => {
+    mockRollbackPreRestoreFiles.mockResolvedValue(undefined)
+    mockMigrateDatabase.mockResolvedValue(undefined)
+    mockRestartServer.mockResolvedValue(undefined)
+
+    await completeRestore(false, new Error('restore failed'))
+
+    expect(mockRollbackPreRestoreFiles).toHaveBeenCalledTimes(1)
+    // The rollback must land before the server comes back — restarting
+    // into the corrupt swapped payload is the wedge this guards against.
+    expect(mockRollbackPreRestoreFiles.mock.invocationCallOrder[0]!).toBeLessThan(
+      mockRestartServer.mock.invocationCallOrder[0]!,
+    )
+    expect(mockCleanupPreRestoreFiles).not.toHaveBeenCalled()
+  })
+
+  it('cleans the pre-restore originals after a successful restore and never rolls back', async () => {
+    mockCleanupPreRestoreFiles.mockResolvedValue(undefined)
+    mockMigrateDatabase.mockResolvedValue(undefined)
+    mockRestartServer.mockResolvedValue(undefined)
+
+    await completeRestore(true, undefined)
+
+    expect(mockRestartServer).toHaveBeenCalledTimes(1)
+    expect(mockCleanupPreRestoreFiles).toHaveBeenCalledTimes(1)
+    expect(mockRollbackPreRestoreFiles).not.toHaveBeenCalled()
   })
 })

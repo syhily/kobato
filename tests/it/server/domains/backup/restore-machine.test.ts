@@ -18,8 +18,16 @@ function wire() {
   })
 }
 
+/**
+ * Wait until the fire-and-forget chain finishes. The terminal report
+ * (completed/failed) only becomes peekable once the slot is released, so
+ * polling the machine's own projection can never race a half-applied
+ * state the way a fixed sleep can.
+ */
 async function settle() {
-  await new Promise((r) => setTimeout(r, 50))
+  await vi.waitFor(() => {
+    expect(machine.peekRestoreJobPhase().phase).toMatch(/^(completed|failed)$/)
+  })
 }
 
 describe('backup/restore-machine', () => {
@@ -138,9 +146,72 @@ describe('backup/restore-machine', () => {
     expect(completeMock).toHaveBeenCalledWith(false, expect.any(Error))
   })
 
-  it('ignores startRestoreJob without a claimed slot', async () => {
-    machine.startRestoreJob(vi.fn().mockResolvedValue(undefined))
+  it('runs the failure cleanup when drain throws before the swap', async () => {
+    drainMock.mockRejectedValueOnce(new Error('http close failed'))
+    const onFailureFn = vi.fn()
+
+    expect(machine.tryBeginRestore()).toBe(true)
+    machine.startRestoreJob(vi.fn().mockResolvedValue(undefined), undefined, onFailureFn)
     await settle()
+
+    expect(onFailureFn).toHaveBeenCalledOnce()
+    expect(machine.consumeRestoreJobReport().phase).toBe('failed')
+  })
+
+  it('runs the failure cleanup when prepare throws before the swap', async () => {
+    prepareForSwapMock.mockImplementationOnce(() => {
+      throw new Error('database already closed')
+    })
+    const onFailureFn = vi.fn()
+
+    expect(machine.tryBeginRestore()).toBe(true)
+    machine.startRestoreJob(vi.fn().mockResolvedValue(undefined), undefined, onFailureFn)
+    await settle()
+
+    expect(onFailureFn).toHaveBeenCalledOnce()
+    expect(machine.consumeRestoreJobReport().phase).toBe('failed')
+  })
+
+  it('skips the failure cleanup once the swap ran — restoreFn owns that cleanup', async () => {
+    const onFailureFn = vi.fn()
+
+    expect(machine.tryBeginRestore()).toBe(true)
+    machine.startRestoreJob(vi.fn().mockRejectedValue(new Error('swap failed')), undefined, onFailureFn)
+    await settle()
+
+    expect(onFailureFn).not.toHaveBeenCalled()
+    expect(machine.consumeRestoreJobReport().phase).toBe('failed')
+  })
+
+  it('skips the failure cleanup on success', async () => {
+    const onFailureFn = vi.fn()
+
+    expect(machine.tryBeginRestore()).toBe(true)
+    machine.startRestoreJob(vi.fn().mockResolvedValue(undefined), undefined, onFailureFn)
+    await settle()
+
+    expect(onFailureFn).not.toHaveBeenCalled()
+    expect(machine.consumeRestoreJobReport().phase).toBe('completed')
+  })
+
+  it('a throwing failure cleanup never masks the real error', async () => {
+    prepareForSwapMock.mockImplementationOnce(() => {
+      throw new Error('database already closed')
+    })
+
+    expect(machine.tryBeginRestore()).toBe(true)
+    machine.startRestoreJob(vi.fn(), undefined, vi.fn().mockRejectedValue(new Error('cleanup failed')))
+    await settle()
+
+    const status = machine.consumeRestoreJobReport()
+    expect(status.phase).toBe('failed')
+    expect(status.error).toBe('database already closed')
+  })
+
+  it('ignores startRestoreJob without a claimed slot', () => {
+    // No claim → the call is rejected synchronously (the error log fires
+    // before startRestoreJob returns), so there is nothing to settle.
+    machine.startRestoreJob(vi.fn().mockResolvedValue(undefined))
     expect(__logCaptureForTests()).toContainEqual(
       expect.objectContaining({ level: 'error', msg: 'startRestoreJob without a claimed slot — ignored' }),
     )
@@ -156,6 +227,23 @@ describe('backup/restore-machine', () => {
       expect(outcome).toBe('started')
       expect(restoreFn).toHaveBeenCalledOnce()
       expect(machine.consumeRestoreJobReport().phase).toBe('completed')
+    })
+
+    it('hands the prepared onFailureFn to the machine', async () => {
+      prepareForSwapMock.mockImplementationOnce(() => {
+        throw new Error('database already closed')
+      })
+      const onFailureFn = vi.fn()
+
+      const outcome = await machine.withRestoreClaim(async () => ({
+        restoreFn: vi.fn().mockResolvedValue(undefined),
+        onFailureFn,
+      }))
+      await settle()
+
+      expect(outcome).toBe('started')
+      expect(onFailureFn).toHaveBeenCalledOnce()
+      expect(machine.consumeRestoreJobReport().phase).toBe('failed')
     })
 
     it('returns busy without running prepare while a job is in flight', async () => {

@@ -166,6 +166,77 @@ describe('/api/admin/backup/upload-restore', () => {
     expect(res.status).toBe(403)
   })
 
+  it('returns 400 and never claims the slot when the staged backup fails the content check', async () => {
+    // A payload that passes the magic-byte check but is not a real,
+    // openable database with an admin row must be rejected pre-swap.
+    mockAssertStagedBackupContainsAdmin.mockRejectedValueOnce(new Error('file is not a database'))
+    const { backupRouter } = await import('@/server/http/resources/backup')
+    const app = new Hono<Env>()
+    app.use('*', async (c, next) => {
+      c.set(
+        'requestContext',
+        makeRc(
+          makeSession({
+            csrfToken: 'valid-csrf',
+            user: { id: '1', name: 'Admin', email: 'admin@test.com', website: null, role: 'admin' },
+          }),
+        ),
+      )
+      await next()
+    })
+    app.route('/', backupRouter)
+
+    const formData = new FormData()
+    formData.set('file', new File(['content'], 'test.db'))
+
+    const res = await app.request('/api/admin/backup/upload-restore', {
+      method: 'POST',
+      body: formData,
+      headers: { 'x-csrf-token': 'valid-csrf' },
+    })
+
+    expect(res.status).toBe(400)
+    const body = (await res.json()) as { error: { message: string } }
+    expect(body.error.message).toBe('备份文件无效或不包含管理员账号。')
+    expect(mockWithRestoreClaim).not.toHaveBeenCalled()
+    expect(mockStartRestoreJob).not.toHaveBeenCalled()
+  })
+
+  it('skips the content check for analytics-only uploads', async () => {
+    mockStageBackup.mockResolvedValue({
+      dir: '/tmp/fake-staged',
+      content: null,
+      analytics: '/tmp/fake-staged/analytics.duckdb',
+    })
+    const { backupRouter } = await import('@/server/http/resources/backup')
+    const app = new Hono<Env>()
+    app.use('*', async (c, next) => {
+      c.set(
+        'requestContext',
+        makeRc(
+          makeSession({
+            csrfToken: 'valid-csrf',
+            user: { id: '1', name: 'Admin', email: 'admin@test.com', website: null, role: 'admin' },
+          }),
+        ),
+      )
+      await next()
+    })
+    app.route('/', backupRouter)
+
+    const formData = new FormData()
+    formData.set('file', new File(['content'], 'analytics.duckdb'))
+
+    const res = await app.request('/api/admin/backup/upload-restore', {
+      method: 'POST',
+      body: formData,
+      headers: { 'x-csrf-token': 'valid-csrf' },
+    })
+
+    expect(res.status).toBe(200)
+    expect(mockAssertStagedBackupContainsAdmin).not.toHaveBeenCalled()
+  })
+
   it('accepts upload when CSRF token is valid', async () => {
     const { backupRouter } = await import('@/server/http/resources/backup')
     const app = new Hono<Env>()

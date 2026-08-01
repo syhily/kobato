@@ -1,7 +1,11 @@
+import { rmSync } from 'node:fs'
+import { Readable } from 'node:stream'
+import { pipeline } from 'node:stream/promises'
 import { createGzip } from 'node:zlib'
 import { describe, expect, it } from 'vitest'
 
 import { extractBackupFile, unpackBackupPayload, packTar } from '#/_helpers/backup-buffer'
+import { decompressedSizeGuard, stageBackup } from '@/server/domains/backup/services/restore'
 import { ActionFailure } from '@/server/infra/http/errors'
 
 async function gzipBytes(input: Buffer): Promise<Buffer> {
@@ -99,5 +103,49 @@ describe('services/backup — unpackBackupPayload', () => {
   it('rejects an oversize payload', () => {
     const big = Buffer.concat([SQLITE_HEADER, Buffer.alloc(501 * 1024 * 1024, 0)])
     expect(() => unpackBackupPayload(big)).toThrow(ActionFailure)
+  })
+})
+
+describe('services/backup — stageBackup streaming size guard', () => {
+  it('stages a gzipped payload within the cap', async () => {
+    const zipped = await gzipBytes(fakeSqliteFile())
+    const staged = await stageBackup(Readable.from(zipped))
+    try {
+      expect(staged.content).not.toBeNull()
+    } finally {
+      rmSync(staged.dir, { recursive: true, force: true })
+    }
+  })
+
+  it('aborts a gzip stream whose decompressed size exceeds the cap, without staging it in full', async () => {
+    const zipped = await gzipBytes(fakeSqliteFile(4096))
+    await expect(stageBackup(Readable.from(zipped), 1024)).rejects.toThrow(ActionFailure)
+    await expect(stageBackup(Readable.from(zipped), 1024)).rejects.toThrow('备份文件过大')
+  })
+
+  it('fails decompressedSizeGuard once the byte count trips the cap', async () => {
+    const seen: Buffer[] = []
+    await expect(
+      pipeline(
+        Readable.from([Buffer.alloc(64), Buffer.alloc(64)]),
+        decompressedSizeGuard(100),
+        async (source: AsyncIterable<Buffer>) => {
+          for await (const chunk of source) {
+            seen.push(chunk)
+          }
+        },
+      ),
+    ).rejects.toThrow(ActionFailure)
+    await expect(
+      pipeline(
+        Readable.from([Buffer.alloc(64), Buffer.alloc(64)]),
+        decompressedSizeGuard(100),
+        async (source: AsyncIterable<Buffer>) => {
+          for await (const chunk of source) {
+            seen.push(chunk)
+          }
+        },
+      ),
+    ).rejects.toThrow('备份文件过大')
   })
 })

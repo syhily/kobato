@@ -102,6 +102,15 @@ export function abortRestoreClaim(): void {
 export interface RestoreJobInput {
   restoreFn: () => Promise<void>
   afterReopenFn?: (db: Database) => Promise<void>
+  /**
+   * Failure cleanup for state the caller staged BEFORE the chain ran:
+   * invoked only when drain/prepare throws — i.e. `restoreFn` never
+   * started. Once `restoreFn` runs it owns its own cleanup
+   * (`restoreFromStagedBackup`'s finally), so this hook stays silent on
+   * later failures. Best-effort: a throwing hook never masks the real
+   * error.
+   */
+  onFailureFn?: () => Promise<void> | void
 }
 
 /**
@@ -134,7 +143,7 @@ export async function withRestoreClaim(
     abortRestoreClaim()
     return 'declined'
   }
-  startRestoreJob(job.restoreFn, job.afterReopenFn)
+  startRestoreJob(job.restoreFn, job.afterReopenFn, job.onFailureFn)
   return 'started'
 }
 
@@ -185,7 +194,11 @@ export function consumeRestoreJobReport(): RestoreJobStatus {
  *   failure), then the slot releases and the terminal report is kept
  *   for one status read.
  */
-export function startRestoreJob(restoreFn: () => Promise<void>, afterReopenFn?: (db: Database) => Promise<void>): void {
+export function startRestoreJob(
+  restoreFn: () => Promise<void>,
+  afterReopenFn?: (db: Database) => Promise<void>,
+  onFailureFn?: () => Promise<void> | void,
+): void {
   if (deps === null || current === null) {
     log.error('startRestoreJob without a claimed slot — ignored')
     return
@@ -195,6 +208,7 @@ export function startRestoreJob(restoreFn: () => Promise<void>, afterReopenFn?: 
   const promise = (async () => {
     let success = false
     let error: Error | undefined
+    let swapStarted = false
 
     try {
       // 1. Close HTTP server (stop accepting, drain in-flight)
@@ -203,6 +217,7 @@ export function startRestoreJob(restoreFn: () => Promise<void>, afterReopenFn?: 
       // 2. Flush batchers, close the database handle, swap the files.
       await machineDeps.prepareForSwap()
       setPhase('restoring')
+      swapStarted = true
       await restoreFn()
 
       // 3. Reopen on the NEW file, then run post-restore work against it.
@@ -214,6 +229,17 @@ export function startRestoreJob(restoreFn: () => Promise<void>, afterReopenFn?: 
     } catch (err) {
       error = err instanceof Error ? err : new Error(String(err))
       log.error('Restore failed', { err: error.message })
+      if (!swapStarted && onFailureFn !== undefined) {
+        // drain/prepare threw before the swap ran — the caller's staged
+        // temp dir is still on disk and nothing else will clean it.
+        try {
+          await onFailureFn()
+        } catch (cleanupErr) {
+          log.warn('Restore failure cleanup failed', {
+            err: cleanupErr instanceof Error ? cleanupErr.message : String(cleanupErr),
+          })
+        }
+      }
     }
 
     // 4. Completion (migrations + ANALYZE + restart; recovery reopen on
