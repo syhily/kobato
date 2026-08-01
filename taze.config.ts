@@ -21,7 +21,7 @@ export default defineConfig({
     peerDependencies: true,
     optionalDependencies: true,
   },
-  // Keep @types/node within the current major line (24.x).
+  // Keep @types/node within the current major line (26.x).
   packageMode: {
     '@types/node': 'minor',
     'drizzle-kit': 'next',

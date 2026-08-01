@@ -19,6 +19,7 @@ tests
 .editorconfig
 .env
 .env.*
+kobato.config.json
 .git*
 .ncurc.mjs
 *.md

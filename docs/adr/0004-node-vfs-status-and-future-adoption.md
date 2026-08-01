@@ -19,8 +19,8 @@ a patch layer on top of that constraint:
   into one ESM `server.mjs` (`vite.sea.config.ts`,
   `ssr.noExternal: true`, `codeSplitting: false`), because a SEA entry
   cannot `import()` from disk;
-- the `eval:true` worker dispatch for `worker/process-worker.cjs` and
-  `worker/smoke-worker.cjs` (embedded text instead of a worker file);
+- the `eval:true` worker dispatch for `worker/process-worker.mjs` and
+  `worker/smoke-worker.mjs` (embedded text instead of a worker file);
 - the `native-require` redirect: a bundler plugin
   (`scripts/sea/redirect-native-requires.ts`) rewriting sharp's and
   @napi-rs/canvas's platform `require(...)` call sites to

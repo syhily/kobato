@@ -18,6 +18,7 @@ import { AuthorInvite } from '@/server/infra/email/templates/AuthorInvite'
 import { ConfirmSubscription } from '@/server/infra/email/templates/ConfirmSubscription'
 import { NewReply } from '@/server/infra/email/templates/NewReply'
 import { PasswordReset } from '@/server/infra/email/templates/PasswordReset'
+import { SignInLink } from '@/server/infra/email/templates/SignInLink'
 import { SignInOtp } from '@/server/infra/email/templates/SignInOtp'
 import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@/shared/config/snapshot'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
@@ -45,6 +46,15 @@ const templates = [
   {
     name: 'SignInOtp',
     make: () => SignInOtp({ receiver: 'reader@example.com', otpCode: '481516', expiresMinutes: 10 }),
+  },
+  {
+    name: 'SignInLink',
+    make: () =>
+      SignInLink({
+        receiver: 'Yufan',
+        link: 'https://example.com/admin/signin?token=abc123def456',
+        expiresMinutes: 15,
+      }),
   },
   {
     name: 'PasswordReset',

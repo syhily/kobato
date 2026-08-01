@@ -33,8 +33,8 @@ export function isSvgSlot(slot: BrandingSlot): slot is SvgSlot {
 }
 
 // SVG uploads are served back AS-IS — no content sanitization (audit
-// P1-9, downgraded to accepted risk 2026-07-31, see
-// docs/plans/2026-07-31-fix-review.md). The two backstops that make the
+// P1-9, downgraded to accepted risk 2026-07-31, recorded in
+// docs/plans/2026-08-01-full-codebase-audit.md). The two backstops that make the
 // downgrade tenable: script inside an SVG referenced via <img> never
 // executes (browsers treat it as an image, not a document), and a
 // directly-opened SVG document falls under the site's CSP

@@ -121,8 +121,8 @@ _Avoid_: full-section snapshot, loader shape as write base
 
 **Cache declaration**:
 One named `kv_cache` bucket (og, calendar, avatar, imageMeta,
-embeddingSearch, searchResult, feed, sitemap, categories, tags,
-comments). Declared once in `@/shared/cache/registry` (metadata plane:
+searchResult, feed, sitemap, categories, tags, comments,
+githubRelease, githubAvatar). Declared once in `@/shared/cache/registry` (metadata plane:
 label, description, default prefix + TTL, tunable flag); the behavior
 plane (`@/server/infra/cache/registry`) attaches the key shape, codec,
 and write policy, and every consumer goes through its verbs (`through`,
