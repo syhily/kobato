@@ -5,6 +5,7 @@ import {
 } from '@/server/bootstrap/analytics-lifecycle'
 import { ManagedEngine } from '@/server/bootstrap/managed-engine'
 import { rescheduleArchive, scheduleNextArchive, wireArchiveScheduler } from '@/server/domains/audit/services/scheduler'
+import { wireSessionStorageDb } from '@/server/domains/auth/session-storage'
 import { wireRestoreMachine } from '@/server/domains/backup/restore-machine'
 import { rescheduleBackup, wireBackupScheduler } from '@/server/domains/backup/scheduler'
 import { wireBackupSnapshots } from '@/server/domains/backup/services/backup'
@@ -86,6 +87,7 @@ const engine = new ManagedEngine<DatabaseHandle>(
 function wireDatabase(handle: DatabaseHandle): DatabaseHandle {
   setRestartDb(handle.db)
   setRestartRefreshSettings(refreshBlogSettings)
+  wireSessionStorageDb({ getDb })
   wireArchiveScheduler({ getDb })
   wireBackupScheduler({ getDb })
   wireBackupSnapshots({ snapshotAnalyticsTo })

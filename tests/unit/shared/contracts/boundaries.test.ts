@@ -384,16 +384,10 @@ describe('contract: module and bundle boundaries', () => {
     // `bootstrap/` is the composition root: it imports domain modules and
     // wires their injected deps at boot (`wireRestoreMachine`,
     // `wireBackupScheduler`, `wireBackupSnapshots`, `wireAccessLogBatcher`,
-    // …). A domain importing back into bootstrap inverts that direction
-    // and risks an import cycle — every `wire*` seam exists precisely to
-    // avoid one. Both `@/`-aliased and relative specifiers count, and type
-    // imports pin the same coupling.
-    //
-    // The legacy list pins the remaining pre-existing violation EXACTLY
-    // (same burn-down discipline as the relative-import allowlist): a new
-    // violation fails, and deleting the import without dropping its entry
-    // fails too.
-    const legacy = ['src/server/domains/auth/session-storage.ts: @/server/bootstrap/db-lifecycle']
+    // `wireSessionStorageDb`, …). A domain importing back into bootstrap
+    // inverts that direction and risks an import cycle — every `wire*`
+    // seam exists precisely to avoid one. Both `@/`-aliased and relative
+    // specifiers count, and type imports pin the same coupling.
     const offenders: string[] = []
     for (const file of files('src/server/domains', '-g', '*.ts', '-g', '*.tsx')) {
       for (const specifier of importSpecifiers(stripComments(readFileSync(file, 'utf8')))) {
@@ -407,7 +401,7 @@ describe('contract: module and bundle boundaries', () => {
         }
       }
     }
-    expect(offenders.sort()).toEqual([...legacy].sort())
+    expect(offenders.sort()).toEqual([])
   })
 
   it('keeps domain repos private to their owning domain', () => {

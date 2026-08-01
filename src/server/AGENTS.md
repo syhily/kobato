@@ -120,6 +120,7 @@ Two embedded engines, zero services:
 ## Server layering constraints
 
 - `infra/*` imports nothing from `domains/`, `http/`, or `render/`.
+- `domains/*` imports nothing from `bootstrap/*` — the composition root wires domain deps through `wire*` seams (`wireRestoreMachine`, `wireBackupScheduler`, `wireBackupSnapshots`, `wireAccessLogBatcher`, `wireSessionStorageDb`, …); the boundaries contract test bans the direction outright.
 - `http/controllers/*` and `http/loaders/*` orchestrate only.
 - `render/*` produces strings / Buffers / Responses and never persists.
 - No barrel `index.ts` files anywhere inside `server/`.

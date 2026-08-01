@@ -3,9 +3,9 @@ import type { Session } from 'react-router'
 import { and, eq, gt } from 'drizzle-orm'
 import { createSession, createSessionStorage } from 'react-router'
 
+import type { Database } from '@/server/infra/db/database'
 import type { Role } from '@/shared/utils/roles'
 
-import { getDb } from '@/server/bootstrap/db-lifecycle'
 import { serverConfig } from '@/server/infra/config'
 import { session as sessionTable } from '@/server/infra/db/schema/session'
 import { getLogger } from '@/server/infra/logger'
@@ -15,6 +15,26 @@ import { isRecord } from '@/shared/utils/type-guards'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const log = getLogger('auth.session-storage')
+
+// The database handle is injected by the composition root
+// (`@/server/bootstrap/db-lifecycle`) at wire time — a direct import of
+// the lifecycle here would invert the dependency direction (domain →
+// composition root). Same injection discipline as `wireBackupScheduler`
+// in `@/server/domains/backup/scheduler`. Session reads/writes are
+// load-bearing (unlike expendable telemetry), so an unwired call fails
+// loudly instead of degrading.
+let resolveDb: (() => Database) | null = null
+
+export function wireSessionStorageDb(deps: { getDb: () => Database }): void {
+  resolveDb = deps.getDb
+}
+
+function requireDb(): Database {
+  if (resolveDb === null) {
+    throw new Error('session storage used before wireSessionStorageDb')
+  }
+  return resolveDb()
+}
 
 export interface SessionUser {
   id: string
@@ -86,7 +106,7 @@ const storage = createSessionStorage<BlogSessionData>({
   async readData(id) {
     // Expired rows read as misses; the hourly sweep in
     // `infra/cache/kv-maintenance.ts` deletes them lazily.
-    const rows = await getDb()
+    const rows = await requireDb()
       .select({ data: sessionTable.data })
       .from(sessionTable)
       .where(and(eq(sessionTable.id, id), gt(sessionTable.expiresAt, new Date())))
@@ -112,12 +132,12 @@ const storage = createSessionStorage<BlogSessionData>({
     await writeSession(id, data, expires)
   },
   async deleteData(id) {
-    await getDb().delete(sessionTable).where(eq(sessionTable.id, id))
+    await requireDb().delete(sessionTable).where(eq(sessionTable.id, id))
   },
 })
 
 async function writeSession(id: string, data: BlogSessionData, expires: Date | undefined): Promise<void> {
-  const db = getDb()
+  const db = requireDb()
   // The json-mode column serializes the (JSON-native) payload itself.
   const payload = data
   const expiresAt = expires ?? new Date(Date.now() + resolveSessionMaxAge() * 1000)
