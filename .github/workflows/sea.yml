@@ -201,9 +201,11 @@ jobs:
 
   # develop validation: pushes to develop and PRs to main run ONLY this
   # job — a single linux-x64 sea:build (local zstd codec, not the slow
-  # brotli release pack) + the full managed smoke. Enough to prove the
-  # SEA artifact without paying for the multi-platform matrix or the e2e
-  # suite on every develop iteration.
+  # brotli release pack) + the full managed smoke + the real-HTTP e2e
+  # journeys against the just-built binary. The e2e suite was added to
+  # this job (audit D-2/P2-5): the binary already exists here, so the
+  # 18 journeys cost a few minutes and keep CSRF/session/restore
+  # regressions from reaching main unobserved.
   build-develop:
     name: build (linux-x64, develop)
     if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/develop')
@@ -223,6 +225,7 @@ jobs:
       - run: command -v patchelf >/dev/null || sudo apt-get install -y patchelf
       - run: pnpm run sea:build
       - run: pnpm run sea:smoke dist-sea/kobato
+      - run: pnpm run sea:e2e dist-sea/kobato
 
   # Release assets are uploaded for the events that actually occur in the
   # release flow — the tag push (automated: scripts/release.ts pushes the
