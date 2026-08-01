@@ -125,6 +125,16 @@ export interface ScheduledJob {
 
 const registeredJobs: ScheduledJob[] = []
 
+/**
+ * Node clamps `setTimeout` delays ≥ 2³¹-1 ms (~24.85 days) to 1 ms — a
+ * monthly backup scheduled ~31 days out would fire instantly, then
+ * re-arm the same future date and fire again, back-to-back forever.
+ * Delays beyond this cap are therefore CHUNKED: the timer only
+ * reschedules (the job's `nextDelayMs()` is recomputed fresh each time)
+ * without running, until the remaining delay fits under the cap.
+ */
+export const MAX_TIMER_DELAY_MS = 24 * 60 * 60 * 1000
+
 export function scheduleJob(options: ScheduledJobOptions): ScheduledJob {
   const log = getLogger(options.name)
   const suspendedRetryMs = options.suspendedRetryMs ?? 30_000
@@ -154,6 +164,10 @@ export function scheduleJob(options: ScheduledJobOptions): ScheduledJob {
       if (delayMs === null) {
         // Suspended: re-evaluate later WITHOUT running the job.
         timer = setTimeout(() => job.reschedule(), suspendedRetryMs)
+      } else if (delayMs > MAX_TIMER_DELAY_MS) {
+        // Too far out for a single setTimeout — re-arm in chunks, never
+        // running the job early (see MAX_TIMER_DELAY_MS).
+        timer = setTimeout(() => job.reschedule(), MAX_TIMER_DELAY_MS)
       } else {
         timer = setTimeout(() => {
           void (async () => {
