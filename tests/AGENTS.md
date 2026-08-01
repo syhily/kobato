@@ -14,11 +14,17 @@ Tests are split into three Vitest workspace projects. **All three mirror the `sr
   If you test `src/ui/public/post/PostListViews.tsx`, the test lives at `tests/snaps/ui/public/post/post-list-views.test.tsx`.
 - **`tests/e2e/`** — True HTTP e2e: tests drive a real kobato instance (the
   SEA binary booted by `scripts/sea/e2e.ts`) over plain `fetch`. No
-  in-process shortcuts, no `vi.mock`, no direct DB access. **Not part of
-  `pnpm test`** (the root config lists projects explicitly) — run it via
-  `pnpm run sea:e2e`, which boots the instance and injects the
-  `KOBATO_E2E_BASE_URL` / `KOBATO_E2E_ADMIN_EMAIL` /
-  `KOBATO_E2E_ADMIN_PASSWORD` env contract.
+  in-process shortcuts, no `vi.mock`. **Not part of `pnpm test`** (the
+  root config lists projects explicitly) — run it via `pnpm run sea:e2e`,
+  which boots the instance and injects the `KOBATO_E2E_BASE_URL` /
+  `KOBATO_E2E_ADMIN_EMAIL` / `KOBATO_E2E_ADMIN_PASSWORD` env contract,
+  plus `KOBATO_E2E_DATABASE` (the throwaway per-run SQLite path) as the
+  one sanctioned seam for state no HTTP surface can stage (e.g. flipping
+  `user.login_method` for the magic-link journey) — reach for it only
+  when no admin RPC exists, and always restore what you flip. Mail never
+  leaves the machine: mail-dependent journeys point the `mail` settings
+  at the in-process SMTP capture server in `#/_helpers/e2e-mail` and
+  extract secrets (OTP code, signin link) from the captured bytes.
 
 Cross-cutting integration tests still live inside `tests/it/` under the primary domain they exercise — there is no `features/` bucket.
 
@@ -139,5 +145,7 @@ ceremony:
     leaf-facing comments contexts (comment-item tests)
 - `#/_helpers/e2e-client` — cookie-jar HTTP client + real signin (e2e only)
 - `#/_helpers/e2e-rpc` — oRPC-over-HTTP caller (e2e only)
+- `#/_helpers/e2e-mail` — loopback SMTP capture server + mail decoders
+  (OTP code / magic-link extraction; e2e only)
 - `#/*` is mapped to `./tests/*` in `tsconfig.json` and resolved by Vitest.
 - `@/*` continues to map to `src/*`.

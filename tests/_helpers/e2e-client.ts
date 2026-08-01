@@ -73,6 +73,26 @@ export class E2eClient {
 }
 
 /**
+ * The anonymous visitor's CSRF token, scraped from a public page's root
+ * loader data. Same mechanics as {@link getAdminCsrfToken}: the token is
+ * the one 64-hex value in the document. Only use on pages without
+ * commenter avatars or branding etags (both are 64-hex too) — a fresh
+ * instance's home/detail pages qualify.
+ */
+export async function getPublicCsrfToken(client: E2eClient, path: string): Promise<string> {
+  const res = await client.get(path)
+  if (res.status !== 200) {
+    throw new Error(`GET ${path} returned ${res.status}`)
+  }
+  const html = await res.text()
+  const unique = [...new Set(html.match(/[0-9a-f]{64}/g) ?? [])]
+  if (unique.length !== 1) {
+    throw new Error(`expected exactly one 64-hex CSRF token on ${path}, found ${unique.length}`)
+  }
+  return unique[0]
+}
+
+/**
  * Real signin over HTTP: GET /admin/signin for the session cookie + the
  * `csrf_token` hidden input, then POST the credentials. Returns the
  * action response (302 + Set-Cookie on success) and the PRE-login CSRF
