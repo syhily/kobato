@@ -66,6 +66,7 @@ data/
 *.bak
 .agents/plans/
 plans/
+docs/plans/
 
 # Local config file (auto-created on first dev run; contains secrets)
 kobato.config.json
