@@ -56,6 +56,19 @@ describe('release chain: the draft-release flow stays triggerable', () => {
     expect(sea).toMatch(/gh release edit "[^"]*" --draft=false/)
   })
 
+  it('sea.yml release-upload stays gated on the full matrix and uploads BEFORE publishing (fix-review)', () => {
+    // Without the needs gate the job could run before some matrix leg
+    // finishes; without the step order the draft could go public with
+    // assets still missing — both re-introduce the partial-release
+    // class from P0-1, and neither was anchored until now.
+    expect(sea).toMatch(/release-upload:[\s\S]*?needs: \[build, build-darwin, build-windows\]/)
+    const uploadIdx = sea.indexOf('gh release upload')
+    const publishIdx = sea.indexOf('--draft=false')
+    expect(uploadIdx).toBeGreaterThan(-1)
+    expect(publishIdx).toBeGreaterThan(-1)
+    expect(uploadIdx).toBeLessThan(publishIdx)
+  })
+
   it('sea.yml release-upload addresses the release via github.ref_name (release context is null on tag pushes)', () => {
     expect(sea).not.toMatch(/github\.event\.release\.tag_name/)
     expect(sea).toMatch(/gh release upload "\$\{\{ github\.ref_name \}\}"/)
