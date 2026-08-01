@@ -86,6 +86,7 @@ vi.mock('@/server/infra/logger/sanitizer', () => ({
 
 import { buildCspHeader, configureMiddleware, buildLoadContext } from '@/server/http/middleware-pipeline'
 import { requestContext } from '@/server/http/request-context'
+import { session as sessionTable } from '@/server/infra/db/schema/session'
 
 describe('buildCspHeader', () => {
   it('returns a strict nonce-based policy in production', () => {
@@ -170,6 +171,41 @@ describe('readiness probe', () => {
     const res = await app.request('/ready')
     expect(res.status).toBe(503)
     expect(await res.json()).toMatchObject({ status: 'booting' })
+  })
+})
+
+describe('anonymous session writes (P1-4)', () => {
+  it('cookieless GET writes no session row and sets no __session cookie', async () => {
+    const app = new Hono<Env>()
+    configureMiddleware(app)
+    const db = getTestDb()
+    // The REAL request-context middleware runs against the harness
+    // database: a bot-flood GET must not persist a session row just to
+    // carry a CSRF token.
+    const rowsBefore = await db.select({ id: sessionTable.id }).from(sessionTable)
+    const res = await app.request('/health')
+    const rowsAfter = await db.select({ id: sessionTable.id }).from(sessionTable)
+    expect(rowsAfter.length).toBe(rowsBefore.length)
+
+    const setCookies = res.headers.getSetCookie()
+    expect(setCookies.some((v) => v.startsWith('__session='))).toBe(false)
+    // The stateless double-submit cookie goes out instead, so the SSR'd
+    // page still has a CSRF token for its forms and /rpc mutations.
+    expect(setCookies.some((v) => v.startsWith('__csrf='))).toBe(true)
+  })
+
+  it('cookieless POST writes no session row and mints no cookies', async () => {
+    const app = new Hono<Env>()
+    configureMiddleware(app)
+    const db = getTestDb()
+    const rowsBefore = await db.select({ id: sessionTable.id }).from(sessionTable)
+    const res = await app.request('/health', { method: 'POST' })
+    const rowsAfter = await db.select({ id: sessionTable.id }).from(sessionTable)
+    expect(rowsAfter.length).toBe(rowsBefore.length)
+
+    const setCookies = res.headers.getSetCookie()
+    expect(setCookies.some((v) => v.startsWith('__session='))).toBe(false)
+    expect(setCookies.some((v) => v.startsWith('__csrf='))).toBe(false)
   })
 })
 

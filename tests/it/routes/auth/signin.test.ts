@@ -733,10 +733,12 @@ describe('routes/signin — identify (real db)', () => {
     expect(extractData(result).error).toBe('请填写正确的邮箱地址。')
   })
 
-  it('returns method=password for unknown email without leaking existence', async () => {
+  it('answers unknown email exactly like a magic-link send (no existence oracle)', async () => {
     const result = await callAction('identify', emailFormData('ghost@example.com'))
-    expect(extractData(result).method).toBe('password')
+    // Same response shape + generic copy as a real send…
+    expect(extractData(result).message).toBe('如果该邮箱已注册，登录链接已发送，请查收邮箱。')
 
+    // …but nothing was actually sent or persisted.
     expect(mockHandles.sendSignInLink).not.toHaveBeenCalled()
     expect(await db.select().from(verification)).toHaveLength(0)
   })

@@ -3,23 +3,26 @@ import { describe, expect, it } from 'vitest'
 import { resBindings, sanitizeReqHeaders } from '@/server/infra/logger/sanitizer'
 
 describe('sanitizeReqHeaders', () => {
-  it('redacts L5 headers (authorization)', () => {
-    const result = sanitizeReqHeaders({ Authorization: 'Bearer secret123' })
+  it('redacts L5 headers (authorization, cookie) entirely', () => {
+    const result = sanitizeReqHeaders({
+      Authorization: 'Bearer secret123',
+      Cookie: 'session=abc123',
+    })
     expect(result.Authorization).toBe('[REDACTED]')
+    expect(result.Cookie).toBe('[REDACTED]')
   })
 
   it('redacts L5 headers case-insensitively', () => {
-    const result = sanitizeReqHeaders({ authorization: 'Bearer secret123' })
+    const result = sanitizeReqHeaders({ authorization: 'Bearer secret123', cookie: 'sid=xyz' })
     expect(result.authorization).toBe('[REDACTED]')
+    expect(result.cookie).toBe('[REDACTED]')
   })
 
   it('tags L3 headers with {E}…{/E} markers', () => {
     const result = sanitizeReqHeaders({
-      Cookie: 'session=abc123',
       'User-Agent': 'Mozilla/5.0',
       'X-Forwarded-For': '1.2.3.4',
     })
-    expect(result.Cookie).toBe('{E}session=abc123{/E}')
     expect(result['User-Agent']).toBe('{E}Mozilla/5.0{/E}')
     expect(result['X-Forwarded-For']).toBe('{E}1.2.3.4{/E}')
   })
@@ -65,7 +68,7 @@ describe('sanitizeReqHeaders', () => {
       'Content-Type': 'text/html',
     })
     expect(result.Authorization).toBe('[REDACTED]')
-    expect(result.Cookie).toBe('{E}sid=123{/E}')
+    expect(result.Cookie).toBe('[REDACTED]')
     expect(result['Content-Type']).toBe('text/html')
   })
 })
@@ -82,10 +85,10 @@ describe('resBindings', () => {
     } as any
   }
 
-  it('tags set-cookie headers with {E}…{/E} markers', () => {
+  it('redacts set-cookie headers entirely', () => {
     const c = mockContext({ 'set-cookie': '__session=abc123; Path=/' })
     const result = resBindings(c)
-    expect(result.res.headers['set-cookie']).toBe('{E}__session=abc123; Path=/{/E}')
+    expect(result.res.headers['set-cookie']).toBe('[REDACTED]')
   })
 
   it('passes through non-cookie response headers unchanged', () => {

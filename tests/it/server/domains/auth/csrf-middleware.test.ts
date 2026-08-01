@@ -15,14 +15,18 @@ function makeSession(data: Partial<BlogSessionData> = {}) {
   return createSession<BlogSessionData, BlogSessionData>(data, 'test-session')
 }
 
-function seedExemptPaths(exemptPaths: string[]): void {
+function seedCsrfSettings(csrf: { enabled: boolean; exemptPaths: string[] }): void {
   setBlogSettingsBundleForTests({
     ...TEST_BLOG_SETTINGS_BUNDLE,
     security: {
       ...TEST_BLOG_SETTINGS_BUNDLE.security!,
-      csrf: { enabled: true, exemptPaths },
+      csrf,
     },
   })
+}
+
+function seedExemptPaths(exemptPaths: string[]): void {
+  seedCsrfSettings({ enabled: true, exemptPaths })
 }
 
 describe('csrfGuard middleware', () => {
@@ -39,7 +43,9 @@ describe('csrfGuard middleware', () => {
     })
     app.use('/rpc/*', csrfGuard)
     app.post('/rpc/test', (c) => c.json({ ok: true }))
+    app.post('/rpc/webhook', (c) => c.json({ ok: true }))
     app.post('/rpc/webhook/event', (c) => c.json({ ok: true }))
+    app.post('/rpc/webhookx', (c) => c.json({ ok: true }))
     return app
   }
 
@@ -79,5 +85,26 @@ describe('csrfGuard middleware', () => {
     const app = await setupApp()
     const res = await app.request('/rpc/test', { method: 'POST' })
     expect(res.status).toBe(403)
+  })
+
+  it('passes through when path equals the exempt prefix exactly', async () => {
+    seedExemptPaths(['/rpc/webhook'])
+    const app = await setupApp()
+    const res = await app.request('/rpc/webhook', { method: 'POST' })
+    expect(res.status).toBe(200)
+  })
+
+  it('does not exempt a look-alike path that merely shares the prefix', async () => {
+    seedExemptPaths(['/rpc/webhook'])
+    const app = await setupApp()
+    const res = await app.request('/rpc/webhookx', { method: 'POST' })
+    expect(res.status).toBe(403)
+  })
+
+  it('skips validation entirely when security.csrf.enabled is false', async () => {
+    seedCsrfSettings({ enabled: false, exemptPaths: [] })
+    const app = await setupApp()
+    const res = await app.request('/rpc/test', { method: 'POST' })
+    expect(res.status).toBe(200)
   })
 })

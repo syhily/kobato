@@ -6,7 +6,10 @@
 // Privacy: known L3 fields (e.g. email, ip, name) are wrapped in {E}…{/E}
 // markers per `.agents/skills/privacy-logging/SKILL.md`, so log aggregators can
 // strip or hash them before storage. Callers don't need to remember to tag
-// values manually — using the standard key names is enough.
+// values manually — using the standard key names is enough. Credential
+// material is stronger than L3: HTTP `authorization`/`cookie`/`set-cookie`
+// headers are fully replaced with `[REDACTED]` by logger/sanitizer.ts, never
+// tagged.
 //
 // Audit log convention: loggers named `audit.<domain>` (e.g. `audit.user`,
 // `audit.comment`, `audit.cms.posts`) are for operational visibility only.

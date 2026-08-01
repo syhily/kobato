@@ -6,7 +6,10 @@ import { resolveVisitorCookie } from '@/server/domains/analytics/visitor-cookie'
 
 const EXEMPT_PATH_PREFIXES = ['/__manifest', '/assets/', '/build/', '/api/', '/feed', '/sitemap.xml', '/images/']
 
-function isExempt(pathname: string): boolean {
+// Paths serving cacheable machine-readable resources rather than HTML
+// documents — anonymous cookies (visitor id, the stateless CSRF cookie)
+// are never minted on them so shared caches can keep serving them.
+export function isExempt(pathname: string): boolean {
   return EXEMPT_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix))
 }
 

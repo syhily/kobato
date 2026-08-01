@@ -279,9 +279,10 @@ describe('integration: magic-link signin flow (real DB)', () => {
     expect(markSessionDirty).not.toHaveBeenCalled()
   })
 
-  it('identify answers method=password for unknown emails without sending', async () => {
+  it('identify answers unknown emails exactly like a magic-link send (no existence oracle)', async () => {
     const result = await callAction('identify', emailFormData('ghost@example.com'))
-    expect(result.data?.method).toBe('password')
+    // Same generic copy as a real send, but nothing is sent or persisted.
+    expect(result.data?.message).toBe('如果该邮箱已注册，登录链接已发送，请查收邮箱。')
     expect(mockHandles.sendSignInLink).not.toHaveBeenCalled()
   })
 

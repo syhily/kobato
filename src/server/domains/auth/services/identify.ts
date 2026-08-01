@@ -43,16 +43,20 @@ export async function handleIdentify(
   const existingUser = await findUserByEmail(db, email)
 
   if (isPasskeySigninUser(existingUser)) {
+    // Residual signal (documented, accepted): this answer proves a
+    // passkey account exists for the address — the passkey prompt UX
+    // cannot work without it. Enumeration is bounded by the per-email
+    // and per-IP rate limits above.
     return { kind: 'passkey' }
   }
 
-  if (
+  const isMagicLinkUser =
     existingUser !== null &&
     existingUser.loginMethod === 'magic-link' &&
     Boolean(existingUser.role) &&
-    !existingUser.deletedAt &&
-    isMailLoginReady()
-  ) {
+    !existingUser.deletedAt
+
+  if (isMagicLinkUser && isMailLoginReady()) {
     const failure = await sendMagicLink(ctx, request, existingUser, redirectTo, origin)
     if (failure) {
       return { kind: 'error', message: failure.message }
@@ -60,7 +64,17 @@ export async function handleIdentify(
     return { kind: 'magic-link-sent' }
   }
 
-  // Unknown mailboxes land here too — the password step fails generically
-  // later, so the identify answer never reveals account existence.
+  if (existingUser === null) {
+    // Unknown mailbox: answer exactly like a real magic-link send so the
+    // identify step is no account-existence oracle. No token row is
+    // issued and no mail goes out. The residual timing gap vs. a real
+    // SMTP round-trip is documented here deliberately and bounded by the
+    // per-email/IP rate limits above.
+    return { kind: 'magic-link-sent' }
+  }
+
+  // Known account on the password method (or magic-link while mail is
+  // not configured): the password step fails generically later, so this
+  // answer reveals nothing beyond "not passkey / not magic-link".
   return { kind: 'password' }
 }

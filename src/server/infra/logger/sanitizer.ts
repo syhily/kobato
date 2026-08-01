@@ -12,13 +12,14 @@ type ResBindingsContext = Context<{
 /**
  * Privacy-aware request header sanitisation for Pino HTTP logging.
  *
- * L5: authorization tokens must NEVER reach logs — they are redacted entirely.
- * L3: cookie, user-agent, and any header carrying IP need {E}…{/E} markers
- * per `src/server/infra/logger.ts` privacy tagging convention.
+ * L5: credentials must NEVER reach logs — authorization tokens and cookies
+ * (request `cookie` / response `set-cookie`) are redacted entirely, not
+ * tagged: their values are session material, not just personal data.
+ * L3: user-agent and any header carrying IP get {E}…{/E} markers per
+ * `src/server/infra/logger.ts` privacy tagging convention.
  */
-const L5_REQ_HEADERS = new Set(['authorization'])
+const L5_REQ_HEADERS = new Set(['authorization', 'cookie'])
 const L3_REQ_HEADERS = new Set([
-  'cookie',
   'user-agent',
   'x-forwarded-for',
   'cf-connecting-ip',
@@ -45,7 +46,7 @@ export function sanitizeReqHeaders(headers: Record<string, string | undefined>):
 export function resBindings(c: ResBindingsContext) {
   const headers: Record<string, string> = {}
   c.res.headers.forEach((value, key) => {
-    headers[key] = key.toLowerCase() === 'set-cookie' && value ? `{E}${value}{/E}` : value
+    headers[key] = key.toLowerCase() === 'set-cookie' && value ? '[REDACTED]' : value
   })
   return { requestId: c.var.requestId, res: { status: c.res.status, headers } }
 }

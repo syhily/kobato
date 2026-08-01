@@ -6,6 +6,9 @@ import type { RequestContext } from '@/server/http/request-context'
 
 import { adminUser, makeSession } from '#/_helpers/session'
 
+const EXISTING_CSRF_COOKIE = 'a'.repeat(64)
+const MINTED_CSRF_COOKIE = 'b'.repeat(64)
+
 describe('requestContextMiddleware', () => {
   beforeEach(() => {
     vi.resetModules()
@@ -17,6 +20,8 @@ describe('requestContextMiddleware', () => {
   async function buildApp(mocks: { sessionCtx?: { dirty?: boolean } } = {}) {
     const user = adminUser()
     const session = makeSession({ user })
+    const ensureCsrfToken = vi.fn()
+    const commitSessionWithMaxAge = vi.fn().mockResolvedValue('__session=abc')
     vi.doMock('@/server/bootstrap/db-lifecycle', () => ({
       getDb: vi.fn(() => fakeDb),
     }))
@@ -29,11 +34,19 @@ describe('requestContextMiddleware', () => {
       }),
     }))
     vi.doMock('@/server/domains/auth/csrf', () => ({
-      ensureCsrfToken: vi.fn(),
+      ensureCsrfToken,
+      CSRF_COOKIE_NAME: '__csrf',
+      isCsrfCookieValue: (value: string) => /^[a-f0-9]{64}$/i.test(value),
+      mintCsrfCookieValue: () => MINTED_CSRF_COOKIE,
+      deriveStatelessCsrfToken: (value: string) => `derived:${value}`,
+      buildCsrfCookieHeader: (value: string) => `__csrf=${value}; Path=/; HttpOnly; SameSite=Lax`,
     }))
     vi.doMock('@/server/domains/auth/session-storage', () => ({
-      commitSessionWithMaxAge: vi.fn().mockResolvedValue('__session=abc'),
+      commitSessionWithMaxAge,
       SESSION_COOKIE_NAME: '__session',
+    }))
+    vi.doMock('@/server/http/middlewares/visitor-cookie', () => ({
+      isExempt: (path: string) => path.startsWith('/feed'),
     }))
     vi.doMock('@/server/http/utils/client-address', () => ({
       getClientAddress: vi.fn().mockReturnValue('192.168.1.1'),
@@ -42,8 +55,13 @@ describe('requestContextMiddleware', () => {
     const { requestContextMiddleware } = await import('@/server/http/middlewares/request-context')
     const app = new Hono<Env>()
     app.use(requestContextMiddleware)
-    return { app, session, user }
+    return { app, session, user, ensureCsrfToken, commitSessionWithMaxAge }
   }
+
+  // The persisted-session contract: the request carries the signed
+  // `__session` cookie, so the middleware keeps minting/reusing the
+  // session-persisted token exactly as before.
+  const sessionCookie = { Cookie: '__session=test-session' }
 
   it('sets c.var.requestContext with the derived fields', async () => {
     const { app, session, user } = await buildApp()
@@ -52,7 +70,7 @@ describe('requestContextMiddleware', () => {
       captured = c.var.requestContext
       return c.json({ ok: true })
     })
-    const res = await app.request('/posts.data?_routes=routes%2Fposts&index')
+    const res = await app.request('/posts.data?_routes=routes%2Fposts&index', { headers: sessionCookie })
     expect(res.status).toBe(200)
     expect(captured?.session).toBe(session)
     expect(captured?.viewer).toEqual(user)
@@ -71,7 +89,7 @@ describe('requestContextMiddleware', () => {
       c.var.requestContext.markSessionDirty()
       return c.json({ ok: true })
     })
-    const res = await app.request('/')
+    const res = await app.request('/', { headers: sessionCookie })
     expect(res.status).toBe(200)
     expect(res.headers.get('Set-Cookie')).toBe('__session=abc')
   })
@@ -79,7 +97,7 @@ describe('requestContextMiddleware', () => {
   it('sets Set-Cookie when session resolution is dirty', async () => {
     const { app } = await buildApp({ sessionCtx: { dirty: true } })
     app.get('/', (c) => c.json({ ok: true }))
-    const res = await app.request('/')
+    const res = await app.request('/', { headers: sessionCookie })
     expect(res.status).toBe(200)
     expect(res.headers.get('Set-Cookie')).toBe('__session=abc')
   })
@@ -87,7 +105,7 @@ describe('requestContextMiddleware', () => {
   it('does not set cookie when session is clean', async () => {
     const { app } = await buildApp({ sessionCtx: { dirty: false } })
     app.get('/', (c) => c.json({ ok: true }))
-    const res = await app.request('/')
+    const res = await app.request('/', { headers: sessionCookie })
     expect(res.headers.get('Set-Cookie')).toBeNull()
   })
 
@@ -99,7 +117,7 @@ describe('requestContextMiddleware', () => {
       c.header('Set-Cookie', '__session=new-sid', { append: true })
       return c.json({ ok: true })
     })
-    const res = await app.request('/')
+    const res = await app.request('/', { headers: sessionCookie })
     // The middleware's dirty commit must NOT land after the route's header
     // (last Set-Cookie wins — appending would resurrect the old sid).
     expect(res.headers.getSetCookie()).toEqual(['__session=new-sid'])
@@ -111,7 +129,82 @@ describe('requestContextMiddleware', () => {
       c.header('Set-Cookie', 'visitor=xyz', { append: true })
       return c.json({ ok: true })
     })
-    const res = await app.request('/')
+    const res = await app.request('/', { headers: sessionCookie })
     expect(res.headers.getSetCookie()).toEqual(['visitor=xyz', '__session=abc'])
+  })
+
+  // ─── Anonymous (cookieless) requests — P1-4 ───────────
+  //
+  // A bot flood of anonymous GETs must not write one session row per
+  // request. The token is derived statelessly from the `__csrf` cookie
+  // instead; nothing touches the session table.
+
+  it('anonymous GET: no session write, no __session cookie, token derived from a minted __csrf cookie', async () => {
+    const { app, session, ensureCsrfToken, commitSessionWithMaxAge } = await buildApp()
+    app.get('/', (c) => c.json({ ok: true }))
+    const res = await app.request('/')
+    expect(res.status).toBe(200)
+    // No session row is persisted for anonymous traffic…
+    expect(commitSessionWithMaxAge).not.toHaveBeenCalled()
+    // …and the persisted-token path is skipped entirely.
+    expect(ensureCsrfToken).not.toHaveBeenCalled()
+    const setCookies = res.headers.getSetCookie()
+    expect(setCookies.some((v) => v.startsWith('__session='))).toBe(false)
+    // The stateless double-submit cookie goes out instead, and the
+    // in-memory session carries the derived token for loaders.
+    expect(setCookies).toEqual([`__csrf=${MINTED_CSRF_COOKIE}; Path=/; HttpOnly; SameSite=Lax`])
+    expect(session.get('csrfToken')).toBe(`derived:${MINTED_CSRF_COOKIE}`)
+  })
+
+  it('anonymous GET with a valid __csrf cookie: reuses it, sets nothing, writes nothing', async () => {
+    const { app, session, ensureCsrfToken, commitSessionWithMaxAge } = await buildApp()
+    app.get('/', (c) => c.json({ ok: true }))
+    const res = await app.request('/', { headers: { Cookie: `__csrf=${EXISTING_CSRF_COOKIE}` } })
+    expect(res.status).toBe(200)
+    expect(commitSessionWithMaxAge).not.toHaveBeenCalled()
+    expect(ensureCsrfToken).not.toHaveBeenCalled()
+    expect(res.headers.getSetCookie()).toEqual([])
+    expect(session.get('csrfToken')).toBe(`derived:${EXISTING_CSRF_COOKIE}`)
+  })
+
+  it('anonymous POST without cookies: no token, no cookie, no session write', async () => {
+    const { app, session, ensureCsrfToken, commitSessionWithMaxAge } = await buildApp()
+    app.post('/', (c) => c.json({ ok: true }))
+    const res = await app.request('/', { method: 'POST' })
+    expect(res.status).toBe(200)
+    expect(commitSessionWithMaxAge).not.toHaveBeenCalled()
+    expect(ensureCsrfToken).not.toHaveBeenCalled()
+    expect(res.headers.getSetCookie()).toEqual([])
+    // No token anywhere — the CSRF guard rejects this request downstream,
+    // same as a tokenless bot POST before the change.
+    expect(session.get('csrfToken')).toBeUndefined()
+  })
+
+  it('anonymous GET with an invalid __csrf cookie value: remints instead of trusting it', async () => {
+    const { app, session } = await buildApp()
+    app.get('/', (c) => c.json({ ok: true }))
+    const res = await app.request('/', { headers: { Cookie: '__csrf=not-a-real-value' } })
+    expect(res.headers.getSetCookie()).toEqual([`__csrf=${MINTED_CSRF_COOKIE}; Path=/; HttpOnly; SameSite=Lax`])
+    expect(session.get('csrfToken')).toBe(`derived:${MINTED_CSRF_COOKIE}`)
+  })
+
+  it('anonymous GET on a cookie-exempt path (feed/sitemap/assets): mints nothing', async () => {
+    const { app, session, commitSessionWithMaxAge } = await buildApp()
+    app.get('/feed.xml', (c) => c.json({ ok: true }))
+    const res = await app.request('/feed.xml')
+    expect(res.headers.getSetCookie()).toEqual([])
+    expect(session.get('csrfToken')).toBeUndefined()
+    expect(commitSessionWithMaxAge).not.toHaveBeenCalled()
+  })
+
+  it('anonymous request can still commit when the route marks the session dirty (OTP/setup explicit flows)', async () => {
+    const { app, commitSessionWithMaxAge } = await buildApp()
+    app.post('/', (c) => {
+      c.var.requestContext.markSessionDirty()
+      return c.json({ ok: true })
+    })
+    const res = await app.request('/', { method: 'POST' })
+    expect(commitSessionWithMaxAge).toHaveBeenCalled()
+    expect(res.headers.getSetCookie()).toContain('__session=abc')
   })
 })
