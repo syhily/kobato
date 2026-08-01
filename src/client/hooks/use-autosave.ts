@@ -86,6 +86,14 @@ export function useAutosave<TBody>({
         } catch {
           // Previous flush failed; fall through to retry below.
         }
+        // The awaited flush may have persisted this exact body (its success
+        // advanced the baseline) or the engine may have been disabled
+        // meanwhile — re-check before snapshotting so an overlapping
+        // trigger (debounce × pagehide × hard cap) never re-flushes a body
+        // the in-flight flush just landed.
+        if (!enabledRef.current || lastPersistedRef.current === bodyRef.current) {
+          return
+        }
       }
       const snapshot = bodyRef.current
       emit({ kind: 'saving' })

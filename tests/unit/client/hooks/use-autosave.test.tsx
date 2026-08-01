@@ -250,6 +250,49 @@ describe('useAutosave — retry kick-off', () => {
   })
 })
 
+describe('useAutosave — overlapping in-flight triggers (V3-02)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('does not re-flush the same body when a second trigger fires while the first flush is in flight', async () => {
+    // Overlap: a forceFlush (Ctrl+S / debounce) is pending when pagehide
+    // fires a second doFlush. The second one waits on the in-flight flush;
+    // once that lands, the baseline already covers the body, so the waiter
+    // must bail out instead of re-PATCHing the identical body (which also
+    // rotates the revision token and can surface a phantom conflict from
+    // its stale expectedToken closure).
+    let resolveFlush!: () => void
+    const flush = vi
+      .fn<(body: unknown) => Promise<void>>()
+      .mockImplementation(() => new Promise<void>((resolve) => (resolveFlush = resolve)))
+    const { result } = renderDomHook(() =>
+      useAutosave({
+        body: sampleBody as never,
+        enabled: true,
+        flush: flush as never,
+      }),
+    )
+
+    // First trigger: the flush goes in flight and stays pending.
+    const first = result.current.forceFlush()
+    expect(flush).toHaveBeenCalledTimes(1)
+
+    // Second trigger via the pagehide listener (needs the DOM harness so
+    // effects attach). Its doFlush parks on the in-flight promise.
+    window.dispatchEvent(new Event('pagehide'))
+
+    // The in-flight flush lands and advances the baseline to the same body.
+    resolveFlush()
+    await first
+    // Let the parked doFlush continuation run its post-await re-check.
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    // No duplicate PATCH for the body the first flush just persisted.
+    expect(flush).toHaveBeenCalledTimes(1)
+  })
+})
+
 describe('useAutosave — default retry ladder (fix-review)', () => {
   it('pins the 1s / 3s / 9s backoff the editor ships with', () => {
     // Callers almost never pass retryDelaysMs, so the default ladder IS
