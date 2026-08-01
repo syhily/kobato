@@ -49,6 +49,7 @@ export function NewsletterForm({ newsletter }: NewsletterFormProps) {
               render={({ field }) => (
                 <div className="flex items-center gap-3">
                   <SettingsSwitch
+                    name={field.name}
                     id="newsletter-enabled"
                     checked={field.value}
                     onCheckedChange={field.onChange}

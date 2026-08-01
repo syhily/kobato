@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react'
 import { useRouteLoaderData } from 'react-router'
 import { toast } from 'sonner'
 
+import { toastApiError } from '@/client/lib/toast-api-error'
 import { extractApiErrorMessage } from '@/shared/utils/api-error'
 
 // Shared adapter for the admin "upload a file to an /api/* resource route"
@@ -149,7 +150,7 @@ export function useFileUpload(options: UseFileUploadOptions): UseFileUploadResul
           // !res.ok path already returned), so surface the fixed fallback.
           onError(fallback)
         } else {
-          toast.error(err instanceof Error ? err.message : fallback)
+          toastApiError(err, fallback)
         }
         return false
       } finally {

@@ -2,8 +2,8 @@ import { isRouteErrorResponse, Outlet, useOutletContext, useRouteError } from 'r
 
 import type { BlogSettingsBundle, SecretMasks } from '@/shared/config/types'
 
-import { computeSecretMasks, redactSecretsFromBundle } from '@/server/domains/settings/services/core'
 import { backfillSettingsSections, hydrateBlogSettings } from '@/server/domains/settings/services/hydrate'
+import { computeSecretMasks, redactSecretsFromBundle } from '@/server/domains/settings/services/masks'
 import { getSupportedTimeZones } from '@/server/domains/settings/timezones'
 import { getRequestContext } from '@/server/http/request-context'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
@@ -48,8 +48,9 @@ export interface SettingsOutletContext extends ParentContext {
 }
 
 // Single loader read shared by every section route below the shell. The
-// snapshot is small, and React Router revalidates this loader after each
-// `admin/updateSettings` save, so children get fresh snapshots for free.
+// snapshot is small; saves deliberately do NOT revalidate it — each card
+// adopts the authoritative save response as its new baseline instead (see
+// `useSettingsMutation`), so this loader only re-runs on navigation.
 //
 // Defensive 503 lives here ONCE: a missing `siteIdentity` / `assets` row
 // means the install never completed, and any other missing section means

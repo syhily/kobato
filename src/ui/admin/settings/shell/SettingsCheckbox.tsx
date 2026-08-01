@@ -11,20 +11,23 @@ import { Checkbox } from '@/ui/components/checkbox'
 
 type CheckboxProps = ComponentProps<typeof Checkbox>
 
-interface SettingsCheckboxProps extends Omit<CheckboxProps, 'onCheckedChange'> {
+interface SettingsCheckboxProps extends Omit<CheckboxProps, 'onCheckedChange' | 'name'> {
   /** From `useSettingsCard().save` — fires immediately after the change. */
-  save: () => void
+  save: (field?: string) => void
+  /** RHF field name — the commit is scoped to this field's change only. */
+  name: string
   /** Optional upstream onCheckedChange (typically RHF `field.onChange`); merged with save. */
   onCheckedChange?: CheckboxProps['onCheckedChange']
 }
 
-export function SettingsCheckbox({ save, onCheckedChange, ...props }: SettingsCheckboxProps) {
+export function SettingsCheckbox({ save, name, onCheckedChange, ...props }: SettingsCheckboxProps) {
   return (
     <Checkbox
       {...props}
+      name={name}
       onCheckedChange={(checked, eventDetails) => {
         onCheckedChange?.(checked, eventDetails)
-        save()
+        save(name)
       }}
     />
   )

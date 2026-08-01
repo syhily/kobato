@@ -14,7 +14,7 @@ describe('ui/admin/settings/shell/SettingsRadioGroup', () => {
     const onValueChange = vi.fn()
     const save = vi.fn()
     render(
-      <SettingsRadioGroup value="like" onValueChange={onValueChange} save={save}>
+      <SettingsRadioGroup name="sort" value="like" onValueChange={onValueChange} save={save}>
         <RadioGroupItem value="like" aria-label="mode-like" />
         <RadioGroupItem value="trgm" aria-label="mode-trgm" />
       </SettingsRadioGroup>,
@@ -23,14 +23,14 @@ describe('ui/admin/settings/shell/SettingsRadioGroup', () => {
     fireEvent.click(screen.getByRole('radio', { name: 'mode-trgm' }))
 
     expect(onValueChange).toHaveBeenCalledWith('trgm', expect.anything())
-    expect(save).toHaveBeenCalledOnce()
+    expect(save).toHaveBeenCalledWith('sort')
     expect(onValueChange.mock.invocationCallOrder[0]).toBeLessThan(save.mock.invocationCallOrder[0])
   })
 
   it('still saves when no upstream handler is given', () => {
     const save = vi.fn()
     render(
-      <SettingsRadioGroup value="like" save={save}>
+      <SettingsRadioGroup name="sort" value="like" save={save}>
         <RadioGroupItem value="like" aria-label="mode-like" />
         <RadioGroupItem value="vector" aria-label="mode-vector" />
       </SettingsRadioGroup>,

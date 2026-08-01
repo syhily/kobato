@@ -17,28 +17,32 @@ import { Switch } from '@/ui/components/switch'
 // Replace:
 //   `<Switch checked={field.value} onCheckedChange={(v) => { field.onChange(v); save() }} />`
 // with:
-//   `<SettingsSwitch checked={field.value} onCheckedChange={field.onChange} save={save} />`
+//   `<SettingsSwitch name={field.name} checked={field.value} onCheckedChange={field.onChange} save={save} />`
 //
 // Like `SettingsInput`, the save trigger is split out as its own prop (rather
 // than smuggled through the change handler) so the wrapper stays compatible
-// with RHF's Controller render prop.
+// with RHF's Controller render prop. The field's `name` rides along so the
+// commit is scoped to just this field (P1-13 — see `useSettingsCard.save`).
 
 type SwitchProps = ComponentProps<typeof Switch>
 
-interface SettingsSwitchProps extends Omit<SwitchProps, 'onCheckedChange'> {
+interface SettingsSwitchProps extends Omit<SwitchProps, 'onCheckedChange' | 'name'> {
   /** From `useSettingsCard().save` — fires immediately after the change. */
-  save: () => void
+  save: (field?: string) => void
+  /** RHF field name — the commit is scoped to this field's change only. */
+  name: string
   /** Optional upstream onCheckedChange (typically RHF `field.onChange`); merged with save. */
   onCheckedChange?: SwitchProps['onCheckedChange']
 }
 
-export function SettingsSwitch({ save, onCheckedChange, ...props }: SettingsSwitchProps) {
+export function SettingsSwitch({ save, name, onCheckedChange, ...props }: SettingsSwitchProps) {
   return (
     <Switch
       {...props}
+      name={name}
       onCheckedChange={(checked, eventDetails) => {
         onCheckedChange?.(checked, eventDetails)
-        save()
+        save(name)
       }}
     />
   )

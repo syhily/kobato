@@ -1,11 +1,11 @@
 import { useMutation } from '@tanstack/react-query'
 import { useCallback, useEffect, useState } from 'react'
-import { toast } from 'sonner'
 
 import type { SettingsSection } from '@/shared/config/sections'
 import type { SettingsSectionPatch } from '@/shared/config/types'
 
 import { orpc } from '@/client/api/client'
+import { toastApiError } from '@/client/lib/toast-api-error'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 export type SettingsCommitResult = { ok: true; section: unknown } | { ok: false }
@@ -57,9 +57,7 @@ export function useSettingsMutation(): UseSettingsMutationResult {
         return { ok: true, section: result.section }
       } catch (error: unknown) {
         setStatus('error')
-        toast.error('保存失败', {
-          description: error instanceof Error ? error.message : '请稍后重试',
-        })
+        toastApiError(error, '保存失败')
         return { ok: false }
       }
     },

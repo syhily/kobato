@@ -8,6 +8,7 @@ import type { BackupFileDto } from '@/shared/types/backup'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
+import { toastApiError } from '@/client/lib/toast-api-error'
 import { extractApiErrorMessage, isApiAccepted } from '@/shared/utils/api-error'
 import { BackupFileList } from '@/ui/admin/settings/BackupFileList'
 import { BackupRestoreDialog } from '@/ui/admin/settings/BackupRestoreDialog'
@@ -63,7 +64,7 @@ async function pollReady(onTimeout: () => void, signal: AbortSignal) {
               status.phase === 'failed'
             ) {
               const error = 'error' in status && typeof status.error === 'string' ? status.error : undefined
-              toast.error('还原失败', { description: error })
+              toastApiError(error, '还原失败')
             }
           }
         } catch {
@@ -113,9 +114,7 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
       setNextToken(res.nextContinuationToken)
       return res
     } catch (err) {
-      toast.error('加载备份列表失败', {
-        description: err instanceof Error ? err.message : '请检查网络或刷新页面重试',
-      })
+      toastApiError(err, '加载备份列表失败')
       throw err
     }
   }, [])
@@ -169,7 +168,7 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
       }, pollAbortRef.current.signal)
     },
     onError: (error: Error) => {
-      toast.error('还原失败', { description: error.message })
+      toastApiError(error, '还原失败')
       setRestoreKey(null)
       setRestorePhase('confirm')
     },
@@ -183,7 +182,7 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
       void safeLoadPage(5)
     },
     onError: (error: Error) => {
-      toast.error('删除失败', { description: error.message })
+      toastApiError(error, '删除失败')
     },
   })
 
@@ -228,7 +227,7 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
         }, pollAbortRef.current.signal)
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : '上传还原失败')
+      toastApiError(err, '上传还原失败')
     } finally {
       setUploading(false)
       setSelectedFile(null)

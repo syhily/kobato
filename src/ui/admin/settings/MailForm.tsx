@@ -64,7 +64,13 @@ function MailToggleCard({ mail }: { mail: MailLoaderShape }) {
               control={form.control}
               name="enabled"
               render={({ field }) => (
-                <SettingsSwitch id="mail-enabled" checked={field.value} onCheckedChange={field.onChange} save={save} />
+                <SettingsSwitch
+                  name={field.name}
+                  id="mail-enabled"
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                  save={save}
+                />
               )}
             />
             <FieldLabel htmlFor="mail-enabled" className="font-normal">
@@ -77,7 +83,13 @@ function MailToggleCard({ mail }: { mail: MailLoaderShape }) {
   )
 }
 
-function ProviderSelectCard({ mail }: { mail: MailLoaderShape }) {
+function ProviderSelectCard({
+  mail,
+  onTransportSaved,
+}: {
+  mail: MailLoaderShape
+  onTransportSaved: (transport: MailLoaderShape['mail']['transport']) => void
+}) {
   const { form, settingGroupProps, save } = useSettingsCard<
     MailLoaderShape,
     { transport: MailLoaderShape['mail']['transport'] }
@@ -88,6 +100,7 @@ function ProviderSelectCard({ mail }: { mail: MailLoaderShape }) {
     fromState: (state) => ({
       mail: { transport: state.transport },
     }),
+    onSaved: useCallback((section: MailLoaderShape) => onTransportSaved(section.mail.transport), [onTransportSaved]),
   })
 
   return (
@@ -107,6 +120,7 @@ function ProviderSelectCard({ mail }: { mail: MailLoaderShape }) {
             name="transport"
             render={({ field }) => (
               <SettingsSelect
+                name={field.name}
                 value={field.value}
                 save={save}
                 onValueChange={(value) => {
@@ -344,6 +358,7 @@ function SmtpConfigCard({ mail }: { mail: MailLoaderShape }) {
               name="smtpSecure"
               render={({ field }) => (
                 <SettingsSwitch
+                  name={field.name}
                   id="mail-smtp-secure"
                   checked={field.value}
                   onCheckedChange={field.onChange}
@@ -363,6 +378,7 @@ function SmtpConfigCard({ mail }: { mail: MailLoaderShape }) {
               name="smtpRequireTls"
               render={({ field }) => (
                 <SettingsSwitch
+                  name={field.name}
                   id="mail-smtp-require-tls"
                   checked={field.value}
                   onCheckedChange={field.onChange}
@@ -385,6 +401,7 @@ function SmtpConfigCard({ mail }: { mail: MailLoaderShape }) {
               name="smtpRejectUnauthorized"
               render={({ field }) => (
                 <SettingsSwitch
+                  name={field.name}
                   id="mail-smtp-reject-unauthorized"
                   checked={field.value}
                   onCheckedChange={field.onChange}
@@ -434,7 +451,7 @@ function SenderFieldCard({ mail }: { mail: MailLoaderShape }) {
   )
 }
 
-function MailTestCard({ mail }: { mail: MailLoaderShape }) {
+function MailTestCard({ mail, transport }: { mail: MailLoaderShape; transport: MailLoaderShape['mail']['transport'] }) {
   const { author } = useSiteIdentity()
   const [testTo, setTestTo] = useState<string>(author?.email ?? '')
   const [testStatus, setTestStatus] = useState<TestStatus>(idleTestStatus)
@@ -456,8 +473,11 @@ function MailTestCard({ mail }: { mail: MailLoaderShape }) {
 
   const inner = mail.mail
   const isTestPending = testMutation.isPending
-  const isZeabur = inner.transport === 'zeabur'
-  const isMailgun = inner.transport === 'mailgun'
+  // Provider identity comes from the parent's last-saved transport (the
+  // authoritative save response), not the loader snapshot — a provider
+  // switch must flip the readiness check immediately.
+  const isZeabur = transport === 'zeabur'
+  const isMailgun = transport === 'mailgun'
   const zeaburReady = inner.host.trim() !== '' && inner.sender.trim() !== '' && inner.apiKeyMask !== null
   const smtpReady =
     inner.smtpHost.trim() !== '' &&
@@ -511,11 +531,16 @@ function MailTestCard({ mail }: { mail: MailLoaderShape }) {
 }
 
 export function MailForm({ mail }: MailFormProps) {
-  const transport = mail.mail.transport
+  // The save response is authoritative and saves never revalidate the
+  // loader, so the provider identity is tracked locally: the moment a
+  // provider switch commits, the config card and the test-send readiness
+  // below flip to the new provider instead of showing the stale snapshot.
+  const [savedTransport, setSavedTransport] = useState<MailLoaderShape['mail']['transport'] | null>(null)
+  const transport = savedTransport ?? mail.mail.transport
   return (
     <div className="flex flex-col gap-5">
       <MailToggleCard mail={mail} />
-      <ProviderSelectCard mail={mail} />
+      <ProviderSelectCard mail={mail} onTransportSaved={setSavedTransport} />
       <SenderFieldCard mail={mail} />
       {transport === 'smtp' ? (
         <SmtpConfigCard mail={mail} />
@@ -524,7 +549,7 @@ export function MailForm({ mail }: MailFormProps) {
       ) : (
         <ZeaburConfigCard mail={mail} />
       )}
-      <MailTestCard mail={mail} />
+      <MailTestCard mail={mail} transport={transport} />
     </div>
   )
 }

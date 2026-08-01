@@ -26,6 +26,7 @@ describe('ui/admin/settings/shell/SettingsCombobox', () => {
     const save = vi.fn()
     render(
       <SettingsCombobox<ZoneItem>
+        name="zone"
         items={ZONES}
         value={ZONES[0]}
         save={save}
@@ -54,6 +55,6 @@ describe('ui/admin/settings/shell/SettingsCombobox', () => {
     fireEvent.click(option)
 
     await waitFor(() => expect(onChange).toHaveBeenCalledWith('UTC'))
-    expect(save).toHaveBeenCalledOnce()
+    expect(save).toHaveBeenCalledWith('zone')
   })
 })

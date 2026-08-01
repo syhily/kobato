@@ -80,6 +80,7 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
             render={({ field }) => (
               <div className="flex items-center gap-3">
                 <SettingsSwitch
+                  name={field.name}
                   id="scheduled-enabled"
                   checked={field.value}
                   disabled={!canConfigure}
@@ -102,6 +103,7 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
                 name="frequency"
                 render={({ field }) => (
                   <SettingsSelect
+                    name={field.name}
                     value={field.value}
                     onValueChange={field.onChange}
                     save={save}
@@ -127,6 +129,7 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
                   name="hour"
                   render={({ field }) => (
                     <SettingsSelect
+                      name={field.name}
                       value={String(field.value)}
                       onValueChange={(v) => field.onChange(Number(v))}
                       save={save}
@@ -151,6 +154,7 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
                   name="minute"
                   render={({ field }) => (
                     <SettingsSelect
+                      name={field.name}
                       value={String(field.value)}
                       onValueChange={(v) => field.onChange(asBackupMinute(v))}
                       save={save}
@@ -179,6 +183,7 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
                   name="dayOfWeek"
                   render={({ field }) => (
                     <SettingsSelect
+                      name={field.name}
                       value={field.value ? String(field.value) : ''}
                       onValueChange={(v) => field.onChange(Number(v))}
                       save={save}
@@ -207,6 +212,7 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
                   name="dayOfMonth"
                   render={({ field }) => (
                     <SettingsSelect
+                      name={field.name}
                       value={field.value ? String(field.value) : ''}
                       onValueChange={(v) => field.onChange(Number(v))}
                       save={save}
@@ -235,6 +241,7 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
                 render={({ field }) => (
                   <div className="flex items-center gap-3">
                     <SettingsSwitch
+                      name={field.name}
                       id="retention-enabled"
                       checked={field.value}
                       disabled={!canConfigure}

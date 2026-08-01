@@ -324,6 +324,7 @@ function GeneralTimeZoneCard({
               const selected = timeZoneItems.find((item) => item.value === field.value) ?? null
               return (
                 <SettingsCombobox<TimeZoneItem>
+                  name={field.name}
                   items={timeZoneItems}
                   value={selected}
                   save={save}

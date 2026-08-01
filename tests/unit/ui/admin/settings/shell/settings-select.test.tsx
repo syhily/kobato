@@ -13,7 +13,7 @@ import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/comp
 
 function renderSelect(onValueChange: (value: string | null) => void, save: () => void) {
   return render(
-    <SettingsSelect value="asc" onValueChange={onValueChange} save={save}>
+    <SettingsSelect name="sort" value="asc" onValueChange={onValueChange} save={save}>
       <SelectTrigger aria-label="sort-dir">
         <SelectValue />
       </SelectTrigger>
@@ -37,14 +37,14 @@ describe('ui/admin/settings/shell/SettingsSelect', () => {
     fireEvent.click(option)
 
     await waitFor(() => expect(onValueChange).toHaveBeenCalledWith('desc', expect.anything()))
-    expect(save).toHaveBeenCalledOnce()
+    expect(save).toHaveBeenCalledWith('sort')
     expect(onValueChange.mock.invocationCallOrder[0]).toBeLessThan(save.mock.invocationCallOrder[0])
   })
 
   it('still saves when no upstream handler is given', async () => {
     const save = vi.fn()
     render(
-      <SettingsSelect value="asc" save={save}>
+      <SettingsSelect name="sort" value="asc" save={save}>
         <SelectTrigger aria-label="sort-dir">
           <SelectValue />
         </SelectTrigger>
@@ -69,7 +69,7 @@ describe('ui/admin/settings/shell/SettingsSelect', () => {
     const onChange = vi.fn()
     const save = vi.fn()
     render(
-      <SettingsSelect value="8" onValueChange={(v) => onChange(Number(v))} save={save}>
+      <SettingsSelect name="hour" value="8" onValueChange={(v) => onChange(Number(v))} save={save}>
         <SelectTrigger aria-label="hour">
           <SelectValue />
         </SelectTrigger>

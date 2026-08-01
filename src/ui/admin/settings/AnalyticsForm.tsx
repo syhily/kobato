@@ -88,6 +88,7 @@ export function AnalyticsForm({ analytics }: AnalyticsFormProps) {
               render={({ field }) => (
                 <div className="flex items-center gap-3">
                   <SettingsSwitch
+                    name={field.name}
                     id="analytics-track-admin"
                     checked={field.value}
                     onCheckedChange={field.onChange}
@@ -107,6 +108,7 @@ export function AnalyticsForm({ analytics }: AnalyticsFormProps) {
               render={({ field }) => (
                 <div className="flex items-center gap-3">
                   <SettingsSwitch
+                    name={field.name}
                     id="analytics-keep-bot-rows"
                     checked={field.value}
                     onCheckedChange={field.onChange}

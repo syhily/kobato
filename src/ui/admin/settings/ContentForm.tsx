@@ -131,6 +131,7 @@ function ContentFeedCard({ content }: { content: ContentSettings }) {
               name="feedFull"
               render={({ field }) => (
                 <SettingsSwitch
+                  name={field.name}
                   id="content-feed-full"
                   checked={field.value}
                   onCheckedChange={field.onChange}
@@ -195,7 +196,7 @@ function ContentSortCard({ content }: { content: ContentSettings }) {
             control={form.control}
             name="postSortBy"
             render={({ field }) => (
-              <SettingsSelect value={field.value} onValueChange={field.onChange} save={save}>
+              <SettingsSelect name={field.name} value={field.value} onValueChange={field.onChange} save={save}>
                 <SelectTrigger id="content-post-sort-by" className="w-full">
                   <SelectValue>
                     {(value: string | null) => SORT_BY_ITEMS.find((o) => o.value === value)?.label ?? value ?? ''}
@@ -217,7 +218,7 @@ function ContentSortCard({ content }: { content: ContentSettings }) {
             control={form.control}
             name="postSort"
             render={({ field }) => (
-              <SettingsSelect value={field.value} onValueChange={field.onChange} save={save}>
+              <SettingsSelect name={field.name} value={field.value} onValueChange={field.onChange} save={save}>
                 <SelectTrigger id="content-post-sort" className="w-full">
                   <SelectValue>
                     {(value: string | null) => SORT_DIR_ITEMS.find((o) => o.value === value)?.label ?? value ?? ''}
@@ -241,6 +242,7 @@ function ContentSortCard({ content }: { content: ContentSettings }) {
               name="postFeatureEnabled"
               render={({ field }) => (
                 <SettingsSwitch
+                  name={field.name}
                   id="content-post-feature-enabled"
                   checked={field.value}
                   onCheckedChange={field.onChange}

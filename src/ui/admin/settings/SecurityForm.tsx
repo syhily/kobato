@@ -54,7 +54,13 @@ function CsrfToggleCard({ security }: { security: SecuritySettings }) {
             name="enabled"
             render={({ field }) => (
               <div className="flex items-center gap-3">
-                <SettingsSwitch id="csrf-enabled" checked={field.value} onCheckedChange={field.onChange} save={save} />
+                <SettingsSwitch
+                  name={field.name}
+                  id="csrf-enabled"
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                  save={save}
+                />
                 <FieldLabel htmlFor="csrf-enabled" className="font-normal">
                   {field.value ? '已开启' : '已关闭'}
                 </FieldLabel>
@@ -171,7 +177,13 @@ function CorsPolicyCard({ security }: { security: SecuritySettings }) {
             name="enabled"
             render={({ field }) => (
               <div className="flex items-center gap-3">
-                <SettingsSwitch id="cors-enabled" checked={field.value} onCheckedChange={field.onChange} save={save} />
+                <SettingsSwitch
+                  name={field.name}
+                  id="cors-enabled"
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                  save={save}
+                />
                 <FieldLabel htmlFor="cors-enabled" className="font-normal">
                   {field.value ? '已开启' : '已关闭'}
                 </FieldLabel>
@@ -269,6 +281,7 @@ function PasskeyToggleCard({ security }: { security: SecuritySettings }) {
             render={({ field }) => (
               <div className="flex items-center gap-3">
                 <SettingsSwitch
+                  name={field.name}
                   id="passkey-enabled"
                   checked={field.value}
                   onCheckedChange={field.onChange}

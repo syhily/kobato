@@ -87,6 +87,7 @@ function SortableWidgetRow({
               name={`widgets.${index}.enabled` as const}
               render={({ field }) => (
                 <SettingsSwitch
+                  name={field.name}
                   id={`sidebar-${widget.type}`}
                   checked={field.value}
                   onCheckedChange={field.onChange}
@@ -160,7 +161,7 @@ function SidebarWidgetsCard({ sidebar }: SidebarFormProps) {
                   widget={widget as SidebarWidget}
                   index={index}
                   form={form}
-                  save={save}
+                  save={() => save('widgets')}
                   flushOnBlur={flushOnBlur}
                 />
               ))}
@@ -243,12 +244,12 @@ function DailyQuoteCard({ sidebar }: SidebarFormProps) {
     }))
     form.setValue('customQuotes', quotes, { shouldDirty: true })
     // 离散动作（非逐行列表编辑），立即保存才能给出服务端校验的即时反馈。
-    save()
+    save('customQuotes')
   }
 
   function handleClear() {
     form.setValue('customQuotes', [], { shouldDirty: true })
-    save()
+    save('customQuotes')
   }
 
   const count = customQuotes.length
@@ -269,7 +270,7 @@ function DailyQuoteCard({ sidebar }: SidebarFormProps) {
             control={form.control}
             name="source"
             render={({ field }) => (
-              <SettingsSelect value={field.value} onValueChange={field.onChange} save={save}>
+              <SettingsSelect name={field.name} value={field.value} onValueChange={field.onChange} save={save}>
                 <SelectTrigger id="sidebar-daily-quote-source" className="w-full">
                   <SelectValue>
                     {(value: string | null) => SOURCE_OPTIONS.find((o) => o.value === value)?.label ?? value ?? ''}

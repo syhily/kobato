@@ -18,20 +18,23 @@ import { Combobox } from '@/ui/components/combobox'
 
 type ComboboxProps<Value> = ComponentProps<typeof Combobox<Value>>
 
-interface SettingsComboboxProps<Value> extends Omit<ComboboxProps<Value>, 'onValueChange'> {
+interface SettingsComboboxProps<Value> extends Omit<ComboboxProps<Value>, 'onValueChange' | 'name'> {
   /** From `useSettingsCard().save` — fires immediately after the change. */
-  save: () => void
+  save: (field?: string) => void
+  /** RHF field name — the commit is scoped to this field's change only. */
+  name: string
   /** Optional upstream onValueChange; merged with save. */
   onValueChange?: ComboboxProps<Value>['onValueChange']
 }
 
-export function SettingsCombobox<Value>({ save, onValueChange, ...props }: SettingsComboboxProps<Value>) {
+export function SettingsCombobox<Value>({ save, name, onValueChange, ...props }: SettingsComboboxProps<Value>) {
   return (
     <Combobox<Value>
       {...props}
+      name={name}
       onValueChange={(value, eventDetails) => {
         onValueChange?.(value, eventDetails)
-        save()
+        save(name)
       }}
     />
   )

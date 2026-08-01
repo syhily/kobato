@@ -248,7 +248,7 @@ describe('useFileUpload — success handling', () => {
       ok = await result.current.upload(makeFile('a.bin', 1))
     })
     expect(ok).toBe(false)
-    expect(toastMock.error).toHaveBeenCalledWith('revalidate blew up')
+    expect(toastMock.error).toHaveBeenCalledWith('上传失败', { description: 'revalidate blew up' })
   })
 
   it('passes the parsed body to onSuccess when parseJson is set', async () => {
@@ -272,7 +272,7 @@ describe('useFileUpload — failure handling', () => {
       ok = await result.current.upload(makeFile('a.bin', 1))
     })
     expect(ok).toBe(false)
-    expect(toastMock.error).toHaveBeenCalledWith('存储后端不可用')
+    expect(toastMock.error).toHaveBeenCalledWith('上传失败', { description: '存储后端不可用' })
     expect(toastMock.success).not.toHaveBeenCalled()
   })
 
@@ -282,7 +282,7 @@ describe('useFileUpload — failure handling', () => {
     await act(async () => {
       await result.current.upload(makeFile('a.bin', 1))
     })
-    expect(toastMock.error).toHaveBeenCalledWith('上传失败 (413)')
+    expect(toastMock.error).toHaveBeenCalledWith('上传失败', { description: '上传失败 (413)' })
   })
 
   it('falls back when the error body is not JSON at all', async () => {
@@ -291,7 +291,7 @@ describe('useFileUpload — failure handling', () => {
     await act(async () => {
       await result.current.upload(makeFile('a.bin', 1))
     })
-    expect(toastMock.error).toHaveBeenCalledWith('上传失败 (502)')
+    expect(toastMock.error).toHaveBeenCalledWith('上传失败', { description: '上传失败 (502)' })
   })
 
   it('routes HTTP failures to onError when the channel is set', async () => {
@@ -332,7 +332,7 @@ describe('useFileUpload — failure handling', () => {
       ok = await result.current.upload(makeFile('a.bin', 1))
     })
     expect(ok).toBe(false)
-    expect(toastMock.error).toHaveBeenCalledWith('Failed to fetch')
+    expect(toastMock.error).toHaveBeenCalledWith('上传失败', { description: 'Failed to fetch' })
   })
 
   it('toasts the failure fallback for non-Error throws', async () => {
@@ -341,7 +341,7 @@ describe('useFileUpload — failure handling', () => {
     await act(async () => {
       await result.current.upload(makeFile('a.bin', 1))
     })
-    expect(toastMock.error).toHaveBeenCalledWith('上传失败')
+    expect(toastMock.error).toHaveBeenCalledWith('上传失败', { description: 'boom' })
   })
 
   it('routes transport failures to the failure fallback in onError mode', async () => {

@@ -5,11 +5,13 @@ import {
   type DefaultValues,
   type FieldError,
   type FieldErrors,
+  type FieldPath,
   type FieldValues,
   type Resolver,
   type UseFormReturn,
   useForm,
 } from 'react-hook-form'
+import { toast } from 'sonner'
 
 import type { SettingsSection } from '@/shared/config/sections'
 import type { SettingsSectionPatch } from '@/shared/config/types'
@@ -25,6 +27,10 @@ interface UseSettingsCardBaseOptions<TSource extends object, TState extends Fiel
   source: TSource
   toState: (source: TSource) => TState
   schema?: z.ZodType<TState, any>
+  /** Called with the authoritative save response (same shape as `source`)
+   * after every successful commit — for parents that must react to a saved
+   * field without waiting on a loader revalidate (which saves never trigger). */
+  onSaved?: (section: TSource) => void
 }
 
 type UseSettingsCardOptions<TSource extends object, TState extends FieldValues> = {
@@ -39,8 +45,11 @@ interface UseSettingsCardResult<TSource extends object, TState extends FieldValu
   isSaving: boolean
   /** Immediate commit. Skips the dirty guard but still runs validation.
    * Used by Switch / RadioGroup / Select — controls that have no "intermediate"
-   * state worth deferring. */
-  save: () => void
+   * state worth deferring. Pass the control's RHF field name (`save('enabled')`)
+   * for a FIELD-scoped commit: only that field's change is POSTed and only that
+   * field's baseline advances, so a keyboard-triggered toggle (no blur, no
+   * mouse) can never sweep a sibling's half-typed text into the patch. */
+  save: (field?: string) => void
   /** Blur-driven commit. No-op when the form matches the last committed
    * snapshot. Used by `<SettingsInput>` on every text input, and by the
    * panel-level flush triggers (close / scroll-away / page-hide) via the
@@ -99,12 +108,95 @@ function buildZodErrors<T extends FieldValues>(
   return unsafeCast<FieldErrors<T>>(errors)
 }
 
+// Depth-first walk for the first human-readable issue in an RHF error tree
+// (plain records and useFieldArray arrays), so a rejected save can tell the
+// user WHICH field failed instead of just that something did.
+function firstErrorMessage(node: unknown): string | undefined {
+  if (Array.isArray(node)) {
+    for (const item of node) {
+      const found = firstErrorMessage(item)
+      if (found !== undefined) {
+        return found
+      }
+    }
+    return undefined
+  }
+  if (isRecord(node)) {
+    if (typeof node.message === 'string') {
+      return node.message
+    }
+    for (const value of Object.values(node)) {
+      const found = firstErrorMessage(value)
+      if (found !== undefined) {
+        return found
+      }
+    }
+  }
+  return undefined
+}
+
+// ─── Field-scoped commit helpers (P1-13) ─────────────────
+// A discrete control (switch / select / radio / checkbox / combobox)
+// fires `save(field)`; the commit must carry ONLY that field's change,
+// so the patch is computed as the sparse diff between two `fromState`
+// snapshots: the committed baseline and the baseline with just this
+// field replaced by its current form value.
+
+/** Read a dotted RHF field path out of a plain values object. */
+function getPathValue(values: unknown, path: string): unknown {
+  let node = values
+  for (const key of path.split('.')) {
+    if (!isRecord(node) && !Array.isArray(node)) {
+      return undefined
+    }
+    node = unsafeCast<Record<string, unknown>>(node)[key]
+  }
+  return node
+}
+
+/** Immutable-shape write of a dotted RHF field path (mutates a draft clone). */
+function setPathValue(draft: unknown, path: string, value: unknown): void {
+  const keys = path.split('.')
+  let node = unsafeCast<Record<string, unknown>>(draft)
+  for (const key of keys.slice(0, -1)) {
+    node = unsafeCast<Record<string, unknown>>(node[key])
+  }
+  node[keys[keys.length - 1]!] = value
+}
+
+/**
+ * Sparse deep-diff: returns the subset of `next` that differs from
+ * `base`, or undefined when nothing changed. Objects recurse; arrays and
+ * primitives compare atomically (a changed array is POSTed whole — the
+ * server's deep-merge treats arrays as replace, not merge). Keys only
+ * present in `base` never appear (settings states don't delete keys).
+ */
+function sparseDiff(base: unknown, next: unknown): unknown {
+  if (isRecord(base) && isRecord(next)) {
+    const out: Record<string, unknown> = {}
+    let changed = false
+    for (const key of Object.keys(next)) {
+      const diff = sparseDiff(base[key], next[key])
+      if (diff !== undefined) {
+        out[key] = diff
+        changed = true
+      }
+    }
+    return changed ? out : undefined
+  }
+  if (Array.isArray(base) || Array.isArray(next)) {
+    return JSON.stringify(base) === JSON.stringify(next) ? undefined : next
+  }
+  return Object.is(base, next) ? undefined : next
+}
+
 export function useSettingsCard<TSource extends object, TState extends FieldValues>({
   section,
   source,
   toState,
   fromState,
   schema,
+  onSaved,
 }: UseSettingsCardOptions<TSource, TState>): UseSettingsCardResult<TSource, TState> {
   const [savedSource, setSavedSource] = useState<TSource | null>(null)
   const { commit, isPending, status } = useSettingsMutation()
@@ -132,10 +224,14 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
     resolver,
     mode: 'onChange',
   })
-  const { reset, handleSubmit, getValues } = form
+  const { reset, handleSubmit, getValues, setValue } = form
 
-  // Last snapshot the server has acknowledged (or the initial seed). Drives
-  // the dirty guard: if `getValues()` deep-equals this, flush is a no-op.
+  // Last snapshot the server has acknowledged (or the initial seed), kept in
+  // RAW form-value representation. Drives the dirty guard: if `getValues()`
+  // deep-equals this, flush is a no-op. Storing the raw values (rather than
+  // the resolver-parsed output) keeps both sides of the comparison in one
+  // representation — a schema transform such as `.trim()` would otherwise
+  // leave the card permanently dirty and re-POST on every flush.
   const [lastCommitted, setLastCommitted] = useState<DefaultValues<TState>>(initialValues)
 
   // Re-seed form when source changes (navigation back to the page, a remote
@@ -183,8 +279,12 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
           // `result.section` is the server-produced TSource (masks merged
           // in for assets/mail/search) — the same shape the loader feeds
           // this card as `source`.
-          setSavedSource(unsafeCast<TSource>(result.section))
-          setLastCommitted(unsafeCast<DefaultValues<TState>>(values))
+          const savedSection = unsafeCast<TSource>(result.section)
+          setSavedSource(savedSection)
+          // Baseline moves to the RAW form values (see `lastCommitted`
+          // above), not the resolver-parsed `values` this callback receives.
+          setLastCommitted(unsafeCast<DefaultValues<TState>>(getValues()))
+          onSaved?.(savedSection)
         } else {
           // Keep the form dirty (lastCommitted untouched) so the next
           // flush retries; display falls back to the loader snapshot.
@@ -192,19 +292,82 @@ export function useSettingsCard<TSource extends object, TState extends FieldValu
         }
       },
       (errors) => {
-        log.debug('Settings save validation failed, skipping', { errors })
+        // A rejected save must never be silent: the control would otherwise
+        // keep the invalid value while the user believes it persisted. Roll
+        // back to the last committed snapshot and surface the first issue —
+        // same toast convention as `useSettingsMutation`'s network failure.
+        reset(lastCommitted)
+        toast.error('设置未保存', { description: firstErrorMessage(errors) ?? '请检查输入后重试' })
+        log.debug('Settings save validation failed, rolled back', { errors })
       },
     )()
-  }, [handleSubmit, section, commit, fromState])
+  }, [handleSubmit, section, commit, fromState, getValues, reset, lastCommitted, onSaved])
 
   const isDirty = useCallback(() => {
     return JSON.stringify(getValues()) !== JSON.stringify(lastCommitted)
   }, [getValues, lastCommitted])
 
-  // Switch / RadioGroup / Select / list buttons — fire immediately.
-  const save = useCallback(() => {
-    performSave()
-  }, [performSave])
+  // Field-scoped commit for discrete controls (P1-13): POST only the
+  // trigger field's change, advance only its baseline, and on rejection
+  // roll back only it — a keyboard-fired toggle must neither sweep a
+  // sibling's half-typed text into the patch nor clobber it on rollback,
+  // and a sibling's invalid in-flight text must not block the toggle.
+  const performSaveField = useCallback(
+    (field: string) => {
+      void (async () => {
+        // The scoped state: committed baseline with just this field
+        // replaced by its current form value.
+        const scoped = structuredClone(lastCommitted)
+        setPathValue(scoped, field, getPathValue(getValues(), field))
+
+        const patch = sparseDiff(fromState(unsafeCast<TState>(lastCommitted)), fromState(unsafeCast<TState>(scoped)))
+        if (patch === undefined) {
+          // The control fired without the value actually moving (a
+          // re-select of the current option) — nothing to commit.
+          return
+        }
+
+        if (schema) {
+          const result = await schema.safeParseAsync(scoped)
+          if (!result.success) {
+            setValue(unsafeCast<FieldPath<TState>>(field), unsafeCast<never>(getPathValue(lastCommitted, field)))
+            toast.error('设置未保存', {
+              description: firstErrorMessage(buildZodErrors<TState>(result.error.issues)) ?? '请检查输入后重试',
+            })
+            log.debug('Settings field save validation failed, rolled back', { field, errors: result.error.issues })
+            return
+          }
+        }
+
+        const result = await commit(section, unsafeCast<SettingsSectionPatch<typeof section>>(patch))
+        if (result.ok) {
+          const savedSection = unsafeCast<TSource>(result.section)
+          setSavedSource(savedSection)
+          // Only the trigger field's baseline advances — sibling edits
+          // stay dirty for their own blur / panel flush.
+          setLastCommitted(scoped)
+          onSaved?.(savedSection)
+        } else {
+          setSavedSource(null)
+        }
+      })()
+    },
+    [lastCommitted, getValues, setValue, schema, commit, section, fromState, onSaved],
+  )
+
+  // Switch / RadioGroup / Select / list buttons — fire immediately. A
+  // field name scopes the commit to that field; without one the whole
+  // card commits (list mutations and other composite edits).
+  const save = useCallback(
+    (field?: string) => {
+      if (field === undefined) {
+        performSave()
+        return
+      }
+      performSaveField(field)
+    },
+    [performSave, performSaveField],
+  )
 
   // Text input blur — skip when nothing changed. Also the callback the
   // panel-level flush registry invokes (close / scroll-away / page-hide).

@@ -114,6 +114,7 @@ function SortableSideNavRow({
               name={`sideNavRows.${index}.newTab` as const}
               render={({ field }) => (
                 <SettingsCheckbox
+                  name={field.name}
                   id={`nav-newtab-${index}`}
                   checked={field.value}
                   onCheckedChange={field.onChange}
@@ -202,7 +203,7 @@ function SideNavCard({ navigation }: { navigation: NavigationSettings }) {
                     index={index}
                     form={form}
                     flushOnBlur={flushOnBlur}
-                    save={save}
+                    save={() => save('sideNavRows')}
                     onRemove={(i) => rows.remove(i)}
                   />
                 ))}
@@ -333,7 +334,7 @@ function FooterNavCard({ navigation, socials }: { navigation: NavigationSettings
   function updateFooterItem(index: number, patch: Partial<FooterNavItem>) {
     const current = rows.fields[index]
     rows.update(index, { ...current, ...patch } as FooterNavItemRowState)
-    save()
+    save('footerNavItems')
   }
 
   const configuredNetworks = new Set(socials.map((s) => s.network))

@@ -54,7 +54,7 @@ function AssetsDomainCard({ assets }: { assets: AssetsLoaderShape }) {
             control={form.control}
             name="assetScheme"
             render={({ field }) => (
-              <SettingsSelect value={field.value} onValueChange={field.onChange} save={save}>
+              <SettingsSelect name={field.name} value={field.value} onValueChange={field.onChange} save={save}>
                 <SelectTrigger id="assets-asset-scheme" className="w-full">
                   <SelectValue>
                     {(value: string | null) => SCHEME_OPTIONS.find((o) => o.value === value)?.label ?? value ?? ''}
@@ -113,6 +113,7 @@ function AssetsToggleCard({ assets }: { assets: AssetsLoaderShape }) {
             render={({ field }) => (
               <div className="flex items-center gap-3">
                 <SettingsSwitch
+                  name={field.name}
                   id="assets-storage-enabled"
                   checked={field.value}
                   onCheckedChange={field.onChange}
@@ -219,6 +220,7 @@ function AssetsS3Card({ assets }: { assets: AssetsLoaderShape }) {
               name="forcePathStyle"
               render={({ field }) => (
                 <SettingsSwitch
+                  name={field.name}
                   id="assets-force-path-style"
                   checked={field.value}
                   onCheckedChange={field.onChange}
