@@ -46,11 +46,18 @@ async function writeFeedResponse(c: Context<Env>, kind: 'rss' | 'atom', scope?: 
 // scope, the category/tag feeds pin their own taxonomy kind with the slug
 // route param. The per-IP resource rate limit guards all of them with the
 // public resource wire shape (`{ error: 'Too many requests' }`, 429).
+//
+// The limiter is passed per route, NEVER via router-level `.use()`: this
+// router is mounted at `/` in the pipeline, where a bare `.use()` registers
+// as a site-wide middleware — every public SSR page view then counts
+// against the feed bucket, and one IP's 60 page loads/minute 429 the whole
+// site (caught in e2e as `429 { key: 'feed', path: '/sitemap.xml' }`).
+const feedRateLimit = rateLimitByIp('feed', 'resourceIp', { errorBody: { error: 'Too many requests' } })
+
 export const feedRouter = new Hono<Env>()
-  .use(rateLimitByIp('feed', 'resourceIp', { errorBody: { error: 'Too many requests' } }))
-  .get('/feed', (c) => writeFeedResponse(c, 'rss'))
-  .get('/feed/atom', (c) => writeFeedResponse(c, 'atom'))
-  .get('/cats/:slug/feed', (c) => writeFeedResponse(c, 'rss', { category: c.req.param('slug') }))
-  .get('/cats/:slug/feed/atom', (c) => writeFeedResponse(c, 'atom', { category: c.req.param('slug') }))
-  .get('/tags/:slug/feed', (c) => writeFeedResponse(c, 'rss', { tag: c.req.param('slug') }))
-  .get('/tags/:slug/feed/atom', (c) => writeFeedResponse(c, 'atom', { tag: c.req.param('slug') }))
+  .get('/feed', feedRateLimit, (c) => writeFeedResponse(c, 'rss'))
+  .get('/feed/atom', feedRateLimit, (c) => writeFeedResponse(c, 'atom'))
+  .get('/cats/:slug/feed', feedRateLimit, (c) => writeFeedResponse(c, 'rss', { category: c.req.param('slug') }))
+  .get('/cats/:slug/feed/atom', feedRateLimit, (c) => writeFeedResponse(c, 'atom', { category: c.req.param('slug') }))
+  .get('/tags/:slug/feed', feedRateLimit, (c) => writeFeedResponse(c, 'rss', { tag: c.req.param('slug') }))
+  .get('/tags/:slug/feed/atom', feedRateLimit, (c) => writeFeedResponse(c, 'atom', { tag: c.req.param('slug') }))

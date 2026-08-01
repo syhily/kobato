@@ -34,6 +34,9 @@ function requestFeed(url: string) {
     await next()
   })
   app.route('/', feedRouter)
+  // Sentinel public route sharing the `/` mount root — mirrors the SSR
+  // pages that must never count against the feed bucket.
+  app.get('/sitemap.xml', (c) => c.text('sitemap'))
   return app.request(url)
 }
 
@@ -94,6 +97,27 @@ describe('feed resource', () => {
     const res = await requestFeed('http://localhost/feed')
     expect(res.status).toBe(429)
     await expect(res.json()).resolves.toEqual({ error: 'Too many requests' })
+  })
+
+  it('never counts public non-feed requests against the feed bucket', async () => {
+    // Regression guard: the router is mounted at `/` in the real pipeline,
+    // where a router-level `.use(rateLimit)` would register as a site-wide
+    // middleware — e2e caught `/sitemap.xml` returning 429 once one IP
+    // exhausted the feed bucket. The limiter now rides each feed route.
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      rateLimit: {
+        ...TEST_BLOG_SETTINGS_BUNDLE.rateLimit!,
+        resourceIp: { windowSeconds: 60, maxAttempts: 1 },
+      },
+    })
+    // Several hits past the bucket ceiling — none may count against it.
+    for (let i = 0; i < 3; i++) {
+      expect((await requestFeed('http://localhost/sitemap.xml')).status).toBe(200)
+    }
+    // The feed endpoints themselves stay guarded by the same bucket.
+    expect((await requestFeed('http://localhost/feed')).status).toBe(200)
+    expect((await requestFeed('http://localhost/feed')).status).toBe(429)
   })
 
   it('serves a cache hit without regenerating the feed', async () => {
