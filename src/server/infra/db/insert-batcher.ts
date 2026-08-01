@@ -34,7 +34,10 @@ export interface FlushResult {
 // A flush DRAINS: events buffered while a write was in flight had their
 // triggers swallowed by the singleflight, so a settled flush re-checks
 // the payload and keeps writing until it is empty (see the starvation
-// guard in `flush()`).
+// guard in `flush()`). On write failure the drain stops instead of
+// hot-looping, then re-arms the interval timer — rows buffered
+// mid-flush can have every trigger consumed by the singleflight, and
+// without the re-arm they would strand until the next event.
 export abstract class FlushLoop<Pending, Result> {
   private timer: NodeJS.Timeout | null = null
   private flushing: Promise<Result> | null = null
@@ -89,6 +92,11 @@ export abstract class FlushLoop<Pending, Result> {
     }
     if (this.timer === null) {
       this.timer = setTimeout(() => {
+        // Clear the field BEFORE flushing: when the timer fires into an
+        // in-flight flush, drain() returns at the singleflight guard and
+        // never clears it — a stale handle would wedge every future arm
+        // (`timer !== null`), stranding later batches.
+        this.timer = null
         void this.flush()
       }, this.flushIntervalMs)
       this.timer.unref()
@@ -173,7 +181,16 @@ export abstract class FlushLoop<Pending, Result> {
             // The recovery policy (dead-letter, merge-back retry, …)
             // owns what happens to a failed batch — stop draining
             // rather than hot-looping a write that keeps failing.
-            return await this.onWriteFailed(current, error)
+            const failed = await this.onWriteFailed(current, error)
+            // …but rows buffered while the failed write was in flight
+            // may have no trigger left: every timer they armed fired
+            // into this singleflight (a no-op join), and a
+            // threshold-crossing push armed nothing. Re-arm the
+            // interval so they flush instead of stranding until the
+            // next event or shutdown. No-ops when a subclass recovery
+            // already re-armed (idempotent) and while paused.
+            this.armFlushTimer()
+            return failed
           }
           // Starvation guard: events that arrived while this flush was
           // in flight had every trigger swallowed by the singleflight —

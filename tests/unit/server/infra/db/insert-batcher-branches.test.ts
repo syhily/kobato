@@ -184,6 +184,58 @@ describe('server/infra/db/insert-batcher — flush mechanics', () => {
     }
   })
 
+  it('re-arms the flush after a write failure when every mid-flush trigger was consumed (no stranded rows)', async () => {
+    vi.useFakeTimers()
+    try {
+      TestBatcher.inserted = []
+      // The first write parks on the gate, then rejects once released —
+      // the failure lands AFTER new events buffered mid-flush.
+      let release!: (error: Error) => void
+      const gate = new Promise<void>((_resolve, reject) => {
+        release = reject
+      })
+      const failing = new (class extends TestBatcher {
+        private failArmed = true
+        protected override async insertBatch(_db: Database, events: string[]): Promise<void> {
+          if (this.failArmed) {
+            this.failArmed = false
+            await gate // rejects → the whole batch dead-letters
+          }
+          TestBatcher.inserted.push(events)
+        }
+      })({ flushIntervalMs: 1_000, flushThreshold: 3 }, 'test', () => fakeDb())
+
+      failing.push('a')
+      failing.push('b')
+      failing.push('c') // threshold → flush starts, parks on the gate
+      // The stranding shape: rows buffer while the doomed write is in
+      // flight, and every trigger they produce is CONSUMED by the
+      // singleflight before the failure settles — each sub-threshold
+      // push arms the interval timer, each timer fires into the
+      // in-flight flush (a no-op join), and the threshold-crossing push
+      // arms nothing at all.
+      failing.push('d')
+      await vi.advanceTimersByTimeAsync(1_000) // timer fires mid-flush: no-op, consumed
+      failing.push('e')
+      await vi.advanceTimersByTimeAsync(1_000) // same
+      failing.push('f') // threshold → joins the singleflight, arms nothing
+      expect(TestBatcher.inserted).toEqual([])
+
+      release(new Error('insert failed'))
+      const result = await failing.flush() // join; 'a..c' dead-letter
+      expect(result).toEqual({ committed: 0, deadLettered: 3 })
+      expect(TestBatcher.inserted).toEqual([])
+
+      // 'd..f' have no trigger left — unless the settled flush re-arms
+      // one, they strand until the next event or shutdown. The interval
+      // must flush them.
+      await vi.advanceTimersByTimeAsync(1_000)
+      expect(TestBatcher.inserted).toEqual([['d', 'e', 'f']])
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('dispose disarms the flush timer and drops the pending batch', async () => {
     vi.useFakeTimers()
     try {
