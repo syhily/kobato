@@ -55,7 +55,9 @@ describe('update/job scheduleSelfRestart (default restart)', () => {
         unref: vi.fn(),
         pid: 4321,
         on: vi.fn((event: string, listener: (err: Error) => void) => {
-          if (event === 'error') {childRef.errorListener = listener}
+          if (event === 'error') {
+            childRef.errorListener = listener
+          }
         }),
       }
     })
