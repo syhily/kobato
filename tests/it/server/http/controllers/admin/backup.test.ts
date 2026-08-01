@@ -196,7 +196,10 @@ describe('adminBackupRouter.delete', () => {
 describe('adminBackupRouter.restore', () => {
   it('returns accepted after restoring backup and runs the machine chain for real', async () => {
     const backupService = await import('@/server/domains/backup/services/backup')
-    vi.mocked(backupService.getBackupStream).mockResolvedValueOnce(Readable.from(['archive-bytes']))
+    vi.mocked(backupService.getBackupStream).mockResolvedValueOnce({
+      stream: Readable.from(['archive-bytes']),
+      byteSize: 13,
+    })
     const admin = await seedAdmin()
     const res = await call(adminBackupRouter.restore, { key: '2026-01-01T00-00-00' }, { context: adminCtx(admin) })
     expect(res).toEqual({ accepted: true })

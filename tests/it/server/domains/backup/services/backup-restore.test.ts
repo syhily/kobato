@@ -12,6 +12,7 @@ let analyticsHandle: AnalyticsHandle
 
 import { extractBackupFile, unpackBackupPayload } from '#/_helpers/backup-buffer'
 import { createBackup, getBackupBuffer } from '@/server/domains/backup/services/backup'
+import { findBackupByTimestamp } from '@/server/infra/db/operations/backup'
 import { category } from '@/server/infra/db/schema/taxonomy'
 import { ActionFailure } from '@/server/infra/http/errors'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@/server/infra/storage/registry'
@@ -125,6 +126,38 @@ describe('backup and restore integration', () => {
     } finally {
       rmSync(staged.dir, { recursive: true, force: true })
     }
+  })
+
+  it('records the exact stored byte count and a complete gzip header (stream-pipeline regression)', async () => {
+    // Regression: a `gzip.on('data')` byte counter forced the gzip stream
+    // into flowing mode, bypassing the pipe's backpressure and racing the
+    // backend consumer — the stored archive deterministically lost its
+    // first chunk (the 10-byte gzip header) while byteSize still counted
+    // it, so downloads (Content-Length = byteSize) corrupted. The size now
+    // comes from the backend's putStream return value.
+    //
+    // The backend below consumes one tick late, like the local backend's
+    // pipeline: a flowing-mode gzip has already emitted — and lost — its
+    // first chunk by the time the drain attaches.
+    __setStorageBackendForTests('s3', {
+      ...mem.backend,
+      async putStream(input) {
+        await new Promise((resolve) => setTimeout(resolve, 20))
+        return mem.backend.putStream(input)
+      },
+    })
+
+    const { size, timestamp } = await createBackup(db)
+
+    const row = await findBackupByTimestamp(db, timestamp)
+    expect(row).not.toBeNull()
+
+    const stored = await getBackupBuffer(db, timestamp)
+    // The archive is intact from byte zero — gzip magic, not a truncation.
+    expect(stored.subarray(0, 2)).toEqual(Buffer.from([0x1f, 0x8b]))
+    // The recorded/uploaded size IS the stored object size, byte for byte.
+    expect(row!.byteSize).toBe(stored.length)
+    expect(size).toBe(stored.length)
   })
 
   it('rejects a payload that is not a SQLite database', () => {

@@ -50,7 +50,7 @@ export interface StorageBackend {
   /** Whether this backend is usable for new uploads under the current config. */
   isAvailable(): boolean
   put(input: PutObjectInput): Promise<StoredObjectMeta>
-  /** Streaming put for large/unknown-length bodies (backups). `size` in the result is best-effort. */
+  /** Streaming put for large/unknown-length bodies (backups). `size` in the result is the exact stored byte count. */
   putStream(input: PutStreamInput): Promise<StoredObjectMeta>
   /** Read the whole object into a buffer (capped at `MAX_OBJECT_BUFFER_SIZE`). */
   get(key: string): Promise<Buffer>

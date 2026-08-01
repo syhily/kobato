@@ -2,7 +2,7 @@ import type { GetObjectCommandOutput, ServiceInputTypes, ServiceOutputTypes, _Ob
 import type { FinalizeRequestMiddleware, HandlerExecutionContext } from '@smithy/types'
 
 import { createHash } from 'node:crypto'
-import { Readable } from 'node:stream'
+import { Readable, Transform } from 'node:stream'
 
 import type { PutObjectInput, PutStreamInput, StorageBackend, StoredObjectMeta } from '@/server/infra/storage/backend'
 import type { AssetsSettings } from '@/shared/config/types'
@@ -384,9 +384,19 @@ export const s3Backend: StorageBackend = {
 
   async putStream(input: PutStreamInput): Promise<StoredObjectMeta> {
     // Streamed bodies (backups) are private-cache, matching the buffered
-    // private put.
-    await putObject(input.key, input.body, input.contentType, DEFAULT_PRIVATE_CACHE_CONTROL)
-    return { key: input.key, size: 0, lastModified: new Date() }
+    // private put. A Transform meter counts the bytes in flight — unlike a
+    // 'data' listener it keeps backpressure intact — so the returned size
+    // is the exact uploaded byte count (the backup row's byteSize doubles
+    // as the download's Content-Length, where a guess would corrupt it).
+    let size = 0
+    const meter = new Transform({
+      transform(chunk: Buffer, _encoding, callback) {
+        size += chunk.length
+        callback(null, chunk)
+      },
+    })
+    await putObject(input.key, input.body.pipe(meter), input.contentType, DEFAULT_PRIVATE_CACHE_CONTROL)
+    return { key: input.key, size, lastModified: new Date() }
   },
 
   async get(key: string): Promise<Buffer> {

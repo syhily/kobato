@@ -86,7 +86,7 @@ const restore = adminProc
     // check-then-act across an await races a second restore into the
     // same staging path. The machine owns the claim/abort choreography.
     const outcome = await withRestoreClaim(async () => {
-      const stream = await getBackupStream(context.db, input.key)
+      const { stream } = await getBackupStream(context.db, input.key)
       const staged = await stageBackup(stream)
       return {
         restoreFn: async () => {

@@ -11,7 +11,7 @@ import { recordAuditEvent } from '@/server/domains/audit/services/record'
 import { CSRF_HEADER, validateCsrfToken } from '@/server/domains/auth/csrf'
 import { isSetupTokenActive } from '@/server/domains/auth/setup-token'
 import { consumeRestoreJobReport, withRestoreClaim } from '@/server/domains/backup/restore-machine'
-import { getBackupBuffer, isValidBackupKey } from '@/server/domains/backup/services/backup'
+import { getBackupStream, isValidBackupKey } from '@/server/domains/backup/services/backup'
 import {
   type StagedBackup,
   assertStagedBackupContainsAdmin,
@@ -23,6 +23,7 @@ import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { csrfGuard } from '@/server/http/middlewares/csrf'
 import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'
 import { rateLimitByIp } from '@/server/http/middlewares/rate-limit'
+import { nodeStreamToWeb } from '@/server/http/resources/serve-local-file'
 import { findFirstAdminUser, hasAdmin } from '@/server/infra/db/operations/user'
 import { getLogger } from '@/server/infra/logger'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
@@ -42,11 +43,15 @@ export const backupRouter = new Hono<Env>()
     if (!isValidBackupKey(timestamp)) {
       return c.json({ error: { message: '无效的备份标识。' } }, 400)
     }
-    const buffer = await getBackupBuffer(c.var.requestContext.db, timestamp)
+    // Streamed, not buffered: backups run to MAX_BACKUP_FILE_SIZE (500MB),
+    // well past the MAX_OBJECT_BUFFER_SIZE (100MB) cap a buffered read
+    // enforces — the download must not 413 on a legitimate backup.
+    const { stream, byteSize } = await getBackupStream(c.var.requestContext.db, timestamp)
     const fileName = `backup-${timestamp}.db.tar.gz`
     c.header('Content-Type', 'application/gzip')
     c.header('Content-Disposition', `attachment; filename="${fileName}"`)
-    return c.body(new Uint8Array(buffer))
+    c.header('Content-Length', String(byteSize))
+    return c.body(nodeStreamToWeb(stream))
   })
   .post(
     '/api/admin/backup/upload-restore',
@@ -57,32 +62,50 @@ export const backupRouter = new Hono<Env>()
       onError: (c) => c.json({ error: { message: '上传文件过大' } }, 413),
     }),
     async (c) => {
-      // Claim the restore slot BEFORE reading the body — the upload can
-      // take seconds, and a check-then-act guard here would let a second
-      // restore start during the read. The machine owns the claim/abort
-      // choreography (body errors release the slot automatically).
-      let missingFile = false
-      const outcome = await withRestoreClaim(async () => {
-        const body = await c.req.parseBody({ all: false })
-        const file = body.file
-        if (!(file instanceof File)) {
-          missingFile = true
-          return null
-        }
-        const staged = await stageBackup(Readable.fromWeb(unsafeCast<WebReadableStream>(file.stream())))
-        const fileName = file.name
-        return {
-          restoreFn: async () => {
-            await restoreFromStagedBackup(staged, fileName)
-            log.info('Restore from uploaded backup completed')
-          },
-        }
-      })
-      if (outcome === 'busy') {
-        return c.json({ error: { message: '已有还原任务正在进行，请等待完成后再试。' } }, 409)
-      }
-      if (missingFile) {
+      const body = await c.req.parseBody({ all: false })
+      const file = body.file
+      if (!(file instanceof File)) {
         return c.json({ error: { message: '请上传文件' } }, 400)
+      }
+
+      // Stage + pre-validate BEFORE claiming the slot (same choreography
+      // as the setup route): the staged content database must open for
+      // real and contain an admin row — the magic-byte check alone lets a
+      // corrupt payload through, and a backup without an admin soft-locks
+      // the restored site behind the install gate. Post-swap validation
+      // would be too late: by then the original file no longer exists.
+      let staged: StagedBackup
+      try {
+        staged = await stageBackup(Readable.fromWeb(unsafeCast<WebReadableStream>(file.stream())))
+      } catch {
+        return c.json({ error: { message: '备份文件无效或已损坏。' } }, 400)
+      }
+      if (staged.content !== null) {
+        // Analytics-only uploads carry no content file to check.
+        try {
+          await assertStagedBackupContainsAdmin(staged)
+        } catch {
+          rmSync(staged.dir, { recursive: true, force: true })
+          return c.json({ error: { message: '备份文件无效或不包含管理员账号。' } }, 400)
+        }
+      }
+
+      // Claim as late as possible — contention cleans up the staged files.
+      const fileName = file.name
+      const outcome = await withRestoreClaim(async () => ({
+        restoreFn: async () => {
+          await restoreFromStagedBackup(staged, fileName)
+          log.info('Restore from uploaded backup completed')
+        },
+        // drain/prepareForSwap throwing inside the machine means the swap
+        // (and its finally-cleanup) never ran — drop the staged dir here.
+        onFailureFn: () => {
+          rmSync(staged.dir, { recursive: true, force: true })
+        },
+      }))
+      if (outcome === 'busy') {
+        rmSync(staged.dir, { recursive: true, force: true })
+        return c.json({ error: { message: '已有还原任务正在进行，请等待完成后再试。' } }, 409)
       }
 
       return c.json({ accepted: true })
@@ -193,6 +216,11 @@ export const backupRouter = new Hono<Env>()
           })
 
           log.info('Setup restore completed', { adminId: String(admin.id) })
+        },
+        // drain/prepareForSwap throwing inside the machine means the swap
+        // (and its finally-cleanup) never ran — drop the staged dir here.
+        onFailureFn: () => {
+          rmSync(staged.dir, { recursive: true, force: true })
         },
       }))
       if (outcome === 'busy') {

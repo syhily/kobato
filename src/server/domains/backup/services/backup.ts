@@ -127,12 +127,14 @@ export async function createBackup(
       entry.size = statSync(entry.path).size
     }
     const gzip = createGzip()
-    let uploadedBytes = 0
-    gzip.on('data', (chunk: Buffer) => {
-      uploadedBytes += chunk.length
-    })
     const { backend, driver } = activeBackend()
-    await backend.putStream({
+    // The stored size comes from the backend's return value — never from a
+    // `gzip.on('data')` counter: attaching a 'data' listener flips the gzip
+    // stream into flowing mode, bypassing the pipe's backpressure and
+    // racing the backend consumer, which deterministically dropped the
+    // first chunk (the 10-byte gzip header) against the local backend's
+    // pipeline while the counter still counted it.
+    const stored = await backend.putStream({
       key,
       body: createTarReadStream(entries).pipe(gzip),
       contentType: 'application/gzip',
@@ -143,12 +145,12 @@ export async function createBackup(
       timestamp,
       storagePath: key,
       storageDriver: driver,
-      byteSize: uploadedBytes,
+      byteSize: stored.size,
       createdBy,
     })
 
-    log.info('Backup completed', { key, driver, size: uploadedBytes, entries: entries.length })
-    return { fileName: key.split('/').pop()!, size: uploadedBytes, timestamp }
+    log.info('Backup completed', { key, driver, size: stored.size, entries: entries.length })
+    return { fileName: key.split('/').pop()!, size: stored.size, timestamp }
   } finally {
     await unlink(stagingPath).catch(() => undefined)
     await unlink(analyticsStagingPath).catch(() => undefined)
@@ -191,16 +193,22 @@ export async function getBackupBuffer(db: Database, timestamp: string): Promise<
 }
 
 /**
- * The restore path's read: a stream, so the staging pipeline never
- * holds the archive in memory. (The download endpoint keeps the
- * buffered variant — it serves the file as one response body.)
+ * The unbuffered read: a stream, so neither the restore staging pipeline
+ * nor the download endpoint ever holds the archive in memory — backups
+ * run to `MAX_BACKUP_FILE_SIZE` (500MB), well past the 100MB cap buffered
+ * reads (`get` / `getBackupBuffer`) enforce. `byteSize` (the recorded
+ * upload size) rides along so the download route can set Content-Length.
  */
-export async function getBackupStream(db: Database, timestamp: string): Promise<Readable> {
+export async function getBackupStream(
+  db: Database,
+  timestamp: string,
+): Promise<{ stream: Readable; byteSize: number }> {
   const row = await findBackupByTimestamp(db, timestamp)
   if (row === null) {
     throw new Error(`Backup row not found for timestamp ${timestamp}`)
   }
-  return backendFor(row.storageDriver).getStream(row.storagePath)
+  const stream = await backendFor(row.storageDriver).getStream(row.storagePath)
+  return { stream, byteSize: row.byteSize }
 }
 
 export async function deleteBackup(db: Database, timestamp: string): Promise<void> {
