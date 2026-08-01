@@ -29,16 +29,23 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   const url = new URL(request.url)
   const wantsDraftPreview = url.searchParams.get('draft') === 'true'
 
-  const [preview, friends] = await Promise.all([
-    loadPagePreview({ db, slug: params.slug, wantsDraftPreview, request, context }),
-    listAllFriends(db),
+  // One parallel block keyed off the preview promise. The music-player
+  // prerender starts the moment the preview resolves instead of waiting
+  // for the friends read, and the friends full-table scan + image
+  // hydration only run when the page actually renders the section — a
+  // hidden section keeps the payload an honest empty list.
+  const previewPromise = loadPagePreview({ db, slug: params.slug, wantsDraftPreview, request, context })
+  const [preview, friends, enrichedBody] = await Promise.all([
+    previewPromise,
+    previewPromise.then((p) => (p.showFriends ? listAllFriends(db) : [])),
+    previewPromise.then((p) =>
+      prerenderMusicPlayerBlocks(p.body, (playerIds) => getPublicMusicMetasByIds(db, playerIds)),
+    ),
   ])
 
   const footnotesSectionTitle = resolveFootnotesSectionTitle(requireBlogSettingsSection('content'))
-  const enrichedBody = await prerenderMusicPlayerBlocks(preview.body, (playerIds) =>
-    getPublicMusicMetasByIds(db, playerIds),
-  )
 
+  // Dependency-forced serial: the detail target needs the resolved page id.
   const { detail } = await loadPublicDetailData(db, {
     request,
     context,

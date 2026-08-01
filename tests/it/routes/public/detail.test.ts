@@ -6,8 +6,9 @@ import type { PortableTextBody } from '@/shared/pt/schema'
 
 import { makeLoaderArgs, unwrapLoaderData } from '#/_helpers/context'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
-import { emptySession, regularSession } from '#/_helpers/session'
+import { adminSession, emptySession, regularSession } from '#/_helpers/session'
 import { content as contentTable } from '@/server/infra/db/schema/content'
+import { friend as friendTable } from '@/server/infra/db/schema/friend'
 import { page as pageTable } from '@/server/infra/db/schema/page'
 import { post as postTable } from '@/server/infra/db/schema/post'
 import { weakEtag } from '@/server/infra/http/etag'
@@ -23,6 +24,11 @@ import { weakEtag } from '@/server/infra/http/etag'
 const mocks = vi.hoisted(() => ({
   resolveSessionContext: vi.fn(),
   findPostBySlug: vi.fn(),
+  findPageBySlug: vi.fn(),
+  listAllFriends: vi.fn(),
+  getTagsByNames: vi.fn(),
+  loadPublicDetailData: vi.fn(),
+  prerenderMusicPlayerBlocks: vi.fn(),
 }))
 
 // Wrapped (not replaced) so the "no session re-resolution fallback" test
@@ -43,6 +49,50 @@ vi.mock('@/server/domains/posts/services/single', async () => {
   )
   mocks.findPostBySlug.mockImplementation(actual.findPostBySlug)
   return { ...actual, findPostBySlug: mocks.findPostBySlug }
+})
+
+// Same wrapped-not-replaced seam for the page leg: the page ETag-probe
+// tests assert `findPageBySlug` (meta + revision + image hydration) is
+// skipped when the slim probe answers 304.
+vi.mock('@/server/domains/pages/services/public-query', async () => {
+  const actual = await vi.importActual<typeof import('@/server/domains/pages/services/public-query')>(
+    '@/server/domains/pages/services/public-query',
+  )
+  mocks.findPageBySlug.mockImplementation(actual.findPageBySlug)
+  return { ...actual, findPageBySlug: mocks.findPageBySlug }
+})
+
+// Wrapped: the friends tests assert the full-table read is skipped when
+// the page hides the section, and gate it to prove the music prerender
+// no longer queues behind it.
+vi.mock('@/server/domains/friends/service', async () => {
+  const actual = await vi.importActual<typeof import('@/server/domains/friends/service')>(
+    '@/server/domains/friends/service',
+  )
+  mocks.listAllFriends.mockImplementation(actual.listAllFriends)
+  return { ...actual, listAllFriends: mocks.listAllFriends }
+})
+
+// Wrapped: the parallelism tests gate one read of the post detail block
+// and assert the detail orchestrator starts without waiting for it.
+vi.mock('@/server/domains/taxonomies/tags/service', async () => {
+  const actual = await vi.importActual<typeof import('@/server/domains/taxonomies/tags/service')>(
+    '@/server/domains/taxonomies/tags/service',
+  )
+  mocks.getTagsByNames.mockImplementation(actual.getTagsByNames)
+  return { ...actual, getTagsByNames: mocks.getTagsByNames }
+})
+
+vi.mock('@/server/http/loaders/detail', async () => {
+  const actual = await vi.importActual<typeof import('@/server/http/loaders/detail')>('@/server/http/loaders/detail')
+  mocks.loadPublicDetailData.mockImplementation(actual.loadPublicDetailData)
+  return { ...actual, loadPublicDetailData: mocks.loadPublicDetailData }
+})
+
+vi.mock('@/server/domains/pt/prerender', async () => {
+  const actual = await vi.importActual<typeof import('@/server/domains/pt/prerender')>('@/server/domains/pt/prerender')
+  mocks.prerenderMusicPlayerBlocks.mockImplementation(actual.prerenderMusicPlayerBlocks)
+  return { ...actual, prerenderMusicPlayerBlocks: mocks.prerenderMusicPlayerBlocks }
 })
 
 // Presentational seam — the loader contract under test never renders.
@@ -105,6 +155,24 @@ async function seedPage(
     .returning({ id: contentTable.id })
   await db.update(pageTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(pageTable.id, pageId))
   return pageId
+}
+
+async function seedFriend(): Promise<void> {
+  await db
+    .insert(friendTable)
+    .values({ website: 'Alice', homepage: 'https://alice.example', poster: '/images/alice.png' })
+}
+
+/** Holds one mocked read open until `release` fires, so ordering tests can
+ *  observe what the loader starts while the read is still in flight. */
+function gateOnce(mock: (typeof mocks)[keyof typeof mocks]): { release: () => void } {
+  const base = mock.getMockImplementation() as (...args: unknown[]) => unknown
+  let release!: () => void
+  const gate = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  mock.mockImplementationOnce((...args: unknown[]) => gate.then(() => base(...args)))
+  return { release }
 }
 
 const postRoute = await import('@/routes/public/post/detail')
@@ -273,6 +341,30 @@ describe('routes/post.detail loader — ETag probe', () => {
   })
 })
 
+describe('routes/post.detail loader — render waterfall', () => {
+  it('starts the detail orchestrator without waiting for the tag/sidebar/prerender block', async () => {
+    await seedPost({ slug: 'hello' })
+
+    // Hold the tags read open: serial composition would only reach
+    // `loadPublicDetailData` after every read of the first block settles.
+    const { release } = gateOnce(mocks.getTagsByNames)
+    const pending = postRoute.loader(
+      makeLoaderArgs({
+        request: new Request('http://localhost/posts/hello'),
+        session,
+        db,
+        params: { slug: 'hello' },
+      }),
+    )
+
+    await vi.waitFor(() => {
+      expect(mocks.loadPublicDetailData).toHaveBeenCalled()
+    })
+    release()
+    await pending
+  })
+})
+
 describe('routes/page.detail loader', () => {
   it('returns the canonical page payload for a real page slug', async () => {
     await seedPage({ slug: 'about', title: 'About' })
@@ -340,5 +432,173 @@ describe('routes/page.detail loader', () => {
         }),
       ),
     ).rejects.toMatchObject({ status: 404 })
+  })
+})
+
+describe('routes/page.detail loader — friends gating', () => {
+  it('skips the friends table read when the page hides the section', async () => {
+    await seedPage({ slug: 'about' })
+    await seedFriend()
+
+    const result = unwrapLoaderData<{ friends: unknown[]; showFriends: boolean }>(
+      await pageRoute.loader(
+        makeLoaderArgs({
+          request: new Request('http://localhost/about'),
+          session,
+          db,
+          params: { slug: 'about' },
+        }),
+      ),
+    )
+
+    // showFriends=false: the full-table scan + image hydration never run
+    // and the payload stays an honest empty list.
+    expect(mocks.listAllFriends).not.toHaveBeenCalled()
+    expect(result.showFriends).toBe(false)
+    expect(result.friends).toEqual([])
+  })
+
+  it('loads friends when the page shows the section', async () => {
+    await seedPage({ slug: 'links', showFriends: true })
+    await seedFriend()
+
+    const result = unwrapLoaderData<{ friends: { website: string }[]; showFriends: boolean }>(
+      await pageRoute.loader(
+        makeLoaderArgs({
+          request: new Request('http://localhost/links'),
+          session,
+          db,
+          params: { slug: 'links' },
+        }),
+      ),
+    )
+
+    expect(mocks.listAllFriends).toHaveBeenCalled()
+    expect(result.showFriends).toBe(true)
+    expect(result.friends.map((f) => f.website)).toContain('Alice')
+  })
+})
+
+describe('routes/page.detail loader — render waterfall', () => {
+  it('starts the music prerender as soon as the preview resolves, without waiting for friends', async () => {
+    await seedPage({ slug: 'links', showFriends: true })
+
+    // Hold the friends read open: serial composition would only reach the
+    // prerender after the whole first Promise.all settles.
+    const { release } = gateOnce(mocks.listAllFriends)
+    const pending = pageRoute.loader(
+      makeLoaderArgs({
+        request: new Request('http://localhost/links'),
+        session,
+        db,
+        params: { slug: 'links' },
+      }),
+    )
+
+    await vi.waitFor(() => {
+      expect(mocks.prerenderMusicPlayerBlocks).toHaveBeenCalled()
+    })
+    release()
+    await pending
+  })
+})
+
+describe('routes/page.detail loader — ETag probe', () => {
+  it('answers 304 from the slim probe when If-None-Match matches, skipping the full load', async () => {
+    await seedPage({ slug: 'about', publishedAt: new Date('2024-01-01') })
+
+    const first = await pageRoute.loader(
+      makeLoaderArgs({
+        request: new Request('http://localhost/about'),
+        session,
+        db,
+        params: { slug: 'about' },
+      }),
+    )
+    const etag = loaderEtag(first)
+    expect(etag).not.toBeNull()
+
+    mocks.findPageBySlug.mockClear()
+    const second = await pageRoute
+      .loader(
+        makeLoaderArgs({
+          request: new Request('http://localhost/about', { headers: { 'If-None-Match': etag! } }),
+          session,
+          db,
+          params: { slug: 'about' },
+        }),
+      )
+      .then(
+        () => null,
+        (response: unknown) => response,
+      )
+
+    expect(second).toMatchObject({ status: 304 })
+    expect((second as Response).headers.get('ETag')).toBe(etag)
+    // The 304 came from the probe — the full meta+revision+image load never ran.
+    expect(mocks.findPageBySlug).not.toHaveBeenCalled()
+  })
+
+  it('re-runs the full load and stamps a fresh ETag after the page is republished', async () => {
+    const pageId = await seedPage({ slug: 'about', publishedAt: new Date('2024-01-01') })
+
+    const first = await pageRoute.loader(
+      makeLoaderArgs({
+        request: new Request('http://localhost/about'),
+        session,
+        db,
+        params: { slug: 'about' },
+      }),
+    )
+    const staleEtag = loaderEtag(first)
+
+    // A republication bumps `published_at` — one of the ETag inputs.
+    await db
+      .update(pageTable)
+      .set({ publishedAt: new Date('2024-06-01') })
+      .where(eq(pageTable.id, pageId))
+
+    mocks.findPageBySlug.mockClear()
+    const result = await pageRoute.loader(
+      makeLoaderArgs({
+        request: new Request('http://localhost/about', { headers: { 'If-None-Match': staleEtag! } }),
+        session,
+        db,
+        params: { slug: 'about' },
+      }),
+    )
+
+    expect(mocks.findPageBySlug).toHaveBeenCalled()
+    const freshEtag = loaderEtag(result)
+    expect(freshEtag).not.toBe(staleEtag)
+  })
+
+  it('never 304s a `?draft=true` preview request from the published-ETag probe', async () => {
+    await seedPage({ slug: 'about', publishedAt: new Date('2024-01-01') })
+
+    const first = await pageRoute.loader(
+      makeLoaderArgs({
+        request: new Request('http://localhost/about'),
+        session,
+        db,
+        params: { slug: 'about' },
+      }),
+    )
+    const etag = loaderEtag(first)
+
+    // An admin's draft preview may swap the body, so the published ETag
+    // must not short-circuit it — the probe is skipped and the full load
+    // answers 200 with the draft marker.
+    const result = unwrapLoaderData<{ draftMarker: string | null }>(
+      await pageRoute.loader(
+        makeLoaderArgs({
+          request: new Request('http://localhost/about?draft=true', { headers: { 'If-None-Match': etag! } }),
+          session: adminSession(),
+          db,
+          params: { slug: 'about' },
+        }),
+      ),
+    )
+    expect(result.draftMarker).toBe('published-draft')
   })
 })

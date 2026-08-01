@@ -10,7 +10,7 @@ import { loadDraftPreviewBySlug } from '@/server/domains/content/lifecycle'
 import { isLive } from '@/server/domains/content/schemas/live-gate'
 import { resolveImageMetaBySources } from '@/server/domains/images/services/enhance'
 import { pageLifecycleAdapter } from '@/server/domains/pages/services/lifecycle-adapter'
-import { findPageBySlug } from '@/server/domains/pages/services/public-query'
+import { findPageBySlug, findPageEtagInputBySlug } from '@/server/domains/pages/services/public-query'
 import { findPublicPostMetaBySlug } from '@/server/domains/posts/services/single'
 import { getRequestContext } from '@/server/http/request-context'
 import { ifNoneMatch, notModifiedResponse, weakEtag } from '@/server/infra/http/etag'
@@ -56,10 +56,9 @@ export async function loadPagePreview({
   request: Request
   context: LoaderFunctionArgs['context']
 }): Promise<PagePreviewResult> {
-  // findPublicPostMetaBySlug is sync (node:sqlite); findPageBySlug stays
-  // async — no Promise.all needed.
+  // findPublicPostMetaBySlug is sync (node:sqlite); the probe and
+  // findPageBySlug stay async — no Promise.all needed.
   const postMeta = findPublicPostMetaBySlug(db, slug)
-  const page = await findPageBySlug(db, slug)
 
   // If the slug belongs to a live post (not deleted, published, not
   // scheduled), redirect to the canonical post URL. Matches the old
@@ -67,6 +66,25 @@ export async function loadPagePreview({
   if (postMeta !== null && isLive(postMeta)) {
     redirectPermanent(`/posts/${slug}`)
   }
+
+  // Cheap ETag probe: a repeat request whose If-None-Match still matches
+  // is answered 304 from one slim meta read, before the full load below
+  // (meta + revision + image hydration) and the draft lookup ever run.
+  // The probe inputs — id + publishedRevisionId + publishedAt — are
+  // exactly the ETag parts recomputed on the full path. Draft-preview
+  // requests skip the probe: an admin's `?draft=true` may swap the body,
+  // so the published ETag must not 304 it.
+  if (!wantsDraftPreview) {
+    const etagInput = await findPageEtagInputBySlug(db, slug)
+    if (etagInput !== null) {
+      const probeEtag = weakEtag(['page', String(etagInput.id), etagInput.publishedRevisionId, etagInput.publishedAt])
+      if (ifNoneMatch(request, probeEtag)) {
+        throw notModifiedResponse(probeEtag)
+      }
+    }
+  }
+
+  const page = await findPageBySlug(db, slug)
 
   const publishedPage = page ?? undefined
 
@@ -100,6 +118,9 @@ export async function loadPagePreview({
     notFound()
   }
 
+  // Same inputs as the early probe above (id + publishedRevisionId +
+  // publishedAt — `updated` projects `meta.publishedAt`) — keep the two
+  // weakEtag calls in sync or repeat visits never see a 304.
   const publicEtag =
     draftMarker === null ? weakEtag(['page', sourcePage.id, sourcePage.publishedRevisionId, sourcePage.updated]) : null
   if (publicEtag !== null && ifNoneMatch(request, publicEtag)) {

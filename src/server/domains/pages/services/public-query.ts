@@ -46,6 +46,30 @@ export async function findLivePageBySlug(db: Database, slug: string): Promise<{ 
   return rows[0] ?? null
 }
 
+/**
+ * Slim live-by-slug ETag probe — `id` + `publishedRevisionId` +
+ * `publishedAt` only, the exact inputs of the page detail route's weak
+ * ETag (`page.updated` projects `meta.publishedAt`). Lets the loader
+ * answer a matching If-None-Match with 304 after one indexed meta read
+ * instead of the full meta+revision+image-hydration load. Pages have no
+ * slug aliases, so an exact-slug match suffices (unlike the post probe).
+ */
+export async function findPageEtagInputBySlug(
+  db: Database,
+  slug: string,
+): Promise<{ id: number; publishedRevisionId: number | null; publishedAt: Date } | null> {
+  const rows = await db
+    .select({
+      id: pageMetaTable.id,
+      publishedRevisionId: pageMetaTable.publishedRevisionId,
+      publishedAt: pageMetaTable.publishedAt,
+    })
+    .from(pageMetaTable)
+    .where(and(eq(pageMetaTable.slug, slug), livePageWhere()))
+    .limit(1)
+  return rows[0] ?? null
+}
+
 /** Slim row for sitemap generation — only the fields needed to derive `permalink` + `lastmod`. */
 export interface SitemapPageRow {
   slug: string

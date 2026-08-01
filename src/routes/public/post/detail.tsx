@@ -84,19 +84,22 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     throw notModifiedResponse(etag)
   }
 
-  const [visibleTags, imageMeta, sidebarTags, sidebarPosts, enrichedBody] = await Promise.all([
+  // One parallel block: the detail orchestrator (likes, comment key,
+  // streaming comments) is independent of the tag/sidebar/prerender
+  // reads — awaiting it after them would make the critical path their
+  // sum instead of their max.
+  const [visibleTags, imageMeta, sidebarTags, sidebarPosts, enrichedBody, { detail }] = await Promise.all([
     getTagsByNames(db, post.tags),
     resolveImageMetaBySources(db, sourcePost.imageSources).then((r) => Object.fromEntries(r)),
     listAllTags(db).then(selectSidebarTags),
     selectSidebarPosts(db, getSidebarWidgetCount(requireBlogSettingsSection('sidebar'), 'recentPosts')),
     prerenderMusicPlayerBlocks(sourcePost.body, (playerIds) => getPublicMusicMetasByIds(db, playerIds)),
+    loadPublicDetailData(db, {
+      request,
+      context,
+      target: { type: 'post', ownerId: idFromString(post.id) },
+    }),
   ])
-
-  const { detail } = await loadPublicDetailData(db, {
-    request,
-    context,
-    target: { type: 'post', ownerId: idFromString(post.id) },
-  })
 
   return data(
     {
