@@ -1,7 +1,7 @@
 import type { Database } from '@/server/infra/db/database'
 import type { WebmentionOutboxRow } from '@/server/infra/db/types'
 
-import { discoverEndpoint, type DiscoveryResult } from '@/server/domains/webmentions/discover'
+import { discoverEndpoint, formatFetchFailure, type DiscoveryResult } from '@/server/domains/webmentions/discover'
 import {
   markWebmentionOutboxRetry,
   markWebmentionOutboxSent,
@@ -24,8 +24,6 @@ const log = getLogger('webmentions.outbox')
 export const OUTBOX_BATCH_SIZE = 5
 export const OUTBOX_MAX_ATTEMPTS = 5
 
-const SEND_TIMEOUT_MS = 10_000
-const MAX_SEND_REDIRECTS = 5
 // The response body is worthless to the sender (the W3C success payload
 // is a status code, sometimes a bare URL string) — cap it anyway.
 const MAX_RESPONSE_BYTES = 16 * 1024
@@ -56,9 +54,7 @@ export type SendResult =
 export async function sendWebmention(endpoint: string, sourceUrl: string, targetUrl: string): Promise<SendResult> {
   const result = await safeFetch(endpoint, {
     method: 'POST',
-    timeoutMs: SEND_TIMEOUT_MS,
     maxBytes: MAX_RESPONSE_BYTES,
-    maxRedirects: MAX_SEND_REDIRECTS,
     headers: {
       'User-Agent': senderUa(),
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -72,8 +68,7 @@ export async function sendWebmention(endpoint: string, sourceUrl: string, target
   if (result.reason === 'http-error' && result.status !== null && result.status >= 400 && result.status < 500) {
     return { kind: 'rejected', status: result.status }
   }
-  const status = result.status === null ? '' : ` (HTTP ${result.status})`
-  return { kind: 'retry', error: `${result.reason}${status}` }
+  return { kind: 'retry', error: formatFetchFailure(result) }
 }
 
 export interface OutboxHooks {

@@ -1,3 +1,5 @@
+import type { SafeFetchFailure } from '@/server/infra/safe-fetch'
+
 import { safeFetch } from '@/server/infra/safe-fetch'
 import { isHttpUrl } from '@/shared/utils/safe-url'
 
@@ -7,9 +9,7 @@ import { isHttpUrl } from '@/shared/utils/safe-url'
 // (`verify.ts`): the document is size-capped, so extraction is
 // best-effort by design — no HTML parser dependency.
 
-const DISCOVERY_TIMEOUT_MS = 10_000
 const MAX_DISCOVERY_BYTES = 1024 * 1024 // 1 MB — mirrors fetchSourceHtml
-const MAX_REDIRECTS = 5
 
 // `<url>; rel="webmention"`, possibly several values in one header line.
 // The rel attribute may carry several space-separated tokens
@@ -80,6 +80,14 @@ export type DiscoveryResult =
   /** The fetch itself failed (network, timeout, HTTP error, too large) — retryable. */
   | { kind: 'retry'; error: string }
 
+/** The sender-side rendering of a safe-fetch failure, shared by
+ *  discovery and send: the union reason plus the upstream status when
+ *  one came back. */
+export function formatFetchFailure(result: SafeFetchFailure): string {
+  const status = result.status === null ? '' : ` (HTTP ${result.status})`
+  return `${result.reason}${status}`
+}
+
 /**
  * Fetch the target and discover its webmention endpoint. Every request
  * (initial and each redirect hop) goes through the shared SSRF guard in
@@ -89,14 +97,11 @@ export type DiscoveryResult =
  */
 export async function discoverEndpoint(targetUrl: string, ua: string): Promise<DiscoveryResult> {
   const result = await safeFetch(targetUrl, {
-    timeoutMs: DISCOVERY_TIMEOUT_MS,
     maxBytes: MAX_DISCOVERY_BYTES,
-    maxRedirects: MAX_REDIRECTS,
     headers: { 'User-Agent': ua, Accept: 'text/html, application/xhtml+xml' },
   })
   if (!result.ok) {
-    const status = result.status === null ? '' : ` (HTTP ${result.status})`
-    return { kind: 'retry', error: `${result.reason}${status}` }
+    return { kind: 'retry', error: formatFetchFailure(result) }
   }
   const html = new TextDecoder('utf-8').decode(result.body)
   const endpoint = parseWebmentionEndpoint(result.response.headers.get('link'), html, result.url)
