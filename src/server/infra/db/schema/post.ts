@@ -50,6 +50,17 @@ export const post = sqliteTable(
     index('idx_post_first_published_at').on(table.firstPublishedAt),
     index('idx_post_pinned_at').on(table.pinnedAt),
     index('idx_post_catalog').on(table.deletedAt, table.published, table.firstPublishedAt),
+    // Covering index for the public live-gate COUNT (`countPublicPosts`,
+    // audit P1-23): without it EXPLAIN shows a full `SCAN post` on every
+    // home/tag listing request; with it the count is
+    // `SEARCH post USING COVERING INDEX idx_post_live_gate` — index-only.
+    index('idx_post_live_gate').on(
+      table.deletedAt,
+      table.published,
+      table.visible,
+      table.publishedAt,
+      table.publishedRevisionId,
+    ),
     index('idx_post_author_id').on(table.authorId),
   ],
 )
