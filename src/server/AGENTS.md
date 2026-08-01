@@ -71,7 +71,8 @@ Two embedded engines, zero services:
 - **Content DB** — SQLite via `node:sqlite` + drizzle (`sqlite-core`), one file at `storage.database` (default `<storage.data>/kobato.db`). Sync driver: awaited builders typecheck OUTSIDE transactions, but `db.transaction(async …)` is a compile error — transactions are sync callbacks. Timestamps are `integer({ mode: 'timestamp_ms' })` (epoch ms), booleans `integer({ mode: 'boolean' })`, JSON `text({ mode: 'json' })`, binary `blob({ mode: 'buffer' })`; `LIKE`, not `ILIKE`.
 - **Analytics sidecar** — DuckDB via `@duckdb/node-api`, one file at `storage.analyticsDatabase` (default `<storage.data>/analytics.duckdb`). Holds `access_log` only (append-heavy telemetry + dashboard scans); recreated empty when missing, but INCLUDED in backups (the two-file `.tar.gz` archive alongside the content DB). The batcher writes through the Appender protocol; queries run on a dedicated MVCC reader connection.
 - **Page-view counters** — `metric.pv` is written through the in-memory `PageViewBatcher` (`domains/analytics/services/pv-batcher`: flush on 50 bumps of one key or 60s). Reads merge the unflushed delta via `pendingViewDelta`, so served counts stay exact despite the batched write; `domains/comments/services/likes::queryMetadata` is the single read funnel.
-- **Daily maintenance** (04:30 site timezone): SQLite `incremental_vacuum` + `optimize` with page/freelist logging (`infra/db/maintenance.ts`); DuckDB 180-day retention DELETE + `CHECKPOINT` with row/file-size logging (`bootstrap/analytics-lifecycle.ts`). Pure `ANALYZE` additionally runs after every bulk load (install seed, backup restore).
+- **Daily maintenance** (04:30 site timezone): SQLite `incremental_vacuum` + `optimize` with page/freelist logging (`infra/db/maintenance.ts`); DuckDB 180-day retention DELETE + `CHECKPOINT` with row/file-size logging (`bootstrap/analytics-lifecycle.ts`). Pure `ANALYZE` additionally runs after every bulk load (install seed, backup restore). Both DuckDB mutation windows — this retention job and the backup's CHECKPOINT + file copy (`snapshotAnalyticsTo`) — serialize on one module-level mutation lock, so a backup can never copy a file the retention job is mid-DELETE on.
+- **Write batchers** (`infra/db/insert-batcher::FlushLoop` — the insert batchers and `PageViewBatcher` share it): a flush DRAINS. Events buffered while a write was in flight had their triggers swallowed by the singleflight (a threshold-crossing push got back the in-flight promise; a fired interval timer was a no-op), so a settled flush re-checks the payload and keeps writing until empty — nothing else would ever schedule them. On failure the recovery policy (dead-letter / merge-back + re-arm) owns the retry and the drain stops (no hot-loop). `pause()/resume()` quiesce every trigger across the backup consistency window.
 
 ## Configuration & Install Gate
 
@@ -93,7 +94,7 @@ Two embedded engines, zero services:
 
 - Canonical: `@/server/infra/slug/derive::deriveSlug(text)` — pipeline `pinyin-pro` → whitespace-collapse → `github-slugger`. Server-only (`pinyin-pro` must not reach the client). The fused explicit-or-derived resolver is `@/server/infra/slug/resolve::resolveSlug`; the route-prefix fence + in-transaction reservation live in `@/server/infra/slug/reservation`.
 - Heading anchors: SSR loaders pre-compute via `collectHeadings(body, deriveSlug)`.
-- Page ↔ post slugs share one namespace. DB `UNIQUE(slug)` + cross-table fence via `@/server/domains/pages/fence::validateSlugFence`.
+- Page ↔ post slugs share one namespace. Cross-table uniqueness is enforced by the `slug_registry` table: `@/server/infra/slug/reservation::reserveSlugInTransaction` checks it in-transaction, and `@/server/domains/content/slug-conflict::rethrowSlugConflict` maps raced DB `UNIQUE` violations (`{post,page}.slug`, `slug_registry.slug`) to a clean 409.
 
 ### Images
 
@@ -109,6 +110,12 @@ Two embedded engines, zero services:
 - **Naming**: kebab-case present-tense `<entity>_<verb>`. Never inline the context extraction.
 - **Retention**: DB rows kept `auditLogDbRetentionDays` (default 30), archived daily to S3, then deleted; S3 archives kept `auditLogArchiveRetentionDays` (default 180).
 - **Batcher**: buffered in memory (50 events / 500ms), flushed as one multi-row INSERT in a single sync transaction (`infra/db/insert-batcher`); self-registers with `infra/db/batcher-registry`; flushed on `SIGTERM` / `SIGINT` / `beforeExit`.
+
+### Webmention outbox
+
+- Outbound mentions are DB-persisted rows (`webmention_outbox`, UNIQUE(source,target)) processed by a sequential single-worker loop (`domains/webmentions/outbox`): 5 rows per wake-up, 5 attempts with exponential backoff capped at 12h.
+- **Rate semantics**: consecutive batches are at least `OUTBOX_MIN_DELAY_MS` (1s) apart — the scheduler's 'due now' answer is floored (`outbox-scheduler`), so a 50-link burst spaces its sends instead of firing back-to-back.
+- **Waterline**: a scheduled post's rows wait for its publish instant; a republish moving the moment LATER raises a pending row's `nextRetryAt` (one-way — sending late is benign, sending before the source answers 200 burns the retry budget). `sent` rows are never re-sent.
 
 ## Server layering constraints
 

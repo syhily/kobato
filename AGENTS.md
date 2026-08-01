@@ -68,7 +68,7 @@ extracted to a flat cache dir on first run
 (`src/server/infra/sea-natives.ts`) — the OS `dlopen` needs real files.
 
 **Node 26 pin.** `scripts/sea/build.ts` gates `REQUIRED_NODE_MAJOR = 26`;
-the CI matrices (`.github/workflows/sea.yml` ×3, `ci.yml` ×2) pin
+the CI matrices (`.github/workflows/sea.yml` ×4, `ci.yml` ×2) pin
 `node-version: 26`; the Dockerfile builds on `node:26-bookworm-slim` with
 `npm install -g pnpm@11.18.0` (Node 25+ images ship no Corepack — keep the
 version aligned with the `packageManager` field). Local dev/tests still
@@ -105,7 +105,9 @@ as text assets) — all ESM. tsdown is gone; the bundles are minified,
 single-file (`codeSplitting: false`), `ssr.noExternal: true`.
 `scripts/sea/check-bundle.ts` fails the build on leftover external
 specifiers (including rolldown's `__require("bare")` runtime-external
-shim).
+shim) and on `__APP_*__`/`__SEA_*__` identifiers the bundle's vite
+`define` table does not cover (undefined compile-time globals would be a
+ReferenceError at boot).
 
 **Payload compression.** `scripts/sea/assets.ts` packs every asset above
 1 KB (zstd-19 by default, brotli-11 for release builds —
@@ -194,7 +196,10 @@ embedded `natives-meta/*` metadata assets
   win32-x64 / win32-arm64, built by
   `.github/workflows/sea.yml`. Every matrix job runs the full managed
   smoke (the embedded databases need no service container); the Linux
-  jobs additionally run `sea:e2e`. The darwin jobs need the
+  jobs additionally run `sea:e2e`. develop pushes and PRs to main run
+  only the `build-develop` job instead: a single linux-x64
+  `sea:build` + `sea:smoke` (zstd, no packaging) to keep the iteration
+  cost down. The darwin jobs need the
   `shasum -a 256` spelling (macOS has no `sha256sum`); the win32 jobs
   run the rename/package steps under Git Bash (`shell: bash`) and ship
   `kobato.exe`. Local macOS builds need an official Node.js 26
@@ -250,7 +255,7 @@ comment at the top of `Dockerfile`).
 
 Bare-metal SEA deployments can self-update from the admin shell. The pipeline lives in `src/server/domains/update/`: download the release asset, verify against `.sha256`, swap the binary, restart. The gate requires: `isSea()`, linux x64/arm64, not containerized, writable binary directory, non-`-dev` build. Admin procedures: `admin.update.check` / `admin.update.apply` / `admin.update.status`.
 
-Manual rollback: `mv kobato.bak kobato && systemctl restart <service>`.
+Manual rollback: `kobato rollback && systemctl restart <service>` (the CLI subcommand in `src/server/infra/sea-cli.ts` verifies the `.bak` sibling, swaps it back via `src/server/infra/binary-rollback.ts`, and leaves the restart to the service manager). `kobato doctor [--json]` prints an aggregated diagnostic (version, natives smoke, config validation via a child-process probe, self-update readiness) and exits 1 when natives or config fail; the gate itself lives in `src/server/infra/self-update-gate.ts` because the infra-layer CLI consumes it.
 
 ## Git
 
@@ -307,6 +312,11 @@ libvips library files (`scripts/sea/assets.ts`).
 Examples: `react`, `hono`, `drizzle-orm`, `nodemailer`,
 `sanitize-html`, `feed`, `pg`, `bcryptjs`, `dompurify`, `fast-xml-parser` —
 all `devDependencies`, despite being production imports.
+
+**Version pins to watch.** `drizzle-orm` / `drizzle-kit` are pinned at
+`1.0.0-rc.4` (pre-release). Watch the drizzle 1.0 stable release; when it
+ships, evaluate upgrading the pair together and re-run the migration
+contract tests before unpinning.
 
 ## Settings autosave
 

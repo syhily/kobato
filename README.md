@@ -31,7 +31,7 @@ embedded **DuckDB** sidecar. There is no database server to run, back up, or upg
 
 ## Requirements
 
-- Node.js 24+ (development and building from source only — the SEA binary deployment needs no runtime)
+- Node.js 24+ for development (the SEA binary deployment needs no runtime); `pnpm run sea:build` requires Node.js 26
 
 No database server: SQLite and DuckDB are embedded.
 
@@ -90,12 +90,14 @@ nested config path joined with a double underscore:
 | `storage__defaultFont`       | `storage.defaultFont`       | Optional fallback font file copied into `<data>/fonts`                |
 | `server__loggingLevel`       | `server.loggingLevel`       | `debug` / `info` / `warn` / `error` / `silent`                        |
 
-See `kobato.config.example.json` for the annotated file shape.
+See `kobato.config.example.json` for the file shape.
 
 ## Testing
 
-The suite is fully self-contained — integration tests run against
-per-worker SQLite/DuckDB temp files, so no Docker or services are needed:
+The suite is fully self-contained — integration tests run against a
+shared in-memory SQLite database (temp files only for file-backed
+flows) and temp-file DuckDB sidecars, so no Docker or services are
+needed:
 
 ```bash
 pnpm run test
@@ -104,7 +106,8 @@ pnpm run test
 For fast local feedback, run unit tests and snapshot tests only:
 
 ```bash
-pnpm run test:fast
+pnpm run test:unit
+pnpm run test:snaps
 ```
 
 ## Deployment
@@ -156,10 +159,11 @@ Every release also ships a self-contained single executable — no Node.js
 runtime, no `node_modules`, no database server. The server bundle, client
 assets, and database migrations are embedded in the binary; the native
 packages (sharp, canvas, DuckDB) are extracted to a cache directory on
-first run. Targets: glibc Linux, x64 and arm64.
+first run. Targets: `linux-x64`, `linux-arm64` (glibc), `darwin-arm64`,
+`win32-x64`, and `win32-arm64`.
 
-Download `kobato-linux-x64.tar.gz` (or `kobato-linux-arm64.tar.gz`) and its
-`.sha256` sidecar from the [latest release](../../releases/latest), verify,
+Download the archive for your platform (e.g. `kobato-linux-x64.tar.gz`)
+and its `.sha256` sidecar from the [latest release](../../releases/latest), verify,
 extract, and install:
 
 ```bash
@@ -187,6 +191,8 @@ After=network-online.target
 
 [Service]
 Type=simple
+# Generate real secrets with e.g. `openssl rand -hex 32` — the schema
+# requires both ≥ 32 chars and encryptionKey ≥ 10 distinct characters.
 Environment=security__sessionSecret=change-me
 Environment=security__encryptionKey=change-me
 Environment=storage__data=/var/lib/kobato
@@ -215,7 +221,8 @@ a new image instead.
 pnpm run dev         # development server
 pnpm run build       # production build
 pnpm run test        # run tests
-pnpm run test:fast   # run unit and snapshot tests only
+pnpm run test:unit   # run unit tests only
+pnpm run test:snaps  # run snapshot tests only
 pnpm run fmt         # formatting
 pnpm run lint        # lint
 pnpm run type        # TypeScript check
