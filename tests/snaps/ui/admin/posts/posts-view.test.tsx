@@ -1,13 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { makeAdminPost } from '#/_helpers/catalog'
 import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderToHtml, stableHtml, renderInRouter } from '#/_helpers/render'
 import { ImageField } from '@/ui/admin/editor-shared/ImageField'
 import { PublishStatusRow } from '@/ui/admin/editor-shared/PublishStatusRow'
 import { PostsSkeleton } from '@/ui/admin/posts/PostsSkeleton'
 import { PostsView } from '@/ui/admin/posts/PostsView'
-import { StatusBadge } from '@/ui/admin/posts/StatusBadge'
 
 const queryMocks = mockTanstackQuery()
 
@@ -69,56 +67,6 @@ describe('snapshot: PostsSkeleton', () => {
   it('renders placeholder rows', () => {
     const html = stableHtml(renderToHtml(<PostsSkeleton />))
     expect(html).toContain('skeleton')
-  })
-})
-
-// StatusBadge already has variant coverage in post-row.test.tsx — this block
-// repeats one assertion per variant so a regression in the standalone export
-// surfaces independently.
-describe('snapshot: StatusBadge', () => {
-  it('renders the published badge', () => {
-    const post = makeAdminPost({
-      published: true,
-      visible: true,
-      deletedAt: null,
-      publishedRevisionId: 'r1',
-    })
-    const html = stableHtml(renderToHtml(<StatusBadge post={post} />))
-    expect(html).toContain('已发布')
-  })
-
-  it('renders the draft badge', () => {
-    const post = makeAdminPost({ published: false, deletedAt: null })
-    const html = stableHtml(renderToHtml(<StatusBadge post={post} />))
-    expect(html).toContain('草稿')
-  })
-
-  it('renders the deleted badge', () => {
-    const post = makeAdminPost({ deletedAt: '2024-03-01T00:00:00.000Z' })
-    const html = stableHtml(renderToHtml(<StatusBadge post={post} />))
-    expect(html).toContain('已删除')
-  })
-
-  it('renders the hidden badge', () => {
-    const post = makeAdminPost({
-      published: true,
-      visible: false,
-      deletedAt: null,
-      publishedRevisionId: 'r1',
-    })
-    const html = stableHtml(renderToHtml(<StatusBadge post={post} />))
-    expect(html).toContain('隐藏')
-  })
-
-  it('renders the only-draft badge', () => {
-    const post = makeAdminPost({
-      published: true,
-      visible: true,
-      deletedAt: null,
-      publishedRevisionId: null,
-    })
-    const html = stableHtml(renderToHtml(<StatusBadge post={post} />))
-    expect(html).toContain('仅草稿')
   })
 })
 

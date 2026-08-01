@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest'
 import { makeAdminPost } from '#/_helpers/catalog'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { PostRow } from '@/ui/admin/posts/PostRow'
-import { StatusBadge } from '@/ui/admin/posts/StatusBadge'
 
 describe('snapshot: PostRow', () => {
   it('renders a published post with cover', () => {
@@ -48,14 +47,14 @@ describe('snapshot: PostRow', () => {
     expect(html).toContain('data-deleted')
   })
 
-  it('renders a hidden published post', () => {
+  it('renders an unlisted published post', () => {
     const post = makeAdminPost({
-      title: 'Hidden Post',
+      title: 'Unlisted Post',
       visible: false,
     })
     const html = stableHtml(renderInRouter(<PostRow post={post} />))
-    expect(html).toContain('Hidden Post')
-    expect(html).toContain('隐藏')
+    expect(html).toContain('Unlisted Post')
+    expect(html).toContain('不列出')
   })
 
   it('renders a post with only draft revision', () => {
@@ -84,52 +83,5 @@ describe('snapshot: PostRow', () => {
     expect(html).toContain('life')
     // SSR never clicks — the callback stays unfired.
     expect(filtered).toBeNull()
-  })
-})
-
-describe('snapshot: StatusBadge', () => {
-  it('renders published badge', () => {
-    const post = makeAdminPost({
-      published: true,
-      visible: true,
-      deletedAt: null,
-      publishedRevisionId: 'r1',
-    })
-    const html = stableHtml(renderInRouter(<StatusBadge post={post} />))
-    expect(html).toContain('已发布')
-  })
-
-  it('renders draft badge', () => {
-    const post = makeAdminPost({ published: false })
-    const html = stableHtml(renderInRouter(<StatusBadge post={post} />))
-    expect(html).toContain('草稿')
-  })
-
-  it('renders deleted badge', () => {
-    const post = makeAdminPost({ deletedAt: '2024-03-01T00:00:00.000Z' })
-    const html = stableHtml(renderInRouter(<StatusBadge post={post} />))
-    expect(html).toContain('已删除')
-  })
-
-  it('renders hidden badge', () => {
-    const post = makeAdminPost({
-      published: true,
-      visible: false,
-      deletedAt: null,
-      publishedRevisionId: 'r1',
-    })
-    const html = stableHtml(renderInRouter(<StatusBadge post={post} />))
-    expect(html).toContain('隐藏')
-  })
-
-  it('renders only-draft badge', () => {
-    const post = makeAdminPost({
-      published: true,
-      visible: true,
-      deletedAt: null,
-      publishedRevisionId: null,
-    })
-    const html = stableHtml(renderInRouter(<StatusBadge post={post} />))
-    expect(html).toContain('仅草稿')
   })
 })

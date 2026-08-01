@@ -37,25 +37,25 @@ function PostStatusText({ post }: { post: AdminPostDto }) {
   }
   if (!post.published) {
     return (
-      <span className="inline-flex items-center gap-1.5 font-medium text-(--text-admin-sm) text-pink-500">
-        <span className="size-1.5 rounded-full bg-pink-500" />
+      <span className="inline-flex items-center gap-1.5 font-medium text-(--text-admin-sm) text-status-draft-fg">
+        <span className="size-1.5 rounded-full bg-status-draft-fg" />
         草稿
       </span>
     )
   }
   if (post.publishedRevisionId === null) {
     return (
-      <span className="inline-flex items-center gap-1.5 font-medium text-(--text-admin-sm) text-amber-600">
-        <span className="size-1.5 rounded-full bg-amber-600" />
+      <span className="inline-flex items-center gap-1.5 font-medium text-(--text-admin-sm) text-status-warn-fg">
+        <span className="size-1.5 rounded-full bg-status-warn-fg" />
         仅草稿
       </span>
     )
   }
   if (!post.visible) {
     return (
-      <span className="inline-flex items-center gap-1.5 font-medium text-(--text-admin-sm) text-amber-600">
-        <span className="size-1.5 rounded-full bg-amber-600" />
-        隐藏
+      <span className="inline-flex items-center gap-1.5 font-medium text-(--text-admin-sm) text-status-warn-fg">
+        <span className="size-1.5 rounded-full bg-status-warn-fg" />
+        不列出
       </span>
     )
   }

@@ -25,7 +25,7 @@ export interface ListPostsFilters extends MetaListFiltersBase {
   sortOrder?: 'asc' | 'desc'
   /**
    * Coarse lifecycle bucket — partitions every live row into one of two
-   * sets that match the `StatusBadge` logic in `PostsView`, routed
+   * sets that match the `PostStatusText` logic in `PostRow`, routed
    * through the promoted gate (`promotedPostWhere`):
    *   - `'published'`: promoted — `published = true AND
    *                    published_revision_id IS NOT NULL` (has a
