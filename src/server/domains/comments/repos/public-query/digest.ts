@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, sql, type SQL } from 'drizzle-orm'
 
 import type { Database } from '@/server/infra/db/database'
 import type { EntityType } from '@/server/infra/db/target'
@@ -46,8 +46,34 @@ export async function adminUserIds(db: Database): Promise<number[]> {
 }
 
 export async function latestDistinctCommentIds(db: Database, adminIds: number[], limit: number): Promise<number[]> {
+  const rows = db.all(latestDistinctCommentIdsQuery(adminIds, limit))
+  return rows.map((row) => {
+    const id = isRecord(row) ? row.id : undefined
+    return idFromString(String(id))
+  })
+}
+
+/**
+ * The digest access path (audit P1-21, EXPLAIN-first): the planner resolves
+ * `deleted_at IS NULL` through `idx_comment_deleted_at` and sorts the
+ * survivors in a temp b-tree for the window partition. Measured against the
+ * migrated schema seeded at personal-blog-plus scale (in-memory, median):
+ * 10k comments ≈ 10ms, 50k ≈ 60ms, 100k ≈ 124ms uncached — and this query
+ * sits behind the sidebar loader's 30s cache, so the per-render cost is
+ * zero on cache hits. A partial covering index on
+ * `(user_id, created_at DESC, id DESC) WHERE is_pending = false AND deleted_at IS NULL`
+ * drops both temp b-trees but still scans every surviving row (the window
+ * must see all users): only 124→75ms at 100k comments. Not worth a
+ * speculative index at personal-blog scale — the access path is pinned by
+ * `tests/it/server/domains/comments/repos.test.ts` instead.
+ *
+ * Trigger condition: if the comments table grows past ~50k rows AND the
+ * sidebar cache-miss cost shows up in profiles, add that partial index via
+ * a drizzle migration and re-pin the plan.
+ */
+export function latestDistinctCommentIdsQuery(adminIds: number[], limit: number): SQL {
   const userFilter = adminIds.length > 0 ? sql`${comment.userId} NOT IN (${sql.join(adminIds, sql`, `)})` : sql`1 = 1`
-  const query = sql`SELECT    id
+  return sql`SELECT    id
   FROM      (
             SELECT    id,
                       user_id,
@@ -61,11 +87,6 @@ export async function latestDistinctCommentIds(db: Database, adminIds: number[],
   WHERE     rn = 1
   ORDER BY  created_at DESC
   LIMIT     ${limit}`
-  const rows = db.all(query)
-  return rows.map((row) => {
-    const id = isRecord(row) ? row.id : undefined
-    return idFromString(String(id))
-  })
 }
 
 export async function commentsByIds(db: Database, ids: number[], limit: number): Promise<PendingCommentRow[]> {

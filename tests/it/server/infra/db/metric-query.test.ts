@@ -1,8 +1,8 @@
 import { and, eq } from 'drizzle-orm'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
-import { incrementMetricPvBatch } from '@/server/infra/db/operations/metric'
+import { ensureMetric, incrementMetricPvBatch } from '@/server/infra/db/operations/metric'
 import { metric } from '@/server/infra/db/schema/metric'
 
 const db = getTestDb()
@@ -78,5 +78,38 @@ describe('db/query/metric', () => {
       .where(and(eq(metric.type, 'post'), eq(metric.ownerId, 1)))
       .limit(1)
     expect(rows[0]?.pv).toBe(10)
+  })
+})
+
+describe('db/query/metric — ensureMetric', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('returns the existing row without issuing any write when the row exists', async () => {
+    // P1-14: the detail render path calls ensureMetric on every page view,
+    // and the row virtually always exists already — the common path must be
+    // a pure read (no INSERT/UPSERT → no SQLite write lock on a read path).
+    const seeded = await db.insert(metric).values({ type: 'post', ownerId: 1, pv: 7 }).returning()
+    const insertSpy = vi.spyOn(db, 'insert')
+
+    const row = await ensureMetric(db, { type: 'post', ownerId: 1 })
+
+    expect(insertSpy).not.toHaveBeenCalled()
+    expect(row).toEqual(seeded[0])
+  })
+
+  it('inserts defaults and returns the minted row when the row is missing', async () => {
+    const insertSpy = vi.spyOn(db, 'insert')
+
+    const row = await ensureMetric(db, { type: 'page', ownerId: 9 })
+
+    expect(insertSpy).toHaveBeenCalledTimes(1)
+    expect(row.type).toBe('page')
+    expect(row.ownerId).toBe(9)
+    expect(row.publicId).toMatch(/^[0-9a-f-]{36}$/)
+    expect(row.voteUp).toBe(0)
+    expect(row.voteDown).toBe(0)
+    expect(row.pv).toBe(0)
   })
 })

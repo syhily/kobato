@@ -15,18 +15,30 @@ function whereTarget(target: EntityTarget) {
 }
 
 /**
- * Atomic upsert of a metric row keyed on the entity target. Returns
+ * Ensure-once read of the metric row keyed on the entity target. Returns
  * the canonical row, including the auto-generated `publicId` UUID
  * that the public API surfaces in place of an URL.
  *
- * - When the row does not yet exist we insert defaults; the
- *   schema's `$defaultFn` mints a fresh `publicId`.
- * - When it already exists we touch `updatedAt` so the RETURNING
- *   clause hands the caller back a fresh row without changing
- *   semantics. (No counter or `publicId` rewrite — those are
- *   handled by their own paths.)
+ * Read-first, insert-only-when-missing: the detail render path calls
+ * this on every page view and the row virtually always exists, so the
+ * common path is a pure SELECT (index-only via `uq_metric_owner`) that
+ * takes no SQLite write lock. The previous single-statement
+ * `INSERT … ON CONFLICT DO UPDATE` acquired a write lock per render
+ * (audit P1-14); its SET was a self-assignment no-op, so skipping the
+ * write changes nothing observable.
+ *
+ * - When the row exists we return it as-is — no `updatedAt` touch, no
+ *   counter or `publicId` rewrite (same as the old no-op SET).
+ * - When it does not yet exist we insert defaults; the schema's
+ *   `$defaultFn` mints a fresh `publicId`. The `ON CONFLICT` no-op is
+ *   kept as the concurrent-create race fallback: two writers passing
+ *   the SELECT concurrently both end up returning the one canonical row.
  */
 export async function ensureMetric(db: Database, target: EntityTarget): Promise<MetricRow> {
+  const existing = await findMetricByTarget(db, target)
+  if (existing !== null) {
+    return existing
+  }
   const np: NewMetric = {
     type: target.type,
     ownerId: target.ownerId,

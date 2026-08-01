@@ -132,10 +132,14 @@ export async function saveBody<TMeta, TPreview>(
   // The force-overwrite audit context is the latest revision of any
   // status — not just the latest draft — so publishing over a published
   // revision is audited the same way as overwriting a draft.
+  // A genuine empty result stays null (nothing to audit against), but a
+  // read ERROR propagates and aborts the save (audit P1-25): the force
+  // path is exactly where the audit trail matters most, and every other
+  // DB failure in this pipeline (the repo save itself, afterPublish)
+  // already fails loudly — swallowing only this read would land the
+  // overwrite while silently dropping its audit row.
   const overwriteContext =
-    input.force === true
-      ? await findLatestRevision(db, adapter.entityType, adapter.getId(meta)).catch(() => null)
-      : null
+    input.force === true ? await findLatestRevision(db, adapter.entityType, adapter.getId(meta)) : null
 
   const repoInput = {
     ownerId: adapter.getId(meta),

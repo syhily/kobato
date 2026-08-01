@@ -21,9 +21,11 @@ import { DomainError } from '@/server/infra/http/errors'
 // referencing a missing library image is skipped by design, see
 // image-sync.test.ts).
 vi.mock('@/server/domains/content/services/image-sync', { spy: true })
+vi.mock('@/server/domains/content/revisions', { spy: true })
 
 const { loadDraftPreviewBySlug, previewBody, saveBody } = await import('@/server/domains/content/lifecycle')
 const { syncLibraryImageBlocks } = await import('@/server/domains/content/services/image-sync')
+const { findLatestRevision } = await import('@/server/domains/content/revisions')
 
 const db = getTestDb()
 
@@ -215,6 +217,27 @@ describe('content/lifecycle — saveBody force overwrite', () => {
     const rows = await revisionsOf(meta.id)
     expect(rows).toHaveLength(2)
     expect(rows[1]!.status).toBe('draft')
+  })
+
+  it('propagates a revision-read failure on the force path instead of silently dropping audit context', async () => {
+    // Audit P1-25: "read failed" must not be treated as "no prior
+    // revision" — on the force path (the one that most needs the audit
+    // trail) a transient DB error aborts the save loudly. Spy mode keeps
+    // the real query everywhere else; only this one read rejects (no
+    // seedable table state makes the real read throw on a live engine).
+    const meta = await seedPost()
+    await seedRevision(meta.id, { status: 'published', clientRevisionToken: 'server-token' })
+    const { adapter, recordForceOverwrite } = makeAdapter({ id: meta.id, publishedRevisionId: null })
+    vi.mocked(findLatestRevision).mockRejectedValueOnce(new Error('transient read failure'))
+
+    await expect(
+      saveBody(db, adapter, { entityId: meta.id, body: VALID_BODY, authorId: 42, force: true }, 'draft'),
+    ).rejects.toThrow('transient read failure')
+
+    // The save aborted before the repo write: only the seeded revision
+    // remains, and no force-overwrite audit was recorded.
+    expect(await revisionsOf(meta.id)).toHaveLength(1)
+    expect(recordForceOverwrite).not.toHaveBeenCalled()
   })
 })
 
