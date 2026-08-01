@@ -4,9 +4,17 @@ on:
   workflow_dispatch:
   push:
     branches: [main, develop]
+    # The automated release flow enters HERE: scripts/release.ts pushes
+    # the tag and then creates the GitHub release as a DRAFT, and GitHub
+    # fires NO workflow events for draft releases — a `release:` trigger
+    # alone leaves the whole chain dead (the draft never publishes, no
+    # assets upload, no semver image builds).
+    tags: ['*']
   pull_request:
     branches: [main]
   release:
+    # `created` fires only for NON-draft releases (i.e. manual ones made
+    # in the UI); the automated flow rides the tag push above.
     types: [created]
 
 # Mirror docker.yml: never cancel — a release build must run to completion.
@@ -23,8 +31,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     # develop pushes and PRs run the single-platform build-develop job
-    # below instead — the full matrix stays on main/release/dispatch.
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'release' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    # below instead — the full matrix stays on main/tags/release/dispatch.
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'release' || (github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')))
     strategy:
       fail-fast: false
       matrix:
@@ -92,7 +100,7 @@ jobs:
     name: build (${{ matrix.target }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'release' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'release' || (github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')))
     strategy:
       fail-fast: false
       matrix:
@@ -144,7 +152,7 @@ jobs:
     name: build (${{ matrix.target }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'release' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'release' || (github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')))
     strategy:
       fail-fast: false
       matrix:
@@ -216,13 +224,16 @@ jobs:
       - run: pnpm run sea:build
       - run: pnpm run sea:smoke dist-sea/kobato
 
-  # Release assets are uploaded only for release events, in a separate job
-  # so the elevated contents:write token never reaches the build matrix.
-  # scripts/release.ts creates the release as a DRAFT: the publish step at
-  # the end flips it public only after every asset is attached.
+  # Release assets are uploaded for the events that actually occur in the
+  # release flow — the tag push (automated: scripts/release.ts pushes the
+  # tag, then creates the release as a DRAFT) and non-draft release events
+  # (manual) — in a separate job so the elevated contents:write token
+  # never reaches the build matrix. The publish step at the end flips the
+  # draft public only after every asset is attached; that `published`
+  # event is what triggers docker.yml's semver build.
   release-upload:
     name: upload release assets
-    if: github.event_name == 'release'
+    if: github.event_name == 'release' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/'))
     needs: [build, build-darwin, build-windows]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -234,11 +245,13 @@ jobs:
           pattern: kobato-*
           path: dist-sea
           merge-multiple: true
+      # `github.ref_name` is the tag on both tag-push and release events
+      # (`github.event.release` is null on tag pushes).
       - name: Upload binaries to the GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
-        run: gh release upload "${{ github.event.release.tag_name }}" dist-sea/kobato-* --clobber
+        run: gh release upload "${{ github.ref_name }}" dist-sea/kobato-* --clobber
       # Publish only now: while the release is a draft, users cannot see or
       # download it, so the async upload above can never expose a partial
       # release. If any build or the upload failed, this step never runs
@@ -248,4 +261,4 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
-        run: gh release edit "${{ github.event.release.tag_name }}" --draft=false
+        run: gh release edit "${{ github.ref_name }}" --draft=false

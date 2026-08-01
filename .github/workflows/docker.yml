@@ -4,7 +4,12 @@ on:
   push:
     branches: [main]
   release:
-    types: [created]
+    # `published` is what the automated flow produces: sea.yml's
+    # release-upload job flips the draft public after uploading the SEA
+    # assets. `created` covers manual non-draft releases. GitHub fires NO
+    # workflow events for draft releases, so a `created`-only trigger
+    # never fires in the automated flow.
+    types: [created, published]
 
 # Prevent concurrent builds on main to avoid race conditions when pushing latest.
 concurrency:
@@ -15,9 +20,11 @@ jobs:
   build-and-push:
     name: build and push image
     runs-on: ubuntu-latest
-    # GitHub fires `created` for draft releases too — a discarded draft
-    # must not leave semver-tagged images behind on the registry. (On
-    # push events `github.event.release` is null and this passes.)
+    # GitHub fires no workflow events for draft releases, so this job only
+    # ever runs for non-draft releases; the `!draft` guard stays as a
+    # belt-and-suspenders check — a discarded draft must never leave
+    # semver-tagged images behind on the registry. (On push events
+    # `github.event.release` is null and this passes.)
     if: ${{ !github.event.release.draft }}
     # Multi-arch: the arm64 leg runs under QEMU emulation, so the whole
     # SEA build (pnpm install + vite bundles + brotli-11 packing) is
