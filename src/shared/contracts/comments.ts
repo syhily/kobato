@@ -63,6 +63,12 @@ export const commentItemDto = commentBaseDto.extend({
   get children() {
     return z.array(commentItemDto).optional()
   },
+  // Thread-cap markers (see `parseComments`): present ONLY on a root whose
+  // reply thread exceeded the server-side cap. `childrenTotal` carries the
+  // full visible reply count so a future "load more" affordance knows how
+  // much was held back.
+  childrenTruncated: z.boolean().optional(),
+  childrenTotal: z.number().int().nonnegative().optional(),
 })
 export type CommentItemWire = z.infer<typeof commentItemDto>
 

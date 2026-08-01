@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
@@ -207,9 +207,31 @@ describe('services/comments/likes — purgeStaleLikeTokens', () => {
 })
 
 describe('services/comments/likes — sweep timer', () => {
-  it('starts idempotently and resets', () => {
-    startLikeTokenSweep(db)
-    startLikeTokenSweep(db)
-    resetLikeTokenSweep()
+  it('purges stale tokens on the hourly tick, starts idempotently, and stops on reset', async () => {
+    const seedStaleToken = async (token: string) => {
+      const deletedAt = new Date(Date.now() - 40 * 24 * 60 * 60 * 1000)
+      await db.insert(like).values({ token, type: 'post', ownerId: 1, deletedAt, updatedAt: deletedAt })
+    }
+
+    vi.useFakeTimers()
+    try {
+      await seedStaleToken('sweep-me')
+      // A duplicate start must not replace the live timer or arm a second
+      // one — either bug would show up as the tick below never firing.
+      startLikeTokenSweep(db)
+      startLikeTokenSweep(db)
+
+      // One interval passes — the tick runs the real purge.
+      await vi.advanceTimersByTimeAsync(60 * 60 * 1000)
+      expect((await likeRows()).map((r) => r.token)).not.toContain('sweep-me')
+
+      // After reset the timer is gone for real: another interval purges nothing.
+      resetLikeTokenSweep()
+      await seedStaleToken('after-reset')
+      await vi.advanceTimersByTimeAsync(60 * 60 * 1000)
+      expect((await likeRows()).map((r) => r.token)).toContain('after-reset')
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })

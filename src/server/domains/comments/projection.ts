@@ -102,9 +102,16 @@ function projectAdminCommentBase(
 
 export function asCommentItemWire(comment: CommentItem | CommentAndUser): CommentItemWire {
   const wire = withCommentBadgeTextColor(projectPublicCommentBase(comment))
-  const children = (comment as CommentItem).children
-  if (children !== undefined) {
-    wire.children = children.map((c) => asCommentItemWire(c))
+  const item = comment as CommentItem
+  if (item.children !== undefined) {
+    wire.children = item.children.map((c) => asCommentItemWire(c))
+  }
+  // Thread-cap markers set by `parseComments` ride the wire verbatim.
+  if (item.childrenTruncated !== undefined) {
+    wire.childrenTruncated = item.childrenTruncated
+  }
+  if (item.childrenTotal !== undefined) {
+    wire.childrenTotal = item.childrenTotal
   }
   return wire
 }

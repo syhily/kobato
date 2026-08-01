@@ -84,6 +84,19 @@ describe('asCommentItemWire', () => {
     const wire = asCommentItemWire(pre)
     expect(wire.id).toBe('7')
   })
+
+  it('passes the thread-cap markers through when present', () => {
+    const root: CommentItem = { ...makeRow({ id: 7 }), children: [], childrenTruncated: true, childrenTotal: 142 }
+    const wire = asCommentItemWire(root)
+    expect(wire.childrenTruncated).toBe(true)
+    expect(wire.childrenTotal).toBe(142)
+  })
+
+  it('omits the thread-cap markers on untruncated roots', () => {
+    const wire = asCommentItemWire(makeRow())
+    expect(wire).not.toHaveProperty('childrenTruncated')
+    expect(wire).not.toHaveProperty('childrenTotal')
+  })
 })
 
 describe('asCommentItemsWire', () => {

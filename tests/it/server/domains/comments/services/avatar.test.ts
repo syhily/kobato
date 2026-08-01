@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import {
+  DEFAULT_AVATAR_SIZE_BUCKET,
   defaultAvatarUrl,
   fetchAvatarImage,
   fetchGithubAvatarDataUrl,
@@ -22,10 +23,13 @@ import { imageWidth } from '@/server/infra/image/compress'
 // in-memory SQLite engine, the DB-backed kv cache registry, and real
 // sharp image processing.
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@/server/infra/logger'
-import { DEFAULT_AVATAR_SIZE } from '@/shared/utils/avatar'
 import { encodedEmail } from '@/shared/utils/security'
 
 const db = getTestDb()
+
+// A valid-format stand-in for the sha256 email hashes `encodedEmail`
+// issues — the mirror branch rejects anything that isn't a hex digest.
+const GRAVATAR_HASH = 'abcdef0123456789'.repeat(4)
 
 beforeEach(async () => {
   await clearAllTables(db)
@@ -89,24 +93,30 @@ async function cachedAvatar(size: number, email: string): Promise<AvatarEntry | 
 }
 
 describe('domains/comments/services/avatar — resolveAvatarSize', () => {
-  it('defaults to 120 when the parameter is absent, blank, or not a number', () => {
-    expect(resolveAvatarSize(undefined)).toBe(120)
-    expect(resolveAvatarSize('')).toBe(120)
-    expect(resolveAvatarSize('  ')).toBe(120)
-    expect(resolveAvatarSize('abc')).toBe(120)
-    expect(resolveAvatarSize('Infinity')).toBe(120)
+  it("defaults to the default size's bucket when the parameter is absent, blank, or not a number", () => {
+    // DEFAULT_AVATAR_SIZE (120) rounds up to the 128 bucket.
+    expect(DEFAULT_AVATAR_SIZE_BUCKET).toBe(128)
+    expect(resolveAvatarSize(undefined)).toBe(128)
+    expect(resolveAvatarSize('')).toBe(128)
+    expect(resolveAvatarSize('  ')).toBe(128)
+    expect(resolveAvatarSize('abc')).toBe(128)
+    expect(resolveAvatarSize('Infinity')).toBe(128)
   })
 
-  it('passes through an in-range integer', () => {
-    expect(resolveAvatarSize('120')).toBe(120)
-    expect(resolveAvatarSize('48')).toBe(48)
+  it('rounds an in-range integer up to the nearest bucket', () => {
+    expect(resolveAvatarSize('120')).toBe(128)
+    expect(resolveAvatarSize('48')).toBe(64)
+    expect(resolveAvatarSize('32')).toBe(32)
+    expect(resolveAvatarSize('65')).toBe(128)
+    expect(resolveAvatarSize('129')).toBe(256)
   })
 
-  it('truncates floats and clamps to 16..512', () => {
-    expect(resolveAvatarSize('119.9')).toBe(119)
-    expect(resolveAvatarSize('1')).toBe(16)
-    expect(resolveAvatarSize('-5')).toBe(16)
-    expect(resolveAvatarSize('10000')).toBe(512)
+  it('truncates floats, clamps to 16..512, then buckets — nothing above 256 survives', () => {
+    expect(resolveAvatarSize('119.9')).toBe(128)
+    expect(resolveAvatarSize('1')).toBe(32)
+    expect(resolveAvatarSize('-5')).toBe(32)
+    expect(resolveAvatarSize('257')).toBe(256)
+    expect(resolveAvatarSize('10000')).toBe(256)
   })
 })
 
@@ -285,7 +295,7 @@ describe('domains/comments/services/avatar — fetchGithubAvatarDataUrl (sunk fr
       }),
     ])
 
-    const dataUrl = await fetchGithubAvatarDataUrl()
+    const dataUrl = await fetchGithubAvatarDataUrl(db)
 
     // PNG magic bytes → 'iVBORw==' in base64.
     expect(dataUrl).toBe('data:image/png;base64,iVBORw==')
@@ -294,13 +304,43 @@ describe('domains/comments/services/avatar — fetchGithubAvatarDataUrl (sunk fr
   it('defaults the content type to image/png when the upstream omits the header', async () => {
     mockFetch([new Response(new Uint8Array([1, 2, 3]).buffer, { status: 200 })])
 
-    expect(await fetchGithubAvatarDataUrl()).toMatch(/^data:image\/png;base64,/)
+    expect(await fetchGithubAvatarDataUrl(db)).toMatch(/^data:image\/png;base64,/)
   })
 
   it('resolves to an empty string when the upstream is not ok', async () => {
     mockFetch([new Response('not found', { status: 404 })])
 
-    expect(await fetchGithubAvatarDataUrl()).toBe('')
+    expect(await fetchGithubAvatarDataUrl(db)).toBe('')
+  })
+
+  it('serves a repeat call from the cache without a second upstream fetch', async () => {
+    const fetchFn = mockFetch([
+      new Response(new Uint8Array([0x89, 0x50, 0x4e, 0x47]).buffer, {
+        status: 200,
+        headers: { 'Content-Type': 'image/png' },
+      }),
+    ])
+
+    const first = await fetchGithubAvatarDataUrl(db)
+    const second = await fetchGithubAvatarDataUrl(db)
+
+    expect(first).toBe('data:image/png;base64,iVBORw==')
+    expect(second).toBe(first)
+    expect(fetchFn).toHaveBeenCalledTimes(1)
+  })
+
+  it('never caches a failure — the next call retries the upstream', async () => {
+    const fetchFn = mockFetch([
+      new Response('not found', { status: 404 }),
+      new Response(new Uint8Array([0x89, 0x50, 0x4e, 0x47]).buffer, {
+        status: 200,
+        headers: { 'Content-Type': 'image/png' },
+      }),
+    ])
+
+    expect(await fetchGithubAvatarDataUrl(db)).toBe('')
+    expect(await fetchGithubAvatarDataUrl(db)).toBe('data:image/png;base64,iVBORw==')
+    expect(fetchFn).toHaveBeenCalledTimes(2)
   })
 })
 
@@ -314,16 +354,16 @@ describe('domains/comments/services/avatar — resolveAvatarForEmail', () => {
     expect(hash).toMatch(/^[0-9a-f]{64}$/)
     expect(spy).not.toHaveBeenCalled()
     // Real cache: nothing was written for any size.
-    expect(await cachedAvatar(DEFAULT_AVATAR_SIZE, hash)).toBeNull()
+    expect(await cachedAvatar(DEFAULT_AVATAR_SIZE_BUCKET, hash)).toBeNull()
   })
 
-  it('pre-warms a HAVE_AVATAR entry at the default size when the QQ fetch succeeds', async () => {
+  it('pre-warms a HAVE_AVATAR entry at the default size bucket when the QQ fetch succeeds', async () => {
     const body = await pngOfSize(100)
     mockFetch([new Response(new Uint8Array(body), { status: 200 })])
 
     const hash = await resolveAvatarForEmail(db, '12345@qq.com')
 
-    const entry = await cachedAvatar(DEFAULT_AVATAR_SIZE, hash)
+    const entry = await cachedAvatar(DEFAULT_AVATAR_SIZE_BUCKET, hash)
     expect(entry?.status).toBe(AvatarStatus.HAVE_AVATAR)
     expect(entry?.buffer).toBeInstanceOf(Buffer)
   })
@@ -333,7 +373,7 @@ describe('domains/comments/services/avatar — resolveAvatarForEmail', () => {
 
     const hash = await resolveAvatarForEmail(db, '12345@qq.com')
 
-    expect(await cachedAvatar(DEFAULT_AVATAR_SIZE, hash)).toEqual({
+    expect(await cachedAvatar(DEFAULT_AVATAR_SIZE_BUCKET, hash)).toEqual({
       status: AvatarStatus.NO_AVATAR,
       buffer: null,
     })
@@ -393,11 +433,11 @@ describe('domains/comments/services/avatar — serveAvatar', () => {
     await set(
       db,
       'avatar',
-      { size: 120, email: 'abc' },
+      { size: 120, email: GRAVATAR_HASH },
       { status: AvatarStatus.HAVE_AVATAR, buffer: Buffer.from('av') },
     )
 
-    const result = await serveAvatar(db, 'abc', 120)
+    const result = await serveAvatar(db, GRAVATAR_HASH, 120)
 
     expect(result).toEqual({ kind: 'png', buffer: Buffer.from('av') })
     expect(spy).not.toHaveBeenCalled()
@@ -406,9 +446,9 @@ describe('domains/comments/services/avatar — serveAvatar', () => {
   it('redirects on a gravatar negative-cache entry without fetching upstream', async () => {
     const spy = vi.fn()
     vi.stubGlobal('fetch', spy)
-    await set(db, 'avatar', { size: 120, email: 'abc' }, { status: AvatarStatus.NO_AVATAR, buffer: null })
+    await set(db, 'avatar', { size: 120, email: GRAVATAR_HASH }, { status: AvatarStatus.NO_AVATAR, buffer: null })
 
-    const result = await serveAvatar(db, 'abc', 120)
+    const result = await serveAvatar(db, GRAVATAR_HASH, 120)
 
     expect(result).toEqual({ kind: 'redirect' })
     expect(spy).not.toHaveBeenCalled()
@@ -417,20 +457,20 @@ describe('domains/comments/services/avatar — serveAvatar', () => {
   it('writes a negative entry and redirects when the gravatar fetch misses', async () => {
     mockFetch([new Response(null, { status: 404 })])
 
-    const result = await withAllowedMirror(() => serveAvatar(db, 'abc', 120))
+    const result = await withAllowedMirror(() => serveAvatar(db, GRAVATAR_HASH, 120))
 
     expect(result).toEqual({ kind: 'redirect' })
-    expect(await cachedAvatar(120, 'abc')).toEqual({ status: AvatarStatus.NO_AVATAR, buffer: null })
+    expect(await cachedAvatar(120, GRAVATAR_HASH)).toEqual({ status: AvatarStatus.NO_AVATAR, buffer: null })
   })
 
   it('serves the fetched bytes and caches HAVE_AVATAR on a gravatar fetch hit', async () => {
     mockFetch([new Response(new Uint8Array(await pngOfSize(512)), { status: 200 })])
 
-    const result = await withAllowedMirror(() => serveAvatar(db, 'abc', 120))
+    const result = await withAllowedMirror(() => serveAvatar(db, GRAVATAR_HASH, 120))
 
     expect(result.kind).toBe('png')
     if (result.kind === 'png') {
-      const entry = await cachedAvatar(120, 'abc')
+      const entry = await cachedAvatar(120, GRAVATAR_HASH)
       expect(entry?.status).toBe(AvatarStatus.HAVE_AVATAR)
       expect(entry?.buffer?.equals(result.buffer)).toBe(true)
     }
@@ -443,11 +483,34 @@ describe('domains/comments/services/avatar — serveAvatar', () => {
     // the entry reads back as NO_AVATAR and short-circuits.
     const spy = vi.fn()
     vi.stubGlobal('fetch', spy)
-    await set(db, 'avatar', { size: 120, email: 'abc' }, { status: AvatarStatus.HAVE_AVATAR, buffer: null })
+    await set(db, 'avatar', { size: 120, email: GRAVATAR_HASH }, { status: AvatarStatus.HAVE_AVATAR, buffer: null })
 
-    const result = await withAllowedMirror(() => serveAvatar(db, 'abc', 120))
+    const result = await withAllowedMirror(() => serveAvatar(db, GRAVATAR_HASH, 120))
 
     expect(result).toEqual({ kind: 'redirect' })
     expect(spy).not.toHaveBeenCalled()
+  })
+
+  it('rejects a non-hex hash without touching the cache or the mirror', async () => {
+    const fetchSpy = vi.fn()
+    vi.stubGlobal('fetch', fetchSpy)
+
+    const result = await serveAvatar(db, '../../etc/passwd', 120)
+
+    expect(result).toEqual({ kind: 'redirect' })
+    // No negative entry keyed on the garbage param — spraying invalid
+    // hashes must not grow kv_cache.
+    expect(await cachedAvatar(120, '../../etc/passwd')).toBeNull()
+    expect(fetchSpy).not.toHaveBeenCalled()
+  })
+
+  it('still accepts a legacy 32-hex md5 hash and reaches the mirror branch', async () => {
+    const md5 = 'd41d8cd98f00b204e9800998ecf8427e'
+    mockFetch([new Response(null, { status: 404 })])
+
+    const result = await withAllowedMirror(() => serveAvatar(db, md5, 120))
+
+    expect(result).toEqual({ kind: 'redirect' })
+    expect(await cachedAvatar(120, md5)).toEqual({ status: AvatarStatus.NO_AVATAR, buffer: null })
   })
 })

@@ -65,6 +65,13 @@ export interface CommentAndUser {
 
 export interface CommentItem extends CommentAndUser {
   children?: CommentItem[]
+  /**
+   * Server-side thread-cap markers, set by `parseComments` only on a root
+   * whose reply thread exceeded the cap. Mirrored onto the wire DTO so the
+   * public client can later grow a "load more" affordance.
+   */
+  childrenTruncated?: boolean
+  childrenTotal?: number
 }
 
 export interface Comments {

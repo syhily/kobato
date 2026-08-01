@@ -99,6 +99,16 @@ export async function loadComments(
 const MAX_RID_WALK = 256
 
 /**
+ * Server-side cap on one root's reply thread. `findChildComments` returns
+ * every visible reply of the page's roots, so a single hot thread could
+ * otherwise balloon the public payload without bound. Threads over the
+ * cap are truncated (keeping the earliest replies in thread order) and
+ * flagged with `childrenTruncated` / `childrenTotal` on the root — the
+ * wire contract for a future "load more" affordance.
+ */
+export const MAX_THREAD_CHILDREN = 100
+
+/**
  * Walk the `rid` chain to find the nearest visible ancestor.
  * Soft-deleted parents are transparent: we resolve through them so the
  * thread doesn't break when a middle comment is removed.
@@ -164,7 +174,7 @@ export async function parseComments(comments: CommentAndUser[]): Promise<Comment
     (c) => String(c.rid),
   )
 
-  return projected.filter(rootCommentFilter).map((comment) => commentItems(comment, childComments))
+  return projected.filter(rootCommentFilter).map((comment) => capThreadChildren(commentItems(comment, childComments)))
 }
 
 function rootCommentFilter(comment: CommentAndUser): boolean {
@@ -178,4 +188,38 @@ function commentItems(comment: CommentAndUser, childComments: Record<string, Com
   }
 
   return { ...comment, children: children.map((child) => commentItems(child, childComments)) }
+}
+
+function threadChildCount(comment: CommentItem): number {
+  const children = comment.children ?? []
+  return children.reduce((sum, child) => sum + 1 + threadChildCount(child), 0)
+}
+
+/** Keep the first `budget.remaining` descendants in pre-order (the order
+ *  the reply query returned them), dropping the rest of the thread. */
+function trimThreadChildren(comment: CommentItem, budget: { remaining: number }): CommentItem {
+  if (comment.children === undefined) {
+    return comment
+  }
+  if (budget.remaining <= 0) {
+    return { ...comment, children: [] }
+  }
+  const children: CommentItem[] = []
+  for (const child of comment.children) {
+    if (budget.remaining <= 0) {
+      break
+    }
+    budget.remaining -= 1
+    children.push(trimThreadChildren(child, budget))
+  }
+  return { ...comment, children }
+}
+
+function capThreadChildren(root: CommentItem): CommentItem {
+  const total = threadChildCount(root)
+  if (total <= MAX_THREAD_CHILDREN) {
+    return root
+  }
+  const trimmed = trimThreadChildren(root, { remaining: MAX_THREAD_CHILDREN })
+  return { ...trimmed, childrenTruncated: true, childrenTotal: total }
 }

@@ -2,7 +2,7 @@ import { Buffer } from 'node:buffer'
 
 import type { Database } from '@/server/infra/db/database'
 
-import { type AvatarEntry, AvatarStatus, get, set } from '@/server/infra/cache/registry'
+import { type AvatarEntry, AvatarStatus, get, set, through } from '@/server/infra/cache/registry'
 import { findEmailById } from '@/server/infra/db/operations/user'
 import { compressImage, imageWidth } from '@/server/infra/image/compress'
 import { getLogger } from '@/server/infra/logger'
@@ -29,18 +29,40 @@ const FETCH_TIMEOUT_MS = 30_000
 const MIN_AVATAR_SIZE = 16
 const MAX_AVATAR_SIZE = 512
 
+// Fixed size buckets for the avatar cache key. Every cache entry (and every
+// upstream mirror fetch) is keyed `{ size, email }`, so an arbitrary `?s=`
+// would hand each requested pixel size its own entry — a cache-key
+// explosion an attacker can trigger with a loop. The clamped size rounds UP
+// to the nearest bucket (upscaling the upstream request is harmless:
+// gravatar-protocol mirrors serve exactly the requested size).
+const AVATAR_SIZE_BUCKETS = [32, 64, 128, 256] as const
+
+function bucketAvatarSize(size: number): number {
+  for (const bucket of AVATAR_SIZE_BUCKETS) {
+    if (size <= bucket) {
+      return bucket
+    }
+  }
+  return AVATAR_SIZE_BUCKETS[AVATAR_SIZE_BUCKETS.length - 1]
+}
+
+/** The bucket the site-wide default (DEFAULT_AVATAR_SIZE) lands in — the
+ *  size the QQ pre-warm writes so the read-through branch actually hits it. */
+export const DEFAULT_AVATAR_SIZE_BUCKET = bucketAvatarSize(DEFAULT_AVATAR_SIZE)
+
 /** Resolve the avatar endpoint's `?s=` query parameter: an integer clamped
- *  to [16, 512], defaulting to DEFAULT_AVATAR_SIZE when the parameter is
- *  absent, blank, or not a finite number. */
+ *  to [16, 512] and rounded up to the nearest cache bucket, defaulting to
+ *  DEFAULT_AVATAR_SIZE's bucket when the parameter is absent, blank, or not
+ *  a finite number. */
 export function resolveAvatarSize(raw: string | undefined): number {
   if (raw === undefined || raw.trim() === '') {
-    return DEFAULT_AVATAR_SIZE
+    return DEFAULT_AVATAR_SIZE_BUCKET
   }
   const parsed = Number(raw)
   if (!Number.isFinite(parsed)) {
-    return DEFAULT_AVATAR_SIZE
+    return DEFAULT_AVATAR_SIZE_BUCKET
   }
-  return Math.min(MAX_AVATAR_SIZE, Math.max(MIN_AVATAR_SIZE, Math.trunc(parsed)))
+  return bucketAvatarSize(Math.min(MAX_AVATAR_SIZE, Math.max(MIN_AVATAR_SIZE, Math.trunc(parsed))))
 }
 
 /** Default-avatar URL on this site, used both as the loader fallback and
@@ -175,20 +197,21 @@ export async function fetchQQAvatarImage(email: string, size: number): Promise<B
 
 /** Find-or-fetch-and-cache for the find-avatar procedure. Returns the
  *  canonical email hash the avatar endpoint is keyed on. When the email
- *  is a QQ email the cache is pre-warmed at DEFAULT_AVATAR_SIZE — the URL
- *  the controller builds from the returned hash serves the
- *  DEFAULT_AVATAR_SIZE entry — recording either the fetched bytes
- *  (HAVE_AVATAR) or a negative entry (NO_AVATAR) when the upstream has
- *  no avatar. Non-QQ emails leave the cache alone: the avatar endpoint
- *  fetches from the gravatar mirror lazily per requested size. */
+ *  is a QQ email the cache is pre-warmed at DEFAULT_AVATAR_SIZE_BUCKET —
+ *  the size the endpoint's default `?s=` resolves to after bucketing, so
+ *  the URL the controller builds from the returned hash hits the warm
+ *  entry — recording either the fetched bytes (HAVE_AVATAR) or a negative
+ *  entry (NO_AVATAR) when the upstream has no avatar. Non-QQ emails leave
+ *  the cache alone: the avatar endpoint fetches from the gravatar mirror
+ *  lazily per requested size. */
 export async function resolveAvatarForEmail(db: Database, email: string): Promise<string> {
   const hash = await encodedEmail(email)
   if (isQQEmail(email)) {
-    const buffer = await fetchQQAvatarImage(email, DEFAULT_AVATAR_SIZE)
+    const buffer = await fetchQQAvatarImage(email, DEFAULT_AVATAR_SIZE_BUCKET)
     await set(
       db,
       'avatar',
-      { size: DEFAULT_AVATAR_SIZE, email: hash },
+      { size: DEFAULT_AVATAR_SIZE_BUCKET, email: hash },
       buffer === null ? { status: AvatarStatus.NO_AVATAR, buffer: null } : { status: AvatarStatus.HAVE_AVATAR, buffer },
     )
   }
@@ -223,6 +246,12 @@ export async function resolveAvatarInfo(
  *  the requester to `defaultAvatarUrl()`. */
 export type ServedAvatar = { kind: 'png'; buffer: Buffer } | { kind: 'redirect' }
 
+// The gravatar-protocol email hash the mirror branch is keyed on is a hex
+// digest — md5 (32) historically, sha256 (64) is what `encodedEmail`
+// issues. Anything else can never resolve upstream, so it is rejected
+// before it becomes a cache key or an outbound mirror request.
+const EMAIL_HASH_RE = /^([a-f0-9]{32}|[a-f0-9]{64})$/i
+
 /** The avatar endpoint's entire serving policy, sunk out of the HTTP
  *  resource: id/hash translation, the negative-cache writes, the QQ
  *  upstream branch, and the gravatar read-through branch. Every cache
@@ -241,6 +270,12 @@ export type ServedAvatar = { kind: 'png'; buffer: Buffer } | { kind: 'redirect' 
  *  comment thread) only round-trips kv_cache once per concurrent burst
  *  instead of once per requesting comment. */
 export async function serveAvatar(db: Database, hash: string, size: number): Promise<ServedAvatar> {
+  if (!isNumeric(hash) && !EMAIL_HASH_RE.test(hash)) {
+    // Neither a user id nor a hex email hash. Redirect WITHOUT writing a
+    // negative cache entry — an attacker spraying garbage hashes must not
+    // be able to grow kv_cache or trigger mirror fetches.
+    return { kind: 'redirect' }
+  }
   const { email, hash: canonical } = await resolveAvatarInfo(db, hash)
   if (canonical === null) {
     // Numeric id with no user row — no upstream to ask, record the
@@ -295,13 +330,20 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
  *  so the client never makes a cross-origin request. The avatar is
  *  decorative — any upstream failure resolves to an empty string instead
  *  of an error. The URL is a compile-time constant, so a plain `fetch`
- *  (no SSRF guard) is sufficient. */
-export async function fetchGithubAvatarDataUrl(): Promise<string> {
-  const res = await fetch(GITHUB_AVATAR_URL, { signal: AbortSignal.timeout(30_000) })
-  if (!res.ok) {
-    return ''
-  }
-  const buffer = await res.arrayBuffer()
-  const contentType = res.headers.get('content-type') ?? 'image/png'
-  return `data:${contentType};base64,${arrayBufferToBase64(buffer)}`
+ *  (no SSRF guard) is sufficient.
+ *
+ *  Served through the `githubAvatar` kv bucket (short TTL): an uncached
+ *  call costs up to 30s of upstream-timeout per fresh session, while a
+ *  cached one is a kv read. Failures (`''`) are never cached — the
+ *  bucket's `cacheWhen` drops them so the next request retries. */
+export async function fetchGithubAvatarDataUrl(db: Database): Promise<string> {
+  return through(db, 'githubAvatar', {}, async () => {
+    const res = await fetch(GITHUB_AVATAR_URL, { signal: AbortSignal.timeout(30_000) })
+    if (!res.ok) {
+      return ''
+    }
+    const buffer = await res.arrayBuffer()
+    const contentType = res.headers.get('content-type') ?? 'image/png'
+    return `data:${contentType};base64,${arrayBufferToBase64(buffer)}`
+  })
 }

@@ -2,13 +2,13 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { RotateCcwIcon, SearchIcon, SquarePenIcon, Trash2Icon } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router'
-import { toast } from 'sonner'
 
 import type { MyCommentItem } from '@/routes/admin/me/comments'
 import type { MyCommentsStatus } from '@/shared/types/comments'
 import type { ActiveFilter, FilterPillsAction } from '@/ui/admin/shared/filterPillsReducer'
 
 import { orpcQuery } from '@/client/api/orpc-query'
+import { toastApiError } from '@/client/lib/toast-api-error'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { commentBodySchema } from '@/shared/pt/comment-schema'
 import { avatarImageUrl } from '@/shared/utils/avatar'
@@ -169,7 +169,7 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
       invalidateList()
     },
     onError: (error) => {
-      toast.error('申请删除失败', { description: error.message })
+      toastApiError(error, '申请删除失败')
     },
   })
   const cancelDelete = useMutation({
@@ -178,7 +178,7 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
       invalidateList()
     },
     onError: (error) => {
-      toast.error('撤回删除申请失败', { description: error.message })
+      toastApiError(error, '撤回删除申请失败')
     },
   })
 

@@ -13,7 +13,7 @@ import type { CommentAndUser, CommentItem } from '@/shared/types/comments'
 // reads the default badge colour off the real settings snapshot seeded by
 // the it setup. The exact value is irrelevant — we only assert on tree
 // shape.
-const { parseComments } = await import('@/server/domains/comments/services/public-query')
+const { parseComments, MAX_THREAD_CHILDREN } = await import('@/server/domains/comments/services/public-query')
 
 function row(overrides: Omit<Partial<CommentAndUser>, 'id'> & { id: number }): CommentAndUser {
   const { id, ...rest } = overrides
@@ -159,5 +159,58 @@ describe('services/comments/loader — parseComments soft-delete reparenting', (
 
     expect(ids(tree)).toEqual(['7'])
     expect(tree[0].rid).toBe(0)
+  })
+})
+
+describe('services/comments/loader — parseComments thread cap', () => {
+  it('truncates a thread over MAX_THREAD_CHILDREN and flags the root', async () => {
+    const total = MAX_THREAD_CHILDREN + 25
+    const input: CommentAndUser[] = [
+      row({ id: 1, rid: 0, rootId: 0 }),
+      ...Array.from({ length: total }, (_, i) => row({ id: i + 2, rid: 1, rootId: 1 })),
+    ]
+
+    const tree = await parseComments(input)
+
+    expect(ids(tree)).toEqual(['1'])
+    expect(tree[0].children).toHaveLength(MAX_THREAD_CHILDREN)
+    expect(tree[0].childrenTruncated).toBe(true)
+    expect(tree[0].childrenTotal).toBe(total)
+  })
+
+  it('leaves a thread at or under the cap untouched and unflagged', async () => {
+    const input: CommentAndUser[] = [
+      row({ id: 1, rid: 0, rootId: 0 }),
+      ...Array.from({ length: MAX_THREAD_CHILDREN }, (_, i) => row({ id: i + 2, rid: 1, rootId: 1 })),
+    ]
+
+    const tree = await parseComments(input)
+
+    expect(tree[0].children).toHaveLength(MAX_THREAD_CHILDREN)
+    expect(tree[0]).not.toHaveProperty('childrenTruncated')
+    expect(tree[0]).not.toHaveProperty('childrenTotal')
+  })
+
+  it('caps each root independently and counts nested descendants', async () => {
+    // Root 1: a chain 1 → 2 → 3 → … deeper than the cap. Root 2: no replies.
+    const input: CommentAndUser[] = [
+      row({ id: 1, rid: 0, rootId: 0 }),
+      row({ id: 10000, rid: 0, rootId: 0 }),
+      ...Array.from({ length: MAX_THREAD_CHILDREN + 10 }, (_, i) => row({ id: i + 2, rid: i + 1, rootId: 1 })),
+    ]
+
+    const tree = await parseComments(input)
+
+    const [capped, quiet] = tree
+    let depth = 0
+    let node = capped
+    while (node.children !== undefined && node.children.length > 0) {
+      depth += node.children.length
+      node = node.children[0]!
+    }
+    expect(depth).toBe(MAX_THREAD_CHILDREN)
+    expect(capped.childrenTruncated).toBe(true)
+    expect(capped.childrenTotal).toBe(MAX_THREAD_CHILDREN + 10)
+    expect(quiet).not.toHaveProperty('childrenTruncated')
   })
 })

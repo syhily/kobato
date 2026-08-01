@@ -150,7 +150,53 @@ export async function cleanupExpiredTokens(
 }
 
 /**
+ * Bounds for the commenter token jar. The whole jar rides in a single
+ * cookie on every request, and browsers cap one cookie at ~4096 bytes
+ * including name and attributes — an unbounded jar would eventually make
+ * the browser drop the cookie (silently losing edit rights) or bloat
+ * every request. Eviction drops the globally oldest entries first; the
+ * freshly-issued token is always protected.
+ */
+const MAX_TOKEN_ENTRIES = 50
+const MAX_COOKIE_JSON_BYTES = 3500
+
+function serializedCookieSize(cookie: CommentTokenCookie): number {
+  return encodeURIComponent(JSON.stringify(cookie)).length
+}
+
+/**
+ * Remove the oldest entry (by `expiresAt`) from the jar, skipping the
+ * protected token. Returns false when nothing evictable remains.
+ */
+function evictOldestEntry(cookie: CommentTokenCookie, protectToken: string): boolean {
+  let oldest: { pageKey: string; index: number; expiresAt: number } | null = null
+  for (const [pageKey, entries] of Object.entries(cookie)) {
+    for (let index = 0; index < entries.length; index++) {
+      const entry = entries[index]!
+      if (entry.token === protectToken) {
+        continue
+      }
+      if (!oldest || entry.expiresAt < oldest.expiresAt) {
+        oldest = { pageKey, index, expiresAt: entry.expiresAt }
+      }
+    }
+  }
+  if (!oldest) {
+    return false
+  }
+  const list = cookie[oldest.pageKey]!
+  list.splice(oldest.index, 1)
+  if (list.length === 0) {
+    delete cookie[oldest.pageKey]
+  }
+  return true
+}
+
+/**
  * Build a new cookie payload by appending a freshly-issued token.
+ * Enforces MAX_TOKEN_ENTRIES / MAX_COOKIE_JSON_BYTES by evicting the
+ * oldest entries first; `cleanupExpiredTokens` stays the expiry-driven
+ * cleanup path.
  */
 export function appendCommentToken(
   existing: CommentTokenCookie,
@@ -158,10 +204,23 @@ export function appendCommentToken(
   token: string,
   ttlSeconds: number,
 ): CommentTokenCookie {
-  const next: CommentTokenCookie = { ...existing }
-  const list = next[pageKey] ? [...next[pageKey]] : []
+  // Deep-copy the entry lists so eviction below never mutates the
+  // caller's cookie arrays (the record itself is re-created either way).
+  const next: CommentTokenCookie = {}
+  for (const [key, entries] of Object.entries(existing)) {
+    next[key] = [...entries]
+  }
+  const list = next[pageKey] ?? []
   list.push({ token, expiresAt: Date.now() + ttlSeconds * 1000 })
   next[pageKey] = list
+
+  let totalEntries = Object.values(next).reduce((count, entries) => count + entries.length, 0)
+  while (totalEntries > MAX_TOKEN_ENTRIES || serializedCookieSize(next) > MAX_COOKIE_JSON_BYTES) {
+    if (!evictOldestEntry(next, token)) {
+      break
+    }
+    totalEntries--
+  }
   return next
 }
 
