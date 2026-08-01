@@ -30,6 +30,7 @@ export const analyticsEventsRouter = new Hono<Env>().get('/api/analytics/events'
   }
 
   const encoder = new TextEncoder()
+  let closeStream!: () => void
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
       let closed = false
@@ -50,6 +51,7 @@ export const analyticsEventsRouter = new Hono<Env>().get('/api/analytics/events'
           /* already closed */
         }
       }
+      closeStream = close
 
       c.req.raw.signal.addEventListener('abort', close)
 
@@ -104,6 +106,14 @@ export const analyticsEventsRouter = new Hono<Env>().get('/api/analytics/events'
           close()
         }
       }, HEARTBEAT_INTERVAL_MS)
+    },
+    cancel() {
+      // Some runtimes (and in-process fetch) cancel the response body
+      // instead of aborting the request signal. Release through the same
+      // close path or the session's registry slot and both interval
+      // timers leak until the next failed enqueue (up to the 25s
+      // heartbeat — and forever when the stream stays silent).
+      closeStream?.()
     },
   })
 

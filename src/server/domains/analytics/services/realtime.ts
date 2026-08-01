@@ -60,6 +60,17 @@ export function acquireRealtimeConnection(key: string): (() => void) | null {
   }
 }
 
+/** Test seam: total live connections across all registry keys, so tests
+ *  can wait on the release path (abort → decrement) instead of sleeping
+ *  a fixed duration and hoping the event propagated. */
+export function __getRealtimeConnectionCountForTests(): number {
+  let total = 0
+  for (const count of activeSSEConnections.values()) {
+    total += count
+  }
+  return total
+}
+
 export async function queryRealtimeTail(reader: AnalyticsReader, sinceTs: Date, limit = 50): Promise<RealtimeEvent[]> {
   const rows = await queryAnalyticsRows(
     reader,

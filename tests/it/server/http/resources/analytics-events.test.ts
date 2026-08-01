@@ -10,6 +10,7 @@ import type { AnalyticsHandle } from '@/server/infra/analytics/duckdb'
 import { clearAccessLog, closeTestAnalyticsDb, createTestAnalyticsDb, seedAccessEvents } from '#/_helpers/analytics-db'
 import { makeRequestContext as makeBaseRequestContext } from '#/_helpers/request-context'
 import { __adoptAnalyticsHandleForTests, __resetAnalyticsEngineForTests } from '@/server/bootstrap/analytics-lifecycle'
+import { __getRealtimeConnectionCountForTests } from '@/server/domains/analytics/services/realtime'
 import { analyticsEventsRouter } from '@/server/http/resources/analytics'
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@/server/infra/logger'
 
@@ -65,12 +66,33 @@ async function openStream(app: Hono<Env>, sessionId: string, clientAddress = '12
 }
 
 async function closeStream(res: Response): Promise<void> {
+  const before = __getRealtimeConnectionCountForTests()
   await res.body?.cancel()
-  // Give the abort event a tick to decrement the in-memory counter.
-  await new Promise((resolve) => setTimeout(resolve, 10))
+  if (before === 0) {
+    // The slot is already gone — the body was cancelled upstream (e.g.
+    // readSseUntil cancels its reader, which releases through the same
+    // stream-cancel path).
+    return
+  }
+  // Wait for the cancel/abort path to actually release the registry slot
+  // (decrement below `before`) instead of hoping a fixed 10ms sufficed.
+  const released = await waitUntil(() => __getRealtimeConnectionCountForTests() < before, 2_000)
+  expect(released).toBe(true)
 }
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+/** Poll a condition on a short interval until it holds or the deadline
+ *  passes — for outcomes that ride real event/I-O propagation (stream
+ *  abort, the 2s poll loop) that fake timers cannot drive. */
+async function waitUntil(condition: () => boolean, timeoutMs: number): Promise<boolean> {
+  const deadline = Date.now() + timeoutMs
+  while (!condition()) {
+    if (Date.now() >= deadline) {
+      return false
+    }
+    await new Promise((resolve) => setTimeout(resolve, 5))
+  }
+  return true
+}
 
 /** Drain SSE frames until `needle` appears (or the deadline passes). */
 async function readSseUntil(res: Response, needle: string, timeoutMs = 6_000): Promise<string> {
@@ -199,7 +221,13 @@ describe('/api/analytics/events realtime tail (real DuckDB)', () => {
     try {
       const res = await openStream(await buildApp('session-warn'), 'session-warn')
       expect(res.status).toBe(200)
-      await sleep(2_500)
+      // The poll loop fires every 2s — wait for the warn the first failed
+      // query logs, with headroom for slow CI, instead of a fixed 2.5s
+      // that races the first poll tick.
+      await waitUntil(
+        () => __logCaptureForTests().some((e) => e.level === 'warn' && e.msg === 'queryRealtimeTail failed'),
+        10_000,
+      )
       await closeStream(res)
       expect(__logCaptureForTests().some((e) => e.level === 'warn' && e.msg === 'queryRealtimeTail failed')).toBe(true)
     } finally {
