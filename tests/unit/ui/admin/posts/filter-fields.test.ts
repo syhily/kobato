@@ -11,7 +11,7 @@ import {
 } from '@/ui/admin/posts/filter-fields'
 
 // Spec-level coverage for the posts filter-pill fields: the status→query
-// projection (including the 隐藏 leg), the per-field toQuery mappers, and
+// projection (including the unlisted leg), the per-field toQuery mappers, and
 // the URL seed/sync helpers the view wires into `useFilterPills`.
 
 const fields = buildPostFilterFields({
@@ -41,8 +41,8 @@ describe('ui/admin/posts/deriveStatusFields', () => {
     expect(deriveStatusFields('draft')).toEqual({ deletedStatus: 'normal', published: false })
   })
 
-  it('maps hidden to published + invisible', () => {
-    expect(deriveStatusFields('hidden')).toEqual({ deletedStatus: 'normal', published: true, visible: false })
+  it('maps unlisted to published + visible=false', () => {
+    expect(deriveStatusFields('unlisted')).toEqual({ deletedStatus: 'normal', published: true, visible: false })
   })
 
   it('maps deleted to the deleted flag only', () => {
@@ -55,17 +55,17 @@ describe('ui/admin/posts/buildPostFilterFields — toQuery projections', () => {
     const status = fieldSpec('status')
     expect(status.toQuery('published')).toEqual({ deletedStatus: 'normal', published: true, visible: true })
     expect(status.toQuery('draft')).toEqual({ deletedStatus: 'normal', published: false })
-    // The posts-only hidden leg.
-    expect(status.toQuery('hidden')).toEqual({ deletedStatus: 'normal', published: true, visible: false })
+    // The posts-only unlisted leg.
+    expect(status.toQuery('unlisted')).toEqual({ deletedStatus: 'normal', published: true, visible: false })
     expect(status.toQuery('deleted')).toEqual({ deletedStatus: 'deleted' })
   })
 
-  it('keeps the 隐藏 leg among the status options', () => {
+  it('keeps the unlisted leg among the status options', () => {
     const status = fieldSpec('status')
     expect(status.options.map((o) => [o.value, o.label])).toEqual([
       ['published', '已发布'],
       ['draft', '草稿'],
-      ['hidden', '隐藏'],
+      ['unlisted', '不列出'],
       ['deleted', '已删除'],
     ])
   })
@@ -102,7 +102,7 @@ describe('ui/admin/posts/postFiltersFromSearch', () => {
     ])
   })
 
-  it.each(['published', 'draft', 'hidden', 'deleted'])('accepts the %s status from the URL', (value) => {
+  it.each(['published', 'draft', 'unlisted', 'deleted'])('accepts the %s status from the URL', (value) => {
     const pills = postFiltersFromSearch(`?status=${value}`)
     expect(pills).toHaveLength(1)
     expect(pills[0]).toMatchObject({ field: 'status', value })

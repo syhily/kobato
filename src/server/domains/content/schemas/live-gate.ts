@@ -18,7 +18,7 @@ export interface LiveContentOptions {
   asOf?: Date
   /**
    * Escape hatch for listings: skip the `publishedAt <= asOf` condition
-   * so scheduled (future-dated) rows are included.
+   * so scheduled rows (`publishedAt` later than `asOf`) are included.
    */
   includeScheduled?: boolean
 }

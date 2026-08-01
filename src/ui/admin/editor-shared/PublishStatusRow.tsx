@@ -101,7 +101,7 @@ export function PublishStatusRow({
 
 function RevisionSummaryInline({ summary }: { summary: SidebarRevisionSummary | null }) {
   if (summary === null || summary.kind === 'no-revision') {
-    return <span className="text-xs text-muted-foreground">当前还没有保存的版本</span>
+    return <span className="text-xs text-muted-foreground">当前还没有保存的修订</span>
   }
   return null
 }

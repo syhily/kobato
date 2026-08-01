@@ -39,8 +39,9 @@ export async function listPostsByTaxonomy(
 
 /**
  * Slim seam for the taxonomy delete guard: just the titles of posts that
- * still reference the tag, under the guard's full-inclusion gate (hidden
- * + scheduled included — every live-ish reference blocks deletion).
+ * still reference the tag, under the guard's full-inclusion gate
+ * (visible=false + scheduled included — every live-ish reference blocks
+ * deletion).
  * Selects only `title`: no tag batch, no revision join, no cover/thumbhash
  * hydration — the 409 message needs nothing else.
  */

@@ -87,7 +87,7 @@ Two embedded engines, zero services:
 ### Posts and pages
 
 - `post` → `/posts/:slug`; `page` → `/:slug`. Both rendered via `<PortableTextBody>`.
-- `visible=false` posts: hidden from home/random-post widgets but stay in archives, tags, search, sitemap, feeds.
+- `visible=false` posts: excluded from home/random-post widgets but stay in archives, tags, search, sitemap, feeds.
 - **Draft gate**: a post is public-invisible when `status=draft` OR `publishedRevisionId=null` — all public queries MUST check both. The full "live" gate is defined once in `domains/content/schemas/live-gate.ts` as `isLive` (in-memory) and `liveContentWhere` (SQL). Never hand-assemble the struct.
 
 ### Slug derivation

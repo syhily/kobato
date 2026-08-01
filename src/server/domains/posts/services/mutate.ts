@@ -1,5 +1,6 @@
+import type { ViewerIdentity } from '@/server/domains/auth/rbac'
 import type { AdminPostDto } from '@/server/domains/posts/projection'
-import type { UpsertPostMetaInput, ViewerContext } from '@/server/domains/posts/services/shared'
+import type { UpsertPostMetaInput } from '@/server/domains/posts/services/shared'
 import type { Database } from '@/server/infra/db/database'
 
 import { makeEntityMutations } from '@/server/domains/content/entities/mutate'
@@ -19,7 +20,7 @@ export const unpublishPost = mutations.unpublish
 export async function updatePostMeta(
   db: Database,
   input: UpsertPostMetaInput,
-  viewer?: ViewerContext,
+  viewer?: ViewerIdentity,
 ): Promise<AdminPostDto> {
   if (input.id === undefined) {
     throw new DomainError('BAD_REQUEST', 'updatePostMeta requires an id')

@@ -169,7 +169,7 @@ describe('snapshot: PostsView branches', () => {
   it.each([
     ['published', '已发布'],
     ['draft', '草稿'],
-    ['hidden', '隐藏'],
+    ['unlisted', '不列出'],
     ['deleted', '已删除'],
   ] as const)('renders the status pill labelled %s for the %s value', (value, label) => {
     setList([])

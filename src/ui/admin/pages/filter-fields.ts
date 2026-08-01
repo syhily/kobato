@@ -3,6 +3,7 @@ import { ListChecksIcon, UserIcon } from 'lucide-react'
 import type { FilterFieldSpec, FilterQueryPatch } from '@/ui/admin/shared/filter-bar/types'
 
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
+import { deriveStatusQueryFields } from '@/ui/admin/shared/filter-bar/status-fields'
 
 // Pages-list filter-pill field specs — keys, labels, icons, the status
 // option array, and the `toQuery` mappers onto `admin.pages.list`'s input.
@@ -19,20 +20,20 @@ export const PAGE_STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: 'deleted', label: '已删除' },
 ]
 
+// The pages leg set — no `visible` leg: the page table has no `visible`
+// column, so a status maps onto the published flag only.
+const PAGE_STATUS_FIELDS: Record<Exclude<PageStatusFilter, 'deleted'>, { published?: boolean }> = {
+  all: {},
+  published: { published: true },
+  draft: { published: false },
+}
+
 /** Map the status filter onto the list API's deleted/published flags. */
 export function deriveStatusFields(status: PageStatusFilter): {
   deletedStatus: 'all' | 'deleted' | 'normal'
   published?: boolean
 } {
-  if (status === 'deleted') {
-    return { deletedStatus: 'deleted' }
-  }
-  const statusMap: Record<Exclude<PageStatusFilter, 'deleted'>, { published?: boolean }> = {
-    all: {},
-    published: { published: true },
-    draft: { published: false },
-  }
-  return { deletedStatus: 'normal', ...statusMap[status as Exclude<PageStatusFilter, 'deleted'>] }
+  return deriveStatusQueryFields(status, PAGE_STATUS_FIELDS)
 }
 
 /** The `admin.pages.list` input contributed by the active pills. */

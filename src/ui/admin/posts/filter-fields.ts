@@ -4,6 +4,7 @@ import type { FilterFieldSpec, FilterQueryPatch } from '@/ui/admin/shared/filter
 import type { ActiveFilter, FilterPillsAction } from '@/ui/admin/shared/filterPillsReducer'
 
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
+import { deriveStatusQueryFields } from '@/ui/admin/shared/filter-bar/status-fields'
 
 // Posts-list filter-pill field specs — keys, labels, icons, option arrays,
 // the URL search-param seed/sync helpers (dashboard / sidebar / tag /
@@ -14,14 +15,23 @@ import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 export type PostFilterFieldKey = 'status' | 'category' | 'tag' | 'author'
 
-export type PostStatusFilter = 'all' | 'published' | 'draft' | 'hidden' | 'deleted'
+export type PostStatusFilter = 'all' | 'published' | 'draft' | 'unlisted' | 'deleted'
 
 export const POST_STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: 'published', label: '已发布' },
   { value: 'draft', label: '草稿' },
-  { value: 'hidden', label: '隐藏' },
+  { value: 'unlisted', label: '不列出' },
   { value: 'deleted', label: '已删除' },
 ]
+
+// The posts leg set — includes the `visible` leg that pages lack (the
+// page table has no `visible` column).
+const POST_STATUS_FIELDS: Record<Exclude<PostStatusFilter, 'deleted'>, { published?: boolean; visible?: boolean }> = {
+  all: {},
+  published: { published: true, visible: true },
+  draft: { published: false },
+  unlisted: { published: true, visible: false },
+}
 
 /** Map the status filter onto the list API's deleted/published/visible flags. */
 export function deriveStatusFields(status: PostStatusFilter): {
@@ -29,16 +39,7 @@ export function deriveStatusFields(status: PostStatusFilter): {
   published?: boolean
   visible?: boolean
 } {
-  if (status === 'deleted') {
-    return { deletedStatus: 'deleted' }
-  }
-  const statusMap: Record<Exclude<PostStatusFilter, 'deleted'>, { published?: boolean; visible?: boolean }> = {
-    all: {},
-    published: { published: true, visible: true },
-    draft: { published: false },
-    hidden: { published: true, visible: false },
-  }
-  return { deletedStatus: 'normal', ...statusMap[status as Exclude<PostStatusFilter, 'deleted'>] }
+  return deriveStatusQueryFields(status, POST_STATUS_FIELDS)
 }
 
 /** The `admin.posts.list` input contributed by the active pills. */
@@ -116,7 +117,7 @@ export function postFiltersFromSearch(search: string): ActiveFilter<PostFilterFi
   const params = new URLSearchParams(search)
   const pills: ActiveFilter<PostFilterFieldKey>[] = []
   const status = params.get('status')
-  if (status === 'published' || status === 'draft' || status === 'hidden' || status === 'deleted') {
+  if (status === 'published' || status === 'draft' || status === 'unlisted' || status === 'deleted') {
     pills.push({
       field: 'status',
       value: status,

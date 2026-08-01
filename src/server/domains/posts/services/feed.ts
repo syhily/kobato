@@ -47,8 +47,8 @@ export interface FeedTaxonomyResolvers {
 
 /**
  * Post selection for the feed channel (RSS/Atom). Visibility is internal
- * to the feed channel: hidden posts are included (they stay listed in
- * feeds by design), scheduled posts are not. A category/tag scope resolves
+ * to the feed channel: posts with `visible=false` are included (they stay
+ * listed in feeds by design), scheduled posts are not. A category/tag scope resolves
  * slug-or-name through the injected resolvers; an unresolvable scope
  * yields an empty selection (an empty feed, not an error).
  */

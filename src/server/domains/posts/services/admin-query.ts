@@ -1,6 +1,7 @@
+import type { ViewerIdentity } from '@/server/domains/auth/rbac'
 import type { AdminPostDetailDto } from '@/server/domains/posts/projection'
 import type { ListPostsFilters } from '@/server/domains/posts/repos/shared'
-import type { AdminPostsListResult, ViewerContext } from '@/server/domains/posts/services/shared'
+import type { AdminPostsListResult } from '@/server/domains/posts/services/shared'
 import type { Database } from '@/server/infra/db/database'
 import type { PostMetaRow } from '@/server/infra/db/types'
 
@@ -25,7 +26,7 @@ const adminQuery = makeEntityAdminQuery(postDescriptor, listQueries)
 export async function listPostsForAdmin(
   db: Database,
   filters: ListPostsFilters = {},
-  viewer?: ViewerContext,
+  viewer?: ViewerIdentity,
 ): Promise<AdminPostsListResult> {
   const { items, total, hasMore } = await adminQuery.listForAdmin(db, filters, viewer)
   return { posts: items, total, hasMore }
@@ -34,7 +35,7 @@ export async function listPostsForAdmin(
 export async function getPostDetailForAdmin(
   db: Database,
   id: number,
-  viewer?: ViewerContext,
+  viewer?: ViewerIdentity,
 ): Promise<AdminPostDetailDto> {
   const { meta, latestRevision, publishedRevision } = await adminQuery.getDetailForAdmin(db, id, viewer)
   return { post: meta, latestRevision, publishedRevision }
