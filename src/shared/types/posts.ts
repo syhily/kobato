@@ -44,7 +44,8 @@ export interface UpsertPostMetaInput {
    */
   showUpdated?: boolean
   visible?: boolean
-  publishedAt?: string
+  /** ISO to set; `null` cancels a pending schedule; omitted = leave untouched. */
+  publishedAt?: string | null
   categoryId?: string | null
   tags?: string[]
   alias?: string[]

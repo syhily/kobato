@@ -51,5 +51,7 @@ export const upsertMetaBaseSchema = z.object({
   commentsEnabled: safeBoolean().optional(),
   showToc: safeBoolean().optional(),
   showUpdated: safeBoolean().optional(),
-  publishedAt: z.iso.datetime({ offset: true }).optional(),
+  // `null` is the explicit cancel-schedule signal (vs omitted = leave the
+  // column untouched) — see `update` in `content/entities/mutate.ts`.
+  publishedAt: z.iso.datetime({ offset: true }).nullable().optional(),
 })

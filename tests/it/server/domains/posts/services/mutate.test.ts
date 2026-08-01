@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { isLive } from '@/server/domains/content/schemas/live-gate'
 import { slugRegistry } from '@/server/infra/db/schema/config'
 import { content as contentTable, postSearchIndex } from '@/server/infra/db/schema/content'
 import { page as pageTable } from '@/server/infra/db/schema/page'
@@ -20,11 +21,20 @@ vi.mock('@/server/domains/posts/services/search-index', async (importOriginal) =
   }
 })
 
+// Same wrap-don't-replace pattern for the invalidation door: the real
+// clears/bumps run, the spy only pins WHICH mutations knock on it.
+vi.mock('@/server/domains/content/invalidate', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/server/domains/content/invalidate')>()
+  return { invalidateContent: vi.fn(actual.invalidateContent) }
+})
+
 const { createPost, deletePost, restorePost, unpublishPost, updatePostMeta } =
   await import('@/server/domains/posts/services/mutate')
 const { indexPost, removePostIndex } = await import('@/server/domains/posts/services/search-index')
+const { invalidateContent } = await import('@/server/domains/content/invalidate')
 const indexPostMock = vi.mocked(indexPost)
 const removePostIndexMock = vi.mocked(removePostIndex)
+const invalidateContentMock = vi.mocked(invalidateContent)
 
 const db = getTestDb()
 
@@ -144,6 +154,67 @@ describe('posts/services/mutate — updatePostMeta', () => {
   it('rejects update without id', async () => {
     await expect(updatePostMeta(db, { slug: 'x', title: 'X' })).rejects.toMatchObject({ code: 'BAD_REQUEST' })
     await expect(updatePostMeta(db, { slug: 'x', title: 'X' })).rejects.toThrow('requires an id')
+  })
+
+  it('invalidates and re-indexes when a PUBLISHED post meta is updated', async () => {
+    const { postId } = await seedPublishedPost('old')
+
+    await updatePostMeta(db, { id: postId, slug: 'old', title: 'Renamed', tags: [] })
+
+    // A published post's meta edit reaches the public surface immediately:
+    // the invalidation door fires and the search corpus is rebuilt from the
+    // persisted published revision (the body did not change, the title did).
+    expect(invalidateContentMock).toHaveBeenCalledWith(db, { entity: 'post' })
+    expect(indexPostMock).toHaveBeenCalledTimes(1)
+    expect(indexPostMock.mock.calls[0]?.[2]).toBe('Renamed')
+    const rows = await indexRows()
+    expect(rows).toHaveLength(1)
+    expect(rows[0]?.plainText).toBe('hi')
+  })
+
+  it('does not invalidate or index when an unpublished post meta is updated', async () => {
+    const created = await createPost(db, { slug: 'draft', title: 'Draft' }, 1)
+    vi.clearAllMocks()
+
+    await updatePostMeta(db, { id: Number(created.id), slug: 'draft', title: 'Draft v2' })
+
+    expect(invalidateContentMock).not.toHaveBeenCalled()
+    expect(indexPostMock).not.toHaveBeenCalled()
+  })
+
+  it('publishedAt: null cancels a pending schedule — stays unpublished, drops the future timestamp', async () => {
+    const { postId } = await seedPublishedPost('scheduled')
+    const future = new Date(Date.now() + 86_400_000)
+    await db.update(postMetaTable).set({ publishedAt: future }).where(eq(postMetaTable.id, postId))
+
+    const dto = await updatePostMeta(db, { id: postId, slug: 'scheduled', title: 'Post scheduled', publishedAt: null })
+
+    expect(dto.published).toBe(false)
+    const meta = await db.select().from(postMetaTable).where(eq(postMetaTable.id, postId))
+    expect(meta[0]?.published).toBe(false)
+    // The future timestamp is gone (reset to the cancel time), so the post
+    // can never slip live later — the live gate stays closed.
+    expect(meta[0]?.publishedAt.getTime()).toBeLessThanOrEqual(Date.now())
+    expect(
+      isLive({
+        deletedAt: meta[0]!.deletedAt,
+        published: meta[0]!.published,
+        publishedRevisionId: meta[0]!.publishedRevisionId,
+        publishedAt: meta[0]!.publishedAt,
+      }),
+    ).toBe(false)
+  })
+
+  it('omitting publishedAt leaves an existing schedule untouched', async () => {
+    const { postId } = await seedPublishedPost('scheduled')
+    const future = new Date(Date.now() + 86_400_000)
+    await db.update(postMetaTable).set({ publishedAt: future }).where(eq(postMetaTable.id, postId))
+
+    await updatePostMeta(db, { id: postId, slug: 'scheduled', title: 'Post scheduled' })
+
+    const meta = await db.select().from(postMetaTable).where(eq(postMetaTable.id, postId))
+    expect(meta[0]?.published).toBe(true)
+    expect(meta[0]?.publishedAt.getTime()).toBe(future.getTime())
   })
 })
 

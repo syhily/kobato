@@ -4,9 +4,11 @@ import type { NewPostMeta, PostMetaRow } from '@/server/infra/db/types'
 import type { Post } from '@/shared/types/catalog'
 
 import { invalidateContent } from '@/server/domains/content/invalidate'
+import { warmContentRenderCaches } from '@/server/domains/content/render-warmup'
 import { findContentById } from '@/server/domains/content/revisions'
-import { isPromoted } from '@/server/domains/content/schemas/live-gate'
+import { isLive, isPromoted } from '@/server/domains/content/schemas/live-gate'
 import { toAdminPostDto, toCmsPost, type AdminPostDto } from '@/server/domains/posts/projection'
+import { runPostPublishHooks } from '@/server/domains/posts/publish-hooks'
 import {
   insertPostMeta,
   restorePostMeta,
@@ -118,6 +120,14 @@ export const postDescriptor: MetaEntityDescriptor<
     project: (meta, revision) => toCmsPost(meta, revision),
     async afterPublish(db, meta, body, warnings) {
       invalidateContent(db, { entity: 'post' })
+      // Warm the OG card + today's calendar so a crawler's first scan of
+      // the fresh post hits a filled bucket instead of a cold render.
+      warmContentRenderCaches(db, {
+        slug: meta.slug,
+        title: meta.title,
+        summary: meta.summary,
+        cover: meta.cover,
+      })
       // Index the canonical body already in scope rather than re-reading the
       // row from the DB: `body` is freshly canonicalized + prerendered, so it
       // matches what `publishLatestRevision` persisted — a re-read would only
@@ -128,6 +138,9 @@ export const postDescriptor: MetaEntityDescriptor<
         log.warn('index post failed', { postId: meta.id, error: err })
         warnings.push(INDEX_FAILURE_WARNING)
       }
+      // Cross-domain extensions (Webmention outbox enqueue) run through
+      // the seam — see `posts/publish-hooks.ts`.
+      await runPostPublishHooks(db, meta, body, warnings)
     },
   },
   adminDto: {
@@ -202,17 +215,55 @@ export const postDescriptor: MetaEntityDescriptor<
     },
     async afterMutation(db, meta, event) {
       // create/update of a (still unpublished) post changes no public
-      // surface; only the lifecycle flips invalidate. Publishing already
-      // invalidated through `preview.afterPublish`.
-      if (event === 'create' || event === 'update') {
+      // surface; publishing already invalidated through `preview.afterPublish`.
+      if ((event === 'create' || event === 'update') && !isPromoted(meta)) {
         return
       }
+      // A meta update on a PUBLISHED post (title/summary/tags/cover/
+      // visibility) reaches the public surface immediately — invalidate
+      // like a lifecycle flip, otherwise feed/sitemap/taxonomy lists stay
+      // stale for their TTLs and search for its full counter window.
       invalidateContent(db, { entity: 'post' })
+      // Live rows get their OG card + today's calendar re-warmed under
+      // the NEW render inputs (the OG key folds title/summary/cover, so
+      // an edit is always a fresh key a crawler would otherwise render
+      // cold). Deletes/unpublishes fail the live gate and skip.
+      if (isLive(meta)) {
+        warmContentRenderCaches(db, {
+          slug: meta.slug,
+          title: meta.title,
+          summary: meta.summary,
+          cover: meta.cover,
+        })
+      }
       if (event === 'unpublish') {
         try {
           removePostIndex(db, meta.id)
         } catch (err: unknown) {
           log.warn('remove post index failed', { postId: meta.id, error: err })
+        }
+        return
+      }
+      if (event === 'update' && isPromoted(meta)) {
+        // Re-index from the persisted published revision: the body did not
+        // change, but title/summary search hits did (the search corpus is
+        // otherwise rebuilt only on publish/restore).
+        const revision = findContentById(db, meta.publishedRevisionId)
+        if (revision === null) {
+          return
+        }
+        const bodyResult = portableTextBodySchema.safeParse(revision.body)
+        if (!bodyResult.success) {
+          log.warn('update post: published revision body validation failed, skipping search re-index', {
+            postId: meta.id.toString(),
+            error: bodyResult.error.message,
+          })
+          return
+        }
+        try {
+          await indexPost(db, meta.id, meta.title, meta.summary, bodyResult.data)
+        } catch (err: unknown) {
+          log.warn('index post failed', { postId: meta.id, error: err })
         }
       }
     },

@@ -563,6 +563,39 @@ describe('posts/services/featured — selectSidebarPosts', () => {
     const rows = await selectSidebarPosts(db, 5)
     expect(rows[0]?.slug).toBe('side')
   })
+
+  it('returns up to count distinct posts from the live set', async () => {
+    await seedPost({ slug: 's1', publishedRevisionId: 1, publishedAt: new Date('2020-01-01') })
+    await seedPost({ slug: 's2', publishedRevisionId: 2, publishedAt: new Date('2020-01-02') })
+    await seedPost({ slug: 's3', publishedRevisionId: 3, publishedAt: new Date('2020-01-03') })
+    const { selectSidebarPosts } = await import('@/server/domains/posts/services/featured')
+
+    const two = await selectSidebarPosts(db, 2)
+    expect(two).toHaveLength(2)
+    expect(new Set(two.map((r) => r.slug)).size).toBe(2)
+    for (const row of two) {
+      expect(['s1', 's2', 's3']).toContain(row.slug)
+    }
+
+    // Asking for more than the table holds returns everything live.
+    const all = await selectSidebarPosts(db, 10)
+    expect(all).toHaveLength(3)
+  })
+
+  it('randomises the pick across calls (no seed degradation)', async () => {
+    await seedPost({ slug: 'r1', publishedRevisionId: 1, publishedAt: new Date('2020-01-01') })
+    await seedPost({ slug: 'r2', publishedRevisionId: 2, publishedAt: new Date('2020-01-02') })
+    const { selectSidebarPosts } = await import('@/server/domains/posts/services/featured')
+
+    const seen = new Set<string>()
+    for (let i = 0; i < 30 && seen.size < 2; i++) {
+      const [row] = await selectSidebarPosts(db, 1)
+      if (row) {
+        seen.add(row.slug)
+      }
+    }
+    expect(seen).toEqual(new Set(['r1', 'r2']))
+  })
 })
 
 describe('posts/services/public-query — listSitemapPosts', () => {

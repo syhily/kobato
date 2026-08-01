@@ -125,7 +125,8 @@ const upsertMeta = authorProc
       tags: input.tags,
       alias: input.alias,
       pinnedAt: input.pinnedAt === undefined || input.pinnedAt === null ? input.pinnedAt : new Date(input.pinnedAt),
-      publishedAt: input.publishedAt === undefined ? undefined : new Date(input.publishedAt),
+      publishedAt:
+        input.publishedAt === undefined || input.publishedAt === null ? input.publishedAt : new Date(input.publishedAt),
     }
     const sessionUserId = idFromString(context.viewer.id)
     const post =

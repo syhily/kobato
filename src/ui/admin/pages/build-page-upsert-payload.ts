@@ -7,7 +7,8 @@ export function buildPageUpsertPayload({
 }: {
   meta: PageMetaDraft
   id?: string
-  publishedAt: string | null
+  /** ISO to set; `null` = cancel schedule; `undefined` = leave untouched. */
+  publishedAt?: string | null
 }): UpsertPageMetaInput {
   return {
     ...(id !== undefined ? { id } : {}),
@@ -20,6 +21,6 @@ export function buildPageUpsertPayload({
     showToc: meta.showToc,
     showUpdated: meta.showUpdated,
     showFriends: meta.showFriends,
-    ...(publishedAt !== null ? { publishedAt } : {}),
+    ...(publishedAt !== undefined ? { publishedAt } : {}),
   }
 }

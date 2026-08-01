@@ -49,8 +49,8 @@ export interface UpsertPageMetaInput {
   showUpdated?: boolean
   /** Toggle the page-bottom friends grid. */
   showFriends?: boolean
-  /** ISO-8601 string; admin date-picker sets this on a re-publish. */
-  publishedAt?: string
+  /** ISO-8601 string; admin date-picker sets this on a re-publish. `null` cancels a pending schedule. */
+  publishedAt?: string | null
 }
 
 export interface UpsertPageMetaOutput {

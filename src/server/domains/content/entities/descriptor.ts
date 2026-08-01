@@ -49,7 +49,8 @@ export interface UpsertMetaInputBase {
   commentsEnabled?: boolean
   showToc?: boolean
   showUpdated?: boolean
-  publishedAt?: Date
+  /** `null` cancels a pending schedule (drops back to unpublished); omitted = leave untouched. */
+  publishedAt?: Date | null
 }
 
 /**

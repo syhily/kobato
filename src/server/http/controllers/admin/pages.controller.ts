@@ -122,7 +122,8 @@ const upsertMeta = adminProc
       showToc: input.showToc,
       showUpdated: input.showUpdated,
       showFriends: input.showFriends,
-      publishedAt: input.publishedAt === undefined ? undefined : new Date(input.publishedAt),
+      publishedAt:
+        input.publishedAt === undefined || input.publishedAt === null ? input.publishedAt : new Date(input.publishedAt),
     }
     const sessionUserId = idFromString(context.viewer.id)
     const page =

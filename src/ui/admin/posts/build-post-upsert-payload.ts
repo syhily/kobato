@@ -7,7 +7,8 @@ export function buildPostUpsertPayload({
 }: {
   meta: PostMetaDraft
   id?: string
-  publishedAt: string | null
+  /** ISO to set; `null` = cancel schedule; `undefined` = leave untouched. */
+  publishedAt?: string | null
 }): UpsertPostMetaInput {
   return {
     ...(id !== undefined ? { id } : {}),
@@ -24,6 +25,6 @@ export function buildPostUpsertPayload({
     categoryId: meta.categoryId === '' ? null : meta.categoryId,
     tags: meta.tags,
     alias: meta.alias,
-    ...(publishedAt !== null ? { publishedAt } : {}),
+    ...(publishedAt !== undefined ? { publishedAt } : {}),
   }
 }

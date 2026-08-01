@@ -6,6 +6,7 @@ import type {
 } from '@/server/domains/content/entities/descriptor'
 import type { Database } from '@/server/infra/db/database'
 
+import { rescheduleScheduledPublish } from '@/server/domains/content/scheduled-publish'
 import { rethrowSlugConflict } from '@/server/domains/content/slug-conflict'
 import { reclaimSlugOnRestore } from '@/server/domains/content/slug-reclaim'
 import {
@@ -111,6 +112,7 @@ export function makeEntityMutations<
     const existing = repos.findMetaById(db, id)
     descriptor.access.assertAccess(existing, viewer)
     await mutations.preflightUpsert?.(db, input)
+    const now = new Date()
     try {
       const updated = syncTransaction(db, (tx) => {
         if (existing.slug !== slug) {
@@ -127,7 +129,12 @@ export function makeEntityMutations<
           commentsEnabled: input.commentsEnabled ?? existing.commentsEnabled,
           showToc: input.showToc ?? existing.showToc,
           showUpdated: input.showUpdated ?? existing.showUpdated,
-          publishedAt: input.publishedAt ?? existing.publishedAt,
+          // `publishedAt: null` is the explicit cancel-schedule signal (vs
+          // `undefined` = leave untouched): drop the future timestamp and
+          // flip back to unpublished so the live gate stays closed — the
+          // user asked to cancel the schedule, not to publish now.
+          publishedAt: input.publishedAt === undefined ? existing.publishedAt : (input.publishedAt ?? now),
+          ...(input.publishedAt === null ? { published: false } : {}),
           ...mutations.updateExtras(input, existing),
         } as Partial<Omit<TNew, 'id' | 'createdAt'>>)
         if (result !== null) {
@@ -142,6 +149,9 @@ export function makeEntityMutations<
         throw new DomainError('NOT_FOUND', `${descriptor.label}不存在或已被删除。`)
       }
       await mutations.afterMutation?.(db, updated, 'update')
+      // `publishedAt` may have been set, moved, or cancelled — re-arm the
+      // scheduled-publish timer (no-op until the scheduler is started).
+      rescheduleScheduledPublish()
       const extras = await mutations.mutationExtras?.(db, updated, { kind: 'upsert', input })
       return descriptor.adminDto.project(updated, extras)
     } catch (err) {
@@ -162,6 +172,8 @@ export function makeEntityMutations<
     })
     if (deleted) {
       await mutations.afterMutation?.(db, meta, 'delete')
+      // A deleted scheduled row is no longer the next one — re-arm.
+      rescheduleScheduledPublish()
     }
     return { deleted }
   }
@@ -195,6 +207,8 @@ export function makeEntityMutations<
     if (restored) {
       // `restored` implies the tx gathered a context (possibly the descriptor's own null/undefined).
       restoreWarning = await mutations.afterRestore?.(db, unsafeCast<TRestore>(ctx))
+      // A restored scheduled row may be the next one now — re-arm.
+      rescheduleScheduledPublish()
     }
     const warning = [slugWarning, restoreWarning].filter((part) => part !== undefined).join(' ') || undefined
     return { restored, warning }
@@ -213,6 +227,8 @@ export function makeEntityMutations<
       throw new DomainError('NOT_FOUND', `${descriptor.label}不存在或已被删除。`)
     }
     await mutations.afterMutation?.(db, updated, 'unpublish')
+    // Unpublishing drops the row from the scheduled set — re-arm.
+    rescheduleScheduledPublish()
     const extras = await mutations.mutationExtras?.(db, updated, { kind: 'unpublish' })
     return descriptor.adminDto.project(updated, extras)
   }
