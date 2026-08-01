@@ -89,6 +89,64 @@ export function checkTokenConflict(
   return { status: 'conflict', latest, expectedToken: latest.clientRevisionToken }
 }
 
+/**
+ * The single revision-write primitive behind both public mutations: the
+ * optimistic-concurrency check, then either an in-place rewrite of the
+ * latest DRAFT row or an appended revision at `status`. The callers own
+ * only what genuinely differs — the draft no-op equivalence short-circuit
+ * and the meta-row update. Returns the conflict for the caller to return
+ * verbatim, or the written row.
+ */
+function writeRevisionRow(
+  tx: RevisionTx,
+  type: ContentType,
+  latest: ContentRow | undefined,
+  input: SaveDraftInput,
+  status: 'draft' | 'published',
+): TokenConflict | { row: ContentRow } {
+  const conflict = checkTokenConflict(latest, input)
+  if (conflict !== null) {
+    return conflict
+  }
+
+  const now = new Date()
+  const nextToken = randomUUID()
+
+  if (latest !== undefined && latest.status === 'draft') {
+    // This branch only runs on a draft row, so `status` is either an
+    // identity write (save) or the draft→published flip (publish).
+    const updated = tx
+      .update(contentTable)
+      .set({
+        updatedAt: now,
+        status,
+        body: input.body as ContentRow['body'],
+        imageSources: input.imageSources as ContentRow['imageSources'],
+        headings: input.headings as ContentRow['headings'],
+        authorId: input.authorId ?? latest.authorId,
+        clientRevisionToken: nextToken,
+      })
+      .where(eq(contentTable.id, latest.id))
+      .returning()
+      .all()
+    return { row: updated[0] }
+  }
+
+  const insert: NewContent = {
+    type,
+    ownerId: input.ownerId,
+    revisionNo: (latest?.revisionNo ?? 0) + 1,
+    status,
+    body: input.body as NewContent['body'],
+    imageSources: input.imageSources as NewContent['imageSources'],
+    headings: input.headings as NewContent['headings'],
+    authorId: input.authorId,
+    clientRevisionToken: nextToken,
+  }
+  const inserted = tx.insert(contentTable).values(insert).returning().all()
+  return { row: inserted[0] }
+}
+
 export async function saveDraftRevision(
   db: Database,
   type: ContentType,
@@ -98,34 +156,9 @@ export async function saveDraftRevision(
   return db.transaction((tx) => {
     const { latest } = lockMetaAndLoadLatest(tx, type, input.ownerId)
 
-    const nextToken = randomUUID()
-    const now = new Date()
-    const bodyJson = input.body
-    const imageSourcesJson = input.imageSources
-    const headingsJson = input.headings
-
-    if (latest !== undefined && latest.status === 'draft') {
-      const conflict = checkTokenConflict(latest, input)
-      if (conflict !== null) {
-        return conflict
-      }
-      const updated = tx
-        .update(contentTable)
-        .set({
-          updatedAt: now,
-          body: bodyJson as ContentRow['body'],
-          imageSources: imageSourcesJson as ContentRow['imageSources'],
-          headings: headingsJson as ContentRow['headings'],
-          authorId: input.authorId ?? latest.authorId,
-          clientRevisionToken: nextToken,
-        })
-        .where(eq(contentTable.id, latest.id))
-        .returning()
-        .all()
-      tx.update(metaTable).set({ updatedAt: now }).where(eq(metaTable.id, input.ownerId)).run()
-      return { status: 'saved' as const, row: updated[0] }
-    }
-
+    // The conflict check precedes the no-op short-circuit: a stale token
+    // must surface even when the bodies happen to match. (The primitive
+    // re-runs the same check before writing — it owns the write path.)
     const conflict = checkTokenConflict(latest, input)
     if (conflict !== null) {
       return conflict
@@ -145,21 +178,12 @@ export async function saveDraftRevision(
       return { status: 'saved' as const, row: latest }
     }
 
-    const nextRevisionNo = (latest?.revisionNo ?? 0) + 1
-    const insert: NewContent = {
-      type,
-      ownerId: input.ownerId,
-      revisionNo: nextRevisionNo,
-      status: 'draft',
-      body: bodyJson as NewContent['body'],
-      imageSources: imageSourcesJson as NewContent['imageSources'],
-      headings: headingsJson as NewContent['headings'],
-      authorId: input.authorId,
-      clientRevisionToken: nextToken,
+    const written = writeRevisionRow(tx, type, latest, input, 'draft')
+    if (!('row' in written)) {
+      return written
     }
-    const inserted = tx.insert(contentTable).values(insert).returning().all()
-    tx.update(metaTable).set({ updatedAt: now }).where(eq(metaTable.id, input.ownerId)).run()
-    return { status: 'saved' as const, row: inserted[0] }
+    tx.update(metaTable).set({ updatedAt: new Date() }).where(eq(metaTable.id, input.ownerId)).run()
+    return { status: 'saved' as const, row: written.row }
   })
 }
 
@@ -172,55 +196,15 @@ export async function publishLatestRevision(
   return db.transaction((tx) => {
     const { meta, latest } = lockMetaAndLoadLatest(tx, type, input.ownerId)
 
-    const nextToken = randomUUID()
-    const now = new Date()
-
-    let savedRow: ContentRow
-
-    if (latest !== undefined && latest.status === 'draft') {
-      const conflict = checkTokenConflict(latest, input)
-      if (conflict !== null) {
-        return conflict
-      }
-      const updated = tx
-        .update(contentTable)
-        .set({
-          updatedAt: now,
-          body: input.body as ContentRow['body'],
-          imageSources: input.imageSources as ContentRow['imageSources'],
-          headings: input.headings as ContentRow['headings'],
-          authorId: input.authorId ?? latest.authorId,
-          clientRevisionToken: nextToken,
-          status: 'published',
-        })
-        .where(eq(contentTable.id, latest.id))
-        .returning()
-        .all()
-      savedRow = updated[0]
-    } else {
-      const conflict = checkTokenConflict(latest, input)
-      if (conflict !== null) {
-        return conflict
-      }
-      const nextRevisionNo = (latest?.revisionNo ?? 0) + 1
-      const insert: NewContent = {
-        type,
-        ownerId: input.ownerId,
-        revisionNo: nextRevisionNo,
-        status: 'published',
-        body: input.body as NewContent['body'],
-        imageSources: input.imageSources as NewContent['imageSources'],
-        headings: input.headings as NewContent['headings'],
-        authorId: input.authorId,
-        clientRevisionToken: nextToken,
-      }
-      const inserted = tx.insert(contentTable).values(insert).returning().all()
-      savedRow = inserted[0]
+    const written = writeRevisionRow(tx, type, latest, input, 'published')
+    if (!('row' in written)) {
+      return written
     }
 
+    const now = new Date()
     tx.update(metaTable)
       .set({
-        publishedRevisionId: savedRow.id,
+        publishedRevisionId: written.row.id,
         published: true,
         publishedAt: input.publishedAt ?? now,
         firstPublishedAt: meta.firstPublishedAt ?? input.publishedAt ?? now,
@@ -229,6 +213,6 @@ export async function publishLatestRevision(
       .where(eq(metaTable.id, input.ownerId))
       .run()
 
-    return { status: 'published' as const, row: savedRow }
+    return { status: 'published' as const, row: written.row }
   })
 }
