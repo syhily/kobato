@@ -74,27 +74,38 @@ describe('editor routes — Component SSR renders', () => {
     expect(html).toContain('返回编辑器')
   })
 
-  it('editor/post/edit renders the PostEditorRoute wrapper without throwing', () => {
-    // The route wires useNavigate + PostEditorRoute. PostEditorRoute
-    // mounts a TipTap editor which can partially SSR; we only assert
-    // the wrapper function executes and produces output.
+  it('editor/post/edit mounts the PostEditorRoute loader (detail query pending → skeleton)', () => {
+    // The route wires useNavigate + PostEditorRoute → EditorRouteLoader.
+    // Under SSR the detail query never leaves `pending`, so the stable
+    // output is the editor skeleton — assert the mount marker and that
+    // the wrapper did not fall into the error branch.
     const html = stableHtml(renderInRouter(<PostEditRoute loaderData={null} params={{ id: '7' }} />, '/editor/post/7'))
-    expect(html.length).toBeGreaterThan(0)
+    expect(html).toContain('min-h-admin-content-min')
+    expect(html).not.toContain('无法打开文章编辑器')
   })
 
   it('editor/post/new renders the PostEditorShell (create mode) wrapper', () => {
     const html = stableHtml(renderInRouter(<PostNewRoute loaderData={null} />, '/editor/post/new'))
-    expect(html.length).toBeGreaterThan(0)
+    // Title/slug strip — the editor mount point.
+    expect(html).toContain('placeholder="文章标题"')
+    expect(html).toContain('aria-label="URL slug"')
+    // Create-mode banner + toolbar chrome.
+    expect(html).toContain('点击「创建文章」后才会同步到服务器')
+    expect(html).toContain('返回列表')
   })
 
-  it('editor/page/edit renders the PageEditorRoute wrapper without throwing', () => {
+  it('editor/page/edit mounts the PageEditorRoute loader (detail query pending → skeleton)', () => {
     const html = stableHtml(renderInRouter(<PageEditRoute loaderData={null} params={{ id: '3' }} />, '/editor/page/3'))
-    expect(html.length).toBeGreaterThan(0)
+    expect(html).toContain('min-h-admin-content-min')
+    expect(html).not.toContain('无法打开页面编辑器')
   })
 
   it('editor/page/new renders the PageEditorShell (create mode) wrapper', () => {
     const html = stableHtml(renderInRouter(<PageNewRoute loaderData={null} />, '/editor/page/new'))
-    expect(html.length).toBeGreaterThan(0)
+    expect(html).toContain('placeholder="页面标题"')
+    expect(html).toContain('aria-label="URL slug"')
+    expect(html).toContain('点击「创建页面」后才会同步到服务器')
+    expect(html).toContain('返回列表')
   })
 })
 

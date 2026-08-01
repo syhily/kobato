@@ -87,6 +87,76 @@ describe('useAutosave — saving lifecycle', () => {
   })
 })
 
+describe('useAutosave — conflict outcome', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('emits no saved tick and does not advance the baseline on a conflict flush', async () => {
+    const flush = vi.fn<(body: unknown) => Promise<'saved' | 'conflict'>>().mockResolvedValue('conflict')
+    const statuses: string[] = []
+    const result = renderHook(() =>
+      useAutosave({
+        body: sampleBody as never,
+        enabled: true,
+        flush: flush as never,
+        onStatusChange: (s) => statuses.push(s.kind),
+      }),
+    )
+
+    await result.forceFlush()
+    expect(flush).toHaveBeenCalledTimes(1)
+    expect(statuses).toContain('saving')
+    // A 'saved' tick here would clobber the conflict state the flush surfaced.
+    expect(statuses).not.toContain('saved')
+
+    // The baseline never advanced: the same body flushes again rather than
+    // short-circuiting (the persist layer's `enabled` gate is what freezes
+    // automatic flushes after a conflict).
+    await result.forceFlush()
+    expect(flush).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('useAutosave — markPersisted', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('advances the baseline so the next tick short-circuits instead of re-flushing the same body', async () => {
+    const flush = vi.fn<(body: unknown) => Promise<void>>().mockResolvedValue(undefined)
+    const result = renderHook(() =>
+      useAutosave({
+        body: sampleBody as never,
+        enabled: true,
+        flush: flush as never,
+      }),
+    )
+    // A manual Ctrl+S save persisted the current body outside the engine.
+    result.markPersisted(sampleBody as never)
+    // The next debounce tick hits the same reference check forceFlush uses.
+    await result.forceFlush()
+    expect(flush).not.toHaveBeenCalled()
+  })
+
+  it('still flushes a body that changed after markPersisted', async () => {
+    const flush = vi.fn<(body: unknown) => Promise<void>>().mockResolvedValue(undefined)
+    const result = renderHook(() =>
+      useAutosave({
+        body: sampleBody as never,
+        enabled: true,
+        flush: flush as never,
+      }),
+    )
+    // Marking a stale snapshot persisted must not swallow real changes:
+    // the current body differs from the marked reference, so it flushes.
+    result.markPersisted([{ _type: 'block', _key: 'old' }] as never)
+    await result.forceFlush()
+    expect(flush).toHaveBeenCalledTimes(1)
+    expect(flush).toHaveBeenCalledWith(sampleBody)
+  })
+})
+
 describe('useAutosave — retry kick-off', () => {
   beforeEach(() => {
     vi.clearAllMocks()

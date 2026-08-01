@@ -20,7 +20,7 @@ vi.mock('@tanstack/react-query', () => ({
 }))
 
 vi.mock('@/client/hooks/use-autosave', () => ({
-  useAutosave: vi.fn(),
+  useAutosave: vi.fn(() => ({ forceFlush: vi.fn(), markPersisted: vi.fn() })),
 }))
 
 vi.mock('@/client/hooks/use-local-draft', () => ({

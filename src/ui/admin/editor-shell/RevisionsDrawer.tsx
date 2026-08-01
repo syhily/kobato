@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeftIcon, CheckIcon, HistoryIcon, RefreshCcwIcon } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { toast } from 'sonner'
 
 import type { AdminRevisionDto } from '@/shared/contracts/revision'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
 import { orpcQuery } from '@/client/api/orpc-query'
+import { toastApiError } from '@/client/lib/toast-api-error'
 import { diffBodies, DiffPanel } from '@/ui/admin/editor/portable-text-diff'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
@@ -58,7 +58,7 @@ export function RevisionHistoryDrawer({
 
   useEffect(() => {
     if (listQuery.error) {
-      toast.error('加载历史版本失败', { description: listQuery.error.message })
+      toastApiError(listQuery.error, '加载历史版本失败')
     }
   }, [listQuery.error])
 

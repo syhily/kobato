@@ -13,7 +13,7 @@ import type {
   UseEditorShellStateArgs,
 } from '@/ui/admin/editor-shell/editor-shell-types'
 
-import { useAutosave, type AutosaveStatus } from '@/client/hooks/use-autosave'
+import { useAutosave, type AutosaveFlushOutcome, type AutosaveStatus } from '@/client/hooks/use-autosave'
 import { arePortableTextBodiesEquivalent } from '@/shared/pt/bridge/canonicalize'
 import { localInputValueToIso } from '@/ui/admin/editor-shell/editor-datetime'
 import { deriveBaselineRevision, deriveBaselineUpdatedAtMs } from '@/ui/admin/editor-shell/editor-shell-derived'
@@ -93,6 +93,11 @@ export function useEditorShellPersist<
   // sidebar / toolbar views. The banner protocol (arm → note legs → show /
   // cancel) never crosses the module boundary.
   const [status, setStatus] = useState<EditorShellStatus>({ kind: 'idle' })
+  // Server-side revision conflict freeze: set by `noteBodySaved` on a
+  // conflict payload, cleared on the next clean save. Gates autosave —
+  // without it the engine keeps flushing a token the server will reject
+  // forever, and its generic `saved` tick would hide the conflict.
+  const [serverConflicted, setServerConflicted] = useState(false)
   const [displaySaveAtMs, setDisplaySaveAtMs] = useState<number | null>(() => deriveBaselineUpdatedAtMs(detail))
   const [lastSavedBody, setLastSavedBody] = useState<PortableTextBody>(() => deriveBaselineRevision(detail)?.body ?? [])
   const [serverPublishedAtIso, setServerPublishedAtIso] = useState<string | null>(detail?.entity.publishedAt ?? null)
@@ -104,6 +109,14 @@ export function useEditorShellPersist<
     dismiss: dismissPreviewBanner,
   } = useActionBanner()
 
+  // Body snapshot submitted by the in-flight manual body save
+  // (persistSave's body leg / persistPublish). On its success the autosave
+  // baseline advances to it, so the next debounce tick's reference check
+  // short-circuits instead of re-PATCHing the same body. Cleared on any
+  // save outcome and on error so a stale snapshot never marks an
+  // unpersisted body as saved.
+  const manualSaveBodyRef = useRef<PortableTextBody | null>(null)
+
   const markBodySaved = useCallback((savedBody: PortableTextBody) => {
     setLastSavedBody(savedBody)
   }, [])
@@ -111,6 +124,7 @@ export function useEditorShellPersist<
   // --- Mutation reducers (module-private) ------------------------------------
   const noteError = useCallback(
     (message: string) => {
+      manualSaveBodyRef.current = null
       setStatus({ kind: 'error', message })
       cancelActionBanner()
     },
@@ -133,13 +147,32 @@ export function useEditorShellPersist<
     [applyServerMeta, metaDraftFromEntity, noteActionLegSucceeded],
   )
 
+  // Mirror of the autosave engine's `markPersisted` (the engine is mounted
+  // further down, after these reducers are defined — same pattern as
+  // `handleBodySavedRef` below).
+  const markPersistedRef = useRef<(body: PortableTextBody) => void>(() => undefined)
+
   const noteBodySaved = useCallback(
     (payload: SaveBodyOutput) => {
       if (payload.status === 'conflict') {
+        // Freeze autosave: the expected token can never advance while the
+        // server keeps rejecting it, and the engine must not clobber this
+        // status with a generic `saved` tick. Reset on the next clean save
+        // (i.e. after the user resolves the conflict).
+        manualSaveBodyRef.current = null
+        setServerConflicted(true)
         setStatus({ kind: 'conflict', expectedToken: payload.expectedToken })
         cancelActionBanner()
         return
       }
+      if (manualSaveBodyRef.current !== null) {
+        // A manual save just persisted this exact body snapshot outside the
+        // engine — advance the engine baseline so the next debounce tick
+        // short-circuits instead of re-PATCHing it.
+        markPersistedRef.current(manualSaveBodyRef.current)
+        manualSaveBodyRef.current = null
+      }
+      setServerConflicted(false)
       if (payload.warning !== undefined) {
         setStatus({ kind: 'warning', message: payload.warning })
       } else {
@@ -206,7 +239,7 @@ export function useEditorShellPersist<
 
   // --- Autosave ------------------------------------------------------------
   const [isCreating, setIsCreating] = useState(false)
-  const autosaveEnabled = isEditing && conflict === null && !isSubmittingAny
+  const autosaveEnabled = isEditing && conflict === null && !isSubmittingAny && !serverConflicted
   // The `noteBodySaved` reducer reads from a closure that captures
   // `detail`, `expectedToken`, etc. We mirror it through a ref so the
   // autosave flush always picks up the latest values without forcing
@@ -217,9 +250,11 @@ export function useEditorShellPersist<
   })
 
   const flushAutosave = useCallback(
-    async (snapshot: PortableTextBody) => {
+    async (snapshot: PortableTextBody): Promise<AutosaveFlushOutcome> => {
       if (!isEditing || !detail) {
-        return
+        // Unreachable while `enabled` gates on isEditing; treat as a no-op
+        // save so the engine's bookkeeping stays consistent.
+        return 'saved'
       }
       try {
         const result = await directSaveDraft({
@@ -228,6 +263,7 @@ export function useEditorShellPersist<
           expectedClientRevisionToken: expectedToken,
         })
         handleBodySavedRef.current(result)
+        return result.status === 'conflict' ? 'conflict' : 'saved'
       } catch (error) {
         throw new Error(error instanceof Error ? error.message : '保存失败')
       }
@@ -235,7 +271,7 @@ export function useEditorShellPersist<
     [isEditing, detail, expectedToken, directSaveDraft],
   )
 
-  useAutosave({
+  const { markPersisted: markAutosavePersisted } = useAutosave({
     body,
     enabled: autosaveEnabled,
     flush: flushAutosave,
@@ -244,13 +280,24 @@ export function useEditorShellPersist<
         setStatus({ kind: 'saving' })
       } else if (autosaveStatus.kind === 'saved') {
         // The flush's own noteBodySaved may have surfaced a save-result
-        // warning; the engine's generic 'saved' tick must not hide it.
-        setStatus((prev) => (prev.kind === 'warning' ? prev : { kind: 'saved', at: new Date(autosaveStatus.at) }))
+        // warning or a revision conflict; the engine's generic 'saved'
+        // tick must not hide either. (The engine no longer emits 'saved'
+        // for a conflicted flush at all — this is the belt-and-suspenders
+        // guard against regressions.)
+        setStatus((prev) =>
+          prev.kind === 'warning' || prev.kind === 'conflict'
+            ? prev
+            : { kind: 'saved', at: new Date(autosaveStatus.at) },
+        )
       } else if (autosaveStatus.kind === 'retrying') {
         setStatus({ kind: 'error', message: autosaveStatus.message })
       }
     },
   })
+
+  useEffect(() => {
+    markPersistedRef.current = markAutosavePersisted
+  }, [markAutosavePersisted])
 
   // --- Persist handlers ----------------------------------------------------
   const persistCreate = useCallback(async () => {
@@ -260,7 +307,10 @@ export function useEditorShellPersist<
     setIsCreating(true)
     setStatus({ kind: 'saving' })
 
-    const publishedAt = localInputValueToIso(meta.publishedAt)
+    // `null` (empty picker) means "no schedule supplied" on create — omit
+    // the field so the server applies its default instead of reading it as
+    // the cancel-schedule signal.
+    const publishedAt = localInputValueToIso(meta.publishedAt) ?? undefined
     let savedEntity: TEntity
     try {
       savedEntity = await upsertMetaMutation.mutateAsync(buildUpsertMetaPayload({ meta, publishedAt }))
@@ -287,6 +337,7 @@ export function useEditorShellPersist<
       return
     }
     if (draftResult.status === 'conflict') {
+      setServerConflicted(true)
       setStatus({ kind: 'conflict', expectedToken: draftResult.expectedToken })
       setIsCreating(false)
       void navigate(editPath(savedEntity.id), { replace: true })
@@ -324,11 +375,16 @@ export function useEditorShellPersist<
     setStatus({ kind: 'saving' })
     const pickerIso = localInputValueToIso(meta.publishedAt)
     const serverIsScheduled = serverPublishedAtIso !== null && (Date.parse(serverPublishedAtIso) || 0) > Date.now()
-    const publishedAt = pickerIso !== null ? pickerIso : serverIsScheduled ? new Date().toISOString() : null
+    // Picker cleared while the server still holds a schedule: send an
+    // explicit `null` — the cancel-schedule signal, keeping the entity
+    // unpublished — instead of forcing it live with `new Date()`. With no
+    // schedule to cancel the field is omitted entirely (leave untouched).
+    const publishedAt = pickerIso ?? (serverIsScheduled ? null : undefined)
     const bodyDiverged = !arePortableTextBodiesEquivalent(body, lastSavedBody)
     beginActionBanner('draft', bodyDiverged ? 2 : 1)
     upsertMetaMutation.mutate(buildUpsertMetaPayload({ meta, id: detail.entity.id, publishedAt }))
     if (bodyDiverged) {
+      manualSaveBodyRef.current = body
       saveDraftMutation.mutate({
         id: detail.entity.id,
         body,
@@ -357,6 +413,7 @@ export function useEditorShellPersist<
     setStatus({ kind: 'saving' })
     const publishedAtIso = localInputValueToIso(meta.publishedAt)
     beginActionBanner('published', 1)
+    manualSaveBodyRef.current = body
     publishMutation.mutate({
       id: detail.entity.id,
       body,

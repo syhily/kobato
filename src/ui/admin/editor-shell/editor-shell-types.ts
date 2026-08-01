@@ -86,7 +86,7 @@ export interface UseEditorShellStateArgs<
    * `commentsEnabled`, `showToc`, `showUpdated`, `slug`, `publishedAt`)
    * are built here from `meta`.
    */
-  buildUpsertMetaPayload: (input: { meta: TMeta; id?: string; publishedAt: string | null }) => TUpsertMetaInput
+  buildUpsertMetaPayload: (input: { meta: TMeta; id?: string; publishedAt?: string | null }) => TUpsertMetaInput
 
   /**
    * Direct oRPC `saveDraft` for autosave + force-save (adoptLocalDraft).

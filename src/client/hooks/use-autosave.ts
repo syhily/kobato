@@ -10,10 +10,21 @@ export type AutosaveStatus =
   | { kind: 'saved'; at: number }
   | { kind: 'retrying'; attempt: number; nextAttemptAt: number; message: string }
 
+/**
+ * Outcome the flush reports back to the engine. `'conflict'` means the
+ * server rejected the write with a revision conflict: the flush itself
+ * has already surfaced the conflict state, so the engine must stay
+ * silent — a `saved` tick would clobber it, and advancing the
+ * lastPersisted baseline would pretend the snapshot landed. Further
+ * flushes are frozen by the caller's `enabled` gate (the persist layer
+ * disables autosave until the conflict is resolved).
+ */
+export type AutosaveFlushOutcome = 'saved' | 'conflict'
+
 export interface UseAutosaveOptions<TBody> {
   body: TBody
   enabled: boolean
-  flush: (body: TBody) => Promise<void>
+  flush: (body: TBody) => Promise<AutosaveFlushOutcome | void>
   debounceMs?: number
   hardCapMs?: number
   retryDelaysMs?: number[]
@@ -30,7 +41,7 @@ export function useAutosave<TBody>({
   hardCapMs = 60_000,
   retryDelaysMs = DEFAULT_RETRY_DELAYS_MS,
   onStatusChange,
-}: UseAutosaveOptions<TBody>): { forceFlush: () => Promise<void> } {
+}: UseAutosaveOptions<TBody>): { forceFlush: () => Promise<void>; markPersisted: (body: TBody) => void } {
   const flushRef = useRef(flush)
   const bodyRef = useRef(body)
   const enabledRef = useRef(enabled)
@@ -47,7 +58,7 @@ export function useAutosave<TBody>({
   })
 
   const lastPersistedRef = useRef<TBody | null>(null)
-  const inFlightRef = useRef<Promise<void> | null>(null)
+  const inFlightRef = useRef<Promise<AutosaveFlushOutcome | void> | null>(null)
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const hardCapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -79,7 +90,12 @@ export function useAutosave<TBody>({
       const promise = flushRef.current(snapshot)
       inFlightRef.current = promise
       try {
-        await promise
+        const outcome = await promise
+        if (outcome === 'conflict') {
+          // Server-side revision conflict — the flush surfaced it; do
+          // not clobber with a `saved` tick, do not advance the baseline.
+          return
+        }
         lastPersistedRef.current = snapshot
         emit({ kind: 'saved', at: Date.now() })
       } catch (cause) {
@@ -191,5 +207,14 @@ export function useAutosave<TBody>({
     await doFlush()
   }, [doFlush])
 
-  return { forceFlush }
+  /**
+   * Advance the persisted baseline to a body that was persisted outside
+   * the engine (a manual Ctrl+S save). The next debounce tick's reference
+   * check then short-circuits instead of re-flushing the same body.
+   */
+  const markPersisted = useCallback((persistedBody: TBody): void => {
+    lastPersistedRef.current = persistedBody
+  }, [])
+
+  return { forceFlush, markPersisted }
 }

@@ -43,15 +43,20 @@ vi.mock('@tanstack/react-query', () => ({
   }),
 }))
 
+const autosaveMockReturns = vi.hoisted(() => ({ forceFlush: vi.fn(), markPersisted: vi.fn() }))
+
 vi.mock('@/client/hooks/use-autosave', () => ({
-  useAutosave: vi.fn(),
+  useAutosave: vi.fn(() => autosaveMockReturns),
 }))
 
 import type { AdminRevisionDto, SaveBodyOutput } from '@/shared/contracts/revision'
 import type { EditorShellDetail, EntityLike } from '@/ui/admin/editor-shell/editor-shell-types'
 import type { UseEditorShellPersistArgs } from '@/ui/admin/editor-shell/use-editor-shell-persist'
 
+import { useAutosave } from '@/client/hooks/use-autosave'
 import { useEditorShellPersist } from '@/ui/admin/editor-shell/use-editor-shell-persist'
+
+const useAutosaveMock = vi.mocked(useAutosave)
 
 const WARNING = '图片库同步失败，部分图片可能无法正常显示。'
 
@@ -149,6 +154,8 @@ function makeArgs(
 
 beforeEach(() => {
   useMutationCalls = 0
+  autosaveMockReturns.markPersisted.mockClear()
+  autosaveMockReturns.forceFlush.mockClear()
   for (const slot of slots) {
     slot.config = undefined
     slot.mutate.mockClear()
@@ -341,6 +348,151 @@ describe('ui/admin/editor-shell/useEditorShellPersist — edit-mode save dispatc
   })
 })
 
+describe('ui/admin/editor-shell/useEditorShellPersist — manual save advances the autosave baseline', () => {
+  it('marks the submitted body snapshot persisted after a clean manual body save', () => {
+    const divergedBody = [block('new', 'new text')]
+    const args = makeArgs({
+      detail: makeDetail([block('old', 'old text')]),
+      draft: { body: divergedBody },
+    })
+    const { result } = renderHook(() => useEditorShellPersist(args))
+    act(() => result.current.persistSave())
+
+    act(() => slots[1].config?.onSuccess?.(savedPayload({ body: divergedBody }) as never))
+    // The engine's baseline moves to the exact reference the manual save
+    // submitted, so the next debounce tick's reference check hits and no
+    // redundant PATCH goes out for the same body.
+    expect(autosaveMockReturns.markPersisted).toHaveBeenCalledTimes(1)
+    expect(autosaveMockReturns.markPersisted).toHaveBeenCalledWith(divergedBody)
+  })
+
+  it('does not touch the baseline on a meta-only save (body clean)', () => {
+    const args = makeArgs({
+      detail: makeDetail([block('b1', 'same')]),
+      draft: { body: [block('b1', 'same')] },
+    })
+    const { result } = renderHook(() => useEditorShellPersist(args))
+    act(() => result.current.persistSave())
+    act(() => slots[0].config?.onSuccess?.(savedEntity() as never))
+    expect(autosaveMockReturns.markPersisted).not.toHaveBeenCalled()
+  })
+
+  it('does not mark the baseline when the manual body save conflicts', () => {
+    const args = makeArgs({
+      detail: makeDetail([block('old', 'old text')]),
+      draft: { body: [block('new', 'new text')] },
+    })
+    const { result } = renderHook(() => useEditorShellPersist(args))
+    act(() => result.current.persistSave())
+
+    act(() =>
+      slots[1].config?.onSuccess?.({
+        status: 'conflict',
+        latest: makeRevision(),
+        expectedToken: 'tok-server',
+      } as never),
+    )
+    expect(autosaveMockReturns.markPersisted).not.toHaveBeenCalled()
+
+    // The conflict dropped the pending snapshot: the clean save after the
+    // user resolves the conflict must not mark a stale body reference.
+    act(() => slots[1].config?.onSuccess?.(savedPayload() as never))
+    expect(autosaveMockReturns.markPersisted).not.toHaveBeenCalled()
+  })
+})
+
+describe('ui/admin/editor-shell/useEditorShellPersist — autosave conflict freeze', () => {
+  /** Options of the most recent useAutosave call (one per render). */
+  function lastAutosaveOptions() {
+    const call = useAutosaveMock.mock.calls.at(-1)
+    expect(call).toBeDefined()
+    return call![0] as {
+      enabled: boolean
+      flush: (body: never) => Promise<'saved' | 'conflict'>
+      onStatusChange: (status: { kind: string; at?: number }) => void
+    }
+  }
+
+  function conflictSaveDraft() {
+    return vi.fn().mockResolvedValue({
+      status: 'conflict',
+      latest: makeRevision(),
+      expectedToken: 'tok-server',
+    })
+  }
+
+  it('freezes autosave on a server conflict and never lets a saved tick clobber it', async () => {
+    const args = makeArgs({ detail: makeDetail(), mutations: { directSaveDraft: conflictSaveDraft() } })
+    const { result } = renderHook(() => useEditorShellPersist(args))
+
+    expect(lastAutosaveOptions().enabled).toBe(true)
+
+    let outcome: 'saved' | 'conflict' | undefined
+    await act(async () => {
+      outcome = await lastAutosaveOptions().flush([] as never)
+    })
+    // The flush reports the conflict instead of resolving as a plain save —
+    // this is what stops the engine from emitting its generic 'saved' tick.
+    expect(outcome).toBe('conflict')
+    expect(result.current.status).toEqual({ kind: 'conflict', expectedToken: 'tok-server' })
+
+    // The state update above re-rendered the hook: autosave is now frozen.
+    expect(lastAutosaveOptions().enabled).toBe(false)
+
+    // Belt-and-suspenders: even a stray engine 'saved' status cannot hide
+    // the conflict (the engine no longer emits one for conflicted flushes).
+    act(() => lastAutosaveOptions().onStatusChange({ kind: 'saved', at: Date.now() }))
+    expect(result.current.status).toEqual({ kind: 'conflict', expectedToken: 'tok-server' })
+  })
+
+  it('unfreezes autosave on the next clean body save (conflict resolved)', async () => {
+    const args = makeArgs({ detail: makeDetail(), mutations: { directSaveDraft: conflictSaveDraft() } })
+    renderHook(() => useEditorShellPersist(args))
+
+    await act(async () => {
+      await lastAutosaveOptions().flush([] as never)
+    })
+    expect(lastAutosaveOptions().enabled).toBe(false)
+
+    // After the user resolves the conflict, the next successful save clears
+    // the freeze (noteBodySaved's non-conflict branch).
+    act(() => slots[1].config?.onSuccess?.(savedPayload() as never))
+    expect(lastAutosaveOptions().enabled).toBe(true)
+  })
+})
+
+describe('ui/admin/editor-shell/useEditorShellPersist — cancel schedule on picker clear', () => {
+  it('sends publishedAt: null when the picker is cleared on a server-scheduled entity', () => {
+    const detail = makeDetail()
+    detail.entity = { ...detail.entity, publishedAt: '2099-06-01T12:00:00.000Z' }
+    const args = makeArgs({ detail, draft: { meta: { ...baseMeta, publishedAt: '' } } })
+    const { result } = renderHook(() => useEditorShellPersist(args))
+    act(() => result.current.persistSave())
+
+    // 取消排期: the explicit null must reach the wire — the old behavior
+    // wrote `new Date()` here, publishing the post immediately.
+    expect(args.mutations.buildUpsertMetaPayload).toHaveBeenCalledWith({
+      meta: args.draft.meta,
+      id: 'e1',
+      publishedAt: null,
+    })
+  })
+
+  it('omits publishedAt when the picker is cleared and the server holds no schedule', () => {
+    const args = makeArgs({ detail: makeDetail(), draft: { meta: { ...baseMeta, publishedAt: '' } } })
+    const { result } = renderHook(() => useEditorShellPersist(args))
+    act(() => result.current.persistSave())
+
+    // Nothing scheduled: leave the column untouched (undefined), so a live
+    // post is never unpublished by an empty picker.
+    expect(args.mutations.buildUpsertMetaPayload).toHaveBeenCalledWith({
+      meta: args.draft.meta,
+      id: 'e1',
+      publishedAt: undefined,
+    })
+  })
+})
+
 describe('ui/admin/editor-shell/useEditorShellPersist — publish / unpublish', () => {
   it('persistPublish fires the publish leg, marks meta published, and retains the server publishedAt', () => {
     const args = makeArgs({
@@ -365,14 +517,15 @@ describe('ui/admin/editor-shell/useEditorShellPersist — publish / unpublish', 
     expect(result.current.previewBanner).toEqual({ kind: 'published', slug: 's' })
 
     // The optimistic server publishedAt is retained inside persist: a later
-    // save with an empty picker republishes "now" instead of writing null.
+    // save with an empty picker reads it as a schedule to CANCEL and sends
+    // an explicit null — never a forced "publish now".
     const nextArgs: Args = { ...args, draft: { ...args.draft, meta: { ...baseMeta, publishedAt: '' } } }
     rerender({ args: nextArgs })
     act(() => result.current.persistSave())
     expect(nextArgs.mutations.buildUpsertMetaPayload).toHaveBeenCalledWith({
       meta: nextArgs.draft.meta,
       id: 'e1',
-      publishedAt: expect.any(String),
+      publishedAt: null,
     })
   })
 

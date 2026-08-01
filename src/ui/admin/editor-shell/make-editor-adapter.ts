@@ -66,7 +66,7 @@ export interface EditorAdapterConfig<
   metaDraftsEqual: (a: TMeta, b: TMeta) => boolean
   localDraftConfig: LocalDraftConfig<PortableTextBody>
   createDraftConfig: CreateDraftConfig<PortableTextBody>
-  buildUpsertMetaPayload: (input: { meta: TMeta; id?: string; publishedAt: string | null }) => TUpsertMetaInput
+  buildUpsertMetaPayload: (input: { meta: TMeta; id?: string; publishedAt?: string | null }) => TUpsertMetaInput
 
   /** oRPC namespace (`orpc.admin.posts` / `orpc.admin.pages`). */
   api: EditorEntityApi<TUpsertMetaInput, TWrappedEntity>

@@ -64,7 +64,7 @@ export interface EditorScreenAdapter<
   saveDraftFn: (input: SaveBodyInput) => Promise<SaveBodyOutput>
   publishFn: (input: SaveBodyInput) => Promise<SaveBodyOutput>
   unpublishFn: (input: { id: string }) => Promise<TEntity>
-  buildUpsertMetaPayload: (input: { meta: TMeta; id?: string; publishedAt: string | null }) => TUpsertMetaInput
+  buildUpsertMetaPayload: (input: { meta: TMeta; id?: string; publishedAt?: string | null }) => TUpsertMetaInput
   directSaveDraft: (input: {
     id: string
     body: PortableTextBody
