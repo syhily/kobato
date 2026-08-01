@@ -133,9 +133,15 @@ function cmdTag(args: string[]): void {
   run(`git push origin "${version}"`)
   process.stdout.write(`Pushed tag ${version}\n`)
 
-  // Create GitHub release
-  run(`gh release create "${version}" --title "Kobato ${version}" ${notesFlag} ${prerelease}`)
-  process.stdout.write(`GitHub release created: https://github.com/syhily/kobato/releases/tag/${version}`)
+  // Create the GitHub release as a DRAFT: sea.yml uploads the SEA assets
+  // asynchronously, and only publishes (gh release edit --draft=false)
+  // after every binary is attached — users must never see a release with
+  // missing assets. If the upload fails, the draft stays for manual fixing.
+  run(`gh release create "${version}" --draft --title "Kobato ${version}" ${notesFlag} ${prerelease}`)
+  process.stdout.write(
+    `GitHub draft release created: https://github.com/syhily/kobato/releases/tag/${version}\n` +
+      `It stays a draft until sea.yml finishes uploading the SEA assets.`,
+  )
 }
 
 function cmdPrepareNext(): void {

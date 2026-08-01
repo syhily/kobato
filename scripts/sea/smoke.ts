@@ -23,6 +23,7 @@ import { join, resolve as resolvePath } from 'node:path'
 
 import type { SmokeServer } from './instance.ts'
 
+import { BINARY_MAX_BYTES } from './budget.ts'
 import { fail } from './exec.ts'
 import {
   bootServer,
@@ -53,15 +54,6 @@ const LOG_TAIL_LINES = 50
 
 const PNG_MAGIC = [0x89, 0x50, 0x4e, 0x47]
 const CALENDAR_MIN_BYTES = 2_048
-
-// The blob is the binary's variable part: uncompressed it is ~173 MB
-// (libduckdb alone is ~112 MB raw), the compressed payload must stay in
-// the ~45-55 MB band. A regression to uncompressed embedding roughly
-// triples the binary — fail loudly here rather than at release time.
-// `--build-sea` builds the blob into the binary internally, so the
-// regression is caught by a binary-size budget (linux node26 base
-// ~148 MB + ~46 MB payload ≈ 194 MB).
-const BINARY_MAX_BYTES = 230 * 1024 * 1024
 
 const results: CheckResult[] = []
 let serverLogPath: string | null = null

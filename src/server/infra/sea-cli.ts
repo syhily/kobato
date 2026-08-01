@@ -9,6 +9,16 @@
 //                            worker_threads pool and exit (needs the
 //                            server config — the pool graph validates
 //                            it at import time)
+//   kobato rollback          swap the `<binary>.bak` sibling left by the
+//                            self-update pipeline back into place and exit
+//   kobato doctor [--json]   aggregate diagnostics: version, natives smoke,
+//                            self-update gate, config validation; exit 1
+//                            when natives or config fail
+//   kobato --doctor-config-probe
+//                            hidden helper: validates the configuration by
+//                            loading the config graph, exits accordingly —
+//                            `doctor` spawns it so a failing config cannot
+//                            kill the diagnostic report mid-aggregation
 //   (anything else)          fall through — `@/server/infra/sea-bootstrap`
 //                            and then the server graph evaluate next
 //
@@ -18,7 +28,12 @@
 // the natives themselves (same code path as server startup) and then
 // exit. Nothing in this module may touch the env-validated graph: it
 // imports node builtins, `@/server/infra/sea`, `@/server/infra/sea-natives`,
-// and constants only.
+// and constants only — plus `@/server/infra/binary-rollback`,
+// `@/server/infra/self-update-gate` and `@/server/infra/doctor-report`, which
+// are held to the same builtins-and-constants budget by their own headers.
+// The config graph stays behind a DYNAMIC import in `--doctor-config-probe`:
+// evaluating it validates the configuration and exits the process, which is
+// exactly the probe semantics — and must never happen for the other flags.
 //
 // `--smoke-worker` no longer materializes a bundle to disk (filesystem
 // `import()` is forbidden in the injected script): the embedded
@@ -28,11 +43,15 @@
 // `worker/process-worker.mjs`. Outside SEA the sibling bundle emitted by
 // the same vite run is spawned as a file worker instead.
 
+import { spawnSync } from 'node:child_process'
 import { once } from 'node:events'
 import { Worker } from 'node:worker_threads'
 
-import { getEmbeddedAsset } from '@/server/infra/sea'
+import { rollbackBinary } from '@/server/infra/binary-rollback'
+import { collectDoctorReport, doctorOk, formatDoctorText, parseProbeIssues } from '@/server/infra/doctor-report'
+import { getEmbeddedAsset, isSea } from '@/server/infra/sea'
 import { bootstrapSeaRuntime } from '@/server/infra/sea-natives'
+import { evaluateSelfUpdateGate } from '@/server/infra/self-update-gate'
 import { SEA_SMOKE_WORKER_BUNDLE_KEY } from '@/shared/sea/assets'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
@@ -55,6 +74,15 @@ Usage:
                            worker_threads image pool and exit. Requires
                            the full configuration (validated, never
                            connected to).
+  kobato rollback          Restore the previous release: swaps the
+                           <binary>.bak sibling left by the last
+                           self-update back into place. Restart the
+                           service afterwards (e.g. systemctl restart
+                           <service>) to run the restored build.
+  kobato doctor [--json]   Print an aggregated diagnostic report:
+                           version, native libraries, configuration
+                           validation, and self-update readiness.
+                           Exits 1 when natives or config fail.
 
 Configuration:
   --config, -c <path>      Config file to use. Resolution order without it:
@@ -85,7 +113,7 @@ Optional environment variables:
  * dynamic imports are deliberate: sharp's platform detection runs at
  * module evaluation and needs `KOBATO_NATIVES_DIR` set first.
  */
-async function smokeNatives(): Promise<void> {
+async function smokeNatives(quiet = false): Promise<void> {
   bootstrapSeaRuntime()
 
   // sharp: raw pixels -> PNG encode -> JPEG re-encode.
@@ -123,7 +151,9 @@ async function smokeNatives(): Promise<void> {
     throw new Error(`@duckdb/node-api aggregate returned ${String(total)}, expected 6`)
   }
 
-  process.stdout.write(`SEA natives smoke passed: ${process.platform}-${process.arch}\n`)
+  if (!quiet) {
+    process.stdout.write(`SEA natives smoke passed: ${process.platform}-${process.arch}\n`)
+  }
 }
 
 /**
@@ -177,6 +207,52 @@ async function smokeWorker(): Promise<void> {
   }
 }
 
+/**
+ * Config probe for `doctor`: re-exec this binary with the hidden
+ * `--doctor-config-probe` flag (forwarding any `--config` argument), where
+ * loading the config graph IS the validation — `loadServerConfig` prints
+ * the issues and exits 1 on failure, so the parent never has to import the
+ * env-validated graph itself. Exit 0 means the configuration validates.
+ */
+function probeConfig(): Promise<{ ok: boolean; issues: string[] }> {
+  const forward: string[] = []
+  const argv = process.argv.slice(2)
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i]
+    if (arg === '--config' || arg === '-c') {
+      const next = argv[i + 1]
+      if (next !== undefined) {
+        forward.push(arg, next)
+        i++
+      }
+    } else if (arg.startsWith('--config=')) {
+      forward.push(arg)
+    }
+  }
+  const res = spawnSync(process.execPath, ['--doctor-config-probe', ...forward], {
+    encoding: 'utf-8',
+    timeout: 30_000,
+  })
+  if (res.status === 0) {
+    return Promise.resolve({ ok: true, issues: [] })
+  }
+  return Promise.resolve({ ok: false, issues: parseProbeIssues(res.stderr ?? '') })
+}
+
+async function doctor(json: boolean): Promise<void> {
+  const report = await collectDoctorReport({
+    version: __SEA_APP_VERSION__,
+    sea: isSea(),
+    checkNatives: () => smokeNatives(true),
+    evaluateGate: evaluateSelfUpdateGate,
+    probeConfig,
+  })
+  process.stdout.write(json ? `${JSON.stringify(report, null, 2)}\n` : formatDoctorText(report))
+  if (!doctorOk(report)) {
+    process.exit(1)
+  }
+}
+
 async function main(args: ReadonlySet<string>): Promise<void> {
   if (args.has('--version') || args.has('-v')) {
     process.stdout.write(`kobato ${__SEA_APP_VERSION__}\n`)
@@ -193,6 +269,22 @@ async function main(args: ReadonlySet<string>): Promise<void> {
   if (args.has('--smoke-worker')) {
     await smokeWorker()
   }
+  if (args.has('rollback')) {
+    const { rolledBackTo, previousVersion } = await rollbackBinary()
+    process.stdout.write(
+      `Rolled back kobato ${previousVersion} → ${rolledBackTo}. ` +
+        'Restart the service to run the restored build (e.g. systemctl restart <service>).\n',
+    )
+  }
+  if (args.has('doctor')) {
+    await doctor(args.has('--json'))
+  }
+  if (args.has('--doctor-config-probe')) {
+    // Importing the config graph validates the configuration as a module
+    // side effect: `loadServerConfig` prints the issue list and exits 1 on
+    // failure; reaching this line means the configuration is valid.
+    await import('@/server/infra/config')
+  }
 }
 
 const args = new Set(process.argv.slice(2))
@@ -202,7 +294,10 @@ const isFlagInvocation =
   args.has('--help') ||
   args.has('-h') ||
   args.has('--smoke-natives') ||
-  args.has('--smoke-worker')
+  args.has('--smoke-worker') ||
+  args.has('rollback') ||
+  args.has('doctor') ||
+  args.has('--doctor-config-probe')
 
 if (isFlagInvocation) {
   try {

@@ -19,6 +19,7 @@ import { readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 import { collectSeaAssets, type SeaPackCodec } from './assets.ts'
+import { BINARY_MAX_BYTES } from './budget.ts'
 import { fail, run } from './exec.ts'
 import { runInjectStep } from './inject.ts'
 import { repoRoot, seaBinaryFileName, seaBinaryPath, seaBinarySha256Path, seaIntermediatesDir } from './paths.ts'
@@ -98,7 +99,16 @@ async function main() {
   await writeBinaryChecksum()
 
   const { size } = await stat(seaBinaryPath())
-  console.log(`==> SEA build complete: ${seaBinaryPath()} (${(size / 1024 / 1024).toFixed(1)} MB)`)
+  const binaryMb = (size / 1024 / 1024).toFixed(1)
+  // Enforce the shared compression budget (scripts/sea/budget.ts) at build
+  // time — a blob packing regression must fail the build itself, not only
+  // the later sea:smoke step (the Docker image build never runs it).
+  if (size > BINARY_MAX_BYTES) {
+    fail(`binary is ${binaryMb} MB, over the ${BINARY_MAX_BYTES / 1024 / 1024} MB budget`)
+  }
+  console.log(
+    `==> SEA build complete: ${seaBinaryPath()} (${binaryMb} MB, within the ${BINARY_MAX_BYTES / 1024 / 1024} MB budget)`,
+  )
 }
 
 await main()

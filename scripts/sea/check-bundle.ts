@@ -6,14 +6,22 @@
 // env access is meaningless inside the binary). Leftovers would fail at
 // runtime — the SEA's restricted require resolves nothing, and the
 // embedded worker / materialized server have no node_modules next to
-// them — so fail the build here instead.
+// them — so fail the build here instead. The scan also runs in reverse:
+// any `__APP_*__`/`__SEA_*__` compile-time global left in a bundle whose
+// define table does not cover it would be a ReferenceError at boot.
 
 import { readFileSync } from 'node:fs'
 import { builtinModules } from 'node:module'
+import { pathToFileURL } from 'node:url'
 
 import { seaServerBundlePath, seaSmokeWorkerBundlePath, seaWorkerBundlePath } from './paths.ts'
 
 const builtins = new Set([...builtinModules, ...builtinModules.map((name) => `node:${name}`)])
+
+// The define table of vite.sea.config.ts — shared by all three SEA
+// bundles (server / process-worker / smoke-worker). Keep in sync with the
+// `define` block there.
+const SEA_BUNDLE_DEFINED_GLOBALS = ['__SEA_APP_VERSION__']
 
 // False-positive allowlist: these specifiers only appear inside STRING
 // LITERALS (error messages shipped by upstream packages), never as real
@@ -53,14 +61,29 @@ function executableLines(text: string) {
     })
 }
 
-function checkBundle(bundlePath: string) {
+// Compile-time globals the vite build substitutes into a bundle via
+// `define` (`__SEA_APP_VERSION__` in vite.sea.config.ts; the `__APP_*__`
+// set exists only in vite.config.ts). The reverse scan below fails on any
+// `__APP_*__`/`__SEA_*__` identifier left in a bundle that its define
+// table does not cover — a leftover would be a bare ReferenceError at
+// runtime inside the binary (src/shared/config/version.ts consumes six
+// `__APP_*__` globals the SEA build never defines).
+const buildGlobalPattern = /\b__(?:APP|SEA)_[A-Z0-9_]*__\b/g
+
+/**
+ * Scan one bundle's text for leftovers that would fail at runtime inside
+ * the binary. `definedGlobals` is the bundle's vite `define` table — an
+ * `__APP_*__`/`__SEA_*__` identifier that survives the build and is NOT
+ * in that table is an undefined-global ReferenceError waiting to happen.
+ */
+export function scanBundleText(text: string, definedGlobals: readonly string[]) {
   const errors: string[] = []
-  const text = readFileSync(bundlePath, 'utf-8')
 
   if (text.includes('import.meta.env')) {
     errors.push('import.meta.env remains in the bundle')
   }
 
+  const undefinedGlobals = new Set<string>()
   for (const line of executableLines(text)) {
     // Rolldown's runtime-external shim: `__require("bare")` is how a
     // failed/externalized CJS require survives into the bundle (a plain-
@@ -119,23 +142,40 @@ function checkBundle(bundlePath: string) {
         }
       }
     }
+
+    for (const match of line.matchAll(buildGlobalPattern)) {
+      const identifier = match[0]
+      if (!definedGlobals.includes(identifier)) {
+        undefinedGlobals.add(identifier)
+      }
+    }
+  }
+
+  for (const identifier of undefinedGlobals) {
+    errors.push(`undefined build-time global remains: ${identifier} (not in the bundle's define table)`)
   }
 
   return errors
 }
 
-let failed = false
-for (const bundlePath of [seaServerBundlePath(), seaWorkerBundlePath(), seaSmokeWorkerBundlePath()]) {
-  const errors = checkBundle(bundlePath)
-  if (errors.length > 0) {
-    failed = true
-    console.error(`SEA bundle check failed for ${bundlePath}:`)
-    for (const error of errors) {
-      console.error(`- ${error}`)
-    }
-  }
+function checkBundle(bundlePath: string) {
+  return scanBundleText(readFileSync(bundlePath, 'utf-8'), SEA_BUNDLE_DEFINED_GLOBALS)
 }
 
-if (failed) {
-  process.exit(1)
+if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  let failed = false
+  for (const bundlePath of [seaServerBundlePath(), seaWorkerBundlePath(), seaSmokeWorkerBundlePath()]) {
+    const errors = checkBundle(bundlePath)
+    if (errors.length > 0) {
+      failed = true
+      console.error(`SEA bundle check failed for ${bundlePath}:`)
+      for (const error of errors) {
+        console.error(`- ${error}`)
+      }
+    }
+  }
+
+  if (failed) {
+    process.exit(1)
+  }
 }

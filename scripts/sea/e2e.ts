@@ -17,7 +17,13 @@ import { spawnSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { rm } from 'node:fs/promises'
 import { join, resolve as resolvePath } from 'node:path'
+import { DatabaseSync } from 'node:sqlite'
 
+import type { SmokeServer } from './instance.ts'
+
+// The one src import: the canonical bucket table, so the relaxed
+// blog.rateLimit row below can never drift out of the section schema.
+import { rateLimitDefaults } from '../../src/shared/config/defaults.ts'
 import { fail } from './exec.ts'
 import {
   bootServer,
@@ -32,6 +38,41 @@ import {
 import { repoRoot, seaBinaryPath } from './paths.ts'
 
 const SHUTDOWN_TIMEOUT_MS = 15_000
+
+/**
+ * The journeys share one instance and one source IP (127.0.0.1), so the
+ * shipped sign-in / OTP-send budgets — sized for a public deployment —
+ * would trip mid-suite (a dozen credential logins against a 5-per-30min
+ * bucket). Relax exactly those buckets in the seeded settings row; every
+ * other bucket keeps its production default. The row carries the full
+ * bucket table because hydration validates it against the section schema.
+ *
+ * `resourceIp` is relaxed for sheer suite pressure: the journeys render
+ * dozens of feed/OG/avatar resource URLs from the single test IP inside
+ * one 60-second window, and even legitimate per-route counting would ride
+ * the shipped 60/min bucket ceiling mid-suite. 1000 is the section
+ * schema's ceiling (`rateLimitBounds`).
+ */
+function relaxRateLimitsForE2e(databasePath: string) {
+  const relaxed = {
+    ...rateLimitDefaults,
+    signInIp: { windowSeconds: 60 * 30, maxAttempts: 100 },
+    signInEmail: { windowSeconds: 60 * 30, maxAttempts: 100 },
+    otpSendIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
+    otpSendEmail: { windowSeconds: 60 * 5, maxAttempts: 10 },
+    resourceIp: { windowSeconds: 60, maxAttempts: 1000 },
+  }
+  const db = new DatabaseSync(databasePath)
+  try {
+    db.prepare(
+      `INSERT INTO "setting" ("scope", "data", "updated_at", "updated_by")
+       VALUES ('blog.rateLimit', ?, ?, NULL)
+       ON CONFLICT ("scope") DO UPDATE SET "data" = excluded."data"`,
+    ).run(JSON.stringify(relaxed), Date.now())
+  } finally {
+    db.close()
+  }
+}
 
 async function main() {
   const binaryPath = process.argv[2] ? resolvePath(process.argv[2]) : seaBinaryPath()
@@ -60,15 +101,20 @@ async function main() {
   }
 
   let vitestStatus: number | null = null
-  let server = await bootServer(binaryPath, dirs, env, serverLogPath)
+  // Never fail() (process.exit) from here on: an immediate exit would skip
+  // the finally below and leak the server process plus the mkdtemp root
+  // holding the throwaway database and secrets. Throw instead — the
+  // top-level catch prints the message and sets a non-zero exit code.
+  let server: SmokeServer | null = null
   try {
+    server = await bootServer(binaryPath, dirs, env, serverLogPath)
     // First boot: applies the embedded migrations (the seed below needs
     // the tables) and proves the fresh-install gate answers the setup
     // redirect.
     console.log(`    waiting for http://127.0.0.1:${server.port}/health (log: ${serverLogPath})`)
     const fresh = await waitForHttp(`http://127.0.0.1:${server.port}/health`, server.exitState)
     if (fresh.status !== 303) {
-      fail(`expected /health 303 → /admin/setup on a fresh instance, got ${fresh.status}`)
+      throw new Error(`expected /health 303 → /admin/setup on a fresh instance, got ${fresh.status}`)
     }
     server.child.kill('SIGTERM')
     await waitForExit(server, SHUTDOWN_TIMEOUT_MS)
@@ -84,19 +130,22 @@ async function main() {
       email: adminEmail,
       passwordHash: bcrypt.hashSync(adminPassword, 10),
     })
+    relaxRateLimitsForE2e(databases.database)
 
     server = await bootServer(binaryPath, dirs, env, serverLogPath)
     console.log(`    waiting for http://127.0.0.1:${server.port}/health (seeded restart)`)
     const health = await waitForHttp(`http://127.0.0.1:${server.port}/health`, server.exitState)
     if (health.status !== 200) {
-      fail(`expected /health 200 on the seeded instance, got ${health.status}`)
+      throw new Error(`expected /health 200 on the seeded instance, got ${health.status}`)
     }
 
     // The env-driven first boot must have written its overrides back into
     // the config file — assert the instance is self-contained.
     const converged = await readConvergedConfig(join(dirs.root, 'kobato.config.json'))
     if (converged.database !== databases.database) {
-      fail(`config file did not converge: storage.database is ${converged.database}, expected ${databases.database}`)
+      throw new Error(
+        `config file did not converge: storage.database is ${converged.database}, expected ${databases.database}`,
+      )
     }
     console.log('    config file converged (env written back)')
 
@@ -111,14 +160,18 @@ async function main() {
         KOBATO_E2E_BASE_URL: `http://127.0.0.1:${server.port}`,
         KOBATO_E2E_ADMIN_EMAIL: adminEmail,
         KOBATO_E2E_ADMIN_PASSWORD: adminPassword,
+        // Sanctioned seam for flows no admin RPC can stage (the magic-link
+        // journey flips user.login_method directly). The file is the
+        // throwaway per-run database — never a real deployment's.
+        KOBATO_E2E_DATABASE: databases.database,
       },
     })
     if (result.error) {
-      fail(`Failed to spawn vitest: ${result.error.message}`)
+      throw new Error(`Failed to spawn vitest: ${result.error.message}`)
     }
     vitestStatus = result.status ?? 1
   } finally {
-    if (!server.exitState.exited) {
+    if (server !== null && !server.exitState.exited) {
       server.child.kill('SIGTERM')
       await waitForExit(server, SHUTDOWN_TIMEOUT_MS)
     }
@@ -129,4 +182,9 @@ async function main() {
   process.exit(vitestStatus)
 }
 
-await main()
+await main().catch((error: unknown) => {
+  // A thrown failure already ran main's finally (server stopped, mkdtemp
+  // root removed) — report it plainly and exit non-zero.
+  console.error(error instanceof Error ? error.message : String(error))
+  process.exitCode = 1
+})
