@@ -16,8 +16,26 @@ describe('server/http/utils/client-address — getClientAddress', () => {
     expect(getClientAddress(req, '203.0.113.1')).toBe('203.0.113.1')
   })
 
-  it('returns 127.0.0.1 by default when direct ip is omitted', () => {
-    expect(getClientAddress(buildRequest())).toBe('127.0.0.1')
+  it('returns a safe placeholder when the direct peer is unavailable', () => {
+    expect(getClientAddress(buildRequest())).toBe('unknown')
+  })
+
+  // P0-5 regression: behind a Unix-socket reverse proxy the direct peer IP
+  // is undefined. Trusting proxy headers in that case lets any remote
+  // client spoof its IP and bypass every IP-keyed rate limit.
+  it('does NOT trust cf-connecting-ip when the direct peer is unavailable', () => {
+    const req = buildRequest({ 'cf-connecting-ip': '198.51.100.5' })
+    expect(getClientAddress(req, undefined)).toBe('unknown')
+  })
+
+  it('does NOT trust x-real-ip when the direct peer is unavailable', () => {
+    const req = buildRequest({ 'x-real-ip': '198.51.100.7' })
+    expect(getClientAddress(req, undefined)).toBe('unknown')
+  })
+
+  it('does NOT trust x-forwarded-for when the direct peer is unavailable', () => {
+    const req = buildRequest({ 'x-forwarded-for': '203.0.113.1, 198.51.100.10' })
+    expect(getClientAddress(req, undefined)).toBe('unknown')
   })
 
   it('trusts cf-connecting-ip when direct connection is loopback', () => {

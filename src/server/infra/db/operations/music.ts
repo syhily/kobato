@@ -181,3 +181,24 @@ export async function softDeleteMusic(db: Database, id: number): Promise<MusicRo
   const rows = await db.update(music).set({ deletedAt: now, updatedAt: now }).where(eq(music.id, id)).returning()
   return rows[0] ?? null
 }
+
+/**
+ * Undo a soft delete in place: clears `deletedAt` and refreshes the mutable
+ * metadata. `addMusic` uses it when a re-added song's soft-deleted row still
+ * occupies UNIQUE(source, source_id) — a plain insert would violate the key.
+ * The row keeps its id, playerId, storage paths, and driver; the caller
+ * re-uploads the assets to those same paths.
+ */
+export async function restoreMusic(
+  db: Database,
+  id: number,
+  values: Pick<NewMusic, 'name' | 'artist' | 'album' | 'lyric' | 'uploaderId'>,
+): Promise<MusicRow | null> {
+  const now = new Date()
+  const rows = await db
+    .update(music)
+    .set({ ...values, deletedAt: null, updatedAt: now })
+    .where(eq(music.id, id))
+    .returning()
+  return rows[0] ?? null
+}

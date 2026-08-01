@@ -327,6 +327,54 @@ describe('music/services/write/add — addMusic', () => {
     expect(s3Memory.store.has(r.audioStoragePath)).toBe(true)
     expect(s3Memory.store.has(r.coverStoragePath)).toBe(true)
   })
+
+  it('restores the soft-deleted row when the same song is re-added', async () => {
+    const track = {
+      source: 'netease',
+      sourceId: 're-add',
+      name: 'Song',
+      artist: ['Singer'],
+      album: 'Album',
+      picId: 'pic',
+      urlId: 'url',
+      lyricId: 'lyric',
+    }
+    const mockProviderOnce = (name: string) =>
+      vi.spyOn(registry, 'getProvider').mockReturnValueOnce({
+        source: 'netease',
+        search: vi.fn(),
+        getTrack: vi.fn(async () => ({ ...track, name })),
+        resolveAudioUrl: vi.fn(async () => 'https://up.example.com/audio.mp3'),
+        resolveCoverUrl: vi.fn(async () => 'https://up.example.com/cover.jpg'),
+        getLyric: vi.fn(async () => '[00:00] Hi'),
+      })
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response(new Uint8Array(4), { status: 200, headers: { 'content-length': '4' } })),
+    )
+
+    mockProviderOnce('Song')
+    const first = await addMod.addMusic(db, { source: 'netease', sourceId: 're-add', uploader: null })
+    await deleteMod.deleteMusic(db, Number(first.id))
+    expect(s3Memory.store.has(first.audioStoragePath)).toBe(false)
+
+    // Re-adding the same (source, sourceId) must restore the soft-deleted
+    // row — not die on the UNIQUE constraint it still occupies.
+    mockProviderOnce('Song Remastered')
+    const second = await addMod.addMusic(db, { source: 'netease', sourceId: 're-add', uploader: null })
+
+    expect(second.id).toBe(first.id)
+    expect(second.playerId).toBe(first.playerId)
+    expect(second.name).toBe('Song Remastered')
+    const rows = await db.select().from(music)
+    expect(rows).toHaveLength(1)
+    expect(rows[0].deletedAt).toBeNull()
+    // deleteMusic removed the objects; the restore re-uploads them to the
+    // row's original storage paths.
+    expect(second.audioStoragePath).toBe(first.audioStoragePath)
+    expect(s3Memory.store.has(second.audioStoragePath)).toBe(true)
+    expect(s3Memory.store.has(second.coverStoragePath)).toBe(true)
+  })
 })
 
 describe('music/providers/registry — getProvider', () => {

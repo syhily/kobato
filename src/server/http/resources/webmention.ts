@@ -4,11 +4,14 @@ import type { Env } from '@/server/http/context'
 
 import { webmentionReceiveSchema } from '@/server/domains/webmentions/schema'
 import { receiveWebmention } from '@/server/domains/webmentions/service'
+import { dynamicBodyLimit } from '@/server/http/middlewares/dynamic-body-limit'
 import { rateLimitByIp } from '@/server/http/middlewares/rate-limit'
 
 // Form-encoded webmention bodies carry exactly two URLs — anything
-// larger is junk traffic, not a protocol peer. The cap is checked on
-// the declared content-length before the body is parsed.
+// larger is junk traffic, not a protocol peer. dynamicBodyLimit checks
+// the declared content-length up front and streams bodies without one
+// (chunked transfer-encoding) through a byte-counting passthrough, so
+// the cap can never be bypassed by omitting the header.
 const MAX_FORM_BODY_BYTES = 16 * 1024
 
 // W3C Webmention receive endpoint. Unauthenticated by protocol design —
@@ -20,12 +23,8 @@ const MAX_FORM_BODY_BYTES = 16 * 1024
 export const webmentionRouter = new Hono<Env>().post(
   '/webmention',
   rateLimitByIp('webmention', 'resourceIp', { errorBody: { error: 'Too many requests' } }),
+  dynamicBodyLimit({ maxSize: MAX_FORM_BODY_BYTES, onError: (c) => c.json({ error: 'Payload too large' }, 413) }),
   async (c) => {
-    const contentLength = Number.parseInt(c.req.header('content-length') ?? '', 10)
-    if (Number.isFinite(contentLength) && contentLength > MAX_FORM_BODY_BYTES) {
-      return c.json({ error: 'Payload too large' }, 413)
-    }
-
     const body = await c.req.parseBody()
     const parsed = webmentionReceiveSchema.safeParse({ source: body['source'], target: body['target'] })
     if (!parsed.success) {

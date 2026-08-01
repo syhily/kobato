@@ -13,7 +13,7 @@ import {
   MAX_AUDIO_BYTES,
   MAX_COVER_BYTES,
 } from '@/server/domains/music/services/write/shared'
-import { insertMusic, findMusicBySourceAndId } from '@/server/infra/db/operations/music'
+import { insertMusic, findMusicBySourceAndId, restoreMusic } from '@/server/infra/db/operations/music'
 import { DomainError } from '@/server/infra/http/errors'
 import { processImageBuffer } from '@/server/infra/image/process'
 import { getLogger } from '@/server/infra/logger'
@@ -47,7 +47,9 @@ export interface AddMusicPrefill {
  * the admin add-music dialog action AND the historical-import CLI.
  * Idempotent on `(source, sourceId)`: an already-imported song returns
  * its existing row instead of re-uploading, so the import script is
- * safe to re-run.
+ * safe to re-run. A soft-deleted row still occupies UNIQUE(source,
+ * source_id), so re-adding RESTORES it in place — same row, playerId,
+ * and storage paths; fresh metadata and re-uploaded assets.
  */
 export async function addMusic(db: Database, input: AddMusicInputs): Promise<AdminMusicDto> {
   // Idempotency: skip the upload-and-insert dance if we already imported
@@ -58,6 +60,11 @@ export async function addMusic(db: Database, input: AddMusicInputs): Promise<Adm
     return toAdminMusicDto({ ...existing, uploaderName: input.uploader?.name ?? null }, input.uploader?.name ?? null)
   }
 
+  // A soft-deleted match means restore, not insert: the row still holds the
+  // unique key, so a plain INSERT would 500. Restoring in place also revives
+  // the playerId already embedded in posts — the delete is fully undone.
+  const restoring = existing
+
   // Resolve the canonical track from the provider.
   const provider = getProvider(input.source)
   const track = await provider.getTrack(input.sourceId)
@@ -67,9 +74,11 @@ export async function addMusic(db: Database, input: AddMusicInputs): Promise<Adm
 
   const metadata = mergeMetadata(track, input.prefill)
 
-  const playerId = await generateUniquePlayerId(db)
-  const audioStoragePath = `musics/${playerId}.mp3`
-  const coverStoragePath = `musics/${playerId}.jpg`
+  // On restore the row keeps its playerId and storage paths — no new
+  // playerId draw, no unique-key churn.
+  const playerId = restoring?.playerId ?? (await generateUniquePlayerId(db))
+  const audioStoragePath = restoring?.audioStoragePath ?? `musics/${playerId}.mp3`
+  const coverStoragePath = restoring?.coverStoragePath ?? `musics/${playerId}.jpg`
 
   // Resolve URLs, download binaries, and fetch lyric in parallel.
   const [audioUrl, coverUrl] = await Promise.all([
@@ -97,10 +106,14 @@ export async function addMusic(db: Database, input: AddMusicInputs): Promise<Adm
     throw error
   }
 
-  // Upload both assets in parallel. Resolving the active backend once
-  // guarantees audio and cover land on the same driver; it is persisted
-  // on the row and targets the rollback deletes below.
-  const { backend, driver } = activeBackend()
+  // Upload both assets in parallel. A fresh add resolves the active backend
+  // once so audio and cover land on the same driver; a restore re-uploads to
+  // the row's persisted driver (deleteMusic removed the objects there) so a
+  // local↔S3 switch while deleted can't strand the assets on the wrong
+  // backend. The driver targets the rollback deletes below.
+  const { backend, driver } = restoring
+    ? { backend: backendFor(restoring.storageDriver), driver: restoring.storageDriver }
+    : activeBackend()
   await Promise.all([
     backend.put({ key: audioStoragePath, body: audioBuffer, contentType: 'audio/mpeg', visibility: 'public' }),
     backend.put({ key: coverStoragePath, body: coverProcessed, contentType: 'image/jpeg', visibility: 'public' }),
@@ -122,9 +135,23 @@ export async function addMusic(db: Database, input: AddMusicInputs): Promise<Adm
 
   let row: MusicRow
   try {
-    row = await insertMusic(db, newRow)
+    if (restoring) {
+      const restored = await restoreMusic(db, restoring.id, {
+        name: newRow.name,
+        artist: newRow.artist,
+        album: newRow.album,
+        lyric: newRow.lyric,
+        uploaderId: newRow.uploaderId,
+      })
+      if (restored === null) {
+        throw new Error(`restore target vanished: music id=${restoring.id}`)
+      }
+      row = restored
+    } else {
+      row = await insertMusic(db, newRow)
+    }
   } catch (error) {
-    log.error('Music insert failed; rolling back uploads', {
+    log.error('Music write failed; rolling back uploads', {
       sourceId: input.sourceId,
       playerId,
       driver,

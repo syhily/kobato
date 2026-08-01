@@ -134,8 +134,11 @@ export function useEditorShellPersist<
   const noteMetaSaved = useCallback(
     (saved: TEntity) => {
       // A save round runs the meta and body legs concurrently; when the body
-      // leg already landed with a warning, the meta leg must not hide it.
-      setStatus((prev) => (prev.kind === 'warning' ? prev : { kind: 'saved', at: new Date() }))
+      // leg already landed with a warning or a conflict, the meta leg must
+      // not hide it.
+      setStatus((prev) =>
+        prev.kind === 'warning' || prev.kind === 'conflict' ? prev : { kind: 'saved', at: new Date() },
+      )
       applyServerMeta(metaDraftFromEntity(saved))
       setServerPublishedAtIso(saved.publishedAt)
       const saveMs = Date.parse(saved.updatedAt)
@@ -192,7 +195,11 @@ export function useEditorShellPersist<
 
   const noteUnpublishSaved = useCallback(
     (saved: TEntity) => {
-      setStatus({ kind: 'saved', at: new Date() })
+      // Same concurrent-leg rule as noteMetaSaved: an in-flight body leg may
+      // have surfaced a warning / conflict while unpublish was pending.
+      setStatus((prev) =>
+        prev.kind === 'warning' || prev.kind === 'conflict' ? prev : { kind: 'saved', at: new Date() },
+      )
       applyServerMeta(metaDraftFromEntity(saved))
       setServerPublishedAtIso(saved.publishedAt)
       const saveMs = Date.parse(saved.updatedAt)

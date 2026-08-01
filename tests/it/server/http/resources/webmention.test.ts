@@ -177,6 +177,42 @@ describe('integration / POST /webmention', () => {
     expect(res.status).toBe(202)
   })
 
+  it('rejects a request whose declared content-length exceeds the 16KB form cap', async () => {
+    const res = await buildApp().request('/webmention', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Length': String(20 * 1024),
+      },
+      body: 'x'.repeat(20 * 1024),
+    })
+    expect(res.status).toBe(413)
+    expect(mockFetch.calls).toHaveLength(0)
+    expect((await db.select().from(webmention)).length).toBe(0)
+  })
+
+  it('rejects a chunked request without content-length whose body exceeds the 16KB form cap', async () => {
+    // A stream body carries no content-length — this is the chunked
+    // transfer-encoding shape that must not bypass the cap and buffer
+    // the entire payload in memory.
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode('x'.repeat(20 * 1024)))
+        controller.close()
+      },
+    })
+    const res = await buildApp().request('/webmention', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: stream,
+      // @ts-expect-error — Node.js fetch requires duplex when sending a stream body
+      duplex: 'half',
+    })
+    expect(res.status).toBe(413)
+    expect(mockFetch.calls).toHaveLength(0)
+    expect((await db.select().from(webmention)).length).toBe(0)
+  })
+
   it('rejects oversized sources via the declared content-length', async () => {
     await seedLivePost('wm-target')
     mockFetch.enqueue(

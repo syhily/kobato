@@ -9,8 +9,9 @@
  *   - When the direct connection is remote, the direct IP is returned
  *     verbatim and all forwarding headers are ignored.
  *
- * Falls back to `127.0.0.1` when no proxy headers are present and no
- * direct IP is provided.
+ * Falls back to `'unknown'` when no direct IP is provided (e.g. behind a
+ * Unix-socket reverse proxy). The placeholder is deliberately NOT a
+ * loopback address, so proxy headers stay untrusted in that case.
  */
 
 const IPV4_RE = /^(?:(?:25[0-5]|2[0-4]\d|1?\d{1,2})\.){3}(?:25[0-5]|2[0-4]\d|1?\d{1,2})$/
@@ -41,7 +42,17 @@ function isLoopback(ip: string): boolean {
 }
 
 export function getClientAddress(request: Request, directIp?: string): string {
-  const base = directIp ?? '127.0.0.1'
+  // Security: the loopback check below is the ONLY gate on trusting proxy
+  // headers. When the direct peer is unknown — e.g. behind a Unix-socket
+  // reverse proxy where `socket.remoteAddress` is undefined — we must NOT
+  // substitute '127.0.0.1' here: that would pass the loopback check and
+  // let any remote client spoof X-Forwarded-For / CF-Connecting-IP,
+  // bypassing every IP-keyed rate limit and forging audit IPs (P0-5).
+  // Return a non-IP placeholder instead; proxy headers stay untrusted.
+  if (directIp === undefined) {
+    return 'unknown'
+  }
+  const base = directIp
 
   // Only trust proxy headers when the direct TCP connection is from
   // localhost. Any remote client can forge X-Forwarded-For; we ignore

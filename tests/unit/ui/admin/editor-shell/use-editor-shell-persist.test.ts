@@ -493,6 +493,72 @@ describe('ui/admin/editor-shell/useEditorShellPersist — cancel schedule on pic
   })
 })
 
+describe('ui/admin/editor-shell/useEditorShellPersist — success legs never downgrade conflict / warning', () => {
+  it('keeps the conflict status when the meta leg resolves after a body-leg conflict', () => {
+    const args = makeArgs({
+      detail: makeDetail([block('old', 'old text')]),
+      draft: { body: [block('new', 'new text')] },
+    })
+    const { result } = renderHook(() => useEditorShellPersist(args))
+    act(() => result.current.persistSave())
+
+    // The body leg lands first with a revision conflict.
+    act(() =>
+      slots[1].config?.onSuccess?.({
+        status: 'conflict',
+        latest: makeRevision(),
+        expectedToken: 'tok-server',
+      } as never),
+    )
+    expect(result.current.status).toEqual({ kind: 'conflict', expectedToken: 'tok-server' })
+
+    // The concurrent meta leg's success must not downgrade the conflict to
+    // "saved" — the edits never landed.
+    act(() => slots[0].config?.onSuccess?.(savedEntity() as never))
+    expect(result.current.status).toEqual({ kind: 'conflict', expectedToken: 'tok-server' })
+  })
+
+  it('keeps the conflict status when the unpublish leg resolves after a body-leg conflict', () => {
+    const args = makeArgs({
+      detail: makeDetail([block('old', 'old text')]),
+      draft: { body: [block('new', 'new text')] },
+    })
+    const { result } = renderHook(() => useEditorShellPersist(args))
+    act(() => result.current.persistSave())
+    act(() => result.current.persistUnpublish())
+
+    // The in-flight body leg lands with a revision conflict while the
+    // unpublish leg is still pending.
+    act(() =>
+      slots[1].config?.onSuccess?.({
+        status: 'conflict',
+        latest: makeRevision(),
+        expectedToken: 'tok-server',
+      } as never),
+    )
+    expect(result.current.status).toEqual({ kind: 'conflict', expectedToken: 'tok-server' })
+
+    act(() => slots[3].config?.onSuccess?.(savedEntity() as never))
+    expect(result.current.status).toEqual({ kind: 'conflict', expectedToken: 'tok-server' })
+  })
+
+  it('keeps the warning status when the unpublish leg resolves after a body-leg warning', () => {
+    const args = makeArgs({
+      detail: makeDetail([block('old', 'old text')]),
+      draft: { body: [block('new', 'new text')] },
+    })
+    const { result } = renderHook(() => useEditorShellPersist(args))
+    act(() => result.current.persistSave())
+    act(() => result.current.persistUnpublish())
+
+    act(() => slots[1].config?.onSuccess?.(savedPayload({}, WARNING) as never))
+    expect(result.current.status).toEqual({ kind: 'warning', message: WARNING })
+
+    act(() => slots[3].config?.onSuccess?.(savedEntity() as never))
+    expect(result.current.status).toEqual({ kind: 'warning', message: WARNING })
+  })
+})
+
 describe('ui/admin/editor-shell/useEditorShellPersist — publish / unpublish', () => {
   it('persistPublish fires the publish leg, marks meta published, and retains the server publishedAt', () => {
     const args = makeArgs({
