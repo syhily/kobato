@@ -55,6 +55,10 @@ export function editableHint(expiresAt: number | undefined, isPending: boolean |
   if (expiresAt === undefined) {
     return isPending ? '此消息正在等待审核，可编辑。' : '可编辑此消息。'
   }
+  // `Date.now()` here is safe from the SSR/hydration clock rule (audit
+  // P2-23): ownership (`myComments`) only populates post-mount via the
+  // client-side loadMyComments mutation, so this hint never renders during
+  // SSR or hydration — the clock read is purely client-side.
   const remainingMs = expiresAt - Date.now()
   if (remainingMs <= 0) {
     return isPending ? '此消息正在等待审核，编辑时间已过期。' : '编辑时间已过期。'

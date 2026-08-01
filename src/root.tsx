@@ -112,7 +112,12 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
   const cspNonce = rc.cspNonce
 
-  return { admin, currentUser, blogSettings, fonts, theme, csrfToken, criticalLinks, tier2Chunks, cspNonce }
+  // Server clock for public chrome that renders dates/times (footer year,
+  // sidebar calendar) — passing it down as loader data keeps SSR and
+  // hydration on the same instant (repo convention, audit P2-23).
+  const nowIso = new Date().toISOString()
+
+  return { admin, currentUser, blogSettings, fonts, theme, csrfToken, criticalLinks, tier2Chunks, cspNonce, nowIso }
 }
 
 export function shouldRevalidate({ formAction, defaultShouldRevalidate }: ShouldRevalidateFunctionArgs) {

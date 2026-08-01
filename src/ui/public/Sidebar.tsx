@@ -1,4 +1,4 @@
-import { Link } from 'react-router'
+import { Link, useRouteLoaderData } from 'react-router'
 
 import type { ClientTag, SidebarPostLink } from '@/shared/types/catalog'
 import type { LatestComment } from '@/shared/types/comments'
@@ -203,7 +203,11 @@ function WidgetTitle({ children, tooltip }: { children: string; tooltip: string 
 
 function TodayCalendar() {
   const siteIdentity = useSiteIdentity()
-  const today = new Date()
+  // The root loader's clock, so SSR and hydration pick the same calendar
+  // PNG at the day boundary (audit P2-23); the Date fallback only fires in
+  // router-less test renders.
+  const nowIso = useRouteLoaderData<{ nowIso?: string }>('root')?.nowIso
+  const today = nowIso === undefined ? new Date() : new Date(nowIso)
   const year = formatLocalDate(today, 'yyyy', siteIdentity)
   const monthDay = formatLocalDate(today, 'LLdd', siteIdentity)
   const lightImage = `/images/calendar/${year}/${monthDay}.png`

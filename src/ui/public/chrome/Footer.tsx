@@ -1,10 +1,16 @@
+import { useRouteLoaderData } from 'react-router'
+
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { formatLocalDate } from '@/shared/utils/formatter'
 
 export function Footer() {
   const siteIdentity = useSiteIdentity()
   const { website, title } = siteIdentity
-  const thisYear = formatLocalDate(new Date(), 'yyyy', siteIdentity)
+  // The root loader's clock, so SSR and hydration render the same year at
+  // the New-Year boundary (audit P2-23); the Date fallback only fires in
+  // router-less test renders.
+  const nowIso = useRouteLoaderData<{ nowIso?: string }>('root')?.nowIso
+  const thisYear = formatLocalDate(nowIso ?? new Date(), 'yyyy', siteIdentity)
   const { icpNo, moeIcpNo, initialYear } = siteIdentity
   const hasIcp = icpNo || moeIcpNo
 
