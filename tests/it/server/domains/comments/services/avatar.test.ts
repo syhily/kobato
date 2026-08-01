@@ -394,29 +394,67 @@ describe('domains/comments/services/avatar — serveAvatar', () => {
     expect(fetchSpy).not.toHaveBeenCalled()
   })
 
-  it('serves a QQ hit as png and overwrites a stale cache entry — the QQ policy never reads the cache', async () => {
+  it('serves a QQ positive cache hit as png without fetching upstream (read-through)', async () => {
     const id = await seedUser({ email: '12345@qq.com' })
     const hash = await encodedEmail('12345@qq.com')
-    // Pre-warm a stale positive entry: a read-through policy would serve
-    // it without ever calling the upstream.
-    const stale = Buffer.from('stale-bytes')
-    await set(db, 'avatar', { size: 120, email: hash }, { status: AvatarStatus.HAVE_AVATAR, buffer: stale })
-    const fetchFn = mockFetch([new Response(new Uint8Array(await pngOfSize(100)), { status: 200 })])
+    await set(
+      db,
+      'avatar',
+      { size: 120, email: hash },
+      { status: AvatarStatus.HAVE_AVATAR, buffer: Buffer.from('qq-av') },
+    )
+    const fetchSpy = vi.fn()
+    vi.stubGlobal('fetch', fetchSpy)
 
     const result = await serveAvatar(db, String(id), 120)
 
-    expect(result.kind).toBe('png')
-    expect(fetchFn).toHaveBeenCalledTimes(1)
-    if (result.kind === 'png') {
-      expect(result.buffer.equals(stale)).toBe(false)
-      // The cache was overwritten with the freshly fetched bytes.
-      const entry = await cachedAvatar(120, hash)
-      expect(entry?.status).toBe(AvatarStatus.HAVE_AVATAR)
-      expect(entry?.buffer?.equals(result.buffer)).toBe(true)
-    }
+    expect(result).toEqual({ kind: 'png', buffer: Buffer.from('qq-av') })
+    expect(fetchSpy).not.toHaveBeenCalled()
   })
 
-  it('overwrites the cache with a negative entry and redirects on a QQ miss', async () => {
+  it('fetches a QQ avatar only once — a repeat request for the same identity is served from the cache', async () => {
+    const id = await seedUser({ email: '12345@qq.com' })
+    const fetchFn = mockFetch([new Response(new Uint8Array(await pngOfSize(100)), { status: 200 })])
+
+    const first = await serveAvatar(db, String(id), 120)
+    const second = await serveAvatar(db, String(id), 120)
+
+    expect(first.kind).toBe('png')
+    expect(second).toEqual(first)
+    expect(fetchFn).toHaveBeenCalledTimes(1)
+    const hash = await encodedEmail('12345@qq.com')
+    const entry = await cachedAvatar(120, hash)
+    expect(entry?.status).toBe(AvatarStatus.HAVE_AVATAR)
+  })
+
+  it('redirects on a QQ negative-cache entry without fetching upstream', async () => {
+    const id = await seedUser({ email: '12345@qq.com' })
+    const hash = await encodedEmail('12345@qq.com')
+    await set(db, 'avatar', { size: 120, email: hash }, { status: AvatarStatus.NO_AVATAR, buffer: null })
+    const fetchSpy = vi.fn()
+    vi.stubGlobal('fetch', fetchSpy)
+
+    const result = await serveAvatar(db, String(id), 120)
+
+    expect(result).toEqual({ kind: 'redirect' })
+    expect(fetchSpy).not.toHaveBeenCalled()
+  })
+
+  it('caches a QQ miss once — a repeat request redirects without a second upstream fetch', async () => {
+    const id = await seedUser({ email: '12345@qq.com' })
+    const fetchFn = mockFetch([new Response(null, { status: 404 })])
+
+    const first = await serveAvatar(db, String(id), 120)
+    const second = await serveAvatar(db, String(id), 120)
+
+    expect(first).toEqual({ kind: 'redirect' })
+    expect(second).toEqual({ kind: 'redirect' })
+    expect(fetchFn).toHaveBeenCalledTimes(1)
+    const hash = await encodedEmail('12345@qq.com')
+    expect(await cachedAvatar(120, hash)).toEqual({ status: AvatarStatus.NO_AVATAR, buffer: null })
+  })
+
+  it('writes a negative entry and redirects when a cold QQ fetch misses', async () => {
     const id = await seedUser({ email: '12345@qq.com' })
     mockFetch([new Response(null, { status: 404 })])
 

@@ -253,22 +253,23 @@ export type ServedAvatar = { kind: 'png'; buffer: Buffer } | { kind: 'redirect' 
 const EMAIL_HASH_RE = /^([a-f0-9]{32}|[a-f0-9]{64})$/i
 
 /** The avatar endpoint's entire serving policy, sunk out of the HTTP
- *  resource: id/hash translation, the negative-cache writes, the QQ
- *  upstream branch, and the gravatar read-through branch. Every cache
- *  entry is keyed `{ size, email }` and written exactly once per path.
+ *  resource: id/hash translation, the negative-cache writes, and the
+ *  read-through branches for both the QQ CDN and the gravatar mirror.
+ *  Every cache entry is keyed `{ size, email }` and written exactly once
+ *  per path.
  *
- *  QQ policy — deliberately NOT read-through (preserved verbatim from the
- *  inline handler): QQ emails never read the cache. Every request fetches
- *  the QQ CDN upstream and overwrites the entry (HAVE on success, a
- *  negative on miss), so a stale negative can never shadow a QQ avatar
- *  that appears later. Revisit separately if this turns out wrong.
- *
- *  Gravatar policy — read-through: a cached entry (positive or negative)
- *  serves directly; a miss fetches the mirror once and records the
- *  outcome. Concurrent reads of the same email coalesce inside the cache
- *  module, so a hot avatar (e.g. the site owner appearing in every
- *  comment thread) only round-trips kv_cache once per concurrent burst
- *  instead of once per requesting comment. */
+ *  Read-through policy — identical for QQ and gravatar (audit P1-27):
+ *  a cached entry (positive or negative) serves directly; a miss fetches
+ *  upstream once and records the outcome. Both fetch helpers collapse
+ *  every failure mode (4xx, redirect, network error, undecodable or
+ *  undersized payload) into `null`, and any `null` is recorded as a
+ *  negative entry under the same bucket TTL as a positive one — a
+ *  negative is only ever written after a cache miss, so a transient
+ *  upstream failure can never shadow a still-cached positive entry.
+ *  Concurrent reads of the same email coalesce inside the cache module,
+ *  so a hot avatar (e.g. the site owner appearing in every comment
+ *  thread) only round-trips kv_cache once per concurrent burst instead
+ *  of once per requesting comment. */
 export async function serveAvatar(db: Database, hash: string, size: number): Promise<ServedAvatar> {
   if (!isNumeric(hash) && !EMAIL_HASH_RE.test(hash)) {
     // Neither a user id nor a hex email hash. Redirect WITHOUT writing a
@@ -284,16 +285,6 @@ export async function serveAvatar(db: Database, hash: string, size: number): Pro
     return { kind: 'redirect' }
   }
 
-  if (email !== null && isQQEmail(email)) {
-    const buffer = await fetchQQAvatarImage(email, size)
-    if (buffer === null) {
-      await set(db, 'avatar', { size, email: canonical }, { status: AvatarStatus.NO_AVATAR, buffer: null })
-      return { kind: 'redirect' }
-    }
-    await set(db, 'avatar', { size, email: canonical }, { status: AvatarStatus.HAVE_AVATAR, buffer })
-    return { kind: 'png', buffer }
-  }
-
   const cached = await get<'avatar', AvatarEntry>(db, 'avatar', { size, email: canonical })
   if (cached !== null) {
     if (cached.status === AvatarStatus.NO_AVATAR) {
@@ -304,7 +295,8 @@ export async function serveAvatar(db: Database, hash: string, size: number): Pro
     }
   }
 
-  const buffer = await fetchAvatarImage(canonical, size)
+  const buffer =
+    email !== null && isQQEmail(email) ? await fetchQQAvatarImage(email, size) : await fetchAvatarImage(canonical, size)
   if (buffer === null) {
     await set(db, 'avatar', { size, email: canonical }, { status: AvatarStatus.NO_AVATAR, buffer: null })
     return { kind: 'redirect' }
