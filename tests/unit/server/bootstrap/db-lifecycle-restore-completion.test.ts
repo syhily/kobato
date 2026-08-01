@@ -62,7 +62,11 @@ vi.mock('@/server/infra/db/batcher-registry', () => ({
 
 // db-lifecycle imports the batcher modules only for their registration
 // side effect; the mocked registry absorbs the lifecycle calls.
-vi.mock('@/server/domains/analytics/services/batcher', () => ({}))
+// `wireAccessLogBatcher` is called by the real analytics-lifecycle at
+// module scope (the composition root injecting the writer getter).
+vi.mock('@/server/domains/analytics/services/batcher', () => ({
+  wireAccessLogBatcher: vi.fn(),
+}))
 vi.mock('@/server/domains/analytics/services/pv-batcher', () => ({}))
 vi.mock('@/server/domains/audit/services/batcher', () => ({}))
 

@@ -2,7 +2,6 @@ import { type DuckDBConnection } from '@duckdb/node-api'
 
 import type { EnrichedAccessEvent } from '@/server/domains/analytics/types'
 
-import { getAnalyticsHandle } from '@/server/bootstrap/analytics-lifecycle'
 import { appendAccessEvents } from '@/server/domains/analytics/services/access-log'
 import { getBatcher, registerBatcher, requireBatcher } from '@/server/infra/db/batcher-registry'
 import {
@@ -30,12 +29,31 @@ function deserializeFromDeadLetter(line: string): EnrichedAccessEvent | null {
   })
 }
 
+// The DuckDB writer is injected by the composition root
+// (`@/server/bootstrap/analytics-lifecycle`, which owns the analytics
+// engine) at import time — a direct import of the lifecycle here would
+// invert the dependency direction (domain → composition root). Same
+// injection discipline as `wireBackupSnapshots` in
+// `@/server/domains/backup/services/backup`.
+let resolveWriter: (() => DuckDBConnection) | null = null
+
+export function wireAccessLogBatcher(deps: { getWriter: () => DuckDBConnection }): void {
+  resolveWriter = deps.getWriter
+}
+
+function requireWriter(): DuckDBConnection {
+  if (resolveWriter === null) {
+    throw new Error('AccessLogBatcher used before wireAccessLogBatcher')
+  }
+  return resolveWriter()
+}
+
 // The writer getter is lazy: the sidecar opens AFTER the batchers
 // register (db-lifecycle order), so the connection resolves at flush
 // time, never at construction.
 class AccessLogBatcher extends InsertBatcher<EnrichedAccessEvent, DuckDBConnection> {
   constructor() {
-    super({ flushIntervalMs: 1000, flushThreshold: 100 }, 'analytics.batcher', () => getAnalyticsHandle().writer)
+    super({ flushIntervalMs: 1000, flushThreshold: 100 }, 'analytics.batcher', requireWriter)
   }
 
   protected async insertBatch(writer: DuckDBConnection, events: EnrichedAccessEvent[]): Promise<void> {

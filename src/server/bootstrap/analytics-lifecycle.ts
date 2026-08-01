@@ -4,6 +4,7 @@ import type { AnalyticsReader } from '@/server/domains/analytics/services/duckdb
 
 import { ManagedEngine } from '@/server/bootstrap/managed-engine'
 import { ACCESS_LOG_DDL } from '@/server/domains/analytics/services/access-log'
+import { wireAccessLogBatcher } from '@/server/domains/analytics/services/batcher'
 import { runAccessLogRetention } from '@/server/domains/analytics/services/maintenance'
 import {
   type AnalyticsHandle,
@@ -31,6 +32,12 @@ const engine = new ManagedEngine<AnalyticsHandle>(
   },
   'analyticsHandle',
 )
+
+// Inject the access-log batcher's writer getter here, where the handle
+// lives — the batcher (a domain service) must not import this bootstrap
+// module back, so the composition root hands it a lazy getter instead.
+// Flush-time resolution keeps handles adopted by tests reachable.
+wireAccessLogBatcher({ getWriter: () => engine.get().writer })
 
 let maintenanceJob: ScheduledJob | null = null
 
@@ -130,10 +137,11 @@ export async function snapshotAnalyticsTo(stagingPath: string): Promise<boolean>
     return false
   }
   return withAnalyticsMutationLock(async () => {
-    // Reached through the registry, not a direct import of the batcher
-    // module — that module reads `getAnalyticsHandle` here, and a direct
-    // import would close an import cycle. The name is the batcher's own
-    // registration key (`domains/analytics/services/batcher.ts`).
+    // Reached through the registry's optional pause/resume seam rather
+    // than the batcher module's own API — the registry is the uniform
+    // cross-batcher control surface (init/flush/reset/replay go through
+    // it too). The name is the batcher's own registration key
+    // (`domains/analytics/services/batcher.ts`).
     const batcher = getBatcher('AccessLogBatcher')
     await batcher?.pause?.()
     try {

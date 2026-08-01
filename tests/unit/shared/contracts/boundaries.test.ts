@@ -380,6 +380,36 @@ describe('contract: module and bundle boundaries', () => {
     expect(cycle).toEqual([])
   })
 
+  it('keeps domains below the composition root', () => {
+    // `bootstrap/` is the composition root: it imports domain modules and
+    // wires their injected deps at boot (`wireRestoreMachine`,
+    // `wireBackupScheduler`, `wireBackupSnapshots`, `wireAccessLogBatcher`,
+    // …). A domain importing back into bootstrap inverts that direction
+    // and risks an import cycle — every `wire*` seam exists precisely to
+    // avoid one. Both `@/`-aliased and relative specifiers count, and type
+    // imports pin the same coupling.
+    //
+    // The legacy list pins the remaining pre-existing violation EXACTLY
+    // (same burn-down discipline as the relative-import allowlist): a new
+    // violation fails, and deleting the import without dropping its entry
+    // fails too.
+    const legacy = ['src/server/domains/auth/session-storage.ts: @/server/bootstrap/db-lifecycle']
+    const offenders: string[] = []
+    for (const file of files('src/server/domains', '-g', '*.ts', '-g', '*.tsx')) {
+      for (const specifier of importSpecifiers(stripComments(readFileSync(file, 'utf8')))) {
+        if (specifier.startsWith('@/server/bootstrap/')) {
+          offenders.push(`${file}: ${specifier}`)
+        } else if (specifier.startsWith('./') || specifier.startsWith('../')) {
+          const target = posixNormalize(`${posixDirname(file)}/${specifier}`)
+          if (target.startsWith('src/server/bootstrap/')) {
+            offenders.push(`${file}: ${specifier}`)
+          }
+        }
+      }
+    }
+    expect(offenders.sort()).toEqual([...legacy].sort())
+  })
+
   it('keeps domain repos private to their owning domain', () => {
     // A domain's interface is its services/, projection, schema, and root
     // feature modules; `repos/**` (or a root `repo.ts`) is the persistence
