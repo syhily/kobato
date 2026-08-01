@@ -1211,6 +1211,28 @@ describe('contract: module and bundle boundaries', () => {
       expect(source, `${file} statically imports motion/react`).not.toMatch(/^import .* from 'motion\/react'/m)
       expect(source, `${file} bypasses the lazy boundary`).not.toContain('motion.div')
     }
+    // The same rule holds for the deeper motion consumers: page-level
+    // transitions and ambient animations reach `motion/react` exclusively
+    // through `lazy-motion.tsx`, so the runtime is fetched when the first
+    // animated element mounts instead of riding the owning route/widget
+    // chunk as a static dependency (`useReducedMotion` is a hook and would
+    // force a static import — `useMediaQuery` covers the same media query).
+    const motionConsumers = [
+      'src/ui/public/widgets/Popup.tsx',
+      'src/ui/public/post/TableOfContents.tsx',
+      'src/ui/admin/musics/Equalizer.tsx',
+      'src/ui/admin/musics/MusicLibraryHero.tsx',
+      'src/ui/admin/musics/AdminMusicPlayerFloat.tsx',
+      'src/ui/admin/musics/MusicDetailView.tsx',
+      'src/ui/admin/musics/AddMusicView.tsx',
+      'src/ui/admin/images/JustifiedImageGrid.tsx',
+    ]
+    for (const file of motionConsumers) {
+      const source = readFileSync(file, 'utf8')
+      expect(source, `${file} statically imports motion/react`).not.toMatch(/^import .* from 'motion\/react'/m)
+      expect(source, `${file} bypasses the lazy boundary`).not.toMatch(/<motion\./)
+      expect(source, `${file} bypasses the lazy boundary`).not.toContain('useReducedMotion')
+    }
     const likeActions = readFileSync('src/ui/public/LikeActions.tsx', 'utf8')
     expect(likeActions).not.toMatch(/^import .* from '@number-flow\/react'/m)
     expect(likeActions).toContain("lazy(() => import('@number-flow/react'))")

@@ -1,14 +1,15 @@
-import { motion, useReducedMotion } from 'motion/react'
 import { useMemo } from 'react'
 
 import type { AdminImageDto } from '@/shared/contracts/images'
 
 import { transitions } from '@/client/lib/motion'
 import { getImageUrl } from '@/shared/types/images'
+import { LazyMotionButton, LazyMotionDiv } from '@/ui/components/lazy-motion'
 import { cn } from '@/ui/lib/cn'
 import { skeletonKeys } from '@/ui/lib/skeleton-keys'
 import { useDevicePixelRatio } from '@/ui/lib/use-device-pixel-ratio'
 import { useElementWidth } from '@/ui/lib/use-element-width'
+import { useMediaQuery } from '@/ui/lib/use-media-query'
 
 export interface JustifiedImageGridProps {
   images: AdminImageDto[]
@@ -150,7 +151,7 @@ export function JustifiedImageGrid({
   const targetHeight = targetRowHeight ?? targetRowHeightForWidth(width)
   const rows = useMemo(() => buildJustifiedRows(images, width, targetHeight, gap), [images, width, targetHeight, gap])
   const dpr = useDevicePixelRatio()
-  const prefersReducedMotion = useReducedMotion()
+  const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
 
   return (
     <div ref={ref} className={cn('flex flex-col', className)} style={{ gap }}>
@@ -170,7 +171,7 @@ export function JustifiedImageGrid({
               })
 
               return (
-                <motion.button
+                <LazyMotionButton
                   key={item.image.id}
                   type="button"
                   onClick={() => onSelect(item.image)}
@@ -194,7 +195,7 @@ export function JustifiedImageGrid({
                   aria-label={`查看图片 ${item.image.storagePath}`}
                 >
                   <img src={thumbUrl} alt="" loading="lazy" decoding="async" className="size-full object-cover" />
-                </motion.button>
+                </LazyMotionButton>
               )
             })}
           </div>
@@ -224,7 +225,7 @@ function skeletonWidths(seed: number): number[] {
 }
 
 export function JustifiedImageGridSkeleton({ targetRowHeight = 200, gap = 12, className }: SkeletonProps) {
-  const prefersReducedMotion = useReducedMotion()
+  const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
   return (
     <div className={cn('flex flex-col', className)} style={{ gap }}>
       {skeletonKeys(4).map((rowKey, rowIndex) => (
@@ -235,7 +236,7 @@ export function JustifiedImageGridSkeleton({ targetRowHeight = 200, gap = 12, cl
             return prefersReducedMotion ? (
               <div key={key} className="rounded-xl bg-muted" style={style} />
             ) : (
-              <motion.div
+              <LazyMotionDiv
                 key={key}
                 className="rounded-xl bg-muted"
                 style={style}

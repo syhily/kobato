@@ -1,12 +1,13 @@
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, X, ChevronUp, ChevronDown } from 'lucide-react'
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router'
 
 import { formatTime } from '@/ui/admin/musics/format-time'
 import { useMusicPlayerActions, useMusicPlayerState, useMusicPlayerTime } from '@/ui/admin/musics/MusicPlayerContext'
 import { ProgressSlider } from '@/ui/admin/musics/ProgressSlider'
+import { LazyAnimatePresence, LazyMotionDiv } from '@/ui/components/lazy-motion'
 import { cn } from '@/ui/lib/cn'
+import { useMediaQuery } from '@/ui/lib/use-media-query'
 import { Image } from '@/ui/public/widgets/Image'
 
 const STORAGE_KEY = 'kobato-admin-player-pos'
@@ -48,7 +49,7 @@ function savePosition(pos: PlayerPosition) {
 
 export function AdminMusicPlayerFloat() {
   const location = useLocation()
-  const prefersReducedMotion = useReducedMotion()
+  const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
   const isMusicPage = location.pathname.startsWith('/admin/library/music')
   const { currentTrack, isPlaying, duration, volume, muted, extractedColor, playlist, currentIndex } =
     useMusicPlayerState()
@@ -158,9 +159,9 @@ export function AdminMusicPlayerFloat() {
         bottom: position.y ? 'auto' : undefined,
       }}
     >
-      <AnimatePresence mode="wait">
+      <LazyAnimatePresence mode="wait">
         {!expanded ? (
-          <motion.div
+          <LazyMotionDiv
             key="collapsed"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -175,7 +176,7 @@ export function AdminMusicPlayerFloat() {
             {/* Spinning cover */}
             <div className="relative shrink-0">
               {currentTrack.coverUrl ? (
-                <motion.div
+                <LazyMotionDiv
                   className="size-10 overflow-hidden rounded-full"
                   animate={isPlaying && !prefersReducedMotion ? { rotate: 360 } : { rotate: 0 }}
                   transition={
@@ -191,7 +192,7 @@ export function AdminMusicPlayerFloat() {
                     height={40}
                     className="size-10 rounded-full object-cover"
                   />
-                </motion.div>
+                </LazyMotionDiv>
               ) : (
                 <div className="size-10 rounded-full bg-surface-dim" />
               )}
@@ -223,9 +224,9 @@ export function AdminMusicPlayerFloat() {
             >
               <ChevronUp className="size-4" />
             </button>
-          </motion.div>
+          </LazyMotionDiv>
         ) : (
-          <motion.div
+          <LazyMotionDiv
             key="expanded"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -355,9 +356,9 @@ export function AdminMusicPlayerFloat() {
                 ariaLabel="音量"
               />
             </div>
-          </motion.div>
+          </LazyMotionDiv>
         )}
-      </AnimatePresence>
+      </LazyAnimatePresence>
     </div>
   )
 }

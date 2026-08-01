@@ -1,5 +1,4 @@
 import { ChevronLeftIcon } from 'lucide-react'
-import { AnimatePresence, motion } from 'motion/react'
 import { useCallback, useEffect, useState } from 'react'
 
 import type { MarkdownHeading, TocOpts } from '@/shared/utils/toc'
@@ -7,6 +6,7 @@ import type { MarkdownHeading, TocOpts } from '@/shared/utils/toc'
 import { transitions } from '@/client/lib/motion'
 import { useSeoSettingsOptional } from '@/shared/lib/blog-config-context'
 import { generateToC } from '@/shared/utils/toc'
+import { LazyAnimatePresence, LazyMotionButton, LazyMotionDiv, LazyMotionSpan } from '@/ui/components/lazy-motion'
 import { cn } from '@/ui/lib/cn'
 import { TocItems } from '@/ui/public/post/TocItems'
 
@@ -64,7 +64,7 @@ export function TableOfContents({ headings, toc = 'disabled' }: TableOfContentsP
 
   return (
     <>
-      <motion.button
+      <LazyMotionButton
         type="button"
         className={cn(
           'fixed top-0 right-0 bottom-0 my-auto flex cursor-pointer items-center justify-center',
@@ -74,6 +74,9 @@ export function TableOfContents({ headings, toc = 'disabled' }: TableOfContentsP
           visible ? 'bg-surface' : 'bg-canvas/90',
         )}
         style={{ zIndex: 'var(--z-toc-toggle-open)' }}
+        // Closed-state resting geometry so the SSR/static fallback sits
+        // exactly where the settled animation would.
+        fallbackStyle={{ width: 100, height: 100, marginRight: -80 }}
         animate={{
           width: visible ? 50 : 100,
           height: visible ? 50 : 100,
@@ -91,8 +94,10 @@ export function TableOfContents({ headings, toc = 'disabled' }: TableOfContentsP
         aria-expanded={visible}
         onClick={onToggle}
       >
-        <motion.span
+        <LazyMotionSpan
           className="inline-flex"
+          // Same closed-state resting offset as the settled animation.
+          fallbackStyle={{ transform: 'translateX(-2.0875rem)' }}
           animate={{
             x: visible ? 0 : '-2.0875rem',
             rotate: visible ? 180 : 0,
@@ -101,12 +106,14 @@ export function TableOfContents({ headings, toc = 'disabled' }: TableOfContentsP
           aria-hidden
         >
           <ChevronLeftIcon className="text-md" size="1em" />
-        </motion.span>
-      </motion.button>
+        </LazyMotionSpan>
+      </LazyMotionButton>
 
-      <motion.div
+      <LazyMotionDiv
         className="fixed top-0 bottom-0 z-(--z-toc-drawer-open) h-full w-toc-drawer border-l border-line bg-surface font-normal"
         style={{ right: 0 }}
+        // Keeps the SSR/static fallback drawer off-screen while closed.
+        fallbackStyle={{ transform: 'translateX(100%)' }}
         initial={false}
         animate={{ x: visible ? 0 : '100%' }}
         transition={transitions.drawer}
@@ -122,11 +129,11 @@ export function TableOfContents({ headings, toc = 'disabled' }: TableOfContentsP
             </div>
           </div>
         </div>
-      </motion.div>
+      </LazyMotionDiv>
 
-      <AnimatePresence>
+      <LazyAnimatePresence>
         {visible && (
-          <motion.div
+          <LazyMotionDiv
             key="toc-backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -136,7 +143,7 @@ export function TableOfContents({ headings, toc = 'disabled' }: TableOfContentsP
             onClick={() => setVisible(false)}
           />
         )}
-      </AnimatePresence>
+      </LazyAnimatePresence>
     </>
   )
 }

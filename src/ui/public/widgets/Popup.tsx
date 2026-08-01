@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react'
 
 import { XIcon } from 'lucide-react'
-import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 import { transitions } from '@/client/lib/motion'
+import { LazyAnimatePresence, LazyMotionButton, LazyMotionDiv } from '@/ui/components/lazy-motion'
 import { cn } from '@/ui/lib/cn'
 
 export type PopupSize = 'sm' | 'md' | 'lg'
@@ -157,9 +157,9 @@ export function Popup({
   }
 
   return createPortal(
-    <AnimatePresence>
+    <LazyAnimatePresence>
       {open && mounted && (
-        <motion.div
+        <LazyMotionDiv
           key="popup-wrapper"
           ref={portalRef}
           initial={{ opacity: 0 }}
@@ -168,7 +168,7 @@ export function Popup({
           transition={transitions.popupFade}
           className="fixed inset-0 z-1500 flex items-center justify-center overflow-x-hidden overflow-y-auto"
         >
-          <motion.div
+          <LazyMotionDiv
             key="popup-backdrop"
             variants={backdropVariants}
             initial="hidden"
@@ -191,7 +191,7 @@ export function Popup({
               BODY_SIZE_CLASS[size],
             )}
           >
-            <motion.div
+            <LazyMotionDiv
               key="popup-content"
               variants={contentVariants}
               initial="hidden"
@@ -200,8 +200,8 @@ export function Popup({
               transition={transitions.popup}
             >
               <div className={cn('relative rounded-lg bg-canvas text-ink-1', CONTENT_SIZE_CLASS[size])}>{children}</div>
-            </motion.div>
-            <motion.button
+            </LazyMotionDiv>
+            <LazyMotionButton
               key="popup-close"
               type="button"
               aria-label="关闭"
@@ -226,11 +226,11 @@ export function Popup({
               }}
             >
               <XIcon size={22} aria-hidden className="inline-block align-middle text-ink-4" />
-            </motion.button>
+            </LazyMotionButton>
           </div>
-        </motion.div>
+        </LazyMotionDiv>
       )}
-    </AnimatePresence>,
+    </LazyAnimatePresence>,
     document.body,
   )
 }

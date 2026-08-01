@@ -2,7 +2,6 @@ import type { NavigateFunction } from 'react-router'
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Play, Pause, Trash2, X, Copy, Pencil, Check, RotateCcw } from 'lucide-react'
-import { motion } from 'motion/react'
 import { useCallback, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -16,6 +15,7 @@ import { LyricsDisplay } from '@/ui/admin/musics/LyricsDisplay'
 import { buildMusicUpdate } from '@/ui/admin/musics/music-update'
 import { useMusicPlayerActions, useMusicPlayerState, useMusicPlayerTime } from '@/ui/admin/musics/MusicPlayerContext'
 import { ConfirmDialog, type ConfirmState } from '@/ui/admin/shared/ConfirmDialog'
+import { LazyMotionDiv, LazyMotionH1, LazyMotionP, LazyMotionSpan } from '@/ui/components/lazy-motion'
 import { cn } from '@/ui/lib/cn'
 import { Image } from '@/ui/public/widgets/Image'
 
@@ -195,7 +195,7 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
   }
 
   return (
-    <motion.div
+    <LazyMotionDiv
       className="relative min-h-full"
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
@@ -220,7 +220,7 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
       >
         <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-end">
           {/* Cover */}
-          <motion.div
+          <LazyMotionDiv
             className="shrink-0"
             style={{ viewTransitionName: `music-cover-${music.id}` }}
             initial={{ opacity: 0, scale: 0.9 }}
@@ -238,21 +238,21 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
             ) : (
               <div className="size-56 rounded-lg bg-surface-dim shadow-2xl" />
             )}
-          </motion.div>
+          </LazyMotionDiv>
 
           {/* Info / Edit Form */}
           <div className="flex min-w-0 flex-1 flex-col gap-3">
-            <motion.span
+            <LazyMotionSpan
               className="text-xs font-medium tracking-wider text-ink-4 uppercase"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ ...transitions.detailFade, delay: 0.1 }}
             >
               单曲
-            </motion.span>
+            </LazyMotionSpan>
 
             {editing ? (
-              <motion.div
+              <LazyMotionDiv
                 className="flex flex-col gap-3"
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -285,10 +285,10 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
                     className="min-w-0 flex-1 border-b-2 border-line-muted bg-transparent pb-1 transition-colors outline-none placeholder:text-ink-4/40 focus:border-primary"
                   />
                 </div>
-              </motion.div>
+              </LazyMotionDiv>
             ) : (
               <>
-                <motion.h1
+                <LazyMotionH1
                   className="text-4xl font-bold tracking-tight text-ink-1 sm:text-5xl lg:text-6xl"
                   style={{ viewTransitionName: `music-title-${music.id}` }}
                   initial={{ opacity: 0, y: 16 }}
@@ -296,8 +296,8 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
                   transition={{ ...transitions.detailFade, delay: 0.15 }}
                 >
                   {music.name}
-                </motion.h1>
-                <motion.p
+                </LazyMotionH1>
+                <LazyMotionP
                   className="text-base text-ink-2"
                   style={{ viewTransitionName: `music-artist-${music.id}` }}
                   initial={{ opacity: 0, y: 16 }}
@@ -305,23 +305,23 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
                   transition={{ ...transitions.detailFade, delay: 0.2 }}
                 >
                   {music.artist.join(' / ')} · {music.album}
-                </motion.p>
+                </LazyMotionP>
               </>
             )}
-            <motion.p
+            <LazyMotionP
               className="text-sm text-ink-4"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ ...transitions.detailFade, delay: 0.25 }}
             >
               {music.source} · {music.uploaderName ?? '—'} · {formatLocalDate(music.createdAt, DATE_FORMAT, config)}
-            </motion.p>
+            </LazyMotionP>
           </div>
         </div>
       </div>
 
       {/* Action Bar */}
-      <motion.div
+      <LazyMotionDiv
         className="mb-8 flex items-center gap-3"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -389,11 +389,11 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
             </button>
           </>
         )}
-      </motion.div>
+      </LazyMotionDiv>
 
       {/* Metadata */}
       {!editing && (
-        <motion.div
+        <LazyMotionDiv
           className="mb-8 grid grid-cols-2 gap-4 text-sm text-ink-4 sm:grid-cols-4"
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -415,11 +415,11 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
             <span className="block text-xs text-ink-4/70">更新时间</span>
             <span>{formatLocalDate(music.updatedAt, DATE_FORMAT, config)}</span>
           </div>
-        </motion.div>
+        </LazyMotionDiv>
       )}
 
       {/* Lyrics */}
-      <motion.div
+      <LazyMotionDiv
         className="border-t border-line pt-8"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -437,10 +437,10 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
         ) : (
           <LyricsDisplay lrcText={music.lyric} currentTime={isCurrent ? currentTime : 0} />
         )}
-      </motion.div>
+      </LazyMotionDiv>
 
       <ConfirmDialog state={confirm} onClose={() => setConfirm(null)} />
-    </motion.div>
+    </LazyMotionDiv>
   )
 }
 

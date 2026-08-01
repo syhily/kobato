@@ -1,13 +1,14 @@
 import type { ReactNode } from 'react'
 
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import type { AdminMusicDto } from '@/shared/contracts/music'
 
 import { transitions } from '@/client/lib/motion'
 import { useMusicPlayerState } from '@/ui/admin/musics/MusicPlayerContext'
+import { LazyAnimatePresence, LazyMotionDiv } from '@/ui/components/lazy-motion'
 import { cn } from '@/ui/lib/cn'
+import { useMediaQuery } from '@/ui/lib/use-media-query'
 
 interface MusicLibraryHeroProps {
   musics: AdminMusicDto[]
@@ -190,8 +191,8 @@ function CollageBackground({ allCoverUrls }: { allCoverUrls: string[] }) {
         <div className="grid w-full" style={{ gridTemplateColumns: `repeat(${grid.cols}, 1fr)` }}>
           {cells.map((cell) => (
             <div key={cell.id} className="relative aspect-square overflow-hidden">
-              <AnimatePresence>
-                <motion.div
+              <LazyAnimatePresence>
+                <LazyMotionDiv
                   key={`${cell.id}-${cell.url}`}
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -200,8 +201,8 @@ function CollageBackground({ allCoverUrls }: { allCoverUrls: string[] }) {
                   className="absolute inset-0"
                 >
                   <img src={cell.url} alt="" className="h-full w-full object-cover" loading="lazy" />
-                </motion.div>
-              </AnimatePresence>
+                </LazyMotionDiv>
+              </LazyAnimatePresence>
             </div>
           ))}
         </div>
@@ -214,25 +215,25 @@ function CollageBackground({ allCoverUrls }: { allCoverUrls: string[] }) {
 }
 
 function PlayingBackground({ coverUrl, extractedColor }: { coverUrl: string; extractedColor: string | null }) {
-  const prefersReducedMotion = useReducedMotion()
+  const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
   return (
     <div className="absolute inset-0 overflow-hidden">
       {/* Blurred cover backdrop — scale compensates blur edge fade.
           The ambient slowLoop is decorative; freeze it under reduced-motion. */}
-      <motion.div
+      <LazyMotionDiv
         className="absolute inset-0"
         animate={prefersReducedMotion ? { scale: 1.1 } : { scale: [1.05, 1.2] }}
         transition={prefersReducedMotion ? { duration: 0 } : transitions.slowLoop}
       >
         <img src={coverUrl} alt="" className="h-full w-full scale-125 object-cover" style={{ filter: 'blur(48px)' }} />
-      </motion.div>
+      </LazyMotionDiv>
 
       {/* Dark base overlay */}
       <div className="absolute inset-0 bg-black/50" />
 
       {/* Extracted-color radial glow */}
       {extractedColor && (
-        <motion.div
+        <LazyMotionDiv
           className="absolute inset-0"
           style={{
             background: `radial-gradient(ellipse at 50% 30%, ${extractedColor}40 0%, transparent 60%)`,

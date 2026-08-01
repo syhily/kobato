@@ -89,11 +89,13 @@ function resetSearchHookMock(): void {
 // `Dialog` wrapper renders its children only when `open` is true so the
 // snapshot reflects the open dialog body without a browser portal.
 
-// `motion/react` is imported by `AddMusicView` / `MusicDetailView` for
-// page-level transitions. SSR-safe passthrough so the inner children
-// always render (motion would otherwise wrap output in an effect-driven
-// opacity animation which is fine on SSR, but stubbing keeps the output
-// stable).
+// `motion/react` reaches `AddMusicView` / `MusicDetailView` only through
+// the dynamic import inside `lazy-motion.tsx` — SSR renders the static
+// fallback, but client-side branch tests resolve the lazy boundary against
+// the real module. Stub it as an SSR-safe passthrough so the inner
+// children always render (motion would otherwise wrap output in an
+// effect-driven opacity animation which is fine on SSR, but stubbing
+// keeps the output stable).
 vi.mock('motion/react', async () => {
   const actual = await vi.importActual<typeof import('motion/react')>('motion/react')
   // Motion-only props that would otherwise leak onto the DOM as

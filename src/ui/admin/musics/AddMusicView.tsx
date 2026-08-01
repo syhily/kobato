@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Loader2, Search, X } from 'lucide-react'
-import { motion } from 'motion/react'
 import { useCallback, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { toast } from 'sonner'
@@ -17,6 +16,7 @@ import { useMusicPlayerActions, useMusicPlayerState } from '@/ui/admin/musics/Mu
 import { SearchAlbumCard } from '@/ui/admin/musics/SearchAlbumCard'
 import { useMetingMusicSearch } from '@/ui/admin/musics/useMetingMusicSearch'
 import { Label } from '@/ui/components/label'
+import { LazyMotionDiv } from '@/ui/components/lazy-motion'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/ui/components/select'
 
 export function AddMusicView() {
@@ -119,7 +119,7 @@ export function AddMusicView() {
   })
 
   return (
-    <motion.div
+    <LazyMotionDiv
       className="relative min-h-full"
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
@@ -142,7 +142,7 @@ export function AddMusicView() {
 
       {/* Hero */}
       <MusicLibraryHero musics={libraryMusics} total={libraryTotal} title="添加音乐">
-        <motion.div
+        <LazyMotionDiv
           className="mx-auto flex max-w-sm items-center gap-2"
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -200,11 +200,11 @@ export function AddMusicView() {
               </SelectContent>
             </Select>
           </div>
-        </motion.div>
+        </LazyMotionDiv>
       </MusicLibraryHero>
 
       {/* Results */}
-      <motion.div
+      <LazyMotionDiv
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ ...transitions.detailFade, delay: 0.2 }}
@@ -248,8 +248,8 @@ export function AddMusicView() {
             ) : null}
           </>
         )}
-      </motion.div>
-    </motion.div>
+      </LazyMotionDiv>
+    </LazyMotionDiv>
   )
 }
 
