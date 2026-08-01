@@ -103,8 +103,20 @@ export function useFontSlotsController() {
     },
   })
 
+  // Serialize persists through a one-at-a-time queue: two rapid drags
+  // would otherwise fire concurrent unversioned POSTs, and an earlier
+  // payload landing last leaves the server holding a stale slot order
+  // (audit P1-19). Sequential writes make the last drag the authoritative
+  // end state; a failure surfaces via onError without stranding the queue.
+  const persistQueueRef = useRef<Promise<void>>(Promise.resolve())
+
   const persist = (slot: FontSlot, ids: string[]) => {
-    setSlotMutation.mutate({ slot, fontIds: ids })
+    persistQueueRef.current = persistQueueRef.current.then(() =>
+      setSlotMutation.mutateAsync({ slot, fontIds: ids }).then(
+        () => undefined,
+        () => undefined,
+      ),
+    )
   }
 
   const commit = (slot: FontSlot, next: string[]) => {

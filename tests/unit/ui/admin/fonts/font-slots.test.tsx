@@ -210,6 +210,75 @@ describe('useFontSlotsController', () => {
     expect(result.current.slots.global).toEqual(['a'])
   })
 
+  it('serializes rapid persists so the server receives them in dispatch order (audit P1-19)', async () => {
+    const calls: { slot: string; fontIds: string[] }[] = []
+    const resolvers: (() => void)[] = []
+    setSlotMock.mockImplementation((args: { slot: string; fontIds: string[] }) => {
+      calls.push(args)
+      return new Promise((resolve) => {
+        resolvers.push(() => resolve({}))
+      })
+    })
+    routerState.fonts = makeFonts({ global: ['a', 'b', 'c'] })
+    const { result } = renderHook(() => useFontSlotsController(), { wrapper: makeWrapper() })
+
+    // Two rapid drag-ends: each fires from the latest optimistic state
+    // (separate acts, like separate dnd events).
+    await act(async () => {
+      result.current.reorder('global', 0, 2)
+    })
+    expect(result.current.slots.global).toEqual(['b', 'c', 'a'])
+    await act(async () => {
+      result.current.reorder('global', 0, 1)
+    })
+    expect(result.current.slots.global).toEqual(['c', 'b', 'a'])
+
+    // The second POST must not be on the wire yet — a concurrent earlier
+    // payload landing last would leave the server at a stale order.
+    expect(calls).toEqual([{ slot: 'global', fontIds: ['b', 'c', 'a'] }])
+
+    // Once the first settles, the queued second fires — the last drag wins.
+    await act(async () => {
+      resolvers[0]!()
+    })
+    expect(calls).toEqual([
+      { slot: 'global', fontIds: ['b', 'c', 'a'] },
+      { slot: 'global', fontIds: ['c', 'b', 'a'] },
+    ])
+  })
+
+  it('a failed persist does not strand the queue — the next drag still goes out', async () => {
+    const calls: { slot: string; fontIds: string[] }[] = []
+    const rejecters: (() => void)[] = []
+    setSlotMock.mockImplementation((args: { slot: string; fontIds: string[] }) => {
+      calls.push(args)
+      if (calls.length === 1) {
+        return new Promise((_, reject) => {
+          rejecters.push(() => reject(new Error('boom')))
+        })
+      }
+      return Promise.resolve({})
+    })
+    routerState.fonts = makeFonts({ global: ['a', 'b'] })
+    const { result } = renderHook(() => useFontSlotsController(), { wrapper: makeWrapper() })
+
+    await act(async () => {
+      result.current.reorder('global', 0, 1)
+    })
+    await act(async () => {
+      rejecters[0]!()
+    })
+    expect(toastMock.error).toHaveBeenCalledWith('槽位更新失败', expect.anything())
+
+    await act(async () => {
+      result.current.remove('global', 'a')
+    })
+    expect(calls).toEqual([
+      { slot: 'global', fontIds: ['b', 'a'] },
+      { slot: 'global', fontIds: ['b'] },
+    ])
+  })
+
   it('persists both slots on a cross-slot move', async () => {
     routerState.fonts = makeFonts({ global: ['a'], post: ['b'] })
     const { result } = renderHook(() => useFontSlotsController(), { wrapper: makeWrapper() })
