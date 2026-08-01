@@ -1,6 +1,6 @@
 import type { ReadableStream as WebReadableStream } from 'node:stream/web'
 
-import { Hono } from 'hono'
+import { Hono, type Context } from 'hono'
 import { bodyLimit } from 'hono/body-limit'
 import { rmSync } from 'node:fs'
 import { Readable } from 'node:stream'
@@ -29,6 +29,49 @@ import { getLogger } from '@/server/infra/logger'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const log = getLogger('backup.upload')
+
+/**
+ * The upload-route stage → pre-validate choreography: stage the streamed
+ * upload ONCE (streamed decompression), then verify the staged content
+ * database opens for real and contains an admin row BEFORE the restore
+ * slot is claimed — the magic-byte check alone lets a corrupt payload
+ * through, and a backup without an admin soft-locks the restored site
+ * behind the install gate. Post-swap validation would be too late: by
+ * then the original file no longer exists. The staged files serve both
+ * the validation and the swap, so the payload is decompressed a single
+ * time and never fully held in memory. Every rejection cleans up the
+ * staged dir. `allowAnalyticsOnly` skips the admin check when the upload
+ * carries no content file (the admin route only — setup hard-requires
+ * content).
+ */
+async function stageUploadForRestore(
+  c: Context<Env>,
+  file: File,
+  opts: { allowAnalyticsOnly: boolean },
+): Promise<StagedBackup | Response> {
+  let staged: StagedBackup
+  try {
+    staged = await stageBackup(Readable.fromWeb(unsafeCast<WebReadableStream>(file.stream())))
+  } catch {
+    return c.json({ error: { message: '备份文件无效或已损坏。' } }, 400)
+  }
+  if (!opts.allowAnalyticsOnly || staged.content !== null) {
+    // Analytics-only uploads carry no content file to check.
+    try {
+      await assertStagedBackupContainsAdmin(staged)
+    } catch {
+      rmSync(staged.dir, { recursive: true, force: true })
+      return c.json({ error: { message: '备份文件无效或不包含管理员账号。' } }, 400)
+    }
+  }
+  return staged
+}
+
+/** Slot contention: the staged upload is dropped, the caller retries later. */
+function busyRestoreResponse(c: Context<Env>, staged: StagedBackup): Response {
+  rmSync(staged.dir, { recursive: true, force: true })
+  return c.json({ error: { message: '已有还原任务正在进行，请等待完成后再试。' } }, 409)
+}
 
 export const backupRouter = new Hono<Env>()
   .get('/api/admin/backup/restore-status', requireRoleMw('admin'), (c) => {
@@ -68,27 +111,13 @@ export const backupRouter = new Hono<Env>()
         return c.json({ error: { message: '请上传文件' } }, 400)
       }
 
-      // Stage + pre-validate BEFORE claiming the slot (same choreography
-      // as the setup route): the staged content database must open for
-      // real and contain an admin row — the magic-byte check alone lets a
-      // corrupt payload through, and a backup without an admin soft-locks
-      // the restored site behind the install gate. Post-swap validation
-      // would be too late: by then the original file no longer exists.
-      let staged: StagedBackup
-      try {
-        staged = await stageBackup(Readable.fromWeb(unsafeCast<WebReadableStream>(file.stream())))
-      } catch {
-        return c.json({ error: { message: '备份文件无效或已损坏。' } }, 400)
+      // Stage + pre-validate BEFORE claiming the slot (see the helper —
+      // analytics-only uploads skip the admin check).
+      const stagedOrError = await stageUploadForRestore(c, file, { allowAnalyticsOnly: true })
+      if (stagedOrError instanceof Response) {
+        return stagedOrError
       }
-      if (staged.content !== null) {
-        // Analytics-only uploads carry no content file to check.
-        try {
-          await assertStagedBackupContainsAdmin(staged)
-        } catch {
-          rmSync(staged.dir, { recursive: true, force: true })
-          return c.json({ error: { message: '备份文件无效或不包含管理员账号。' } }, 400)
-        }
-      }
+      const staged = stagedOrError
 
       // Claim as late as possible — contention cleans up the staged files.
       const fileName = file.name
@@ -104,8 +133,7 @@ export const backupRouter = new Hono<Env>()
         },
       }))
       if (outcome === 'busy') {
-        rmSync(staged.dir, { recursive: true, force: true })
-        return c.json({ error: { message: '已有还原任务正在进行，请等待完成后再试。' } }, 409)
+        return busyRestoreResponse(c, staged)
       }
 
       return c.json({ accepted: true })
@@ -149,25 +177,13 @@ export const backupRouter = new Hono<Env>()
         return c.json({ error: { message: '请上传文件' } }, 400)
       }
 
-      // Stage the upload on disk ONCE (streamed decompression), then
-      // pre-validate the backup's contents (a backup without an admin
-      // can never complete setup) BEFORE claiming the restore slot —
-      // post-swap validation must be infallible, because the original
-      // file no longer exists at that point. The staged files serve
-      // both the validation and the swap, so the payload is
-      // decompressed a single time and never fully held in memory.
-      let staged: StagedBackup
-      try {
-        staged = await stageBackup(Readable.fromWeb(unsafeCast<WebReadableStream>(file.stream())))
-      } catch {
-        return c.json({ error: { message: '备份文件无效或已损坏。' } }, 400)
+      // Stage + pre-validate BEFORE claiming the slot (see the helper —
+      // setup hard-requires a content database with an admin row).
+      const stagedOrError = await stageUploadForRestore(c, file, { allowAnalyticsOnly: false })
+      if (stagedOrError instanceof Response) {
+        return stagedOrError
       }
-      try {
-        await assertStagedBackupContainsAdmin(staged)
-      } catch {
-        rmSync(staged.dir, { recursive: true, force: true })
-        return c.json({ error: { message: '备份文件无效或不包含管理员账号。' } }, 400)
-      }
+      const staged = stagedOrError
 
       // Claim the slot as late as possible (staging + validation above
       // need no slot) — contention cleans up the staged files.
@@ -224,8 +240,7 @@ export const backupRouter = new Hono<Env>()
         },
       }))
       if (outcome === 'busy') {
-        rmSync(staged.dir, { recursive: true, force: true })
-        return c.json({ error: { message: '已有还原任务正在进行，请等待完成后再试。' } }, 409)
+        return busyRestoreResponse(c, staged)
       }
 
       return c.json({ accepted: true })
