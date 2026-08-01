@@ -15,6 +15,10 @@ jobs:
   build-and-push:
     name: build and push image
     runs-on: ubuntu-latest
+    # GitHub fires `created` for draft releases too — a discarded draft
+    # must not leave semver-tagged images behind on the registry. (On
+    # push events `github.event.release` is null and this passes.)
+    if: ${{ !github.event.release.draft }}
     # Multi-arch: the arm64 leg runs under QEMU emulation, so the whole
     # SEA build (pnpm install + vite bundles + brotli-11 packing) is
     # several times slower than a native build. If this becomes painful,
@@ -50,6 +54,11 @@ jobs:
 
       - uses: docker/setup-buildx-action@v4
 
+      # The build publishes under a staging tag FIRST, never under the
+      # user-facing tags: the smoke below gates `latest` / semver, so a
+      # broken image can no longer ship and then fail. The staging tag
+      # (`build-<sha>`) stays on the registry as build provenance — it is
+      # untagged by convention from any release channel.
       - uses: docker/build-push-action@v7
         id: push
         with:
@@ -59,10 +68,40 @@ jobs:
           # errors.
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ghcr.io/${{ github.repository }}:build-${{ github.sha }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      # The arm64 leg is built entirely under QEMU and the image's
+      # HEALTHCHECK only probes /health — the embedded native libraries
+      # (sharp / canvas / duckdb) never load there, so an arch-broken
+      # natives bundle would ship unnoticed. Pull the just-pushed staging
+      # manifest back and run the SEA binary's own zero-config smoke flags
+      # inside the container per platform (arm64 via the QEMU binfmt
+      # above) — BEFORE any user-facing tag exists.
+      - name: Smoke the SEA binary inside the image
+        env:
+          IMAGE: ghcr.io/${{ github.repository }}@${{ steps.push.outputs.digest }}
+        run: |
+          docker pull "$IMAGE"
+          for arch in amd64 arm64; do
+            docker run --rm --platform "linux/$arch" --entrypoint kobato "$IMAGE" --version
+            docker run --rm --platform "linux/$arch" --entrypoint kobato "$IMAGE" --smoke-natives
+          done
+
+      # Smoke passed — point the release tags at the very same manifest
+      # (no rebuild, no digest drift).
+      - name: Tag the smoked image
+        env:
+          IMAGE: ghcr.io/${{ github.repository }}:build-${{ github.sha }}
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          args=()
+          while IFS= read -r tag; do
+            [ -n "$tag" ] && args+=(-t "$tag")
+          done <<< "$TAGS"
+          docker buildx imagetools create "${args[@]}" "$IMAGE"
 
       - uses: actions/attest@v4
         with:

@@ -1,3 +1,2 @@
 pnpx lint-staged
 pnpm run type
-pnpm run test -- --run

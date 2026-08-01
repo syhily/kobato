@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      security__sessionSecret: ci-session-secret
+      security__sessionSecret: ci-session-secret-not-a-real-one
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
