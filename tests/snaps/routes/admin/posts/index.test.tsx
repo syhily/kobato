@@ -6,6 +6,7 @@ import PostsRoute from '@/routes/admin/posts/index'
 describe('snapshot: routes/admin/posts/index', () => {
   it('renders the posts index route', () => {
     const html = stableHtml(renderInRouter(<PostsRoute />, '/admin/posts'))
-    expect(html.length).toBeGreaterThan(0)
+    expect(html).toContain('文章管理')
+    expect(html).toContain('新建文章')
   })
 })

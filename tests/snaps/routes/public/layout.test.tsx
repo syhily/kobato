@@ -47,16 +47,23 @@ describe('snapshot: routes/public/layout', () => {
 
   it('renders the error boundary inside the chrome', () => {
     const Boundary = asRoute(ErrorBoundary)
+    // A bare `Response` no longer satisfies `isRouteErrorResponse` (it also
+    // requires `internal`/`data`) — use the same route-error shape the
+    // ErrorView snapshots use so the 404 branch is the one exercised.
+    const notFound = { status: 404, statusText: 'Not Found', internal: false, data: null }
     const html = renderRoutes(
       [
         {
           path: '/',
-          element: <Boundary error={new Response('Not found', { status: 404 })} />,
+          element: <Boundary error={notFound} />,
         },
       ],
       '/',
     )
-    expect(html.length).toBeGreaterThan(0)
+    // The ErrorView 404 branch renders its hero and description inside the
+    // site chrome.
+    expect(html).toContain('404')
+    expect(html).toContain('抱歉，没有你要找的内容')
     expect(html).toContain('且听书吟')
   })
 })

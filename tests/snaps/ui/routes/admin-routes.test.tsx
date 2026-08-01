@@ -10,11 +10,15 @@ import { describe, expect, it } from 'vitest'
 // the page chrome renders. Routes that just render a known View
 // component get a null/empty fixture — the View fetches via react-query
 // so it renders its loading / empty chrome under SSR, which still
-// exercises the route component function itself.
+// exercises the route component function itself. Every test asserts on
+// real rendered content (headings, labels, fixture values), so a route
+// that degrades into the router's error boundary fails instead of
+// passing a vacuous `html.length > 0`.
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { asRoute } from '#/_helpers/route-test-utils'
+import { orpcQuery } from '@/client/api/orpc-query'
 import AnalyticsLayoutRouteRaw from '@/routes/admin/analytics/layout'
 import AnalyticsOverviewRouteRaw from '@/routes/admin/analytics/overview'
 import AnalyticsRealtimeRouteRaw from '@/routes/admin/analytics/realtime'
@@ -195,9 +199,10 @@ describe('admin routes — Component SSR renders', () => {
   describe('posts', () => {
     it('posts/index renders the PostsView shell', () => {
       const html = stableHtml(renderInRouter(<PostsRoute loaderData={emptyLoaderData} />, '/admin/posts'))
-      // PostsView renders at least its toolbar chrome; assert the page
-      // produced non-empty markup without depending on remote data.
-      expect(html.length).toBeGreaterThan(0)
+      // The list query reports loading under SSR (the empty state never
+      // renders), so assert the header chrome the route always produces.
+      expect(html).toContain('文章管理')
+      expect(html).toContain('新建文章')
     })
 
     it('posts/analytics renders the post title and chart tabs', () => {
@@ -232,7 +237,8 @@ describe('admin routes — Component SSR renders', () => {
           { currentUser: CURRENT_USER },
         ),
       )
-      expect(html.length).toBeGreaterThan(0)
+      expect(html).toContain('我的评论')
+      expect(html).toContain('条评论')
     })
   })
 
@@ -241,74 +247,138 @@ describe('admin routes — Component SSR renders', () => {
       const html = stableHtml(
         renderInRouter(<BrandingRoute loaderData={{ branding: null }} />, '/admin/library/branding'),
       )
-      expect(html.length).toBeGreaterThan(0)
+      expect(html).toContain('品牌素材')
+      expect(html).toContain('Favicon 套件')
     })
 
     it('library/images renders the ImagesView shell', () => {
       const html = stableHtml(renderInRouter(<ImagesRoute loaderData={emptyLoaderData} />, '/admin/library/images'))
-      expect(html.length).toBeGreaterThan(0)
+      expect(html).toContain('图片管理')
+      expect(html).toContain('上传图片')
     })
 
     it('library/music renders the MusicsView shell', () => {
       const html = stableHtml(renderInRouter(<MusicsRoute loaderData={emptyLoaderData} />, '/admin/library/music'))
-      expect(html.length).toBeGreaterThan(0)
+      expect(html).toContain('音乐库')
+      expect(html).toContain('添加音乐')
     })
 
     it('library/music/add renders the AddMusicView shell', () => {
       const html = stableHtml(
         renderInRouter(<MusicAddRoute loaderData={emptyLoaderData} />, '/admin/library/music/add'),
       )
-      expect(html.length).toBeGreaterThan(0)
+      expect(html).toContain('添加音乐')
+      expect(html).toContain('输入关键词搜索音乐')
     })
 
-    it('library/music/detail renders the MusicDetailView shell', () => {
-      // Like the user detail route, the component reads `params.id` from
-      // RR7's injected ComponentProps — pass it explicitly so the detail
-      // view gets a non-empty id.
+    it('library/music/detail renders the MusicDetailView with the seeded music', () => {
+      // The component reads `params.id` from RR7's injected ComponentProps
+      // — pass it explicitly so the detail view gets a non-empty id. The
+      // music query reports loading under SSR, so seed the shared client's
+      // cache (keyed by the same queryOptions the view uses) to make the
+      // view render the real detail chrome instead of the skeleton.
+      testQueryClient.setQueryData(orpcQuery.admin.music.get.queryOptions({ input: { id: 'abc' } }).queryKey, {
+        music: {
+          id: 'abc',
+          source: 'netease',
+          sourceId: '1001',
+          playerId: 'abcdef0123456789',
+          name: '青花瓷',
+          artist: ['周杰伦'],
+          album: '我很忙',
+          audioStoragePath: 'music/audio.mp3',
+          audioUrl: 'https://cdn.example.com/audio.mp3',
+          coverStoragePath: 'music/cover.jpg',
+          coverUrl: 'https://cdn.example.com/cover.jpg',
+          lyric: '',
+          uploaderId: 'user-1',
+          uploaderName: '雨帆',
+          createdAt: '2024-01-01T00:00:00.000Z',
+          updatedAt: '2024-02-01T00:00:00.000Z',
+        },
+      })
+      // Render via the outlet wrapper so the tree uses this file's
+      // QueryClient (the one we just seeded); the view reads no outlet
+      // context, so an empty context suffices.
       const html = stableHtml(
-        renderInRouter(
+        renderInRouterWithOutlet(
           <MusicDetailRoute loaderData={emptyLoaderData} params={{ id: 'abc' }} />,
           '/admin/library/music/abc',
+          {},
         ),
       )
-      expect(html.length).toBeGreaterThan(0)
+      expect(html).toContain('青花瓷')
+      expect(html).toContain('周杰伦')
+      expect(html).toContain('单曲')
     })
   })
 
   describe('pages & taxonomy', () => {
     it('pages/index renders the PagesView shell', () => {
       const html = stableHtml(renderInRouter(<PagesRoute loaderData={emptyLoaderData} />, '/admin/pages'))
-      expect(html.length).toBeGreaterThan(0)
+      expect(html).toContain('页面管理')
+      expect(html).toContain('新建页面')
     })
 
     it('taxonomy/categories renders the CategoriesView shell', () => {
       const html = stableHtml(
         renderInRouter(<CategoriesRoute loaderData={emptyLoaderData} />, '/admin/taxonomy/categories'),
       )
-      expect(html.length).toBeGreaterThan(0)
+      expect(html).toContain('分类管理')
+      expect(html).toContain('新增分类')
     })
 
     it('taxonomy/friends renders the FriendsView shell', () => {
       const html = stableHtml(renderInRouter(<FriendsRoute loaderData={emptyLoaderData} />, '/admin/taxonomy/friends'))
-      expect(html.length).toBeGreaterThan(0)
+      expect(html).toContain('友链管理')
+      expect(html).toContain('新增友链')
     })
 
     it('taxonomy/tags renders the TagsView shell', () => {
       const html = stableHtml(renderInRouter(<TagsRoute loaderData={emptyLoaderData} />, '/admin/taxonomy/tags'))
-      expect(html.length).toBeGreaterThan(0)
+      expect(html).toContain('标签管理')
+      expect(html).toContain('新增标签')
     })
   })
 
   describe('security/users', () => {
     it('security/users/index renders the UsersView shell', () => {
       const html = stableHtml(renderInRouter(<UsersRoute loaderData={emptyLoaderData} />, '/admin/security/users'))
-      expect(html.length).toBeGreaterThan(0)
+      expect(html).toContain('用户管理')
+      expect(html).toContain('邀请作者')
     })
 
-    it('security/users/detail renders the UserDetailView shell with passkey flag', () => {
+    it('security/users/detail renders the UserDetailView with the seeded user', () => {
       // The route reads `params.id` from RR7's injected ComponentProps and
       // `currentUser` from the admin layout's outlet context. We pass both
       // explicitly so the detail view gets a non-empty userId and viewer.
+      // The view fetches the user + recent comments via react-query; seed
+      // the shared client's cache (keyed by the same queryOptions the view
+      // uses) so SSR renders the real detail chrome instead of the
+      // skeleton — an error boundary would not contain these strings.
+      testQueryClient.setQueryData(orpcQuery.admin.users.get.queryOptions({ input: { id: '42' } }).queryKey, {
+        user: {
+          id: '42',
+          name: 'Bob',
+          email: 'bob@example.com',
+          link: '',
+          role: 'author',
+          deletedAt: null,
+          isMuted: false,
+          badgeName: '',
+          badgeColor: '',
+          badgeTextColor: '',
+          commentCount: 3,
+          pendingCount: 0,
+          lastCommentAt: null,
+          createdAt: '2024-01-01T00:00:00.000Z',
+          passkeyCount: 0,
+        },
+      })
+      testQueryClient.setQueryData(
+        orpcQuery.admin.comments.loadAll.queryOptions({ input: { offset: 0, limit: 10, userId: '42' } }).queryKey,
+        { comments: [] },
+      )
       const html = stableHtml(
         renderInRouterWithOutlet(
           <UsersDetailRoute loaderData={{ passkeyEnabled: false }} params={{ id: '42' }} />,
@@ -316,7 +386,10 @@ describe('admin routes — Component SSR renders', () => {
           { currentUser: CURRENT_USER },
         ),
       )
-      expect(html.length).toBeGreaterThan(0)
+      expect(html).toContain('用户详情')
+      expect(html).toContain('Bob')
+      expect(html).toContain('bob@example.com')
+      expect(html).toContain('统计信息')
     })
   })
 
@@ -381,10 +454,11 @@ describe('admin routes — Component SSR renders', () => {
         }),
       )
 
-      // The settings chrome includes the section nav + the first
-      // visible form (General). Assert a stable, user-visible label.
+      // The settings chrome includes the section nav + the rendered
+      // sections. Assert a stable nav group label plus the first
+      // section's heading, proving every SECTION_CONFIGS render() ran.
       expect(html).toContain('通用')
-      expect(html.length).toBeGreaterThan(0)
+      expect(html).toContain('基本信息')
     })
   })
 })

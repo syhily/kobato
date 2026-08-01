@@ -10,6 +10,11 @@ describe('snapshot: routes/admin/library/music/detail', () => {
     const html = stableHtml(
       renderInRouter(<Route loaderData={{ id: 'abc' }} params={{ id: 'abc' }} />, '/admin/library/music/abc'),
     )
-    expect(html.length).toBeGreaterThan(0)
+    // The detail query stays pending under SSR, so the route renders its
+    // DetailSkeleton — not the not-found or load-error states. These
+    // assertions fail if SSR degrades into an error boundary.
+    expect(html).toContain('animate-pulse')
+    expect(html).not.toContain('未找到该歌曲')
+    expect(html).not.toContain('加载失败')
   })
 })

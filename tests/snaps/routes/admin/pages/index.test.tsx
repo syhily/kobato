@@ -6,6 +6,7 @@ import PagesRoute from '@/routes/admin/pages/index'
 describe('snapshot: routes/admin/pages/index', () => {
   it('renders the pages index route', () => {
     const html = stableHtml(renderInRouter(<PagesRoute />, '/admin/pages'))
-    expect(html.length).toBeGreaterThan(0)
+    expect(html).toContain('页面管理')
+    expect(html).toContain('新建页面')
   })
 })

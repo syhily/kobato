@@ -61,10 +61,11 @@ describe('routes/auth/signin — Component SSR branches', () => {
           '/signin',
         ),
       )
-      // The login form block is gated by `action === 'login'`; the
-      // production loader sets it explicitly. We only assert the branch
-      // when the route supplies the literal value, covered above.
-      expect(html.length).toBeGreaterThan(0)
+      // The runtime value is still the literal 'login' (only the type is
+      // widened to the loader's optional shape), so the identifier-first
+      // login form renders exactly like the default branch above.
+      expect(html).toContain('登陆')
+      expect(html).toContain('邮箱')
     })
 
     it('does not render the login form when action is verifyotp', () => {

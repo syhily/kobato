@@ -32,7 +32,10 @@ describe('snapshot: routes/admin/me/profile', () => {
         '/admin/me/profile',
       ),
     )
-    expect(html.length).toBeGreaterThan(0)
+    expect(html).toContain('个人信息')
     expect(html).toContain('Alice')
+    expect(html).toContain('alice@example.com')
+    expect(html).toContain('管理员')
+    expect(html).toContain('统计信息')
   })
 })

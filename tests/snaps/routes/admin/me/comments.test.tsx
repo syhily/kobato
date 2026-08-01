@@ -45,6 +45,7 @@ describe('snapshot: routes/admin/me/comments', () => {
       <Route loaderData={{ status: 'all', q: '', entity: null, entityOptions: [] }} />,
       '/admin/me/comments',
     )
-    expect(html.length).toBeGreaterThan(0)
+    expect(html).toContain('我的评论')
+    expect(html).toContain('条评论')
   })
 })
