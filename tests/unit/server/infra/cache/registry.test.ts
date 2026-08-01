@@ -75,7 +75,7 @@ describe('cache registry — through', () => {
     expect(value).toEqual(['a', 'b'])
     expect(loader).toHaveBeenCalledTimes(1)
     expect(kvStoreMock.setItem).toHaveBeenCalledWith(db, 'categories:all', ['a', 'b'], {
-      ttlSeconds: 30,
+      ttlSeconds: 300,
       bucket: 'categories',
     })
   })

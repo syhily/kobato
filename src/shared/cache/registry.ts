@@ -88,12 +88,15 @@ export const CACHE_DECLARATIONS = [
     defaultTtlSeconds: 300,
     tunable: false,
   },
+  // Taxonomy lists: TTL matches feed/sitemap — content and taxonomy
+  // mutations already clear these buckets via `invalidateContent`, so the
+  // TTL is only a backstop, not the freshness mechanism (audit P1-24).
   {
     id: 'categories',
     label: '分类列表缓存',
     description: (prefix) => `公开侧全部分类（含文章计数）的查询结果，键形如 ${prefix}all。分类或文章变更后自动清空。`,
     defaultPrefix: 'categories:',
-    defaultTtlSeconds: 30,
+    defaultTtlSeconds: 300,
     tunable: false,
   },
   {
@@ -101,7 +104,7 @@ export const CACHE_DECLARATIONS = [
     label: '标签列表缓存',
     description: (prefix) => `公开侧全部标签（含文章计数）的查询结果，键形如 ${prefix}all。标签或文章变更后自动清空。`,
     defaultPrefix: 'tags:',
-    defaultTtlSeconds: 30,
+    defaultTtlSeconds: 300,
     tunable: false,
   },
   {
