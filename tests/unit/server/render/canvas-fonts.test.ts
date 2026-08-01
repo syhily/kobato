@@ -127,6 +127,44 @@ describe('render/canvas-fonts — ensureCanvasFont', () => {
     await expect(ensureCanvasFont('calendar')).resolves.toBeNull()
   })
 
+  it('does not commit an in-flight load that raced a reset (font-upload regression)', async () => {
+    seedFontFamilies({ og: 'OPPO Sans' })
+    // Hold the read so the upload's invalidation lands mid-flight.
+    let releaseRead!: (buffer: Buffer) => void
+    mocks.readFile.mockImplementationOnce(
+      () =>
+        new Promise<Buffer>((resolve) => {
+          releaseRead = resolve
+        }),
+    )
+
+    const pending = ensureCanvasFont('og')
+    // Let the flight reach the readFile call (the fs probes in between are
+    // mocked-resolved microtasks).
+    await new Promise((resolve) => setImmediate(resolve))
+    expect(mocks.readFile).toHaveBeenCalledTimes(1)
+    // The upload route replaces the file, then calls resetFontCache() +
+    // resetCanvasFont(slot) — while the OLD file's read is still in flight.
+    resetFontCache()
+    resetCanvasFont('og')
+    releaseRead(TTF_BUFFER)
+
+    // The stale result must not be committed: no registration, no slot,
+    // and the caller resolves null (this render falls back to the system
+    // font; the next one loads the new file).
+    await expect(pending).resolves.toBeNull()
+    expect(mocks.fontsRegister).not.toHaveBeenCalled()
+
+    // The next render loads the NEW bytes — the raced buffer must not have
+    // re-entered the in-process cache behind resetFontCache's back.
+    const newBuffer = Buffer.from('new-ttf-bytes')
+    mocks.readFile.mockResolvedValue(newBuffer)
+    const slot = await ensureCanvasFont('og')
+    expect(slot).toEqual({ buffer: newBuffer, family: 'OPPO Sans' })
+    expect(mocks.fontsRegister).toHaveBeenCalledTimes(1)
+    expect(mocks.fontsRegister).toHaveBeenCalledWith(newBuffer, 'OPPO Sans')
+  })
+
   it('resetCanvasFont(slot) clears only that slot', async () => {
     seedFontFamilies({ og: 'OPPO Sans', calendar: 'OPPO Serif' })
     mocks.fontsHas.mockReturnValue(true)

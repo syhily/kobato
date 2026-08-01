@@ -61,7 +61,11 @@ export function resetFontCache(): void {
   loggedMissing.clear()
 }
 
-async function loadFontSlot(slot: 'og' | 'calendar'): Promise<FontSlot | null> {
+interface LoadedFont extends FontSlot {
+  path: string
+}
+
+async function loadFontSlot(slot: 'og' | 'calendar'): Promise<LoadedFont | null> {
   const fonts = requireBlogSettingsSection('fonts')
   const family = fonts[slot].family
   if (family === '') {
@@ -85,14 +89,16 @@ async function loadFontSlot(slot: 'og' | 'calendar'): Promise<FontSlot | null> {
 
   const cached = inProcessByPath.get(fullPath)
   if (cached !== undefined) {
-    return { buffer: cached, family }
+    return { buffer: cached, family, path: fullPath }
   }
 
   try {
     const buffer = await readFile(fullPath)
-    inProcessByPath.set(fullPath, buffer)
+    // The buffer cache write happens in the caller's generation-guarded
+    // commit — caching here would let a load that raced an upload re-enter
+    // the OLD bytes behind resetFontCache's back (audit P1-18).
     log.info('Loaded Canvas font slot', { slot, path: fullPath, family, bytes: buffer.byteLength })
-    return { buffer, family }
+    return { buffer, family, path: fullPath }
   } catch (err) {
     if (!loggedMissing.has(fullPath)) {
       log.warn('Failed to load Canvas font slot', {
@@ -134,6 +140,11 @@ const canvasFontFlights: Record<'og' | 'calendar', Promise<FontSlot | null> | nu
   og: null,
   calendar: null,
 }
+// Invalidation generation per slot: `resetCanvasFont` bumps it, and a
+// flight started before the bump must not commit its (stale) result —
+// otherwise an upload racing an in-flight load re-registers the OLD font
+// buffer and caches it until the family changes (audit P1-18).
+const canvasFontGenerations: Record<'og' | 'calendar', number> = { og: 0, calendar: 0 }
 
 export function ensureCanvasFont(slot: 'og' | 'calendar'): Promise<FontSlot | null> {
   const cached = canvasFontSlots[slot]
@@ -151,21 +162,33 @@ export function ensureCanvasFont(slot: 'og' | 'calendar'): Promise<FontSlot | nu
   }
   let flight = canvasFontFlights[slot]
   if (flight === null) {
+    const generation = canvasFontGenerations[slot]
     flight = (async () => {
       const loaded = await loadFontSlot(slot)
-      if (loaded !== null) {
+      if (loaded !== null && canvasFontGenerations[slot] === generation) {
+        inProcessByPath.set(loaded.path, loaded.buffer)
         if (!GlobalFonts.has(loaded.family)) {
           GlobalFonts.register(loaded.buffer, loaded.family)
         }
-        canvasFontSlots[slot] = loaded
+        canvasFontSlots[slot] = { buffer: loaded.buffer, family: loaded.family }
       }
       return canvasFontSlots[slot]
     })()
       .catch((err) => {
-        canvasFontFlights[slot] = null
+        // Only the current generation may clear its own flight — a stale
+        // flight erroring must not null out a newer flight's registry
+        // entry while that flight is still running.
+        if (canvasFontGenerations[slot] === generation) {
+          canvasFontFlights[slot] = null
+        }
         throw err
       })
       .finally(() => {
+        if (canvasFontGenerations[slot] !== generation) {
+          // Stale flight: the reset already cleared the registry entry;
+          // leave any newer flight alone.
+          return
+        }
         const s = canvasFontSlots[slot]
         // If the work resolved without actually registering (null
         // slot, snapshot race), drop the single-flight so the next
@@ -191,8 +214,11 @@ export function resetCanvasFont(slot?: 'og' | 'calendar'): void {
     canvasFontSlots.calendar = null
     canvasFontFlights.og = null
     canvasFontFlights.calendar = null
+    canvasFontGenerations.og += 1
+    canvasFontGenerations.calendar += 1
     return
   }
   canvasFontSlots[slot] = null
   canvasFontFlights[slot] = null
+  canvasFontGenerations[slot] += 1
 }
