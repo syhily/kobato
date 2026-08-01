@@ -30,7 +30,12 @@ export interface FlushResult {
 //   - The subclass arms a flush (threshold, interval via `armFlushTimer`).
 //   - Process receives SIGTERM / SIGINT / `beforeExit` (via
 //     `registerShutdownHook` with priority 100 so flushers run before
-//     the database-close hook at priority 0).
+//     the database-close hook at priority 0), and the restore flow
+//     flushes before swapping the database file. Both are TEARDOWN
+//     flushes (`flushForTeardown`): they ignore the pause gate, because
+//     a shutdown or swap landing inside the backup's consistency window
+//     must not strand the rows buffered there — the pause gates
+//     triggers, never durability.
 // A flush DRAINS: events buffered while a write was in flight had their
 // triggers swallowed by the singleflight, so a settled flush re-checks
 // the payload and keeps writing until it is empty (see the starvation
@@ -52,7 +57,7 @@ export abstract class FlushLoop<Pending, Result> {
   ) {
     this.log = getLogger(scope)
     this.shutdownHook = async () => {
-      void (await this.flush())
+      void (await this.flushForTeardown())
     }
     registerShutdownHook(this.shutdownHook, 100)
   }
@@ -107,8 +112,10 @@ export abstract class FlushLoop<Pending, Result> {
    * Quiesce the loop for an external consistency window (the analytics
    * backup suspends appends across its CHECKPOINT + file copy): drain
    * whatever is pending, then hold — pushes keep buffering but no
-   * trigger (interval, threshold, shutdown hook) writes until `resume`.
-   * Events buffered during the pause survive it; they flush on resume.
+   * trigger (interval, threshold, explicit `flush`) writes until
+   * `resume`. Events buffered during the pause survive it; they flush
+   * on resume, and a teardown flush (shutdown hook, restore swap)
+   * drains them even inside the window.
    */
   async pause(): Promise<void> {
     if (this.paused) {
@@ -154,9 +161,20 @@ export abstract class FlushLoop<Pending, Result> {
   }
 
   /**
+   * Teardown flush for the shutdown hook and the restore swap: drains
+   * the pending payload even while paused. A SIGTERM or a database swap
+   * landing inside the backup's consistency window must not strand the
+   * rows buffered there — `dispose()` runs detach-and-discard right
+   * after, so this is the last chance to write them.
+   */
+  async flushForTeardown(): Promise<Result> {
+    return this.drain()
+  }
+
+  /**
    * Singleflight drain of the pending payload — the shared write path
-   * for `flush()` (paused-gated) and `pause()` (gated by its caller's
-   * flag-first ordering).
+   * for `flush()` (paused-gated), `pause()` (gated by its caller's
+   * flag-first ordering), and `flushForTeardown()` (ungated).
    */
   private async drain(): Promise<Result> {
     if (this.flushing) {

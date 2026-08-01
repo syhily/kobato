@@ -11,6 +11,7 @@ vi.mock('@/server/infra/lifecycle', () => ({
 }))
 
 import { InsertBatcher, type FlushResult, replayDeadLetter, writeDeadLetter } from '@/server/infra/db/insert-batcher'
+import { registerShutdownHook } from '@/server/infra/lifecycle'
 
 const tmp = mkdtempSync(join(tmpdir(), 'insert-batcher-test-'))
 afterAll(() => rmSync(tmp, { recursive: true, force: true }))
@@ -117,6 +118,39 @@ describe('server/infra/db/insert-batcher — flush mechanics', () => {
     } finally {
       vi.useRealTimers()
     }
+  })
+
+  it('flushForTeardown drains rows buffered during a pause while flush() stays gated', async () => {
+    TestBatcher.inserted = []
+    const batcher = new TestBatcher({ flushIntervalMs: 60_000, flushThreshold: 100 }, 'test', () => fakeDb())
+    await batcher.pause()
+    batcher.push('held')
+
+    // The normal flush stays gated — the consistency window keeps
+    // write-free for interval/threshold/explicit triggers.
+    expect(await batcher.flush()).toEqual({ committed: 0, deadLettered: 0 })
+    expect(TestBatcher.inserted).toEqual([])
+
+    // The teardown variant (shutdown hook, restore swap) ignores the
+    // gate: rows buffered inside the window must not strand on a SIGTERM
+    // or a database swap — dispose() would discard them right after.
+    expect(await batcher.flushForTeardown()).toEqual({ committed: 1, deadLettered: 0 })
+    expect(TestBatcher.inserted).toEqual([['held']])
+    batcher.resume()
+  })
+
+  it('the shutdown hook flushes through the pause gate (SIGTERM inside a backup window)', async () => {
+    TestBatcher.inserted = []
+    const batcher = new TestBatcher({ flushIntervalMs: 60_000, flushThreshold: 100 }, 'test', () => fakeDb())
+    await batcher.pause()
+    batcher.push('sigterm-window')
+
+    // The constructor registers the hook last among this file's batchers.
+    const hook = vi.mocked(registerShutdownHook).mock.calls.at(-1)![0] as () => Promise<void>
+    await hook()
+
+    expect(TestBatcher.inserted).toEqual([['sigterm-window']])
+    batcher.resume()
   })
 
   it('neither the interval timer nor the threshold fires while paused', async () => {

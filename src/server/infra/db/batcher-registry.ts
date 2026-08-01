@@ -25,6 +25,10 @@ const log = getLogger('batcher-registry')
 /** The slice of a running batcher the registry drives. */
 interface RegisteredBatcher {
   flush(): Promise<unknown>
+  /** Teardown flush that ignores the pause gate — preferred before the
+   *  database swap so rows buffered inside a backup consistency window
+   *  are written instead of stranded by the discard in `dispose`. */
+  flushForTeardown?(): Promise<unknown>
   /** Drain + hold flushes for an external consistency window (analytics backup). */
   pause?(): Promise<unknown>
   /** Release a pause — buffered payloads flush immediately. */
@@ -82,6 +86,9 @@ export function initAllBatchers(handle: DatabaseHandle): void {
 /**
  * Flush every batcher, isolating failures per batcher so one stuck
  * batcher never blocks the rest (or the database swap that follows).
+ * Prefers the teardown flush: the swap may land inside a backup's pause
+ * window, and the paused-gated `flush()` would silently keep those rows
+ * buffered for `dispose()` to discard.
  */
 export async function flushAllBatchers(): Promise<void> {
   for (const entry of entries) {
@@ -89,7 +96,11 @@ export async function flushAllBatchers(): Promise<void> {
       continue
     }
     try {
-      await entry.instance.flush()
+      if (entry.instance.flushForTeardown) {
+        await entry.instance.flushForTeardown()
+      } else {
+        await entry.instance.flush()
+      }
     } catch (error) {
       log.warn('batcher flush failed; continuing with the rest', {
         batcher: entry.name,

@@ -76,6 +76,22 @@ describe('server/infra/db/batcher-registry', () => {
     expect(first.flush.mock.invocationCallOrder[0]!).toBeLessThan(second.flush.mock.invocationCallOrder[0]!)
   })
 
+  it('flushAllBatchers prefers the pause-ignoring teardown flush when the batcher exposes one', async () => {
+    const batcher = {
+      ...fakeBatcher(),
+      flushForTeardown: vi.fn(async () => ({ committed: 1, deadLettered: 0 })),
+    }
+    registerBatcher('test-teardown', () => batcher)
+    initAllBatchers(handle)
+
+    await flushAllBatchers()
+
+    // The restore swap can land inside a backup pause window; the gated
+    // flush() would keep those rows buffered for dispose() to discard.
+    expect(batcher.flushForTeardown).toHaveBeenCalledOnce()
+    expect(batcher.flush).not.toHaveBeenCalled()
+  })
+
   it('flushAllBatchers isolates failures and never rejects', async () => {
     const failing = { flush: vi.fn(async (): Promise<unknown> => Promise.reject(new Error('flush exploded'))) }
     const healthy = fakeBatcher()

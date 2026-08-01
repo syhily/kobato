@@ -1,6 +1,7 @@
 import type { ProviderTrack } from '@/server/domains/music/providers/types'
 import type { Database } from '@/server/infra/db/database'
 import type { MusicRow, NewMusic } from '@/server/infra/db/types'
+import type { StorageDriver } from '@/shared/config/types'
 import type { AdminMusicDto } from '@/shared/contracts/music'
 
 import { toAdminMusicDto } from '@/server/domains/music/projection'
@@ -13,13 +14,40 @@ import {
   MAX_AUDIO_BYTES,
   MAX_COVER_BYTES,
 } from '@/server/domains/music/services/write/shared'
-import { insertMusic, findMusicBySourceAndId, restoreMusic } from '@/server/infra/db/operations/music'
+import { findMusicById, findMusicBySourceAndId, insertMusic, restoreMusic } from '@/server/infra/db/operations/music'
 import { DomainError } from '@/server/infra/http/errors'
 import { processImageBuffer } from '@/server/infra/image/process'
 import { getLogger } from '@/server/infra/logger'
 import { activeBackend, backendFor } from '@/server/infra/storage/registry'
 
 const log = getLogger('music.service')
+
+// Ownership-aware restore rollback (fix-review): a concurrent re-add of
+// the same song restores the SAME soft-deleted row — restoreMusic has no
+// deletedAt guard, so both writers can pass it; when this one then fails
+// on an independent database error, the row (and the storage paths it
+// still claims) may already be live again under the winner. Deleting the
+// objects would orphan that live row — only delete when no row claims
+// the paths. A failed ownership check also skips the delete: an orphaned
+// object is recoverable, an orphaned live row is not. Same shape as the
+// image upload's `deleteObjectUnlessClaimed`.
+async function deleteRestoredObjectsUnlessClaimed(
+  db: Database,
+  rowId: number,
+  driver: StorageDriver,
+  audioStoragePath: string,
+  coverStoragePath: string,
+): Promise<void> {
+  const claimant = await findMusicById(db, rowId).catch(() => null)
+  if (
+    claimant !== null &&
+    claimant.audioStoragePath === audioStoragePath &&
+    claimant.coverStoragePath === coverStoragePath
+  ) {
+    return
+  }
+  await Promise.allSettled([backendFor(driver).delete(audioStoragePath), backendFor(driver).delete(coverStoragePath)])
+}
 
 export interface AddMusicInputs {
   source: string
@@ -157,7 +185,9 @@ export async function addMusic(db: Database, input: AddMusicInputs): Promise<Adm
       driver,
       error,
     })
-    await Promise.allSettled([backendFor(driver).delete(audioStoragePath), backendFor(driver).delete(coverStoragePath)])
+    await (restoring
+      ? deleteRestoredObjectsUnlessClaimed(db, restoring.id, driver, audioStoragePath, coverStoragePath)
+      : Promise.allSettled([backendFor(driver).delete(audioStoragePath), backendFor(driver).delete(coverStoragePath)]))
     throw new DomainError('INTERNAL', '音乐元数据写入失败，请稍后重试')
   }
 

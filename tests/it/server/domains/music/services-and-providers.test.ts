@@ -38,6 +38,7 @@ vi.mock('@/server/infra/image/process', () => ({
 }))
 
 const read = await import('@/server/domains/music/services/read')
+const musicOps = await import('@/server/infra/db/operations/music')
 const publicUrlMod = await import('@/server/infra/storage/public-url')
 const searchService = await import('@/server/domains/music/services/search')
 const addMod = await import('@/server/domains/music/services/write/add')
@@ -374,6 +375,56 @@ describe('music/services/write/add — addMusic', () => {
     expect(second.audioStoragePath).toBe(first.audioStoragePath)
     expect(s3Memory.store.has(second.audioStoragePath)).toBe(true)
     expect(s3Memory.store.has(second.coverStoragePath)).toBe(true)
+  })
+
+  it('keeps the re-uploaded objects when the restore write fails but the row still claims the paths', async () => {
+    // The concurrent-restore race: two re-adds restore the SAME
+    // soft-deleted row (restoreMusic has no deletedAt guard, so both
+    // pass it), then the loser's write fails on an independent database
+    // error. Its rollback must NOT delete the objects the row still
+    // claims — that would orphan the winner's live row (player 404).
+    const row = await seedMusic({
+      source: 'netease',
+      sourceId: 'restore-race',
+      deletedAt: new Date(),
+      storageDriver: 's3',
+      audioStoragePath: 'musics/restore-race.mp3',
+      coverStoragePath: 'musics/restore-race.jpg',
+    })
+    vi.spyOn(registry, 'getProvider').mockReturnValueOnce({
+      source: 'netease',
+      search: vi.fn(),
+      getTrack: vi.fn(async () => ({
+        source: 'netease',
+        sourceId: 'restore-race',
+        name: 'Song',
+        artist: ['Singer'],
+        album: 'Album',
+        picId: 'pic',
+        urlId: 'url',
+        lyricId: 'lyric',
+      })),
+      resolveAudioUrl: vi.fn(async () => 'https://up.example.com/audio.mp3'),
+      resolveCoverUrl: vi.fn(async () => 'https://up.example.com/cover.jpg'),
+      getLyric: vi.fn(async () => '[00:00] Hi'),
+    })
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response(new Uint8Array(4), { status: 200, headers: { 'content-length': '4' } })),
+    )
+    // The winner's restore landed (the row is live again on the same
+    // paths); the loser's restore then fails on an independent error.
+    vi.spyOn(musicOps, 'restoreMusic').mockImplementationOnce(async () => {
+      await db.update(music).set({ deletedAt: null }).where(eq(music.id, row.id))
+      throw new Error('independent database error')
+    })
+
+    await expect(addMod.addMusic(db, { source: 'netease', sourceId: 'restore-race', uploader: null })).rejects.toThrow(
+      /音乐元数据写入失败/,
+    )
+
+    expect(s3Memory.store.has('musics/restore-race.mp3')).toBe(true)
+    expect(s3Memory.store.has('musics/restore-race.jpg')).toBe(true)
   })
 })
 
