@@ -173,7 +173,14 @@ export async function saveBody<TMeta, TPreview>(
     }
   }
   if (mode === 'publish' && wroteSuccessfully) {
-    await adapter.afterPublish(db, meta, body, warnings)
+    // The publish transaction rewrote the meta row (`publishedRevisionId`,
+    // `published`, `publishedAt` — possibly a future schedule): re-read it
+    // so afterPublish consumers see the post-publish state. The webmention
+    // outbox hook reads `meta.publishedAt` to push a scheduled post's
+    // waterline to the publish instant; the pre-publish `meta` (NULL for a
+    // fresh post) would fire the mentions early.
+    const publishedMeta = adapter.findMetaById(db, input.entityId) ?? meta
+    await adapter.afterPublish(db, publishedMeta, body, warnings)
     // A publish can set a future `publishedAt` (scheduling) — re-arm the
     // scheduled-publish timer (no-op until the scheduler is started).
     rescheduleScheduledPublish()
