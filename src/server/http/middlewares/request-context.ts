@@ -28,7 +28,18 @@ function getDirectRemoteAddress(c: { env: unknown }): string | undefined {
   const socket = unsafeCast<Record<string, unknown> | undefined>(
     unsafeCast<Record<string, unknown> | undefined>(incoming)?.socket,
   )
-  return typeof socket?.remoteAddress === 'string' ? socket.remoteAddress : undefined
+  if (typeof socket?.remoteAddress === 'string') {
+    return socket.remoteAddress
+  }
+  // node-server can report an undefined remoteAddress (e.g. behind a TCP
+  // reverse proxy) while remotePort is still known. Keying on `port:<n>`
+  // keeps rate-limit buckets per connection instead of collapsing every
+  // such peer into one shared 'unknown' bucket (V3-09). Unix sockets
+  // expose neither and keep the 'unknown' fallback in `getClientAddress`.
+  if (typeof socket?.remotePort === 'number') {
+    return `port:${socket.remotePort}`
+  }
+  return undefined
 }
 
 export interface DerivedRequest {

@@ -12,6 +12,13 @@
  * Falls back to `'unknown'` when no direct IP is provided (e.g. behind a
  * Unix-socket reverse proxy). The placeholder is deliberately NOT a
  * loopback address, so proxy headers stay untrusted in that case.
+ *
+ * Deployment constraint: under a Unix-socket reverse proxy every request
+ * shares the single `'unknown'` bucket, so IP-keyed rate limiting degrades
+ * to one global per-instance bucket — the fronting proxy should rate-limit
+ * at the edge. Where the socket still reports a remote port, the caller
+ * keys on `port:<n>` instead (per-connection buckets); a non-IP direct
+ * peer like that passes through verbatim below since it is never loopback.
  */
 
 const IPV4_RE = /^(?:(?:25[0-5]|2[0-4]\d|1?\d{1,2})\.){3}(?:25[0-5]|2[0-4]\d|1?\d{1,2})$/

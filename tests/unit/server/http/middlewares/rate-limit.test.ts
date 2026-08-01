@@ -17,6 +17,17 @@ function buildApp(...args: Parameters<typeof rateLimitByIp>) {
   return app
 }
 
+/** Same shape as buildApp, with a caller-picked client address. */
+function buildAppWithAddress(clientAddress: string, ...args: Parameters<typeof rateLimitByIp>) {
+  const app = new Hono<Env>()
+  app.use('*', async (c, next) => {
+    c.set('requestContext', { clientAddress } as unknown as Env['Variables']['requestContext'])
+    await next()
+  })
+  app.get('/ping', rateLimitByIp(...args), (c) => c.text('pong'))
+  return app
+}
+
 /** Shrink the `resourceIp` bucket so the second hit in a window trips. */
 function seedSingleAttemptResourceBucket() {
   setBlogSettingsBundleForTests({
@@ -39,6 +50,24 @@ describe('rateLimitByIp middleware', () => {
     expect(res.status).toBe(200)
     await expect(res.text()).resolves.toBe('pong')
     expect(__rateLimitKeysForTests()).toEqual(['rate-limit:feed:203.0.113.7'])
+  })
+
+  // V3-09: when the peer IP is unknown but the socket port is known, the
+  // request-context middleware keys the address on `port:<n>` — the bucket
+  // must follow that per-connection discriminator instead of the shared
+  // 'unknown' bucket.
+  it('keys the bucket on the per-connection port when the peer IP is unknown', async () => {
+    const res = await buildAppWithAddress('port:43210', 'feed', 'resourceIp').request('/ping')
+
+    expect(res.status).toBe(200)
+    expect(__rateLimitKeysForTests()).toEqual(['rate-limit:feed:port:43210'])
+  })
+
+  it('falls back to the shared unknown bucket when neither IP nor port is known', async () => {
+    const res = await buildAppWithAddress('unknown', 'feed', 'resourceIp').request('/ping')
+
+    expect(res.status).toBe(200)
+    expect(__rateLimitKeysForTests()).toEqual(['rate-limit:feed:unknown'])
   })
 
   it('answers 429 with the default HTTPException shape when exceeded', async () => {

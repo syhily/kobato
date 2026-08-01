@@ -1,4 +1,4 @@
-import { Link, useRouteLoaderData } from 'react-router'
+import { Link } from 'react-router'
 
 import type { ClientTag, SidebarPostLink } from '@/shared/types/catalog'
 import type { LatestComment } from '@/shared/types/comments'
@@ -8,6 +8,7 @@ import { formatLocalDate } from '@/shared/utils/formatter'
 import { safeHref } from '@/shared/utils/safe-url'
 import { Tooltip } from '@/ui/components/tooltip'
 import { cn } from '@/ui/lib/cn'
+import { useChromeClock } from '@/ui/public/chrome/use-chrome-clock'
 import { SearchBar } from '@/ui/public/Search'
 
 // Sidebar shell — sticky at xl, card surface with constant padding.
@@ -203,11 +204,9 @@ function WidgetTitle({ children, tooltip }: { children: string; tooltip: string 
 
 function TodayCalendar() {
   const siteIdentity = useSiteIdentity()
-  // The root loader's clock, so SSR and hydration pick the same calendar
-  // PNG at the day boundary (audit P2-23); the Date fallback only fires in
-  // router-less test renders.
-  const nowIso = useRouteLoaderData<{ nowIso?: string }>('root')?.nowIso
-  const today = nowIso === undefined ? new Date() : new Date(nowIso)
+  // Hydration-safe live clock — SSR/hydration use the root loader's instant,
+  // then the mounted client clock takes over (see useChromeClock).
+  const today = useChromeClock()
   const year = formatLocalDate(today, 'yyyy', siteIdentity)
   const monthDay = formatLocalDate(today, 'LLdd', siteIdentity)
   const lightImage = `/images/calendar/${year}/${monthDay}.png`

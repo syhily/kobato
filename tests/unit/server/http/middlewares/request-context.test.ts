@@ -48,14 +48,15 @@ describe('requestContextMiddleware', () => {
     vi.doMock('@/server/http/middlewares/visitor-cookie', () => ({
       isExempt: (path: string) => path.startsWith('/feed'),
     }))
+    const getClientAddress = vi.fn().mockReturnValue('192.168.1.1')
     vi.doMock('@/server/http/utils/client-address', () => ({
-      getClientAddress: vi.fn().mockReturnValue('192.168.1.1'),
+      getClientAddress,
     }))
 
     const { requestContextMiddleware } = await import('@/server/http/middlewares/request-context')
     const app = new Hono<Env>()
     app.use(requestContextMiddleware)
-    return { app, session, user, ensureCsrfToken, commitSessionWithMaxAge }
+    return { app, session, user, ensureCsrfToken, commitSessionWithMaxAge, getClientAddress }
   }
 
   // The persisted-session contract: the request carries the signed
@@ -92,6 +93,26 @@ describe('requestContextMiddleware', () => {
     const res = await app.request('/', { headers: sessionCookie })
     expect(res.status).toBe(200)
     expect(res.headers.get('Set-Cookie')).toBe('__session=abc')
+  })
+
+  // V3-09: node-server can report an undefined socket.remoteAddress (e.g.
+  // behind a TCP reverse proxy) while remotePort is still known — key the
+  // direct peer on `port:<n>` so rate limits stay per connection.
+  it('keys the direct peer on the socket port when remoteAddress is unavailable', async () => {
+    const { app, getClientAddress } = await buildApp()
+    app.get('/', (c) => c.json({ ok: true }))
+    const env = { incoming: { socket: { remotePort: 43210 } } }
+    const res = await app.request('/', { headers: sessionCookie }, env)
+    expect(res.status).toBe(200)
+    expect(getClientAddress).toHaveBeenCalledWith(expect.any(Request), 'port:43210')
+  })
+
+  it('leaves the direct peer undefined when the socket reports neither address nor port (Unix socket)', async () => {
+    const { app, getClientAddress } = await buildApp()
+    app.get('/', (c) => c.json({ ok: true }))
+    const res = await app.request('/', { headers: sessionCookie }, { incoming: { socket: {} } })
+    expect(res.status).toBe(200)
+    expect(getClientAddress).toHaveBeenCalledWith(expect.any(Request), undefined)
   })
 
   it('sets Set-Cookie when session resolution is dirty', async () => {

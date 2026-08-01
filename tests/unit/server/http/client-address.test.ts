@@ -20,6 +20,15 @@ describe('server/http/utils/client-address — getClientAddress', () => {
     expect(getClientAddress(buildRequest())).toBe('unknown')
   })
 
+  // V3-09: when the socket reports no remoteAddress but a remotePort, the
+  // caller keys on `port:<n>` (per-connection buckets). The non-IP peer is
+  // never loopback, so it passes through verbatim and proxy headers stay
+  // untrusted.
+  it('passes a port-keyed direct peer through verbatim, ignoring proxy headers', () => {
+    const req = buildRequest({ 'x-forwarded-for': '198.51.100.1' })
+    expect(getClientAddress(req, 'port:43210')).toBe('port:43210')
+  })
+
   // P0-5 regression: behind a Unix-socket reverse proxy the direct peer IP
   // is undefined. Trusting proxy headers in that case lets any remote
   // client spoof its IP and bypass every IP-keyed rate limit.
