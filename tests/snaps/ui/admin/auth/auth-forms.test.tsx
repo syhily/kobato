@@ -1,14 +1,12 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import { renderInRouter, stableHtml } from '#/_helpers/render'
-import {
-  LoginForm,
-  LostPasswordForm,
-  MagicLinkConfirmForm,
-  OtpForm,
-  ResetPasswordForm,
-} from '@/ui/admin/auth/AdminCredentialsForm'
+import { LoginForm } from '@/ui/admin/auth/AdminCredentialsForm'
 import { AdminInstallForm } from '@/ui/admin/auth/AdminInstallForm'
+import { LostPasswordForm } from '@/ui/admin/auth/LostPasswordForm'
+import { MagicLinkConfirmForm } from '@/ui/admin/auth/MagicLinkConfirmForm'
+import { OtpForm } from '@/ui/admin/auth/OtpForm'
+import { ResetPasswordForm } from '@/ui/admin/auth/ResetPasswordForm'
 import { SetupTokenVerifyForm } from '@/ui/admin/auth/SetupTokenVerifyForm'
 
 vi.mock('@simplewebauthn/browser', () => ({

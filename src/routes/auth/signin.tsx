@@ -16,13 +16,11 @@ import { getRequestContext } from '@/server/http/request-context'
 import { titleMeta } from '@/shared/seo/title-meta'
 import { safeRedirectPath } from '@/shared/utils/safe-url'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
-import {
-  LoginForm,
-  LostPasswordForm,
-  MagicLinkConfirmForm,
-  OtpForm,
-  ResetPasswordForm,
-} from '@/ui/admin/auth/AdminCredentialsForm'
+import { LoginForm } from '@/ui/admin/auth/AdminCredentialsForm'
+import { LostPasswordForm } from '@/ui/admin/auth/LostPasswordForm'
+import { MagicLinkConfirmForm } from '@/ui/admin/auth/MagicLinkConfirmForm'
+import { OtpForm } from '@/ui/admin/auth/OtpForm'
+import { ResetPasswordForm } from '@/ui/admin/auth/ResetPasswordForm'
 import { BrandLogo } from '@/ui/public/chrome/BrandLogo'
 
 import type { Route } from './+types/signin'

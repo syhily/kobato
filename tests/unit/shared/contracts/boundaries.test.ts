@@ -931,7 +931,7 @@ describe('contract: module and bundle boundaries', () => {
     })
     const directInputAllowlist = new Set([
       // Test-mail recipient is transient action state, not persisted settings.
-      'src/ui/admin/settings/MailForm.tsx',
+      'src/ui/admin/settings/MailTestCard.tsx',
     ])
 
     const bareInputOffenders = settingsCardFiles.filter((file) => {
