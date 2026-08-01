@@ -11,29 +11,15 @@ const rateLimitBucketSchema = z.object({
   maxAttempts: z.coerce.number().int().min(rateLimitBounds.maxAttempts.min).max(rateLimitBounds.maxAttempts.max),
 })
 
-export const RATE_LIMIT_BUCKET_KEYS = [
-  'signInIp',
-  'signInEmail',
-  'commentPostIp',
-  'commentPostEmail',
-  'likeIncreaseIp',
-  'inviteIp',
-  'inviteEmail',
-  'passwordResetIp',
-  'passwordResetEmail',
-  'passwordResetTarget',
-  'resourceIp',
-  'otpSendIp',
-  'otpSendEmail',
-  'otpVerifyIp',
-  'otpVerifyEmail',
-  'passkeyAuthBeginIp',
-  'passkeyAuthFinishIp',
-  'passkeyRegisterBeginIp',
-  'passkeyRegisterFinishIp',
-  'passkeySetForceIp',
-  'passkeyDeleteIp',
-] as const
+// `rateLimitDefaults` is the single source of truth for the bucket set
+// (P1-26): the install seed, the settings backfill, and the infra
+// limiter's fallback all read it. The key tuple is DERIVED so adding a
+// bucket is a one-file edit; `Object.keys` widens to `string[]`, so
+// narrow back to the concrete key set (the runtime value IS exactly the
+// defaults' keys, in declaration order).
+export const RATE_LIMIT_BUCKET_KEYS = unsafeCast<readonly (keyof typeof rateLimitDefaults)[]>(
+  Object.keys(rateLimitDefaults),
+)
 
 // `Object.fromEntries` widens the shape's static type to an index
 // signature; the runtime shape is exactly one bucket schema per

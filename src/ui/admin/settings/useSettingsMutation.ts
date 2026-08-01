@@ -1,5 +1,6 @@
 import { useMutation } from '@tanstack/react-query'
 import { useCallback, useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
 import type { SettingsSection } from '@/shared/config/sections'
 import type { SettingsSectionPatch } from '@/shared/config/types'
@@ -54,6 +55,13 @@ export function useSettingsMutation(): UseSettingsMutationResult {
           payload: unsafeCast<Record<string, unknown>>(payload),
         })
         setStatus('saved')
+        // The section IS persisted; warnings mean a post-save side effect
+        // (schedule re-arm, transport cache) failed and the derived state
+        // is stale. Show them as warnings, not errors — the baseline below
+        // is still honestly adopted.
+        for (const warning of result.warnings) {
+          toast.warning(warning)
+        }
         return { ok: true, section: result.section }
       } catch (error: unknown) {
         setStatus('error')

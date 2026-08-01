@@ -20,12 +20,24 @@ import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const log = getLogger('settings.service')
 
+export interface SectionUpdateResult {
+  bundle: BlogSettingsBundle | null
+  /**
+   * Honest side-effect failures: the section row IS persisted, but a
+   * registered change handler (reschedule backup/archive, mail transport
+   * cache invalidation) threw, so the derived state is stale until the
+   * next successful save or a restart. Surfaced to the admin instead of
+   * only landing in the server log (P1-5).
+   */
+  warnings: string[]
+}
+
 export async function updateBlogSettingsSection<S extends SettingsSection>(
   db: Database,
   section: S,
   payload: unknown,
   updatedBy: number | null,
-): Promise<BlogSettingsBundle | null> {
+): Promise<SectionUpdateResult> {
   const meta = SECTION_REGISTRY[section]
   // Strict key check before any DB work: unknown keys (loader mask
   // fields, renamed keys) are a client bug — 400 with the issue list. The
@@ -84,16 +96,21 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
   })
   const bundle = await refreshBlogSettings(db)
 
+  const warnings: string[] = []
   const handler = sectionChangeHandler(section)
   if (handler) {
     try {
       await handler()
     } catch (e: unknown) {
+      // The write already committed — throwing here would report a
+      // failure for a change that IS persisted (and the controller would
+      // skip the audit record). Succeed with an explicit warning instead.
       log.error('Section change handler failed', { section, error: String(e) })
+      warnings.push('设置已保存，但关联任务未能重新应用；新设置可能要重启后才会完全生效。')
     }
   }
 
-  return bundle
+  return { bundle, warnings }
 }
 
 /**

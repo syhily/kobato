@@ -2,9 +2,20 @@ import { z } from 'zod'
 
 import { coerceBoolean } from '@/server/domains/settings/sections/shared'
 
+// Prefixes an admin must never be able to CSRF-exempt: `/rpc` fronts
+// every oRPC procedure, and `/api` fronts the Hono API surface behind
+// `csrfGuard` (upload/restore/branding/maxmind). Exempting either prefix
+// silently disables CSRF on state-changing routes (P1-16). The check is
+// segment-boundary aware, mirroring `isPathExempt`'s match semantics in
+// `@/server/domains/auth/csrf`.
+const DANGEROUS_EXEMPT_PREFIXES = ['/rpc', '/api'] as const
+
 function isDangerousExemptPath(path: string): boolean {
   const normalized = path.trim()
-  return normalized === '/' || normalized === '/rpc' || normalized === '/rpc/' || normalized.startsWith('/rpc/')
+  if (normalized === '/') {
+    return true
+  }
+  return DANGEROUS_EXEMPT_PREFIXES.some((prefix) => normalized === prefix || normalized.startsWith(`${prefix}/`))
 }
 
 export const securitySchema = z.object({
@@ -16,7 +27,7 @@ export const securitySchema = z.object({
       .default([])
       .refine((paths: string[]) => !paths.some(isDangerousExemptPath), {
         message:
-          'Exempt paths cannot blanket-disable CSRF for all RPC endpoints. Paths starting with /rpc/ are not allowed.',
+          'Exempt paths cannot blanket-disable CSRF for RPC or API endpoints. Paths starting with /rpc/ or /api/ are not allowed.',
       }),
   }),
   cors: z

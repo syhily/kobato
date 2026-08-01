@@ -92,21 +92,21 @@ function CsrfExemptPathsCard({ security }: { security: SecuritySettings }) {
   return (
     <SettingGroup
       title="路径豁免"
-      description="匹配这些前缀的 /rpc/* 路径将跳过 CSRF 验证。适用于 Webhook 回调或需要无令牌访问的特定端点。"
+      description="匹配这些前缀的请求将跳过 CSRF 验证。适用于 Webhook 回调或需要无令牌访问的特定端点；/rpc 与 /api 前缀不可豁免。"
       {...settingGroupProps}
     >
       <SettingGroupContent>
-        <SettingsRow label="豁免路径" hint={`输入路径前缀（如 /rpc/public.comments），最多 ${MAX_EXEMPT_PATHS} 条。`}>
+        <SettingsRow label="豁免路径" hint={`输入路径前缀（如 /webhook/github），最多 ${MAX_EXEMPT_PATHS} 条。`}>
           <div className="flex flex-col gap-3">
             {rows.fields.length === 0 ? (
-              <p className="text-sm text-muted-foreground">无豁免路径。所有 /rpc/* 请求均需携带令牌。</p>
+              <p className="text-sm text-muted-foreground">无豁免路径。所有请求均需携带令牌。</p>
             ) : (
               rows.fields.map((field, index) => (
                 <div key={field.id} className="flex items-center gap-2">
                   <SettingsInput
                     flushOnBlur={flushOnBlur}
                     type="text"
-                    placeholder="/rpc/public.comments"
+                    placeholder="/webhook/github"
                     className="flex-1"
                     {...form.register(`exemptPaths.${index}.path` as const)}
                   />

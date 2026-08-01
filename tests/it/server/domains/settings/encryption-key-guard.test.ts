@@ -61,7 +61,7 @@ describe('settings service — ENCRYPTION_KEY guard', () => {
     )
 
     expect(result).not.toBeNull()
-    expect(result?.siteIdentity?.title).toBe('Test')
+    expect(result.bundle?.siteIdentity?.title).toBe('Test')
 
     const rows = await db.select().from(setting).where(eq(setting.scope, 'blog.general'))
     expect(rows).toHaveLength(1)

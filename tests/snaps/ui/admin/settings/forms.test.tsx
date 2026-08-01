@@ -126,7 +126,7 @@ describe('snapshot: FontsForm', () => {
 describe('snapshot: SecurityForm', () => {
   it('renders CSRF enabled, CORS disabled and Passkey eligible states', () => {
     const security: SecuritySettings = {
-      csrf: { enabled: true, exemptPaths: ['/rpc/public.comments'] },
+      csrf: { enabled: true, exemptPaths: ['/webhook/github'] },
       cors: { enabled: false, origins: [] },
       passkey: { enabled: false },
     }
@@ -159,7 +159,7 @@ describe('snapshot: SecurityForm', () => {
     }
     const html = stableHtml(renderToHtml(<SecurityForm security={security} />))
     // Empty exempt paths copy (no rows -> the empty <p> branch).
-    expect(html).toContain('无豁免路径。所有 /rpc/* 请求均需携带令牌。')
+    expect(html).toContain('无豁免路径。所有请求均需携带令牌。')
     // CORS enabled: two origin rows emitted (values themselves are
     // uncontrolled, so assert on the field-array row names instead).
     expect(html).toContain('name="origins.0.url"')

@@ -27,12 +27,12 @@ const update = adminProc
   // is per-section); the REAL runtime gate lives in
   // `projectSectionForAdmin`, which validates against the per-section
   // schema at assembly time.
-  .output(z.object({ section: z.unknown() }))
+  .output(z.object({ section: z.unknown(), warnings: z.array(z.string()) }))
   .handler(async ({ input, context }) => {
     const editorId = safeBigInt(context.viewer.id)
     // DomainError translation lives in orpc-base's domainErrorGuard —
     // no per-controller catch here.
-    const bundle = await updateBlogSettingsSection(context.db, input.section, input.payload, editorId)
+    const { bundle, warnings } = await updateBlogSettingsSection(context.db, input.section, input.payload, editorId)
     recordAuditEventFromContext(context, {
       action: 'settings_updated',
       resourceType: 'setting',
@@ -43,7 +43,7 @@ const update = adminProc
       throw new ORPCError('INTERNAL_SERVER_ERROR', { message: '设置保存后无法读取最新配置。' })
     }
     const masks = computeSecretMasks(bundle)
-    return { section: projectSectionForAdmin(input.section, bundle, masks) }
+    return { section: projectSectionForAdmin(input.section, bundle, masks), warnings }
   })
 
 export const adminSettingsRouter = { update }

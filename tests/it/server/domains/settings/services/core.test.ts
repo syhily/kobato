@@ -103,8 +103,33 @@ describe('server/domains/settings/services/core', () => {
 
     const result = await updateBlogSettingsSection(db, 'limits', { maxRequestBodySize: 2048 }, null)
 
-    expect(result?.limits?.maxRequestBodySize).toBe(2048)
+    expect(result.bundle?.limits?.maxRequestBodySize).toBe(2048)
     expect(observed).toBe(2048)
+  })
+
+  it('surfaces a section change handler failure as a save warning', async () => {
+    // The row IS committed before the handler runs, so failing the whole
+    // response would lie about the persisted state (and skip the audit
+    // record). The honest shape: succeed with an explicit warning the
+    // client renders, so a stale derived state (reschedule / transport
+    // cache) is never silent (P1-5).
+    registerSectionChangeHandler('limits', () => {
+      throw new Error('reschedule blew up')
+    })
+
+    const result = await updateBlogSettingsSection(db, 'limits', { maxRequestBodySize: 2048 }, null)
+
+    expect(result.bundle?.limits?.maxRequestBodySize).toBe(2048)
+    expect(result.warnings).toHaveLength(1)
+    expect(result.warnings[0]).toContain('设置已保存')
+  })
+
+  it('reports no warnings when the section change handler succeeds', async () => {
+    registerSectionChangeHandler('limits', () => {})
+
+    const result = await updateBlogSettingsSection(db, 'limits', { maxRequestBodySize: 2048 }, null)
+
+    expect(result.warnings).toEqual([])
   })
 
   it('awaits the handler and does not swallow synchronous errors', async () => {
@@ -115,7 +140,8 @@ describe('server/domains/settings/services/core', () => {
 
     const result = await updateBlogSettingsSection(db, 'limits', { maxRequestBodySize: 2048 }, null)
 
-    expect(result?.limits?.maxRequestBodySize).toBe(2048)
+    expect(result.bundle?.limits?.maxRequestBodySize).toBe(2048)
+    expect(result.warnings).toHaveLength(1)
     expect(__logCaptureForTests()).toContainEqual(
       expect.objectContaining({
         level: 'error',
@@ -137,7 +163,8 @@ describe('server/domains/settings/services/core', () => {
 
     const result = await updateBlogSettingsSection(db, 'limits', { maxRequestBodySize: 2048 }, null)
 
-    expect(result?.limits?.maxRequestBodySize).toBe(2048)
+    expect(result.bundle?.limits?.maxRequestBodySize).toBe(2048)
+    expect(result.warnings).toHaveLength(1)
     expect(__logCaptureForTests()).toContainEqual(
       expect.objectContaining({
         level: 'error',

@@ -283,7 +283,7 @@ describe('services/settings — updateBlogSettingsSection', () => {
     expect(data.title).toBe('雨帆')
     expect(data.settings).toBeUndefined()
     // The post-write snapshot refresh re-read the database.
-    expect(next?.siteIdentity?.title).toBe('雨帆')
+    expect(next.bundle?.siteIdentity?.title).toBe('雨帆')
   })
 
   it("writes the assets patch to scope='blog.assets' only and preserves the unchanged secret", async () => {
@@ -537,7 +537,7 @@ describe('services/settings — rateLimit section', () => {
       signInIp: { windowSeconds: 600, maxAttempts: 3 },
       likeIncreaseIp: { windowSeconds: 60 * 5, maxAttempts: 100 },
     })
-    expect(next?.rateLimit?.signInIp).toEqual({ windowSeconds: 600, maxAttempts: 3 })
+    expect(next.bundle?.rateLimit?.signInIp).toEqual({ windowSeconds: 600, maxAttempts: 3 })
   })
 
   it('rejects a window shorter than 60s', async () => {
@@ -623,7 +623,7 @@ describe('services/settings — cache section', () => {
     expect((cache.og as Record<string, unknown>).prefix).toBe('opengraph:')
     expect((cache.calendar as Record<string, unknown>).prefix).toBe('cal:')
     expect((cache.avatar as Record<string, unknown>).prefix).toBe('gravatar:')
-    expect(next?.cache?.cache.og.prefix).toBe('opengraph:')
+    expect(next.bundle?.cache?.cache.og.prefix).toBe('opengraph:')
   })
 
   it('rejects two buckets sharing the same prefix', async () => {
@@ -783,8 +783,8 @@ describe('services/settings — security section', () => {
       enabled: true,
       origins: ['https://example.com', 'https://app.example.com'],
     })
-    expect(next?.security?.cors.enabled).toBe(true)
-    expect(next?.security?.cors.origins).toEqual(['https://example.com', 'https://app.example.com'])
+    expect(next.bundle?.security?.cors.enabled).toBe(true)
+    expect(next.bundle?.security?.cors.origins).toEqual(['https://example.com', 'https://app.example.com'])
   })
 
   it('rejects an origin that is not a valid URL-like string (min length)', async () => {
