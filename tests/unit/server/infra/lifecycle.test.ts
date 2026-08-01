@@ -113,6 +113,20 @@ describe('lifecycle', () => {
     await expect(closeHttpServer()).resolves.toBeUndefined()
   })
 
+  it('detaches the server on close so a second close is a no-op', async () => {
+    // The self-update restart closes the socket before spawning the
+    // replacement process; the graceful chain's own close afterwards must
+    // not double-close (audit P0-7).
+    const closeFn = vi.fn((cb: (err?: Error) => void) => cb())
+    const fakeServer = Object.create(NodeHttpServer.prototype)
+    fakeServer.close = closeFn
+    setHttpServer(fakeServer)
+    await closeHttpServer()
+    expect(getContainer().httpServer).toBeNull()
+    await closeHttpServer()
+    expect(closeFn).toHaveBeenCalledOnce()
+  })
+
   it('requests shutdown and runs hooks', async () => {
     vi.useFakeTimers()
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never)

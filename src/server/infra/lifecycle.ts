@@ -68,6 +68,11 @@ export async function closeHttpServer(timeoutMs = DEFAULT_CLOSE_TIMEOUT_MS): Pro
     return
   }
   const nodeServer = container.httpServer
+  // Detach up front so a close is idempotent: the self-update restart
+  // closes the socket before spawning the replacement process, and the
+  // graceful chain's own close in `performShutdown` must then be a no-op
+  // rather than a "Server is not running" warning.
+  container.httpServer = null
   nodeServer.closeIdleConnections?.()
 
   await new Promise<void>((resolve) => {
