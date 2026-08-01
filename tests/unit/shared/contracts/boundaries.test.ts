@@ -89,6 +89,42 @@ function importSpecifiers(source: string): string[] {
   return [...source.matchAll(specifierRe)].map((match) => match[1])
 }
 
+// Specifiers bound by VALUE imports (static, side-effect, and dynamic) in a
+// comment-stripped source. `import type …` is erased at compile time and
+// excluded — a check that bans runtime coupling must not flag it. Matching
+// runs across the whole source, so a multiline import whose `from '…'`
+// clause sits on its own line is still caught (a per-line
+// `startsWith('import')` scan misses those).
+function valueImportSpecifiers(source: string): string[] {
+  const specifiers: string[] = []
+  const staticRe = /\bimport\s+([^'";]*?)\s+from\s*['"]([^'"]+)['"]/g
+  for (const match of source.matchAll(staticRe)) {
+    if (!/^\s*type[\s{]/.test(match[1])) {
+      specifiers.push(match[2])
+    }
+  }
+  const bareRe = /\bimport\s*['"]([^'"]+)['"]/g
+  for (const match of source.matchAll(bareRe)) {
+    specifiers.push(match[1])
+  }
+  const dynamicRe = /\bimport\s*\(\s*['"]([^'"]+)['"]/g
+  for (const match of source.matchAll(dynamicRe)) {
+    specifiers.push(match[1])
+  }
+  return specifiers
+}
+
+// A relative specifier resolves against the importing file; everything else
+// (`@/` aliases, package names, node: builtins) passes through unchanged.
+// Layer checks compare against BOTH the `@/…` alias and the resolved
+// `src/…` path so a `../` escape cannot bypass an alias-only ban.
+function resolveSpecifier(file: string, specifier: string): string {
+  if (specifier.startsWith('./') || specifier.startsWith('../')) {
+    return posixNormalize(`${posixDirname(file)}/${specifier}`)
+  }
+  return specifier
+}
+
 // Local names bound by `import … from '…'` statements. Used to tell an
 // import-then-export facade apart from a legal `const x = …; export { x }`:
 // only exported bindings that came from an import are facades.
@@ -123,13 +159,19 @@ function importedBindings(source: string): Set<string> {
 
 describe('contract: module and bundle boundaries', () => {
   it('keeps value imports from @/server out of shared modules', () => {
-    const offenders = files('src/shared', '-g', '*.ts', '-g', '*.tsx').filter((file) => {
-      const source = readFileSync(file, 'utf8')
-      return source.split('\n').some((line) => {
-        const trimmed = line.trim()
-        return trimmed.startsWith('import') && !trimmed.startsWith('import type') && trimmed.includes('@/server/')
-      })
-    })
+    // `@/shared/*` is bundled for server AND browser, so a value import of
+    // a server module would drag the server graph into the client bundle.
+    // Type imports are erased and stay legal. Both `@/server/…` aliases
+    // and relative `../server/…` escapes count.
+    const offenders: string[] = []
+    for (const file of files('src/shared', '-g', '*.ts', '-g', '*.tsx')) {
+      for (const specifier of valueImportSpecifiers(stripComments(readFileSync(file, 'utf8')))) {
+        const target = resolveSpecifier(file, specifier)
+        if (target.startsWith('@/server/') || target.startsWith('src/server/')) {
+          offenders.push(`${file}: ${specifier}`)
+        }
+      }
+    }
 
     expect(offenders).toEqual([])
   })
@@ -210,7 +252,10 @@ describe('contract: module and bundle boundaries', () => {
         continue
       }
       for (const specifier of importSpecifiers(stripComments(readFileSync(file, 'utf8')))) {
-        if (rule.banned.some((banned) => specifier.startsWith(banned))) {
+        // Compare against the alias AND the resolved src/ path — a relative
+        // `../domains/…` escape must trip the same ban.
+        const target = resolveSpecifier(file, specifier)
+        if (rule.banned.some((banned) => target.startsWith(banned) || target.startsWith(`src/${banned.slice(2)}`))) {
           offenders.push(`${file}: ${specifier}`)
         }
       }
@@ -449,7 +494,13 @@ describe('contract: module and bundle boundaries', () => {
     const offenders: string[] = []
     for (const file of files('src/server', '-g', '*.ts', '-g', '*.tsx')) {
       for (const specifier of importSpecifiers(stripComments(readFileSync(file, 'utf8')))) {
-        if (specifier.startsWith('@/client/') || specifier.startsWith('@/ui/')) {
+        const target = resolveSpecifier(file, specifier)
+        if (
+          target.startsWith('@/client/') ||
+          target.startsWith('@/ui/') ||
+          target.startsWith('src/client/') ||
+          target.startsWith('src/ui/')
+        ) {
           offenders.push(`${file}: ${specifier}`)
         }
       }
@@ -466,7 +517,8 @@ describe('contract: module and bundle boundaries', () => {
     const offenders: string[] = []
     for (const file of files('src/shared', '-g', '*.ts', '-g', '*.tsx')) {
       for (const specifier of importSpecifiers(stripComments(readFileSync(file, 'utf8')))) {
-        if (specifier.startsWith('@/client/')) {
+        const target = resolveSpecifier(file, specifier)
+        if (target.startsWith('@/client/') || target.startsWith('src/client/')) {
           offenders.push(`${file}: ${specifier}`)
         }
       }
@@ -494,26 +546,25 @@ describe('contract: module and bundle boundaries', () => {
     // Route `meta()` exports pull `shared/seo` into the browser bundle, so a
     // server-layer or node-only import there would leak into every route
     // chunk. This pins mechanically what the old `server/render/seo` path
-    // only documented in a comment.
+    // only documented in a comment. Whole-file matching catches multiline
+    // imports; relative `../` escapes resolve to their `src/…` target.
     const offenders: string[] = []
     for (const file of files('src/shared/seo', '-g', '*.ts', '-g', '*.tsx')) {
-      const source = readFileSync(file, 'utf8')
-      for (const line of source.split('\n')) {
-        const trimmed = line.trim()
-        if (!trimmed.startsWith('import')) {
-          continue
+      const source = stripComments(readFileSync(file, 'utf8'))
+      // `node:` specifiers are browser-hostile even in type positions.
+      for (const specifier of importSpecifiers(source)) {
+        if (specifier.startsWith('node:')) {
+          offenders.push(`${file}: ${specifier}`)
         }
-        if (/from\s+['"]node:/.test(trimmed)) {
-          offenders.push(`${file}: ${trimmed}`)
-          continue
-        }
-        // `import type` is erased at compile time and stays legal.
-        if (trimmed.startsWith('import type')) {
-          continue
-        }
-        const specifier = /from\s+['"]([^'"]+)['"]/.exec(trimmed)?.[1]
-        if (specifier !== undefined && specifier.startsWith('@/') && !specifier.startsWith('@/shared/')) {
-          offenders.push(`${file}: ${trimmed}`)
+      }
+      // `import type` is erased at compile time and stays legal otherwise.
+      for (const specifier of valueImportSpecifiers(source)) {
+        const target = resolveSpecifier(file, specifier)
+        if (
+          (target.startsWith('@/') && !target.startsWith('@/shared/')) ||
+          (target.startsWith('src/') && !target.startsWith('src/shared/'))
+        ) {
+          offenders.push(`${file}: ${specifier}`)
         }
       }
     }
@@ -786,29 +837,36 @@ describe('contract: module and bundle boundaries', () => {
     expect(partialOffenders).toEqual([])
   })
   it('keeps client utilities independent from UI component modules', () => {
-    const offenders = files('src/client', 'src/shared', '-g', '*.ts').filter((file) => {
-      const source = readFileSync(file, 'utf8')
-      return source.includes('@/ui/')
-    })
+    // `@/client/` hooks and `@/shared/` helpers are imported by server and
+    // browser bundles alike — reaching into `@/ui/` components would drag
+    // the DOM component graph into every consumer. Value and type imports
+    // both count, whether `@/`-aliased or relative.
+    const offenders: string[] = []
+    for (const file of files('src/client', 'src/shared', '-g', '*.ts', '-g', '*.tsx')) {
+      for (const specifier of importSpecifiers(stripComments(readFileSync(file, 'utf8')))) {
+        const target = resolveSpecifier(file, specifier)
+        if (target.startsWith('@/ui/') || target.startsWith('src/ui/')) {
+          offenders.push(`${file}: ${specifier}`)
+        }
+      }
+    }
 
     expect(offenders).toEqual([])
   })
 
   it('keeps UI and client modules from importing server/runtime data modules', () => {
-    const offenders = files('src/ui', 'src/client', '-g', '*.ts', '-g', '*.tsx').filter((file) => {
-      const source = readFileSync(file, 'utf8')
-      return source.split('\n').some((line) => {
-        const trimmed = line.trim()
-        if (!trimmed.startsWith('import')) {
-          return false
+    // `import type` is compile-time only; runtime imports are banned.
+    // Whole-file matching catches multiline statements, and relative
+    // `../server/…` escapes resolve to their `src/server/…` target.
+    const offenders: string[] = []
+    for (const file of files('src/ui', 'src/client', '-g', '*.ts', '-g', '*.tsx')) {
+      for (const specifier of valueImportSpecifiers(stripComments(readFileSync(file, 'utf8')))) {
+        const target = resolveSpecifier(file, specifier)
+        if (target.startsWith('@/server/') || target.startsWith('src/server/') || target.endsWith('.server')) {
+          offenders.push(`${file}: ${specifier}`)
         }
-        // `import type` is compile-time only; runtime imports are banned.
-        if (trimmed.startsWith('import type ') || trimmed.startsWith('import type{')) {
-          return false
-        }
-        return trimmed.includes('@/server/') || /\.server(?:["']|$)/.test(trimmed)
-      })
-    })
+      }
+    }
 
     expect(offenders).toEqual([])
   })
@@ -910,17 +968,17 @@ describe('contract: module and bundle boundaries', () => {
   })
 
   it('keeps non-type catalog imports out of UI components', () => {
-    const offenders = files('src/ui', '-g', '*.ts', '-g', '*.tsx').filter((file) => {
-      const source = readFileSync(file, 'utf8')
-      return source.split('\n').some((line) => {
-        const trimmed = line.trim()
-        return (
-          trimmed.startsWith('import') &&
-          !trimmed.startsWith('import type') &&
-          trimmed.includes('"@/shared/types/catalog"')
-        )
-      })
-    })
+    // `shared/types/catalog` is the type-only catalog surface; a value
+    // import would drag shared runtime code into the component chunk.
+    const offenders: string[] = []
+    for (const file of files('src/ui', '-g', '*.ts', '-g', '*.tsx')) {
+      for (const specifier of valueImportSpecifiers(stripComments(readFileSync(file, 'utf8')))) {
+        const target = resolveSpecifier(file, specifier)
+        if (target === '@/shared/types/catalog' || target === 'src/shared/types/catalog') {
+          offenders.push(`${file}: ${specifier}`)
+        }
+      }
+    }
 
     expect(offenders).toEqual([])
   })
@@ -1130,6 +1188,52 @@ describe('contract: module and bundle boundaries', () => {
 
     expect(select).toContain('<SelectGroup>{children}</SelectGroup>')
     expect(dropdown).toContain('<DropdownMenuGroup>{children}</DropdownMenuGroup>')
+  })
+
+  it('keeps interaction-only animation libraries behind lazy boundaries', () => {
+    // The popup chrome enhances its content with a motion enter-animation,
+    // but the animation runtime must not ride the content pages' synchronous
+    // bundle — the components reach it through `lazy-motion.tsx` (dynamic
+    // import + Suspense fallback). `@number-flow/react` likewise animates
+    // only on like/unlike, so LikeActions lazy-loads it (admin Counters stay
+    // static — the admin bundle is already heavy).
+    const popupComponents = [
+      'src/ui/components/alert-dialog.tsx',
+      'src/ui/components/combobox.tsx',
+      'src/ui/components/dialog.tsx',
+      'src/ui/components/dropdown-menu.tsx',
+      'src/ui/components/popover.tsx',
+      'src/ui/components/select.tsx',
+      'src/ui/components/sheet.tsx',
+    ]
+    for (const file of popupComponents) {
+      const source = readFileSync(file, 'utf8')
+      expect(source, `${file} statically imports motion/react`).not.toMatch(/^import .* from 'motion\/react'/m)
+      expect(source, `${file} bypasses the lazy boundary`).not.toContain('motion.div')
+    }
+    const likeActions = readFileSync('src/ui/public/LikeActions.tsx', 'utf8')
+    expect(likeActions).not.toMatch(/^import .* from '@number-flow\/react'/m)
+    expect(likeActions).toContain("lazy(() => import('@number-flow/react'))")
+
+    // The rest of the public path follows the same rule: the root's
+    // MotionConfig goes through `LazyMotionConfig`, the deeply-animated
+    // public chrome (Popup, TableOfContents) is lazy-loaded at the call
+    // site, so `motion/react` never rides the entry/public bundle.
+    const root = readFileSync('src/root.tsx', 'utf8')
+    expect(root, 'root.tsx statically imports motion/react').not.toMatch(/^import .* from 'motion\/react'/m)
+    const popupCallSites = [
+      'src/ui/public/Search.tsx',
+      'src/ui/public/friends/FriendApplyForm.tsx',
+      'src/ui/public/widgets/QRDialog.tsx',
+    ]
+    for (const file of popupCallSites) {
+      const source = readFileSync(file, 'utf8')
+      expect(source, `${file} statically imports Popup`).not.toContain("from '@/ui/public/widgets/Popup'")
+    }
+    const detailChrome = readFileSync('src/ui/public/post/DetailBodyChrome.tsx', 'utf8')
+    expect(detailChrome, 'DetailBodyChrome statically imports TableOfContents').not.toMatch(
+      /^import \{ TableOfContents \}/m,
+    )
   })
 
   it('sizes Button icons through data-icon instead of hand-written size classes', () => {
@@ -1459,5 +1563,49 @@ describe('contract: module and bundle boundaries', () => {
     expect(plugin).toMatch(/@\/server\/infra\/native-require/)
     const seaConfig = readFileSync('vite.sea.config.ts', 'utf8')
     expect(seaConfig).toMatch(/redirectNativeRequiresPlugin\(\)/)
+  })
+})
+
+describe('contract checker internals (the scanners catch their own escape shapes)', () => {
+  // These pin the scanner helpers against the escape shapes the checks
+  // exist to catch — without them a scanner regression would silently
+  // neuter every layer check above while the suite stays green.
+  const MULTILINE_SAMPLE = [
+    'import {',
+    '  alpha,',
+    "} from '@/server/domains/pt/service'",
+    "import type { Beta } from '@/server/http/types'",
+    "import '../server/infra/db/operations/post'",
+    'const lazy = import(',
+    "  '@/ui/components/button'",
+    ')',
+  ].join('\n')
+
+  it('valueImportSpecifiers catches multiline, side-effect, and dynamic imports — but not import type', () => {
+    expect(valueImportSpecifiers(MULTILINE_SAMPLE)).toEqual([
+      '@/server/domains/pt/service',
+      '../server/infra/db/operations/post',
+      '@/ui/components/button',
+    ])
+    // importSpecifiers keeps type imports (some checks ban those too).
+    expect(importSpecifiers(MULTILINE_SAMPLE)).toContain('@/server/http/types')
+  })
+
+  it('the retired per-line scan misses the multiline sample (why the scanners match whole-file)', () => {
+    const perLineHit = MULTILINE_SAMPLE.split('\n').some((line) => {
+      const trimmed = line.trim()
+      return trimmed.startsWith('import') && !trimmed.startsWith('import type') && trimmed.includes('@/server/')
+    })
+    expect(perLineHit).toBe(false)
+    expect(valueImportSpecifiers(MULTILINE_SAMPLE)).toContain('@/server/domains/pt/service')
+  })
+
+  it('resolveSpecifier maps relative escapes onto their src/ target and leaves aliases alone', () => {
+    expect(resolveSpecifier('src/shared/x.ts', '../server/infra/db/operations/post')).toBe(
+      'src/server/infra/db/operations/post',
+    )
+    expect(resolveSpecifier('src/client/hooks/y.ts', '../../ui/components/button')).toBe('src/ui/components/button')
+    expect(resolveSpecifier('src/server/infra/z.ts', '@/server/domains/pt/service')).toBe('@/server/domains/pt/service')
+    expect(resolveSpecifier('src/ui/w.ts', 'react')).toBe('react')
   })
 })

@@ -485,6 +485,22 @@ describe('infra/config — migrateLegacyKeys', () => {
   })
 })
 
+describe('infra/config — CONFIG_TABLE', () => {
+  it('derives every env var name by the `__` convention (path.join)', () => {
+    expect(configEnvName(['storage', 'database'])).toBe('storage__database')
+    for (const entry of CONFIG_TABLE) {
+      expect(configEnvName(entry.path)).toBe(entry.path.join('__'))
+    }
+  })
+
+  it('declares each dotted path exactly once', () => {
+    // A duplicate path would silently shadow itself in buildFileSchema and
+    // defaultFileContents — one row would win, the other would be dead.
+    const paths = CONFIG_TABLE.map((entry) => entry.path.join('.'))
+    expect(new Set(paths).size).toBe(paths.length)
+  })
+})
+
 describe('infra/config — configCandidates', () => {
   const seaEnv = { sea: false, cwd: '/work/app', home: '/home/user' }
 
