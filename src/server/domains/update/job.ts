@@ -52,20 +52,41 @@ function scheduleSelfRestart(): void {
     // Free the port before the child boots; the 8s budget matches the
     // graceful-shutdown close in `performShutdown`.
     await closeHttpServer(8_000)
+    // Shared recovery for both respawn failure shapes (audit V3-01). The
+    // socket is already closed, so re-bind with the current process to keep
+    // a listener, then release the job slot — otherwise the state machine
+    // sticks in 'restarting', the admin UI spins forever, and every later
+    // apply is rejected with CONFLICT.
+    const recover = async (err: unknown): Promise<void> => {
+      const message = err instanceof Error ? err.message : String(err)
+      log.error('self-update respawn failed; restoring the listener', { err: message })
+      try {
+        await restartServer()
+      } catch (restartErr) {
+        // Best-effort: a failed re-bind must not escape as an unhandled
+        // rejection inside this detached IIFE.
+        log.error('self-update listener restore failed', {
+          err: restartErr instanceof Error ? restartErr.message : String(restartErr),
+        })
+      }
+      current = { ...current, state: 'failed', error: message }
+      running = false
+    }
     try {
       const child = spawn(process.execPath, process.argv.slice(1), {
         detached: true,
         stdio: 'inherit',
       })
+      // Real spawn failures (ENOENT/EACCES) arrive asynchronously via the
+      // child's 'error' event; without a listener the event throws and
+      // crashes the process before `restartServer` could run.
+      child.on('error', (err) => {
+        void recover(err)
+      })
       child.unref()
       log.info('self-update swapped the binary; restarting', { pid: child.pid ?? null })
     } catch (err) {
-      // The socket is already closed — re-bind with the current process so
-      // a failed respawn can't strand the deployment without a listener.
-      log.error('self-update respawn failed; restoring the listener', {
-        err: err instanceof Error ? err.message : String(err),
-      })
-      await restartServer()
+      await recover(err)
       return
     }
     requestShutdown('self-update restart')
