@@ -29,9 +29,12 @@ export interface LiveContentOptions {
  * has a published revision, and its `publishedAt` is not in the future.
  *
  * `liveContentWhere` below is the SQL projection of the same gate — the
- * two MUST be changed together. SQL callers must go through the
- * post-/page-table bindings `livePostWhere` / `livePageWhere`, never
- * hand-bound columns.
+ * two MUST be changed together. SQL callers outside the content domain
+ * must go through the post-/page-table bindings `livePostWhere` /
+ * `livePageWhere`, never hand-bound columns. Inside the content domain
+ * itself (the owner of this base — e.g. the scheduled-publish job, which
+ * cannot import the entity bindings without closing an import cycle)
+ * binding the struct directly is the sanctioned path.
  */
 export function isLive(meta: LiveMeta, options: LiveContentOptions = {}): boolean {
   if (meta.deletedAt !== null) {
