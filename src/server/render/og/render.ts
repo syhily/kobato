@@ -51,8 +51,14 @@ function printAt(
   for (let idx = 1; idx <= text.length; idx++) {
     const str = text.substring(0, idx)
     if (getStringWidth(str, fontSize) > width) {
-      context.fillText(text.substring(0, idx - 1), x, y)
-      printAt(context, text.substring(idx - 1), x, y + lineHeight, lineHeight, width, fontSize)
+      // Always advance at least one character: when even a lone character
+      // is wider than fitWidth, recursing on `idx - 1` would re-enter with
+      // the same string and overflow the stack. Unreachable today (the seo
+      // schema bounds og.width ≥ 600, well above any single glyph at these
+      // font sizes); kept as a defensive guard.
+      const end = Math.max(idx - 1, 1)
+      context.fillText(text.substring(0, end), x, y)
+      printAt(context, text.substring(end), x, y + lineHeight, lineHeight, width, fontSize)
       return
     }
   }
