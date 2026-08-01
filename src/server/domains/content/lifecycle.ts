@@ -9,6 +9,7 @@ import type { RoleOrNull } from '@/shared/utils/roles'
 import { toAdminRevisionDto } from '@/server/domains/content/projection'
 import { publishLatestRevision, saveDraftRevision } from '@/server/domains/content/repos/mutate'
 import { findContentById, findLatestDraft, findLatestRevision } from '@/server/domains/content/revisions'
+import { rescheduleScheduledPublish } from '@/server/domains/content/scheduled-publish'
 import { syncLibraryImageBlocks } from '@/server/domains/content/services/image-sync'
 import { canonicalizePortableTextBody } from '@/server/domains/pt/services/canonicalize'
 import { getLogger, type Logger } from '@/server/infra/logger'
@@ -169,6 +170,9 @@ export async function saveBody<TMeta, TPreview>(
   }
   if (mode === 'publish' && wroteSuccessfully) {
     await adapter.afterPublish(db, meta, body, warnings)
+    // A publish can set a future `publishedAt` (scheduling) — re-arm the
+    // scheduled-publish timer (no-op until the scheduler is started).
+    rescheduleScheduledPublish()
   }
   return projectSaveResult(result, warnings.length > 0 ? warnings.join(' ') : undefined)
 }
