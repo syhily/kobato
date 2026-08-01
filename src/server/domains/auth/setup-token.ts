@@ -66,6 +66,13 @@ export async function invalidateSetupToken(db: Database): Promise<void> {
   await db.delete(oneTimeToken).where(eq(oneTimeToken.key, TOKEN_KEY))
 }
 
+/** Test seam: reset the process-local invalidation fast-path between
+ *  tests so a suite exercising invalidateSetupToken cannot leak the flag
+ *  into later cases (the DB row is already per-test via clearAllTables). */
+export function __resetSetupTokenForTests(): void {
+  tokenInvalidated = false
+}
+
 /** Verify a setup token presented by the client. */
 export async function verifySetupToken(db: Database, candidate: string): Promise<boolean> {
   if (tokenInvalidated) {

@@ -37,6 +37,17 @@ function makeCardProps(source: Source, schema?: z.ZodType<State, any>) {
   }
 }
 
+// The save chain (react-hook-form submit → schema parse → mocked commit →
+// baseline update) is fully microtask-driven: the event loop drains the
+// entire microtask queue — including freshly queued links — before the
+// next macrotask, so two event-loop turns settle every pending save chain
+// deterministically. If a stray commit were ever going to fire, it has
+// fired by the time this resolves. Replaces fixed 20ms sleeps.
+const settleSaveChains = async () => {
+  await new Promise((resolve) => setImmediate(resolve))
+  await new Promise((resolve) => setImmediate(resolve))
+}
+
 describe('useSettingsCard — schema-aware save baseline', () => {
   beforeEach(() => {
     commit.mockReset()
@@ -67,7 +78,7 @@ describe('useSettingsCard — schema-aware save baseline', () => {
 
     // …but afterwards the card is clean: another blur / panel flush is a no-op.
     fireEvent.blur(input)
-    await new Promise((resolve) => setTimeout(resolve, 20))
+    await settleSaveChains()
     expect(commit).toHaveBeenCalledOnce()
   })
 
@@ -215,7 +226,7 @@ describe('useSettingsCard — field-scoped save (P1-13)', () => {
 
     render(<Harness source={{ title: 'Hello', enabled: false }} />)
     fireEvent.click(screen.getByRole('button', { name: 'reselect' }))
-    await new Promise((resolve) => setTimeout(resolve, 20))
+    await settleSaveChains()
     expect(commit).not.toHaveBeenCalled()
   })
 })

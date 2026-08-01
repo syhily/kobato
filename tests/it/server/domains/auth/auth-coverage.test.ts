@@ -23,6 +23,7 @@ import {
   invalidateSetupToken,
   verifySetupToken,
   isSetupTokenActive,
+  __resetSetupTokenForTests,
 } from '@/server/domains/auth/setup-token'
 import {
   issueOtpToken,
@@ -50,6 +51,10 @@ beforeEach(async () => {
   initAllBatchers(getDatabaseHandle())
   await clearAllTables(db)
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
+  // The setup-token invalidation flag is a process-level fast-path (the
+  // DB row is already reset by clearAllTables) — reset it per test so no
+  // case depends on running before/after the invalidate test.
+  __resetSetupTokenForTests()
 })
 
 afterEach(async () => {
@@ -264,9 +269,6 @@ describe('auth/setup-token — getSetupToken & verify', () => {
     expect(await isSetupTokenActive(db)).toBe(false)
   })
 
-  // NOTE: this test runs last in the file's setup-token usage — the
-  // module-level `tokenInvalidated` flag stays set for the rest of the
-  // process, and no later test in this file touches the setup token.
   it('after invalidate, getSetupToken throws and verify returns false', async () => {
     await getSetupToken(db)
     await invalidateSetupToken(db)
@@ -357,16 +359,23 @@ describe('auth/repo — session meta', () => {
     expect(rows).toHaveLength(0)
   })
 
-  it('recordSessionActivity is a void fire-and-forget that writes lastActiveAt', async () => {
+  it('recordSessionActivity is a void fire-and-forget that bumps lastActiveAt and expiresAt', async () => {
     const u = await seedUser('admin', 'activity@example.com')
     const sid = 'sid-activity'
-    await seedSessionRow(sid, u.id)
-    await recordSessionLogin(db, { sid, userId: u.id, userAgent: 'ua', ip: '1.1.1.1' })
+    // Seed a short-lived row so the sliding-refresh bump is observable.
+    const seededExpiry = new Date(Date.now() + 60 * 60 * 1000)
+    await seedSessionRow(sid, u.id, seededExpiry)
+    const staleLogin = new Date('2024-01-01T00:00:00Z')
+    await recordSessionLogin(db, { sid, userId: u.id, userAgent: 'ua', ip: '1.1.1.1', loginAt: staleLogin })
     recordSessionActivity(db, sid)
-    // Fire-and-forget; give the promise a tick.
-    await new Promise((r) => setTimeout(r, 50))
+    // drizzle's node:sqlite driver runs the UPDATE synchronously when the
+    // fire-and-forget `.then` attaches inside recordSessionActivity; one
+    // event-loop turn drains the trailing promise chain deterministically.
+    await new Promise((resolve) => setImmediate(resolve))
     const meta = await findSessionMeta(db, sid)
     expect(meta).not.toBeNull()
+    expect(meta!.lastActiveAt.getTime()).toBeGreaterThan(staleLogin.getTime())
+    expect(meta!.expiresAt.getTime()).toBeGreaterThan(seededExpiry.getTime())
   })
 })
 

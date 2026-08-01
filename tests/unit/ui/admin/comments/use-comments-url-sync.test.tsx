@@ -1,10 +1,10 @@
 // @vitest-environment happy-dom
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { act, render, waitFor } from '@testing-library/react'
+import { act, render } from '@testing-library/react'
 import { useState } from 'react'
 import { createMemoryRouter, RouterProvider, useSearchParams } from 'react-router'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // The controller's list query and the pills' autocomplete queries hit the
 // oRPC client; mocked at the same seam use-comments-actions.test.tsx uses.
@@ -74,10 +74,12 @@ function setup(initialPath: string) {
   return { router, sink }
 }
 
-// Let the 300ms URL-sync debounce fire (and any stale timer with it).
-const settleUrlSync = () => act(async () => new Promise((resolve) => setTimeout(resolve, 400)))
+// Let the 300ms URL-sync debounce fire (and any stale timer with it) on
+// the fake clock — no real-time wait.
+const settleUrlSync = () => act(async () => vi.advanceTimersByTimeAsync(400))
 
 beforeEach(() => {
+  vi.useFakeTimers()
   api.loadAll.mockReset()
   api.loadAll.mockResolvedValue({
     comments: [],
@@ -89,6 +91,10 @@ beforeEach(() => {
   api.searchPages.mockResolvedValue({ pages: [] })
   api.searchAuthors.mockReset()
   api.searchAuthors.mockResolvedValue({ authors: [] })
+})
+
+afterEach(() => {
+  vi.useRealTimers()
 })
 
 describe('useCommentsController URL sync', () => {
@@ -103,7 +109,8 @@ describe('useCommentsController URL sync', () => {
       sink.current!.pills.dispatch({ type: 'addFilter', field: 'status', value: 'pending', label: '待审核' })
     })
     // The debounced write-back mirrors the pill into the URL.
-    await waitFor(() => expect(router.state.location.search).toBe('?status=pending'))
+    await settleUrlSync()
+    expect(router.state.location.search).toBe('?status=pending')
 
     await act(async () => {
       await router.navigate(-1)
@@ -122,7 +129,8 @@ describe('useCommentsController URL sync', () => {
     act(() => {
       sink.current!.pills.dispatch({ type: 'addFilter', field: 'status', value: 'pending', label: '待审核' })
     })
-    await waitFor(() => expect(router.state.location.search).toBe('?status=pending'))
+    await settleUrlSync()
+    expect(router.state.location.search).toBe('?status=pending')
 
     // Push forward and filter differently, then pop back to the first entry.
     await act(async () => {
@@ -131,7 +139,8 @@ describe('useCommentsController URL sync', () => {
     act(() => {
       sink.current!.pills.dispatch({ type: 'addFilter', field: 'status', value: 'approved', label: '已审核' })
     })
-    await waitFor(() => expect(router.state.location.search).toBe('?status=approved'))
+    await settleUrlSync()
+    expect(router.state.location.search).toBe('?status=approved')
 
     await act(async () => {
       await router.navigate(-1)

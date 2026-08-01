@@ -118,9 +118,11 @@ describe('users/repos/admin-query — listAdminUsers', () => {
   })
 
   it('orders by recent by default', async () => {
-    const older = await seedUser({ name: 'Older', email: 'o@example.com' })
-    await new Promise((r) => setTimeout(r, 10))
-    const newer = await seedUser({ name: 'Newer', email: 'n@example.com' })
+    // Stamp createdAt explicitly — 'recent' sorts by created_at DESC, and
+    // two inserts within the same wall-clock tick must not leave the
+    // ordering to chance.
+    const older = await seedUser({ name: 'Older', email: 'o@example.com', createdAt: new Date('2024-01-01T00:00:00Z') })
+    const newer = await seedUser({ name: 'Newer', email: 'n@example.com', createdAt: new Date('2024-01-02T00:00:00Z') })
 
     const rows = await adminQuery.listAdminUsers(db, 0, 10, {})
     expect(rows[0].id).toBe(newer.id)

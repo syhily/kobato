@@ -168,8 +168,24 @@ describe('snapshotAnalyticsTo', () => {
     // (private-field receivers) — the retention job's own calls must be
     // forwarded with the real receiver too.
     decorated.runAndReadAll = (sql: string, params?: never) => realWriter.runAndReadAll(sql, params)
+    // Record every statement the maintenance job manages to issue through
+    // the engine's READER while the snapshot holds the lock (the test's
+    // own reads go through the undecorated handle, so only production
+    // code paths land here). This turns the negative assertion below into
+    // a deterministic pin: while the lock works, the job is parked at
+    // `await previous` and can issue NOTHING; if the lock were broken,
+    // its path from the (resolved) lock promise to its first statement is
+    // pure microtasks, drained by a single event-loop turn — no real-time
+    // wait can race it.
+    const realReader = analyticsHandle.reader
+    const decoratedReader = Object.create(realReader) as AnalyticsHandle['reader']
+    const maintenanceStatements: string[] = []
+    decoratedReader.runAndReadAll = (sql: string, params?: never) => {
+      maintenanceStatements.push(sql)
+      return realReader.runAndReadAll(sql, params)
+    }
     __resetAnalyticsEngineForTests()
-    __adoptAnalyticsHandleForTests({ ...analyticsHandle, writer: decorated })
+    __adoptAnalyticsHandleForTests({ ...analyticsHandle, writer: decorated, reader: decoratedReader })
 
     const snapshot = snapshotAnalyticsTo(join(stagingDir, 'analytics.duckdb'))
     await entered // the snapshot now holds the mutation lock
@@ -178,10 +194,9 @@ describe('snapshotAnalyticsTo', () => {
     const maintenance = runAnalyticsMaintenance().then(() => {
       maintenanceDone = true
     })
-    // Proving a negative needs a real (short) wait: without the lock the
-    // retention DELETE would have ample time to land here.
-    await new Promise((resolve) => setTimeout(resolve, 50))
+    await new Promise((resolve) => setImmediate(resolve))
     expect(maintenanceDone).toBe(false)
+    expect(maintenanceStatements).toEqual([])
     expect(await accessLogPaths(analyticsHandle)).toContain('/old')
 
     releaseCheckpoint()

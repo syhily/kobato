@@ -62,13 +62,18 @@ describe('email/admin-notification — sendAdminNotification', () => {
 })
 
 describe('email/admin-notification — fireAndForgetNotify', () => {
+  // The send promise's rejection/resolution handler is a plain microtask
+  // chain — the event loop drains it fully before the next macrotask, so
+  // one setImmediate turn settles fireAndForgetNotify deterministically.
+  const settleNotify = () => new Promise((resolve) => setImmediate(resolve))
+
   it('swallows rejections and logs them through the given logger', async () => {
     const errorSpy = vi.fn()
     const log = { error: errorSpy } as unknown as Logger
     const failure = new Error('boom')
 
     fireAndForgetNotify(Promise.reject(failure), log, 'new comment')
-    await new Promise((resolve) => setTimeout(resolve, 0))
+    await settleNotify()
 
     expect(errorSpy).toHaveBeenCalledOnce()
     expect(errorSpy).toHaveBeenCalledWith('failed to send new comment email', { error: failure })
@@ -79,7 +84,7 @@ describe('email/admin-notification — fireAndForgetNotify', () => {
     const log = { error: errorSpy } as unknown as Logger
 
     fireAndForgetNotify(Promise.resolve({ ok: true }), log, 'new webmention')
-    await new Promise((resolve) => setTimeout(resolve, 0))
+    await settleNotify()
 
     expect(errorSpy).not.toHaveBeenCalled()
   })

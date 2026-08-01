@@ -139,6 +139,12 @@ describe('backup and restore integration', () => {
     // The backend below consumes one tick late, like the local backend's
     // pipeline: a flowing-mode gzip has already emitted — and lost — its
     // first chunk by the time the drain attaches.
+    //
+    // The 20ms is WALL-CLOCK on purpose and must not become a fake timer
+    // or a setImmediate turn: zlib compresses off the event loop (thread
+    // pool), so no fixed number of turns can guarantee the buggy flowing-
+    // mode gzip has emitted its first chunk before the consumer attaches.
+    // The regression this stages is itself a wall-clock race.
     __setStorageBackendForTests('s3', {
       ...mem.backend,
       async putStream(input) {

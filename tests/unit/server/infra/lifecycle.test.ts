@@ -168,8 +168,14 @@ describe('lifecycle', () => {
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never)
     requestShutdown('first')
     requestShutdown('second')
-    await new Promise((resolve) => setTimeout(resolve, 5))
+    // shuttingDown flips synchronously…
     expect(getContainer().shuttingDown).toBe(true)
+    // …and with no http server and no hooks, performShutdown's chain to
+    // process.exit is pure microtasks — one event-loop turn settles it.
+    // The second requestShutdown was a no-op, so exit fires exactly once.
+    await new Promise((resolve) => setImmediate(resolve))
+    expect(exitSpy).toHaveBeenCalledOnce()
+    expect(exitSpy).toHaveBeenCalledWith(0)
     exitSpy.mockRestore()
   })
 

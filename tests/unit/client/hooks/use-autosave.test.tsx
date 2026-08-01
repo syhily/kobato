@@ -1,4 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+// @vitest-environment happy-dom
+
+import { renderHook as renderDomHook } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { renderHook } from '#/_helpers/hook'
 import { useAutosave } from '@/client/hooks/use-autosave'
@@ -160,6 +163,10 @@ describe('useAutosave — markPersisted', () => {
 describe('useAutosave — retry kick-off', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
     vi.useRealTimers()
   })
 
@@ -202,5 +209,43 @@ describe('useAutosave — retry kick-off', () => {
     await result.forceFlush()
 
     expect(statuses.some((s) => s.message === '保存失败')).toBe(true)
+  })
+
+  it('re-fires the flush after the scheduled delay and lands on saved', async () => {
+    // The SSR harness never runs effects, so `doFlushRef` (the retry
+    // timer's target) stays a noop there — the ladder needs a real DOM
+    // render where effects fire. Fake timers drive the retry delay.
+    const flush = vi
+      .fn<(body: unknown) => Promise<void>>()
+      .mockRejectedValueOnce(new Error('network down'))
+      .mockResolvedValueOnce(undefined)
+    const statuses: Array<{ kind: string; attempt?: number; message?: string }> = []
+    const { result } = renderDomHook(() =>
+      useAutosave({
+        body: sampleBody as never,
+        enabled: true,
+        flush: flush as never,
+        retryDelaysMs: [10, 20, 30],
+        onStatusChange: (s) => statuses.push(s),
+      }),
+    )
+
+    await result.current.forceFlush()
+    expect(flush).toHaveBeenCalledTimes(1)
+    expect(statuses.map((s) => s.kind)).toEqual(['saving', 'retrying'])
+    expect(statuses[1]).toMatchObject({ attempt: 1, message: 'network down' })
+
+    // The retry is timer-scheduled, not immediate: just before the delay
+    // elapses the flush has NOT re-fired.
+    await vi.advanceTimersByTimeAsync(9)
+    expect(flush).toHaveBeenCalledTimes(1)
+
+    // At the delay boundary the retry re-fires with the same body…
+    await vi.advanceTimersByTimeAsync(1)
+    expect(flush).toHaveBeenCalledTimes(2)
+    expect(flush).toHaveBeenNthCalledWith(2, sampleBody)
+
+    // …and the recovery completes the ladder: saving → retrying → saving → saved.
+    expect(statuses.map((s) => s.kind)).toEqual(['saving', 'retrying', 'saving', 'saved'])
   })
 })
