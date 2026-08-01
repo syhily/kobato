@@ -55,6 +55,8 @@ describe('service: cache admin', () => {
       categories: 0,
       tags: 0,
       comments: 0,
+      githubAvatar: 0,
+      githubRelease: 0,
     })
     expect(stats.total).toBe(5)
   })
@@ -110,6 +112,8 @@ describe('service: cache admin', () => {
       categories: 0,
       tags: 0,
       comments: 0,
+      githubAvatar: 0,
+      githubRelease: 0,
     })
     expect(await remainingKvKeys()).toEqual([])
     // Sessions are a reserved bucket: never cleared, still reported.

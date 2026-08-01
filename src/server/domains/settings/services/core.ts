@@ -1,29 +1,20 @@
-import type { z } from 'zod'
-
 import type { SectionMeta } from '@/server/domains/settings/sections/registry'
 import type { Database } from '@/server/infra/db/database'
 import type { Setting } from '@/server/infra/db/types'
 import type { SettingsSection } from '@/shared/config/sections'
-import type { BlogSettingsBundle, SecretMasks } from '@/shared/config/types'
+import type { BlogSettingsBundle } from '@/shared/config/types'
 
-import { SECRET_FIELDS } from '@/server/domains/settings/secrets'
 import { SECTION_REGISTRY, validateSectionDefaults } from '@/server/domains/settings/sections/registry'
+import { securitySection } from '@/server/domains/settings/sections/security'
 import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
+import { applySectionPatch, encryptSecretsInRow } from '@/server/domains/settings/services/secrets-write'
 import { sectionChangeHandler } from '@/server/domains/settings/services/section-changes'
-import { assertSectionPatchKeys } from '@/server/domains/settings/services/section-patch'
-import { encryptIfNeeded } from '@/server/infra/crypto/secret-encryption'
+import { assertSectionPatchKeys, isRecord } from '@/server/domains/settings/services/section-patch'
 import { findSettingByScope, upsertSetting } from '@/server/infra/db/operations/setting'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { mergeSectionPatch } from '@/shared/config/merge-section-patch'
-import {
-  assetsLoaderShapeSchema,
-  mailLoaderShapeSchema,
-  projectAssetsForAdmin,
-  projectMailForAdmin,
-} from '@/shared/config/projection'
-import { SECTION_TO_BUNDLE_KEY } from '@/shared/config/sections'
 import { isValidPasskeyDomain } from '@/shared/utils/safe-url'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
@@ -37,7 +28,8 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
 ): Promise<BlogSettingsBundle | null> {
   const meta = SECTION_REGISTRY[section]
   // Strict key check before any DB work: unknown keys (loader mask
-  // fields, renamed keys) are a client bug — 400 with the issue list.
+  // fields, renamed keys) are a client bug — 400 with the issue list. The
+  // assertion signature types the passing payload for the merge below.
   assertSectionPatchKeys(section, payload)
 
   // Sync transaction (node:sqlite). The snapshot refresh runs right
@@ -49,7 +41,7 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
     // preservation in `applySectionPatch`.
     const storedRow = findSettingByScope(tx, meta.scope) ?? null
     const base = resolveMergeBase(meta, storedRow)
-    const merged = mergeSectionPatch(base, unsafeCast<Record<string, unknown>>(payload))
+    const merged = mergeSectionPatch(base, payload)
     const parsed = meta.schema.safeParse(merged)
     if (!parsed.success) {
       throw new DomainError(
@@ -62,8 +54,11 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
       )
     }
     if (section === 'security') {
-      const securityPayload = unsafeCast<{ passkey?: { enabled?: boolean } }>(parsed.data)
-      if (securityPayload.passkey?.enabled) {
+      // `parsed.data` came from this very schema's safeParse above, so
+      // the typed re-parse cannot fail — it only recovers the concrete
+      // SecuritySettings shape the generic `meta.schema` erases.
+      const securityPayload = securitySection.schema.parse(parsed.data)
+      if (securityPayload.passkey.enabled) {
         const current = getBlogSettingsBundleSync()
         const website = current?.siteIdentity?.website
         if (!website) {
@@ -78,7 +73,11 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
       }
     }
 
-    const nextRow = applySectionPatch(section, parsed.data, storedRow)
+    // Every section schema is a z.object, so the validated output IS a
+    // plain record; the generic `meta.schema: z.ZodType` just cannot
+    // prove it.
+    const validated = unsafeCast<Record<string, unknown>>(parsed.data)
+    const nextRow = applySectionPatch(section, validated, storedRow)
 
     const encryptedRow = encryptSecretsInRow(section, nextRow)
     upsertSetting(tx, encryptedRow, updatedBy, meta.scope)
@@ -107,10 +106,10 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
  * BOTH the stored row and the patch still gets its backfill default.
  */
 function resolveMergeBase(meta: SectionMeta, storedRow: Setting | null): Record<string, unknown> {
-  if (storedRow !== null && storedRow.data !== null && typeof storedRow.data === 'object') {
+  if (storedRow !== null && isRecord(storedRow.data)) {
     const parsed = meta.schema.safeParse(storedRow.data)
-    if (parsed.success) {
-      return unsafeCast<Record<string, unknown>>(parsed.data)
+    if (parsed.success && isRecord(parsed.data)) {
+      return parsed.data
     }
     // A row that fails the schema is treated as absent rather than merged
     // onto a shape we no longer understand — same leniency as hydrate.
@@ -122,165 +121,4 @@ function resolveMergeBase(meta: SectionMeta, storedRow: Setting | null): Record<
     return validateSectionDefaults(meta)
   }
   return {}
-}
-
-export function computeSecretMasks(bundle: BlogSettingsBundle): SecretMasks {
-  const masks = unsafeCast<Record<keyof SecretMasks, string | null>>({})
-  for (const { bundleKey, path, field, maskKey } of SECRET_FIELDS) {
-    const section = unsafeCast<Record<string, unknown> | null>(bundle[bundleKey])
-    const bucket = unsafeCast<Record<string, unknown> | undefined>(section?.[path])
-    const value = bucket?.[field]
-    masks[maskKey] = typeof value === 'string' && value !== '' ? value.slice(-4) : null
-  }
-  return masks
-}
-
-export function redactSecretsFromBundle(bundle: BlogSettingsBundle): BlogSettingsBundle {
-  const clone = unsafeCast<Record<string, unknown>>({ ...bundle })
-  for (const { bundleKey, path, field } of SECRET_FIELDS) {
-    const section = unsafeCast<Record<string, unknown> | null>(clone[bundleKey])
-    if (section === null) {
-      continue
-    }
-    const bucket = unsafeCast<Record<string, unknown> | undefined>(section[path])
-    if (bucket && typeof bucket[field] === 'string' && bucket[field] !== '') {
-      clone[bundleKey] = {
-        ...section,
-        [path]: { ...bucket, [field]: '' },
-      }
-    }
-  }
-  return unsafeCast<BlogSettingsBundle>(clone)
-}
-
-// Per-section runtime gate for the admin display shape: the three masked
-// sections validate against their loader-shape Zod twins, every other
-// section against the registry schema (its stored shape IS the admin
-// shape there). A drifting projection fails HERE — loudly, at the
-// assembly point — instead of silently mistyping the save response.
-const SECTION_OUTPUT_SCHEMAS: Partial<Record<SettingsSection, z.ZodType>> = {
-  assets: assetsLoaderShapeSchema,
-  mail: mailLoaderShapeSchema,
-}
-
-/**
- * Project one section of a fresh bundle into the admin display shape the
- * settings cards expect — the exact TSource contract the layout loader +
- * `routes/admin/settings/index.tsx` produce (assets/mail/search get their
- * masks merged in; every other section is the redacted bundle slice). The
- * update endpoint returns this so the client can adopt the save response
- * as its new baseline instead of revalidating the loader.
- */
-export function projectSectionForAdmin(
-  section: SettingsSection,
-  bundle: BlogSettingsBundle,
-  masks: SecretMasks,
-): unknown {
-  const redacted = redactSecretsFromBundle(bundle)
-  let projected: unknown
-  if (section === 'assets') {
-    projected = projectAssetsForAdmin(unsafeCast(redacted.assets), masks.assetsSecretAccessKeyMask)
-  } else if (section === 'mail') {
-    projected = projectMailForAdmin(unsafeCast(redacted.mail), {
-      apiKeyMask: masks.mailApiKeyMask,
-      smtpPassMask: masks.mailSmtpPassMask,
-      mailgunApiKeyMask: masks.mailMailgunApiKeyMask,
-    })
-  } else {
-    projected = redacted[SECTION_TO_BUNDLE_KEY[section]]
-  }
-
-  const schema = SECTION_OUTPUT_SCHEMAS[section] ?? SECTION_REGISTRY[section].schema
-  const result = schema.safeParse(projected)
-  if (!result.success) {
-    throw new DomainError(
-      'INTERNAL',
-      `admin 投影形状校验失败(${section}):${result.error.issues[0]?.path.join('.') ?? '<root>'} ${result.error.issues[0]?.message ?? ''}`,
-    )
-  }
-  return result.data
-}
-
-function applySectionPatch(
-  section: SettingsSection,
-  validated: unknown,
-  storedRow: Setting | null,
-): Record<string, unknown> {
-  let row = unsafeCast<Record<string, unknown>>(validated)
-  const secretConfigs = SECRET_FIELDS.filter((f) => f.section === section)
-  if (secretConfigs.length > 0) {
-    // A patch that omits a secret keeps the stored value; a patch that
-    // includes every secret is a full overwrite and has nothing to
-    // preserve. `storedRow` is the same read the merge base used.
-    const needsExisting = secretConfigs.some((config) => !hasSecretInRow(row, config.path, config.field))
-    if (needsExisting) {
-      for (const secretConfig of secretConfigs) {
-        row = preserveSecretOnPatch(row, storedRow, secretConfig.path, secretConfig.field)
-      }
-    }
-  }
-  if (section === 'assets') {
-    row = preserveBrandingOnPatch(row, storedRow)
-  }
-  return row
-}
-
-function hasSecretInRow(row: Record<string, unknown>, payloadPath: string, secretKey: string): boolean {
-  const bucket = unsafeCast<Record<string, unknown> | undefined>(row[payloadPath])
-  return bucket !== undefined && secretKey in bucket && bucket[secretKey] !== undefined
-}
-
-function preserveBrandingOnPatch(row: Record<string, unknown>, storedRow: Setting | null): Record<string, unknown> {
-  const existingBranding = unsafeCast<Record<string, unknown> | undefined>(
-    unsafeCast<Record<string, unknown> | undefined>(storedRow?.data)?.branding,
-  )
-  const incomingBranding = unsafeCast<Record<string, unknown> | undefined>(row.branding)
-  if (existingBranding === undefined && incomingBranding === undefined) {
-    return row
-  }
-  const merged: Record<string, unknown> = { ...existingBranding, ...incomingBranding }
-  return { ...row, branding: merged }
-}
-
-function preserveSecretOnPatch(
-  validated: unknown,
-  existingRow: Setting | null,
-  payloadPath: string,
-  secretKey: string,
-): Record<string, unknown> {
-  const record = unsafeCast<Record<string, unknown>>(validated)
-  const incoming = unsafeCast<Record<string, unknown>>(record[payloadPath]) ?? {}
-  if (secretKey in incoming && incoming[secretKey] !== undefined) {
-    return record
-  }
-
-  const existingPayload = unsafeCast<Record<string, unknown> | undefined>(
-    unsafeCast<Record<string, unknown> | undefined>(existingRow?.data)?.[payloadPath],
-  )
-
-  // Pass the existing ciphertext through unchanged. encryptSecretsInRow
-  // recognises the encrypted prefix and skips re-encryption.
-  const previousSecret = typeof existingPayload?.[secretKey] === 'string' ? existingPayload[secretKey] : ''
-  const nextPayload: Record<string, unknown> = { ...incoming, [secretKey]: previousSecret }
-  return { ...record, [payloadPath]: nextPayload }
-}
-
-function encryptSecretsInRow(section: SettingsSection, row: Record<string, unknown>): Record<string, unknown> {
-  const configs = SECRET_FIELDS.filter((f) => f.section === section)
-  if (configs.length === 0) {
-    return row
-  }
-  const next: Record<string, unknown> = { ...row }
-  for (const config of configs) {
-    const bucket = unsafeCast<Record<string, unknown> | undefined>(next[config.path])
-    if (!bucket) {
-      continue
-    }
-    const value = bucket[config.field]
-    if (typeof value !== 'string') {
-      continue
-    }
-    Object.assign(bucket, { [config.field]: encryptIfNeeded(value) })
-  }
-  return next
 }

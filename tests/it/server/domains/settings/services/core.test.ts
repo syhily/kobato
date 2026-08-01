@@ -7,7 +7,8 @@ import { resetBlogSettingsForTests } from '#/_helpers/blog-settings'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { SECRET_FIELDS } from '@/server/domains/settings/secrets'
 import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
-import { computeSecretMasks, updateBlogSettingsSection } from '@/server/domains/settings/services/core'
+import { updateBlogSettingsSection } from '@/server/domains/settings/services/core'
+import { computeSecretMasks } from '@/server/domains/settings/services/masks'
 // Non-DB seams only: handlers register through the real registry (a
 // throwing handler without waking the real backup/audit schedulers),
 // and the failure log is asserted through the logger's capture ring.

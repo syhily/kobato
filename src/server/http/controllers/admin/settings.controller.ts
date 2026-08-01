@@ -4,11 +4,9 @@ import { z } from 'zod'
 import type { SettingsSection } from '@/shared/config/sections'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
-import {
-  computeSecretMasks,
-  projectSectionForAdmin,
-  updateBlogSettingsSection,
-} from '@/server/domains/settings/services/core'
+import { projectSectionForAdmin } from '@/server/domains/settings/services/admin-projection'
+import { updateBlogSettingsSection } from '@/server/domains/settings/services/core'
+import { computeSecretMasks } from '@/server/domains/settings/services/masks'
 import { adminProc } from '@/server/http/orpc-base'
 import { SETTINGS_SECTIONS } from '@/shared/config/sections'
 import { safeBigInt } from '@/shared/utils/tools'

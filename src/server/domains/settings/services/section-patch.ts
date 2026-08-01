@@ -5,7 +5,7 @@ import type { SettingsSection } from '@/shared/config/sections'
 import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
 import { DomainError } from '@/server/infra/http/errors'
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+export function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
 }
 
@@ -67,8 +67,13 @@ function collectUnknownKeys(
  * does not own — reject with `DomainError BAD_REQUEST` carrying the issue
  * list, before any merge or validation runs. Key legality only; the
  * merged row's VALUES are validated against the full schema afterwards.
+ * The assertion signature types a passing payload as the record the merge
+ * step consumes.
  */
-export function assertSectionPatchKeys(section: SettingsSection, payload: unknown): void {
+export function assertSectionPatchKeys(
+  section: SettingsSection,
+  payload: unknown,
+): asserts payload is Record<string, unknown> {
   const issues: { message: string; path: string[] }[] = []
   if (!isRecord(payload)) {
     issues.push({ path: [], message: 'Expected an object' })
