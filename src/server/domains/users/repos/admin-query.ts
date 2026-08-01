@@ -1,4 +1,4 @@
-import { and, count, desc, eq, isNull, max, or, sql } from 'drizzle-orm'
+import { and, count, desc, eq, inArray, isNull, max, or, sql } from 'drizzle-orm'
 
 import type { Database } from '@/server/infra/db/database'
 import type { LoginMethod } from '@/shared/contracts/users'
@@ -82,6 +82,44 @@ function lastCommentAtAggregate() {
   return max(comment.createdAt).mapWith((value: Date | string) => (value instanceof Date ? value : new Date(value)))
 }
 
+interface CommentStats {
+  commentCount: number
+  pendingCount: number
+  lastCommentAt: Date | null
+}
+
+const EMPTY_COMMENT_STATS: CommentStats = { commentCount: 0, pendingCount: 0, lastCommentAt: null }
+
+// Batched per-user comment stats for an already-paginated user set: one
+// grouped scan over just these users' comments (range scans on
+// idx_comment_user_id) instead of LEFT JOINing the whole comment table
+// before LIMIT can apply (audit P1-13). `lastCommentAt` intentionally
+// counts soft-deleted comments, matching the previous join semantics.
+async function aggregateCommentStats(db: Database, userIds: readonly number[]): Promise<Map<number, CommentStats>> {
+  const stats = new Map<number, CommentStats>()
+  if (userIds.length === 0) {
+    return stats
+  }
+  const rows = await db
+    .select({
+      userId: comment.userId,
+      commentCount: sql<number>`COUNT(*) FILTER (WHERE ${comment.deletedAt} IS NULL)`,
+      pendingCount: sql<number>`COUNT(*) FILTER (WHERE ${comment.deletedAt} IS NULL AND ${comment.isPending} = TRUE)`,
+      lastCommentAt: lastCommentAtAggregate(),
+    })
+    .from(comment)
+    .where(inArray(comment.userId, [...userIds]))
+    .groupBy(comment.userId)
+  for (const row of rows) {
+    stats.set(row.userId, {
+      commentCount: Number(row.commentCount ?? 0),
+      pendingCount: Number(row.pendingCount ?? 0),
+      lastCommentAt: row.lastCommentAt ?? null,
+    })
+  }
+  return stats
+}
+
 export async function listAdminUsers(
   db: Database,
   offset: number,
@@ -90,7 +128,51 @@ export async function listAdminUsers(
   sortBy: AdminUsersSortOrder = 'recent',
 ): Promise<AdminUserRow[]> {
   const conditions = buildAdminUsersConditions(filters)
-  const commentCountSql = sql<number>`COUNT(${comment.id}) FILTER (WHERE ${comment.deletedAt} IS NULL)`
+
+  // Ordering by the comment aggregate requires counting every matching
+  // user before pagination can apply, so this sort keeps the LEFT JOIN +
+  // GROUP BY shape.
+  if (sortBy === 'commentCount') {
+    const commentCountSql = sql<number>`COUNT(${comment.id}) FILTER (WHERE ${comment.deletedAt} IS NULL)`
+    const rows = await db
+      .select({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        link: user.link,
+        badgeName: user.badgeName,
+        badgeColor: user.badgeColor,
+        badgeTextColor: user.badgeTextColor,
+        role: user.role,
+        isMuted: user.isMuted,
+        emailVerified: user.emailVerified,
+        createdAt: user.createdAt,
+        deletedAt: user.deletedAt,
+        commentCount: commentCountSql,
+        pendingCount: sql<number>`COUNT(${comment.id}) FILTER (WHERE ${comment.deletedAt} IS NULL AND ${comment.isPending} = TRUE)`,
+        lastCommentAt: lastCommentAtAggregate(),
+        passkeyCount: sql<number>`(SELECT COUNT(*) FROM passkey_credential WHERE passkey_credential.user_id = ${user.id})`,
+        loginMethod: user.loginMethod,
+      })
+      .from(user)
+      .leftJoin(comment, eq(comment.userId, user.id))
+      .where(conditions.length ? and(...conditions) : undefined)
+      .groupBy(user.id)
+      .orderBy(desc(commentCountSql), desc(user.id))
+      .limit(limit)
+      .offset(offset)
+
+    return rows.map((row) => ({
+      ...row,
+      role: row.role ?? null,
+      commentCount: Number(row.commentCount ?? 0),
+      pendingCount: Number(row.pendingCount ?? 0),
+      passkeyCount: Number(row.passkeyCount ?? 0),
+    }))
+  }
+
+  // Default recency order: paginate the user rows first, then aggregate
+  // comments for just this page — LIMIT now constrains the comment work.
   const rows = await db
     .select({
       id: user.id,
@@ -105,29 +187,30 @@ export async function listAdminUsers(
       emailVerified: user.emailVerified,
       createdAt: user.createdAt,
       deletedAt: user.deletedAt,
-      commentCount: commentCountSql,
-      pendingCount: sql<number>`COUNT(${comment.id}) FILTER (WHERE ${comment.deletedAt} IS NULL AND ${comment.isPending} = TRUE)`,
-      lastCommentAt: lastCommentAtAggregate(),
       passkeyCount: sql<number>`(SELECT COUNT(*) FROM passkey_credential WHERE passkey_credential.user_id = ${user.id})`,
       loginMethod: user.loginMethod,
     })
     .from(user)
-    .leftJoin(comment, eq(comment.userId, user.id))
     .where(conditions.length ? and(...conditions) : undefined)
-    .groupBy(user.id)
-    .orderBy(
-      ...(sortBy === 'commentCount' ? [desc(commentCountSql), desc(user.id)] : [desc(user.createdAt), desc(user.id)]),
-    )
+    .orderBy(desc(user.createdAt), desc(user.id))
     .limit(limit)
     .offset(offset)
+  const stats = await aggregateCommentStats(
+    db,
+    rows.map((row) => row.id),
+  )
 
-  return rows.map((row) => ({
-    ...row,
-    role: row.role ?? null,
-    commentCount: Number(row.commentCount ?? 0),
-    pendingCount: Number(row.pendingCount ?? 0),
-    passkeyCount: Number(row.passkeyCount ?? 0),
-  }))
+  return rows.map((row) => {
+    const stat = stats.get(row.id) ?? EMPTY_COMMENT_STATS
+    return {
+      ...row,
+      role: row.role ?? null,
+      commentCount: stat.commentCount,
+      pendingCount: stat.pendingCount,
+      lastCommentAt: stat.lastCommentAt,
+      passkeyCount: Number(row.passkeyCount ?? 0),
+    }
+  })
 }
 
 export async function findAdminUserById(db: Database, id: number): Promise<AdminUserRow | null> {
@@ -145,26 +228,24 @@ export async function findAdminUserById(db: Database, id: number): Promise<Admin
       emailVerified: user.emailVerified,
       createdAt: user.createdAt,
       deletedAt: user.deletedAt,
-      commentCount: sql<number>`COUNT(${comment.id}) FILTER (WHERE ${comment.deletedAt} IS NULL)`,
-      pendingCount: sql<number>`COUNT(${comment.id}) FILTER (WHERE ${comment.deletedAt} IS NULL AND ${comment.isPending} = TRUE)`,
-      lastCommentAt: lastCommentAtAggregate(),
       passkeyCount: sql<number>`(SELECT COUNT(*) FROM passkey_credential WHERE passkey_credential.user_id = ${user.id})`,
       loginMethod: user.loginMethod,
     })
     .from(user)
-    .leftJoin(comment, eq(comment.userId, user.id))
     .where(eq(user.id, id))
-    .groupBy(user.id)
     .limit(1)
   const row = rows[0]
   if (!row) {
     return null
   }
+  const stats = await aggregateCommentStats(db, [id])
+  const stat = stats.get(id) ?? EMPTY_COMMENT_STATS
   return {
     ...row,
     role: row.role ?? null,
-    commentCount: Number(row.commentCount ?? 0),
-    pendingCount: Number(row.pendingCount ?? 0),
+    commentCount: stat.commentCount,
+    pendingCount: stat.pendingCount,
+    lastCommentAt: stat.lastCommentAt,
     passkeyCount: Number(row.passkeyCount ?? 0),
   }
 }

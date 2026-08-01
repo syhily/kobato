@@ -137,6 +137,43 @@ describe('users/repos/admin-query — listAdminUsers', () => {
     const rows = await adminQuery.listAdminUsers(db, 1, 1, {})
     expect(rows).toHaveLength(1)
   })
+
+  it('orders by comment count when sortBy is commentCount', async () => {
+    const busy = await seedUser({ name: 'Busy', email: 'busy@example.com' })
+    const quiet = await seedUser({ name: 'Quiet', email: 'quiet@example.com' })
+    await seedComment(busy.id)
+    await seedComment(busy.id)
+    await seedComment(quiet.id)
+
+    const rows = await adminQuery.listAdminUsers(db, 0, 10, {}, 'commentCount')
+    expect(rows[0].id).toBe(busy.id)
+    expect(rows[0].commentCount).toBe(2)
+    expect(rows[1].id).toBe(quiet.id)
+  })
+
+  it('aggregates comments only for the paginated users', async () => {
+    // The off-page user's comments must not leak into the page's stats —
+    // recency mode paginates users before aggregating (audit P1-13).
+    const offPage = await seedUser({
+      name: 'OffPage',
+      email: 'off@example.com',
+      createdAt: new Date('2024-01-01T00:00:00Z'),
+    })
+    const onPage = await seedUser({
+      name: 'OnPage',
+      email: 'on@example.com',
+      createdAt: new Date('2024-01-02T00:00:00Z'),
+    })
+    await seedComment(offPage.id)
+    await seedComment(offPage.id)
+    const latest = await seedComment(onPage.id, { createdAt: new Date('2024-02-01T00:00:00Z') })
+
+    const rows = await adminQuery.listAdminUsers(db, 0, 1, {})
+    expect(rows).toHaveLength(1)
+    expect(rows[0].id).toBe(onPage.id)
+    expect(rows[0].commentCount).toBe(1)
+    expect(rows[0].lastCommentAt?.getTime()).toBe(latest.createdAt.getTime())
+  })
 })
 
 describe('users/repos/admin-query — findAdminUserById', () => {
