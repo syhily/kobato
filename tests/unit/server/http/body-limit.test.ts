@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import type { Env } from '@/server/http/context'
 
@@ -84,6 +84,27 @@ describe('dynamicBodyLimit', () => {
       duplex: 'half',
     })
     expect(res.status).toBe(413)
+  })
+
+  it('cancels the upstream reader when a stream body exceeds the limit', async () => {
+    const app = makeApp(100)
+    const cancel = vi.fn()
+    const stream = new ReadableStream({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode('x'.repeat(200)))
+        // Never close — simulates a client trickling an oversized chunked
+        // body. Without the upstream cancel the raw body would hang here.
+      },
+      cancel,
+    })
+    const res = await app.request('/test', {
+      method: 'POST',
+      body: stream,
+      // @ts-expect-error — Node.js fetch requires duplex when sending a stream body
+      duplex: 'half',
+    })
+    expect(res.status).toBe(413)
+    expect(cancel).toHaveBeenCalled()
   })
 
   it('uses dynamic maxSize on each request', async () => {

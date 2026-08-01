@@ -43,10 +43,23 @@ describe('release chain: the draft-release flow stays triggerable', () => {
     expect(onBlock).toMatch(/push:[\s\S]*tags:/)
   })
 
-  it('sea.yml build matrix gate admits tag pushes', () => {
-    // Without this the matrix jobs would be skipped on the tag push and
-    // release-upload's `needs` would never be satisfiable.
-    expect(sea).toMatch(/if:.*startsWith\(github\.ref, 'refs\/tags\/'\)/)
+  it('sea.yml build matrix gate admits tag pushes — anchored per release-upload dependency job', () => {
+    // Without these gates the matrix jobs would be skipped on the tag
+    // push and release-upload's `needs` would never be satisfiable. A
+    // single whole-file match cannot detect ONE leg's gate being renamed
+    // or broken (the other two still match), which would silently make
+    // `needs: [build, build-darwin, build-windows]` unsatisfiable and
+    // the release would never publish — the P0-1 class. So each job's
+    // gate is asserted inside its own job block.
+    const tagGate = /if:.*startsWith\(github\.ref, 'refs\/tags\/'\)/
+    // Job keys are the only lines indented exactly two spaces under
+    // `jobs:`, so splitting there yields one block per job.
+    const jobBlocks = sea.slice(sea.indexOf('jobs:')).split(/\n  (?=\S)/)
+    for (const job of ['build', 'build-darwin', 'build-windows']) {
+      const block = jobBlocks.find((b) => b.startsWith(`${job}:`))
+      expect(block, `sea.yml job block for ${job}`).toBeDefined()
+      expect(block).toMatch(tagGate)
+    }
   })
 
   it('sea.yml release-upload runs on the tag push and publishes the draft', () => {

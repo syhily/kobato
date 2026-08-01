@@ -62,6 +62,13 @@ export function dynamicBodyLimit(options: DynamicBodyLimitOptions): MiddlewareHa
         }
         size += value.byteLength
         if (size > maxSize) {
+          // Cancel the upstream reader first: erroring the passthrough
+          // without cancelling leaves the raw chunked body hanging (the
+          // socket is never drained), which lets a client trickle bytes
+          // and hold the connection open. The catch is required — cancel
+          // rejects if the stream is already errored, which would
+          // otherwise surface as an unhandled rejection.
+          void rawReader.cancel().catch(() => {})
           // Erroring the stream with an HTTPException lets Hono's error
           // handler convert it to a 413 response. A plain Error would
           // become a 500 because Hono's next() always resolves and the
