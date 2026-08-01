@@ -13,13 +13,22 @@ import { rateLimitByIp } from '@/server/http/middlewares/rate-limit'
 import { serveCalendar } from '@/server/http/resources/calendar'
 import { through } from '@/server/infra/cache/registry'
 import { drawOpenGraph } from '@/server/render/og/render'
+// Side-effect import: wires the render-layer warmup implementation into
+// the content domain's slot (`domains/content/render-warmup.ts`). This
+// module owns the OG/calendar request path the warm mirrors, so the
+// wiring loads with it.
+import '@/server/render/warmup/content-cache'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { joinUrl } from '@/shared/utils/urls'
 
 // ─── OG image ─────────────────────────────────────────────────────
 
+// OG URLs key on the slug only — the image content can change across
+// edits while the URL stays put, so `immutable` would pin stale social
+// cards in browsers/previewers for a week. A short max-age keeps the
+// card fresh via revalidation instead.
 const OG_HEADERS = {
-  'Cache-Control': 'public, max-age=604800, immutable',
+  'Cache-Control': 'public, max-age=3600',
 }
 
 function respondPng(c: Context<Env>, buffer: Uint8Array, headers: Readonly<Record<string, string>>) {
@@ -104,6 +113,12 @@ const AVATAR_HEADERS = {
   'Cache-Control': 'public, max-age=604800',
 }
 
+// The avatar route proxies an external mirror per cache miss, so it gets
+// its own bucket stacked on the per-route images limit below — half the
+// generic resource budget. Browsers cache avatars for a week
+// (AVATAR_HEADERS), so legitimate traffic stays far below this.
+const AVATAR_RATE_BUCKET = { windowSeconds: 60, maxAttempts: 30 }
+
 // ─── Router ───────────────────────────────────────────────────────
 //
 // Hono's path parser footgun: in a pattern like `/foo/:name.png`,
@@ -120,35 +135,46 @@ function stripPng(filename: string | undefined): string {
   return filename?.replace(/\.png$/, '') ?? ''
 }
 
+// The limiter is passed per route, NEVER via router-level `.use()`: this
+// router is mounted at `/` in the pipeline, where a bare `.use()` registers
+// as a site-wide middleware — every public SSR page view then counts
+// against the images bucket, and one IP's 60 page loads/minute 429 the
+// whole site. The avatar route additionally stacks its own stricter bucket.
+const imagesRateLimit = rateLimitByIp('images', 'resourceIp', { errorBody: { error: 'Too many requests' } })
+
 export const imagesRouter = new Hono<Env>()
-  .use(rateLimitByIp('images', 'resourceIp', { errorBody: { error: 'Too many requests' } }))
-  .get('/images/og/:filename{[^/]+\\.png}', createOgHandler([postOgAdapter, pageOgAdapter]))
-  .get('/images/og/cats/:filename{[^/]+\\.png}', createOgHandler([categoryOgAdapter]))
-  .get('/images/calendar/:year/:filename{[^/]+\\.png}', async (c) => {
+  .get('/images/og/:filename{[^/]+\\.png}', imagesRateLimit, createOgHandler([postOgAdapter, pageOgAdapter]))
+  .get('/images/og/cats/:filename{[^/]+\\.png}', imagesRateLimit, createOgHandler([categoryOgAdapter]))
+  .get('/images/calendar/:year/:filename{[^/]+\\.png}', imagesRateLimit, async (c) => {
     const params = { year: c.req.param('year'), time: stripPng(c.req.param('filename')) }
     const headers = { 'Cache-Control': 'public, max-age=86400' }
     const res = await serveCalendar(c.var.requestContext.db, params, 'light', headers)
     res.headers.forEach((v, k) => c.header(k, v))
     return c.body(await res.arrayBuffer())
   })
-  .get('/images/calendar/dark/:year/:filename{[^/]+\\.png}', async (c) => {
+  .get('/images/calendar/dark/:year/:filename{[^/]+\\.png}', imagesRateLimit, async (c) => {
     const params = { year: c.req.param('year'), time: stripPng(c.req.param('filename')) }
     const headers = { 'Cache-Control': 'public, max-age=86400' }
     const res = await serveCalendar(c.var.requestContext.db, params, 'dark', headers)
     res.headers.forEach((v, k) => c.header(k, v))
     return c.body(await res.arrayBuffer())
   })
-  .get('/images/avatar/:filename{[^/]+\\.png}', async (c) => {
-    const hash = stripPng(c.req.param('filename'))
-    if (!hash) {
-      return c.redirect(defaultAvatarUrl())
-    }
-    const size = resolveAvatarSize(c.req.query('s'))
-    // The serving policy (cache reads/writes, QQ vs gravatar branching)
-    // lives in the domain service; the resource only maps the outcome.
-    const avatar = await serveAvatar(c.var.requestContext.db, hash, size)
-    if (avatar.kind === 'redirect') {
-      return c.redirect(defaultAvatarUrl())
-    }
-    return respondPng(c, avatar.buffer, AVATAR_HEADERS)
-  })
+  .get(
+    '/images/avatar/:filename{[^/]+\\.png}',
+    imagesRateLimit,
+    rateLimitByIp('avatar', AVATAR_RATE_BUCKET, { errorBody: { error: 'Too many requests' } }),
+    async (c) => {
+      const hash = stripPng(c.req.param('filename'))
+      if (!hash) {
+        return c.redirect(defaultAvatarUrl())
+      }
+      const size = resolveAvatarSize(c.req.query('s'))
+      // The serving policy (cache reads/writes, QQ vs gravatar branching)
+      // lives in the domain service; the resource only maps the outcome.
+      const avatar = await serveAvatar(c.var.requestContext.db, hash, size)
+      if (avatar.kind === 'redirect') {
+        return c.redirect(defaultAvatarUrl())
+      }
+      return respondPng(c, avatar.buffer, AVATAR_HEADERS)
+    },
+  )

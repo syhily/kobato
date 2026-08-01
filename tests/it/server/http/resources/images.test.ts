@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Env } from '@/server/http/context'
 
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { page as pageTable } from '@/server/infra/db/schema/page'
@@ -36,6 +37,7 @@ vi.mock('@/server/render/og/render', () => ({
 
 import { serveAvatar } from '@/server/domains/comments/services/avatar'
 import { imagesRouter } from '@/server/http/resources/images'
+import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 import { renderCalendar } from '@/server/render/calendar/render'
 
 const db = getTestDb()
@@ -47,6 +49,9 @@ function requestImages(url: string) {
     await next()
   })
   app.route('/', imagesRouter)
+  // Sentinel public route sharing the `/` mount root — mirrors the SSR
+  // pages that must never count against the images bucket.
+  app.get('/sitemap.xml', (c) => c.text('sitemap'))
   return app.request(url)
 }
 
@@ -95,6 +100,9 @@ describe('images resource', () => {
   beforeEach(async () => {
     await clearAllTables(db)
     vi.clearAllMocks()
+    // Per-test bucket overrides need a clean counter — earlier cases in
+    // this file already spend resource/avatar attempts from 127.0.0.1.
+    __resetRateLimitsForTests()
     ;(renderCalendar as ReturnType<typeof vi.fn>).mockResolvedValue(Buffer.from('cal'))
     // Default: the domain reports "no avatar" — the redirect mapping tests
     // override per case.
@@ -116,6 +124,31 @@ describe('images resource', () => {
   it('falls back when no entity is found', async () => {
     const res = await requestImages('http://localhost/images/og/missing.png')
     expect(res.status).toBe(302)
+  })
+
+  it('never counts public non-image requests against the images bucket', async () => {
+    // Regression guard: the router is mounted at `/` in the real pipeline,
+    // where a router-level `.use(rateLimit)` would register as a site-wide
+    // middleware — every SSR page view then drained the images bucket and
+    // one IP's page traffic 429'd the whole site. The limiter now rides
+    // each image route (avatar additionally stacks its stricter bucket).
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      rateLimit: {
+        ...TEST_BLOG_SETTINGS_BUNDLE.rateLimit!,
+        resourceIp: { windowSeconds: 60, maxAttempts: 1 },
+      },
+    })
+    // Several hits past the bucket ceiling — none may count against it.
+    for (let i = 0; i < 3; i++) {
+      expect((await requestImages('http://localhost/sitemap.xml')).status).toBe(200)
+    }
+    // An image route still draws from the resource bucket …
+    expect((await requestImages('http://localhost/images/og/missing.png')).status).toBe(302)
+    // … and the next hit inside the window trips it.
+    const res = await requestImages('http://localhost/images/og/missing.png')
+    expect(res.status).toBe(429)
+    await expect(res.json()).resolves.toEqual({ error: 'Too many requests' })
   })
 
   it('renders an OG image for a category', async () => {
@@ -158,12 +191,13 @@ describe('images resource', () => {
     expect(res.headers.get('Location')).toBe('https://example.com/images/default-avatar.png')
   })
 
-  it('threads the `?s=` size into the domain call, defaulting to 120', async () => {
+  it("threads the `?s=` size into the domain call, defaulting to the default's bucket", async () => {
     const res = await requestImages('http://localhost/images/avatar/abc.png?s=256')
     expect(res.status).toBe(302)
     expect(serveAvatar).toHaveBeenCalledWith(expect.anything(), 'abc', 256)
     ;(serveAvatar as ReturnType<typeof vi.fn>).mockClear()
     await requestImages('http://localhost/images/avatar/abc.png')
-    expect(serveAvatar).toHaveBeenCalledWith(expect.anything(), 'abc', 120)
+    // No `?s=` → DEFAULT_AVATAR_SIZE (120) rounded up to its bucket.
+    expect(serveAvatar).toHaveBeenCalledWith(expect.anything(), 'abc', 128)
   })
 })

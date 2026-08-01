@@ -7,6 +7,7 @@ import type { Env } from '@/server/http/context'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { post as postTable } from '@/server/infra/db/schema/post'
+import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 
 // Regression net for the Hono path-parser footgun that was silently
 // degrading every `/images/*.png` endpoint to its fallback branch.
@@ -75,6 +76,7 @@ app.route('/', imagesRouter)
 
 beforeEach(async () => {
   await clearAllTables(db)
+  __resetRateLimitsForTests()
 })
 
 async function seedLivePost(slug: string): Promise<number> {
@@ -105,18 +107,31 @@ describe('imagesRouter avatar', () => {
     // would have driven this into the missing-param fallback).
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('image/png')
-    expect(await res.text()).toBe('abcdef0123456789:120')
+    // No `?s=` → the default size, rounded up to its cache bucket (128).
+    expect(await res.text()).toBe('abcdef0123456789:128')
   })
 
   it('matches numeric ids the same way', async () => {
     const res = await app.request('/images/avatar/42.png')
     expect(res.status).toBe(200)
-    expect(await res.text()).toBe('42:120')
+    expect(await res.text()).toBe('42:128')
   })
 
   it('rejects non-png extensions with 404', async () => {
     const res = await app.request('/images/avatar/42.jpg')
     expect(res.status).toBe(404)
+  })
+
+  it('throttles the avatar route with its own stricter bucket', async () => {
+    // 30 requests per 60s per IP; the 31st is answered 429 with the
+    // resource-route error shape — before any mirror fetch happens.
+    for (let i = 0; i < 30; i += 1) {
+      const res = await app.request('/images/avatar/abcdef0123456789.png')
+      expect(res.status).toBe(200)
+    }
+    const res = await app.request('/images/avatar/abcdef0123456789.png')
+    expect(res.status).toBe(429)
+    expect(await res.json()).toEqual({ error: 'Too many requests' })
   })
 })
 

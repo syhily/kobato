@@ -9,6 +9,7 @@ import { ROLE_LEVELS, roleLabel, type Role } from '@/shared/utils/roles'
 import { ACTION_OPTIONS, RESOURCE_TYPE_OPTIONS } from '@/ui/admin/audit/filter-fields'
 import { Badge } from '@/ui/components/badge'
 import { cn } from '@/ui/lib/cn'
+import { sanitizeHtml } from '@/ui/lib/sanitize-html'
 
 interface AuditLogRowProps {
   row: AuditLogItemDto
@@ -153,7 +154,10 @@ function JsonDetailPanel({ row }: { row: AuditLogItemDto }) {
       {row.detailsHtml ? (
         <div
           className="[&>pre]:m-0 [&>pre]:rounded-none [&>pre]:border-0 [&>pre]:bg-transparent [&>pre]:px-4 [&>pre]:py-3 [&>pre]:text-xs [&>pre]:leading-relaxed"
-          dangerouslySetInnerHTML={{ __html: row.detailsHtml }}
+          // Convention (src/ui/AGENTS.md): every dangerouslySetInnerHTML
+          // goes through sanitizeHtml — the producer escapes today, but
+          // the client must not rely on that staying true.
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(row.detailsHtml, 'shiki') }}
         />
       ) : (
         <pre className="bg-muted/30 px-4 py-3 text-xs leading-relaxed">{JSON.stringify(row.details, null, 2)}</pre>

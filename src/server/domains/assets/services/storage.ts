@@ -32,6 +32,16 @@ export function isSvgSlot(slot: BrandingSlot): slot is SvgSlot {
   return (SVG_SLOTS as readonly string[]).includes(slot)
 }
 
+// SVG uploads are served back AS-IS — no content sanitization (audit
+// P1-9, downgraded to accepted risk 2026-07-31, see
+// docs/plans/2026-07-31-fix-review.md). The two backstops that make the
+// downgrade tenable: script inside an SVG referenced via <img> never
+// executes (browsers treat it as an image, not a document), and a
+// directly-opened SVG document falls under the site's CSP
+// (`script-src 'self' 'nonce-*'`), which blocks its inline script;
+// uploads are admin-only, and S3-configured sites serve the bytes from
+// an isolated origin anyway. Revisit here if either backstop changes.
+
 // Per-slot expected MIME type. We use it to reject mismatched uploads
 // and to set the response `Content-Type` when serving the bytes back.
 export const SLOT_CONTENT_TYPE: Readonly<Record<BrandingSlot, string>> = {
