@@ -86,6 +86,7 @@ vi.mock('@/server/domains/backup/restore-machine', () => ({
 vi.mock('@/server/bootstrap/analytics-lifecycle', () => ({
   initAnalyticsDatabase: vi.fn(),
   closeAnalyticsForRestore: vi.fn(),
+  snapshotAnalyticsTo: vi.fn(),
 }))
 
 vi.mock('@/server/domains/comments/services/likes', () => ({

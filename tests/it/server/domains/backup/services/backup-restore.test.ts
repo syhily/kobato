@@ -6,12 +6,16 @@ import type { AnalyticsHandle } from '@/server/infra/analytics/duckdb'
 import { closeTestAnalyticsDb, createTestAnalyticsDb, seedAccessEvents } from '#/_helpers/analytics-db'
 import { clearAllTables, createTestDatabaseFile, getTestDb } from '#/_helpers/integration-db'
 import { makeMemoryBackend } from '#/_helpers/memory-storage'
-import { __adoptAnalyticsHandleForTests, __resetAnalyticsEngineForTests } from '@/server/bootstrap/analytics-lifecycle'
+import {
+  __adoptAnalyticsHandleForTests,
+  __resetAnalyticsEngineForTests,
+  snapshotAnalyticsTo,
+} from '@/server/bootstrap/analytics-lifecycle'
 
 let analyticsHandle: AnalyticsHandle
 
 import { extractBackupFile, unpackBackupPayload } from '#/_helpers/backup-buffer'
-import { createBackup, getBackupBuffer } from '@/server/domains/backup/services/backup'
+import { createBackup, getBackupBuffer, wireBackupSnapshots } from '@/server/domains/backup/services/backup'
 import { findBackupByTimestamp } from '@/server/infra/db/operations/backup'
 import { category } from '@/server/infra/db/schema/taxonomy'
 import { ActionFailure } from '@/server/infra/http/errors'
@@ -27,9 +31,11 @@ const db = getTestDb()
 beforeEach(async () => {
   __setStorageBackendForTests('s3', mem.backend)
   analyticsHandle = await createTestAnalyticsDb()
-  // The real snapshotAnalyticsTo runs against the adopted handle.
+  // The real snapshotAnalyticsTo runs against the adopted handle — wired
+  // explicitly now that the backup domain takes it by injection.
   __resetAnalyticsEngineForTests()
   __adoptAnalyticsHandleForTests(analyticsHandle)
+  wireBackupSnapshots({ snapshotAnalyticsTo })
   await clearAllTables(db)
 })
 

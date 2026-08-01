@@ -1,8 +1,13 @@
-import { closeAnalyticsForRestore, initAnalyticsDatabase } from '@/server/bootstrap/analytics-lifecycle'
+import {
+  closeAnalyticsForRestore,
+  initAnalyticsDatabase,
+  snapshotAnalyticsTo,
+} from '@/server/bootstrap/analytics-lifecycle'
 import { ManagedEngine } from '@/server/bootstrap/managed-engine'
 import { rescheduleArchive, scheduleNextArchive, wireArchiveScheduler } from '@/server/domains/audit/services/scheduler'
 import { wireRestoreMachine } from '@/server/domains/backup/restore-machine'
 import { rescheduleBackup, wireBackupScheduler } from '@/server/domains/backup/scheduler'
+import { wireBackupSnapshots } from '@/server/domains/backup/services/backup'
 import {
   cleanupPreRestoreFiles,
   rollbackPreRestoreFiles,
@@ -83,6 +88,7 @@ function wireDatabase(handle: DatabaseHandle): DatabaseHandle {
   setRestartRefreshSettings(refreshBlogSettings)
   wireArchiveScheduler({ getDb })
   wireBackupScheduler({ getDb })
+  wireBackupSnapshots({ snapshotAnalyticsTo })
   wireScheduledPublishScheduler({ getDb })
   wireWebmentionOutboxScheduler({ getDb })
   wireWebmentionPostPublishHook()

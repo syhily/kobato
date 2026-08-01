@@ -11,7 +11,6 @@ import { createGzip } from 'node:zlib'
 import type { Database } from '@/server/infra/db/database'
 import type { BackupFileDto } from '@/shared/types/backup'
 
-import { snapshotAnalyticsTo } from '@/server/bootstrap/analytics-lifecycle'
 import { createTarReadStream } from '@/server/domains/backup/services/tar'
 import {
   deleteBackupRow,
@@ -90,6 +89,18 @@ async function reconcileBackups(db: Database): Promise<void> {
   }
 }
 
+// The analytics sidecar snapshot is injected by the composition root
+// (`@/server/bootstrap/db-lifecycle`, which owns the analytics engine)
+// at wire time — a direct import of bootstrap/analytics-lifecycle here
+// would invert the dependency direction (domain → composition root) and
+// risk an import cycle. Same injection discipline as
+// `wireBackupScheduler` in `@/server/domains/backup/scheduler`.
+let snapshotAnalytics: ((stagingPath: string) => Promise<boolean>) | null = null
+
+export function wireBackupSnapshots(deps: { snapshotAnalyticsTo: (stagingPath: string) => Promise<boolean> }): void {
+  snapshotAnalytics = deps.snapshotAnalyticsTo
+}
+
 // Single-flight claim for backup creation — the timestamp has SECOND
 // precision and names the S3 key and DB row, so two backups starting in
 // the same second collide: the loser's `VACUUM INTO` failed opaquely on
@@ -146,10 +157,17 @@ async function createBackupUnchecked(
   // byte-for-byte — append-only telemetry tolerates the handoff.
   db.run(sql.raw(`VACUUM INTO '${stagingPath.replaceAll("'", "''")}'`))
 
+  // Unwired is a composition-root bug, not an expendable-sidecar
+  // condition — fail loudly instead of silently archiving content only.
+  const snapshot = snapshotAnalytics
+  if (snapshot === null) {
+    throw new Error('createBackup ran before wireBackupSnapshots')
+  }
+
   try {
     const entries: { name: string; path: string; size: number }[] = []
     try {
-      if (await snapshotAnalyticsTo(analyticsStagingPath)) {
+      if (await snapshot(analyticsStagingPath)) {
         entries.push({ name: 'analytics.duckdb', path: analyticsStagingPath, size: 0 })
       }
     } catch (error) {

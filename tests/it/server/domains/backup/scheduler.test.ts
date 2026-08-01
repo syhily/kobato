@@ -9,6 +9,7 @@ const registerShutdownHook = vi.fn()
 vi.mock('@/server/domains/backup/services/backup', () => ({
   createBackup: (...args: unknown[]) => createBackup(...args),
   cleanupOldBackups: (...args: unknown[]) => cleanupOldBackups(...args),
+  wireBackupSnapshots: vi.fn(),
 }))
 
 vi.mock('@/server/infra/lifecycle', async (importOriginal) => ({
