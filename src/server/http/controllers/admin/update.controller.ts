@@ -10,14 +10,14 @@ const check = adminProc
   .route({ method: 'GET', path: '/admin/update/check' })
   .input(z.object({}))
   .output(updateCheckResultDto)
-  .handler(() => checkForUpdate())
+  .handler(({ context }) => checkForUpdate(context.db))
 
 const apply = adminProc
   .route({ method: 'POST', path: '/admin/update/apply' })
   .input(z.object({}))
   .output(z.object({ fromVersion: z.string(), toVersion: z.string() }))
   .handler(async ({ context }) => {
-    const result = await applyUpdate()
+    const result = await applyUpdate(context.db)
     recordAuditEventFromContext(context, {
       action: 'system_updated',
       resourceType: 'system',

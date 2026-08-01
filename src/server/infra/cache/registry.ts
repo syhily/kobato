@@ -48,6 +48,8 @@ interface CacheParamsMap {
   categories: Record<string, never>
   tags: Record<string, never>
   comments: Record<string, never>
+  githubRelease: { owner: string; repo: string; endpoint: string }
+  githubAvatar: Record<string, never>
 }
 
 // ─── Behaviors ────────────────────────────────────────────
@@ -174,6 +176,23 @@ const BEHAVIORS: { [K in CacheBucketId]: CacheBehavior<CacheParamsMap[K]> } = {
   comments: {
     kind: 'json',
     key: () => 'latest',
+  },
+  // Short-TTL shield for outbound GitHub API calls: the key carries the
+  // full request target so a repo or endpoint change can never serve a
+  // stale cross-request hit. Failures are never cached — the loader
+  // throws and `through` writes nothing.
+  githubRelease: {
+    kind: 'json',
+    key: ({ owner, repo, endpoint }) => `${owner}/${repo}/${endpoint}`,
+  },
+  // The site owner's GitHub avatar data URL — a single compile-time
+  // constant upstream, so one fixed key. The loader resolves '' on
+  // failure; caching that would shadow the avatar for the whole TTL, so
+  // only real payloads are stored.
+  githubAvatar: {
+    kind: 'json',
+    key: () => '',
+    cacheWhen: (value) => typeof value === 'string' && value !== '',
   },
 }
 

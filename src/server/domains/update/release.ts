@@ -1,6 +1,9 @@
 // Latest-release lookup against the GitHub Releases API.
 // Shared by the public `github.release` procedure and the self-update domain.
 
+import type { Database } from '@/server/infra/db/database'
+
+import { through } from '@/server/infra/cache/registry'
 import { DomainError } from '@/server/infra/http/errors'
 import { APP_REPOSITORY } from '@/shared/config/version'
 import { isRecord } from '@/shared/utils/type-guards'
@@ -34,26 +37,32 @@ function isGitHubRelease(
   )
 }
 
-export async function fetchLatestRelease(): Promise<LatestRelease> {
+export async function fetchLatestRelease(db: Database): Promise<LatestRelease> {
   const parsed = parseRepo(APP_REPOSITORY)
   if (!parsed) {
     throw new DomainError('INTERNAL', 'Invalid repository format')
   }
   const { owner, repo } = parsed
-  const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/releases/latest`, {
-    signal: AbortSignal.timeout(30_000),
+  // Read-through the short-TTL bucket (the key carries the full request
+  // target): repeat callers — the public release endpoint and the admin
+  // update check — share one upstream call per TTL window. A failed
+  // fetch throws out of the loader and is never cached.
+  return through(db, 'githubRelease', { owner, repo, endpoint: 'releases/latest' }, async () => {
+    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/releases/latest`, {
+      signal: AbortSignal.timeout(30_000),
+    })
+    if (!res.ok) {
+      throw new DomainError('INTERNAL', 'Failed to fetch release')
+    }
+    const json: unknown = await res.json()
+    if (!isGitHubRelease(json)) {
+      throw new DomainError('INTERNAL', 'Unexpected response format from GitHub API')
+    }
+    return {
+      tagName: json.tag_name,
+      htmlUrl: json.html_url,
+      name: json.name,
+      publishedAt: json.published_at,
+    }
   })
-  if (!res.ok) {
-    throw new DomainError('INTERNAL', 'Failed to fetch release')
-  }
-  const json: unknown = await res.json()
-  if (!isGitHubRelease(json)) {
-    throw new DomainError('INTERNAL', 'Unexpected response format from GitHub API')
-  }
-  return {
-    tagName: json.tag_name,
-    htmlUrl: json.html_url,
-    name: json.name,
-    publishedAt: json.published_at,
-  }
 }

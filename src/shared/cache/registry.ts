@@ -112,6 +112,24 @@ export const CACHE_DECLARATIONS = [
     defaultTtlSeconds: 30,
     tunable: false,
   },
+  {
+    id: 'githubRelease',
+    label: 'GitHub 版本缓存',
+    description: (prefix) =>
+      `GitHub Releases API 的查询结果，键形如 ${prefix}<owner>/<repo>/<endpoint>。短 TTL 仅用于削减重复外呼，到期后自动重新请求。`,
+    defaultPrefix: 'github-release:',
+    defaultTtlSeconds: 15 * 60,
+    tunable: false,
+  },
+  {
+    id: 'githubAvatar',
+    label: 'GitHub 头像缓存',
+    description: (prefix) =>
+      `站长 GitHub 头像的 data URL，缓存键为 ${prefix}。短 TTL 仅用于削减重复外呼（每次新会话的 30s 直连超时），到期后自动重新请求。`,
+    defaultPrefix: 'github-avatar:',
+    defaultTtlSeconds: 15 * 60,
+    tunable: false,
+  },
 ] as const satisfies readonly CacheDeclaration[]
 
 /**

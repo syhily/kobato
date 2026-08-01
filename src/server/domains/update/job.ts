@@ -10,6 +10,7 @@ import type { UpdateJobStatus } from '@/shared/contracts/update'
 
 import { runSelfUpdate } from '@/server/domains/update/pipeline'
 import { DomainError } from '@/server/infra/http/errors'
+import { requestShutdown } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
 
 const log = getLogger('update.job')
@@ -28,7 +29,15 @@ export function getUpdateJobStatus(): UpdateJobStatus {
 // The replacement process is spawned detached with the same argv tail;
 // `env` is intentionally omitted because spawn already inherits the
 // parent's environment by default (and raw environment reads are
-// centralised in `infra/env.ts` by the boundaries contract).
+// centralised in `infra/env.ts` by the boundaries contract). Under
+// systemd's default KillMode=control-group the orphan is cleaned up with
+// the cgroup, so the spawned child is only ever the restart vehicle for
+// unsupervised bare-metal runs.
+//
+// The exit itself goes through `requestShutdown`, NOT `process.exit`:
+// the graceful chain runs the priority-100 batcher flush hooks (audit
+// 500ms / page-view 60s / access-log 1s buffers) before exiting — a raw
+// `process.exit(0)` would silently drop those rows on every upgrade.
 function scheduleSelfRestart(delayMs = 1_000): void {
   const child = spawn(process.execPath, process.argv.slice(1), {
     detached: true,
@@ -37,7 +46,7 @@ function scheduleSelfRestart(delayMs = 1_000): void {
   child.unref()
   log.info('self-update swapped the binary; restarting', { pid: child.pid ?? null })
   setTimeout(() => {
-    process.exit(0)
+    requestShutdown('self-update restart')
   }, delayMs)
 }
 

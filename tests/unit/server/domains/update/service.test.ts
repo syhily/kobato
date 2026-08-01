@@ -1,17 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { Database } from '@/server/infra/db/database'
+
 import { DomainError } from '@/server/infra/http/errors'
 
 const gateMocks = vi.hoisted(() => ({ evaluateSelfUpdateGate: vi.fn() }))
 const releaseMocks = vi.hoisted(() => ({ fetchLatestRelease: vi.fn() }))
 const jobMocks = vi.hoisted(() => ({ startUpdateJob: vi.fn() }))
 
-vi.mock('@/server/domains/update/gate', () => ({ evaluateSelfUpdateGate: gateMocks.evaluateSelfUpdateGate }))
+vi.mock('@/server/infra/self-update-gate', () => ({ evaluateSelfUpdateGate: gateMocks.evaluateSelfUpdateGate }))
 vi.mock('@/server/domains/update/release', () => ({ fetchLatestRelease: releaseMocks.fetchLatestRelease }))
 vi.mock('@/server/domains/update/job', () => ({ startUpdateJob: jobMocks.startUpdateJob }))
 vi.mock('@/shared/config/version', () => ({ APP_VERSION: '6.4.0' }))
 
 const { checkForUpdate, applyUpdate, isNewerVersion } = await import('@/server/domains/update/service')
+
+// Only forwarded to the mocked release lookup — a plain object suffices.
+const db = {} as Database
 
 function release(tagName: string) {
   return {
@@ -30,7 +35,7 @@ describe('update/service', () => {
   })
 
   it('composes the check result from release, gate, and version comparison', async () => {
-    const result = await checkForUpdate()
+    const result = await checkForUpdate(db)
     expect(result).toEqual({
       currentVersion: '6.4.0',
       latestVersion: '6.5.0',
@@ -44,7 +49,7 @@ describe('update/service', () => {
 
   it('reports no update when the release is not newer', async () => {
     releaseMocks.fetchLatestRelease.mockResolvedValue(release('v6.4.0'))
-    const result = await checkForUpdate()
+    const result = await checkForUpdate(db)
     expect(result.updateAvailable).toBe(false)
   })
 
@@ -53,21 +58,21 @@ describe('update/service', () => {
       canSelfUpdate: false,
       reasons: ['Docker 部署请拉取新镜像升级'],
     })
-    const result = await checkForUpdate()
+    const result = await checkForUpdate(db)
     expect(result.canSelfUpdate).toBe(false)
     expect(result.reasons).toEqual(['Docker 部署请拉取新镜像升级'])
   })
 
   it('apply starts the job and returns the from/to versions', async () => {
-    const result = await applyUpdate()
+    const result = await applyUpdate(db)
     expect(result).toEqual({ fromVersion: '6.4.0', toVersion: '6.5.0' })
     expect(jobMocks.startUpdateJob).toHaveBeenCalledWith('v6.5.0')
   })
 
   it('apply re-checks freshness and refuses when no update is available', async () => {
     releaseMocks.fetchLatestRelease.mockResolvedValue(release('v6.4.0'))
-    await expect(applyUpdate()).rejects.toThrow(DomainError)
-    await expect(applyUpdate()).rejects.toMatchObject({ code: 'CONFLICT' })
+    await expect(applyUpdate(db)).rejects.toThrow(DomainError)
+    await expect(applyUpdate(db)).rejects.toMatchObject({ code: 'CONFLICT' })
     expect(jobMocks.startUpdateJob).not.toHaveBeenCalled()
   })
 
@@ -76,7 +81,7 @@ describe('update/service', () => {
       canSelfUpdate: false,
       reasons: ['Docker 部署请拉取新镜像升级', '二进制所在目录不可写，无法替换程序文件'],
     })
-    await expect(applyUpdate()).rejects.toMatchObject({
+    await expect(applyUpdate(db)).rejects.toMatchObject({
       code: 'FORBIDDEN',
       message: 'Docker 部署请拉取新镜像升级；二进制所在目录不可写，无法替换程序文件',
     })
