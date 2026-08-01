@@ -12,6 +12,15 @@ describe('sanitizeReqHeaders', () => {
     expect(result.Cookie).toBe('[REDACTED]')
   })
 
+  it('redacts proxy credentials and CSRF tokens (audit P0-9)', () => {
+    const result = sanitizeReqHeaders({
+      'Proxy-Authorization': 'Basic cHJveHk6c2VjcmV0',
+      'X-CSRF-Token': 'csrf-secret',
+    })
+    expect(result['Proxy-Authorization']).toBe('[REDACTED]')
+    expect(result['X-CSRF-Token']).toBe('[REDACTED]')
+  })
+
   it('redacts L5 headers case-insensitively', () => {
     const result = sanitizeReqHeaders({ authorization: 'Bearer secret123', cookie: 'sid=xyz' })
     expect(result.authorization).toBe('[REDACTED]')

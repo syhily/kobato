@@ -12,13 +12,14 @@ type ResBindingsContext = Context<{
 /**
  * Privacy-aware request header sanitisation for Pino HTTP logging.
  *
- * L5: credentials must NEVER reach logs — authorization tokens and cookies
- * (request `cookie` / response `set-cookie`) are redacted entirely, not
- * tagged: their values are session material, not just personal data.
+ * L5: credentials must NEVER reach logs — authorization tokens, proxy
+ * credentials, CSRF tokens, and cookies (request `cookie` / response
+ * `set-cookie`) are redacted entirely, not tagged: their values are
+ * session material, not just personal data.
  * L3: user-agent and any header carrying IP get {E}…{/E} markers per
  * `src/server/infra/logger.ts` privacy tagging convention.
  */
-const L5_REQ_HEADERS = new Set(['authorization', 'cookie'])
+const L5_REQ_HEADERS = new Set(['authorization', 'proxy-authorization', 'x-csrf-token', 'cookie'])
 const L3_REQ_HEADERS = new Set([
   'user-agent',
   'x-forwarded-for',

@@ -1,8 +1,13 @@
 import type { Hono } from 'hono'
 
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { wrapFetchWithLeakedResponseHandler } from '@/server/http/leaked-response'
+
+const mocks = vi.hoisted(() => ({ warn: vi.fn() }))
+vi.mock('@/server/infra/logger', () => ({
+  getLogger: vi.fn(() => ({ warn: mocks.warn, info: vi.fn(), error: vi.fn(), debug: vi.fn() })),
+}))
 
 interface FakeApp {
   fetch: (req: Request | string) => Response | Promise<Response>
@@ -39,6 +44,20 @@ describe('server/http/leaked-response — wrapFetchWithLeakedResponseHandler', (
     wrapFetchWithLeakedResponseHandler(app as unknown as Hono)
     const res = await app.fetch(new Request('https://example.com'))
     expect(res).toBe(leaked)
+  })
+
+  it('logs only the path — the query string can carry one-time tokens (audit P0-9)', async () => {
+    const leaked = new Response(null, { status: 302 })
+    const app = makeApp(() => {
+      throw leaked
+    })
+    wrapFetchWithLeakedResponseHandler(app as unknown as Hono)
+    await app.fetch(new Request('https://example.com/admin/signin?action=login&token=one-time-secret'))
+    expect(mocks.warn).toHaveBeenCalledWith(
+      'leaked-response',
+      expect.objectContaining({ path: '/admin/signin', status: 302 }),
+    )
+    expect(JSON.stringify(mocks.warn.mock.calls)).not.toContain('one-time-secret')
   })
 
   it('rethrows non-Response sync errors', () => {
