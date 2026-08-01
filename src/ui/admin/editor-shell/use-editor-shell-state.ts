@@ -180,6 +180,7 @@ export function useEditorShellState<
     previewBanner,
     dismissPreviewBanner,
     noteBodySaved,
+    noteBodyPersisted,
     isPending,
     isSavingDraft,
     isPublishing,
@@ -259,10 +260,26 @@ export function useEditorShellState<
         force: true,
       })
       noteBodySaved(result)
+      if (result.status === 'saved') {
+        // Persisted outside both the engine and the manual-save flow:
+        // advance the autosave baseline to the adopted body so the next
+        // debounce tick short-circuits instead of re-PATCHing it.
+        noteBodyPersisted(conflict.localBody)
+      }
     } catch (error) {
       setStatus({ kind: 'error', message: error instanceof Error ? error.message : '保存失败' })
     }
-  }, [conflict, isEditing, detail, expectedToken, directSaveDraft, noteBodySaved, replaceBody, setStatus])
+  }, [
+    conflict,
+    isEditing,
+    detail,
+    expectedToken,
+    directSaveDraft,
+    noteBodySaved,
+    noteBodyPersisted,
+    replaceBody,
+    setStatus,
+  ])
 
   const adoptServerVersion = useCallback(() => {
     replaceBody(initialBody, `${detail?.entity.id ?? 'new'}:adopt-server:${Date.now()}`)

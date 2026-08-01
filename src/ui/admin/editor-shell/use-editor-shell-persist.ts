@@ -117,6 +117,13 @@ export function useEditorShellPersist<
   // unpersisted body as saved.
   const manualSaveBodyRef = useRef<PortableTextBody | null>(null)
 
+  // Server publishedAt captured right before persistPublish's optimistic
+  // overwrite, so a failed publish can restore the pre-publish truth instead
+  // of leaving the optimistic value behind — a leftover future date would
+  // make a later picker-clear save send `publishedAt: null` (the server's
+  // cancel-schedule signal) and silently unpublish a live entity.
+  const publishedAtBeforePublishRef = useRef<string | null>(null)
+
   const markBodySaved = useCallback((savedBody: PortableTextBody) => {
     setLastSavedBody(savedBody)
   }, [])
@@ -154,6 +161,14 @@ export function useEditorShellPersist<
   // further down, after these reducers are defined — same pattern as
   // `handleBodySavedRef` below).
   const markPersistedRef = useRef<(body: PortableTextBody) => void>(() => undefined)
+
+  // Advance the engine baseline for a body persisted outside both the engine
+  // and the manual-save flow — the orchestrator's adoptLocalDraft force-save.
+  // Without it the next debounce tick re-PATCHes the adopted body (and
+  // rotates the revision token server-side for nothing).
+  const noteBodyPersisted = useCallback((persistedBody: PortableTextBody) => {
+    markPersistedRef.current(persistedBody)
+  }, [])
 
   const noteBodySaved = useCallback(
     (payload: SaveBodyOutput) => {
@@ -229,7 +244,15 @@ export function useEditorShellPersist<
         markMetaPublished()
       }
     },
-    onError: (error) => noteError(error.message),
+    onError: (error) => {
+      // The publish never landed: revert the optimistic server publishedAt
+      // persistPublish just applied, back to the pre-publish truth (the next
+      // meta save re-syncs it via noteMetaSaved). Only this optimistic write
+      // is rolled back — the user's picker input lives in the meta draft and
+      // stays untouched.
+      setServerPublishedAtIso(publishedAtBeforePublishRef.current)
+      noteError(error.message)
+    },
   })
   const unpublishMutation = useMutation({
     mutationFn: unpublishFn,
@@ -444,8 +467,18 @@ export function useEditorShellPersist<
       expectedClientRevisionToken: expectedToken,
       ...(publishedAtIso !== null ? { publishedAt: publishedAtIso } : {}),
     })
+    publishedAtBeforePublishRef.current = serverPublishedAtIso
     setServerPublishedAtIso(publishedAtIso ?? new Date().toISOString())
-  }, [isEditing, detail, body, expectedToken, meta.publishedAt, publishMutation, beginActionBanner])
+  }, [
+    isEditing,
+    detail,
+    body,
+    expectedToken,
+    meta.publishedAt,
+    serverPublishedAtIso,
+    publishMutation,
+    beginActionBanner,
+  ])
 
   const persistUnpublish = useCallback(() => {
     if (!isEditing || !detail) {
@@ -474,6 +507,7 @@ export function useEditorShellPersist<
     previewBanner,
     dismissPreviewBanner,
     noteBodySaved,
+    noteBodyPersisted,
     isPending,
     isSavingDraft,
     isPublishing,

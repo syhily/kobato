@@ -624,9 +624,12 @@ describe('ui/admin/editor-shell/useEditorShellPersist — publish / unpublish', 
     expect(args.notifications.noteRevisionSaved).toHaveBeenCalled()
     expect(result.current.previewBanner).toEqual({ kind: 'published', slug: 's' })
 
-    // The optimistic server publishedAt is retained inside persist: a later
-    // save with an empty picker reads it as a schedule to CANCEL and sends
-    // an explicit null — never a forced "publish now".
+    // The optimistic server publishedAt is retained inside persist after the
+    // SUCCESSFUL publish: the server stored exactly this picker ISO
+    // (repos/mutate.ts publish sets publishedAt = input ?? now), so the
+    // optimistic value is now the truth. A later save with an empty picker
+    // reads it as a schedule to CANCEL and sends an explicit null — never a
+    // forced "publish now". (The failure path reverts it — see below.)
     const nextArgs: Args = { ...args, draft: { ...args.draft, meta: { ...baseMeta, publishedAt: '' } } }
     rerender({ args: nextArgs })
     act(() => result.current.persistSave())
@@ -634,6 +637,42 @@ describe('ui/admin/editor-shell/useEditorShellPersist — publish / unpublish', 
       meta: nextArgs.draft.meta,
       id: 'e1',
       publishedAt: null,
+    })
+  })
+
+  it('reverts the optimistic server publishedAt when the publish leg fails (V3-07)', () => {
+    // A live entity: its publishedAt is a past fact, not a schedule.
+    const detail = makeDetail([block('b1', 'x')])
+    detail.entity = { ...detail.entity, publishedAt: '2026-01-01T00:00:00.000Z' }
+    const args = makeArgs({
+      detail,
+      draft: {
+        meta: { ...baseMeta, published: true, publishedAt: '2099-06-01T12:00' },
+        body: [block('b1', 'x')],
+        expectedToken: 'tok-1',
+      },
+    })
+    const { result, rerender } = renderHook((props: { args: Args }) => useEditorShellPersist(props.args), {
+      initialProps: { args },
+    })
+    act(() => result.current.persistPublish())
+    act(() => slots[2].config?.onError?.(new Error('boom')))
+    expect(result.current.status).toEqual({ kind: 'error', message: 'boom' })
+
+    // Picker cleared after the failed publish. With the optimistic schedule
+    // reverted, the server holds no schedule to cancel: the field must be
+    // omitted (undefined), never null — `publishedAt: null` is the server's
+    // cancel-schedule signal and would silently unpublish the live entity.
+    const nextArgs: Args = {
+      ...args,
+      draft: { ...args.draft, meta: { ...baseMeta, published: true, publishedAt: '' } },
+    }
+    rerender({ args: nextArgs })
+    act(() => result.current.persistSave())
+    expect(nextArgs.mutations.buildUpsertMetaPayload).toHaveBeenCalledWith({
+      meta: nextArgs.draft.meta,
+      id: 'e1',
+      publishedAt: undefined,
     })
   })
 

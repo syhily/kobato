@@ -1,6 +1,6 @@
-import { renderHook } from '@testing-library/react'
+import { act, renderHook } from '@testing-library/react'
 // @vitest-environment happy-dom
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Client-side companion to use-editor-shell-state.test.ts (which uses the
 // SSR harness and therefore cannot reproduce render-phase loops). The
@@ -19,12 +19,21 @@ vi.mock('@tanstack/react-query', () => ({
   })),
 }))
 
+// Shared engine handles so tests can assert what persist reports into the
+// (mocked) autosave engine — same pattern as use-editor-shell-persist.test.
+const autosaveMockReturns = vi.hoisted(() => ({ forceFlush: vi.fn(), markPersisted: vi.fn() }))
+
 vi.mock('@/client/hooks/use-autosave', () => ({
-  useAutosave: vi.fn(() => ({ forceFlush: vi.fn(), markPersisted: vi.fn() })),
+  useAutosave: vi.fn(() => autosaveMockReturns),
+}))
+
+// Per-test control over the local-storage draft the conflict check reads.
+const localDraftState = vi.hoisted(() => ({
+  loadedDraft: null as { body: unknown; savedAt: number } | null,
 }))
 
 vi.mock('@/client/hooks/use-local-draft', () => ({
-  useLocalDraft: vi.fn(() => ({ loadedDraft: null, clearDraft: vi.fn() })),
+  useLocalDraft: vi.fn(() => ({ loadedDraft: localDraftState.loadedDraft, clearDraft: vi.fn() })),
 }))
 
 vi.mock('@/client/hooks/use-create-draft', () => ({
@@ -136,5 +145,64 @@ describe('ui/admin/editor-shell/useEditorShellState — client re-renders', () =
     rerender()
     expect(result.current.initialBody).toBe(firstBody)
     expect(result.current.dialog.conflict).toBeNull()
+  })
+})
+
+describe('ui/admin/editor-shell/useEditorShellState — adoptLocalDraft (V3-04)', () => {
+  beforeEach(() => {
+    localDraftState.loadedDraft = null
+    autosaveMockReturns.markPersisted.mockClear()
+    autosaveMockReturns.forceFlush.mockClear()
+  })
+
+  it('advances the autosave baseline after adopting a local draft so the next tick does not re-send it', async () => {
+    // The stored local draft diverges from the (empty) server body.
+    const localBody = [{ _type: 'block', _key: 'lb', children: [{ _type: 'span', _key: 'lb-s', text: 'local draft' }] }]
+    const directSaveDraft = vi.fn().mockResolvedValue({
+      status: 'saved',
+      revision: {
+        id: 'rev-2',
+        revisionNo: 1,
+        status: 'draft',
+        body: localBody,
+        imageSources: [],
+        headings: [],
+        authorId: null,
+        clientRevisionToken: 'tok-2',
+        createdAt: '2026-07-10T00:00:00.000Z',
+        updatedAt: '2026-07-10T00:00:00.000Z',
+      },
+    })
+    const args = { ...makeEditArgs(), directSaveDraft }
+    const { result, rerender } = renderHook(() => useEditorShellState<Meta, EntityLike>(args))
+
+    // The real useLocalDraft resolves asynchronously, and the conflict check
+    // only fires on a CHANGE of the loaded draft — mount clean, then let the
+    // draft arrive.
+    localDraftState.loadedDraft = { body: localBody, savedAt: 123 }
+    rerender()
+
+    expect(result.current.dialog.conflict).toEqual({ localBody, localSavedAt: 123 })
+
+    // Discount the mount-time opening-body seed (covered by the persist suite).
+    autosaveMockReturns.markPersisted.mockClear()
+
+    await act(async () => {
+      await result.current.dialog.adoptLocalDraft()
+    })
+
+    // The adopted body went out force-saved with the current expected token…
+    expect(directSaveDraft).toHaveBeenCalledWith({
+      id: 'post-1',
+      body: localBody,
+      expectedClientRevisionToken: null,
+      force: true,
+    })
+    // …and the engine baseline advanced to that exact body reference, so the
+    // next debounce tick's reference check short-circuits instead of
+    // re-PATCHing the adopted body (and rotating the revision token).
+    expect(autosaveMockReturns.markPersisted).toHaveBeenCalledTimes(1)
+    expect(autosaveMockReturns.markPersisted).toHaveBeenCalledWith(localBody)
+    expect(result.current.body).toBe(localBody)
   })
 })
