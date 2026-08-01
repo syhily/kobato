@@ -160,6 +160,131 @@ describe('WorkerPool', () => {
     await pool.stop()
   })
 
+  it('replaces a worker that exits and rejects its in-flight job', async () => {
+    const pool = new WorkerPool(1, createFakeWorker)
+    await pool.start()
+    const deadWorker = workersOf(pool)[0].worker
+
+    const crashed = pool.process({ buffer: Buffer.from('x'), jpegQuality: 80 })
+    deadWorker.emit('exit', 1)
+    await expect(crashed).rejects.toThrow('process worker exited with code 1')
+
+    // Pool size is restored and the replacement is idle and usable.
+    expect(pool.stats().size).toBe(1)
+    expect(pool.stats().idle).toBe(1)
+    const replacement = workersOf(pool)[0].worker
+    expect(replacement).not.toBe(deadWorker)
+
+    const promise = pool.process({ buffer: Buffer.from('y'), jpegQuality: 80 })
+    const request = replacement.posted[0]
+    replacement.emit('message', {
+      type: 'process:result',
+      id: request.id,
+      ok: true,
+      result: { buffer: Buffer.from('out'), width: 1, height: 1 },
+    })
+    await promise
+    await pool.stop()
+  })
+
+  it('dispatches queued jobs to the replacement after a worker exits', async () => {
+    const pool = new WorkerPool(1, createFakeWorker)
+    await pool.start()
+    const poolWorker = workersOf(pool)[0]
+    const deadWorker = poolWorker.worker
+
+    const crashed = pool.process({ buffer: Buffer.from('a'), jpegQuality: 80 })
+    const request1 = deadWorker.posted[0]
+
+    // Force busy so the second job queues behind the first.
+    poolWorker.busy = true
+    const queued = pool.process({ buffer: Buffer.from('b'), jpegQuality: 80 })
+    expect(pool.stats().queued).toBe(1)
+
+    deadWorker.emit('exit', 1)
+    await expect(crashed).rejects.toThrow('process worker exited with code 1')
+
+    // The replacement is spawned and immediately picks up the queued job.
+    const replacement = workersOf(pool)[0].worker
+    expect(replacement).not.toBe(deadWorker)
+    expect(pool.stats().queued).toBe(0)
+    expect(replacement.posted.length).toBe(1)
+    expect(replacement.posted[0].id).not.toBe(request1.id)
+
+    replacement.emit('message', {
+      type: 'process:result',
+      id: replacement.posted[0].id,
+      ok: true,
+      result: { buffer: Buffer.from('out'), width: 2, height: 2 },
+    })
+    await queued
+    await pool.stop()
+  })
+
+  it('never dispatches to a dead worker after an error', async () => {
+    const pool = new WorkerPool(1, createFakeWorker)
+    await pool.start()
+    const deadWorker = workersOf(pool)[0].worker
+
+    const crashed = pool.process({ buffer: Buffer.from('x'), jpegQuality: 80 })
+    deadWorker.emit('error', new Error('worker died'))
+    await expect(crashed).rejects.toThrow('worker died')
+
+    // Subsequent jobs must land on the replacement, not the dead worker.
+    const postedBefore = deadWorker.posted.length
+    const replacement = workersOf(pool)[0].worker
+    expect(replacement).not.toBe(deadWorker)
+    const promise = pool.process({ buffer: Buffer.from('y'), jpegQuality: 80 })
+    expect(deadWorker.posted.length).toBe(postedBefore)
+    expect(replacement.posted.length).toBe(1)
+
+    replacement.emit('message', {
+      type: 'process:result',
+      id: replacement.posted[0].id,
+      ok: true,
+      result: { buffer: Buffer.from('out'), width: 1, height: 1 },
+    })
+    await promise
+    await pool.stop()
+  })
+
+  it('rejects a job that exceeds the timeout and recycles its worker', async () => {
+    const pool = new WorkerPool(1, createFakeWorker, 50)
+    await pool.start()
+    const stuckWorker = workersOf(pool)[0].worker
+
+    // The worker never answers — the deadline must reject the job.
+    const promise = pool.process({ buffer: Buffer.from('x'), jpegQuality: 80 })
+    await expect(promise).rejects.toThrow('process job timed out after 50ms')
+    expect(stuckWorker.terminated).toBe(true)
+
+    // Pool size is restored and the replacement serves the next job.
+    expect(pool.stats().size).toBe(1)
+    const replacement = workersOf(pool)[0].worker
+    expect(replacement).not.toBe(stuckWorker)
+    const next = pool.process({ buffer: Buffer.from('y'), jpegQuality: 80 })
+    replacement.emit('message', {
+      type: 'process:result',
+      id: replacement.posted[0].id,
+      ok: true,
+      result: { buffer: Buffer.from('out'), width: 1, height: 1 },
+    })
+    await next
+    await pool.stop()
+  })
+
+  it('ignores an exit event from an already-retired worker', async () => {
+    const pool = new WorkerPool(1, createFakeWorker)
+    await pool.start()
+    const deadWorker = workersOf(pool)[0].worker
+
+    deadWorker.emit('error', new Error('worker died'))
+    // Node follows `error` with `exit`; the follow-up must not respawn twice.
+    deadWorker.emit('exit', 1)
+    expect(pool.stats().size).toBe(1)
+    await pool.stop()
+  })
+
   it('ignores stale results and non-result messages', async () => {
     const pool = new WorkerPool(1, createFakeWorker)
     await pool.start()

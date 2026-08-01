@@ -27,6 +27,14 @@ const log = getLogger('image:process-pool')
  */
 export const POOL_SIZE = Math.min(4, Math.max(1, availableParallelism()))
 
+/**
+ * Upper bound for a single in-flight job. A message posted to a worker
+ * that has already died is silently dropped (no `error` event, no
+ * rejection), so without a deadline such a job would hang forever. On
+ * timeout the job is rejected and the worker is recycled.
+ */
+export const JOB_TIMEOUT_MS = 60_000
+
 export interface ProcessPoolStats {
   size: number
   idle: number
@@ -44,6 +52,7 @@ interface PoolWorker {
   worker: Worker
   busy: boolean
   currentJobId: number | null
+  jobTimer: ReturnType<typeof setTimeout> | null
 }
 
 /**
@@ -70,6 +79,7 @@ export class WorkerPool {
   constructor(
     private readonly size: number,
     private readonly workerFactory: () => Worker,
+    private readonly jobTimeoutMs: number = JOB_TIMEOUT_MS,
   ) {}
 
   async start(): Promise<void> {
@@ -87,19 +97,20 @@ export class WorkerPool {
 
   private async doStart(): Promise<void> {
     for (let i = 0; i < this.size; i++) {
-      const worker = this.workerFactory()
-      const poolWorker: PoolWorker = { worker, busy: false, currentJobId: null }
-      worker.on('message', (msg: WorkerResponse) => this.onMessage(poolWorker, msg))
-      worker.on('error', (err) => this.onWorkerError(poolWorker, err))
-      worker.on('exit', (code) => {
-        if (!this.stopped && code !== 0) {
-          log.warn('Process worker exited unexpectedly', { code, workerIndex: i })
-        }
-      })
-      this.workers.push(poolWorker)
+      this.spawnWorker()
     }
     this.started = true
     log.info('Sharp process pool started', { size: this.size })
+  }
+
+  private spawnWorker(): PoolWorker {
+    const worker = this.workerFactory()
+    const poolWorker: PoolWorker = { worker, busy: false, currentJobId: null, jobTimer: null }
+    worker.on('message', (msg: WorkerResponse) => this.onMessage(poolWorker, msg))
+    worker.on('error', (err) => this.onWorkerError(poolWorker, err))
+    worker.on('exit', (code) => this.onWorkerExit(poolWorker, code))
+    this.workers.push(poolWorker)
+    return poolWorker
   }
 
   /**
@@ -147,9 +158,20 @@ export class WorkerPool {
   private dispatch(worker: PoolWorker, job: PendingJob): void {
     worker.busy = true
     worker.currentJobId = job.id
+    // Unref'd so an idle pool never keeps the process alive on a deadline
+    // alone; the timer is cleared as soon as the job settles.
+    worker.jobTimer = setTimeout(() => this.onJobTimeout(worker, job.id), this.jobTimeoutMs)
+    worker.jobTimer.unref()
 
     const request: WorkerRequest = { type: 'process', id: job.id, input: job.input }
     worker.worker.postMessage(request)
+  }
+
+  private clearJobTimer(worker: PoolWorker): void {
+    if (worker.jobTimer !== null) {
+      clearTimeout(worker.jobTimer)
+      worker.jobTimer = null
+    }
   }
 
   private onMessage(worker: PoolWorker, msg: WorkerResponse): void {
@@ -162,6 +184,7 @@ export class WorkerPool {
       return
     }
     this.pending.delete(msg.id)
+    this.clearJobTimer(worker)
     worker.busy = false
     worker.currentJobId = null
 
@@ -184,8 +207,58 @@ export class WorkerPool {
 
   private onWorkerError(worker: PoolWorker, err: unknown): void {
     log.warn('Process worker emitted an error', { err: err instanceof Error ? err.message : String(err) })
-    // If a job was in flight when the worker died, reject it; the worker
-    // is then marked idle and the drain picks up queued work.
+    // A worker that emitted an error can no longer be trusted (Node
+    // typically follows `error` with `exit`); retire it instead of marking
+    // it idle, or queued jobs would be dispatched to a dead worker and
+    // silently dropped.
+    this.retireWorker(worker, err instanceof Error ? err : new Error(String(err)))
+  }
+
+  private onWorkerExit(worker: PoolWorker, code: number): void {
+    const index = this.workers.indexOf(worker)
+    if (index === -1) {
+      // Already retired (error/timeout path or pool stop) — nothing to do.
+      return
+    }
+    this.workers.splice(index, 1)
+    if (this.stopped) {
+      return
+    }
+    log.warn('Process worker exited unexpectedly', { code, workerIndex: index })
+    this.failInFlight(worker, new Error(`process worker exited with code ${code}`))
+    this.replaceWorker()
+  }
+
+  private onJobTimeout(worker: PoolWorker, jobId: number): void {
+    if (worker.currentJobId !== jobId) {
+      // Job already settled; the timer just hadn't been reaped yet.
+      return
+    }
+    log.warn('Process job timed out; recycling worker', { jobId, timeoutMs: this.jobTimeoutMs })
+    this.retireWorker(worker, new Error(`process job timed out after ${this.jobTimeoutMs}ms`))
+  }
+
+  /**
+   * Remove a worker from the pool for good: reject its in-flight job,
+   * terminate the thread (harmless if it already exited), and spawn a
+   * replacement so the pool keeps its configured size.
+   */
+  private retireWorker(worker: PoolWorker, err: Error): void {
+    const index = this.workers.indexOf(worker)
+    if (index !== -1) {
+      this.workers.splice(index, 1)
+    }
+    this.failInFlight(worker, err)
+    void worker.worker.terminate().catch(() => {
+      // Ignore — terminating an already-exited worker is harmless.
+    })
+    if (!this.stopped) {
+      this.replaceWorker()
+    }
+  }
+
+  private failInFlight(worker: PoolWorker, err: unknown): void {
+    this.clearJobTimer(worker)
     if (worker.currentJobId !== null) {
       const entry = this.pending.get(worker.currentJobId)
       if (entry !== undefined) {
@@ -195,6 +268,12 @@ export class WorkerPool {
     }
     worker.busy = false
     worker.currentJobId = null
+  }
+
+  private replaceWorker(): void {
+    this.spawnWorker()
+    // The fresh worker is idle — flush anything queued while the pool was
+    // short-handed.
     this.drain()
   }
 
@@ -215,6 +294,7 @@ export class WorkerPool {
     }
     await Promise.all(
       this.workers.map(async (w) => {
+        this.clearJobTimer(w)
         try {
           await w.worker.terminate()
         } catch {
