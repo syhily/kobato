@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react'
 
 import type { PortableTextBody } from '@/shared/pt/schema'
 import type {
+  ConflictFreezeSource,
   EntityLike,
   PublishState,
   RevisionLike,
@@ -99,8 +100,17 @@ export function useEditorShellState<
   const [publishedRevision, setPublishedRevision] = useState<RevisionLike | null>(
     detail !== undefined ? detail.publishedRevision : null,
   )
+  // The `server` leg of the autosave freeze: set via persist's
+  // `noteRevisionConflict` (the server rejected the revision token),
+  // cleared by the next clean body save below. Lives beside the token it
+  // guards — persist only reads the merged freeze via `draft.freeze`.
+  const [serverConflicted, setServerConflicted] = useState(false)
 
   const updateAfterSave = useCallback((revision: RevisionLike) => {
+    // A clean body save is also the server-conflict recovery: it clears
+    // the `server` leg of the autosave freeze (the `local` leg only
+    // clears through the dialog's adopt handlers).
+    setServerConflicted(false)
     setExpectedToken(revision.clientRevisionToken)
     setLatestRevision(revision)
     if (revision.status === 'published') {
@@ -162,13 +172,24 @@ export function useEditorShellState<
   }
 
   // --- Persist notifications -------------------------------------------------
-  // Persist owns the save-flow state and reports back through these three
+  // Persist owns the save-flow state and reports back through these
   // notifications only. The expected token stays here: it keys the
   // local-storage draft whose conflict gates persist's autosave — moving it
-  // into persist would close a hook-ordering cycle.
+  // into persist would close a hook-ordering cycle. Both legs of the
+  // autosave freeze live here for the same reason; persist reads the merged
+  // single-sourced flag via `draft.freeze` and only REPORTS the server leg.
   const markMetaPublished = useCallback(() => {
     setMeta((m) => ({ ...m, published: true }))
   }, [])
+
+  const noteRevisionConflict = useCallback(() => {
+    setServerConflicted(true)
+  }, [])
+
+  // The merged autosave freeze: one gate, two sources. The local leg wins
+  // the `source` label when both are set (its dialog carries the payload) —
+  // the gate itself only reads "any leg set".
+  const conflictFreeze: ConflictFreezeSource | null = conflict !== null ? 'local' : serverConflicted ? 'server' : null
 
   // --- Persist (mutations + autosave + handlers) ---------------------------
   const {
@@ -196,7 +217,7 @@ export function useEditorShellState<
       meta,
       body,
       expectedToken,
-      conflict,
+      freeze: conflictFreeze,
     },
     mutations: {
       upsertMetaFn,
@@ -211,6 +232,7 @@ export function useEditorShellState<
       applyServerMeta: resetMeta,
       markMetaPublished,
       noteRevisionSaved: updateAfterSave,
+      noteRevisionConflict,
     },
     routing: { editPath, navigate },
     createDraft,

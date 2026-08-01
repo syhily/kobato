@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { SaveBodyOutput } from '@/shared/contracts/revision'
 import type { PortableTextBody } from '@/shared/pt/schema'
 import type {
+  ConflictFreezeSource,
   EditorShellDetail,
   EditorShellStatus,
   EntityLike,
@@ -24,7 +25,8 @@ export interface EditorShellPersistDraft<TMeta> {
   meta: TMeta
   body: PortableTextBody
   expectedToken: string | null
-  conflict: { localBody: PortableTextBody; localSavedAt: number } | null
+  /** The merged autosave freeze (orchestrator-owned; `null` = saving allowed). */
+  freeze: ConflictFreezeSource | null
 }
 
 /** Entity-specific wire calls, straight from `UseEditorShellStateArgs`. */
@@ -44,9 +46,11 @@ export interface EditorShellPersistMutations<
 /**
  * The few writes persist must report into orchestrator-owned state. The meta
  * draft and the revision-token race stay in the orchestrator: the token keys
- * the local-storage draft (`useLocalDraft`), and the conflict that draft
- * surfaces gates autosave here — moving the token into persist would close
- * a hook-ordering cycle between the two modules.
+ * the local-storage draft (`useLocalDraft`), and the freeze that draft feeds
+ * into gates autosave here — moving the token into persist would close a
+ * hook-ordering cycle between the two modules. The freeze itself is also
+ * orchestrator-owned (both of its sources live there); persist only reports
+ * the server-revision leg via `noteRevisionConflict`.
  */
 export interface EditorShellPersistNotifications<TMeta> {
   /** Adopt the server-confirmed meta draft after a meta save / unpublish. */
@@ -55,6 +59,8 @@ export interface EditorShellPersistNotifications<TMeta> {
   markMetaPublished: () => void
   /** Advance the revision race (expected token + latest/published) after a body save. */
   noteRevisionSaved: (revision: RevisionLike) => void
+  /** Set the `server`-sourced autosave freeze after a revision conflict. */
+  noteRevisionConflict: () => void
 }
 
 export interface UseEditorShellPersistArgs<
@@ -82,22 +88,19 @@ export function useEditorShellPersist<
   TUpsertMetaInput = Record<string, unknown>,
 >(args: UseEditorShellPersistArgs<TMeta, TEntity, TUpsertMetaInput>) {
   const { detail, draft, mutations, metaDraftFromEntity, notifications, routing, createDraft } = args
-  const { meta, body, expectedToken, conflict } = draft
+  const { meta, body, expectedToken, freeze } = draft
   const { upsertMetaFn, saveDraftFn, publishFn, unpublishFn, buildUpsertMetaPayload, directSaveDraft } = mutations
-  const { applyServerMeta, markMetaPublished, noteRevisionSaved } = notifications
+  const { applyServerMeta, markMetaPublished, noteRevisionSaved, noteRevisionConflict } = notifications
   const { editPath, navigate } = routing
   const isEditing = detail !== undefined
 
   // --- Owned save-flow state -------------------------------------------------
   // Persist flows write these; the orchestrator only projects them into the
   // sidebar / toolbar views. The banner protocol (arm → note legs → show /
-  // cancel) never crosses the module boundary.
+  // cancel) never crosses the module boundary. The autosave freeze is NOT
+  // here: both its sources are orchestrator-owned and arrive via
+  // `draft.freeze` (see the notifications doc).
   const [status, setStatus] = useState<EditorShellStatus>({ kind: 'idle' })
-  // Server-side revision conflict freeze: set by `noteBodySaved` on a
-  // conflict payload, cleared on the next clean save. Gates autosave —
-  // without it the engine keeps flushing a token the server will reject
-  // forever, and its generic `saved` tick would hide the conflict.
-  const [serverConflicted, setServerConflicted] = useState(false)
   const [displaySaveAtMs, setDisplaySaveAtMs] = useState<number | null>(() => deriveBaselineUpdatedAtMs(detail))
   const [lastSavedBody, setLastSavedBody] = useState<PortableTextBody>(() => deriveBaselineRevision(detail)?.body ?? [])
   const [serverPublishedAtIso, setServerPublishedAtIso] = useState<string | null>(detail?.entity.publishedAt ?? null)
@@ -173,12 +176,13 @@ export function useEditorShellPersist<
   const noteBodySaved = useCallback(
     (payload: SaveBodyOutput) => {
       if (payload.status === 'conflict') {
-        // Freeze autosave: the expected token can never advance while the
-        // server keeps rejecting it, and the engine must not clobber this
-        // status with a generic `saved` tick. Reset on the next clean save
-        // (i.e. after the user resolves the conflict).
+        // Freeze autosave via the orchestrator's `server`-sourced freeze:
+        // the expected token can never advance while the server keeps
+        // rejecting it, and the engine must not clobber this status with a
+        // generic `saved` tick. The freeze clears on the next clean save
+        // (the orchestrator resets it in `noteRevisionSaved`).
         manualSaveBodyRef.current = null
-        setServerConflicted(true)
+        noteRevisionConflict()
         setStatus({ kind: 'conflict', expectedToken: payload.expectedToken })
         cancelActionBanner()
         return
@@ -190,7 +194,6 @@ export function useEditorShellPersist<
         markPersistedRef.current(manualSaveBodyRef.current)
         manualSaveBodyRef.current = null
       }
-      setServerConflicted(false)
       if (payload.warning !== undefined) {
         setStatus({ kind: 'warning', message: payload.warning })
       } else {
@@ -205,7 +208,15 @@ export function useEditorShellPersist<
       noteRevisionSaved(payload.revision)
       markBodySaved(payload.revision.body)
     },
-    [meta.slug, detail, cancelActionBanner, noteActionLegSucceeded, noteRevisionSaved, markBodySaved],
+    [
+      meta.slug,
+      detail,
+      cancelActionBanner,
+      noteActionLegSucceeded,
+      noteRevisionSaved,
+      noteRevisionConflict,
+      markBodySaved,
+    ],
   )
 
   const noteUnpublishSaved = useCallback(
@@ -269,7 +280,7 @@ export function useEditorShellPersist<
 
   // --- Autosave ------------------------------------------------------------
   const [isCreating, setIsCreating] = useState(false)
-  const autosaveEnabled = isEditing && conflict === null && !isSubmittingAny && !serverConflicted
+  const autosaveEnabled = isEditing && freeze === null && !isSubmittingAny
   // The `noteBodySaved` reducer reads from a closure that captures
   // `detail`, `expectedToken`, etc. We mirror it through a ref so the
   // autosave flush always picks up the latest values without forcing
@@ -384,7 +395,7 @@ export function useEditorShellPersist<
       return
     }
     if (draftResult.status === 'conflict') {
-      setServerConflicted(true)
+      noteRevisionConflict()
       setStatus({ kind: 'conflict', expectedToken: draftResult.expectedToken })
       setIsCreating(false)
       void navigate(editPath(savedEntity.id), { replace: true })
@@ -413,6 +424,7 @@ export function useEditorShellPersist<
     editPath,
     navigate,
     markBodySaved,
+    noteRevisionConflict,
   ])
 
   const persistSave = useCallback(() => {

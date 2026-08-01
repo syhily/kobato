@@ -14,6 +14,16 @@ export type EditorShellStatus =
   | { kind: 'conflict'; expectedToken: string }
   | { kind: 'info'; message: string }
 
+/**
+ * The autosave freeze — one gate, two sources. `local`: the local-storage
+ * draft diverged from the opening body (recovery: the dialog's
+ * adopt/discard). `server`: the server rejected the revision token
+ * (recovery: the next clean save). The orchestrator owns both sources and
+ * hands persist this single sourced flag — the gate is merged, the
+ * recovery branches stay source-specific.
+ */
+export type ConflictFreezeSource = 'local' | 'server'
+
 export type PublishState =
   | { kind: 'not-published-yet' }
   | { kind: 'published-current'; revisionNo: number }

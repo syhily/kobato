@@ -7,9 +7,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 // saved-body bookkeeping, server publishedAt, preview banner), so this
 // suite drives the four mutation slots and asserts that owned state
 // directly — no orchestrator reducers are rebuilt here. The only mocks on
-// the seam are the three notifications (orchestrator-owned meta draft +
-// revision race) and the wire calls. Slot order matches the useMutation
-// call order in use-editor-shell-persist:
+// the seam are the notifications (orchestrator-owned meta draft, revision
+// race, and the server leg of the autosave freeze) and the wire calls.
+// Slot order matches the useMutation call order in
+// use-editor-shell-persist:
 //   0 = upsertMeta, 1 = saveDraft, 2 = publish, 3 = unpublish
 //
 // `localInputValueToIso` lives in editor-datetime.ts and is covered
@@ -128,7 +129,7 @@ function makeArgs(
       meta: baseMeta,
       body: [],
       expectedToken: null,
-      conflict: null,
+      freeze: null,
       ...overrides.draft,
     },
     mutations: {
@@ -145,6 +146,7 @@ function makeArgs(
       applyServerMeta: vi.fn(),
       markMetaPublished: vi.fn(),
       noteRevisionSaved: vi.fn(),
+      noteRevisionConflict: vi.fn(),
       ...overrides.notifications,
     },
     routing: { editPath: (id: string) => `/edit/${id}`, navigate: vi.fn() },
@@ -463,9 +465,11 @@ describe('ui/admin/editor-shell/useEditorShellPersist — autosave conflict free
     })
   }
 
-  it('freezes autosave on a server conflict and never lets a saved tick clobber it', async () => {
+  it('reports the server conflict as the freeze notification and never lets a saved tick clobber it', async () => {
     const args = makeArgs({ detail: makeDetail(), mutations: { directSaveDraft: conflictSaveDraft() } })
-    const { result } = renderHook(() => useEditorShellPersist(args))
+    const { result, rerender } = renderHook((props: { args: Args }) => useEditorShellPersist(props.args), {
+      initialProps: { args },
+    })
 
     expect(lastAutosaveOptions().enabled).toBe(true)
 
@@ -477,8 +481,11 @@ describe('ui/admin/editor-shell/useEditorShellPersist — autosave conflict free
     // this is what stops the engine from emitting its generic 'saved' tick.
     expect(outcome).toBe('conflict')
     expect(result.current.status).toEqual({ kind: 'conflict', expectedToken: 'tok-server' })
+    // The freeze itself is orchestrator-owned: persist only reports the
+    // server leg. The gate reads the merged flag handed back via draft.
+    expect(args.notifications.noteRevisionConflict).toHaveBeenCalledTimes(1)
 
-    // The state update above re-rendered the hook: autosave is now frozen.
+    rerender({ args: { ...args, draft: { ...args.draft, freeze: 'server' } } })
     expect(lastAutosaveOptions().enabled).toBe(false)
 
     // Belt-and-suspenders: even a stray engine 'saved' status cannot hide
@@ -487,19 +494,33 @@ describe('ui/admin/editor-shell/useEditorShellPersist — autosave conflict free
     expect(result.current.status).toEqual({ kind: 'conflict', expectedToken: 'tok-server' })
   })
 
-  it('unfreezes autosave on the next clean body save (conflict resolved)', async () => {
+  it('gates autosave on the merged freeze flag alone — either source freezes, none unfreezes', async () => {
+    const args = makeArgs({ detail: makeDetail(), draft: { freeze: 'local' } })
+    const { rerender } = renderHook((props: { args: Args }) => useEditorShellPersist(props.args), {
+      initialProps: { args },
+    })
+    expect(lastAutosaveOptions().enabled).toBe(false)
+
+    rerender({ args: { ...args, draft: { ...args.draft, freeze: 'server' } } })
+    expect(lastAutosaveOptions().enabled).toBe(false)
+
+    rerender({ args: { ...args, draft: { ...args.draft, freeze: null } } })
+    expect(lastAutosaveOptions().enabled).toBe(true)
+  })
+
+  it('hands the clean save to the orchestrator (its unfreeze cue) after a conflict', async () => {
     const args = makeArgs({ detail: makeDetail(), mutations: { directSaveDraft: conflictSaveDraft() } })
     renderHook(() => useEditorShellPersist(args))
 
     await act(async () => {
       await lastAutosaveOptions().flush([] as never)
     })
-    expect(lastAutosaveOptions().enabled).toBe(false)
+    expect(args.notifications.noteRevisionConflict).toHaveBeenCalledTimes(1)
 
-    // After the user resolves the conflict, the next successful save clears
-    // the freeze (noteBodySaved's non-conflict branch).
+    // After the user resolves the conflict, the next successful save goes
+    // to noteRevisionSaved — where the orchestrator clears the freeze.
     act(() => slots[1].config?.onSuccess?.(savedPayload() as never))
-    expect(lastAutosaveOptions().enabled).toBe(true)
+    expect(args.notifications.noteRevisionSaved).toHaveBeenCalled()
   })
 })
 
