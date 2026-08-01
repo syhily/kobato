@@ -93,6 +93,26 @@ describe('backup scheduler', () => {
     expect(cleanupOldBackups).toHaveBeenCalledWith(expect.objectContaining({}), 7)
   })
 
+  it('skips quietly when another backup already holds the single-flight slot', async () => {
+    const { DomainError } = await import('@/server/infra/http/errors')
+    const { __logCaptureForTests, __clearLogCaptureForTests } = await import('@/server/infra/logger')
+    createBackup.mockRejectedValueOnce(new DomainError('CONFLICT'))
+    setBlogSettingsBundleForTests(
+      bundleWith({ scheduled: { enabled: true, frequency: 'daily' }, retention: { enabled: true, days: 7 } }),
+    )
+    scheduleNextBackup()
+    __clearLogCaptureForTests()
+    await vi.advanceTimersByTimeAsync(3_600_000)
+
+    expect(createBackup).toHaveBeenCalled()
+    // The overlap is expected — a skip at info level, never an error, and
+    // the retention cleanup does not run for a backup that never happened.
+    const logs = __logCaptureForTests().filter((entry) => entry.scope === 'backup.scheduler')
+    expect(logs.some((entry) => entry.level === 'error')).toBe(false)
+    expect(logs.some((entry) => entry.level === 'info' && entry.msg.includes('skipped'))).toBe(true)
+    expect(cleanupOldBackups).not.toHaveBeenCalled()
+  })
+
   it('handles a next-run in the past by scheduling in one minute', async () => {
     const { computeNextRun } = await import('@/server/infra/scheduler-utils')
     ;(computeNextRun as ReturnType<typeof vi.fn>).mockReturnValueOnce(new Date(Date.now() - 1000))

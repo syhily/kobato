@@ -4,6 +4,7 @@ import { Readable } from 'node:stream'
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest'
 
 import type { Database } from '@/server/infra/db/database'
+import type { PutStreamInput, StorageBackend } from '@/server/infra/storage/backend'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { makeMemoryBackend } from '#/_helpers/memory-storage'
@@ -158,6 +159,53 @@ describe('adminBackupRouter.create', () => {
     expect(rows[0]!.resourceType).toBe('backup')
     expect(rows[0]!.resourceId).toBe(res.fileName)
     expect(rows[0]!.actorId).toBe(admin)
+  })
+
+  it('rejects a concurrent create with CONFLICT while another backup is in flight', async () => {
+    // Stall the first backup's upload so the second request arrives while
+    // the first still holds the single-flight slot — two same-second admin
+    // clicks. The loser must surface as a clean 409 CONFLICT (DomainError,
+    // translated by orpc-base's domainErrorGuard), never an opaque 500.
+    let enteredPutStream!: () => void
+    const putStreamEntered = new Promise<void>((resolve) => {
+      enteredPutStream = resolve
+    })
+    let releaseUpload!: () => void
+    const uploadGate = new Promise<void>((resolve) => {
+      releaseUpload = resolve
+    })
+    const gated: StorageBackend = {
+      ...s3Memory.backend,
+      async putStream(input: PutStreamInput) {
+        enteredPutStream()
+        await uploadGate
+        return s3Memory.backend.putStream(input)
+      },
+    }
+    __setStorageBackendForTests('s3', gated)
+
+    const admin = await seedAdmin()
+    const ctx = adminCtx(admin)
+    const first = call(adminBackupRouter.create, undefined, { context: ctx })
+    await putStreamEntered
+
+    const conflict = await call(adminBackupRouter.create, undefined, { context: ctx }).then(
+      () => {
+        throw new Error('second create unexpectedly succeeded')
+      },
+      (error: unknown) => error,
+    )
+    expect(conflict).toBeInstanceOf(ORPCError)
+    expect((conflict as ORPCError<'CONFLICT', unknown>).code).toBe('CONFLICT')
+
+    releaseUpload()
+    const res = await first
+    expect(s3Memory.store.has(`backup/${res.fileName}`)).toBe(true)
+
+    // Only the winning backup records an audit row.
+    await flushAuditLog()
+    const rows = await db.select().from(auditLog).where(eq(auditLog.action, 'backup_created'))
+    expect(rows).toHaveLength(1)
   })
 })
 

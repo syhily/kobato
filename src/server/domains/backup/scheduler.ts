@@ -1,6 +1,7 @@
 import type { Database } from '@/server/infra/db/database'
 
 import { createBackup, cleanupOldBackups } from '@/server/domains/backup/services/backup'
+import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { computeNextRun, scheduleJob, type ScheduledJob } from '@/server/infra/scheduler-utils'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
@@ -37,6 +38,12 @@ async function runBackupJob(): Promise<void> {
       await cleanupOldBackups(db, backupSettings.retention.days)
     }
   } catch (error) {
+    // The single-flight slot is held by a manual backup (or a still-running
+    // previous tick) — skipping this run is expected, not a failure.
+    if (error instanceof DomainError && error.code === 'CONFLICT') {
+      log.info('Scheduled backup skipped; another backup is in progress')
+      return
+    }
     log.error('Scheduled backup job failed', { error })
   }
 }

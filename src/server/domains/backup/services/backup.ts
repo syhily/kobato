@@ -1,6 +1,7 @@
 import type { Readable } from 'node:stream'
 
 import { sql } from 'drizzle-orm'
+import { randomBytes } from 'node:crypto'
 import { statSync } from 'node:fs'
 import { unlink } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -21,6 +22,7 @@ import {
   listBackupRows,
   listBackupStoragePaths,
 } from '@/server/infra/db/operations/backup'
+import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { activeBackend, allBackends, backendFor } from '@/server/infra/storage/registry'
 
@@ -88,14 +90,52 @@ async function reconcileBackups(db: Database): Promise<void> {
   }
 }
 
+// Single-flight claim for backup creation — the timestamp has SECOND
+// precision and names the S3 key and DB row, so two backups starting in
+// the same second collide: the loser's `VACUUM INTO` failed opaquely on
+// the shared staging file, or its insert hit `uq_backup_storage_path`.
+// Occupied/free slot (the restore machine's `tryBeginRestore` shape —
+// share-in-flight does NOT apply: a second backup must never join the
+// first's archive); failure: release — the `finally` in `createBackup`
+// always frees the claim, so a crashed attempt never wedges the slot.
+let backupRunning = false
+
+/** Atomically claim the backup slot: true when this caller got it. */
+export function tryBeginBackup(): boolean {
+  if (backupRunning) {
+    return false
+  }
+  backupRunning = true
+  return true
+}
+
 export async function createBackup(
   db: Database,
   createdBy: number | null = null,
 ): Promise<{ fileName: string; size: number; timestamp: string }> {
+  if (!tryBeginBackup()) {
+    throw new DomainError('CONFLICT', '已有备份任务正在进行，请等待完成后再试。')
+  }
+  try {
+    return await createBackupUnchecked(db, createdBy)
+  } finally {
+    backupRunning = false
+  }
+}
+
+async function createBackupUnchecked(
+  db: Database,
+  createdBy: number | null,
+): Promise<{ fileName: string; size: number; timestamp: string }> {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
   const key = buildBackupS3Key(timestamp)
-  const stagingPath = path.join(tmpdir(), `kobato-backup-${timestamp}.db`)
-  const analyticsStagingPath = path.join(tmpdir(), `kobato-backup-${timestamp}.duckdb`)
+  // Per-attempt staging suffix: the single-flight claim is process-local,
+  // so a stale file a crashed same-second attempt left behind (or another
+  // process on the same host) must never collide with this run's
+  // `VACUUM INTO` target.
+  const attemptId = randomBytes(6).toString('hex')
+  const stagingPath = path.join(tmpdir(), `kobato-backup-${timestamp}-${attemptId}.db`)
+  const analyticsStagingPath = path.join(tmpdir(), `kobato-backup-${timestamp}-${attemptId}.duckdb`)
 
   log.info('Starting backup', { key })
 
