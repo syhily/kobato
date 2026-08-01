@@ -115,11 +115,49 @@ describe('client: safe-url utilities', () => {
       expect(isBlockedFetchHost('[fc00::1]')).toBe(true)
     })
 
+    it('blocks zone-ID-suffixed spellings of private IPv6 addresses', () => {
+      expect(isBlockedFetchHost('fe80::1%eth0')).toBe(true) // RFC 6874 zone-ID
+      expect(isBlockedFetchHost('fe80::1%25eth0')).toBe(true) // URL-encoded zone-ID
+      expect(isBlockedFetchHost('[fe80::1%eth0]')).toBe(true)
+      expect(isBlockedFetchHost('fc00::1%1')).toBe(true)
+    })
+
+    it('blocks non-canonical IPv4 spellings of private addresses', () => {
+      expect(isBlockedFetchHost('0x7f000001')).toBe(true) // hex 127.0.0.1
+      expect(isBlockedFetchHost('2130706433')).toBe(true) // decimal 127.0.0.1
+      expect(isBlockedFetchHost('127.1')).toBe(true) // short dotted 127.0.0.1
+      expect(isBlockedFetchHost('0177.0.0.1')).toBe(true) // octal 127.0.0.1
+      expect(isBlockedFetchHost('0xA9FEA9FE')).toBe(true) // hex 169.254.169.254
+      expect(isBlockedFetchHost('10.1')).toBe(true) // short dotted 10.0.0.1
+    })
+
+    it('blocks IPv4-mapped IPv6 forms of private addresses', () => {
+      expect(isBlockedFetchHost('::ffff:127.0.0.1')).toBe(true)
+      expect(isBlockedFetchHost('[::ffff:127.0.0.1]')).toBe(true)
+      expect(isBlockedFetchHost('[::ffff:7f00:1]')).toBe(true) // URL-normalized spelling
+      expect(isBlockedFetchHost('::ffff:169.254.169.254')).toBe(true)
+      expect(isBlockedFetchHost('::ffff:10.0.0.1')).toBe(true)
+    })
+
+    it('blocks IPv6 loopback and unspecified addresses in any spelling', () => {
+      expect(isBlockedFetchHost('0:0:0:0:0:0:0:1')).toBe(true)
+      expect(isBlockedFetchHost('::')).toBe(true)
+      expect(isBlockedFetchHost('0:0:0:0:0:0:0:0')).toBe(true)
+    })
+
+    it('still blocks 127-prefixed domain names via the literal first layer', () => {
+      expect(isBlockedFetchHost('127.0.0.1.nip.io')).toBe(true)
+    })
+
     it('allows public hosts and IPs', () => {
       expect(isBlockedFetchHost('gravatar.com')).toBe(false)
       expect(isBlockedFetchHost('p3.music.126.net')).toBe(false)
       expect(isBlockedFetchHost('example.com')).toBe(false)
       expect(isBlockedFetchHost('8.8.8.8')).toBe(false)
+      expect(isBlockedFetchHost('0x08080808')).toBe(false) // hex 8.8.8.8
+      expect(isBlockedFetchHost('::ffff:8.8.8.8')).toBe(false) // mapped public IP
+      expect(isBlockedFetchHost('[::ffff:808:808]')).toBe(false)
+      expect(isBlockedFetchHost('2606:4700::1%eth0')).toBe(false) // zone-ID on a public address stays public
     })
   })
 
