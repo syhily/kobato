@@ -20,8 +20,19 @@ const builtins = new Set([...builtinModules, ...builtinModules.map((name) => `no
 
 // The define table of vite.sea.config.ts — shared by all three SEA
 // bundles (server / process-worker / smoke-worker). Keep in sync with the
-// `define` block there.
-const SEA_BUNDLE_DEFINED_GLOBALS = ['__SEA_APP_VERSION__']
+// `define` block there. Exported so the contract test consumes the same
+// table instead of drifting on its own copy.
+export const SEA_BUNDLE_DEFINED_GLOBALS = [
+  '__SEA_APP_VERSION__',
+  // The six `__APP_*__` globals `@/shared/config/version` consumes —
+  // vite.sea.config.ts defines them exactly like vite.config.ts does.
+  '__APP_NAME__',
+  '__APP_VERSION__',
+  '__APP_DESCRIPTION__',
+  '__APP_AUTHOR_NAME__',
+  '__APP_HOMEPAGE__',
+  '__APP_REPOSITORY__',
+]
 
 // False-positive allowlist: these specifiers only appear inside STRING
 // LITERALS (error messages shipped by upstream packages), never as real
@@ -62,12 +73,13 @@ function executableLines(text: string) {
 }
 
 // Compile-time globals the vite build substitutes into a bundle via
-// `define` (`__SEA_APP_VERSION__` in vite.sea.config.ts; the `__APP_*__`
-// set exists only in vite.config.ts). The reverse scan below fails on any
+// `define` (vite.sea.config.ts defines `__SEA_APP_VERSION__` plus the same
+// six `__APP_*__` globals vite.config.ts defines, consumed by
+// src/shared/config/version.ts). The reverse scan below fails on any
 // `__APP_*__`/`__SEA_*__` identifier left in a bundle that its define
 // table does not cover — a leftover would be a bare ReferenceError at
-// runtime inside the binary (src/shared/config/version.ts consumes six
-// `__APP_*__` globals the SEA build never defines).
+// runtime inside the binary (e.g. a NEW global added to version.ts without
+// a matching define row).
 const buildGlobalPattern = /\b__(?:APP|SEA)_[A-Z0-9_]*__\b/g
 
 /**

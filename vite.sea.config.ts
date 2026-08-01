@@ -35,7 +35,12 @@ import { z } from 'zod'
 import { redirectNativeRequiresPlugin } from './scripts/sea/redirect-native-requires.ts'
 
 const pkgSchema = z.object({
+  name: z.string(),
   version: z.string(),
+  description: z.string(),
+  author: z.object({ name: z.string() }),
+  homepage: z.string(),
+  repository: z.object({ url: z.string() }),
 })
 
 const pkg = pkgSchema.parse(JSON.parse(readFileSync('./package.json', 'utf-8')))
@@ -68,6 +73,17 @@ export default defineConfig({
     // Baked into the bundle from package.json — a single executable has
     // no package.json to read at runtime (see `@/server/infra/sea-cli`).
     __SEA_APP_VERSION__: JSON.stringify(pkg.version),
+    // The same six `__APP_*__` globals vite.config.ts defines for the
+    // regular build: `@/shared/config/version` is consumed by the server
+    // graph (self-update domain, `kobato rollback` / `kobato doctor` via
+    // binary-rollback.ts and self-update-gate.ts), so the binary needs
+    // them too.
+    __APP_NAME__: JSON.stringify(pkg.name),
+    __APP_VERSION__: JSON.stringify(pkg.version),
+    __APP_DESCRIPTION__: JSON.stringify(pkg.description),
+    __APP_AUTHOR_NAME__: JSON.stringify(pkg.author.name),
+    __APP_HOMEPAGE__: JSON.stringify(pkg.homepage),
+    __APP_REPOSITORY__: JSON.stringify(pkg.repository.url),
   },
   plugins: [redirectNativeRequiresPlugin()],
   build: {
