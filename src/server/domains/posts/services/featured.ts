@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, isNotNull, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm'
 import { randomInt } from 'node:crypto'
 
 import type { Database } from '@/server/infra/db/database'
@@ -115,39 +115,37 @@ export async function selectSidebarPosts(db: Database, count: number): Promise<S
     return []
   }
   const where = and(livePostWhere(), eq(postMetaTable.visible, true))
-  // COUNT + random OFFSET: the previous ORDER BY (id*seed) expression
-  // sort evaluated and ordered the whole table per request, and the
-  // `Date.now():Math.random()` seed string silently degraded to a
-  // millisecond timestamp under SQLite's numeric-prefix parsing. Picking
-  // distinct random offsets touches only the rows actually returned, and
-  // the pick is uniform per request (sidebar randomises on every load).
-  const [totalRow] = await db
-    .select({ total: sql<number>`count(*)` })
+  // The previous ORDER BY (id*seed) expression sort evaluated and ordered
+  // the whole table per request, and the `Date.now():Math.random()` seed
+  // string silently degraded to a millisecond timestamp under SQLite's
+  // numeric-prefix parsing. Instead: read the candidate ids once (one
+  // cheap indexed column scan), pick distinct random positions in JS —
+  // uniform per request, no repeats — then fetch exactly those rows with
+  // one key-based IN query. The sidebar randomises on every load, so the
+  // pick deliberately uses a fresh CSPRNG draw each call.
+  const idRows = await db
+    .select({ id: postMetaTable.id })
     .from(postMetaTable)
     .where(where)
-  const total = totalRow?.total ?? 0
-  if (total === 0) {
+    // A stable key so position addressing is deterministic per pick.
+    .orderBy(asc(postMetaTable.id))
+  if (idRows.length === 0) {
     return []
   }
-  const pick = Math.min(count, total)
-  const offsets = new Set<number>()
-  while (offsets.size < pick) {
-    offsets.add(randomInt(total))
+  const pick = Math.min(count, idRows.length)
+  const positions = new Set<number>()
+  while (positions.size < pick) {
+    positions.add(randomInt(idRows.length))
   }
-  const rows = await Promise.all(
-    [...offsets].map(async (offset) => {
-      const [row] = await db
-        .select()
-        .from(postMetaTable)
-        .where(where)
-        // A stable key so OFFSET addressing is deterministic per pick.
-        .orderBy(asc(postMetaTable.id))
-        .limit(1)
-        .offset(offset)
-      return row
-    }),
-  )
-  const metas = rows.filter((row): row is PostMetaRow => row !== undefined)
+  const metas = await db
+    .select()
+    .from(postMetaTable)
+    .where(
+      inArray(
+        postMetaTable.id,
+        [...positions].map((position) => idRows[position]!.id),
+      ),
+    )
   const posts = await hydratePostList(db, metas, { images: false })
   return posts.map(toSidebarPostLink)
 }

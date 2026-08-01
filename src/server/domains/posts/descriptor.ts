@@ -191,7 +191,16 @@ export const postDescriptor: MetaEntityDescriptor<
     }),
     updateExtras: (input, existing) => ({
       visible: input.visible ?? existing.visible,
-      pinnedAt: input.pinnedAt === undefined ? existing.pinnedAt : input.pinnedAt,
+      // The editor maps its `pinned` boolean to a FRESH stamp on every
+      // meta save, so a non-null input means "pinned", not "pin at this
+      // instant" — keep the original stamp on an already-pinned post or
+      // every unrelated edit would reshuffle the pinned/featured order.
+      pinnedAt:
+        input.pinnedAt === undefined
+          ? existing.pinnedAt
+          : input.pinnedAt === null
+            ? null
+            : (existing.pinnedAt ?? input.pinnedAt),
       categoryId: input.categoryId === undefined ? existing.categoryId : input.categoryId,
       alias: input.alias ?? existing.alias,
     }),

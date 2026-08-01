@@ -156,6 +156,46 @@ describe('posts/services/mutate — updatePostMeta', () => {
     await expect(updatePostMeta(db, { slug: 'x', title: 'X' })).rejects.toThrow('requires an id')
   })
 
+  it('keeps the original pinnedAt when an already-pinned post is re-saved with a fresh stamp', async () => {
+    // The editor derives pinnedAt from its `pinned` boolean on EVERY meta
+    // save, so any edit to a pinned post arrives with a fresh stamp —
+    // applying it would silently reshuffle the pinned/featured order.
+    const { postId } = await seedPublishedPost('pinned')
+    const original = new Date('2026-01-15T08:00:00.000Z')
+    await db.update(postMetaTable).set({ pinnedAt: original }).where(eq(postMetaTable.id, postId))
+
+    await updatePostMeta(db, { id: postId, slug: 'pinned', title: 'Post pinned', pinnedAt: new Date() })
+
+    const meta = await db.select().from(postMetaTable).where(eq(postMetaTable.id, postId))
+    expect(meta[0]?.pinnedAt?.getTime()).toBe(original.getTime())
+  })
+
+  it('applies the incoming stamp when pinning a previously unpinned post', async () => {
+    const { postId } = await seedPublishedPost('pin-me')
+    const stamp = new Date('2026-02-01T12:00:00.000Z')
+
+    await updatePostMeta(db, { id: postId, slug: 'pin-me', title: 'Post pin-me', pinnedAt: stamp })
+
+    const meta = await db.select().from(postMetaTable).where(eq(postMetaTable.id, postId))
+    expect(meta[0]?.pinnedAt?.getTime()).toBe(stamp.getTime())
+  })
+
+  it('clears pinnedAt on unpin and leaves it untouched when omitted', async () => {
+    const { postId } = await seedPublishedPost('pin-cycle')
+    const original = new Date('2026-01-15T08:00:00.000Z')
+    await db.update(postMetaTable).set({ pinnedAt: original }).where(eq(postMetaTable.id, postId))
+
+    // omitted → untouched
+    await updatePostMeta(db, { id: postId, slug: 'pin-cycle', title: 'Post pin-cycle' })
+    let meta = await db.select().from(postMetaTable).where(eq(postMetaTable.id, postId))
+    expect(meta[0]?.pinnedAt?.getTime()).toBe(original.getTime())
+
+    // null → unpinned
+    await updatePostMeta(db, { id: postId, slug: 'pin-cycle', title: 'Post pin-cycle', pinnedAt: null })
+    meta = await db.select().from(postMetaTable).where(eq(postMetaTable.id, postId))
+    expect(meta[0]?.pinnedAt).toBeNull()
+  })
+
   it('invalidates and re-indexes when a PUBLISHED post meta is updated', async () => {
     const { postId } = await seedPublishedPost('old')
 

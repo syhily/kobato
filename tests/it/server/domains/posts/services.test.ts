@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { postTag } from '@/server/infra/db/schema/post-tag'
@@ -595,6 +596,31 @@ describe('posts/services/featured — selectSidebarPosts', () => {
       }
     }
     expect(seen).toEqual(new Set(['r1', 'r2']))
+  })
+
+  it('reads the post table a constant number of times regardless of count', async () => {
+    // Regression: the old implementation fired one `LIMIT 1 OFFSET n`
+    // query PER picked row — up to 100 parallel post-table reads per
+    // sidebar render. The pick must be computed in JS and fetched in one
+    // batched query.
+    for (let i = 0; i < 10; i++) {
+      await seedPost({ slug: `q-${i}`, publishedRevisionId: i + 1, publishedAt: new Date('2020-01-01') })
+    }
+    const { drizzle } = await import('drizzle-orm/node-sqlite')
+    const queries: string[] = []
+    const counting = drizzle({
+      client: getDatabaseHandle().client,
+      logger: { logQuery: (query) => queries.push(query) },
+    })
+    const { selectSidebarPosts } = await import('@/server/domains/posts/services/featured')
+
+    const rows = await selectSidebarPosts(counting, 5)
+
+    expect(rows).toHaveLength(5)
+    expect(new Set(rows.map((r) => r.slug)).size).toBe(5)
+    // One id scan + one batched row fetch — hydration hits other tables.
+    const postTableQueries = queries.filter((q) => q.includes('"post"'))
+    expect(postTableQueries).toHaveLength(2)
   })
 })
 

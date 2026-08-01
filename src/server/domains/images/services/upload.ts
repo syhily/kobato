@@ -150,21 +150,32 @@ export async function uploadImage(db: Database, input: UploadImageInputs): Promi
         note: noteValue,
       })
     } catch (error) {
-      log.error('Generic image insert failed (storage_path collision?)', { objectKey, driver, error })
+      log.error('Generic image insert failed (storage_path collision?); rolling back upload', {
+        objectKey,
+        driver,
+        error,
+      })
+      await Promise.allSettled([backend.delete(objectKey)])
       throw new DomainError('INTERNAL', '图片元数据写入失败，请稍后重试')
     }
   } else {
-    row = await upsertImageByStoragePath(db, {
-      storagePath: objectKey,
-      storageDriver: driver,
-      mimeType: 'image/jpeg',
-      width: processed.width,
-      height: processed.height,
-      byteSize: processed.byteSize,
-      thumbhash: processed.thumbhash,
-      uploaderId: input.uploader?.id ?? null,
-      note: noteValue,
-    })
+    try {
+      row = await upsertImageByStoragePath(db, {
+        storagePath: objectKey,
+        storageDriver: driver,
+        mimeType: 'image/jpeg',
+        width: processed.width,
+        height: processed.height,
+        byteSize: processed.byteSize,
+        thumbhash: processed.thumbhash,
+        uploaderId: input.uploader?.id ?? null,
+        note: noteValue,
+      })
+    } catch (error) {
+      log.error('Image upsert failed; rolling back upload', { objectKey, driver, kind: input.kind.kind, error })
+      await Promise.allSettled([backend.delete(objectKey)])
+      throw new DomainError('INTERNAL', '图片元数据写入失败，请稍后重试')
+    }
   }
 
   await invalidateImageEnhanceCacheFor(db, row.storagePath)

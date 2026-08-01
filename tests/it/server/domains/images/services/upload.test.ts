@@ -17,11 +17,21 @@ const processImageBufferMock = vi.hoisted(() => vi.fn())
 
 vi.mock('@/server/infra/image/process', () => ({ processImageBuffer: processImageBufferMock }))
 
+// Wrap-don't-replace: the real upsert runs against the real engine on
+// every happy path; the wrapper only exists to inject a one-shot DB
+// failure for the rollback test below.
+vi.mock('@/server/infra/db/operations/image', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/server/infra/db/operations/image')>()
+  return { ...actual, upsertImageByStoragePath: vi.fn(actual.upsertImageByStoragePath) }
+})
+
 // Injected as the 's3' backend; its isAvailable() === true makes S3 the
 // ACTIVE backend, so uploads record driver 's3' exactly like production.
 const mem = makeMemoryBackend()
 
 const { assertImageUploadAllowed, uploadImage } = await import('@/server/domains/images/services/upload')
+const { upsertImageByStoragePath } = await import('@/server/infra/db/operations/image')
+const upsertImageByStoragePathMock = vi.mocked(upsertImageByStoragePath)
 
 const db = getTestDb()
 
@@ -237,9 +247,34 @@ describe('images/services/upload — pure validation + mime detection', () => {
         ).rejects.toThrow(/图片元数据写入失败/)
         // Still exactly one row — the failed insert left nothing behind.
         expect(await allImageRows()).toHaveLength(1)
+        // The object the failed insert orphaned on the backend is rolled
+        // back — no storage leak without a referencing row.
+        expect(mem.putKeys).toContain(key)
+        expect(mem.deletedKeys).toContain(key)
+        expect(mem.store.has(key)).toBe(false)
       } finally {
         vi.useRealTimers()
       }
+    })
+
+    it('rolls back the uploaded object when the state-key upsert fails', async () => {
+      upsertImageByStoragePathMock.mockRejectedValueOnce(new Error('db gone'))
+      await expect(
+        uploadImage(db, {
+          kind: { kind: 'category', slug: 'rollback' },
+          buffer: jpeg(),
+          maxBytes: 1000,
+          jpegQuality: 80,
+          uploader: null,
+        }),
+      ).rejects.toThrow(/图片元数据写入失败/)
+      const key = 'images/categories/rollback.jpg'
+      // The put landed BEFORE the DB write failed, so the rollback must
+      // delete it again — otherwise the object leaks on the backend.
+      expect(mem.putKeys).toContain(key)
+      expect(mem.deletedKeys).toContain(key)
+      expect(mem.store.has(key)).toBe(false)
+      expect(await allImageRows()).toHaveLength(0)
     })
 
     it('upserts on the state key for a category kind', async () => {
