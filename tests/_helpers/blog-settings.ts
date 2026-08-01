@@ -19,6 +19,7 @@
 // `beforeEach`.
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
+import { deepFreeze } from '#/_helpers/deep-freeze'
 import { analyticsDefaults } from '@/server/domains/settings/sections/analytics'
 import { backupDefaults } from '@/server/domains/settings/sections/backup'
 import { limitsDefaults } from '@/server/domains/settings/sections/limits'
@@ -29,7 +30,6 @@ import { seoDefaults } from '@/server/domains/settings/sections/seo'
 import { rateLimitDefaults } from '@/shared/config/defaults'
 import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@/shared/config/snapshot'
 import { CACHE_BUCKET_FALLBACKS } from '@/shared/types/cache'
-import { deepClone, deepFreeze } from '@/shared/utils/tools'
 
 export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
   siteIdentity: {
@@ -167,7 +167,7 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
  */
 export function setBlogSettingsBundleForTests(value: BlogSettingsBundle | null | undefined): void {
   const frozen =
-    value == null ? value : value === TEST_BLOG_SETTINGS_BUNDLE ? deepFreeze(value) : deepFreeze(deepClone(value))
+    value == null ? value : value === TEST_BLOG_SETTINGS_BUNDLE ? deepFreeze(value) : deepFreeze(structuredClone(value))
   BLOG_SETTINGS_SNAPSHOT_SLOT.write(frozen)
   BLOG_SETTINGS_SNAPSHOT_SLOT.writeHydration(frozen === undefined ? undefined : Promise.resolve(frozen ?? null))
 }

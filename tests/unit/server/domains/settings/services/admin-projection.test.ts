@@ -6,10 +6,9 @@ import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { projectSectionForAdmin } from '@/server/domains/settings/services/admin-projection'
 import { computeSecretMasks } from '@/server/domains/settings/services/masks'
 import { DomainError } from '@/server/infra/http/errors'
-import { deepClone } from '@/shared/utils/tools'
 
 function bundleWithSecrets(): BlogSettingsBundle {
-  const bundle = deepClone(TEST_BLOG_SETTINGS_BUNDLE)
+  const bundle = structuredClone(TEST_BLOG_SETTINGS_BUNDLE)
   bundle.mail!.mail.apiKey = 'key-aa11'
   bundle.mail!.mail.smtpPass = 'pass-bb22'
   bundle.mail!.mail.mailgunApiKey = 'mg-cc33'

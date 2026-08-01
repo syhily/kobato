@@ -174,17 +174,6 @@ export function formatLocalDate(source: string | Date, format: string | undefine
     .replaceAll('ss', pad(parts.second))
 }
 
-/** Format a duration in seconds into a Chinese human-readable string. */
-export function formatDuration(seconds: number): string {
-  if (seconds >= 3600) {
-    return `${Math.floor(seconds / 3600)} 小时`
-  }
-  if (seconds >= 60) {
-    return `${Math.floor(seconds / 60)} 分钟`
-  }
-  return `${seconds} 秒`
-}
-
 export function formatBytes(bytes: number): string {
   if (bytes < 1024) {
     return `${bytes} B`

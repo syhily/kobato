@@ -24,8 +24,3 @@ export function idFromString(value: string | number): number {
   }
   return parsed
 }
-
-/** Serialize an id for the wire (inverse of `idFromString`). */
-export function idToString(value: number): string {
-  return String(value)
-}

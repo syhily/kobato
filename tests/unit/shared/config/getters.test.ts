@@ -3,7 +3,6 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import {
   getBlogSettingsBundleSync,
-  getCacheSettings,
   requireBlogSettingsBundle,
   requireBlogSettingsSection,
 } from '@/shared/config/getters'
@@ -56,24 +55,5 @@ describe('shared/config/getters — requireBlogSettingsSection', () => {
   it('throws when the section value is null', () => {
     BLOG_SETTINGS_SNAPSHOT_SLOT.write({ ...TEST_BLOG_SETTINGS_BUNDLE, mail: null })
     expect(() => requireBlogSettingsSection('mail')).toThrow(/missing from the snapshot/)
-  })
-})
-
-describe('shared/config/getters — getCacheSettings', () => {
-  it('returns the cache section with fallbacks applied to every bucket', () => {
-    const cache = getCacheSettings()
-    expect(cache.cache.og.ttlSeconds).toBeGreaterThan(0)
-    expect(cache.cache.calendar.ttlSeconds).toBeGreaterThan(0)
-    expect(cache.cache.avatar.ttlSeconds).toBeGreaterThanOrEqual(0)
-  })
-
-  it('uses fallback bucket shapes when individual buckets are missing', () => {
-    BLOG_SETTINGS_SNAPSHOT_SLOT.write({
-      ...TEST_BLOG_SETTINGS_BUNDLE,
-      cache: { cache: {} } as never,
-    })
-    const cache = getCacheSettings()
-    expect(cache.cache.og.ttlSeconds).toBeGreaterThan(0)
-    expect(cache.cache.imageMeta.ttlSeconds).toBeGreaterThanOrEqual(0)
   })
 })

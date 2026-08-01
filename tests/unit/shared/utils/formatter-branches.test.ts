@@ -1,33 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { formatBytes, formatDuration, formatLocalDate, formatShowDate, slicePosts } from '@/shared/utils/formatter'
+import { formatBytes, formatLocalDate, formatShowDate, slicePosts } from '@/shared/utils/formatter'
 
 const SETTINGS = {
   settings: { locale: 'zh-CN', timeZone: 'Asia/Shanghai', timeFormat: 'yyyy-LL-dd HH:mm' },
 }
-
-// --- formatDuration -------------------------------------------------------
-
-describe('shared/utils/formatter — formatDuration', () => {
-  it('renders sub-minute durations in seconds', () => {
-    expect(formatDuration(0)).toBe('0 秒')
-    expect(formatDuration(45)).toBe('45 秒')
-    expect(formatDuration(59)).toBe('59 秒')
-  })
-
-  it('renders sub-hour durations in minutes (floored)', () => {
-    expect(formatDuration(60)).toBe('1 分钟')
-    expect(formatDuration(119)).toBe('1 分钟')
-    expect(formatDuration(120)).toBe('2 分钟')
-    expect(formatDuration(3599)).toBe('59 分钟')
-  })
-
-  it('renders hour-or-greater durations in hours (floored)', () => {
-    expect(formatDuration(3600)).toBe('1 小时')
-    expect(formatDuration(7200)).toBe('2 小时')
-    expect(formatDuration(3600 * 25)).toBe('25 小时')
-  })
-})
 
 // --- formatBytes ----------------------------------------------------------
 

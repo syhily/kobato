@@ -12,7 +12,7 @@ import { decryptIfNeeded } from '@/server/infra/crypto/secret-encryption'
 import { findSettingByScope } from '@/server/infra/db/operations/setting'
 import { setting } from '@/server/infra/db/schema/config'
 import { DomainError } from '@/server/infra/http/errors'
-import { getBlogSettingsBundleSync, getCacheSettings } from '@/shared/config/getters'
+import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 // Section-change dispatch (backup/audit reschedule, mail transport
 // invalidation) is covered by the unit tests; keep the schedulers out of
@@ -970,28 +970,6 @@ describe('services/settings — snapshot reader', () => {
     expect(live?.siteIdentity?.title).toBe('snapshot title')
     expect(live?.assets?.asset.host).toBe('cdn.example.com')
     expect(live?.siteIdentity?.locale).toBe('zh-CN')
-  })
-
-  it('getCacheSettings() backfills missing bucket slots with fallbacks', () => {
-    const legacyCache = {
-      og: { prefix: 'legacy-og:', ttlSeconds: 1234 },
-      calendar: { prefix: 'legacy-calendar:', ttlSeconds: 5678 },
-      avatar: { prefix: 'legacy-avatar:', ttlSeconds: 4321 },
-    } as unknown as NonNullable<BlogSettingsBundle['cache']>['cache']
-
-    const legacyLikeBundle: BlogSettingsBundle = {
-      ...fixtureBundle,
-      cache: {
-        cache: legacyCache,
-      },
-    }
-    setBlogSettingsBundleForTests(legacyLikeBundle)
-
-    const cache = getCacheSettings().cache
-    expect(cache.og).toEqual({ prefix: 'legacy-og:', ttlSeconds: 1234 })
-    expect(cache.calendar).toEqual({ prefix: 'legacy-calendar:', ttlSeconds: 5678 })
-    expect(cache.avatar).toEqual({ prefix: 'legacy-avatar:', ttlSeconds: 4321 })
-    expect(cache.imageMeta).toEqual({ prefix: 'image-meta:', ttlSeconds: 60 * 60 })
   })
 
   it('hydrate rejects legacy 3-bucket cache rows so the registry default backfills the section', async () => {

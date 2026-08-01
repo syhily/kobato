@@ -1,16 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import {
-  deepClone,
-  deepFreeze,
-  groupBy,
-  idStr,
-  isNumeric,
-  readStringArray,
-  safeBigInt,
-  sampleSize,
-  shuffle,
-} from '@/shared/utils/tools'
+import { groupBy, idStr, isNumeric, readStringArray, safeBigInt, sampleSize, shuffle } from '@/shared/utils/tools'
 
 describe('shared/utils/tools — safeBigInt', () => {
   it('returns BigInt for numeric strings', () => {
@@ -109,50 +99,5 @@ describe('shared/utils/tools — groupBy', () => {
 
   it('returns an empty record for empty input', () => {
     expect(groupBy([] as number[], (n) => String(n))).toEqual({})
-  })
-})
-
-describe('shared/utils/tools — deepClone', () => {
-  it('returns primitives and null unchanged', () => {
-    expect(deepClone(0)).toBe(0)
-    expect(deepClone('x')).toBe('x')
-    expect(deepClone(null)).toBe(null)
-  })
-
-  it('clones arrays element-by-element', () => {
-    const input = [{ a: 1 }, { b: [{ c: 2 }] }]
-    const out = deepClone(input)
-    expect(out).toEqual(input)
-    expect(out).not.toBe(input)
-    expect(out[1].b).not.toBe(input[1].b)
-  })
-
-  it('clones nested objects', () => {
-    const input = { a: { b: { c: 1 } } }
-    const out = deepClone(input)
-    expect(out).toEqual(input)
-    expect(out.a).not.toBe(input.a)
-    expect(out.a.b).not.toBe(input.a.b)
-  })
-})
-
-describe('shared/utils/tools — deepFreeze', () => {
-  it('returns primitives unchanged', () => {
-    expect(deepFreeze(0)).toBe(0)
-    expect(deepFreeze(null)).toBe(null)
-  })
-
-  it('freezes nested objects and arrays', () => {
-    const obj = { a: { b: 1 }, arr: [{ x: 1 }] }
-    deepFreeze(obj)
-    expect(Object.isFrozen(obj)).toBe(true)
-    expect(Object.isFrozen(obj.a)).toBe(true)
-    expect(Object.isFrozen(obj.arr)).toBe(true)
-    expect(Object.isFrozen(obj.arr[0])).toBe(true)
-  })
-
-  it('is a no-op for already-frozen objects', () => {
-    const obj = Object.freeze({ a: 1 })
-    expect(deepFreeze(obj)).toBe(obj)
   })
 })

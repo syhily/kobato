@@ -123,6 +123,8 @@ ceremony:
   `['', setter]` under SSR — never stub it with that exact value; stub it
   only when a test drives the search text.
   - `#/_helpers/blog-settings` — test settings bundle
+  - `#/_helpers/deep-freeze` — recursive `Object.freeze` for fixtures that
+    must stay mutation-proof across tests
   - `#/_helpers/integration-db` — DB creation / teardown (integration only)
   - `#/_helpers/analytics-db` — DuckDB sidecar creation / seeding / teardown
     (analytics integration tests)

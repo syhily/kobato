@@ -1,6 +1,5 @@
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
-import { withCacheFallbacks } from '@/shared/config/cache'
 import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@/shared/config/snapshot'
 
 export function getBlogSettingsBundleSync(): BlogSettingsBundle | null {
@@ -31,8 +30,4 @@ export function requireBlogSettingsSection<K extends keyof BlogSettingsBundle>(
     )
   }
   return value
-}
-
-export function getCacheSettings(): NonNullable<BlogSettingsBundle['cache']> {
-  return withCacheFallbacks(requireBlogSettingsSection('cache'))
 }
