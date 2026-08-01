@@ -120,6 +120,36 @@ describe('feed-safety', () => {
     })
   })
 
+  describe('renderPortableTextToHtml rssMode code → sanitizeFeedHtml pipeline', () => {
+    // RN-1 regression: rssMode used to CDATA-wrap the precomputed
+    // highlightedHtml, and sanitize-html drops CDATA sections wholesale —
+    // every published post with a code block shipped an empty <pre><code>
+    // box to feed subscribers. RSS mode must emit the escaped plain code
+    // (the same fallback shape as the math renderers), which survives
+    // sanitization.
+    it('keeps the code text after sanitization when highlightedHtml is present', async () => {
+      const html = await renderPortableTextToHtml(
+        [
+          {
+            _type: 'code',
+            _key: 'c1',
+            code: 'const answer = 42;',
+            language: 'ts',
+            highlightedHtml: '<pre class="shiki"><code><span>const answer = 42;</span></code></pre>',
+          },
+        ],
+        [],
+        resolveMusicEmbeds,
+        { rssMode: true },
+      )
+
+      const out = sanitizeFeedHtml(html)
+      expect(out).toContain('const answer = 42;')
+      expect(out).not.toContain('<![CDATA[')
+      expect(out).not.toContain('shiki')
+    })
+  })
+
   describe('renderPortableTextToHtml rssMode math', () => {
     it('renders inline math as TeX fallback in RSS mode, not MathML/SVG', async () => {
       const html = await renderPortableTextToHtml(

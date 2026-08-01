@@ -112,6 +112,30 @@ describe('render/feed/generator — generateFeeds', () => {
     expect(itemCount(result.rss)).toBe(1)
   })
 
+  it("lands a code block's code text in the feed XML (RN-1 regression)", async () => {
+    // Stored bodies carry the server-prerendered highlightedHtml (see
+    // infra/pt/prerender). rssMode used to CDATA-wrap it and sanitize-html
+    // dropped the CDATA whole, so subscribers saw an empty <pre><code>.
+    await seedPost({
+      slug: 'with-code',
+      title: 'With Code',
+      body: [
+        {
+          _type: 'code',
+          _key: 'c1',
+          code: 'const answer = 42;',
+          language: 'ts',
+          highlightedHtml: '<pre class="shiki"><code><span>const answer = 42;</span></code></pre>',
+        },
+      ],
+    })
+
+    const result = await generateFeeds(db)
+    expect(itemCount(result.rss)).toBe(1)
+    expect(result.rss).toContain('const answer = 42;')
+    expect(result.atom).toContain('const answer = 42;')
+  })
+
   it('throws DomainError when both category and tag are provided', async () => {
     await expect(generateFeeds(db, { category: 'c', tag: 't' })).rejects.toMatchObject({ name: 'DomainError' })
   })

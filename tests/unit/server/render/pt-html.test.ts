@@ -333,12 +333,17 @@ describe('renderPortableTextToHtml', () => {
       {
         _type: 'code',
         _key: 'code1',
+        code: 'raw code',
         language: 'ts',
         highlightedHtml: '<b>code</b>',
       },
     ]
     const html = await renderPortableTextToHtml(body as never, [], resolveMusicEmbeds, { rssMode: true })
     expect(html).toContain('<code>a</code>')
-    expect(html).toContain('<![CDATA[<b>code</b>]]>')
+    // RSS mode falls back to escaped plain code: sanitize-html would drop a
+    // CDATA-wrapped highlighted fragment whole.
+    expect(html).toContain('raw code')
+    expect(html).not.toContain('<![CDATA[')
+    expect(html).not.toContain('<b>code</b>')
   })
 })

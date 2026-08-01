@@ -247,9 +247,15 @@ function renderCodeBlock(value: CodeBlock, isRss: boolean): string {
     value.language !== undefined && value.language !== '' ? ` class="language-${escapeHtml(value.language)}"` : ''
   const dataLang =
     value.language !== undefined && value.language !== '' ? ` data-language="${escapeHtml(value.language)}"` : ''
+  // Feed output falls back to plain escaped code (same shape as the math
+  // renderers' TeX fallback): the feed pipeline's sanitize-html drops CDATA
+  // sections wholesale, so a CDATA-wrapped highlighted fragment would reach
+  // subscribers as an empty <pre><code> box.
+  if (isRss) {
+    return `<pre><code${langClass}${dataLang}>${escapeHtml(value.code)}</code></pre>`
+  }
   if (value.highlightedHtml !== undefined && value.highlightedHtml !== '') {
-    const inner = isRss ? `<![CDATA[${value.highlightedHtml}]]>` : value.highlightedHtml
-    return `<pre><code${langClass}${dataLang}>${inner}</code></pre>`
+    return `<pre><code${langClass}${dataLang}>${value.highlightedHtml}</code></pre>`
   }
   return `<pre><code${langClass}${dataLang}>${escapeHtml(value.code)}</code></pre>`
 }

@@ -2,8 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { MusicEmbedResolver } from '@/server/domains/pt/embeds'
 // Extends pt-html-branches.test.ts — fills in the remaining
-// uncovered branches: image alt/width/height/caption, code-block CDATA
-// in RSS mode, math svg/mathml web paths, twoColumn RSS concat, the
+// uncovered branches: image alt/width/height/caption, code-block RSS
+// fallback, math svg/mathml web paths, twoColumn RSS concat, the
 // footnote section emit, heading-id map fallback, list/li marks, the
 // `solution`/`footnoteDefinition` music collectors, and inline marks
 // (strong/em/code/footnoteRef) including the undefined-value short-circuits.
@@ -78,15 +78,19 @@ describe('render/pt-html — image block attribute branches', () => {
   })
 })
 
-describe('render/pt-html — code block RSS CDATA wrapping', () => {
-  it('wraps highlighted HTML in CDATA when in RSS mode', async () => {
+describe('render/pt-html — code block RSS fallback', () => {
+  it('emits escaped plain code in RSS mode even when highlighted HTML is present', async () => {
     const html = await renderPortableTextToHtml(
-      [{ _type: 'code', _key: 'c1', code: 'x', language: 'ts', highlightedHtml: '<span>hl</span>' }],
+      [{ _type: 'code', _key: 'c1', code: 'x < y', language: 'ts', highlightedHtml: '<span>hl</span>' }],
       [],
       resolveMusicEmbeds,
       { rssMode: true },
     )
-    expect(html).toContain('<![CDATA[<span>hl</span>]]>')
+    // sanitize-html drops CDATA sections, so RSS mode must not wrap the
+    // highlighted fragment — subscribers would get an empty code box.
+    expect(html).toContain('x &lt; y')
+    expect(html).not.toContain('<![CDATA[')
+    expect(html).not.toContain('<span>hl</span>')
     expect(html).toContain('class="language-ts"')
     expect(html).toContain('data-language="ts"')
   })
