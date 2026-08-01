@@ -13,6 +13,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   // Archives promises completeness: list every live post. The bound is explicit
   // (the helper otherwise defaults to 200) and far above any realistic personal
   // blog; if it ever bites, the fix is year-grouped pagination, not a lower cap.
+  // Audit P1-22 reviewed this and deferred that work behind a scale trigger:
+  // revisit when a deployment passes ~2,000 live posts (~6-7 batched queries,
+  // ~1-3MB payload at the 10k cap — no per-post fan-out).
   const rawPosts = await listClientPosts(db, { includeHidden: true, includeScheduled: false, limit: 10_000 })
   const posts = rawPosts.map(toListingPostCard)
   const resolvedPosts = await getClientPostsWithMetadata(db, posts, {
