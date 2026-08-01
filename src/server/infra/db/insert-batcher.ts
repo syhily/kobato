@@ -31,9 +31,14 @@ export interface FlushResult {
 //   - Process receives SIGTERM / SIGINT / `beforeExit` (via
 //     `registerShutdownHook` with priority 100 so flushers run before
 //     the database-close hook at priority 0).
+// A flush DRAINS: events buffered while a write was in flight had their
+// triggers swallowed by the singleflight, so a settled flush re-checks
+// the payload and keeps writing until it is empty (see the starvation
+// guard in `flush()`).
 export abstract class FlushLoop<Pending, Result> {
   private timer: NodeJS.Timeout | null = null
   private flushing: Promise<Result> | null = null
+  private paused = false
   protected readonly log: Logger
   private readonly shutdownHook: () => Promise<void>
 
@@ -79,6 +84,9 @@ export abstract class FlushLoop<Pending, Result> {
 
   /** Arm the lazy interval flush — idempotent while a timer is pending. */
   protected armFlushTimer(): void {
+    if (this.paused) {
+      return
+    }
     if (this.timer === null) {
       this.timer = setTimeout(() => {
         void this.flush()
@@ -87,7 +95,62 @@ export abstract class FlushLoop<Pending, Result> {
     }
   }
 
+  /**
+   * Quiesce the loop for an external consistency window (the analytics
+   * backup suspends appends across its CHECKPOINT + file copy): drain
+   * whatever is pending, then hold — pushes keep buffering but no
+   * trigger (interval, threshold, shutdown hook) writes until `resume`.
+   * Events buffered during the pause survive it; they flush on resume.
+   */
+  async pause(): Promise<void> {
+    if (this.paused) {
+      return
+    }
+    // Gate FIRST, then drain: with the flag set before the first await,
+    // no push can start a fresh flush in the microtask gap between the
+    // drain settling and the flag landing (the old `await flush()`
+    // ordering left exactly that window open — a threshold-crossing push
+    // there saw `flushing === null` and wrote inside the consistency
+    // window). Events absorbed by the drain loop below are written
+    // before pause() resolves, i.e. before the caller opens the window.
+    this.paused = true
+    // A push that raced the drain armed a fresh timer — disarm it so
+    // nothing fires inside the window.
+    if (this.timer !== null) {
+      clearTimeout(this.timer)
+      this.timer = null
+    }
+    // Join an in-flight flush (singleflight), then drain whatever is
+    // left over — events that arrived while that write was parked.
+    if (this.flushing !== null) {
+      await this.flushing
+    }
+    await this.drain()
+  }
+
+  resume(): void {
+    if (!this.paused) {
+      return
+    }
+    this.paused = false
+    // Flush paused-time buffering right away instead of waiting out a
+    // fresh interval — the pause already delayed those events once.
+    void this.flush()
+  }
+
   async flush(): Promise<Result> {
+    if (this.paused) {
+      return this.emptyResult
+    }
+    return this.drain()
+  }
+
+  /**
+   * Singleflight drain of the pending payload — the shared write path
+   * for `flush()` (paused-gated) and `pause()` (gated by its caller's
+   * flag-first ordering).
+   */
+  private async drain(): Promise<Result> {
     if (this.flushing) {
       return this.flushing
     }
@@ -100,10 +163,32 @@ export abstract class FlushLoop<Pending, Result> {
       return this.emptyResult
     }
     this.flushing = (async () => {
+      let current: Pending = pending
       try {
-        return await this.writePending(pending)
-      } catch (error) {
-        return await this.onWriteFailed(pending, error)
+        for (;;) {
+          let result: Result
+          try {
+            result = await this.writePending(current)
+          } catch (error) {
+            // The recovery policy (dead-letter, merge-back retry, …)
+            // owns what happens to a failed batch — stop draining
+            // rather than hot-looping a write that keeps failing.
+            return await this.onWriteFailed(current, error)
+          }
+          // Starvation guard: events that arrived while this flush was
+          // in flight had every trigger swallowed by the singleflight —
+          // a threshold-crossing push got back THIS same promise (and
+          // armed no timer), and an interval timer that fired mid-flush
+          // was a no-op. Nothing else will ever schedule them, so keep
+          // draining until the payload is empty. The singleflight's
+          // awaiters (the shutdown hook included) only resolve once the
+          // whole backlog is durable.
+          const more = this.takePending()
+          if (more === null) {
+            return result
+          }
+          current = more
+        }
       } finally {
         this.flushing = null
       }
