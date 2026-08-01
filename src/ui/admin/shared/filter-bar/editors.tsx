@@ -11,7 +11,7 @@ import type {
   TextFilterField,
 } from '@/ui/admin/shared/filter-bar/types'
 
-import { DateRangePicker } from '@/ui/admin/shared/DateRangePicker'
+import { DateRangeCalendarPicker } from '@/ui/admin/shared/DateRangePicker'
 import { SearchableOptionList } from '@/ui/admin/shared/filter-bar/option-list'
 import { Combobox, ComboboxContent, ComboboxItem, ComboboxTrigger, ComboboxValue } from '@/ui/components/combobox'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/ui/components/dropdown-menu'
@@ -291,7 +291,7 @@ export function DateRangeEditor({
 }) {
   return (
     <div className="flex h-full items-center px-2">
-      <DateRangePicker from={value.from} to={value.to} onChange={(from, to) => onChange({ from, to })} />
+      <DateRangeCalendarPicker from={value.from} to={value.to} onChange={(from, to) => onChange({ from, to })} />
     </div>
   )
 }

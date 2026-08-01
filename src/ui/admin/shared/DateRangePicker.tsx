@@ -38,13 +38,13 @@ export function formatRangeLabel(from: string, to: string): string {
   return ''
 }
 
-interface DateRangePickerProps {
+interface DateRangeCalendarPickerProps {
   from: string
   to: string
   onChange: (from: string, to: string) => void
 }
 
-export function DateRangePicker({ from, to, onChange }: DateRangePickerProps) {
+export function DateRangeCalendarPicker({ from, to, onChange }: DateRangeCalendarPickerProps) {
   return (
     <Popover>
       <PopoverTrigger
