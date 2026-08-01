@@ -378,6 +378,69 @@ describe('domains/comments/services/avatar — resolveAvatarForEmail', () => {
       buffer: null,
     })
   })
+
+  it('skips the QQ fetch and keeps the entry when a HAVE_AVATAR entry is already cached', async () => {
+    const hash = await encodedEmail('12345@qq.com')
+    await set(
+      db,
+      'avatar',
+      { size: DEFAULT_AVATAR_SIZE_BUCKET, email: hash },
+      { status: AvatarStatus.HAVE_AVATAR, buffer: Buffer.from('cached-av') },
+    )
+    const fetchSpy = vi.fn()
+    vi.stubGlobal('fetch', fetchSpy)
+
+    expect(await resolveAvatarForEmail(db, '12345@qq.com')).toBe(hash)
+
+    expect(fetchSpy).not.toHaveBeenCalled()
+    expect(await cachedAvatar(DEFAULT_AVATAR_SIZE_BUCKET, hash)).toEqual({
+      status: AvatarStatus.HAVE_AVATAR,
+      buffer: Buffer.from('cached-av'),
+    })
+  })
+
+  it('never lets a transient upstream failure shadow a still-cached positive entry', async () => {
+    const hash = await encodedEmail('12345@qq.com')
+    await set(
+      db,
+      'avatar',
+      { size: DEFAULT_AVATAR_SIZE_BUCKET, email: hash },
+      { status: AvatarStatus.HAVE_AVATAR, buffer: Buffer.from('cached-av') },
+    )
+    const fetchSpy = mockFetch([
+      () => {
+        throw new TypeError('fetch failed', { cause: new AggregateError([], 'ETIMEDOUT') })
+      },
+    ])
+
+    await resolveAvatarForEmail(db, '12345@qq.com')
+
+    expect(fetchSpy).not.toHaveBeenCalled()
+    expect(await cachedAvatar(DEFAULT_AVATAR_SIZE_BUCKET, hash)).toEqual({
+      status: AvatarStatus.HAVE_AVATAR,
+      buffer: Buffer.from('cached-av'),
+    })
+  })
+
+  it('skips the QQ fetch when a NO_AVATAR entry is already cached', async () => {
+    const hash = await encodedEmail('12345@qq.com')
+    await set(
+      db,
+      'avatar',
+      { size: DEFAULT_AVATAR_SIZE_BUCKET, email: hash },
+      { status: AvatarStatus.NO_AVATAR, buffer: null },
+    )
+    const fetchSpy = vi.fn()
+    vi.stubGlobal('fetch', fetchSpy)
+
+    expect(await resolveAvatarForEmail(db, '12345@qq.com')).toBe(hash)
+
+    expect(fetchSpy).not.toHaveBeenCalled()
+    expect(await cachedAvatar(DEFAULT_AVATAR_SIZE_BUCKET, hash)).toEqual({
+      status: AvatarStatus.NO_AVATAR,
+      buffer: null,
+    })
+  })
 })
 
 describe('domains/comments/services/avatar — serveAvatar', () => {

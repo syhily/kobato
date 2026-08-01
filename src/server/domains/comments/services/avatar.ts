@@ -203,17 +203,29 @@ export async function fetchQQAvatarImage(email: string, size: number): Promise<B
  *  entry — recording either the fetched bytes (HAVE_AVATAR) or a negative
  *  entry (NO_AVATAR) when the upstream has no avatar. Non-QQ emails leave
  *  the cache alone: the avatar endpoint fetches from the gravatar mirror
- *  lazily per requested size. */
+ *  lazily per requested size.
+ *
+ *  The pre-warm honors the same read-through policy as `serveAvatar`: it
+ *  only fetches after a cache miss. Any existing entry is final — a
+ *  still-cached HAVE_AVATAR entry must never be shadowed by a negative
+ *  written off a transient QQ CDN failure (audit V3-03), and re-fetching
+ *  on every hit would amplify one upstream request per comment-editor
+ *  load. */
 export async function resolveAvatarForEmail(db: Database, email: string): Promise<string> {
   const hash = await encodedEmail(email)
   if (isQQEmail(email)) {
-    const buffer = await fetchQQAvatarImage(email, DEFAULT_AVATAR_SIZE_BUCKET)
-    await set(
-      db,
-      'avatar',
-      { size: DEFAULT_AVATAR_SIZE_BUCKET, email: hash },
-      buffer === null ? { status: AvatarStatus.NO_AVATAR, buffer: null } : { status: AvatarStatus.HAVE_AVATAR, buffer },
-    )
+    const cached = await get<'avatar', AvatarEntry>(db, 'avatar', { size: DEFAULT_AVATAR_SIZE_BUCKET, email: hash })
+    if (cached === null) {
+      const buffer = await fetchQQAvatarImage(email, DEFAULT_AVATAR_SIZE_BUCKET)
+      await set(
+        db,
+        'avatar',
+        { size: DEFAULT_AVATAR_SIZE_BUCKET, email: hash },
+        buffer === null
+          ? { status: AvatarStatus.NO_AVATAR, buffer: null }
+          : { status: AvatarStatus.HAVE_AVATAR, buffer },
+      )
+    }
   }
   return hash
 }
