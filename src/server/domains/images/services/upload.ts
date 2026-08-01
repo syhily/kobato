@@ -7,7 +7,7 @@ import type { AdminImageDto } from '@/shared/contracts/images'
 import { type ImageKindSpec, buildObjectKey } from '@/server/domains/images/key'
 import { toAdminImageDto } from '@/server/domains/images/services/admin-read'
 import { invalidateImageEnhanceCacheFor } from '@/server/domains/images/services/cache'
-import { insertImage, upsertImageByStoragePath } from '@/server/infra/db/operations/image'
+import { findImagesByStoragePaths, insertImage, upsertImageByStoragePath } from '@/server/infra/db/operations/image'
 import { DomainError } from '@/server/infra/http/errors'
 import { processImageBuffer } from '@/server/infra/image/process'
 import { getLogger } from '@/server/infra/logger'
@@ -15,6 +15,20 @@ import { activeBackend } from '@/server/infra/storage/registry'
 import { formatBytes } from '@/shared/utils/formatter'
 
 const log = getLogger('images.service')
+
+type ActiveBackend = ReturnType<typeof activeBackend>['backend']
+
+// Ownership-aware rollback (fix-review): two uploads landing in the same
+// millisecond can share an objectKey (the key's `% 100` ms suffix). When
+// the loser's row write fails on the storage_path unique constraint, the
+// object now belongs to the winner's row — deleting it would orphan THAT
+// row. Only delete when no row claims the key.
+async function deleteObjectUnlessClaimed(db: Database, backend: ActiveBackend, objectKey: string): Promise<void> {
+  const claimed = await findImagesByStoragePaths(db, [objectKey]).catch(() => [] as ImageRow[])
+  if (claimed.length === 0) {
+    await Promise.allSettled([backend.delete(objectKey)])
+  }
+}
 
 export type UploadKind = { kind: 'generic' } | { kind: 'category'; slug: string } | { kind: 'friend'; host: string }
 
@@ -155,7 +169,7 @@ export async function uploadImage(db: Database, input: UploadImageInputs): Promi
         driver,
         error,
       })
-      await Promise.allSettled([backend.delete(objectKey)])
+      await deleteObjectUnlessClaimed(db, backend, objectKey)
       throw new DomainError('INTERNAL', '图片元数据写入失败，请稍后重试')
     }
   } else {
@@ -173,7 +187,7 @@ export async function uploadImage(db: Database, input: UploadImageInputs): Promi
       })
     } catch (error) {
       log.error('Image upsert failed; rolling back upload', { objectKey, driver, kind: input.kind.kind, error })
-      await Promise.allSettled([backend.delete(objectKey)])
+      await deleteObjectUnlessClaimed(db, backend, objectKey)
       throw new DomainError('INTERNAL', '图片元数据写入失败，请稍后重试')
     }
   }

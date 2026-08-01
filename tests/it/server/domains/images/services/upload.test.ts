@@ -17,12 +17,16 @@ const processImageBufferMock = vi.hoisted(() => vi.fn())
 
 vi.mock('@/server/infra/image/process', () => ({ processImageBuffer: processImageBufferMock }))
 
-// Wrap-don't-replace: the real upsert runs against the real engine on
-// every happy path; the wrapper only exists to inject a one-shot DB
-// failure for the rollback test below.
+// Wrap-don't-replace: the real operations run against the real engine on
+// every happy path; the wrappers only exist to inject one-shot DB
+// failures for the rollback tests below.
 vi.mock('@/server/infra/db/operations/image', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/server/infra/db/operations/image')>()
-  return { ...actual, upsertImageByStoragePath: vi.fn(actual.upsertImageByStoragePath) }
+  return {
+    ...actual,
+    insertImage: vi.fn(actual.insertImage),
+    upsertImageByStoragePath: vi.fn(actual.upsertImageByStoragePath),
+  }
 })
 
 // Injected as the 's3' backend; its isAvailable() === true makes S3 the
@@ -30,8 +34,9 @@ vi.mock('@/server/infra/db/operations/image', async (importOriginal) => {
 const mem = makeMemoryBackend()
 
 const { assertImageUploadAllowed, uploadImage } = await import('@/server/domains/images/services/upload')
-const { upsertImageByStoragePath } = await import('@/server/infra/db/operations/image')
+const { upsertImageByStoragePath, insertImage } = await import('@/server/infra/db/operations/image')
 const upsertImageByStoragePathMock = vi.mocked(upsertImageByStoragePath)
+const insertImageMock = vi.mocked(insertImage)
 
 const db = getTestDb()
 
@@ -247,14 +252,34 @@ describe('images/services/upload — pure validation + mime detection', () => {
         ).rejects.toThrow(/图片元数据写入失败/)
         // Still exactly one row — the failed insert left nothing behind.
         expect(await allImageRows()).toHaveLength(1)
-        // The object the failed insert orphaned on the backend is rolled
-        // back — no storage leak without a referencing row.
+        // Ownership-aware rollback (fix-review #4): the key is claimed by
+        // the pre-existing row, so the uploaded object is NOT deleted —
+        // deleting it would orphan THAT row (its storagePath would 404).
         expect(mem.putKeys).toContain(key)
-        expect(mem.deletedKeys).toContain(key)
-        expect(mem.store.has(key)).toBe(false)
+        expect(mem.deletedKeys).not.toContain(key)
+        expect(mem.store.has(key)).toBe(true)
       } finally {
         vi.useRealTimers()
       }
+    })
+
+    it('deletes the orphaned object when the failed insert left no claiming row', async () => {
+      // A non-constraint failure (DB gone) leaves NO row claiming the key —
+      // the orphaned object must be rolled back or it leaks on the backend.
+      insertImageMock.mockRejectedValueOnce(new Error('db gone'))
+      await expect(
+        uploadImage(db, {
+          kind: { kind: 'generic' },
+          buffer: jpeg(),
+          maxBytes: 1000,
+          jpegQuality: 80,
+          uploader: null,
+        }),
+      ).rejects.toThrow(/图片元数据写入失败/)
+      expect(await allImageRows()).toHaveLength(0)
+      expect(mem.putKeys).toHaveLength(1)
+      expect(mem.deletedKeys).toContain(mem.putKeys[0])
+      expect(mem.store.size).toBe(0)
     })
 
     it('rolls back the uploaded object when the state-key upsert fails', async () => {
