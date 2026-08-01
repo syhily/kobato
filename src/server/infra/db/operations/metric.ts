@@ -7,9 +7,11 @@ import type { MetricRow, NewMetric } from '@/server/infra/db/types'
 import { metric } from '@/server/infra/db/schema/metric'
 
 // Filter clause used everywhere we look up a metric by entity target.
-// Drizzle's `and(eq, eq)` plus the partial-unique index
-// `uq_metric_owner` (on `(type, owner_id) WHERE … NOT NULL`) keeps
-// reads index-only.
+// It matches the unique index `uq_metric_owner` (a plain UNIQUE on
+// `(type, owner_id)` — both columns are NOT NULL, so no partial WHERE
+// is needed), which drives the lookup (fix-review comment correction:
+// the index is not partial and the SELECT returns full rows, so the
+// read is index-driven, not index-only).
 function whereTarget(target: EntityTarget) {
   return and(eq(metric.type, target.type), eq(metric.ownerId, target.ownerId))
 }
@@ -21,8 +23,8 @@ function whereTarget(target: EntityTarget) {
  *
  * Read-first, insert-only-when-missing: the detail render path calls
  * this on every page view and the row virtually always exists, so the
- * common path is a pure SELECT (index-only via `uq_metric_owner`) that
- * takes no SQLite write lock. The previous single-statement
+ * common path is a pure SELECT (driven by the `uq_metric_owner` index)
+ * that takes no SQLite write lock. The previous single-statement
  * `INSERT … ON CONFLICT DO UPDATE` acquired a write lock per render
  * (audit P1-14); its SET was a self-assignment no-op, so skipping the
  * write changes nothing observable.

@@ -31,7 +31,9 @@ export interface UseAutosaveOptions<TBody> {
   onStatusChange?: (status: AutosaveStatus) => void
 }
 
-const DEFAULT_RETRY_DELAYS_MS = [1_000, 3_000, 9_000]
+// Exported so tests can pin the ladder (fix-review): the 1s/3s/9s
+// backoff is part of the editor's UX contract, not an impl detail.
+export const DEFAULT_RETRY_DELAYS_MS = [1_000, 3_000, 9_000]
 
 export function useAutosave<TBody>({
   body,

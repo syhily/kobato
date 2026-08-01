@@ -4,7 +4,7 @@ import { renderHook as renderDomHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { renderHook } from '#/_helpers/hook'
-import { useAutosave } from '@/client/hooks/use-autosave'
+import { DEFAULT_RETRY_DELAYS_MS, useAutosave } from '@/client/hooks/use-autosave'
 
 // useAutosave is a hook whose observable surface is the `forceFlush`
 // callback it returns and the `onStatusChange` callback the caller
@@ -247,5 +247,13 @@ describe('useAutosave — retry kick-off', () => {
 
     // …and the recovery completes the ladder: saving → retrying → saving → saved.
     expect(statuses.map((s) => s.kind)).toEqual(['saving', 'retrying', 'saving', 'saved'])
+  })
+})
+
+describe('useAutosave — default retry ladder (fix-review)', () => {
+  it('pins the 1s / 3s / 9s backoff the editor ships with', () => {
+    // Callers almost never pass retryDelaysMs, so the default ladder IS
+    // the retry UX contract — pin it against silent edits.
+    expect(DEFAULT_RETRY_DELAYS_MS).toEqual([1_000, 3_000, 9_000])
   })
 })

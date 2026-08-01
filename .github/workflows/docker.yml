@@ -139,8 +139,11 @@ jobs:
           else
             base="users/$owner"
           fi
+          # Sort explicitly by created_at — the "keep the newest 10"
+          # window must not depend on the API's undocumented default
+          # ordering (fix-review).
           gh api --paginate --slurp "$base/packages/container/$package/versions?per_page=100" \
-            --jq '[ add[] | select((.metadata.container.tags | length > 0) and ([.metadata.container.tags[] | startswith("build-")] | all)) | .id ] | .[10:][]' \
+            --jq '[ add[] | select((.metadata.container.tags | length > 0) and ([.metadata.container.tags[] | startswith("build-")] | all)) ] | sort_by(.created_at) | reverse | .[10:][] | .id' \
           | while read -r id; do
               echo "Deleting staging version $id"
               gh api -X DELETE "$base/packages/container/$package/versions/$id"

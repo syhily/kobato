@@ -198,8 +198,10 @@ embedded `natives-meta/*` metadata assets
   smoke (the embedded databases need no service container); the Linux
   jobs additionally run `sea:e2e`. develop pushes and PRs to main run
   only the `build-develop` job instead: a single linux-x64
-  `sea:build` + `sea:smoke` (zstd, no packaging) to keep the iteration
-  cost down. The darwin jobs need the
+  `sea:build` + `sea:smoke` (zstd, no packaging) plus `sea:e2e`
+  (added by audit D-2/P2-5 — the binary already exists there, so the
+  journeys cost minutes and catch CSRF/session/restore regressions
+  before main). The darwin jobs need the
   `shasum -a 256` spelling (macOS has no `sha256sum`); the win32 jobs
   run the rename/package steps under Git Bash (`shell: bash`) and ship
   `kobato.exe`. Local macOS builds need an official Node.js 26

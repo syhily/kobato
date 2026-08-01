@@ -36,6 +36,10 @@ export function useEventStream({ bufferSize = 100, enabled = true }: UseEventStr
   const [events, setEvents] = useState<RealtimeEvent[]>([])
   const [state, setState] = useState<'connecting' | 'live' | 'lost'>('connecting')
   const lastSeenRef = useRef<string | null>(null)
+  // Floor at the server replay tail (queryRealtimeTail's default LIMIT
+  // 50): a smaller buffer would truncate a reconnect's replay payload on
+  // the slice below (fix-review).
+  const size = Math.max(bufferSize, 50)
 
   useEffect(() => {
     if (!enabled || typeof window === 'undefined' || typeof window.EventSource === 'undefined') {
@@ -74,7 +78,7 @@ export function useEventStream({ bufferSize = 100, enabled = true }: UseEventStr
             return prev
           }
           const next = [...prev, ...fresh]
-          return next.length > bufferSize ? next.slice(next.length - bufferSize) : next
+          return next.length > size ? next.slice(next.length - size) : next
         })
       } catch {
         // bad payload — skip
@@ -84,7 +88,7 @@ export function useEventStream({ bufferSize = 100, enabled = true }: UseEventStr
     return () => {
       source.close()
     }
-  }, [bufferSize, enabled])
+  }, [size, enabled])
 
   return { events, state }
 }
