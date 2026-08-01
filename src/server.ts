@@ -6,8 +6,10 @@ import { getDb } from '@/server/bootstrap/db-lifecycle'
 import { scheduleNextArchive } from '@/server/domains/audit/services/scheduler'
 import { getSetupToken } from '@/server/domains/auth/setup-token'
 import { scheduleNextBackup } from '@/server/domains/backup/scheduler'
+import { scheduleNextScheduledPublish } from '@/server/domains/content/scheduled-publish'
 import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { migrateSecretsEncryption } from '@/server/domains/settings/services/migrate-secrets'
+import { scheduleWebmentionOutbox } from '@/server/domains/webmentions/outbox-scheduler'
 import { wrapFetchWithLeakedResponseHandler } from '@/server/http/leaked-response'
 import { buildLoadContext, configureMiddleware } from '@/server/http/middleware-pipeline'
 import { scheduleNextKvSweep } from '@/server/infra/cache/kv-maintenance'
@@ -62,6 +64,8 @@ if (!hmr?.secretsMigrated) {
 
   scheduleNextBackup()
   scheduleNextArchive()
+  scheduleNextScheduledPublish()
+  scheduleWebmentionOutbox()
   scheduleNextKvSweep()
   scheduleNextDbMaintenance()
 

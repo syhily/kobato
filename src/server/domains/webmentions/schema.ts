@@ -38,3 +38,12 @@ export const adminWebmentionListSchema = z.object({
   status: z.enum(['all', 'pending', 'approved', 'rejected']).optional(),
 })
 export type AdminWebmentionListInput = z.infer<typeof adminWebmentionListSchema>
+
+// Outbound send-log list — read-only; the `all` filter carries no status
+// constraint, same convention as the moderation list above.
+export const adminWebmentionOutboxListSchema = z.object({
+  offset: z.number().min(0),
+  limit: z.number().min(1).max(100),
+  status: z.enum(['all', 'pending', 'sent', 'no-endpoint', 'failed']).optional(),
+})
+export type AdminWebmentionOutboxListInput = z.infer<typeof adminWebmentionOutboxListSchema>

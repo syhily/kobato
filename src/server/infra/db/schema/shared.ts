@@ -17,3 +17,10 @@ export const NEWSLETTER_SUBSCRIBER_STATUSES = ['pending', 'confirmed', 'unsubscr
 // cleared for display; `rejected` rows are kept (not deleted) so the
 // moderation decision stays auditable.
 export const WEBMENTION_STATUSES = ['pending', 'approved', 'rejected'] as const
+
+// Webmention send lifecycle (outbound mirror of the receive side above).
+// `pending` rows await endpoint discovery or (re)send; `sent` /
+// `no-endpoint` / `failed` are terminal — kept, not deleted, because the
+// row IS the send log. A republish resets `no-endpoint` / `failed` rows
+// back to `pending`, but never `sent` (repeat-bombing guard).
+export const WEBMENTION_OUTBOX_STATUSES = ['pending', 'sent', 'no-endpoint', 'failed'] as const

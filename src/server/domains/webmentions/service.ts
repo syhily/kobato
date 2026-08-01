@@ -1,12 +1,13 @@
 import type { WebmentionReceiveInput } from '@/server/domains/webmentions/schema'
 import type { Database } from '@/server/infra/db/database'
 import type { WebmentionStatus, WebmentionStatusCounts } from '@/server/infra/db/operations/webmention'
+import type { WebmentionOutboxStatusCounts } from '@/server/infra/db/operations/webmention-outbox'
 import type { WebmentionRow } from '@/server/infra/db/types'
-import type { AdminWebmentionWire } from '@/shared/contracts/webmentions'
+import type { AdminWebmentionOutboxWire, AdminWebmentionWire } from '@/shared/contracts/webmentions'
 
 import { sendNewWebmention } from '@/server/domains/webmentions/email'
 import { fetchSourceHtml } from '@/server/domains/webmentions/fetch'
-import { asAdminWebmentionsWire } from '@/server/domains/webmentions/projection'
+import { asAdminWebmentionOutboxListWire, asAdminWebmentionsWire } from '@/server/domains/webmentions/projection'
 import { resolveWebmentionTarget } from '@/server/domains/webmentions/target'
 import { extractSourceMetadata, sourceLinksToTarget } from '@/server/domains/webmentions/verify'
 import {
@@ -16,6 +17,10 @@ import {
   listWebmentionsByStatus,
   setWebmentionStatus,
 } from '@/server/infra/db/operations/webmention'
+import {
+  countWebmentionOutboxByStatus,
+  listWebmentionOutboxForAdmin,
+} from '@/server/infra/db/operations/webmention-outbox'
 import { fireAndForgetNotify } from '@/server/infra/email/admin-notification'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
@@ -28,6 +33,13 @@ export interface AdminWebmentionList {
   total: number
   hasMore: boolean
   statusCounts: WebmentionStatusCounts
+}
+
+export interface AdminWebmentionOutboxList {
+  rows: AdminWebmentionOutboxWire[]
+  total: number
+  hasMore: boolean
+  statusCounts: WebmentionOutboxStatusCounts
 }
 
 /**
@@ -78,6 +90,26 @@ export async function listAdminWebmentions(
   ])
   return {
     mentions: asAdminWebmentionsWire(rows),
+    total,
+    hasMore: input.offset + rows.length < total,
+    statusCounts,
+  }
+}
+
+// Outbound send log — read-only by design: a retry is a republish (the
+// upsert resets terminal rows), not an admin mutation.
+export async function listAdminWebmentionOutbox(
+  db: Database,
+  input: { offset: number; limit: number; status?: 'all' | 'pending' | 'sent' | 'no-endpoint' | 'failed' },
+): Promise<AdminWebmentionOutboxList> {
+  const status = input.status === undefined || input.status === 'all' ? undefined : input.status
+  const [rows, statusCounts] = await Promise.all([
+    listWebmentionOutboxForAdmin(db, status, input.offset, input.limit),
+    countWebmentionOutboxByStatus(db),
+  ])
+  const total = status === undefined ? statusCounts.all : statusCounts[status]
+  return {
+    rows: asAdminWebmentionOutboxListWire(rows),
     total,
     hasMore: input.offset + rows.length < total,
     statusCounts,

@@ -1,10 +1,15 @@
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
-import { adminWebmentionListSchema } from '@/server/domains/webmentions/schema'
-import { approveWebmention, listAdminWebmentions, rejectWebmention } from '@/server/domains/webmentions/service'
+import { adminWebmentionListSchema, adminWebmentionOutboxListSchema } from '@/server/domains/webmentions/schema'
+import {
+  approveWebmention,
+  listAdminWebmentionOutbox,
+  listAdminWebmentions,
+  rejectWebmention,
+} from '@/server/domains/webmentions/service'
 import { adminProc } from '@/server/http/orpc-base'
-import { adminWebmentionDto } from '@/shared/contracts/webmentions'
+import { adminWebmentionDto, adminWebmentionOutboxDto } from '@/shared/contracts/webmentions'
 
 const loadAll = adminProc
   .route({ method: 'GET', path: '/webmention-admin/load-all' })
@@ -52,8 +57,33 @@ const reject = adminProc
     })
   })
 
+// The outbound send log, read-only: no mutations here on purpose — a
+// retry is a republish (the upsert resets terminal rows), and rows are
+// never deleted from the admin shell.
+const outbox = adminProc
+  .route({ method: 'GET', path: '/webmention-admin/outbox' })
+  .input(adminWebmentionOutboxListSchema)
+  .output(
+    z.object({
+      rows: z.array(adminWebmentionOutboxDto),
+      total: z.number().int(),
+      hasMore: z.boolean(),
+      statusCounts: z.object({
+        all: z.number().int(),
+        pending: z.number().int(),
+        sent: z.number().int(),
+        'no-endpoint': z.number().int(),
+        failed: z.number().int(),
+      }),
+    }),
+  )
+  .handler(async ({ input, context }) => {
+    return listAdminWebmentionOutbox(context.db, input)
+  })
+
 export const adminWebmentionsRouter = {
   loadAll,
   approve,
   reject,
+  outbox,
 }

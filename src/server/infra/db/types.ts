@@ -14,7 +14,7 @@ import type { post } from '@/server/infra/db/schema/post'
 import type { session } from '@/server/infra/db/schema/session'
 import type { category, tag } from '@/server/infra/db/schema/taxonomy'
 import type { user, verification } from '@/server/infra/db/schema/user'
-import type { webmention } from '@/server/infra/db/schema/webmention'
+import type { webmention, webmentionOutbox } from '@/server/infra/db/schema/webmention'
 
 // Types for insert
 export type NewPasskeyCredential = typeof passkeyCredential.$inferInsert
@@ -35,6 +35,7 @@ export type NewContent = typeof content.$inferInsert
 export type NewBackup = typeof backup.$inferInsert
 export type NewNewsletterSubscriber = typeof newsletterSubscriber.$inferInsert
 export type NewWebmention = typeof webmention.$inferInsert
+export type NewWebmentionOutbox = typeof webmentionOutbox.$inferInsert
 export type NewSession = typeof session.$inferInsert
 export type NewKvCacheEntry = typeof kvCache.$inferInsert
 export type NewOneTimeToken = typeof oneTimeToken.$inferInsert
@@ -58,6 +59,7 @@ export type ContentRow = typeof content.$inferSelect
 export type BackupRow = typeof backup.$inferSelect
 export type NewsletterSubscriberRow = typeof newsletterSubscriber.$inferSelect
 export type WebmentionRow = typeof webmention.$inferSelect
+export type WebmentionOutboxRow = typeof webmentionOutbox.$inferSelect
 export type SessionRow = typeof session.$inferSelect
 export type KvCacheRow = typeof kvCache.$inferSelect
 export type OneTimeTokenRow = typeof oneTimeToken.$inferSelect
