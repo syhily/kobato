@@ -10,6 +10,7 @@ import type { MetingSearchHit, MetingSource } from '@/shared/contracts/music'
 import { orpcQuery } from '@/client/api/orpc-query'
 import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'
 import { transitions } from '@/client/lib/motion'
+import { toastApiError } from '@/client/lib/toast-api-error'
 import { hitToPreviewTrack, isPreviewId, SOURCE_OPTIONS } from '@/ui/admin/musics/meting-search'
 import { MusicLibraryHero } from '@/ui/admin/musics/MusicLibraryHero'
 import { useMusicPlayerActions, useMusicPlayerState } from '@/ui/admin/musics/MusicPlayerContext'
@@ -62,7 +63,7 @@ export function AddMusicView() {
     },
     onError: (error) => {
       setAddingSourceId(null)
-      toast.error(error.message)
+      toastApiError(error, '添加音乐失败')
     },
   })
   const { mutate: submitAdd } = addMutation

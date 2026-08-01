@@ -7,6 +7,7 @@ import type { AdminImageDto } from '@/shared/contracts/images'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
+import { toastApiError } from '@/client/lib/toast-api-error'
 import { useAssetsSettings } from '@/shared/lib/blog-config-context'
 import { ImageDetailDialog } from '@/ui/admin/images/ImageDetailDialog'
 import { ImagesFilterBar } from '@/ui/admin/images/ImagesFilterBar'
@@ -68,7 +69,7 @@ export function ImagesView() {
       invalidateList()
     },
     onError: (error) => {
-      toast.error('删除图片失败', { description: error.message })
+      toastApiError(error, '删除图片失败')
     },
   })
 
@@ -81,7 +82,7 @@ export function ImagesView() {
       invalidateList()
     },
     onError: (error) => {
-      toast.error('更新图片备注失败', { description: error.message })
+      toastApiError(error, '更新图片备注失败')
     },
   })
   const submitUpdateNote = updateNoteMutation.mutate
@@ -95,7 +96,7 @@ export function ImagesView() {
       invalidateList()
     },
     onError: (error) => {
-      toast.error('重新计算缩略图失败', { description: error.message })
+      toastApiError(error, '重新计算缩略图失败')
     },
   })
   const submitRecalculate = recalculateMutation.mutate

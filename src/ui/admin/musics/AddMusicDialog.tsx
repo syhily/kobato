@@ -7,6 +7,7 @@ import type { AdminMusicDto, MetingSearchHit, MetingSource } from '@/shared/cont
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'
+import { toastApiError } from '@/client/lib/toast-api-error'
 import { hitToPreviewTrack, isPreviewId, SOURCE_OPTIONS } from '@/ui/admin/musics/meting-search'
 import { useMusicPlayerActions, useMusicPlayerState } from '@/ui/admin/musics/MusicPlayerContext'
 import { SearchResultItem } from '@/ui/admin/musics/SearchResultItem'
@@ -81,7 +82,7 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
     },
     onError: (error) => {
       setAddingSourceId(null)
-      toast.error(error.message)
+      toastApiError(error, '添加音乐失败')
     },
   })
   const { mutate: submitAdd } = addMutation

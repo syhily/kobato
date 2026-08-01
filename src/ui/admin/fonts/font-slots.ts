@@ -9,7 +9,7 @@ import type { FontSlot } from '@/shared/contracts/fonts'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
-import { extractApiErrorMessage } from '@/shared/utils/api-error'
+import { toastApiError } from '@/client/lib/toast-api-error'
 
 // Optimistic slot controller for the fonts view: a local reducer mirrors
 // `blogSettings.fonts` so dragged items don't snap back while `setSlot`
@@ -99,7 +99,7 @@ export function useFontSlotsController() {
     onError: (error) => {
       inFlightRef.current = Math.max(0, inFlightRef.current - 1)
       void revalidator.revalidate()
-      toast.error('槽位更新失败', { description: extractApiErrorMessage(error) })
+      toastApiError(error, '槽位更新失败')
     },
   })
 

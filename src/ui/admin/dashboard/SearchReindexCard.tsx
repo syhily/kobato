@@ -1,8 +1,8 @@
 import { CheckIcon, Loader2Icon } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { toast } from 'sonner'
 
 import { orpc } from '@/client/api/client'
+import { toastApiError } from '@/client/lib/toast-api-error'
 import { Button } from '@/ui/components/button'
 
 interface ReindexProgress {
@@ -58,7 +58,7 @@ export function SearchReindexCard() {
       setReindex({ phase: 'success', total, processed, failed })
     } catch (err) {
       setReindex(IDLE)
-      toast.error(err instanceof Error ? err.message : '索引重建失败')
+      toastApiError(err, '索引重建失败')
     }
   }
 

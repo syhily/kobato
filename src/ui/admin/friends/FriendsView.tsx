@@ -8,6 +8,7 @@ import type { DeleteFriendInput } from '@/shared/types/friends'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
+import { toastApiError } from '@/client/lib/toast-api-error'
 import { EditFriendDialog } from '@/ui/admin/friends/EditFriendDialog'
 import { FriendRow, FriendsSkeleton } from '@/ui/admin/friends/FriendRow'
 import { PendingFriendRow } from '@/ui/admin/friends/PendingFriendRow'
@@ -70,7 +71,7 @@ export function FriendsView() {
       invalidateList()
     },
     onError: (error) => {
-      toast.error('删除友链失败', { description: error.message })
+      toastApiError(error, '删除友链失败')
     },
   })
 
@@ -93,7 +94,7 @@ export function FriendsView() {
       invalidateList()
     },
     onError: (error) => {
-      toast.error('通过友链失败', { description: error.message })
+      toastApiError(error, '通过友链失败')
     },
   })
 

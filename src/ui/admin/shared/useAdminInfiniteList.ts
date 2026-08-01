@@ -6,9 +6,9 @@ import {
   type UseInfiniteQueryOptions,
 } from '@tanstack/react-query'
 import { useCallback, useEffect, useRef } from 'react'
-import { toast } from 'sonner'
 
 import { useInfiniteScrollSentinel } from '@/client/hooks/use-infinite-scroll-sentinel'
+import { toastApiError } from '@/client/lib/toast-api-error'
 
 // Page contract shared by every admin list procedure: offset-paginated,
 // `hasMore` gates the next fetch. `total` is optional — endpoints without a
@@ -78,7 +78,7 @@ export function useAdminInfiniteList<TInput, TPage extends AdminListPageShape, T
 
   useEffect(() => {
     if (noun && listQuery.error) {
-      toast.error(`加载${noun}列表失败`, { description: listQuery.error.message })
+      toastApiError(listQuery.error, `加载${noun}列表失败`)
     }
   }, [listQuery.error, noun])
 

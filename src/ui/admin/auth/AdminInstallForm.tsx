@@ -4,6 +4,7 @@ import { Form, useNavigation, useRouteLoaderData } from 'react-router'
 
 import { useFileUpload } from '@/client/hooks/use-file-upload'
 import { isApiAccepted } from '@/shared/utils/api-error'
+import { formatBytes } from '@/shared/utils/formatter'
 import { Button } from '@/ui/components/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/ui/components/dialog'
 import { Input } from '@/ui/components/input'
@@ -75,16 +76,6 @@ export function AdminInstallForm() {
     }
     setRestoreError(null)
     setSelectedFile(file)
-  }
-
-  function formatFileSize(bytes: number): string {
-    if (bytes < 1024) {
-      return `${bytes} B`
-    }
-    if (bytes < 1024 * 1024) {
-      return `${(bytes / 1024).toFixed(1)} KB`
-    }
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
   }
 
   async function pollReady(signal: AbortSignal) {
@@ -311,7 +302,7 @@ export function AdminInstallForm() {
               </Button>
               {selectedFile ? (
                 <span className="text-sm text-muted-foreground">
-                  {selectedFile.name}（{formatFileSize(selectedFile.size)}）
+                  {selectedFile.name}（{formatBytes(selectedFile.size)}）
                 </span>
               ) : (
                 <span className="text-sm text-muted-foreground">未选择文件</span>

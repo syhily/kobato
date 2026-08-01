@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import type { AssetsLoaderShape, BrandingSlotStatus } from '@/shared/config/projection'
 
 import { useFileUpload } from '@/client/hooks/use-file-upload'
+import { toastApiError } from '@/client/lib/toast-api-error'
 import { extractApiErrorMessage } from '@/shared/utils/api-error'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { Button } from '@/ui/components/button'
@@ -282,7 +283,7 @@ function SlotRow({ meta, status }: { meta: SlotMeta; status: BrandingSlotStatus 
       toast.success(`${meta.label} 已清除`)
       await revalidator.revalidate()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : '清除失败')
+      toastApiError(err, '清除失败')
     } finally {
       setClearing(false)
     }

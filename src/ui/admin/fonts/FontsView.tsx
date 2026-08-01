@@ -19,7 +19,7 @@ import type { AdminFontDto, FontSlot } from '@/shared/contracts/fonts'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
-import { extractApiErrorMessage } from '@/shared/utils/api-error'
+import { toastApiError } from '@/client/lib/toast-api-error'
 import { formatBytes } from '@/shared/utils/formatter'
 import {
   isDragData,
@@ -81,7 +81,7 @@ export function FontsView() {
       void revalidator.revalidate()
     },
     onError: (error) => {
-      toast.error('删除失败', { description: extractApiErrorMessage(error) })
+      toastApiError(error, '删除失败')
     },
   })
 

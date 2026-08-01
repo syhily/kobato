@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
 import { transitions } from '@/client/lib/motion'
+import { toastApiError } from '@/client/lib/toast-api-error'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { LyricsDisplay } from '@/ui/admin/musics/LyricsDisplay'
@@ -72,7 +73,7 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
       setEditing(false)
     },
     onError: (error) => {
-      toast.error(error.message || '保存失败')
+      toastApiError(error, '保存失败')
     },
   })
 
@@ -134,7 +135,7 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
       void navigate('/admin/library/music')
     },
     onError: (error) => {
-      toast.error(error.message || '删除失败')
+      toastApiError(error, '删除失败')
     },
   })
 

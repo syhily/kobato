@@ -9,6 +9,7 @@ import type { ListPendingDashboardOutput } from '@/shared/types/comments'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
+import { toastApiError } from '@/client/lib/toast-api-error'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { Badge } from '@/ui/components/badge'
@@ -53,7 +54,7 @@ export function PendingModerationPanel({ initial, emptyStateLine }: PendingModer
       toast.success('已通过该评论')
       refresh()
     },
-    onError: () => toast.error('操作失败，请刷新页面重试'),
+    onError: (error) => toastApiError(error, '操作失败，请刷新页面重试'),
   })
   const rejectApi = useMutation({
     mutationFn: (vars: { commentId: string }) => orpc.admin.comments.delete({ commentId: vars.commentId }),
@@ -61,7 +62,7 @@ export function PendingModerationPanel({ initial, emptyStateLine }: PendingModer
       toast.success('已拒绝并删除该评论')
       refresh()
     },
-    onError: () => toast.error('操作失败，请刷新页面重试'),
+    onError: (error) => toastApiError(error, '操作失败，请刷新页面重试'),
   })
   const approveDeletionApi = useMutation({
     ...orpcQuery.admin.comments.approveCommentDeletion.mutationOptions(),
@@ -69,7 +70,7 @@ export function PendingModerationPanel({ initial, emptyStateLine }: PendingModer
       toast.success(data ? '已处理该删除申请' : '已处理')
       refresh()
     },
-    onError: () => toast.error('操作失败，请刷新页面重试'),
+    onError: (error) => toastApiError(error, '操作失败，请刷新页面重试'),
   })
 
   const onApprove = (item: AdminPendingItemDto) => {

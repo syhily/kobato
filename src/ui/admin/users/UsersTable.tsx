@@ -6,7 +6,7 @@ import type { SiteIdentitySettings } from '@/shared/config/types'
 import type { AdminUserDto } from '@/shared/contracts/users'
 
 import { avatarImageUrl } from '@/shared/utils/avatar'
-import { formatLocalDate } from '@/shared/utils/formatter'
+import { formatLocalDate, formatShowDate } from '@/shared/utils/formatter'
 import { roleLabel } from '@/shared/utils/roles'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/avatar'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
@@ -21,35 +21,6 @@ interface UsersTableProps {
   rows: AdminUserDto[]
   config: SiteIdentitySettings
   isLoading: boolean
-}
-
-function formatRelativeTime(date: Date): string {
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffSec = Math.floor(diffMs / 1000)
-  const diffMin = Math.floor(diffSec / 60)
-  const diffHour = Math.floor(diffMin / 60)
-  const diffDay = Math.floor(diffHour / 24)
-
-  if (diffMin < 1) {
-    return '刚刚'
-  }
-  if (diffMin < 60) {
-    return `${diffMin} 分钟前`
-  }
-  if (diffHour < 24) {
-    return `${diffHour} 小时前`
-  }
-  if (diffDay < 7) {
-    return `${diffDay} 天前`
-  }
-  if (diffDay < 30) {
-    return `${Math.floor(diffDay / 7)} 周前`
-  }
-  if (diffDay < 365) {
-    return `${Math.floor(diffDay / 30)} 个月前`
-  }
-  return `${Math.floor(diffDay / 365)} 年前`
 }
 
 export function UsersTable({ rows, config, isLoading }: UsersTableProps) {
@@ -148,7 +119,7 @@ const UserRow = memo(function UserRow({ user, config }: UserRowProps) {
       <TableCell className="px-4 py-4">
         <div>
           <div className="text-sm">{formatLocalDate(createdDate, DATE_FORMAT, config)}</div>
-          <div className="text-xs text-muted-foreground">{formatRelativeTime(createdDate)}</div>
+          <div className="text-xs text-muted-foreground">{formatShowDate(createdDate, config)}</div>
         </div>
       </TableCell>
     </TableRow>

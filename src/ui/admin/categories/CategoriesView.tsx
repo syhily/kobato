@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import type { AdminCategoryDto } from '@/shared/contracts/categories'
 
 import { orpcQuery } from '@/client/api/orpc-query'
+import { toastApiError } from '@/client/lib/toast-api-error'
 import { CategoriesSkeleton, CategoryRow } from '@/ui/admin/categories/CategoryRow'
 import { EditCategoryDialog } from '@/ui/admin/categories/EditCategoryDialog'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
@@ -35,7 +36,7 @@ export function CategoriesView() {
 
   useEffect(() => {
     if (listQuery.error) {
-      toast.error('加载分类失败', { description: listQuery.error.message })
+      toastApiError(listQuery.error, '加载分类失败')
     }
   }, [listQuery.error])
 

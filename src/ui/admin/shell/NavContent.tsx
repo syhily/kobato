@@ -1,4 +1,5 @@
 import {
+  AtSignIcon,
   FileTextIcon,
   ImagesIcon,
   LibraryIcon,
@@ -89,6 +90,15 @@ export function NavContent({ role, pendingCommentCount = 0, userCount }: NavCont
                   {pendingCommentCount}
                 </SidebarMenuBadge>
               )}
+            </NavMenuItem>
+          )}
+
+          {showAdminItems && (
+            <NavMenuItem>
+              <NavMenuItem.Link to="/admin/webmentions">
+                <AtSignIcon />
+                <NavMenuItem.Label>Webmentions</NavMenuItem.Label>
+              </NavMenuItem.Link>
             </NavMenuItem>
           )}
 
