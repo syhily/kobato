@@ -44,6 +44,12 @@ function getDailyAuspiciousLabel(date: Date) {
   const solar = Solar.fromYmd(getYear(date), getMonth(date) + 1, getDate(date))
   const lunar = solar.getLunar()
   const auspicious = lunar.getDayYi()
+  // Defensive guard (audit P2-25): getDayYi never returns an empty list
+  // for any day in 1900–2200 (verified exhaustively), but an empty list
+  // would render "宜undefined" — bail out instead.
+  if (auspicious.length === 0) {
+    return ''
+  }
   return `宜${auspicious[Math.floor(getDate(date) % auspicious.length)]}`
 }
 

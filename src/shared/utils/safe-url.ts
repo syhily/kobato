@@ -212,6 +212,11 @@ function isPrivateIpv6(hextets: number[]): boolean {
   if (hextets.slice(0, 5).every((h) => h === 0) && hextets[5] === 0xffff) {
     return isPrivateIpv4Number(hextets[6] * 0x10000 + hextets[7])
   }
+  // IPv4-compatible IPv6 (`::a.b.c.d`, deprecated by RFC 4291 §2.5.5.1) is
+  // deliberately NOT special-cased: current Linux/macOS runtimes do not
+  // route that form, so `::127.0.0.1` is unreachable today (audit P2-26,
+  // accepted latent risk). If a future runtime revives the legacy
+  // compatible stack, map hextets[6..7] through isPrivateIpv4Number here.
   return hextets.every((h, i) => h === (i === 7 ? 1 : 0)) || hextets.every((h) => h === 0)
 }
 
