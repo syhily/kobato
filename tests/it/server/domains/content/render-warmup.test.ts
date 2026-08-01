@@ -8,6 +8,7 @@ import { pageLifecycleAdapter } from '@/server/domains/pages/services/lifecycle-
 import { createPage } from '@/server/domains/pages/services/mutate'
 import { postLifecycleAdapter } from '@/server/domains/posts/services/lifecycle-adapter'
 import { createPost, updatePostMeta } from '@/server/domains/posts/services/mutate'
+import { upsertAdminCategory } from '@/server/domains/taxonomies/categories/services/mutate'
 import { kvCache } from '@/server/infra/db/schema/kv-cache'
 import { page as pageMetaTable } from '@/server/infra/db/schema/page'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
@@ -147,5 +148,40 @@ describe('render cache warmup on content publish/update', () => {
     )
     expect(result.status).toBe('saved')
     expect(warmMock).toHaveBeenCalled()
+  })
+})
+
+describe('category OG warmup (audit P1-12)', () => {
+  it('warms the category OG card after a category create', async () => {
+    await upsertAdminCategory(db, { name: 'Tech Notes', cover: '', description: '' })
+
+    // The OG route serves categories under a `cat-`-prefixed slug and
+    // resolves an empty description to the site description (the test
+    // fixture's '诗与梦想的远方') — the warm key must fold the same inputs.
+    expect(warmMock).toHaveBeenCalledWith(db, {
+      slug: 'cat-tech-notes',
+      title: 'Tech Notes',
+      summary: '诗与梦想的远方',
+      cover: '',
+    })
+    // The fire-and-forget warm fills the same bucket the crawler's first
+    // scan reads — wait for the async write to land.
+    await vi.waitFor(async () => {
+      expect(await cachedBuckets()).toContain('og')
+    })
+  })
+
+  it('re-warms under the new content-hash key after a category rename', async () => {
+    const created = await upsertAdminCategory(db, { name: 'Old Cat', cover: '', description: 'old summary' })
+    warmMock.mockClear()
+
+    await upsertAdminCategory(db, { id: Number(created.id), name: 'New Cat', cover: '', description: 'new summary' })
+
+    expect(warmMock).toHaveBeenCalledWith(db, {
+      slug: 'cat-new-cat',
+      title: 'New Cat',
+      summary: 'new summary',
+      cover: '',
+    })
   })
 })
