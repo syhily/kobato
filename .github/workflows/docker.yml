@@ -65,7 +65,9 @@ jobs:
       # user-facing tags: the smoke below gates `latest` / semver, so a
       # broken image can no longer ship and then fail. The staging tag
       # (`build-<sha>`) stays on the registry as build provenance — it is
-      # untagged by convention from any release channel.
+      # untagged by convention from any release channel, and the prune
+      # step at the bottom keeps only the newest few of them (audit
+      # P2-16: ghcr has no built-in retention).
       - uses: docker/build-push-action@v7
         id: push
         with:
@@ -115,3 +117,31 @@ jobs:
           subject-name: ghcr.io/${{ github.repository }}
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
+
+      # Every main push leaves a `build-<sha>` staging tag behind, and ghcr
+      # has no built-in retention — prune them via the API (audit P2-16).
+      # Once the user-facing tags move on to a newer build, an old staging
+      # version carries only `build-*` tags and becomes prunable; versions
+      # still holding `latest` / semver tags are never touched (deleting a
+      # version deletes ALL its tags). The newest 10 staging versions stay
+      # as build provenance. Best-effort: a prune failure must not fail a
+      # release, so this runs continue-on-error.
+      - name: Prune old build-* staging tags
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          owner="${GITHUB_REPOSITORY%/*}"
+          package="$(echo "${GITHUB_REPOSITORY#*/}" | tr '[:upper:]' '[:lower:]')"
+          if [ "$(gh api "users/$owner" --jq .type)" = "Organization" ]; then
+            base="orgs/$owner"
+          else
+            base="users/$owner"
+          fi
+          gh api --paginate --slurp "$base/packages/container/$package/versions?per_page=100" \
+            --jq '[ add[] | select((.metadata.container.tags | length > 0) and ([.metadata.container.tags[] | startswith("build-")] | all)) | .id ] | .[10:][]' \
+          | while read -r id; do
+              echo "Deleting staging version $id"
+              gh api -X DELETE "$base/packages/container/$package/versions/$id"
+            done
