@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useSyncExternalStore } from 'react'
 
 import { isRecord } from '@/shared/utils/type-guards'
 
@@ -30,7 +30,8 @@ function isCommentGuestProfile(value: unknown): value is CommentGuestProfile {
   return true
 }
 
-function readProfile(): CommentGuestProfile | null {
+/** Read the stored profile once. Exported for unit tests. */
+export function readProfile(): CommentGuestProfile | null {
   if (typeof window === 'undefined') {
     return null
   }
@@ -63,19 +64,57 @@ function removeProfile(): void {
   window.localStorage.removeItem(STORAGE_KEY)
 }
 
+// Snapshot cache: `useSyncExternalStore` requires `getSnapshot` to return a
+// referentially stable value between store changes, so the parsed profile
+// is cached against the raw storage string (same idiom as
+// `use-thumbhash-bg.ts`).
+let cachedRaw: string | null | undefined
+let cachedProfile: CommentGuestProfile | null = null
+
+function getSnapshot(): CommentGuestProfile | null {
+  const raw = typeof window === 'undefined' ? null : window.localStorage.getItem(STORAGE_KEY)
+  if (raw !== cachedRaw) {
+    cachedRaw = raw
+    cachedProfile = readProfile()
+  }
+  return cachedProfile
+}
+
+function getServerSnapshot(): CommentGuestProfile | null {
+  return null
+}
+
+const listeners = new Set<() => void>()
+
+function subscribe(listener: () => void): () => void {
+  listeners.add(listener)
+  return () => {
+    listeners.delete(listener)
+  }
+}
+
+function emitChange(): void {
+  for (const listener of listeners) {
+    listener()
+  }
+}
+
 export function useCommentGuest() {
-  // Lazy initializer reads from localStorage exactly once on mount (client
-  // only — guarded inside readProfile) without a render+effect cycle.
-  const [profile, setProfileState] = useState<CommentGuestProfile | null>(() => readProfile())
+  // SSR-consistent prefill via `useSyncExternalStore`: the server snapshot
+  // is always `null`, so SSR and the hydration render agree and React
+  // re-renders with the stored profile right after hydration — no
+  // hydration mismatch. SPA navigations mount client-side and read the
+  // client snapshot on the first render, so prefill stays instant there.
+  const profile = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 
   const saveProfile = useCallback((next: CommentGuestProfile) => {
     writeProfile(next)
-    setProfileState(next)
+    emitChange()
   }, [])
 
   const clearProfile = useCallback(() => {
     removeProfile()
-    setProfileState(null)
+    emitChange()
   }, [])
 
   return { profile, saveProfile, clearProfile }
