@@ -1,5 +1,14 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+// The real-send describe below drives `sendWebmention` through the REAL
+// safeFetch stack — only the network boundary is stubbed: `fetch` via
+// installFetch, DNS to a fixed public address (same discipline as
+// tests/unit/server/infra/safe-fetch.test.ts).
+vi.mock('node:dns/promises', () => ({
+  lookup: async () => [{ address: '93.184.216.34', family: 4 }],
+}))
+
+import { installFetch } from '#/_helpers/fetch'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import {
   OUTBOX_MAX_ATTEMPTS,
@@ -17,11 +26,15 @@ import { webmentionOutbox } from '@/server/infra/db/schema/webmention'
 
 const db = getTestDb()
 
+const mockFetch = installFetch()
+
 const SOURCE = 'https://example.com/posts/hello/'
 const TARGET = 'https://a.dev/article'
 
 beforeEach(async () => {
   await clearAllTables(db)
+  mockFetch.reset()
+  globalThis.fetch = mockFetch.fetch as unknown as typeof globalThis.fetch
 })
 
 async function seedRow(overrides: { endpoint?: string | null; nextRetryAt?: Date | null } = {}) {
@@ -208,5 +221,68 @@ describe('webmentions/outbox picking', () => {
     expect(processed).toBe(2)
     expect(sent.sort()).toEqual(['https://a.dev/one', 'https://a.dev/two'])
     expect(findNextWebmentionOutboxDueAt(db)).toBeNull()
+  })
+})
+
+describe('webmentions/outbox real send path', () => {
+  const ENDPOINT = 'https://endpoint.example/wm'
+
+  it('POSTs the form-encoded mention with the sender UA and lands sent on 2xx', async () => {
+    const row = await seedRow({ endpoint: ENDPOINT })
+    mockFetch.enqueue(ENDPOINT, new Response('ok', { status: 202 }))
+
+    // Default hooks: the REAL sendWebmention through the REAL safeFetch.
+    await processWebmentionOutboxRow(db, row)
+
+    const [after] = await db.select().from(webmentionOutbox)
+    expect(after!.status).toBe('sent')
+
+    expect(mockFetch.calls).toHaveLength(1)
+    const call = mockFetch.calls[0]!
+    expect(call.url).toBe(ENDPOINT)
+    expect(call.init?.method).toBe('POST')
+    const headers = call.init?.headers as Record<string, string>
+    expect(headers['User-Agent']).toBe('Kobato Webmention Sender (+https://example.com)')
+    expect(headers['Content-Type']).toBe('application/x-www-form-urlencoded')
+    expect(headers['Accept']).toBe('*/*')
+    // Form encoding, pinned byte for byte.
+    expect(call.init?.body).toBe(`source=${encodeURIComponent(SOURCE)}&target=${encodeURIComponent(TARGET)}`)
+  })
+
+  it('maps a 4xx from the real stack to a terminal refusal', async () => {
+    const row = await seedRow({ endpoint: ENDPOINT })
+    mockFetch.enqueue(ENDPOINT, new Response('gone', { status: 410 }))
+
+    await processWebmentionOutboxRow(db, row)
+
+    const [after] = await db.select().from(webmentionOutbox)
+    expect(after!.status).toBe('failed')
+    expect(after!.lastError).toBe('http-410')
+  })
+
+  it('maps a 5xx from the real stack to a retryable failure', async () => {
+    const before = Date.now()
+    const row = await seedRow({ endpoint: ENDPOINT })
+    mockFetch.enqueue(ENDPOINT, new Response('boom', { status: 500 }))
+
+    await processWebmentionOutboxRow(db, row)
+
+    const [after] = await db.select().from(webmentionOutbox)
+    expect(after!.status).toBe('pending')
+    expect(after!.attempts).toBe(1)
+    expect(after!.lastError).toBe('http-error (HTTP 500)')
+    expect(after!.nextRetryAt!.getTime()).toBeGreaterThanOrEqual(before + outboxBackoffMs(1))
+  })
+
+  it('maps a network failure from the real stack to a retryable failure', async () => {
+    const row = await seedRow({ endpoint: ENDPOINT })
+    mockFetch.enqueue(ENDPOINT, () => Promise.reject(new Error('connection refused')))
+
+    await processWebmentionOutboxRow(db, row)
+
+    const [after] = await db.select().from(webmentionOutbox)
+    expect(after!.status).toBe('pending')
+    expect(after!.attempts).toBe(1)
+    expect(after!.lastError).toBe('fetch-failed')
   })
 })
