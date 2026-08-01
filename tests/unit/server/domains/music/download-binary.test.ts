@@ -3,21 +3,25 @@ import { describe, expect, it, vi } from 'vitest'
 import { downloadBinary } from '@/server/domains/music/services/write/shared'
 import { DomainError } from '@/server/infra/http/errors'
 
+// downloadBinary resolves hostnames through safe-fetch's DNS guard —
+// pin it to a public address so tests stay hermetic.
+vi.mock('node:dns/promises', () => ({
+  lookup: vi.fn(async () => [{ address: '93.184.216.34', family: 4 }]),
+}))
+
 describe('downloadBinary', () => {
-  function stubFetch(responses: Array<{ status?: number; headers?: Headers; arrayBuffer?: ArrayBuffer }>) {
+  function stubFetch(responses: Array<{ status?: number; headers?: Headers; body?: Uint8Array<ArrayBuffer> }>) {
     let i = 0
     vi.stubGlobal(
       'fetch',
       vi.fn(() => {
-        const r = responses[i] ?? { arrayBuffer: new ArrayBuffer(4) }
+        const r = responses[i] ?? {}
         i += 1
-        const status = r.status ?? 200
-        return Promise.resolve({
-          ok: status >= 200 && status < 300,
-          status,
-          headers: r.headers ?? new Headers(),
-          arrayBuffer: async () => r.arrayBuffer ?? new ArrayBuffer(4),
-        })
+        // A real Response: safe-fetch reads `.status` for the manual
+        // redirect loop and streams `.body` through a size-capped reader.
+        return Promise.resolve(
+          new Response(r.body ?? new Uint8Array(4), { status: r.status ?? 200, headers: r.headers }),
+        )
       }),
     )
   }
@@ -75,7 +79,7 @@ describe('downloadBinary', () => {
   })
 
   it('allows a public https CDN URL', async () => {
-    stubFetch([{ arrayBuffer: new ArrayBuffer(4) }])
+    stubFetch([{ body: new Uint8Array(4) }])
     const result = await downloadBinary('https://p3.music.126.net/abc/123.jpg', 1000, 'cover')
     expect(result).toBeInstanceOf(Buffer)
     expect(result.length).toBe(4)

@@ -10,6 +10,7 @@ import type { MetingSource } from '@/shared/contracts/music'
 import { getProvider } from '@/server/domains/music/providers/registry'
 import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'
 import { ActionFailure } from '@/server/infra/http/errors'
+import { safeFetch } from '@/server/infra/safe-fetch'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const SOURCE_REFERERS: Record<MetingSource, string> = {
@@ -19,28 +20,40 @@ const SOURCE_REFERERS: Record<MetingSource, string> = {
 
 const VALID_SOURCES = new Set<string>(['netease', 'tencent'])
 
+/** Upstream payload cap: a proxied track/cover never exceeds 50 MB. */
+const MAX_PROXY_BYTES = 50 * 1024 * 1024
+
 async function proxyUpstream(targetUrl: string, referer: string): Promise<Response> {
-  const upstreamRes = await fetch(targetUrl, {
+  // The target URL comes from the upstream provider API (schema-checked
+  // only as a string) — route it through the SSRF-guarded fetch so a
+  // hostile/compromised upstream cannot point the proxy at internal
+  // addresses, and cap the streamed body.
+  const result = await safeFetch(targetUrl, {
+    stream: true,
+    timeoutMs: 30000,
+    maxBytes: MAX_PROXY_BYTES,
     headers: {
       'User-Agent':
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       Referer: referer,
     },
-    signal: AbortSignal.timeout(30000),
   })
 
-  if (!upstreamRes.ok) {
-    return new Response(`Upstream returned ${upstreamRes.status}`, { status: upstreamRes.status })
+  if (!result.ok) {
+    if (result.reason === 'http-error' && result.status !== null) {
+      return new Response(`Upstream returned ${result.status}`, { status: result.status })
+    }
+    return new Response(`Upstream error: ${result.reason}`, { status: 502 })
   }
 
   const headers = new Headers()
-  const contentType = upstreamRes.headers.get('content-type')
+  const contentType = result.response.headers.get('content-type')
   if (contentType) {
     headers.set('Content-Type', contentType)
   }
   headers.set('Cache-Control', 'private, max-age=300')
 
-  return new Response(upstreamRes.body, { status: 200, headers })
+  return new Response(result.response.body, { status: 200, headers })
 }
 
 function parseProxyParams(c: { req: { query: (k: string) => string | undefined } }):

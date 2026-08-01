@@ -6,6 +6,12 @@ import type { Env } from '@/server/http/context'
 import { adminSession, emptySession, regularSession } from '#/_helpers/session'
 import { onErrorHandler } from '@/server/http/errors'
 
+// The proxy route resolves upstream hostnames through safe-fetch's DNS
+// guard — pin it to a public address so tests stay hermetic.
+vi.mock('node:dns/promises', () => ({
+  lookup: vi.fn(async () => [{ address: '93.184.216.34', family: 4 }]),
+}))
+
 function createTestApp(session = adminSession()) {
   const app = new Hono<Env>()
   app.use('*', async (c, next) => {
@@ -53,6 +59,7 @@ describe.each(ROUTES)('musicProxyRouter /admin/music/proxy/$route', ({ route, re
       'fetch',
       vi.fn(async () => ({
         ok: true,
+        status: 200,
         headers: new Headers({ 'content-type': contentType }),
         body: new ReadableStream(),
       })),
@@ -66,6 +73,38 @@ describe.each(ROUTES)('musicProxyRouter /admin/music/proxy/$route', ({ route, re
     expect(res.status).toBe(200)
     expect(getTrack).toHaveBeenCalledWith('123')
     expect(resolveUrl).toHaveBeenCalledTimes(1)
+  })
+
+  it('rejects an upstream URL pointing at an internal address without fetching it', async () => {
+    const resolveUrl = vi.fn(async () => 'http://169.254.169.254/latest/meta-data')
+    vi.doMock('@/server/domains/music/providers/registry', () => ({
+      getProvider: () => ({
+        source: 'netease',
+        getTrack: vi.fn(async () => ({
+          source: 'netease',
+          sourceId: '123',
+          name: 'Song',
+          artist: ['Artist'],
+          album: 'Album',
+          picId: 'pic123',
+          urlId: 'url123',
+          lyricId: 'lyric123',
+        })),
+        resolveCoverUrl: resolver === 'resolveCoverUrl' ? resolveUrl : vi.fn(),
+        resolveAudioUrl: resolver === 'resolveAudioUrl' ? resolveUrl : vi.fn(),
+      }),
+    }))
+
+    const fetchSpy = vi.fn()
+    vi.stubGlobal('fetch', fetchSpy)
+
+    const { musicProxyRouter: router } = await import('@/server/http/resources/music-proxy')
+    const app = createTestApp(adminSession())
+    app.route('/', router)
+
+    const res = await app.request(`/admin/music/proxy/${route}?source=netease&sourceId=123`)
+    expect(res.status).toBe(502)
+    expect(fetchSpy).not.toHaveBeenCalled()
   })
 
   it('rejects anonymous callers with a 401 JSON error', async () => {

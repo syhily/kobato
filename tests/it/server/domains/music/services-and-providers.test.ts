@@ -299,17 +299,12 @@ describe('music/services/write/add — addMusic', () => {
       getLyric: vi.fn(async () => '[00:00] Hi'),
     })
 
-    const fetchMock = vi.fn(async () => ({
-      // `downloadBinary` follows redirects manually and reads `.status`
-      // to decide whether the response is a 2xx/4xx (terminal) or a 3xx
-      // (follow the Location). A plain object literal omits `status`, so
-      // we have to set it explicitly or the loop misreads the response
-      // as a redirect without a Location header.
-      ok: true,
-      status: 200,
-      headers: new Headers({ 'content-length': '4' }),
-      arrayBuffer: async () => new ArrayBuffer(4),
-    })) as unknown as typeof fetch
+    // A real Response: `downloadBinary` follows redirects manually off
+    // `.status` and streams the body through a size-capped reader, so a
+    // plain object literal no longer suffices.
+    const fetchMock = vi.fn(
+      async () => new Response(new Uint8Array(4), { status: 200, headers: { 'content-length': '4' } }),
+    )
     vi.stubGlobal('fetch', fetchMock)
 
     const r = await addMod.addMusic(db, { source: 'netease', sourceId: 'new-song', uploader: null })
