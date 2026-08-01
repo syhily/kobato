@@ -1,18 +1,28 @@
 import { useMutation, useQueryClient, type InfiniteData } from '@tanstack/react-query'
 import { useCallback, useEffect, useRef, useState, type Dispatch } from 'react'
 import { useSearchParams } from 'react-router'
-import { toast } from 'sonner'
 
 import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
-import type { CommentFilterFieldKey, CommentsFilterQuery } from '@/ui/admin/comments/filter-fields'
 import type { ActiveFilter, FilterPillsAction } from '@/ui/admin/shared/filterPillsReducer'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
+import { toastApiError } from '@/client/lib/toast-api-error'
 import { idStr } from '@/shared/utils/tools'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
+import {
+  type CommentFilterFieldKey,
+  type CommentsFilterQuery,
+  isTextFilterOperator,
+  textFilterLabel,
+} from '@/ui/admin/comments/filter-fields'
 import { type ConfirmState } from '@/ui/admin/shared/ConfirmDialog'
+import {
+  DEFAULT_SINGLE_DATE_OPERATOR,
+  isSingleDateFilterOperator,
+  singleDateFilterLabel,
+} from '@/ui/admin/shared/date-filter'
 import { useAdminInfiniteList } from '@/ui/admin/shared/useAdminInfiniteList'
 
 export interface StatusCounts {
@@ -140,6 +150,63 @@ export interface CommentActions extends CommentIntents {
   isResolvingDeletion(comment: AdminComment): boolean
 }
 
+// Build the filter list from a `URLSearchParams` snapshot — the inverse of
+// the write-back inside the controller below. Used for the route's mount
+// seed (shared URLs) and for the controller's Back/Forward reseed, so both
+// directions agree on the URL shape. Intentionally lenient — invalid
+// values fall back to a sensible default rather than throwing, so a
+// hand-edited URL never bricks the page.
+export function parseCommentFiltersFromSearchParams(
+  searchParams: URLSearchParams,
+): ActiveFilter<CommentFilterFieldKey>[] {
+  const initialFilters: ActiveFilter<CommentFilterFieldKey>[] = []
+
+  const status = searchParams.get('status')
+  if (status && status !== 'all') {
+    const statusLabel: Record<string, string> = {
+      pending: '待审核',
+      approved: '已审核',
+      deleteRequested: '申请删除',
+    }
+    initialFilters.push({ field: 'status', value: status, label: statusLabel[status] ?? status })
+  }
+
+  const pageKey = searchParams.get('pageKey')
+  if (pageKey) {
+    initialFilters.push({ field: 'page', value: pageKey, label: pageKey })
+  }
+
+  const userId = searchParams.get('userId')
+  if (userId) {
+    initialFilters.push({ field: 'author', value: userId, label: userId })
+  }
+
+  const q = searchParams.get('q')
+  const matchRaw = searchParams.get('match')
+  if (q) {
+    const op = isTextFilterOperator(matchRaw) ? matchRaw : 'contains'
+    const value = JSON.stringify({ value: q, op })
+    initialFilters.push({ field: 'text', value, label: textFilterLabel({ value: q, op }) })
+  }
+
+  const date = searchParams.get('date')
+  const dateOp = searchParams.get('dateOp')
+  if (date && isSingleDateFilterOperator(dateOp)) {
+    const value = JSON.stringify({ date, op: dateOp })
+    initialFilters.push({ field: 'date', value, label: singleDateFilterLabel({ date, op: dateOp }) })
+  } else if (date) {
+    // Partial date URL — fall back to the default operator so the
+    // chip stays consistent with the picker, which always pairs a
+    // date with an operator. `dateOp` may be missing or invalid;
+    // `DEFAULT_SINGLE_DATE_OPERATOR` matches Ghost's "on or before" default.
+    const op = isSingleDateFilterOperator(dateOp) ? dateOp : DEFAULT_SINGLE_DATE_OPERATOR
+    const value = JSON.stringify({ date, op })
+    initialFilters.push({ field: 'date', value, label: singleDateFilterLabel({ date, op }) })
+  }
+
+  return initialFilters
+}
+
 export interface UseCommentsControllerOptions {
   /** Live pill state — owned by the view's `useFilterPills`, which also
    *  produced `queryInput` (the merged per-field `toQuery` patch). */
@@ -157,6 +224,29 @@ export function useCommentsController({ filters, dispatch, queryInput, intents }
   // once the user pauses.
   const [searchParams, setSearchParams] = useSearchParams()
   const urlSyncTimerRef = useRef<number | null>(null)
+  // The params string this controller last consumed (mount / popstate
+  // reseed) or produced (the write-back below). A `searchParams` change
+  // that doesn't match it came from outside — browser Back/Forward — so
+  // the URL becomes the source of truth again and the pills reseed from it
+  // instead of the stale pills being written back over the restored URL.
+  const consumedParamsRef = useRef<string | null>(null)
+  useEffect(() => {
+    const current = searchParams.toString()
+    if (consumedParamsRef.current === current) {
+      return
+    }
+    const isMount = consumedParamsRef.current === null
+    consumedParamsRef.current = current
+    if (isMount) {
+      // The route already seeded the pills from this URL.
+      return
+    }
+    const restored = parseCommentFiltersFromSearchParams(searchParams)
+    dispatch({ type: 'clearFilters' })
+    for (const filter of restored) {
+      dispatch({ type: 'addFilter', field: filter.field, value: filter.value, label: filter.label })
+    }
+  }, [searchParams, dispatch])
   useEffect(() => {
     if (urlSyncTimerRef.current !== null) {
       window.clearTimeout(urlSyncTimerRef.current)
@@ -199,6 +289,9 @@ export function useCommentsController({ filters, dispatch, queryInput, intents }
         }
       }
       if (next.toString() !== searchParams.toString()) {
+        // Record the write so the reseed effect above recognizes this
+        // searchParams change as our own and leaves the pills alone.
+        consumedParamsRef.current = next.toString()
         setSearchParams(next, { replace: true, preventScrollReset: true })
       }
     }, URL_SYNC_DEBOUNCE_MS)
@@ -276,7 +369,7 @@ export function useCommentsController({ filters, dispatch, queryInput, intents }
   const resolveDeletionMutation = useMutation({
     ...orpcQuery.admin.comments.approveCommentDeletion.mutationOptions(),
     onError: (error) => {
-      toast.error('处理删除申请失败', { description: error.message })
+      toastApiError(error, '处理删除申请失败')
     },
   })
 

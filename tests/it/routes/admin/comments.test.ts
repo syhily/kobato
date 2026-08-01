@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { parseCommentFiltersFromSearchParams } from '@/routes/admin/comments'
+import { parseCommentFiltersFromSearchParams } from '@/ui/admin/comments/useCommentsController'
 
 describe('parseCommentFiltersFromSearchParams — status / page / author', () => {
   it('returns an empty list for an empty search params', () => {

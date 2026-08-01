@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { meta, parseCommentFiltersFromSearchParams } from '@/routes/admin/comments'
+import { meta } from '@/routes/admin/comments'
+import { parseCommentFiltersFromSearchParams } from '@/ui/admin/comments/useCommentsController'
 
 describe('route: admin/comments', () => {
   describe('meta', () => {
