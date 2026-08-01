@@ -59,10 +59,13 @@ export const CONFIG_TABLE = [
   },
   {
     path: ['security', 'sessionSecret'],
+    // The 32-char floor applies to EACH comma-separated secret, checked
+    // after the split/trim — validating the joined string would let two
+    // short secrets pass and produce weak signing keys (audit P1-17).
     schema: z
       .string()
-      .min(32)
-      .transform((val) => val.split(',').map((s) => s.trim())),
+      .transform((val) => val.split(',').map((s) => s.trim()))
+      .pipe(z.array(z.string().min(32)).min(1)),
     fileDefault: '',
   },
   {

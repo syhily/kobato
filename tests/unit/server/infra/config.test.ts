@@ -151,6 +151,19 @@ describe('infra/config — loadConfig', () => {
     expect(written.security.sessionSecret).toBe('another-secret-that-is-at-least-32-chars')
   })
 
+  it('rejects a config file whose comma-joined sessionSecrets are individually under 32 chars', () => {
+    const dir = makeTmpDir()
+    const path = configPathIn(dir)
+    // 20 + 20 chars: the joined string clears min(32), each secret does
+    // not — the floor must apply per secret, after the split (audit P1-17).
+    writeConfig(path, { security: { sessionSecret: `${'a'.repeat(20)},${'b'.repeat(20)}` } })
+    withConfigArg(path)
+
+    const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true)
+    expect(() => loadConfig()).toThrow('process.exit called')
+    expect(stderr).toHaveBeenCalledWith(expect.stringContaining('无效内容'))
+  })
+
   it('fails on malformed JSON with the file name in the message', () => {
     const dir = makeTmpDir()
     const path = configPathIn(dir)
@@ -301,6 +314,26 @@ describe('infra/config — loadServerConfig', () => {
       'first-secret-at-least-32-characters!!',
       'second-secret-at-least-32-chars!',
     ])
+  })
+
+  it('rejects a sessionSecret list whose individual secrets are under 32 chars', () => {
+    stubRequiredEnv()
+    // 20 + 20 chars: the joined string clears min(32), each secret does
+    // not — validating before the split would let this through (audit P1-17).
+    vi.stubEnv('security__sessionSecret', `${'a'.repeat(20)},${'b'.repeat(20)}`)
+    const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true)
+
+    expect(() => loadServerConfig()).toThrow('process.exit called')
+    expect(stderr).toHaveBeenCalledWith(expect.stringContaining('security.sessionSecret'))
+  })
+
+  it('accepts multiple sessionSecrets that each meet the 32-char floor', () => {
+    stubRequiredEnv()
+    vi.stubEnv('security__sessionSecret', `${'a'.repeat(32)}, ${'b'.repeat(40)}`)
+
+    const config = loadServerConfig()
+
+    expect(config.security.sessionSecret).toEqual(['a'.repeat(32), 'b'.repeat(40)])
   })
 
   it('treats empty-string optional values as unset (an auto-created file boots)', () => {
