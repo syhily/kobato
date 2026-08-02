@@ -6,6 +6,7 @@ import { adminCategoriesRouter } from '@/server/http/controllers/admin/categorie
 import { adminCommentsRouter } from '@/server/http/controllers/admin/comments.controller'
 import { adminFontsRouter } from '@/server/http/controllers/admin/fonts.controller'
 import { adminFriendsRouter } from '@/server/http/controllers/admin/friends.controller'
+import { adminGeoipRouter } from '@/server/http/controllers/admin/geoip.controller'
 import { adminImagesRouter } from '@/server/http/controllers/admin/images.controller'
 import { adminMailRouter } from '@/server/http/controllers/admin/mail.controller'
 import { adminMusicRouter } from '@/server/http/controllers/admin/music.controller'
@@ -69,6 +70,7 @@ export const apiRouter = {
     comments: adminCommentsRouter,
     backup: adminBackupRouter,
     fonts: adminFontsRouter,
+    geoip: adminGeoipRouter,
     webmentions: adminWebmentionsRouter,
     update: adminUpdateRouter,
   },

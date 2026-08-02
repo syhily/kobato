@@ -3,6 +3,7 @@ import { serve } from '@hono/node-server'
 import type { Env } from '@/server/http/context'
 
 import { getDb } from '@/server/bootstrap/db-lifecycle'
+import { scheduleNextGeoipUpdate } from '@/server/domains/analytics/geoip-scheduler'
 import { scheduleNextArchive } from '@/server/domains/audit/services/scheduler'
 import { getSetupToken } from '@/server/domains/auth/setup-token'
 import { scheduleNextBackup } from '@/server/domains/backup/scheduler'
@@ -68,6 +69,7 @@ if (!hmr?.secretsMigrated) {
   scheduleWebmentionOutbox()
   scheduleNextKvSweep()
   scheduleNextDbMaintenance()
+  scheduleNextGeoipUpdate()
 
   if (hmr) {
     hmr.secretsMigrated = true

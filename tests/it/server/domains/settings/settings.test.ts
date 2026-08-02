@@ -153,7 +153,7 @@ const fixtureBundle: BlogSettingsBundle = {
     auditLogArchiveRetentionDays: 180,
   },
   analytics: {
-    analytics: { trackAdmin: false, keepBotRows: false },
+    analytics: { trackAdmin: false, keepBotRows: false, geoipAutoUpdate: false },
   },
   security: {
     csrf: { enabled: true, exemptPaths: [] },

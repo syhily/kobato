@@ -6,6 +6,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { UseFileUploadOptions } from '@/client/hooks/use-file-upload'
 import type { AnalyticsSettings } from '@/shared/config/types'
 
+import { mockTanstackQuery } from '#/_helpers/mock-react-query'
+
+// The GeoIP rows read status / fire mutations through orpc + TanStack Query;
+// the canonical inert hook doubles keep this spec focused on the upload wiring.
+mockTanstackQuery()
+
 // The upload choreography itself is pinned by use-file-upload.test.tsx; this
 // spec pins the AnalyticsForm wiring: the exact options the MaxMind row
 // hands to the hook and the pending-driven button UX.
@@ -25,7 +31,7 @@ vi.mock('@/client/hooks/use-file-upload', () => ({
 import { AnalyticsForm } from '@/ui/admin/settings/AnalyticsForm'
 
 const analytics: AnalyticsSettings = {
-  analytics: { trackAdmin: false, keepBotRows: false },
+  analytics: { trackAdmin: false, keepBotRows: false, geoipAutoUpdate: true },
 }
 
 function options(): UseFileUploadOptions {

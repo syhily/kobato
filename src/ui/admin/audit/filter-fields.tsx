@@ -103,6 +103,7 @@ export const ACTION_OPTIONS = [
   { value: 'passkey_registered', label: '通行密钥注册' },
   { value: 'passkey_deleted', label: '通行密钥删除' },
   { value: 'maxmind_uploaded', label: 'MaxMind 数据上传' },
+  { value: 'maxmind_remote_updated', label: 'MaxMind 远程更新' },
   { value: 'font_uploaded', label: '字体上传' },
   { value: 'font_deleted', label: '字体删除' },
   { value: 'font_slot_updated', label: '字体槽位更新' },

@@ -40,6 +40,7 @@ describe('maxmindRouter', () => {
     }))
     vi.doMock('@/server/infra/paths', () => ({
       MAXMIND_DB_PATH: '/tmp/maxmind/GeoLite2-City.mmdb',
+      MAXMIND_META_PATH: '/tmp/maxmind/GeoLite2-City.meta.json',
     }))
     vi.doMock('@maxmind/geoip2-node', () => ({
       Reader: {
@@ -50,6 +51,7 @@ describe('maxmindRouter', () => {
     const fsMocks = {
       mkdir: vi.fn().mockResolvedValue(undefined),
       writeFile: vi.fn().mockResolvedValue(undefined),
+      rename: vi.fn().mockResolvedValue(undefined),
       unlink: vi.fn().mockResolvedValue(undefined),
     }
     vi.doMock('node:fs/promises', () => fsMocks)
@@ -67,12 +69,24 @@ describe('maxmindRouter', () => {
     })
     expect(res.status).toBe(200)
     await expect(res.json()).resolves.toEqual({ size: 4 })
-    expect(fsMocks.writeFile).toHaveBeenCalled()
+    // Atomic swap: staged to a temp file, validated, then renamed into place.
+    expect(fsMocks.writeFile).toHaveBeenCalledWith('/tmp/maxmind/GeoLite2-City.mmdb.upload', expect.any(Buffer))
+    expect(fsMocks.rename).toHaveBeenCalledWith(
+      '/tmp/maxmind/GeoLite2-City.mmdb.upload',
+      '/tmp/maxmind/GeoLite2-City.mmdb',
+    )
+    // Provenance sidecar: marks the database as a manual upload so the
+    // daily auto-update never replaces it silently.
+    expect(fsMocks.writeFile).toHaveBeenCalledWith(
+      '/tmp/maxmind/GeoLite2-City.meta.json',
+      expect.stringContaining('"source":"upload"'),
+    )
   })
 
   it('rejects non-mmdb files', async () => {
     vi.doMock('@/server/infra/paths', () => ({
       MAXMIND_DB_PATH: '/tmp/maxmind/GeoLite2-City.mmdb',
+      MAXMIND_META_PATH: '/tmp/maxmind/GeoLite2-City.meta.json',
     }))
 
     const { maxmindRouter } = await import('@/server/http/resources/maxmind')
@@ -92,6 +106,7 @@ describe('maxmindRouter', () => {
   it('rejects an empty file', async () => {
     vi.doMock('@/server/infra/paths', () => ({
       MAXMIND_DB_PATH: '/tmp/maxmind/GeoLite2-City.mmdb',
+      MAXMIND_META_PATH: '/tmp/maxmind/GeoLite2-City.meta.json',
     }))
 
     const { maxmindRouter } = await import('@/server/http/resources/maxmind')
@@ -108,7 +123,7 @@ describe('maxmindRouter', () => {
     expect(res.status).toBe(400)
   })
 
-  it('deletes corrupt mmdb files and returns 400', async () => {
+  it('rejects a corrupt mmdb and never touches the live database', async () => {
     vi.doMock('@/server/domains/analytics/geoip', () => ({
       resetGeoReader: vi.fn(),
     }))
@@ -117,6 +132,7 @@ describe('maxmindRouter', () => {
     }))
     vi.doMock('@/server/infra/paths', () => ({
       MAXMIND_DB_PATH: '/tmp/maxmind/GeoLite2-City.mmdb',
+      MAXMIND_META_PATH: '/tmp/maxmind/GeoLite2-City.meta.json',
     }))
     vi.doMock('@maxmind/geoip2-node', () => ({
       Reader: {
@@ -143,12 +159,15 @@ describe('maxmindRouter', () => {
       body: form,
     })
     expect(res.status).toBe(400)
-    expect(unlink).toHaveBeenCalled()
+    // Only the staged temp file is cleaned up — the live database is
+    // never written before validation passes.
+    expect(unlink).toHaveBeenCalledWith('/tmp/maxmind/GeoLite2-City.mmdb.upload')
   })
 
   it('rejects uploads that exceed the body limit', async () => {
     vi.doMock('@/server/infra/paths', () => ({
       MAXMIND_DB_PATH: '/tmp/maxmind/GeoLite2-City.mmdb',
+      MAXMIND_META_PATH: '/tmp/maxmind/GeoLite2-City.meta.json',
     }))
 
     const { maxmindRouter } = await import('@/server/http/resources/maxmind')

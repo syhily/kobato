@@ -94,7 +94,8 @@ export function nextDailyMaintenanceDelayMs(): number {
 
 // ─── Scheduled jobs ──────────────────────────────────────
 // One self-rescheduling-timer seam for every periodic job (kv sweep,
-// audit archive, backup, and the two engine maintenance jobs). The
+// audit archive, backup, GeoIP update, and the two engine maintenance
+// jobs). The
 // domain owns its POLICY through two closures — when to fire next and
 // what to do — while this module owns the MECHANICS: timer lifecycle,
 // `.unref()`, self-reschedule after every fire, error logging, and one

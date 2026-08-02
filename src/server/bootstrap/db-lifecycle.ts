@@ -4,6 +4,7 @@ import {
   snapshotAnalyticsTo,
 } from '@/server/bootstrap/analytics-lifecycle'
 import { ManagedEngine } from '@/server/bootstrap/managed-engine'
+import { rescheduleGeoipUpdate } from '@/server/domains/analytics/geoip-scheduler'
 import { rescheduleArchive, scheduleNextArchive, wireArchiveScheduler } from '@/server/domains/audit/services/scheduler'
 import { wireSessionStorageDb } from '@/server/domains/auth/session-storage'
 import { wireRestoreMachine } from '@/server/domains/backup/restore-machine'
@@ -234,6 +235,7 @@ wireRestoreMachine({
 registerSectionChangeHandler('backup', rescheduleBackup)
 registerSectionChangeHandler('limits', rescheduleArchive)
 registerSectionChangeHandler('mail', invalidateMailTransportCache)
+registerSectionChangeHandler('analytics', rescheduleGeoipUpdate)
 
 // ─── Migration ───────────────────────────────────────────
 // Run migrations once per process (HMR-safe via the 'migrationsRan'

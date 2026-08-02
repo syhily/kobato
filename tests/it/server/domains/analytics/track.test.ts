@@ -89,7 +89,7 @@ describe('analytics/track — trackPageView', () => {
   it('returns early when the admin visitor is excluded by settings — neither signal writes', async () => {
     setBlogSettingsBundleForTests({
       ...TEST_BLOG_SETTINGS_BUNDLE,
-      analytics: { analytics: { trackAdmin: false, keepBotRows: false } },
+      analytics: { analytics: { trackAdmin: false, keepBotRows: false, geoipAutoUpdate: false } },
     })
     await ensureMetric(db, POST_TARGET)
     await trackPageView(makeFacts(), POST_TARGET, { isAdmin: true })
@@ -100,7 +100,7 @@ describe('analytics/track — trackPageView', () => {
   it('records an admin visit on both signals when trackAdmin is true', async () => {
     setBlogSettingsBundleForTests({
       ...TEST_BLOG_SETTINGS_BUNDLE,
-      analytics: { analytics: { trackAdmin: true, keepBotRows: false } },
+      analytics: { analytics: { trackAdmin: true, keepBotRows: false, geoipAutoUpdate: false } },
     })
     await ensureMetric(db, POST_TARGET)
     await trackPageView(makeFacts(), POST_TARGET, { isAdmin: true })
@@ -125,7 +125,7 @@ describe('analytics/track — trackPageView', () => {
   it('records bot traffic when keepBotRows is true', async () => {
     setBlogSettingsBundleForTests({
       ...TEST_BLOG_SETTINGS_BUNDLE,
-      analytics: { analytics: { trackAdmin: false, keepBotRows: true } },
+      analytics: { analytics: { trackAdmin: false, keepBotRows: true, geoipAutoUpdate: false } },
     })
     await trackPageView(makeFacts({ userAgent: BOT_UA }), POST_TARGET)
     const rows = await accessLogRows()

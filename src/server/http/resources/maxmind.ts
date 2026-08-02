@@ -1,12 +1,13 @@
 import { Reader } from '@maxmind/geoip2-node'
 import { Hono } from 'hono'
 import { bodyLimit } from 'hono/body-limit'
-import { mkdir, unlink, writeFile } from 'node:fs/promises'
+import { mkdir, rename, unlink, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
 import type { Env } from '@/server/http/context'
 
 import { resetGeoReader } from '@/server/domains/analytics/geoip'
+import { withGeoipWriteLock, writeGeoipMetaBestEffort } from '@/server/domains/analytics/geoip-update'
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { csrfGuard } from '@/server/http/middlewares/csrf'
 import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'
@@ -41,21 +42,37 @@ export const maxmindRouter = new Hono<Env>().post(
       return c.json({ error: { message: '上传文件为空' } }, 400)
     }
 
-    await mkdir(path.dirname(MAXMIND_DB_PATH), { recursive: true })
-    await writeFile(MAXMIND_DB_PATH, buffer)
+    // Serialize with the remote-update flow — both swap the same
+    // database/meta pair. The write itself is atomic: stage to a temp
+    // file, validate by opening it, then rename into place. A corrupt
+    // upload never touches the live database (and readers never see a
+    // half-written file).
+    const ok = await withGeoipWriteLock(async () => {
+      await mkdir(path.dirname(MAXMIND_DB_PATH), { recursive: true })
+      const tmpPath = `${MAXMIND_DB_PATH}.upload`
+      await writeFile(tmpPath, buffer)
+      try {
+        await Reader.open(tmpPath)
+      } catch {
+        await unlink(tmpPath).catch(() => {
+          /* already deleted */
+        })
+        return false
+      }
+      await rename(tmpPath, MAXMIND_DB_PATH)
 
-    // Validate the file by attempting to open it. If it fails, delete the
-    // corrupt file and return an error so the admin knows immediately.
-    try {
-      await Reader.open(MAXMIND_DB_PATH)
-    } catch {
-      await unlink(MAXMIND_DB_PATH).catch(() => {
-        /* already deleted */
-      })
+      // The swap is done — refresh the reader first, then record
+      // provenance best-effort: it tells the daily auto-update this
+      // database was installed manually and must not be replaced behind
+      // the admin's back.
+      resetGeoReader()
+      await writeGeoipMetaBestEffort({ version: null, source: 'upload', updatedAt: new Date().toISOString() })
+      return true
+    })
+
+    if (!ok) {
       return c.json({ error: { message: '上传的文件不是有效的 MaxMind 数据库' } }, 400)
     }
-
-    resetGeoReader()
 
     recordAuditEventFromContext(c.var.requestContext, {
       action: 'maxmind_uploaded',

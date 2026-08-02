@@ -292,6 +292,7 @@ export interface AnalyticsSettings {
   analytics: {
     trackAdmin: boolean
     keepBotRows: boolean
+    geoipAutoUpdate: boolean
   }
 }
 

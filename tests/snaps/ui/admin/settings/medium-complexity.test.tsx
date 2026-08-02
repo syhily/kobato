@@ -208,7 +208,7 @@ const baseRateLimit: RateLimitSettings = {
 }
 
 const baseAnalytics: AnalyticsSettings = {
-  analytics: { trackAdmin: false, keepBotRows: false },
+  analytics: { trackAdmin: false, keepBotRows: false, geoipAutoUpdate: true },
 }
 
 describe('snapshot: admin settings forms', () => {

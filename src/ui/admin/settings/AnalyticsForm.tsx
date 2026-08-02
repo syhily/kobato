@@ -1,10 +1,15 @@
-import { UploadIcon } from 'lucide-react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { format } from 'date-fns'
+import { RefreshCwIcon, UploadIcon } from 'lucide-react'
 import { useRef } from 'react'
 import { Controller } from 'react-hook-form'
+import { toast } from 'sonner'
 
 import type { AnalyticsSettings } from '@/shared/config/types'
 
+import { orpcQuery } from '@/client/api/orpc-query'
 import { useFileUpload } from '@/client/hooks/use-file-upload'
+import { toastApiError } from '@/client/lib/toast-api-error'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
@@ -17,8 +22,20 @@ interface AnalyticsFormProps {
   analytics: AnalyticsSettings
 }
 
+interface GeoipStatus {
+  installed: boolean
+  version: string | null
+  source: 'upload' | 'remote' | null
+  updatedAt: string | null
+}
+
+function geoipStatusKey() {
+  return orpcQuery.admin.geoip.status.key()
+}
+
 function MaxMindUploadRow() {
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const queryClient = useQueryClient()
   const { upload, pending } = useFileUpload({
     endpoint: '/api/admin/maxmind/upload',
     accept: ['.mmdb'],
@@ -28,6 +45,7 @@ function MaxMindUploadRow() {
       tooLarge: () => ({ title: '文件过大', description: 'MaxMind 数据库文件大小上限为 100 MB' }),
       success: 'MaxMind 数据库已上传',
     },
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: geoipStatusKey() }),
   })
 
   return (
@@ -61,19 +79,70 @@ function MaxMindUploadRow() {
   )
 }
 
+function describeGeoipStatus(status: GeoipStatus | undefined): string {
+  if (!status) {
+    return '正在读取数据库状态…'
+  }
+  if (!status.installed) {
+    return '尚未安装数据库，点击检查更新将自动下载最新版'
+  }
+  const version = status.version ?? '未知版本'
+  const source = status.source === 'remote' ? '远程下载' : '本地上传'
+  const updatedAt = status.updatedAt ? `，更新于 ${format(new Date(status.updatedAt), 'yyyy-MM-dd HH:mm')}` : ''
+  return `当前版本 ${version}（${source}${updatedAt}）`
+}
+
+function MaxMindRemoteUpdateRow() {
+  const queryClient = useQueryClient()
+  const { data: status } = useQuery(orpcQuery.admin.geoip.status.queryOptions({ input: {} }))
+  const updateMutation = useMutation({
+    ...orpcQuery.admin.geoip.update.mutationOptions(),
+    onSuccess: (result) => {
+      if (result.status === 'updated') {
+        toast.success(`GeoIP 数据库已更新至 ${result.version}`)
+      } else {
+        toast.success(`GeoIP 数据库已是最新版本（${result.version}）`)
+      }
+      void queryClient.invalidateQueries({ queryKey: geoipStatusKey() })
+    },
+    onError: (error) => toastApiError(error, 'GeoIP 更新失败'),
+  })
+
+  return (
+    <div className="flex items-center gap-3">
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        disabled={updateMutation.isPending}
+        onClick={() => updateMutation.mutate({})}
+      >
+        <RefreshCwIcon data-icon="sm" />
+        {updateMutation.isPending ? '检查中…' : '检查并更新'}
+      </Button>
+      <span className="text-sm text-muted-foreground">{describeGeoipStatus(status)}</span>
+    </div>
+  )
+}
+
 export function AnalyticsForm({ analytics }: AnalyticsFormProps) {
   const { form, settingGroupProps, save } = useSettingsCard<
     AnalyticsSettings,
-    { trackAdmin: boolean; keepBotRows: boolean }
+    { trackAdmin: boolean; keepBotRows: boolean; geoipAutoUpdate: boolean }
   >({
     section: 'analytics',
     source: analytics,
     toState: (source) => ({
       trackAdmin: source.analytics.trackAdmin,
       keepBotRows: source.analytics.keepBotRows,
+      geoipAutoUpdate: source.analytics.geoipAutoUpdate,
     }),
     fromState: (state) => ({
-      analytics: { trackAdmin: state.trackAdmin, keepBotRows: state.keepBotRows },
+      analytics: {
+        trackAdmin: state.trackAdmin,
+        keepBotRows: state.keepBotRows,
+        geoipAutoUpdate: state.geoipAutoUpdate,
+      },
     }),
   })
 
@@ -124,10 +193,39 @@ export function AnalyticsForm({ analytics }: AnalyticsFormProps) {
         </SettingGroupContent>
       </SettingGroup>
 
-      <SettingGroup title="GeoIP 数据库" description="上传 MaxMind GeoLite2-City 数据库以启用访问者的地理位置解析。">
+      <SettingGroup
+        title="GeoIP 数据库"
+        description="上传或远程下载 MaxMind GeoLite2-City 数据库以启用访问者的地理位置解析。"
+      >
         <SettingGroupContent>
           <SettingsRow label="GeoLite2-City.mmdb">
             <MaxMindUploadRow />
+          </SettingsRow>
+          <SettingsRow
+            label="远程更新"
+            hint="从 jsDelivr CDN 检测并下载最新版 GeoLite2-City 数据库；本地上传的数据库将被远程版本替换。"
+          >
+            <MaxMindRemoteUpdateRow />
+          </SettingsRow>
+          <SettingsRow label="自动更新" hint="每天定时检测远程版本并在有更新时自动下载；不会覆盖手动上传的数据库。">
+            <Controller
+              control={form.control}
+              name="geoipAutoUpdate"
+              render={({ field }) => (
+                <div className="flex items-center gap-3">
+                  <SettingsSwitch
+                    name={field.name}
+                    id="analytics-geoip-auto-update"
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    save={save}
+                  />
+                  <FieldLabel htmlFor="analytics-geoip-auto-update" className="font-normal">
+                    {field.value ? '已开启' : '已关闭'}
+                  </FieldLabel>
+                </div>
+              )}
+            />
           </SettingsRow>
         </SettingGroupContent>
       </SettingGroup>

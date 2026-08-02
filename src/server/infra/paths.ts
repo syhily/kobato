@@ -9,6 +9,10 @@ export const FONT_DIR = path.resolve(DATA_PATH, 'fonts')
 export const ANALYTICS_DEAD_LETTER_PATH = path.resolve(DATA_PATH, 'analytics', 'dead-letter.jsonl')
 export const AUDIT_DEAD_LETTER_PATH = path.resolve(DATA_PATH, 'audit', 'dead-letter.jsonl')
 export const MAXMIND_DB_PATH = path.resolve(DATA_PATH, 'maxmind', 'GeoLite2-City.mmdb')
+// Provenance sidecar for the GeoIP database (installed version, upload vs
+// remote download, install time) — written by the upload endpoint and the
+// remote-update flow in `domains/analytics/geoip-update`.
+export const MAXMIND_META_PATH = path.resolve(DATA_PATH, 'maxmind', 'GeoLite2-City.meta.json')
 // Local storage backend root. When S3 is not enabled, uploaded images,
 // music, branding, and backups land here under the same key namespace
 // the S3 backend uses (e.g. `images/...`, `musics/...`, `backup/...`).
