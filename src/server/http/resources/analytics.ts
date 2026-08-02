@@ -26,7 +26,7 @@ export const analyticsEventsRouter = new Hono<Env>().get('/api/analytics/events'
   const connectionKey = realtimeConnectionKey(c.var.requestContext.session.id, c.var.requestContext.clientAddress)
   const releaseConnection = acquireRealtimeConnection(connectionKey)
   if (releaseConnection === null) {
-    return c.json({ error: 'Too many realtime connections for this session' }, 429)
+    return c.json({ error: { message: 'Too many realtime connections for this session' } }, 429)
   }
 
   const encoder = new TextEncoder()

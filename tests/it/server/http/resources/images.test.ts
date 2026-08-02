@@ -36,6 +36,7 @@ vi.mock('@/server/render/og/render', () => ({
 }))
 
 import { serveAvatar } from '@/server/domains/comments/services/avatar'
+import { onErrorHandler } from '@/server/http/errors'
 import { imagesRouter } from '@/server/http/resources/images'
 import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 import { renderCalendar } from '@/server/render/calendar/render'
@@ -49,6 +50,7 @@ function requestImages(url: string) {
     await next()
   })
   app.route('/', imagesRouter)
+  app.onError(onErrorHandler)
   // Sentinel public route sharing the `/` mount root — mirrors the SSR
   // pages that must never count against the images bucket.
   app.get('/sitemap.xml', (c) => c.text('sitemap'))
@@ -148,7 +150,7 @@ describe('images resource', () => {
     // … and the next hit inside the window trips it.
     const res = await requestImages('http://localhost/images/og/missing.png')
     expect(res.status).toBe(429)
-    await expect(res.json()).resolves.toEqual({ error: 'Too many requests' })
+    await expect(res.json()).resolves.toEqual({ error: { message: '请求过于频繁，请稍后再试。' } })
   })
 
   it('renders an OG image for a category', async () => {

@@ -84,18 +84,6 @@ describe('rateLimitByIp middleware', () => {
     await expect(res.text()).resolves.toBe('请求过于频繁，请稍后再试。')
   })
 
-  it('answers 429 with the custom error body verbatim when exceeded', async () => {
-    seedSingleAttemptResourceBucket()
-    const app = buildApp('feed', 'resourceIp', { errorBody: { error: 'Too many requests' } })
-    expect((await app.request('/ping')).status).toBe(200)
-
-    const res = await app.request('/ping')
-
-    expect(res.status).toBe(429)
-    expect(res.headers.get('Content-Type')).toContain('application/json')
-    await expect(res.json()).resolves.toEqual({ error: 'Too many requests' })
-  })
-
   it('accepts an explicit bucket object that governs instead of the settings snapshot', async () => {
     // The settings bucket stays generous; the explicit maxAttempts: 1
     // bucket is what trips the second request.

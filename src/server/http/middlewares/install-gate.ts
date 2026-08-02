@@ -43,7 +43,7 @@ export const honoInstallGateMiddleware = createMiddleware<Env>(async (c, next) =
     state = await getInstallState(c.var.requestContext.db)
   } catch (error) {
     log.error('Install gate failed to determine install state', { error })
-    return c.json({ error: 'Service temporarily unavailable' }, 503)
+    return c.json({ error: { message: 'Service temporarily unavailable' } }, 503)
   }
 
   if (state === 'installed') {

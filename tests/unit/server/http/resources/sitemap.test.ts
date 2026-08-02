@@ -3,12 +3,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Env } from '@/server/http/context'
 
+import { onErrorHandler } from '@/server/http/errors'
+
 function createTestApp() {
   const app = new Hono<Env>()
   app.use('*', async (c, next) => {
     c.set('requestContext', { clientAddress: '127.0.0.1', db: {} } as never)
     await next()
   })
+  app.onError(onErrorHandler)
   return app
 }
 
@@ -75,6 +78,6 @@ describe('sitemapRouter', () => {
 
     const res = await app.request('/sitemap.xml')
     expect(res.status).toBe(429)
-    await expect(res.json()).resolves.toEqual({ error: 'Too many requests' })
+    await expect(res.json()).resolves.toEqual({ error: { message: '请求过于频繁，请稍后再试。' } })
   })
 })

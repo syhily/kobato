@@ -22,13 +22,19 @@ const MAX_FORM_BODY_BYTES = 16 * 1024
 // perimeter onError handler, which maps it to 400/404 with a JSON body.
 export const webmentionRouter = new Hono<Env>().post(
   '/webmention',
-  rateLimitByIp('webmention', 'resourceIp', { errorBody: { error: 'Too many requests' } }),
-  dynamicBodyLimit({ maxSize: MAX_FORM_BODY_BYTES, onError: (c) => c.json({ error: 'Payload too large' }, 413) }),
+  rateLimitByIp('webmention', 'resourceIp'),
+  dynamicBodyLimit({
+    maxSize: MAX_FORM_BODY_BYTES,
+    onError: (c) => c.json({ error: { message: 'Payload too large' } }, 413),
+  }),
   async (c) => {
     const body = await c.req.parseBody()
     const parsed = webmentionReceiveSchema.safeParse({ source: body['source'], target: body['target'] })
     if (!parsed.success) {
-      return c.json({ error: 'Invalid webmention request: source and target must be valid http(s) URLs' }, 400)
+      return c.json(
+        { error: { message: 'Invalid webmention request: source and target must be valid http(s) URLs' } },
+        400,
+      )
     }
 
     const mention = await receiveWebmention(c.var.requestContext.db, parsed.data)

@@ -140,7 +140,7 @@ function stripPng(filename: string | undefined): string {
 // as a site-wide middleware — every public SSR page view then counts
 // against the images bucket, and one IP's 60 page loads/minute 429 the
 // whole site. The avatar route additionally stacks its own stricter bucket.
-const imagesRateLimit = rateLimitByIp('images', 'resourceIp', { errorBody: { error: 'Too many requests' } })
+const imagesRateLimit = rateLimitByIp('images', 'resourceIp')
 
 export const imagesRouter = new Hono<Env>()
   .get('/images/og/:filename{[^/]+\\.png}', imagesRateLimit, createOgHandler([postOgAdapter, pageOgAdapter]))
@@ -162,7 +162,7 @@ export const imagesRouter = new Hono<Env>()
   .get(
     '/images/avatar/:filename{[^/]+\\.png}',
     imagesRateLimit,
-    rateLimitByIp('avatar', AVATAR_RATE_BUCKET, { errorBody: { error: 'Too many requests' } }),
+    rateLimitByIp('avatar', AVATAR_RATE_BUCKET),
     async (c) => {
       const hash = stripPng(c.req.param('filename'))
       if (!hash) {

@@ -65,13 +65,13 @@ function parseProxyParams(c: { req: { query: (k: string) => string | undefined }
   const source = c.req.query('source')
   const sourceId = c.req.query('sourceId')
   if (!source || !sourceId) {
-    return new Response(JSON.stringify({ error: 'Missing source or sourceId parameter' }), {
+    return new Response(JSON.stringify({ error: { message: 'Missing source or sourceId parameter' } }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     })
   }
   if (!VALID_SOURCES.has(source)) {
-    return new Response(JSON.stringify({ error: 'Invalid source' }), {
+    return new Response(JSON.stringify({ error: { message: 'Invalid source' } }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     })
@@ -82,7 +82,7 @@ function parseProxyParams(c: { req: { query: (k: string) => string | undefined }
 function handleError(err: unknown) {
   const message = err instanceof ActionFailure ? err.message : 'Upstream error'
   const status = unsafeCast<ContentfulStatusCode>(err instanceof ActionFailure ? err.status : 502)
-  return { error: message, status }
+  return { message, status }
 }
 
 function proxyHandler(resolveUrl: (provider: MusicProvider, track: ProviderTrack) => Promise<string>) {
@@ -96,13 +96,13 @@ function proxyHandler(resolveUrl: (provider: MusicProvider, track: ProviderTrack
     try {
       const track = await provider.getTrack(params.sourceId)
       if (track === null) {
-        return c.json({ error: 'Track not found' }, 404)
+        return c.json({ error: { message: 'Track not found' } }, 404)
       }
       const url = await resolveUrl(provider, track)
       return await proxyUpstream(url, SOURCE_REFERERS[params.source])
     } catch (err: unknown) {
-      const { error, status } = handleError(err)
-      return c.json({ error }, status)
+      const { message, status } = handleError(err)
+      return c.json({ error: { message } }, status)
     }
   }
 }

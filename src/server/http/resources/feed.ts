@@ -45,14 +45,14 @@ async function writeFeedResponse(c: Context<Env>, kind: 'rss' | 'atom', scope?: 
 // Every handler knows its scope at compile time: the site-wide feeds pass no
 // scope, the category/tag feeds pin their own taxonomy kind with the slug
 // route param. The per-IP resource rate limit guards all of them with the
-// public resource wire shape (`{ error: 'Too many requests' }`, 429).
+// standard API error shape (`{ error: { message } }`, 429).
 //
 // The limiter is passed per route, NEVER via router-level `.use()`: this
 // router is mounted at `/` in the pipeline, where a bare `.use()` registers
 // as a site-wide middleware — every public SSR page view then counts
 // against the feed bucket, and one IP's 60 page loads/minute 429 the whole
 // site (caught in e2e as `429 { key: 'feed', path: '/sitemap.xml' }`).
-const feedRateLimit = rateLimitByIp('feed', 'resourceIp', { errorBody: { error: 'Too many requests' } })
+const feedRateLimit = rateLimitByIp('feed', 'resourceIp')
 
 export const feedRouter = new Hono<Env>()
   .get('/feed', feedRateLimit, (c) => writeFeedResponse(c, 'rss'))

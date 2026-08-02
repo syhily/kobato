@@ -12,6 +12,7 @@ vi.mock('@/server/render/feed/generator', () => ({
   generateFeeds: vi.fn(),
 }))
 
+import { onErrorHandler } from '@/server/http/errors'
 import { feedRouter } from '@/server/http/resources/feed'
 import { resolveCacheSlot } from '@/server/infra/cache/registry'
 import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
@@ -34,6 +35,7 @@ function requestFeed(url: string) {
     await next()
   })
   app.route('/', feedRouter)
+  app.onError(onErrorHandler)
   // Sentinel public route sharing the `/` mount root — mirrors the SSR
   // pages that must never count against the feed bucket.
   app.get('/sitemap.xml', (c) => c.text('sitemap'))
@@ -96,7 +98,7 @@ describe('feed resource', () => {
 
     const res = await requestFeed('http://localhost/feed')
     expect(res.status).toBe(429)
-    await expect(res.json()).resolves.toEqual({ error: 'Too many requests' })
+    await expect(res.json()).resolves.toEqual({ error: { message: '请求过于频繁，请稍后再试。' } })
   })
 
   it('never counts public non-feed requests against the feed bucket', async () => {

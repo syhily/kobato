@@ -155,8 +155,8 @@ describe('/api/analytics/events SSE per-session cap', () => {
 
     const third = await openStream(await buildApp('session-b'), 'session-b')
     expect(third.status).toBe(429)
-    const body = (await third.json()) as { error: string }
-    expect(body.error).toBe('Too many realtime connections for this session')
+    const body = (await third.json()) as { error: { message: string } }
+    expect(body.error.message).toBe('Too many realtime connections for this session')
 
     await closeStream(first)
     await closeStream(second)

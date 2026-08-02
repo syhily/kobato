@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Env } from '@/server/http/context'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { onErrorHandler } from '@/server/http/errors'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { post as postTable } from '@/server/infra/db/schema/post'
 import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
@@ -73,6 +74,7 @@ app.use('*', async (c, next) => {
   await next()
 })
 app.route('/', imagesRouter)
+app.onError(onErrorHandler)
 
 beforeEach(async () => {
   await clearAllTables(db)
@@ -124,14 +126,14 @@ describe('imagesRouter avatar', () => {
 
   it('throttles the avatar route with its own stricter bucket', async () => {
     // 30 requests per 60s per IP; the 31st is answered 429 with the
-    // resource-route error shape — before any mirror fetch happens.
+    // standard API error shape — before any mirror fetch happens.
     for (let i = 0; i < 30; i += 1) {
       const res = await app.request('/images/avatar/abcdef0123456789.png')
       expect(res.status).toBe(200)
     }
     const res = await app.request('/images/avatar/abcdef0123456789.png')
     expect(res.status).toBe(429)
-    expect(await res.json()).toEqual({ error: 'Too many requests' })
+    expect(await res.json()).toEqual({ error: { message: '请求过于频繁，请稍后再试。' } })
   })
 })
 
