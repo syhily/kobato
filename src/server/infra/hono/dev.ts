@@ -7,8 +7,8 @@ import nodeAdapter from '@hono/vite-dev-server/node'
 import fs from 'node:fs'
 import path from 'node:path'
 
-import { unsafeCast } from '../../../shared/utils/unsafe-cast'
-import { setViteDevServer } from './dev-server-ref'
+import { unsafeCast } from '../../../shared/utils/unsafe-cast.ts'
+import { setViteDevServer } from './dev-server-ref.ts'
 
 interface ReactRouterHonoServerEnv {
   readonly REACT_ROUTER_HONO_SERVER_BUILD_DIRECTORY: string

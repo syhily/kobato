@@ -1027,19 +1027,19 @@ describe('contract: module and bundle boundaries', () => {
         specifier: './src/server/infra/hono/dev.ts',
       },
       {
-        key: 'vite.config.ts -> ./src/server/infra/route-warmup',
+        key: 'vite.config.ts -> ./src/server/infra/route-warmup.ts',
         file: 'vite.config.ts',
-        specifier: './src/server/infra/route-warmup',
+        specifier: './src/server/infra/route-warmup.ts',
       },
       {
-        key: 'vite.config.ts -> ./src/server/infra/image/worker-entry-plugin',
+        key: 'vite.config.ts -> ./src/server/infra/image/worker-entry-plugin.ts',
         file: 'vite.config.ts',
-        specifier: './src/server/infra/image/worker-entry-plugin',
+        specifier: './src/server/infra/image/worker-entry-plugin.ts',
       },
       {
-        key: 'dev.ts -> ./dev-server-ref',
+        key: 'dev.ts -> ./dev-server-ref.ts',
         file: 'src/server/infra/hono/dev.ts',
-        specifier: './dev-server-ref',
+        specifier: './dev-server-ref.ts',
       },
       {
         key: 'process-worker.ts -> ../../../shared/utils/thumbhash.ts',
@@ -1049,32 +1049,34 @@ describe('contract: module and bundle boundaries', () => {
       {
         // Config-graph file: `@/` aliases are not resolved while Vite loads
         // vite.config.ts, so this must stay relative (see process-worker above).
-        key: 'route-warmup.ts -> ../../shared/constants/route-warmup',
+        // The explicit extension keeps the graph loadable by Vite's native
+        // config loader, whose ESM resolution requires it.
+        key: 'route-warmup.ts -> ../../shared/constants/route-warmup.ts',
         file: 'src/server/infra/route-warmup.ts',
-        specifier: '../../shared/constants/route-warmup',
+        specifier: '../../shared/constants/route-warmup.ts',
       },
       {
         // Config-graph file (loaded by vite.config.ts): same alias caveat
         // as the constants import above. The warmup file contract lives in
         // this shared module so writer and reader cannot drift.
-        key: 'route-warmup.ts -> ../../shared/route-warmup/manifest',
+        key: 'route-warmup.ts -> ../../shared/route-warmup/manifest.ts',
         file: 'src/server/infra/route-warmup.ts',
-        specifier: '../../shared/route-warmup/manifest',
+        specifier: '../../shared/route-warmup/manifest.ts',
       },
       {
         // Config-graph file (loaded by vite.config.ts): same alias caveat
         // as above. `unsafeCast` is needed because the Vite dev-server types
         // are structurally compatible but not declared as our domain type.
-        key: 'dev.ts -> ../../../shared/utils/unsafe-cast',
+        key: 'dev.ts -> ../../../shared/utils/unsafe-cast.ts',
         file: 'src/server/infra/hono/dev.ts',
-        specifier: '../../../shared/utils/unsafe-cast',
+        specifier: '../../../shared/utils/unsafe-cast.ts',
       },
       {
         // Config-graph file (loaded by vite.config.ts): same alias caveat.
         // `unsafeCast` is used on Vite internals (the env/ssr flags).
-        key: 'route-warmup.ts -> ../../shared/utils/unsafe-cast',
+        key: 'route-warmup.ts -> ../../shared/utils/unsafe-cast.ts',
         file: 'src/server/infra/route-warmup.ts',
-        specifier: '../../shared/utils/unsafe-cast',
+        specifier: '../../shared/utils/unsafe-cast.ts',
       },
       {
         // Vendored cn-font-split: relative import of the wasm glue module.

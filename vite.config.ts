@@ -9,8 +9,8 @@ import { defineConfig } from 'vite'
 import { z } from 'zod'
 
 import { reactRouterHonoServer } from './src/server/infra/hono/dev.ts'
-import { processWorkerEntryPlugin } from './src/server/infra/image/worker-entry-plugin'
-import { routeWarmupPlugin } from './src/server/infra/route-warmup'
+import { processWorkerEntryPlugin } from './src/server/infra/image/worker-entry-plugin.ts'
+import { routeWarmupPlugin } from './src/server/infra/route-warmup.ts'
 
 const pkgSchema = z.object({
   name: z.string(),

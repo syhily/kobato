@@ -9,9 +9,9 @@ import {
   WARMUP_EDITOR_ONLY_PATTERN,
   WARMUP_GLOBAL_EXCLUDED_PATTERNS,
   type RouteManifest,
-} from '../../shared/constants/route-warmup'
-import { collectManifestChunks, parseClientManifest, type WarmupManifest } from '../../shared/route-warmup/manifest'
-import { unsafeCast } from '../../shared/utils/unsafe-cast'
+} from '../../shared/constants/route-warmup.ts'
+import { collectManifestChunks, parseClientManifest, type WarmupManifest } from '../../shared/route-warmup/manifest.ts'
+import { unsafeCast } from '../../shared/utils/unsafe-cast.ts'
 
 // Route tier configuration
 
