@@ -20,6 +20,7 @@ import type {
   SidebarSettings,
   SiteIdentitySettings,
   SocialsSettings,
+  WebmentionsSettings,
 } from '@/shared/config/types'
 
 import { BUNDLE_KEYS } from '@/shared/config/sections'
@@ -46,6 +47,7 @@ const socialsContext = makeCtx<SocialsSettings>('socialsContext')
 const contentContext = makeCtx<ContentSettings>('contentContext')
 const sidebarContext = makeCtx<SidebarSettings>('sidebarContext')
 const commentsContext = makeCtx<CommentsSettings>('commentsContext')
+const webmentionsContext = makeCtx<WebmentionsSettings>('webmentionsContext')
 const seoContext = makeCtx<SeoSettings>('seoContext')
 const mailContext = makeCtx<MailSettings>('mailContext')
 const newsletterContext = makeCtx<NewsletterSettings>('newsletterContext')
@@ -65,6 +67,7 @@ const SECTION_CONTEXTS_ANY: Record<BundleKey, Context<any>> = {
   content: contentContext,
   sidebar: sidebarContext,
   comments: commentsContext,
+  webmentions: webmentionsContext,
   seo: seoContext,
   mail: mailContext,
   newsletter: newsletterContext,

@@ -37,6 +37,7 @@ describe('snapshot: routes/public/post/detail', () => {
               likes: 3,
               commentKey: 'https://example.com/posts/hello/',
               comments: Promise.resolve({ commentData: null, commentItems: [] }),
+              webmentions: Promise.resolve([]),
               recentComments: [],
               currentUser: null,
             },

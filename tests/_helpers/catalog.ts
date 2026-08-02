@@ -95,6 +95,7 @@ export function makeAdminPost(overrides: Partial<AdminPostDto> = {}): AdminPostD
     og: overrides.og ?? null,
     published: overrides.published ?? true,
     commentsEnabled: overrides.commentsEnabled ?? true,
+    webmentionsEnabled: overrides.webmentionsEnabled ?? true,
     showToc: overrides.showToc ?? true,
     showUpdated: overrides.showUpdated ?? false,
     visible: overrides.visible ?? true,

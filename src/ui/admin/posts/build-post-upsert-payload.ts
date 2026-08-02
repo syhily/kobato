@@ -18,6 +18,7 @@ export function buildPostUpsertPayload({
     cover: meta.cover.trim(),
     og: meta.og.trim() === '' ? null : meta.og.trim(),
     commentsEnabled: meta.commentsEnabled,
+    webmentionsEnabled: meta.webmentionsEnabled,
     showToc: meta.showToc,
     showUpdated: meta.showUpdated,
     visible: meta.visible,

@@ -1,5 +1,6 @@
 import {
   Archive,
+  AtSign,
   BarChart3,
   Database,
   FileText,
@@ -35,6 +36,7 @@ export const ICON_MAP: Record<string, React.ComponentType<{ className?: string }
   FileText,
   PanelLeft,
   MessageSquare,
+  AtSign,
   Search,
   Navigation,
   Share2,

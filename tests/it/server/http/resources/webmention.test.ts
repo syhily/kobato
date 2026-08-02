@@ -11,11 +11,14 @@ import { onErrorHandler } from '@/server/http/errors'
 import { webmentionRouter } from '@/server/http/resources/webmention'
 import { page } from '@/server/infra/db/schema/page'
 import { post } from '@/server/infra/db/schema/post'
-import { webmention } from '@/server/infra/db/schema/webmention'
+import { webmention, webmentionInbox } from '@/server/infra/db/schema/webmention'
 import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 
 const db = getTestDb()
 
+// Verification moved to the inbox worker (plan 026 Phase 2): the
+// endpoint must NEVER fetch the source. The mock stays installed so any
+// regression that reaches for globalThis.fetch shows up in `calls`.
 const mockFetch = installFetch()
 
 beforeEach(async () => {
@@ -68,42 +71,57 @@ function formPost(app: Hono<Env>, params: Record<string, string>) {
 }
 
 const SOURCE = 'https://sender.example/blog/mentioning-post'
-const linkingHtml = (href: string) =>
-  `<html><head><title>Mentioning post</title><meta name="author" content="Jane Doe"></head>` +
-  `<body><p>I wrote about <a href="${href}">this post</a>.</p></body></html>`
 
-describe('integration / POST /webmention', () => {
-  it('accepts a verified mention for a post target and stores it pending', async () => {
-    const postId = await seedLivePost('wm-target')
-    mockFetch.enqueue(SOURCE, new Response(linkingHtml('https://example.com/posts/wm-target'), { status: 200 }))
+describe('integration / POST /webmention (async enqueue)', () => {
+  it('enqueues a mention for a post target and answers 202 without fetching', async () => {
+    await seedLivePost('wm-target')
 
     const res = await formPost(buildApp(), { source: SOURCE, target: 'https://example.com/posts/wm-target' })
     expect(res.status).toBe(202)
-    const body = (await res.json()) as { status: string; id: string }
+    const body = (await res.json()) as { status: string }
     expect(body.status).toBe('pending')
 
-    const rows = await db.select().from(webmention)
-    expect(rows).toHaveLength(1)
-    expect(rows[0]!.status).toBe('pending')
-    expect(rows[0]!.sourceUrl).toBe(SOURCE)
-    expect(rows[0]!.targetUrl).toBe('https://example.com/posts/wm-target/')
-    expect(rows[0]!.targetType).toBe('post')
-    expect(rows[0]!.targetOwnerId).toBe(postId)
-    expect(rows[0]!.title).toBe('Mentioning post')
-    expect(rows[0]!.authorName).toBe('Jane Doe')
-    expect(rows[0]!.fetchedAt).not.toBeNull()
-    expect(rows[0]!.rawPayload).toEqual({ source: SOURCE, target: 'https://example.com/posts/wm-target' })
+    // No fetch, no mention row yet — the pair sits in the inbox queue,
+    // source normalized and target canonicalized.
+    expect(mockFetch.calls).toHaveLength(0)
+    expect(await db.select().from(webmention)).toHaveLength(0)
+    const queued = await db.select().from(webmentionInbox)
+    expect(queued).toHaveLength(1)
+    expect(queued[0]!.sourceUrl).toBe(SOURCE)
+    expect(queued[0]!.targetUrl).toBe('https://example.com/posts/wm-target/')
+    expect(queued[0]!.attempts).toBe(0)
+    expect(queued[0]!.nextRetryAt).toBeNull()
   })
 
-  it('accepts a mention for a page target', async () => {
-    const pageId = await seedLivePage('wm-page')
-    mockFetch.enqueue(SOURCE, new Response(linkingHtml('https://example.com/wm-page/'), { status: 200 }))
+  it('enqueues a mention for a page target', async () => {
+    await seedLivePage('wm-page')
 
     const res = await formPost(buildApp(), { source: SOURCE, target: 'https://example.com/wm-page/' })
     expect(res.status).toBe(202)
-    const rows = await db.select().from(webmention)
-    expect(rows[0]!.targetType).toBe('page')
-    expect(rows[0]!.targetOwnerId).toBe(pageId)
+    const queued = await db.select().from(webmentionInbox)
+    expect(queued).toHaveLength(1)
+    expect(queued[0]!.targetUrl).toBe('https://example.com/wm-page/')
+  })
+
+  it('folds a repeat POST of the same pair into one queued row', async () => {
+    await seedLivePost('wm-target')
+    const app = buildApp()
+    expect((await formPost(app, { source: SOURCE, target: 'https://example.com/posts/wm-target' })).status).toBe(202)
+    expect((await formPost(app, { source: SOURCE, target: 'https://example.com/posts/wm-target' })).status).toBe(202)
+
+    expect(await db.select().from(webmentionInbox)).toHaveLength(1)
+  })
+
+  it('converges source URL variants (fragment / trailing slash) onto one queued row', async () => {
+    await seedLivePost('wm-target')
+    const app = buildApp()
+    for (const source of [SOURCE, `${SOURCE}#comments`, `${SOURCE}/`]) {
+      expect((await formPost(app, { source, target: 'https://example.com/posts/wm-target' })).status).toBe(202)
+    }
+
+    const queued = await db.select().from(webmentionInbox)
+    expect(queued).toHaveLength(1)
+    expect(queued[0]!.sourceUrl).toBe(SOURCE)
   })
 
   it('rejects malformed or missing params with 400', async () => {
@@ -118,7 +136,6 @@ describe('integration / POST /webmention', () => {
 
   it('rejects targets that are not live resources with 404', async () => {
     await seedLivePost('wm-target')
-    mockFetch.enqueue(SOURCE, new Response(linkingHtml('https://example.com/posts/wm-target'), { status: 200 }))
 
     const app = buildApp()
     // Unknown slug.
@@ -127,54 +144,9 @@ describe('integration / POST /webmention', () => {
     expect((await formPost(app, { source: SOURCE, target: 'https://other.example/posts/wm-target' })).status).toBe(404)
     // Single-segment paths resolve as pages; `archives` is not a page slug.
     expect((await formPost(app, { source: SOURCE, target: 'https://example.com/archives' })).status).toBe(404)
-    // No source fetch may happen for an unresolvable target.
+    // Unresolvable targets never reach the queue either.
     expect(mockFetch.calls).toHaveLength(0)
-  })
-
-  it('rejects a source that does not link to the target', async () => {
-    await seedLivePost('wm-target')
-    mockFetch.enqueue(SOURCE, new Response('<html><body><p>No link at all.</p></body></html>', { status: 200 }))
-
-    const res = await formPost(buildApp(), { source: SOURCE, target: 'https://example.com/posts/wm-target' })
-    expect(res.status).toBe(400)
-    expect((await db.select().from(webmention)).length).toBe(0)
-  })
-
-  it('rejects SSRF-blocked sources without fetching them', async () => {
-    await seedLivePost('wm-target')
-    const app = buildApp()
-    for (const blocked of [
-      'http://127.0.0.1:8080/x',
-      'http://169.254.169.254/latest/meta-data',
-      'http://localhost/x',
-    ]) {
-      const res = await formPost(app, { source: blocked, target: 'https://example.com/posts/wm-target' })
-      expect(res.status).toBe(400)
-    }
-    expect(mockFetch.calls).toHaveLength(0)
-    expect((await db.select().from(webmention)).length).toBe(0)
-  })
-
-  it('revalidates every redirect hop through the SSRF guard', async () => {
-    await seedLivePost('wm-target')
-    mockFetch.enqueue(SOURCE, new Response(null, { status: 302, headers: { location: 'http://192.168.1.1/internal' } }))
-
-    const res = await formPost(buildApp(), { source: SOURCE, target: 'https://example.com/posts/wm-target' })
-    expect(res.status).toBe(400)
-    // The redirect target was never fetched.
-    expect(mockFetch.calls.map((c) => c.url)).toEqual([SOURCE])
-  })
-
-  it('follows safe redirects and verifies the final document', async () => {
-    await seedLivePost('wm-target')
-    mockFetch.enqueue(SOURCE, new Response(null, { status: 302, headers: { location: 'https://cdn.example/final' } }))
-    mockFetch.enqueue(
-      'https://cdn.example/final',
-      new Response(linkingHtml('https://example.com/posts/wm-target'), { status: 200 }),
-    )
-
-    const res = await formPost(buildApp(), { source: SOURCE, target: 'https://example.com/posts/wm-target' })
-    expect(res.status).toBe(202)
+    expect(await db.select().from(webmentionInbox)).toHaveLength(0)
   })
 
   it('rejects a request whose declared content-length exceeds the 16KB form cap', async () => {
@@ -187,8 +159,7 @@ describe('integration / POST /webmention', () => {
       body: 'x'.repeat(20 * 1024),
     })
     expect(res.status).toBe(413)
-    expect(mockFetch.calls).toHaveLength(0)
-    expect((await db.select().from(webmention)).length).toBe(0)
+    expect((await db.select().from(webmentionInbox)).length).toBe(0)
   })
 
   it('rejects a chunked request without content-length whose body exceeds the 16KB form cap', async () => {
@@ -209,33 +180,7 @@ describe('integration / POST /webmention', () => {
       duplex: 'half',
     })
     expect(res.status).toBe(413)
-    expect(mockFetch.calls).toHaveLength(0)
-    expect((await db.select().from(webmention)).length).toBe(0)
-  })
-
-  it('rejects oversized sources via the declared content-length', async () => {
-    await seedLivePost('wm-target')
-    mockFetch.enqueue(
-      SOURCE,
-      new Response('x', { status: 200, headers: { 'content-length': String(2 * 1024 * 1024) } }),
-    )
-
-    const res = await formPost(buildApp(), { source: SOURCE, target: 'https://example.com/posts/wm-target' })
-    expect(res.status).toBe(400)
-    expect((await db.select().from(webmention)).length).toBe(0)
-  })
-
-  it('rejects sources that fail to fetch (timeout / unreachable / non-2xx)', async () => {
-    await seedLivePost('wm-target')
-    const app = buildApp()
-    mockFetch.enqueue(SOURCE, () => {
-      throw new Error('simulated timeout')
-    })
-    expect((await formPost(app, { source: SOURCE, target: 'https://example.com/posts/wm-target' })).status).toBe(400)
-
-    mockFetch.enqueue(SOURCE, new Response('server error', { status: 500 }))
-    expect((await formPost(app, { source: SOURCE, target: 'https://example.com/posts/wm-target' })).status).toBe(400)
-    expect((await db.select().from(webmention)).length).toBe(0)
+    expect((await db.select().from(webmentionInbox)).length).toBe(0)
   })
 
   it('rate-limits repeated mentions from the same IP', async () => {
@@ -248,9 +193,22 @@ describe('integration / POST /webmention', () => {
     })
     await seedLivePost('wm-target')
     const app = buildApp()
-    mockFetch.enqueue(SOURCE, new Response(linkingHtml('https://example.com/posts/wm-target'), { status: 200 }))
     expect((await formPost(app, { source: SOURCE, target: 'https://example.com/posts/wm-target' })).status).toBe(202)
     // Second mention from the same IP within the window is throttled.
     expect((await formPost(app, { source: SOURCE, target: 'https://example.com/posts/wm-target' })).status).toBe(429)
+  })
+})
+
+describe('integration / POST /webmention — receive switch (G5)', () => {
+  it('answers 410 Gone and enqueues nothing when receiving is disabled', async () => {
+    setBlogSettingsBundleForTests({
+      ...TEST_BLOG_SETTINGS_BUNDLE,
+      webmentions: { webmention: { receiveEnabled: false, displayOnPosts: true } },
+    })
+    await seedLivePost('wm-target')
+    const res = await formPost(buildApp(), { source: SOURCE, target: 'https://example.com/posts/wm-target' })
+    expect(res.status).toBe(410)
+    expect(mockFetch.calls).toHaveLength(0)
+    expect((await db.select().from(webmentionInbox)).length).toBe(0)
   })
 })

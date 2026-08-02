@@ -26,6 +26,7 @@ export function metaDraftFromPost(post: AdminPostDto): PostMetaDraft {
     og: post.og ?? '',
     published: post.published,
     commentsEnabled: post.commentsEnabled,
+    webmentionsEnabled: post.webmentionsEnabled,
     showToc: post.showToc,
     showUpdated: post.showUpdated,
     visible: post.visible,

@@ -21,6 +21,8 @@ export interface PostDetailBodyProps {
   commentKey: string
   /** Streamed in via React Router `<Await>`. */
   commentsPromise: Promise<DetailPageComments>
+  /** 引用与回应 block node (route wraps the streamed list in `<Await>`). */
+  webmentions?: ReactNode
   currentUser?: CommentFormUser
   draftMarker?: DraftMarker
   sidebar: SidebarData
@@ -35,6 +37,7 @@ export function PostDetailBody({
   likes,
   commentKey,
   commentsPromise,
+  webmentions,
   currentUser,
   draftMarker,
   sidebar,
@@ -62,6 +65,7 @@ export function PostDetailBody({
                 permalink={post.permalink}
                 commentKey={commentKey}
                 commentsPromise={commentsPromise}
+                webmentions={webmentions}
                 currentUser={currentUser}
                 comments={post.comments}
                 mode={mode}

@@ -36,6 +36,7 @@ import { musicProxyRouter } from '@/server/http/resources/music-proxy'
 import { redirectsRouter } from '@/server/http/resources/redirects'
 import { sitemapRouter } from '@/server/http/resources/sitemap'
 import { webmentionRouter } from '@/server/http/resources/webmention'
+import { webmentionLinkHeader } from '@/server/http/webmention-link-header'
 import { root } from '@/server/infra/logger'
 import { sanitizeReqHeaders, resBindings } from '@/server/infra/logger/sanitizer'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
@@ -120,6 +121,10 @@ export function configureMiddleware(app: Hono<Env>): void {
     const bundle = getBlogSettingsBundleSync()
     const csp = buildCspHeader({ bundle, nonce: rc.cspNonce, isDev: import.meta.env.DEV })
     c.res.headers.set('Content-Security-Policy', csp)
+    const webmentionLink = webmentionLinkHeader(bundle)
+    if (webmentionLink !== null) {
+      c.res.headers.append('Link', webmentionLink)
+    }
   })
 
   app.use(

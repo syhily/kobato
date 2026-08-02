@@ -8,6 +8,7 @@ export const adminWebmentionDto = z.object({
   targetUrl: z.string(),
   targetType: z.enum(['post', 'page']),
   status: z.enum(['pending', 'approved', 'rejected']),
+  type: z.enum(['mention', 'reply', 'like', 'repost']),
   authorName: z.string().nullable(),
   title: z.string().nullable(),
   summary: z.string().nullable(),
@@ -31,3 +32,18 @@ export const adminWebmentionOutboxDto = z.object({
   createdAt: isoDateTime,
 })
 export type AdminWebmentionOutboxWire = z.infer<typeof adminWebmentionOutboxDto>
+
+// Public display DTO (approved mentions under a post/page). Deliberately
+// narrow — internal fields (targetOwnerId, rawPayload, status, fetchedAt,
+// moderatedAt) never leave the server. `type` crosses the boundary: the
+// public block groups replies/likes/reposts by it.
+export const publicWebmentionDto = z.object({
+  id: idString,
+  sourceUrl: z.string(),
+  type: z.enum(['mention', 'reply', 'like', 'repost']),
+  authorName: z.string().nullable(),
+  title: z.string().nullable(),
+  summary: z.string().nullable(),
+  createdAt: isoDateTime,
+})
+export type PublicWebmentionWire = z.infer<typeof publicWebmentionDto>

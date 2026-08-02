@@ -118,6 +118,7 @@ const upsertMeta = authorProc
       og: input.og,
       published: input.published,
       commentsEnabled: input.commentsEnabled,
+      webmentionsEnabled: input.webmentionsEnabled,
       showToc: input.showToc,
       showUpdated: input.showUpdated,
       visible: input.visible,

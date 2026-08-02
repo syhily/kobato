@@ -160,6 +160,9 @@ const fixtureBundle: BlogSettingsBundle = {
     cors: { enabled: false, origins: [] },
     passkey: { enabled: false },
   },
+  webmentions: {
+    webmention: { receiveEnabled: true, displayOnPosts: true },
+  },
 }
 
 const BUNDLE_SCOPES: Record<keyof BlogSettingsBundle, string> = {
@@ -171,6 +174,7 @@ const BUNDLE_SCOPES: Record<keyof BlogSettingsBundle, string> = {
   content: 'blog.content',
   sidebar: 'blog.sidebar',
   comments: 'blog.comments',
+  webmentions: 'blog.webmentions',
   seo: 'blog.seo',
   mail: 'blog.mail',
   newsletter: 'blog.newsletter',

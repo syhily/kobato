@@ -143,6 +143,7 @@ describe('posts/repos/shared — toClientPostFromMeta', () => {
       og: null,
       published: true,
       commentsEnabled: true,
+      webmentionsEnabled: true,
       showToc: false,
       showUpdated: false,
       visible: true,

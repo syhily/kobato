@@ -57,6 +57,12 @@ export const SECTION_DISPLAY: Record<SettingsSection, SectionDisplayMeta> = {
     group: 'content',
     icon: 'MessageSquare',
   },
+  webmentions: {
+    label: 'Webmention',
+    description: 'Webmention 接收开关与文章页展示',
+    group: 'content',
+    icon: 'AtSign',
+  },
   seo: {
     label: 'SEO 与目录',
     description: 'TOC 标题级别、OG 尺寸',

@@ -17,6 +17,7 @@ export interface AdminMetaDto {
   og: string | null
   published: boolean
   commentsEnabled: boolean
+  webmentionsEnabled: boolean
   showToc: boolean
   showUpdated: boolean
   publishedAt: string
@@ -58,6 +59,7 @@ export function toAdminMetaDto(
     og: row.og,
     published: row.published,
     commentsEnabled: row.commentsEnabled,
+    webmentionsEnabled: row.webmentionsEnabled,
     showToc: row.showToc,
     showUpdated: row.showUpdated,
     publishedAt: row.publishedAt.toISOString(),

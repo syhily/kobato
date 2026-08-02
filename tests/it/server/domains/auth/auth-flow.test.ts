@@ -14,7 +14,7 @@ import { user as userTable } from '@/server/infra/db/schema/user'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 // `signUpInitialAdminWithSession` against the real engine: the admin
-// insert, the 17-section settings seed, the session establish, the
+// insert, the 18-section settings seed, the session establish, the
 // settings re-hydration, and the login audit all run for real against
 // the shared in-memory database. Nothing is mocked — the concurrent-
 // install race is reproduced with a real unique-constraint collision,

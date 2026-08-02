@@ -12,6 +12,7 @@ export const adminPostDto = z.object({
   og: z.string().nullable(),
   published: z.boolean(),
   commentsEnabled: z.boolean(),
+  webmentionsEnabled: z.boolean(),
   showToc: z.boolean(),
   // Opt the post into rendering「修改于 XXXX」next to the first-publish
   // date on the public detail page. Toggled from the editor meta sidebar

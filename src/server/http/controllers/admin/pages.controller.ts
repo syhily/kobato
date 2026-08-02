@@ -119,6 +119,7 @@ const upsertMeta = adminProc
       og: input.og,
       published: input.published,
       commentsEnabled: input.commentsEnabled,
+      webmentionsEnabled: input.webmentionsEnabled,
       showToc: input.showToc,
       showUpdated: input.showUpdated,
       showFriends: input.showFriends,

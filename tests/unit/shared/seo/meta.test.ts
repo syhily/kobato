@@ -67,6 +67,9 @@ const fixture: BlogSettingsBundle = {
       tokenTtlSeconds: 1800,
     },
   },
+  webmentions: {
+    webmention: { receiveEnabled: true, displayOnPosts: true },
+  },
   seo: {
     toc: { minHeadingLevel: 2, maxHeadingLevel: 4 },
     og: { width: 1200, height: 630 },

@@ -64,4 +64,14 @@ describe('webmentions/email — sendNewWebmention', () => {
     const { props } = lastCall()
     expect(props.rows).toEqual([{ label: '来源：', value: 'https://sender.example/mentioning-post' }])
   })
+
+  it('marks the copy as an update re-review when `updated` is set (R14)', async () => {
+    await sendNewWebmention(mention, target, { updated: true })
+
+    const { subject, props } = lastCall()
+    expect(subject).toBe('Webmention 内容已更新，等待重新审核')
+    expect(props.title).toBe('Webmention 已更新')
+    expect(props.preview).toBe('《目标文章标题》的一条 Webmention 内容已更新')
+    expect(props.mutedNote).toBe('该提及的内容已更新，已通过来源校验，等待重新审核')
+  })
 })

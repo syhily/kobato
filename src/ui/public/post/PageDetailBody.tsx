@@ -17,6 +17,8 @@ export interface PageDetailBodyProps {
   likes: number
   commentKey: string
   commentsPromise: Promise<DetailPageComments>
+  /** 引用与回应 block node (route wraps the streamed list in `<Await>`). */
+  webmentions?: ReactNode
   currentUser?: CommentFormUser
   mode?: 'admin' | 'public'
   children: ReactNode
@@ -29,6 +31,7 @@ export function PageDetailBody({
   likes,
   commentKey,
   commentsPromise,
+  webmentions,
   currentUser,
   mode,
   children,
@@ -53,6 +56,7 @@ export function PageDetailBody({
             permalink={page.permalink}
             commentKey={commentKey}
             commentsPromise={commentsPromise}
+            webmentions={webmentions}
             currentUser={currentUser}
             comments={page.comments}
             mode={mode}

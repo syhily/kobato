@@ -37,6 +37,7 @@ export interface UpsertPostMetaInput {
   og?: string | null
   published?: boolean
   commentsEnabled?: boolean
+  webmentionsEnabled?: boolean
   showToc?: boolean
   /**
    * Toggle the「修改于 XXXX」secondary timestamp on the public detail
@@ -65,6 +66,7 @@ export interface PostMetaDraft {
   og: string
   published: boolean
   commentsEnabled: boolean
+  webmentionsEnabled: boolean
   showToc: boolean
   showUpdated: boolean
   visible: boolean
@@ -84,6 +86,7 @@ export const EMPTY_POST_META_DRAFT: PostMetaDraft = {
   og: '',
   published: false,
   commentsEnabled: true,
+  webmentionsEnabled: true,
   showToc: false,
   showUpdated: false,
   visible: true,
@@ -103,6 +106,7 @@ export function postMetaDraftsEqual(a: PostMetaDraft, b: PostMetaDraft): boolean
     a.og === b.og &&
     a.published === b.published &&
     a.commentsEnabled === b.commentsEnabled &&
+    a.webmentionsEnabled === b.webmentionsEnabled &&
     a.showToc === b.showToc &&
     a.showUpdated === b.showUpdated &&
     a.visible === b.visible &&
@@ -142,7 +146,13 @@ export interface PreviewPostBodyInput {
   body: PortableTextBody
 }
 
-export type PostMetaToggleKey = 'commentsEnabled' | 'showToc' | 'showUpdated' | 'visible' | 'pinned'
+export type PostMetaToggleKey =
+  | 'commentsEnabled'
+  | 'webmentionsEnabled'
+  | 'showToc'
+  | 'showUpdated'
+  | 'visible'
+  | 'pinned'
 
 export interface PostMetaToggleField {
   key: PostMetaToggleKey
@@ -159,6 +169,12 @@ export const POST_META_TOGGLE_FIELDS: ReadonlyArray<PostMetaToggleField> = [
     id: 'post-comments',
     label: '开启评论',
     description: '关闭后文章底部不再渲染评论区。',
+  },
+  {
+    key: 'webmentionsEnabled',
+    id: 'post-webmentions',
+    label: '显示 Webmention',
+    description: '关闭后文章底部不再渲染「引用与回应」区块（全局开关关闭时亦不渲染）。',
   },
   {
     key: 'showToc',

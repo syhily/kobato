@@ -12,6 +12,7 @@ export const adminPageDto = z.object({
   og: z.string().nullable(),
   published: z.boolean(),
   commentsEnabled: z.boolean(),
+  webmentionsEnabled: z.boolean(),
   showToc: z.boolean(),
   /** Render the "Updated on XXXX" secondary timestamp on the public detail page. */
   showUpdated: z.boolean(),

@@ -134,8 +134,8 @@ describe('integration: /admin/setup full install flow', () => {
       .select()
       .from(setting)
       .where(sql`${setting.scope} like 'blog.%'`)
-    // 17 sections — `blog.search` was removed.
-    expect(settingRows.length).toBe(17)
+    // 18 sections — `blog.search` was removed, `blog.webmentions` added.
+    expect(settingRows.length).toBe(18)
 
     const scopes = new Set(settingRows.map((r) => r.scope))
     const EXPECTED_SECTIONS = [
@@ -146,6 +146,7 @@ describe('integration: /admin/setup full install flow', () => {
       'blog.content',
       'blog.sidebar',
       'blog.comments',
+      'blog.webmentions',
       'blog.seo',
       'blog.mail',
       'blog.newsletter',

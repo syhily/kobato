@@ -23,6 +23,7 @@ export function metaDraftFromPage(page: AdminPageDto): PageMetaDraft {
     og: page.og ?? '',
     published: page.published,
     commentsEnabled: page.commentsEnabled,
+    webmentionsEnabled: page.webmentionsEnabled,
     showToc: page.showToc,
     showUpdated: page.showUpdated,
     showFriends: page.showFriends,

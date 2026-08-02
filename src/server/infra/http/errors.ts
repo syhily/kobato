@@ -39,11 +39,23 @@ const DEFAULT_MESSAGES: Record<DomainErrorCode, string> = {
 export class DomainError extends Error {
   readonly code: DomainErrorCode
   readonly issues?: { message: string; path?: string[] }[]
+  /**
+   * Queue-worker hint (webmention inbox): the failure is transient and
+   * the job may be retried on a backoff waterline. Absent means
+   * terminal. HTTP mapping never reads this flag.
+   */
+  readonly retryable?: boolean
 
-  constructor(code: DomainErrorCode, message?: string, issues?: { message: string; path?: string[] }[]) {
+  constructor(
+    code: DomainErrorCode,
+    message?: string,
+    issues?: { message: string; path?: string[] }[],
+    retryable?: boolean,
+  ) {
     super(message ?? DEFAULT_MESSAGES[code])
     this.code = code
     this.issues = issues
+    this.retryable = retryable
     this.name = 'DomainError'
   }
 }

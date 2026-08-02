@@ -117,6 +117,17 @@ export interface CommentsSettings {
   }
 }
 
+export interface WebmentionsSettings {
+  webmention: {
+    /** Receive endpoint gate: off → POST /webmention answers 410 and the
+     *  endpoint declaration (`<link rel="webmention">` + HTTP Link header)
+     *  is removed. Existing rows stay moderation-able. */
+    receiveEnabled: boolean
+    /** Public gate: off → approved mentions are not rendered under posts/pages. */
+    displayOnPosts: boolean
+  }
+}
+
 export interface SeoSettings {
   toc: {
     minHeadingLevel: number
@@ -325,6 +336,7 @@ export interface BlogSettingsBundle {
   content: ContentSettings | null
   sidebar: SidebarSettings | null
   comments: CommentsSettings | null
+  webmentions: WebmentionsSettings | null
   seo: SeoSettings | null
   mail: MailSettings | null
   newsletter: NewsletterSettings | null

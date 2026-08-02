@@ -26,10 +26,10 @@ function builtRows() {
 
 describe('server/domains/settings/services/install-flow', () => {
   describe('buildInstallSectionRows', () => {
-    it('builds validated rows for all 17 sections — general and assets first, the rest in registry order', () => {
+    it('builds validated rows for all 18 sections — general and assets first, the rest in registry order', () => {
       const rows = builtRows()
 
-      expect(rows).toHaveLength(17)
+      expect(rows).toHaveLength(18)
       expect(rows[0]?.scope).toBe('blog.general')
       expect(rows[1]?.scope).toBe('blog.assets')
       const remainingScopes = SETTINGS_SECTIONS.filter((section) => section !== 'general' && section !== 'assets').map(
@@ -94,7 +94,7 @@ describe('server/domains/settings/services/install-flow', () => {
       })
 
       const stored = await db.select().from(setting).orderBy(asc(setting.id))
-      expect(stored).toHaveLength(17)
+      expect(stored).toHaveLength(18)
       expect(stored.map((row) => row.scope)).toEqual(rows.map((row) => row.scope))
       for (const [index, row] of stored.entries()) {
         expect(row.data).toEqual(rows[index]?.payload)

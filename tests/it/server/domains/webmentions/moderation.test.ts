@@ -8,7 +8,7 @@ import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
 import { flushAuditLog } from '@/server/domains/audit/services/batcher'
 import { adminWebmentionsRouter } from '@/server/http/controllers/admin/webmentions.controller'
 import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
-import { insertWebmention } from '@/server/infra/db/operations/webmention'
+import { upsertWebmention } from '@/server/infra/db/operations/webmention'
 import { auditLog } from '@/server/infra/db/schema/config'
 import { user } from '@/server/infra/db/schema/user'
 import { webmention } from '@/server/infra/db/schema/webmention'
@@ -39,7 +39,7 @@ function adminCtx(adminId: number) {
 }
 
 async function seedMention(status: 'pending' | 'approved' | 'rejected', slug = 'wm-target'): Promise<number> {
-  const row = await insertWebmention(db, {
+  const { row } = await upsertWebmention(db, {
     sourceUrl: `https://sender.example/${slug}-${status}`,
     targetUrl: `https://example.com/posts/${slug}/`,
     status,
@@ -169,5 +169,39 @@ describe('integration / admin webmentions approve + reject', () => {
     expect(rows[0]!.status).toBe('approved')
 
     await expect(call(adminWebmentionsRouter.approve, { id: '999999' }, { context: ctx })).rejects.toThrow()
+  })
+
+  it('re-approves a mention demoted by a re-sent (updated) source', async () => {
+    const adminId = await seedAdmin()
+    const id = await seedMention('approved')
+
+    // The source author edits and re-sends: the row demotes to pending…
+    const { outcome } = await upsertWebmention(db, {
+      sourceUrl: 'https://sender.example/wm-target-approved',
+      targetUrl: 'https://example.com/posts/wm-target/',
+      status: 'pending',
+      targetType: 'post',
+      targetOwnerId: 1,
+      fetchedAt: new Date(),
+      authorName: 'Jane Doe',
+      title: 'Edited after approval',
+      summary: null,
+      rawPayload: {
+        source: 'https://sender.example/wm-target-approved',
+        target: 'https://example.com/posts/wm-target/',
+      },
+    })
+    expect(outcome).toBe('demoted')
+    expect((await db.select().from(webmention).where(eq(webmention.id, id)))[0]!.status).toBe('pending')
+
+    // …and re-approval returns it to the public page with the new content.
+    const ctx = adminCtx(adminId)
+    await call(adminWebmentionsRouter.approve, { id: id.toString() }, { context: ctx })
+    const rows = await db.select().from(webmention).where(eq(webmention.id, id))
+    expect(rows[0]!.status).toBe('approved')
+    expect(rows[0]!.title).toBe('Edited after approval')
+
+    const audits = await auditRowsFor('webmention_approved')
+    expect(audits).toHaveLength(1)
   })
 })

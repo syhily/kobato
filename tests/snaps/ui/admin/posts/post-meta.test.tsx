@@ -26,6 +26,7 @@ const populatedDraft: PostMetaDraft = {
   og: '/images/og.png',
   published: true,
   commentsEnabled: true,
+  webmentionsEnabled: true,
   showToc: true,
   showUpdated: false,
   visible: true,
@@ -245,6 +246,7 @@ describe('snapshot: PostMetaDraft pure helpers', () => {
     expect(postMetaDraftsEqual(a, { ...a, og: 'diff' })).toBe(false)
     expect(postMetaDraftsEqual(a, { ...a, categoryId: 'diff' })).toBe(false)
     expect(postMetaDraftsEqual(a, { ...a, commentsEnabled: !a.commentsEnabled })).toBe(false)
+    expect(postMetaDraftsEqual(a, { ...a, webmentionsEnabled: !a.webmentionsEnabled })).toBe(false)
     expect(postMetaDraftsEqual(a, { ...a, showToc: !a.showToc })).toBe(false)
     expect(postMetaDraftsEqual(a, { ...a, showUpdated: !a.showUpdated })).toBe(false)
     expect(postMetaDraftsEqual(a, { ...a, slug: 'diff' })).toBe(false)

@@ -59,7 +59,9 @@ function OutboxRow({ row }: { row: AdminWebmentionOutboxWire }) {
 
 // The outbound send log — read-only by design: a retry is a republish
 // (the outbox upsert resets terminal rows), so this view offers filters
-// and visibility, never actions.
+// and visibility, never actions. Renders as the「发送日志」tab body of
+// `WebmentionsView` (toolbar + list only — the page chrome lives in the
+// parent).
 export function WebmentionOutboxView() {
   const [status, setStatus] = useState<StatusFilter>('all')
 
@@ -76,12 +78,7 @@ export function WebmentionOutboxView() {
   })
 
   return (
-    <AdminListPage>
-      <AdminListPage.Header
-        title="Webmention 发送日志"
-        description="文章发布后，正文中的外部链接会自动向目标站点发送 Webmention。此处为只读记录；重新发布会重试失败的条目。"
-      />
-
+    <>
       <AdminListPage.Toolbar>
         <Tabs value={status} onValueChange={(value) => setStatus(value as StatusFilter)}>
           <TabsList>
@@ -119,6 +116,6 @@ export function WebmentionOutboxView() {
           isFetchingNextPage={isFetchingNextPage}
         />
       </AdminListPage.Body>
-    </AdminListPage>
+    </>
   )
 }

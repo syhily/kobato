@@ -78,6 +78,7 @@ function makeAdminPage(overrides: Partial<AdminPageDto> = {}): AdminPageDto {
     og: null,
     published: true,
     commentsEnabled: false,
+    webmentionsEnabled: true,
     showToc: false,
     showUpdated: false,
     showFriends: false,

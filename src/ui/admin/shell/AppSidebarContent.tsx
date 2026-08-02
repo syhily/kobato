@@ -8,15 +8,26 @@ import { SidebarContent } from '@/ui/components/sidebar'
 interface AppSidebarContentProps {
   role: AdminShellProps['currentUser']['role']
   pendingCommentCount?: number
+  pendingWebmentionCount?: number
   userCount?: number
 }
 
-export function AppSidebarContent({ role, pendingCommentCount, userCount }: AppSidebarContentProps) {
+export function AppSidebarContent({
+  role,
+  pendingCommentCount,
+  pendingWebmentionCount,
+  userCount,
+}: AppSidebarContentProps) {
   return (
     <SidebarContent className="justify-between px-3 pt-4">
       <div className="flex flex-col gap-2">
         <NavMain role={role} />
-        <NavContent role={role} pendingCommentCount={pendingCommentCount} userCount={userCount} />
+        <NavContent
+          role={role}
+          pendingCommentCount={pendingCommentCount}
+          pendingWebmentionCount={pendingWebmentionCount}
+          userCount={userCount}
+        />
       </div>
       <div className="flex flex-col gap-2">
         <NavSettings role={role} />

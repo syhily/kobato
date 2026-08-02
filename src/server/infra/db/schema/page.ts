@@ -21,6 +21,9 @@ export const page = sqliteTable(
     og: text('og'),
     published: integer('published', { mode: 'boolean' }).notNull().default(true),
     commentsEnabled: integer('comments_enabled', { mode: 'boolean' }).notNull().default(true),
+    // Per-page kill switch for the public webmention block, ANDed with
+    // the global `blog.webmentions.webmention.displayOnPosts` setting.
+    webmentionsEnabled: integer('webmentions_enabled', { mode: 'boolean' }).notNull().default(true),
     showToc: integer('show_toc', { mode: 'boolean' }).notNull().default(false),
     showUpdated: integer('show_updated', { mode: 'boolean' }).notNull().default(false),
     showFriends: integer('show_friends', { mode: 'boolean' }).notNull().default(false),

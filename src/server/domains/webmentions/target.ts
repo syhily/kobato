@@ -2,6 +2,7 @@ import type { Database } from '@/server/infra/db/database'
 
 import { findLivePageBySlug } from '@/server/domains/pages/services/public-query'
 import { findLivePostBySlug } from '@/server/domains/posts/services/single'
+import { DomainError } from '@/server/infra/http/errors'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { entityPermalink } from '@/shared/utils/paths'
 import { tryParseUrl } from '@/shared/utils/safe-url'
@@ -70,4 +71,18 @@ export async function resolveWebmentionTarget(db: Database, rawTarget: string): 
     title: entity.title,
     canonicalUrl: `${site.origin}${entityPermalink(type, slug)}/`,
   }
+}
+
+/**
+ * `resolveWebmentionTarget` for the two receive-side paths that both
+ * reject an unknown target outright — the endpoint's enqueue (a 404 at
+ * the route) and the inbox worker (a terminal drop): a null resolution
+ * is always a DomainError there, never a silent skip.
+ */
+export async function resolveWebmentionTargetOrThrow(db: Database, rawTarget: string): Promise<WebmentionTarget> {
+  const target = await resolveWebmentionTarget(db, rawTarget)
+  if (target === null) {
+    throw new DomainError('NOT_FOUND', 'target is not a resource on this site')
+  }
+  return target
 }

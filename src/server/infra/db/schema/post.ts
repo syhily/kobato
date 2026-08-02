@@ -20,6 +20,9 @@ export const post = sqliteTable(
     og: text('og'),
     published: integer('published', { mode: 'boolean' }).notNull().default(true),
     commentsEnabled: integer('comments_enabled', { mode: 'boolean' }).notNull().default(true),
+    // Per-post kill switch for the public webmention block, ANDed with
+    // the global `blog.webmentions.webmention.displayOnPosts` setting.
+    webmentionsEnabled: integer('webmentions_enabled', { mode: 'boolean' }).notNull().default(true),
     showToc: integer('show_toc', { mode: 'boolean' }).notNull().default(false),
     // Same semantics as `page.show_updated` — defaults false; flip on
     // displayed in the meta row.

@@ -113,6 +113,9 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
       tokenTtlSeconds: 1800,
     },
   },
+  webmentions: {
+    webmention: { receiveEnabled: true, displayOnPosts: true },
+  },
   // Byte-identical to the registry seeds — imported, not copied.
   seo: seoDefaults,
   mail: mailDefaults,

@@ -1,5 +1,5 @@
-import { useMemo } from 'react'
-import { data } from 'react-router'
+import { Suspense, useMemo } from 'react'
+import { Await, data } from 'react-router'
 
 import type { RouteHandle } from '@/root'
 import type { DraftMarker } from '@/shared/types/catalog'
@@ -27,6 +27,7 @@ import { idFromString } from '@/shared/utils/id'
 import { canonicalPostPath } from '@/shared/utils/paths'
 import { PortableTextBody } from '@/ui/pt/render'
 import { PostDetailBody } from '@/ui/public/post/PostDetailBody'
+import { WebmentionList } from '@/ui/public/webmentions/WebmentionList'
 
 import type { Route } from './+types/detail'
 
@@ -145,6 +146,11 @@ export default function PostDetailRoute({ loaderData }: Route.ComponentProps) {
         likes={detail.likes}
         commentKey={detail.commentKey}
         commentsPromise={detail.comments}
+        webmentions={
+          <Suspense fallback={null}>
+            <Await resolve={detail.webmentions}>{(mentions) => <WebmentionList mentions={mentions} />}</Await>
+          </Suspense>
+        }
         currentUser={detail.currentUser}
         draftMarker={draftMarker}
         sidebar={sidebar}

@@ -87,6 +87,7 @@ export function makeEntityMutations<
             og: input.og ?? null,
             published: false,
             commentsEnabled: input.commentsEnabled ?? true,
+            webmentionsEnabled: input.webmentionsEnabled ?? true,
             showToc: input.showToc ?? false,
             showUpdated: input.showUpdated ?? false,
             publishedAt: input.publishedAt ?? now,
@@ -127,6 +128,7 @@ export function makeEntityMutations<
           cover: input.cover ?? existing.cover,
           og: input.og === undefined ? existing.og : input.og,
           commentsEnabled: input.commentsEnabled ?? existing.commentsEnabled,
+          webmentionsEnabled: input.webmentionsEnabled ?? existing.webmentionsEnabled,
           showToc: input.showToc ?? existing.showToc,
           showUpdated: input.showUpdated ?? existing.showUpdated,
           // `publishedAt: null` is the explicit cancel-schedule signal (vs

@@ -4,8 +4,10 @@ import {
   extractLinks,
   extractSourceMetadata,
   normalizeForMatch,
+  requireSourceKey,
   sourceLinksToTarget,
 } from '@/server/domains/webmentions/verify'
+import { DomainError } from '@/server/infra/http/errors'
 
 describe('webmentions/verify normalizeForMatch', () => {
   it('strips the fragment and trailing slashes', () => {
@@ -29,6 +31,17 @@ describe('webmentions/verify normalizeForMatch', () => {
   it('rejects non-http(s) and unparseable URLs', () => {
     expect(normalizeForMatch('ftp://example.com/foo')).toBeNull()
     expect(normalizeForMatch('not a url')).toBeNull()
+  })
+})
+
+describe('webmentions/verify requireSourceKey', () => {
+  it('returns the normalized key for a schema-gated http(s) URL', () => {
+    expect(requireSourceKey('https://example.com:443/posts/foo/#c')).toBe('https://example.com/posts/foo')
+  })
+
+  it('throws a BAD_REQUEST DomainError where normalizeForMatch would return null', () => {
+    expect(() => requireSourceKey('mailto:a@example.com')).toThrow(DomainError)
+    expect(() => requireSourceKey('not a url')).toThrow(/valid http\(s\) URL/)
   })
 })
 

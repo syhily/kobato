@@ -25,6 +25,7 @@ export interface MetaRowBase {
   og: string | null
   published: boolean
   commentsEnabled: boolean
+  webmentionsEnabled: boolean
   showToc: boolean
   showUpdated: boolean
   publishedAt: Date
@@ -47,6 +48,7 @@ export interface UpsertMetaInputBase {
   og?: string | null
   published?: boolean
   commentsEnabled?: boolean
+  webmentionsEnabled?: boolean
   showToc?: boolean
   showUpdated?: boolean
   /** `null` cancels a pending schedule (drops back to unpublished); omitted = leave untouched. */

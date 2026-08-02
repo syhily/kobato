@@ -44,6 +44,7 @@ export interface UpsertPageMetaInput {
   og?: string | null
   published?: boolean
   commentsEnabled?: boolean
+  webmentionsEnabled?: boolean
   showToc?: boolean
   /** Toggle the "Updated on XXXX" secondary timestamp on the public detail page. */
   showUpdated?: boolean
@@ -66,6 +67,7 @@ export interface PageMetaDraft {
   og: string
   published: boolean
   commentsEnabled: boolean
+  webmentionsEnabled: boolean
   showToc: boolean
   showUpdated: boolean
   showFriends: boolean
@@ -81,6 +83,7 @@ export const EMPTY_PAGE_META_DRAFT: PageMetaDraft = {
   og: '',
   published: false,
   commentsEnabled: true,
+  webmentionsEnabled: true,
   showToc: false,
   showUpdated: false,
   showFriends: false,
@@ -96,6 +99,7 @@ export function pageMetaDraftsEqual(a: PageMetaDraft, b: PageMetaDraft): boolean
     a.og === b.og &&
     a.published === b.published &&
     a.commentsEnabled === b.commentsEnabled &&
+    a.webmentionsEnabled === b.webmentionsEnabled &&
     a.showToc === b.showToc &&
     a.showUpdated === b.showUpdated &&
     a.showFriends === b.showFriends &&
@@ -103,7 +107,7 @@ export function pageMetaDraftsEqual(a: PageMetaDraft, b: PageMetaDraft): boolean
   )
 }
 
-export type PageMetaToggleKey = 'commentsEnabled' | 'showToc' | 'showUpdated' | 'showFriends'
+export type PageMetaToggleKey = 'commentsEnabled' | 'webmentionsEnabled' | 'showToc' | 'showUpdated' | 'showFriends'
 
 export interface PageMetaToggleField {
   key: PageMetaToggleKey
@@ -118,6 +122,12 @@ export const PAGE_META_TOGGLE_FIELDS: ReadonlyArray<PageMetaToggleField> = [
     id: 'page-comments',
     label: '开启评论',
     description: '关闭后页面底部不再渲染评论区。',
+  },
+  {
+    key: 'webmentionsEnabled',
+    id: 'page-webmentions',
+    label: '显示 Webmention',
+    description: '关闭后页面底部不再渲染「引用与回应」区块（全局开关关闭时亦不渲染）。',
   },
   {
     key: 'showToc',

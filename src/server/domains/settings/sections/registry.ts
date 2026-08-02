@@ -21,6 +21,7 @@ import { securitySection } from '@/server/domains/settings/sections/security'
 import { seoSection } from '@/server/domains/settings/sections/seo'
 import { sidebarSection } from '@/server/domains/settings/sections/sidebar'
 import { socialsSection } from '@/server/domains/settings/sections/socials'
+import { webmentionsSection } from '@/server/domains/settings/sections/webmentions'
 import { DomainError } from '@/server/infra/http/errors'
 import { SECTION_TO_BUNDLE_KEY, SETTINGS_SECTIONS } from '@/shared/config/sections'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
@@ -48,6 +49,7 @@ export const SECTION_REGISTRY = {
   content: contentSection,
   sidebar: sidebarSection,
   comments: commentsSection,
+  webmentions: webmentionsSection,
   seo: seoSection,
   mail: mailSection,
   newsletter: newsletterSection,

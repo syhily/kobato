@@ -18,6 +18,14 @@ export const NEWSLETTER_SUBSCRIBER_STATUSES = ['pending', 'confirmed', 'unsubscr
 // moderation decision stays auditable.
 export const WEBMENTION_STATUSES = ['pending', 'approved', 'rejected'] as const
 
+// Webmention response type (W3C / IndieWeb classification, async-inbox
+// design — docs/plans/2026-08-02-webmention-async-inbox-design.md):
+// detected from microformats2 class markers on the source
+// anchor (`u-in-reply-to` / `u-repost-of` / `u-like-of`) — a source with
+// no recognized marker is a plain `mention`. The type is presentational
+// grouping only; moderation and verification treat every type alike.
+export const WEBMENTION_TYPES = ['mention', 'reply', 'like', 'repost'] as const
+
 // Webmention send lifecycle (outbound mirror of the receive side above).
 // `pending` rows await endpoint discovery or (re)send; `sent` /
 // `no-endpoint` / `failed` are terminal — kept, not deleted, because the

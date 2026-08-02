@@ -20,6 +20,7 @@ import { wireScheduledPublishScheduler } from '@/server/domains/content/schedule
 import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { registerSectionChangeHandler } from '@/server/domains/settings/services/section-changes'
 import { wireWebmentionPostPublishHook } from '@/server/domains/webmentions/enqueue'
+import { wireWebmentionInboxScheduler } from '@/server/domains/webmentions/inbox-scheduler'
 import { wireWebmentionOutboxScheduler } from '@/server/domains/webmentions/outbox-scheduler'
 import { wireKvSweepScheduler } from '@/server/infra/cache/kv-maintenance'
 import { isVitest } from '@/server/infra/config'
@@ -94,6 +95,7 @@ function wireDatabase(handle: DatabaseHandle): DatabaseHandle {
   wireBackupSnapshots({ snapshotAnalyticsTo })
   wireScheduledPublishScheduler({ getDb })
   wireWebmentionOutboxScheduler({ getDb })
+  wireWebmentionInboxScheduler({ getDb })
   wireWebmentionPostPublishHook()
   wireKvSweepScheduler({ getDb })
   wireDbMaintenanceScheduler({ getHandle: () => engine.get() })

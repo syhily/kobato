@@ -37,6 +37,7 @@ import { SettingsSearchProvider, useSettingsSearchContext } from '@/ui/admin/set
 import { SidebarForm } from '@/ui/admin/settings/SidebarForm'
 import { SocialsEditor } from '@/ui/admin/settings/SocialsEditor'
 import { ThresholdForm } from '@/ui/admin/settings/ThresholdForm'
+import { WebmentionsForm } from '@/ui/admin/settings/WebmentionsForm'
 import { useMediaQuery } from '@/ui/lib/use-media-query'
 
 import type { Route } from './+types/index'
@@ -80,6 +81,10 @@ const SECTION_CONFIGS = [
   {
     id: 'comments',
     render: (bundle) => <CommentsForm comments={bundle.comments} />,
+  },
+  {
+    id: 'webmentions',
+    render: (bundle) => <WebmentionsForm webmentions={bundle.webmentions} />,
   },
   {
     id: 'seo',

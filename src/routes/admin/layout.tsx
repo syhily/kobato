@@ -5,6 +5,7 @@ import type { RouteHandle } from '@/root'
 import { useDetachPublicCss } from '@/client/hooks/use-detach-public-css'
 import { countAdminPendingDashboard } from '@/server/domains/comments/services/admin-query'
 import { countUsers } from '@/server/domains/users/services/admin'
+import { countPendingWebmentionsForAdmin } from '@/server/domains/webmentions/service'
 import { getRequestContext } from '@/server/http/request-context'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { hasAtLeast } from '@/shared/utils/roles'
@@ -39,6 +40,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   }
 
   const pendingComments = hasAtLeast(role, 'admin') ? await countAdminPendingDashboard(db) : { all: 0 }
+  const pendingWebmentions = hasAtLeast(role, 'admin') ? await countPendingWebmentionsForAdmin(db) : 0
   const userCount = hasAtLeast(role, 'admin') ? await countUsers(db) : 0
   return data({
     currentUser: {
@@ -49,6 +51,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     },
     siteTitle: getBlogSettingsBundleSync()?.siteIdentity?.title ?? '管理后台',
     pendingCommentCount: pendingComments.all,
+    pendingWebmentionCount: pendingWebmentions,
     userCount,
   })
 }
@@ -63,6 +66,7 @@ export default function WpAdminLayoutRoute({ loaderData }: Route.ComponentProps)
         currentUser={loaderData.currentUser}
         siteTitle={loaderData.siteTitle}
         pendingCommentCount={loaderData.pendingCommentCount}
+        pendingWebmentionCount={loaderData.pendingWebmentionCount}
         userCount={loaderData.userCount}
       >
         <Outlet context={{ currentUser: loaderData.currentUser }} />

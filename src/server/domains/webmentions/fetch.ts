@@ -6,10 +6,11 @@ import { safeFetch } from '@/server/infra/safe-fetch'
 
 const log = getLogger('webmentions.fetch')
 
-// Synchronous fetch-and-verify before 202, on the safe-fetch default
-// timeout/redirect budget with a strict size cap. If spam volume makes
-// the synchronous cost a problem, the fix is an async queue, not weaker
-// caps.
+// Fetch budget for the inbox worker's source verification, on the
+// safe-fetch default timeout/redirect budget with a strict size cap.
+// Transient failures (timeout / network / 5xx) are marked retryable so
+// the queue retries them on a backoff waterline; everything else drops
+// the queue row. The caps never weaken under retry.
 export const MAX_SOURCE_BYTES = 1024 * 1024 // 1 MB
 
 // Identify the receiver honestly; some IndieWeb sites serve the
@@ -19,7 +20,9 @@ const WEBMENTION_UA = 'Kobato Webmention Receiver (+https://yufan.me/webmention)
 
 // Map the safe-fetch failure union onto the receiver's DomainError
 // variants; the HTTP layer turns these into the 400s the endpoint
-// contract (and the resource tests) expects.
+// contract (and the resource tests) expects. Transient infrastructure
+// failures carry `retryable: true` — the inbox queue re-arms those rows
+// instead of dropping them.
 function sourceFetchError(result: SafeFetchFailure): DomainError {
   switch (result.reason) {
     case 'invalid-url':
@@ -35,9 +38,14 @@ function sourceFetchError(result: SafeFetchFailure): DomainError {
     case 'timeout':
     case 'fetch-failed':
       log.warn('Webmention source fetch failed', { url: result.url, error: result.error })
-      return new DomainError('BAD_REQUEST', 'source could not be fetched (timeout or unreachable)')
+      return new DomainError('BAD_REQUEST', 'source could not be fetched (timeout or unreachable)', undefined, true)
     case 'http-error':
-      return new DomainError('BAD_REQUEST', `source could not be fetched (HTTP ${result.status})`)
+      return new DomainError(
+        'BAD_REQUEST',
+        `source could not be fetched (HTTP ${result.status})`,
+        undefined,
+        result.status !== null && result.status >= 500,
+      )
     case 'too-large':
       return new DomainError('BAD_REQUEST', 'source document exceeds the size limit')
   }

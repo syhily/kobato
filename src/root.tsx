@@ -17,7 +17,7 @@ import { resolveFontsForRender } from '@/server/domains/fonts/services/render'
 import { redactSecretsFromBundle } from '@/server/domains/settings/services/masks'
 import { getRequestContext } from '@/server/http/request-context'
 import { getCriticalChunksForPathname, getWarmupManifest } from '@/server/render/warmup/manifest'
-import { getBlogSettingsBundleSync } from '@/shared/config/getters'
+import { getBlogSettingsBundleSync, isWebmentionReceiveEnabled } from '@/shared/config/getters'
 import { BlogSettingsProvider } from '@/shared/lib/blog-config-context'
 import { bundleFromMatches, routeMeta } from '@/shared/seo/meta'
 import { isRecord } from '@/shared/utils/type-guards'
@@ -134,6 +134,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     blogSettings?: {
       assets?: { asset?: { host?: string } | null } | null
       siteIdentity?: { locale?: string } | null
+      webmentions?: { webmention?: { receiveEnabled?: boolean } } | null
     } | null
     criticalLinks?: string[]
     fonts?: {
@@ -232,6 +233,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {activeCodeFonts.map((f) => (f.href ? <link key={`c-${f.href}`} rel="stylesheet" href={f.href} /> : null))}
         <Meta />
         <Links />
+        {/* W3C Webmention endpoint discovery (relative — the browser
+            resolves it against the origin). Suppressed when the receive
+            switch is off — `isWebmentionReceiveEnabled` is the one
+            switch read shared with the SSR Link header and the 410
+            gate. */}
+        {isWebmentionReceiveEnabled(rootData?.blogSettings) && <link rel="webmention" href="/webmention" />}
         {criticalLinks.map((href) => (
           <link key={href} rel="modulepreload" href={href} />
         ))}

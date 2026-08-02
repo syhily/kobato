@@ -1,5 +1,5 @@
-import { useMemo } from 'react'
-import { data } from 'react-router'
+import { Suspense, useMemo } from 'react'
+import { Await, data } from 'react-router'
 
 import type { RouteHandle } from '@/root'
 
@@ -18,6 +18,7 @@ import { Friends } from '@/ui/pt/blocks/Friends'
 import { PortableTextBody } from '@/ui/pt/render'
 import { FriendApplyForm } from '@/ui/public/friends/FriendApplyForm'
 import { PageDetailBody } from '@/ui/public/post/PageDetailBody'
+import { WebmentionList } from '@/ui/public/webmentions/WebmentionList'
 
 import type { Route } from './+types/detail'
 
@@ -89,6 +90,11 @@ export default function PageDetailRoute({ loaderData }: Route.ComponentProps) {
         likes={detail.likes}
         commentKey={detail.commentKey}
         commentsPromise={detail.comments}
+        webmentions={
+          <Suspense fallback={null}>
+            <Await resolve={detail.webmentions}>{(mentions) => <WebmentionList mentions={mentions} />}</Await>
+          </Suspense>
+        }
         currentUser={detail.currentUser}
         mode={detail.admin ? 'admin' : 'public'}
       >

@@ -74,6 +74,7 @@ export interface AdminShellProps {
   siteTitle?: string
   pathname?: string
   pendingCommentCount?: number
+  pendingWebmentionCount?: number
   userCount?: number
   children: ReactNode
 }
@@ -101,7 +102,14 @@ function MusicPlayerAwareMain({
   )
 }
 
-export function AdminShell({ currentUser, siteTitle, pendingCommentCount, userCount, children }: AdminShellProps) {
+export function AdminShell({
+  currentUser,
+  siteTitle,
+  pendingCommentCount,
+  pendingWebmentionCount,
+  userCount,
+  children,
+}: AdminShellProps) {
   const [focused, setFocused] = useState(false)
   const [scrollTopLifted, setScrollTopLifted] = useState(false)
   const mainScrollRef = useRef<HTMLElement | null>(null)
@@ -125,6 +133,7 @@ export function AdminShell({ currentUser, siteTitle, pendingCommentCount, userCo
               currentUser={currentUser}
               siteTitle={siteTitle}
               pendingCommentCount={pendingCommentCount}
+              pendingWebmentionCount={pendingWebmentionCount}
               userCount={userCount}
             />
             <SidebarInset

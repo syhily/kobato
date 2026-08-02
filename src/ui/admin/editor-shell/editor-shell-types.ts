@@ -93,7 +93,8 @@ export interface UseEditorShellStateArgs<
    * Build the upsertMeta payload from the meta draft. Post passes
    * `pinnedAt`, `category`, `tags`, `alias`; page passes `showFriends`.
    * Common fields (`title`, `summary`, `cover`, `og`, `published`,
-   * `commentsEnabled`, `showToc`, `showUpdated`, `slug`, `publishedAt`)
+   * `commentsEnabled`, `webmentionsEnabled`, `showToc`, `showUpdated`,
+   * `slug`, `publishedAt`)
    * are built here from `meta`.
    */
   buildUpsertMetaPayload: (input: { meta: TMeta; id?: string; publishedAt?: string | null }) => TUpsertMetaInput

@@ -1,0 +1,220 @@
+import { useMutation, type InfiniteData } from '@tanstack/react-query'
+import { AtSignIcon, CheckIcon, XIcon } from 'lucide-react'
+import { useState } from 'react'
+
+import type { AdminWebmentionWire } from '@/shared/contracts/webmentions'
+
+import { orpc } from '@/client/api/client'
+import { orpcQuery } from '@/client/api/orpc-query'
+import { toastApiError } from '@/client/lib/toast-api-error'
+import { useSiteIdentity } from '@/shared/lib/blog-config-context'
+import { formatLocalDate } from '@/shared/utils/formatter'
+import { tryParseUrl } from '@/shared/utils/safe-url'
+import { AdminInfiniteListFooter } from '@/ui/admin/shared/AdminInfiniteListFooter'
+import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
+import { useAdminInfiniteList } from '@/ui/admin/shared/useAdminInfiniteList'
+import { Badge, type BadgeProps } from '@/ui/components/badge'
+import { Button } from '@/ui/components/button'
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
+import { Tabs, TabsList, TabsTrigger } from '@/ui/components/tabs'
+
+const PAGE_SIZE = 30
+const ADMIN_DATE_FORMAT = 'yyyy-LL-dd HH:mm:ss'
+
+type StatusFilter = 'all' | AdminWebmentionWire['status']
+
+const STATUS_META: Record<AdminWebmentionWire['status'], { label: string; variant: BadgeProps['variant'] }> = {
+  pending: { label: '待审核', variant: 'secondary' },
+  approved: { label: '已批准', variant: 'default' },
+  rejected: { label: '已拒绝', variant: 'destructive' },
+}
+
+// Response-type labels (mf2 classification — presentational only, every
+// type moderates alike).
+const TYPE_META: Record<AdminWebmentionWire['type'], { label: string }> = {
+  mention: { label: '提及' },
+  reply: { label: '回应' },
+  like: { label: '喜欢' },
+  repost: { label: '转发' },
+}
+
+export type AdminWebmentionsPage = Awaited<ReturnType<typeof orpc.admin.webmentions.loadAll>>
+export type AdminWebmentionsData = InfiniteData<AdminWebmentionsPage, number>
+
+/**
+ * Local cache patch after a moderation mutation: the row takes its new
+ * terminal status and the per-page status counts shift with it — no
+ * refetch. Under a non-`all` filter the row no longer matches, so it
+ * leaves the visible list (the stale `total` re-syncs on the next page
+ * load, same convention as the comments list).
+ */
+export function moderateMentionInPages(
+  data: AdminWebmentionsData,
+  id: string,
+  status: 'approved' | 'rejected',
+  filter: StatusFilter,
+): AdminWebmentionsData {
+  return {
+    ...data,
+    pages: data.pages.map((page) => {
+      const hit = page.mentions.find((mention) => mention.id === id)
+      if (!hit) {
+        return page
+      }
+      const statusCounts = {
+        ...page.statusCounts,
+        pending: Math.max(0, page.statusCounts.pending - (hit.status === 'pending' ? 1 : 0)),
+        approved: page.statusCounts.approved + (status === 'approved' ? 1 : 0) - (hit.status === 'approved' ? 1 : 0),
+        rejected: page.statusCounts.rejected + (status === 'rejected' ? 1 : 0) - (hit.status === 'rejected' ? 1 : 0),
+      }
+      return {
+        ...page,
+        mentions:
+          filter === 'all'
+            ? page.mentions.map((mention) => (mention.id === id ? { ...mention, status } : mention))
+            : page.mentions.filter((mention) => mention.id !== id),
+        statusCounts,
+      }
+    }),
+  }
+}
+
+/** Author line falls back to the source hostname when no author metadata
+ *  was extracted. */
+function authorLabel(mention: AdminWebmentionWire): string {
+  if (mention.authorName !== null && mention.authorName !== '') {
+    return mention.authorName
+  }
+  return tryParseUrl(mention.sourceUrl)?.hostname ?? mention.sourceUrl
+}
+
+interface InboxRowProps {
+  mention: AdminWebmentionWire
+  onApprove: (mention: AdminWebmentionWire) => void
+  onReject: (mention: AdminWebmentionWire) => void
+  isModerating: (mention: AdminWebmentionWire) => boolean
+}
+
+function InboxRow({ mention, onApprove, onReject, isModerating }: InboxRowProps) {
+  const config = useSiteIdentity()
+  const meta = STATUS_META[mention.status]
+  const moderating = isModerating(mention)
+  return (
+    <div className="flex flex-col gap-1 px-4 py-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge variant={meta.variant}>{meta.label}</Badge>
+        <Badge variant="outline">{TYPE_META[mention.type].label}</Badge>
+        <span className="text-sm font-medium">{authorLabel(mention)}</span>
+        <a
+          href={mention.sourceUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="text-link text-sm break-all hover:underline"
+        >
+          {mention.title ?? mention.sourceUrl}
+        </a>
+      </div>
+      {mention.summary !== null && <p className="line-clamp-2 text-sm text-muted-foreground">{mention.summary}</p>}
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <p className="text-xs break-all text-muted-foreground">
+          目标 {mention.targetUrl} · 接收于 {formatLocalDate(new Date(mention.createdAt), ADMIN_DATE_FORMAT, config)}
+        </p>
+        {mention.status === 'pending' && (
+          <span className="ml-auto flex shrink-0 gap-2">
+            <Button size="sm" variant="outline" disabled={moderating} onClick={() => onApprove(mention)}>
+              <CheckIcon /> 批准
+            </Button>
+            <Button size="sm" variant="destructive" disabled={moderating} onClick={() => onReject(mention)}>
+              <XIcon /> 拒绝
+            </Button>
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// The receive side of the Webmention page: the moderation queue. Every
+// mention lands here as `pending` after source verification and only
+// reaches the public page once approved; rejection is a kept terminal
+// state (the row is the audit trail), so terminal rows render no
+// actions.
+export function WebmentionInboxView() {
+  const [status, setStatus] = useState<StatusFilter>('all')
+
+  const { rows, total, isLoading, hasNextPage, isFetchingNextPage, sentinelRef, patchPages } = useAdminInfiniteList({
+    namespace: orpcQuery.admin.webmentions.loadAll,
+    pageSize: PAGE_SIZE,
+    buildInput: (offset) => ({
+      status: status === 'all' ? undefined : status,
+      offset,
+      limit: PAGE_SIZE,
+    }),
+    selectRows: (page) => page.mentions,
+    noun: 'Webmention',
+  })
+
+  const approveMutation = useMutation({
+    ...orpcQuery.admin.webmentions.approve.mutationOptions(),
+    onSuccess: (_result, variables) =>
+      patchPages((data) => moderateMentionInPages(data, variables.id, 'approved', status)),
+    onError: (error) => toastApiError(error, '批准 Webmention 失败'),
+  })
+  const rejectMutation = useMutation({
+    ...orpcQuery.admin.webmentions.reject.mutationOptions(),
+    onSuccess: (_result, variables) =>
+      patchPages((data) => moderateMentionInPages(data, variables.id, 'rejected', status)),
+    onError: (error) => toastApiError(error, '拒绝 Webmention 失败'),
+  })
+
+  const isModerating = (mention: AdminWebmentionWire) =>
+    (approveMutation.isPending && approveMutation.variables?.id === mention.id) ||
+    (rejectMutation.isPending && rejectMutation.variables?.id === mention.id)
+
+  return (
+    <>
+      <AdminListPage.Toolbar>
+        <Tabs value={status} onValueChange={(value) => setStatus(value as StatusFilter)}>
+          <TabsList>
+            <TabsTrigger value="all">全部</TabsTrigger>
+            <TabsTrigger value="pending">待审核</TabsTrigger>
+            <TabsTrigger value="approved">已批准</TabsTrigger>
+            <TabsTrigger value="rejected">已拒绝</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </AdminListPage.Toolbar>
+
+      <AdminListPage.Body>
+        {!isLoading && rows.length === 0 ? (
+          <Empty>
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <AtSignIcon />
+              </EmptyMedia>
+              <EmptyTitle>暂无收到的 Webmention</EmptyTitle>
+            </EmptyHeader>
+          </Empty>
+        ) : (
+          <div className="divide-y">
+            {rows.map((mention) => (
+              <InboxRow
+                key={mention.id}
+                mention={mention}
+                onApprove={(m) => approveMutation.mutate({ id: m.id })}
+                onReject={(m) => rejectMutation.mutate({ id: m.id })}
+                isModerating={isModerating}
+              />
+            ))}
+          </div>
+        )}
+        <div ref={sentinelRef} />
+        <AdminInfiniteListFooter
+          noun="条 Webmention"
+          rowCount={total}
+          hasNextPage={hasNextPage}
+          isFetchingNextPage={isFetchingNextPage}
+        />
+      </AdminListPage.Body>
+    </>
+  )
+}

@@ -49,6 +49,7 @@ export const upsertMetaBaseSchema = z.object({
     .transform((value) => (value === undefined || value === '' ? null : value)),
   published: safeBoolean().optional(),
   commentsEnabled: safeBoolean().optional(),
+  webmentionsEnabled: safeBoolean().optional(),
   showToc: safeBoolean().optional(),
   showUpdated: safeBoolean().optional(),
   // `null` is the explicit cancel-schedule signal (vs omitted = leave the

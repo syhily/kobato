@@ -1,3 +1,4 @@
+import { DomainError } from '@/server/infra/http/errors'
 import { tryParseUrl } from '@/shared/utils/safe-url'
 
 // Link verification + best-effort metadata extraction for webmention
@@ -58,6 +59,22 @@ export function normalizeForMatch(raw: string): string | null {
   return url.toString()
 }
 
+/**
+ * `normalizeForMatch` for inputs a gate upstream already constrained to
+ * http(s) URLs — the endpoint's `webmentionReceiveSchema`, or an inbox
+ * row written through it. A null result is unreachable by construction,
+ * so it surfaces as a DomainError rather than a silent skip. This is the
+ * ONE place the normalized source key is required: the endpoint's
+ * enqueue path and the worker's store path must agree on the key.
+ */
+export function requireSourceKey(raw: string): string {
+  const key = normalizeForMatch(raw)
+  if (key === null) {
+    throw new DomainError('BAD_REQUEST', 'source must be a valid http(s) URL')
+  }
+  return key
+}
+
 export function extractLinks(html: string): string[] {
   const links: string[] = []
   for (const match of html.matchAll(ANCHOR_HREF_RE)) {
@@ -72,9 +89,11 @@ export function extractLinks(html: string): string[] {
 /**
  * True when the source HTML contains an `<a href>` that resolves
  * (relative links resolved against the source URL) to the target's
- * canonical URL. Only `<a>` counts in the slice — like/repost/reply
- * markup that mentions the target via `<img src>`, `<u-like-of>` etc.
- * is Phase 2.
+ * canonical URL. Only `<a>` counts for verification — response-type
+ * classification (u-like-of / u-repost-of / u-in-reply-to markers, also
+ * anchor-carried) lives in `classify.ts`; markup that mentions the
+ * target without an anchor (`<img src>` etc.) is not verifiable and
+ * stays out.
  */
 export function sourceLinksToTarget(html: string, sourceUrl: string, targetCanonicalUrl: string): boolean {
   const wanted = normalizeForMatch(targetCanonicalUrl)

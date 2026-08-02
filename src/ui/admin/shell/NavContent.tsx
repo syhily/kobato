@@ -18,10 +18,11 @@ import { SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuBadge } from
 interface NavContentProps {
   role: AdminShellProps['currentUser']['role']
   pendingCommentCount?: number
+  pendingWebmentionCount?: number
   userCount?: number
 }
 
-export function NavContent({ role, pendingCommentCount = 0, userCount }: NavContentProps) {
+export function NavContent({ role, pendingCommentCount = 0, pendingWebmentionCount = 0, userCount }: NavContentProps) {
   if (!role) {
     return null
   }
@@ -99,6 +100,11 @@ export function NavContent({ role, pendingCommentCount = 0, userCount }: NavCont
                 <AtSignIcon />
                 <NavMenuItem.Label>网页互动</NavMenuItem.Label>
               </NavMenuItem.Link>
+              {pendingWebmentionCount > 0 && (
+                <SidebarMenuBadge className="bg-status-error-bg text-status-error-fg">
+                  {pendingWebmentionCount}
+                </SidebarMenuBadge>
+              )}
             </NavMenuItem>
           )}
 

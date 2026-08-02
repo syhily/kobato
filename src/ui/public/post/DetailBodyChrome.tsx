@@ -46,6 +46,9 @@ export interface DetailBodyChromeProps {
   commentsPromise: Promise<DetailPageComments>
   currentUser?: CommentFormUser
   comments?: boolean
+  /** 引用与回应 block — streamed in by the route via `<Await>`; renders
+   *  between the post body and the comment section (IndieWeb convention). */
+  webmentions?: ReactNode
   mode?: 'admin' | 'public'
   editHref?: string
   draftMarker?: DraftMarker
@@ -71,6 +74,7 @@ export function DetailBodyChrome({
   commentsPromise,
   currentUser,
   comments = false,
+  webmentions,
   mode,
   editHref,
   draftMarker = null,
@@ -132,6 +136,7 @@ export function DetailBodyChrome({
       </div>
       <LikeButton permalink={permalink} commentKey={commentKey} likes={likes} />
       {afterLikeButton}
+      {webmentions}
       {comments && (
         <Suspense fallback={<CommentsSkeleton />}>
           <Await resolve={commentsPromise}>
