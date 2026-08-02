@@ -1,6 +1,16 @@
 import { useMutation } from '@tanstack/react-query'
 import { HeartIcon } from 'lucide-react'
-import { Suspense, lazy, startTransition, useCallback, useEffect, useOptimistic, useRef, useState } from 'react'
+import {
+  startTransition,
+  Suspense,
+  lazy,
+  useCallback,
+  useEffect,
+  useOptimistic,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react'
 
 import type { DecreaseLikeOutput, IncreaseLikeOutput, ValidateLikeTokenOutput } from '@/shared/types/likes'
 
@@ -22,6 +32,10 @@ export interface LikeButtonProps {
 }
 
 const LIKE_TOKENS_KEY = 'like-tokens'
+
+// No-op subscription for the mount-detection store below (the snapshot
+// flips on its own once hydration commits).
+const emptySubscribe = () => () => {}
 
 // `@number-flow/react` is interaction-only chrome: the digit-roll animation
 // matters when the count changes on a like/unlike, not on first paint. Load
@@ -100,6 +114,20 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
   // until `onSuccess` commits, otherwise React 19 reverts the update.
   const [baseState, setBaseState] = useState(createLikeButtonState(commentKey, initialLikes))
   const [state, addOptimistic] = useOptimistic(baseState, applyLikeOptimistic)
+
+  // `@number-flow/react` renders a nested span structure (digit rolls) that
+  // a static fallback cannot replicate, so rendering it during hydration
+  // would mismatch the server's plain-number span (React error #418). The
+  // official hydration-safe client-only switch: SSR and the first hydrated
+  // render take the server snapshot (plain span); right after hydration the
+  // store re-checks and flips to NumberFlow — a regular update with no
+  // hydration constraints, and the lazy chunk can still arrive late under
+  // the Suspense fallback.
+  const showNumberFlow = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
+  )
 
   const tokenRef = useRef<string | null>(null)
   // Interaction sequencing: every like/unlike dispatch bumps
@@ -239,9 +267,13 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
           strokeWidth={0}
           aria-hidden
         />
-        <Suspense fallback={<span>{state.likes}</span>}>
-          <NumberFlow value={state.likes} />
-        </Suspense>
+        {showNumberFlow ? (
+          <Suspense fallback={<span>{state.likes}</span>}>
+            <NumberFlow value={state.likes} />
+          </Suspense>
+        ) : (
+          <span>{state.likes}</span>
+        )}
       </Button>
     </div>
   )

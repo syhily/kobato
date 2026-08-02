@@ -1277,9 +1277,14 @@ describe('contract: module and bundle boundaries', () => {
       expect(source, `${file} statically imports Popup`).not.toContain("from '@/ui/public/widgets/Popup'")
     }
     const detailChrome = readFileSync('src/ui/public/post/DetailBodyChrome.tsx', 'utf8')
-    expect(detailChrome, 'DetailBodyChrome statically imports TableOfContents').not.toMatch(
-      /^import \{ TableOfContents \}/m,
-    )
+    // DetailBodyChrome statically imports TableOfContents — the TOC's
+    // motion elements all render through `lazy-motion.tsx` (asserted above),
+    // so `motion/react` still never rides the public bundle. A component-
+    // level lazy boundary with a `fallback={null}` would drop the closed-
+    // drawer DOM from SSR and mismatch on hydration (React error #418) —
+    // that regression is pinned by tests/unit/ui/public/post/
+    // toc-hydration.test.tsx instead.
+    expect(detailChrome).toContain("import { TableOfContents } from '@/ui/public/post/TableOfContents'")
   })
 
   it('sizes Button icons through data-icon instead of hand-written size classes', () => {

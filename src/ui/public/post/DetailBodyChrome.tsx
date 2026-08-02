@@ -1,5 +1,5 @@
 import { PencilIcon } from 'lucide-react'
-import { type ReactNode, lazy, Suspense } from 'react'
+import { type ReactNode, Suspense } from 'react'
 import { Await, Link } from 'react-router'
 
 import type { SiteIdentitySettings } from '@/shared/config/types'
@@ -13,16 +13,18 @@ import { Comments } from '@/ui/public/comments/Comments'
 import { CommentsSkeleton } from '@/ui/public/comments/CommentsSkeleton'
 import { LikeButton } from '@/ui/public/LikeActions'
 import { postMetaClass, postMetaDateClass, postTitleClass } from '@/ui/public/post/postChrome'
+import { TableOfContents } from '@/ui/public/post/TableOfContents'
 
-// The TOC drawer is orchestrated motion (animated toggle, drawer, backdrop)
-// and pure progressive-enhancement chrome, so it loads behind a lazy
-// boundary instead of pulling the motion runtime into the public bundle.
-// The null fallback matches the closed drawer's SSR invisibility; the
-// streamed boundary fills in once the chunk resolves (see entry.server's
-// onShellReady streaming — the Comments boundary below works the same way).
-const TableOfContents = lazy(() =>
-  import('@/ui/public/post/TableOfContents').then((module) => ({ default: module.TableOfContents })),
-)
+// The TOC must NOT be wrapped in a lazy boundary here: its motion runtime
+// already stays out of the public bundle (every animated element inside
+// renders through `ui/components/lazy-motion`), while the component itself
+// renders the closed-drawer DOM on the server (toggle button + off-screen
+// drawer, both aria-hidden/inert). A `fallback={null}` boundary would drop
+// that DOM from the SSR output entirely, and once the chunk resolves the
+// client renders it back — a server-vs-client element mismatch that
+// surfaces as React error #418 on every warm visit. The streamed Comments
+// boundary below is safe because its SSR fallback (`CommentsSkeleton`) is
+// a real placeholder the client renders until the Await resolves.
 
 const DRAFT_MARKER_LABELS: Record<Exclude<DraftMarker, null>, { sr: string; visible: string }> = {
   draft: { sr: '未发布草稿：', visible: '【草稿】' },
@@ -122,9 +124,7 @@ export function DetailBodyChrome({
         </div>
         {metaExtra}
       </div>
-      <Suspense fallback={null}>
-        <TableOfContents headings={headings} toc={toc ? 'enabled' : 'disabled'} />
-      </Suspense>
+      <TableOfContents headings={headings} toc={toc ? 'enabled' : 'disabled'} />
       <div className={contentWrapperClassName}>
         <div ref={postContentRef} className={cn('post-content', 'prose-blog prose prose-lg max-w-none')}>
           {children}
