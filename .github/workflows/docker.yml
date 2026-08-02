@@ -17,21 +17,31 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build-and-push:
-    name: build and push image
-    runs-on: ubuntu-latest
+  # Per-arch native builds. The arm64 leg used to run the whole SEA build
+  # under QEMU emulation, which never fit the job timeout (6.7.1: 85+
+  # minutes without progress inside `pnpm run sea:build` on the emulated
+  # leg — rolldown's multithreaded Rust bundling degrades catastrophically
+  # under TCG) — so each platform now builds on its own native runner
+  # (ubuntu-24.04-arm, same as sea.yml) and pushes an arch-scoped staging
+  # tag. The merge job below assembles the multi-arch manifest.
+  build:
+    name: build linux/${{ matrix.arch }} and smoke
+    runs-on: ${{ matrix.runner }}
     # GitHub fires no workflow events for draft releases, so this job only
     # ever runs for non-draft releases; the `!draft` guard stays as a
     # belt-and-suspenders check — a discarded draft must never leave
     # semver-tagged images behind on the registry. (On push events
     # `github.event.release` is null and this passes.)
     if: ${{ !github.event.release.draft }}
-    # Multi-arch: the arm64 leg runs under QEMU emulation, so the whole
-    # SEA build (pnpm install + vite bundles + brotli-11 packing) is
-    # several times slower than a native build. If this becomes painful,
-    # switch to per-arch native runners (ubuntu-24.04-arm, like sea.yml)
-    # pushing by digest, plus a manifest-merge job.
-    timeout-minutes: 90
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            runner: ubuntu-24.04-arm
     permissions:
       contents: read
       packages: write
@@ -50,82 +60,105 @@ jobs:
         id: meta
         with:
           images: ghcr.io/${{ github.repository }}
+          # Labels only on the per-arch images — the user-facing tags are
+          # applied to the merged manifest by the merge job below.
           tags: |
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-            type=semver,pattern={{version}},enable=${{ github.event_name == 'release' }}
-            type=semver,pattern={{major}}.{{minor}},enable=${{ github.event_name == 'release' }}
-
-      # QEMU provides the arm64 emulator for the multi-platform build;
-      # buildx then runs the Dockerfile once per listed platform.
-      - uses: docker/setup-qemu-action@v4
+            type=raw,value=build-${{ github.sha }}-${{ matrix.arch }}
 
       - uses: docker/setup-buildx-action@v4
 
-      # The build publishes under a staging tag FIRST, never under the
-      # user-facing tags: the smoke below gates `latest` / semver, so a
-      # broken image can no longer ship and then fail. The staging tag
-      # (`build-<sha>`) stays on the registry as build provenance — it is
-      # untagged by convention from any release channel, and the prune
-      # step at the bottom keeps only the newest few of them (audit
-      # P2-16: ghcr has no built-in retention).
+      # Each arch pushes its own staging tag FIRST. The smoke below gates
+      # the merge, so a broken image can no longer ship and then fail —
+      # the staging tags stay on the registry as build provenance.
       - uses: docker/build-push-action@v7
         id: push
         with:
           context: .
-          # amd64 + arm64: sea.yml already ships linux-arm64 binaries, so
-          # the image must not strand ARM Docker hosts with exec format
-          # errors.
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/${{ matrix.arch }}
           push: true
-          tags: ghcr.io/${{ github.repository }}:build-${{ github.sha }}
+          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.arch }}
 
-      # The arm64 leg is built entirely under QEMU and the image's
-      # HEALTHCHECK only probes /health — the embedded native libraries
-      # (sharp / canvas / duckdb) never load there, so an arch-broken
-      # natives bundle would ship unnoticed. Pull the just-pushed staging
-      # manifest back and run the SEA binary's own zero-config smoke flags
-      # inside the container per platform (arm64 via the QEMU binfmt
-      # above) — BEFORE any user-facing tag exists.
+      # Native smoke on the arch's own runner: the embedded native
+      # libraries (sharp / canvas / duckdb) load without emulation, so
+      # `--smoke-natives` genuinely exercises the bundle per arch — the
+      # old QEMU-based smoke of the arm64 leg never ran these.
       - name: Smoke the SEA binary inside the image
         env:
           IMAGE: ghcr.io/${{ github.repository }}@${{ steps.push.outputs.digest }}
         run: |
           docker pull "$IMAGE"
-          for arch in amd64 arm64; do
-            docker run --rm --platform "linux/$arch" --entrypoint kobato "$IMAGE" --version
-            docker run --rm --platform "linux/$arch" --entrypoint kobato "$IMAGE" --smoke-natives
-          done
+          docker run --rm --platform linux/${{ matrix.arch }} --entrypoint kobato "$IMAGE" --version
+          docker run --rm --platform linux/${{ matrix.arch }} --entrypoint kobato "$IMAGE" --smoke-natives
 
-      # Smoke passed — point the release tags at the very same manifest
-      # (no rebuild, no digest drift).
-      - name: Tag the smoked image
+  merge:
+    name: merge multi-arch manifest and tag
+    runs-on: ubuntu-latest
+    needs: build
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+    steps:
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/metadata-action@v6
+        id: meta
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=semver,pattern={{version}},enable=${{ github.event_name == 'release' }}
+            type=semver,pattern={{major}}.{{minor}},enable=${{ github.event_name == 'release' }}
+
+      # Both per-arch staging tags passed their native smoke — point the
+      # combined staging tag and the user-facing tags at one manifest list
+      # referencing them (no rebuild, no digest drift).
+      - name: Merge the per-arch manifests
         env:
-          IMAGE: ghcr.io/${{ github.repository }}:build-${{ github.sha }}
+          IMAGE: ghcr.io/${{ github.repository }}
           TAGS: ${{ steps.meta.outputs.tags }}
         run: |
-          args=()
+          args=(-t "$IMAGE:build-${{ github.sha }}")
           while IFS= read -r tag; do
             [ -n "$tag" ] && args+=(-t "$tag")
           done <<< "$TAGS"
-          docker buildx imagetools create "${args[@]}" "$IMAGE"
+          docker buildx imagetools create "${args[@]}" \
+            "$IMAGE:build-${{ github.sha }}-amd64" \
+            "$IMAGE:build-${{ github.sha }}-arm64"
+
+      - name: Resolve the merged digest
+        id: merged
+        env:
+          IMAGE: ghcr.io/${{ github.repository }}:build-${{ github.sha }}
+        run: echo "digest=$(docker buildx imagetools inspect "$IMAGE" --format '{{.Manifest.Digest}}')" >> "$GITHUB_OUTPUT"
 
       - uses: actions/attest@v4
         with:
           subject-name: ghcr.io/${{ github.repository }}
-          subject-digest: ${{ steps.push.outputs.digest }}
+          subject-digest: ${{ steps.merged.outputs.digest }}
           push-to-registry: true
 
-      # Every main push leaves a `build-<sha>` staging tag behind, and ghcr
-      # has no built-in retention — prune them via the API (audit P2-16).
-      # Once the user-facing tags move on to a newer build, an old staging
-      # version carries only `build-*` tags and becomes prunable; versions
-      # still holding `latest` / semver tags are never touched (deleting a
-      # version deletes ALL its tags). The newest 10 staging versions stay
-      # as build provenance. Best-effort: a prune failure must not fail a
-      # release, so this runs continue-on-error.
+      # Every main push leaves `build-<sha>` staging manifests behind, and
+      # ghcr has no built-in retention — prune them via the API (audit
+      # P2-16). The per-arch staging versions (`build-<sha>-amd64` /
+      # `-arm64`) are NEVER pruned: the merged manifest lists reference
+      # them by digest, so deleting one would break every semver image
+      # that still points at it. Versions still holding `latest` / semver
+      # tags are never touched either (deleting a version deletes ALL its
+      # tags). The newest 10 staging manifests stay as build provenance.
+      # Best-effort: a prune failure must not fail a release, so this runs
+      # continue-on-error.
       - name: Prune old build-* staging tags
         continue-on-error: true
         env:
@@ -141,9 +174,10 @@ jobs:
           fi
           # Sort explicitly by created_at — the "keep the newest 10"
           # window must not depend on the API's undocumented default
-          # ordering (fix-review).
+          # ordering (fix-review). Arch-scoped staging tags are excluded
+          # from pruning (see above).
           gh api --paginate --slurp "$base/packages/container/$package/versions?per_page=100" \
-            --jq '[ add[] | select((.metadata.container.tags | length > 0) and ([.metadata.container.tags[] | startswith("build-")] | all)) ] | sort_by(.created_at) | reverse | .[10:][] | .id' \
+            --jq '[ add[] | select((.metadata.container.tags | length > 0) and ([.metadata.container.tags[] | startswith("build-")] | all) and ([.metadata.container.tags[] | test("build-.*-(amd64|arm64)$")] | any | not)) ] | sort_by(.created_at) | reverse | .[10:][] | .id' \
           | while read -r id; do
               echo "Deleting staging version $id"
               gh api -X DELETE "$base/packages/container/$package/versions/$id"
