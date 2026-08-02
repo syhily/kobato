@@ -20,6 +20,10 @@ function makeMention(overrides: Partial<AdminWebmentionWire> = {}): AdminWebment
     authorName: 'Jane Doe',
     title: '提及了你的文章',
     summary: '一段摘要。',
+    verificationStatus: 'verified',
+    lastVerifiedAt: '2026-08-01T00:00:00.000Z',
+    lastError: null,
+    verifyFailStreak: 0,
     fetchedAt: '2026-08-01T00:00:00.000Z',
     createdAt: '2026-08-01T00:00:00.000Z',
     moderatedAt: null,
@@ -32,7 +36,7 @@ function inboxPage(mentions: AdminWebmentionWire[]) {
     mentions,
     total: mentions.length,
     hasMore: false,
-    statusCounts: { all: mentions.length, pending: 1, approved: 1, rejected: 1 },
+    statusCounts: { all: mentions.length, pending: 1, approved: 1, rejected: 1, hidden: 1 },
   }
 }
 
@@ -65,7 +69,14 @@ describe('snapshot: WebmentionInboxView', () => {
           inboxPage([
             makeMention({ id: '1', status: 'pending' }),
             makeMention({ id: '2', status: 'approved', type: 'like', title: '通过的提及' }),
-            makeMention({ id: '3', status: 'rejected', type: 'reply', title: '屏蔽的提及' }),
+            makeMention({
+              id: '3',
+              status: 'rejected',
+              type: 'reply',
+              title: '屏蔽的提及',
+              verificationStatus: 'failed',
+              lastError: 'spam',
+            }),
           ]),
         ],
       },
@@ -74,6 +85,11 @@ describe('snapshot: WebmentionInboxView', () => {
     expect(html).toContain('待审核')
     expect(html).toContain('已批准')
     expect(html).toContain('已拒绝')
+    // Verification badges ride on every row; a rejected row's failure
+    // badge carries no 重新验证 action (rejected is terminal).
+    expect(html.match(/已验证/g)).toHaveLength(2)
+    expect(html.match(/验证失败/g)).toHaveLength(1)
+    expect(html).not.toContain('重新验证')
     // Response-type badges ride alongside the status badges.
     expect(html).toContain('喜欢')
     expect(html).toContain('回应')
@@ -87,10 +103,40 @@ describe('snapshot: WebmentionInboxView', () => {
     expect(html.match(/拒绝/g)).toHaveLength(3)
   })
 
+  it('renders the verification-failed badge, its tooltip, and the reverify action', () => {
+    queryMocks.infinite = {
+      ...queryMocks.infinite,
+      data: {
+        pages: [
+          inboxPage([
+            makeMention({
+              id: '1',
+              status: 'hidden',
+              verificationStatus: 'failed',
+              lastError: 'source could not be fetched (HTTP 404)',
+              verifyFailStreak: 9,
+            }),
+          ]),
+        ],
+      },
+    }
+    const html = stableHtml(renderInRouter(<WebmentionInboxView />, '/admin/webmentions'))
+    expect(html).toContain('已隐藏')
+    expect(html).toContain('验证失败')
+    // 拒绝: tab trigger + status badge + action button; 重新验证: action
+    // button only. No 批准 for hidden rows. (The tooltip carrying
+    // `lastError` only mounts on hover, so it is not in the static HTML.)
+    expect(html).toContain('重新验证')
+    // 批准 appears only in the 已批准 tab trigger (the hidden row has no
+    // approve action); 拒绝 = tab trigger + the row's action button.
+    expect(html.match(/批准/g)).toHaveLength(1)
+    expect(html.match(/拒绝/g)).toHaveLength(2)
+  })
+
   it('renders the status filter tabs', () => {
     queryMocks.infinite = { ...queryMocks.infinite, data: { pages: [inboxPage([])] } }
     const html = stableHtml(renderInRouter(<WebmentionInboxView />, '/admin/webmentions'))
-    for (const label of ['全部', '待审核', '已批准', '已拒绝']) {
+    for (const label of ['全部', '待审核', '已批准', '已拒绝', '已隐藏']) {
       expect(html).toContain(label)
     }
   })

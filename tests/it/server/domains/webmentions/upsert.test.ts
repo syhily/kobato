@@ -4,7 +4,11 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import type { NewWebmention } from '@/server/infra/db/types'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
-import { setWebmentionStatus, upsertWebmention } from '@/server/infra/db/operations/webmention'
+import {
+  setWebmentionStatus,
+  upsertWebmention,
+  upsertWebmentionVerificationFailure,
+} from '@/server/infra/db/operations/webmention'
 import { webmention } from '@/server/infra/db/schema/webmention'
 
 const db = getTestDb()
@@ -65,6 +69,39 @@ describe('integration / upsertWebmention (re-mention update semantics)', () => {
     expect(row.updatedAt.getTime()).toBeGreaterThanOrEqual(first.row.updatedAt.getTime())
   })
 
+  it('refreshes the verification state on a successful re-mention', async () => {
+    // A failed receive-time check left the row failed with a message.
+    const first = await upsertWebmention(
+      db,
+      mentionValues({
+        verificationStatus: 'failed',
+        lastVerifiedAt: new Date('2026-08-01T00:00:00.000Z'),
+        lastError: 'source could not be fetched (HTTP 500)',
+        verifyFailStreak: 3,
+      }),
+    )
+    expect(first.row.verificationStatus).toBe('failed')
+
+    // The sender re-POSTs and the source recovers: the upsert flips the
+    // verification state back to verified and clears the failure.
+    const second = await upsertWebmention(
+      db,
+      mentionValues({
+        verificationStatus: 'verified',
+        lastVerifiedAt: new Date('2026-08-02T00:00:00.000Z'),
+        lastError: null,
+        verifyFailStreak: 0,
+      }),
+    )
+
+    expect(second.outcome).toBe('updated')
+    const row = await rowOf(first.row.id)
+    expect(row.verificationStatus).toBe('verified')
+    expect(row.lastError).toBeNull()
+    expect(row.verifyFailStreak).toBe(0)
+    expect(row.lastVerifiedAt?.toISOString()).toBe('2026-08-02T00:00:00.000Z')
+  })
+
   it('demotes an approved row back to pending without touching moderatedAt', async () => {
     const first = await upsertWebmention(db, mentionValues())
     await setWebmentionStatus(db, first.row.id, 'approved')
@@ -93,6 +130,29 @@ describe('integration / upsertWebmention (re-mention update semantics)', () => {
     expect(row.title).toBe('Spam edit attempt')
   })
 
+  it('resets the failure streak when a row is approved', async () => {
+    // A pending row accumulated daily-cycle failures; approval restarts
+    // the 7-day window so the hide countdown only counts failures of the
+    // APPROVED mention.
+    const { row } = await upsertWebmention(
+      db,
+      mentionValues({
+        verificationStatus: 'failed',
+        lastVerifiedAt: new Date('2026-08-01T00:00:00.000Z'),
+        lastError: 'source could not be fetched (HTTP 500)',
+        verifyFailStreak: 6,
+      }),
+    )
+    await setWebmentionStatus(db, row.id, 'approved')
+
+    const updated = await rowOf(row.id)
+    expect(updated.status).toBe('approved')
+    expect(updated.verifyFailStreak).toBe(0)
+    // The verification state itself is untouched — only the count resets.
+    expect(updated.verificationStatus).toBe('failed')
+    expect(updated.lastError).toBe('source could not be fetched (HTTP 500)')
+  })
+
   it('folds a same-key race into the ON CONFLICT fallback, reported as `updated`', async () => {
     // Both calls observe an empty pair SELECT before either INSERT runs
     // (node:sqlite resolves each statement in its own microtask), so one
@@ -107,5 +167,64 @@ describe('integration / upsertWebmention (re-mention update semantics)', () => {
     expect(outcomes).toEqual(['inserted', 'updated'])
     expect(a.row.id).toBe(b.row.id)
     expect(await db.select().from(webmention)).toHaveLength(1)
+  })
+})
+
+describe('integration / upsertWebmentionVerificationFailure (terminal receive-time failure)', () => {
+  const failureValues = (
+    error: string,
+    overrides: Partial<Parameters<typeof upsertWebmentionVerificationFailure>[1]> = {},
+  ) => ({
+    sourceUrl: 'https://sender.example/mentioning-post',
+    targetUrl: 'https://example.com/posts/wm-target/',
+    targetType: 'post' as const,
+    targetOwnerId: 1,
+    error,
+    ...overrides,
+  })
+
+  it('inserts a failed pending row for a fresh pair', async () => {
+    const row = await upsertWebmentionVerificationFailure(db, failureValues('source does not link to target'))
+
+    expect(row.status).toBe('pending')
+    expect(row.verificationStatus).toBe('failed')
+    expect(row.lastError).toBe('source does not link to target')
+    expect(row.verifyFailStreak).toBe(0)
+    expect(row.lastVerifiedAt).not.toBeNull()
+  })
+
+  it('refreshes an existing failed row with the new message instead of duplicating', async () => {
+    const first = await upsertWebmentionVerificationFailure(db, failureValues('first failure'))
+    const second = await upsertWebmentionVerificationFailure(db, failureValues('second failure'))
+
+    expect(second.id).toBe(first.id)
+    expect(await db.select().from(webmention)).toHaveLength(1)
+    const row = await rowOf(first.id)
+    expect(row.lastError).toBe('second failure')
+    expect(row.status).toBe('pending')
+    expect(row.verificationStatus).toBe('failed')
+  })
+
+  it('demotes an approved row back to pending on a failed re-verification', async () => {
+    const { row } = await upsertWebmention(db, mentionValues())
+    await setWebmentionStatus(db, row.id, 'approved')
+
+    await upsertWebmentionVerificationFailure(db, failureValues('source could not be fetched (HTTP 404)'))
+
+    const updated = await rowOf(row.id)
+    expect(updated.status).toBe('pending')
+    expect(updated.verificationStatus).toBe('failed')
+    expect(updated.lastError).toBe('source could not be fetched (HTTP 404)')
+  })
+
+  it('keeps a rejected row rejected on a failed re-send', async () => {
+    const { row } = await upsertWebmention(db, mentionValues())
+    await setWebmentionStatus(db, row.id, 'rejected')
+
+    await upsertWebmentionVerificationFailure(db, failureValues('spam edit attempt'))
+
+    const updated = await rowOf(row.id)
+    expect(updated.status).toBe('rejected')
+    expect(updated.verificationStatus).toBe('failed')
   })
 })

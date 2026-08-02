@@ -79,11 +79,13 @@ describe('integration / webmention inbox worker', () => {
     expect(rows).toHaveLength(1)
     expect(rows[0]!.status).toBe('pending')
     expect(rows[0]!.type).toBe('mention')
+    expect(rows[0]!.verificationStatus).toBe('verified')
+    expect(rows[0]!.verifyFailStreak).toBe(0)
     expect(rows[0]!.sourceUrl).toBe(SOURCE)
     expect(vi.mocked(sendNewWebmention)).toHaveBeenCalledTimes(1)
   })
 
-  it('drops the row when the source does not link to the target (terminal)', async () => {
+  it('records a failed pending row when the source does not link to the target (terminal)', async () => {
     await seedLivePost('wm-target')
     await enqueue()
     mockFetch.enqueue(SOURCE, new Response('<html><body><p>No link at all.</p></body></html>', { status: 200 }))
@@ -91,11 +93,15 @@ describe('integration / webmention inbox worker', () => {
     await runWebmentionInboxBatch(db)
 
     expect(await listWebmentionInbox(db)).toHaveLength(0)
-    expect(await db.select().from(webmention)).toHaveLength(0)
+    const rows = await db.select().from(webmention)
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!.status).toBe('pending')
+    expect(rows[0]!.verificationStatus).toBe('failed')
+    expect(rows[0]!.lastError).toBe('source does not link to target')
     expect(vi.mocked(sendNewWebmention)).not.toHaveBeenCalled()
   })
 
-  it('drops the row for an SSRF-blocked source without fetching it', async () => {
+  it('records the blocked-host failure without fetching it', async () => {
     await seedLivePost('wm-target')
     await enqueue('http://127.0.0.1:8080/x')
 
@@ -103,6 +109,10 @@ describe('integration / webmention inbox worker', () => {
 
     expect(mockFetch.calls).toHaveLength(0)
     expect(await listWebmentionInbox(db)).toHaveLength(0)
+    const rows = await db.select().from(webmention)
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!.verificationStatus).toBe('failed')
+    expect(rows[0]!.lastError).toBe('source URL points at a blocked host')
   })
 
   it('drops the row when the target vanished between enqueue and processing', async () => {
@@ -112,9 +122,10 @@ describe('integration / webmention inbox worker', () => {
 
     expect(mockFetch.calls).toHaveLength(0)
     expect(await listWebmentionInbox(db)).toHaveLength(0)
+    expect(await db.select().from(webmention)).toHaveLength(0)
   })
 
-  it('drops the row on a permanent HTTP refusal (4xx), no retry', async () => {
+  it('records the failure on a permanent HTTP refusal (4xx), no retry', async () => {
     await seedLivePost('wm-target')
     await enqueue()
     mockFetch.enqueue(SOURCE, new Response('gone', { status: 404 }))
@@ -123,10 +134,13 @@ describe('integration / webmention inbox worker', () => {
 
     const rows = await listWebmentionInbox(db)
     expect(rows).toHaveLength(0)
-    expect(await db.select().from(webmention)).toHaveLength(0)
+    const mentions = await db.select().from(webmention)
+    expect(mentions).toHaveLength(1)
+    expect(mentions[0]!.verificationStatus).toBe('failed')
+    expect(mentions[0]!.lastError).toBe('source could not be fetched (HTTP 404)')
   })
 
-  it('backs off a transient failure and drops the row once the attempt budget is spent', async () => {
+  it('backs off a transient failure and records the failure once the attempt budget is spent', async () => {
     await seedLivePost('wm-target')
     await enqueue()
     mockFetch.enqueue(SOURCE, () => {
@@ -156,7 +170,10 @@ describe('integration / webmention inbox worker', () => {
     })
     await processWebmentionInboxRow(db, row!)
     expect(await listWebmentionInbox(db)).toHaveLength(0)
-    expect(await db.select().from(webmention)).toHaveLength(0)
+    const mentions = await db.select().from(webmention)
+    expect(mentions).toHaveLength(1)
+    expect(mentions[0]!.verificationStatus).toBe('failed')
+    expect(mentions[0]!.lastError).toContain('source could not be fetched')
   })
 
   it('retries a 5xx and succeeds once the source recovers', async () => {

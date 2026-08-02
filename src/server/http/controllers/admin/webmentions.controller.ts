@@ -1,6 +1,8 @@
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
+import { asAdminWebmentionWire } from '@/server/domains/webmentions/projection'
+import { reverifyWebmention } from '@/server/domains/webmentions/reverify'
 import { adminWebmentionListSchema, adminWebmentionOutboxListSchema } from '@/server/domains/webmentions/schema'
 import {
   approveWebmention,
@@ -24,6 +26,7 @@ const loadAll = adminProc
         pending: z.number().int(),
         approved: z.number().int(),
         rejected: z.number().int(),
+        hidden: z.number().int(),
       }),
     }),
   )
@@ -57,6 +60,26 @@ const reject = adminProc
     })
   })
 
+// Manual re-verification — the ONLY recovery path for a `hidden`
+// mention (the daily cycle leaves hidden rows alone): re-fetch the
+// source and confirm the link right now. Success restores `hidden` →
+// `approved` and resets the failure streak; failure records the message
+// on the row and surfaces it to the admin. Returns the refreshed row so
+// the UI patches its cache without a refetch.
+const reverify = adminProc
+  .route({ method: 'POST', path: '/webmention-admin/reverify' })
+  .input(z.object({ id: z.string() }))
+  .output(adminWebmentionDto)
+  .handler(async ({ input, context }) => {
+    const row = await reverifyWebmention(context.db, input.id)
+    recordAuditEventFromContext(context, {
+      action: 'webmention_verified',
+      resourceType: 'webmention',
+      resourceId: input.id,
+    })
+    return asAdminWebmentionWire(row)
+  })
+
 // The outbound send log, read-only: no mutations here on purpose — a
 // retry is a republish (the upsert resets terminal rows), and rows are
 // never deleted from the admin shell.
@@ -85,5 +108,6 @@ export const adminWebmentionsRouter = {
   loadAll,
   approve,
   reject,
+  reverify,
   outbox,
 }

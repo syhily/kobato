@@ -2,6 +2,8 @@ import type { Database } from '@/server/infra/db/database'
 import type { WebmentionInboxRow } from '@/server/infra/db/types'
 
 import { receiveWebmention } from '@/server/domains/webmentions/service'
+import { resolveWebmentionTarget } from '@/server/domains/webmentions/target'
+import { upsertWebmentionVerificationFailure } from '@/server/infra/db/operations/webmention'
 import {
   clearWebmentionInbox,
   deleteWebmentionInbox,
@@ -39,9 +41,11 @@ function failureMessage(error: string): string {
  * deleted since enqueue is a terminal NOT_FOUND, not a retry). Success
  * deletes the row; a transient fetch failure (DomainError with
  * `retryable`, or an unexpected throw) backs off until the attempt
- * budget runs out; anything terminal (source does not link, 4xx,
- * blocked host, target gone) drops the row — the sender learned nothing
- * from its 202 beyond "queued", which the protocol allows.
+ * budget runs out; anything terminal lands as a VISIBLE failure: the
+ * pair is recorded as a `pending` row with `verificationStatus='failed'`
+ * and the last failure message, so the admin sees why the mention was
+ * not accepted (a vanished target is the one exception — there is no
+ * page left to anchor the mention to, so it drops silently).
  */
 export async function processWebmentionInboxRow(db: Database, row: WebmentionInboxRow): Promise<void> {
   try {
@@ -65,8 +69,24 @@ export async function processWebmentionInboxRow(db: Database, row: WebmentionInb
       )
       return
     }
+    const target = await resolveWebmentionTarget(db, row.targetUrl)
+    if (target !== null) {
+      await upsertWebmentionVerificationFailure(db, {
+        sourceUrl: row.sourceUrl,
+        targetUrl: row.targetUrl,
+        targetType: target.type,
+        targetOwnerId: target.ownerId,
+        error: message,
+      })
+    }
     await deleteWebmentionInbox(db, row.id)
-    log.warn('Webmention inbox row dropped', { id: row.id, sourceUrl: row.sourceUrl, attempts, error: message })
+    log.warn('Webmention inbox row verification failed', {
+      id: row.id,
+      sourceUrl: row.sourceUrl,
+      attempts,
+      error: message,
+      recorded: target !== null,
+    })
   }
 }
 

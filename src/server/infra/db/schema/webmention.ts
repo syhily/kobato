@@ -1,13 +1,31 @@
 import { sql } from 'drizzle-orm'
 import { check, index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 
-import { WEBMENTION_OUTBOX_STATUSES, WEBMENTION_STATUSES, WEBMENTION_TYPES } from '@/server/infra/db/schema/shared'
+import {
+  WEBMENTION_OUTBOX_STATUSES,
+  WEBMENTION_STATUSES,
+  WEBMENTION_TYPES,
+  WEBMENTION_VERIFY_STATUSES,
+} from '@/server/infra/db/schema/shared'
 
 // Webmentions (W3C Webmention, receive side). A row is created in
 // `pending` status only after the endpoint has fetched `sourceUrl` and
-// verified it links to `targetUrl`; moderation then flips the row to
-// `approved` / `rejected` (both kept — the row is the audit trail).
+// verified it links to `targetUrl` — or, since the verify redesign, when
+// the verification terminally failed (attempt budget spent): the row
+// lands `pending` with `verificationStatus='failed'` so the admin can
+// see the failure instead of a silent drop. Moderation then flips the
+// row to `approved` / `rejected` (both kept — the row is the audit
+// trail).
 //
+// - `verificationStatus` / `lastVerifiedAt` / `lastError` /
+//   `verifyFailStreak` are the verification state. The initial
+//   receive-time check and the daily re-verification cycle (approved
+//   rows plus pending rows that failed) share the same
+//   fetch-and-link-check; a successful check resets the streak, a failed
+//   one records the message and bumps it. 7 consecutive daily failures
+//   move an `approved` row to `hidden` — `hidden` rows leave the public
+//   page, are not re-verified automatically, and only a manual
+//   re-verification restores them.
 // - `authorName` / `title` / `summary` are best-effort extractions from
 //   the source HTML; `type` is the mf2 classification (reply / like /
 //   repost markers on the source anchor, `mention` otherwise) detected
@@ -40,6 +58,10 @@ export const webmention = sqliteTable(
     targetType: text('target_type').$type<'post' | 'page'>().notNull(),
     targetOwnerId: integer('target_owner_id').notNull(),
     fetchedAt: integer('fetched_at', { mode: 'timestamp_ms' }),
+    verificationStatus: text('verification_status', { enum: WEBMENTION_VERIFY_STATUSES }).notNull().default('verified'),
+    lastVerifiedAt: integer('last_verified_at', { mode: 'timestamp_ms' }),
+    lastError: text('last_error'),
+    verifyFailStreak: integer('verify_fail_streak').notNull().default(0),
     authorName: text('author_name'),
     title: text('title'),
     summary: text('summary'),
@@ -53,8 +75,9 @@ export const webmention = sqliteTable(
     uniqueIndex('uq_webmention_pair').on(table.sourceUrl, table.targetUrl),
     index('idx_webmention_status').on(table.status),
     index('idx_webmention_target').on(table.targetType, table.targetOwnerId),
-    check('webmention_status_chk', sql`${table.status} IN ('pending', 'approved', 'rejected')`),
+    check('webmention_status_chk', sql`${table.status} IN ('pending', 'approved', 'rejected', 'hidden')`),
     check('webmention_type_chk', sql`${table.type} IN ('mention', 'reply', 'like', 'repost')`),
+    check('webmention_verification_chk', sql`${table.verificationStatus} IN ('verified', 'failed')`),
   ],
 )
 

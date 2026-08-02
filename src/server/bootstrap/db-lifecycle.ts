@@ -22,6 +22,7 @@ import { registerSectionChangeHandler } from '@/server/domains/settings/services
 import { wireWebmentionPostPublishHook } from '@/server/domains/webmentions/enqueue'
 import { wireWebmentionInboxScheduler } from '@/server/domains/webmentions/inbox-scheduler'
 import { wireWebmentionOutboxScheduler } from '@/server/domains/webmentions/outbox-scheduler'
+import { wireWebmentionReverifyScheduler } from '@/server/domains/webmentions/reverify-scheduler'
 import { wireKvSweepScheduler } from '@/server/infra/cache/kv-maintenance'
 import { isVitest } from '@/server/infra/config'
 import {
@@ -96,6 +97,7 @@ function wireDatabase(handle: DatabaseHandle): DatabaseHandle {
   wireScheduledPublishScheduler({ getDb })
   wireWebmentionOutboxScheduler({ getDb })
   wireWebmentionInboxScheduler({ getDb })
+  wireWebmentionReverifyScheduler({ getDb })
   wireWebmentionPostPublishHook()
   wireKvSweepScheduler({ getDb })
   wireDbMaintenanceScheduler({ getHandle: () => engine.get() })

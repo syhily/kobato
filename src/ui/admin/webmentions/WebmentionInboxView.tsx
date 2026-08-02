@@ -1,5 +1,5 @@
 import { useMutation, type InfiniteData } from '@tanstack/react-query'
-import { AtSignIcon, CheckIcon, XIcon } from 'lucide-react'
+import { AtSignIcon, CheckIcon, CircleAlertIcon, RefreshCwIcon, XIcon } from 'lucide-react'
 import { useState } from 'react'
 
 import type { AdminWebmentionWire } from '@/shared/contracts/webmentions'
@@ -17,6 +17,7 @@ import { Badge, type BadgeProps } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { Tabs, TabsList, TabsTrigger } from '@/ui/components/tabs'
+import { Tooltip } from '@/ui/components/tooltip'
 
 const PAGE_SIZE = 30
 const ADMIN_DATE_FORMAT = 'yyyy-LL-dd HH:mm:ss'
@@ -27,6 +28,7 @@ const STATUS_META: Record<AdminWebmentionWire['status'], { label: string; varian
   pending: { label: '待审核', variant: 'secondary' },
   approved: { label: '已批准', variant: 'default' },
   rejected: { label: '已拒绝', variant: 'destructive' },
+  hidden: { label: '已隐藏', variant: 'outline' },
 }
 
 // Response-type labels (mf2 classification — presentational only, every
@@ -66,6 +68,7 @@ export function moderateMentionInPages(
         pending: Math.max(0, page.statusCounts.pending - (hit.status === 'pending' ? 1 : 0)),
         approved: page.statusCounts.approved + (status === 'approved' ? 1 : 0) - (hit.status === 'approved' ? 1 : 0),
         rejected: page.statusCounts.rejected + (status === 'rejected' ? 1 : 0) - (hit.status === 'rejected' ? 1 : 0),
+        hidden: Math.max(0, page.statusCounts.hidden - (hit.status === 'hidden' ? 1 : 0)),
       }
       return {
         ...page,
@@ -73,6 +76,44 @@ export function moderateMentionInPages(
           filter === 'all'
             ? page.mentions.map((mention) => (mention.id === id ? { ...mention, status } : mention))
             : page.mentions.filter((mention) => mention.id !== id),
+        statusCounts,
+      }
+    }),
+  }
+}
+
+/**
+ * Local cache patch after a manual re-verification: the server row is
+ * authoritative (verification state + refreshed metadata). A `hidden`
+ * row restored to `approved` shifts the counts and leaves the 已隐藏
+ * filter; any other row just updates in place.
+ */
+export function applyReverifyToPages(
+  data: AdminWebmentionsData,
+  row: AdminWebmentionWire,
+  filter: StatusFilter,
+): AdminWebmentionsData {
+  return {
+    ...data,
+    pages: data.pages.map((page) => {
+      const hit = page.mentions.find((mention) => mention.id === row.id)
+      if (!hit) {
+        return page
+      }
+      const restored = hit.status === 'hidden' && row.status === 'approved'
+      const statusCounts = restored
+        ? {
+            ...page.statusCounts,
+            hidden: Math.max(0, page.statusCounts.hidden - 1),
+            approved: page.statusCounts.approved + 1,
+          }
+        : page.statusCounts
+      return {
+        ...page,
+        mentions:
+          restored && filter === 'hidden'
+            ? page.mentions.filter((mention) => mention.id !== row.id)
+            : page.mentions.map((mention) => (mention.id === row.id ? row : mention)),
         statusCounts,
       }
     }),
@@ -88,21 +129,57 @@ function authorLabel(mention: AdminWebmentionWire): string {
   return tryParseUrl(mention.sourceUrl)?.hostname ?? mention.sourceUrl
 }
 
+/** The verification badge: 已验证 for a clean last check, 验证失败 with
+ *  the last failure message (and the consecutive-day count) on hover for
+ *  a failed one. Present on every row — pending, approved, and hidden
+ *  all carry a verification state. */
+function VerificationBadge({ mention }: { mention: AdminWebmentionWire }) {
+  if (mention.verificationStatus === 'verified') {
+    return (
+      <Badge variant="outline">
+        <CheckIcon /> 已验证
+      </Badge>
+    )
+  }
+  const streak = mention.verifyFailStreak > 0 ? ` · 已连续失败 ${mention.verifyFailStreak} 天` : ''
+  return (
+    <Tooltip>
+      <Tooltip.Trigger as="span" className="cursor-help">
+        <Badge variant="destructive">
+          <CircleAlertIcon /> 验证失败
+        </Badge>
+      </Tooltip.Trigger>
+      <Tooltip.Content>
+        {mention.lastError ?? '未知错误'}
+        {streak}
+      </Tooltip.Content>
+    </Tooltip>
+  )
+}
+
 interface InboxRowProps {
   mention: AdminWebmentionWire
   onApprove: (mention: AdminWebmentionWire) => void
   onReject: (mention: AdminWebmentionWire) => void
-  isModerating: (mention: AdminWebmentionWire) => boolean
+  onReverify: (mention: AdminWebmentionWire) => void
+  isBusy: (mention: AdminWebmentionWire) => boolean
 }
 
-function InboxRow({ mention, onApprove, onReject, isModerating }: InboxRowProps) {
+function InboxRow({ mention, onApprove, onReject, onReverify, isBusy }: InboxRowProps) {
   const config = useSiteIdentity()
   const meta = STATUS_META[mention.status]
-  const moderating = isModerating(mention)
+  const busy = isBusy(mention)
+  // Re-verification is the only recovery path for a hidden row (even one
+  // re-mentioned back to `verified` — the badge must not take the button
+  // away), and a failed verification can always be re-checked right now.
+  // Rejected rows are terminal: no verification actions at all.
+  const showReverify =
+    mention.status !== 'rejected' && (mention.status === 'hidden' || mention.verificationStatus === 'failed')
   return (
     <div className="flex flex-col gap-1 px-4 py-3">
       <div className="flex flex-wrap items-center gap-2">
         <Badge variant={meta.variant}>{meta.label}</Badge>
+        <VerificationBadge mention={mention} />
         <Badge variant="outline">{TYPE_META[mention.type].label}</Badge>
         <span className="text-sm font-medium">{authorLabel(mention)}</span>
         <a
@@ -119,16 +196,28 @@ function InboxRow({ mention, onApprove, onReject, isModerating }: InboxRowProps)
         <p className="text-xs break-all text-muted-foreground">
           目标 {mention.targetUrl} · 接收于 {formatLocalDate(new Date(mention.createdAt), ADMIN_DATE_FORMAT, config)}
         </p>
-        {mention.status === 'pending' && (
-          <span className="ml-auto flex shrink-0 gap-2">
-            <Button size="sm" variant="outline" disabled={moderating} onClick={() => onApprove(mention)}>
-              <CheckIcon /> 批准
+        <span className="ml-auto flex shrink-0 gap-2">
+          {showReverify && (
+            <Button size="sm" variant="outline" disabled={busy} onClick={() => onReverify(mention)}>
+              <RefreshCwIcon /> 重新验证
             </Button>
-            <Button size="sm" variant="destructive" disabled={moderating} onClick={() => onReject(mention)}>
+          )}
+          {mention.status === 'pending' && (
+            <>
+              <Button size="sm" variant="outline" disabled={busy} onClick={() => onApprove(mention)}>
+                <CheckIcon /> 批准
+              </Button>
+              <Button size="sm" variant="destructive" disabled={busy} onClick={() => onReject(mention)}>
+                <XIcon /> 拒绝
+              </Button>
+            </>
+          )}
+          {mention.status === 'hidden' && (
+            <Button size="sm" variant="destructive" disabled={busy} onClick={() => onReject(mention)}>
               <XIcon /> 拒绝
             </Button>
-          </span>
-        )}
+          )}
+        </span>
       </div>
     </div>
   )
@@ -137,8 +226,10 @@ function InboxRow({ mention, onApprove, onReject, isModerating }: InboxRowProps)
 // The receive side of the Webmention page: the moderation queue. Every
 // mention lands here as `pending` after source verification and only
 // reaches the public page once approved; rejection is a kept terminal
-// state (the row is the audit trail), so terminal rows render no
-// actions.
+// state (the row is the audit trail). A verification that exhausted its
+// retries lands as `pending` + 验证失败 (the hover shows why); 7
+// consecutive daily re-verification failures flip an `approved` row to
+// `hidden` — off the public page, recoverable only via 重新验证.
 export function WebmentionInboxView() {
   const [status, setStatus] = useState<StatusFilter>('all')
 
@@ -166,10 +257,16 @@ export function WebmentionInboxView() {
       patchPages((data) => moderateMentionInPages(data, variables.id, 'rejected', status)),
     onError: (error) => toastApiError(error, '拒绝 Webmention 失败'),
   })
+  const reverifyMutation = useMutation({
+    ...orpcQuery.admin.webmentions.reverify.mutationOptions(),
+    onSuccess: (row) => patchPages((data) => applyReverifyToPages(data, row, status)),
+    onError: (error) => toastApiError(error, '重新验证失败'),
+  })
 
-  const isModerating = (mention: AdminWebmentionWire) =>
+  const isBusy = (mention: AdminWebmentionWire) =>
     (approveMutation.isPending && approveMutation.variables?.id === mention.id) ||
-    (rejectMutation.isPending && rejectMutation.variables?.id === mention.id)
+    (rejectMutation.isPending && rejectMutation.variables?.id === mention.id) ||
+    (reverifyMutation.isPending && reverifyMutation.variables?.id === mention.id)
 
   return (
     <>
@@ -180,6 +277,7 @@ export function WebmentionInboxView() {
             <TabsTrigger value="pending">待审核</TabsTrigger>
             <TabsTrigger value="approved">已批准</TabsTrigger>
             <TabsTrigger value="rejected">已拒绝</TabsTrigger>
+            <TabsTrigger value="hidden">已隐藏</TabsTrigger>
           </TabsList>
         </Tabs>
       </AdminListPage.Toolbar>
@@ -202,7 +300,8 @@ export function WebmentionInboxView() {
                 mention={mention}
                 onApprove={(m) => approveMutation.mutate({ id: m.id })}
                 onReject={(m) => rejectMutation.mutate({ id: m.id })}
-                isModerating={isModerating}
+                onReverify={(m) => reverifyMutation.mutate({ id: m.id })}
+                isBusy={isBusy}
               />
             ))}
           </div>

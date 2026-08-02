@@ -15,8 +15,18 @@ export const NEWSLETTER_SUBSCRIBER_STATUSES = ['pending', 'confirmed', 'unsubscr
 // Webmention moderation lifecycle. `pending` rows have been verified
 // (source links to target) but await admin review; `approved` rows are
 // cleared for display; `rejected` rows are kept (not deleted) so the
-// moderation decision stays auditable.
-export const WEBMENTION_STATUSES = ['pending', 'approved', 'rejected'] as const
+// moderation decision stays auditable; `hidden` is the automatic
+// terminal-ish state a displayed mention lands in after 7 consecutive
+// daily re-verification failures — it leaves the public page, is
+// excluded from further daily re-verification, and only a successful
+// manual re-verification by the admin restores it to `approved`.
+export const WEBMENTION_STATUSES = ['pending', 'approved', 'rejected', 'hidden'] as const
+
+// Webmention source verification state (receive-time verification and
+// the daily re-verification cycle). `verified` means the last check
+// confirmed the source document links to the target; `failed` carries
+// the last failure message in `last_error` for the admin UI tooltip.
+export const WEBMENTION_VERIFY_STATUSES = ['verified', 'failed'] as const
 
 // Webmention response type (W3C / IndieWeb classification, async-inbox
 // design — docs/plans/2026-08-02-webmention-async-inbox-design.md):

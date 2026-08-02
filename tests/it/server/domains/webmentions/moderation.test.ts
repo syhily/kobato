@@ -38,7 +38,10 @@ function adminCtx(adminId: number) {
   return makeAuthedCtx({ userId: adminId.toString(), role: 'admin', db })
 }
 
-async function seedMention(status: 'pending' | 'approved' | 'rejected', slug = 'wm-target'): Promise<number> {
+async function seedMention(
+  status: 'pending' | 'approved' | 'rejected' | 'hidden',
+  slug = 'wm-target',
+): Promise<number> {
   const { row } = await upsertWebmention(db, {
     sourceUrl: `https://sender.example/${slug}-${status}`,
     targetUrl: `https://example.com/posts/${slug}/`,
@@ -64,7 +67,7 @@ describe('integration / admin webmentions moderation', () => {
     const all = await call(adminWebmentionsRouter.loadAll, { offset: 0, limit: 10 }, { context: adminCtx(adminId) })
     expect(all.total).toBe(3)
     expect(all.hasMore).toBe(false)
-    expect(all.statusCounts).toEqual({ all: 3, pending: 1, approved: 1, rejected: 1 })
+    expect(all.statusCounts).toEqual({ all: 3, pending: 1, approved: 1, rejected: 1, hidden: 0 })
     // Newest first.
     expect(all.mentions.map((m) => m.status)).toEqual(['rejected', 'approved', 'pending'])
     const wire = all.mentions[2]!
@@ -169,6 +172,18 @@ describe('integration / admin webmentions approve + reject', () => {
     expect(rows[0]!.status).toBe('approved')
 
     await expect(call(adminWebmentionsRouter.approve, { id: '999999' }, { context: ctx })).rejects.toThrow()
+  })
+
+  it('refuses to approve a hidden mention — recovery must pass verification', async () => {
+    const adminId = await seedAdmin()
+    const id = await seedMention('hidden')
+
+    await expect(
+      call(adminWebmentionsRouter.approve, { id: id.toString() }, { context: adminCtx(adminId) }),
+    ).rejects.toThrow('只能通过重新验证恢复')
+
+    const rows = await db.select().from(webmention).where(eq(webmention.id, id))
+    expect(rows[0]!.status).toBe('hidden')
   })
 
   it('re-approves a mention demoted by a re-sent (updated) source', async () => {

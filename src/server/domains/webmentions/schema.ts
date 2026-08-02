@@ -29,13 +29,23 @@ export const webmentionReceiveSchema = z.object({
 })
 export type WebmentionReceiveInput = z.infer<typeof webmentionReceiveSchema>
 
+// Public display list (headless API, `public.webmention.list`) — the
+// mount key is the metric `public_id` (`page_key`), same key flow as
+// `public.comments.list` (split-plan notes-6 §3.1): the detail critical
+// carries it as `commentKey`; a miss resolves to NOT_FOUND.
+export const webmentionPublicListSchema = z.object({
+  page_key: z.string(),
+})
+export type WebmentionPublicListInput = z.infer<typeof webmentionPublicListSchema>
+
 // Admin moderation list — mirrors the comments status-enum pattern,
 // extended with `rejected` (webmention rejection is a stored terminal
-// state, not a delete).
+// state, not a delete) and `hidden` (the automatic state after 7
+// consecutive daily re-verification failures).
 export const adminWebmentionListSchema = z.object({
   offset: z.number().min(0),
   limit: z.number().min(1).max(100),
-  status: z.enum(['all', 'pending', 'approved', 'rejected']).optional(),
+  status: z.enum(['all', 'pending', 'approved', 'rejected', 'hidden']).optional(),
 })
 export type AdminWebmentionListInput = z.infer<typeof adminWebmentionListSchema>
 

@@ -1,3 +1,5 @@
+import { eq } from 'drizzle-orm'
+
 import type { WebmentionReceiveInput } from '@/server/domains/webmentions/schema'
 import type { Database } from '@/server/infra/db/database'
 import type {
@@ -14,7 +16,7 @@ import type {
   PublicWebmentionWire,
 } from '@/shared/contracts/webmentions'
 
-import { classifyWebmentionType } from '@/server/domains/webmentions/classify'
+import { classifyWebmentionType, type WebmentionType } from '@/server/domains/webmentions/classify'
 import { sendNewWebmention } from '@/server/domains/webmentions/email'
 import { fetchSourceHtml } from '@/server/domains/webmentions/fetch'
 import {
@@ -23,11 +25,17 @@ import {
   asPublicWebmentionsWire,
 } from '@/server/domains/webmentions/projection'
 import { resolveWebmentionTargetOrThrow } from '@/server/domains/webmentions/target'
-import { extractSourceMetadata, requireSourceKey, sourceLinksToTarget } from '@/server/domains/webmentions/verify'
+import {
+  extractSourceMetadata,
+  requireSourceKey,
+  sourceLinksToTarget,
+  type SourceMetadata,
+} from '@/server/domains/webmentions/verify'
 import {
   countPendingWebmentions,
   countWebmentions,
   countWebmentionsByStatus,
+  findWebmentionById,
   listApprovedWebmentionsForTarget,
   listWebmentionsByStatus,
   setWebmentionStatus,
@@ -37,9 +45,12 @@ import {
   countWebmentionOutboxByStatus,
   listWebmentionOutboxForAdmin,
 } from '@/server/infra/db/operations/webmention-outbox'
+import { page } from '@/server/infra/db/schema/page'
+import { post } from '@/server/infra/db/schema/post'
 import { fireAndForgetNotify } from '@/server/infra/email/admin-notification'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
+import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { idFromString } from '@/shared/utils/id'
 
 const log = getLogger('webmentions.service')
@@ -62,6 +73,28 @@ export interface ReceiveWebmentionResult {
   row: WebmentionRow
   /** Upsert outcome driving the notification decision (R11/R13). */
   outcome: WebmentionUpsertOutcome
+}
+
+export interface VerifiedSource {
+  meta: SourceMetadata
+  type: WebmentionType
+}
+
+/**
+ * The shared verification core for every webmention check — the
+ * receive-time check, the daily re-verification cycle, and the admin's
+ * manual re-verification: fetch the source document (SSRF-guarded,
+ * 1 MB cap), confirm it links to the target's canonical URL, and
+ * extract the response-type classification + metadata. Throws a
+ * DomainError with a human-readable message on any failure, so every
+ * caller records the same `lastError` wording.
+ */
+export async function verifyWebmentionSource(sourceUrl: string, targetCanonicalUrl: string): Promise<VerifiedSource> {
+  const html = await fetchSourceHtml(sourceUrl)
+  if (!sourceLinksToTarget(html, sourceUrl, targetCanonicalUrl)) {
+    throw new DomainError('BAD_REQUEST', 'source does not link to target')
+  }
+  return { meta: extractSourceMetadata(html), type: classifyWebmentionType(html, sourceUrl, targetCanonicalUrl) }
 }
 
 /**
@@ -90,13 +123,7 @@ export interface ReceiveWebmentionResult {
 export async function receiveWebmention(db: Database, input: WebmentionReceiveInput): Promise<ReceiveWebmentionResult> {
   const target = await resolveWebmentionTargetOrThrow(db, input.target)
 
-  const html = await fetchSourceHtml(input.source)
-  if (!sourceLinksToTarget(html, input.source, target.canonicalUrl)) {
-    throw new DomainError('BAD_REQUEST', 'source does not link to target')
-  }
-
-  const meta = extractSourceMetadata(html)
-  const type = classifyWebmentionType(html, input.source, target.canonicalUrl)
+  const { meta, type } = await verifyWebmentionSource(input.source, target.canonicalUrl)
   const sourceKey = requireSourceKey(input.source)
   const { row, outcome } = await upsertWebmention(db, {
     sourceUrl: sourceKey,
@@ -106,6 +133,10 @@ export async function receiveWebmention(db: Database, input: WebmentionReceiveIn
     targetType: target.type,
     targetOwnerId: target.ownerId,
     fetchedAt: new Date(),
+    verificationStatus: 'verified',
+    lastVerifiedAt: new Date(),
+    lastError: null,
+    verifyFailStreak: 0,
     authorName: meta.authorName,
     title: meta.title,
     summary: meta.summary,
@@ -120,7 +151,7 @@ export async function receiveWebmention(db: Database, input: WebmentionReceiveIn
 
 export async function listAdminWebmentions(
   db: Database,
-  input: { offset: number; limit: number; status?: 'all' | 'pending' | 'approved' | 'rejected' },
+  input: { offset: number; limit: number; status?: 'all' | 'pending' | 'approved' | 'rejected' | 'hidden' },
 ): Promise<AdminWebmentionList> {
   const status = input.status === undefined || input.status === 'all' ? undefined : input.status
   const [rows, total, statusCounts] = await Promise.all([
@@ -162,16 +193,66 @@ export async function listPublicWebmentions(db: Database, target: EntityTarget):
   return asPublicWebmentionsWire(await listApprovedWebmentionsForTarget(db, target))
 }
 
+/** The per-entity display switch (post/page meta `webmentions_enabled`).
+ *  One PK read; a missing row answers false (block hidden) — safe
+ *  default for a dangling target. Owned here so the detail loader and
+ *  the `public.webmention.list` procedure share the same gate. */
+async function isEntityWebmentionsEnabled(db: Database, target: EntityTarget): Promise<boolean> {
+  if (target.type === 'post') {
+    const rows = await db
+      .select({ enabled: post.webmentionsEnabled })
+      .from(post)
+      .where(eq(post.id, target.ownerId))
+      .limit(1)
+    return rows[0]?.enabled ?? false
+  }
+  const rows = await db
+    .select({ enabled: page.webmentionsEnabled })
+    .from(page)
+    .where(eq(page.id, target.ownerId))
+    .limit(1)
+  return rows[0]?.enabled ?? false
+}
+
+/**
+ * The public display feed with BOTH display switches applied — the
+ * global `displayOnPosts` setting AND the per-entity meta toggle — each
+ * resolving to an honest empty list so the block never renders. The
+ * entity flag is only read when the global switch is on. Single owner
+ * of the gate: the detail loader (SSR) and the `public.webmention.list`
+ * procedure (headless API) both call here, so the split never has to
+ * duplicate the logic in the public frontend.
+ */
+export async function loadPublicWebmentionsForTarget(
+  db: Database,
+  target: EntityTarget,
+): Promise<PublicWebmentionWire[]> {
+  if (!requireBlogSettingsSection('webmentions').webmention.displayOnPosts) {
+    return []
+  }
+  if (!(await isEntityWebmentionsEnabled(db, target))) {
+    return []
+  }
+  return listPublicWebmentions(db, target)
+}
+
 /** Sidebar badge feed: pending mentions awaiting moderation. */
 export async function countPendingWebmentionsForAdmin(db: Database): Promise<number> {
   return countPendingWebmentions(db)
 }
 
 async function moderate(db: Database, id: string, status: WebmentionStatus): Promise<void> {
-  const updated = await setWebmentionStatus(db, idFromString(id), status)
-  if (updated === null) {
+  const row = await findWebmentionById(db, idFromString(id))
+  if (row === null) {
     throw new DomainError('NOT_FOUND', 'Webmention 不存在。')
   }
+  // A hidden mention can only return to the public page through a
+  // successful re-verification — approving it directly would bypass the
+  // source check that put it there.
+  if (status === 'approved' && row.status === 'hidden') {
+    throw new DomainError('BAD_REQUEST', '已隐藏的 Webmention 只能通过重新验证恢复。')
+  }
+  await setWebmentionStatus(db, row.id, status)
 }
 
 // Approve/reject are idempotent transitions (re-applying the same

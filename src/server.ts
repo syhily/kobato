@@ -12,6 +12,7 @@ import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { migrateSecretsEncryption } from '@/server/domains/settings/services/migrate-secrets'
 import { scheduleWebmentionInbox } from '@/server/domains/webmentions/inbox-scheduler'
 import { scheduleWebmentionOutbox } from '@/server/domains/webmentions/outbox-scheduler'
+import { scheduleWebmentionReverify } from '@/server/domains/webmentions/reverify-scheduler'
 import { wrapFetchWithLeakedResponseHandler } from '@/server/http/leaked-response'
 import { buildLoadContext, configureMiddleware } from '@/server/http/middleware-pipeline'
 import { scheduleNextKvSweep } from '@/server/infra/cache/kv-maintenance'
@@ -69,6 +70,7 @@ if (!hmr?.secretsMigrated) {
   scheduleNextScheduledPublish()
   scheduleWebmentionOutbox()
   scheduleWebmentionInbox()
+  scheduleWebmentionReverify()
   scheduleNextKvSweep()
   scheduleNextDbMaintenance()
   scheduleNextGeoipUpdate()

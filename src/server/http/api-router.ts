@@ -33,6 +33,7 @@ import { likesRouter } from '@/server/http/controllers/likes.controller'
 import { musicRouter } from '@/server/http/controllers/music.controller'
 import { newsletterPublicRouter } from '@/server/http/controllers/newsletter-public.controller'
 import { passkeyPublicRouter } from '@/server/http/controllers/passkey-public.controller'
+import { webmentionPublicRouter } from '@/server/http/controllers/webmention-public.controller'
 
 // The composed oRPC router. The shape is the audit surface for the
 // permission matrix — each leaf's guard comes from the base procedure
@@ -52,6 +53,7 @@ export const apiRouter = {
   music: musicRouter,
   newsletter: newsletterPublicRouter,
   passkey: passkeyPublicRouter,
+  webmention: webmentionPublicRouter,
   admin: {
     users: { ...adminUsersCrudRouter, ...adminUsersAdminRouter, ...adminUsersSessionsRouter },
     auditLog: auditLogRouter,
