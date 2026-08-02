@@ -12,8 +12,8 @@ importers:
   .:
     dependencies:
       '@duckdb/node-api':
-        specifier: 1.5.5-r.2
-        version: 1.5.5-r.2
+        specifier: 1.5.5-r.3
+        version: 1.5.5-r.3
       '@napi-rs/canvas':
         specifier: ^1.0.3
         version: 1.0.3
@@ -312,8 +312,8 @@ packages:
     resolution: {integrity: sha512-mbhpPMmnw/kwW19aRNmSUl1QzLbdGo1SCuE49BT98MNwqF6zaHb3o2owssFc/PEO/4t2UjqtCNwocuDtJornzA==}
     engines: {node: ^22.13.0 || >=24.0.0}
 
-  '@asamuzakjp/dom-selector@8.3.0':
-    resolution: {integrity: sha512-UJLfKXBhrc8i1vH2eJXuYQMwlsLKWFw3O+CPqXSuVEiikeAim3UgrfWX0k4tA/X8cRFM8iZ7OaqBokFGbYusdg==}
+  '@asamuzakjp/dom-selector@8.3.2':
+    resolution: {integrity: sha512-93Z1N+BQNXysodoicpOIyNh2drHfz/CTf9nnT0FEx72GJcIiwgydD7tGAr78j41LsYn3hlRn+LdGPuBLn1Bl8Q==}
     engines: {node: ^22.13.0 || >=24.0.0}
 
   '@aws-sdk/checksums@3.1000.24':
@@ -629,55 +629,55 @@ packages:
   '@drizzle-team/brocli@0.12.0':
     resolution: {integrity: sha512-mlUE+rZ8CatQekLhnaiN91Iemdd+e2gFKooGlnRB3oPTL3VghLfX24dx7HrzMNeC1JrIB/0kpsfyty3f5HNfxQ==}
 
-  '@duckdb/node-api@1.5.5-r.2':
-    resolution: {integrity: sha512-PhpjvblIQV36IlnWGOWcLCVhCBPALJ+gu2d4MR5VIveVS57Bx1Hpvoe9BZqPcMzMeqWc3sQOpcr8DoZ/hKB2PQ==}
+  '@duckdb/node-api@1.5.5-r.3':
+    resolution: {integrity: sha512-qOwoSj8eBW+mNyAvTOOWjnii6jwrLkQFbEC/TyYGZjYCAQzu1r1X6UWVo+23sgtGGNHxmJLHE0ms5QtlQf2W3Q==}
 
-  '@duckdb/node-bindings-darwin-arm64@1.5.5-r.2':
-    resolution: {integrity: sha512-huZfnM/awM62hpPlK7ckx0u0twW3zc00Bs0qfY8ldhjwVn+Jf764pxFdMmUujYWtMdsSZIk4FvMy8ZQijALOPg==}
+  '@duckdb/node-bindings-darwin-arm64@1.5.5-r.3':
+    resolution: {integrity: sha512-bqnjnI2U/aUOcB25smNRwxF1/47HxHz78a8F9ghTHvEl+CeEMEr1lp+sPmjuS/1EybAYsaWJro6zFLd+O5qNQg==}
     cpu: [arm64]
     os: [darwin]
 
-  '@duckdb/node-bindings-darwin-x64@1.5.5-r.2':
-    resolution: {integrity: sha512-/TlqNBOqg2EbBJ2MjVDkJg6IKQHE1SkCC41cn4e5CaJVxj7re1A77W6o1V7Xa/25jftO1HxvGBlHGP15dmjMxQ==}
+  '@duckdb/node-bindings-darwin-x64@1.5.5-r.3':
+    resolution: {integrity: sha512-8QEA0tuW5EWPg7kQbyWka6kGu+j7wZuvUAkibdJgODtxz4axJGMR5oM13lb6m/HedvsU3ch2lkvhIhwv6aWqsw==}
     cpu: [x64]
     os: [darwin]
 
-  '@duckdb/node-bindings-linux-arm64-musl@1.5.5-r.2':
-    resolution: {integrity: sha512-78lhr3GBzscZXA3iHqOIIo5+zRbtSA+lNHUBHZPLUICn0+boeGic4JP/KE3Y2MTNAe4OqG4ctfl8CX1tBArjQA==}
+  '@duckdb/node-bindings-linux-arm64-musl@1.5.5-r.3':
+    resolution: {integrity: sha512-qETa9eqdZQNNn1QFfW+FI91HM5kVm+tN4cfqBPu1FgRTatd0oG8KPOfl6NlpuKhQQM5TcWDxI3P57JPXbzjsEQ==}
     cpu: [arm64]
     os: [linux]
     libc: [musl]
 
-  '@duckdb/node-bindings-linux-arm64@1.5.5-r.2':
-    resolution: {integrity: sha512-hlyuOvjOShhgsTguCGv9A6M5QZf9NiFW/fmq9aZO7lhlz0P0cBVOiCca+CAhcnePrbZmzeGZ21fwiBs6T12StA==}
+  '@duckdb/node-bindings-linux-arm64@1.5.5-r.3':
+    resolution: {integrity: sha512-27y+0xn4ad6mirnu3faZUE2UQhvpPTpi/o9tm9cGxi7QvuvhfD5rvo0D3RnhreHTjiYB4RRB5ZqPMRErqOaTlg==}
     cpu: [arm64]
     os: [linux]
     libc: [glibc]
 
-  '@duckdb/node-bindings-linux-x64-musl@1.5.5-r.2':
-    resolution: {integrity: sha512-eKvMBSEyd3Vq4CiPGTXAb4Ww+l9XPuTR3WzXbHQMwJjEEGbnFhnHaqjtLyr3Chqg0iDWe41empP3IC7XWPBpiQ==}
+  '@duckdb/node-bindings-linux-x64-musl@1.5.5-r.3':
+    resolution: {integrity: sha512-+9cThIhSC1inv6MVVgL37k4lRk56uo7TK2MLNwn1xe7mDVOh8SsjZbHLd/IZ0cWJn77lX7/6G3Qz3mU5k4O2PA==}
     cpu: [x64]
     os: [linux]
     libc: [musl]
 
-  '@duckdb/node-bindings-linux-x64@1.5.5-r.2':
-    resolution: {integrity: sha512-e8SypIiYX3wzvB2CfEr3zTfoCOqkqt0zvcc025ukVno95W+hnH37NJOEdhC7RfSCEwgaPrkWGChhZ3x3EVZsTg==}
+  '@duckdb/node-bindings-linux-x64@1.5.5-r.3':
+    resolution: {integrity: sha512-+n/rmU0o3Km5MEBJnjteud8f5JEhcSPxTdcyxNERL6H3pZw1vQX3ysI1axP8Mx0Mw7XrVv9+pC5VH+9ERD3LQg==}
     cpu: [x64]
     os: [linux]
     libc: [glibc]
 
-  '@duckdb/node-bindings-win32-arm64@1.5.5-r.2':
-    resolution: {integrity: sha512-87wuGkEjc4VwcDZI09rSm6FXc8F9oHZWYE7so8p2l4qtmGCfsoLwSSlnhi9MHGefGqUBxshfJ0O9Zvg7A0//ag==}
+  '@duckdb/node-bindings-win32-arm64@1.5.5-r.3':
+    resolution: {integrity: sha512-/9Ji9xKtzar7MM21DJMZfuizOXjdar+JtOez6o3ue7cKt0AUpjLjqbAjQ0sE/pkqMbByv9TEiVkTi1b3VYm1dw==}
     cpu: [arm64]
     os: [win32]
 
-  '@duckdb/node-bindings-win32-x64@1.5.5-r.2':
-    resolution: {integrity: sha512-r5V6Q0zcv5HSHGDXsd6M+t3jakhm6S11TNH5vydKGeq8JBWj4v3ZTof/mF3R8Rly+90Z205KoI9ujblg/jN04g==}
+  '@duckdb/node-bindings-win32-x64@1.5.5-r.3':
+    resolution: {integrity: sha512-NTODIfgfKARm86kOgSW5CvFElE3J+3X0Y0+3Y40P3biO4wrg4FBGtNSCaVyKuWe+CBkA5PODjgIo3w07hu5qrQ==}
     cpu: [x64]
     os: [win32]
 
-  '@duckdb/node-bindings@1.5.5-r.2':
-    resolution: {integrity: sha512-sdLrfvfOxhFA6igCMiToaYSYaffd7D5j00ooy7Y1ACJ1PZKTVENwHV91RfECyNrlGGZItNbfqVR/yHL1jiHMcQ==}
+  '@duckdb/node-bindings@1.5.5-r.3':
+    resolution: {integrity: sha512-I5basCuPs0OrNHu2cDLFrIErp6Rr9J7wR5awVbvCmFQdOCpi+v+lmQy6KZ2dH8Z7hsqwmAMHk/QJ0s5cvW0qnw==}
 
   '@emnapi/core@2.0.0-alpha.3':
     resolution: {integrity: sha512-AZypUeJ/yByuxyS7BlSNRDOMLMlROYtjYdIAuBmJssVz1UJDSeYxLrdizhXCFYhedC5bqd/ASy8EuNXbVVXp9g==}
@@ -2793,8 +2793,8 @@ packages:
     resolution: {integrity: sha512-3hN7NaskYvMDLQY55gnW3NQ+mesEAepTqlg+VEbj7zzqEMBVNhzcGYYeqFo/TlYz6eQiFcp1HcsCZO+nGgS8zg==}
     engines: {node: '>=6.9.0'}
 
-  get-tsconfig@4.14.0:
-    resolution: {integrity: sha512-yTb+8DXzDREzgvYmh6s9vHsSVCHeC0G3PI5bEXNBHtmshPnO+S5O7qgLEOn0I5QvMy6kpZN8K1NKGyilLb93wA==}
+  get-tsconfig@4.14.1:
+    resolution: {integrity: sha512-Dz/6HxkrxgNehhxLVeyv8sad9UzF2xBVeaKBQNDfJ5XiSXmp2gTR0eO0RWiT2NCKS5aGP9jjkOMggTN90qU50A==}
 
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
@@ -3945,7 +3945,7 @@ snapshots:
       '@csstools/css-tokenizer': 4.0.0
       lru-cache: 11.5.2
 
-  '@asamuzakjp/dom-selector@8.3.0':
+  '@asamuzakjp/dom-selector@8.3.2':
     dependencies:
       bidi-js: 1.0.3
       css-tree: 3.2.1
@@ -4398,46 +4398,46 @@ snapshots:
 
   '@drizzle-team/brocli@0.12.0': {}
 
-  '@duckdb/node-api@1.5.5-r.2':
+  '@duckdb/node-api@1.5.5-r.3':
     dependencies:
-      '@duckdb/node-bindings': 1.5.5-r.2
+      '@duckdb/node-bindings': 1.5.5-r.3
 
-  '@duckdb/node-bindings-darwin-arm64@1.5.5-r.2':
+  '@duckdb/node-bindings-darwin-arm64@1.5.5-r.3':
     optional: true
 
-  '@duckdb/node-bindings-darwin-x64@1.5.5-r.2':
+  '@duckdb/node-bindings-darwin-x64@1.5.5-r.3':
     optional: true
 
-  '@duckdb/node-bindings-linux-arm64-musl@1.5.5-r.2':
+  '@duckdb/node-bindings-linux-arm64-musl@1.5.5-r.3':
     optional: true
 
-  '@duckdb/node-bindings-linux-arm64@1.5.5-r.2':
+  '@duckdb/node-bindings-linux-arm64@1.5.5-r.3':
     optional: true
 
-  '@duckdb/node-bindings-linux-x64-musl@1.5.5-r.2':
+  '@duckdb/node-bindings-linux-x64-musl@1.5.5-r.3':
     optional: true
 
-  '@duckdb/node-bindings-linux-x64@1.5.5-r.2':
+  '@duckdb/node-bindings-linux-x64@1.5.5-r.3':
     optional: true
 
-  '@duckdb/node-bindings-win32-arm64@1.5.5-r.2':
+  '@duckdb/node-bindings-win32-arm64@1.5.5-r.3':
     optional: true
 
-  '@duckdb/node-bindings-win32-x64@1.5.5-r.2':
+  '@duckdb/node-bindings-win32-x64@1.5.5-r.3':
     optional: true
 
-  '@duckdb/node-bindings@1.5.5-r.2':
+  '@duckdb/node-bindings@1.5.5-r.3':
     dependencies:
       detect-libc: 2.1.2
     optionalDependencies:
-      '@duckdb/node-bindings-darwin-arm64': 1.5.5-r.2
-      '@duckdb/node-bindings-darwin-x64': 1.5.5-r.2
-      '@duckdb/node-bindings-linux-arm64': 1.5.5-r.2
-      '@duckdb/node-bindings-linux-arm64-musl': 1.5.5-r.2
-      '@duckdb/node-bindings-linux-x64': 1.5.5-r.2
-      '@duckdb/node-bindings-linux-x64-musl': 1.5.5-r.2
-      '@duckdb/node-bindings-win32-arm64': 1.5.5-r.2
-      '@duckdb/node-bindings-win32-x64': 1.5.5-r.2
+      '@duckdb/node-bindings-darwin-arm64': 1.5.5-r.3
+      '@duckdb/node-bindings-darwin-x64': 1.5.5-r.3
+      '@duckdb/node-bindings-linux-arm64': 1.5.5-r.3
+      '@duckdb/node-bindings-linux-arm64-musl': 1.5.5-r.3
+      '@duckdb/node-bindings-linux-x64': 1.5.5-r.3
+      '@duckdb/node-bindings-linux-x64-musl': 1.5.5-r.3
+      '@duckdb/node-bindings-win32-arm64': 1.5.5-r.3
+      '@duckdb/node-bindings-win32-x64': 1.5.5-r.3
 
   '@emnapi/core@2.0.0-alpha.3':
     dependencies:
@@ -6013,7 +6013,7 @@ snapshots:
       '@drizzle-team/brocli': 0.12.0
       '@js-temporal/polyfill': 0.5.1
       esbuild: 0.28.1
-      get-tsconfig: 4.14.0
+      get-tsconfig: 4.14.1
       jiti: 2.7.0
 
   drizzle-orm@1.0.0-rc.4(@types/pg@8.20.0)(pg@8.22.0)(valibot@1.4.2(typescript@7.0.2))(zod@4.4.3):
@@ -6111,7 +6111,7 @@ snapshots:
 
   gensync@1.0.0-beta.2: {}
 
-  get-tsconfig@4.14.0:
+  get-tsconfig@4.14.1:
     dependencies:
       resolve-pkg-maps: 1.0.0
 
@@ -6220,7 +6220,7 @@ snapshots:
   jsdom@30.0.1:
     dependencies:
       '@asamuzakjp/css-color': 6.0.5
-      '@asamuzakjp/dom-selector': 8.3.0
+      '@asamuzakjp/dom-selector': 8.3.2
       '@bramus/specificity': 2.4.2
       '@csstools/css-syntax-patches-for-csstree': 1.1.7(css-tree@3.2.1)
       '@exodus/bytes': 1.15.1

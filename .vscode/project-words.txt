@@ -55,6 +55,7 @@ dedup
 dichen
 dinesh
 dotum
+duckdb
 duoshuo
 eliostruyf
 embedpdf
