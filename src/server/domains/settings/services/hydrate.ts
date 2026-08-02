@@ -42,7 +42,14 @@ function decryptSecretsInBundle(bundle: BlogSettingsBundle): void {
     }
     const value = bucket[field]
     if (typeof value === 'string') {
-      bucket[field] = decryptIfNeeded(value)
+      try {
+        bucket[field] = decryptIfNeeded(value)
+      } catch (error) {
+        // Name the failing field so the operator knows WHICH secret the
+        // encryption-key mismatch (or corruption) hit — the bare crypto
+        // error alone gives no hint where to look.
+        throw new Error(`Failed to decrypt secret setting '${bundleKey}.${path}.${field}'`, { cause: error })
+      }
     }
   }
 }

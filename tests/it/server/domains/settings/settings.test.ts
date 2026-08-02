@@ -253,6 +253,23 @@ describe('services/settings — hydrateBlogSettings', () => {
 
     expect(bundle).toBeNull()
   })
+
+  it('names the failing secret field when a stored secret cannot be decrypted', async () => {
+    // The backup-restore-with-a-different-encryptionKey scenario: the
+    // stored value is well-formed `enc2:` ciphertext, but the configured
+    // key cannot authenticate it. The hydration error must identify WHICH
+    // secret broke, not just "Secret decryption failed".
+    const undecryptable = 'enc2:' + '00'.repeat(12) + ':' + '00'.repeat(16) + ':' + '00'.repeat(16)
+    await seedSections(fixtureBundle, {
+      override: {
+        'blog.mail': {
+          mail: { ...(fixtureBundle.mail!.mail as Record<string, unknown>), apiKey: undecryptable },
+        },
+      },
+    })
+
+    await expect(hydrateBlogSettings(db)).rejects.toThrow(/Failed to decrypt secret setting 'mail\.mail\.apiKey'/)
+  })
 })
 
 describe('services/settings — updateBlogSettingsSection', () => {

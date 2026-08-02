@@ -107,6 +107,12 @@ export function decryptIfNeeded(ciphertext: string): string {
     return decrypt(ciphertext)
   } catch (error) {
     log.error('Failed to decrypt secret — encryption key may have changed or ciphertext is corrupted', { error })
-    throw new Error('Secret decryption failed', { cause: error })
+    throw new Error(
+      'Secret decryption failed — the configured security.encryptionKey does not match the key that encrypted this ' +
+        'value, or the ciphertext is corrupted. This typically happens after restoring a backup onto an instance with ' +
+        "a different encryptionKey: copy security.encryptionKey from the source instance's kobato.config.json " +
+        '(or set the security__encryptionKey env var) and restart.',
+      { cause: error },
+    )
   }
 }

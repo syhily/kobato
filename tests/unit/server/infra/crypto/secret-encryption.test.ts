@@ -101,6 +101,16 @@ describe('secret-encryption', () => {
       const fake = 'enc2:' + '00'.repeat(12) + ':' + '00'.repeat(16) + ':' + '00'.repeat(16)
       expect(() => decryptIfNeeded(fake)).toThrow('Secret decryption failed')
     })
+
+    it('the decryption error names the encryption key and the backup-restore remedy', async () => {
+      const { decryptIfNeeded } = await importModule(MOCK_KEY)
+      // A wrong encryptionKey fails the same way as corrupted ciphertext;
+      // the message must point the operator at the mismatch (the common
+      // case: a backup restored onto an instance with a different key).
+      const fake = 'enc2:' + '00'.repeat(12) + ':' + '00'.repeat(16) + ':' + '00'.repeat(16)
+      expect(() => decryptIfNeeded(fake)).toThrow(/security\.encryptionKey/)
+      expect(() => decryptIfNeeded(fake)).toThrow(/restoring a backup/)
+    })
   })
 
   describe('v2 format produces enc2: prefix', () => {
