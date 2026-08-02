@@ -95,9 +95,9 @@ export function NavContent({ role, pendingCommentCount = 0, userCount }: NavCont
 
           {showAdminItems && (
             <NavMenuItem>
-              <NavMenuItem.Link to="/admin/webmentions">
+              <NavMenuItem.Link to="/admin/webmentions" tooltip="Webmention">
                 <AtSignIcon />
-                <NavMenuItem.Label>Webmentions</NavMenuItem.Label>
+                <NavMenuItem.Label>网页互动</NavMenuItem.Label>
               </NavMenuItem.Link>
             </NavMenuItem>
           )}
