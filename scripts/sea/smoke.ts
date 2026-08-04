@@ -29,7 +29,6 @@
 //
 // Instance lifecycle is shared with e2e via scripts/sea/instance.ts.
 
-import { unsafeCast } from '@kobato/shared/utils/unsafe-cast'
 import { spawnSync } from 'node:child_process'
 import { createHmac, generateKeyPairSync, randomBytes, sign } from 'node:crypto'
 import { readFile, readdir, rm, stat } from 'node:fs/promises'
@@ -38,6 +37,10 @@ import { DatabaseSync } from 'node:sqlite'
 
 import type { SmokeServer } from './instance.ts'
 
+// The one src import: a tiny shared type helper. Relative path on
+// purpose — this script runs under plain `node` (no tsconfig path
+// aliases), same convention as `e2e.ts`'s `defaults.ts` import.
+import { unsafeCast } from '../../packages/shared/src/utils/unsafe-cast.ts'
 import { BINARY_MAX_BYTES, FRONTEND_BINARY_MAX_BYTES } from './budget.ts'
 import { fail } from './exec.ts'
 import {
