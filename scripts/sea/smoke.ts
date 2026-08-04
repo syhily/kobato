@@ -881,6 +881,9 @@ async function runManagedFrontend(binaryPath: string, coreUrl: string | null) {
     if (booted && server !== null) {
       const bootedServer = server
       await check('SIGTERM clean shutdown (fresh boot)', () => checkShutdown(bootedServer))
+      // Same stream-flush wait as the core line: the log stream's close
+      // event is still in flight when the next phase starts.
+      await Promise.race([bootedServer.logClosed, sleep(2_000)])
     }
 
     // Restart phase: prove the binary boots twice under the same
@@ -977,6 +980,9 @@ async function runManagedFrontend(binaryPath: string, coreUrl: string | null) {
         }
 
         await check('SIGTERM clean shutdown (seeded install)', () => checkShutdown(seededServer))
+        // Same stream-flush wait as the core line — buffered log writes
+        // outlive the process otherwise.
+        await Promise.race([seededServer.logClosed, sleep(2_000)])
       }
     }
   } finally {
@@ -1138,7 +1144,13 @@ async function main() {
   if (cleanup !== null) {
     await cleanup()
   }
-  process.exit(failed.length === 0 ? 0 : 1)
+  // Set the exit code and let the process end NATURALLY — an explicit
+  // process.exit() would tear the loop down while async handles are
+  // still in flight (e.g. the server log stream's close event), which
+  // trips a libuv assertion on win32 (`src\win\async.c:94,
+  // UV_HANDLE_CLOSING`) after an otherwise fully-passing run. e2e.ts
+  // makes the same choice deliberately.
+  process.exitCode = failed.length === 0 ? 0 : 1
 }
 
 await main()

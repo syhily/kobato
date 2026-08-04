@@ -53,11 +53,7 @@ jobs:
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
-          # Pinned below the 26.6.0 line: node 26.6.0 crashes the win32
-          # smoke script with a libuv assertion (src\win\async.c:94,
-          # UV_HANDLE_CLOSING) on exit — 26.5.1 is the last verified
-          # version (6.7.2 full-matrix green). Revisit on the next release.
-          node-version: 26.5.1
+          node-version: 26
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       # patchelf rewrites the sharp addon's rpath during the core sea:build
@@ -134,11 +130,7 @@ jobs:
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
-          # Pinned below the 26.6.0 line: node 26.6.0 crashes the win32
-          # smoke script with a libuv assertion (src\win\async.c:94,
-          # UV_HANDLE_CLOSING) on exit — 26.5.1 is the last verified
-          # version (6.7.2 full-matrix green). Revisit on the next release.
-          node-version: 26.5.1
+          node-version: 26
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - run: pnpm run sea:build --codec brotli
@@ -205,11 +197,7 @@ jobs:
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
-          # Pinned below the 26.6.0 line: node 26.6.0 crashes the win32
-          # smoke script with a libuv assertion (src\win\async.c:94,
-          # UV_HANDLE_CLOSING) on exit — 26.5.1 is the last verified
-          # version (6.7.2 full-matrix green). Revisit on the next release.
-          node-version: 26.5.1
+          node-version: 26
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - run: pnpm run sea:build --codec brotli
@@ -272,11 +260,7 @@ jobs:
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
-          # Pinned below the 26.6.0 line: node 26.6.0 crashes the win32
-          # smoke script with a libuv assertion (src\win\async.c:94,
-          # UV_HANDLE_CLOSING) on exit — 26.5.1 is the last verified
-          # version (6.7.2 full-matrix green). Revisit on the next release.
-          node-version: 26.5.1
+          node-version: 26
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       # patchelf rewrites the sharp addon's rpath during the core sea:build
