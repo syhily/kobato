@@ -77,14 +77,38 @@ function relaxRateLimitsForE2e(databasePath: string) {
   }
 }
 
+/**
+ * The first positional (non-flag) argument — the binary path after
+ * `--target <t>`. Skips the values of known flag arguments so
+ * `--target core dist-sea/kobato-…` resolves the binary correctly (same
+ * skip set as smoke.ts).
+ */
+function firstPositionalArg(args: readonly string[]) {
+  const skipNext = new Set(['--target', '--codec'])
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i]
+    if (arg.startsWith('--')) {
+      if (skipNext.has(arg)) {
+        i++
+      }
+      continue
+    }
+    return arg
+  }
+  return null
+}
+
 async function main() {
   // The e2e suite is core-only (admin sign-in journeys over the core
   // binary); the target only picks the default binary path.
-  const target = resolveSeaTarget()
-  // First non-flag argument is the binary path (`--target` may precede it).
-  const positional = process.argv.slice(2).find((arg) => !arg.startsWith('--'))
-  const binaryPath = positional ? resolvePath(positional) : seaBinaryPath(target)
-  if (positional === undefined && process.argv[2]?.startsWith('--') && parseTargetArg(process.argv.slice(2)) === null) {
+  const args = process.argv.slice(2)
+  const target = resolveSeaTarget(args)
+  // The binary path — the first positional AFTER any known flag values
+  // (same skip logic as smoke.ts: `--target core dist-sea/kobato-…` must
+  // resolve the binary, not the `core` target value).
+  const positional = firstPositionalArg(args)
+  const binaryPath = positional !== null ? resolvePath(positional) : seaBinaryPath(target)
+  if (positional === null && args[0]?.startsWith('--') && parseTargetArg(args) === null) {
     fail('Usage: node scripts/sea/e2e.ts [--target core|frontend] [path-to-binary]')
   }
   await ensureBinaryExists(binaryPath)
