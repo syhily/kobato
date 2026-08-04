@@ -108,13 +108,17 @@ describe('headless third-party frontend chain (examples/frontend-proxy as the te
     const setCookie = proxied.headers.get('Set-Cookie')
     expect(setCookie).toContain('__comment_tokens=')
 
-    // The comment is visible on the public feed under the same page key
-    // (the write went through, and the key-flow holds end to end).
+    // The comment landed in core (the reply payload carries the id), and
+    // the moderation contract holds: an anonymous visitor's comment is
+    // PENDING, so the public feed stays clean until an admin approves it.
+    const proxiedJson = (await proxied.json()) as { comment?: { id: string | number } }
+    expect(proxiedJson.comment?.id).toBeTruthy()
+
     const list = await client.get(
       `/api/content/v1/comments/list?page_key=${encodeURIComponent(detailJson.detail.commentKey)}&offset=0`,
     )
     expect(list.status).toBe(200)
     const listJson = (await list.json()) as { comments: { name: string }[] }
-    expect(listJson.comments.some((c) => c.name === 'Headless Visitor')).toBe(true)
+    expect(listJson.comments.some((c) => c.name === 'Headless Visitor')).toBe(false)
   })
 })
