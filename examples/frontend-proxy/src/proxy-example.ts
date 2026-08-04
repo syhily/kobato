@@ -85,11 +85,18 @@ export async function proxyCommentSubmit(input: {
     // no token). Replay it into the visitor's first-party cookie: the
     // value is already the complete refreshed jar and the attributes
     // (Path, SameSite, HttpOnly, Max-Age) are host-only, so they land on
-    // the frontend domain untouched. When the runtime relays `Set-Cookie`
-    // verbatim (Node's fetch does), the re-emit is a harmless duplicate;
-    // runtimes that strip response headers still get the jar.
-    for (const cookie of extractCommentTokenCookies(res)) {
-      res.headers.append('Set-Cookie', cookie)
+    // the frontend domain untouched. Node's fetch Response headers are
+    // immutable, so the re-emit builds a NEW response with the jar merged
+    // into a copy of the headers — runtimes that relay `Set-Cookie`
+    // verbatim get a harmless duplicate, runtimes that strip response
+    // headers still get the jar.
+    const cookies = extractCommentTokenCookies(res)
+    if (cookies.length > 0) {
+      const headers = new Headers(res.headers)
+      for (const cookie of cookies) {
+        headers.append('Set-Cookie', cookie)
+      }
+      return new Response(res.body, { status: res.status, statusText: res.statusText, headers })
     }
   }
   return res
