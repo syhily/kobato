@@ -19,7 +19,7 @@ import { z } from 'zod'
 // validate against. It must stay runtime-dependency-free: NOTHING here
 // may import `lexical` — the gate is pure JSON validation; the editor
 // package layers the real `parseEditorState` double-check on top in
-// `lexical-core/comment-validate.ts`.
+// `./comment-validate.ts`.
 //
 // Allowed vs. the full `lexicalBodySchema`:
 //   - root blocks: paragraph / quote / list / code / mathBlock ONLY

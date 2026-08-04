@@ -9,7 +9,7 @@ import { readStringArray } from '@kobato/shared/utils/tools'
 
 // --- Public catalog projection ----------------------------------------------
 
-// `toCmsPost` returns the shared `Post` DTO directly (`@/shared/types/catalog`)
+// `toCmsPost` returns the shared `Post` DTO directly (`@kobato/shared/types/catalog`)
 // — there is no server-side variant of the shape.
 export function toCmsPost(
   meta: PostMetaRow,

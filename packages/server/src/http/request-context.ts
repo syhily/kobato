@@ -8,7 +8,7 @@ import { createContext } from 'react-router'
 /**
  * The canonical per-request fact base — the lightweight CONTRACT module:
  * the type, the React Router context key, and the route-side accessor.
- * Derivation lives in `@/server/http/middlewares/request-context` (which
+ * Derivation lives in `@kobato/server/http/middlewares/request-context` (which
  * pulls the db/session/infra graph); this module deliberately imports
  * nothing at runtime beyond `react-router` so route modules and test
  * helpers can import the key without dragging the server graph in.

@@ -81,7 +81,7 @@ interface SafeFetchOptions {
 
 /** Fetch avatar image bytes with bounded redirects and consistent error
  *  handling — the SSRF guard, manual-redirect loop, and timeout are owned
- *  by `@/server/infra/safe-fetch`. Returns `null` on any failure so the
+ *  by `@kobato/server/infra/safe-fetch`. Returns `null` on any failure so the
  *  route can fall back to the default avatar. */
 async function safeFetchAvatar(
   label: 'avatar' | 'avatar.qq',

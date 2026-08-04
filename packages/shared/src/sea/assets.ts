@@ -1,7 +1,7 @@
 // Single owner of the SEA embedded-asset key contract: the writer is
 // `scripts/sea/assets.ts`, the readers under `src/server/` fetch assets
 // back by key through `getEmbeddedAsset` / `listEmbeddedAssetKeys`
-// (`@/server/infra/sea`). Never hardcode an asset key outside this module.
+// (`@kobato/server/infra/sea`). Never hardcode an asset key outside this module.
 //
 // Asset key layout:
 //   manifest.json                       this build's manifest
@@ -34,7 +34,7 @@ export const SEA_MANIFEST_KEY = 'manifest.json'
  * Compression codec of an embedded asset, recorded per file in the
  * manifest's `codec` field. Every asset above 1 KB is compressed at build
  * time (see `scripts/sea/assets.ts`) and decoded lazily on read (see
- * `@/server/infra/sea`). `'none'` means the blob holds the raw bytes —
+ * `@kobato/server/infra/sea`). `'none'` means the blob holds the raw bytes —
  * tiny assets, and always the manifest itself: it doubles as the
  * decompression registry, so it must be readable before anything else.
  * A missing `codec` field (binaries built before compression) is treated

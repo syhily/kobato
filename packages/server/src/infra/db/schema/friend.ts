@@ -8,7 +8,7 @@ import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 //   public renderer keys on `homepage` and the admin shell keys on
 //   `id`, neither of which needs a separate handle.
 // - No `sortOrder`: friends render in random order
-//   (`@/ui/pt/blocks/Friends.tsx` already shuffles), so no ranking is
+//   (`@kobato/ui/pt/blocks/Friends.tsx` already shuffles), so no ranking is
 //   stored. Admin list sorts by `createdAt desc` (newest first).
 // - Soft-uniqueness on `homepage` is enforced at the service layer
 //   (CLI import + admin upsert): a strict DB UNIQUE would reject

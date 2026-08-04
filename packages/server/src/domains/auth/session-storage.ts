@@ -16,10 +16,10 @@ import { createSession, createSessionStorage } from 'react-router'
 const log = getLogger('auth.session-storage')
 
 // The database handle is injected by the composition root
-// (`@/server/bootstrap/db-lifecycle`) at wire time — a direct import of
+// (`@kobato/server/bootstrap/db-lifecycle`) at wire time — a direct import of
 // the lifecycle here would invert the dependency direction (domain →
 // composition root). Same injection discipline as `wireBackupScheduler`
-// in `@/server/domains/backup/scheduler`. Session reads/writes are
+// in `@kobato/server/domains/backup/scheduler`. Session reads/writes are
 // load-bearing (unlike expendable telemetry), so an unwired call fails
 // loudly instead of degrading.
 let resolveDb: (() => Database) | null = null

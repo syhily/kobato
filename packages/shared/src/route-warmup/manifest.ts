@@ -8,7 +8,7 @@
 // Isomorphic: pure JSON/regex only — no node APIs, no logging.
 import type { RouteManifest, RouteManifestRoute } from '@kobato/shared/constants/route-warmup'
 
-// Local copy of `isRecord` (same semantics as `@/shared/utils/type-guards`)
+// Local copy of `isRecord` (same semantics as `@kobato/shared/utils/type-guards`)
 // — do NOT import it. The vite plugin pulls this module into the
 // vite.config.ts graph, where `@/` aliases are not resolved, so runtime
 // imports must stay zero (type-only imports are erased and safe).

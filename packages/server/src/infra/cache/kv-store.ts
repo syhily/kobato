@@ -8,7 +8,7 @@ import { and, eq, gt, inArray, isNull, or } from 'drizzle-orm'
 
 /**
  * SQLite-backed row-access plane for the cache module
- * (`@/server/infra/cache/registry`) — the ONLY consumer. JSON payloads
+ * (`@kobato/server/infra/cache/registry`) — the ONLY consumer. JSON payloads
  * ride the `value` json-mode column as PLAIN JSON (superjson was dropped
  * with the SQLite migration: every bucket payload is JSON-native — the
  * one Date-bearing shape, image metadata, carries `updatedAtMs` as an

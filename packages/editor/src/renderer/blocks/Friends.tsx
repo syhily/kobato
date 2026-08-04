@@ -1,6 +1,6 @@
 import type { Friend } from '@kobato/shared/types/catalog'
 
-import { Image } from '@kobato/editor/engine/widgets/Image'
+import { Image } from '@kobato/editor/widgets/Image'
 import { shuffle } from '@kobato/shared/utils/tools'
 import { useMemo } from 'react'
 

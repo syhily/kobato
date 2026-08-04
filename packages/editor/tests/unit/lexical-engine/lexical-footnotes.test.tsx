@@ -5,7 +5,7 @@ import type { LexicalEditor } from 'lexical'
 
 import { OPEN_FOOTNOTE_DIALOG_COMMAND } from '@kobato/editor/engine/lexical/commands'
 import { LexicalBodyEditor } from '@kobato/editor/engine/lexical/LexicalBodyEditor'
-import { FootnoteRefNode as FootnoteRefNodeClass } from '@kobato/editor/lexical-core/nodes/footnote-ref-node'
+import { FootnoteRefNode as FootnoteRefNodeClass } from '@kobato/shared/lexical/nodes/footnote-ref-node'
 import { unsafeCast } from '@kobato/shared/utils/unsafe-cast'
 import { fireEvent, render, waitFor } from '@testing-library/react'
 import { $nodesOfType, getNearestEditorFromDOMNode, TextNode } from 'lexical'

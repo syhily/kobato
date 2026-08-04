@@ -1,5 +1,5 @@
 // Isomorphic API error-shape helpers shared by the upload hook
-// (@/client/hooks/use-file-upload) and the admin views. Client
+// (@kobato/client/hooks/use-file-upload) and the admin views. Client
 // utilities must stay independent of ui/ modules (boundaries contract),
 // so these live here, not in ui/lib.
 

@@ -11,10 +11,8 @@ parent.
   (`tailwind.css`) covers public + admin.
 - **`ui/public/`** — `chrome/`, `post/`, `comments/` (thread state split across four contexts in
   `comments-context.ts` — Tree / Identity / ReplySlot / Actions — so leaf rows subscribe to slices),
-  `friends/`, `widgets/`, `aplayer/`, plus single-file leaves (`Search`, `Sidebar`, `LikeActions`).
-- **`ui/admin/`** — grouped by domain (`analytics`, `auth`, `categories`, `comments`, `editor`,
-  `editor-shell`, `editor-shared`, `fonts`, `friends`, `images`, `library`, `musics`, `my`, `pages`,
-  `posts`, `sessions`, `settings`, `tags`, `users`, `dashboard`, plus `shared/` and `shell/`).
+  `friends/`, `widgets/`, plus single-file leaves (`Search`, `Sidebar`, `LikeActions`).
+- **`ui/admin/`** — grouped by domain (`analytics`, `apikeys`, `audit`, `auth`, `categories`, `comments`, `dashboard`, `editor-pickers`, `editor-shell`, `editor-shared`, `fonts`, `friends`, `images`, `library`, `musics`, `my`, `pages`, `posts`, `sessions`, `settings`, `tags`, `users`, `webmentions`, `welcome`, plus `shared/` and `shell/`).
   - `fonts/` — `FontsView.tsx` (shell, ≤500 LOC), `FontUploadButton.tsx` (upload dialog FSM on
     `useFileUpload`), `font-slots.ts` (`slotsReducer` + `useFontSlotsController`, in-flight reseed
     guard), `dnd.ts` (drag guards).
@@ -22,10 +20,8 @@ parent.
     …). `sortable.tsx` is the one dnd-list adapter: `useSortableSensors`, `useSortableRow`
     (destructure its result — member access trips the react-compiler ref heuristic),
     `SortableDragHandle`, `resolveSortableMove`. New sortable lists use it, don't copy row chrome.
-  - `editor/` — the Lexical micro-app (`engine/lexical/` — `LexicalBodyEditor`, `LexicalToolbar`,
-    slash/bubble menus, footnote registry; `engine/toolbar/` shared chrome; `FootnoteEditorDialog`,
-    `engine/widgets/`, `engine/lib/`). Self-contained; only `LexicalBodyEditor` is imported by
-    other admin domains.
+  - `editor-pickers/` — editor-insertion picker dialogs: `ImageLibraryPicker.tsx` (library image
+    picker for body images) and `MusicPickerDialog.tsx` (music picker for the MusicPlayer block).
   - `editor-shell/` — orchestration layer wrapping the Lexical editor into a draft/publish workflow:
     `useEditorShellState` (shared FSM for Post + Page shells — drafts, conflict resolution,
     autosave, revision-token race, persist save/publish/unpublish, shortcuts, layout toggles),
@@ -46,7 +42,7 @@ parent.
   React renderers are `editor/src/lexical-html/` (`LexicalBody`, `LexicalCommentBody`).
 - `ui/icons/` — static-export icon library. Named imports only — no `<Icon name="..." />` string
   lookups. Import directly from `lucide-react`; the build tree-shakes unused icons.
-- `ui/lib/` — UI utilities (`cn`, `code-languages`, `ThemeProvider`, `blog-config-context`,
+- `ui/lib/` — UI utilities (`cn`, `code-languages`, `ThemeProvider`,
   `use-media-query`). shadcn's `aliases.lib` is pinned here. No `apps/core/src/lib/` parallel.
 
 ## Tailwind-merge tokens
@@ -142,11 +138,17 @@ unrelated concerns.
   it's the `page.show_friends` toggle.
 - Editor engine: `@kobato/editor/engine/lexical/` (`LexicalBodyEditor`), pinned to
   `lexical@0.45.0`. The retired PT/Tiptap track (`@tiptap/*`, `@portabletext/*`) is gone; the
-  one-way PT→Lexical conversion (`@kobato/editor/lexical-core/mapping::convertPtBodyToLexical`)
-  and the PT schema survive only as `@kobato/shared/legacy-pt/*` for the data-migration window
+  one-way PT→Lexical conversion (`@kobato/shared/lexical/mapping::convertPtBodyToLexical` —
+  moved out of `editor/lexical-core` in stage 5) and the PT schema survive only as
+  `@kobato/shared/legacy-pt/*` for the data-migration window
   (`kobato migrate-pt` — `packages/server/src/infra/pt-migration/`, dual-shape read).
+  The custom decorator nodes live in `@kobato/shared/lexical/nodes/*`; their React views live
+  in `@kobato/editor/engine/lexical/node-views/` and are wired via the shared node-view
+  registry (`@kobato/shared/lexical/node-views`, `register-node-views.tsx`).
 - SSR renderers: `@kobato/editor/lexical-html/` (`LexicalBody`, `LexicalCommentBody`; server-side
-  string form via `@kobato/editor/lexical-html/lexicalBodyToHtml`). Heading anchor ids align with
+  string form via `@kobato/server/render/lexical-html/lexicalBodyToHtml` and
+  `…/comment-to-html` — moved to the server package in stage 4, with the
+  shared manifest contract in `@kobato/shared/lexical/html-manifest`). Heading anchor ids align with
   post anchors.
 - Admin editor: `@kobato/editor/engine/lexical/LexicalBodyEditor` (shared by pages and posts). UX:
   toolbar (`LexicalToolbar`, `engine/lexical/toolbar/`) → floating bubble menus

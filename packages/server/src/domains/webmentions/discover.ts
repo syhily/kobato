@@ -91,7 +91,7 @@ export function formatFetchFailure(result: SafeFetchFailure): string {
 /**
  * Fetch the target and discover its webmention endpoint. Every request
  * (initial and each redirect hop) goes through the shared SSRF guard in
- * `@/server/infra/safe-fetch`; fetch parameters mirror the receiver's
+ * `@kobato/server/infra/safe-fetch`; fetch parameters mirror the receiver's
  * `fetchSourceHtml` exactly. The `ua` is supplied by the caller (the
  * worker composes it from the site's configured origin).
  */

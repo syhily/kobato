@@ -110,6 +110,41 @@ export async function loadHomeData(
   })
 }
 
+/**
+ * Plain paginated post listing — the home listing minus the
+ * featured/sidebar extras. Same pagination semantics as home (page
+ * size, tail-merge, canonical collapse, overflow redirect) and the
+ * same post set (`includeHidden: false`; DEV shows scheduled posts),
+ * so a third-party frontend paginating this endpoint sees exactly the
+ * `pageNum`/`totalPage`/`resolvedPosts` of `/content/v1/home` — just
+ * without the `extra` payload. There is no SSR route for it; the
+ * headless Content API procedure (`public.postList`) is the only
+ * consumer.
+ */
+export async function loadPostListData(db: Database, rawNum: string | undefined): Promise<ListingPageLoaderData> {
+  const content = requireBlogSettingsSection('content')
+  const pageSize = content.pagination.posts
+  const mergeTailWhenLessThan = Math.max(0, pageSize - 2)
+
+  const filters = {
+    includeHidden: false,
+    includeScheduled: import.meta.env.DEV,
+  }
+
+  return listingLoader(db, {
+    rawNum,
+    totalPosts: await countPublicPosts(db, filters),
+    fetchPage: ({ pageNum, limit, offset }) => listPublicPostCardsPaginated(db, pageNum, limit, { ...filters, offset }),
+    rootPath: '/',
+    pageSize,
+    mergeTailWhenLessThan,
+    metadata: { likes: true, views: true, comments: true },
+    seoMode: 'skip-on-first-page',
+    allowEmpty: true,
+    extra: undefined,
+  })
+}
+
 export async function loadCategoryListData(
   db: Database,
   slug: string,

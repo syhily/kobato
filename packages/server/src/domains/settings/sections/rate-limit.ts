@@ -3,8 +3,8 @@ import { unsafeCast } from '@kobato/shared/utils/unsafe-cast'
 import { z } from 'zod'
 
 // Centralised rate-limiting policy. Every bucket maps 1:1 to a surface
-// in `@/server/infra/rate-limit`. The bounds live in
-// `@/shared/config/defaults` because the admin form mirrors them.
+// in `@kobato/server/infra/rate-limit`. The bounds live in
+// `@kobato/shared/config/defaults` because the admin form mirrors them.
 const rateLimitBucketSchema = z.object({
   windowSeconds: z.coerce.number().int().min(rateLimitBounds.windowSeconds.min).max(rateLimitBounds.windowSeconds.max),
   maxAttempts: z.coerce.number().int().min(rateLimitBounds.maxAttempts.min).max(rateLimitBounds.maxAttempts.max),
@@ -30,8 +30,8 @@ const rateLimitShape = unsafeCast<Record<(typeof RATE_LIMIT_BUCKET_KEYS)[number]
 
 export const rateLimitSchema = z.object(rateLimitShape)
 
-// The seed stays in `@/shared/config/defaults` because the infra
-// rate-limit fallback (`@/server/infra/rate-limit`) shares it — this
+// The seed stays in `@kobato/shared/config/defaults` because the infra
+// rate-limit fallback (`@kobato/server/infra/rate-limit`) shares it — this
 // module only composes the section meta around it.
 export const rateLimitSection = {
   scope: 'blog.rateLimit',

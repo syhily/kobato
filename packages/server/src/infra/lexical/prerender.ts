@@ -16,7 +16,7 @@ const log = getLogger('lexical.prerender')
 
 // Pre-render heavy Lexical blocks (code, math) at save time so SSR
 // doesn't pay the Shiki/KaTeX bootstrap cost on every request — the
-// Lexical twin of `prerenderPortableTextBody` (`@/server/infra/pt/prerender`).
+// Lexical twin of `prerenderPortableTextBody` (`@kobato/server/infra/pt/prerender`).
 // Mutates in place: `code` gains `highlightedHtml` (Shiki), `mathBlock` /
 // `mathInline` gain `mathml` (KaTeX). Only missing fields are recomputed —
 // a block that already carries its artifact passes through untouched, and

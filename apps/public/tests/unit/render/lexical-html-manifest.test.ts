@@ -7,13 +7,13 @@ import type {
   LexicalTextNode,
 } from '@kobato/shared/lexical/schema'
 
-import { convertPtBodyToLexical } from '@kobato/editor/lexical-core/mapping'
-import { lexicalBodyToHtml } from '@kobato/editor/lexical-html/lexicalBodyToHtml'
+import { lexicalBodyToHtml } from '@kobato/server/render/lexical-html/lexicalBodyToHtml'
+import { convertPtBodyToLexical } from '@kobato/shared/lexical/mapping'
 import { describe, expect, it } from 'vitest'
 
 // Byte-exact HTML contract tests for the Lexical string renderer. The
-// expectations are the manifest contract (`@kobato/editor/lexical-html/
-// manifest.ts`) derived from the PT render adapters (render.tsx /
+// expectations are the manifest contract (`@kobato/shared/lexical/
+// html-manifest.ts`) derived from the PT render adapters (render.tsx /
 // render-blocks.tsx / render-marks.tsx / pt-html.ts) — every class name,
 // data attribute, and tag structure is pinned here so a drift in either
 // the manifest or the renderer fails loudly. Fixtures come from

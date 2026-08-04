@@ -14,7 +14,7 @@ import { unsafeCast } from '@kobato/shared/utils/unsafe-cast'
 
 // Pure PT-tree footnote renumbering engine. Lives beside `footnote-merge`
 // — deliberately NOT in the bridge: nothing here knows about ProseMirror.
-// The bridge node module (`@/shared/pt/bridge/nodes/footnote`) keeps only
+// The bridge node module (`@kobato/shared/pt/bridge/nodes/footnote`) keeps only
 // the PM↔PT converters; this engine is consumed by the bridge save path
 // (`pm-to-pt`), the editor footnote hook, and `footnote-merge`.
 

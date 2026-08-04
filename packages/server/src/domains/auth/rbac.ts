@@ -6,7 +6,7 @@ import { hasAtLeast, type Role, type RoleOrNull } from '@kobato/shared/utils/rol
 /**
  * The structural minimum a viewer identity must carry for permission
  * predicates. The canonical `RequestContext.viewer` (a full `SessionUser`,
- * see `@/server/http/request-context`) satisfies it; tests can stub the
+ * see `@kobato/server/http/request-context`) satisfies it; tests can stub the
  * two fields directly.
  */
 export interface ViewerIdentity {

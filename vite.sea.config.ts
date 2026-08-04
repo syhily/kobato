@@ -114,11 +114,17 @@ export default defineConfig({
       // workspace symlink alone does not resolve their deep paths
       // (packages/*/src/...) in a bare vite config, so map them
       // explicitly, exactly like the per-app vite configs do.
+      //
+      // `@kobato/client` and `@kobato/editor` are deliberately NOT mapped:
+      // their only reachability was the server bundle's transitive
+      // editor→client chain, which stage 5 eliminated (server→shared only
+      // — the built app bundles under apps/*/build inline every @kobato
+      // specifier at app build time, so the SEA re-bundle never sees
+      // them). A future graph edge that introduces either specifier fails
+      // the build here instead of silently resolving.
       '@kobato/shared': join(projectRoot, 'packages', 'shared', 'src'),
-      '@kobato/client': join(projectRoot, 'packages', 'client', 'src'),
       '@kobato/server': join(projectRoot, 'packages', 'server', 'src'),
       '@kobato/ui': join(projectRoot, 'packages', 'ui', 'src'),
-      '@kobato/editor': join(projectRoot, 'packages', 'editor', 'src'),
       '@kobato/sdk': join(projectRoot, 'packages', 'sdk', 'src'),
       // The built app bundles have their own `@/*` resolved already; keep
       // an `@` mapping for the entry shims' sake (both live under scripts/).

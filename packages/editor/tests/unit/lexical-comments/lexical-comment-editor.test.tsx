@@ -7,10 +7,7 @@ import { COMMENT_LEXICAL_SLASH_COMMANDS } from '@kobato/editor/comments-editor/l
 import { LexicalCommentEditor } from '@kobato/editor/comments-editor/lexical/LexicalCommentEditor'
 import { TOGGLE_LINK_COMMAND } from '@kobato/editor/engine/lexical/commands'
 import { filterLexicalSlashCommands } from '@kobato/editor/engine/lexical/slash-commands'
-import {
-  COMMENT_EDITOR_NAMESPACE,
-  createCommentEditorConfig,
-} from '@kobato/editor/lexical-core/create-comment-editor-config'
+import { COMMENT_EDITOR_NAMESPACE, createCommentEditorConfig } from '@kobato/shared/lexical/comment-config'
 import { unsafeCast } from '@kobato/shared/utils/unsafe-cast'
 import { fireEvent, render, waitFor } from '@testing-library/react'
 import { $getRoot, $getSelection, $nodesOfType, getNearestEditorFromDOMNode, TextNode } from 'lexical'

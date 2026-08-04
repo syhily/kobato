@@ -58,7 +58,7 @@ Controllers and loaders **orchestrate only** — business logic stays in `domain
 
 ## render/
 
-SSR output products: `seo/`, `feed/`, `og/`, `calendar/`, `canvas-fonts.ts`, `lexical-html.ts`, `analytics/`, `warmup/`. Never persists — produces strings, Buffers, or Responses. Caching is the caller's responsibility.
+SSR output products: `seo/`, `feed/`, `og/`, `calendar/`, `canvas-fonts.ts`, `lexical-html.ts` (assembly seam; the pure string renderers live in `lexical-html/` and the node sanitize facade in `sanitize-html*.ts`), `analytics/`, `warmup/`. Never persists — produces strings, Buffers, or Responses. Caching is the caller's responsibility.
 
 ## Sessions & Request Context
 
@@ -87,9 +87,12 @@ Two embedded engines, zero services:
 ### Posts and pages
 
 - `post` → `/posts/:slug`; `page` → `/:slug`. Both rendered via the Lexical renderer
-  (`@kobato/editor/lexical-html/LexicalBody`; the string form `renderLexicalBodyToHtml`).
+  (`@kobato/editor/lexical-html/LexicalBody`; the string form
+  `renderLexicalBodyToHtml` assembles `render/lexical-html/lexicalBodyToHtml`).
   Legacy PT rows (`Array.isArray` bodies) convert through
-  `convertPtBodyToLexical` on read until the data migration
+  `convertPtBodyToLexical` (stage 5: the canonicalize/validate/mapping modules now live in
+  `@kobato/shared/lexical/` — the server graph is server→shared only, no `@kobato/editor`
+  value imports) on read until the data migration
   (`kobato migrate-pt`, `packages/server/src/infra/pt-migration/`) confirms the store is
   Lexical-only.
 - `visible=false` posts: excluded from home/random-post widgets but stay in archives, tags, search, sitemap, feeds.

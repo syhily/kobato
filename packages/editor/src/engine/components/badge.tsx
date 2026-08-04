@@ -1,8 +1,8 @@
 import type { ComponentProps } from 'react'
 
 import { useRender } from '@base-ui/react/use-render'
-import { cn } from '@kobato/editor/engine/lib/cn'
-import { cva, type VariantProps } from '@kobato/editor/engine/lib/cva'
+import { cn } from '@kobato/editor/lib/cn'
+import { cva, type VariantProps } from '@kobato/editor/lib/cva'
 
 const badgeVariants = cva(
   'inline-flex items-center justify-center rounded-md border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:shadow-focus aria-invalid:border-destructive transition-[color,box-shadow] overflow-hidden',

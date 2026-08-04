@@ -5,10 +5,10 @@ import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 import { callRpc, parseRpcJson } from '#/_helpers/rpc-call'
 
-import { convertPtBodyToLexical } from '@kobato/editor/lexical-core/mapping'
 import { enqueuePostWebmentionOutbox } from '@kobato/server/domains/webmentions/enqueue'
 import { pickDueWebmentionOutbox } from '@kobato/server/infra/db/operations/webmention-outbox'
 import { webmentionOutbox } from '@kobato/server/infra/db/schema/webmention'
+import { convertPtBodyToLexical } from '@kobato/shared/lexical/mapping'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 const db = getTestDb()

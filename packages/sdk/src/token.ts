@@ -7,7 +7,7 @@
  * echoes the current page's token back through this header on subsequent
  * proxy requests — no third-party cookies anywhere.
  *
- * The wire format mirrors `@/shared/utils/comment-token` (a JSON map of
+ * The wire format mirrors `@kobato/shared/utils/comment-token` (a JSON map of
  * page key → entries): the SDK re-implements it standalone so the
  * published package never imports workspace internals; the contract test
  * pins the two sides to the same shape.

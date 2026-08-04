@@ -9,12 +9,12 @@ import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters'
 const log = getLogger('backup.scheduler')
 
 // The db getter is injected by the composition root
-// (`@/server/bootstrap/db-lifecycle`, which imports this module) at
+// (`@kobato/server/bootstrap/db-lifecycle`, which imports this module) at
 // wire time — a direct import of db-lifecycle here would close an
 // import cycle. The getter is invoked when the job fires, so a
 // recreated handle (restore completion) is picked up without being
 // captured in module state. Same injection discipline as
-// `wireArchiveScheduler` in `@/server/domains/audit/services/scheduler`.
+// `wireArchiveScheduler` in `@kobato/server/domains/audit/services/scheduler`.
 let resolveDb: (() => Database) | null = null
 let job: ScheduledJob | null = null
 let hydrationRetryAttempt = 0

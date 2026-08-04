@@ -1,4 +1,4 @@
-import { strategyToConfig, type SafeHtmlStrategy } from '@kobato/ui/lib/sanitize-html-config'
+import { strategyToConfig, type SafeHtmlStrategy } from '@kobato/shared/sanitize-html-config'
 import { sanitizeHtmlEngine } from '@kobato/ui/lib/sanitize-html-engine.browser'
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest'

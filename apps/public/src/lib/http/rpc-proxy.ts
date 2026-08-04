@@ -1,9 +1,10 @@
 import type { Context } from 'hono'
 
+import { buildProxyHeaders } from '@kobato/sdk/proxy'
 import { createKeyAuthSigner, type KeyAuthSigner } from '@kobato/sdk/signer'
 import { parseCommentTokenHeader, serializeCommentTokenHeader } from '@kobato/sdk/token'
 import { resolveProxyAddress } from '@kobato/shared/http/proxy-address'
-import { SESSION_COOKIE_NAME, X_KOBATO_SESSION_TOKEN } from '@kobato/shared/http/session-bridge'
+import { SESSION_COOKIE_NAME } from '@kobato/shared/http/session-bridge'
 import { createMiddleware } from 'hono/factory'
 
 /**
@@ -101,8 +102,10 @@ function getDirectRemoteAddress(c: Context): string | null {
  * relayed as-is; the rightmost VALID chain entry is the one the nearest
  * trusted proxy appended. When no honest address is derivable the header
  * is omitted and core falls back to its own view of the connection.
+ *
+ * Shared with the `/webmention` POST proxy (same trust chain).
  */
-function getVisitorAddress(c: Context): string | null {
+export function getVisitorAddress(c: Context): string | null {
   const direct = getDirectRemoteAddress(c)
   return resolveProxyAddress(direct, {
     cfConnectingIp: c.req.header('cf-connecting-ip') ?? null,
@@ -174,22 +177,21 @@ export function createRpcProxy(options: RpcProxyOptions) {
         headers.set(name, value)
       }
     }
-    if (signer !== null) {
-      headers.set('Authorization', `Bearer ${signer.sign({ scope: ['content:write'] })}`)
-      if (commentToken !== null) {
-        headers.set('X-Kobato-Comment-Token', commentToken)
-      }
-      if (sessionToken !== null && sessionToken !== '') {
-        headers.set(X_KOBATO_SESSION_TOKEN, sessionToken)
-      }
-      const visitorAddress = getVisitorAddress(c)
-      if (visitorAddress !== null) {
-        headers.set('X-Forwarded-For', visitorAddress)
-      }
-      const userAgent = c.req.header('user-agent')
-      if (userAgent !== undefined) {
-        headers.set('X-Forwarded-User-Agent', userAgent)
-      }
+
+    // The phase-0.6 contract header family, assembled by the SDK's
+    // `buildProxyHeaders` (the official frontend dogfoods the SDK — same
+    // assembly as the `examples/frontend-proxy` reference). Every value is
+    // gated behind the key: without a JWT core ignores the family, so
+    // nothing is sent.
+    const proxyHeaders = buildProxyHeaders({
+      jwt: signer !== null ? signer.sign({ scope: ['content:write'] }) : null,
+      commentToken,
+      sessionToken,
+      forwardedFor: signer !== null ? getVisitorAddress(c) : null,
+      forwardedUserAgent: signer !== null ? (c.req.header('user-agent') ?? null) : null,
+    })
+    for (const [name, value] of Object.entries(proxyHeaders)) {
+      headers.set(name, value)
     }
 
     const rawUrl = new URL(c.req.raw.url)

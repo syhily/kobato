@@ -7,15 +7,15 @@ import { LexicalHistoryPlugin } from '@kobato/editor/engine/lexical/history'
 import { registerLinkCommands } from '@kobato/editor/engine/lexical/link-commands'
 import { registerMathInputRules } from '@kobato/editor/engine/lexical/math-input-rules'
 import { LexicalSlashMenuPlugin } from '@kobato/editor/engine/lexical/slash-menu'
-import { cn } from '@kobato/editor/engine/lib/cn'
-import { canonicalizeLexicalCommentBodyShape } from '@kobato/editor/lexical-core/comment-canonicalize'
-import {
-  COMMENT_EDITOR_NAMESPACE,
-  createCommentEditorConfig,
-} from '@kobato/editor/lexical-core/create-comment-editor-config'
+import { cn } from '@kobato/editor/lib/cn'
+import { canonicalizeLexicalCommentBodyShape } from '@kobato/shared/lexical/comment-canonicalize'
+import { COMMENT_EDITOR_NAMESPACE, createCommentEditorConfig } from '@kobato/shared/lexical/comment-config'
 import { isEmptyLexicalCommentBody } from '@kobato/shared/lexical/comment-schema'
 import { unsafeCast } from '@kobato/shared/utils/unsafe-cast'
 import { registerList } from '@lexical/list'
+// Side effect: register the decorator-node views (inline-math / math-block)
+// into the shared node-view registry so `decorate()` renders in-editor.
+import '@kobato/editor/engine/lexical/node-views/register-comment-node-views'
 import { LexicalComposer, type InitialConfigType } from '@lexical/react/LexicalComposer'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { ContentEditable } from '@lexical/react/LexicalContentEditable'
@@ -26,7 +26,7 @@ import { useEffect, useRef, useState } from 'react'
 
 // Comment body editor — the Lexical engine on the comment node subset
 // (see `@kobato/shared/lexical/comment-schema` and
-// `lexical-core/create-comment-editor-config`). Mirrors the tiptap
+// `@kobato/shared/lexical/comment-config`). Mirrors the tiptap
 // `CommentBodyEditor` contract field for field (same props, same empty /
 // placeholder / disabled semantics, same wrapper chrome), so the ui
 // consumers can swap imports at R6 without changing their call sites.

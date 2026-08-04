@@ -23,7 +23,7 @@ import { getLogger } from '@kobato/server/infra/logger'
 const log = getLogger('friends.service')
 
 // Public projection (no `id`/`visible`/timestamps/`rssUrl`) — matches
-// the `Friend` shape in `@/shared/types/catalog`, keeping the catalog
+// the `Friend` shape in `@kobato/shared/types/catalog`, keeping the catalog
 // decoupled from the DB row layout.
 export interface PublicFriend {
   website: string

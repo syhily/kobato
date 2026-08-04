@@ -5,12 +5,12 @@ import { defineConfig } from 'vitest/config'
 // shared facilities live in `packages/test-utils/tests/`. The projects
 // below are file-based configs under `vitest/`:
 //
-//   unit.config.ts        name `unit|it|snaps`        — repository-level
-//                         guards (under the owning module) + package tests
-//   unit.core.config.ts   name `unit-core|it-core|snaps-core` — core-app
-//                         tests (`@/` → apps/core/src)
-//   unit.public.config.ts name `unit-public|it-public|snaps-public` —
-//                         public-app tests (`@/` → apps/public/src)
+//   vitest.config.unit.ts        name `unit|it|snaps` — repository-level
+//                                guards (under the owning module) + package tests
+//   vitest.config.unit.core.ts   name `unit-core|it-core|snaps-core` — core-app
+//                                tests (`@/` → apps/core/src)
+//   vitest.config.unit.public.ts name `unit-public|it-public|snaps-public` —
+//                                public-app tests (`@/` → apps/public/src)
 //
 // Per-app configs are needed because `@/` resolves per app and Vite's
 // native tsconfig paths resolution only applies to files under a config
@@ -21,8 +21,9 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
   test: {
     silent: 'passed-only',
-    // Explicit list — tests/e2e needs a live SEA-booted instance (it is
-    // driven by `pnpm run sea:e2e`) and must never join the default run.
+    // Explicit list — `apps/core/tests/e2e` needs a live SEA-booted
+    // instance (it is driven by `pnpm run sea:e2e`) and must never join
+    // the default run.
     projects: [
       'vitest/vitest.config.unit.ts',
       'vitest/vitest.config.unit.core.ts',

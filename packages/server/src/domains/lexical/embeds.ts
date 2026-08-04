@@ -7,6 +7,6 @@ import type { PublicMusicMeta } from '@kobato/shared/contracts/music'
 // the dialect declares the minimal input here — player ids in, public
 // metas out — and the caller wires the implementation at the call site:
 // pass `(playerIds) => getPublicMusicMetasByIds(db, playerIds)` from
-// `@/server/domains/music/services/read`. Callers (routes, render, http)
+// `@kobato/server/domains/music/services/read`. Callers (routes, render, http)
 // sit in layers that may import music; the dialect never does.
 export type MusicEmbedResolver = (playerIds: readonly string[]) => Promise<Map<string, PublicMusicMeta>>

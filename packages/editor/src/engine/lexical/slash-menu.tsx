@@ -5,7 +5,7 @@ import {
   filterLexicalSlashCommands,
   type LexicalSlashCommand,
 } from '@kobato/editor/engine/lexical/slash-commands'
-import { cn } from '@kobato/editor/engine/lib/cn'
+import { cn } from '@kobato/editor/lib/cn'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import {
   LexicalTypeaheadMenuPlugin,

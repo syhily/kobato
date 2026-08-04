@@ -1,4 +1,4 @@
-import type { SafeHtmlStrategy } from '@kobato/ui/lib/sanitize-html-config'
+import type { SafeHtmlStrategy } from '@kobato/shared/sanitize-html-config'
 
 import { sanitizeHtmlString } from '@kobato/ui/lib/sanitize-html'
 import { describe, expect, it } from 'vitest'

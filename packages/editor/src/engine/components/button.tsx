@@ -1,8 +1,8 @@
 import type { ComponentProps } from 'react'
 
 import { useRender } from '@base-ui/react/use-render'
-import { cn } from '@kobato/editor/engine/lib/cn'
-import { cva, type VariantProps } from '@kobato/editor/engine/lib/cva'
+import { cn } from '@kobato/editor/lib/cn'
+import { cva, type VariantProps } from '@kobato/editor/lib/cva'
 
 // Button variants matching the public site's `.btn` rules.
 const buttonVariants = cva(

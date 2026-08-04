@@ -1,7 +1,7 @@
 <!-- markdownlint-disable MD033 MD041 -->
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="src/server/assets/defaults/images/blog-poster-dark.png">
-  <img alt="Kobato" src="src/server/assets/defaults/images/blog-poster.png">
+  <source media="(prefers-color-scheme: dark)" srcset="packages/server/src/assets/defaults/images/blog-poster-dark.png">
+  <img alt="Kobato" src="packages/server/src/assets/defaults/images/blog-poster.png">
 </picture>
 
 # Kobato (こばと。)
@@ -11,20 +11,22 @@
 **Kobato** is a self-hosted blog CMS built by [Yufan Sheng](https://github.com/syhily)
 — the engine behind [且听书吟](https://yufan.me). It runs on React Router 8 (SSR), Hono, and oRPC,
 with a built-in `/admin` console for everything.
-Content is stored as **PortableText** and authored through a Tiptap editor that round-trips losslessly to the wire format.
+Content is stored as **Lexical JSON** and authored through a built-in Lexical editor.
 
 This repository is the complete product: public site, admin SPA, API, SSR renderer, install gate, and database migrations.
-The whole deployment is one process — content lives in an embedded **SQLite** database, analytics in an
+Deployments follow the headless topology — a **core** service (admin SSR, `/rpc` + `/api`, URL endpoints)
+and an official **frontend** service (public SSR) that talks to core over HTTP, shipped as two SEA binaries
+or two Docker containers. Content lives in an embedded **SQLite** database, analytics in an
 embedded **DuckDB** sidecar. There is no database server to run, back up, or upgrade.
 
 > **Contributors:** start at [AGENTS.md](AGENTS.md) — it documents the import
-> boundaries, the four-layer `src/server/` graph, the install contract, and the
+> boundaries, the package layout (`packages/*`, `apps/*`), the install contract, and the
 > API permission matrix.
 
 ## Features
 
 - Posts, pages, categories, tags, and comments — all managed in a built-in `/admin` console
-- PortableText content model with a Tiptap editor
+- Lexical content model with a built-in Lexical editor (headings, lists, tables, code blocks with syntax highlighting, math, footnotes, images, and two-column layouts)
 - Per-section settings (general, SEO, assets, comments, navigation, and more)
 - First-party analytics with optional GeoIP enrichment
 - Optional S3-compatible object storage for media
@@ -37,16 +39,18 @@ No database server: SQLite and DuckDB are embedded.
 
 ## Quick start
 
-Install dependencies and start the dev server:
+Install dependencies and start the dev servers (core on `4321`, the
+public frontend on `4322`):
 
 ```bash
 pnpm install
 pnpm run dev
 ```
 
-On first boot a `kobato.config.json` is created in the repo root
+On first boot a `kobato.config.json` is created next to the core process
 (gitignored) — fill in the two secrets (see [Configuration](#configuration)
-for the file shape). The database files create themselves under
+for the file shape; env vars like `security__sessionSecret=…` also work
+without a file). The database files create themselves under
 `storage.data` (`./data` by default):
 
 ```jsonc
@@ -58,8 +62,10 @@ for the file shape). The database files create themselves under
 }
 ```
 
-Open `/admin/setup` and enter the setup token printed in the console to
-create the admin account. Settings are seeded automatically.
+Open `http://localhost:4321/admin/setup` and enter the setup token printed
+in the console to create the admin account. Settings are seeded
+automatically; the public site is served by the frontend process at
+`http://localhost:4322`.
 
 ## Configuration
 
@@ -114,9 +120,10 @@ pnpm run test:snaps
 
 ### Docker Compose (recommended)
 
-The root `docker-compose.yml` runs the app as a single container — the
-SQLite content database and the DuckDB analytics sidecar are embedded
-files on the `kobato_data` volume, so there is no database service.
+The root `docker-compose.yml` runs the headless topology as two services —
+**core** (admin + API + the content SQLite and DuckDB sidecar files on the
+`kobato_data` volume) and **frontend** (the official public SSR service,
+pointing at core over the compose network). There is no database service.
 
 Launch with randomly generated secrets:
 
@@ -126,12 +133,23 @@ ENCRYPTION_KEY=$(openssl rand -hex 32) \
 docker compose up -d
 ```
 
+Both services are reachable from the host: core on `4321`, the public
+frontend on `4322` (override with `PORT` / `FRONTEND_PORT`). To make the
+frontend's comment/read write-proxy trust chain work (visitor IP/UA and
+comment-token forwarding), register a frontend key in the core admin and
+pass its credentials:
+
+```bash
+KOBATO_FRONTEND_PRIVATE_KEY=… KOBATO_FRONTEND_KEY_ID=… docker compose up -d
+```
+
 Optional overrides (compose forwards them to the app env; they are written
 into `/etc/kobato/config.json` on first boot and persist in the
 `kobato_config` volume):
 
 - `HOST` — default `0.0.0.0`
-- `PORT` — default `4321`
+- `PORT` — default `4321` (core)
+- `FRONTEND_PORT` — default `4322` (frontend)
 - `LOG_LEVEL` — default `info`
 
 Migrations run automatically at boot. Backups copy the content database
@@ -141,30 +159,40 @@ database files (content + the analytics sidecar) into a single
 
 ### Build your own image
 
-Use the included [`Dockerfile`](Dockerfile) to build locally:
+Use the included [`Dockerfile`](Dockerfile) (core) and
+[`Dockerfile.frontend`](Dockerfile.frontend) to build locally:
 
 ```bash
-docker build -t kobato .
+docker build -t kobato .                       # core
+docker build -f Dockerfile.frontend -t kobato-frontend .
 docker run -p 4321:4321 \
   -e security__sessionSecret=... \
   -e security__encryptionKey=... \
   -v kobato_data:/data \
   -v kobato_config:/etc/kobato \
   kobato
+docker run -p 4322:4322 -e CORE_API_URL=http://host.docker.internal:4321 kobato-frontend
 ```
 
 ### SEA binary (bare metal)
 
-Every release also ships a self-contained single executable — no Node.js
-runtime, no `node_modules`, no database server. The server bundle, client
-assets, and database migrations are embedded in the binary; the native
-packages (sharp, canvas, DuckDB) are extracted to a cache directory on
-first run. Targets: `linux-x64`, `linux-arm64` (glibc), `darwin-arm64`,
+Every release ships two self-contained single executables — no Node.js
+runtime, no `node_modules`, no database server:
+
+- **`kobato`** — the core: admin SSR, `/rpc` + `/api`, URL endpoints. The server bundle,
+  client assets, and database migrations are embedded in the binary; the native
+  packages (sharp, canvas, DuckDB) are extracted to a cache directory on first run.
+- **`kobato-frontend`** — the official public SSR service (no natives, no
+  migrations); it needs a reachable core via `CORE_API_URL` and optionally
+  `KOBATO_FRONTEND_PRIVATE_KEY` / `KOBATO_FRONTEND_KEY_ID` for the
+  write-proxy trust chain.
+
+Targets: `linux-x64`, `linux-arm64` (glibc), `darwin-arm64`,
 `win32-x64`, and `win32-arm64`.
 
-Download the archive for your platform (e.g. `kobato-linux-x64.tar.gz`)
-and its `.sha256` sidecar from the [latest release](../../releases/latest), verify,
-extract, and install:
+Download the archives for your platform (e.g. `kobato-linux-x64.tar.gz`
+and `kobato-frontend-linux-x64.tar.gz`) and their `.sha256` sidecars from
+the [latest release](../../releases/latest), verify, extract, and install:
 
 ```bash
 sha256sum -c kobato-linux-x64.tar.gz.sha256
@@ -182,11 +210,12 @@ lands in `$XDG_CACHE_HOME/kobato` (override with `KOBATO_CACHE_DIR`).
 Database migrations run automatically at boot; on first boot, open
 `/admin/setup`.
 
-A minimal systemd unit:
+A minimal systemd unit (core; run the frontend binary the same way with
+`CORE_API_URL` and, optionally, the frontend credentials):
 
 ```ini
 [Unit]
-Description=Kobato blog CMS
+Description=Kobato blog CMS (core)
 After=network-online.target
 
 [Service]
@@ -204,12 +233,13 @@ RestartSec=3
 WantedBy=multi-user.target
 ```
 
-The binary can update itself: in the admin console, open the version
+The core binary can update itself: in the admin console, open the version
 dialog → 检查更新 → 立即更新. It downloads the release asset for the current
 platform, verifies the sha256, swaps the executable in place (the previous
-one is kept as `kobato.bak` for manual rollback), and restarts. Self-update
-is intentionally unavailable inside Docker — upgrade containers by pulling
-a new image instead.
+one is kept as `kobato.bak` for manual rollback), and restarts. The
+frontend binary does not self-update — roll it with your deployment
+orchestration instead. Self-update is intentionally unavailable inside
+Docker — upgrade containers by pulling a new image instead.
 
 ### Zeabur
 
@@ -218,7 +248,7 @@ a new image instead.
 ## Scripts
 
 ```bash
-pnpm run dev         # development server
+pnpm run dev         # development servers (core :4321 + frontend :4322)
 pnpm run build       # production build
 pnpm run test        # run tests
 pnpm run test:unit   # run unit tests only

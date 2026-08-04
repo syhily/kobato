@@ -13,7 +13,7 @@ import { z } from 'zod'
 // The PT comment dialect gate: strict PortableText subset accepted in
 // comment bodies. The markdown-projection tests retired with the PT
 // comment-markdown module (R6) — the current markdown pipeline is the
-// Lexical one (`@kobato/editor/lexical-core/comment-markdown`).
+// Lexical one (`@kobato/shared/lexical/comment-markdown`).
 
 const validBody: CommentBody = [
   { _type: 'block', _key: 'b1', style: 'normal', children: [{ _type: 'span', _key: 's1', text: 'Hello' }] },

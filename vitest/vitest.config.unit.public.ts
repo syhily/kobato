@@ -15,8 +15,7 @@ export default defineConfig({
     silent: 'passed-only',
     environment: 'node',
     // Public-app tests (the official frontend route tree). The
-    // repository-level + package tests run via `vitest.config.ts` in this
-    // directory.
+    // repository-level + package tests run via `vitest.config.unit.ts`.
     include: ['../apps/public/tests/unit/**/*.test.{ts,tsx}'],
     setupFiles: ['./setup.unit.ts'],
     testTimeout: 10_000,

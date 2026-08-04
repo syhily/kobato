@@ -1,7 +1,7 @@
 import type { PortableTextBody } from '@kobato/shared/legacy-pt/schema'
 
-import { convertPtBodyToLexical } from '@kobato/editor/lexical-core/mapping'
 import { extractExternalLinks, MAX_OUTBOUND_LINKS_PER_POST } from '@kobato/server/domains/webmentions/enqueue'
+import { convertPtBodyToLexical } from '@kobato/shared/lexical/mapping'
 import { describe, expect, it } from 'vitest'
 
 // The extractor walks the canonical Lexical shape; fixtures stay in the

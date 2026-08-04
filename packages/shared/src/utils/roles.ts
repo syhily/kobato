@@ -1,7 +1,7 @@
 // Isomorphic role primitives. Pure types + functions, no Node deps —
 // safe to import from both `server/*` and `ui/*`. The server side
 // adds the throwing `requireRole` / `requireUserRole` guards on top
-// of these in `@/server/domains/auth/rbac`; UI consumers stick to `Role`,
+// of these in `@kobato/server/domains/auth/rbac`; UI consumers stick to `Role`,
 // `ROLE_LEVELS`, `hasAtLeast`, and `roleLabel`.
 
 export const ROLE_LEVELS = { visitor: 1, author: 2, admin: 3 } as const

@@ -1,6 +1,6 @@
 import { OPEN_IMAGE_PICKER_COMMAND, OPEN_MUSIC_PICKER_COMMAND } from '@kobato/editor/engine/lexical/commands'
 import { getPickerHandlers, registerPickerHandlers } from '@kobato/editor/engine/lexical/picker-registry'
-import { createBodyEditorConfig } from '@kobato/editor/lexical-core/create-body-editor-config'
+import { createBodyEditorConfig } from '@kobato/shared/lexical/body-config'
 import { createHeadlessEditor } from '@lexical/headless'
 import { describe, expect, it, vi } from 'vitest'
 

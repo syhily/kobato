@@ -1,5 +1,5 @@
 // Derived cache-bucket views. The declaration table itself lives in
-// `@/shared/cache/registry` — this module derives the id unions, the
+// `@kobato/shared/cache/registry` — this module derives the id unions, the
 // tunable fallbacks, and the reserved (read-only) bucket metadata from
 // it, so no second hand-synced enumeration exists.
 

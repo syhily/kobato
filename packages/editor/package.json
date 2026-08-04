@@ -7,8 +7,9 @@
     "./engine/*": "./src/engine/*",
     "./renderer/*": "./src/renderer/*",
     "./comments-editor/*": "./src/comments-editor/*",
-    "./lexical-core/*": "./src/lexical-core/*",
     "./lexical-html/*": "./src/lexical-html/*",
+    "./lib/*": "./src/lib/*",
+    "./widgets/*": "./src/widgets/*",
     "./package.json": "./package.json"
   },
   "dependencies": {
@@ -23,7 +24,6 @@
     "@lexical/html": "catalog:",
     "@lexical/link": "catalog:",
     "@lexical/list": "catalog:",
-    "@lexical/markdown": "catalog:",
     "@lexical/react": "catalog:",
     "@lexical/rich-text": "catalog:",
     "@lexical/selection": "catalog:",
@@ -35,7 +35,6 @@
     "dompurify": "catalog:",
     "lexical": "catalog:",
     "lucide-react": "catalog:",
-    "medium-zoom": "catalog:",
     "motion": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",

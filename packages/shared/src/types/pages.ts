@@ -6,7 +6,7 @@ import type { LexicalBody } from '@kobato/shared/lexical/schema'
 // so server and client import the same shape without crossing
 // the boundary. Bigints are stringified. The row DTOs
 // (`AdminPageDto`, `AdminPageDetailDto`, list/revision outputs) are
-// zod-derived in `@/shared/contracts/pages`.
+// zod-derived in `@kobato/shared/contracts/pages`.
 
 export interface ListPagesInput {
   q?: string

@@ -4,7 +4,7 @@ import type { Env as HonoPinoEnv } from 'hono-pino'
 type BaseEnv = {
   Variables: {
     requestId: string
-    /** The canonical per-request fact base — see `@/server/http/request-context`. */
+    /** The canonical per-request fact base — see `@kobato/server/http/request-context`. */
     requestContext: RequestContext
   }
 }

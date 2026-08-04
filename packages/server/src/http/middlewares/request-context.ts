@@ -98,7 +98,7 @@ export async function deriveRequestContext(input: {
 
 /**
  * The single per-request derivation point. Produces the canonical
- * `RequestContext` (see `@/server/http/request-context`) and stores it on
+ * `RequestContext` (see `@kobato/server/http/request-context`) and stores it on
  * `c.var.requestContext`; every downstream surface (oRPC bridge, React
  * Router bridge, resource routers) projects from it — nothing re-derives.
  *
@@ -122,7 +122,7 @@ export const requestContextMiddleware = createMiddleware<Env>(async (c, next) =>
   // below rewrites the row. Cookieless anonymous requests never persist a
   // session just to carry a token — a bot flood would otherwise write one
   // session row per GET (P1-4). Their token is derived statelessly from
-  // the HttpOnly `__csrf` cookie (see `@/server/domains/auth/csrf`) and
+  // the HttpOnly `__csrf` cookie (see `@kobato/server/domains/auth/csrf`) and
   // parked in the in-memory session, so loaders and the CSRF guard read
   // it exactly as before while nothing here marks the context dirty.
   const cookieHeader = c.req.raw.headers.get('cookie')

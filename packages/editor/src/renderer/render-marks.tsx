@@ -1,5 +1,5 @@
-import { cn } from '@kobato/editor/engine/lib/cn'
-import { sanitizeHtml } from '@kobato/editor/engine/lib/sanitize-html'
+import { cn } from '@kobato/editor/lib/cn'
+import { sanitizeHtml } from '@kobato/editor/lib/sanitize-html'
 import { type ReactNode } from 'react'
 
 // Shared math rendering used by the Lexical body renderers (the PT

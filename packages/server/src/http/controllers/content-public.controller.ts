@@ -1,3 +1,5 @@
+import type { ListingPageLoaderData } from '@kobato/shared/types/catalog'
+
 import { resolveMetricTarget } from '@kobato/server/domains/comments/services/shared'
 import { resolveFontsForRender } from '@kobato/server/domains/fonts/services/render'
 import { verifyPreviewToken } from '@kobato/server/domains/preview-token/service'
@@ -12,6 +14,7 @@ import {
   loadArchivesData,
   loadCategoryListData,
   loadHomeData,
+  loadPostListData,
   loadTagListData,
 } from '@kobato/server/http/loaders/listing-data'
 import { searchLoader } from '@kobato/server/http/loaders/search'
@@ -19,7 +22,7 @@ import { loadSidebarData } from '@kobato/server/http/loaders/sidebar'
 import { publicProc } from '@kobato/server/http/orpc-base'
 import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters'
 import { publicWebmentionDto } from '@kobato/shared/contracts/webmentions'
-import { ORPCError } from '@orpc/server'
+import { ORPCError, type as typeSchema } from '@orpc/server'
 import { z } from 'zod'
 
 /**
@@ -179,6 +182,21 @@ const home = publicProc
     return withRedirectPayload(() => loadHomeData(context.db, rc, input.num))
   })
 
+/**
+ * Plain paginated post listing — the home listing without the
+ * featured/sidebar extras. Same post set, page size, tail-merge and
+ * overflow/canonical redirects as `/content/v1/home` (the `redirectTo`
+ * payload on overflow), so third-party frontends that only need a
+ * posts index paginate here instead of paying for the `extra` payload.
+ */
+const postList = publicProc
+  .route({ method: 'GET', path: '/content/v1/posts' })
+  .input(z.object({ num: z.string().optional() }))
+  .output(typeSchema<ListingPageLoaderData | { redirectTo: string }>())
+  .handler(async ({ input, context }) => {
+    return withRedirectPayload(() => loadPostListData(context.db, input.num))
+  })
+
 /** Category listing; NOT_FOUND when the category slug is unknown. */
 const categoryList = publicProc
   .route({ method: 'GET', path: '/content/v1/categories/:slug' })
@@ -261,6 +279,7 @@ export const contentPublicRouter = {
   pageDetail,
   search,
   home,
+  postList,
   categoryList,
   categoryDetail,
   tagList,

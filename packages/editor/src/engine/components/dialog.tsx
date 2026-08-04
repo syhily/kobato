@@ -1,9 +1,9 @@
 import type { ComponentProps } from 'react'
 
 import { Dialog as BaseDialog } from '@base-ui/react/dialog'
+import { transitions } from '@kobato/client/lib/motion'
 import { LazyMotionDiv } from '@kobato/editor/engine/components/lazy-motion'
-import { cn } from '@kobato/editor/engine/lib/cn'
-import { transitions } from '@kobato/editor/engine/lib/motion'
+import { cn } from '@kobato/editor/lib/cn'
 import { XIcon } from 'lucide-react'
 
 function Dialog({ ...props }: ComponentProps<typeof BaseDialog.Root>) {

@@ -30,7 +30,7 @@ const pageLiveColumns = {
 } satisfies LiveContentColumns
 
 // The db getter is injected by the composition root
-// (`@/server/bootstrap/db-lifecycle`, which imports this module) at wire
+// (`@kobato/server/bootstrap/db-lifecycle`, which imports this module) at wire
 // time — same injection discipline as `wireBackupScheduler`: the getter
 // is invoked when the job evaluates, so a recreated handle (restore
 // completion) is picked up without being captured in module state.

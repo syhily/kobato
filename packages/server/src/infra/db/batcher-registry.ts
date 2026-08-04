@@ -7,7 +7,7 @@ const log = getLogger('batcher-registry')
 
 // Registry for the process-level write batchers (access log, page views,
 // audit log). Each batcher module self-registers at import time with a
-// factory; the bootstrap lifecycle (`@/server/bootstrap/db-lifecycle`)
+// factory; the bootstrap lifecycle (`@kobato/server/bootstrap/db-lifecycle`)
 // then drives every registered batcher through one vocabulary —
 // `initAllBatchers` on database (re)open, `flushAllBatchers` +
 // `resetAllBatchers` before the database is swapped — with no per-domain

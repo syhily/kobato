@@ -2,7 +2,10 @@ import { type ClassValue, clsx } from '@kobato/ui/lib/clsx'
 import { extendTailwindMerge } from 'tailwind-merge'
 
 // Project-wide `cn` helper — custom `tailwind-merge` that registers every `@theme`
-// token so custom utilities are classified correctly. Keep in sync with `src/styles/tailwind.css`.
+// token so custom utilities are classified correctly. Keep in sync with
+// `apps/core/src/styles/tailwind.css`; the editor keeps a twin copy at
+// `packages/editor/src/lib/cn.ts` — the dual copy is guarded by the
+// parity test at packages/editor/tests/unit/parity/ui-copies.test.ts.
 
 const TEXT_TOKENS = [
   'admin-sm',

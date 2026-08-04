@@ -46,7 +46,7 @@ import { wireDbMaintenanceScheduler } from '@kobato/server/infra/db/maintenance'
 import { migrateDatabase } from '@kobato/server/infra/db/migrate'
 import { invalidateMailTransportCache } from '@kobato/server/infra/email/sender'
 // Load-bearing side-effect imports: each batcher module self-registers
-// on the infra batching seam (`@/server/infra/db/batcher-registry`) at
+// on the infra batching seam (`@kobato/server/infra/db/batcher-registry`) at
 // import time, so `initAllBatchers` / `flushAllBatchers` /
 // `resetAllBatchers` / `replayAllDeadLetters` below cover every batcher
 // with no per-domain calls.

@@ -5,7 +5,7 @@
 // `CACHE_BUCKET_FALLBACKS`, the settings defaults and schema slots, the
 // admin cache panel) reads from this table, so adding a cache never
 // requires editing a second list. The behavior plane (key shapes,
-// codecs, `cacheWhen`, counters) lives in `@/server/infra/cache/registry`.
+// codecs, `cacheWhen`, counters) lives in `@kobato/server/infra/cache/registry`.
 //
 // The `id` doubles as the value written into the `kv_cache.bucket`
 // column. `tunable` buckets get a settings slot (prefix + TTL editable

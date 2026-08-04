@@ -5,7 +5,7 @@ import { z } from 'zod'
 
 // Per-bucket cache configuration. Only tunable buckets own a settings
 // slot (the list derives from the declaration registry,
-// `@/shared/cache/registry`); the editor can only rename the PREFIX and
+// `@kobato/shared/cache/registry`); the editor can only rename the PREFIX and
 // tune the TTL. The prefix must end with `:` so a prefix scan can never
 // reach into a neighbouring bucket's namespace (an `og` prefix could
 // otherwise match `ogre-foo`).

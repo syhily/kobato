@@ -28,7 +28,7 @@ export async function sweepExpiredKvEntries(db: Database): Promise<void> {
 
 // ─── Scheduler ───────────────────────────────────────────
 // The db getter is injected by the composition root
-// (`@/server/bootstrap/db-lifecycle`) at wire time — a direct import of
+// (`@kobato/server/bootstrap/db-lifecycle`) at wire time — a direct import of
 // db-lifecycle here would make infra depend on bootstrap. The getter is
 // invoked when the job fires, so a reopened handle (restore completion)
 // is picked up without being captured in module state. Timer mechanics

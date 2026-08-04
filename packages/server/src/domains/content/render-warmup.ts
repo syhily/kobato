@@ -18,7 +18,7 @@ export interface OgWarmTarget {
  * (publish/update of a live row, alongside `invalidateContent`) but must
  * not import the render layer — the server layer graph is one-way
  * (infra → domains → render → http). So the HOW lives behind this slot:
- * `@/server/render/warmup/content-cache` wires the implementation at
+ * `@kobato/server/render/warmup/content-cache` wires the implementation at
  * import time (it loads with the HTTP resources that own the OG/calendar
  * request path), and the descriptor hooks knock on
  * `warmContentRenderCaches` below. Unwired = no-op: a publish path that

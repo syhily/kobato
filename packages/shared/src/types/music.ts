@@ -1,6 +1,6 @@
 // Wire-format DTOs for the music management endpoints. The row/result
 // DTOs (`AdminMusicDto`, `MetingSearchHit`, list/search/add/update
-// outputs) are zod-derived in `@/shared/contracts/music`.
+// outputs) are zod-derived in `@kobato/shared/contracts/music`.
 
 import type { MetingSource } from '@kobato/shared/contracts/music'
 

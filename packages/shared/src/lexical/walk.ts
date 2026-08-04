@@ -294,7 +294,7 @@ export function collectHeadingSlotsInLexicalRenderOrder(body: LexicalBody): Lexi
  * Return the structured TOC entries this body would render — the Lexical
  * counterpart of `collectHeadings` (`@kobato/shared/pt/utils`), with the
  * same slug pipeline (`transform` → `Slugger`; server-side callers pass
- * `deriveSlug` from `@/server/infra/slug/derive` to romanise CJK via
+ * `deriveSlug` from `@kobato/server/infra/slug/derive` to romanise CJK via
  * `pinyin-pro` — it can't be imported here because this module ships to
  * the client). Order matches
  * `collectHeadingSlotsInLexicalRenderOrder` so callers can pass

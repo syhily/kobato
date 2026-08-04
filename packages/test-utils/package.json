@@ -4,12 +4,11 @@
   "private": true,
   "description": "Shared test facilities (helpers + fixtures) for the workspace test projects",
   "type": "module",
-  "dependencies": {
+  "dependencies": {},
+  "devDependencies": {
     "@kobato/server": "workspace:*",
     "@kobato/shared": "workspace:*",
-    "@kobato/ui": "workspace:*"
-  },
-  "devDependencies": {
+    "@kobato/ui": "workspace:*",
     "@orpc/server": "catalog:",
     "@tanstack/react-query": "catalog:",
     "@testing-library/jest-dom": "catalog:",

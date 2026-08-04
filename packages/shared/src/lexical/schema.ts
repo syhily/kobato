@@ -9,7 +9,7 @@ import { z } from 'zod'
 // hand-written structural types plus a zod whitelist gate. It must stay
 // runtime-dependency-free: NOTHING here may import `lexical` (the gate is
 // pure JSON validation; the editor package layers the real
-// `parseEditorState` double-check on top in `lexical-core/validate.ts`).
+// `parseEditorState` double-check on top in `./validate.ts`).
 //
 // Field names and defaults below are the ACTUAL serialized shape of
 // lexical 0.45.0 (verified against `exportJSON()` of every registered

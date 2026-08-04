@@ -1,6 +1,5 @@
 import type { LexicalBody, LexicalFootnoteDefinitionNode } from '@kobato/shared/lexical/schema'
 
-import { $createFootnoteRefNode, $isFootnoteRefNode } from '@kobato/editor/lexical-core/nodes/footnote-ref-node'
 import {
   createFootnoteDefinitionNode,
   extractFootnoteDefinitionBlocksLexical,
@@ -11,6 +10,7 @@ import {
   stripFootnoteDefinitionsForEditorLexical,
 } from '@kobato/shared/lexical/footnote-merge-lexical'
 import { footnoteSyncSignatureLexical } from '@kobato/shared/lexical/footnote-sync-lexical'
+import { $createFootnoteRefNode, $isFootnoteRefNode } from '@kobato/shared/lexical/nodes/footnote-ref-node'
 import { unsafeCast } from '@kobato/shared/utils/unsafe-cast'
 import { $dfs } from '@lexical/utils'
 import { $getSelection, $isRangeSelection, type LexicalEditor } from 'lexical'

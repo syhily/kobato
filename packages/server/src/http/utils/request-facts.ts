@@ -36,7 +36,7 @@ export function isDataRequestUrl(url: URL): boolean {
 /**
  * Extract the transport-agnostic request facts the domain layer is
  * allowed to see. Runs once per request in the request-context middleware
- * (`@/server/http/middlewares/request-context`) and rides the canonical
+ * (`@kobato/server/http/middlewares/request-context`) and rides the canonical
  * `RequestContext` — header names and URL normalization live in exactly
  * one place.
  */

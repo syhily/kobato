@@ -17,7 +17,7 @@ const MIGRATIONS_TABLE = '__drizzle_migrations'
 const log = getLogger('db:migrations')
 
 // Embedded asset keys look like `<SEA_DRIZZLE_ASSET_PREFIX><folder>/migration.sql`
-// (the prefix is owned by `@/shared/sea/assets`).
+// (the prefix is owned by `@kobato/shared/sea/assets`).
 const MIGRATION_SQL_SUFFIX = '/migration.sql'
 
 /**

@@ -1,5 +1,5 @@
 // L3 (direct identifier) privacy tagging for audit-log `details`.
-// Uses the same L3 key set as `@/server/infra/logger.ts` so audit rows
+// Uses the same L3 key set as `@kobato/server/infra/logger.ts` so audit rows
 // carry the same `{E}…{/E}` markers as stdout log lines.
 
 import { L3_KEYS } from '@kobato/server/infra/logger'

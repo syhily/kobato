@@ -1,9 +1,9 @@
 import type { ComponentProps } from 'react'
 
 import { Popover as BasePopover } from '@base-ui/react/popover'
+import { transitions } from '@kobato/client/lib/motion'
 import { LazyMotionDiv } from '@kobato/editor/engine/components/lazy-motion'
-import { cn } from '@kobato/editor/engine/lib/cn'
-import { transitions } from '@kobato/editor/engine/lib/motion'
+import { cn } from '@kobato/editor/lib/cn'
 
 function Popover({ ...props }: ComponentProps<typeof BasePopover.Root>) {
   return <BasePopover.Root data-slot="popover" {...props} />

@@ -1,10 +1,10 @@
-import type { AudioInfo } from '@kobato/editor/engine/aplayer/types'
+import type { AudioInfo } from '@kobato/editor/widgets/aplayer/types'
 import type { MusicPlayerBlockMeta } from '@kobato/shared/types/music'
 
-import { cn } from '@kobato/editor/engine/lib/cn'
+import { cn } from '@kobato/editor/lib/cn'
 import { lazy, Suspense } from 'react'
 
-const APlayer = lazy(() => import('@kobato/editor/engine/aplayer/player').then((m) => ({ default: m.APlayer })))
+const APlayer = lazy(() => import('@kobato/editor/widgets/aplayer/player').then((m) => ({ default: m.APlayer })))
 
 export interface MusicPlayerProps {
   /** Resolved metadata from SSR. When provided the player renders immediately. */

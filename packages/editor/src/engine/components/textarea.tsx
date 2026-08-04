@@ -1,6 +1,6 @@
 import type { ComponentProps } from 'react'
 
-import { cn } from '@kobato/editor/engine/lib/cn'
+import { cn } from '@kobato/editor/lib/cn'
 
 function Textarea({ className, ...props }: ComponentProps<'textarea'>) {
   return (

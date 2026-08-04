@@ -111,7 +111,7 @@ export async function listAdminImageRows(
 
 /**
  * Single-row variant of `listAdminImageRows` keyed by `id`. Used by
- * the post-mutation paths in `@/server/domains/images/services/admin-read` so the admin
+ * the post-mutation paths in `@kobato/server/domains/images/services/admin-read` so the admin
  * shell can patch the row in place without a second `SELECT user`
  * round-trip after `updateImageNote()` / `findImageDtoById()`.
  */

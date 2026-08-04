@@ -130,7 +130,7 @@ export function buildDefaultSectionPayloads(): {
 //      so drift here means the DTO lies.
 // A missing registry entry already fails the `satisfies` on
 // SECTION_REGISTRY above; a missing SECTION_TO_BUNDLE_KEY entry fails
-// its own `satisfies` in `@/shared/config/sections`. This assert is
+// its own `satisfies` in `@kobato/shared/config/sections`. This assert is
 // what fails on key disagreement or schema/DTO drift.
 type _SectionRegistryBundleParity = Assert<
   Equals<

@@ -48,8 +48,8 @@ const sanitizeEngineAliasPlugin = (): Plugin => ({
     filter: { id: /sanitize-html-engine\.node$/ },
     handler(id) {
       if (this.environment.name === 'client') {
-        if (id.includes('/editor/src/engine/lib/sanitize-html-engine.node')) {
-          return resolve(packagesRoot, 'editor/src/engine/lib/sanitize-html-engine.browser.ts')
+        if (id.includes('/editor/src/lib/sanitize-html-engine.node')) {
+          return resolve(packagesRoot, 'editor/src/lib/sanitize-html-engine.browser.ts')
         }
         return resolve(packagesRoot, 'ui/src/lib/sanitize-html-engine.browser.ts')
       }

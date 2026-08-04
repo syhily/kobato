@@ -2,7 +2,7 @@ import type { AdminPostDetailDto, AdminPostDto } from '@kobato/shared/contracts/
 import type { LexicalBody } from '@kobato/shared/lexical/schema'
 
 // The row DTOs (`AdminPostDto`, `AdminPostDetailDto`, list/revision
-// outputs) are zod-derived in `@/shared/contracts/posts`.
+// outputs) are zod-derived in `@kobato/shared/contracts/posts`.
 
 export interface ListPostsInput {
   q?: string

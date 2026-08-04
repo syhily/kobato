@@ -73,7 +73,9 @@ payload = { "iss": "<key-id>", "scope": ["content:write"], "exp": <now+300> }
 
 ## 分页约定
 
-列表端点(首页/分类/标签/搜索)支持 `num` 查询参数(页码字符串,`/page/N` 语义;`/page/1` 折叠到根,溢出 301 到最后一页)。响应含 `pageNum`/`totalPage`/`rootPath`。评论区列表 `offset` 游标分页。
+列表端点(`/content/v1/home` 首页、`/content/v1/posts` 文章列表、`/content/v1/categories/:slug` 分类、`/content/v1/tags/:slug` 标签、`/content/v1/search` 搜索)支持 `num` 查询参数(页码字符串,`/page/N` 语义;`/page/1` 折叠到根,溢出 301 到最后一页)。响应含 `pageNum`/`totalPage`/`rootPath`。评论区列表 `offset` 游标分页。
+
+`/content/v1/posts` 是纯分页文章列表:与 `/content/v1/home` 相同的分页语义(页大小取 `content.pagination.posts`,尾页合并规则一致,溢出同样返回 `redirectTo` 载荷),但不含 featured/sidebar 等 `extra` 数据。第三方前端只需文章索引时用它分页;需要首页组装数据(featured 精选、sidebar 挂件、分类链接)仍用 `/content/v1/home`。
 
 ## 日期约定
 

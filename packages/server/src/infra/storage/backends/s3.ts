@@ -452,8 +452,8 @@ export const s3Backend: StorageBackend = {
   },
 }
 
-// `buildPublicUrl` lives in `@/server/domains/images/services/cache` and
+// `buildPublicUrl` lives in `@kobato/server/domains/images/services/cache` and
 // resolves the live `publicBaseUrl` directly through
-// `@/server/infra/storage/public-url`'s `resolveAssetUrl`. Keeping it out
+// `@kobato/server/infra/storage/public-url`'s `resolveAssetUrl`. Keeping it out
 // of this module is what allows the SSR enhancer to stay free of the AWS
 // SDK in code paths that only need to compute a URL (no PUT/DELETE).

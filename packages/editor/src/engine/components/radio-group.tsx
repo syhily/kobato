@@ -2,7 +2,7 @@ import type { ComponentProps } from 'react'
 
 import { Radio as BaseRadio } from '@base-ui/react/radio'
 import { RadioGroup as BaseRadioGroup } from '@base-ui/react/radio-group'
-import { cn } from '@kobato/editor/engine/lib/cn'
+import { cn } from '@kobato/editor/lib/cn'
 
 function RadioGroup({ className, ...props }: ComponentProps<typeof BaseRadioGroup>) {
   return <BaseRadioGroup data-slot="radio-group" className={cn('grid w-full gap-3', className)} {...props} />

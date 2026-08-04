@@ -3,7 +3,7 @@
 // Drizzle types `comment.id` / `userId` / `ownerId` / `rootId` as
 // `bigint` and timestamps as `Date`, neither of which survives
 // `JSON.stringify` in the shape the wire DTOs declare. The contract DTOs
-// in `@/shared/contracts/comments` model the wire shape — `string` ids,
+// in `@kobato/shared/contracts/comments` model the wire shape — `string` ids,
 // ISO timestamps — which is what consumers expect over the network.
 //
 // These helpers do the projection explicitly and are idempotent:
@@ -14,10 +14,10 @@ import type { AdminCommentWire, CommentItemWire } from '@kobato/shared/contracts
 import type { LexicalCommentBody } from '@kobato/shared/lexical/comment-schema'
 import type { AdminComment, CommentAndUser, CommentItem, LatestComment } from '@kobato/shared/types/comments'
 
-import { convertPtBodyToLexical } from '@kobato/editor/lexical-core/mapping'
 import { withCommentBadgeTextColor } from '@kobato/server/domains/comments/badge'
 import { validatePortableTextBody } from '@kobato/shared/legacy-pt/utils'
 import { parseLexicalCommentBody } from '@kobato/shared/lexical/comment-schema'
+import { convertPtBodyToLexical } from '@kobato/shared/lexical/mapping'
 import { entityPermalink, trimSiteSuffix } from '@kobato/shared/utils/paths'
 
 // DUAL-SHAPE comment body read until the data migration (R6):

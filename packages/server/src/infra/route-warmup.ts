@@ -135,7 +135,6 @@ function bundleWarmupScript(): Promise<string> {
             '@kobato/shared': resolve(PACKAGES_ROOT, 'shared/src'),
             '@kobato/server': resolve(PACKAGES_ROOT, 'server/src'),
             '@kobato/ui': resolve(PACKAGES_ROOT, 'ui/src'),
-            '@kobato/editor': resolve(PACKAGES_ROOT, 'editor/src'),
             '@kobato/sdk': resolve(PACKAGES_ROOT, 'sdk/src'),
           },
         },

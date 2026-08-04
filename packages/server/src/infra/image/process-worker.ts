@@ -67,7 +67,7 @@ export interface WorkerErrResponse {
   id: number
   ok: false
   // Type-only reference (erased at runtime): the wire contract is owned by
-  // `domainErrorFromWire` in `@/server/infra/http/errors`, which must stay
+  // `domainErrorFromWire` in `@kobato/server/infra/http/errors`, which must stay
   // out of this module's runtime graph (see `WorkerDomainError` below).
   error: DomainErrorWire
 }
@@ -77,12 +77,12 @@ export type WorkerResponse = WorkerOkResponse | WorkerErrResponse
 /**
  * Lightweight stand-in for `DomainError` used inside the worker isolate.
  *
- * We deliberately avoid importing `@/server/infra/http/errors` here at
+ * We deliberately avoid importing `@kobato/server/infra/http/errors` here at
  * runtime — that module uses TypeScript parameter properties (`readonly`
  * in the constructor) which Node's `--experimental-strip-types` cannot
  * transform, and pulling it in would also bring transitive deps. The main
  * thread rehydrates these into real `DomainError` instances via
- * `domainErrorFromWire` (in `@/server/infra/http/errors`), so callers see
+ * `domainErrorFromWire` (in `@kobato/server/infra/http/errors`), so callers see
  * the exact same exception type they did before the worker offload.
  *
  * The `name` is set to `'DomainError'` so the wire format matches what

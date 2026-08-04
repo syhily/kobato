@@ -86,7 +86,7 @@ export async function getMusicMetaForPlayer(db: Database, playerId: string): Pro
 /**
  * Batch variant of `getMusicMetaForPlayer` — one query regardless of how
  * many players a page embeds. Callers wire this into the PT-owned embed
- * seam (`@/server/domains/lexical/embeds`) so the body dialect never
+ * seam (`@kobato/server/domains/lexical/embeds`) so the body dialect never
  * imports this domain.
  */
 export async function getPublicMusicMetasByIds(

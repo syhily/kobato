@@ -8,8 +8,9 @@ import { COMMAND_PRIORITY_LOW } from 'lexical'
  *
  * The footnote dialog state lives in the engine's footnote loop
  * (`useLexicalFootnotes`), but the click-to-edit entry point is inside
- * the node view (`FootnoteRefView` in `lexical-core`), which must not
- * import the engine's hook — the same separation as the picker bridge.
+ * the node view (`FootnoteRefView` in `engine/lexical/node-views`), which
+ * must not import the engine's hook — the same separation as the picker
+ * bridge.
  * The loop registers its callbacks through `registerFootnoteHandlers`;
  * node views read them via `getFootnoteHandlers`. `OPEN_FOOTNOTE_DIALOG_COMMAND`
  * (toolbar / slash menu / caret trigger) translates into the insert

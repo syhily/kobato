@@ -8,7 +8,7 @@ import { RadioGroup } from '@kobato/ui/components/radio-group'
 // the upstream `onValueChange` (typically RHF's `field.onChange`) fires
 // first, then `save()` commits the card immediately. The items
 // (`RadioGroupItem`) are presentational and stay imported from
-// `@/ui/components/radio-group`.
+// `@kobato/ui/components/radio-group`.
 
 type RadioGroupProps = ComponentProps<typeof RadioGroup>
 

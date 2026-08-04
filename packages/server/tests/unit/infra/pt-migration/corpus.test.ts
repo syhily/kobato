@@ -1,9 +1,9 @@
 import type { PtRowOutcome } from '@kobato/server/infra/pt-migration/core'
 import type { LexicalBody } from '@kobato/shared/lexical/schema'
 
-import { lexicalBodyToHtml } from '@kobato/editor/lexical-html/lexicalBodyToHtml'
 import { processPtRow } from '@kobato/server/infra/pt-migration/core'
 import { verifyBodySanity } from '@kobato/server/infra/pt-migration/migrate'
+import { lexicalBodyToHtml } from '@kobato/server/render/lexical-html/lexicalBodyToHtml'
 import { parseLexicalCommentBody } from '@kobato/shared/lexical/comment-schema'
 import { parseLexicalBody } from '@kobato/shared/lexical/schema'
 import { readFileSync } from 'node:fs'

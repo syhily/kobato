@@ -1,7 +1,7 @@
 import type { LexicalEditor, LexicalNode } from 'lexical'
 
-import { $createInlineMathNode, $isInlineMathNode } from '@kobato/editor/lexical-core/nodes/inline-math-node'
 import { generateBlockKey } from '@kobato/shared/legacy-pt/utils'
+import { $createInlineMathNode, $isInlineMathNode } from '@kobato/shared/lexical/nodes/inline-math-node'
 import {
   $createTextNode,
   $generateNodesFromRawText,

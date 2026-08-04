@@ -21,7 +21,7 @@ import { likeCacheKeyParts, runLikeSearch } from '@kobato/server/infra/search/li
 // Empty result sets are never cached (cacheWhen on the declaration).
 
 // The visibility gate is supplied by the caller (infra has zero business
-// knowledge — the "live" rule lives in `@/server/domains/content/schemas/live-gate`).
+// knowledge — the "live" rule lives in `@kobato/server/domains/content/schemas/live-gate`).
 export async function searchPosts(
   db: Database,
   baseWhere: SQL,

@@ -13,12 +13,12 @@ const log = getLogger('audit.scheduler')
 // shared `scheduleJob` seam.
 
 // The db getter is injected by the composition root
-// (`@/server/bootstrap/db-lifecycle`, which imports this module) at
+// (`@kobato/server/bootstrap/db-lifecycle`, which imports this module) at
 // wire time — a direct import of db-lifecycle here would close an
 // import cycle. The getter is invoked when the job fires, so a
 // recreated pool (restore completion) is picked up without being
 // captured in module state. Same injection discipline as
-// `setRestartDb` / `setRestartRefreshSettings` in `@/server/infra/lifecycle`.
+// `setRestartDb` / `setRestartRefreshSettings` in `@kobato/server/infra/lifecycle`.
 let resolveDb: (() => Database) | null = null
 let job: ScheduledJob | null = null
 

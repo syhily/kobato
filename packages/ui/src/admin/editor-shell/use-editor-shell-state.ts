@@ -11,7 +11,7 @@ import type {
 
 import { useCreateDraft } from '@kobato/client/hooks/use-create-draft'
 import { useLocalDraft } from '@kobato/client/hooks/use-local-draft'
-import { areLexicalBodiesEquivalent } from '@kobato/editor/lexical-core/canonicalize'
+import { areLexicalBodiesEquivalent } from '@kobato/shared/lexical/canonicalize'
 import { EMPTY_LEXICAL_BODY } from '@kobato/shared/lexical/schema'
 import {
   deriveBaselineRevision,

@@ -1,8 +1,8 @@
 // Manual rollback for the self-update pipeline: `kobato rollback` swaps the
 // `<binary>.bak` sibling (left behind by the update swap) back into place.
-// Invoked from the SEA CLI surface (`@/server/infra/sea-cli`) BEFORE any
+// Invoked from the SEA CLI surface (`@kobato/server/infra/sea-cli`) BEFORE any
 // bootstrap — this module must stay free of side effects and may only
-// depend on node builtins and `@/shared/config/version`, same as sea-cli.
+// depend on node builtins and `@kobato/shared/config/version`, same as sea-cli.
 
 import { APP_VERSION } from '@kobato/shared/config/version'
 import { spawnSync } from 'node:child_process'

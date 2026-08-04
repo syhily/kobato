@@ -2,7 +2,7 @@ import type { BlogSettingsBundle } from '@kobato/shared/config/types'
 import type { MetaDescriptor } from 'react-router'
 
 // Isomorphic by construction: route `meta()` exports pull this module into
-// the browser bundle, so it may only import `@/shared/*` — the invariant is
+// the browser bundle, so it may only import `@kobato/shared/*` — the invariant is
 // pinned by `tests/unit/shared/contracts/boundaries.test.ts`.
 import { getBlogSettingsBundleSync } from '@kobato/shared/config/getters'
 import { brandingVersion, extractXHandle } from '@kobato/shared/config/utils'

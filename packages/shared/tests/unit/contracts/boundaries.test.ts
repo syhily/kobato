@@ -198,15 +198,17 @@ function importedBindings(source: string): Set<string> {
 }
 
 describe('contract: workspace package boundaries (direction rules)', () => {
-  // The plan's dependency graph (stage 0 target): shared is leaf-isolated;
-  // server → shared (+ editor since stage 4: the Lexical string renderer
-  // lives in the editor package and the server assembles it in
-  // `server/render/lexical-html.ts`); client → shared (+ type-only server
-  // for ApiRouter); ui → shared, client, editor; editor → shared, client;
-  // sdk is a published package with ZERO workspace imports (self-reference
-  // only). `allowed` is the set of `@kobato/<name>` prefixes a package's
-  // src may import (value AND type); `valueBanned` lists packages that may
-  // be imported type-only but never by value.
+  // The plan's dependency graph (stage 0 target): shared is leaf-isolated
+  // (its canonicalize/validate/mapping/node classes moved OUT of the
+  // editor package in stage 5, so the server→editor edge is gone — the
+  // server graph is server→shared only again, with the Lexical string
+  // renderers living in `server/render/lexical-html/` since stage 4);
+  // client → shared (+ type-only server for ApiRouter); ui → shared,
+  // client, editor; editor → shared, client; sdk is a published package
+  // with ZERO workspace imports (self-reference only). `allowed` is the
+  // set of `@kobato/<name>` prefixes a package's src may import (value
+  // AND type); `valueBanned` lists packages that may be imported
+  // type-only but never by value.
   interface DirectionRule {
     root: string
     allowed: string[]
@@ -214,7 +216,7 @@ describe('contract: workspace package boundaries (direction rules)', () => {
   }
   const PACKAGE_DIRECTIONS: DirectionRule[] = [
     { root: 'packages/shared/src', allowed: ['shared'], valueBanned: [] },
-    { root: 'packages/server/src', allowed: ['server', 'shared', 'editor'], valueBanned: [] },
+    { root: 'packages/server/src', allowed: ['server', 'shared'], valueBanned: [] },
     // client and ui may TYPE-import server (the ApiRouter type exit for the
     // browser client) but never import it by value.
     { root: 'packages/client/src', allowed: ['client', 'shared', 'server'], valueBanned: ['server'] },
@@ -360,6 +362,20 @@ describe('contract: server package internals', () => {
     // business rules and must not reach into the SSR (`render/`) or
     // transport (`http/`) perimeters; `render/` must not reach `http/`.
     // Type imports count too — they pin the same coupling.
+    //
+    // Documented exceptions (stage 4): the Lexical STRING renderers
+    // (`render/lexical-html/`) are pure functions over EditorState JSON —
+    // no request context, no SSR machinery — so the two pre-existing
+    // consumers keep calling them directly: the comment email service
+    // (domains) renders email-mode comment HTML and the PT-migration core
+    // (infra) spot-renders converted rows. The exceptions are pinned to
+    // these exact `file: specifier` pairs; a new cross-layer consumer must
+    // go through the assembly seam (`render/lexical-html.ts`) instead.
+    const layerExceptions = new Set([
+      'packages/server/src/domains/comments/services/email.ts: @kobato/server/render/lexical-html/comment-to-html',
+      'packages/server/src/infra/pt-migration/core.ts: @kobato/server/render/lexical-html/lexicalBodyToHtml',
+    ])
+    const layerExceptionHits = new Set<string>()
     const rules: Array<{ from: string; banned: string[] }> = [
       { from: 'packages/server/src/infra/', banned: ['domains', 'http', 'render'] },
       { from: 'packages/server/src/domains/', banned: ['http', 'render'] },
@@ -381,11 +397,18 @@ describe('contract: server package internals', () => {
               target.startsWith(`@kobato/server/${banned}/`) || target.startsWith(`packages/server/src/${banned}/`),
           )
         ) {
-          offenders.push(`${file}: ${specifier}`)
+          const key = `${file}: ${specifier}`
+          if (layerExceptions.has(key)) {
+            layerExceptionHits.add(key)
+          } else {
+            offenders.push(key)
+          }
         }
       }
     }
     expect(offenders).toEqual([])
+    // No dead allowlist: the documented cross-layer couplings must actually exist.
+    expect([...layerExceptions].filter((key) => !layerExceptionHits.has(key))).toEqual([])
   })
 
   it('keeps the cross-domain import graph acyclic', () => {
@@ -700,6 +723,65 @@ describe('contract: shared / client / ui / editor rules', () => {
     }
 
     expect(offenders).toEqual([])
+  })
+
+  it('keeps the editor public surfaces off the engine (renderer/lexical-html/comments-editor)', () => {
+    // Stage-6 layering: the engine (admin editor chrome) must not ride the
+    // public rendering surfaces. `renderer/` and `lexical-html/` are fully
+    // engine-free — every neutral piece they consume (cn, sanitize-html,
+    // code-languages, the tooltip copy, Image/use-image-loaded, the aplayer
+    // widget) lives in `lib/` / `widgets/` since stage 6. `comments-editor/`
+    // keeps the plan-documented engine coupling (it reuses engine nodes,
+    // plugins and toolbar chrome — the split plan: "comments-editor 内部对
+    // 引擎节点的引用按 import 图自然入包,属合理"), confined to the
+    // `engine/lexical/` and `engine/components/` surfaces; everything else
+    // in engine (lib leftovers, toolbar, icons, picker-slot,
+    // FootnoteEditorDialog) is off limits. Type imports are erased at
+    // compile time and stay legal. The reverse edge engine→renderer
+    // (MusicBlock reuses the public MusicPlayer in the admin canvas) is
+    // documented and deliberately NOT checked here.
+    const engineTargetPrefixes = ['@kobato/editor/engine/', 'packages/editor/src/engine/']
+    const commentsEngineAllowedPrefixes = [
+      '@kobato/editor/engine/lexical/',
+      'packages/editor/src/engine/lexical/',
+      '@kobato/editor/engine/components/',
+      'packages/editor/src/engine/components/',
+    ]
+    // The aliased forms are the real surface (the relative forms are
+    // defensive — the same ban applied to a relative escape), so the
+    // no-dead-allowlist check watches the aliases.
+    const commentsEngineAllowedAliases = commentsEngineAllowedPrefixes.filter((prefix) => prefix.startsWith('@kobato/'))
+    const offenders: string[] = []
+    const commentsEngineHits: string[] = []
+    for (const root of [
+      'packages/editor/src/renderer',
+      'packages/editor/src/lexical-html',
+      'packages/editor/src/comments-editor',
+    ]) {
+      const isComments = root.endsWith('comments-editor')
+      for (const file of files(root, '-g', '*.ts', '-g', '*.tsx')) {
+        for (const specifier of valueImportSpecifiers(stripComments(readFileSync(file, 'utf8')))) {
+          const target = resolveSpecifier(file, specifier)
+          if (!engineTargetPrefixes.some((prefix) => target.startsWith(prefix))) {
+            continue
+          }
+          if (isComments && commentsEngineAllowedPrefixes.some((prefix) => target.startsWith(prefix))) {
+            commentsEngineHits.push(target)
+            continue
+          }
+          offenders.push(`${file}: ${specifier}`)
+        }
+      }
+    }
+
+    expect(offenders).toEqual([])
+    // No dead allowlist: the documented comments-editor coupling must exist.
+    for (const prefix of commentsEngineAllowedAliases) {
+      expect(
+        commentsEngineHits.some((target) => target.startsWith(prefix)),
+        `${prefix} unused — drop it`,
+      ).toBe(true)
+    }
   })
 })
 
@@ -1448,8 +1530,7 @@ describe('contract: module and bundle boundaries', () => {
         (file) =>
           !file.startsWith('packages/ui/src/admin/') &&
           !file.startsWith('apps/core/src/routes/auth/') &&
-          !file.startsWith('apps/core/src/routes/admin/') &&
-          !file.startsWith('packages/ui/src/public/aplayer/'),
+          !file.startsWith('apps/core/src/routes/admin/'),
       )
       .filter((file) => /(?:bg|text|border)-\[#/.test(readFileSync(file, 'utf8')))
 
@@ -1575,11 +1656,18 @@ describe('contract: module and bundle boundaries', () => {
     expect(offenders).toEqual([])
   })
 
-  it('keeps the wp-decoy status text mirrored between server and ErrorView', () => {
+  it('keeps the wp-decoy status text mirrored between shared and ErrorView', () => {
+    // The predicate + status text are shared by the core server and the
+    // headless frontend (both mount the decoy); the single source is
+    // `@kobato/shared/http/wp-decoy` — the server middleware must import
+    // it, never re-declare it.
+    const shared = readFileSync('packages/shared/src/http/wp-decoy.ts', 'utf8')
     const server = readFileSync('packages/server/src/http/middlewares/wp-decoy.ts', 'utf8')
     const ui = readFileSync('packages/ui/src/public/chrome/ErrorView.tsx', 'utf8')
 
-    expect(server).toContain("export const NOT_WORDPRESS_STATUS_TEXT = 'Not WordPress'")
+    expect(shared).toContain("export const NOT_WORDPRESS_STATUS_TEXT = 'Not WordPress'")
+    expect(server).toContain("from '@kobato/shared/http/wp-decoy'")
+    expect(server).not.toContain('export const NOT_WORDPRESS_STATUS_TEXT')
     expect(ui).toContain("const NOT_WORDPRESS_STATUS_TEXT = 'Not WordPress'")
   })
 
@@ -1703,10 +1791,12 @@ describe('contract: module and bundle boundaries', () => {
     const baseLayout = readFileSync('packages/ui/src/public/chrome/BaseLayout.tsx', 'utf8')
     expect(baseLayout).toMatch(/import ['"]@\/styles\/public\.css['"]/)
 
-    const audioControl = readFileSync('packages/ui/src/public/aplayer/hooks/use-audio-control.ts', 'utf8')
+    // The aplayer widget's single copy lives in `@kobato/editor/widgets/aplayer`
+    // (the ui `public/aplayer` copy was deleted in phase 7 of the split audit).
+    const audioControl = readFileSync('packages/editor/src/widgets/aplayer/hooks/use-audio-control.ts', 'utf8')
     expect(audioControl).toMatch(/export\s+type\s+AudioControl\s*=\s*ReturnType<typeof useAudioControl>/)
 
-    const playbackControls = readFileSync('packages/ui/src/public/aplayer/controller.tsx', 'utf8')
+    const playbackControls = readFileSync('packages/editor/src/widgets/aplayer/controller.tsx', 'utf8')
     expect(playbackControls).toMatch(/control:\s*AudioControl/)
     expect(playbackControls).not.toMatch(/audioDurationSeconds/)
 

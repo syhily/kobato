@@ -1,4 +1,4 @@
-import { Tooltip } from '@kobato/editor/engine/components/tooltip'
+import { Tooltip } from '@kobato/editor/lib/components/tooltip'
 import { FOOTNOTE_ID_PREFIX, FOOTNOTE_REF_ID_PREFIX } from '@kobato/shared/lexical/footnote-anchors'
 import {
   createContext,

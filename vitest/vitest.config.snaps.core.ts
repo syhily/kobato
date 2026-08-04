@@ -17,8 +17,7 @@ export default defineConfig({
     silent: 'passed-only',
     environment: 'node',
     // Core-app SSR snapshot tests (admin + editor routes). The
-    // repository-level + package tests run via `vitest.config.ts` in this
-    // directory.
+    // repository-level + package tests run via `vitest.config.snaps.ts`.
     include: ['../apps/core/tests/snaps/**/*.test.{ts,tsx}'],
     setupFiles: ['./setup.snaps.ts'],
     testTimeout: 10_000,

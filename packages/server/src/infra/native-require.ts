@@ -31,10 +31,10 @@
 // new specifier in a future sharp/canvas release fails the
 // `native-specifiers` contract test at upgrade time, not silently here.
 //
-// Dependency discipline (same as `@/server/infra/sea`): this module is
+// Dependency discipline (same as `@kobato/server/infra/sea`): this module is
 // inlined into the worker bundles and evaluates inside the SEA before the
-// app graph is up — node builtins, `@/server/infra/sea`, and the
-// constants-only `@/shared/sea/assets` only. `process.env` is read here
+// app graph is up — node builtins, `@kobato/server/infra/sea`, and the
+// constants-only `@kobato/shared/sea/assets` only. `process.env` is read here
 // for the same reason sea.ts reads it: `KOBATO_NATIVES_DIR` is runtime
 // state assigned by the SEA bootstrap after module load (pinned by the
 // boundaries contract test).

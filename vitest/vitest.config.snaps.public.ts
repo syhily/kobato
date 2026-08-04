@@ -17,7 +17,7 @@ export default defineConfig({
     silent: 'passed-only',
     environment: 'node',
     // Public-app SSR snapshot tests. The repository-level + package tests
-    // run via `vitest.config.ts` in this directory.
+    // run via `vitest.config.snaps.ts`.
     include: ['../apps/public/tests/snaps/**/*.test.{ts,tsx}'],
     setupFiles: ['./setup.snaps.ts'],
     testTimeout: 10_000,

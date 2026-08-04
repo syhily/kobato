@@ -4,7 +4,7 @@ Repository conventions for AI agents and contributors.
 
 ## Quick orientation
 
-- Monorepo: two apps (`apps/core` — headless core: admin SSR + `/rpc` + `/api` + URL endpoints; `apps/public` — the official frontend, consuming core over HTTP) and six packages (`packages/{server,client,ui,shared,editor,sdk}`). React Router 8 Framework Mode with SSR (each app's `react-router.config.ts` keeps `appDirectory: 'src'`), React 19 TSX/TS only, SQLite (node:sqlite) + a DuckDB analytics sidecar.
+- Monorepo: two apps (`apps/core` — headless core: admin SSR + `/rpc` + `/api` + URL endpoints; `apps/public` — the official frontend, consuming core over HTTP and proxying core's URL endpoints — feeds/sitemap/robots/assets/images/storage/fonts — with streaming relay) and seven packages (`packages/{server,client,ui,shared,editor,sdk,test-utils}`). React Router 8 Framework Mode with SSR (each app's `react-router.config.ts` keeps `appDirectory: 'src'`), React 19 TSX/TS only, SQLite (node:sqlite) + a DuckDB analytics sidecar.
 - Path aliases: app-scoped `@/*` → `<app>/src/*`, `#/*` → `packages/test-utils/tests/*`, `@kobato/*` → `packages/*/src/*`.
 - Five layers: `packages/server` (SSR), `packages/client` (browser), `packages/ui` (components), `packages/shared` (isomorphic), plus app `routes/` (orchestration).
 
@@ -362,11 +362,12 @@ its own `dependencies`/`devDependencies` by its **import graph** (stage 3
 @kobato/sdk` resolves them for consumers.
 
 **Editor stack.** The admin body editor is Lexical — `lexical` + `@lexical/*` pinned at
-`0.45.0` (devDependencies of `packages/editor`, hoisted from the root). The retired PT track
+`0.45.0` (devDependencies of `packages/editor` AND `packages/shared`, hoisted from the root —
+shared owns the headless dialect core since stage 5). The retired PT track
 (Tiptap engine + bridge, `@tiptap/*`, `@portabletext/*`, `shared/pt`) is removed; what survives
 is the migration surface only: `packages/shared/src/legacy-pt/` (PT schema / canonicalize /
 comment schema — the minimal set the dual-shape read path and the migration core still need),
-`packages/editor/src/lexical-core/mapping.ts` (`convertPtBodyToLexical`, one-way), and the
+`packages/shared/src/lexical/mapping.ts` (`convertPtBodyToLexical`, one-way), and the
 built-in `kobato migrate-pt` migration (`packages/server/src/infra/pt-migration/` —
 backup-gated, idempotent, `--check`/`--verify` modes; the one-shot
 `scripts/migrate-pt-to-lexical.ts` is retired).

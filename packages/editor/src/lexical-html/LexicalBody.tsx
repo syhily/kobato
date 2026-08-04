@@ -13,9 +13,25 @@ import type {
 } from '@kobato/shared/lexical/schema'
 import type { MusicPlayerBlockMeta } from '@kobato/shared/types/music'
 
-import { cn } from '@kobato/editor/engine/lib/cn'
-import { safeRel } from '@kobato/editor/engine/lib/link'
-import { sanitizeHtml } from '@kobato/editor/engine/lib/sanitize-html'
+import { cn } from '@kobato/editor/lib/cn'
+import { sanitizeHtml } from '@kobato/editor/lib/sanitize-html'
+import { BlockImage } from '@kobato/editor/renderer/blocks/BlockImage'
+import { CodeBlock as CodeBlockComponent } from '@kobato/editor/renderer/blocks/CodeBlock'
+import { MusicPlayer } from '@kobato/editor/renderer/blocks/MusicPlayer'
+import { Solution } from '@kobato/editor/renderer/blocks/Solution'
+import { FootnotePreviewRegistrar, FootnoteProvider, FootnoteReference } from '@kobato/editor/renderer/Footnotes'
+import { ImageMetaProvider, type ImageMetaMap } from '@kobato/editor/renderer/image-meta-context'
+import { renderMathMarkupOrTexFallback } from '@kobato/editor/renderer/render-marks'
+import { MusicPresentationContext } from '@kobato/editor/renderer/render-shared'
+import {
+  FOOTNOTE_BACKREF_ARIA_LABEL,
+  FOOTNOTE_BACKREF_ATTRIBUTE,
+  FOOTNOTES_SECTION_HEADING_ID,
+  footnoteAnchorHref,
+  footnoteAnchorId,
+  footnoteRefHref,
+  footnoteRefId,
+} from '@kobato/shared/lexical/footnote-anchors'
 import {
   alignClass,
   BODY_WRAPPER_CLASS,
@@ -34,37 +50,22 @@ import {
   TABLE_WRAPPER_CLASS,
   TWO_COLUMN_CLASS,
   TWO_COLUMN_PANE_CLASS,
-} from '@kobato/editor/lexical-html/manifest'
-import { BlockImage } from '@kobato/editor/renderer/blocks/BlockImage'
-import { CodeBlock as CodeBlockComponent } from '@kobato/editor/renderer/blocks/CodeBlock'
-import { MusicPlayer } from '@kobato/editor/renderer/blocks/MusicPlayer'
-import { Solution } from '@kobato/editor/renderer/blocks/Solution'
-import { FootnotePreviewRegistrar, FootnoteProvider, FootnoteReference } from '@kobato/editor/renderer/Footnotes'
-import { ImageMetaProvider, type ImageMetaMap } from '@kobato/editor/renderer/image-meta-context'
-import { renderMathMarkupOrTexFallback } from '@kobato/editor/renderer/render-marks'
-import { MusicPresentationContext } from '@kobato/editor/renderer/render-shared'
-import {
-  FOOTNOTE_BACKREF_ARIA_LABEL,
-  FOOTNOTE_BACKREF_ATTRIBUTE,
-  FOOTNOTES_SECTION_HEADING_ID,
-  footnoteAnchorHref,
-  footnoteAnchorId,
-  footnoteRefHref,
-  footnoteRefId,
-} from '@kobato/shared/lexical/footnote-anchors'
+} from '@kobato/shared/lexical/html-manifest'
+import { safeRel } from '@kobato/shared/safe-rel'
 import { sanitizeUrl } from '@kobato/shared/sanitize-url'
 import { Slugger } from '@kobato/shared/slug'
 import { useMemo, type ElementType, type ReactNode } from 'react'
 
 // React tree renderer for `LexicalBody` — the client/SSR twin of the
-// string renderer in `./lexicalBodyToHtml`. Pure JSON traversal over the
+// string renderer in `@kobato/server/render/lexical-html/lexicalBodyToHtml`.
+// Pure JSON traversal over the
 // EditorState (NO `@lexical/*` runtime): the same manifest constants the
 // string renderer uses, so both adapters emit the same HTML contract.
 // Interactive chrome that only makes sense in a React tree (the code
 // copy button, the APlayer music widget, footnote preview tooltips)
 // renders as its component here and as its feed form in the string
 // renderer — the one deliberate structural divergence (see the module
-// doc of `lexicalBodyToHtml.ts`).
+// doc of `@kobato/server/render/lexical-html/lexicalBodyToHtml`).
 //
 // Heading anchors are assigned by RENDER POSITION: the renderer consumes
 // one slot per non-empty heading in `collectHeadingSlotsInLexicalRenderOrder`

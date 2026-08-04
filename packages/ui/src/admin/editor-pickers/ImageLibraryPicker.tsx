@@ -10,7 +10,7 @@ import {
   DialogTrigger,
 } from '@kobato/editor/engine/components/dialog'
 import { Input } from '@kobato/editor/engine/components/input'
-import { cn } from '@kobato/editor/engine/lib/cn'
+import { cn } from '@kobato/editor/lib/cn'
 import { UploadImageDialog } from '@kobato/ui/admin/shared/UploadImageDialog'
 import { useQuery } from '@tanstack/react-query'
 import { ImageIcon, SearchIcon, UploadIcon } from 'lucide-react'

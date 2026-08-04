@@ -13,7 +13,7 @@ import initWasm from './cnfs.wasm?init'
 
 const log = getLogger('fonts.wasm')
 
-// Under SEA the wasm binary is an embedded asset (see `@/shared/sea/assets`)
+// Under SEA the wasm binary is an embedded asset (see `@kobato/shared/sea/assets`)
 // rather than a file next to the server bundle, so instantiate it
 // directly from memory — mirrors the Vite `?init` helper semantics
 // (fresh instance per call) without touching disk.

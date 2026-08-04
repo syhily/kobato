@@ -54,8 +54,8 @@ function sourceFetchError(result: SafeFetchFailure): DomainError {
 /**
  * Fetch the webmention source document. Every URL (initial and each
  * redirect hop) passes through the shared SSRF guard owned by
- * `@/server/infra/safe-fetch` (`isBlockedFetchHost` in
- * `@/shared/utils/safe-url`, applied per hop with a redirect budget).
+ * `@kobato/server/infra/safe-fetch` (`isBlockedFetchHost` in
+ * `@kobato/shared/utils/safe-url`, applied per hop with a redirect budget).
  * The document is capped at {@link MAX_SOURCE_BYTES}; the cap is checked
  * against both the Content-Length header and the actual body.
  */

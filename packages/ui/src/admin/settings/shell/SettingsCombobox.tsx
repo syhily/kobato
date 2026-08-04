@@ -14,7 +14,7 @@ import { Combobox } from '@kobato/ui/components/combobox'
 //
 // The trigger/content items (`ComboboxTrigger`, `ComboboxContent`,
 // `ComboboxItem`, …) are presentational and stay imported from
-// `@/ui/components/combobox`.
+// `@kobato/ui/components/combobox`.
 
 type ComboboxProps<Value> = ComponentProps<typeof Combobox<Value>>
 

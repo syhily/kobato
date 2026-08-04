@@ -3,7 +3,7 @@ import type { Block } from '@kobato/shared/legacy-pt/schema'
 
 // Normalisation shared by PortableText semantic equality (`pt-bridge`
 // dirty/conflict guards) AND the admin block-level diff anchoring logic
-// (`portable-text-diff`). Keeping this in `@/shared/*` satisfies the UI
+// (`portable-text-diff`). Keeping this in `@kobato/shared/*` satisfies the UI
 // import boundary while guaranteeing the predicates stay mechanically in
 // lockstep — diff UI must never disagree with equivalence checks again.
 

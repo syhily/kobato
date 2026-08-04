@@ -5,7 +5,7 @@ import { Button } from '@kobato/editor/engine/components/button'
 import { Label } from '@kobato/editor/engine/components/label'
 import { Textarea } from '@kobato/editor/engine/components/textarea'
 import { useAdminMathPreview } from '@kobato/editor/engine/lexical/use-admin-math-preview'
-import { sanitizeHtml } from '@kobato/editor/engine/lib/sanitize-html'
+import { sanitizeHtml } from '@kobato/editor/lib/sanitize-html'
 import { CheckIcon, SigmaIcon, XIcon } from 'lucide-react'
 import { useState } from 'react'
 

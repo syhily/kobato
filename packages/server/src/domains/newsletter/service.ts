@@ -18,7 +18,7 @@ import { requireBlogSettingsSection } from '@kobato/shared/config/getters'
 const log = getLogger('newsletter.service')
 
 // Double-opt-in confirm tokens use the shared token primitives
-// (`@/server/infra/crypto/tokens`): 43-char base64url, stored as a
+// (`@kobato/server/infra/crypto/tokens`): 43-char base64url, stored as a
 // sha256 hash. 24h is generous enough for slow inboxes without leaving
 // pending rows open indefinitely.
 const CONFIRM_TTL_MS = 24 * 60 * 60 * 1000

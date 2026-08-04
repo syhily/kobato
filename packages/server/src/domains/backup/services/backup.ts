@@ -88,11 +88,11 @@ async function reconcileBackups(db: Database): Promise<void> {
 }
 
 // The analytics sidecar snapshot is injected by the composition root
-// (`@/server/bootstrap/db-lifecycle`, which owns the analytics engine)
+// (`@kobato/server/bootstrap/db-lifecycle`, which owns the analytics engine)
 // at wire time — a direct import of bootstrap/analytics-lifecycle here
 // would invert the dependency direction (domain → composition root) and
 // risk an import cycle. Same injection discipline as
-// `wireBackupScheduler` in `@/server/domains/backup/scheduler`.
+// `wireBackupScheduler` in `@kobato/server/domains/backup/scheduler`.
 let snapshotAnalytics: ((stagingPath: string) => Promise<boolean>) | null = null
 
 export function wireBackupSnapshots(deps: { snapshotAnalyticsTo: (stagingPath: string) => Promise<boolean> }): void {

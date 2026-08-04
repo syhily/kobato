@@ -3,7 +3,7 @@
 // Single owner of the "embedded asset under SEA, real file on disk
 // otherwise" read for JSON/SQL/text resources (warmup manifests, client
 // manifests, migration SQL). Callers keep ownership of the asset key
-// (the `@/shared/sea/assets` contract) and the disk path; this module
+// (the `@kobato/shared/sea/assets` contract) and the disk path; this module
 // owns the `isSea()` dispatch and the missing-asset handling.
 
 import { getEmbeddedAsset, isSea } from '@kobato/server/infra/sea'

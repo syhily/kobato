@@ -8,24 +8,34 @@ import { randomBytes } from 'node:crypto'
 import { RouterContextProvider, createRequestHandler } from 'react-router'
 
 import { frontendContext } from '@/lib/frontend-context'
+import { createUrlProxyApp } from '@/lib/http/proxy-routes'
 import { createRpcProxy } from '@/lib/http/rpc-proxy'
+import { createWebmentionLinkMiddleware } from '@/lib/http/webmention-link'
+import { frontendWpDecoyMiddleware } from '@/lib/http/wp-decoy'
 import { root } from '@/lib/logger'
 import { getEmbeddedAsset, isSea } from '@/lib/sea-assets'
 
 // ─── Frontend (official public SSR service) assembly ─────
 //
-// The frontend binary serves ONLY the public pages: no /rpc, no /api,
-// no URL endpoints, no schedulers, no migrations, no admin, no database,
-// no shared config graph. Every content-shaped read goes over HTTP to the
-// core server's Content API (the SDK client's HTTP transport — see
-// `src/routes/public/client.ts`); this file owns the perimeter: the
-// client-asset serving (disk / SEA embedded), the React Router request
-// handler with the per-request frontend context, and a health probe.
+// The frontend binary serves the public pages and the site's canonical
+// URL endpoints: no /rpc, no /api, no admin, no schedulers, no
+// migrations, no database, no shared config graph. Content-shaped reads
+// go over HTTP to the core server's Content API (the SDK client's HTTP
+// transport — see `src/routes/public/client.ts`); the URL-shaped
+// resources core generates (feeds, sitemap/robots/manifest, brand
+// assets, OG/calendar/avatar images, /storage media, embedded fonts)
+// are proxied to core with streaming relay (`src/lib/http/proxy-routes.ts`,
+// pinned 1:1 against core's mounts by a contract test). This file owns
+// the perimeter: the client-asset serving (disk / SEA embedded), the
+// React Router request handler with the per-request frontend context,
+// a health probe, the WordPress probe decoy, and the stage-3 write /
+// webmention proxies.
 //
 // Configuration face is environment-only (the plan's frontend config
 // contract): PORT (default 4322; `server__port` is honored as the harness
-// convention from the SEA smoke lifecycle), CORE_API_URL (the core `/rpc`
-// base URL the SDK transport targets; echoed by /health so deployments can
+// convention from the SEA smoke lifecycle), CORE_API_URL (the core base
+// URL for the SDK transport's `/rpc`, the URL-endpoint GET proxy, and
+// the POST /webmention proxy; echoed by /health so deployments can
 // verify the wiring), CORE_PUBLIC_URL (the browser-reachable core base
 // URL, carried in the root loader data for the stage-3 write proxy), and
 // the stage-3 write-proxy credentials KOBATO_FRONTEND_PRIVATE_KEY /
@@ -112,6 +122,13 @@ if (import.meta.env.PROD) {
   }
 }
 
+// WordPress probe decoy: answer scanner paths with the canonical
+// `404 Not WordPress` BEFORE anything else (core parity — the decoy sits
+// at the top of core's pipeline too). Under the headless topology the
+// frontend is the first hop a probe touches; without this the request
+// would burn an SSR round-trip or fall through to a generic 404.
+app.use(frontendWpDecoyMiddleware)
+
 // Same-origin `/rpc` write proxy (stage 3): the public pages' comment /
 // like forms POST to the frontend's own `/rpc`, which forwards to core
 // with the proxy header family (frontend JWT + comment-token jar +
@@ -125,6 +142,24 @@ app.use(
     keyId: FRONTEND_KEY_ID,
   }),
 )
+
+// Core-owned URL endpoints (feeds, sitemap/robots/manifest, brand
+// assets, OG/calendar/avatar images, /storage media, embedded fonts)
+// proxied to core with streaming relay — the mount table in
+// `lib/http/proxy-routes.ts`, pinned 1:1 against core's resource routes
+// by a contract test. Also serves the local 301 replicates (/tags,
+// /search) and the POST /webmention proxy. Registered BEFORE the React
+// Router mount so the router never sees these paths.
+app.route(
+  '/',
+  createUrlProxyApp({ coreApiUrl: CORE_API_URL, privateKeyPem: FRONTEND_PRIVATE_KEY, keyId: FRONTEND_KEY_ID }),
+)
+
+// W3C webmention discovery for page responses: appends
+// `Link: <core-origin>/webmention; rel="webmention"` to HTML responses
+// while the receive switch is on (lazy layout-bundle fetch, 60 s TTL).
+// Registered immediately before the router so it wraps the SSR face.
+app.use(createWebmentionLinkMiddleware(CORE_API_URL))
 
 // React Router request handler (the framework-mode SSR face).
 const reactRouterApp = new Hono({ strict: false })

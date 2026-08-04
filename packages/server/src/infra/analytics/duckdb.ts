@@ -45,7 +45,7 @@ export function resolveAnalyticsPath(): string {
  *  `:memory:` opens an in-memory database (tests). The DDL is injected
  *  because infra carries zero business knowledge — the access_log table
  *  shape is owned by the analytics domain
- *  (`@/server/domains/analytics/services/access-log`). */
+ *  (`@kobato/server/domains/analytics/services/access-log`). */
 export async function openAnalyticsDatabase(analyticsPath: string, ddl: string): Promise<AnalyticsHandle> {
   // mkdir FIRST (same order as openDatabase): a custom
   // storage.analyticsDatabase in a missing directory must be created

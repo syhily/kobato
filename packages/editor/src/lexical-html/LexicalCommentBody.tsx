@@ -9,15 +9,15 @@ import type {
 import type { LexicalCodeNode } from '@kobato/shared/lexical/schema'
 import type { ReactNode } from 'react'
 
-import { safeRel } from '@kobato/editor/engine/lib/link'
-import { sanitizeHtml } from '@kobato/editor/engine/lib/sanitize-html'
-import { BODY_WRAPPER_CLASS, codeLanguageClass, PT_INLINE } from '@kobato/editor/lexical-html/manifest'
+import { sanitizeHtml } from '@kobato/editor/lib/sanitize-html'
 import { CodeBlock as CodeBlockComponent } from '@kobato/editor/renderer/blocks/CodeBlock'
 import { renderMathMarkupOrTexFallback } from '@kobato/editor/renderer/render-marks'
+import { BODY_WRAPPER_CLASS, codeLanguageClass, PT_INLINE } from '@kobato/shared/lexical/html-manifest'
+import { safeRel } from '@kobato/shared/safe-rel'
 import { sanitizeUrl } from '@kobato/shared/sanitize-url'
 
 // React tree renderer for `LexicalCommentBody` — the client/SSR twin of
-// the string renderer in `./comment-to-html` (its `default` mode). Pure
+// the string renderer in `@kobato/server/render/lexical-html/comment-to-html` (its `default` mode). Pure
 // JSON traversal over the EditorState (NO `@lexical/*` runtime), using
 // the same manifest constants, so both adapters emit the same HTML
 // contract on the comment dialect: `PT_INLINE` mark classes,

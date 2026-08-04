@@ -2,9 +2,9 @@
 // that touches disk.
 //
 // Everything except the native dynamic libraries is read straight from
-// the SEA blob (see `@/server/infra/sea`) — all native package JS rides
+// the SEA blob (see `@kobato/server/infra/sea`) — all native package JS rides
 // inside the injected server bundle with its platform loads redirected to
-// `nativeRequire` (`@/server/infra/native-require`). Native `.node` /
+// `nativeRequire` (`@kobato/server/infra/native-require`). Native `.node` /
 // `.so` / `.dylib` / `.dll` files cannot be dlopen'ed from memory, so on
 // first run the embedded libraries (the rpath-patched sharp + duckdb
 // addons, the libvips + libduckdb files, the skia addon — plus skia's
@@ -13,8 +13,8 @@
 // 5 files on darwin/linux, 7 on win32)
 // are extracted to a FLAT `<cacheDir>/natives-<manifest-hash>/` dir with
 // per-file sha256 verification and atomic (tmp + rename) writes. The
-// bootstrap (the `@/server/infra/sea-bootstrap` side-effect import ahead
-// of the server graph, or the CLI flags in `@/server/infra/sea-cli`)
+// bootstrap (the `@kobato/server/infra/sea-bootstrap` side-effect import ahead
+// of the server graph, or the CLI flags in `@kobato/server/infra/sea-cli`)
 // then points `nativeRequire` at that dir via `KOBATO_NATIVES_DIR`.
 //
 // The manifest asset (`manifest.json`, generated at build time by
@@ -27,7 +27,7 @@
 //
 // Dependency discipline: this module runs ahead of the server graph (and
 // its env-validated modules), so it must only import node builtins,
-// `@/server/infra/sea`, `@/shared/sea/assets` (side-effect-free
+// `@kobato/server/infra/sea`, `@kobato/shared/sea/assets` (side-effect-free
 // constants), and type-only symbols — never the pino logger or the env
 // facade (both validate env vars at module scope).
 
@@ -79,7 +79,7 @@ export interface ExtractNativesResult {
 }
 
 // Minimal stand-in for the project logger. The pino logger
-// (`@/server/infra/logger`) transitively imports the env facade, which
+// (`@kobato/server/infra/logger`) transitively imports the env facade, which
 // validates required env vars at module scope and exits the process when
 // they are missing — the SEA bootstrap/CLI modules must instead run with
 // zero env (`--version`, `--help`, `--smoke-natives` work without a

@@ -10,7 +10,7 @@ import type { MusicPlayerBlockMeta } from '@kobato/shared/types/music'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 
 import { LexicalBody } from '@kobato/editor/lexical-html/LexicalBody'
-import { lexicalBodyToHtml } from '@kobato/editor/lexical-html/lexicalBodyToHtml'
+import { lexicalBodyToHtml } from '@kobato/server/render/lexical-html/lexicalBodyToHtml'
 import { BlogSettingsProvider } from '@kobato/shared/lib/blog-config-context'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'

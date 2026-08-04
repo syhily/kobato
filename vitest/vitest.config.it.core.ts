@@ -17,8 +17,7 @@ export default defineConfig({
     silent: 'passed-only',
     environment: 'node',
     // Core-app integration tests (admin/editor/auth routes + auth flows).
-    // The repository-level + package tests run via `vitest.config.ts` in
-    // this directory.
+    // The repository-level + package tests run via `vitest.config.it.ts`.
     include: ['../apps/core/tests/it/**/*.test.{ts,tsx}'],
     setupFiles: ['./setup.it.ts'],
     testTimeout: 30_000,

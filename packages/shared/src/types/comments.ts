@@ -6,7 +6,7 @@ export interface LatestComment {
 }
 
 // Welcome-dashboard moderation inbox filter. The row DTOs live in
-// `@/shared/contracts/comments`; this is the queue-switching union.
+// `@kobato/shared/contracts/comments`; this is the queue-switching union.
 export type AdminPendingKind = 'all' | 'approval' | 'deletion'
 
 import type { AdminCommentWire, AdminPendingDashboardDto, CommentItemWire } from '@kobato/shared/contracts/comments'
@@ -170,7 +170,7 @@ export interface FilterAutocompleteInput {
 }
 
 // Output DTOs below intentionally use the **wire** comment types
-// (`CommentItemWire` / `AdminCommentWire` from `@/shared/contracts/comments`)
+// (`CommentItemWire` / `AdminCommentWire` from `@kobato/shared/contracts/comments`)
 // rather than the earlier `CommentItem` / `AdminComment` interfaces. The
 // wire shapes match what `JSON.stringify` actually emits: number ids
 // stringified, Date timestamps ISO-encoded. The earlier interfaces are

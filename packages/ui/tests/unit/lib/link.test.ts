@@ -1,4 +1,4 @@
-import { safeRel } from '@kobato/ui/lib/link'
+import { safeRel } from '@kobato/shared/safe-rel'
 import { describe, expect, it } from 'vitest'
 
 describe('safeRel', () => {

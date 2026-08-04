@@ -30,7 +30,7 @@ const GENERIC_RESET_MESSAGE = '如果该邮箱存在且符合要求，重置邮�
  * "established commenter" check, but the auth domain must not import
  * comments (the domain graph is a DAG) — so the routes layer, which may
  * touch both domains, passes `hasApprovedComments` from
- * `@/server/domains/comments/services/public-query` in.
+ * `@kobato/server/domains/comments/services/public-query` in.
  */
 export interface PasswordResetFlowDeps {
   hasApprovedComments(db: Database, userId: number): Promise<boolean>

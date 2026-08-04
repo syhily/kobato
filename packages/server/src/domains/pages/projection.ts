@@ -8,7 +8,7 @@ import { readRevisionProjection } from '@kobato/server/domains/content/projectio
 // --- Public catalog projection ----------------------------------------------
 
 // `toCmsPage` is the catalog-facing projection: meta row + published
-// revision (or null) → the shared `Page` DTO (`@/shared/types/catalog`)
+// revision (or null) → the shared `Page` DTO (`@kobato/shared/types/catalog`)
 // directly — there is no server-side variant of the shape. Pages
 // without a published revision still surface in the catalog with an
 // empty body and no headings.

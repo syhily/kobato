@@ -3,7 +3,7 @@
 // the admin SocialsEditor uses the list to populate its "add a platform"
 // menu.
 //
-// Lives in `@/shared/` because both the server-side Zod schema and the
+// Lives in `@kobato/shared/` because both the server-side Zod schema and the
 // admin form editor need the same canonical list, while UI modules are
 // forbidden from importing server modules and shared modules cannot
 // import from server.

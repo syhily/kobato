@@ -53,6 +53,11 @@ describe('server layer constraints', () => {
   })
 
   it('domains/ never imports from http/ or render/', () => {
+    // Stage-4 exception: the comments email service renders email-mode
+    // comment HTML through the pure string renderer
+    // (`render/lexical-html/comment-to-html` — a leaf function over
+    // EditorState JSON, no request context), pinned in boundaries.test.ts.
+    const renderExceptions = new Set(['packages/server/src/domains/comments/services/email.ts'])
     const violations: string[] = []
     const domainsDir = join(SERVER_DIR, 'domains')
     walk(domainsDir, (filePath) => {
@@ -60,7 +65,12 @@ describe('server layer constraints', () => {
       const imports = getImports(source)
       for (const imp of imports) {
         if (imp.startsWith('@kobato/server/http/') || imp.startsWith('@kobato/server/render/')) {
-          violations.push(`${relativePath(filePath)} imports ${imp}`)
+          const rel = relativePath(filePath)
+          const rendererOnly = imp === '@kobato/server/render/lexical-html/comment-to-html'
+          if (rendererOnly && renderExceptions.has(rel)) {
+            continue
+          }
+          violations.push(`${rel} imports ${imp}`)
         }
       }
     })
@@ -68,6 +78,11 @@ describe('server layer constraints', () => {
   })
 
   it('infra/ never imports from domains/, http/, or render/', () => {
+    // Stage-4 exception: the PT-migration core spot-renders converted rows
+    // through the pure string renderer (`render/lexical-html/
+    // lexicalBodyToHtml` — a leaf function over EditorState JSON, no
+    // request context), pinned in boundaries.test.ts.
+    const renderExceptions = new Set(['packages/server/src/infra/pt-migration/core.ts'])
     const violations: string[] = []
     const infraDir = join(SERVER_DIR, 'infra')
     walk(infraDir, (filePath) => {
@@ -79,7 +94,12 @@ describe('server layer constraints', () => {
           imp.startsWith('@kobato/server/http/') ||
           imp.startsWith('@kobato/server/render/')
         ) {
-          violations.push(`${relativePath(filePath)} imports ${imp}`)
+          const rel = relativePath(filePath)
+          const rendererOnly = imp === '@kobato/server/render/lexical-html/lexicalBodyToHtml'
+          if (rendererOnly && renderExceptions.has(rel)) {
+            continue
+          }
+          violations.push(`${rel} imports ${imp}`)
         }
       }
     })

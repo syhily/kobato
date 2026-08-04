@@ -7,8 +7,8 @@
  */
 
 export interface ProxyHeadersInput {
-  /** EdDSA JWT signed with the frontend's registered key. */
-  jwt: string
+  /** EdDSA JWT signed with the frontend's registered key. Omitted when null/empty (anonymous forwarding). */
+  jwt?: string | null
   /** Visitor comment token for the target page (see `token.ts`). */
   commentToken?: string | null
   /** Member session token (returned to the frontend at login handoff). */
@@ -20,7 +20,10 @@ export interface ProxyHeadersInput {
 }
 
 export function buildProxyHeaders(input: ProxyHeadersInput): Record<string, string> {
-  const headers: Record<string, string> = { Authorization: `Bearer ${input.jwt}` }
+  const headers: Record<string, string> = {}
+  if (input.jwt !== undefined && input.jwt !== null && input.jwt !== '') {
+    headers.Authorization = `Bearer ${input.jwt}`
+  }
   if (input.commentToken !== undefined && input.commentToken !== null && input.commentToken !== '') {
     headers['X-Kobato-Comment-Token'] = input.commentToken
   }

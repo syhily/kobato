@@ -48,6 +48,8 @@ describe('infra/markup/shiki — fine-grained highlighter', () => {
     }
   })
 
+  // First load of the full shiki bundle (plus the fine-grained engine) can
+  // exceed the default 10s timeout under parallel test load — give it room.
   it('produces byte-identical HTML to the full shiki bundle', async () => {
     const [fine, full] = await Promise.all([
       createShikiHighlighter(),
@@ -60,7 +62,7 @@ describe('infra/markup/shiki — fine-grained highlighter', () => {
       const options = { lang: language, themes: SHIKI_THEMES, defaultColor: false } as const
       expect(fine.codeToHtml(code, options), language).toBe(full.codeToHtml(code, options))
     }
-  })
+  }, 30_000)
 
   it('renders the plain-text fallback for unsupported languages', async () => {
     const highlighter = await createShikiHighlighter()

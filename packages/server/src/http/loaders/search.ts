@@ -34,7 +34,7 @@ export async function searchLoader(
   const pageNum = parseListingPage(num, rootPath)
   const pageSize = requireBlogSettingsSection('content').pagination.search
   // Only live posts are searchable — the gate is defined once in
-  // `@/server/domains/content/schemas/live-gate`, bound to the post columns by
+  // `@kobato/server/domains/content/schemas/live-gate`, bound to the post columns by
   // `livePostWhere`, and passed down so the search infra stays free of
   // business rules.
   const liveWhere = livePostWhere()

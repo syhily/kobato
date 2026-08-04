@@ -8,7 +8,7 @@ import { scheduleJob, type ScheduledJob } from '@kobato/server/infra/scheduler-u
 const log = getLogger('webmentions.outbox-scheduler')
 
 // The db getter is injected by the composition root
-// (`@/server/bootstrap/db-lifecycle`, which imports this module) at wire
+// (`@kobato/server/bootstrap/db-lifecycle`, which imports this module) at wire
 // time — same injection discipline as `wireScheduledPublishScheduler`:
 // the getter is invoked when the job evaluates, so a recreated handle
 // (restore completion) is picked up without being captured in module

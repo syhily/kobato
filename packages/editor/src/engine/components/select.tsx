@@ -1,9 +1,9 @@
 import type { ComponentProps } from 'react'
 
 import { Select as BaseSelect } from '@base-ui/react/select'
+import { transitions } from '@kobato/client/lib/motion'
 import { LazyMotionDiv } from '@kobato/editor/engine/components/lazy-motion'
-import { cn } from '@kobato/editor/engine/lib/cn'
-import { transitions } from '@kobato/editor/engine/lib/motion'
+import { cn } from '@kobato/editor/lib/cn'
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-react'
 
 function Select<Value>(props: ComponentProps<typeof BaseSelect.Root<Value>>) {

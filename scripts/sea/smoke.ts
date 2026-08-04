@@ -41,6 +41,7 @@ import type { SmokeServer } from './instance.ts'
 // purpose — this script runs under plain `node` (no tsconfig path
 // aliases), same convention as `e2e.ts`'s `defaults.ts` import.
 import { unsafeCast } from '../../packages/shared/src/utils/unsafe-cast.ts'
+import { firstPositionalArg } from './args.ts'
 import { BINARY_MAX_BYTES, FRONTEND_BINARY_MAX_BYTES } from './budget.ts'
 import { fail } from './exec.ts'
 import {
@@ -979,6 +980,36 @@ async function runManagedFrontend(binaryPath: string, coreUrl: string | null) {
           })
         }
 
+        // The phase-2 URL-endpoint proxy: the frontend's canonical domain
+        // must serve core's URL-shaped resources (a 404 here means the
+        // mount table drifted from core). An UNINSTALLED core 303s
+        // `/feed` to /admin/setup (install gate) — accept both, like the
+        // core-health check. sitemap/robots are gate-exempt and always
+        // answer 200.
+        if (coreUrl !== null) {
+          await check('URL endpoints proxied via frontend (/feed, /sitemap.xml, /robots.txt)', async () => {
+            const results: string[] = []
+            for (const path of ['/feed', '/sitemap.xml', '/robots.txt']) {
+              const res = await fetchManual(`${baseUrl}${path}`)
+              if (res.status !== 200 && res.status !== 303) {
+                throw new Error(`GET ${path} via frontend: expected 200/303, got ${res.status}`)
+              }
+              const contentType = res.headers.get('content-type') ?? ''
+              if (contentType === '') {
+                throw new Error(`GET ${path} via frontend: no content-type header`)
+              }
+              results.push(`${path} ${res.status} ${contentType.split(';')[0]}`)
+            }
+            return results.join(', ')
+          })
+        } else {
+          await check('URL endpoints proxied via frontend (--core-url)', () => {
+            // Without a live core there is nothing to proxy to — the
+            // endpoints would answer the 503 "core not configured" path.
+            return 'SKIP — no --core-url / KOBATO_SMOKE_CORE_URL given'
+          })
+        }
+
         await check('SIGTERM clean shutdown (seeded install)', () => checkShutdown(seededServer))
         // Same stream-flush wait as the core line — buffered log writes
         // outlive the process otherwise.
@@ -1044,27 +1075,6 @@ function normalizeBaseUrl(rawBaseUrl: string) {
   return `${url.origin}${url.pathname === '/' ? '' : url.pathname.replace(/\/+$/, '')}`
 }
 
-/**
- * The first positional (non-flag) argument — the binary path after
- * `--target <t>` / `--core-url <url>` etc. Skips the values of known
- * flag arguments so `--target frontend dist-sea/kobato-frontend` resolves
- * the binary correctly.
- */
-function firstPositionalArg(args: readonly string[]) {
-  const skipNext = new Set(['--target', '--codec', '--core-url', '--external', '--binary-only'])
-  for (let i = 0; i < args.length; i++) {
-    const arg = args[i]
-    if (arg.startsWith('--')) {
-      if (skipNext.has(arg)) {
-        i++
-      }
-      continue
-    }
-    return arg
-  }
-  return null
-}
-
 async function main() {
   const args = process.argv.slice(2)
   const target = resolveSeaTarget(args)
@@ -1116,7 +1126,10 @@ async function main() {
     console.log(`==> SEA smoke (binary-only, target: ${target})`)
     cleanup = await runBinaryOnly(binaryPath, target)
   } else {
-    const positional = firstPositionalArg(args)
+    const positional = firstPositionalArg(
+      args,
+      new Set(['--target', '--codec', '--core-url', '--external', '--binary-only']),
+    )
     const binaryPath = positional !== null ? resolvePath(positional) : seaBinaryPath(target)
     console.log(`==> SEA smoke (managed, target: ${target})`)
     cleanup = target === 'frontend' ? await runManagedFrontend(binaryPath, coreUrl) : await runManagedCore(binaryPath)

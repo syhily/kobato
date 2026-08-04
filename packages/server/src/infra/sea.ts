@@ -8,7 +8,7 @@
 // 3 files on darwin/linux, 4 on win32) are extracted to a flat cache
 // directory at first run, because the OS `dlopen` requires real files;
 // all native package JS is bundled and its platform loads are redirected
-// to `nativeRequire` (see `@/server/infra/native-require`).
+// to `nativeRequire` (see `@kobato/server/infra/native-require`).
 //
 // Every blob asset above 1 KB is stored COMPRESSED (zstd by default,
 // brotli for release builds — see `scripts/sea/assets.ts`); the
@@ -29,8 +29,8 @@
 //     identical to a static import at runtime.
 //
 // This module intentionally avoids project imports except the standalone
-// `unsafeCast` util, the constants-only `@/shared/sea/assets`, and the
-// shared asset reader `@/shared/sea/reader` (itself constants-only +
+// `unsafeCast` util, the constants-only `@kobato/shared/sea/assets`, and the
+// shared asset reader `@kobato/shared/sea/reader` (itself constants-only +
 // `node:zlib`): it is pulled into the image process-worker bundle (see
 // `worker-entry-plugin.ts`), which must stay self-contained, and it runs
 // inside the SEA bootstrap/CLI modules ahead of the rest of the app graph.

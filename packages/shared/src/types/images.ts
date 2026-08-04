@@ -78,7 +78,7 @@ const SAFE_PATH_SEGMENT = /^[a-z0-9._-]+$/
 /**
  * Isomorphic host extractor used by client-side cover dialogs to
  * preview the upload target before invoking the server. Mirrors
- * `extractHostForFriendKey` in `@/server/domains/images/key`.
+ * `extractHostForFriendKey` in `@kobato/server/domains/images/key`.
  */
 export function extractFriendHostSafe(homepage: string): string | null {
   const trimmed = homepage.trim()

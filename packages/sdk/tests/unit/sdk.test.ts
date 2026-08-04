@@ -59,4 +59,17 @@ describe('sdk — proxy headers', () => {
     const minimal = buildProxyHeaders({ jwt: 'jwt-2' })
     expect(Object.keys(minimal)).toEqual(['Authorization'])
   })
+
+  it('omits Authorization when no JWT is provided (anonymous forwarding)', () => {
+    expect(buildProxyHeaders({ jwt: null, commentToken: 'tok' })).toEqual({ 'X-Kobato-Comment-Token': 'tok' })
+    expect(
+      buildProxyHeaders({
+        jwt: '',
+        commentToken: null,
+        sessionToken: '',
+        forwardedFor: null,
+        forwardedUserAgent: undefined,
+      }),
+    ).toEqual({})
+  })
 })

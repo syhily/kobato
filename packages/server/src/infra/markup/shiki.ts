@@ -48,7 +48,7 @@ import solarizedDark from 'shiki/themes/solarized-dark.mjs'
 import solarizedLight from 'shiki/themes/solarized-light.mjs'
 
 // Shiki transformer list used by the PT prerender highlighting pass
-// (`@/server/infra/pt/prerender`) when it pre-renders code blocks to HTML
+// (`@kobato/server/infra/pt/prerender`) when it pre-renders code blocks to HTML
 // at SSR time.
 export const shikiTransformers = () => [
   transformerNotationDiff({ matchAlgorithm: 'v3' }),

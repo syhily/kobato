@@ -7,7 +7,7 @@ const log = getLogger('db.maintenance')
 
 /**
  * The SQLite half of the daily DB maintenance job (plan §1.11 — the
- * DuckDB half lives in `@/server/bootstrap/analytics-lifecycle`):
+ * DuckDB half lives in `@kobato/server/bootstrap/analytics-lifecycle`):
  *   1. `PRAGMA incremental_vacuum` — drain the freelist left by
  *      session/kv/token expiry churn; bounded and online under WAL.
  *   2. `PRAGMA optimize` — refresh planner statistics whose tables have
@@ -53,7 +53,7 @@ export function runDbMaintenance(handle: DatabaseHandle): void {
 
 // ─── Scheduler ───────────────────────────────────────────
 // The handle getter is injected by the composition root
-// (`@/server/bootstrap/db-lifecycle`) at wire time and invoked when the
+// (`@kobato/server/bootstrap/db-lifecycle`) at wire time and invoked when the
 // job fires, so a reopened handle (restore completion) is picked up
 // without being captured in module state. Timer mechanics live in the
 // shared `scheduleJob` seam; this module owns only the policy (04:30

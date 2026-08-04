@@ -8,10 +8,10 @@ import {
   OPEN_IMAGE_PICKER_COMMAND,
   OPEN_MUSIC_PICKER_COMMAND,
 } from '@kobato/editor/engine/lexical/commands'
-import { $createMathBlockNode } from '@kobato/editor/lexical-core/nodes/math-block-node'
-import { $createSolutionNode } from '@kobato/editor/lexical-core/nodes/solution-node'
-import { $createTwoColumnNode, $createTwoColumnPaneNode } from '@kobato/editor/lexical-core/nodes/two-column-node'
 import { generateBlockKey } from '@kobato/shared/legacy-pt/utils'
+import { $createMathBlockNode } from '@kobato/shared/lexical/nodes/math-block-node'
+import { $createSolutionNode } from '@kobato/shared/lexical/nodes/solution-node'
+import { $createTwoColumnNode, $createTwoColumnPaneNode } from '@kobato/shared/lexical/nodes/two-column-node'
 import { unsafeCast } from '@kobato/shared/utils/unsafe-cast'
 import { INSERT_TABLE_COMMAND, type InsertTableCommandPayload } from '@lexical/table'
 import { $insertNodeToNearestRoot } from '@lexical/utils'

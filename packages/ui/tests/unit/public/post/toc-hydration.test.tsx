@@ -1,6 +1,7 @@
 import { TableOfContents } from '@kobato/ui/public/post/TableOfContents'
 // @vitest-environment jsdom
 import { Writable } from 'node:stream'
+import { act } from 'react'
 import { hydrateRoot } from 'react-dom/client'
 import { renderToPipeableStream } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
@@ -65,10 +66,17 @@ describe('ui/public/post/TableOfContents — hydration contract', () => {
 
     document.body.innerHTML = `<div id="probe-root">${html}</div>`
     const errors: unknown[] = []
-    hydrateRoot(document.getElementById('probe-root')!, <TableOfContents headings={headings} toc="enabled" />, {
-      onRecoverableError: (error) => errors.push(error),
+    // `act` drains React's pending work INSIDE the test: hydration is
+    // concurrent, and a scheduler callback left dangling past the file's
+    // end fires after vitest tears the jsdom environment down
+    // (`window is not defined`), poisoning the next test file in the
+    // same worker under full-suite CPU pressure.
+    await act(async () => {
+      hydrateRoot(document.getElementById('probe-root')!, <TableOfContents headings={headings} toc="enabled" />, {
+        onRecoverableError: (error) => errors.push(error),
+      })
+      await new Promise((resolve) => setTimeout(resolve, 100))
     })
-    await new Promise((resolve) => setTimeout(resolve, 100))
 
     expect(errors.map((e) => (e instanceof Error ? e.message : String(e)))).toEqual([])
   })

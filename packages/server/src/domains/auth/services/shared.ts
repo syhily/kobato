@@ -17,7 +17,7 @@ export type AuthFlowResult =
 
 /**
  * The slice of the canonical request context the signin flows need.
- * Structurally satisfied by `RequestContext` (`@/server/http/request-context`)
+ * Structurally satisfied by `RequestContext` (`@kobato/server/http/request-context`)
  * so routes pass `rc` straight in — the domain stays decoupled from the
  * http layer.
  *

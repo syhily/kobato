@@ -127,6 +127,11 @@ export const contentPublicContract = {
     .input(z.object({ num: z.string().optional() }))
     .output(typeSchema<ListingPageLoaderData<HomeExtra> | RedirectPayload>()),
 
+  postList: oc
+    .route({ method: 'GET', path: '/content/v1/posts' })
+    .input(z.object({ num: z.string().optional() }))
+    .output(typeSchema<ListingPageLoaderData | RedirectPayload>()),
+
   categoryList: oc
     .route({ method: 'GET', path: '/content/v1/categories/:slug' })
     .input(z.object({ slug: z.string().min(1), num: z.string().optional() }))

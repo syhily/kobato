@@ -1,15 +1,15 @@
 import type { LexicalBody } from '@kobato/shared/lexical/schema'
 
-import { canonicalizeLexicalBodyShape } from '@kobato/editor/lexical-core/canonicalize'
-import { convertPtBodyToLexical } from '@kobato/editor/lexical-core/mapping'
 import { DomainError } from '@kobato/server/infra/http/errors'
 import { prerenderLexicalBody } from '@kobato/server/infra/lexical/prerender'
 import { validatePortableTextBody } from '@kobato/shared/legacy-pt/utils'
+import { canonicalizeLexicalBodyShape } from '@kobato/shared/lexical/canonicalize'
+import { convertPtBodyToLexical } from '@kobato/shared/lexical/mapping'
 import { visitLexicalNodes } from '@kobato/shared/lexical/walk'
 
 // Server-side canonicalization for Lexical post/page bodies — the
 // Lexical replacement of `canonicalizePortableTextBody`
-// (`@/server/domains/pt/services/canonicalize`):
+// (`@kobato/server/domains/pt/services/canonicalize`):
 //
 //   1. `canonicalizeLexicalBodyShape` — quote normalization, autolink →
 //      link rewrite, the zod gate + headless parse double check,

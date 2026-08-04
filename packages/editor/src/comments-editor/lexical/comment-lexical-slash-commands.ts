@@ -2,7 +2,7 @@ import type { LexicalSlashCommand } from '@kobato/editor/engine/lexical/slash-co
 import type { LexicalEditor } from 'lexical'
 
 import { applyBlockStyle, insertBulletList, insertOrderedList } from '@kobato/editor/engine/lexical/block-commands'
-import { $createMathBlockNode } from '@kobato/editor/lexical-core/nodes/math-block-node'
+import { $createMathBlockNode } from '@kobato/shared/lexical/nodes/math-block-node'
 import { $insertNodeToNearestRoot } from '@lexical/utils'
 import { CodeIcon, ListIcon, ListOrderedIcon, QuoteIcon, SigmaIcon, Type as TypeIcon } from 'lucide-react'
 

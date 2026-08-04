@@ -1,23 +1,20 @@
 import type { MusicEmbedResolver } from '@kobato/server/domains/lexical/embeds'
 import type { LexicalBody } from '@kobato/shared/lexical/schema'
 
-import { lexicalBodyToHtml, type LexicalMusicMeta } from '@kobato/editor/lexical-html/lexicalBodyToHtml'
+import { lexicalBodyToHtml, type LexicalMusicMeta } from '@kobato/server/render/lexical-html/lexicalBodyToHtml'
 import { requireBlogSettingsSection } from '@kobato/shared/config/getters'
 import { collectMusicPlayerIds } from '@kobato/shared/lexical/walk'
 import { resolveFootnotesSectionTitle } from '@kobato/shared/utils/footnotes-section-title'
 import { joinUrl } from '@kobato/shared/utils/urls'
 
-// Server-side assembly for the Lexical string renderer (R2). No consumer
-// is switched to this module yet (R5 flips the call sites); this file
-// exists so the editor-package renderer reaches the server with the same
-// seams the PT feed renderer uses — heading slugs, music embeds, and the
-// settings-driven footnotes section title.
+// Server-side assembly for the Lexical string renderer. Feed and other
+// string sinks reach the renderer through these seams — heading slugs,
+// music embeds, and the settings-driven footnotes section title.
 //
-// Mirror of `renderPortableTextToHtml` (`@kobato/server/render/pt-html`):
-// music metas arrive through the PT-owned embed seam
-// (`@/server/domains/pt/embeds`) and relative covers are absolutized for
-// feed consumption; `rssMode` selects the string renderer's classless
-// degraded branch.
+// Music metas arrive through the lexical embed seam
+// (`@kobato/server/domains/lexical/embeds`) and relative covers are
+// absolutized for feed consumption; `rssMode` selects the string
+// renderer's classless degraded branch.
 
 export interface RenderLexicalBodyToHtmlOptions {
   rssMode?: boolean

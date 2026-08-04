@@ -7,7 +7,7 @@ import type {
 } from '@kobato/shared/lexical/schema'
 
 import { Badge } from '@kobato/editor/engine/components/badge'
-import { cn } from '@kobato/editor/engine/lib/cn'
+import { cn } from '@kobato/editor/lib/cn'
 import { diff_match_patch } from 'diff-match-patch'
 
 // Lexical body diff for the draft-conflict dialog and the revision

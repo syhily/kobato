@@ -49,7 +49,6 @@ export default {
     alias: {
       '@kobato/shared': resolve(root, 'packages/shared/src'),
       '@kobato/server': resolve(root, 'packages/server/src'),
-      '@kobato/editor': resolve(root, 'packages/editor/src'),
       '@kobato/ui': resolve(root, 'packages/ui/src'),
       '@kobato/client': resolve(root, 'packages/client/src'),
       '@kobato/sdk': resolve(root, 'packages/sdk/src'),

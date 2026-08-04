@@ -35,7 +35,23 @@ server or client boundary catch and log it.
   `footnote-sync` survive as canonicalize deps).
 - `lexical/` — Lexical body dialect: schema (`schema.ts`, `lexicalBodySchema`), comment dialect
   (`comment-schema.ts`), node walk (`walk.ts`), footnote anchors/merge/sync ported to the Lexical
-  tree (`footnote-anchors.ts`, `footnote-merge-lexical.ts`, `footnote-sync-lexical.ts`).
+  tree (`footnote-anchors.ts`, `footnote-merge-lexical.ts`, `footnote-sync-lexical.ts`), and the
+  HTML render manifest (`html-manifest.ts` — the class/data-attribute contract shared by the
+  React renderers in `@kobato/editor/lexical-html/` and the string renderers in
+  `@kobato/server/render/lexical-html/`).
+- `lexical/` dialect core (stage 5 — moved OUT of `packages/editor/lexical-core` so the server
+  graph is server→shared only): the custom node classes (`nodes/*.ts`), the editor node
+  registries (`body-config.ts`, `comment-config.ts`), the double-gate validators + canonical
+  forms (`validate.ts`, `comment-validate.ts`, `canonicalize.ts`, `comment-canonicalize.ts`),
+  the comment markdown projection (`comment-markdown.ts`), and the one-way PT→Lexical mapping
+  (`mapping.ts`). The nodes are React-free: their decorator views are registered by the editor
+  engine through the shared node-view registry (`node-views.ts` — `registerNodeView` /
+  `renderNodeView`; editor-side registration in
+  `@kobato/editor/engine/lexical/node-views/register-node-views.tsx`), and the export-DOM
+  sanitization rides `math-sanitize.ts` (an allowlist walker over
+  `sanitize-html-config`'s `'math'` strategy — environment-independent, unlike DOMPurify under
+  non-spec parsers). Shared's lexical devDependencies: `lexical`,
+  `@lexical/{headless,code,link,list,rich-text,table,markdown,html}`.
 - `route-warmup/` — warmup manifest file contract (parse, validate,
   chunk collection) shared by the build plugin and the SSR reader.
 - `sea/` — SEA embedded-asset key contract (single owner for the writer
@@ -46,8 +62,11 @@ server or client boundary catch and log it.
   `formatter`, `pagination`, `toc`, `paths`, `roles`, `user-agent`,
   `chunk-error`, `comment-token`, `footnotes-section-title`, `memo`.
 - `cache/`, `constants/`, `lib/` — small standalone modules; a few
-  top-level files (`slug`, `sanitize-url`, `zod-config`) round out the
-  layer.
+  top-level files (`slug`, `sanitize-url`, `safe-rel`, `sanitize-html-config`, `zod-config`)
+  round out the layer. `sanitize-html-config` is the single strategy table for the sanitize
+  facades in ui/editor (`lib/sanitize-html*`) and the server node copy
+  (`render/sanitize-html*`, pinned by a parity test); `safe-rel` is the
+  `_blank` anchor `rel` helper.
 
 ## Zod DTO single source
 

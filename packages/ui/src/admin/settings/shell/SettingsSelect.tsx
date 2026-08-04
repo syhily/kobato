@@ -16,7 +16,7 @@ import { Select } from '@kobato/ui/components/select'
 // is typed `Value | null` and narrowing guards keep working unchanged.
 //
 // The trigger/content items (`SelectTrigger`, `SelectContent`, `SelectItem`,
-// …) are presentational and stay imported from `@/ui/components/select`.
+// …) are presentational and stay imported from `@kobato/ui/components/select`.
 
 type SelectProps<Value> = ComponentProps<typeof Select<Value>>
 

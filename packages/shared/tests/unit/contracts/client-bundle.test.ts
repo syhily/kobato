@@ -124,7 +124,7 @@ const NODE_ONLY_PACKAGES: readonly NodeOnlyPackage[] = [
     // its node engine is routed to its own browser twin by the same plugin.
     allowedIn: [
       'packages/ui/src/lib/sanitize-html-engine.node.ts',
-      'packages/editor/src/engine/lib/sanitize-html-engine.node.ts',
+      'packages/editor/src/lib/sanitize-html-engine.node.ts',
     ],
   },
   // sanitize-html's transitive leak chain — not direct deps, kept pre-armed.

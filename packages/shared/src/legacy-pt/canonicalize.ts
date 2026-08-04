@@ -168,7 +168,7 @@ export function canonicalizePortableTextBodyShape(body: PortableTextBody): Porta
  * false-positive "content mismatch" prompts.
  *
  * Block-wise comparison matches the admin PortableText diff's anchor
- * construction (`portable-text-diff` ⇆ `@/shared/portable-text-semantics`):
+ * construction (`portable-text-diff` ⇆ `@kobato/shared/portable-text-semantics`):
  * `_key` regeneration, Postgres `jsonb` key reordering, omitted vs
  * present prerender artefacts (`highlightedHtml`, SVG), and markupDef
  * key reshuffles must not resurrect spurious mismatches versus what the

@@ -1,5 +1,5 @@
-import { cn } from '@kobato/editor/engine/lib/cn'
-import { LANGUAGE_MAP } from '@kobato/editor/engine/lib/code-languages'
+import { cn } from '@kobato/editor/lib/cn'
+import { LANGUAGE_MAP } from '@kobato/editor/lib/code-languages'
 import {
   isValidElement,
   useEffect,

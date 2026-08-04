@@ -11,7 +11,7 @@ import type {
 import type { NavigateFunction } from 'react-router'
 
 import { useAutosave, type AutosaveFlushOutcome, type AutosaveStatus } from '@kobato/client/hooks/use-autosave'
-import { areLexicalBodiesEquivalent } from '@kobato/editor/lexical-core/canonicalize'
+import { areLexicalBodiesEquivalent } from '@kobato/shared/lexical/canonicalize'
 import { EMPTY_LEXICAL_BODY } from '@kobato/shared/lexical/schema'
 import { localInputValueToIso } from '@kobato/ui/admin/editor-shell/editor-datetime'
 import { deriveBaselineRevision, deriveBaselineUpdatedAtMs } from '@kobato/ui/admin/editor-shell/editor-shell-derived'

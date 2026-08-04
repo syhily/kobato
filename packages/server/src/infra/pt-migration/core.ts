@@ -1,14 +1,14 @@
 import type { LexicalCommentBody } from '@kobato/shared/lexical/comment-schema'
 import type { LexicalBody } from '@kobato/shared/lexical/schema'
 
-import { canonicalizeLexicalBodyShape } from '@kobato/editor/lexical-core/canonicalize'
-import { canonicalizeLexicalCommentBodyShape } from '@kobato/editor/lexical-core/comment-canonicalize'
-import { convertPtBodyToLexical } from '@kobato/editor/lexical-core/mapping'
-import { lexicalBodyToHtml } from '@kobato/editor/lexical-html/lexicalBodyToHtml'
+import { lexicalBodyToHtml } from '@kobato/server/render/lexical-html/lexicalBodyToHtml'
 import { canonicalizePortableTextBodyShape } from '@kobato/shared/legacy-pt/canonicalize'
 import { commentBodySchema } from '@kobato/shared/legacy-pt/comment-schema'
 import { safeValidatePortableTextBody } from '@kobato/shared/legacy-pt/utils'
+import { canonicalizeLexicalBodyShape } from '@kobato/shared/lexical/canonicalize'
+import { canonicalizeLexicalCommentBodyShape } from '@kobato/shared/lexical/comment-canonicalize'
 import { parseLexicalCommentBody } from '@kobato/shared/lexical/comment-schema'
+import { convertPtBodyToLexical } from '@kobato/shared/lexical/mapping'
 import { parseLexicalBody } from '@kobato/shared/lexical/schema'
 
 // Per-row PortableText → Lexical conversion pipeline (the built-in

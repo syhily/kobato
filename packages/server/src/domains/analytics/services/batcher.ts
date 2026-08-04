@@ -29,11 +29,11 @@ function deserializeFromDeadLetter(line: string): EnrichedAccessEvent | null {
 }
 
 // The DuckDB writer is injected by the composition root
-// (`@/server/bootstrap/analytics-lifecycle`, which owns the analytics
+// (`@kobato/server/bootstrap/analytics-lifecycle`, which owns the analytics
 // engine) at import time — a direct import of the lifecycle here would
 // invert the dependency direction (domain → composition root). Same
 // injection discipline as `wireBackupSnapshots` in
-// `@/server/domains/backup/services/backup`.
+// `@kobato/server/domains/backup/services/backup`.
 let resolveWriter: (() => DuckDBConnection) | null = null
 
 export function wireAccessLogBatcher(deps: { getWriter: () => DuckDBConnection }): void {

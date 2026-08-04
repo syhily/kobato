@@ -23,7 +23,7 @@
 //                            loading the config graph, exits accordingly —
 //                            `doctor` spawns it so a failing config cannot
 //                            kill the diagnostic report mid-aggregation
-//   (anything else)          fall through — `@/server/infra/sea-bootstrap`
+//   (anything else)          fall through — `@kobato/server/infra/sea-bootstrap`
 //                            and then the server graph evaluate next
 //
 // --version/--help exit here with ZERO side effects (no natives
@@ -31,12 +31,12 @@
 // bootstrap and the env-validated server graph. The smoke flags bootstrap
 // the natives themselves (same code path as server startup) and then
 // exit. Nothing in this module may touch the env-validated graph: it
-// imports node builtins, `@/server/infra/sea`, `@/server/infra/sea-natives`,
-// and constants only — plus `@/server/infra/binary-rollback`,
-// `@/server/infra/self-update-gate` and `@/server/infra/doctor-report`, which
+// imports node builtins, `@kobato/server/infra/sea`, `@kobato/server/infra/sea-natives`,
+// and constants only — plus `@kobato/server/infra/binary-rollback`,
+// `@kobato/server/infra/self-update-gate` and `@kobato/server/infra/doctor-report`, which
 // are held to the same builtins-and-constants budget by their own headers.
 // The config graph stays behind a DYNAMIC import in `--doctor-config-probe`
-// AND in `migrate-pt` (whose `@/server/infra/pt-migration/migrate` module
+// AND in `migrate-pt` (whose `@kobato/server/infra/pt-migration/migrate` module
 // imports the config graph only when `--db` is omitted): evaluating it
 // validates the configuration and exits the process, which is exactly the
 // probe semantics — and must never happen for the other flags.
@@ -192,7 +192,7 @@ async function smokeNatives(quiet = false): Promise<void> {
  * production `worker_threads` image pool inside the binary — the gap
  * `--smoke-natives` (in-process load) cannot cover. The embedded
  * smoke-worker text pulls the config-validated graph (the pool registers its
- * teardown via `@/server/infra/lifecycle` → `@/server/infra/config`), so
+ * teardown via `@kobato/server/infra/lifecycle` → `@kobato/server/infra/config`), so
  * this flag legitimately requires the full server environment —
  * validated, never connected to. The worker inherits this process's env
  * at spawn, so the natives dir set above is visible to it.
@@ -286,7 +286,7 @@ async function doctor(json: boolean): Promise<void> {
 
 /**
  * `migrate-pt`: the built-in PT → Lexical data migration. The heavy
- * module graph (`@/server/infra/pt-migration/migrate` — editor mapping,
+ * module graph (`@kobato/server/infra/pt-migration/migrate` — editor mapping,
  * legacy-pt schemas, and the config graph when `--db` is omitted) is
  * imported DYNAMICALLY, keeping this module's static-import budget
  * intact. Exit codes: 0 success, 1 any failed row (or verify

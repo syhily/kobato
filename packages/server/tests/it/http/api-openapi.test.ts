@@ -76,6 +76,35 @@ describe('openapi face (/api) vs rpc face (/rpc)', () => {
     expect(rpc.resolvedPosts.length).toBe(1)
   })
 
+  it('serves the same posts-list payload over REST and RPC', async () => {
+    await seedPost('rest-post')
+
+    const handler = new OpenAPIHandler(contentSurface)
+    const result = await handler.handle(new Request('http://localhost/api/content/v1/posts'), {
+      prefix: '/api',
+      context: makePublicCtx({ db }),
+    })
+    expect(result.matched).toBe(true)
+    if (result.response === undefined) {
+      throw new Error('expected a response')
+    }
+    expect(result.response.status).toBe(200)
+    const body = (await result.response.json()) as { resolvedPosts: unknown[]; extra?: unknown }
+    expect(Array.isArray(body.resolvedPosts)).toBe(true)
+    expect(body.resolvedPosts.length).toBe(1)
+    // The plain listing has no `extra` payload — JSON transport drops the
+    // `undefined` field entirely, so only the in-process RPC value proves
+    // the home extras are absent (home's `extra` is a real object).
+    expect(body.extra).toBeUndefined()
+
+    const rpc = await call(contentPublicRouter.postList, {}, { context: makePublicCtx({ db }) })
+    if ('redirectTo' in rpc) {
+      throw new Error('expected posts-list data')
+    }
+    expect(rpc.resolvedPosts.length).toBe(1)
+    expect(rpc.extra).toBeUndefined()
+  })
+
   it('exposes the generated OpenAPI document with the v1 paths', async () => {
     const generator = new OpenAPIGenerator({
       schemaConverters: [new ZodToJsonSchemaConverter()],
@@ -86,6 +115,7 @@ describe('openapi face (/api) vs rpc face (/rpc)', () => {
       paths: Record<string, { get?: Record<string, unknown>; post?: Record<string, unknown> }>
     }
     expect(spec.paths['/content/v1/home']).toBeDefined()
+    expect(spec.paths['/content/v1/posts']).toBeDefined()
     expect(spec.paths['/content/v1/posts/:slug']).toBeDefined()
     expect(spec.paths['/content/v1/comments/tree']).toBeDefined()
   })
@@ -114,6 +144,13 @@ describe('openapi face (/api) vs rpc face (/rpc)', () => {
         expect.objectContaining({ name: 'keyword', in: 'query', required: true }),
         expect.objectContaining({ name: 'num', in: 'query', required: false }),
       ]),
+    )
+
+    const postsParams = spec.paths['/content/v1/posts']?.get?.parameters
+    expect(postsParams).toEqual(
+      // All-optional input objects omit the `required` key — same emission
+      // as `/content/v1/home` (an all-optional input too).
+      expect.arrayContaining([expect.objectContaining({ name: 'num', in: 'query' })]),
     )
 
     const pageParams = spec.paths['/content/v1/pages/:slug']?.get?.parameters

@@ -6,7 +6,7 @@ import { z } from 'zod'
 // `csrfGuard` (upload/restore/branding/maxmind). Exempting either prefix
 // silently disables CSRF on state-changing routes (P1-16). The check is
 // segment-boundary aware, mirroring `isPathExempt`'s match semantics in
-// `@/server/domains/auth/csrf`.
+// `@kobato/server/domains/auth/csrf`.
 const DANGEROUS_EXEMPT_PREFIXES = ['/rpc', '/api'] as const
 
 function isDangerousExemptPath(path: string): boolean {
