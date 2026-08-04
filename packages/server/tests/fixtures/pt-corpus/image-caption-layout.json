@@ -1,0 +1,5 @@
+{
+  "kind": "content",
+  "note": "image 带 alt + caption + layout:\"left\"(基于 render.test.tsx 的 img1 补 layout 字段,构造)",
+  "bodyJson": "[{\"_type\":\"image\",\"_key\":\"img1\",\"src\":\"https://example.com/x.jpg\",\"alt\":\"示例图片\",\"caption\":\"图片说明文字\",\"layout\":\"left\"}]"
+}

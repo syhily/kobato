@@ -1,7 +1,7 @@
 // SEA worker-pool smoke — bundled by vite into
 // `dist-sea/intermediates/smoke-worker.mjs` (see vite.sea.config.ts) and
 // embedded as the `worker/smoke-worker.mjs` asset. The bundle's
-// `--smoke-worker` flag (`@/server/infra/sea-cli`) dispatches it via
+// `--smoke-worker` flag (`@kobato/server/infra/sea-cli`) dispatches it via
 // `new Worker(code, { eval: true, execArgv: ['--input-type=module'] })` —
 // the same mechanism the image process pool uses — with
 // `workerData.kobatoSmokeWorker` set; the dual-mode entry at the bottom
@@ -17,7 +17,7 @@
 //
 // Unlike the other binary flags this module DOES pull the config-validated
 // server graph: the pool registers its teardown via
-// `@/server/infra/lifecycle`, which imports `@/server/infra/config` and
+// `@kobato/server/infra/lifecycle`, which imports `@kobato/server/infra/config` and
 // exits when required values are missing. `--smoke-worker` therefore needs
 // the full server configuration (database.url, security.sessionSecret,
 // security.encryptionKey, storage.data) — it validates but never opens a
@@ -27,11 +27,10 @@
 // ever run AFTER `bootstrapSeaRuntime()` (or outside SEA, where the
 // redirected loads fall back to node_modules resolution).
 
+import { __setWorkerFactory, getProcessPool, stopProcessPool } from '@kobato/server/infra/image/process-pool'
+import { isSea } from '@kobato/server/infra/sea'
 import { parentPort, Worker, workerData } from 'node:worker_threads'
 import sharp from 'sharp'
-
-import { __setWorkerFactory, getProcessPool, stopProcessPool } from '@/server/infra/image/process-pool'
-import { isSea } from '@/server/infra/sea'
 
 const SOURCE_WIDTH = 64
 const SOURCE_HEIGHT = 48
@@ -52,7 +51,7 @@ export async function run(): Promise<void> {
   // embedded-text eval worker — that path is what this smoke exists to
   // prove.
   if (!isSea()) {
-    __setWorkerFactory(() => new Worker(new URL('../../build/server/process-worker.js', import.meta.url)))
+    __setWorkerFactory(() => new Worker(new URL('../../apps/core/build/server/process-worker.js', import.meta.url)))
   }
 
   // Synthesize a real PNG from raw pixels — a deterministic gradient, not
@@ -100,7 +99,7 @@ export async function run(): Promise<void> {
 
 // Dual-mode entry: when the bundle's `--smoke-worker` handler dispatches
 // this bundle as a worker (`workerData.kobatoSmokeWorker` — see
-// `@/server/infra/sea-cli`), run immediately and report through the exit
+// `@kobato/server/infra/sea-cli`), run immediately and report through the exit
 // code. Plain imports (tests, direct module use) skip this branch.
 if (parentPort !== null && workerData?.kobatoSmokeWorker === true) {
   void run().catch((error: unknown) => {

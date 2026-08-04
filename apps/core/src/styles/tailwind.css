@@ -1,0 +1,1441 @@
+@import 'tailwindcss' source(none);
+@plugin '@tailwindcss/typography';
+
+/* Dark variant explicit class or system preference when no class is set */
+@custom-variant dark {
+  &:where(.dark, .dark *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not(.light, .dark), :root:not(.light, .dark) *) {
+      @slot;
+    }
+  }
+}
+
+/* Sidebar scoped variant — matches shadcn/ui sidebar data attribute */
+@custom-variant sidebar {
+  &:where([data-sidebar='sidebar'], [data-sidebar='sidebar'] *) {
+    @slot;
+  }
+}
+
+/* Monorepo source scanning — @tailwindcss/vite 4.x does not auto-scan
+   workspace packages (tailwindlabs/tailwindcss#19313), so each app
+   declares its own src tree plus every package source root it consumes.
+   Paths are relative to this stylesheet. */
+@source '../..';
+@source '../../../packages/ui/src';
+@source '../../../packages/editor/src';
+@source '../../../packages/client/src';
+@source '../../../packages/shared/src';
+
+/* Project semantic tokens */
+:root {
+  /* Brand — teal hue 184. #007a82 darkens from #008c95 (L29→L25) so
+     inline links and brand text clear WCAG AA on white (4.05→5.11:1). */
+  --brand: #007a82;
+  --brand-dark: #151b2b;
+  --brand-darker: #20283b;
+
+  /* Primary button hover swap */
+  --btn-hover-bg: var(--brand-dark);
+  --btn-hover-fg: #ffffff;
+
+  /* Destructive button hover — steps the error fill darker in the same
+     red family (Geist scale-stepping), instead of jumping to brand-dark
+     which erased the error affordance on hover. */
+  --btn-destructive-hover-bg: color-mix(in oklab, var(--destructive) 82%, black 18%);
+  --btn-destructive-hover-fg: #ffffff;
+
+  /* Ink */
+  --ink-1: #151b2b;
+  --ink-2: #1f2538;
+  --ink-3: #404b69;
+  /* ink-4 drives muted-foreground / placeholder / timestamps. Darkened
+     from #8a92a9 (3.10:1) to #646c82 (5.24:1) for WCAG AA on white. */
+  --ink-4: #646c82;
+  --ink-on-dark: #e8e9ea;
+  --ink-5: #eaecf3;
+
+  /* Surfaces — neutral hue unified to 220° (indigo-gray) with saturation
+     decreasing as lightness rises, for a clean paper feel without the
+     previous blue-cast drift (was 216-240°, sat 6-52%). */
+  --canvas: #ffffff;
+  --surface: #f5f6f8;
+  --surface-dim: #edeef1;
+  --surface-warn: #ffe9d5;
+  --surface-body: #fafbfc;
+  --surface-secondary: #283149;
+  --surface-soft: #edeef1;
+
+  /* Aside panel — same fill as surface-secondary in light; diverges in dark. */
+  --aside-bg: var(--surface-secondary);
+
+  /* Lines — same hue 220° discipline; low saturation so borders read as
+     gray, not blue. */
+  --line: #f0f2f5;
+  --line-muted: #d6d9e0;
+  --line-widget: #d2e3e4;
+
+  /* Status */
+  --warn: #ff8338;
+  --alert: #f7094c;
+  --like-active: #ff4053;
+  --like-active-shadow: 0 5px 20px 0 rgba(228, 93, 106, 0.35);
+  --like-bg: var(--brand-dark);
+  --like-bg-hover: var(--brand-darker);
+
+  /* Radius */
+  --radius: 0.375rem;
+  --radius-xs: 3px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+
+  /* Geist gray-alpha overlay — translucent steps that layer over any
+     surface for borders, dividers, hover washes (design.md:430).
+     Unlocks cross-theme borders/hover the solid --line can't express. */
+  --ga-100: #0000000d;
+  --ga-200: #00000015;
+  --ga-300: #0000001a;
+  --ga-400: #00000014;
+  --ga-500: #00000036;
+  --ga-600: #0000003d;
+
+  /* Misc primitives */
+  --editor-accent: rgb(59 130 246);
+  --font-code: 'Iosevka', monospace;
+  --code-bg: rgb(253, 246, 227);
+  --code-inline-fg: #24292e;
+  --code-inline-border: color-mix(in oklab, var(--code-bg) 68%, white 32%);
+  --size-empty-state: 50vh;
+  --size-sidebar-item: 34px;
+  --size-search-trigger: 38px;
+  --size-admin-thumb: 100px;
+  --size-admin-col-narrow: 52px;
+  --size-auth-input: 54px;
+  --size-auth-btn: 52px;
+  --size-editor-min: 480px;
+  --mobile-navbar-height: 64px;
+  --z-aside-drawer: 1020;
+  --z-modal: 1050;
+  --z-nav-splash: 1100;
+  --z-tooltip: 1080;
+
+  /* TOC z-index stack */
+  --z-toc-backdrop: 500;
+  --z-toc-drawer: 880;
+  --z-toc-drawer-open: 1000;
+  --z-toc-toggle: 890;
+  --z-toc-toggle-open: 1500;
+  --scrim: rgba(8, 15, 25, 0.3);
+  --skeleton-start: rgba(0, 0, 0, 0.04);
+  --skeleton-end: rgba(0, 0, 0, 0.08);
+
+  /* Sidebar layout */
+  --sidebar-width: 20.5rem;
+  --sidebar-width-icon: 4rem;
+
+  /* Shadow and popup primitives */
+  --shadow-card-value: 0 0 30px 0 rgb(40 49 73 / 2%);
+  --shadow-tooltip-value: 0 8px 28px rgb(40 49 73 / 14%);
+  --shadow-toc-toggle-value: 0 0.125rem 0.3125rem rgb(0 0 0 / 11.7%);
+  --popup-close-hover: #f5f5f5;
+
+  /* Geist elevation — three semantic tiers (design.md:449-455).
+     `--shadow-card-value` above is kept at its existing soft value so
+     the legacy `shadow-card` utility (used across many components) keeps
+     its current look; the tiers below are the new vocabulary for new
+     code and a gradual migration. */
+  --shadow-raised: 0 2px 2px rgb(0 0 0 / 4%);
+  --shadow-popover: 0 1px 1px rgb(0 0 0 / 2%), 0 4px 8px -4px rgb(0 0 0 / 4%), 0 16px 24px -8px rgb(0 0 0 / 6%);
+  --shadow-modal: 0 1px 1px rgb(0 0 0 / 2%), 0 8px 16px -4px rgb(0 0 0 / 4%), 0 24px 32px -8px rgb(0 0 0 / 6%);
+
+  /* Shadcn semantic slots */
+  --background: var(--surface-body);
+  --foreground: var(--ink-1);
+  --card: var(--canvas);
+  --card-foreground: var(--ink-1);
+  --popover: var(--canvas);
+  --popover-foreground: var(--ink-1);
+
+  --primary: var(--brand);
+  --primary-foreground: #ffffff;
+
+  /* Primary button resting fill */
+  --btn-primary-bg: var(--primary);
+
+  --secondary: var(--surface-dim);
+  --secondary-foreground: var(--ink-1);
+
+  --muted: var(--surface-dim);
+  --muted-foreground: var(--ink-4);
+
+  --accent: var(--line);
+  --accent-foreground: var(--ink-1);
+
+  --destructive: var(--alert);
+  --destructive-foreground: #ffffff;
+
+  --border-soft: var(--line);
+  --border-strong: var(--line-widget);
+  --border: var(--border-soft);
+  --input: var(--border-strong);
+  --ring: var(--brand);
+
+  /* Geist two-layer focus ring — a 2px gap in the surface color, then a
+     2px brand ring (design.md:475). `--ring-gap-color` is the surface fill
+     so the ring reads as floating; `--ring-color` is the brand stroke and
+     intentionally tracks --ring (the shadcn ring slot) — both equal brand.
+     Don't diverge them without also updating --shadow-focus in the bridge. */
+  --ring-gap-color: var(--canvas);
+  --ring-color: var(--ring);
+
+  --sidebar: var(--surface);
+  --sidebar-foreground: var(--ink-1);
+  --sidebar-primary: var(--brand);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--surface-dim);
+  --sidebar-accent-foreground: var(--ink-1);
+  --sidebar-border: var(--border-soft);
+  --sidebar-ring: var(--brand);
+
+  /* Status tokens light */
+  --status-info-bg: #f0f9ff;
+  --status-info-fg: #0369a1;
+  --status-info-border: #bae6fd;
+  --status-warn-bg: #fffbeb;
+  --status-warn-fg: #92400e;
+  --status-warn-border: #fcd34d;
+  --status-error-bg: #fef2f2;
+  --status-error-fg: #991b1b;
+  --status-error-border: #fecaca;
+  --status-success-bg: #f0fdf4;
+  --status-success-fg: #166534;
+  --status-success-border: #86efac;
+
+  /* Status tokens — draft */
+  --status-draft-bg: #fdf2f8;
+  --status-draft-fg: #be185d;
+  --status-draft-border: #f9a8d4;
+
+  /* Diff viewer tokens light — alias the matching status triple
+     (change=warn, insert=success, delete=error). Re-point individually
+     if diff ever needs to diverge from status coloring. */
+  --diff-change-bg: var(--status-warn-bg);
+  --diff-change-fg: var(--status-warn-fg);
+  --diff-change-border: var(--status-warn-border);
+  --diff-insert-bg: var(--status-success-bg);
+  --diff-insert-fg: var(--status-success-fg);
+  --diff-insert-border: var(--status-success-border);
+  --diff-delete-bg: var(--status-error-bg);
+  --diff-delete-fg: var(--status-error-fg);
+  --diff-delete-border: var(--status-error-border);
+
+  /* Chip tokens light */
+  --chip-bg: var(--foreground);
+  --chip-fg: var(--background);
+  --chip-hover-bg: var(--primary);
+  --chip-hover-fg: var(--primary-foreground);
+
+  /* Chart palette — two data series for the analytics dashboard. */
+  --chart-1: #6366f1;
+  --chart-2: #14b8a6;
+
+  /* Button light variant tokens light */
+  --btn-light-border: var(--surface-soft);
+  --btn-light-bg: var(--surface-soft);
+  --btn-light-fg: var(--ink-4);
+  --btn-light-hover-fg: var(--ink-1);
+
+  /* FAB tokens light */
+  --fab-bg: var(--canvas);
+  --fab-fg: var(--ink-1);
+}
+
+.dark {
+  /* Ink light text on dark canvas */
+  --ink-1: #e8e9ea;
+  --ink-2: #c8ccd6;
+  --ink-3: #8b92a5;
+  --ink-4: #9ca3b8;
+  --ink-5: #2a3142;
+
+  /* Brand */
+  --brand: #22c7d4;
+  --brand-dark: #334155;
+  --brand-darker: #475569;
+
+  /* Surfaces */
+  --surface-secondary: #0b1322;
+  --aside-bg: #15203a;
+
+  /* Primary button hover and resting */
+  --btn-hover-bg: color-mix(in oklab, var(--brand) 80%, black 20%);
+  --btn-hover-fg: #ffffff;
+  --btn-primary-bg: color-mix(in oklab, var(--brand) 75%, black 25%);
+  --btn-destructive-hover-bg: color-mix(in oklab, var(--destructive) 78%, black 22%);
+  --btn-destructive-hover-fg: #ffffff;
+
+  /* Dark surface lightness ladder L 7 to L 44 see cn.ts */
+  --canvas: #26314d;
+  --surface: #26314d;
+  --surface-dim: #303a5a;
+  --surface-warn: #3a2810;
+  --surface-body: #1d2842;
+  --surface-soft: #2a3553;
+
+  --line: #475672;
+  --line-muted: #374566;
+  --line-widget: #5b6b88;
+
+  /* Focus ring — gap matches the page surface so the ring floats
+     (design.dark.md:475); stroke is the recalibrated dark brand. */
+  --ring-gap-color: var(--surface-body);
+  --ring-color: var(--ring);
+
+  /* Geist gray-alpha overlay (design.dark.md frontmatter) */
+  --ga-100: #ffffff12;
+  --ga-200: #ffffff17;
+  --ga-300: #ffffff21;
+  --ga-400: #ffffff24;
+  --ga-500: #ffffff3d;
+  --ga-600: #ffffff82;
+
+  --editor-accent: rgb(59 130 246);
+
+  /* Code dark inversion */
+  --code-bg: #1a1f2e;
+  --code-inline-fg: #c8ccd6;
+  --code-inline-border: color-mix(in oklab, var(--code-bg) 68%, #444 32%);
+
+  /* Skeleton dark inversion */
+  --skeleton-start: rgba(255, 255, 255, 0.04);
+  --skeleton-end: rgba(255, 255, 255, 0.08);
+
+  /* Scrim */
+  --scrim: rgba(0, 0, 0, 0.5);
+
+  /* Shadows tuned for dark */
+  --shadow-card-value: 0 0 0 1px rgb(255 255 255 / 7%), 0 6px 20px 0 rgb(0 0 0 / 38%);
+  --shadow-tooltip-value: 0 8px 28px rgb(0 0 0 / 40%);
+  --shadow-toc-toggle-value: 0 0.125rem 0.3125rem rgb(0 0 0 / 40%);
+
+  /* Geist elevation — dark tiers (design.dark.md:449-455). Only raised
+     differs from light; popover/modal are identical so inherited. */
+  --shadow-raised: 0 1px 2px rgb(0 0 0 / 16%);
+
+  /* Popup close hover */
+  --popup-close-hover: #2a3142;
+
+  /* Like button dark mode */
+  --like-bg: #64748b;
+  --like-bg-hover: #94a3b8;
+  --like-active: #991b1b;
+  --like-active-shadow: 0 5px 20px 0 rgba(0, 0, 0, 0.45);
+
+  /* Shiki light fallback see cn.ts */
+  --shiki-light: var(--ink-2);
+
+  /* Status lifts */
+  --warn: #ff9b5c;
+  --alert: #ff4a6a;
+
+  /* Status tokens dark */
+  --status-info-bg: #0c4a6e;
+  --status-info-fg: #bae6fd;
+  --status-info-border: #075985;
+  --status-warn-bg: #451a03;
+  --status-warn-fg: #fcd34d;
+  --status-warn-border: #78350f;
+  --status-error-bg: #450a0a;
+  --status-error-fg: #fecaca;
+  --status-error-border: #7f1d1d;
+  --status-success-bg: #052e16;
+  --status-success-fg: #86efac;
+  --status-success-border: #14532d;
+
+  /* Status tokens — draft dark */
+  --status-draft-bg: #4a0e2c;
+  --status-draft-fg: #f9a8d4;
+  --status-draft-border: #831843;
+
+  /* Diff viewer tokens dark — alias the dark status triple (see :root note). */
+  --diff-change-bg: var(--status-warn-bg);
+  --diff-change-fg: var(--status-warn-fg);
+  --diff-change-border: var(--status-warn-border);
+  --diff-insert-bg: var(--status-success-bg);
+  --diff-insert-fg: var(--status-success-fg);
+  --diff-insert-border: var(--status-success-border);
+  --diff-delete-bg: var(--status-error-bg);
+  --diff-delete-fg: var(--status-error-fg);
+  --diff-delete-border: var(--status-error-border);
+
+  /* Chip tokens dark */
+  --chip-bg: var(--surface-dim);
+  --chip-fg: var(--ink-1);
+  --chip-hover-bg: var(--primary);
+  --chip-hover-fg: var(--primary-foreground);
+
+  /* Chart palette — lifted for dark surfaces. */
+  --chart-1: #818cf8;
+  --chart-2: #2dd4bf;
+
+  /* Button light variant tokens dark */
+  --btn-light-border: var(--line);
+  --btn-light-bg: var(--line-muted);
+  --btn-light-fg: var(--ink-1);
+  --btn-light-hover-fg: var(--brand);
+
+  /* FAB tokens dark */
+  --fab-bg: var(--surface-dim);
+  --fab-fg: var(--ink-1);
+
+  /* Sidebar */
+  --sidebar: var(--surface-secondary);
+  --sidebar-foreground: var(--ink-on-dark);
+  --sidebar-primary: var(--brand);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: color-mix(in oklab, var(--brand) 18%, var(--surface-dim));
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: var(--ink-3);
+  --sidebar-ring: var(--brand);
+}
+
+/* Shiki token colors and background outside .prose-blog (e.g. audit-log details) */
+pre.shiki {
+  color: var(--shiki-light);
+  background-color: var(--shiki-light-bg);
+}
+pre.shiki span {
+  color: var(--shiki-light);
+}
+
+/* Shiki dual theme dark override */
+.dark pre.shiki {
+  color: var(--shiki-dark) !important;
+  background-color: var(--shiki-dark-bg) !important;
+}
+.dark pre.shiki span {
+  color: var(--shiki-dark) !important;
+}
+
+/* System preference dark fallback */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light, .dark) {
+    --ink-1: #e8e9ea;
+    --ink-2: #c8ccd6;
+    --ink-3: #8b92a5;
+    --ink-4: #9ca3b8;
+    --ink-5: #2a3142;
+
+    --brand: #22c7d4;
+    --brand-dark: #334155;
+    --brand-darker: #475569;
+
+    --surface-secondary: #0b1322;
+    --aside-bg: #15203a;
+
+    --btn-hover-bg: color-mix(in oklab, var(--brand) 80%, black 20%);
+    --btn-hover-fg: #ffffff;
+    --btn-primary-bg: color-mix(in oklab, var(--brand) 75%, black 25%);
+    --btn-destructive-hover-bg: color-mix(in oklab, var(--destructive) 78%, black 22%);
+    --btn-destructive-hover-fg: #ffffff;
+
+    --canvas: #26314d;
+    --surface: #26314d;
+    --surface-dim: #303a5a;
+    --surface-warn: #3a2810;
+    --surface-body: #1d2842;
+    --surface-soft: #2a3553;
+
+    --line: #475672;
+    --line-muted: #374566;
+    --line-widget: #5b6b88;
+
+    /* Focus ring — gap matches the page surface so the ring floats
+       (design.dark.md:475); stroke is the recalibrated dark brand. */
+    --ring-gap-color: var(--surface-body);
+    --ring-color: var(--ring);
+
+    /* Geist gray-alpha overlay (design.dark.md frontmatter) */
+    --ga-100: #ffffff12;
+    --ga-200: #ffffff17;
+    --ga-300: #ffffff21;
+    --ga-400: #ffffff24;
+    --ga-500: #ffffff3d;
+    --ga-600: #ffffff82;
+
+    --editor-accent: rgb(59 130 246);
+
+    --code-bg: #1a1f2e;
+    --code-inline-fg: #c8ccd6;
+    --code-inline-border: color-mix(in oklab, var(--code-bg) 68%, #444 32%);
+
+    --skeleton-start: rgba(255, 255, 255, 0.04);
+    --skeleton-end: rgba(255, 255, 255, 0.08);
+
+    --scrim: rgba(0, 0, 0, 0.5);
+
+    --shadow-card-value: 0 0 0 1px rgb(255 255 255 / 7%), 0 6px 20px 0 rgb(0 0 0 / 38%);
+    --shadow-tooltip-value: 0 8px 28px rgb(0 0 0 / 40%);
+    --shadow-toc-toggle-value: 0 0.125rem 0.3125rem rgb(0 0 0 / 40%);
+
+    /* Geist elevation — dark tiers (design.dark.md:449-455). Only raised
+       differs from light; popover/modal are identical so inherited. */
+    --shadow-raised: 0 1px 2px rgb(0 0 0 / 16%);
+
+    --popup-close-hover: #2a3142;
+
+    --like-bg: #64748b;
+    --like-bg-hover: #94a3b8;
+    --like-active: #991b1b;
+    --like-active-shadow: 0 5px 20px 0 rgba(0, 0, 0, 0.45);
+
+    --shiki-light: var(--ink-2);
+
+    --warn: #ff9b5c;
+    --alert: #ff4a6a;
+
+    --status-info-bg: #0c4a6e;
+    --status-info-fg: #bae6fd;
+    --status-info-border: #075985;
+    --status-warn-bg: #451a03;
+    --status-warn-fg: #fcd34d;
+    --status-warn-border: #78350f;
+    --status-error-bg: #450a0a;
+    --status-error-fg: #fecaca;
+    --status-error-border: #7f1d1d;
+    --status-success-bg: #052e16;
+    --status-success-fg: #86efac;
+    --status-success-border: #14532d;
+
+    /* Status tokens — draft dark */
+    --status-draft-bg: #4a0e2c;
+    --status-draft-fg: #f9a8d4;
+    --status-draft-border: #831843;
+
+    /* Diff viewer tokens dark — alias the dark status triple (see :root note). */
+    --diff-change-bg: var(--status-warn-bg);
+    --diff-change-fg: var(--status-warn-fg);
+    --diff-change-border: var(--status-warn-border);
+    --diff-insert-bg: var(--status-success-bg);
+    --diff-insert-fg: var(--status-success-fg);
+    --diff-insert-border: var(--status-success-border);
+    --diff-delete-bg: var(--status-error-bg);
+    --diff-delete-fg: var(--status-error-fg);
+    --diff-delete-border: var(--status-error-border);
+
+    --chip-bg: var(--surface-dim);
+    --chip-fg: var(--ink-1);
+    --chip-hover-bg: var(--primary);
+    --chip-hover-fg: var(--primary-foreground);
+
+    /* Chart palette — lifted for dark surfaces. */
+    --chart-1: #818cf8;
+    --chart-2: #2dd4bf;
+
+    --btn-light-border: var(--line);
+    --btn-light-bg: var(--line-muted);
+    --btn-light-fg: var(--ink-1);
+    --btn-light-hover-fg: var(--brand);
+
+    --fab-bg: var(--surface-dim);
+    --fab-fg: var(--ink-1);
+
+    /* Sidebar */
+    --sidebar: var(--surface-secondary);
+    --sidebar-foreground: var(--ink-on-dark);
+    --sidebar-primary: var(--brand);
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: color-mix(in oklab, var(--brand) 18%, var(--surface-dim));
+    --sidebar-accent-foreground: #ffffff;
+    --sidebar-border: var(--ink-3);
+    --sidebar-ring: var(--brand);
+  }
+
+  :root:not(.light, .dark) pre.shiki {
+    color: var(--shiki-dark) !important;
+    background-color: var(--shiki-dark-bg) !important;
+  }
+  :root:not(.light, .dark) pre.shiki span {
+    color: var(--shiki-dark) !important;
+  }
+}
+
+/* Display P3 wide-gamut overrides (design.md frontmatter `*-p3` tokens).
+   On P3-capable screens (MacBook, iPhone, modern Android) these express
+   more chroma than the sRGB hex fallbacks above. Only accent colors
+   benefit — neutrals are gray, so no override needed. Chroma is boosted
+   ~15% over the sRGB oklch equivalent, hue/lightness held constant. */
+@supports (color: oklch(0% 0 0)) {
+  @media (color-gamut: p3) {
+    :root {
+      --brand: oklch(52.8% 0.1034 202.8);
+      --alert: oklch(62.1% 0.283 17.4);
+      --warn: oklch(73.9% 0.1991 48.2);
+      --like-active: oklch(66.2% 0.2588 20.9);
+    }
+    .dark {
+      --brand: oklch(75.8% 0.1427 203.5);
+      --alert: oklch(67.5% 0.2483 15.2);
+    }
+  }
+}
+
+/* Comment hash focus flash */
+.comment-body.active {
+  animation: var(--animate-comment-flash);
+  border-radius: var(--radius-sm);
+}
+
+/* Tailwind theme bridge shadcn */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Radius: sm, md, and lg are intentionally flattened to the base --radius (5px)
+     for a consistent UI look. The raw --radius-sm (4px), --radius-md (6px), and
+     --radius-lg (10px) CSS variables are preserved for non-Tailwind usage.
+     For the 4px checkbox radius, see --radius-input below. */
+  --radius-sm: var(--radius);
+  --radius-md: var(--radius);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 2px);
+
+  --breakpoint-sm: 576px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 992px;
+  --breakpoint-xl: 1200px;
+  --breakpoint-2xl: 1400px;
+
+  --container-sm: 540px;
+  --container-md: 720px;
+  --container-lg: 960px;
+  --container-xl: 1140px;
+  --container-2xl: 1320px;
+  --container-admin: 1480px;
+
+  --text-admin-sm: 0.8125rem;
+  --text-admin-base: 0.9375rem;
+  --text-micro: 0.6875rem;
+  --text-nano: 0.625rem;
+
+  --ring-width: 3px;
+
+  --z-index-modal: var(--z-modal);
+  --z-index-aside-drawer: var(--z-aside-drawer);
+
+  --spacing-admin-thumb: var(--size-admin-thumb);
+  --spacing-admin-col-narrow: var(--size-admin-col-narrow);
+  --spacing-auth-input: var(--size-auth-input);
+  --spacing-auth-btn: var(--size-auth-btn);
+  --spacing-editor-min: var(--size-editor-min);
+
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-dim: var(--surface-dim);
+  --color-surface-soft: var(--surface-soft);
+  --color-surface-warn: var(--surface-warn);
+  --color-surface-body: var(--surface-body);
+  --color-surface-secondary: var(--surface-secondary);
+  --color-aside-bg: var(--aside-bg);
+
+  --color-line: var(--line);
+  --color-line-muted: var(--line-muted);
+  --color-widget-border: var(--line-widget);
+
+  --color-brand: var(--brand);
+  --color-brand-dark: var(--brand-dark);
+  --color-brand-darker: var(--brand-darker);
+  --color-scrim: var(--scrim);
+  --color-skeleton-start: var(--skeleton-start);
+  --color-skeleton-end: var(--skeleton-end);
+  --color-warn: var(--warn);
+  --color-alert: var(--alert);
+
+  --color-ink-1: var(--ink-1);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-ink-4: var(--ink-4);
+  --color-ink-on-dark: var(--ink-on-dark);
+  --color-ink-5: var(--ink-5);
+
+  /* Geist gray-alpha overlay — translucent borders/dividers/hover (P2) */
+  --color-ga-100: var(--ga-100);
+  --color-ga-200: var(--ga-200);
+  --color-ga-300: var(--ga-300);
+  --color-ga-400: var(--ga-400);
+  --color-ga-500: var(--ga-500);
+  --color-ga-600: var(--ga-600);
+
+  --color-like-active: var(--like-active);
+  --color-like-bg: var(--like-bg);
+  --color-like-bg-hover: var(--like-bg-hover);
+  --shadow-like-active: var(--like-active-shadow);
+
+  --radius-xs: var(--radius-xs);
+  --radius-input: var(--radius-sm);
+  --font-code: var(--font-code);
+
+  --text-md: 0.9375rem;
+  --text-2xl: 1.625rem;
+  --text-toc-toggle: 1.375rem;
+  --text-toc-title: 1.5rem;
+  --text-toc-link: 0.85rem;
+  --text-badge: 0.625rem;
+  --text-empty-state-hero: 6rem;
+  --text-btn-lg: clamp(0.875rem, 0.8rem + 0.2vw, 0.9375rem);
+
+  /* Geist heading ladder (P3) — five steps the blog actually uses, not
+     the full Geist 10-step scale. Negative tracking tightens with size.
+     Pair with --leading-h-* (omitted from cn.ts) and Tailwind-native
+     tracking-h-* utilities. */
+  --text-h-display: 2.5rem;
+  --leading-h-display: 1.2;
+  --tracking-h-display: -0.04em;
+  --text-h-xl: 2rem;
+  --leading-h-xl: 1.25;
+  --tracking-h-xl: -0.032em;
+  --text-h-lg: 1.5rem;
+  --leading-h-lg: 1.33;
+  --tracking-h-lg: -0.024em;
+  --text-h-md: 1.25rem;
+  --leading-h-md: 1.3;
+  --tracking-h-md: -0.01em;
+  --text-h-sm: 1rem;
+  --leading-h-sm: 1.5;
+  --tracking-h-sm: -0.008em;
+
+  --leading-badge: 1.2;
+  --spacing-sidebar-item: var(--size-sidebar-item);
+  --spacing-search-trigger: var(--size-search-trigger);
+  --spacing-empty-state: var(--size-empty-state);
+  --spacing-badge-overlay-y: 0.4375rem;
+  --spacing-icon-inset: 28%;
+  --spacing-btn-icon-md: 2.625rem;
+
+  /* TOC spacing tokens */
+  --spacing-toc-disc: 100px;
+  --spacing-toc-disc-hover: 120px;
+  --spacing-toc-disc-open: 50px;
+  --spacing-toc-disc-open-hover: 64px;
+  --spacing-toc-drawer: 280px;
+  --spacing-toc-drawer-edge: 280px;
+  --spacing-toc-toggle-edge-open: 25px;
+
+  /* Header / chrome spacing tokens */
+  --spacing-header-brand-x: 25px;
+  --spacing-header-brand-b: 15px;
+  --spacing-submenu-p: 25px;
+  --spacing-submenu-px-lg: 15px;
+
+  /* Form spacing tokens */
+  --spacing-comment-avatar-gap: 15px;
+  --spacing-auth-input-pad: 8rem;
+
+  /* Editor spacing tokens */
+  --spacing-editor-prose-min: 440px;
+
+  /* APlayer spacing tokens */
+  --spacing-aplayer-margin: 5px;
+  --spacing-aplayer-art-sm: 66px;
+  --spacing-aplayer-art-lg: 90px;
+  --spacing-aplayer-info-gap-sm: 76px;
+  --spacing-aplayer-info-gap-lg: 100px;
+  --spacing-aplayer-info-pad-x: 7px;
+  --spacing-aplayer-info-pad-top-lg: 10px;
+  --spacing-aplayer-music-gap: 13px;
+  --spacing-aplayer-music-indent: 5px;
+  --spacing-aplayer-time-height: 17px;
+  --spacing-aplayer-time-pad: 7px;
+  --spacing-aplayer-icon: 15px;
+  --spacing-aplayer-volume-indent: 3px;
+  --spacing-aplayer-volume-popup-right: 3px;
+  --spacing-aplayer-volume-popup-bottom: 15px;
+  --spacing-aplayer-volume-popup-width: 25px;
+  --spacing-aplayer-volume-bar-indent: 10px;
+  --spacing-aplayer-volume-bar-height: 35px;
+  --spacing-aplayer-volume-bar-track: 5px;
+  --spacing-aplayer-progress-indent: 5px;
+  --spacing-aplayer-thumb-offset: 5px;
+  --spacing-aplayer-notice-pad-y: 5px;
+  --spacing-aplayer-fixed-max: 400px;
+  --spacing-aplayer-miniswitcher-width: 18px;
+  --spacing-aplayer-lrc: 30px;
+  --spacing-aplayer-lrc-gap: 7px;
+  --text-aplayer-time: 11px;
+  --radius-aplayer-volume: 2.5px;
+  --color-aplayer-bar: #cdcdcd;
+  --color-aplayer-bar-loaded: #aaa;
+
+  --container-popup-sm: 300px;
+  --container-popup-md: 540px;
+  --container-popup-lg: 960px;
+  --spacing-popup-mobile: 95%;
+  --shadow-popup-close: 0 2px 6px rgba(0, 0, 0, 0.2);
+  --color-popup-close-hover: var(--popup-close-hover);
+
+  --spacing-qr-dialog: 210px;
+
+  /* Admin content minimum height */
+  --spacing-admin-content-min: calc(100vh - 4rem);
+
+  /* Dialog max heights */
+  --spacing-dialog-max-h: 90vh;
+  --spacing-dialog-max-h-sm: 60vh;
+
+  /* Editor padding bottom for scroll */
+  --spacing-editor-pad-bottom: 60vh;
+
+  /* Content layout proportions */
+  --spacing-content-main: 71%;
+  --spacing-content-side: 29%;
+
+  /* Body line height */
+  --leading-body: 1.4;
+
+  /* Copy line height — taller, for multi-line user-generated body text
+     (comments, descriptions). Dedupes the former leading-[1.85] literals. */
+  --leading-copy: 1.85;
+
+  /* Dialog popup max width */
+  --spacing-dialog-popup-md: calc(var(--container-popup-md));
+
+  --shadow-card: var(--shadow-card-value);
+  --shadow-tooltip: var(--shadow-tooltip-value);
+  --shadow-toc-toggle: var(--shadow-toc-toggle-value);
+
+  /* Two-layer focus ring (P1) — 2px surface gap + 2px brand stroke.
+     Kept as a single shadow token so `focus-visible:shadow-focus` emits
+     both layers; pair with `outline-none`. */
+  --shadow-focus: 0 0 0 2px var(--ring-gap-color), 0 0 0 4px var(--ring-color);
+
+  /* Three semantic elevation tiers (P5) */
+  --shadow-raised: var(--shadow-raised);
+  --shadow-popover: var(--shadow-popover);
+  --shadow-modal: var(--shadow-modal);
+
+  --animate-comments-shimmer: comments-shimmer 1.4s linear infinite;
+
+  --animate-comment-flash: comment-flash 1.5s ease-out forwards;
+
+  @keyframes comment-flash {
+    0%,
+    40% {
+      background-color: color-mix(in oklab, var(--brand) 16%, transparent);
+    }
+    100% {
+      background-color: transparent;
+    }
+  }
+
+  --color-status-info-bg: var(--status-info-bg);
+  --color-status-info-fg: var(--status-info-fg);
+  --color-status-info-border: var(--status-info-border);
+  --color-status-warn-bg: var(--status-warn-bg);
+  --color-status-warn-fg: var(--status-warn-fg);
+  --color-status-warn-border: var(--status-warn-border);
+  --color-status-error-bg: var(--status-error-bg);
+  --color-status-error-fg: var(--status-error-fg);
+  --color-status-error-border: var(--status-error-border);
+  --color-status-success-bg: var(--status-success-bg);
+  --color-status-success-fg: var(--status-success-fg);
+  --color-status-success-border: var(--status-success-border);
+
+  /* Status tokens — draft */
+  --color-status-draft-bg: var(--status-draft-bg);
+  --color-status-draft-fg: var(--status-draft-fg);
+  --color-status-draft-border: var(--status-draft-border);
+
+  /* Diff viewer tokens */
+  --color-diff-change-bg: var(--diff-change-bg);
+  --color-diff-change-fg: var(--diff-change-fg);
+  --color-diff-change-border: var(--diff-change-border);
+  --color-diff-insert-bg: var(--diff-insert-bg);
+  --color-diff-insert-fg: var(--diff-insert-fg);
+  --color-diff-insert-border: var(--diff-insert-border);
+  --color-diff-delete-bg: var(--diff-delete-bg);
+  --color-diff-delete-fg: var(--diff-delete-fg);
+  --color-diff-delete-border: var(--diff-delete-border);
+
+  --color-chip-bg: var(--chip-bg);
+  --color-chip-fg: var(--chip-fg);
+  --color-chip-hover-bg: var(--chip-hover-bg);
+  --color-chip-hover-fg: var(--chip-hover-fg);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+
+  --color-btn-light-border: var(--btn-light-border);
+  --color-btn-light-bg: var(--btn-light-bg);
+  --color-btn-light-fg: var(--btn-light-fg);
+  --color-btn-light-hover-fg: var(--btn-light-hover-fg);
+
+  --color-fab-bg: var(--fab-bg);
+  --color-fab-fg: var(--fab-fg);
+
+  --color-btn-primary-bg: var(--btn-primary-bg);
+  --color-btn-hover-bg: var(--btn-hover-bg);
+  --color-btn-hover-fg: var(--btn-hover-fg);
+  --color-btn-destructive-hover-bg: var(--btn-destructive-hover-bg);
+  --color-btn-destructive-hover-fg: var(--btn-destructive-hover-fg);
+  --color-editor-accent: var(--editor-accent);
+
+  @keyframes comments-shimmer {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+}
+
+/* Base layer Preflight overrides */
+@layer base {
+  :root {
+    text-autospace: normal;
+  }
+
+  svg {
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--border);
+  }
+}
+
+/* APlayer icon sizing — SVGs must fill their 15×15 px parent containers */
+.aplayer .aplayer-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/*
+ * Body font chain.
+ *
+ * Defined as a CSS variable so a configured globalFamily setting
+ * (blogSettings.fonts.globalFamily) can prepend a custom family at
+ * runtime via root.tsx. When no globalFamily is configured, the variable
+ * falls back to the default OPPO Sans CJK sans-serif chain.
+ */
+:root {
+  --font-body:
+    'OPPO Sans 4.0', 'OPPO Sans', OPPOSans, 'PingFang SC', 'Lantinghei SC', 'Microsoft YaHei', 'Source Han Sans CN',
+    -apple-system, BlinkMacSystemFont, 'HanHei SC', 'Helvetica Neue', 'Open Sans', Arial, 'Hiragino Sans GB', STHeiti,
+    'WenQuanYi Micro Hei', SimSun, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+
+  /* Article-body serif stack. Same runtime-override mechanism as --font-body:
+     root.tsx prepends the configured post-slot families on <html>; without a
+     configured slot the prose body falls back to this default chain. */
+  --font-serif: 'OPPO Serif SC', 'Source Han Serif SC', 'Noto Serif CJK SC', 'Songti SC', SimSun, Georgia, Times, serif;
+}
+
+/* Document chrome body font cursors */
+html,
+body {
+  overscroll-behavior: none;
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  background-color: var(--surface-body);
+  color: var(--ink-2);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+@import './cursors.css';
+
+/* Brand typography utility prose-blog */
+@utility prose-blog {
+  /* &.prose lifts specificity above the plugin defaults so brand vars win */
+  &.prose {
+    --prose-blog-body: var(--ink-2);
+    --prose-blog-headings: var(--ink-1);
+    --prose-blog-lead: var(--ink-2);
+    --prose-blog-links: var(--brand);
+    --prose-blog-bold: var(--ink-1);
+    --prose-blog-counters: var(--ink-3);
+    --prose-blog-bullets: var(--ink-4);
+    --prose-blog-hr: var(--line);
+    --prose-blog-quotes: var(--ink-2);
+    --prose-blog-quote-borders: color-mix(in oklab, var(--brand) 55%, transparent);
+    --prose-blog-captions: var(--ink-4);
+    --prose-blog-code: var(--ink-3);
+    --prose-blog-pre-code: var(--shiki-light);
+    --prose-blog-pre-bg: var(--code-bg);
+    --prose-blog-th-borders: var(--line-muted);
+    --prose-blog-td-borders: var(--line-muted);
+
+    --tw-prose-body: var(--prose-blog-body);
+    --tw-prose-headings: var(--prose-blog-headings);
+    --tw-prose-lead: var(--prose-blog-lead);
+    --tw-prose-links: var(--prose-blog-links);
+    --tw-prose-bold: var(--prose-blog-bold);
+    --tw-prose-counters: var(--prose-blog-counters);
+    --tw-prose-bullets: var(--prose-blog-bullets);
+    --tw-prose-hr: var(--prose-blog-hr);
+    --tw-prose-quotes: var(--prose-blog-quotes);
+    --tw-prose-quote-borders: var(--prose-blog-quote-borders);
+    --tw-prose-captions: var(--prose-blog-captions);
+    --tw-prose-code: var(--prose-blog-code);
+    --tw-prose-pre-code: var(--prose-blog-pre-code);
+    --tw-prose-pre-bg: var(--prose-blog-pre-bg);
+    --tw-prose-th-borders: var(--prose-blog-th-borders);
+    --tw-prose-td-borders: var(--prose-blog-td-borders);
+
+    --tw-prose-invert-body: var(--prose-blog-body);
+    --tw-prose-invert-headings: var(--prose-blog-headings);
+    --tw-prose-invert-lead: var(--prose-blog-lead);
+    --tw-prose-invert-links: var(--prose-blog-links);
+    --tw-prose-invert-bold: var(--prose-blog-bold);
+    --tw-prose-invert-counters: var(--prose-blog-counters);
+    --tw-prose-invert-bullets: var(--prose-blog-bullets);
+    --tw-prose-invert-hr: var(--prose-blog-hr);
+    --tw-prose-invert-quotes: var(--prose-blog-quotes);
+    --tw-prose-invert-quote-borders: var(--prose-blog-quote-borders);
+    --tw-prose-invert-captions: var(--prose-blog-captions);
+    --tw-prose-invert-code: var(--prose-blog-code);
+    --tw-prose-invert-pre-code: var(--prose-blog-pre-code);
+    --tw-prose-invert-pre-bg: var(--prose-blog-pre-bg);
+    --tw-prose-invert-th-borders: var(--prose-blog-th-borders);
+    --tw-prose-invert-td-borders: var(--prose-blog-td-borders);
+
+    font-family: var(--font-serif);
+
+    :where(blockquote) {
+      font-style: normal;
+      font-weight: 400;
+      background-color: var(--surface);
+      border-radius: var(--radius-sm);
+      quotes: none;
+      display: flow-root;
+      padding-block: 1rem;
+      padding-inline-end: 1.25rem;
+    }
+
+    &.prose-lg :where(blockquote),
+    &.prose-sm :where(blockquote) {
+      padding-inline-start: 1.25rem;
+    }
+
+    :where(blockquote) > :where(:first-child) {
+      margin-top: 0;
+    }
+
+    :where(blockquote) > :where(:last-child) {
+      margin-bottom: 0;
+    }
+
+    :where(blockquote) :where(p:first-of-type)::before,
+    :where(blockquote) :where(p:last-of-type)::after {
+      content: none;
+    }
+
+    :where(.math) :where(math) {
+      max-width: none;
+    }
+
+    :where(.math-display) {
+      max-width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding-bottom: 0.125rem;
+      -webkit-overflow-scrolling: touch;
+      text-align: center;
+    }
+
+    :where(.math-display) :where(math[display='block']) {
+      margin-inline: auto;
+    }
+  }
+
+  &.prose.max-w-none :where(code):not(:where(pre *)) {
+    font-weight: 400;
+  }
+
+  :where(code, pre, kbd, samp) {
+    font-family: var(--font-code);
+  }
+
+  &.post-content {
+    --prose-blog-table-border: color-mix(in oklab, var(--line-muted) 78%, var(--ink-4) 22%);
+    --prose-blog-table-header-bg: var(--surface);
+    --prose-blog-table-stripe: color-mix(in oklab, var(--surface-soft) 55%, var(--canvas) 45%);
+
+    /* Article headings scaled down from prose-lg defaults */
+    &.prose-lg :where(h1, h2, h3, h4, h5):not(:where([class~='not-prose'], [class~='not-prose'] *)) {
+      color: var(--ink-1);
+    }
+    &.prose-lg :where(h1):not(:where([class~='not-prose'], [class~='not-prose'] *)) {
+      font-size: 1.75rem;
+      line-height: 1.3;
+    }
+    &.prose-lg :where(h2):not(:where([class~='not-prose'], [class~='not-prose'] *)) {
+      position: relative;
+      padding: 0 0 0 1.5rem;
+      font-size: 1.5rem;
+      line-height: 1.32;
+    }
+    /* Bar vertical position: tie to line box (`lh`), not fixed px — matches font-size + line-height. */
+    &.prose-lg :where(h2):not(:where([class~='not-prose'], [class~='not-prose'] *))::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: calc(0.5lh - 11px);
+      width: 6px;
+      height: 22px;
+      background-color: var(--primary);
+    }
+    &.prose-lg :where(h3):not(:where([class~='not-prose'], [class~='not-prose'] *)) {
+      position: relative;
+      padding: 0 0 0 1.5rem;
+      font-size: 1.25rem;
+      line-height: 1.38;
+    }
+    &.prose-lg :where(h3):not(:where([class~='not-prose'], [class~='not-prose'] *))::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: calc(0.5lh - 8px);
+      width: 5px;
+      height: 16px;
+      background-color: var(--primary);
+    }
+    &.prose-lg :where(h4):not(:where([class~='not-prose'], [class~='not-prose'] *)) {
+      position: relative;
+      padding: 0 0 0 1.5rem;
+      font-size: 1.125rem;
+      line-height: 1.42;
+    }
+    &.prose-lg :where(h4):not(:where([class~='not-prose'], [class~='not-prose'] *))::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: calc(0.5lh - 2.5px);
+      width: 5px;
+      height: 5px;
+      background-color: var(--primary);
+    }
+    &.prose-lg :where(h5):not(:where([class~='not-prose'], [class~='not-prose'] *)) {
+      font-size: 1rem;
+      line-height: 1.45;
+    }
+
+    :where(code) {
+      background-color: var(--code-bg);
+      color: var(--code-inline-fg);
+      border: 1px solid var(--code-inline-border);
+      padding: 0.2em 0.4em;
+      margin: 0;
+      border-radius: var(--radius-md);
+      font-size: 0.875em;
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+    }
+
+    :where(span[data-math-inline]) {
+      background-color: var(--code-bg);
+      color: var(--code-inline-fg);
+      border: 1px solid var(--code-inline-border);
+      padding: 0.2em 0.4em;
+      margin: 0;
+      border-radius: var(--radius-md);
+      font-size: 0.875em;
+      font-family: var(--font-code);
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+    }
+
+    :where(code)::before,
+    :where(code)::after {
+      content: none;
+    }
+
+    :where(pre) {
+      position: relative;
+      color: inherit;
+      background-color: var(--code-bg);
+      padding: 1rem 1.25rem;
+      margin-top: 0 !important;
+      margin-bottom: 1rem !important;
+      border-radius: 0 0 0.375rem 0.375rem;
+      overflow-x: auto;
+      word-break: normal;
+      overflow-wrap: normal;
+    }
+
+    :where(pre.shiki) {
+      color: var(--shiki-light);
+    }
+
+    :where(pre.shiki) :where(span) {
+      color: var(--shiki-light);
+    }
+
+    :where(pre) > :where(code) {
+      color: inherit;
+      background: transparent;
+      border: none;
+      padding: 0 !important;
+      margin: 0;
+      border-radius: 0;
+      font-size: inherit;
+      box-decoration-break: unset;
+      -webkit-box-decoration-break: unset;
+      display: block;
+      min-width: 100%;
+      width: max-content;
+      white-space: pre;
+      word-break: normal;
+      overflow-wrap: normal;
+    }
+
+    :where(svg) {
+      display: block;
+      max-width: 100%;
+      height: auto;
+    }
+
+    /* Editor canvas tweaks */
+    &.pt-body-editor :where(span[data-math-inline]) {
+      background-color: color-mix(in oklab, var(--editor-accent) 16%, var(--canvas));
+      color: var(--ink-2);
+      border: 1px solid color-mix(in oklab, var(--editor-accent) 8%, var(--canvas));
+    }
+
+    &.pt-body-editor :where(.react-renderer.node-image) :where(input[data-slot='input']) {
+      background-color: var(--background);
+      color: var(--ink-2);
+      caret-color: var(--ink-2);
+      -webkit-text-fill-color: var(--ink-2);
+    }
+
+    &.pt-body-editor :where(.react-renderer.node-image) :where(input[data-slot='input'])::placeholder {
+      color: var(--muted-foreground);
+      opacity: 1;
+      -webkit-text-fill-color: var(--muted-foreground);
+    }
+
+    &.pt-body-editor :where(.react-renderer.node-image) :where(label[data-slot='label']) {
+      color: var(--ink-2);
+    }
+  }
+
+  &.comment-content {
+    :where(code) {
+      background-color: var(--code-bg);
+      color: var(--code-inline-fg);
+      border: 1px solid var(--code-inline-border);
+      padding: 0.2em 0.4em;
+      margin: 0;
+      border-radius: var(--radius-md);
+      font-size: 0.875em;
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+    }
+
+    :where(code)::before,
+    :where(code)::after {
+      content: none;
+    }
+
+    :where(pre) {
+      font-size: 0.875rem;
+      line-height: 1.7;
+      color: inherit;
+      background-color: var(--code-bg);
+      padding: 0.875rem 1rem;
+      margin: 0.75rem 0;
+      border-radius: var(--radius-sm);
+      overflow-x: auto;
+      word-break: normal;
+      overflow-wrap: normal;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    :where(pre.shiki) {
+      color: var(--shiki-light);
+    }
+
+    :where(pre.shiki) :where(span) {
+      color: var(--shiki-light);
+    }
+
+    :where(pre) > :where(code) {
+      display: block;
+      min-width: 100%;
+      width: max-content;
+      font-size: inherit;
+      line-height: inherit;
+      color: inherit;
+      background: transparent;
+      border: none;
+      padding: 0;
+      margin: 0;
+      border-radius: 0;
+      box-decoration-break: unset;
+      -webkit-box-decoration-break: unset;
+      white-space: pre;
+      word-break: normal;
+      overflow-wrap: normal;
+    }
+  }
+}
+
+@layer utilities {
+  /* medium-zoom stack admin chrome under overlay popovers above */
+  .medium-zoom-overlay,
+  .medium-zoom-image--opened {
+    z-index: 45;
+  }
+
+  /* Portable Text tables grid overrides typography prose table borders */
+  .post-content.prose-blog.prose table.pt-table {
+    border-collapse: collapse;
+    border-width: 1px;
+    border-style: solid;
+    border-color: var(--prose-blog-table-border, var(--line-muted));
+  }
+
+  .post-content.prose-blog.prose table.pt-table :is(thead, tfoot, tbody tr) {
+    border-width: 0;
+    border-style: none;
+  }
+
+  .post-content.prose-blog.prose table.pt-table :is(th, td) {
+    border-width: 1px;
+    border-style: solid;
+    border-color: var(--prose-blog-table-border, var(--line-muted));
+    padding-block: 0.75em;
+    padding-inline: 0.875em;
+  }
+
+  .post-content.prose-blog.prose table.pt-table thead th,
+  .post-content.prose-blog.prose table.pt-table tbody tr:first-child th {
+    background-color: var(--prose-blog-table-header-bg);
+  }
+
+  .post-content.prose-blog.prose table.pt-table tbody tr:nth-child(even) td {
+    background-color: var(--prose-blog-table-stripe);
+  }
+
+  /* Thin scrollbar for lyrics panel */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+}
+
+/* ─── View Transition styles ───────────────────────────── */
+@supports (view-transition-name: none) {
+  ::view-transition-group(*) {
+    animation-duration: 350ms;
+    animation-timing-function: cubic-bezier(0.3, 0, 0, 1);
+  }
+
+  ::view-transition-old(music-cover-*),
+  ::view-transition-new(music-cover-*) {
+    animation: none;
+  }
+
+  ::view-transition-new(music-title-*),
+  ::view-transition-new(music-artist-*) {
+    animation: slideUpFade 300ms ease-out;
+  }
+}
+
+/* Theme switch wipe — the full-page theme change runs inside a View
+   Transition (see transitionViewIfSupported + ThemeProvider). The old
+   snapshot stays put while the new one is revealed by a clip-path wipe:
+   top-down when entering dark, bottom-up when returning to light. The
+   :root.dark gate keys the direction off the RESULTING theme, because the
+   new snapshot is captured after the class swap. Reduced-motion users
+   never start a transition, so no CSS guard is needed here. */
+::view-transition-old(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-new(root) {
+  animation: theme-wipe-to-light 800ms ease-in-out;
+  mix-blend-mode: normal;
+}
+
+:root.dark::view-transition-new(root) {
+  animation-name: theme-wipe-to-dark;
+}
+
+@keyframes theme-wipe-to-dark {
+  from {
+    clip-path: polygon(0 0, 100% 0, 100% 0, 0 0);
+  }
+  to {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  }
+}
+
+@keyframes theme-wipe-to-light {
+  from {
+    clip-path: polygon(0 100%, 100% 100%, 100% 100%, 0 100%);
+  }
+  to {
+    clip-path: polygon(0 100%, 100% 100%, 100% 0, 0 0);
+  }
+}
+
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

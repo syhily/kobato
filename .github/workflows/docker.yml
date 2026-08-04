@@ -23,7 +23,8 @@ jobs:
   # leg — rolldown's multithreaded Rust bundling degrades catastrophically
   # under TCG) — so each platform now builds on its own native runner
   # (ubuntu-24.04-arm, same as sea.yml) and pushes an arch-scoped staging
-  # tag. The merge job below assembles the multi-arch manifest.
+  # tag. The merge job below assembles the multi-arch manifests for BOTH
+  # images (core = the default Dockerfile, frontend = Dockerfile.frontend).
   build:
     name: build linux/${{ matrix.arch }} and smoke
     runs-on: ${{ matrix.runner }}
@@ -57,7 +58,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: docker/metadata-action@v6
-        id: meta
+        id: meta-core
         with:
           images: ghcr.io/${{ github.repository }}
           # Labels only on the per-arch images — the user-facing tags are
@@ -65,36 +66,66 @@ jobs:
           tags: |
             type=raw,value=build-${{ github.sha }}-${{ matrix.arch }}
 
+      - uses: docker/metadata-action@v6
+        id: meta-frontend
+        with:
+          images: ghcr.io/${{ github.repository }}-frontend
+          tags: |
+            type=raw,value=build-${{ github.sha }}-${{ matrix.arch }}
+
       - uses: docker/setup-buildx-action@v4
 
-      # Each arch pushes its own staging tag FIRST. The smoke below gates
+      # Each arch pushes its own staging tag FIRST. The smokes below gate
       # the merge, so a broken image can no longer ship and then fail —
       # the staging tags stay on the registry as build provenance.
       - uses: docker/build-push-action@v7
-        id: push
+        id: push-core
         with:
           context: .
+          file: Dockerfile
           platforms: linux/${{ matrix.arch }}
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=${{ matrix.arch }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.arch }}
+          tags: ${{ steps.meta-core.outputs.tags }}
+          labels: ${{ steps.meta-core.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.arch }}-core
+          cache-to: type=gha,mode=max,scope=${{ matrix.arch }}-core
 
-      # Native smoke on the arch's own runner: the embedded native
-      # libraries (sharp / canvas / duckdb) load without emulation, so
-      # `--smoke-natives` genuinely exercises the bundle per arch — the
-      # old QEMU-based smoke of the arm64 leg never ran these.
-      - name: Smoke the SEA binary inside the image
+      - uses: docker/build-push-action@v7
+        id: push-frontend
+        with:
+          context: .
+          file: Dockerfile.frontend
+          platforms: linux/${{ matrix.arch }}
+          push: true
+          tags: ${{ steps.meta-frontend.outputs.tags }}
+          labels: ${{ steps.meta-frontend.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.arch }}-frontend
+          cache-to: type=gha,mode=max,scope=${{ matrix.arch }}-frontend
+
+      # Native smokes on the arch's own runner: the core image's embedded
+      # native libraries (sharp / canvas / duckdb) load without emulation,
+      # so `--smoke-natives` genuinely exercises the bundle per arch — the
+      # old QEMU-based smoke of the arm64 leg never ran these. The
+      # frontend image has no natives; its binary answers --version and
+      # boots the public SSR service.
+      - name: Smoke the core binary inside the image
         env:
-          IMAGE: ghcr.io/${{ github.repository }}@${{ steps.push.outputs.digest }}
+          IMAGE: ghcr.io/${{ github.repository }}@${{ steps.push-core.outputs.digest }}
         run: |
           docker pull "$IMAGE"
           docker run --rm --platform linux/${{ matrix.arch }} --entrypoint kobato "$IMAGE" --version
           docker run --rm --platform linux/${{ matrix.arch }} --entrypoint kobato "$IMAGE" --smoke-natives
 
+      - name: Smoke the frontend binary inside the image
+        env:
+          IMAGE: ghcr.io/${{ github.repository }}-frontend@${{ steps.push-frontend.outputs.digest }}
+        run: |
+          docker pull "$IMAGE"
+          docker run --rm --platform linux/${{ matrix.arch }} --entrypoint kobato-frontend "$IMAGE" --version
+          docker run --rm --platform linux/${{ matrix.arch }} --entrypoint kobato-frontend "$IMAGE" --help
+
   merge:
-    name: merge multi-arch manifest and tag
+    name: merge multi-arch manifests and tag
     runs-on: ubuntu-latest
     needs: build
     timeout-minutes: 20
@@ -113,7 +144,7 @@ jobs:
       - uses: docker/setup-buildx-action@v4
 
       - uses: docker/metadata-action@v6
-        id: meta
+        id: meta-core
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
@@ -121,13 +152,22 @@ jobs:
             type=semver,pattern={{version}},enable=${{ github.event_name == 'release' }}
             type=semver,pattern={{major}}.{{minor}},enable=${{ github.event_name == 'release' }}
 
+      - uses: docker/metadata-action@v6
+        id: meta-frontend
+        with:
+          images: ghcr.io/${{ github.repository }}-frontend
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=semver,pattern={{version}},enable=${{ github.event_name == 'release' }}
+            type=semver,pattern={{major}}.{{minor}},enable=${{ github.event_name == 'release' }}
+
       # Both per-arch staging tags passed their native smoke — point the
       # combined staging tag and the user-facing tags at one manifest list
-      # referencing them (no rebuild, no digest drift).
-      - name: Merge the per-arch manifests
+      # referencing them (no rebuild, no digest drift). One step per image.
+      - name: Merge the per-arch manifests (core)
         env:
           IMAGE: ghcr.io/${{ github.repository }}
-          TAGS: ${{ steps.meta.outputs.tags }}
+          TAGS: ${{ steps.meta-core.outputs.tags }}
         run: |
           args=(-t "$IMAGE:build-${{ github.sha }}")
           while IFS= read -r tag; do
@@ -137,16 +177,37 @@ jobs:
             "$IMAGE:build-${{ github.sha }}-amd64" \
             "$IMAGE:build-${{ github.sha }}-arm64"
 
-      - name: Resolve the merged digest
+      - name: Merge the per-arch manifests (frontend)
+        env:
+          IMAGE: ghcr.io/${{ github.repository }}-frontend
+          TAGS: ${{ steps.meta-frontend.outputs.tags }}
+        run: |
+          args=(-t "$IMAGE:build-${{ github.sha }}")
+          while IFS= read -r tag; do
+            [ -n "$tag" ] && args+=(-t "$tag")
+          done <<< "$TAGS"
+          docker buildx imagetools create "${args[@]}" \
+            "$IMAGE:build-${{ github.sha }}-amd64" \
+            "$IMAGE:build-${{ github.sha }}-arm64"
+
+      - name: Resolve the merged digests
         id: merged
         env:
-          IMAGE: ghcr.io/${{ github.repository }}:build-${{ github.sha }}
-        run: echo "digest=$(docker buildx imagetools inspect "$IMAGE" --format '{{.Manifest.Digest}}')" >> "$GITHUB_OUTPUT"
+          IMAGE: ghcr.io/${{ github.repository }}
+        run: |
+          echo "digest=$(docker buildx imagetools inspect "$IMAGE:build-${{ github.sha }}" --format '{{.Manifest.Digest}}')" >> "$GITHUB_OUTPUT"
+          echo "digest-frontend=$(docker buildx imagetools inspect "$IMAGE-frontend:build-${{ github.sha }}" --format '{{.Manifest.Digest}}')" >> "$GITHUB_OUTPUT"
 
       - uses: actions/attest@v4
         with:
           subject-name: ghcr.io/${{ github.repository }}
           subject-digest: ${{ steps.merged.outputs.digest }}
+          push-to-registry: true
+
+      - uses: actions/attest@v4
+        with:
+          subject-name: ghcr.io/${{ github.repository }}-frontend
+          subject-digest: ${{ steps.merged.outputs.digest-frontend }}
           push-to-registry: true
 
       # Every main push leaves `build-<sha>` staging manifests behind, and
@@ -166,19 +227,21 @@ jobs:
         run: |
           set -euo pipefail
           owner="${GITHUB_REPOSITORY%/*}"
-          package="$(echo "${GITHUB_REPOSITORY#*/}" | tr '[:upper:]' '[:lower:]')"
-          if [ "$(gh api "users/$owner" --jq .type)" = "Organization" ]; then
-            base="orgs/$owner"
-          else
-            base="users/$owner"
-          fi
-          # Sort explicitly by created_at — the "keep the newest 10"
-          # window must not depend on the API's undocumented default
-          # ordering (fix-review). Arch-scoped staging tags are excluded
-          # from pruning (see above).
-          gh api --paginate --slurp "$base/packages/container/$package/versions?per_page=100" \
-            --jq '[ add[] | select((.metadata.container.tags | length > 0) and ([.metadata.container.tags[] | startswith("build-")] | all) and ([.metadata.container.tags[] | test("build-.*-(amd64|arm64)$")] | any | not)) ] | sort_by(.created_at) | reverse | .[10:][] | .id' \
-          | while read -r id; do
-              echo "Deleting staging version $id"
-              gh api -X DELETE "$base/packages/container/$package/versions/$id"
-            done
+          for pkg_name in "${GITHUB_REPOSITORY#*/}" "$(echo "${GITHUB_REPOSITORY#*/}-frontend" | tr '[:upper:]' '[:lower:]')"; do
+            package="$(echo "$pkg_name" | tr '[:upper:]' '[:lower:]')"
+            if [ "$(gh api "users/$owner" --jq .type)" = "Organization" ]; then
+              base="orgs/$owner"
+            else
+              base="users/$owner"
+            fi
+            # Sort explicitly by created_at — the "keep the newest 10"
+            # window must not depend on the API's undocumented default
+            # ordering (fix-review). Arch-scoped staging tags are excluded
+            # from pruning (see above).
+            gh api --paginate --slurp "$base/packages/container/$package/versions?per_page=100" \
+              --jq '[ add[] | select((.metadata.container.tags | length > 0) and ([.metadata.container.tags[] | startswith("build-")] | all) and ([.metadata.container.tags[] | test("build-.*-(amd64|arm64)$")] | any | not)) ] | sort_by(.created_at) | reverse | .[10:][] | .id' \
+            | while read -r id; do
+                echo "Deleting staging version $id"
+                gh api -X DELETE "$base/packages/container/$package/versions/$id"
+              done
+          done

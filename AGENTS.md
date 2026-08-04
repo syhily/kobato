@@ -4,33 +4,31 @@ Repository conventions for AI agents and contributors.
 
 ## Quick orientation
 
-- React Router 8 Framework Mode with SSR (`appDirectory: 'src'`), React 19 TSX/TS only, SQLite (node:sqlite) + a DuckDB analytics sidecar.
-- Path alias `@/*` → `./src/*`.
-- Five layers under `src/`: `routes/` (orchestration), `server/` (SSR), `client/` (browser), `ui/` (components), `shared/` (isomorphic).
+- Monorepo: two apps (`apps/core` — headless core: admin SSR + `/rpc` + `/api` + URL endpoints; `apps/public` — the official frontend, consuming core over HTTP) and six packages (`packages/{server,client,ui,shared,editor,sdk}`). React Router 8 Framework Mode with SSR (each app's `react-router.config.ts` keeps `appDirectory: 'src'`), React 19 TSX/TS only, SQLite (node:sqlite) + a DuckDB analytics sidecar.
+- Path aliases: app-scoped `@/*` → `<app>/src/*`, `#/*` → `tests/*`, `@kobato/*` → `packages/*/src/*`.
+- Five layers: `packages/server` (SSR), `packages/client` (browser), `packages/ui` (components), `packages/shared` (isomorphic), plus app `routes/` (orchestration).
 
 ## Config file
 
-Infrastructure configuration lives in `kobato.config.json` — auto-created with defaults when missing. `src/server/infra/config.ts`'s `CONFIG_TABLE` maps nested config paths to Zod schemas; the validated `serverConfig` object exported from that module is what consumers read. Env var names are derived by convention (`path.join('__')` → `storage__database`).
+Infrastructure configuration lives in `kobato.config.json` — auto-created with defaults when missing. `packages/server/src/infra/config.ts`'s `CONFIG_TABLE` maps nested config paths to Zod schemas; the validated `serverConfig` object exported from that module is what consumers read. Env var names are derived by convention (`path.join('__')` → `storage__database`).
 
 - Location order: `--config <path>` → SEA `<execDir>/kobato.config.json` → `./kobato.config.json` → `~/.config/kobato.config.json`. First existing wins.
 - Precedence: schema defaults < config file < env vars. Env values differing from the file are written back.
 - `VITEST=true` without `--config` → env-only, zero filesystem access.
 - Tooling that spawns the binary MUST pass `--config <tempDir>/…` to avoid persisting throwaway config next to the binary.
-- Adding a config value: add a `CONFIG_TABLE` row → update `kobato.config.example.json` → cover it in `tests/unit/server/infra/config.test.ts`.
+- Adding a config value: add a `CONFIG_TABLE` row → update `kobato.config.example.json` → cover it in `packages/server/tests/unit/infra/config.test.ts`.
 
 ## Subdirectory conventions
 
 Claude loads these additively as it moves through the codebase:
 
-| File                   | Scope                                                              |
-| ---------------------- | ------------------------------------------------------------------ |
-| `src/routes/AGENTS.md` | Route modules, loaders, actions, React Router conventions          |
-| `src/server/AGENTS.md` | Server layers (infra, domains, http, render), API procedures, auth |
-| `src/client/AGENTS.md` | Browser hooks, oRPC client, React.lazy patterns                    |
-| `src/ui/AGENTS.md`     | Pure-props components, shadcn, PT renderer, component architecture |
-| `src/styles/AGENTS.md` | Tailwind tokens, design-system CSS, `@theme` conventions           |
-| `src/shared/AGENTS.md` | Isomorphic modules, Zod contracts, DTOs, PT schema                 |
-| `tests/AGENTS.md`      | Test utilities, naming conventions, coverage rules                 |
+| File                            | Scope                                                              |
+| ------------------------------- | ------------------------------------------------------------------ |
+| `packages/server/src/AGENTS.md` | Server layers (infra, domains, http, render), API procedures, auth |
+| `packages/shared/src/AGENTS.md` | Isomorphic modules, Zod contracts, DTOs, PT schema                 |
+| `packages/client/src/AGENTS.md` | Browser hooks, oRPC client, React.lazy patterns                    |
+| `packages/ui/src/AGENTS.md`     | Pure-props components, shadcn, PT renderer, component architecture |
+| `tests/AGENTS.md`               | Test utilities, naming conventions, coverage rules                 |
 
 ## Skills
 
@@ -53,9 +51,9 @@ Agent Skills under `.agents/skills/` override these conventions on conflict:
 
 ## Route module prewarming
 
-A Vite plugin splits ~500 client chunks into tiers so the browser proactively loads high-priority routes. At request time, `src/server/render/warmup/manifest.ts` matches the pathname against the route tree and emits critical `<link rel="modulepreload">` for the matched route and its ancestor layouts. Idle tiers preload lower-priority chunks via inline `<script>`.
+A Vite plugin splits ~500 client chunks into tiers so the browser proactively loads high-priority routes. At request time, `packages/server/src/render/warmup/manifest.ts` matches the pathname against the route tree and emits critical `<link rel="modulepreload">` for the matched route and its ancestor layouts. Idle tiers preload lower-priority chunks via inline `<script>`.
 
-Tier-2 buckets derive automatically from route-ID prefixes (`routes/public|admin|editor|auth/*`) in `src/server/infra/route-warmup.ts` — adding or removing routes in `src/routes.ts` needs no warmup edits. Only `TIER1_ROUTES` is editorial (critical-path changes). A contract test in `tests/unit/server/infra/route-warmup.test.ts` pins every declared route to exactly one bucket.
+Tier-2 buckets derive automatically from route-ID prefixes (`routes/public|admin|editor|auth/*`) in `packages/server/src/infra/route-warmup.ts` — adding or removing routes in `apps/core/src/routes.ts` needs no warmup edits. Only `TIER1_ROUTES` is editorial (critical-path changes). A contract test in `packages/server/tests/unit/infra/route-warmup.test.ts` pins every declared route to exactly one bucket.
 
 ## SEA packaging
 
@@ -63,9 +61,9 @@ The production server also ships as a Node.js single executable (SEA) on
 **Node 26**: the single-file ESM server bundle is the binary's injected
 `main` (`mainFormat: "module"`); client assets, drizzle migrations, wasm,
 worker code, and libvips metadata are embedded in the blob and read from
-memory (`src/server/infra/sea.ts`). Only the native dynamic libraries are
+memory (`packages/server/src/infra/sea.ts`). Only the native dynamic libraries are
 extracted to a flat cache dir on first run
-(`src/server/infra/sea-natives.ts`) — the OS `dlopen` needs real files.
+(`packages/server/src/infra/sea-natives.ts`) — the OS `dlopen` needs real files.
 
 **Node 26 pin.** `scripts/sea/build.ts` gates `REQUIRED_NODE_MAJOR = 26`;
 the CI matrices (`.github/workflows/sea.yml` ×4, `ci.yml` ×2) pin
@@ -80,10 +78,10 @@ forbidden in the injected script, so the whole server graph is one static
 import graph evaluated depth-first in import order. The entry shim
 (`scripts/sea/server-entry.ts`) sequences it:
 
-1. `src/server/infra/sea-cli.ts` — argv handling: `--version`/`--help`
+1. `packages/server/src/infra/sea-cli.ts` — argv handling: `--version`/`--help`
    exit with zero side effects; `--smoke-natives` / `--smoke-worker`
    bootstrap + run + exit.
-2. `src/server/infra/sea-bootstrap.ts` — `bootstrapSeaRuntime()` at
+2. `packages/server/src/infra/sea-bootstrap.ts` — `bootstrapSeaRuntime()` at
    module scope: natives extraction + `KOBATO_NATIVES_DIR`. It MUST
    complete before step 3 because sharp's platform detection runs at
    module-evaluation time.
@@ -116,8 +114,30 @@ three sea.yml jobs; local builds stay zstd) into
 `dist-sea/intermediates/packed/<key>`. `manifest.json` rides uncompressed
 as the codec registry (`{key, path, sha256(raw), codec, size}`);
 `getEmbeddedAsset` parses it once and decodes lazily, memoized per key.
-The smoke budgets the binary at 230 MB — `--build-sea` leaves no
+The smoke budgets the core binary at 230 MB — `--build-sea` leaves no
 standalone blob, so the compressed payload is sized inside the binary.
+
+**Dual build line (headless split).** The pipeline parameterizes over
+`SEA_TARGET=core|frontend` (or `--target <t>`; default `core`; see
+`scripts/sea/target.ts`):
+
+- **core** (`pnpm run sea:build` → `dist-sea/kobato` + `.sha256`) — the
+  full line: natives, drizzle migrations, cnfs wasm, worker + smoke
+  bundles, admin client assets. `vite.sea.config.ts` bundles three
+  entries (server / process-worker / smoke-worker) into
+  `dist-sea/intermediates/`.
+- **frontend** (`pnpm run sea:build --target frontend` →
+  `dist-sea/kobato-frontend` + `.sha256`) — the public SSR service: one
+  server bundle into `dist-sea/intermediates-frontend/` + the public
+  client tree ONLY. No natives (the server package's native packages —
+  sharp, @napi-rs/canvas, @duckdb/node-api — are stubbed out of the
+  bundle by `scripts/sea/stub-native-packages.ts` as a defensive guard:
+  the frontend runtime graph is fully headless and never imports the
+  server package, but a future regression that did would otherwise fail
+  at boot with no natives embedded), no worker/smoke bundles, no
+  migrations, no wasm. Budget: 180 MB (the node26 base alone is ~148 MB).
+  Minimal CLI (`--version`/`--help` only — no smoke flags, no rollback,
+  no doctor: self-update stays core-only).
 
 **Natives = dynamic libraries + one datafile.** The extraction writes
 exactly 5 files (7 on win32) into the FLAT
@@ -140,7 +160,7 @@ bundled**; `scripts/sea/redirect-native-requires.ts` (a Vite plugin)
 rewrites the packages' own platform-specifier `require(...)` call sites
 to `nativeRequire(...)`, which resolves them against the flat dir plus
 embedded `natives-meta/*` metadata assets
-(`src/server/infra/native-require.ts`).
+(`packages/server/src/infra/native-require.ts`).
 
 - `pnpm run sea:build` → `dist-sea/kobato` (+ `.sha256`). The binary is
   deliberately NOT UPX-compressed — every ordering is a verified dead
@@ -153,27 +173,39 @@ embedded `natives-meta/*` metadata assets
   compress-then-inject destroys the sentinel fuse so `--build-sea`
   refuses; and Node finds the blob via `dl_iterate_phdr` on the in-memory
   phdrs, which a packed stub does not present. Do not re-add an UPX step.
-- `pnpm run sea:smoke [binary]` — deep smoke: binary budget, version,
-  natives, the flat extraction layout, `--smoke-worker` (a real
-  sharp job round-tripping through the `worker_threads` image pool),
-  boot + migrations on per-run temp files (the SQLite content DB and the
-  DuckDB analytics sidecar both live under one mkdtemp root — no
-  external services on any platform), fresh-install gate, SSR, embedded
-  asset, **config-file convergence** (the env-driven boot writes
-  `storage.database` + secrets back into `--config`'s temp file), SQL
-  seed via node:sqlite (one minimal admin row plus the `blog.general` /
-  `blog.assets` roots — hydration backfills the rest), a graceful
-  restart on a **reduced env that proves the converged file alone boots
-  the server** (the settings snapshot only loads at boot; the install
-  gate is evaluated per request), installed `/health` and `/` SSR, the
-  @napi-rs/canvas calendar endpoint over HTTP, browser-UA page views +
-  a **DuckDB analytics round-trip** (rows landed in `access_log`,
-  verified by scanning the sidecar file after shutdown), SIGTERM ×2,
-  natives-cache reuse ×2. `--external <url>` runs only the HTTP checks
-  against an already-running server (e.g. a container), seeds nothing,
-  and reports the calendar check as SKIP on uninstalled instances.
-  `--binary-only [binary]` runs just the service-free checks (budget,
-  version, natives, layout, worker pool).
+- `pnpm run sea:smoke [--target core|frontend] [binary]` — deep smoke:
+  binary budget, version, natives, the flat extraction layout,
+  `--smoke-worker` (a real sharp job round-tripping through the
+  `worker_threads` image pool), boot + migrations on per-run temp files
+  (the SQLite content DB and the DuckDB analytics sidecar both live under
+  one mkdtemp root — no external services on any platform), fresh-install
+  gate, admin SSR, embedded asset, **config-file convergence** (the
+  env-driven boot writes `storage.database` + secrets back into
+  `--config`'s temp file), SQL seed via node:sqlite (one minimal admin
+  row plus the `blog.general` / `blog.assets` roots — hydration
+  backfills the rest), a graceful restart on a **reduced env that proves
+  the converged file alone boots the server** (the settings snapshot only
+  loads at boot; the install gate is evaluated per request), installed
+  `/health`, the **headless REST face** (`/api/content/v1/openapi.json` +
+  an anonymous `home` read), **frontend-key JWT positive/negative flows**
+  (valid EdDSA token bumps `api_key.last_used_at` via a
+  frontendKeyAuth-gated write procedure; a tampered signature leaves it
+  untouched), the @napi-rs/canvas calendar endpoint over HTTP,
+  browser-UA page views + a **DuckDB analytics round-trip** (rows landed
+  in `access_log`, verified by scanning the sidecar file after shutdown),
+  SIGTERM ×2, natives-cache reuse ×2. The `--target frontend` line runs
+  its own lifecycle instead: budget (180 MB), version, boot + `/health`
+  (no install gate), SIGTERM, temp-DB schema provisioned from the repo's
+  drizzle SQL (the frontend binary embeds no migrations), seeded restart,
+  public `/` SSR + embedded asset, optional core connectivity check
+  (`--core-url <url>` / `KOBATO_SMOKE_CORE_URL` — the frontend /health
+  must echo the URL and the orchestrator fetches core /health; SKIP when
+  absent — the frontend graph is HTTP-only and has nothing to render
+  without a configured core). `--external <url>` runs only the HTTP checks against an
+  already-running server (e.g. a container), seeds nothing, and reports
+  the calendar check as SKIP on uninstalled instances. `--binary-only
+[binary]` runs just the service-free checks (budget, version, natives,
+  layout, worker pool — core line).
 - `pnpm run sea:e2e [binary]` — boots the binary like the managed smoke
   (per-run database files, migrations, seeded admin with a KNOWN random
   password), then runs `tests/e2e` against the live server over real
@@ -181,10 +213,16 @@ embedded `natives-meta/*` metadata assets
   create→render→delete round-trip via oRPC. The instance lifecycle is
   shared with the smoke via `scripts/sea/instance.ts`. The Linux CI
   matrix runs this right after `sea:smoke`.
-- Binary CLI flags: `--version`, `--help`, `--smoke-natives`,
+- Binary CLI flags (core): `--version`, `--help`, `--smoke-natives`,
   `--smoke-worker`. The first three need zero environment; the last one
   requires the full server configuration because the pool graph pulls in
-  `@/server/infra/config` at import time — it validates but never connects.
+  `@kobato/server/infra/config` at import time — it validates but never connects.
+  The frontend binary (`kobato-frontend`) keeps only `--version`/`--help`
+  (see `scripts/sea/frontend-cli.ts`); its server reads the deployment
+  env face (`PORT`, `CORE_API_URL`, `PUBLIC_URL`,
+  `KOBATO_FRONTEND_PRIVATE_KEY` + `KOBATO_FRONTEND_KEY_ID` — the
+  stage-3 write-proxy Ed25519 credentials) in
+  `apps/public/src/server.ts`.
 - Injection is single-path (`scripts/sea/inject.ts`): **`--build-sea` is
   the only injector** — it regenerates the blob itself from the
   sea-config (whose `output` is the final binary), does NOT codesign on
@@ -214,7 +252,7 @@ embedded `natives-meta/*` metadata assets
   defaults to `%LOCALAPPDATA%\kobato` (`resolveCacheDir`). Windows
   delivers no SIGTERM — graceful shutdown relies on SIGINT (Ctrl+C),
   SIGHUP (console window closed), and SIGBREAK (Ctrl+Break), all
-  registered in `src/server/infra/lifecycle.ts`; service deployments
+  registered in `packages/server/src/infra/lifecycle.ts`; service deployments
   should wrap the binary with WinSW/NSSM, whose stop action sends
   Ctrl+C into that same path. `taskkill /F` (TerminateProcess) can
   never be graceful, on any platform level.
@@ -228,11 +266,11 @@ Runtime rules:
   call site hides the package from the bundler and crashes under SEA.
   Enforcement: the boundaries contract test bans native
   `requireExternal(...)` call sites and pins the plugin's existence
-  (`tests/unit/shared/contracts/
+  (`packages/shared/tests/unit/contracts/
 boundaries.test.ts`), and the native-specifiers contract test
   enumerates every platform `require` in the installed packages so a
   future sharp/canvas/duckdb release introducing a new specifier fails
-  at upgrade time (`tests/unit/shared/contracts/
+  at upgrade time (`packages/shared/tests/unit/contracts/
 native-specifiers.test.ts`). `requireExternal` remains only as
   `nativeRequire`'s resolver (absolute `.node` paths under SEA, regular
   node_modules resolution outside it).
@@ -240,10 +278,10 @@ native-specifiers.test.ts`). `requireExternal` remains only as
   `getEmbeddedAsset` / `listEmbeddedAssetKeys`. New resource types must
   be added to `scripts/sea/assets.ts` AND read via the sea helpers with
   a non-SEA fallback.
-- Embedded asset keys are owned by `src/shared/sea/assets.ts` — the
+- Embedded asset keys are owned by `packages/shared/src/sea/assets.ts` — the
   single owner of the writer/reader key contract. New keys go there;
-  never hardcode a key in `scripts/` or `src/server/`. Enforced by
-  `tests/unit/shared/contracts/sea-assets.test.ts`.
+  never hardcode a key in `scripts/` or `packages/server/src/`. Enforced by
+  `packages/shared/tests/unit/contracts/sea-assets.test.ts`.
 - `KOBATO_NATIVES_DIR` / `KOBATO_CACHE_DIR` are documented runtime env
   vars, deliberately read outside `env.ts` (see the allowlist comment on
   the process.env centralization rule in the boundaries test).
@@ -251,13 +289,17 @@ native-specifiers.test.ts`). `requireExternal` remains only as
 The production Docker image ships only the SEA binary on a glibc base —
 the historical musl blocker (a postject `.gnu.hash` corruption bug) is
 gone with postject, but musl stays unverified for SEA injection (see the
-comment at the top of `Dockerfile`).
+comment at the top of `Dockerfile`). There are two images: the core
+image (`Dockerfile`, `ghcr.io/syhily/kobato`) and the frontend image
+(`Dockerfile.frontend`, `ghcr.io/syhily/kobato-frontend`); both runtime
+stages carry only the binary, and `docker-compose.yml` wires the
+frontend to core over the compose network (`CORE_API_URL`).
 
 ### SEA self-update
 
-Bare-metal SEA deployments can self-update from the admin shell. The pipeline lives in `src/server/domains/update/`: download the release asset, verify against `.sha256`, swap the binary, restart. The restart (`job.ts::scheduleSelfRestart`) MUST close the listen socket (idempotent `closeHttpServer`) before spawning the detached replacement — spawning first races the child's bind against the parent still holding the port and strands bare-metal deployments on EADDRINUSE (audit P0-7). The gate requires: `isSea()`, linux x64/arm64, not containerized, writable binary directory, non-`-dev` build. Admin procedures: `admin.update.check` / `admin.update.apply` / `admin.update.status`.
+Bare-metal SEA deployments can self-update from the admin shell. The pipeline lives in `packages/server/src/domains/update/`: download the release asset, verify against `.sha256`, swap the binary, restart. The restart (`job.ts::scheduleSelfRestart`) MUST close the listen socket (idempotent `closeHttpServer`) before spawning the detached replacement — spawning first races the child's bind against the parent still holding the port and strands bare-metal deployments on EADDRINUSE (audit P0-7). The gate requires: `isSea()`, linux x64/arm64, not containerized, writable binary directory, non-`-dev` build. Admin procedures: `admin.update.check` / `admin.update.apply` / `admin.update.status`.
 
-Manual rollback: `kobato rollback && systemctl restart <service>` (the CLI subcommand in `src/server/infra/sea-cli.ts` verifies the `.bak` sibling, swaps it back via `src/server/infra/binary-rollback.ts`, and leaves the restart to the service manager). `kobato doctor [--json]` prints an aggregated diagnostic (version, natives smoke, config validation via a child-process probe, self-update readiness) and exits 1 when natives or config fail; the gate itself lives in `src/server/infra/self-update-gate.ts` because the infra-layer CLI consumes it.
+Manual rollback: `kobato rollback && systemctl restart <service>` (the CLI subcommand in `packages/server/src/infra/sea-cli.ts` verifies the `.bak` sibling, swaps it back via `packages/server/src/infra/binary-rollback.ts`, and leaves the restart to the service manager). `kobato doctor [--json]` prints an aggregated diagnostic (version, natives smoke, config validation via a child-process probe, self-update readiness) and exits 1 when natives or config fail; the gate itself lives in `packages/server/src/infra/self-update-gate.ts` because the infra-layer CLI consumes it.
 
 ## Git
 
@@ -273,38 +315,65 @@ Use `/release <version>` (e.g., `/release 6.3.0`):
 3. Create git tag + GitHub release (Docker and SEA workflows trigger automatically).
 4. Switch back to develop, prepare next patch version, push.
 
-No PRs — direct fast-forward merge from develop to main. Version is baked at build time via `vite.config.ts` `define.__APP_VERSION__`.
+No PRs — direct fast-forward merge from develop to main. The release version is owned by `apps/core/package.json` (`scripts/release.ts` bumps only that file; the workspace root and the private packages keep an inert `7.0.0-dev`, `@kobato/sdk` tracks its own 1.x contract line). It is baked at build time via both apps' vite configs and `vite.sea.config.ts` `define.__APP_VERSION__`.
 
 ## Defensive constraints
 
 These patterns are banned:
 
-- `src/actions`, `src/middleware`, `src/layouts`, `src/services`, `src/hooks`, `src/db`, `src/assets/scripts`, or `src/content/`.
-- `src/blog.config.ts`, `DEFAULT_SETTINGS`, `BlogConstants`, or per-section "reset to defaults" action.
+- `apps/core/src/{actions,middleware,layouts,services,hooks,db,assets/scripts,content}`.
+- `apps/core/src/blog.config.ts`, `DEFAULT_SETTINGS`, `BlogConstants`, or per-section "reset to defaults" action.
 - Monolithic `BlogConfigContext`/`<BlogConfigProvider>`. Use per-section hooks.
 - `data-admin-shell` selector.
-- `src/lib/` parallel to `@/ui/lib`.
-- `@/ui/admin/shadcn/components/ui/` nesting.
+- `apps/core/src/lib/` parallel to `packages/ui/src/lib`.
+- shadcn nesting (`components/ui/` trees) — `packages/ui/src/components/` stays flat.
 - Preserve public URLs, feed URLs, image endpoints, WordPress compatibility routes, and pagination routes.
-- `*.server.ts` suffix is redundant inside `src/server/`.
+- `*.server.ts` suffix is redundant inside `packages/server/src/`.
 - Streamed loader promises (a loader returning an un-awaited promise) require
   the process-level `unhandledRejection` handler in
-  `src/server/infra/lifecycle.ts` — do not remove it (ADR-0005).
+  `packages/server/src/infra/lifecycle.ts` — do not remove it (ADR-0005).
 
-`src/assets/scripts` is intentionally absent. All interactivity lives in
-React hooks/components under `src/client/` and `src/ui/`.
+`apps/core/src/assets/scripts` is intentionally absent. All interactivity lives in
+React hooks/components under `packages/client/` and `packages/ui/`.
 
 ## Dependencies
 
-Only packages that are **required at production runtime AND ship a native
-dynamic library** belong in `package.json`'s `dependencies`:
+**SEA 构建约束(根 package.json)。** Only packages that are **required at
+production runtime AND ship a native dynamic library** belong in the
+**root** `package.json`'s `dependencies`:
 
 - `@napi-rs/canvas`, `sharp` — native binaries fetched per platform.
 - `@duckdb/node-api` — the DuckDB analytics engine (`duckdb.node` +
   libduckdb fetched per platform).
 
-Every other dependency belongs in `devDependencies`, even if the server or
-client bundle imports it in production. The production image ships a SEA
+**Workspace 包(packages/_、apps/_)。** Each workspace package declares
+its own `dependencies`/`devDependencies` by its **import graph** (stage 3
+§1 of the monorepo plan):
+
+- Cross-package `@kobato/*` **runtime imports (src value imports)** →
+  the package's `dependencies`, `workspace:*` protocol.
+- **Type-only** workspace imports (erased at runtime) and **test-only**
+  workspace imports → `devDependencies`.
+- **npm dependencies** (even production imports — react, hono, lexical,
+  ...) → `devDependencies`: the SEA build inlines them into the bundles
+  and the root hoists them via pnpm. **Exception: `@kobato/sdk`, the only
+  published package** — its real runtime deps (`@orpc/client`,
+  `@orpc/contract`, `zod`) live in its `dependencies` so `npm install
+@kobato/sdk` resolves them for consumers.
+
+**Editor stack.** The admin body editor is Lexical — `lexical` + `@lexical/*` pinned at
+`0.45.0` (devDependencies of `packages/editor`, hoisted from the root). The retired PT track
+(Tiptap engine + bridge, `@tiptap/*`, `@portabletext/*`, `shared/pt`) is removed; what survives
+is the migration surface only: `packages/shared/src/legacy-pt/` (PT schema / canonicalize /
+comment schema — the minimal set the dual-shape read path and the migration core still need),
+`packages/editor/src/lexical-core/mapping.ts` (`convertPtBodyToLexical`, one-way), and the
+built-in `kobato migrate-pt` migration (`packages/server/src/infra/pt-migration/` —
+backup-gated, idempotent, `--check`/`--verify` modes; the one-shot
+`scripts/migrate-pt-to-lexical.ts` is retired).
+`scripts/vite.node.config.ts` provides the `@kobato/*` alias resolution for `vite-node` scripts
+(post-split replacement of the old root `vite.config.ts`).
+
+The production image ships a SEA
 binary: the build stage runs `pnpm install --frozen-lockfile` with the full
 dev dependencies and bundles the server, and the runtime stage contains
 only that binary — no node runtime, no node_modules, no second
@@ -341,18 +410,18 @@ Adding a settings card:
 
 1. Use `useSettingsCard()` — destructure `flushOnBlur` for text inputs, `save` for switches/selects/radios.
 2. Text inputs: render through `<SettingsInput flushOnBlur={flushOnBlur} {...form.register('x')}>` — never bare `<Input>`. Multi-line: `<SettingsTextarea>`. Secrets: `<SettingsSecretInput>`.
-3. Switch/select/radio/combobox: render through the wrapper components in `src/ui/admin/settings/shell/` with `save={save}` — never hand-roll `onValueChange`.
+3. Switch/select/radio/combobox: render through the wrapper components in `packages/ui/src/admin/settings/shell/` with `save={save}` — never hand-roll `onValueChange`.
 4. List buttons MUST NOT call `save()` — let the next blur/flush commit the whole list.
 5. `useSettingsCard` only re-seeds the form when clean, and only if `toState(source)` differs from current form values — prevents lost edits and focus drops.
 
-Each card POSTs an honest Section patch (owned fields only). The server deep-merges, validates, and writes only that row. `src/shared/config/merge-section-patch.ts` is the single merge implementation.
+Each card POSTs an honest Section patch (owned fields only). The server deep-merges, validates, and writes only that row. `packages/shared/src/config/merge-section-patch.ts` is the single merge implementation.
 
 ## Layering
 
-- `server/*` → `shared/*`, `server/*`. Not `client/*` or `ui/*`.
-- `client/*`, `ui/*` → `shared/*`, `ui/*`, `client/*`. Not `server/*`.
-- `shared/*` → `shared/*` only.
-- `routes/*` wire only: extract request context, call orchestrators, render. No DB imports or business logic inline.
-- Cross-domain imports under `server/domains/` must stay acyclic (DAG, pinned by contract test).
+- `packages/server/src` → `packages/shared/src`, `packages/server/src`. Not `client/*` or `ui/*`.
+- `packages/client/src`, `packages/ui/src` → `packages/shared/src`, `packages/ui/src`, `packages/client/src`. Not `server/*` (client/ui may TYPE-import server for the ApiRouter types only).
+- `packages/shared/src` → `packages/shared/src` only.
+- `routes/*` wire only (in each app): extract request context, call orchestrators, render. No DB imports or business logic inline.
+- Cross-domain imports under `packages/server/src/domains/` must stay acyclic (DAG, pinned by contract test).
 - No barrel `index.ts` files. No `export { X } from 'y'` re-exports — import directly from the source module.
 - Refactor from architectural correctness, not minimal diff size.

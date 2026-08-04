@@ -1,0 +1,60 @@
+{
+  "name": "@kobato/sdk",
+  "version": "1.0.0-dev",
+  "private": false,
+  "description": "Typed Content API client + Ed25519 signer + token helpers + proxy-chain tools for Kobato (headless blog CMS)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/syhily/kobato.git"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "default": "./dist/client.js"
+    },
+    "./signer": {
+      "types": "./dist/signer.d.ts",
+      "default": "./dist/signer.js"
+    },
+    "./token": {
+      "types": "./dist/token.d.ts",
+      "default": "./dist/token.js"
+    },
+    "./proxy": {
+      "types": "./dist/proxy.d.ts",
+      "default": "./dist/proxy.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "default": "./dist/types.js"
+    },
+    "./contracts": {
+      "types": "./dist/contracts.d.ts",
+      "default": "./dist/contracts.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json"
+  },
+  "dependencies": {
+    "@orpc/client": "catalog:",
+    "@orpc/contract": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@kobato/server": "workspace:*",
+    "@orpc/server": "catalog:",
+    "@types/node": "catalog:",
+    "vitest": "catalog:"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

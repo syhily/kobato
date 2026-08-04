@@ -1,0 +1,68 @@
+# Frontend image — the official public SSR service SEA binary
+# (kobato-frontend). No native libraries: the build stage needs no
+# patchelf and the binary extracts nothing at runtime. Same glibc
+# (bookworm) base as Dockerfile.core — musl stays unverified for SEA
+# injection.
+FROM node:26-bookworm-slim AS build
+WORKDIR /app
+
+# pnpm, matching the packageManager field (11.18.0). Node 25+ images no
+# longer bundle Corepack, so install pnpm globally from npm instead.
+RUN npm install -g pnpm@11.18.0
+
+# Install dependencies first so source changes don't invalidate the layer.
+# The workspace manifests must exist before `pnpm install` can resolve the
+# workspace (member package.json files included).
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/core/package.json apps/core/package.json
+COPY apps/public/package.json apps/public/package.json
+COPY packages/shared/package.json packages/shared/package.json
+COPY packages/client/package.json packages/client/package.json
+COPY packages/server/package.json packages/server/package.json
+COPY packages/ui/package.json packages/ui/package.json
+COPY packages/editor/package.json packages/editor/package.json
+COPY packages/sdk/package.json packages/sdk/package.json
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile
+
+# Build the frontend SEA single executable: react-router build + vite
+# bundle + `--build-sea` injection. `--codec brotli` matches the core
+# image's release packing.
+COPY . .
+RUN pnpm run sea:build --codec brotli --target frontend
+
+FROM debian:bookworm-slim AS runtime
+
+# tini — PID 1 init for proper signal handling.
+# libstdc++6 + libatomic1 — the official Node 26 binary the SEA executable
+# is copied from links against both dynamically; debian:bookworm-slim
+# ships neither.
+# wget — for the HEALTHCHECK below.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates wget tini libstdc++6 libatomic1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Non-root runtime user, same uid/gid as the core image.
+RUN groupadd --gid 1000 kobato && useradd --uid 1000 --gid kobato --create-home --shell /usr/sbin/nologin kobato
+
+# The runtime image contains no node and no node_modules — just the binary.
+COPY --from=build /app/dist-sea/kobato-frontend /usr/local/bin/kobato-frontend
+COPY --from=build /app/dist-sea/kobato-frontend.sha256 /usr/local/bin/kobato-frontend.sha256
+
+ENV NODE_ENV=production
+# The frontend's own port face (see apps/public/src/server.ts). In the
+# compose topology CORE_API_URL points at the core service.
+ENV PORT=4322
+ENV CORE_API_URL=http://core:4321
+
+EXPOSE 4322
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD wget -qO- http://127.0.0.1:4322/health || exit 1
+
+RUN mkdir -p /etc/kobato && chown -R kobato:kobato /etc/kobato
+
+USER kobato
+
+ENTRYPOINT ["tini", "--"]
+CMD ["kobato-frontend", "--config", "/etc/kobato/config.json"]

@@ -210,7 +210,14 @@ export default defineConfig({
   },
   overrides: [
     {
-      files: ['tests/**/*.ts', 'tests/**/*.tsx'],
+      files: [
+        'tests/**/*.ts',
+        'tests/**/*.tsx',
+        'packages/*/tests/**/*.ts',
+        'packages/*/tests/**/*.tsx',
+        'apps/*/tests/**/*.ts',
+        'apps/*/tests/**/*.tsx',
+      ],
       rules: {
         // Test code gets a deliberately lighter rule set: mocks, fixtures,
         // and deliberately-awkward components make the type-aware unsafe

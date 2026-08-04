@@ -1,0 +1,5 @@
+{
+  "kind": "content",
+  "note": "未知 _type 块:widget 不在 PT block union 中,合法 JSON 且 PT shape gate 可通过但 schema 校验失败,迁移应报 error(构造;schema.test.ts \"rejects an unknown block _type\" 形态)",
+  "bodyJson": "[{\"_type\":\"widget\",\"_key\":\"w1\"}]"
+}

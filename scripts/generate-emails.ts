@@ -1,4 +1,17 @@
 #!/usr/bin/env node
+import type { BlogSettingsBundle } from '@kobato/shared/config/types'
+
+import { render } from '@kobato/server/infra/email/render'
+import { AdminNotificationEmail } from '@kobato/server/infra/email/templates/AdminNotificationEmail'
+import { ApprovedComment } from '@kobato/server/infra/email/templates/ApprovedComment'
+import { AuthorInvite } from '@kobato/server/infra/email/templates/AuthorInvite'
+import { ConfirmSubscription } from '@kobato/server/infra/email/templates/ConfirmSubscription'
+import { NewReply } from '@kobato/server/infra/email/templates/NewReply'
+import { PasswordReset } from '@kobato/server/infra/email/templates/PasswordReset'
+import { SignInLink } from '@kobato/server/infra/email/templates/SignInLink'
+import { SignInOtp } from '@kobato/server/infra/email/templates/SignInOtp'
+import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@kobato/shared/config/snapshot'
+import { unsafeCast } from '@kobato/shared/utils/unsafe-cast'
 //
 // Renders every email template to a standalone HTML file under
 // `scripts/emails/` so you can preview them in a browser.
@@ -8,20 +21,6 @@
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-
-import type { BlogSettingsBundle } from '@/shared/config/types'
-
-import { render } from '@/server/infra/email/render'
-import { AdminNotificationEmail } from '@/server/infra/email/templates/AdminNotificationEmail'
-import { ApprovedComment } from '@/server/infra/email/templates/ApprovedComment'
-import { AuthorInvite } from '@/server/infra/email/templates/AuthorInvite'
-import { ConfirmSubscription } from '@/server/infra/email/templates/ConfirmSubscription'
-import { NewReply } from '@/server/infra/email/templates/NewReply'
-import { PasswordReset } from '@/server/infra/email/templates/PasswordReset'
-import { SignInLink } from '@/server/infra/email/templates/SignInLink'
-import { SignInOtp } from '@/server/infra/email/templates/SignInOtp'
-import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@/shared/config/snapshot'
-import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const OUT_DIR = join(__dirname, 'emails')

@@ -1,6 +1,6 @@
-import { createSession } from 'react-router'
+import type { BlogSession, BlogSessionData, SessionUser } from '@kobato/server/domains/auth/session-storage'
 
-import type { BlogSession, BlogSessionData, SessionUser } from '@/server/domains/auth/session-storage'
+import { createSession } from 'react-router'
 
 // In-memory `BlogSession` doppelganger. `react-router`'s real `Session`
 // builds on top of `createSessionStorage`, which the app wires to the

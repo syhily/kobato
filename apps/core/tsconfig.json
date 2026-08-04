@@ -1,0 +1,25 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    // Own rootDirs/paths: this app's typegen output (`./.react-router/types`)
+    // mirrors its src tree (`./src`), and `@/*` points at this app's src.
+    "rootDirs": [".", "./.react-router/types"],
+    "paths": {
+      "@/*": ["./src/*"],
+      "#/*": ["../../tests/*"],
+      "@kobato/shared/*": ["../../packages/shared/src/*"],
+      "@kobato/client/*": ["../../packages/client/src/*"],
+      "@kobato/server/*": ["../../packages/server/src/*"],
+      "@kobato/ui/*": ["../../packages/ui/src/*"],
+      "@kobato/editor/*": ["../../packages/editor/src/*"],
+      "@kobato/sdk/*": ["../../packages/sdk/src/*"]
+    }
+  },
+  "include": ["src/**/*", "tests/**/*", ".react-router/types/**/*"],
+  // Override the inherited root exclude (build/dist/`apps/**/.react-router`):
+  // this program MUST contain the app's own `.react-router/types` output —
+  // `+routes.ts` (the Register augmentation) and `+server-build.d.ts` are
+  // ambient files that only take effect when included, unlike the `+types/*`
+  // files which enter via the routes' relative imports.
+  "exclude": []
+}

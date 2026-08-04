@@ -1,7 +1,7 @@
-import { afterEach } from 'vitest'
+import type { AdminPostDto } from '@kobato/shared/contracts/posts'
+import type { ClientCategory, ClientPage, ClientPost, ClientTag } from '@kobato/shared/types/catalog'
 
-import type { AdminPostDto } from '@/shared/contracts/posts'
-import type { ClientCategory, ClientPage, ClientPost, ClientTag } from '@/shared/types/catalog'
+import { afterEach } from 'vitest'
 
 let counter = 0
 function nextId(prefix: string): string {

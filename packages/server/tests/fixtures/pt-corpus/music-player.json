@@ -1,0 +1,5 @@
+{
+  "kind": "content",
+  "note": "musicPlayer 带 playerId + auto:false + center:true(schema.test.ts 的 MUSIC 常量原样)",
+  "bodyJson": "[{\"_type\":\"musicPlayer\",\"_key\":\"m1\",\"playerId\":\"7hk2pqrxyzabc012\",\"auto\":false,\"center\":true}]"
+}

@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM"],
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "declaration": true,
+    "declarationMap": false,
+    "sourceMap": false,
+    "outDir": "dist",
+    "rootDir": "src",
+    "strict": true,
+    "skipLibCheck": true,
+    "verbatimModuleSyntax": true,
+    "forceConsistentCasingInFileNames": true,
+    "paths": {
+      "@kobato/sdk/*": ["./src/*"]
+    },
+    "types": ["node"]
+  },
+  "include": ["src"]
+}

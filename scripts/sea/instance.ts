@@ -7,16 +7,16 @@
 // service at all), server boot with output captured to a log file, HTTP
 // boot polling, and the "installed instance" SQL seed.
 //
-// Imports: Node builtins (the seed SQL runs through node:sqlite) plus
-// @duckdb/node-api (a runtime dependency — the analytics round-trip
-// check reads the sidecar file the binary wrote).
+// Imports: Node builtins (the seed SQL runs through node:sqlite) plus a
+// lazy @duckdb/node-api import inside scanAccessLog (a runtime dependency
+// of the CORE line's analytics round-trip check — kept out of module
+// scope so the frontend line's smoke needs no node_modules).
 
 import type { ChildProcess } from 'node:child_process'
 import type { WriteStream } from 'node:fs'
 
-import { DuckDBInstance } from '@duckdb/node-api'
 import { spawn } from 'node:child_process'
-import { createWriteStream } from 'node:fs'
+import { createWriteStream, existsSync, readdirSync, readFileSync } from 'node:fs'
 import { mkdir, mkdtemp, readFile, stat } from 'node:fs/promises'
 import { createServer } from 'node:net'
 import { tmpdir } from 'node:os'
@@ -24,6 +24,7 @@ import { join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 
 import { fail } from './exec.ts'
+import { repoRoot } from './paths.ts'
 
 export const BOOT_TIMEOUT_MS = 90_000
 const POLL_INTERVAL_MS = 500
@@ -127,6 +128,38 @@ export interface SeedAdminOptions {
   /** bcrypt hash of the admin's password (a placeholder hash when the
    *  caller never logs in — see smoke.ts). */
   passwordHash: string
+}
+
+/**
+ * Apply the repo's drizzle migration SQL files to a fresh database. The
+ * FRONTEND line's smoke needs this: the frontend binary carries no
+ * embedded migrations (it has no DB of its own), but its transitional
+ * in-process content transport queries the temp content DB — so the
+ * orchestrator provisions the schema from the repo's `drizzle/` tree
+ * before seeding. Splits each file on drizzle-kit's
+ * `--> statement-breakpoint` marker (files are plain SQL, idempotent
+ * DDL). When the HTTP transport lands (stage 3) the frontend smoke
+ * drops its DB phase entirely.
+ */
+export function applyMigrationsSql(databasePath: string) {
+  const drizzleRoot = join(repoRoot, 'drizzle')
+  const migrations = readdirSync(drizzleRoot)
+    .filter((name) => existsSync(join(drizzleRoot, name, 'migration.sql')))
+    .sort()
+  const db = new DatabaseSync(databasePath)
+  try {
+    for (const folder of migrations) {
+      const sql = readFileSync(join(drizzleRoot, folder, 'migration.sql'), 'utf-8')
+      for (const statement of sql.split('--> statement-breakpoint')) {
+        if (statement.trim().length > 0) {
+          db.exec(statement)
+        }
+      }
+    }
+  } finally {
+    db.close()
+  }
+  return `${migrations.length} migration files applied`
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -234,8 +267,14 @@ export async function seedInstalledInstance(databasePath: string, admin: SeedAdm
  * and prove the page views fetched over HTTP landed as access_log rows
  * (track → batcher → Appender → file). Returns row and distinct-path
  * counts from one aggregate scan.
+ *
+ * The @duckdb/node-api import is lazy on purpose: this helper only ever
+ * runs in the CORE line's smoke — keeping the import out of module scope
+ * lets the frontend line's smoke run without a node_modules tree (it
+ * boots the frontend binary, which carries no DuckDB at all).
  */
 export async function scanAccessLog(analyticsPath: string): Promise<{ rows: number; paths: number }> {
+  const { DuckDBInstance } = await import('@duckdb/node-api')
   const instance = await DuckDBInstance.create(analyticsPath)
   try {
     const connection = await instance.connect()

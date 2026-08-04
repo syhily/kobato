@@ -1,7 +1,8 @@
-import { describe, expect, it } from 'vitest'
-
 import { E2eClient, e2eEnv, getAdminCsrfToken, loginAdmin } from '#/_helpers/e2e-client'
 import { callE2eRpc } from '#/_helpers/e2e-rpc'
+import { lexBody, lexParagraphNode } from '#/_helpers/lexical-body'
+
+import { describe, expect, it } from 'vitest'
 
 const env = e2eEnv()
 
@@ -54,6 +55,15 @@ describe('admin backup/restore round-trip (HTTP e2e)', () => {
       csrfToken,
     )
     expect(kept.status).toBe(200)
+    // A meta-only post is never live — publish a real revision so the
+    // public page renders in the snapshot (and after the restore).
+    const keptPub = await callE2eRpc(
+      admin,
+      '/admin/posts/publishLatest',
+      { id: String(kept.json.post.id), body: lexBody([lexParagraphNode('E2E Kept 正文')]) },
+      csrfToken,
+    )
+    expect(keptPub.status).toBe(200)
 
     // Trigger the backup — a real gzipped tar archive in local storage.
     const backup = await callE2eRpc<{ fileName: string; timestamp: string; size: number }>(
@@ -83,7 +93,14 @@ describe('admin backup/restore round-trip (HTTP e2e)', () => {
       csrfToken,
     )
     expect(dropped.status).toBe(200)
-    expect((await admin.get('/posts/e2e-dropped')).status).toBe(200)
+    const droppedPub = await callE2eRpc(
+      admin,
+      '/admin/posts/publishLatest',
+      { id: String(dropped.json.post.id), body: lexBody([lexParagraphNode('E2E Dropped 正文')]) },
+      csrfToken,
+    )
+    expect(droppedPub.status).toBe(200)
+    expect((await admin.get('/api/content/v1/posts/e2e-dropped')).status).toBe(200)
 
     // Restore — accepted, then the instance drains and restarts.
     const restore = await callE2eRpc<{ accepted: boolean }>(
@@ -103,10 +120,10 @@ describe('admin backup/restore round-trip (HTTP e2e)', () => {
     const relogin = await loginAdmin(after, env)
     expect(relogin.res.status).toBe(302)
 
-    const keptPage = await after.get('/posts/e2e-kept')
+    const keptPage = await after.get('/api/content/v1/posts/e2e-kept')
     expect(keptPage.status).toBe(200)
     expect(await keptPage.text()).toContain('E2E Kept Post')
-    expect((await after.get('/posts/e2e-dropped')).status).not.toBe(200)
+    expect((await after.get('/api/content/v1/posts/e2e-dropped')).status).not.toBe(200)
 
     // Leave the instance tidy for later journeys.
     const csrfAfter = await getAdminCsrfToken(after)

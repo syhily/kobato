@@ -1,0 +1,46 @@
+{
+  "name": "@kobato/editor",
+  "version": "7.0.0-dev",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./engine/*": "./src/engine/*",
+    "./renderer/*": "./src/renderer/*",
+    "./comments-editor/*": "./src/comments-editor/*",
+    "./lexical-core/*": "./src/lexical-core/*",
+    "./lexical-html/*": "./src/lexical-html/*",
+    "./package.json": "./package.json"
+  },
+  "dependencies": {
+    "@kobato/client": "workspace:*",
+    "@kobato/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@base-ui/react": "catalog:",
+    "@lexical/code": "catalog:",
+    "@lexical/headless": "catalog:",
+    "@lexical/history": "catalog:",
+    "@lexical/html": "catalog:",
+    "@lexical/link": "catalog:",
+    "@lexical/list": "catalog:",
+    "@lexical/markdown": "catalog:",
+    "@lexical/react": "catalog:",
+    "@lexical/rich-text": "catalog:",
+    "@lexical/selection": "catalog:",
+    "@lexical/table": "catalog:",
+    "@lexical/utils": "catalog:",
+    "@tanstack/react-query": "catalog:",
+    "@testing-library/react": "catalog:",
+    "diff-match-patch": "catalog:",
+    "dompurify": "catalog:",
+    "lexical": "catalog:",
+    "lucide-react": "catalog:",
+    "medium-zoom": "catalog:",
+    "motion": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "sanitize-html": "catalog:",
+    "tailwind-merge": "catalog:",
+    "vitest": "catalog:"
+  }
+}

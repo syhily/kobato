@@ -4,14 +4,17 @@ Conventions for the `tests/` directory.
 
 ## Layout
 
-Tests are split into three Vitest workspace projects. **All three mirror the `src/` layout:**
+Tests are split into three Vitest workspace projects per root (`tests/`,
+`packages/*/tests/`, `apps/*/tests/` — see `tests/vitest.projects.ts`). The
+package/app tests **mirror the src layout of their package/app**; repository-level
+tests (arch/contract) stay directly under `tests/{unit,it,snaps}/`:
 
-- **`tests/unit/`** — Pure logic, no DB, fastest feedback loop.
-  If you test `src/shared/utils/paths.ts`, the test lives at `tests/unit/shared/utils/paths.test.ts`.
+- **`tests/unit/`** (project `unit` + `unit-core` + `unit-public`) — Pure logic, no DB, fastest feedback loop.
+  If you test `packages/shared/src/utils/paths.ts`, the test lives at `packages/shared/tests/unit/utils/paths.test.ts`.
 - **`tests/it/`** — Integration / end-to-end tests that need a real database.
-  If you test `src/server/domains/posts/services/cms-posts.ts`, the test lives at `tests/it/server/domains/posts/services/cms-posts.test.ts`.
+  If you test `packages/server/src/domains/posts/services/cms-posts.ts`, the test lives at `packages/server/tests/it/domains/posts/services/cms-posts.test.ts`.
 - **`tests/snaps/`** — React SSR snapshot tests (render-to-string, no DB).
-  If you test `src/ui/public/post/PostListViews.tsx`, the test lives at `tests/snaps/ui/public/post/post-list-views.test.tsx`.
+  If you test `packages/ui/src/public/post/PostListViews.tsx`, the test lives at `packages/ui/tests/snaps/public/post/post-list-views.test.tsx`.
 - **`tests/e2e/`** — True HTTP e2e: tests drive a real kobato instance (the
   SEA binary booted by `scripts/sea/e2e.ts`) over plain `fetch`. No
   in-process shortcuts, no `vi.mock`. **Not part of `pnpm test`** (the
@@ -85,7 +88,7 @@ GitHub Actions needs no service containers — the suite is self-contained.
   `createTestAnalyticsDb()` from `#/_helpers/analytics-db` and close it
   with `closeTestAnalyticsDb(handle)`.
 - Tests that write tables should call `clearAllTables(db)` in `beforeEach` to reset state between cases within the same worker.
-- Tests that exercise the real (unmocked) rate limiter should additionally call `__resetRateLimitsForTests()` from `@/server/infra/rate-limit` in `beforeEach` — the limiter is a process-level Map, so per-IP/email budgets otherwise leak across tests within a file.
+- Tests that exercise the real (unmocked) rate limiter should additionally call `__resetRateLimitsForTests()` from `@kobato/server/infra/rate-limit` in `beforeEach` — the limiter is a process-level Map, so per-IP/email budgets otherwise leak across tests within a file.
 
 ## TypeScript pragmatism
 
@@ -112,11 +115,11 @@ ceremony:
     control singleton per test. Only hand-roll a `vi.mock` for react-query
     when the mock must BEHAVE (call-order routing, option capture,
     `initialData` pass-through).
-  - `#/_helpers/stubs/dialog` — SSR-safe `@/ui/components/dialog` double:
-    `vi.mock('@/ui/components/dialog', () => import('#/_helpers/stubs/dialog'))`
+  - `#/_helpers/stubs/dialog` — SSR-safe `@kobato/ui/components/dialog` double:
+    `vi.mock('@kobato/ui/components/dialog', () => import('#/_helpers/stubs/dialog'))`
 - Setup stubs the noise, `_helpers` owns the doubles. `tests/unit/setup.ts`
   and `tests/snaps/setup.ts` register inert global stubs for `sonner` and
-  `@/ui/admin/settings/useSettingsMutation` — do NOT copy those `vi.mock`
+  `@kobato/ui/admin/settings/useSettingsMutation` — do NOT copy those `vi.mock`
   blocks into new test files. A file declares its own mock for them only
   when it asserts on `toast` or programs `commit` (a file-level `vi.mock`
   overrides the setup-level one). The real `useDebouncedSearch` returns
@@ -132,13 +135,13 @@ ceremony:
   - `#/_helpers/mock-ctx` — mock auth context (integration only)
   - `#/_helpers/request-context` — `makeRequestContext`, the single
     canonical `RequestContext` stub factory (never hand-roll rc literals;
-    safe to import from `vi.mock('@/server/http/request-context', …)`
+    safe to import from `vi.mock('@kobato/server/http/request-context', …)`
     factories — no runtime edge to the mocked module)
   - `#/_helpers/context` — `makeRouteContext` / `makeLoaderArgs` wrappers
     that set the stub on a `RouterContextProvider` for direct loader/action
     tests
   - `#/_helpers/auth-context-mock` — `createRequestContextMockModule()` for
-    `vi.mock('@/server/http/request-context', ...)` when a test invokes a
+    `vi.mock('@kobato/server/http/request-context', ...)` when a test invokes a
     handler without a real `RouterContextProvider`
   - `#/_helpers/rpc-call` — oRPC test caller (integration only)
   - `#/_helpers/session` — session fixtures (integration only)
@@ -149,5 +152,7 @@ ceremony:
 - `#/_helpers/e2e-rpc` — oRPC-over-HTTP caller (e2e only)
 - `#/_helpers/e2e-mail` — loopback SMTP capture server + mail decoders
   (OTP code / magic-link extraction; e2e only)
-- `#/*` is mapped to `./tests/*` in `tsconfig.json` and resolved by Vitest.
-- `@/*` continues to map to `src/*`.
+- `#/*` is mapped to `./tests/*` in the tsconfigs and resolved by Vitest.
+- `@/*` is app-scoped per project: core tests resolve it to `apps/core/src`,
+  public tests to `apps/public/src` (see `tests/vitest.projects.ts`); package
+  tests fall back to the core app.

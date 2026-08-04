@@ -1,0 +1,18 @@
+{
+  "name": "@kobato/shared",
+  "version": "7.0.0-dev",
+  "private": true,
+  "type": "module",
+  "dependencies": {},
+  "devDependencies": {
+    "@kobato/server": "workspace:*",
+    "@kobato/ui": "workspace:*",
+    "@number-flow/react": "catalog:",
+    "react": "catalog:",
+    "react-router": "catalog:",
+    "sharp": "catalog:",
+    "ua-parser-js": "catalog:",
+    "vitest": "catalog:",
+    "zod": "catalog:"
+  }
+}

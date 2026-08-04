@@ -4,14 +4,14 @@
 // like unit tests with a real engine. File-backed flows (backup /
 // restore) opt into temp files explicitly via `createTestDatabaseFile`.
 // The `:memory:` choice itself is owned by `#/_helpers/env` (imported
-// below — it lands before `@/server/infra/config` can evaluate).
+// below — it lands before `@kobato/server/infra/config` can evaluate).
 
-import { afterEach } from 'vitest'
-
-// Provide the env defaults `@/server/infra/config` requires at
+import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
+// Provide the env defaults `@kobato/server/infra/config` requires at
 // module-load time.
 import '#/_helpers/env'
-import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
+
+import { afterEach } from 'vitest'
 
 // Seed the in-process settings snapshot once per worker.
 setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)

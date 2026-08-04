@@ -1,0 +1,34 @@
+{
+  "name": "@kobato/public",
+  "version": "7.0.0-dev",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "react-router build",
+    "dev": "react-router dev"
+  },
+  "dependencies": {
+    "@kobato/client": "workspace:*",
+    "@kobato/editor": "workspace:*",
+    "@kobato/sdk": "workspace:*",
+    "@kobato/shared": "workspace:*",
+    "@kobato/ui": "workspace:*"
+  },
+  "devDependencies": {
+    "@hono/node-server": "catalog:",
+    "@kobato/server": "workspace:*",
+    "@orpc/server": "catalog:",
+    "@react-router/dev": "catalog:",
+    "@react-router/node": "catalog:",
+    "@tailwindcss/vite": "catalog:",
+    "@tanstack/react-query": "catalog:",
+    "drizzle-orm": "catalog:",
+    "hono": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-router": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:",
+    "zod": "catalog:"
+  }
+}

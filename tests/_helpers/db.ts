@@ -1,4 +1,4 @@
-import type { MetricRow } from '@/server/infra/db/types'
+import type { MetricRow } from '@kobato/server/infra/db/types'
 
 export function seedMetric(overrides: Partial<MetricRow> = {}): MetricRow {
   const now = overrides.createdAt ?? new Date('2024-01-01T00:00:00.000Z')

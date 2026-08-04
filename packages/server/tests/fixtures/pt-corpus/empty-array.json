@@ -1,0 +1,5 @@
+{
+  "kind": "content",
+  "note": "空正文:content.body 为 [],新文档尚无草稿(schema.test.ts \"an empty body is valid\" 原样)",
+  "bodyJson": "[]"
+}

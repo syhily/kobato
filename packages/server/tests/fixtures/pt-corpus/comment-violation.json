@@ -1,0 +1,5 @@
+{
+  "kind": "comment",
+  "note": "违规评论:image 块不在 comment schema 允许集内,迁移应报 error(comment-schema.test.ts \"returns ok:false\" 原样)",
+  "bodyJson": "[{\"_type\":\"image\",\"_key\":\"i1\",\"src\":\"/x.png\"}]"
+}

@@ -1,19 +1,32 @@
+import type { MakeRequestContextOptions } from '#/_helpers/request-context'
+import { makeRequestContext } from '#/_helpers/request-context'
+
+import { createInProcessTransport } from '@kobato/server/http/in-process-transport'
+import { requestContext } from '@kobato/server/http/request-context'
 import { RouterContextProvider } from 'react-router'
 
-import type { MakeRequestContextOptions } from '#/_helpers/request-context'
-
-import { makeRequestContext } from '#/_helpers/request-context'
-import { requestContext } from '@/server/http/request-context'
+import { frontendContext } from '../../apps/public/src/lib/frontend-context'
 
 // Stand-in for the `RouterContextProvider` that `buildLoadContext` populates
 // in production. Direct loader/action unit tests that bypass the router get
 // a context that already has the canonical `RequestContext` pre-loaded so
-// the route handler's `getRequestContext(args)` keeps working.
+// the route handler's `getRequestContext(args)` keeps working — and, for
+// the public app's loaders, the headless `FrontendRequestContext` with the
+// in-process transport injected (the plan's "in-process transport survives
+// as the test injection" form; production builds the HTTP fetch transport
+// from `coreApiUrl` instead).
 export type MakeContextOptions = MakeRequestContextOptions
 
 export function makeRouteContext(options: MakeContextOptions = {}): RouterContextProvider {
   const context = new RouterContextProvider()
-  context.set(requestContext, makeRequestContext(options))
+  const rc = makeRequestContext(options)
+  context.set(requestContext, rc)
+  context.set(frontendContext, {
+    coreApiUrl: null,
+    corePublicUrl: null,
+    cspNonce: rc.cspNonce,
+    transport: createInProcessTransport(rc),
+  })
   return context
 }
 

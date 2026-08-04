@@ -5,12 +5,12 @@
 // The evaluation-order contract the binary relies on (ESM evaluates the
 // import graph depth-first in import order; rolldown preserves it):
 //
-//   1. `@/server/infra/sea-cli`       — argv handling: --version/--help
+//   1. `@kobato/server/infra/sea-cli`       — argv handling: --version/--help
 //                                       exit with zero side effects;
 //                                       --smoke-natives/--smoke-worker
 //                                       bootstrap + run + exit. Flag
 //                                       invocations never reach 2 or 3.
-//   2. `@/server/infra/sea-bootstrap` — extracts the native libraries and
+//   2. `@kobato/server/infra/sea-bootstrap` — extracts the native libraries and
 //                                       sets `KOBATO_NATIVES_DIR` (no-op
 //                                       outside SEA) BEFORE …
 //   3. the server graph               — … any native-package module
@@ -20,6 +20,6 @@
 // A filesystem `import()` is forbidden in the injected script, so the
 // server graph is a static import — it is all one bundle.
 
-import '@/server/infra/sea-cli'
-import '@/server/infra/sea-bootstrap'
-import '../../build/server/index.js'
+import '@kobato/server/infra/sea-cli'
+import '@kobato/server/infra/sea-bootstrap'
+import '../../apps/core/build/server/index.js'

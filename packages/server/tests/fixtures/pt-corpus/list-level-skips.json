@@ -1,0 +1,5 @@
+{
+  "kind": "content",
+  "note": "列表跳级与混排:level 1→3 跳级、bullet/number 交替再回 level 1(构造;HEAD 测试仅有 level1/level2 连续嵌套,见 render.test.tsx 与 pt-html-branches.test.ts)",
+  "bodyJson": "[{\"_type\":\"block\",\"_key\":\"l1\",\"listItem\":\"bullet\",\"level\":1,\"style\":\"normal\",\"children\":[{\"_type\":\"span\",\"_key\":\"s1\",\"text\":\"一级列表项\"}]},{\"_type\":\"block\",\"_key\":\"l2\",\"listItem\":\"number\",\"level\":3,\"style\":\"normal\",\"children\":[{\"_type\":\"span\",\"_key\":\"s2\",\"text\":\"跳级到三级的编号项\"}]},{\"_type\":\"block\",\"_key\":\"l3\",\"listItem\":\"bullet\",\"level\":1,\"style\":\"normal\",\"children\":[{\"_type\":\"span\",\"_key\":\"s3\",\"text\":\"回到一级\"}]},{\"_type\":\"block\",\"_key\":\"l4\",\"listItem\":\"number\",\"level\":2,\"style\":\"normal\",\"children\":[{\"_type\":\"span\",\"_key\":\"s4\",\"text\":\"二级编号项\"}]}]"
+}

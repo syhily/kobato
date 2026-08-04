@@ -1,14 +1,14 @@
 import type { ReactElement, ReactNode } from 'react'
 
+import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
+
+import { BlogSettingsProvider } from '@kobato/shared/lib/blog-config-context'
+import { ThemeProvider } from '@kobato/ui/lib/ThemeProvider'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Buffer } from 'node:buffer'
 import { renderToStaticMarkup, renderToString } from 'react-dom/server'
 import { prerenderToNodeStream } from 'react-dom/static'
 import { createMemoryRouter, Outlet, type RouteObject, RouterProvider } from 'react-router'
-
-import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
-import { BlogSettingsProvider } from '@/shared/lib/blog-config-context'
-import { ThemeProvider } from '@/ui/lib/ThemeProvider'
 
 const testQueryClient = new QueryClient({
   defaultOptions: {

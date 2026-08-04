@@ -1,0 +1,27 @@
+{
+  "name": "@kobato/client",
+  "version": "7.0.0-dev",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@kobato/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@kobato/server": "workspace:*",
+    "@orpc/client": "catalog:",
+    "@orpc/react-query": "catalog:",
+    "@orpc/server": "catalog:",
+    "@tanstack/react-query": "catalog:",
+    "@testing-library/react": "catalog:",
+    "fake-indexeddb": "catalog:",
+    "idb": "catalog:",
+    "medium-zoom": "catalog:",
+    "pino": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-router": "catalog:",
+    "sonner": "catalog:",
+    "vitest": "catalog:",
+    "zod": "catalog:"
+  }
+}

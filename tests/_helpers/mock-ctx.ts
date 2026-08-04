@@ -1,7 +1,7 @@
-import type { HandlerContext } from '@/server/http/orpc-base'
-import type { Database } from '@/server/infra/db/database'
+import type { HandlerContext } from '@kobato/server/http/orpc-base'
+import type { Database } from '@kobato/server/infra/db/database'
 
-import { extractRequestFacts } from '@/server/http/utils/request-facts'
+import { extractRequestFacts } from '@kobato/server/http/utils/request-facts'
 
 // Builders for the `context` argument passed to oRPC procedures
 // (via `call(router.method, input, { context })`). Authed procedures

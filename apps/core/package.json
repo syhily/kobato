@@ -1,0 +1,45 @@
+{
+  "name": "kobato",
+  "version": "7.0.0-dev",
+  "private": true,
+  "description": "A self-hosted blog CMS built with React Router 8, Hono, and oRPC",
+  "homepage": "https://github.com/syhily/kobato",
+  "author": {
+    "name": "Yufan Sheng",
+    "email": "syhily@gmail.com",
+    "url": "https://github.com/syhily"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/syhily/kobato"
+  },
+  "type": "module",
+  "scripts": {
+    "build": "react-router build",
+    "dev": "react-router dev",
+    "start": "node build/server/index.js"
+  },
+  "dependencies": {
+    "@kobato/client": "workspace:*",
+    "@kobato/server": "workspace:*",
+    "@kobato/shared": "workspace:*",
+    "@kobato/ui": "workspace:*"
+  },
+  "devDependencies": {
+    "@hono/node-server": "catalog:",
+    "@react-router/dev": "catalog:",
+    "@react-router/node": "catalog:",
+    "@tailwindcss/vite": "catalog:",
+    "@tanstack/react-query": "catalog:",
+    "bcryptjs": "catalog:",
+    "drizzle-orm": "catalog:",
+    "hono": "catalog:",
+    "lucide-react": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-router": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:",
+    "zod": "catalog:"
+  }
+}

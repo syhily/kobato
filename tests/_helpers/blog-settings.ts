@@ -17,19 +17,20 @@
 // satisfying its schema fails loudly. Tests that need a different shape
 // can call `setBlogSettingsBundleForTests(custom)` in their own
 // `beforeEach`.
-import type { BlogSettingsBundle } from '@/shared/config/types'
+import type { BlogSettingsBundle } from '@kobato/shared/config/types'
 
 import { deepFreeze } from '#/_helpers/deep-freeze'
-import { analyticsDefaults } from '@/server/domains/settings/sections/analytics'
-import { backupDefaults } from '@/server/domains/settings/sections/backup'
-import { limitsDefaults } from '@/server/domains/settings/sections/limits'
-import { mailDefaults } from '@/server/domains/settings/sections/mail'
-import { newsletterDefaults } from '@/server/domains/settings/sections/newsletter'
-import { securityDefaults } from '@/server/domains/settings/sections/security'
-import { seoDefaults } from '@/server/domains/settings/sections/seo'
-import { rateLimitDefaults } from '@/shared/config/defaults'
-import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@/shared/config/snapshot'
-import { CACHE_BUCKET_FALLBACKS } from '@/shared/types/cache'
+
+import { analyticsDefaults } from '@kobato/server/domains/settings/sections/analytics'
+import { backupDefaults } from '@kobato/server/domains/settings/sections/backup'
+import { limitsDefaults } from '@kobato/server/domains/settings/sections/limits'
+import { mailDefaults } from '@kobato/server/domains/settings/sections/mail'
+import { newsletterDefaults } from '@kobato/server/domains/settings/sections/newsletter'
+import { securityDefaults } from '@kobato/server/domains/settings/sections/security'
+import { seoDefaults } from '@kobato/server/domains/settings/sections/seo'
+import { rateLimitDefaults } from '@kobato/shared/config/defaults'
+import { BLOG_SETTINGS_SNAPSHOT_SLOT } from '@kobato/shared/config/snapshot'
+import { CACHE_BUCKET_FALLBACKS } from '@kobato/shared/types/cache'
 
 export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
   siteIdentity: {

@@ -1,0 +1,402 @@
+import { analyticsSchema } from '@kobato/server/domains/settings/sections/analytics'
+import { commentsSchema } from '@kobato/server/domains/settings/sections/comments'
+import { contentSchema } from '@kobato/server/domains/settings/sections/content'
+import { fontsSchema } from '@kobato/server/domains/settings/sections/fonts'
+import { limitsSchema } from '@kobato/server/domains/settings/sections/limits'
+import { mailSchema } from '@kobato/server/domains/settings/sections/mail'
+import { seoSchema } from '@kobato/server/domains/settings/sections/seo'
+import { sidebarSchema } from '@kobato/server/domains/settings/sections/sidebar'
+import { socialsSchema } from '@kobato/server/domains/settings/sections/socials'
+import { describe, expect, it } from 'vitest'
+
+describe('settings/sections/mail', () => {
+  it('accepts a fully-populated payload', () => {
+    const result = mailSchema.safeParse({
+      mail: { enabled: true, host: 'example.com', apiKey: 'k', sender: 'a@b.com', transport: 'zeabur' },
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('defaults transport to "zeabur" when omitted', () => {
+    const result = mailSchema.safeParse({ mail: { enabled: false, host: 'h', sender: '' } })
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.mail.transport).toBe('zeabur')
+    }
+  })
+
+  it('accepts empty string as a valid sender (no reply address)', () => {
+    expect(mailSchema.safeParse({ mail: { enabled: false, host: 'h', sender: '' } }).success).toBe(true)
+  })
+
+  it('rejects an invalid sender email', () => {
+    expect(mailSchema.safeParse({ mail: { enabled: false, host: 'h', sender: 'not-an-email' } }).success).toBe(false)
+  })
+
+  it('rejects an unknown transport', () => {
+    expect(
+      mailSchema.safeParse({
+        mail: { enabled: false, host: 'h', sender: '', transport: 'sendgrid' },
+      }).success,
+    ).toBe(false)
+  })
+
+  it('allows an empty host so the provider can be switched without filling fields first', () => {
+    expect(mailSchema.safeParse({ mail: { enabled: false, host: '', sender: '' } }).success).toBe(true)
+  })
+})
+
+describe('settings/sections/comments', () => {
+  it('accepts a valid payload and applies the default tokenTtlSeconds', () => {
+    const result = commentsSchema.safeParse({
+      comments: { size: 10, avatar: { mirror: 'https://gravatar.com/avatar/' } },
+    })
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.comments.tokenTtlSeconds).toBe(1800)
+    }
+  })
+
+  it('rejects an unknown gravatar mirror', () => {
+    expect(
+      commentsSchema.safeParse({
+        comments: { size: 10, avatar: { mirror: 'https://evil.example/avatar/' } },
+      }).success,
+    ).toBe(false)
+  })
+
+  it('rejects size below 1 or above 100', () => {
+    expect(
+      commentsSchema.safeParse({
+        comments: { size: 0, avatar: { mirror: 'https://gravatar.com/avatar/' } },
+      }).success,
+    ).toBe(false)
+    expect(
+      commentsSchema.safeParse({
+        comments: { size: 101, avatar: { mirror: 'https://gravatar.com/avatar/' } },
+      }).success,
+    ).toBe(false)
+  })
+
+  it('rejects tokenTtlSeconds outside 60..86400', () => {
+    expect(
+      commentsSchema.safeParse({
+        comments: {
+          size: 5,
+          avatar: { mirror: 'https://gravatar.com/avatar/' },
+          tokenTtlSeconds: 10,
+        },
+      }).success,
+    ).toBe(false)
+  })
+})
+
+describe('settings/sections/content', () => {
+  it('accepts a valid payload', () => {
+    const result = contentSchema.safeParse({
+      pagination: { posts: 10, category: 20, tags: 30, search: 40 },
+      feed: { full: true, size: 50 },
+      post: { sort: 'desc', sortBy: 'publishedAt', featureEnabled: true },
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('applies defaults for post.featureEnabled and footnotes', () => {
+    const result = contentSchema.safeParse({
+      pagination: { posts: 10, category: 20, tags: 30, search: 40 },
+      feed: { full: true, size: 50 },
+      post: { sort: 'desc' },
+    })
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.post.featureEnabled).toBe(false)
+      expect(result.data.post.sortBy).toBe('publishedAt')
+      expect(result.data.footnotes.sectionTitle).toBe('尾声礼记')
+    }
+  })
+
+  it('rejects an unknown sort order', () => {
+    expect(
+      contentSchema.safeParse({
+        pagination: { posts: 10, category: 20, tags: 30, search: 40 },
+        feed: { full: true, size: 50 },
+        post: { sort: 'sideways' as never },
+      }).success,
+    ).toBe(false)
+  })
+
+  it('rejects pagination sizes outside 1..100', () => {
+    expect(
+      contentSchema.safeParse({
+        pagination: { posts: 0, category: 20, tags: 30, search: 40 },
+        feed: { full: true, size: 50 },
+      }).success,
+    ).toBe(false)
+  })
+})
+
+describe('settings/sections/analytics', () => {
+  it('accepts the boolean flags', () => {
+    const result = analyticsSchema.safeParse({ analytics: { trackAdmin: false, keepBotRows: true } })
+    expect(result.success).toBe(true)
+  })
+
+  it('coerces string booleans', () => {
+    const result = analyticsSchema.safeParse({ analytics: { trackAdmin: 'true', keepBotRows: 'false' } })
+    expect(result.success).toBe(true)
+  })
+})
+
+describe('settings/sections/seo', () => {
+  it('accepts valid toc + og dimensions', () => {
+    const result = seoSchema.safeParse({
+      toc: { minHeadingLevel: 2, maxHeadingLevel: 4 },
+      og: { width: 1200, height: 630 },
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects og width below 600', () => {
+    expect(
+      seoSchema.safeParse({ toc: { minHeadingLevel: 2, maxHeadingLevel: 4 }, og: { width: 500, height: 630 } }).success,
+    ).toBe(false)
+  })
+
+  it('rejects heading levels outside 1..6', () => {
+    expect(
+      seoSchema.safeParse({ toc: { minHeadingLevel: 0, maxHeadingLevel: 4 }, og: { width: 1200, height: 630 } })
+        .success,
+    ).toBe(false)
+  })
+})
+
+describe('settings/sections/fonts', () => {
+  it('accepts empty family and empty slot lists', () => {
+    const result = fontsSchema.safeParse({
+      og: { family: '' },
+      calendar: { family: '' },
+      global: [],
+      post: [],
+      code: [],
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('accepts valid canvas family names with UUID slot lists', () => {
+    const id = '00000000-0000-4000-8000-00000000000a'
+    const result = fontsSchema.safeParse({
+      og: { family: 'NotoSans' },
+      calendar: { family: 'Noto-Serif' },
+      global: [id],
+      post: [],
+      code: [id],
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('accepts family names with spaces (valid CSS font-family)', () => {
+    const result = fontsSchema.safeParse({
+      og: { family: 'OPPO Sans 4.0' },
+      calendar: { family: 'Source Han Serif' },
+      global: [],
+      post: [],
+      code: [],
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('accepts Unicode family names', () => {
+    const result = fontsSchema.safeParse({
+      og: { family: '思源宋体' },
+      calendar: { family: 'ヒラギノ角ゴ' },
+      global: [],
+      post: [],
+      code: [],
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects family names containing quotes (CSS injection guard)', () => {
+    expect(
+      fontsSchema.safeParse({
+        og: { family: "Serif'; body { color: red }" },
+        calendar: { family: '' },
+        global: [],
+        post: [],
+        code: [],
+      }).success,
+    ).toBe(false)
+  })
+
+  it('rejects family names containing braces (CSS injection guard)', () => {
+    expect(
+      fontsSchema.safeParse({
+        og: { family: 'Serif{}' },
+        calendar: { family: '' },
+        global: [],
+        post: [],
+        code: [],
+      }).success,
+    ).toBe(false)
+  })
+
+  it('rejects more than 8 font ids in a slot', () => {
+    const ids = Array.from({ length: 9 }, (_, i) => `00000000-0000-4000-8000-${String(i).padStart(12, '0')}`)
+    expect(
+      fontsSchema.safeParse({
+        og: { family: '' },
+        calendar: { family: '' },
+        global: ids,
+        post: [],
+        code: [],
+      }).success,
+    ).toBe(false)
+  })
+
+  it('rejects non-uuid slot ids', () => {
+    expect(
+      fontsSchema.safeParse({
+        og: { family: '' },
+        calendar: { family: '' },
+        global: ['not-a-uuid'],
+        post: [],
+        code: [],
+      }).success,
+    ).toBe(false)
+  })
+})
+
+describe('settings/sections/limits', () => {
+  it('applies defaults when fields are omitted', () => {
+    const result = limitsSchema.safeParse({})
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.maxRequestBodySize).toBe(10 * 1024 * 1024)
+      expect(result.data.sessionMaxAge).toBe(60 * 60 * 24 * 30)
+      expect(result.data.auditLogDbRetentionDays).toBe(30)
+      expect(result.data.auditLogArchiveRetentionDays).toBe(180)
+    }
+  })
+
+  it('rejects maxRequestBodySize below 1KB', () => {
+    expect(limitsSchema.safeParse({ maxRequestBodySize: 100 }).success).toBe(false)
+  })
+
+  it('rejects sessionMaxAge below 60 seconds', () => {
+    expect(limitsSchema.safeParse({ sessionMaxAge: 30 }).success).toBe(false)
+  })
+
+  it('rejects audit db retention above 90 days', () => {
+    expect(limitsSchema.safeParse({ auditLogDbRetentionDays: 120 }).success).toBe(false)
+  })
+})
+
+describe('settings/sections/sidebar', () => {
+  it('accepts an empty widget list', () => {
+    expect(sidebarSchema.safeParse({ sidebar: { widgets: [] } }).success).toBe(true)
+  })
+
+  it('accepts widgets of every known type with optional count', () => {
+    const result = sidebarSchema.safeParse({
+      sidebar: {
+        widgets: [
+          { type: 'search', enabled: true },
+          { type: 'recentPosts', enabled: true, count: 5 },
+          { type: 'recentComments', enabled: false },
+          { type: 'randomTags', enabled: true, count: 10 },
+          { type: 'todayCalendar', enabled: true },
+        ],
+      },
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects an unknown widget type', () => {
+    expect(
+      sidebarSchema.safeParse({
+        sidebar: { widgets: [{ type: 'unknown' as never, enabled: true }] },
+      }).success,
+    ).toBe(false)
+  })
+
+  it('rejects count above 100', () => {
+    expect(
+      sidebarSchema.safeParse({
+        sidebar: { widgets: [{ type: 'recentPosts', enabled: true, count: 101 }] },
+      }).success,
+    ).toBe(false)
+  })
+
+  it('applies dailyQuote defaults when omitted', () => {
+    const result = sidebarSchema.safeParse({ sidebar: { widgets: [] } })
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.sidebar.dailyQuote).toEqual({ source: 'shanbay', customQuotes: [] })
+    }
+  })
+
+  it('rejects an unknown dailyQuote source', () => {
+    expect(
+      sidebarSchema.safeParse({
+        sidebar: { widgets: [], dailyQuote: { source: 'nope' as never, customQuotes: [] } },
+      }).success,
+    ).toBe(false)
+  })
+
+  it('accepts 10+ custom quotes and defaults the author to an empty string', () => {
+    const quotes = Array.from({ length: 10 }, (_, i) => ({ content: `名言${i}` }))
+    const result = sidebarSchema.safeParse({
+      sidebar: { widgets: [], dailyQuote: { source: 'custom', customQuotes: quotes } },
+    })
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.sidebar.dailyQuote.customQuotes[0].author).toBe('')
+    }
+  })
+
+  it('rejects 1–9 custom quotes (the minimum usable bank is 10)', () => {
+    const quotes = Array.from({ length: 9 }, (_, i) => ({ content: `名言${i}` }))
+    expect(
+      sidebarSchema.safeParse({
+        sidebar: { widgets: [], dailyQuote: { source: 'custom', customQuotes: quotes } },
+      }).success,
+    ).toBe(false)
+  })
+
+  it('accepts an empty customQuotes array (clearing restores the built-in bank)', () => {
+    expect(
+      sidebarSchema.safeParse({
+        sidebar: { widgets: [], dailyQuote: { source: 'local', customQuotes: [] } },
+      }).success,
+    ).toBe(true)
+  })
+
+  it('rejects a custom quote with empty content', () => {
+    const quotes = [
+      ...Array.from({ length: 9 }, (_, i) => ({ content: `名言${i}` })),
+      { content: '   ', author: '佚名' },
+    ]
+    expect(
+      sidebarSchema.safeParse({
+        sidebar: { widgets: [], dailyQuote: { source: 'custom', customQuotes: quotes } },
+      }).success,
+    ).toBe(false)
+  })
+})
+
+describe('settings/sections/socials', () => {
+  it('accepts an empty list', () => {
+    const result = socialsSchema.safeParse({ socials: [] })
+    expect(result.success).toBe(true)
+  })
+
+  it('accepts valid link and qrcode rows', () => {
+    const result = socialsSchema.safeParse({
+      socials: [
+        { network: 'github', name: 'GitHub', type: 'link', url: 'https://github.com/me' },
+        { network: 'wechat', name: '微信', type: 'qrcode', url: 'https://u.wechat.com/abc' },
+      ],
+    })
+    expect(result.success).toBe(true)
+  })
+})

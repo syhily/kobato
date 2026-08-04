@@ -1,12 +1,11 @@
+import type { EnrichedAccessEvent } from '@kobato/server/domains/analytics/types'
+import type { AnalyticsHandle } from '@kobato/server/infra/analytics/duckdb'
+
+import { ACCESS_LOG_DDL, appendAccessEvents } from '@kobato/server/domains/analytics/services/access-log'
+import { closeAnalyticsDatabase, openAnalyticsDatabase } from '@kobato/server/infra/analytics/duckdb'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-
-import type { EnrichedAccessEvent } from '@/server/domains/analytics/types'
-import type { AnalyticsHandle } from '@/server/infra/analytics/duckdb'
-
-import { ACCESS_LOG_DDL, appendAccessEvents } from '@/server/domains/analytics/services/access-log'
-import { closeAnalyticsDatabase, openAnalyticsDatabase } from '@/server/infra/analytics/duckdb'
 
 const handles: AnalyticsHandle[] = []
 const dirs: string[] = []

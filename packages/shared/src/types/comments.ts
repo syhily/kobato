@@ -1,0 +1,283 @@
+export interface LatestComment {
+  title: string
+  author: string
+  authorLink: string
+  permalink: string
+}
+
+// Welcome-dashboard moderation inbox filter. The row DTOs live in
+// `@/shared/contracts/comments`; this is the queue-switching union.
+export type AdminPendingKind = 'all' | 'approval' | 'deletion'
+
+import type { AdminCommentWire, AdminPendingDashboardDto, CommentItemWire } from '@kobato/shared/contracts/comments'
+import type { LexicalCommentBody } from '@kobato/shared/lexical/comment-schema'
+
+export interface CommentAndUser {
+  id: number
+  createAt: Date
+  updatedAt: Date
+  deleteAt: Date | null
+  /**
+   * Soft "delete-request" marker. The visitor clicked "申请删除" but the
+   * admin has not yet acted on it. When set, the comment is still
+   * visible (so the author can review their own pending action), but
+   * the public comment row gains a quiet warning banner and the inline
+   * edit affordance is hidden.
+   */
+  deleteRequestedAt?: Date | string | null
+  /**
+   * Canonical Lexical comment body. Rendered by `<LexicalCommentBody>` on
+   * the public site. The DB also retains a markdown projection of this
+   * field under `comment.content`, but that's server-only.
+   */
+  body: LexicalCommentBody
+  /**
+   * Plain-text / markdown rollback snapshot. Present on server-side
+   * `CommentAndUser` values, null on client-projected DTOs.
+   */
+  content: string | null
+  /**
+   * Polymorphic entity reference. `'post' | 'page'` (no DB enum).
+   * `ownerId` is the stringified bigint. Both are nullable to
+   * accommodate orphan rows that have not yet been backfilled.
+   */
+  type: 'post' | 'page' | null
+  ownerId: number | null
+  userId: number
+  isVerified: boolean | null
+  ua: string | null
+  ip: string | null
+  rid: number
+  isCollapsed: boolean | null
+  isPending: boolean | null
+  isPinned: boolean | null
+  voteUp: number | null
+  voteDown: number | null
+  rootId: number | null
+  name: string
+  email: string
+  emailVerified: boolean
+  link: string | null
+  badgeName: string | null
+  badgeColor: string | null
+  badgeTextColor: string | null
+}
+
+export interface CommentItem extends CommentAndUser {
+  children?: CommentItem[]
+  /**
+   * Server-side thread-cap markers, set by `parseComments` only on a root
+   * whose reply thread exceeded the cap. Mirrored onto the wire DTO so the
+   * public client can later grow a "load more" affordance.
+   */
+  childrenTruncated?: boolean
+  childrenTotal?: number
+}
+
+export interface Comments {
+  comments: CommentAndUser[]
+  count: number
+  roots_count: number
+}
+
+export interface AdminComment extends CommentAndUser {
+  pageTitle: string | null
+  /**
+   * The metric's `public_id` UUID for the page the comment belongs
+   * to. Drives the admin moderation filter Combobox.
+   */
+  pagePublicId: string | null
+  pageCover: string | null
+  /**
+   * Fully-qualified public URL for the page this comment belongs to.
+   * Powers the per-row "查看文章" overflow-menu item.
+   */
+  pagePermalink: string | null
+}
+
+export interface AdminCommentsResult {
+  comments: AdminComment[]
+  total: number
+  hasMore: boolean
+  /**
+   * Per-status row counts under the current page/author filter context.
+   * Always populated so the moderation filter can render its badges in
+   * one round-trip.
+   */
+  statusCounts: { all: number; pending: number; approved: number; deleteRequested: number }
+}
+
+export interface DetailPageComments {
+  commentData: Comments | null
+  commentItems: CommentItemWire[]
+}
+
+export interface CommentReq {
+  page_key: string
+  name: string
+  email: string
+  link?: string
+  body: LexicalCommentBody
+  rid?: number
+}
+
+export interface ErrorResp {
+  msg: string
+}
+
+export interface CommentReplyInput {
+  page_key: string
+  name: string
+  email: string
+  link?: string
+  body: LexicalCommentBody
+  rid?: number
+  subtitle?: string
+}
+
+export type ReplyCommentInput = CommentReplyInput
+
+export interface CommentRidInput {
+  rid: string
+}
+
+export interface CommentEditInput extends CommentRidInput {
+  body: LexicalCommentBody
+}
+
+export interface LoadCommentsInput {
+  page_key: string
+  offset: number
+}
+
+export interface LoadAllCommentsInput {
+  offset: number
+  limit: number
+  pageKey?: string
+  userId?: string
+  status?: 'all' | 'pending' | 'approved' | 'deleteRequested'
+  q?: string
+  match?: 'contains' | 'does-not-contain'
+  createdAfter?: string
+  createdBefore?: string
+}
+
+export interface FilterAutocompleteInput {
+  q?: string
+  limit?: number
+  ids?: string | string[]
+  key?: string
+}
+
+// Output DTOs below intentionally use the **wire** comment types
+// (`CommentItemWire` / `AdminCommentWire` from `@/shared/contracts/comments`)
+// rather than the earlier `CommentItem` / `AdminComment` interfaces. The
+// wire shapes match what `JSON.stringify` actually emits: number ids
+// stringified, Date timestamps ISO-encoded. The earlier interfaces are
+// kept for the server-side query layer.
+
+export interface ReplyCommentOutput {
+  comment: CommentItemWire
+}
+
+export interface CommentEditOutput {
+  comment: CommentItemWire
+}
+
+export interface LoadCommentsOutput {
+  comments: CommentItemWire[]
+  next: boolean
+}
+
+export interface CommentRawOutput {
+  body: LexicalCommentBody
+}
+
+export interface MyCommentsOutput {
+  comments: CommentItemWire[]
+  /**
+   * Map from comment id string to token expiration timestamp (ms).
+   * The UI uses this to show "editable for X more minutes" hints.
+   */
+  expiresAt: Record<string, number>
+}
+
+export interface RevokeCommentTokenOutput {
+  success: boolean
+}
+
+export interface SearchPagesOutput {
+  pages: { key: string; title: string | null }[]
+}
+
+export interface SearchAuthorsOutput {
+  authors: { id: string; name: string }[]
+}
+
+export type LoadAllInput = LoadAllCommentsInput
+
+export interface LoadAllOutput {
+  comments: AdminCommentWire[]
+  total: number
+  hasMore: boolean
+  /**
+   * Counts for each status filter under the SAME page/user filter
+   * context. The currently-selected tab's count equals `total`, but we
+   * ship all four so the unselected tabs can still render their badges
+   * without an extra round-trip.
+   */
+  statusCounts: { all: number; pending: number; approved: number; deleteRequested: number }
+}
+
+export interface FindAvatarInput {
+  email: string
+}
+
+export interface FindAvatarOutput {
+  avatar: string
+}
+
+export interface ListPendingDashboardInput {
+  kind?: AdminPendingKind
+  offset?: number
+  limit?: number
+}
+
+export type ListPendingDashboardOutput = AdminPendingDashboardDto
+
+/**
+ * Status filter for the visitor self-service `/admin/me/comments`
+ * view. Lives in shared so the admin view can spell the same union
+ * the loader parses without crossing the server-import boundary.
+ */
+export type MyCommentsStatus = 'all' | 'pending' | 'deleteRequested' | 'deleted'
+
+// --- My-comments page DTOs -------------------------------------------------
+
+/** Entity filter option for the my-comments page (`${type}:${ownerId}`). */
+export interface MyCommentEntityOption {
+  /** `${type}:${ownerId}` — opaque Combobox value. */
+  value: string
+  /** Entity title shown in the trigger and the dropdown rows. */
+  label: string
+}
+
+/** Row of the my-comments page (loader + view shared shape). */
+export interface MyCommentItem {
+  id: string
+  body: LexicalCommentBody
+  createdAtIso: string
+  deletedAtIso: string | null
+  deleteRequestedAtIso: string | null
+  isPending: boolean
+  /**
+   * Post / page the comment was posted under. Missing entry (`null`)
+   * means the underlying row has been deleted.
+   */
+  entity: { title: string; permalink: string } | null
+  /**
+   * Set when the row is a reply. If the parent has been soft-deleted,
+   * `isDeleted` is true and the name / excerpt are blank.
+   */
+  parent: { name: string; excerpt: string; isDeleted: boolean } | null
+}

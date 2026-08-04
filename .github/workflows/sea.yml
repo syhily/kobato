@@ -25,11 +25,16 @@ concurrency:
 permissions:
   contents: read
 
+# The dual build line (see scripts/sea/target.ts): every job builds BOTH
+# binaries — `sea:build` (core, the default target) and
+# `sea:build --target frontend` — and runs each line's smoke. The core
+# line also runs the real-HTTP e2e; the frontend line has no natives/
+# worker to smoke beyond its managed lifecycle.
 jobs:
   build:
     name: build (${{ matrix.target }})
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
+    timeout-minutes: 45
     # develop pushes and PRs run the single-platform build-develop job
     # below instead — the full matrix stays on main/tags/release/dispatch.
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'release' || (github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')))
@@ -41,7 +46,7 @@ jobs:
             target: linux-x64
           - os: ubuntu-24.04-arm
             target: linux-arm64
-    # The deep smoke boots the server against per-run temp files (SQLite +
+    # The deep smokes boot the servers against per-run temp files (SQLite +
     # DuckDB — embedded, no service container needed on any platform).
     steps:
       - uses: actions/checkout@v7
@@ -51,14 +56,15 @@ jobs:
           node-version: 26
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
-      # patchelf rewrites the sharp addon's rpath during sea:build (see
-      # scripts/sea/assets.ts). Preinstalled on the ubuntu-24.04 runner
-      # image — this guards against image changes.
+      # patchelf rewrites the sharp addon's rpath during the core sea:build
+      # (see scripts/sea/assets.ts). Preinstalled on the ubuntu-24.04
+      # runner image — this guards against image changes.
       - run: command -v patchelf >/dev/null || sudo apt-get install -y patchelf
       # Release binaries pack the blob at brotli-11 (smallest; the slower
       # pack is acceptable CI time). Local `sea:build` stays zstd.
       - run: pnpm run sea:build --codec brotli
-      - name: Rename output to kobato-<target>
+      - run: pnpm run sea:build --codec brotli --target frontend
+      - name: Rename outputs to kobato-<target> / kobato-frontend-<target>
         env:
           BIN: kobato-${{ matrix.target }}
         working-directory: dist-sea
@@ -66,16 +72,20 @@ jobs:
           sha256sum -c kobato.sha256
           mv kobato "$BIN"
           rm kobato.sha256
-      - run: pnpm run sea:smoke "dist-sea/kobato-${{ matrix.target }}"
-      # True HTTP e2e against the SEA-booted instance (tests/e2e). Linux
-      # only — the e2e suite needs no services but the extra minutes buy
-      # nothing the darwin/win32 smokes don't already cover.
-      - run: pnpm run sea:e2e "dist-sea/kobato-${{ matrix.target }}"
+          sha256sum -c kobato-frontend.sha256
+          mv kobato-frontend "kobato-frontend-${{ matrix.target }}"
+          rm kobato-frontend.sha256
+      - run: pnpm run sea:smoke --target core "dist-sea/kobato-${{ matrix.target }}"
+      - run: pnpm run sea:smoke --target frontend "dist-sea/kobato-frontend-${{ matrix.target }}"
+      # True HTTP e2e against the SEA-booted CORE instance (tests/e2e).
+      # Linux only — the e2e suite needs no services but the extra
+      # minutes buy nothing the darwin/win32 smokes don't already cover.
+      - run: pnpm run sea:e2e --target core "dist-sea/kobato-${{ matrix.target }}"
       # Two checksums ship per target: one over the archive (verified
       # pre-extraction) and one over the raw binary (verified on the
       # extracted file) — the self-update pipeline checks both, so a
       # defective extraction can never swap in a corrupt executable.
-      - name: Package tar.gz with checksum
+      - name: Package tar.gz with checksums
         env:
           BIN: kobato-${{ matrix.target }}
         working-directory: dist-sea
@@ -84,6 +94,11 @@ jobs:
           sha256sum "$BIN.tar.gz" > "$BIN.tar.gz.sha256"
           sha256sum -c "$BIN.tar.gz.sha256"
           sha256sum "$BIN" > "$BIN.sha256"
+          FBIN="kobato-frontend-${{ matrix.target }}"
+          tar -czf "$FBIN.tar.gz" "$FBIN"
+          sha256sum "$FBIN.tar.gz" > "$FBIN.tar.gz.sha256"
+          sha256sum -c "$FBIN.tar.gz.sha256"
+          sha256sum "$FBIN" > "$FBIN.sha256"
       - uses: actions/upload-artifact@v7
         with:
           name: kobato-${{ matrix.target }}
@@ -92,14 +107,17 @@ jobs:
             dist-sea/kobato-${{ matrix.target }}.tar.gz
             dist-sea/kobato-${{ matrix.target }}.tar.gz.sha256
             dist-sea/kobato-${{ matrix.target }}.sha256
+            dist-sea/kobato-frontend-${{ matrix.target }}.tar.gz
+            dist-sea/kobato-frontend-${{ matrix.target }}.tar.gz.sha256
+            dist-sea/kobato-frontend-${{ matrix.target }}.sha256
 
-  # macOS targets: separate job for the runner image only. The smoke is
-  # the FULL managed lifecycle — the embedded databases need no service
+  # macOS targets: separate job for the runner image only. The smokes are
+  # the FULL managed lifecycles — the embedded databases need no service
   # container, so macOS coverage matches Linux (minus the e2e suite).
   build-darwin:
     name: build (${{ matrix.target }})
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 45
+    timeout-minutes: 60
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'release' || (github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')))
     strategy:
       fail-fast: false
@@ -116,7 +134,8 @@ jobs:
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - run: pnpm run sea:build --codec brotli
-      - name: Rename output to kobato-<target>
+      - run: pnpm run sea:build --codec brotli --target frontend
+      - name: Rename outputs to kobato-<target> / kobato-frontend-<target>
         env:
           BIN: kobato-${{ matrix.target }}
         working-directory: dist-sea
@@ -125,8 +144,12 @@ jobs:
           shasum -a 256 -c kobato.sha256
           mv kobato "$BIN"
           rm kobato.sha256
-      - run: pnpm run sea:smoke "dist-sea/kobato-${{ matrix.target }}"
-      - name: Package tar.gz with checksum
+          shasum -a 256 -c kobato-frontend.sha256
+          mv kobato-frontend "kobato-frontend-${{ matrix.target }}"
+          rm kobato-frontend.sha256
+      - run: pnpm run sea:smoke --target core "dist-sea/kobato-${{ matrix.target }}"
+      - run: pnpm run sea:smoke --target frontend "dist-sea/kobato-frontend-${{ matrix.target }}"
+      - name: Package tar.gz with checksums
         env:
           BIN: kobato-${{ matrix.target }}
         working-directory: dist-sea
@@ -135,6 +158,11 @@ jobs:
           shasum -a 256 "$BIN.tar.gz" > "$BIN.tar.gz.sha256"
           shasum -a 256 -c "$BIN.tar.gz.sha256"
           shasum -a 256 "$BIN" > "$BIN.sha256"
+          FBIN="kobato-frontend-${{ matrix.target }}"
+          tar -czf "$FBIN.tar.gz" "$FBIN"
+          shasum -a 256 "$FBIN.tar.gz" > "$FBIN.tar.gz.sha256"
+          shasum -a 256 -c "$FBIN.tar.gz.sha256"
+          shasum -a 256 "$FBIN" > "$FBIN.sha256"
       - uses: actions/upload-artifact@v7
         with:
           name: kobato-${{ matrix.target }}
@@ -143,15 +171,18 @@ jobs:
             dist-sea/kobato-${{ matrix.target }}.tar.gz
             dist-sea/kobato-${{ matrix.target }}.tar.gz.sha256
             dist-sea/kobato-${{ matrix.target }}.sha256
+            dist-sea/kobato-frontend-${{ matrix.target }}.tar.gz
+            dist-sea/kobato-frontend-${{ matrix.target }}.tar.gz.sha256
+            dist-sea/kobato-frontend-${{ matrix.target }}.sha256
 
   # Windows targets: same split as macOS — separate job for the runner
-  # image, full managed smoke (no service container needed). The
-  # rename/package steps run under Git Bash (sha256sum/tar); the binary
-  # is kobato.exe.
+  # image, full managed smokes (no service container needed). The
+  # rename/package steps run under Git Bash (sha256sum/tar); the binaries
+  # are kobato.exe / kobato-frontend.exe.
   build-windows:
     name: build (${{ matrix.target }})
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 45
+    timeout-minutes: 60
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'release' || (github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')))
     strategy:
       fail-fast: false
@@ -170,7 +201,8 @@ jobs:
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - run: pnpm run sea:build --codec brotli
-      - name: Rename output to kobato-<target>
+      - run: pnpm run sea:build --codec brotli --target frontend
+      - name: Rename outputs to kobato-<target> / kobato-frontend-<target>
         env:
           BIN: kobato-${{ matrix.target }}
         working-directory: dist-sea
@@ -179,8 +211,12 @@ jobs:
           sha256sum -c kobato.sha256
           mv kobato.exe "$BIN.exe"
           rm kobato.sha256
-      - run: pnpm run sea:smoke "dist-sea/kobato-${{ matrix.target }}.exe"
-      - name: Package tar.gz with checksum
+          sha256sum -c kobato-frontend.sha256
+          mv kobato-frontend.exe "kobato-frontend-${{ matrix.target }}.exe"
+          rm kobato-frontend.sha256
+      - run: pnpm run sea:smoke --target core "dist-sea/kobato-${{ matrix.target }}.exe"
+      - run: pnpm run sea:smoke --target frontend "dist-sea/kobato-frontend-${{ matrix.target }}.exe"
+      - name: Package tar.gz with checksums
         env:
           BIN: kobato-${{ matrix.target }}
         working-directory: dist-sea
@@ -190,6 +226,11 @@ jobs:
           sha256sum "$BIN.tar.gz" > "$BIN.tar.gz.sha256"
           sha256sum -c "$BIN.tar.gz.sha256"
           sha256sum "$BIN.exe" > "$BIN.sha256"
+          FBIN="kobato-frontend-${{ matrix.target }}"
+          tar -czf "$FBIN.tar.gz" "$FBIN.exe"
+          sha256sum "$FBIN.tar.gz" > "$FBIN.tar.gz.sha256"
+          sha256sum -c "$FBIN.tar.gz.sha256"
+          sha256sum "$FBIN.exe" > "$FBIN.sha256"
       - uses: actions/upload-artifact@v7
         with:
           name: kobato-${{ matrix.target }}
@@ -198,19 +239,22 @@ jobs:
             dist-sea/kobato-${{ matrix.target }}.tar.gz
             dist-sea/kobato-${{ matrix.target }}.tar.gz.sha256
             dist-sea/kobato-${{ matrix.target }}.sha256
+            dist-sea/kobato-frontend-${{ matrix.target }}.tar.gz
+            dist-sea/kobato-frontend-${{ matrix.target }}.tar.gz.sha256
+            dist-sea/kobato-frontend-${{ matrix.target }}.sha256
 
   # develop validation: pushes to develop and PRs to main run ONLY this
-  # job — a single linux-x64 sea:build (local zstd codec, not the slow
-  # brotli release pack) + the full managed smoke + the real-HTTP e2e
-  # journeys against the just-built binary. The e2e suite was added to
-  # this job (audit D-2/P2-5): the binary already exists here, so the
-  # 18 journeys cost a few minutes and keep CSRF/session/restore
+  # job — a single linux-x64 build of BOTH binaries (local zstd codec, not
+  # the slow brotli release pack) + both managed smokes + the real-HTTP
+  # e2e journeys against the just-built core binary. The e2e suite was
+  # added to this job (audit D-2/P2-5): the binary already exists here, so
+  # the 18 journeys cost a few minutes and keep CSRF/session/restore
   # regressions from reaching main unobserved.
   build-develop:
     name: build (linux-x64, develop)
     if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/develop')
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
@@ -219,13 +263,15 @@ jobs:
           node-version: 26
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
-      # patchelf rewrites the sharp addon's rpath during sea:build (see
-      # scripts/sea/assets.ts). Preinstalled on the ubuntu-24.04 runner
-      # image — this guards against image changes.
+      # patchelf rewrites the sharp addon's rpath during the core sea:build
+      # (see scripts/sea/assets.ts). Preinstalled on the ubuntu-24.04
+      # runner image — this guards against image changes.
       - run: command -v patchelf >/dev/null || sudo apt-get install -y patchelf
       - run: pnpm run sea:build
-      - run: pnpm run sea:smoke dist-sea/kobato
-      - run: pnpm run sea:e2e dist-sea/kobato
+      - run: pnpm run sea:build --target frontend
+      - run: pnpm run sea:smoke --target core dist-sea/kobato
+      - run: pnpm run sea:smoke --target frontend dist-sea/kobato-frontend
+      - run: pnpm run sea:e2e --target core dist-sea/kobato
 
   # Release assets are uploaded for the events that actually occur in the
   # release flow — the tag push (automated: scripts/release.ts pushes the

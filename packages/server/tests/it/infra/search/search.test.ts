@@ -1,0 +1,231 @@
+import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+
+import { postSearchIndex } from '@kobato/server/infra/db/schema/content'
+import { kvCache } from '@kobato/server/infra/db/schema/kv-cache'
+import { post } from '@kobato/server/infra/db/schema/post'
+import { eq } from 'drizzle-orm'
+import { beforeEach, describe, expect, it } from 'vitest'
+
+const db = getTestDb()
+
+const { searchPosts } = await import('@kobato/server/infra/search/search')
+const { bumpCounter, getCounter, resolveCacheSlot, __resetCacheCountersForTests } =
+  await import('@kobato/server/infra/cache/registry')
+const { __logCaptureForTests, __clearLogCaptureForTests } = await import('@kobato/server/infra/logger')
+const { getPostsBySlugs } = await import('@kobato/server/domains/posts/services/public-query')
+const { searchPostOptions } = await import('@kobato/server/infra/search/options')
+const { liveContentWhere } = await import('@kobato/server/domains/content/schemas/live-gate')
+const { setBlogSettingsBundleForTests } = await import('#/_helpers/blog-settings')
+const { TEST_BLOG_SETTINGS_BUNDLE } = await import('#/_helpers/blog-settings')
+
+/** The same caller-supplied live gate the production search loader passes. */
+function liveWhere() {
+  return liveContentWhere({
+    deletedAt: post.deletedAt,
+    published: post.published,
+    publishedRevisionId: post.publishedRevisionId,
+    publishedAt: post.publishedAt,
+  })
+}
+
+beforeEach(async () => {
+  await clearAllTables(db)
+  setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
+  // The generation counter is memoized process-wide; drop the memo so
+  // each test re-reads the freshly cleared kv_cache table.
+  __resetCacheCountersForTests()
+  __clearLogCaptureForTests()
+})
+
+async function seedPost({ plainText, ...overrides }: Partial<typeof post.$inferInsert> & { plainText?: string } = {}) {
+  const rows = await db
+    .insert(post)
+    .values({
+      slug: 'test-post',
+      title: 'Test Post',
+      summary: 'A test summary',
+      publishedAt: overrides.publishedAt ?? new Date(),
+      publishedRevisionId: 1,
+      ...overrides,
+    })
+    .returning()
+  await db.insert(postSearchIndex).values({
+    postId: rows[0].id,
+    plainText: plainText ?? overrides.summary ?? 'A test summary',
+  })
+  return rows[0]
+}
+
+describe('services/search — searchPosts', () => {
+  it('returns empty results for empty query', async () => {
+    const result = await searchPosts(db, liveWhere(), '', 10)
+    expect(result.hits).toEqual([])
+    expect(result.totalPages).toBe(0)
+  })
+
+  it('uses LIKE mode by default', async () => {
+    await seedPost({ slug: 'post-with-phrase', title: '向量数据库入门' })
+    await seedPost({ slug: 'another-post', title: '另一个文章' })
+
+    const result = await searchPosts(db, liveWhere(), '向量数据库', 10)
+
+    expect(result.hits).toEqual(['post-with-phrase'])
+    expect(result.totalPages).toBe(1)
+  })
+
+  it('paginates LIKE results', async () => {
+    const now = new Date()
+    await seedPost({
+      slug: 'post-a',
+      title: 'Test A',
+      publishedAt: new Date(now.getTime() - 2000),
+    })
+    await seedPost({
+      slug: 'post-b',
+      title: 'Test B',
+      publishedAt: new Date(now.getTime() - 1000),
+    })
+    await seedPost({ slug: 'post-c', title: 'Test C', publishedAt: now })
+
+    const result = await searchPosts(db, liveWhere(), 'test', 2, 1)
+
+    // Ordered by publishedAt DESC: post-c, post-b, post-a
+    // offset=1, limit=2 → post-b, post-a
+    expect(result.hits).toEqual(['post-b', 'post-a'])
+    expect(result.page).toBe(1)
+    expect(result.totalPages).toBe(2)
+  })
+
+  it('excludes scheduled posts (publishedAt in the future)', async () => {
+    await seedPost({
+      slug: 'scheduled',
+      title: 'Scheduled Test',
+      publishedAt: new Date(Date.now() + 86_400_000),
+    })
+
+    const result = await searchPosts(db, liveWhere(), 'scheduled', 10)
+    expect(result.hits).toEqual([])
+  })
+
+  it('excludes published posts without a published revision', async () => {
+    await seedPost({ slug: 'no-revision', title: 'No Revision Test', publishedRevisionId: null })
+
+    const result = await searchPosts(db, liveWhere(), 'revision', 10)
+    expect(result.hits).toEqual([])
+  })
+})
+
+describe('services/search — search result cache invalidation', () => {
+  it('serves fresh results after the search generation is bumped', async () => {
+    await seedPost({ slug: 'cache-alpha', title: 'Cache Alpha' })
+
+    // First query populates the result cache …
+    const first = await searchPosts(db, liveWhere(), 'cache', 10)
+    expect(first.hits).toEqual(['cache-alpha'])
+
+    // … a corpus change stays invisible while the cached entry lives.
+    await seedPost({ slug: 'cache-beta', title: 'Cache Beta' })
+    const stale = await searchPosts(db, liveWhere(), 'cache', 10)
+    expect(stale.hits).toEqual(['cache-alpha'])
+
+    // Invalidation bumps the generation stamp, so the next query misses
+    // the old-generation entry and re-runs against the corpus.
+    await bumpCounter(db, 'searchResult')
+    const fresh = await searchPosts(db, liveWhere(), 'cache', 10)
+    expect(fresh.hits).toEqual(['cache-beta', 'cache-alpha'])
+
+    // The counter row now exists, so a second bump takes the
+    // ON CONFLICT DO UPDATE branch (value::int + 1) — and invalidates
+    // all over again.
+    await seedPost({ slug: 'cache-gamma', title: 'Cache Gamma' })
+    const staleAgain = await searchPosts(db, liveWhere(), 'cache', 10)
+    expect(staleAgain.hits).toEqual(['cache-beta', 'cache-alpha'])
+
+    await bumpCounter(db, 'searchResult')
+    const freshAgain = await searchPosts(db, liveWhere(), 'cache', 10)
+    expect(freshAgain.hits).toEqual(['cache-gamma', 'cache-beta', 'cache-alpha'])
+  })
+})
+
+describe('services/search — searchResult cache rows (real registry)', () => {
+  it('stamps cached entries with the current generation and never writes the counter on reads', async () => {
+    await seedPost({ slug: 'gen-post', title: 'Generation Probe' })
+
+    // The counter starts at 0 — a read must NOT create the row.
+    expect(await getCounter(db, 'searchResult')).toBe(0)
+
+    const result = await searchPosts(db, liveWhere(), 'generation', 10)
+    expect(result.hits).toEqual(['gen-post'])
+
+    const prefix = resolveCacheSlot('searchResult').prefix
+    const rows = await db.select().from(kvCache).where(eq(kvCache.bucket, 'searchResult'))
+    expect(rows).toHaveLength(1)
+    expect(rows[0].key.startsWith(`${prefix}0:`)).toBe(true)
+    expect(rows.some((row) => row.key === `${prefix}generation`)).toBe(false)
+  })
+
+  it('serves a later page from the same cached slug list without a second entry', async () => {
+    const now = new Date()
+    await seedPost({ slug: 'page-a', title: 'Paged A', publishedAt: new Date(now.getTime() - 2000) })
+    await seedPost({ slug: 'page-b', title: 'Paged B', publishedAt: new Date(now.getTime() - 1000) })
+    await seedPost({ slug: 'page-c', title: 'Paged C', publishedAt: now })
+
+    const first = await searchPosts(db, liveWhere(), 'paged', 2, 0)
+    expect(first.hits).toEqual(['page-c', 'page-b'])
+
+    const second = await searchPosts(db, liveWhere(), 'paged', 2, 2)
+    expect(second.hits).toEqual(['page-a'])
+    expect(second.page).toBe(2)
+    expect(second.totalPages).toBe(2)
+
+    // Both pages read the ONE cached slug list — no per-page entry.
+    const rows = await db.select().from(kvCache).where(eq(kvCache.bucket, 'searchResult'))
+    expect(rows).toHaveLength(1)
+  })
+
+  it('logs a cache hit on a repeated identical query', async () => {
+    await seedPost({ slug: 'hit-post', title: 'Hit Probe' })
+
+    await searchPosts(db, liveWhere(), 'hit probe', 10)
+    await searchPosts(db, liveWhere(), 'hit probe', 10)
+
+    const hits = __logCaptureForTests().filter((entry) => entry.msg === 'Search result cache hit')
+    expect(hits).toHaveLength(1)
+    expect(hits[0].ctx).toEqual({ query: 'hit probe', total: 1 })
+  })
+})
+
+describe('services/search — getPostsBySlugs', () => {
+  it('returns hydrated posts in the caller slug order, not date order', async () => {
+    const now = new Date()
+    await seedPost({ slug: 'alpha-match', title: 'alpha match', publishedAt: now })
+    await seedPost({
+      slug: 'match-beta',
+      title: 'match beta',
+      publishedAt: new Date(now.getTime() - 1000),
+    })
+    await seedPost({
+      slug: 'match-gamma',
+      title: 'match gamma',
+      publishedAt: new Date(now.getTime() - 2000),
+    })
+
+    const posts = await getPostsBySlugs(db, ['match-gamma', 'alpha-match', 'match-beta'], searchPostOptions())
+
+    expect(posts.map((p) => p.slug)).toEqual(['match-gamma', 'alpha-match', 'match-beta'])
+  })
+
+  it('excludes published rows that never had a revision promoted', async () => {
+    await seedPost({
+      slug: 'never-promoted',
+      title: 'Never Promoted',
+      published: true,
+      publishedRevisionId: null,
+    })
+    await seedPost({ slug: 'promoted-live', title: 'Promoted Live', publishedRevisionId: 1 })
+
+    const posts = await getPostsBySlugs(db, ['never-promoted', 'promoted-live'], searchPostOptions())
+
+    expect(posts.map((p) => p.slug)).toEqual(['promoted-live'])
+  })
+})

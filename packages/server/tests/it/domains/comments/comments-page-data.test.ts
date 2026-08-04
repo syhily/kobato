@@ -1,0 +1,119 @@
+import type { Database } from '@kobato/server/infra/db/database'
+
+import { seedMetric } from '#/_helpers/db'
+import { regularSession } from '#/_helpers/session'
+
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+// `loadDetailPageStreaming` must fan out `loadComments`, `queryLikes`, and
+// `loadSidebarData` in parallel — they're independent and each is
+// individually slow. This test injects 50ms of artificial latency into all
+// three paths and asserts the wall clock stays below ~100ms (≈ slowest
+// dependency + scheduler jitter), which is impossible if any pair were
+// serialised.
+
+vi.mock('@kobato/server/domains/comments/services/shared', () => ({
+  ensureCommentPage: vi.fn(async () => seedMetric()),
+}))
+
+vi.mock('@kobato/server/domains/comments/services/public-query', () => ({
+  loadComments: vi.fn(),
+  parseComments: vi.fn(async () => []),
+}))
+vi.mock('@kobato/server/domains/comments/services/likes', () => ({ queryLikes: vi.fn(), startLikeTokenSweep: vi.fn() }))
+vi.mock('@kobato/server/http/loaders/sidebar', () => ({ loadSidebarData: vi.fn() }))
+
+const commentShared = await import('@kobato/server/domains/comments/services/shared')
+const commentPublicQuery = await import('@kobato/server/domains/comments/services/public-query')
+const likes = await import('@kobato/server/domains/comments/services/likes')
+const sidebar = await import('@kobato/server/http/loaders/sidebar')
+const { loadDetailPageStreaming } = await import('@kobato/server/http/loaders/comments')
+
+const POST_TIMING = { type: 'post' as const, ownerId: 1 }
+const POST_EMPTY = { type: 'post' as const, ownerId: 2 }
+const POST_ONE_UPSERT = { type: 'post' as const, ownerId: 3 }
+
+const mockDb = {} as Database
+
+function delay<T>(value: T, ms: number): Promise<T> {
+  return new Promise((resolve) => setTimeout(() => resolve(value), ms))
+}
+
+beforeEach(() => {
+  vi.clearAllMocks()
+  vi.mocked(commentShared.ensureCommentPage).mockResolvedValue(seedMetric())
+})
+
+describe('services/comments/page-data — loadDetailPageStreaming', () => {
+  it('loadComments + queryLikes + loadSidebarData run in parallel (≤100ms wall clock for 50ms each)', async () => {
+    vi.mocked(commentPublicQuery.loadComments).mockImplementation(() =>
+      delay({ count: 0, roots_count: 0, comments: [] }, 50),
+    )
+    vi.mocked(likes.queryLikes).mockImplementation(() => delay(0, 50))
+    vi.mocked(sidebar.loadSidebarData).mockImplementation(() =>
+      delay(
+        {
+          recentPosts: [],
+          recentComments: [],
+          pendingComments: [],
+          tags: [],
+          isAdmin: false,
+        } as unknown as Awaited<ReturnType<typeof sidebar.loadSidebarData>>,
+        50,
+      ),
+    )
+
+    const start = Date.now()
+    const { comments } = await loadDetailPageStreaming(mockDb, regularSession(), POST_TIMING)
+    await comments
+    const elapsed = Date.now() - start
+
+    expect(elapsed).toBeLessThan(100)
+  })
+
+  it('skips parseComments entirely when there are zero comments (short-circuit)', async () => {
+    vi.mocked(commentPublicQuery.loadComments).mockResolvedValue({
+      count: 0,
+      roots_count: 0,
+      comments: [],
+    })
+    vi.mocked(likes.queryLikes).mockResolvedValue(0)
+    vi.mocked(sidebar.loadSidebarData).mockResolvedValue({
+      recentPosts: [],
+      recentComments: [],
+      pendingComments: [],
+      tags: [],
+      isAdmin: false,
+    } as unknown as Awaited<ReturnType<typeof sidebar.loadSidebarData>>)
+
+    const { comments } = await loadDetailPageStreaming(mockDb, regularSession(), POST_EMPTY)
+
+    expect((await comments).commentItems).toEqual([])
+    expect(commentPublicQuery.parseComments).not.toHaveBeenCalled()
+  })
+
+  it('ensures the page row once, then loads comments without a second upsert', async () => {
+    vi.mocked(commentPublicQuery.loadComments).mockResolvedValue({
+      count: 0,
+      roots_count: 0,
+      comments: [],
+    })
+    vi.mocked(likes.queryLikes).mockResolvedValue(0)
+    vi.mocked(sidebar.loadSidebarData).mockResolvedValue({
+      recentPosts: [],
+      recentComments: [],
+      pendingComments: [],
+      tags: [],
+      isAdmin: false,
+    } as unknown as Awaited<ReturnType<typeof sidebar.loadSidebarData>>)
+    const session = regularSession()
+
+    const { comments } = await loadDetailPageStreaming(mockDb, session, POST_ONE_UPSERT)
+    await comments
+
+    expect(commentShared.ensureCommentPage).toHaveBeenCalledOnce()
+    expect(commentPublicQuery.loadComments).toHaveBeenCalledWith(mockDb, session, POST_ONE_UPSERT, 0, {
+      ensurePage: false,
+    })
+  })
+})

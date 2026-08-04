@@ -23,7 +23,9 @@ import type { SmokeServer } from './instance.ts'
 
 // The one src import: the canonical bucket table, so the relaxed
 // blog.rateLimit row below can never drift out of the section schema.
-import { rateLimitDefaults } from '../../src/shared/config/defaults.ts'
+// Relative path on purpose — this script runs under plain `node` (no
+// tsconfig path aliases).
+import { rateLimitDefaults } from '../../packages/shared/src/config/defaults.ts'
 import { fail } from './exec.ts'
 import {
   bootServer,
@@ -36,6 +38,7 @@ import {
   waitForHttp,
 } from './instance.ts'
 import { repoRoot, seaBinaryPath } from './paths.ts'
+import { parseTargetArg, resolveSeaTarget } from './target.ts'
 
 const SHUTDOWN_TIMEOUT_MS = 15_000
 
@@ -75,9 +78,14 @@ function relaxRateLimitsForE2e(databasePath: string) {
 }
 
 async function main() {
-  const binaryPath = process.argv[2] ? resolvePath(process.argv[2]) : seaBinaryPath()
-  if (process.argv[2]?.startsWith('--')) {
-    fail('Usage: node scripts/sea/e2e.ts [path-to-binary]')
+  // The e2e suite is core-only (admin sign-in journeys over the core
+  // binary); the target only picks the default binary path.
+  const target = resolveSeaTarget()
+  // First non-flag argument is the binary path (`--target` may precede it).
+  const positional = process.argv.slice(2).find((arg) => !arg.startsWith('--'))
+  const binaryPath = positional ? resolvePath(positional) : seaBinaryPath(target)
+  if (positional === undefined && process.argv[2]?.startsWith('--') && parseTargetArg(process.argv.slice(2)) === null) {
+    fail('Usage: node scripts/sea/e2e.ts [--target core|frontend] [path-to-binary]')
   }
   await ensureBinaryExists(binaryPath)
 

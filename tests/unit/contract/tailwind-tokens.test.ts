@@ -1,10 +1,9 @@
+import { __TOKENS_FOR_TESTS } from '@kobato/ui/lib/cn'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-import { __TOKENS_FOR_TESTS } from '@/ui/lib/cn'
-
-const CSS_PATH = resolve(process.cwd(), 'src/styles/tailwind.css')
+const CSS_PATH = resolve(process.cwd(), 'apps/core/src/styles/tailwind.css')
 
 /** Namespaces that are Tailwind builtins and do not need registration in cn.ts. */
 const BUILTIN_NAMESPACES = new Set(['breakpoint', 'container'])

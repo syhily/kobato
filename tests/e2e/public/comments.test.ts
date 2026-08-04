@@ -1,32 +1,19 @@
-import { describe, expect, it } from 'vitest'
-
 import { E2eClient, e2eEnv, getAdminCsrfToken, getPublicCsrfToken, loginAdmin } from '#/_helpers/e2e-client'
 import { callE2eRpc } from '#/_helpers/e2e-rpc'
+import { lexBody, lexCommentBody, lexParagraphNode } from '#/_helpers/lexical-body'
+
+import { describe, expect, it } from 'vitest'
 
 const env = e2eEnv()
 
-const COMMENT_BODY = [
-  {
-    _type: 'block',
-    _key: 'b1',
-    style: 'normal',
-    children: [{ _type: 'span', _key: 's1', text: 'e2e 评论旅程标记', marks: [] }],
-    markDefs: [],
-  },
-]
+const COMMENT_BODY = lexCommentBody('e2e 评论旅程标记')
 
 interface CommentListJson {
   comments: Array<{ id: string; name: string; isPending: boolean | null }>
 }
 
-/** The post detail SSR embeds the metric public_id in the reply form's hidden input. */
-function scrapePageKey(html: string): string {
-  const input = html.match(/<input[^>]*name="page_key"[^>]*>/)
-  const value = input?.[0].match(/value="([^"]+)"/)
-  if (!value?.[1]) {
-    throw new Error('no page_key hidden input on the post detail page')
-  }
-  return value[1]
+interface PostDetailJson {
+  detail: { commentKey: string }
 }
 
 // The comment journey across all three actors: a guest's first reply is
@@ -57,29 +44,24 @@ describe('public comments flow (HTTP e2e)', () => {
       '/admin/posts/publishLatest',
       {
         id: postId,
-        body: [
-          {
-            _type: 'block',
-            _key: 'b1',
-            style: 'normal',
-            children: [{ _type: 'span', _key: 's1', text: 'e2e 评论宿主正文', marks: [] }],
-            markDefs: [],
-          },
-        ],
+        body: lexBody([lexParagraphNode('e2e 评论宿主正文')]),
       },
       csrfToken,
     )
     expect(published.status).toBe(200)
 
     try {
-      // The page_key the public thread is keyed by comes from the page itself.
+      // The page_key the public thread is keyed by comes from the detail
+      // payload (the SSR page embeds the same metric public_id; the
+      // headless e2e reads the API face directly).
       const guest = new E2eClient(env.baseUrl)
-      const detail = await guest.get('/posts/e2e-comments')
+      const detail = await guest.get('/api/content/v1/posts/e2e-comments')
       expect(detail.status).toBe(200)
-      const pageKey = scrapePageKey(await detail.text())
+      const pageKey = ((await detail.json()) as PostDetailJson).detail.commentKey
       // Every /rpc POST — public ones included — passes the csrfGuard, so
-      // both anonymous clients need their own session-bound token.
-      const guestCsrf = await getPublicCsrfToken(guest, '/posts/e2e-comments')
+      // both anonymous clients need their own session-bound token (the
+      // core app shell at `/` mints and embeds it).
+      const guestCsrf = await getPublicCsrfToken(guest, '/')
 
       // Guest reply — a first-time commenter is held pending.
       const reply = await callE2eRpc<{ comment: { id: string; isPending: boolean | null } }>(
@@ -118,7 +100,10 @@ describe('public comments flow (HTTP e2e)', () => {
       const approved = await callE2eRpc(admin, '/admin/comments/approve', { commentId }, csrfToken)
       expect(approved.status).toBe(200)
 
-      // Now the public thread shows it…
+      // Now the public thread shows it (the /rpc face — the REST
+      // comments/list GET is a documented follow-up: its zod number
+      // input rejects string query values, so it is not callable over
+      // the query string today).
       const visible = await callE2eRpc<CommentListJson>(
         anon,
         '/comments/loadComments',
@@ -127,10 +112,6 @@ describe('public comments flow (HTTP e2e)', () => {
       )
       expect(visible.status).toBe(200)
       expect(visible.json.comments.map((c) => c.id)).toContain(commentId)
-
-      // …and so does the streamed SSR of the post page.
-      const rerendered = await anon.get('/posts/e2e-comments')
-      expect(await rerendered.text()).toContain('e2e 评论旅程标记')
     } finally {
       await callE2eRpc(admin, '/admin/posts/delete', { id: String(created.json.post.id) }, csrfToken)
     }

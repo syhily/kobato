@@ -1,0 +1,5 @@
+{
+  "kind": "content",
+  "note": "行内公式 markDef:mathInline 带 tex + mathml,span 文本非空且 marks 引用之(pt-html-extra.test.ts \"emits mathml for an inline math mark\" 分支的真实形态)",
+  "bodyJson": "[{\"_type\":\"block\",\"_key\":\"b1\",\"style\":\"normal\",\"children\":[{\"_type\":\"span\",\"_key\":\"s1\",\"text\":\"行内公式:\"},{\"_type\":\"span\",\"_key\":\"s2\",\"text\":\"x\",\"marks\":[\"m1\"]}],\"markDefs\":[{\"_type\":\"mathInline\",\"_key\":\"m1\",\"tex\":\"x^2\",\"mathml\":\"<math><msup><mi>x</mi><mn>2</mn></msup></math>\"}]}]"
+}

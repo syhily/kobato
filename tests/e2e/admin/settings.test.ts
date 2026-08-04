@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest'
-
 import { E2eClient, e2eEnv, getAdminCsrfToken, loginAdmin } from '#/_helpers/e2e-client'
 import { callE2eRpc } from '#/_helpers/e2e-rpc'
+
+import { describe, expect, it } from 'vitest'
 
 const env = e2eEnv()
 

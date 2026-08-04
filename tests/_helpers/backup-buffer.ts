@@ -1,9 +1,3 @@
-import { mkdtempSync, rmSync } from 'node:fs'
-import { writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
-import { gunzipSync } from 'node:zlib'
-
 import {
   type StagedBackup,
   assertDuckdbBackup,
@@ -13,7 +7,7 @@ import {
   restoreFromStagedBackup,
   stageBackup,
   type RestoreOptions,
-} from '@/server/domains/backup/services/restore'
+} from '@kobato/server/domains/backup/services/restore'
 import {
   isTarArchive,
   readCString,
@@ -21,8 +15,13 @@ import {
   TAR_BLOCK,
   tarEntryHeader,
   tarPaddingSize,
-} from '@/server/domains/backup/services/tar'
-import { ActionFailure } from '@/server/infra/http/errors'
+} from '@kobato/server/domains/backup/services/tar'
+import { ActionFailure } from '@kobato/server/infra/http/errors'
+import { mkdtempSync, rmSync } from 'node:fs'
+import { writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { gunzipSync } from 'node:zlib'
 
 /**
  * The in-memory backup tier, for tests only. Production paths stream

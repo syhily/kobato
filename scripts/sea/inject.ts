@@ -14,6 +14,8 @@
 
 import { mkdir, readFile } from 'node:fs/promises'
 
+import type { SeaTarget } from './target.ts'
+
 import { writeSeaConfig } from './blob.ts'
 import { fail, run, tryRun } from './exec.ts'
 import { SEA_SENTINEL_FUSE, seaBinaryPath, seaConfigPath, seaDistDir } from './paths.ts'
@@ -48,15 +50,15 @@ function resignDarwinBinary(out: string) {
   run('codesign', ['--sign', '-', '--force', out])
 }
 
-export async function runInjectStep(assets: Map<string, string>) {
+export async function runInjectStep(assets: Map<string, string>, target: SeaTarget = 'core') {
   await ensureSentinelFuse()
-  const out = seaBinaryPath()
+  const out = seaBinaryPath(target)
   await mkdir(seaDistDir(), { recursive: true })
   // `--build-sea` builds the blob itself; the config's `output` is the
   // final executable path (the `executable` field stays at its default —
   // the building node).
-  await writeSeaConfig(assets, out)
-  run(process.execPath, ['--build-sea', seaConfigPath()])
+  await writeSeaConfig(assets, out, target)
+  run(process.execPath, ['--build-sea', seaConfigPath(target)])
   if (process.platform === 'darwin') {
     resignDarwinBinary(out)
   }

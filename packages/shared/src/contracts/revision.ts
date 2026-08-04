@@ -1,0 +1,51 @@
+import { idString, isoDateTime, markdownHeadingDto } from '@kobato/shared/contracts/primitives'
+import { lexicalBodySchema } from '@kobato/shared/lexical/schema'
+import { safeBoolean } from '@kobato/shared/utils/schema'
+import { z } from 'zod'
+
+export const adminRevisionDto = z.object({
+  id: idString,
+  revisionNo: z.number().int().nonnegative(),
+  status: z.enum(['draft', 'published']),
+  body: lexicalBodySchema,
+  imageSources: z.array(z.string()),
+  headings: z.array(markdownHeadingDto),
+  authorId: idString.nullable(),
+  clientRevisionToken: z.string(),
+  createdAt: isoDateTime,
+  updatedAt: isoDateTime,
+})
+export type AdminRevisionDto = z.infer<typeof adminRevisionDto>
+
+// Single statement of the post/page body-save + preview input shapes; the
+// admin posts and pages controllers both consume these.
+export const saveBodyInput = z.object({
+  id: z.string().min(1),
+  body: lexicalBodySchema,
+  expectedClientRevisionToken: z.uuid().nullable().optional(),
+  force: safeBoolean().optional(),
+  publishedAt: z.iso.datetime({ offset: true }).optional(),
+})
+export type SaveBodyInput = z.infer<typeof saveBodyInput>
+
+export const previewBodyInput = z.object({
+  body: lexicalBodySchema,
+})
+
+// The server emits `warning` when a non-fatal side effect (image-library
+// sync) failed — the editor surfaces it instead of swallowing it.
+export const saveResultOutput = z.discriminatedUnion('status', [
+  z.object({ status: z.literal('saved'), revision: adminRevisionDto, warning: z.string().optional() }),
+  z.object({
+    status: z.literal('conflict'),
+    latest: adminRevisionDto,
+    expectedToken: z.string(),
+    warning: z.string().optional(),
+  }),
+])
+export type SaveBodyOutput = z.infer<typeof saveResultOutput>
+
+export const previewOutputDto = z.object({
+  html: z.string(),
+  headings: z.array(markdownHeadingDto),
+})

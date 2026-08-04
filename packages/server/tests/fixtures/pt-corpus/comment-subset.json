@@ -1,0 +1,5 @@
+{
+  "kind": "comment",
+  "note": "合法评论子集:normal 段落 + strong 装饰 + link markDef + bullet 列表 + blockquote + code + mathBlock,全部符合 comment schema(comment-schema.test.ts 各用例拼装,中文化)",
+  "bodyJson": "[{\"_type\":\"block\",\"_key\":\"b1\",\"style\":\"normal\",\"children\":[{\"_type\":\"span\",\"_key\":\"s1\",\"text\":\"这是一条评论,包含\"},{\"_type\":\"span\",\"_key\":\"s2\",\"text\":\"加粗\",\"marks\":[\"strong\"]},{\"_type\":\"span\",\"_key\":\"s3\",\"text\":\"和\"},{\"_type\":\"span\",\"_key\":\"s4\",\"text\":\"链接\",\"marks\":[\"link-1\"]}],\"markDefs\":[{\"_type\":\"link\",\"_key\":\"link-1\",\"href\":\"https://example.com\"}]},{\"_type\":\"block\",\"_key\":\"b2\",\"listItem\":\"bullet\",\"level\":1,\"style\":\"normal\",\"children\":[{\"_type\":\"span\",\"_key\":\"s5\",\"text\":\"列表项\"}]},{\"_type\":\"block\",\"_key\":\"b3\",\"style\":\"blockquote\",\"children\":[{\"_type\":\"span\",\"_key\":\"s6\",\"text\":\"引用内容\"}]},{\"_type\":\"code\",\"_key\":\"c1\",\"code\":\"console.log('hi')\",\"language\":\"ts\"},{\"_type\":\"mathBlock\",\"_key\":\"m1\",\"tex\":\"\\\\int_0^1 x\\\\,dx\"}]"
+}

@@ -64,7 +64,9 @@ function cmdBump(version: string): void {
 
   validateClean()
 
-  const pkgPath = 'package.json'
+  // Version is owned by the core app's package.json (monorepo split,
+  // stage 2 §8) — the workspace root no longer carries a release version.
+  const pkgPath = 'apps/core/package.json'
   const lockPath = 'pnpm-lock.yaml'
   const composePath = 'docker-compose.yml'
 
@@ -99,7 +101,7 @@ function cmdTag(args: string[]): void {
 
   validateClean()
 
-  const pkg = readJson('package.json')
+  const pkg = readJson('apps/core/package.json')
   if (!isRecord(pkg)) {
     throw new Error('Invalid package.json')
   }
@@ -140,7 +142,45 @@ function cmdTag(args: string[]): void {
   run(`gh release create "${version}" --draft --title "Kobato ${version}" ${notesFlag} ${prerelease}`)
   process.stdout.write(
     `GitHub draft release created: https://github.com/syhily/kobato/releases/tag/${version}\n` +
-      `It stays a draft until sea.yml finishes uploading the SEA assets.`,
+      `It stays a draft until sea.yml finishes uploading the SEA assets.\n`,
+  )
+
+  cmdPublishSdk()
+}
+
+/**
+ * The npm publish step for `@kobato/sdk` — the only published package in
+ * the workspace (stage 3 §1). The tag flow builds the SDK and verifies
+ * `npm publish --dry-run` passes; the actual `npm publish` stays a
+ * manual/CI action (the release can still be aborted while the SEA assets
+ * upload). The SDK's version follows the Content API contract (1.x ↔
+ * `/api/content/v1`) and is bumped independently of the core release
+ * version.
+ */
+function cmdPublishSdk(): void {
+  process.stdout.write('\n── @kobato/sdk npm publish (dry-run) ──\n')
+
+  const sdkPkg = readJson('packages/sdk/package.json')
+  if (!isRecord(sdkPkg) || typeof sdkPkg['version'] !== 'string') {
+    throw new Error('packages/sdk/package.json is missing a version')
+  }
+  const sdkVersion = sdkPkg['version']
+
+  run('pnpm --filter @kobato/sdk build')
+  process.stdout.write(`SDK ${sdkVersion} built (packages/sdk/dist/). Verifying publish dry-run…\n`)
+
+  // Prerelease versions (e.g. `1.0.0-dev`) require an explicit dist-tag.
+  const tagFlag = sdkVersion.includes('-') ? '--tag next' : ''
+
+  // `npm publish <folder> --dry-run` packs exactly what `files` declares
+  // and validates the exports map without touching the registry.
+  run(`npm publish ./packages/sdk --dry-run ${tagFlag}`.trim())
+
+  process.stdout.write(
+    `@kobato/sdk@${sdkVersion} dry-run passed.\n` +
+      `To publish: cd packages/sdk && npm publish\n` +
+      `(the actual publish stays manual/CI — bump the sdk version in ` +
+      `packages/sdk/package.json when the Content API contract changes)\n`,
   )
 }
 
@@ -152,7 +192,9 @@ function cmdPrepareNext(): void {
 
   validateClean()
 
-  const pkgPath = 'package.json'
+  // Version is owned by the core app's package.json (monorepo split,
+  // stage 2 §8) — the workspace root no longer carries a release version.
+  const pkgPath = 'apps/core/package.json'
   const lockPath = 'pnpm-lock.yaml'
   const composePath = 'docker-compose.yml'
 

@@ -15,6 +15,7 @@ import { builtinModules } from 'node:module'
 import { pathToFileURL } from 'node:url'
 
 import { seaServerBundlePath, seaSmokeWorkerBundlePath, seaWorkerBundlePath } from './paths.ts'
+import { resolveSeaTarget, type SeaTarget } from './target.ts'
 
 const builtins = new Set([...builtinModules, ...builtinModules.map((name) => `node:${name}`)])
 
@@ -24,7 +25,7 @@ const builtins = new Set([...builtinModules, ...builtinModules.map((name) => `no
 // table instead of drifting on its own copy.
 export const SEA_BUNDLE_DEFINED_GLOBALS = [
   '__SEA_APP_VERSION__',
-  // The six `__APP_*__` globals `@/shared/config/version` consumes —
+  // The six `__APP_*__` globals `@kobato/shared/config/version` consumes —
   // vite.sea.config.ts defines them exactly like vite.config.ts does.
   '__APP_NAME__',
   '__APP_VERSION__',
@@ -75,7 +76,7 @@ function executableLines(text: string) {
 // Compile-time globals the vite build substitutes into a bundle via
 // `define` (vite.sea.config.ts defines `__SEA_APP_VERSION__` plus the same
 // six `__APP_*__` globals vite.config.ts defines, consumed by
-// src/shared/config/version.ts). The reverse scan below fails on any
+// packages/shared/src/config/version.ts). The reverse scan below fails on any
 // `__APP_*__`/`__SEA_*__` identifier left in a bundle that its define
 // table does not cover — a leftover would be a bare ReferenceError at
 // runtime inside the binary (e.g. a NEW global added to version.ts without
@@ -174,9 +175,18 @@ function checkBundle(bundlePath: string) {
   return scanBundleText(readFileSync(bundlePath, 'utf-8'), SEA_BUNDLE_DEFINED_GLOBALS)
 }
 
+/** The bundles a build line produces — the frontend line has no worker/smoke bundles. */
+function bundlesForTarget(target: SeaTarget) {
+  if (target === 'frontend') {
+    return [seaServerBundlePath(target)]
+  }
+  return [seaServerBundlePath(target), seaWorkerBundlePath(target), seaSmokeWorkerBundlePath(target)]
+}
+
 if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const target = resolveSeaTarget()
   let failed = false
-  for (const bundlePath of [seaServerBundlePath(), seaWorkerBundlePath(), seaSmokeWorkerBundlePath()]) {
+  for (const bundlePath of bundlesForTarget(target)) {
     const errors = checkBundle(bundlePath)
     if (errors.length > 0) {
       failed = true

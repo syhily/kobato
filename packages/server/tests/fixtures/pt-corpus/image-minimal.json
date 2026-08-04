@@ -1,0 +1,5 @@
+{
+  "kind": "content",
+  "note": "最简 image:仅 _type/_key/src,缺 alt/caption/layout/width/height(pt-html.test.ts \"covers edge cases\" 的 img2 原样)",
+  "bodyJson": "[{\"_type\":\"image\",\"_key\":\"img2\",\"src\":\"https://cdn.example.com/b.jpg\"}]"
+}

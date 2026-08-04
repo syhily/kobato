@@ -1,0 +1,5 @@
+{
+  "kind": "content",
+  "note": "span.marks 引用不存在的 markDef key(marks:[\"l1\"] 但 markDefs 缺失),合法 PT,迁移成功且悬挂 mark 被丢弃(pt-html.test.ts badmark/s7 与 pt-html-extra.test.ts \"no matching markDef\" 形态,构造中文)",
+  "bodyJson": "[{\"_type\":\"block\",\"_key\":\"p1\",\"style\":\"normal\",\"children\":[{\"_type\":\"span\",\"_key\":\"s1\",\"text\":\"这里的 l1 标记没有对应 markDef\",\"marks\":[\"l1\"]}]}]"
+}

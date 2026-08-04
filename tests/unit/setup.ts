@@ -6,10 +6,10 @@
 // happy-dom`). These are no-ops for Node-environment tests.
 
 import '@testing-library/jest-dom/vitest'
+import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
+
 import { cleanup } from '@testing-library/react'
 import { afterEach, vi } from 'vitest'
-
-import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import '#/_helpers/env'
 
 // Inert global stubs for the two noisiest UI seams. Convention: setup stubs
@@ -22,7 +22,7 @@ vi.mock('sonner', () => ({
   // would resolve it to `undefined` and break any render that includes the shell.
   Toaster: () => null,
 }))
-vi.mock('@/ui/admin/settings/useSettingsMutation', () => ({
+vi.mock('@kobato/ui/admin/settings/useSettingsMutation', () => ({
   useSettingsMutation: () => ({
     commit: vi.fn(),
     resetStatus: vi.fn(),

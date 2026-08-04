@@ -1,0 +1,5 @@
+{
+  "kind": "content",
+  "note": "code 块不带 language 字段(构造;pt-html-branches.test.ts 有 language:\"\" 的空字符串变体,此处整个省略该字段)",
+  "bodyJson": "[{\"_type\":\"code\",\"_key\":\"code1\",\"code\":\"const greeting = \\\"你好\\\"\"}]"
+}

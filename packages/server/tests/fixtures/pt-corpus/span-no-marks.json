@@ -1,0 +1,5 @@
+{
+  "kind": "content",
+  "note": "span 无 marks 字段与空 marks 数组 [] 混排的普通段落(render.test.tsx marks:undefined 与 pt-html.test.ts marks:[] 两种历史形态,构造中文)",
+  "bodyJson": "[{\"_type\":\"block\",\"_key\":\"p1\",\"style\":\"normal\",\"children\":[{\"_type\":\"span\",\"_key\":\"s1\",\"text\":\"第一个 span 省略 marks 字段,\"},{\"_type\":\"span\",\"_key\":\"s2\",\"text\":\"第二个 span 带空 marks 数组\",\"marks\":[]},{\"_type\":\"span\",\"_key\":\"s3\",\"text\":\"第三个又省略 marks\"}]}]"
+}

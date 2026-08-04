@@ -1,0 +1,5 @@
+{
+  "kind": "content",
+  "note": "纯文本正文:两个 normal 段落,无 marks 无 markDefs(comment-schema.test.ts plain paragraph 与 render.test.tsx 段落的形态)",
+  "bodyJson": "[{\"_type\":\"block\",\"_key\":\"p1\",\"style\":\"normal\",\"children\":[{\"_type\":\"span\",\"_key\":\"s1\",\"text\":\"这是一段纯文本。\"}]},{\"_type\":\"block\",\"_key\":\"p2\",\"style\":\"normal\",\"children\":[{\"_type\":\"span\",\"_key\":\"s2\",\"text\":\"这是第二段,没有任何标记。\"}]}]"
+}

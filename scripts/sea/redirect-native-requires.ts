@@ -7,7 +7,7 @@
 // the bundle (the flat natives cache dir + embedded `natives-meta/*`
 // assets). This plugin rewrites the platform-specifier `require(...)`
 // call sites inside those packages' modules to `nativeRequire(...)`,
-// whose runtime resolution lives in `@/server/infra/native-require`:
+// whose runtime resolution lives in `@kobato/server/infra/native-require`:
 //
 //   require("@img/sharp-darwin-x64/sharp.node")     → nativeRequire(...)
 //   require(`@img/sharp-libvips-${p}/versions`)     → nativeRequire(...)
@@ -34,7 +34,7 @@
 import type { Plugin } from 'vite'
 
 const NATIVE_REQUIRE_BINDING = 'nativeRequire'
-const NATIVE_REQUIRE_MODULE = '@/server/infra/native-require'
+const NATIVE_REQUIRE_MODULE = '@kobato/server/infra/native-require'
 
 /**
  * Modules this plugin transforms: any file inside the sharp,

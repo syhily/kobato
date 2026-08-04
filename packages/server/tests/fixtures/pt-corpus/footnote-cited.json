@@ -1,0 +1,5 @@
+{
+  "kind": "content",
+  "note": "引用脚注:footnoteRef + 对应 footnoteDefinition,targetKey 匹配且 index 一致(render.test.tsx \"renders footnote definitions\" 原样,含中文脚注内容)",
+  "bodyJson": "[{\"_type\":\"block\",\"_key\":\"p1\",\"style\":\"normal\",\"children\":[{\"_type\":\"span\",\"_key\":\"s1\",\"text\":\"See note\",\"marks\":[\"fnref\"]}],\"markDefs\":[{\"_type\":\"footnoteRef\",\"_key\":\"fnref\",\"targetKey\":\"fn1\",\"index\":1}]},{\"_type\":\"footnoteDefinition\",\"_key\":\"fn1\",\"index\":1,\"children\":[{\"_type\":\"block\",\"_key\":\"fn1p\",\"style\":\"normal\",\"children\":[{\"_type\":\"span\",\"_key\":\"fns\",\"text\":\"脚注内容\"}]}]}]"
+}

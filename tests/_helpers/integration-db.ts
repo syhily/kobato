@@ -1,14 +1,13 @@
+import type { Database, DatabaseHandle } from '@kobato/server/infra/db/database'
+
+import { getDatabaseHandle } from '@kobato/server/bootstrap/db-lifecycle'
+import { closeDatabase, openDatabase } from '@kobato/server/infra/db/database'
 import { sql } from 'drizzle-orm'
 import { migrate } from 'drizzle-orm/node-sqlite/migrator'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll } from 'vitest'
-
-import type { Database, DatabaseHandle } from '@/server/infra/db/database'
-
-import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
-import { closeDatabase, openDatabase } from '@/server/infra/db/database'
 
 const MIGRATIONS_FOLDER = './drizzle'
 const MIGRATIONS_TABLE = '__drizzle_migrations'

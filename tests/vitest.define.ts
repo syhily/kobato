@@ -1,14 +1,17 @@
 import { createRequire } from 'node:module'
 
 const require = createRequire(import.meta.url)
-const pkg = require('../package.json')
+// Site metadata is owned by the core app's package.json — the same source
+// the two app vite configs' define blocks read (see the monorepo split
+// plan, stage 2 §1/§3).
+const pkg = require('../apps/core/package.json')
 
-// The compile-time app globals, mirroring the root vite.config.ts define
-// block — shared by the unit/it/snaps project configs so route modules
-// that transitively import `@/shared/config/version` (e.g. AdminShell →
-// VersionDialog) resolve the globals under the test bundler instead of
-// throwing ReferenceError. One owner: change the shape here, not in
-// three configs.
+// The compile-time app globals, mirroring the two app vite configs' define
+// blocks (all read apps/core/package.json) — shared by the unit/it/snaps
+// project configs so route modules that transitively import
+// `@kobato/shared/config/version` (e.g. AdminShell → VersionDialog) resolve
+// the globals under the test bundler instead of throwing ReferenceError.
+// One owner: change the shape here, not in three configs.
 export const testDefine = {
   __APP_NAME__: JSON.stringify(pkg.name),
   __APP_VERSION__: JSON.stringify(pkg.version),

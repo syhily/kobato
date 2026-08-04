@@ -1,0 +1,38 @@
+{
+  "name": "@kobato/ui",
+  "version": "7.0.0-dev",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@kobato/client": "workspace:*",
+    "@kobato/editor": "workspace:*",
+    "@kobato/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@base-ui/react": "catalog:",
+    "@dnd-kit/core": "catalog:",
+    "@dnd-kit/modifiers": "catalog:",
+    "@dnd-kit/sortable": "catalog:",
+    "@dnd-kit/utilities": "catalog:",
+    "@kobato/server": "workspace:*",
+    "@number-flow/react": "catalog:",
+    "@simplewebauthn/browser": "catalog:",
+    "@tanstack/react-query": "catalog:",
+    "@testing-library/react": "catalog:",
+    "date-fns": "catalog:",
+    "dompurify": "catalog:",
+    "lucide-react": "catalog:",
+    "motion": "catalog:",
+    "qrcode.react": "catalog:",
+    "react": "catalog:",
+    "react-day-picker": "catalog:",
+    "react-dom": "catalog:",
+    "react-hook-form": "catalog:",
+    "react-router": "catalog:",
+    "sanitize-html": "catalog:",
+    "sonner": "catalog:",
+    "tailwind-merge": "catalog:",
+    "vitest": "catalog:",
+    "zod": "catalog:"
+  }
+}

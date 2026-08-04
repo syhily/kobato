@@ -3,7 +3,7 @@ import { join, relative } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 const PROJECT_ROOT = process.cwd()
-const SERVER_DIR = join(PROJECT_ROOT, 'src/server')
+const SERVER_DIR = join(PROJECT_ROOT, 'packages/server/src')
 
 function walk(dir: string, callback: (filePath: string) => void) {
   for (const entry of readdirSync(dir)) {
@@ -59,7 +59,7 @@ describe('server layer constraints', () => {
       const source = readFileSync(filePath, 'utf-8')
       const imports = getImports(source)
       for (const imp of imports) {
-        if (imp.startsWith('@/server/http/') || imp.startsWith('@/server/render/')) {
+        if (imp.startsWith('@kobato/server/http/') || imp.startsWith('@kobato/server/render/')) {
           violations.push(`${relativePath(filePath)} imports ${imp}`)
         }
       }
@@ -75,9 +75,9 @@ describe('server layer constraints', () => {
       const imports = getImports(source)
       for (const imp of imports) {
         if (
-          imp.startsWith('@/server/domains/') ||
-          imp.startsWith('@/server/http/') ||
-          imp.startsWith('@/server/render/')
+          imp.startsWith('@kobato/server/domains/') ||
+          imp.startsWith('@kobato/server/http/') ||
+          imp.startsWith('@kobato/server/render/')
         ) {
           violations.push(`${relativePath(filePath)} imports ${imp}`)
         }
@@ -93,7 +93,7 @@ describe('server layer constraints', () => {
       const source = readFileSync(filePath, 'utf-8')
       const imports = getImports(source)
       for (const imp of imports) {
-        if (imp.startsWith('@/server/http/')) {
+        if (imp.startsWith('@kobato/server/http/')) {
           violations.push(`${relativePath(filePath)} imports ${imp}`)
         }
       }

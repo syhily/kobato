@@ -1,20 +1,28 @@
 /**
  * Client-bundle architecture guard.
  *
- * Walks `src/ui`, `src/client`, `src/routes` and `src/shared` — the layers
- * whose modules can reach the browser bundle — and fails if any of them
- * value-imports a Node-only specifier: a `node:*` builtin (or its bare
- * alias), or a package whose dependency chain only resolves under Node. The
+ * Walks the client-reachable layers — `packages/ui/src`, `packages/client/src`,
+ * `packages/editor/src`, the app route trees (`apps/core/src/routes` and
+ * `apps/public/src/routes`) and `packages/shared/src` — and fails if any of
+ * them value-imports a Node-only
+ * specifier: a `node:*` builtin (or its bare alias), or a package whose
+ * dependency chain only resolves under Node. The
  * last leak of this kind surfaced as a vite externalization warning plus a
  * runtime break in the browser (sanitize-html → postcss, fixed in 31b49a6e);
  * this guard turns the next one into a CI failure.
  *
- * Route modules legitimately value-import `@/server/*` for their loaders —
- * the React Router compiler strips loader/action from the client build — so
- * only direct node-only specifiers are denied there, not server aliases. A
- * route that pulls a server module into its RENDER path (the settings
- * services/core leak) stays invisible to this scan: keep server imports
- * loader-only and project through `@/shared/*` (src/routes/AGENTS.md).
+ * Route modules legitimately value-import `@kobato/server/*` for their
+ * loaders — the React Router compiler strips loader/action from the client
+ * build — so only direct node-only specifiers are denied there, not server
+ * aliases. A route that pulls a server module into its RENDER path (the
+ * settings services/core leak) stays invisible to this scan: keep server
+ * imports loader-only and project through `@kobato/shared/*`
+ * (src/routes/AGENTS.md).
+ *
+ * The server-only shared modules (`SERVER_ONLY_SHARED_MODULES` below) are
+ * exempt the same way: their Node builtins ride loader-only import paths
+ * and never reach the browser bundle (verified against the client build
+ * products), while the rest of `packages/shared/src` must stay isomorphic.
  *
  * Type-only imports (`import type …`) are erased at build time and ignored.
  *
@@ -27,7 +35,17 @@ import { join, relative } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 const PROJECT_ROOT = process.cwd()
-const CLIENT_LAYERS = ['src/ui', 'src/client', 'src/routes', 'src/shared']
+// The layers whose modules can reach the browser bundle. `src/routes` split
+// into the two app route trees; `src/ui` split into the ui package (shell /
+// admin) and the editor package (engine / renderer / comments-editor).
+const CLIENT_LAYERS = [
+  'packages/ui/src',
+  'packages/client/src',
+  'packages/editor/src',
+  'apps/core/src/routes',
+  'apps/public/src/routes',
+  'packages/shared/src',
+]
 
 const NODE_BUILTINS = [
   'assert',
@@ -81,13 +99,33 @@ interface NodeOnlyPackage {
   allowedIn?: readonly string[]
 }
 
+/**
+ * Server-only shared modules, exempt from the client-reachability scan.
+ *
+ * Stage-3 consolidation moved the HTTP/SEA helper contracts into
+ * `@kobato/shared` as the single owner, and some of them legitimately
+ * import Node builtins (`http/etag` — `node:crypto`, `sea/reader` —
+ * `node:zlib`). They never reach the browser bundle: every importer is an
+ * SSR loader / the SEA asset readers, the React Router compiler strips
+ * loader-only imports from the client build, and rollup tree-shakes the
+ * remainder (verified: no `node:crypto` / `weakEtag` bytes in
+ * `apps/public/build/client`). Keep this list in sync with any future
+ * server-only shared module.
+ */
+const SERVER_ONLY_SHARED_MODULES = new Set(['packages/shared/src/http/etag.ts', 'packages/shared/src/sea/reader.ts'])
+
 const NODE_ONLY_PACKAGES: readonly NodeOnlyPackage[] = [
   {
     name: 'sanitize-html',
     reason: 'pulls postcss/source-map-js and node builtins',
     // The vite `sanitize-html-engine-alias` plugin swaps this specifier to
-    // the DOMPurify engine for the client build (vite.config.ts).
-    allowedIn: ['src/ui/lib/sanitize-html-engine.node.ts'],
+    // the DOMPurify engine for the client build (vite.config.ts). The
+    // editor package carries its own facade copy (self-contained engine);
+    // its node engine is routed to its own browser twin by the same plugin.
+    allowedIn: [
+      'packages/ui/src/lib/sanitize-html-engine.node.ts',
+      'packages/editor/src/engine/lib/sanitize-html-engine.node.ts',
+    ],
   },
   // sanitize-html's transitive leak chain — not direct deps, kept pre-armed.
   { name: 'postcss', reason: 'sanitize-html transitive chain, node-only' },
@@ -168,6 +206,9 @@ function collectViolations(rootDir: string): string[] {
   const violations: string[] = []
   walk(rootDir, (filePath) => {
     const rel = relativePath(filePath)
+    if (SERVER_ONLY_SHARED_MODULES.has(rel)) {
+      return
+    }
     const source = readFileSync(filePath, 'utf-8')
     for (const specifier of getValueSpecifiers(source)) {
       if (isNodeBuiltin(specifier)) {

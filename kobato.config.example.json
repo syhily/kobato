@@ -8,6 +8,14 @@
     "sessionSecret": "",
     "encryptionKey": ""
   },
+  "api": {
+    "allowedOrigins": [],
+    "trustedProxy": [],
+    "readRateLimitPerMinute": 300
+  },
+  "public": {
+    "frontendUrl": ""
+  },
   "storage": {
     "data": "./data",
     "defaultFont": "",

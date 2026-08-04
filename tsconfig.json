@@ -1,18 +1,19 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig.json",
   "include": [
-    "src/**/*",
+    "env.d.ts",
+    "packages/**/*",
     "tests/**/*",
     "scripts/**/*",
+    "examples/**/*",
     "drizzle.config.ts",
-    "react-router.config.ts",
+    "apps/core/vite.config.ts",
+    "apps/public/vite.config.ts",
     "oxfmt.config.ts",
     "oxlint.config.ts",
     "vite.sea.config.ts",
-    "vite.config.ts",
     "**/.server/**/*",
-    "**/.client/**/*",
-    ".react-router/types/**/*"
+    "**/.client/**/*"
   ],
   "compilerOptions": {
     "lib": ["DOM", "DOM.Iterable", "ES2022"],
@@ -21,10 +22,24 @@
     "module": "ES2022",
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
-    "rootDirs": [".", "./.react-router/types"],
+    // Stage 1 (test migration) retired the temporary bridge that let
+    // root-level tests import app sources: no root-program file imports
+    // `@/…` anymore (app tests live in `apps/*/tests`, type-checked by
+    // each app's own tsconfig — which includes its `tests/**/*` and maps
+    // `@/*` to its own src — and executed at runtime by the vitest
+    // projects), so the `@/*` path mapping, the app rootDirs entries and
+    // the `react-router-register.d.ts` placeholder are gone. The apps
+    // are checked by their own tsconfigs (apps/core|public/tsconfig.json);
+    // `@kobato/*` + `#/*` serve the packages and the repository-level
+    // tests.
     "paths": {
-      "@/*": ["./src/*"],
-      "#/*": ["./tests/*"]
+      "#/*": ["./tests/*"],
+      "@kobato/shared/*": ["./packages/shared/src/*"],
+      "@kobato/client/*": ["./packages/client/src/*"],
+      "@kobato/server/*": ["./packages/server/src/*"],
+      "@kobato/ui/*": ["./packages/ui/src/*"],
+      "@kobato/editor/*": ["./packages/editor/src/*"],
+      "@kobato/sdk/*": ["./packages/sdk/src/*"]
     },
     "esModuleInterop": true,
     "verbatimModuleSyntax": true,
@@ -35,5 +50,5 @@
     "strict": true,
     "strictNullChecks": true
   },
-  "exclude": ["build", "dist"]
+  "exclude": ["build", "dist", "dist-sea", "apps/**/.react-router"]
 }

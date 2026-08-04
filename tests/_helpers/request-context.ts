@@ -1,9 +1,10 @@
-import type { BlogSession, SessionUser } from '@/server/domains/auth/session-storage'
-import type { RequestContext } from '@/server/http/request-context'
-import type { Database } from '@/server/infra/db/database'
+import type { BlogSession, SessionUser } from '@kobato/server/domains/auth/session-storage'
+import type { RequestContext } from '@kobato/server/http/request-context'
+import type { Database } from '@kobato/server/infra/db/database'
 
 import { regularSession } from '#/_helpers/session'
-import { extractRequestFacts, normalizeDocumentUrl } from '@/server/http/utils/request-facts'
+
+import { extractRequestFacts, normalizeDocumentUrl } from '@kobato/server/http/utils/request-facts'
 
 // Stand-in for the canonical `RequestContext` that `requestContextMiddleware`
 // derives once per request in production. The single factory for the whole
@@ -11,8 +12,8 @@ import { extractRequestFacts, normalizeDocumentUrl } from '@/server/http/utils/r
 // pass the overrides you need here instead.
 //
 // This module is deliberately VALUE-import-free of
-// `@/server/http/request-context` (types only, erased at runtime) so it can
-// be imported from a `vi.mock('@/server/http/request-context', …)` factory
+// `@kobato/server/http/request-context` (types only, erased at runtime) so it can
+// be imported from a `vi.mock('@kobato/server/http/request-context', …)` factory
 // without creating a circular mock evaluation.
 export interface MakeRequestContextOptions {
   request?: Request

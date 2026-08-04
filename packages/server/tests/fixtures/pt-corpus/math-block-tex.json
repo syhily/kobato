@@ -1,0 +1,5 @@
+{
+  "kind": "content",
+  "note": "mathBlock 仅带 tex,无 mathml/svg(render.test.tsx \"custom blocks\" 的 math1 原样)",
+  "bodyJson": "[{\"_type\":\"mathBlock\",\"_key\":\"math1\",\"tex\":\"a^2 + b^2 = c^2\"}]"
+}

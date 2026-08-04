@@ -1,0 +1,5 @@
+{
+  "kind": "content",
+  "note": "solution(children 含多个非递归 block)+ twoColumn(left/right 两侧 pane 均有内容)(pt-html.test.ts full body 的 sol1/two1,中文化)",
+  "bodyJson": "[{\"_type\":\"solution\",\"_key\":\"sol1\",\"children\":[{\"_type\":\"block\",\"_key\":\"solb1\",\"style\":\"normal\",\"children\":[{\"_type\":\"span\",\"_key\":\"ss1\",\"text\":\"解法第一步\"}]},{\"_type\":\"block\",\"_key\":\"solb2\",\"style\":\"normal\",\"children\":[{\"_type\":\"span\",\"_key\":\"ss2\",\"text\":\"解法第二步\",\"marks\":[\"strong\"]}]}]},{\"_type\":\"twoColumn\",\"_key\":\"two1\",\"left\":[{\"_type\":\"block\",\"_key\":\"left1\",\"style\":\"normal\",\"children\":[{\"_type\":\"span\",\"_key\":\"ls1\",\"text\":\"左栏内容\"}]}],\"right\":[{\"_type\":\"block\",\"_key\":\"right1\",\"style\":\"normal\",\"children\":[{\"_type\":\"span\",\"_key\":\"rs1\",\"text\":\"右栏内容\"}]}]}]"
+}

@@ -1,0 +1,5 @@
+{
+  "kind": "content",
+  "note": "表格 hasHeaderRow=true,isHeader 单元格混合(表头行 + 普通行),body 行单元格内嵌 link markDef,span _key 历史重复(render.test.tsx \"renders a table block\" 原样)",
+  "bodyJson": "[{\"_type\":\"table\",\"_key\":\"tbl1\",\"hasHeaderRow\":true,\"rows\":[{\"_type\":\"tableRow\",\"_key\":\"r0\",\"cells\":[{\"_type\":\"tableCell\",\"_key\":\"r0c0\",\"isHeader\":true,\"content\":[{\"_type\":\"span\",\"_key\":\"s\",\"text\":\"名称\"}]},{\"_type\":\"tableCell\",\"_key\":\"r0c1\",\"isHeader\":true,\"content\":[{\"_type\":\"span\",\"_key\":\"s\",\"text\":\"链接\"}]}]},{\"_type\":\"tableRow\",\"_key\":\"r1\",\"cells\":[{\"_type\":\"tableCell\",\"_key\":\"r1c0\",\"content\":[{\"_type\":\"span\",\"_key\":\"s\",\"text\":\"示例\"}]},{\"_type\":\"tableCell\",\"_key\":\"r1c1\",\"content\":[{\"_type\":\"span\",\"_key\":\"s\",\"text\":\"site\",\"marks\":[\"lk\"]}],\"markDefs\":[{\"_type\":\"link\",\"_key\":\"lk\",\"href\":\"https://example.com\"}]}]}]}]"
+}

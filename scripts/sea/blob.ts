@@ -7,9 +7,11 @@
 // `module`: the injected entry is `server.mjs` itself, so there is no
 // CJS prelude and no bundle materialization at runtime (the bootstrap
 // ordering lives in the entry's import order — see
-// `scripts/sea/server-entry.ts`).
+// `scripts/sea/server-entry.ts` / `scripts/sea/server-entry-frontend.ts`).
 
 import { writeFile } from 'node:fs/promises'
+
+import type { SeaTarget } from './target.ts'
 
 import { seaConfigPath, seaServerBundlePath } from './paths.ts'
 
@@ -19,9 +21,9 @@ import { seaConfigPath, seaServerBundlePath } from './paths.ts'
  *   only the keys end up in the blob.
  * @param output the final executable path `--build-sea` writes.
  */
-export async function writeSeaConfig(assets: Map<string, string>, output: string) {
+export async function writeSeaConfig(assets: Map<string, string>, output: string, target: SeaTarget = 'core') {
   const config = {
-    main: seaServerBundlePath(),
+    main: seaServerBundlePath(target),
     mainFormat: 'module',
     output,
     assets: Object.fromEntries(assets),
@@ -29,5 +31,5 @@ export async function writeSeaConfig(assets: Map<string, string>, output: string
     useCodeCache: false,
     useSnapshot: false,
   }
-  await writeFile(seaConfigPath(), `${JSON.stringify(config, null, 2)}\n`)
+  await writeFile(seaConfigPath(target), `${JSON.stringify(config, null, 2)}\n`)
 }

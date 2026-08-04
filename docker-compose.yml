@@ -1,11 +1,15 @@
 name: kobato
 
-# The whole product is one container: the content database (SQLite) and
-# the analytics sidecar (DuckDB) are embedded files on the kobato_data
-# volume — no database service, no internal network.
+# Two services, two SEA binaries (the headless topology — see
+# docs/plans/2026-08-02-monorepo-split.md):
+#   core      — the headless core: admin SSR + /rpc + /api + URL endpoints
+#               + the content DB (SQLite) and the analytics sidecar
+#               (DuckDB) as embedded files on the kobato_data volume.
+#   frontend  — the official public SSR service, pointed at core over the
+#               compose network (CORE_API_URL). No database of its own.
 
 services:
-  app:
+  core:
     image: ghcr.io/syhily/kobato:latest
     ports:
       - '${PORT:-4321}:${PORT:-4321}'
@@ -19,6 +23,11 @@ services:
       security__encryptionKey: ${ENCRYPTION_KEY:?ENCRYPTION_KEY is required}
       # Logging
       server__loggingLevel: ${LOG_LEVEL:-info}
+      # The official frontend's browser-reachable origin — the admin
+      # editor mints short-lived preview tokens and points its public
+      # links at this origin with `?preview_token=…` (headless draft
+      # preview, plan 0.5 §5).
+      public__frontendUrl: http://localhost:${FRONTEND_PORT:-4322}
       # Data directory (SQLite + DuckDB files, fonts, uploads staging).
       # The per-file paths default to <storage.data>/kobato.db and
       # <storage.data>/analytics.duckdb — no need to restate them here.
@@ -40,6 +49,47 @@ services:
           cpus: '0.5'
           memory: 256M
 
+  frontend:
+    image: ghcr.io/syhily/kobato-frontend:latest
+    ports:
+      - '${FRONTEND_PORT:-4322}:${FRONTEND_PORT:-4322}'
+    environment:
+      NODE_ENV: production
+      # The frontend's own port face (see apps/public/src/server.ts).
+      PORT: ${FRONTEND_PORT:-4322}
+      # Core /rpc base URL — the compose service name resolves over the
+      # internal network; the frontend answers it in GET /health.
+      CORE_API_URL: http://core:${PORT:-4321}
+      # Optional: the frontend's Ed25519 credentials for the write-proxy
+      # trust chain (see apps/public/src/server.ts). Without them the
+      # /rpc proxy still forwards anonymous writes, but core ignores every
+      # forwarding header (visitor IP/UA, comment-token jar).
+      KOBATO_FRONTEND_PRIVATE_KEY: ${KOBATO_FRONTEND_PRIVATE_KEY:-}
+      KOBATO_FRONTEND_KEY_ID: ${KOBATO_FRONTEND_KEY_ID:-}
+      # Optional: the browser-reachable core base URL (carried in the root
+      # loader data for the anonymous-read direct link).
+      CORE_PUBLIC_URL: ${CORE_PUBLIC_URL:-}
+    depends_on:
+      - core
+    volumes:
+      - kobato_frontend_data:/data
+      - kobato_frontend_config:/etc/kobato
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
 volumes:
   kobato_data:
   kobato_config:
+  kobato_frontend_data:
+  kobato_frontend_config:

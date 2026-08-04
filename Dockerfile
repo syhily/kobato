@@ -16,7 +16,17 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # Install dependencies first so source changes don't invalidate the layer.
+# The workspace manifests must exist before `pnpm install` can resolve the
+# workspace (member package.json files included).
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/core/package.json apps/core/package.json
+COPY apps/public/package.json apps/public/package.json
+COPY packages/shared/package.json packages/shared/package.json
+COPY packages/client/package.json packages/client/package.json
+COPY packages/server/package.json packages/server/package.json
+COPY packages/ui/package.json packages/ui/package.json
+COPY packages/editor/package.json packages/editor/package.json
+COPY packages/sdk/package.json packages/sdk/package.json
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
 

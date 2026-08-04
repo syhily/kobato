@@ -1,0 +1,5 @@
+{
+  "kind": "content",
+  "note": "孤儿脚注:footnoteRef.targetKey 指向 missing-key,body 中无对应 footnoteDefinition。合法 PT,迁移成功但迁移后 verify 健全性断言会报 targetKey 缺失(footnote-sync.test.ts missing-key 样本 + pt-html-branches.test.ts footnoteRef 分支形态)",
+  "bodyJson": "[{\"_type\":\"block\",\"_key\":\"p1\",\"style\":\"normal\",\"children\":[{\"_type\":\"span\",\"_key\":\"s1\",\"text\":\"这里引用一个不存在的脚注\",\"marks\":[\"fn1\"]}],\"markDefs\":[{\"_type\":\"footnoteRef\",\"_key\":\"fn1\",\"targetKey\":\"missing-key\",\"index\":1}]}]"
+}

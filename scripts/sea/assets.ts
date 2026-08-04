@@ -2,10 +2,10 @@
 //
 // Builds the embedded-asset map consumed by `node --build-sea`
 // (see blob.ts) and writes the `manifest.json` asset that the runtime
-// bootstrap (`src/server/infra/sea-natives.ts`) uses to verify and extract
+// bootstrap (`packages/server/src/infra/sea-natives.ts`) uses to verify and extract
 // the native libraries.
 //
-// Every asset key comes from `src/shared/sea/assets.ts` — the single
+// Every asset key comes from `packages/shared/src/sea/assets.ts` — the single
 // owner of the writer/reader key contract. Do not hardcode keys here.
 //
 // The manifest is `{ version, target, files: [{ key, path, sha256, codec,
@@ -25,7 +25,7 @@
 // sea-config asset entry points at the packed file while the asset KEY
 // stays unchanged. The manifest itself is always embedded uncompressed:
 // it doubles as the decompression registry, so the runtime reader
-// (`src/server/infra/sea.ts`) must be able to parse it before decoding
+// (`packages/server/src/infra/sea.ts`) must be able to parse it before decoding
 // anything else. Hashes stay over the raw bytes, so natives verification
 // is codec-agnostic.
 //
@@ -65,8 +65,10 @@ import { createRequire } from 'node:module'
 import { dirname, join, relative } from 'node:path'
 import { brotliCompressSync, constants as zlibConstants, zstdCompressSync } from 'node:zlib'
 
+import type { SeaTarget } from './target.ts'
+
 // Relative import on purpose: this script runs under plain `node` (no
-// tsconfig path aliases), so `@/shared/...` would not resolve.
+// tsconfig path aliases), so `@kobato/shared/...` would not resolve.
 import {
   SEA_CLIENT_ASSET_PREFIX,
   SEA_DRIZZLE_ASSET_PREFIX,
@@ -84,7 +86,7 @@ import {
   SEA_SMOKE_WORKER_BUNDLE_KEY,
   SEA_WASM_CNFS_KEY,
   type SeaAssetCodec,
-} from '../../src/shared/sea/assets.ts'
+} from '../../packages/shared/src/sea/assets.ts'
 import { fail, run } from './exec.ts'
 import {
   repoRoot,
@@ -477,50 +479,69 @@ async function addTree(
 }
 
 /**
- * Collect the full asset map, write `manifest.json` into the
- * intermediates dir, and return the map including that manifest asset.
- * The manifest is never packed: it is the decompression registry and must
- * stay readable before anything else in the blob.
+ * Collect the full asset map for one build line, write `manifest.json`
+ * into the target's intermediates dir, and return the map including that
+ * manifest asset. The manifest is never packed: it is the decompression
+ * registry and must stay readable before anything else in the blob.
+ *
+ * Core line: whole core-app client tree + drizzle migrations + the cnfs
+ * wasm + both worker bundles + the native libraries (the original
+ * single-line set). Frontend line: the public app's client tree ONLY —
+ * no migrations (no DB), no wasm, no workers, no natives.
  */
-export async function collectSeaAssets({ wasmPath, codec = 'zstd' }: { wasmPath: string; codec?: SeaPackCodec }) {
+export async function collectSeaAssets({
+  target = 'core',
+  wasmPath,
+  codec = 'zstd',
+}: {
+  target?: SeaTarget
+  wasmPath?: string
+  codec?: SeaPackCodec
+}) {
   const assets = new Map<string, string>()
   const files: ManifestFileEntry[] = []
   // Wipe the packed dir so a codec switch never leaves stale payloads
   // behind (build.ts wipes the whole intermediates dir; the standalone
   // CLI below does not).
-  const ctx: PackContext = { codec, packedDir: seaPackedAssetsDir(), rawBytes: 0, packedBytes: 0 }
+  const ctx: PackContext = { codec, packedDir: seaPackedAssetsDir(target), rawBytes: 0, packedBytes: 0 }
   await rm(ctx.packedDir, { recursive: true, force: true })
 
-  // Whole build/client tree (fingerprinted static assets + public files).
-  await addTree(assets, files, SEA_CLIENT_ASSET_PREFIX, join(repoRoot, 'build', 'client'), ctx)
+  // The binary's host app's build/client tree (fingerprinted static
+  // assets + public files): core app for the core line, public app for
+  // the frontend line (target name ≠ app dir name — frontend → apps/public).
+  const appDir = target === 'core' ? 'core' : 'public'
+  const clientTree = join(repoRoot, 'apps', appDir, 'build', 'client')
+  await addTree(assets, files, SEA_CLIENT_ASSET_PREFIX, clientTree, ctx)
 
-  // Whole drizzle/ tree minus the drizzle-kit snapshot artifacts: the
-  // embedded migrator discovers folders by their `*/migration.sql` key
-  // only (see src/server/infra/db/migrate.ts), so `snapshot.json` files
-  // (and any `snapshot/` subdir) are dead weight in the blob. The fs
-  // migrator used outside SEA reads them from disk — this exclusion only
-  // narrows what rides the binary.
-  await addTree(assets, files, SEA_DRIZZLE_ASSET_PREFIX, join(repoRoot, 'drizzle'), ctx, isDrizzleSnapshotArtifact)
+  if (target === 'core') {
+    // Whole drizzle/ tree minus the drizzle-kit snapshot artifacts: the
+    // embedded migrator discovers folders by their `*/migration.sql` key
+    // only (see packages/server/src/infra/db/migrate.ts), so `snapshot.json` files
+    // (and any `snapshot/` subdir) are dead weight in the blob. The fs
+    // migrator used outside SEA reads them from disk — this exclusion only
+    // narrows what rides the binary.
+    await addTree(assets, files, SEA_DRIZZLE_ASSET_PREFIX, join(repoRoot, 'drizzle'), ctx, isDrizzleSnapshotArtifact)
 
-  // The cn-font-split wasm core (single hashed file inside the server
-  // build, pinned to a stable key — build.mjs locates it).
-  await addAsset(assets, files, SEA_WASM_CNFS_KEY, wasmPath, ctx)
+    // The cn-font-split wasm core (single hashed file inside the server
+    // build, pinned to a stable key — build.mjs locates it).
+    await addAsset(assets, files, SEA_WASM_CNFS_KEY, wasmPath ?? fail('wasmPath is required for the core line'), ctx)
 
-  // The bundled image worker, embedded as text and started via
-  // `new Worker(code, { eval: true, execArgv: ['--input-type=module'] })`
-  // under SEA.
-  await addAsset(assets, files, SEA_PROCESS_WORKER_BUNDLE_KEY, seaWorkerBundlePath(), ctx)
+    // The bundled image worker, embedded as text and started via
+    // `new Worker(code, { eval: true, execArgv: ['--input-type=module'] })`
+    // under SEA.
+    await addAsset(assets, files, SEA_PROCESS_WORKER_BUNDLE_KEY, seaWorkerBundlePath(target), ctx)
 
-  // The bundled worker-pool smoke entry, embedded as text and dispatched
-  // by the binary's `--smoke-worker` flag via the same eval-worker
-  // mechanism (see `@/server/infra/sea-cli`).
-  await addAsset(assets, files, SEA_SMOKE_WORKER_BUNDLE_KEY, seaSmokeWorkerBundlePath(), ctx)
+    // The bundled worker-pool smoke entry, embedded as text and dispatched
+    // by the binary's `--smoke-worker` flag via the same eval-worker
+    // mechanism (see `@kobato/server/infra/sea-cli`).
+    await addAsset(assets, files, SEA_SMOKE_WORKER_BUNDLE_KEY, seaSmokeWorkerBundlePath(target), ctx)
 
-  // Native dynamic libraries (rpath-patched sharp + DuckDB addons,
-  // libvips, libduckdb, skia) + the platform metadata the redirected
-  // native probes answer — the only assets extracted to disk at runtime
-  // (see the header comment).
-  await addNativeAssets(assets, files, ctx)
+    // Native dynamic libraries (rpath-patched sharp + DuckDB addons,
+    // libvips, libduckdb, skia) + the platform metadata the redirected
+    // native probes answer — the only assets extracted to disk at runtime
+    // (see the header comment).
+    await addNativeAssets(assets, files, ctx)
+  }
 
   // Manifest: sorted for deterministic bytes (the runtime natives dir is
   // named after the manifest's sha256 — stable bytes mean cache reuse).
@@ -530,8 +551,8 @@ export async function collectSeaAssets({ wasmPath, codec = 'zstd' }: { wasmPath:
     target: `${process.platform}-${process.arch}`,
     files: sortManifestFiles(files),
   }
-  await mkdir(seaIntermediatesDir(), { recursive: true })
-  const manifestPath = seaManifestPath()
+  await mkdir(seaIntermediatesDir(target), { recursive: true })
+  const manifestPath = seaManifestPath(target)
   await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`)
   assets.set(SEA_MANIFEST_KEY, manifestPath)
 

@@ -1,0 +1,15 @@
+import { renderToHtml } from '#/_helpers/render'
+
+import { Popup } from '@kobato/ui/public/widgets/Popup'
+import { describe, expect, it } from 'vitest'
+
+describe('snapshot: Popup', () => {
+  it('renders nothing during SSR because the component is portal-based', () => {
+    const html = renderToHtml(
+      <Popup open onClose={() => undefined} aria-label="Test popup">
+        <div>Popup body</div>
+      </Popup>,
+    )
+    expect(html).toBe('')
+  })
+})

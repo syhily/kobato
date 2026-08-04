@@ -1,5 +1,5 @@
 // Centralised env defaults used by every test that pulls in server
-// modules (which read `@/server/infra/config` at module-load time).
+// modules (which read `@kobato/server/infra/config` at module-load time).
 // Imported by the per-project setup files so individual tests can
 // re-import it cheaply.
 

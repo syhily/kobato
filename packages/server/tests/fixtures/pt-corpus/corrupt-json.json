@@ -1,0 +1,5 @@
+{
+  "kind": "content",
+  "note": "损坏 JSON:content.body 存了非 JSON 字符串,迁移应报 error(\"invalid-json\")(构造)",
+  "bodyJson": "{not json"
+}
