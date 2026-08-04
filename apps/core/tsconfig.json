@@ -6,7 +6,7 @@
     "rootDirs": [".", "./.react-router/types"],
     "paths": {
       "@/*": ["./src/*"],
-      "#/*": ["../../tests/*"],
+      "#/*": ["../../packages/test-utils/tests/*"],
       "@kobato/shared/*": ["../../packages/shared/src/*"],
       "@kobato/client/*": ["../../packages/client/src/*"],
       "@kobato/server/*": ["../../packages/server/src/*"],

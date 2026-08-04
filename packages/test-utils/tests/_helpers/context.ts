@@ -5,7 +5,7 @@ import { createInProcessTransport } from '@kobato/server/http/in-process-transpo
 import { requestContext } from '@kobato/server/http/request-context'
 import { RouterContextProvider } from 'react-router'
 
-import { frontendContext } from '../../apps/public/src/lib/frontend-context'
+import { frontendContext } from '../../../../apps/public/src/lib/frontend-context'
 
 // Stand-in for the `RouterContextProvider` that `buildLoadContext` populates
 // in production. Direct loader/action unit tests that bypass the router get

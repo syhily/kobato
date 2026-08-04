@@ -211,8 +211,8 @@ export default defineConfig({
   overrides: [
     {
       files: [
-        'tests/**/*.ts',
-        'tests/**/*.tsx',
+        'packages/test-utils/tests/**/*.ts',
+        'packages/test-utils/tests/**/*.tsx',
         'packages/*/tests/**/*.ts',
         'packages/*/tests/**/*.tsx',
         'apps/*/tests/**/*.ts',

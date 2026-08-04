@@ -105,7 +105,7 @@ Two embedded engines, zero services:
 
 - `image` table; bytes in the active storage backend (`infra/storage/registry::activeBackend` — S3 when configured, local filesystem otherwise). Each row persists `storageDriver` so a local→S3 switch keeps old rows readable.
 - Writes use `activeBackend()`, reads/deletes `backendFor(driver)`. Whole-fleet scans iterate `allBackends()` — never import a backend directly.
-- Test seam: `__setStorageBackendForTests` / `__resetStorageBackendsForTests` substitute a driver→backend mapping (e.g. `tests/_helpers/memory-storage.ts`) so storage-touching tests run without mocking the registry.
+- Test seam: `__setStorageBackendForTests` / `__resetStorageBackendsForTests` substitute a driver→backend mapping (e.g. `#/_helpers/memory-storage`) so storage-touching tests run without mocking the registry.
 - All URL → image-meta resolution flows through `domains/images/services/resolve`.
 
 ### Audit Log

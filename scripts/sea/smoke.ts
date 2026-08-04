@@ -573,7 +573,7 @@ async function acquireCsrf(baseUrl: string, sessionSecret: string): Promise<{ co
  *   - negative: the same token with a flipped signature byte →
  *     last_used_at unchanged.
  *
- * The RPC wire path is router-relative using the procedure KEY (`/rpc/comments/replyComment` — the oRPC wire names procedures by their router key, while the `/content/v1/...` strings in the controllers are the REST face's route paths); the oRPC body rides the `{ "json": <input> }` envelope (tests/_helpers/rpc-call.ts).
+ * The RPC wire path is router-relative using the procedure KEY (`/rpc/comments/replyComment` — the oRPC wire names procedures by their router key, while the `/content/v1/...` strings in the controllers are the REST face's route paths); the oRPC body rides the `{ "json": <input> }` envelope (#/_helpers/rpc-call).
  */
 async function checkFrontendJwtFlows(
   baseUrl: string,

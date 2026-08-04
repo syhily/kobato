@@ -115,7 +115,7 @@ state.
 - Raw HTML uses `dangerouslySetInnerHTML` on the host element — no generic `Html` wrapper.
 - Conditional classNames go through `cn()` from `@kobato/ui/lib/cn`. A new `--<namespace>-<name>` token in
   `tailwind.css` MUST pair with an entry in `cn.ts`'s per-namespace list — enforced by
-  `tests/unit/contract/tailwind-tokens.test.ts`.
+  `packages/ui/tests/unit/contract/tailwind-tokens.test.ts`.
 - Use `<Image />` from `@kobato/ui/public/widgets/Image` for transformed remote images.
 
 ## Shiki syntax highlighting
@@ -175,5 +175,5 @@ unrelated concerns.
 - Adding a toggle touches: db schema + migration + snapshot, page projection, page service +
   schema, shared DTOs, `MetaSidebar` + `PageEditorShell`, and the `PageMetaDraft` meta type in
   `@kobato/shared/types/pages` (passed through to `@kobato/client/hooks/use-create-draft` by the editor shell).
-  Test fixtures in `tests/_helpers/catalog.ts` and the page service tests under
+  Test fixtures in `#/_helpers/catalog` and the page service tests under
   `packages/server/tests/it/domains/pages/` need the new default.

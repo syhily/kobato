@@ -216,7 +216,7 @@ export async function buildLoadContext(c: { var: Env['Variables']; req: { raw: R
   // before the DB round-trip finishes and hit the
   // "Blog settings have not been hydrated yet" error. Awaiting here
   // guarantees the snapshot is populated before React Router calls any
-  // loader. See `tests/it/server/http/middlewares/pipeline.test.ts` for
+  // loader. See `packages/server/tests/it/http/middlewares/pipeline.test.ts` for
   // the regression guard.
   await hydrateBlogSettings(rc.db)
   // The single canonical key — every loader/action reads it via

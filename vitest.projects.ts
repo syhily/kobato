@@ -7,7 +7,7 @@ import { resolve } from 'node:path'
 // convention as the arch tests' PROJECT_ROOT = process.cwd().
 
 // Shared alias tables for the per-tier project configs under
-// `tests/{unit,it,snaps}/`. Stage 1 of the workspace split moved the tests
+// `vitest/`. The workspace split moved the tests
 // with their packages/apps; Vite's native tsconfig paths resolution only
 // applies to files under a config file's directory, so every project
 // carries explicit `resolve.alias` entries.
@@ -29,7 +29,7 @@ const uiSrc = resolve(repoRoot, 'packages/ui/src')
 const clientSrc = resolve(repoRoot, 'packages/client/src')
 const editorSrc = resolve(repoRoot, 'packages/editor/src')
 const sdkSrc = resolve(repoRoot, 'packages/sdk/src')
-const testsDir = resolve(repoRoot, 'tests')
+const testsDir = resolve(repoRoot, 'packages/test-utils/tests')
 
 export interface AliasEntry {
   find: string | RegExp

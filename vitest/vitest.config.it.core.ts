@@ -1,6 +1,6 @@
 import { defineConfig } from 'vitest/config'
 
-import { routeWarmupScriptStubPlugin } from '../_helpers/virtual-modules'
+import { routeWarmupScriptStubPlugin } from '../packages/test-utils/tests/_helpers/virtual-modules'
 import { testDefine } from '../vitest.define'
 import { CORE_ALIASES, PKG_ALIASES } from '../vitest.projects'
 
@@ -19,8 +19,8 @@ export default defineConfig({
     // Core-app integration tests (admin/editor/auth routes + auth flows).
     // The repository-level + package tests run via `vitest.config.ts` in
     // this directory.
-    include: ['../../apps/core/tests/it/**/*.test.{ts,tsx}'],
-    setupFiles: ['./setup.ts'],
+    include: ['../apps/core/tests/it/**/*.test.{ts,tsx}'],
+    setupFiles: ['./setup.it.ts'],
     testTimeout: 30_000,
     hookTimeout: 120_000,
   },

@@ -4,7 +4,7 @@
 // DB + DuckDB sidecar under one mkdtemp root — no external services) —
 // the same shared lifecycle as the managed smoke
 // (scripts/sea/instance.ts) — but seeds the admin with a KNOWN random
-// password, then runs the tests/e2e vitest project against the live
+// password, then runs the apps/core/tests/e2e vitest project against the live
 // server over real HTTP. The vitest exit code becomes this script's exit
 // code; the server and the temp dirs are always cleaned up.
 //
@@ -117,7 +117,7 @@ async function main() {
   const databases = smokeDatabases(dirs)
   const serverLogPath = join(dirs.root, 'server.log')
 
-  console.log('==> SEA e2e (managed boot + tests/e2e)')
+  console.log('==> SEA e2e (managed boot + apps/core/tests/e2e)')
   console.log(`    binary:   ${binaryPath}`)
   console.log(`    database: ${databases.database}`)
   console.log(`    temp dir: ${dirs.root}`)
@@ -181,8 +181,8 @@ async function main() {
     }
     console.log('    config file converged (env written back)')
 
-    console.log('==> vitest run (tests/e2e)')
-    const result = spawnSync('pnpm', ['exec', 'vitest', 'run', '--config', 'tests/e2e/vitest.config.ts'], {
+    console.log('==> vitest run (apps/core/tests/e2e)')
+    const result = spawnSync('pnpm', ['exec', 'vitest', 'run', '--config', 'apps/core/tests/e2e/vitest.config.ts'], {
       cwd: repoRoot,
       stdio: 'inherit',
       // pnpm is a .cmd shim on Windows — see exec.ts.

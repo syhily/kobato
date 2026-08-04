@@ -1,16 +1,16 @@
 import { defineConfig } from 'vitest/config'
 
-// Monorepo test aggregation (stage 1 of the workspace split). Tests moved
-// with their packages (`packages/*/tests/{unit,it,snaps}`) and apps
-// (`apps/*/tests/{unit,it,snaps}`); the projects below are file-based
-// configs under `tests/{unit,it,snaps}/`:
+// Monorepo test aggregation. Tests moved with their packages
+// (`packages/*/tests/{unit,it,snaps}`) and apps (`apps/*/tests/...`);
+// shared facilities live in `packages/test-utils/tests/`. The projects
+// below are file-based configs under `vitest/`:
 //
-//   vitest.config.ts        name `unit|it|snaps`        — repository-level
-//                           tests that stayed at the root + package tests
-//   vitest.core.config.ts   name `unit-core|it-core|snaps-core` — core-app
-//                           tests (`@/` → apps/core/src)
-//   vitest.public.config.ts name `unit-public|it-public|snaps-public` —
-//                           public-app tests (`@/` → apps/public/src)
+//   unit.config.ts        name `unit|it|snaps`        — repository-level
+//                         guards (under the owning module) + package tests
+//   unit.core.config.ts   name `unit-core|it-core|snaps-core` — core-app
+//                         tests (`@/` → apps/core/src)
+//   unit.public.config.ts name `unit-public|it-public|snaps-public` —
+//                         public-app tests (`@/` → apps/public/src)
 //
 // Per-app configs are needed because `@/` resolves per app and Vite's
 // native tsconfig paths resolution only applies to files under a config
@@ -24,15 +24,15 @@ export default defineConfig({
     // Explicit list — tests/e2e needs a live SEA-booted instance (it is
     // driven by `pnpm run sea:e2e`) and must never join the default run.
     projects: [
-      'tests/unit/vitest.config.ts',
-      'tests/unit/vitest.core.config.ts',
-      'tests/unit/vitest.public.config.ts',
-      'tests/it/vitest.config.ts',
-      'tests/it/vitest.core.config.ts',
-      'tests/it/vitest.public.config.ts',
-      'tests/snaps/vitest.config.ts',
-      'tests/snaps/vitest.core.config.ts',
-      'tests/snaps/vitest.public.config.ts',
+      'vitest/vitest.config.unit.ts',
+      'vitest/vitest.config.unit.core.ts',
+      'vitest/vitest.config.unit.public.ts',
+      'vitest/vitest.config.it.ts',
+      'vitest/vitest.config.it.core.ts',
+      'vitest/vitest.config.it.public.ts',
+      'vitest/vitest.config.snaps.ts',
+      'vitest/vitest.config.snaps.core.ts',
+      'vitest/vitest.config.snaps.public.ts',
     ],
     coverage: {
       provider: 'v8',

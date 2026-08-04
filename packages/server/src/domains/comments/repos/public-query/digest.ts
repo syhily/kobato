@@ -64,7 +64,7 @@ export async function latestDistinctCommentIds(db: Database, adminIds: number[],
  * drops both temp b-trees but still scans every surviving row (the window
  * must see all users): only 124→75ms at 100k comments. Not worth a
  * speculative index at personal-blog scale — the access path is pinned by
- * `tests/it/server/domains/comments/repos.test.ts` instead.
+ * `packages/server/tests/it/domains/comments/repos.test.ts` instead.
  *
  * Trigger condition: if the comments table grows past ~50k rows AND the
  * sidebar cache-miss cost shows up in profiles, add that partial index via

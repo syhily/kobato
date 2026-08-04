@@ -1743,8 +1743,8 @@ describe('contract: module and bundle boundaries', () => {
     const lifecycle = readFileSync('packages/server/src/bootstrap/db-lifecycle.ts', 'utf8')
     expect(lifecycle).toMatch(/function wireDatabase\(/)
 
-    expect(existsSync('tests/_helpers/request.ts')).toBe(false)
-    const dbHelper = readFileSync('tests/_helpers/db.ts', 'utf8')
+    expect(existsSync('packages/test-utils/tests/_helpers/request.ts')).toBe(false)
+    const dbHelper = readFileSync('packages/test-utils/tests/_helpers/db.ts', 'utf8')
     expect(dbHelper).toMatch(/export\s+function\s+seedMetric/)
     expect(dbHelper).not.toMatch(/afterEach|\bvi\.|spyQueryModule|resetSeedIds|seedComment|seedUser|seedLike/)
 

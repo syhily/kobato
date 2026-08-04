@@ -1027,6 +1027,52 @@ importers:
         specifier: 'catalog:'
         version: 4.4.3
 
+  packages/test-utils:
+    dependencies:
+      '@kobato/server':
+        specifier: workspace:*
+        version: link:../server
+      '@kobato/shared':
+        specifier: workspace:*
+        version: link:../shared
+      '@kobato/ui':
+        specifier: workspace:*
+        version: link:../ui
+    devDependencies:
+      '@orpc/server':
+        specifier: 'catalog:'
+        version: 1.14.13(ws@8.21.1)
+      '@tanstack/react-query':
+        specifier: 'catalog:'
+        version: 5.101.4(react@19.2.8)
+      '@testing-library/jest-dom':
+        specifier: 'catalog:'
+        version: 7.0.0(@testing-library/dom@10.4.1)
+      '@testing-library/react':
+        specifier: 'catalog:'
+        version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      drizzle-orm:
+        specifier: 'catalog:'
+        version: 1.0.0-rc.4(@types/pg@8.20.0)(pg@8.22.0)(valibot@1.4.2(typescript@7.0.2))(zod@4.4.3)
+      happy-dom:
+        specifier: 'catalog:'
+        version: 20.11.1
+      react:
+        specifier: 'catalog:'
+        version: 19.2.8
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.2.8(react@19.2.8)
+      react-router:
+        specifier: 'catalog:'
+        version: 8.3.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      vite:
+        specifier: 'catalog:'
+        version: 8.2.0(@types/node@26.1.2)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0)
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.10(@types/node@26.1.2)(@vitest/coverage-v8@4.1.10)(happy-dom@20.11.1)(jsdom@30.0.1)(vite@8.2.0(@types/node@26.1.2)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
+
   packages/ui:
     dependencies:
       '@kobato/client':

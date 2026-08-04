@@ -5,7 +5,7 @@ Repository conventions for AI agents and contributors.
 ## Quick orientation
 
 - Monorepo: two apps (`apps/core` — headless core: admin SSR + `/rpc` + `/api` + URL endpoints; `apps/public` — the official frontend, consuming core over HTTP) and six packages (`packages/{server,client,ui,shared,editor,sdk}`). React Router 8 Framework Mode with SSR (each app's `react-router.config.ts` keeps `appDirectory: 'src'`), React 19 TSX/TS only, SQLite (node:sqlite) + a DuckDB analytics sidecar.
-- Path aliases: app-scoped `@/*` → `<app>/src/*`, `#/*` → `tests/*`, `@kobato/*` → `packages/*/src/*`.
+- Path aliases: app-scoped `@/*` → `<app>/src/*`, `#/*` → `packages/test-utils/tests/*`, `@kobato/*` → `packages/*/src/*`.
 - Five layers: `packages/server` (SSR), `packages/client` (browser), `packages/ui` (components), `packages/shared` (isomorphic), plus app `routes/` (orchestration).
 
 ## Config file
@@ -28,7 +28,7 @@ Claude loads these additively as it moves through the codebase:
 | `packages/shared/src/AGENTS.md` | Isomorphic modules, Zod contracts, DTOs, PT schema                 |
 | `packages/client/src/AGENTS.md` | Browser hooks, oRPC client, React.lazy patterns                    |
 | `packages/ui/src/AGENTS.md`     | Pure-props components, shadcn, PT renderer, component architecture |
-| `tests/AGENTS.md`               | Test utilities, naming conventions, coverage rules                 |
+| `packages/test-utils/AGENTS.md` | Shared test facilities, naming conventions, coverage rules         |
 
 ## Skills
 
@@ -208,7 +208,7 @@ embedded `natives-meta/*` metadata assets
   layout, worker pool — core line).
 - `pnpm run sea:e2e [binary]` — boots the binary like the managed smoke
   (per-run database files, migrations, seeded admin with a KNOWN random
-  password), then runs `tests/e2e` against the live server over real
+  password), then runs `apps/core/tests/e2e` against the live server over real
   HTTP: signin flow, public pages/feed/sitemap, and an admin
   create→render→delete round-trip via oRPC. The instance lifecycle is
   shared with the smoke via `scripts/sea/instance.ts`. The Linux CI

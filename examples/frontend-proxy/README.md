@@ -1,7 +1,7 @@
 # frontend-proxy — 最小第三方前端参考实现
 
 演示 headless 接入全链路:注册密钥 → 签发 JWT → 代理写交互(头族)→ 读 API。
-兼作 headless e2e 测试床(`tests/e2e/headless/frontend-proxy.test.ts` 以本目录
+兼作 headless e2e 测试床(`apps/core/tests/e2e/headless/frontend-proxy.test.ts` 以本目录
 的 `proxyCommentSubmit` 为被测实现,对真实 core 跑读直连 + 写代理全链路)。
 
 ## 流程

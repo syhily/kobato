@@ -11,7 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 //   - the server snapshot always returning `undefined`
 //   - the decode-failure fallback (mocked thumbHashToDataURL throws)
 //
-// Real thumbhash base64 strings come from tests/fixtures/thumbhash.
+// Real thumbhash base64 strings come from packages/test-utils/tests/fixtures/thumbhash.
 
 const VALID_THUMBHASH_A = 'cucFBwBdaXiMlnV7h/h3toZnxfXGTF8M'
 const VALID_THUMBHASH_B = '3AcWDwBnh3d/h3iMeJeHd4h3Z/SoBHAE'

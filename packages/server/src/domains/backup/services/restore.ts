@@ -76,7 +76,7 @@ export function assertDuckdbBackup(buffer: Buffer): void {
 // pipeline, and tar entries extract via ranged reads — a full database
 // file is never held in memory. The in-memory buffer tier
 // (extractBackupFile / unpackBackupPayload / packTar / unpackTar) lives
-// in tests/_helpers/backup-buffer.ts.
+// in `#/_helpers/backup-buffer`.
 
 export interface StagedBackup {
   /** Temp dir holding the decompressed payload + extracted entries. */

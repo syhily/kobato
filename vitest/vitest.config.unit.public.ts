@@ -1,6 +1,5 @@
 import { defineConfig } from 'vitest/config'
 
-import { routeWarmupScriptStubPlugin } from '../_helpers/virtual-modules'
 import { testDefine } from '../vitest.define'
 import { PKG_ALIASES, PUBLIC_ALIASES } from '../vitest.projects'
 
@@ -9,17 +8,17 @@ export default defineConfig({
     tsconfigPaths: true,
     alias: [...PUBLIC_ALIASES, ...PKG_ALIASES],
   },
-  plugins: [routeWarmupScriptStubPlugin()],
   define: testDefine,
   test: {
-    name: 'snaps-public',
+    name: 'unit-public',
     globals: false,
     silent: 'passed-only',
     environment: 'node',
-    // Public-app SSR snapshot tests. The repository-level + package tests
-    // run via `vitest.config.ts` in this directory.
-    include: ['../../apps/public/tests/snaps/**/*.test.{ts,tsx}'],
-    setupFiles: ['./setup.ts'],
+    // Public-app tests (the official frontend route tree). The
+    // repository-level + package tests run via `vitest.config.ts` in this
+    // directory.
+    include: ['../apps/public/tests/unit/**/*.test.{ts,tsx}'],
+    setupFiles: ['./setup.unit.ts'],
     testTimeout: 10_000,
   },
 })

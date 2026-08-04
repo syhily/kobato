@@ -4,7 +4,18 @@ const require = createRequire(import.meta.url)
 // Site metadata is owned by the core app's package.json — the same source
 // the two app vite configs' define blocks read (see the monorepo split
 // plan, stage 2 §1/§3).
-const pkg = require('../apps/core/package.json')
+// `require()` of a JSON file is untyped `any`; the double assertion is the
+// standard test-config escape (the shape is pinned by the core app's
+// package.json).
+// oxlint-disable-next-line typescript/no-unsafe-type-assertion
+const pkg = require('./apps/core/package.json') as unknown as {
+  name: string
+  version: string
+  description: string
+  author: { name: string }
+  homepage: string
+  repository: { url: string }
+}
 
 // The compile-time app globals, mirroring the two app vite configs' define
 // blocks (all read apps/core/package.json) — shared by the unit/it/snaps

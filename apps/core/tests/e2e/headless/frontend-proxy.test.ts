@@ -83,7 +83,7 @@ describe('headless third-party frontend chain (examples/frontend-proxy as the te
     process.env.KOBATO_FRONTEND_PRIVATE_KEY = frontendKey.privateKeyPem
     process.env.KOBATO_FRONTEND_KEY_ID = frontendKey.keyId
     process.env.KOBATO_CORE_API = env.baseUrl
-    const { proxyCommentSubmit } = await import('../../../examples/frontend-proxy/src/proxy-example')
+    const { proxyCommentSubmit } = await import('../../../../../examples/frontend-proxy/src/proxy-example')
 
     const client = new E2eClient(env.baseUrl)
     const detail = await client.get('/api/content/v1/posts/headless-e2e')

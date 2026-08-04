@@ -12,11 +12,11 @@ import { Readable } from 'node:stream'
  * Everything here is STREAMING (`createTarReadStream` /
  * `listTarEntriesInFile`) — the whole-file packing (`packTar`) and
  * subarray views (`unpackTar`) are the test tier and live in
- * tests/_helpers/backup-buffer.ts.
+ * `#/_helpers/backup-buffer`.
  */
 
 /** The tar block size — exported for the test-tier reader in
- *  tests/_helpers/backup-buffer.ts (its offset math shares the constant). */
+ *  `#/_helpers/backup-buffer` (its offset math shares the constant). */
 export const TAR_BLOCK = 512
 const BLOCK = TAR_BLOCK
 const USTAR_OFFSET = 257

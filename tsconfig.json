@@ -3,7 +3,8 @@
   "include": [
     "env.d.ts",
     "packages/**/*",
-    "tests/**/*",
+    "packages/test-utils/tests/**/*",
+    "vitest/**/*",
     "scripts/**/*",
     "examples/**/*",
     "drizzle.config.ts",
@@ -33,7 +34,7 @@
     // `@kobato/*` + `#/*` serve the packages and the repository-level
     // tests.
     "paths": {
-      "#/*": ["./tests/*"],
+      "#/*": ["./packages/test-utils/tests/*"],
       "@kobato/shared/*": ["./packages/shared/src/*"],
       "@kobato/client/*": ["./packages/client/src/*"],
       "@kobato/server/*": ["./packages/server/src/*"],

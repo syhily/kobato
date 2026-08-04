@@ -14,7 +14,7 @@ import { describe, expect, it } from 'vitest'
 // gitignored files under `data/fonts/`, so the test runs identically on any
 // machine including CI.
 
-const TTF_PATH = resolve(__dirname, '../../../../../../tests/fixtures/fonts/Barlow-Regular.ttf')
+const TTF_PATH = resolve(__dirname, '../../../../../../packages/test-utils/tests/fixtures/fonts/Barlow-Regular.ttf')
 
 describe('sliceFont', () => {
   // The wasm binary is loaded via Vite's native `?init` import and
