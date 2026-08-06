@@ -30,9 +30,13 @@ One folder per business domain. Base vocabulary: `schema.ts / repo.ts / service.
 
 ## http/
 
-HTTP perimeter only: `orpc-base.ts` (procedure base), `request-context.ts` (canonical request context — ADR-0003), `api-router.ts`, `errors.ts`, `app.ts` (Hono entry); `middlewares/`; `controllers/` (per-domain, admin under `controllers/admin/`); `resources/` (non-JSON: feed, sitemap, images); `loaders/` (React Router data orchestrators).
+HTTP perimeter only: `orpc-base.ts` (procedure base), `request-context.ts` (canonical request context — ADR-0003), `api-router.ts`, `errors.ts`, `app.ts` (Hono entry); `middlewares/`; `controllers/` (per-domain, admin under `controllers/admin/`); `resources/` (non-JSON: feed, sitemap, images); `loaders/` (React Router data orchestrators); `ssr-caller.ts` (in-process oRPC caller for route loaders).
 
 Controllers and loaders **orchestrate only** — business logic stays in `domains/<x>/service.ts`.
+
+### Public content API (`content.*`)
+
+The public site's read-only data contract is the `content.*` procedure group — a Ghost-Content-API-style surface implemented by `controllers/content-*.controller.ts` (`bootstrap`, `home`, `posts.list/bySlug`, `pages.bySlug`, `comments.byKey`, `search`, `categories.list`, `archives`), with input/output schemas in `shared/contracts/content.ts`. Public route loaders and the root loader consume it through `createSsrCaller` (`ssr-caller.ts`), which runs the router **in-process** against a `HandlerContext` projected from the canonical `RequestContext` — no HTTP hop; `ssr-caller.ts` also owns the `unwrapListing`/`unwrapDetail` helpers that translate the output unions back into thrown Responses for the route loaders. The shared `loaders/*` helpers are the orchestration layer these controllers call: `listing`/`search`/`sidebar`/`sidebar-select`/`comments`/`detail` plus the per-endpoint pipelines `page-preview` (pages), `post-detail` (posts — ETag probe, draft fallback, canonical 301) and `home` (the full home listing pipeline — analytics write, settings gates, feature fan-out; `loadHomeData`). The pipelines keep signalling 301/302/304/404 by throwing `Response`s, and `content-signals.ts::translateThrownResponse` maps those onto a discriminated signal union (or `ORPCError('NOT_FOUND')`). `content.bootstrap` takes no input — it parses the theme cookie itself via `@/shared/utils/theme-cookie` off `context.requestFacts.cookie`.
 
 ### Base procedures
 

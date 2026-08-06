@@ -1,1 +1,67 @@
+/*
+ * Admin-side Tailwind entry — imported by the admin / auth / editor layouts.
+ *
+ * Shares the token partial (`tailwind.css`) with the public entry but scans
+ * only admin-rendered sources, so the emitted bundle drops public-only
+ * artifacts (cursors, post/TOC/friends/webmention chrome, the public
+ * medium-zoom z-index). The typography plugin stays registered because the
+ * editor canvas, preview panel, and comment views use `prose` classes.
+ */
+@import 'tailwindcss' source(none);
+@plugin '@tailwindcss/typography';
 @import './tailwind.css';
+
+@source '../routes/admin';
+@source '../routes/auth';
+@source '../routes/editor';
+@source '../root.tsx';
+@source '../ui/admin';
+@source '../ui/pt';
+@source '../ui/components';
+@source '../ui/icons';
+@source '../ui/lib';
+/* Admin surfaces reuse public building blocks: aplayer (PT music previews),
+   chrome (root error views), the comment editor (top-level files only —
+   comment-item/ is public-only), popups, and search. */
+@source '../ui/public/aplayer';
+@source '../ui/public/chrome';
+@source '../ui/public/comments/*.{ts,tsx}';
+@source '../ui/public/widgets';
+@source '../ui/public/Search.tsx';
+
+@layer utilities {
+  /* medium-zoom stacks admin chrome under overlay popovers above */
+  .medium-zoom-overlay,
+  .medium-zoom-image--opened {
+    z-index: 45;
+  }
+
+  /* Thin scrollbar for the lyrics panel */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+}
+
+/* Music library shared-element transitions (AlbumCard ↔ MusicDetailView) */
+@supports (view-transition-name: none) {
+  ::view-transition-old(music-cover-*),
+  ::view-transition-new(music-cover-*) {
+    animation: none;
+  }
+
+  ::view-transition-new(music-title-*),
+  ::view-transition-new(music-artist-*) {
+    animation: slideUpFade 300ms ease-out;
+  }
+}
+
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

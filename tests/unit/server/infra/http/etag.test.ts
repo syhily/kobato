@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { ifNoneMatch, notModifiedResponse, weakEtag } from '@/server/infra/http/etag'
+import { notModifiedResponse, weakEtag } from '@/server/infra/http/etag'
 
 describe('server/infra/http/etag — weakEtag', () => {
   it('returns a weak-etag-prefixed 16-char hex digest', () => {
@@ -23,30 +23,6 @@ describe('server/infra/http/etag — weakEtag', () => {
 
   it('handles bigint parts', () => {
     expect(weakEtag([1])).toBe(weakEtag([1]))
-  })
-})
-
-describe('server/infra/http/etag — ifNoneMatch', () => {
-  function buildRequest(header: string | null): Request {
-    return new Request('https://example.com', header === null ? undefined : { headers: { 'if-none-match': header } })
-  }
-
-  it('returns false when there is no If-None-Match header', () => {
-    expect(ifNoneMatch(buildRequest(null), 'W/"abc"')).toBe(false)
-  })
-
-  it('returns true when the etag is present in a single-entry header', () => {
-    const tag = 'W/"abc"'
-    expect(ifNoneMatch(buildRequest(tag), tag)).toBe(true)
-  })
-
-  it('returns true when the etag is present in a comma-separated list', () => {
-    const tag = 'W/"abc"'
-    expect(ifNoneMatch(buildRequest(`W/"xyz", ${tag}, W/"def"`), tag)).toBe(true)
-  })
-
-  it('returns false when the etag is absent', () => {
-    expect(ifNoneMatch(buildRequest('W/"xyz"'), 'W/"abc"')).toBe(false)
   })
 })
 

@@ -1,10 +1,8 @@
-import type { LoaderFunctionArgs } from 'react-router'
-
 import type { Database } from '@/server/infra/db/database'
 import type { PortableTextBody } from '@/shared/pt/schema'
-import type { DraftMarker } from '@/shared/types/catalog'
+import type { DetailPageShell, DraftMarker } from '@/shared/types/catalog'
 import type { ResolvedImageMeta } from '@/shared/types/images'
-import type { MarkdownHeading } from '@/shared/utils/toc'
+import type { RoleOrNull } from '@/shared/utils/roles'
 
 import { loadDraftPreviewBySlug } from '@/server/domains/content/lifecycle'
 import { isLive } from '@/server/domains/content/schemas/live-gate'
@@ -12,30 +10,12 @@ import { resolveImageMetaBySources } from '@/server/domains/images/services/enha
 import { pageLifecycleAdapter } from '@/server/domains/pages/services/lifecycle-adapter'
 import { findPageBySlug, findPageEtagInputBySlug } from '@/server/domains/pages/services/public-query'
 import { findPublicPostMetaBySlug } from '@/server/domains/posts/services/single'
-import { getRequestContext } from '@/server/http/request-context'
-import { ifNoneMatch, notModifiedResponse, weakEtag } from '@/server/infra/http/etag'
+import { etagHeaderMatches, notModifiedResponse, pageEtag } from '@/server/infra/http/etag'
 import { redirectPermanent } from '@/server/infra/http/redirects'
 import { notFound } from '@/server/infra/http/status'
 
 export interface PagePreviewResult {
-  page: {
-    id: string
-    slug: string
-    title: string
-    summary: string
-    cover: string
-    coverThumbhash?: string
-    coverWidth?: number
-    coverHeight?: number
-    permalink: string
-    date: Date
-    updated?: Date
-    og?: string
-    comments: boolean
-    toc: boolean
-    showUpdated: boolean
-    headings: MarkdownHeading[]
-  }
+  page: DetailPageShell
   body: PortableTextBody
   showFriends: boolean
   draftMarker: DraftMarker
@@ -43,18 +23,25 @@ export interface PagePreviewResult {
   imageMeta: Record<string, ResolvedImageMeta>
 }
 
+// The page-detail read pipeline behind `content.pages.bySlug`. HTTP
+// facts arrive as plain values (`role`, the raw `ifNoneMatch` header)
+// so the procedure layer stays transport-agnostic; the thrown
+// redirect/304/404 Responses are translated into the procedure's
+// discriminated-union output by the controller.
 export async function loadPagePreview({
   db,
   slug,
   wantsDraftPreview,
-  request,
-  context,
+  role,
+  ifNoneMatch,
 }: {
   db: Database
   slug: string
   wantsDraftPreview: boolean
-  request: Request
-  context: LoaderFunctionArgs['context']
+  /** Viewer role for the draft-preview gate (`undefined`/`null` = anonymous). */
+  role: RoleOrNull | undefined
+  /** Raw If-None-Match header value. */
+  ifNoneMatch: string | null | undefined
 }): Promise<PagePreviewResult> {
   // findPublicPostMetaBySlug is sync (node:sqlite); the probe and
   // findPageBySlug stay async — no Promise.all needed.
@@ -71,14 +58,15 @@ export async function loadPagePreview({
   // is answered 304 from one slim meta read, before the full load below
   // (meta + revision + image hydration) and the draft lookup ever run.
   // The probe inputs — id + publishedRevisionId + publishedAt — are
-  // exactly the ETag parts recomputed on the full path. Draft-preview
-  // requests skip the probe: an admin's `?draft=true` may swap the body,
-  // so the published ETag must not 304 it.
+  // exactly the ETag parts recomputed on the full path (both sites call
+  // the shared `pageEtag` builder). Draft-preview requests skip the
+  // probe: an admin's `?draft=true` may swap the body, so the published
+  // ETag must not 304 it.
   if (!wantsDraftPreview) {
     const etagInput = await findPageEtagInputBySlug(db, slug)
     if (etagInput !== null) {
-      const probeEtag = weakEtag(['page', String(etagInput.id), etagInput.publishedRevisionId, etagInput.publishedAt])
-      if (ifNoneMatch(request, probeEtag)) {
+      const probeEtag = pageEtag(etagInput.id, etagInput.publishedRevisionId, etagInput.publishedAt)
+      if (etagHeaderMatches(ifNoneMatch, probeEtag)) {
         throw notModifiedResponse(probeEtag)
       }
     }
@@ -93,7 +81,6 @@ export async function loadPagePreview({
 
   const needsDraftLookup = sourcePage === undefined || (wantsDraftPreview && publishedPage !== undefined)
   if (needsDraftLookup) {
-    const role = getRequestContext({ request, context }).viewer?.role
     if (pageLifecycleAdapter.canPreviewDraft(role)) {
       const draftPreview = await loadDraftPreviewBySlug(db, pageLifecycleAdapter, slug)
       if (draftPreview !== null) {
@@ -118,16 +105,16 @@ export async function loadPagePreview({
     notFound()
   }
 
-  // Same inputs as the early probe above (id + publishedRevisionId +
-  // publishedAt — `updated` projects `meta.publishedAt`) — keep the two
-  // weakEtag calls in sync or repeat visits never see a 304.
+  // Same builder as the early probe above (id + publishedRevisionId +
+  // publishedAt — `updated` projects `meta.publishedAt`); probe and full
+  // share `pageEtag`, so repeat visits keep hitting the same 304.
   const publicEtag =
-    draftMarker === null ? weakEtag(['page', sourcePage.id, sourcePage.publishedRevisionId, sourcePage.updated]) : null
-  if (publicEtag !== null && ifNoneMatch(request, publicEtag)) {
+    draftMarker === null ? pageEtag(sourcePage.id, sourcePage.publishedRevisionId, sourcePage.updated) : null
+  if (publicEtag !== null && etagHeaderMatches(ifNoneMatch, publicEtag)) {
     throw notModifiedResponse(publicEtag)
   }
 
-  const pageProjection = {
+  const pageProjection: DetailPageShell = {
     id: sourcePage.id,
     slug: sourcePage.slug,
     title: sourcePage.title,

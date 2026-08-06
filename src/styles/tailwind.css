@@ -1,5 +1,15 @@
-@import 'tailwindcss' source(none);
-@plugin '@tailwindcss/typography';
+/*
+ * Shared token partial — NOT a standalone Tailwind entry.
+ *
+ * Imported by the two real entries, `public.css` and `admin.css`, each of
+ * which owns its own `@import 'tailwindcss' source(none)`, typography
+ * plugin registration, and `@source` scan scope. Everything here is
+ * genuinely shared: raw design tokens, the `@theme inline` bridge (the
+ * cn.ts parity tests parse this file), custom variants, base-layer
+ * overrides, the `prose-blog` typography utility (public post body AND
+ * admin editor/preview/comment views), PT table rules, and the theme-wipe
+ * view transition (ThemeProvider renders on both sides via root.tsx).
+ */
 
 /* Dark variant explicit class or system preference when no class is set */
 @custom-variant dark {
@@ -19,8 +29,6 @@
     @slot;
   }
 }
-
-@source '../..';
 
 /* Project semantic tokens */
 :root {
@@ -576,12 +584,6 @@ pre.shiki span {
   }
 }
 
-/* Comment hash focus flash */
-.comment-body.active {
-  animation: var(--animate-comment-flash);
-  border-radius: var(--radius-sm);
-}
-
 /* Tailwind theme bridge shadcn */
 @theme inline {
   --color-background: var(--background);
@@ -982,9 +984,9 @@ body {
   box-sizing: border-box;
 }
 
-@import './cursors.css';
-
-/* Brand typography utility prose-blog */
+/* Brand typography utility prose-blog — SHARED: used by the public post
+   body, the admin editor canvas (`.pt-body-editor`), the admin preview
+   panel, and admin comment views, so both entries rely on it. */
 @utility prose-blog {
   /* &.prose lifts specificity above the plugin defaults so brand vars win */
   &.prose {
@@ -1322,12 +1324,6 @@ body {
 }
 
 @layer utilities {
-  /* medium-zoom stack admin chrome under overlay popovers above */
-  .medium-zoom-overlay,
-  .medium-zoom-image--opened {
-    z-index: 45;
-  }
-
   /* Portable Text tables grid overrides typography prose table borders */
   .post-content.prose-blog.prose table.pt-table {
     border-collapse: collapse;
@@ -1357,28 +1353,15 @@ body {
   .post-content.prose-blog.prose table.pt-table tbody tr:nth-child(even) td {
     background-color: var(--prose-blog-table-stripe);
   }
-
-  /* Thin scrollbar for lyrics panel */
-  .scrollbar-thin {
-    scrollbar-width: thin;
-  }
 }
 
 /* ─── View Transition styles ───────────────────────────── */
+/* Shared group timing — applies to the theme wipe below and to the admin
+   music-library transitions declared in admin.css. */
 @supports (view-transition-name: none) {
   ::view-transition-group(*) {
     animation-duration: 350ms;
     animation-timing-function: cubic-bezier(0.3, 0, 0, 1);
-  }
-
-  ::view-transition-old(music-cover-*),
-  ::view-transition-new(music-cover-*) {
-    animation: none;
-  }
-
-  ::view-transition-new(music-title-*),
-  ::view-transition-new(music-artist-*) {
-    animation: slideUpFade 300ms ease-out;
   }
 }
 
@@ -1418,16 +1401,5 @@ body {
   }
   to {
     clip-path: polygon(0 100%, 100% 100%, 100% 0, 0 0);
-  }
-}
-
-@keyframes slideUpFade {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
   }
 }

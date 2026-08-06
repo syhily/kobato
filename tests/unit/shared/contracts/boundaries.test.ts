@@ -510,6 +510,40 @@ describe('contract: module and bundle boundaries', () => {
     expect(offenders).toEqual([])
   })
 
+  it('keeps the public render path on the content API: routes/public + root stay inside the server-import whitelist', () => {
+    // Every public-site data load goes through oRPC (`content.*` via the
+    // in-process `@/server/http/ssr-caller`) — route loaders and the root
+    // loader no longer import `@/server/domains/*` or the
+    // `@/server/http/loaders/*` orchestrators directly. What remains on
+    // the whitelist is the HTTP orchestration line only:
+    //
+    //   `@/server/http/ssr-caller`            — the one data-access seam
+    //   `@/server/http/loaders/route-exports` — cache-header constants
+    //   `@/server/infra/http/*`               — union→Response translation
+    //                                           (etag / redirects / status)
+    //   `@/server/render/warmup/*`            — root only: chunk manifest
+    //
+    // Value and type imports both count, whether `@/`-aliased or relative.
+    const allowed = (file: string, target: string): boolean => {
+      const prefixes = ['@/server/http/ssr-caller', '@/server/http/loaders/route-exports', '@/server/infra/http/']
+      if (file === 'src/root.tsx') {
+        prefixes.push('@/server/render/warmup/')
+      }
+      return prefixes.some((prefix) => target.startsWith(prefix) || target.startsWith(`src/${prefix.slice(2)}`))
+    }
+    const offenders: string[] = []
+    for (const file of [...files('src/routes/public', '-g', '*.ts', '-g', '*.tsx'), 'src/root.tsx']) {
+      for (const specifier of importSpecifiers(stripComments(readFileSync(file, 'utf8')))) {
+        const target = resolveSpecifier(file, specifier)
+        if ((target.startsWith('@/server/') || target.startsWith('src/server/')) && !allowed(file, target)) {
+          offenders.push(`${file}: ${specifier}`)
+        }
+      }
+    }
+
+    expect(offenders).toEqual([])
+  })
+
   it('keeps client and ui modules out of the server layer', () => {
     // `@/client/` hooks and `@/ui/` components touch DOM APIs and styles
     // that cannot evaluate under SSR — the server must depend on
@@ -1345,6 +1379,7 @@ describe('contract: module and bundle boundaries', () => {
 
   it('routes post / comment typography through @tailwindcss/typography', () => {
     const publicCss = readFileSync('src/styles/public.css', 'utf8')
+    const adminCss = readFileSync('src/styles/admin.css', 'utf8')
     const tailwindCss = readFileSync('src/styles/tailwind.css', 'utf8')
     const commentItem = readFileSync('src/ui/public/comments/comment-item/helpers.ts', 'utf8')
 
@@ -1356,7 +1391,10 @@ describe('contract: module and bundle boundaries', () => {
     expect(publicCss).not.toMatch(/@import\s+['"][^'"]*ui\/post\/post\.css['"]/)
     expect(existsSync('src/ui/post/post.css')).toBe(false)
 
-    expect(tailwindCss).toContain("@plugin '@tailwindcss/typography'")
+    // The plugin registration lives in the two entries (the shared partial
+    // is entry-agnostic); both sides render `prose` classes.
+    expect(publicCss).toContain("@plugin '@tailwindcss/typography'")
+    expect(adminCss).toContain("@plugin '@tailwindcss/typography'")
     expect(tailwindCss).toMatch(/--code-bg:\s*rgb\(253,\s*246,\s*227\);/)
 
     // Typography colours are driven by a shared --prose-blog-* slot table

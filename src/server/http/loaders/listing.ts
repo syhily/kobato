@@ -1,31 +1,12 @@
-import type { MetaDescriptor } from 'react-router'
-
 import type { Database } from '@/server/infra/db/database'
 import type { FeedLinkOptions } from '@/shared/seo/meta'
-import type { ListingPostCard, ListingPostCardWithMetadata } from '@/shared/types/catalog'
+import type { ListingPostCard } from '@/shared/types/catalog'
+import type { ListingExtraArgs, ListingPageLoaderData } from '@/shared/types/listing'
 
 import { getClientPostsWithMetadata } from '@/server/domains/posts/services/public-query'
 import { parseListingPage, redirectListingOverflow } from '@/server/http/loaders/pagination'
 import { listingSeo } from '@/server/render/seo/listing-seo'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
-
-// Shared loader-return shape for every listing route (`/`, `/cats/:slug`,
-// `/tags/:slug`, `/search/:keyword`). Components destructure the same fields
-// regardless of which loader produced the data. `extra` is a per-route slot
-// for sidebar/feature data that doesn't fit the generic listing contract.
-export interface ListingPageLoaderData<TExtra = undefined> {
-  pageNum: number
-  totalPage: number
-  rootPath: string
-  resolvedPosts: ListingPostCardWithMetadata[]
-  title?: string
-  description?: string
-  /** Pre-computed `MetaDescriptor[]` ready to return from `meta()`. */
-  seo: MetaDescriptor[]
-  extra: TExtra
-  /** ISO instant captured once per loader run; thread into `formatShowDate` so SSR matches hydration. */
-  listingNowIso: string
-}
 
 // Per-page metadata fan-out. Defaults match the historical category/tag
 // listing behaviour (likes + views, no comment count). Home overrides this
@@ -193,10 +174,4 @@ export async function listingLoader<TExtra = undefined>(
     extra: resolvedExtra,
     listingNowIso,
   }
-}
-
-export interface ListingExtraArgs<TPost = ListingPostCardWithMetadata> {
-  resolvedPosts: TPost[]
-  pageNum: number
-  totalPage: number
 }

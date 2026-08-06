@@ -39,7 +39,8 @@ server or client boundary catch and log it.
   `og-image`) shared by routes, loaders, and the feed/OG renderers.
 - `utils/` — `urls`, `safe-url`, `security`, `tools`,
   `formatter`, `pagination`, `toc`, `paths`, `roles`, `user-agent`,
-  `chunk-error`, `comment-token`, `footnotes-section-title`, `memo`.
+  `chunk-error`, `comment-token`, `footnotes-section-title`, `memo`,
+  `theme-cookie`.
 - `cache/`, `constants/`, `lib/` — small standalone modules; a few
   top-level files (`slug`, `sanitize-url`, `zod-config`) round out the
   layer.
@@ -53,6 +54,18 @@ parity assertions — consumers `import type` the DTO from the owning
 contracts module. `shared/types/` keeps only types that have no contract
 schema. The `Assert`/`Equals` helpers in `contracts/primitives` remain for
 the settings system's compile-time registry checks.
+
+**Exception — `contracts/content.ts` (the `content.*` SSR wire contract).**
+Its output schemas deliberately use `z.custom<T>()` over the historical
+loader-data types instead of full Zod schemas: the inferred output types
+must EXACTLY match the historical loader-data shapes (bit-identical public
+rendering — no lossy partial schema may drift from them), and the primary
+consumer is the in-process SSR caller, which never re-serializes the
+payload. HTTP-path coverage for these outputs comes from
+`tests/it/server/http/content-api.test.ts`. Input schemas and the
+redirect/not-modified signal unions in that module still use real Zod.
+This exception is scoped to `contracts/content.ts` only — every other
+contracts module follows the single-source rule above.
 
 ## Client API usage
 

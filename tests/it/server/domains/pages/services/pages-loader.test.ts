@@ -1,14 +1,11 @@
 import { eq } from 'drizzle-orm'
-import { RouterContextProvider } from 'react-router'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import type { SessionUser } from '@/server/domains/auth/session-storage'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
-import { makeRequestContext } from '#/_helpers/request-context'
 import { adminUser } from '#/_helpers/session'
-import { requestContext } from '@/server/http/request-context'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { page as pageTable } from '@/server/infra/db/schema/page'
 import { post as postTable } from '@/server/infra/db/schema/post'
@@ -105,16 +102,15 @@ async function seedPage(opts: {
 }
 
 function makeArgs(slug: string, viewer: SessionUser | null = null) {
-  const context = new RouterContextProvider()
-  // `loadPagePreview` reads only `viewer` off the canonical request
-  // context (draft-preview role gating).
-  context.set(requestContext, makeRequestContext({ user: viewer }))
+  // `loadPagePreview` takes the draft-preview gate inputs as plain values
+  // (viewer role + raw If-None-Match header) since the oRPC migration —
+  // no canonical request context involved anymore.
   return {
     db,
     slug,
     wantsDraftPreview: false,
-    request: new Request(`http://localhost/${slug}`),
-    context,
+    role: viewer?.role,
+    ifNoneMatch: null,
   }
 }
 

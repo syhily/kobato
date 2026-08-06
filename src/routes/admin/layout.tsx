@@ -14,11 +14,12 @@ import { AdminShell } from '@/ui/admin/shell/AdminShell'
 
 import type { Route } from './+types/layout'
 
-// The admin SPA only needs Tailwind v4 (with the `` prefix) plus the
-// shadcn admin theme tokens declared inside `admin.css`. Importing
-// `tailwind.css` directly here keeps Bootstrap reboot/grid/utilities and the
-// public-site cascade (`public.css`) out of this route's chunk, matching
-// the project's "admin pages do not load public.css" contract.
+// `admin.css` is the admin-side Tailwind entry: it shares the token
+// partial (`tailwind.css`) with the public site but scans only
+// admin-rendered sources, so this route's bundle excludes the public
+// cascade (`public.css` — cursors, post chrome, public medium-zoom
+// stacking). `useDetachPublicCss` below covers SPA navigations that
+// arrive from a public page with `public.css` still in <head>.
 import '@/styles/admin.css'
 
 export const handle: RouteHandle = { layout: 'admin', postFonts: true }

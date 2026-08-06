@@ -1,8 +1,11 @@
 # Routes conventions
 
 `src/routes/` contains route modules — loader / action / meta / component orchestration. Read
-session/context at the perimeter, call into `server/http/loaders/*` or domain-surface services,
-project DTOs through `shared/`, render with `ui/`. No DB queries, cache access, or markdown parsing
+session/context at the perimeter, call orchestrators (`server/http/loaders/*`, domain-surface
+services), project DTOs through `shared/`, render with `ui/`. **Public routes and the root loader
+are the exception**: they read through the `content.*` oRPC group via `createSsrCaller`
+(`@/server/http/ssr-caller`), never touching domain services or `server/http/loaders/*` directly.
+No DB queries, cache access, or markdown parsing
 inline — never import `server/infra/db/operations/*` (pinned by a boundaries contract test).
 Resource routes (feeds, sitemap, OG images, JSON APIs) live alongside page modules so the per-URL
 contract is obvious from the file system. This file is the long-form companion to the terse route
@@ -46,6 +49,18 @@ Adding a route: pick the area directory, choose a role filename, add the manifes
 
 - `loader` for render-time data, `action` for route form submissions.
 - `redirect`, `data`, `Response`, and thrown responses for control flow.
+- **Public SSR data goes through oRPC** — `routes/public/**` loaders and `src/root.tsx` call the
+  `content.*` procedures via `createSsrCaller` (`@/server/http/ssr-caller`), an in-process router
+  client bound to the per-request `HandlerContext`. Loaders stay one-liners: `unwrapListing(...)`
+  (home/tag/category/search) and `unwrapDetail(...)` (post/page detail) map the output union back
+  to the URL contract — `redirect` → thrown 301/302, `not-modified` → thrown 304,
+  `ORPCError('NOT_FOUND')` → `notFound()`. Detail loaders fire `content.comments.byKey` and
+  `webmention.list` only on the ok branch, chained off the critical payload's `commentKey`
+  (un-awaited, so comments/webmentions still stream via `<Await>`; never speculatively — a
+  304/301/404 read costs zero comments work). The root loader calls `content.bootstrap()` with no
+  args — the theme cookie is parsed inside the procedure. The exact `@/server/*` import whitelist
+  for public routes + root is pinned by the boundaries contract
+  test (`ssr-caller`, `loaders/route-exports`, `infra/http/*`, plus `render/warmup/*` for root).
 - **Non-page requests** (API, feeds, sitemap, generated images) are served by Hono native routes
   mounted in `server.ts`, NOT React Router resource routes.
 - Public URLs and physical paths stay stable — route ids derive from the file path.
@@ -85,7 +100,8 @@ goes here, not in `routes.ts`.
 the matched route module graph, so the static import guarantees a styled first paint. **Do not**
 lazy-load `public.css` from a child route or move it into a regular component — both reintroduce
 FOUC. Admin / login / install / API routes live **outside** this layout so their bundles skip the
-public stylesheet cascade.
+public stylesheet cascade; the admin / auth / editor layouts import the separate `admin.css`
+entry instead (see `src/styles/AGENTS.md` → Entry structure).
 
 ### B. Splat catch-all inside the public layout
 

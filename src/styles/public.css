@@ -1,6 +1,36 @@
+/*
+ * Public-site Tailwind entry — imported by BaseLayout (public chrome).
+ *
+ * Owns its own tailwindcss import, typography plugin, and a `@source`
+ * scope covering exactly the sources the public site renders: public
+ * routes, public/pt/components/icons/lib UI, root.tsx, and the admin
+ * tiptap building blocks the public comment editor reuses. Admin-only
+ * rules (music view transitions, admin medium-zoom stacking, scrollbar-thin)
+ * live in admin.css and never reach this bundle.
+ */
+@import 'tailwindcss' source(none);
+@plugin '@tailwindcss/typography';
+@import './tailwind.css';
+@import './cursors.css';
+
+@source '../routes/public';
+@source '../root.tsx';
+@source '../ui/public';
+@source '../ui/pt';
+@source '../ui/components';
+@source '../ui/icons';
+@source '../ui/lib';
+/* CommentBodyEditor (public comments) reuses the admin tiptap building blocks */
+@source '../ui/admin/editor/tiptap';
+
+/* medium-zoom floats above every public chrome layer (popovers, drawers) */
 .medium-zoom-overlay,
 .medium-zoom-image--opened {
   z-index: 1080;
 }
 
-@import './tailwind.css';
+/* Comment hash focus flash */
+.comment-body.active {
+  animation: var(--animate-comment-flash);
+  border-radius: var(--radius-sm);
+}

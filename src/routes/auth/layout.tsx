@@ -4,9 +4,10 @@ import type { RouteHandle } from '@/root'
 
 import { useDetachPublicCss } from '@/client/hooks/use-detach-public-css'
 import { AdminErrorFallback } from '@/ui/admin/shell/AdminErrorFallback'
-// The login / install screen uses the same shadcn / Tailwind v4 cascade
-// as the admin SPA. Importing `tailwind.css` directly keeps the public
-// site's `public.css` out of this route's chunk.
+// The login / install screen shares the admin-side Tailwind entry
+// (`admin.css`) — a standalone bundle whose `@source` scope covers
+// admin/auth/editor-rendered sources only, keeping the public site's
+// `public.css` out of this route's chunk.
 import '@/styles/admin.css'
 
 // Tells `root.tsx` to skip rendering `<BaseLayout>` for any descendant

@@ -1,16 +1,13 @@
-import type { ListingPageLoaderData } from '@/server/http/loaders/listing'
-
 import { listingHeaders } from '@/server/http/loaders/route-exports'
-import { searchLoader } from '@/server/http/loaders/search'
-import { getRequestContext } from '@/server/http/request-context'
+import { createSsrCaller, unwrapListing } from '@/server/http/ssr-caller'
 import { metaWithFallback } from '@/shared/seo/meta'
 import { PostListingBody } from '@/ui/public/post/PostListViews'
 
 import type { Route } from './+types/list'
 
-export async function loader({ request, params, context }: Route.LoaderArgs): Promise<ListingPageLoaderData> {
-  const rc = getRequestContext({ request, context })
-  return searchLoader(rc.db, { keyword: params.keyword, num: params.num, auditContext: rc })
+export async function loader({ request, params, context }: Route.LoaderArgs) {
+  const { caller } = createSsrCaller({ request, context })
+  return unwrapListing(caller.content.search({ keyword: params.keyword, num: params.num }))
 }
 
 export const headers = listingHeaders

@@ -5,12 +5,14 @@ import type { Database } from '@/server/infra/db/database'
 import { seedMetric } from '#/_helpers/db'
 import { regularSession } from '#/_helpers/session'
 
-// `loadDetailPageStreaming` must fan out `loadComments`, `queryLikes`, and
-// `loadSidebarData` in parallel — they're independent and each is
-// individually slow. This test injects 50ms of artificial latency into all
-// three paths and asserts the wall clock stays below ~100ms (≈ slowest
-// dependency + scheduler jitter), which is impossible if any pair were
-// serialised.
+// The detail comments/critical split (`loadCommentsAndItems` fired in
+// parallel with `loadDetailPageCritical` by the detail routes, via
+// `content.comments.byKey` + `content.posts/pages.bySlug`) must keep the
+// historical overlap: `loadComments`, `queryLikes`, and `loadSidebarData`
+// are independent and each is individually slow. This test injects 50ms
+// of artificial latency into all three paths and asserts the wall clock
+// stays below ~100ms (≈ slowest dependency + scheduler jitter), which is
+// impossible if any pair were serialised.
 
 vi.mock('@/server/domains/comments/services/shared', () => ({
   ensureCommentPage: vi.fn(async () => seedMetric()),
@@ -27,7 +29,7 @@ const commentShared = await import('@/server/domains/comments/services/shared')
 const commentPublicQuery = await import('@/server/domains/comments/services/public-query')
 const likes = await import('@/server/domains/comments/services/likes')
 const sidebar = await import('@/server/http/loaders/sidebar')
-const { loadDetailPageStreaming } = await import('@/server/http/loaders/comments')
+const { loadCommentsAndItems, loadDetailPageCritical } = await import('@/server/http/loaders/comments')
 
 const POST_TIMING = { type: 'post' as const, ownerId: 1 }
 const POST_EMPTY = { type: 'post' as const, ownerId: 2 }
@@ -44,7 +46,7 @@ beforeEach(() => {
   vi.mocked(commentShared.ensureCommentPage).mockResolvedValue(seedMetric())
 })
 
-describe('services/comments/page-data — loadDetailPageStreaming', () => {
+describe('services/comments/page-data — comments/critical split', () => {
   it('loadComments + queryLikes + loadSidebarData run in parallel (≤100ms wall clock for 50ms each)', async () => {
     vi.mocked(commentPublicQuery.loadComments).mockImplementation(() =>
       delay({ count: 0, roots_count: 0, comments: [] }, 50),
@@ -64,8 +66,10 @@ describe('services/comments/page-data — loadDetailPageStreaming', () => {
     )
 
     const start = Date.now()
-    const { comments } = await loadDetailPageStreaming(mockDb, regularSession(), POST_TIMING)
-    await comments
+    await Promise.all([
+      loadCommentsAndItems(mockDb, regularSession(), POST_TIMING),
+      loadDetailPageCritical(mockDb, regularSession(), POST_TIMING),
+    ])
     const elapsed = Date.now() - start
 
     expect(elapsed).toBeLessThan(100)
@@ -77,18 +81,10 @@ describe('services/comments/page-data — loadDetailPageStreaming', () => {
       roots_count: 0,
       comments: [],
     })
-    vi.mocked(likes.queryLikes).mockResolvedValue(0)
-    vi.mocked(sidebar.loadSidebarData).mockResolvedValue({
-      recentPosts: [],
-      recentComments: [],
-      pendingComments: [],
-      tags: [],
-      isAdmin: false,
-    } as unknown as Awaited<ReturnType<typeof sidebar.loadSidebarData>>)
 
-    const { comments } = await loadDetailPageStreaming(mockDb, regularSession(), POST_EMPTY)
+    const { commentItems } = await loadCommentsAndItems(mockDb, regularSession(), POST_EMPTY)
 
-    expect((await comments).commentItems).toEqual([])
+    expect(commentItems).toEqual([])
     expect(commentPublicQuery.parseComments).not.toHaveBeenCalled()
   })
 
@@ -108,8 +104,8 @@ describe('services/comments/page-data — loadDetailPageStreaming', () => {
     } as unknown as Awaited<ReturnType<typeof sidebar.loadSidebarData>>)
     const session = regularSession()
 
-    const { comments } = await loadDetailPageStreaming(mockDb, session, POST_ONE_UPSERT)
-    await comments
+    await loadDetailPageCritical(mockDb, session, POST_ONE_UPSERT)
+    await loadCommentsAndItems(mockDb, session, POST_ONE_UPSERT)
 
     expect(commentShared.ensureCommentPage).toHaveBeenCalledOnce()
     expect(commentPublicQuery.loadComments).toHaveBeenCalledWith(mockDb, session, POST_ONE_UPSERT, 0, {

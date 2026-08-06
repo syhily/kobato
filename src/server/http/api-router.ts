@@ -26,6 +26,10 @@ import { avatarRouter } from '@/server/http/controllers/avatar.controller'
 import { commentsAuthedRouter } from '@/server/http/controllers/comments-authed.controller'
 import { commentsPublicRouter } from '@/server/http/controllers/comments-public.controller'
 import { commentsTokenRouter } from '@/server/http/controllers/comments-token.controller'
+import { contentBootstrap } from '@/server/http/controllers/content-bootstrap.controller'
+import { contentCommentsByKey } from '@/server/http/controllers/content-comments.controller'
+import { contentDetailRouter } from '@/server/http/controllers/content-detail.controller'
+import { contentListingsRouter } from '@/server/http/controllers/content-listings.controller'
 import { friendsPublicRouter } from '@/server/http/controllers/friends-public.controller'
 import { githubRouter } from '@/server/http/controllers/github.controller'
 import { imageRouter } from '@/server/http/controllers/image.controller'
@@ -47,6 +51,19 @@ export const apiRouter = {
   avatar: avatarRouter,
   github: githubRouter,
   comments: { ...commentsPublicRouter, ...commentsAuthedRouter, ...commentsTokenRouter },
+  // Ghost-Content-API-style read-only group. The public SSR loaders
+  // consume it in-process (`@/server/http/ssr-caller`); the same leaves
+  // answer headless reads over `/rpc/content/*`.
+  content: {
+    bootstrap: contentBootstrap,
+    home: contentListingsRouter.home,
+    posts: { list: contentListingsRouter.postsList, bySlug: contentDetailRouter.postBySlug },
+    pages: { bySlug: contentDetailRouter.pageBySlug },
+    comments: { byKey: contentCommentsByKey },
+    search: contentListingsRouter.search,
+    categories: { list: contentListingsRouter.categoriesList },
+    archives: contentListingsRouter.archives,
+  },
   friends: friendsPublicRouter,
   image: imageRouter,
   likes: likesRouter,

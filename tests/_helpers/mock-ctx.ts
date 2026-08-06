@@ -15,16 +15,28 @@ export interface MockCtxOptions {
   sessionId?: string
   clientAddress?: string
   url?: string
+  /** Raw `Cookie` header — lands in `requestFacts.cookie`. */
+  cookie?: string
+  /** CSRF token the session stub answers for the `csrfToken` key. */
+  csrfToken?: string
   db?: Database
 }
 
-function makeSessionStub(user: { id: string; role: string } | undefined, sessionId: string) {
+function makeSessionStub(user: { id: string; role: string } | undefined, sessionId: string, csrfToken?: string) {
   // Minimal `BlogSession` surface — only the methods orpc-base / the
   // controllers actually call. Cast through `unknown` once at the use
   // site so the typing surface in tests stays clean.
   return {
     id: sessionId,
-    get: (key: string) => (key === 'user' ? user : undefined),
+    get: (key: string) => {
+      if (key === 'user') {
+        return user
+      }
+      if (key === 'csrfToken') {
+        return csrfToken
+      }
+      return undefined
+    },
     set: () => undefined,
     unset: () => undefined,
     flash: () => undefined,
@@ -34,11 +46,14 @@ function makeSessionStub(user: { id: string; role: string } | undefined, session
 export function makeAuthedCtx(opts: MockCtxOptions = {}): HandlerContext {
   const userId = opts.userId ?? '1'
   const role = opts.role ?? 'admin'
-  const request = new Request(opts.url ?? 'http://localhost/rpc')
+  const request = new Request(
+    opts.url ?? 'http://localhost/rpc',
+    opts.cookie === undefined ? undefined : { headers: { Cookie: opts.cookie } },
+  )
   return {
     request,
     requestFacts: extractRequestFacts(request),
-    session: makeSessionStub({ id: userId, role }, opts.sessionId ?? 'session-1'),
+    session: makeSessionStub({ id: userId, role }, opts.sessionId ?? 'session-1', opts.csrfToken),
     viewer: { id: userId, name: 'Test User', email: 'test@example.com', website: null, role },
     clientAddress: opts.clientAddress ?? '127.0.0.1',
     responseHeaders: new Headers(),
@@ -47,11 +62,14 @@ export function makeAuthedCtx(opts: MockCtxOptions = {}): HandlerContext {
 }
 
 export function makePublicCtx(opts: MockCtxOptions = {}): HandlerContext {
-  const request = new Request(opts.url ?? 'http://localhost/rpc')
+  const request = new Request(
+    opts.url ?? 'http://localhost/rpc',
+    opts.cookie === undefined ? undefined : { headers: { Cookie: opts.cookie } },
+  )
   return {
     request,
     requestFacts: extractRequestFacts(request),
-    session: makeSessionStub(undefined, opts.sessionId ?? 'session-1'),
+    session: makeSessionStub(undefined, opts.sessionId ?? 'session-1', opts.csrfToken),
     viewer: null,
     clientAddress: opts.clientAddress ?? '127.0.0.1',
     responseHeaders: new Headers(),

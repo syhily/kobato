@@ -3,17 +3,9 @@ import { Await, data } from 'react-router'
 
 import type { RouteHandle } from '@/root'
 
-import { listAllFriends } from '@/server/domains/friends/service'
-import { getPublicMusicMetasByIds } from '@/server/domains/music/services/read'
-import { prerenderMusicPlayerBlocks } from '@/server/domains/pt/prerender'
-import { loadPublicDetailData } from '@/server/http/loaders/detail'
-import { loadPagePreview } from '@/server/http/loaders/page-preview'
 import { detailHeaders } from '@/server/http/loaders/route-exports'
-import { getRequestContext } from '@/server/http/request-context'
-import { requireBlogSettingsSection } from '@/shared/config/getters'
+import { createSsrCaller, streamDetailExtras, unwrapDetail } from '@/server/http/ssr-caller'
 import { bundleFromMatches, routeMeta, seoForPage } from '@/shared/seo/meta'
-import { resolveFootnotesSectionTitle } from '@/shared/utils/footnotes-section-title'
-import { idFromString } from '@/shared/utils/id'
 import { Friends } from '@/ui/pt/blocks/Friends'
 import { PortableTextBody } from '@/ui/pt/render'
 import { FriendApplyForm } from '@/ui/public/friends/FriendApplyForm'
@@ -26,46 +18,34 @@ export const handle: RouteHandle = { footer: false, postFonts: true }
 export const headers = detailHeaders
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
-  const { db } = getRequestContext({ request, context })
-  const url = new URL(request.url)
-  const wantsDraftPreview = url.searchParams.get('draft') === 'true'
+  const { caller } = createSsrCaller({ request, context })
+  const wantsDraftPreview = new URL(request.url).searchParams.get('draft') === 'true'
 
-  // One parallel block keyed off the preview promise. The music-player
-  // prerender starts the moment the preview resolves instead of waiting
-  // for the friends read, and the friends full-table scan + image
-  // hydration only run when the page actually renders the section — a
-  // hidden section keeps the payload an honest empty list.
-  const previewPromise = loadPagePreview({ db, slug: params.slug, wantsDraftPreview, request, context })
-  const [preview, friends, enrichedBody] = await Promise.all([
-    previewPromise,
-    previewPromise.then((p) => (p.showFriends ? listAllFriends(db) : [])),
-    previewPromise.then((p) =>
-      prerenderMusicPlayerBlocks(p.body, (playerIds) => getPublicMusicMetasByIds(db, playerIds)),
-    ),
-  ])
+  const result = await unwrapDetail(
+    caller.content.pages.bySlug({
+      slug: params.slug,
+      draft: wantsDraftPreview,
+      ifNoneMatch: request.headers.get('if-none-match') ?? undefined,
+    }),
+  )
 
-  const footnotesSectionTitle = resolveFootnotesSectionTitle(requireBlogSettingsSection('content'))
-
-  // Dependency-forced serial: the detail target needs the resolved page id.
-  const { detail } = await loadPublicDetailData(db, {
-    request,
-    context,
-    target: { type: 'page', ownerId: idFromString(preview.page.id) },
-  })
+  // Comments and webmentions chain off the critical's comment key — known
+  // only once the page read settles — and stream through <Await>.
+  const { comments, webmentions } = streamDetailExtras(caller, result.payload.critical.commentKey)
 
   return data(
     {
-      page: preview.page,
-      body: enrichedBody ?? preview.body,
-      friends,
-      showFriends: preview.showFriends,
-      draftMarker: preview.draftMarker,
-      detail,
-      imageMeta: preview.imageMeta,
-      footnotesSectionTitle,
+      page: result.payload.page,
+      body: result.payload.body,
+      friends: result.payload.friends,
+      showFriends: result.payload.showFriends,
+      draftMarker: result.payload.draftMarker,
+      detail: { ...result.payload.critical, comments, webmentions },
+      imageMeta: result.payload.imageMeta,
+      footnotesSectionTitle: result.payload.footnotesSectionTitle,
     },
     {
-      headers: preview.publicEtag === null ? undefined : { ETag: preview.publicEtag },
+      headers: result.etag === null ? undefined : { ETag: result.etag },
     },
   )
 }

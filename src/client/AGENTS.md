@@ -5,7 +5,7 @@
 ## Structure
 
 - `hooks/` — browser hooks. Admin file uploads go through `useFileUpload` (`@/client/hooks/use-file-upload`): it owns the CSRF read, accept/size guards, FormData POST, error unwrap, and toast choreography. Never hand-roll a fetch upload in a view.
-- `api/` — oRPC client. All RPC calls go through `orpc.<domain>.<endpoint>(flatInput)` from `@/client/api/client`; server errors arrive as `ORPCError` rejections. TanStack Query wrappers live in `@/client/api/orpc-query`.
+- `api/` — oRPC client. All RPC calls go through `orpc.<domain>.<endpoint>(flatInput)` from `@/client/api/client`; server errors arrive as `ORPCError` rejections. TanStack Query wrappers live in `@/client/api/orpc-query`. Every public-site read flows through oRPC end to end: browser-side interactions use this `/rpc` client, and SSR data (public routes + root loader) goes through the read-only `content.*` group via the in-process caller (`@/server/http/ssr-caller`) — no route talks to domain services directly.
 
 ## Patterns
 

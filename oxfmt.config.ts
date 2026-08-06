@@ -31,7 +31,7 @@ export default defineConfig({
     ],
   },
   sortTailwindcss: {
-    stylesheet: './src/styles/tailwind.css',
+    stylesheet: './src/styles/public.css',
     functions: ['cn'],
     preserveWhitespace: true,
   },

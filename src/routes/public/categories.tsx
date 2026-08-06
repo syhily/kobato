@@ -1,17 +1,13 @@
-import { listAllCategories } from '@/server/domains/taxonomies/categories/services/query'
 import { listingHeaders } from '@/server/http/loaders/route-exports'
-import { getRequestContext } from '@/server/http/request-context'
+import { createSsrCaller } from '@/server/http/ssr-caller'
 import { titleMeta } from '@/shared/seo/title-meta'
 import { CategoriesBody } from '@/ui/public/post/CategoriesBody'
 
 import type { Route } from './+types/categories'
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const { db } = getRequestContext({ request, context })
-  const categories = await listAllCategories(db)
-  return {
-    categories,
-  }
+  const { caller } = createSsrCaller({ request, context })
+  return caller.content.categories.list()
 }
 
 export const headers = listingHeaders

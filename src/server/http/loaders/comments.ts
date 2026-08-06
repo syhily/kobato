@@ -28,12 +28,13 @@ function toCommentFormUser(user: SessionUser | undefined): CommentFormUser | und
   }
 }
 
-// Comments split out so the loader can stream them via React Router's
+// The streamed comments payload (`content.comments.byKey`). Comments
+// split out so the detail route can stream them via React Router's
 // `<Await>` while the rest of the detail (likes, sidebar, post body)
 // renders immediately. PT bodies are stored pre-rendered, so the
 // per-row work in `parseComments` is now just projection — but the
 // network/DB round-trip is still worth deferring.
-async function loadCommentsAndItems(
+export async function loadCommentsAndItems(
   db: Database,
   session: BlogSession,
   target: EntityTarget,
@@ -45,9 +46,9 @@ async function loadCommentsAndItems(
 
 // "Critical" detail data: everything the page needs to paint above the fold
 // (post body, likes, sidebar, current-user identity for the reply form).
-// Comments are intentionally excluded so the loader can stream them
+// Comments are intentionally excluded so the route can stream them
 // alongside the SSR HTML.
-async function loadDetailPageCritical(db: Database, session: BlogSession, target: EntityTarget) {
+export async function loadDetailPageCritical(db: Database, session: BlogSession, target: EntityTarget) {
   const user = userSession(session)
   const currentUser = toCommentFormUser(user)
 
@@ -63,12 +64,4 @@ async function loadDetailPageCritical(db: Database, session: BlogSession, target
     currentUser,
     ...sidebar,
   }
-}
-
-// Detail data with the comments promise split out, ready to stream through
-// React Router's `defer`-style return + `<Await>` consumer.
-export async function loadDetailPageStreaming(db: Database, session: BlogSession, target: EntityTarget) {
-  const comments = loadCommentsAndItems(db, session, target)
-  const critical = await loadDetailPageCritical(db, session, target)
-  return { critical, comments }
 }

@@ -13,16 +13,14 @@ import { useChunkErrorRecovery, useReloadOnChunkError } from '@/client/hooks/use
 import { useFocusHash } from '@/client/hooks/use-focus-hash'
 import { useIosNoZoomOnFocus } from '@/client/hooks/use-ios-no-zoom'
 import { defaultTransition } from '@/client/lib/motion'
-import { resolveFontsForRender } from '@/server/domains/fonts/services/render'
-import { redactSecretsFromBundle } from '@/server/domains/settings/services/masks'
-import { getRequestContext } from '@/server/http/request-context'
+import { createSsrCaller } from '@/server/http/ssr-caller'
 import { getCriticalChunksForPathname, getWarmupManifest } from '@/server/render/warmup/manifest'
 import { getBlogSettingsBundleSync, isWebmentionReceiveEnabled } from '@/shared/config/getters'
 import { BlogSettingsProvider } from '@/shared/lib/blog-config-context'
 import { bundleFromMatches, routeMeta } from '@/shared/seo/meta'
 import { isRecord } from '@/shared/utils/type-guards'
 import { LazyMotionConfig } from '@/ui/components/lazy-motion'
-import { ThemeProvider, THEME_COOKIE } from '@/ui/lib/ThemeProvider'
+import { ThemeProvider } from '@/ui/lib/ThemeProvider'
 import { ChunkReloadOverlay } from '@/ui/public/chrome/ChunkReloadOverlay'
 import { ErrorView } from '@/ui/public/chrome/ErrorView'
 import { NavigationSplash } from '@/ui/public/chrome/NavigationSplash'
@@ -75,49 +73,35 @@ export function meta({ loaderData, matches }: Route.MetaArgs) {
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const rc = getRequestContext({ request, context })
-  const { session } = rc
-  const role = rc.viewer?.role ?? null
-  const user = rc.viewer ?? undefined
-  const admin = role === 'admin'
-  const csrfToken = session.get('csrfToken')
-  if (typeof csrfToken !== 'string') {
-    throw new Error('CSRF token missing from session — session middleware must run before root loader')
-  }
-  const currentUser = user && role ? { id: user.id, name: user.name, role } : null
+  const { caller, cspNonce } = createSsrCaller({ request, context })
 
-  const cookie = request.headers.get('Cookie') ?? ''
-  const themeMatch = cookie.match(new RegExp(`(?:^|;\\s*)${THEME_COOKIE}=([^;]*)`))
-  const cookieValue = themeMatch?.[1]
-  const theme: 'dark' | 'light' | null = cookieValue === 'dark' ? 'dark' : cookieValue === 'light' ? 'light' : null
-
-  const rawBundle = getBlogSettingsBundleSync()
-  const blogSettings = rawBundle ? redactSecretsFromBundle(rawBundle) : null
-
-  // Resolve the configured font-id slots into browser-ready {family, href}
-  // lists so `<head>` can emit one self-hosted `<link>` per font without a
-  // second round-trip. Post/code fonts are resolved eagerly (the root layout
-  // can't know which child routes opt in via `handle.postFonts` until render)
-  // but only rendered when the matched route opts in — see the Layout below.
-  // `rc.db` is read lazily so a missing bundle never touches the
-  // request db.
-  const fonts = blogSettings?.fonts
-    ? await resolveFontsForRender(rc.db, blogSettings.fonts, /* wantsPostFonts */ true)
-    : null
+  // The data segment (identity, redacted settings bundle, resolved fonts,
+  // theme, CSRF token) loads through the content API like every public
+  // route — the theme cookie is parsed inside the procedure.
+  const boot = await caller.content.bootstrap()
 
   const warmupManifest = getWarmupManifest()
   const pathname = new URL(request.url).pathname
   const criticalLinks = getCriticalChunksForPathname(pathname) ?? warmupManifest?.tier1 ?? []
-  const tier2Chunks = warmupManifest ? collectTier2Chunks(warmupManifest, admin, new Set(criticalLinks)) : []
-
-  const cspNonce = rc.cspNonce
+  const tier2Chunks = warmupManifest ? collectTier2Chunks(warmupManifest, boot.admin, new Set(criticalLinks)) : []
 
   // Server clock for public chrome that renders dates/times (footer year,
   // sidebar calendar) — passing it down as loader data keeps SSR and
   // hydration on the same instant (repo convention, audit P2-23).
   const nowIso = new Date().toISOString()
 
-  return { admin, currentUser, blogSettings, fonts, theme, csrfToken, criticalLinks, tier2Chunks, cspNonce, nowIso }
+  return {
+    admin: boot.admin,
+    currentUser: boot.currentUser,
+    blogSettings: boot.blogSettings,
+    fonts: boot.fonts,
+    theme: boot.theme,
+    csrfToken: boot.csrfToken,
+    criticalLinks,
+    tier2Chunks,
+    cspNonce,
+    nowIso,
+  }
 }
 
 export function shouldRevalidate({ formAction, defaultShouldRevalidate }: ShouldRevalidateFunctionArgs) {

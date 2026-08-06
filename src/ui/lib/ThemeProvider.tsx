@@ -3,6 +3,7 @@ import { flushSync } from 'react-dom'
 
 import { getLogger } from '@/client/lib/logger'
 import { transitionViewIfSupported } from '@/client/lib/view-transition'
+import { THEME_COOKIE } from '@/shared/utils/theme-cookie'
 
 const logger = getLogger('theme')
 
@@ -15,8 +16,7 @@ interface ThemeContextType {
   resolvedTheme: Resolved
 }
 
-const STORAGE_KEY = 'kobato-blog-theme'
-export const THEME_COOKIE = 'kobato-blog-theme'
+const STORAGE_KEY = THEME_COOKIE
 
 const ThemeContext = createContext<ThemeContextType | null>(null)
 

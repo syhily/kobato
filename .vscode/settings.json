@@ -40,7 +40,7 @@
     "*.css": "tailwindcss"
   },
   "npm.scriptRunner": "pnpm",
-  "tailwindCSS.experimental.configFile": "${workspaceRoot}/src/styles/tailwind.css",
+  "tailwindCSS.experimental.configFile": "${workspaceRoot}/src/styles/public.css",
   "tailwindCSS.classFunctions": ["cn"],
   "tailwindCSS.includeLanguages": {
     "mdx": "html"
