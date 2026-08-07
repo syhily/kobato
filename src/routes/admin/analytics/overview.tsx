@@ -6,7 +6,8 @@ function isChartTab(value: string): value is 'views' | 'heatmap' {
 
 import type { MetricGroup } from '@/shared/contracts/analytics'
 
-import { loadAdminAnalyticsOverview } from '@/server/http/loaders/analytics-overview'
+import { requireRole } from '@/server/domains/auth/rbac'
+import { createSsrCaller } from '@/server/http/ssr-caller'
 import { METRIC_GROUPS } from '@/shared/contracts/analytics'
 import { Counters } from '@/ui/admin/analytics/Counters'
 import { DateRangePicker } from '@/ui/admin/analytics/DateRangePicker'
@@ -21,12 +22,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/components/tabs'
 import type { Route } from './+types/overview'
 
 // Overview tab. The loader fans out all dashboard queries in parallel
-// (via `@/server/http/loaders/analytics-overview` → the domain's
+// (via the in-process `analytics.overview` procedure → the domain's
 // `loadAnalyticsOverview`) so the first paint is fully populated;
 // client-side fetchers (`MetricList`) take over once the URL state
-// changes.
+// changes. The `search` string carries the raw query string; the URL
+// grammar stays inside `parseAnalyticsSearch` (server-side).
 export async function loader({ request, context }: Route.LoaderArgs) {
-  return loadAdminAnalyticsOverview({ request, context })
+  const { caller, viewer } = createSsrCaller({ request, context })
+  requireRole({ user: viewer ?? undefined, role: viewer?.role ?? null }, 'admin')
+  const url = new URL(request.url)
+  return caller.analytics.overview({ search: url.searchParams.toString() })
 }
 
 export default function WpAdminAnalyticsOverview({ loaderData }: Route.ComponentProps) {

@@ -1,6 +1,13 @@
 import { useSyncExternalStore } from 'react'
 
-import { loadAdminDashboardData } from '@/server/http/loaders/dashboard'
+import type { CountersDto, ViewsPoint } from '@/shared/contracts/analytics'
+import type { DraftSummary } from '@/shared/contracts/dashboard'
+import type { ListPendingDashboardOutput } from '@/shared/types/comments'
+
+import { requireRole } from '@/server/domains/auth/rbac'
+import { createSsrCaller } from '@/server/http/ssr-caller'
+import { computeDateRange } from '@/shared/contracts/analytics'
+import { pickEmptyStateLine } from '@/shared/contracts/dashboard'
 import { titleMeta } from '@/shared/seo/title-meta'
 import { roleLabel } from '@/shared/utils/roles'
 import { QuickActions } from '@/ui/admin/dashboard/QuickActions'
@@ -15,11 +22,90 @@ import type { Route } from './+types/dashboard'
 
 export const meta = titleMeta('欢迎')
 
-// The data assembly (an 8-way fan-out across the comments / analytics /
-// posts domain services plus the DTO projections) lives in
-// `@/server/http/loaders/dashboard` — this route is wiring only.
+export interface AdminDashboardData {
+  name: string
+  role: 'admin' | 'author' | 'visitor'
+  /** Admin-only branches — `null` for authors (the UI hides those cards). */
+  pendingModeration: ListPendingDashboardOutput | null
+  visitSummary: CountersDto | null
+  weeklyTrend: ViewsPoint[] | null
+  emptyStateLine: string
+  stats: {
+    draftCount: number
+    publishedCount: number
+    myCommentsTotal: number
+    myCommentsPending: number
+  }
+  recentDrafts: DraftSummary[]
+  recentPublished: DraftSummary[]
+}
+
+// Must stay in lockstep with the `PAGE_SIZE` constant in
+// `PendingModerationPanel.tsx` — the panel's pagination math reads the
+// initial payload assuming this page size.
+const PENDING_PAGE_SIZE = 3
+
+// The whole dashboard data assembly is one fan-out across the
+// comments/analytics/posts procedures (admin branch) plus the wire
+// projections — orchestration stays in the loader, the procedures only
+// hand over their domain rows. The `analytics.*` procedures are gated
+// `adminProc` but only the admin branch calls them; `admin.posts.mySummary`
+// is `authorProc` and `comments-authed.myCounts` is `authedProc`, so the
+// author branch rides the same in-process caller.
 export async function loader({ request, context }: Route.LoaderArgs) {
-  return loadAdminDashboardData({ request, context })
+  const { caller, viewer } = createSsrCaller({ request, context })
+  const ctx = { user: viewer ?? undefined, role: viewer?.role ?? null }
+  // Defence-in-depth: `admin.layout` already gates author+, but
+  // asserting here narrows `ctx.user` / `ctx.role` to non-null for the
+  // loader body so the response shape is statically tight.
+  requireRole(ctx, 'author')
+
+  const admin = ctx.user.role === 'admin'
+
+  // Fan out every dashboard query in one go. Each branch is a small
+  // count(*) or LIMIT-5 select, so the round-trip wins dominate the
+  // per-query CPU cost.
+  const now = new Date()
+  const nowSec = Math.floor(now.getTime() / 1000)
+  const dayRange = { startAt: nowSec - 24 * 60 * 60, endAt: nowSec }
+  const weekRange = computeDateRange('last-7d', now)
+  // `analytics.*` inputs are strings (`parseAnalyticsInput` parseInts
+  // them); `computeDateRange` yields unix seconds, so stringify.
+  // The `comments-authed` group lives under the `comments` namespace
+  // (`myCounts` is authedProc); `admin.posts.mySummary` is `authorProc`.
+  const [pendingModeration, visitSummary, weeklyTrend, mySummary, myCommentCounts] = await Promise.all([
+    admin
+      ? caller.admin.comments.listPendingDashboard({ kind: 'all', offset: 0, limit: PENDING_PAGE_SIZE })
+      : Promise.resolve(null),
+    admin
+      ? caller.analytics.counters({ startAt: String(dayRange.startAt), endAt: String(dayRange.endAt) })
+      : Promise.resolve(null),
+    admin
+      ? caller.analytics.views({ startAt: String(weekRange.startAt), endAt: String(weekRange.endAt) })
+      : Promise.resolve(null),
+    caller.admin.posts.mySummary(),
+    caller.comments.myCounts(),
+  ])
+
+  return {
+    name: ctx.user.name,
+    role: ctx.user.role,
+    pendingModeration,
+    visitSummary,
+    weeklyTrend,
+    emptyStateLine: pickEmptyStateLine(),
+    stats: {
+      draftCount: mySummary.draftCount,
+      publishedCount: mySummary.publishedCount,
+      myCommentsTotal: myCommentCounts.total,
+      myCommentsPending: myCommentCounts.pending,
+    },
+    // The mySummary procedure projects the same rows the old loader
+    // projected (id stringified, title, published falls back to
+    // updatedAt) — pass them through untouched.
+    recentDrafts: mySummary.recentDrafts,
+    recentPublished: mySummary.recentPublished,
+  }
 }
 
 function greetingForHour(hour: number): string {

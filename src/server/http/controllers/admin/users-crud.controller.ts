@@ -2,7 +2,9 @@ import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
+import { isPasskeyEnabled } from '@/server/domains/auth/passkey/gate'
 import {
+  countUsers,
   fetchAdminUserDto,
   listUsersForAdmin,
   softDeleteUserWithGuard,
@@ -10,12 +12,28 @@ import {
 } from '@/server/domains/users/services/admin'
 import { adminProc } from '@/server/http/orpc-base'
 import { restoreUserById, updateUserById } from '@/server/infra/db/operations/user'
+import { adminUsersCountOutputSchema, adminUsersPasskeyFlagOutputSchema } from '@/shared/contracts/admin'
 import { adminUserDto } from '@/shared/contracts/users'
 import { idFromString } from '@/shared/utils/id'
 import { optionalHttpUrlSchema } from '@/shared/utils/safe-url'
 
 const idInput = z.object({ id: z.string().min(1) })
 const successOutput = z.object({ success: z.boolean() })
+
+// Total user count for the admin layout's badge — one `count(*)`, no
+// filters (the list endpoint owns the filtered count).
+const count = adminProc
+  .route({ method: 'GET', path: '/admin/users/count' })
+  .output(adminUsersCountOutputSchema)
+  .handler(({ context }) => countUsers(context.db))
+
+// Passkey feature gate for the user detail page — reads the in-process
+// settings snapshot, same `isPasskeyEnabled` the account/passkey
+// procedures use.
+const passkeyFlag = adminProc
+  .route({ method: 'GET', path: '/admin/users/passkey-flag' })
+  .output(adminUsersPasskeyFlagOutputSchema)
+  .handler(() => isPasskeyEnabled())
 
 const list = adminProc
   .route({ method: 'GET', path: '/admin/users/list' })
@@ -130,6 +148,8 @@ const restore = adminProc
   })
 
 export const adminUsersCrudRouter = {
+  count,
+  passkeyFlag,
   list,
   get,
   update,

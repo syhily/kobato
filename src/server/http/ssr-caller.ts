@@ -3,6 +3,7 @@ import type { LoaderFunctionArgs } from 'react-router'
 import { createRouterClient, ORPCError, type RouterClient } from '@orpc/server'
 import { redirect } from 'react-router'
 
+import type { BlogSession, SessionUser } from '@/server/domains/auth/session-storage'
 import type { ApiRouter } from '@/server/http/api-router'
 import type { HandlerContext } from '@/server/http/orpc-base'
 import type { ContentRedirectSignal, ContentSignal } from '@/shared/contracts/content'
@@ -19,7 +20,10 @@ import { notFound } from '@/server/infra/http/status'
 // the root loader) never touch `@/server/domains/*` directly — every
 // data read goes through the `content.*` procedures (plus the existing
 // `webmention.list`) via this client, so the public render path has a
-// single transport seam shared with the headless API.
+// single transport seam shared with the headless API. The admin / me
+// routes follow the same seam: their loaders compose the `admin.*` /
+// `account.*` / `analytics.*` procedures here instead of importing
+// domain services.
 //
 // `createRouterClient` invokes the procedures in-process: zero HTTP,
 // zero serialization — `Date`s and un-awaited `Promise`s (the streaming
@@ -33,7 +37,21 @@ type SsrCallerArgs = {
   context: LoaderFunctionArgs['context']
 }
 
-export function createSsrCaller(args: SsrCallerArgs): { caller: SsrCaller; cspNonce: string } {
+export type SsrCallerResult = {
+  caller: SsrCaller
+  cspNonce: string
+  /**
+   * The canonical session identity (`RequestContext.viewer`) — the
+   * route-level `requireRole` gates and the current-user projections
+   * read it, so route modules never import `getRequestContext`
+   * themselves.
+   */
+  viewer: SessionUser | null
+  /** The canonical session — `isCurrent` projections read `session.id`. */
+  session: BlogSession
+}
+
+export function createSsrCaller(args: SsrCallerArgs): SsrCallerResult {
   const rc = getRequestContext(args)
   // Same projection the Hono `/rpc/*` bridge performs (app.ts), with a
   // fresh `responseHeaders` bag — the SSR caller never merges it onto a
@@ -51,7 +69,12 @@ export function createSsrCaller(args: SsrCallerArgs): { caller: SsrCaller; cspNo
   // request context (root loader keeps it as infrastructure data) — it
   // derives once here so route modules never call `getRequestContext`
   // themselves.
-  return { caller: createRouterClient(apiRouter, { context }), cspNonce: rc.cspNonce }
+  return {
+    caller: createRouterClient(apiRouter, { context }),
+    cspNonce: rc.cspNonce,
+    viewer: rc.viewer,
+    session: rc.session,
+  }
 }
 
 // Route loaders translate `content.*` NOT_FOUNDs back into the React

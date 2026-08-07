@@ -3,10 +3,7 @@ import { data, Outlet, redirect } from 'react-router'
 import type { RouteHandle } from '@/root'
 
 import { useDetachPublicCss } from '@/client/hooks/use-detach-public-css'
-import { countAdminPendingDashboard } from '@/server/domains/comments/services/admin-query'
-import { countUsers } from '@/server/domains/users/services/admin'
-import { countPendingWebmentionsForAdmin } from '@/server/domains/webmentions/service'
-import { getRequestContext } from '@/server/http/request-context'
+import { createSsrCaller } from '@/server/http/ssr-caller'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { hasAtLeast } from '@/shared/utils/roles'
 import { AdminErrorFallback } from '@/ui/admin/shell/AdminErrorFallback'
@@ -25,10 +22,9 @@ import '@/styles/admin.css'
 export const handle: RouteHandle = { layout: 'admin', postFonts: true }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const rc = getRequestContext({ request, context })
-  const { db, url } = rc
-  const user = rc.viewer ?? undefined
-  const role = rc.viewer?.role ?? null
+  const { caller, viewer } = createSsrCaller({ request, context })
+  const user = viewer ?? undefined
+  const role = viewer?.role ?? null
   // Self-service visitors land on `/admin/me/profile`; other admin
   // routes have their own per-route `requireRole` gate that promotes
   // the minimum to `author` (content management) or `admin` (settings,
@@ -36,13 +32,17 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   // lets a logged-in commenter reach their own profile without us
   // having to ship two parallel chromes.
   if (!hasAtLeast(role, 'visitor')) {
-    const redirectPath = url.pathname
+    const redirectPath = new URL(request.url).pathname
     throw redirect(`/admin/signin?redirect_to=${encodeURIComponent(redirectPath)}`)
   }
 
-  const pendingComments = hasAtLeast(role, 'admin') ? await countAdminPendingDashboard(db) : { all: 0 }
-  const pendingWebmentions = hasAtLeast(role, 'admin') ? await countPendingWebmentionsForAdmin(db) : 0
-  const userCount = hasAtLeast(role, 'admin') ? await countUsers(db) : 0
+  const [pendingComments, pendingWebmentions, userCount] = hasAtLeast(role, 'admin')
+    ? await Promise.all([
+        caller.admin.comments.pendingCount(),
+        caller.admin.webmentions.pendingCount(),
+        caller.admin.users.count(),
+      ])
+    : ([{ all: 0 }, 0, 0] as const)
   return data({
     currentUser: {
       id: user?.id ?? '',

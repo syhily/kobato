@@ -349,6 +349,17 @@ export interface BlogSettingsBundle {
   security: SecuritySettings | null
 }
 
+/**
+ * Bundle shape downstream settings routes consume (and the
+ * `admin.settings.bootstrap` procedure output). Every section is narrowed
+ * to NonNullable because the settings layout loader enforces the
+ * invariant once — deleting ~12 identical `bundle.<section> === null`
+ * 503 guards from the per-section routes.
+ */
+export type SettingsBundle = {
+  [K in keyof BlogSettingsBundle]-?: NonNullable<BlogSettingsBundle[K]>
+}
+
 type DeepPartial<T> = T extends readonly (infer Item)[]
   ? DeepPartial<Item>[]
   : T extends object

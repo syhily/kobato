@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { asAdminCommentsWire } from '@/server/domains/comments/projection'
 import {
+  countAdminPendingDashboard,
   loadAdminPendingDashboard,
   loadAllComments,
   searchAuthorOptions,
@@ -14,6 +15,7 @@ import {
   resolveCommentDeleteRequest,
 } from '@/server/domains/comments/services/moderate'
 import { adminProc } from '@/server/http/orpc-base'
+import { adminCommentsPendingCountOutputSchema } from '@/shared/contracts/admin'
 import { adminCommentDto, adminPendingDashboardDto } from '@/shared/contracts/comments'
 import { idFromString } from '@/shared/utils/id'
 
@@ -162,6 +164,16 @@ const listPendingDashboard = adminProc
     return loadAdminPendingDashboard(context.db, input.kind, input.offset ?? 0, input.limit ?? 20)
   })
 
+// Total pending rows (`all` kind) for the admin layout's moderation
+// badge — one `count(*)`, no pagination.
+const pendingCount = adminProc
+  .route({ method: 'GET', path: '/comment-admin/pending-count' })
+  .output(adminCommentsPendingCountOutputSchema)
+  .handler(async ({ context }) => {
+    const counts = await countAdminPendingDashboard(context.db)
+    return { all: counts.all }
+  })
+
 export const adminCommentsRouter = {
   approve,
   delete: deleteOne,
@@ -170,4 +182,5 @@ export const adminCommentsRouter = {
   searchAuthors,
   approveCommentDeletion,
   listPendingDashboard,
+  pendingCount,
 }

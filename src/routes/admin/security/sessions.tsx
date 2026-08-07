@@ -1,8 +1,7 @@
 import { data } from 'react-router'
 
 import { requireRole } from '@/server/domains/auth/rbac'
-import { listAllSessions } from '@/server/domains/auth/services/sessions'
-import { getRequestContext } from '@/server/http/request-context'
+import { createSsrCaller } from '@/server/http/ssr-caller'
 import { titleMeta } from '@/shared/seo/title-meta'
 import {
   DEFAULT_ADMIN_SORT,
@@ -32,8 +31,8 @@ export interface AdminSessionItem {
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const rc = getRequestContext({ request, context })
-  const ctx = { session: rc.session, user: rc.viewer ?? undefined, role: rc.viewer?.role ?? null }
+  const { caller, viewer, session } = createSsrCaller({ request, context })
+  const ctx = { session, user: viewer ?? undefined, role: viewer?.role ?? null }
   requireRole(ctx, 'admin')
   const url = new URL(request.url)
   const sort: SessionSortState<'lastActive' | 'loginTime' | 'userName'> = parseSessionSort(
@@ -42,7 +41,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     DEFAULT_ADMIN_SORT,
   )
 
-  const all = await listAllSessions(rc.db)
+  const all = await caller.admin.users.listSessions()
   const sorted = [...all].sort((a, b) => {
     let cmp = 0
     switch (sort.field) {

@@ -6,11 +6,13 @@ import { reverifyWebmention } from '@/server/domains/webmentions/reverify'
 import { adminWebmentionListSchema, adminWebmentionOutboxListSchema } from '@/server/domains/webmentions/schema'
 import {
   approveWebmention,
+  countPendingWebmentionsForAdmin,
   listAdminWebmentionOutbox,
   listAdminWebmentions,
   rejectWebmention,
 } from '@/server/domains/webmentions/service'
 import { adminProc } from '@/server/http/orpc-base'
+import { adminWebmentionsPendingCountOutputSchema } from '@/shared/contracts/admin'
 import { adminWebmentionDto, adminWebmentionOutboxDto } from '@/shared/contracts/webmentions'
 
 const loadAll = adminProc
@@ -104,10 +106,17 @@ const outbox = adminProc
     return listAdminWebmentionOutbox(context.db, input)
   })
 
+// Pending mention count for the admin layout's badge — one `count(*)`.
+const pendingCount = adminProc
+  .route({ method: 'GET', path: '/webmention-admin/pending-count' })
+  .output(adminWebmentionsPendingCountOutputSchema)
+  .handler(({ context }) => countPendingWebmentionsForAdmin(context.db))
+
 export const adminWebmentionsRouter = {
   loadAll,
   approve,
   reject,
   reverify,
   outbox,
+  pendingCount,
 }

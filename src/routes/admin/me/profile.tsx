@@ -1,13 +1,8 @@
 import { data } from 'react-router'
 
-import { isPasskeyEnabled } from '@/server/domains/auth/passkey/gate'
 import { requireRole } from '@/server/domains/auth/rbac'
-import { isMailLoginReady } from '@/server/domains/auth/services/shared'
-import { countMyComments } from '@/server/domains/comments/services/mine-comments'
-import { getAccountProfile } from '@/server/domains/users/services/account'
-import { getRequestContext } from '@/server/http/request-context'
+import { createSsrCaller } from '@/server/http/ssr-caller'
 import { titleMeta } from '@/shared/seo/title-meta'
-import { idFromString } from '@/shared/utils/id'
 import { MyProfileView } from '@/ui/admin/my/MyProfileView'
 
 import type { Route } from './+types/profile'
@@ -15,18 +10,17 @@ import type { Route } from './+types/profile'
 export const meta = titleMeta('个人信息')
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const rc = getRequestContext({ request, context })
-  const ctx = { user: rc.viewer ?? undefined, role: rc.viewer?.role ?? null }
+  const { caller, viewer } = createSsrCaller({ request, context })
+  const ctx = { user: viewer ?? undefined, role: viewer?.role ?? null }
   // Self-service: any logged-in role can edit their own row. admin.layout
   // already rejects anonymous visitors; this keeps the contract explicit.
   requireRole(ctx, 'visitor')
-  const userId = idFromString(ctx.user.id)
-  const [profile, counts] = await Promise.all([getAccountProfile(rc.db, userId), countMyComments(rc.db, userId)])
+  const [profile, myCounts] = await Promise.all([caller.account.profile(), caller.comments.myCounts()])
   return data({
-    user: profile,
-    counts,
-    passkeyEnabled: isPasskeyEnabled(),
-    mailReady: isMailLoginReady(),
+    user: profile.user,
+    counts: myCounts,
+    passkeyEnabled: profile.passkeyEnabled,
+    mailReady: profile.mailReady,
   })
 }
 

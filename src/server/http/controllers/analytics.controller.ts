@@ -4,9 +4,15 @@ import { getAnalyticsReader } from '@/server/bootstrap/analytics-lifecycle'
 import { queryCounters } from '@/server/domains/analytics/services/counters'
 import { queryHeatmap } from '@/server/domains/analytics/services/heatmap'
 import { queryMetric } from '@/server/domains/analytics/services/metric'
-import { parseAnalyticsInput } from '@/server/domains/analytics/services/query-parser'
+import { loadAnalyticsOverview } from '@/server/domains/analytics/services/overview'
+import { parseAnalyticsInput, parseAnalyticsSearch } from '@/server/domains/analytics/services/query-parser'
 import { queryViews } from '@/server/domains/analytics/services/views'
 import { adminProc } from '@/server/http/orpc-base'
+import {
+  adminAnalyticsMentionsOutputSchema,
+  adminAnalyticsOverviewOutputSchema,
+  adminAnalyticsSearchInputSchema,
+} from '@/shared/contracts/admin'
 import { METRIC_TYPE_VALUES, PRESET_KEY_VALUES } from '@/shared/contracts/analytics'
 
 const presetKey = z.enum(PRESET_KEY_VALUES)
@@ -78,4 +84,32 @@ const metrics = adminProc
     return queryMetric(getAnalyticsReader(), parseAnalyticsInput(input), input.type, input.limit)
   })
 
-export const analyticsRouter = { counters, views, heatmap, metrics }
+// Site-wide analytics first-paint fan-out (counters + views + heatmap +
+// first metric tab of every group), behind `/admin/analytics/overview`.
+// `search` carries the raw query string; the URL grammar stays inside
+// `parseAnalyticsSearch` (server-side).
+const overview = adminProc
+  .route({ method: 'GET', path: '/analytics/overview' })
+  .input(adminAnalyticsSearchInputSchema)
+  .output(adminAnalyticsOverviewOutputSchema)
+  .handler(({ input }) =>
+    loadAnalyticsOverview(getAnalyticsReader(), parseAnalyticsSearch(new URLSearchParams(input.search))),
+  )
+
+// Mentions page data: top 50 referers for the parsed range — the same
+// `queryMetric('referer', 50)` shape `loaders/mentions.ts` produced.
+const mentions = adminProc
+  .route({ method: 'GET', path: '/analytics/mentions' })
+  .input(adminAnalyticsSearchInputSchema)
+  .output(adminAnalyticsMentionsOutputSchema)
+  .handler(async ({ input }) => {
+    const referers = await queryMetric(
+      getAnalyticsReader(),
+      parseAnalyticsSearch(new URLSearchParams(input.search)),
+      'referer',
+      50,
+    )
+    return { referers }
+  })
+
+export const analyticsRouter = { counters, views, heatmap, metrics, overview, mentions }

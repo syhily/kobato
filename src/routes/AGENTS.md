@@ -61,6 +61,18 @@ Adding a route: pick the area directory, choose a role filename, add the manifes
   args — the theme cookie is parsed inside the procedure. The exact `@/server/*` import whitelist
   for public routes + root is pinned by the boundaries contract
   test (`ssr-caller`, `loaders/route-exports`, `infra/http/*`, plus `render/warmup/*` for root).
+- **Admin SSR data goes through oRPC too** — `routes/admin/**` and `routes/editor/**` loaders
+  compose the domain endpoints (`account.*`, `comments.*`, `analytics.*`, `admin.*` — added in
+  `shared/contracts/admin.ts`) via the same `createSsrCaller` (which also returns `viewer`/`session`
+  for the route-level `requireRole` gates and `isCurrent` projections). Loaders keep the
+  `requireRole` gate, do their own `Promise.all` composition (role-conditional branches — e.g. the
+  dashboard's admin-only analytics/moderation reads), and translate `ORPCError` codes back to
+  Responses (`NOT_FOUND` → `notFound()`, `SERVICE_UNAVAILABLE` → the historical 503 texts). There
+  is no page-level aggregate group — orchestration stays in the loaders. The boundaries test pins
+  the admin/editor whitelist (`ssr-caller`, `request-context`, `domains/auth/rbac`, `infra/http/*`)
+  and the auth whitelist (signin/setup authentication-flow orchestration, which deliberately stays
+  direct: `domains/auth/*`, `domains/comments/services/public-query`, `domains/settings/install-gate`,
+  `http/loaders/signin`, `request-context`, `infra/rate-limit`).
 - **Non-page requests** (API, feeds, sitemap, generated images) are served by Hono native routes
   mounted in `server.ts`, NOT React Router resource routes.
 - Public URLs and physical paths stay stable — route ids derive from the file path.

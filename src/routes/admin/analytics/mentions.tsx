@@ -1,6 +1,5 @@
 import { requireRole } from '@/server/domains/auth/rbac'
-import { loadMentionsReferers } from '@/server/http/loaders/mentions'
-import { getRequestContext } from '@/server/http/request-context'
+import { createSsrCaller } from '@/server/http/ssr-caller'
 import { DateRangePicker } from '@/ui/admin/analytics/DateRangePicker'
 import { useAnalyticsState } from '@/ui/admin/analytics/use-analytics-state'
 import { Card, CardContent } from '@/ui/components/card'
@@ -8,13 +7,13 @@ import { Card, CardContent } from '@/ui/components/card'
 import type { Route } from './+types/mentions'
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const rc = getRequestContext({ request, context })
-  const user = rc.viewer ?? undefined
-  const role = rc.viewer?.role ?? null
+  const { caller, viewer } = createSsrCaller({ request, context })
+  const user = viewer ?? undefined
+  const role = viewer?.role ?? null
   requireRole({ user, role }, 'admin')
 
   const url = new URL(request.url)
-  return loadMentionsReferers(url.searchParams)
+  return caller.analytics.mentions({ search: url.searchParams.toString() })
 }
 
 export default function MentionsPage({ loaderData }: Route.ComponentProps) {

@@ -55,17 +55,20 @@ contracts module. `shared/types/` keeps only types that have no contract
 schema. The `Assert`/`Equals` helpers in `contracts/primitives` remain for
 the settings system's compile-time registry checks.
 
-**Exception — `contracts/content.ts` (the `content.*` SSR wire contract).**
-Its output schemas deliberately use `z.custom<T>()` over the historical
-loader-data types instead of full Zod schemas: the inferred output types
-must EXACTLY match the historical loader-data shapes (bit-identical public
-rendering — no lossy partial schema may drift from them), and the primary
-consumer is the in-process SSR caller, which never re-serializes the
-payload. HTTP-path coverage for these outputs comes from
-`tests/it/server/http/content-api.test.ts`. Input schemas and the
-redirect/not-modified signal unions in that module still use real Zod.
-This exception is scoped to `contracts/content.ts` only — every other
-contracts module follows the single-source rule above.
+**Exception — the content/admin SSR wire contracts
+(`contracts/content.ts` + `contracts/admin.ts`).**
+Their output schemas deliberately use `z.custom<T>()` over the historical
+loader-data types (and, for admin, the domain-service row/projection types)
+instead of full Zod schemas: the inferred output types must EXACTLY match
+the historical loader-data shapes (bit-identical SSR rendering — no lossy
+partial schema may drift from them), and the primary consumer is the
+in-process SSR caller, which never re-serializes the payload. HTTP-path
+coverage for these outputs comes from `tests/it/server/http/content-api.test.ts`
+(admin outputs follow in `tests/it/server/http/admin-api.test.ts`). Input
+schemas — and the redirect/not-modified signal unions in `contracts/content.ts` —
+still use real Zod. This exception is scoped to the content/admin SSR
+contracts only — every other contracts module follows the single-source
+rule above.
 
 ## Client API usage
 

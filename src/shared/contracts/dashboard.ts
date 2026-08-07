@@ -1,5 +1,5 @@
-// Admin dashboard wire contracts. The dashboard loader
-// (`@/server/http/loaders/dashboard`) projects recent drafts / published
+// Admin dashboard wire contracts. The dashboard route loader
+// (`@/routes/admin/dashboard`) projects recent drafts / published
 // posts into `DraftSummary` and picks the moderation empty-state line
 // server-side; the UI cards consume both as plain props. Isomorphic so
 // the route chunk and the server bundle share one definition.

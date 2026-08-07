@@ -2,13 +2,23 @@ import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { asCommentItemWire } from '@/server/domains/comments/projection'
-import { listMyCommentEntities, loadMineCommentsPage } from '@/server/domains/comments/services/mine-comments'
+import {
+  countMyComments,
+  listMyCommentEntities,
+  loadMineCommentsPage,
+} from '@/server/domains/comments/services/mine-comments'
 import {
   cancelOwnCommentDeletion,
   editOwnComment,
   requestOwnCommentDeletion,
 } from '@/server/domains/comments/services/moderate'
+import { resolveEntitiesForComments } from '@/server/domains/content/entities/slug-title'
 import { authedProc } from '@/server/http/orpc-base'
+import {
+  commentsMyCountsOutputSchema,
+  commentsResolveEntityInputSchema,
+  commentsResolveEntityOutputSchema,
+} from '@/shared/contracts/admin'
 import { ownCommentMutationDto } from '@/shared/contracts/comments'
 import { commentBodySchema } from '@/shared/pt/comment-schema'
 import { parseCommentEntity, serializeCommentEntity } from '@/shared/utils/comments'
@@ -106,10 +116,38 @@ const searchMineEntities = authedProc
     }
   })
 
+// Comment count tuple for the profile/dashboard cards — the service's
+// full `{ total, pending, deleteRequested, deleted }` passes through
+// unchanged (the profile card renders all four rows).
+const myCounts = authedProc
+  .route({ method: 'GET', path: '/comments/my-counts' })
+  .output(commentsMyCountsOutputSchema)
+  .handler(async ({ context }) => countMyComments(context.db, idFromString(context.viewer.id)))
+
+// Follow-up entity resolve for `/admin/me/comments`: when the URL pins an
+// entity that is not in the mine-comments entity dropdown, the loader
+// asks here for its title. Malformed keys and hard-deleted entities
+// answer `null` — the loader keeps the pinned raw key in that case.
+const resolveEntity = authedProc
+  .route({ method: 'GET', path: '/comments/resolve-entity' })
+  .input(commentsResolveEntityInputSchema)
+  .output(commentsResolveEntityOutputSchema)
+  .handler(async ({ input, context }) => {
+    const parsed = parseCommentEntity(input.entity)
+    if (parsed === null) {
+      return null
+    }
+    const resolved = await resolveEntitiesForComments(context.db, [parsed])
+    const hit = resolved.get(serializeCommentEntity(parsed))
+    return hit === undefined ? null : { value: serializeCommentEntity(parsed), label: hit.title }
+  })
+
 export const commentsAuthedRouter = {
   updateOwn,
   requestDeleteOwn,
   cancelDeleteOwn,
   loadMine,
   searchMineEntities,
+  myCounts,
+  resolveEntity,
 }

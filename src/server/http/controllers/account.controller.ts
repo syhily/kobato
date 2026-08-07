@@ -13,9 +13,10 @@ import {
   verifyRegistrationResponse,
 } from '@/server/domains/auth/passkey/service'
 import { MIN_PASSWORD_LENGTH, PASSWORD_COMPLEXITY_RE } from '@/server/domains/auth/schema'
+import { listSessionsByUser } from '@/server/domains/auth/services/sessions'
 import { isMailLoginReady } from '@/server/domains/auth/services/shared'
 import { revokeOwnSessionWithGuard } from '@/server/domains/auth/session-guard'
-import { updateAccountPassword, updateAccountProfile } from '@/server/domains/users/services/account'
+import { getAccountProfile, updateAccountPassword, updateAccountProfile } from '@/server/domains/users/services/account'
 import { authedProc, passkeyGuard } from '@/server/http/orpc-base'
 import { findSafeUserById } from '@/server/infra/db/operations/user'
 import {
@@ -25,6 +26,7 @@ import {
   tryPasskeySetForceRateLimit,
   tryRateLimit,
 } from '@/server/infra/rate-limit'
+import { accountProfileOutputSchema, accountSessionsOutputSchema } from '@/shared/contracts/admin'
 import { loginMethodSchema } from '@/shared/contracts/users'
 import { idFromString } from '@/shared/utils/id'
 import { isRecord } from '@/shared/utils/type-guards'
@@ -86,6 +88,27 @@ const accountUserOutput = z.object({
 })
 
 // ─── Procedures ─────────────────────────────────────────
+
+// The self-service profile read behind `/admin/me/profile`: the domain's
+// full `AccountProfile` projection (a deleted-mid-session row degrades to
+// empty fields, matching the old loader) plus the two feature switches
+// the page renders. Raw service output — no projection here.
+const profile = authedProc
+  .route({ method: 'GET', path: '/account/profile' })
+  .output(accountProfileOutputSchema)
+  .handler(async ({ context }) => {
+    const { db, viewer } = context
+    const user = await getAccountProfile(db, idFromString(viewer.id))
+    return { user, passkeyEnabled: isPasskeyEnabled(), mailReady: isMailLoginReady() }
+  })
+
+// The raw session rows behind `/admin/me/sessions`. Sorting and the
+// `isCurrent` flag stay in the route loader (`parseSessionSort` is
+// shared) — the endpoint only hands over the live-session list.
+const sessions = authedProc
+  .route({ method: 'GET', path: '/account/sessions' })
+  .output(accountSessionsOutputSchema)
+  .handler(async ({ context }) => listSessionsByUser(context.db, idFromString(context.viewer.id)))
 
 const updateProfile = authedProc
   .route({ method: 'POST', path: '/account/update-profile' })
@@ -286,6 +309,8 @@ const setLoginMethodProc = authedProc
   })
 
 export const accountRouter = {
+  profile,
+  sessions,
   updateProfile,
   updatePassword,
   revokeSession,

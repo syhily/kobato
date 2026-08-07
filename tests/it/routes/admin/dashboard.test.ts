@@ -11,19 +11,20 @@ import { comment as commentTable } from '@/server/infra/db/schema/comment'
 import { post as postTable } from '@/server/infra/db/schema/post'
 import { EMPTY_STATE_LINES } from '@/shared/contracts/dashboard'
 
-// The dashboard loader against the real engine: posts/comments are real
-// rows in the shared in-memory SQLite, the analytics fan-out
-// (queryCounters/queryViews) runs for real against an ADOPTED DuckDB
-// sidecar — analytics-lifecycle's own test seam — and the admin-only
-// branches are pinned by their real RESULTS (null for authors), not by
-// "service was not called" behavioural assertions. No mocks at all.
+// The dashboard route loader against the real engine: posts/comments are
+// real rows in the shared in-memory SQLite, the analytics fan-out
+// (analytics.counters/views procedures) runs for real against an ADOPTED
+// DuckDB sidecar — analytics-lifecycle's own test seam — and the
+// admin-only branches are pinned by their real RESULTS (null for
+// authors), not by "service was not called" behavioural assertions. No
+// mocks at all.
 
 const db = getTestDb()
 
 const analyticsHandle: AnalyticsHandle = await createTestAnalyticsDb()
 __adoptAnalyticsHandleForTests(analyticsHandle)
 
-const { loadAdminDashboardData } = await import('@/server/http/loaders/dashboard')
+const { loader } = await import('@/routes/admin/dashboard')
 
 beforeEach(async () => {
   await clearAllTables(db)
@@ -83,7 +84,7 @@ async function seedVisits(): Promise<void> {
   ])
 }
 
-describe('loadAdminDashboardData (real db + real analytics)', () => {
+describe('admin dashboard loader (real db + real analytics)', () => {
   it('assembles the full payload for an admin, admin-only branches included', async () => {
     const draftId = await seedPost(1, {
       title: 'Draft A',
@@ -100,7 +101,7 @@ describe('loadAdminDashboardData (real db + real analytics)', () => {
     await seedComment(1)
     await seedVisits()
 
-    const data = await loadAdminDashboardData(makeLoaderArgs({ session: adminSession(), db }))
+    const data = await loader(makeLoaderArgs({ session: adminSession(), db }))
 
     expect(data.name).toBe('admin')
     expect(data.role).toBe('admin')
@@ -141,7 +142,7 @@ describe('loadAdminDashboardData (real db + real analytics)', () => {
     await seedComment(1)
     await seedVisits()
 
-    const data = await loadAdminDashboardData(makeLoaderArgs({ session: authorSession(), db }))
+    const data = await loader(makeLoaderArgs({ session: authorSession(), db }))
 
     expect(data.role).toBe('author')
     // Admin-only branches are null for authors (the UI hides those cards) —
@@ -158,6 +159,6 @@ describe('loadAdminDashboardData (real db + real analytics)', () => {
   })
 
   it('rejects anonymous viewers', async () => {
-    await expect(loadAdminDashboardData(makeLoaderArgs({ user: null, db }))).rejects.toMatchObject({ status: 403 })
+    await expect(loader(makeLoaderArgs({ user: null, db }))).rejects.toMatchObject({ status: 403 })
   })
 })

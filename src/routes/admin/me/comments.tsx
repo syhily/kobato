@@ -4,12 +4,9 @@ import type { CommentBody } from '@/shared/pt/comment-schema'
 import type { MyCommentsStatus } from '@/shared/types/comments'
 
 import { requireRole } from '@/server/domains/auth/rbac'
-import { listMyCommentEntities } from '@/server/domains/comments/services/mine-comments'
-import { resolveEntitiesForComments } from '@/server/domains/content/entities/slug-title'
-import { getRequestContext } from '@/server/http/request-context'
+import { createSsrCaller } from '@/server/http/ssr-caller'
 import { titleMeta } from '@/shared/seo/title-meta'
 import { parseCommentEntity, serializeCommentEntity } from '@/shared/utils/comments'
-import { idFromString } from '@/shared/utils/id'
 import { MyCommentsView } from '@/ui/admin/my/MyCommentsView'
 
 import type { Route } from './+types/comments'
@@ -54,30 +51,25 @@ function parseStatus(raw: string | null): MyCommentsStatus {
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const rc = getRequestContext({ request, context })
-  const ctx = { user: rc.viewer ?? undefined, role: rc.viewer?.role ?? null }
+  const { caller, viewer } = createSsrCaller({ request, context })
+  const ctx = { user: viewer ?? undefined, role: viewer?.role ?? null }
   // Self-service path — any logged-in role can see their own comments.
   requireRole(ctx, 'visitor')
-  const userId = idFromString(ctx.user.id)
   const url = new URL(request.url)
   const status = parseStatus(url.searchParams.get('status'))
   const q = (url.searchParams.get('q') ?? '').trim()
   const entity = parseCommentEntity(url.searchParams.get('entity'))
   const entityValue = entity ? serializeCommentEntity(entity) : null
 
-  const entityOptionsRaw = await listMyCommentEntities(rc.db, userId)
-  const entityOptions: MyCommentEntityOption[] = entityOptionsRaw.map((e) => ({
-    value: serializeCommentEntity({ type: e.type, ownerId: e.ownerId }),
-    label: e.title,
-  }))
+  const { entities } = await caller.comments.searchMineEntities({})
+  const entityOptions: MyCommentEntityOption[] = entities
 
   // If the URL pins an entity that isn't in the result set, do a
   // follow-up lookup so the trigger can render the human-readable title.
   if (entity && !entityOptions.some((o) => o.value === entityValue)) {
-    const resolved = await resolveEntitiesForComments(rc.db, [entity])
-    const row = resolved.get(serializeCommentEntity(entity))
-    if (row) {
-      entityOptions.unshift({ value: serializeCommentEntity(entity), label: row.title })
+    const resolved = await caller.comments.resolveEntity({ entity: entityValue! })
+    if (resolved !== null) {
+      entityOptions.unshift(resolved)
     }
   }
 

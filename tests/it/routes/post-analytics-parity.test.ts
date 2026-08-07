@@ -1,7 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { PostAnalyticsData } from '@/server/http/loaders/post-analytics'
 import type { AnalyticsHandle } from '@/server/infra/analytics/duckdb'
+import type { AdminPostAnalyticsData } from '@/shared/contracts/admin'
 
 import { clearAccessLog, closeTestAnalyticsDb, createTestAnalyticsDb, seedAccessEvents } from '#/_helpers/analytics-db'
 import { makeLoaderArgs, unwrapLoaderData } from '#/_helpers/context'
@@ -12,7 +12,8 @@ import { post as postTable } from '@/server/infra/db/schema/post'
 import { postTag } from '@/server/infra/db/schema/post-tag'
 import { tag as tagTable } from '@/server/infra/db/schema/taxonomy'
 // Parity net for plan 062: /admin/posts/:postId/analytics and
-// /editor/post/:id/analytics share `loadPostAnalyticsData`. This test
+// /editor/post/:id/analytics share the `admin.posts.analytics` procedure
+// (shape `AdminPostAnalyticsData`). This test
 // pins both routes to identical loader data for the same post so a
 // future edit can't silently diverge one shell from the other.
 //
@@ -101,10 +102,10 @@ describe('post analytics route parity (real db + real analytics)', () => {
     await seedPostTag(postId, 'typescript')
     await seedViews(postId)
 
-    const adminData = unwrapLoaderData<PostAnalyticsData>(
+    const adminData = unwrapLoaderData<AdminPostAnalyticsData>(
       await adminRoute.loader(makeLoaderArgs({ request, session, db, params: { postId: String(postId) } })),
     )
-    const editorData = unwrapLoaderData<PostAnalyticsData>(
+    const editorData = unwrapLoaderData<AdminPostAnalyticsData>(
       await editorRoute.loader(makeLoaderArgs({ request, session, db, params: { id: String(postId) } })),
     )
 
@@ -116,10 +117,10 @@ describe('post analytics route parity (real db + real analytics)', () => {
     await seedPostTag(postId, 'typescript')
     await seedViews(postId)
 
-    const adminData = unwrapLoaderData<PostAnalyticsData>(
+    const adminData = unwrapLoaderData<AdminPostAnalyticsData>(
       await adminRoute.loader(makeLoaderArgs({ request, session, db, params: { postId: String(postId) } })),
     )
-    const editorData = unwrapLoaderData<PostAnalyticsData>(
+    const editorData = unwrapLoaderData<AdminPostAnalyticsData>(
       await editorRoute.loader(makeLoaderArgs({ request, session, db, params: { id: String(postId) } })),
     )
 

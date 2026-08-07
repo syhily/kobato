@@ -544,6 +544,94 @@ describe('contract: module and bundle boundaries', () => {
     expect(offenders).toEqual([])
   })
 
+  it('keeps the admin/editor SSR data path on the API: routes/admin + routes/editor stay inside the server-import whitelist', () => {
+    // Every admin/editor data load goes through oRPC (`admin.*`,
+    // `analytics.*`, `comments-authed.*`, `account.*` via the in-process
+    // `@/server/http/ssr-caller`) — the `@/server/http/loaders/*`
+    // orchestrators were deleted as part of the migration. What remains
+    // on the whitelist is the gating + HTTP orchestration line:
+    //
+    //   `@/server/http/ssr-caller`          — the one data-access seam
+    //   `@/server/http/request-context`     — action request-context
+    //                                         extraction (getRequestContext)
+    //   `@/server/domains/auth/rbac`        — loader requireRole gate
+    //   `@/server/infra/http/*`             — union→Response translation
+    //                                         (notFound / status)
+    //
+    // Value and type imports both count, whether `@/`-aliased or relative.
+    const allowed = (target: string): boolean => {
+      const prefixes = [
+        '@/server/http/ssr-caller',
+        '@/server/http/request-context',
+        '@/server/domains/auth/rbac',
+        '@/server/infra/http/',
+      ]
+      return prefixes.some((prefix) => target.startsWith(prefix) || target.startsWith(`src/${prefix.slice(2)}`))
+    }
+    const offenders: string[] = []
+    for (const file of [
+      ...files('src/routes/admin', '-g', '*.ts', '-g', '*.tsx'),
+      ...files('src/routes/editor', '-g', '*.ts', '-g', '*.tsx'),
+    ]) {
+      for (const specifier of importSpecifiers(stripComments(readFileSync(file, 'utf8')))) {
+        const target = resolveSpecifier(file, specifier)
+        if ((target.startsWith('@/server/') || target.startsWith('src/server/')) && !allowed(target)) {
+          offenders.push(`${file}: ${specifier}`)
+        }
+      }
+    }
+
+    expect(offenders).toEqual([])
+  })
+
+  it('keeps the auth orchestration imports direct: routes/auth stays on the signin/setup whitelist', () => {
+    // The auth routes are orchestration, not data reads: signin/setup
+    // assemble the authentication flow (session writes, Set-Cookie,
+    // redirects, token peeks, CSRF) that no data endpoint can replace —
+    // out of scope for the API migration by design. Their direct server
+    // imports are the flow's own domain surface plus the infra/HTTP
+    // primitives the actions need:
+    //
+    //   `@/server/domains/auth/*`                      — the auth flow
+    //                                                     (csrf / schema /
+    //                                                     services / setup-token /
+    //                                                     passkey)
+    //   `@/server/domains/comments/services/public-query` — hasApprovedComments
+    //                                                     (signed-in redirect)
+    //   `@/server/domains/settings/install-gate`        — ensureInstalledOrRedirect /
+    //                                                     ensureNoAdminOrRedirect
+    //   `@/server/http/loaders/signin`                  — loadSigninData (the one
+    //                                                     legacy loader kept)
+    //   `@/server/http/request-context`                 — action request-context
+    //                                                     extraction
+    //   `@/server/infra/rate-limit`                     — tryKeyedRateLimit on
+    //                                                     the signin/setup actions
+    //
+    // Value and type imports both count, whether `@/`-aliased or relative.
+    const allowed = (target: string): boolean => {
+      const prefixes = [
+        '@/server/domains/auth/',
+        '@/server/domains/comments/services/public-query',
+        '@/server/domains/settings/install-gate',
+        '@/server/http/loaders/signin',
+        '@/server/http/request-context',
+        '@/server/infra/rate-limit',
+      ]
+      return prefixes.some((prefix) => target.startsWith(prefix) || target.startsWith(`src/${prefix.slice(2)}`))
+    }
+    const offenders: string[] = []
+    for (const file of files('src/routes/auth', '-g', '*.ts', '-g', '*.tsx')) {
+      for (const specifier of importSpecifiers(stripComments(readFileSync(file, 'utf8')))) {
+        const target = resolveSpecifier(file, specifier)
+        if ((target.startsWith('@/server/') || target.startsWith('src/server/')) && !allowed(target)) {
+          offenders.push(`${file}: ${specifier}`)
+        }
+      }
+    }
+
+    expect(offenders).toEqual([])
+  })
+
   it('keeps client and ui modules out of the server layer', () => {
     // `@/client/` hooks and `@/ui/` components touch DOM APIs and styles
     // that cannot evaluate under SSR — the server must depend on

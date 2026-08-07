@@ -2,13 +2,22 @@ import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
+import { listAllSessions } from '@/server/domains/auth/services/sessions'
 import { revokeAllSessionsWithGuard, revokeSessionWithGuard } from '@/server/domains/auth/session-guard'
 import { bulkApproveCommentsByUser, bulkDeleteCommentsByUser } from '@/server/domains/comments/services/moderate'
 import { adminProc } from '@/server/http/orpc-base'
+import { adminUsersListSessionsOutputSchema } from '@/shared/contracts/admin'
 import { idFromString } from '@/shared/utils/id'
 
 const userIdInput = z.object({ userId: z.string().min(1) })
 const successOutput = z.object({ success: z.boolean() })
+
+// Every live session across the site, user-joined raw rows — the
+// security sessions page sorts/projects in the loader.
+const listSessions = adminProc
+  .route({ method: 'GET', path: '/admin/users/list-sessions' })
+  .output(adminUsersListSessionsOutputSchema)
+  .handler(({ context }) => listAllSessions(context.db))
 
 const revokeSession = adminProc
   .route({ method: 'POST', path: '/admin/users/revoke-session' })
@@ -77,6 +86,7 @@ const bulkDeleteComments = adminProc
   })
 
 export const adminUsersSessionsRouter = {
+  listSessions,
   revokeSession,
   revokeAllSessions,
   bulkApproveComments,

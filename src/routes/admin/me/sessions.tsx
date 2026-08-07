@@ -1,10 +1,8 @@
 import { data } from 'react-router'
 
 import { requireRole } from '@/server/domains/auth/rbac'
-import { listSessionsByUser } from '@/server/domains/auth/services/sessions'
-import { getRequestContext } from '@/server/http/request-context'
+import { createSsrCaller } from '@/server/http/ssr-caller'
 import { titleMeta } from '@/shared/seo/title-meta'
-import { idFromString } from '@/shared/utils/id'
 import {
   DEFAULT_MY_SORT,
   MY_SESSION_SORT_OPTIONS,
@@ -29,8 +27,8 @@ export interface MySessionItem {
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const rc = getRequestContext({ request, context })
-  const ctx = { session: rc.session, user: rc.viewer ?? undefined, role: rc.viewer?.role ?? null }
+  const { caller, viewer, session } = createSsrCaller({ request, context })
+  const ctx = { session, user: viewer ?? undefined, role: viewer?.role ?? null }
   // admin.layout already gates on `visitor`; assert here to narrow
   // `ctx.user` and guard against a future layout refactor widening access.
   requireRole(ctx, 'visitor')
@@ -40,8 +38,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     MY_SESSION_SORT_OPTIONS,
     DEFAULT_MY_SORT,
   )
-  const userId = idFromString(ctx.user.id)
-  const sessions = await listSessionsByUser(rc.db, userId)
+  const sessions = await caller.account.sessions()
   const sorted = [...sessions].sort((a, b) => {
     let cmp = 0
     switch (sort.field) {

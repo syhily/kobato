@@ -1,10 +1,16 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
+import { getAnalyticsReader } from '@/server/bootstrap/analytics-lifecycle'
+import { loadAnalyticsOverview } from '@/server/domains/analytics/services/overview'
+import { parseAnalyticsSearch } from '@/server/domains/analytics/services/query-parser'
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
+import { toAdminPostDto } from '@/server/domains/posts/projection'
 import { listPostsSchema, upsertPostMetaSchema } from '@/server/domains/posts/schema'
 import {
+  countPostMetas,
   getPostDetailForAdmin,
+  listPostMetas,
   listPostsForAdmin,
   listRevisionsForAdmin as listPostRevisionsForAdmin,
 } from '@/server/domains/posts/services/admin-query'
@@ -16,8 +22,15 @@ import {
   unpublishPost,
   updatePostMeta,
 } from '@/server/domains/posts/services/mutate'
+import { findPostMetaById } from '@/server/domains/posts/services/single'
 import { makeRevisionRouter } from '@/server/http/controllers/admin/revision-router'
 import { authorProc } from '@/server/http/orpc-base'
+import { findTagNamesByPostId } from '@/server/infra/db/operations/post-tag'
+import {
+  adminPostAnalyticsInputSchema,
+  adminPostAnalyticsOutputSchema,
+  adminPostsMySummaryOutputSchema,
+} from '@/shared/contracts/admin'
 import {
   adminPostDetailDto,
   adminPostDto,
@@ -27,6 +40,12 @@ import {
 import { idFromString } from '@/shared/utils/id'
 
 const idInput = z.object({ id: z.string().min(1) })
+
+// The recent-5 window of the dashboard cards — must stay in lockstep
+// with `RECENT_DRAFTS_LIMIT` / `RECENT_PUBLISHED_LIMIT` in
+// `src/routes/admin/dashboard.tsx` (the loader projects the same rows).
+const RECENT_DRAFTS_LIMIT = 5
+const RECENT_PUBLISHED_LIMIT = 5
 
 const list = authorProc
   .route({ method: 'GET', path: '/admin/posts/list' })
@@ -151,6 +170,76 @@ const listRevisions = authorProc
     return { revisions }
   })
 
+// Dashboard card data: draft/published counts plus the recent-5 lists,
+// scoped to the calling author. The projections below are copied
+// verbatim from `loaders/dashboard.ts` (id stringified, title, and the
+// published row falling back to `updatedAt` when never published) so the
+// cards render bit-identical data.
+const mySummary = authorProc
+  .route({ method: 'GET', path: '/admin/posts/my-summary' })
+  .output(adminPostsMySummaryOutputSchema)
+  .handler(async ({ context }) => {
+    const authorId = idFromString(context.viewer.id)
+    const [draftCount, publishedCount, recentDraftRows, recentPublishedRows] = await Promise.all([
+      countPostMetas(context.db, { authorId, deletedStatus: 'normal', lifecycle: 'draft' }),
+      countPostMetas(context.db, { authorId, deletedStatus: 'normal', lifecycle: 'published' }),
+      listPostMetas(context.db, {
+        authorId,
+        deletedStatus: 'normal',
+        lifecycle: 'draft',
+        sortBy: 'updatedAt',
+        sortOrder: 'desc',
+        limit: RECENT_DRAFTS_LIMIT,
+      }),
+      listPostMetas(context.db, {
+        authorId,
+        deletedStatus: 'normal',
+        lifecycle: 'published',
+        sortBy: 'publishedAt',
+        sortOrder: 'desc',
+        limit: RECENT_PUBLISHED_LIMIT,
+      }),
+    ])
+    return {
+      draftCount,
+      publishedCount,
+      recentDrafts: recentDraftRows.map((row) => ({
+        id: String(row.id),
+        title: row.title,
+        updatedAtIso: row.updatedAt.toISOString(),
+      })),
+      recentPublished: recentPublishedRows.map((row) => ({
+        id: String(row.id),
+        title: row.title,
+        updatedAtIso: row.publishedAt?.toISOString() ?? row.updatedAt.toISOString(),
+      })),
+    }
+  })
+
+// Per-post analytics behind both `/admin/posts/:id/analytics` and
+// `/editor/post/:id/analytics` — semantics replicated from
+// `loaders/post-analytics.ts`: NOT_FOUND on a missing meta, the admin
+// post DTO (with tags), then the overview fan-out scoped to the post.
+// `search` carries the raw query string, parsed server-side.
+const analytics = authorProc
+  .route({ method: 'GET', path: '/admin/posts/analytics' })
+  .input(adminPostAnalyticsInputSchema)
+  .output(adminPostAnalyticsOutputSchema)
+  .handler(async ({ input, context }) => {
+    const meta = findPostMetaById(context.db, input.postId)
+    if (meta === null) {
+      throw new ORPCError('NOT_FOUND', { message: '文章不存在' })
+    }
+    const tags = await findTagNamesByPostId(context.db, input.postId)
+    const post = toAdminPostDto(meta, { tags })
+    const overview = await loadAnalyticsOverview(getAnalyticsReader(), {
+      ...parseAnalyticsSearch(new URLSearchParams(input.search)),
+      entityType: 'post',
+      entityId: input.postId,
+    })
+    return { post, ...overview }
+  })
+
 export const adminPostsRouter = {
   list,
   get,
@@ -162,4 +251,6 @@ export const adminPostsRouter = {
   preview,
   upsertMeta,
   listRevisions,
+  mySummary,
+  analytics,
 }

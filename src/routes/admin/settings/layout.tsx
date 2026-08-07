@@ -1,27 +1,14 @@
+import { ORPCError } from '@orpc/server'
 import { isRouteErrorResponse, Outlet, useOutletContext, useRouteError } from 'react-router'
 
-import type { BlogSettingsBundle, SecretMasks } from '@/shared/config/types'
+import type { SecretMasks, SettingsBundle } from '@/shared/config/types'
 
-import { backfillSettingsSections, hydrateBlogSettings } from '@/server/domains/settings/services/hydrate'
-import { computeSecretMasks, redactSecretsFromBundle } from '@/server/domains/settings/services/masks'
-import { getSupportedTimeZones } from '@/server/domains/settings/timezones'
-import { getRequestContext } from '@/server/http/request-context'
-import { unsafeCast } from '@/shared/utils/unsafe-cast'
+import { createSsrCaller } from '@/server/http/ssr-caller'
 
 import type { Route } from './+types/layout'
 
 interface ParentContext {
   currentUser: { id: string; name: string; email: string }
-}
-
-/**
- * Bundle shape downstream settings routes consume. Every section is
- * narrowed to NonNullable here because the loader below enforces the
- * invariant once — deleting ~12 identical `bundle.<section> === null`
- * 503 guards from the per-section routes.
- */
-export type SettingsBundle = {
-  [K in keyof BlogSettingsBundle]-?: NonNullable<BlogSettingsBundle[K]>
 }
 
 export interface SettingsOutletContext extends ParentContext {
@@ -52,43 +39,22 @@ export interface SettingsOutletContext extends ParentContext {
 // adopts the authoritative save response as its new baseline instead (see
 // `useSettingsMutation`), so this loader only re-runs on navigation.
 //
-// Defensive 503 lives here ONCE: a missing `siteIdentity` / `assets` row
-// means the install never completed, and any other missing section means
-// an admin truncated a row by hand. Owning the guard at this layer lets
-// every per-section route trust the bundle is fully populated.
-function assertSettingsBundle(value: Record<string, unknown>): asserts value is SettingsBundle {
-  const missing = Object.entries(value)
-    .filter(([, v]) => v === null)
-    .map(([k]) => k)
-  if (missing.length > 0) {
-    throw new Response(
-      `设置数据不完整，缺少以下 section：${missing.join('、')}。` +
-        '安装流程本应写入所有设置行，因此这通常意味着某行被手动删除。请重新运行安装流程或从备份还原。',
-      { status: 503 },
-    )
-  }
-}
-
+// The defensive 503 lives in the `admin.settings.bootstrap` procedure
+// ONCE: a missing `siteIdentity` / `assets` row means the install never
+// completed, and any other missing section means an admin truncated a
+// row by hand (SERVICE_UNAVAILABLE carries the exact historical texts).
+// Owning the guard there lets every per-section route trust the bundle
+// is fully populated; this loader only translates the code back into
+// the thrown Response.
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const { db } = getRequestContext({ request, context })
-  const bundle = await hydrateBlogSettings(db)
-  if (bundle === null) {
-    throw new Response('站点尚未完成安装。', { status: 503 })
-  }
-
-  // Eager backfill: any section that is null but carries registry defaults
-  // gets written to DB and populated in the bundle copy before we check.
-  // This prevents newly-added optional sections (e.g. backup) from breaking
-  // the entire admin panel on existing deployments whose DB predates them.
-  const mutable = await backfillSettingsSections(db, bundle)
-
-  assertSettingsBundle(mutable)
-  const masks = computeSecretMasks(unsafeCast<BlogSettingsBundle>(mutable))
-  const redacted = unsafeCast<SettingsBundle>(redactSecretsFromBundle(unsafeCast<BlogSettingsBundle>(mutable)))
-  return {
-    bundle: redacted,
-    timeZones: getSupportedTimeZones(),
-    masks,
+  const { caller } = createSsrCaller({ request, context })
+  try {
+    return await caller.admin.settings.bootstrap()
+  } catch (error) {
+    if (error instanceof ORPCError && error.code === 'SERVICE_UNAVAILABLE') {
+      throw new Response(error.message, { status: 503 })
+    }
+    throw error
   }
 }
 
