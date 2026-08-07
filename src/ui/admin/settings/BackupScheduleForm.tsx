@@ -26,6 +26,11 @@ interface FormState {
 const WEEKDAY_LABELS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
 const HOURS = Array.from({ length: 24 }, (_, i) => i)
 const MINUTES = [0, 30] as const
+const FREQUENCY_OPTIONS = [
+  { value: 'daily', label: '每天' },
+  { value: 'weekly', label: '每周' },
+  { value: 'monthly', label: '每月' },
+] as const
 
 function asBackupMinute(value: string | null): BackupSettings['scheduled']['minute'] {
   return value === '30' ? 30 : 0
@@ -108,14 +113,17 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
                     onValueChange={field.onChange}
                     save={save}
                     disabled={!canConfigure}
+                    items={FREQUENCY_OPTIONS}
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="daily">每天</SelectItem>
-                      <SelectItem value="weekly">每周</SelectItem>
-                      <SelectItem value="monthly">每月</SelectItem>
+                      {FREQUENCY_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </SettingsSelect>
                 )}
@@ -159,6 +167,7 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
                       onValueChange={(v) => field.onChange(asBackupMinute(v))}
                       save={save}
                       disabled={!canConfigure}
+                      items={MINUTES.map((m) => ({ value: String(m), label: String(m).padStart(2, '0') }))}
                     >
                       <SelectTrigger className="w-24">
                         <SelectValue />
@@ -188,6 +197,7 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
                       onValueChange={(v) => field.onChange(Number(v))}
                       save={save}
                       disabled={!canConfigure}
+                      items={WEEKDAY_LABELS.map((label, idx) => ({ value: String(idx + 1), label }))}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -217,6 +227,7 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
                       onValueChange={(v) => field.onChange(Number(v))}
                       save={save}
                       disabled={!canConfigure}
+                      items={Array.from({ length: 28 }, (_, i) => ({ value: String(i + 1), label: `${i + 1} 日` }))}
                     >
                       <SelectTrigger>
                         <SelectValue />

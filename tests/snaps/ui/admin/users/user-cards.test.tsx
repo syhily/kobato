@@ -153,12 +153,13 @@ describe('snapshot: UserOperationsCard', () => {
   it('shows the role select for another user with a non-null role', () => {
     const user = makeAdminUser({ id: 'other-1', role: 'author' })
     const html = renderOpsCard(user, 'self-1')
-    // The role <Select> trigger renders with the current role value. The
-    // dropdown options (管理员/作者/访客) live in a Base UI SelectContent
-    // portal that does not emit during SSR, so we assert the trigger only.
+    // The role <Select> trigger renders with the current role's label (the
+    // `items` prop resolves the Base UI Select.Value label). The dropdown
+    // options (管理员/作者/访客) live in a Base UI SelectContent portal
+    // that does not emit during SSR, so we assert the trigger only.
     expect(html).toContain('角色')
     expect(html).toContain('data-slot="select-trigger"')
-    expect(html).toContain('data-slot="select-value">author</span>')
+    expect(html).toContain('data-slot="select-value">作者</span>')
   })
 })
 

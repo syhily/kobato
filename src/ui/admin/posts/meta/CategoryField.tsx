@@ -19,7 +19,14 @@ export function CategoryField({ value, onChange, disabled }: CategoryFieldProps)
       <Label htmlFor="post-category">分类</Label>
       <Select value={value} onValueChange={(v) => onChange(v ?? '')} disabled={disabled}>
         <SelectTrigger id="post-category" className="w-full">
-          <SelectValue placeholder="— 无分类 —" />
+          {/* Base UI's `<Select.Value>` renders the raw `value` by default —
+              resolve the category name here, mirroring `AlignSelect`. */}
+          <SelectValue placeholder="— 无分类 —">
+            {(selected) => {
+              const match = categories.find((cat) => cat.id === selected)
+              return match ? match.name : '— 无分类 —'
+            }}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="">— 无分类 —</SelectItem>

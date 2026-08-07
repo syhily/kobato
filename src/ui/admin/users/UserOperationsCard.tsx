@@ -113,6 +113,11 @@ export function UserOperationsCard({ user, currentUserId, passkeyEnabled, onDele
             <div className="flex flex-col gap-2">
               <Label htmlFor="user-role">角色</Label>
               <Select
+                items={[
+                  { value: 'admin', label: '管理员' },
+                  { value: 'author', label: '作者' },
+                  { value: 'visitor', label: '访客' },
+                ]}
                 value={roleDraft || user.role}
                 onValueChange={(value) => {
                   if (value === user.role) {
