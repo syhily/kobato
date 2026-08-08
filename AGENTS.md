@@ -290,6 +290,17 @@ These patterns are banned:
 - Streamed loader promises (a loader returning an un-awaited promise) require
   the process-level `unhandledRejection` handler in
   `src/server/infra/lifecycle.ts` — do not remove it (ADR-0005).
+- Never wrap the whole app (or any SSR-critical DOM that must match between
+  server and client) in a lazy `<Suspense>` boundary whose fallback differs
+  from the resolved content — on a cold visit the chunk is still loading at
+  hydration time, so the client renders the fallback against the server's
+  streamed (resolved) markup and the whole tree mismatches (React error
+  #418). Use the hydration-safe `useSyncExternalStore` gate
+  (`LazyMotionConfig` in `src/ui/components/lazy-motion.tsx` is the
+  reference), or import eagerly. Same rule for leaf lazy boundaries whose
+  fallback is not byte-identical to the real render (`MusicPlayer`'s APlayer
+  is a known latent instance; fix it the same way before lazy-wrapping more
+  interactive chrome).
 
 `src/assets/scripts` is intentionally absent. All interactivity lives in
 React hooks/components under `src/client/` and `src/ui/`.

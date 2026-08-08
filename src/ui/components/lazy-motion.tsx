@@ -1,6 +1,14 @@
 import type { AnimatePresence, MotionConfig, motion } from 'motion/react'
 
-import { createElement, lazy, Suspense, type ComponentProps, type CSSProperties, type ReactNode } from 'react'
+import {
+  createElement,
+  lazy,
+  Suspense,
+  useSyncExternalStore,
+  type ComponentProps,
+  type CSSProperties,
+  type ReactNode,
+} from 'react'
 
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
@@ -130,11 +138,30 @@ export function LazyAnimatePresence({ children, ...props }: ComponentProps<typeo
 
 const LazyMotionConfigImpl = lazy(() => import('motion/react').then((module) => ({ default: module.MotionConfig })))
 
+// No-op subscription — the store's snapshot flips on its own once hydration commits.
+const emptySubscribe = () => () => {}
+
 /**
  * `MotionConfig` behind the same lazy boundary — no DOM, so the fallback
  * renders children bare.
+ *
+ * The boundary must NOT exist during SSR/hydration: it wraps the entire app,
+ * so a motion chunk still loading at hydration time (cold visit) makes the
+ * client render the boundary pending against the server's streamed (resolved)
+ * markup — a whole-tree structural mismatch surfacing as React error #418 on
+ * every cold load. Children render bare until the first client commit; the
+ * provider then mounts behind the lazy boundary exactly as the chunk-resolve
+ * swap did before.
  */
 export function LazyMotionConfig({ children, ...props }: ComponentProps<typeof MotionConfig>) {
+  const ready = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
+  )
+  if (!ready) {
+    return <>{children}</>
+  }
   return (
     <Suspense fallback={<>{children}</>}>
       <LazyMotionConfigImpl {...props}>{children}</LazyMotionConfigImpl>
