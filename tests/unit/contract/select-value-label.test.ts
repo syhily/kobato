@@ -2,27 +2,13 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-// Contract: every `<Select>` call site must display a human-readable label
-// in the trigger, never the raw `value`.
-//
-// Base UI's `<Select.Value>` renders the RAW `value` by default (documented
-// in the Base UI select docs and pinned by
-// `tests/snaps/ui/components/select-value.test.tsx`), so a bare
-// `<SelectValue />` without an `items` prop on the root would surface ids /
-// enum keys in the UI (the article-editor category select showed "1" instead
-// of the category name). This test scans every call site statically and
-// enforces the two sanctioned mechanisms:
-//
-//   1. `items` on the root `<Select>` → Base UI resolves the label itself.
-//   2. a children function on `<SelectValue>` → the call site maps the value.
-//
-// Any future select that skips both fails here — the check is structural, so
-// it cannot drift from the rendered output.
+// Contract: every `<Select>` call site must show a human-readable label in
+// the trigger, never the raw `value` — via `items` on the root or a children
+// function on `<SelectValue>`.
 
 const UI_ROOTS = [resolve(process.cwd(), 'src/ui'), resolve(process.cwd(), 'src/routes')]
 
-// Child components of the select family — `<SelectContent>` etc. must not be
-// mistaken for the root `<Select>`.
+// Select family child tags, so they aren't mistaken for the root `<Select>`.
 const SELECT_CHILDREN = [
   'Content',
   'Item',
@@ -44,18 +30,14 @@ const SELECT_CHILDREN = [
 ] as const
 
 function stripComments(source: string): string {
-  // Strip `/* */` and `//` comments only — JSX expressions (`{...}`, e.g.
-  // SelectValue children functions) must survive so the `=>` label-resolution
-  // check below sees them. `https://`-style URLs are preserved by the
-  // non-colon lookbehind on `//`.
+  // Strip comments only; `{...}` JSX and `https://` URLs must survive.
   return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
 }
 
 /** Every `<Select ...>` root opening tag: `{ attrs, block }` (block = body up to `</Select>`). */
 function findSelectRoots(source: string): { attrs: string; block: string; line: number }[] {
   const roots: { attrs: string; block: string; line: number }[] = []
-  // `<Select` not followed by a child-component name; optional generic
-  // argument (`<Select<AdminImageKind>`); attrs may span lines.
+  // `<Select` not followed by a child name; optional generic; attrs may span lines.
   const rootRe = new RegExp(`<Select(?!${SELECT_CHILDREN.join('|')})(?:<[^>]*>)?([\\s\\S]*?)>`, 'g')
   let match: RegExpExecArray | null
   while ((match = rootRe.exec(source)) !== null) {

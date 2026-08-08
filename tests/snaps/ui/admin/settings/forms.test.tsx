@@ -30,10 +30,7 @@ cacheQueryMocks.mutation = {
   isPending: false,
 }
 
-// `useSettingsMutation` powers every `useSettingsCard` and would otherwise
-// fire a `useMutation` against the settings ORPC endpoint. The inert global
-// stub from `tests/snaps/setup.ts` keeps forms rendering without a network
-// stack.
+// The inert `useSettingsMutation` stub from `tests/snaps/setup.ts` keeps forms network-free.
 
 // `FontsForm` reads a csrf token off the root loader; supply a stable one.
 vi.mock('react-router', async () => {
@@ -45,13 +42,9 @@ vi.mock('react-router', async () => {
   }
 })
 
-// `CacheView` queries cache stats via `@tanstack/react-query` and the orpc
-// client. The `#/_helpers/mock-react-query` singleton (mirroring musics-view)
-// lets each test swap the resolved stats / mutation result without re-mocking.
+// Cache stats/clear go through the mock-react-query singleton — each test swaps the resolved data.
 
-// The orpc client is only reached when the query / mutation actually fires;
-// the react-query mock intercepts before invocation, but keep the
-// import resolvable & side-effect free.
+// orpc mock stays resolvable + side-effect free; the react-query stub intercepts calls.
 vi.mock('@/client/api/client', () => ({
   orpc: {
     admin: {
@@ -62,8 +55,6 @@ vi.mock('@/client/api/client', () => ({
     },
   },
 }))
-
-// ────────────────────────────── FontsForm ───────────────────────────
 
 const populatedFonts: FontsSettings = {
   og: { family: 'OPPOSans' },
@@ -83,17 +74,14 @@ const emptyFonts: FontsSettings = {
 
 describe('snapshot: FontsForm', () => {
   it('renders the canvas card with populated family names', () => {
-    // FontsForm now contains a <Link> in the notice card, so it must render
-    // inside a router context (renderInRouter) rather than bare renderToHtml.
+    // Contains a <Link> — must render inside a router context.
     const html = stableHtml(renderInRouter(<FontsForm fonts={populatedFonts} />))
-    // Canvas card headings + family inputs
     expect(html).toContain('Canvas 字体')
     expect(html).toContain('OG 图字体')
     expect(html).toContain('日历图字体')
     expect(html).toContain('id="fonts-og-family"')
     expect(html).toContain('id="fonts-calendar-family"')
-    // Upload affordances + the populated family name is reflected via the
-    // FontUploadRow `family` prop (a <span>, not a form-controlled input).
+    // Family name renders via FontUploadRow's family prop (a <span>, not a form input).
     expect(html).toContain('上传字体')
     expect(html).toContain('已配置族名：OPPOSans')
     expect(html).toContain('已配置族名：OPPOSerif')
@@ -101,12 +89,11 @@ describe('snapshot: FontsForm', () => {
 
   it('renders the web-font notice card pointing to /admin/library/fonts', () => {
     const html = stableHtml(renderInRouter(<FontsForm fonts={emptyFonts} />))
-    // The three browser web-font slots moved to /admin/library/fonts; the settings
-    // page just shows a pointer card.
+    // Browser web-font slots live at /admin/library/fonts — this card only points there.
     expect(html).toContain('网页字体')
     expect(html).toContain('/admin/library/fonts')
     expect(html).toContain('网站字体与槽位分配')
-    // The legacy globalCss/globalFamily inputs are gone.
+    // Legacy globalCss/globalFamily inputs must not return.
     expect(html).not.toContain('name="globalFamily"')
     expect(html).not.toContain('name="globalCss')
     expect(html).not.toContain('全站字体')
@@ -121,8 +108,6 @@ describe('snapshot: FontsForm', () => {
   })
 })
 
-// ───────────────────────────── SecurityForm ────────────────────────
-
 describe('snapshot: SecurityForm', () => {
   it('renders CSRF enabled, CORS disabled and Passkey eligible states', () => {
     const security: SecuritySettings = {
@@ -131,15 +116,13 @@ describe('snapshot: SecurityForm', () => {
       passkey: { enabled: false },
     }
     const html = stableHtml(renderToHtml(<SecurityForm security={security} />))
-    // CSRF card: switch id + exempt-paths card heading + populated row.
-    // (Toggle label text comes from Controller field.value which hydrates
-    // post-render, so assert on structural signals instead.)
+    // Toggle labels hydrate post-render — assert structural signals instead.
     expect(html).toContain('CSRF 防护')
     expect(html).toContain('id="csrf-enabled"')
     expect(html).toContain('路径豁免')
     expect(html).toContain('name="exemptPaths.0.path"')
     expect(html).toContain('添加路径')
-    // CORS card: disabled + mirror-mode hint (no rows -> the empty <p>).
+    // No origin rows -> the mirror-mode hint is the empty <p> copy.
     expect(html).toContain('CORS 策略')
     expect(html).toContain('镜像模式：将自动允许所有请求来源。')
     expect(html).toContain('添加来源')
@@ -160,16 +143,13 @@ describe('snapshot: SecurityForm', () => {
     const html = stableHtml(renderToHtml(<SecurityForm security={security} />))
     // Empty exempt paths copy (no rows -> the empty <p> branch).
     expect(html).toContain('无豁免路径。所有请求均需携带令牌。')
-    // CORS enabled: two origin rows emitted (values themselves are
-    // uncontrolled, so assert on the field-array row names instead).
+    // CORS enabled: two origin rows — values are uncontrolled, assert the field-array names.
     expect(html).toContain('name="origins.0.url"')
     expect(html).toContain('name="origins.1.url"')
-    // The passkey domain is still valid, so the invalid-domain warning is absent.
+    // Valid passkey domain → no invalid-domain warning.
     expect(html).not.toContain('当前站点域名不满足 Passkey 要求')
   })
 })
-
-// ──────────────────────────── NavigationEditor ─────────────────────
 
 const sideNavItems: NavigationSettings = {
   navigation: {
@@ -190,9 +170,7 @@ const socials: SocialItem[] = [{ name: 'GitHub', network: 'github', type: 'link'
 describe('snapshot: NavigationEditor', () => {
   it('renders side nav and footer nav rows with populated fixtures', () => {
     const html = stableHtml(renderToHtml(<NavigationEditor navigation={sideNavItems} socials={socials} />))
-    // Side nav card — multiple rows + add button. Row text/link values are
-    // uncontrolled inputs (won't appear in SSR), so assert on row ids and
-    // the field-array names which reflect that rows were seeded.
+    // Values are uncontrolled (absent in SSR) — assert row ids + field-array names.
     expect(html).toContain('侧边导航菜单')
     expect(html).toContain('id="nav-text-0"')
     expect(html).toContain('id="nav-text-1"')
@@ -200,10 +178,8 @@ describe('snapshot: NavigationEditor', () => {
     expect(html).toContain('name="sideNavRows.0.text"')
     expect(html).toContain('name="sideNavRows.1.text"')
     expect(html).toContain('添加菜单项')
-    // Footer nav card — the populated rows emit type Select triggers; the
-    // SelectValue render-prop label doesn't run during SSR but the select
-    // `id`s and the hidden social-network input do. github is configured
-    // so the unconfigured-network warning must NOT show.
+    // SelectValue labels don't run under SSR, but select ids + hidden inputs
+    // do; github is configured → no unconfigured-network warning.
     expect(html).toContain('底部导航菜单')
     expect(html).toContain('id="footer-item-type-0"')
     expect(html).toContain('id="footer-item-type-2"')
@@ -227,13 +203,10 @@ describe('snapshot: NavigationEditor', () => {
     const html = stableHtml(renderToHtml(<NavigationEditor navigation={emptyNav} socials={socials} />))
     expect(html).toContain('还没有任何菜单条目，点下方按钮新增一项。')
     expect(html).toContain('还没有任何导航条目，点下方按钮新增一项。')
-    // Add buttons still present
     expect(html).toContain('添加菜单项')
     expect(html).toContain('添加导航项')
   })
 })
-
-// ─────────────────────────────── CacheView ─────────────────────────
 
 const baseCacheSlice: CacheSettings['cache'] = {
   og: { prefix: 'og:', ttlSeconds: 604800 },
@@ -286,7 +259,6 @@ describe('snapshot: CacheView', () => {
       error: null,
     }
     const html = stableHtml(renderToHtml(<CacheView cache={baseCacheSlice} />))
-    // Clear-all card with populated key total
     expect(html).toContain('一键清空')
     expect(html).toContain('当前共 142 条缓存')
     expect(html).toContain('清空全部缓存')
@@ -294,7 +266,6 @@ describe('snapshot: CacheView', () => {
     // Bucket cards (id-keyed settings render the bucket label)
     expect(html).toContain('OG 图缓存')
     expect(html).toContain('头像缓存')
-    // Reserved section with the session bucket copy + key count
     expect(html).toContain('受保护的缓存（只读）')
     expect(html).toContain('登录会话')
     expect(html).toContain('当前键数：')

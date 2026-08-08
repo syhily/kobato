@@ -8,14 +8,8 @@ import { BRIDGE_NODE_REGISTRY } from '@/shared/pt/bridge/node-registry'
 import { pmDocToBody } from '@/shared/pt/bridge/pm-to-pt'
 import { bodyToPmDoc } from '@/shared/pt/bridge/pt-to-pm'
 
-// The node registry is the single dispatch table for both bridge
-// directions. These tests pin the two policies that keep the save path
-// honest:
-//
-//   1. Loud unknown policy — an unregistered PM node / mark throws instead
-//      of being silently dropped (silent content loss is never acceptable).
-//   2. Completeness — every registry entry has at least one round-trip
-//      fixture below, so adding a converter without a fixture fails here.
+// Pins the two bridge policies: loud failure on unknown node types, and
+// a round-trip fixture for every registry entry.
 
 describe('pt-bridge node registry — loud unknown policy', () => {
   it('throws naming the type for an unknown top-level PM node', () => {
@@ -70,9 +64,7 @@ describe('pt-bridge node registry — loud unknown policy', () => {
   })
 })
 
-// One round-trip fixture per registry entry. Keyed by the PM node type the
-// fixture's body converts into, so the completeness check below can point
-// at the exact entry that is missing coverage.
+// Keyed by PM node type so the completeness check names the missing entry.
 const REGISTRY_FIXTURES: ReadonlyArray<{ pmType: string; body: PortableTextBody }> = [
   {
     pmType: 'paragraph',
@@ -235,8 +227,7 @@ const REGISTRY_FIXTURES: ReadonlyArray<{ pmType: string; body: PortableTextBody 
     ],
   },
   {
-    // Generic pass-through: mathBlock has no dedicated editor node, so it
-    // rides the blockCard payload slot in both directions.
+    // mathBlock rides the blockCard slot — no dedicated editor node.
     pmType: 'blockCard',
     body: [{ _type: 'mathBlock', _key: 'mb1', tex: 'E=mc^2' }],
   },

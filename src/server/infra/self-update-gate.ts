@@ -1,6 +1,4 @@
-// Self-update gate. Offered only when: running as a SEA binary, linux
-// x64/arm64, not containerized, binary directory writable, non-dev build.
-// Each failed check appends a Chinese admin-facing reason.
+// Self-update gate — each failed check appends a Chinese admin-facing reason.
 
 import { accessSync, constants, existsSync, readFileSync } from 'node:fs'
 import { dirname } from 'node:path'

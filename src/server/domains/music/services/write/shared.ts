@@ -10,9 +10,7 @@ import { safeFetch } from '@/server/infra/safe-fetch'
 
 const log = getLogger('music.service')
 
-// `[a-z0-9]{16}` is enough entropy for 80 bits — collisions are
-// astronomically unlikely against the small music corpus, but we
-// still retry on a unique-key violation just to be defensive.
+// `[a-z0-9]{16}` ≈ 80 bits of entropy; collisions are retried anyway.
 const PLAYER_ID_ALPHABET = 'abcdefghijklmnopqrstuvwxyz0123456789'
 function generatePlayerId(): string {
   const bytes = randomBytes(16)
@@ -29,8 +27,7 @@ export const MAX_COVER_BYTES = 5 * 1024 * 1024
 export const COVER_SIZE = 300
 export const COVER_JPEG_QUALITY = 85
 
-// netease and friends often blacklist the default Node user agent for direct
-// CDN downloads; spoof a stock browser UA so we land on the regular CDN path.
+// Spoof a browser UA — providers blacklist Node's default for CDN downloads.
 const MUSIC_DOWNLOAD_UA =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36'
 
@@ -46,8 +43,7 @@ export async function generateUniquePlayerId(db: Database): Promise<string> {
   throw new DomainError('INTERNAL', 'playerId 生成失败：连续 5 次冲突')
 }
 
-// Map the safe-fetch failure union onto the pinned DomainError
-// variants — the exact codes/messages are covered by the write tests.
+// Map the safe-fetch failure union onto the pinned DomainError variants (codes/messages covered by the write tests).
 function downloadError(result: SafeFetchFailure, originalUrl: string, what: 'audio' | 'cover'): DomainError {
   const asset = what === 'audio' ? '音频' : '封面'
   const action = what === 'audio' ? '下载音频' : '下载封面'

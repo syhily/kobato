@@ -12,7 +12,6 @@ const VALID_PROFILE: CommentGuestProfile = {
   avatar: 'https://avatar.example/a.png',
 }
 
-// Minimal localStorage stub backed by an in-memory map.
 function makeStorage(initial: Record<string, string> = {}) {
   const store = new Map<string, string>(Object.entries(initial))
   return {
@@ -30,11 +29,8 @@ function makeStorage(initial: Record<string, string> = {}) {
 
 type StorageLike = ReturnType<typeof makeStorage>
 
-// The unit project runs under `environment: 'node'`, so `window` is
-// not defined by default. `readProfile` guards every storage touch with
-// `typeof window === 'undefined'`, so to exercise the profile read /
-// write / remove logic we install a fake `window` with a `localStorage`
-// slot for the duration of each test.
+// Node defines no `window`; `readProfile` guards with `typeof window`,
+// so each test installs a fake window + localStorage to reach its storage paths.
 interface FakeWindow {
   localStorage: StorageLike
 }
@@ -42,13 +38,10 @@ interface FakeWindow {
 let savedDescriptor: PropertyDescriptor | undefined
 
 beforeEach(() => {
-  // Snapshot the current globalThis.window state so afterEach can
-  // restore it cleanly. Under node this is `undefined`.
   savedDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'window')
 })
 
 afterEach(() => {
-  // Restore the original (undefined) window.
   if (savedDescriptor) {
     Object.defineProperty(globalThis, 'window', savedDescriptor)
   } else {
@@ -76,7 +69,6 @@ describe('readProfile + isCommentGuestProfile', () => {
 
   it('returns null when the stored JSON is malformed', () => {
     const fake = installWindow({ [STORAGE_KEY]: '{not json' })
-    // readProfile swallows the parse error.
     expect(readProfile()).toBeNull()
     expect(fake.localStorage.getItem).toHaveBeenCalledWith(STORAGE_KEY)
   })
@@ -123,8 +115,6 @@ describe('readProfile + isCommentGuestProfile', () => {
 })
 
 describe('useCommentGuest first render (SSR / hydration pass)', () => {
-  // The SSR hook runner renders the server snapshot, so what it returns is
-  // exactly what SSR and the client's hydration render see.
   it('renders null on the server snapshot even when a profile is stored', () => {
     installWindow({ [STORAGE_KEY]: JSON.stringify(VALID_PROFILE) })
     const result = renderHook(() => useCommentGuest())
@@ -154,22 +144,16 @@ describe('useCommentGuest clearProfile (removeProfile)', () => {
     const fake = installWindow({ [STORAGE_KEY]: JSON.stringify(VALID_PROFILE) })
     const result = renderHook(() => useCommentGuest())
     result.clearProfile()
-    // removeProfile runs synchronously inside the callback; the companion
-    // setState(null) only reflects on the next render (which never
-    // happens under the SSR runner), so we assert the storage side-effect.
+    // No re-render happens under the SSR runner — assert the storage side-effect.
     expect(fake.localStorage.removeItem).toHaveBeenCalledWith(STORAGE_KEY)
   })
 })
 
 describe('useCommentGuest SSR guard (typeof window === undefined)', () => {
   it('returns a null profile and no-op writes when window is absent', () => {
-    // Do not install a window; globalThis.window stays undefined after
-    // the afterEach from the previous test restored it.
     delete (globalThis as { window?: unknown }).window
     const result = renderHook(() => useCommentGuest())
     expect(result.profile).toBeNull()
-    // saveProfile / clearProfile are wrapped in the same guard and
-    // must not throw.
     expect(() => result.saveProfile(VALID_PROFILE)).not.toThrow()
     expect(() => result.clearProfile()).not.toThrow()
   })
@@ -187,16 +171,12 @@ describe('useCommentGuest stability', () => {
       },
       {
         actions: [
-          // Trigger a re-render via a state update so we can compare
-          // callback references across two renders.
           (r) => {
             r.saveProfile(VALID_PROFILE)
           },
         ],
       },
     )
-    // The action fires a state update; once settled, the callbacks
-    // must keep referential identity (useCallback with empty deps).
     if (results.length >= 2) {
       expect(results[0].saveProfile).toBe(results[1].saveProfile)
       expect(results[0].clearProfile).toBe(results[1].clearProfile)

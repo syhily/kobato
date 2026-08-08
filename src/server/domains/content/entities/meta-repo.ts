@@ -12,22 +12,14 @@ import { likeEscape } from '@/server/infra/db/like-escape'
 import { user } from '@/server/infra/db/schema/user'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
-/**
- * The two meta tables. Type-only union (like `LiveContentColumns` in
- * `content/schemas/live-gate.ts`) — the generic queries below bind the shared
- * columns structurally and never touch entity extras.
- */
+/** The two meta tables — type-only union; the generic queries bind shared columns structurally, never entity extras. */
 export type MetaTable = typeof postMetaTable | typeof pageMetaTable
 
 type AnyNewMeta = NewPostMeta | NewPageMeta
 
 /**
- * The meta-table CRUD every content entity shares: id/slug lookups
- * (including the row-locking reservation probe and the public
- * not-deleted slug read), insert, patch-by-id, soft-delete / restore.
- * One implementation over the shared columns; the entity's table comes
- * in as a parameter so no entity fork can drift. Rows cross the
- * boundary as `unknown` and leave as `TMeta` (`MetaRowBase`).
+ * The meta-table CRUD every content entity shares, over the shared
+ * columns — the table comes in as a parameter so no entity fork drifts.
  */
 export function makeMetaCrud<TMeta extends MetaRowBase, TNew extends AnyNewMeta>(
   table: MetaTable,
@@ -44,14 +36,7 @@ export function makeMetaCrud<TMeta extends MetaRowBase, TNew extends AnyNewMeta>
     },
 
     findMetaBySlugForUpdate(db, slug) {
-      // Identical SQL to `findMetaBySlug` — the "ForUpdate" name is a
-      // PG-era fossil (`SELECT … FOR UPDATE` had no SQLite mapping to
-      // emit). The lock it promises is still real, just inherited:
-      // node:sqlite serializes writers on one connection, so a read
-      // inside a `db.transaction` cannot interleave with another write.
-      // The separate name survives so call sites state their intent —
-      // "I am about to mutate this row" — and the reservation probe
-      // stays greppable.
+      // The lock is real: node:sqlite serializes writers, so no write interleaves mid-transaction.
       const rows: unknown[] = db.select().from(table).where(eq(table.slug, slug)).limit(1).all()
       return unsafeCast<TMeta | null>(rows[0] ?? null)
     },
@@ -108,20 +93,12 @@ export function makeMetaCrud<TMeta extends MetaRowBase, TNew extends AnyNewMeta>
 export interface MetaListFiltersBase extends LimitOffset {
   /** Free-text query matched case-insensitively against `slug` and `title`. */
   q?: string
-  /** Deletion state filter. */
   deletedStatus?: 'all' | 'deleted' | 'normal'
-  /** Filter by published flag. */
   published?: boolean
-  /** Filter by author id. */
   authorId?: number
 }
 
-/**
- * The shared legs of the admin-list WHERE clause (deletion state,
- * slug/title search, published flag, author) plus entity `extras`.
- * SQL `AND` is order-insensitive, so posts keep their taxonomy legs in
- * `extras` without changing query semantics.
- */
+/** Shared admin-list WHERE legs plus entity `extras`. */
 export function buildMetaListWhere(
   table: MetaTable,
   filters: MetaListFiltersBase,
@@ -165,11 +142,7 @@ export interface MetaListQueries<TMeta extends MetaRowBase, TFilters extends Lim
   countMetas: (db: Database, filters: TFilters) => Promise<number>
 }
 
-/**
- * The admin-list meta queries both entities share: meta columns joined
- * with the author's name, filtered + ordered + paginated per entity
- * options, plus the matching count.
- */
+/** The admin-list meta queries both entities share: author-joined meta columns, per-entity filters/ordering/pagination, and the count. */
 export function makeMetaListQueries<TMeta extends MetaRowBase, TFilters extends LimitOffset>(
   table: MetaTable,
   options: MetaListQueriesOptions<TFilters>,
@@ -201,7 +174,6 @@ export function makeMetaListQueries<TMeta extends MetaRowBase, TFilters extends 
   }
 }
 
-/** Shared `updatedAt DESC` admin-list ordering (pages). */
 export function orderByUpdatedAtDesc(table: MetaTable): SQL {
   return desc(table.updatedAt)
 }

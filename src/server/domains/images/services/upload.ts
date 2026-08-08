@@ -18,11 +18,7 @@ const log = getLogger('images.service')
 
 type ActiveBackend = ReturnType<typeof activeBackend>['backend']
 
-// Ownership-aware rollback (fix-review): two uploads landing in the same
-// millisecond can share an objectKey (the key's `% 100` ms suffix). When
-// the loser's row write fails on the storage_path unique constraint, the
-// object now belongs to the winner's row — deleting it would orphan THAT
-// row. Only delete when no row claims the key.
+// Only delete when no row claims the key — a raced upload may own it.
 async function deleteObjectUnlessClaimed(db: Database, backend: ActiveBackend, objectKey: string): Promise<void> {
   const claimed = await findImagesByStoragePaths(db, [objectKey]).catch(() => [] as ImageRow[])
   if (claimed.length === 0) {
@@ -44,13 +40,8 @@ export interface UploadImageInputs {
 const ALLOWED_IMAGE_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif'])
 
 /**
- * Pre-read validation of the client-declared upload envelope (MIME type +
- * size) against the allowlist and the configured cap — runs BEFORE the
- * bytes are buffered, so a mislabeled or oversize Blob is rejected
- * cheaply. The authoritative checks (magic-byte sniffing, real byte
- * counts) still run inside {@link uploadImage}; this layer throws
- * `ORPCError` because DomainError has no PAYLOAD_TOO_LARGE code.
- * Messages are the wire contract — do not reword.
+ * Pre-read check of the declared envelope; authoritative checks still
+ * run in {@link uploadImage}. Messages are the wire contract — do not reword.
  */
 export function assertImageUploadAllowed(file: { type: string; size: number }, maxBytes: number): void {
   if (!ALLOWED_IMAGE_MIME_TYPES.has(file.type)) {
@@ -140,9 +131,7 @@ export async function uploadImage(db: Database, input: UploadImageInputs): Promi
   const keySpec = toKeySpec(input.kind)
   const objectKey = buildObjectKey(keySpec)
 
-  // Writes go to the active backend (S3 when enabled + configured, local
-  // otherwise); the driver is persisted on the row so reads/deletes can
-  // dispatch on it later.
+  // Driver is persisted on the row so reads/deletes dispatch on it later.
   const { backend, driver } = activeBackend()
   await backend.put({ key: objectKey, body: processed.buffer, contentType: 'image/jpeg', visibility: 'public' })
 

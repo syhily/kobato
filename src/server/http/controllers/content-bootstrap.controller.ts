@@ -5,12 +5,8 @@ import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { contentBootstrapOutputSchema } from '@/shared/contracts/content'
 import { parseThemeCookie } from '@/shared/utils/theme-cookie'
 
-// The root loader's data segment: session identity, redacted settings
-// bundle, resolved font links, theme, and the CSRF token. Every page
-// (public AND admin) bootstraps through this procedure — the redacted
-// bundle is public-safe by construction. No input: the theme is parsed
-// from the theme cookie (`context.requestFacts.cookie`) inside the
-// procedure, so the route never touches cookie names.
+// The root loader's data segment (public AND admin): redacted settings
+// bundle, fonts, theme, CSRF token. No input — theme parsed from the cookie.
 export const contentBootstrap = publicProc
   .route({ method: 'GET', path: '/content/bootstrap' })
   .output(contentBootstrapOutputSchema)

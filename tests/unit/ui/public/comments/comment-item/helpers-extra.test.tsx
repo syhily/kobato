@@ -1,10 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Cover the remaining branches / functions in
-// `src/ui/public/comments/comment-item/helpers.ts`:
-//   - the pending/non-pending variants of editableHint branches that
-//     were previously only exercised in a single mode
-//   - the depth boundaries of commentAvatarClass / commentContentClass
 import { commentAvatarClass, commentContentClass, editableHint } from '@/ui/public/comments/comment-item/helpers'
 
 describe('editableHint — pending/non-pending branch coverage', () => {
@@ -38,17 +33,12 @@ describe('editableHint — pending/non-pending branch coverage', () => {
   })
 
   it('treats exactly 1 remaining minute as the seconds branch', () => {
-    // remainingMinutes === 1 hits the `<= 1` branch (ceil of slightly
-    // more than 0 seconds → 1 minute, but the branch picks seconds).
     const expiresAt = Date.now() + 500 // ceil → 1 second, ceil-mins → 1
     const out = editableHint(expiresAt, false)
     expect(out).toMatch(/秒内可编辑此消息。$/)
   })
 
   it('returns the raw error string when authError is an unknown code', () => {
-    // localizeAuthError is private to signin.tsx; this spec covers the
-    // generic "unknown error" passthrough by symmetry — editableHint's
-    // last branch is the plain minutes string.
     const expiresAt = Date.now() + 10 * 60 * 1000
     expect(editableHint(expiresAt, false)).toBe('10 分钟内可编辑此消息。')
   })

@@ -1,14 +1,8 @@
 import { blob, index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
-// General-purpose persistent cache — the replacement for the Redis
-// keyspace (feed/sitemap/taxonomy/comment caches, image-meta, search
-// results, avatar/OG/calendar binaries). Metadata payloads live in
-// `value` (plain JSON — superjson was dropped with the migration; dates
-// are epoch ms numbers inside the payloads), binary payloads in `blob`;
-// a row holds one or the other — the writers null out the sibling column
-// on overwrite. `expiresAt` NULL means the entry never expires (e.g. the
-// search generation counter); reads filter expired rows lazily and a
-// periodic sweep deletes them.
+// General-purpose persistent cache. Metadata JSON in `value`, binary in
+// `blob` — a row holds one or the other (writers null the sibling on
+// overwrite). `expiresAt` NULL means never expires.
 export const kvCache = sqliteTable(
   'kv_cache',
   {

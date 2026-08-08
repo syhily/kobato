@@ -1,7 +1,6 @@
 /**
- * Content revision domain — shared primitives for post and page body
- * revisions. Both `post` and `page` own a `content` row chain; this
- * module holds the type definitions that cross the post/page boundary.
+ * Shared revision primitives for post and page body revisions — the
+ * types that cross the post/page boundary.
  */
 
 import type { ContentRow } from '@/server/infra/db/types'

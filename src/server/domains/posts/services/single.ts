@@ -13,8 +13,8 @@ import { findTagNamesByPostId } from '@/server/infra/db/operations/post-tag'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 
-// Meta-row reads come from the shared meta CRUD (`content/entities/meta-repo.ts`)
-// bound to the post table — no post-specific fork of these queries exists.
+// No post-specific fork: reads come from the shared meta CRUD
+// (`content/entities/meta-repo.ts`) bound to the post table.
 const crud = makeMetaCrud<PostMetaRow, NewPostMeta>(postMetaTable)
 
 export const findPostMetaById = crud.findMetaById
@@ -23,10 +23,8 @@ export const findPostMetaBySlugForUpdate = crud.findMetaBySlugForUpdate
 export const findPublicPostMetaBySlug = crud.findPublicMetaBySlug
 
 /**
- * Slim live-by-slug lookup — id + title only, gated by `livePostWhere`.
- * Cross-domain consumers that must know whether a slug resolves to a live
- * post (webmention target resolution) mount this instead of opening a
- * post-table query of their own.
+ * Slim live-by-slug lookup (id + title only) for cross-domain consumers
+ * (e.g. webmention target resolution) — no post-table query of their own.
  */
 export async function findLivePostBySlug(db: Database, slug: string): Promise<{ id: number; title: string } | null> {
   const rows = await db
@@ -65,10 +63,7 @@ async function findPostWithRevisionBySlug(
   )
 }
 
-/** Slug OR alias match for the live-gated public lookup: a request to an
- *  old alias resolves to the same post (the route then 301s to the
- *  canonical slug via `canonicalPostPath`). json_each unpacks the
- *  JSON-array alias column in SQL. */
+/** Slug OR alias match — json_each unpacks the JSON-array alias column in SQL. */
 function whereSlugOrAlias(slug: string): SQL {
   return sql`EXISTS (SELECT 1 FROM json_each(${postMetaTable.alias}) WHERE json_each.value = ${slug})`
 }
@@ -78,14 +73,8 @@ function findPostWithRevisionBySlugOrAlias(db: Database, slug: string, extraWher
 }
 
 /**
- * Slim live-by-slug ETag probe — `id` + `slug` + `publishedAt` only, the
- * exact inputs of the public detail route's weak ETag (`post.updated`
- * projects `meta.publishedAt`). Lets the loader answer a matching
- * If-None-Match with 304 after one indexed meta read instead of the full
- * meta+revision+taxonomy load. Slug OR alias match, mirroring
- * `findPostBySlug`; on an alias hit the returned `slug` differs from the
- * requested one so the caller skips the early 304 and lets the full load
- * issue the canonical 301.
+ * ETag probe: `id` + `slug` + `publishedAt` only. On an alias hit the
+ * returned `slug` differs — caller must skip the early 304 and issue the 301.
  */
 export async function findPostEtagInputBySlug(
   db: Database,
@@ -127,8 +116,7 @@ export async function findPostBySlug(db: Database, slug: string): Promise<Post |
     findTagNamesByPostId(db, result.meta.id),
     resolveCategoryName(db, result.meta.categoryId),
   ])
-  // `toCmsPost` returns the shared `Post` DTO directly (no `CmsPost`
-  // variant exists) — hydrate images in place and return as-is.
+  // `toCmsPost` returns the shared `Post` DTO directly — hydrate in place.
   const post = toCmsPost(result.meta, result.revision, { tags, categoryName })
   await hydratePostImages(db, [post])
   return post
@@ -143,7 +131,6 @@ export async function findPostBySlugForAdmin(db: Database, slug: string): Promis
     findTagNamesByPostId(db, result.meta.id),
     resolveCategoryName(db, result.meta.categoryId),
   ])
-  // See `findPostBySlug` — `toCmsPost`'s return already IS the `Post` DTO.
   const post = toCmsPost(result.meta, result.revision, { tags, categoryName })
   await hydratePostImages(db, [post])
   return post

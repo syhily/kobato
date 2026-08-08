@@ -36,33 +36,16 @@ export interface MetaSidebarProps {
   onChange: (next: PageMetaDraft) => void
   /** Disable every input while a save / publish is in flight. */
   disabled?: boolean
-  /**
-   * Lifecycle status used to render the badge inside 基本信息. `null`
-   * means the sidebar is being rendered in a context that doesn't
-   * have a clear publish state, and the badge falls back to
-   * `never-saved`.
-   */
+  /** Lifecycle status for the 基本信息 badge; `null` falls back to `never-saved`. */
   publishStatus?: SidebarPublishStatus | null
-  /**
-   * Persisted slug of the page being edited, used to render the
-   * generated `/images/og/:slug.png` preview when the OG override is
-   * empty. We read the *server-side* slug rather than `draft.slug` so
-   * the preview keeps pointing at a working URL while the operator
-   * is mid-typing.
-   */
+  /** Persisted (server-side) slug for the `/images/og/:slug.png` preview — reads
+   *  `page.slug`, not `draft.slug`, so the preview stays live while typing. */
   ogPreviewSlug?: string | null
-  /**
-   * Revision-versioning summary rendered alongside the visibility
-   * badge. `null` or `no-revision` renders as "no saved version yet"
-   * inline.
-   */
+  /** Revision-versioning summary for the visibility badge; `null` / `no-revision` renders as "no saved version yet". */
   revisionSummary?: SidebarRevisionSummary | null
   /** Shell-derived draft / persist lifecycle for the save-status row. */
   saveStatus: SidebarSaveStatus
-  /**
-   * Optional extra slot rendered at the bottom of the panel. Used by
-   * the editor shell to mount the revision history drawer trigger.
-   */
+  /** Extra slot at the bottom of the panel (revision history drawer trigger). */
   extras?: ReactNode
 }
 

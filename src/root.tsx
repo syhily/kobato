@@ -75,9 +75,7 @@ export function meta({ loaderData, matches }: Route.MetaArgs) {
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { caller, cspNonce } = createSsrCaller({ request, context })
 
-  // The data segment (identity, redacted settings bundle, resolved fonts,
-  // theme, CSRF token) loads through the content API like every public
-  // route — the theme cookie is parsed inside the procedure.
+  // Boot data loads through the content API like every public route; the theme cookie is parsed inside.
   const boot = await caller.content.bootstrap()
 
   const warmupManifest = getWarmupManifest()
@@ -85,9 +83,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const criticalLinks = getCriticalChunksForPathname(pathname) ?? warmupManifest?.tier1 ?? []
   const tier2Chunks = warmupManifest ? collectTier2Chunks(warmupManifest, boot.admin, new Set(criticalLinks)) : []
 
-  // Server clock for public chrome that renders dates/times (footer year,
-  // sidebar calendar) — passing it down as loader data keeps SSR and
-  // hydration on the same instant (repo convention, audit P2-23).
+  // Server clock for public chrome: loader data keeps SSR and hydration on the same instant (audit P2-23).
   const nowIso = new Date().toISOString()
 
   return {
@@ -139,14 +135,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   const matches = useMatches()
   const wantsPostFonts = matches.some((m) => isRecord(m.handle) && m.handle.postFonts === true)
-  // Post/code fonts load only on routes that render article content (they opt
-  // in via `handle.postFonts`); the global slot loads on every page.
   const activePostFonts = wantsPostFonts ? postFonts : []
   const activeCodeFonts = wantsPostFonts ? codeFonts : []
 
-  // Preconnect to every distinct host the self-hosted fonts load from.
-  // Local storage resolves to 'self' (a relative URL → skipped); S3 storage
-  // resolves to the asset host, which is already preconnected below.
+  // Preconnect to every distinct host the self-hosted fonts load from ('self' relative URLs are skipped).
   const fontHosts = new Set<string>()
   for (const f of [...globalFonts, ...activePostFonts, ...activeCodeFonts]) {
     if (!f.href) {
@@ -177,11 +169,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const locale = rootData?.blogSettings?.siteIdentity?.locale ?? 'zh-CN'
 
   // When custom fonts are configured, override the CSS font tokens on <html>
-  // so the slot's family stack is prepended to the existing fallback chain
-  // (an empty slot leaves the token at its stylesheet default).
-  //   global → --font-body  (site-wide UI font)
-  //   post   → --font-serif (article body serif font)
-  //   code   → --font-code  (inline/block code monospace font)
+  // so the slot's stack prepends the existing fallback chain:
+  //   global → --font-body, post → --font-serif, code → --font-code
   const htmlStyle: Record<string, string> = {}
   if (globalFonts.length > 0) {
     const stack = globalFonts.map((f) => `'${f.family}'`).join(', ')
@@ -208,20 +197,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="color-scheme" content={theme ?? 'light dark'} />
-        {/* Self-hosted web-font packages. Each font's result.css references
-            its woff2 chunks via relative paths, so a single <link> per font
-            pulls the whole progressive-load cascade. Served from 'self'
-            (local storage) or the asset CDN host (S3) — both CSP-safe. */}
+        {/* Self-hosted web-font packages: one <link> per font pulls the whole woff2 cascade (self/S3 — both CSP-safe). */}
         {globalFonts.map((f) => (f.href ? <link key={`g-${f.href}`} rel="stylesheet" href={f.href} /> : null))}
         {activePostFonts.map((f) => (f.href ? <link key={`p-${f.href}`} rel="stylesheet" href={f.href} /> : null))}
         {activeCodeFonts.map((f) => (f.href ? <link key={`c-${f.href}`} rel="stylesheet" href={f.href} /> : null))}
         <Meta />
         <Links />
-        {/* W3C Webmention endpoint discovery (relative — the browser
-            resolves it against the origin). Suppressed when the receive
-            switch is off — `isWebmentionReceiveEnabled` is the one
-            switch read shared with the SSR Link header and the 410
-            gate. */}
+        {/* W3C Webmention endpoint discovery (relative — resolved against the origin). Same switch as the SSR Link header and the 410 gate. */}
         {isWebmentionReceiveEnabled(rootData?.blogSettings) && <link rel="webmention" href="/webmention" />}
         {criticalLinks.map((href) => (
           <link key={href} rel="modulepreload" href={href} />
@@ -238,10 +220,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
   )
 }
 
-// Routes can opt-in to a custom chrome by exporting a `handle.layout` value.
-// `"admin"` marks routes that own their own chrome (admin SPA, login/install
-// split-screen). Routes can also disable the site footer with
-// `handle.footer = false` (see `routes/public/page/detail.tsx`).
+// Routes opt in to custom chrome via `handle.layout` ("admin" = own chrome:
+// admin SPA, login/install split-screen) and can disable the site footer
+// with `handle.footer = false` (see `routes/public/page/detail.tsx`).
 export type RouteHandle = {
   layout?: 'admin'
   footer?: boolean

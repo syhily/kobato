@@ -2,10 +2,8 @@ import { describe, expect, it } from 'vitest'
 
 import routes from '@/routes'
 
-// External URL contract. AGENTS.md is explicit: "public URL / feed URL /
-// stable". A regression here is potentially user-visible (broken bookmarks,
-// search engine deindex, RSS reader churn). This file pins every public
-// route in the manifest so any rename forces an explicit test update.
+// Pins every public route in the manifest so any rename forces an explicit
+// test update (AGENTS.md: "public URL / feed URL / stable").
 
 interface RouteEntry {
   path?: string
@@ -48,9 +46,7 @@ describe('contract: public URL stability', () => {
   })
 
   it('RSS / Atom / sitemap routes are mounted by Hono at the historical paths', () => {
-    // Feed and sitemap routes migrated from React Router resource routes
-    // to Hono native routes in server/http/resources/. The public URLs
-    // remain stable; they are just no longer in the RR manifest.
+    // Hono-native (server/http/resources/); must stay out of the RR manifest.
     const paths = new Set(all.map((r) => r.path))
     expect(paths.has('feed')).toBe(false)
     expect(paths.has('feed/atom')).toBe(false)
@@ -58,8 +54,7 @@ describe('contract: public URL stability', () => {
   })
 
   it('image endpoints (/images/og /calendar /avatar) preserve their URL shape', () => {
-    // Image resource routes migrated to Hono — see middleware-pipeline.ts
-    // and server/http/resources/images.ts. Public URLs remain stable.
+    // Image endpoints are Hono routes (server/http/resources/images.ts).
     const paths = new Set(all.map((r) => r.path))
     expect(paths.has('images/og/:slug.png')).toBe(false)
     expect(paths.has('images/calendar/:year/:time.png')).toBe(false)
@@ -81,9 +76,7 @@ describe('contract: public URL stability', () => {
 
   it('search routes (/search, /search/:keyword, paged) are unchanged', () => {
     const paths = new Set(all.map((r) => r.path))
-    // /search 301 redirect is served by Hono redirectsRouter; client-side
-    // forms in Search.tsx intercept the submit and navigate directly to
-    // /search/:keyword so /search never needs a React Router route entry.
+    // /search is handled by Hono redirects + client forms; no RR route entry.
     expect(paths.has('search')).toBe(false)
     expect(paths.has('search/:keyword')).toBe(true)
     expect(paths.has('search/:keyword/page/:num')).toBe(true)

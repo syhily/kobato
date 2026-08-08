@@ -82,10 +82,7 @@ export function ThemeProvider({ children, initialResolved = 'light' }: ThemeProv
     } catch (err) {
       logger.warn('Failed to persist theme preference', { error: err, theme: next })
     }
-    // flushSync forces the render AND the applyTheme effect to land inside
-    // the view-transition update window, so the new snapshot is captured
-    // with the new theme class already on <html>. Without the API the
-    // helper just runs the update synchronously.
+    // flushSync lands the render and applyTheme inside the view-transition update window.
     transitionViewIfSupported(() => {
       flushSync(() => setThemeState(next))
     })

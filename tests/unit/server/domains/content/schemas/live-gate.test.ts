@@ -83,7 +83,6 @@ describe('content/schemas/live-gate — isLive', () => {
   it('returns false when deletedAt is a past date (presence check, not date comparison)', () => {
     const past = new Date('2020-01-01T00:00:00.000Z')
     const meta = liveMeta({ deletedAt: past })
-    // deletedAt being non-null triggers the check regardless of the date value
     expect(isLive(meta)).toBe(false)
   })
 })
@@ -169,7 +168,6 @@ describe('content/schemas/live-gate — promotedContentWhere', () => {
     const query = toQuery(promotedContentWhere(promotedColumns))
     expect(query.sql).toContain('"published" = ')
     expect(query.sql).toContain('"published_revision_id" is not null')
-    // sqlite boolean columns bind as 1/0
     expect(query.params).toContain(1)
   })
 

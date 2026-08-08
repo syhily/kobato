@@ -11,19 +11,12 @@ import { ensureInstalledOrRedirect } from '@/server/domains/settings/install-gat
 import { getRequestContext } from '@/server/http/request-context'
 import { safeRedirectPath } from '@/shared/utils/safe-url'
 
-// The signin page's flow routing behind `routes/auth/signin.tsx`: the
-// logout branch, the reset/accept-invite token peek, and the OTP-session
-// branching all live here — the route module keeps context extraction,
-// this one call, and rendering. Redirects are thrown (logout, already
-// signed-in, expired OTP); the two `data(...)` payload shapes drive the
-// login / verify-otp / lost-password / reset-password forms.
+// Flow routing behind `routes/auth/signin.tsx`: logout, token peek, and
+// OTP-session branching. Redirects are thrown; two `data(...)` payload
+// shapes drive the login/verify-otp/lost-password/reset-password forms.
 
-// Only these URL actions name a GET view. Every other action name is a
-// POST handler (identify, passkey, verifyotp, …) — the router navigates
-// to the submitted form's action URL, so the loader revalidates against
-// e.g. `?action=identify` right after the identify round-trip. Treating
-// those names as views would unmount the login form the instant that
-// revalidation commits; they must fall back to the login view instead.
+// Only these URL actions name a GET view; any other action is a POST
+// handler — treating those as views would unmount the login form on revalidation.
 const VIEW_ACTIONS = new Set(['magiclink', 'lostpassword', 'resetpassword', 'accept-invite'])
 export async function loadSigninData({ request, context }: Pick<LoaderFunctionArgs, 'request' | 'context'>) {
   const rc = getRequestContext({ request, context })
@@ -54,10 +47,8 @@ export async function loadSigninData({ request, context }: Pick<LoaderFunctionAr
     throw redirect(redirectTo)
   }
 
-  // For reset / invite, surface a token error on the loader so the UI
-  // can short-circuit before the user types a new password. `peekToken`
-  // is read-only on purpose — the route's action consumes the token
-  // only after the form is submitted.
+  // Surface token errors on the loader so the UI short-circuits before a
+  // new password is typed; `peekToken` is read-only — the action consumes it.
   let tokenError: string | null = null
   let resetToken: string | null = null
   if ((action === 'resetpassword' || action === 'accept-invite') && url.searchParams.has('token')) {

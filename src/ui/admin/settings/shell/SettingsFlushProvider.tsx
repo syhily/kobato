@@ -1,14 +1,8 @@
 import { type ReactNode, createContext, use, useCallback, useMemo, useRef } from 'react'
 
-// Flush registry for /admin/settings. Each `useSettingsCard` registers its
-// `flush` fn under its section id; three trigger sources call back in:
-//   - close button / ESC                    → `flushAll`
-//   - scroll-away (IntersectionObserver)    → `flushSection(id)`
-//   - page hide (visibilitychange/pagehide) → `flushAll`
-//
-// Dirty-checking lives inside each card's `flush`, so flushing a clean card
-// is a cheap no-op. Refs (not state) hold the Map so registrations don't
-// trigger re-renders.
+// Flush registry for /admin/settings: each `useSettingsCard` registers its
+// flush under a section id; dirty-checking lives inside each flush, so
+// flushing a clean card is a no-op.
 
 interface SettingsFlushContextValue {
   /** Register a flush fn under a section id. Returns an unregister fn. */
@@ -19,8 +13,7 @@ interface SettingsFlushContextValue {
   flushSection: (sectionId: string) => void
 }
 
-// Default: no-op. Keeps `useSettingsCard` safe in unit tests that don't wrap
-// the provider.
+// No-op default keeps `useSettingsCard` safe in unit tests without the provider.
 const SettingsFlushContext = createContext<SettingsFlushContextValue>({
   registerFlush: () => () => {
     /* noop */

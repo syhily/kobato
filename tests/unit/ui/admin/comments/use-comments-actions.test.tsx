@@ -10,12 +10,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
-// The comment actions live on `useCommentsController` — this suite drives
-// them at the hook level (no row rendering), mirroring how
-// use-meting-music-search.test.tsx mocks the oRPC client. `orpcQuery` is
-// derived from `orpc`, so the plain-object client mock covers both the
-// loadAll infinite query and the three comment mutations; each test
-// programs the outcome per procedure.
+// Drives `useCommentsController` at the hook level; the plain-object
+// `orpc` mock covers loadAll and the three comment mutations.
 const api = vi.hoisted(() => ({
   loadAll: vi.fn(),
   approve: vi.fn(),
@@ -51,10 +47,7 @@ import {
 } from '@/ui/admin/comments/useCommentsController'
 import { useFilterPills } from '@/ui/admin/shared/filter-bar/useFilterPills'
 
-// The controller owns a `useInfiniteQuery` + `useMutation`s, so tests need
-// a real QueryClient above the hook; `useSearchParams` needs a router.
-// Effects must run (happy-dom + the @testing-library/react runner), unlike
-// the SSR `#/_helpers/hook` runner the controller's other suite uses.
+// Real effects required — unlike the controller's SSR `#/_helpers/hook` suite.
 function makeWrapper() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 }, mutations: { retry: false } },
@@ -118,11 +111,8 @@ function makeIntents() {
   return { edit: vi.fn(), reply: vi.fn(), editUser: vi.fn() } satisfies CommentIntents
 }
 
-// Boots the controller with a single loaded page and waits for the rows to
-// land in the cache before the test drives an action. The pill state comes
-// from a real `useFilterPills` bridged in exactly the way `CommentsView`
-// wires it; the returned hook result spreads the controller and overlays
-// the pills' `filters` so the action assertions read unchanged.
+// Boots the controller with one loaded page and bridges a real
+// `useFilterPills` exactly as `CommentsView` does.
 async function setupController(pageComments: AdminComment[], statusCounts?: AdminCommentsPage['statusCounts']) {
   const counts = statusCounts ?? {
     all: pageComments.length,
@@ -162,8 +152,7 @@ beforeEach(() => {
   api.searchPages.mockReset()
   api.searchAuthors.mockReset()
   toastMock.error.mockClear()
-  // happy-dom may not implement scrollTo; the filter actions call it after
-  // dispatching, so pin a no-op.
+  // happy-dom lacks scrollTo; pin a no-op.
   Object.defineProperty(window, 'scrollTo', { value: vi.fn(), writable: true, configurable: true })
 })
 
@@ -251,8 +240,6 @@ describe('useCommentsController comment actions — confirm choreography', () =>
 
     expect(api.approveCommentDeletion).toHaveBeenCalledWith({ commentId: comment.id, approve: false })
     await waitFor(() => expect(result.current.comments[0]?.deleteRequestedAt).toBeNull())
-    // The pending count is restored — the reject path kept the comment's
-    // isPending flag through the per-call mutation callback.
     expect(result.current.statusCounts).toEqual({ all: 1, pending: 1, approved: 0, deleteRequested: 0 })
   })
 
@@ -265,7 +252,6 @@ describe('useCommentsController comment actions — confirm choreography', () =>
     await act(async () => result.current.confirm?.onConfirm())
 
     await waitFor(() => expect(toastMock.error).toHaveBeenCalledWith('处理删除申请失败', { description: 'boom' }))
-    // The row stays untouched in the cache.
     expect(result.current.comments).toHaveLength(1)
     expect(result.current.comments[0]?.deleteRequestedAt).not.toBeNull()
   })

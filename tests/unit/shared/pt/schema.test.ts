@@ -9,12 +9,8 @@ import {
   validatePortableTextBody,
 } from '@/shared/pt/utils'
 
-// Pin the in-repo PortableText dialect. Every editor save and every
-// SSR render parses through `portableTextBodySchema`, so drift here
-// either lets malformed payloads land in `content.body` (the editor
-// then silently corrupts pages) or rejects valid revisions (the
-// public site goes blank). The constants below are the canonical
-// shape every other layer should mirror.
+// Pin the in-repo PortableText dialect: every editor save and SSR render
+// parses through `portableTextBodySchema`; the constants are canonical.
 
 function span(text: string, marks?: string[]) {
   return { _type: 'span' as const, _key: `s-${text.slice(0, 4)}`, text, marks }
@@ -225,10 +221,7 @@ describe('contract: portable-text dialect — rejects unknown shapes', () => {
 
 describe('contract: portable-text dialect — storage-pure wire schema', () => {
   it('strips SSR music enrichment (`meta`) at the API perimeter', () => {
-    // `meta` is request-scoped enrichment (`@/shared/pt/enriched`) injected
-    // by the SSR prerender — never authored, never stored. The wire schema
-    // must not carry it: parsing a block that smuggles one in strips the
-    // key instead of persisting it to `content.body`.
+    // `meta` is SSR-only enrichment — the wire schema strips it, never stores it.
     const smuggled: unknown = [
       {
         _type: 'musicPlayer',

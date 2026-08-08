@@ -9,12 +9,8 @@ const RESTART_POLL_INTERVAL_MS = 500
 const RESTART_TIMEOUT_MS = 90_000
 
 /**
- * Poll /ready until the instance answers 200 again. /health always 200s
- * while the socket is up — even mid-restart — so it cannot witness the
- * drain → swap → reopen → graceful-restart cycle; /ready 503s with the
- * restore machine's phase until the server is truly back, which is the
- * gate the relogin below needs. Connection errors during the brief
- * socket close are expected and retried.
+ * Poll /ready until the instance is truly back — /health 200s even
+ * mid-restart, /ready 503s with the restore phase until the server's up.
  */
 async function waitForInstanceBack(): Promise<void> {
   const probe = new E2eClient(env.baseUrl)
@@ -35,10 +31,8 @@ async function waitForInstanceBack(): Promise<void> {
   throw new Error(`instance did not come back within ${RESTART_TIMEOUT_MS / 1000}s (last: ${lastStatus})`)
 }
 
-// Backup → download → restore round-trip. The restore swaps the database
-// file back to the archived snapshot and restarts the server in-process,
-// so the assertions bracket it: content written BEFORE the backup must
-// survive, content written AFTER it must be gone.
+// Backup → download → restore round-trip: content written before the
+// snapshot survives, content written after it is gone.
 describe('admin backup/restore round-trip (HTTP e2e)', () => {
   it('archives, downloads, and restores the instance back to the snapshot', { timeout: 120_000 }, async () => {
     const admin = new E2eClient(env.baseUrl)
@@ -97,8 +91,7 @@ describe('admin backup/restore round-trip (HTTP e2e)', () => {
 
     await waitForInstanceBack()
 
-    // The instance is back on the snapshot: sign in fresh and verify
-    // both sides of the bracket.
+    // Instance is back on the snapshot — sign in fresh and verify both sides.
     const after = new E2eClient(env.baseUrl)
     const relogin = await loginAdmin(after, env)
     expect(relogin.res.status).toBe(302)

@@ -3,19 +3,9 @@
 import { act, renderHook } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// useEditorShellPersist owns the save-flow state (status, save timestamp,
-// saved-body bookkeeping, server publishedAt, preview banner), so this
-// suite drives the four mutation slots and asserts that owned state
-// directly — no orchestrator reducers are rebuilt here. The only mocks on
-// the seam are the notifications (orchestrator-owned meta draft, revision
-// race, and the server leg of the autosave freeze) and the wire calls.
-// Slot order matches the useMutation call order in
-// use-editor-shell-persist:
+// This suite drives useEditorShellPersist's four mutation slots directly.
+// Slot order matches the useMutation call order in use-editor-shell-persist:
 //   0 = upsertMeta, 1 = saveDraft, 2 = publish, 3 = unpublish
-//
-// `localInputValueToIso` lives in editor-datetime.ts and is covered
-// directly by editor-datetime.test.ts; the persist paths below only
-// assert its ISO output flows into the mutation payloads.
 
 interface MutationSlot {
   onSuccess?: (data: never) => void
@@ -72,10 +62,7 @@ type Entity = EntityLike
 
 const baseMeta: Meta = { title: 't', slug: 's', published: false, publishedAt: '' }
 
-// Minimal valid PortableText block shape (matches what the autosave /
-// canonicalize helpers expect). `arePortableTextBodiesEquivalent` runs
-// the body through the PT↔PM bridge, which iterates `block.children`, so
-// every block must carry a `children` array of spans.
+// Minimal valid PortableText block — every block must carry a `children` array of spans.
 function block(key: string, text: string) {
   return { _type: 'block' as const, _key: key, children: [{ _type: 'span' as const, _key: `${key}-s`, text }] }
 }
@@ -170,18 +157,15 @@ describe('ui/admin/editor-shell/useEditorShellPersist — initial-return surface
   it('returns the persist handlers, derived flags, and owned save-flow state in create mode', () => {
     const { result } = renderHook(() => useEditorShellPersist(makeArgs()))
 
-    // Handlers present.
     expect(result.current.persistCreate).toBeInstanceOf(Function)
     expect(result.current.persistSave).toBeInstanceOf(Function)
     expect(result.current.persistPublish).toBeInstanceOf(Function)
     expect(result.current.persistUnpublish).toBeInstanceOf(Function)
-    // Flags: nothing pending with mocked idle mutations.
     expect(result.current.isPending).toBe(false)
     expect(result.current.isSavingDraft).toBe(false)
     expect(result.current.isPublishing).toBe(false)
     expect(result.current.isUnpublishing).toBe(false)
     expect(result.current.isCreating).toBe(false)
-    // Owned state: idle status, no banner, no save timestamp, empty saved body.
     expect(result.current.status).toEqual({ kind: 'idle' })
     expect(result.current.previewBanner).toBeNull()
     expect(result.current.displaySaveAtMs).toBeNull()
@@ -229,14 +213,13 @@ describe('ui/admin/editor-shell/useEditorShellPersist — edit-mode save dispatc
       detail: makeDetail([block('b1', 'same')]),
       draft: {
         meta: { ...baseMeta, publishedAt: '2025-01-01T00:00' },
-        body: [block('b1', 'same')], // semantically equal to the baseline -> not diverged
+        body: [block('b1', 'same')],
       },
     })
     const { result } = renderHook(() => useEditorShellPersist(args))
     act(() => result.current.persistSave())
 
     expect(result.current.status).toEqual({ kind: 'saving' })
-    // upsertMeta fired exactly once with the built payload; saveDraft skipped.
     expect(slots[0].mutate).toHaveBeenCalledTimes(1)
     expect(slots[1].mutate).not.toHaveBeenCalled()
     expect(args.mutations.buildUpsertMetaPayload).toHaveBeenCalledWith({
@@ -251,8 +234,6 @@ describe('ui/admin/editor-shell/useEditorShellPersist — edit-mode save dispatc
     const { result } = renderHook(() => useEditorShellPersist(args))
     act(() => result.current.persistSave())
     act(() => slots[0].config?.onSuccess?.(savedEntity() as never))
-
-    // One armed leg, one success — the banner surfaces with the entity slug.
     expect(result.current.previewBanner).toEqual({ kind: 'draft', slug: 's' })
     expect(result.current.status).toEqual({ kind: 'saved', at: expect.any(Date) })
     expect(result.current.displaySaveAtMs).toBe(Date.parse('2026-07-10T00:00:00.000Z'))
@@ -265,26 +246,23 @@ describe('ui/admin/editor-shell/useEditorShellPersist — edit-mode save dispatc
       detail: makeDetail([block('old', 'old text')]),
       draft: {
         meta: { ...baseMeta, publishedAt: '' },
-        body: [block('new', 'new text')], // diverged from the baseline
+        body: [block('new', 'new text')],
         expectedToken: 'tok-0',
       },
     })
     const { result } = renderHook(() => useEditorShellPersist(args))
     act(() => result.current.persistSave())
 
-    // Both legs fire (upsertMeta + saveDraft).
     expect(slots[0].mutate).toHaveBeenCalledTimes(1)
     expect(slots[1].mutate).toHaveBeenCalledTimes(1)
 
-    // The first leg alone must not surface the banner.
     act(() => slots[0].config?.onSuccess?.(savedEntity() as never))
     expect(result.current.previewBanner).toBeNull()
 
     act(() => slots[1].config?.onSuccess?.({ status: 'saved', revision } as never))
     expect(result.current.previewBanner).toEqual({ kind: 'draft', slug: 's' })
     expect(result.current.status).toEqual({ kind: 'saved', at: expect.any(Date) })
-    // The revision race is reported to the orchestrator; the saved-body
-    // bookkeeping stays inside persist.
+    // Revision race → orchestrator; saved-body bookkeeping stays in persist.
     expect(args.notifications.noteRevisionSaved).toHaveBeenCalledWith(revision)
     expect(result.current.lastSavedBody).toEqual([block('new', 'new text')])
   })
@@ -300,7 +278,6 @@ describe('ui/admin/editor-shell/useEditorShellPersist — edit-mode save dispatc
     act(() => slots[1].config?.onSuccess?.(savedPayload({}, WARNING) as never))
     expect(result.current.status).toEqual({ kind: 'warning', message: WARNING })
 
-    // The concurrent meta leg's success must keep the body leg's warning.
     act(() => slots[0].config?.onSuccess?.(savedEntity() as never))
     expect(result.current.status).toEqual({ kind: 'warning', message: WARNING })
   })
@@ -336,7 +313,6 @@ describe('ui/admin/editor-shell/useEditorShellPersist — edit-mode save dispatc
     )
     expect(result.current.status).toEqual({ kind: 'conflict', expectedToken: 'tok-server' })
 
-    // A late meta-leg success cannot flash a stale link.
     act(() => slots[0].config?.onSuccess?.(savedEntity() as never))
     expect(result.current.previewBanner).toBeNull()
   })
@@ -358,15 +334,12 @@ describe('ui/admin/editor-shell/useEditorShellPersist — manual save advances t
       draft: { body: divergedBody },
     })
     const { result } = renderHook(() => useEditorShellPersist(args))
-    // Discount the mount-time opening-body seed (covered by its own suite);
-    // this test asserts the manual save's baseline advance only.
+    // Discount the mount-time opening-body seed (covered by its own suite).
     autosaveMockReturns.markPersisted.mockClear()
     act(() => result.current.persistSave())
 
     act(() => slots[1].config?.onSuccess?.(savedPayload({ body: divergedBody }) as never))
-    // The engine's baseline moves to the exact reference the manual save
-    // submitted, so the next debounce tick's reference check hits and no
-    // redundant PATCH goes out for the same body.
+    // Baseline moves to the submitted reference so the next debounce tick is a no-op.
     expect(autosaveMockReturns.markPersisted).toHaveBeenCalledTimes(1)
     expect(autosaveMockReturns.markPersisted).toHaveBeenCalledWith(divergedBody)
   })
@@ -401,18 +374,14 @@ describe('ui/admin/editor-shell/useEditorShellPersist — manual save advances t
     )
     expect(autosaveMockReturns.markPersisted).not.toHaveBeenCalled()
 
-    // The conflict dropped the pending snapshot: the clean save after the
-    // user resolves the conflict must not mark a stale body reference.
+    // The conflict dropped the pending snapshot; a later clean save must not mark a stale body.
     act(() => slots[1].config?.onSuccess?.(savedPayload() as never))
     expect(autosaveMockReturns.markPersisted).not.toHaveBeenCalled()
   })
 })
 
 describe('ui/admin/editor-shell/useEditorShellPersist — opening body seeds the autosave baseline', () => {
-  // Audit P1-1: with the baseline starting null, the first debounce tick 5 s
-  // after every editor open fired an unconditional PATCH even with zero
-  // edits. Seeding the engine with the opening body makes that tick hit the
-  // reference check instead.
+  // Audit P1-1: seeding the baseline makes the first debounce tick hit the reference check.
   it('marks the opening body persisted on mount so the first autosave tick is a no-op', () => {
     const openingBody = [block('b1', 'server state')]
     const args = makeArgs({
@@ -477,19 +446,15 @@ describe('ui/admin/editor-shell/useEditorShellPersist — autosave conflict free
     await act(async () => {
       outcome = await lastAutosaveOptions().flush([] as never)
     })
-    // The flush reports the conflict instead of resolving as a plain save —
-    // this is what stops the engine from emitting its generic 'saved' tick.
+    // The conflict outcome stops the engine from emitting its generic 'saved' tick.
     expect(outcome).toBe('conflict')
     expect(result.current.status).toEqual({ kind: 'conflict', expectedToken: 'tok-server' })
-    // The freeze itself is orchestrator-owned: persist only reports the
-    // server leg. The gate reads the merged flag handed back via draft.
+    // Freeze is orchestrator-owned; persist only reports the server leg.
     expect(args.notifications.noteRevisionConflict).toHaveBeenCalledTimes(1)
 
     rerender({ args: { ...args, draft: { ...args.draft, freeze: 'server' } } })
     expect(lastAutosaveOptions().enabled).toBe(false)
 
-    // Belt-and-suspenders: even a stray engine 'saved' status cannot hide
-    // the conflict (the engine no longer emits one for conflicted flushes).
     act(() => lastAutosaveOptions().onStatusChange({ kind: 'saved', at: Date.now() }))
     expect(result.current.status).toEqual({ kind: 'conflict', expectedToken: 'tok-server' })
   })
@@ -517,8 +482,6 @@ describe('ui/admin/editor-shell/useEditorShellPersist — autosave conflict free
     })
     expect(args.notifications.noteRevisionConflict).toHaveBeenCalledTimes(1)
 
-    // After the user resolves the conflict, the next successful save goes
-    // to noteRevisionSaved — where the orchestrator clears the freeze.
     act(() => slots[1].config?.onSuccess?.(savedPayload() as never))
     expect(args.notifications.noteRevisionSaved).toHaveBeenCalled()
   })
@@ -532,8 +495,7 @@ describe('ui/admin/editor-shell/useEditorShellPersist — cancel schedule on pic
     const { result } = renderHook(() => useEditorShellPersist(args))
     act(() => result.current.persistSave())
 
-    // 取消排期: the explicit null must reach the wire — the old behavior
-    // wrote `new Date()` here, publishing the post immediately.
+    // 取消排期: the explicit null must reach the wire.
     expect(args.mutations.buildUpsertMetaPayload).toHaveBeenCalledWith({
       meta: args.draft.meta,
       id: 'e1',
@@ -546,8 +508,7 @@ describe('ui/admin/editor-shell/useEditorShellPersist — cancel schedule on pic
     const { result } = renderHook(() => useEditorShellPersist(args))
     act(() => result.current.persistSave())
 
-    // Nothing scheduled: leave the column untouched (undefined), so a live
-    // post is never unpublished by an empty picker.
+    // Nothing scheduled: undefined leaves the column untouched — a live post is never unpublished.
     expect(args.mutations.buildUpsertMetaPayload).toHaveBeenCalledWith({
       meta: args.draft.meta,
       id: 'e1',
@@ -565,7 +526,6 @@ describe('ui/admin/editor-shell/useEditorShellPersist — success legs never dow
     const { result } = renderHook(() => useEditorShellPersist(args))
     act(() => result.current.persistSave())
 
-    // The body leg lands first with a revision conflict.
     act(() =>
       slots[1].config?.onSuccess?.({
         status: 'conflict',
@@ -575,8 +535,6 @@ describe('ui/admin/editor-shell/useEditorShellPersist — success legs never dow
     )
     expect(result.current.status).toEqual({ kind: 'conflict', expectedToken: 'tok-server' })
 
-    // The concurrent meta leg's success must not downgrade the conflict to
-    // "saved" — the edits never landed.
     act(() => slots[0].config?.onSuccess?.(savedEntity() as never))
     expect(result.current.status).toEqual({ kind: 'conflict', expectedToken: 'tok-server' })
   })
@@ -590,8 +548,6 @@ describe('ui/admin/editor-shell/useEditorShellPersist — success legs never dow
     act(() => result.current.persistSave())
     act(() => result.current.persistUnpublish())
 
-    // The in-flight body leg lands with a revision conflict while the
-    // unpublish leg is still pending.
     act(() =>
       slots[1].config?.onSuccess?.({
         status: 'conflict',
@@ -645,12 +601,8 @@ describe('ui/admin/editor-shell/useEditorShellPersist — publish / unpublish', 
     expect(args.notifications.noteRevisionSaved).toHaveBeenCalled()
     expect(result.current.previewBanner).toEqual({ kind: 'published', slug: 's' })
 
-    // The optimistic server publishedAt is retained inside persist after the
-    // SUCCESSFUL publish: the server stored exactly this picker ISO
-    // (repos/mutate.ts publish sets publishedAt = input ?? now), so the
-    // optimistic value is now the truth. A later save with an empty picker
-    // reads it as a schedule to CANCEL and sends an explicit null — never a
-    // forced "publish now". (The failure path reverts it — see below.)
+    // After a successful publish the optimistic publishedAt is the truth: an
+    // empty picker cancels it with an explicit null — never a "publish now".
     const nextArgs: Args = { ...args, draft: { ...args.draft, meta: { ...baseMeta, publishedAt: '' } } }
     rerender({ args: nextArgs })
     act(() => result.current.persistSave())
@@ -680,10 +632,8 @@ describe('ui/admin/editor-shell/useEditorShellPersist — publish / unpublish', 
     act(() => slots[2].config?.onError?.(new Error('boom')))
     expect(result.current.status).toEqual({ kind: 'error', message: 'boom' })
 
-    // Picker cleared after the failed publish. With the optimistic schedule
-    // reverted, the server holds no schedule to cancel: the field must be
-    // omitted (undefined), never null — `publishedAt: null` is the server's
-    // cancel-schedule signal and would silently unpublish the live entity.
+    // After a failed publish the optimistic schedule is reverted: omit the
+    // field (undefined), never null — null cancels and would unpublish the live entity.
     const nextArgs: Args = {
       ...args,
       draft: { ...args.draft, meta: { ...baseMeta, published: true, publishedAt: '' } },

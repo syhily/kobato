@@ -9,27 +9,19 @@ import { kvCache } from '@/server/infra/db/schema/kv-cache'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 /**
- * SQLite-backed row-access plane for the cache module
- * (`@/server/infra/cache/registry`) — the ONLY consumer. JSON payloads
- * ride the `value` json-mode column as PLAIN JSON (superjson was dropped
- * with the SQLite migration: every bucket payload is JSON-native — the
- * one Date-bearing shape, image metadata, carries `updatedAtMs` as an
- * epoch number). Binary payloads go to the `blob` BLOB column. A row
- * holds one or the other: both writers null out the sibling column so an
- * overwrite never leaves a stale payload of the other kind behind.
+ * SQLite row-access plane for `@/server/infra/cache/registry` — its only consumer.
+ * JSON payloads ride the `value` json-mode column, binary payloads the `blob`
+ * column; a row holds one or the other — writers null out the sibling column.
  */
 
 export interface KvStoreSetOptions {
   /** Time-to-live in seconds. Omit for an entry that never expires. */
   ttlSeconds?: number
-  /** Bucket label surfaced by the admin cache panel — required so every
-   *  row lands in a declared bucket (there is no misc bucket). */
+  /** Bucket label for the admin cache panel — required; every row lands in a declared bucket. */
   bucket: string
 }
 
-// Lazy expiry: a row is live only when it has no expiry or its expiry is
-// still in the future. The hourly sweep in `kv-maintenance.ts` deletes
-// expired rows; until it runs, every read must filter them out.
+// Lazy expiry: every read must filter expired rows; the sweep only reclaims space.
 function liveEntries() {
   return or(isNull(kvCache.expiresAt), gt(kvCache.expiresAt, new Date()))
 }
@@ -38,10 +30,7 @@ function expiryFrom(opts: KvStoreSetOptions): Date | null {
   return opts.ttlSeconds ? new Date(Date.now() + opts.ttlSeconds * 1000) : null
 }
 
-// The json-mode column already parsed the stored text, so the value
-// comes back as plain JSON. The cast to T is the declaration's own
-// contract (the registry validates reads against the bucket schema where
-// one exists); `undefined` reads as a miss.
+// The json-mode column already parsed the text — the cast is the registry's schema contract.
 function deserializeValue<T>(value: unknown): T | null {
   if (value === null || value === undefined) {
     return null
@@ -63,9 +52,7 @@ export async function getItem<T>(db: Database, key: string): Promise<T | null> {
 }
 
 export async function setItem(db: Database, key: string, value: JsonValue, opts: KvStoreSetOptions): Promise<void> {
-  // Plain JSON storage: the json-mode column serializes the value
-  // itself, and the JsonValue bound (plan §1.12) makes a Date/bigint
-  // payload a compile error at the call site.
+  // Plain JSON storage — the JsonValue bound (plan §1.12) makes a Date/bigint payload a compile error.
   const serialized = value
   const expiresAt = expiryFrom(opts)
   await db
@@ -110,7 +97,6 @@ export async function getItems<T>(db: Database, keys: string[]): Promise<{ key: 
     .from(kvCache)
     .where(and(inArray(kvCache.key, keys), liveEntries()))
   const byKey = new Map(rows.map((row) => [row.key, row.value]))
-  // Result order follows the input keys (MGET semantics); missing or
-  // expired keys come back as null values.
+  // Result order follows the input keys (MGET semantics); missing keys come back null.
   return keys.map((key) => ({ key, value: deserializeValue<T>(byKey.get(key) ?? null) }))
 }

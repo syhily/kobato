@@ -8,37 +8,18 @@ import {
   useScrollSpyNav,
 } from '@/ui/admin/settings/shell/useSettingsScrollSpy'
 
-// Extra coverage for useSettingsScrollSpy. The SSR `renderHook` harness
-// runs a single synchronous pass, so the scroll-detection `useEffect`
-// (which depends on `document.getElementById('settings-content-scroller')`
-// and attaches a scroll listener) does not fire. What IS observable in a
-// single pass:
-//   - the provider context's initial value (currentSection === null)
-//   - the updateSection / updateNav / scrollToSection callbacks are
-//     present and callable (updateSection/updateNav mutate refs and are
-//     safe to call without a DOM; scrollToSection reads refs and is a
-//     no-op when the section was never registered)
-//   - useScrollSpy / useScrollSpyNav return refs (initially null in SSR)
-//     and the nav marker prop
-//   - the default (no-provider) context fallbacks
-//
-// The geometry helpers (findClosestSection, scrollSidebarNav,
-// scrollToSectionElement) are module-private and only reachable through
-// the effects, so they are left to higher-level integration coverage.
+// Extra coverage for useSettingsScrollSpy under the single-pass SSR
+// harness (the scroll-detection effect never fires): observable surfaces
+// are context defaults, callable callbacks, and null refs.
 
 describe('ui/admin/settings/shell/useSettingsScrollSpy — extra', () => {
-  // scrollToSection's callback reaches for `document.getElementById`
-  // (via getContentScroller / getNavScroller). The unit project runs in
-  // the node environment where `document` is undefined, so we stub a
-  // minimal document that returns null for both scrollers — the scroll
-  // helpers then bail early and the callback becomes a safe no-op.
+  // scrollToSection needs document.getElementById; stub it to return null so the callback no-ops.
   beforeEach(() => {
     const fakeDoc = {
       getElementById: vi.fn().mockReturnValue(null),
     }
     vi.stubGlobal('document', fakeDoc)
-    // scrollToSection also arms a setTimeout via the active-nav timer;
-    // stub it so no real timer leaks across tests.
+    // Stub the active-nav timer so no real timer leaks across tests.
     vi.stubGlobal(
       'setTimeout',
       vi.fn(() => 0 as unknown as NodeJS.Timeout),
@@ -64,8 +45,7 @@ describe('ui/admin/settings/shell/useSettingsScrollSpy — extra', () => {
         wrapper: ScrollSpyProvider,
         actions: [({ updateSection }) => updateSection('general', fakeEl)],
       })
-      // currentSection is still null — the scroll effect would compute it,
-      // but effects don't run in SSR. updateSection just mutates a ref.
+      // Effects don't run in SSR, so currentSection stays null.
       expect(ctx.currentSection).toBeNull()
     })
 
@@ -83,17 +63,13 @@ describe('ui/admin/settings/shell/useSettingsScrollSpy — extra', () => {
         wrapper: ScrollSpyProvider,
         actions: [({ scrollToSection }) => scrollToSection('never-registered')],
       })
-      // Should not throw and should leave currentSection null. The
-      // scrollTo callback guards on `sectionElements.current[id]`.
+      // No-op: the scrollTo callback guards on sectionElements.current[id].
       expect(ctx.currentSection).toBeNull()
     })
 
     it('scrollToSection targets a registered section but remains null in SSR', () => {
       const fakeEl = {} as unknown as HTMLDivElement
-      // scrollToSection calls setActiveNav(id) — which schedules a state
-      // update not observable in the same SSR pass — then calls
-      // scrollToSectionElement, which bails when there is no
-      // #settings-content-scroller in the DOM.
+      // setActiveNav schedules state invisible in this pass; the scroller lookup bails without the DOM element.
       const ctx = renderHook(useScrollSpyContext, {
         wrapper: ScrollSpyProvider,
         actions: [
@@ -171,9 +147,7 @@ describe('ui/admin/settings/shell/useSettingsScrollSpy — extra', () => {
   })
 })
 
-// The bare (no-provider) context fallbacks: calling the consumer hooks
-// outside a ScrollSpyProvider must return the noop defaults and never
-// throw.
+// No-provider fallbacks: consumer hooks return the noop defaults and never throw.
 describe('ui/admin/settings/shell/useSettingsScrollSpy — default (no provider) context', () => {
   it('useScrollSpyContext returns the documented no-op defaults', () => {
     const ctx = renderHook(useScrollSpyContext)

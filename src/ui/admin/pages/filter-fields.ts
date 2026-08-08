@@ -5,11 +5,7 @@ import type { FilterFieldSpec, FilterQueryPatch } from '@/ui/admin/shared/filter
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { deriveStatusQueryFields } from '@/ui/admin/shared/filter-bar/status-fields'
 
-// Pages-list filter-pill field specs — keys, labels, icons, the status
-// option array, and the `toQuery` mappers onto `admin.pages.list`'s input.
-// `buildPageFilterFields` is a factory (memoized by the view) because the
-// author options come from an async option-list query.
-
+// Pages-list filter-pill specs + `toQuery` mappers onto `admin.pages.list` input.
 export type PageFilterFieldKey = 'status' | 'author'
 
 export type PageStatusFilter = 'all' | 'published' | 'draft' | 'deleted'
@@ -20,8 +16,7 @@ export const PAGE_STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: 'deleted', label: '已删除' },
 ]
 
-// The pages leg set — no `visible` leg: the page table has no `visible`
-// column, so a status maps onto the published flag only.
+// No `visible` leg — the page table has no `visible` column.
 const PAGE_STATUS_FIELDS: Record<Exclude<PageStatusFilter, 'deleted'>, { published?: boolean }> = {
   all: {},
   published: { published: true },
@@ -53,9 +48,7 @@ export function buildPageFilterFields(
       icon: ListChecksIcon,
       kind: 'options',
       options: PAGE_STATUS_OPTIONS,
-      // The status projection carries a boolean; the string-typed patch is
-      // the common case and the merge copies values verbatim, so the cast
-      // is exact.
+      // The status projection carries a boolean; the string-typed patch is the common case and merges verbatim — the cast is exact.
       toQuery: (value) => unsafeCast<FilterQueryPatch>(deriveStatusFields(unsafeCast<PageStatusFilter>(value))),
     },
     {

@@ -154,25 +154,19 @@ describe('requestContextMiddleware', () => {
     expect(res.headers.getSetCookie()).toEqual(['visitor=xyz', '__session=abc'])
   })
 
-  // ─── Anonymous (cookieless) requests — P1-4 ───────────
-  //
-  // A bot flood of anonymous GETs must not write one session row per
-  // request. The token is derived statelessly from the `__csrf` cookie
-  // instead; nothing touches the session table.
+  // Anonymous (cookieless) requests — P1-4: a bot flood of anonymous GETs
+  // must not write one session row per request — the token is derived
+  // statelessly from the `__csrf` cookie; nothing touches the session table.
 
   it('anonymous GET: no session write, no __session cookie, token derived from a minted __csrf cookie', async () => {
     const { app, session, ensureCsrfToken, commitSessionWithMaxAge } = await buildApp()
     app.get('/', (c) => c.json({ ok: true }))
     const res = await app.request('/')
     expect(res.status).toBe(200)
-    // No session row is persisted for anonymous traffic…
     expect(commitSessionWithMaxAge).not.toHaveBeenCalled()
-    // …and the persisted-token path is skipped entirely.
     expect(ensureCsrfToken).not.toHaveBeenCalled()
     const setCookies = res.headers.getSetCookie()
     expect(setCookies.some((v) => v.startsWith('__session='))).toBe(false)
-    // The stateless double-submit cookie goes out instead, and the
-    // in-memory session carries the derived token for loaders.
     expect(setCookies).toEqual([`__csrf=${MINTED_CSRF_COOKIE}; Path=/; HttpOnly; SameSite=Lax`])
     expect(session.get('csrfToken')).toBe(`derived:${MINTED_CSRF_COOKIE}`)
   })

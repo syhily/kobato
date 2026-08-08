@@ -193,7 +193,6 @@ describe('service: cache admin', () => {
     const result = await clearAdminCache(db, 'imageMeta')
     expect(result.total).toBe(2)
     expect(result.cleared[0]?.bucketId).toBe('imageMeta')
-    // og rows survive a targeted imageMeta sweep.
     expect(await remainingKvKeys()).toEqual(['og:foo'])
   })
 })

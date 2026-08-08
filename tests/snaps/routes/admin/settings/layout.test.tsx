@@ -12,9 +12,7 @@ import SettingsLayoutRoute, { type SettingsOutletContext } from '@/routes/admin/
 import { BlogSettingsProvider } from '@/shared/lib/blog-config-context'
 import { ThemeProvider } from '@/ui/lib/ThemeProvider'
 
-// The layout's loader path imports the settings service, whose
-// section-change wiring pulls in the backup/audit schedulers (and
-// transitively the DB bootstrap) — irrelevant to these snapshots.
+// The settings layout's loader transitively pulls in the DB bootstrap — irrelevant to these snapshots.
 const CURRENT_USER = { id: '1', name: 'Alice', email: 'alice@example.com' }
 
 const MASKS = {

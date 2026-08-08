@@ -18,12 +18,7 @@ export interface ConfirmState {
   description: string
   actionLabel: string
   destructive: boolean
-  /**
-   * Optional icon rendered before `actionLabel` on the confirm button.
-   * Defaults to `Trash2Icon` for destructive actions (overwhelmingly
-   * "delete") and `CheckIcon` for the approve path; pass your own icon
-   * when the destructive action isn't a delete (e.g. 禁言).
-   */
+  /** Icon on the confirm button; defaults to `Trash2Icon` / `CheckIcon`. */
   actionIcon?: ReactNode
   onConfirm: () => void
 }
@@ -34,13 +29,8 @@ export interface ConfirmDialogProps {
   onClose: () => void
 }
 
-/**
- * Generic approve/delete confirmation dialog used by every admin view.
- * Setting `state` back to `null` flips `open` to false, but the shadcn
- * AlertDialog keeps rendering its props through the close animation — so
- * the last truthy `state` is cached (via the "adjust state during render"
- * pattern) to keep the title and button from blanking mid-animation.
- */
+/** Generic approve/delete dialog. The last truthy `state` is cached through
+ *  the close animation so title/buttons don't blank mid-animation. */
 export function ConfirmDialog({ state, onClose }: ConfirmDialogProps) {
   const [lastState, setLastState] = useState<ConfirmState | null>(state)
   if (state !== null && state !== lastState) {

@@ -62,9 +62,7 @@ const replyComment = publicProc
         const next = appendCommentToken(existing, input.page_key, token, ttl)
         responseHeaders.append('Set-Cookie', serializeCommentTokensCookie(next))
       } catch (err) {
-        // Token issuance failed (e.g. database hiccup). The comment is
-        // already persisted; failing the whole request would leave the
-        // user without any indication their comment was saved.
+        // Token issuance failed — the comment is already persisted; don't fail the request.
         getLogger('comments.token').warn('comment token issuance failed', {
           commentId: comment.id,
           error: err instanceof Error ? err.message : String(err),

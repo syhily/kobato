@@ -498,16 +498,8 @@ describe('comments/repos/public-query/digest — latestDistinctCommentIds', () =
   })
 
   it('pins the access path: deleted_at index search, no full table scan (audit P1-21)', () => {
-    // EXPLAIN-first deferral, evidence on `latestDistinctCommentIdsQuery`:
-    // seeded 10k/50k/100k comments measured ~10/60/124ms uncached, and the
-    // query sits behind the sidebar loader's 30s cache — fine at
-    // personal-blog scale, so NO covering index was added (a partial
-    // `(user_id, created_at, id)` index only reached 124→75ms at 100k).
-    // This pin fails if the planner loses the `idx_comment_deleted_at`
-    // search — e.g. the index is dropped or the WHERE shape changes —
-    // which would degrade the window scan into a full table scan. If the
-    // trigger condition in digest.ts is ever met, add the partial index
-    // via migration and re-pin the improved plan here.
+    // Pins the `idx_comment_deleted_at` index search; losing it degrades
+    // the window scan to a full table scan.
     const plan = db.all<{ detail: string }>(sql`EXPLAIN QUERY PLAN ${latestDistinctCommentIdsQuery([1], 10)}`)
     const details = plan.map((r) => r.detail)
     expect(details.some((d) => d.includes('SEARCH comment USING INDEX idx_comment_deleted_at'))).toBe(true)

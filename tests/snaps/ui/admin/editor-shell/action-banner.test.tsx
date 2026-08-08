@@ -3,9 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { renderInRouter } from '#/_helpers/render'
 import { ActionBanner } from '@/ui/admin/editor-shell/ActionBanner'
 
-// ActionBanner renders the post-save preview link that appears at the top
-// of the editor after a successful draft save or publish. The href must
-// include the correct base path (/posts for posts, empty for pages).
+// Post-save preview link; href must use the base path (/posts for posts, empty for pages).
 
 describe('ActionBanner', () => {
   it('renders /posts/slug?draft=true for a post draft', () => {

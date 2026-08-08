@@ -7,7 +7,6 @@ export interface SectionDisplayMeta {
   label: string
   /** One-line Chinese description shown beneath the label. */
   description: string
-  /** Navigation group key. */
   group: SettingsNavGroup
   /** Lucide icon name (PascalCase, e.g. 'Settings'). */
   icon: string

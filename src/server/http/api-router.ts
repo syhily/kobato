@@ -39,21 +39,15 @@ import { newsletterPublicRouter } from '@/server/http/controllers/newsletter-pub
 import { passkeyPublicRouter } from '@/server/http/controllers/passkey-public.controller'
 import { webmentionPublicRouter } from '@/server/http/controllers/webmention-public.controller'
 
-// The composed oRPC router. The shape is the audit surface for the
-// permission matrix — each leaf's guard comes from the base procedure
-// it was built from (`publicProc / authedProc / adminProc / authorProc`
-// in `src/server/http/orpc-base.ts`). Grep
-// `grep -rn "adminProc\|authorProc" src/server/http/controllers/`
-// to see every gated procedure in one shot.
+// The composed oRPC router — its shape is the permission-matrix audit surface
+// (grep -rn "adminProc\|authorProc" src/server/http/controllers/).
 export const apiRouter = {
   account: accountRouter,
   analytics: analyticsRouter,
   avatar: avatarRouter,
   github: githubRouter,
   comments: { ...commentsPublicRouter, ...commentsAuthedRouter, ...commentsTokenRouter },
-  // Ghost-Content-API-style read-only group. The public SSR loaders
-  // consume it in-process (`@/server/http/ssr-caller`); the same leaves
-  // answer headless reads over `/rpc/content/*`.
+  // Ghost-Content-API-style read-only group — consumed in-process by the SSR loaders, headless via `/rpc/content/*`.
   content: {
     bootstrap: contentBootstrap,
     home: contentListingsRouter.home,

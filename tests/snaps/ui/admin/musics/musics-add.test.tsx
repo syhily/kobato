@@ -34,27 +34,12 @@ queryMocks.queryClient = {
   removeQueries: vi.fn(),
 }
 
-// ──────────────────────────── mocking strategy ────────────────────────────
-//
-// This file mirrors the data-mock pattern already used in
-// `tests/snaps/ui/admin/musics/musics-view.test.tsx`:
-//   - the TanStack hook seams come from `#/_helpers/mock-react-query` — a
-//     mutable control singleton each test can rebind,
-//   - `sonner` is an inert global stub from `tests/snaps/setup.ts`,
-//   - the `orpcQuery` option builders run for real but never execute — the
-//     mocked hooks swallow their output.
-//
-// Additionally the Dialog primitives from `@/ui/components/dialog` are
-// stubbed the same way the admin tags/friends view specs do: when `open`
-// is true we render the content inline; otherwise we emit nothing. The
-// real Base UI dialog mounts its content through a portal guarded by an
-// effect, which never fires during SSR — so to assert the open-state
-// chrome of `AddMusicDialog` we need the stub.
+// Same mock pattern as `musics-view.test.tsx` (mock-react-query seams,
+// inert sonner, orpcQuery runs but never executes); dialog primitives are
+// stubbed because the real Base UI portal never mounts under SSR.
 
-// The meting search machine now lives in `useMetingMusicSearch` (covered by
-// `tests/unit/ui/admin/musics/use-meting-music-search.test.tsx`). Stub it so
-// each snapshot sets the machine's state directly instead of driving it
-// through the old `useQuery` mock.
+// `useMetingMusicSearch` (unit-covered) is stubbed so snapshots set the
+// machine's state directly.
 const searchHookMock = vi.hoisted(() => ({
   state: {
     results: [] as MetingSearchHit[],
@@ -85,22 +70,11 @@ function resetSearchHookMock(): void {
   }
 }
 
-// Dialog primitives — same approach as the admin tags/friends specs. The
-// `Dialog` wrapper renders its children only when `open` is true so the
-// snapshot reflects the open dialog body without a browser portal.
-
-// `motion/react` reaches `AddMusicView` / `MusicDetailView` only through
-// the dynamic import inside `lazy-motion.tsx` — SSR renders the static
-// fallback, but client-side branch tests resolve the lazy boundary against
-// the real module. Stub it as an SSR-safe passthrough so the inner
-// children always render (motion would otherwise wrap output in an
-// effect-driven opacity animation which is fine on SSR, but stubbing
-// keeps the output stable).
+// Stub motion/react as an SSR-safe passthrough so the lazy-motion branch
+// renders children directly (keeps the SSR output stable).
 vi.mock('motion/react', async () => {
   const actual = await vi.importActual<typeof import('motion/react')>('motion/react')
-  // Motion-only props that would otherwise leak onto the DOM as
-  // `initial="[object Object]"` etc. Stripped before forwarding the
-  // remaining DOM-safe props.
+  // Strip motion-only props so they don't leak onto the DOM.
   const MOTION_ONLY_PROPS = new Set([
     'initial',
     'animate',
@@ -127,8 +101,7 @@ vi.mock('motion/react', async () => {
       {},
       {
         get: () => {
-          // Every `motion.X` access becomes a pass-through element that
-          // forwards DOM-safe props (style, className, children, …) verbatim.
+          // Every `motion.X` access becomes a pass-through element forwarding DOM-safe props.
           const MotionStub = ({
             children,
             as,
@@ -148,8 +121,6 @@ vi.mock('motion/react', async () => {
 })
 
 vi.mock('@/ui/components/dialog', () => import('#/_helpers/stubs/dialog'))
-
-// ─────────────────────────────── fixtures ─────────────────────────────────
 
 function makeAdminMusic(overrides: Partial<AdminMusicDto> = {}): AdminMusicDto {
   return {
@@ -188,8 +159,6 @@ function makeSearchHit(overrides: Partial<MetingSearchHit> = {}): MetingSearchHi
 
 const SAMPLE_LRC = ['[00:01.00]夜了呢', '[00:05.00]月光下的苍白', '[00:10.00]手风琴弹奏着那年代的向往'].join('\n')
 
-// ─────────────────────────── shared beforeEach ────────────────────────────
-
 function resetQueryMocks(): void {
   queryMocks.query = {
     data: null,
@@ -203,8 +172,6 @@ function resetQueryMocks(): void {
   queryMocks.mutation = { mutate: vi.fn(), isPending: false }
   resetSearchHookMock()
 }
-
-// ═══════════════════════════ AddMusicDialog ═══════════════════════════════
 
 describe('snapshot: AddMusicDialog', () => {
   beforeEach(resetQueryMocks)
@@ -236,20 +203,15 @@ describe('snapshot: AddMusicDialog', () => {
     expect(html).toContain('添加音乐')
     expect(html).toContain('搜索并添加音乐到曲库')
     expect(html).toContain('placeholder="例：Adele Hello、稻香、夜曲"')
-    // 搜索 submit button text
     expect(html).toContain('搜索')
-    // Source + per-page selectors
     expect(html).toContain('来源')
     expect(html).toContain('每页')
-    // Empty-search prompt copy
     expect(html).toContain('输入关键词后点击搜索。')
-    // Close footer button
     expect(html).toContain('关闭')
   })
 
   it('renders skeletons when the search query is fetching and there are no results yet', () => {
-    // The hook reports `isSearching` while the first page is in flight.
-    // With no results yet, three Skeleton rows render.
+    // isSearching with no results → three Skeleton rows.
     searchHookMock.state = {
       ...searchHookMock.state,
       isSearching: true,
@@ -262,7 +224,7 @@ describe('snapshot: AddMusicDialog', () => {
       ),
     )
     expect(html).toContain('添加音乐')
-    // Skeleton placeholder chrome — Base UI Skeleton renders with animate-pulse.
+    // Base UI Skeleton renders with animate-pulse.
     expect(html).toContain('animate-pulse')
   })
 
@@ -283,11 +245,7 @@ describe('snapshot: AddMusicDialog', () => {
   })
 })
 
-// ─────────────────────── SearchResultItem (data-loaded) ───────────────────
-//
-// The populated render path of the dialog's result row is exercised
-// directly so the markup still has coverage even though the parent's
-// seed-on-change branch can't run under SSR.
+// Result-row markup is covered directly — the dialog's seed-on-change path can't run under SSR.
 
 describe('snapshot: SearchResultItem', () => {
   it('renders the hit cover, title, artist, album and action buttons', () => {
@@ -375,13 +333,10 @@ describe('snapshot: SearchResultItem', () => {
   })
 })
 
-// ════════════════════════════ AddMusicView ════════════════════════════════
-
 describe('snapshot: AddMusicView', () => {
   beforeEach(resetQueryMocks)
 
   it('renders the hero, search form and source selector with the empty-search prompt', () => {
-    // No library, no search data yet.
     queryMocks.query = {
       ...queryMocks.query,
       data: null,
@@ -399,16 +354,13 @@ describe('snapshot: AddMusicView', () => {
     expect(html).toContain('placeholder="搜索歌曲、艺人、专辑..."')
     expect(html).toContain('来源')
     expect(html).toContain('aria-label="关闭"')
-    // Empty-search prompt copy
     expect(html).toContain('输入关键词搜索音乐')
     expect(html).toContain('支持歌曲名称、艺人、专辑搜索')
   })
 
   it('renders the hero song count and a populated library snapshot when libraryQuery resolves', () => {
-    // The hero reads libraryMusics / libraryTotal from `libraryQuery.data`
-    // directly, so a populated library IS reachable on SSR. The search
-    // results grid stays empty: the search machine starts idle and only an
-    // event (`search()`) starts fetching.
+    // `libraryQuery.data` drives the hero, so a populated library IS
+    // reachable on SSR; the search grid stays empty (machine starts idle).
     const music = makeAdminMusic({ name: '蓝色风暴', artist: ['周杰伦'] })
     queryMocks.query = {
       ...queryMocks.query,
@@ -424,14 +376,12 @@ describe('snapshot: AddMusicView', () => {
     )
     expect(html).toContain('添加音乐')
     expect(html).toContain('共 1 首歌曲')
-    // The empty-search prompt is still present because the search state
-    // stays empty on SSR (see AddMusicDialog skip comment).
+    // Search state stays empty on SSR, so the prompt remains.
     expect(html).toContain('输入关键词搜索音乐')
   })
 
   it('renders the grid skeleton when the search query is fetching', () => {
-    // The hook reports `isSearching` while the first page is in flight.
-    // With no results the GridSkeleton branch (12 animate-pulse cells) renders.
+    // isSearching with no results → GridSkeleton (12 animate-pulse cells).
     searchHookMock.state = {
       ...searchHookMock.state,
       isSearching: true,
@@ -465,8 +415,6 @@ describe('snapshot: AddMusicView', () => {
     expect(html).toContain('text-destructive')
   })
 })
-
-// ─────────────────────── SearchAlbumCard (data-loaded) ────────────────────
 
 describe('snapshot: SearchAlbumCard', () => {
   it('renders the cover, title, artist and album for a populated hit', () => {
@@ -544,9 +492,7 @@ describe('snapshot: SearchAlbumCard', () => {
   })
 })
 
-// ═════════════════════════ MusicDetailView ════════════════════════════════
-
-// The view is pure-props now: the route module supplies the id + navigate.
+// Pure-props view — the route module supplies id + navigate.
 const navigateMock = vi.fn()
 
 describe('snapshot: MusicDetailView', () => {
@@ -633,20 +579,17 @@ describe('snapshot: MusicDetailView', () => {
     // Track identity (artist list joined by ' / ', then ' · album')
     expect(html).toContain('青花瓷')
     expect(html).toContain('周杰伦 · 我很忙')
-    // Cover
     expect(html).toContain('https://cdn.example.com/qinghua.jpg')
     // Subtitle line: source · uploader · createdAt (formatted YYYY-MM-DD)
     expect(html).toContain('netease')
     expect(html).toContain('雨帆')
     expect(html).toContain('2024-03-04')
-    // Close affordance
     expect(html).toContain('aria-label="关闭"')
     // Action bar (not editing → play / copy / edit / delete)
     expect(html).toContain('aria-label="播放"')
     expect(html).toContain('复制 playerId')
     expect(html).toContain('编辑')
     expect(html).toContain('删除')
-    // Metadata grid
     expect(html).toContain('playerId')
     expect(html).toContain('0123456789abcdef')
     expect(html).toContain('sourceId')
@@ -654,7 +597,6 @@ describe('snapshot: MusicDetailView', () => {
     expect(html).toContain('上传者')
     expect(html).toContain('更新时间')
     expect(html).toContain('2024-04-05')
-    // Lyrics block + parsed LRC lines
     expect(html).toContain('歌词')
     expect(html).toContain('夜了呢')
     expect(html).toContain('月光下的苍白')
@@ -677,7 +619,6 @@ describe('snapshot: MusicDetailView', () => {
     )
     expect(html).toContain('无封面曲')
     expect(html).not.toContain('https://cdn.example.com/cover.jpg')
-    // Placeholder block uses the surface-dim background utility.
     expect(html).toContain('bg-surface-dim')
   })
 

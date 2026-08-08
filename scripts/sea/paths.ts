@@ -1,16 +1,4 @@
 // Shared paths for the SEA (single executable) build pipeline.
-//
-// Layout under dist-sea/:
-//   intermediates/server.mjs         vite output — single-file ESM server
-//                                    (the injected `main` of the binary)
-//   intermediates/process-worker.mjs vite output — embedded worker text
-//   intermediates/smoke-worker.mjs   vite output — --smoke-worker entry
-//   intermediates/staged-natives/    patched native libraries (see assets.ts)
-//   intermediates/packed/<key>       compressed asset payloads (see assets.ts)
-//   intermediates/manifest.json      embedded asset manifest (see assets.ts)
-//   intermediates/sea-config.json    sea config input (node --build-sea)
-//   kobato(.exe)                     final single-executable binary
-//   kobato.sha256                    sha256sum-format checksum file
 
 import { resolve } from 'node:path'
 

@@ -7,12 +7,8 @@ import { isInMemoryPath } from '@/server/infra/db/database'
 
 /**
  * The embedded DuckDB analytics sidecar: one file, one instance, one
- * read connection + one write connection (DuckDB MVCC allows a reader
- * while the writer commits). `access_log` lives here — append-heavy
- * page-view telemetry plus the dashboard aggregation scans, the one
- * workload DuckDB is built for. Backups archive this file alongside
- * the content DB (two-file tar.gz), but a missing file is always
- * recreated empty — restore is a bonus, never a requirement.
+ * reader + one writer connection, hosting `access_log`. Backups archive
+ * it with the content DB, but a missing file is recreated empty — restore is a bonus.
  */
 export interface AnalyticsHandle {
   instance: DuckDBInstance
@@ -20,18 +16,13 @@ export interface AnalyticsHandle {
   writer: DuckDBConnection
   /** Dashboard read queries. */
   reader: DuckDBConnection
-  /** The path the handle was opened with. */
   path: string
-  /** Decided once at open: the in-memory special case, so consumers read a flag instead of re-deriving it from `path`. */
+  /** Decided once at open: the in-memory special case. */
   inMemory: boolean
   closed: boolean
 }
 
-/** The effective analytics file path: `storage.analyticsDatabase` when
- *  set, otherwise `<storage.data>/analytics.duckdb`. `:memory:` passes
- *  through (mirroring `resolveDatabasePath`) — without the passthrough
- *  `path.resolve(':memory:')` would silently yield a file named
- *  `<cwd>/:memory:`. */
+/** `:memory:` passes through — `path.resolve(':memory:')` would yield a file. */
 export function resolveAnalyticsPath(): string {
   const configured = serverConfig.storage.analyticsDatabase
   if (isInMemoryPath(configured)) {
@@ -40,17 +31,10 @@ export function resolveAnalyticsPath(): string {
   return path.resolve(configured === '' ? path.join(serverConfig.storage.data, 'analytics.duckdb') : configured)
 }
 
-/** Open the sidecar and apply the caller's DDL. Idempotent DDL — a
- *  missing file is created empty at boot (the expendable-telemetry
- *  contract: restore never brings it back, boot just recreates it).
- *  `:memory:` opens an in-memory database (tests). The DDL is injected
- *  because infra carries zero business knowledge — the access_log table
- *  shape is owned by the analytics domain
- *  (`@/server/domains/analytics/services/access-log`). */
+/** Open the sidecar and apply the caller's DDL (idempotent — a missing
+ *  file is created empty). DDL is injected: infra owns no analytics schema. */
 export async function openAnalyticsDatabase(analyticsPath: string, ddl: string): Promise<AnalyticsHandle> {
-  // mkdir FIRST (same order as openDatabase): a custom
-  // storage.analyticsDatabase in a missing directory must be created
-  // before DuckDB tries to open the file.
+  // mkdir first — a custom path in a missing directory must exist before DuckDB opens.
   const inMemory = isInMemoryPath(analyticsPath)
   if (!inMemory) {
     mkdirSync(path.dirname(analyticsPath), { recursive: true })

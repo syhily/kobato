@@ -7,9 +7,7 @@ import { receiveWebmention } from '@/server/domains/webmentions/service'
 import { post } from '@/server/infra/db/schema/post'
 import { webmention } from '@/server/infra/db/schema/webmention'
 
-// Capture the notification seam: the receive service decides WHEN to
-// notify (R11 rules); the email module's own mapping is covered by its
-// unit suite.
+// Notification seam only: WHEN to notify (R11 rules); the email mapping is covered by its unit suite.
 vi.mock('@/server/domains/webmentions/email', () => ({
   sendNewWebmention: vi.fn(async () => ({ ok: true })),
 }))
@@ -106,8 +104,7 @@ describe('integration / receiveWebmention — response type classification (Phas
     const first = await receive('https://sender.example/post')
     expect(first.row.type).toBe('mention')
 
-    // The author turns the post into a reply and re-sends — same pair,
-    // new classification.
+    // The author re-sends as a reply — same pair, new classification.
     mockFetch.enqueue(
       'https://sender.example/post',
       new Response(`<html><body><a class="u-in-reply-to" href="${TARGET}">reply</a></body></html>`, { status: 200 }),

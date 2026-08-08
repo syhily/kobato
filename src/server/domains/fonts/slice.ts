@@ -4,20 +4,11 @@ import { fontSplit, type FontSplitOutputFile } from './vendor/wasm-split'
 
 const log = getLogger('fonts.slice')
 
-// Slicing integration: a thin wrapper around the vendored cn-font-split wasm
-// core (driven by `node:wasi`, see `vendor/wasm-split.ts`). The caller
-// (`upload.ts`) owns the source buffer + the storage lifecycle; this module
-// owns only the slice options + the output-file partitioning (result.css vs
-// chunks).
-//
-// The wasm core runs single-threaded via WASI (~15–20s for a CJK font, ~1s
-// for Latin). It reads the source bytes + writes `result.css` + chunks into
-// an OS temp directory, which `fontSplit` returns as `{ name, data }[]`.
+// Slicing wrapper around the vendored cn-font-split wasm core (see
+// `vendor/wasm-split.ts`). The caller owns the buffer + storage lifecycle;
+// this module owns only slice options + output partitioning.
 
-// Let the cn-font-split wasm core decide chunk boundaries and character-set
-// partitioning freely. No manual chunkSize / languageAreas / subsets —
-// removing all overrides lets the core use its internal defaults, producing
-// smaller per-chunk packages that load progressively.
+// No manual chunkSize / languageAreas / subsets — the wasm core's defaults win.
 export interface SliceOptions {
   fontFamily?: string
 }

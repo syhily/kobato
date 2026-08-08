@@ -65,9 +65,7 @@ export async function renderPortableTextToHtml(
   return html
 }
 
-// Music player resolution: metas arrive through `resolveMusicEmbeds`, the
-// PT-owned embed seam (`@/server/domains/pt/embeds`), so this module never
-// imports the music domain.
+// Metas arrive through the PT-owned embed seam — no music-domain import here.
 
 interface MusicMeta {
   name: string
@@ -94,10 +92,7 @@ async function resolveMusicPlayerMeta(
   return map
 }
 
-// Feed readers resolve URLs on a different origin, so a relative cover URL
-// (the bundled default music cover) is joined with the site origin — the
-// same way the feed generator absolutizes `/logo.svg`. Storage URLs already
-// arrive absolute (`resolveAssetUrl` joins the CDN base or the site origin).
+// Feed readers resolve URLs on another origin — absolutize relative covers.
 function absolutizeForFeed(url: string): string {
   if (!url.startsWith('/')) {
     return url
@@ -113,9 +108,7 @@ interface ComponentContext {
   musicByPlayerId: Map<string, MusicMeta>
 }
 
-// Mark → HTML rules shared by the block-level `marks` map and the
-// table-cell inline renderer (`applyInlineMarkHtml`), so the two paths
-// can never drift into divergent copies of the same rule.
+// Shared mark rules: the block `marks` map and the table-cell inline path must not drift.
 
 interface LinkMarkValue {
   href?: string
@@ -141,9 +134,7 @@ function renderLinkMark(children: string, value: LinkMarkValue): string {
 }
 
 function renderMathInlineMark(children: string, value: MathInlineMarkValue | undefined, isRss: boolean): string {
-  // Feed readers cannot safely consume raw MathML/SVG (active elements,
-  // event attributes, external references), so RSS mode falls back to
-  // plain TeX inside <code>. The web path prefers SVG for consistency.
+  // RSS: raw MathML/SVG is unsafe for feed readers — fall back to TeX.
   if (isRss) {
     return `<code>${value?.tex ? escapeHtml(value.tex) : children}</code>`
   }
@@ -247,10 +238,7 @@ function renderCodeBlock(value: CodeBlock, isRss: boolean): string {
     value.language !== undefined && value.language !== '' ? ` class="language-${escapeHtml(value.language)}"` : ''
   const dataLang =
     value.language !== undefined && value.language !== '' ? ` data-language="${escapeHtml(value.language)}"` : ''
-  // Feed output falls back to plain escaped code (same shape as the math
-  // renderers' TeX fallback): the feed pipeline's sanitize-html drops CDATA
-  // sections wholesale, so a CDATA-wrapped highlighted fragment would reach
-  // subscribers as an empty <pre><code> box.
+  // RSS: sanitize-html drops CDATA — emit plain escaped code, not highlighted HTML.
   if (isRss) {
     return `<pre><code${langClass}${dataLang}>${escapeHtml(value.code)}</code></pre>`
   }
@@ -287,11 +275,7 @@ function renderMusicPlayer(value: MusicPlayerBlock, ctx: ComponentContext): stri
 
 // Table block
 //
-// Table cells carry link markDefs only per the wire schema
-// (`tableCellSchema.markDefs` is `linkMarkDefSchema[]`) — the bridge strips
-// any other def on save and the editor's table-cell guard strips them on
-// paste, so the cell inline pipeline types to the schema instead of
-// re-declaring the full markDef union.
+// Wire schema: table cells carry link markDefs only, so the inline pipeline types to that.
 
 function renderTableBlock(value: TableBlock): string {
   const rows = value.rows ?? []
@@ -357,8 +341,7 @@ function applyInlineMarkHtml(text: string, markName: string, markDefs: readonly 
   if (def === undefined) {
     return text
   }
-  // Same link rule as the block-level `marks` map — see the shared
-  // helpers at the top of this file.
+  // Same rule as the block-level marks map.
   return renderLinkMark(text, def)
 }
 

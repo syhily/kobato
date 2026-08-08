@@ -4,15 +4,7 @@ import { renderHook } from '#/_helpers/hook'
 
 // useEditorShellState is the orchestrator that owns body / meta / revision
 // state and wires layout + persist together. The SSR renderHook harness
-// renders a single synchronous pass, so effects (keyboard shortcuts,
-// autosave, scroll listeners) do not fire. We mock the four leaf
-// dependencies that need a provider or DOM:
-//   - @tanstack/react-query (useMutation)
-//   - @/client/hooks/use-autosave
-//   - @/client/hooks/use-local-draft
-//   - @/client/hooks/use-create-draft
-// and assert the create-mode initial-return surface: the screen-level
-// fields plus the three narrow views (toolbar / sidebar / dialog).
+// renders a single synchronous pass, so the leaf deps are mocked below.
 
 const mutate = vi.fn()
 const mutateAsync = vi.fn().mockResolvedValue(undefined)
@@ -85,20 +77,17 @@ describe('ui/admin/editor-shell/useEditorShellState — create-mode initial surf
   it('returns the screen-level fields with sensible create-mode defaults', () => {
     const result = renderHook(() => useEditorShellState<Meta, EntityLike>(makeCreateArgs()))
 
-    // Meta + body state.
     expect(result.meta).toEqual(emptyMeta)
     expect(result.body).toEqual([])
     expect(result.bodyKey).toBe('create:initial')
     expect(result.initialBody).toEqual([])
     expect(result.isEditing).toBe(false)
 
-    // Layout state.
     expect(result.previewOpen).toBe(false)
     expect(typeof result.setPreviewOpen).toBe('function')
     expect(result.metaOpen).toBe(true) // isLg defaults to true in SSR
     expect(result.isLg).toBe(true)
 
-    // Banners / create-draft projection.
     expect(result.previewBanner).toBeNull()
     expect(result.createDraftSavedAt).toBeNull()
     expect(result.dismissPreviewBanner).toBeInstanceOf(Function)
@@ -108,21 +97,18 @@ describe('ui/admin/editor-shell/useEditorShellState — create-mode initial surf
     const result = renderHook(() => useEditorShellState<Meta, EntityLike>(makeCreateArgs()))
     const { toolbar } = result
 
-    // Flags: nothing pending with mocked idle mutations.
     expect(toolbar.isPending).toBe(false)
     expect(toolbar.isSavingDraft).toBe(false)
     expect(toolbar.isPublishing).toBe(false)
     expect(toolbar.isUnpublishing).toBe(false)
     expect(toolbar.isCreating).toBe(false)
 
-    // Create-mode gating: canPublish requires isEditing; canPersistMeta
-    // flips on a non-empty title (empty here -> false).
+    // Create-mode gating: canPublish requires isEditing, canPersistMeta a non-empty title.
     expect(toolbar.canPublish).toBe(false)
     expect(toolbar.canPersistMeta).toBe(false)
     expect(toolbar.published).toBe(false)
     expect(toolbar.publishStatus).toBe('never-saved') // not editing
 
-    // Handlers present.
     expect(toolbar.persistCreate).toBeInstanceOf(Function)
     expect(toolbar.persistSave).toBeInstanceOf(Function)
     expect(toolbar.persistPublish).toBeInstanceOf(Function)
@@ -138,7 +124,6 @@ describe('ui/admin/editor-shell/useEditorShellState — create-mode initial surf
     expect(sidebar.publishStatus).toBe('never-saved') // not editing
     expect(sidebar.revisionSummary).toBeNull() // not editing
     expect(sidebar.saveStatus).toEqual({ kind: 'unsaved' })
-    // No expected token in create mode.
     expect(sidebar.expectedToken).toBeNull()
     expect(sidebar.body).toEqual([])
     expect(sidebar.adoptRevisionFromHistory).toBeInstanceOf(Function)
@@ -148,7 +133,6 @@ describe('ui/admin/editor-shell/useEditorShellState — create-mode initial surf
     const result = renderHook(() => useEditorShellState<Meta, EntityLike>(makeCreateArgs()))
     const { dialog } = result
 
-    // No conflict in create mode.
     expect(dialog.conflict).toBeNull()
     expect(dialog.serverBody).toEqual([])
     expect(dialog.baselineUpdatedAtMs).toBeNull()
@@ -180,12 +164,10 @@ describe('ui/admin/editor-shell/useEditorShellState — create-mode initial surf
   it('adoptLocalDraft / adoptServerVersion / adoptRevisionFromHistory short-circuit in create mode', async () => {
     const args = makeCreateArgs()
     const result = renderHook(() => useEditorShellState<Meta, EntityLike>(args))
-    // Each adoption helper guards on isEditing/detail; in create mode
-    // they resolve without touching the body/meta state.
+    // In create mode the adoption helpers no-op, leaving body/meta untouched.
     await expect(result.dialog.adoptLocalDraft()).resolves.toBeUndefined()
     expect(() => result.dialog.adoptServerVersion()).not.toThrow()
     expect(() => result.sidebar.adoptRevisionFromHistory({ body: [], revisionNo: 1 })).not.toThrow()
-    // directSaveDraft must not have been called by adoptLocalDraft.
     expect(args.directSaveDraft).not.toHaveBeenCalled()
   })
 })

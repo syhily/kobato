@@ -4,7 +4,7 @@ import { honeypotField } from '@/shared/utils/schema'
 
 const newsletterHoneypot = honeypotField('subtitle')
 
-// Mirrors the comment-submit honeypot (`subtitle` must stay blank).
+// Same field name as the comment-submit honeypot.
 export const newsletterSubscribeSchema = z
   .object({
     email: z.email(),
@@ -19,9 +19,8 @@ export const newsletterConfirmSchema = z.object({
 })
 export type NewsletterConfirmInput = z.infer<typeof newsletterConfirmSchema>
 
-// `id` arrives as a string on the wire (bigint ids never cross the JSON
-// boundary); `sig` is the HMAC-SHA256 hex signature from the unsubscribe
-// link. Length caps keep junk payloads out of the signature check.
+// `id` arrives stringified — bigint ids never cross the JSON boundary. `sig`
+// is the HMAC-SHA256 hex signature from the unsubscribe link.
 export const newsletterUnsubscribeSchema = z.object({
   id: z.string().regex(/^\d+$/, { message: '订阅 ID 必须是数字' }),
   sig: z.string().min(1).max(128),

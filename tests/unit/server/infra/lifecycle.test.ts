@@ -117,9 +117,7 @@ describe('lifecycle', () => {
   })
 
   it('detaches the server on close so a second close is a no-op', async () => {
-    // The self-update restart closes the socket before spawning the
-    // replacement process; the graceful chain's own close afterwards must
-    // not double-close (audit P0-7).
+    // Close must be idempotent after the self-update restart's own close (audit P0-7).
     const closeFn = vi.fn((cb: (err?: Error) => void) => cb())
     const fakeServer = Object.create(NodeHttpServer.prototype)
     fakeServer.close = closeFn
@@ -171,11 +169,8 @@ describe('lifecycle', () => {
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never)
     requestShutdown('first')
     requestShutdown('second')
-    // shuttingDown flips synchronously…
     expect(getContainer().shuttingDown).toBe(true)
-    // …and with no http server and no hooks, performShutdown's chain to
-    // process.exit is pure microtasks — one event-loop turn settles it.
-    // The second requestShutdown was a no-op, so exit fires exactly once.
+    // Second requestShutdown is a no-op: exit fires exactly once.
     await new Promise((resolve) => setImmediate(resolve))
     expect(exitSpy).toHaveBeenCalledOnce()
     expect(exitSpy).toHaveBeenCalledWith(0)
@@ -198,10 +193,8 @@ describe('lifecycle', () => {
   })
 
   it('logs unhandled rejections loudly instead of crashing', () => {
-    // The handler exists so a streamed loader promise (detail-page comments)
-    // rejecting before turbo-stream subscribes cannot take the process down
-    // (ADR-0005). Only the pure function is exercised — the `process.on`
-    // registration itself is not touched to avoid polluting the global.
+    // Prevents a streamed loader rejection from taking the process down (ADR-0005);
+    // the `process.on` registration is not touched to avoid polluting the global.
     clearLogCapture()
     handleUnhandledRejection(new Error('comments query failed'))
 

@@ -35,11 +35,9 @@ export function extractXHandle(socials: Array<{ network: SocialNetwork; link: st
   }
 }
 
-// Compose a short version string from every configured branding ref's
-// etag. Public templates append it as `?v=<version>` to bust the
-// browser cache when an admin replaces an asset. The result is stable
-// for a given branding configuration (etag → bytes is 1:1) so
-// duplicate render calls return the same query string.
+// Short version string from every configured branding ref's etag;
+// templates append it as `?v=<version>` to bust the browser cache.
+// Stable for a given configuration so duplicate renders agree.
 export function brandingVersion(branding: SiteAssetBranding | undefined | null): string {
   if (!branding) {
     return ''

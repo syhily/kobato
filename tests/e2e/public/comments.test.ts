@@ -29,10 +29,8 @@ function scrapePageKey(html: string): string {
   return value[1]
 }
 
-// The comment journey across all three actors: a guest's first reply is
-// held for moderation (invisible to anonymous readers), the admin queue
-// sees and approves it, and only then does the public thread — and the
-// post page itself — show it.
+// The comment journey across all three actors: guest reply held for
+// moderation, admin approves, then the public thread and post show it.
 describe('public comments flow (HTTP e2e)', () => {
   it('guest reply → moderation hold → admin approve → publicly visible', async () => {
     const admin = new E2eClient(env.baseUrl)
@@ -49,9 +47,7 @@ describe('public comments flow (HTTP e2e)', () => {
     expect(created.status).toBe(200)
     const postId = String(created.json.post.id)
 
-    // upsertMeta alone never publishes (insert hardcodes published:false
-    // and no revision exists) — a guest would get the 404 an anonymous
-    // reader sees. Publish a real revision so the live gate opens.
+    // upsertMeta alone never publishes — publish a real revision so the live gate opens.
     const published = await callE2eRpc(
       admin,
       '/admin/posts/publishLatest',
@@ -77,8 +73,7 @@ describe('public comments flow (HTTP e2e)', () => {
       const detail = await guest.get('/posts/e2e-comments')
       expect(detail.status).toBe(200)
       const pageKey = scrapePageKey(await detail.text())
-      // Every /rpc POST — public ones included — passes the csrfGuard, so
-      // both anonymous clients need their own session-bound token.
+      // /rpc POSTs pass the csrfGuard — anonymous clients need their own session-bound token.
       const guestCsrf = await getPublicCsrfToken(guest, '/posts/e2e-comments')
 
       // Guest reply — a first-time commenter is held pending.

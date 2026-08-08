@@ -10,10 +10,7 @@ export interface ToolbarButtonProps {
   children: ReactNode
 }
 
-// Single source of truth for every toolbar / group button in the
-// page editor. Variant flip on `state` mirrors the rest of the editor
-// chrome (ghost vs secondary), and `title` doubles as `aria-label` so
-// screen readers and tooltips agree.
+// Single source of truth for toolbar buttons; `title` doubles as `aria-label`.
 export function ToolbarButton({ title, state, disabled, onClick, children }: ToolbarButtonProps) {
   const isActive = state === 'active'
   return (

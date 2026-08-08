@@ -11,8 +11,7 @@ import { MetricList } from '@/ui/admin/analytics/MetricList'
 import { MetricsGroup } from '@/ui/admin/analytics/MetricsGroup'
 import { ViewsChart } from '@/ui/admin/analytics/ViewsChart'
 
-// Fixtures mirror the analytics wire DTOs exactly so a contract change
-// fails this suite loudly.
+// Fixtures mirror the wire DTOs exactly so a contract change fails loudly.
 
 const VIEWS_DATA: ViewsPoint[] = [
   { time: '2024-01-15T00:00:00.000Z', visits: 10, visitors: 5 },
@@ -47,8 +46,7 @@ describe('snapshot: ViewsChart', () => {
   })
 
   it('renders the single-point branch as two stat bars', () => {
-    // A lone data point cannot draw a line — the component switches to
-    // a pair of big-number bars instead.
+    // Lone point can't draw a line — two stat bars instead.
     const html = stableHtml(
       renderToHtml(<ViewsChart data={[{ time: '2024-01-15T00:00:00.000Z', visits: 7, visitors: 3 }]} />),
     )
@@ -56,21 +54,18 @@ describe('snapshot: ViewsChart', () => {
     expect(html).toContain('访客数')
     expect(html).toContain('7')
     expect(html).toContain('3')
-    // No SVG in the single-point branch.
     expect(html).not.toContain('<svg')
   })
 
   it('renders the empty-state branch for an empty data array', () => {
     const html = stableHtml(renderToHtml(<ViewsChart data={[]} />))
     expect(html).toContain('当前时间范围内暂无数据')
-    // No SVG / chart surface in the empty branch.
     expect(html).not.toContain('<svg')
   })
 
   it('honours a custom height prop by adjusting the viewBox', () => {
     const html = stableHtml(renderToHtml(<ViewsChart data={VIEWS_DATA} height={300} />))
-    // viewBox width is fixed at 800; the custom height flows into the
-    // viewBox's height component.
+    // viewBox width fixed at 800; custom height flows into viewBox height.
     expect(html).toMatch(/viewBox="0 0 800 300"/)
   })
 })
@@ -80,7 +75,6 @@ describe('snapshot: Heatmap', () => {
     const html = stableHtml(renderToHtml(<Heatmap data={HEATMAP_DATA} />))
     // The heatmap surface is an img-role region with the aria-label.
     expect(html).toContain('aria-label="7 天 24 小时访问热力图"')
-    // Hour axis labels render at the bottom of the grid.
     expect(html).toContain('0:00')
     expect(html).toContain('12:00')
     expect(html).toContain('23:00')
@@ -136,7 +130,6 @@ describe('snapshot: FiltersBar', () => {
     expect(html).toContain('China')
     expect(html).toContain('浏览器')
     expect(html).toContain('Chrome')
-    // Clear-all affordance.
     expect(html).toContain('清空筛选')
     expect(html).toContain('aria-label="已应用的筛选"')
   })
@@ -145,8 +138,7 @@ describe('snapshot: FiltersBar', () => {
 describe('snapshot: DateRangePicker', () => {
   it('renders the seven preset chips', () => {
     const html = stableHtml(renderToHtml(<DateRangePicker preset="last-7d" onSelect={() => {}} />))
-    // The active preset renders with aria-pressed so the chip's state
-    // is exposed to AT users.
+    // Active preset exposes aria-pressed to AT users.
     expect(html).toContain('aria-pressed="true"')
     expect(html).toContain('最近 7 天')
     // A non-active preset chip is also present.
@@ -162,17 +154,13 @@ describe('snapshot: DateRangePicker', () => {
 
 describe('snapshot: MetricList', () => {
   it('renders rows from initial data without waiting on the pending query', () => {
-    // MetricList drives its data via useQuery, but when `initial` is
-    // provided it renders synchronously off the fixture regardless of
-    // the pending fetch. useAnalyticsState needs a router context, so
-    // we render inside the memory router.
+    // `initial` renders synchronously off the fixture regardless of the
+    // pending fetch; useAnalyticsState needs a router context.
     const html = stableHtml(renderInRouter(<MetricList type="country" initial={METRIC_ROWS} />, '/admin/analytics'))
     expect(html).toContain('China')
     expect(html).toContain('United States')
     expect(html).toContain('Japan')
-    // Visit counts are formatted with toLocaleString (no thousands
-    // separator in the default node locale for small numbers, but the
-    // raw value must appear).
+    // Counts are toLocaleString-formatted; the raw value must appear.
     expect(html).toContain('100')
     expect(html).toContain('40')
   })

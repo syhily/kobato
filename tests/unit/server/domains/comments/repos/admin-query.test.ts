@@ -3,28 +3,8 @@ import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 // Covers RBAC-RECTIFICATION-PLAN §1.7 (O7).
-//
-// `listMyComments(userId, offset, limit)` (repos/admin-query.ts) and
-// `countMyComments(userId)` (services/mine-comments.ts) must share a
-// single visibility predicate. Drift between the two had previously caused
-// `hasMore = offset + comments.length < counts.total` to under-count
-// the total (the list query included rows the count query had already
-// dropped), truncating the "/my/comments" tail page or hiding a
-// «load more» button mid-list.
-//
-// The current implementation centralises that predicate in
-// `mineWhere(userId, filters)` — which itself wraps the smaller
-// `mineVisibleClause(userId)` so the soft-delete grace window stays in
-// lockstep — and parameterises the grace window with the named
-// constant `MY_COMMENTS_SOFT_DELETE_GRACE_MS`. This test pins the
-// source-level contract:
-//
-//   1. `MY_COMMENTS_SOFT_DELETE_GRACE_MS` is declared in the file AND
-//      both `listMyComments` and `countMyComments` reach for
-//      `mineWhere` (not bespoke `where(...)` clauses). `mineWhere` in
-//      turn references `mineVisibleClause`, keeping the grace-window
-//      predicate single-sourced.
-//   2. The grace constant equals exactly 7 days in milliseconds.
+// Pins the source contract: both listMyComments and countMyComments route
+// through mineWhere → mineVisibleClause; the grace constant is 7 days.
 
 const commentQueryPath = resolve(process.cwd(), 'src/server/domains/comments/repos/admin-query.ts')
 const commentSharedPath = resolve(process.cwd(), 'src/server/domains/comments/repos/shared.ts')
@@ -41,15 +21,11 @@ function readSource(): string {
 }
 
 function extractFunctionBody(source: string, fnSignaturePattern: RegExp): string {
-  // Finds the `export ... function <name>(` declaration, walks past the
-  // parenthesised parameter list (so a return-type annotation with `{`s
-  // — `Promise<{ total: number; … }>` — is not misread as the body),
-  // then returns the text between the opening `{` and its matching `}`.
+  // Skips the parameter list and return-type annotation to find the body's braces.
   const match = fnSignaturePattern.exec(source)
   if (!match) {
     throw new Error(`Function signature not found: ${String(fnSignaturePattern)}`)
   }
-  // Walk the parameter list, balancing `(` / `)`.
   let i = match.index + match[0].length
   let parenDepth = 1
   while (i < source.length && parenDepth > 0) {
@@ -61,9 +37,7 @@ function extractFunctionBody(source: string, fnSignaturePattern: RegExp): string
     }
     i++
   }
-  // Now consume optional `: ReturnType` until we reach the body's `{`.
-  // Track `<` / `>` and `{` / `}` depths so generic / inline object
-  // types inside the annotation don't trip the search.
+  // Consume optional `: ReturnType`, tracking depth so annotations don't trip the search.
   let angleDepth = 0
   let braceDepth = 0
   while (i < source.length) {
@@ -122,11 +96,7 @@ describe('server/db/query/comment — listMyComments / countMyComments share vis
 
   it('parameterises the visibility window to exactly 7 days of soft-delete grace', () => {
     const source = readSource()
-    // Match `7 * <something>` literal arithmetic. We pin the leading `7`
-    // so the test fails immediately if the grace window is shortened
-    // (or lengthened) without the test being intentionally updated to
-    // match — even if the right-hand factorisation gets rewritten
-    // (`86_400_000`, `24 * 3_600_000`, etc.).
+    // Pin the leading `7` whatever the RHS factorisation is rewritten as.
     const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000
     const HOURS_DAYS_FORMS = [`${SEVEN_DAYS_MS}`, '7 * 24 * 60 * 60 * 1000', '7 * 24 * 3_600_000', '7 * 86_400_000']
     const constLine = /MY_COMMENTS_SOFT_DELETE_GRACE_MS\s*=\s*([^\n;]+)/.exec(source)

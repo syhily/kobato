@@ -13,11 +13,8 @@ export interface EntitySlugTitle {
 }
 
 /**
- * Look up the live `(slug, title)` of an entity target. Used by the
- * comment email senders and the comment-form loader, both of which need
- * the current values rather than the stale denormalised snapshot the
- * metric table used to carry. Returns `null` when the entity has been
- * hard-deleted or the target points at nothing (orphan).
+ * Look up the live `(slug, title)` of an entity target. Returns `null`
+ * when the entity is hard-deleted or the target is an orphan.
  */
 export async function findEntitySlugTitle(
   db: Database,
@@ -40,11 +37,8 @@ export async function findEntitySlugTitle(
 }
 
 /**
- * Batch-resolve the `(slug, title)` of the entities a list of targets
- * (e.g. the rows a comment list attaches to) points at — the
- * multi-target counterpart of {@link findEntitySlugTitle}. Returns a
- * map keyed by `type:ownerId`; pairs pointing at nothing (orphan rows)
- * are absent.
+ * Batch-resolve the `(slug, title)` of a comment list's targets. Map
+ * keyed by `type:ownerId`; orphan pairs are absent.
  */
 export async function resolveEntitiesForComments(
   db: Database,

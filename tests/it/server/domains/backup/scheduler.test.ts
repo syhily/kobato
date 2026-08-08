@@ -30,26 +30,16 @@ import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '#/_hel
 const { scheduleNextBackup, rescheduleBackup, wireBackupScheduler } = await import('@/server/domains/backup/scheduler')
 const { stopAllScheduledJobs } = await import('@/server/infra/scheduler-utils')
 
-// The scheduler's db getter is injected at wire time (the composition
-// root does this in production); with the import cycle gone the test
-// wires it explicitly — the real in-memory handle, as before. Dynamic
-// import: a static one would evaluate the db-lifecycle graph before the
-// mock-capture consts above initialize (hoisted vi.mock factories read
-// them).
+// Dynamic import: a static one would evaluate the db-lifecycle graph before the mock consts initialize.
 const { getTestDb } = await import('#/_helpers/integration-db')
 const testDb = getTestDb()
 wireBackupScheduler({ getDb: () => testDb })
 
-// The scheduleJob seam registers its stop-all hook once, at module
-// import — capture it here, before beforeEach clears the mock.
+// The stop-all hook registers once at module import — capture before beforeEach clears the mocks.
 const sharedJobStopHook = registerShutdownHook.mock.calls[0]?.[0] as (() => void | Promise<void>) | undefined
 
-// Timer-policy coverage for the backup scheduler: the DB is the real
-// in-memory engine (the scheduler only passes it through to the backup
-// service, which stays mocked as the S3-backed seam it is).
+// Real in-memory DB; the backup service stays mocked as the S3-backed seam.
 function bundleWith(backup: Record<string, unknown>): typeof TEST_BLOG_SETTINGS_BUNDLE {
-  // The fixture overrides two sections wholesale; the rest of the bundle
-  // shape is inherited from TEST_BLOG_SETTINGS_BUNDLE.
   return {
     ...TEST_BLOG_SETTINGS_BUNDLE,
     backup,
@@ -77,8 +67,7 @@ describe('backup scheduler', () => {
   it('never runs the backup when scheduled backup is disabled', async () => {
     setBlogSettingsBundleForTests(bundleWith({ scheduled: { enabled: false }, retention: { enabled: false } }))
     scheduleNextBackup()
-    // Suspended: the seam arms only its re-evaluation retry — the backup
-    // job itself never fires, even far past the retry window.
+    // Only the re-evaluation retry arms — the backup job itself never fires.
     await vi.advanceTimersByTimeAsync(10 * 60_000)
     expect(createBackup).not.toHaveBeenCalled()
   })
@@ -90,7 +79,6 @@ describe('backup scheduler', () => {
     scheduleNextBackup()
     await vi.advanceTimersByTimeAsync(3_600_000)
     expect(createBackup).toHaveBeenCalled()
-    // The real database handle flows through to the cleanup call.
     expect(cleanupOldBackups).toHaveBeenCalledWith(expect.objectContaining({}), 7)
   })
 
@@ -106,8 +94,6 @@ describe('backup scheduler', () => {
     await vi.advanceTimersByTimeAsync(3_600_000)
 
     expect(createBackup).toHaveBeenCalled()
-    // The overlap is expected — a skip at info level, never an error, and
-    // the retention cleanup does not run for a backup that never happened.
     const logs = __logCaptureForTests().filter((entry) => entry.scope === 'backup.scheduler')
     expect(logs.some((entry) => entry.level === 'error')).toBe(false)
     expect(logs.some((entry) => entry.level === 'info' && entry.msg.includes('skipped'))).toBe(true)
@@ -121,8 +107,7 @@ describe('backup scheduler', () => {
       bundleWith({ scheduled: { enabled: true, frequency: 'daily' }, retention: { enabled: false } }),
     )
     scheduleNextBackup()
-    // The composition root keeps other periodic jobs armed in the it
-    // project — this case pins that a past next-run does not throw.
+    // Other periodic jobs stay armed in it; this pins that a past next-run does not throw.
   })
 
   it('resets retry attempt and reschedules on settings change', () => {
@@ -144,7 +129,6 @@ describe('backup scheduler', () => {
   })
 
   it('registers the shared job-stop shutdown hook at import', () => {
-    // The scheduleJob seam registers one hook that stops every job.
     expect(sharedJobStopHook).toBeDefined()
   })
 })

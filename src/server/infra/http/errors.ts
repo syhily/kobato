@@ -1,5 +1,3 @@
-// Domain error codes
-
 export const DOMAIN_ERROR_CODES = [
   'BAD_REQUEST',
   'UNAUTHORIZED',
@@ -40,9 +38,8 @@ export class DomainError extends Error {
   readonly code: DomainErrorCode
   readonly issues?: { message: string; path?: string[] }[]
   /**
-   * Queue-worker hint (webmention inbox): the failure is transient and
-   * the job may be retried on a backoff waterline. Absent means
-   * terminal. HTTP mapping never reads this flag.
+   * Queue-worker hint: transient, retryable on a backoff waterline; absent
+   * means terminal. HTTP mapping never reads it.
    */
   readonly retryable?: boolean
 
@@ -61,11 +58,8 @@ export class DomainError extends Error {
 }
 
 /**
- * Wire shape of a `DomainError` flattened into a plain object. The class
- * (and its prototype chain) does not survive the structured-clone boundary
- * of a `worker_threads` message, so the image process worker reports
- * errors in this shape (see `process-worker.ts`) and the main thread
- * rehydrates them below.
+ * `DomainError` flattened for the worker_threads structured-clone boundary;
+ * the main thread rehydrates it via `domainErrorFromWire`.
  */
 export interface DomainErrorWire {
   name: string
@@ -75,10 +69,8 @@ export interface DomainErrorWire {
 }
 
 /**
- * Rehydrate a wire-format error back into a real `DomainError`, or return
- * `null` when it is not one (different `name`, missing `code`, or a code
- * outside `DOMAIN_ERROR_CODES`). The caller owns the fallback for
- * non-domain errors.
+ * Rehydrate a wire error into a `DomainError`, else `null` when it is not
+ * one; the caller owns the fallback for non-domain errors.
  */
 export function domainErrorFromWire(error: DomainErrorWire): DomainError | null {
   if (error.name === 'DomainError' && error.code !== undefined && isDomainErrorCode(error.code)) {
@@ -113,13 +105,8 @@ export const ErrorMessages = {
 } as const
 
 /**
- * Detect a SQLite unique-constraint violation (SQLITE_CONSTRAINT_UNIQUE /
- * SQLITE_CONSTRAINT_PRIMARYKEY). node:sqlite errors carry a numeric
- * `errcode`; the message names the offending columns
- * (`UNIQUE constraint failed: post.slug`), so a `constraintName` filter
- * matches against the message text (a table, column, or index name).
- * drizzle-orm wraps driver errors in `DrizzleQueryError`, so the match
- * also looks through one level of `cause`.
+ * Unique-constraint detection: node:sqlite `errcode` 2067/1555, `constraintName`
+ * matched against the message text, `cause` unwrapped one level for drizzle.
  */
 const SQLITE_CONSTRAINT_PRIMARYKEY = 1555
 const SQLITE_CONSTRAINT_UNIQUE = 2067

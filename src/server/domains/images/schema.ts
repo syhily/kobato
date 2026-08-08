@@ -33,10 +33,6 @@ export const updateImageNoteSchema = z.object({
     }),
 })
 
-// Multipart upload metadata (the Blob is read separately from
-// `formData()`). The discriminated union keeps `slug` / `host` strictly
-// scoped to their respective `kind`s so a payload that ships the wrong
-// pair fails at validation rather than silently choosing one.
 export const uploadImageMetadataSchema = z.discriminatedUnion('kind', [
   z.object({
     kind: z.literal('generic'),

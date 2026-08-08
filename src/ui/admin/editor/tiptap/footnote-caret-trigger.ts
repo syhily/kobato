@@ -2,9 +2,7 @@ import { Extension, InputRule } from '@tiptap/core'
 
 import { canInsertFootnoteMark } from '@/ui/admin/editor/tiptap/insert-inline-footnote'
 
-// Footnote insert shortcut: caret + ASCII space, aligned with backtick code and $ math.
-// A backslash before the caret suppresses the trigger (same spirit as \$ for math).
-
+// Insert shortcut: caret + ASCII space (backslash before the caret escapes — same spirit as \$ for math).
 export const FOOTNOTE_INSERT_TRIGGER_REGEX = /(^|[^\\])(\^ )$/
 
 export const FootnoteCaretTriggerExtension = Extension.create({

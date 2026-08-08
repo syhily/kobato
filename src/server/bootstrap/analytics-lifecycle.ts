@@ -16,14 +16,9 @@ import { getBatcher } from '@/server/infra/db/batcher-registry'
 import { nextDailyMaintenanceDelayMs, scheduleJob, type ScheduledJob } from '@/server/infra/scheduler-utils'
 
 /**
- * Boot-time owner of the DuckDB sidecar: opens it alongside the content
- * database, closes it after every batcher has flushed (the engine's
- * priority-0 shutdown hook runs after the priority-100 flushes). The
- * DuckDB half of the daily DB maintenance job (180-day retention
- * DELETE + CHECKPOINT, row-count and file-size logging) is wired here
- * too — daily at 04:30 in the site's configured timezone, the same
- * wall-clock slot as the SQLite half (one policy owner:
- * `nextDailyMaintenanceDelayMs`).
+ * Boot-time owner of the DuckDB sidecar and the daily 180-day retention
+ * job (same 04:30 slot as the SQLite half). The engine's priority-0
+ * shutdown hook runs after the priority-100 batcher flushes.
  */
 const engine = new ManagedEngine<AnalyticsHandle>(
   {
@@ -33,22 +28,14 @@ const engine = new ManagedEngine<AnalyticsHandle>(
   'analyticsHandle',
 )
 
-// Inject the access-log batcher's writer getter here, where the handle
-// lives — the batcher (a domain service) must not import this bootstrap
-// module back, so the composition root hands it a lazy getter instead.
-// Flush-time resolution keeps handles adopted by tests reachable.
+// Lazy writer getter so the domain batcher never imports this module back.
 wireAccessLogBatcher({ getWriter: () => engine.get().writer })
 
 let maintenanceJob: ScheduledJob | null = null
 
-// One mutation window at a time across the two multi-statement DuckDB
-// jobs: the backup's CHECKPOINT + file copy and the daily retention
-// DELETE + CHECKPOINT. DuckDB's single writer serializes individual
-// statements, but the backup's copyFile is EXTERNAL to the writer — a
-// retention DELETE landing between the backup's CHECKPOINT and its copy
-// would archive a file that straddles a mutation. A promise chain
-// suffices: both jobs are async, neither window is long, and neither
-// body re-enters the lock (the batcher's paused flush writes directly).
+// Serialize the backup (CHECKPOINT+copy) and retention (DELETE) windows:
+// copyFile is external to the writer, so a mid-copy DELETE would archive a
+// straddled file.
 let analyticsMutationLock: Promise<void> = Promise.resolve()
 
 async function withAnalyticsMutationLock<T>(fn: () => Promise<T>): Promise<T> {
@@ -65,10 +52,7 @@ async function withAnalyticsMutationLock<T>(fn: () => Promise<T>): Promise<T> {
   }
 }
 
-/** The maintenance job's body, one path for the scheduler and for tests:
- *  the retention DELETE + CHECKPOINT runs under the same mutation lock
- *  as a backup snapshot, so a backup firing at 04:30 cannot copy a file
- *  the retention job is mid-DELETE on. */
+/** The maintenance job body (shared by scheduler and tests); runs under the same mutation lock as backup snapshots. */
 export async function runAnalyticsMaintenance(): Promise<void> {
   const handle = engine.peek()
   if (handle === null) {
@@ -95,9 +79,7 @@ export function getAnalyticsHandle(): AnalyticsHandle {
   return engine.get()
 }
 
-/** Test seam: place a test-owned handle (a real temp-file DuckDB)
- *  inside the engine so getAnalyticsHandle/getAnalyticsReader/
- *  snapshotAnalyticsTo run for real. Reset between cases. */
+/** Test seam: adopt a test-owned temp-file handle; reset between cases. */
 export function __adoptAnalyticsHandleForTests(handle: AnalyticsHandle): void {
   engine.adopt(handle)
 }
@@ -107,41 +89,19 @@ export function __resetAnalyticsEngineForTests(): void {
   engine.reset()
 }
 
-/**
- * The MVCC-safe read connection for dashboard/report queries. The
- * writer/reader split is a private implementation detail of this module
- * — query call sites never see the handle, and the writer stays
- * reachable only through the batcher's lazy getter.
- */
+/** The MVCC-safe read connection; query call sites never touch the handle. */
 export function getAnalyticsReader(): AnalyticsReader {
   return getAnalyticsHandle().reader
 }
 
-/**
- * Checkpoint the sidecar and copy it to `stagingPath` for a backup
- * archive. Returns false when there is nothing to archive (an in-memory
- * handle in tests). Errors propagate — the caller decides whether the
- * sidecar is expendable (backup) or load-bearing (nothing else is).
- *
- * The access-log batcher is PAUSED across the CHECKPOINT + copy window
- * (drain first, then hold appends) so the archived file can't straddle
- * an in-flight batch insert; the finally-resume runs even when the
- * checkpoint or copy throws. The whole window runs under the module's
- * mutation lock, so the daily retention DELETE + CHECKPOINT (which holds
- * the same lock) can never interleave a mutation between the backup's
- * checkpoint and its copy either.
- */
+/** Checkpoint + copy the sidecar to `stagingPath` for a backup archive; false when the handle is in-memory, errors propagate. The access-log batcher stays paused across the window. */
 export async function snapshotAnalyticsTo(stagingPath: string): Promise<boolean> {
   const handle = getAnalyticsHandle()
   if (handle.inMemory) {
     return false
   }
   return withAnalyticsMutationLock(async () => {
-    // Reached through the registry's optional pause/resume seam rather
-    // than the batcher module's own API — the registry is the uniform
-    // cross-batcher control surface (init/flush/reset/replay go through
-    // it too). The name is the batcher's own registration key
-    // (`domains/analytics/services/batcher.ts`).
+    // Via the registry's uniform pause/resume seam, keyed by the batcher's registration name.
     const batcher = getBatcher('AccessLogBatcher')
     await batcher?.pause?.()
     try {
@@ -154,12 +114,7 @@ export async function snapshotAnalyticsTo(stagingPath: string): Promise<boolean>
   })
 }
 
-/**
- * Close the sidecar for the restore machine's file swap and forget the
- * handle (the maintenance job is stopped first so it can't fire against
- * a closing file). The content database's prepare step calls this after
- * the batcher flush; the reopen happens via `initAnalyticsDatabase`.
- */
+/** Close the sidecar for the restore file swap; the maintenance job is stopped first. */
 export async function closeAnalyticsForRestore(): Promise<void> {
   if (maintenanceJob !== null) {
     maintenanceJob.stop()

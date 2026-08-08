@@ -70,7 +70,6 @@ describe('integration / upsertWebmention (re-mention update semantics)', () => {
   })
 
   it('refreshes the verification state on a successful re-mention', async () => {
-    // A failed receive-time check left the row failed with a message.
     const first = await upsertWebmention(
       db,
       mentionValues({
@@ -82,8 +81,6 @@ describe('integration / upsertWebmention (re-mention update semantics)', () => {
     )
     expect(first.row.verificationStatus).toBe('failed')
 
-    // The sender re-POSTs and the source recovers: the upsert flips the
-    // verification state back to verified and clears the failure.
     const second = await upsertWebmention(
       db,
       mentionValues({
@@ -131,9 +128,6 @@ describe('integration / upsertWebmention (re-mention update semantics)', () => {
   })
 
   it('resets the failure streak when a row is approved', async () => {
-    // A pending row accumulated daily-cycle failures; approval restarts
-    // the 7-day window so the hide countdown only counts failures of the
-    // APPROVED mention.
     const { row } = await upsertWebmention(
       db,
       mentionValues({
@@ -154,10 +148,7 @@ describe('integration / upsertWebmention (re-mention update semantics)', () => {
   })
 
   it('folds a same-key race into the ON CONFLICT fallback, reported as `updated`', async () => {
-    // Both calls observe an empty pair SELECT before either INSERT runs
-    // (node:sqlite resolves each statement in its own microtask), so one
-    // of them must hit the unique index and take the conflict fallback —
-    // which cannot see the old status and reports `updated` (no notify).
+    // One racer loses the pair-SELECT race, hits the unique index, and reports 'updated'.
     const [a, b] = await Promise.all([
       upsertWebmention(db, mentionValues({ title: 'Race A' })),
       upsertWebmention(db, mentionValues({ title: 'Race B' })),

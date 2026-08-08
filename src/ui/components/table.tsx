@@ -3,11 +3,8 @@ import type { ComponentProps } from 'react'
 import { cn } from '@/ui/lib/cn'
 
 function Table({ className, ...props }: ComponentProps<'table'>) {
-  // Block-level disable: the formatter breaks the opening tag across
-  // multiple lines, which would defeat `oxlint-disable-next-line` (the
-  // violation lands on the `tabIndex={0}` line, not the `<div` line).
-  // The region role + tabIndex is intentional: it makes horizontally
-  // scrollable tables keyboard-accessible.
+  // Block-level disable (the formatter splits the opening tag); region role +
+  // tabIndex makes horizontally scrollable tables keyboard-accessible.
   /* oxlint-disable jsx-a11y/no-noninteractive-tabindex */
   return (
     <div

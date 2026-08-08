@@ -24,10 +24,8 @@ export function numberAttr(attrs: Record<string, unknown> | undefined, key: stri
   return typeof value === 'number' ? value : undefined
 }
 
-// FNV-1a 32-bit hash. Plenty of collision resistance for the
-// per-paragraph markDefs registry (a paragraph rarely carries more
-// than a handful of links). We use base36 to keep `_key`s short and
-// URL-safe.
+// FNV-1a 32-bit hash — plenty of collision resistance for the
+// per-paragraph markDefs registry; base36 keeps `_key`s short and URL-safe.
 export function hashLinkHref(href: string): string {
   let hash = 0x811c9dc5
   for (let i = 0; i < href.length; i += 1) {

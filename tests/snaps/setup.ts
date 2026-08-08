@@ -1,19 +1,15 @@
-// Vitest worker setup for snapshot tests. No DB — just env vars and
-// the settings snapshot slot.
+// Vitest worker setup for snapshot tests — no DB, just env vars + the settings snapshot slot.
 
 import { afterEach, vi } from 'vitest'
 
 import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import '#/_helpers/env'
 
-// Inert global stubs for the two noisiest UI seams. Convention: setup stubs
-// the noise, `tests/_helpers/` owns the doubles — a test file only declares
-// its own `vi.mock` for these modules when it ASSERTS on `toast` or programs
-// `commit` (a file-level `vi.mock` overrides these registrations).
+// Inert global stubs for the noisiest UI seams; setup stubs the noise,
+// `tests/_helpers/` owns the doubles (a file-level vi.mock overrides these).
 vi.mock('sonner', () => ({
   toast: { error: vi.fn(), success: vi.fn() },
-  // `AdminShell` renders `<Toaster />`; without this export the mocked module
-  // would resolve it to `undefined` and break any render that includes the shell.
+  // Without this export the mocked module would resolve Toaster to undefined and break AdminShell renders.
   Toaster: () => null,
 }))
 vi.mock('@/ui/admin/settings/useSettingsMutation', () => ({

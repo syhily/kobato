@@ -7,9 +7,7 @@ import { sendEmail } from '@/server/infra/email/sender'
 import ConfirmSubscription from '@/server/infra/email/templates/ConfirmSubscription'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 
-// The only mail a `pending` subscriber ever receives. `fromName` /
-// `subjectPrefix` fall back to the site title when the newsletter
-// section leaves them blank, so the email is always identifiable.
+// The only mail a `pending` subscriber ever receives.
 export async function sendConfirmSubscription(
   email: string,
   confirmLink: string,

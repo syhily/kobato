@@ -17,15 +17,13 @@ import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empt
 const PAGE_SIZE = 10
 
 export function PagesView() {
-  // --- Filter option data ---
   const { data: usersData } = useQuery(
     orpcQuery.admin.users.list.queryOptions({ input: { limit: 100, hasPages: true } }),
   )
 
   const fields = useMemo(() => buildPageFilterFields(usersData?.users ?? []), [usersData])
 
-  // The pills own the whole filter surface: reducer state and the merged
-  // query input the list query spreads.
+  // The pills own the filter surface: reducer state + merged query input the list query spreads.
   const pills = useFilterPills({ fields })
 
   const { rows, total, isLoading, hasNextPage, isFetchingNextPage, sentinelRef } = useAdminInfiniteList({

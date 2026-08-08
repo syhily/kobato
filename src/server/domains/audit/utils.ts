@@ -1,11 +1,3 @@
-// Audit Log display helpers — IP / UA masking
-
-/**
- * Mask an IPv4 or IPv6 address for display.
- *
- * IPv4: 192.168.1.42  → 192.168.x.x
- * IPv6: 2001:db8::1   → 2001:db8:x:x (first 2 groups kept)
- */
 export function maskIp(ip: string | null | undefined): string {
   if (!ip) {
     return ''
@@ -22,7 +14,6 @@ export function maskIp(ip: string | null | undefined): string {
     return v4
   }
 
-  // IPv4
   if (ip.includes('.')) {
     const parts = ip.split('.')
     if (parts.length === 4) {
@@ -31,7 +22,6 @@ export function maskIp(ip: string | null | undefined): string {
     return ip
   }
 
-  // IPv6
   if (ip.includes(':')) {
     const parts = ip.split(':').filter((p) => p.length > 0)
     if (parts.length >= 3) {
@@ -46,17 +36,11 @@ export function maskIp(ip: string | null | undefined): string {
   return ip
 }
 
-/**
- * Simplify a User-Agent string for display by keeping only the browser
- * family and OS family (when parsable). Falls back to truncation for
- * unrecognised strings.
- */
 export function maskUserAgent(ua: string | null | undefined): string {
   if (!ua) {
     return ''
   }
 
-  // Try to extract browser name + OS name using common UA patterns.
   const browserMatch = ua.match(/(Chrome|Firefox|Safari|Edge|Opera|Brave)\/[^\s]+/i)
   const osMatch = ua.match(/\(([^)]+)\)/)
 
@@ -68,7 +52,6 @@ export function maskUserAgent(ua: string | null | undefined): string {
     return `${browser} / ${osFamily}`
   }
 
-  // Fallback: truncate to first 40 chars
   if (ua.length <= 40) {
     return ua
   }

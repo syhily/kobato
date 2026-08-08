@@ -6,13 +6,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderHook } from '#/_helpers/hook'
 import { DEFAULT_RETRY_DELAYS_MS, useAutosave } from '@/client/hooks/use-autosave'
 
-// useAutosave is a hook whose observable surface is the `forceFlush`
-// callback it returns and the `onStatusChange` callback the caller
-// passes in. The renderHook harness renders synchronously once (so
-// effects do not fire), but `forceFlush` and `doFlush` are
-// user-triggered async paths we can drive directly. These cases
-// exercise the disabled short-circuit, the no-change short-circuit,
-// the saving/saved lifecycle, and the retry ladder.
+// The SSR harness renders synchronously once (effects never fire), so
+// the tests drive the user-triggered forceFlush / doFlush paths directly.
 
 const sampleBody = [
   { _type: 'block', _key: 'b1', style: 'normal', children: [{ _type: 'span', _key: 's1', text: 'hi' }] },
@@ -45,10 +40,8 @@ describe('useAutosave — disabled / no-op paths', () => {
         flush: flush as never,
       }),
     )
-    // First flush should persist the body.
     await result.forceFlush()
     expect(flush).toHaveBeenCalledTimes(1)
-    // Second flush with the same body reference should short-circuit.
     await result.forceFlush()
     expect(flush).toHaveBeenCalledTimes(1)
   })
@@ -84,7 +77,6 @@ describe('useAutosave — saving lifecycle', () => {
         flush: flush as never,
       }),
     )
-    // Should simply not throw.
     await expect(result.forceFlush()).resolves.toBeUndefined()
     expect(flush).toHaveBeenCalledTimes(1)
   })
@@ -110,12 +102,9 @@ describe('useAutosave — conflict outcome', () => {
     await result.forceFlush()
     expect(flush).toHaveBeenCalledTimes(1)
     expect(statuses).toContain('saving')
-    // A 'saved' tick here would clobber the conflict state the flush surfaced.
+    // A 'saved' tick would clobber the conflict state the flush surfaced.
     expect(statuses).not.toContain('saved')
 
-    // The baseline never advanced: the same body flushes again rather than
-    // short-circuiting (the persist layer's `enabled` gate is what freezes
-    // automatic flushes after a conflict).
     await result.forceFlush()
     expect(flush).toHaveBeenCalledTimes(2)
   })
@@ -135,9 +124,7 @@ describe('useAutosave — markPersisted', () => {
         flush: flush as never,
       }),
     )
-    // A manual Ctrl+S save persisted the current body outside the engine.
     result.markPersisted(sampleBody as never)
-    // The next debounce tick hits the same reference check forceFlush uses.
     await result.forceFlush()
     expect(flush).not.toHaveBeenCalled()
   })
@@ -151,8 +138,6 @@ describe('useAutosave — markPersisted', () => {
         flush: flush as never,
       }),
     )
-    // Marking a stale snapshot persisted must not swallow real changes:
-    // the current body differs from the marked reference, so it flushes.
     result.markPersisted([{ _type: 'block', _key: 'old' }] as never)
     await result.forceFlush()
     expect(flush).toHaveBeenCalledTimes(1)
@@ -186,8 +171,7 @@ describe('useAutosave — retry kick-off', () => {
 
     await result.forceFlush()
 
-    // The first failure schedules a retry — assert the retrying event
-    // fires with attempt === 1 and the cause message copied through.
+    // First failure → retrying with attempt === 1 and the cause message.
     expect(flush).toHaveBeenCalledTimes(1)
     expect(statuses.some((s) => s.kind === 'saving')).toBe(true)
     expect(statuses.some((s) => s.kind === 'retrying' && s.attempt === 1 && s.message === 'network down')).toBe(true)
@@ -212,9 +196,7 @@ describe('useAutosave — retry kick-off', () => {
   })
 
   it('re-fires the flush after the scheduled delay and lands on saved', async () => {
-    // The SSR harness never runs effects, so `doFlushRef` (the retry
-    // timer's target) stays a noop there — the ladder needs a real DOM
-    // render where effects fire. Fake timers drive the retry delay.
+    // Retry timers need a real DOM render — the SSR harness never fires effects.
     const flush = vi
       .fn<(body: unknown) => Promise<void>>()
       .mockRejectedValueOnce(new Error('network down'))
@@ -235,17 +217,15 @@ describe('useAutosave — retry kick-off', () => {
     expect(statuses.map((s) => s.kind)).toEqual(['saving', 'retrying'])
     expect(statuses[1]).toMatchObject({ attempt: 1, message: 'network down' })
 
-    // The retry is timer-scheduled, not immediate: just before the delay
-    // elapses the flush has NOT re-fired.
+    // Timer-scheduled: before the delay elapses, the flush has NOT re-fired.
     await vi.advanceTimersByTimeAsync(9)
     expect(flush).toHaveBeenCalledTimes(1)
 
-    // At the delay boundary the retry re-fires with the same body…
+    // At the delay boundary the retry re-fires with the same body.
     await vi.advanceTimersByTimeAsync(1)
     expect(flush).toHaveBeenCalledTimes(2)
     expect(flush).toHaveBeenNthCalledWith(2, sampleBody)
 
-    // …and the recovery completes the ladder: saving → retrying → saving → saved.
     expect(statuses.map((s) => s.kind)).toEqual(['saving', 'retrying', 'saving', 'saved'])
   })
 })
@@ -256,12 +236,7 @@ describe('useAutosave — overlapping in-flight triggers (V3-02)', () => {
   })
 
   it('does not re-flush the same body when a second trigger fires while the first flush is in flight', async () => {
-    // Overlap: a forceFlush (Ctrl+S / debounce) is pending when pagehide
-    // fires a second doFlush. The second one waits on the in-flight flush;
-    // once that lands, the baseline already covers the body, so the waiter
-    // must bail out instead of re-PATCHing the identical body (which also
-    // rotates the revision token and can surface a phantom conflict from
-    // its stale expectedToken closure).
+    // Overlapping triggers must not re-PATCH the same body.
     let resolveFlush!: () => void
     const flush = vi
       .fn<(body: unknown) => Promise<void>>()
@@ -274,29 +249,24 @@ describe('useAutosave — overlapping in-flight triggers (V3-02)', () => {
       }),
     )
 
-    // First trigger: the flush goes in flight and stays pending.
     const first = result.current.forceFlush()
     expect(flush).toHaveBeenCalledTimes(1)
 
-    // Second trigger via the pagehide listener (needs the DOM harness so
-    // effects attach). Its doFlush parks on the in-flight promise.
+    // Second trigger via the pagehide listener; its doFlush parks on the in-flight promise.
     window.dispatchEvent(new Event('pagehide'))
 
-    // The in-flight flush lands and advances the baseline to the same body.
     resolveFlush()
     await first
     // Let the parked doFlush continuation run its post-await re-check.
     await new Promise((resolve) => setTimeout(resolve, 0))
 
-    // No duplicate PATCH for the body the first flush just persisted.
     expect(flush).toHaveBeenCalledTimes(1)
   })
 })
 
 describe('useAutosave — default retry ladder (fix-review)', () => {
   it('pins the 1s / 3s / 9s backoff the editor ships with', () => {
-    // Callers almost never pass retryDelaysMs, so the default ladder IS
-    // the retry UX contract — pin it against silent edits.
+    // The default ladder is the retry UX contract — pin it against silent edits.
     expect(DEFAULT_RETRY_DELAYS_MS).toEqual([1_000, 3_000, 9_000])
   })
 })

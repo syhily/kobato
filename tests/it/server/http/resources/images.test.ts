@@ -11,13 +11,8 @@ import { page as pageTable } from '@/server/infra/db/schema/page'
 import { post as postTable } from '@/server/infra/db/schema/post'
 import { category as categoryTable } from '@/server/infra/db/schema/taxonomy'
 
-// `imagesRouter` outcome-mapping tests against the real engine: slug
-// resolution (posts / pages / categories) hits seeded rows, the live
-// gate, the in-process rate limiter, and the kv-backed cache registry
-// all run for real — including the real `serveCalendar` (date validation
-// + `through()` cache registration). The kept seams are the
-// heavy/external backends: gravatar avatar fetching (network), OG canvas
-// rendering, and the native-canvas calendar renderer.
+// `imagesRouter` outcome mapping against the real engine (seeded rows, live gate,
+// rate limiter, kv cache, real serveCalendar); seams: avatar fetch, OG canvas, calendar renderer.
 
 vi.mock('@/server/render/calendar/render', () => ({
   renderCalendar: vi.fn(),
@@ -51,8 +46,7 @@ function requestImages(url: string) {
   })
   app.route('/', imagesRouter)
   app.onError(onErrorHandler)
-  // Sentinel public route sharing the `/` mount root — mirrors the SSR
-  // pages that must never count against the images bucket.
+  // Sentinel SSR-style route that must never count against the images bucket.
   app.get('/sitemap.xml', (c) => c.text('sitemap'))
   return app.request(url)
 }
@@ -102,12 +96,10 @@ describe('images resource', () => {
   beforeEach(async () => {
     await clearAllTables(db)
     vi.clearAllMocks()
-    // Per-test bucket overrides need a clean counter — earlier cases in
-    // this file already spend resource/avatar attempts from 127.0.0.1.
+    // Clean counter — earlier cases already spend resource/avatar attempts from 127.0.0.1.
     __resetRateLimitsForTests()
     ;(renderCalendar as ReturnType<typeof vi.fn>).mockResolvedValue(Buffer.from('cal'))
-    // Default: the domain reports "no avatar" — the redirect mapping tests
-    // override per case.
+    // Default: "no avatar" — redirect mapping tests override per case.
     ;(serveAvatar as ReturnType<typeof vi.fn>).mockResolvedValue({ kind: 'redirect' })
   })
 
@@ -129,11 +121,7 @@ describe('images resource', () => {
   })
 
   it('never counts public non-image requests against the images bucket', async () => {
-    // Regression guard: the router is mounted at `/` in the real pipeline,
-    // where a router-level `.use(rateLimit)` would register as a site-wide
-    // middleware — every SSR page view then drained the images bucket and
-    // one IP's page traffic 429'd the whole site. The limiter now rides
-    // each image route (avatar additionally stacks its stricter bucket).
+    // Only the image routes may draw from the images bucket — never SSR pages.
     setBlogSettingsBundleForTests({
       ...TEST_BLOG_SETTINGS_BUNDLE,
       rateLimit: {
@@ -145,9 +133,8 @@ describe('images resource', () => {
     for (let i = 0; i < 3; i++) {
       expect((await requestImages('http://localhost/sitemap.xml')).status).toBe(200)
     }
-    // An image route still draws from the resource bucket …
+    // Image routes still draw from the bucket — the next hit inside the window trips it.
     expect((await requestImages('http://localhost/images/og/missing.png')).status).toBe(302)
-    // … and the next hit inside the window trips it.
     const res = await requestImages('http://localhost/images/og/missing.png')
     expect(res.status).toBe(429)
     await expect(res.json()).resolves.toEqual({ error: { message: '请求过于频繁，请稍后再试。' } })
@@ -170,9 +157,7 @@ describe('images resource', () => {
   })
 
   it('rejects an invalid MMdd calendar date with a 404 (real serveCalendar date validation)', async () => {
-    // Month 13 passes the shape regex but rolls over in the date-fns parse
-    // and fails the round-trip check — the real `HTTPException(404)` is
-    // mapped to a proper 404 response by Hono's error handling.
+    // MM 13 passes the shape regex but fails the date-fns round-trip check → 404.
     const res = await requestImages('http://localhost/images/calendar/2026/1332.png')
     expect(res.status).toBe(404)
   })

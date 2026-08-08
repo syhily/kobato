@@ -14,14 +14,7 @@ export type EditorShellStatus =
   | { kind: 'conflict'; expectedToken: string }
   | { kind: 'info'; message: string }
 
-/**
- * The autosave freeze — one gate, two sources. `local`: the local-storage
- * draft diverged from the opening body (recovery: the dialog's
- * adopt/discard). `server`: the server rejected the revision token
- * (recovery: the next clean save). The orchestrator owns both sources and
- * hands persist this single sourced flag — the gate is merged, the
- * recovery branches stay source-specific.
- */
+/** One merged autosave gate, two sources: `local` (dialog adopt/discard) and `server` (next clean save). */
 export type ConflictFreezeSource = 'local' | 'server'
 
 export type PublishState =
@@ -89,21 +82,11 @@ export interface UseEditorShellStateArgs<
   publishFn: (input: SaveBodyInput) => Promise<SaveBodyOutput>
   unpublishFn: (input: { id: string }) => Promise<TEntity>
 
-  /**
-   * Build the upsertMeta payload from the meta draft. Post passes
-   * `pinnedAt`, `category`, `tags`, `alias`; page passes `showFriends`.
-   * Common fields (`title`, `summary`, `cover`, `og`, `published`,
-   * `commentsEnabled`, `webmentionsEnabled`, `showToc`, `showUpdated`,
-   * `slug`, `publishedAt`)
-   * are built here from `meta`.
-   */
+  /** Build the upsertMeta payload from the meta draft — common fields are
+   *  built here; entity-specific fields come from the caller. */
   buildUpsertMetaPayload: (input: { meta: TMeta; id?: string; publishedAt?: string | null }) => TUpsertMetaInput
 
-  /**
-   * Direct oRPC `saveDraft` for autosave + force-save (adoptLocalDraft).
-   * `useMutation.mutate()` doesn't return a promise so we need a raw
-   * caller for the await-driven flows.
-   */
+  /** Direct oRPC `saveDraft` for autosave + force-save — `mutate()` returns no promise, so await-driven flows need a raw caller. */
   directSaveDraft: (input: {
     id: string
     body: PortableTextBody
@@ -116,10 +99,7 @@ export interface UseEditorShellStateArgs<
   navigate: NavigateFunction
 }
 
-/**
- * Narrow slice consumed by the toolbar row (and the floating publish
- * button, which shares the same publish/save gating).
- */
+/** Narrow slice consumed by the toolbar row (and the floating publish button). */
 export interface EditorToolbarState {
   previewOpen: boolean
   setPreviewOpen: (updater: boolean | ((prev: boolean) => boolean)) => void
@@ -141,10 +121,7 @@ export interface EditorToolbarState {
   persistUnpublish: () => void
 }
 
-/**
- * Narrow slice consumed by the meta panel (aside / Sheet): the sidebar
- * draft bindings plus the revision-history extras wiring.
- */
+/** Narrow slice consumed by the meta panel (aside / Sheet). */
 export interface EditorSidebarState<TMeta> {
   draft: TMeta
   onChange: React.Dispatch<React.SetStateAction<TMeta>>
@@ -167,12 +144,8 @@ export interface EditorDialogState {
   adoptServerVersion: () => void
 }
 
-/**
- * Orchestrator output. The top level carries only what the screen body
- * itself renders (editor column, preview pane, banners); subsection
- * consumers receive one of the three narrow views above instead of the
- * whole bag.
- */
+/** Orchestrator output: the top level carries only what the screen body
+ *  renders; subsection consumers receive the narrow views above. */
 export interface UseEditorShellStateOutput<TMeta> {
   meta: TMeta
   setMeta: React.Dispatch<React.SetStateAction<TMeta>>

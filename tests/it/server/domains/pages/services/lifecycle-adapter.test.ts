@@ -2,10 +2,8 @@ import { describe, expect, it } from 'vitest'
 
 import { pageLifecycleAdapter } from '@/server/domains/pages/services/lifecycle-adapter'
 
-// Pin for the page adapter's draft-preview access rule
-// (CONTEXT.md "Draft preview": pages allow admin only). Runs against
-// the real adapter — the it project's module graph no longer needs the
-// DB-free import mocks the unit version carried.
+// Pin for the draft-preview access rule (CONTEXT.md: pages allow admin
+// only), against the real adapter.
 
 describe('pageLifecycleAdapter.canPreviewDraft', () => {
   it.each([

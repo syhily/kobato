@@ -15,10 +15,7 @@ interface PendingFriendRowProps {
   onDelete: () => void
 }
 
-// Row in the pending-review bucket: poster fallback for coverless
-// applicants, a 待审核 badge, and an approve action. Approve reuses the
-// admin upsert path, which requires a valid poster — it stays disabled
-// until the admin fills the cover via the edit dialog.
+// Pending-review row: poster fallback, 待审核 badge, approve action (disabled until a valid poster exists).
 export const PendingFriendRow = memo(function PendingFriendRow({
   friend,
   disabled,

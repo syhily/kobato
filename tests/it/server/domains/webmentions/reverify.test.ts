@@ -21,8 +21,7 @@ const db = getTestDb()
 const mockFetch = installFetch()
 
 const SOURCE = 'https://sender.example/mentioning-post'
-// The canonical stored target — `resolveWebmentionTarget` re-derives the
-// same URL from the live post's slug.
+// `resolveWebmentionTarget` re-derives this URL from the live post's slug.
 const TARGET = 'https://example.com/posts/wm-target/'
 const linkingHtml = (href: string) =>
   `<html><head><title>Mentioning post</title><meta name="author" content="Jane Doe"></head>` +
@@ -183,8 +182,7 @@ describe('integration / daily re-verification cycle', () => {
     const row = await rowOf(id)
     expect(row.status).toBe('pending') // only approved rows can hide
     expect(row.verificationStatus).toBe('failed')
-    // Bounded: a pending row whose target is gone must not accumulate an
-    // unbounded counter (MIN(streak + 1, 7) in the failure write).
+    // Bounded: MIN(streak + 1, 7) — a gone-target pending row must not accumulate unboundedly.
     expect(row.verifyFailStreak).toBe(7)
   })
 
@@ -235,10 +233,7 @@ describe('integration / manual re-verification (admin)', () => {
 
     await expect(reverifyWebmention(db, id.toString())).rejects.toThrow('source could not be fetched (HTTP 404)')
 
-    // The row keeps its hidden state and the failure message refreshes;
-    // the streak is a daily-cycle counter and the 24h waterline must NOT
-    // move — an admin's failed attempt cannot delay the next scheduled
-    // check.
+    // A failed admin attempt must not move the 24h waterline (or delay the next scheduled check).
     const row = await rowOf(id)
     expect(row.status).toBe('hidden')
     expect(row.verificationStatus).toBe('failed')
@@ -257,7 +252,6 @@ describe('integration / manual re-verification (admin)', () => {
 
     await expect(reverifyWebmention(db, id.toString())).rejects.toThrow('不再参与验证')
 
-    // Nothing changed on the row.
     const row = await rowOf(id)
     expect(row.status).toBe('rejected')
     expect(row.verificationStatus).toBe('failed')
@@ -272,8 +266,7 @@ describe('integration / admin reverify procedure (audit + wire)', () => {
   })
 
   afterEach(async () => {
-    // Flush BEFORE reset (and before the next clearAllTables wipes the
-    // seeded admin) — same discipline as the moderation suite.
+    // Flush BEFORE reset — same discipline as the moderation suite.
     await flushAuditLog()
     resetAllBatchers()
   })
@@ -325,8 +318,7 @@ describe('integration / admin reverify procedure (audit + wire)', () => {
 describe('integration / pickWebmentionsDueForReverify', () => {
   it('picks only cycle rows that crossed the waterline, oldest first', async () => {
     await seedLivePost()
-    // Every row needs its own (source, target) pair — the upsert folds
-    // same-pair seeds into one row.
+    // Distinct (source, target) pairs required — the upsert folds same-pair seeds into one row.
     const oldApproved = await seedMention({
       sourceUrl: `${SOURCE}?a=1`,
       status: 'approved',

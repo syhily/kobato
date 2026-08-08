@@ -30,15 +30,9 @@ queryMocks.filters = [] as ActiveFilter<PageFilterFieldKey>[]
 
 queryMocks.dispatch = vi.fn()
 
-// `PagesView` drives its rows from `useInfiniteQuery` (`admin.pages.list` —
-// server state lives in the TanStack cache), its author options from a
-// `useQuery` (`admin.users.list`), and its filter surface from the shared
-// `useFilterPills` hook. We hoist query singletons so each test can swap
-// the resolved list / users data + loading flag without re-mocking, and a
-// hoisted pill-list singleton so tests can inject active filters — the
-// module mock swaps ONLY the hook (capturing the view-built field specs so
-// the real `<FilterPillBar>` still renders them), mirroring the
-// audit-branches pattern.
+// PagesView's list/authors queries are hoisted singletons so each test
+// swaps resolved data + loading flag; the pill hook mock (audit-branches
+// pattern) swaps ONLY the hook so the real FilterPillBar renders.
 
 vi.mock('@/ui/admin/shared/filter-bar/useFilterPills', async () => {
   const actual = await vi.importActual<typeof import('@/ui/admin/shared/filter-bar/useFilterPills')>(
@@ -65,8 +59,6 @@ vi.mock('@/ui/admin/shared/filter-bar/useFilterPills', async () => {
     }),
   }
 })
-
-// ───────────────────────────── fixtures ─────────────────────────────
 
 function makeAdminPage(overrides: Partial<AdminPageDto> = {}): AdminPageDto {
   return {
@@ -116,8 +108,6 @@ function renderView() {
   return stableHtml(renderInRouter(<PagesView />, '/admin/pages'))
 }
 
-// ───────────────────────────── PagesView ────────────────────────────
-
 describe('snapshot: PagesView', () => {
   beforeEach(() => {
     queryMocks.infinite = {
@@ -135,10 +125,8 @@ describe('snapshot: PagesView', () => {
 
   it('renders the header chrome (title, filter bar, new-page link) regardless of query state', () => {
     const html = renderView()
-    // Header title always renders; the total span is 0 until the list
-    // resolves, but the title text is static.
+    // Title always renders; the total span stays 0 until the list resolves.
     expect(html).toContain('页面管理')
-    // New-page anchor — present in every render branch.
     expect(html).toContain('新建页面')
     expect(html).toContain('href="/editor/page/new"')
     // No active filters — just the pill-bar 筛选 trigger in the header slot.
@@ -147,7 +135,6 @@ describe('snapshot: PagesView', () => {
   })
 
   it('renders the list skeleton while the initial query is pending', () => {
-    // infinite isLoading=true → the PagesSkeleton branch mounts.
     const html = renderView()
     expect(html).toContain('页面管理')
     expect(html).toContain('skeleton')
@@ -163,9 +150,7 @@ describe('snapshot: PagesView', () => {
     }
     const html = renderView()
     expect(html).toContain('页面管理')
-    // The Empty branch renders the search-icon empty state.
     expect(html).toContain('未找到页面')
-    // The skeleton branch is gone once loading flips false.
     expect(html).not.toContain('skeleton')
   })
 
@@ -181,8 +166,7 @@ describe('snapshot: PagesView', () => {
   })
 
   it('renders the author pill with the label resolved from the seeded author list', () => {
-    // The users query resolves with one admin user; the author field's
-    // options are built from it, so the pill editor shows the name.
+    // Author field options come from the seeded users query.
     queryMocks.query = { data: { users: [makeAdminUser({ name: '雨帆' })], total: 1 }, isPending: false, error: null }
     queryMocks.filters = [{ field: 'author', value: '1', label: '雨帆' }]
     const html = renderView()

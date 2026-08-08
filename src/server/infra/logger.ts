@@ -1,21 +1,6 @@
-// Structured JSON logger backed by pino. The public API (Logger interface,
-// getLogger, logger singleton) is the only stable surface — consumers never
-// touch pino directly, so the underlying transport can be swapped without
-// touching call sites.
-//
-// Privacy: known L3 fields (e.g. email, ip, name) are wrapped in {E}…{/E}
-// markers per `.agents/skills/privacy-logging/SKILL.md`, so log aggregators can
-// strip or hash them before storage. Callers don't need to remember to tag
-// values manually — using the standard key names is enough. Credential
-// material is stronger than L3: HTTP `authorization`/`cookie`/`set-cookie`
-// headers are fully replaced with `[REDACTED]` by logger/sanitizer.ts, never
-// tagged.
-//
-// Audit log convention: loggers named `audit.<domain>` (e.g. `audit.user`,
-// `audit.comment`, `audit.cms.posts`) are for operational visibility only.
-// Durable audit records are written via `recordAuditEvent()` to the
-// `audit_log` table through the insert batcher, not through this
-// logger. `getLogger('audit.*')` calls remain informational stdout output.
+// Structured JSON logger backed by pino; Logger/getLogger/logger is the only
+// stable surface. L3 fields are wrapped in {E}…{/E} and credential headers
+// are fully [REDACTED] by logger/sanitizer.ts, never tagged.
 
 import { Writable } from 'node:stream'
 import pino from 'pino'
@@ -30,12 +15,9 @@ function resolveLevel(): Level {
   if (level) {
     return level
   }
-  // NODE_ENV, not import.meta.env.PROD — this module also lands in the CJS
-  // worker bundles where import.meta is replaced with {}.
+  // NODE_ENV, not import.meta.env.PROD — import.meta is replaced with {} in the CJS worker bundles.
   return NODE_ENV === 'production' ? 'info' : 'debug'
 }
-
-// Privacy tagging — L3 (direct identifier) fields
 
 export const L3_KEYS = new Set([
   'email',
@@ -67,8 +49,6 @@ function tagL3(value: unknown): unknown {
   return str === '' ? str : `{E}${str}{/E}`
 }
 
-// Error serialization — preserves cause chains and extra props
-
 function serializeError(err: Error): Record<string, unknown> {
   const out: Record<string, unknown> = {
     name: err.name,
@@ -90,9 +70,7 @@ function serializeError(err: Error): Record<string, unknown> {
   return out
 }
 
-// Apply privacy tagging to a single element of an array-valued log field.
-// Split out so the map callback has a typed return instead of leaking
-// `unknown` through the ternary into the outer assignment.
+// Split out so the map callback keeps a typed return instead of `unknown`.
 function tagArrayElement(item: unknown, keyIsL3: boolean): unknown {
   if (typeof item === 'object' && item !== null && !(item instanceof Error)) {
     return applyPrivacyTagsRecursive(unsafeCast<LogContext>(item))
@@ -121,10 +99,7 @@ interface LogContext {
   [key: string]: unknown
 }
 
-// Pino's default destination (SonicBoom) writes directly to the file
-// descriptor, which bypasses process.stdout.write — making test spies
-// unable to intercept log output. A thin Writable wrapper keeps output
-// going to stdout while remaining interceptable in tests.
+// Writable wrapper keeps output on process.stdout so test spies can intercept it.
 const stdout = new Writable({
   write(chunk, _encoding, cb) {
     process.stdout.write(String(chunk))
@@ -141,7 +116,7 @@ export const root = pino(
         return { level: label }
       },
     },
-    // ISO-8601 timestamps to match the previous custom logger's format.
+    // ISO-8601 timestamps.
     timestamp: pino.stdTimeFunctions.isoTime,
     serializers: {
       error: serializeError,
@@ -160,13 +135,7 @@ export interface Logger {
   withScope(scope: string): Logger
 }
 
-// ─── Test capture seam ──────────────────────────────────────────────
-// Under vitest the level is 'silent', so log output vanishes into a
-// black hole and every assertion on logging used to need a module mock
-// of this whole surface. The capture ring keeps the last N entries —
-// POST privacy-tagging, so assertions run against the real pipeline —
-// and lets tests assert on real output. Gated on the same env flag the
-// config module uses for test detection; production never allocates it.
+// Test-only capture ring (post-privacy-tagging) so assertions run against the real pipeline; gated on isVitest().
 
 export interface LogCaptureEntry {
   scope: string

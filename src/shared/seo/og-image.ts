@@ -1,7 +1,6 @@
-// Single owner of the `/images/og/<slug>.png` URL shape. The Hono images
-// resource (`@/server/http/resources/images`) declares the matching route
-// pattern; every builder of the URL goes through this helper so the path
-// shape cannot drift between meta tags, feeds, and the serving route.
+// Single owner of the `/images/og/<slug>.png` URL shape — the Hono
+// images resource declares the matching route pattern; every builder of
+// the URL goes through this helper so the path cannot drift.
 export function ogImagePathForSlug(slug: string): string {
   return `/images/og/${slug}.png`
 }

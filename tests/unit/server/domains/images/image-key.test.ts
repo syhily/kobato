@@ -6,8 +6,7 @@ import { DomainError } from '@/server/infra/http/errors'
 describe('server/images/key — buildObjectKey', () => {
   describe('kind: generic', () => {
     it('embeds yyyy/MM in the prefix and zero-pads each timestamp component', () => {
-      // Pick a deterministic moment: Jan 7, 2026 03:04:05.987 UTC. The
-      // generic key uses UTC components so the test is timezone-stable.
+      // The generic key is built from UTC components, keeping the test timezone-stable.
       const now = new Date(Date.UTC(2026, 0, 7, 3, 4, 5, 987))
       const key = buildObjectKey({ kind: 'generic', now })
       // 987 ms % 100 = 87 → trailing `87`.
@@ -60,11 +59,7 @@ describe('server/images/key — extractHostForFriendKey', () => {
   })
 
   it('returns punycoded host for IDN URLs (whitelist still accepts xn-- form)', () => {
-    // `URL.hostname` returns the punycode form for IDN inputs (per
-    // WHATWG URL spec), and `xn--…` is all-lowercase ASCII so the
-    // safe-segment whitelist accepts it. The test pins the contract:
-    // we never blow up on legitimate IDN, even though the resulting
-    // S3 key won't be human-readable.
+    // URL.hostname returns the punycode form, so `xn--` must pass the lowercase-ASCII whitelist.
     expect(extractHostForFriendKey('https://测试.example')).toMatch(/^xn--[a-z0-9.-]+$/)
   })
 })

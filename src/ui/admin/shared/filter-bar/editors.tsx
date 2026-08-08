@@ -18,13 +18,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/popover'
 import { cn } from '@/ui/lib/cn'
 
-// Pill value editors — one per field `kind`. Each decodes nothing itself:
-// `pill.tsx` hands them a codec-correct value and they report commits back
-// as editor-level values; the pill owns serialization + labels.
+// Pill value editors — one per field `kind`; the pill owns serialization.
 
-/** Static options dropdown (comments status, audit action / resourceType /
- *  actor). Searchable sets render the locally-filtered list (w-56); plain
- *  sets render the compact option list (w-32). */
+/** Static options dropdown; searchable sets render the local-filter list (w-56), plain sets the compact list (w-32). */
 export function OptionsValueEditor<K extends string>({
   field,
   value,

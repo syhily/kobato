@@ -1,18 +1,6 @@
 // SEA build orchestrator (`pnpm run sea:build`).
-//
-//   1. react-router build       build/server (ESM chunks) + build/client
-//   2. vite bundle              inline everything into server.mjs (the
-//                               injected ESM main) + process-worker.mjs +
-//                               smoke-worker.mjs (dist-sea/intermediates)
-//   3. check-bundle             fail on leftover external specifiers
-//   4. assets                   collect embedded assets + manifest.json
-//   5. inject                   node --build-sea regenerates the blob and
-//                               patches the node binary — see inject.ts
-//   6. checksum                 dist-sea/kobato.sha256
-//
-// The build is platform-native by design: the embedded native libraries
-// and the copied Node executable are the build machine's, so run it on
-// the delivery target's architecture (CI matrix / linux container).
+// Platform-native by design: the embedded natives and the copied Node
+// executable are the build machine's, so build on the delivery target's arch.
 
 import { createHash } from 'node:crypto'
 import { readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
@@ -75,8 +63,7 @@ async function main() {
   run('pnpm', ['run', 'build'], { env: { ...process.env, NODE_ENV: 'production' } })
 
   console.log('==> vite bundle')
-  // The three bundles share the intermediates dir and none of them may
-  // wipe it (emptyOutDir: false in vite.sea.config.ts) — clean it here.
+  // None of the bundles may wipe the shared intermediates dir — clean it here.
   await rm(seaIntermediatesDir(), { recursive: true, force: true })
   for (const seaBundle of ['server', 'worker', 'smoke']) {
     run('pnpm', ['exec', 'vite', 'build', '--config', 'vite.sea.config.ts'], {
@@ -100,9 +87,7 @@ async function main() {
 
   const { size } = await stat(seaBinaryPath())
   const binaryMb = (size / 1024 / 1024).toFixed(1)
-  // Enforce the shared compression budget (scripts/sea/budget.ts) at build
-  // time — a blob packing regression must fail the build itself, not only
-  // the later sea:smoke step (the Docker image build never runs it).
+  // Fail the build on budget regression — the Docker image build never runs sea:smoke.
   if (size > BINARY_MAX_BYTES) {
     fail(`binary is ${binaryMb} MB, over the ${BINARY_MAX_BYTES / 1024 / 1024} MB budget`)
   }

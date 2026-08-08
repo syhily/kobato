@@ -13,10 +13,9 @@ import { sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { GripVerticalIcon } from 'lucide-react'
 
-// Shared chrome for the admin's @dnd-kit sortable lists (navigation editors,
-// font slot columns): the sensor set, the find-by-id + move drag-end
-// plumbing, and the row scaffolding (`useSortable` + grip handle + transform
-// style) — each list keeps its own row contents and container styling.
+// Shared chrome for the admin's @dnd-kit sortable lists: sensors, drag-end
+// plumbing, and row scaffolding — lists keep their own row contents and
+// container styling.
 
 /** Pointer + keyboard sensors; every admin sortable list uses this exact set. */
 export function useSortableSensors() {
@@ -31,12 +30,7 @@ export interface SortableMove {
   to: number
 }
 
-/**
- * Resolve a drag-end into a list move: find both ids by key and return the
- * indices to feed `useFieldArray().move` (or an equivalent reorder). Returns
- * null for a no-op drop — outside any row, onto itself, or onto an element
- * that is not a row of this list.
- */
+/** Resolve a drag-end into a list move; null for a no-op drop (outside a row, onto itself, or a foreign row). */
 export function resolveSortableMove<T>(
   activeId: UniqueIdentifier,
   overId: UniqueIdentifier | undefined,
@@ -54,12 +48,7 @@ export function resolveSortableMove<T>(
   return { from, to }
 }
 
-/**
- * Props for `<SortableDragHandle>`: the dnd-kit attributes (with
- * `aria-describedby` stripped) plus the synthetic listeners. Kept as two
- * fields because `SyntheticListenerMap`'s index signature cannot intersect
- * with the attribute props — the handle spreads them separately.
- */
+/** dnd-kit attributes (with `aria-describedby` stripped) plus synthetic listeners, kept as two fields so the handle spreads them separately. */
 export interface SortableDragHandleProps {
   attributes: Omit<DraggableAttributes, 'aria-describedby'>
   listeners: DraggableSyntheticListeners
@@ -76,11 +65,8 @@ export interface SortableRowChrome {
 }
 
 /**
- * The per-row `useSortable` plumbing shared by every admin sortable list.
- * Row contents and container styling stay at the call site; the dragging
- * visual is up to the list via `isDragging`. Destructure the result —
- * member access trips the react-compiler ref heuristic (`row.setNodeRef`
- * reads as a ref access during render).
+ * Per-row `useSortable` plumbing shared by every admin sortable list.
+ * Destructure the result — member access trips the react-compiler ref heuristic.
  */
 export function useSortableRow(options: {
   id: UniqueIdentifier
@@ -114,11 +100,7 @@ export function SortableDragHandle({ attributes, listeners }: SortableDragHandle
   )
 }
 
-/**
- * `useSortable` augments the draggable's `.data` with a `sortable.index`
- * field at runtime. Read it without narrowing the whole object — a caller
- * resolving a drop target only needs the number.
- */
+/** `useSortable` augments draggable `.data` with `sortable.index` at runtime — read it without narrowing the whole object. */
 export function sortableIndexOf(value: object): number | undefined {
   const maybe = value as { sortable?: { index?: unknown } } | Record<string, never>
   const index = maybe.sortable?.index

@@ -11,11 +11,8 @@ import { scheduleJob, type ScheduledJob } from '@/server/infra/scheduler-utils'
 
 const log = getLogger('content.scheduled-publish')
 
-// The post/page live-gate modules bind these same structs for outside
-// callers; this module sits INSIDE the content domain (posts and pages
-// both depend on it), so importing either binding would close a
-// content ↔ entity import cycle. Binding the shared base directly here
-// keeps a single gate implementation — see content/schemas/live-gate.ts.
+// Importing either entity's live-gate binding here would close a
+// content ↔ entity import cycle — bind the shared base instead.
 const postLiveColumns = {
   deletedAt: postMetaTable.deletedAt,
   published: postMetaTable.published,
@@ -30,11 +27,8 @@ const pageLiveColumns = {
   publishedAt: pageMetaTable.publishedAt,
 } satisfies LiveContentColumns
 
-// The db getter is injected by the composition root
-// (`@/server/bootstrap/db-lifecycle`, which imports this module) at wire
-// time — same injection discipline as `wireBackupScheduler`: the getter
-// is invoked when the job evaluates, so a recreated handle (restore
-// completion) is picked up without being captured in module state.
+// Wired by the composition root; the getter is invoked at evaluate time,
+// so a recreated handle (restore completion) is picked up.
 let resolveDb: (() => Database) | null = null
 let job: ScheduledJob | null = null
 
@@ -43,10 +37,8 @@ export function wireScheduledPublishScheduler(deps: { getDb: () => Database }): 
 }
 
 /**
- * The earliest future `publishedAt` among promoted (published, revision
- * attached, not soft-deleted) posts AND pages — the next moment the
- * public surface changes on its own. Pages share the scheduling
- * semantics through the same live gate, so both tables feed the timer.
+ * The earliest future `publishedAt` among promoted posts AND pages —
+ * the next moment the public surface changes on its own.
  */
 // Sync (node:sqlite): the scheduleJob seam's nextDelayMs is sync.
 function findNextScheduledPublishAt(db: Database): Date | null {
@@ -74,15 +66,12 @@ function findNextScheduledPublishAt(db: Database): Date | null {
 
 function nextScheduledPublishDelayMs(): number | null {
   if (!resolveDb) {
-    // Suspended until the composition root wires the db getter — the seam
-    // re-evaluates periodically, so wiring late still takes effect.
+    // Suspended until wired; the seam re-evaluates, so late wiring still takes effect.
     return null
   }
   const next = findNextScheduledPublishAt(resolveDb())
   if (next === null) {
-    // Nothing scheduled: suspend. The seam keeps re-evaluating and every
-    // content write path nudges `rescheduleScheduledPublish`, so a newly
-    // scheduled row arms the timer promptly.
+    // Nothing scheduled: suspend — every content write nudges `rescheduleScheduledPublish`.
     return null
   }
   // Clamped at 0: the row went due between arming and firing — run now.
@@ -95,13 +84,8 @@ function runScheduledPublish(): void {
     throw new Error('scheduled-publish job fired before wireScheduledPublishScheduler')
   }
   const db = resolveDb()
-  // The timer fired at the next scheduled row's `publishedAt` — that row
-  // is live as of now. Both entities invalidate: the two events are
-  // idempotent and the post event is a near-superset (only the page-only
-  // case makes the second call meaningful). No search reindex here: the
-  // corpus already contains scheduled posts (indexed at publish time,
-  // gated at query time — see posts/services/search-reindex), so the
-  // `searchResult` counter bump inside invalidateContent IS the reindex.
+  // The row is live as of now; invalidate both entities (idempotent).
+  // No extra search reindex — the `searchResult` bump covers it.
   invalidateContent(db, { entity: 'post' })
   invalidateContent(db, { entity: 'page' })
   log.info('Scheduled publish reached; public caches invalidated')
@@ -117,12 +101,8 @@ export function scheduleNextScheduledPublish(): void {
 }
 
 /**
- * Nudge from the content write paths — anywhere `publishedAt` or the
- * promoted set can change (publish, meta update, unpublish, delete,
- * restore). Create is the one mutation that doesn't call this: a fresh
- * row is always `published: false`, so it can never be the next
- * scheduled one. No-op until the composition root starts the job, so
- * entity mutations in unit tests never arm a real timer.
+ * Nudge from every content write path that can move the next scheduled
+ * row. No-op until the composition root starts the job.
  */
 export function rescheduleScheduledPublish(): void {
   job?.reschedule()

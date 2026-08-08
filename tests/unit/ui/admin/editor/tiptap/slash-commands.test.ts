@@ -2,11 +2,10 @@ import { describe, expect, it } from 'vitest'
 
 import { filterSlashCommands, SLASH_COMMANDS } from '@/ui/admin/editor/tiptap/slash-commands'
 
-// Slash command catalogue sanity tests. The catalogue is the
-// authoritative source of truth for what the `/` menu shows; this
-// suite locks down its contract so a refactor that drops a command
-// or breaks the alias-matching collapses here instead of silently
-// going to production.
+// The catalogue is the authoritative source of truth for what the `/`
+// menu shows; this suite locks down its contract so a refactor that
+// drops a command or breaks the alias-matching collapses here instead
+// of silently going to production.
 
 describe('slash-commands', () => {
   it('exposes a stable catalogue with unique ids', () => {

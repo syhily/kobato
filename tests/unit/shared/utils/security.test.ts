@@ -2,14 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { makeToken } from '@/shared/utils/security'
 
-// `makeToken` underpins like-tokens (64 chars) and CSRF tokens. The contract
-// we depend on at call sites:
-//   1. Output is exactly the requested length.
-//   2. Output uses only the base64url alphabet (urlsafe, no padding) so it can
-//      be safely embedded in URL paths and form fields without encoding.
-//   3. Output is unpredictable — different invocations must not collide in
-//      practice. Each char carries ~6 bits of entropy, so a 64-char token has
-//      ~384 bits.
+// makeToken feeds like-tokens and CSRF tokens; the base64url alphabet keeps tokens URL-embeddable.
 
 const BASE64URL_RE = /^[A-Za-z0-9_-]+$/
 

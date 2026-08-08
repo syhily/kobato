@@ -4,10 +4,9 @@ import { synchronizeFootnoteIndices } from '@/shared/pt/footnote-sync'
 import { generateBlockKey } from '@/shared/pt/utils'
 
 /**
- * The one inline/footnote partition: `prose` renders in place, footnote
- * `definitions` render as a trailing section. Both render adapters (feed
- * HTML, React tree) consume this — the section markup itself stays
- * per-adapter, the partition does not.
+ * The one inline/footnote partition: `prose` renders in place,
+ * `definitions` as a trailing section — shared by both render adapters;
+ * the section markup itself stays per-adapter.
  */
 export function partitionFootnoteDefinitions(body: PortableTextBody): {
   prose: PortableTextBody

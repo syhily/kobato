@@ -1,8 +1,6 @@
-// Payload assembly for the admin user-edit form. Optional profile fields
-// (link / badge) are only sent when non-empty so the server keeps the stored
-// value; `badgeTextColor` is sent as `null` unless the text-color override is
-// on, making the server fall back to the automatic contrast color.
-
+// Payload assembly for the admin user-edit form: optional profile fields are
+// sent only when non-empty (server keeps the stored value); `badgeTextColor`
+// is `null` unless the text-color override is on, falling back to auto contrast.
 export interface UserEditFields {
   name: string
   email: string

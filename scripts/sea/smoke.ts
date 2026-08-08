@@ -1,20 +1,7 @@
 // Deep end-to-end smoke for the built SEA binary.
-//
-// Managed mode (default): verify dist-sea/kobato end to end — CLI flags,
-// native-package extraction, worker pool, and a full server lifecycle
-// against per-run temp files (SQLite content DB + DuckDB analytics
-// sidecar under one mkdtemp root — no external services): boot,
-// migrations, install gate, SSR, embedded assets, seeded admin + settings,
-// graceful restart, installed SSR, canvas calendar, DuckDB analytics
-// round-trip, natives-cache reuse, SIGTERM shutdowns.
-//
-// External mode (`--external <baseUrl>`): HTTP assertions only against an
-// already-running server — no binary checks, no seeding.
-//
-// Binary-only mode (`--binary-only <binary>`): service-free checks only
-// (--version, --smoke-natives, --smoke-worker).
-//
-// Instance lifecycle is shared with e2e via scripts/sea/instance.ts.
+// Managed mode (default): full lifecycle against per-run temp files (no
+// external services). `--external` runs HTTP assertions only; `--binary-only`
+// runs the service-free checks. Instance lifecycle shared with e2e via instance.ts.
 
 import { spawnSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
@@ -59,10 +46,7 @@ const results: CheckResult[] = []
 let serverLogPath: string | null = null
 
 /**
- * Initializer for variables assigned only inside `check` closures. Starting
- * from a function call (not the `null` literal) keeps the declared union —
- * TS otherwise narrows the variable to `null` at every later read, because
- * closure assignments are invisible to its flow analysis.
+ * Initializer for variables assigned only inside closures — keeps the declared union.
  */
 function none<T>(): T | null {
   return null
@@ -88,13 +72,9 @@ function tailLines(text: string, count: number) {
 }
 
 /**
- * Assert the payload stays within the compression budget. `--build-sea`
- * builds the blob into the binary internally, so the binary size is
- * budgeted (node26 base ~148 MB + compressed payload ~25 MB). The binary
- * under test is the one passed to the smoke — CI renames it to
- * `kobato-<target>` before running `--binary-only`, so the default
- * `dist-sea/kobato` path cannot be assumed. Runs in managed and
- * binary-only mode (external mode tests someone else's server).
+ * Assert the payload stays within the compression budget. The binary under
+ * test is the one passed in — CI renames it before `--binary-only`.
+ * Runs in managed and binary-only mode.
  */
 async function checkBinarySize(binaryPath: string) {
   const binary = await stat(binaryPath).catch(() => null)
@@ -125,15 +105,9 @@ function checkVersion(binaryPath: string) {
 }
 
 /**
- * The extraction dir is FLAT and holds exactly the native dynamic
- * libraries: sharp.node + skia.node + duckdb.node + the libvips files
- * (one on darwin/linux, two DLLs on win32) + the libduckdb library
- * (libduckdb.dylib/.so; duckdb.dll on win32) + skia's ICU datafile
- * (icudtl.dat — win32 only; the Windows skia builds probe for it next to
- * the loaded module and crash fatally without it) — no node_modules
- * tree, no package files. The materialized bundles (server.mjs,
- * smoke-worker.mjs) share the dir by design and are excluded from the
- * count. Assert the layout right after `--smoke-natives` populated it.
+ * The extraction dir is FLAT and holds exactly the native dynamic libraries
+ * — no node_modules tree, no package files. The materialized bundles
+ * (server.mjs, smoke-worker.mjs) share the dir by design and are excluded.
  */
 const NATIVES_FILE_COUNT = process.platform === 'win32' ? 7 : 5
 
@@ -200,12 +174,9 @@ function checkNatives(binaryPath: string, cacheDir: string) {
 }
 
 /**
- * `--smoke-worker` validates the full server config at import time (the pool
- * graph pulls in `@/server/infra/config`) but never connects to anything, so
- * the same env the server boot gets is passed here. The `--config` points
- * at the temp cache dir — without it env loading would auto-create
- * `kobato.config.json` next to the binary and persist the throwaway
- * database path and smoke secrets into it.
+ * `--smoke-worker` validates the full server config at import time but never
+ * connects. `--config` points into the temp cache dir so env loading never
+ * persists a config next to the binary.
  */
 function checkWorker(binaryPath: string, env: Record<string, string>) {
   const expected = `SEA worker smoke passed: ${process.platform}-${process.arch}`
@@ -231,9 +202,7 @@ function checkWorker(binaryPath: string, env: Record<string, string>) {
   return expected
 }
 
-// A bcrypt-format placeholder (the same dummy hash the auth layer uses for
-// timing equalization) — the smoke never logs in; the install gate only
-// counts the row.
+// Bcrypt placeholder (never logged in; the install gate only counts the row).
 const SEED_ADMIN_PASSWORD = '$2b$12$EIX9MbHN0xG0yKqfNR4XPezHbhVzQzMn/37uD.LR8VgNTbQjD/II.'
 const SEED_ADMIN_EMAIL = 'smoke-admin@kobato.local'
 
@@ -245,10 +214,7 @@ async function checkShutdown(server: SmokeServer) {
   if (outcome.timeout) {
     throw new Error(`still running ${SHUTDOWN_TIMEOUT_MS / 1000}s after SIGTERM (sent SIGKILL)`)
   }
-  // Windows delivers no SIGTERM — Node's kill maps to TerminateProcess,
-  // so a non-zero forceful exit IS the expected outcome there (graceful
-  // shutdown on win32 relies on console Ctrl+C, undeliverable to a
-  // spawned child). The check still proves the process exits promptly.
+  // Windows delivers no SIGTERM — TerminateProcess is the expected outcome there.
   if (process.platform === 'win32') {
     return `terminated after ${elapsed}s (win32: SIGTERM maps to TerminateProcess)`
   }
@@ -262,12 +228,8 @@ async function checkShutdown(server: SmokeServer) {
 }
 
 /**
- * The server's bootstrap logs `SEA natives ready` with per-file counts;
- * a warm cache (populated by the --smoke-natives check) means every
- * native library is reused. Read after the log stream closed so no
- * buffered writes are missed. Lines are parsed as JSON and matched on
- * the `msg` field — never on key order or substrings, so a logger
- * refactor can't false-fail the smoke.
+ * Assert the warm natives cache was reused. Lines are parsed as JSON and
+ * matched on the `msg` field only, so a logger refactor can't false-fail.
  */
 async function checkNativesReuse() {
   const expectedCount = NATIVES_FILE_COUNT
@@ -306,7 +268,6 @@ async function checkNativesReuse() {
   return `extracted=${extracted} reused=${reused}`
 }
 
-/** Fetch an SSR page and assert it is a 200 text/html document with markup. */
 async function fetchSsrPage(baseUrl: string, path: string) {
   const res = await fetchManual(`${baseUrl}${path}`)
   const body = await res.text()
@@ -328,9 +289,8 @@ function calendarPath() {
 }
 
 /**
- * Assert a calendar response is a direct 200 (redirect: 'manual' — any
- * redirect shows up as a 3xx here), carries a real PNG (magic bytes), and
- * is large enough that @napi-rs/canvas actually rendered something.
+ * Assert a calendar response is a direct 200 with a real PNG large enough
+ * that @napi-rs/canvas actually rendered something.
  */
 async function assertCalendarPng(res: Response) {
   const contentType = res.headers.get('content-type') ?? ''
@@ -352,9 +312,8 @@ async function assertCalendarPng(res: Response) {
 }
 
 /**
- * HTTP assertions shared by managed and external mode. `healthResponse`
- * is the response the boot poll already obtained in managed mode; pass
- * null to fetch /health directly (external mode).
+ * HTTP assertions shared by managed and external mode; pass the boot-poll
+ * response or null to fetch /health directly (external mode).
  */
 async function runHttpChecks(baseUrl: string, healthResponse: Response | null) {
   let ssrPath: string | null = null
@@ -409,10 +368,8 @@ async function runHttpChecks(baseUrl: string, healthResponse: Response | null) {
 }
 
 /**
- * The @napi-rs/canvas calendar endpoint over HTTP. Managed mode requires
- * a rendered PNG; external mode tolerates an uninstalled instance (the
- * handler cannot render without a settings snapshot and answers with a
- * redirect or a 500) and reports SKIP instead of failing.
+ * The @napi-rs/canvas calendar endpoint over HTTP. External mode tolerates
+ * an uninstalled instance (redirect/500) and reports SKIP instead of failing.
  */
 async function checkCalendar(baseUrl: string, { optional }: { optional: boolean }) {
   await check(`GET ${calendarPath()} — canvas render over HTTP`, async () => {
@@ -470,8 +427,7 @@ async function runManaged(binaryPath: string) {
         const bootedServer = server
         await runHttpChecks(`http://127.0.0.1:${bootedServer.port}`, bootedServer.healthResponse)
         await check('SIGTERM clean shutdown', () => checkShutdown(bootedServer))
-        // Natives-ready is logged before the listener starts, but wait for
-        // the stream flush anyway — buffered writes outlive the process.
+        // Wait for the stream flush — buffered writes outlive the process.
         await Promise.race([bootedServer.logClosed, sleep(2_000)])
         await check('natives cache reused by the server', () => checkNativesReuse())
         await check('config file converged (env written back)', async () => {
@@ -483,25 +439,16 @@ async function runManaged(binaryPath: string) {
         })
       }
 
-      // ── Seeded phase: flip the instance to "installed" and reboot ──
-      //
-      // The install gate itself evaluates `hasAdmin()` per request (the
-      // production React build's `cache()` is a pass-through), but the
-      // settings snapshot is only (re)loaded at boot and the seeded
-      // `blog.*` rows are invisible until then — so the server is
-      // gracefully restarted. The restart doubles as a second
-      // natives-cache reuse exercise.
+      // The settings snapshot only loads at boot — restart so the seeded
+      // rows are visible (doubles as a second natives-cache reuse exercise).
       const seeded =
         booted &&
         (await check('seed admin + core settings (SQL)', () =>
           seedInstalledInstance(databases.database, { email: SEED_ADMIN_EMAIL, passwordHash: SEED_ADMIN_PASSWORD }),
         ))
       if (seeded) {
-        // The restart runs with a REDUCED env on purpose: database/
-        // secrets/paths all come from the config file the first boot
-        // converged (env overrides were written back) — this is the
-        // file-only boot proof for the new configuration model. Only
-        // process-level vars (cache dir, NODE_ENV) stay in the env.
+        // Reduced env on purpose: database/secrets come from the converged
+        // config file — the file-only boot proof.
         const fileOnlyEnv = {
           KOBATO_CACHE_DIR: dirs.cache,
           NODE_ENV: 'production',
@@ -529,10 +476,8 @@ async function runManaged(binaryPath: string) {
             return `200 text/html, ${body.length} bytes`
           })
           await checkCalendar(baseUrl, { optional: false })
-          // Page views for the DuckDB round-trip: the tracker drops
-          // bot-classified UAs by default, so fetch with a real browser
-          // UA. The graceful shutdown below flushes the access-log
-          // batcher before the analytics handle checkpoints + closes.
+          // The tracker drops bot UAs — fetch with a browser UA; the
+          // shutdown below flushes the access-log batcher.
           const BROWSER_UA =
             'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'
           const PAGE_VIEWS = 3
@@ -547,11 +492,8 @@ async function runManaged(binaryPath: string) {
                 throw new Error(`page view ${i + 1}: expected 200, got ${res.status}`)
               }
             }
-            // Wait out the batcher's 1s flush interval so the rows are
-            // committed BEFORE the shutdown: on win32 the kill below maps
-            // to TerminateProcess (no shutdown hooks, no flush), and even
-            // on POSIX a fast SSR would race the interval. 1.5s of slack
-            // makes the round-trip deterministic on every platform.
+            // Wait out the batcher's 1s flush interval: on win32 the kill
+            // below is TerminateProcess (no shutdown hooks, no flush).
             await sleep(1_500)
             return `${PAGE_VIEWS} GET / with a browser UA`
           })
@@ -580,11 +522,8 @@ async function runManaged(binaryPath: string) {
 }
 
 /**
- * Binary-only mode: the service-free checks (CLI flags, natives extraction
- * and loading, the sharp worker pool). `--smoke-worker` validates the full
- * server config at import time but never connects, so temp paths satisfy
- * it. Returns a cleanup callback for the temp dirs (natives cache
- * included).
+ * Binary-only mode: the service-free checks (CLI flags, natives extraction,
+ * the sharp worker pool). Returns a cleanup callback for the temp dirs.
  */
 async function runBinaryOnly(binaryPath: string) {
   await ensureBinaryExists(binaryPath)

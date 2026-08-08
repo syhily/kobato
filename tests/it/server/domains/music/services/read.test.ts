@@ -1,12 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
-// music/services/read.ts — the row→meta mapping is the single owner of music
-// URL building. These tests pin the default-cover semantics against REAL
-// music rows: an unbuildable cover falls back to the bundled default vinyl
-// image (the track stays playable), while an unbuildable audio URL drops
-// the entry entirely. The public-URL seam stays mocked (storage backends
-// are a true external); the database is real.
+// music/services/read against the real DB; only mock: the public-URL seam (storage is a true external).
 import { music } from '@/server/infra/db/schema/media'
 
 const publicUrlMock = vi.hoisted(() => ({

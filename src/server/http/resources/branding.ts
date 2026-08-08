@@ -9,9 +9,7 @@ import { isRecord } from '@/shared/utils/type-guards'
 
 const log = getLogger('branding.http')
 
-// Both endpoints live under `/api/admin/branding/*` and require the
-// admin role. Binaries can be ~600 KB and SVGs ~200 KB, so a 2 MiB
-// ceiling covers every slot with margin.
+// Admin-only `/api/admin/branding/*`; 2 MiB ceiling covers every slot's binaries with margin.
 export const brandingRouter = adminUploadRoute({
   path: '/api/admin/branding/upload',
   maxSize: 2 * 1024 * 1024,

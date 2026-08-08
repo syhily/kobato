@@ -29,21 +29,9 @@ export interface PutStreamInput {
 }
 
 /**
- * Pluggable storage backend. Two implementations exist: S3
- * (`backends/s3.ts`) and local (under `DATA_PATH/storage/`). Domain
- * dispatchers never import a backend directly — they go through the
- * registry: resolve one via `activeBackend()` (writes) or
- * `backendFor(driver)` (reads/deletes/migration), or iterate every
- * registered backend via `allBackends()` (the backup reconcile).
- *
- * URL resolution is intentionally NOT on this interface: the public URL
- * depends on the driver + the configured base URLs, which the registry
- * and `public-url.ts` handle centrally.
- *
- * Error contract: a read of an absent object (`get` / `getStream`) rejects
- * with `StorageObjectNotFound` — never a backend-specific error — so callers
- * `instanceof`-check instead of substring-matching messages. Deletes are
- * idempotent and stay silent on a missing object.
+ * Pluggable storage backend: S3 (`backends/s3.ts`) or local (`DATA_PATH/storage/`).
+ * Dispatchers resolve one through the registry, never importing a backend directly.
+ * Absent-object reads reject with `StorageObjectNotFound`; deletes are idempotent.
  */
 export interface StorageBackend {
   readonly driver: StorageDriver
@@ -65,11 +53,8 @@ export interface StorageBackend {
 }
 
 /**
- * The seam's typed not-found. Both adapters throw exactly this when an
- * object is absent (local: ENOENT / a directory key; S3: `NoSuchKey` /
- * `NotFound` / a bare 404, or an empty `GetObject` body). It extends
- * `ActionFailure(404)` so a miss that escapes a caller still maps to a 404
- * at the HTTP perimeter — the contract the local adapter always had.
+ * The seam's typed not-found, thrown by both adapters when an object is absent.
+ * Extends `ActionFailure(404)` so an escaped miss still maps to a 404.
  */
 export class StorageObjectNotFound extends ActionFailure {
   constructor(readonly key: string) {

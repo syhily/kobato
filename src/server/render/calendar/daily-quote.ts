@@ -8,21 +8,10 @@ import { LOCAL_QUOTES } from '@/server/render/calendar/local-quotes'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { isRecord } from '@/shared/utils/type-guards'
 
-// Daily-quote sources for the calendar image. The source is configured in
-// the `sidebar` settings section (`dailyQuote.source`):
-//
-//   shanbay (default) / one / hitokoto — one remote call; any failure
-//     (network, HTTP error, SSRF guard, bad payload) falls back to the
-//     built-in bank — the endpoint never 500s on a quote outage.
-//   custom — the admin-uploaded bank (≥ 10 entries); below that it
-//     silently behaves like `local`.
-//   local  — the built-in bank, no remote call at all.
-//
-// Known degradations of the remote providers:
-//   - ONE (`v3.wufazhuce.com`) has no date parameter — it only serves
-//     "today", so historical calendar dates also render today's entry.
-//   - hitokoto returns a random quote per call; the rendered PNG cache
-//     freezes whichever quote was drawn until the cache TTL expires.
+// Daily-quote sources (sidebar `dailyQuote.source`): shanbay/one/hitokoto
+// remote with built-in fallback on any failure; custom (≥10 entries, else
+// `local`); local built-in bank. ONE serves only "today"; hitokoto is
+// random per call (the PNG cache freezes whichever quote was drawn).
 
 const log = getLogger('calendar')
 
@@ -33,10 +22,8 @@ export interface DailyQuote {
   author: string
 }
 
-// FNV-1a over the ISO date, modulo the bank length. Deterministic per
-// date — a re-render after the PNG cache expires still shows the same
-// quote — and, unlike day-of-year modulo, every entry of a bank larger
-// than 366 stays reachable across years.
+// FNV-1a over the ISO date: deterministic per date, and every bank entry
+// stays reachable (unlike day-of-year modulo for banks > 366).
 export function pickForDate(bank: readonly DailyQuote[], date: Date): DailyQuote {
   const key = format(date, 'yyyy-MM-dd')
   let hash = 0x811c9dc5
@@ -50,8 +37,6 @@ export function pickForDate(bank: readonly DailyQuote[], date: Date): DailyQuote
 function parseJson(body: ArrayBuffer): unknown {
   return JSON.parse(new TextDecoder().decode(body))
 }
-
-// --- 扇贝 (shanbay) ---
 
 function isShanbayPayload(value: unknown): value is { translation: string; author: string } {
   if (!isRecord(value)) {
@@ -72,8 +57,6 @@ async function fetchShanbay(date: Date): Promise<DailyQuote> {
   }
   return { content: parsed.translation, author: parsed.author }
 }
-
-// --- ONE 一个 ---
 
 function isOnePayload(
   value: unknown,
@@ -97,8 +80,6 @@ async function fetchOne(): Promise<DailyQuote> {
   const first = parsed.data.content_list[0]
   return { content: first.forward, author: typeof first.words_info === 'string' ? first.words_info : '' }
 }
-
-// --- 一言 (hitokoto) ---
 
 function isHitokotoPayload(value: unknown): value is { hitokoto: string; from?: unknown } {
   return isRecord(value) && typeof value.hitokoto === 'string'

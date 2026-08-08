@@ -1,13 +1,6 @@
 // Self-update pipeline: stage → download → verify → extract → verify →
-// chmod → backup → swap, with best-effort restore and manual post-restart
-// rollback via the `<binary>.bak` sibling.
-//
-// The release asset is a `kobato-linux-<arch>.tar.gz` (built by sea.yml)
-// containing the bare binary. Two sidecars authenticate it end to end:
-// `<asset>.tar.gz.sha256` hashes the archive (checked before extraction)
-// and `<asset>.sha256` hashes the raw binary (checked on the EXTRACTED
-// file) — so an extraction defect can never swap in a corrupt executable
-// that a valid archive hash would otherwise wave through.
+// chmod → backup → swap, with best-effort restore and `.bak` rollback.
+// Sidecars: archive hash checked pre-extraction, binary hash post-extraction.
 
 import type { ReadableStream as WebReadableStream } from 'node:stream/web'
 
@@ -78,9 +71,7 @@ async function sha256File(path: string): Promise<string> {
   return hash.digest('hex')
 }
 
-// Extracts the first regular-file entry from a `.tar.gz` archive. The CI
-// archive holds exactly one entry (the bare binary), so no entry-name
-// filtering is needed; directories and metadata entries are skipped.
+// Extracts the first regular-file entry (the CI archive holds exactly one).
 async function extractBinaryFromTarGz(archivePath: string, destPath: string): Promise<void> {
   const tarPath = `${archivePath}.tar`
   await pipeline(createReadStream(archivePath), createGunzip(), createWriteStream(tarPath))
@@ -113,10 +104,8 @@ async function extractBinaryFromTarGz(archivePath: string, destPath: string): Pr
   }
 }
 
-// The `.sha256` sidecars are produced by `sha256sum` in `sea.yml` — one
-// over the `.tar.gz` archive, one over the raw binary — both in the
-// `<hash>  <name>` format. If the workflow changes the format, this
-// parser must change in lockstep.
+// Sidecars come from `sha256sum` in sea.yml as `<hash>  <name>`; if the
+// workflow changes the format, this parser must change in lockstep.
 export function parseSha256Sidecar(text: string): string {
   const hash = text.trim().split(/\s+/)[0] ?? ''
   if (!/^[0-9a-f]{64}$/i.test(hash)) {
@@ -134,7 +123,6 @@ export async function runSelfUpdate({ tagName, execPath = process.execPath, onSt
   const assetBaseUrl = `${APP_REPOSITORY}/releases/download/${tagName}`
   const assetUrl = `${assetBaseUrl}/${assetName()}`
 
-  // Clean any stale stage dir from an interrupted run, then re-create.
   await rm(stageDir, { recursive: true, force: true })
   await mkdir(stageDir, { recursive: true })
 
@@ -163,9 +151,7 @@ export async function runSelfUpdate({ tagName, execPath = process.execPath, onSt
     } catch (err) {
       throw new Error('更新包解压失败，已中止', { cause: err })
     }
-    // The archive hash authenticates the container, not its contents —
-    // only this second check proves the bytes about to be exec'd are the
-    // bytes CI produced.
+    // The archive hash covers only the container; this check authenticates the extracted bytes.
     const actualBinary = await sha256File(stagedPath)
     if (actualBinary !== expectedBinary) {
       throw new Error('更新包内容校验失败，已中止')
@@ -178,8 +164,7 @@ export async function runSelfUpdate({ tagName, execPath = process.execPath, onSt
     await rename(stagedPath, execPath)
   } catch (err) {
     if (backedUp) {
-      // Best-effort restore while the pipeline is still running; a failed
-      // restore leaves the `.bak` sibling for manual recovery.
+      // Best-effort restore; a failure leaves the `.bak` for manual recovery.
       await rename(backupPath, execPath).catch(() => undefined)
     }
     throw err

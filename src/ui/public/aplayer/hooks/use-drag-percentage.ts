@@ -2,9 +2,8 @@ import type { MouseEvent as ReactMouseEvent, RefObject } from 'react'
 
 import { useCallback, useRef, useState } from 'react'
 
-/** Bar geometry: maps a pointer position to a clamped 0..1 percentage.
- *  The progress bar declares the X-axis variant, the volume bar the
- *  Y-axis one (see `aplayer/utils/compute-percentage`). */
+/** Bar geometry: pointer position → clamped 0..1; progress bar uses the X-axis
+ *  variant, volume bar the Y-axis one. */
 export type DragPercentageGeometry = (
   event: Pick<MouseEvent, 'clientX' | 'clientY'>,
   ref: RefObject<HTMLDivElement | null>,
@@ -12,16 +11,14 @@ export type DragPercentageGeometry = (
 
 export interface UseDragPercentageOptions {
   compute: DragPercentageGeometry
-  /** Fires on mousedown and every mousemove, and once more with the
-   *  final percentage on mouseup (ahead of `onCommit`). */
+  /** Fires on mousedown, every mousemove, and once more with the final percentage on mouseup. */
   onChange: (percentage: number) => void
   /** Fires once on mouseup with the final percentage (seek semantics). */
   onCommit?: (percentage: number) => void
 }
 
-/** Shared drag machine for the aplayer bars: mousedown arms document-level
- *  mousemove/mouseup listeners behind an AbortController; mouseup aborts and settles.
- *  `isDraggingRef` mirrors `isDragging` for effects that must not re-subscribe. */
+/** Shared drag machine for the aplayer bars: document-level mousemove/mouseup behind
+ *  an AbortController. `isDraggingRef` mirrors `isDragging` for effects that must not re-subscribe. */
 export function useDragPercentage(
   ref: RefObject<HTMLDivElement | null>,
   { compute, onChange, onCommit }: UseDragPercentageOptions,

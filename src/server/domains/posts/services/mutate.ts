@@ -7,9 +7,8 @@ import { makeEntityMutations } from '@/server/domains/content/entities/mutate'
 import { postDescriptor } from '@/server/domains/posts/descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 
-// The five meta mutations come from the shared descriptor-driven skeleton
-// (`content/entities/mutate.ts`); everything post-specific (RBAC, tags,
-// category, search index) attaches through `postDescriptor`.
+// The five mutations come from the shared descriptor-driven skeleton;
+// everything post-specific attaches through `postDescriptor`.
 const mutations = makeEntityMutations(postDescriptor)
 
 export const createPost = mutations.create

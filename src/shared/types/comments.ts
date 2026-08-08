@@ -5,8 +5,7 @@ export interface LatestComment {
   permalink: string
 }
 
-// Welcome-dashboard moderation inbox filter. The row DTOs live in
-// `@/shared/contracts/comments`; this is the queue-switching union.
+// Welcome-dashboard moderation inbox queue-switching union; row DTOs live in `@/shared/contracts/comments`.
 export type AdminPendingKind = 'all' | 'approval' | 'deletion'
 
 import type { AdminCommentWire, AdminPendingDashboardDto, CommentItemWire } from '@/shared/contracts/comments'
@@ -17,30 +16,13 @@ export interface CommentAndUser {
   createAt: Date
   updatedAt: Date
   deleteAt: Date | null
-  /**
-   * Soft "delete-request" marker. The visitor clicked "申请删除" but the
-   * admin has not yet acted on it. When set, the comment is still
-   * visible (so the author can review their own pending action), but
-   * the public comment row gains a quiet warning banner and the inline
-   * edit affordance is hidden.
-   */
+  /** Soft "delete-request" marker: the comment stays visible until the admin acts. */
   deleteRequestedAt?: Date | string | null
-  /**
-   * Canonical PortableText body. Rendered by `<PortableTextBody>` on
-   * the public site. The DB also retains a markdown projection of this
-   * field under `comment.content`, but that's server-only.
-   */
+  /** Canonical PortableText body; the DB's markdown projection is server-only. */
   body: CommentBody
-  /**
-   * Plain-text / markdown rollback snapshot. Present on server-side
-   * `CommentAndUser` values, null on client-projected DTOs.
-   */
+  /** Plain-text / markdown rollback snapshot (server-side only; null on client DTOs). */
   content: string | null
-  /**
-   * Polymorphic entity reference. `'post' | 'page'` (no DB enum).
-   * `ownerId` is the stringified bigint. Both are nullable to
-   * accommodate orphan rows that have not yet been backfilled.
-   */
+  /** Polymorphic `'post' | 'page'` ref (no DB enum); null on not-yet-backfilled orphan rows. */
   type: 'post' | 'page' | null
   ownerId: number | null
   userId: number
@@ -65,11 +47,7 @@ export interface CommentAndUser {
 
 export interface CommentItem extends CommentAndUser {
   children?: CommentItem[]
-  /**
-   * Server-side thread-cap markers, set by `parseComments` only on a root
-   * whose reply thread exceeded the cap. Mirrored onto the wire DTO so the
-   * public client can later grow a "load more" affordance.
-   */
+  /** Thread-cap marker set by `parseComments` when a root's reply thread exceeded the cap. */
   childrenTruncated?: boolean
   childrenTotal?: number
 }
@@ -82,16 +60,10 @@ export interface Comments {
 
 export interface AdminComment extends CommentAndUser {
   pageTitle: string | null
-  /**
-   * The metric's `public_id` UUID for the page the comment belongs
-   * to. Drives the admin moderation filter Combobox.
-   */
+  /** The page's `public_id` UUID; drives the admin moderation filter Combobox. */
   pagePublicId: string | null
   pageCover: string | null
-  /**
-   * Fully-qualified public URL for the page this comment belongs to.
-   * Powers the per-row "查看文章" overflow-menu item.
-   */
+  /** Fully-qualified public URL of the page; powers the per-row 查看文章 overflow item. */
   pagePermalink: string | null
 }
 
@@ -99,11 +71,7 @@ export interface AdminCommentsResult {
   comments: AdminComment[]
   total: number
   hasMore: boolean
-  /**
-   * Per-status row counts under the current page/author filter context.
-   * Always populated so the moderation filter can render its badges in
-   * one round-trip.
-   */
+  /** Per-status row counts under the current filter. */
   statusCounts: { all: number; pending: number; approved: number; deleteRequested: number }
 }
 
@@ -169,12 +137,7 @@ export interface FilterAutocompleteInput {
   key?: string
 }
 
-// Output DTOs below intentionally use the **wire** comment types
-// (`CommentItemWire` / `AdminCommentWire` from `@/shared/contracts/comments`)
-// rather than the earlier `CommentItem` / `AdminComment` interfaces. The
-// wire shapes match what `JSON.stringify` actually emits: number ids
-// stringified, Date timestamps ISO-encoded. The earlier interfaces are
-// kept for the server-side query layer.
+// Output DTOs use the wire comment types — ids stringified, timestamps ISO.
 
 export interface ReplyCommentOutput {
   comment: CommentItemWire
@@ -195,10 +158,7 @@ export interface CommentRawOutput {
 
 export interface MyCommentsOutput {
   comments: CommentItemWire[]
-  /**
-   * Map from comment id string to token expiration timestamp (ms).
-   * The UI uses this to show "editable for X more minutes" hints.
-   */
+  /** Map from comment id to token expiry (ms); the UI renders "editable for X more minutes" from it. */
   expiresAt: Record<string, number>
 }
 
@@ -220,12 +180,7 @@ export interface LoadAllOutput {
   comments: AdminCommentWire[]
   total: number
   hasMore: boolean
-  /**
-   * Counts for each status filter under the SAME page/user filter
-   * context. The currently-selected tab's count equals `total`, but we
-   * ship all four so the unselected tabs can still render their badges
-   * without an extra round-trip.
-   */
+  /** Counts per status under the same filter context. */
   statusCounts: { all: number; pending: number; approved: number; deleteRequested: number }
 }
 
@@ -245,9 +200,5 @@ export interface ListPendingDashboardInput {
 
 export type ListPendingDashboardOutput = AdminPendingDashboardDto
 
-/**
- * Status filter for the visitor self-service `/admin/me/comments`
- * view. Lives in shared so the admin view can spell the same union
- * the loader parses without crossing the server-import boundary.
- */
+/** Status filter for the visitor self-service `/admin/me/comments` view. */
 export type MyCommentsStatus = 'all' | 'pending' | 'deleteRequested' | 'deleted'

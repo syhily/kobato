@@ -28,13 +28,7 @@ export interface PageBubbleMenuProps {
   editor: Editor
 }
 
-// Tiptap `isActive('mathInline')` uses `storedMarks || $from.marks()` on a
-// collapsed selection, which (a) hides math when a stored mark like bold is
-// pending and (b) can treat the cursor *after* an inclusive-false mark run as
-// still “in math” via `nodeBefore`-style resolution. For the BubbleMenu we
-// only swap in `MathInlinePanel` when the caret is actually inside the TeX
-// span or on its *leading* edge (nodeAfter carries the mark), not when the
-// operator has moved past the trailing edge to keep typing prose.
+// Show `MathInlinePanel` only when the caret is inside the math span or on its leading edge.
 function mathInlinePanelApplies(editor: Editor): boolean {
   const { state } = editor
   const markType = state.schema.marks.mathInline

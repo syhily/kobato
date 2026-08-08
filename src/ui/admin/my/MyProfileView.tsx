@@ -61,8 +61,7 @@ export function MyProfileView({ user, counts, passkeyEnabled, mailReady }: MyPro
     ...orpcQuery.account.updateProfile.mutationOptions(),
     onSuccess: () => {
       setProfileMessage('已保存。')
-      // Re-run the route loader so the avatar / stats card picks up
-      // any name change without a full reload.
+      // Re-run the route loader so avatar / stats pick up a name change without a reload.
       void revalidator.revalidate()
     },
   })
@@ -74,9 +73,7 @@ export function MyProfileView({ user, counts, passkeyEnabled, mailReady }: MyPro
   const [profileMessage, setProfileMessage] = useState<string | null>(null)
 
   const profileError = profileMutation.error?.message
-  // Only privileged roles (admin / author) can paint a custom badge
-  // next to their comments. Visitors keep the field hidden — the
-  // server-side updateProfile action enforces the same rule.
+  // Only privileged roles can paint a custom badge; the updateProfile action enforces the same rule.
   const canSetBadge = user.role === 'admin' || user.role === 'author'
   const initial = (user.name || user.email || '?').slice(0, 1).toUpperCase()
   const roleLabelText = user.role ? roleLabel(user.role) : '匿名'
@@ -169,9 +166,7 @@ export function MyProfileView({ user, counts, passkeyEnabled, mailReady }: MyPro
                 onSubmit={(e) => {
                   e.preventDefault()
                   setProfileMessage(null)
-                  // Empty link → null (Zod's z.url() rejects empty
-                  // strings; clearing the field must send the "no link"
-                  // sentinel rather than a blank string).
+                  // Empty link → null — z.url() rejects empty strings; clearing must send the "no link" sentinel.
                   const trimmedLink = link.trim()
                   const payload: Record<string, string | null> = {
                     name,

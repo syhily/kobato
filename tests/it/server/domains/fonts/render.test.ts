@@ -4,10 +4,7 @@ import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_hel
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { font } from '@/server/infra/db/schema/font'
 
-// `resolveAssetUrl` reads the CDN host + site origin off the real settings
-// snapshot, and `findFontsByIds` now runs against the real in-memory SQLite
-// (spied only so the "no slot reference ⇒ no DB read" case can assert the
-// short-circuit). `resolveSlotOrder` stays real.
+// Only findFontsByIds is spied (so the no-slot short-circuit is assertable); settings and the DB stay real.
 vi.mock('@/server/domains/fonts/services/read', { spy: true })
 
 const { findFontsByIds } = await import('@/server/domains/fonts/services/read')
@@ -16,9 +13,7 @@ const { resolveFontsForRender } = await import('@/server/domains/fonts/services/
 const db = getTestDb()
 
 const HASH = 'a'.repeat(64)
-// Deliberately NOT `fontCssKey(HASH)` — a cssKey pointing at a different
-// package proves render consumes the persisted column instead of
-// recomputing the `fonts/<hash>/result.css` layout from the row's hash.
+// NOT `fontCssKey(HASH)`: a mismatched cssKey proves render reads the persisted column.
 const CSS_KEY = `fonts/${'c'.repeat(64)}/result.css`
 // etagToTimestamp takes the first 8 hex chars: parseInt('deadbeef', 16).
 const ETAG = `deadbeef${'0'.repeat(56)}`
@@ -44,7 +39,7 @@ async function seedFont(overrides: Partial<typeof font.$inferInsert> = {}) {
   return rows[0]!
 }
 
-// Full FontsSettings shape; only the three slot lists matter to the resolver.
+// Only the three slot lists matter to the resolver.
 function settings(global: string[], post: string[] = [], code: string[] = []) {
   return { og: { family: '' }, calendar: { family: '' }, global, post, code }
 }

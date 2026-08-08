@@ -7,13 +7,8 @@ import type { DatabaseHandle } from '@/server/infra/db/database'
 import { closeDatabase, openDatabase } from '@/server/infra/db/database'
 
 // The `uq_webmention_pair` migration dedupes pre-existing rows BEFORE
-// creating the unique index, grouping by the `normalizeForMatch`
-// equality classes (fragment / default port / path trailing slashes
-// fold; scheme and query stay distinct) and keeping the MAX(id) row per
-// group. Exercised against a scratch database carrying the pre-migration
-// table shape — the shared test DB is already fully migrated, so the
-// cleanup branch can never run there.
-
+// creating the index: normalizeForMatch folds fragment / default port /
+// trailing slashes (scheme and query stay distinct), MAX(id) wins.
 const MIGRATION_SQL = readFileSync('drizzle/20260802111647_webmention_pair_unique/migration.sql', 'utf8')
 
 const OLD_TABLE_SQL = `
@@ -85,12 +80,9 @@ describe('migration / uq_webmention_pair — pre-index dedupe', () => {
     applyMigration(handle)
 
     const rows = await surviving(handle)
-    // The four https://sender.example/post variants (base + fragment +
-    // trailing slash + :443) collapse into one row; http, ?utm and the
-    // unrelated source survive as their own groups.
+    // The four variants collapse into one row; http, ?utm and the unrelated source stay separate.
     expect(rows.map((r) => r.title)).toEqual(['http-scheme-stays', 'port-folds', 'query-stays', 'unrelated'])
 
-    // The unique index now exists.
     const indexes = handle.db.all<{ name: string }>(
       sql`SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'webmention'`,
     )
@@ -98,13 +90,7 @@ describe('migration / uq_webmention_pair — pre-index dedupe', () => {
   })
 
   it('keeps the MAX(id) row even when an older id carries a later created_at (pinned approximation)', async () => {
-    // The plan says "keep the latest createdAt"; the migration keeps
-    // MAX(id) instead — ids autoincrement in insertion order and the app
-    // never backdates created_at, so the two orders coincide on every
-    // real row. This test pins the approximation DELIBERATELY: if the
-    // dedupe ever switches to created_at ordering, it must change too.
-    // (Separate scratch handle — the migration's CREATE INDEX is not
-    // re-runnable on the shared one.)
+    // Pins MAX(id) ≈ latest-createdAt: ids autoincrement in insertion order. Separate handle — CREATE INDEX is not re-runnable.
     const scratch = openDatabase(':memory:')
     try {
       scratch.db.run(sql.raw(OLD_TABLE_SQL))

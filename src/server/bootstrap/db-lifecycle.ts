@@ -41,11 +41,7 @@ import {
 import { wireDbMaintenanceScheduler } from '@/server/infra/db/maintenance'
 import { migrateDatabase } from '@/server/infra/db/migrate'
 import { invalidateMailTransportCache } from '@/server/infra/email/sender'
-// Load-bearing side-effect imports: each batcher module self-registers
-// on the infra batching seam (`@/server/infra/db/batcher-registry`) at
-// import time, so `initAllBatchers` / `flushAllBatchers` /
-// `resetAllBatchers` / `replayAllDeadLetters` below cover every batcher
-// with no per-domain calls.
+// Load-bearing: each batcher module self-registers on the registry at import time.
 import '@/server/domains/analytics/services/batcher'
 import '@/server/domains/analytics/services/pv-batcher'
 import '@/server/domains/audit/services/batcher'
@@ -59,13 +55,8 @@ import {
 import { root } from '@/server/infra/logger'
 import { isRecord } from '@/shared/utils/type-guards'
 
-// ─── HMR-safe resource creation ──────────────────────────
-// In dev, React Router re-evaluates server.ts on every HMR cycle.
-// import.meta.hot.data persists across those re-evaluations so the
-// handle and the migration flag survive without leaking connections
-// or re-running completed migrations. The handle slot is owned by the
-// ManagedEngine below ('handle'); this module owns only
-// 'migrationsRan'.
+// HMR re-evaluates server.ts per cycle; import.meta.hot.data persists.
+// The engine owns the 'handle' slot; this module owns only 'migrationsRan'.
 
 function migrationsRanInHmr(): boolean {
   const data: unknown = import.meta.hot?.data
@@ -112,40 +103,20 @@ async function initDatabase(): Promise<void> {
 
 await initDatabase()
 
-// The DuckDB sidecar opens alongside the content database (its own
-// shutdown hook at priority 0 runs after the batcher flushes at 100).
-// Dead-letter replay follows: batch files written by a crashed flush
-// are re-ingested once per boot through the registry (fire-and-forget
-// — each replay logs its own failures and keeps the file on error).
+// Fire-and-forget dead-letter replay: batch files from a crashed flush
+// are re-ingested once per boot (each replay logs its own failures).
 if (!isVitest()) {
   await initAnalyticsDatabase()
   void replayAllDeadLetters()
-  // Fire-and-forget (same as the dead-letter replay): drop staged-restore
-  // temp dirs a crash mid-restore orphaned — the in-chain cleanups can't
-  // run when the process dies. The sweep only touches `kobato-restore-*`
-  // directories and logs its own per-entry failures.
+  // Fire-and-forget: drop `kobato-restore-*` dirs orphaned by a crash mid-restore.
   void sweepStaleRestoreDirs()
 }
 
-// ─── Restore machine wiring ──────────────────────────────
-// The composition root wires the restore machine's engine specifics:
-// prepare (flush + close), reopen, and completion (recovery reopen
-// when the job failed, migrations + ANALYZE, then the restart).
-
-/**
- * The restore machine's completion chain, named so tests invoke it
- * directly instead of capturing a closure off the wire. Idempotent
- * reopen: the machine already reopened on the success path, so this
- * only reopens for recovery after a failed job. Only the archive job
- * is rescheduled here — the other periodic jobs survive the reopen
- * through their handle getters and need nothing.
- */
+/** The restore machine's completion chain (tests invoke it directly). Idempotent reopen; only the archive job is rescheduled. */
 export async function completeRestore(success: boolean, err?: Error): Promise<void> {
   if (!success) {
     root.error({ err: err?.message }, 'Restore failed, restarting server for recovery')
-    // Roll the pre-restore originals back BEFORE the recovery reopen —
-    // reopening the just-swapped (corrupt) payload again would leave the
-    // server wedged in `restarting` with the original file already gone.
+    // Roll back the originals before the recovery reopen.
     try {
       await rollbackPreRestoreFiles()
     } catch (rollbackErr) {
@@ -181,9 +152,7 @@ export async function completeRestore(success: boolean, err?: Error): Promise<vo
   }
 
   if (!recreated) {
-    // Never restart into a dead handle — the server stays down (phase
-    // 'restarting', install gate closed) rather than 500ing every
-    // request against the closed database.
+    // Never restart into a dead handle — stay down rather than 500 against a closed DB.
     root.error('Restore completion aborted: no live database handle; server not restarted')
     return
   }
@@ -192,8 +161,7 @@ export async function completeRestore(success: boolean, err?: Error): Promise<vo
     try {
       await migrateDatabase(getDb())
       root.info('Database migrations completed after restore')
-      // Restore is a bulk load — refresh planner statistics for the
-      // swapped-in file (plan §1.9).
+      // Bulk-loaded file — refresh planner statistics (plan §1.9).
       getDatabaseHandle().client.exec('ANALYZE')
     } catch (migrateErr) {
       root.error(
@@ -203,8 +171,7 @@ export async function completeRestore(success: boolean, err?: Error): Promise<vo
     }
     await restartServer()
     root.info('Restore completion finished, server back online')
-    // The chain finished on the new files — drop the pre-restore
-    // originals the swap kept for the failure path.
+    // Success path — drop the pre-restore originals the swap kept.
     if (success) {
       try {
         await cleanupPreRestoreFiles()
@@ -233,55 +200,33 @@ wireRestoreMachine({
   complete: completeRestore,
 })
 
-// Section-change side effects register here — the composition root —
-// so the settings registry module stays inert on import (no scheduler
-// or mail graphs leak into settings-UI consumers).
+// Composition root: section-change side effects register here, keeping the registry module inert.
 registerSectionChangeHandler('backup', rescheduleBackup)
 registerSectionChangeHandler('limits', rescheduleArchive)
 registerSectionChangeHandler('mail', invalidateMailTransportCache)
 registerSectionChangeHandler('analytics', rescheduleGeoipUpdate)
 
-// ─── Migration ───────────────────────────────────────────
-// Run migrations once per process (HMR-safe via the 'migrationsRan'
-// slot). Always on: vitest workers get an isolated `:memory:` database
-// per module graph, so every test file's global must migrate itself —
-// idempotent everywhere else.
+// Migrate once per process (HMR-safe via the 'migrationsRan' slot);
+// vitest's per-graph :memory: DBs must migrate themselves.
 
 if (!migrationsRanInHmr()) {
   await migrateDatabase(getDb())
   markMigrationsRanInHmr()
 }
 
-// The shutdown hook (priority 0, after the priority-100 batcher
-// flushes) lives inside the ManagedEngine.
+// The priority-0 shutdown hook (after the priority-100 batcher flushes) lives in the ManagedEngine.
 
-/**
- * Prepare the live database for a file swap (the restore flow's step
- * one): flush every batcher BEFORE the handle closes — buffered audit /
- * page-view rows must land in the pre-swap database, not dead-letter
- * against a closed handle — then reset and close.
- * `flushAllBatchers` isolates per-batcher failures internally, so one
- * stuck batcher never blocks the rest or the swap.
- */
+/** Flush every batcher BEFORE the handle closes (rows land in the pre-swap DB, not dead-letter), then reset and close. */
 export async function prepareDatabaseForRestore(): Promise<void> {
   await flushAllBatchers()
   resetAllBatchers()
   resetLikeTokenSweep()
   await engine.closeForSwap()
-  // The analytics sidecar swaps too (two-file backup archive): close it
-  // after the batcher flush so the buffered access events land first.
+  // Close the sidecar after the flush so buffered access events land first.
   await closeAnalyticsForRestore()
 }
 
-/**
- * Reopen BOTH databases on (possibly swapped) files — the analytics
- * sidecar reopens with the content database (closed by
- * prepareDatabaseForRestore; init is a no-op when already open).
- * Called by the restore orchestrator after the swap (so post-restore
- * validation runs against the NEW file) and by the completion handler
- * for recovery after a failed restore — the handle is only reopened
- * when closed.
- */
+/** Reopen BOTH databases on (possibly swapped) files; no-op when the content handle is already open. */
 export async function reopenDatabase(): Promise<DatabaseHandle> {
   const open = engine.peek()
   if (open !== null) {
@@ -292,7 +237,6 @@ export async function reopenDatabase(): Promise<DatabaseHandle> {
   return handle
 }
 
-/** `reopenDatabase` for consumers that only need the drizzle instance (the restore orchestrator's `reopenAfterSwap`). */
 export async function reopenDatabaseAndGetDb(): Promise<Database> {
   const handle = await reopenDatabase()
   return handle.db

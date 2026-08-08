@@ -19,11 +19,8 @@ import { session as sessionTable } from '@/server/infra/db/schema/session'
 import { user as userTable } from '@/server/infra/db/schema/user'
 import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 
-// The account controller against the real engine: seeded user/session/
-// credential rows, the real in-process rate limiter, the real settings-
-// driven passkey/mail gates, and the real audit batcher. The only stub
-// is `@simplewebauthn/server` — the WebAuthn attestation crypto is a
-// true external that cannot produce a genuine ceremony in tests.
+// The account controller against the real engine (rate limiter, settings gates, audit
+// batcher); only stub: `@simplewebauthn/server` — attestation crypto is a true external.
 const swaMocks = vi.hoisted(() => ({
   generateRegistrationOptions: vi.fn(),
   verifyRegistrationResponse: vi.fn(),
@@ -50,8 +47,6 @@ beforeEach(async () => {
 afterEach(() => {
   resetAllBatchers()
 })
-
-// ─── Settings bundles ─────────────────────────────────────
 
 const PASSKEY_ON: BlogSettingsBundle = {
   ...TEST_BLOG_SETTINGS_BUNDLE,
@@ -82,8 +77,6 @@ function withBucket(
     rateLimit: { ...base.rateLimit!, [bucket]: { windowSeconds: 60, maxAttempts } },
   }
 }
-
-// ─── Seeds ────────────────────────────────────────────────
 
 let ipCounter = 0
 function nextIp(): string {
@@ -185,7 +178,6 @@ function regResponse(overrides: Record<string, unknown> = {}) {
 }
 
 describe('account controller', () => {
-  // ─── updateProfile ─────────────────────────────────────
   describe('updateProfile', () => {
     it('returns the safe user projection on success and persists the patch', async () => {
       const id = await seedUser({ name: 'Before', receiveEmail: false })
@@ -204,7 +196,6 @@ describe('account controller', () => {
     })
   })
 
-  // ─── updatePassword ────────────────────────────────────
   describe('updatePassword', () => {
     it('changes the password, keeps the current session, and records an audit event', async () => {
       const id = await seedUser({ password: await bcrypt.hash('OldPass1234', 4) })
@@ -257,7 +248,6 @@ describe('account controller', () => {
     })
   })
 
-  // ─── revokeSession ─────────────────────────────────────
   describe('revokeSession', () => {
     it('returns success without an audit event when the target session meta is missing', async () => {
       const id = await seedUser()
@@ -303,7 +293,6 @@ describe('account controller', () => {
     })
   })
 
-  // ─── passkey list ──────────────────────────────────────
   describe('passkeyList', () => {
     it('throws BAD_REQUEST when passkeys are disabled', async () => {
       const id = await seedUser()
@@ -333,7 +322,6 @@ describe('account controller', () => {
     })
   })
 
-  // ─── passkey register begin ────────────────────────────
   describe('passkeyRegisterBegin', () => {
     it('throws BAD_REQUEST when passkeys are disabled', async () => {
       const id = await seedUser()
@@ -381,7 +369,6 @@ describe('account controller', () => {
     })
   })
 
-  // ─── passkey register finish ───────────────────────────
   describe('passkeyRegisterFinish', () => {
     const validFinish = {
       response: regResponse(),
@@ -401,8 +388,7 @@ describe('account controller', () => {
       const id = await seedUser()
       const ip = nextIp()
 
-      // The first attempt burns the budget and fails on the missing
-      // challenge; the second never gets past the limiter.
+      // First attempt burns the budget on the missing challenge; the second hits the limiter.
       await expect(
         call(accountRouter.passkeyRegisterFinish, validFinish, { context: ctxFor(id, { ip }) }),
       ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
@@ -460,7 +446,6 @@ describe('account controller', () => {
     })
   })
 
-  // ─── passkey delete ────────────────────────────────────
   describe('passkeyDelete', () => {
     it('throws NOT_FOUND when the credential does not exist', async () => {
       setBlogSettingsBundleForTests(PASSKEY_ON)
@@ -497,7 +482,6 @@ describe('account controller', () => {
     })
   })
 
-  // ─── set login method ──────────────────────────────────
   describe('setLoginMethod', () => {
     it('rejects choosing passkey with no credentials', async () => {
       setBlogSettingsBundleForTests(PASSKEY_ON)

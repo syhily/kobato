@@ -3,22 +3,10 @@ import { describe, expect, it } from 'vitest'
 import { renderToHtml } from '#/_helpers/render'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 
-// The `@/ui/components/select` wrapper is a thin pass-through over Base UI's
-// Select. Base UI's `<Select.Value>` renders the RAW `value` by default (see
-// the docs: "By default, the `<Select.Value>` component renders the raw
-// `value`"), so every call site must resolve a display label through one of
-// the two sanctioned mechanisms:
-//
-//   1. `items` on the root `<Select>` — Base UI then renders the selected
-//      item's label automatically (used by PostsView / ImagesFilterBar /
-//      UsersToolbar / AddMusicDialog / UserOperationsCard / BackupScheduleForm).
-//   2. a children function on `<SelectValue>` — the call site maps the raw
-//      value to its own label (AlignSelect / BlockStyle / CategoryField /
-//      settings forms).
-//
-// These tests pin the mechanism itself; a static contract test
-// (`tests/unit/contract/select-value-label.test.ts`) enforces that every
-// call site uses one of the two.
+// Base UI's `<Select.Value>` renders the RAW value by default, so call sites
+// must resolve a label via `items` on `<Select>` or a `<SelectValue>` child
+// function — these tests pin the mechanism (see the static contract test in
+// tests/unit/contract/select-value-label.test.ts).
 
 describe('Select value label resolution', () => {
   it('renders the selected item label when `items` is provided', () => {

@@ -44,10 +44,8 @@ export function pushSpan(out: Array<PmInlineNode | PmHardBreakNode>, span: Span,
   }
   const marks = (span.marks ?? []).map((markName) => spanMarkToPmMark(markName, markDefs))
   const pmMarks = marks.length > 0 ? marks : undefined
-  // A `\n` inside span text IS the PortableText hard break (Shift+Enter in
-  // the editor): `@portabletext/toolkit` splits span text on `\n` and both
-  // renderers map the break segment to `<br>`. Restore it as PM hardBreak
-  // nodes between the text segments so the editor shows the same break.
+  // A `\n` in span text IS the PortableText hard break — restore it as
+  // PM hardBreak nodes between the text segments.
   const segments = span.text.split('\n')
   for (let i = 0; i < segments.length; i += 1) {
     if (i > 0) {
@@ -108,9 +106,8 @@ export function paragraphToTextBlock(
   let nextSpanKey = 0
   for (const child of node.content ?? []) {
     if (child.type === 'hardBreak') {
-      // Shift+Enter in the editor. PortableText's canonical hard-break
-      // representation is `\n` inside span text; keep it as its own span
-      // so the surrounding marks stay untouched.
+      // Shift+Enter in the editor → `\n` in its own span so the
+      // surrounding marks stay untouched.
       nextSpanKey += 1
       children.push({ _type: 'span', _key: `s-${nextSpanKey.toString(36)}`, text: '\n' })
       continue
@@ -197,8 +194,8 @@ export function pmMarkToSpanMark(mark: PmMark): { decorator: string } | { def: M
       return { def: { _type: 'footnoteRef', _key: key, targetKey, index } }
     }
     default:
-      // Loud failure: silently dropping an unknown mark on save loses
-      // authored formatting. Register the mark here instead of swallowing it.
+      // Loud failure: dropping an unknown mark on save loses authored
+      // formatting — register it instead of swallowing it.
       throw new Error(`pt-bridge: cannot save — no converter registered for PM mark type "${mark.type}"`)
   }
 }

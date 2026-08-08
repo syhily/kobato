@@ -17,12 +17,8 @@ const testQueryClient = new QueryClient({
   },
 })
 
-// Tiny SSR helpers shared across snapshot tests so each spec doesn't have to
-// know whether it should reach for `renderToString` (synchronous, no Suspense
-// boundary needed) or `prerenderToNodeStream` (the path the RSS/Atom feed
-// pipeline uses when it still needs an HTML string).
+// Tiny SSR helpers shared across snapshot tests — pick sync vs stream render per spec.
 
-/** Synchronously render a React element to an HTML string. */
 export function renderToHtml(element: ReactElement): string {
   return renderToString(
     <QueryClientProvider client={testQueryClient}>
@@ -33,14 +29,8 @@ export function renderToHtml(element: ReactElement): string {
   )
 }
 
-// Render a component tree under a memory router so React Router hooks
-// (`useLocation`, `useHref`, `useFetcher`, `<Link>`, …) can resolve. The
-// memory router is configured with a single catch-all route so the snapshot
-// matches what the SSR runtime would produce for `initialPath`. The tree is
-// also wrapped in a `BlogSettingsProvider` so components calling
-// per-section accessors resolve against a stable bundle fixture —
-// production renders sit behind the install gate, and tests need the
-// same invariant without bringing up the real loader chain.
+// Render under a memory router (catch-all route) so router hooks resolve;
+// BlogSettingsProvider supplies the fixture bundle like production.
 export function renderInRouter(node: ReactNode, initialPath: string = '/'): string {
   const routes: RouteObject[] = [{ path: '*', element: <>{node}</> }]
   const router = createMemoryRouter(routes, { initialEntries: [initialPath] })
@@ -55,11 +45,8 @@ export function renderInRouter(node: ReactNode, initialPath: string = '/'): stri
   )
 }
 
-/**
- * Like `renderInRouter`, but nests the tree under a parent route whose
- * `<Outlet>` carries `outletContext` — for routes that read
- * `useOutletContext` (e.g. the admin layout's `currentUser`).
- */
+/** Like `renderInRouter`, but the tree sits under a parent `<Outlet>`
+ *  carrying `outletContext` (for `useOutletContext` consumers). */
 export function renderInRouterWithOutlet(node: ReactNode, initialPath: string, outletContext: unknown): string {
   const routes: RouteObject[] = [
     {
@@ -80,13 +67,8 @@ export function renderInRouterWithOutlet(node: ReactNode, initialPath: string, o
   )
 }
 
-/**
- * Stream-render a React tree the way our production SSR pipeline does, then
- * collect the result into a single string. Useful for snapshot-testing
- * components that depend on Suspense / server-only data fetching. The tree
- * is wrapped in a `BlogSettingsProvider` so consumers reading from any
- * per-section context see the test fixture instead of throwing.
- */
+/** Stream-render like the production SSR pipeline and collect the result —
+ *  for components depending on Suspense / server-only data fetching. */
 export async function prerenderToHtml(element: ReactNode): Promise<string> {
   const { prelude } = await prerenderToNodeStream(
     <QueryClientProvider client={testQueryClient}>
@@ -102,13 +84,8 @@ export async function prerenderToHtml(element: ReactNode): Promise<string> {
   return Buffer.concat(chunks).toString('utf8')
 }
 
-/**
- * The router-wrapped counterpart of `prerenderToHtml`: stream-render under
- * a memory router so Suspense boundaries resolve the way production SSR
- * delivers them (shell first, resolved boundary streamed in). Use this —
- * not `renderInRouter` — when the tree contains a lazily-loaded component
- * (the synchronous helper can only render the boundary's fallback).
- */
+/** Router-wrapped `prerenderToHtml` — use for lazily-loaded components
+ *  (the synchronous helper only renders the boundary's fallback). */
 export async function prerenderInRouter(node: ReactNode, initialPath: string = '/'): Promise<string> {
   const routes: RouteObject[] = [{ path: '*', element: <>{node}</> }]
   const router = createMemoryRouter(routes, { initialEntries: [initialPath] })
@@ -128,18 +105,14 @@ export async function prerenderInRouter(node: ReactNode, initialPath: string = '
   return Buffer.concat(chunks).toString('utf8')
 }
 
-/**
- * Strip volatile React server attributes (`data-react-*`, hydration markers,
- * source-map URL fragments) so snapshots survive React minor upgrades.
- * Pure regex-based; does not rebuild the DOM.
- */
+/** Strip volatile React server attributes / hydration markers so snapshots
+ *  survive React minor upgrades. Regex-based, no DOM rebuild. */
 export function stableHtml(html: string): string {
   return (
     html
       .replace(/\s+data-react[\w-]+="[^"]*"/g, '')
       .replace(/<!--\$-->|<!--\/\$-->|<!--\$\?-->|<!--\$!-->|<!---->/g, '')
-      // Base UI generates volatile ids from React useId — strip them so
-      // snapshots stay stable across runs.
+      // Base UI emits volatile useId-based ids — normalize them.
       .replace(/id="base-ui-[^"]*"/g, 'id="base-ui-id"')
       .replace(/\s{2,}/g, ' ')
       .trim()

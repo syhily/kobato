@@ -8,13 +8,9 @@ export interface ActionBannerState {
 }
 
 export interface ActionBannerController {
-  /** Banner currently visible above the editor; null while a save flow is still counting legs or after dismiss. */
+  /** Banner visible above the editor; null while a save flow counts legs or after dismiss. */
   banner: ActionBannerState | null
-  /**
-   * Arm the countdown for a save flow: the banner appears once `legs`
-   * successful legs have been noted. The caller owns the leg count —
-   * persist knows whether the body diverged and fires one or two mutations.
-   */
+  /** Arm the countdown for a save flow — the banner appears once `legs` successful legs are noted; the caller owns the leg count. */
   begin: (kind: ActionBannerKind, legs: number) => void
   /** Record one successful leg; shows the banner with `slug` once the countdown reaches zero. */
   noteLeg: (slug: string) => void
@@ -24,11 +20,9 @@ export interface ActionBannerController {
   dismiss: () => void
 }
 
-// The post-save preview banner is a two-phase protocol: a save flow arms a
-// countdown (`begin`), each successful mutation leg decrements it (`noteLeg`),
-// and the banner surfaces only when every leg landed. Conflict / error paths
-// `cancel` so a late success cannot flash a stale link. The pending countdown
-// lives in a ref — it is mutated from mutation callbacks and must not render.
+// Two-phase post-save banner protocol: `begin` arms a countdown, `noteLeg`
+// decrements per successful mutation leg; the banner surfaces only when every
+// leg landed — conflict/error paths `cancel` so a late success can't flash a stale link.
 export function useActionBanner(): ActionBannerController {
   const pendingRef = useRef<{ kind: ActionBannerKind; remaining: number } | null>(null)
   const [banner, setBanner] = useState<ActionBannerState | null>(null)

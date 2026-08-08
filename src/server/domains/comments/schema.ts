@@ -6,11 +6,8 @@ import { honeypotField } from '@/shared/utils/schema'
 
 const commentHoneypot = honeypotField('subtitle')
 
-// `rid` arrives as a number from JSON callers. The previous form-encoded
-// path coerced from string; comments now POST JSON exclusively because
-// PortableText bodies aren't form-encodable, so `z.number()` is enough.
-// `0` keeps its "top-level reply" meaning and gets normalised to
-// `undefined` before reaching `createComment`.
+// JSON callers send `rid` as a number; `0` means top-level reply and is
+// normalised to `undefined` before `createComment`.
 export const commentReplySchema = z
   .object({
     page_key: z.string(),
@@ -54,21 +51,8 @@ export const loadAllCommentsSchema = z.object({
 export type LoadAllCommentsInput = z.infer<typeof loadAllCommentsSchema>
 
 // Server-side autocomplete inputs for the moderation Combobox filters.
-// Both endpoints accept the same shape so the schema is shared. `q` is
-// trimmed and capped at 100 chars (any sane substring fits) and `limit`
-// is hard-bounded so a malicious caller can't request 1M rows.
-//
-// `ids` is an optional comma-separated list of user identifiers used to
-// rehydrate a Combobox selection from a `?userId=2232` URL parameter —
-// the URL only carries the value, never the human label. When `ids` is
-// present the authors endpoint returns exact matches by id and ignores
-// `q` to avoid mixing two query intents in one round-trip.
-//
-// `key` is the page-flavoured equivalent: a single page `key` (a URL
-// such as `https://example.com/about/`) used to rehydrate the page-title
-// Combobox from a `?pageKey=…` URL parameter. Page keys are not
-// comma-safe (URL fragments may legally contain `,`), so unlike `ids`
-// we accept a single value rather than splitting.
+// `ids` rehydrates a selection from `?userId=` (comma-separated); `key` is
+// the single-value page-key equivalent (page keys may contain `,`).
 export const filterAutocompleteSchema = z.object({
   q: z.string().trim().max(100).optional(),
   limit: z.coerce.number().min(1).max(50).default(20),

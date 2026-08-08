@@ -2,15 +2,8 @@ import { Hono } from 'hono'
 
 import type { Env } from '@/server/http/context'
 
-// Index-style redirects for legacy navigation entry points. The
-// `/tags` and `/search` URLs predate the resource-route refactor;
-// they now collapse onto the canonical surface (homepage + the
-// `/search/<keyword>` path-style search endpoint) with a 301 so
-// any inbound link or bookmark keeps resolving.
-//
-// Lives in `server/http/resources/` with the other non-JSON resource
-// endpoints (feed/sitemap/images), not in the SSR wiring file.
-
+// 301 collapses for legacy entry points (`/tags` → `/`, `/search` → the
+// path-style search endpoint) so inbound links and bookmarks keep resolving.
 export const redirectsRouter = new Hono<Env>()
 
 redirectsRouter.get('/tags', (c) => {

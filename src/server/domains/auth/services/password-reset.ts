@@ -21,21 +21,16 @@ import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 const GENERIC_RESET_MESSAGE = '如果该邮箱存在且符合要求，重置邮件已发送。'
 
 /**
- * The cross-domain concept `requestPasswordReset` consumes, wired by the
- * caller. The commenter-claim rule below needs the comments domain's
- * "established commenter" check, but the auth domain must not import
- * comments (the domain graph is a DAG) — so the routes layer, which may
- * touch both domains, passes `hasApprovedComments` from
- * `@/server/domains/comments/services/public-query` in.
+ * Cross-domain dependency wired by the caller: the claim path needs the
+ * comments domain's approved-commenter check, which auth must not import.
  */
 export interface PasswordResetFlowDeps {
   hasApprovedComments(db: Database, userId: number): Promise<boolean>
 }
 
 /**
- * Issue a single-use reset token, build the reset link, send the email,
- * and audit the request. Shared by the existing-user and the
- * commenter-claim paths — only the audited actor role differs.
+ * Issue a single-use reset token, email the link, and audit the request.
+ * Shared by the existing-user and commenter-claim paths.
  */
 async function issueTokenAndEmail(
   db: Database,
@@ -60,11 +55,8 @@ async function issueTokenAndEmail(
 }
 
 /**
- * `lostpassword` — request a password-reset email.
- *
- * Always appears to succeed to prevent email enumeration: the generic
- * message is returned whether or not the email maps to an account, and
- * a tripped rate limit silently short-circuits with the same message.
+ * `lostpassword` — request a password-reset email. Always appears to
+ * succeed: no account and tripped rate limits yield the same message.
  */
 export async function requestPasswordReset(
   db: Database,
@@ -75,12 +67,7 @@ export async function requestPasswordReset(
 ): Promise<AuthFlowResult> {
   const email = formData.get('email')
   const emailStr = typeof email === 'string' ? email : ''
-  // Rate-limit before any lookup to prevent abuse. Two additive
-  // buckets: per-IP catches one attacker fanning out across many
-  // mailboxes; per-email catches one attacker rotating IPs against
-  // a single mailbox. Either tripping silently short-circuits with
-  // the generic success message so neither path leaks which limit
-  // (or even which email) was throttled.
+  // Either rate limit tripping silently returns the generic success message.
   const [ipLimit, emailLimit] = await Promise.all([
     tryPasswordResetRateLimit(clientAddress),
     emailStr ? tryPasswordResetByEmailRateLimit(emailStr) : Promise.resolve(null),
@@ -91,11 +78,9 @@ export async function requestPasswordReset(
   if (emailStr) {
     const u = await findUserByEmail(db, emailStr)
     if (u && u.role && !u.deletedAt) {
-      // Existing user with a role — send reset email.
       await issueTokenAndEmail(db, u, u.role, clientAddress, request)
     } else if (u && !u.role && u.password === '' && !u.deletedAt) {
-      // Anonymous commenter with at least one approved comment can
-      // claim the account by setting a password.
+      // Anonymous commenter with an approved comment can claim the account.
       if (await deps.hasApprovedComments(db, u.id)) {
         await updateUserById(db, u.id, { role: 'visitor' })
         await issueTokenAndEmail(db, u, 'visitor', clientAddress, request)
@@ -136,9 +121,7 @@ export async function resetPasswordWithToken(
   }
 
   const hashed = await bcrypt.hash(newPasswordStr, PASSWORD_HASH_ROUNDS)
-  // Resetting the password also returns the account to password signin —
-  // the account-recovery escape hatch must not leave the user locked
-  // behind a lost passkey or a dead mailbox.
+  // Password reset also returns the account to password signin.
   await updateUserById(db, result.userId, { password: hashed, loginMethod: 'password' })
   try {
     await deleteAllCredentials(db, result.userId)
@@ -150,14 +133,8 @@ export async function resetPasswordWithToken(
   if (!dbUser || !dbUser.role || dbUser.deletedAt) {
     return { type: 'error', message: '账户状态异常，无法登录。' }
   }
-  // `{ revokeOtherSessions: true }` enforces the reset invariant: every
-  // other session of this user (incl. anything an attacker might still
-  // hold) is destroyed before the new one is issued.
-  // `establishLoginSession` mints the sid + cookie itself (so the real
-  // cookie sid is the one written to the session table); use its returned
-  // `setCookie` rather than re-committing the in-memory session —
-  // calling `commitSession` after would mint a SECOND sid and orphan
-  // the one we just wrote.
+  // Use the returned `setCookie` — a later `commitSession` would mint a
+  // second sid and orphan the one just written.
   const established = await establishLoginSession(db, session, dbUser, request, clientAddress, {
     revokeOtherSessions: true,
   })

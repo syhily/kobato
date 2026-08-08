@@ -1,9 +1,8 @@
 import type { CommentBlock, CommentBody, CommentTextBlock } from '@/shared/pt/comment-schema'
 import type { Span } from '@/shared/pt/schema'
 
-// Serialise a comment PortableText body back into markdown. The output
-// is stored in `comment.content` as a rollback snapshot — every save
-// writes BOTH the PT `body` (canonical) and this markdown projection.
+// Serialise a comment PT body to markdown — stored in `comment.content`
+// as a rollback snapshot on every save.
 
 const NEWLINE = '\n'
 const INDENT_STEP = '  '
@@ -71,9 +70,8 @@ function wrapLinkIfAny(text: string, marks: ReadonlyArray<string>, lookup: MarkD
 }
 
 function escapeInline(text: string): string {
-  // Escape the four markdown characters that would otherwise re-parse
-  // when the snapshot is fed back through `marked`. We deliberately do
-  // NOT escape `<` / `>` — `<u>` is the only inline HTML we emit.
+  // Escape the markdown chars that would re-parse through `marked`;
+  // deliberately NOT `<`/`>` — `<u>` is the only inline HTML we emit.
   return text.replace(/([\\`*_])/g, '\\$1')
 }
 

@@ -30,11 +30,9 @@ import {
 import { type SingleDateFilterValue } from '@/ui/admin/shared/date-filter'
 import { useFilterPills } from '@/ui/admin/shared/filter-bar/useFilterPills'
 
-// The controller owns a `useInfiniteQuery` + `useQueryClient`, so hook tests
-// need a real QueryClient above the memory router that `renderHook` mounts.
-// No fetch ever fires — effects do not run under the SSR hook runner. The
-// QueryClient rides on the wrapper so cache-level assertions (seed → act →
-// inspect query state) can reach the same instance the hook saw.
+// Hook tests need a real QueryClient above the memory router; no fetch ever
+// fires (SSR hook runner). The wrapper carries it so cache-level assertions
+// reach the same instance the hook saw.
 function makeWrapper() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 }, mutations: { retry: false } },
@@ -47,8 +45,7 @@ function makeWrapper() {
   )
 }
 
-// View-owned editor intents — inert stubs; the confirm/mutation actions are
-// covered by use-comments-actions.test.tsx (happy-dom, mocked oRPC client).
+// Inert stubs — the confirm/mutation actions are covered by use-comments-actions.test.tsx.
 const intents = { edit: () => {}, reply: () => {}, editUser: () => {} }
 
 let commentId = 0
@@ -112,9 +109,7 @@ function makeData(...pages: AdminCommentsPage[]): AdminCommentsData {
 }
 
 describe('ui/admin/comments/useCommentsController helpers', () => {
-  // The date-filter helpers moved to `@/ui/admin/shared/date-filter` (the
-  // converged two-mode module) — their coverage lives in
-  // `tests/unit/ui/admin/shared/date-filter.test.ts`.
+  // Date-filter helper coverage lives in `tests/unit/ui/admin/shared/date-filter.test.ts`.
   it('validates text operators', () => {
     expect(isTextFilterOperator('contains')).toBe(true)
     expect(isTextFilterOperator('does-not-contain')).toBe(true)
@@ -212,8 +207,7 @@ describe('ui/admin/comments/useCommentsController page patches', () => {
 })
 
 describe('ui/admin/comments/useCommentsController hook', () => {
-  // The controller receives its pill state from the view's `useFilterPills`
-  // — the bridge below composes them exactly the way `CommentsView` does.
+  // Composes pill state the same way `CommentsView` does.
   function renderController(
     initial: ActiveFilter<CommentFilterFieldKey>[],
     options: { actions?: Array<(r: { pills: Pills; controller: Controller }) => void> } = {},
@@ -283,10 +277,7 @@ describe('ui/admin/comments/useCommentsController hook', () => {
 
   it('invalidateList invalidates the cached loadAll pages for the active filter input', () => {
     const wrapper = makeWrapper()
-    // With no filters the controller's infinite query embeds
-    // `input: { offset: 0, limit: 10 }` (PAGE_SIZE) in its key — seed exactly
-    // that entry and check the invalidation lands on it. (The react variant
-    // of the orpcQuery utils exposes the exact key via the options builder.)
+    // Seed the exact no-filter key: `input: { offset: 0, limit: 10 }` (PAGE_SIZE).
     const listKey = orpcQuery.admin.comments.loadAll.infiniteOptions({
       input: (pageParam: number) => ({ offset: pageParam, limit: 10 }),
       initialPageParam: 0,

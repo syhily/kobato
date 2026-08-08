@@ -12,8 +12,7 @@ import { idFromString } from '@/shared/utils/id'
 const userIdInput = z.object({ userId: z.string().min(1) })
 const successOutput = z.object({ success: z.boolean() })
 
-// Every live session across the site, user-joined raw rows — the
-// security sessions page sorts/projects in the loader.
+// Every live session, raw joined rows — the security page sorts/projects in the loader.
 const listSessions = adminProc
   .route({ method: 'GET', path: '/admin/users/list-sessions' })
   .output(adminUsersListSessionsOutputSchema)

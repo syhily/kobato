@@ -38,10 +38,7 @@ export function TagsView() {
     noun: '标签',
   })
 
-  // On success the whole list namespace is invalidated (EditTagDialog does
-  // the same for upserts) instead of patching a local mirror — a rejected
-  // delete (409 "still referenced") leaves the cache untouched and surfaces
-  // through the confirm dialog.
+  // Whole-namespace invalidation, no local mirror; a rejected delete (409) surfaces through the confirm dialog.
   const deleteApi = useMutation({
     mutationFn: (id: string) => orpc.admin.tags.delete({ id }),
     onSuccess: () => {

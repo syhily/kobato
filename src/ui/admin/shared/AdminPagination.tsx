@@ -17,16 +17,8 @@ interface AdminPaginationProps {
   onChange: (page: number) => void
 }
 
-/**
- * Shared admin pagination control, replacing the in-file copies that lived
- * in `CommentsView` and `UsersView`. Renders the shadcn `Pagination`
- * primitive with the same `computePageWindow` chip ladder as the public
- * site (`src/ui/public/post/Pagination.tsx`), without prev/next chevrons.
- *
- * The external API stays 0-based like the rest of the admin code;
- * internally we add 1 before calling `computePageWindow` (1-based) and
- * subtract 1 in the click callback.
- */
+/** Shared admin pagination over the shadcn `Pagination` primitive.
+ *  API is 0-based; `computePageWindow` is 1-based, so ±1 at the boundary. */
 export function AdminPagination({ totalPages, currentPage, onChange }: AdminPaginationProps) {
   const items = useMemo(
     () => computePageWindow({ current: currentPage + 1, total: totalPages }),
@@ -39,9 +31,7 @@ export function AdminPagination({ totalPages, currentPage, onChange }: AdminPagi
     <Pagination>
       <PaginationContent>
         {items.map((item, i) => {
-          // Disambiguate the (at most two) ellipsis slots by their window
-          // edge — pairing with the neighbouring page number keeps the key
-          // stable regardless of list length.
+          // Disambiguate the (at most two) ellipsis slots by their window edge — key stays stable.
           const prev = items[i - 1]
           const next = items[i + 1]
           const ellipsisKey = `ellipsis-${prev ?? 'start'}-${next ?? 'end'}`

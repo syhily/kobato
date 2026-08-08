@@ -1,9 +1,8 @@
 import { type RefObject, useEffect } from 'react'
 
-// Lazy-loads medium-zoom for images + SVGs inside the container element.
-// Uses a MutationObserver (not the selector overload) so React Router
-// same-route navigations pick up new images; cleanup detaches everything
-// on unmount so stale listeners don't leak across route swaps.
+// Lazy-loads medium-zoom for images + SVGs. MutationObserver (not the
+// selector overload) so same-route navigations pick up new images; cleanup
+// detaches everything on unmount.
 export function useMediumZoom(containerRef: RefObject<HTMLElement | null>): void {
   useEffect(() => {
     const container = containerRef.current

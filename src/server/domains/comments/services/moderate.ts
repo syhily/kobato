@@ -28,13 +28,9 @@ import { idFromString } from '@/shared/utils/id'
 
 const adminLog = getLogger('comments.admin')
 
-// Cache-invalidation invariant: every mutation that changes what the
-// sidebar latest-comments list shows emits `{ entity: 'comment' }`
-// through the content-invalidation door HERE, inside the mutation
-// itself, so a new caller can never forget it. The delete-request trio
-// (requestDeleteComment / clearDeleteRequest / adminClearDeleteRequest)
-// deliberately does NOT emit: they only touch `deleteRequestedAt`,
-// which the latest-comments query does not filter on.
+// Cache-invalidation invariant: mutations changing the latest-comments list
+// emit `{ entity: 'comment' }` here. The delete-request trio never emits —
+// they only touch `deleteRequestedAt`, which the query does not filter on.
 
 export async function approveCommentById(db: Database, id: number): Promise<void> {
   await db.update(comment).set({ isPending: false }).where(eq(comment.id, id))
@@ -52,7 +48,6 @@ export async function softDeleteCommentById(db: Database, id: number): Promise<v
 }
 
 export async function bulkApprovePendingByUser(db: Database, userId: number): Promise<number> {
-  // Returns the number of pending comments that were just approved.
   const updated = await db
     .update(comment)
     .set({ isPending: false })
@@ -63,9 +58,7 @@ export async function bulkApprovePendingByUser(db: Database, userId: number): Pr
 }
 
 export async function bulkSoftDeleteCommentsByUser(db: Database, userId: number): Promise<number> {
-  // Soft-deletion mirrors the per-row delete used by the existing admin
-  // page. We avoid the hard `DELETE` so moderation actions remain
-  // recoverable and downstream like-counts stay consistent.
+  // Soft-delete, not hard DELETE — moderation stays recoverable and like-counts consistent.
   const updated = await db
     .update(comment)
     .set({ deletedAt: new Date() })
@@ -98,11 +91,8 @@ export async function clearDeleteRequest(db: Database, id: number, userId: numbe
   return updated.length > 0
 }
 
-/**
- * Admin-side variant of {@link clearDeleteRequest}: clears the pending
- * delete request regardless of who originated it. Used by the
- * "reject delete request" admin action.
- */
+/** Variant of {@link clearDeleteRequest} clearing the request regardless
+ *  of origin — the "reject delete request" admin action. */
 export async function adminClearDeleteRequest(db: Database, id: number): Promise<boolean> {
   const updated = await db
     .update(comment)
@@ -112,13 +102,8 @@ export async function adminClearDeleteRequest(db: Database, id: number): Promise
   return updated.length > 0
 }
 
-/**
- * Admin decision on a pending delete request — the moderation state
- * machine lifted from the admin comments controller: the comment must
- * exist and carry a `deleteRequestedAt`; approving soft-deletes it,
- * rejecting clears the request. Each branch audits its own event. Error
- * codes/messages are the wire contract — do not reword.
- */
+/** Admin decision on a delete request: approve → soft-delete, reject →
+ *  clear. Each branch audits; error codes/messages are the wire contract. */
 export async function resolveCommentDeleteRequest(
   db: Database,
   rid: string,
@@ -186,9 +171,7 @@ export async function updateOwnComment(db: Database, rid: string, newBody: Comme
   const { body, content } = await canonicalizeCommentBody(newBody)
   const decision = decideOwnEdit(existing, Date.now())
 
-  // Optimistic-lock guard: if another request edited the same comment
-  // between our read and our write, the update will affect 0 rows and
-  // we reject the request so the client can retry with fresh state.
+  // Optimistic lock: a 0-row update means a concurrent edit — reject for retry.
   const graceUpdatedAt = existing.updatedAt ?? existing.createAt
   const affected =
     decision === 'silent-edit'
@@ -215,13 +198,8 @@ export async function updateOwnComment(db: Database, rid: string, newBody: Comme
   return { ...withCommentBadgeTextColor(r), content: null }
 }
 
-/**
- * Visitor self-edit of their own comment — the full update-own flow lifted
- * from the authed comments controller: fetch → ownership check → the
- * delete-request fence → the has-replies edit lock → the grace-window
- * mutation in {@link updateOwnComment}. Audits `comment_own_updated` on
- * success. Error codes/messages are the wire contract — do not reword.
- */
+/** Visitor self-edit: ownership check, delete-request fence, has-replies
+ *  lock, then the grace-window mutation. Audits; wire-contract errors. */
 export async function editOwnComment(
   db: Database,
   rid: string,
@@ -237,8 +215,7 @@ export async function editOwnComment(
   if (existing.deleteRequestedAt !== null) {
     throw new DomainError('CONFLICT', '已申请删除，无法编辑。')
   }
-  // Edit lock: once approved replies exist, editing the parent would
-  // rewrite the context those replies responded to.
+  // Edit lock: approved replies make the parent's context immutable.
   const replyCount = await countApprovedRepliesOfComment(db, id)
   if (replyCount > 0) {
     throw new DomainError('CONFLICT', '已有回复，无法再编辑。')
@@ -255,14 +232,8 @@ export async function editOwnComment(
   return updated
 }
 
-/**
- * Visitor self-service delete request — the full request-delete-own flow
- * lifted from the authed comments controller: fetch → ownership check →
- * the already-requested idempotent no-op → the flag-setting mutation in
- * {@link requestDeleteComment} → audit `comment_delete_requested` →
- * re-fetch the fresh row. Error codes/messages are the wire contract —
- * do not reword.
- */
+/** Visitor delete request: ownership check, idempotent no-op, flag-setting
+ *  mutation, audit, re-fetch. Wire-contract errors. */
 export async function requestOwnCommentDeletion(
   db: Database,
   rid: string,
@@ -275,8 +246,7 @@ export async function requestOwnCommentDeletion(
     throw new DomainError('NOT_FOUND', '资源不存在。')
   }
   if (existing.deleteRequestedAt !== null) {
-    // Idempotent no-op: the flag is already set, so the current row IS
-    // the updated one — return it without re-writing or re-auditing.
+    // Idempotent no-op: flag already set — return the current row untouched.
     return existing
   }
   await requestDeleteComment(db, id, idFromString(viewer.id))
@@ -292,14 +262,8 @@ export async function requestOwnCommentDeletion(
   return updated
 }
 
-/**
- * Visitor self-service cancel of a pending delete request — the full
- * cancel-delete-own flow lifted from the authed comments controller:
- * fetch → ownership check → the guarded mutation in
- * {@link clearDeleteRequest} → audit `comment_delete_request_cancelled` →
- * re-fetch the fresh row. Error codes/messages are the wire contract —
- * do not reword.
- */
+/** Visitor cancel of a delete request: ownership check, guarded clear,
+ *  audit, re-fetch. Wire-contract errors. */
 export async function cancelOwnCommentDeletion(db: Database, rid: string, viewer: ViewerIdentity, audit: AuditContext) {
   const id = idFromString(rid)
   const existing = await findCommentWithUserById(db, id)

@@ -6,18 +6,9 @@ import type { Env } from '@/server/http/context'
 
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
-// CORS middleware for API and SSR routes. Reads configuration from the
-// blog settings system (`security` section) so the admin can update origins
-// from `/admin/settings/security` without a restart.
-//
-//   - `security.cors.enabled === false` (default) → middleware is a no-op; no
-//     CORS headers are added. Same-origin requests work as usual.
-//   - `security.cors.enabled === true` + non-empty `origins` → only listed
-//     origins receive CORS headers.
-//   - `security.cors.enabled === true` + empty `origins` → refuse CORS entirely.
-//     Never reflect the request origin when credentials: true is set.
-//   - Pre-install (bundle is null) → no-op so the install wizard
-//     works without CORS side effects.
+// CORS from `security` settings (live, no restart). No-op when disabled or
+// pre-install; when enabled, only listed origins get headers — never reflect
+// the request origin with credentials: true.
 export function corsMiddleware(): MiddlewareHandler<Env> {
   const handler = cors({
     origin: (origin) => {

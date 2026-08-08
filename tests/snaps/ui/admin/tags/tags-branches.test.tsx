@@ -26,15 +26,12 @@ queryMocks.queryClient = {
   invalidateQueries: vi.fn(),
 }
 
-// TagsView drives its rows from `useAdminInfiniteList` (server state lives
-// in the TanStack cache, via an internal `useInfiniteQuery`), with the search
-// box wired through `useDebouncedSearch`. The existing
-// `tags-view.test.tsx` covers the loading and empty states; this spec adds
-// populated rows (the `rows.map` callback branch), the error state, and the
-// search-active state.
+// TagsView rows come from useAdminInfiniteList's internal useInfiniteQuery,
+// search via useDebouncedSearch. tags-view.test.tsx covers loading/empty;
+// this adds populated rows, the error state and search-active.
 
 vi.mock('@/ui/admin/shared/useDebouncedSearch', () => ({
-  // Return a hoisted pair so each test can drive the search-input value.
+  // Hoisted pair so each test drives the search-input value.
   useDebouncedSearch: () => [debouncedSearch.value, debouncedSearch.setInput],
 }))
 
@@ -44,8 +41,6 @@ const debouncedSearch = vi.hoisted(() => ({
   value: '',
   setInput: vi.fn(),
 }))
-
-// ───────────────────────────── fixtures ─────────────────────────────
 
 function makeTag(overrides: Partial<AdminTagDto> = {}): AdminTagDto {
   return {
@@ -69,8 +64,6 @@ function setList(tags: AdminTagDto[], total = tags.length): void {
   }
 }
 
-// ─────────────────────────── shared setup ───────────────────────────
-
 describe('snapshot: TagsView branches', () => {
   beforeEach(() => {
     queryMocks.infinite = {
@@ -93,13 +86,12 @@ describe('snapshot: TagsView branches', () => {
     const html = stableHtml(renderInRouter(<TagsView />, '/admin/taxonomy/tags'))
     expect(html).toContain('react')
     expect(html).toContain('vite')
-    // TagRow renders the post-count suffix and a deep-link to the posts list.
+    // TagRow renders the post-count suffix + posts-list deep-link.
     expect(html).toContain('5 篇')
     expect(html).toContain('2 篇')
     // Edit / delete affordances carry the tag name in their aria-labels.
     expect(html).toContain('编辑标签 react')
     expect(html).toContain('删除标签 vite')
-    // End-of-list sentinel copy.
     expect(html).toContain('已加载全部标签')
   })
 
@@ -118,8 +110,7 @@ describe('snapshot: TagsView branches', () => {
     }
     const html = stableHtml(renderInRouter(<TagsView />, '/admin/taxonomy/tags'))
     expect(html).toContain('标签管理')
-    // With no rows and not loading, the empty state renders. The toast
-    // call is mocked so no assertion is needed on its side effect.
+    // No rows + not loading → empty state (toast mocked).
     expect(html).toContain('未找到标签')
   })
 

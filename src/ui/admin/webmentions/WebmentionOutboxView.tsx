@@ -57,11 +57,7 @@ function OutboxRow({ row }: { row: AdminWebmentionOutboxWire }) {
   )
 }
 
-// The outbound send log — read-only by design: a retry is a republish
-// (the outbox upsert resets terminal rows), so this view offers filters
-// and visibility, never actions. Renders as the「发送日志」tab body of
-// `WebmentionsView` (toolbar + list only — the page chrome lives in the
-// parent).
+// Read-only outbound send log — a retry is a republish, so this view offers filters and visibility, never actions.
 export function WebmentionOutboxView() {
   const [status, setStatus] = useState<StatusFilter>('all')
 

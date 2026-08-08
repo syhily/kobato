@@ -1,7 +1,5 @@
-// Isomorphic API error-shape helpers shared by the upload hook
-// (@/client/hooks/use-file-upload) and the admin views. Client
-// utilities must stay independent of ui/ modules (boundaries contract),
-// so these live here, not in ui/lib.
+// Isomorphic API error-shape helpers shared by the upload hook and the
+// admin views (can't live in ui/lib — boundaries contract).
 
 export function extractApiErrorMessage(data: unknown): string | undefined {
   if (typeof data !== 'object' || data === null) {

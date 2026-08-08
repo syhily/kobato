@@ -2,14 +2,9 @@ import { describe, expect, it } from 'vitest'
 
 import { SEA_BUNDLE_DEFINED_GLOBALS, scanBundleText } from '../../../../scripts/sea/check-bundle.ts'
 
-// The bundle scan's reverse direction: an `__APP_*__`/`__SEA_*__`
-// identifier left in a bundle whose vite `define` table does not cover it
-// would boot into a bare ReferenceError inside the binary. The SEA define
-// table covers `__SEA_APP_VERSION__` plus the same six `__APP_*__` globals
-// vite.config.ts defines — `@/shared/config/version` is legitimately
-// consumed by the SEA server graph (self-update domain, rollback/doctor
-// CLI), so the contract pins coverage of the REAL globals and flags any
-// FUTURE one added without a matching define row.
+// An `__APP_*__`/`__SEA_*__` identifier missing from the bundle's define
+// table would boot into a bare ReferenceError inside the binary — pin the
+// real table and flag any future global added without a define row.
 
 describe('scanBundleText: undefined build-time globals', () => {
   it('passes a bundle with no __APP_/__SEA_ identifiers', () => {
@@ -39,9 +34,6 @@ describe('scanBundleText: undefined build-time globals', () => {
   })
 
   it('tolerates every global vite.sea.config.ts actually defines', () => {
-    // The define table is imported from check-bundle.ts itself, so this
-    // test pins the REAL table: `__SEA_APP_VERSION__` for the CLI and the
-    // six `__APP_*__` globals `@/shared/config/version` consumes.
     const text = [
       'const cliVersion = __SEA_APP_VERSION__',
       'export const APP_NAME = __APP_NAME__',

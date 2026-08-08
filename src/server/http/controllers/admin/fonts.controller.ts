@@ -7,16 +7,8 @@ import { adminProc } from '@/server/http/orpc-base'
 import { adminFontDto, listFontsOutputDto, setFontSlotInputDto } from '@/shared/contracts/fonts'
 import { idFromString } from '@/shared/utils/id'
 
-// Admin font library + slot-assignment procedures. The `list` / `delete` /
-// `setSlot` procedures are admin-gated oRPC routes. The `upload` procedure
-// intentionally lives in a separate Hono resource route
-// (`src/server/http/resources/fonts-package.ts`) rather than here, because a
-// font source file can be 60 MiB and the oRPC bridge sits behind the
-// request-wide body limit (default 10 MB). A dedicated resource route with
-// its own `bodyLimit` mirrors the existing canvas-font upload at
-// `resources/fonts.ts` and the image-upload exception documented in
-// `middleware-pipeline.ts`.
-
+// Admin font procedures. `upload` lives in a separate Hono resource route
+// (`fonts-package.ts`): 60 MiB sources exceed the oRPC bridge's body limit.
 const list = adminProc
   .route({ method: 'GET', path: '/admin/fonts/list' })
   .input(z.object({}).optional())

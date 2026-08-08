@@ -19,14 +19,9 @@ import { auditLog } from '@/server/infra/db/schema/config'
 import { user } from '@/server/infra/db/schema/user'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@/server/infra/storage/registry'
 
-// createBackup / listBackups / deleteBackup run for REAL against the test
-// DB and an in-memory storage backend injected through the registry seam
-// (see beforeEach) — no S3, no settings. Only the file-exchange boundary
-// stays mocked: `getBackupStream` hands the restore route a synthetic
-// archive stream, and `stageBackup`/`restoreFromStagedBackup` would do
-// real file staging and a real database swap. The restore MACHINE (claim
-// choreography, chain ordering, slot lifecycle) runs for real against
-// injected deps below.
+// Backup services run real against the test DB + in-memory storage; only
+// the file-exchange boundary stays mocked (getBackupStream, staging). The
+// restore machine runs real on injected deps.
 vi.mock('@/server/domains/backup/services/backup', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/server/domains/backup/services/backup')>()
   return {
@@ -40,9 +35,7 @@ vi.mock('@/server/domains/backup/services/restore', () => ({
   restoreFromStagedBackup: vi.fn(async () => undefined),
 }))
 
-// db-lifecycle wires the restore machine with real deps at import; those
-// deps reach the process/restart boundary. Keep that boundary inert — the
-// machine is re-wired with test deps in beforeEach anyway.
+// The machine is re-wired with test deps in beforeEach; keep the process/restart boundary inert.
 vi.mock('@/server/infra/lifecycle', () => ({
   requestShutdown: vi.fn(),
   registerShutdownHook: vi.fn(),
@@ -55,17 +48,12 @@ vi.mock('@/server/infra/lifecycle', () => ({
 
 const db = getTestDb()
 
-// Both driver slots route at in-memory backends. The 's3' one reports
-// isAvailable() = true, so the real registry resolves it as the ACTIVE
-// backend for new uploads; 'local' is swapped too so `listBackups`'s
-// cross-backend reconcile never walks the real local storage directory.
+// Both slots route at in-memory backends: 's3' reports available (the
+// ACTIVE backend); 'local' keeps the reconcile off real storage.
 const s3Memory = makeMemoryBackend({ driver: 's3' })
 const localMemory = makeMemoryBackend({ driver: 'local' })
 
-// The engine specifics (drain/close/reopen/complete) are injected deps of
-// the real machine; the it environment has no HTTP server to drain and no
-// file swap to reopen, so the deps are spies — the claim/abort/slot
-// choreography under test is the machine's own, and it runs for real.
+// The real machine's engine deps are spies; the choreography under test is the machine's own.
 let restoreDeps: {
   drain: Mock<() => Promise<void>>
   prepareForSwap: Mock<() => Promise<void>>
@@ -96,8 +84,7 @@ afterEach(async () => {
   localMemory.reset()
 })
 
-// audit_log.actor_id references user.id, so the admin actor must be a real
-// row for the batched audit insert to survive the FK.
+// audit_log.actor_id references user.id: the admin actor must be a real row.
 async function seedAdmin(): Promise<number> {
   const [row] = await db
     .insert(user)
@@ -112,8 +99,7 @@ function adminCtx(userId: number) {
 
 describe('adminBackupRouter.status', () => {
   it('returns the active primary driver', async () => {
-    // The injected in-memory 's3' backend is available, so the real
-    // registry resolves it as the primary driver — no settings needed.
+    // The injected 's3' backend is available, so it resolves as the primary driver.
     const admin = await seedAdmin()
     const res = await call(adminBackupRouter.status, undefined, { context: adminCtx(admin) })
     expect(res).toEqual({ primaryDriver: 's3' })
@@ -122,8 +108,7 @@ describe('adminBackupRouter.status', () => {
 
 describe('adminBackupRouter.list', () => {
   it('returns files array', async () => {
-    // Seed an object with no DB row: the real listBackups' reconcile
-    // registers it, then lists it from the real query.
+    // Seed an object with no DB row: the real reconcile registers it.
     await s3Memory.backend.put({
       key: 'backup/backup-2026-01-01T00-00-00.db.tar.gz',
       body: Buffer.alloc(1024),
@@ -162,10 +147,7 @@ describe('adminBackupRouter.create', () => {
   })
 
   it('rejects a concurrent create with CONFLICT while another backup is in flight', async () => {
-    // Stall the first backup's upload so the second request arrives while
-    // the first still holds the single-flight slot — two same-second admin
-    // clicks. The loser must surface as a clean 409 CONFLICT (DomainError,
-    // translated by orpc-base's domainErrorGuard), never an opaque 500.
+    // Stall the first upload so the second request hits the single-flight slot.
     let enteredPutStream!: () => void
     const putStreamEntered = new Promise<void>((resolve) => {
       enteredPutStream = resolve
@@ -211,7 +193,6 @@ describe('adminBackupRouter.create', () => {
 
 describe('adminBackupRouter.delete', () => {
   it('deletes the stored object and records a backup_deleted audit row', async () => {
-    // Seed a real backup (DB row + stored object) through the real service.
     const created = await createBackup(db)
     const storageKey = `backup/${created.fileName}`
     expect(s3Memory.store.has(storageKey)).toBe(true)
@@ -220,7 +201,6 @@ describe('adminBackupRouter.delete', () => {
     const res = await call(adminBackupRouter.delete, { key: created.timestamp }, { context: adminCtx(admin) })
     expect(res).toEqual({ success: true })
 
-    // State assertion: the object went through the backend and is gone.
     expect(s3Memory.deletedKeys).toEqual([storageKey])
     expect(s3Memory.store.has(storageKey)).toBe(false)
 
@@ -252,10 +232,7 @@ describe('adminBackupRouter.restore', () => {
     const res = await call(adminBackupRouter.restore, { key: '2026-01-01T00-00-00' }, { context: adminCtx(admin) })
     expect(res).toEqual({ accepted: true })
 
-    // The real machine runs drain → prepareForSwap → restoreFn →
-    // reopenAfterSwap → afterReopenFn → complete fire-and-forget; wait for
-    // the chain to reach completion before asserting the ordering side
-    // effects.
+    // The chain is fire-and-forget; wait for completion before asserting the ordering.
     await vi.waitFor(() => expect(restoreDeps.complete).toHaveBeenCalledWith(true, undefined))
     expect(restoreDeps.drain).toHaveBeenCalledOnce()
     expect(restoreDeps.prepareForSwap).toHaveBeenCalledOnce()
@@ -279,8 +256,7 @@ describe('adminBackupRouter.restore', () => {
   })
 
   it('rejects concurrent restore requests', async () => {
-    // Occupy the slot for real: a claimed-but-running restore makes the
-    // machine's next claim return 'busy', which the route maps to 409.
+    // Occupy the slot: the next claim returns 'busy', which the route maps to 409.
     expect(tryBeginRestore()).toBe(true)
     const admin = await seedAdmin()
     await expect(

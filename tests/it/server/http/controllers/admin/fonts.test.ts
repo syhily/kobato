@@ -17,17 +17,11 @@ import { font } from '@/server/infra/db/schema/font'
 import { user } from '@/server/infra/db/schema/user'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@/server/infra/storage/registry'
 
-// No module mocks left: the DB, settings, audit, and the real
-// `deleteFontPackage` all run for real. The storage registry is pointed at
-// a shared in-memory backend (a true external — local disk/S3) via the
-// registry seam, so `delete` is pinned by the package objects actually
-// disappearing from the store. Seeded fonts carry storageDriver 'local',
-// matching this backend's driver.
+// No mocks: everything runs real against the shared in-memory storage
+// backend (seeded fonts carry storageDriver 'local', matching its driver).
 const memory = makeMemoryBackend({ driver: 'local' })
 
-// Section-change dispatch (backup/audit reschedule, mail transport
-// invalidation) is covered by the unit tests; keep it out of these
-// persistence-focused cases.
+// Section-change dispatch is unit-covered; keep it out of these cases.
 const db = getTestDb()
 
 beforeEach(async () => {
@@ -40,9 +34,7 @@ beforeEach(async () => {
 afterEach(async () => {
   __resetStorageBackendsForTests()
   memory.reset()
-  // Flush BEFORE dropping the batcher: InsertBatcher.dispose() leaves an
-  // armed flush timer behind, so an unflushed queue would otherwise
-  // insert this case's stale events mid-next-test.
+  // Flush BEFORE dropping the batcher: an armed flush timer leaks stale events into the next test.
   await flushAuditLog()
   resetAllBatchers()
 })
@@ -68,8 +60,7 @@ async function seedFont(overrides: Partial<typeof font.$inferInsert> = {}): Prom
   return row
 }
 
-// audit_log.actor_id references user.id, so the admin viewer must be a real
-// row for the batched audit insert to survive the FK.
+// audit_log.actor_id references user.id: the admin viewer must be a real row.
 async function seedAdmin(): Promise<number> {
   const [row] = await db
     .insert(user)
@@ -104,7 +95,7 @@ describe('adminFontsRouter.delete', () => {
   it('returns the deleted DTO, removes the storage package, and records a font_deleted audit row', async () => {
     const admin = await seedAdmin()
     const seeded = await seedFont()
-    // Mirror what putFont would have written: result.css + the woff2 chunks.
+    // Mirror putFont's output: result.css + the woff2 chunks.
     const packageFiles = ['result.css', 'chunk-0.woff2', 'chunk-1.woff2', 'chunk-2.woff2']
     for (const name of packageFiles) {
       memory.store.set(`fonts/${seeded.hash}/${name}`, {
@@ -120,8 +111,6 @@ describe('adminFontsRouter.delete', () => {
     const remaining = await db.select().from(font).where(eq(font.id, seeded.id))
     expect(remaining).toHaveLength(0)
 
-    // The real deleteFontPackage ran against the memory backend: every
-    // object under fonts/<hash>/ is gone and each delete was recorded.
     const packageKeys = packageFiles.map((name) => `fonts/${seeded.hash}/${name}`)
     expect(memory.deletedKeys).toEqual(expect.arrayContaining(packageKeys))
     for (const key of packageKeys) {

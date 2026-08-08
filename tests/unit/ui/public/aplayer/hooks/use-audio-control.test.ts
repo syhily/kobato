@@ -3,18 +3,8 @@ import { describe, expect, it, vi } from 'vitest'
 import { renderHook } from '#/_helpers/hook'
 import { useAudioControl } from '@/ui/public/aplayer/hooks/use-audio-control'
 
-// useAudioControl creates an HTMLAudioElement inside a useEffect and binds
-// its event listeners there. The SSR renderHook harness renders a single
-// synchronous pass, so that effect never runs and `audioRef.current`
-// stays null. What IS observable in one pass:
-//   - the initial state values (isPlaying, currentTime, duration, etc.)
-//   - the callbacks are returned as functions
-//   - every callback short-circuits when there is no audio element
-//     (the `if (!audio) return` guards), so calling them is a safe no-op
-//
-// The event-listener wiring and the real play/pause/seek paths require a
-// live HTMLAudioElement, which is exercised in the aplayer controller /
-// player snapshot tests instead.
+// In the SSR hook harness the audio effect never runs, so every callback
+// is a safe no-op; real audio paths live in the aplayer controller tests.
 
 describe('ui/public/aplayer/hooks/useAudioControl — initial state', () => {
   it('returns the documented defaults when no options override them', () => {
@@ -40,7 +30,6 @@ describe('ui/public/aplayer/hooks/useAudioControl — initial state', () => {
   })
 
   it('falls back to 0.7 when initialVolume is undefined and the nullish coalesce engages', () => {
-    // initialVolume ?? 0.7 — passing `undefined` exercises the ?? branch.
     const api = renderHook(() => useAudioControl({ src: '/x', initialVolume: undefined }))
     expect(api.volume).toBe(0.7)
   })
@@ -92,13 +81,10 @@ describe('ui/public/aplayer/hooks/useAudioControl — option pass-through', () =
   it('accepts onEnded / onError callbacks without invoking them during render', () => {
     const onEnded = vi.fn()
     const onError = vi.fn()
-    // The hook stores these in refs and only fires them from event
-    // listeners attached in the effect (which doesn't run in SSR), so
-    // neither should be called during the initial render.
+    // Fired only from effect-attached listeners, which never run in SSR.
     const api = renderHook(() => useAudioControl({ src: '/track.mp3', onEnded, onError }))
     expect(onEnded).not.toHaveBeenCalled()
     expect(onError).not.toHaveBeenCalled()
-    // Sanity: the rest of the API is still intact.
     expect(api.isPlaying).toBe(false)
   })
 })

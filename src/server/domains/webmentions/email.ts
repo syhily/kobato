@@ -7,12 +7,8 @@ import type { SendResult } from '@/server/infra/email/types'
 import { sendAdminNotification } from '@/server/infra/email/admin-notification'
 import { AdminNotificationEmail } from '@/server/infra/email/templates/AdminNotificationEmail'
 
-// Sent to the administrator when a webmention passes verification and
-// lands in the pending queue. Fire-and-forget from the receive service
-// (same shape as `sendNewComment`): a mail-pipeline hiccup must never
-// fail the mention itself. `updated` marks the demote case (an approved
-// mention whose source content changed and now waits for re-review) so
-// the admin can tell a fresh mention apart from an update re-review.
+/** Fire-and-forget admin notification when a mention lands in pending; a
+ *  mail hiccup must never fail the mention. `updated` marks the demote case. */
 export async function sendNewWebmention(
   mention: WebmentionRow,
   target: { title: string; canonicalUrl: string },

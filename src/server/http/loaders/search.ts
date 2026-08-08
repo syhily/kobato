@@ -34,10 +34,8 @@ export async function searchLoader(
   const rootPath = searchRootPath(query)
   const pageNum = parseListingPage(num, rootPath)
   const pageSize = requireBlogSettingsSection('content').pagination.search
-  // Only live posts are searchable — the gate is defined once in
-  // `@/server/domains/content/schemas/live-gate`, bound to the post columns by
-  // `livePostWhere`, and passed down so the search infra stays free of
-  // business rules.
+  // Only live posts are searchable — the gate is defined once and passed
+  // down, keeping the search infra free of business rules.
   const liveWhere = livePostWhere()
   const { hits, page, totalPages } = await searchPosts(db, liveWhere, query, pageSize, (pageNum - 1) * pageSize)
   if (auditContext !== undefined) {

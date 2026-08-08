@@ -20,10 +20,7 @@ export interface FeedOptions {
   tag?: string
 }
 
-// Allowlist-based HTML sanitizer for feed output served to external
-// aggregators. `sanitize-html` is a pure-JS parser (no jsdom dependency),
-// which closes the bypasses the previous regex chain had (unclosed
-// `<script>`, slash-separated event handlers, etc.).
+// Allowlist HTML sanitizer for feed output; pure-JS parser, no jsdom.
 export function sanitizeFeedHtml(html: string): string {
   return sanitizeHtml(html, {
     allowedTags: [
@@ -83,11 +80,7 @@ export function sanitizeFeedHtml(html: string): string {
 }
 
 async function renderEntryContent(db: Database, entry: Post | Page): Promise<string> {
-  // Feed items ship as HTML (RSS/Atom can't carry a React tree). We skip the
-  // image-enhancement pipeline (feed readers don't need thumbhash
-  // placeholders or DB-resolved dimensions), and `rssMode` degrades
-  // interactive blocks (musicPlayer, etc.) to static HTML so feed readers
-  // without JavaScript still get meaningful content.
+  // Feeds ship as HTML; `rssMode` degrades interactive blocks to static HTML for feed readers.
   const html = await renderPortableTextToHtml(
     entry.body,
     entry.headings.map((h) => h.slug),
@@ -104,10 +97,7 @@ export async function generateFeeds(db: Database, options: FeedOptions = {}) {
   if (category !== undefined && tag !== undefined) {
     throw new DomainError('BAD_REQUEST', 'Category and tag cannot be specified at the same time')
   }
-  // The feed channel's visibility policy (hidden included, scheduled not)
-  // and the slug-or-name scope resolution live in the posts domain; the
-  // renderer only wires the taxonomy resolvers the domain cannot import
-  // (taxonomies → posts is the existing DAG edge).
+  // Visibility policy lives in the posts domain; the renderer wires the taxonomy resolvers only.
   const feedPosts = await selectFeedPosts(
     db,
     { category, tag, limit: content.feed.size },
@@ -133,8 +123,7 @@ export async function generateFeeds(db: Database, options: FeedOptions = {}) {
       email: siteIdentity.author.email,
       link: siteIdentity.author.url,
     },
-    // Intentionally no `stylesheet` / `<?xml-stylesheet?>`: browsers are
-    // deprecating XSLT for XML documents (Chrome et al.); aggregators ignore it.
+    // No XML stylesheet — browsers are deprecating XSLT for XML documents.
   })
 
   // Batch-resolve tags and categories so we don't N+1 inside the loop.
@@ -196,7 +185,7 @@ export async function generateFeeds(db: Database, options: FeedOptions = {}) {
 
   return {
     rss: feed.rss2(),
-    // Hotfix the adding the xml:lang attribute to the atom feed
+    // Atom: inject the xml:lang attribute into the root element.
     atom: feed
       .atom1()
       .replace(

@@ -36,10 +36,9 @@ const metingSearchHitDto = z.object({
   album: z.string(),
   /** Pre-resolved cover URL for the search result thumbnail. */
   coverUrl: z.string(),
-  // Direct streaming URL returned by the upstream provider. These URLs
-  // are short-lived (token-signed, ~1h on netease) and intentionally
-  // NOT persisted — they exist only so the dialog's `<audio>` element
-  // can preview the song before it gets imported.
+  // Direct streaming URL from the upstream provider — short-lived
+  // (token-signed, ~1h on netease) and NOT persisted; only for the
+  // dialog's `<audio>` preview.
   previewUrl: z.string(),
 })
 export type MetingSearchHit = z.infer<typeof metingSearchHitDto>

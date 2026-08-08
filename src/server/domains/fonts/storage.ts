@@ -3,14 +3,9 @@ import type { StorageDriver } from '@/shared/config/types'
 import { DEFAULT_PUBLIC_CACHE_CONTROL } from '@/server/infra/storage/backend'
 import { activeBackend, backendFor } from '@/server/infra/storage/registry'
 
-// Storage entry point for the fonts domain. Mirrors `images/storage.ts`:
-// writes go to the **active** backend (S3 when configured, local otherwise);
-// reads/deletes dispatch on the font row's recorded `driver` so historical
-// packages keep working after a local→S3 flip. This module owns the
-// `fonts/<hash>/` key layout (`fontPrefix`/`fontCssKey`): upload persists
-// `fontCssKey(hash)` as the row's `cssKey`, and render resolves the public
-// URL from that persisted column via `resolveAssetUrl` — nothing else
-// reconstructs the layout.
+// Storage entry point for the fonts domain. Writes go to the active backend;
+// reads/deletes dispatch on the row's recorded `driver`. Owns the
+// `fonts/<hash>/` key layout — nothing else reconstructs it.
 
 /** Storage prefix for every file in a font package. Content-addressed by hash. */
 export function fontPrefix(hash: string): string {
@@ -33,13 +28,7 @@ export interface PutFontResult {
   driver: StorageDriver
 }
 
-/**
- * Write every file of a sliced font package to the active backend under the
- * content-addressed `fonts/<hash>/` prefix. Idempotent: re-writing the same
- * hash overwrites in place (the hash is the source sha256, so the bytes are
- * identical). All files are marked public + immutable — packages are
- * content-addressed and never change once written.
- */
+/** Write a font package to the active backend under `fonts/<hash>/`. Idempotent (same hash = same bytes); files are public + immutable. */
 export async function putFont(hash: string, files: FontPackageFile[]): Promise<PutFontResult> {
   const { backend, driver } = activeBackend()
   await Promise.all(
@@ -56,12 +45,7 @@ export async function putFont(hash: string, files: FontPackageFile[]): Promise<P
   return { driver }
 }
 
-/**
- * Delete every object under `fonts/<hash>/` from the backend the package
- * lives on. Best-effort: a missing prefix is not an error. Uses
- * `deletePrefix` so the local backend also removes the empty directory
- * tree, not just individual files.
- */
+/** Delete every object under `fonts/<hash>/` on the recorded driver's backend. Best-effort — a missing prefix is not an error. */
 export async function deleteFontPackage(hash: string, driver: StorageDriver): Promise<void> {
   const backend = backendFor(driver)
   await backend.deletePrefix(fontPrefix(hash))

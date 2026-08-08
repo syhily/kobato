@@ -35,10 +35,8 @@ queryMocks.infinite = {
 
 queryMocks.queryClient = { invalidateQueries: vi.fn() }
 
-// The load-more sentinel is observed from `useInfiniteScrollSentinel` inside
-// `useCommentsController`. Effects never run during synchronous SSR, but the
-// constructor is still referenced at module load when the effect closure is
-// built — silence the SSR warning by stubbing the global.
+// Stub IntersectionObserver — the sentinel's constructor is referenced at
+// module load, which warns under SSR.
 vi.stubGlobal(
   'IntersectionObserver',
   class {
@@ -48,24 +46,9 @@ vi.stubGlobal(
   },
 )
 
-// --- hoisted controller singleton -------------------------------------------
-//
-// `CommentsView` reads its row list from `useCommentsController`, which owns
-// a `useInfiniteQuery` against `orpc.admin.comments.loadAll`. Queries never
-// fetch under synchronous SSR, so the list stays at its initial empty value.
-// To exercise the data-loaded render branches we swap the controller's
-// return value through this hoisted singleton, exactly mirroring what
-// `comments-view.test.tsx` does.
-//
-// The render-path branches we target here are the ones the existing test
-// leaves uncovered:
-//   - the search-item derivation inside `useFilterPills` (run only when the
-//     secondary `useQueries` lookups resolve with data),
-//   - the `current not in items` selected-value pinning inside that memo,
-//   - the `isFetchingNextPage` "加载中…" sentinel,
-//   - the `!hasMore && comments.length > 0` "已加载全部评论" sentinel,
-//   - the active-filter header/body slot split (driven by the
-//     `initialFilters` prop through the real `useFilterPills`).
+// `CommentsView` reads its list from `useCommentsController`; queries never
+// fetch under SSR, so the controller is swapped via this hoisted singleton.
+// Targets: filter-pill derivations, selected-value pinning, sentinel branches.
 
 const controllerState = vi.hoisted(() => ({
   comments: [] as AdminComment[],
@@ -76,8 +59,7 @@ const controllerState = vi.hoisted(() => ({
   isFetchingNextPage: false,
 }))
 
-// No-op comment actions for the presentational row — hoisted so the
-// controller mock factory below can reference them.
+// No-op actions for the presentational row; hoisted for the mock factory below.
 const stubActions = vi.hoisted((): CommentActions => {
   const noop = () => {}
   return {
@@ -119,15 +101,8 @@ vi.mock('@/ui/admin/comments/useCommentsController', async () => {
   }
 })
 
-// --- react-query singleton ---------------------------------------------------
-//
-// The pill hook fires its search + rehydrate lookups through `useQueries`.
-// The `#/_helpers/mock-react-query` mock returns the same control object
-// for every query, so we pack both `.pages` and `.authors` arrays onto the
-// shared `data` field. Each test reassigns the slot to control which
-// option list is populated.
-
-// --- fixtures ----------------------------------------------------------------
+// The shared query mock returns one control object for every `useQueries`
+// lookup — pack the option lists onto `data`.
 
 let commentSeq = 0
 
@@ -195,8 +170,6 @@ function renderComments(initialFilters: ActiveFilter<CommentFilterFieldKey>[] = 
   )
 }
 
-// --- render-branch coverage --------------------------------------------------
-
 describe('snapshot: CommentsView render branches', () => {
   beforeEach(() => {
     resetController()
@@ -210,17 +183,11 @@ describe('snapshot: CommentsView render branches', () => {
     }
   })
 
-  // The search-items derivation inside `useFilterPills` (and its `.map` /
-  // pinning callbacks) runs during render regardless of whether the
-  // Combobox popover is open. Base UI only surfaces the option labels as
-  // user-visible text once the popover mounts (browser-only), so we can't
-  // assert on the dropdown text itself — but driving a populated query
-  // result through the component exercises every line of the memo and
-  // proves the render completes without throwing.
+  // The search-items memo runs during render even with the popover closed;
+  // popover text is browser-only, so assert the render completes without throwing.
 
   it('runs the page search-items map branch when searchPages resolves with pages', () => {
-    // Shared query data carries both `.pages` (for searchPages) and `.authors`
-    // (for searchAuthors); the memo only reads the one it cares about.
+    // Shared query data packs `.pages` and `.authors`; the memo reads only its own.
     queryMocks.query = {
       ...queryMocks.query,
       data: {
@@ -235,10 +202,8 @@ describe('snapshot: CommentsView render branches', () => {
     controllerState.total = 1
     controllerState.statusCounts = { all: 1, pending: 0, approved: 1, deleteRequested: 0 }
     const html = renderComments()
-    // Row map branch executed (memo factories ran before the row render).
     expect(html).toContain('Alice')
-    // The page-title filter-by-page affordance on the row still emits the
-    // title as a button label, proving the render reached the row body.
+    // Page-title affordance proves the render reached the row body.
     expect(html).toContain('Hello World')
     // End-of-list sentinel runs (comments.length > 0 && !hasMore).
     expect(html).toContain('已加载全部评论')
@@ -259,14 +224,12 @@ describe('snapshot: CommentsView render branches', () => {
     controllerState.total = 1
     controllerState.statusCounts = { all: 1, pending: 0, approved: 1, deleteRequested: 0 }
     const html = renderComments()
-    // Row rendered (the author items memo ran before the row render).
     expect(html).toContain('Carol')
     expect(html).toContain('已加载全部评论')
   })
 
   it('runs the page items pinning branch when the active page filter is not in fetched items', () => {
-    // Active filter references a page that the autocomplete lookup did NOT
-    // return — the hook must prepend it so the trigger shows the label.
+    // Filter references a page the lookup didn't return — the hook prepends it.
     queryMocks.query = {
       ...queryMocks.query,
       data: {
@@ -281,10 +244,8 @@ describe('snapshot: CommentsView render branches', () => {
     controllerState.total = 1
     controllerState.statusCounts = { all: 1, pending: 0, approved: 1, deleteRequested: 0 }
     const html = renderComments(activeFilters)
-    // Active-filter body slot rendered (filter bar moved into the body).
     // The field label "文章" for the page filter renders in the pill prefix.
     expect(html).toContain('文章')
-    // Row still rendered alongside the active filter.
     expect(html).toContain('Eve')
     // The clear-filters affordance only appears when filters are active.
     expect(html).toContain('清除')
@@ -318,9 +279,8 @@ describe('snapshot: CommentsView render branches', () => {
     controllerState.hasMore = true
     const html = renderComments()
     expect(html).toContain('Solo')
-    // The IntersectionObserver sentinel div is rendered when hasMore is true.
+    // hasMore → sentinel div.
     expect(html).toContain('class="h-1"')
-    // The "已加载全部评论" sentinel must NOT appear when hasMore is true.
     expect(html).not.toContain('已加载全部评论')
   })
 
@@ -348,9 +308,7 @@ describe('snapshot: CommentsView render branches', () => {
   })
 
   it('renders the parentLookup map branch when a row references a parent in the list', () => {
-    // Two rows where the child's `rid` points at the parent's id — this
-    // forces `parentLookup` (a useMemo over `comments`) to be built
-    // and the AdminCommentRow "回复 <parent>" hint branch to render.
+    // Child `rid` points at the parent — exercises parentLookup + the "回复" hint.
     const parent = makeAdminComment({ id: '100', name: 'Carol' })
     const child = makeAdminComment({
       id: '101',
@@ -364,14 +322,12 @@ describe('snapshot: CommentsView render branches', () => {
     const html = renderComments()
     expect(html).toContain('Carol')
     expect(html).toContain('Dave')
-    // The replied-to hint is rendered for the child row.
     expect(html).toContain('回复')
   })
 
   it('renders the empty-state branch when comments is empty', () => {
     const html = renderComments()
     expect(html).toContain('暂无评论')
-    // The end-of-list sentinel only fires when comments.length > 0.
     expect(html).not.toContain('已加载全部评论')
   })
 
@@ -380,8 +336,6 @@ describe('snapshot: CommentsView render branches', () => {
       { field: 'status', value: 'pending', label: '待审核' },
     ]
     const html = renderComments(activeFilters)
-    // Filter bar still rendered (in the body slot), so the status filter
-    // label is visible.
     expect(html).toContain('评论管理')
   })
 })

@@ -24,7 +24,6 @@ async function openReader(): Promise<ReaderModel | null> {
     log.debug('MaxMind DB not found; geo enrichment disabled', { path: MAXMIND_DB_PATH })
     return null
   }
-  // Open failures propagate: `getGeoReader` must not memoize them.
   const reader = await Reader.open(MAXMIND_DB_PATH)
   log.info('MaxMind GeoLite2 reader opened', { path: MAXMIND_DB_PATH })
   return reader
@@ -34,9 +33,7 @@ export function getGeoReader(): Promise<ReaderModel | null> {
   readerPromise ??= openReader().catch((err: unknown) => {
     // A failed open (transient I/O error, a read racing a database swap)
     // is NOT memoized — caching it would silently disable geo enrichment
-    // until the next resetGeoReader(). 'Not installed' / misconfigured
-    // results (null above) stay memoized; uploads and remote installs
-    // call resetGeoReader() to pick up new files.
+    // until the next reset; 'not installed' results stay memoized.
     readerPromise = undefined
     log.warn('MaxMind reader failed to open; will retry on next lookup', {
       err: err instanceof Error ? err.message : String(err),

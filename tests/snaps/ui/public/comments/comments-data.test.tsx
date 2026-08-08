@@ -9,24 +9,14 @@ import { Comments } from '@/ui/public/comments/Comments'
 
 mockTanstackQuery()
 
-// `Comments` is a pure-render orchestrator: it takes a pre-loaded
-// `comments` aggregate + `items` array and hydrates a `useReducer` tree
-// from them. The reducer/list-render branches are what we want to cover
-// here — populated tree with nested replies, the load-more sentinel,
-// the no-comments state, and the failure placeholder.
+// Comments is a pure-render orchestrator over a pre-loaded aggregate +
+// items; covers the populated/nested tree, load-more, empty and failure branches.
 
-// The component still pulls `useMutation` (token revoke, my-comments
-// merge, load-more) from `@tanstack/react-query`. Effects that fire
-// those mutations don't run under SSR, but the hook itself is called
-// during render, so we stub it to avoid real network plumbing.
+// useMutation hooks run during render even though their effects don't fire
+// under SSR — stubbed to avoid network plumbing.
 
-// `useCommentsSettings` reads the page-size used by the LoadMore button.
-// The BlogSettingsProvider in the render helper already supplies a bundle,
-// so no extra mock is needed — but `Comments.LoadMore` also depends on
-// `useCommentsActions`/`useCommentsState` which are wired internally by
-// `CommentsRoot`, so the consumer of this test only has to feed props.
-
-// ───────────────────────────── fixtures ─────────────────────────────
+// The render helper's BlogSettingsProvider covers useCommentsSettings;
+// CommentsRoot wires the rest internally — tests only feed props.
 
 let seq = 0
 function makeComment(overrides: Partial<CommentItemType> = {}): CommentItemType {
@@ -87,23 +77,19 @@ describe('snapshot: Comments data-loaded tree', () => {
         '/posts/hello',
       ),
     )
-    // Orchestrator wrapper.
     expect(html).toContain('id="comments"')
-    // Header branch renders the total count.
     expect(html).toContain('评论')
     expect(html).toContain('(5)')
-    // The list map branch executed for both roots.
     expect(html).toContain('id="user-comment-1"')
     expect(html).toContain('id="user-comment-2"')
     expect(html).toContain('Alice')
     expect(html).toContain('Bob')
     expect(html).toContain('Body 1')
     expect(html).toContain('Body 2')
-    // Reply-form slot branch (renders the anonymous reply form when no
-    // active reply target).
+    // Reply-form slot renders with no active reply target.
     expect(html).toContain('id="respond"')
     expect(html).toContain('发表评论')
-    // LoadMore branch fires because rootsLoaded (2) < rootsTotal (5).
+    // rootsLoaded (2) < rootsTotal (5) → LoadMore fires.
     expect(html).toContain('加载更多')
   })
 
@@ -167,12 +153,10 @@ describe('snapshot: Comments data-loaded tree', () => {
     expect(html).toContain('id="comments"')
     expect(html).toContain('评论')
     expect(html).toContain('(0)')
-    // No row markup emitted.
     expect(html).not.toContain('user-comment-')
     // rootsLoaded (0) >= rootsTotal (0) → no load-more button.
     expect(html).not.toContain('加载更多')
-    // Reply form still present — the empty thread still accepts a new
-    // top-level comment.
+    // Empty thread still accepts a top-level comment.
     expect(html).toContain('id="respond"')
   })
 
@@ -180,9 +164,7 @@ describe('snapshot: Comments data-loaded tree', () => {
     const html = stableHtml(
       renderInRouter(<Comments commentKey="/posts/hello" comments={null} items={[]} />, '/posts/hello'),
     )
-    // Early-return failure branch.
     expect(html).toContain('评论加载失败')
-    // None of the orchestrator chrome renders on the failure branch.
     expect(html).not.toContain('id="respond"')
     expect(html).not.toContain('加载更多')
   })

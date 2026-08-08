@@ -2,10 +2,8 @@ import { describe, expect, it } from 'vitest'
 
 import { postLifecycleAdapter } from '@/server/domains/posts/services/lifecycle-adapter'
 
-// Pin for the post adapter's draft-preview access rule
-// (CONTEXT.md "Draft preview": posts allow author and above). Runs
-// against the real adapter — the it project's module graph no longer
-// needs the DB-free import mocks the unit version carried.
+// Pins CONTEXT.md "Draft preview": posts allow author and above, against
+// the real adapter.
 
 describe('postLifecycleAdapter.canPreviewDraft', () => {
   it.each([

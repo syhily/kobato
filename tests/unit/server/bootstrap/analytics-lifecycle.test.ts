@@ -19,10 +19,9 @@ import { flushAccessLog, pushAccessEvent } from '@/server/domains/analytics/serv
 import { closeAnalyticsDatabase, openAnalyticsDatabase } from '@/server/infra/analytics/duckdb'
 import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
 
-// snapshotAnalyticsTo against a REAL temp-file DuckDB sidecar (adopted
-// into the lifecycle engine) and the REAL AccessLogBatcher: the pause →
-// CHECKPOINT → copyFile → resume window runs for real, only the staging
-// directory is test-owned.
+// snapshotAnalyticsTo against a REAL temp-file DuckDB sidecar and the
+// REAL AccessLogBatcher: the pause → CHECKPOINT → copyFile → resume
+// window runs for real; only the staging directory is test-owned.
 
 let analyticsHandle: AnalyticsHandle
 let stagingDir: string
@@ -102,9 +101,7 @@ describe('snapshotAnalyticsTo', () => {
   })
 
   it('loses no appends across the window: an event pushed during CHECKPOINT lands after resume', async () => {
-    // Interleave an append INTO the pause window deterministically: the
-    // decorated writer pushes the event when the snapshot issues its
-    // CHECKPOINT — i.e. after the batcher drained and paused.
+    // The decorated writer pushes the event when the snapshot issues CHECKPOINT.
     const realWriter = analyticsHandle.writer
     const decorated = Object.create(realWriter) as AnalyticsHandle['writer']
     decorated.run = async (sql: string) => {
@@ -125,9 +122,7 @@ describe('snapshotAnalyticsTo', () => {
   })
 
   it('resumes the batcher even when the copy fails', async () => {
-    // copyFile into a nonexistent directory rejects — the finally must
-    // still release the pause, or every later append would silently
-    // buffer forever.
+    // The finally must release the pause even when copyFile rejects.
     const stagingPath = join(stagingDir, 'missing-dir', 'analytics.duckdb')
     await expect(snapshotAnalyticsTo(stagingPath)).rejects.toThrow()
 
@@ -138,15 +133,12 @@ describe('snapshotAnalyticsTo', () => {
   })
 
   it('holds the retention DELETE out of a concurrent snapshot window (mutation lock)', async () => {
-    // One row older than the retention window (the maintenance job would
-    // delete it) and one fresh row (it must survive — makeEvent's default
-    // ts is 2024, which is ALSO past the window, so stamp it explicitly).
+    // makeEvent's default ts is past the window — stamp the fresh row explicitly.
     pushAccessEvent(makeEvent({ path: '/old', ts: new Date(Date.now() - 200 * 24 * 60 * 60 * 1000) }))
     pushAccessEvent(makeEvent({ path: '/new', ts: new Date() }))
     await flushAccessLog()
 
-    // Park the snapshot INSIDE its mutation-lock window: the decorated
-    // writer blocks the backup's CHECKPOINT until the test releases it.
+    // The decorated writer blocks the snapshot's CHECKPOINT until released.
     const realWriter = analyticsHandle.writer
     const decorated = Object.create(realWriter) as AnalyticsHandle['writer']
     let checkpointEntered!: () => void
@@ -164,19 +156,9 @@ describe('snapshotAnalyticsTo', () => {
       }
       return realWriter.run(sql)
     }
-    // Prototype delegation alone is not enough for the DuckDB connection
-    // (private-field receivers) — the retention job's own calls must be
-    // forwarded with the real receiver too.
+    // Prototype delegation fails on DuckDB (private-field receivers) — forward explicitly.
     decorated.runAndReadAll = (sql: string, params?: never) => realWriter.runAndReadAll(sql, params)
-    // Record every statement the maintenance job manages to issue through
-    // the engine's READER while the snapshot holds the lock (the test's
-    // own reads go through the undecorated handle, so only production
-    // code paths land here). This turns the negative assertion below into
-    // a deterministic pin: while the lock works, the job is parked at
-    // `await previous` and can issue NOTHING; if the lock were broken,
-    // its path from the (resolved) lock promise to its first statement is
-    // pure microtasks, drained by a single event-loop turn — no real-time
-    // wait can race it.
+    // Record the maintenance job's reader statements — the negative pin is deterministic.
     const realReader = analyticsHandle.reader
     const decoratedReader = Object.create(realReader) as AnalyticsHandle['reader']
     const maintenanceStatements: string[] = []

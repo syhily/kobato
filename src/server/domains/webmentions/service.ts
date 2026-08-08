@@ -81,13 +81,8 @@ export interface VerifiedSource {
 }
 
 /**
- * The shared verification core for every webmention check — the
- * receive-time check, the daily re-verification cycle, and the admin's
- * manual re-verification: fetch the source document (SSRF-guarded,
- * 1 MB cap), confirm it links to the target's canonical URL, and
- * extract the response-type classification + metadata. Throws a
- * DomainError with a human-readable message on any failure, so every
- * caller records the same `lastError` wording.
+ * The shared verification core: fetch the source (SSRF-guarded, 1 MB cap),
+ * confirm the link, classify. Throws DomainError so callers share `lastError` wording.
  */
 export async function verifyWebmentionSource(sourceUrl: string, targetCanonicalUrl: string): Promise<VerifiedSource> {
   const html = await fetchSourceHtml(sourceUrl)
@@ -98,27 +93,9 @@ export async function verifyWebmentionSource(sourceUrl: string, targetCanonicalU
 }
 
 /**
- * Verify and store one webmention: resolve the target to a live
- * post/page, fetch the source through the SSRF-guarded fetcher, verify
- * it links to the target's canonical URL, classify the response type,
- * then store it as `pending` and notify the admin. The caller is the
- * inbox queue worker (`inbox.ts`) — the endpoint only enqueues the pair
- * and answers 202, so transient fetch failures surface here as
- * `DomainError` with `retryable` and terminal ones without (async-inbox
- * design, docs/plans/2026-08-02-webmention-async-inbox-design.md).
- *
- * The stored source key is `requireSourceKey(input.source)` (R12) so a
- * re-mention after the source author edits their post folds into the
- * existing row instead of duplicating. The inbox row carries only that
- * normalized key, so this worker fetches and verifies the NORMALIZED
- * source — fragment / default-port / trailing-slash variants of the
- * claimed URL converge before verification (design doc §2.1; the
- * fragment never reaches the wire anyway, and a default port is the
- * same server). Notification fires only for genuinely new
- * moderation events (R11): a fresh row (`inserted`) or an approved row
- * demoted back to pending by a content update (`demoted`) — pending
- * refreshes and rejected re-sends stay silent so a spammer cannot mail-
- * bomb the admin through one row.
+ * Verify + store one mention as `pending` and notify (async-inbox design,
+ * docs/plans/2026-08-02-webmention-async-inbox-design.md): source key is
+ * `requireSourceKey` (R12), notify only on `inserted`/`demoted` (R11).
  */
 export async function receiveWebmention(db: Database, input: WebmentionReceiveInput): Promise<ReceiveWebmentionResult> {
   const target = await resolveWebmentionTargetOrThrow(db, input.target)
@@ -167,8 +144,7 @@ export async function listAdminWebmentions(
   }
 }
 
-// Outbound send log — read-only by design: a retry is a republish (the
-// upsert resets terminal rows), not an admin mutation.
+// Outbound send log — read-only: a retry is a republish, not an admin mutation.
 export async function listAdminWebmentionOutbox(
   db: Database,
   input: { offset: number; limit: number; status?: 'all' | 'pending' | 'sent' | 'no-endpoint' | 'failed' },
@@ -187,16 +163,13 @@ export async function listAdminWebmentionOutbox(
   }
 }
 
-/** Public display feed: approved mentions only — internal fields never
- *  leave the server (see the DTO contract in shared/contracts). */
+/** Public display feed — approved mentions only (DTO contract in shared/contracts). */
 export async function listPublicWebmentions(db: Database, target: EntityTarget): Promise<PublicWebmentionWire[]> {
   return asPublicWebmentionsWire(await listApprovedWebmentionsForTarget(db, target))
 }
 
-/** The per-entity display switch (post/page meta `webmentions_enabled`).
- *  One PK read; a missing row answers false (block hidden) — safe
- *  default for a dangling target. Owned here so the detail loader and
- *  the `public.webmention.list` procedure share the same gate. */
+/** Per-entity display switch: one PK read; a missing row answers false.
+ *  Single gate shared by the detail loader and `public.webmention.list`. */
 async function isEntityWebmentionsEnabled(db: Database, target: EntityTarget): Promise<boolean> {
   if (target.type === 'post') {
     const rows = await db
@@ -214,15 +187,8 @@ async function isEntityWebmentionsEnabled(db: Database, target: EntityTarget): P
   return rows[0]?.enabled ?? false
 }
 
-/**
- * The public display feed with BOTH display switches applied — the
- * global `displayOnPosts` setting AND the per-entity meta toggle — each
- * resolving to an honest empty list so the block never renders. The
- * entity flag is only read when the global switch is on. Single owner
- * of the gate: the detail loader (SSR) and the `public.webmention.list`
- * procedure (headless API) both call here, so the split never has to
- * duplicate the logic in the public frontend.
- */
+/** Public feed with both switches applied (global + per-entity), each to an
+ *  honest empty list; single gate for SSR and the headless API. */
 export async function loadPublicWebmentionsForTarget(
   db: Database,
   target: EntityTarget,
@@ -246,18 +212,14 @@ async function moderate(db: Database, id: string, status: WebmentionStatus): Pro
   if (row === null) {
     throw new DomainError('NOT_FOUND', 'Webmention 不存在。')
   }
-  // A hidden mention can only return to the public page through a
-  // successful re-verification — approving it directly would bypass the
-  // source check that put it there.
+  // A hidden mention returns to the public page only via successful re-verification.
   if (status === 'approved' && row.status === 'hidden') {
     throw new DomainError('BAD_REQUEST', '已隐藏的 Webmention 只能通过重新验证恢复。')
   }
   await setWebmentionStatus(db, row.id, status)
 }
 
-// Approve/reject are idempotent transitions (re-applying the same
-// status just bumps moderatedAt) so a double-click in the admin UI
-// never surfaces an error.
+// Idempotent transitions, so a double-click never errors.
 export async function approveWebmention(db: Database, id: string): Promise<void> {
   await moderate(db, id, 'approved')
 }

@@ -20,8 +20,7 @@ const { fontsEmbeddedRouter } = await import('@/server/http/resources/fonts-embe
 const HASH = 'a'.repeat(64)
 const MISSING_HASH = 'b'.repeat(64)
 
-// Seed one package under the storage `fonts/` namespace. File contents are
-// irrelevant — what matters is which URL shapes reach the filesystem.
+// File contents are irrelevant — what matters is which URL shapes reach the filesystem.
 beforeAll(() => {
   mkdirSync(`${tmp.root}/fonts/${HASH}`, { recursive: true })
   writeFileSync(`${tmp.root}/fonts/${HASH}/result.css`, '@font-face{}')

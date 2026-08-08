@@ -9,12 +9,9 @@ import { localInputValueToIso } from '@/ui/admin/editor-shell/editor-datetime'
 import { EditorMetaPanel } from '@/ui/admin/editor-shell/EditorMetaPanel'
 import { metaDraftFromPost, PostMetaSidebar } from '@/ui/admin/posts/PostMetaSidebar'
 
-// PostMetaSidebar is the props-driven aside rendered inside the post editor.
-// It owns no data fetching — every field is controlled via the `draft` prop —
-// so SSR renders both the populated and empty-state branches by swapping the
-// fixture. PostEditorShell mounts a TipTap editor (browser-only) so it is
-// skipped; the prop-driven MetaPanel wrappers (Aside/Sheet) are covered
-// instead with a hand-rolled editor-shell state stub.
+// PostMetaSidebar is props-driven (no fetching) — SSR renders populated and
+// empty branches by swapping the draft. PostEditorShell is skipped (TipTap
+// is browser-only); MetaPanel wrappers use a stubbed editor-shell state.
 
 const noop = () => undefined
 
@@ -51,11 +48,9 @@ describe('snapshot: PostMetaSidebar', () => {
     )
     expect(html).toContain('基本信息')
     expect(html).toContain('A populated summary for the post.')
-    // Cover / OG section.
     expect(html).toContain('封面 / OG 图')
     expect(html).toContain('/images/cover.png')
     expect(html).toContain('/images/og.png')
-    // Display-options card with all toggle labels.
     expect(html).toContain('展示选项')
     expect(html).toContain('开启评论')
     expect(html).toContain('显示目录')
@@ -77,7 +72,6 @@ describe('snapshot: PostMetaSidebar', () => {
       ),
     )
     expect(html).not.toContain('置顶到首页')
-    // Other toggles remain.
     expect(html).toContain('开启评论')
     expect(html).toContain('显示目录')
   })
@@ -98,7 +92,6 @@ describe('snapshot: PostMetaSidebar', () => {
     expect(html).toContain('未保存')
     // No cover value => the empty hint copy shows.
     expect(html).toContain('点击此处上传封面，或粘贴一张图片 URL。')
-    // Summary textarea is empty but still rendered.
     expect(html).toContain('摘要')
   })
 
@@ -165,7 +158,7 @@ describe('snapshot: PostMetaSidebar', () => {
         />,
       ),
     )
-    // The empty-content branch swaps in a GeneratedOgPreview pointing at the slug.
+    // Empty og → GeneratedOgPreview pointing at the slug.
     expect(html).toContain('当前展示的是默认生成的 OG')
     expect(html).toContain('hello-world')
   })
@@ -205,8 +198,6 @@ describe('snapshot: PostMetaSidebar', () => {
   })
 })
 
-// ────────────────────── pure helpers on PostMetaDraft ──────────────────────
-
 describe('snapshot: PostMetaDraft pure helpers', () => {
   it('metaDraftFromPost maps an AdminPostDto onto a draft (pinned from pinnedAt)', () => {
     const post = makeAdminPost({ pinnedAt: '2024-05-01T00:00:00.000Z', tags: ['a', 'b'] })
@@ -214,18 +205,15 @@ describe('snapshot: PostMetaDraft pure helpers', () => {
     expect(draft.slug).toBe(post.slug)
     expect(draft.pinned).toBe(true)
     expect(draft.tags).toEqual(['a', 'b'])
-    // publishedAt is a future-dated ISO; the helper converts it to a local
-    // input value only when it is in the future. For a past date it clears it.
+    // Past publishedAt → cleared (future ones stay as local input values).
     expect(draft.publishedAt).toBe('')
   })
 
   it('metaDraftFromPost keeps a future publishedAt as a local input value', () => {
     const post = makeAdminPost({ publishedAt: '2099-12-31T10:00:00.000Z' })
     const draft = metaDraftFromPost(post)
-    // The helper converts the ISO to a *local* datetime-local input value,
-    // so we assert the shape rather than a timezone-pinned string.
+    // ISO → local datetime-local value; assert shape, not a timezone-pinned string.
     expect(draft.publishedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/u)
-    // Round-trip: the local value parses back to the same instant.
     expect(Date.parse(localInputValueToIso(draft.publishedAt)!)).toBe(Date.parse(post.publishedAt))
   })
 
@@ -257,22 +245,16 @@ describe('snapshot: PostMetaDraft pure helpers', () => {
     expect(localInputValueToIso('')).toBeNull()
     expect(localInputValueToIso('   ')).toBeNull()
     expect(localInputValueToIso('not-a-date')).toBeNull()
-    // The function parses the local input and emits an ISO string ending in Z.
     const iso = localInputValueToIso('2099-01-02T03:04')
     expect(iso).not.toBeNull()
     expect(iso).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.000Z$/u)
-    // Round-trips back to the same instant in the local zone.
     const backToLocal = new Date(iso!).getTime()
     expect(Number.isFinite(backToLocal)).toBe(true)
   })
 })
 
-// ───────────────────────── EditorMetaPanel ────────────────────────────
-// The shared meta panel (aside / Sheet) consumes a narrow `sidebar` state
-// slice plus a delete/restore wiring bag. We build minimal stubs that satisfy
-// the props so the SSR render exercises the aside/sheet branch logic without
-// bringing up the full editor state machine (which depends on a TipTap editor
-// instance + local-storage draft sync).
+// Minimal stubs satisfy the panel props — the full editor state machine
+// (TipTap + draft sync) isn't needed.
 
 const sidebarState = {
   draft: populatedDraft,
@@ -318,7 +300,6 @@ describe('snapshot: EditorMetaPanel (aside)', () => {
   it('renders the sidebar (lg aside) with revision + delete extras for an existing post', () => {
     const post = makeAdminPost({ title: 'Editable Post' })
     const html = renderMetaPanel({ id: post.id, slug: post.slug, title: post.title, deletedAt: post.deletedAt })
-    // Aside + sidebar body.
     expect(html).toContain('基本信息')
     // Extras renders the revision-history trigger + delete button (edit mode).
     expect(html).toContain('历史版本')
@@ -343,8 +324,7 @@ describe('snapshot: EditorMetaPanel (aside)', () => {
 describe('snapshot: EditorMetaPanel (sheet)', () => {
   it('renders the sheet wrapper (closed state emits no panel body on SSR)', () => {
     const post = makeAdminPost({ title: 'Sheet Post' })
-    // The Base UI Sheet portal does not emit its content during SSR when
-    // closed, but the component still mounts without throwing.
+    // Closed Sheet portal emits nothing under SSR — the component still mounts without throwing.
     const html = stableHtml(
       renderInRouter(
         <EditorMetaPanel
@@ -362,9 +342,7 @@ describe('snapshot: EditorMetaPanel (sheet)', () => {
         '/editor/post/1',
       ),
     )
-    // ConfirmDialog (closed) emits nothing; the sheet content is portalled.
-    // We only assert the render doesn't throw — user-visible copy is behind
-    // the portal which SSR skips.
+    // Closed portals emit nothing — assert only that the render doesn't throw.
     expect(html).toBe('')
   })
 })

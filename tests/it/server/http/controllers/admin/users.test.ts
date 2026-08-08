@@ -11,11 +11,7 @@ import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-reg
 import { session as sessionTable } from '@/server/infra/db/schema/session'
 import { user as userTable } from '@/server/infra/db/schema/user'
 
-// The admin users routers against the real engine: the operations
-// layer, the admin service guards, and the session repository all run
-// against seeded rows. The only stub is the email sender — a true
-// external (SMTP/HTTP) that the service module imports but none of the
-// procedures exercised here reach.
+// Admin users routers against the real engine; only stub: the email sender (true external).
 vi.mock('@/server/infra/email/sender', () => ({
   sendAuthorInvite: vi.fn(),
   sendPasswordReset: vi.fn(),

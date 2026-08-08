@@ -7,11 +7,8 @@ import { commentWithUser, whereTarget } from '@/server/domains/comments/repos/sh
 import { comment } from '@/server/infra/db/schema/comment'
 import { user } from '@/server/infra/db/schema/user'
 
-// Viewer-visibility predicate, shared by the three thread queries below. A
-// row is visible when it falls inside the caller-visible pending set and
-// has no pending delete request — or when it is the viewer's own comment
-// still awaiting approval or deletion, so its author keeps seeing it with
-// its moderation state.
+// Viewer-visibility predicate: caller-visible pending rows without a delete
+// request, or the viewer's own pending/delete-requested comment.
 function whereViewerVisible(pendingValues: boolean[], currentUserId?: number) {
   return or(
     and(inArray(comment.isPending, pendingValues), isNull(comment.deleteRequestedAt)),
@@ -21,8 +18,7 @@ function whereViewerVisible(pendingValues: boolean[], currentUserId?: number) {
   )
 }
 
-// Computes both totals in a single round-trip using a filtered aggregate so
-// loaders don't issue two near-identical queries on every comment render.
+// Both totals in one round-trip via a filtered aggregate.
 export async function countCommentsAndRoots(
   db: Database,
   target: EntityTarget,

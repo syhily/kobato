@@ -7,12 +7,8 @@ import { scheduleJob, type ScheduledJob } from '@/server/infra/scheduler-utils'
 
 const log = getLogger('webmentions.inbox-scheduler')
 
-// The db getter is injected by the composition root
-// (`@/server/bootstrap/db-lifecycle`, which imports this module) at wire
-// time — same injection discipline as `wireWebmentionOutboxScheduler`:
-// the getter is invoked when the job evaluates, so a recreated handle
-// (restore completion) is picked up without being captured in module
-// state.
+// Db getter injected by the composition root at wire time; invoked when
+// the job evaluates, so a recreated handle (restore) is picked up.
 let resolveDb: (() => Database) | null = null
 let job: ScheduledJob | null = null
 
@@ -20,25 +16,18 @@ export function wireWebmentionInboxScheduler(deps: { getDb: () => Database }): v
   resolveDb = deps.getDb
 }
 
-// Burst throttle: a mention burst can enqueue many rows, all due at
-// once — the worker drains them INBOX_BATCH_SIZE at a time and each
-// drained batch makes the next one due 'now'. Without a floor the
-// self-rescheduling seam would fire back-to-back setTimeout(0)s and the
-// whole burst would hit third-party source hosts as fast as the
-// round-trips allow. One second is prompt for the first verification
-// and spaces the burst out.
+// Burst throttle: drained batches self-reschedule; the floor keeps a
+// burst from hammering third-party hosts back-to-back.
 export const INBOX_MIN_DELAY_MS = 1_000
 
 function nextWebmentionInboxDelayMs(): number | null {
   if (!resolveDb) {
-    // Suspended until the composition root wires the db getter — the seam
-    // re-evaluates periodically, so wiring late still takes effect.
+    // Not wired yet; the seam re-evaluates, so wiring late still takes effect.
     return null
   }
   const due = findNextWebmentionInboxDueAt(resolveDb())
   if (due === null) {
-    // Nothing queued: suspend. Every enqueue nudges
-    // `rescheduleWebmentionInbox`, so a fresh row arms the timer promptly.
+    // Nothing due: suspend; enqueues nudge the seam.
     return null
   }
   if (due === 'now') {
@@ -66,13 +55,8 @@ export function scheduleWebmentionInbox(): void {
   job.reschedule()
 }
 
-/**
- * Nudge from the enqueue path (the /webmention endpoint) — new rows are
- * due immediately (`next_retry_at NULL`), so the timer should fire
- * within the throttle floor rather than at the previously computed
- * waterline. No-op until the composition root starts the job, so the
- * endpoint in unit tests never arms a real timer.
- */
+/** Nudge from the enqueue path — new rows are due now. No-op until the
+ *  composition root starts the job (unit tests never arm a real timer). */
 export function rescheduleWebmentionInbox(): void {
   job?.reschedule()
 }

@@ -2,8 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { formatLocalDate, formatShowDate, slicePosts } from '@/shared/utils/formatter'
 
-// Minimal aggregated-shaped fixture for the date formatters. Only the
-// `locale` / `timeZone` / `timeFormat` slice is read.
+// Minimal aggregated-shaped fixture; only the locale/timeZone/timeFormat slice is read.
 const config = {
   settings: {
     locale: 'zh-CN',
@@ -35,13 +34,8 @@ describe('services/markdown/formatter — slicePosts', () => {
   })
 })
 
-// Home-only feature: when `mergeTailWhenLessThan` is set, the natural
-// last page is merged into its predecessor whenever the orphan tail is
-// strictly smaller than the threshold. The threshold every other listing
-// route opts out of by leaving the option unset; home wires it as
-// pageSize - 2 so a tail of 1 or 2 posts on a 10-per-page setting
-// collapses into the previous page, while a near-full tail e.g. 8 of 10
-// keeps its own page.
+// mergeTailWhenLessThan: the orphan tail merges into the previous page only
+// when strictly smaller than the threshold (home wires it as pageSize - 2).
 describe('services/markdown/formatter — slicePosts tail-merge guard', () => {
   it('does nothing when the option is left unset (legacy behaviour)', () => {
     const posts = Array.from({ length: 12 }, (_, i) => i)
@@ -50,7 +44,6 @@ describe('services/markdown/formatter — slicePosts tail-merge guard', () => {
   })
 
   it('does nothing when the option is set but the tail is large enough', () => {
-    // pageSize=10, threshold=8. Tail of 8 posts is NOT < 8, so no merge.
     const posts = Array.from({ length: 18 }, (_, i) => i)
     const result = slicePosts(posts, 2, 10, { mergeTailWhenLessThan: 8 })
     expect(result.totalPage).toBe(2)
@@ -58,9 +51,6 @@ describe('services/markdown/formatter — slicePosts tail-merge guard', () => {
   })
 
   it('merges the orphan tail into the previous page when below the threshold', () => {
-    // pageSize=10, threshold=8. Tail of 2 posts IS < 8, so merge.
-    // Expected: totalPage drops from 2 to 1; the only remaining page
-    // returns all 12 posts in one open-ended slice.
     const posts = Array.from({ length: 12 }, (_, i) => i)
     const result = slicePosts(posts, 1, 10, { mergeTailWhenLessThan: 8 })
     expect(result.totalPage).toBe(1)
@@ -68,9 +58,6 @@ describe('services/markdown/formatter — slicePosts tail-merge guard', () => {
   })
 
   it('merges across the middle of the catalogue, not just the very last tail', () => {
-    // pageSize=10, threshold=8. 23 posts naturally split 10 / 10 / 3.
-    // Tail of 3 IS < 8, so merge. Expected: totalPage drops 3 to 2;
-    // page 2 now holds posts 10..22 (13 posts) via the open-ended slice.
     const posts = Array.from({ length: 23 }, (_, i) => i)
     const result = slicePosts(posts, 2, 10, { mergeTailWhenLessThan: 8 })
     expect(result.totalPage).toBe(2)
@@ -78,17 +65,14 @@ describe('services/markdown/formatter — slicePosts tail-merge guard', () => {
   })
 
   it('out-of-range page after a merge yields the empty + new totalPage shape', () => {
-    // The shared `redirectListingOverflow` helper relies on this exact
-    // contract: pageNum > totalPage returns currentPosts: [] alongside
-    // the merged totalPage so the helper can 301-redirect.
+    // redirectListingOverflow 301s via this contract: pageNum > totalPage yields currentPosts: [] + the merged totalPage.
     const posts = Array.from({ length: 12 }, (_, i) => i)
     const result = slicePosts(posts, 2, 10, { mergeTailWhenLessThan: 8 })
     expect(result).toEqual({ currentPosts: [], totalPage: 1 })
   })
 
   it('never merges when there is only one natural page', () => {
-    // A tail-merge on totalPage=1 has no predecessor to absorb the
-    // orphans, so the guard is intentionally skipped.
+    // No predecessor page exists at totalPage=1, so the merge guard is skipped.
     const posts = Array.from({ length: 3 }, (_, i) => i)
     const result = slicePosts(posts, 1, 10, { mergeTailWhenLessThan: 8 })
     expect(result.totalPage).toBe(1)
@@ -103,7 +87,6 @@ describe('services/markdown/formatter — slicePosts tail-merge guard', () => {
   })
 
   it('boundary: tail equal to the threshold does NOT merge (strict less-than)', () => {
-    // pageSize=10, threshold=8. Tail of exactly 8 stays on its own page.
     const posts = Array.from({ length: 18 }, (_, i) => i)
     const result = slicePosts(posts, 2, 10, { mergeTailWhenLessThan: 8 })
     expect(result.totalPage).toBe(2)
@@ -111,7 +94,6 @@ describe('services/markdown/formatter — slicePosts tail-merge guard', () => {
   })
 
   it('boundary: tail one below the threshold DOES merge', () => {
-    // pageSize=10, threshold=8. Tail of 7 collapses into the previous page.
     const posts = Array.from({ length: 17 }, (_, i) => i)
     const result = slicePosts(posts, 1, 10, { mergeTailWhenLessThan: 8 })
     expect(result.totalPage).toBe(1)

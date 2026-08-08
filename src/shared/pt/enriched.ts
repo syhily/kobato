@@ -7,16 +7,11 @@ import type {
 } from '@/shared/pt/schema'
 import type { MusicPlayerBlockMeta } from '@/shared/types/music'
 
-// Request-scoped enrichment layer over the storage-pure wire schema
-// (`@/shared/pt/schema`). The SSR prerender (`@/server/domains/pt/prerender`)
-// attaches resolved music metadata to `musicPlayer` blocks in memory so the
-// React renderer can paint without a client fetch. This shape is never
-// authored, never accepted at the API perimeter, and never stored in
-// `content.body` — which is why `meta` lives HERE and not on the schema.
-// Every enriched type is a structural supertype of its wire twin, so a
-// plain stored body is assignable anywhere an enriched one is expected.
+// Request-scoped enrichment layer over the storage-pure wire schema:
+// the SSR prerender attaches resolved music metadata to `musicPlayer`
+// blocks in memory. Never authored, accepted at the API perimeter, or
+// stored — which is why `meta` lives HERE, not on the schema.
 
-/** `musicPlayer` block carrying SSR-resolved metadata. */
 export type EnrichedMusicPlayerBlock = MusicPlayerBlock & { meta?: MusicPlayerBlockMeta }
 
 export type EnrichedNonRecursiveBlock = Exclude<NonRecursiveBlock, MusicPlayerBlock> | EnrichedMusicPlayerBlock

@@ -11,23 +11,14 @@ import { __adoptAnalyticsHandleForTests, __resetAnalyticsEngineForTests } from '
 import { post as postTable } from '@/server/infra/db/schema/post'
 import { postTag } from '@/server/infra/db/schema/post-tag'
 import { tag as tagTable } from '@/server/infra/db/schema/taxonomy'
-// Parity net for plan 062: /admin/posts/:postId/analytics and
-// /editor/post/:id/analytics share the `admin.posts.analytics` procedure
-// (shape `AdminPostAnalyticsData`). This test
-// pins both routes to identical loader data for the same post so a
-// future edit can't silently diverge one shell from the other.
-//
-// Real engine: the post + tags are real rows in the content database
-// and every analytics query (counters / views / heatmap / metrics)
-// runs for real against a seeded DuckDB sidecar — ADOPTED into the
-// lifecycle engine (no module mock). The only kept seam is the
-// presentational view module.
+// Parity net for plan 062: pins both analytics shells to identical loader
+// data for the same post. Real engine: real rows + the seeded DuckDB
+// sidecar adopted into the lifecycle; only the view module is mocked.
 import { METRIC_GROUPS, METRIC_GROUP_TABS } from '@/shared/contracts/analytics'
 
 const analytics = vi.hoisted(() => ({ handle: null as unknown as AnalyticsHandle }))
 
-// Keep the parity test on the loader surface; the shared view is covered
-// by the route snapshots.
+// Loader-surface test; the shared view is covered by the route snapshots.
 vi.mock('@/ui/admin/analytics/PostAnalyticsView', () => ({
   PostAnalyticsHeader: () => null,
   PostAnalyticsView: () => null,

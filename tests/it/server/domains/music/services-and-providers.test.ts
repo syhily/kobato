@@ -12,11 +12,7 @@ import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@/s
 const { setBlogSettingsBundleForTests } = await import('#/_helpers/blog-settings')
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('#/_helpers/blog-settings')
 
-// The storage registry is NOT module-mocked: both driver slots route at
-// the shared in-memory backend through the registry test seam. `put` on
-// the 's3' slot is a spy wrapping the real memory implementation so the
-// addMusic happy path can still pin the visibility/content-type arguments
-// — spying on a real implementation, not stubbing the module.
+// Both driver slots route through the registry seam; 's3' put is a spy over the real implementation.
 const s3Memory = makeMemoryBackend({ driver: 's3' })
 const localMemory = makeMemoryBackend({ driver: 'local' })
 let s3Put: Mock<StorageBackend['put']>
@@ -54,9 +50,7 @@ beforeEach(async () => {
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
   await clearAllTables(db)
   vi.clearAllMocks()
-  // After clearAllMocks so the spy starts empty. The 's3' memory backend
-  // is available, so the real registry resolves it as the active backend;
-  // 'local' is swapped too so backendFor('local') never touches disk.
+  // After clearAllMocks so the spy starts empty; 'local' is swapped so it never touches disk.
   s3Put = vi.fn(s3Memory.backend.put)
   __setStorageBackendForTests('s3', { ...s3Memory.backend, put: s3Put })
   __setStorageBackendForTests('local', localMemory.backend)
@@ -300,9 +294,7 @@ describe('music/services/write/add — addMusic', () => {
       getLyric: vi.fn(async () => '[00:00] Hi'),
     })
 
-    // A real Response: `downloadBinary` follows redirects manually off
-    // `.status` and streams the body through a size-capped reader, so a
-    // plain object literal no longer suffices.
+    // downloadBinary streams a real Response body through a size-capped reader.
     const fetchMock = vi.fn(
       async () => new Response(new Uint8Array(4), { status: 200, headers: { 'content-length': '4' } }),
     )
@@ -316,9 +308,7 @@ describe('music/services/write/add — addMusic', () => {
     expect(resolveAudioUrl).toHaveBeenCalledWith(track)
     expect(resolveCoverUrl).toHaveBeenCalledTimes(1)
     expect(resolveCoverUrl).toHaveBeenCalledWith(track)
-    // Both assets land on the active backend with their fixed content types
-    // (MP3 audio, JPEG cover) and public visibility — asserted on a spy
-    // wrapping the real memory backend, and backed by store state.
+    // Fixed content types (MP3 audio, JPEG cover) and public visibility.
     expect(s3Put).toHaveBeenCalledWith(
       expect.objectContaining({ key: r.audioStoragePath, contentType: 'audio/mpeg', visibility: 'public' }),
     )
@@ -359,8 +349,7 @@ describe('music/services/write/add — addMusic', () => {
     await deleteMod.deleteMusic(db, Number(first.id))
     expect(s3Memory.store.has(first.audioStoragePath)).toBe(false)
 
-    // Re-adding the same (source, sourceId) must restore the soft-deleted
-    // row — not die on the UNIQUE constraint it still occupies.
+    // Re-adding the same (source, sourceId) restores the soft-deleted row, not dies on its UNIQUE constraint.
     mockProviderOnce('Song Remastered')
     const second = await addMod.addMusic(db, { source: 'netease', sourceId: 're-add', uploader: null })
 
@@ -370,19 +359,14 @@ describe('music/services/write/add — addMusic', () => {
     const rows = await db.select().from(music)
     expect(rows).toHaveLength(1)
     expect(rows[0].deletedAt).toBeNull()
-    // deleteMusic removed the objects; the restore re-uploads them to the
-    // row's original storage paths.
+    // The restore re-uploads the objects to the row's original storage paths.
     expect(second.audioStoragePath).toBe(first.audioStoragePath)
     expect(s3Memory.store.has(second.audioStoragePath)).toBe(true)
     expect(s3Memory.store.has(second.coverStoragePath)).toBe(true)
   })
 
   it('keeps the re-uploaded objects when the restore write fails but the row still claims the paths', async () => {
-    // The concurrent-restore race: two re-adds restore the SAME
-    // soft-deleted row (restoreMusic has no deletedAt guard, so both
-    // pass it), then the loser's write fails on an independent database
-    // error. Its rollback must NOT delete the objects the row still
-    // claims — that would orphan the winner's live row (player 404).
+    // Loser's rollback must NOT delete the objects the row still claims — that would orphan the winner's live row.
     const row = await seedMusic({
       source: 'netease',
       sourceId: 'restore-race',
@@ -412,8 +396,7 @@ describe('music/services/write/add — addMusic', () => {
       'fetch',
       vi.fn(async () => new Response(new Uint8Array(4), { status: 200, headers: { 'content-length': '4' } })),
     )
-    // The winner's restore landed (the row is live again on the same
-    // paths); the loser's restore then fails on an independent error.
+    // The winner's restore lands; the loser's then fails on an independent error.
     vi.spyOn(musicOps, 'restoreMusic').mockImplementationOnce(async () => {
       await db.update(music).set({ deletedAt: null }).where(eq(music.id, row.id))
       throw new Error('independent database error')

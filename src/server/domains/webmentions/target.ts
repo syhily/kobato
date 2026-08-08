@@ -27,13 +27,8 @@ function decodeSegment(segment: string | undefined): string | null {
   }
 }
 
-/**
- * Resolve a webmention `target` URL to a live post/page on this site.
- * Returns null when the URL is not on the site origin, does not match
- * the `/posts/<slug>` or `/<slug>` shapes, or the entity is not live
- * (draft / scheduled / trashed / missing). The mention is rejected at
- * the route with 404 in that case.
- */
+/** Resolve a webmention `target` URL to a live post/page, else null
+ *  (the receive route answers 404). */
 export async function resolveWebmentionTarget(db: Database, rawTarget: string): Promise<WebmentionTarget | null> {
   const target = tryParseUrl(rawTarget)
   if (target === null || (target.protocol !== 'http:' && target.protocol !== 'https:')) {
@@ -73,12 +68,7 @@ export async function resolveWebmentionTarget(db: Database, rawTarget: string): 
   }
 }
 
-/**
- * `resolveWebmentionTarget` for the two receive-side paths that both
- * reject an unknown target outright — the endpoint's enqueue (a 404 at
- * the route) and the inbox worker (a terminal drop): a null resolution
- * is always a DomainError there, never a silent skip.
- */
+/** `resolveWebmentionTarget` as an error — null is never a silent skip here. */
 export async function resolveWebmentionTargetOrThrow(db: Database, rawTarget: string): Promise<WebmentionTarget> {
   const target = await resolveWebmentionTarget(db, rawTarget)
   if (target === null) {

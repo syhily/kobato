@@ -30,8 +30,7 @@ function TabsTrigger({
   value,
   ...props
 }: Omit<ComponentProps<typeof BaseTabs.Tab>, 'value'> & { value?: string }) {
-  // Base UI v1.x renamed `data-selected` to `data-active` (mui/base-ui#3024).
-  // Keep selectors on `data-[active]:*` so the active state actually highlights.
+  // Base UI v1.x renamed `data-selected` to `data-active` (mui/base-ui#3024) — keep `data-[active]:*` selectors.
   return (
     <BaseTabs.Tab
       data-slot="tabs-trigger"

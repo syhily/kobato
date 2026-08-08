@@ -161,9 +161,8 @@ function SectionWrapper({
   const { ref } = useScrollSpy(id)
   const { flushSection } = useSettingsFlushContext()
   const sectionRef = useRef<HTMLDivElement>(null)
-  // Track whether this section has ever been visible. Without this, the
-  // initial mount (section starts off-screen below the fold) would fire a
-  // spurious "left the viewport" flush before the user has scrolled at all.
+  // Only flush a "left the viewport" event after the section has ever been
+  // visible — the initial mount starts off-screen below the fold.
   const hasBeenVisibleRef = useRef(false)
   const Icon = ICON_MAP[icon]
 
@@ -172,8 +171,8 @@ function SectionWrapper({
     if (!el) {
       return
     }
-    // Root is the content scroller, not the viewport — the panel is a fixed
-    // inset-0 container with its own scroll context.
+    // Root is the content scroller — the panel is a fixed inset-0 container
+    // with its own scroll context.
     const root = document.getElementById('settings-content-scroller')
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -262,10 +261,9 @@ function SettingsPageInner() {
     }
   }, [navigate, flushAll])
 
-  // Flush pending edits when the page is hidden (tab switch, minimize, mobile
-  // background) or unloaded. `pagehide` covers close-tab / back-nav on mobile
-  // where visibilitychange doesn't fire. `beforeunload` is deliberately not
-  // used — it would pop a "leave site?" dialog, violating the silent-save UX.
+  // Flush pending edits when the page is hidden or unloaded. `pagehide` covers
+  // close-tab / back-nav where visibilitychange doesn't fire. `beforeunload`
+  // is deliberately unused — it would pop a "leave site?" dialog.
   useEffect(() => {
     const onVisibility = () => {
       if (document.visibilityState === 'hidden') {

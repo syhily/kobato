@@ -38,11 +38,7 @@ export function TableOfContents({ headings, toc = 'disabled' }: TableOfContentsP
     }
   }, [])
 
-  // Scroll-lock the page only when the drawer is actually open. Tying
-  // it to `hovered` made the body gain a 15px padding-right every time
-  // the cursor entered the toggle, which shoved every `fixed right-*`
-  // chrome element (logged-in avatar, floating buttons) 15px leftward
-  // and back on each hover/leave — visible page jitter.
+  // Scroll-lock the body only while the drawer is open.
   useEffect(() => {
     if (typeof document === 'undefined' || !visible) {
       return
@@ -74,8 +70,7 @@ export function TableOfContents({ headings, toc = 'disabled' }: TableOfContentsP
           visible ? 'bg-surface' : 'bg-canvas/90',
         )}
         style={{ zIndex: 'var(--z-toc-toggle-open)' }}
-        // Closed-state resting geometry so the SSR/static fallback sits
-        // exactly where the settled animation would.
+        // Closed-state resting geometry — the SSR/static fallback sits where the settled animation would.
         fallbackStyle={{ width: 100, height: 100, marginRight: -80 }}
         animate={{
           width: visible ? 50 : 100,

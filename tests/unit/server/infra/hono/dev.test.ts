@@ -2,11 +2,8 @@ import type { UserConfig } from 'vite'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// dev.ts pulls in @hono/vite-dev-server (default + /node) and reads the
-// React Router plugin context off `config.__reactRouterPluginContext`. To
-// drive the plugin hooks in isolation we stub the Hono dev-server factory
-// and `node:fs` so the entry-resolution + configureServer paths can run
-// deterministically without a real Vite project on disk.
+// Stub the Hono dev-server factory and `node:fs` so the entry-resolution +
+// configureServer paths run deterministically without a real Vite project.
 
 const honoDevServerMock = vi.hoisted(() => vi.fn((..._args: unknown[]) => ({ configureServer: vi.fn() })))
 const nodeAdapterMock = vi.hoisted(() => ({ __esModule: true, default: vi.fn() }))
@@ -27,7 +24,6 @@ vi.mock('@/server/infra/hono/dev-server-ref', () => ({
   getViteDevServer: vi.fn(() => null),
 }))
 
-// Capture NODE_ENV manipulation across runs.
 const originalNodeEnv = process.env.NODE_ENV
 const originalStderrWrite = process.stderr.write
 
@@ -39,9 +35,8 @@ function restoreStderr() {
   process.stderr.write = originalStderrWrite
 }
 
-// Build a minimal React-Router plugin context shape that resolvePluginConfig
-// understands. appDirectory/buildDirectory must be absolute under rootDirectory
-// so `path.relative(rootDirectory, appDirectory)` yields 'app'.
+// appDirectory/buildDirectory must be absolute under rootDirectory so
+// `path.relative(rootDirectory, appDirectory)` yields 'app'.
 function reactRouterContext(overrides: Record<string, unknown> = {}) {
   return {
     __reactRouterPluginContext: {
@@ -133,7 +128,6 @@ describe('infra/hono/dev — reactRouterHonoServer plugin', () => {
         'import.meta.env.REACT_ROUTER_HONO_SERVER_ASSETS_DIR': JSON.stringify('assets'),
         'import.meta.env.REACT_ROUTER_HONO_SERVER_BASENAME': JSON.stringify('/'),
       })
-      // No build/rolldownOptions in the non-SSR path.
       expect(result.build).toBeUndefined()
       expect(result.environments).toBeUndefined()
     })
@@ -154,12 +148,10 @@ describe('infra/hono/dev — reactRouterHonoServer plugin', () => {
       const config = plugin.config as (config: UserConfig, env: unknown) => Promise<UserConfig | undefined>
       const result = (await config(cfg, {} as never)) as UserConfig
       const output = result.build!.rolldownOptions!.output as Record<'entryFileNames' | 'chunkFileNames', unknown>
-      // entryFileNames always returns 'index.js' and rewrites facadeModuleId.
       const chunk = { facadeModuleId: 'orig' } as Record<string, string>
       expect((output.entryFileNames as (c: unknown) => string)(chunk)).toBe('index.js')
       expect(chunk.facadeModuleId).toBe('\0virtual:react-router/server-build')
 
-      // server-build chunk -> reactRouterBuildFile (rewritten).
       expect((output.chunkFileNames as (c: { name: string }) => string)({ name: 'server-build' })).toBe(
         'assets/server-build.js',
       )
@@ -237,7 +229,6 @@ describe('infra/hono/dev — reactRouterHonoServer plugin', () => {
       const cfg = viteUserConfig(reactRouterContext({ environmentBuildContext: { name: 'ssr' } }))
       const config = plugin.config as (config: UserConfig, env: unknown) => Promise<UserConfig | undefined>
       const result = (await config(cfg, {} as never)) as UserConfig
-      // build.rolldownOptions.input should be the resolved entry.
       expect((result.build!.rolldownOptions as { input: string }).input).toBe('app/server.ts')
     })
 
@@ -390,7 +381,6 @@ describe('infra/hono/dev — reactRouterHonoServer plugin', () => {
       const config = plugin.config as (config: UserConfig, env: unknown) => Promise<UserConfig | undefined>
       await config(cfg, {} as never)
 
-      // Plugin without a configureServer function.
       honoDevServerMock.mockReturnValueOnce({} as never)
       const configureServer = plugin.configureServer as (server: unknown) => Promise<void>
       await expect(configureServer(fakeServer().server)).rejects.toThrow(

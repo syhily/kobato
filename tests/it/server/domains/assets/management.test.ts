@@ -4,11 +4,8 @@ import type { BrandingObjectRef } from '@/shared/config/types'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { makeMemoryBackend } from '#/_helpers/memory-storage'
-// uploadBrandingAsset / clearBrandingAsset orchestration against the REAL
-// settings table: objects go to the shared in-memory storage backend (a
-// true external — S3/local disk, injected through the registry seam as the
-// active 's3' backend), the favicon-pack generator stays mocked (sharp),
-// and every settings write is asserted by reading the row back from SQLite.
+// Real settings table + storage registry seam; only the favicon-pack
+// generator (sharp) is mocked; writes are read back from SQLite.
 import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
 import { findSettingByScope, upsertSetting } from '@/server/infra/db/operations/setting'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@/server/infra/storage/registry'
@@ -24,8 +21,7 @@ const { uploadBrandingAsset, clearBrandingAsset } = await import('@/server/domai
 
 const db = getTestDb()
 
-// PNG magic-byte prefix. Padded to a few extra bytes so size > 0 checks
-// pass and the magic-byte sniff returns 'image/png'.
+// PNG magic-byte prefix, padded so the sniff returns 'image/png'.
 const PNG_BYTES = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x00])
 const ICO_BYTES = Buffer.from([0x00, 0x00, 0x01, 0x00, 0x01, 0x00])
 const SVG_BYTES = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><rect/></svg>', 'utf8')
@@ -126,7 +122,6 @@ describe('uploadBrandingAsset', () => {
   })
 
   it('rejects mismatched content for a binary slot', async () => {
-    // PNG bytes in an ICO slot should fail the magic-byte check.
     await expect(uploadBrandingAsset(db, 'faviconIco', PNG_BYTES)).rejects.toThrow(/image\/x-icon/)
     expect(mem.store.size).toBe(0)
   })
@@ -141,7 +136,7 @@ describe('uploadBrandingAsset', () => {
 describe('clearBrandingAsset', () => {
   it('clears a single slot and removes the field from the settings row', async () => {
     seedAssetsRow({ appleTouchIcon: { etag: 'x', contentType: 'image/png', size: 1, updatedAt: '', driver: 's3' } })
-    mem.reset() // drop the legacy-key deletes recorded during seeding — none happen, but keep counts honest
+    mem.reset()
 
     await clearBrandingAsset(db, 'appleTouchIcon')
 

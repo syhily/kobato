@@ -34,8 +34,7 @@ function isChartTab(value: string): value is 'views' | 'heatmap' {
   return value === 'views' || value === 'heatmap'
 }
 
-// Title + public-link header shared by both shells. Each route wraps it
-// in its own chrome (admin: bare column; editor: back link + tab strip).
+// Title + public-link header shared by both shells; each route wraps it in its own chrome.
 export function PostAnalyticsHeader({ post }: { post: AdminPostDto }) {
   return (
     <div className="flex flex-col gap-1">

@@ -13,33 +13,19 @@ import { SEA_WASM_CNFS_KEY } from '@/shared/sea/assets'
 
 const log = getLogger('fonts.wasm')
 
-// Under SEA the wasm binary is an embedded asset (see `@/shared/sea/assets`)
-// rather than a file next to the server bundle, so instantiate it
-// directly from memory — mirrors the Vite `?init` helper semantics
-// (fresh instance per call) without touching disk.
+// Under SEA the wasm bytes come from the embedded asset (see `@/shared/sea/assets`); instantiate per call like `?init`.
 async function instantiateEmbeddedWasm(imports: WebAssembly.Imports): Promise<WebAssembly.Instance> {
   const bytes = getEmbeddedAsset(SEA_WASM_CNFS_KEY)
   if (bytes === null) {
     throw new Error(`Embedded wasm asset missing: ${SEA_WASM_CNFS_KEY}`)
   }
-  // Copy into a fresh Uint8Array: the DOM `BufferSource` overload requires
-  // an `ArrayBuffer`-backed view, which Node's `Buffer` is not typed as.
+  // Fresh Uint8Array copy — `BufferSource` needs an ArrayBuffer-backed view, which `Buffer` isn't.
   const result = await WebAssembly.instantiate(new Uint8Array(bytes), imports)
   return result.instance
 }
 
-// Minimal WASM glue for the vendored cn-font-split wasm core, driven by
-// Node's built-in `node:wasi` (which binds `node:fs` directly——no
-// `memfs-browser` / `@tybys/wasm-util` needed). The wasm binary is imported
-// via Vite's native `?init` query: in dev the helper reads the source file
-// from disk; in the SSR build Vite emits the `.wasm` next to the server
-// bundle and resolves it relative to `import.meta.url` at runtime.
-//
-// The wasm core expects: a serialized `InputTemplate` protobuf at
-// `/tmp/fonts/<key>` (WASI preopens-relative), and writes its outputs
-// (`result.css` + `chunk-*.woff2`) into `/tmp/<key>/`. We expose a real OS
-// temp directory as the wasm's `/` and use a random `key` so concurrent
-// slice calls don't collide.
+// Minimal WASM glue for the vendored cn-font-split wasm core via `node:wasi`;
+// the binary is imported with Vite's `?init` query.
 
 export interface FontSplitCssProps {
   fontFamily?: string
@@ -65,12 +51,7 @@ export interface FontSplitOutputFile {
   data: Uint8Array
 }
 
-/**
- * Run the cn-font-split wasm core against `props`, returning every file the
- * core emits. The caller (slice.ts) partitions these into `result.css` +
- * woff2 chunks. The OS temp directory backing the WASI preopen is removed in
- * `finally`, so a thrown error never leaks it.
- */
+/** Run the wasm core against `props`, returning every file it emits (the caller partitions css vs chunks). Temp dir is always removed in `finally`. */
 export async function fontSplit(props: FontSplitProps): Promise<FontSplitOutputFile[]> {
   const key = randomBytes(8).toString('hex')
   const root = await mkdtemp(join(tmpdir(), 'cnfs-'))
@@ -110,9 +91,7 @@ export async function fontSplit(props: FontSplitProps): Promise<FontSplitOutputF
       preopens: { '/': root },
     })
 
-    // The wasm core is single-threaded and expects the wasm-threads pthread
-    // mutex stubs (it links against pthreads but runs single-threaded under
-    // WASI). Provide no-op implementations so imports resolve.
+    // No-op pthread mutex stubs — the core links pthreads but runs single-threaded.
     const imports = {
       wasi_snapshot_preview1: wasi.wasiImport,
       env: {
@@ -123,14 +102,10 @@ export async function fontSplit(props: FontSplitProps): Promise<FontSplitOutputF
       },
     }
 
-    // Vite's `?init` helper compiles + instantiates per call, so concurrent
-    // slice calls each get a fresh instance (the wasm core is stateful and
-    // runs `main` once via `wasi.start`). Under SEA the bytes come from the
-    // embedded asset instead; instantiation stays per call.
+    // Fresh instance per call (`?init` semantics) — the core is stateful and runs `main` once.
     const instance = isSea() ? await instantiateEmbeddedWasm(imports) : await initWasm(imports)
     wasi.start(instance)
 
-    // Read back everything the core wrote into <root>/tmp/<key>/.
     const outDir = join(root, 'tmp', key)
     const names = await readdir(outDir)
     log.info('Wasm output files', { key, fileCount: names.length, names })

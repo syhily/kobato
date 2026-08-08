@@ -4,10 +4,8 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider, useActionData } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Reproduction harness for the passkey signin client chain:
-// identify answer → passkey step → verify-button click → authBegin →
-// ceremony → hidden-form requestSubmit. The WebAuthn ceremony and the oRPC
-// call are mocked; everything inside LoginForm runs for real.
+// Reproduction harness for the passkey signin client chain: the WebAuthn
+// ceremony and the oRPC call are mocked, everything inside LoginForm runs for real.
 const mocks = vi.hoisted(() => ({
   authBegin: vi.fn(),
   startAuthentication: vi.fn(),
@@ -40,8 +38,6 @@ function renderLoginForm(actionData?: { method: 'passkey' | 'password' }) {
   return render(<RouterProvider router={router} />)
 }
 
-// The production path: the route's action answers the identify POST and
-// the same mounted LoginForm transitions into the passkey step.
 function SigninRoute() {
   const actionData = useActionData() as { method: 'passkey' } | undefined
   return <LoginForm isSubmitting={false} csrfToken="csrf" actionData={actionData ?? null} />
@@ -64,8 +60,7 @@ const verifyButton = () => screen.getByRole('button', { name: /Passkey 登陆/ }
 describe('LoginForm passkey chain', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    // happy-dom has no WebAuthn API; the support check only needs the
-    // constructor to exist.
+    // happy-dom has no WebAuthn API; the check only needs the constructor.
     vi.stubGlobal('PublicKeyCredential', class {})
     mocks.authBegin.mockResolvedValue({
       options: { challenge: 'Y2hhbGxlbmdl', rpId: 'yufan.me', userVerification: 'required' },
@@ -80,13 +75,10 @@ describe('LoginForm passkey chain', () => {
   it('locks the email input, shows the passkey notice, and waits for a click', async () => {
     renderLoginForm({ method: 'passkey' })
 
-    // The identify form stays in place — the input is locked and the
-    // account's passkey requirement is explained.
     expect(screen.getByLabelText('邮箱')).toBeDisabled()
     expect(screen.getByText('此账号已启用 Passkey 验证，请点击上方按钮完成登陆。')).toBeInTheDocument()
 
-    // No network or ceremony has started — the browser requires a user
-    // gesture for modal WebAuthn.
+    // The browser only runs the ceremony after a user gesture.
     expect(verifyButton()).toBeInTheDocument()
     expect(mocks.authBegin).not.toHaveBeenCalled()
     expect(mocks.startAuthentication).not.toHaveBeenCalled()
@@ -117,12 +109,9 @@ describe('LoginForm passkey chain', () => {
 
     renderLoginRoute()
 
-    // Type the email and submit the identify form for real (React Router
-    // runs the route action and feeds actionData back into LoginForm).
     fireEvent.change(screen.getByLabelText('邮箱'), { target: { value: 'admin@yufan.me' } })
     fireEvent.submit(screen.getByLabelText('邮箱').closest('form')!)
 
-    // The passkey step appears — but nothing launches without a gesture.
     await waitFor(() => expect(verifyButton()).toBeInTheDocument())
     expect(mocks.authBegin).not.toHaveBeenCalled()
 
@@ -145,7 +134,6 @@ describe('LoginForm passkey chain', () => {
     await waitFor(() => {
       expect(document.querySelector('[role="alert"]')?.textContent).toContain('Passkey 验证被取消或超时。')
     })
-    // Pending cleared: the button is armed again, labelled as a retry.
     expect(verifyButton()).toBeEnabled()
     expect(verifyButton().textContent).toContain('重试 Passkey 登陆')
   })
@@ -192,7 +180,7 @@ describe('LoginForm passkey chain', () => {
     })
     expect(document.querySelector('[role="alert"]')?.textContent).toContain('Passkey 验证超时')
 
-    // The phone-side approval arrives late — the retired run must not act.
+    // The retired run must not act on a late approval.
     resolveCeremony({ id: 'cred-1', type: 'public-key', response: {} })
     await act(async () => {
       await vi.advanceTimersByTimeAsync(0)
@@ -216,8 +204,7 @@ describe('LoginForm passkey chain', () => {
     })
     expect(document.querySelector('[role="alert"]')?.textContent).toContain('Passkey 验证超时')
 
-    // Retry: a fresh gesture starts a fresh ceremony, and this one
-    // completes (the default mock resolves).
+    // The retry ceremony completes — the default mock resolves.
     fireEvent.click(verifyButton())
     await act(async () => {
       await vi.advanceTimersByTimeAsync(0)

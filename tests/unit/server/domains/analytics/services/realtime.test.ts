@@ -2,11 +2,8 @@ import { describe, expect, it } from 'vitest'
 
 import { acquireRealtimeConnection, realtimeConnectionKey } from '@/server/domains/analytics/services/realtime'
 
-// Domain-seam coverage for the SSE connection registry sunk out of
-// `src/server/http/resources/analytics.ts` (task C4): the cap key
-// derivation (session vs hashed IP) and the per-key slot policy. The
-// resource keeps only the Hono/SSE plumbing; the HTTP-level driving of
-// this same registry is pinned in
+// Domain-seam coverage for the SSE connection registry (task C4): cap-key
+// derivation and the per-key slot policy; HTTP-level driving is pinned in
 // tests/it/server/http/resources/analytics-events.test.ts.
 
 describe('realtimeConnectionKey', () => {
@@ -62,8 +59,6 @@ describe('acquireRealtimeConnection — per-key cap of two', () => {
     first()
     first()
 
-    // Only one slot was freed: a new acquire fills it and the next one is
-    // refused again.
     const third = acquireRealtimeConnection(key)
     expect(third).not.toBeNull()
     expect(acquireRealtimeConnection(key)).toBeNull()

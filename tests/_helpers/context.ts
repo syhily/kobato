@@ -5,10 +5,8 @@ import type { MakeRequestContextOptions } from '#/_helpers/request-context'
 import { makeRequestContext } from '#/_helpers/request-context'
 import { requestContext } from '@/server/http/request-context'
 
-// Stand-in for the `RouterContextProvider` that `buildLoadContext` populates
-// in production. Direct loader/action unit tests that bypass the router get
-// a context that already has the canonical `RequestContext` pre-loaded so
-// the route handler's `getRequestContext(args)` keeps working.
+// Stand-in for the `RouterContextProvider` that `buildLoadContext`
+// populates in production, with the canonical RequestContext pre-loaded.
 export type MakeContextOptions = MakeRequestContextOptions
 
 export function makeRouteContext(options: MakeContextOptions = {}): RouterContextProvider {
@@ -17,8 +15,7 @@ export function makeRouteContext(options: MakeContextOptions = {}): RouterContex
   return context
 }
 
-// Convenience to match the typical `loader({ request, context, params })`
-// signature without callers having to construct the args object themselves.
+// Convenience wrapper matching the typical `loader({ request, context, params })` signature.
 export function makeLoaderArgs(
   options: MakeContextOptions & { params?: Record<string, string | undefined> } = {},
 ): any {

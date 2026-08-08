@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react'
 
-// Autosave engine for the page/post editor.
-// Debounce (5 s) + hard cap (60 s). Force-flush on `visibilitychange` / `pagehide`.
-// Skips when disabled or body hasn't changed since last persist.
+// Autosave engine: debounce + hard cap, force-flush on tab hide/pagehide, no-op when the body is unchanged.
 
 export type AutosaveStatus =
   | { kind: 'idle' }
@@ -11,13 +9,8 @@ export type AutosaveStatus =
   | { kind: 'retrying'; attempt: number; nextAttemptAt: number; message: string }
 
 /**
- * Outcome the flush reports back to the engine. `'conflict'` means the
- * server rejected the write with a revision conflict: the flush itself
- * has already surfaced the conflict state, so the engine must stay
- * silent — a `saved` tick would clobber it, and advancing the
- * lastPersisted baseline would pretend the snapshot landed. Further
- * flushes are frozen by the caller's `enabled` gate (the persist layer
- * disables autosave until the conflict is resolved).
+ * `'conflict'`: the server rejected the write and the flush already surfaced
+ * it — the engine must stay silent and not advance the baseline.
  */
 export type AutosaveFlushOutcome = 'saved' | 'conflict'
 
@@ -31,8 +24,7 @@ export interface UseAutosaveOptions<TBody> {
   onStatusChange?: (status: AutosaveStatus) => void
 }
 
-// Exported so tests can pin the ladder (fix-review): the 1s/3s/9s
-// backoff is part of the editor's UX contract, not an impl detail.
+// The 1s/3s/9s backoff ladder is part of the editor's UX contract, not an impl detail.
 export const DEFAULT_RETRY_DELAYS_MS = [1_000, 3_000, 9_000]
 
 export function useAutosave<TBody>({
@@ -49,8 +41,7 @@ export function useAutosave<TBody>({
   const enabledRef = useRef(enabled)
   const onStatusRef = useRef(onStatusChange)
   const retryDelaysRef = useRef(retryDelaysMs)
-  // Keep latest props in refs without writing during render — effects run after
-  // commit, so callbacks always read the freshest values via these refs.
+  // Latest props in refs, updated in an effect so callbacks always read fresh values.
   useEffect(() => {
     flushRef.current = flush
     bodyRef.current = body
@@ -64,8 +55,7 @@ export function useAutosave<TBody>({
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const hardCapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  // Breaks the recursive self-reference inside doFlush's retry path so the
-  // compiler doesn't have to capture `doFlush` before it's declared.
+  // Holds doFlush so the retry path can re-enter it before its own declaration completes.
   const doFlushRef = useRef<(attempt?: number) => Promise<void>>(() => Promise.resolve())
 
   const emit = useCallback((status: AutosaveStatus) => {
@@ -86,11 +76,8 @@ export function useAutosave<TBody>({
         } catch {
           // Previous flush failed; fall through to retry below.
         }
-        // The awaited flush may have persisted this exact body (its success
-        // advanced the baseline) or the engine may have been disabled
-        // meanwhile — re-check before snapshotting so an overlapping
-        // trigger (debounce × pagehide × hard cap) never re-flushes a body
-        // the in-flight flush just landed.
+        // Re-check after awaiting: the in-flight flush may have persisted
+        // this exact body or the engine may have been disabled meanwhile.
         if (!enabledRef.current || lastPersistedRef.current === bodyRef.current) {
           return
         }
@@ -102,8 +89,6 @@ export function useAutosave<TBody>({
       try {
         const outcome = await promise
         if (outcome === 'conflict') {
-          // Server-side revision conflict — the flush surfaced it; do
-          // not clobber with a `saved` tick, do not advance the baseline.
           return
         }
         lastPersistedRef.current = snapshot
@@ -218,9 +203,8 @@ export function useAutosave<TBody>({
   }, [doFlush])
 
   /**
-   * Advance the persisted baseline to a body that was persisted outside
-   * the engine (a manual Ctrl+S save). The next debounce tick's reference
-   * check then short-circuits instead of re-flushing the same body.
+   * Advance the persisted baseline to a body persisted outside the engine
+   * (manual Ctrl+S) so the next debounce tick short-circuits.
    */
   const markPersisted = useCallback((persistedBody: TBody): void => {
     lastPersistedRef.current = persistedBody

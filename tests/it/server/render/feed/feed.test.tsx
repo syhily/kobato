@@ -9,11 +9,8 @@ import { postTag } from '@/server/infra/db/schema/post-tag'
 import { category as categoryTable, tag as tagTable } from '@/server/infra/db/schema/taxonomy'
 import { generateFeeds } from '@/server/render/feed/generator'
 
-// `generateFeeds` threads a real `feed` package output, the content
-// catalog, and the PT renderer together. Against the real engine this
-// suite pins the channel-level envelope so a future refactor of
-// `generator.tsx` cannot silently change the RSS/Atom output that
-// downstream subscribers depend on.
+// Pins the channel-level RSS/Atom envelope: a refactor of `generator.tsx`
+// must not silently change subscriber-visible output.
 const db = getTestDb()
 
 beforeEach(async () => {
@@ -82,9 +79,7 @@ describe('services/feed — generateFeeds (channel envelope)', () => {
   })
 
   it('limits the selection to the configured feed page size', async () => {
-    // The visibility policy itself (hidden included, scheduled excluded)
-    // is pinned at the domain seam in
-    // tests/unit/server/domains/posts/services/feed.test.ts.
+    // Visibility policy is pinned separately in tests/unit/server/domains/posts/services/feed.test.ts.
     setBlogSettingsBundleForTests({
       ...TEST_BLOG_SETTINGS_BUNDLE,
       content: { ...TEST_BLOG_SETTINGS_BUNDLE.content!, feed: { full: true, size: 1 } },

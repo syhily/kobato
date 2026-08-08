@@ -11,13 +11,9 @@ import {
   SEA_NATIVE_META_SHARP_VERSIONS_KEY,
 } from '@/shared/sea/assets'
 
-// Unit tests for `nativeRequire` — the runtime half of the SEA native
-// redirect. `@/server/infra/sea` is mocked so both modes are exercisable
-// under vitest (which never runs as a SEA): with `KOBATO_NATIVES_DIR`
-// set the addon loads must root at the flat natives dir and the metadata
-// probes must come from the embedded assets; without it every recognized
-// specifier must pass through to `requireExternal` (regular node_modules
-// resolution — itself covered by `tests/unit/server/infra/sea.test.ts`).
+// Unit tests for `nativeRequire` — the runtime half of the SEA native redirect.
+// With `KOBATO_NATIVES_DIR` set, addon loads root at the flat natives dir and
+// metadata probes read embedded assets; otherwise everything passes through to requireExternal.
 
 const seaMock = vi.hoisted(() => ({
   requireExternal: vi.fn<(name: string) => unknown>((name) => ({ passthrough: name })),
@@ -29,8 +25,7 @@ vi.mock('@/server/infra/sea', () => ({
   getEmbeddedAsset: seaMock.getEmbeddedAsset,
 }))
 
-// The specifier triples are computed from the runtime host, exactly like
-// the module under test does (the build is platform-native).
+// Computed from the runtime host, exactly as the module under test does.
 function isMuslLinux(): boolean {
   const getReport = process.report?.getReport
   if (typeof getReport !== 'function') {
@@ -122,9 +117,7 @@ describe('infra/native-require — under SEA (KOBATO_NATIVES_DIR set)', () => {
     vi.stubEnv('KOBATO_NATIVES_DIR', dir)
     seaMock.getEmbeddedAsset.mockReturnValue(null)
 
-    // Mirrors the upstream MODULE_NOT_FOUND the platform package's missing
-    // ./versions export produces — sharp's own try/catch absorbs it and
-    // falls back to the libvips versions probe.
+    // Mirrors the upstream MODULE_NOT_FOUND for a missing ./versions export.
     expect(() => nativeRequire(SHARP_VERSIONS_SPEC)).toThrow(/embedded metadata asset missing/)
   })
 
@@ -139,8 +132,6 @@ describe('infra/native-require — under SEA (KOBATO_NATIVES_DIR set)', () => {
     const dir = makeNativesDir()
     vi.stubEnv('KOBATO_NATIVES_DIR', dir)
 
-    // The packages' own try/catch chains absorb these — build-from-source
-    // probes, relative addon attempts, wasm candidates, dev headers.
     expect(() => nativeRequire(`../src/build/Release/sharp-${SHARP_PLATFORM}-0.35.3.node`)).toThrow(
       /unresolvable specifier/,
     )

@@ -13,13 +13,8 @@ import { page as pageTable } from '@/server/infra/db/schema/page'
 import { post as postTable } from '@/server/infra/db/schema/post'
 import { weakEtag } from '@/server/infra/http/etag'
 
-// post.detail / page.detail loaders form the most-trafficked SSR endpoints.
-// Real engine: posts/pages are seeded rows (meta + published content
-// revision) and the loaders, projections, live gate, comments streaming, and
-// redirect contracts all run against the in-memory database. The only kept
-// seams are the presentational PT renderer and a wrapped (not replaced)
-// `resolveSessionContext` so the "no session re-resolution fallback" test
-// can assert the loaders never consult it.
+// post/page.detail loaders against the real engine; seams: the PT
+// renderer (replaced) and wrapped probes gating per-test assertions.
 
 const mocks = vi.hoisted(() => ({
   resolveSessionContext: vi.fn(),
@@ -31,8 +26,7 @@ const mocks = vi.hoisted(() => ({
   prerenderMusicPlayerBlocks: vi.fn(),
 }))
 
-// Wrapped (not replaced) so the "no session re-resolution fallback" test
-// can assert the loaders never consult it — everything else stays real.
+// Wrapped (not replaced): the loaders must never consult it.
 vi.mock('@/server/domains/auth/primitives', async () => {
   const actual = await vi.importActual<typeof import('@/server/domains/auth/primitives')>(
     '@/server/domains/auth/primitives',
@@ -40,9 +34,7 @@ vi.mock('@/server/domains/auth/primitives', async () => {
   return { ...actual, resolveSessionContext: mocks.resolveSessionContext }
 })
 
-// Wrapped (not replaced): the ETag-probe tests assert the full meta load
-// is skipped on a 304 while every other export (the probe itself included)
-// runs for real against the seeded rows.
+// Wrapped (not replaced): the 304 tests assert the full meta load is skipped.
 vi.mock('@/server/domains/posts/services/single', async () => {
   const actual = await vi.importActual<typeof import('@/server/domains/posts/services/single')>(
     '@/server/domains/posts/services/single',
@@ -51,9 +43,7 @@ vi.mock('@/server/domains/posts/services/single', async () => {
   return { ...actual, findPostBySlug: mocks.findPostBySlug }
 })
 
-// Same wrapped-not-replaced seam for the page leg: the page ETag-probe
-// tests assert `findPageBySlug` (meta + revision + image hydration) is
-// skipped when the slim probe answers 304.
+// Wrapped (not replaced): the page 304 tests assert `findPageBySlug` is skipped.
 vi.mock('@/server/domains/pages/services/public-query', async () => {
   const actual = await vi.importActual<typeof import('@/server/domains/pages/services/public-query')>(
     '@/server/domains/pages/services/public-query',
@@ -62,9 +52,7 @@ vi.mock('@/server/domains/pages/services/public-query', async () => {
   return { ...actual, findPageBySlug: mocks.findPageBySlug }
 })
 
-// Wrapped: the friends tests assert the full-table read is skipped when
-// the page hides the section, and gate it to prove the music prerender
-// no longer queues behind it.
+// Wrapped: the full-table read must be skipped when the page hides the section.
 vi.mock('@/server/domains/friends/service', async () => {
   const actual = await vi.importActual<typeof import('@/server/domains/friends/service')>(
     '@/server/domains/friends/service',
@@ -73,8 +61,7 @@ vi.mock('@/server/domains/friends/service', async () => {
   return { ...actual, listAllFriends: mocks.listAllFriends }
 })
 
-// Wrapped: the parallelism tests gate one read of the post detail block
-// and assert the detail orchestrator starts without waiting for it.
+// Wrapped: gated so the orchestrator must start without waiting for this read.
 vi.mock('@/server/domains/taxonomies/tags/service', async () => {
   const actual = await vi.importActual<typeof import('@/server/domains/taxonomies/tags/service')>(
     '@/server/domains/taxonomies/tags/service',
@@ -212,8 +199,7 @@ describe('routes/post.detail loader', () => {
   })
 
   it('404s when the slug is missing for an anonymous visitor', async () => {
-    // Anonymous requests carry the canonical context with `viewer: null`;
-    // a missing slug must still 404 rather than leak a draft preview.
+    // A missing slug must 404 even anonymously — never leak a draft preview.
     await expect(
       postRoute.loader(
         makeLoaderArgs({
@@ -249,8 +235,7 @@ describe('routes/post.detail loader', () => {
   })
 })
 
-// React Router `data()` keeps the loader's response init (status/headers)
-// under `.init` — the ETag the loader stamps on a 200 lives there.
+// `data()` keeps status/headers under `.init` — the 200 ETag lives there.
 function loaderEtag(result: unknown): string | null {
   const init = (result as { init?: { headers?: Record<string, string> } }).init
   return init?.headers?.ETag ?? null
@@ -288,7 +273,6 @@ describe('routes/post.detail loader — ETag probe', () => {
 
     expect(second).toMatchObject({ status: 304 })
     expect((second as Response).headers.get('ETag')).toBe(etag)
-    // The 304 came from the probe — the full meta+revision load never ran.
     expect(mocks.findPostBySlug).not.toHaveBeenCalled()
   })
 
@@ -345,8 +329,7 @@ describe('routes/post.detail loader — render waterfall', () => {
   it('starts the detail orchestrator without waiting for the tag/sidebar/prerender block', async () => {
     await seedPost({ slug: 'hello' })
 
-    // Hold the tags read open: serial composition would only reach
-    // `loadPublicDetailData` after every read of the first block settles.
+    // Hold the tags read open — serial composition would reach the orchestrator only after it settles.
     const { release } = gateOnce(mocks.getTagsByNames)
     const pending = postRoute.loader(
       makeLoaderArgs({
@@ -384,10 +367,7 @@ describe('routes/page.detail loader', () => {
   })
 
   it('throws instead of re-resolving the session when the canonical request context is missing', async () => {
-    // ADR-0003: the session re-resolution fallback was deleted. A loader
-    // that finds no canonical request context treats that as a
-    // programming error and throws — `resolveSessionContext` is never
-    // consulted as a fallback.
+    // ADR-0003: missing canonical request context is a programming error — throws, never consults resolveSessionContext.
     const ctx = new RouterContextProvider()
 
     await expect(
@@ -451,8 +431,7 @@ describe('routes/page.detail loader — friends gating', () => {
       ),
     )
 
-    // showFriends=false: the full-table scan + image hydration never run
-    // and the payload stays an honest empty list.
+    // showFriends=false: no full-table scan; the payload stays an honest empty list.
     expect(mocks.listAllFriends).not.toHaveBeenCalled()
     expect(result.showFriends).toBe(false)
     expect(result.friends).toEqual([])
@@ -483,8 +462,7 @@ describe('routes/page.detail loader — render waterfall', () => {
   it('starts the music prerender as soon as the preview resolves, without waiting for friends', async () => {
     await seedPage({ slug: 'links', showFriends: true })
 
-    // Hold the friends read open: serial composition would only reach the
-    // prerender after the whole first Promise.all settles.
+    // Hold the friends read open — serial composition would reach the prerender only after it settles.
     const { release } = gateOnce(mocks.listAllFriends)
     const pending = pageRoute.loader(
       makeLoaderArgs({
@@ -535,7 +513,6 @@ describe('routes/page.detail loader — ETag probe', () => {
 
     expect(second).toMatchObject({ status: 304 })
     expect((second as Response).headers.get('ETag')).toBe(etag)
-    // The 304 came from the probe — the full meta+revision+image load never ran.
     expect(mocks.findPageBySlug).not.toHaveBeenCalled()
   })
 
@@ -586,9 +563,7 @@ describe('routes/page.detail loader — ETag probe', () => {
     )
     const etag = loaderEtag(first)
 
-    // An admin's draft preview may swap the body, so the published ETag
-    // must not short-circuit it — the probe is skipped and the full load
-    // answers 200 with the draft marker.
+    // A draft preview may swap the body, so the published ETag must not short-circuit it.
     const result = unwrapLoaderData<{ draftMarker: string | null }>(
       await pageRoute.loader(
         makeLoaderArgs({

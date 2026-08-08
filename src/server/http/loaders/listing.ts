@@ -8,9 +8,7 @@ import { parseListingPage, redirectListingOverflow } from '@/server/http/loaders
 import { listingSeo } from '@/server/render/seo/listing-seo'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 
-// Per-page metadata fan-out. Defaults match the historical category/tag
-// listing behaviour (likes + views, no comment count). Home overrides this
-// to also pull comment counts (cards on `/` show the comment-bubble badge).
+// Per-page metadata fan-out; home overrides to also pull comment counts (card badges).
 export interface ListingMetadataFlags {
   likes?: boolean
   views?: boolean
@@ -23,10 +21,7 @@ const DEFAULT_LISTING_METADATA: Required<ListingMetadataFlags> = {
   comments: false,
 }
 
-// Page-1 SEO behaviour. The historical category/tag listings always emit
-// canonical/prev/next, but the home page deliberately skips SEO on page 1 so
-// the most-visited URL ships the smallest possible MetaDescriptor payload
-// (the root `meta()` already provides the site default).
+// 'skip-on-first-page': home omits page-1 SEO so `/` ships a minimal payload.
 export type ListingSeoMode = 'always' | 'skip-on-first-page'
 
 interface ListingPageRequest {
@@ -47,18 +42,9 @@ function calculateTotalPages(postCount: number, pageSize: number, mergeTailThres
   return naturalTotalPage
 }
 
-// Listing routes (`/`, `/cats/:slug`, `/tags/:slug`) share the same loader
-// skeleton: slice & resolve posts, redirect on overflow, and emit canonical/
-// prev/next SEO. This helper centralises the pattern so each route only
-// carries the params-to-filter mapping plus its body props.
-//
-// `extra` is computed via an optional async callback so the per-route work
-// (sidebar / feature posts / category-link map) can run alongside the
-// shared post-resolution pipeline without forcing every caller to duplicate
-// the slice/hydrate dance.
-//
-// Lives under `src/server/` so SSR-only catalog / metadata imports never reach
-// the client bundle.
+// Shared skeleton for listing routes: slice & resolve posts, overflow
+// redirect, canonical/prev/next SEO. `computeExtra` runs per-route work
+// alongside the shared pipeline.
 export async function listingLoader<TExtra = undefined>(
   db: Database,
   {
@@ -86,40 +72,20 @@ export async function listingLoader<TExtra = undefined>(
     title?: string
     description?: string
     pageSize?: number
-    /**
-     * Optional tail-merge guard. When set to a positive integer M and the
-     * natural last page would render fewer than M posts, that last page is
-     * merged into its predecessor i.e. the predecessor absorbs the orphan
-     * posts via the existing "the last page is open-ended" branch below.
-     * The result is a smaller totalPage and a fatter last page; the route
-     * helper then 301-redirects any out-of-range :num back to the new last
-     * page through the shared overflow handler.
-     */
+    /** Tail-merge guard: an orphan last page (< M posts) is absorbed into its predecessor. */
     mergeTailWhenLessThan?: number
     forceNoindex?: boolean
     metadata?: ListingMetadataFlags
     seoMode?: ListingSeoMode
-    /**
-     * Optional scoped feed links (e.g. per-category or per-tag RSS/Atom URLs)
-     * forwarded to `listingSeo` so the rendered head advertises them as
-     * `<link rel="alternate">` entries alongside the site-wide feeds.
-     */
+    /** Scoped feed links (per-category/tag RSS) advertised alongside the site-wide feeds. */
     feedLinks?: FeedLinkOptions
     /** Custom OG image URL for the listing page. */
     ogImageUrl?: string
-    /**
-     * Async callback that produces the per-route `extra` payload from the
-     * resolved page slice. Runs after pagination/overflow redirects so the
-     * caller only sees the in-page slice that will actually render.
-     */
+    /** Async per-route `extra` producer — runs after overflow redirects, sees the in-page slice only. */
     computeExtra?: (args: ListingExtraArgs) => Promise<TExtra> | TExtra
     /** Static extra payload, used when no async work is needed. */
     extra?: TExtra
-    /**
-     * When `true`, an empty catalog (zero posts) is allowed to render instead
-     * of throwing a 404. Used by the home page so a fresh blog can show a
-     * friendly empty-state CTA.
-     */
+    /** Allow an empty catalog to render instead of 404 (home empty-state CTA). */
     allowEmpty?: boolean
   },
 ): Promise<ListingPageLoaderData<TExtra>> {

@@ -24,10 +24,8 @@ const VALID_SOURCES = new Set<string>(['netease', 'tencent'])
 const MAX_PROXY_BYTES = 50 * 1024 * 1024
 
 async function proxyUpstream(targetUrl: string, referer: string): Promise<Response> {
-  // The target URL comes from the upstream provider API (schema-checked
-  // only as a string) — route it through the SSRF-guarded fetch so a
-  // hostile/compromised upstream cannot point the proxy at internal
-  // addresses, and cap the streamed body.
+  // Upstream-provided URLs are schema-checked strings only — route through the
+  // SSRF-guarded fetch and cap the streamed body.
   const result = await safeFetch(targetUrl, {
     stream: true,
     timeoutMs: 30000,

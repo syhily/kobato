@@ -10,9 +10,8 @@ import type { CommentFilterFieldKey } from '@/ui/admin/comments/filter-fields'
 import type { ActiveFilter } from '@/ui/admin/shared/filterPillsReducer'
 
 // The hook drives its search / rehydrate lookups through react-query against
-// the oRPC client — mocked as a plain object (mirroring
-// use-comments-actions.test.tsx), so `orpcQuery` derives real query options
-// over the stubbed procedures and each test programs the responses.
+// the oRPC client, mocked as a plain object so `orpcQuery` derives real
+// query options over the stubbed procedures.
 const api = vi.hoisted(() => ({
   searchPages: vi.fn(),
   searchAuthors: vi.fn(),
@@ -62,7 +61,6 @@ describe('useFilterPills — uncontrolled reducer', () => {
     ])
     expect(result.current.hasFilters).toBe(true)
 
-    // Re-adding the same field replaces its pill and moves it to the end.
     act(() => result.current.dispatch({ type: 'addFilter', field: 'status', value: 'approved', label: '已审核' }))
     expect(result.current.filters).toEqual([
       { field: 'author', value: 'u1', label: 'Alice' },
@@ -92,10 +90,9 @@ describe('useFilterPills — controlled mode', () => {
 
     act(() => result.current.dispatch({ type: 'removeFilter', field: 'status' }))
     await waitFor(() => expect(onChange).toHaveBeenCalledWith([], { type: 'removeFilter', field: 'status' }))
-    // The local state follows the dispatch optimistically (the URL catches up).
+    // The local state follows the dispatch optimistically.
     expect(result.current.filters).toEqual([])
 
-    // A new external value (URL re-validated) replaces the local state.
     const fromUrl: ActiveFilter<CommentFilterFieldKey>[] = [{ field: 'page', value: 'p1', label: 'Hello' }]
     rerender({ value: fromUrl })
     expect(result.current.filters).toEqual(fromUrl)
@@ -107,9 +104,7 @@ describe('useFilterPills — controlled mode', () => {
       wrapper: makeWrapper(),
     })
 
-    // Instant-add of a text pill: the value is the codec-correct empty
-    // default; the sink (my-comments' syncUrl) maps it to q: null, so the
-    // value prop never changes and the pill stays editable.
+    // The empty text pill maps to q: null, so the value prop never changes and the pill stays editable.
     act(() =>
       result.current.dispatch({
         type: 'addFilter',
@@ -174,7 +169,6 @@ describe('useFilterPills — codec fallbacks', () => {
     expect(result.current.text('text')).toEqual({ op: 'contains', value: '' })
     expect(result.current.dateSingle('date')).toBeNull()
     expect(result.current.dateRange('date')).toBeNull()
-    // Malformed pills are query no-ops.
     expect(result.current.queryInput()).toEqual({})
   })
 
@@ -207,8 +201,7 @@ describe('useFilterPills — async search', () => {
   })
 
   it('pins the selected value into the search items when it is not in the fetched window', async () => {
-    // The resolve query confirms the pinned page's label; the idle search
-    // returns a different page that must not displace it.
+    // The idle search window must not displace the pinned selection.
     api.searchPages.mockImplementation((input: { key?: string }) =>
       Promise.resolve(
         input.key === 'pinned'

@@ -58,8 +58,7 @@ export async function loadMineCommentsPage(
   limit: number,
   filters: MyCommentsFilters = {},
 ): Promise<LoadMineCommentsResult> {
-  // Compute the soft-delete cutoff once so the parallel list/count
-  // queries see the same set of visible comments.
+  // Compute the cutoff once so the parallel list/count queries see the same visible set.
   const cutoff = mineSoftDeleteCutoff()
   const [rows, counts] = await Promise.all([
     listMyComments(db, userId, offset, limit, filters, cutoff),

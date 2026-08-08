@@ -8,8 +8,6 @@ import type { ValidateLikeTokenOutput } from '@/shared/types/likes'
 
 // Behavioral pins for the LikeButton validate race: a slow background
 // token validation must not overwrite a newer like/unlike interaction.
-// The oRPC client is mocked at the same seam use-comments-actions.test.tsx
-// uses; the mutations themselves run through real react-query.
 const api = vi.hoisted(() => ({
   validate: vi.fn(),
   increase: vi.fn(),
@@ -26,8 +24,7 @@ vi.mock('@/client/api/client', () => ({
   },
 }))
 
-// NumberFlow is presentation-only here; happy-dom doesn't fully implement
-// the layout APIs it measures with.
+// NumberFlow is presentation-only here.
 vi.mock('@number-flow/react', () => ({
   default: ({ value }: { value: number }) => <span>{value}</span>,
 }))
@@ -37,9 +34,7 @@ import { LikeButton } from '@/ui/public/LikeActions'
 const PERMALINK = '/posts/hello'
 const TOKENS_KEY = 'like-tokens'
 
-// happy-dom doesn't implement localStorage; the component reads the bare
-// global, so stub a Map-backed one per test (same pattern as
-// admin-music-player-float.test.tsx).
+// happy-dom lacks localStorage; stub a Map-backed one per test.
 const store = new Map<string, string>()
 vi.stubGlobal('localStorage', {
   getItem(key: string) {
@@ -92,18 +87,15 @@ describe('LikeButton validate sequencing', () => {
     api.increase.mockResolvedValue({ key: 'key-1', likes: 6, token: 'new-token' })
 
     renderButton()
-    // The mount effect fired the background validation for the stored token.
     await waitFor(() => expect(api.validate).toHaveBeenCalledWith({ key: 'key-1', token: 'old-token' }))
 
-    // The user likes while the validation is still in flight.
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: '点赞' }))
     })
     await waitFor(() => expect(screen.getByRole('button', { name: '取消点赞' }).dataset.liked).toBe('true'))
     expect(readStoredTokens()[PERMALINK]).toBe('new-token')
 
-    // The stale verdict arrives late — it must not flip the button back
-    // or delete the freshly issued token.
+    // The late verdict must not flip the button back or delete the fresh token.
     await act(async () => {
       resolveValidate({ key: 'key-1', valid: false })
     })

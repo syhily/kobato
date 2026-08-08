@@ -10,9 +10,8 @@ import { findCategoryNamesByIds } from '@/server/infra/db/operations/category'
 import { findTagNamesByPostIds } from '@/server/infra/db/operations/post-tag'
 
 /**
- * Cover hydration for any post-shaped projection carrying `cover` /
- * `coverThumbhash` (`Post`, `ClientPost`, `ListingPostCard`, ...): resolves
- * the stored cover to its CDN public URL and attaches the thumbhash.
+ * Resolves `cover` to its CDN public URL and attaches `coverThumbhash`
+ * for any post-shaped projection carrying both fields.
  */
 export async function hydratePostImages<T extends { cover: string; coverThumbhash?: string }>(
   db: Database,
@@ -41,23 +40,16 @@ export function buildPublicPostFilters(
 }
 
 export interface HydratePostListOptions {
-  /**
-   * `'none'` (default): project metas with an empty body — cheap, for cards
-   * and metadata-only listings. `'published'`: batch-join the published
-   * `content` revisions so posts carry real Portable Text bodies + headings
-   * (feeds and other body-rendering callers).
-   */
+  /** `'none'` (default): empty body, for cards/metadata listings.
+   *  `'published'`: join published revisions for real bodies + headings. */
   revision?: 'none' | 'published'
   /** Resolve covers to CDN public URLs + thumbhashes. Default `true`. */
   images?: boolean
 }
 
 /**
- * The public post-list assembly pipeline: batch tag + category names,
- * project each meta to a full `Post`, optionally join published revisions,
- * optionally hydrate covers. Every public listing (cards, archives,
- * taxonomy, feed, search hydration) is a one-liner over this — mount it
- * instead of hand-assembling a new copy.
+ * The public post-list assembly pipeline — mount this instead of
+ * hand-assembling a new copy.
  */
 export async function hydratePostList(
   db: Database,

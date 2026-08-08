@@ -13,8 +13,7 @@ export const CSRF_HEADER = 'x-csrf-token'
 export const CSRF_COOKIE_NAME = '__csrf'
 
 function generateAndStore(session: BlogSession): string {
-  // 32 bytes = 256 bits of entropy, hex-encoded. Stronger than
-  // crypto.randomUUID() (122 bits) for defense-in-depth.
+  // 32 bytes = 256 bits of entropy, hex-encoded.
   const token = randomBytes(32).toString('hex')
   session.set(CSRF_SESSION_KEY, token)
   return token
@@ -28,16 +27,9 @@ export function ensureCsrfToken(session: BlogSession): string {
   return generateAndStore(session)
 }
 
-// ─── Stateless (anonymous) CSRF tokens ──────────────────
-//
-// Every SSR page needs a CSRF token for the public forms and /rpc
-// mutations it renders, but persisting a session row per cookieless bot
-// request floods the session table (write amplification — P1-4). For
-// requests without a `__session` cookie the token is therefore derived
-// statelessly: HMAC(sessionSecret, __csrf cookie), a signed double-submit
-// variant. The HttpOnly SameSite=Lax cookie pins the token to the
-// browser; the header/form field proves the caller read the HTML. Nothing
-// is ever written to the session table for anonymous traffic.
+// Cookieless requests get a stateless token: HMAC(sessionSecret,
+// __csrf cookie), a signed double-submit variant — persisting per-request
+// rows would flood the session table (P1-4).
 
 const CSRF_COOKIE_VALUE_RE = /^[a-f0-9]{64}$/i
 
@@ -46,8 +38,7 @@ export function isCsrfCookieValue(value: string): boolean {
 }
 
 export function mintCsrfCookieValue(): string {
-  // 32 bytes = 256 bits of entropy, hex-encoded — same strength as the
-  // session-persisted tokens above.
+  // Same strength as the session-persisted tokens.
   return randomBytes(32).toString('hex')
 }
 
@@ -56,8 +47,7 @@ export function deriveStatelessCsrfToken(cookieValue: string): string {
 }
 
 export function buildCsrfCookieHeader(cookieValue: string): string {
-  // Session-scoped on purpose: the token is re-derived on every visit, so
-  // the cookie has no reason to outlive the browser session.
+  // Session-scoped: the token is re-derived every visit.
   const parts = [`${CSRF_COOKIE_NAME}=${cookieValue}`, 'Path=/', 'HttpOnly', 'SameSite=Lax']
   if (import.meta.env.PROD) {
     parts.push('Secure')
@@ -82,25 +72,18 @@ export function validateCsrfToken(session: BlogSession, headerValue: string | nu
 
 export function isPathExempt(path: string): boolean {
   const exemptPaths = getBlogSettingsBundleSync()?.security?.csrf.exemptPaths ?? []
-  // Segment-boundary match: `/api/admin` exempts `/api/admin` itself and
-  // `/api/admin/...`, but not a look-alike prefix such as `/api/adminx`
-  // (P1-6). Exempt a non-slash continuation (e.g. `/feed` → `/feed.xml`)
-  // by listing that exact path instead.
+  // Segment-boundary match: `/api/admin` covers `/api/admin/...` but not
+  // `/api/adminx` (P1-6); list exact paths for non-slash continuations.
   return exemptPaths.some((prefix) => path === prefix || path.startsWith(`${prefix}/`))
 }
-
-// ─── Master switch (security.csrf.enabled) ──────────────
 
 const log = getLogger('auth.csrf')
 
 let csrfDisabledWarned = false
 
 /**
- * Returns true when CSRF validation must be skipped because the admin
- * turned off `security.csrf.enabled` (P1-7). The first skip after startup
- * logs a warning so the degraded posture is visible in the logs;
- * subsequent skips log at debug to avoid per-request noise. Pre-install
- * (settings snapshot not hydrated yet) fails closed: protection stays on.
+ * True when the admin disabled `security.csrf.enabled` (P1-7); the first
+ * skip warns, later ones log at debug. Pre-install fails closed.
  */
 export function isCsrfValidationSkipped(): boolean {
   const enabled = getBlogSettingsBundleSync()?.security?.csrf.enabled ?? true
@@ -116,11 +99,7 @@ export function isCsrfValidationSkipped(): boolean {
   return true
 }
 
-/**
- * Validate a CSRF token for a React Router form action.
- * The token may be supplied via the `x-csrf-token` header or a
- * `csrf_token` form field.
- */
+/** Validate a CSRF token for a React Router form action. */
 export function validateCsrfForAction(session: BlogSession, request: Request, formData: FormData): boolean {
   if (isCsrfValidationSkipped()) {
     return true

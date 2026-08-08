@@ -13,10 +13,7 @@ import { content as contentTable } from '@/server/infra/db/schema/content'
 import { post as postTable } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
 
-// Only the body lifecycle stays mocked: saveBody/previewBody are the
-// composition-root neighbours of this controller and are covered by the
-// content-domain integration tests. The admin query, the meta mutations,
-// and the audit pipeline all run against the real in-memory db.
+// Only saveBody/previewBody stay mocked (covered by content-domain tests); everything else runs real.
 vi.mock('@/server/domains/content/lifecycle', () => ({
   previewBody: vi.fn(),
   saveBody: vi.fn(),
@@ -35,14 +32,12 @@ beforeEach(async () => {
 })
 
 afterEach(async () => {
-  // Flush BEFORE dropping the batcher so no stale events leak into the
-  // next case's queue (see auth/password-flow for the full rationale).
+  // Flush BEFORE dropping the batcher so no stale events leak into the next case.
   await flushAuditLog()
   resetAllBatchers()
 })
 
-// audit_log.actor_id references user.id, so the admin viewer must be a
-// real row for the batched audit insert to survive the FK.
+// audit_log.actor_id references user.id: the admin viewer must be a real row.
 async function seedAdmin(): Promise<number> {
   const [row] = await db
     .insert(user)
@@ -65,8 +60,6 @@ async function seedPost(overrides: Partial<typeof postTable.$inferInsert> = {}) 
   return row
 }
 
-// The double-table fixture: a post row plus a content/revision row the
-// post points at via published_revision_id.
 async function seedPublishedRevision(postId: number): Promise<number> {
   const [rev] = await db
     .insert(contentTable)
@@ -162,7 +155,6 @@ describe('adminPostsRouter.saveDraft', () => {
     )) as { status: string }
     expect(res.status).toBe('saved')
 
-    // The `saved` branch records a draft audit through the real batcher.
     await flushAuditLog()
     const rows = await db.select().from(auditLog).where(eq(auditLog.action, 'post_draft_saved'))
     expect(rows).toHaveLength(1)

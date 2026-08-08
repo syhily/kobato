@@ -1,8 +1,6 @@
 // Date formatter primitives shared between SSR and the client bundle.
-//
-// `Intl.DateTimeFormat` can't be cached at module scope because the
-// locale / time zone come from the runtime DB-backed blog config.
-// Callers thread the relevant slice of the config in explicitly.
+// `Intl.DateTimeFormat` can't be cached at module scope — locale /
+// time zone come from runtime DB-backed config, so callers thread it in.
 
 import { createBoundedMap } from '@/shared/utils/memo'
 
@@ -43,9 +41,8 @@ function makeFormatter(locale: string, timeZone: string): Intl.DateTimeFormat {
   })
 }
 
-// Bounded FIFO map keyed by `${locale}|${timeZone}` so repeated formatter
-// calls for the same deployment do not pay the `Intl.DateTimeFormat` ctor
-// cost on every invocation.
+// Bounded FIFO cache keyed by `${locale}|${timeZone}` so repeated calls
+// don't pay the `Intl.DateTimeFormat` ctor cost.
 const formatterCache = createBoundedMap<string, Intl.DateTimeFormat>(8)
 
 function cachedFormatter(locale: string, timeZone: string): Intl.DateTimeFormat {
@@ -93,9 +90,8 @@ function pad(value: number): string {
 }
 
 export interface SlicePostsOptions {
-  // When set to a positive integer M and the natural last page would
-  // render fewer than M posts, that last page is merged into its
-  // predecessor. Defaults to 0 (disabled).
+  // Positive M: a natural last page with fewer than M posts merges
+  // into its predecessor. Defaults to 0 (disabled).
   mergeTailWhenLessThan?: number
 }
 
@@ -121,10 +117,8 @@ export function slicePosts<Type>(
   }
 }
 
-// Returns the post-merge totalPage. When `threshold` is 0 or the natural
-// last page is already large enough, the natural totalPage is returned
-// unchanged. The merge is only valid when there are at least two pages
-// to begin with.
+// Tail merge applies only when `threshold` > 0 and there are at least
+// two pages to begin with.
 function applyTailMerge(postCount: number, pageSize: number, naturalTotalPage: number, threshold: number): number {
   if (threshold <= 0 || naturalTotalPage < 2) {
     return naturalTotalPage

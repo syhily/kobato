@@ -1,9 +1,7 @@
 import { z } from 'zod'
 
-// W3C Webmention receive payload — the protocol mandates a form-encoded
-// POST with `source` + `target` URL parameters. Both are capped well
-// above any sane URL length so a junk POST cannot smuggle a large body
-// into the parser (the resource route also caps content-length).
+// W3C receive payload — form-encoded `source` + `target`; the caps stop a
+// junk POST from smuggling a large body into the parser (the route also caps content-length).
 const MAX_URL_LENGTH = 2048
 
 const httpUrlField = (name: string) =>
@@ -29,19 +27,16 @@ export const webmentionReceiveSchema = z.object({
 })
 export type WebmentionReceiveInput = z.infer<typeof webmentionReceiveSchema>
 
-// Public display list (headless API, `public.webmention.list`) — the
-// mount key is the metric `public_id` (`page_key`), same key flow as
-// `public.comments.list` (split-plan notes-6 §3.1): the detail critical
-// carries it as `commentKey`; a miss resolves to NOT_FOUND.
+// Public display list (headless API, `public.webmention.list`) — keyed by
+// `page_key` (same flow as `public.comments.list`, split-plan notes-6 §3.1);
+// a miss resolves to NOT_FOUND.
 export const webmentionPublicListSchema = z.object({
   page_key: z.string(),
 })
 export type WebmentionPublicListInput = z.infer<typeof webmentionPublicListSchema>
 
-// Admin moderation list — mirrors the comments status-enum pattern,
-// extended with `rejected` (webmention rejection is a stored terminal
-// state, not a delete) and `hidden` (the automatic state after 7
-// consecutive daily re-verification failures).
+// Admin moderation list — `rejected` is a stored terminal state (not a
+// delete); `hidden` follows 7 consecutive daily re-verification failures.
 export const adminWebmentionListSchema = z.object({
   offset: z.number().min(0),
   limit: z.number().min(1).max(100),
@@ -49,8 +44,7 @@ export const adminWebmentionListSchema = z.object({
 })
 export type AdminWebmentionListInput = z.infer<typeof adminWebmentionListSchema>
 
-// Outbound send-log list — read-only; the `all` filter carries no status
-// constraint, same convention as the moderation list above.
+// Outbound send-log list — read-only; `all` carries no status constraint.
 export const adminWebmentionOutboxListSchema = z.object({
   offset: z.number().min(0),
   limit: z.number().min(1).max(100),

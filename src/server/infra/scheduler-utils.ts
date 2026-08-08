@@ -81,37 +81,22 @@ export function computeNextRun(
 }
 
 /**
- * The one owner of the daily-maintenance wall-clock slot: 04:30 in the
- * site's configured timezone (the audit archive runs at 04:00). Both
- * engine maintenance jobs — SQLite (infra/db/maintenance) and DuckDB
- * (bootstrap/analytics-lifecycle) — compute their delay here so the
- * two halves of one conceptual job can never drift apart.
+ * Single owner of the daily-maintenance slot (04:30 site timezone); both
+ * engine maintenance jobs compute their delay here so they can't drift.
  */
 export function nextDailyMaintenanceDelayMs(): number {
   const timeZone = getBlogSettingsBundleSync()?.siteIdentity?.timeZone ?? 'UTC'
   return computeNextRun({ frequency: 'daily', hour: 4, minute: 30 }, timeZone, new Date()).getTime() - Date.now()
 }
 
-// ─── Scheduled jobs ──────────────────────────────────────
-// One self-rescheduling-timer seam for every periodic job (kv sweep,
-// audit archive, backup, GeoIP update, and the two engine maintenance
-// jobs). The
-// domain owns its POLICY through two closures — when to fire next and
-// what to do — while this module owns the MECHANICS: timer lifecycle,
-// `.unref()`, self-reschedule after every fire, error logging, and one
-// shutdown hook that stops every registered job. The db-handle getter
-// each job closes over is about FRESHNESS (a reopened handle after
-// restore must be picked up), never about import cycles.
+// One self-rescheduling-timer seam per periodic job: the domain owns
+// policy (next-fire/run closures), this module owns the mechanics. Jobs
+// close over the db-handle GETTER so a reopened handle is picked up.
 
 export interface ScheduledJobOptions {
   /** Logger scope. */
   name: string
-  /**
-   * Milliseconds until the next fire, or `null` to suspend — the job
-   * re-evaluates after `suspendedRetryMs` (settings not hydrated yet,
-   * feature disabled, …). Computed fresh after every run and on every
-   * `reschedule()`, so settings changes apply by rescheduling.
-   */
+  /** Milliseconds until the next fire, or `null` to suspend (re-check after `suspendedRetryMs`); computed fresh on every reschedule. */
   nextDelayMs: () => number | null
   run: () => Promise<void> | void
   /** Re-check delay while suspended (default 30s). */
@@ -127,12 +112,8 @@ export interface ScheduledJob {
 const registeredJobs: ScheduledJob[] = []
 
 /**
- * Node clamps `setTimeout` delays ≥ 2³¹-1 ms (~24.85 days) to 1 ms — a
- * monthly backup scheduled ~31 days out would fire instantly, then
- * re-arm the same future date and fire again, back-to-back forever.
- * Delays beyond this cap are therefore CHUNKED: the timer only
- * reschedules (the job's `nextDelayMs()` is recomputed fresh each time)
- * without running, until the remaining delay fits under the cap.
+ * Chunked timer delay cap: Node clamps delays ≥ 2³¹-1 ms to 1 ms, so longer
+ * delays re-arm without running until the remainder fits.
  */
 export const MAX_TIMER_DELAY_MS = 24 * 60 * 60 * 1000
 
@@ -147,9 +128,7 @@ export function scheduleJob(options: ScheduledJobOptions): ScheduledJob {
         clearTimeout(timer)
         timer = null
       }
-      // Re-arming re-registers after a stop() — stop() is "clear the
-      // pending fire", never a permanent kill (tests and settings
-      // toggles rely on resurrection via the public schedule verbs).
+      // Re-arming re-registers the job — stop() only clears the pending fire.
       if (!registeredJobs.includes(job)) {
         registeredJobs.push(job)
       }
@@ -166,8 +145,7 @@ export function scheduleJob(options: ScheduledJobOptions): ScheduledJob {
         // Suspended: re-evaluate later WITHOUT running the job.
         timer = setTimeout(() => job.reschedule(), suspendedRetryMs)
       } else if (delayMs > MAX_TIMER_DELAY_MS) {
-        // Too far out for a single setTimeout — re-arm in chunks, never
-        // running the job early (see MAX_TIMER_DELAY_MS).
+        // Too far out for one setTimeout — re-arm in chunks, never running early.
         timer = setTimeout(() => job.reschedule(), MAX_TIMER_DELAY_MS)
       } else {
         timer = setTimeout(() => {
@@ -201,15 +179,9 @@ export function scheduleJob(options: ScheduledJobOptions): ScheduledJob {
   return job
 }
 
-/**
- * Stop every registered job. Used by the shutdown hook — and by tests
- * cleaning up between cases, which is why it exists as a public verb:
- * the per-domain `stop*Scheduler` wrappers that predated it were
- * deleted (the seam owns stopping).
- */
+/** Stop every registered job (shutdown hook and test cleanup). */
 export function stopAllScheduledJobs(): void {
-  // Backwards iteration: stop() deregisters the job from the array,
-  // so forward iteration would skip entries.
+  // Backwards: stop() deregisters from the array mid-iteration.
   for (let i = registeredJobs.length - 1; i >= 0; i--) {
     registeredJobs[i]!.stop()
   }

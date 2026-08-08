@@ -2,9 +2,8 @@ import type { MetaDescriptor } from 'react-router'
 
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
-// Isomorphic by construction: route `meta()` exports pull this module into
-// the browser bundle, so it may only import `@/shared/*` — the invariant is
-// pinned by `tests/unit/shared/contracts/boundaries.test.ts`.
+// Isomorphic by construction: route `meta()` exports pull this module
+// into the browser bundle, so it may only import `@/shared/*`.
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { brandingVersion, extractXHandle } from '@/shared/config/utils'
 import { ogImagePathForSlug } from '@/shared/seo/og-image'
@@ -288,9 +287,8 @@ export function routeMeta(
   const resolved = bundle ?? getBlogSettingsBundleSync()
   const siteIdentity = resolved?.siteIdentity
   if (resolved === null || siteIdentity === null || siteIdentity === undefined) {
-    // Pre-install fallback. The install split-screen renders before the
-    // gate has any settings to hand out; emit a minimal `<title>` so
-    // browsers don't show "untitled" and call it a day.
+    // Pre-install fallback: the split-screen renders before settings
+    // exist — emit a minimal `<title>` and noindex.
     return [{ title: title ?? PRE_INSTALL_TITLE }, ...robotsTags(true)]
   }
 

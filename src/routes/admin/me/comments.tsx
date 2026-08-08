@@ -27,15 +27,9 @@ export interface MyCommentItem {
   deletedAtIso: string | null
   deleteRequestedAtIso: string | null
   isPending: boolean
-  /**
-   * Post / page the comment was posted under. Missing entry (`null`)
-   * means the underlying row has been deleted.
-   */
+  /** Post / page the comment was posted under; null means the row was deleted. */
   entity: { title: string; permalink: string } | null
-  /**
-   * Set when the row is a reply. If the parent has been soft-deleted,
-   * `isDeleted` is true and the name / excerpt are blank.
-   */
+  /** Reply parent; when soft-deleted, `isDeleted` is true and name/excerpt are blank. */
   parent: { name: string; excerpt: string; isDeleted: boolean } | null
 }
 
@@ -64,8 +58,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const { entities } = await caller.comments.searchMineEntities({})
   const entityOptions: MyCommentEntityOption[] = entities
 
-  // If the URL pins an entity that isn't in the result set, do a
-  // follow-up lookup so the trigger can render the human-readable title.
+  // The URL may pin an entity outside the result set — resolve it so the
+  // trigger can render the human-readable title.
   if (entity && !entityOptions.some((o) => o.value === entityValue)) {
     const resolved = await caller.comments.resolveEntity({ entity: entityValue! })
     if (resolved !== null) {

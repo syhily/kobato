@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-// Server prerender products are deterministic sentinels so the strip tests
-// can tell server-recomputed bytes apart from client-supplied ones.
+// Server prerender products are deterministic sentinels marking server-recomputed bytes.
 vi.mock('katex', () => ({
   default: {
     renderToString: (tex: string) => `<math>server:${tex}</math>`,
@@ -59,11 +58,7 @@ describe('pt/services/canonicalize — canonicalizePortableTextBody', () => {
     }
   })
 
-  // P0-10 regression: the save path used to keep client-supplied prerender
-  // products verbatim (prerender only recomputes missing fields), so an
-  // author could store arbitrary/stale highlightedHtml/mathml/svg bytes
-  // inconsistent with `code`/`tex`. Canonicalization must strip them first,
-  // like the comment path does, and let the server recompute.
+  // P0-10 regression: strip client-supplied prerender products and let the server recompute.
   describe('strips client prerender products', () => {
     it('drops client highlightedHtml/mathml/svg and recomputes them server-side', async () => {
       const body = await canonicalizePortableTextBody([
@@ -103,8 +98,7 @@ describe('pt/services/canonicalize — canonicalizePortableTextBody', () => {
       expect(serialized).not.toContain('client-mathml')
       expect(serialized).not.toContain('client-svg')
       expect(serialized).not.toContain('client-inline')
-      // The server recomputes highlightedHtml/mathml from code/tex; svg is a
-      // legacy field that is never recomputed, so it must be gone entirely.
+      // svg is legacy and never recomputed — it must be gone entirely.
       expect(serialized).toContain('server:const x = 1')
       expect(serialized).toContain('server:x^2')
       expect(serialized).toContain('server:e=mc^2')

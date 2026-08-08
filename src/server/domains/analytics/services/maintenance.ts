@@ -10,11 +10,8 @@ const log = getLogger('analytics.maintenance')
 
 /**
  * The DuckDB half of the daily DB maintenance job (plan §1.11): the
- * 180-day retention DELETE + CHECKPOINT, with row-count and file-size
- * logging before and after. access_log knowledge (the table, the
- * retention window, the epoch binding) lives entirely here in the
- * domain — the bootstrap lifecycle owns only the scheduling and the
- * handle.
+ * 180-day retention DELETE + CHECKPOINT. The bootstrap lifecycle owns
+ * only the scheduling and the handle.
  */
 
 async function analyticsFileSize(handle: AnalyticsHandle): Promise<number | null> {

@@ -89,11 +89,8 @@ const unpublish = adminProc
     return { page }
   })
 
-// save-draft / publish-latest / preview come from the shared revision
-// factory. Pages deliberately do NOT pass `context.viewer` into
-// `saveBody`: editing is already admin-only via `adminProc`, so the page
-// adapter has no ownership rule to evaluate — see the
-// `passViewerToSaveBody` option doc in `controllers/admin/revision-router.ts`.
+// Shared revision factory; pages pass no `viewer` — editing is already
+// admin-only, so there is no ownership rule (see `revision-router.ts`).
 const { saveDraft, publishLatest, preview } = makeRevisionRouter({
   proc: adminProc,
   adapter: pageLifecycleAdapter,

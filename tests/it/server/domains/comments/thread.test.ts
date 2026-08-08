@@ -15,7 +15,6 @@ describe('integration / comment threading', () => {
     const adminCtx = makeAuthedCtx({ role: 'admin', db })
     const publicCtx = makePublicCtx({ db })
 
-    // 1. Create a page
     const pageRes = await callRpc(
       '/admin/pages/upsertMeta',
       { title: 'Commentable Page', summary: '', slug: 'commentable' },
@@ -23,7 +22,7 @@ describe('integration / comment threading', () => {
     )
     expect(pageRes.status).toBe(200)
 
-    // 2. List pages to trigger metric creation and get commentPublicId
+    // List pages to trigger metric creation and get commentPublicId
     const listRes = await callRpc('/admin/pages/list', { offset: 0, limit: 1 }, adminCtx)
     expect(listRes.status).toBe(200)
     const list = await parseRpcJson<{
@@ -34,7 +33,6 @@ describe('integration / comment threading', () => {
     const page = list.pages[0]!
     expect(page.commentPublicId).toBeTruthy()
 
-    // 3. Post comment using the metric publicId as page_key
     const commentRes = await callRpc(
       '/comments/replyComment',
       {
@@ -56,7 +54,7 @@ describe('integration / comment threading', () => {
     const comment = await parseRpcJson<{ comment: { id: string; name: string } }>(commentRes)
     expect(comment.comment.name).toBe('Alice')
 
-    // 4. Load comments as admin (to see pending comments) and verify
+    // Load comments as admin (to see pending comments)
     const loadRes = await callRpc(
       '/comments/loadComments',
       { page_key: page.commentPublicId, offset: 0, limit: 10 },

@@ -71,10 +71,8 @@ async function scopedPostsListing({
   })
 }
 
-// The home listing (`/` + `/page/:num`). The whole pipeline — analytics
-// write, settings gates, feature fan-out — lives in
-// `loaders/home.ts::loadHomeData`; this procedure only wraps it in the
-// thrown-Response → union translation.
+// The home listing — the whole pipeline lives in `loadHomeData`; this
+// only wraps the thrown-Response → union translation.
 const home = publicProc
   .route({ method: 'GET', path: '/content/home' })
   .input(contentHomeInputSchema)
@@ -92,8 +90,7 @@ const home = publicProc
     )
   })
 
-// Scoped listings (`/tags/:slug`, `/cats/:slug`). An unknown taxonomy
-// slug is a NOT_FOUND; pagination redirects ride the union.
+// Scoped listings (`/tags/:slug`, `/cats/:slug`); unknown slug → NOT_FOUND.
 const postsList = publicProc
   .route({ method: 'GET', path: '/content/posts/list' })
   .input(contentPostsListInputSchema)
@@ -137,9 +134,7 @@ const postsList = publicProc
     )
   })
 
-// Keyword search (`/search/:keyword`). The empty-keyword 302, the
-// overflow redirects, and the `search` audit event all stay exactly
-// where they were — inside `searchLoader`.
+// Keyword search — the empty-keyword 302, overflow redirects, and the audit event stay inside `searchLoader`.
 const search = publicProc
   .route({ method: 'GET', path: '/content/search' })
   .input(contentSearchInputSchema)
@@ -166,12 +161,8 @@ const archives = publicProc
   .handler(async ({ context }) => {
     const db = context.db
     const listingNowIso = new Date().toISOString()
-    // Archives promises completeness: list every live post. The bound is explicit
-    // (the helper otherwise defaults to 200) and far above any realistic personal
-    // blog; if it ever bites, the fix is year-grouped pagination, not a lower cap.
-    // Audit P1-22 reviewed this and deferred that work behind a scale trigger:
-    // revisit when a deployment passes ~2,000 live posts (~6-7 batched queries,
-    // ~1-3MB payload at the 10k cap — no per-post fan-out).
+    // Archives promise completeness — explicit 10k bound (helper defaults to 200);
+    // revisit via year-grouped pagination past ~2,000 live posts (P1-22).
     const rawPosts = await listClientPosts(db, { includeHidden: true, includeScheduled: false, limit: 10_000 })
     const posts = rawPosts.map(toListingPostCard)
     const resolvedPosts = await getClientPostsWithMetadata(db, posts, {

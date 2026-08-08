@@ -7,13 +7,8 @@ import { validatePortableTextBody, visitNestedBlocks } from '@/shared/pt/utils'
 export async function canonicalizePortableTextBody(input: unknown): Promise<PortableTextBody> {
   try {
     const body = validatePortableTextBody(input)
-    // Strip any client-supplied pre-rendered fields to prevent stored XSS
-    // and stale artifacts (same policy as the comment path) — the prerender
-    // pass below only recomputes missing fields, so a kept client value
-    // would be stored verbatim, possibly inconsistent with code/tex. Unlike
-    // the comment dialect, post/page bodies nest code/math inside solution,
-    // twoColumn, and footnoteDefinition containers, so the strip walks the
-    // same nested positions `prerenderPortableTextBody` recomputes.
+    // Strip client-supplied prerendered fields (stored XSS) at the nested
+    // positions the prerender pass recomputes.
     stripClientPrerenderedFields(body)
     await prerenderPortableTextBody(body)
     return body

@@ -15,15 +15,9 @@ import { ensureMetric, findMetricByTarget } from '@/server/infra/db/operations/m
 import { metric } from '@/server/infra/db/schema/metric'
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@/server/infra/logger'
 
-// `trackPageView` is the single owner of "what counts as a view": one gate
-// (prefetch via `facts.purpose`, admin exemption with the `trackAdmin`
-// settings override) covering BOTH signals — the per-entity counter
-// (`bumpPageView`) and the time-series (`pushAccessEvent`). These tests
-// pin the fan-out against the real engine: the counter lands in the real
-// `metric` table after `flushPageViews()`, the time-series lands as real
-// access_log rows in an ADOPTED DuckDB sidecar after `flushAccessLog()`.
-// No mocks at all — the defensive try/catch case exercises the real
-// 'PageViewBatcher not initialized' throw by leaving the batchers down.
+// `trackPageView` gates both signals (per-entity counter + time-series)
+// against the real engine: real `metric` table + adopted DuckDB sidecar.
+// No mocks.
 
 const db = getTestDb()
 
@@ -59,8 +53,7 @@ beforeEach(async () => {
 })
 
 afterEach(async () => {
-  // Flush BEFORE dropping the batchers so no pending event lands
-  // mid-next-test; the flushed rows are wiped by the next beforeEach.
+  // Flush BEFORE dropping the batchers so no pending event lands mid-next-test.
   await flushPageViews()
   await flushAccessLog()
   resetAllBatchers()
@@ -78,7 +71,6 @@ async function pvOfPostTarget(): Promise<number> {
   return row?.pv ?? 0
 }
 
-/** Real access_log rows in the sidecar after a flush. */
 async function accessLogRows(): Promise<Record<string, unknown>[]> {
   await flushAccessLog()
   const result = await analyticsHandle.reader.runAndReadAll('SELECT * FROM access_log')
@@ -159,8 +151,7 @@ describe('analytics/track — trackPageView', () => {
   })
 
   it('never throws on internal failure (defensive try/catch)', async () => {
-    // Leave the batchers down: the real bumpPageView throws
-    // 'PageViewBatcher not initialized' and the track catch swallows it.
+    // Batchers down: the real throw is swallowed by track's catch.
     resetAllBatchers()
     await expect(trackPageView(makeFacts({ userAgent: CHROME_UA }), POST_TARGET)).resolves.toBeUndefined()
     expect(__logCaptureForTests().some((e) => e.level === 'error')).toBe(true)

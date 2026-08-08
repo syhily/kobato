@@ -42,18 +42,13 @@ import { verification, user } from '@/server/infra/db/schema/user'
 
 const db = getTestDb()
 
-// The audit batcher is a process-level singleton that production code
-// initialises during bootstrap. Tests below exercise
-// `establishLoginSession`, which records an audit event fire-and-forget —
-// wire the batcher up so the event lands, and flush it before the next
-// test's `clearAllTables` truncates the user rows it references.
+// Wire the audit batcher so establishLoginSession's fire-and-forget
+// events land; flush before clearAllTables truncates referenced rows.
 beforeEach(async () => {
   initAllBatchers(getDatabaseHandle())
   await clearAllTables(db)
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
-  // The setup-token invalidation flag is a process-level fast-path (the
-  // DB row is already reset by clearAllTables) — reset it per test so no
-  // case depends on running before/after the invalidate test.
+  // The invalidation flag is a process-level fast-path — reset it per test.
   __resetSetupTokenForTests()
 })
 
@@ -92,7 +87,7 @@ describe('auth/verification-tokens — issueResetToken', () => {
     expect(consumed).not.toBeNull()
     expect(consumed!.userId).toBe(u.id)
 
-    // Single-shot consume — second call must return null.
+    // Single-shot consume.
     expect(await consumeToken(db, token, 'password-reset')).toBeNull()
   })
 
@@ -113,7 +108,6 @@ describe('auth/verification-tokens — issueResetToken', () => {
     const second = await issueResetToken(db, u.id)
     expect(first.token).not.toBe(second.token)
 
-    // Old token must no longer work.
     expect(await peekToken(db, first.token, 'password-reset')).toBeNull()
     expect(await peekToken(db, second.token, 'password-reset')).not.toBeNull()
   })
@@ -217,7 +211,7 @@ describe('auth/verification-tokens — OTP', () => {
     expect(result).not.toBeNull()
     expect(result!.userId).toBe(u.id)
 
-    // Single-use — second verify must fail (row was deleted).
+    // Single-use: the row was deleted.
     expect(await verifyOtpToken(db, u.id, otpCode)).toBeNull()
   })
 
@@ -368,9 +362,7 @@ describe('auth/repo — session meta', () => {
     const staleLogin = new Date('2024-01-01T00:00:00Z')
     await recordSessionLogin(db, { sid, userId: u.id, userAgent: 'ua', ip: '1.1.1.1', loginAt: staleLogin })
     recordSessionActivity(db, sid)
-    // drizzle's node:sqlite driver runs the UPDATE synchronously when the
-    // fire-and-forget `.then` attaches inside recordSessionActivity; one
-    // event-loop turn drains the trailing promise chain deterministically.
+    // One event-loop turn drains the fire-and-forget UPDATE deterministically.
     await new Promise((resolve) => setImmediate(resolve))
     const meta = await findSessionMeta(db, sid)
     expect(meta).not.toBeNull()
@@ -491,14 +483,11 @@ describe('auth/primitives — establishLoginSession & logout', () => {
     expect(result.sid).toMatch(/^[0-9a-f-]+$/)
     expect(result.setCookie).toContain('__session=')
 
-    // The session row must exist with the owner stamped. It is written
-    // through the process-level pool (session-storage), which commits
-    // against the same worker database.
+    // Row written through the process-level session-storage pool.
     const rows = await db.select().from(sessionTable).where(eq(sessionTable.id, result.sid))
     expect(rows).toHaveLength(1)
     expect(rows[0]!.userId).toBe(u.id)
 
-    // Now login again with a fresh session for logout flow.
     const session2 = await getRequestSession(
       new Request('http://localhost/', { headers: { Cookie: result.setCookie.split(';')[0] } }),
     )
@@ -517,7 +506,6 @@ describe('auth/primitives — establishLoginSession & logout', () => {
     })
 
     expect(second.sid).not.toBe(first.sid)
-    // The first session's row is gone; only the new one remains.
     expect(await db.select().from(sessionTable).where(eq(sessionTable.id, first.sid))).toHaveLength(0)
     expect(await db.select().from(sessionTable).where(eq(sessionTable.id, second.sid))).toHaveLength(1)
   })
@@ -551,8 +539,7 @@ describe('auth/otp-flow — handleOtpCancel', () => {
     }
     expect(session.get('pendingOtpUser')).toBeUndefined()
     expect(session.get('otpFailCount')).toBeUndefined()
-    // Same-session mutations are committed by the boundary middleware —
-    // the domain only marks the session dirty and carries no setCookie.
+    // The domain only marks dirty — the boundary middleware commits the session.
     expect(markSessionDirty).toHaveBeenCalledTimes(1)
     expect(result).not.toHaveProperty('setCookie')
   })

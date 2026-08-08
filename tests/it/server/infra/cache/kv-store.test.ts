@@ -22,9 +22,7 @@ const past = () => new Date(Date.now() - 60_000)
 
 describe('kv-store — JSON entries', () => {
   it('round-trips JSON-native values with plain-JSON semantics', async () => {
-    // Plain JSON (superjson was dropped with the SQLite migration): Dates
-    // and bigints are no longer special — bucket payloads are JSON-native
-    // by contract, and a Date stored anyway comes back as its ISO string.
+    // Bucket payloads are JSON-native by contract: a stored Date comes back as its ISO string.
     await setItem(
       db,
       'k:plain',
@@ -85,9 +83,7 @@ describe('kv-store — JSON entries', () => {
   })
 
   it('round-trips a raw scalar payload written by direct SQL', async () => {
-    // Mirrors rows written by direct SQL (the cache generation counters):
-    // plain-JSON storage means the scalar reads back as-is. Only the
-    // registry's counter path reads these keys — never `getItem`.
+    // Mirrors direct-SQL scalar rows (the cache generation counters): plain-JSON storage reads them back as-is.
     await db.insert(kvCache).values({ key: 'k:counter', bucket: 'searchResult', value: 5 })
     expect(await getItem(db, 'k:counter')).toBe(5)
   })

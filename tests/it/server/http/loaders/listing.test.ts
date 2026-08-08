@@ -7,10 +7,7 @@ import { listingLoader } from '@/server/http/loaders/listing'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { post as postTable } from '@/server/infra/db/schema/post'
 
-// `listingLoader` against the real engine: the tail-merge offset contract
-// is pinned twice — once at the callback boundary (the loader's own API)
-// and once end-to-end through the real paginated query, where the merged
-// tail shows up as actual resolved rows.
+// `listingLoader` against the real engine: the tail-merge offset contract is pinned at the callback boundary and end-to-end.
 
 const db = getTestDb()
 
@@ -60,8 +57,7 @@ describe('listingLoader', () => {
   })
 
   it('serves the merged tail as real rows through the paginated query', async () => {
-    // 13 live posts at pageSize 5 naturally split 5 + 5 + 3; the tail of
-    // 3 < threshold 4 merges into page 2, which must return all 8 rows.
+    // 13 posts at pageSize 5: the tail of 3 < threshold 4 merges into page 2 → 8 rows.
     await seedLivePosts(13)
 
     const result = await listingLoader(db, {
@@ -78,8 +74,7 @@ describe('listingLoader', () => {
     expect(result.totalPage).toBe(2)
     expect(result.pageNum).toBe(2)
     expect(result.resolvedPosts).toHaveLength(8)
-    // firstPublishedAt desc: page 1 held post-12…post-8, so the merged
-    // tail runs post-7 down to post-0.
+    // firstPublishedAt desc: page 1 took post-12…post-8; the merged tail is post-7…post-0.
     expect(result.resolvedPosts.map((p) => p.slug)).toEqual(Array.from({ length: 8 }, (_, i) => `post-${7 - i}`))
   })
 })

@@ -14,13 +14,9 @@ import { session as sessionTable } from '@/server/infra/db/schema/session'
 import { user } from '@/server/infra/db/schema/user'
 import { DomainError } from '@/server/infra/http/errors'
 
-// The guard's policy branches run against the real session/user tables:
-// the guard reads the session meta, checks the target user row, and the
-// revocation is a real DELETE we assert on. The admin-scope happy paths
-// (missing meta, own session, admin→live-admin FORBIDDEN, admin→visitor)
-// are already covered in ./auth-coverage.test.ts — this file owns the
-// own-scope and bulk-scope suites plus the two remaining admin-scope
-// branches (non-admin actor, soft-deleted target admin).
+// Guard policy branches against the real session/user tables; the
+// admin-scope happy paths live in ./auth-coverage.test.ts. This file
+// owns own-scope, bulk-scope, non-admin actor, and soft-deleted admin.
 
 const db = getTestDb()
 

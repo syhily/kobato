@@ -8,11 +8,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { FontsSettings } from '@/shared/config/types'
 
-// The controller reads `blogSettings.fonts` off the root loader and fires
-// `admin.fonts.setSlot` through the orpc client; both are hoisted
-// singletons so each test can swap the server snapshot and the mutation
-// outcome. The orpcQuery list key is irrelevant here — the key grammar is
-// pinned by fonts-cache.test.ts — so a static fake stands in.
+// Hoisted singletons let each test swap the loader snapshot and the
+// mutation outcome; the orpcQuery key grammar is pinned by fonts-cache.test.ts.
 const routerState = vi.hoisted(() => ({
   fonts: undefined as FontsSettings | undefined,
   revalidate: vi.fn(),
@@ -166,16 +163,13 @@ describe('useFontSlotsController', () => {
     await act(async () => {
       result.current.moveToSlot('x', 'global', undefined)
     })
-    // Optimistic state reflects the move immediately.
     expect(result.current.slots.global).toEqual(['a', 'x'])
 
-    // A revalidate delivering the pre-move server snapshot mid-flight must
-    // not clobber the optimistic state.
+    // Mid-flight loader data must not clobber the optimistic state.
     routerState.fonts = makeFonts({ global: ['a'] })
     rerender()
     expect(result.current.slots.global).toEqual(['a', 'x'])
 
-    // Once the mutation settles, the next loader change seeds again.
     await act(async () => {
       resolveSetSlot({})
     })
@@ -222,8 +216,7 @@ describe('useFontSlotsController', () => {
     routerState.fonts = makeFonts({ global: ['a', 'b', 'c'] })
     const { result } = renderHook(() => useFontSlotsController(), { wrapper: makeWrapper() })
 
-    // Two rapid drag-ends: each fires from the latest optimistic state
-    // (separate acts, like separate dnd events).
+    // Two rapid drag-ends fire from the latest optimistic state.
     await act(async () => {
       result.current.reorder('global', 0, 2)
     })
@@ -233,8 +226,7 @@ describe('useFontSlotsController', () => {
     })
     expect(result.current.slots.global).toEqual(['c', 'b', 'a'])
 
-    // The second POST must not be on the wire yet — a concurrent earlier
-    // payload landing last would leave the server at a stale order.
+    // No second POST while the first persist is in flight.
     expect(calls).toEqual([{ slot: 'global', fontIds: ['b', 'c', 'a'] }])
 
     // Once the first settles, the queued second fires — the last drag wins.

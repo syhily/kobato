@@ -15,12 +15,8 @@ import { auditLog } from '@/server/infra/db/schema/config'
 import { passkeyCredential } from '@/server/infra/db/schema/passkey'
 import { user as userTable, verification } from '@/server/infra/db/schema/user'
 
-// The users-admin router against the real engine: real user rows, real
-// role/mute guards, real passkey gate (driven by the settings bundle),
-// real in-process rate limiter, and audit rows asserted after a batcher
-// flush. The only test double is `installFetch` — the Zeabur ZSend
-// transport is HTTP, so invite / password-reset delivery is captured at
-// the fetch boundary (an officially sanctioned seam).
+// users-admin router against the real engine; only double: `installFetch` at the
+// Zeabur ZSend HTTP boundary (invite / password-reset delivery).
 const { RPCHandler } = await import('@orpc/server/fetch')
 const { adminUsersAdminRouter } = await import('@/server/http/controllers/admin/users-admin.controller')
 const { __resetRateLimitsForTests } = await import('@/server/infra/rate-limit')
@@ -40,8 +36,7 @@ afterEach(async () => {
   resetAllBatchers()
 })
 
-// `audit_log.actor_id` is a real FK to `user.id`, so the acting admin is
-// a seeded row whose id becomes the viewer identity.
+// audit_log.actor_id is a real FK: the acting admin must be a seeded row.
 async function seedViewer(): Promise<number> {
   return seedUser({ name: 'Test User', email: 'test@example.com', role: 'admin' })
 }
@@ -117,9 +112,7 @@ describe('admin users-admin controller', () => {
     expect(body.user.id).toBe(String(id))
     expect(body.user.isMuted).toBe(true)
 
-    // The mute landed in the user row…
     expect((await userRow(id)).isMuted).toBe(true)
-    // …and was audited.
     const rows = await auditRowsFor('user_muted')
     expect(rows).toHaveLength(1)
     expect(rows[0]!.resourceId).toBe(String(id))
@@ -132,7 +125,6 @@ describe('admin users-admin controller', () => {
     const response = await call('/mute', { id: String(adminId), muted: true }, viewerId)
     expect(response.status).toBe(404)
 
-    // The admin row was not muted, and nothing was audited.
     expect((await userRow(adminId)).isMuted).toBe(false)
     expect(await auditRowsFor('user_muted')).toHaveLength(0)
   })
@@ -163,7 +155,6 @@ describe('admin users-admin controller', () => {
     const body = await parseRpcJson<{ success: boolean }>(response)
     expect(body.success).toBe(true)
 
-    // The author row and its one-shot setup token were committed.
     const rows = await db.select().from(userTable).where(eq(userTable.email, 'bob@example.com'))
     expect(rows).toHaveLength(1)
     expect(rows[0]!.role).toBe('author')
@@ -171,8 +162,6 @@ describe('admin users-admin controller', () => {
     const tokens = await db.select().from(verification).where(eq(verification.userId, rows[0]!.id))
     expect(tokens).toHaveLength(1)
 
-    // The invite went out exactly once, to the invitee, BCC'd to the
-    // inviter, carrying a setup link on the configured site origin.
     expect(fetchMock.calls).toHaveLength(1)
     expect(fetchMock.calls[0]!.url).toBe(ZSEND_URL)
     const payload = zsendPayload(fetchMock.calls[0]!.init)
@@ -186,10 +175,7 @@ describe('admin users-admin controller', () => {
   })
 
   it('rejects an invite when rate limited', async () => {
-    // Shrink the per-IP invite bucket so the second invite in the window
-    // trips; keep the per-email bucket out of the way so the 429 is
-    // attributable to the IP guard. Mail stays enabled so the first
-    // invite really delivers.
+    // inviteIp: 1 / inviteEmail: 100 — the 429 must be attributable to the IP guard.
     withMailEnabled({
       ...TEST_BLOG_SETTINGS_BUNDLE,
       rateLimit: {
@@ -207,8 +193,6 @@ describe('admin users-admin controller', () => {
     const response = await call('/inviteAuthor', { email: 'bob@example.com', name: 'Bob' }, viewerId)
     expect(response.status).toBe(429)
 
-    // The rate-limited attempt never reached the mail transport, and only
-    // one author row exists.
     expect(fetchMock.calls).toHaveLength(1)
     expect(await db.select().from(userTable).where(eq(userTable.email, 'bob@example.com'))).toHaveLength(1)
   })
@@ -225,11 +209,9 @@ describe('admin users-admin controller', () => {
     const body = await parseRpcJson<{ success: boolean }>(response)
     expect(body.success).toBe(true)
 
-    // A reset token row exists for the user…
     const tokens = await db.select().from(verification).where(eq(verification.userId, id))
     expect(tokens).toHaveLength(1)
 
-    // …and the reset mail carries a link on the configured site origin.
     expect(fetchMock.calls).toHaveLength(1)
     const payload = zsendPayload(fetchMock.calls[0]!.init)
     expect(payload.to).toEqual(['alice@example.com'])
@@ -262,7 +244,6 @@ describe('admin users-admin controller', () => {
     expect(body.user.id).toBe(String(id))
     expect(body.user.passkeyCount).toBe(0)
 
-    // Every credential row for the user is gone.
     expect(await db.select().from(passkeyCredential).where(eq(passkeyCredential.userId, id))).toHaveLength(0)
 
     const audit = await auditRowsFor('passkeys_cleared')

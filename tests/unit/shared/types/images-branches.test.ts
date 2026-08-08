@@ -9,8 +9,6 @@ import {
   isSafeImageSegment,
 } from '@/shared/types/images'
 
-// --- classifyImageKind ----------------------------------------------------
-
 describe('shared/types/images — classifyImageKind', () => {
   it('returns "category" for images/categories/ prefix', () => {
     expect(classifyImageKind('images/categories/foo.png')).toBe('category')
@@ -26,8 +24,6 @@ describe('shared/types/images — classifyImageKind', () => {
     expect(classifyImageKind('')).toBe('generic')
   })
 })
-
-// --- extractFriendHostSafe ------------------------------------------------
 
 describe('shared/types/images — extractFriendHostSafe', () => {
   it('returns null for empty / whitespace-only input', () => {
@@ -57,8 +53,6 @@ describe('shared/types/images — extractFriendHostSafe', () => {
   })
 })
 
-// --- isSafeImageSegment ---------------------------------------------------
-
 describe('shared/types/images — isSafeImageSegment', () => {
   it('returns false for empty / whitespace-only input', () => {
     expect(isSafeImageSegment('')).toBe(false)
@@ -76,8 +70,6 @@ describe('shared/types/images — isSafeImageSegment', () => {
     expect(isSafeImageSegment('a b')).toBe(false)
   })
 })
-
-// --- buildPublicBaseUrlFromStorage ---------------------------------------
 
 describe('shared/types/images — buildPublicBaseUrlFromStorage', () => {
   it('returns null when options is undefined', () => {
@@ -127,7 +119,7 @@ describe('shared/types/images — buildPublicBaseUrlFromStorage', () => {
   })
 })
 
-// --- getImageUrl (quality + placeholder-substitution branches not in images.test.ts) ---
+// Quality + placeholder-substitution branches; the rest lives in images.test.ts.
 
 describe('shared/types/images — getImageUrl placeholder + quality branches', () => {
   const opts = {
@@ -156,8 +148,6 @@ describe('shared/types/images — getImageUrl placeholder + quality branches', (
     expect(url).toBe('/resize?u=https://cdn.example.com/img.jpg&w=100')
   })
 })
-
-// --- getImageSrcset -------------------------------------------------------
 
 describe('shared/types/images — getImageSrcset', () => {
   const base = {

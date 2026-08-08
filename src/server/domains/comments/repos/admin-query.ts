@@ -41,7 +41,6 @@ export async function findCommentWithUserAndTarget(db: Database, id: number) {
   return rows[0] ?? null
 }
 
-// Page-title autocomplete for the comment-moderation filter Combobox.
 export async function searchPages(
   db: Database,
   q: string | undefined,
@@ -65,7 +64,6 @@ export async function searchPages(
   return rows.map((r) => ({ key: r.key, title: r.title ?? '无标题' }))
 }
 
-// Comment-author autocomplete.
 export async function searchCommentAuthors(
   db: Database,
   q: string | undefined,
@@ -96,10 +94,7 @@ export async function countAllComments(db: Database, filters: AdminListFilters):
   return rows[0].counts
 }
 
-// Single-query variant that returns all three status counts at once,
-// avoiding the N-round-trip penalty of calling countAllComments three
-// times. The base conditions (target, userId, text filter, date bounds)
-// are applied in the WHERE; each SELECT arm further narrows by status.
+// Single-query variant of countAllComments — all four status counts in one round trip.
 export async function countAdminComments(
   db: Database,
   baseFilters: Omit<AdminListFilters, 'status'>,

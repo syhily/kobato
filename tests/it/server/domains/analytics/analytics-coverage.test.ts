@@ -214,7 +214,6 @@ describe('analytics/visitor-cookie — resolveVisitorCookie', () => {
   })
 
   it('returns null set-cookie when no Cookie header is present', () => {
-    // Same as no-cookie case but explicit
     const res = resolveVisitorCookie(null)
     expect(res.setCookie).not.toBeNull()
   })

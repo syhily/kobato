@@ -54,9 +54,7 @@ export const music = sqliteTable(
   },
   (table) => [
     uniqueIndex('uq_music_source_source_id').on(table.source, table.sourceId),
-    // No `idx_music_player_id`: the player_id UNIQUE constraint creates
-    // an implicit index — and a redundant non-unique index here makes
-    // drizzle-kit DROP the constraint from the generated DDL.
+    // No `idx_music_player_id`: a redundant non-unique index would make drizzle-kit DROP the UNIQUE constraint.
     index('idx_music_created_at').on(table.createdAt),
     index('idx_music_deleted_at').on(table.deletedAt),
     check('music_storage_driver_chk', sql`${table.storageDriver} IN ('s3', 'local')`),

@@ -7,10 +7,8 @@ export type ToolbarDensity = 'compact' | 'full'
 
 const TOOLBAR_DENSITY_STORAGE_KEY = 'kobato/admin/page-editor/toolbar-density'
 
-// Snapshot cache: `useSyncExternalStore` requires `getSnapshot` to return a
-// referentially stable value between store changes, so the parsed density
-// is cached against the raw storage string (same idiom as
-// `use-comment-guest.ts`).
+// Cache the parsed snapshot: `useSyncExternalStore` demands referential
+// stability between store changes.
 let cachedRaw: string | null | undefined
 let cachedDensity: ToolbarDensity = 'full'
 
@@ -50,14 +48,9 @@ function emitChange(): void {
   }
 }
 
-// Persistent toolbar density preference. SSR-consistent via
-// `useSyncExternalStore` (audit P1-4): the server snapshot is always
-// `'full'`, so SSR and the hydration render agree even for users WITH a
-// stored preference, and React swaps to the stored value right after
-// hydration — no mismatch. SPA navigations mount client-side and read the
-// client snapshot on the first render, so the preference applies instantly
-// there. The outer `flex-wrap` container grows to more rows when space is
-// tight.
+// Persistent toolbar density, SSR-consistent via `useSyncExternalStore`
+// (audit P1-4): the server snapshot is always `'full'`, so SSR and hydration
+// agree; SPA navigations read the client snapshot on first render.
 export function useToolbarDensityPreference(): [ToolbarDensity, (next: ToolbarDensity) => void] {
   const density = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
   const setDensity = useCallback((next: ToolbarDensity) => {
@@ -65,8 +58,7 @@ export function useToolbarDensityPreference(): [ToolbarDensity, (next: ToolbarDe
       try {
         window.localStorage.setItem(TOOLBAR_DENSITY_STORAGE_KEY, next)
       } catch {
-        // localStorage may throw in private mode / quota-exceeded; the
-        // preference is best-effort, so silently move on.
+        // localStorage may throw (private mode / quota); the preference is best-effort.
       }
     }
     emitChange()
@@ -80,10 +72,7 @@ interface DensityToggleButtonProps {
   disabled?: boolean
 }
 
-// Two-state toggle: full ↔ compact. The icon mirrors the action that
-// firing the button will perform — when expanded ('full') we show the
-// "collapse inward" chevron; when collapsed ('compact') we show the
-// "expand outward" chevron.
+// Two-state toggle: the icon mirrors the action firing the button performs.
 export function DensityToggleButton({ density, onChange, disabled }: DensityToggleButtonProps) {
   const next: ToolbarDensity = density === 'full' ? 'compact' : 'full'
   const title = density === 'full' ? '收起工具栏' : '展开工具栏'

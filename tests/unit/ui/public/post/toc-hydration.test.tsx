@@ -6,17 +6,9 @@ import { describe, expect, it } from 'vitest'
 
 import { TableOfContents } from '@/ui/public/post/TableOfContents'
 
-// Hydration contract for the TOC (audit: React error #418 on every warm
-// visit after 6.7.1 lazy-wrapped it in a `fallback={null}` boundary):
-//
-// 1. SSR MUST render the closed-drawer DOM (toggle button + off-screen
-//    drawer). A null fallback would drop it from the server output and the
-//    client would render it back once the chunk resolves — a server-vs-
-//    client element mismatch.
-// 2. Hydration must succeed even when the motion chunk is ALREADY loaded
-//    (modulepreload / HTTP cache): the lazy motion elements then resolve
-//    to real motion components whose first frame must match the static
-//    fallback markup.
+// Hydration contract for the TOC (audit: React error #418):
+// SSR must keep the closed-drawer DOM in the stream (a null fallback
+// drops it) and hydrate cleanly even with the motion chunk preloaded.
 function renderToPipeableStreamString(node: React.ReactNode): Promise<string> {
   return new Promise((resolve, reject) => {
     let out = ''
@@ -46,9 +38,6 @@ const headings = [
 describe('ui/public/post/TableOfContents — hydration contract', () => {
   it('renders the closed-drawer DOM on the server (no null fallback)', async () => {
     const html = await renderToPipeableStreamString(<TableOfContents headings={headings} toc="enabled" />)
-    // The toggle button and the off-screen drawer must be in the SSR
-    // output — a lazy `fallback={null}` boundary would omit both and the
-    // client would re-add them after hydration (error #418).
     expect(html).toContain('展开文章目录')
     expect(html).toContain('文章目录')
     expect(html).toContain('aria-expanded="false"')
@@ -60,8 +49,7 @@ describe('ui/public/post/TableOfContents — hydration contract', () => {
   it('hydrates without a mismatch when the motion chunk is already loaded', async () => {
     const html = await renderToPipeableStreamString(<TableOfContents headings={headings} toc="enabled" />)
 
-    // Warm the module cache exactly like a browser that already fetched the
-    // motion chunk (modulepreload / HTTP cache) before hydration.
+    // Warm the module cache before hydration, like a preloaded chunk would.
     await import('motion/react')
 
     document.body.innerHTML = `<div id="probe-root">${html}</div>`

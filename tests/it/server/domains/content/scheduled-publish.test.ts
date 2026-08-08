@@ -15,12 +15,8 @@ import { page } from '@/server/infra/db/schema/page'
 import { post } from '@/server/infra/db/schema/post'
 import { stopAllScheduledJobs } from '@/server/infra/scheduler-utils'
 
-// The scheduled-publish job against the real engine: real post/page rows
-// feed the next-due query, and the observable effect is the real
-// content-invalidation — kv_cache buckets cleared, `searchResult`
-// generation bumped. db-lifecycle (pulled in by the test-db helper) is
-// the composition root that wires the scheduler's db getter, so only
-// `scheduleNextScheduledPublish()` is called explicitly, like server.ts.
+// The job against the real engine: real rows drive next-due and the effect
+// is real kv_cache invalidation; only scheduleNextScheduledPublish() is called.
 const db = getTestDb()
 
 const HOUR_MS = 3_600_000
@@ -42,7 +38,6 @@ async function seedScheduledPost(publishedAt: Date): Promise<number> {
   return meta.id
 }
 
-/** A promoted page scheduled for `publishedAt`. */
 async function seedScheduledPage(publishedAt: Date): Promise<number> {
   const key = ++seq
   const [meta] = await db
@@ -61,20 +56,11 @@ function warmFeed(): Promise<void> {
   return set(db, 'feed', { scope: 'all' }, ['stale'])
 }
 
-/**
- * Row-level assertion: TTL expiry also makes `get` miss (fake timers
- * advance past the feed TTL), but only `invalidateContent`'s bucket
- * clear DELETES the row — the exact effect under test.
- */
-// Sync (node:sqlite).
+/** TTL expiry only makes `get` miss; only the bucket clear DELETES the row. */
 function feedRowCount(): number {
   return db.select().from(kvCache).where(eq(kvCache.bucket, 'feed')).all().length
 }
 
-/**
- * Row-level sitemap assertion (see feedRowCount).
- */
-// Sync (node:sqlite).
 function sitemapRowCount(): number {
   return db.select().from(kvCache).where(eq(kvCache.bucket, 'sitemap')).all().length
 }
@@ -159,8 +145,7 @@ describe('scheduled-publish job', () => {
     )
     expect(res.status).toBe(200)
 
-    // The update of a promoted post invalidated once already; re-warm and
-    // prove the re-armed timer fires at the EARLIER time.
+    // Re-warm and prove the re-armed timer fires at the EARLIER time.
     await warmFeed()
     await vi.advanceTimersByTimeAsync(HOUR_MS)
     expect(feedRowCount()).toBe(0)
@@ -185,8 +170,7 @@ describe('scheduled-publish job', () => {
     expect(createRes.status).toBe(200)
     const { post: created } = await parseRpcJson<{ post: { id: string } }>(createRes)
 
-    // Job started (suspended: nothing scheduled yet) — the publish below
-    // must re-arm it through the content lifecycle's nudge.
+    // The publish below must re-arm the suspended job via the lifecycle nudge.
     scheduleNextScheduledPublish()
 
     const publishRes = await callRpc(

@@ -8,8 +8,6 @@ import { getLogger } from '@/server/infra/logger'
 
 const log = getLogger('music.netease')
 
-// ── Crypto primitives ──────────────────────────────────────────────────────
-
 const EAPI_KEY = Buffer.from('e82ckenh8dichen8', 'utf8')
 const BASE_URL = 'http://music.163.com'
 
@@ -41,8 +39,6 @@ export function encryptId(id: string): string {
   const hash = createHash('md5').update(buf).digest('base64')
   return hash.replace(/\//g, '_').replace(/\+/g, '-')
 }
-
-// ── HTTP helpers ───────────────────────────────────────────────────────────
 
 function buildBody(params: Record<string, unknown>): string {
   return new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)])).toString()
@@ -88,8 +84,6 @@ async function eapi(path: string, payload: Record<string, unknown>): Promise<unk
   return post(postUrl, body, makeHeaders())
 }
 
-// ── Raw song parsing ───────────────────────────────────────────────────────
-
 interface RawNeteaseSong {
   id: number
   name: string
@@ -109,8 +103,6 @@ function toTrack(song: RawNeteaseSong): ProviderTrack {
     lyricId: String(song.id),
   }
 }
-
-// ── Zod schemas for raw API responses ──────────────────────────────────────
 
 const rawNeteaseSongSchema = z.object({
   id: z.number(),
@@ -156,8 +148,6 @@ const lyricResponseSchema = z
     lrc: z.object({ lyric: z.string() }).optional(),
   })
   .loose()
-
-// ── Provider implementation ─────────────────────────────────────────────────
 
 export const neteaseProvider: MusicProvider = {
   source: 'netease',

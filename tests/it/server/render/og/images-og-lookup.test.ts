@@ -9,16 +9,9 @@ import { content as contentTable } from '@/server/infra/db/schema/content'
 import { page as pageTable } from '@/server/infra/db/schema/page'
 import { post as postTable } from '@/server/infra/db/schema/post'
 
-// Tests for the OG image route slug resolution in `imagesRouter`.
-// The route uses slim public-meta lookups (findPublicPostMetaBySlug +
-// findPublicPageMetaBySlug) instead of the heavier findPostBySlug /
-// findPageBySlug.
-//
-// Real engine: posts/pages are seeded meta rows (+ published revisions),
-// so the live gate decides the fallback branches for real. The only kept
-// seam is the canvas OG renderer — its stub echoes the title into the
-// PNG body so the "post wins" branch is observable on the wire instead
-// of through mock call args.
+// OG slug resolution against the real engine (slim public-meta lookups +
+// live gate). Only mock: the canvas renderer, whose stub echoes the title
+// into the PNG body so branches are observable on the wire.
 
 vi.mock('@/server/render/og/render', () => ({
   drawOpenGraph: vi.fn(async ({ title }: { title: string }) => Buffer.from(`og:${title}`)),
@@ -83,15 +76,11 @@ async function seedPage(opts: { slug: string; title?: string; publishedAt?: Date
   return pageId
 }
 
-// Static import on purpose: a lazy beforeEach import puts the first heavy
-// module load under the 10s hookTimeout and flakes under parallel load, while
-// a top-level import is measured as file import time. vi.mock calls above are
-// hoisted, so the mocks still apply.
+// Static import on purpose: a lazy beforeEach import would flake under the
+// 10s hookTimeout; the hoisted vi.mock calls still apply.
 import { imagesRouter } from '@/server/http/resources/images'
 
-// Minimal requestContext stub — the rate-limit middleware reads
-// `.clientAddress`, the OG handler reads `.db`; no other field of the
-// canonical context is consulted on this surface.
+// Stub covers the consulted fields: rate-limit `.clientAddress`, handler `.db`.
 const app = new Hono<Env>()
 app.use('*', async (c, next) => {
   c.set('requestContext', { clientAddress: '127.0.0.1', db } as unknown as Env['Variables']['requestContext'])
@@ -148,13 +137,10 @@ describe('OG image slug resolution', () => {
 
     const res = await requestOg('collision')
     expect(res.status).toBe(200)
-    // The rendered PNG carries the post's title, not the page's.
     expect(await res.text()).toBe('og:Hello')
   })
 
   it('404 for empty slug (route pattern mismatch)', async () => {
-    // The route regex `[^/]+\.png` requires at least one character before `.png`,
-    // so `/images/og/.png` does not match and returns 404 without hitting the handler.
     const res = await requestOg('')
     expect(res.status).toBe(404)
   })

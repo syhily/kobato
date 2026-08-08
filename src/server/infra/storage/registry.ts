@@ -20,35 +20,27 @@ export function backendFor(driver: StorageDriver): StorageBackend {
 }
 
 /**
- * The backend new uploads go to: S3 when it is enabled AND fully configured
- * (endpoint + bucket + keys), local otherwise. Local is the always-on
- * fallback, so uploads never hard-fail on a missing/misconfigured S3.
- *
- * Wrapped in try/catch so a not-yet-hydrated settings snapshot (early boot,
- * install gate) degrades to local instead of throwing.
+ * Backend for new uploads: S3 when enabled and fully configured, local otherwise
+ * (the always-on fallback).
  */
 export function activeBackend(): { backend: StorageBackend; driver: StorageDriver } {
   try {
-    // Read through the registry (not the import directly) so the test seam
-    // below can substitute an in-memory backend.
+    // Via the registry (not the import) so the test seam can substitute a backend.
     if (backends.s3.isAvailable()) {
       return { backend: backends.s3, driver: 's3' }
     }
   } catch {
-    // Settings snapshot not hydrated yet — fall back to local.
+    // Settings snapshot not hydrated yet (early boot, install gate) — fall back to local.
   }
   return { backend: backends.local, driver: 'local' }
 }
 
 /**
- * Every registered backend in stable registry order (s3 first, then
- * local), for operations that span all backends at once — e.g. the backup
- * reconcile, which lists each backend to re-register orphaned objects.
- * When the same key exists in several backends, the earlier driver wins.
+ * Every registered backend in stable order (s3 first), for operations spanning
+ * all backends (backup reconcile). On key collisions the earlier driver wins.
  */
 export function allBackends(): { driver: StorageDriver; backend: StorageBackend }[] {
-  // `Object.entries` widens the record keys to `string`; they are
-  // `StorageDriver` by construction.
+  // `Object.entries` widens keys to `string`; they are `StorageDriver` by construction.
   return Object.entries(backends).map(([driver, backend]) => ({
     driver: unsafeCast<StorageDriver>(driver),
     backend,
@@ -60,11 +52,7 @@ export function isS3Primary(): boolean {
   return activeBackend().driver === 's3'
 }
 
-/**
- * Test seam: substitute the backend a driver resolves to. Production code
- * never calls this; tests pair it with `__resetStorageBackendsForTests` in
- * afterEach so substitutions never leak between files.
- */
+/** Test seam: substitute a driver's backend. Pair with `__resetStorageBackendsForTests` in afterEach. */
 export function __setStorageBackendForTests(driver: StorageDriver, backend: StorageBackend): void {
   backends[driver] = backend
 }

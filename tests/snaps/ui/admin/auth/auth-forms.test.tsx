@@ -38,8 +38,7 @@ describe('snapshot: LoginForm', () => {
     // The identify form stays in place: locked input + passkey notice.
     expect(html).toContain('此账号已启用 Passkey 验证，请点击上方按钮完成登陆。')
     expect(html).toContain('disabled')
-    // The ceremony launches from the primary button's click (user
-    // gesture), not on mount.
+    // Ceremony launches from the button click (user gesture), not on mount.
     expect(html).toContain('使用 Passkey 登陆')
     expect(html).toContain('?action=passkey')
     expect(html).toContain('更换邮箱')
@@ -56,8 +55,7 @@ describe('snapshot: LoginForm', () => {
     const html = stableHtml(
       renderInRouter(<LoginForm isSubmitting={false} redirectTo="/admin/posts" />, '/admin/signin'),
     )
-    // Each step POSTs to its own handler URL — the router navigates to the
-    // submitted URL, so every step must carry `action` + `redirect_to`.
+    // Every step must carry action + redirect_to (each POSTs to its own handler URL).
     expect(html).toContain('action="/admin/signin?action=identify&amp;redirect_to=%2Fadmin%2Fposts"')
   })
 
@@ -68,7 +66,7 @@ describe('snapshot: LoginForm', () => {
         '/admin/signin?action=identify',
       ),
     )
-    // A bare <Form> would re-post to the identify URL and loop the flow.
+    // A bare <Form> would loop the identify flow.
     expect(html).toContain('action="/admin/signin?redirect_to=%2Fadmin%2Fposts"')
   })
 
@@ -137,8 +135,7 @@ describe('snapshot: AdminInstallForm', () => {
 
   it('renders restore mode', () => {
     const html = stableHtml(renderInRouter(<AdminInstallForm />, '/?mode=restore'))
-    // Mode state defaults to install; the component does not read URL mode.
-    // We just assert both modes are selectable and restore instructions appear after click in integration tests.
+    // Mode defaults to install — the component never reads URL mode.
     expect(html).toContain('全新安装')
     expect(html).toContain('从备份恢复')
   })

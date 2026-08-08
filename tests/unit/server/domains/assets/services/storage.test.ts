@@ -13,11 +13,9 @@ import {
 } from '@/server/domains/assets/services/storage'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@/server/infra/storage/registry'
 
-// The branding repo talks to storage exclusively through the registry, so
-// the tests substitute the seam's 's3' backend with the shared in-memory
-// one and assert on observable state — stored objects, put/delete history —
-// never on S3 internals. vi.spyOn on the memory backend is used only to
-// inject failures the in-memory store cannot produce on its own.
+// Tests substitute the registry's 's3' backend with the shared in-memory
+// one and assert observable state, never S3 internals; spies only inject
+// failures the store cannot produce.
 const mem = makeMemoryBackend()
 
 const pngHeader = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
@@ -96,8 +94,7 @@ describe('assets storage', () => {
     const buffer = await fetchBrandingObject('icon192', ref)
     expect(buffer).toBe(pngHeader)
 
-    // Drop the stored object: the second call must come from the in-process
-    // cache.
+    // Stored object dropped — the second call must hit the in-process cache.
     mem.store.delete('branding/icon-192.png')
     const cached = await fetchBrandingObject('icon192', ref)
     expect(cached).toBe(pngHeader)
@@ -113,15 +110,12 @@ describe('assets storage', () => {
       driver: 's3',
     })
     expect(buffer).toBeNull()
-    // A non-not-found failure must NOT probe the legacy key — only the
-    // seam's typed `StorageObjectNotFound` triggers the auto-migration.
+    // Only the seam's typed `StorageObjectNotFound` triggers the legacy-key probe.
     expect(getSpy).toHaveBeenCalledTimes(1)
   })
 
   it('auto-migrates from legacy extensionless key when new key is not found', async () => {
-    // The legacy extensionless key holds the bytes; the current key is
-    // absent, so the memory backend's StorageObjectNotFound triggers the
-    // migration path.
+    // Only the legacy extensionless key exists, so the fetch migrates it.
     mem.store.set('branding/icon-192', { body: pngHeader, contentType: 'image/png' })
 
     const buffer = await fetchBrandingObject('icon192', {
@@ -133,8 +127,7 @@ describe('assets storage', () => {
     })
 
     expect(buffer).toBe(pngHeader)
-    // Migration: the bytes were copied to the current key and the legacy
-    // object was deleted.
+    // Migration: bytes copied to the current key, legacy object deleted.
     expect(mem.putKeys).toEqual(['branding/icon-192.png'])
     expect(mem.store.get('branding/icon-192.png')?.body).toBe(pngHeader)
     expect(mem.deletedKeys).toEqual(['branding/icon-192'])
@@ -142,8 +135,6 @@ describe('assets storage', () => {
   })
 
   it('auto-migrates and still returns null when both keys are missing', async () => {
-    // Both new and legacy keys are absent — the memory backend rejects
-    // missing-key reads with StorageObjectNotFound on its own.
     const buffer = await fetchBrandingObject('icon192', {
       etag: 'd',
       contentType: 'image/png',

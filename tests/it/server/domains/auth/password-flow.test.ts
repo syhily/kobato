@@ -20,20 +20,9 @@ import { session as sessionTable } from '@/server/infra/db/schema/session'
 import { user as userTable, verification } from '@/server/infra/db/schema/user'
 import { __rateLimitKeysForTests, __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 
-// auth/password-flow against the real engine: reset tokens are real
-// single-use rows in `verification`, the users are real rows, the rate
-// limiter is the real in-process one (tripped via settings-bucket
-// overrides), the passkey cleanup and the session-establish primitive
-// run for real, and audit rows are asserted after a batcher flush.
-//
-// The only mocks:
-//  - `sendPasswordReset` — email delivery is a true external.
-//  - `hasApprovedComments` — an INJECTED dependency of the flow (the
-//    routes layer wires the comments domain in), stubbed directly per
-//    the flow's own design; never a module mock.
-//  - `deleteAllCredentials` — a call-through wrapper (real by default)
-//    so the single best-effort-failure case can force a rejection; a
-//    simple DELETE has no realistic failure mode to seed against.
+// auth/password-flow against the real engine; only mocks:
+// sendPasswordReset (email is external), hasApprovedComments (an
+// injected flow dependency), deleteAllCredentials (failure seeding).
 
 const mocks = vi.hoisted(() => ({
   sendPasswordReset: vi.fn<(user: unknown, link: string) => Promise<{ ok: boolean }>>(async () => ({ ok: true })),
@@ -137,10 +126,7 @@ beforeEach(async () => {
 })
 
 afterEach(async () => {
-  // Flush BEFORE dropping the batcher: InsertBatcher.dispose() leaves an
-  // armed flush timer behind, so an unflushed queue would otherwise
-  // insert this case's stale events mid-next-test. The rows flushed here
-  // are wiped by the next beforeEach's clearAllTables.
+  // Flush BEFORE dropping the batcher: an armed flush timer would insert after the wipe.
   await flushAuditLog()
   resetAllBatchers()
 })
@@ -171,8 +157,7 @@ describe('auth/password-flow — requestPasswordReset (real db + tokens)', () =>
     await requestPasswordReset(db, CLIENT, request(), formWith({ email: 'a@example.com' }), resetDeps)
     mocks.sendPasswordReset.mockClear()
 
-    // A second request for the same mailbox — even from another IP —
-    // trips the per-email bucket.
+    // A second request for the same mailbox — even another IP — trips the bucket.
     const result = await requestPasswordReset(
       db,
       '198.51.100.9',
@@ -201,12 +186,10 @@ describe('auth/password-flow — requestPasswordReset (real db + tokens)', () =>
 
     expect(result).toEqual({ type: 'success', message: GENERIC })
 
-    // A live single-use token row exists for the user.
     const row = await resetTokenRow(userId)
     expect(row).toBeDefined()
 
-    // The emailed link carries the raw token over the configured origin
-    // (TEST bundle: https://example.com) — and the token really resolves.
+    // Link carries the raw token over the configured origin; the token resolves.
     expect(mocks.sendPasswordReset).toHaveBeenCalledTimes(1)
     const [sentUser, link] = mocks.sendPasswordReset.mock.calls[0]! as [{ email: string }, string]
     expect(sentUser.email).toBe('vis@example.com')
@@ -285,9 +268,7 @@ describe('auth/password-flow — requestPasswordReset (real db + tokens)', () =>
     const result = await requestPasswordReset(db, CLIENT, request(), formWith({ email: 'anon@example.com' }), resetDeps)
 
     expect(result).toEqual({ type: 'success', message: GENERIC })
-    // The claim landed on the real row, the token exists, the email went
-    // out, and the audit is attributed with the NEW role — together they
-    // pin the upgrade-before-issue ordering.
+    // These pin the upgrade-before-issue ordering.
     expect((await userRow(userId))!.role).toBe('visitor')
     expect(await resetTokenRow(userId)).toBeDefined()
     expect(mocks.sendPasswordReset).toHaveBeenCalledTimes(1)
@@ -377,8 +358,7 @@ describe('auth/password-flow — resetPasswordWithToken (real db + tokens)', () 
     )
 
     expect(wrongPurpose).toEqual({ type: 'error', message: '链接无效或已过期。' })
-    // The consume is single-shot: the mismatched-purpose attempt still
-    // burned the row, so even the right purpose can no longer use it.
+    // Single-shot consume: the mismatched attempt already burned the row.
     const retry = await resetPasswordWithToken(
       flowCtx(makeSession({})),
       request(),
@@ -433,8 +413,7 @@ describe('auth/password-flow — resetPasswordWithToken (real db + tokens)', () 
     expect(mocks.deleteAllCredentials).toHaveBeenCalledWith(db, userId)
     expect(await db.select().from(passkeyCredential).where(eq(passkeyCredential.userId, userId))).toHaveLength(0)
 
-    // The reset invariant on the real session table: both old sessions
-    // destroyed, exactly one new session owned by the user.
+    // Reset invariant: both old sessions destroyed, one new session owned.
     const sessions = await db.select().from(sessionTable)
     expect(sessions).toHaveLength(1)
     expect(sessions[0]!.userId).toBe(userId)
@@ -478,8 +457,7 @@ describe('auth/password-flow — resetPasswordWithToken (real db + tokens)', () 
   it('returns 账户状态异常 when the user is gone after token consume', async () => {
     const userId = await seedUser()
     const { token } = issueResetToken(db, userId)
-    // Hard-delete the user: `verification` carries no FK, so the token
-    // row survives and consumes — the user lookup then misses.
+    // No FK on verification: the token row survives the hard-deleted user.
     await db.delete(userTable).where(eq(userTable.id, userId))
 
     const result = await resetPasswordWithToken(

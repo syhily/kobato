@@ -1,7 +1,6 @@
 // Analytics wire types, time-range primitives, and query helpers.
 // Consumed by both the server query builder and the React dashboard.
 
-// ─── time-range presets ────────────────────────────────
 export const PRESET_KEYS = ['last-1h', 'today', 'yesterday', 'last-7d', 'last-30d', 'last-90d', 'last-365d'] as const
 
 export type PresetKey = (typeof PRESET_KEYS)[number]
@@ -51,10 +50,8 @@ export function computeDateRange(preset: PresetKey, now: Date = new Date()): Dat
 }
 
 /**
- * Time bucket width in milliseconds for the views time series — the
- * shared (isomorphic) half of the bucket vocabulary. The SQL half is
- * `timeBucketInterval` in `domains/analytics/services/duckdb-sql`,
- * which maps this width to the DuckDB `time_bucket` INTERVAL literal;
+ * Time bucket width in ms for the views time series. The SQL half is
+ * `timeBucketInterval` in `domains/analytics/services/duckdb-sql`;
  * an unmapped width fails loudly there.
  */
 export function pickTimeBucketMs(range: DateRange): number {
@@ -71,7 +68,6 @@ export function pickTimeBucketMs(range: DateRange): number {
   return 86_400_000
 }
 
-// ─── metric types ──────────────────────────────────────
 export const METRIC_TYPES = [
   'country',
   'region',
@@ -106,7 +102,6 @@ export const FILTERABLE_TYPES = METRIC_TYPES
 
 export type Filters = Partial<Record<MetricType, string>>
 
-// ─── DTOs ──────────────────────────────────────────────
 export interface AnalyticsQuery {
   preset?: PresetKey
   startAt?: number

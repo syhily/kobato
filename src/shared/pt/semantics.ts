@@ -1,11 +1,9 @@
 /* oxlint-disable typescript/no-unsafe-type-assertion */
 import type { Block } from '@/shared/pt/schema'
 
-// Normalisation shared by PortableText semantic equality (`pt-bridge`
-// dirty/conflict guards) AND the admin block-level diff anchoring logic
-// (`portable-text-diff`). Keeping this in `@/shared/*` satisfies the UI
-// import boundary while guaranteeing the predicates stay mechanically in
-// lockstep — diff UI must never disagree with equivalence checks again.
+// Normalisation shared by PortableText semantic equality (pt-bridge
+// dirty/conflict guards) AND the admin block-level diff anchoring —
+// diff UI must never disagree with equivalence checks.
 
 const DECORATOR_MARKS = new Set(['strong', 'em', 'underline', 'strike-through', 'code'])
 

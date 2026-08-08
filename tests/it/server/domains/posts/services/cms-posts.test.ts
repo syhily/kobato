@@ -35,7 +35,6 @@ describe('cms/posts/service — createPost published guard', () => {
 describe('cms/posts/service — updatePostMeta ignores published', () => {
   it('leaves existing status=published untouched even when input says false', async () => {
     const created = await service.createPost(db, { title: 'Hello World', slug: 'hello-world' }, null)
-    // Manually set status=published in DB to simulate a published post
     await db
       .update(postMetaTable)
       .set({ published: true })

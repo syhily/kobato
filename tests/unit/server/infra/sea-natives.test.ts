@@ -6,12 +6,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { bootstrapSeaRuntime, extractNatives, type SeaManifest } from '@/server/infra/sea-natives'
 
-// Unit tests for the SEA natives extractor. `bootstrapSeaRuntime` is a
-// no-op outside SEA mode, so the extraction core (`extractNatives`) is
-// exercised directly with a fake embedded-asset source and a temp cache
-// dir: first-run extraction into the FLAT layout (`natives/` prefix
-// stripped), reuse on the second run, repair of a corrupted file, and GC
-// of stale hash dirs.
+// Unit tests for the SEA natives extractor: `extractNatives` runs against a
+// fake embedded-asset source and a temp cache dir (`bootstrapSeaRuntime` is
+// a no-op outside SEA mode), covering extraction, reuse, repair, and GC.
 
 const CURRENT_TARGET = `${process.platform}-${process.arch}`
 
@@ -73,7 +70,6 @@ describe('infra/sea-natives — extractNatives', () => {
     expect(existsSync(join(result.dir, 'natives'))).toBe(false)
     expect(existsSync(join(result.dir, 'natives-meta'))).toBe(false)
     expect(existsSync(join(result.dir, 'client/assets/app.js'))).toBe(false)
-    // The cache dir name carries the manifest hash prefix.
     expect(result.dir).toBe(join(cacheDir, `natives-${sha256(manifestRaw).slice(0, 16)}`))
   })
 

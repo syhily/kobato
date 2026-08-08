@@ -5,8 +5,7 @@ import type { MusicEmbedResolver } from '@/server/domains/pt/embeds'
 import { sanitizeFeedHtml } from '@/server/render/feed/generator'
 import { renderPortableTextToHtml } from '@/server/render/pt-html'
 
-// Bodies without music players never invoke the resolver, so a no-op
-// embed-seam stub is sufficient for these markup tests.
+// No music players here, so a no-op embed-seam stub suffices.
 const resolveMusicEmbeds: MusicEmbedResolver = async () => new Map()
 
 describe('feed-safety', () => {
@@ -16,8 +15,7 @@ describe('feed-safety', () => {
       expect(sanitizeFeedHtml(input)).toBe('<p>hello</p><p>world</p>')
     })
 
-    // Regression: the old regex required a closing </script> tag, so an
-    // unclosed `<script>` survived intact and ran in feed readers.
+    // Unclosed <script> tags must also be stripped.
     it('strips unclosed <script> tags', () => {
       const input = '<p>hello</p><script>alert(1)'
       expect(sanitizeFeedHtml(input)).toBe('<p>hello</p>')
@@ -31,8 +29,6 @@ describe('feed-safety', () => {
       expect(out).not.toContain('evil')
     })
 
-    // Regression: the old regex required whitespace before on\w+, so
-    // `<img/onerror=...>` and `<img onerror=...>` (no quotes) bypassed it.
     it('strips event handlers regardless of separator (space, slash, none)', () => {
       const inputs = [
         '<img src="x" onerror="alert(1)">',
@@ -79,8 +75,7 @@ describe('feed-safety', () => {
 
     it('neutralizes javascript: URLs (drops href, keeps link text)', () => {
       const input = '<a href="javascript:alert(1)">click</a>'
-      // sanitize-html removes the disallowed scheme attribute rather than
-      // rewriting it to "#", which is the safer behaviour (no dead anchor).
+      // sanitize-html drops the attribute rather than rewriting it to "#".
       const out = sanitizeFeedHtml(input)
       expect(out).not.toContain('javascript:')
       expect(out).toContain('click')
@@ -121,12 +116,8 @@ describe('feed-safety', () => {
   })
 
   describe('renderPortableTextToHtml rssMode code → sanitizeFeedHtml pipeline', () => {
-    // RN-1 regression: rssMode used to CDATA-wrap the precomputed
-    // highlightedHtml, and sanitize-html drops CDATA sections wholesale —
-    // every published post with a code block shipped an empty <pre><code>
-    // box to feed subscribers. RSS mode must emit the escaped plain code
-    // (the same fallback shape as the math renderers), which survives
-    // sanitization.
+    // RN-1: rssMode must emit escaped plain code, not CDATA — sanitize-html
+    // drops CDATA sections wholesale.
     it('keeps the code text after sanitization when highlightedHtml is present', async () => {
       const html = await renderPortableTextToHtml(
         [

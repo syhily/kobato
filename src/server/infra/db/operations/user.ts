@@ -85,10 +85,8 @@ export async function hasRegisteredAccount(db: Database, email: string): Promise
 }
 
 /**
- * Bulk fetch of users by id list. Used by the admin session-management
- * view to join `session_meta:<sid>` records against the `user` table in
- * a single round trip. Returns rows in whatever order the engine picks —
- * the caller indexes by `id` rather than relying on input order.
+ * Bulk fetch of users by id list. Rows come back in engine order —
+ * the caller indexes by `id`.
  */
 export async function findUsersByIds(db: Database, ids: number[]): Promise<User[]> {
   if (ids.length === 0) {
@@ -129,8 +127,7 @@ export async function hashAdminPassword(password: string): Promise<string> {
   return bcrypt.hash(password, PASSWORD_HASH_ROUNDS)
 }
 
-// Sync (node:sqlite): the bcrypt hash is deliberately NOT done here —
-// hashing is async and must happen outside the surrounding transaction.
+// Sync (node:sqlite): hashing must happen outside the transaction (bcrypt is async).
 export function insertAdmin(
   db: Database,
   name: string,
@@ -204,10 +201,7 @@ export interface UserUpdate {
   role?: 'admin' | 'author' | 'visitor' | null
   badgeName?: string
   badgeColor?: string
-  // `null` clears the manual override and reactivates the auto-derived
-  // contrast pick (see `commentBadgeTextColor`); a non-null hex string
-  // pins the badge text colour verbatim. Distinct from `undefined`
-  // (which means "do not touch the column on this update").
+  // `null` clears the manual override (back to auto-derived); `undefined` leaves the column untouched.
   badgeTextColor?: string | null
   receiveEmail?: boolean
   loginMethod?: LoginMethod
@@ -216,9 +210,7 @@ export interface UserUpdate {
 const BCRYPT_HASH_RE = /^\$2[aby]?\$\d+\$/
 
 export async function updateUserById(db: Database, id: number, patch: UserUpdate): Promise<User | null> {
-  // Defensive: reject plaintext passwords that were not pre-hashed.
-  // Callers that intend to change a password must hash it with bcrypt
-  // before passing it here.
+  // Callers must pass a bcrypt hash, never plaintext.
   if (patch.password !== undefined && patch.password !== '' && !BCRYPT_HASH_RE.test(patch.password)) {
     throw new Error('updateUserById: password must be a bcrypt hash, not plaintext')
   }
@@ -226,8 +218,7 @@ export async function updateUserById(db: Database, id: number, patch: UserUpdate
   return updated[0] ?? null
 }
 
-// Sync (node:sqlite): called inside the last-admin guard transaction,
-// and directly by the invite rollback path.
+// Sync (node:sqlite): called inside the last-admin guard transaction and the invite rollback path.
 export function softDeleteUserById(db: Database, id: number): boolean {
   const updated = db
     .update(user)

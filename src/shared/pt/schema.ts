@@ -4,9 +4,7 @@ import { isSafeUrl } from '@/shared/sanitize-url'
 
 // Strict PortableText subset for this repository. PT is stored in
 // `content.body` (`jsonb`) and maps 1:1 to the SSR renderer's React
-// components. A closed type union lets the SSR renderer and Tiptap
-// bridge use a finite switch; Zod rejects unknown payloads at the API
-// perimeter.
+// components; Zod rejects unknown payloads at the API perimeter.
 
 const NON_EMPTY_KEY = z.string().min(1)
 
@@ -233,7 +231,6 @@ export const blockSchema = z.discriminatedUnion('_type', [
 export const portableTextBodySchema = z.array(blockSchema)
 export type PortableTextBody = z.infer<typeof portableTextBodySchema>
 
-// Convenience aliases: keep call sites readable.
 export type PortableTextBlock = Block
 export type { Block as PtBlock }
 

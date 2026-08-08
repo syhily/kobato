@@ -14,9 +14,7 @@ export async function deleteMusic(db: Database, id: number, viewer?: ViewerIdent
     throw new DomainError('NOT_FOUND', ErrorMessages.NOT_FOUND)
   }
 
-  // Mirror the image library: try S3 best-effort, always proceed to
-  // DB soft-delete so the admin table doesn't keep showing a "missing"
-  // row when the delete only fails on the S3 leg.
+  // Best-effort storage delete, mirroring the image library — always proceed to the DB soft-delete.
   await Promise.allSettled([
     backendFor(existing.storageDriver).delete(existing.audioStoragePath),
     backendFor(existing.storageDriver).delete(existing.coverStoragePath),

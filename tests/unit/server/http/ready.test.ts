@@ -16,11 +16,8 @@ import {
 import { readyHandler } from '@/server/http/ready'
 import { __getLifecycleContainer, setServerPhase } from '@/server/infra/lifecycle'
 
-// The /ready probe against the REAL handler and the REAL state machines:
-// the server phase comes from `setServerPhase` transitions (no mock), and
-// the restore projection comes from a genuinely wired restore machine.
-// Only the machine's engine deps (drain/swap/reopen/complete) are no-op
-// test doubles — the phases under assertion are the machine's own.
+// Real handler and state machines; only the restore engine deps are
+// no-op test doubles.
 
 function resetPhaseTo(phase: ServerPhase): void {
   __getLifecycleContainer().serverPhase = phase
@@ -76,7 +73,6 @@ describe('/ready endpoint', () => {
     setServerPhase('restarting')
     wireNoopMachine()
     expect(tryBeginRestore()).toBe(true)
-    // Run the real machine to its failed terminal report.
     startRestoreJob(async () => {
       throw new Error('restore exited with code 1')
     })
@@ -101,8 +97,7 @@ describe('/ready endpoint', () => {
     try {
       const { honoInstallGateMiddleware } = await import('@/server/http/middlewares/install-gate')
       const gated = new Hono<Env>()
-      // Stub the canonical per-request context — the gate reads
-      // `requestContext.url` and `requestContext.db`.
+      // The gate reads only url and db from requestContext.
       gated.use('*', async (c, next) => {
         c.set('requestContext', {
           url: new URL(c.req.url),

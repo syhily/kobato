@@ -56,14 +56,12 @@ class AuditLogBatcher extends InsertBatcher<AuditEventInput> {
     db.insert(auditLog).values(events.map(toRow)).run()
   }
 
-  // On batch failure, fall back to per-row INSERT (audit rows must not
-  // be lost). Remaining failures after per-row go to dead-letter.
+  // Batch failure → per-row INSERT, then dead-letter; audit rows must not be lost.
   protected async onInsertFailed(events: AuditEventInput[], _error: unknown): Promise<FlushResult> {
     return insertPerRow(this.auditDb, events)
   }
 }
 
-// Fallback — per-row INSERT via Drizzle (slower but maximally safe).
 async function insertPerRow(db: Database, events: AuditEventInput[]): Promise<FlushResult> {
   const failedEvents: AuditEventInput[] = []
   let successCount = 0
@@ -92,10 +90,7 @@ async function insertPerRow(db: Database, events: AuditEventInput[]): Promise<Fl
   return { committed: successCount, deadLettered: failedEvents.length }
 }
 
-// Self-register on the infra batching seam: the bootstrap lifecycle
-// drives init/flush/reset/replay through the registry (`initAllBatchers`
-// / `flushAllBatchers` / `resetAllBatchers` / `replayAllDeadLetters`)
-// with no per-domain calls.
+// Self-register: the bootstrap lifecycle drives batchers through the registry.
 registerBatcher(BATCHER_NAME, (handle) => new AuditLogBatcher(handle.db), {
   replayDeadLetter: () => replayDeadLetterAuditLog(),
 })

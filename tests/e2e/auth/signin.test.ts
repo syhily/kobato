@@ -16,8 +16,7 @@ describe('auth/signin (HTTP e2e)', () => {
   it('rejects a wrong password (no redirect)', async () => {
     const client = new E2eClient(env.baseUrl)
     const { res } = await loginAdmin(client, { ...env, adminPassword: 'definitely-wrong-password' })
-    // The action returns a 200 error payload on bad credentials; only a
-    // successful login redirects.
+    // Bad credentials return a 200 error payload — only success redirects.
     expect(res.status).not.toBe(302)
   })
 

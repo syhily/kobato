@@ -1,4 +1,3 @@
-// Parse a string to BigInt, returning null on failure instead of throwing.
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 export function safeBigInt(value: string): number | null {
   try {
@@ -21,11 +20,8 @@ export function readStringArray(value: unknown): string[] {
 }
 
 // Render a numeric/BigInt id as a plain decimal string. Drizzle types
-// `bigint` columns as JS BigInts (e.g. `comment.id`, `userId`), but the
-// pg int8 type-parser actually returns those values as strings — so wire
-// DTOs ship strings. `idStr` accepts all three so call sites stay uniform
-// whether the id arrived from the server (bigint per TS, string at
-// runtime) or from a wire response (string at both levels).
+// bigint columns as BigInt, but pg returns int8 as strings, so wire DTOs
+// ship strings; `idStr` accepts all three forms.
 export function idStr(value: number | string): string {
   return String(value)
 }

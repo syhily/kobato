@@ -1,13 +1,6 @@
-// Wire-projection helpers for comment payloads.
-//
-// Drizzle types `comment.id` / `userId` / `ownerId` / `rootId` as
-// `bigint` and timestamps as `Date`, neither of which survives
-// `JSON.stringify` in the shape the wire DTOs declare. The contract DTOs
-// in `@/shared/contracts/comments` model the wire shape — `string` ids,
-// ISO timestamps — which is what consumers expect over the network.
-//
-// These helpers do the projection explicitly and are idempotent:
-// pre-converted values (`id` already a string) pass straight through.
+// Wire-projection helpers for comment payloads. Drizzle types bigint ids
+// and Date timestamps, which JSON.stringify mangles; the DTOs declare the
+// wire shape (string ids, ISO timestamps). Helpers are idempotent.
 
 import type { PendingCommentRow } from '@/server/domains/comments/repos/shared'
 import type { AdminCommentWire, CommentItemWire } from '@/shared/contracts/comments'
@@ -16,7 +9,6 @@ import type { AdminComment, CommentAndUser, CommentItem, LatestComment } from '@
 import { withCommentBadgeTextColor } from '@/server/domains/comments/badge'
 import { entityPermalink, trimSiteSuffix } from '@/shared/utils/paths'
 
-/** Project a sidebar/digest row into the `LatestComment` wire shape. */
 export function toLatestComment(row: PendingCommentRow): LatestComment {
   const slug = row.slug ?? ''
   const path = slug === '' ? '/' : `${entityPermalink(row.type, slug)}/`
@@ -44,10 +36,7 @@ function asNullableString(value: number | string | null | undefined): string | n
 
 function asIso(value: Date | string | null | undefined): string {
   if (value === null || value === undefined) {
-    // Empty ISO never happens on a valid comment row; the schema
-    // requires a value. Falling back to "" lets the response
-    // validator pinpoint the real null source rather than crashing
-    // on `.toISOString()`.
+    // Schema guarantees a value; fall back to "" rather than crashing.
     return ''
   }
   return typeof value === 'string' ? value : value.toISOString()

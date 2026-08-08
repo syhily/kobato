@@ -55,7 +55,6 @@ describe('server/infra/db/batcher-registry', () => {
     expect(requireBatcher('test-reregister')).toBe(first)
 
     registerBatcher('test-reregister', () => second)
-    // The old instance is dropped until the next initAllBatchers.
     expect(getBatcher('test-reregister')).toBeUndefined()
 
     initAllBatchers(handle)
@@ -131,7 +130,6 @@ describe('server/infra/db/batcher-registry', () => {
     resetAllBatchers()
     expect(() => requireBatcher('test-reset')).toThrow('test-reset not initialized')
 
-    // Re-init works without re-registering.
     initAllBatchers(handle)
     expect(init).toHaveBeenCalledTimes(2)
     expect(requireBatcher('test-reset')).toBe(batcher)

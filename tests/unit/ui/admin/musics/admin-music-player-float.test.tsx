@@ -4,17 +4,9 @@ import type { AdminMusicDto } from '@/shared/contracts/music'
 
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 
-// `AdminMusicPlayerFloat` is a pure consumer of three hooks exported from
-// `MusicPlayerContext` plus `useLocation` from react-router — the router
-// side is already controlled by `renderInRouter`'s `initialPath`, so no
-// react-router mock is needed. The provider itself can't seed a current
-// track in a single SSR pass (its state lives in `useState` and the only
-// way to populate it is through `load()`, which requires the audio element
-// an effect creates — and effects don't run here). So instead of mounting
-// the real provider we stub the three hooks with a hoisted mutable
-// singleton and rebind its fields per test. That lets us drive the
-// collapsed / expanded / hidden-on-music-page branches directly, which is
-// where the float's function coverage actually lives.
+// `AdminMusicPlayerFloat` consumes three hooks from `MusicPlayerContext`
+// plus `useLocation`. The real provider can't seed a track in an SSR pass,
+// so the hooks are stubbed with a hoisted mutable singleton.
 
 const track: AdminMusicDto = {
   id: 'm1',
@@ -37,11 +29,7 @@ const track: AdminMusicDto = {
 
 const playlist: AdminMusicDto[] = [track]
 
-// ── hoisted mutable singletons ──────────────────────────────────────────
-//
-// `vi.hoisted` runs before the module-level `vi.mock` factory bodies, so
-// the factories can close over these objects. Each test rebinds the
-// fields; the mock hook implementations read them fresh on every render.
+// `vi.hoisted` runs before the `vi.mock` factories, so they can close over `player`.
 
 const player = vi.hoisted(() => ({
   state: {
@@ -73,8 +61,7 @@ vi.mock('@/ui/admin/musics/MusicPlayerContext', () => ({
   useMusicPlayerActions: () => player.actions,
 }))
 
-// Drive the import lazily *after* the mocks are registered so the module
-// under test picks up the stubbed hooks.
+// Import lazily so the module under test picks up the stubbed hooks.
 async function renderFloat(initialPath = '/admin/dashboard') {
   const { AdminMusicPlayerFloat } = await import('@/ui/admin/musics/AdminMusicPlayerFloat')
   return stableHtml(renderInRouter(<AdminMusicPlayerFloat />, initialPath))
@@ -107,9 +94,7 @@ describe('ui/admin/musics/AdminMusicPlayerFloat', () => {
     it('renders nothing on the music library page even with a current track', async () => {
       player.state.currentTrack = track
       const html = await renderFloat('/admin/library/music')
-      // `visible = currentTrack !== null && !isMusicPage` — the music
-      // page branch suppresses the float so the full-page player owns
-      // playback.
+      // The music-page branch suppresses the float; the full-page player owns playback.
       expect(html).toBe('')
     })
 
@@ -150,9 +135,7 @@ describe('ui/admin/musics/AdminMusicPlayerFloat', () => {
     it('renders a placeholder cover when the track has no coverUrl', async () => {
       player.state.currentTrack = { ...track, coverUrl: '' }
       const html = await renderFloat()
-      // The collapsed branch emits a `<div class="size-10 rounded-full
-      // bg-surface-dim" />` placeholder instead of the spinning cover,
-      // and crucially no `<img>` tag is emitted for the cover slot.
+      // The cover slot emits the placeholder div, never an `<img>`.
       expect(html).toContain('bg-surface-dim')
       expect(html).not.toContain('src="https://example.com/c.png"')
     })
@@ -164,10 +147,8 @@ describe('ui/admin/musics/AdminMusicPlayerFloat', () => {
   })
 
   describe('position persistence (loadPosition / savePosition)', () => {
-    // The float reads its drag position from localStorage via a lazy
-    // `useState` initializer — that initializer runs during the single
-    // SSR pass, so both the valid-parse and fallback branches of
-    // `loadPosition` are reachable here.
+    // The lazy `useState` position initializer runs during the SSR pass,
+    // reaching both `loadPosition` branches.
     beforeEach(() => {
       player.state.currentTrack = track
       player.state.playlist = playlist
@@ -195,9 +176,7 @@ describe('ui/admin/musics/AdminMusicPlayerFloat', () => {
 
     it('falls back to {x:0, y:0} when no stored position exists', async () => {
       const html = await renderFloat()
-      // `position.x || undefined` — a zero position leaves `left`
-      // unset, so the fixed container relies on its CSS class anchors
-      // (`md:right-4 md:bottom-4`) rather than an inline `left`.
+      // `position.x || undefined` — zero coordinates leave `left`/`top` unset.
       expect(html).not.toContain('left:0')
       expect(html).toContain('cursor-grab')
     })
@@ -205,9 +184,6 @@ describe('ui/admin/musics/AdminMusicPlayerFloat', () => {
     it('hydrates a stored {x, y} position into the inline style', async () => {
       localStorage.setItem('kobato-admin-player-pos', JSON.stringify({ x: 120, y: 200 }))
       const html = await renderFloat()
-      // `position.x` is truthy → `left:120px` and `right:'auto'` are
-      // written into the inline style, exercising the parsed-value
-      // branch of loadPosition.
       expect(html).toContain('left:120px')
       expect(html).toContain('top:200px')
       expect(html).toContain('right:auto')
@@ -217,8 +193,6 @@ describe('ui/admin/musics/AdminMusicPlayerFloat', () => {
     it('ignores a stored payload that is not a valid {x, y} object', async () => {
       localStorage.setItem('kobato-admin-player-pos', JSON.stringify({ x: 'nope' }))
       const html = await renderFloat()
-      // Invalid shape → loadPosition returns the default {0, 0} → no
-      // inline left/top is written.
       expect(html).not.toContain('left:')
       expect(html).not.toContain('top:')
     })

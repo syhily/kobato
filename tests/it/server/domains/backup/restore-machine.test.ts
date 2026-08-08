@@ -19,10 +19,8 @@ function wire() {
 }
 
 /**
- * Wait until the fire-and-forget chain finishes. The terminal report
- * (completed/failed) only becomes peekable once the slot is released, so
- * polling the machine's own projection can never race a half-applied
- * state the way a fixed sleep can.
+ * Wait for the fire-and-forget chain; the terminal report only becomes
+ * peekable once the slot is released.
  */
 async function settle() {
   await vi.waitFor(() => {
@@ -49,8 +47,7 @@ describe('backup/restore-machine', () => {
     machine.startRestoreJob(vi.fn().mockResolvedValue(undefined))
     await settle()
 
-    // Slot released after the chain; a new job may begin. The terminal
-    // report stays behind for one status read.
+    // Slot released after the chain; the terminal report stays for one status read.
     expect(machine.tryBeginRestore()).toBe(true)
     machine.abortRestoreClaim()
   })
@@ -92,9 +89,7 @@ describe('backup/restore-machine', () => {
   })
 
   it('peek never consumes the terminal report — the /ready race', async () => {
-    // The aborted-completion path keeps the server in 'restarting'
-    // while /ready polls: a liveness read must not eat the failed
-    // report the admin endpoint is waiting to show.
+    // /ready polls while the server restarts: a liveness read must not eat the failed report.
     expect(machine.tryBeginRestore()).toBe(true)
     machine.startRestoreJob(vi.fn().mockRejectedValue(new Error('swap failed')))
     await settle()
@@ -114,7 +109,6 @@ describe('backup/restore-machine', () => {
     expect(status.phase).toBe('failed')
     expect(status.error).toBe('swap failed')
     expect(completeMock).toHaveBeenCalledWith(false, expect.any(Error))
-    // The slot still released.
     expect(machine.tryBeginRestore()).toBe(true)
     machine.abortRestoreClaim()
   })
@@ -209,8 +203,7 @@ describe('backup/restore-machine', () => {
   })
 
   it('ignores startRestoreJob without a claimed slot', () => {
-    // No claim → the call is rejected synchronously (the error log fires
-    // before startRestoreJob returns), so there is nothing to settle.
+    // No claim → rejected synchronously; nothing to settle.
     machine.startRestoreJob(vi.fn().mockResolvedValue(undefined))
     expect(__logCaptureForTests()).toContainEqual(
       expect.objectContaining({ level: 'error', msg: 'startRestoreJob without a claimed slot — ignored' }),
@@ -263,7 +256,6 @@ describe('backup/restore-machine', () => {
         }),
       ).rejects.toThrow('body parse failed')
 
-      // The slot is free again.
       expect(machine.tryBeginRestore()).toBe(true)
       machine.abortRestoreClaim()
     })

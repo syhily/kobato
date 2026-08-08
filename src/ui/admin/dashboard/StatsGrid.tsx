@@ -5,9 +5,7 @@ import type { LucideIcon } from '@/ui/icons/types'
 
 import { cn } from '@/ui/lib/cn'
 
-// Per-card palette: each tone pairs a soft status bg fill with its matching fg
-// (decorative icon) so the four KPI cards read as distinct stripes on the design
-// system's status tokens (auto-flips in dark mode).
+// Per-card palette: soft status bg + matching fg icon, auto-flips in dark mode.
 const TONE_CLASSES = {
   warn: { bg: 'bg-status-warn-bg', icon: 'text-status-warn-fg' },
   success: { bg: 'bg-status-success-bg', icon: 'text-status-success-fg' },

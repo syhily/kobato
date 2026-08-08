@@ -11,13 +11,11 @@ import { cn } from '@/ui/lib/cn'
 import { useChromeClock } from '@/ui/public/chrome/use-chrome-clock'
 import { SearchBar } from '@/ui/public/Search'
 
-// Sidebar shell — sticky at xl, card surface with constant padding.
 const sidebarInnerClass = cn('mb-7 px-7 py-8', 'bg-canvas shadow-card', 'xl:sticky xl:top-[30px]')
 
 // Widget container — 2.5rem bottom spacing (legacy `.widget`).
 const widgetClass = 'mb-10'
 
-// Widget title with brand top-border and decorative before-bar.
 const widgetTitleClass = cn(
   'relative border-t-2 border-widget-border',
   'px-0 py-5',
@@ -25,23 +23,17 @@ const widgetTitleClass = cn(
   "before:absolute before:-top-0.5 before:left-0 before:h-0.5 before:w-8 before:bg-brand before:content-['']",
 )
 
-// Widget list indent.
 const widgetListClass = 'pl-5'
 
-// Widget list item — circle bullet with ellipsis truncation.
 const widgetListItemClass = 'mb-3 list-[circle] truncate'
 
-// Entry link (block, truncates) vs comment link (inline, hover only).
 const widgetEntryLinkClass = 'block truncate hover:text-brand'
 const widgetCommentLinkClass = 'hover:text-brand'
 
-// Comment author span — semibold, slight right margin.
 const commentAuthorLinkClass = 'mr-1.5 font-semibold text-ink-1'
 
-// Tag-cloud flex wrapper.
 const tagcloudClass = 'flex flex-wrap'
 
-// Tag chip — `#` prefix via before pseudo-element.
 const tagcloudLinkClass = cn(
   'relative inline-block text-sm leading-none',
   'mr-1.5 mb-1.5 px-4 py-2',
@@ -204,8 +196,7 @@ function WidgetTitle({ children, tooltip }: { children: string; tooltip: string 
 
 function TodayCalendar() {
   const siteIdentity = useSiteIdentity()
-  // Hydration-safe live clock — SSR/hydration use the root loader's instant,
-  // then the mounted client clock takes over (see useChromeClock).
+  // Hydration-safe live clock (see useChromeClock).
   const today = useChromeClock()
   const year = formatLocalDate(today, 'yyyy', siteIdentity)
   const monthDay = formatLocalDate(today, 'LLdd', siteIdentity)

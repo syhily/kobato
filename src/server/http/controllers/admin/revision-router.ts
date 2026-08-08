@@ -22,24 +22,14 @@ export interface MakeRevisionRouterOptions<TMeta, TPreview> {
   basePath: `/${string}`
   audit: RevisionRouterAudit
   /**
-   * Whether `saveBody` receives `context.viewer` so the adapter's access
-   * gate can evaluate ownership. Posts pass it: authors may only edit
-   * their own posts (`assertOwnPostOr404`). Pages deliberately do NOT:
-   * page editing is already admin-only via the `adminProc` gate, so the
-   * page adapter's assert has no ownership rule to evaluate and the
-   * viewer would be dead weight.
+   * Whether `saveBody` receives `context.viewer` so the adapter's access gate
+   * can evaluate ownership — posts pass it, pages (admin-only) don't.
    */
   passViewerToSaveBody: boolean
 }
 
-/**
- * The save-draft / publish-latest / preview trio shared by the admin
- * posts and pages controllers. NOT_FOUND surfaces one way here: the
- * adapter's `assertAccess` throws a `DomainError`, which the
- * `domainErrorGuard` middleware in `orpc-base` translates to
- * `ORPCError('NOT_FOUND')` — the handlers never throw `ORPCError`
- * directly.
- */
+/** The save-draft / publish-latest / preview trio shared by the posts and
+ *  pages controllers. NOT_FOUND surfaces via the adapter's `assertAccess`. */
 export function makeRevisionRouter<TMeta, TPreview>(options: MakeRevisionRouterOptions<TMeta, TPreview>) {
   const { proc, adapter, basePath, audit, passViewerToSaveBody } = options
 

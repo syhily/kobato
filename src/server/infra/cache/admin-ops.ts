@@ -32,9 +32,7 @@ export async function clearAdminCache(db: Database, target: ClearCacheTarget): P
 
   const bucket = getBucket(target)
   if (!bucket) {
-    // The Zod schema on the API surface should have caught this already;
-    // this branch is the belt-and-braces guard for code paths (tests,
-    // future internal callers) that bypass the schema.
+    // Belt-and-braces guard for callers that bypass the API-surface Zod schema.
     throw new DomainError('BAD_REQUEST', `未知的缓存分组：${target}`)
   }
   const removed = await clearBucket(db, bucket)

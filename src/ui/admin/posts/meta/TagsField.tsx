@@ -22,8 +22,7 @@ export function TagsField({ values, onChange, disabled }: TagsFieldProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const isComposingRef = useRef(false)
-  // Suggestions are searched on demand on the server (`q`) instead of
-  // downloading the tag catalogue up front — the list is unbounded.
+  // Server-side search on demand — the tag catalogue is unbounded.
   const suggestionsQuery = useQuery(
     orpcQuery.admin.tags.list.queryOptions({
       input: { q: input.trim(), limit: 20 },
@@ -44,8 +43,7 @@ export function TagsField({ values, onChange, disabled }: TagsFieldProps) {
       setOpen(false)
       setHighlighted(0)
       isComposingRef.current = false
-      // Mobile Chinese IMEs may keep an active composition session after a tag
-      // is added (especially via dropdown click) — blur+focus resets the IME.
+      // Mobile CJK IMEs may keep a composition session after adding — blur+focus resets it.
       const el = inputRef.current
       if (el && document.activeElement === el) {
         el.blur()
@@ -62,9 +60,7 @@ export function TagsField({ values, onChange, disabled }: TagsFieldProps) {
     [values, onChange],
   )
 
-  // Existence check: one targeted server search per entered tag name, so the
-  // warning stays correct no matter how many tags exist. Names are few and
-  // react-query caches per name.
+  // One targeted server search per entered name keeps the warning correct; react-query caches per name.
   const existenceQueries = useQueries({
     queries: values.map((name) =>
       orpcQuery.admin.tags.list.queryOptions({
@@ -78,7 +74,6 @@ export function TagsField({ values, onChange, disabled }: TagsFieldProps) {
 
   const filtered = tags.filter((t) => !values.includes(t.name))
 
-  // Click outside closes the dropdown.
   useEffect(() => {
     if (!open) {
       return
@@ -93,7 +88,6 @@ export function TagsField({ values, onChange, disabled }: TagsFieldProps) {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [open])
 
-  // Reset highlight when the filtered list changes.
   const [lastInput, setLastInput] = useState(input)
   if (lastInput !== input) {
     setLastInput(input)
@@ -176,8 +170,7 @@ export function TagsField({ values, onChange, disabled }: TagsFieldProps) {
                   type="button"
                   onMouseEnter={() => setHighlighted(index)}
                   onMouseDown={(e) => {
-                    // Prevent the input from losing focus before the click
-                    // is processed, which would prematurely close the list.
+                    // Keep focus until the click is processed, or the list closes prematurely.
                     e.preventDefault()
                     addTag(tag.name)
                   }}

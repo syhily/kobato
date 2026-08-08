@@ -5,14 +5,9 @@ import type { Database } from '@/server/infra/db/database'
 import { seedMetric } from '#/_helpers/db'
 import { regularSession } from '#/_helpers/session'
 
-// The detail comments/critical split (`loadCommentsAndItems` fired in
-// parallel with `loadDetailPageCritical` by the detail routes, via
-// `content.comments.byKey` + `content.posts/pages.bySlug`) must keep the
-// historical overlap: `loadComments`, `queryLikes`, and `loadSidebarData`
-// are independent and each is individually slow. This test injects 50ms
-// of artificial latency into all three paths and asserts the wall clock
-// stays below ~100ms (≈ slowest dependency + scheduler jitter), which is
-// impossible if any pair were serialised.
+// The comments/critical split must keep `loadComments`, `queryLikes`, and
+// `loadSidebarData` parallel: 50ms injected into each still finishes
+// under ~100ms wall clock.
 
 vi.mock('@/server/domains/comments/services/shared', () => ({
   ensureCommentPage: vi.fn(async () => seedMetric()),

@@ -21,12 +21,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/components/tabs'
 
 import type { Route } from './+types/overview'
 
-// Overview tab. The loader fans out all dashboard queries in parallel
-// (via the in-process `analytics.overview` procedure → the domain's
-// `loadAnalyticsOverview`) so the first paint is fully populated;
-// client-side fetchers (`MetricList`) take over once the URL state
-// changes. The `search` string carries the raw query string; the URL
-// grammar stays inside `parseAnalyticsSearch` (server-side).
+// Fan out all dashboard queries in parallel so the first paint is fully
+// populated; client-side fetchers take over once the URL state changes. The
+// `search` string carries the raw query string, parsed server-side.
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { caller, viewer } = createSsrCaller({ request, context })
   requireRole({ user: viewer ?? undefined, role: viewer?.role ?? null }, 'admin')

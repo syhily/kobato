@@ -40,39 +40,23 @@ export interface AdminDashboardData {
   recentPublished: DraftSummary[]
 }
 
-// Must stay in lockstep with the `PAGE_SIZE` constant in
-// `PendingModerationPanel.tsx` — the panel's pagination math reads the
-// initial payload assuming this page size.
+// Keep in lockstep with the `PAGE_SIZE` constant in `PendingModerationPanel.tsx` — the panel's pagination assumes this size.
 const PENDING_PAGE_SIZE = 3
 
-// The whole dashboard data assembly is one fan-out across the
-// comments/analytics/posts procedures (admin branch) plus the wire
-// projections — orchestration stays in the loader, the procedures only
-// hand over their domain rows. The `analytics.*` procedures are gated
-// `adminProc` but only the admin branch calls them; `admin.posts.mySummary`
-// is `authorProc` and `comments-authed.myCounts` is `authedProc`, so the
-// author branch rides the same in-process caller.
+// The `analytics.*` inputs are strings (`parseAnalyticsInput` parseInts them);
+// `computeDateRange` yields unix seconds, so stringify.
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { caller, viewer } = createSsrCaller({ request, context })
   const ctx = { user: viewer ?? undefined, role: viewer?.role ?? null }
-  // Defence-in-depth: `admin.layout` already gates author+, but
-  // asserting here narrows `ctx.user` / `ctx.role` to non-null for the
-  // loader body so the response shape is statically tight.
+  // Re-assert author+ so `ctx.user` / `ctx.role` narrow to non-null for the loader body.
   requireRole(ctx, 'author')
 
   const admin = ctx.user.role === 'admin'
 
-  // Fan out every dashboard query in one go. Each branch is a small
-  // count(*) or LIMIT-5 select, so the round-trip wins dominate the
-  // per-query CPU cost.
   const now = new Date()
   const nowSec = Math.floor(now.getTime() / 1000)
   const dayRange = { startAt: nowSec - 24 * 60 * 60, endAt: nowSec }
   const weekRange = computeDateRange('last-7d', now)
-  // `analytics.*` inputs are strings (`parseAnalyticsInput` parseInts
-  // them); `computeDateRange` yields unix seconds, so stringify.
-  // The `comments-authed` group lives under the `comments` namespace
-  // (`myCounts` is authedProc); `admin.posts.mySummary` is `authorProc`.
   const [pendingModeration, visitSummary, weeklyTrend, mySummary, myCommentCounts] = await Promise.all([
     admin
       ? caller.admin.comments.listPendingDashboard({ kind: 'all', offset: 0, limit: PENDING_PAGE_SIZE })
@@ -100,9 +84,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       myCommentsTotal: myCommentCounts.total,
       myCommentsPending: myCommentCounts.pending,
     },
-    // The mySummary procedure projects the same rows the old loader
-    // projected (id stringified, title, published falls back to
-    // updatedAt) — pass them through untouched.
+    // Pass through untouched (id stringified, title, published falls back to updatedAt).
     recentDrafts: mySummary.recentDrafts,
     recentPublished: mySummary.recentPublished,
   }
@@ -139,9 +121,8 @@ function getGreetingServerSnapshot(): string | null {
 }
 
 function useGreeting(): string | null {
-  // Client-local greeting: SSR emits no greeting (server snapshot is null)
-  // and hydration renders the same null, so the browser's own clock is the
-  // only source — the container's timezone can no longer desync the text.
+  // SSR emits no greeting (server snapshot is null) and hydration renders the
+  // same null, so the browser's own clock is the only source.
   return useSyncExternalStore<string | null>(subscribeNoop, getGreetingSnapshot, getGreetingServerSnapshot)
 }
 

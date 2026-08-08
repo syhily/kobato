@@ -14,11 +14,9 @@ interface BatcherOptions {
   flushThreshold: number
 }
 
-// In-memory counter aggregator for high-frequency page views (every
-// post-page request bumps the same counters). Shares the FlushLoop
-// skeleton with the insert batchers; its own payload is the MAP
-// aggregation and the failure policy — merge the snapshot back for a
-// retry instead of dead-lettering rows.
+// In-memory counter aggregator for high-frequency page views. Shares
+// the FlushLoop skeleton with the insert batchers; on failure it merges
+// the snapshot back for a retry instead of dead-lettering rows.
 class PageViewBatcher extends FlushLoop<Map<string, number>, void> {
   private buffer = new Map<string, number>()
 
@@ -48,10 +46,8 @@ class PageViewBatcher extends FlushLoop<Map<string, number>, void> {
       err: error instanceof Error ? error.message : String(error),
       keys: pending.size,
     })
-    // Merge the snapshot back — increments that arrived during the
-    // failed flush live in the fresh buffer, so counts can't
-    // double-count. Re-arm so the retry isn't lost when no new
-    // increments arrive before shutdown.
+    // Merge the snapshot back (the fresh buffer holds increments that
+    // arrived mid-flush) and re-arm — the retry must not be lost.
     for (const [key, count] of pending) {
       this.buffer.set(key, (this.buffer.get(key) ?? 0) + count)
     }
@@ -72,8 +68,7 @@ class PageViewBatcher extends FlushLoop<Map<string, number>, void> {
 
   /**
    * Unflushed delta for one key — the read-time-merge half of the
-   * batcher. Peeks without detaching, so a peek never disturbs the
-   * pending flush.
+   * batcher. Peeks without detaching.
    */
   pendingDelta(key: string): number {
     return this.buffer.get(key) ?? 0
@@ -92,10 +87,9 @@ class PageViewBatcher extends FlushLoop<Map<string, number>, void> {
 
 const BATCHER_NAME = 'PageViewBatcher'
 
-// Self-register on the same registry seam as the insert batchers, so
-// the bootstrap lifecycle drives every batcher through one vocabulary
-// (`initAllBatchers` / `flushAllBatchers` / `resetAllBatchers` /
-// `replayAllDeadLetters`).
+// Self-register so the bootstrap lifecycle drives every batcher
+// through one vocabulary (`initAllBatchers` / `flushAllBatchers` /
+// `resetAllBatchers` / `replayAllDeadLetters`).
 registerBatcher(
   BATCHER_NAME,
   (handle) =>
@@ -113,10 +107,8 @@ export function bumpPageView(target: EntityTarget): void {
 }
 
 /**
- * Read-time merge for view counters: the stored `metric.pv` lags by up
- * to one flush interval, so readers add the unflushed delta to serve an
- * exact count. Returns 0 when the batcher is not running (pre-bootstrap,
- * tests) — the same guard posture as `flushPageViews`.
+ * Read-time merge for view counters: readers add the unflushed delta
+ * to serve an exact count. Returns 0 when the batcher is not running.
  */
 export function pendingViewDelta(target: EntityTarget): number {
   return getBatcher<PageViewBatcher>(BATCHER_NAME)?.pendingDelta(targetKey(target)) ?? 0

@@ -67,9 +67,8 @@ describe('fontsRouter', () => {
   })
 
   it('invalidates the canvas font slot on upload — the next ensureCanvasFont re-reads', async () => {
-    // Use the REAL canvas-fonts module here: the point of this test is the
-    // upload → invalidation → re-read chain, so only its leaf
-    // dependencies (settings, fs, the native font registry) are mocked.
+    // Use the real canvas-fonts module — only its leaf deps (settings, fs,
+    // the native font registry) are mocked.
     const families = { og: 'OPPO Sans', calendar: '' }
     const fsMocks = {
       mkdir: vi.fn().mockResolvedValue(undefined),

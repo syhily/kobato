@@ -1,13 +1,7 @@
 import { ActionFailure, DomainError, domainStatus } from '@/server/infra/http/errors'
 
-/**
- * Transport-neutral projection of a domain-layer failure. Both HTTP
- * adapters — the Hono `onErrorHandler` (`errors.ts`) and the oRPC
- * `domainErrorGuard` (`orpc-base.ts`) — consume this single translation
- * so status, message, issues, and headers can never diverge between
- * transports again. Each adapter applies the result in its own idiom
- * (JSON `Response` headers vs `ORPCError` data + `responseHeaders`).
- */
+/** Single translation shared by the Hono and oRPC adapters so status,
+ *  message, issues, and headers can never diverge between transports. */
 export interface TranslatedDomainError {
   status: number
   message: string

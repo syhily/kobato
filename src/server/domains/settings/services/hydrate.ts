@@ -45,9 +45,7 @@ function decryptSecretsInBundle(bundle: BlogSettingsBundle): void {
       try {
         bucket[field] = decryptIfNeeded(value)
       } catch (error) {
-        // Name the failing field so the operator knows WHICH secret the
-        // encryption-key mismatch (or corruption) hit — the bare crypto
-        // error alone gives no hint where to look.
+        // Name the failing field — the bare crypto error gives no hint where to look.
         throw new Error(`Failed to decrypt secret setting '${bundleKey}.${path}.${field}'`, { cause: error })
       }
     }
@@ -116,13 +114,8 @@ function backfillMissingSectionDefaults(bundle: BlogSettingsBundle, db: Database
 }
 
 export async function hydrateBlogSettings(db: Database): Promise<BlogSettingsBundle | null> {
-  // Single-process deployment model: the in-process snapshot is always
-  // authoritative once loaded.
-  //
-  // The hydration promise below is the single-flight for the initial load.
-  // Semantics: share-in-flight; failure: keep-stale — a failed load drops
-  // the flight so the next call retries, but never overwrites the last
-  // good snapshot, so settings stay available through a DB outage.
+  // Hydration single-flight; on failure the flight is dropped so the next call retries —
+  // the last good snapshot is never overwritten.
   const pending = BLOG_SETTINGS_SNAPSHOT_SLOT.readHydration()
   if (pending) {
     return pending
@@ -148,15 +141,8 @@ export async function refreshBlogSettings(db: Database): Promise<BlogSettingsBun
 }
 
 /**
- * The admin settings shell's eager backfill: any section the hydrated
- * bundle is missing but that ships registry defaults gets written to the
- * DB and populated into a COPY of the bundle (the hydrated snapshot is
- * shared cache — never mutate it). Best-effort per row: a failed upsert
- * leaves the key null so the caller's completeness check surfaces it.
- *
- * Distinct from the hydration backfill above: that one repairs the
- * snapshot at load time with validated payloads, while this one serves
- * the shell's per-navigation read with the raw registry defaults.
+ * Admin shell's eager backfill: write registry defaults for missing sections into a
+ * COPY of the bundle (the hydrated snapshot is shared cache — never mutate it), best-effort per row.
  */
 export async function backfillSettingsSections(
   db: Database,
@@ -166,10 +152,7 @@ export async function backfillSettingsSections(
   for (const [key, value] of Object.entries(bundle)) {
     mutable[key] = value
   }
-  // `meta.key` is read everywhere in this file (never
-  // SECTION_TO_BUNDLE_KEY): the mapped-type pin in `sections/registry.ts`
-  // proves the two maps agree, and the registry entry is already in hand
-  // here for `defaults` / `scope`.
+  // `meta.key` (never SECTION_TO_BUNDLE_KEY) — the registry parity assert proves the maps agree.
   for (const section of SETTINGS_SECTIONS) {
     const meta = SECTION_REGISTRY[section]
     const key = meta.key
@@ -182,9 +165,7 @@ export async function backfillSettingsSections(
     try {
       upsertSetting(db, meta.defaults, null, meta.scope)
       mutable[key] = meta.defaults
-    } catch {
-      // Best-effort; the caller's assert surfaces still-missing sections.
-    }
+    } catch {}
   }
   return mutable
 }

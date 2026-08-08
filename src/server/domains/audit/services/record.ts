@@ -6,20 +6,8 @@ import { getLogger } from '@/server/infra/logger'
 
 const log = getLogger('audit.service')
 
-// Public API
-
 /**
- * Record an audit event.
- *
- * This function is **fire-and-forget**: it pushes the event into an
- * in-memory batcher and returns immediately. The actual DB insert
- * happens asynchronously (batched, flushed every 50 events or 500ms).
- *
- * L3-sensitive fields inside `details` are automatically wrapped in
- * `{E}…{/E}` markers before storage.
- *
- * Never throws. Any failure (DB down, malformed row, …) is logged and
- * silently swallowed so the caller's business logic is never blocked.
+ * Fire-and-forget: never throws; failures are logged and swallowed.
  */
 export function recordAuditEvent(input: AuditEventInput): void {
   try {
@@ -29,8 +17,7 @@ export function recordAuditEvent(input: AuditEventInput): void {
       details: tagged,
     })
   } catch (err) {
-    // Batcher push is synchronous (O(1) array push), so this catch is
-    // defensive against programming errors in tagL3InDetails.
+    // Defensive: push is synchronous, so only tagL3InDetails can fail.
     log.error('recordAuditEvent failed', {
       action: input.action,
       err: err instanceof Error ? err.message : String(err),
@@ -38,13 +25,6 @@ export function recordAuditEvent(input: AuditEventInput): void {
   }
 }
 
-// Context helpers
-
-/**
- * Extract audit-relevant fields from an AuditContext.
- * Useful when the caller already has a context object and wants to
- * avoid manual field extraction.
- */
 export function buildAuditContext(context: AuditContext) {
   return {
     actorId: context.viewer?.id,
@@ -54,10 +34,6 @@ export function buildAuditContext(context: AuditContext) {
   }
 }
 
-/**
- * Convenience wrapper that combines `buildAuditContext` + `recordAuditEvent`
- * for the common case where the caller has an AuditContext.
- */
 export function recordAuditEventFromContext(
   context: AuditContext,
   event: Omit<AuditEventInput, 'actorId' | 'actorRole' | 'ipAddress' | 'userAgent'>,

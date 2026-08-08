@@ -14,16 +14,11 @@ import { setting } from '@/server/infra/db/schema/config'
 import { DomainError } from '@/server/infra/http/errors'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
-// Section-change dispatch (backup/audit reschedule, mail transport
-// invalidation) is covered by the unit tests; keep the schedulers out of
-// these persistence-focused cases. Everything else — the settings reads,
-// the merge, the UPSERT, the secret encryption, the post-write snapshot
-// refresh — runs against the real in-memory engine.
+// Real in-memory engine for reads/merge/UPSERT/encryption/snapshot;
+// only the section-change dispatch stays with the unit tests.
 const db: Database = getTestDb()
 
-// Bucketed settings fixture. The DB stores one row per section so
-// `seedSections()` projects this fully-populated bundle into per-scope
-// rows, mirroring what an installed deployment persists.
+// The DB stores one row per section; seedSections() projects this bundle into per-scope rows.
 const fixtureBundle: BlogSettingsBundle = {
   siteIdentity: {
     title: 'fixture title',
@@ -187,9 +182,7 @@ const BUNDLE_SCOPES: Record<keyof BlogSettingsBundle, string> = {
 }
 
 /**
- * Seed the fixture bundle as per-scope rows. `except` skips scopes,
- * `override` replaces a scope's payload (for stored-row variants with
- * plaintext secrets or legacy shapes).
+ * Seed the fixture bundle as per-scope rows; `except` skips scopes, `override` swaps a scope's payload.
  */
 async function seedSections(
   bundle: BlogSettingsBundle = fixtureBundle,
@@ -242,8 +235,7 @@ describe('services/settings — hydrateBlogSettings', () => {
   })
 
   it('treats a deployment as uninstalled when only some sections exist', async () => {
-    // Only siteIdentity present; the snapshot module requires both
-    // siteIdentity AND assets to consider the deployment installed.
+    // The snapshot requires both siteIdentity AND assets to consider the deployment installed.
     await db.insert(setting).values({
       scope: 'blog.general',
       data: fixtureBundle.siteIdentity as unknown as Record<string, unknown>,
@@ -255,10 +247,8 @@ describe('services/settings — hydrateBlogSettings', () => {
   })
 
   it('names the failing secret field when a stored secret cannot be decrypted', async () => {
-    // The backup-restore-with-a-different-encryptionKey scenario: the
-    // stored value is well-formed `enc2:` ciphertext, but the configured
-    // key cannot authenticate it. The hydration error must identify WHICH
-    // secret broke, not just "Secret decryption failed".
+    // Well-formed enc2: ciphertext the configured key can't authenticate;
+    // the error must name the failing secret field.
     const undecryptable = 'enc2:' + '00'.repeat(12) + ':' + '00'.repeat(16) + ':' + '00'.repeat(16)
     await seedSections(fixtureBundle, {
       override: {
@@ -303,7 +293,6 @@ describe('services/settings — updateBlogSettingsSection', () => {
     const data = row.data as Record<string, unknown>
     expect(data.title).toBe('雨帆')
     expect(data.settings).toBeUndefined()
-    // The post-write snapshot refresh re-read the database.
     expect(next.bundle?.siteIdentity?.title).toBe('雨帆')
   })
 
@@ -342,8 +331,7 @@ describe('services/settings — updateBlogSettingsSection', () => {
     const row = readRow('blog.assets')
     const payload = row.data as Record<string, unknown>
     expect(payload.asset).toEqual({ host: 'cdn.test.example', scheme: 'https' })
-    // The omitted secret survived the patch — preserved from the stored
-    // row, then routed through encryptSecretsInRow like any plaintext.
+    // The omitted secret survived the patch, routed through encryptSecretsInRow like any plaintext.
     const storage = payload.storage as Record<string, unknown>
     expect(storage.secretAccessKey).toMatch(/^enc2:/)
     expect(decryptIfNeeded(storage.secretAccessKey as string)).toBe('STORED')
@@ -365,7 +353,6 @@ describe('services/settings — updateBlogSettingsSection', () => {
       sideNav: [{ text: 'Home', link: '/' }],
       footerNav: [],
     })
-    // No other section row was rewritten by the navigation save.
     expect(readRow('blog.mail').data).toEqual(mailBefore)
   })
 })
@@ -456,15 +443,13 @@ describe('services/settings — mail section', () => {
     )
 
     const mail = readBucket('blog.mail', 'mail')
-    // smtpPass was omitted from the patch: preserved from the stored row,
-    // then encrypted alongside the other mail secrets.
+    // smtpPass omitted from the patch: preserved from the stored row, then encrypted.
     expect(mail.smtpPass).toMatch(/^enc2:/)
     expect(decryptIfNeeded(mail.smtpPass as string)).toBe('STOREDSMTPPASS')
     expect(mail.smtpHost).toBe('smtp.example.com')
     expect(mail.smtpUser).toBe('user')
     expect(mail.smtpSecure).toBe(true)
-    // apiKey is preserved (not in the patch) and re-encrypted — every
-    // secret in the mail section routes through `encryptSecretsInRow`.
+    // apiKey preserved and re-encrypted — every mail secret routes through encryptSecretsInRow.
     expect(mail.apiKey).toMatch(/^enc2:/)
     expect(decryptIfNeeded(mail.apiKey as string)).toBe('ZEABURKEY')
   })
@@ -509,11 +494,9 @@ describe('services/settings — mail section', () => {
     const mail = readBucket('blog.mail', 'mail')
     expect(mail.mailgunDomain).toBe('mg.example.com')
     expect(mail.sender).toBe('noreply@mg.example.com')
-    // mailgunApiKey was omitted from the patch and preserved from the
-    // existing row, then routed through encryptSecretsInRow.
+    // mailgunApiKey omitted from the patch and preserved from the existing row.
     expect(mail.mailgunApiKey).toMatch(/^enc2:/)
     expect(decryptIfNeeded(mail.mailgunApiKey as string)).toBe('STOREDMAILGUNKEY')
-    // The Zeabur secret was preserved and re-encrypted too.
     expect(mail.apiKey).toMatch(/^enc2:/)
     expect(decryptIfNeeded(mail.apiKey as string)).toBe('ZEABURKEY')
   })
@@ -612,9 +595,8 @@ describe('services/settings — rateLimit section', () => {
     )
 
     const row = readRow('blog.rateLimit').data as Record<string, unknown>
-    // The patched bucket is overwritten...
+    // Patched bucket overwritten; omitted buckets survive from the stored row.
     expect(row.signInIp).toEqual({ windowSeconds: 600, maxAttempts: 3 })
-    // ...and every bucket the patch omits survives from the stored row.
     expect(row.commentPostIp).toEqual(fixtureBundle.rateLimit!.commentPostIp)
     expect(row.likeIncreaseIp).toEqual(fixtureBundle.rateLimit!.likeIncreaseIp)
     expect(row.passkeyDeleteIp).toEqual(fixtureBundle.rateLimit!.passkeyDeleteIp)
@@ -675,8 +657,7 @@ describe('services/settings — cache section', () => {
           cache: {
             og: { prefix: 'og:', ttlSeconds: 60 * 60 },
             calendar: { prefix: 'calendar:', ttlSeconds: 60 * 60 },
-            // `og` is a strict prefix of `og:` — and fails the
-            // must-end-with-`:` pattern, so the perimeter refuses it.
+            // `og` is a strict prefix of `og:` and lacks the required `:` suffix.
             avatar: { prefix: 'og', ttlSeconds: 60 * 60 },
             imageMeta: { prefix: 'image-meta:', ttlSeconds: 60 * 60 },
             searchResult: { prefix: 'search-result:', ttlSeconds: 60 * 60 },
@@ -847,9 +828,7 @@ describe('services/settings — security section', () => {
 
 describe('services/settings — section patch merge', () => {
   it('keeps the stored SMTP TLS flags when a Zeabur-style patch only carries host', async () => {
-    // Regression for the mail TLS drift: the loader projection may not
-    // carry every field, so a focused patch must never reset the stored
-    // row's untouched fields.
+    // A focused patch must never reset the stored row's untouched fields.
     await seedSections(fixtureBundle, { except: ['blog.mail'] })
     await db.insert(setting).values({
       scope: 'blog.mail',
@@ -957,8 +936,7 @@ describe('services/settings — section patch merge', () => {
 
   it('accepts a complete fonts payload and writes it verbatim', async () => {
     await seedSections(fixtureBundle, { except: ['blog.fonts'] })
-    // The fonts domain's setFontSlot path posts a full FontsSettings —
-    // a complete object is a valid patch.
+    // setFontSlot posts a full FontsSettings — a complete object is a valid patch.
     const fontsPayload = {
       og: { family: 'NotoSansCJK' },
       calendar: { family: '' },
@@ -994,9 +972,7 @@ describe('services/settings — snapshot reader', () => {
   })
 
   it('hydrate rejects legacy 3-bucket cache rows so the registry default backfills the section', async () => {
-    // Reproduces the prod crash where a legacy `blog.cache` row stored
-    // before `imageMeta` was added passed the old probe, then crashed
-    // `<BucketCard>` on `allBuckets.imageMeta.prefix`.
+    // Legacy pre-imageMeta rows must backfill, not crash the cache card.
     await seedSections(fixtureBundle, { except: ['blog.cache'] })
     await db.insert(setting).values({
       scope: 'blog.cache',

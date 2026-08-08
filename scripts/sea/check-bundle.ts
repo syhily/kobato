@@ -1,14 +1,7 @@
-// Bundle sanity check for the SEA intermediates.
-//
-// All three bundles must be fully self-contained: every relative
-// specifier and every non-builtin bare specifier must have been inlined
-// by the vite build, and no `import.meta.env` may survive (vite-style
-// env access is meaningless inside the binary). Leftovers would fail at
-// runtime — the SEA's restricted require resolves nothing, and the
-// embedded worker / materialized server have no node_modules next to
-// them — so fail the build here instead. The scan also runs in reverse:
-// any `__APP_*__`/`__SEA_*__` compile-time global left in a bundle whose
-// define table does not cover it would be a ReferenceError at boot.
+// Bundle sanity check for the SEA intermediates: every bundle must be fully
+// self-contained (leftovers fail at runtime — no node_modules next to the
+// binary). Also fails on any `__APP_*__`/`__SEA_*__` identifier the bundle's
+// define table does not cover (a bare ReferenceError at boot).
 
 import { readFileSync } from 'node:fs'
 import { builtinModules } from 'node:module'
@@ -18,14 +11,11 @@ import { seaServerBundlePath, seaSmokeWorkerBundlePath, seaWorkerBundlePath } fr
 
 const builtins = new Set([...builtinModules, ...builtinModules.map((name) => `node:${name}`)])
 
-// The define table of vite.sea.config.ts — shared by all three SEA
-// bundles (server / process-worker / smoke-worker). Keep in sync with the
-// `define` block there. Exported so the contract test consumes the same
-// table instead of drifting on its own copy.
+// The vite.sea.config.ts `define` table, shared by all three bundles —
+// keep in sync with the define block there; exported for the contract test.
 export const SEA_BUNDLE_DEFINED_GLOBALS = [
   '__SEA_APP_VERSION__',
-  // The six `__APP_*__` globals `@/shared/config/version` consumes —
-  // vite.sea.config.ts defines them exactly like vite.config.ts does.
+  // The six `__APP_*__` globals `@/shared/config/version` consumes.
   '__APP_NAME__',
   '__APP_VERSION__',
   '__APP_DESCRIPTION__',
@@ -34,21 +24,8 @@ export const SEA_BUNDLE_DEFINED_GLOBALS = [
   '__APP_REPOSITORY__',
 ]
 
-// False-positive allowlist: these specifiers only appear inside STRING
-// LITERALS (error messages shipped by upstream packages), never as real
-// imports — verified against the vite-built server bundle, which contains
-// the identical strings in production today:
-//   @aws-sdk/signature-v4a    — @smithy/signature-v4's "please install …"
-//                               SigV4a error text embeds
-//                               `require('@aws-sdk/signature-v4a')`;
-//   @aws-sdk/signature-v4-crt — @smithy/signature-v4's CRT error text
-//                               embeds `require("@aws-sdk/signature-v4-crt")`
-//                               ("register the package by calling […]").
-//                               Only matches the scan once the bundle is
-//                               minified onto single lines — still a
-//                               string literal, verified in context.
-//   ./MyComponent           — React's react.lazy error text embeds
-//                             `import('./MyComponent')`.
+// False-positive allowlist: these specifiers appear only inside string
+// literals (error texts shipped by upstream packages), never as real imports.
 const allowedExternalSpecifiers = new Set(['@aws-sdk/signature-v4a', '@aws-sdk/signature-v4-crt'])
 const allowedRelativeSpecifiers = new Set(['./MyComponent'])
 
@@ -72,21 +49,14 @@ function executableLines(text: string) {
     })
 }
 
-// Compile-time globals the vite build substitutes into a bundle via
-// `define` (vite.sea.config.ts defines `__SEA_APP_VERSION__` plus the same
-// six `__APP_*__` globals vite.config.ts defines, consumed by
-// src/shared/config/version.ts). The reverse scan below fails on any
-// `__APP_*__`/`__SEA_*__` identifier left in a bundle that its define
-// table does not cover — a leftover would be a bare ReferenceError at
-// runtime inside the binary (e.g. a NEW global added to version.ts without
-// a matching define row).
+// Compile-time globals the vite build substitutes via `define`; the reverse
+// scan fails on any `__APP_*__`/`__SEA_*__` identifier the define table
+// does not cover — a leftover is a bare ReferenceError at runtime.
 const buildGlobalPattern = /\b__(?:APP|SEA)_[A-Z0-9_]*__\b/g
 
 /**
  * Scan one bundle's text for leftovers that would fail at runtime inside
- * the binary. `definedGlobals` is the bundle's vite `define` table — an
- * `__APP_*__`/`__SEA_*__` identifier that survives the build and is NOT
- * in that table is an undefined-global ReferenceError waiting to happen.
+ * the binary, including undefined build-time globals.
  */
 export function scanBundleText(text: string, definedGlobals: readonly string[]) {
   const errors: string[] = []
@@ -97,12 +67,8 @@ export function scanBundleText(text: string, definedGlobals: readonly string[]) 
 
   const undefinedGlobals = new Set<string>()
   for (const line of executableLines(text)) {
-    // Rolldown's runtime-external shim: `__require("bare")` is how a
-    // failed/externalized CJS require survives into the bundle (a plain-
-    // `require` scan cannot see it). Only node builtins may ride it —
-    // anything else is a `Cannot find module` at runtime inside the
-    // binary (the historical failure shape: a bundled package's require
-    // of a sibling package surviving externalization).
+    // Rolldown's runtime-external shim `__require("bare")` — only node
+    // builtins may ride it; anything else is a `Cannot find module` at runtime.
     for (const match of line.matchAll(/__require\(\s*["']([^"']+)["']\s*\)/g)) {
       const specifier = match[1]
       if (specifier.startsWith('.') || specifier.startsWith('/')) {

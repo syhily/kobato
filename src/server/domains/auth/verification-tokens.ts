@@ -12,10 +12,8 @@ const log = getLogger('verification-tokens')
 const RESET_TTL_MS = 15 * 60 * 1000
 const SETUP_TTL_MS = 7 * 24 * 60 * 60 * 1000
 
-// Purpose tags persisted to `verification.purpose`. The DB column is
-// `varchar(32)` so the set has plenty of headroom for future flows
-// (e.g. `'email-change'`), but new values must be added here so the
-// type system catches typos at call sites.
+// Purpose tags persisted to `verification.purpose`; new values must be
+// added here so the type system catches typos at call sites.
 export type TokenPurpose = 'password-reset' | 'author-invite' | 'signin-otp' | 'signin-link'
 
 export interface TokenResult {
@@ -34,7 +32,7 @@ export function issueSetupToken(db: Database, userId: number): TokenResult {
 const SIGNIN_LINK_TTL_MS = 15 * 60 * 1000
 export const SIGNIN_LINK_TTL_MINUTES = SIGNIN_LINK_TTL_MS / (60 * 1000)
 
-/** One-time magic-link signin token. High-entropy, so the generic path suffices. */
+/** Signin-link tokens are high-entropy, so the generic path suffices. */
 export function issueSignInLinkToken(db: Database, userId: number): TokenResult {
   return issueToken(db, userId, 'signin-link', SIGNIN_LINK_TTL_MS)
 }
@@ -46,9 +44,7 @@ function issueToken(db: Database, userId: number, purpose: TokenPurpose, ttlMs: 
   const expiresAt = new Date(Date.now() + ttlMs)
   const id = generateToken().slice(0, 24)
 
-  // Single-token-per-(purpose, user) invariant, enforced by the
-  // `uq_verification_purpose_user` unique index; the UPSERT rotates the
-  // live token in-place on re-issue.
+  // Single-token-per-(purpose, user), enforced by `uq_verification_purpose_user`.
   db.insert(verification)
     .values({ id, purpose, userId, value, expiresAt })
     .onConflictDoUpdate({
@@ -81,10 +77,8 @@ function validatedTokenRow(
 }
 
 /**
- * Read-only check that the token exists, has the expected purpose, and
- * is unexpired. Does NOT delete the row — callers in the loader use
- * this to short-circuit a form before the user submits a password.
- * The destructive {@link consumeToken} is reserved for the action.
+ * Read-only token check — does NOT delete the row; the destructive
+ * {@link consumeToken} is reserved for the action.
  */
 export async function peekToken(db: Database, rawToken: string, purpose: TokenPurpose): Promise<ValidatedToken | null> {
   if (!TOKEN_LEN_RE.test(rawToken)) {
@@ -109,9 +103,8 @@ export async function peekToken(db: Database, rawToken: string, purpose: TokenPu
 }
 
 /**
- * Delete the row matching `rawToken` and return `{ userId }` if the row
- * exists, has the expected purpose, and is unexpired. Single-shot — a
- * subsequent call with the same token returns `null`.
+ * Delete the row matching `rawToken`; returns `{ userId }` only when the
+ * row exists, is unexpired, and matches the purpose. Single-shot.
  */
 export async function consumeToken(
   db: Database,
@@ -144,11 +137,8 @@ export async function purgeExpired(db: Database): Promise<number> {
   return Number(result.changes)
 }
 
-// ── OTP (signin-otp) — separate path from generic tokens ───────────────────
-// 6-digit numeric OTPs have too little entropy (~20 bits) to be safely
-// stored as bare sha256 hashes.  We salt each OTP with a per-token
-// random 16-byte hex string so an attacker who reads the DB cannot
-// pre-compute a 1,000,000-entry rainbow table.
+// 6-digit OTPs (~20 bits) must not be stored as bare sha256 — each is
+// salted with a per-token random 16-byte hex string.
 
 export const OTP_TTL_MS = 5 * 60 * 1000
 export const OTP_TTL_MINUTES = OTP_TTL_MS / (60 * 1000)
@@ -173,9 +163,8 @@ export interface OtpTokenResult {
 }
 
 /**
- * Issue a 6-digit numeric OTP for login verification.
- * Stored as `salt:hash` in the `value` column; queried by
- * `(purpose='signin-otp', userId)` rather than by value.
+ * Issue a 6-digit OTP; stored as `salt:hash`, looked up by
+ * `(purpose='signin-otp', userId)`, never by value.
  */
 export async function issueOtpToken(db: Database, userId: number): Promise<OtpTokenResult> {
   const otpCode = generateOtpCode()
@@ -195,16 +184,10 @@ export async function issueOtpToken(db: Database, userId: number): Promise<OtpTo
   return { otpCode, expiresAt }
 }
 
-/**
- * Verify a raw 6-digit OTP code for the given user.
- * Looks up by `(purpose='signin-otp', userId)`, compares the salted
- * hash, and **deletes the row on success** (single-use).
- */
+/** Verify a 6-digit OTP for a user; deletes the row on success (single-use). */
 export async function verifyOtpToken(db: Database, userId: number, rawOtpCode: string): Promise<ValidatedToken | null> {
   try {
-    // Sync transaction (node:sqlite): the delete-on-success single-use
-    // semantics are preserved; writers serialise on the connection, so
-    // the old `FOR UPDATE` row lock is unnecessary.
+    // Sync transaction (node:sqlite): writers serialise on the connection.
     return db.transaction((tx) => {
       const rows = tx
         .select({

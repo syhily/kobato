@@ -23,11 +23,8 @@ const log = getLogger('settings.service')
 export interface SectionUpdateResult {
   bundle: BlogSettingsBundle | null
   /**
-   * Honest side-effect failures: the section row IS persisted, but a
-   * registered change handler (reschedule backup/archive, mail transport
-   * cache invalidation) threw, so the derived state is stale until the
-   * next successful save or a restart. Surfaced to the admin instead of
-   * only landing in the server log (P1-5).
+   * Honest side-effect failures: the row IS persisted but a registered change handler
+   * threw, so derived state is stale until the next successful save or restart (P1-5).
    */
   warnings: string[]
 }
@@ -39,18 +36,14 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
   updatedBy: number | null,
 ): Promise<SectionUpdateResult> {
   const meta = SECTION_REGISTRY[section]
-  // Strict key check before any DB work: unknown keys (loader mask
-  // fields, renamed keys) are a client bug — 400 with the issue list. The
+  // Strict key check before any DB work — unknown keys are a client bug; the
   // assertion signature types the passing payload for the merge below.
   assertSectionPatchKeys(section, payload)
 
-  // Sync transaction (node:sqlite). The snapshot refresh runs right
-  // after commit — same macrotask, so no reader can interleave.
+  // Sync transaction; the snapshot refresh runs in the same macrotask, so no reader can interleave.
   db.transaction((tx) => {
-    // The stored row is the only honest write base: merge the patch onto
-    // it (objects merge, arrays replace), then validate the merged
-    // section. This single read also feeds the secret/branding
-    // preservation in `applySectionPatch`.
+    // The stored row is the only honest write base; this single read also feeds
+    // the secret/branding preservation in `applySectionPatch`.
     const storedRow = findSettingByScope(tx, meta.scope) ?? null
     const base = resolveMergeBase(meta, storedRow)
     const merged = mergeSectionPatch(base, payload)
@@ -66,9 +59,7 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
       )
     }
     if (section === 'security') {
-      // `parsed.data` came from this very schema's safeParse above, so
-      // the typed re-parse cannot fail — it only recovers the concrete
-      // SecuritySettings shape the generic `meta.schema` erases.
+      // Cannot fail — it only recovers the concrete SecuritySettings shape the generic `meta.schema` erases.
       const securityPayload = securitySection.schema.parse(parsed.data)
       if (securityPayload.passkey.enabled) {
         const current = getBlogSettingsBundleSync()
@@ -85,9 +76,7 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
       }
     }
 
-    // Every section schema is a z.object, so the validated output IS a
-    // plain record; the generic `meta.schema: z.ZodType` just cannot
-    // prove it.
+    // Every section schema is a z.object, so the validated output IS a plain record — the generic type just cannot prove it.
     const validated = unsafeCast<Record<string, unknown>>(parsed.data)
     const nextRow = applySectionPatch(section, validated, storedRow)
 
@@ -102,9 +91,7 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
     try {
       await handler()
     } catch (e: unknown) {
-      // The write already committed — throwing here would report a
-      // failure for a change that IS persisted (and the controller would
-      // skip the audit record). Succeed with an explicit warning instead.
+      // The write already committed — report the handler failure as an explicit warning, not an error.
       log.error('Section change handler failed', { section, error: String(e) })
       warnings.push('设置已保存，但关联任务未能重新应用；新设置可能要重启后才会完全生效。')
     }
@@ -114,13 +101,8 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
 }
 
 /**
- * Normalize the merge base for a section write: the stored row through
- * the same lenient parse the read path performs (hydrate.ts), the
- * registry defaults when no row exists, or `{}` for the two sections
- * that ship no defaults (general / assets — their setup-time first write
- * must arrive complete, which the merged validation enforces). The
- * schema's `.default()`s stay reachable here, so a field missing from
- * BOTH the stored row and the patch still gets its backfill default.
+ * Merge base: the stored row through the same lenient parse as hydrate, registry defaults
+ * when no row exists, or `{}` for sections that ship no defaults (general / assets).
  */
 function resolveMergeBase(meta: SectionMeta, storedRow: Setting | null): Record<string, unknown> {
   if (storedRow !== null && isRecord(storedRow.data)) {
@@ -128,13 +110,11 @@ function resolveMergeBase(meta: SectionMeta, storedRow: Setting | null): Record<
     if (parsed.success && isRecord(parsed.data)) {
       return parsed.data
     }
-    // A row that fails the schema is treated as absent rather than merged
-    // onto a shape we no longer understand — same leniency as hydrate.
+    // A schema-failing row is treated as absent — same leniency as hydrate.
     log.warn('Setting row failed schema validation; merging onto section defaults', { scope: meta.scope })
   }
   if (meta.defaults !== null) {
-    // The registry owns the one defaults validator — identical thrown
-    // message to the hydration backfill path.
+    // The registry owns the one defaults validator, shared with the hydration backfill path.
     return validateSectionDefaults(meta)
   }
   return {}

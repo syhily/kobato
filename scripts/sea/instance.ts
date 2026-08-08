@@ -1,15 +1,6 @@
-// Shared lifecycle for driving a built SEA binary.
-//
-// Extracted from scripts/sea/smoke.ts so both the deep managed smoke
-// (smoke.ts) and the HTTP e2e orchestrator (e2e.ts) boot instances the
-// exact same way: per-run temp dirs (the SQLite content file and the
-// DuckDB analytics sidecar both live under `dirs.data` — no external
-// service at all), server boot with output captured to a log file, HTTP
-// boot polling, and the "installed instance" SQL seed.
-//
-// Imports: Node builtins (the seed SQL runs through node:sqlite) plus
-// @duckdb/node-api (a runtime dependency — the analytics round-trip
-// check reads the sidecar file the binary wrote).
+// Shared lifecycle for driving a built SEA binary: per-run temp dirs (no
+// external services), boot with output captured to a log file, HTTP boot
+// polling, and the installed-instance SQL seed. Used by smoke.ts and e2e.ts.
 
 import type { ChildProcess } from 'node:child_process'
 import type { WriteStream } from 'node:fs'
@@ -51,7 +42,6 @@ export interface SmokeServer {
   healthResponse: Response | null
 }
 
-/** Per-run database file paths (both live under `dirs.data`). */
 export interface SmokeDatabases {
   /** SQLite content database. */
   database: string
@@ -89,12 +79,9 @@ export async function fetchManual(url: string) {
 }
 
 /**
- * Parent env minus what a smoke child must NOT inherit: config vars
- * (`__`-suffixed — a leaked value silently overrides the converged config
- * file, env > file) and KOBATO_* runtime vars (an operator-set
- * KOBATO_NATIVES_DIR would redirect the child's native extraction away
- * from the per-run cache and false-fail the layout checks). Deliberate
- * vars are re-injected explicitly by each spawn call.
+ * Parent env minus config vars (`__`-suffixed — env > file) and KOBATO_*
+ * runtime vars (a leaked KOBATO_NATIVES_DIR would redirect extraction away
+ * from the per-run cache). Deliberate vars are re-injected per spawn.
  */
 export function scrubbedParentEnv(): Record<string, string> {
   return Object.fromEntries(
@@ -124,8 +111,7 @@ export async function ensureBinaryExists(binaryPath: string) {
 
 export interface SeedAdminOptions {
   email: string
-  /** bcrypt hash of the admin's password (a placeholder hash when the
-   *  caller never logs in — see smoke.ts). */
+  /** bcrypt hash of the admin's password (placeholder when the caller never logs in). */
   passwordHash: string
 }
 
@@ -139,10 +125,8 @@ export interface ConvergedConfig {
 }
 
 /**
- * Assert a temp config file converged: the env-driven boot wrote its
- * overrides back (`storage.database` + `security.sessionSecret` present as
- * raw strings — never the schema-transformed shape). Used by the smoke's
- * and the e2e orchestrator's convergence checks.
+ * Assert a temp config file converged: env overrides were written back as
+ * raw strings, never the schema-transformed shape.
  */
 export async function readConvergedConfig(configPath: string): Promise<ConvergedConfig> {
   const parsed: unknown = JSON.parse(await readFile(configPath, 'utf-8'))
@@ -158,18 +142,10 @@ export async function readConvergedConfig(configPath: string): Promise<Converged
 }
 
 /**
- * Flip the instance to "installed" with plain SQL against the SQLite
- * content file (the server is stopped — no WAL contention):
- *   1. one minimal admin row — `hasAdmin()` (role = 'admin' AND
- *      deleted_at IS NULL) is the whole install gate;
- *   2. the two settings scope roots the settings hydration requires
- *      (`blog.general` → siteIdentity, `blog.assets` → assets). On the
- *      next boot the server's own hydration backfills every other section
- *      with registry defaults — the same payloads the install flow
- *      writes, without replaying the passkey/setup-token wizard.
- * Both payloads must pass the real section Zod schemas at hydration time.
- * Timestamps are epoch-ms integers (`timestamp_ms` columns), settings
- * `data` is plain-JSON text.
+ * Flip the instance to "installed" with plain SQL (server stopped — no WAL
+ * contention): one minimal admin row — `hasAdmin()` is the whole install
+ * gate — plus the `blog.general` / `blog.assets` roots the settings
+ * hydration requires. Both payloads must pass the real section schemas.
  */
 export async function seedInstalledInstance(databasePath: string, admin: SeedAdminOptions) {
   const year = new Date().getFullYear()
@@ -229,11 +205,8 @@ export async function seedInstalledInstance(databasePath: string, admin: SeedAdm
 }
 
 /**
- * DuckDB round-trip verification: open the analytics sidecar AFTER the
- * server shut down (its close checkpoints the WAL into one clean file)
- * and prove the page views fetched over HTTP landed as access_log rows
- * (track → batcher → Appender → file). Returns row and distinct-path
- * counts from one aggregate scan.
+ * Open the analytics sidecar AFTER shutdown (its close checkpoints the WAL)
+ * and prove page views landed as access_log rows.
  */
 export async function scanAccessLog(analyticsPath: string): Promise<{ rows: number; paths: number }> {
   const instance = await DuckDBInstance.create(analyticsPath)
@@ -253,10 +226,9 @@ export async function scanAccessLog(analyticsPath: string): Promise<{ rows: numb
 }
 
 /**
- * Spawn the server with an unrelated cwd and both output streams captured
- * to `logPath` (truncated per boot, so each lifecycle gets its own log).
- * Natives extraction, migrations, and the HTTP listener all happen before
- * the first response.
+ * Spawn the server with an unrelated cwd, output captured to `logPath`
+ * (truncated per boot). Natives extraction, migrations, and the listener
+ * all happen before the first response.
  */
 export async function bootServer(
   binaryPath: string,
@@ -267,17 +239,9 @@ export async function bootServer(
   const port = await pickFreePort()
   const logStream = createWriteStream(logPath, { flags: 'w' })
   const logClosed = new Promise<void>((resolve) => logStream.once('close', resolve))
-  // The config file MUST live inside the per-run temp root: without an
-  // explicit --config the binary would create/read kobato.config.json in
-  // its own directory or ~/.config and persist smoke secrets + the
-  // throwaway database path into real locations.
-  //
-  // Config vars (`storage__database`, `security__sessionSecret`, …) must
-  // NOT be inherited from the parent environment: a leaked value
-  // silently overrides the converged config file (env > file) — the
-  // file-only restart would then boot against a foreign database instead
-  // of the per-run smoke one. Config reaches the child only through the
-  // explicit `env` argument (and server__port below).
+  // The config file MUST live inside the per-run temp root (never next to
+  // the binary or ~/.config), and config vars must NOT come from the parent
+  // env — a leaked value silently overrides the converged file (env > file).
   const parentEnv = scrubbedParentEnv()
   const child = spawn(binaryPath, ['--config', join(dirs.root, 'kobato.config.json')], {
     cwd: dirs.cwd,
@@ -320,9 +284,7 @@ export async function waitForExit(server: SmokeServer, timeoutMs: number) {
   if (exitState.exited) {
     return { code: exitState.code, signal: exitState.signal, timeout: false }
   }
-  // Two single-resolution promises raced: the child's exit, or the timeout
-  // that SIGKILLs it. The loser resolves into the void (its listener/timer
-  // is discarded), so no promise ever resolves twice.
+  // Two single-resolution promises raced — the loser resolves into the void.
   const exited = new Promise<{ code: number | null; signal: NodeJS.Signals | null; timeout: boolean }>((resolve) => {
     child.once('exit', (code, signal) => resolve({ code, signal, timeout: false }))
   })

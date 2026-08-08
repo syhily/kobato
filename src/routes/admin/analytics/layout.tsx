@@ -10,9 +10,8 @@ import type { Route } from './+types/layout'
 
 export const meta = titleMeta('访问统计')
 
-// Layout is intentionally thin — the date-range picker + filters live on
-// the child routes so the realtime feed isn't forced to ignore the URL
-// params or run a no-op revalidation on every range change.
+// Intentionally thin — the date-range picker + filters live on the child
+// routes so the realtime feed isn't forced to react to range changes.
 export async function loader({ request, context }: Route.LoaderArgs) {
   const rc = getRequestContext({ request, context })
   const user = rc.viewer ?? undefined

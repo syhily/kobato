@@ -11,10 +11,7 @@ import { setWebmentionStatus, upsertWebmention } from '@/server/infra/db/operati
 import { post } from '@/server/infra/db/schema/post'
 import { webmention } from '@/server/infra/db/schema/webmention'
 
-// The public display surface (`public.webmention.list`, split-plan
-// notes-6 §3.1) against the real engine: metric-key resolution, the
-// double display gate, and the approved-only feed all run for real —
-// same discipline as the comment-public controller suite.
+// public.webmention.list (split-plan notes-6 §3.1) against the real engine — same discipline as the comment-public suite.
 const db = getTestDb()
 
 const TARGET_URL = 'https://example.com/posts/wm-target/'
@@ -33,8 +30,7 @@ async function seedLivePost(overrides: Partial<typeof post.$inferInsert> = {}): 
   return rows[0]!.id
 }
 
-/** The real page_key flow: `ensureMetric` fan-out (the same upsert the
- *  detail critical path runs) yields the public_id the client passes. */
+/** The real page_key flow: `ensureMetric` yields the public_id the client passes. */
 async function seedPageKey(type: 'post' | 'page', ownerId: number): Promise<string> {
   const row = await ensureMetric(db, { type, ownerId })
   return row.publicId

@@ -22,11 +22,8 @@ import {
 import { parseTextFilterValue, textFilterValueLabel } from '@/ui/admin/shared/filter-bar/text-filter'
 import { cn } from '@/ui/lib/cn'
 
-// One filter pill: the field label + icon on the left, the kind-specific
-// value editor in the middle, and the remove (×) button on the right. Pill
-// values are opaque strings at the interface — this component owns decoding
-// (with a never-throwing fallback to the editor default) and re-serialization.
-
+// One pill: label + icon, kind-specific value editor, remove button. Values are
+// opaque strings — this component owns decoding (never throws) + re-serialization.
 interface FilterPillProps<K extends string> {
   field: FilterFieldSpec<K> | undefined
   filter: ActiveFilter<K>

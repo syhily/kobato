@@ -10,8 +10,7 @@ export interface ActionBannerProps {
   onClose: () => void
 }
 
-// Shown after a save flow succeeds. The operator dismisses it manually; a
-// follow-up successful action replaces the banner in place.
+// Post-save banner — manually dismissed; a follow-up successful action replaces it in place.
 export function ActionBanner({ kind, slug, basePath, onClose }: ActionBannerProps) {
   const href = kind === 'draft' ? `${basePath}/${slug}?draft=true` : `${basePath}/${slug}`
   const message =

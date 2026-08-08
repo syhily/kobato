@@ -60,7 +60,6 @@ describe('server/images/render-enhance — resolveImageRef', () => {
     const result1 = await resolveImageRef(db, 'https://assets.example.com/images/categories/coding.jpg')
     expect(result1).not.toBeNull()
 
-    // Verify the cache row was written to kv_cache
     const cached = await db
       .select({ key: kvCache.key, bucket: kvCache.bucket })
       .from(kvCache)

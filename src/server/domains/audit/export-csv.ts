@@ -2,11 +2,9 @@ import type { auditLog } from '@/server/infra/db/schema/config'
 
 import { toAuditLogItemDto } from '@/server/domains/audit/projection'
 
-// Display-oriented CSV for spreadsheet export: standard quoting plus
-// formula-injection protection (cells starting with `=`, `+`, `-`, `@`
-// get a tab prefix). Distinct from `server/infra/csv.ts`, which follows
-// Postgres COPY semantics (`\N` nulls, no formula protection) — the two
-// models are intentionally not shared.
+// Display-oriented CSV for spreadsheet export: cells starting with `=`,
+// `+`, `-`, `@` get a tab prefix (formula-injection protection).
+// Intentionally distinct from `server/infra/csv.ts` (Postgres COPY semantics).
 const FORMULA_PREFIXES = new Set(['=', '+', '-', '@'])
 
 export function csvEscapeDisplay(value: string | number | null | undefined): string {
@@ -39,8 +37,7 @@ export interface AuditLogCsvOptions {
   includeFullIp?: boolean
 }
 
-// Builds the admin audit-log CSV export: BOM + header row + one row per
-// audit entry. `includeFullIp` swaps the masked IP column for the raw one.
+// BOM-prefixed UTF-8 output.
 export function buildAuditLogCsv(
   rows: Array<typeof auditLog.$inferSelect>,
   actorMap: Map<string, string>,

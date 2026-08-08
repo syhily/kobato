@@ -1,25 +1,7 @@
 /**
- * Client-bundle architecture guard.
- *
- * Walks `src/ui`, `src/client`, `src/routes` and `src/shared` — the layers
- * whose modules can reach the browser bundle — and fails if any of them
- * value-imports a Node-only specifier: a `node:*` builtin (or its bare
- * alias), or a package whose dependency chain only resolves under Node. The
- * last leak of this kind surfaced as a vite externalization warning plus a
- * runtime break in the browser (sanitize-html → postcss, fixed in 31b49a6e);
- * this guard turns the next one into a CI failure.
- *
- * Route modules legitimately value-import `@/server/*` for their loaders —
- * the React Router compiler strips loader/action from the client build — so
- * only direct node-only specifiers are denied there, not server aliases. A
- * route that pulls a server module into its RENDER path (the settings
- * services/core leak) stays invisible to this scan: keep server imports
- * loader-only and project through `@/shared/*` (src/routes/AGENTS.md).
- *
- * Type-only imports (`import type …`) are erased at build time and ignored.
- *
- * Maintenance: when a new Node-only dependency enters devDependencies,
- * review whether it belongs in NODE_ONLY_PACKAGES below.
+ * Client-bundle architecture guard: fails when the client layers value-import a
+ * node-only specifier. Routes may import `@/server/*` for loaders only; keep
+ * server imports out of render paths. New node-only deps go in NODE_ONLY_PACKAGES.
  */
 import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -85,8 +67,7 @@ const NODE_ONLY_PACKAGES: readonly NodeOnlyPackage[] = [
   {
     name: 'sanitize-html',
     reason: 'pulls postcss/source-map-js and node builtins',
-    // The vite `sanitize-html-engine-alias` plugin swaps this specifier to
-    // the DOMPurify engine for the client build (vite.config.ts).
+    // Swapped client-side to the DOMPurify engine by the `sanitize-html-engine-alias` plugin (vite.config.ts).
     allowedIn: ['src/ui/lib/sanitize-html-engine.node.ts'],
   },
   // sanitize-html's transitive leak chain — not direct deps, kept pre-armed.

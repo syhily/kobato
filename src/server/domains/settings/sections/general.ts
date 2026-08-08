@@ -2,12 +2,8 @@ import { z } from 'zod'
 
 import { isSupportedTimeZone } from '@/server/domains/settings/timezones'
 
-// `locale` is a BCP 47 tag (e.g. `zh-CN`); `timeZone` is an IANA name
-// (e.g. `Asia/Shanghai`); `timeFormat` is the project's small token
-// language consumed by `formatLocalDate` (`yyyy LL MM dd HH mm`). Date
-// fields live alongside site identity now so `/admin/settings/general`
-// owns every "what does the site call itself, in what language" knob in
-// one place.
+// `locale` is a BCP 47 tag; `timeZone` an IANA name; `timeFormat` a small token
+// language consumed by `formatLocalDate` (`yyyy LL MM dd HH mm`).
 export const generalSchema = z.object({
   title: z.string().trim().min(1).max(120),
   description: z.string().trim().min(1).max(240),
@@ -19,10 +15,7 @@ export const generalSchema = z.object({
     url: z.url(),
   }),
   locale: z.string().trim().min(2).max(35),
-  // The dropdown UI only offers values from `Intl.supportedValuesOf`,
-  // but we still validate at the perimeter so a hand-crafted POST that
-  // bypasses the picker can't smuggle a bogus zone into the JSONB
-  // document — the formatters would silently throw at render time.
+  // Perimeter validation: a hand-crafted POST bypassing the picker must not smuggle a bogus zone.
   timeZone: z
     .string()
     .trim()
@@ -35,8 +28,7 @@ export const generalSchema = z.object({
   moeIcpNo: z.string().trim().max(60).optional(),
 })
 
-// `general` ships no seed: the setup-time first write arrives complete
-// from the install form (`services/install-flow.ts`).
+// No seed: the setup-time first write arrives complete from the install form.
 export const generalSection = {
   scope: 'blog.general',
   key: 'siteIdentity',

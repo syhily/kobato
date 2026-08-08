@@ -38,8 +38,7 @@ export function buildBackupS3Key(timestamp: string): string {
 }
 
 function parseTimestampFromKey(key: string): string | null {
-  // Both archive generations: the two-file `.db.tar.gz` and the legacy
-  // content-only `.db.gz` (still restorable — see services/restore).
+  // Both archive generations: `.db.tar.gz` and legacy content-only `.db.gz`.
   const match = key.match(/^backup\/backup-(.+)\.db(?:\.tar)?\.gz$/)
   if (match === null) {
     return null
@@ -47,20 +46,12 @@ function parseTimestampFromKey(key: string): string | null {
   return isValidBackupKey(match[1]) ? match[1] : null
 }
 
-/**
- * Self-healing reconcile: scan both backends for `backup/*.db.gz` and
- * `backup/*.db.tar.gz` objects that have no DB row and insert them.
- * Picks up pre-existing S3 backups on first run after upgrade, plus any
- * files a migration left behind. Cheap (the `backup/` prefix holds a
- * handful of objects) and idempotent via the `storage_path` unique
- * constraint.
- */
+/** Reconcile: insert DB rows for backend objects that have none — idempotent
+ * via the `storage_path` unique constraint. */
 async function reconcileBackups(db: Database): Promise<void> {
   const known = new Set(await listBackupStoragePaths(db))
   const candidates: { key: string; size: number; driver: 's3' | 'local' }[] = []
-  // Scan every registered backend (s3 first, then local — a key present in
-  // both is attributed to s3). A listing failure in one backend must not
-  // abort the scan of the others.
+  // A listing failure in one backend must not abort the scan of the others.
   for (const { backend, driver } of allBackends()) {
     try {
       for (const obj of await backend.list('backup/')) {
@@ -89,29 +80,16 @@ async function reconcileBackups(db: Database): Promise<void> {
   }
 }
 
-// The analytics sidecar snapshot is injected by the composition root
-// (`@/server/bootstrap/db-lifecycle`, which owns the analytics engine)
-// at wire time — a direct import of bootstrap/analytics-lifecycle here
-// would invert the dependency direction (domain → composition root) and
-// risk an import cycle. Same injection discipline as
-// `wireBackupScheduler` in `@/server/domains/backup/scheduler`.
+// Snapshot fn injected by the composition root at wire time (avoids the domain → bootstrap cycle).
 let snapshotAnalytics: ((stagingPath: string) => Promise<boolean>) | null = null
 
 export function wireBackupSnapshots(deps: { snapshotAnalyticsTo: (stagingPath: string) => Promise<boolean> }): void {
   snapshotAnalytics = deps.snapshotAnalyticsTo
 }
 
-// Single-flight claim for backup creation — the timestamp has SECOND
-// precision and names the S3 key and DB row, so two backups starting in
-// the same second collide: the loser's `VACUUM INTO` failed opaquely on
-// the shared staging file, or its insert hit `uq_backup_storage_path`.
-// Occupied/free slot (the restore machine's `tryBeginRestore` shape —
-// share-in-flight does NOT apply: a second backup must never join the
-// first's archive); failure: release — the `finally` in `createBackup`
-// always frees the claim, so a crashed attempt never wedges the slot.
+// Single-flight: same-second timestamps would collide on the S3 key and DB row.
 let backupRunning = false
 
-/** Atomically claim the backup slot: true when this caller got it. */
 export function tryBeginBackup(): boolean {
   if (backupRunning) {
     return false
@@ -140,25 +118,17 @@ async function createBackupUnchecked(
 ): Promise<{ fileName: string; size: number; timestamp: string }> {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
   const key = buildBackupS3Key(timestamp)
-  // Per-attempt staging suffix: the single-flight claim is process-local,
-  // so a stale file a crashed same-second attempt left behind (or another
-  // process on the same host) must never collide with this run's
-  // `VACUUM INTO` target.
+  // Unique per-attempt suffix — a stale file from a crashed attempt must not collide.
   const attemptId = randomBytes(6).toString('hex')
   const stagingPath = path.join(tmpdir(), `kobato-backup-${timestamp}-${attemptId}.db`)
   const analyticsStagingPath = path.join(tmpdir(), `kobato-backup-${timestamp}-${attemptId}.duckdb`)
 
   log.info('Starting backup', { key })
 
-  // `VACUUM INTO` produces a consistent, fully-checkpointed copy of the
-  // live content database in one step — no WAL sidecars to chase, and
-  // (as a defragmented rewrite) a smaller file than the live one. The
-  // DuckDB sidecar checkpoints through its writer and is copied
-  // byte-for-byte — append-only telemetry tolerates the handoff.
+  // `VACUUM INTO`: a consistent, fully-checkpointed copy in one step; the sidecar is copied byte-for-byte.
   db.run(sql.raw(`VACUUM INTO '${stagingPath.replaceAll("'", "''")}'`))
 
-  // Unwired is a composition-root bug, not an expendable-sidecar
-  // condition — fail loudly instead of silently archiving content only.
+  // Unwired snapshot fn is a composition-root bug — fail loudly, don't archive content only.
   const snapshot = snapshotAnalytics
   if (snapshot === null) {
     throw new Error('createBackup ran before wireBackupSnapshots')
@@ -171,27 +141,20 @@ async function createBackupUnchecked(
         entries.push({ name: 'analytics.duckdb', path: analyticsStagingPath, size: 0 })
       }
     } catch (error) {
-      // The sidecar is expendable telemetry: a missing/closed analytics
-      // handle never blocks the content backup.
+      // Sidecar is expendable — never block the content backup on it.
       log.warn('Backup: analytics sidecar unavailable; archiving content only', {
         err: error instanceof Error ? error.message : String(error),
       })
     }
 
-    // Streaming archive: tar headers + file contents flow through gzip
-    // into the backend — a full database file is never held in memory.
+    // Streaming archive — a full database file is never held in memory.
     entries.unshift({ name: 'kobato.db', path: stagingPath, size: 0 })
     for (const entry of entries) {
       entry.size = statSync(entry.path).size
     }
     const gzip = createGzip()
     const { backend, driver } = activeBackend()
-    // The stored size comes from the backend's return value — never from a
-    // `gzip.on('data')` counter: attaching a 'data' listener flips the gzip
-    // stream into flowing mode, bypassing the pipe's backpressure and
-    // racing the backend consumer, which deterministically dropped the
-    // first chunk (the 10-byte gzip header) against the local backend's
-    // pipeline while the counter still counted it.
+    // Stored size comes from the backend's return value — never a gzip 'data' listener.
     const stored = await backend.putStream({
       key,
       body: createTarReadStream(entries).pipe(gzip),
@@ -250,13 +213,8 @@ export async function getBackupBuffer(db: Database, timestamp: string): Promise<
   return backendFor(row.storageDriver).get(row.storagePath)
 }
 
-/**
- * The unbuffered read: a stream, so neither the restore staging pipeline
- * nor the download endpoint ever holds the archive in memory — backups
- * run to `MAX_BACKUP_FILE_SIZE` (500MB), well past the 100MB cap buffered
- * reads (`get` / `getBackupBuffer`) enforce. `byteSize` (the recorded
- * upload size) rides along so the download route can set Content-Length.
- */
+/** Unbuffered read: a stream, so neither the restore pipeline nor the download
+ * endpoint holds the archive in memory. `byteSize` lets the route set Content-Length. */
 export async function getBackupStream(
   db: Database,
   timestamp: string,
@@ -275,12 +233,7 @@ export async function deleteBackup(db: Database, timestamp: string): Promise<voi
     log.warn('Backup delete: row not found; nothing to delete', { timestamp })
     return
   }
-  // Intentional best-effort: if the storage delete fails (e.g. the object
-  // was already pruned, or the backend is momentarily unreachable) we still
-  // drop the DB row so the admin action succeeds. `reconcileBackups`
-  // (called from `listBackups`) re-registers any orphaned file it rediscovers
-  // in either backend, so a leftover object self-heals back into the list
-  // rather than leaking silently.
+  // Best-effort delete: drop the row even if storage removal fails; `reconcileBackups` re-registers orphans.
   try {
     await backendFor(row.storageDriver).delete(row.storagePath)
   } catch (error) {

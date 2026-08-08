@@ -14,8 +14,7 @@ const CONTENT_TYPES = {
   atom: 'application/atom+xml; charset=utf-8',
 } as const
 
-// Centralised cache headers for syndication feeds, applied to every feed
-// response so all six feed URLs share one cache policy.
+// One cache policy for all six feed URLs.
 function feedHeaders(kind: 'rss' | 'atom'): HeadersInit {
   return {
     'Content-Type': CONTENT_TYPES[kind],
@@ -42,16 +41,9 @@ async function writeFeedResponse(c: Context<Env>, kind: 'rss' | 'atom', scope?: 
   return c.body(kind === 'rss' ? feed.rss : feed.atom)
 }
 
-// Every handler knows its scope at compile time: the site-wide feeds pass no
-// scope, the category/tag feeds pin their own taxonomy kind with the slug
-// route param. The per-IP resource rate limit guards all of them with the
-// standard API error shape (`{ error: { message } }`, 429).
-//
-// The limiter is passed per route, NEVER via router-level `.use()`: this
-// router is mounted at `/` in the pipeline, where a bare `.use()` registers
-// as a site-wide middleware — every public SSR page view then counts
-// against the feed bucket, and one IP's 60 page loads/minute 429 the whole
-// site (caught in e2e as `429 { key: 'feed', path: '/sitemap.xml' }`).
+// Scope is known at compile time per handler; the per-IP resource limiter
+// guards all feeds. Passed per route, NEVER router-level `.use()` — mounted
+// at `/`, a bare `.use()` would count every SSR page view against the bucket.
 const feedRateLimit = rateLimitByIp('feed', 'resourceIp')
 
 export const feedRouter = new Hono<Env>()

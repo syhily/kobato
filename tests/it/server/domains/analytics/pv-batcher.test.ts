@@ -6,11 +6,8 @@ import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
 import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
 import { ensureMetric, findMetricByTarget } from '@/server/infra/db/operations/metric'
 
-// The page-view batcher against the real engine: flushes land in the
-// real `metric` table through the real `incrementMetricPvBatch`. A
-// flush failure is induced with a real TEMP trigger that aborts every
-// metric UPDATE, so the merge-back recovery is verified end-to-end —
-// including the transaction rollback that leaves the counters intact.
+// The page-view batcher against the real engine; flush failures are induced
+// with a real TEMP trigger, so merge-back recovery is verified end-to-end.
 
 const db = getTestDb()
 
@@ -20,7 +17,6 @@ async function freshBatcher() {
   return mod
 }
 
-/** Make every metric UPDATE fail until `healMetricUpdates` runs. */
 function failMetricUpdates(): void {
   db.run(sql`
     CREATE TEMP TRIGGER it_fail_metric_update
@@ -63,12 +59,10 @@ describe('analytics/pv-batcher', () => {
 
     failMetricUpdates()
 
-    // 3 increments before flush
     bumpPageView({ type: 'post', ownerId: 1 })
     bumpPageView({ type: 'post', ownerId: 1 })
     bumpPageView({ type: 'post', ownerId: 2 })
 
-    // Start flush; during the async window, 2 more increments land
     const flushPromise = flushPageViews()
 
     // These go into the NEW buffer while the snapshot is in-flight
@@ -81,9 +75,7 @@ describe('analytics/pv-batcher', () => {
     expect(await pvOf('post', 1)).toBe(0)
     expect(await pvOf('post', 2)).toBe(0)
 
-    // Snapshot: post:1=2, post:2=1
-    // New buffer during flush: post:1=1, post:2=1
-    // Recovery merges them: post:1=3, post:2=2 — exactly the 5 bumps.
+    // Recovery merges snapshot (2/1) with the new buffer (1/1): 3/2.
     healMetricUpdates()
     await flushPageViews()
 
@@ -100,8 +92,7 @@ describe('analytics/pv-batcher', () => {
     await flushPageViews()
     expect(await pvOf('post', 1)).toBe(1)
 
-    // Second flush is a no-op because the buffer is empty — the count
-    // must not move.
+    // Second flush is a no-op: the empty buffer must not move the count.
     await flushPageViews()
     expect(await pvOf('post', 1)).toBe(1)
   })

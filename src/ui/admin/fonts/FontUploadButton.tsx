@@ -16,12 +16,8 @@ import {
 } from '@/ui/components/dialog'
 import { Input } from '@/ui/components/input'
 
-// Web-font upload button + dialog: name input → upload progress →
-// success/error result. Uses the dedicated resource route (not oRPC, which
-// sits behind the request-wide body limit) because source fonts can be
-// 60 MiB; slicing runs synchronously server-side (~15–20s for CJK), so the
-// progress phase holds until the response returns.
-
+// Web-font upload via the dedicated resource route, not oRPC — fonts can be
+// 60 MiB and oRPC sits behind the request-wide body limit.
 type UploadPhase =
   | { kind: 'idle' }
   | { kind: 'input'; file: File; familyName: string }
@@ -38,10 +34,7 @@ export function FontUploadButton() {
 
   const dialogOpen = phase.kind !== 'idle'
 
-  // The upload options close over the family name from the click-time
-  // render, so the guards, multipart fields, and result phases keep the
-  // value the user saw even after the phase advances and the name
-  // re-renders empty.
+  // Options close over the click-time family name so the phases keep the value the user saw.
   const inputFamilyName = phase.kind === 'input' ? phase.familyName : ''
   const trimmedFamilyName = inputFamilyName.trim()
 
@@ -67,7 +60,6 @@ export function FontUploadButton() {
     },
   })
 
-  // Focus the family-name input when the dialog enters the input phase.
   useEffect(() => {
     if (phase.kind === 'input') {
       const id = requestAnimationFrame(() => familyInputRef.current?.focus())
@@ -75,7 +67,6 @@ export function FontUploadButton() {
     }
   }, [phase.kind])
 
-  // Reset everything when the dialog closes.
   const reset = () => setPhase({ kind: 'idle' })
 
   const startUpload = async (file: File) => {
@@ -133,8 +124,6 @@ export function FontUploadButton() {
     </>
   )
 }
-
-// ---- phase sub-components --------------------------------------------------
 
 function UploadInputPhase({
   familyName,

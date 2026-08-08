@@ -36,9 +36,7 @@ function WebmentionCard({ mention }: { mention: PublicWebmentionWire }) {
   )
 }
 
-/** Compact group for the lightweight interactions (likes / reposts):
- *  a row of linked author names instead of full cards — there is no
- *  title or summary worth a card on a bare like. */
+/** Compact author-row group for likes / reposts — no title or summary worth a card. */
 function CompactGroup({ label, mentions }: { label: string; mentions: PublicWebmentionWire[] }) {
   if (mentions.length === 0) {
     return null
@@ -63,11 +61,8 @@ function CompactGroup({ label, mentions }: { label: string; mentions: PublicWebm
 }
 
 /**
- * 「引用与回应」— approved webmentions under a post/page, grouped by the
- * mf2 response type: replies and plain mentions render as cards, likes
- * and reposts as compact author rows. Pure props and SSR-only (no client
- * interaction, matching the zero-JS-dependency rule for public display
- * blocks). Renders no DOM at all when there is nothing approved to show.
+ * 「引用与回应」— approved webmentions grouped by mf2 type: replies/mentions as
+ * cards, likes/reposts as compact rows. Pure props, SSR-only.
  */
 export function WebmentionList({ mentions }: { mentions: PublicWebmentionWire[] }) {
   if (mentions.length === 0) {

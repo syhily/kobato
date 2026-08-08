@@ -12,16 +12,12 @@ export function setCsrfToken(token: string) {
 }
 
 /**
- * Typed oRPC client. Every procedure under `apiRouter` is available
- * as a strongly-typed async function. Errors are normalized as
- * `ORPCError` instances.
+ * Typed oRPC client: every `apiRouter` procedure is a strongly-typed async
+ * function; errors normalize as `ORPCError`.
  */
 const link = new RPCLink({
-  // RPCLink does `new URL(baseUrl)` internally, which throws on relative
-  // inputs ("Invalid URL"), so `/rpc` is resolved against `location.origin`
-  // lazily: this module is import-transitively reachable from SSR typing code
-  // and must not touch `window` at module load, and per-call reads keep
-  // Storybook / Vitest `location` stubs honest.
+  // RPCLink's `new URL(baseUrl)` throws on relative inputs, so resolve `/rpc`
+  // against `location.origin` lazily per call — never at module load.
   url: () => `${globalThis.location?.origin ?? 'http://localhost'}/rpc`,
   headers: () => {
     const h: Record<string, string> = {}

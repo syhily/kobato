@@ -11,21 +11,16 @@ import {
 } from '@/server/domains/analytics/services/duckdb-sql'
 import { isRecord } from '@/shared/utils/type-guards'
 
-// ─── SSE connection registry ─────────────────────────────────────────────
-// The `/api/analytics/events` resource owns only the Hono/SSE wire
-// plumbing; the per-session connection bookkeeping and the cap policy
-// live here, next to the tail query the stream polls.
+// Per-session SSE connection bookkeeping + cap policy for
+// `/api/analytics/events`, next to the tail query the stream polls.
 
 const MAX_REALTIME_CONNECTIONS_PER_SESSION = 2
 
-// Per-session connection counter. Node.js is single-threaded, so a plain
-// Map is safe. If worker threads are ever introduced, this state must move
-// to the main thread only.
+// Per-session connection counter — a plain Map is safe (single-threaded);
+// keep this state off any future worker threads.
 const activeSSEConnections = new Map<string, number>()
 
-/** Cap key for one realtime consumer: the session id when the request
- *  carries one, else a truncated SHA-256 of the client address — the raw
- *  IP is never used as a map key. */
+/** Cap key: session id when present, else a truncated SHA-256 of the client address — the raw IP is never used as a map key. */
 export function realtimeConnectionKey(sessionId: string | null | undefined, clientAddress: string): string {
   if (sessionId) {
     return `session:${sessionId}`
@@ -35,9 +30,8 @@ export function realtimeConnectionKey(sessionId: string | null | undefined, clie
 
 /**
  * Take one of the per-key realtime-connection slots. Returns an
- * idempotent release function, or `null` when the key is already at
- * MAX_REALTIME_CONNECTIONS_PER_SESSION (the caller maps that to 429).
- * Acquisition is synchronous, so check-and-increment cannot race.
+ * idempotent release function, or `null` at the cap (caller maps
+ * that to 429).
  */
 export function acquireRealtimeConnection(key: string): (() => void) | null {
   const current = activeSSEConnections.get(key) ?? 0
@@ -60,9 +54,7 @@ export function acquireRealtimeConnection(key: string): (() => void) | null {
   }
 }
 
-/** Test seam: total live connections across all registry keys, so tests
- *  can wait on the release path (abort → decrement) instead of sleeping
- *  a fixed duration and hoping the event propagated. */
+/** Test seam: total live connections across all registry keys. */
 export function __getRealtimeConnectionCountForTests(): number {
   let total = 0
   for (const count of activeSSEConnections.values()) {
@@ -89,9 +81,8 @@ export async function queryRealtimeTail(reader: AnalyticsReader, sinceTs: Date, 
     LIMIT ?`,
     [epochMsParam(sinceTs), BigInt(limit)],
   )
-  // Non-record rows are skipped, never manufactured: a placeholder with
-  // `ts: ''` would surface downstream as an Invalid Date and a NaN
-  // epoch binding on the next poll.
+  // Non-record rows are skipped, never manufactured — a placeholder would
+  // surface downstream as Invalid Date / NaN binding on the next poll.
   return rows.filter(isRecord).map((row) => ({
     ts: new Date(timestampToMs(row.ts)).toISOString(),
     path: typeof row.path === 'string' ? row.path : '',

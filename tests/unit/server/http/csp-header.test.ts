@@ -5,15 +5,11 @@ import type { BlogSettingsBundle } from '@/shared/config/types'
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { buildCspHeader } from '@/server/http/middleware-pipeline'
 
-// `buildCspHeader` is a pure function: given a bundle + nonce + dev flag it
-// returns the CSP string. These tests exercise the REAL production logic
-// (font origin extraction, asset host, dev-mode unsafe-inline/blob workers)
-// rather than a parallel inline copy — closing the gap called out in the
-// legacy `tests/it/server/http/csp-middleware.test.ts` comment.
+// Exercises the real production `buildCspHeader` (bundle + nonce + dev flag
+// → CSP string), not a parallel inline copy.
 
 const NONCE = 'abcdef0123456789'
 
-/** Build a minimal bundle carrying only the fields `buildCspHeader` reads. */
 function bundleWith(overrides: { host?: string | null }): BlogSettingsBundle {
   return {
     ...TEST_BLOG_SETTINGS_BUNDLE,
@@ -50,9 +46,6 @@ describe('buildCspHeader', () => {
   })
 
   it('does NOT inject any per-font origin (self-hosted fonts are served from self / asset host)', () => {
-    // Self-hosted web fonts live under /fonts/embedded/* (local) or the asset
-    // CDN host (S3); both are already covered by 'self' / the asset host.
-    // No external font origin (Google Fonts etc.) should ever appear.
     const csp = buildCspHeader({ bundle: bundleWith({ host: null }), nonce: NONCE, isDev: false })
     expect(csp).not.toContain('fonts.googleapis.com')
     expect(csp).not.toContain('fonts.bunny.net')
@@ -62,7 +55,6 @@ describe('buildCspHeader', () => {
   it('adds the asset host as an https origin', () => {
     const csp = buildCspHeader({ bundle: bundleWith({ host: 'cdn.example.com' }), nonce: NONCE, isDev: false })
     expect(csp).toContain('https://cdn.example.com')
-    // The asset host must land in style-src / font-src / img-src / media-src.
     expect(csp).toContain('style-src ' + "'self' 'unsafe-inline'  https://cdn.example.com")
     expect(csp).toContain('font-src ' + "'self'  https://cdn.example.com")
     expect(csp).toContain('img-src ' + "'self' data: blob:  https://cdn.example.com")
@@ -70,11 +62,8 @@ describe('buildCspHeader', () => {
 
   it('handles a null bundle without throwing', () => {
     const csp = buildCspHeader({ bundle: null, nonce: NONCE, isDev: false })
-    // No external origins: the "extra" suffix collapses to empty so
-    // directives keep their trailing space but no bogus origin appears.
     expect(csp).toContain("default-src 'self'")
     expect(csp).toContain("connect-src 'self'")
-    // No `https://` host leaks in when nothing was configured.
     expect(csp).not.toMatch(/https:\/\/[^']/)
   })
 

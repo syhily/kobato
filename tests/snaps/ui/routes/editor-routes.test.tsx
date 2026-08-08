@@ -4,13 +4,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { Outlet, useOutletContext, createMemoryRouter, RouterProvider, type RouteObject } from 'react-router'
 import { describe, expect, it } from 'vitest'
-// SSR-render the editor route `Component` exports. These routes render
-// TipTap-based editors that cannot fully SSR, but the route wrapper
-// functions themselves (loader gate, navigate wiring, layout context)
-// are pure and run synchronously before the editor mounts. We assert
-// the wrapper produces output without throwing; if a route cannot SSR
-// at all, we `it.skip` it with a comment so the wrapper is still
-// imported (covering the module-load side) but not asserted.
+// SSR-render the editor route Component wrappers (loader gate, navigate
+// wiring, layout context) — the TipTap editors themselves can't fully SSR,
+// so assert the wrapper produces output without throwing.
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
@@ -24,9 +20,7 @@ import PostNewRouteRaw from '@/routes/editor/post/new'
 import { BlogSettingsProvider } from '@/shared/lib/blog-config-context'
 import { ThemeProvider } from '@/ui/lib/ThemeProvider'
 
-// Generated `Route.ComponentProps` types are strict (params/matches/…);
-// `asRoute` widens the prop bag so tests only supply the fields each
-// route actually reads.
+// `asRoute` widens the strict ComponentProps so tests supply only the fields each route reads.
 const EditorLayoutRoute = asRoute(EditorLayoutRouteRaw)
 const PageEditRoute = asRoute(PageEditRouteRaw)
 const PageNewRoute = asRoute(PageNewRouteRaw)
@@ -42,8 +36,7 @@ const testQueryClient = new QueryClient({
 
 describe('editor routes — Component SSR renders', () => {
   it('editor/layout forwards currentUser to its outlet', () => {
-    // The layout renders <Outlet context={{ currentUser }} />. We put a
-    // probe child in the outlet to confirm the context flows through.
+    // Probe child confirms the layout's outlet context flows through.
     const html = stableHtml(
       renderNested('/editor/post/new', {
         parent: {},
@@ -75,10 +68,7 @@ describe('editor routes — Component SSR renders', () => {
   })
 
   it('editor/post/edit mounts the PostEditorRoute loader (detail query pending → skeleton)', () => {
-    // The route wires useNavigate + PostEditorRoute → EditorRouteLoader.
-    // Under SSR the detail query never leaves `pending`, so the stable
-    // output is the editor skeleton — assert the mount marker and that
-    // the wrapper did not fall into the error branch.
+    // Under SSR the detail query stays pending → editor skeleton; assert the mount marker, not the error branch.
     const html = stableHtml(renderInRouter(<PostEditRoute loaderData={null} params={{ id: '7' }} />, '/editor/post/7'))
     expect(html).toContain('min-h-admin-content-min')
     expect(html).not.toContain('无法打开文章编辑器')
@@ -86,10 +76,8 @@ describe('editor routes — Component SSR renders', () => {
 
   it('editor/post/new renders the PostEditorShell (create mode) wrapper', () => {
     const html = stableHtml(renderInRouter(<PostNewRoute loaderData={null} />, '/editor/post/new'))
-    // Title/slug strip — the editor mount point.
     expect(html).toContain('placeholder="文章标题"')
     expect(html).toContain('aria-label="URL slug"')
-    // Create-mode banner + toolbar chrome.
     expect(html).toContain('点击「创建文章」后才会同步到服务器')
     expect(html).toContain('返回列表')
   })
@@ -109,13 +97,7 @@ describe('editor routes — Component SSR renders', () => {
   })
 })
 
-/**
- * Three-level nested router. The root route provides `parent` context
- * via `<Outlet context>`; an optional `middle` element (e.g. a layout
- * route that re-emits context) sits between root and the leaf; the
- * leaf is `child`. Used for routes like editor/layout that both
- * consume a parent context and forward a richer one to their outlet.
- */
+/** Three-level router: root provides `parent` context, optional `middle` re-emits it, leaf is `child`. */
 function renderNested(
   initialPath: string,
   layers: {
@@ -148,7 +130,6 @@ function OutletContextProvider({ context }: { context: Record<string, unknown> }
   return <Outlet context={context} />
 }
 
-/** Reads the forwarded `currentUser` from the editor layout's outlet. */
 function CurrentUserProbe() {
   const ctx = useOutletContext<{ currentUser?: { name: string } }>()
   return <div data-testid="probe">{ctx?.currentUser?.name ?? ''}</div>

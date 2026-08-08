@@ -9,17 +9,9 @@ import { content as contentTable } from '@/server/infra/db/schema/content'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { DomainError } from '@/server/infra/http/errors'
 
-// Merged-lifecycle contract tests against the real engine: the repo
-// layer (`saveDraftRevision` / `publishLatestRevision` / the revision
-// queries) runs against real `content` / `post` rows, so every former
-// `toHaveBeenCalledWith` repo assertion is now a table-state assertion.
-// The entity adapter stays fake — it is the SUT's declared seam, so
-// `recordForceOverwrite` callback assertions are kept. `image-sync`
-// runs in spy mode: the real sync executes everywhere except the one
-// degraded-save case, which forces a single rejection through the spy
-// (no seedable data state makes the real sync throw — a body block
-// referencing a missing library image is skipped by design, see
-// image-sync.test.ts).
+// Real repo layer (repo assertions read table state); the entity adapter
+// stays fake — the SUT's declared seam. image-sync runs in spy mode to
+// force one rejection no real state can produce.
 vi.mock('@/server/domains/content/services/image-sync', { spy: true })
 vi.mock('@/server/domains/content/revisions', { spy: true })
 
@@ -116,7 +108,6 @@ describe('content/lifecycle — saveBody validation', () => {
     await expect(
       saveBody(db, adapter, { entityId: 1, body: [{ _type: 'unknown', _key: 'k' }], authorId: null }, 'draft'),
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
-    // No revision row was written.
     expect(await allRevisions()).toHaveLength(0)
   })
 
@@ -150,10 +141,7 @@ describe('content/lifecycle — saveBody degraded sync', () => {
 describe('content/lifecycle — saveBody force overwrite', () => {
   it('records the overwrite against the latest revision when tokens mismatch', async () => {
     const meta = await seedPost()
-    // Seed a PUBLISHED revision as the latest: the overwrite context must
-    // come from the latest revision of any status, not the latest draft —
-    // with only a published row present, a `findLatestDraft` context would
-    // find nothing and skip the audit entirely.
+    // The overwrite context comes from the latest revision of ANY status, not the latest draft.
     const overwritten = await seedRevision(meta.id, {
       revisionNo: 9,
       status: 'published',
@@ -179,12 +167,10 @@ describe('content/lifecycle — saveBody force overwrite', () => {
     expect(entry.mode).toBe('draft')
     expect(entry.authorId).toBe(42)
     expect(entry.meta.id).toBe(meta.id)
-    // The overwritten context is the seeded published row.
     expect(entry.overwritten.id).toBe(overwritten.id)
     expect(entry.overwritten.clientRevisionToken).toBe('server-side-newer')
     expect(entry.expectedClientRevisionToken).toBe('client-thought-this')
 
-    // The result row is the freshly inserted draft revision in the table.
     const rows = await revisionsOf(meta.id)
     expect(rows).toHaveLength(2)
     const latest = rows[1]!
@@ -220,11 +206,7 @@ describe('content/lifecycle — saveBody force overwrite', () => {
   })
 
   it('propagates a revision-read failure on the force path instead of silently dropping audit context', async () => {
-    // Audit P1-25: "read failed" must not be treated as "no prior
-    // revision" — on the force path (the one that most needs the audit
-    // trail) a transient DB error aborts the save loudly. Spy mode keeps
-    // the real query everywhere else; only this one read rejects (no
-    // seedable table state makes the real read throw on a live engine).
+    // Audit P1-25: a read failure on the force path must abort loudly, never be treated as "no prior revision".
     const meta = await seedPost()
     await seedRevision(meta.id, { status: 'published', clientRevisionToken: 'server-token' })
     const { adapter, recordForceOverwrite } = makeAdapter({ id: meta.id, publishedRevisionId: null })
@@ -234,8 +216,7 @@ describe('content/lifecycle — saveBody force overwrite', () => {
       saveBody(db, adapter, { entityId: meta.id, body: VALID_BODY, authorId: 42, force: true }, 'draft'),
     ).rejects.toThrow('transient read failure')
 
-    // The save aborted before the repo write: only the seeded revision
-    // remains, and no force-overwrite audit was recorded.
+    // Aborted before the repo write: only the seeded revision remains.
     expect(await revisionsOf(meta.id)).toHaveLength(1)
     expect(recordForceOverwrite).not.toHaveBeenCalled()
   })
@@ -283,8 +264,7 @@ describe('content/lifecycle — saveBody publish side effects', () => {
 
     expect(result.status).toBe('saved')
     expect(afterPublish).toHaveBeenCalledTimes(1)
-    // The publish landed: revision row is published and the post meta
-    // points at it.
+    // Publish landed: revision published, post meta points at it.
     const rows = await revisionsOf(meta.id)
     expect(rows).toHaveLength(1)
     expect(rows[0]!.status).toBe('published')

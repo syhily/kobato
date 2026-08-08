@@ -15,10 +15,9 @@ export function entityPermalink(type: 'post' | 'page', slug: string): string {
 }
 
 /**
- * Fully-qualified URL with trailing slash — the shape comment / metric
- * rows used to store as the URL `page_key`. Used at email-send time so
- * notification permalinks always reflect the current `siteIdentity.website`
- * and the current canonical slug.
+ * Fully-qualified URL with trailing slash — the shape stored as
+ * `page_key`. Used at email-send time so permalinks reflect the current
+ * website + canonical slug.
  */
 export function entityCommentUrl(type: 'post' | 'page', slug: string): string {
   const website = requireBlogSettingsSection('siteIdentity').website
@@ -35,15 +34,13 @@ export function trimSiteSuffix(title: string | null): string {
   return trim
 }
 
-// When a post is fetched via one of its aliases, return the canonical
-// `/posts/<slug>` so the route can issue a 301 redirect. Returns `undefined`
-// when the requested slug is already the canonical one (no redirect needed).
+// Non-canonical requested slug → canonical `/posts/<slug>` for a 301;
+// `undefined` when the requested slug is already canonical.
 export function canonicalPostPath(requestedSlug: string | undefined, canonicalSlug: string): string | undefined {
   return requestedSlug !== undefined && requestedSlug !== canonicalSlug ? `/posts/${canonicalSlug}` : undefined
 }
 
-// Build the canonical URL for page `pageNum` under `rootPath`. Page 1 of a
-// listing is the bare root URL (no `/page/1` suffix) for canonical collapse.
+// Page 1 of a listing is the bare root URL (no `/page/1` suffix) for canonical collapse.
 export function pagePath(rootPath: string, pageNum: number): string {
   if (pageNum <= 1) {
     return rootPath

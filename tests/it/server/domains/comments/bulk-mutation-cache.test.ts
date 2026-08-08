@@ -8,9 +8,7 @@ import { kvCache } from '@/server/infra/db/schema/kv-cache'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
 
-// The comments service module pulls the email sender in transitively.
-// The bulk comment paths never send mail, but stub the boundary so the
-// module graph can never reach the network.
+// Stub the email boundary so the module graph never reaches the network.
 vi.mock('@/server/infra/email/sender', () => ({
   sendAuthorInvite: vi.fn(),
   sendPasswordReset: vi.fn(),
@@ -20,15 +18,9 @@ vi.mock('@/server/infra/email/sender', () => ({
 const { setBlogSettingsBundleForTests } = await import('#/_helpers/blog-settings')
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('#/_helpers/blog-settings')
 
-// Import the comments-domain service entry points AFTER the mocks are
-// registered. The invariant under test: these bulk mutations reach the
-// comments domain's repo mutations, which clear the sidebar
-// latest-comments cache inline — forgetting the invalidation is
-// impossible.
+// Import AFTER the mocks register; cache invalidation lives inside the mutations.
 const { bulkApproveCommentsByUser, bulkDeleteCommentsByUser } =
   await import('@/server/domains/comments/services/moderate')
-// The admin approve-delete-request path calls the repo mutation
-// directly; the cache invalidation is sunk into the mutation itself.
 const { softDeleteCommentById } = await import('@/server/domains/comments/services/moderate')
 
 const db = getTestDb()
@@ -38,7 +30,6 @@ beforeEach(async () => {
   await clearAllTables(db)
 })
 
-// The sidebar list caches under the `comments` declaration's lone key.
 async function latestCommentsRow() {
   const rows = await db.select().from(kvCache).where(eq(kvCache.key, 'comments:latest')).limit(1)
   return rows[0] ?? null
@@ -95,7 +86,7 @@ describe('comments/repos/moderation — bulk mutations clear the sidebar cache',
     const postId = await seedPost('bulk-approve-target')
     const commentId = await seedComment(userId, postId, true)
 
-    // Warm the sidebar cache. The pending comment is not listed yet.
+    // Pending comments are not listed yet.
     const warmed = await latestComments(db)
     expect(warmed).toHaveLength(0)
     expect(await latestCommentsRow()).not.toBeNull()
@@ -103,7 +94,6 @@ describe('comments/repos/moderation — bulk mutations clear the sidebar cache',
     const { approved } = await bulkApproveCommentsByUser(db, userId)
     expect(approved).toBe(1)
 
-    // The cache must be cleared, so the next read sees the approved row.
     expect(await latestCommentsRow()).toBeNull()
     const fresh = await latestComments(db)
     expect(fresh).toHaveLength(1)
@@ -115,7 +105,6 @@ describe('comments/repos/moderation — bulk mutations clear the sidebar cache',
     const postId = await seedPost('bulk-delete-target')
     await seedComment(userId, postId, false)
 
-    // Warm the sidebar cache with the approved comment listed.
     const warmed = await latestComments(db)
     expect(warmed).toHaveLength(1)
     expect(await latestCommentsRow()).not.toBeNull()
@@ -123,7 +112,6 @@ describe('comments/repos/moderation — bulk mutations clear the sidebar cache',
     const { deleted } = await bulkDeleteCommentsByUser(db, userId)
     expect(deleted).toBe(1)
 
-    // The cache must be cleared, so the next read no longer sees the row.
     expect(await latestCommentsRow()).toBeNull()
     const fresh = await latestComments(db)
     expect(fresh).toHaveLength(0)
@@ -136,15 +124,12 @@ describe('comments/repos/moderation — approve-delete-request clears the sideba
     const postId = await seedPost('approve-delete-target')
     const commentId = await seedComment(userId, postId, false)
 
-    // Warm the sidebar cache with the approved comment listed.
     const warmed = await latestComments(db)
     expect(warmed).toHaveLength(1)
     expect(await latestCommentsRow()).not.toBeNull()
 
-    // Admin approves the user's delete request → soft delete.
     await softDeleteCommentById(db, commentId)
 
-    // The cache must be cleared, so the re-read no longer sees the row.
     expect(await latestCommentsRow()).toBeNull()
     const fresh = await latestComments(db)
     expect(fresh).toHaveLength(0)

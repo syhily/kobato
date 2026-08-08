@@ -8,22 +8,10 @@ import { getLogger } from '@/server/infra/logger'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { isBot } from '@/shared/utils/is-bot'
 
-// Single owner of "what counts as a view" for the whole analytics domain.
-// Callers fire `void trackPageView(facts, target, options)` and the gate
-// here decides whether EITHER signal writes:
-//   - prefetch requests (via `facts.purpose`) never write anything;
-//   - admin visits are skipped unless "记录管理员访问" (`trackAdmin`) is
-//     toggled on in `/admin/settings` — the same rule covers BOTH signals;
-//   - bot traffic still bumps the counter (counters carry no bot
-//     dimension) but only lands in the time-series when `keepBotRows` is on.
-// Settings come from the `blog.analytics` section, falling back to safe
-// defaults (`trackAdmin: false`, `keepBotRows: false`) when unseeded.
-//
-// One call fans out to both signals: the per-entity counter
-// (`bumpPageView`, skipped when `target` is null — e.g. the homepage,
-// which has no entity to count) and the time-series access log
-// (`pushAccessEvent`). Fire-and-forget: callers `void` the promise so
-// enrichment/flush never blocks render.
+// Single owner of "what counts as a view": one call fans out to the
+// per-entity counter and the time-series access log. Prefetch and admin
+// visits (unless `trackAdmin`) never write; bots land in the time-series
+// only when `keepBotRows` is on. Callers `void` the promise — fire-and-forget.
 
 const log = getLogger('analytics.track')
 
@@ -48,10 +36,8 @@ export interface TrackPageViewOptions {
   /** Skip the bot check (useful in tests). */
   skipBotFilter?: boolean
   /**
-   * Set by callers that have already resolved the session role. Admin
-   * visits are skipped by default — dashboard owners shouldn't pollute
-   * their own visitor metrics. Toggle "记录管理员访问" in
-   * `/admin/settings` to override; the toggle covers BOTH signals.
+   * Pre-resolved session role; admin visits are skipped unless
+   * "记录管理员访问" (`trackAdmin`) is on. Covers BOTH signals.
    */
   isAdmin?: boolean
   /**
@@ -77,9 +63,7 @@ export async function trackPageView(
       return
     }
 
-    // Counter signal — the gate above has already passed, so this fires
-    // for every countable view. A null target (e.g. the homepage) has no
-    // entity to count and only lands in the time-series below.
+    // Counter signal — the gates above have already passed.
     if (target !== null) {
       bumpPageView(target)
     }
@@ -87,10 +71,8 @@ export async function trackPageView(
     const ip = options.clientAddress ?? 'unknown'
     const ua = facts.userAgent ?? ''
 
-    // Bot gate BEFORE enrichment: a row keepBotRows would drop anyway
-    // must not pay for the GeoIP lookup + salted IP hash. The counter
-    // above already fired (counters carry no bot dimension), and when
-    // keepBotRows is on the row is still enriched and stored below.
+    // Bot gate BEFORE enrichment: rows `keepBotRows` would drop anyway
+    // must not pay for the GeoIP lookup + salted IP hash.
     if (isBot(ua) && !analytics.keepBotRows && !options.skipBotFilter) {
       return
     }
@@ -109,8 +91,6 @@ export async function trackPageView(
     pushAccessEvent(event)
   } catch (err) {
     // An analytics failure must never break the user-facing request.
-    // Matches Sink's defensive try/catch around its own access log
-    // (`server/middleware/1.redirect.ts:148-152`).
     log.error('trackPageView failed', { err: err instanceof Error ? err.message : String(err) })
   }
 }

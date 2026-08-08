@@ -36,12 +36,8 @@ export async function pendingComments(db: Database): Promise<LatestComment[]> {
   return rows.map(toLatestComment)
 }
 
-/**
- * Whether the user has at least one approved (non-pending) comment —
- * the "established commenter" rule consumed cross-domain, e.g. by the
- * signin flow that lets an anonymous commenter claim their account via
- * password reset.
- */
+/** "Established commenter" rule — consumed cross-domain, e.g. the signin
+ *  flow's account claim for anonymous commenters. */
 export async function hasApprovedComments(db: Database, userId: number): Promise<boolean> {
   return countApprovedCommentsByUser(db, userId) >= 1
 }
@@ -98,22 +94,12 @@ export async function loadComments(
 
 const MAX_RID_WALK = 256
 
-/**
- * Server-side cap on one root's reply thread. `findChildComments` returns
- * every visible reply of the page's roots, so a single hot thread could
- * otherwise balloon the public payload without bound. Threads over the
- * cap are truncated (keeping the earliest replies in thread order) and
- * flagged with `childrenTruncated` / `childrenTotal` on the root — the
- * wire contract for a future "load more" affordance.
- */
+/** Reply-thread cap: truncated threads keep the earliest replies and are
+ *  flagged `childrenTruncated`/`childrenTotal` (wire contract). */
 export const MAX_THREAD_CHILDREN = 100
 
-/**
- * Walk the `rid` chain to find the nearest visible ancestor.
- * Soft-deleted parents are transparent: we resolve through them so the
- * thread doesn't break when a middle comment is removed.
- * Returns 0 when the root is reached or the chain is broken.
- */
+/** Walk the `rid` chain to the nearest visible ancestor; soft-deleted
+ *  parents are transparent. Returns 0 at the root or a broken chain. */
 function resolveVisibleParentRid(commentId: number, rid: number | null, byId: Map<string, CommentAndUser>): number {
   if (rid === 0 || rid === null || rid === undefined) {
     return 0

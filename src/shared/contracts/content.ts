@@ -20,27 +20,10 @@ import type { ResolvedImageMeta } from '@/shared/types/images'
 import type { ListingPageLoaderData } from '@/shared/types/listing'
 import type { Role } from '@/shared/utils/roles'
 
-// ─── `content.*` — the Ghost-Content-API-style read-only group ─────
-// Every public-site SSR loader reaches its data through these
-// procedures (in-process via `@/server/http/ssr-caller`), so the wire
-// contract is declared here once and shared by both ends.
-//
-// HTTP signals that cannot cross the RPC wire as thrown `Response`s
-// travel as a DISCRIMINATED UNION instead:
-//
-//   { kind: 'redirect', to, status }   — 301 canonical / 302 pagination
-//   { kind: 'not-modified', etag }     — If-None-Match hit (304)
-//   { kind: 'ok', ... }                — the payload
-//
-// Route loaders translate them back into `redirect` /
-// `notModifiedResponse` / `data(..., { ETag })`. 404s travel as
-// `ORPCError('NOT_FOUND')` and the loader re-throws `notFound()`.
-//
-// Rich nested DTOs (PortableText bodies, `MetaDescriptor[]`, image-meta
-// maps) use `z.custom<T>()` so the inferred output type EXACTLY matches
-// the historical loader-data shape — no lossy partial schemas. This is
-// the sanctioned exception to the Zod-single-source rule; see
-// `src/shared/AGENTS.md` → Zod DTO single source.
+// `content.*` — the Ghost-Content-API-style read-only group backing every public SSR
+// loader (in-process via `@/server/http/ssr-caller`). HTTP signals that can't cross the
+// RPC wire as thrown `Response`s travel as a discriminated union; 404s as `ORPCError('NOT_FOUND')`;
+// rich nested DTOs use `z.custom<T>()` — the sanctioned Zod-single-source exception.
 
 export const contentRedirectSignalSchema = z.object({
   kind: z.literal('redirect'),
@@ -58,11 +41,8 @@ export type ContentNotModifiedSignal = z.infer<typeof contentNotModifiedSignalSc
 /** The non-OK half of every content output union. */
 export type ContentSignal = ContentRedirectSignal | ContentNotModifiedSignal
 
-// ─── content.bootstrap ────────────────────────────────────────────
 // The root loader's data segment. No input: the theme is parsed from
-// the theme cookie inside the procedure (`context.requestFacts.cookie`
-// + `@/shared/utils/theme-cookie`) so the route never touches cookie
-// names.
+// the cookie inside the procedure so the route never touches cookie names.
 export const contentBootstrapOutputSchema = z.object({
   admin: z.boolean(),
   currentUser: z.custom<{ id: string; name: string; role: Role } | null>(),
@@ -73,7 +53,6 @@ export const contentBootstrapOutputSchema = z.object({
 })
 export type ContentBootstrapOutput = z.infer<typeof contentBootstrapOutputSchema>
 
-// ─── content.home ─────────────────────────────────────────────────
 export interface HomeSidebarPayload {
   posts: SidebarPostLink[]
   tags: ClientTag[]
@@ -96,7 +75,6 @@ export const contentHomeOutputSchema = z.union([
 ])
 export type ContentHomeOutput = z.infer<typeof contentHomeOutputSchema>
 
-// ─── content.posts.list (tag / category scopes) ───────────────────
 export const contentPostsListInputSchema = z.object({
   scope: z.object({ type: z.enum(['tag', 'category']), slug: z.string() }),
   num: z.string().optional(),
@@ -108,10 +86,10 @@ export const contentPostsListOutputSchema = z.union([
 ])
 export type ContentPostsListOutput = z.infer<typeof contentPostsListOutputSchema>
 
-// ─── detail critical (shared by post + page) ──────────────────────
-// Everything the detail page needs to paint above the fold besides the
-// body itself. Comments and webmentions are deliberately EXCLUDED —
-// they stream through `content.comments.byKey` / `webmention.list`.
+// Detail critical (shared by post + page): everything the detail page needs
+// above the fold besides the body. Comments and webmentions are
+// deliberately EXCLUDED — they stream through `content.comments.byKey` /
+// `webmention.list`.
 export interface DetailCriticalPayload {
   commentKey: string
   likes: number
@@ -120,10 +98,8 @@ export interface DetailCriticalPayload {
   recentComments: LatestComment[]
 }
 
-// ─── content.posts.bySlug ─────────────────────────────────────────
-// `ifNoneMatch` carries the raw If-None-Match header value — the
-// procedure owns both ETag probes (slim + full) and answers
-// `not-modified` without the route ever computing an ETag.
+// `ifNoneMatch` carries the raw If-None-Match header value; the
+// procedure owns both ETag probes and answers `not-modified`.
 export const contentPostBySlugInputSchema = z.object({
   slug: z.string(),
   ifNoneMatch: z.string().optional(),
@@ -147,7 +123,6 @@ export const contentPostBySlugOutputSchema = z.union([
 ])
 export type ContentPostBySlugOutput = z.infer<typeof contentPostBySlugOutputSchema>
 
-// ─── content.pages.bySlug ─────────────────────────────────────────
 // `draft` mirrors the `?draft=true` query flag: an admin's draft
 // preview may swap the body, so it also skips the published-ETag probe.
 export const contentPageBySlugInputSchema = z.object({
@@ -176,17 +151,15 @@ export const contentPageBySlugOutputSchema = z.union([
 ])
 export type ContentPageBySlugOutput = z.infer<typeof contentPageBySlugOutputSchema>
 
-// ─── content.comments.byKey ───────────────────────────────────────
 // `pageKey` is the metric public id carried by the detail critical
-// (`commentKey`) — the SSR detail loaders fire this call only after the
-// `bySlug` ok branch settles, so no DB work is wasted on 304/301/404.
+// (`commentKey`); fired only after the `bySlug` ok branch settles, so
+// no DB work is wasted on 304/301/404.
 export const contentCommentsByKeyInputSchema = z.object({
   pageKey: z.string(),
 })
 
 export const contentCommentsByKeyOutputSchema = z.custom<DetailPageComments>()
 
-// ─── content.search ───────────────────────────────────────────────
 export const contentSearchInputSchema = z.object({
   keyword: z.string().optional(),
   num: z.string().optional(),
@@ -198,13 +171,11 @@ export const contentSearchOutputSchema = z.union([
 ])
 export type ContentSearchOutput = z.infer<typeof contentSearchOutputSchema>
 
-// ─── content.categories.list ──────────────────────────────────────
 export const contentCategoriesListOutputSchema = z.object({
   categories: z.custom<Category[]>(),
 })
 export type ContentCategoriesListOutput = z.infer<typeof contentCategoriesListOutputSchema>
 
-// ─── content.archives ─────────────────────────────────────────────
 export const contentArchivesOutputSchema = z.object({
   resolvedPosts: z.custom<ListingPostCardWithMetadata[]>(),
   listingNowIso: z.string(),

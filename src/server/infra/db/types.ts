@@ -16,7 +16,6 @@ import type { category, tag } from '@/server/infra/db/schema/taxonomy'
 import type { user, verification } from '@/server/infra/db/schema/user'
 import type { webmention, webmentionInbox, webmentionOutbox } from '@/server/infra/db/schema/webmention'
 
-// Types for insert
 export type NewPasskeyCredential = typeof passkeyCredential.$inferInsert
 export type NewMetric = typeof metric.$inferInsert
 export type NewUser = typeof user.$inferInsert
@@ -41,7 +40,6 @@ export type NewSession = typeof session.$inferInsert
 export type NewKvCacheEntry = typeof kvCache.$inferInsert
 export type NewOneTimeToken = typeof oneTimeToken.$inferInsert
 
-// Types for select
 export type PasskeyCredentialRow = typeof passkeyCredential.$inferSelect
 export type MetricRow = typeof metric.$inferSelect
 export type User = typeof user.$inferSelect

@@ -5,10 +5,7 @@ import type { MetingSearchHit, MetingSource, SearchMusicOutput } from '@/shared/
 import { orpcQuery } from '@/client/api/orpc-query'
 import { useAdminInfiniteList } from '@/ui/admin/shared/useAdminInfiniteList'
 
-// Flatten fetched pages into one hit list, first occurrence winning on
-// `source:sourceId` collisions (upstream pages can overlap as the
-// provider's result set shifts). Exported pure so unit tests can exercise
-// it without mounting the hook.
+// Flatten pages into one hit list, first occurrence winning on `source:sourceId` — pure for direct unit tests.
 export function dedupeSearchHits(pages: SearchMusicOutput[]): MetingSearchHit[] {
   const seen = new Set<string>()
   return pages
@@ -23,11 +20,9 @@ export function dedupeSearchHits(pages: SearchMusicOutput[]): MetingSearchHit[] 
     })
 }
 
-// Search-pagination machine for the meting "add music" surfaces, built on
-// the shared admin infinite-list scaffold (the search endpoint reports
-// only `hasMore`, absorbed by the scaffold's optional-`total` page shape).
-// Callers keep their own keyword/source inputs, add mutation, and preview
-// wiring, and drive the machine through `search` / `loadMore` / `reset`.
+// Search-pagination machine on the shared infinite-list scaffold (the search
+// endpoint reports only `hasMore`); callers keep their own inputs, add
+// mutation, and preview wiring.
 export function useMetingMusicSearch({ limit }: { limit: number }) {
   const [submitted, setSubmitted] = useState<{ source: MetingSource; keyword: string } | null>(null)
 
@@ -42,9 +37,7 @@ export function useMetingMusicSearch({ limit }: { limit: number }) {
   } = useAdminInfiniteList({
     namespace: orpcQuery.admin.music.search,
     pageSize: limit,
-    // `enabled` gates on submitted !== null, so the null branch below
-    // (keyword '') is only ever embedded in the disabled query's key —
-    // it is never sent to the server.
+    // `enabled` gates on submitted !== null, so the ''-keyword branch is only ever embedded in the disabled key — never sent.
     buildInput: (offset) => ({ ...submitted, keyword: submitted?.keyword ?? '', limit, offset }),
     selectRows: (page) => page.results,
     // No `noun`: the dialog/view renders the error inline instead of a toast.

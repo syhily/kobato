@@ -4,14 +4,9 @@ import { describe, expect, it } from 'vitest'
 import { SHIKI_SUPPORTED_LANGUAGES, SHIKI_THEMES, createShikiHighlighter } from '@/server/infra/pt/shiki'
 import { HIGHLIGHT_LANGUAGES } from '@/shared/constants/languages'
 
-// Real-Shiki coverage for the fine-grained wiring in
-// `src/server/infra/pt/shiki.ts`: the 36 explicit language registrations +
-// Oniguruma engine must produce BYTE-IDENTICAL HTML to the full `shiki`
-// bundle's `createHighlighter` (same grammars, same themes, same engine),
-// and the supported-language gate must match the old
-// `block.language in bundledLanguages` check. Runs the real highlighters —
-// no mocks — so a future shiki/lang upgrade that renames a grammar or
-// changes an embedded dependency fails here instead of in production.
+// Real-shiki contract for `src/server/infra/pt/shiki.ts`: the fine-grained
+// registrations must produce BYTE-IDENTICAL HTML to the full bundle, and
+// the language gate must match `lang in bundledLanguages`.
 
 const SAMPLES: { language: string; code: string }[] = [
   { language: 'typescript', code: 'const x: number = 42\n' },
@@ -29,9 +24,6 @@ const SAMPLES: { language: string; code: string }[] = [
 describe('infra/pt/shiki — fine-grained highlighter', () => {
   it('SHIKI_SUPPORTED_LANGUAGES equals HIGHLIGHT_LANGUAGES (and the old bundle filter)', () => {
     expect([...SHIKI_SUPPORTED_LANGUAGES].sort()).toEqual([...HIGHLIGHT_LANGUAGES].sort())
-    // The previous runtime gate: every supported language exists in the
-    // full bundle (grammar or alias) — verified so the Set swap is a
-    // no-op behaviorally.
     for (const lang of HIGHLIGHT_LANGUAGES) {
       expect(SHIKI_SUPPORTED_LANGUAGES.has(lang), lang).toBe(lang in bundledLanguages)
     }

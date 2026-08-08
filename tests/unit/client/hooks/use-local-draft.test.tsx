@@ -2,9 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { PortableTextBody } from '@/shared/pt/schema'
 
-// Mock the IndexedDB-backed draft store so tests don't need a real DB.
-// The mock captures every call into getDraft/setDraft/removeDraft and
-// lets each test program the return value.
+// Mock the IndexedDB-backed draft store; each test programs the return values.
 const draftStore = vi.hoisted(() => ({
   get: vi.fn<(key: string) => Promise<unknown>>(),
   set: vi.fn<(key: string, record: unknown) => Promise<void>>(),
@@ -54,7 +52,6 @@ describe('useLocalDraft — synchronous render branches', () => {
       }),
     )
     expect(result.loadedDraft).toBeNull()
-    // Nothing should hit storage in the disabled state.
     expect(draftStore.get).not.toHaveBeenCalled()
   })
 

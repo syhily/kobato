@@ -15,13 +15,8 @@ import { auditLog } from '@/server/infra/db/schema/config'
 import { user as userTable } from '@/server/infra/db/schema/user'
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@/server/infra/logger'
 
-// `adminUploadRoute` against the real engine: the CSRF guard runs for
-// real (session-carried token + `x-csrf-token` header), and the audit
-// write goes through the real record → batcher → `audit_log` path —
-// asserted on the flushed row, with the flush/reset hygiene from
-// domains/auth/password-flow so no stale events leak into the next
-// case. No module mocks remain; the route's own handler is inlined per
-// its design.
+// `adminUploadRoute` against the real engine: real CSRF guard, real record → batcher → `audit_log`
+// write (asserted on the flushed row). No module mocks; the handler is inlined per its design.
 
 const db = getTestDb()
 const CSRF_TOKEN = 'test-csrf-token'
@@ -73,18 +68,14 @@ beforeEach(async () => {
 })
 
 afterEach(async () => {
-  // Flush BEFORE dropping the batcher: InsertBatcher.dispose() leaves an
-  // armed flush timer behind, so an unflushed queue would otherwise
-  // insert this case's stale events mid-next-test. The rows flushed here
-  // are wiped by the next beforeEach's clearAllTables.
+  // Flush BEFORE dropping the batcher: an armed flush timer would insert after the table wipe.
   await flushAuditLog()
   resetAllBatchers()
 })
 
 describe('adminUploadRoute', () => {
   it('owns parsing, file validation, audit context, logging, and success response', async () => {
-    // The audit row's actorId FK points at a real user — seed the admin
-    // the session's viewer ('1') stands for.
+    // The audit row's actorId FK needs the real user the viewer ('1') stands for.
     await db.insert(userTable).values({ id: 1, name: 'admin', email: 'admin@example.com', password: 'hashed' })
     const form = new FormData()
     form.append('kind', 'avatar')
@@ -95,8 +86,7 @@ describe('adminUploadRoute', () => {
     expect(response.status).toBe(200)
     await expect(response.json()).resolves.toEqual({ kind: 'avatar', size: 3 })
 
-    // The audit write landed through the real batcher, attributed from
-    // the request context (viewer, client address, request facts).
+    // The audit write landed through the real batcher, attributed from the request context.
     await flushAuditLog()
     const rows = await db.select().from(auditLog).where(eq(auditLog.action, 'test_uploaded'))
     expect(rows).toHaveLength(1)

@@ -6,13 +6,7 @@ import type { ActiveFilter, FilterPillsAction } from '@/ui/admin/shared/filterPi
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { deriveStatusQueryFields } from '@/ui/admin/shared/filter-bar/status-fields'
 
-// Posts-list filter-pill field specs — keys, labels, icons, option arrays,
-// the URL search-param seed/sync helpers (dashboard / sidebar / tag /
-// category links land on `/admin/posts?status=` / `?tag=` / `?category=`),
-// and the `toQuery` mappers onto `admin.posts.list`'s input.
-// `buildPostFilterFields` is a factory (memoized by the view) because the
-// category / tag / author options come from async option-list queries.
-
+// Posts-list filter-pill specs, URL seed/sync helpers, and `toQuery` mappers onto `admin.posts.list` input.
 export type PostFilterFieldKey = 'status' | 'category' | 'tag' | 'author'
 
 export type PostStatusFilter = 'all' | 'published' | 'draft' | 'unlisted' | 'deleted'
@@ -24,8 +18,7 @@ export const POST_STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: 'deleted', label: '已删除' },
 ]
 
-// The posts leg set — includes the `visible` leg that pages lack (the
-// page table has no `visible` column).
+// The posts leg set — includes the `visible` leg that pages lack (no `visible` column on pages).
 const POST_STATUS_FIELDS: Record<Exclude<PostStatusFilter, 'deleted'>, { published?: boolean; visible?: boolean }> = {
   all: {},
   published: { published: true, visible: true },
@@ -71,9 +64,7 @@ export function buildPostFilterFields({
       icon: ListChecksIcon,
       kind: 'options',
       options: POST_STATUS_OPTIONS,
-      // The status projection carries booleans; the string-typed patch is
-      // the common case and the merge copies values verbatim, so the cast
-      // is exact.
+      // The status projection carries booleans; the string-typed patch is the common case and merges verbatim — the cast is exact.
       toQuery: (value) => unsafeCast<FilterQueryPatch>(deriveStatusFields(unsafeCast<PostStatusFilter>(value))),
     },
     {
@@ -106,20 +97,16 @@ export function buildPostFilterFields({
   ]
 }
 
-/** The URL-backed fields, in seed order — only these three sync from the
- *  URL; the author pill is UI-local. */
+// URL-backed fields in seed order — the author pill is UI-local.
 const URL_FILTER_FIELDS = ['status', 'category', 'tag'] as const
 
-/** Seed pills from the URL search params (dashboard / sidebar / tag /
- *  category deep links). Unknown or `all` statuses seed nothing — the
- *  absent status pill IS the unfiltered state. */
+/** Seed pills from the URL (dashboard / sidebar / tag / category deep links);
+ *  unknown or `all` statuses seed nothing — absence IS the unfiltered state. */
 export function postFiltersFromSearch(search: string): ActiveFilter<PostFilterFieldKey>[] {
   const params = new URLSearchParams(search)
   const pills: ActiveFilter<PostFilterFieldKey>[] = []
   const status = params.get('status')
-  // Deep links bookmarked before the P2-11 rename still carry the old
-  // `hidden` key — map it to `unlisted` so they keep their filter
-  // instead of silently landing unfiltered (fix-review).
+  // Deep links bookmarked before the P2-11 rename carry `hidden` — map to `unlisted` (fix-review).
   const normalizedStatus = status === 'hidden' ? 'unlisted' : status
   if (
     normalizedStatus === 'published' ||
@@ -135,8 +122,7 @@ export function postFiltersFromSearch(search: string): ActiveFilter<PostFilterFi
   }
   const category = params.get('category')
   if (category) {
-    // The human label resolves from the category options once they load —
-    // until then the pill editor falls back to the raw id.
+    // The human label resolves once the category options load — until then the pill editor falls back to the raw id.
     pills.push({ field: 'category', value: category, label: category })
   }
   const tag = params.get('tag')
@@ -146,9 +132,8 @@ export function postFiltersFromSearch(search: string): ActiveFilter<PostFilterFi
   return pills
 }
 
-/** Reconcile the URL-backed pills (status / category / tag) after a
- *  navigation while already on the posts list — mirrors the retired
- *  usePostsFilters URL→state sync: user-added pills (author) survive. */
+/** Reconcile the URL-backed pills after a navigation while already on the
+ *  posts list — user-added pills (author) survive. */
 export function syncPostFiltersFromUrl(
   filters: ActiveFilter<PostFilterFieldKey>[],
   dispatch: (action: FilterPillsAction<PostFilterFieldKey>) => void,

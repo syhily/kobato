@@ -74,8 +74,7 @@ describe('update/job startUpdateJob', () => {
     await vi.waitFor(() => {
       expect(job.getUpdateJobStatus().state).toBe('restarting')
     })
-    // The injected spy stands in for the real detached respawn +
-    // `process.exit(0)`; it must be called exactly once, on success only.
+    // Called exactly once, on success only.
     expect(restart).toHaveBeenCalledOnce()
   })
 

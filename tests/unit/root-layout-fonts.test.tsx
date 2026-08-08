@@ -4,16 +4,11 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { Layout } from '@/root'
 
-// Build-time virtual module provided by the route-warmup Vite plugin — not
-// resolvable in the unit runner.
+// Virtual module from the route-warmup Vite plugin — unresolvable in the unit runner.
 vi.mock('virtual:route-warmup-script', () => ({ default: '' }))
 
-// The section-change wiring pulls in the backup/audit schedulers (and
-// transitively the DB bootstrap) — irrelevant to the document shell.
-// The document-shell pieces (Meta/Links/Scripts/ScrollRestoration) depend on
-// the framework build manifest, which a memory router doesn't have. They are
-// irrelevant to the font-slot contract, so stub them and keep everything
-// else — including useMatches / useRouteLoaderData — real.
+// Meta/Links/Scripts/ScrollRestoration need the framework build manifest a
+// memory router lacks — stub them, keep the rest real.
 vi.mock('react-router', async (importOriginal) => {
   const actual = await importOriginal<typeof import('react-router')>()
   return {

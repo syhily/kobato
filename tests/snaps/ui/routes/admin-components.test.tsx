@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'vitest'
-// SSR-render a selection of admin route `Component` exports to cover the
-// route component functions themselves (each default export). Routes
-// split their I/O into `loader`; the Component is pure given loaderData,
-// so we drive it directly with fixture data and assert the page chrome
-// renders. This covers the route component functions without standing
-// up the loader/DB chain.
+// SSR-render a selection of admin route Component exports: each is pure
+// given loaderData, so drive it directly with fixtures and assert the page
+// chrome — no loader/DB chain.
 
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { asRoute } from '#/_helpers/route-test-utils'
@@ -15,9 +12,7 @@ import MySessionsRouteRaw from '@/routes/admin/me/sessions'
 import AuditLogRouteRaw from '@/routes/admin/security/audit-log'
 import SessionsRouteRaw from '@/routes/admin/security/sessions'
 
-// Generated `Route.ComponentProps` types are strict (params/matches/…);
-// `asRoute` widens the prop bag so tests only supply the fields each
-// route actually reads from loaderData.
+// `asRoute` widens the strict ComponentProps so tests supply only the fields each route reads.
 const MentionsRoute = asRoute(MentionsRouteRaw)
 const DashboardRoute = asRoute(DashboardRouteRaw)
 const MyProfileRoute = asRoute(MyProfileRouteRaw)
@@ -57,8 +52,7 @@ describe('admin routes — Component SSR renders', () => {
       },
     ]
     const html = stableHtml(renderInRouter(<MySessionsRoute loaderData={{ items }} />, '/admin/me/sessions'))
-    // The view masks the IP octets; assert on the platform hint and UA
-    // which are shown verbatim, plus the "current session" badge.
+    // IP octets are masked — assert the verbatim platform/UA + current-session badge.
     expect(html).toContain('macOS')
     expect(html).toContain('curl/8')
     expect(html).toContain('当前会话')
@@ -164,10 +158,8 @@ describe('admin routes — Component SSR renders', () => {
       ),
     )
     expect(html).toContain('Carol')
-    // Stats grid renders every numeric field.
     expect(html).toContain('3')
     expect(html).toContain('11')
-    // Recent draft / published titles surface.
     expect(html).toContain('Draft A')
     expect(html).toContain('Post Z')
   })

@@ -8,39 +8,11 @@ import {
   WEBMENTION_VERIFY_STATUSES,
 } from '@/server/infra/db/schema/shared'
 
-// Webmentions (W3C Webmention, receive side). A row is created in
-// `pending` status only after the endpoint has fetched `sourceUrl` and
-// verified it links to `targetUrl` — or, since the verify redesign, when
-// the verification terminally failed (attempt budget spent): the row
-// lands `pending` with `verificationStatus='failed'` so the admin can
-// see the failure instead of a silent drop. Moderation then flips the
-// row to `approved` / `rejected` (both kept — the row is the audit
-// trail).
-//
-// - `verificationStatus` / `lastVerifiedAt` / `lastError` /
-//   `verifyFailStreak` are the verification state. The initial
-//   receive-time check and the daily re-verification cycle (approved
-//   rows plus pending rows that failed) share the same
-//   fetch-and-link-check; a successful check resets the streak, a failed
-//   one records the message and bumps it. 7 consecutive daily failures
-//   move an `approved` row to `hidden` — `hidden` rows leave the public
-//   page, are not re-verified automatically, and only a manual
-//   re-verification restores them.
-// - `authorName` / `title` / `summary` are best-effort extractions from
-//   the source HTML; `type` is the mf2 classification (reply / like /
-//   repost markers on the source anchor, `mention` otherwise) detected
-//   at the same time — presentational grouping only, refreshed on every
-//   re-mention like the rest of the extraction.
-// - `rawPayload` is the verbatim form payload as received
-//   (`{ source, target }`) — the fetched HTML is never persisted.
-// - UNIQUE(source_url, target_url) is the physical dedup: a re-mention
-//   (the source author edited their post and re-sent) is an upsert that
-//   refreshes the extracted metadata — `pending` stays pending,
-//   `approved` demotes back to `pending` for re-review, `rejected` stays
-//   rejected (a spammer must not edit their way around moderation).
-//   `source_url` is stored normalized via `normalizeForMatch` (fragment /
-//   default port / path trailing slashes stripped), so those variants
-//   converge onto one row; scheme and query differences do not.
+// Webmentions (W3C Webmention, receive side): rows land `pending` after
+// source verification, then moderation flips them `approved`/`rejected`;
+// 7 consecutive daily re-verification failures hide an `approved` row.
+// UNIQUE(source_url, target_url) is the dedup: a re-mention upserts —
+// `approved` demotes to `pending` for re-review, `rejected` stays.
 export const webmention = sqliteTable(
   'webmention',
   {
@@ -81,19 +53,10 @@ export const webmention = sqliteTable(
   ],
 )
 
-// Webmention outbox (W3C Webmention, SEND side — the outbound mirror of
-// the table above). A row is enqueued when a published post body links to
-// an external URL; the worker discovers the target's endpoint, POSTs the
-// mention, and drives the row to a terminal status. Terminal rows are
-// kept — the row is the send log surfaced read-only in the admin shell.
-//
-// - `endpoint` is the discovered endpoint and doubles as the discovery
-//   cache: `null` means discovery has not run (or is being retried).
-// - `nextRetryAt` is the worker's waterline (`NULL` = send immediately);
-//   the pick query is `status='pending' AND (nextRetryAt IS NULL OR
-//   nextRetryAt <= now)`.
-// - UNIQUE(source_url, target_url) is the physical dedup: re-enqueue is an
-//   upsert that resets `no-endpoint` / `failed` but never `sent`.
+// Webmention outbox (W3C Webmention, SEND side): the worker discovers
+// the endpoint, POSTs the mention, and drives the row to a terminal
+// status, kept as the send log. UNIQUE(source_url, target_url) dedup: a
+// re-enqueue resets `no-endpoint`/`failed` but never `sent`.
 export const webmentionOutbox = sqliteTable(
   'webmention_outbox',
   {
@@ -121,23 +84,11 @@ export const webmentionOutbox = sqliteTable(
   ],
 )
 
-// Webmention inbox queue (W3C Webmention, receive side — the async
-// verification queue, docs/plans/2026-08-02-webmention-async-inbox-design.md).
-// The endpoint enqueues a row
-// and returns 202 immediately; the worker then fetches the source,
-// verifies the link, and lands the mention in the `webmention` table.
-// There is NO status column: every row is awaiting verification, success
-// DELETES the row, and terminal failures (target gone, source does not
-// link, 4xx, blocked host) delete it too — only transient fetch errors
-// (timeout / network / 5xx) retry on the `next_retry_at` waterline.
-//
-// - UNIQUE(source_url, target_url) is the queue dedup: a repeat POST
-//   while a row is queued resets attempts and re-arms it for immediate
-//   processing instead of piling up duplicate work. Both URLs are stored
-//   normalized (`normalizeForMatch` / canonical target), so the variants
-//   the receive side converges converge here too.
-// - Verified source HTML is never persisted here — the queue carries
-//   only the pair to check and the retry bookkeeping.
+// Webmention inbox queue (receive side, async verification —
+// docs/plans/2026-08-02-webmention-async-inbox-design.md). The endpoint
+// enqueues and returns 202; the worker verifies and lands the mention in
+// `webmention`. No status column: success and terminal failures DELETE
+// the row, only transient fetch errors retry on `next_retry_at`.
 export const webmentionInbox = sqliteTable(
   'webmention_inbox',
   {

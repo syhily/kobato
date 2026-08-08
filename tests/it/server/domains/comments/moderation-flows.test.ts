@@ -17,24 +17,9 @@ import { auditLog } from '@/server/infra/db/schema/config'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
 
-// Domain-seam coverage for the two moderation flows sunk out of the HTTP
-// controllers (task C4):
-//
-//   * `editOwnComment` — the update-own-comment flow: ownership check,
-//     delete-request fence, has-replies edit lock, then the grace-window
-//     mutation (pinned separately in `update-own-comment.test.ts`);
-//   * `resolveCommentDeleteRequest` — the admin delete-request state
-//     machine: existence fence, pending-request fence, approve →
-//     soft-delete / reject → clear, each branch auditing its own event;
-//   * `requestOwnCommentDeletion` / `cancelOwnCommentDeletion` — the
-//     visitor delete-request lifecycle: ownership fence, the
-//     already-requested idempotent no-op, the guarded clear, each
-//     mutating branch auditing its own event.
-//
-// The error codes and Chinese messages asserted here are the wire
-// contract — the controllers used to throw them inline as `ORPCError`s
-// and the oRPC `domainErrorGuard` now translates these `DomainError`s
-// into the byte-identical wire shape.
+// Domain-seam coverage for the moderation flows sunk out of the HTTP
+// controllers (task C4); the asserted error codes and Chinese messages
+// are the wire contract, translated byte-identically by `domainErrorGuard`.
 
 const db = getTestDb()
 
@@ -98,8 +83,7 @@ function ctxFor(userId: number) {
 }
 
 async function seedAdmin(opts: Partial<typeof user.$inferInsert> = {}): Promise<number> {
-  // The audit row's actor_id FK requires a real user row — a synthetic id
-  // would silently dead-letter the batched insert.
+  // actor_id FK: a synthetic id would dead-letter the batched insert.
   return seedVisitor({
     name: 'Admin',
     email: `admin-${Date.now()}-${Math.random()}@example.com`,
@@ -188,8 +172,6 @@ describe('editOwnComment — update-own flow with the reply edit lock', () => {
       message: '已有回复，无法再编辑。',
     })
 
-    // The lock fired before any write: the body is untouched and no audit
-    // event was recorded.
     const [row] = await db.select().from(comment).where(eq(comment.id, cid))
     expect(row!.content).toBe('hello')
     expect(await auditRowsFor('comment_own_updated')).toHaveLength(0)
@@ -285,7 +267,6 @@ describe('resolveCommentDeleteRequest — admin delete-request state machine', (
       message: '该评论没有待处理的删除申请。',
     })
 
-    // No state change, no audit event on the fenced path.
     const [row] = await db.select().from(comment).where(eq(comment.id, cid))
     expect(row!.deletedAt).toBeNull()
     expect(await auditRowsFor('comment_delete_request_approved')).toHaveLength(0)
@@ -337,7 +318,6 @@ describe('requestOwnCommentDeletion — visitor delete-request flow', () => {
       message: '资源不存在。',
     })
 
-    // The fence fired before any write: no flag, no audit event.
     const [row] = await db.select().from(comment).where(eq(comment.id, cid))
     expect(row!.deleteRequestedAt).toBeNull()
     expect(await auditRowsFor('comment_delete_requested')).toHaveLength(0)
@@ -396,7 +376,6 @@ describe('cancelOwnCommentDeletion — visitor cancel-delete-request flow', () =
       message: '资源不存在。',
     })
 
-    // The fence fired before any write: the request is still pending.
     const [row] = await db.select().from(comment).where(eq(comment.id, cid))
     expect(row!.deleteRequestedAt).not.toBeNull()
     expect(await auditRowsFor('comment_delete_request_cancelled')).toHaveLength(0)

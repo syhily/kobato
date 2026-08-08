@@ -8,7 +8,6 @@ import { LinkPopover } from '@/ui/admin/editor/tiptap/LinkPopover'
 // LinkPopover is shared by the toolbar (insert at caret) and the
 // BubbleMenu (wrap / edit selection). Static SSR checks keep the
 // dependency footprint minimal vs @testing-library.
-//
 
 interface LinkChain {
   focus: () => LinkChain

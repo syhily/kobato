@@ -17,7 +17,6 @@ function buildApp(...args: Parameters<typeof rateLimitByIp>) {
   return app
 }
 
-/** Same shape as buildApp, with a caller-picked client address. */
 function buildAppWithAddress(clientAddress: string, ...args: Parameters<typeof rateLimitByIp>) {
   const app = new Hono<Env>()
   app.use('*', async (c, next) => {
@@ -28,7 +27,6 @@ function buildAppWithAddress(clientAddress: string, ...args: Parameters<typeof r
   return app
 }
 
-/** Shrink the `resourceIp` bucket so the second hit in a window trips. */
 function seedSingleAttemptResourceBucket() {
   setBlogSettingsBundleForTests({
     ...TEST_BLOG_SETTINGS_BUNDLE,
@@ -52,10 +50,7 @@ describe('rateLimitByIp middleware', () => {
     expect(__rateLimitKeysForTests()).toEqual(['rate-limit:feed:203.0.113.7'])
   })
 
-  // V3-09: when the peer IP is unknown but the socket port is known, the
-  // request-context middleware keys the address on `port:<n>` — the bucket
-  // must follow that per-connection discriminator instead of the shared
-  // 'unknown' bucket.
+  // V3-09: bucket key must follow the `port:<n>` per-connection discriminator.
   it('keys the bucket on the per-connection port when the peer IP is unknown', async () => {
     const res = await buildAppWithAddress('port:43210', 'feed', 'resourceIp').request('/ping')
 
@@ -77,16 +72,12 @@ describe('rateLimitByIp middleware', () => {
 
     const res = await app.request('/ping')
 
-    // Hono's default error handler renders the thrown HTTPException as a
-    // plain-text message body — the perimeter `onError` in production
-    // maps the same exception to the standard API error JSON.
+    // Hono's default handler renders the HTTPException as plain text.
     expect(res.status).toBe(429)
     await expect(res.text()).resolves.toBe('请求过于频繁，请稍后再试。')
   })
 
   it('accepts an explicit bucket object that governs instead of the settings snapshot', async () => {
-    // The settings bucket stays generous; the explicit maxAttempts: 1
-    // bucket is what trips the second request.
     const app = buildApp('setupRestore', { windowSeconds: 3600, maxAttempts: 1 })
 
     expect((await app.request('/ping')).status).toBe(200)

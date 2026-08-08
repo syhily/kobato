@@ -31,8 +31,7 @@ const STATUS_META: Record<AdminWebmentionWire['status'], { label: string; varian
   hidden: { label: '已隐藏', variant: 'outline' },
 }
 
-// Response-type labels (mf2 classification — presentational only, every
-// type moderates alike).
+// Response-type labels (mf2 classification — presentational only).
 const TYPE_META: Record<AdminWebmentionWire['type'], { label: string }> = {
   mention: { label: '提及' },
   reply: { label: '回应' },
@@ -43,13 +42,8 @@ const TYPE_META: Record<AdminWebmentionWire['type'], { label: string }> = {
 export type AdminWebmentionsPage = Awaited<ReturnType<typeof orpc.admin.webmentions.loadAll>>
 export type AdminWebmentionsData = InfiniteData<AdminWebmentionsPage, number>
 
-/**
- * Local cache patch after a moderation mutation: the row takes its new
- * terminal status and the per-page status counts shift with it — no
- * refetch. Under a non-`all` filter the row no longer matches, so it
- * leaves the visible list (the stale `total` re-syncs on the next page
- * load, same convention as the comments list).
- */
+/** Local cache patch after a moderation mutation: the row takes its new
+ *  terminal status; under a non-`all` filter it leaves the visible list. */
 export function moderateMentionInPages(
   data: AdminWebmentionsData,
   id: string,
@@ -82,12 +76,8 @@ export function moderateMentionInPages(
   }
 }
 
-/**
- * Local cache patch after a manual re-verification: the server row is
- * authoritative (verification state + refreshed metadata). A `hidden`
- * row restored to `approved` shifts the counts and leaves the 已隐藏
- * filter; any other row just updates in place.
- */
+/** Local cache patch after re-verification: the server row is authoritative;
+ *  a `hidden` row restored to `approved` leaves the 已隐藏 filter. */
 export function applyReverifyToPages(
   data: AdminWebmentionsData,
   row: AdminWebmentionWire,
@@ -129,10 +119,8 @@ function authorLabel(mention: AdminWebmentionWire): string {
   return tryParseUrl(mention.sourceUrl)?.hostname ?? mention.sourceUrl
 }
 
-/** The verification badge: 已验证 for a clean last check, 验证失败 with
- *  the last failure message (and the consecutive-day count) on hover for
- *  a failed one. Present on every row — pending, approved, and hidden
- *  all carry a verification state. */
+/** Verification badge: 已验证 for a clean check; 验证失败 with the last
+ *  failure message (+ consecutive-day count) on hover. */
 function VerificationBadge({ mention }: { mention: AdminWebmentionWire }) {
   if (mention.verificationStatus === 'verified') {
     return (
@@ -169,10 +157,8 @@ function InboxRow({ mention, onApprove, onReject, onReverify, isBusy }: InboxRow
   const config = useSiteIdentity()
   const meta = STATUS_META[mention.status]
   const busy = isBusy(mention)
-  // Re-verification is the only recovery path for a hidden row (even one
-  // re-mentioned back to `verified` — the badge must not take the button
-  // away), and a failed verification can always be re-checked right now.
-  // Rejected rows are terminal: no verification actions at all.
+  // Re-verification is the only recovery path for a hidden row, and a failed
+  // verification can always be re-checked; rejected rows are terminal.
   const showReverify =
     mention.status !== 'rejected' && (mention.status === 'hidden' || mention.verificationStatus === 'failed')
   return (
@@ -223,13 +209,9 @@ function InboxRow({ mention, onApprove, onReject, onReverify, isBusy }: InboxRow
   )
 }
 
-// The receive side of the Webmention page: the moderation queue. Every
-// mention lands here as `pending` after source verification and only
-// reaches the public page once approved; rejection is a kept terminal
-// state (the row is the audit trail). A verification that exhausted its
-// retries lands as `pending` + 验证失败 (the hover shows why); 7
-// consecutive daily re-verification failures flip an `approved` row to
-// `hidden` — off the public page, recoverable only via 重新验证.
+// The moderation queue: mentions land as `pending` after source verification
+// and only reach the public page once approved; rejection is kept (audit trail);
+// 7 consecutive daily verification failures flip an approved row to `hidden`.
 export function WebmentionInboxView() {
   const [status, setStatus] = useState<StatusFilter>('all')
 

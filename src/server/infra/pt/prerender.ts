@@ -15,8 +15,7 @@ import { createPromiseMemo } from '@/shared/utils/memo'
 
 const log = getLogger('pt.prerender')
 
-// Pre-render heavy PT blocks (code, math) at save time so SSR doesn't pay
-// the Shiki/KaTeX bootstrap cost on every request. Mutates in place.
+// Pre-render code/math blocks at save time so SSR never pays the Shiki/KaTeX bootstrap; mutates in place.
 
 export async function prerenderPortableTextBody(body: PortableTextBody): Promise<PortableTextBody> {
   const codeBlocks: {
@@ -55,13 +54,11 @@ export async function prerenderPortableTextBody(body: PortableTextBody): Promise
       return
     }
     if (block._type === 'block') {
-      // Tables, rules, images, music players, and containers carry no
-      // code/math payloads of their own.
+      // Only text blocks can carry inline math marks.
       collectFromTextBlock(block, mathInlineDefs)
     }
   })
 
-  // Hot path: skip when no math/code blocks need pre-rendering.
   if (codeBlocks.length === 0 && mathBlocks.length === 0 && mathInlineDefs.length === 0) {
     return body
   }
@@ -86,9 +83,7 @@ function collectFromTextBlock(
   }
 }
 
-// Process-level singleton shared across saves. Single-flight semantics:
-// share-in-flight (concurrent first saves await one bootstrap promise);
-// failure: retry (a rejected bootstrap is dropped, a later save re-tries).
+// Process-wide singleton; single-flight, and a failed bootstrap is retried on the next save.
 const getShikiHighlighter = createPromiseMemo(() => createShikiHighlighter())
 
 async function runShikiPasses(blocks: { code: string; language?: string; highlightedHtml?: string }[]): Promise<void> {
@@ -136,7 +131,6 @@ function runKatexPasses(blocks: { tex: string; mathml?: string }[], inlines: { t
     try {
       def.mathml = katex.renderToString(def.tex, { ...KATEX_OPTIONS, displayMode: false })
     } catch (err) {
-      // Leave mathml unset.
       log.warn('katex inline render failed', { error: String(err) })
     }
   }

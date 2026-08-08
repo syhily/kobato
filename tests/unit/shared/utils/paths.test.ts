@@ -9,11 +9,8 @@ import {
   trimSiteSuffix,
 } from '@/shared/utils/paths'
 
-// `canonicalPostPath` is what drives our alias-slug 301 redirects, and
-// `searchRootPath` is the only place query encoding happens for the search
-// landing URL. Both look trivial but each has a handful of edge cases that
-// have caused real prod incidents (Chinese slugs encoded twice, alias=
-// canonical triggering a redirect loop, etc.) — pin them.
+// `canonicalPostPath` drives alias-slug 301s; `searchRootPath` is the only query encoder.
+// Pin the edge cases that caused prod incidents (double-encoded CJK slugs, redirect loops).
 
 describe('routes/_shared/canonicalPostPath', () => {
   it('returns the canonical /posts/<slug> when alias differs', () => {
@@ -33,14 +30,11 @@ describe('routes/_shared/canonicalPostPath', () => {
   })
 
   it('treats Chinese-character canonicals as identity (no double-encoding)', () => {
-    // The canonical itself is interpolated literally; no encodeURI happens
-    // because router segments are already URL-decoded by the time the loader
-    // reads them.
+    // Canonical is interpolated literally — router segments arrive URL-decoded.
     expect(canonicalPostPath('foo', '你好-世界')).toBe('/posts/你好-世界')
   })
 
   it('treats empty-string slugs as different from canonical', () => {
-    // The router never feeds us "" but be defensive — empty !== canonical.
     expect(canonicalPostPath('', 'hello-world')).toBe('/posts/hello-world')
   })
 })
@@ -63,9 +57,7 @@ describe('routes/_shared/searchRootPath', () => {
   })
 })
 
-// The entity-permalink helpers pin the `/posts/<slug>` vs `/<slug>` split
-// that webmention resolution and comment notification emails both parse
-// back apart — a drift here silently breaks inbound links.
+// Pins the `/posts/<slug>` vs `/<slug>` split that webmention resolution and comment emails parse back apart.
 describe('shared/utils/paths — entityPermalink', () => {
   it('prefixes posts with /posts/', () => {
     expect(entityPermalink('post', 'hello-world')).toBe('/posts/hello-world')

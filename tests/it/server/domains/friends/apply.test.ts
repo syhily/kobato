@@ -23,10 +23,7 @@ const mockFetch = installFetch()
 
 const ADMIN_EMAIL = TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.author.email
 
-// Zeabur transport against the mocked fetch — one enqueued response
-// covers one notification email. Tests that expect a send additionally
-// `vi.waitFor` the call so the fire-and-forget promise settles inside
-// the test that triggered it (no cross-test bleed).
+// Zeabur transport against the mocked fetch; tests `vi.waitFor` the send so the fire-and-forget promise settles in-test.
 function enableMail() {
   setBlogSettingsBundleForTests({
     ...TEST_BLOG_SETTINGS_BUNDLE,
@@ -46,8 +43,7 @@ function enableMail() {
 
 beforeEach(async () => {
   await clearAllTables(db)
-  // The rate limiter is a process-level Map — reset it or earlier tests
-  // (same client IP) exhaust the window for later ones.
+  // Process-level Map: reset it or earlier tests exhaust the per-IP window.
   __resetRateLimitsForTests()
   mockFetch.reset()
   globalThis.fetch = mockFetch.fetch as unknown as typeof globalThis.fetch
@@ -68,8 +64,7 @@ function lastMailBody(): { to: string[]; subject: string; html: string } {
   return JSON.parse(mailCall!.init?.body as string)
 }
 
-// audit_log.actor_id references user.id — the admin actor must be a
-// real row or the audit insert dead-letters on the FK.
+// audit_log.actor_id references user.id — a missing actor row dead-letters the audit insert.
 async function seedAdmin(): Promise<number> {
   const rows = await db
     .insert(user)
@@ -207,10 +202,7 @@ describe('integration / friends apply → admin approve', () => {
   })
 
   afterEach(async () => {
-    // Flush BEFORE reset (and before the next clearAllTables wipes the
-    // seeded admin) — otherwise the batcher's 500ms timer can fire into
-    // the next test and dead-letter the buffered events on the
-    // audit_log.actor_id FK.
+    // Flush BEFORE reset — the batcher's timer can dead-letter buffered events on the actor FK.
     await flushAuditLog()
     resetAllBatchers()
   })

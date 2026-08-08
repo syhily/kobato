@@ -9,11 +9,8 @@ export interface MetricTarget {
   ownerId: number
 }
 
-/** Narrow a database `type` column to the entity types that comments can
- *  attach to. Returns `null` when either argument is null or the type is
- *  neither `'post'` nor `'page'` (caller decides how to handle).
- *  Centralises the check so call sites don't need `as` casts — the
- *  throwing wrapper is `resolveMetricTarget`. */
+/** Narrow a `type` column to comment-attachable types, avoiding `as` casts;
+ *  `null` for unknown types (the throwing wrapper is `resolveMetricTarget`). */
 export function asCommentTarget(type: string | null, ownerId: number | null): MetricTarget | null {
   if (type === null || ownerId === null) {
     return null

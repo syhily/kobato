@@ -2,9 +2,7 @@ import type { Buffer } from 'node:buffer'
 
 import sharp from 'sharp'
 
-// Statically imported and bundled; under SEA the bundler plugin redirects
-// sharp's own platform loads to `nativeRequire` (see
-// `scripts/sea/redirect-native-requires.ts`).
+// sharp is statically imported — the SEA bundler redirects its platform loads to `nativeRequire`.
 
 export interface CompressImageOptions {
   preserveAlpha?: boolean

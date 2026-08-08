@@ -30,8 +30,7 @@ interface ImageDetailDialogProps {
   onRecalculateThumbhash: (image: AdminImageDto) => void
 }
 
-// Image library detail dialog: full preview plus meta fields, with
-// note editing inline (click → reveal → save / cancel).
+// Library detail dialog: full preview + meta fields, note edited inline (click → reveal → save/cancel).
 export function ImageDetailDialog({
   image,
   open,

@@ -2,14 +2,8 @@ import { describe, expect, it } from 'vitest'
 
 import { isChunkLoadError } from '@/shared/utils/chunk-error'
 
-// Why this contract test exists.
-//
-// `isChunkLoadError` is the single decision point for the
-// chunk-reload recovery installed at `src/root.tsx`. A false negative
-// here turns a stale-deploy tab into a silent crash; a false positive
-// turns an unrelated runtime error into a forced reload loop. Both
-// are operator-visible bad outcomes, so we lock the message set
-// against the cross-browser strings observed in the wild.
+// Contract test: locks the cross-browser chunk-error strings — false
+// negatives silently crash a stale tab, false positives force reload loops.
 
 describe('isChunkLoadError', () => {
   it('matches Chrome / Edge dynamic import failures', () => {

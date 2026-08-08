@@ -12,10 +12,8 @@ import {
 } from '@/client/lib/draft-store'
 
 /**
- * One owner for the draft-record lifecycle: load → version/schema-check →
- * purge-or-hydrate, a loadComplete-gated persist, and the cross-tab clear
- * broadcast. `useLocalDraft` and `useCreateDraft` are thin adapters over this
- * session — they only supply a key source and a loaded-draft mapping.
+ * Single owner of the draft-record lifecycle: load → version/schema-check →
+ * purge-or-hydrate, loadComplete-gated persist, cross-tab clear broadcast.
  */
 
 /** Bump when the persisted draft shape changes; stale records are purged on load. */
@@ -35,17 +33,15 @@ export interface UseDraftSessionArgs<TBody, TLoaded> {
   /** Storage key for this session, or null while the draft surface is inactive. */
   key: string | null
   /**
-   * When the key embeds a rotating token (`<prefix><entityId>:<token>`),
-   * the adapter supplies the stable entity prefix here so `clearDraft`
-   * sweeps orphaned rotated predecessors, not just the current-token key
-   * (audit P1-15). Omit for token-free keys — the clear stays per-key.
+   * When the key embeds a rotating token (`<prefix><entityId>:<token>`), the
+   * stable entity prefix so `clearDraft` sweeps orphaned rotated predecessors
+   * too (audit P1-15). Omit for token-free keys.
    */
   clearPrefix?: string
   broadcastName: string
   draftType: DraftType
   bodySchema: ZodType<TBody>
   body: TBody
-  /** Persisted alongside the body on every write when defined. */
   meta?: unknown
   /**
    * Map a version- and schema-valid record to the adapter's loaded-draft
@@ -150,8 +146,8 @@ export function useDraftSession<TBody, TLoaded>({
     }
   }, [key, bodySchema, mapLoaded])
 
-  // Persist on every body/meta change, but never before the initial load
-  // completed — a stale write must not clobber the stored draft.
+  // Persist on every body/meta change, never before the initial load completed
+  // — a stale write must not clobber the stored draft.
   useEffect(() => {
     if (key === null) {
       return

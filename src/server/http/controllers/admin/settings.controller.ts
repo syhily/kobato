@@ -24,14 +24,9 @@ const update = adminProc
       payload: z.record(z.string(), z.unknown()),
     }),
   )
-  // The response is authoritative: the merged, validated section in the
-  // admin display shape (masks merged in for assets/mail/search). The
-  // client adopts it as its new baseline instead of revalidating the
-  // loader — a save must never refetch the document out from under the
-  // user's hands. The oRPC output schema is necessarily loose (the shape
-  // is per-section); the REAL runtime gate lives in
-  // `projectSectionForAdmin`, which validates against the per-section
-  // schema at assembly time.
+  // The response is authoritative: the merged, validated section in the admin display shape.
+  // The client adopts it as its new baseline — a save must never refetch the document out
+  // from under the user's hands. The REAL runtime gate lives in `projectSectionForAdmin`.
   .output(z.object({ section: z.unknown(), warnings: z.array(z.string()) }))
   .handler(async ({ input, context }) => {
     const editorId = safeBigInt(context.viewer.id)
@@ -51,12 +46,8 @@ const update = adminProc
     return { section: projectSectionForAdmin(input.section, bundle, masks), warnings }
   })
 
-// The settings layout loader data behind `/admin/settings`: hydrate →
-// eager backfill → missing-section 503 semantics → secret masks +
-// redacted bundle + the IANA timezone list. The 503 semantics replicate
-// `routes/admin/settings/layout.tsx` exactly (SERVICE_UNAVAILABLE, same
-// message texts) so the route loader can translate the code back into
-// the historical `Response`.
+// Settings layout loader data behind `/admin/settings`: hydrate → eager
+// backfill → 503 semantics replicated from `layout.tsx` exactly.
 const bootstrap = adminProc
   .route({ method: 'GET', path: '/admin/settings/bootstrap' })
   .output(adminSettingsBootstrapOutputSchema)

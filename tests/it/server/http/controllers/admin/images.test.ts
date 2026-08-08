@@ -17,12 +17,8 @@ import { image } from '@/server/infra/db/schema/media'
 import { user } from '@/server/infra/db/schema/user'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@/server/infra/storage/registry'
 
-// Worker boundary: recalculateImageThumbhash (storage fetch + sharp worker)
-// stays mocked — the sharp pipeline is a native external covered at the
-// domain seam. deleteImage now runs REAL: its storage delete goes through
-// the registry seam to the in-memory backend below, so `delete` is pinned
-// by the object actually disappearing from the store. updateImageNote runs
-// real against the in-memory database.
+// recalculateImageThumbhash stays mocked (sharp is a native external pinned
+// at the domain seam); deleteImage and updateImageNote run real.
 vi.mock('@/server/domains/images/services/admin-mutate', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/server/domains/images/services/admin-mutate')>()
   return {
@@ -31,10 +27,7 @@ vi.mock('@/server/domains/images/services/admin-mutate', async (importOriginal) 
   }
 })
 
-// Storage + worker boundary: uploadImage (sharp processing + storage put)
-// stays mocked — pinned at the domain seam in
-// tests/unit/server/domains/images/services/upload.test.ts — while
-// assertImageUploadAllowed runs REAL so the cap wiring is exercised.
+// uploadImage stays mocked (pinned at the domain seam); assertImageUploadAllowed runs real.
 vi.mock('@/server/domains/images/services/upload', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/server/domains/images/services/upload')>()
   return {
@@ -58,17 +51,14 @@ beforeEach(async () => {
 afterEach(async () => {
   __resetStorageBackendsForTests()
   memory.reset()
-  // Flush BEFORE dropping the batcher: InsertBatcher.dispose() leaves an
-  // armed flush timer behind, so an unflushed queue would otherwise
-  // insert this case's stale events mid-next-test.
+  // Flush BEFORE dropping the batcher: an armed flush timer leaks stale events into the next test.
   await flushAuditLog()
   resetAllBatchers()
 })
 
 let seq = 0
 
-// audit_log.actor_id references user.id, so the admin caller must be a
-// real row for the batched audit insert to survive the FK.
+// audit_log.actor_id references user.id: the admin caller must be a real row.
 async function seedAdmin(): Promise<number> {
   const [row] = await db
     .insert(user)
@@ -148,8 +138,6 @@ describe('adminImagesRouter.delete', () => {
 
     expect(res).toBeUndefined()
 
-    // The real deleteImage ran: the row is soft-deleted and the object is
-    // gone from the (in-memory) storage backend.
     const [row] = await db.select().from(image).where(eq(image.id, seeded.id))
     expect(row!.deletedAt).not.toBeNull()
     expect(memory.deletedKeys).toContain(seeded.storagePath)
@@ -200,12 +188,7 @@ describe('adminImagesRouter.recalculateThumbhash', () => {
 })
 
 describe('adminImagesRouter.upload — orchestration only', () => {
-  // The validation rules themselves (MIME allowlist, size cap, magic-byte
-  // sniffing) are pinned at the domain seam in
-  // tests/unit/server/domains/images/services/upload.test.ts; here we only
-  // pin that the controller wires the declared file + settings into the
-  // domain and routes the kind dispatch. assertImageUploadAllowed runs
-  // real so the configured cap is genuinely enforced.
+  // Validation rules live at the domain seam; here: controller wiring + real cap enforcement.
   beforeEach(() => {
     setBlogSettingsBundleForTests({
       ...TEST_BLOG_SETTINGS_BUNDLE,
@@ -232,8 +215,7 @@ describe('adminImagesRouter.upload — orchestration only', () => {
         note: null,
         maxBytes: 1024,
         jpegQuality: 80,
-        // The session stub carries only id + role, so the resolved
-        // uploader name is undefined here; the domain maps it to null.
+        // Session stub carries only id + role; the domain maps undefined to null.
         uploader: { id: admin, name: undefined },
       }),
     )

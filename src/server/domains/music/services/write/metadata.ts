@@ -11,18 +11,13 @@ export interface UpdateMusicMetadataInputs {
   name: string
   artist: string[]
   album: string
-  /** `null` clears the stored lyric (matches the "no upstream lyric" case). */
+  /** `null` clears the stored lyric. */
   lyric: string | null
 }
 
 /**
- * Metadata-only edit for the admin UI. Provider id triplet
- * (`source`, `sourceId`, `playerId`), audio/cover storage paths,
- * uploader, and timestamps are intentionally untouched — the
- * upload pipeline owns those, and `playerId` is how `musicPlayer`
- * PortableText blocks reference the row. `artist[]` is packed back to the historical
- * `'Artist A / Artist B'` row representation; the public
- * projection unpacks it again on read.
+ * Metadata-only edit for the admin UI; `artist[]` is packed to the
+ * `'Artist A / Artist B'` row form. Other columns are upload-pipeline-owned.
  */
 export async function updateMusicMetadata(
   db: Database,
@@ -47,9 +42,7 @@ export async function updateMusicMetadata(
     throw new DomainError('NOT_FOUND', '音乐不存在')
   }
 
-  // Re-fetch through the admin projection so the response carries
-  // the joined `uploaderName` instead of forcing the caller to
-  // re-derive it.
+  // Re-fetch so the response carries the joined `uploaderName`.
   const projected = await findAdminMusicRowById(db, input.id)
   if (projected === null) {
     throw new DomainError('NOT_FOUND', '音乐不存在')

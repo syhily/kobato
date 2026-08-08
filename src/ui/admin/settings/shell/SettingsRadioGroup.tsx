@@ -2,13 +2,8 @@ import type { ComponentProps } from 'react'
 
 import { RadioGroup } from '@/ui/components/radio-group'
 
-// `<RadioGroup>` + automatic immediate save for /admin/settings.
-//
-// Same save-on-change idiom as `SettingsSwitch` (see its header comment):
-// the upstream `onValueChange` (typically RHF's `field.onChange`) fires
-// first, then `save()` commits the card immediately. The items
-// (`RadioGroupItem`) are presentational and stay imported from
-// `@/ui/components/radio-group`.
+// `<RadioGroup>` + immediate save: the upstream `onValueChange` fires
+// first, then `save(name)` commits.
 
 type RadioGroupProps = ComponentProps<typeof RadioGroup>
 

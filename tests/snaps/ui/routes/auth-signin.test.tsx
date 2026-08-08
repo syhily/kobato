@@ -1,8 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-// Mock the WebAuthn browser entry point the same way the existing
-// auth-forms snapshot does, so the imported admin form modules do not
-// try to call into the real `@simplewebauthn/browser` under SSR.
+// Stub WebAuthn so the imported admin forms don't call the real browser entry under SSR.
 vi.mock('@simplewebauthn/browser', () => ({
   startAuthentication: vi.fn(),
   startRegistration: vi.fn(),
@@ -12,22 +10,16 @@ import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { asRoute } from '#/_helpers/route-test-utils'
 import AdminLayoutRouteRaw from '@/routes/auth/layout'
 import AdminInstallRouteRaw from '@/routes/auth/setup'
-// `Component` is the default export of the route module. Its branches
-// (login vs verifyotp vs lostpassword vs resetpassword/accept-invite,
-// plus error/message/token-error surfacing) are pure given loaderData /
-// actionData, so we drive the Component directly with fixture data and
-// assert on the visible chrome each branch renders. The generated
-// `Route.ComponentProps` types are strict (params/matches/…); `asRoute`
-// widens the prop bag so tests only need the fields each branch reads.
+// Drive the route Component directly with fixture loaderData/actionData
+// (branches are pure given the data). `asRoute` widens the strict
+// ComponentProps so tests pass only the fields each branch reads.
 import LoginRouteRaw from '@/routes/auth/signin'
 
 const LoginRoute = asRoute(LoginRouteRaw)
 const AdminInstallRoute = asRoute(AdminInstallRouteRaw)
 const AdminLayoutRoute = asRoute(AdminLayoutRouteRaw)
 
-// Base loader fixture: every field the route's default Component reads
-// (csrfToken, action, magicToken, authError, tokenError, resetToken).
-// Each test spreads in overrides to hit a different branch.
+// Base loader fixture; each test spreads overrides for a different branch.
 const baseLoader = {
   redirectTo: '/',
   action: 'login' as const,
@@ -61,9 +53,7 @@ describe('routes/auth/signin — Component SSR branches', () => {
           '/signin',
         ),
       )
-      // The runtime value is still the literal 'login' (only the type is
-      // widened to the loader's optional shape), so the identifier-first
-      // login form renders exactly like the default branch above.
+      // Runtime value stays 'login' — only the type widens, so the default branch renders.
       expect(html).toContain('登陆')
       expect(html).toContain('邮箱')
     })
@@ -84,7 +74,6 @@ describe('routes/auth/signin — Component SSR branches', () => {
       )
       expect(html).toContain('user@example.com')
       expect(html).toContain('验证码')
-      // The login button does not show in the OTP step.
       expect(html).not.toContain('>登陆<')
     })
   })
@@ -110,9 +99,7 @@ describe('routes/auth/signin — Component SSR branches', () => {
     })
 
     it('falls back to no OTP form when pendingOtpEmail is missing (in guard check)', () => {
-      // action === 'verifyotp' but the loaderData does not carry the
-      // pending-email fields, so the `'pendingOtpEmail' in loaderData`
-      // guard fails and OtpForm is not rendered.
+      // Missing pending-email fields → the 'pendingOtpEmail' in loaderData guard fails.
       const html = stableHtml(
         renderInRouter(
           <LoginRoute
@@ -304,9 +291,7 @@ describe('routes/auth/signin — Component SSR branches', () => {
 
     it('renders nothing in the notice block when all error/message sources are absent', () => {
       const html = stableHtml(renderInRouter(<LoginRoute loaderData={baseLoader} />, '/signin'))
-      // The notice wrapper is conditionally rendered; assert that no
-      // role="alert" appears since no error/message/tokenError/authError
-      // is set.
+      // Notice wrapper is conditional — no error sources set.
       expect(html).not.toContain('role="alert"')
     })
   })
@@ -373,10 +358,7 @@ describe('routes/auth/setup — Component SSR branches', () => {
   })
 
   it('renders the token verify form (not the install form) when not yet verified', () => {
-    // The install form (`AdminInstallForm`) is only rendered once the
-    // setup token is verified. Before that, the route renders
-    // `SetupTokenVerifyForm`, which shows its own error slot — so the
-    // install-specific chrome (`站点名称`) must be absent.
+    // Not verified → SetupTokenVerifyForm, so install chrome must be absent.
     const html = stableHtml(
       renderInRouter(
         <AdminInstallRoute
@@ -393,8 +375,7 @@ describe('routes/auth/setup — Component SSR branches', () => {
 
 describe('routes/auth/layout — Component SSR', () => {
   it('renders the admin auth layout shell with an <Outlet/>', () => {
-    // The layout reads no loaderData; it just renders the split-screen
-    // chrome and forwards to its <Outlet/>. Assert visible chrome.
+    // The layout reads no loaderData — just the split-screen chrome and its <Outlet/>.
     const html = stableHtml(renderInRouter(<AdminLayoutRoute />, '/admin/signin'))
     expect(html).toContain('<main')
     // The layout uses a max width of 520px for the centered panel.

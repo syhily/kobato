@@ -6,19 +6,9 @@ import { nextDailyMaintenanceDelayMs, scheduleJob, type ScheduledJob } from '@/s
 const log = getLogger('db.maintenance')
 
 /**
- * The SQLite half of the daily DB maintenance job (plan §1.11 — the
- * DuckDB half lives in `@/server/bootstrap/analytics-lifecycle`):
- *   1. `PRAGMA incremental_vacuum` — drain the freelist left by
- *      session/kv/token expiry churn; bounded and online under WAL.
- *   2. `PRAGMA optimize` — refresh planner statistics whose tables have
- *      drifted (SQLite's own heuristic ANALYZE).
- *   3. page_count / freelist_count logged before and after, so database
- *      growth and maintenance effect are observable in the log stream.
- * A full VACUUM is never scheduled (blocking, doubles disk usage) —
- * restore-from-backup already produces a fully defragmented file.
- * Scheduled daily at 04:30 in the site's configured timezone (the audit
- * archive runs at 04:00), same self-rescheduling seam as the other
- * sweeps.
+ * SQLite half of the daily DB maintenance job (plan §1.11 — DuckDB half
+ * in `@/server/bootstrap/analytics-lifecycle`): incremental vacuum,
+ * optimize, page stats. Full VACUUM is never scheduled.
  */
 
 /** Read a single-value PRAGMA (page_count, freelist_count) as a number. */
@@ -33,8 +23,7 @@ function pageStats(handle: DatabaseHandle): { pageCount: number; freelistCount: 
 }
 
 export function runDbMaintenance(handle: DatabaseHandle): void {
-  // Pragmas are connection-local no-ops inside transactions; run on the
-  // raw client outside any drizzle work.
+  // Pragmas are no-ops inside transactions — run on the raw client.
   try {
     const before = pageStats(handle)
     handle.client.exec('PRAGMA incremental_vacuum')
@@ -51,13 +40,8 @@ export function runDbMaintenance(handle: DatabaseHandle): void {
   }
 }
 
-// ─── Scheduler ───────────────────────────────────────────
-// The handle getter is injected by the composition root
-// (`@/server/bootstrap/db-lifecycle`) at wire time and invoked when the
-// job fires, so a reopened handle (restore completion) is picked up
-// without being captured in module state. Timer mechanics live in the
-// shared `scheduleJob` seam; this module owns only the policy (04:30
-// site time, what to run).
+// The handle getter is injected at wire time so a reopened handle
+// (restore completion) is picked up without module state.
 
 let job: ScheduledJob | null = null
 let resolveHandle: (() => DatabaseHandle) | null = null

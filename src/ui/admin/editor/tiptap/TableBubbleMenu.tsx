@@ -17,10 +17,7 @@ import {
 import { Button } from '@/ui/components/button'
 import { Separator } from '@/ui/components/separator'
 
-// Floating action bar that appears whenever the selection is inside
-// a Tiptap table. The buttons map 1:1 onto Tiptap's table command
-// names; each button consults `editor.can()` so that, e.g., "merge
-// cells" greys out when fewer than two cells are selected.
+// Table action bar; each button consults `editor.can()` so unavailable commands grey out.
 
 const TABLE_BUBBLE_MENU_OPTIONS = { placement: 'top' as const, offset: 8 }
 

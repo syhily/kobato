@@ -3,12 +3,9 @@ import { describe, expect, it } from 'vitest'
 
 import { InputTemplateSchema } from '@/server/domains/fonts/vendor/gen/api_pb'
 
-// Schema-drift guard for the bufbuild-generated `InputTemplate` encoder. The
-// generated `gen/api_pb.ts` is the JS↔wasm contract: if the proto schema or
-// the `protoc-gen-es` version drifts, the bytes the wasm core receives would
-// change and slicing would fail. These tests pin the encoder's wire-format
-// output so a regeneration that changes the byte layout is caught loudly
-// before the (slower) end-to-end slice test runs.
+// Pins the bufbuild-generated `InputTemplate` encoder's wire bytes: a
+// regeneration that changes the byte layout fails here before the
+// end-to-end slice test runs.
 
 describe('InputTemplate encoder (bufbuild)', () => {
   it('encodes a minimal input (just bytes) with the field-1 length-delimited tag', () => {
@@ -16,7 +13,7 @@ describe('InputTemplate encoder (bufbuild)', () => {
     const msg = create(InputTemplateSchema, { input: source })
     const bytes = toBinary(InputTemplateSchema, msg)
 
-    // Field 1, wire type 2 (length-delimited): tag = (1 << 3) | 2 = 0x0a.
+    // Field 1, wire type 2 (length-delimited) → tag 0x0a.
     expect(bytes[0]).toBe(0x0a)
     expect(bytes[1]).toBe(source.length)
     expect(bytes.subarray(2, 2 + source.length)).toEqual(source)
@@ -35,7 +32,7 @@ describe('InputTemplate encoder (bufbuild)', () => {
   it('encodes css.fontFamily inside a nested message (field 5, tag = 0x2a)', () => {
     const msg = create(InputTemplateSchema, { input: new Uint8Array([0x00]), css: { fontFamily: 'OPPO Sans' } })
     const bytes = toBinary(InputTemplateSchema, msg)
-    // Field 5, wire type 2: tag = (5 << 3) | 2 = 0x2a.
+    // Field 5, wire type 2 (length-delimited) → tag 0x2a.
     const cssTagIdx = bytes.indexOf(0x2a)
     expect(cssTagIdx).toBeGreaterThan(-1)
     const nestedLen = bytes[cssTagIdx + 1]

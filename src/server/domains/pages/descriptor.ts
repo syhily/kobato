@@ -19,9 +19,7 @@ import { findPublicPageMetaBySlug } from '@/server/domains/pages/services/public
 import { assertPageExists, type UpsertPageMetaInput } from '@/server/domains/pages/services/shared'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 
-// The OG request path (`http/resources/images.ts`) resolves an empty
-// page summary to the site description — the warm key must fold the same
-// inputs or it fills a key the crawler never asks for.
+// Warm key must mirror the OG resolver (`http/resources/images.ts`): empty summary → site description.
 function pageOgTarget(meta: PageMetaRow) {
   return {
     slug: meta.slug,
@@ -32,12 +30,9 @@ function pageOgTarget(meta: PageMetaRow) {
 }
 
 /**
- * The page entity: existence-only access (admin-only surface), admin-only
- * draft preview, the showFriends flag, and cache invalidation on every
- * meta mutation (the sitemap lists pages, so any meta change can stale
- * it). Everything else — the body lifecycle and the meta CRUD/mutation
- * skeleton — comes from the generic implementations this descriptor
- * feeds (`content/entities/*`).
+ * The page entity descriptor: existence-only access, admin-only draft
+ * preview, `showFriends`, and invalidation on every meta mutation
+ * (the sitemap lists pages). The rest comes from `content/entities/*`.
  */
 export const pageDescriptor: MetaEntityDescriptor<
   PageMetaRow,
@@ -69,8 +64,6 @@ export const pageDescriptor: MetaEntityDescriptor<
     project: (meta, revision) => toCmsPage(meta, revision),
     async afterPublish(db, meta) {
       invalidateContent(db, { entity: 'page' })
-      // Same crawler-first-scan warm as posts — the request path falls
-      // back to the site description when the page summary is empty.
       warmContentRenderCaches(db, pageOgTarget(meta))
     },
   },
@@ -86,9 +79,7 @@ export const pageDescriptor: MetaEntityDescriptor<
     }),
     async afterMutation(db, meta) {
       invalidateContent(db, { entity: 'page' })
-      // Re-warm only when the mutation leaves a publicly reachable page —
-      // creates/updates of unpublished pages and deletes/unpublishes
-      // would render a card the OG route never serves.
+      // Re-warm only when the mutation leaves a publicly reachable page.
       if (isLive(meta)) {
         warmContentRenderCaches(db, pageOgTarget(meta))
       }

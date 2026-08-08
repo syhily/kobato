@@ -11,10 +11,8 @@ import { loadComments, parseComments } from '@/server/domains/comments/services/
 import { ensureCommentPage } from '@/server/domains/comments/services/shared'
 import { loadSidebarData } from '@/server/http/loaders/sidebar'
 
-// `SessionUser` carries the canonical `role`. The public reply form
-// only cares about the admin vs. non-admin distinction (admins bypass
-// rate limits, render moderator badges, etc.), so project through
-// `CommentFormUser` to keep future session fields out of the SSR DOM.
+// Project through `CommentFormUser` — the reply form only needs the
+// admin/non-admin split, keeping future session fields out of the SSR DOM.
 function toCommentFormUser(user: SessionUser | undefined): CommentFormUser | undefined {
   if (user === undefined) {
     return undefined
@@ -28,12 +26,8 @@ function toCommentFormUser(user: SessionUser | undefined): CommentFormUser | und
   }
 }
 
-// The streamed comments payload (`content.comments.byKey`). Comments
-// split out so the detail route can stream them via React Router's
-// `<Await>` while the rest of the detail (likes, sidebar, post body)
-// renders immediately. PT bodies are stored pre-rendered, so the
-// per-row work in `parseComments` is now just projection — but the
-// network/DB round-trip is still worth deferring.
+// The streamed comments payload (`content.comments.byKey`) — split out so
+// the route streams it via `<Await>` while the rest of the detail renders.
 export async function loadCommentsAndItems(
   db: Database,
   session: BlogSession,
@@ -44,10 +38,8 @@ export async function loadCommentsAndItems(
   return { commentData, commentItems: asCommentItemsWire(commentItems) }
 }
 
-// "Critical" detail data: everything the page needs to paint above the fold
-// (post body, likes, sidebar, current-user identity for the reply form).
-// Comments are intentionally excluded so the route can stream them
-// alongside the SSR HTML.
+// Above-the-fold detail data (likes, sidebar, current user); comments are
+// excluded so the route streams them alongside the SSR HTML.
 export async function loadDetailPageCritical(db: Database, session: BlogSession, target: EntityTarget) {
   const user = userSession(session)
   const currentUser = toCommentFormUser(user)

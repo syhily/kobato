@@ -2,12 +2,9 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-// Schema-lint: the SQLite migration standardised every timestamp column
-// on `integer({ mode: 'timestamp_ms' })` (epoch ms — node:sqlite throws
-// on integers beyond 2^53, and the other modes invite exactly that).
-// Any new column using another mode (`timestamp`, `date`, or a bare
-// drizzle `timestamp()` builder) fails here at authoring time, not in
-// production.
+// Schema-lint: every SQLite timestamp column must use
+// `integer({ mode: 'timestamp_ms' })`; other modes fail here at
+// authoring time.
 const SCHEMA_DIR = join(process.cwd(), 'src/server/infra/db/schema')
 
 function schemaSources(): [string, string][] {
@@ -24,7 +21,6 @@ describe('contract: schema column modes', () => {
       for (const match of source.matchAll(/mode:\s*'(timestamp|date)'/g)) {
         offenders.push(`${name}: mode: '${match[1]}'`)
       }
-      // The drizzle timestamp()/date() builders must never appear.
       for (const match of source.matchAll(/\b(?:timestamp|date)\(/g)) {
         offenders.push(`${name}: ${match[0]} builder`)
       }

@@ -1,14 +1,9 @@
 import { z } from 'zod'
 
 /**
- * Safe boolean coercion that correctly handles string "true"/"false".
- *
- * `z.coerce.boolean()` uses JavaScript's `Boolean()` under the hood, which
- * means `Boolean("false") === true`. That turns a checkbox that a user
- * un-checked into `true` on the wire — exactly the opposite of what they
- * intended.
- *
- * Use this everywhere you'd reach for `z.coerce.boolean()`.
+ * Boolean coercion that handles string "true"/"false" — unlike
+ * `z.coerce.boolean()` (Boolean("false") === true). Use this wherever
+ * you'd reach for `z.coerce.boolean()`.
  */
 export function safeBoolean() {
   return z
@@ -18,7 +13,6 @@ export function safeBoolean() {
 
 const HONEYPOT_MAX_LENGTH = 240
 
-/** Build one deliberately-named bot trap while keeping its mechanics shared. */
 export function honeypotField<const TName extends string>(name: TName) {
   return {
     schema: z.string().max(HONEYPOT_MAX_LENGTH).optional().default(''),

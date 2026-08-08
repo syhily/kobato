@@ -3,10 +3,8 @@ import { describe, expect, it } from 'vitest'
 import { deriveSlug } from '@/server/infra/slug/derive'
 import { DERIVED_SLUG_PATTERN, SLUG_MAX } from '@/shared/slug'
 
-// Contract tests for the project-wide slug helper. These pin the
-// pinyin-pro -> github-slugger pipeline so any future swap of either
-// dependency cannot silently change the URL shape of every tag,
-// category, page, and heading anchor in one go.
+// Pins the pinyin-pro -> github-slugger pipeline: a swap of either
+// dependency must not silently change URL shapes.
 describe('deriveSlug', () => {
   it('romanises Han text to lowercase pinyin syllables joined by `-`', () => {
     expect(deriveSlug('编程')).toBe('bian-cheng')
@@ -27,29 +25,20 @@ describe('deriveSlug', () => {
   it('collapses consecutive separators and strips leading / trailing dashes', () => {
     expect(deriveSlug('  hello   world  ')).toBe('hello-world')
     expect(deriveSlug('--foo--bar--')).toBe('foo-bar')
-    // `github-slugger` STRIPS most punctuation rather than replacing
-    // it with `-`. Periods, slashes, parens, etc. simply vanish.
-    // We document the behaviour here so a future reader doesn't
-    // assume "any non-alnum collapses to a dash".
+    // github-slugger strips most punctuation — don't assume it becomes `-`.
     expect(deriveSlug('a.b.c')).toBe('abc')
     expect(deriveSlug('node.js v20')).toBe('nodejs-v20')
   })
 
   it('returns an empty string when the input has no slug-eligible characters', () => {
-    // The fallback for "all-emoji / all-punctuation" lives at the
-    // call sites (category / page service throw a friendly 400);
-    // the helper itself returns '' so callers can tell the difference.
+    // Call sites map '' to a 400 — it must stay distinguishable.
     expect(deriveSlug('💯')).toBe('')
     expect(deriveSlug('!!!')).toBe('')
     expect(deriveSlug('   ')).toBe('')
   })
 
   it('produces stateless output (no cross-call dedup)', () => {
-    // First-call vs second-call equality matters because the helper
-    // allocates a fresh `GithubSlugger` per call. If we ever
-    // accidentally hoist the slugger to module scope, two saves of
-    // the same name would yield `foo` and `foo-1`, silently
-    // duplicating taxonomy slugs.
+    // Stateless: a shared GithubSlugger would dedup repeats into `foo-1`.
     expect(deriveSlug('react')).toBe('react')
     expect(deriveSlug('react')).toBe('react')
   })

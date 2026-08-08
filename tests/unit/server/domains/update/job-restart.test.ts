@@ -1,16 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Regression for audit P0-7: the self-update restart spawned the
-// replacement process BEFORE the parent closed its listen socket, so on
-// bare metal (no supervisor) the child could bind while the parent still
-// held the port, die on EADDRINUSE, and leave the deployment permanently
-// down once the parent exited. The default restart must close the socket
-// first, then spawn, then request the graceful shutdown.
-//
-// Audit V3-01: real spawn failures (ENOENT/EACCES) arrive asynchronously
-// via the child's 'error' event, not a synchronous throw. The restart must
-// listen for that event, restore the listener, land the job in 'failed',
-// and release the slot so later applies stop 409ing.
+// Regression for audit P0-7: close the listen socket before spawning, then request shutdown.
+// Audit V3-01: spawn failures arrive via the child's 'error' event, not a synchronous throw;
+// the restart must listen, fail the job, and release the slot.
 
 const calls = vi.hoisted(() => ({ order: [] as string[] }))
 
@@ -65,9 +57,7 @@ describe('update/job scheduleSelfRestart (default restart)', () => {
 
   it('closes the listen socket before spawning the replacement process', async () => {
     const job = await loadJob()
-    // No injected restart — the real `scheduleSelfRestart` drives the
-    // mocked lifecycle/spawn seams. `process.exit` never runs: the mocked
-    // `requestShutdown` swallows the shutdown.
+    // The real `scheduleSelfRestart` drives the mocked seams.
     job.startUpdateJob('v9.9.9')
 
     await vi.waitFor(
@@ -82,8 +72,7 @@ describe('update/job scheduleSelfRestart (default restart)', () => {
       detached: true,
       stdio: 'inherit',
     })
-    // The happy path must still arm the async failure listener; without it
-    // a later 'error' event would crash the process as an uncaught throw.
+    // The happy path must still arm the async failure listener.
     expect(childRef.errorListener).toBeDefined()
   })
 
@@ -98,8 +87,6 @@ describe('update/job scheduleSelfRestart (default restart)', () => {
       { timeout: 2_000 },
     )
 
-    // ENOENT/EACCES surface like this in production — the spawn call
-    // succeeded, the failure arrives on the child afterwards.
     childRef.errorListener!(new Error('spawn ENOENT'))
 
     await vi.waitFor(
@@ -135,9 +122,7 @@ describe('update/job scheduleSelfRestart (default restart)', () => {
       { timeout: 2_000 },
     )
 
-    // The socket was closed before the failed spawn; the process must
-    // recover its listener and stay up rather than exiting into a dead
-    // deployment.
+    // The process must stay up after a failed spawn, not exit into a dead deployment.
     expect(calls.order).toEqual(['close', 'spawn'])
     expect(lifecycleMocks.requestShutdown).not.toHaveBeenCalled()
     expect(job.getUpdateJobStatus()).toMatchObject({
@@ -159,8 +144,6 @@ describe('update/job scheduleSelfRestart (default restart)', () => {
 
     job.startUpdateJob('v9.9.9')
 
-    // A rejecting `restartServer` must be caught — an unhandled rejection
-    // here would fail this run — and the job must still land in 'failed'.
     await vi.waitFor(
       () => {
         expect(job.getUpdateJobStatus().state).toBe('failed')

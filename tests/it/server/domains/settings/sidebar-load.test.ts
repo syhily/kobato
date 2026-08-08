@@ -7,11 +7,8 @@ import { comment } from '@/server/infra/db/schema/comment'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
 
-// loadSidebarData fans out to the real latestComments digest (kv-backed
-// `comments` cache bucket included — cleared with every other table in
-// `beforeEach`). The seeded rows below pin the digest projection: one
-// non-admin commenter, one approved comment on a real post row.
-
+// Real latestComments digest incl. the kv cache bucket — cleared with
+// every other table in `beforeEach`.
 const db = getTestDb()
 
 beforeEach(async () => {

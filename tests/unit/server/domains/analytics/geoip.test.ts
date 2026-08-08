@@ -1,10 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Reader-lifecycle memoization rules: a database that is simply not
-// installed stays memoized (cheap steady state), but a FAILED open is
-// never cached — otherwise one transient I/O error (or a read racing a
-// database swap) would silently disable geo enrichment until the next
-// resetGeoReader().
+// Memoization rules: a not-installed database stays memoized, but a
+// failed open is never cached.
 const knobs = vi.hoisted(() => ({ installed: true }))
 const readerOpen = vi.hoisted(() => vi.fn())
 const existsSyncMock = vi.hoisted(() => vi.fn(() => knobs.installed))

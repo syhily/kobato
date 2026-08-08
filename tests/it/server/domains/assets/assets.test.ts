@@ -8,12 +8,9 @@ import { resolveSiteAsset } from '@/server/domains/assets/services/routes'
 import { fetchBrandingObject } from '@/server/domains/assets/services/storage'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@/server/infra/storage/registry'
 
-// The storage registry is the only substituted boundary: branding reads
-// route to a shared in-memory backend (a true external — S3/local disk)
-// injected through the registry's test seam, so the real fetchBrandingObject
-// runs end-to-end — buffer cache, not-found fallback, and legacy-key
-// migration included. Every branding ref here carries driver 's3', so the
-// seam substitutes the 's3' driver only.
+// Only the storage registry is substituted: the real fetchBrandingObject
+// runs end-to-end (buffer cache, not-found fallback, legacy-key migration)
+// against the in-memory 's3' backend.
 const mem = makeMemoryBackend()
 
 beforeEach(() => {

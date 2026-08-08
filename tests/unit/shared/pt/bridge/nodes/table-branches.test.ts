@@ -5,8 +5,6 @@ import type { TableBlock, TableCell, TableRow } from '@/shared/pt/schema'
 
 import { pmCellToTableCell, pmTableToBlock, tableBlockToPmNode } from '@/shared/pt/bridge/nodes/table'
 
-// --- helpers --------------------------------------------------------------
-
 let n = 0
 function key(p: string): string {
   n += 1
@@ -34,15 +32,12 @@ function table(rows: TableRow[], overrides: Partial<TableBlock> = {}): TableBloc
   return { _type: 'table', _key: key('t'), rows, ...overrides }
 }
 
-// ensureKey callback that simply echoes the existing _key (or generates one)
 function ensureKeyEcho(attrs: Record<string, unknown> | undefined): string {
   if (attrs && typeof attrs._key === 'string') {
     return attrs._key
   }
   return key('g')
 }
-
-// --- tableBlockToPmNode ---------------------------------------------------
 
 describe('shared/pt/bridge/nodes/table — tableBlockToPmNode', () => {
   it('marks the first row as headers when hasHeaderRow is true', () => {
@@ -80,8 +75,6 @@ describe('shared/pt/bridge/nodes/table — tableBlockToPmNode', () => {
     expect(para.content).toEqual([{ type: 'text', text: 'hi' }])
   })
 })
-
-// --- pmTableToBlock -------------------------------------------------------
 
 describe('shared/pt/bridge/nodes/table — pmTableToBlock', () => {
   function pmTable(rows: PmBlockNode[], opts?: { hasHeaderRow?: boolean }): PmBlockNode {
@@ -158,8 +151,6 @@ describe('shared/pt/bridge/nodes/table — pmTableToBlock', () => {
     expect(blk.rows[0]!.cells[0]!.content[0]!.text).toBe('keep')
   })
 })
-
-// --- pmCellToTableCell ----------------------------------------------------
 
 describe('shared/pt/bridge/nodes/table — pmCellToTableCell', () => {
   function pmCellWith(content: PmBlockNode[], type: 'tableCell' | 'tableHeader' = 'tableCell'): PmBlockNode {

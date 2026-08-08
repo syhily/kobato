@@ -11,16 +11,12 @@ import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-reg
 import { category } from '@/server/infra/db/schema/taxonomy'
 import { user } from '@/server/infra/db/schema/user'
 
-// adminCategoriesRouter against the real engine: the taxonomy service
-// runs against real category rows (uniqueness guards, slug resolution,
-// sort_order rewrite on reorder), and writes record real audit rows
-// flushed from the batcher.
+// adminCategoriesRouter against the real engine; audit rows flushed from the batcher.
 const db = getTestDb()
 
 let adminId = 0
 
-// audit_log.actor_id references user.id, so the editor must be a real
-// row for the batched audit insert to survive the FK on flush.
+// audit_log.actor_id references user.id: the editor must be a real row for the FK.
 async function seedAdmin(): Promise<number> {
   const [row] = await db
     .insert(user)

@@ -17,7 +17,7 @@ export interface SearchMusicInput {
   keyword: string
   /** Defaults to 10, capped at 30 server-side. */
   limit?: number
-  /** Number of results to skip for pagination. Defaults to 0. */
+  /** Defaults to 0. */
   offset?: number
 }
 

@@ -6,19 +6,13 @@ import type { EntityTarget, EntityType } from '@/server/infra/db/target'
 import { comment } from '@/server/infra/db/schema/comment'
 import { like, metric } from '@/server/infra/db/schema/metric'
 
-// Filter clause used everywhere we look up like rows by entity target.
 function whereLikeTarget(target: EntityTarget) {
   return and(eq(like.type, target.type), eq(like.ownerId, target.ownerId))
 }
 
 /**
- * Atomic "register like + bump counter + read fresh count" in one transaction.
- *
- * Previously the like flow ran three separate round-trips which let a
- * concurrent decrement land between the bump and the read and report a
- * stale count to the client. The transaction guarantees the returned
- * count reflects this exact insert; downstream UPDATEs touching the
- * same row queue behind it.
+ * Register like + bump counter + read the fresh count atomically, so the
+ * returned count reflects this exact insert.
  */
 export async function recordLikeAndCount(db: Database, token: string, target: EntityTarget): Promise<number> {
   return db.transaction((tx) => {
@@ -71,12 +65,7 @@ export interface MetricsRow {
   view: number | null
 }
 
-/**
- * Batch metric read scoped to a single entity type. Callers fan out
- * per-type and merge the results — in practice every admin list / feed
- * surface is already homogeneous, and a single `eq + inArray` is
- * cheaper than a polymorphic `(type, owner_id) IN (...)` predicate.
- */
+/** Batch metric read scoped to one entity type; callers fan out per-type and merge. */
 export async function metricsByOwnerIds(db: Database, type: EntityType, ownerIds: number[]): Promise<MetricsRow[]> {
   if (ownerIds.length === 0) {
     return []
@@ -105,11 +94,7 @@ export interface TargetCommentCountRow {
   count: number
 }
 
-/**
- * Batch comment count read scoped to a single entity type. Mirrors
- * `metricsByOwnerIds`'s shape so admin list services can fan both out
- * in the same loop.
- */
+/** Batch comment count read; mirrors `metricsByOwnerIds`'s shape so callers fan both out together. */
 export async function commentCountsByOwnerIds(
   db: Database,
   type: EntityType,

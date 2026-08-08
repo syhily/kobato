@@ -2,13 +2,9 @@ import { describe, expect, it } from 'vitest'
 
 import type { ContentRow, PostMetaRow } from '@/server/infra/db/types'
 
-// Projection-layer unit tests for post DTO shaping.  Pins two contracts:
-//
-//   1. `toCmsPost` / `toClientPostFromMeta` fall back to the default cover
-//      image (`/images/open-graph.png`) when the DB `cover` column is empty.
-//      This prevents broken `<Image src="" />` renders in listings and
-//      failed OG generation.
-//   2. DTO field shape stability (id stringification, permalink, dates).
+// The cover fallback matters: a blank `cover` column must project to
+// `/images/open-graph.png` — otherwise listings render `<Image src="" />`
+// and OG generation fails.
 
 const { toCmsPost } = await import('@/server/domains/posts/projection')
 const { toClientPostFromMeta } = await import('@/server/domains/posts/repos/shared')

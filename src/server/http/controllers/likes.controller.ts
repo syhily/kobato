@@ -34,9 +34,7 @@ const decreaseLike = publicProc
     const target = await resolveMetricTarget(context.db, input.key)
     const consumed = await decreaseLikes(context.db, target, input.token)
     if (!consumed) {
-      // Unknown / already-consumed / purged token: the count did NOT
-      // change, so a 200 carrying the current count would tell the
-      // client a lie it would persist as truth.
+      // Unknown/consumed/purged token — 200 with the current count would be a lie the client persists.
       throw new DomainError('BAD_REQUEST', '点赞状态已失效，请刷新页面后重试')
     }
     return { key: input.key, likes: await queryLikes(context.db, target) }

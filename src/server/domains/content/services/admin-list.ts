@@ -31,19 +31,15 @@ export interface ListForAdminOptions<
   countRows: (db: Database, filters: Filters) => Promise<number>
   /**
    * Domain-specific enrichment loaded in the same batch as the
-   * metrics/comment reads (posts use it for tags + category names).
-   * Keyed by row id; rows missing from the map get `undefined` extras.
+   * metrics/comment reads. Keyed by row id; missing rows get `undefined`.
    */
   loadExtras?: (db: Database, rows: Row[]) => Promise<Map<number, Extras>>
   toDto: (row: Row, engagement: AdminListEngagement, extras: Extras | undefined) => Dto
 }
 
 /**
- * Shared orchestration for the posts/pages admin lists: page + count in
- * parallel, backfill metric rows, then read engagement counters (and any
- * domain extras) in one batch and project each row through `toDto`. The
- * domains keep their own repos (join/where/order) and DTO mappers; only
- * the fan-out shape lives here.
+ * Shared orchestration for the posts/pages admin lists: the domains keep
+ * their repos and DTO mappers; the fan-out shape lives here.
  */
 export async function listForAdmin<
   Filters extends { limit?: number; offset?: number },

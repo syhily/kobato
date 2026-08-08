@@ -17,10 +17,6 @@ describe('services/comments/badge', () => {
   })
 
   it('honours an explicit text-colour override when present', () => {
-    // Admin-set override should win over the WCAG auto-pick. The
-    // background here would otherwise resolve to dark text (#151b2b),
-    // but the override forces white — which is the whole point of the
-    // user-facing setting.
     expect(
       withCommentBadgeTextColor({
         badgeName: '站长',
@@ -31,9 +27,6 @@ describe('services/comments/badge', () => {
   })
 
   it('falls back to the auto-pick when the override is empty or whitespace', () => {
-    // Empty/whitespace overrides are treated as "no override" so
-    // accidentally clearing the picker (or seeding rows with empty
-    // strings) does not leave the badge with `color: ''`.
     expect(
       withCommentBadgeTextColor({ badgeName: '站长', badgeColor: '#6ab7ca', badgeTextColor: '   ' }).badgeTextColor,
     ).toBe('#151b2b')
@@ -43,8 +36,6 @@ describe('services/comments/badge', () => {
   })
 
   it('returns null even if an override is set when the badge is absent', () => {
-    // No badge → nothing to colour. Override is ignored so the public
-    // renderer doesn't accidentally show a styled empty span.
     expect(
       withCommentBadgeTextColor({
         badgeName: null,

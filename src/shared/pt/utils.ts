@@ -13,12 +13,8 @@ import { headingLevelFromStyle } from '@/shared/pt/heading-levels'
 import { Slugger } from '@/shared/slug'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
-// --- Key generation ---------------------------------------------------------
-
-// Generate a short opaque `_key` for a freshly-created block / span /
-// markDef. Keys only need uniqueness within the body — they're not
-// stable across saves. Falls back to `Math.random` when
-// `crypto.getRandomValues` is missing (e.g. some Node test environments).
+// Unique within the body only (not stable across saves); falls back to
+// `Math.random` when `crypto.getRandomValues` is missing.
 export function generateBlockKey(): string {
   const bytes = new Uint8Array(8)
   if (typeof globalThis !== 'undefined' && typeof globalThis.crypto?.getRandomValues === 'function') {
@@ -34,8 +30,6 @@ export function generateBlockKey(): string {
   }
   return out.slice(0, 12)
 }
-
-// --- Headings ---------------------------------------------------------------
 
 function tryPushHeadingSlot(block: TextBlock, out: PortableTextHeadingSlot[]): void {
   const depth = headingLevelFromStyle(block.style)
@@ -61,12 +55,8 @@ function visitNonRecursiveForHeadings(blocks: readonly NonRecursiveBlock[], out:
 }
 
 /**
- * Heading blocks in **exact** render order for `PortableTextBody`:
- * top-level main column (skipping `footnoteDefinition` rows), DFS into
- * each `solution` and each `twoColumn` (left then right), then every
- * footnote definition's children in row order. Matches
- * `@portabletext/react` traversal so `_key` → anchor maps stay stable
- * across SSR and hydration without render-phase state.
+ * Heading blocks in exact render order for `PortableTextBody` — must
+ * match `@portabletext/react` so `_key` → anchor maps stay stable across SSR/hydration.
  */
 export function collectHeadingSlotsInPortableTextRenderOrder(body: PortableTextBody): PortableTextHeadingSlot[] {
   const out: PortableTextHeadingSlot[] = []
@@ -96,20 +86,8 @@ export function collectHeadingSlotsInPortableTextRenderOrder(body: PortableTextB
 }
 
 /**
- * Return the structured TOC entries this body would render. The slug
- * pipeline matches what `rehype-slug` produced on MDX posts, so heading
- * anchors stayed stable when content migrated from MDX into the editor:
- *
- *   - `transform` (optional) is applied to the heading text BEFORE
- *     `Slugger`. Server-side callers pass `deriveSlug` from
- *     `@/server/infra/slug/derive` to romanise CJK via `pinyin-pro` — it can't be
- *     imported here because this module ships to the client and
- *     pinyin-pro is ~150KB of CJK lookup tables.
- *   - `Slugger` then lowercases, collapses non-alphanumerics into `-`,
- *     and dedups within the same body (`foo`, `foo-1`, `foo-2`, …).
- *
- * Order matches `collectHeadingSlotsInPortableTextRenderOrder` so callers
- * can pass `headings.map(h => h.slug)` to `<PortableTextBody>`.
+ * Structured TOC entries this body renders; `transform` runs BEFORE
+ * `Slugger`. pinyin-pro is not importable here — this module ships to the client.
  */
 export function collectHeadings(
   body: PortableTextBody,
@@ -125,16 +103,8 @@ export function collectHeadings(
 }
 
 /**
- * Zip the heading slots of a body with precomputed slugs into a
- * `_key → anchor id` map — the single owner of the slots→slug zip used
- * by BOTH render adapters (feed HTML and React tree), so the two can
- * never drift into different id assignment.
- *
- * Slot `i` takes `headingSlugs[i]` when that entry is a non-empty string;
- * otherwise `fallbackSlug` derives an id from the heading's plain text.
- * The fallback legitimately differs per adapter (pinyin-aware on the feed
- * renderer, client-safe `Slugger` in the React tree), so it stays a
- * parameter.
+ * Single owner of the slots→slug zip shared by BOTH render adapters,
+ * so id assignment can't drift. Slot `i` takes `headingSlugs[i]` or `fallbackSlug`.
  */
 export function buildHeadingIdByBlockKey(
   body: PortableTextBody,
@@ -152,14 +122,9 @@ export function buildHeadingIdByBlockKey(
   return map
 }
 
-// --- Nested traversal -------------------------------------------------------
-
 /**
- * Depth-first walk over a PortableText body in render order (pre-order:
- * container first, then its descendants). The schema's nesting rules live
- * here exactly once; collectors (image paths, code/math pre-render, music
- * players, image sync) are callbacks that filter by `_type`. Nesting is
- * one level deep by schema, so the walk cannot recurse further.
+ * Depth-first pre-order walk over a body in render order (container first, then descendants).
+ * Nesting is one level deep by schema — the walk never recurses further.
  */
 export function visitNestedBlocks(body: PortableTextBody, visit: (block: Block) => void): void {
   for (const block of body) {
@@ -182,16 +147,10 @@ export function visitNestedBlocks(body: PortableTextBody, visit: (block: Block) 
 }
 
 /**
- * Mapping counterpart of `visitNestedBlocks` — same nesting rules, same
- * pre-order. The callback MUST preserve each position's block kind: a
- * nested block has to map to a `NonRecursiveBlock` (nesting is one level
- * deep by schema). Every block is mapped exactly once; the result is
- * always a new array with new container objects, while untouched leaves
- * keep their identity.
+ * Mapping counterpart of `visitNestedBlocks`. The callback MUST map a
+ * nested block to `NonRecursiveBlock`; untouched leaves keep their identity.
  */
 export function mapNestedBlocks(body: PortableTextBody, map: (block: Block) => Block): PortableTextBody {
-  // The callback contract guarantees a nested position maps back to a
-  // NonRecursiveBlock (the schema forbids deeper nesting).
   const mapChild = (child: NonRecursiveBlock): NonRecursiveBlock => unsafeCast<NonRecursiveBlock>(map(child))
   return body.map((block) => {
     const mapped = map(block)
@@ -205,9 +164,6 @@ export function mapNestedBlocks(body: PortableTextBody, map: (block: Block) => B
   })
 }
 
-// --- Image paths ------------------------------------------------------------
-
-/** Walk a body and pick out every `image.storagePath` referenced. */
 export function collectImageStoragePaths(body: PortableTextBody): string[] {
   const paths = new Set<string>()
   visitNestedBlocks(body, (block) => {
@@ -219,10 +175,8 @@ export function collectImageStoragePaths(body: PortableTextBody): string[] {
 }
 
 /**
- * Walk a body and pick out every `musicPlayer.playerId` referenced,
- * deduped in first-seen order. The single collector behind both music
- * resolution paths — SSR enrichment and feed rendering — which then call
- * the single fetch seam `getPublicMusicMetasByIds`.
+ * The single collector behind both music resolution paths (SSR + feed).
+ * Deduped in first-seen order.
  */
 export function collectMusicPlayerIds(body: PortableTextBody): string[] {
   const ids = new Set<string>()
@@ -234,8 +188,6 @@ export function collectMusicPlayerIds(body: PortableTextBody): string[] {
   return Array.from(ids)
 }
 
-// --- Plain text -------------------------------------------------------------
-
 /** Plain-text projection used by search / RSS summary / OG fallback. */
 export function bodyToPlainText(body: PortableTextBody): string {
   const out: string[] = []
@@ -245,8 +197,7 @@ export function bodyToPlainText(body: PortableTextBody): string {
   return out.join('\n').trim()
 }
 
-// Leaf projection callback for `visitNestedBlocks` — containers carry no
-// text of their own, so only leaf blocks push.
+// Leaf-only: containers carry no text of their own.
 function pushBlockText(block: Block, out: string[]): void {
   if (block._type === 'block') {
     out.push(block.children.map((span) => span.text).join(''))
@@ -284,14 +235,11 @@ function pushBlockText(block: Block, out: string[]): void {
   }
 }
 
-// --- Validation -------------------------------------------------------------
-
 import { portableTextBodySchema } from '@/shared/pt/schema'
 
 /**
- * Validate an arbitrary value as a PortableText body. Throws a Zod
- * `ZodError` on failure so the caller can surface field-level errors;
- * use `safeValidatePortableTextBody` if you want a result envelope.
+ * Throws a Zod `ZodError`; use `safeValidatePortableTextBody` for a
+ * result envelope.
  */
 export function validatePortableTextBody(value: unknown): PortableTextBody {
   return portableTextBodySchema.parse(value)

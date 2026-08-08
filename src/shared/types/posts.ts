@@ -39,10 +39,7 @@ export interface UpsertPostMetaInput {
   commentsEnabled?: boolean
   webmentionsEnabled?: boolean
   showToc?: boolean
-  /**
-   * Toggle the「修改于 XXXX」secondary timestamp on the public detail
-   * page. Defaults `false` on create.
-   */
+  /** Toggle the「修改于 XXXX」secondary timestamp; defaults `false` on create. */
   showUpdated?: boolean
   visible?: boolean
   /** ISO to set; `null` cancels a pending schedule; omitted = leave untouched. */

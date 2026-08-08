@@ -1,22 +1,6 @@
-// SMTP transport.
-//
-// Lets self-hosters not running on Zeabur send mail through any SMTP
-// server. Wired into the dispatcher: the transport registry in
-// `sender.ts` routes here when `mail.transport === 'smtp'`, and the
-// admin settings UI exposes the `host` / `port` / `user` / `pass`
-// fields.
-//
-//   - `SmtpConfig` shape (host, port, user, pass, secure) behind the
-//     shared `MailTransport` interface.
-//   - The same `disabled` / `unconfigured` skip semantics as Zeabur so
-//     both transports speak the same result vocabulary.
-//   - A thin `nodemailer.createTransport` + `sendMail` happy path.
-//
-// What's intentionally deferred:
-//   - OAuth2 (Gmail / Outlook) — needs a separate credential shape and
-//     token refresh flow.
-//   - Connection pooling config (maxConnections / maxMessages).
-//   - A DKIM / SPF helper bundle.
+// SMTP transport via `nodemailer` for self-hosters; the registry in `sender.ts`
+// routes here when `mail.transport === 'smtp'`. Shares the other transports'
+// skip/error vocabulary. Deferred: OAuth2, pooling config, DKIM/SPF helpers.
 
 import nodemailer, { type Transporter } from 'nodemailer'
 
@@ -88,10 +72,6 @@ export class SmtpTransport implements MailTransport {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
       log.error('SMTP mail send failed', { to: message.to, subject: message.subject, error })
-      // nodemailer surfaces SMTP reject codes via `responseCode`; we
-      // don't dig them out here yet — when finer error classification is
-      // needed, the `upstream` branch should populate `status` from that
-      // code.
       return { ok: false, reason: 'network', message: errorMessage }
     }
   }

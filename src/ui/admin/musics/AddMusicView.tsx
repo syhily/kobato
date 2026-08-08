@@ -57,8 +57,7 @@ export function AddMusicView() {
     onSuccess: () => {
       toast.success('音乐已添加')
       setAddingSourceId(null)
-      // The library hero is staleTime: Infinity — without this it would
-      // keep showing the pre-add library for the rest of the session.
+      // The library hero is staleTime: Infinity — invalidate or it shows the pre-add library all session.
       void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.music.list.key() })
     },
     onError: (error) => {
@@ -111,7 +110,6 @@ export function AddMusicView() {
     return null
   }, [currentTrack])
 
-  // Infinite scroll via IntersectionObserver
   const sentinelRef = useInfiniteScrollSentinel({
     hasNextPage: hasMore,
     isFetchingNextPage: isLoadingMore,

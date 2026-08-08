@@ -30,8 +30,7 @@ export function buildAuditLogWhere(input: AuditLogFilterInput) {
     conditions.push(eq(auditLog.actorId, idFromString(input.actorId)))
   }
   if (input.ip) {
-    // Route through the shared safe-LIKE seam: `%`/`_` in the filter
-    // are escaped, not widened into match-anything patterns.
+    // Safe-LIKE seam: `%`/`_` are escaped, never wildcards.
     conditions.push(likeEscape(auditLog.ipAddress, input.ip))
   }
   const dateFrom = clampDateToRetention(parseDate(input.dateFrom))

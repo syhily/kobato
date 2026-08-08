@@ -6,9 +6,7 @@ import type { LoginMethod } from '@/shared/contracts/users'
 import { USER_ROLES } from '@/server/infra/db/schema/shared'
 
 // RBAC role enum. `text({ enum })` constrains at the drizzle layer; the
-// explicit CHECK below keeps the DB-perimeter guarantee the Postgres
-// ENUM gave (a stray `UPDATE user SET role = 'editor'` from a DB client
-// is rejected).
+// explicit CHECK keeps the DB-perimeter guarantee (a stray `UPDATE` from a DB client is rejected).
 
 export const user = sqliteTable(
   'user',
@@ -28,28 +26,20 @@ export const user = sqliteTable(
     password: text('password').notNull(),
     badgeName: text('badge_name'),
     badgeColor: text('badge_color'),
-    // Optional manual override for the badge text colour. When `null`
-    // (the historical default for every existing row) the public
-    // renderer falls back to `commentBadgeTextColor()`'s WCAG-based
-    // auto-pick so older accounts keep working without an admin sweep.
+    // Manual override for the badge text colour; when `null` the renderer falls back to `commentBadgeTextColor()`'s WCAG auto-pick.
     badgeTextColor: text('badge_text_color'),
     lastIp: text('last_ip'),
     lastUa: text('last_ua'),
     role: text('role', { enum: USER_ROLES }),
     isMuted: integer('is_muted', { mode: 'boolean' }).default(false).notNull(),
     receiveEmail: integer('receive_email', { mode: 'boolean' }).default(true),
-    // Unified per-user signin method: 'password' (default), 'magic-link',
-    // or 'passkey'.
     loginMethod: text('login_method').$type<LoginMethod>().default('password').notNull(),
   },
   (table) => [
-    // No `idx_users_email`: the email UNIQUE constraint creates an
-    // implicit index — and a redundant non-unique index here makes
-    // drizzle-kit DROP the constraint from the generated DDL.
+    // No `idx_users_email`: a redundant non-unique index would make drizzle-kit DROP the UNIQUE constraint.
     index('idx_users_name').on(table.name),
     index('idx_users_deleted_at').on(table.deletedAt),
-    // Partial: skip anonymous placeholder rows (role IS NULL) — they're 80%+
-    // of the table on a mature install and have no role-based query needs.
+    // Partial: skips anonymous placeholder rows (role IS NULL).
     index('idx_user_role')
       .on(table.role)
       .where(sql`role IS NOT NULL`),
@@ -57,13 +47,8 @@ export const user = sqliteTable(
   ],
 )
 
-// One-shot tokens for password reset and author invite. Previously
-// the row identity was a single `identifier text` column shaped as
-// `<purpose>:<userId>` — that conflated two concerns into one column,
-// had no UNIQUE constraint, and forced userIds through a string-split /
-// parseInt detour. Splitting `purpose` and `userId` into two real
-// columns lets the `(purpose, userId)` UNIQUE index do its job (one
-// live token per purpose per user).
+// One-shot tokens for password reset and author invite. `(purpose, userId)`
+// is UNIQUE — one live token per purpose per user.
 export const verification = sqliteTable(
   'verification',
   {

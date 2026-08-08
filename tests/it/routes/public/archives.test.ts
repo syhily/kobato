@@ -7,8 +7,7 @@ import { content as contentTable } from '@/server/infra/db/schema/content'
 import { post as postTable } from '@/server/infra/db/schema/post'
 
 // Archives promises completeness: every live post, including hidden ones.
-// Real engine — seeded live rows prove the hidden inclusion and the
-// scheduled exclusion fall out of the shared live gate, not a mock.
+// Real engine: hidden inclusion and scheduled exclusion fall out of the shared live gate.
 
 const db = getTestDb()
 
@@ -48,8 +47,7 @@ describe('routes/archives loader', () => {
   it('includes visible=false posts while still excluding scheduled posts', async () => {
     await seedPost({ slug: 'visible-post', firstPublishedAt: new Date('2024-01-02') })
     await seedPost({ slug: 'hidden-post', visible: false, firstPublishedAt: new Date('2024-01-01') })
-    // Live in every respect except a future publishedAt — the scheduled leg
-    // of the live gate must keep it out of the archive.
+    // Live except a future publishedAt — the scheduled leg of the live gate excludes it.
     await seedPost({
       slug: 'scheduled-post',
       firstPublishedAt: new Date('2024-01-03'),

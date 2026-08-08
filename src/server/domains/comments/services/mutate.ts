@@ -39,8 +39,6 @@ function hashContent(content: string): string {
   return createHash('sha256').update(content).digest('hex')
 }
 
-// --- Step 1: Validate -------------------------------------------------------
-
 interface ValidatedSubmission {
   target: MetricTarget
   user: NonNullable<Awaited<ReturnType<typeof insertCommentUser>>>
@@ -62,9 +60,7 @@ async function validateSubmission(
     throw new DomainError('NOT_FOUND', '系统错误，评论的目标页面不存在。')
   }
 
-  // The registered-account fence only applies to anonymous submissions,
-  // so the lookup stays lazy for logged-in commenters. It must be
-  // evaluated before `insertCommentUser` writes anything.
+  // Registered-account fence: anonymous-only, must run before `insertCommentUser`.
   const loginUser = userSession(session)
   const emailRegistered = loginUser === undefined ? await hasRegisteredAccount(db, commentReq.email) : false
   const emailFailure = decideEmailGate(loginUser, emailRegistered)
@@ -85,9 +81,7 @@ async function validateSubmission(
   const { body: canonicalBody, content: markdownSnapshot } = await canonicalizeCommentBody(commentReq.body)
   const contentHash = hashContent(markdownSnapshot)
 
-  // Admins skip the dedupe window — don't even run the SELECT for them.
-  // Null hashes can never equal the submitted hash; drop them at the
-  // boundary so the decider works on plain strings.
+  // Admins skip dedupe; drop null hashes (they never equal a submitted hash).
   const recentRows =
     u.role === 'admin'
       ? []
@@ -115,8 +109,6 @@ async function validateSubmission(
   return { target, user: u, canonicalBody, markdownSnapshot, contentHash, rootId }
 }
 
-// --- Step 2: Persist --------------------------------------------------------
-
 async function persistComment(
   db: Database,
   commentReq: CommentReq,
@@ -124,10 +116,8 @@ async function persistComment(
   ua: string | null,
   ip: string,
 ): Promise<CommentAndUser> {
-  // Transactional, sync (node:sqlite): two concurrent comment creations
-  // from the same user cannot both read count=0 and bypass moderation —
-  // the transaction itself serialises the read+write (the old
-  // `pg_advisory_xact_lock` is unnecessary on a single-writer engine).
+  // Transactional, sync (node:sqlite): the transaction serialises the
+  // read+write, so two concurrent first comments can't both bypass moderation.
   return db.transaction((tx) => {
     const approvedCount = countApprovedCommentsByUser(tx, sub.user.id)
     const isPending = approvedCount === 0
@@ -171,8 +161,6 @@ async function persistComment(
   })
 }
 
-// --- Step 3: Notify ---------------------------------------------------------
-
 async function notifyCommentCreated(db: Database, info: CommentAndUser, target: MetricTarget): Promise<void> {
   if (info.email !== requireBlogSettingsSection('siteIdentity').author.email) {
     fireAndForgetNotify(sendNewComment(db, info, target), log, 'new comment')
@@ -186,8 +174,6 @@ async function notifyCommentCreated(db: Database, info: CommentAndUser, target: 
     }
   }
 }
-
-// --- Public entry point -----------------------------------------------------
 
 export async function createComment(
   db: Database,

@@ -1,47 +1,11 @@
-// SEA command-line surface — evaluates FIRST in the injected server
-// bundle (see `scripts/sea/server-entry.ts` for the evaluation-order
-// contract). Owns `process.argv` handling inside the binary:
-//
-//   kobato --version | -v    print the baked-in version and exit
-//   kobato --help | -h       print usage and exit
-//   kobato --smoke-natives   extract + load the native libraries and exit
-//   kobato --smoke-worker    round-trip a real sharp job through the
-//                            worker_threads pool and exit (needs the
-//                            server config — the pool graph validates
-//                            it at import time)
-//   kobato rollback          swap the `<binary>.bak` sibling left by the
-//                            self-update pipeline back into place and exit
-//   kobato doctor [--json]   aggregate diagnostics: version, natives smoke,
-//                            self-update gate, config validation; exit 1
-//                            when natives or config fail
-//   kobato --doctor-config-probe
-//                            hidden helper: validates the configuration by
-//                            loading the config graph, exits accordingly —
-//                            `doctor` spawns it so a failing config cannot
-//                            kill the diagnostic report mid-aggregation
-//   (anything else)          fall through — `@/server/infra/sea-bootstrap`
-//                            and then the server graph evaluate next
-//
-// --version/--help exit here with ZERO side effects (no natives
-// extraction, no env validation) — they must stay ahead of both the
-// bootstrap and the env-validated server graph. The smoke flags bootstrap
-// the natives themselves (same code path as server startup) and then
-// exit. Nothing in this module may touch the env-validated graph: it
-// imports node builtins, `@/server/infra/sea`, `@/server/infra/sea-natives`,
-// and constants only — plus `@/server/infra/binary-rollback`,
-// `@/server/infra/self-update-gate` and `@/server/infra/doctor-report`, which
-// are held to the same builtins-and-constants budget by their own headers.
-// The config graph stays behind a DYNAMIC import in `--doctor-config-probe`:
-// evaluating it validates the configuration and exits the process, which is
-// exactly the probe semantics — and must never happen for the other flags.
-//
-// `--smoke-worker` no longer materializes a bundle to disk (filesystem
-// `import()` is forbidden in the injected script): the embedded
-// `worker/smoke-worker.mjs` text is dispatched via
-// `new Worker(code, { eval: true, execArgv: ['--input-type=module'] })` —
-// the same mechanism the image process pool uses for
-// `worker/process-worker.mjs`. Outside SEA the sibling bundle emitted by
-// the same vite run is spawned as a file worker instead.
+// SEA command-line surface — evaluates FIRST in the injected server bundle.
+// Flags: --version|-v, --help|-h, --smoke-natives, --smoke-worker, rollback,
+// doctor [--json], hidden --doctor-config-probe; anything else falls through
+// to the server graph.
+// --version/--help exit with ZERO side effects; nothing here may touch the
+// env-validated graph (config loads only behind the probe's dynamic import).
+// --smoke-worker dispatches the embedded bundle via new Worker(code, { eval: true })
+// — never materializes to disk.
 
 import { spawnSync } from 'node:child_process'
 import { once } from 'node:events'
@@ -55,10 +19,7 @@ import { evaluateSelfUpdateGate } from '@/server/infra/self-update-gate'
 import { SEA_SMOKE_WORKER_BUNDLE_KEY } from '@/shared/sea/assets'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
-// Baked at build time by vite (`define` in vite.sea.config.ts) from
-// package.json — a single executable has no package.json to read at
-// runtime. The `declare const` emits no code; only usage sites are
-// replaced.
+// Baked at build time by vite define — a single executable has no package.json.
 declare const __SEA_APP_VERSION__: string
 
 const USAGE = `kobato — self-hosted blog CMS (single executable)
@@ -103,20 +64,12 @@ Optional environment variables:
                    (default: $XDG_CACHE_HOME/kobato or ~/.cache/kobato)
 `
 
-/**
- * `--smoke-natives`: prove the embedded native libraries extract and load.
- * Runs the same code path as server startup (`bootstrapSeaRuntime`, then
- * sharp / @napi-rs/canvas / @duckdb/node-api with their platform loads
- * redirected to the flat natives dir) plus one real operation per native
- * library, so CI can validate a freshly built binary without a database.
- * Also works outside SEA mode (resolves node_modules directly). The
- * dynamic imports are deliberate: sharp's platform detection runs at
- * module evaluation and needs `KOBATO_NATIVES_DIR` set first.
- */
+/** Prove the embedded natives extract and load, one real operation each.
+ * Dynamic imports after bootstrapSeaRuntime — sharp's platform detection
+ * runs at module evaluation and needs KOBATO_NATIVES_DIR set first. */
 async function smokeNatives(quiet = false): Promise<void> {
   bootstrapSeaRuntime()
 
-  // sharp: raw pixels -> PNG encode -> JPEG re-encode.
   const { default: sharp } = await import('sharp')
   const rawPixels = Buffer.alloc(8 * 8 * 3, 128)
   const png = await sharp(rawPixels, { raw: { width: 8, height: 8, channels: 3 } })
@@ -127,7 +80,6 @@ async function smokeNatives(quiet = false): Promise<void> {
     throw new Error('sharp re-encode produced an empty buffer')
   }
 
-  // @napi-rs/canvas: fill a tiny canvas and encode it as PNG.
   const { createCanvas } = await import('@napi-rs/canvas')
   const canvas = createCanvas(8, 8)
   const context = canvas.getContext('2d')
@@ -137,7 +89,6 @@ async function smokeNatives(quiet = false): Promise<void> {
     throw new Error('@napi-rs/canvas PNG encode produced an empty buffer')
   }
 
-  // @duckdb/node-api: in-memory instance, one row in, one aggregate out.
   const { DuckDBInstance } = await import('@duckdb/node-api')
   const duckdb = await DuckDBInstance.create()
   const connection = await duckdb.connect()
@@ -156,50 +107,29 @@ async function smokeNatives(quiet = false): Promise<void> {
   }
 }
 
-/**
- * `--smoke-worker`: prove a real sharp job round-trips through the
- * production `worker_threads` image pool inside the binary — the gap
- * `--smoke-natives` (in-process load) cannot cover. The embedded
- * smoke-worker text pulls the config-validated graph (the pool registers its
- * teardown via `@/server/infra/lifecycle` → `@/server/infra/config`), so
- * this flag legitimately requires the full server environment —
- * validated, never connected to. The worker inherits this process's env
- * at spawn, so the natives dir set above is visible to it.
- */
+/** Prove a sharp job round-trips the production worker pool — the gap
+ * in-process smoke cannot cover. Requires the full server config
+ * (validated, never connected). */
 async function smokeWorker(): Promise<void> {
-  // Extract the natives and set KOBATO_NATIVES_DIR FIRST (sync) — the
-  // dispatched worker (and the pool's workers inside it) evaluate their
-  // bundled sharp at module scope.
+  // Extract natives and set KOBATO_NATIVES_DIR first — the worker evaluates bundled sharp at module scope.
   bootstrapSeaRuntime()
   const code = getEmbeddedAsset(SEA_SMOKE_WORKER_BUNDLE_KEY)
-  // Worker threads do NOT inherit the parent's argv. The smoke worker's
-  // env graph resolves the config file from argv (`--config`), so forward
-  // this process's args explicitly — otherwise its config resolution
-  // falls through to the <execDir> candidate and writes a throwaway file
-  // next to the binary. The '[worker eval]' placeholder keeps the
-  // forwarded args at process.argv[2:]: the classic eval path splices
-  // that name into argv[1] itself, but the module eval path
-  // (--input-type=module) does NOT — without the placeholder every
-  // `process.argv.slice(2)` in the worker is off by one and `--config`
-  // is silently dropped. The worker also inherits this process's env at
-  // spawn, so the natives dir set above is visible to it.
+  // Worker threads don't inherit argv — forward it; the '[worker eval]'
+  // placeholder keeps process.argv.slice(2) aligned, or --config is dropped.
   const workerOptions = {
     argv: ['[worker eval]', ...process.argv.slice(2)],
     workerData: { kobatoSmokeWorker: true },
   }
   const worker =
     code !== null
-      ? // `--input-type=module`: run the eval'd ESM bundle as a module
-        // explicitly (see the image process pool for why it matters).
+      ? // eval: true + --input-type=module runs the ESM bundle as a module.
         new Worker(code.toString('utf-8'), { ...workerOptions, eval: true, execArgv: ['--input-type=module'] })
       : // Non-SEA convenience: the sibling bundle from the same vite run.
         new Worker(new URL('./smoke-worker.mjs', import.meta.url), {
           argv: process.argv.slice(2),
           workerData: workerOptions.workerData,
         })
-  // The worker's own stdout/stderr are shared with this process (the
-  // success line prints from inside it). Swallow the 'error' event — the
-  // exit code carries the failure.
+  // Shared stdio with this process; swallow 'error' — the exit code carries the failure.
   worker.once('error', () => undefined)
   const [exitCode] = unsafeCast<[number]>(await once(worker, 'exit'))
   if (exitCode !== 0) {
@@ -207,13 +137,8 @@ async function smokeWorker(): Promise<void> {
   }
 }
 
-/**
- * Config probe for `doctor`: re-exec this binary with the hidden
- * `--doctor-config-probe` flag (forwarding any `--config` argument), where
- * loading the config graph IS the validation — `loadServerConfig` prints
- * the issues and exits 1 on failure, so the parent never has to import the
- * env-validated graph itself. Exit 0 means the configuration validates.
- */
+/** Re-exec with --doctor-config-probe (forwarding --config): loading the
+ * config graph IS the validation — exit 0 means it validates. */
 function probeConfig(): Promise<{ ok: boolean; issues: string[] }> {
   const forward: string[] = []
   const argv = process.argv.slice(2)
@@ -280,9 +205,7 @@ async function main(args: ReadonlySet<string>): Promise<void> {
     await doctor(args.has('--json'))
   }
   if (args.has('--doctor-config-probe')) {
-    // Importing the config graph validates the configuration as a module
-    // side effect: `loadServerConfig` prints the issue list and exits 1 on
-    // failure; reaching this line means the configuration is valid.
+    // Importing the config graph validates the configuration as a module side effect.
     await import('@/server/infra/config')
   }
 }

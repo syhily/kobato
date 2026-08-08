@@ -12,8 +12,6 @@ import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
 import { cn } from '@/ui/lib/cn'
 
-// ── Login form (identifier-first: email → passkey / mailbox / password) ─────
-
 export interface LoginActionData {
   method?: 'passkey' | 'password'
   message?: string
@@ -27,11 +25,7 @@ export interface LoginFormProps {
   actionData?: LoginActionData | null
 }
 
-// Every step's form POSTs to its own handler URL: the router navigates to
-// the submitted URL, so a bare <Form> would re-hit the previous step's
-// `action` param (after identify, the password form would loop through
-// identify instead of reaching the credential handler). Each URL also
-// carries the redirect target so it survives the whole multi-step flow.
+// Each step posts to its own handler URL (a bare <Form> would loop the previous `action`); redirect rides along.
 function signinActionUrl(handler: 'identify' | 'passkey' | null, redirectTo?: string): string {
   const params = new URLSearchParams()
   if (handler !== null) {
@@ -50,10 +44,8 @@ export function useWebAuthnSupported(): boolean {
   return supported
 }
 
-// The `passkey/auth-begin` endpoint returns `{ options: z.any() }` because
-// the WebAuthn options JSON is owned by @simplewebauthn. This guard narrows
-// the untyped response back to the library's expected shape without an
-// unsafe cast.
+// `passkey/auth-begin` returns `{ options: z.any() }` — narrows the untyped
+// response to the library's expected shape without an unsafe cast.
 function isAuthBeginResponse(value: unknown): value is { options: PublicKeyCredentialRequestOptionsJSON } {
   if (typeof value !== 'object' || value === null || !('options' in value)) {
     return false
@@ -69,24 +61,18 @@ function extractAuthOptions(value: unknown): PublicKeyCredentialRequestOptionsJS
   if (isAuthBeginResponse(value)) {
     return value.options
   }
-  // Unreachable in practice — the server always returns a well-formed
-  // challenge. Throw so a malformed response surfaces as a caught error
-  // rather than silent undefined-propagation.
+  // Unreachable in practice — throw so a malformed response surfaces as a caught error.
   throw new Error('Passkey 服务返回数据格式错误')
 }
 
 type LoginStep = 'email' | 'password' | 'passkey'
 
-// A cross-device (QR) ceremony can leave the browser's promise pending
-// forever — the phone approves but the hybrid tunnel never delivers the
-// assertion to the desktop. Two minutes is generous for a phone unlock;
-// past that we retire the run, dismiss the native prompt, and surface a
-// visible error instead of freezing on "正在验证…".
+// A cross-device ceremony can leave the browser promise pending forever;
+// past two minutes retire the run and surface a visible error.
 const PASSKEY_TIMEOUT_MS = 120_000
 
 export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: LoginFormProps) {
-  // Initial step derives from the identify answer so a fresh mount (or
-  // SSR) lands on the right step, not just actionData *changes*.
+  // Initial step derives from the identify answer so a fresh mount / SSR lands on the right step.
   const [step, setStep] = useState<LoginStep>(() =>
     actionData?.method === 'password' ? 'password' : actionData?.method === 'passkey' ? 'passkey' : 'email',
   )
@@ -97,13 +83,11 @@ export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: L
   const [passkeyPending, setPasskeyPending] = useState(false)
   const passkeyFormRef = useRef<HTMLFormElement>(null)
   const passwordRef = useRef<HTMLInputElement>(null)
-  // Monotonic run id: a retry or timeout retires the in-flight ceremony so
-  // a late-resolving (or late-rejecting) promise can never submit the form
-  // or overwrite a newer error state.
+  // Monotonic run id: a retry / timeout retires the in-flight ceremony so a
+  // late-resolving promise can never submit or overwrite a newer error state.
   const passkeyRunRef = useRef(0)
 
-  // actionData-driven step transitions (same sync-during-render pattern as
-  // OtpForm): the identify answer picks the next step.
+  // actionData-driven step transitions (same sync-during-render pattern as OtpForm).
   const [lastActionData, setLastActionData] = useState(actionData)
   if (actionData !== lastActionData) {
     setLastActionData(actionData)
@@ -114,9 +98,7 @@ export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: L
     }
   }
 
-  // The ceremony MUST launch from a user gesture (the verify button):
-  // modal WebAuthn requires transient activation in every browser, and an
-  // auto-launch after the identify round-trip fires outside that window.
+  // The ceremony MUST launch from a user gesture — modal WebAuthn requires transient activation.
   const runPasskey = useCallback(async () => {
     setPasskeyError(null)
     setPasskeyPending(true)
@@ -126,11 +108,9 @@ export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: L
       if (!isCurrent()) {
         return
       }
-      // Retire the run first: the abort below rejects the pending promise
-      // and its catch must land as stale rather than overwrite this error.
+      // Retire the run first so the abort's rejection lands as stale, not as an overwrite.
       passkeyRunRef.current += 1
-      // Dismiss the native prompt so the QR sheet doesn't linger behind
-      // the error state (a no-op when no ceremony is active).
+      // Dismiss the native prompt so the QR sheet doesn't linger behind the error state.
       WebAuthnAbortService.cancelCeremony()
       setPasskeyPending(false)
       setPasskeyError('Passkey 验证超时，请重试。多次失败可通过下方链接改用邮箱登录。')
@@ -184,9 +164,8 @@ export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: L
     }
   }, [email])
 
-  // Leaving the passkey step (更换邮箱) abandons any in-flight ceremony:
-  // retire the run so a late phone-side approval can't act on a view the
-  // user already left, and dismiss the lingering native prompt.
+  // Leaving the passkey step retires any in-flight ceremony and dismisses the
+  // lingering native prompt.
   const backToEmail = () => {
     passkeyRunRef.current += 1
     WebAuthnAbortService.cancelCeremony()
@@ -202,7 +181,6 @@ export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: L
     }
   }, [])
 
-  // Focus the password field when the password step opens.
   useEffect(() => {
     if (step === 'password') {
       passwordRef.current?.focus()
@@ -276,10 +254,8 @@ export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: L
     )
   }
 
-  // The email and passkey states share the identify form's layout: the
-  // server has identified the account, so the input locks (greyed out)
-  // and the primary button becomes the scenario's action — identify for
-  // the email state, the passkey ceremony for the passkey state.
+  // The email and passkey states share the identify form's layout: the input
+  // locks and the primary button becomes the scenario's action.
   const isPasskeyStep = step === 'passkey'
   return (
     <div className="flex w-full flex-col gap-6">
@@ -319,9 +295,7 @@ export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: L
           />
         </div>
         {isPasskeyStep ? (
-          /* The ceremony launches from this button's click — a user gesture
-             keeps the call inside the browser's transient-activation
-             window, which modal WebAuthn requires in every browser. */
+          /* The ceremony launches from this click — inside the browser's transient-activation window. */
           <Button
             type="button"
             disabled={!webAuthnSupported || isSubmitting || passkeyPending}
@@ -375,9 +349,7 @@ export function LoginForm({ redirectTo, isSubmitting, csrfToken, actionData }: L
               ? '正在验证 Passkey，请按浏览器提示完成验证（跨设备登陆可扫码）。'
               : '此账号已启用 Passkey 验证，请点击上方按钮完成登陆。'}
           </p>
-          {/* Account recovery: a passkey-only account with a failing
-              ceremony is otherwise a lockout — identify always routes back
-              to this state. */}
+          {/* Passkey-only account with a failing ceremony is otherwise a lockout — identify always routes back here. */}
           <p className="text-center text-sm text-muted-foreground">
             无法使用 Passkey？
             <Link

@@ -2,10 +2,9 @@ import { act, renderHook } from '@testing-library/react'
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Client-side companion to use-editor-shell-state.test.ts (which uses the
-// SSR harness and therefore cannot reproduce render-phase loops). The
-// mocked leaf deps mirror that suite; layout + keyboard shortcuts are
-// mocked too so this test exercises only body/meta/conflict paths.
+// Client-side companion to use-editor-shell-state.test.ts — the SSR
+// harness cannot reproduce render-phase loops. Layout + keyboard
+// shortcuts are mocked; this suite covers only body/meta/conflict paths.
 const mutate = vi.fn()
 const mutateAsync = vi.fn().mockResolvedValue(undefined)
 
@@ -19,8 +18,7 @@ vi.mock('@tanstack/react-query', () => ({
   })),
 }))
 
-// Shared engine handles so tests can assert what persist reports into the
-// (mocked) autosave engine — same pattern as use-editor-shell-persist.test.
+// Shared autosave engine handles; same pattern as use-editor-shell-persist.test.
 const autosaveMockReturns = vi.hoisted(() => ({ forceFlush: vi.fn(), markPersisted: vi.fn() }))
 
 vi.mock('@/client/hooks/use-autosave', () => ({
@@ -99,8 +97,7 @@ function makeCreateArgs() {
 }
 
 function makeEditArgs() {
-  // The shell TSX rebuilds the detail literal every render from the
-  // loader-stable DTO, so each call hands out a fresh object on purpose.
+  // The shell rebuilds the detail literal every render — fresh object per call on purpose.
   const detail: EditorShellDetail<EntityLike> = {
     entity: {
       id: 'post-1',
@@ -120,11 +117,8 @@ function makeEditArgs() {
 
 describe('ui/admin/editor-shell/useEditorShellState — client re-renders', () => {
   it('create mode survives re-renders with a referentially stable initialBody', () => {
-    // Regression: the body-state memo once sat on an args bag rebuilt every
-    // render, so create-mode `initialBody` was a fresh `[]` per render. The
-    // shell's conflict check saw a "changed" initialBody every pass and
-    // setState-during-render looped until React threw "Too many re-renders"
-    // on /editor/post/new.
+    // Regression: a fresh `initialBody` per render made the conflict check
+    // setState-during-render loop into "Too many re-renders".
     const { result, rerender } = renderHook(() => useEditorShellState<Meta, EntityLike>(makeCreateArgs()))
     const firstBody = result.current.initialBody
     rerender()
@@ -134,11 +128,8 @@ describe('ui/admin/editor-shell/useEditorShellState — client re-renders', () =
   })
 
   it('edit mode with zero revisions survives re-renders with a referentially stable initialBody', () => {
-    // Regression: an entity with no revisions (persistCreate whose saveDraft
-    // leg failed still navigates to the edit path) made the body-state memo
-    // hand out a fresh `[]` every render — `(null ?? null)?.body ?? []`.
-    // The conflict check then setState-during-render looped until React threw
-    // "Too many re-renders"; one external re-render (typing) ignited it.
+    // Regression: zero revisions (a failed persistCreate still navigates to
+    // edit) must not yield a fresh `[]` — it looped into "Too many re-renders".
     const { result, rerender } = renderHook(() => useEditorShellState<Meta, EntityLike>(makeEditArgs()))
     const firstBody = result.current.initialBody
     rerender()
@@ -176,9 +167,7 @@ describe('ui/admin/editor-shell/useEditorShellState — adoptLocalDraft (V3-04)'
     const args = { ...makeEditArgs(), directSaveDraft }
     const { result, rerender } = renderHook(() => useEditorShellState<Meta, EntityLike>(args))
 
-    // The real useLocalDraft resolves asynchronously, and the conflict check
-    // only fires on a CHANGE of the loaded draft — mount clean, then let the
-    // draft arrive.
+    // The conflict check fires only on a CHANGE of the loaded draft — mount clean, then deliver it.
     localDraftState.loadedDraft = { body: localBody, savedAt: 123 }
     rerender()
 
@@ -191,16 +180,14 @@ describe('ui/admin/editor-shell/useEditorShellState — adoptLocalDraft (V3-04)'
       await result.current.dialog.adoptLocalDraft()
     })
 
-    // The adopted body went out force-saved with the current expected token…
     expect(directSaveDraft).toHaveBeenCalledWith({
       id: 'post-1',
       body: localBody,
       expectedClientRevisionToken: null,
       force: true,
     })
-    // …and the engine baseline advanced to that exact body reference, so the
-    // next debounce tick's reference check short-circuits instead of
-    // re-PATCHing the adopted body (and rotating the revision token).
+    // …and the baseline advanced to that body reference, so the next tick
+    // short-circuits instead of re-PATCHing it (and rotating the revision token).
     expect(autosaveMockReturns.markPersisted).toHaveBeenCalledTimes(1)
     expect(autosaveMockReturns.markPersisted).toHaveBeenCalledWith(localBody)
     expect(result.current.body).toBe(localBody)

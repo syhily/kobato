@@ -32,13 +32,8 @@ function isCommentTokenPayload(value: unknown): value is CommentTokenPayload {
   )
 }
 
-/**
- * Decode guard for `one_time_token` payloads. The row stores plain JSON
- * (superjson was dropped with the SQLite migration — the payload is all
- * strings and epoch-ms numbers), so writes pass the object straight to
- * Drizzle's JSON column; the guard runs after decode as a second-line
- * check against shape drift.
- */
+/** Payloads are plain JSON (strings + epoch-ms numbers); this guard is a
+ *  second-line check against shape drift after decode. */
 function decodeTokenPayload(raw: unknown): CommentTokenPayload | null {
   try {
     if (!isCommentTokenPayload(raw)) {
@@ -92,11 +87,7 @@ export async function revokeCommentToken(db: Database, token: string): Promise<v
   await db.delete(oneTimeToken).where(eq(oneTimeToken.key, `${TOKEN_KEY_PREFIX}${token}`))
 }
 
-/**
- * Clean up expired tokens from the cookie value by checking both the
- * per-token `expiresAt` field and the row's existence/expiry.
- * Returns the cleaned cookie payload and the list of still-valid tokens with payloads.
- */
+/** Drop cookie entries whose `expiresAt` passed or whose DB row is gone/expired. */
 export async function cleanupExpiredTokens(
   db: Database,
   cookie: CommentTokenCookie,
@@ -108,8 +99,7 @@ export async function cleanupExpiredTokens(
   const validEntries: Array<{ token: string; payload: CommentTokenPayload; expiresAt: number }> = []
   const now = Date.now()
 
-  // Collect all non-expired entries first so we can verify them in a
-  // single query instead of N sequential round-trips.
+  // Verify all non-expired entries in one query, not N round-trips.
   const candidates: Array<{ pageKey: string; entry: CommentTokenCookieEntry }> = []
   for (const [pageKey, entries] of Object.entries(cookie)) {
     for (const entry of entries) {
@@ -149,14 +139,8 @@ export async function cleanupExpiredTokens(
   return { cleaned, validEntries }
 }
 
-/**
- * Bounds for the commenter token jar. The whole jar rides in a single
- * cookie on every request, and browsers cap one cookie at ~4096 bytes
- * including name and attributes — an unbounded jar would eventually make
- * the browser drop the cookie (silently losing edit rights) or bloat
- * every request. Eviction drops the globally oldest entries first; the
- * freshly-issued token is always protected.
- */
+/** Bounds for the token-jar cookie (browsers cap one cookie at ~4096 bytes).
+ *  Eviction drops the globally oldest entry; the fresh token is protected. */
 const MAX_TOKEN_ENTRIES = 50
 const MAX_COOKIE_JSON_BYTES = 3500
 
@@ -192,20 +176,15 @@ function evictOldestEntry(cookie: CommentTokenCookie, protectToken: string): boo
   return true
 }
 
-/**
- * Build a new cookie payload by appending a freshly-issued token.
- * Enforces MAX_TOKEN_ENTRIES / MAX_COOKIE_JSON_BYTES by evicting the
- * oldest entries first; `cleanupExpiredTokens` stays the expiry-driven
- * cleanup path.
- */
+/** Append a freshly-issued token, evicting oldest entries to enforce the
+ *  MAX_TOKEN_ENTRIES / MAX_COOKIE_JSON_BYTES bounds. */
 export function appendCommentToken(
   existing: CommentTokenCookie,
   pageKey: string,
   token: string,
   ttlSeconds: number,
 ): CommentTokenCookie {
-  // Deep-copy the entry lists so eviction below never mutates the
-  // caller's cookie arrays (the record itself is re-created either way).
+  // Deep-copy entry lists — eviction must not mutate the caller's arrays.
   const next: CommentTokenCookie = {}
   for (const [key, entries] of Object.entries(existing)) {
     next[key] = [...entries]
@@ -224,12 +203,8 @@ export function appendCommentToken(
   return next
 }
 
-/**
- * Find the caller's valid token for the given comment, if any.
- * Returns the matching token (so callers can act on it, e.g. revoke)
- * or `null`, plus the cleaned cookie with expired and invalid entries
- * dropped.
- */
+/** The caller's valid token for a comment, or `null`, plus the cleaned
+ *  cookie with expired and invalid entries dropped. */
 export async function verifyCommentOwnership(
   db: Database,
   cookie: CommentTokenCookie,

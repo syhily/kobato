@@ -7,12 +7,8 @@ import { makeRequestContext } from '#/_helpers/request-context'
 import { requestContext } from '@/server/http/request-context'
 
 // Contract test for the four hand-written glue seams between Hono, oRPC,
-// and React Router (ADR-0003 / ADR-0005): the middleware pipeline order,
-// the oRPC bridge projection, the three request-context projections, and
-// the entry.server export surface. The goal is "touch the glue, break a
-// test" — every assertion pins a behavior another layer silently depends
-// on. Header-merge BEHAVIOR of the bridge (Set-Cookie append vs. set) is
-// pinned separately in `tests/unit/server/http/app.test.ts`.
+// and React Router (ADR-0003 / ADR-0005): "touch the glue, break a test".
+// Bridge header-merge behavior is pinned separately in app.test.ts.
 
 const handlerHandleMock = vi.fn<(_req: Request, opts: { context: any }) => Promise<{ matched: boolean }>>()
 
@@ -38,9 +34,7 @@ vi.mock('@/server/domains/settings/services/hydrate', () => ({
   hydrateBlogSettings: vi.fn(async () => ({})),
 }))
 
-// The middleware graph pulls db-lifecycle, which migrates a database at
-// module-import time — unit tests have no DB bootstrap, so stub the seam
-// (same pattern as tests/unit/server/http/middlewares/request-context.test.ts).
+// db-lifecycle migrates a database at module-import time — keep it mocked.
 vi.mock('@/server/bootstrap/db-lifecycle', () => ({
   getDb: vi.fn(() => ({})),
 }))
@@ -69,9 +63,7 @@ describe('glue contract / middleware pipeline order', () => {
 
     configureMiddleware(app as never)
 
-    // Registration order IS semantics: requestContextMiddleware must derive
-    // the canonical context before install-gate / visitor-cookie consume it,
-    // and trailing-slash / wp-decoy short-circuit before any derivation.
+    // Registration order is semantics: context derives before its consumers, decoys short-circuit first.
     expect(uses).toHaveLength(12)
     expect(uses[6][0]).toBe(trailingSlashNormaliser)
     expect(uses[7][0]).toBe(honoWpDecoyMiddleware)
@@ -108,8 +100,7 @@ describe('glue contract / oRPC bridge projection', () => {
       'session',
       'viewer',
     ])
-    // Procedures get a read-only session — the dirty-marking channel must
-    // never leak into the oRPC surface (see app.ts comment + ADR-0003).
+    // The dirty-marking channel must never leak into the oRPC surface (ADR-0003).
     expect('markSessionDirty' in captured!).toBe(false)
     expect(captured!.responseHeaders).toBeInstanceOf(Headers)
   })
@@ -146,8 +137,7 @@ describe('glue contract / entry.server export surface', () => {
 
     expect(typeof entry.default).toBe('function')
     expect(entry.streamTimeout).toBe(5_000)
-    // Pinned by ADR-0005: the structured error-reporting hook that replaces
-    // React Router's default console.error handler.
+    // Pinned by ADR-0005 — replaces React Router's default console.error handler.
     expect(typeof entry.handleError).toBe('function')
   })
 })

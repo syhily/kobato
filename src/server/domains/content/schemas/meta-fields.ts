@@ -3,11 +3,9 @@ import { z } from 'zod'
 import { safeBoolean } from '@/shared/utils/schema'
 
 /**
- * Field-level zod pieces shared verbatim by the post and page admin
- * input schemas. Both entities accept the same user-supplied slug
- * alphabet (`[._-]` between segments) so legacy page URLs like
- * `archives.html` survive — see `src/server/AGENTS.md` "Slug derivation
- * and uniqueness".
+ * Field-level zod pieces shared by the post and page admin input
+ * schemas. The slug alphabet allows `[._-]` between segments so legacy
+ * page URLs like `archives.html` survive.
  */
 export const slugSchema = z
   .string()
@@ -16,7 +14,6 @@ export const slugSchema = z
   .max(80)
   .regex(/^[a-z0-9]+(?:[._-][a-z0-9]+)*$/, 'Invalid slug')
 
-/** Optional free-text meta field: trims, caps length, defaults to ''. */
 export const optionalText = (max: number) =>
   z
     .string()
@@ -29,10 +26,7 @@ export const idSchema = z.object({ id: z.string().min(1) })
 
 /**
  * The upsert-meta skeleton every content entity shares — the writable
- * shared meta columns. Entity schemas `.extend()` it with their extras
- * (`upsertPostMetaSchema`: visible/pinnedAt/categoryId/tags/alias;
- * `upsertPageMetaSchema`: showFriends). Both entities accept the same
- * user-supplied slug alphabet via `slugSchema`.
+ * shared meta columns; entity schemas `.extend()` it with their extras.
  */
 export const upsertMetaBaseSchema = z.object({
   id: z.string().min(1).optional(),
@@ -52,7 +46,6 @@ export const upsertMetaBaseSchema = z.object({
   webmentionsEnabled: safeBoolean().optional(),
   showToc: safeBoolean().optional(),
   showUpdated: safeBoolean().optional(),
-  // `null` is the explicit cancel-schedule signal (vs omitted = leave the
-  // column untouched) — see `update` in `content/entities/mutate.ts`.
+  // `null` = explicit cancel-schedule; omitted = leave the column untouched.
   publishedAt: z.iso.datetime({ offset: true }).nullable().optional(),
 })

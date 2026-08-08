@@ -9,15 +9,8 @@ import { InlineSearchList, SearchableOptionList } from '@/ui/admin/shared/filter
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/popover'
 import { cn } from '@/ui/lib/cn'
 
-// The 筛选 / 添加筛选 trigger. The popover is a two-step FSM: the field list
-// (fields already active are hidden — one pill per field) and, for option /
-// search fields, a picker step with back navigation. Text, freetext and date
-// kinds skip the picker entirely and instant-add a pill with an empty,
-// codec-correct default value the editor then owns.
-//
-// The global `f` shortcut opens the popover from anywhere except text-entry
-// surfaces (input / textarea / contentEditable).
-
+// The 筛选 / 添加筛选 trigger — text/freetext/date kinds instant-add a default pill,
+// option/search open a picker step; global `f` opens it except on text-entry surfaces.
 interface FilterAddButtonProps<K extends string> {
   fields: readonly FilterFieldSpec<K>[]
   filters: ActiveFilter<K>[]

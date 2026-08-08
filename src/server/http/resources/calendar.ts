@@ -9,10 +9,8 @@ import { type CalendarTheme, renderCalendar } from '@/server/render/calendar/ren
 
 const timeRegex = /^\d{4}$/
 
-// Hono-land 404: `HTTPException` is the only thrown shape the pipeline's
-// error handler maps to a real response (`onErrorHandler`). The RR-style
-// `notFound()` helper throws a raw `Response`, which Hono does NOT catch
-// — it escapes as an unhandled rejection and surfaces as a 500.
+// Hono-land 404: `HTTPException` is the only thrown shape `onErrorHandler`
+// maps — a raw `Response` escapes as an unhandled rejection → 500.
 function httpNotFound(): never {
   throw new HTTPException(404, { message: 'Not Found' })
 }
@@ -28,12 +26,8 @@ export async function serveCalendar(
     httpNotFound()
   }
 
-  // `time` is `MMdd`, e.g. `0424`. Reassemble into the full string
-  // and parse it through date-fns — the round-trip equality check
-  // (`format(date) === rawDate`) catches any value the parser would
-  // silently accept by rolling over (e.g. month 13 → next year's
-  // January) and rejects with a 404 instead of returning a different
-  // calendar than the URL asked for.
+  // `time` is `MMdd`; the round-trip equality check rejects values the
+  // parser would silently roll over (month 13 → next year's January).
   const rawDate = `${year}-${time}`
   const date = parse(rawDate, 'yyyy-MMdd', new Date())
   if (!isValid(date) || format(date, 'yyyy-MMdd') !== rawDate) {

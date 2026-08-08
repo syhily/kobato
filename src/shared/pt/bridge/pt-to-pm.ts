@@ -5,16 +5,11 @@ import { dispatchBlockToPm } from '@/shared/pt/bridge/node-registry'
 import { consumeListStreak } from '@/shared/pt/bridge/nodes/list'
 import { validatePortableTextBody } from '@/shared/pt/utils'
 
-/**
- * Validate and convert untyped input into a ProseMirror `doc` node.
- * Use at editor mount when loading historical data; raw `bodyToPmDoc`
- * skips schema validation for hot-path round-trips.
- */
+/** Validate + convert untyped input into a PM `doc` (editor mount); raw `bodyToPmDoc` skips validation for hot-path round-trips. */
 export function parsePortableTextBodyForEditor(input: unknown): PmDoc {
   return bodyToPmDoc(validatePortableTextBody(input))
 }
 
-/** Convert a PortableText body into a ProseMirror `doc` node. */
 export function bodyToPmDoc(body: PortableTextBody): PmDoc {
   const content: PmNode[] = []
   pushBlocks(content, body)
@@ -26,11 +21,8 @@ export function bodyToPmDoc(body: PortableTextBody): PmDoc {
 }
 
 export function pushBlocks(out: PmNode[], blocks: readonly Block[]): void {
-  // PortableText represents lists as a flat sequence of `block`s tagged
-  // with `listItem` + `level`. ProseMirror needs nested list trees.
-  // The state machine scans consecutive list items and emits a single
-  // root list node per "streak" with deeper levels nested inside the
-  // previous level's last `<li>`.
+  // PortableText lists are flat `listItem` + `level` blocks; the state
+  // machine emits one root list node per streak, nesting deeper levels.
   let i = 0
   while (i < blocks.length) {
     const block = blocks[i]

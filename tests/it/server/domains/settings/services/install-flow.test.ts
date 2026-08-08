@@ -66,9 +66,7 @@ describe('server/domains/settings/services/install-flow', () => {
     })
 
     it('rethrows the shared DomainError when a registry default drifted from its schema', () => {
-      // A corrupt seed is a build bug: `buildDefaultSectionPayloads`
-      // throws — the identical message the hydration backfill surfaces —
-      // instead of collapsing into the soft form-error path.
+      // A corrupt seed is a build bug: throw, not the soft form-error path.
       const mutableRegistry = SECTION_REGISTRY as unknown as Record<string, { defaults: unknown }>
       const original = SECTION_REGISTRY.limits
       mutableRegistry.limits = { ...original, defaults: { maxRequestBodySize: 'ten' } }
@@ -85,8 +83,7 @@ describe('server/domains/settings/services/install-flow', () => {
 
   describe('seedInstallSections', () => {
     it('persists every row inside the caller-supplied transaction, in order', async () => {
-      // The handle IS the atomicity contract: the install flow passes its
-      // admin-insert transaction, so every upsert must go through it.
+      // The caller-supplied tx handle is the atomicity contract — every upsert goes through it.
       const rows = builtRows()
 
       db.transaction((tx) => {
@@ -103,9 +100,7 @@ describe('server/domains/settings/services/install-flow', () => {
     })
 
     it('propagates a persist failure so the caller transaction rolls back', async () => {
-      // A payload the JSON column cannot serialize fails the INSERT for
-      // real — the same propagation the admin-insert transaction relies
-      // on. The two rows seeded before it must roll back with it.
+      // A JSON-column failure must propagate so the caller transaction rolls back all rows.
       const circular: Record<string, unknown> = {}
       circular.self = circular
       const rows = [...builtRows().slice(0, 2), { scope: 'blog.mail', payload: circular }]

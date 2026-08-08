@@ -12,10 +12,8 @@ import {
   migrateLegacyKeys,
 } from '@/server/infra/config'
 
-// The config loader is exercised with argv/env/FS permutations. Under
-// VITEST without --config, loadConfig never touches the filesystem — so
-// every test that needs file behavior passes --config (pointed at a temp
-// dir). `process.exit` is stubbed to intercept `fail()`.
+// Under VITEST without --config, loadConfig never touches the filesystem;
+// file-behavior tests pass --config at a temp dir. process.exit is stubbed.
 
 const tmpDirs: string[] = []
 const realArgv = process.argv
@@ -78,8 +76,7 @@ describe('infra/config — loadConfig', () => {
     expect(written.storage.database).toBe('')
     expect(written.security.sessionSecret).toBe('')
 
-    // The auto-created file (empty strings for unset secrets) must pass
-    // its own schema on the NEXT load — '' means "unset".
+    // '' means "unset" — the auto-created file must pass its own schema on reload.
     expect(() => loadConfig()).not.toThrow()
   })
 
@@ -116,8 +113,7 @@ describe('infra/config — loadConfig', () => {
     const dir = makeTmpDir()
     const path = configPathIn(dir)
     writeConfig(path, { storage: { database: '/data/from-file.db' } })
-    // The write-back goes tmp+rename — a read-only FILE doesn't stop it
-    // (the tmp file is new), but a read-only DIRECTORY does.
+    // tmp+rename write-back fails only on a read-only directory, not a read-only file.
     chmodSync(dir, 0o500)
     withConfigArg(path)
     vi.stubEnv('storage__database', '/data/from-env.db')
@@ -138,9 +134,7 @@ describe('infra/config — loadConfig', () => {
     writeConfig(path, { security: { sessionSecret: 'a-secret-that-is-at-least-32-characters-long' } })
     withConfigArg(path)
 
-    // sessionSecret's schema transforms string → string[]; loadConfig must
-    // return the RAW file value (the transform runs once, downstream in
-    // loadServerConfig).
+    // loadConfig returns the raw value; the string → string[] transform runs once, in loadServerConfig.
     const env = loadConfig()
     expect(env['security.sessionSecret']).toBe('a-secret-that-is-at-least-32-characters-long')
 
@@ -154,8 +148,7 @@ describe('infra/config — loadConfig', () => {
   it('rejects a config file whose comma-joined sessionSecrets are individually under 32 chars', () => {
     const dir = makeTmpDir()
     const path = configPathIn(dir)
-    // 20 + 20 chars: the joined string clears min(32), each secret does
-    // not — the floor must apply per secret, after the split (audit P1-17).
+    // 20+20: the joined string clears min(32), each secret does not — per-secret floor after the split (P1-17).
     writeConfig(path, { security: { sessionSecret: `${'a'.repeat(20)},${'b'.repeat(20)}` } })
     withConfigArg(path)
 
@@ -199,8 +192,7 @@ describe('infra/config — loadConfig', () => {
   })
 
   it('returns env-only values without --config under VITEST (no file access)', () => {
-    // Run from a scratch cwd so the assertion does not depend on whether
-    // the developer's repo happens to have a kobato.config.json.
+    // Scratch cwd keeps the assertion independent of a repo-level config file.
     const dir = makeTmpDir()
     const realCwd = process.cwd()
     process.chdir(dir)
@@ -230,8 +222,7 @@ describe('infra/config — loadConfig', () => {
   it('migrates legacy keys on load, rewrites the file, and keeps booting', () => {
     const dir = makeTmpDir()
     const path = configPathIn(dir)
-    // A file in the pre-rename shape: old sections plus the removed redis
-    // block every auto-created file from that era carries.
+    // Pre-rename shape: old sections plus the redis block that era's auto-created files carried.
     writeConfig(path, {
       database: { url: 'postgres://from-file/db' },
       auth: { sessionSecret: 'a-secret-that-is-at-least-32-characters-long' },
@@ -255,7 +246,6 @@ describe('infra/config — loadConfig', () => {
       ),
     )
 
-    // The file was rewritten in the new shape — old sections and redis gone.
     const written = JSON.parse(readFileSync(path, 'utf-8'))
     expect(written).toEqual({
       security: { sessionSecret: 'a-secret-that-is-at-least-32-characters-long' },
@@ -318,8 +308,7 @@ describe('infra/config — loadServerConfig', () => {
 
   it('rejects a sessionSecret list whose individual secrets are under 32 chars', () => {
     stubRequiredEnv()
-    // 20 + 20 chars: the joined string clears min(32), each secret does
-    // not — validating before the split would let this through (audit P1-17).
+    // 20+20: the joined string clears min(32), each secret does not — validate after the split (P1-17).
     vi.stubEnv('security__sessionSecret', `${'a'.repeat(20)},${'b'.repeat(20)}`)
     const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true)
 
@@ -527,8 +516,7 @@ describe('infra/config — CONFIG_TABLE', () => {
   })
 
   it('declares each dotted path exactly once', () => {
-    // A duplicate path would silently shadow itself in buildFileSchema and
-    // defaultFileContents — one row would win, the other would be dead.
+    // A duplicate path would silently shadow itself in buildFileSchema and defaultFileContents.
     const paths = CONFIG_TABLE.map((entry) => entry.path.join('.'))
     expect(new Set(paths).size).toBe(paths.length)
   })

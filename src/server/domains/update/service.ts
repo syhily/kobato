@@ -10,8 +10,7 @@ import { DomainError } from '@/server/infra/http/errors'
 import { evaluateSelfUpdateGate } from '@/server/infra/self-update-gate'
 import { APP_VERSION } from '@/shared/config/version'
 
-// Semver-lite comparison: strips a leading `v`, compares numeric `x.y.z`
-// triples; pre-release suffixes are ignored.
+// Semver-lite: numeric `x.y.z` triples, pre-release suffixes ignored.
 function parseTriple(version: string): [number, number, number] {
   const core = version.replace(/^v/, '').split('-', 2)[0] ?? ''
   const parts = core.split('.')

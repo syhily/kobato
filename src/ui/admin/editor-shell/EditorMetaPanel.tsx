@@ -51,12 +51,8 @@ export interface EditorMetaPanelProps<TMeta> {
   deleteRestore: EditorMetaPanelDeleteRestore
 }
 
-/**
- * Mounts exactly one sidebar instance: aside column on large screens with
- * the preview closed, `Sheet` overlay everywhere else. A single instance
- * keeps the revision-history query and delete/restore mutations from
- * running twice (the old CSS-hidden dual mount ran both).
- */
+/** Mounts exactly one sidebar instance: aside on large screens, `Sheet`
+ *  elsewhere — a dual mount would run the history query and mutations twice. */
 export function EditorMetaPanel<TMeta>({
   entityKind,
   entityLabel,

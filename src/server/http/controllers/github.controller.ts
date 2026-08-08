@@ -11,8 +11,7 @@ const avatar = publicProc
   .output(z.object({ avatar: z.string() }))
   .use(resourceRateLimit)
   .handler(async ({ context }) => {
-    // The fetch + base64 inlining lives in the comments domain
-    // (`services/avatar`); upstream failures resolve to '' there.
+    // Fetch + base64 inlining lives in the comments domain; upstream failures resolve to ''.
     return { avatar: await fetchGithubAvatarDataUrl(context.db) }
   })
 
@@ -28,9 +27,7 @@ const release = publicProc
   )
   .use(resourceRateLimit)
   .handler(async ({ context }) => {
-    // The fetch/validate logic lives in the update domain; the wire shape
-    // (ORPCError code + message) stays byte-identical to the pre-extraction
-    // handler.
+    // Fetch/validate lives in the update domain; the wire shape stays byte-identical.
     try {
       return await fetchLatestRelease(context.db)
     } catch (err) {

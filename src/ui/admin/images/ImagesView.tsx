@@ -22,9 +22,7 @@ import { Button } from '@/ui/components/button'
 import { Card } from '@/ui/components/card'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 
-// Infinite-scroll image library. Filter state lives in `useImagesReducer`;
-// the actual pages are fetched via `useInfiniteQuery` and laid out by
-// `JustifiedImageGrid` using a Google Photos-style justified-row algorithm.
+// Infinite-scroll image library: filter state in `useImagesReducer`, rows cached via `useInfiniteQuery`.
 export function ImagesView() {
   const { q, kind, dispatch, pageSize, activeFilters } = useImagesReducer()
   const { asset, storage } = useAssetsSettings()
@@ -54,9 +52,7 @@ export function ImagesView() {
     noun: '图片',
   })
 
-  // The grid caches as `type: 'infinite'` and the editor's
-  // ImageLibraryPicker as `type: 'query'` — the procedure-level orpcQuery
-  // key partial-matches both; a hand-rolled key array never would.
+  // Both cache types (`infinite` grid, `query` picker) — the procedure-level key partial-matches both.
   const invalidateList = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.images.list.key() })
   }, [queryClient])

@@ -1,23 +1,12 @@
 /**
  * ThumbHash — compact perceptual image hash for blur placeholders.
- *
- * TypeScript port of Evan Wallace's `thumbhash@0.1.1`
- * (https://github.com/evanw/thumbhash), kept in the main bundle instead
- * of being lazy-loaded. Snapshot tests in `tests/unit.thumbhash.test.ts`
- * guard against drift from the upstream algorithm.
- *
- * The algorithm encodes a small (≤100×100) RGBA image into a ~30-byte
- * hash using DCT coefficient quantization; the hash decodes back into a
- * tiny PNG data URL usable as a CSS background-image placeholder.
+ * TS port of evanw/thumbhash@0.1.1; snapshot tests guard against
+ * drift from the upstream algorithm.
  */
 
 /**
- * Encodes an RGBA image to a ThumbHash. RGB should not be premultiplied by A.
- *
- * @param w The width of the input image. Must be ≤100px.
- * @param h The height of the input image. Must be ≤100px.
- * @param rgba The pixels in the input image, row-by-row. Must have w*h*4 elements.
- * @returns The ThumbHash as a Uint8Array.
+ * Encodes an RGBA image to a ThumbHash. RGB should not be
+ * premultiplied by A. Input must be ≤100×100 (`w*h*4` pixels).
  */
 export function rgbaToThumbHash(w: number, h: number, rgba: ArrayLike<number>): Uint8Array {
   if (w > 100 || h > 100) {
@@ -26,7 +15,6 @@ export function rgbaToThumbHash(w: number, h: number, rgba: ArrayLike<number>): 
 
   const { PI, round, max, cos, abs } = Math
 
-  // Determine the average color
   let avgR = 0
   let avgG = 0
   let avgB = 0
@@ -136,12 +124,7 @@ export function rgbaToThumbHash(w: number, h: number, rgba: ArrayLike<number>): 
   return new Uint8Array(hash)
 }
 
-/**
- * Decodes a ThumbHash to an RGBA image. RGB is not premultiplied by A.
- *
- * @param hash The bytes of the ThumbHash.
- * @returns The width, height, and pixels of the rendered placeholder image.
- */
+/** Decodes a ThumbHash to an RGBA image (RGB not premultiplied by A). */
 export function thumbHashToRGBA(hash: ArrayLike<number>): {
   w: number
   h: number
@@ -197,7 +180,6 @@ export function thumbHashToRGBA(hash: ArrayLike<number>): {
       let q = qDC
       let a = aDC
 
-      // Precompute the coefficients
       const fx: number[] = []
       const fy: number[] = []
       for (let cx = 0, n = max(lx, hasAlpha ? 5 : 3); cx < n; cx++) {
@@ -232,7 +214,6 @@ export function thumbHashToRGBA(hash: ArrayLike<number>): {
         }
       }
 
-      // Convert to RGB
       const b = l - (2 / 3) * p
       const r = (3 * l - b + q) / 2
       const g = r - q
@@ -246,12 +227,7 @@ export function thumbHashToRGBA(hash: ArrayLike<number>): {
   return { w, h, rgba }
 }
 
-/**
- * Extracts the average color from a ThumbHash. RGB is not premultiplied by A.
- *
- * @param hash The bytes of the ThumbHash.
- * @returns The RGBA values for the average color. Each value ranges from 0 to 1.
- */
+/** Average color from a ThumbHash; RGB not premultiplied, values 0–1. */
 export function thumbHashToAverageRGBA(hash: ArrayLike<number>): {
   r: number
   g: number
@@ -276,12 +252,7 @@ export function thumbHashToAverageRGBA(hash: ArrayLike<number>): {
   }
 }
 
-/**
- * Extracts the approximate aspect ratio of the original image.
- *
- * @param hash The bytes of the ThumbHash.
- * @returns The approximate aspect ratio (i.e. width / height).
- */
+/** Approximate aspect ratio of the original image (width / height). */
 export function thumbHashToApproximateAspectRatio(hash: ArrayLike<number>): number {
   const header = hash[3]
   const hasAlpha = hash[2] & 0x80
@@ -292,14 +263,9 @@ export function thumbHashToApproximateAspectRatio(hash: ArrayLike<number>): numb
 }
 
 /**
- * Encodes an RGBA image to a PNG data URL. RGB should not be premultiplied by
- * A. This is optimized for speed and simplicity and does not optimize for size
- * at all. This doesn't do any compression (all values are stored uncompressed).
- *
- * @param w The width of the input image. Must be ≤100px.
- * @param h The height of the input image. Must be ≤100px.
- * @param rgba The pixels in the input image, row-by-row. Must have w*h*4 elements.
- * @returns A data URL containing a PNG for the input image.
+ * Encodes an RGBA image to a PNG data URL (RGB not premultiplied by
+ * A). Optimized for speed, not size — uncompressed. Input must be
+ * ≤100×100 (`w*h*4` pixels).
  */
 export function rgbaToDataURL(w: number, h: number, rgba: ArrayLike<number>): string {
   const row = w * 4 + 1
@@ -394,13 +360,6 @@ export function rgbaToDataURL(w: number, h: number, rgba: ArrayLike<number>): st
   return 'data:image/png;base64,' + btoa(binary)
 }
 
-/**
- * Decodes a ThumbHash to a PNG data URL. This is a convenience function that
- * just calls `thumbHashToRGBA` followed by `rgbaToDataURL`.
- *
- * @param hash The bytes of the ThumbHash.
- * @returns A data URL containing a PNG for the rendered ThumbHash.
- */
 export function thumbHashToDataURL(hash: ArrayLike<number>): string {
   const image = thumbHashToRGBA(hash)
   return rgbaToDataURL(image.w, image.h, image.rgba)

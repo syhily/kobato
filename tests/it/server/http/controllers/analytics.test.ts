@@ -8,12 +8,8 @@ import { getTestDb } from '#/_helpers/integration-db'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 import { __adoptAnalyticsHandleForTests, __resetAnalyticsEngineForTests } from '@/server/bootstrap/analytics-lifecycle'
 
-// analyticsRouter against the real engine: a per-run DuckDB sidecar is
-// ADOPTED into the analytics lifecycle (no module mock) and every
-// procedure — counters / views / heatmap / metrics — runs the real
-// query-parser + aggregation SQL against seeded access_log rows.
-// Assertions are on the real aggregates (row counts, distinct visitor
-// hashes, weekday/hour extraction, browser names).
+// analyticsRouter against the real engine: a per-run DuckDB sidecar is adopted into the
+// analytics lifecycle (no module mocks); every procedure runs real aggregation SQL.
 
 const db = getTestDb()
 
@@ -22,8 +18,7 @@ __adoptAnalyticsHandleForTests(analyticsHandle)
 
 const { analyticsRouter } = await import('@/server/http/controllers/analytics.controller')
 
-// Explicit epoch-seconds range so `parseAnalyticsInput` never consults
-// the clock; seeded events land inside [1000, 2000).
+// Explicit epoch range keeps parseAnalyticsInput off the clock; events land in [1000, 2000).
 const rangeInput = { startAt: '1000', endAt: '2000' }
 
 beforeEach(async () => {
@@ -75,8 +70,7 @@ describe('analyticsRouter.counters', () => {
       visitors: number
       referers: number
     }
-    // visits = row count, visitors = distinct visitor_hash,
-    // referers = distinct non-empty referer_host.
+    // visits = row count; visitors = distinct visitor_hash; referers = distinct non-empty referer_host.
     expect(res).toEqual({ visits: 3, visitors: 2, referers: 1 })
   })
 })

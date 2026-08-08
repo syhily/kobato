@@ -11,11 +11,8 @@ const queryMocks = mockTanstackQuery()
 
 queryMocks.mutation = { mutate: vi.fn(), isPending: false }
 
-// `EditTagDialog` is already covered by `tags.test.tsx` for the closed /
-// create / edit states. This suite adds the remaining render-path branches
-// that are controllable through the mocked mutation state:
-//   - the submit button label flips to "保存中…" / "创建中…" when pending,
-//   - both the create and edit pending label arms are exercised.
+// tags.test.tsx covers closed/create/edit; this adds the pending submit
+// labels ("保存中…" / "创建中…") driven via the mocked mutation state.
 
 vi.mock('@/ui/components/dialog', () => import('#/_helpers/stubs/dialog'))
 

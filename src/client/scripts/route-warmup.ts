@@ -5,17 +5,9 @@ interface NetworkInformationLike {
 }
 
 /**
- * Idle-time prefetcher for tier-2 route chunks.
- *
- * Inserts `<link rel="modulepreload">` tags in batches during browser idle
- * time so navigating to a non-critical route is instant. Skips on metered or
- * very slow connections. Link nodes are removed 5s after the final batch so
- * they don't linger once the modules are cached.
- *
- * This source is bundled + minified at build time by `routeWarmupPlugin`; the
- * chunk list is injected per request by `RouteWarmupScript` via the
- * `CHUNKS_SENTINEL` placeholder. Keep this module free of top-level side
- * effects so it is safe to import for the sentinel constant.
+ * Idle-time prefetcher for tier-2 chunks: batched `<link rel="modulepreload">` inserts,
+ * skipped on metered/slow connections, links dropped 5s after the final batch. No
+ * top-level side effects — bundled by `routeWarmupPlugin` and imported for the sentinel constant.
  */
 export function startRouteWarmup(chunks: string[]): void {
   const connection = (navigator as Navigator & { connection?: NetworkInformationLike }).connection

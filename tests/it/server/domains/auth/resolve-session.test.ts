@@ -10,11 +10,8 @@ import { buildSessionWithSid, commitSession } from '@/server/domains/auth/sessio
 import { session as sessionTable } from '@/server/infra/db/schema/session'
 import { user as userTable } from '@/server/infra/db/schema/user'
 
-// resolveSessionContext against the real engine: the `__session` cookie
-// is genuinely signed by the session storage, the payload rows live in
-// the real session table, and the back-compat upgrade reads the real
-// user table. Nothing below the flow is mocked — the one sabotage case
-// (transient DB error) passes a broken db HANDLE, not a module mock.
+// resolveSessionContext against the real engine — no mocks; the one
+// sabotage case passes a broken db HANDLE, not a module mock.
 
 const db = getTestDb()
 
@@ -38,12 +35,8 @@ async function seedUser(overrides: Record<string, unknown> = {}) {
 
 let sidCounter = 0
 /**
- * Mint a real signed `__session` cookie for a session row carrying
- * `data`. `commitSession` signs the cookie AND writes the row; the
- * follow-up UPDATE then swaps in the exact payload the case needs —
- * including legacy payloads whose user id no longer resolves to a row
- * (the derived `user_id` column stays NULL there so the FK is never
- * tripped by a deliberately-dangling payload).
+ * Mint a real signed `__session` cookie; the follow-up UPDATE swaps in
+ * the exact payload — dangling user ids stay NULL so the FK never trips.
  */
 async function sessionCookie(
   data: BlogSessionData,
@@ -63,7 +56,7 @@ function requestWithCookie(cookie: string): Request {
   return new Request('http://localhost/', { headers: { Cookie: cookie } })
 }
 
-/** A legacy (pre-role) session payload — the shape old cookies still carry. */
+/** A legacy (pre-role) session payload: no role field. */
 function legacyUser(id: string, name = 'legacy', email = 'legacy@example.com') {
   return { id, name, email, website: null } as BlogSessionData['user']
 }
@@ -87,7 +80,6 @@ describe('auth/primitives — resolveSessionContext (real session storage + db)'
   })
 
   it('returns dirty=true when clearing a legacy session for a demoted/gone user', async () => {
-    // The payload references a user id that no longer exists.
     const { cookie } = await sessionCookie({ user: legacyUser('999999') })
 
     const result = await resolveSessionContext(db, requestWithCookie(cookie))
@@ -98,9 +90,7 @@ describe('auth/primitives — resolveSessionContext (real session storage + db)'
   })
 
   it('returns dirty=false for a modern session that already has role (no db lookup)', async () => {
-    // The payload deliberately references a nonexistent user: if the
-    // resolver did a back-compat lookup the user would be cleared —
-    // surviving untouched proves the modern path never hits the db.
+    // Modern path never hits the db: a nonexistent user survives untouched.
     const modernUser = {
       id: '999999',
       name: 'modern',
@@ -123,8 +113,7 @@ describe('auth/primitives — resolveSessionContext (real session storage + db)'
   it('returns dirty=true and clears user when the back-compat lookup throws', async () => {
     const u = await seedUser()
     const { cookie } = await sessionCookie({ user: legacyUser(String(u.id)) }, { userId: u.id })
-    // A sabotaged db HANDLE (not a module mock): every findUserById call
-    // fails, exercising the transient-error branch.
+    // Sabotaged db HANDLE (not a module mock): every lookup throws.
     const brokenDb = {
       select: () => {
         throw new Error('connection lost')

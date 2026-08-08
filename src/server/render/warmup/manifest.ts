@@ -32,8 +32,7 @@ export function getWarmupManifest(): WarmupManifest | null {
 
   try {
     const __dirname = dirname(fileURLToPath(import.meta.url))
-    // Single-executable build: the warmup manifest is embedded in the
-    // binary (`client/assets/warmup-manifest.json`), not on disk.
+    // SEA: the manifest is embedded, not on disk.
     const raw = readAssetTextOrDisk(
       `${SEA_CLIENT_ASSET_PREFIX}assets/warmup-manifest.json`,
       join(__dirname, '..', '..', 'client', 'assets', 'warmup-manifest.json'),
@@ -56,8 +55,6 @@ export function getWarmupManifest(): WarmupManifest | null {
   }
 }
 
-// --- Route manifest reader (request-time critical-path preloads) ---
-
 let routeManifestCache: RouteManifest | null | undefined
 let routeTreeCache: RouteObject[] | undefined
 
@@ -70,8 +67,7 @@ function readClientManifest(): RouteManifest | null {
     const __dirname = dirname(fileURLToPath(import.meta.url))
     const assetsDir = join(__dirname, '..', '..', 'client', 'assets')
 
-    // Discover the hashed manifest bundle: embedded asset keys under SEA,
-    // the `build/client/assets` directory listing on disk.
+    // Hashed manifest bundle: embedded keys under SEA, dir listing on disk.
     let manifestFile: string | undefined
     if (isSea()) {
       const key = listEmbeddedAssetKeys(`${SEA_CLIENT_ASSET_PREFIX}assets/manifest-`).find((k) => k.endsWith('.js'))
@@ -119,8 +115,7 @@ function buildRouteTree(manifest: RouteManifest): RouteObject[] {
   function build(id: string): RouteObject {
     const route = manifest.routes[id]
     const children = (childrenByParent.get(id) ?? []).map((r) => build(r.id))
-    // The React Router `RouteObject` union types `index` as a discriminant,
-    // so constructing it with optional fields requires an assertion.
+    // `index` is a discriminant in the RouteObject union — assertion required.
     return unsafeCast<RouteObject>({
       id,
       path: route?.path,
@@ -132,13 +127,7 @@ function buildRouteTree(manifest: RouteManifest): RouteObject[] {
   return [build('root')]
 }
 
-/**
- * Returns the critical-path modulepreload chunks for a given pathname by
- * matching it against the React Router client manifest. Includes the entry
- * bundle, the matched route, and all ancestor layouts. Returns `null` in dev
- * or when the manifest is missing, so callers can fall back to the home-tier
- * list from `getWarmupManifest()`.
- */
+/** modulepreload chunks for a pathname: entry + matched route + ancestor layouts. Null in dev / missing manifest. */
 export function getCriticalChunksForPathname(pathname: string): string[] | null {
   const manifest = getRouteManifest()
   if (!manifest) {

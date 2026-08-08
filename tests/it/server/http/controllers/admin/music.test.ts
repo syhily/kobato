@@ -16,16 +16,9 @@ import { music } from '@/server/infra/db/schema/media'
 import { user } from '@/server/infra/db/schema/user'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@/server/infra/storage/registry'
 
-// De-mocked migration: list / update / delete run against the real
-// in-memory SQLite and the real domain services; audit rows recorded by
-// the controller are asserted after a batcher flush. The only remaining
-// fakes are true externals:
-//  - search + add services — upstream music-provider network boundary
-//    (module mocks).
-//  - the storage registry — the shared in-memory backend is injected
-//    through the registry's test seam so `delete` exercises its real
-//    audio/cover cleanup without touching S3. Seeded music rows default
-//    to driver 's3', so the seam substitutes the 's3' driver only.
+// list / update / delete run real; only true externals stay mocked:
+// search/add (provider network) and the storage registry (in-memory
+// backend; seeded rows default to driver 's3').
 
 vi.mock('@/server/domains/music/services/search', () => ({
   searchMusic: vi.fn(),
@@ -74,9 +67,7 @@ async function seedMusic(overrides: Partial<typeof music.$inferInsert> = {}) {
   return row
 }
 
-// audit_log.actor_id references user.id, so any viewer whose action
-// records audit must be a real row for the batched insert to survive
-// the FK.
+// audit_log.actor_id references user.id: any audit-recording actor must be a real row.
 async function seedUser(role: 'admin' | 'author', name = 'User'): Promise<number> {
   const [row] = await db
     .insert(user)
@@ -165,8 +156,7 @@ describe('adminMusicRouter.update', () => {
     )
     expect(res.music.name).toBe('Updated Song')
     expect(res.music.artist).toEqual(['Artist'])
-    // `album` falls back to the route's '' default and `lyric` to null
-    // when omitted — the row must reflect both.
+    // Omitted album/lyric fall back to '' and null in the row.
     const [row] = await db.select().from(music).where(eq(music.id, seeded.id))
     expect(row).toMatchObject({ name: 'Updated Song', artist: 'Artist', album: '', lyric: null })
 
@@ -208,7 +198,6 @@ describe('adminMusicRouter.delete', () => {
     const res = await call(adminMusicRouter.delete, { id: String(seeded.id) }, { context: ctx })
     expect(res).toBeUndefined()
 
-    // The service soft-deletes: the row stays but carries deletedAt.
     const [row] = await db.select().from(music).where(eq(music.id, seeded.id))
     expect(row!.deletedAt).not.toBeNull()
     expect(mem.deletedKeys).toEqual(expect.arrayContaining([seeded.audioStoragePath, seeded.coverStoragePath]))

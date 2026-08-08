@@ -26,17 +26,10 @@ type CacheSlice = CacheSettings['cache']
 
 interface BucketCardProps {
   bucket: CacheBucketStats
-  /**
-   * This bucket's authoritative settings (server-side snapshot).
-   * `undefined` for non-tunable buckets — their prefix/TTL are declared
-   * in the cache registry and the card renders read-only.
-   */
+  /** Authoritative server-side settings; `undefined` renders the card read-only. */
   settings?: { prefix: string; ttlSeconds: number }
-  /**
-   * The full cache slice — feeds the prefix-collision validation for the
-   * sibling buckets. The save itself posts only this card's bucket; the
-   * server merges it into the stored row.
-   */
+  /** The full cache slice — feeds the prefix-collision validation for sibling
+   *  buckets; the save posts only this card's bucket. */
   allBuckets: CacheSlice
   isClearPending: boolean
   clearStatus: ClearStatus
@@ -45,8 +38,7 @@ interface BucketCardProps {
 
 export function BucketCard({ bucket, settings, allBuckets, isClearPending, clearStatus, onClear }: BucketCardProps) {
   const editable = settings !== undefined
-  // Non-tunable buckets fall back to the stats row for display; memoized
-  // for a stable identity — the snapshot sync below compares by reference.
+  // Non-tunable buckets fall back to the stats row — memoized for a stable identity (compared by reference below).
   const effectiveSettings = useMemo(
     () => settings ?? { prefix: bucket.prefix, ttlSeconds: bucket.ttlSeconds },
     [settings, bucket.prefix, bucket.ttlSeconds],
@@ -55,13 +47,10 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
   const [snapshot, setSnapshot] = useState<BucketDraft>(() => snapshotFromSettings(effectiveSettings))
   const [draft, setDraft] = useState<BucketDraft>(snapshot)
   const submittedDraftRef = useRef<{ value: BucketDraft } | null>(null)
-  // Fire "auto-exit on save" exactly once per successful save, not on
-  // every render where `status === 'saved'`: track whether THIS card
-  // initiated the submission so a sibling card's save doesn't close this one.
+  // Fire "auto-exit on save" only for THIS card's submission — a sibling's save must not close this one.
   const [savingFromHere, setSavingFromHere] = useState(false)
 
-  // Sync snapshot/draft to settings via the React-blessed "adjust state
-  // during render" pattern instead of setState-in-effect.
+  // Sync via the "adjust state during render" pattern, not setState-in-effect.
   const [lastSettingsRef, setLastSettingsRef] = useState<{ settings: typeof effectiveSettings; isEditing: boolean }>({
     settings: effectiveSettings,
     isEditing,
@@ -132,9 +121,7 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
       ttlHours: draft.ttlHours,
     }
     submittedDraftRef.current = { value: submittedDraft }
-    // Honest Section patch: only the bucket this card owns. The server
-    // merges it into the stored cache row, so sibling buckets — possibly
-    // edited concurrently in another tab — are never re-sent.
+    // Honest Section patch: only this card's bucket — sibling buckets, possibly edited in another tab, are never re-sent.
     void save({
       cache: {
         [bucket.id]: {

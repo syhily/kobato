@@ -8,14 +8,8 @@ import { comment } from '@/server/infra/db/schema/comment'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
 
-// `loadComments` is the most-called server function on the site (every post
-// view runs it). It coordinates the thread queries, the metric upsert, and
-// the admin-vs-public pending-visibility flip. Everything below runs against
-// the real in-memory engine — visibility, counts, the metric row, and the
-// sidebar digest are all asserted from real seeded rows. The blog-settings
-// snapshot (sidebar recentComments count = 5, comments.size = 10) comes from
-// the it-project setup; the kv-backed `comments` cache bucket is real too
-// (cleared with every other table in `beforeEach`).
+// Everything runs against the real in-memory engine; only the settings
+// snapshot (sidebar recentComments = 5) comes from the it-project setup.
 
 const db = getTestDb()
 
@@ -75,9 +69,7 @@ describe('services/comments/loader — loadComments', () => {
     await seedComment({ userId: uid, ownerId: pid, content: 'approved', isPending: false })
     await seedComment({ userId: uid, ownerId: pid, content: 'pending', isPending: true })
 
-    // The regular session's user (id '2') is not the comment author, so
-    // the viewer-visibility escape hatch for own pending rows does not
-    // apply.
+    // The regular session user (id 2) is not the author: the own-pending visibility escape does not apply.
     const result = await loadComments(db, regularSession(), { type: 'post', ownerId: pid }, 0)
 
     expect(result?.count).toBe(1)
@@ -159,7 +151,6 @@ describe('services/comments/loader — latestComments / pendingComments', () => 
     const list = await latestComments(db)
 
     expect(list).toHaveLength(2)
-    // The admin's comment is excluded from the sidebar pool entirely.
     expect(list.some((c) => c.author === 'Admin')).toBe(false)
     const fromAlice = list.find((c) => c.author === 'Alice')
     const fromBob = list.find((c) => c.author === 'Bob')

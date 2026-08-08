@@ -9,9 +9,7 @@ import { music } from '@/server/infra/db/schema/media'
 const { setBlogSettingsBundleForTests } = await import('#/_helpers/blog-settings')
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('#/_helpers/blog-settings')
 
-// URL building is stubbed at the public-url seam: every path resolves to a
-// CDN URL except `musics/coverless.jpg`, which simulates an S3 row whose CDN
-// base is gone — the track keeps playing on the bundled default cover.
+// Public-url seam: every path resolves to a CDN URL except `musics/coverless.jpg` (S3 row whose CDN base is gone).
 vi.mock('@/server/infra/storage/public-url', () => ({
   resolveAssetUrl: vi.fn((_driver: string, path: string) => `https://assets.example.com/${path}`),
   safeResolveAssetUrl: vi.fn((_driver: string, path: string) =>
@@ -70,8 +68,7 @@ describe('server/domains/pt/prerenderMusicPlayerBlocks (db)', () => {
     expect(covered.meta!.cover).toBe('https://assets.example.com/musics/covered.jpg')
     expect(covered.meta!.audioUrl).toContain('https://assets.example.com/')
 
-    // A coverless track stays playable — the cover falls back to the
-    // bundled default vinyl image instead of hiding the player.
+    // Coverless tracks fall back to the bundled default cover.
     const coverless = result![1] as EnrichedMusicPlayerBlock
     expect(coverless.meta).toBeDefined()
     expect(coverless.meta!.cover).toBe(DEFAULT_MUSIC_COVER_URL)

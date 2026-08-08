@@ -1,6 +1,5 @@
-// L3 (direct identifier) privacy tagging for audit-log `details`.
-// Uses the same L3 key set as `@/server/infra/logger.ts` so audit rows
-// carry the same `{E}…{/E}` markers as stdout log lines.
+// L3 (direct identifier) tagging for audit-log `details`; key set shared
+// with `@/server/infra/logger.ts` (`{E}…{/E}` markers).
 
 import { L3_KEYS } from '@/server/infra/logger'
 import { isRecord } from '@/shared/utils/type-guards'
@@ -8,11 +7,8 @@ import { isRecord } from '@/shared/utils/type-guards'
 const L3_OPEN = '{E}'
 const L3_CLOSE = '{/E}'
 
-// Audit-log details should NOT tag generic 'name' keys (category names,
-// tag names, etc.) even though the logger does tag them.
+// Unlike the logger, never tag generic 'name' keys.
 const AUDIT_L3_KEYS = new Set([...L3_KEYS].filter((k) => k !== 'name'))
-
-// Tagging — wraps L3 values in {E}…{/E}
 
 function tagL3(value: string): string {
   if (value === '') {
@@ -39,13 +35,7 @@ function tagValue(key: string, value: unknown): unknown {
   return tagL3(value)
 }
 
-/**
- * Recursively walk a details object and wrap every string value whose
- * key matches the L3 set in `{E}…{/E}` markers.
- *
- * Arrays are walked element-by-element (the element index is NOT treated
- * as a key, so nested objects inside arrays are still traversed).
- */
+/** Wrap string values whose key matches the L3 set; array elements keep the parent key. */
 export function tagL3InDetails(details: Record<string, unknown> | undefined): Record<string, unknown> | undefined {
   if (details === undefined || details === null) {
     return details
@@ -78,19 +68,10 @@ function tagValueRecursive(key: string, value: unknown): unknown {
   return value
 }
 
-// Stripping — removes {E}…{/E} wrappers for display
-
-/**
- * Check whether a string is wrapped in `{E}…{/E}`.
- */
 export function isL3Tagged(value: string): boolean {
   return value.startsWith(L3_OPEN) && value.endsWith(L3_CLOSE)
 }
 
-/**
- * Strip the `{E}…{/E}` wrapper from a single tagged string.
- * Returns the inner value.
- */
 export function stripL3(value: string): string {
   if (!isL3Tagged(value)) {
     return value
@@ -98,12 +79,6 @@ export function stripL3(value: string): string {
   return value.slice(L3_OPEN.length, -L3_CLOSE.length)
 }
 
-/**
- * Recursively walk any value and replace every `{E}…{/E}` wrapped string
- * with a masked placeholder (`***`).
- *
- * Used before serialising audit rows for API responses / CSV export.
- */
 export function stripL3Markers(value: unknown): unknown {
   if (value === null || value === undefined) {
     return value

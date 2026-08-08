@@ -1,8 +1,6 @@
 import { LoaderIcon } from 'lucide-react'
 
-// Shared bottom status for the admin infinite lists: spinner while the next
-// page is in flight, the "everything loaded" line once exhausted, nothing
-// while idle mid-list. Rendered below the sentinel.
+// Bottom status for admin infinite lists: spinner / exhausted line / nothing.
 export function AdminInfiniteListFooter({
   noun,
   rowCount,

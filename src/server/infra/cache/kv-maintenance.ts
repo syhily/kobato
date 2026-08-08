@@ -10,15 +10,12 @@ import { scheduleJob, type ScheduledJob } from '@/server/infra/scheduler-utils'
 
 const log = getLogger('kv.maintenance')
 
-// Fixed hourly interval — the sweep is infra hygiene, not a site-timezone
-// wall-clock job, so it doesn't go through `computeNextRun`.
+// Fixed hourly interval — infra hygiene, not a site-timezone wall-clock job.
 const SWEEP_INTERVAL_MS = 60 * 60 * 1000
 
 /**
- * Delete every expired row from the three PG replacement tables. Reads
- * already filter expired rows lazily (see `kv-store.ts`); this sweep
- * reclaims the space. NULL `expires_at` on `kv_cache` means "never
- * expires" and is deliberately kept.
+ * Delete every expired row (reads filter lazily; this reclaims space).
+ * NULL `expires_at` means "never expires" and is deliberately kept.
  */
 export async function sweepExpiredKvEntries(db: Database): Promise<void> {
   const now = new Date()
@@ -27,13 +24,8 @@ export async function sweepExpiredKvEntries(db: Database): Promise<void> {
   await db.delete(session).where(lt(session.expiresAt, now))
 }
 
-// ─── Scheduler ───────────────────────────────────────────
-// The db getter is injected by the composition root
-// (`@/server/bootstrap/db-lifecycle`) at wire time — a direct import of
-// db-lifecycle here would make infra depend on bootstrap. The getter is
-// invoked when the job fires, so a reopened handle (restore completion)
-// is picked up without being captured in module state. Timer mechanics
-// live in the shared `scheduleJob` seam.
+// The db getter is injected at wire time (infra must not import bootstrap) and
+// invoked when the job fires — a reopened handle is picked up without module state.
 
 let job: ScheduledJob | null = null
 let resolveDb: (() => Database) | null = null

@@ -1,9 +1,6 @@
 // OTP signin flow — staging (issue + send + session), verify, resend,
-// and cancel.
-//
-// OTP pending state contract: `pendingOtpUser` / `otpFailCount` session
-// keys are read and written ONLY by this module. The signin loader uses
-// `readLivePendingOtp` — it never touches the keys directly.
+// and cancel. The `pendingOtpUser` / `otpFailCount` session keys are
+// read and written ONLY by this module.
 
 import type { BlogSession, PendingOtpUser } from '@/server/domains/auth/session-storage'
 
@@ -25,10 +22,8 @@ import { idFromString } from '@/shared/utils/id'
 const log = getLogger('auth.signin')
 
 /**
- * The loader-facing projection of the OTP pending state. Returns the live
- * pending entry, or clears it (both session keys) and reports `expired`
- * when it has outlived its TTL. This is the ONLY place the expiry rule
- * exists — the signin loader never reads the session keys directly.
+ * Loader-facing projection of the OTP pending state; clears both keys
+ * and reports `expired` past TTL. The ONLY place the expiry rule exists.
  */
 export function readLivePendingOtp(session: BlogSession): { pending: PendingOtpUser | null; expired: boolean } {
   const pending = session.get('pendingOtpUser')
@@ -49,7 +44,6 @@ function clearPendingOtp(ctx: SigninFlowContext): void {
   ctx.markSessionDirty()
 }
 
-/** Parse the pending entry's userId; a malformed entry is cleared and reported. */
 function parsePendingUserId(ctx: SigninFlowContext, pendingOtpUser: PendingOtpUser): number | null {
   try {
     return idFromString(pendingOtpUser.userId)
@@ -60,9 +54,8 @@ function parsePendingUserId(ctx: SigninFlowContext, pendingOtpUser: PendingOtpUs
 }
 
 /**
- * Send an OTP email with fallback error handling.
- * Catches both upstream failures (returned as `{ok:false}`) and
- * unexpected exceptions (network / runtime errors).
+ * Send the OTP email; upstream failures and exceptions funnel into the
+ * same user-facing error result.
  */
 async function sendOtpSafely(
   user: { name: string; email: string },
@@ -81,9 +74,8 @@ async function sendOtpSafely(
 }
 
 /**
- * The full "issue + send + stage + audit" OTP sequence shared by the
- * initial staging (credential login) and resend. Returns an error result
- * on failure; on success the caller decides the response shape.
+ * Issue + send + stage + audit, shared by initial staging and resend;
+ * returns an error result on failure, null on success.
  */
 async function issueAndSendOtp(
   ctx: SigninFlowContext,
@@ -131,10 +123,6 @@ async function issueAndSendOtp(
   return null
 }
 
-/**
- * The credential flow's OTP branch: stage a fresh OTP for a
- * password-verified user and redirect onto the verify form.
- */
 export async function sendOtpAndStageSession(
   ctx: SigninFlowContext,
   request: Request,

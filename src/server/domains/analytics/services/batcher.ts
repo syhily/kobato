@@ -29,12 +29,9 @@ function deserializeFromDeadLetter(line: string): EnrichedAccessEvent | null {
   })
 }
 
-// The DuckDB writer is injected by the composition root
-// (`@/server/bootstrap/analytics-lifecycle`, which owns the analytics
-// engine) at import time — a direct import of the lifecycle here would
-// invert the dependency direction (domain → composition root). Same
-// injection discipline as `wireBackupSnapshots` in
-// `@/server/domains/backup/services/backup`.
+// The DuckDB writer is injected by the composition root at import time —
+// a direct import would invert the dependency direction (domain →
+// composition root).
 let resolveWriter: (() => DuckDBConnection) | null = null
 
 export function wireAccessLogBatcher(deps: { getWriter: () => DuckDBConnection }): void {
@@ -49,8 +46,7 @@ function requireWriter(): DuckDBConnection {
 }
 
 // The writer getter is lazy: the sidecar opens AFTER the batchers
-// register (db-lifecycle order), so the connection resolves at flush
-// time, never at construction.
+// register, so the connection resolves at flush time, never at construction.
 class AccessLogBatcher extends InsertBatcher<EnrichedAccessEvent, DuckDBConnection> {
   constructor() {
     super({ flushIntervalMs: 1000, flushThreshold: 100 }, 'analytics.batcher', requireWriter)
@@ -66,10 +62,8 @@ class AccessLogBatcher extends InsertBatcher<EnrichedAccessEvent, DuckDBConnecti
   }
 }
 
-// Self-register on the infra batching seam: the bootstrap lifecycle
-// drives init/flush/reset/replay through the registry (`initAllBatchers`
-// / `flushAllBatchers` / `resetAllBatchers` / `replayAllDeadLetters`)
-// with no per-domain calls.
+// Self-register on the infra batching seam so the bootstrap lifecycle
+// drives init/flush/reset/replay through the registry.
 registerBatcher(BATCHER_NAME, () => new AccessLogBatcher(), {
   replayDeadLetter: () => replayDeadLetterAccessLog(),
 })

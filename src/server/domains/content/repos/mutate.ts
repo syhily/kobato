@@ -19,7 +19,6 @@ import { DomainError } from '@/server/infra/http/errors'
 import { arePortableTextBodiesEquivalent } from '@/shared/pt/bridge/canonicalize'
 import { portableTextBodySchema } from '@/shared/pt/schema'
 
-/** The tx handle handed to a `db.transaction(...)` callback. */
 type RevisionTx = Parameters<Parameters<Database['transaction']>[0]>[0]
 
 function metaTableFor(type: ContentType) {
@@ -33,9 +32,7 @@ export interface LockedMeta {
 
 /**
  * Shared transaction prologue for the revision mutations: load the owner
- * meta row (throwing NOT_FOUND when it is gone) and the latest content
- * revision (any status). Sync — node:sqlite; writers serialise on the
- * connection, so the old `FOR UPDATE` row lock is unnecessary.
+ * meta row (throwing NOT_FOUND when gone) and the latest revision.
  */
 export function lockMetaAndLoadLatest(
   tx: RevisionTx,
@@ -71,10 +68,7 @@ export interface TokenConflict {
 
 /**
  * The optimistic-concurrency check both mutations run before writing.
- * A conflict requires all of: the client did NOT pass `force`, the
- * client echoed an expectation token, a latest revision exists, and the
- * tokens differ. `undefined` expectation means "no expectation" (skip);
- * `null` is a real token value that simply never matches.
+ * `undefined` expectation = "no expectation" (skip); `null` never matches.
  */
 export function checkTokenConflict(
   latest: ContentRow | undefined,
@@ -90,12 +84,9 @@ export function checkTokenConflict(
 }
 
 /**
- * The single revision-write primitive behind both public mutations: the
- * optimistic-concurrency check, then either an in-place rewrite of the
- * latest DRAFT row or an appended revision at `status`. The callers own
- * only what genuinely differs — the draft no-op equivalence short-circuit
- * and the meta-row update. Returns the conflict for the caller to return
- * verbatim, or the written row.
+ * The single revision-write primitive: conflict check, then an in-place
+ * rewrite of the latest DRAFT row or an appended revision at `status`.
+ * Returns the conflict for the caller, or the written row.
  */
 function writeRevisionRow(
   tx: RevisionTx,
@@ -113,8 +104,7 @@ function writeRevisionRow(
   const nextToken = randomUUID()
 
   if (latest !== undefined && latest.status === 'draft') {
-    // This branch only runs on a draft row, so `status` is either an
-    // identity write (save) or the draft→published flip (publish).
+    // Only runs on a draft row — `status` is an identity write or the draft→published flip.
     const updated = tx
       .update(contentTable)
       .set({
@@ -156,9 +146,7 @@ export async function saveDraftRevision(
   return db.transaction((tx) => {
     const { latest } = lockMetaAndLoadLatest(tx, type, input.ownerId)
 
-    // The conflict check precedes the no-op short-circuit: a stale token
-    // must surface even when the bodies happen to match. (The primitive
-    // re-runs the same check before writing — it owns the write path.)
+    // Conflict check precedes the no-op short-circuit — a stale token must surface even when bodies match.
     const conflict = checkTokenConflict(latest, input)
     if (conflict !== null) {
       return conflict

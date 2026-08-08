@@ -19,19 +19,15 @@ import { SEA_PROCESS_WORKER_BUNDLE_KEY } from '@/shared/sea/assets'
 const log = getLogger('image:process-pool')
 
 /**
- * How many sharp workers to keep warm. Sharp itself is already
- * multi-threaded internally (libvips spawns a thread pool), so we cap the
- * *Node* worker count conservatively — one or two are usually enough to
- * keep the request thread responsive without saturating CPU on a small
- * box. `availableParallelism` is the upper bound; the minimum is 1.
+ * Cap the Node worker count — libvips is already multi-threaded internally,
+ * so one or two workers keep the request thread responsive without
+ * saturating CPU.
  */
 export const POOL_SIZE = Math.min(4, Math.max(1, availableParallelism()))
 
 /**
- * Upper bound for a single in-flight job. A message posted to a worker
- * that has already died is silently dropped (no `error` event, no
- * rejection), so without a deadline such a job would hang forever. On
- * timeout the job is rejected and the worker is recycled.
+ * Upper bound for one in-flight job — messages to dead workers are dropped
+ * silently, so a deadline is the only thing preventing a permanent hang.
  */
 export const JOB_TIMEOUT_MS = 60_000
 
@@ -56,16 +52,8 @@ interface PoolWorker {
 }
 
 /**
- * A minimal `worker_threads` pool for sharp image processing.
- *
- * The pool keeps `POOL_SIZE` workers warm and dispatches jobs to the
- * first idle worker. When every worker is busy, jobs queue in arrival
- * order and are flushed as workers go idle.
- *
- * Not a general-purpose job queue — it exists solely to move the
- * decode/resize/re-encode/thumbhash pipeline off the request thread so
- * a slow upload cannot stall public SSR, other API calls, or WebSocket
- * heartbeats.
+ * Minimal `worker_threads` pool for sharp image processing: keeps warm
+ * workers, queues jobs in arrival order, dispatches to the first idle one.
  */
 export class WorkerPool {
   private readonly workers: PoolWorker[] = []
@@ -113,11 +101,7 @@ export class WorkerPool {
     return poolWorker
   }
 
-  /**
-   * Run a single image through the pool. Resolves with the processed
-   * image or rejects with whatever error the worker raised (re-hydrated
-   * into a `DomainError` where applicable).
-   */
+  /** Run a single image through the pool; worker errors re-hydrate into a `DomainError` where applicable. */
   async process(input: ProcessImageInput): Promise<ProcessedImage> {
     if (this.stopped) {
       throw new Error('process pool has been stopped')
@@ -158,8 +142,7 @@ export class WorkerPool {
   private dispatch(worker: PoolWorker, job: PendingJob): void {
     worker.busy = true
     worker.currentJobId = job.id
-    // Unref'd so an idle pool never keeps the process alive on a deadline
-    // alone; the timer is cleared as soon as the job settles.
+    // Unref'd so an idle pool never keeps the process alive.
     worker.jobTimer = setTimeout(() => this.onJobTimeout(worker, job.id), this.jobTimeoutMs)
     worker.jobTimer.unref()
 
@@ -190,10 +173,7 @@ export class WorkerPool {
 
     if (msg.ok) {
       const ok = msg as WorkerOkResponse
-      // `Buffer` instances arrive as plain `Uint8Array` after structured-
-      // clone across the worker boundary. Re-wrap so callers see a real
-      // `Buffer` (they may call `.toString('hex')`, `.toString('base64')`,
-      // etc., which `Uint8Array` does not support).
+      // Buffers arrive as `Uint8Array` across the worker boundary; re-wrap.
       const result = {
         ...ok.result,
         buffer: Buffer.isBuffer(ok.result.buffer) ? ok.result.buffer : Buffer.from(ok.result.buffer),
@@ -207,10 +187,7 @@ export class WorkerPool {
 
   private onWorkerError(worker: PoolWorker, err: unknown): void {
     log.warn('Process worker emitted an error', { err: err instanceof Error ? err.message : String(err) })
-    // A worker that emitted an error can no longer be trusted (Node
-    // typically follows `error` with `exit`); retire it instead of marking
-    // it idle, or queued jobs would be dispatched to a dead worker and
-    // silently dropped.
+    // An errored worker must be retired, not marked idle — it cannot be trusted.
     this.retireWorker(worker, err instanceof Error ? err : new Error(String(err)))
   }
 
@@ -239,9 +216,7 @@ export class WorkerPool {
   }
 
   /**
-   * Remove a worker from the pool for good: reject its in-flight job,
-   * terminate the thread (harmless if it already exited), and spawn a
-   * replacement so the pool keeps its configured size.
+   * Remove a worker for good and spawn a replacement to keep the pool at size.
    */
   private retireWorker(worker: PoolWorker, err: Error): void {
     const index = this.workers.indexOf(worker)
@@ -272,8 +247,7 @@ export class WorkerPool {
 
   private replaceWorker(): void {
     this.spawnWorker()
-    // The fresh worker is idle — flush anything queued while the pool was
-    // short-handed.
+    // Flush anything queued while the pool was short-handed.
     this.drain()
   }
 
@@ -317,22 +291,17 @@ export class WorkerPool {
 }
 
 /**
- * Turn the wire-format error object back into a `DomainError` when the
- * worker reported one (see `domainErrorFromWire`), otherwise fall back to
- * a plain `Error` carrying just the message.
+ * Re-hydrate the worker's wire-format error into a `DomainError`, else a plain `Error`.
  */
 function rehydrateError(msg: WorkerErrResponse): unknown {
   return domainErrorFromWire(msg.error) ?? new Error(msg.error.message)
 }
 
-// ─── Module singleton ─────────────────────────────────────
-
 let poolPromise: Promise<WorkerPool> | null = null
 
 /**
- * Lazily create (and start) the shared sharp process pool. The first
- * caller pays the worker spawn cost; subsequent callers reuse the warm
- * pool. Safe to call concurrently — the promise is memoised.
+ * Lazily create and start the shared pool; memoised, so concurrent
+ * callers share one instance.
  */
 export function getProcessPool(): Promise<WorkerPool> {
   if (poolPromise !== null) {
@@ -376,35 +345,20 @@ export function __resetWorkerFactory(): void {
 
 function defaultCreateWorker(): Worker {
   if (isSea()) {
-    // Single-executable build: the worker bundle is embedded as a text
-    // asset and started with `eval: true`. `--input-type=module` makes
-    // the eval'd ESM bundle run as a module EXPLICITLY (no syntax
-    // detection) and keeps `import.meta.url` a file: URL, which the
-    // module-scope `createRequire(import.meta.url)` sites in the inlined
-    // sharp code require. Worker threads share the parent process
-    // environment, so the worker's redirected native loads
-    // (`nativeRequire`) resolve via `KOBATO_NATIVES_DIR` without
-    // workerData plumbing.
+    // SEA: the embedded worker bundle is eval'd with `--input-type=module`,
+    // which keeps `import.meta.url` a file: URL — required by the inlined
+    // sharp code's module-scope `createRequire(import.meta.url)`.
     const code = getEmbeddedAsset(SEA_PROCESS_WORKER_BUNDLE_KEY)
     if (code === null) {
       throw new Error(`Embedded worker asset missing: ${SEA_PROCESS_WORKER_BUNDLE_KEY}`)
     }
     return new Worker(code.toString('utf-8'), { eval: true, execArgv: ['--input-type=module'] })
   }
-  // In production the worker entry is emitted by `processWorkerEntryPlugin`
-  // at `<server-build-dir>/assets/process-worker.js` (stable name, no hash).
-  // We resolve it relative to the bundled module's own URL so the path is
-  // correct regardless of which chunk the pool lands in.
-  //
-  // Dev never reaches here — the dev shortcut in `process.ts` runs the
-  // pipeline inline, avoiding Node worker `.ts` loading limitations.
+  // The worker entry is emitted by `processWorkerEntryPlugin` at a stable
+  // name; resolve it relative to this module so the path survives bundling.
   const workerUrl = new URL('./process-worker.js', import.meta.url)
   return new Worker(workerUrl)
 }
 
-// Register the pool teardown as a shutdown hook. Priority 0 (default)
-// runs after flush hooks (priority 100) but alongside other
-// connection-close hooks (the DB pool). The pool rejects in-flight jobs
-// deterministically, so no data is lost — callers see an error and the
-// request fails fast.
+// Priority 0: runs after flush hooks (priority 100), alongside the DB pool close.
 registerShutdownHook(stopProcessPool, 0)

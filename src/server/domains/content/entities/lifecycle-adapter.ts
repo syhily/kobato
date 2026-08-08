@@ -9,11 +9,8 @@ import { recordForceOverwriteAudit } from '@/server/domains/content/lifecycle'
 import { getLogger } from '@/server/infra/logger'
 
 /**
- * Builds the body-lifecycle adapter (consumed by `saveBody` /
- * `loadDraftPreviewBySlug`) from the same descriptor that drives the
- * meta CRUD skeleton, so one declaration owns both halves of entity
- * behavior. Lives outside `content/lifecycle.ts` so tests that mock the
- * lifecycle module keep the adapter factory real.
+ * Builds the body-lifecycle adapter from the same descriptor that drives
+ * the meta CRUD skeleton. Lives outside `lifecycle.ts` for test seams.
  */
 export function makeContentEntityAdapter<
   TMeta extends MetaRowBase,

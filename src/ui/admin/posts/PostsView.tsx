@@ -33,7 +33,6 @@ const pill =
   'h-9 gap-1 rounded-(--radius) border-border px-3 text-(--text-admin-sm) font-medium shadow-none hover:bg-accent focus-visible:border-border focus-visible:ring-0 data-[popup-open]:border-border data-[popup-open]:ring-0'
 
 export function PostsView() {
-  // --- Filter option data ---
   const { data: categoriesData } = useQuery(orpcQuery.admin.categories.list.queryOptions({ input: {} }))
   const { data: tagsData } = useQuery(orpcQuery.admin.tags.list.queryOptions({ input: { limit: 100 } }))
   const { data: usersData } = useQuery(
@@ -50,10 +49,7 @@ export function PostsView() {
     [categoriesData, tagsData, usersData],
   )
 
-  // The pills own the whole filter surface: reducer state and the merged
-  // query input the list query spreads. The URL seeds them (dashboard /
-  // sidebar / tag / category deep links) and re-syncs the URL-backed fields
-  // on later navigations.
+  // The pills own the filter surface: reducer state + merged query input; the URL seeds them and re-syncs on navigation.
   const { search } = useLocation()
   const [initialFilters] = useState(() => postFiltersFromSearch(search))
   const pills = useFilterPills({ fields, initial: initialFilters })
@@ -61,9 +57,7 @@ export function PostsView() {
   const [sortBy, setSortBy] = useState<'publishedAt' | 'updatedAt'>('publishedAt')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
 
-  // URL → pills sync via the sanctioned "adjust state during render" pattern.
-  // UI-driven filter changes never touch `search`, so this only runs on real
-  // navigation and can't clobber the user's in-progress edits.
+  // URL → pills sync via the "adjust state during render" pattern; UI-driven changes never touch `search`.
   const [lastSearch, setLastSearch] = useState(search)
   if (search !== lastSearch) {
     setLastSearch(search)
@@ -102,7 +96,6 @@ export function PostsView() {
             {/* Header slot only when no filters are active — the body slot below takes over otherwise. */}
             {!pills.hasFilters && filterBar}
 
-            {/* Sort */}
             <Select
               items={SORT_OPTIONS}
               value={sortValue}
@@ -133,7 +126,6 @@ export function PostsView() {
                 ))}
               </SelectContent>
             </Select>
-            {/* New post */}
             <Link
               to="/editor/post/new"
               className="inline-flex h-9 items-center gap-1.5 rounded-(--radius) bg-primary px-3 font-medium text-(--text-admin-sm) text-primary-foreground shadow-none hover:bg-primary/90"
@@ -171,9 +163,7 @@ export function PostsView() {
                   />
                 ))}
               </div>
-              {/* Sentinel for infinite scroll */}
               {hasNextPage && <div ref={sentinelRef} className="h-1" />}
-              {/* Bottom status */}
               <AdminInfiniteListFooter
                 noun="文章"
                 rowCount={rows.length}

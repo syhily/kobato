@@ -5,8 +5,7 @@ import type { AssetsLoaderShape } from '@/shared/config/projection'
 import { renderToHtml, stableHtml } from '#/_helpers/render'
 import { BrandingView } from '@/ui/admin/library/BrandingView'
 
-// BrandingView reaches for route-loader data and a revalidator; stub both
-// so SSR produces a deterministic tree instead of touching the network.
+// Route-loader data + revalidator are stubbed so SSR never touches the network.
 vi.mock('react-router', async () => {
   const actual = await vi.importActual<typeof import('react-router')>('react-router')
   return {
@@ -16,9 +15,7 @@ vi.mock('react-router', async () => {
   }
 })
 
-// Build the full branding fixture. `etag` non-empty → "已自定义", empty →
-// "使用默认". The cast is a documented escape hatch for the partial map;
-// every slot must be present per `AssetsLoaderShape['branding']`.
+// etag non-empty → "已自定义", empty → "使用默认"; the cast is a documented escape hatch for the partial map.
 function buildBranding(overrides: Partial<AssetsLoaderShape['branding']> = {}): AssetsLoaderShape['branding'] {
   const base: AssetsLoaderShape['branding'] = {
     faviconSvg: { etag: '' },
@@ -45,23 +42,19 @@ describe('snapshot: BrandingView', () => {
     const html = stableHtml(renderToHtml(<BrandingView branding={branding} />))
     expect(html).toContain('品牌素材')
     expect(html).toContain('集中管理 favicon、Logo、社交卡片与海报等站点品牌素材')
-    // Slot group headings.
     expect(html).toContain('Favicon 套件')
     expect(html).toContain('站点 Logo')
     expect(html).toContain('社交卡片与海报')
     expect(html).toContain('通用素材')
-    // A configured slot reads "已自定义"; the others default.
     expect(html).toContain('已自定义')
     expect(html).toContain('使用默认')
-    // Uploads always work (S3 or local fallback), so the buttons render
-    // without a storage-disabled state on a configured slot.
+    // Uploads always work (S3 or local fallback) — no storage-disabled state.
     expect(html).toContain('替换')
     expect(html).toContain('上传')
   })
 
   it('never renders a storage-disabled banner — uploads always succeed via the active backend', () => {
-    // The old "请先启用 S3 上传" gate is gone: uploads fall back to local
-    // storage, so there is no disabled state to render regardless of config.
+    // Uploads fall back to local storage — no disabled state regardless of config.
     const branding = buildBranding()
     const html = stableHtml(renderToHtml(<BrandingView branding={branding} />))
     expect(html).toContain('品牌素材')
@@ -74,7 +67,6 @@ describe('snapshot: BrandingView', () => {
     const html = stableHtml(renderToHtml(<BrandingView branding={null} />))
     expect(html).toContain('品牌素材')
     expect(html).toContain('使用默认')
-    // No slot is configured, so the "configured" pill never appears.
     expect(html).not.toContain('已自定义')
   })
 })

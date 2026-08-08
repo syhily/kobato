@@ -53,7 +53,6 @@ export const optionalHttpUrlSchema = z.preprocess((value) => {
   return trimmed === '' ? undefined : trimmed
 }, httpUrlSchema.optional())
 
-/** Try to parse a string as a URL. Returns null on failure. */
 export function tryParseUrl(raw: string): URL | null {
   try {
     return new URL(raw)
@@ -64,10 +63,9 @@ export function tryParseUrl(raw: string): URL | null {
 
 const IPV4_PRIVATE = /^(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.|127\.|169\.254\.|0\.|22[4-9]\.|2[3-5][0-9]\.)/
 
-/** Parse one dotted-quad segment per the WHATWG IPv4 rules: decimal by
- *  default, `0x`-prefixed hex, `0`-prefixed octal. Returns null when the
- *  segment is not numeric in its radix (the host is then a name, not an
- *  IP literal). */
+/** One dotted-quad segment per the WHATWG IPv4 rules: decimal by
+ *  default, `0x`-prefixed hex, `0`-prefixed octal. Null when the
+ *  segment is not numeric in its radix (a name, not an IP literal). */
 function parseIpv4Segment(segment: string): number | null {
   if (segment === '') {
     return null
@@ -92,10 +90,8 @@ function parseIpv4Segment(segment: string): number | null {
   return Number.parseInt(digits, radix)
 }
 
-/** Parse an IPv4 literal in any WHATWG spelling — full dotted quad
- *  (`127.0.0.1`), short dotted forms (`127.1`), hex (`0x7f000001`),
- *  octal (`0177.0.0.1`), or a single decimal integer (`2130706433`) —
- *  into its 32-bit value. Returns null for non-IP-literal hosts. */
+/** IPv4 literal in any WHATWG spelling (dotted, short-dot, hex,
+ *  octal, decimal integer) → 32-bit value; null for non-IP hosts. */
 function parseIpv4(host: string): number | null {
   const input = host.endsWith('.') ? host.slice(0, -1) : host
   const segments = input.split('.')
@@ -127,8 +123,7 @@ function parseIpv4(host: string): number | null {
   return ip
 }
 
-/** Private/reserved check on a parsed 32-bit IPv4 value. Mirrors the
- *  ranges of the `IPV4_PRIVATE` literal regex exactly. */
+/** Private/reserved check on a 32-bit IPv4 value; must mirror the `IPV4_PRIVATE` regex exactly. */
 function isPrivateIpv4Number(ip: number): boolean {
   const a = Math.floor(ip / 256 ** 3)
   const b = Math.floor(ip / 256 ** 2) % 256
@@ -143,8 +138,8 @@ function isPrivateIpv4Number(ip: number): boolean {
   )
 }
 
-/** Parse one side of a (possibly `::`-compressed) IPv6 address into
- *  hextets. A dotted IPv4 tail is only allowed as the final group. */
+/** One side of a (possibly `::`-compressed) IPv6 address into hextets;
+ *  a dotted IPv4 tail is only allowed as the final group. */
 function parseIpv6Hextets(groups: string[], allowIpv4Tail: boolean): number[] | null {
   const hextets: number[] = []
   for (const [index, group] of groups.entries()) {
@@ -167,12 +162,9 @@ function parseIpv6Hextets(groups: string[], allowIpv4Tail: boolean): number[] | 
   return hextets
 }
 
-/** Parse an IPv6 literal (compressed or full, with optional IPv4 tail)
- *  into its 8 hextets. Returns null for malformed input. A zone-ID
- *  suffix (`fe80::1%eth0`, RFC 6874 — `%25`-encoded when it arrives via
- *  a URL hostname) is stripped first: the ADDRESS alone decides the
- *  private/reserved verdict, and a zone suffix must never launder a
- *  link-local literal into an unblocked "hostname". */
+/** IPv6 literal (compressed or full, with optional IPv4 tail) → its 8
+ *  hextets; null for malformed input. A zone-ID suffix is stripped
+ *  first — the address alone decides the private/reserved verdict. */
 function parseIpv6(host: string): number[] | null {
   const zoneIndex = host.indexOf('%')
   const address = zoneIndex === -1 ? host : host.slice(0, zoneIndex)
@@ -212,19 +204,14 @@ function isPrivateIpv6(hextets: number[]): boolean {
   if (hextets.slice(0, 5).every((h) => h === 0) && hextets[5] === 0xffff) {
     return isPrivateIpv4Number(hextets[6] * 0x10000 + hextets[7])
   }
-  // IPv4-compatible IPv6 (`::a.b.c.d`, deprecated by RFC 4291 §2.5.5.1) is
-  // deliberately NOT special-cased: current Linux/macOS runtimes do not
-  // route that form, so `::127.0.0.1` is unreachable today (audit P2-26,
-  // accepted latent risk). If a future runtime revives the legacy
-  // compatible stack, map hextets[6..7] through isPrivateIpv4Number here.
+  // IPv4-compatible IPv6 (`::a.b.c.d`, RFC 4291 §2.5.5.1) is NOT
+  // special-cased: current runtimes don't route it (audit P2-26,
+  // accepted latent risk).
   return hextets.every((h, i) => h === (i === 7 ? 1 : 0)) || hextets.every((h) => h === 0)
 }
 
-/** Hostnames that must never be the target of an admin-influenced server-side
- *  outbound fetch (SSRF guard). Combines the IP-literal check in `isPrivateIp`
- *  with the loopback/`0.0.0.0`/`*.localhost` *names* that `isPrivateIp` does not
- *  cover. Pass `URL.hostname` (already lowercased by `URL`, but we lowercase
- *  defensively). */
+/** SSRF guard: hostnames that must never be the target of an
+ *  admin-influenced outbound fetch. */
 export function isBlockedFetchHost(hostname: string): boolean {
   const host = hostname.toLowerCase()
   if (host === 'localhost' || host === '0.0.0.0' || host === '::1' || host === '[::1]' || host.endsWith('.localhost')) {
@@ -233,14 +220,11 @@ export function isBlockedFetchHost(hostname: string): boolean {
   return isPrivateIp(host)
 }
 
-/** Check whether a hostname is a private/reserved IP address. Only applies to
- *  actual IP addresses — domain names like `fcbarcelona.com` are NOT flagged.
- *  Handles bracketed IPv6 format from URL.hostname (e.g. `[fc00::1]`). The
- *  literal regex runs first (it also catches non-IP names such as
- *  `127.0.0.1.nip.io`); parsing then covers the spellings the regex cannot
- *  see — hex/octal/decimal/short-dot IPv4 variants and IPv4-mapped IPv6. */
+/** Private/reserved IP check — domain names are NOT flagged. Literal
+ *  regex first (also catches non-IP names like `127.0.0.1.nip.io`),
+ *  then the parser spellings the regex cannot see; handles bracketed
+ *  IPv6. */
 export function isPrivateIp(hostname: string): boolean {
-  // Strip brackets from IPv6 URL hostnames: [fc00::1] → fc00::1
   const h = hostname.startsWith('[') && hostname.endsWith(']') ? hostname.slice(1, -1) : hostname
   // IPv4 private ranges (RFC 1918) + loopback + link-local + multicast
   if (IPV4_PRIVATE.test(h)) {
@@ -268,9 +252,8 @@ export const httpUrlOrEmptyStringSchema = z.preprocess(
   z.union([z.literal(''), httpUrlSchema]),
 )
 
-/** Validates that a website URL meets Passkey RP requirements:
- *  HTTPS protocol, public hostname (no localhost / private IP / IPv6 ULA).
- */
+/** Passkey RP requirements: HTTPS + public hostname (no localhost /
+ *  private IP / IPv6 ULA). */
 export function isValidPasskeyDomain(website: string): boolean {
   try {
     const url = new URL(website)
@@ -287,11 +270,8 @@ export function isValidPasskeyDomain(website: string): boolean {
   }
 }
 
-// Known Gravatar-compatible mirror hosts. The avatar mirror URL is
-// admin-configurable and fetched by the public `/images/avatar/:filename.png`
-// endpoint, so an admin (or compromised admin cookie) could otherwise point
-// it at a cloud metadata endpoint or any internal address and let visitors
-// trigger the fetch — an SSRF primitive.
+// Known Gravatar-compatible mirrors; the admin-configurable mirror URL
+// is fetched by a public endpoint, so the allowlist blocks SSRF.
 const ALLOWED_GRAVATAR_HOSTS = new Set([
   'gravatar.com',
   'www.gravatar.com',
@@ -299,8 +279,7 @@ const ALLOWED_GRAVATAR_HOSTS = new Set([
   'en.gravatar.com',
   'secure.gravatar.com',
   'i.gravatar.com',
-  // Public Gravatar-compatible mirrors commonly used in China / by the
-  // community. Keep this list explicit; do not open it to arbitrary hosts.
+  // Public mirrors; keep the list explicit — never open it to arbitrary hosts.
   'cdn.v2ex.com',
   'sdn.geekzu.org',
   'gravatar.loli.net',
@@ -310,11 +289,8 @@ const ALLOWED_GRAVATAR_HOSTS = new Set([
   'gravatar.webp.se',
 ])
 
-/** Return `true` only when `rawUrl` is an HTTPS URL on a known Gravatar
- *  mirror host that is NOT a loopback / private / link-local address.
- *  Defence in depth: the allowlist already excludes unknown hosts, but we
- *  also scan for private IP ranges so a future DNS rebinding of an allowed
- *  hostname to an internal IP cannot slip through. */
+/** HTTPS on a known mirror host that is not private — a DNS rebinding
+ *  of an allowed name to an internal IP must not slip through. */
 export function isAllowedMirrorUrl(rawUrl: string): boolean {
   const parsed = tryParseUrl(rawUrl)
   if (parsed === null) {

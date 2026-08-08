@@ -3,13 +3,9 @@
 import { act, renderHook } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-// Save-warning surfacing (plan 058): the server emits `warning` on a save
-// result when a non-fatal side effect (image-library sync) failed. The
-// shell must surface it in the status area instead of swallowing it. The
-// mutation configs are captured per slot so each test can drive the exact
-// onSuccess a real mutation would fire. Slot order matches the useMutation
-// call order in use-editor-shell-persist:
-//   0 = upsertMeta, 1 = saveDraft, 2 = publish, 3 = unpublish
+// Save-warning surfacing (plan 058): the shell must surface a save
+// warning instead of swallowing it. Mutation slots follow persist call
+// order: 0 = upsertMeta, 1 = saveDraft, 2 = publish, 3 = unpublish
 
 interface MutationSlot {
   onSuccess?: (data: never) => void
@@ -149,8 +145,7 @@ describe('ui/admin/editor-shell/useEditorShellState — save-result warnings', (
     const { result } = renderHook(() => useEditorShellState<Meta, EntityLike>(makeEditArgs()))
     const payload: SaveBodyOutput = { status: 'saved', revision: makeRevision(), warning: WARNING }
 
-    // persistSave fires the meta and body legs concurrently; when the body
-    // leg lands first with a warning, the meta leg's success must keep it.
+    // A concurrent meta-leg success must not clobber the body-leg warning.
     act(() => slots[1]?.onSuccess?.(payload as never))
     act(() =>
       slots[0]?.onSuccess?.({

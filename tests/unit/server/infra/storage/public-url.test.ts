@@ -4,10 +4,7 @@ import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_hel
 import { ActionFailure } from '@/server/infra/http/errors'
 import { getPublicBaseUrl, resolveAssetUrl, safeResolveAssetUrl } from '@/server/infra/storage/public-url'
 
-// `resolveAssetUrl` reads the CDN host + site origin off the real settings
-// snapshot. The baseline below keeps the historical fixture hosts so the
-// expected URLs stay byte-for-byte stable; individual tests override the
-// one section they care about.
+// `resolveAssetUrl` reads the real settings snapshot; each test overrides one section at a time.
 function seedSettings(overrides: { assetHost?: string; storageEnabled?: boolean; website?: string | null } = {}) {
   setBlogSettingsBundleForTests({
     ...TEST_BLOG_SETTINGS_BUNDLE,
@@ -86,18 +83,14 @@ describe('resolveAssetUrl — missing-base guards', () => {
   })
 
   it('re-throws non-ActionFailure errors from safeResolveAssetUrl', () => {
-    // An unhydrated snapshot makes the real getter throw a plain Error —
-    // safeResolveAssetUrl must not swallow it as an ActionFailure.
+    // The unhydrated-snapshot Error must not be swallowed as an ActionFailure.
     setBlogSettingsBundleForTests(null)
     expect(() => safeResolveAssetUrl('s3', 'images/a.jpg')).toThrow('not been hydrated')
   })
 })
 
-// The font URL contract (hard repo rule): local fonts are served from the
-// dedicated `/fonts/embedded/<hash>/result.css` route, s3 fonts straight
-// from `<publicBaseUrl>/fonts/<hash>/result.css`. The options bag below is
-// exactly what the fonts render service passes — these tests pin the public
-// URL shapes byte-for-byte.
+// Font URL contract (hard repo rule): local → `/fonts/embedded/<hash>/result.css`,
+// s3 → `<publicBaseUrl>/fonts/<hash>/result.css`.
 describe('resolveAssetUrl — local route override (font options bag)', () => {
   const HASH = 'a'.repeat(64)
   const CSS_KEY = `fonts/${HASH}/result.css`

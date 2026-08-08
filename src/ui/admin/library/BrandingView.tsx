@@ -12,10 +12,7 @@ import { Button } from '@/ui/components/button'
 import { Card, CardContent } from '@/ui/components/card'
 import { cn } from '@/ui/lib/cn'
 
-// Per-slot UI metadata: `publicPath` mirrors the server-side
-// `ASSET_ROUTES` table, `purpose` says where the asset shows up on the
-// public site, and `spec` is the recommended format / dimensions / size
-// cap.
+// Per-slot UI metadata: `publicPath` mirrors the server-side `ASSET_ROUTES` table.
 type BrandingFileSlot =
   | 'faviconSvg'
   | 'faviconIco'

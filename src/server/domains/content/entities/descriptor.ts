@@ -7,11 +7,9 @@ import type { PortableTextBody } from '@/shared/pt/schema'
 import type { RoleOrNull } from '@/shared/utils/roles'
 
 /**
- * The 17 columns the `post` and `page` meta tables declare identically.
- * Entity extras (post: visible/categoryId/alias/pinnedAt, page:
- * showFriends) never appear here — they attach through the descriptor's
- * `mutations.insertExtras` / `mutations.updateExtras` hooks. Structural
- * (like `LiveMeta` in `content/schemas/live-gate.ts`), so both row types satisfy it.
+ * The 17 columns `post` and `page` meta tables declare identically.
+ * Entity extras attach through `mutations.insertExtras` / `updateExtras`;
+ * structural, so both row types satisfy it.
  */
 export interface MetaRowBase {
   id: number
@@ -35,9 +33,8 @@ export interface MetaRowBase {
 }
 
 /**
- * The shared upsert-meta input fields (mirrors `MetaRowBase`'s writable
- * shared columns). Entity inputs extend this with their extras — see
- * `UpsertPostMetaInput` / `UpsertPageMetaInput`.
+ * Shared upsert-meta input fields (the writable shared meta columns);
+ * entity inputs extend with their extras.
  */
 export interface UpsertMetaInputBase {
   id?: number
@@ -56,10 +53,8 @@ export interface UpsertMetaInputBase {
 }
 
 /**
- * Meta-table persistence behind the descriptor. One implementation
- * (`makeMetaCrud` in `entities/meta-repo.ts`) serves both entities; the
- * descriptor wires the bindings through the entity's own surface modules
- * so unit tests keep their per-entity mock seams.
+ * Meta-table persistence behind the descriptor — one implementation
+ * serves both entities, wired per-entity to keep unit-test mock seams.
  */
 // Sync returns (node:sqlite): these run inside entity transactions.
 export interface MetaCrud<TMeta extends MetaRowBase, TNew> {
@@ -82,10 +77,8 @@ export type MutationExtrasSource<TInput> = { kind: 'upsert'; input: TInput } | {
 export type MetaMutationEvent = 'create' | 'update' | 'delete' | 'unpublish'
 
 /**
- * One descriptor per meta entity drives BOTH the body lifecycle
- * (`ContentEntityAdapter` via `makeContentEntityAdapter`) and the meta
- * CRUD skeleton (`makeEntityMutations`, `makeEntityAdminQuery`) in
- * `content/entities/*`; posts and pages keep only this declaration plus
+ * One descriptor per meta entity drives both the body lifecycle and the
+ * meta CRUD skeleton; posts and pages keep only this declaration plus
  * their genuinely-specific services.
  */
 export interface MetaEntityDescriptor<
@@ -105,19 +98,11 @@ export interface MetaEntityDescriptor<
   defaultAdminListLimit: number
 
   access: {
-    /**
-     * The entity's access gate, shared by the body lifecycle, the meta
-     * mutations, and the admin queries. Throws the entity's NOT_FOUND
-     * (posts also enforce author ownership via `canEditPost`).
-     */
+    /** The entity's access gate (body lifecycle, meta mutations, admin queries); throws NOT_FOUND. */
     assertAccess: (meta: TMeta | null, viewer?: ViewerIdentity) => asserts meta is TMeta
     /** Draft-preview access rule (CONTEXT.md "Draft preview"): posts author+, pages admin only. */
     canPreviewDraft: (role: RoleOrNull | undefined) => boolean
-    /**
-     * Narrow the admin-list filters for a non-admin viewer. Posts pin
-     * authors to their own posts; pages omit the hook (admin-only
-     * surface, no scoping).
-     */
+    /** Narrow the admin-list filters for a non-admin viewer. */
     scopeListFilters?: <TFilters>(filters: TFilters, viewer: ViewerIdentity) => TFilters
   }
 
@@ -163,15 +148,12 @@ export interface MetaEntityDescriptor<
     mutationExtras?: (db: Database, meta: TMeta, source: MutationExtrasSource<TInput>) => Promise<TExtras>
     /**
      * Post-commit side effects. Pages invalidate on every event; posts
-     * only on delete/unpublish (create/update of an unpublished row
-     * change no public surface) and drop the search-index row on
-     * unpublish.
+     * only on delete/unpublish.
      */
     afterMutation?: (db: Database, meta: TMeta, event: MetaMutationEvent) => Promise<void>
     /**
      * In-transaction restore gathering (posts: the published body for
-     * re-indexing, collected inside the tx so a failed restore never
-     * touches the external index). Runs after the slug reclaim.
+     * re-indexing). Runs after the slug reclaim.
      */
     prepareRestore?: (tx: Database, meta: TMeta) => TRestore | null
     /** Post-commit restore side effects; may return a warning that follows the slug warning. */

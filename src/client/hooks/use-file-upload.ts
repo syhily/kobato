@@ -5,11 +5,9 @@ import { toast } from 'sonner'
 import { toastApiError } from '@/client/lib/toast-api-error'
 import { extractApiErrorMessage } from '@/shared/utils/api-error'
 
-// Shared adapter for the admin "upload a file to an /api/* resource route"
-// flows: CSRF token from the root loader, extension/size guards, multipart
-// POST, `{ error: { message } }` unwrapping. Uploads deliberately bypass
-// the oRPC client — the resource routes sit behind their own (larger) body
-// limits.
+// Shared admin upload adapter for `/api/*` resource routes: CSRF from the
+// root loader, accept/size guards, multipart POST, `{ error: { message } }`
+// unwrap. Deliberately bypasses oRPC — resource routes have larger body limits.
 
 export interface FileUploadToast {
   title: string
@@ -30,46 +28,27 @@ export interface FileUploadMessages {
 }
 
 export interface UseFileUploadOptions {
-  /** Resource route accepting the multipart POST. */
   endpoint: string
   /** Extra fields appended to the FormData ahead of the file (File uploads only). */
   fields?: Record<string, string>
-  /**
-   * Extension allowlist; each entry is a lowercase dotted suffix matched
-   * against the file name (e.g. '.svg', '.sql.gz'). Omit to skip the type
-   * guard. Guards only run for File inputs — a prebuilt FormData is posted
-   * as-is.
-   */
+  /** Dotted-suffix allowlist matched against the file name (e.g. '.svg', '.sql.gz'); omit to skip the type guard. Guards only run for File inputs. */
   accept?: readonly string[]
   /** Size cap in bytes. Omit to skip the size guard. */
   maxBytes?: number
   /** Fetch credentials mode for the POST. */
   credentials?: RequestCredentials
-  /**
-   * Parse the response body as JSON immediately — before the ok check — and
-   * hand it to onSuccess / the error extractor. A malformed body then lands
-   * in the failure channel like a transport error. Required by flows that
-   * inspect the success payload (e.g. /api/setup/restore's `accepted` flag).
-   */
+  /** Parse the response body as JSON before the ok check; a malformed body lands in the failure channel like a transport error. */
   parseJson?: boolean
   messages?: FileUploadMessages
-  /**
-   * Runs after a successful POST (revalidation, cache invalidation,
-   * follow-up UX). Awaited; receives the parsed body when parseJson is set.
-   */
+  /** Runs after a successful POST; awaited, receives the parsed body when parseJson is set. */
   onSuccess?: (body: unknown) => void | Promise<void>
-  /**
-   * When set, EVERY failure channel (guard, HTTP, transport) routes the
-   * message here instead of toast.error — for views that render errors
-   * inline. Guard failures pass `description ?? title`.
-   */
+  /** When set, every failure channel routes here instead of toast.error; guard failures pass `description ?? title`. */
   onError?: (message: string) => void
 }
 
 export interface UseFileUploadResult {
   /** Run the full choreography. Resolves true on success, false on any handled failure. */
   upload: (input: File | FormData) => Promise<boolean>
-  /** True while a request is in flight. */
   pending: boolean
 }
 
@@ -145,9 +124,7 @@ export function useFileUpload(options: UseFileUploadOptions): UseFileUploadResul
       } catch (err) {
         const fallback = messages?.failure ?? '上传失败'
         if (onError) {
-          // Inline-error mode: the thrown value is a transport / parse
-          // failure or an onSuccess throw — never a server message (the
-          // !res.ok path already returned), so surface the fixed fallback.
+          // Inline-error mode: only transport/parse/onSuccess throws land here — the !res.ok path already returned.
           onError(fallback)
         } else {
           toastApiError(err, fallback)

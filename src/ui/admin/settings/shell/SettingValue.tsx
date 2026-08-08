@@ -14,9 +14,6 @@ interface SettingValueProps {
   className?: string
 }
 
-// A read-only key-value row inside a `SettingGroup`.
-// On desktop it renders as a two-column grid (label left, value right);
-// on narrow viewports the columns collapse vertically.
 export function SettingValue({ label, value, hint, format = 'plain', className }: SettingValueProps) {
   return (
     <div

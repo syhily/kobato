@@ -5,7 +5,7 @@ import type { BackupRow, NewBackup } from '@/server/infra/db/types'
 
 import { backup } from '@/server/infra/db/schema/backup'
 
-/** Insert a backup row. `storagePath` is unique — `onConflictDoNothing` guards the reconcile backfill. */
+/** Insert a backup row (`storagePath` is unique). */
 export async function insertBackup(db: Database, values: NewBackup): Promise<BackupRow> {
   const rows = await db.insert(backup).values(values).returning()
   return rows[0]!

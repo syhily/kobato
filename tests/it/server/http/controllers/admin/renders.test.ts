@@ -13,11 +13,7 @@ import { content, postSearchIndex } from '@/server/infra/db/schema/content'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
 
-// adminRendersRouter against the real engine: KaTeX renders for real
-// (mhchem side-effect included via KATEX_OPTIONS' module), and
-// reindexSearchBatch walks real post/content rows and writes the real
-// post_search_index table — the old mock only echoed fake stats and
-// never exercised the batch/offset math.
+// adminRendersRouter against the real engine: real KaTeX renders and real post_search_index writes.
 const db = getTestDb()
 
 let seq = 0
@@ -34,8 +30,7 @@ function adminCtx(userId: number) {
   return makeAuthedCtx({ userId: String(userId), role: 'admin', db })
 }
 
-// A live post (published, not deleted, published revision attached) whose
-// revision body is a valid portable-text document mentioning `plainText`.
+// A live post (published, published revision attached) whose body mentions `plainText`.
 async function seedPublishedPost(plainText: string): Promise<number> {
   const key = ++seq
   const [meta] = await db

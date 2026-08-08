@@ -11,11 +11,8 @@ import { createTestDatabaseFile } from '#/_helpers/integration-db'
 import { closeDatabase, openDatabase } from '@/server/infra/db/database'
 import { runEmbeddedMigrations } from '@/server/infra/db/migrate'
 
-// Folder path vs embedded path equivalence. The SEA binary ships no
-// `drizzle/` directory — migrations are embedded as blob assets and run
-// through `runEmbeddedMigrations`, which replaces the battle-tested
-// folder reader in production SEA deployments. Both paths are executed
-// here against fresh databases and must land on identical outcomes.
+// Folder vs embedded migration paths must land on identical outcomes —
+// the SEA binary ships no `drizzle/` dir, only embedded blob assets.
 
 const MIGRATIONS_FOLDER = './drizzle'
 const MIGRATIONS_TABLE = '__drizzle_migrations'
@@ -70,8 +67,7 @@ function readDbShape(db: Database): DbShape {
   return { tables, migrations }
 }
 
-// Handles opened directly (not via the harness) close locally; the
-// createTestDatabaseFile handle self-cleans through the harness registry.
+// Directly-opened handles close locally; createTestDatabaseFile self-cleans via the harness registry.
 const handles: DatabaseHandle[] = []
 afterAll(() => {
   for (const handle of handles.splice(0)) {

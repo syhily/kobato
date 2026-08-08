@@ -7,11 +7,9 @@ import type { BlogSettingsBundle } from '@/shared/config/types'
 import { setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { bundleFromMatches, metaWithFallback, pageTitle, routeMeta, seoForPage, seoForPost } from '@/shared/seo/meta'
 
-// `routeMeta` and `pageTitle` consult the snapshot reader for the
-// site title / website / OG defaults. There is no longer a baked-in
-// `DEFAULT_SETTINGS`, so the test suite seeds an explicit fixture
-// snapshot before the assertions run and tears it down afterwards so
-// other test files don't observe leaked global state.
+// `routeMeta` and `pageTitle` read the site title / website / OG defaults
+// from the snapshot reader — there is no baked-in `DEFAULT_SETTINGS`, so
+// every test seeds an explicit fixture snapshot in `beforeEach`.
 const fixture: BlogSettingsBundle = {
   siteIdentity: {
     title: 'Test Blog',
@@ -160,9 +158,8 @@ beforeEach(() => {
   setBlogSettingsBundleForTests(fixture)
 })
 
-// Helpers to find a meta tag by predicate. routeMeta produces a heterogeneous
-// list of `name`, `property`, and `tagName: link` entries — we treat it as a
-// flat map and assert the relevant keys are present and correct.
+// routeMeta emits a heterogeneous list of `name`, `property`, and
+// `tagName: link` entries — treat it as a flat map and assert by predicate.
 type MetaEntry = MetaDescriptor & Record<string, unknown>
 
 function findByName(meta: MetaEntry[], name: string) {

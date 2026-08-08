@@ -13,11 +13,8 @@ export function useOpenFootnoteEditDialogRef() {
   })
 }
 
-/**
- * Build the `editorProps.handleClick` callback that wires inline
- * math and footnote-ref clicks to their respective editing surfaces.
- * The refs are populated by the caller after `useEditor` resolves.
- */
+/** Wire inline-math and footnote-ref clicks to their editing surfaces —
+ *  the refs are populated by the caller after `useEditor` resolves. */
 export function useTiptapEditorProps(
   mathInlineClickEditorRef: React.RefObject<Editor | null>,
   openFootnoteEditDialogRef: React.RefObject<(targetKey: string) => void>,

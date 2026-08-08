@@ -3,14 +3,9 @@
 import { act, renderHook } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-// The merged autosave freeze (one gate, two sources) end-to-end through
-// the orchestrator: persist reports the server leg via the
-// noteRevisionConflict notification, the orchestrator merges it with the
-// local-draft leg into the single `draft.freeze` flag persist gates on,
-// and the next clean save clears it in noteRevisionSaved. Same mock seam
-// as use-editor-shell-warning.test.tsx — slot order matches the
-// useMutation call order in use-editor-shell-persist:
-//   0 = upsertMeta, 1 = saveDraft, 2 = publish, 3 = unpublish
+// Merged autosave freeze end-to-end: both sources merge into the single
+// `draft.freeze` gate. Mock seam — slot order matches useMutation call
+// order in use-editor-shell-persist: 0 = upsertMeta, 1 = saveDraft, 2 = publish, 3 = unpublish
 
 interface MutationSlot {
   onSuccess?: (data: never) => void
@@ -147,8 +142,6 @@ describe('ui/admin/editor-shell/useEditorShellState — merged autosave freeze',
     renderHook(() => useEditorShellState<Meta, EntityLike>(makeEditArgs()))
     expect(lastAutosaveOptions().enabled).toBe(true)
 
-    // The body leg lands with a revision conflict: persist reports the
-    // server leg, the orchestrator merges it into the single freeze flag.
     const conflicted: SaveBodyOutput = {
       status: 'conflict',
       latest: makeRevision(),
@@ -157,8 +150,6 @@ describe('ui/admin/editor-shell/useEditorShellState — merged autosave freeze',
     act(() => slots[1]?.onSuccess?.(conflicted as never))
     expect(lastAutosaveOptions().enabled).toBe(false)
 
-    // The conflict recovery is the next clean save: noteRevisionSaved
-    // clears the server leg and the gate reopens.
     const clean: SaveBodyOutput = {
       status: 'saved',
       revision: makeRevision({ id: 'rev-2', revisionNo: 2, clientRevisionToken: 'tok-2' }),

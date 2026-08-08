@@ -4,11 +4,7 @@ import { describe, expect, it } from 'vitest'
 import type { Env } from '@/server/http/context'
 
 // Contract: `c.var` set by a root-app middleware survives `app.route()` into
-// a sub-app handler. The RR bridge (`src/server/infra/hono/node.ts`) mounts
-// `reactRouterApp` via `app.route(basename, …)`, and `buildLoadContext`
-// reads `c.var.requestContext` inside it. If Hono ever drops `c.var` across
-// this seam, this test fails — and the fix belongs in the bridge (forward
-// the value explicitly), not in per-loader fallback re-derivation.
+// a sub-app handler. If it ever drops, fix the bridge, not the per-loader fallback.
 
 type TestEnv = {
   Variables: {

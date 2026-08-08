@@ -28,7 +28,6 @@ async function resolveEntity(db: Database, target: EntityTarget): Promise<{ titl
   return { title: entity.title, url: entityCommentUrl(target.type, entity.slug) }
 }
 
-// Sent to the administrator whenever a new comment is posted.
 export async function sendNewComment(
   db: Database,
   commentInfo: CommentAndUser,
@@ -53,7 +52,6 @@ export async function sendNewComment(
   })
 }
 
-// Sent to the original commenter when one of their comments receives a reply.
 export async function sendNewReply(
   db: Database,
   sourceUser: User,
@@ -85,7 +83,6 @@ export async function sendNewReply(
   )
 }
 
-// Sent to the commenter when an admin approves their previously pending comment.
 export async function sendApprovedComment(
   db: Database,
   comment: Comment,

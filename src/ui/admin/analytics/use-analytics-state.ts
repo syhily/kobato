@@ -22,9 +22,7 @@ function isMetricType(key: string): key is MetricType {
   )
 }
 
-// URL-synced state hook for the analytics dashboard. The loader reads the
-// same `?preset=`/`?startAt=`/`?endAt=`/`?filters=` search params, so these
-// setters trigger React Router's revalidation pass automatically.
+// URL-synced dashboard state; setters trigger the loader's revalidation pass.
 
 export interface AnalyticsState {
   preset: PresetKey | null

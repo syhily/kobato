@@ -7,13 +7,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { useToolbarDensityPreference } from '@/ui/admin/editor/toolbar/density'
 
-// Audit P1-4: the lazy useState initializer read localStorage on the
-// hydration render, so users WITH a stored preference got a hydration
-// mismatch (SSR 'full' vs first client render 'compact'). The fix mirrors
-// use-comment-guest: a useSyncExternalStore whose server snapshot is
-// always the default. happy-dom doesn't implement localStorage, so stub
-// the bare global the hook reads (same pattern as
-// use-comment-guest-client.test.tsx).
+// Audit P1-4: the hook must render the default on SSR even when a
+// preference is stored — the server snapshot is always the default.
 const STORAGE_KEY = 'kobato/admin/page-editor/toolbar-density'
 
 const store = new Map<string, string>()
@@ -47,8 +42,7 @@ describe('useToolbarDensityPreference — SSR/hydration consistency (audit P1-4)
     const container = document.createElement('div')
     document.body.appendChild(container)
 
-    // The server render sees the server snapshot — always the default,
-    // regardless of the stored preference.
+    // Server snapshot is the default regardless of the stored preference.
     container.innerHTML = renderToStaticMarkup(<Probe />)
     expect(container.textContent).toBe('full')
 
@@ -59,8 +53,7 @@ describe('useToolbarDensityPreference — SSR/hydration consistency (audit P1-4)
     })
     spy.mockRestore()
 
-    // No hydration warning/error, and the stored preference applies once
-    // React swaps to the client snapshot.
+    // The stored preference applies once React swaps to the client snapshot.
     expect(errors).toEqual([])
     expect(container.textContent).toBe('compact')
     container.remove()

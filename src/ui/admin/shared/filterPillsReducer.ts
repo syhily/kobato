@@ -1,7 +1,4 @@
-// Shared filter-pill state machine for admin list surfaces. Consumers
-// (comments, audit log, images) parametrize it with their field-key union
-// and keep their value codecs and side effects (images' q mirror) local.
-
+// Shared filter-pill state machine for admin list surfaces; consumers keep their codecs and side effects local.
 export interface ActiveFilter<TField extends string = string> {
   field: TField
   value: string
@@ -20,8 +17,7 @@ export function filterPillsReducer<TField extends string>(
 ): ActiveFilter<TField>[] {
   switch (action.type) {
     case 'addFilter': {
-      // One pill per field: a re-add replaces the existing pill and moves
-      // it to the end.
+      // One pill per field: a re-add replaces the existing pill and moves it to the end.
       const next = filters.filter((f) => f.field !== action.field)
       return [...next, { field: action.field, value: action.value, label: action.label }]
     }

@@ -1,11 +1,6 @@
-// In-memory StorageBackend for integration tests — the single shared
-// fake for the S3/local-disk external. Every test that routes the
-// storage registry at an in-memory backend builds it here instead of
-// hand-rolling a Map-backed double, so the seam's full contract
-// (put/putStream/get/getStream/exists/delete/deleteMany/deletePrefix/
-// list) behaves the same everywhere: reads of an absent key reject with
-// `StorageObjectNotFound` exactly like the real adapters, deletes are
-// idempotent, and `list` honours prefix + maxKeys.
+// In-memory StorageBackend for integration tests — the single shared fake
+// for the S3/local-disk external. Reads of an absent key reject with
+// `StorageObjectNotFound`; deletes are idempotent; `list` honours prefix.
 import { Readable } from 'node:stream'
 
 import type { PutObjectInput, PutStreamInput, StorageBackend, StoredObjectMeta } from '@/server/infra/storage/backend'

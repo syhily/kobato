@@ -73,11 +73,8 @@ export class E2eClient {
 }
 
 /**
- * The anonymous visitor's CSRF token, scraped from a public page's root
- * loader data. Same mechanics as {@link getAdminCsrfToken}: the token is
- * the one 64-hex value in the document. Only use on pages without
- * commenter avatars or branding etags (both are 64-hex too) — a fresh
- * instance's home/detail pages qualify.
+ * The anonymous visitor's CSRF token — the one 64-hex value in the page.
+ * Use only on pages without 64-hex avatars or branding etags.
  */
 export async function getPublicCsrfToken(client: E2eClient, path: string): Promise<string> {
   const res = await client.get(path)
@@ -93,12 +90,9 @@ export async function getPublicCsrfToken(client: E2eClient, path: string): Promi
 }
 
 /**
- * Real signin over HTTP: GET /admin/signin for the session cookie + the
- * `csrf_token` hidden input, then POST the credentials. Returns the
- * action response (302 + Set-Cookie on success) and the PRE-login CSRF
- * token (only valid for the login POST itself — `establishLoginSession`
- * destroys the anonymous session and the new session gets a fresh token;
- * use `getAdminCsrfToken` for authenticated RPCs).
+ * Real signin over HTTP. Returns the action response (302 + Set-Cookie on
+ * success) and the PRE-login CSRF token — valid only for the login POST;
+ * use `getAdminCsrfToken` for authenticated RPCs.
  */
 export async function loginAdmin(client: E2eClient, env: E2eEnv): Promise<{ res: Response; csrfToken: string }> {
   const page = await client.get('/admin/signin')
@@ -116,13 +110,8 @@ export async function loginAdmin(client: E2eClient, env: E2eEnv): Promise<{ res:
   return { res, csrfToken }
 }
 
-/**
- * The CSRF token of the authenticated session, scraped from the /admin
- * document. The token lives in the root loader data (rendered into the
- * React Router stream — the key itself is flattened away by turbo-stream,
- * but the 32-byte hex value appears exactly once in the page). Required
- * as `x-csrf-token` on every /rpc/* call.
- */
+/** The authenticated session's CSRF token — the one 64-hex value in the
+ *  /admin document. Required as `x-csrf-token` on every /rpc/* call. */
 export async function getAdminCsrfToken(client: E2eClient): Promise<string> {
   const res = await client.get('/admin')
   if (res.status !== 200) {

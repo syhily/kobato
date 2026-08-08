@@ -14,10 +14,8 @@ import { content } from '@/server/infra/db/schema/content'
 import { page as pageTable } from '@/server/infra/db/schema/page'
 import { user } from '@/server/infra/db/schema/user'
 
-// The body lifecycle (saveBody/previewBody) stays mocked — it is covered
-// end-to-end by the content/lifecycle integration suites; everything else
-// (meta mutations, admin queries, audit, slug registry) runs against the
-// real in-memory engine.
+// saveBody/previewBody stay mocked (covered end-to-end by the
+// content/lifecycle suites); everything else runs real.
 vi.mock('@/server/domains/content/lifecycle', () => ({
   previewBody: vi.fn(),
   saveBody: vi.fn(),
@@ -31,8 +29,7 @@ beforeEach(async () => {
 })
 
 afterEach(async () => {
-  // Flush BEFORE dropping the batcher so no armed timer leaks this case's
-  // queued audit events into the next test.
+  // Flush BEFORE dropping the batcher: an armed timer leaks queued events into the next test.
   await flushAuditLog()
   resetAllBatchers()
 })
@@ -67,8 +64,7 @@ async function seedRevision(ownerId: number, revisionNo: number, status: 'draft'
   return row!
 }
 
-// audit_log.actor_id references user.id, so the admin viewer must be a
-// real row for the batched audit insert to survive the FK.
+// audit_log.actor_id references user.id: the admin viewer must be a real row.
 async function seedAdmin(): Promise<number> {
   const [row] = await db
     .insert(user)

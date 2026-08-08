@@ -9,32 +9,12 @@ import { csrfGuard } from '@/server/http/middlewares/csrf'
 import { dynamicBodyLimit } from '@/server/http/middlewares/dynamic-body-limit'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
-// ─── oRPC + Hono perimeter ──────────────────────────────
-//
-// Single mount point for the whole API. `RPCHandler` consumes the
-// composed `apiRouter` and answers every request whose path matches
-// `/rpc/*`. The Hono wrapper adds the perimeter around it:
-//
-//   1. `bodyLimit` — read from `blog.limits` settings (default 10 MB).
-//      Checked per-request from the live settings snapshot so admin
-//      changes take effect immediately without a server restart.
-//   2. `csrfGuard` on `/rpc/*`.
-//   3. Context projection — `c.var.requestContext` is the canonical
-//      per-request fact base derived by the request-context middleware;
-//      the bridge projects it into `HandlerContext` and adds
-//      `responseHeaders`, a fresh `Headers` object that procedures
-//      can append to (Set-Cookie etc.) and we merge onto the final
-//      Response after the handler resolves.
-//
-// The permission matrix is no longer an `app.ts` block — each leaf's
-// guard is encoded in which base procedure (`publicProc / authedProc /
-// adminProc / authorProc` in `orpc-base.ts`) the controller built it
-// from. Audit surface: `grep -rn "adminProc\|authorProc"
-// src/server/http/controllers/`.
-
+// Single API mount: `RPCHandler` answers `/rpc/*` behind a Hono perimeter —
+// live-settings body limit, CSRF, and the context projection onto
+// `HandlerContext` (+ `responseHeaders`, merged onto the final Response).
 const handler = new RPCHandler(apiRouter)
 
-const DEFAULT_MAX_BODY_SIZE = 10 * 1024 * 1024 // 10 MB
+const DEFAULT_MAX_BODY_SIZE = 10 * 1024 * 1024
 
 function resolveMaxBodySize(): number {
   const bundle = getBlogSettingsBundleSync()
@@ -45,9 +25,7 @@ function resolveMaxBodySize(): number {
 export function createApiApp(): Hono<Env> {
   const app = new Hono<Env>()
 
-  // Per-request body size check. Reads the live settings snapshot every
-  // time (a single pointer load — negligible cost) so an admin change to
-  // `maxRequestBodySize` takes effect on the very next request.
+  // Live settings snapshot per request — admin changes apply on the next request.
   app.use(
     dynamicBodyLimit({
       maxSize: resolveMaxBodySize,
@@ -60,9 +38,8 @@ export function createApiApp(): Hono<Env> {
   app.use('/rpc/*', async (c, next) => {
     const responseHeaders = new Headers()
     const rc = c.var.requestContext
-    // Pure projection of the canonical RequestContext (no re-derivation).
-    // Deliberately omits `markSessionDirty` — procedures get a read-only
-    // session; the comment-token flow uses its own cookie jar instead.
+    // Pure projection — no re-derivation; `markSessionDirty` deliberately
+    // omitted (procedures get a read-only session).
     const context: HandlerContext = {
       request: c.req.raw,
       requestFacts: rc.requestFacts,
@@ -77,8 +54,7 @@ export function createApiApp(): Hono<Env> {
       await next()
       return
     }
-    // Merge per-procedure response headers (Set-Cookie etc.) onto the
-    // RPC response before handing it back to Hono.
+    // Merge per-procedure headers (Set-Cookie etc.) onto the RPC response.
     const merged = new Headers(result.response.headers)
     responseHeaders.forEach((value, key) => {
       if (key.toLowerCase() === 'set-cookie') {

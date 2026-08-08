@@ -1,12 +1,7 @@
 import { isRecord } from '@/shared/utils/type-guards'
 
-// Generic pill-value codec for the operator + free-text filter kind
-// (`{op, value}` serialized as a JSON string). The operator vocabulary is
-// per-field — comments pairs 包含 / 不包含 while my-comments pins the single
-// 包含 operator — so parse / label take the field's operator list instead of
-// hardcoding one. Parsing never throws: malformed payloads return null and
-// the editor falls back to its default state.
-
+// Pill-value codec for operator + free-text filters (`{op, value}` as JSON).
+// Operators are per-field; parsing never throws — malformed → null.
 export interface TextFilterOperatorOption {
   value: string
   label: string

@@ -7,11 +7,8 @@ import type { EditorAdapterConfig } from '@/ui/admin/editor-shell/make-editor-ad
 import { portableTextBodySchema } from '@/shared/pt/schema'
 import { makeEditorAdapter } from '@/ui/admin/editor-shell/make-editor-adapter'
 
-// The factory owns the wire wrappers both entity shells used to spell out
-// twice: call the namespaced procedure, invalidate the admin list cache,
-// unwrap the `{ entity: … }` envelope. These tests pin that contract with a
-// minimal fake entity so a future drift in the shared wrappers (or a lost
-// invalidation) fails here instead of in the editor.
+// Pins the factory's wire contract: namespaced procedure call, admin list
+// invalidation, and `{ entity: … }` envelope unwrap.
 
 interface TestMeta {
   title: string

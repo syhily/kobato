@@ -34,7 +34,6 @@ describe('reorderCategories', () => {
     expect(result[2].name).toBe('B')
     expect(result[2].sortOrder).toBe(2)
 
-    // Verify DB state
     const rows = await db.select().from(category).orderBy(asc(category.sortOrder))
     expect(rows.map((r) => r.name)).toEqual(['C', 'A', 'B'])
   })
@@ -77,7 +76,6 @@ describe('reorderAdminCategories', () => {
     expect(result[1].name).toBe('Alpha')
     expect(result[1].sortOrder).toBe(1)
 
-    // DTO shape assertions
     for (const dto of result) {
       expect(typeof dto.id).toBe('string')
       expect(typeof dto.postCount).toBe('number')

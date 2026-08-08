@@ -7,10 +7,7 @@ import { readRevisionProjection } from '@/server/domains/content/projection-help
 import { toClientPostFromMeta } from '@/server/domains/posts/repos/shared'
 import { readStringArray } from '@/shared/utils/tools'
 
-// --- Public catalog projection ----------------------------------------------
-
-// `toCmsPost` returns the shared `Post` DTO directly (`@/shared/types/catalog`)
-// — there is no server-side variant of the shape.
+// `toCmsPost` returns the shared `Post` DTO directly — no server-side variant.
 export function toCmsPost(
   meta: PostMetaRow,
   publishedRevision: ContentRow | null,
@@ -24,10 +21,8 @@ export function toCmsPost(
 ): Post {
   const { body, imageSources, headings } = readRevisionProjection(publishedRevision)
 
-  // Compose, don't copy: the ~20 catalog fields come from the shared
-  // projection (`toClientPostFromMeta`); only the revision-joined CMS
-  // fields are stated here. `headings` overrides the projection's empty
-  // default when a published revision carries real anchors.
+  // Compose from `toClientPostFromMeta`; only revision-joined fields are
+  // stated here — `headings` overrides the projection's empty default.
   return {
     ...toClientPostFromMeta(meta, options.tags ?? [], options.categoryName ?? ''),
     coverThumbhash: options.coverThumbhash,
@@ -37,8 +32,6 @@ export function toCmsPost(
     publishedRevisionId: meta.publishedRevisionId,
   }
 }
-
-// --- Admin projection -------------------------------------------------------
 
 export interface AdminPostDto extends AdminMetaDto {
   visible: boolean

@@ -12,11 +12,8 @@ import type {
 import { mapNestedBlocks } from '@/shared/pt/utils'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
-// Pure PT-tree footnote renumbering engine. Lives beside `footnote-merge`
-// — deliberately NOT in the bridge: nothing here knows about ProseMirror.
-// The bridge node module (`@/shared/pt/bridge/nodes/footnote`) keeps only
-// the PM↔PT converters; this engine is consumed by the bridge save path
-// (`pm-to-pt`), the editor footnote hook, and `footnote-merge`.
+// Pure PT-tree footnote renumbering engine — deliberately NOT in the
+// bridge: nothing here knows ProseMirror.
 
 function walkMainColumnFootnoteRefs(body: PortableTextBody, visit: (targetKey: string, index: number) => void): void {
   function scanSpans(spans: readonly Span[], markDefs: readonly MarkDef[] | undefined): void {
@@ -175,8 +172,7 @@ function syncFootnoteDigitsInSpans(
 }
 
 // Per-block renumbering callback for `mapNestedBlocks` — containers
-// (`solution` / `twoColumn` / the definition's own `children`) descend
-// through the mapper, so only the payload-carrying cases rewrite here.
+// descend through the mapper, so only payload-carrying cases rewrite here.
 function syncFootnoteBlock(block: Block, keyToIndex: Map<string, number>): Block {
   switch (block._type) {
     case 'footnoteDefinition': {
@@ -197,9 +193,8 @@ function syncFootnoteBlock(block: Block, keyToIndex: Map<string, number>): Block
         rows: block.rows.map((row) => ({
           ...row,
           cells: row.cells.map((cell) => {
-            // The engine tolerates non-link defs in cells defensively (the
-            // bridge strips them on save); narrow the synced array back to
-            // the cell's declared link-only shape.
+            // Tolerates non-link defs in cells defensively (the bridge
+            // strips them on save); narrow back to the link-only shape.
             const nextCellDefs = unsafeCast<TableCell['markDefs']>(syncMarkDefs(cell.markDefs, keyToIndex))
             return {
               ...cell,

@@ -1,30 +1,7 @@
-// Configuration file (`kobato.config.json`) — the default configuration
-// source, always present (auto-created when missing). This module is the
-// single configuration entry point: it resolves the effective values,
-// validates them, and exposes the nested `serverConfig` object every
-// consumer reads.
-//
-//   - ONE declarative table (CONFIG_TABLE) is the single source of truth:
-//     each row maps a nested config path (`storage.database`) to a Zod schema.
-//     The process env var name is derived by convention: `path.join('__')`
-//     → `storage__database`.
-//   - Precedence: schema defaults < config file < env vars. Values coming
-//     from env that differ from the file are WRITTEN BACK into the file —
-//     env is the injection mechanism, the file converges to the effective
-//     configuration and stays the persistent record.
-//   - Location order: `--config <path>` / `-c <path>` (also `--config=…`)
-//     > `<execDir>/kobato.config.json` (SEA only — non-SEA execPath is the
-//     node binary itself) > `./kobato.config.json` > `~/.config/kobato.config.json`.
-//     The first existing file wins; when none exists, the file is created
-//     at the first candidate with table defaults and mode 0o600.
-//   - Legacy keys from older releases (`auth.sessionSecret`, `paths.*`,
-//     `logging.level`, the removed `redis` block) are migrated to the
-//     current layout on load and the file is rewritten, so config files
-//     written by older versions keep booting (see migrateLegacyKeys).
-//
-// `VITEST=true` makes loading read-only (no create, no write-back) and
-// skips the file entirely unless `--config` is given — otherwise test runs
-// would drop a config file into the repo root and persist test secrets.
+// Single configuration entry point: resolves the config file (auto-created
+// when missing) + env overrides, validates, and exposes `serverConfig`.
+// CONFIG_TABLE is the single source of truth (env name = path joined by
+// `__`); `VITEST=true` without `--config` is env-only, no filesystem access.
 
 import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
@@ -59,9 +36,7 @@ export const CONFIG_TABLE = [
   },
   {
     path: ['security', 'sessionSecret'],
-    // The 32-char floor applies to EACH comma-separated secret, checked
-    // after the split/trim — validating the joined string would let two
-    // short secrets pass and produce weak signing keys (audit P1-17).
+    // The 32-char floor applies to EACH comma-separated secret after split/trim (audit P1-17).
     schema: z
       .string()
       .transform((val) => val.split(',').map((s) => s.trim()))
@@ -70,10 +45,7 @@ export const CONFIG_TABLE = [
   },
   {
     path: ['security', 'encryptionKey'],
-    // min(32) alone passes trivially weak keys ('aaaa…'). The distinct-
-    // character floor blocks single-character and short-pattern repeats
-    // while comfortably accepting real random keys (hex/base64 output of
-    // `openssl rand` sits well above it).
+    // Distinct-character floor blocks trivially weak keys like 'aaaa…'.
     schema: z
       .string()
       .min(32)
@@ -85,17 +57,14 @@ export const CONFIG_TABLE = [
   { path: ['storage', 'data'], schema: z.string().min(1), fileDefault: './data' },
   {
     path: ['storage', 'database'],
-    // Empty resolves to `<storage.data>/kobato.db` at open time, so the
-    // default tracks a custom `storage.data` without duplicating it.
-    // `:memory:` is allowed for tests. The `.default('')` matters for
-    // config files written before this key existed (PG-era files carry
-    // no `storage.database`).
+    // Empty → `<storage.data>/kobato.db` at open time (tracks a custom
+    // `storage.data` without duplicating it); `:memory:` allowed for tests.
+    // `.default('')` covers config files written before this key existed.
     schema: z.string().default(''),
     fileDefault: '',
   },
   {
     path: ['storage', 'analyticsDatabase'],
-    // DuckDB analytics file. Empty resolves to `<storage.data>/analytics.duckdb`.
     schema: z.string().default(''),
     fileDefault: '',
   },
@@ -111,9 +80,6 @@ export function configEnvName(path: readonly string[]): string {
   return path.join('__')
 }
 
-// ─── Config file location ────────────────────────────────────────────────
-
-/** Scan argv for `--config <path>` / `-c <path>` / `--config=<path>`. */
 function argvConfigPath(argv: string[]): string | null {
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i]
@@ -143,16 +109,13 @@ export function configCandidates(argv: string[], env?: ConfigCandidateEnv): stri
   const { sea, cwd, home } = env ?? { sea: isSea(), cwd: process.cwd(), home: homedir() }
   const candidates: (string | null)[] = [
     explicit,
-    // Only the SEA binary owns its executable path; under plain node,
-    // execPath is the node binary itself and must not be consulted.
+    // Non-SEA execPath is the node binary itself — only the SEA binary owns its path.
     sea ? join(dirname(process.execPath), CONFIG_FILE_NAME) : null,
     join(cwd, CONFIG_FILE_NAME),
     join(home, '.config', CONFIG_FILE_NAME),
   ]
   return candidates.filter((candidate): candidate is string => candidate !== null)
 }
-
-// ─── File schema (generated from the table) ──────────────────────────────
 
 interface FileSchemaNode {
   children: Record<string, FileSchemaNode>
@@ -177,8 +140,7 @@ function buildFileSchema(): z.ZodType {
     for (const [key, child] of Object.entries(node.children)) {
       shape[key] = build(child)
     }
-    // Every level optional: partial config files are legal — missing values
-    // fall through to schema defaults or env vars.
+    // Every level optional: partial config files fall through to defaults/env.
     return z.object(shape).strict().optional()
   }
   return build(root)
@@ -198,8 +160,6 @@ function defaultFileContents(): Record<string, unknown> {
   }
   return root
 }
-
-// ─── Helpers ─────────────────────────────────────────────────────────────
 
 function fail(message: string): never {
   process.stderr.write(`${message}\n`)
@@ -241,9 +201,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
 }
 
-/** '' means "unset" in the config file (mirrors emptyStringAsUndefined on
- *  the env side) — strip it before validation so an auto-created file
- *  with empty secrets passes its own schema on the next boot. */
+/** '' means "unset" in the file (mirrors the env side) — strip before
+ *  validation so an auto-created file passes its own schema next boot. */
 function stripEmptyStrings(value: unknown): unknown {
   if (Array.isArray(value)) {
     return value.map(stripEmptyStrings)
@@ -270,18 +229,13 @@ function writeConfigFile(filePath: string, data: Record<string, unknown>): void 
   renameSync(tempPath, filePath)
 }
 
-// ─── Legacy key migration ────────────────────────────────────────────────
-
 /**
- * In-place migration for config files written before the config-key renames.
- * Legacy values MOVE into the current layout without overwriting existing
- * values; a legacy key whose target slot is taken is dropped. Returns one
- * Chinese note per consumed legacy key.
+ * In-place migration for pre-rename config files: legacy values MOVE into the
+ * current layout, never overwriting; one Chinese note per consumed key.
  */
 export function migrateLegacyKeys(data: Record<string, unknown>): { migrated: boolean; notes: string[] } {
   const notes: string[] = []
-  // '' means "unset" in the config file (see stripEmptyStrings) — a target
-  // slot holding '' must not block a real legacy value from moving over.
+  // A target slot holding '' (unset) must not block a real legacy value.
   const taken = (value: unknown): boolean => value !== undefined && value !== ''
 
   /** Move source[sourceKey] into target[targetKey]; never overwrite. */
@@ -310,8 +264,7 @@ export function migrateLegacyKeys(data: Record<string, unknown>): { migrated: bo
       data.security = security
       moveKey(auth, 'sessionSecret', security, 'sessionSecret', 'auth.sessionSecret → security.sessionSecret')
     }
-    // An emptied section must not survive — the strict schema rejects it
-    // (env write-backs could persist `auth: {}` after stripEmptyStrings).
+    // An emptied section must not survive — the strict schema rejects it.
     if (Object.keys(auth).length === 0) {
       delete data.auth
       if (!hadSecret) {
@@ -352,16 +305,13 @@ export function migrateLegacyKeys(data: Record<string, unknown>): { migrated: bo
     }
   }
 
-  // redis: dropped together with the Redis dependency — old auto-created
-  // files all carry the block, and the strict schema would reject it.
+  // redis: dropped with the Redis dependency — old files carry the block and the strict schema rejects it.
   if ('redis' in data) {
     delete data.redis
     notes.push('redis(已删除)')
   }
 
-  // database: the Postgres era. `database.url` has no meaningful mapping
-  // to a SQLite file path, so the section is dropped (like redis) rather
-  // than auto-moved — the new `storage.database` default applies.
+  // database (Postgres era): no meaningful mapping to a SQLite path — dropped like redis.
   if ('database' in data) {
     delete data.database
     notes.push('database(已删除)')
@@ -370,24 +320,14 @@ export function migrateLegacyKeys(data: Record<string, unknown>): { migrated: bo
   return { migrated: notes.length > 0, notes }
 }
 
-// ─── Main entry ──────────────────────────────────────────────────────────
-
 /**
- * Resolve the effective raw values, keyed by dotted config path
- * (`'storage.database'`): schema defaults < config file < env vars,
- * persisting env overrides back into the file. Fails the process
- * (clear Chinese message) on unreadable/invalid config files.
- *
- * The values are RAW (untransformed) — the per-entry schema parse
- * (defaults, coercion, transforms) runs downstream in
- * {@link loadServerConfig}, exactly once.
+ * Resolve effective raw values keyed by dotted path, persisting env overrides
+ * back into the file; fatal on unreadable/invalid files. Values stay RAW —
+ * transforms run exactly once in `loadServerConfig`.
  */
 export function loadConfig(): Record<string, unknown> {
   const explicit = argvConfigPath(process.argv.slice(2))
-  // Vitest without an explicit --config: env-only, never touch the
-  // filesystem — otherwise test runs would drop a config file into the
-  // repo root and persist test secrets. An explicit --config opts into
-  // the full behavior (tests point it at a temp dir).
+  // Vitest without --config: env-only, zero filesystem access (no config dropped into the repo, no secrets persisted).
   if (process.env.VITEST === 'true' && explicit === null) {
     return Object.fromEntries(
       CONFIG_TABLE.map((entry) => [entry.path.join('.'), process.env[configEnvName(entry.path)]]),
@@ -395,9 +335,7 @@ export function loadConfig(): Record<string, unknown> {
   }
   const candidates = configCandidates(process.argv.slice(2))
 
-  // An explicit --config is a directive, not a candidate: use it even
-  // when the file doesn't exist yet (it is created there), instead of
-  // falling through to a config found in the cwd or home directory.
+  // An explicit --config is a directive: use it even when the file doesn't exist yet (it is created there).
   const filePath = explicit ?? candidates.find((candidate) => existsSync(candidate)) ?? candidates[0]
 
   let fileData: Record<string, unknown>
@@ -439,10 +377,7 @@ export function loadConfig(): Record<string, unknown> {
     if (!result.success) {
       fail(`配置文件 ${filePath} 包含无效内容:\n${formatIssues(result.error.issues)}`)
     }
-    // Read values from the RAW (stripped) JSON, not result.data: schemas
-    // like sessionSecret carry a transform (string → string[]), and the
-    // transformed output must never round-trip back into the file — the
-    // final transform runs exactly once, downstream in createEnv.
+    // Use the RAW stripped JSON, not result.data: transformed output (sessionSecret → string[]) must never round-trip into the file.
     fileData = unsafeCast<Record<string, unknown>>(stripped)
   }
 
@@ -474,8 +409,6 @@ export function loadConfig(): Record<string, unknown> {
   return runtimeEnv
 }
 
-// ─── Validated runtime configuration ─────────────────────────────────────
-
 /** The nested, validated configuration every consumer reads. */
 export interface ServerConfig {
   server: {
@@ -499,10 +432,8 @@ export interface ServerConfig {
 }
 
 /**
- * Parse every CONFIG_TABLE entry exactly once (defaults, coercion and
- * transforms apply here) and assemble the nested {@link ServerConfig}.
- * Validation failures are fatal with a Chinese bootstrap hint — the
- * logger is not available this early, so the message goes to stderr.
+ * Parse every CONFIG_TABLE entry exactly once (defaults, coercion, transforms)
+ * and assemble `ServerConfig`; fatal on validation failure (logger not up yet).
  */
 export function loadServerConfig(): ServerConfig {
   const raw = loadConfig()
@@ -510,9 +441,7 @@ export function loadServerConfig(): ServerConfig {
   const issues: string[] = []
   for (const entry of CONFIG_TABLE) {
     const key = entry.path.join('.')
-    // '' means "unset" (same convention as stripEmptyStrings on the file
-    // side) — an auto-created file holds '' for optional values, and those
-    // must fall through to the schema default, not fail min(1).
+    // '' = unset — auto-created files hold it for optional values, which must fall through to the schema default.
     const value = raw[key] === '' ? undefined : raw[key]
     try {
       setPath(config, entry.path, entry.schema.parse(value))

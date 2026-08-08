@@ -168,11 +168,8 @@ export interface AdminPendingRow {
 
 export const MY_COMMENTS_SOFT_DELETE_GRACE_MS = 7 * 24 * 60 * 60 * 1000
 
-/** Compute the soft-delete cutoff (comments deleted after this instant
- *  are still visible to their author). Defaults to "now minus the grace
- *  period" — pass an explicit `cutoff` when a handler runs several
- *  mine-where queries in parallel so they all share the same instant
- *  instead of drifting by a few ms across calls. */
+/** Soft-delete cutoff: comments deleted after this instant stay visible to
+ *  their author. Pass an explicit `cutoff` for parallel mine-queries. */
 export function mineSoftDeleteCutoff(now: Date = new Date()): Date {
   return new Date(now.getTime() - MY_COMMENTS_SOFT_DELETE_GRACE_MS)
 }
@@ -185,8 +182,8 @@ export interface MyCommentsFilters {
   status?: MyCommentsStatus
   q?: string
   /**
-   * Narrow the result to a specific post / page the user has commented
-   * on. URL-driven via `?entity=<type>:<ownerId>` on `/admin/me/comments`.
+   * Narrow to a specific post/page the user commented on (`?entity=` on
+   * `/admin/me/comments`).
    */
   entity?: { type: EntityType; ownerId: number }
 }

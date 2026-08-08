@@ -2,14 +2,10 @@ import type { RefObject } from 'react'
 
 import { useEffect, useState } from 'react'
 
-// Shared scroll-position observer for floating "back to top" buttons and
-// similar chrome. Uses rAF to coalesce scroll events so `setState` fires at
-// most once per animation frame. Used by the public `ScrollTopButton` and
-// the admin `AdminScrollTopButton` under `src/ui/`.
-//
-// When `scrollRootRef` is set (admin `<main>`), scroll depth is read from
-// that element instead of `window` — the admin shell pins the document to
-// the viewport and scrolls inside `main`.
+// Shared scroll-position observer for floating "back to top" buttons;
+// rAF-coalesced so `setState` fires at most once per frame. With
+// `scrollRootRef` (admin `<main>`), depth is read from that element instead
+// of `window` — the admin shell pins the document and scrolls inside `main`.
 export function useShowOnScroll(threshold: number = 300, scrollRootRef?: RefObject<Element | null>): boolean {
   const [show, setShow] = useState(false)
 

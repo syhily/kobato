@@ -8,10 +8,7 @@ export const MIN_PASSWORD_LENGTH = 10
 /** Maximum password length to prevent DoS via oversized payloads. */
 export const MAX_PASSWORD_LENGTH = 128
 
-/**
- * Password complexity regex: at least one uppercase, one lowercase,
- * and one digit. Applied on top of the minimum length.
- */
+/** Password complexity regex, applied on top of the minimum length. */
 export const PASSWORD_COMPLEXITY_RE = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/
 
 function passwordSchema() {
@@ -22,7 +19,6 @@ function passwordSchema() {
     .regex(PASSWORD_COMPLEXITY_RE, '密码必须包含至少一个大写字母、一个小写字母和一个数字')
 }
 
-// Auth form schemas.
 export const signInSchema = z.object({
   email: z.email(),
   password: z.string().min(1).max(MAX_PASSWORD_LENGTH),
@@ -45,11 +41,8 @@ export const updateUserSchema = z
     link: httpUrlOrEmptyStringSchema.optional(),
     badgeName: z.string().optional(),
     badgeColor: z.string().optional(),
-    // Optional manual override for the badge text colour. The form
-    // sends a string (the picker output), an explicit `null` ("clear
-    // override"), or `undefined` ("don't touch"). We normalise empty
-    // strings to `null` here so the storage column has just two
-    // meaningful states: explicit hex, or NULL → auto-derive.
+    // Manual override: string (picker output), `null` ("clear"), or
+    // `undefined` ("don't touch"); empty strings normalise to `null`.
     badgeTextColor: z
       .union([z.string(), z.null()])
       .optional()

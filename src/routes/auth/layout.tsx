@@ -4,14 +4,11 @@ import type { RouteHandle } from '@/root'
 
 import { useDetachPublicCss } from '@/client/hooks/use-detach-public-css'
 import { AdminErrorFallback } from '@/ui/admin/shell/AdminErrorFallback'
-// The login / install screen shares the admin-side Tailwind entry
-// (`admin.css`) — a standalone bundle whose `@source` scope covers
-// admin/auth/editor-rendered sources only, keeping the public site's
-// `public.css` out of this route's chunk.
+// The login / install screen shares the admin Tailwind entry (`admin.css`),
+// keeping the public site's `public.css` out of this route's chunk.
 import '@/styles/admin.css'
 
-// Tells `root.tsx` to skip rendering `<BaseLayout>` for any descendant
-// route so the admin / login stack can own its own chrome.
+// Skips `<BaseLayout>` for this tree so the admin/login stack owns its own chrome.
 export const handle: RouteHandle = { layout: 'admin' }
 
 export { AdminErrorFallback as ErrorBoundary }

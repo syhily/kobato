@@ -2,8 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { PortableTextBody } from '@/shared/pt/schema'
 
-// Mock the IndexedDB-backed draft store the same way the use-local-draft
-// spec does — program return values per test and capture every call.
+// Mock the draft store: program return values per test, capture every call.
 const draftStore = vi.hoisted(() => ({
   get: vi.fn<(key: string) => Promise<unknown>>(),
   set: vi.fn<(key: string, record: unknown) => Promise<void>>(),
@@ -36,17 +35,9 @@ const config: CreateDraftConfig<PortableTextBody> = {
 const emptyBody: PortableTextBody = []
 const meta = { title: 'Hello', summary: '' }
 
-// The unit project runs under `environment: 'node'`, so `window` is
-// not defined by default. The hook guards every storage touch with
-// `typeof window === 'undefined'`. To exercise the readOrCreateSessionId
-// paths we install a fake `window` with a `sessionStorage` slot.
-//
-// Note: `useEffect` does not fire under `renderToStaticMarkup`, so the
-// async load / save / BroadcastChannel-listener effects are not reachable
-// via this harness (the existing use-local-draft spec has the same
-// constraint). We focus on the synchronous branches: sessionId
-// derivation (lazy useState initializer), the initial loadedDraft
-// state, and the useCallback bodies that are invoked explicitly.
+// The hook guards storage with `typeof window === 'undefined'`; the SSR
+// harness never fires `useEffect`, so only synchronous branches are
+// reachable — we install a fake `window` with a `sessionStorage` slot.
 function makeSessionStorage(initial: Record<string, string> = {}) {
   const store = new Map<string, string>(Object.entries(initial))
   return {
@@ -117,15 +108,13 @@ describe('useCreateDraft — sessionId derivation (readOrCreateSessionId)', () =
   })
 
   it('returns an empty string under SSR (no window at all)', () => {
-    // Remove the global window entirely so the typeof guard fires.
     delete (globalThis as { window?: unknown }).window
     const result = renderHook(() => useCreateDraft(config, { body: emptyBody, meta }))
     expect(result.sessionId).toBe('')
   })
 
   it('falls back to a Date.now-based id when sessionStorage throws on read', () => {
-    // Window exists but sessionStorage.getItem throws — exercises the
-    // try/catch in readOrCreateSessionId.
+    // Throwing sessionStorage getter exercises the catch fallback.
     const fake = installWindow()
     Object.defineProperty(fake, 'sessionStorage', {
       configurable: true,
@@ -134,7 +123,6 @@ describe('useCreateDraft — sessionId derivation (readOrCreateSessionId)', () =
       },
     })
     const result = renderHook(() => useCreateDraft(config, { body: emptyBody, meta }))
-    // The catch path returns Date.now().toString(36) — a base36 string.
     expect(result.sessionId).toMatch(/^[0-9a-z]+$/)
     expect(Number.parseInt(result.sessionId, 36)).toBeGreaterThan(0)
   })
@@ -160,9 +148,7 @@ describe('useCreateDraft — synchronous return shape', () => {
     installWindow()
     const result = renderHook(() => useCreateDraft(config, { body: emptyBody, meta }))
     result.clearDraft()
-    // The useCallback body runs synchronously inside the test, so the
-    // removeDraft call is observable even though the load effect never
-    // fires under SSR.
+    // The callback body runs synchronously in the harness, so the call is observable.
     expect(draftStore.remove).toHaveBeenCalledWith(expect.stringContaining(config.keyPrefix))
   })
 
@@ -170,23 +156,18 @@ describe('useCreateDraft — synchronous return shape', () => {
     const fake = installWindow()
     const result = renderHook(() => useCreateDraft(config, { body: emptyBody, meta }))
     result.migrateToEditKey('post-42', 'rev-7', emptyBody)
-    // The migrateToEditKey body wraps the work in an async IIFE with
-    // multiple awaits (setDraft, removeDraft, sessionStorage.removeItem).
-    // Flush the microtask queue thoroughly before asserting.
+    // The body is an async IIFE — flush the microtask queue before asserting.
     for (let i = 0; i < 5; i++) {
       await Promise.resolve()
     }
-    // The edit-keyed setDraft call writes the post-edit record.
     const setCalls = draftStore.set.mock.calls as Array<[string, Record<string, unknown>]>
     const editCall = setCalls.find(([k]) => k.startsWith(config.editKeyPrefix))
     expect(editCall).toBeDefined()
     expect(editCall![0]).toBe('cms-post-draft:post-42:rev-7')
     expect(editCall![1].type).toBe('post-edit')
     expect(editCall![1].version).toBe(1)
-    // removeDraft was called for the create-keyed record.
     const removeCalls = draftStore.remove.mock.calls.map((c) => c[0])
     expect(removeCalls.some((k) => k.includes(config.keyPrefix))).toBe(true)
-    // The session storage entry for the session key was cleared.
     expect(fake.sessionStorage.removeItem).toHaveBeenCalledWith(config.sessionKey)
   })
 })
@@ -231,9 +212,7 @@ describe('useCreateDraft — stability', () => {
         return r
       },
       {
-        // Trigger a second render via the actions queue. The hook's
-        // useCallback deps are stable, so the returned callbacks should
-        // keep referential identity.
+        // The actions queue triggers a second render pass.
         actions: [
           (r) => {
             r.clearDraft()

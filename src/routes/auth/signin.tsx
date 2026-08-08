@@ -58,8 +58,8 @@ function toActionResult(result: AuthFlowResult, extraData?: Record<string, unkno
   }
 }
 
-// The flow routing (logout branch, token peek, OTP-session branching)
-// lives in `@/server/http/loaders/signin` — this route is wiring only.
+// Flow routing (logout branch, token peek, OTP-session branching) lives in
+// `@/server/http/loaders/signin` — this route is wiring only.
 export async function loader({ request, context }: Route.LoaderArgs) {
   return loadSigninData({ request, context })
 }
@@ -80,8 +80,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   }
 
   if (action === 'lostpassword') {
-    // The routes layer may touch both domains, so it wires the comments
-    // domain's "established commenter" check into the reset flow — the
+    // Wire the comments domain's "established commenter" check in here so the
     // auth domain itself stays free of the comments import.
     return toActionResult(await requestPasswordReset(db, clientAddress, request, formData, { hasApprovedComments }))
   }

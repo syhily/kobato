@@ -1,62 +1,9 @@
-// SEA asset collection.
-//
-// Builds the embedded-asset map consumed by `node --build-sea`
-// (see blob.ts) and writes the `manifest.json` asset that the runtime
-// bootstrap (`src/server/infra/sea-natives.ts`) uses to verify and extract
-// the native libraries.
-//
-// Every asset key comes from `src/shared/sea/assets.ts` — the single
-// owner of the writer/reader key contract. Do not hardcode keys here.
-//
-// The manifest is `{ version, target, files: [{ key, path, sha256, codec,
-// size }] }` where `path` equals the asset key, `sha256` hashes the RAW
-// (uncompressed) bytes, `codec` records how the blob payload is packed,
-// and `size` is the raw byte length. Only `natives/`-prefixed entries are
-// extracted at runtime (into a FLAT dir — the extraction strips the
-// prefix); the rest stay in the blob. The manifest does NOT list itself
-// (its own hash would change its bytes). The natives cache dir is named
-// after the sha256 of the exact manifest BYTES, so the file is serialized
-// once, written to the intermediates dir, and embedded from that file —
-// never re-serialized.
-//
-// Blob payload compression: every asset above `SEA_COMPRESSION_MIN_BYTES`
-// is compressed (zstd by default, brotli behind `--codec brotli`) and the
-// packed bytes are written to `dist-sea/intermediates/packed/<key>` — the
-// sea-config asset entry points at the packed file while the asset KEY
-// stays unchanged. The manifest itself is always embedded uncompressed:
-// it doubles as the decompression registry, so the runtime reader
-// (`src/server/infra/sea.ts`) must be able to parse it before decoding
-// anything else. Hashes stay over the raw bytes, so natives verification
-// is codec-agnostic.
-//
-// Native selection: the native packages' JS (sharp, sharp-ico,
-// @napi-rs/canvas, @duckdb/node-api) is bundled into the server/worker
-// bundles with its platform loads redirected to `nativeRequire` (see
-// scripts/sea/redirect-native-requires.ts), so the blob carries ONLY the
-// files that cannot ride in JS:
-//   - the platform sharp addon (`@img/sharp-<platform>`'s `*.node`),
-//     rpath-patched so the OS loader finds libvips in the same flat dir
-//     (darwin: `install_name_tool -change @rpath/X @loader_path/X`;
-//     linux: `patchelf --set-rpath '$ORIGIN'`; win32: nothing — the DLL
-//     search covers the loaded module's own directory). The patch runs
-//     on a COPY staged under intermediates/staged-natives/, never on the
-//     node_modules original;
-//   - the libvips library files (one on darwin/linux, two DLLs on win32,
-//     where they ship inside the sharp platform package itself);
-//   - the platform skia addon (`@napi-rs/canvas-<triple>`'s `skia.*.node`),
-//     plus — win32 only — the `icudtl.dat` ICU datafile shipping beside
-//     it: the Windows skia builds probe for it next to the loaded module
-//     and a missing file is fatal on the first paragraph build
-//     (SkIcuLoader → `check(fUnicode)` takes the whole process down).
-//     darwin/linux skia builds carry ICU internally and ship no datafile;
-//   - the platform DuckDB addon (`@duckdb/node-bindings-<platform>`'s
-//     `duckdb.node`), rpath-patched exactly like sharp (it links
-//     `@rpath/libduckdb.<ext>`), plus the libduckdb library file that
-//     ships beside it (`libduckdb.dylib`/`.so`; `duckdb.dll` on win32,
-//     where the DLL search covers the module's own directory);
-//   - the `natives-meta/*` metadata JSON the redirected probes answer
-//     from memory (libvips/sharp platform package.json + versions.json —
-//     the subsets that exist on this platform).
+// SEA asset collection: build the embedded-asset map for `--build-sea`
+// (see blob.ts) and write manifest.json — the decompression registry the
+// runtime reads to verify/extract natives. Asset keys come from
+// `src/shared/sea/assets.ts`; never hardcode a key here. The manifest is
+// never packed (the reader needs it before decoding) and never lists
+// itself; sha256 hashes the RAW bytes, so verification is codec-agnostic.
 
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs'
@@ -65,8 +12,7 @@ import { createRequire } from 'node:module'
 import { dirname, join, relative } from 'node:path'
 import { brotliCompressSync, constants as zlibConstants, zstdCompressSync } from 'node:zlib'
 
-// Relative import on purpose: this script runs under plain `node` (no
-// tsconfig path aliases), so `@/shared/...` would not resolve.
+// Relative import: this script runs under plain `node` — no path aliases.
 import {
   SEA_CLIENT_ASSET_PREFIX,
   SEA_DRIZZLE_ASSET_PREFIX,
@@ -99,9 +45,7 @@ import {
 const requireFromRepo = createRequire(join(repoRoot, 'package.json'))
 
 /**
- * Assets smaller than this stay uncompressed (`codec: 'none'`) — codec
- * framing and the decode call outweigh the savings on the long tail of
- * tiny files.
+ * Assets below this stay uncompressed — framing + decode outweigh the savings.
  */
 export const SEA_COMPRESSION_MIN_BYTES = 1024
 
@@ -135,11 +79,8 @@ function sha256(bytes: Buffer) {
 }
 
 /**
- * Compress one asset's raw bytes for the blob. Assets below
- * `SEA_COMPRESSION_MIN_BYTES` keep their raw bytes (`codec: 'none'`).
- * zstd packs at level 19 (max without the memory-hungry "ultra" levels);
- * brotli packs at quality 11 — both decode fast enough that cold-start
- * cost stays trivial next to native extraction.
+ * Compress one asset's raw bytes for the blob; small assets stay raw.
+ * zstd level 19, brotli quality 11.
  */
 export function packAssetBytes(raw: Buffer, codec: SeaPackCodec): { codec: SeaAssetCodec; bytes: Buffer } {
   if (raw.byteLength < SEA_COMPRESSION_MIN_BYTES) {
@@ -158,11 +99,9 @@ export function packAssetBytes(raw: Buffer, codec: SeaPackCodec): { codec: SeaAs
 }
 
 /**
- * Sort manifest files by key with plain ASCII comparison (not
- * localeCompare — ICU data can differ between Node builds, and the
- * manifest bytes must be reproducible everywhere: the runtime natives dir
- * is named after the manifest's sha256). Generic so tests can sort
- * partial entries.
+ * Sort manifest files by key with plain ASCII comparison — the manifest
+ * bytes must be reproducible everywhere (the runtime natives dir is named
+ * after the manifest's sha256).
  */
 export function sortManifestFiles<T extends { key: string }>(files: T[]): T[] {
   return files.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))
@@ -173,10 +112,8 @@ function toPosixPath(path: string) {
 }
 
 /**
- * drizzle-kit snapshot artifacts (`<folder>/snapshot.json`, or a
- * `snapshot/` subdir in older layouts). The embedded migration reader
- * only consumes `<folder>/migration.sql` keys — these never need to ride
- * the blob. Exported for tests.
+ * drizzle-kit snapshot artifacts — the embedded migrator only consumes
+ * `migration.sql` keys, so snapshots never need to ride the blob.
  */
 export function isDrizzleSnapshotArtifact(posixRelativePath: string): boolean {
   return (
@@ -203,10 +140,7 @@ async function listFiles(root: string) {
         continue
       }
       if (entry.isSymbolicLink()) {
-        // pnpm links are already resolved by the caller (roots are
-        // realpath'ed); this covers symlinks INSIDE published packages
-        // (e.g. libvips.so.42 -> libvips.so.42.0.1). The bytes are
-        // embedded under the link name and extracted as real files.
+        // Symlinks inside published packages (e.g. libvips.so.42 -> libvips.so.42.0.1).
         if (statSync(path).isDirectory()) {
           await walk(realpathSync(path))
           continue
@@ -223,12 +157,9 @@ async function listFiles(root: string) {
 }
 
 /**
- * Real path of an installed package's root directory. `pkg/package.json`
- * is tried first; packages whose exports map hides it (sharp does) fall
- * back to realpath'ing the top-level node_modules symlink. Transitive
- * packages with no top-level symlink under pnpm (e.g.
- * `@duckdb/node-bindings`, which rides inside `@duckdb/node-api`)
- * resolve from within a dependent package (`resolveVia`).
+ * Real path of an installed package's root: `pkg/package.json` first, the
+ * top-level node_modules symlink (sharp hides it via exports), or a
+ * transitive pnpm package resolved from within a dependent (`resolveVia`).
  */
 function resolvePackageRoot(name: string, resolveVia?: string) {
   try {
@@ -249,13 +180,8 @@ interface InstalledPackage {
 
 /**
  * The one installed platform package out of an entry package's
- * optionalDependencies. Under pnpm each package's optional deps are
- * symlinked as siblings of the package's real location
- * (`<store>/<pkg>@<ver>/node_modules/<dep>`), so a sibling's existence
- * picks exactly the package this install provides — platform-filtered
- * optional deps that were skipped simply have no sibling. Non-required
- * misses return null (sharp's libvips package legitimately does not exist
- * on win32, where libvips ships inside the sharp platform package).
+ * optionalDependencies: under pnpm they are siblings of the package's real
+ * location, so a sibling's existence picks exactly what this install provides.
  */
 function findPlatformPackage(
   entryName: string,
@@ -270,8 +196,7 @@ function findPlatformPackage(
     fail(`Native package ${entryName} is not installed. Run pnpm install first.\n${reason}`)
   }
   const pkg: PackageJsonShape = JSON.parse(readFileSync(join(entryRoot, 'package.json'), 'utf-8'))
-  // A scoped package's realpath ends in `<store>/node_modules/@scope/<pkg>`,
-  // so the store dir is two levels up (one for unscoped names).
+  // Scoped package realpaths end in `node_modules/@scope/<pkg>` — two levels up.
   const storeDir = entryName.startsWith('@') ? dirname(dirname(entryRoot)) : dirname(entryRoot)
 
   const matches: InstalledPackage[] = []
@@ -301,7 +226,6 @@ function findPlatformPackage(
   return match0
 }
 
-/** The single file matching `pattern` directly inside `dir` — fail loudly on ambiguity. */
 async function singleFile(dir: string, pattern: RegExp, what: string): Promise<string> {
   const entries = await readdir(dir)
   const matches = entries.filter((name) => pattern.test(name) && statSync(join(dir, name)).isFile())
@@ -312,14 +236,9 @@ async function singleFile(dir: string, pattern: RegExp, what: string): Promise<s
 }
 
 /**
- * Patch a STAGED addon copy so the OS loader finds its companion
- * libraries in the same flat dir (the S1 spike recipe); the node_modules
- * originals are never touched. darwin rewrites each `@rpath` reference
- * to `@loader_path`; linux sets the rpath to `$ORIGIN` (needs patchelf —
- * Dockerfile build stage and the linux CI runners carry it); win32 needs
- * nothing — the DLL search order covers the loaded module's own
- * directory. Used for sharp (against the libvips files) and duckdb.node
- * (against libduckdb).
+ * Patch a STAGED addon copy so the OS loader finds its companion libraries
+ * in the same flat dir — never the node_modules originals. darwin: rpath →
+ * loader_path; linux: `$ORIGIN` (patchelf); win32: nothing needed.
  */
 function patchAddonRpath(stagedAddon: string, libraryFileNames: string[]) {
   if (process.platform === 'darwin') {
@@ -334,13 +253,8 @@ function patchAddonRpath(stagedAddon: string, libraryFileNames: string[]) {
 }
 
 /**
- * Collect the native dynamic libraries + platform metadata. Exactly what
- * the flat extraction dir holds at runtime: the (rpath-patched) sharp
- * addon, the libvips library files, the skia addon, and the
- * (rpath-patched) DuckDB addon + the libduckdb library — 5 files on
- * darwin/linux, 7 on win32 (libvips splits into two DLLs there, and
- * skia's `icudtl.dat` ICU datafile must sit next to skia.node). No
- * node_modules tree, no npm package files, no generated shims.
+ * Collect the native dynamic libraries + platform metadata — exactly the
+ * flat extraction dir's contents (5 files on darwin/linux, 7 on win32).
  */
 async function addNativeAssets(assets: Map<string, string>, files: ManifestFileEntry[], ctx: PackContext) {
   const sharpPkg = findPlatformPackage(
@@ -357,7 +271,6 @@ async function addNativeAssets(assets: Map<string, string>, files: ManifestFileE
     resolveVia: '@duckdb/node-api',
   })!
 
-  // The platform addons + the libvips library files.
   const sharpAddon = await singleFile(join(sharpPkg.root, 'lib'), /\.node$/, `${sharpPkg.name} addon (*.node)`)
   const libvipsDir = join((libvipsPkg ?? sharpPkg).root, 'lib')
   const libvipsEntries = await readdir(libvipsDir)
@@ -369,8 +282,6 @@ async function addNativeAssets(assets: Map<string, string>, files: ManifestFileE
   }
   const skiaAddon = await singleFile(canvasPkg.root, /^skia\..*\.node$/, `${canvasPkg.name} addon (skia.*.node)`)
 
-  // The DuckDB addon + the libduckdb library shipping beside it
-  // (libduckdb.dylib/.so; duckdb.dll on win32).
   const duckdbAddon = await singleFile(duckdbPkg.root, /^duckdb\.node$/, `${duckdbPkg.name} addon (duckdb.node)`)
   const libduckdbName = await singleFile(
     duckdbPkg.root,
@@ -378,7 +289,6 @@ async function addNativeAssets(assets: Map<string, string>, files: ManifestFileE
     `${duckdbPkg.name} libduckdb library`,
   ).then((path) => path.split(/[\\/]/).pop()!)
 
-  // Stage + rpath-patch the addons (copies only — see above).
   const stagedDir = seaStagedNativesDir()
   await mkdir(stagedDir, { recursive: true })
   const stagedAddon = join(stagedDir, 'sharp.node')
@@ -393,9 +303,7 @@ async function addNativeAssets(assets: Map<string, string>, files: ManifestFileE
     await addAsset(assets, files, `${SEA_NATIVE_ASSET_PREFIX}${name}`, join(libvipsDir, name), ctx)
   }
   await addAsset(assets, files, SEA_NATIVE_SKIA_ADDON_KEY, skiaAddon, ctx)
-  // skia's ICU datafile rides only where the platform package ships one
-  // (win32 — see the header comment); it extracts into the same flat dir
-  // as skia.node, which is exactly where SkIcuLoader probes for it.
+  // ICU datafile rides only where the platform package ships one; it extracts beside skia.node.
   const skiaIcuData = join(canvasPkg.root, 'icudtl.dat')
   if (existsSync(skiaIcuData)) {
     await addAsset(assets, files, SEA_NATIVE_SKIA_ICU_KEY, skiaIcuData, ctx)
@@ -403,11 +311,8 @@ async function addNativeAssets(assets: Map<string, string>, files: ManifestFileE
   await addAsset(assets, files, SEA_NATIVE_DUCKDB_ADDON_KEY, stagedDuckdbAddon, ctx)
   await addAsset(assets, files, `${SEA_NATIVE_ASSET_PREFIX}${libduckdbName}`, join(duckdbPkg.root, libduckdbName), ctx)
 
-  // Metadata the redirected probes answer from memory (`natives-meta/*`).
-  // Each entry rides only when the source file exists on this platform:
-  // win32 has no libvips package (its libvips versions.json lives in the
-  // sharp platform package instead), and non-win32 sharp platform
-  // packages ship no versions.json at all.
+  // Metadata the redirected probes answer from memory; each entry rides
+  // only when the source file exists on this platform.
   await addAsset(assets, files, SEA_NATIVE_META_SHARP_PACKAGE_KEY, join(sharpPkg.root, 'package.json'), ctx)
   const sharpVersions = join(sharpPkg.root, 'versions.json')
   if (existsSync(sharpVersions)) {
@@ -419,7 +324,6 @@ async function addNativeAssets(assets: Map<string, string>, files: ManifestFileE
   }
 }
 
-/** Shared state for `addAsset` — the build codec, the packed-payload dir, and byte totals for the build log. */
 interface PackContext {
   codec: SeaPackCodec
   packedDir: string
@@ -428,11 +332,8 @@ interface PackContext {
 }
 
 /**
- * Add one file to the asset map: hash the RAW bytes, pack the payload
- * (compressed into `<packedDir>/<key>` unless tiny), and point the map at
- * the file the blob must store. The manifest entry keeps the raw sha256
- * and gains the codec + raw size — runtime verification hashes the
- * decoded bytes, so it is codec-agnostic.
+ * Add one file to the asset map: hash raw bytes, pack into `<packedDir>/<key>`
+ * unless tiny, and record the manifest entry (raw sha256, codec, raw size).
  */
 async function addAsset(
   assets: Map<string, string>,
@@ -477,17 +378,13 @@ async function addTree(
 }
 
 /**
- * Collect the full asset map, write `manifest.json` into the
- * intermediates dir, and return the map including that manifest asset.
- * The manifest is never packed: it is the decompression registry and must
- * stay readable before anything else in the blob.
+ * Collect the full asset map, write manifest.json, and return the map
+ * including the manifest asset itself — never packed, the reader needs it first.
  */
 export async function collectSeaAssets({ wasmPath, codec = 'zstd' }: { wasmPath: string; codec?: SeaPackCodec }) {
   const assets = new Map<string, string>()
   const files: ManifestFileEntry[] = []
-  // Wipe the packed dir so a codec switch never leaves stale payloads
-  // behind (build.ts wipes the whole intermediates dir; the standalone
-  // CLI below does not).
+  // Wipe the packed dir so a codec switch never leaves stale payloads.
   const ctx: PackContext = { codec, packedDir: seaPackedAssetsDir(), rawBytes: 0, packedBytes: 0 }
   await rm(ctx.packedDir, { recursive: true, force: true })
 
@@ -495,35 +392,22 @@ export async function collectSeaAssets({ wasmPath, codec = 'zstd' }: { wasmPath:
   await addTree(assets, files, SEA_CLIENT_ASSET_PREFIX, join(repoRoot, 'build', 'client'), ctx)
 
   // Whole drizzle/ tree minus the drizzle-kit snapshot artifacts: the
-  // embedded migrator discovers folders by their `*/migration.sql` key
-  // only (see src/server/infra/db/migrate.ts), so `snapshot.json` files
-  // (and any `snapshot/` subdir) are dead weight in the blob. The fs
-  // migrator used outside SEA reads them from disk — this exclusion only
-  // narrows what rides the binary.
+  // embedded migrator discovers folders by `*/migration.sql` keys only.
   await addTree(assets, files, SEA_DRIZZLE_ASSET_PREFIX, join(repoRoot, 'drizzle'), ctx, isDrizzleSnapshotArtifact)
 
-  // The cn-font-split wasm core (single hashed file inside the server
-  // build, pinned to a stable key — build.mjs locates it).
+  // The cn-font-split wasm core (single hashed file, pinned to a stable key).
   await addAsset(assets, files, SEA_WASM_CNFS_KEY, wasmPath, ctx)
 
-  // The bundled image worker, embedded as text and started via
-  // `new Worker(code, { eval: true, execArgv: ['--input-type=module'] })`
-  // under SEA.
+  // The image worker bundle, embedded as text and eval'd under SEA.
   await addAsset(assets, files, SEA_PROCESS_WORKER_BUNDLE_KEY, seaWorkerBundlePath(), ctx)
 
-  // The bundled worker-pool smoke entry, embedded as text and dispatched
-  // by the binary's `--smoke-worker` flag via the same eval-worker
-  // mechanism (see `@/server/infra/sea-cli`).
+  // The worker-pool smoke entry, embedded as text for `--smoke-worker`.
   await addAsset(assets, files, SEA_SMOKE_WORKER_BUNDLE_KEY, seaSmokeWorkerBundlePath(), ctx)
 
-  // Native dynamic libraries (rpath-patched sharp + DuckDB addons,
-  // libvips, libduckdb, skia) + the platform metadata the redirected
-  // native probes answer — the only assets extracted to disk at runtime
-  // (see the header comment).
+  // Native dynamic libraries + platform metadata — the only assets extracted to disk at runtime.
   await addNativeAssets(assets, files, ctx)
 
-  // Manifest: sorted for deterministic bytes (the runtime natives dir is
-  // named after the manifest's sha256 — stable bytes mean cache reuse).
+  // Sorted for deterministic bytes — the runtime natives dir is named after the manifest's sha256.
   const pkg = await readJson(join(repoRoot, 'package.json'))
   const manifest: SeaManifest = {
     version: pkg.version ?? fail('package.json has no "version" field'),

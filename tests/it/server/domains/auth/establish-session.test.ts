@@ -16,14 +16,9 @@ import { DomainError } from '@/server/infra/http/errors'
 
 const db = getTestDb()
 
-// The audit batcher is a process-level singleton that production code
-// initialises during bootstrap via the batcher registry. Integration
-// tests that exercise `recordAuditEvent` (called fire-and-forget inside
-// `establishLoginSession`) must wire up the batcher themselves so events
-// actually land in the `audit_log` table. `flushAuditLog()` forces a
-// drain before assertions and before teardown so no pending event
-// references a user row that the next test's `clearAllTables` will
-// truncate (FK violation).
+// Wire the audit batcher so establishLoginSession's fire-and-forget
+// events land; flushAuditLog() before assertions and teardown so no
+// pending event references a row the next clearAllTables truncates.
 beforeEach(() => {
   initAllBatchers(getDatabaseHandle())
 })
@@ -32,8 +27,6 @@ afterEach(async () => {
   await flushAuditLog()
   resetAllBatchers()
 })
-
-// ── Fixtures ──────────────────────────────────────────────────────────────
 
 async function seedUser(overrides: Record<string, unknown> = {}): Promise<number> {
   const hashed = await bcrypt.hash('Password123!', 12)
@@ -63,8 +56,6 @@ async function findSessionRow(sid: string) {
   return rows[0]
 }
 
-// ── Tests ─────────────────────────────────────────────────────────────────
-
 describe('establishLoginSession', () => {
   it('writes a session row stamped with the user and login meta', async () => {
     const userId = await seedUser()
@@ -77,9 +68,7 @@ describe('establishLoginSession', () => {
 
     const result = await establishLoginSession(db, emptySession(), dbUser, buildRequest(), '203.0.113.1')
 
-    // The session row keyed by sid must exist with its owner stamped. It
-    // is written through the process-level pool (session-storage), which
-    // commits against the same worker database.
+    // Written through the process-level session-storage pool.
     const row = await findSessionRow(result.sid)
     expect(row).toBeDefined()
     expect(row!.userId).toBe(userId)
@@ -101,7 +90,6 @@ describe('establishLoginSession', () => {
 
     const result = await establishLoginSession(db, emptySession(), dbUser, buildRequest(), '203.0.113.2')
 
-    // Confirm the row exists before revocation.
     expect(await findSessionRow(result.sid)).toBeDefined()
 
     const deleted = await revokeAllSessionsOfUser(db, userId)
@@ -120,8 +108,7 @@ describe('establishLoginSession', () => {
 
     const result = await establishLoginSession(db, emptySession(), dbUser, buildRequest(), '203.0.113.3')
 
-    // `recordAuditEvent` is fire-and-forget into the batcher. Flush before
-    // querying so the row is guaranteed to be in the table.
+    // recordAuditEvent is fire-and-forget — flush before querying.
     await flushAuditLog()
 
     const events = await db.select().from(auditLog).where(eq(auditLog.resourceId, result.sid)).limit(1)
@@ -142,12 +129,9 @@ describe('establishLoginSession', () => {
       .limit(1)
       .then((r) => r[0])
 
-    // Establish a first session.
     const first = await establishLoginSession(db, emptySession(), dbUser, buildRequest(), '203.0.113.4')
     expect(await findSessionRow(first.sid)).toBeDefined()
 
-    // Establish a second session with revokeOtherSessions; the first
-    // session's row must be deleted.
     const second = await establishLoginSession(db, emptySession(), dbUser, buildRequest(), '203.0.113.5', {
       revokeOtherSessions: true,
     })
@@ -158,7 +142,6 @@ describe('establishLoginSession', () => {
   })
 
   it('throws when the user has no role', async () => {
-    // Seed a user with a null role (anonymous placeholder account).
     const userId = await seedUser({ email: 'no-role@example.com', role: null })
     const dbUser = await db
       .select()

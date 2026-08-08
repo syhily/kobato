@@ -1,35 +1,6 @@
-// SEA natives bootstrap — the one piece of the single-executable runtime
-// that touches disk.
-//
-// Everything except the native dynamic libraries is read straight from
-// the SEA blob (see `@/server/infra/sea`) — all native package JS rides
-// inside the injected server bundle with its platform loads redirected to
-// `nativeRequire` (`@/server/infra/native-require`). Native `.node` /
-// `.so` / `.dylib` / `.dll` files cannot be dlopen'ed from memory, so on
-// first run the embedded libraries (the rpath-patched sharp + duckdb
-// addons, the libvips + libduckdb files, the skia addon — plus skia's
-// `icudtl.dat` ICU datafile on win32, which the Windows skia builds
-// probe for next to the loaded module and fatally crash without —
-// 5 files on darwin/linux, 7 on win32)
-// are extracted to a FLAT `<cacheDir>/natives-<manifest-hash>/` dir with
-// per-file sha256 verification and atomic (tmp + rename) writes. The
-// bootstrap (the `@/server/infra/sea-bootstrap` side-effect import ahead
-// of the server graph, or the CLI flags in `@/server/infra/sea-cli`)
-// then points `nativeRequire` at that dir via `KOBATO_NATIVES_DIR`.
-//
-// The manifest asset (`manifest.json`, generated at build time by
-// scripts/sea/assets) describes every embedded file; only entries whose
-// asset key starts with `natives/` are extracted — all other assets stay
-// in the blob and are read from memory. Blob payloads are stored
-// compressed, but every read goes through `getEmbeddedAsset`, which
-// decodes transparently — the per-file sha256 verification below still
-// runs over the RAW bytes, so it is unchanged by compression.
-//
-// Dependency discipline: this module runs ahead of the server graph (and
-// its env-validated modules), so it must only import node builtins,
-// `@/server/infra/sea`, `@/shared/sea/assets` (side-effect-free
-// constants), and type-only symbols — never the pino logger or the env
-// facade (both validate env vars at module scope).
+// SEA natives bootstrap — the only SEA-runtime piece that touches disk.
+// Embedded native libraries extract into a FLAT `<cacheDir>/natives-<hash>/` dir.
+// Runs ahead of the server graph: never the env-validating logger or config facade.
 
 import { createHash } from 'node:crypto'
 import { mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
@@ -45,7 +16,7 @@ export interface SeaManifestFile {
   path: string
   /** sha256 of the RAW (uncompressed) bytes — verification is codec-agnostic. */
   sha256: string
-  /** Blob payload codec; absent in manifests from before blob compression (treated as `'none'`). */
+  /** Blob payload codec; absent means uncompressed (`'none'`). */
   codec?: SeaAssetCodec
   /** Raw byte length; informational only, verification goes through sha256. */
   size?: number
@@ -79,14 +50,6 @@ export interface ExtractNativesResult {
   reused: number
 }
 
-// Minimal stand-in for the project logger. The pino logger
-// (`@/server/infra/logger`) transitively imports the env facade, which
-// validates required env vars at module scope and exits the process when
-// they are missing — the SEA bootstrap/CLI modules must instead run with
-// zero env (`--version`, `--help`, `--smoke-natives` work without a
-// database).
-// Same call shape, plain JSON lines on stdout; debug lines are gated on
-// server__loggingLevel=debug, mirroring the production default level of 'info'.
 const log: Pick<Logger, 'info' | 'debug'> = {
   info: (message, context) => {
     process.stdout.write(`${JSON.stringify({ level: 'info', msg: message, ...context })}\n`)
@@ -133,8 +96,6 @@ function parseManifest(raw: Buffer): SeaManifest {
       throw new Error(`Invalid SEA manifest (${SEA_MANIFEST_KEY}): every file needs { key, path, sha256 }`)
     }
     const file: SeaManifestFile = { key: entry.key, path: entry.path, sha256: entry.sha256 }
-    // codec/size were introduced with blob compression — pass them through
-    // when present and valid, stay tolerant of older manifests without them.
     if (entry.codec === 'zstd' || entry.codec === 'brotli' || entry.codec === 'none') {
       file.codec = entry.codec
     }
@@ -152,12 +113,7 @@ function assertSafeRelativePath(path: string): void {
   }
 }
 
-/**
- * Write `bytes` to `path` unless the on-disk file already matches
- * `expectedSha256`. Writes go through a temp file + atomic rename so a
- * crashed run never leaves a half-written native library behind; the file
- * is re-verified after the rename.
- */
+/** Write `bytes` unless `path` already matches `expectedSha256`; temp file + atomic rename, re-verified after. */
 function ensureFile(path: string, bytes: Buffer, expectedSha256: string): 'reused' | 'written' {
   if (readFileSha256(path) === expectedSha256) {
     return 'reused'
@@ -180,10 +136,7 @@ function ensureFile(path: string, bytes: Buffer, expectedSha256: string): 'reuse
   return 'written'
 }
 
-/**
- * Delete sibling `natives-*` cache dirs from previous manifest hashes.
- * Best-effort: failures are logged at debug and never fail the bootstrap.
- */
+/** Delete stale sibling `natives-*` dirs; best-effort — failures only log at debug. */
 function gcStaleNativesDirs(cacheDir: string, currentDirName: string, logger: Pick<Logger, 'info' | 'debug'>): void {
   try {
     for (const entry of readdirSync(cacheDir)) {
@@ -207,17 +160,12 @@ function gcStaleNativesDirs(cacheDir: string, currentDirName: string, logger: Pi
   }
 }
 
-/** Name of the extraction dir for a given raw manifest — stable bytes in,
- * stable name out (cache reuse across runs). */
+/** Content-hashed extraction dir — unchanged manifests reuse the cache dir. */
 function nativesDirName(manifestRaw: Buffer): string {
   return `natives-${sha256(manifestRaw).slice(0, 16)}`
 }
 
-/**
- * Extract the embedded native libraries into the flat cache dir
- * (idempotent). Exported for tests; production code enters through
- * `bootstrapSeaRuntime`.
- */
+/** Extract embedded native libraries into the flat cache dir (idempotent). */
 export function extractNatives(options: ExtractNativesOptions): ExtractNativesResult {
   const logger = options.logger ?? log
   const manifest = parseManifest(options.manifestRaw)
@@ -235,10 +183,7 @@ export function extractNatives(options: ExtractNativesOptions): ExtractNativesRe
   let extracted = 0
   let reused = 0
   for (const file of manifest.files) {
-    // Only the native dynamic libraries are extracted; every other asset
-    // stays in the blob and is read from memory via `getEmbeddedAsset`.
-    // The layout is FLAT: the extraction path is the asset key with the
-    // `natives/` prefix stripped (`natives/sharp.node` → `<dir>/sharp.node`).
+    // FLAT layout: extract only `natives/` assets, stripping the prefix from the path.
     if (!file.key.startsWith(SEA_NATIVE_ASSET_PREFIX)) {
       continue
     }
@@ -265,12 +210,7 @@ export function extractNatives(options: ExtractNativesOptions): ExtractNativesRe
   return { dir, nativesDir: dir, extracted, reused }
 }
 
-/**
- * SEA bootstrap entry point (sync by design — it runs before the server
- * graph evaluates). No-op outside SEA mode. On success,
- * `process.env.KOBATO_NATIVES_DIR` points at the flat natives dir so
- * `nativeRequire` can load the extracted libraries.
- */
+/** No-op outside SEA. Sets `KOBATO_NATIVES_DIR` so `nativeRequire` resolves the extracted libraries; runs before the server graph evaluates. */
 export function bootstrapSeaRuntime(): void {
   if (!isSea()) {
     return

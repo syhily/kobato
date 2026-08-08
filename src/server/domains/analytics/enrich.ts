@@ -6,13 +6,11 @@ import { lookupCity } from '@/server/domains/analytics/geoip'
 import { getDailySalt } from '@/server/domains/analytics/salt'
 import { isBot } from '@/shared/utils/is-bot'
 
-// Take a raw request signal and produce a row-shaped event for the COPY
-// pipeline. Never touches request/response objects; failures degrade to
-// null fields rather than throwing.
+// Row-shaped event for the COPY pipeline: never touches request/response
+// objects; failures degrade to null fields rather than throwing.
 
 function hashIp(ip: string): string {
-  // SHA-256 truncated to 32 hex chars — collision-safe at personal-blog
-  // volumes and keeps the visitor index smaller than a full 64-char hash.
+  // SHA-256 truncated to 32 hex chars — collision-safe at personal-blog volumes.
   return createHash('sha256')
     .update(ip + getDailySalt())
     .digest('hex')
@@ -30,11 +28,8 @@ function parseRefererHost(referer: string | null): string | null {
   }
 }
 
-// Data minimisation: the dashboard only reads `referer_host`, yet the raw
-// referer can carry tokens in its query and is persisted for months.
-// Strip query/hash (and any userinfo) before storage; an unparseable
-// referer cannot be inspected, so per this file's degrade-to-null
-// convention nothing is persisted.
+// Data minimisation: the raw referer can carry tokens in its query and
+// is persisted for months — strip query/hash/userinfo before storage.
 function minimizeReferer(referer: string | null): string | null {
   if (!referer) {
     return null
@@ -51,9 +46,7 @@ function minimizeReferer(referer: string | null): string | null {
   }
 }
 
-// Minimal `Accept-Language` first-tag parser. The dashboard only cares
-// about the primary preference, so first tag wins; empty/malformed input
-// degrades to `null` like every other enrichment column.
+// The dashboard only cares about the primary preference; empty/malformed input degrades to `null`.
 function parsePrimaryLanguage(header: string | null): string | null {
   if (!header) {
     return null
@@ -82,8 +75,8 @@ export async function enrichEvent(raw: RawAccessEvent): Promise<EnrichedAccessEv
     ts: raw.ts,
     visitorHash: hashIp(raw.ip),
     sessionId: raw.sessionId,
-    // Privacy: raw IP is used for geo lookup but not persisted.
-    // Only the salted visitorHash is stored for analytics.
+    // Privacy: raw IP is used for geo lookup but never persisted — only
+    // the salted visitorHash is stored.
     ip: null,
     path: raw.path,
     entityType: raw.target?.type ?? null,

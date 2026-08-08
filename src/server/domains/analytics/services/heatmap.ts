@@ -6,8 +6,7 @@ import { queryAnalyticsRows, whereClause } from '@/server/domains/analytics/serv
 
 export async function queryHeatmap(reader: AnalyticsReader, input: AnalyticsQueryInput): Promise<HeatmapCell[]> {
   const where = whereClause(input)
-  // EXTRACT on the TIMESTAMP column — same UTC semantics as the old
-  // `EXTRACT(DOW/HOUR FROM ts)` against a UTC-set Postgres.
+  // EXTRACT on the TIMESTAMP column — UTC semantics (as the old UTC-set Postgres).
   const rows = await queryAnalyticsRows(
     reader,
     `SELECT

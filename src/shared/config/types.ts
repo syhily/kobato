@@ -3,8 +3,7 @@ import type { SocialNetwork } from '@/shared/config/socials'
 import type { Assert, Equals } from '@/shared/contracts/primitives'
 import type { CacheBucketSlot, TunableCacheBucketId } from '@/shared/types/cache'
 
-// Per-section DTOs for the editable blog configuration. The DB stores
-// one row per section and `BlogSettingsBundle` is the in-memory
+// The DB stores one row per section; `BlogSettingsBundle` is the in-memory
 // composition of those rows.
 
 export interface SiteIdentitySettings {
@@ -62,11 +61,7 @@ export interface ContentSettings {
     sortBy: 'publishedAt' | 'updatedAt'
     featureEnabled: boolean
   }
-  /**
-   * The schema's `.default({ sectionTitle: '尾声礼记' })`
-   * (`schemas/content.ts`) fills this bucket on every read, so it is
-   * always present post-hydration.
-   */
+  /** Filled by the schema's `.default({ sectionTitle: '尾声礼记' })` on every read, so always present post-hydration. */
   footnotes: {
     sectionTitle: string
   }
@@ -80,10 +75,7 @@ export interface SidebarWidget {
   count?: number
 }
 
-/** Daily-quote sources for the calendar image. The three remote providers
- * fall back to the built-in bank on failure; `custom` uses the
- * admin-uploaded `customQuotes` (≥ 10 entries, enforced by the schema) and
- * behaves like `local` below that; `local` is the built-in bank only. */
+/** Calendar daily-quote sources: remote providers fall back to the built-in bank on failure; `custom` uses admin uploads (≥10, schema-enforced) and behaves like `local` below that. */
 export type DailyQuoteSource = 'shanbay' | 'one' | 'hitokoto' | 'custom' | 'local'
 
 export interface CustomQuote {
@@ -94,10 +86,7 @@ export interface CustomQuote {
 export interface SidebarSettings {
   sidebar: {
     widgets: SidebarWidget[]
-    /**
-     * The schema's `.default(...)` (`schemas/sidebar.ts`) fills this bucket
-     * on every read, so it is always present post-hydration.
-     */
+    /** Filled by the schema's `.default(...)` on every read, so always present post-hydration. */
     dailyQuote: {
       source: DailyQuoteSource
       customQuotes: CustomQuote[]
@@ -119,9 +108,7 @@ export interface CommentsSettings {
 
 export interface WebmentionsSettings {
   webmention: {
-    /** Receive endpoint gate: off → POST /webmention answers 410 and the
-     *  endpoint declaration (`<link rel="webmention">` + HTTP Link header)
-     *  is removed. Existing rows stay moderation-able. */
+    /** Off → POST /webmention answers 410 and the endpoint declaration is removed; existing rows stay moderation-able. */
     receiveEnabled: boolean
     /** Public gate: off → approved mentions are not rendered under posts/pages. */
     displayOnPosts: boolean
@@ -152,7 +139,6 @@ export interface MailSettings {
     host: string
     apiKey?: string | undefined
     sender: string
-    /** Vendor selector — `'zeabur'`, `'smtp'`, or `'mailgun'`. */
     transport: 'zeabur' | 'smtp' | 'mailgun'
     smtpHost: string
     smtpPort: number
@@ -177,21 +163,18 @@ export interface NewsletterSettings {
   }
 }
 
-// Only tunable buckets own a settings slot — the slot list derives from
-// the cache declaration registry, never from a hand-maintained list.
+// Slot list derives from the cache declaration registry, never hand-maintained.
 export interface CacheSettings {
   cache: Record<TunableCacheBucketId, CacheBucketSlot>
 }
 
-// The backend a stored object lives in. Each asset (image, music,
-// branding slot, backup) records its driver so reads, deletes, and the
-// local→S3 migration target the right place. Defined here (shared) so
-// the settings JSON shape and the server storage layer agree on it.
+// Backend a stored object lives in, recorded per asset so reads/deletes
+// and the local→S3 migration target the right place; shared so the
+// settings JSON shape and the server storage layer agree.
 export type StorageDriver = 's3' | 'local'
 
-// Metadata kept in the settings row for each branding asset. `etag` is
-// the sha256 of the uploaded bytes, used as the HTTP ETag value and as
-// the in-process cache key.
+// Per-asset metadata kept in the settings row. `etag` = sha256 of the
+// uploaded bytes, used as the HTTP ETag and the in-process cache key.
 export interface BrandingObjectRef {
   etag: string
   contentType: string
@@ -351,10 +334,8 @@ export interface BlogSettingsBundle {
 
 /**
  * Bundle shape downstream settings routes consume (and the
- * `admin.settings.bootstrap` procedure output). Every section is narrowed
- * to NonNullable because the settings layout loader enforces the
- * invariant once — deleting ~12 identical `bundle.<section> === null`
- * 503 guards from the per-section routes.
+ * `admin.settings.bootstrap` output). Every section is NonNullable
+ * because the settings layout loader enforces the invariant once.
  */
 export type SettingsBundle = {
   [K in keyof BlogSettingsBundle]-?: NonNullable<BlogSettingsBundle[K]>
@@ -366,18 +347,11 @@ type DeepPartial<T> = T extends readonly (infer Item)[]
     ? { [Key in keyof T]?: DeepPartial<T[Key]> }
     : T
 
-/**
- * Compile-time contract for a settings card's write payload. The section
- * literal selects the matching persisted DTO, while every nested property
- * is optional because cards submit honest Section patches — only the
- * fields the card owns. The server deep-merges the patch into the stored
- * row (objects merge, arrays replace) and validates the merged section.
- */
+/** Settings-card write payload: the section literal selects the matching persisted DTO; every property optional because cards submit honest section patches. The server deep-merges (objects merge, arrays replace) then validates. */
 export type SettingsSectionPatch<Section extends SettingsSection> = DeepPartial<
   NonNullable<BlogSettingsBundle[(typeof SECTION_TO_BUNDLE_KEY)[Section]]>
 >
 
-// Compile-time parity: BlogSettingsBundle keys must mirror the section →
-// bundle-key mapping in `sections.ts`. Adding a section without a bundle
-// slot (or renaming one side) fails type-checking here.
+// Compile-time parity: `BlogSettingsBundle` keys must mirror the
+// section → bundle-key mapping in `sections.ts`.
 type _blogSettingsBundleKeyParity = Assert<Equals<keyof BlogSettingsBundle, BundleKey>>

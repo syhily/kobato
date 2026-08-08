@@ -6,12 +6,8 @@ import type { Comment, NewComment } from '@/server/infra/db/types'
 import { invalidateContent } from '@/server/domains/content/invalidate'
 import { comment } from '@/server/infra/db/schema/comment'
 
-// Cache-invalidation invariant: every mutation that changes what the
-// sidebar latest-comments list shows emits `{ entity: 'comment' }`
-// through the content-invalidation door HERE, inside the repo mutation
-// itself, so a caller can never forget it. Two controllers call these
-// repos directly, bypassing the service layer — the repo is the only
-// layer every write path crosses.
+// Cache-invalidation invariant: every comment mutation emits
+// `{ entity: 'comment' }` here, inside the repo, so no caller can forget it.
 // Sync (node:sqlite): called inside the comment persist transaction.
 export function insertComment(db: Database, values: NewComment): Comment | null {
   const res = db.insert(comment).values(values).returning().all()
@@ -26,12 +22,8 @@ export async function updateCommentContent(db: Database, id: number, content: st
   await db.update(comment).set({ content }).where(eq(comment.id, id))
 }
 
-// Like the moderation mutations in `services/moderate.ts`, the mutations
-// below emit the comment invalidation inline so no caller can forget
-// it. The optimistic-lock pair emits only when a row was actually
-// updated — a conflicting write (0 rows) leaves the caches alone,
-// matching the historical service-level behaviour where the CONFLICT
-// throw happened before the invalidation.
+// Same inline invalidation as the moderation mutations; the optimistic-lock
+// pair emits only when a row was actually updated (a 0-row conflict leaves caches alone).
 export async function updateCommentBodyAndContent(
   db: Database,
   id: number,
@@ -42,13 +34,8 @@ export async function updateCommentBodyAndContent(
   invalidateContent(db, { entity: 'comment' })
 }
 
-// Fresh-edit variant of `comment.updateOwn`: an owner editing their own
-// comment within the grace window (see `updateOwnComment` in
-// `@/server/domains/comments/services/moderate`) gets to rewrite the
-// PortableText body and its markdown projection in place, bumping
-// `updated_at` but NOT flipping `is_pending`. The comment stays in
-// whatever moderation state it was already in, and the admin
-// notification is skipped.
+// Fresh-edit variant of `comment.updateOwn`: an in-grace-window owner edit
+// rewrites body + projection without flipping `is_pending` or notifying admins.
 export async function updateOwnCommentBody(
   db: Database,
   id: number,
@@ -67,13 +54,9 @@ export async function updateOwnCommentBody(
   return affected
 }
 
-// Re-pend variant of `comment.updateOwn`: when an owner edits their own
-// comment OUTSIDE the grace window, in addition to rewriting the
-// PortableText body and its markdown projection, flip the comment back
-// into the moderation queue (`is_pending = true`) and bump
-// `updated_at`. The admin-side edit path keeps using
-// `updateCommentBodyAndContent` so a moderator's edit does not
-// re-queue an already-approved comment.
+// Re-pend variant of `comment.updateOwn`: an out-of-grace-window owner edit
+// rewrites body + projection and flips the comment back into the queue.
+// Moderator edits use `updateCommentBodyAndContent` so they never re-queue.
 export async function updateOwnCommentBodyAndPending(
   db: Database,
   id: number,

@@ -16,17 +16,11 @@ queryMocks.query = {
   refetch: vi.fn(),
 }
 
-// DateTimePicker is fully props-driven (value/onChange). The calendar popover
-// content lives behind a Base UI Popover that only mounts its popup on click
-// (client-only), so we assert the trigger button label + the closed state.
-// RevisionsDrawer wraps its list in a Base UI Sheet (same portal constraint as
-// ConfirmDialog): the trigger button is emitted but the sheet body only mounts
-// after the open animation runs. We cover the trigger + the query-wired list
-// path by stubbing react-query so the data resolves.
+// DateTimePicker is props-driven; its calendar popover only mounts on click
+// (client-only) — assert the trigger label. RevisionsDrawer's Sheet body
+// mounts only after open; cover the trigger + query-wired list via the stub.
 
 const noop = () => undefined
-
-// ──────────────────────────── DateTimePicker ───────────────────────────────
 
 describe('snapshot: DateTimePicker', () => {
   it('renders the empty-state trigger label when value is blank', () => {
@@ -66,15 +60,12 @@ describe('snapshot: DateTimePicker', () => {
   })
 
   it('renders the popover trigger even when the value is unparseable garbage', () => {
-    // parseLocal returns null for garbage; the trigger falls back to the
-    // empty-state label without throwing.
+    // Garbage → parseLocal returns null; trigger falls back to the empty label.
     const html = stableHtml(renderToHtml(<DateTimePicker value="not-a-date" onChange={noop} />))
     expect(html).toContain('选择日期与时间')
     expect(html).toContain('data-empty="true"')
   })
 })
-
-// ──────────────────────────── RevisionsDrawer ──────────────────────────────
 
 function makeRevision(overrides: Partial<AdminRevisionDto> = {}): AdminRevisionDto {
   return {
@@ -105,7 +96,6 @@ describe('snapshot: RevisionHistoryDrawer', () => {
         />,
       ),
     )
-    // The SheetTrigger button always renders.
     expect(html).toContain('历史版本')
   })
 
@@ -126,10 +116,7 @@ describe('snapshot: RevisionHistoryDrawer', () => {
   })
 
   it('renders the revision rows inside the sheet body when the query resolves', () => {
-    // The Base UI Sheet keeps its content mounted only after open; on SSR the
-    // closed sheet emits just the trigger. When `open` is forced true the
-    // portal may still skip the popup, so we assert the trigger + a no-throw
-    // render. If the portal emits, we additionally see the row copy.
+    // Closed sheet emits just the trigger; if the portal emits we additionally see the row copy.
     const revisions = [
       makeRevision({ id: 'r1', revisionNo: 3, status: 'published', clientRevisionToken: 'tok-3' }),
       makeRevision({ id: 'r2', revisionNo: 2, status: 'draft', clientRevisionToken: 'tok-2' }),
@@ -146,10 +133,8 @@ describe('snapshot: RevisionHistoryDrawer', () => {
         />,
       ),
     )
-    // Trigger always present.
     expect(html).toContain('历史版本')
-    // The revision list view is rendered inside the Sheet body which is behind
-    // the Base UI portal; assert the row labels only if the portal emitted.
+    // Row labels live behind the portal — assert only if it emitted.
     if (html.includes('R3')) {
       expect(html).toContain('R3 · 已发布')
       expect(html).toContain('当前')

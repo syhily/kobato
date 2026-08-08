@@ -19,16 +19,13 @@ import {
 import { type AvatarEntry, AvatarStatus, get, set } from '@/server/infra/cache/registry'
 import { user } from '@/server/infra/db/schema/user'
 import { imageWidth } from '@/server/infra/image/compress'
-// paths are assertable; every other dependency below is real — the
-// in-memory SQLite engine, the DB-backed kv cache registry, and real
-// sharp image processing.
+// Only fetch is stubbed; the engine, kv cache registry, and sharp are real.
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@/server/infra/logger'
 import { encodedEmail } from '@/shared/utils/security'
 
 const db = getTestDb()
 
-// A valid-format stand-in for the sha256 email hashes `encodedEmail`
-// issues — the mirror branch rejects anything that isn't a hex digest.
+// Stand-in for sha256 hashes; the mirror branch rejects non-hex digests.
 const GRAVATAR_HASH = 'abcdef0123456789'.repeat(4)
 
 beforeEach(async () => {
@@ -41,8 +38,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-/** A real square PNG — the upstream fixtures are decoded by real sharp,
- *  so the Postgres-era fake magic-byte buffers are gone. */
+/** A real square PNG decoded by real sharp. */
 async function pngOfSize(width: number): Promise<Buffer> {
   return sharp({ create: { width, height: width, channels: 3, background: { r: 32, g: 128, b: 200 } } })
     .png()
@@ -87,14 +83,12 @@ function mockFetch(responses: Array<Response | (() => Response)>) {
   return fn
 }
 
-/** Read the real kv_cache-backed avatar entry the service wrote. */
 async function cachedAvatar(size: number, email: string): Promise<AvatarEntry | null> {
   return get<'avatar', AvatarEntry>(db, 'avatar', { size, email })
 }
 
 describe('domains/comments/services/avatar — resolveAvatarSize', () => {
   it("defaults to the default size's bucket when the parameter is absent, blank, or not a number", () => {
-    // DEFAULT_AVATAR_SIZE (120) rounds up to the 128 bucket.
     expect(DEFAULT_AVATAR_SIZE_BUCKET).toBe(128)
     expect(resolveAvatarSize(undefined)).toBe(128)
     expect(resolveAvatarSize('')).toBe(128)
@@ -353,7 +347,6 @@ describe('domains/comments/services/avatar — resolveAvatarForEmail', () => {
 
     expect(hash).toMatch(/^[0-9a-f]{64}$/)
     expect(spy).not.toHaveBeenCalled()
-    // Real cache: nothing was written for any size.
     expect(await cachedAvatar(DEFAULT_AVATAR_SIZE_BUCKET, hash)).toBeNull()
   })
 
@@ -448,8 +441,7 @@ describe('domains/comments/services/avatar — serveAvatar', () => {
     const fetchSpy = vi.fn()
     vi.stubGlobal('fetch', fetchSpy)
 
-    // Numeric id with no user row: nothing to ask upstream, so the raw
-    // param itself keys the negative entry.
+    // No user row: the raw numeric param keys the negative entry.
     const result = await serveAvatar(db, '42', 120)
 
     expect(result).toEqual({ kind: 'redirect' })
@@ -578,10 +570,7 @@ describe('domains/comments/services/avatar — serveAvatar', () => {
   })
 
   it('persists a HAVE_AVATAR entry with a null buffer as NO_AVATAR and redirects without fetching', async () => {
-    // The avatar codec normalizes a payload-less positive to the negative
-    // sentinel byte (encodeAvatar), so the mocked-unit-test "null buffer
-    // treated as a miss, refetch upstream" scenario cannot be persisted:
-    // the entry reads back as NO_AVATAR and short-circuits.
+    // encodeAvatar normalizes a payload-less positive to the NO_AVATAR sentinel byte.
     const spy = vi.fn()
     vi.stubGlobal('fetch', spy)
     await set(db, 'avatar', { size: 120, email: GRAVATAR_HASH }, { status: AvatarStatus.HAVE_AVATAR, buffer: null })
@@ -599,8 +588,7 @@ describe('domains/comments/services/avatar — serveAvatar', () => {
     const result = await serveAvatar(db, '../../etc/passwd', 120)
 
     expect(result).toEqual({ kind: 'redirect' })
-    // No negative entry keyed on the garbage param — spraying invalid
-    // hashes must not grow kv_cache.
+    // Invalid hashes must not grow kv_cache.
     expect(await cachedAvatar(120, '../../etc/passwd')).toBeNull()
     expect(fetchSpy).not.toHaveBeenCalled()
   })

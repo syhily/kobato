@@ -8,14 +8,8 @@ import { getTestDb } from '#/_helpers/integration-db'
 import { makeRequestContext } from '#/_helpers/request-context'
 import { emptySession } from '#/_helpers/session'
 
-// All seven perimeter middlewares (cors / install-gate / request-context /
-// request-timeout / trailing-slash / visitor-cookie / wp-decoy) run for REAL
-// against the it harness: `requestContextMiddleware` derives from the
-// harness-initialized db-lifecycle, `install-gate` reads the real install
-// state (`hasAdmin` against the empty user table), and the remaining four
-// are pure per-request functions. The kept seams are the composition root
-// (`createApiApp`), the resource routers (their own suites cover them),
-// and the logging trio (log noise).
+// The seven perimeter middlewares run for real against the it harness;
+// seams: `createApiApp`, the resource routers, and the logging trio.
 
 vi.mock('@/server/http/app', () => ({
   createApiApp: vi.fn(() => new Hono()),
@@ -104,8 +98,7 @@ describe('buildCspHeader', () => {
   it('adds the asset host from the bundle (self-hosted fonts need no per-font origin)', () => {
     const header = buildCspHeader({
       bundle: {
-        // The fonts section now carries slot id lists (global/post/code),
-        // not external CSS URLs — no per-font origin is ever injected.
+        // Font slots carry id lists, not external CSS URLs — no per-font origin is ever injected.
         fonts: { global: [], post: [], code: [] },
         assets: { asset: { host: 'cdn.example.com' } },
       } as never,
@@ -113,8 +106,7 @@ describe('buildCspHeader', () => {
       isDev: false,
     })
     expect(header).toContain('https://cdn.example.com')
-    // No external font origin leaks in — self-hosted packages are served
-    // from 'self' (local) or the asset host above (S3), both CSP-safe.
+    // Self-hosted packages stay CSP-safe: 'self' or the asset host — no external origin.
     expect(header).not.toContain('fonts.example.com')
   })
 })
@@ -134,11 +126,7 @@ describe('dynamic CSP middleware', () => {
   it('keeps the static secureHeaders CSP when the real WP decoy short-circuits before the RequestContext is derived', async () => {
     const app = new Hono<Env>()
     configureMiddleware(app)
-    // The REAL pipeline: the wp-decoy middleware answers /wp-login.php with
-    // a 404 before `requestContextMiddleware` ever runs, so
-    // `c.var.requestContext` is undefined — the dynamic overwrite must skip
-    // and leave the static CSP from `secureHeaders` in place (the
-    // middleware-pipeline.ts:112-115 regression scenario).
+    // wp-decoy 404s before requestContextMiddleware — the overwrite must skip on undefined context.
     const res = await app.request('/wp-login.php')
     expect(res.status).toBe(404)
     const csp = res.headers.get('Content-Security-Policy')
@@ -150,10 +138,7 @@ describe('dynamic CSP middleware', () => {
   it('overwrites with the dynamic policy once the real request-context middleware derived a RequestContext', async () => {
     const app = new Hono<Env>()
     configureMiddleware(app)
-    // /health survives the wp-decoy and trailing-slash passes, so the real
-    // `requestContextMiddleware` derives a RequestContext (harness db) and
-    // the dynamic overwrite fires. The real install gate then redirects
-    // pre-install (no admin row) — irrelevant to the header assertion.
+    // /health reaches requestContextMiddleware (harness db), so the dynamic overwrite fires.
     const res = await app.request('/health')
     const csp = res.headers.get('Content-Security-Policy')
     expect(csp).toContain("base-uri 'self'")
@@ -164,10 +149,7 @@ describe('readiness probe', () => {
   it('reports 503 with the real phase — the it harness never leaves booting', async () => {
     const app = new Hono<Env>()
     configureMiddleware(app)
-    // No phase mock: `setServerPhase('running')` is only called by the
-    // production bootstrap / restart flow, never by the db-lifecycle the
-    // it harness initializes. `/ready` is exempt from the real install
-    // gate, so the real `readyHandler` projects the booting phase.
+    // The harness never leaves booting — `setServerPhase('running')` is production-bootstrap only.
     const res = await app.request('/ready')
     expect(res.status).toBe(503)
     expect(await res.json()).toMatchObject({ status: 'booting' })
@@ -179,9 +161,7 @@ describe('anonymous session writes (P1-4)', () => {
     const app = new Hono<Env>()
     configureMiddleware(app)
     const db = getTestDb()
-    // The REAL request-context middleware runs against the harness
-    // database: a bot-flood GET must not persist a session row just to
-    // carry a CSRF token.
+    // Bot-flood GETs must not persist a session row just to carry a CSRF token.
     const rowsBefore = await db.select({ id: sessionTable.id }).from(sessionTable)
     const res = await app.request('/health')
     const rowsAfter = await db.select({ id: sessionTable.id }).from(sessionTable)
@@ -189,8 +169,7 @@ describe('anonymous session writes (P1-4)', () => {
 
     const setCookies = res.headers.getSetCookie()
     expect(setCookies.some((v) => v.startsWith('__session='))).toBe(false)
-    // The stateless double-submit cookie goes out instead, so the SSR'd
-    // page still has a CSRF token for its forms and /rpc mutations.
+    // The stateless double-submit cookie still covers SSR forms and /rpc mutations.
     expect(setCookies.some((v) => v.startsWith('__csrf='))).toBe(true)
   })
 
@@ -211,9 +190,7 @@ describe('anonymous session writes (P1-4)', () => {
 
 describe('buildLoadContext', () => {
   it('hydrates settings against the real database and returns a RouterContextProvider', async () => {
-    // The hydration is REAL — the it harness's db-lifecycle is already
-    // initialized. Reset the worker's seeded bundle so the hydrate
-    // actually reads the (empty) setting table.
+    // Reset the worker's seeded bundle so the real hydrate reads the (empty) setting table.
     resetBlogSettingsForTests()
     const rc = makeRequestContext({ session: emptySession(), cspNonce: 'nonce', db: getTestDb() })
     const context = await buildLoadContext({
@@ -221,7 +198,6 @@ describe('buildLoadContext', () => {
       req: { raw: new Request('http://localhost/'), url: 'http://localhost/' },
     })
     expect(context).toBeDefined()
-    // The single canonical key carries the Hono-side RequestContext as-is.
     expect(context.get(requestContext)).toBe(rc)
   })
 })

@@ -14,8 +14,7 @@ export async function queryViews(reader: AnalyticsReader, input: AnalyticsQueryI
   const interval = timeBucketInterval(pickTimeBucketMs(input.range))
   const where = whereClause(input)
 
-  // DuckDB-native `time_bucket` on a real TIMESTAMP — the Postgres
-  // original carried over nearly verbatim.
+  // DuckDB-native `time_bucket` on a real TIMESTAMP (Postgres original).
   const rows = await queryAnalyticsRows(
     reader,
     `SELECT

@@ -20,22 +20,10 @@ import { unsafeCast } from '@/shared/utils/unsafe-cast'
 const log = getLogger('cache')
 
 /**
- * The behavior plane of the cache layer — the ONLY module that reads and
- * writes `kv_cache` rows (through `kv-store`, its internal row-access
- * plane). Each cache's key shape, codec, and write policy is declared
- * once in `BEHAVIORS`; callers pass domain params, never assembled keys.
- *
- * Unified best-effort error policy: read and write failures are logged
- * and degrade to a miss / a skipped write — the cache must NEVER fail
- * the request it serves. Loader errors still propagate (the loader is
- * the real work).
+ * The cache behavior plane — the only module reading/writing `kv_cache` rows
+ * (via `kv-store`). Best-effort: failures degrade to a miss / a skipped write —
+ * the cache must never fail the request it serves; loader errors propagate.
  */
-
-// ─── Params ───────────────────────────────────────────────
-//
-// One params shape per cache id. Values stay caller-typed: `through`
-// infers the value type from its loader, exactly like the retired
-// per-cache helpers did.
 
 interface CacheParamsMap {
   og: { slug: string; title: string; summary: string; cover: string }
@@ -52,8 +40,6 @@ interface CacheParamsMap {
   githubAvatar: Record<string, never>
 }
 
-// ─── Behaviors ────────────────────────────────────────────
-
 interface CacheBehavior<P> {
   kind: 'json' | 'binary'
   /** Key shape WITHOUT the prefix — the module prepends the resolved slot prefix. */
@@ -65,18 +51,15 @@ interface CacheBehavior<P> {
   decode?: (raw: Buffer) => unknown
   /** Skip caching the loader result when this returns false. */
   cacheWhen?: (value: unknown) => boolean
-  /** Dev mode always re-runs the loader but still writes (OG / calendar re-render loop). */
+  /** Dev mode re-runs the loader but still writes. */
   devBypass?: boolean
-  /** Declares the `${prefix}generation` counter row (search invalidation stamp). */
+  /** Declares the `${prefix}generation` counter row. */
   counter?: boolean
 }
 
-// Single-key avatar layout (was two keys: `avatar-status-${email}` plus
-// `avatar-${email}`). Byte 0 is the status sentinel — `HAVE_AVATAR` (0)
-// means the payload follows, `NO_AVATAR` (1) is a negative, payload-less
-// entry. The enum IS the persisted byte protocol; the codec below is its
-// only reader/writer, and consumers (http resources, the comments avatar
-// domain service) import the enum from here.
+// Byte 0 is the status sentinel: `HAVE_AVATAR` (0) = payload follows,
+// `NO_AVATAR` (1) = negative, payload-less entry. The enum IS the
+// persisted byte protocol — consumers import it from here.
 export enum AvatarStatus {
   HAVE_AVATAR = 0,
   NO_AVATAR = 1,
@@ -119,23 +102,17 @@ const BEHAVIORS: { [K in CacheBucketId]: CacheBehavior<CacheParamsMap[K]> } = {
   og: {
     kind: 'binary',
     devBypass: true,
-    // The hash folds every render input (title / summary / cover) into the
-    // key so an edit produces a fresh entry instead of serving the stale
-    // render under the same slug.
+    // Hash of every render input — an edit produces a fresh entry, never a stale render.
     key: ({ slug, title, summary, cover }) =>
       `${slug}-${createHash('sha1').update(`${title}\u0001${summary}\u0001${cover}`).digest('hex').slice(0, 16)}`,
   },
   calendar: {
     kind: 'binary',
     devBypass: true,
-    // Dark variants get a distinct key so the two themes don't clobber
-    // each other under the same prefix.
+    // `-dark` suffix keeps the two themes from clobbering each other.
     key: ({ date, theme }) => `${date}${theme === 'dark' ? '-dark' : ''}`,
   },
-  // The fetch size is part of the key: the endpoint serves the size its
-  // caller asked for via `?s=` (120 by default) and the upstream is
-  // queried at exactly that size — a 120px entry must never serve a
-  // `?s=512` request (or vice versa).
+  // Size is part of the key — a cached entry must never serve a different `?s=` request.
   avatar: {
     kind: 'binary',
     key: ({ size, email }) => `${size}:${email}`,
@@ -149,12 +126,9 @@ const BEHAVIORS: { [K in CacheBucketId]: CacheBehavior<CacheParamsMap[K]> } = {
   searchResult: {
     kind: 'json',
     counter: true,
-    // The generation stamp is the invalidation mechanism: every key
-    // carries the counter and bumping it orphans all previously cached
-    // entries — they expire by TTL.
+    // Every key carries the generation; bumping orphans older entries (they expire by TTL).
     key: ({ generation, parts }) => `${generation}:${createHash('sha256').update(parts.join('|')).digest('hex')}`,
-    // Empty result lists are never cached, so a corpus that starts
-    // matching later isn't shadowed by a stale empty page.
+    // Empty result lists are never cached — a later corpus match must not be shadowed.
     cacheWhen: (value) => Array.isArray(value) && value.length > 0,
   },
   feed: {
@@ -177,26 +151,18 @@ const BEHAVIORS: { [K in CacheBucketId]: CacheBehavior<CacheParamsMap[K]> } = {
     kind: 'json',
     key: () => 'latest',
   },
-  // Short-TTL shield for outbound GitHub API calls: the key carries the
-  // full request target so a repo or endpoint change can never serve a
-  // stale cross-request hit. Failures are never cached — the loader
-  // throws and `through` writes nothing.
+  // Key carries the full request target — a repo or endpoint change can't serve a stale hit.
   githubRelease: {
     kind: 'json',
     key: ({ owner, repo, endpoint }) => `${owner}/${repo}/${endpoint}`,
   },
-  // The site owner's GitHub avatar data URL — a single compile-time
-  // constant upstream, so one fixed key. The loader resolves '' on
-  // failure; caching that would shadow the avatar for the whole TTL, so
-  // only real payloads are stored.
+  // One fixed key; the loader resolves '' on failure, so only real payloads are stored.
   githubAvatar: {
     kind: 'json',
     key: () => '',
     cacheWhen: (value) => typeof value === 'string' && value !== '',
   },
 }
-
-// ─── Slot resolution ──────────────────────────────────────
 
 const DECLARATION_BY_ID = new Map(CACHE_DECLARATIONS.map((entry) => [entry.id, entry]))
 
@@ -205,10 +171,8 @@ interface ResolvedSlot {
   ttlSeconds: number
 }
 
-// Null-tolerant on purpose: pre-hydration callers (CLI smoke checks,
-// settings-free tests) fall back to the declared defaults instead of
-// crashing on `requireBlogSettingsSection`. Tunable buckets read the live
-// snapshot so an admin rename / retune applies to the very next access.
+// Null-tolerant: pre-hydration callers fall back to the declared defaults;
+// tunable buckets read the live snapshot, so an admin retune applies next access.
 export function resolveCacheSlot(id: CacheBucketId): ResolvedSlot {
   const declaration = DECLARATION_BY_ID.get(id)
   if (declaration === undefined) {
@@ -233,8 +197,6 @@ function keyFor<K extends CacheBucketId>(id: K, params: CacheParamsMap[K]): { ke
   return { key: `${slot.prefix}${BEHAVIORS[id].key(params)}`, slot }
 }
 
-// ─── Read / write primitives ──────────────────────────────
-
 async function readEntry(db: Database, id: CacheBucketId, key: string): Promise<unknown> {
   const behavior = BEHAVIORS[id]
   try {
@@ -253,9 +215,7 @@ async function readEntry(db: Database, id: CacheBucketId, key: string): Promise<
     if (behavior.schema !== undefined) {
       const result = behavior.schema.safeParse(parsed)
       if (!result.success) {
-        // Schema mismatch (e.g. new field added) — evict and treat as a
-        // miss. Undeserializable rows already read as null inside
-        // kv-store; only a shape mismatch needs the eager evict.
+        // Stale shape reads as a miss and evicts the row.
         await removeItem(db, key)
         return null
       }
@@ -277,29 +237,19 @@ async function writeEntry(db: Database, id: CacheBucketId, key: string, slot: Re
       await setItemRaw(db, key, encode(value), { ttlSeconds: slot.ttlSeconds, bucket: id })
       return
     }
-    // Bucket payloads are JSON-native by declaration contract (the one
-    // former Date-bearer, imageMeta, stores `updatedAtMs` as a number) —
-    // the cast documents the boundary; setItem enforces it downstream.
+    // Payloads are JSON-native by declaration contract — the cast documents the boundary.
     await setItem(db, key, unsafeCast<JsonValue>(value), { ttlSeconds: slot.ttlSeconds, bucket: id })
   } catch (error) {
     log.warn('cache write failed; continuing without warmth', { bucket: id, error })
   }
 }
 
-// ─── Verbs ────────────────────────────────────────────────
-
-// One process-wide coalescer for every cache: concurrent loads for the
-// same key collapse into a single promise, so a cold OG image or a hot
-// avatar hit by a request burst can't fan out into N parallel renders /
-// fetches. Keys are namespaced by bucket id so a renamed prefix can
-// never merge two caches into one inflight slot.
+// Process-wide coalescer: concurrent loads for the same key share one promise.
+// Keys are namespaced by bucket id — a renamed prefix can't merge two caches.
 const inflight = createInflight<unknown>()
 
 /**
- * THE main verb — cache-aside with inflight coalescing and a
- * double-checked read. On a miss the loader runs, its result is cached
- * (honoring the declaration's `cacheWhen`), and returned. `devBypass`
- * caches skip the read in dev but still write.
+ * Cache-aside with inflight coalescing. `devBypass` caches skip the read in dev but still write.
  */
 export async function through<K extends CacheBucketId, V>(
   db: Database,
@@ -314,16 +264,13 @@ export async function through<K extends CacheBucketId, V>(
   if (!bypassRead) {
     const hit = await readEntry(db, id, key)
     if (hit !== null) {
-      // readEntry returns the declaration's decoded shape, which is the
-      // loader's value type by the declaration's own contract.
       options.onHit?.(unsafeCast<V>(hit))
       return unsafeCast<V>(hit)
     }
   }
   return unsafeCast<Promise<V>>(
     inflight(`${id}:${key}`, async () => {
-      // Double-check: a concurrent request may have warmed the row while
-      // this one waited on the inflight map.
+      // Double-check: a concurrent request may have warmed the row while we waited.
       if (!bypassRead) {
         const hit = await readEntry(db, id, key)
         if (hit !== null) {
@@ -340,7 +287,7 @@ export async function through<K extends CacheBucketId, V>(
   )
 }
 
-/** Direct read. Concurrent reads of the same key coalesce. */
+/** Concurrent reads of the same key coalesce. */
 export async function get<K extends CacheBucketId, V>(
   db: Database,
   id: K,
@@ -372,9 +319,7 @@ export async function remove<K extends CacheBucketId>(db: Database, id: K, param
 }
 
 /** Whole-bucket delete — one bucket-column DELETE, no prefix scan (best-effort). */
-// Sync (node:sqlite): called inside entity transactions via
-// `invalidateContent`. No interleaving risk — the sync driver runs every
-// statement to completion before anything else on the event loop moves.
+// Sync (node:sqlite): called inside entity transactions via `invalidateContent`.
 export function clear(db: Database, id: CacheBucketId): void {
   try {
     db.delete(kvCache).where(eq(kvCache.bucket, id)).run()
@@ -384,11 +329,8 @@ export function clear(db: Database, id: CacheBucketId): void {
 }
 
 /**
- * Batch cache-aside for json caches (the image-meta path): one MGET for
- * every params entry, the loader runs once for the misses, and each
- * loaded value is written back. Returns one entry per input params, in
- * input order (MGET semantics — misses the loader didn't cover come back
- * as null).
+ * Batch cache-aside: one MGET per entry, the loader runs once for the misses.
+ * Returns one entry per input, in input order (uncovered misses are null).
  */
 export async function throughMany<K extends CacheBucketId, V>(
   db: Database,
@@ -411,7 +353,6 @@ export async function throughMany<K extends CacheBucketId, V>(
     cached = keys.map((key) => ({ key, value: null }))
   }
 
-  // kv-store decodes the declaration's stored shape on a hit, null on a miss.
   const values: (V | null)[] = cached.map((entry) => unsafeCast<V | null>(entry.value))
   const missingIndexes: number[] = []
   cached.forEach((entry, index) => {
@@ -423,8 +364,7 @@ export async function throughMany<K extends CacheBucketId, V>(
   if (missingIndexes.length > 0) {
     const missing = missingIndexes.map((index) => paramsList[index] as CacheParamsMap[K])
     const loaded = await loader(missing)
-    // Match loaded values back by their computed key, not by params object
-    // identity — the loader is free to rebuild its params.
+    // Match loaded values by computed key — the loader may rebuild its params.
     const loadedByKey = new Map(loaded.map((entry) => [behavior.key(entry.params), entry.value]))
     await Promise.all(
       missingIndexes.map(async (index) => {
@@ -442,14 +382,8 @@ export async function throughMany<K extends CacheBucketId, V>(
   return paramsList.map((params, index) => ({ params, value: values[index] ?? null }))
 }
 
-// ─── Counters ─────────────────────────────────────────────
-//
-// The generation is read once per process and cached in module state. A
-// failed read is NOT cached (the next search retries) and falls back to
-// generation 0 — a missing or unreadable counter must never break
-// search. Single-instance self-host is the documented deploy target, so
-// only this process bumps the counter and the cached value stays
-// authoritative.
+// Generation is read once per process and cached; failed reads fall back to 0 and
+// are NOT cached (the next search retries). Single-instance: only this process bumps.
 const counterMemo = new Map<CacheBucketId, Promise<number>>()
 
 function assertCounter(id: CacheBucketId): void {
@@ -462,11 +396,8 @@ function counterKey(id: CacheBucketId): string {
   return `${resolveCacheSlot(id).prefix}generation`
 }
 
-// The counter row lives in `kv_cache` at the `${prefix}generation` key
-// with a raw integer JSON in `value` and NULL `expires_at` (never
-// swept). It deliberately bypasses kv-store's `getItem`/`setItem` —
-// this module is the only kv-store consumer and reaches the counter
-// with direct SQL.
+// Counter row: `${prefix}generation` key, raw integer JSON in `value`, NULL
+// `expires_at` (never swept) — read via direct SQL, not kv-store.
 function parseCounter(value: unknown): number {
   const parsed = typeof value === 'number' ? value : Number.parseInt(String(value), 10)
   return Number.isNaN(parsed) ? 0 : parsed
@@ -501,11 +432,7 @@ export function getCounter(db: Database, id: CacheBucketId): Promise<number> {
 }
 
 /**
- * Bump the generation stamp, orphaning every entry stamped with an older
- * generation. Read-modify-write inside one statement sequence — safe
- * because the sync driver runs uninterrupted (no interleaving between
- * the read and the write). Fire-and-forget by contract: invalidation
- * must never bring down the mutation that triggered it, so database
+ * Bump the generation, orphaning entries with older stamps. Fire-and-forget:
  * failures are logged and swallowed here. Sync — node:sqlite.
  */
 export function bumpCounter(db: Database, id: CacheBucketId): void {

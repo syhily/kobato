@@ -9,8 +9,6 @@ interface ReactRouterHonoServerEnv {
 
 interface ImportMetaEnv extends ReactRouterHonoServerEnv {}
 
-// hono-server global types
-
 import type { ViteDevServer } from 'vite'
 
 declare global {

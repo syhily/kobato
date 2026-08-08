@@ -18,12 +18,7 @@ interface DetailRevisions {
   publishedRevision: RevisionLike | null
 }
 
-/**
- * The oRPC namespace surface the editor adapter consumes
- * (`orpc.admin.posts` / `orpc.admin.pages` both satisfy it structurally).
- * `TWrappedEntity` is the `{ post | page: TEntity }` envelope the upsert /
- * unpublish procedures return.
- */
+/** The oRPC namespace surface the editor adapter consumes — `orpc.admin.posts` / `orpc.admin.pages` both satisfy it structurally. */
 export interface EditorEntityApi<TUpsertMetaInput, TWrappedEntity> {
   upsertMeta: (input: TUpsertMetaInput) => Promise<TWrappedEntity>
   saveDraft: (input: SaveBodyInput) => Promise<SaveBodyOutput>
@@ -34,9 +29,8 @@ export interface EditorEntityApi<TUpsertMetaInput, TWrappedEntity> {
 }
 
 /**
- * Static entity parameterization of the editor adapter. Declared once per
- * entity at module level — every function inside keeps a stable identity
- * across renders, which `EditorScreen`'s memoized detail object relies on.
+ * Static entity parameterization declared once per entity — stable function
+ * identities across renders, which `EditorScreen`'s memoized detail relies on.
  */
 export interface EditorAdapterConfig<
   TMeta extends EditorMetaShape,
@@ -76,28 +70,17 @@ export interface EditorAdapterConfig<
   listQueryKey: () => QueryKey
 }
 
-/**
- * Per-render inputs the static config cannot know: the TanStack query
- * client (list invalidation) and the entity meta sidebar (posts thread a
- * feature gate from `useContentSettings` through theirs).
- */
+/** Per-render inputs the static config cannot know: query client (list invalidation) and the entity meta sidebar. */
 export interface EditorAdapterRuntime<TMeta extends EditorMetaShape> {
   queryClient: QueryClient
   renderMetaSidebar: (props: MetaSidebarSlotProps<TMeta>) => ReactNode
 }
 
-// Module-level revision accessors shared by every configured adapter —
-// stable identities so the screen's memoized detail object only recomputes
-// when the loader DTO itself changes.
+// Module-level revision accessors — stable identities keep the screen's memoized detail object referentially stable.
 const getLatestRevision = <TDetail extends DetailRevisions>(detail: TDetail) => detail.latestRevision
 const getPublishedRevision = <TDetail extends DetailRevisions>(detail: TDetail) => detail.publishedRevision
 
-/**
- * Assemble the `EditorScreenAdapter` for one entity. The two call sites
- * (`PostEditorShell` / `PageEditorShell`) differ only in the config object;
- * the wire wrappers (call → invalidate list → unwrap the entity envelope)
- * are the same shape for both and live here exactly once.
- */
+/** Assemble the `EditorScreenAdapter` for one entity; the wire wrappers (call → invalidate list → unwrap envelope) live here exactly once. */
 export function makeEditorAdapter<
   TMeta extends EditorMetaShape,
   TEntity extends EditorScreenEntity,
@@ -111,9 +94,7 @@ export function makeEditorAdapter<
   const { queryClient } = runtime
 
   const invalidateList = () => {
-    // The admin list lives in the TanStack cache (useInfiniteQuery in
-    // PostsView / PagesView) — invalidate the namespace so a meta save
-    // (including the create flow) is reflected when the user returns to it.
+    // The admin list lives in the TanStack cache — invalidate so a meta save shows up on return.
     void queryClient.invalidateQueries({ queryKey: config.listQueryKey() })
   }
 

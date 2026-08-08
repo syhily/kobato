@@ -4,12 +4,8 @@ import type { CommentAndUser, CommentItem } from '@/shared/types/comments'
 
 import { asAdminCommentsWire, asCommentItemsWire, asCommentItemWire } from '@/server/domains/comments/projection'
 
-// The wire helpers bridge `CommentAndUser` (Drizzle row shape: number
-// ids, Date timestamps) onto the contract DTO (`CommentItemWire`:
-// string ids, ISO timestamps). Without this projection, the response
-// runtime validator in the adapter rejects every comment-listing
-// response — see the original "expected string, received bigint"
-// regression report.
+// Wire helpers bridge `CommentAndUser` (number ids, Date timestamps) onto
+// `CommentItemWire` (string ids, ISO timestamps).
 
 function makeRow(overrides: Partial<CommentAndUser> = {}): CommentAndUser {
   return {

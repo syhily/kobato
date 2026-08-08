@@ -4,12 +4,7 @@ import type { Block, PortableTextBody } from '@/shared/pt/schema'
 import { dispatchPmNodeToBlocks } from '@/shared/pt/bridge/node-registry'
 import { synchronizeFootnoteIndices } from '@/shared/pt/footnote-sync'
 
-/**
- * Convert a ProseMirror `doc` node back into a PortableText body.
- *
- * This is the save path: every top-level node is dispatched through the
- * node registry, which throws on unknown types instead of dropping them.
- */
+/** Convert a PM `doc` back to a PortableText body — the save path; unknown node types throw instead of being dropped. */
 export function pmDocToBody(doc: PmDoc): PortableTextBody {
   const out: Block[] = []
   let nextKey = 0

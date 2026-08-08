@@ -11,13 +11,9 @@ import { comment as commentTable } from '@/server/infra/db/schema/comment'
 import { post as postTable } from '@/server/infra/db/schema/post'
 import { EMPTY_STATE_LINES } from '@/shared/contracts/dashboard'
 
-// The dashboard route loader against the real engine: posts/comments are
-// real rows in the shared in-memory SQLite, the analytics fan-out
-// (analytics.counters/views procedures) runs for real against an ADOPTED
-// DuckDB sidecar — analytics-lifecycle's own test seam — and the
-// admin-only branches are pinned by their real RESULTS (null for
-// authors), not by "service was not called" behavioural assertions. No
-// mocks at all.
+// The dashboard loader against the real engine: real rows + the ADOPTED
+// DuckDB sidecar; admin-only branches are pinned by their real results
+// (null for authors), not behavioural assertions. No mocks.
 
 const db = getTestDb()
 
@@ -52,8 +48,7 @@ async function seedPost(
       slug: `post-${Math.random().toString(36).slice(2)}`,
       title: overrides.title,
       authorId,
-      // Lifecycle buckets: promoted = published flag + a published
-      // revision; drafts miss one of the two.
+      // Promoted = published flag + a published revision; drafts miss one of the two.
       published: !draft,
       publishedRevisionId: draft ? null : 1,
       updatedAt: overrides.updatedAt,
@@ -105,7 +100,7 @@ describe('admin dashboard loader (real db + real analytics)', () => {
 
     expect(data.name).toBe('admin')
     expect(data.role).toBe('admin')
-    // Real moderation queue: nothing pending → the empty dashboard page.
+    // Real moderation queue: nothing pending.
     expect(data.pendingModeration).toEqual({
       items: [],
       total: 0,
@@ -145,8 +140,7 @@ describe('admin dashboard loader (real db + real analytics)', () => {
     const data = await loader(makeLoaderArgs({ session: authorSession(), db }))
 
     expect(data.role).toBe('author')
-    // Admin-only branches are null for authors (the UI hides those cards) —
-    // the result assertion replaces the old "service was not called" pins.
+    // Admin-only branches are null for authors; the UI hides those cards.
     expect(data.pendingModeration).toBeNull()
     expect(data.visitSummary).toBeNull()
     expect(data.weeklyTrend).toBeNull()

@@ -1,18 +1,10 @@
-/**
- * Opaque entity reference used in comment URLs and filters.
- * Comments are attached to either a `post` or a `page`; the `ownerId`
- * is the bigint primary key of that entity.
- */
+/** Opaque entity reference in comment URLs and filters: `post`/`page` + the bigint primary key. */
 export interface CommentEntityRef {
   type: 'post' | 'page'
   ownerId: number
 }
 
-/**
- * Parse the `?entity=<type>:<ownerId>` parameter used by the "my comments"
- * self-service view. Malformed values are dropped silently so hand-edited
- * URLs degrade to the unfiltered list instead of producing an error page.
- */
+/** Parse the `?entity=<type>:<ownerId>` param; malformed values drop silently to the unfiltered list. */
 export function parseCommentEntity(raw: string | null | undefined): CommentEntityRef | null {
   if (!raw) {
     return null
@@ -40,10 +32,7 @@ export function parseCommentEntity(raw: string | null | undefined): CommentEntit
   }
 }
 
-/**
- * Serialize a comment entity reference back to the opaque wire form
- * `<type>:<ownerId>` used in combobox values and URL parameters.
- */
+/** Serialize an entity ref to the opaque wire form `<type>:<ownerId>` used in combobox values / URL params. */
 export function serializeCommentEntity(entity: CommentEntityRef): string {
   return `${entity.type}:${entity.ownerId}`
 }

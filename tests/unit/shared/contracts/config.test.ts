@@ -3,19 +3,10 @@ import { describe, expect, it } from 'vitest'
 
 import { CONFIG_TABLE } from '@/server/infra/config'
 
-// Contract: `kobato.config.example.json` is the operator-facing sample of
-// the real `kobato.config.json`, whose only source of truth is CONFIG_TABLE
-// (`src/server/infra/config.ts`). The two can drift silently — a table row
-// added without updating the example (or an example key the strict file
-// schema would reject) — so the flattened dot-path key sets must match
-// exactly.
-//
-// Legacy keys (`auth.sessionSecret`, `paths.*`, `logging.level`, `redis`,
-// `database`) are NOT part of this mapping: they exist only inside
-// migrateLegacyKeys so old files keep booting, they carry no CONFIG_TABLE
-// row, and they must never appear in the example.
+// Contract: `kobato.config.example.json`'s flattened dot-path key set must
+// exactly equal CONFIG_TABLE's. Legacy keys live only in migrateLegacyKeys
+// (so old files keep booting) and must never appear in the example.
 
-/** Flatten nested object keys into dot paths (`storage.database`). */
 function flattenKeys(value: unknown, prefix: string, out: string[]): void {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) {
     out.push(prefix)

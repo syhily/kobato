@@ -4,11 +4,8 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 import type { AnalyticsHandle } from '@/server/infra/analytics/duckdb'
 
 import { closeTestAnalyticsDb, createTestAnalyticsDb } from '#/_helpers/analytics-db'
-// Mock fs/promises so dead-letter file contents are controlled without
-// touching the real filesystem. The analytics handle is a REAL DuckDB
-// sidecar — replay appends through the same Appender protocol as
-// production — ADOPTED into the lifecycle engine with a failure gate on
-// `createAppender` so the ingest-failure cases stay deterministic.
+// Mock fs/promises for dead-letter file I/O; the DuckDB sidecar is real
+// and adopted into the lifecycle engine.
 import { __adoptAnalyticsHandleForTests, __resetAnalyticsEngineForTests } from '@/server/bootstrap/analytics-lifecycle'
 import { replayDeadLetterAccessLog } from '@/server/domains/analytics/services/batcher'
 import { initAllBatchers } from '@/server/infra/db/batcher-registry'
@@ -66,8 +63,7 @@ afterAll(async () => {
 
 beforeEach(() => {
   ingestShouldFail = false
-  // Adopt a decorated handle: the writer's createAppender carries the
-  // deterministic failure gate; everything else is the real sidecar.
+  // Decorated handle: createAppender carries the failure gate; the rest is the real sidecar.
   __resetAnalyticsEngineForTests()
   __adoptAnalyticsHandleForTests({
     ...analyticsHandle,
@@ -83,9 +79,7 @@ beforeEach(() => {
 })
 
 describe('replayDeadLetter', () => {
-  // The batcher must be initialized (via the shared registry) before
-  // replay operations. The db stub is inert — AccessLogBatcher writes
-  // through the analytics handle, not the relational db.
+  // initAllBatchers must run before replay; the db stub is inert — writes go through the analytics handle.
   const dbStub = {}
   initAllBatchers({ db: dbStub, client: {}, path: ':memory:', inMemory: true, closed: false } as never)
 

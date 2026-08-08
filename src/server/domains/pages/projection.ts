@@ -5,13 +5,7 @@ import type { Page } from '@/shared/types/catalog'
 import { toAdminMetaDto, type AdminMetaDto } from '@/server/domains/content/entities/projection'
 import { readRevisionProjection } from '@/server/domains/content/projection-helpers'
 
-// --- Public catalog projection ----------------------------------------------
-
-// `toCmsPage` is the catalog-facing projection: meta row + published
-// revision (or null) → the shared `Page` DTO (`@/shared/types/catalog`)
-// directly — there is no server-side variant of the shape. Pages
-// without a published revision still surface in the catalog with an
-// empty body and no headings.
+// Catalog-facing projection; pages without a published revision surface with an empty body and no headings.
 export function toCmsPage(
   meta: PageMetaRow,
   publishedRevision: ContentRow | null,
@@ -49,11 +43,7 @@ export function toCmsPage(
   }
 }
 
-// --- Admin projection -------------------------------------------------------
-
-// Wire DTO returned by every admin page endpoint. The shared 19 fields
-// come from `AdminMetaDto` (`content/entities/projection.ts`); only the
-// page-only friends flag is stated here.
+// Admin wire DTO: shared fields from `AdminMetaDto`, page-only `showFriends` stated here.
 export interface AdminPageDto extends AdminMetaDto {
   showFriends: boolean
 }
@@ -68,10 +58,7 @@ export function toAdminPageDto(
   }
 }
 
-// Editor "load" DTO — the admin page edit route returns this so the
-// browser hydrates the Tiptap editor and the metadata panel from one
-// round trip. `body` comes from the *latest* revision (draft preferred)
-// so reopening restores in-progress edits.
+// Editor "load" DTO: `body` comes from the latest revision (draft preferred) so reopening restores in-progress edits.
 export interface AdminPageDetailDto {
   page: AdminPageDto
   latestRevision: AdminRevisionDto | null

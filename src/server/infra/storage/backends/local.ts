@@ -20,13 +20,10 @@ import {
 
 const log = getLogger('storage.local')
 
-// Reject ASCII control characters (NUL through US and DEL) anywhere in a key.
-// Node rejects NUL in paths at runtime, but bailing early with a clean 400 is
-// friendlier and defends against crafted keys that try to confuse path parsing.
+// Reject ASCII control characters (NUL–US, DEL) anywhere in a key.
 // eslint-disable-next-line no-control-regex -- intentional security guard
 const UNSAFE_KEY_CHARS = /[\x00-\x1f\x7f]/
 
-/** Safely read `.code` off a thrown value as a string (Node `fs` errors carry `ENOENT` etc.). */
 function errnoCode(error: unknown): string | undefined {
   if (error instanceof Error && 'code' in error && typeof error.code === 'string') {
     return error.code
@@ -40,19 +37,13 @@ function metaFromStat(key: string, st: { size: number; mtimeMs: number; mtime: D
 
 /**
  * Resolve a backend key to an absolute path inside `STORAGE_DIR`, rejecting
- * anything that would escape it (absolute keys, `..` traversal, control
- * characters). Mirrors the guard the MaxMind reader uses (`isPathInside`).
- * Exported so the public `/storage/*` route and the migration tool reuse the
- * exact same guard instead of re-implementing it.
+ * escapes (absolute keys, `..`, control chars). Shared by `/storage/*` and migration.
  */
 export function resolveLocalPath(key: string): string {
   if (key === '' || key.startsWith('/') || UNSAFE_KEY_CHARS.test(key)) {
     throw new ActionFailure(400, `非法的存储路径: ${key}`)
   }
-  // Collapse any `.` / `..` segments and Windows drive letters / UNC paths
-  // before the containment check. `path.resolve` normalises, so an input
-  // like `images/../../etc/passwd` resolves outside STORAGE_DIR and is
-  // rejected by `isPathInside` below.
+  // `path.resolve` normalises `..` — hence the `isPathInside` re-check.
   const abs = path.resolve(STORAGE_DIR, key)
   if (!isPathInside(abs, STORAGE_DIR)) {
     throw new ActionFailure(400, `非法的存储路径: ${key}`)
@@ -61,11 +52,8 @@ export function resolveLocalPath(key: string): string {
 }
 
 /**
- * Write a buffer/stream to a sibling temp file then atomically `rename` it
- * into place. A crash or write error mid-way never leaves a partial file at
- * the target path — readers either see the previous full file or the new
- * full file, never a truncated one. The temp file lives in the same
- * directory so the rename is atomic on a single filesystem.
+ * Write via a sibling temp file + atomic rename: readers never see a partial
+ * file. Temp lives in the same directory so the rename stays on one filesystem.
  */
 async function atomicWrite(abs: string, write: (tmp: string) => Promise<void>): Promise<void> {
   await mkdir(path.dirname(abs), { recursive: true })
@@ -102,9 +90,8 @@ async function walk(dir: string, base: string): Promise<StoredObjectMeta[]> {
 }
 
 /**
- * Local-filesystem backend. Writes under `$DATA_PATH/storage/<key>` in the
- * same key namespace as S3, so a migration is a verbatim copy. Always
- * available — it's the fallback when S3 is not configured.
+ * Local-filesystem backend under `$DATA_PATH/storage/<key>`, same key namespace
+ * as S3 (migration is a verbatim copy). Always available — the S3 fallback.
  */
 export const localBackend: StorageBackend = {
   driver: 'local',
@@ -133,10 +120,7 @@ export const localBackend: StorageBackend = {
     } catch (error) {
       throw errnoCode(error) === 'ENOENT' ? new StorageObjectNotFound(key) : error
     }
-    // A key that resolves to a directory is not a readable object — surface
-    // the seam's not-found instead of letting `readFile` throw EISDIR (which
-    // the HTTP layer would turn into a 500). Matches the `isFile()` guard the
-    // route uses.
+    // A directory key is not a readable object — surface the seam's not-found instead of EISDIR.
     if (!st.isFile()) {
       throw new StorageObjectNotFound(key)
     }
@@ -181,9 +165,7 @@ export const localBackend: StorageBackend = {
   },
 
   async deleteMany(keys: string[]): Promise<void> {
-    // Reference `localBackend.delete` directly rather than `this.delete` so
-    // the method stays correct when destructured off the object or passed as
-    // a callback (where `this` would be lost).
+    // Reference the object directly: `this` is lost when the method is destructured.
     await Promise.all(keys.map((key) => localBackend.delete(key)))
   },
 
@@ -204,8 +186,7 @@ export const localBackend: StorageBackend = {
     if (!isPathInside(base, STORAGE_DIR)) {
       return []
     }
-    // Sort before slicing so `maxKeys` returns a deterministic prefix of the
-    // listing — matching the S3 backend's lexicographic ordering.
+    // Sort before slicing so `maxKeys` is a deterministic prefix (matches S3's lexicographic order).
     const walked = await walk(base, STORAGE_DIR)
     const items = walked.sort((a, b) => a.key.localeCompare(b.key))
     return opts?.maxKeys !== undefined ? items.slice(0, opts.maxKeys) : items

@@ -7,31 +7,24 @@ import { normalizeDocumentUrl } from '@/server/http/utils/request-facts'
 
 // prettier-ignore
 const EXEMPT_CASES = [
-  // static asset prefixes
   { path: '/assets/main.js',         desc: 'assets prefix' },
   { path: '/build/client.js',        desc: 'build prefix' },
   { path: '/fonts/Inter.woff2',      desc: 'fonts prefix' },
   { path: '/images/avatar/1.png',    desc: 'images prefix' },
-  // favicon variants
   { path: '/favicon.svg',            desc: 'favicon svg' },
   { path: '/favicon.ico',            desc: 'favicon ico' },
-  // logo variants
   { path: '/logo.svg',               desc: 'logo svg' },
   { path: '/logo-dark.svg',          desc: 'logo-dark svg' },
   { path: '/logo-large.svg',         desc: 'logo-large svg' },
   { path: '/logo-large-dark.svg',    desc: 'logo-large-dark svg' },
-  // apple touch icon
   { path: '/apple-touch-icon.png',   desc: 'apple-touch-icon' },
-  // other well-known files
   { path: '/robots.txt',             desc: 'robots.txt' },
   { path: '/sitemap.xml',            desc: 'sitemap.xml' },
   { path: '/__manifest',             desc: '__manifest' },
-  // install-gate explicit paths
   { path: '/admin/signin',           desc: 'admin signin' },
   { path: '/admin/setup',            desc: 'admin setup' },
   { path: '/api/setup/restore',      desc: 'api setup restore' },
   { path: '/ready',                  desc: 'ready endpoint' },
-  // React Router data suffix
   { path: '/admin/signin.data',      desc: 'RR data suffix' },
 ]
 
@@ -70,7 +63,7 @@ describe('honoInstallGateMiddleware', () => {
         try {
           const app = await makeApp()
           const res = await app.request(path)
-          // Either 200 (passed through) or 303 (allowed by explicit exempt)
+          // Exempt paths pass through — the blocked-path redirect (303 → /admin/setup) must never fire.
           expect(res.status).not.toBe(302)
           expect(res.headers.get('location')).not.toBe('/admin/setup')
         } finally {

@@ -1,8 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Mock `node:fs` so we can drive every branch of `routeWarmupPlugin`'s
-// writeBundle handler (manifest missing, malformed, route dedup, idle
-// size filter, editor-only filter, canvas exclusion) without touching disk.
+// Mock `node:fs` to drive routeWarmupPlugin's writeBundle branches without touching disk.
 const fsState = vi.hoisted(() => {
   return {
     files: new Map<string, string | Buffer>(),
@@ -85,9 +83,7 @@ function buildPluginContext() {
     logs,
     errors,
     ctx: {
-      // writeBundle runs under the SSR environment in production; tests
-      // simulate "no environment API + SSR build" by leaving `environment`
-      // unset and the options.ssr flag off, so neither early-return fires.
+      // `environment` unset + ssr off: neither writeBundle early-return fires.
       environment: undefined,
       options: { dir: '/build/server' } as { dir?: string },
       async writeFile(path: string, content: string) {
@@ -126,10 +122,8 @@ describe('route-warmup plugin — writeBundle handler', () => {
 
   it('skips when the client assets dir does not exist', async () => {
     const { ctx } = buildPluginContext()
-    // The default dir resolves to /build/client/assets, which is not in
-    // the existsSync allow-list.
+    // /build/client/assets is not in the existsSync allow-list.
     await invokeWriteBundle(ctx)
-    // Nothing was written (warmup-manifest.json absent).
     expect(fsState.files.has('/build/client/assets/warmup-manifest.json')).toBe(false)
   })
 
@@ -175,8 +169,7 @@ describe('route-warmup plugin — writeBundle handler', () => {
     fsState.files.set('/build/client/assets/manifest-abc.js', buildManifest('window.__reactRouterManifest='))
     fsState.sizes.set('/build/client/assets/manifest-abc.js', 100)
 
-    // Per-chunk sizes for the idle-tier filter. Everything is small so
-    // all chunks survive the IDLE_SIZE_LIMIT gate.
+    // Small sizes so every chunk clears the IDLE_SIZE_LIMIT gate.
     for (const name of [
       'entry',
       'runtime',
@@ -213,8 +206,7 @@ describe('route-warmup plugin — writeBundle handler', () => {
       ]),
     )
 
-    // tier2_public is empty in this minimal manifest because no secondary
-    // public routes are defined.
+    // tier2_public is empty: no secondary public routes exist here.
     expect(manifest.tier2_public).toEqual([])
 
     // tier2_admin excludes editor-only chunks; the editor tier keeps them.
@@ -275,8 +267,7 @@ describe('route-warmup tier derivation', () => {
   })
 
   it('excludes TIER1 members from prefix buckets even when they carry a prefix', () => {
-    // 'routes/public/layout' and 'routes/public/home' start with
-    // 'routes/public/' but must stay tier-1-only.
+    // Prefix-carrying TIER1 routes must stay tier-1-only.
     for (const id of TIER1_ROUTES) {
       const buckets = deriveTier2RouteIds(manifestOf([id]))
       expect(Object.values(buckets).flat(), `TIER1 route "${id}" leaked into a tier-2 bucket`).toEqual([])
@@ -308,9 +299,7 @@ describe('route-warmup tier derivation — src/routes.ts coverage', () => {
 
   it('every route declared in src/routes.ts lands in exactly one warmup bucket', () => {
     for (const entry of flatten(routes)) {
-      // React Router derives the manifest ID from the file path; an
-      // explicit `id` overrides it (paginated aliases). Aliases share the
-      // base file's chunk, so the base ID's bucket covers them.
+      // Paginated aliases share the base file's chunk, so its bucket covers them.
       const baseId = entry.file.replace(/\.tsx$/, '')
       const manifestId = entry.id ?? baseId
       const bucket =

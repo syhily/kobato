@@ -116,18 +116,14 @@ const searchMineEntities = authedProc
     }
   })
 
-// Comment count tuple for the profile/dashboard cards — the service's
-// full `{ total, pending, deleteRequested, deleted }` passes through
-// unchanged (the profile card renders all four rows).
+// Comment count tuple for the profile/dashboard cards — passes through unchanged.
 const myCounts = authedProc
   .route({ method: 'GET', path: '/comments/my-counts' })
   .output(commentsMyCountsOutputSchema)
   .handler(async ({ context }) => countMyComments(context.db, idFromString(context.viewer.id)))
 
-// Follow-up entity resolve for `/admin/me/comments`: when the URL pins an
-// entity that is not in the mine-comments entity dropdown, the loader
-// asks here for its title. Malformed keys and hard-deleted entities
-// answer `null` — the loader keeps the pinned raw key in that case.
+// Entity resolve for `/admin/me/comments`: titles for entities pinned in
+// the URL but absent from the dropdown; malformed/hard-deleted → `null`.
 const resolveEntity = authedProc
   .route({ method: 'GET', path: '/comments/resolve-entity' })
   .input(commentsResolveEntityInputSchema)

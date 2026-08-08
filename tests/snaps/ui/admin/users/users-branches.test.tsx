@@ -7,20 +7,9 @@ import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { UsersView } from '@/ui/admin/users/UsersView'
 
-// `UsersView` drives its rows from `useInfiniteQuery` (server state lives in
-// the TanStack cache) and its filters from `useUsersFilters`. To maximise
-// render-path branch coverage we bypass both: a hoisted filters singleton
-// each test can flip, and a hoisted slot for the infinite list query. The
-// existing `users.test.tsx` only snapshots the loading chrome; this suite
-// covers the remaining render-path branches:
-//   - populated rows via `rows.map`,
-//   - empty state,
-//   - loading skeleton,
-//   - error toast path (render still completes),
-//   - active search value in the input,
-//   - `hasNextPage` sentinel vs end-of-list sentinel.
-
-// ───────────────────────── controller mock ──────────────────────────
+// UsersView's list query + filters hook are bypassed via hoisted singletons
+// (users.test.tsx covers only the loading chrome): populated rows, empty,
+// skeleton, error-toast fallthrough, active search, sentinels.
 
 const controller = vi.hoisted((): { filters: UsersFilters } => ({
   filters: {
@@ -58,8 +47,7 @@ queryMocks.infinite = {
   fetchNextPage: vi.fn(),
 }
 
-// `useDebouncedSearch` is driven (one test types a keyword), so it keeps a
-// file-level stub instead of relying on the real hook's SSR default.
+// File-level stub: one test drives the search term (real hook's SSR default is empty).
 vi.mock('@/ui/admin/shared/useDebouncedSearch', () => ({
   useDebouncedSearch: () => [debouncedSearch.value, debouncedSearch.setInput],
 }))
@@ -74,8 +62,6 @@ vi.stubGlobal(
     disconnect() {}
   },
 )
-
-// ───────────────────────────── fixtures ─────────────────────────────
 
 function makeAdminUser(overrides: Partial<AdminUserDto> = {}): AdminUserDto {
   const id = overrides.id ?? `user-${Math.random().toString(36).slice(2, 8)}`
@@ -113,8 +99,6 @@ function setList(users: AdminUserDto[], total = users.length): void {
 function renderUsers(): string {
   return stableHtml(renderInRouter(<UsersView />, '/admin/security/users'))
 }
-
-// ─────────────────────────── shared setup ───────────────────────────
 
 describe('snapshot: UsersView branches', () => {
   beforeEach(() => {

@@ -6,10 +6,8 @@ import { invalidateContent } from '@/server/domains/content/invalidate'
 import { __resetCacheCountersForTests, getCounter, resolveCacheSlot } from '@/server/infra/cache/registry'
 import { kvCache } from '@/server/infra/db/schema/kv-cache'
 
-// The REAL cache registry against the shared in-memory kv_cache table:
-// `clear` must land bucket-column DELETEs and `bumpCounter` must write
-// the searchResult generation row. `og` seeds the control row — no
-// invalidation event ever touches it.
+// Real cache registry on the in-memory kv_cache table; `og` seeds a control
+// row no invalidation event touches.
 const db = getTestDb()
 
 const SEEDED_BUCKETS = ['feed', 'tags', 'categories', 'sitemap', 'comments', 'og'] as const

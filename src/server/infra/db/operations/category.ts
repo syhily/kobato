@@ -7,9 +7,7 @@ import { likeEscape } from '@/server/infra/db/like-escape'
 import { assembleWhere } from '@/server/infra/db/operations/admin-list'
 import { category } from '@/server/infra/db/schema/taxonomy'
 
-// Public listing reads. Stable `(sort_order ASC, id ASC)` order so the
-// `/categories` listing has a deterministic admin-controlled ranking
-// that does not change as new rows are inserted.
+// Stable `(sort_order ASC, id ASC)` order: deterministic ranking that does not shift on insert.
 export async function listPublicCategoryRows(db: Database): Promise<CategoryRow[]> {
   return db.select().from(category).orderBy(asc(category.sortOrder), asc(category.id))
 }
@@ -18,12 +16,7 @@ export interface AdminCategoriesListFilters {
   q?: string
 }
 
-// Admin list view. Mirrors `listAdminFriendRows` in spirit but uses
-// `(sort_order ASC, id ASC)` ordering so the table reflects the live
-// public order; admins editing `sortOrder` see the change immediately.
-// `q` matches name / slug / description (case-insensitive `LIKE`) so
-// the search box on the toolbar finds rows by either the Chinese name
-// or the URL slug.
+// Same ordering as the public listing so the table mirrors the live public order.
 export async function listAdminCategoryRows(
   db: Database,
   filters: AdminCategoriesListFilters = {},
@@ -53,10 +46,7 @@ export async function findCategoryByName(db: Database, name: string): Promise<Ca
   return rows[0] ?? null
 }
 
-// The single seam for post→category name resolution: posts store
-// `category_id`, listings project the display NAME onto the wire DTO.
-// Mount this in `hydratePostList`-style pipelines (next to the tag-name
-// batch) rather than hand-joining per query.
+// Single seam for post→category name resolution — mount in `hydratePostList`-style pipelines.
 export async function findCategoryNamesByIds(db: Database, ids: readonly number[]): Promise<Map<number, string>> {
   const map = new Map<number, string>()
   if (ids.length === 0) {
@@ -100,15 +90,8 @@ export async function deleteCategory(db: Database, id: number): Promise<boolean>
   return result.length > 0
 }
 
-// Bulk-rewrite `sort_order` so each row's `sort_order` becomes its
-// 0-based index in `orderedIds`, with `updated_at` bumped to one shared
-// wall clock so the audit trail reflects a single operation. The whole
-// rewrite runs inside a single transaction so the public listing never
-// shows a half-applied ranking.
-//
-// Returns the freshly-ordered rows in the same order as `orderedIds`,
-// so callers don't need a follow-up `select` round-trip to project the
-// updated DTOs back to the admin client.
+// Bulk-rewrite `sort_order` to each row's 0-based index in `orderedIds`, inside one
+// transaction; returns rows in the same order as `orderedIds`.
 export async function reorderCategories(db: Database, orderedIds: readonly number[]): Promise<CategoryRow[]> {
   if (orderedIds.length === 0) {
     return []

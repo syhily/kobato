@@ -16,20 +16,9 @@ import { notModifiedResponse } from '@/server/infra/http/etag'
 import { redirectPermanent } from '@/server/infra/http/redirects'
 import { notFound } from '@/server/infra/http/status'
 
-// The in-process oRPC caller for SSR route loaders. Public routes (and
-// the root loader) never touch `@/server/domains/*` directly — every
-// data read goes through the `content.*` procedures (plus the existing
-// `webmention.list`) via this client, so the public render path has a
-// single transport seam shared with the headless API. The admin / me
-// routes follow the same seam: their loaders compose the `admin.*` /
-// `account.*` / `analytics.*` procedures here instead of importing
-// domain services.
-//
-// `createRouterClient` invokes the procedures in-process: zero HTTP,
-// zero serialization — `Date`s and un-awaited `Promise`s (the streaming
-// comments/webmentions fired by the detail loaders) pass through
-// untouched, which is what keeps the `<Await>` streaming behaviour
-// bit-identical to direct domain calls.
+// In-process oRPC caller for SSR loaders — every public/admin data read goes
+// through this single transport seam. Zero HTTP, zero serialization: `Date`s
+// and un-awaited `Promise`s pass through untouched (streaming stays intact).
 export type SsrCaller = RouterClient<ApiRouter>
 
 type SsrCallerArgs = {
@@ -41,10 +30,8 @@ export type SsrCallerResult = {
   caller: SsrCaller
   cspNonce: string
   /**
-   * The canonical session identity (`RequestContext.viewer`) — the
-   * route-level `requireRole` gates and the current-user projections
-   * read it, so route modules never import `getRequestContext`
-   * themselves.
+   * Canonical session identity — route-level `requireRole` gates read it,
+   * so route modules never import `getRequestContext` themselves.
    */
   viewer: SessionUser | null
   /** The canonical session — `isCurrent` projections read `session.id`. */
@@ -53,9 +40,7 @@ export type SsrCallerResult = {
 
 export function createSsrCaller(args: SsrCallerArgs): SsrCallerResult {
   const rc = getRequestContext(args)
-  // Same projection the Hono `/rpc/*` bridge performs (app.ts), with a
-  // fresh `responseHeaders` bag — the SSR caller never merges it onto a
-  // Response because the content procedures don't write headers.
+  // Same projection as the Hono `/rpc/*` bridge, fresh `responseHeaders` bag (never merged).
   const context: HandlerContext = {
     request: args.request,
     requestFacts: rc.requestFacts,
@@ -65,10 +50,7 @@ export function createSsrCaller(args: SsrCallerArgs): SsrCallerResult {
     responseHeaders: new Headers(),
     db: rc.db,
   }
-  // The CSP nonce is the one sanctioned extra peek into the canonical
-  // request context (root loader keeps it as infrastructure data) — it
-  // derives once here so route modules never call `getRequestContext`
-  // themselves.
+  // Nonce derives once here so route modules never call `getRequestContext` themselves.
   return {
     caller: createRouterClient(apiRouter, { context }),
     cspNonce: rc.cspNonce,
@@ -77,21 +59,17 @@ export function createSsrCaller(args: SsrCallerArgs): SsrCallerResult {
   }
 }
 
-// Route loaders translate `content.*` NOT_FOUNDs back into the React
-// Router 404 (`notFound()`); every other error propagates.
+// `content.*` NOT_FOUNDs → React Router 404; every other error propagates.
 export function isOrpcNotFound(error: unknown): boolean {
   return error instanceof ORPCError && error.code === 'NOT_FOUND'
 }
 
-// 30x/304 signals arrive as DATA (the RPC wire carries no thrown
-// Responses) — the unwrap helpers below translate the union back into the
-// historical Responses so every route loader stays a one-liner. Exact
-// status codes preserved: 301 canonical / 302 pagination / 304 ETag.
+// 30x/304 signals arrive as DATA — the unwrap helpers translate them back
+// into the thrown Responses (301 canonical / 302 pagination / 304 ETag).
 
 type ListingResult<T> = ContentRedirectSignal | { kind: 'ok'; listing: T }
 
-/** Listing loaders (`content.home` / `posts.list` / `search`): NOT_FOUND →
- *  404, `redirect` → the thrown 301/302. Returns the ok listing. */
+/** Listing loaders: NOT_FOUND → 404, `redirect` → the thrown 301/302. */
 export async function unwrapListing<T>(promise: Promise<ListingResult<T>>): Promise<T> {
   let result
   try {
@@ -108,10 +86,8 @@ export async function unwrapListing<T>(promise: Promise<ListingResult<T>>): Prom
   return result.listing
 }
 
-/** Detail loaders (`content.posts/pages.bySlug`): NOT_FOUND → 404,
- *  `not-modified` → the thrown 304, `redirect` → the canonical 301.
- *  Returns the ok etag + payload (the page variant's `etag` is nullable —
- *  draft previews carry no public ETag). */
+/** Detail loaders: NOT_FOUND → 404, `not-modified` → 304, `redirect` → 301.
+ *  The page variant's `etag` is nullable (draft previews carry none). */
 export async function unwrapDetail<T, ETag extends string | null>(
   promise: Promise<ContentSignal | { kind: 'ok'; etag: ETag; payload: T }>,
 ): Promise<{ etag: ETag; payload: T }> {
@@ -133,10 +109,8 @@ export async function unwrapDetail<T, ETag extends string | null>(
   return { etag: result.etag, payload: result.payload }
 }
 
-// The comments + webmentions fan-out chained off the detail critical's
-// comment key — shared by the post and page detail loaders so the two
-// can't drift. Both promises stay un-awaited: the loaders pass them
-// through `detail` untouched and `<Await>` streams them.
+// Comments + webmentions fan-out off the detail comment key — shared by the
+// post and page loaders; both promises stay un-awaited so `<Await>` streams them.
 export function streamDetailExtras(
   caller: SsrCaller,
   commentKey: string,

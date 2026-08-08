@@ -11,9 +11,8 @@ export const sidebarSchema = z.object({
         count: z.coerce.number().int().min(0).max(100).optional(),
       }),
     ),
-    // Daily-quote source for the calendar image (`todayCalendar` widget).
-    // Remote sources fall back to the built-in bank on failure; `custom`
-    // needs ≥ 10 uploaded quotes or it silently behaves like `local`.
+    // Daily-quote source for the calendar image. Remote sources fall back to the
+    // built-in bank on failure; `custom` needs ≥ 10 uploaded quotes or behaves like `local`.
     dailyQuote: z
       .object({
         source: z.enum(['shanbay', 'one', 'hitokoto', 'custom', 'local']).default('shanbay'),

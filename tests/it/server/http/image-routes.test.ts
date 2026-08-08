@@ -10,34 +10,15 @@ import { content as contentTable } from '@/server/infra/db/schema/content'
 import { post as postTable } from '@/server/infra/db/schema/post'
 import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 
-// Regression net for the Hono path-parser footgun that was silently
-// degrading every `/images/*.png` endpoint to its fallback branch.
-//
-// Pattern `/foo/:name.png` does NOT match `:name` against a single
-// segment and `.png` as a literal suffix. Hono treats the `.png` as
-// part of the param NAME, so `c.req.param('name')` returns `undefined`
-// and `c.req.param()` reveals an entry keyed `name.png`. Every handler
-// then short-circuits to its "missing param" fallback. The user-facing
-// symptom is "every avatar shows the default" — and (silently) every
-// OG image and calendar image too.
-//
-// The fix in `src/server/http/resources/images.ts` declares each route
-// with an explicit `{[^/]+\\.png}` constraint and strips the extension
-// in the handler. These tests pin both halves.
-//
-// Real engine: the OG slug lookups run against seeded post rows, the
-// in-process rate limiter and the kv-backed cache registry run for real.
-// The kept seams are the heavy/external backends: gravatar avatar
-// fetching (network), OG canvas rendering, and the calendar renderer —
-// each stub echoes its arguments onto the wire so param extraction is
-// asserted through response bodies, not mock call args.
+// `/images/*.png` param extraction against the real engine (seeded rows,
+// rate limiter, kv cache); seams: avatar fetch, OG canvas, calendar renderer.
+// Hono folds `.png` into the param NAME — routes need explicit `{[^/]+\\.png}` constraints.
 
 vi.mock('@/server/domains/comments/services/avatar', async (importActual) => {
   const actual = await importActual<typeof import('@/server/domains/comments/services/avatar')>()
   return {
     ...actual,
-    // Echo stub: the route maps a `png` outcome straight onto the wire,
-    // so the extracted hash + size are observable in the response body.
+    // Echo stub: the extracted hash + size are observable in the response body.
     serveAvatar: vi.fn(async (_db: unknown, hash: string, size: number) => ({
       kind: 'png' as const,
       buffer: Buffer.from(`${hash}:${size}`),
@@ -61,10 +42,7 @@ const db = getTestDb()
 
 const { imagesRouter } = await import('@/server/http/resources/images')
 
-// The perimeter normally derives the canonical RequestContext in
-// `requestContextMiddleware`; these route-level tests wrap the router in an
-// app that stubs the only two fields the images pipeline reads
-// (rate-limit → `clientAddress`, handlers → `db`).
+// Stub app provides only `clientAddress` + `db`, the fields the images pipeline reads.
 const app = new Hono<Env>()
 app.use('*', async (c, next) => {
   c.set('requestContext', {
@@ -105,8 +83,6 @@ async function seedLivePost(slug: string): Promise<number> {
 describe('imagesRouter avatar', () => {
   it('extracts the bare hash from `/images/avatar/<hash>.png`', async () => {
     const res = await app.request('/images/avatar/abcdef0123456789.png')
-    // Route does NOT 404 (it now resolves the hash; the path-parser bug
-    // would have driven this into the missing-param fallback).
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toBe('image/png')
     // No `?s=` → the default size, rounded up to its cache bucket (128).
@@ -125,8 +101,7 @@ describe('imagesRouter avatar', () => {
   })
 
   it('throttles the avatar route with its own stricter bucket', async () => {
-    // 30 requests per 60s per IP; the 31st is answered 429 with the
-    // standard API error shape — before any mirror fetch happens.
+    // 30 per 60s per IP; the 31st → 429.
     for (let i = 0; i < 30; i += 1) {
       const res = await app.request('/images/avatar/abcdef0123456789.png')
       expect(res.status).toBe(200)

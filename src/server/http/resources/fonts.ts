@@ -6,7 +6,7 @@ import { FONT_DIR } from '@/server/infra/paths'
 import { resetCanvasFont, resetFontCache } from '@/server/render/canvas-fonts'
 
 const FONT_SLOTS = new Set(['og', 'calendar'])
-const FONT_MAX_BYTES = 60 * 1024 * 1024 // 60 MiB
+const FONT_MAX_BYTES = 60 * 1024 * 1024
 
 function isFontSlot(value: unknown): value is 'og' | 'calendar' {
   return typeof value === 'string' && FONT_SLOTS.has(value)
@@ -53,8 +53,7 @@ export const fontsRouter = adminUploadRoute({
     const dest = path.join(FONT_DIR, `${slot}.${ext}`)
     await writeFile(dest, buffer)
     resetFontCache()
-    // Drop the registered slot state too — otherwise the single-flight
-    // cache keeps serving the OLD font until a process restart.
+    // Drop the registered slot state too, or the single-flight cache keeps serving the old font.
     resetCanvasFont(slot)
 
     return {

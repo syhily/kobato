@@ -1,9 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The counter map is in-process now, so bucket routing is observed
-// through the test-only key snapshot instead of a mocked external
-// store: asserting the tracked keys pins both the key constructors and
-// the bucket selection in `readBucket`.
+// Asserting the tracked key snapshot pins the key constructors and `readBucket` bucket selection.
 import {
   tryCommentPostRateLimit,
   tryCommentPostRateLimitByEmail,
@@ -38,8 +35,7 @@ describe('rate-limit — bucket routing', () => {
     __resetRateLimitsForTests()
   })
 
-  // Each bucket helper should derive a *distinct* key namespace so two
-  // unrelated throttles don't share a counter.
+  // Unrelated throttles must not share a counter.
   it('routes IP-bound buckets to distinct keys', async () => {
     await tryRateLimit('1.1.1.1')
     await tryInviteRateLimit('1.1.1.1')
@@ -61,7 +57,6 @@ describe('rate-limit — bucket routing', () => {
     for (const k of keys) {
       expect(k.startsWith('rate-limit:')).toBe(true)
     }
-    // Spot-check the namespaces we know about.
     expect(keys).toEqual(
       expect.arrayContaining([
         'rate-limit:signin:1.1.1.1',
@@ -91,13 +86,11 @@ describe('rate-limit — bucket routing', () => {
     await tryOtpVerifyByEmailRateLimit(email)
 
     const keys = __rateLimitKeysForTests()
-    // Raw email (or unnormalized casing) must never appear in a key.
     for (const k of keys) {
       expect(k).not.toContain(email)
       expect(k).not.toContain(email.toLowerCase())
       expect(k).not.toContain('User@Example.COM')
     }
-    // Each distinct namespace should still produce a unique key.
     expect(new Set(keys).size).toBe(keys.length)
   })
 
@@ -108,7 +101,6 @@ describe('rate-limit — bucket routing', () => {
     expect(first.count).toBe(1)
     expect(second.count).toBe(2)
     expect(third.count).toBe(3)
-    // One logical subject → one tracked key.
     expect(__rateLimitKeysForTests()).toHaveLength(1)
   })
 
@@ -125,7 +117,6 @@ describe('rate-limit — bucket routing', () => {
   it('scopes invite-email counters per admin', async () => {
     const email = 'peer@example.com'
     expect((await tryInviteByEmailRateLimit(1, email)).count).toBe(1)
-    // Same mailbox, different admin → a fresh counter.
     expect((await tryInviteByEmailRateLimit(2, email)).count).toBe(1)
     expect((await tryInviteByEmailRateLimit(1, email)).count).toBe(2)
   })
@@ -144,7 +135,7 @@ describe('rate-limit — window + exceed branches', () => {
   })
 
   it('reports exceeded=true when the count strictly exceeds maxAttempts', async () => {
-    // resourceIp default maxAttempts is 60, so the 61st hit trips.
+    // resourceIp default maxAttempts is 60; the 61st hit trips.
     for (let i = 0; i < 60; i += 1) {
       expect((await tryResourceRateLimit('8.8.8.8')).exceeded).toBe(false)
     }
@@ -162,8 +153,7 @@ describe('rate-limit — window + exceed branches', () => {
   })
 
   it('applies the settings-driven windowSeconds to the window length', async () => {
-    // resourceIp fixture windowSeconds is 60: a hit at t0 and t+59s
-    // share a window; t+61s starts a fresh one.
+    // resourceIp fixture windowSeconds is 60: t+59s shares the window, t+61s starts fresh.
     expect((await tryResourceRateLimit('10.0.0.1')).count).toBe(1)
     vi.setSystemTime(T0 + 59_000)
     expect((await tryResourceRateLimit('10.0.0.1')).count).toBe(2)

@@ -10,14 +10,9 @@ import { content as contentTable } from '@/server/infra/db/schema/content'
 import { page as pageMetaTable } from '@/server/infra/db/schema/page'
 import { DomainError } from '@/server/infra/http/errors'
 
-// CMS page service — drives the save/publish state machine through the
-// real in-memory engine: meta rows, revision rows, slug registry,
-// metrics fan-out, and cache invalidation all land in real tables.
-//
-// The ONLY surviving double is the audit-scope logger: the test env runs
-// pino at `silent`, so the `force_overwrite_save` line (informational
-// stdout, never a DB row — see the convention note in infra/logger.ts)
-// would be unobservable without intercepting `getLogger('audit.cms.pages')`.
+// CMS page service against the real engine; the ONLY double is the
+// audit-scope logger (pino runs silent, so the force_overwrite_save line
+// would be unobservable).
 const { auditInfoMock } = vi.hoisted(() => ({ auditInfoMock: vi.fn() }))
 
 vi.mock('@/server/infra/logger', async (importOriginal) => {
@@ -329,8 +324,7 @@ describe('cms/pages lifecycle — saveBody CAS + force', () => {
     expect(auditInfoMock).toHaveBeenCalledTimes(1)
     const [message, context] = auditInfoMock.mock.calls[0]!
     expect(message).toBe('force_overwrite_save')
-    // The draft update happens in place, so the overwritten row and the
-    // result row share one id — only the token rotated.
+    // In-place update: the overwritten row and the result row share one id.
     const rows = await contentRows(meta.id)
     expect(rows).toHaveLength(1)
     expect(context).toMatchObject({

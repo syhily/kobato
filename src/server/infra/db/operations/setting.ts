@@ -11,18 +11,10 @@ export function findSettingByScope(db: Database, scope: string): Setting | null 
   return rows[0] ?? null
 }
 
-/**
- * Pull every settings row whose `scope` starts with `prefix`. Used by
- * `hydrateBlogSettings()` to load all section rows in one round-trip
- * before bucketing them by `scope` into `BlogSettingsBundle`. The
- * caller is expected to filter / parse the returned rows.
- */
+/** All settings rows whose `scope` starts with `prefix`; the caller filters/parses them. */
 // Sync (node:sqlite): called inside the hydration read path.
 export function findSettingsByScopePrefix(db: Database, prefix: string): Setting[] {
-  // `like` with a `%` suffix scans the unique B-tree on `scope`; no
-  // sequential scan even for large `setting` tables. The prefix is
-  // hard-coded by the caller (`'blog.'`) so SQL injection isn't a
-  // concern.
+  // `%`-suffixed LIKE still uses the unique B-tree on `scope`; the prefix is caller-hard-coded.
   return db
     .select()
     .from(setting)

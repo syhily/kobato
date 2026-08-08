@@ -1,8 +1,6 @@
 // Magic-link signin flow — send the one-time link (identify step) and
-// consume it (confirm step). The link lands on
-// `/admin/signin?action=magiclink&token=…`, where the loader peeks the
-// token and renders a confirm button; only the POST here consumes it —
-// mail-client prefetchers never burn the token.
+// consume it (confirm step). Only the POST here consumes the token;
+// mail-client prefetchers never burn it.
 
 import { recordAuditEvent } from '@/server/domains/audit/services/record'
 import { establishLoginSession } from '@/server/domains/auth/primitives'
@@ -16,10 +14,8 @@ import { tryOtpSendByEmailRateLimit, tryOtpSendRateLimit, tryRateLimit } from '@
 const log = getLogger('auth.magic-link')
 
 /**
- * Issue + send + audit the one-time signin link for a known user.
- * Returns an error message on throttling or send failure; `null` on
- * success (the caller decides the response shape — identify answers
- * with a deliberately generic message either way).
+ * Send the one-time signin link; returns an error message on failure,
+ * `null` on success — the caller answers generically either way.
  */
 export async function sendMagicLink(
   ctx: SigninFlowContext,
@@ -74,8 +70,7 @@ export async function handleMagicLinkConsume(
     return { type: 'error', message: '链接无效或已过期，请重新获取。' }
   }
 
-  // Cheap IP throttle before the token lookup — the token itself is
-  // 256-bit, so this only guards against hammering the DB.
+  // Cheap IP throttle before the token lookup — guards DB hammering only.
   const limit = await tryRateLimit(clientAddress)
   if (limit.exceeded) {
     return { type: 'error', message: '操作过于频繁，请稍后再试。' }

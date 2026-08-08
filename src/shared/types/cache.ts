@@ -1,7 +1,6 @@
-// Derived cache-bucket views. The declaration table itself lives in
-// `@/shared/cache/registry` — this module derives the id unions, the
-// tunable fallbacks, and the reserved (read-only) bucket metadata from
-// it, so no second hand-synced enumeration exists.
+// Derived cache-bucket views: the id unions, the tunable fallbacks, and
+// the reserved (read-only) bucket metadata all derive from
+// `@/shared/cache/registry` — no second hand-synced enumeration exists.
 
 import { CACHE_DECLARATIONS } from '@/shared/cache/registry'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
@@ -52,13 +51,9 @@ export const CACHE_BUCKET_FALLBACKS = unsafeCast<Record<TunableCacheBucketId, Ca
   ),
 )
 
-// Read-only cache surfaces that the admin panel surfaces for visibility
-// only — no rename, no clear. Both are critical to runtime behaviour:
-// clearing sessions would log everyone out and break in-flight tokens;
-// clearing rate-limit counters would let throttled abusers retry
-// immediately. Sessions live in the `session` table and rate-limit
-// counters are in-process, so operating on them stays
-// administrative-tool territory (SQL shells / process restarts).
+// Read-only surfaces (no rename, no clear): clearing sessions logs
+// everyone out; clearing rate-limit counters unblocks throttled
+// abusers. Both live outside `kv_cache` (DB table / process memory).
 export type ReservedCacheBucketId = 'session' | 'rateLimit'
 
 export interface ReservedCacheBucket {

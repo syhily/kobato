@@ -4,10 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { user, verification } from '@/server/infra/db/schema/user'
 
-// `sendAuthorInvite` is the external side effect (SMTP/HTTP call). In
-// production it runs AFTER the DB transaction commits. Here we stub it
-// at the module boundary so each test can dial the outcome without
-// touching the network.
+// sendAuthorInvite (SMTP/HTTP side effect) is stubbed at the module boundary.
 const sendAuthorInvite = vi.hoisted(() => vi.fn())
 
 vi.mock('@/server/infra/email/sender', () => ({
@@ -16,10 +13,7 @@ vi.mock('@/server/infra/email/sender', () => ({
   invalidateMailTransportCache: vi.fn(),
 }))
 
-// `issueSetupToken` is wrapped so individual tests can make it throw
-// mid-transaction to verify rollback atomicity. By default it
-// delegates to the real implementation so the happy-path and
-// email-failure cases exercise the real DB transaction.
+// issueSetupToken is wrapped so tests can make it throw mid-transaction; defaults to the real implementation.
 const realVerificationTokens = await vi.importActual<typeof import('@/server/domains/auth/verification-tokens')>(
   '@/server/domains/auth/verification-tokens',
 )
@@ -31,8 +25,7 @@ vi.mock('@/server/domains/auth/verification-tokens', () => ({
   revokeTokensFor: realVerificationTokens.revokeTokensFor,
 }))
 
-// Import the service under test AFTER the mocks are registered so the
-// mocked bindings propagate through its import graph.
+// Import the service AFTER the mocks so the bindings propagate.
 const { inviteAuthorWithRollback } = await import('@/server/domains/users/services/admin')
 
 const db = getTestDb()
@@ -40,7 +33,6 @@ const db = getTestDb()
 beforeEach(async () => {
   await clearAllTables(db)
   sendAuthorInvite.mockReset()
-  // Restore real behaviour for every test; individual tests override.
   issueSetupToken.mockReset()
   issueSetupToken.mockImplementation(realVerificationTokens.issueSetupToken)
 })
@@ -82,11 +74,9 @@ describe('integration / inviteAuthorWithRollback', () => {
     expect(row!.role).toBe('author')
     expect(row!.deletedAt).toBeNull()
 
-    // A setup token row should survive the committed transaction.
     const tokenCount = await countSetupTokensFor(row!.id)
     expect(tokenCount).toBe(1)
 
-    // The invite email was dispatched exactly once.
     expect(sendAuthorInvite).toHaveBeenCalledTimes(1)
   })
 
@@ -110,39 +100,30 @@ describe('integration / inviteAuthorWithRollback', () => {
   })
 
   it('rolls back the token if the user insert hits a unique-constraint error', async () => {
-    // Seed an existing user with the target email so `findUserByEmail`
-    // short-circuits the pre-commit guard. The CONFLICT error is thrown
-    // before the transaction opens — no token row is created.
+    // The CONFLICT error throws before the transaction opens — no token row is created.
     sendAuthorInvite.mockResolvedValueOnce({ ok: true })
     await inviteAuthorWithRollback(db, 'First Author', 'dup@example.com', 'https://blog.example.com', 'Admin')
 
-    // Capture the id of the already-committed user so we can count its
-    // tokens after the duplicate attempt.
     const existing = await findUserRow('dup@example.com')
     expect(existing).not.toBeNull()
     const tokensBefore = await countSetupTokensFor(existing!.id)
 
-    // The second invitation with the same email must throw the CONFLICT
-    // error — no second user row, no second token.
+    // Second invitation: CONFLICT — no second user row, no second token.
     await expect(
       inviteAuthorWithRollback(db, 'Second Author', 'dup@example.com', 'https://blog.example.com', 'Admin'),
     ).rejects.toThrow(/已被注册/)
 
-    // Still exactly one user row for this email (no second author).
     const row = await findUserRow('dup@example.com')
     expect(row).not.toBeNull()
     expect(row!.id).toBe(existing!.id)
 
-    // Token count is unchanged — the duplicate attempt never opened a
-    // transaction, so nothing was written to the verification table.
+    // Token count unchanged: the duplicate attempt never opened a transaction.
     const tokensAfter = await countSetupTokensFor(existing!.id)
     expect(tokensAfter).toBe(tokensBefore)
   })
 
   it('preserves atomicity when issueSetupToken fails mid-transaction', async () => {
-    // Make `issueSetupToken` throw inside the transaction. The rollback
-    // must discard the `insertAuthor` write so no orphaned user row is
-    // left behind, and `sendAuthorInvite` must never run.
+    // Rollback must discard the insertAuthor write and never run sendAuthorInvite.
     issueSetupToken.mockImplementationOnce(() => {
       throw new Error('token store down')
     })
@@ -151,11 +132,9 @@ describe('integration / inviteAuthorWithRollback', () => {
       inviteAuthorWithRollback(db, 'Ghost Author', 'ghost@example.com', 'https://blog.example.com', 'Admin'),
     ).rejects.toThrow('token store down')
 
-    // No user row survived — the transaction rolled back.
     const row = await findUserRow('ghost@example.com')
     expect(row).toBeNull()
 
-    // The email side effect never fired because the tx threw first.
     expect(sendAuthorInvite).not.toHaveBeenCalled()
   })
 })

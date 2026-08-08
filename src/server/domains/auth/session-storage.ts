@@ -16,13 +16,9 @@ import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const log = getLogger('auth.session-storage')
 
-// The database handle is injected by the composition root
-// (`@/server/bootstrap/db-lifecycle`) at wire time — a direct import of
-// the lifecycle here would invert the dependency direction (domain →
-// composition root). Same injection discipline as `wireBackupScheduler`
-// in `@/server/domains/backup/scheduler`. Session reads/writes are
-// load-bearing (unlike expendable telemetry), so an unwired call fails
-// loudly instead of degrading.
+// DB handle injected by the composition root (a direct import would
+// invert the dependency direction); an unwired call fails loudly
+// instead of degrading.
 let resolveDb: (() => Database) | null = null
 
 export function wireSessionStorageDb(deps: { getDb: () => Database }): void {
@@ -41,9 +37,6 @@ export interface SessionUser {
   name: string
   email: string
   website: string | null
-  // Invariant: present on every user row in a session. Writes go
-  // through `establishLoginSession`, which throws on `!dbUser.role`,
-  // so a session with a user but no role is unreachable at runtime.
   role: Role
 }
 
@@ -55,17 +48,13 @@ export interface PendingOtpUser {
 }
 
 export interface BlogSessionData {
-  // Invariant: if `user` is present, `user.role` is non-null.
-  // The single writer is `establishLoginSession` (in `primitives.ts`),
-  // which throws on `!dbUser.role` — so no callable code path can
-  // produce a stored session with `user` but missing role.
+  // Invariant: `user` present ⇒ `user.role` non-null — the only writer
+  // is `establishLoginSession`, which throws on `!dbUser.role`.
   user?: SessionUser
   pendingOtpUser?: PendingOtpUser
   otpFailCount?: number
   csrfToken?: string
-  // Absolute session expiry (epoch ms). When present, the session is
-  // unconditionally invalid after this timestamp regardless of sliding
-  // cookie refreshes. This caps the maximum lifetime of a stolen cookie.
+  // Absolute expiry: invalid after this timestamp regardless of cookie refreshes.
   absoluteExpiry?: number
   setupTokenVerified?: boolean
 }
@@ -104,8 +93,7 @@ const storage = createSessionStorage<BlogSessionData>({
     return id
   },
   async readData(id) {
-    // Expired rows read as misses; the hourly sweep in
-    // `infra/cache/kv-maintenance.ts` deletes them lazily.
+    // Expired rows read as misses; the hourly sweep deletes them lazily.
     const rows = await requireDb()
       .select({ data: sessionTable.data })
       .from(sessionTable)
@@ -116,9 +104,7 @@ const storage = createSessionStorage<BlogSessionData>({
       return null
     }
     try {
-      // `data` is plain JSON (superjson was dropped with the SQLite
-      // migration — BlogSessionData is all strings/numbers/booleans).
-      // Anything but an object reads as a miss.
+      // `data` is plain JSON (all strings/numbers/booleans); non-object reads as a miss.
       if (!isRecord(row.data)) {
         return null
       }
@@ -141,18 +127,15 @@ async function writeSession(id: string, data: BlogSessionData, expires: Date | u
   // The json-mode column serializes the (JSON-native) payload itself.
   const payload = data
   const expiresAt = expires ?? new Date(Date.now() + resolveSessionMaxAge() * 1000)
-  // The `user_id` column is derived from the payload on every write: an
-  // OTP-pending session carries only `pendingOtpUser` (NULL); once the
-  // login completes the session is rewritten with `user` and the column
-  // picks up the owner.
+  // `user_id` derives from the payload on every write: OTP-pending
+  // sessions carry only `pendingOtpUser` → NULL.
   const userId = data.user ? idFromString(data.user.id) : null
   await db
     .insert(sessionTable)
     .values({ id, userId, data: payload, expiresAt })
     .onConflictDoUpdate({
       target: sessionTable.id,
-      // Never touch the meta columns (user_agent, ip, login_at, …) on a
-      // payload rewrite — they are owned by `repo.ts::recordSessionLogin`.
+      // Never touch the meta columns — owned by `repo.ts::recordSessionLogin`.
       set: { userId, data: payload, expiresAt },
     })
 }
@@ -164,10 +147,8 @@ export async function getRequestSession(request: Request): Promise<BlogSession> 
 }
 
 /**
- * Construct a `BlogSession` with a pre-chosen sid. React Router's
- * `Session.id` is closed over at creation, so the login path must mint
- * the sid itself before doing session-row bookkeeping. `commitSession`
- * then writes the session row with the pre-chosen id intact.
+ * Build a session with a pre-chosen sid — React Router closes over the
+ * id at creation, so the login path mints it before row bookkeeping.
  */
 export function buildSessionWithSid(sid: string, data: BlogSessionData): BlogSession {
   return createSession<BlogSessionData, BlogSessionData>(data, sid)

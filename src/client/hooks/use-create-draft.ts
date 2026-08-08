@@ -32,9 +32,8 @@ function readOrCreateSessionId(sessionKey: string): string {
   }
 }
 
-// A stored create draft is only usable when it carries meta. The draft
-// session has already version- and schema-checked the record by the time
-// this runs, so the predicate only adds the meta check.
+// A stored create draft is only usable when it carries meta — the session has
+// already version- and schema-checked the record.
 function hasMeta<TBody, TMeta>(record: DraftRecord): record is DraftRecord<TBody, TMeta> & { meta: TMeta } {
   return record.meta !== undefined
 }
@@ -58,9 +57,9 @@ export function useCreateDraft<TBody, TMeta>(
   const [sessionId] = useState(() => readOrCreateSessionId(config.sessionKey))
   const key = `${config.keyPrefix}${sessionId}`
 
-  // The draft lifecycle lives in useDraftSession; this adapter only supplies
-  // the session key and the meta-carrying mapping. Note the raw record body
-  // is surfaced, not the parsed one — historical create-flow behavior.
+  // Lifecycle lives in useDraftSession; this adapter supplies the session
+  // key and the meta-carrying mapping — the raw record body is surfaced,
+  // not the parsed one (historical create-flow behavior).
   const mapLoaded = useCallback((record: DraftRecord): { body: TBody; meta: TMeta; savedAt: number } | null => {
     if (!hasMeta<TBody, TMeta>(record)) {
       return null

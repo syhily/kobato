@@ -43,7 +43,6 @@ export function boxLog(lines: string | readonly string[], options: BoxLogOptions
     if (align === 'right') {
       return ' '.repeat(padLength) + text
     }
-    // 'left' is the only remaining case
     return text + ' '.repeat(padLength)
   }
 

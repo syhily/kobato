@@ -51,9 +51,7 @@ export function MailTestCard({
 
   const inner = mail.mail
   const isTestPending = testMutation.isPending
-  // Provider identity comes from the parent's last-saved transport (the
-  // authoritative save response), not the loader snapshot — a provider
-  // switch must flip the readiness check immediately.
+  // Readiness follows the parent's last-saved transport, not the loader snapshot.
   const isZeabur = transport === 'zeabur'
   const isMailgun = transport === 'mailgun'
   const zeaburReady = inner.host.trim() !== '' && inner.sender.trim() !== '' && inner.apiKeyMask !== null

@@ -3,16 +3,9 @@ import { describe, expect, it } from 'vitest'
 
 import { __TOKENS_FOR_TESTS } from '@/ui/lib/cn'
 
-// Custom design tokens live in @theme inline blocks in
-// src/styles/tailwind.css. tailwind-merge does not parse those
-// blocks, so src/ui/lib/cn.ts hand-mirrors the token names into
-// extendTailwindMerge under the matching theme key. A forgotten
-// registration silently reintroduces the original bug — two tokens
-// from different Tailwind v4 namespaces collapsing to one because
-// tailwind-merge cannot tell them apart.
-//
-// This test diffs the token universe in tailwind.css against the
-// hand-written tables in cn.ts and fails noisily on drift.
+// Contract: cn.ts's hand-written tailwind-merge tables must mirror the
+// @theme inline tokens in tailwind.css exactly — tailwind-merge cannot
+// parse those blocks, so drift silently re-collapses token namespaces.
 
 interface ParsedThemeBlocks {
   byNamespace: Map<string, Set<string>>
@@ -66,9 +59,7 @@ function parseThemeBlocks(css: string): ParsedThemeBlocks {
   return { byNamespace }
 }
 
-// Namespaces that drive utilities the project does not currently
-// compose with cn(), or that describe non-utility values read by
-// hand-authored arbitrary-value utilities.
+// Namespaces cn() never composes, or non-utility values read by arbitrary-value utilities.
 const BELOW_THE_LINE_NAMESPACES = new Set<string>(['breakpoint', 'container', 'ring', 'size', 'width', 'z'])
 
 const CSS_PATH = 'src/styles/tailwind.css'

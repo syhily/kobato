@@ -13,20 +13,13 @@ import { rateLimitByIp } from '@/server/http/middlewares/rate-limit'
 import { serveCalendar } from '@/server/http/resources/calendar'
 import { through } from '@/server/infra/cache/registry'
 import { drawOpenGraph } from '@/server/render/og/render'
-// Side-effect import: wires the render-layer warmup implementation into
-// the content domain's slot (`domains/content/render-warmup.ts`). This
-// module owns the OG/calendar request path the warm mirrors, so the
-// wiring loads with it.
+// Side-effect: wires render-layer warmup into the content domain's slot
+// (this module owns the OG/calendar request path it mirrors).
 import '@/server/render/warmup/content-cache'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { joinUrl } from '@/shared/utils/urls'
 
-// ─── OG image ─────────────────────────────────────────────────────
-
-// OG URLs key on the slug only — the image content can change across
-// edits while the URL stays put, so `immutable` would pin stale social
-// cards in browsers/previewers for a week. A short max-age keeps the
-// card fresh via revalidation instead.
+// Slug-keyed OG URLs outlive the image content — `immutable` would pin stale cards; short max-age revalidates.
 const OG_HEADERS = {
   'Cache-Control': 'public, max-age=3600',
 }
@@ -107,39 +100,21 @@ const categoryOgAdapter: OgAdapter = {
   },
 }
 
-// ─── Avatar ───────────────────────────────────────────────────────
-
 const AVATAR_HEADERS = {
   'Cache-Control': 'public, max-age=604800',
 }
 
-// The avatar route proxies an external mirror per cache miss, so it gets
-// its own bucket stacked on the per-route images limit below — half the
-// generic resource budget. Browsers cache avatars for a week
-// (AVATAR_HEADERS), so legitimate traffic stays far below this.
+// The avatar route proxies an external mirror per miss — its own stricter bucket stacked on the images limit.
 const AVATAR_RATE_BUCKET = { windowSeconds: 60, maxAttempts: 30 }
 
-// ─── Router ───────────────────────────────────────────────────────
-//
-// Hono's path parser footgun: in a pattern like `/foo/:name.png`,
-// `.png` is NOT a literal suffix — the `:` capture group greedily
-// includes the `.` and the resulting param name becomes `name.png`
-// (try `c.req.param()` on such a route). We therefore declare each
-// image endpoint with an explicit `{[^/]+\\.png}` regex constraint
-// on a `:filename` param and strip the extension in the handler.
-// This was the cause of the "all avatars degrade to default"
-// regression — every request was hitting `param('hash')` →
-// `undefined` → fallback redirect.
-
+// Hono footgun: `:name.png` captures the `.png` into the param — declare
+// `{[^/]+\\.png}` regex constraints instead (a former avatar regression).
 function stripPng(filename: string | undefined): string {
   return filename?.replace(/\.png$/, '') ?? ''
 }
 
-// The limiter is passed per route, NEVER via router-level `.use()`: this
-// router is mounted at `/` in the pipeline, where a bare `.use()` registers
-// as a site-wide middleware — every public SSR page view then counts
-// against the images bucket, and one IP's 60 page loads/minute 429 the
-// whole site. The avatar route additionally stacks its own stricter bucket.
+// Per-route limiter, never router-level `.use()` — mounted at `/`, a bare
+// `.use()` would rate-limit every public SSR page view against the images bucket.
 const imagesRateLimit = rateLimitByIp('images', 'resourceIp')
 
 export const imagesRouter = new Hono<Env>()
@@ -169,8 +144,7 @@ export const imagesRouter = new Hono<Env>()
         return c.redirect(defaultAvatarUrl())
       }
       const size = resolveAvatarSize(c.req.query('s'))
-      // The serving policy (cache reads/writes, QQ vs gravatar branching)
-      // lives in the domain service; the resource only maps the outcome.
+      // The domain service owns the serving policy; the resource only maps the outcome.
       const avatar = await serveAvatar(c.var.requestContext.db, hash, size)
       if (avatar.kind === 'redirect') {
         return c.redirect(defaultAvatarUrl())

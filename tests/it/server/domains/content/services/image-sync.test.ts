@@ -5,10 +5,8 @@ import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_hel
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { image as imageTable } from '@/server/infra/db/schema/media'
 
-// No mocks at the module boundary: the image rows are real, the public base
-// URL comes from the real settings snapshot (TEST_BLOG_SETTINGS_BUNDLE's
-// assets.example.com), so the id batch lookup, the block rewriting, and the
-// alt→note write-back all run against the engine.
+// No module mocks: real image rows and the real settings snapshot's
+// assets.example.com base URL.
 const { syncLibraryImageBlocks } = await import('@/server/domains/content/services/image-sync')
 
 const db = getTestDb()

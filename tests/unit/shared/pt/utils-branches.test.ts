@@ -16,8 +16,6 @@ import {
   visitNestedBlocks,
 } from '@/shared/pt/utils'
 
-// --- fixtures -------------------------------------------------------------
-
 let n = 0
 function key(p: string): string {
   n += 1
@@ -43,8 +41,6 @@ function imageBlock(storagePath?: string, alt?: string): NonRecursiveBlock {
   } as NonRecursiveBlock
 }
 
-// --- generateBlockKey -----------------------------------------------------
-
 describe('shared/pt/utils — generateBlockKey', () => {
   it('returns a 12-char [a-z0-9] string', () => {
     const k = generateBlockKey()
@@ -59,8 +55,6 @@ describe('shared/pt/utils — generateBlockKey', () => {
     expect(seen.size).toBe(50)
   })
 })
-
-// --- collectHeadingSlotsInPortableTextRenderOrder -------------------------
 
 describe('shared/pt/utils — collectHeadingSlotsInPortableTextRenderOrder', () => {
   it('skips footnoteDefinition at the top level during the main pass', () => {
@@ -124,8 +118,6 @@ describe('shared/pt/utils — collectHeadingSlotsInPortableTextRenderOrder', () 
   })
 })
 
-// --- collectHeadings ------------------------------------------------------
-
 describe('shared/pt/utils — collectHeadings', () => {
   it('builds slugs from heading text using Slugger', () => {
     const body: PortableTextBody = [textBlock('Hello World', 'h2')]
@@ -145,8 +137,6 @@ describe('shared/pt/utils — collectHeadings', () => {
     expect(headings.map((h) => h.slug)).toEqual(['same', 'same-1'])
   })
 })
-
-// --- visitNestedBlocks -------------------------------------------------------
 
 describe('shared/pt/utils — visitNestedBlocks', () => {
   it('yields nothing for an empty body', () => {
@@ -186,9 +176,6 @@ describe('shared/pt/utils — visitNestedBlocks', () => {
     visitNestedBlocks(body, (block) => {
       seen.push(`${block._type}:${block._key}`)
     })
-    // Complete coverage (all 10 blocks, containers included) in exact
-    // pre-order: each container yields itself before its descendants,
-    // twoColumn yields left before right.
     expect(seen).toEqual([
       'block:b1',
       'solution:sol1',
@@ -215,8 +202,6 @@ describe('shared/pt/utils — visitNestedBlocks', () => {
     expect(seen).toEqual(['sol1', 'tc1'])
   })
 })
-
-// --- collectImageStoragePaths --------------------------------------------
 
 describe('shared/pt/utils — collectImageStoragePaths', () => {
   it('collects storagePath from top-level image blocks, deduped', () => {
@@ -259,8 +244,6 @@ describe('shared/pt/utils — collectImageStoragePaths', () => {
     expect(collectImageStoragePaths(body)).toEqual(['images/l.png', 'images/r.png'])
   })
 })
-
-// --- bodyToPlainText ------------------------------------------------------
 
 describe('shared/pt/utils — bodyToPlainText', () => {
   it('joins spans inside a text block', () => {
@@ -365,8 +348,6 @@ describe('shared/pt/utils — bodyToPlainText', () => {
   })
 })
 
-// --- mapNestedBlocks -------------------------------------------------------
-
 describe('shared/pt/utils — mapNestedBlocks', () => {
   it('maps every block exactly once in pre-order: container first, then children, left before right', () => {
     const body: PortableTextBody = [
@@ -448,8 +429,6 @@ describe('shared/pt/utils — mapNestedBlocks', () => {
   })
 })
 
-// --- buildHeadingIdByBlockKey ------------------------------------------------
-
 describe('shared/pt/utils — buildHeadingIdByBlockKey', () => {
   it('zips slots with the precomputed slugs by render order', () => {
     const body: PortableTextBody = [textBlock('Alpha', 'h2'), textBlock('Beta', 'h3')]
@@ -498,8 +477,6 @@ describe('shared/pt/utils — buildHeadingIdByBlockKey', () => {
   })
 })
 
-// --- collectMusicPlayerIds ---------------------------------------------------
-
 describe('shared/pt/utils — collectMusicPlayerIds', () => {
   it('collects player ids deduped in first-seen order', () => {
     const body: PortableTextBody = [
@@ -537,8 +514,6 @@ describe('shared/pt/utils — collectMusicPlayerIds', () => {
     expect(collectMusicPlayerIds([textBlock('no music')])).toEqual([])
   })
 })
-
-// --- validation -----------------------------------------------------------
 
 describe('shared/pt/utils — validation', () => {
   it('validatePortableTextBody returns parsed body for valid input', () => {

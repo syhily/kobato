@@ -1,7 +1,6 @@
 import type { ClearCacheTarget } from '@/shared/types/cache'
 
-// Status reducer state for the "clear cache" buttons. The parent
-// `CacheView` owns one of these; per-bucket cards read it.
+// Status reducer state for the "clear cache" buttons; `CacheView` owns one, per-bucket cards read it.
 export interface ClearStatus {
   state: 'idle' | 'pending' | 'success' | 'error'
   /** Last-clicked target so the per-bucket button can show "clearing…" only on itself. */

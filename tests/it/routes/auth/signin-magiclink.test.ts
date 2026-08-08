@@ -19,23 +19,13 @@ import { session as sessionTable } from '@/server/infra/db/schema/session'
 import { user, verification } from '@/server/infra/db/schema/user'
 import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 
-// ── Mock handles ────────────────────────────────────────────────────────────
-//
-// Everything runs REAL except the two sanctioned doubles: the
-// request-context seam and email DELIVERY (a true external that doubles
-// as the plaintext magic-link token extraction channel). The install gate
-// reads the real `user` table (a gate admin is seeded per test), CSRF is
-// the real session-token check, establishLoginSession runs for real
-// (asserted via the session table + the real Set-Cookie), and audit
-// events land in `audit_log` through the real batcher (asserted after a
-// flush).
+// Magic-link signin against the real engine; only mocks: the
+// request-context seam and email DELIVERY (the plaintext token extraction channel).
 
 const mockHandles = vi.hoisted(() => ({
   getRequestContext: vi.fn<any>(),
   sendSignInLink: vi.fn<any>(),
 }))
-
-// ── Module mocks ────────────────────────────────────────────────────────────
 
 vi.mock('@/server/http/request-context', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/server/http/request-context')>()
@@ -53,13 +43,9 @@ vi.mock('@/server/infra/email/sender', async (importOriginal) => {
   }
 })
 
-// ── Real infrastructure ─────────────────────────────────────────────────────
-
 const db = getTestDb()
 
 const CSRF_TOKEN = 'signin-magiclink-csrf-token'
-
-// ── Settings bundle with a ready mail transport ─────────────────────────────
 
 const MAGIC_LINK_TEST_BUNDLE = {
   ...TEST_BLOG_SETTINGS_BUNDLE,
@@ -82,19 +68,13 @@ const MAGIC_LINK_TEST_BUNDLE = {
   },
 } as BlogSettingsBundle
 
-// ── Import route under test ─────────────────────────────────────────────────
-
 const { action, loader } = await import('@/routes/auth/signin')
-
-// ── Test setup ──────────────────────────────────────────────────────────────
 
 let testSession: BlogSession
 let markSessionDirty: Mock<() => void>
 
 beforeEach(async () => {
-  // The real audit pipeline: recordAuditEvent pushes into the
-  // process-level batcher; flush before teardown so no pending event
-  // references a user row the next clearAllTables will wipe (FK).
+  // Flush before teardown: pending events reference rows the next clearAllTables wipes (FK).
   initAllBatchers(getDatabaseHandle())
   setBlogSettingsBundleForTests(MAGIC_LINK_TEST_BUNDLE)
   await clearAllTables(db)
@@ -120,8 +100,6 @@ afterEach(async () => {
   await flushAuditLog()
   resetAllBatchers()
 })
-
-// ── Helpers ─────────────────────────────────────────────────────────────────
 
 const TEST_PASSWORD = 'correcthorsebatterystaple'
 
@@ -255,8 +233,6 @@ async function identifyAndExtractToken(email = 'admin@example.com'): Promise<str
   return token as string
 }
 
-// ── Tests ───────────────────────────────────────────────────────────────────
-
 describe('integration: magic-link signin flow (real DB)', () => {
   it('identify sends a link and stages a signin-link token for a magic-link user', async () => {
     const admin = await seedUser('magic-link')
@@ -314,21 +290,17 @@ describe('integration: magic-link signin flow (real DB)', () => {
 
     expect(result.status).toBe(302)
     expect(result.headers.get('Location')).toBe('/admin')
-    // The real establishLoginSession minted the cookie…
     expect(result.headers.get('Set-Cookie')).toMatch(/^__session=/)
 
-    // …wrote the admin's session row…
     const sessions = await db.select().from(sessionTable).where(eq(sessionTable.userId, admin.id))
     expect(sessions).toHaveLength(1)
 
-    // …and recorded the login audit with the magic-link method.
     const logins = await auditRowsFor('login')
     expect(logins).toHaveLength(1)
     expect(logins[0]!.resourceId).toBe(sessions[0]!.id)
     expect(logins[0]!.actorId).toBe(admin.id)
     expect(logins[0]!.details).toMatchObject({ method: 'magic-link' })
 
-    // Single-use: the row is gone and a replay fails.
     expect(await getLinkRow(admin.id)).toBeNull()
     const replay = await callAction('magiclink', magicLinkFormData(token))
     expect(replay.data?.error).toBe('链接无效或已过期，请重新获取。')
@@ -349,7 +321,6 @@ describe('integration: magic-link signin flow (real DB)', () => {
 
     const result = await callAction('magiclink', magicLinkFormData(token))
     expect(result.data?.error).toBe('链接无效或已过期，请重新获取。')
-    // No session was established for the user.
     expect(await db.select().from(sessionTable).where(eq(sessionTable.userId, admin.id))).toHaveLength(0)
   })
 

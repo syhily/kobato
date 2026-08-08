@@ -1,8 +1,6 @@
-// Shared contract of the sign-in services — the per-flow modules in
-// this directory (`credential`, `otp`, `passkey`, `password-reset`,
-// `setup`) are the single owner of the auth session-key state machine.
-// Previously one `signin-flow.ts` held every flow; the split is by
-// use-case, with this module holding the vocabulary they all speak.
+// Shared contract of the sign-in services: the per-flow modules
+// (`credential`, `otp`, `passkey`, `password-reset`, `setup`) are the
+// single owner of the auth session-key state machine.
 
 import type { BlogSession } from '@/server/domains/auth/session-storage'
 import type { Database } from '@/server/infra/db/database'
@@ -17,15 +15,8 @@ export type AuthFlowResult =
 
 /**
  * The slice of the canonical request context the signin flows need.
- * Structurally satisfied by `RequestContext` (`@/server/http/request-context`)
- * so routes pass `rc` straight in — the domain stays decoupled from the
- * http layer.
- *
- * Same-session mutations (OTP staging, fail counters) call
- * `markSessionDirty()`; the perimeter middleware emits the Set-Cookie
- * after the response resolves. `AuthFlowResult.setCookie` is reserved
- * for sid-rotating results (`establishLoginSession`) — never for
- * same-session commits.
+ * Same-session mutations call `markSessionDirty()`; `AuthFlowResult.setCookie`
+ * is reserved for sid-rotating results — never for same-session commits.
  */
 export interface SigninFlowContext {
   db: Database
@@ -40,9 +31,8 @@ export function formFieldString(formData: FormData, key: string): string {
 }
 
 /**
- * Whether mail-dependent signin steps (the post-password OTP code and
- * magic-link delivery) can run right now. There is deliberately no
- * on/off toggle: a ready mail transport enables them automatically.
+ * Whether mail-dependent signin steps (post-password OTP, magic-link
+ * delivery) can run right now.
  */
 export function isMailLoginReady(): boolean {
   const mail = getBlogSettingsBundleSync()?.mail?.mail

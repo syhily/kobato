@@ -26,8 +26,7 @@ import { useEditorKeyboardShortcuts } from '@/ui/admin/editor-shell/use-editor-k
 import { useEditorShellLayout } from '@/ui/admin/editor-shell/use-editor-shell-layout'
 import { useEditorShellPersist } from '@/ui/admin/editor-shell/use-editor-shell-persist'
 
-// Both "no body yet" paths must hand out this single reference, never a
-// fresh `[]` — a fresh array triggers infinite setState-during-render.
+// Single shared reference — a fresh `[]` triggers infinite setState-during-render.
 const EMPTY_BODY: PortableTextBody = []
 
 export function useEditorShellState<
@@ -55,9 +54,7 @@ export function useEditorShellState<
 
   const isEditing = mode === 'edit' && detail !== undefined
 
-  // --- Body state ------------------------------------------------------------
-  // `detail` is the loader-stable reference the screen memoizes, so the memos
-  // below recompute only when the loaded entity actually changes.
+  // `detail` is the loader-stable reference the screen memoizes.
   const initialBody = useMemo<PortableTextBody>(() => {
     return deriveBaselineRevision(detail)?.body ?? EMPTY_BODY
   }, [detail])
@@ -79,7 +76,6 @@ export function useEditorShellState<
     setBodyKey(key)
   }, [])
 
-  // --- Meta state ------------------------------------------------------------
   const [meta, setMeta] = useState<TMeta>(detail !== undefined ? metaDraftFromEntity(detail.entity) : emptyMeta)
   const [lastPersistedMeta, setLastPersistedMeta] = useState<TMeta>(
     detail !== undefined ? metaDraftFromEntity(detail.entity) : { ...emptyMeta },
@@ -90,7 +86,6 @@ export function useEditorShellState<
     setLastPersistedMeta(freshMeta)
   }, [])
 
-  // --- Revision race state -----------------------------------------------------
   const [expectedToken, setExpectedToken] = useState<string | null>(
     deriveBaselineRevision(detail)?.clientRevisionToken ?? null,
   )
@@ -100,16 +95,12 @@ export function useEditorShellState<
   const [publishedRevision, setPublishedRevision] = useState<RevisionLike | null>(
     detail !== undefined ? detail.publishedRevision : null,
   )
-  // The `server` leg of the autosave freeze: set via persist's
-  // `noteRevisionConflict` (the server rejected the revision token),
-  // cleared by the next clean body save below. Lives beside the token it
-  // guards — persist only reads the merged freeze via `draft.freeze`.
+  // The `server` leg of the autosave freeze — set via `noteRevisionConflict`,
+  // cleared by the next clean body save below.
   const [serverConflicted, setServerConflicted] = useState(false)
 
   const updateAfterSave = useCallback((revision: RevisionLike) => {
-    // A clean body save is also the server-conflict recovery: it clears
-    // the `server` leg of the autosave freeze (the `local` leg only
-    // clears through the dialog's adopt handlers).
+    // A clean body save also clears the `server` freeze leg (the `local` leg clears via the dialog's adopt handlers).
     setServerConflicted(false)
     setExpectedToken(revision.clientRevisionToken)
     setLatestRevision(revision)
@@ -118,11 +109,9 @@ export function useEditorShellState<
     }
   }, [])
 
-  // --- Layout ------------------------------------------------------------------
   const { previewOpen, setPreviewOpen, metaOpen, setMetaOpen, isLg, editorScrollRef, previewScrollRef } =
     useEditorShellLayout()
 
-  // --- LS draft hooks -------------------------------------------------------
   const { loadedDraft: loadedLocalDraft, clearDraft: clearLocalDraft } = useLocalDraft(localDraftConfig, {
     entityId: isEditing ? detail.entity.id : null,
     clientRevisionToken: expectedToken,
@@ -131,11 +120,8 @@ export function useEditorShellState<
   })
   const createDraft = useCreateDraft(createDraftConfig, { body, meta })
 
-  // --- Create-mode LS hydration --------------------------------------------
-  // Render-phase state adjustment (the react-compiler-safe pattern, same as
-  // the conflict check below): hydrate once, the first time the create draft
-  // resolves. `null` means the load settled with nothing stored — mark
-  // hydrated and keep the empty draft.
+  // Render-phase state adjustment (react-compiler-safe pattern, same as the
+  // conflict check below): hydrate once when the create draft resolves.
   const [createDraftHydrated, setCreateDraftHydrated] = useState(false)
   if (!isEditing && !createDraftHydrated) {
     setCreateDraftHydrated(true)
@@ -145,7 +131,6 @@ export function useEditorShellState<
     }
   }
 
-  // --- Conflict detection (edit mode) --------------------------------------
   const [conflict, setConflict] = useState<{
     localBody: PortableTextBody
     localSavedAt: number
@@ -171,13 +156,9 @@ export function useEditorShellState<
     }
   }
 
-  // --- Persist notifications -------------------------------------------------
-  // Persist owns the save-flow state and reports back through these
-  // notifications only. The expected token stays here: it keys the
-  // local-storage draft whose conflict gates persist's autosave — moving it
-  // into persist would close a hook-ordering cycle. Both legs of the
-  // autosave freeze live here for the same reason; persist reads the merged
-  // single-sourced flag via `draft.freeze` and only REPORTS the server leg.
+  // Persist reports back through these notifications only. The expected
+  // token and both freeze legs stay here — moving them into persist would
+  // close a hook-ordering cycle.
   const markMetaPublished = useCallback(() => {
     setMeta((m) => ({ ...m, published: true }))
   }, [])
@@ -186,12 +167,10 @@ export function useEditorShellState<
     setServerConflicted(true)
   }, [])
 
-  // The merged autosave freeze: one gate, two sources. The local leg wins
-  // the `source` label when both are set (its dialog carries the payload) —
-  // the gate itself only reads "any leg set".
+  // The merged autosave freeze: one gate, two sources; the local leg wins
+  // the `source` label when both are set.
   const conflictFreeze: ConflictFreezeSource | null = conflict !== null ? 'local' : serverConflicted ? 'server' : null
 
-  // --- Persist (mutations + autosave + handlers) ---------------------------
   const {
     status,
     setStatus,
@@ -238,10 +217,7 @@ export function useEditorShellState<
     createDraft,
   })
 
-  // --- Derived flags + projections -----------------------------------------
-  // Baseline timestamp (latest revision, else published, else the entity
-  // row's own updatedAt) — single-owner projection from editor-shell-derived,
-  // consumed by the conflict dialog in the screen.
+  // Baseline timestamp — single-owner projection from editor-shell-derived.
   const baselineUpdatedAtMs = useMemo(() => (isEditing ? deriveBaselineUpdatedAtMs(detail) : null), [isEditing, detail])
 
   const publishState = useMemo<PublishState>(
@@ -255,7 +231,6 @@ export function useEditorShellState<
     [isEditing, publishState, meta.publishedAt],
   )
 
-  // --- Keyboard shortcuts --------------------------------------------------
   useEditorKeyboardShortcuts({
     mode,
     isEditing,
@@ -265,7 +240,6 @@ export function useEditorShellState<
     publishState,
   })
 
-  // --- Conflict / history adoption handlers -------------------------------
   const adoptLocalDraft = useCallback(async () => {
     if (conflict === null || !isEditing || !detail) {
       return
@@ -283,9 +257,7 @@ export function useEditorShellState<
       })
       noteBodySaved(result)
       if (result.status === 'saved') {
-        // Persisted outside both the engine and the manual-save flow:
-        // advance the autosave baseline to the adopted body so the next
-        // debounce tick short-circuits instead of re-PATCHing it.
+        // Advance the autosave baseline to the adopted body so the next debounce tick short-circuits.
         noteBodyPersisted(conflict.localBody)
       }
     } catch (error) {
@@ -322,7 +294,6 @@ export function useEditorShellState<
     [isEditing, detail, replaceBody, setStatus],
   )
 
-  // --- Sidebar projection --------------------------------------------------
   const canPersistMeta = meta.title.trim() !== ''
   const canPublish = isEditing && publishState.kind !== 'published-current'
   const sidebarRevisionSummary = deriveSidebarRevisionSummary({ isEditing, publishState })

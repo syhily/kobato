@@ -2,13 +2,9 @@ import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
 import { user } from '@/server/infra/db/schema/user'
 
-// Server-side session store — the replacement for the Redis
-// `session:<sid>` payload / `session_meta:<sid>` hash / `user_sessions:<uid>`
-// set trio. `userId` stays NULL while an OTP challenge is pending; the row
-// only gains a user once login completes. `data` holds the plain-JSON
-// `BlogSessionData` (superjson was dropped with the migration — every
-// field is JSON-native); the meta fields are flat columns so session
-// listing/revocation is a plain SELECT/UPDATE instead of HGETALL/HSET.
+// Server-side session store. `userId` stays NULL while an OTP challenge
+// is pending (set once login completes); `data` is the plain-JSON
+// `BlogSessionData`; meta fields are flat columns.
 export const session = sqliteTable(
   'session',
   {

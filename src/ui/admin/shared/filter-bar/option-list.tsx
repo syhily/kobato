@@ -6,12 +6,7 @@ import type { FilterOptionItem, FilterOptionRenderer } from '@/ui/admin/shared/f
 import { Input } from '@/ui/components/input'
 import { cn } from '@/ui/lib/cn'
 
-// Two list leaves shared by the add-button picker step and the pill editors:
-// `SearchableOptionList` filters a STATIC option set locally (audit action /
-// resourceType / actor), `InlineSearchList` renders ASYNC search results and
-// forwards keystrokes to the field's debounced server search (comments page /
-// author, my-comments entity).
-
+// Two list leaves shared by the add-button picker and the pill editors: static local filter vs async server search.
 interface SearchableOptionListProps {
   options: readonly FilterOptionItem[]
   selectedValue?: string
@@ -65,9 +60,7 @@ export function SearchableOptionList({
                 type="button"
                 className={cn(
                   'flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm transition hover:bg-accent hover:text-accent-foreground',
-                  // Custom-rendered rows (audit actor) carry the selected
-                  // background on the whole row; plain rows highlight the
-                  // label text instead.
+                  // Custom-rendered rows carry the selected background on the whole row; plain rows highlight the label.
                   renderOption && isSelected && 'bg-accent text-accent-foreground',
                 )}
                 onClick={() => onSelect(option)}

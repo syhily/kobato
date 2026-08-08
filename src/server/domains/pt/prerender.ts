@@ -6,17 +6,9 @@ import type { MusicPlayerBlockMeta } from '@/shared/types/music'
 import { collectMusicPlayerIds, mapNestedBlocks } from '@/shared/pt/utils'
 
 /**
- * Walks a PortableText value and resolves `musicPlayer` blocks into SSR-ready
- * metadata. The resolved DTO is embedded into each block's `value.meta` so the
- * React component can render without a client-side fetch. The enrichment is
- * request-scoped (`@/shared/pt/enriched`) — the stored body stays storage-pure.
- *
- * Music players nested inside `solution`, `footnoteDefinition`, and `twoColumn`
- * blocks are also resolved.
- *
- * The music metadata itself comes through `resolveMusicEmbeds`, the PT-owned
- * embed seam (`@/server/domains/pt/embeds`) — callers wire the music domain's
- * `getPublicMusicMetasByIds` in so PT never imports the music domain.
+ * Resolves `musicPlayer` blocks into SSR-ready metadata embedded in each
+ * block's `value.meta`; enrichment is request-scoped — the stored body
+ * stays storage-pure.
  */
 export async function prerenderMusicPlayerBlocks(
   body: PortableTextBody | null,

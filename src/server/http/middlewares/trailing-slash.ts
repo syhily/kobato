@@ -3,21 +3,13 @@ import type { MiddlewareHandler } from 'hono'
 import type { Env } from '@/server/http/context'
 
 /**
- * Normalise trailing slashes for public GET/HEAD routes.
- *
- *   - `/foo/`   → 301 → `/foo`
- *   - `/foo//`  → 301 → `/foo`
- *   - `/`       → untouched (root must keep its slash)
- *   - `/rpc/*`  → untouched (API perimeter)
- *   - `/health` → untouched (probe endpoints)
- *
- * This runs *before* React Router so every public page has one canonical
- * URL shape — the version without the trailing slash.
+ * 301-normalise trailing slashes on public GET/HEAD routes (root, `/rpc/*`
+ * and probes untouched) — runs before React Router so every public page has
+ * one canonical URL shape.
  */
 export const trailingSlashNormaliser: MiddlewareHandler<Env> = async (c, next) => {
   const path = c.req.path
 
-  // Skip non-GET/HEAD, root, and API/probe prefixes
   if (c.req.method !== 'GET' && c.req.method !== 'HEAD') {
     return next()
   }
@@ -25,7 +17,6 @@ export const trailingSlashNormaliser: MiddlewareHandler<Env> = async (c, next) =
     return next()
   }
 
-  // Collapse multiple trailing slashes and redirect if any remain
   const normalised = path.replace(/\/+$/, '')
   if (normalised !== path) {
     const search = new URL(c.req.url).search

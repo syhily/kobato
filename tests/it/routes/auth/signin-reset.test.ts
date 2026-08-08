@@ -19,24 +19,9 @@ import { session as sessionTable } from '@/server/infra/db/schema/session'
 import { user, verification } from '@/server/infra/db/schema/user'
 import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 
-// Covers RBAC-RECTIFICATION-PLAN §1.2.
-//
-// The `signin` action's password-reset and author-invite branches
-// share a non-negotiable invariant:
-//
-//   After a successful password rotation, ALL other sessions of the
-//   target user MUST be revoked — `establishLoginSession` is called
-//   with `{ revokeOtherSessions: true }` so a stolen cookie cannot
-//   survive the recovery flow.
-//
-// Real engine: the user is a real row, the reset token is a real
-// single-use `verification` row, the rate limiter is the real in-process
-// one, the install gate reads the real `user` table, CSRF is the real
-// session-token check, and `establishLoginSession` now runs for real —
-// the revocation invariant is asserted on the session TABLE (seeded old
-// rows gone, one new row owned by the user) instead of a mock's call
-// args. Audit events land in `audit_log` through the real batcher. Email
-// delivery stays mocked (a true external).
+// Covers RBAC-RECTIFICATION-PLAN §1.2: after a successful password
+// rotation, ALL other sessions of the target user MUST be revoked.
+// Real engine; only mock: email delivery.
 
 const mockHandles = vi.hoisted(() => ({
   getRequestContext: vi.fn<any>(),
@@ -69,15 +54,10 @@ let testSession: BlogSession
 let markSessionDirty: Mock<() => void>
 
 beforeEach(async () => {
-  // The real audit pipeline: resetPasswordWithToken records
-  // password_reset_complete and establishLoginSession records login —
-  // both through the process-level batcher. Flush before teardown so no
-  // pending event references a user row the next clearAllTables wipes.
+  // Flush before teardown: pending events reference rows the next clearAllTables wipes (FK).
   initAllBatchers(getDatabaseHandle())
   await clearAllTables(db)
-  // The real install gate needs an installed deployment: seed one admin
-  // (this file's seedUser defaults to role 'visitor', which hasAdmin
-  // does NOT count).
+  // Seed one admin — seedUser's default 'visitor' does not satisfy the install gate.
   await db.insert(user).values({
     name: 'Gatekeeper',
     email: 'gatekeeper@example.com',
@@ -146,7 +126,6 @@ describe('routes/signin — password-reset session-revocation (real db + tokens)
       callResetAction({ reset_token: 'bogus-token', password: 'LongEnough1' }),
     )
     expect(result.error).toBe('链接无效或已过期。')
-    // No session was established.
     expect(await db.select().from(sessionTable)).toHaveLength(0)
   })
 
@@ -170,21 +149,17 @@ describe('routes/signin — password-reset session-revocation (real db + tokens)
     }
     const { token } = issueResetToken(db, admin.id)
 
-    // Action returns a redirect Response on success; both `data(...)` and
-    // `redirect(...)` flow through the same call surface.
+    // A redirect Response on success; `data()` and `redirect()` share the call surface.
     const response = (await callResetAction({ reset_token: token, password: 'LongEnough1' })) as Response
     expect(response.status).toBe(302)
     expect(response.headers.get('Set-Cookie')).toMatch(/^__session=/)
 
-    // The revocation invariant on the real session table: both old
-    // sessions destroyed, exactly one new session owned by the user.
+    // Revocation invariant: both old sessions destroyed, one new row owned by the user.
     const sessions = await db.select().from(sessionTable)
     expect(sessions).toHaveLength(1)
     expect(sessions[0]!.userId).toBe(admin.id)
     expect(['old-sid-1', 'old-sid-2']).not.toContain(sessions[0]!.id)
 
-    // The rotation really landed: new bcrypt hash, login method reverted,
-    // passkey credentials cleared through the real cleanup, token gone.
     const [row] = await db.select().from(user).where(eq(user.id, admin.id))
     expect(await bcrypt.compare('LongEnough1', row!.password)).toBe(true)
     expect(row!.loginMethod).toBe('password')
@@ -195,8 +170,6 @@ describe('routes/signin — password-reset session-revocation (real db + tokens)
       .where(and(eq(verification.purpose, 'password-reset'), eq(verification.userId, admin.id)))
     expect(tokens).toHaveLength(0)
 
-    // The audit trail really landed: the completion event and the login
-    // event (credential-rotation method) attributed to the new sid.
     await flushAuditLog()
     const completes = await db.select().from(auditLog).where(eq(auditLog.action, 'password_reset_complete'))
     expect(completes).toHaveLength(1)

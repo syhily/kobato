@@ -74,7 +74,6 @@ function CollageBackground({ allCoverUrls }: { allCoverUrls: string[] }) {
   // Track previous urls to avoid re-initialising when only the array reference changes
   const prevUrlsRef = useRef<string[]>([])
 
-  // Measure container and compute grid size dynamically
   useEffect(() => {
     const el = containerRef.current
     if (!el) {
@@ -111,7 +110,7 @@ function CollageBackground({ allCoverUrls }: { allCoverUrls: string[] }) {
       return
     }
 
-    // Skip if urls haven't actually changed and cells already fill the grid
+    // Skip when the urls haven't actually changed and the cells already fill the grid
     if (urlsEqual(prevUrlsRef.current, allCoverUrls) && cells.length === grid.count) {
       return
     }
@@ -228,10 +227,8 @@ function PlayingBackground({ coverUrl, extractedColor }: { coverUrl: string; ext
         <img src={coverUrl} alt="" className="h-full w-full scale-125 object-cover" style={{ filter: 'blur(48px)' }} />
       </LazyMotionDiv>
 
-      {/* Dark base overlay */}
       <div className="absolute inset-0 bg-black/50" />
 
-      {/* Extracted-color radial glow */}
       {extractedColor && (
         <LazyMotionDiv
           className="absolute inset-0"
@@ -270,7 +267,6 @@ export function MusicLibraryHero({ musics, total, title = '音乐库', children 
 
   return (
     <div className={cn('relative -mx-4 -mt-4 mb-8', 'lg:-mx-6 lg:-mt-6')}>
-      {/* ── Background layers ── */}
       {hasPlayingTrack && currentTrack.coverUrl ? (
         <PlayingBackground coverUrl={currentTrack.coverUrl} extractedColor={extractedColor} />
       ) : hasBackground ? (
@@ -279,7 +275,7 @@ export function MusicLibraryHero({ musics, total, title = '音乐库', children 
         <EmptyBackground />
       )}
 
-      {/* ── Global readability scrim ── */}
+      {/* Readability scrim over the hero background. */}
       <div
         className="absolute inset-0"
         style={{
@@ -287,7 +283,6 @@ export function MusicLibraryHero({ musics, total, title = '音乐库', children 
         }}
       />
 
-      {/* ── Hero Content ── */}
       <div className="relative z-10 px-4 pt-12 pb-8 lg:px-6 lg:pt-16 lg:pb-12">
         <h1
           className="text-5xl font-black tracking-tight text-white"
@@ -306,7 +301,6 @@ export function MusicLibraryHero({ musics, total, title = '音乐库', children 
         </p>
       </div>
 
-      {/* ── Action Bar ── */}
       {children && <div className="relative z-10 px-4 pb-8 lg:px-6 lg:pb-12">{children}</div>}
     </div>
   )

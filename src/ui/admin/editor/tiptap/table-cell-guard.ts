@@ -33,8 +33,7 @@ function sanitizeNode(node: Node): Node {
     return node
   }
 
-  // Return the original node when nothing changed so callers can detect a
-  // no-op sanitization by reference (the drop guard relies on this).
+  // Keep the original node when unchanged so callers can detect no-ops by reference.
   let changed = false
   const sanitized: Node[] = []
   node.forEach((child) => {
@@ -69,10 +68,9 @@ function sanitizeSlice(slice: Slice): Slice {
 }
 
 /**
- * ProseMirror plugin that strips illegal marks from content pasted or dropped
- * into a table cell. The PT table dialect permits inline spans, link marks,
- * and code marks inside cells; mathInline and footnoteRef marks are silently
- * removed so the user is not surprised by content that disappears on save.
+ * Strips marks the PT table dialect forbids (mathInline, footnoteRef) from
+ * content pasted or dropped into a cell — silently, so the user isn't
+ * surprised by content that disappears on save.
  */
 export const TableCellGuardExtension = Extension.create({
   name: 'tableCellGuard',
@@ -92,9 +90,7 @@ export const TableCellGuardExtension = Extension.create({
               return false
             }
             const sanitized = sanitizeSlice(slice)
-            // Reference-equal means nothing was stripped: leave the drop to
-            // ProseMirror's default handling (selection placement,
-            // openStart/openEnd semantics) and only intercept real changes.
+            // Reference-equal means nothing was stripped — leave the drop to ProseMirror's default handling.
             if (sanitized === slice) {
               return false
             }

@@ -17,13 +17,9 @@ import { idFromString } from '@/shared/utils/id'
 
 const log = getLogger('webmentions.reverify')
 
-// The daily re-verification cycle: approved mentions (and pending ones
-// whose receive-time check failed) are re-fetched once per 24h waterline
-// to confirm the source still exists and still links to the target. A
-// failure records the message and bumps the streak; an `approved` row's
-// 7th consecutive daily failure flips it to `hidden` — off the public
-// page and out of the cycle. `hidden` rows only recover through the
-// admin's manual re-verification.
+// Daily re-verification cycle: approved/pending rows are re-checked per 24h
+// waterline; an `approved` row's 7th consecutive failure flips to `hidden`,
+// which only the admin's manual re-verification can recover.
 
 export const REVERIFY_BATCH_SIZE = 10
 
@@ -34,13 +30,8 @@ type VerifySuccess = { ok: true; meta: SourceMetadata; type: WebmentionType }
 type VerifyFailure = { ok: false; error: string }
 type VerifyOutcome = VerifySuccess | VerifyFailure
 
-/**
- * One row's check: resolve the target (it may have been deleted or
- * reverted to draft since approval — a missing target is a permanent
- * failure, not a transient one, and counts toward the hide streak), then
- * run the shared fetch-and-link verification. A single attempt per day
- * by design: a transient outage just counts as that day's failure.
- */
+/** One row's check: a missing target is a permanent failure (counts toward
+ *  the hide streak); one attempt per day by design. */
 async function checkRow(db: Database, row: WebmentionRow): Promise<VerifyOutcome> {
   const target = await resolveWebmentionTarget(db, row.targetUrl)
   if (target === null) {
@@ -54,12 +45,8 @@ async function checkRow(db: Database, row: WebmentionRow): Promise<VerifyOutcome
   }
 }
 
-/** The scheduler's batch: re-check a few due rows, strictly in sequence
- *  (the same third-party-politeness discipline as the inbox/outbox
- *  workers). Success refreshes the metadata and resets the streak;
- *  failure records the message and bumps it — atomically, inside the
- *  failure write — hiding the row once the consecutive-day budget is
- *  spent. Returns the processed count. */
+/** The scheduler's batch: success refreshes metadata and resets the streak;
+ *  failure bumps it and hides the row once the budget is spent. */
 export async function runWebmentionReverifyBatch(db: Database): Promise<number> {
   const rows = await pickWebmentionsDueForReverify(db, new Date(), REVERIFY_BATCH_SIZE)
   for (const row of rows) {
@@ -81,10 +68,7 @@ export async function runWebmentionReverifyBatch(db: Database): Promise<number> 
         })
       }
     } catch (error) {
-      // A row must never kill the batch (same discipline as the inbox
-      // worker): a DB hiccup or an unexpected throw leaves the row due
-      // (its waterline is unchanged), so the next wake-up takes another
-      // turn at it.
+      // A row must never kill the batch: log and move on; the row stays due.
       log.warn('Webmention reverify row processing threw', { id: row.id, error: String(error) })
     }
   }
@@ -92,14 +76,8 @@ export async function runWebmentionReverifyBatch(db: Database): Promise<number> 
 }
 
 /**
- * The admin's manual re-verification — the ONLY recovery path for a
- * `hidden` mention (the daily cycle deliberately leaves hidden rows
- * alone). Success flips `hidden` back to `approved` and resets the
- * streak; failure records the message on the row (streak and the 24h
- * waterline untouched — the consecutive-day count belongs to the daily
- * cycle, and a failed attempt must not delay the next scheduled check)
- * and rethrows so the admin sees why. `rejected` rows are terminal and
- * never re-verified through this path.
+ * Admin manual re-verification — the only recovery path for `hidden`
+ * (`rejected` is terminal); failure records but does not touch streak/waterline.
  */
 export async function reverifyWebmention(db: Database, id: string): Promise<WebmentionRow> {
   const row = await findWebmentionById(db, idFromString(id))

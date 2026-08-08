@@ -46,8 +46,7 @@ vi.mock('@/server/domains/backup/services/restore', () => ({
 vi.mock('@/server/domains/backup/restore-machine', () => ({
   startRestoreJob: (...args: unknown[]) => mockStartRestoreJob(...args),
   withRestoreClaim: (...args: unknown[]) => mockWithRestoreClaim(...args),
-  // db-lifecycle wires the machine at module scope (imported transitively
-  // via the integration-db harness) — the wiring is a no-op under the seam.
+  // db-lifecycle wires the machine at module scope — a no-op under the seam.
   wireRestoreMachine: () => undefined,
 }))
 
@@ -63,10 +62,7 @@ function makeSession(data: Partial<BlogSessionData> = {}) {
   return createSession<BlogSessionData, BlogSessionData>(data, 'test-session')
 }
 
-// The install gate (`hasAdmin`) and the post-restore hook
-// (`findFirstAdminUser`) run against the real engine — seeded user
-// rows, no mocked operations layer. The restore-machine / stageBackup
-// stubs stay: they are the seam around the actual file swap.
+// Real engine: install gate + post-restore hook; stubs: restore-machine / stageBackup (the file-swap seam).
 const db = getTestDb()
 
 beforeEach(async () => {
@@ -331,8 +327,7 @@ describe('/api/setup/restore', () => {
     mockStartRestoreJob.mockImplementation(
       async (fn: () => Promise<void>, afterReopenFn?: (db: unknown) => Promise<void>) => {
         await fn()
-        // The real machine passes the freshly reopened handle. The
-        // shared test db has no admin rows — the warn-and-skip branch.
+        // The shared test db has no admin rows — the warn-and-skip branch.
         await afterReopenFn?.(db)
       },
     )
@@ -405,9 +400,7 @@ describe('/api/setup/restore', () => {
   })
 
   it('returns accepted on successful restore — and applies content only (withAnalytics: false)', async () => {
-    // The post-restore hook runs against the freshly swapped file —
-    // modelled here with a real file-backed database seeded with the
-    // admin the restore is guaranteed to contain.
+    // The post-restore hook runs against the freshly swapped file — modelled with a real file-backed db seeded with the admin.
     const restored = createTestDatabaseFile()
     const adminId = await seedAdmin(restored.db)
     mockStartRestoreJob.mockImplementation(
@@ -431,8 +424,7 @@ describe('/api/setup/restore', () => {
     const body = (await res.json()) as { accepted: boolean }
     expect(body.accepted).toBe(true)
     expect(mockStartRestoreJob).toHaveBeenCalledOnce()
-    // The setup restore applies the content database only — a fresh
-    // install never inherits an old site's telemetry.
+    // Setup restore applies the content database only — a fresh install never inherits old telemetry.
     expect(mockRestoreFromStagedBackup).toHaveBeenCalledWith(
       expect.objectContaining({ dir: expect.any(String) }),
       'test.db.tar.gz',
@@ -451,9 +443,7 @@ describe('/api/setup/restore', () => {
   })
 
   it('still accepts when the swapped file yields no admin row — the audit event is skipped', async () => {
-    // Default seam: the post-restore hook runs against the shared
-    // (empty) test database, so `findFirstAdminUser` returns null and
-    // the hook takes the warn-and-continue branch.
+    // Default seam: the hook runs against the shared empty db — the warn-and-continue branch.
     const app = await buildApp(makeSession({ setupTokenVerified: true, csrfToken: 'valid-csrf' }))
     const formData = new FormData()
     formData.set('file', new File(['content'], 'test.db.tar.gz'))

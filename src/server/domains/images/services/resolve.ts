@@ -1,12 +1,6 @@
-// Single owner of the "image URL(s) → stored meta" pipeline: match each URL
-// against the configured CDN base, read the cached image rows, and hand back
-// dimensions / thumbhash / public URL per resolvable URL. `resolveImageRefs`
-// is the batch entry; `resolveImageRef` a thin single-URL wrapper.
-//
-// Base-URL policy: every caller is a best-effort render surface, so an
-// unreadable settings snapshot degrades the CDN match to `null` —
-// origin-relative `/storage/…` and `/images/…` srcs still resolve — and
-// never fails the render.
+// Single owner of the "image URL(s) → stored meta" pipeline. Best-effort:
+// unreadable settings degrade the CDN match to `null` (origin-relative
+// `/storage/…` and `/images/…` srcs still resolve) — never fails the render.
 
 import type { Database } from '@/server/infra/db/database'
 
@@ -16,7 +10,6 @@ import { getPublicBaseUrl, safeResolveAssetUrl } from '@/server/infra/storage/pu
 
 const log = getLogger('images.render-enhance')
 
-/** Stored metadata resolved for one image URL. */
 export interface ResolvedImageRef {
   width: number
   height: number
@@ -26,9 +19,8 @@ export interface ResolvedImageRef {
 }
 
 /**
- * Batch entry. Every distinct URL string gets its own entry, even when
- * several URLs (e.g. transform variants `x.jpg!w400`) share one storage
- * path — the path is read once either way.
+ * Batch entry. Result map is keyed by distinct URL; URLs sharing one
+ * storage path (transform variants) are read once.
  */
 export async function resolveImageRefs(db: Database, urls: string[]): Promise<Map<string, ResolvedImageRef>> {
   const out = new Map<string, ResolvedImageRef>()
@@ -75,7 +67,6 @@ export async function resolveImageRefs(db: Database, urls: string[]): Promise<Ma
   return out
 }
 
-/** Single-URL entry over the batch pipeline. */
 export async function resolveImageRef(db: Database, src: string): Promise<ResolvedImageRef | null> {
   if (src === '') {
     return null

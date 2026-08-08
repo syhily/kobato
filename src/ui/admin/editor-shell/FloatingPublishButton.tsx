@@ -2,10 +2,7 @@ import { Loader2Icon, SendIcon } from 'lucide-react'
 
 import { Button } from '@/ui/components/button'
 
-// Positioning-agnostic: the floating layout lives in `PageBodyEditor`'s
-// `floatingActions` slot, which docks this button next to the floating
-// toolbar. Visibility is the caller's responsibility (return `null` from
-// the shell when there is nothing publishable, e.g. create mode).
+// Positioning and visibility are the caller's responsibility (return `null` to hide).
 interface FloatingPublishButtonProps {
   onPublish: () => void
   disabled: boolean

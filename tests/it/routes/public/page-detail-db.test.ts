@@ -9,13 +9,8 @@ import { regularSession } from '#/_helpers/session'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { page as pageTable } from '@/server/infra/db/schema/page'
 
-// Pages live exclusively in the `page` + `content` tables,
-// so this test pins the contract that the `page.detail` loader
-// returns the row's PortableText body straight through (the React
-// component renders it via `<PortableTextBody>`) — real engine: the
-// page is a seeded meta row + published content revision and the
-// loader, music prerender, image-meta resolution, and comments
-// streaming all run for real.
+// page.detail returns the row's PortableText body straight through —
+// real engine: seeded meta row + published content revision.
 
 // Presentational seam — the loader contract under test never renders.
 vi.mock('@/ui/pt/render', () => ({
@@ -110,13 +105,9 @@ describe('routes/page.detail loader (DB-backed page)', () => {
     )
 
     expect(result.page.permalink).toBe('/about')
-    // The PortableText body shape is preserved end-to-end. The musicPlayer
-    // block resolves no players (empty music table) so the prerender
-    // passes the body straight through.
+    // Body preserved end-to-end; no players seeded, so the prerender passes it through.
     expect(result.body).toEqual(dbPageBody)
-    // Image meta resolution runs for real: the external CDN src matches no
-    // stored image rows, so the map comes back empty rather than the
-    // loader short-circuiting it.
+    // Real image-meta resolution: the CDN src matches no stored row, so the map is empty.
     expect(result.imageMeta).toEqual({})
   })
 

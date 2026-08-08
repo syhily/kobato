@@ -11,8 +11,7 @@ import { closeAnalyticsDatabase, openAnalyticsDatabase } from '@/server/infra/an
 const handles: AnalyticsHandle[] = []
 const dirs: string[] = []
 
-/** Open a fresh DuckDB analytics sidecar on a temp file (migrated via
- *  the same idempotent DDL as production). */
+/** Open a fresh DuckDB analytics sidecar on a temp file (same idempotent DDL as production). */
 export async function createTestAnalyticsDb(): Promise<AnalyticsHandle> {
   const dir = mkdtempSync(join(tmpdir(), 'kobato-duckdb-it-'))
   dirs.push(dir)
@@ -38,11 +37,8 @@ export function closeAllTestAnalyticsDbs(): void {
   }
 }
 
-/**
- * Minimal access-log seed row: ts + visitorHash + path required in
- * spirit (visitorHash/path default to constants), every other column
- * optional — mirrors `EnrichedAccessEvent`'s shape.
- */
+/** Minimal access-log seed row: ts required, visitorHash/path default to
+ *  constants, everything else optional — mirrors `EnrichedAccessEvent`. */
 export interface SeedAccessEvent {
   ts: Date
   visitorHash?: string

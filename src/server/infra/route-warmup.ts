@@ -13,21 +13,12 @@ import {
 import { collectManifestChunks, parseClientManifest, type WarmupManifest } from '../../shared/route-warmup/manifest.ts'
 import { unsafeCast } from '../../shared/utils/unsafe-cast.ts'
 
-// Route tier configuration
-
-// Critical path for the public launch route (home). The SSR runtime matches
-// the current request against the React Router client manifest and emits the
-// critical preloads for the matched route instead of always widening the
-// first paint with unrelated routes. This is the only editorial list — tier 2
-// is derived from route-ID prefixes below.
+// Critical preloads for the public launch route — the only editorial list;
+// tier 2 is derived from route-ID prefixes below.
 export const TIER1_ROUTES = ['root', 'routes/public/layout', 'routes/public/home']
 
-// Tier-2 membership is derived from the parsed client manifest's route IDs by
-// prefix: `routes/public/` → public, `routes/admin/` → admin,
-// `routes/editor/` → editor, `routes/auth/` → auth. Paginated alias IDs
-// (`home-page`, `category-list-page`, …) carry no prefix and are skipped —
-// they share their base route's module chunk, which the prefixed base ID
-// already collects.
+// Tier-2 buckets derive from route-ID prefixes (see TIER2_PREFIXES);
+// un-prefixed paginated aliases are skipped — they share their base route's chunk.
 const TIER2_PREFIXES = [
   ['routes/public/', 'public'],
   ['routes/admin/', 'admin'],
@@ -46,9 +37,7 @@ export function tier2BucketForRouteId(id: string): Tier2Bucket | null {
   return null
 }
 
-// Derives tier-2 route-ID lists from the parsed client manifest. TIER1
-// members are excluded up front so 'routes/public/layout' and
-// 'routes/public/home' stay tier-1-only despite their public prefix.
+// TIER1 members are excluded up front so they stay tier-1-only despite their public prefix.
 export function deriveTier2RouteIds(manifest: RouteManifest): Record<Tier2Bucket, string[]> {
   const tier1 = new Set<string>(TIER1_ROUTES)
   const buckets: Record<Tier2Bucket, string[]> = { public: [], admin: [], editor: [], auth: [] }
@@ -69,9 +58,7 @@ const EXCLUDED_PATTERNS = WARMUP_GLOBAL_EXCLUDED_PATTERNS.map((p) => new RegExp(
 // Excluded from tier 1, public, admin, auth — kept in editor tier
 const EDITOR_ONLY_PATTERN = new RegExp(WARMUP_EDITOR_ONLY_PATTERN)
 
-const IDLE_SIZE_LIMIT = 100 * 1024 // 100 KB
-
-// Helpers
+const IDLE_SIZE_LIMIT = 100 * 1024
 
 function loadServerManifest(clientAssetsDir: string): RouteManifest | null {
   try {
@@ -95,22 +82,17 @@ function loadServerManifest(clientAssetsDir: string): RouteManifest | null {
   }
 }
 
-// --- Inline warmup script (bundled + minified at build time) ---------------
-
 const WARMUP_ENTRY = resolve(process.cwd(), 'src/client/scripts/route-warmup.entry.ts')
 const VIRTUAL_ID = 'virtual:route-warmup-script'
 const RESOLVED_VIRTUAL_ID = `\0${VIRTUAL_ID}`
 
-// The inline script is static per build, so bundle it once and reuse across
-// the client and SSR environments. Cached as a promise so concurrent loads
-// dedupe to a single nested build.
+// Static per build — bundle once, cached as a promise so concurrent loads dedupe.
 let compiledWarmupPromise: Promise<string> | null = null
 
 function bundleWarmupScript(): Promise<string> {
   if (!compiledWarmupPromise) {
     compiledWarmupPromise = (async () => {
-      // Isolated build (no project plugins) — same pattern as
-      // `processWorkerEntryPlugin`. Output is a single self-contained IIFE.
+      // Isolated build (no project plugins); output is a single self-contained IIFE.
       const result = await build({
         configFile: false,
         logLevel: 'warn',
@@ -147,8 +129,6 @@ function bundleWarmupScript(): Promise<string> {
   return compiledWarmupPromise
 }
 
-// Plugin
-
 export function routeWarmupPlugin(): Plugin {
   let isServe = false
   return {
@@ -180,9 +160,7 @@ export function routeWarmupPlugin(): Plugin {
     writeBundle: {
       order: 'post',
       async handler(options, _bundle) {
-        // With v8_viteEnvironmentApi, the client build fires first,
-        // then the SSR build. Run in the SSR environment so both
-        // client assets and the server manifest are available.
+        // Client build fires first; run in the SSR environment so both assets and the manifest exist.
         const env = unsafeCast<{ environment?: { name?: string } }>(this).environment
 
         // Skip client env (server manifest not written yet)
@@ -194,8 +172,7 @@ export function routeWarmupPlugin(): Plugin {
           return
         }
 
-        // The server build's outDir is build/server
-        // Client assets are at build/client/assets
+        // Server build outDir; client assets are at ../client/assets.
         const serverOutDir = options.dir
         if (!serverOutDir) {
           return
@@ -206,9 +183,7 @@ export function routeWarmupPlugin(): Plugin {
           return
         }
 
-        // Read the structured React Router client manifest from disk.
-        // The client build fires before the SSR build, so the manifest is
-        // already written by the time this SSR writeBundle hook runs.
+        // Client build fired first, so the manifest is already written here.
         const manifest = loadServerManifest(clientAssetsDir)
         if (!manifest) {
           return
@@ -235,15 +210,13 @@ export function routeWarmupPlugin(): Plugin {
         const t2EditorRaw = collectManifestChunks(manifest, tier2Ids.editor)
         const t2AuthRaw = collectManifestChunks(manifest, tier2Ids.auth)
 
-        // Also add entry imports to tier 1
         for (const imp of manifest.entry.imports) {
           t1Raw.push(imp)
         }
 
         const tier1Set = new Set(t1Raw)
 
-        // Apply filters. Exclusion patterns match against the chunk
-        // basename — the same idiom `collectManifestChunks` uses.
+        // Exclusion patterns match against the chunk basename.
         const filterTier = (
           chunks: string[],
           allowEditor: boolean,

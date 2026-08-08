@@ -1,18 +1,10 @@
-/**
- * A single resolved, browser-ready web font in a slot: the CSS family name
- * (for the `font-family` stack) and the absolute URL of the self-hosted
- * `result.css` (for the `<link rel="stylesheet">`). Populated server-side
- * by `resolveFontsForRender` and consumed by the root `<head>`.
- */
+/** A resolved, browser-ready web font: CSS family name + absolute URL of the self-hosted `result.css`. Populated by `resolveFontsForRender`, consumed by the root `<head>`. */
 export interface ResolvedFont {
   family: string
   href: string
 }
 
-/**
- * The SSR-renderable fonts payload returned by the root loader. Each slot is
- * an ordered list; `post` / `code` are empty unless the route opts in.
- */
+/** SSR-renderable fonts payload from the root loader; `post` / `code` are empty unless the route opts in. */
 export interface ResolvedFonts {
   global: ResolvedFont[]
   post: ResolvedFont[]

@@ -23,10 +23,7 @@ import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
 import { Textarea } from '@/ui/components/textarea'
 
-// Discriminator: `friend === null` opens the dialog in "new friend"
-// mode; a populated `friend` opens it in "edit existing" mode. The
-// parent owns the state — closing the dialog flips this back to
-// `undefined` so the dialog returns to the closed state.
+// Discriminator: `null` = new friend, a friend = edit, `undefined` = closed.
 export interface EditFriendDialogProps {
   friend: AdminFriendDto | null | undefined
   onClose: () => void
@@ -60,8 +57,7 @@ export function EditFriendDialog({ friend, onClose, onSaved }: EditFriendDialogP
   })
   const { mutate: submit, isPending } = upsertMutation
 
-  // Re-seed the form when the parent toggles the dialog (discriminator
-  // semantics on the props interface above).
+  // Re-seed the form when the parent toggles the dialog (discriminator semantics above).
   if (friend !== lastFriend) {
     setLastFriend(friend)
     if (friend === undefined) {

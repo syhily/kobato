@@ -1,8 +1,5 @@
-// Coalesce concurrent in-flight requests for the same key into a single
-// promise so a hot key (e.g. the homepage OG image right after a deploy)
-// can't trigger N parallel renders. The map is process-local.
-// Single-flight semantics: share-in-flight; failure: retry — cleanup runs
-// in `.finally`, so a failure never pins a rejected promise in the map.
+// Coalesce concurrent requests for the same key into one promise (process-local).
+// Cleanup runs in `.finally` — a failure never pins a rejected promise in the map.
 export interface Inflight<T> {
   (key: string, run: () => Promise<T>): Promise<T>
   size(): number

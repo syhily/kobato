@@ -31,8 +31,7 @@ const GZIP_MAGIC_1 = 0x1f
 const GZIP_MAGIC_2 = 0x8b
 const HEAD_BYTES = 600
 
-/** The mkdtemp prefix every staged-restore temp dir carries — the
- *  boot-time sweep keys on it (and nothing else may). */
+/** mkdtemp prefix staged-restore temp dirs carry — the boot-time sweep keys on it (and nothing else may). */
 export const RESTORE_TEMP_PREFIX = 'kobato-restore-'
 
 /** Whether a (prefix of a) payload starts with the SQLite header magic. */
@@ -48,13 +47,8 @@ export function hasDuckdbMagic(buffer: Buffer): boolean {
   )
 }
 
-/**
- * Validate a (decompressed) payload as a real SQLite database file.
- * This is the entire restore-file security surface: unlike the old
- * pg_dump SQL restores — which needed a statement-level validator —
- * a database file is data, not code; nothing in it is ever executed as
- * SQL by the restore path.
- */
+/** Validate a payload as a real SQLite database file — a DB file is data,
+ * never executed as SQL by the restore path. */
 export function assertSqliteBackup(buffer: Buffer): void {
   if (buffer.length > MAX_BACKUP_FILE_SIZE) {
     throw new ActionFailure(400, '备份文件过大，请确认文件未损坏。')
@@ -64,20 +58,13 @@ export function assertSqliteBackup(buffer: Buffer): void {
   }
 }
 
-/** Validate a payload as a real DuckDB database file (the analytics sidecar). */
 export function assertDuckdbBackup(buffer: Buffer): void {
   if (!hasDuckdbMagic(buffer)) {
     throw new ActionFailure(400, '备份归档中的 analytics.duckdb 不是有效的 DuckDB 数据库文件')
   }
 }
 
-// ─── Staged (streaming) restore ──────────────────────────
-// The production path: the upload (bounded at MAX_BACKUP_FILE_SIZE by
-// the multipart layer) streams to disk, decompresses through the
-// pipeline, and tar entries extract via ranged reads — a full database
-// file is never held in memory. The in-memory buffer tier
-// (extractBackupFile / unpackBackupPayload / packTar / unpackTar) lives
-// in tests/_helpers/backup-buffer.ts.
+// Production path streams to disk; the in-memory buffer tier lives in tests/_helpers/backup-buffer.ts.
 
 export interface StagedBackup {
   /** Temp dir holding the decompressed payload + extracted entries. */
@@ -103,9 +90,7 @@ async function copyRange(sourcePath: string, offset: number, size: number, destP
   await pipeline(createReadStream(sourcePath, { start: offset, end: offset + size - 1 }), createWriteStream(destPath))
 }
 
-/** Transform that fails the pipeline once the byte count passing through
- *  exceeds `maxBytes` — exported so the streaming cap can be unit-tested
- *  with a small bound instead of a real 500MB payload. */
+/** Fails the pipeline once bytes passed exceed `maxBytes` — exported for unit tests. */
 export function decompressedSizeGuard(maxBytes: number): Transform {
   let total = 0
   return new Transform({
@@ -120,16 +105,9 @@ export function decompressedSizeGuard(maxBytes: number): Transform {
   })
 }
 
-/**
- * Stage an uploaded backup on disk: stream it to a temp dir,
- * decompress through the pipeline, and extract the engine payloads as
- * files (magic-validated from their prefixes). Memory use stays
- * O(chunk) regardless of backup size — the source may be a download or
- * multipart stream (production) or a Buffer (tests). The caller owns
- * `dir`'s cleanup (restoreFromStagedBackup and the route's error paths
- * handle it). `maxBytes` caps the DECOMPRESSED payload; tests pass a
- * small value to exercise the streaming guard without a real 500MB file.
- */
+/** Stage an uploaded backup to a temp dir: stream, decompress, extract
+ * payloads (magic-validated). Caller owns `dir` cleanup; `maxBytes` caps
+ * the DECOMPRESSED payload. */
 export async function stageBackup(source: Buffer | Readable, maxBytes = MAX_BACKUP_FILE_SIZE): Promise<StagedBackup> {
   const dir = await mkdtemp(join(tmpdir(), RESTORE_TEMP_PREFIX))
   const uploadPath = join(dir, 'upload.bin')
@@ -142,9 +120,7 @@ export async function stageBackup(source: Buffer | Readable, maxBytes = MAX_BACK
     }
     const magic = await readPrefix(uploadPath, 2)
     if (magic.length >= 2 && magic[0] === GZIP_MAGIC_1 && magic[1] === GZIP_MAGIC_2) {
-      // Count decompressed bytes in-stream and abort the moment the cap
-      // trips — a gzip bomb must not be written to disk in full first
-      // (the old decompress-then-stat flow allowed exactly that).
+      // Abort in-stream the moment the decompressed cap trips (gzip-bomb guard).
       await pipeline(
         createReadStream(uploadPath),
         createGunzip(),
@@ -193,14 +169,8 @@ export async function stageBackup(source: Buffer | Readable, maxBytes = MAX_BACK
   }
 }
 
-/**
- * Boot-time sweep for staged-restore temp dirs orphaned by a process
- * crash mid-restore (the in-chain cleanups can't run when the process
- * dies). Deletes ONLY directories directly inside the OS temp dir whose
- * names carry the exact mkdtemp prefix — files and unrelated
- * directories are left alone. Best-effort per entry: one unreadable
- * leftover never blocks the rest.
- */
+/** Boot-time sweep of staged-restore temp dirs orphaned by a crash — only
+ * exact-prefix dirs directly in the OS temp dir, best-effort per entry. */
 export async function sweepStaleRestoreDirs(): Promise<void> {
   let entries
   try {
@@ -227,17 +197,8 @@ export async function sweepStaleRestoreDirs(): Promise<void> {
   }
 }
 
-/**
- * Pre-swap content check for BOTH restore routes (admin upload-restore
- * and setup restore): the backup must contain an admin row — restoring
- * one without an admin soft-locks the instance behind the install gate,
- * and a payload that passes the magic check but cannot be opened as a
- * real database fails HERE (DatabaseSync open + a real query), not
- * after the swap. Reads the STAGED content file — the live database is
- * untouched, so this can run before the restore slot is even claimed.
- * Post-swap validation would be too late: by then the original file no
- * longer exists.
- */
+/** Pre-swap check: the backup must contain an admin row, or restoring it
+ * soft-locks the instance behind the install gate. */
 export async function assertStagedBackupContainsAdmin(staged: StagedBackup): Promise<void> {
   if (staged.content === null) {
     throw new ActionFailure(400, '备份中不包含管理员账号')
@@ -257,15 +218,8 @@ export async function assertStagedBackupContainsAdmin(staged: StagedBackup): Pro
   }
 }
 
-/** Move a staged engine file into place over the live one. The owning
- *  handle is already closed (the restore machine's prepare step) — the
- *  swap is a staged copy + atomic rename + sidecar cleanup. The live
- *  file is first moved aside to `<target>.pre-restore` (never deleted
- *  in place): if the chain fails AFTER the swap — e.g. the swapped-in
- *  payload passes the magic check but cannot be opened — the
- *  completion handler rolls the original back
- *  (`rollbackPreRestoreFiles`) instead of restarting into a corrupt
- *  database with no way home. */
+/** Move a staged engine file into place over the live one (copy + rename);
+ *  the live file is moved aside to `.pre-restore` for the rollback path. */
 async function swapStagedFile(sourcePath: string, targetPath: string): Promise<void> {
   const stagingPath = `${targetPath}.restore-staging`
   const preRestorePath = `${targetPath}${PRE_RESTORE_SUFFIX}`
@@ -288,7 +242,6 @@ async function swapStagedFile(sourcePath: string, targetPath: string): Promise<v
   }
 }
 
-/** Sibling suffix of the original files kept by the swap. */
 const PRE_RESTORE_SUFFIX = '.pre-restore'
 
 /** Live engine files the swap touches (skipped when in-memory). */
@@ -305,28 +258,19 @@ function swapTargets(): string[] {
   return targets
 }
 
-/**
- * Roll the pre-restore originals back over the swapped files. Called by
- * the restore completion handler on the FAILURE path, BEFORE the
- * recovery reopen — reopening the (corrupt) swapped payload again
- * would leave the server wedged in `restarting` with the original
- * already gone. Best-effort per file: a missing `.pre-restore` sibling
- * (analytics-only upload, in-memory target) is simply skipped.
- */
+/** Roll the `.pre-restore` originals back — must run before the recovery
+ * reopen. Best-effort per file: a missing sibling is skipped. */
 export async function rollbackPreRestoreFiles(): Promise<void> {
   for (const target of swapTargets()) {
     const backupPath = `${target}${PRE_RESTORE_SUFFIX}`
     try {
       await access(backupPath)
     } catch {
-      // No original kept for this target (analytics-only upload,
-      // in-memory target, content skipped) — nothing to roll back,
-      // and the live file must NOT be touched.
+      // No `.pre-restore` sibling — nothing to roll back; the live file must not be touched.
       continue
     }
     try {
-      // Windows cannot rename over an existing file — remove the bad
-      // swap first (POSIX would atomically replace).
+      // Windows cannot rename over an existing file — remove the swap first.
       await rm(target, { force: true })
       await rename(backupPath, target)
     } catch (error: unknown) {
@@ -338,11 +282,7 @@ export async function rollbackPreRestoreFiles(): Promise<void> {
   }
 }
 
-/**
- * Delete the pre-restore originals after a SUCCESSFUL restore chain
- * (reopened + migrated + restarted on the new files). Best-effort —
- * leftovers are inert siblings, cleaned on the next restore.
- */
+/** Delete the `.pre-restore` originals after a successful restore chain. Best-effort. */
 export async function cleanupPreRestoreFiles(): Promise<void> {
   for (const target of swapTargets()) {
     await rm(`${target}${PRE_RESTORE_SUFFIX}`, { force: true }).catch(() => undefined)
@@ -352,20 +292,13 @@ export async function cleanupPreRestoreFiles(): Promise<void> {
 export interface RestoreOptions {
   /**
    * Apply the analytics payload when the upload carries one (default
-   * true). The SETUP restore passes false: a fresh install applies the
-   * content database only — there is no reason to inherit an old
-   * site's telemetry before the first admin exists.
+   * true; the setup restore passes false).
    */
   withAnalytics?: boolean
 }
 
-/**
- * Swap the staged engine files into place (and clean the temp dir).
- * The content database swaps when present (skipped on an analytics-only
- * upload); the sidecar swaps when the upload carries it AND
- * `withAnalytics` is on. The reopen that follows replays migrations
- * and restarts the server.
- */
+/** Swap the staged engine files into place and clean the temp dir: content
+ * when present, sidecar when the upload carries it AND `withAnalytics`. */
 export async function restoreFromStagedBackup(
   staged: StagedBackup,
   fileName: string,

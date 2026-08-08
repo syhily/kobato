@@ -1,15 +1,11 @@
-// Wire-format DTOs for the friend-management endpoints. Lives in
-// `@/shared` so both the server (admin actions) and the client
-// (admin UI fetcher) can import the same shape without crossing the
-// server/client boundary. Bigints are stringified — the public site
-// never ships `id` to the browser, but the admin shell uses it as
-// the React list key.
+// Wire-format DTOs for the friend-management endpoints. Shared so
+// server (admin actions) and client (admin UI) import the same shape.
+// Bigints are stringified; the public site never ships `id`.
 
 import type { AdminFriendDto } from '@/shared/contracts/friends'
 
-// `offset` / `limit` mirror the tag and comment moderation listings:
-// the admin table is paginated server-side. Both are optional — omitted
-// requests fall back to `offset=0, limit=10` (client default page size).
+// `offset`/`limit` mirror the tag and comment listings: server-side
+// pagination, both optional (client default `offset=0, limit=10`).
 export interface ListFriendsInput {
   q?: string
   includeHidden?: boolean
@@ -27,9 +23,8 @@ export interface ListFriendsOutput {
   hasMore: boolean
 }
 
-// `id` absent → create a new row. Present → update the matching row.
-// `visible` defaults to true on create; explicit `true`/`false`
-// always overrides the stored value on update.
+// `id` absent → create; present → update. `visible` defaults to true on
+// create; explicit values always override on update.
 export interface UpsertFriendInput {
   id?: string
   website: string

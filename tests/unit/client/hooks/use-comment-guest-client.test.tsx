@@ -7,11 +7,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { useCommentGuest, type CommentGuestProfile } from '@/client/hooks/use-comment-guest'
 
-// Client-side behavior of the SSR-consistent prefill: the server snapshot
-// is empty, so SSR and the hydration render agree; the client snapshot
-// reads localStorage and React re-renders with it after hydration.
-// happy-dom doesn't implement localStorage, so stub the bare global the
-// hook reads (same pattern as like-actions-validate-race.test.tsx).
+// Client snapshot reads localStorage, so SSR and hydration agree on empty
+// and React re-renders after hydration; happy-dom lacks localStorage — stub it.
 const STORAGE_KEY = 'comment-guest-profile'
 
 const VALID_PROFILE: CommentGuestProfile = {
@@ -52,7 +49,6 @@ describe('useCommentGuest client behavior', () => {
     const container = document.createElement('div')
     document.body.appendChild(container)
 
-    // The server render sees the server snapshot — always empty.
     container.innerHTML = renderToStaticMarkup(<Probe />)
     expect(container.textContent).toBe('empty')
 
@@ -63,8 +59,6 @@ describe('useCommentGuest client behavior', () => {
     })
     spy.mockRestore()
 
-    // No hydration warning/error, and the stored profile is prefilled
-    // once React swaps to the client snapshot.
     expect(errors).toEqual([])
     expect(container.textContent).toBe('Alice')
     container.remove()

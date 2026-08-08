@@ -11,22 +11,11 @@ const log = getLogger('fonts.render')
 const EMPTY: ResolvedFonts = { global: [], post: [], code: [] }
 
 function etagToTimestamp(etag: string): number {
-  // The etag is a 64-char sha256 hex; take the first 8 hex chars as a stable
-  // integer for the `?v=` cache-buster. Cheap + deterministic — a
-  // repackaged font produces a new etag and therefore a new URL.
+  // First 8 hex chars of the sha256 etag → stable `?v=` cache-buster; repackaging changes it.
   return parseInt(etag.slice(0, 8), 16)
 }
 
-/**
- * Resolve the fonts referenced by a settings `fonts` payload into
- * browser-ready `{ family, href }` lists, one per slot. Batched in a single
- * query across all three slots. Stale UUIDs (a font GC'd but still in the
- * settings row) are dropped silently — a missing font degrades to the
- * fallback stack rather than crashing SSR.
- *
- * @param wantsPostFonts when false, `post` + `code` resolve to `[]` (they
- *   only load on routes that opt in via `handle.postFonts`).
- */
+/** Settings `fonts` → per-slot `{ family, href }` lists; stale ids drop silently. @param wantsPostFonts when false, `post`/`code` resolve to `[]` (routes opt in via `handle.postFonts`). */
 export async function resolveFontsForRender(
   db: Database,
   settings: FontsSettings,
@@ -49,18 +38,12 @@ export async function resolveFontsForRender(
     resolveSlotOrder(ids, byId).map((row) => {
       let href: string
       try {
-        // Consume the persisted `cssKey` (written by `fontCssKey(hash)` at
-        // upload time) instead of recomputing the key layout from `hash`.
-        // Local packages are served by the dedicated `/fonts/embedded/*`
-        // route, not the generic `/storage/*` one — `route`/`stripPrefix`
-        // below are that route's shape and must stay in sync with
-        // src/server/http/resources/fonts-embedded.ts.
+        // Consume the persisted `cssKey` — `route`/`stripPrefix` must stay in sync with fonts-embedded.ts.
         href = resolveAssetUrl(row.storageDriver, row.cssKey, etagToTimestamp(row.etag), {
           local: { route: '/fonts/embedded/', stripPrefix: 'fonts/' },
         })
       } catch (error) {
-        // Asset base URL unconfigured — degrade by dropping this font from
-        // the stack rather than crashing the whole render.
+        // Asset base URL unconfigured — drop this font rather than failing the render.
         log.warn('Failed to resolve font URL', { id: row.id, error: String(error) })
         href = ''
       }

@@ -61,8 +61,7 @@ describe('ui/admin/settings/shell/useSettingsCard', () => {
     await vi.waitFor(() => expect(commit).toHaveBeenCalledOnce())
     const [section, payload] = commit.mock.calls[0]!
     expect(section).toBe('general')
-    // The honest Section patch: only the fields this card owns. The
-    // server merges it into the stored row — no client-side snapshot.
+    // Honest Section patch: only the fields this card owns.
     expect(payload).toEqual({ title: 'Updated' })
   })
 
@@ -75,18 +74,8 @@ describe('ui/admin/settings/shell/useSettingsCard', () => {
     expect(display).toEqual(source)
   })
 
-  // Note on flush/flushOnBlur dirty-commit coverage:
-  //
-  // `flushOnBlur` and `flush` share the same dirty guard (`getValues() !==
-  // lastCommitted`) before delegating to `performSave`. Verifying the
-  // guard *passes* when dirty is hard in this SSR-only hook runner:
-  // `renderToStaticMarkup` renders exactly once with no commit phase, so
-  // RHF's `getValues()` after a post-render `setValue` still returns the
-  // seeded snapshot, making `isDirty()` return false and the commit a
-  // no-op. The unconditional `save()` path (tested above) confirms
-  // `performSave` itself works; the no-op tests below confirm the guard
-  // exists and blocks clean forms. The dirty→commit path is exercised
-  // end-to-end by the snapshot form tests that render the full card tree.
+  // The dirty→commit path is exercised end-to-end by the snapshot form
+  // tests that render the full card tree; here we cover the no-op guards.
 
   it('flushOnBlur is a no-op when the form is clean', () => {
     const source: Source = { title: 'Hello', description: 'World' }
@@ -100,8 +89,7 @@ describe('ui/admin/settings/shell/useSettingsCard', () => {
     const source: Source = { title: 'Hello', description: 'World' }
     const { form } = renderHook(makeHook(source))
     form.setValue('title', 'Typed')
-    // Wait well past any historical debounce window. Nothing should fire —
-    // saves are now exclusively driven by save()/flushOnBlur()/flush().
+    // Wait past any debounce window — saves fire only from save()/flushOnBlur()/flush().
     await new Promise((resolve) => setTimeout(resolve, 30))
     expect(commit).not.toHaveBeenCalled()
   })

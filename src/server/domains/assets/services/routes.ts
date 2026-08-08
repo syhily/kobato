@@ -23,10 +23,7 @@ interface BinaryRoute {
 
 export type AssetRoute = SvgRoute | BinaryRoute
 
-// Single source of truth for the public asset map. The router imports
-// `ASSET_ROUTES` to register every path; `resolveSiteAsset` reads it to
-// dispatch. Adding an asset means appending here only — no second list
-// to keep in sync.
+// Single source of truth: adding an asset means one entry here, nothing else.
 export const ASSET_ROUTES: Readonly<Record<string, AssetRoute>> = {
   '/favicon.svg': { kind: 'svg', slot: 'faviconSvg' },
   '/logo.svg': { kind: 'svg', slot: 'logoSvg' },
@@ -44,9 +41,7 @@ export const ASSET_ROUTES: Readonly<Record<string, AssetRoute>> = {
   '/images/default-music-cover.png': { kind: 'binary', slot: 'defaultMusicCover' },
 }
 
-// Defensive sanity check: every BinarySlot must have exactly one route.
-// Mostly catches the case where the slot list grows but `ASSET_ROUTES`
-// isn't updated, leaving an unreachable binary in the settings row.
+// Every BinarySlot must have exactly one route here — else a slot becomes unreachable.
 if (NODE_ENV !== 'production') {
   const slots = new Set<string>(BINARY_SLOTS)
   for (const route of Object.values(ASSET_ROUTES)) {
@@ -84,8 +79,7 @@ async function resolveSvg(slot: SvgSlot, original?: boolean): Promise<ResolvedAs
       if (buffer !== null) {
         return { content: buffer, contentType: ref.contentType, etag: ref.etag }
       }
-      // S3 fetch failed (transient or the bucket has been pruned). Fall
-      // through to the bundled default instead of 500'ing the route.
+      // Fetch failed — fall through to the bundled default instead of 500'ing.
     }
   }
   return {

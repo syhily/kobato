@@ -64,15 +64,12 @@ describe('content/repos/mutate — checkTokenConflict', () => {
 interface FakeTxOptions {
   /** Meta rows returned by the locking select; empty means the owner is gone. */
   lockRows: { id: number; firstPublishedAt: Date | null }[]
-  /** Latest-revision rows returned by the content select. */
   latestRows: ContentRow[]
 }
 
 /**
- * Minimal structural fake of the drizzle tx: the first `select(fields)`
- * call (with a selection object) is the meta-row lock, the second
- * `select()` (no args) is the latest-revision lookup. Every chain step
- * returns an awaitable that resolves to the configured rows.
+ * Structural fake of the drizzle tx: `select(fields)` is the meta-row lock,
+ * bare `select()` the latest-revision lookup.
  */
 function makeFakeTx(options: FakeTxOptions): RevisionTx {
   const lockChain = {

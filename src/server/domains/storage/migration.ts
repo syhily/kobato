@@ -22,8 +22,7 @@ import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const log = getLogger('storage.migration')
 
-// The migration copies objects between the two registered backends; both
-// are resolved through the registry instead of importing the adapters.
+// Both backends come from the registry, not direct adapter imports.
 const localBackend = backendFor('local')
 const s3Backend = backendFor('s3')
 
@@ -75,27 +74,19 @@ export async function getLocalStorageMigrationStats(db: Database): Promise<Migra
 }
 
 /**
- * Copy every local-stored asset to the S3 backend and flip its recorded
- * driver. Idempotent: an object already present in S3 is skipped. Per-item
- * errors are logged and counted, never fatal to the batch. Backups stream
- * to avoid the 100 MB buffer cap.
- *
- * Precondition: S3 is configured (`activeBackend().driver === 's3'`). The
- * oRPC procedure enforces this before calling.
+ * Copy every local-stored asset to S3 and flip its recorded driver; per-item
+ * errors are counted, never fatal. Precondition: S3 configured (oRPC enforces).
  */
 export async function migrateLocalToS3(db: Database): Promise<MigrationResult> {
   const result: MigrationResult = { images: 0, music: 0, branding: 0, backups: 0, skipped: 0, failed: 0 }
 
-  // --- Images ---
   const localImages = await db
     .select({ path: image.storagePath, mime: image.mimeType })
     .from(image)
     .where(and(eq(image.storageDriver, 'local'), isNull(image.deletedAt)))
   for (const row of localImages) {
     try {
-      // Upload only if S3 doesn't already have it (idempotent re-run after a
-      // partial failure). The driver flip + local cleanup happen regardless,
-      // so an object that pre-existed in S3 still gets its driver corrected.
+      // Driver flip + local cleanup run even when the object pre-existed in S3.
       let alreadyInS3 = false
       if (await s3Backend.exists(row.path)) {
         alreadyInS3 = true
@@ -117,18 +108,13 @@ export async function migrateLocalToS3(db: Database): Promise<MigrationResult> {
     }
   }
 
-  // --- Music (audio + cover share one driver) ---
   const localMusic = await db
     .select({ id: music.id, audio: music.audioStoragePath, cover: music.coverStoragePath })
     .from(music)
     .where(and(eq(music.storageDriver, 'local'), isNull(music.deletedAt)))
   for (const row of localMusic) {
     try {
-      // Upload whichever of audio/cover S3 doesn't already have, then flip
-      // the shared driver once. Audio and cover always share a driver.
-      // Count the track as `skipped` only when BOTH pre-existed in S3
-      // (nothing was copied); a partial pre-existence still counts as a
-      // migrated track, since we did copy the missing half.
+      // Count `skipped` only when both audio and cover pre-existed in S3.
       let uploadedAny = false
       for (const [key, mime] of [
         [row.audio, 'audio/mpeg'],
@@ -154,10 +140,8 @@ export async function migrateLocalToS3(db: Database): Promise<MigrationResult> {
     }
   }
 
-  // --- Branding ---
   await migrateBranding(db, result)
 
-  // --- Backups (streamed; can be large) ---
   const localBackups = await db
     .select({ id: backupTable.id, path: backupTable.storagePath })
     .from(backupTable)
@@ -218,8 +202,7 @@ async function migrateBranding(db: Database, result: MigrationResult): Promise<v
         } else if (await localBackend.exists(legacyKey)) {
           body = await localBackend.get(legacyKey)
         } else {
-          // Neither key exists locally — the ref points to an orphan.
-          // Still flip the driver so the row stops counting as local.
+          // Orphaned ref: flip the driver anyway so it stops counting as local.
           branding[slot] = { ...ref, driver: 's3' }
           changed = true
           result.skipped += 1

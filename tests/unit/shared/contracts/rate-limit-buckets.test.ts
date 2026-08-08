@@ -5,29 +5,10 @@ import { RATE_LIMIT_BUCKET_KEYS } from '@/server/domains/settings/sections/rate-
 import { rateLimitDefaults } from '@/shared/config/defaults'
 import { BUCKET_META } from '@/ui/admin/settings/rate-limit/constants'
 
-// Contract: the rate-limit bucket set is enumerated in several places
-// that MUST stay in lock-step (P1-26):
-//
-//   - `rateLimitDefaults` (`@/shared/config/defaults`) — the source of
-//     truth: install seed, settings backfill, and the infra limiter's
-//     pre-hydration fallback.
-//   - `RATE_LIMIT_BUCKET_KEYS` (`@/server/domains/settings/sections/
-//     rate-limit`) — the z.object shape of the section schema; a key
-//     missing here is silently stripped on parse.
-//   - `BUCKET_META` (`@/ui/admin/settings/rate-limit/constants`) — the
-//     admin form's per-bucket copy; a key missing here is invisible in
-//     the UI.
-//   - The `readBucket('<name>')` call sites in `@/server/infra/
-//     rate-limit` — the limiter's real bucket set. The dangerous drift
-//     direction: infra adds a bucket while defaults/UI don't follow —
-//     the fallback lookup returns undefined and a NaN window means the
-//     limiter never trips.
-//
-// `RateLimitSettings` (`@/shared/config/types`) has no runtime
-// presence; its parity with `rateLimitDefaults` is pinned at compile
-// time by the Assert/Equals check in `shared/config/defaults.ts`.
+// Contract (P1-26): the rate-limit bucket set stays in lock-step across
+// defaults, section schema, UI copy, and the infra limiter. Type-level
+// parity of `RateLimitSettings` is pinned at compile time in defaults.ts.
 
-/** Bucket names the infra limiter actually reads, from its source. */
 function infraBucketNames(): string[] {
   const source = readFileSync('src/server/infra/rate-limit.ts', 'utf8')
   const names = [...source.matchAll(/readBucket\('([A-Za-z]+)'\)/g)].map((match) => match[1])

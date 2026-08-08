@@ -3,16 +3,9 @@ import { isRecord } from '@/shared/utils/type-guards'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 /**
- * The holder mechanics every engine lifecycle needs, written once: a
- * module-scope `current`, HMR-safe reuse across dev re-evaluations
- * (React Router re-evaluates the server graph on every cycle — the
- * handle survives via `import.meta.hot.data` instead of leaking
- * connections), an idempotent close, and the priority-0 shutdown hook
- * (batchers flush at priority 100, so engines close after). The
- * engine-specific parts — open, close, and everything the composition
- * root wires on top — stay in the per-engine lifecycle modules behind
- * the adapter. Two adapters exist (content SQLite, analytics DuckDB),
- * which is what justifies the seam.
+ * Shared holder mechanics for the engine lifecycles: module-scope handle,
+ * HMR-safe reuse, idempotent close, priority-0 shutdown hook (batchers
+ * flush at 100). Per-engine logic lives behind the adapter.
  */
 export interface EngineAdapter<THandle> {
   /** Open a fresh handle (skipped when the HMR cache has one). */
@@ -42,7 +35,6 @@ export class ManagedEngine<THandle> {
     return cached !== null && typeof cached === 'object' ? unsafeCast<THandle>(cached) : undefined
   }
 
-  /** Initialize (or reuse) the handle: HMR cache → open → cache. */
   async init(): Promise<THandle> {
     if (this.current !== null) {
       return this.current
@@ -61,12 +53,7 @@ export class ManagedEngine<THandle> {
     return this.current
   }
 
-  /**
-   * Test seam: place an externally-created handle inside the engine
-   * (a real temp-file database owned by the test) without open() or
-   * any scheduling side effects. Pair with {@link reset} between
-   * cases — adoption persists as module state otherwise.
-   */
+  /** Test seam: adopt an externally-created handle without open()/scheduling. Pair with {@link reset} between cases. */
   adopt(handle: THandle): void {
     this.current = handle
   }
@@ -84,9 +71,7 @@ export class ManagedEngine<THandle> {
     return this.current
   }
 
-  /** Close and forget — the restore swap and the shutdown hook share
-   *  this; the HMR cache is cleared so a dev re-evaluation never
-   *  resurrects a closed handle. */
+  /** Close and forget — also clears the HMR cache slot. */
   async closeForSwap(): Promise<void> {
     if (this.current === null) {
       return

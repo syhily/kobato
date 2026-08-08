@@ -23,23 +23,15 @@ const log = getLogger('comments.likes')
 export async function increaseLikes(db: Database, target: EntityTarget): Promise<{ likes: number; token: string }> {
   // 64 base64url chars ≈ 48 bytes ≈ 384 bits of entropy.
   const token = makeToken(64)
-  // Transactional: insert + bump + RETURNING new count run as one statement
-  // pair so a concurrent decrement can't race in between and return us
-  // yesterday's number.
+  // Transactional: a concurrent decrement can't race between insert and count.
   const likes = await recordLikeAndCount(db, token, target)
   return { likes, token }
 }
 
-/**
- * Consume a like token and decrement the counter. Returns `true` when
- * the token was live and the decrement landed; `false` when the token
- * was unknown, already consumed, or purged — in which case the count is
- * untouched and the caller must NOT report a successful unlike.
- */
+/** Consume a like token and decrement; `true` when the token was live.
+ *  `false` — unknown, consumed, or purged — leaves the count untouched. */
 export async function decreaseLikes(db: Database, target: EntityTarget, token: string): Promise<boolean> {
-  // Transactional: consume + decrement run as one unit so a crash
-  // between them cannot leave the count inflated while the token is
-  // already gone.
+  // Transactional: consume + decrement atomically (no inflated count after a crash).
   return db.transaction((tx) => {
     const consumed = consumeActiveLikeToken(tx, target, token)
     if (consumed) {
@@ -53,17 +45,8 @@ export async function queryLikes(db: Database, target: EntityTarget): Promise<nu
   return metricVoteUp(db, target)
 }
 
-/**
- * Batch metric read for a list of entity targets. Fans out per-type so
- * Drizzle stays on the cheap `eq + inArray` path. The returned map is
- * keyed on `targetKey(target)` so callers look up an entry without
- * juggling `(type, ownerId)` tuples; each value also carries the
- * metric `publicId` UUID for downstream wire-format usage.
- *
- * `views` is read-time merged: the stored `metric.pv` lags by up to one
- * flush interval, so the page-view batcher's unflushed delta is added
- * back (`pendingViewDelta`) to serve the exact count.
- */
+/** Batch metric read keyed on `targetKey(target)`; each entry carries the
+ *  `publicId` UUID. `views` merges the page-view batcher's unflushed delta. */
 export async function queryMetadata(
   db: Database,
   targets: EntityTarget[],
@@ -112,26 +95,17 @@ export async function queryMetadata(
   return out
 }
 
-/**
- * Validate if a like token exists and is valid (not deleted).
- */
 export async function validateLikeToken(db: Database, target: EntityTarget, token: string): Promise<boolean> {
   return existsActiveLikeToken(db, target, token)
 }
 
-/**
- * Physically delete all soft-deleted like tokens older than 30 days. Safe to
- * call from a cron job; also invoked by the in-process sweep below.
- */
+/** Soft-deleted like tokens older than 30 days; safe from a cron job and also invoked by the in-process sweep below. */
 export async function purgeStaleLikeTokens(db: Database): Promise<void> {
   const thirtyDaysAgo = startOfDay(subDays(new Date(), 30))
   await purgeOldLikeTokens(db, thirtyDaysAgo)
 }
 
-/**
- * In-process sweep timer. Purges soft-deleted like tokens once an hour;
- * a module-level guard prevents duplicate timers.
- */
+/** Purges soft-deleted like tokens once an hour; the module-level guard prevents duplicate timers. */
 const SWEEP_INTERVAL_MS = 60 * 60 * 1000
 
 let sweepTimer: NodeJS.Timeout | undefined

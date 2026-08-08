@@ -7,10 +7,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { UseFileUploadOptions } from '@/client/hooks/use-file-upload'
 import type { FontsSettings } from '@/shared/config/types'
 
-// The upload choreography itself is pinned by use-file-upload.test.tsx; this
-// spec pins the FontsForm wiring: the exact options each slot hands to the
-// hook and the pending-driven button UX. The hook is stubbed so every call
-// records its options.
+// The upload choreography is pinned by use-file-upload.test.tsx; this spec
+// pins only the FontsForm wiring.
 const hookMock = vi.hoisted(() => ({
   calls: [] as UseFileUploadOptions[],
   upload: vi.fn(),

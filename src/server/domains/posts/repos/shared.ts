@@ -13,42 +13,21 @@ import { readStringArray } from '@/shared/utils/tools'
 export type PostMetaWithAuthor = PostMetaRow & { authorName: string | null }
 
 export interface ListPostsFilters extends MetaListFiltersBase {
-  /** Filter by category id. */
   categoryId?: number
-  /** Filter by tag name (JSONB contains). */
   tag?: string
-  /** Filter by visible flag. */
   visible?: boolean
-  /** Sort field. */
   sortBy?: 'publishedAt' | 'updatedAt'
-  /** Sort direction. */
   sortOrder?: 'asc' | 'desc'
   /**
-   * Coarse lifecycle bucket — partitions every live row into one of two
-   * sets that match the `PostStatusText` logic in `PostRow`, routed
-   * through the promoted gate (`promotedPostWhere`):
-   *   - `'published'`: promoted — `published = true AND
-   *                    published_revision_id IS NOT NULL` (has a
-   *                    published revision to show).
-   *   - `'draft'`: not promoted (`published = false`, OR
-   *                `published_revision_id IS NULL` meaning the row has
-   *                only ever held draft revisions / was never promoted).
-   *
-   * Use this for "drafts vs published" dashboards instead of `published`
-   * alone — the boolean flag misses the common "freshly created but
-   * not yet promoted" case where the row sits at `published = true`,
-   * `published_revision_id = NULL` and is what users intuitively call
-   * a draft.
+   * Lifecycle bucket through the promoted gate: `'published'` is promoted;
+   * `'draft'` includes the `published=true` row with a NULL `published_revision_id`.
    */
   lifecycle?: 'draft' | 'published'
 }
 
 /**
- * Posts' admin-list WHERE: the shared legs (deletion state, slug/title
- * search, published, author) come from `buildMetaListWhere`; the
- * taxonomy / visible / lifecycle legs below are post-specific. SQL
- * `AND` is order-insensitive, so the leg order change vs the old
- * hand-built clause is semantic-noop.
+ * Admin-list WHERE: shared legs from `buildMetaListWhere` plus the
+ * post-specific taxonomy / visible / lifecycle legs.
  */
 export function buildPostsWhere(filters: ListPostsFilters): SQL | undefined {
   const extras: SQL[] = []

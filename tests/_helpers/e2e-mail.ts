@@ -1,13 +1,6 @@
-// SMTP capture server for tests/e2e — the mail seam the OTP / magic-link
-// journeys extract their secrets from. The real kobato instance is pointed
-// at this server through the `mail` settings section (transport 'smtp',
-// host 127.0.0.1, this server's port); nothing ever leaves the machine.
-//
-// The server speaks just enough SMTP for nodemailer's plaintext path:
-// no AUTH advertisement (nodemailer then skips authentication), no
-// STARTTLS. Messages are captured verbatim from DATA and decoded here —
-// nodemailer ships HTML as quoted-printable, so extraction runs on the
-// decoded UTF-8 text.
+// SMTP capture server for tests/e2e — the mail seam OTP / magic-link
+// journeys extract their secrets from; nothing ever leaves the machine.
+// Speaks just enough SMTP for nodemailer's plaintext path.
 
 import { createServer, type Server, type Socket } from 'node:net'
 
@@ -105,8 +98,7 @@ export class SmtpCapture {
         buffer = buffer.slice(eol + 2)
 
         if (inData) {
-          // A lone dot terminates DATA (dot-stuffing is not exercised by
-          // nodemailer's output for our templates).
+          // A lone dot terminates DATA (dot-stuffing not exercised).
           if (line === '.') {
             inData = false
             this.deliver({ from: mailFrom, to: mailTo, raw: dataLines.join('\r\n') })
@@ -147,7 +139,6 @@ export class SmtpCapture {
   }
 }
 
-/** Decode the DATA payload to a UTF-8 string (headers + body). */
 export function decodeMail(raw: string): string {
   const separator = raw.indexOf('\r\n\r\n')
   const headers = separator === -1 ? raw : raw.slice(0, separator)
@@ -173,8 +164,7 @@ export function decodeMail(raw: string): string {
           continue
         }
       }
-      // Anything non-ASCII travels as =XX octets, so a latin1 read of the
-      // remainder is exact.
+      // Non-ASCII travels as =XX octets — a latin1 read of the remainder is exact.
       bytes.push(ch.charCodeAt(0))
     }
     return Buffer.from(bytes).toString('utf8')

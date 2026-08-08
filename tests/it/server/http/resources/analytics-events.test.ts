@@ -14,11 +14,8 @@ import { __getRealtimeConnectionCountForTests } from '@/server/domains/analytics
 import { analyticsEventsRouter } from '@/server/http/resources/analytics'
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@/server/infra/logger'
 
-// The SSE resource against the real engine: the connection registry and
-// cap policy run for real (that was always the point of these tests) and
-// the poll loop's `queryRealtimeTail` now runs for real too, against a
-// per-run DuckDB sidecar ADOPTED into the analytics lifecycle — no
-// module mock. Broadcast delivery is asserted on the actual SSE frames.
+// The SSE resource against the real engine: connection registry, cap policy,
+// and `queryRealtimeTail` against an adopted DuckDB sidecar — no module mock.
 
 let analyticsHandle: AnalyticsHandle
 
@@ -51,8 +48,7 @@ async function buildApp(sessionId: string, clientAddress = '127.0.0.1') {
 }
 
 async function openStream(app: Hono<Env>, sessionId: string, clientAddress = '127.0.0.1', query = '') {
-  // Rebuild the middleware with the requested session identity. The router
-  // itself is stateless; the context is what determines the cap key.
+  // The router is stateless — the context (session identity) determines the cap key.
   const scoped = new Hono<Env>()
   scoped.use('*', async (c, next) => {
     c.set('requestContext', makeRequestContext(sessionId, clientAddress))
@@ -69,20 +65,15 @@ async function closeStream(res: Response): Promise<void> {
   const before = __getRealtimeConnectionCountForTests()
   await res.body?.cancel()
   if (before === 0) {
-    // The slot is already gone — the body was cancelled upstream (e.g.
-    // readSseUntil cancels its reader, which releases through the same
-    // stream-cancel path).
+    // The slot is already released — the body was cancelled upstream (same cancel path).
     return
   }
-  // Wait for the cancel/abort path to actually release the registry slot
-  // (decrement below `before`) instead of hoping a fixed 10ms sufficed.
+  // Wait for the cancel path to actually release the slot, not a fixed delay.
   const released = await waitUntil(() => __getRealtimeConnectionCountForTests() < before, 2_000)
   expect(released).toBe(true)
 }
 
-/** Poll a condition on a short interval until it holds or the deadline
- *  passes — for outcomes that ride real event/I-O propagation (stream
- *  abort, the 2s poll loop) that fake timers cannot drive. */
+/** Rides real event/I-O propagation — fake timers cannot drive them. */
 async function waitUntil(condition: () => boolean, timeoutMs: number): Promise<boolean> {
   const deadline = Date.now() + timeoutMs
   while (!condition()) {
@@ -94,7 +85,6 @@ async function waitUntil(condition: () => boolean, timeoutMs: number): Promise<b
   return true
 }
 
-/** Drain SSE frames until `needle` appears (or the deadline passes). */
 async function readSseUntil(res: Response, needle: string, timeoutMs = 6_000): Promise<string> {
   const reader = res.body!.getReader()
   const decoder = new TextDecoder()
@@ -120,7 +110,6 @@ async function readSseUntil(res: Response, needle: string, timeoutMs = 6_000): P
 
 beforeAll(async () => {
   analyticsHandle = await createTestAnalyticsDb()
-  // The real poll loop reads through the adopted handle.
   __adoptAnalyticsHandleForTests(analyticsHandle)
 })
 
@@ -181,8 +170,6 @@ describe('/api/analytics/events SSE per-session cap', () => {
 
     await closeStream(res)
 
-    // After the only connection closes, a new connection for the same session
-    // should be accepted again.
     const again = await openStream(await buildApp('session-c'), 'session-c')
     expect(again.status).toBe(200)
     await closeStream(again)
@@ -215,15 +202,12 @@ describe('/api/analytics/events realtime tail (real DuckDB)', () => {
   })
 
   it('logs a warning when the realtime query fails', async () => {
-    // Break the reader for real: with the engine reset, getAnalyticsReader
-    // throws inside the poll loop and the resource logs the warning.
+    // Engine reset: getAnalyticsReader throws inside the poll loop, logging the warning.
     __resetAnalyticsEngineForTests()
     try {
       const res = await openStream(await buildApp('session-warn'), 'session-warn')
       expect(res.status).toBe(200)
-      // The poll loop fires every 2s — wait for the warn the first failed
-      // query logs, with headroom for slow CI, instead of a fixed 2.5s
-      // that races the first poll tick.
+      // Wait for the first failed poll's warn, with headroom for slow CI.
       await waitUntil(
         () => __logCaptureForTests().some((e) => e.level === 'warn' && e.msg === 'queryRealtimeTail failed'),
         10_000,

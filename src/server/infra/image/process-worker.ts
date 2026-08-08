@@ -5,24 +5,15 @@ import sharp from 'sharp'
 
 import type { DomainErrorWire } from '@/server/infra/http/errors'
 
-// Relative import (not `@/shared/...`) so the worker is fully
-// self-contained: Node's `worker_threads` loads it directly in tests via
-// `--experimental-strip-types` without a path-alias resolver, and the
-// production bundle (emitted by `processWorkerEntryPlugin`) inlines the
-// thumbhash code without pulling in the rest of the app graph.
+// Relative import — the worker loads without a path-alias resolver.
 import { rgbaToThumbHash } from '../../../shared/utils/thumbhash.ts'
 
-// sharp is statically imported: the non-SEA worker bundle keeps it
-// external and resolves node_modules normally; the SEA bundle inlines it
-// and the bundler plugin redirects its platform loads to `nativeRequire`
-// (see `scripts/sea/redirect-native-requires.ts`).
+// sharp must stay a static import: the bundler redirects its platform loads
+// to `nativeRequire` (`scripts/sea/redirect-native-requires.ts`).
 
 const THUMBHASH_MAX_DIMENSION = 100
-// Decoded-pixel ceiling: 50 MP ≈ 200 MB of RGBA in the worker. Generous
-// for full-frame camera photos, but bounded so a small, heavily
-// compressed upload (a "decompression bomb") cannot exhaust worker
-// memory — the byte cap enforced by callers bounds the ENCODED size
-// only, never the decoded bitmap.
+// Decoded-pixel ceiling (~200 MB RGBA) — caller caps bound encoded bytes
+// only, so this guards against decompression bombs.
 const MAX_INPUT_PIXELS = 50_000_000
 
 export interface ProcessImageResize {
@@ -46,9 +37,8 @@ export interface ProcessedImage {
 }
 
 /**
- * Wire format for messages exchanged between the pool and its workers.
- * Errors are flattened into a plain object because `DomainError` (and its
- * prototype chain) does not survive the structured-clone boundary.
+ * Wire format for pool↔worker messages; errors are flattened because
+ * class instances don't survive structured clone.
  */
 export interface WorkerRequest {
   type: 'process'
@@ -67,27 +57,16 @@ export interface WorkerErrResponse {
   type: 'process:result'
   id: number
   ok: false
-  // Type-only reference (erased at runtime): the wire contract is owned by
-  // `domainErrorFromWire` in `@/server/infra/http/errors`, which must stay
-  // out of this module's runtime graph (see `WorkerDomainError` below).
+  // Type-only reference: `domainErrorFromWire` must stay out of the worker's runtime graph.
   error: DomainErrorWire
 }
 
 export type WorkerResponse = WorkerOkResponse | WorkerErrResponse
 
 /**
- * Lightweight stand-in for `DomainError` used inside the worker isolate.
- *
- * We deliberately avoid importing `@/server/infra/http/errors` here at
- * runtime — that module uses TypeScript parameter properties (`readonly`
- * in the constructor) which Node's `--experimental-strip-types` cannot
- * transform, and pulling it in would also bring transitive deps. The main
- * thread rehydrates these into real `DomainError` instances via
- * `domainErrorFromWire` (in `@/server/infra/http/errors`), so callers see
- * the exact same exception type they did before the worker offload.
- *
- * The `name` is set to `'DomainError'` so the wire format matches what
- * `domainErrorFromWire` checks for.
+ * `DomainError` stand-in for the worker isolate — `name: 'DomainError'`
+ * matches the wire contract. Never import `@/server/infra/http/errors`
+ * here (parameter properties break `--experimental-strip-types`).
  */
 export class WorkerDomainError extends Error {
   readonly code: string
@@ -102,18 +81,11 @@ export class WorkerDomainError extends Error {
 }
 
 /**
- * The pure sharp transform, lifted verbatim from the previous inline
- * `processImageBuffer`. Both the main thread (dev shortcut / inline tests)
- * and the worker entry point below call this, guaranteeing identical
- * behaviour regardless of where the work runs.
+ * The pure sharp transform shared by the dev inline path and the worker entry point.
  */
 export async function processImageInWorker(input: ProcessImageInput): Promise<ProcessedImage> {
-  // Pre-flight the headers: reject undecodable buffers and oversized
-  // dimensions BEFORE any pixels are decoded. Reading metadata is a
-  // header-only operation, so a decompression bomb is rejected for the
-  // cost of a few bytes. The `limitInputPixels` option below re-enforces
-  // the same ceiling at decode time as defense in depth, in case a
-  // format's header metadata understates the real bitmap size.
+  // Reject undecodable/oversized inputs on metadata alone, before any
+  // pixels decode; `limitInputPixels` re-enforces the ceiling at decode.
   let inputMeta: Metadata
   try {
     inputMeta = await sharp(input.buffer, { failOn: 'error' }).metadata()
@@ -210,11 +182,7 @@ function fitInside(
   return { width: targetWidth, height: targetHeight }
 }
 
-// ─── Worker entry point ───────────────────────────────────
-//
-// Only active when this module is loaded as a worker_thread target.
-// When imported directly (dev shortcut, tests), `parentPort` is undefined
-// and the listener below is never registered.
+// Listener registers only when loaded as a worker_thread target.
 
 if (parentPort !== null) {
   const port = parentPort

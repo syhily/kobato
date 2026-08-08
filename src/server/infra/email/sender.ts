@@ -16,8 +16,7 @@ import { escapeHtml } from '@/shared/utils/security'
 
 const log = getLogger('email')
 
-// OTP TTL mirrored from auth domain so the email layer does not import
-// a business domain. Kept in sync with OTP_TTL_MS in verification-tokens.ts.
+// Mirrored from OTP_TTL_MS in verification-tokens.ts — keep in sync.
 const OTP_TTL_MINUTES = 5
 // Same mirror for the magic-link TTL (SIGNIN_LINK_TTL_MS).
 const SIGNIN_LINK_TTL_MINUTES = 15
@@ -39,11 +38,7 @@ interface MailConfig {
   mailgunApiKey?: string | undefined
 }
 
-// Read the live mail slice straight from the snapshot. Mail senders only
-// run from server-side code paths that already sit behind the install
-// gate, so `requireBlogSettingsSection()` is the right call — a `null`
-// here would be a regression in the gate, not a runtime mode we need to
-// support.
+// Senders only run behind the install gate, so the snapshot section is always present.
 function readMailConfig(): MailConfig {
   return requireBlogSettingsSection('mail').mail
 }
@@ -58,11 +53,8 @@ interface BuildTransportOptions {
   forceEnabled?: boolean
 }
 
-// One registry entry per transport: which mail fields it needs before a
-// send can succeed, the user-facing message when they are missing, and
-// how to build it. `checkMailReady` and `buildTransport` are pure table
-// lookups over this — adding a transport is one entry here plus its
-// `MailTransport` class.
+// One entry per transport: readiness check, missing-field message, builder.
+// Adding a transport = one entry here + its `MailTransport` class.
 interface TransportRegistryEntry {
   isReady(mail: MailConfig): boolean
   unconfiguredMessage: string
@@ -110,10 +102,7 @@ const TRANSPORT_REGISTRY: Record<MailConfig['transport'], TransportRegistryEntry
   },
 }
 
-// The `mail.transport` column is typed as a union, but a settings
-// snapshot written by an older/newer build can still hold an
-// out-of-union value — fall back to Zeabur like the dispatcher always
-// has. The widening cast exists precisely for that runtime case.
+// A snapshot from another build can hold an out-of-union `transport` — fall back to Zeabur.
 function resolveTransportEntry(mail: MailConfig): TransportRegistryEntry {
   const transport = mail.transport ?? 'zeabur'
   const entry = (TRANSPORT_REGISTRY as Record<string, TransportRegistryEntry>)[transport]
@@ -124,11 +113,7 @@ function resolveTransportEntry(mail: MailConfig): TransportRegistryEntry {
   return entry
 }
 
-// Single source of truth for "should this notification actually fire?"
-// — used both internally by the comment-fired senders and by the admin
-// "send test" action so the UI can surface the same skip reason.
-// Test sends pass `{ ignoreEnabled: true }` so they can verify the
-// connection before the master toggle is flipped on.
+// Single source of truth for "should this notification fire?" — shared with the admin test action.
 export function checkMailReady(
   mail: MailConfig,
   options: CheckMailReadyOptions = {},
@@ -144,19 +129,13 @@ export function checkMailReady(
 }
 
 interface InternalSendOptions {
-  /** Optional BCC list. Used by admin-author-invite to keep the inviter on the audit trail. */
   bcc?: string[]
 }
 
 let cachedTransport: { transport: MailTransport; fingerprint: string } | null = null
 
 function computeMailFingerprint(mail: MailConfig): string {
-  // Hash the config material rather than caching the JSON itself: the
-  // fingerprint sits in module memory next to the transport for the
-  // process lifetime, and the plain JSON would retain raw credentials
-  // (apiKey, mailgunApiKey, smtpPass) alongside it. Equality semantics
-  // are unchanged. All transport-shaping fields are included so any
-  // config drift rebuilds the transport.
+  // Hash the config (not raw JSON) so credentials never sit in module memory.
   return createHash('sha256')
     .update(
       JSON.stringify({
@@ -183,10 +162,7 @@ export function invalidateMailTransportCache(): void {
   cachedTransport = null
 }
 
-// Resolve the live transport from the configured mail slice.
-// The transport is cached and reused while the mail config fingerprint
-// stays the same, so SMTP connection pools and Mailgun clients survive
-// across individual notification sends.
+// Cache the transport while the config fingerprint is unchanged, so connection pools survive sends.
 function getTransport(): MailTransport {
   const mail = readMailConfig()
   const fingerprint = computeMailFingerprint(mail)
@@ -213,9 +189,7 @@ export async function sendEmail(
   return transport.send({ to, subject, html }, sendOptions)
 }
 
-// Sent to a newly invited author with a setup link. The inviter is
-// BCC'd so admin actions stay on the audit trail (the recipient does
-// not see the BCC).
+// BCC the inviter so admin actions stay on the audit trail.
 export async function sendAuthorInvite(
   user: { name: string; email: string },
   link: string,
@@ -235,7 +209,6 @@ export async function sendAuthorInvite(
   })
 }
 
-// Sent when a user requests a password reset.
 export async function sendPasswordReset(user: { name: string; email: string }, link: string): Promise<SendResult> {
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
   const html = render(
@@ -247,7 +220,6 @@ export async function sendPasswordReset(user: { name: string; email: string }, l
   return sendEmail(user.email, `【${siteIdentity.title}】密码重置`, html)
 }
 
-// Sent when a user logs in with OTP enabled.
 export async function sendSignInOtp(user: { name: string; email: string }, otpCode: string): Promise<SendResult> {
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
   const html = render(
@@ -260,7 +232,6 @@ export async function sendSignInOtp(user: { name: string; email: string }, otpCo
   return sendEmail(user.email, `【${siteIdentity.title}】登录验证码`, html)
 }
 
-// Sent when a user whose login method is magic-link asks to sign in.
 export async function sendSignInLink(user: { name: string; email: string }, link: string): Promise<SendResult> {
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
   const html = render(
@@ -273,10 +244,7 @@ export async function sendSignInLink(user: { name: string; email: string }, link
   return sendEmail(user.email, `【${siteIdentity.title}】登录链接`, html)
 }
 
-// `enabled` master switch on purpose: an editor needs to verify the
-// connection to upstream BEFORE flipping the public toggle. The
-// `unconfigured` guard still applies — there's no point round-tripping
-// to the provider with an empty key.
+// Test sends still respect the `unconfigured` guard.
 export async function sendTestMail(to: string): Promise<SendResult> {
   const mail = readMailConfig()
   const ready = checkMailReady(mail, { ignoreEnabled: true })
@@ -288,9 +256,7 @@ export async function sendTestMail(to: string): Promise<SendResult> {
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
   const subject = `【${siteIdentity.title}】管理员邮件测试`
   const sentAt = new Date().toISOString()
-  // Keep the test body intentionally plain (no React Email render) so a
-  // failure here points at the transport plumbing rather than the
-  // template renderer.
+  // Plain body (no template render) — failures then isolate the transport.
   const html = [
     `<p>这是一封来自 <strong>${escapeHtml(siteIdentity.title)}</strong> 后台的邮件发送测试。</p>`,
     `<p>如果你收到了这封邮件，说明邮件服务配置工作正常。</p>`,
@@ -301,9 +267,7 @@ export async function sendTestMail(to: string): Promise<SendResult> {
     `</ul>`,
   ].join('\n')
 
-  // Send through the configured transport so the test exercises the
-  // same code path as production notifications, but force `enabled: true`
-  // so editors can verify connectivity before flipping the public toggle.
+  // Same transport as production, forced enabled, so editors can test before flipping the toggle.
   const transport = buildTransport(mail, { forceEnabled: true })
   try {
     return await transport.send({ to, subject, html })

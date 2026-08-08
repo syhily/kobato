@@ -17,14 +17,8 @@ import { auditLog } from '@/server/infra/db/schema/config'
 import { user as userTable } from '@/server/infra/db/schema/user'
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@/server/infra/logger'
 
-// The real write path: recordAuditEvent → tagL3InDetails → the real
-// AuditLogBatcher → an `audit_log` row, asserted after an explicit flush
-// (which also covers toRow's idFromString actor mapping). No mocks.
-//
-// The "swallows errors" case is the one deliberate inversion: it leaves
-// the batcher UNINITIALIZED so the real `requireBatcher` throws and
-// recordAuditEvent's catch swallows it — the failure mode the contract
-// actually protects against.
+// Real write path recordAuditEvent → AuditLogBatcher → `audit_log` row,
+// asserted after an explicit flush. No mocks.
 
 const db = getTestDb()
 
@@ -47,9 +41,7 @@ beforeEach(async () => {
 })
 
 afterEach(async () => {
-  // Flush BEFORE dropping the batcher so no armed flush timer can insert
-  // this case's stale events mid-next-test. flushAuditLog() is a no-op
-  // when the case never initialized the batcher (the swallow case).
+  // Flush BEFORE dropping the batcher: an armed flush timer would insert stale rows into the next case.
   await flushAuditLog()
   resetAllBatchers()
 })
@@ -77,8 +69,7 @@ describe('audit/service', () => {
     })
 
     it('swallows errors and logs them without throwing', async () => {
-      // Batcher deliberately NOT initialized — the real requireBatcher
-      // throws "not initialized" and recordAuditEvent's catch swallows it.
+      // Batcher not initialized: requireBatcher throws, the catch swallows it.
       expect(() => recordAuditEvent({ action: 'post_deleted', resourceType: 'post' })).not.toThrow()
 
       // The real logger, observed through the capture ring.

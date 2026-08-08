@@ -5,14 +5,8 @@ import { Readable } from 'node:stream'
 import { ActionFailure } from '@/server/infra/http/errors'
 
 /**
- * Minimal USTAR writer/reader for the two-file backup archive
- * (`kobato.db` + `analytics.duckdb` in one `.tar.gz`). No dependencies:
- * a tar entry is a 512-byte header + 512-padded payload; the archive
- * ends with two zero blocks. Only the fields we write are parsed back.
- *
- * Everything here is STREAMING (`createTarReadStream` /
- * `listTarEntriesInFile`) — the whole-file packing (`packTar`) and
- * subarray views (`unpackTar`) are the test tier and live in
+ * Minimal USTAR writer/reader for the two-file backup archive, no deps;
+ * production paths stream, the buffer-tier pack/unpack lives in
  * tests/_helpers/backup-buffer.ts.
  */
 
@@ -38,7 +32,6 @@ export function isTarArchive(buffer: Buffer): boolean {
   )
 }
 
-/** The 512-byte USTAR header for one entry. */
 export function tarEntryHeader(name: string, size: number): Buffer {
   if (name.length > 99) {
     throw new Error(`tar entry name too long: ${name}`)
@@ -73,12 +66,7 @@ export function tarPaddingSize(size: number): number {
   return remainder === 0 ? 0 : BLOCK - remainder
 }
 
-/**
- * Stream an archive: headers, file contents, and padding flow through
- * without ever holding a full database file in memory. Yields header
- * blocks and file chunks in tar order, then the two trailing zero
- * blocks.
- */
+/** Stream an archive without ever holding a full file in memory; ends with the two zero blocks. */
 export function createTarReadStream(entries: { name: string; path: string; size: number }[]): Readable {
   return Readable.from(
     (async function* () {
@@ -112,11 +100,7 @@ export function readOctal(buffer: Buffer, offset: number, length: number): numbe
   return Number.parseInt(readCString(buffer.subarray(offset, offset + length)).trim(), 8)
 }
 
-/**
- * List the entries of an archive FILE by reading only its 512-byte
- * headers sequentially — memory cost stays O(header) regardless of
- * archive size.
- */
+/** List an archive file's entries by reading headers sequentially — memory stays O(header). */
 export async function listTarEntriesInFile(rawPath: string): Promise<TarEntryMeta[]> {
   const handle = await open(rawPath, 'r')
   try {

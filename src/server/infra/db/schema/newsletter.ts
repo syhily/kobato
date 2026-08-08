@@ -3,21 +3,9 @@ import { check, index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-o
 
 import { NEWSLETTER_SUBSCRIBER_STATUSES } from '@/server/infra/db/schema/shared'
 
-// Newsletter subscribers (double-opt-in). A row is created in `pending`
-// status with a sha256-hashed confirm token; the only mail a pending row
-// ever receives is the confirmation email. Confirming flips the row to
-// `confirmed` and clears the token hash (single-use). One-click
-// unsubscribe flips to `unsubscribed` and is idempotent — the row is kept
-// so a re-subscribe is a state transition, not a new identity.
-//
-// Field design:
-// - `email` is stored normalized (trimmed, lowercased) by the service
-//   layer; the UNIQUE index is the dedupe backstop under concurrent
-//   subscribes.
-// - `confirmTokenHash` / `confirmTokenExpiresAt` are NULL unless the row
-//   is `pending`. Tokens live on the subscriber row (not the shared
-//   `verification` table) because subscribers are not users — that table
-//   keys on `user_id integer`.
+// Newsletter subscribers (double-opt-in): `pending` rows hold a sha256
+// confirm-token hash, cleared on confirm (single-use); `unsubscribed`
+// rows are kept so a re-subscribe is a state transition, not a new identity.
 export const newsletterSubscriber = sqliteTable(
   'newsletter_subscriber',
   {

@@ -11,26 +11,10 @@ const queryMocks = mockTanstackQuery()
 
 queryMocks.mutation = { mutate: vi.fn(), isPending: false }
 
-// Companion to `comments-data.test.tsx`. This file targets additional
-// render-path branches of the public `Comments` orchestrator that the
-// data-loaded suite does not yet exercise:
-//   - multi-level nesting (grandchild) so `CommentItem` recurses depth > 1,
-//   - the `CommentsList` map callback over a populated root list,
-//   - the `CommentsReplyFormSlot` branch when an active reply target is set
-//     (activeReplyToId !== 0 → the slot returns null and the reply form is
-//     suppressed from its default position),
-//   - the `CommentsLoadMore` button in its `moreLoading` ("加载中…")
-//     state via the mutation's `isPending` flag,
-//   - the `CommentsHeader` count branch with a large total,
-//   - the failure branch + populated-tree branch co-coverage to guard
-//     against regressions in the early-return.
-//
-// `Comments` calls `useMutation` (token revoke, my-comments merge,
-// load-more) from `@tanstack/react-query`. The mutation hooks themselves
-// run during render; we stub them with a hoisted singleton so we can flip
-// the load-more `isPending` flag to cover the "加载中…" copy.
-
-// --- fixtures ----------------------------------------------------------------
+// Companion to comments-data.test.tsx: extra render-path branches of the
+// public Comments orchestrator — nested recursion, load-more states, reply
+// slot, failure early-return. Mutations are stubbed with a hoisted
+// singleton so the load-more isPending flag is flippable.
 
 let seq = 0
 
@@ -79,8 +63,6 @@ const commentsData = (count: number, roots: number): CommentsData => ({
   roots_count: roots,
 })
 
-// --- render-branch coverage --------------------------------------------------
-
 describe('snapshot: Comments render branches', () => {
   it('renders a root list with multiple siblings via the CommentsList map branch', () => {
     const items = [
@@ -94,10 +76,8 @@ describe('snapshot: Comments render branches', () => {
         '/posts/hello',
       ),
     )
-    // Header count branch.
     expect(html).toContain('评论')
     expect(html).toContain('(3)')
-    // All three roots rendered through the list map callback.
     expect(html).toContain('id="user-comment-1"')
     expect(html).toContain('id="user-comment-2"')
     expect(html).toContain('id="user-comment-3"')
@@ -158,8 +138,7 @@ describe('snapshot: Comments render branches', () => {
         '/posts/long',
       ),
     )
-    // The LoadMore button copy flips to "加载中…" while the mutation is
-    // pending, and the button is disabled.
+    // Pending mutation → "加载中…" + disabled.
     expect(html).toContain('加载中…')
     expect(html).toContain('disabled=""')
     queryMocks.mutation.isPending = false
@@ -184,7 +163,6 @@ describe('snapshot: Comments render branches', () => {
     )
     expect(html).toContain('评论')
     expect(html).toContain('(0)')
-    // No row markup, no load-more.
     expect(html).not.toContain('user-comment-')
     expect(html).not.toContain('加载更多')
     // Reply form still accepts a top-level comment.
@@ -196,9 +174,7 @@ describe('snapshot: Comments render branches', () => {
       renderInRouter(<Comments commentKey="/posts/broken" comments={null} items={[]} />, '/posts/broken'),
     )
     expect(html).toContain('评论加载失败')
-    // The early-return branch bypasses CommentsRoot entirely — the wrapper
-    // div (#comments) is still emitted by the failure branch itself, but
-    // none of the orchestrator chrome (reply form, load-more) renders.
+    // Early-return bypasses the orchestrator chrome — only the failure wrapper remains.
     expect(html).not.toContain('id="respond"')
     expect(html).not.toContain('加载更多')
   })

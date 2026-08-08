@@ -8,20 +8,9 @@ import { comment } from '@/server/infra/db/schema/comment'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
 
-// `updateOwnComment` (visitor self-edit of their own comment) delegates
-// the grace-window branch to the pure `decideOwnEdit` decider — see
-// `tests/unit/server/domains/comments/services/policy.test.ts` for the
-// timestamp matrix. This file pins what remains at the persistence seam,
-// against the real in-memory engine:
-//
-//   * the decision drives WHICH optimistic-lock write runs
-//     (`updateOwnCommentBody` vs `updateOwnCommentBodyAndPending`) and
-//     whether the admin notification fires;
-//   * a lost optimistic-lock race (0 rows affected) rejects CONFLICT;
-//   * a row that vanished mid-edit returns null without writing.
-//
-// The canonicalize pipeline is real too (plain paragraph bodies skip the
-// Shiki / KaTeX renderers); only the outbound admin email stays mocked.
+// `updateOwnComment` at the persistence seam against the real engine;
+// the grace-window decision itself is pinned in the unit policy test.
+// Only the outbound admin email is mocked; canonicalize is real.
 
 vi.mock('@/server/domains/comments/services/email', () => ({
   sendApprovedComment: vi.fn(async () => undefined),
@@ -123,7 +112,6 @@ describe('updateOwnComment — decision wiring', () => {
     const stored = await readRow(id)
     expect(stored?.content).toBe(expected.content)
     expect(stored?.body).toEqual(expected.body)
-    // The moderation state is untouched inside the grace window.
     expect(stored?.isPending).toBe(false)
     expect(emails.sendNewComment).not.toHaveBeenCalled()
     expect(result).not.toBeNull()
@@ -144,9 +132,7 @@ describe('updateOwnComment — decision wiring', () => {
     expect(stored?.body).toEqual(expected.body)
     expect(stored?.isPending).toBe(true)
     expect(emails.sendNewComment).toHaveBeenCalledTimes(1)
-    // The notification carries the refetched (now-pending) row + its
-    // (type, ownerId) target so the moderation inbox links back to
-    // the correct post / page.
+    // The notification carries the refetched row + its (type, ownerId) target.
     const [, commentArg, targetArg] = vi.mocked(emails.sendNewComment).mock.calls[0]!
     expect(commentArg.isPending).toBe(true)
     expect(targetArg).toEqual({ type: 'post', ownerId: pid })
@@ -161,12 +147,7 @@ describe('updateOwnComment — persistence edges', () => {
     const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000)
     const id = await seedComment({ userId: uid, ownerId: pid, createdAt: tenMinutesAgo })
 
-    // A real lost race: two concurrent edits of the same comment. Both
-    // initial SELECTs execute before either write (the second read's
-    // execution is queued ahead of the first edit's canonicalize
-    // continuation), so both writes carry the same expected
-    // `updated_at` — the first one wins and bumps it, the second one
-    // matches 0 rows and rejects CONFLICT.
+    // Both reads see the same updated_at, so one write wins and the other rejects CONFLICT.
     const OTHER_BODY: CommentBody = [
       {
         _type: 'block',
@@ -188,7 +169,6 @@ describe('updateOwnComment — persistence edges', () => {
     expect(((rejected[0] as PromiseRejectedResult).reason as Error).message).toMatch(/评论已被修改/)
     expect(fulfilled).toHaveLength(1)
 
-    // Exactly one write landed; the row carries one of the two edits.
     const stored = await readRow(id)
     const body = stored?.body as Array<{ children: Array<{ text: string }> }>
     expect(['edited', 'edited concurrently']).toContain(body[0]?.children[0]?.text)

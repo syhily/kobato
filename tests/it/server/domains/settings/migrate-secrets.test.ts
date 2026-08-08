@@ -7,12 +7,8 @@ import { encryptIfNeeded } from '@/server/infra/crypto/secret-encryption'
 import { findSettingByScope } from '@/server/infra/db/operations/setting'
 import { setting } from '@/server/infra/db/schema/config'
 
-// The migration no-ops under `isVitest()` so test boots never rewrite
-// secrets. Flip ONLY that gate — the real config (including the real
-// test encryption key) and the real secret-encryption module stay in
-// place — so the migration body runs against the real in-memory engine.
-// The gate defaults to `true` so the db-lifecycle import-time
-// `if (!isVitest())` branch sees the same value as an unmocked boot.
+// Flip ONLY the isVitest() gate — real config and secret-encryption
+// stay in place. The gate defaults to `true`, like an unmocked boot.
 const gate = vi.hoisted(() => ({ vitest: true }))
 
 vi.mock('@/server/infra/config', async (importOriginal) => {
@@ -24,8 +20,8 @@ const { migrateSecretsEncryption } = await import('@/server/domains/settings/ser
 
 const db = getTestDb()
 
-// The legacy v1 format: AES-256-GCM with the SHA-256 of the configured
-// key. The migration must still verify (not re-encrypt) these rows.
+// Legacy v1: AES-256-GCM with the SHA-256 of the configured key —
+// verified, never re-encrypted.
 function encryptLegacy(plaintext: string, key: string): string {
   const derived = createHash('sha256').update(key).digest()
   const iv = randomBytes(12)
@@ -68,10 +64,8 @@ describe('migrateSecretsEncryption', () => {
 
     const mail = (await readData('blog.mail')).mail as Record<string, unknown>
     const storage = (await readData('blog.assets')).storage as Record<string, unknown>
-    // New ciphertexts carry the HKDF-deployment-key format…
     expect(mail.apiKey).toMatch(/^enc2:/)
     expect(storage.secretAccessKey).toMatch(/^enc2:/)
-    // …and round-trip back to the original plaintext with the real key.
     const { decryptIfNeeded } = await import('@/server/infra/crypto/secret-encryption')
     expect(decryptIfNeeded(mail.apiKey as string)).toBe('plain-mail-key')
     expect(decryptIfNeeded(storage.secretAccessKey as string)).toBe('plain-s3-key')

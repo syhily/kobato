@@ -6,11 +6,8 @@ import { commentWithUser } from '@/server/domains/comments/repos/shared'
 import { comment } from '@/server/infra/db/schema/comment'
 import { user } from '@/server/infra/db/schema/user'
 
-/**
- * By-id comment lookups mounted by the HTTP controllers (moderation,
- * ownership checks, token flows) — the comments domain's sanctioned
- * single-comment read surface.
- */
+/** By-id comment lookups — the domain's sanctioned single-comment read
+ *  surface for controllers (moderation, ownership, token flows). */
 export async function findCommentWithUserById(db: Database, id: number) {
   const rows = await db
     .select(commentWithUser)

@@ -72,9 +72,7 @@ export function EditUserDialog({ comment, onClose, onSaved }: EditUserDialogProp
             if (!comment) {
               return
             }
-            // Use `string | null` so we can explicitly clear the badge
-            // text-colour override (sends a literal JSON `null`); empty
-            // strings get filtered/normalised on the server.
+            // `string | null` lets clearing the override send a literal JSON `null`.
             const payload: Record<string, string | null> = {
               name,
               email,
@@ -89,8 +87,7 @@ export function EditUserDialog({ comment, onClose, onSaved }: EditUserDialogProp
             if (badgeColor) {
               payload.badgeColor = badgeColor
             }
-            // Always include `badgeTextColor` so admins can also clear a
-            // previous override by unticking the checkbox.
+            // Always include `badgeTextColor` so admins can clear a previous override by unticking.
             payload.badgeTextColor = useTextOverride ? badgeTextColor : null
             mutation.mutate(payload)
           }}

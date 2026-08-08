@@ -3,16 +3,9 @@ import { adminUploadRoute } from '@/server/http/resources/admin-upload-route'
 import { formatBytes } from '@/shared/utils/formatter'
 
 /**
- * Font *package* upload (self-hosted browser web fonts). Kept as a native
- * Hono resource route rather than an oRPC procedure because source fonts can
- * be 60 MiB and the oRPC bridge sits behind the request-wide body limit
- * (default 10 MB). Mounting this route before `createApiApp()` (see
- * `middleware-pipeline.ts`) gives it its own `bodyLimit`, exactly like the
- * legacy canvas-font upload at `resources/fonts.ts`.
- *
- * The synchronous slice (~15–20s for a CJK font) happens inside the request
- * lifetime; the client shows a spinner and the row is only inserted on
- * success, so there is no `processing`/`failed` state.
+ * Font *package* upload as a native Hono route: 60 MiB sources exceed the
+ * oRPC bridge's body limit (mounted before `createApiApp` for its own
+ * bodyLimit). The sync slice runs in-request; the row inserts on success.
  */
 export const fontsPackageRouter = adminUploadRoute({
   path: '/api/admin/fonts/package/upload',

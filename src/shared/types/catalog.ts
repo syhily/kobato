@@ -43,19 +43,9 @@ export interface ClientPage {
   published: boolean
   summary: string
   toc: boolean
-  /**
-   * When true the public detail route renders the「修改于 XXXX」
-   * secondary timestamp next to the first-publish date. Operators flip
-   * it from the editor meta sidebar without re-publishing the body.
-   */
+  /** When true the public detail route renders the 「修改于 XXXX」 timestamp next to the first-publish date; flipped from the editor without re-publishing. */
   showUpdated: boolean
-  /**
-   * When true the public detail route appends the global friends grid
-   * at the bottom of the body. The grid lives **outside** the body —
-   * the PortableText dialect deliberately has no friends block, so
-   * the operator can flip this on/off from the editor's right
-   * sidebar without re-publishing the body.
-   */
+  /** When true the public detail route appends the global friends grid below the body (the PT dialect has no friends block). */
   showFriends: boolean
   slug: string
   permalink: string
@@ -215,8 +205,6 @@ export function toClientPage(page: Page): ClientPage {
   const { body: _body, imageSources: _imageSources, publishedRevisionId: _rev, ...rest } = page
   return rest
 }
-
-// --- Projections ------------------------------------------------------------
 
 export function toListingPostCard(post: ClientPost): ListingPostCard {
   return {

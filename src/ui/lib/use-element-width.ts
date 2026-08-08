@@ -5,10 +5,7 @@ interface UseElementWidthResult<T extends HTMLElement> {
   width: number
 }
 
-/**
- * Reactive width of a DOM element. Returns `0` until the element is
- * measured on the client, so SSR snapshots stay stable.
- */
+/** Reactive width of a DOM element; `0` until measured on the client. */
 export function useElementWidth<T extends HTMLElement = HTMLDivElement>(): UseElementWidthResult<T> {
   const ref = useRef<T>(null)
   const [width, setWidth] = useState(0)

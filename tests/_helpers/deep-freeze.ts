@@ -1,4 +1,3 @@
-/** Recursively freeze an object and all its nested objects/arrays. */
 export function deepFreeze<T>(obj: T): T {
   if (obj === null || typeof obj !== 'object') {
     return obj

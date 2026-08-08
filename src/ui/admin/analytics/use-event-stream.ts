@@ -13,13 +13,8 @@ function isRealtimeEvent(value: unknown): value is RealtimeEvent {
   )
 }
 
-// EventSource subscription hook for the realtime tail: a rolling buffer of
-// the latest `bufferSize` events plus a "connecting / live / lost" state.
-// Reconnect/backoff is the browser's native EventSource behavior; `onerror`
-// after the socket gives up just marks the state lost. A native reconnect
-// reuses the original URL — the `since` watermark goes stale and the server
-// resends the tail — so the merge below dedupes against the buffer.
-
+// EventSource hook for the realtime tail: rolling buffer + connecting / live /
+// lost state; native reconnects resend from a stale `since`, so the merge dedupes.
 /** Identity of one event for reconnect dedup (audit P1-20). */
 function eventKey(event: RealtimeEvent): string {
   return [event.ts, event.path, event.country, event.city, event.browser, event.os, event.deviceType, event.isBot].join(
@@ -36,9 +31,7 @@ export function useEventStream({ bufferSize = 100, enabled = true }: UseEventStr
   const [events, setEvents] = useState<RealtimeEvent[]>([])
   const [state, setState] = useState<'connecting' | 'live' | 'lost'>('connecting')
   const lastSeenRef = useRef<string | null>(null)
-  // Floor at the server replay tail (queryRealtimeTail's default LIMIT
-  // 50): a smaller buffer would truncate a reconnect's replay payload on
-  // the slice below (fix-review).
+  // Floor at the server replay tail (queryRealtimeTail's LIMIT 50) — a smaller buffer would truncate a reconnect's replay (fix-review).
   const size = Math.max(bufferSize, 50)
 
   useEffect(() => {
@@ -70,8 +63,7 @@ export function useEventStream({ bufferSize = 100, enabled = true }: UseEventStr
         }
         lastSeenRef.current = incoming[incoming.length - 1]!.ts
         setEvents((prev) => {
-          // Drop rows already in the buffer — a reconnect resends the tail
-          // from the stale `since` baked into the original URL.
+          // Drop rows already in the buffer — a reconnect resends the tail from the stale `since`.
           const seen = new Set(prev.map(eventKey))
           const fresh = incoming.filter((event) => !seen.has(eventKey(event)))
           if (fresh.length === 0) {

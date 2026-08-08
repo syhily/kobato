@@ -13,10 +13,8 @@ import { postTag } from '@/server/infra/db/schema/post-tag'
 import { category as categoryTable, tag as tagTable } from '@/server/infra/db/schema/taxonomy'
 
 /**
- * Posts referencing one taxonomy term. Category and tag listings differ
- * only in the filter key, so a single function takes the `kind`. The
- * category branch resolves the display name to its row first — posts
- * reference categories by id.
+ * Category and tag listings differ only in the filter key — one function
+ * takes the `kind`; the category branch resolves the name to its row first.
  */
 export async function listPostsByTaxonomy(
   db: Database,
@@ -38,12 +36,8 @@ export async function listPostsByTaxonomy(
 }
 
 /**
- * Slim seam for the taxonomy delete guard: just the titles of posts that
- * still reference the tag, under the guard's full-inclusion gate
- * (visible=false + scheduled included — every live-ish reference blocks
- * deletion).
- * Selects only `title`: no tag batch, no revision join, no cover/thumbhash
- * hydration — the 409 message needs nothing else.
+ * Title-only lookup for the taxonomy delete guard: full-inclusion gate
+ * (every live-ish reference blocks deletion), no hydration.
  */
 export async function listPostTitlesByTaxonomy(db: Database, kind: 'tag', name: string): Promise<string[]> {
   const where = buildPublicPostsWhere({ tag: name, includeHidden: true, includeScheduled: true })
@@ -56,9 +50,7 @@ export async function listPostTitlesByTaxonomy(db: Database, kind: 'tag', name: 
 }
 
 /**
- * The category counterpart of {@link listPostTitlesByTaxonomy}: same slim
- * title-only shape and full-inclusion gate, keyed by the category row id
- * posts reference.
+ * Category counterpart of {@link listPostTitlesByTaxonomy}, keyed by row id.
  */
 export async function listPostTitlesByCategoryId(db: Database, id: number): Promise<string[]> {
   const where = buildPublicPostsWhere({ categoryId: id, includeHidden: true, includeScheduled: true })
@@ -72,11 +64,7 @@ export async function listPostTitlesByCategoryId(db: Database, id: number): Prom
 
 export interface CountPostsByTaxonomyOptions {
   kind: 'category' | 'tag'
-  /**
-   * `admin` counts every live post including scheduled ones (admin
-   * screens show what will go live); `public` counts only posts that
-   * are live right now AND `visible`.
-   */
+  /** `admin` counts live posts incl. scheduled; `public` counts live AND `visible`. */
   gate: 'admin' | 'public'
   /** Narrow the count to a single taxonomy term (e.g. the just-upserted row). */
   name?: string
@@ -85,11 +73,8 @@ export interface CountPostsByTaxonomyOptions {
 }
 
 /**
- * The single implementation behind every per-term post count — admin
- * screens and public catalog alike. Both gates delegate to
- * `livePostWhere`, the post-table live gate, so a count can never drift
- * from what "live" means. Returns a `Map<term name, count>`; terms with
- * no matching posts are absent (callers default to 0).
+ * Single implementation behind every per-term post count; both gates
+ * delegate to `livePostWhere`. Terms with no posts are absent (callers default 0).
  */
 export async function countPostsByTaxonomy(
   db: Database,

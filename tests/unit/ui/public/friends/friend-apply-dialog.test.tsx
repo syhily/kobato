@@ -1,13 +1,7 @@
 // @vitest-environment happy-dom
 
-// Behavioral pins for the friend-apply dialog: the page shows only the
-// trigger, the Popup owns the form (fields + off-screen honeypot), and a
-// closed dialog reopens fresh.
-//
-// `motion/react` is stubbed as a pass-through (same pattern as
-// tests/unit/ui/public/widgets/popup.test.tsx) so AnimatePresence
-// mounts/unmounts synchronously — the tests pin dialog wiring, not
-// animation timing.
+// Behavioral pins for the friend-apply dialog; `motion/react` is stubbed
+// as a pass-through so AnimatePresence mounts/unmounts synchronously.
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen } from '@testing-library/react'
@@ -53,8 +47,7 @@ function renderForm() {
 
 function openDialog() {
   fireEvent.click(screen.getByRole('button', { name: '申请友链' }))
-  // The Popup is lazy-loaded (the motion runtime sits behind its lazy
-  // boundary), so the dialog appears only once the chunk resolves.
+  // The Popup is lazy-loaded, so the dialog appears only once the chunk resolves.
   return screen.findByRole('dialog')
 }
 

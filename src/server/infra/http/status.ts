@@ -1,14 +1,11 @@
 import type { Buffer } from 'node:buffer'
 
-// Throw a `404` Response that React Router catches and routes to the
-// `ErrorBoundary`. Use from loaders/actions when a slug doesn't match any
-// catalog entry.
+// Thrown from loaders/actions; React Router routes it to the `ErrorBoundary`.
 export function notFound(message = 'Not Found'): never {
   throw new Response(message, { status: 404 })
 }
 
-// Wrap a PNG byte buffer in a `Response` with the right `Content-Type`. Used
-// by the OG/avatar/calendar image routes that build PNGs on demand.
+// Used by the OG/avatar/calendar image routes that build PNGs on demand.
 export function pngResponse(buffer: Buffer | Uint8Array, headers?: HeadersInit): Response {
   const responseHeaders = new Headers(headers)
   responseHeaders.set('Content-Type', 'image/png')

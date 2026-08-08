@@ -11,12 +11,9 @@ import { backup as backupTable } from '@/server/infra/db/schema/backup'
 import { image, music } from '@/server/infra/db/schema/media'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@/server/infra/storage/registry'
 
-// The migration copies objects between the two registered backends; S3 and
-// the local disk are true externals, so both are the shared in-memory
-// backend injected through the registry seam. `migrateLocalToS3` captures
-// `backendFor(...)` at module scope, so the seam must be set BEFORE the
-// migration module loads — hence the dynamic import below, after the
-// substitutions.
+// Both backends are the in-memory seam; `migrateLocalToS3` captures
+// backendFor() at module scope, so the seam must be set BEFORE the module
+// loads — hence the dynamic import below.
 const localMem = makeMemoryBackend({ driver: 'local' })
 const s3Mem = makeMemoryBackend()
 __setStorageBackendForTests('local', localMem.backend)
@@ -24,16 +21,12 @@ __setStorageBackendForTests('s3', s3Mem.backend)
 
 const { getLocalStorageMigrationStats, migrateLocalToS3 } = await import('@/server/domains/storage/migration')
 
-// The stats read real image/music/backup rows through the worker database,
-// and the branding count comes from the in-process settings snapshot —
-// exactly what the admin migration card and the migration run summary
-// display. `migrateLocalToS3` additionally drives the injected backends
-// above and asserts the driver flips as real row updates.
+// Stats read real rows + the settings snapshot; migrateLocalToS3 drives the
+// injected backends and asserts real row updates.
 const db = getTestDb()
 
 beforeEach(async () => {
-  // Re-set after each afterEach reset, so the registry never points at the
-  // real adapters while a test is running.
+  // Re-set after the afterEach reset so the registry never points at real adapters.
   __setStorageBackendForTests('local', localMem.backend)
   __setStorageBackendForTests('s3', s3Mem.backend)
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
@@ -175,16 +168,13 @@ describe('storage/migration — getLocalStorageMigrationStats', () => {
 
 describe('storage/migration — migrateLocalToS3 counting (no double-count)', () => {
   it('counts music as skipped only when both audio + cover pre-exist in S3', async () => {
-    // Track A: both halves already in S3 → skipped (NOT skipped + music).
-    // Track B: neither half in S3 → uploaded → music.
-    // Track C: audio exists but cover does not → still uploaded → music.
+    // A: both halves pre-exist → skipped; B: neither → uploaded; C: cover missing → still uploaded.
     const a = await seedMusic({ audioStoragePath: 'musics/a-a.mp3', coverStoragePath: 'musics/a-c.jpg' })
     const b = await seedMusic({ audioStoragePath: 'musics/b-a.mp3', coverStoragePath: 'musics/b-c.jpg' })
     const c = await seedMusic({ audioStoragePath: 'musics/c-a.mp3', coverStoragePath: 'musics/c-c.jpg' })
     for (const key of ['a-a.mp3', 'a-c.jpg', 'b-a.mp3', 'b-c.jpg', 'c-a.mp3', 'c-c.jpg']) {
       seedObject(localMem, `musics/${key}`)
     }
-    // A's audio+cover exist; B's neither; C's audio exists, cover does not.
     seedObject(s3Mem, 'musics/a-a.mp3')
     seedObject(s3Mem, 'musics/a-c.jpg')
     seedObject(s3Mem, 'musics/c-a.mp3')

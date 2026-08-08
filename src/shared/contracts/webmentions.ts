@@ -37,10 +37,9 @@ export const adminWebmentionOutboxDto = z.object({
 })
 export type AdminWebmentionOutboxWire = z.infer<typeof adminWebmentionOutboxDto>
 
-// Public display DTO (approved mentions under a post/page). Deliberately
-// narrow — internal fields (targetOwnerId, rawPayload, status, fetchedAt,
-// moderatedAt) never leave the server. `type` crosses the boundary: the
-// public block groups replies/likes/reposts by it.
+// Public display DTO (approved mentions): deliberately narrow —
+// internal fields never leave the server. `type` crosses: the public
+// block groups replies/likes/reposts by it.
 export const publicWebmentionDto = z.object({
   id: idString,
   sourceUrl: z.string(),

@@ -93,10 +93,8 @@ export function PendingModerationPanel({ initial, emptyStateLine }: PendingModer
   const currentPage = Math.floor(offset / PAGE_SIZE) + 1
 
   return (
-    // Compact fixed-frame card: pixel height fits exactly five rows + the
-    // slim chrome strips without a giant empty area when the queue is short.
-    // Body is the only scroll container — header / pagination stay pinned
-    // via `shrink-0`, items get `min-h-0 overflow-y-auto`.
+    // Compact fixed-frame card: exactly five rows + slim chrome; the body is
+    // the only scroll container (header / pagination pinned via `shrink-0`).
     <div className="flex min-h-[280px] flex-col rounded-xl border bg-card p-5">
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
@@ -185,16 +183,11 @@ function PendingRow({ item, disabled, onApprove, onReject, onApproveDeletion, on
   const timestampIso = isDeletion ? (item.deleteRequestedAtIso ?? item.createdAtIso) : item.createdAtIso
   const timestampLabel = timestampIso ? formatLocalDate(new Date(timestampIso), ROW_DATE_FORMAT, config) : ''
   return (
-    // Two-track row: stacks (content, then buttons) below `sm` so a phone
-    // user reads the excerpt before deciding; on `sm+` the action buttons
-    // float to the right edge as one tight vertically-centred cluster.
+    // Two-track row: stacks below `sm` so a phone user reads the excerpt first; on `sm+` the buttons float right.
     <li className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:gap-4">
-      {/* Project-wide convention: admin layouts stack via flex gap, never
-          `space-*` (enforced by the boundaries contract test). */}
+      {/* Convention: admin layouts stack via flex gap, never `space-*` (boundaries contract test). */}
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-        {/* Single metadata line: author · badge · 《post》 · time, in one
-            muted sm scale with `·` separators so the timestamp stops
-            competing with the action buttons on the right. */}
+        {/* Single metadata line: author · badge · 《post》 · time, muted sm scale with `·` separators. */}
         <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm text-muted-foreground">
           <span className="truncate font-medium text-foreground">{item.authorName}</span>
           {isDeletion ? (

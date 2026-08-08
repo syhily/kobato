@@ -6,9 +6,8 @@ import { DatabaseSync } from 'node:sqlite'
 import { serverConfig } from '@/server/infra/config'
 
 /**
- * The canonical database handle. Every consumer imports this type — the
- * single owner of the drizzle driver choice (node:sqlite, sync API with
- * `.all()` / `.get()` / `.run()` terminals).
+ * The canonical database handle every consumer imports — the single
+ * owner of the drizzle driver choice (node:sqlite sync API).
  */
 export type Database = NodeSQLiteDatabase
 
@@ -17,9 +16,9 @@ export interface DatabaseHandle {
   client: DatabaseSync
   /** The path the handle was opened with (`:memory:` included). */
   path: string
-  /** Decided once at open: the in-memory special case, so consumers read a flag instead of re-deriving it from `path`. */
+  /** Decided once at open: the in-memory special case. */
   inMemory: boolean
-  /** Set by `closeDatabase` — close is idempotent (restore may close early). */
+  /** Set by `closeDatabase` — close is idempotent. */
   closed: boolean
 }
 
@@ -28,11 +27,7 @@ export function isInMemoryPath(p: string): boolean {
   return p === ':memory:'
 }
 
-/**
- * The effective database file path: `storage.database` when set,
- * otherwise `<storage.data>/kobato.db`. `:memory:` passes through for
- * tests (a single shared in-memory database per process).
- */
+/** `:memory:` passes through for tests (one shared in-memory DB per process). */
 export function resolveDatabasePath(): string {
   const configured = serverConfig.storage.database
   if (isInMemoryPath(configured)) {
@@ -42,12 +37,8 @@ export function resolveDatabasePath(): string {
 }
 
 /**
- * Open the single per-process database connection and apply the pragma
- * set. ORDER MATTERS (verified against node:sqlite): `auto_vacuum` is
- * silently ignored on a database already in WAL mode, so it must come
- * first; on a fresh file it must also precede any DDL (migrations run
- * after open). The same pragma block serves every handle — the request
- * connection and the migration connection.
+ * Open the per-process database connection and apply the pragma set.
+ * `auto_vacuum` must come first — ignored once WAL mode is active.
  */
 export function openDatabase(databasePath: string): DatabaseHandle {
   const inMemory = isInMemoryPath(databasePath)
@@ -68,10 +59,8 @@ export function openDatabase(databasePath: string): DatabaseHandle {
 }
 
 /**
- * SQLite-recommended close pattern: refresh planner statistics, fold the
- * WAL back into a single clean on-disk file (which the restore flow can
- * then swap atomically), and close. Idempotent — the restore flow closes
- * the handle before swapping files, and the shutdown hook runs later.
+ * SQLite-recommended close pattern (optimize, fold WAL, close).
+ * Idempotent.
  */
 export function closeDatabase(handle: DatabaseHandle): void {
   if (handle.closed) {

@@ -70,10 +70,7 @@ describe('singleDateFilterLabel', () => {
 })
 
 describe('resolveSingleDateFilterBounds', () => {
-  // The bounds are built in the runner's local timezone (matching
-  // what the picker does), so we mirror the SUT's construction here
-  // instead of hard-coding UTC offsets — otherwise the test would
-  // only pass in UTC.
+  // Bounds are local-timezone; mirror the SUT's construction so the test passes in any TZ.
   function expectedBounds(date: string) {
     const start = new Date(date)
     start.setHours(0, 0, 0, 0)
@@ -115,12 +112,7 @@ describe('resolveSingleDateFilterBounds', () => {
   })
 
   it('returns no bounds when the date is empty (operator-only chip)', () => {
-    // A freshly added date chip is operator-first — the user picks
-    // the operator before typing a date, so the editor may commit
-    // `{ date: '', op }`. The bounds resolver must not crash on
-    // `new Date('').toISOString()` and must return undefined bounds
-    // so the server-side filter is a no-op until the user types a
-    // date.
+    // Operator-first chips may commit `{ date: '', op }` — resolve to undefined bounds, not crash.
     expect(resolveSingleDateFilterBounds({ date: '', op: 'is-greater' })).toEqual({
       after: undefined,
       before: undefined,
@@ -132,8 +124,7 @@ describe('resolveSingleDateFilterBounds', () => {
   })
 
   it('returns no bounds when the date is unparseable', () => {
-    // Defensive against `new Date('not-a-date')` returning an
-    // `Invalid Date` whose `toISOString` would throw.
+    // Defensive: an `Invalid Date`'s `toISOString` would throw.
     expect(resolveSingleDateFilterBounds({ date: 'not-a-date', op: 'is-less' })).toEqual({
       after: undefined,
       before: undefined,
@@ -179,9 +170,7 @@ describe('parseTextFilter', () => {
   })
 
   it('parses an empty value as a valid chip state', () => {
-    // A freshly added chip with the default operator and no text is a
-    // legal filter state — `parseTextFilter` must round-trip it
-    // instead of dropping it.
+    // A default-operator chip with no text is legal — round-trip it, don't drop it.
     expect(parseTextFilter(JSON.stringify({ op: 'contains', value: '' }))).toEqual({
       op: 'contains',
       value: '',

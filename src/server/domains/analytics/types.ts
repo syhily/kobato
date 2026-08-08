@@ -1,14 +1,12 @@
 // Shared types for the analytics ingestion pipeline: `RawAccessEvent`
-// (cheap, produced from the request, no I/O) → `EnrichedAccessEvent`
-// (after geo/UA/bot enrichment; what the batcher flushes to `access_log`).
-// Both mirror the `accessLog` columns 1:1 — adding a column means updating
-// both interfaces plus the insert mapping in `appendAccessEvent`
-// (`services/access-log.ts`).
+// (cheap, from the request) → `EnrichedAccessEvent` (after geo/UA/bot
+// enrichment). Both mirror the `accessLog` columns 1:1 — adding a column
+// means updating both plus `appendAccessEvent`'s insert mapping.
 
 import type { EntityTarget } from '@/server/infra/db/target'
 
 export interface RawAccessEvent {
-  /** Timestamp the request arrived; defaults to `new Date()` at call site. */
+  /** Defaults to `new Date()` at call site. */
   ts: Date
   /** Client IP after proxy-header resolution. Empty string falls through to a null `ip` column. */
   ip: string

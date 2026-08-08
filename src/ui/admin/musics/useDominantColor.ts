@@ -1,14 +1,10 @@
 import { useCallback } from 'react'
 
-// In-memory cache so repeated switches to the same track avoid re-downloading
-// and re-decoding the cover image just to sample its dominant color.
+// Per-URL cache — repeated track switches skip re-downloading the cover.
 const colorCache = new Map<string, string | null>()
 
-/**
- * Extract a dominant color from an image URL using a canvas.
- * Returns a hex color string or null if extraction fails.
- * Results are cached per URL to avoid redundant work on repeated track switches.
- */
+/** Extract a dominant color from an image URL via canvas, or null on
+ *  failure; results cached per URL. */
 export function useDominantColor() {
   return useCallback((imageUrl: string): Promise<string | null> => {
     const cached = colorCache.get(imageUrl)

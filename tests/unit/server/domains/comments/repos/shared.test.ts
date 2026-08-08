@@ -3,11 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import { buildAdminListConditions } from '@/server/domains/comments/repos/shared'
 
-// Drizzle's `SQL` objects don't expose their rendered SQL string
-// directly, but `sql.toQuery({ escapeName, escapeParam, escapeString })`
-// returns a `{ sql, params }` pair. The pg dialect ships with the
-// package, so we reuse it here instead of hand-rolling the helpers
-// — the rendered SQL is what the real driver would send.
+// Render SQL through the pg dialect so it matches what the real driver sends.
 const pgDialect = new PgDialect()
 
 function render(sqlObj: ReturnType<typeof buildAdminListConditions>[number]): { sql: string; params: unknown[] } {
@@ -65,8 +61,7 @@ describe('buildAdminListConditions — text filter', () => {
     const conditions = buildAdminListConditions({ q: '50%' })
     expect(conditions).toHaveLength(2)
     const { params } = render(conditions[1]!)
-    // The `%` from the user should be backslash-escaped; the wrapping
-    // wildcards are added by the repo, not interpolated from input.
+    // User `%` is escaped; wrapping wildcards come from the repo.
     expect(params).toEqual(['%50\\%%'])
   })
 
@@ -119,9 +114,7 @@ describe('buildAdminListConditions — date filter', () => {
     const conditions = buildAdminListConditions({ createdAfter: after })
     expect(conditions).toHaveLength(2)
     const { sql, params } = render(conditions[1]!)
-    // Drizzle renders the column reference first, then the operator:
-    // `"comment"."created_at" >= $1`. The regex is order-tolerant so
-    // it still matches if Drizzle ever flips the order.
+    // Order-tolerant: Drizzle may render the column before or after the operator.
     expect(sql).toMatch(/(created_at.*>=|>=.*created_at)/i)
     // timestamp_ms columns parameterise `Date` values as epoch ms.
     expect(params).toEqual([after.getTime()])

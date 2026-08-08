@@ -12,19 +12,12 @@ import { font } from '@/server/infra/db/schema/font'
 import { DomainError } from '@/server/infra/http/errors'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@/server/infra/storage/registry'
 
-// The storage registry is the ONLY substituted boundary — DB and settings
-// stay real, which is the point of this coverage. The real
-// `deleteFontPackage` runs against a shared in-memory backend (a true
-// external — S3/local disk) injected through the registry's test seam, so
-// the delete→GC pipeline is pinned by the objects actually disappearing
-// from the store. Font rows here are all driver 'local', so the seam
-// substitutes the 'local' driver only (S3 stays unconfigured, which keeps
-// the active backend local).
+// Only the storage registry is substituted — DB and settings stay real.
+// The real deleteFontPackage runs against the in-memory 'local' backend
+// injected through the registry seam.
 const mem = makeMemoryBackend({ driver: 'local' })
 
-// Section-change dispatch (backup/audit reschedule, mail transport
-// invalidation) is covered by the unit tests; keep it out of these
-// persistence-focused cases.
+// Section-change dispatch is unit-tested; kept out of these persistence cases.
 const db = getTestDb()
 
 beforeEach(async () => {
@@ -100,8 +93,7 @@ describe('fonts/services/mutate — deleteFont', () => {
     expect(deleted.id).toBe(target.id)
     const remaining = await db.select().from(font).where(eq(font.id, target.id))
     expect(remaining).toHaveLength(0)
-    // The real deleteFontPackage ran against the memory backend: every
-    // object under fonts/<hash>/ is gone, via deletePrefix.
+    // The real deleteFontPackage ran: every object under fonts/<hash>/ is gone.
     expect(packageKeys(target.hash)).toHaveLength(0)
     expect(mem.deletedKeys).toContain(`fonts/${target.hash}/result.css`)
     expect(mem.deletedKeys).toContain(`fonts/${target.hash}/chunk-0.woff2`)

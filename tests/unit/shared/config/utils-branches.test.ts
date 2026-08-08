@@ -4,7 +4,7 @@ import type { SiteAssetBranding, SidebarSettings } from '@/shared/config/types'
 
 import { brandingVersion, extractXHandle, isSidebarWidgetEnabled } from '@/shared/config/utils'
 
-// --- isSidebarWidgetEnabled (getSidebarWidgetCount is covered in utils.test.ts) --
+// getSidebarWidgetCount is covered in utils.test.ts
 
 function sidebarSettings(widgets: SidebarSettings['sidebar']['widgets']): SidebarSettings {
   return { sidebar: { widgets, dailyQuote: { source: 'shanbay', customQuotes: [] } } }
@@ -28,8 +28,6 @@ describe('shared/config/utils — isSidebarWidgetEnabled', () => {
     expect(isSidebarWidgetEnabled(sidebarSettings([]), 'todayCalendar')).toBe(false)
   })
 })
-
-// --- extractXHandle -------------------------------------------------------
 
 describe('shared/config/utils — extractXHandle', () => {
   it('returns undefined when no X network is present', () => {
@@ -58,8 +56,6 @@ describe('shared/config/utils — extractXHandle', () => {
   })
 })
 
-// --- brandingVersion ------------------------------------------------------
-
 describe('shared/config/utils — brandingVersion', () => {
   it('returns empty string when branding is null / undefined', () => {
     expect(brandingVersion(null)).toBe('')
@@ -80,7 +76,7 @@ describe('shared/config/utils — brandingVersion', () => {
     // Single etag 'a' — non-empty, returns a deterministic hash.
     const v = brandingVersion(branding)
     expect(v).not.toBe('')
-    expect(v).toBe(brandingVersion(branding)) // stable
+    expect(v).toBe(brandingVersion(branding))
   })
 
   it('produces a stable deterministic hash for a given etag set', () => {

@@ -11,15 +11,13 @@ import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-reg
 import { friend } from '@/server/infra/db/schema/friend'
 import { user } from '@/server/infra/db/schema/user'
 
-// adminFriendsRouter against the real engine: the friends service runs
-// against real friend rows (homepage soft-uniqueness, visibility
-// buckets), and writes record real audit rows flushed from the batcher.
+// adminFriendsRouter against the real engine: real friend rows (homepage soft-uniqueness,
+// visibility buckets) and batched audit rows.
 const db = getTestDb()
 
 let adminId = 0
 
-// audit_log.actor_id references user.id, so the editor must be a real
-// row for the batched audit insert to survive the FK on flush.
+// audit_log.actor_id is an FK: the editor must be a real row for the audit insert to survive flush.
 async function seedAdmin(): Promise<number> {
   const [row] = await db
     .insert(user)

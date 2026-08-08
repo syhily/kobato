@@ -53,10 +53,8 @@ export function LinkMark({ value, children }: PortableTextMarkComponentProps<Lin
   if (def === undefined) {
     return <>{children}</>
   }
-  // Defense-in-depth: even if the schema filter is bypassed, never emit
-  // executable JavaScript or data URLs in the public renderer. `sanitizeUrl`
-  // also strips C0 control characters, closing the `java\tscript:` bypass
-  // that a naive protocol regex misses.
+  // Defense-in-depth: never emit executable JS or data URLs; `sanitizeUrl` also
+  // strips C0 control characters (closes the `java\tscript:` bypass).
   const href = sanitizeUrl(def.href)
   return (
     <a href={href} rel={safeRel(def.target, def.rel)} target={def.target} className={PT_INLINE.link}>

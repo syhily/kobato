@@ -1,11 +1,9 @@
 import { useEffect } from 'react'
 
-// React Router keeps injected CSS in `<head>` across SPA navigations.
-// This breaks admin/auth/editor layouts reached from the public site:
-// `public.css` stays in `<head>` and its un-layered rules beat any
-// `@layer utilities` rule. Detach public stylesheets on mount,
-// re-attach on unmount. Every layout that opts out of public chrome
-// must also opt into this hook.
+// React Router keeps injected CSS in `<head>` across SPA navigations, and
+// `public.css`'s un-layered rules beat any `@layer utilities` rule. Detach
+// public stylesheets on mount, re-attach on unmount. Every layout that opts
+// out of public chrome must also opt into this hook.
 
 function isPublicStylesheet(el: Element): boolean {
   if (el.tagName === 'STYLE') {
@@ -41,9 +39,7 @@ export function useDetachPublicCss(): void {
     })
     return () => {
       for (const { node, nextSibling, parent } of detached) {
-        // Re-anchor defensively: only insertBefore when `nextSibling`
-        // is still a child of `parent`, otherwise fall back to append.
-        // Skip when the node has already been re-attached elsewhere.
+        // Re-anchor only when the original position is still valid; skip if re-attached elsewhere.
         if (node.parentNode !== null) {
           continue
         }

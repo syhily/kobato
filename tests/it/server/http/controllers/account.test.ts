@@ -15,11 +15,8 @@ import { session as sessionTable } from '@/server/infra/db/schema/session'
 import { user as userTable } from '@/server/infra/db/schema/user'
 import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 
-// The account controller's profile / password / session procedures
-// against the real engine: seeded user + session rows, real bcrypt
-// compares, and the real in-process rate limiter. (The passkey
-// procedures and their `@simplewebauthn/server` stub live in
-// account.controller.test.ts.)
+// Profile / password / session procedures against the real engine (bcrypt + rate
+// limiter). Passkey procedures live in account.controller.test.ts.
 
 const db = getTestDb()
 
@@ -130,8 +127,7 @@ describe('accountRouter.updateProfile', () => {
   })
 
   it('treats a badge-only patch from a visitor as a graceful no-op, not a 500', async () => {
-    // Badge writes are admin/author-only, so stripping leaves an EMPTY
-    // patch — this used to hit drizzle's "No values to set".
+    // Stripping badge writes leaves an EMPTY patch — must be a graceful no-op.
     const id = await seedUser({ role: 'visitor' })
 
     const res = await call(

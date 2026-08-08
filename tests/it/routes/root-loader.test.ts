@@ -10,9 +10,7 @@ import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 const db = getTestDb()
 const session = makeSession({ csrfToken: 'test-csrf-token' })
 
-// The settings snapshot is REAL here: no getters/hydrate doubles. The
-// empty setting table hydrates to `null` — the pre-install state — and
-// the root loader surfaces it as `blogSettings: null`.
+// Real settings snapshot: the empty table hydrates to null (the pre-install state).
 
 vi.mock('@/client/api/query-client', () => ({
   makeQueryClient: vi.fn(() => ({})),
@@ -32,8 +30,7 @@ const { loader } = await import('@/root')
 describe('root loader', () => {
   beforeEach(async () => {
     await clearAllTables(db)
-    // Restore the pre-install state so the real hydrate re-reads the
-    // (empty) setting table instead of the worker's seeded bundle.
+    // Restore the pre-install state: hydrate must re-read the empty table, not the seeded bundle.
     resetBlogSettingsForTests()
   })
 
@@ -55,8 +52,7 @@ describe('root loader', () => {
 
     expect(result).toMatchObject({
       cspNonce: 'test-nonce-abc123',
-      // No hydrated settings pre-install — the loader passes null through
-      // instead of fabricating a bundle.
+      // Pre-install: pass null through, don't fabricate a bundle.
       blogSettings: null,
     })
   })

@@ -1,36 +1,21 @@
 // The closed list of "branded" social network identifiers used by the
-// `socials[]` settings array. Header maps each value to a fixed icon, and
-// the admin SocialsEditor uses the list to populate its "add a platform"
-// menu.
-//
-// Lives in `@/shared/` because both the server-side Zod schema and the
-// admin form editor need the same canonical list, while UI modules are
-// forbidden from importing server modules and shared modules cannot
-// import from server.
+// `socials[]` settings array (fixed header icons + admin editor menu).
+// Shared: the server Zod schema and the admin editor need the same list.
 export const SOCIAL_NETWORKS = ['github', 'x', 'wechat', 'weibo', 'qq'] as const
 export type SocialNetwork = (typeof SOCIAL_NETWORKS)[number]
 
 export type SocialDisplayType = 'link' | 'qrcode'
 
-// Canonical per-platform metadata. The admin editor uses these to:
-//   - render the "add a platform" menu (label, fixed display type),
-//   - decide whether the row needs a URL input or a QR-code title input,
-//   - seed the user-visible name (`socials[].name`) so an editor never
-//     has to type it.
-//
-// `linkPlaceholder` is a hint string (not validation) showing the
-// expected URL shape for that network.
+// Canonical per-platform metadata for the admin editor: menu label +
+// fixed display type, URL vs QR-code input choice, and the seeded
+// user-visible name. `linkPlaceholder` is a hint, not validation.
 export interface SocialNetworkMeta {
   network: SocialNetwork
   label: string
   type: SocialDisplayType
   linkLabel: string
   linkPlaceholder: string
-  /**
-   * Default text shown in the QR-code popup subtitle (`socials[].name`).
-   * Editors can override per-row inside the form when they want to
-   * personalise the popup wording (e.g. "Yufan Sheng" instead of "微信").
-   */
+  /** Default text for the QR-code popup subtitle (`socials[].name`); editors can override per-row. */
   defaultName: string
 }
 

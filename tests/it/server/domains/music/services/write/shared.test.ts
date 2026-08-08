@@ -1,12 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
-// music/services/write/shared.ts has two surfaces:
-//   - generateUniquePlayerId — retry-until-unique loop against the REAL
-//     music table. `randomBytes` is stubbed so the candidate sequence is
-//     deterministic and collisions can be seeded as real rows.
-//   - downloadBinary — a thin DomainError-mapping wrapper over safeFetch;
-//     the network stays a true external, so global fetch is stubbed.
+// music/write/shared against the real DB; mocks: randomBytes (deterministic ids) and global fetch (network is a true external).
 import { music } from '@/server/infra/db/schema/media'
 
 const randomBytesMock = vi.hoisted(() => vi.fn())
@@ -24,12 +19,10 @@ const db = getTestDb()
 beforeEach(async () => {
   await clearAllTables(db)
   vi.clearAllMocks()
-  // Default: no collision control needed — hand back real random bytes.
   randomBytesMock.mockImplementation((size: number) => Buffer.alloc(size, 7))
 })
 
-// A byte value of `b` yields the candidate id `PLAYER_ID_ALPHABET[b % 36]`
-// repeated 16 times — e.g. 7 → '7777777777777777', 8 → '8888...'.
+// A byte `b` yields PLAYER_ID_ALPHABET[b % 36] repeated 16 times — e.g. 7 → '7777777777777777'.
 function candidateFor(byte: number): string {
   const alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789'
   return alphabet[byte % alphabet.length]!.repeat(16)
@@ -150,7 +143,7 @@ describe('music/write/shared — downloadBinary fetch + redirect branches', () =
   })
 
   it('throws INTERNAL when a 3xx carries no Location header', async () => {
-    fakeFetchHandler(() => new Response(null, { status: 302 })) // no Location
+    fakeFetchHandler(() => new Response(null, { status: 302 }))
     await expect(downloadBinary('https://cdn.example.com/a.mp3', 1000, 'audio')).rejects.toThrow(
       /下载音频失败，请稍后再试/,
     )
@@ -202,7 +195,7 @@ describe('music/write/shared — downloadBinary size enforcement', () => {
       async () =>
         new Response(body, {
           status: 200,
-          headers: { 'content-length': '1' }, // misleading
+          headers: { 'content-length': '1' },
         }),
     ) as typeof globalThis.fetch
     await expect(downloadBinary('https://cdn.example.com/c.jpg', MAX_COVER_BYTES, 'cover')).rejects.toThrow(

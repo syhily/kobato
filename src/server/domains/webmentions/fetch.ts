@@ -6,23 +6,15 @@ import { safeFetch } from '@/server/infra/safe-fetch'
 
 const log = getLogger('webmentions.fetch')
 
-// Fetch budget for the inbox worker's source verification, on the
-// safe-fetch default timeout/redirect budget with a strict size cap.
-// Transient failures (timeout / network / 5xx) are marked retryable so
-// the queue retries them on a backoff waterline; everything else drops
-// the queue row. The caps never weaken under retry.
-export const MAX_SOURCE_BYTES = 1024 * 1024 // 1 MB
+// Inbox verification fetch budget: safe-fetch defaults plus a strict size
+// cap that never weakens under retry.
+export const MAX_SOURCE_BYTES = 1024 * 1024
 
-// Identify the receiver honestly; some IndieWeb sites serve the
-// microformats2 markup only to agents that look like webmention
-// receivers, and a stock browser UA gets the same HTML either way.
+// Identify the receiver honestly in the User-Agent.
 const WEBMENTION_UA = 'Kobato Webmention Receiver (+https://yufan.me/webmention)'
 
-// Map the safe-fetch failure union onto the receiver's DomainError
-// variants; the HTTP layer turns these into the 400s the endpoint
-// contract (and the resource tests) expects. Transient infrastructure
-// failures carry `retryable: true` — the inbox queue re-arms those rows
-// instead of dropping them.
+// Maps safe-fetch failures onto the endpoint's 400 DomainErrors; transient
+// failures carry retryable so the inbox queue re-arms instead of dropping.
 function sourceFetchError(result: SafeFetchFailure): DomainError {
   switch (result.reason) {
     case 'invalid-url':
@@ -51,14 +43,7 @@ function sourceFetchError(result: SafeFetchFailure): DomainError {
   }
 }
 
-/**
- * Fetch the webmention source document. Every URL (initial and each
- * redirect hop) passes through the shared SSRF guard owned by
- * `@/server/infra/safe-fetch` (`isBlockedFetchHost` in
- * `@/shared/utils/safe-url`, applied per hop with a redirect budget).
- * The document is capped at {@link MAX_SOURCE_BYTES}; the cap is checked
- * against both the Content-Length header and the actual body.
- */
+/** Fetch the source document: SSRF-guarded per hop, capped at {@link MAX_SOURCE_BYTES}. */
 export async function fetchSourceHtml(sourceUrl: string): Promise<string> {
   const result = await safeFetch(sourceUrl, {
     maxBytes: MAX_SOURCE_BYTES,

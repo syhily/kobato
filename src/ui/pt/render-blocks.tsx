@@ -168,10 +168,7 @@ export function TableBlockComponent({ value }: PortableTextTypeComponentProps<Ta
   )
 }
 
-// Table cells carry link markDefs only per the wire schema (the bridge
-// strips other defs on save, the editor's table-cell guard on paste), so
-// the cell inline pipeline types to the schema instead of re-declaring the
-// full markDef union.
+// Table cells carry link markDefs only per the wire schema (bridge + paste guard strip others) — type to the schema.
 function renderSpansInline(spans: readonly Span[], markDefs: readonly LinkMarkDef[]): ReactNode {
   return spans.map((span) => <SpanInline key={span._key} span={span} markDefs={markDefs} />)
 }
@@ -205,10 +202,8 @@ function applyInlineMark(node: ReactNode, markName: string, markDefs: readonly L
   if (def === undefined) {
     return node
   }
-  // Defense-in-depth: never emit executable JavaScript or data URLs
-  // even if the schema filter is somehow bypassed. `sanitizeUrl` also
-  // strips C0 control characters, closing the `java\tscript:` bypass
-  // that a naive protocol regex misses.
+  // Defense-in-depth: never emit executable JS or data URLs; `sanitizeUrl` also
+  // strips C0 control characters (closes the `java\tscript:` bypass).
   const href = sanitizeUrl(def.href)
   return (
     <a href={href} rel={safeRel(def.target, def.rel)} target={def.target} className={PT_INLINE.link}>

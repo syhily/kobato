@@ -2,13 +2,9 @@ import { createHash } from 'node:crypto'
 
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
-// Fallback site assets bundled into the server build via Vite's glob
-// import. SVGs are inlined as raw text (also rendered inline elsewhere);
-// binaries are inlined as ArrayBuffers and wrapped in Node Buffers once
-// at module init, so requests never touch the filesystem.
-//
-// This module lives under `src/server/` so a stray client-side import
-// of the 430 KB bundle is caught by the path itself.
+// Fallback site assets bundled via Vite's glob import: SVGs inlined as raw text,
+// binaries as ArrayBuffers wrapped in Node Buffers at module init. Lives under
+// src/server/ so a stray client-side import of the 430 KB bundle is caught by the path.
 
 export const SVG_SLOTS = ['faviconSvg', 'logoSvg', 'logoDarkSvg', 'logoLargeSvg', 'logoLargeDarkSvg'] as const
 export type SvgSlot = (typeof SVG_SLOTS)[number]

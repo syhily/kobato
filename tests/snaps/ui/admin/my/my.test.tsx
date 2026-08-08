@@ -146,7 +146,6 @@ describe('snapshot: LoginMethodCard', () => {
     expect(html).toContain('密码登陆')
     expect(html).toContain('邮箱链接登陆')
     expect(html).toContain('Passkey 登陆')
-    // magic-link disabled: points at the mail settings.
     expect(html).toContain('需要管理员先在「设置 → 邮件服务」完成邮件配置。')
     // passkeyList pending => passkeyCount 0 => "register one first" hint.
     expect(html).toContain('需要先在下方「Passkey 管理」中注册至少一个 Passkey。')

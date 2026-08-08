@@ -43,10 +43,7 @@ export async function fetchLatestRelease(db: Database): Promise<LatestRelease> {
     throw new DomainError('INTERNAL', 'Invalid repository format')
   }
   const { owner, repo } = parsed
-  // Read-through the short-TTL bucket (the key carries the full request
-  // target): repeat callers — the public release endpoint and the admin
-  // update check — share one upstream call per TTL window. A failed
-  // fetch throws out of the loader and is never cached.
+  // Read-through the short-TTL bucket; failed fetches are never cached.
   return through(db, 'githubRelease', { owner, repo, endpoint: 'releases/latest' }, async () => {
     const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/releases/latest`, {
       signal: AbortSignal.timeout(30_000),

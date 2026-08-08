@@ -2,13 +2,9 @@ import sharp from 'sharp'
 
 import { encodeIco } from '@/server/domains/assets/ico'
 
-// sharp is statically imported and bundled; under SEA the bundler plugin
-// redirects the package's own platform loads to `nativeRequire` (see
-// `scripts/sea/redirect-native-requires.ts`).
+// Keep sharp statically imported — under SEA the bundler rewrites its platform loads.
 
-// Caller (settings service) is responsible for uploading each buffer to
-// S3. Returning raw Buffers (not base64) avoids a redundant
-// decode→encode round-trip and keeps the surface honest about size.
+// Caller (settings service) is responsible for uploading each buffer to S3.
 export interface FaviconPack {
   faviconIco: Buffer
   appleTouchIcon: Buffer

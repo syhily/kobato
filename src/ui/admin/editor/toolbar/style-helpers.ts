@@ -13,12 +13,9 @@ import {
   QuoteIcon,
 } from 'lucide-react'
 
-// Block style values map 1:1 to PortableText `style` values produced
-// by pmDocToBody / consumed by bodyToPmDoc — keep in sync if a new
-// style is ever added to `portableTextBodySchema`. h1 is owned by
-// the page title (rendered in the public layout), so the editor
-// surfaces h2–h5 only; h1 + h6 still round-trip through the bridge
-// if external content provides them.
+// Block style values map 1:1 to PortableText `style` values (pmDocToBody /
+// bodyToPmDoc) — keep in sync with `portableTextBodySchema`. h1 is owned by
+// the page title, so the editor surfaces h2–h5 only.
 export const BLOCK_STYLE_OPTIONS: { value: string; label: string }[] = [
   { value: 'normal', label: '正文段落' },
   { value: 'h2', label: '二级标题' },
@@ -29,9 +26,7 @@ export const BLOCK_STYLE_OPTIONS: { value: string; label: string }[] = [
   { value: 'codeBlock', label: '代码块' },
 ]
 
-// Inline button row mirror of `BlockStyleSelect`. The icons follow
-// the same conventions used by the slash menu so the operator gets
-// the same visual cue regardless of entry point.
+// Inline button row mirror of `BlockStyleSelect`; icons follow slash-menu conventions.
 export const BLOCK_STYLE_BUTTONS: { value: string; title: string; Icon: typeof PilcrowIcon }[] = [
   { value: 'normal', title: '正文段落', Icon: PilcrowIcon },
   { value: 'h2', title: '二级标题', Icon: Heading2Icon },
@@ -64,8 +59,7 @@ export function applyBlockStyle(editor: Editor, value: string): void {
       chain.setParagraph().run()
       return
     case 'blockquote':
-      // Only toggle when not already active — toggling an active
-      // blockquote would unwrap it. Same goes for codeBlock below.
+      // Only toggle when not already active — toggling an active blockquote unwraps it.
       if (!editor.isActive('blockquote')) {
         chain.toggleBlockquote().run()
       }

@@ -7,13 +7,9 @@ import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { EditTagDialog } from '@/ui/admin/tags/EditTagDialog'
 import { TagsView } from '@/ui/admin/tags/TagsView'
 
-// The view drives its rows from `useInfiniteQuery` (server state lives in
-// the TanStack cache) plus a delete `useMutation`, with the search box wired
-// through `useDebouncedSearch`. We stub the list query so SSR can emit the
-// loading / empty chrome. The TanStack hook seams are owned by
-// `#/_helpers/mock-react-query`; `sonner` and `useSettingsMutation` are
-// inert global stubs registered in `tests/snaps/setup.ts`; the dialog double
-// lives in `#/_helpers/stubs/dialog`.
+// Rows come from useInfiniteQuery, search from useDebouncedSearch; the list
+// query is stubbed so SSR emits the loading/empty chrome. Hook seams from
+// mock-react-query, global stubs from setup.ts, dialog from _helpers/stubs.
 
 const queryMocks = mockTanstackQuery()
 
@@ -48,7 +44,6 @@ describe('snapshot: TagsView', () => {
     expect(html).toContain('新增标签')
     expect(html).toContain('名称')
     expect(html).toContain('Slug')
-    // The skeleton occupies the table body before data arrives.
     expect(html).toContain('skeleton')
   })
 

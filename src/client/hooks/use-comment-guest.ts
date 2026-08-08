@@ -64,10 +64,8 @@ function removeProfile(): void {
   window.localStorage.removeItem(STORAGE_KEY)
 }
 
-// Snapshot cache: `useSyncExternalStore` requires `getSnapshot` to return a
-// referentially stable value between store changes, so the parsed profile
-// is cached against the raw storage string (same idiom as
-// `use-thumbhash-bg.ts`).
+// `useSyncExternalStore` needs a referentially stable snapshot — cache the
+// parsed profile against the raw storage string (same idiom as use-thumbhash-bg).
 let cachedRaw: string | null | undefined
 let cachedProfile: CommentGuestProfile | null = null
 
@@ -100,11 +98,9 @@ function emitChange(): void {
 }
 
 export function useCommentGuest() {
-  // SSR-consistent prefill via `useSyncExternalStore`: the server snapshot
-  // is always `null`, so SSR and the hydration render agree and React
-  // re-renders with the stored profile right after hydration — no
-  // hydration mismatch. SPA navigations mount client-side and read the
-  // client snapshot on the first render, so prefill stays instant there.
+  // SSR-consistent prefill: the server snapshot is always null so SSR and
+  // hydration agree; React re-renders with the stored profile right after
+  // hydration, and SPA navigations read it on first render.
   const profile = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 
   const saveProfile = useCallback((next: CommentGuestProfile) => {

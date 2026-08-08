@@ -9,9 +9,7 @@ function nextId(prefix: string): string {
   return `${prefix}-${counter}`
 }
 
-// Post / page ids are numeric strings (stringified bigints from the DB).
-// Tests can mostly pin them but the detail loader now `Number(post.id)`s
-// the value to build the metric target, so generated ids MUST be numeric.
+// Post/page ids are numeric strings — generated ids MUST be numeric (the detail loader Number()s them).
 let idCounter = 1_000_000
 function nextNumericId(): string {
   idCounter += 1

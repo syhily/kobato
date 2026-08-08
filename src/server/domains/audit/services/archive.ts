@@ -15,15 +15,10 @@ const log = getLogger('audit.archive')
 
 const S3_ARCHIVE_PREFIX = 'audit-log/archive/'
 const ARCHIVE_PAGE_SIZE = 5000
-// A day's archived IDs can run into the millions; one DELETE with an IN
-// list that long would blow past SQLite's bound-parameter limit (32766).
+// Keep IN lists under SQLite's bound-parameter limit (32766).
 const DELETE_BATCH_SIZE = 5000
 
-// Whether the archive job can write to S3. Goes through the backend's strict
-// `isAvailable()` (enabled + endpoint + bucket + both keys) so a
-// half-configured bucket takes the purge fallback below instead of failing
-// every daily run. The try/catch mirrors the registry's own degradation: a
-// not-yet-hydrated settings snapshot counts as unavailable, not as a crash.
+// Strict `isAvailable()` gate: a half-configured bucket falls back to purge-only.
 function s3ArchiveAvailable(): boolean {
   try {
     return backendFor('s3').isAvailable()
@@ -31,8 +26,6 @@ function s3ArchiveAvailable(): boolean {
     return false
   }
 }
-
-// Archive expired audit logs to S3
 
 export async function archiveExpiredAuditLogs(db: Database): Promise<ArchiveResult> {
   const bundle = getBlogSettingsBundleSync()
@@ -45,8 +38,6 @@ export async function archiveExpiredAuditLogs(db: Database): Promise<ArchiveResu
 
   log.info('Starting audit log archive', { cutoff: cutoff.toISOString(), dbRetentionDays })
 
-  // If S3 is not configured, fall back to purge-only mode so expired rows
-  // do not accumulate indefinitely in the database.
   if (!s3ArchiveAvailable()) {
     log.warn('S3 storage unavailable; purging expired audit logs without archiving')
 
@@ -56,11 +47,9 @@ export async function archiveExpiredAuditLogs(db: Database): Promise<ArchiveResu
     return { archivedDays: 0, archivedRows: 0, deletedRows: deleted }
   }
 
-  // Count how many days have data to archive
   const dayRows = await db
     .select({
-      // createdAt is epoch ms — `date(x)` alone reads it as a Julian day
-      // (NULL); divide down to seconds for `unixepoch`.
+      // createdAt is epoch ms — divide by 1000 for `unixepoch`.
       day: sql<string>`date(${auditLog.createdAt} / 1000, 'unixepoch')`,
       count: sql<number>`count(*)`,
     })
@@ -94,8 +83,7 @@ export async function archiveExpiredAuditLogs(db: Database): Promise<ArchiveResu
         day,
         err: err instanceof Error ? err.message : String(err),
       })
-      // Continue with remaining days — don't let one bad day block
-      // all older data forever.
+      // One bad day must not block the rest of the archive.
       continue
     }
   }
@@ -121,8 +109,7 @@ async function archiveDay(db: Database, day: string, dayStart: Date, dayEnd: Dat
   let cursorId: number | undefined
   const archivedIds: number[] = []
 
-  // Paginate through the day's data in batches using id as cursor
-  // (createdAt is not unique, so id is the tie-breaker).
+  // Cursor by id — createdAt is not unique.
   for (;;) {
     const conditions = [gte(auditLog.createdAt, dayStart), lt(auditLog.createdAt, dayEnd)]
     if (cursorId) {
@@ -140,8 +127,7 @@ async function archiveDay(db: Database, day: string, dayStart: Date, dayEnd: Dat
       break
     }
 
-    // Plain-JSON lines (superjson was dropped with the SQLite
-    // migration): `toJsonSafe` renders Dates as epoch ms.
+    // Plain JSON-lines; `toJsonSafe` renders Dates as epoch ms.
     const lines = rows.map((row) =>
       JSON.stringify(
         toJsonSafe({
@@ -183,18 +169,13 @@ async function archiveDay(db: Database, day: string, dayStart: Date, dayEnd: Dat
     return 0
   }
 
-  // Upload to S3
   await backendFor('s3').put({ key, body: buffer, contentType: 'application/gzip', visibility: 'private' })
 
-  // Only delete from DB after successful upload.
-  // Delete by the exact row IDs we collected so that events inserted
-  // between read and delete are not silently destroyed.
+  // Delete only after a successful upload, by the exact collected IDs.
   return deleteArchivedRows(db, archivedIds)
 }
 
-/** Delete rows by id in batches of `batchSize` (test seam — production
- *  uses DELETE_BATCH_SIZE) so the IN list never approaches SQLite's
- *  bound-parameter limit. Returns the total number of deleted rows. */
+/** Batch deletes by id (test seam: production uses DELETE_BATCH_SIZE). */
 export async function deleteArchivedRows(
   db: Database,
   ids: readonly number[],
@@ -207,8 +188,6 @@ export async function deleteArchivedRows(
   }
   return deleted
 }
-
-// Clean up expired S3 archives
 
 export async function cleanupExpiredArchives(): Promise<CleanupResult> {
   const bundle = getBlogSettingsBundleSync()
@@ -238,8 +217,6 @@ export async function cleanupExpiredArchives(): Promise<CleanupResult> {
   log.info('S3 archive cleanup completed', { deletedFiles: toDelete.length })
   return { deletedFiles: toDelete.length }
 }
-
-// Run the full archive job
 
 export async function runArchiveJob(db: Database): Promise<void> {
   try {

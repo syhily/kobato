@@ -2,11 +2,9 @@ import { useEffect, useLayoutEffect, useRef } from 'react'
 
 const useBrowserLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect
 
-// iOS Safari zooms in when focusing a form control with `font-size < 16px`.
-// This hook disables user-scaling on the viewport meta tag while any
-// INPUT/TEXTAREA/SELECT is focused, restoring it when focus leaves.
-// Mount ONCE at the top of the app — duplicate installs race the same
-// `<meta>` rewrite. Gated to iOS/iPadOS WebKit; other platforms no-op.
+// iOS Safari zooms into focused controls with `font-size < 16px`; lock
+// viewport scaling while one is focused, restore on blur. Mount ONCE —
+// duplicate installs race the same `<meta>` rewrite. iOS/iPadOS only.
 export function useIosNoZoomOnFocus(): void {
   const originalContentRef = useRef<string | null>(null)
 
@@ -46,8 +44,8 @@ export function useIosNoZoomOnFocus(): void {
       if (!isFormControl(event.target)) {
         return
       }
-      // Keep the lock while focus moves between form controls —
-      // restoring mid-tab would let Safari re-zoom on every keystroke.
+      // Keep the lock while focus moves between form controls — restoring
+      // mid-tab would let Safari re-zoom on every keystroke.
       if (isFormControl(event.relatedTarget)) {
         return
       }
@@ -63,8 +61,7 @@ export function useIosNoZoomOnFocus(): void {
     return () => {
       document.removeEventListener('focusin', onFocusIn)
       document.removeEventListener('focusout', onFocusOut)
-      // Defensive: if the app unmounts while a control is focused
-      // (e.g. fast route change), make sure pinch-zoom comes back.
+      // Restore the original meta if a control is still focused at unmount.
       if (originalContentRef.current !== null) {
         meta.setAttribute('content', originalContentRef.current)
         originalContentRef.current = null

@@ -158,7 +158,6 @@ function Sidebar({
             : 'group-data-[collapsible=icon]:w-(--sidebar-width-icon)',
         )}
       />
-      {/* actual sidebar */}
       <div
         className={cn(
           'absolute inset-y-0 z-10 hidden h-full max-h-dvh w-(--sidebar-width) md:flex',

@@ -27,7 +27,6 @@ export function dynamicBodyLimit(options: DynamicBodyLimitOptions): MiddlewareHa
 
   return async function dynamicBodyLimitMiddleware(c, next) {
     if (!c.req.raw.body) {
-      // GET or HEAD request
       return next()
     }
 
@@ -45,11 +44,8 @@ export function dynamicBodyLimit(options: DynamicBodyLimitOptions): MiddlewareHa
       return next()
     }
 
-    // Transfer-Encoding present (chunked) or no length headers.
-    // Per RFC 7230, when both are present Transfer-Encoding takes precedence
-    // and Content-Length is ignored. Stream the body through a passthrough
-    // that counts bytes and errors on overflow, so we never buffer the
-    // entire payload in memory.
+    // Chunked or no length headers: stream through a byte-counting passthrough
+    // (Transfer-Encoding wins per RFC 7230) — never buffer the whole payload.
     let size = 0
     const rawReader = c.req.raw.body.getReader()
 
@@ -62,17 +58,10 @@ export function dynamicBodyLimit(options: DynamicBodyLimitOptions): MiddlewareHa
         }
         size += value.byteLength
         if (size > maxSize) {
-          // Cancel the upstream reader first: erroring the passthrough
-          // without cancelling leaves the raw chunked body hanging (the
-          // socket is never drained), which lets a client trickle bytes
-          // and hold the connection open. The catch is required — cancel
-          // rejects if the stream is already errored, which would
-          // otherwise surface as an unhandled rejection.
+          // Cancel the upstream reader first — an un-cancelled chunked body can
+          // trickle forever; the catch swallows cancel-on-errored-stream rejections.
           void rawReader.cancel().catch(() => {})
-          // Erroring the stream with an HTTPException lets Hono's error
-          // handler convert it to a 413 response. A plain Error would
-          // become a 500 because Hono's next() always resolves and the
-          // generic error ends up in the default error handler.
+          // An `HTTPException` lets Hono's handler emit 413 — a plain Error would 500.
           controller.error(new HTTPException(413, { message: DEFAULT_ERROR_MESSAGE }))
           return
         }

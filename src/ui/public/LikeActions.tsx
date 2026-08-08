@@ -33,17 +33,11 @@ export interface LikeButtonProps {
 
 const LIKE_TOKENS_KEY = 'like-tokens'
 
-// No-op subscription for the mount-detection store below (the snapshot
-// flips on its own once hydration commits).
+// No-op subscription — the store's snapshot flips on its own once hydration commits.
 const emptySubscribe = () => () => {}
 
-// `@number-flow/react` is interaction-only chrome: the digit-roll animation
-// matters when the count changes on a like/unlike, not on first paint. Load
-// it lazily so it stays out of the public pages' synchronous bundle. The
-// Suspense fallback is the plain number, so SSR output and the first
-// hydrated render are byte-identical (no hydration mismatch, no layout
-// shift), and the displayed count stays correct if it changes while the
-// chunk is still in flight.
+// Lazy, interaction-only chrome; the plain-number fallback keeps SSR and the
+// first hydrated render byte-identical.
 const NumberFlow = lazy(() => import('@number-flow/react'))
 
 function isRecordOfStrings(value: unknown): value is Record<string, string> {
@@ -101,7 +95,7 @@ export function createLikeButtonState(commentKey: string, likes: number): LikeBu
   return { commentKey, likes, liked: false }
 }
 
-/** Apply an optimistic like/unlike toggle. Exported for unit tests. */
+/** Exported for unit tests. */
 export function applyLikeOptimistic(state: LikeButtonState, action: 'like' | 'unlike'): LikeButtonState {
   if (action === 'like') {
     return { ...state, liked: true, likes: state.likes + 1 }
@@ -110,19 +104,12 @@ export function applyLikeOptimistic(state: LikeButtonState, action: 'like' | 'un
 }
 
 export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeButtonProps) {
-  // `useOptimistic` must be dispatched inside a transition and stay pending
-  // until `onSuccess` commits, otherwise React 19 reverts the update.
+  // Dispatch inside a transition and keep it pending until `onSuccess` commits.
   const [baseState, setBaseState] = useState(createLikeButtonState(commentKey, initialLikes))
   const [state, addOptimistic] = useOptimistic(baseState, applyLikeOptimistic)
 
-  // `@number-flow/react` renders a nested span structure (digit rolls) that
-  // a static fallback cannot replicate, so rendering it during hydration
-  // would mismatch the server's plain-number span (React error #418). The
-  // official hydration-safe client-only switch: SSR and the first hydrated
-  // render take the server snapshot (plain span); right after hydration the
-  // store re-checks and flips to NumberFlow — a regular update with no
-  // hydration constraints, and the lazy chunk can still arrive late under
-  // the Suspense fallback.
+  // SSR and the first hydrated render take the server snapshot (plain span);
+  // the store flips to NumberFlow only after hydration.
   const showNumberFlow = useSyncExternalStore(
     emptySubscribe,
     () => true,
@@ -130,11 +117,7 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
   )
 
   const tokenRef = useRef<string | null>(null)
-  // Interaction sequencing: every like/unlike dispatch bumps
-  // `interactionSeqRef`, and a validate request snapshots it on the way
-  // out. If the user interacted while the request was in flight, the
-  // verdict predates the current state and is discarded — it must not
-  // flip the button back or delete the freshly issued token.
+  // Discard validate verdicts that predate a newer interaction.
   const interactionSeqRef = useRef(0)
   const validateSeqRef = useRef(0)
 
@@ -248,8 +231,7 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
         className={cn(
           'px-10',
           'border-like-bg bg-like-bg hover:border-like-bg-hover hover:bg-like-bg-hover',
-          // Lift on hover: soft shadow + 4% scale-up. Transition respects
-          // prefers-reduced-motion via the base.css media-query guard.
+          // Hover lift; transitions respect prefers-reduced-motion via base.css.
           'transition-[transform,box-shadow,background-color,border-color] duration-200 ease-[cubic-bezier(0.175,0.885,0.32,1.1)] hover:scale-[1.04] hover:shadow-[0_12px_32px_-6px_rgb(0_0_0/0.25)]',
           'data-[liked=true]:border-like-active data-[liked=true]:bg-like-active data-[liked=true]:text-white data-[liked=true]:shadow-like-active',
         )}

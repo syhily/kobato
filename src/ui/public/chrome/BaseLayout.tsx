@@ -9,9 +9,8 @@ import { Header } from '@/ui/public/chrome/Header'
 import { ScrollTopButton } from '@/ui/public/chrome/ScrollTopButton'
 import { ThemeToggle } from '@/ui/public/chrome/ThemeToggle'
 import { UserMenu } from '@/ui/public/chrome/UserMenu'
-// Static import here so React Router can preload `public.css` during SSR
-// and avoid FOUC. Do NOT re-export from `@/root` — that would pin this
-// module in the admin chunk and break the cascade separation.
+// Static import so React Router preloads `public.css` during SSR (no FOUC).
+// Do NOT re-export from `@/root` — that would pin this module in the admin chunk.
 import '@/styles/public.css'
 
 export interface BaseLayoutProps {
@@ -42,8 +41,7 @@ export function BaseLayout({ navigation, footer, currentUser, pathname, search, 
       </a>
       <Header navigation={resolvedNavigation} currentUser={currentUser} pathname={pathname} logoutQuery={logoutQuery} />
       {currentUser && (
-        // Raise above the right-side cover image used on detail pages
-        // (z-aside-drawer / 1020) so the avatar and its dropdown stay reachable.
+        // Above the detail-page cover image (z-aside-drawer / 1020) so the avatar and dropdown stay reachable.
         <div className="fixed top-4 right-4 z-modal hidden lg:block">
           <UserMenu currentUser={currentUser} logoutQuery={logoutQuery} />
         </div>

@@ -41,10 +41,8 @@ describe('db/query/image — upsertImageByStoragePath', () => {
       note: null,
     })
 
-    // Soft-delete
     await db.update(image).set({ deletedAt: new Date() }).where(eq(image.id, first.id))
 
-    // Re-upload — should resurrect with updated fields and cleared deleted_at
     const second = await upsertImageByStoragePath(db, {
       storagePath: 'images/2026/05/bar.jpg',
       mimeType: 'image/png',

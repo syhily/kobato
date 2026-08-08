@@ -8,8 +8,7 @@ const inputVariants = cva(
   {
     variants: {
       size: {
-        // default (40px) aligns with Button default (h-10). `md` is kept
-        // as an alias for compatibility but resolves to the same height.
+        // `md` is a compatibility alias for `default` (40px, aligns with Button h-10).
         default: 'h-10 px-3 py-2 text-base md:text-sm',
         md: 'h-10 px-3 py-2 text-base md:text-sm',
         lg: 'h-11 px-4 py-2 text-base',

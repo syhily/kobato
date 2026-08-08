@@ -1,7 +1,6 @@
-// Render-enhance projections over the image-meta pipeline in `./resolve`:
-// `resolveImageMetaBySources` shapes meta for Portable Text image blocks
-// (sparse dims + thumbhash, no public URL — the block keeps its own src),
-// `hydrateImageRefs` rewrites cover/poster fields on list DTOs.
+// Render-enhance projections over the `./resolve` pipeline: PT blocks get
+// sparse dims + thumbhash (no public URL); `hydrateImageRefs` rewrites
+// cover/poster fields on list DTOs.
 
 import type { Database } from '@/server/infra/db/database'
 import type { ResolvedImageMeta } from '@/shared/types/images'

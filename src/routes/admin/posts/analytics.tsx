@@ -14,8 +14,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   try {
     return await caller.admin.posts.analytics({ postId, search: url.searchParams.toString() })
   } catch (error) {
-    // The procedure answers NOT_FOUND for a missing post meta — translate
-    // it back to the historical 404 Response.
+    // The procedure answers NOT_FOUND for a missing post meta — translate it back to the historical 404 Response.
     if (isOrpcNotFound(error)) {
       notFound()
     }

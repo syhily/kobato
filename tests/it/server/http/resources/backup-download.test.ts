@@ -11,10 +11,7 @@ import { adminSession } from '#/_helpers/session'
 import { insertBackup } from '@/server/infra/db/operations/backup'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@/server/infra/storage/registry'
 
-// db-lifecycle (pulled in transitively by the integration-db harness)
-// wires the restore machine with real lifecycle deps at import; the
-// download route never runs a restore, but keep the process/restart
-// boundary inert regardless.
+// Keep the process/restart boundary inert — the download route never restores.
 vi.mock('@/server/infra/lifecycle', () => ({
   requestShutdown: vi.fn(),
   registerShutdownHook: vi.fn(),
@@ -25,9 +22,7 @@ vi.mock('@/server/infra/lifecycle', () => ({
   setRestartRefreshSettings: vi.fn(),
 }))
 
-// The download route runs for REAL: the router, the backup service's
-// getBackupStream, and the registry seam routed at the shared in-memory
-// backend — no S3, no settings.
+// Real router + getBackupStream against the shared in-memory backend — no S3, no settings.
 const db = getTestDb()
 const mem = makeMemoryBackend({ driver: 's3' })
 
@@ -64,10 +59,8 @@ describe('/api/admin/backup/download/:timestamp', () => {
   })
 
   it('streams the archive through the stream channel, never the 100MB-capped buffer read', async () => {
-    // A logically >100MB backup: the row records the real uploaded size
-    // (past MAX_OBJECT_BUFFER_SIZE, under MAX_BACKUP_FILE_SIZE) while the
-    // in-memory object stands in for the archive bytes — the assertion is
-    // on the channel (getStream vs get), not on 100MB of real payload.
+    // Row records a >100MB size while the in-memory object stands in for the bytes —
+    // the assertion is on the stream channel (getStream vs get), not payload size.
     const byteSize = 150 * 1024 * 1024
     const payload = Buffer.from('fake-gzip-archive-bytes')
     await mem.backend.put({ key: STORAGE_KEY, body: payload, contentType: 'application/gzip' })

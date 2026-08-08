@@ -31,16 +31,12 @@ import { tryPasswordResetByTargetRateLimit } from '@/server/infra/rate-limit'
 
 const log = getLogger('users.admin')
 
-// Total user rows (deleted included) for the admin shell's user-count
-// badge. Promoted from `infra/db/operations/user` — the admin shell was
-// its only consumer, so the capability lives on the users surface.
 export async function countUsers(db: Database): Promise<number> {
   const rows = await db.select({ count: count() }).from(user)
   return rows[0]?.count ?? 0
 }
 
-// Wire-format DTO returned by every admin user-management endpoint.
-// Bigints are stringified so `BigInt` plumbing never reaches the client.
+// Wire-format DTO; bigint ids are stringified for the client.
 export interface AdminUserDto {
   id: string
   name: string
@@ -83,17 +79,14 @@ export function toAdminUserDto(row: AdminUserRow): AdminUserDto {
   }
 }
 
-// `setUserMuted` returns the raw `user` row (no aggregation); refetch
-// the aggregated view so the client always gets the same DTO shape.
+// `setUserMuted` returns a raw row — refetch the aggregated DTO for the wire shape.
 export async function fetchAdminUserDto(db: Database, id: number): Promise<AdminUserDto | null> {
   const row = await findAdminUserById(db, id)
   return row ? toAdminUserDto(row) : null
 }
 
-// Mute/unmute an account and return the aggregated admin DTO. The
-// "admins cannot be muted" guard lives inside `setUserMuted`'s WHERE
-// clause, so a null write covers both "no such user" and "target is an
-// admin" — same wire contract the controller used to inline.
+// The "admins cannot be muted" guard lives in `setUserMuted`'s WHERE — a null write
+// covers no-such-user and admin-target alike.
 export async function muteUser(db: Database, id: number, muted: boolean): Promise<AdminUserDto> {
   const updated = await setUserMuted(db, id, muted)
   if (!updated) {
@@ -135,9 +128,7 @@ export async function updateUserRoleWithGuard(
   if (actorId === String(targetId)) {
     throw new DomainError('FORBIDDEN', '不能修改自己的角色。')
   }
-  // Last-admin guard and the role write share ONE sync transaction
-  // (node:sqlite): two concurrent demotions can no longer both pass the
-  // count check and zero the admin set (check-then-act race).
+  // Last-admin check and role write share one sync transaction (node:sqlite).
   const updated = db.transaction((tx) => {
     const target = findUserByIdForUpdate(tx, targetId)
     if (!target) {
@@ -175,8 +166,7 @@ export async function inviteAuthorWithRollback(
     throw new DomainError('CONFLICT', '该邮箱已被注册。')
   }
 
-  // Atomic DB writes: `insertAuthor` + `issueSetupToken` in a single
-  // (sync — node:sqlite) transaction so a failure rolls both back.
+  // `insertAuthor` + `issueSetupToken` in one sync transaction (node:sqlite); a failure rolls back both.
   const { user, token } = db.transaction((tx) => {
     const [inserted] = insertAuthor(tx, name, email)
     if (!inserted) {
@@ -186,8 +176,7 @@ export async function inviteAuthorWithRollback(
     return { user: inserted, token }
   })
 
-  // External side effect AFTER commit. If the email send fails,
-  // soft-delete the user row — the token was never committed.
+  // Email send after commit; on failure, soft-delete the row.
   const link = `${origin}/admin/signin?action=accept-invite&token=${encodeURIComponent(token)}`
   const sendResult = await sendAuthorInvite(user, link, inviterName, inviterEmail)
   if (!sendResult.ok) {
@@ -239,9 +228,7 @@ export async function softDeleteUserWithGuard(
   if (actorId === String(targetId)) {
     throw new DomainError('FORBIDDEN', '不能删除自己。')
   }
-  // Same transaction shape as the demote guard above: the count check
-  // and the delete are atomic, so concurrent deletes can't zero the
-  // admin set.
+  // Count check and delete are atomic, so concurrent deletes can't zero the admin set.
   const result = db.transaction((tx) => {
     const target = findUserByIdForUpdate(tx, targetId)
     if (!target) {

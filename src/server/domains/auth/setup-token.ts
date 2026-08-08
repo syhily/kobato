@@ -7,14 +7,11 @@ import { oneTimeToken } from '@/server/infra/db/schema/one-time-token'
 import { boxLog } from '@/server/infra/logger/box-console'
 
 const TOKEN_KEY = 'setup_token'
-const TTL_SECONDS = 7 * 24 * 60 * 60 // 7 days
+const TTL_SECONDS = 7 * 24 * 60 * 60
 
-/** Local fast-path flag. In multi-instance deployments this is only
- * accurate on the instance that called invalidateSetupToken(); other
- * instances rely on the `one_time_token` row being absent. */
+/** Local fast-path flag; multi-instance correctness relies on the DB row. */
 let tokenInvalidated = false
 
-/** Read the live setup token row, or null when missing/expired. */
 async function readSetupToken(db: Database): Promise<string | null> {
   const rows = await db
     .select({ payload: oneTimeToken.payload })
@@ -22,8 +19,7 @@ async function readSetupToken(db: Database): Promise<string | null> {
     .where(and(eq(oneTimeToken.key, TOKEN_KEY), gt(oneTimeToken.expiresAt, new Date())))
     .limit(1)
   const payload = rows[0]?.payload
-  // Rows written below carry the plain-JSON token string (superjson was
-  // dropped with the SQLite migration); anything else reads as a miss.
+  // Rows carry the plain-JSON token string; anything else reads as a miss.
   try {
     return typeof payload === 'string' ? payload : null
   } catch {
@@ -32,13 +28,9 @@ async function readSetupToken(db: Database): Promise<string | null> {
 }
 
 /**
- * Generate (or retrieve) the one-time setup token used to authenticate
- * the initial setup-restore endpoint. The token is stored in the
- * database; it is valid only until the first admin is created.
- *
- * Security note: the full token is NEVER written to structured logs —
- * it is printed to stdout (terminal / `docker logs`) and returned to
- * the caller (install wizard) without entering the logging pipeline.
+ * Generate (or retrieve) the one-time setup token; valid only until the
+ * first admin is created. Never written to structured logs — stdout and
+ * the caller (install wizard) only.
  */
 export async function getSetupToken(db: Database): Promise<string> {
   if (tokenInvalidated) {
@@ -54,8 +46,6 @@ export async function getSetupToken(db: Database): Promise<string> {
       set: { payload, expiresAt },
     })
   }
-  // Print the full token to stdout (not structured logs) so operators
-  // can read it from the terminal or `docker logs`.
   boxLog(['Setup token generated (valid until first admin is created):', token], { style: 'bold', align: 'center' })
   return token
 }
@@ -66,14 +56,11 @@ export async function invalidateSetupToken(db: Database): Promise<void> {
   await db.delete(oneTimeToken).where(eq(oneTimeToken.key, TOKEN_KEY))
 }
 
-/** Test seam: reset the process-local invalidation fast-path between
- *  tests so a suite exercising invalidateSetupToken cannot leak the flag
- *  into later cases (the DB row is already per-test via clearAllTables). */
+/** Test seam: reset the process-local invalidation flag. */
 export function __resetSetupTokenForTests(): void {
   tokenInvalidated = false
 }
 
-/** Verify a setup token presented by the client. */
 export async function verifySetupToken(db: Database, candidate: string): Promise<boolean> {
   if (tokenInvalidated) {
     return false
@@ -88,9 +75,7 @@ export async function verifySetupToken(db: Database, candidate: string): Promise
   return timingSafeEqual(Buffer.from(candidate), Buffer.from(token))
 }
 
-/** Check whether the setup token still exists (i.e. has not expired and
- * has not been invalidated). Used as a second layer of defense so a
- * stale session flag cannot bypass domain-level checks. */
+/** Second layer of defense: true only while the row still exists. */
 export async function isSetupTokenActive(db: Database): Promise<boolean> {
   const token = await readSetupToken(db)
   return token !== null

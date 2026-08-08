@@ -21,8 +21,7 @@ export function InlineOwnEditForm({ comment, onCancel, onSaved }: InlineOwnEditF
   const updateOwn = useMutation({
     ...orpcQuery.comments.updateOwn.mutationOptions(),
     onSuccess: (payload) => {
-      // The procedure returns the updated wire comment — sync it through
-      // the reducer like every other mutation, no loader revalidation.
+      // The procedure returns the updated wire comment — sync it through the reducer, no loader revalidation.
       actions.onEdited(payload.comment)
       onSaved()
     },

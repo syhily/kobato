@@ -7,12 +7,7 @@ import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { resolveSingleDateFilterBounds } from '@/ui/admin/shared/date-filter'
 import { parseTextFilterValue, textFilterValueLabel } from '@/ui/admin/shared/filter-bar/text-filter'
 
-// Comments filter-pill field specs — keys, labels, icons, option arrays,
-// the page/author autocomplete query factories, and the `toQuery` mappers
-// onto `admin.comments.loadAll`'s input. The comments-specific text codec
-// (the 包含 / 不包含 operator pair) also lives here: it specializes the
-// generic codec from the shared filter-bar module.
-
+// Filter-pill specs for the comments list, plus the 包含/不包含 text codec that specializes the shared codec.
 export type CommentFilterFieldKey = 'status' | 'page' | 'author' | 'text' | 'date'
 
 export type TextFilterOperator = 'contains' | 'does-not-contain'
@@ -35,8 +30,7 @@ export interface TextFilterValue {
 
 export function parseTextFilter(value: string | undefined): TextFilterValue | null {
   const parsed = parseTextFilterValue(value, TEXT_FILTER_OPERATORS)
-  // The generic parse already validated `op` against TEXT_FILTER_OPERATORS,
-  // so the narrowing cast is exact.
+  // The generic parse already validated `op` against TEXT_FILTER_OPERATORS — the narrowing cast is exact.
   return parsed ? { op: unsafeCast<TextFilterOperator>(parsed.op), value: parsed.value } : null
 }
 

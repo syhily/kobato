@@ -15,10 +15,7 @@ function getServerSnapshot() {
   return 1
 }
 
-/**
- * Reactive `window.devicePixelRatio`. Returns `1` during SSR and updates
- * when the user zooms or moves the window to a display with a different DPR.
- */
+/** Reactive `window.devicePixelRatio`; `1` during SSR. */
 export function useDevicePixelRatio(): number {
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 }

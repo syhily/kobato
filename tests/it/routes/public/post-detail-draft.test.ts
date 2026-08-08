@@ -10,14 +10,8 @@ import { adminSession, authorSession, regularSession } from '#/_helpers/session'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { post as postTable } from '@/server/infra/db/schema/post'
 
-// Draft-preview contract for `routes/post.detail`.
-//
-//   - `status=draft` posts are invisible to anonymous/regular users (404).
-//   - Admin and author users see the draft via `loadDraftPreviewBySlug`.
-//
-// Real engine: posts are seeded meta rows with real published/draft
-// content revisions, so the live gate and the draft-preview lifecycle
-// run against actual rows instead of mock projections.
+// post.detail draft-preview contract: `status=draft` posts are 404 for
+// anonymous/regular users; admin and author see the draft.
 
 // Presentational seam — the loader contract under test never renders.
 vi.mock('@/ui/pt/render', () => ({
@@ -48,7 +42,6 @@ beforeEach(async () => {
   await clearAllTables(db)
 })
 
-/** A live post whose published revision carries `publishedBody`. */
 async function seedPublishedPost(slug: string, title: string): Promise<number> {
   const rows = await db
     .insert(postTable)

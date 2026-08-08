@@ -1,31 +1,8 @@
-// SEA worker-pool smoke — bundled by vite into
-// `dist-sea/intermediates/smoke-worker.mjs` (see vite.sea.config.ts) and
-// embedded as the `worker/smoke-worker.mjs` asset. The bundle's
-// `--smoke-worker` flag (`@/server/infra/sea-cli`) dispatches it via
-// `new Worker(code, { eval: true, execArgv: ['--input-type=module'] })` —
-// the same mechanism the image process pool uses — with
-// `workerData.kobatoSmokeWorker` set; the dual-mode entry at the bottom
-// then invokes `run()`. Outside SEA the sibling bundle is spawned as a
-// file worker instead.
-//
-// `--smoke-natives` loads sharp in the bundle's OWN process; this smoke
-// instead proves the production image pipeline end to end: a real job is
-// dispatched into the `worker_threads` pool (spawned from the embedded
-// `worker/process-worker.mjs` text via the same eval worker under SEA),
-// sharp decodes/resizes/re-encodes inside the worker, and the
-// result round-trips back to this process.
-//
-// Unlike the other binary flags this module DOES pull the config-validated
-// server graph: the pool registers its teardown via
-// `@/server/infra/lifecycle`, which imports `@/server/infra/config` and
-// exits when required values are missing. `--smoke-worker` therefore needs
-// the full server configuration (database.url, security.sessionSecret,
-// security.encryptionKey, storage.data) — it validates but never opens a
-// connection.
-//
-// The static sharp import is safe at module scope: this bundle is only
-// ever run AFTER `bootstrapSeaRuntime()` (or outside SEA, where the
-// redirected loads fall back to node_modules resolution).
+// SEA worker-pool smoke: bundled into smoke-worker.mjs, embedded, and
+// dispatched by `--smoke-worker` via `new Worker(code, { eval: true,
+// execArgv: ['--input-type=module'] })` — the image pool's own mechanism.
+// This flag DOES pull the config-validated server graph (pool teardown),
+// so it needs the full server configuration — validates, never connects.
 
 import { parentPort, Worker, workerData } from 'node:worker_threads'
 import sharp from 'sharp'
@@ -39,24 +16,14 @@ const TARGET_WIDTH = 32
 const TARGET_HEIGHT = 24
 const JPEG_QUALITY = 80
 
-/**
- * Run one real job through the production worker pool, assert the
- * processed result, and tear the pool down so the CLI can exit.
- */
 export async function run(): Promise<void> {
-  // Non-SEA convenience (`node dist-sea/intermediates/server.mjs
-  // --smoke-worker`): the pool's default worker URL resolves relative to
-  // the bundled module's own location, and no worker file sits next to
-  // this bundle — point the factory hook at the vite-built worker instead
-  // (exists after `pnpm run build`). SEA mode keeps the default
-  // embedded-text eval worker — that path is what this smoke exists to
-  // prove.
+  // Non-SEA convenience: point the pool at the vite-built worker file — no
+  // worker file sits next to this bundle. SEA keeps the embedded eval worker.
   if (!isSea()) {
     __setWorkerFactory(() => new Worker(new URL('../../build/server/process-worker.js', import.meta.url)))
   }
 
-  // Synthesize a real PNG from raw pixels — a deterministic gradient, not
-  // a flat fill, so the JPEG re-encode has real entropy to chew on.
+  // Deterministic gradient — real entropy for the JPEG re-encode.
   const raw = Buffer.alloc(SOURCE_WIDTH * SOURCE_HEIGHT * 3)
   for (let i = 0; i < raw.length; i += 1) {
     raw[i] = i % 256
@@ -90,18 +57,15 @@ export async function run(): Promise<void> {
       throw new Error(`re-encoded output is not the expected ${TARGET_WIDTH}x${TARGET_HEIGHT} jpeg`)
     }
   } finally {
-    // CRITICAL: terminate the workers — an idle pool keeps the event loop
-    // alive and the CLI would never exit.
+    // CRITICAL: an idle pool keeps the event loop alive — the CLI would never exit.
     await stopProcessPool()
   }
 
   process.stdout.write(`SEA worker smoke passed: ${process.platform}-${process.arch}\n`)
 }
 
-// Dual-mode entry: when the bundle's `--smoke-worker` handler dispatches
-// this bundle as a worker (`workerData.kobatoSmokeWorker` — see
-// `@/server/infra/sea-cli`), run immediately and report through the exit
-// code. Plain imports (tests, direct module use) skip this branch.
+// Dual-mode entry: run when dispatched as a worker (workerData.kobatoSmokeWorker);
+// plain imports (tests) skip this branch.
 if (parentPort !== null && workerData?.kobatoSmokeWorker === true) {
   void run().catch((error: unknown) => {
     process.stderr.write(`${error instanceof Error ? (error.stack ?? error.message) : String(error)}\n`)

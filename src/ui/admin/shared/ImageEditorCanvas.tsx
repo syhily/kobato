@@ -21,31 +21,15 @@ export interface ImageEditorCanvasProps {
   file: File
   rotation: 0 | 90 | 180 | 270
   jpegQuality: number
-  /**
-   * Optional locked aspect ratio. When set, the crop rectangle is
-   * forced to maintain this ratio and the encoded output is resized to
-   * exactly `width × height` regardless of the source resolution.
-   */
+  /** Locked aspect ratio; the encoded output is resized to exactly `width × height`. */
   locked?: LockedAspect
-  /**
-   * Free-aspect output width override (source pixels), ignored when
-   * `locked` is set. When strictly smaller than the current crop width
-   * the encoder downscales the crop to exactly this width, preserving
-   * aspect ratio; values `>= cropWidth` write the crop at native
-   * resolution.
-   */
+  /** Free-aspect output width override (source px); when smaller than the crop
+   *  width the encoder downscales to exactly this width, preserving aspect. */
   outputWidth?: number
-  /**
-   * Reports the current crop rectangle (source pixels) after every crop
-   * mutation, so the parent can clamp a target-width input to "at most
-   * the current crop width" without duplicating the crop state machine.
-   */
+  /** Current crop rect after every mutation — lets the parent clamp a target-width input without duplicating the crop state machine. */
   onCropChange?: (cropWidth: number, cropHeight: number) => void
-  /**
-   * Imperative handle: parent calls this to read the current encoded
-   * blob. Returning a Promise defers the canvas → blob work to the
-   * moment the operator clicks "上传".
-   */
+  /** Imperative handle: parent calls this to read the encoded blob; returning
+   *  a Promise defers the canvas → blob work to the moment the operator clicks. */
   onReady: (encoder: () => Promise<{ blob: Blob; width: number; height: number }>) => void
 }
 
@@ -60,8 +44,7 @@ function loadImage(file: File): Promise<HTMLImageElement> {
     const url = URL.createObjectURL(file)
     const img = new Image()
     img.onload = () => {
-      // Revoke after the bitmap is on the GPU; the canvas drawImage
-      // calls below don't need the URL anymore.
+      // Revoke after the bitmap is on the GPU — drawImage below doesn't need the URL.
       URL.revokeObjectURL(url)
       resolve(img)
     }
@@ -97,11 +80,8 @@ export function ImageEditorCanvas({
     originY: number
     startCrop: CropRect
     /**
-     * CSS pixels per source pixel for the canvas at drag start. Computed
-     * from `canvas.clientWidth / displayLayout.sourceWidth`, NOT from
-     * `displayLayout.scale` — the latter is the source→canvas-internal
-     * scale, which is wrong whenever the canvas is downscaled by
-     * `max-w-full` (e.g. a 1600px-wide canvas inside a ~672px dialog).
+     * CSS px per source px at drag start — from `clientWidth / sourceWidth`, NOT
+     * `displayLayout.scale` (wrong when the canvas is downscaled by `max-w-full`).
      */
     cssScale: number
   } | null>(null)
@@ -143,8 +123,7 @@ export function ImageEditorCanvas({
     }
   }, [source, rotation])
 
-  // Compute the crop rectangle from displayLayout + locked aspect
-  // synchronously during render so we don't trigger a cascading render.
+  // Compute the crop from displayLayout + locked aspect during render to avoid a cascading render.
   const [lastCropInputs, setLastCropInputs] = useState<{ displayLayout: typeof displayLayout; locked: typeof locked }>({
     displayLayout,
     locked,
@@ -254,8 +233,7 @@ export function ImageEditorCanvas({
       throw new Error('浏览器不支持 Canvas')
     }
 
-    // Draw the rotated full source onto a working canvas, then read
-    // back the cropped region so the math stays simple.
+    // Draw the rotated source to a working canvas, then read back the cropped region.
     const working = document.createElement('canvas')
     working.width = displayLayout.sourceWidth
     working.height = displayLayout.sourceHeight

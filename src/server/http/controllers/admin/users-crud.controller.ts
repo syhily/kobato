@@ -27,9 +27,7 @@ const count = adminProc
   .output(adminUsersCountOutputSchema)
   .handler(({ context }) => countUsers(context.db))
 
-// Passkey feature gate for the user detail page — reads the in-process
-// settings snapshot, same `isPasskeyEnabled` the account/passkey
-// procedures use.
+// Passkey gate for the user detail page — same `isPasskeyEnabled` as the account/passkey procedures.
 const passkeyFlag = adminProc
   .route({ method: 'GET', path: '/admin/users/passkey-flag' })
   .output(adminUsersPasskeyFlagOutputSchema)

@@ -6,11 +6,8 @@ import { DomainError } from '@/server/infra/http/errors'
 import { tryPasskeyAuthBeginRateLimit } from '@/server/infra/rate-limit'
 
 /**
- * Public passkey authentication endpoints.
- *
- * `authBegin` is a public POST with no CSRF token. This is acceptable
- * because it only returns a single-use challenge that expires in 5 minutes;
- * no data is read or mutated.
+ * Public passkey endpoints. `authBegin` is CSRF-less: it only returns a
+ * single-use 5-minute challenge — no data is read or mutated.
  */
 
 const authBegin = publicProc

@@ -239,8 +239,7 @@ export function useEditorFootnotes(editor: Editor | null): UseEditorFootnotesRes
       if (editor === null) {
         return null
       }
-      // Update defs BEFORE deleting refs so the update handler sees the
-      // correct state and avoids a second sync pass.
+      // Update defs BEFORE deleting refs so the update handler sees the correct state.
       const nextDefs = footnoteDefsRef.current.filter((d) => d._key !== targetKey)
       setFootnoteDefs(nextDefs)
 

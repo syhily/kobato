@@ -89,8 +89,7 @@ export function DateSingleFilterEditor({ value, onChange }: DateSingleFilterEdit
   const inputRef = useRef<HTMLInputElement>(null)
 
   const [lastCommitted, setLastCommitted] = useState(value?.date ?? '')
-  // Sync local date when the external `value` changes — but only when
-  // the input is NOT focused, so we don't clobber in-flight edits.
+  // Sync local date when the external value changes — but only while unfocused, so in-flight edits survive.
   if ((value?.date ?? '') !== lastCommitted) {
     setLastCommitted(value?.date ?? '')
     if (!isFocused) {

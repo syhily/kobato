@@ -1,15 +1,7 @@
-// Detect failures to load a dynamically-imported JS / CSS chunk.
-//
-// After a new deploy ships, browser tabs running the previous bundle
-// still hold dynamic `import()` URLs that point at content-hashed
-// filenames the server no longer serves. The next route navigation,
-// `React.lazy()` resolution, or chunk preload from such a tab throws
-// with one of the messages enumerated below.
-//
-// The detector is signature-based (and isomorphic) because the throw
-// originates inside the platform's native module loader -- we don't
-// control the construction site and so cannot tag the error the way
-// Next.js does with its `markAssetError` symbol.
+// A dynamically-imported JS / CSS chunk failed to load: tabs running the
+// previous bundle after a deploy hold hashed URLs the server no longer
+// serves. Signature-based (isomorphic) because the throw originates in
+// the native module loader, which we can't tag.
 
 const MESSAGE_NEEDLES = [
   'failed to fetch dynamically imported module',

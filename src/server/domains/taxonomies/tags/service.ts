@@ -29,9 +29,7 @@ import { DomainError, ErrorMessages } from '@/server/infra/http/errors'
 import { resolveSlug } from '@/server/infra/slug/resolve'
 import { hasAtLeast } from '@/shared/utils/roles'
 
-// Wire-format DTO for every admin tag endpoint. `postCount` is
-// projected by the caller from `countPostsByTaxonomy` (mirrors the
-// category service shape).
+// Wire-format DTO; `postCount` is projected by the caller (like categories).
 export function toAdminTagDto(row: TagRow, postCount: number): AdminTagDto {
   return {
     id: String(row.id),
@@ -47,14 +45,10 @@ export function toAdminTagDto(row: TagRow, postCount: number): AdminTagDto {
 export interface AdminTagsListResult {
   tags: AdminTagDto[]
   total: number
-  /** True when `offset + rows.length < total` (i.e. another page exists). */
   hasMore: boolean
 }
 
-// Server-side pagination: one round-trip each for the page of rows, the
-// COUNT(*), and the per-term counts. `total` is the full filtered count
-// (independent of `offset`/`limit`) so the client can render the correct
-// number of pagination buttons.
+// `total` is the full filtered count, independent of offset/limit.
 export async function listTagsForAdmin(db: Database, filters: AdminTagsListFilters): Promise<AdminTagsListResult> {
   const offset = filters.offset ?? 0
   const [rows, total, counts] = await Promise.all([
@@ -125,10 +119,7 @@ export async function upsertAdminTag(
   return toAdminTagDto(updated, counts.get(updated.name) ?? 0)
 }
 
-// Block-only deletion regardless of role: `deleteAdminTaxonomy` refuses
-// to remove a tag while any post still references it — a deliberate
-// stricter-than-RBAC fence so posts are never orphaned, even for an
-// admin. Same contract as `deleteAdminCategory`.
+// Block-only deletion for every role — a stricter-than-RBAC fence so posts are never orphaned.
 export async function deleteAdminTag(db: Database, id: number, _viewer?: ViewerIdentity): Promise<boolean> {
   const deleted = await deleteAdminTaxonomy(id, '标签', {
     findById: (id) => findTagById(db, id),
@@ -141,13 +132,7 @@ export async function deleteAdminTag(db: Database, id: number, _viewer?: ViewerI
   return deleted
 }
 
-// --- Public catalog queries -------------------------------------------------
-
-// Slug lookup promoted from `infra/db/operations/tag`: tag resolution
-// is a taxonomy-domain capability, and its consumers (public tag route,
-// the ensure-unique guards above, the feed resolver below) all live on
-// this surface. Public routes resolve strictly by slug —
-// the feed's slug-or-name fallback composes this with `findTagByName`.
+// Public routes resolve strictly by slug.
 export async function findTagBySlug(db: Database, slug: string): Promise<TagRow | null> {
   const rows = await db.select().from(tagTable).where(eq(tagTable.slug, slug)).limit(1)
   return rows[0] ?? null
@@ -185,9 +170,7 @@ export async function getTagsByNames(db: Database, names: readonly string[]): Pr
     .select({ name: tagTable.name, slug: tagTable.slug })
     .from(tagTable)
     .where(inArray(tagTable.name, uniqueNames))
-  // Narrow the aggregate to the requested names — counting the whole
-  // taxonomy on every post detail page is a 3-table full scan for a
-  // handful of chips.
+  // Narrow the count to the requested names; a whole-taxonomy count is a 3-table scan.
   const countsMapPromise = countPostsByTaxonomy(db, { kind: 'tag', gate: 'public', names: uniqueNames })
   const [tagRows, countsMap] = await Promise.all([tagRowsPromise, countsMapPromise])
 
@@ -210,9 +193,7 @@ export async function getTagsByNames(db: Database, names: readonly string[]): Pr
   return uniqueNames.map((name) => tagMap.get(name)).filter((t): t is Tag => t !== undefined)
 }
 
-// Feed-only resolution rule: feed URLs accept a tag slug, but legacy
-// subscribers may carry the display name. Public routes stay slug-only
-// (plan 080, Q1). Deliberately shallow: one composition, no state, no cache.
+// Feed-only: accept slug or legacy display name; public routes stay slug-only (plan 080, Q1).
 export async function resolveTagBySlugOrName(db: Database, value: string): Promise<TagRow | null> {
   return (await findTagBySlug(db, value)) ?? (await findTagByName(db, value))
 }

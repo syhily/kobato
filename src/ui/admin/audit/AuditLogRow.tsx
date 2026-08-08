@@ -154,9 +154,7 @@ function JsonDetailPanel({ row }: { row: AuditLogItemDto }) {
       {row.detailsHtml ? (
         <div
           className="[&>pre]:m-0 [&>pre]:rounded-none [&>pre]:border-0 [&>pre]:bg-transparent [&>pre]:px-4 [&>pre]:py-3 [&>pre]:text-xs [&>pre]:leading-relaxed"
-          // Convention (src/ui/AGENTS.md): every dangerouslySetInnerHTML
-          // goes through sanitizeHtml — the producer escapes today, but
-          // the client must not rely on that staying true.
+          // Convention (src/ui/AGENTS.md): every dangerouslySetInnerHTML goes through sanitizeHtml — never rely on the producer's escaping.
           dangerouslySetInnerHTML={{ __html: sanitizeHtml(row.detailsHtml, 'shiki') }}
         />
       ) : (

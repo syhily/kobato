@@ -1,10 +1,5 @@
-// Install-time seed of every settings section — the strict counterpart
-// to hydrate.ts's lazy backfill: writes all 17 section rows for a FRESH
-// install in one all-or-nothing pass (`blog.general` and `blog.assets`
-// from the install-form identity, the other 15 from registry defaults).
-// `buildInstallSectionRows` validates every section BEFORE any write so
-// a failure produces a form error with zero DB side effects;
-// `seedInstallSections` persists the validated rows on the caller's
+// Install-time seed of every settings section — the strict counterpart to hydrate's lazy
+// backfill: all 17 rows validated BEFORE any write, then persisted on the caller's
 // transaction so they commit atomically with the first admin row.
 
 import type { Database } from '@/server/infra/db/database'
@@ -16,7 +11,6 @@ import { buildDefaultSectionPayloads, SECTION_REGISTRY } from '@/server/domains/
 import { upsertSetting } from '@/server/infra/db/operations/setting'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
-/** Install-form identity the seed is built from: site title, the first admin's name/email, and the request hostname. */
 export interface InstallSeedInput {
   title: string
   name: string
@@ -24,7 +18,7 @@ export interface InstallSeedInput {
   hostname: string
 }
 
-/** One validated section row ready to persist: DB scope + schema-parsed payload. */
+/** One validated section row ready to persist: schema-parsed payload. */
 export interface InstallSectionRow {
   scope: string
   payload: Record<string, unknown>
@@ -33,11 +27,8 @@ export interface InstallSectionRow {
 export type InstallSectionRowsResult = { ok: true; rows: InstallSectionRow[] } | { ok: false; message: string }
 
 /**
- * Build and validate all 17 section rows for a fresh install. Returns
- * the first validation failure as a user-facing message; a registry
- * default that drifted from its schema keeps `buildDefaultSectionPayloads`'
- * thrown DomainError (a build bug, identical to the hydration backfill
- * path) — only the form-derived sections can fail softly here.
+ * Build and validate all 17 section rows for a fresh install. The first validation
+ * failure returns as a user-facing message; registry-default drift keeps its thrown DomainError.
  */
 export function buildInstallSectionRows(input: InstallSeedInput): InstallSectionRowsResult {
   const { title, name, email, hostname } = input
@@ -82,11 +73,9 @@ export function buildInstallSectionRows(input: InstallSeedInput): InstallSection
 }
 
 /**
- * Persist pre-validated rows in order on the caller's handle. The install
- * flow passes the transaction that also inserts the admin row, so all 18
- * upserts participate in that transaction's commit/rollback.
+ * Persist pre-validated rows in order on the caller's handle — the install flow passes
+ * the transaction that also inserts the admin row, so all upserts commit atomically.
  */
-// Sync (node:sqlite): called inside the install transaction.
 export function seedInstallSections(db: Database, rows: InstallSectionRow[], updatedBy: number | null): void {
   for (const { scope, payload } of rows) {
     upsertSetting(db, payload, updatedBy, scope)

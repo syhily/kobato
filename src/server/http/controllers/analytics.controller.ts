@@ -79,15 +79,11 @@ const metrics = adminProc
   .input(metricsInput)
   .output(z.array(metricRowOutput))
   .handler(({ input }) => {
-    // `input.type` is already validated by the zod enum at the wire
-    // boundary — no second guard here.
     return queryMetric(getAnalyticsReader(), parseAnalyticsInput(input), input.type, input.limit)
   })
 
-// Site-wide analytics first-paint fan-out (counters + views + heatmap +
-// first metric tab of every group), behind `/admin/analytics/overview`.
-// `search` carries the raw query string; the URL grammar stays inside
-// `parseAnalyticsSearch` (server-side).
+// Site-wide analytics first-paint fan-out behind `/admin/analytics/overview`;
+// `search` carries the raw query string, parsed server-side.
 const overview = adminProc
   .route({ method: 'GET', path: '/analytics/overview' })
   .input(adminAnalyticsSearchInputSchema)

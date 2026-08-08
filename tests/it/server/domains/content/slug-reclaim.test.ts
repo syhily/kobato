@@ -6,11 +6,8 @@ import { reclaimSlugOnRestore } from '@/server/domains/content/slug-reclaim'
 import { slugRegistry } from '@/server/infra/db/schema/config'
 import { isUniqueConstraintError } from '@/server/infra/http/errors'
 
-// Reclaim runs against the real engine: the pre-check SELECT and the
-// registry insert are plain SQL on seeded rows. Note the single-connection
-// engine serialises writers, so the Postgres-era "stolen mid-restore"
-// interleaving the old mocks simulated cannot occur — a same-entity row at
-// insert time means the row was already there at pre-check time.
+// Real engine; the single-connection engine serialises writers, so a
+// same-entity row at insert time was already there at pre-check time.
 const db = getTestDb()
 
 beforeEach(async () => {
@@ -75,7 +72,6 @@ describe('content/slug-reclaim — reclaimSlugOnRestore', () => {
       const warning = reclaimSlugOnRestore(db, restoring, 1, 'hello')
 
       expect(warning).toBe(message)
-      // The occupant's row is untouched.
       const row = await registryRowFor('hello')
       expect(row?.entityType).toBe(owner)
       expect(row?.entityId).toBe(2)
@@ -83,9 +79,7 @@ describe('content/slug-reclaim — reclaimSlugOnRestore', () => {
   )
 
   it('throws when the restoring entity already owns a different slug', async () => {
-    // The entity unique index (uq_slug_registry_entity) fires before the
-    // insert can claim 'hello' — a leaked row, not a slug conflict, so the
-    // raw constraint error aborts the restore transaction.
+    // The entity unique index fires first — a leaked row, not a slug conflict.
     await seedRegistryRow('other', 'post', 1)
 
     const caught = catchSync(() => reclaimSlugOnRestore(db, 'post', 1, 'hello'))
@@ -94,9 +88,7 @@ describe('content/slug-reclaim — reclaimSlugOnRestore', () => {
   })
 
   it('throws when the registry already holds the slug for the restoring entity itself', async () => {
-    // Same-entity pre-check pass → insert attempted → unique violation on
-    // the real engine (the mock-era suite asserted a successful insert,
-    // which no real database would allow).
+    // Same-entity: pre-check passes, the insert hits the unique violation.
     await seedRegistryRow('hello', 'post', 1)
 
     const caught = catchSync(() => reclaimSlugOnRestore(db, 'post', 1, 'hello'))

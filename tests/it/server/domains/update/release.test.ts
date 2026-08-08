@@ -5,9 +5,7 @@ import { installFetch, jsonResponse } from '#/_helpers/fetch'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { kvCache } from '@/server/infra/db/schema/kv-cache'
 
-// `fetchLatestRelease` reads through the `githubRelease` bucket against the
-// REAL in-memory engine — the hit / expiry / failure semantics below are
-// asserted on actual kv_cache rows, with only the network mocked.
+// fetchLatestRelease against the real kv_cache engine; only the network is mocked.
 
 const db = getTestDb()
 

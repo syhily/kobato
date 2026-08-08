@@ -18,11 +18,7 @@ interface SocketEnv extends Env {
   }
 }
 
-/**
- * Bind socket info from the headers to the Hono context
- *
- * Unlock the usage of https://hono.dev/docs/helpers/conninfo in dev
- */
+/** Unlocks hono's conninfo helper in dev. */
 export function bindIncomingRequestSocketInfo() {
   return createMiddleware<SocketEnv>((c, next) => {
     c.env.server = {
@@ -39,23 +35,14 @@ export function bindIncomingRequestSocketInfo() {
   })
 }
 
-/**
- * Import React Router server build
- */
 export async function importBuild(): Promise<ServerBuild> {
   return import('virtual:react-router/server-build')
 }
 
-/**
- * Helper to create a getLoadContext function fully typed
- */
 export function createGetLoadContext(getLoadContext: HonoServerOptionsBase<Env>['getLoadContext']) {
   return getLoadContext
 }
 
-/**
- * Get the build mode from the environment
- */
 export function getBuildMode() {
   return import.meta.env.DEV ? 'development' : 'production'
 }

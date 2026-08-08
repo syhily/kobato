@@ -25,14 +25,10 @@ queryMocks.queryClient = {
   setQueryData: vi.fn(),
 }
 
-// CategoriesView reads its rows straight from the list `useQuery` data
-// (TanStack single-track) plus delete/reorder mutations and a dnd-kit DnD
-// context. We neutralize the queries and DnD primitives so SSR can stream
-// the chrome.
+// CategoriesView reads rows from the list useQuery + delete/reorder
+// mutations and a dnd-kit context; queries and DnD primitives are neutralized for SSR.
 
-// dnd-kit's DragDropManager touches `document`/DOM measurements at mount; the
-// snapshots only need the tree structure so we shim each primitive to render
-// its children.
+// dnd-kit touches DOM at mount — each primitive is shimmed to render children.
 vi.mock('@dnd-kit/core', () => ({
   DndContext: ({ children }: { children: React.ReactNode }) => children,
   PointerSensor: class PointerSensor {},
@@ -69,8 +65,7 @@ describe('snapshot: CategoriesView', () => {
     const html = stableHtml(renderInRouter(<CategoriesView />, '/admin/taxonomy/categories'))
     expect(html).toContain('分类管理')
     expect(html).toContain('新增分类')
-    // The CategoriesSkeleton renders the same pulse-marked blocks every other
-    // skeleton uses, so we look for the shared skeleton class substring.
+    // Skeleton uses the shared pulse class substring.
     expect(html).toContain('skeleton')
   })
 

@@ -20,8 +20,7 @@ const revokeToken = publicProc
   .output(successOutput)
   .use(commentTokenCookie)
   .handler(async ({ input, context }) => {
-    // `verifyCommentOwnership` runs the same cleanup + token-match loop;
-    // the matched token is the one to revoke.
+    // `verifyCommentOwnership` also cleans; the matched token is the one to revoke.
     const { cleaned, token: targetToken } = await verifyCommentOwnership(
       context.db,
       context.commentTokens.cookie,

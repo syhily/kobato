@@ -21,7 +21,7 @@ interface Props {
   logoutQuery: string
 }
 
-// User menu in the public chrome's site-nav; the single avatar-button trigger
+// User menu in the public chrome's site-nav; a single avatar-button trigger
 // nests next to the other site-nav links without taking a full row.
 export function UserMenu({ currentUser, logoutQuery }: Props) {
   const initial = (currentUser.name || '?').slice(0, 1).toUpperCase()

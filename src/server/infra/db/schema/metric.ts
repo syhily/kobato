@@ -1,14 +1,9 @@
 import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 import { randomUUID } from 'node:crypto'
 
-// Per-entity metric counters keyed on `(type, owner_id)` where `type` is
-// `'post' | 'page'` and `owner_id` references `post.id` / `page.id`.
-// Counters move with single-row UPDATEs from the comment + like flows,
-// so the table stays narrow on purpose. `public_id` is the opaque UUID
-// exposed on the public API wire (the field still named `page_key` on
-// the request/response envelope) so numeric ids never reach the browser.
-// `(type, owner_id)` is the application-side join key; `public_id` is
-// the wire-side identifier — both are unique.
+// Per-entity metric counters keyed on `(type, owner_id)` (`post`/`page`).
+// `public_id` is the opaque UUID on the wire (envelope field still named
+// `page_key`) so numeric ids never reach the browser.
 export const metric = sqliteTable(
   'metric',
   {
@@ -20,12 +15,7 @@ export const metric = sqliteTable(
       .notNull()
       .$defaultFn(() => new Date()),
     deletedAt: integer('deleted_at', { mode: 'timestamp_ms' }),
-    // Populated by `ensureMetric(type, ownerId)` on every metric
-    // upsert. `publicId` is the opaque UUID surfaced to public clients
-    // in place of the historical URL-based `key`. `type` mirrors the
-    // `content` table convention (`text`, no DB enum, see the `content`
-    // discriminator comment block below) so future entity types extend
-    // without a migration.
+    // `type` mirrors the `content` convention (plain `text`, no DB enum) so entity types extend without a migration.
     type: text('type').$type<'post' | 'page'>().notNull(),
     ownerId: integer('owner_id').notNull(),
     publicId: text('public_id')

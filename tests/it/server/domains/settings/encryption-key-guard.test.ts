@@ -6,22 +6,15 @@ import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { updateBlogSettingsSection } from '@/server/domains/settings/services/core'
 import { setting } from '@/server/infra/db/schema/config'
 
-// The encryption-key guard: a section with no SECRET_FIELDS entry
-// (general here) never reaches the crypto module on the write path, so
-// the save succeeds even in a deployment whose ENCRYPTION_KEY is unset.
-// The Postgres-era unit test proved this by deleting the key through a
-// config mock; the real-engine version exercises the same write end to
-// end — no secret field means `encryptSecretsInRow` is a no-op on this
-// path, and the row lands in the `setting` table for real.
+// A section with no SECRET_FIELDS entry never reaches the crypto module —
+// the save succeeds even with ENCRYPTION_KEY unset.
 const db = getTestDb()
 
 beforeEach(async () => {
   await clearAllTables(db)
-  // Evict the in-process snapshot so the post-write refresh re-reads
-  // the database instead of serving a stale hydration.
+  // Evict the snapshot so the post-write refresh re-reads the database.
   resetBlogSettingsForTests()
-  // The snapshot only hydrates once siteIdentity AND assets rows exist;
-  // seed assets so the post-write refresh returns a bundle.
+  // The snapshot hydrates only once siteIdentity AND assets rows exist.
   await db.insert(setting).values({
     scope: 'blog.assets',
     data: {

@@ -22,19 +22,14 @@ import { SEA_CLIENT_ASSET_PREFIX } from '@/shared/sea/assets'
 const log = getLogger('hono')
 
 /**
- * SEA-mode replacement for `serveStatic` on the fingerprinted client
- * assets: the `build/client` tree is embedded in the binary, so files are
- * read from memory instead of disk. A miss mirrors serveStatic's behavior
- * (`next()`), letting later middleware / the stale-chunk guard handle it.
+ * SEA-mode replacement for `serveStatic`: client assets are read from the
+ * embedded binary instead of disk; a miss falls through via `next()`.
  */
 const serveEmbeddedStatic = createMiddleware(async (c, next) => {
   if (c.req.method !== 'GET' && c.req.method !== 'HEAD') {
     return next()
   }
-  // The handler only runs under the `/<assetsDir>/*` mount, so the
-  // request path maps 1:1 onto the embedded `client/assets/...` keys
-  // (the leading `/` of the path makes room for the prefix).
-  // Unresolvable paths (traversal attempts included) simply match no key.
+  // Mounted under `/<assetsDir>/*`, so the path maps 1:1 to the embedded `client/assets/...` keys.
   const asset = getEmbeddedAsset(`${SEA_CLIENT_ASSET_PREFIX}${c.req.path.slice(1)}`)
   if (asset === null) {
     return next()
@@ -48,59 +43,25 @@ const serveEmbeddedStatic = createMiddleware(async (c, next) => {
 })
 
 interface HonoNodeServerOptions<E extends Env = BlankEnv> extends HonoServerOptionsBase<E> {
-  /**
-   * Listening listener (production mode only)
-   *
-   * It is called when the server is listening
-   *
-   * Defaults log the port
-   */
+  /** Listening listener (production mode only); the default logs the port. */
   listeningListener?: (info: AddressInfo) => void
-  /**
-   * Customize the node server (ex: using http2)
-   *
-   * {@link https://hono.dev/docs/getting-started/nodejs#http2}
-   */
+  /** Customize the node server (e.g. http2). */
   customNodeServer?: CreateNodeServerOptions
-  /**
-   * Callback executed just after `serve` from `@hono/node-server`
-   */
   onServe?: (server: ServerType) => void
   /**
-   * The Node.js Adapter rewrites the global Request/Response and uses a lightweight Request/Response to improve performance.
-   *
-   * If you this behavior, set it to `true`
-   *
-   * 🚨 Setting this to `true` can break `request.clone()` if you later check `instanceof Request`.
-   *
-   * {@link https://github.com/honojs/node-server?tab=readme-ov-file#overrideglobalobjects}
-   *
-   * @default false
+   * Override the global Request/Response with lightweight versions; 🚨 can
+   * break `request.clone()` `instanceof` checks. @default false
    */
   overrideGlobalObjects?: boolean
-  /**
-   * Customize the hostname of the node server
-   */
   hostname?: string
-  /**
-   * Customize the serve static options
-   */
   serveStaticOptions?: {
-    /**
-     * Customize the client assets (what's in your `build/client/assets` directory - React Router) serve static options.
-     *
-     */
+    /** Serve-static options for the `build/client/assets` tree. */
     clientAssets?: Omit<ServeStaticOptions<E>, 'root'>
   }
 }
 
 export type HonoServerOptions<E extends Env = BlankEnv> = HonoNodeServerOptions<E>
 
-/**
- * Create a Hono server
- *
- * @param config {@link HonoServerOptions} - The configuration options for the server
- */
 export async function createHonoServer<E extends Env = BlankEnv>(options?: HonoServerOptions<E>) {
   const startTime = Date.now()
   const build = await importBuild()
@@ -131,40 +92,24 @@ export async function createHonoServer<E extends Env = BlankEnv>(options?: HonoS
     app.use(bindIncomingRequestSocketInfo())
   }
 
-  /**
-   * Add optional middleware that runs before any built-in middleware, including assets serving.
-   */
   await mergedOptions.beforeAll?.(app)
 
-  /**
-   * Serve assets files from build/client/assets
-   *
-   * Only mounted in production: in development Vite's dev server handles
-   * asset serving and the `build/client` directory does not exist yet.
-   */
+  /** Production-only: in dev, Vite serves assets and `build/client` does not exist yet. */
   if (PRODUCTION) {
     const assetsPath = `/${import.meta.env.REACT_ROUTER_HONO_SERVER_ASSETS_DIR}/*`
     if (isSea()) {
-      // Single-executable build: client assets are embedded in the binary
-      // (keys `client/assets/...`), nothing to read from disk.
       app.use(assetsPath, cache(60 * 60 * 24 * 365), serveEmbeddedStatic)
     } else {
       app.use(
         assetsPath,
-        cache(60 * 60 * 24 * 365), // 1 year
+        cache(60 * 60 * 24 * 365),
         serveStatic({ root: clientBuildPath, ...mergedOptions.serveStaticOptions?.clientAssets }),
       )
     }
   }
 
-  /**
-   * Add optional middleware
-   */
   await mergedOptions.configure?.(app)
 
-  /**
-   * Create a React Router Hono app and bind it to the root Hono server using the React Router basename
-   */
   const reactRouterApp = new Hono<E>({
     strict: false,
   })
@@ -184,9 +129,6 @@ export async function createHonoServer<E extends Env = BlankEnv>(options?: HonoS
     app.route(`${basename}.data`, reactRouterApp)
   }
 
-  /**
-   * Start the production server
-   */
   if (PRODUCTION && mergedOptions.autoServe !== false) {
     const server = serve(
       {

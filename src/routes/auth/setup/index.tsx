@@ -21,18 +21,15 @@ const SETUP_VERIFY_BUCKET = { windowSeconds: 3600, maxAttempts: 10 }
 export async function loader({ request, context }: Route.LoaderArgs) {
   const rc = getRequestContext({ request, context })
   const db = rc.db
-  // Possible outcomes:
-  //   noAdmin   → render the admin-credentials form.
-  //   installed → 303 → /admin/signin
+  // Possible outcomes: noAdmin → render the credentials form; installed → 303 → /admin/signin.
   await ensureNoAdminOrRedirect(db)
 
-  // Ensure the setup token is visible in the server console whenever the
-  // install wizard is visited (covers restarts, log rotation, etc.).
+  // Re-surface the setup token in the server console on every wizard visit
+  // (covers restarts, log rotation).
   try {
     await getSetupToken(db)
   } catch {
-    // The database may be temporarily unreachable; the token will be
-    // lazily created on the next successful call.
+    // DB temporarily unreachable; the token is lazily created on the next call.
   }
 
   const { session } = rc
@@ -45,17 +42,14 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 export async function action({ request, context }: Route.ActionArgs) {
   const rc = getRequestContext({ request, context })
   const db = rc.db
-  // Same gate as the loader. A POST that races a concurrent install
-  // would still be caught by `signUpInitialAdminWithSession`'s own
-  // `hasAdmin()` check (returns 409), so the redirect here is a UX
-  // courtesy, not a security boundary.
+  // Same gate as the loader; the redirect is a UX courtesy — a racing POST is
+  // still caught by `signUpInitialAdminWithSession`'s own `hasAdmin()` (409).
   await ensureNoAdminOrRedirect(db)
 
   const { session, clientAddress } = rc
   const formData = await request.formData()
   const intent = formData.get('intent')
 
-  // ── Intent: verify-token ───────────────────────────────────────────────
   if (intent === 'verify-token') {
     if (!validateCsrfForAction(session, request, formData)) {
       return data({ error: '安全校验失败，请刷新页面后重试。' })
@@ -78,22 +72,19 @@ export async function action({ request, context }: Route.ActionArgs) {
     }
 
     session.set('setupTokenVerified', true)
-    // Same-session mutation — mark dirty and let the request-context
-    // middleware emit the Set-Cookie after the response resolves. No
-    // explicit commit here (unlike the sid-rotating install flow below,
-    // which keeps its own Set-Cookie channel).
+    // Same-session mutation — the request-context middleware emits the
+    // Set-Cookie after the response resolves.
     rc.markSessionDirty()
     return data({ setupTokenVerified: true })
   }
 
-  // ── Intent: install (or no intent for backward compat) ─────────────────
+  // Intent: install (null intent kept for backward compat).
   if (intent === 'install' || intent === null) {
     if (session.get('setupTokenVerified') !== true) {
       return data({ error: '请先验证 Setup Token。' })
     }
 
-    // Defense in depth: a stale session flag must not bypass a token that
-    // has expired or been invalidated.
+    // Defense in depth: a stale session flag must not bypass an expired or invalidated token.
     if (!(await isSetupTokenActive(db))) {
       return data({ error: 'Setup Token 已过期或失效，请重新验证。' })
     }
@@ -156,8 +147,7 @@ export default function AdminInstallRoute({ actionData, loaderData }: Route.Comp
         )}
       </header>
 
-      {/* Error for the install action — SetupTokenVerifyForm renders its
-          own errors, so only show this when the install form is visible. */}
+      {/* Only the install form's action error — SetupTokenVerifyForm renders its own. */}
       {loaderData.setupTokenVerified && actionData && 'error' in actionData && actionData.error ? (
         <div role="alert" aria-live="polite" className="text-center text-sm leading-relaxed text-destructive">
           {actionData.error}

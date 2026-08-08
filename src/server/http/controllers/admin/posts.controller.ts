@@ -41,9 +41,7 @@ import { idFromString } from '@/shared/utils/id'
 
 const idInput = z.object({ id: z.string().min(1) })
 
-// The recent-5 window of the dashboard cards — must stay in lockstep
-// with `RECENT_DRAFTS_LIMIT` / `RECENT_PUBLISHED_LIMIT` in
-// `src/routes/admin/dashboard.tsx` (the loader projects the same rows).
+// Lockstep with the dashboard's `RECENT_DRAFTS_LIMIT` / `RECENT_PUBLISHED_LIMIT` (routes/admin/dashboard.tsx).
 const RECENT_DRAFTS_LIMIT = 5
 const RECENT_PUBLISHED_LIMIT = 5
 
@@ -57,8 +55,7 @@ const get = authorProc
   .route({ method: 'GET', path: '/admin/posts/get' })
   .input(idInput)
   .output(adminPostDetailDto)
-  // NOT_FOUND comes from the service (`assertOwnPostOr404` throws a
-  // DomainError, translated by `domainErrorGuard`) — no null branch here.
+  // NOT_FOUND comes from the service — no null branch here.
   .handler(({ input, context }) => getPostDetailForAdmin(context.db, idFromString(input.id), context.viewer))
 
 const remove = authorProc
@@ -108,10 +105,8 @@ const unpublish = authorProc
     return { post }
   })
 
-// save-draft / publish-latest / preview come from the shared revision
-// factory. Posts pass `context.viewer` into `saveBody` so the adapter can
-// enforce author-owns-post (`assertOwnPostOr404`) — see the
-// `passViewerToSaveBody` option doc in `controllers/admin/revision-router.ts`.
+// Shared revision factory; posts pass `viewer` so the adapter enforces
+// author-owns-post (see `passViewerToSaveBody` in `revision-router.ts`).
 const { saveDraft, publishLatest, preview } = makeRevisionRouter({
   proc: authorProc,
   adapter: postLifecycleAdapter,
@@ -170,11 +165,8 @@ const listRevisions = authorProc
     return { revisions }
   })
 
-// Dashboard card data: draft/published counts plus the recent-5 lists,
-// scoped to the calling author. The projections below are copied
-// verbatim from `loaders/dashboard.ts` (id stringified, title, and the
-// published row falling back to `updatedAt` when never published) so the
-// cards render bit-identical data.
+// Dashboard card data (counts + recent-5), scoped to the author — the
+// projections match `loaders/dashboard.ts` bit-identical.
 const mySummary = authorProc
   .route({ method: 'GET', path: '/admin/posts/my-summary' })
   .output(adminPostsMySummaryOutputSchema)
@@ -216,11 +208,8 @@ const mySummary = authorProc
     }
   })
 
-// Per-post analytics behind both `/admin/posts/:id/analytics` and
-// `/editor/post/:id/analytics` — semantics replicated from
-// `loaders/post-analytics.ts`: NOT_FOUND on a missing meta, the admin
-// post DTO (with tags), then the overview fan-out scoped to the post.
-// `search` carries the raw query string, parsed server-side.
+// Per-post analytics behind both admin/editor analytics routes — semantics
+// replicated from `loaders/post-analytics.ts`; `search` is parsed server-side.
 const analytics = authorProc
   .route({ method: 'GET', path: '/admin/posts/analytics' })
   .input(adminPostAnalyticsInputSchema)

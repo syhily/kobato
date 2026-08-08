@@ -4,10 +4,7 @@ import { liveContentWhere, type LiveContentOptions } from '@/server/domains/cont
 import { page as pageMetaTable } from '@/server/infra/db/schema/page'
 
 /**
- * Page-table binding of the live gate. Binds the four meta columns once
- * and delegates to `liveContentWhere`, so call sites never hand-assemble
- * the column struct (and can't drift into their own copy of the gate).
- * See the warning on `isLive` in `content/schemas/live-gate.ts`.
+ * Page-table binding of the live gate — call sites must not hand-assemble the column struct.
  */
 export function livePageWhere(options?: LiveContentOptions): SQL {
   return liveContentWhere(

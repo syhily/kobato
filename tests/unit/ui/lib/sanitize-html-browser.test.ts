@@ -5,16 +5,12 @@ import { strategyToConfig, type SafeHtmlStrategy } from '@/ui/lib/sanitize-html-
 import { sanitizeHtmlEngine } from '@/ui/lib/sanitize-html-engine.browser'
 
 // Parity suite for the DOMPurify browser engine (vite aliases the facade's
-// engine import here in the client bundle). Mirrors
-// tests/unit/ui/lib/sanitize-html.test.ts, which pins the node engine.
+// engine import here); mirrors tests/unit/ui/lib/sanitize-html.test.ts.
 
 const strategies: SafeHtmlStrategy[] = ['shiki', 'math', 'email', 'audit', 'preview']
 
 function clean(html: string, strategy: SafeHtmlStrategy): string {
-  // happy-dom's NodeIterator makes DOMPurify drop the FIRST element node of
-  // the input (a known happy-dom-only quirk; real browsers are unaffected).
-  // A leading zero-width-space text node shields the first element so the
-  // assertions below exercise the same paths browsers do.
+  // Leading ZWSP shields the first element from a happy-dom-only DOMPurify quirk.
   return sanitizeHtmlEngine('​' + html, strategyToConfig(strategy))
 }
 
@@ -71,11 +67,7 @@ describe('ui/lib/sanitize-html-engine.browser', () => {
     })
 
     it('strips a bare line tag with its contents (known divergence from the node engine)', () => {
-      // Nothing in the current shiki pipeline emits bare <line> elements
-      // (shiki uses <span class="line">), and DOMPurify treats a bare
-      // <line> as an SVG element out of context — it is removed with its
-      // contents regardless of ALLOWED_TAGS. The node engine preserves
-      // tag and text; SSR output is unaffected either way.
+      // DOMPurify drops a bare <line> with its contents regardless of ALLOWED_TAGS; node engine keeps it.
       const result = clean('<line class="line">code</line>', 'shiki')
       expect(result).not.toContain('<line')
       expect(result).not.toContain('class="line"')

@@ -9,12 +9,8 @@ export const assetsRouter = new Hono<Env>()
 
 const ASSET_CACHE_CONTROL = 'public, max-age=3600, must-revalidate'
 
-// Branding bytes change whenever an admin uploads a new file, so we
-// CANNOT serve `immutable`. We DO send an `ETag` keyed by the bytes'
-// sha256 (computed once, either at module init for bundled defaults or
-// at upload time for S3-backed branding). Combined with
-// `must-revalidate`, the browser / CDN sends a conditional GET and we
-// reply 304 when the bytes match — no body, no S3 fetch on the hot path.
+// Branding bytes change on re-upload — no `immutable`; ETag (sha256) +
+// `must-revalidate` gives conditional 304s with no body/S3 fetch on the hot path.
 for (const path of Object.keys(ASSET_ROUTES)) {
   assetsRouter.get(path, async (c) => {
     const resolved = await resolveSiteAsset(path, { original: c.req.query('original') !== undefined })
@@ -35,12 +31,8 @@ for (const path of Object.keys(ASSET_ROUTES)) {
   })
 }
 
-// Hard-coded fallbacks for the two derived endpoints. The settings
-// bundle may legitimately be `null` during early boot (the install
-// gate hasn't run yet, or the snapshot loader is in flight) — these
-// routes can be hit by uptime probes and "view manifest" devtools long
-// before any admin has logged in. The bundled defaults are designed to
-// keep the perimeter responsive in that window.
+// Hard-coded fallbacks: the settings bundle may be `null` early in boot,
+// and uptime probes hit these routes before any admin has logged in.
 const DEFAULT_MANIFEST_NAME = 'Site'
 
 assetsRouter.get('/manifest.webmanifest', async (c) => {

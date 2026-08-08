@@ -5,11 +5,8 @@ import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { auditLog } from '@/server/infra/db/schema/config'
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@/server/infra/logger'
 
-// Real in-memory engine for the DB side: expired rows are real
-// `audit_log` rows and every assertion reads the table back. The storage
-// seam stays real too (registry → S3 backend); only the AWS SDK is mocked
-// at the boundary. That keeps the availability checks honest — the
-// half-configured cases below exercise the backend's real `isAvailable()`.
+// Real audit_log rows + real storage seam; only the AWS SDK is mocked, so
+// the half-configured cases exercise the backend's real isAvailable().
 const sendMock = vi.fn<(command: { input: unknown }) => Promise<unknown>>()
 const destroyMock = vi.fn()
 const middlewareStack = { addRelativeTo: vi.fn() }
@@ -128,9 +125,7 @@ describe('audit/archive', () => {
       expect(await db.select().from(auditLog)).toHaveLength(0)
     })
 
-    // Q4: a half-configured bucket (enabled + keys present, endpoint missing)
-    // must take the purge fallback — one warn, zero errors — instead of
-    // attempting the archive and logging an error every daily run.
+    // Half-configured S3 (endpoint missing) takes the purge fallback: one warn, zero errors.
     it('purges expired rows when S3 is half-configured (endpoint missing)', async () => {
       setS3Storage({ endpoint: '' })
       await seedAuditRow()
@@ -152,8 +147,7 @@ describe('audit/archive', () => {
 
   describe('deleteArchivedRows', () => {
     it('deletes in batches when the id list exceeds one batch', async () => {
-      // Five rows with a batch size of two → three DELETE statements,
-      // every row gone by the end.
+      // Five rows, batch size two → three DELETEs.
       for (let i = 0; i < 5; i++) {
         await seedAuditRow()
       }

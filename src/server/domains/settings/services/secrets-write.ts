@@ -6,9 +6,8 @@ import { isRecord } from '@/server/domains/settings/services/section-patch'
 import { encryptIfNeeded } from '@/server/infra/crypto/secret-encryption'
 
 /**
- * Shape the validated section payload into the row to persist: secrets the
- * patch omits are carried over from the stored row, and the assets
- * `branding` bucket merges instead of replacing.
+ * Shape the validated payload into the row to persist: omitted secrets carry over from
+ * the stored row, and the assets `branding` bucket merges instead of replacing.
  */
 export function applySectionPatch(
   section: SettingsSection,
@@ -18,9 +17,7 @@ export function applySectionPatch(
   let row = validated
   const secretConfigs = SECRET_FIELDS.filter((f) => f.section === section)
   if (secretConfigs.length > 0) {
-    // A patch that omits a secret keeps the stored value; a patch that
-    // includes every secret is a full overwrite and has nothing to
-    // preserve. `storedRow` is the same read the merge base used.
+    // An omitted secret keeps the stored value; a patch including every secret preserves nothing.
     const needsExisting = secretConfigs.some((config) => !hasSecretInRow(row, config.path, config.field))
     if (needsExisting) {
       for (const secretConfig of secretConfigs) {
@@ -35,9 +32,8 @@ export function applySectionPatch(
 }
 
 /**
- * Encrypt every plaintext secret of the section in place on a shallow row
- * copy. Already-encrypted values (recognised by their prefix) pass
- * through unchanged, which is what makes the preserve-on-omit path cheap.
+ * Encrypt every plaintext secret on a shallow row copy; already-encrypted values
+ * (recognised by their prefix) pass through unchanged.
  */
 export function encryptSecretsInRow(section: SettingsSection, row: Record<string, unknown>): Record<string, unknown> {
   const configs = SECRET_FIELDS.filter((f) => f.section === section)
@@ -92,8 +88,7 @@ function preserveSecretOnPatch(
   const existingPayloadValue: unknown = isRecord(existingData) ? existingData[payloadPath] : undefined
   const existingPayload = isRecord(existingPayloadValue) ? existingPayloadValue : undefined
 
-  // Pass the existing ciphertext through unchanged. encryptSecretsInRow
-  // recognises the encrypted prefix and skips re-encryption.
+  // Pass the existing ciphertext through unchanged — encryptSecretsInRow skips re-encryption.
   const previousSecret = typeof existingPayload?.[secretKey] === 'string' ? existingPayload[secretKey] : ''
   const nextPayload: Record<string, unknown> = { ...incoming, [secretKey]: previousSecret }
   return { ...validated, [payloadPath]: nextPayload }

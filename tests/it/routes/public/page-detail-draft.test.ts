@@ -10,27 +10,8 @@ import { adminSession, regularSession } from '#/_helpers/session'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { page as pageTable } from '@/server/infra/db/schema/page'
 
-// Draft-preview contract for `routes/page.detail`. Three states the
-// route distinguishes via the `draftMarker` discriminator on the
-// loader payload (and propagated to `PageDetailBody`):
-//
-//   - `'draft'`              — page is unpublished; admin sees the
-//                              latest draft on the public URL.
-//   - `'unpublished-draft'`  — published page + `?draft=true` + a
-//                              newer draft revision exists. Body
-//                              swaps to the draft.
-//   - `'published-draft'`    — published page + `?draft=true` but no
-//                              newer draft. Body stays on the
-//                              published revision; the badge confirms
-//                              parity.
-//
-// Anonymous visitors (and non-admin sessions) are never allowed to
-// trip these branches: `?draft=true` is silently ignored, and an
-// unpublished page still 404s.
-//
-// Real engine: pages are seeded meta rows with real published/draft
-// content revisions, so `loadDraftPreviewBySlug` and the live gate run
-// against actual rows instead of mock projections.
+// Draft-preview contract for page.detail: three `draftMarker` states,
+// only reachable by admin sessions (anonymous `?draft=true` is ignored).
 
 // Presentational seam — the loader contract under test never renders.
 vi.mock('@/ui/pt/render', () => ({
@@ -74,7 +55,6 @@ async function seedRevision(opts: {
   return rows[0]!.id
 }
 
-/** A live page whose published revision carries `publishedBody`. */
 async function seedPublishedPage(slug: string, title: string): Promise<number> {
   const rows = await db
     .insert(pageTable)
@@ -92,7 +72,6 @@ async function seedPublishedPage(slug: string, title: string): Promise<number> {
   return pageId
 }
 
-/** An unpublished page: no published revision pointer, one draft revision. */
 async function seedUnpublishedPage(slug: string, title: string): Promise<number> {
   const rows = await db
     .insert(pageTable)
@@ -165,7 +144,6 @@ describe('routes/page.detail draft preview', () => {
 
   it('shows 【未发布的草稿】 for an admin opening a published page with `?draft=true` when a newer draft exists', async () => {
     const pageId = await seedPublishedPage('about', 'About')
-    // A newer draft revision (rev 2) sitting on top of the published rev 1.
     await seedRevision({ ownerId: pageId, revisionNo: 2, status: 'draft', body: draftBody })
 
     const result = unwrapLoaderData<LoaderResult>(await loadPage('about', adminSession(), true))
@@ -179,7 +157,6 @@ describe('routes/page.detail draft preview', () => {
 
     const result = unwrapLoaderData<LoaderResult>(await loadPage('about', adminSession(), true))
 
-    // No newer draft → body stays on the published revision.
     expect(result.body).toEqual(publishedBody)
     expect(result.draftMarker).toBe('published-draft')
   })

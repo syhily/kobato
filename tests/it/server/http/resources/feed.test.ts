@@ -18,11 +18,8 @@ import { resolveCacheSlot } from '@/server/infra/cache/registry'
 import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 import { generateFeeds } from '@/server/render/feed/generator'
 
-// The REAL cache registry against the shared in-memory kv_cache table:
-// a cold cache runs the (mocked) feed generator and persists the entry;
-// a warm cache serves the persisted row without regenerating. Only the
-// generator stays mocked — a true external to the cache contract under
-// test. The rate limiter runs for real against the settings snapshot.
+// The real kv_cache registry: cold cache persists, warm cache serves without regenerating.
+// Seams: the feed generator; the rate limiter runs real against the settings snapshot.
 const db = getTestDb()
 
 const BUILT = { rss: '<rss version="2.0">built</rss>', atom: '<feed>built</feed>' }
@@ -36,8 +33,7 @@ function requestFeed(url: string) {
   })
   app.route('/', feedRouter)
   app.onError(onErrorHandler)
-  // Sentinel public route sharing the `/` mount root — mirrors the SSR
-  // pages that must never count against the feed bucket.
+  // Sentinel SSR-style route that must never count against the feed bucket.
   app.get('/sitemap.xml', (c) => c.text('sitemap'))
   return app.request(url)
 }
@@ -102,10 +98,7 @@ describe('feed resource', () => {
   })
 
   it('never counts public non-feed requests against the feed bucket', async () => {
-    // Regression guard: the router is mounted at `/` in the real pipeline,
-    // where a router-level `.use(rateLimit)` would register as a site-wide
-    // middleware — e2e caught `/sitemap.xml` returning 429 once one IP
-    // exhausted the feed bucket. The limiter now rides each feed route.
+    // Only the feed routes may draw from the feed bucket — never SSR pages.
     setBlogSettingsBundleForTests({
       ...TEST_BLOG_SETTINGS_BUNDLE,
       rateLimit: {

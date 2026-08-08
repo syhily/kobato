@@ -24,19 +24,15 @@ export interface ReindexBatchResult {
 }
 
 /**
- * Rebuild the search index for published posts in batch.
- *
- * When `batchSize` is omitted the entire set is processed in one call.
- * Returns `nextOffset` so callers can drive pagination until it is null.
+ * Rebuild the search index for live posts in `batchSize` batches (default
+ * 50); without `offset` only the first batch runs, `nextOffset: null`.
  */
 export async function reindexSearchBatch(db: Database, input: ReindexBatchInput = {}): Promise<ReindexBatchResult> {
   const useBatching = input.batchSize !== undefined || input.offset !== undefined
   const offset = input.offset ?? 0
   const batchSize = input.batchSize ?? 50
 
-  // Index every live post including scheduled ones (the query-time gate
-  // filters scheduled rows until their `publishedAt` arrives, so they
-  // become searchable then without a reindex).
+  // Index scheduled rows too — the query-time gate exposes them at `publishedAt`.
   const liveIncludingScheduled = livePostWhere({ includeScheduled: true })
 
   const rows = await db

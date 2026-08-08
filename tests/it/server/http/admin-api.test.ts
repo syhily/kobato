@@ -19,20 +19,9 @@ import { session as sessionTable } from '@/server/infra/db/schema/session'
 import { user as userTable } from '@/server/infra/db/schema/user'
 import { webmention as webmentionTable } from '@/server/infra/db/schema/webmention'
 
-// The PHASE A admin/me SSR endpoints against the real wire: every new
-// procedure (`account.*`, `admin.users.*`, `comments-authed.myCounts /
-// resolveEntity`, `admin.comments.webmentions.pendingCount`,
-// `admin.posts.mySummary / analytics`, `admin.analytics.*`,
-// `admin.settings.bootstrap`) driven through the RPCHandler JSON
-// round-trip, with real SQLite rows plus the adopted DuckDB sidecar for
-// the analytics fan-out — the same no-mock setup the dashboard route
-// test uses. Role gating is pinned by real 401/403/404/503 results.
-//
-// Wire paths follow the router OBJECT TREE (api-router.ts), not the
-// procedures' `.route()` paths: the RPCHandler matcher keys on the
-// flattened object path, so `admin.users.passkeyFlag` is served at
-// `/admin/users/passkeyFlag` and `admin.comments.pendingCount` at
-// `/admin/comments/pendingCount`.
+// The admin/me oRPC procedures over the real RPCHandler wire: real SQLite rows,
+// adopted DuckDB sidecar, role gating pinned by real 401/403/404/503s.
+// Wire paths follow the router OBJECT TREE (api-router.ts), not each procedure's `.route()` path.
 
 const db = getTestDb()
 
@@ -171,15 +160,13 @@ describe('admin badge endpoints (count / passkeyFlag / pendingCounts)', () => {
     const off = await callRpc('/admin/users/passkeyFlag', undefined, makeAuthedCtx({ db }))
     expect(await parseRpcJson<boolean>(off)).toBe(false)
 
-    // The fixture ships `security` as a literal (never null) — the `!`
-    // unwraps the nullable bundle slot so the spread can copy it.
+    // The fixture ships `security` as a literal (never null).
     const security = TEST_BLOG_SETTINGS_BUNDLE.security!
     setBlogSettingsBundleForTests({
       ...TEST_BLOG_SETTINGS_BUNDLE,
       security: {
         ...security,
-        // Fresh mutable copies — the spread of the shared fixture would
-        // widen `csrf`/`cors` to `| undefined` and fail the DTO type.
+        // Fresh mutable copies — spreading the shared fixture widens `csrf`/`cors` to `| undefined`.
         csrf: { ...security.csrf },
         cors: { ...security.cors },
         passkey: { enabled: true },
@@ -458,8 +445,7 @@ describe('admin.analytics.mentions', () => {
     expect(res.status).toBe(200)
     const json = await parseRpcJson<{ referers: Array<{ name: string; visits: number; visitors: number }> }>(res)
 
-    // The referer metric groups by `referer_host` (the appender stores
-    // the host) — see `METRIC_COLUMN` in duckdb-sql.ts.
+    // Referers group by `referer_host` (the appender stores the host) — see `METRIC_COLUMN` in duckdb-sql.ts.
     expect(json.referers.map((r) => r.name).sort()).toEqual(['(unknown)', 'google.com', 'twitter.com'])
     expect(json.referers.find((r) => r.name === 'google.com')).toMatchObject({ visits: 2, visitors: 2 })
   })
@@ -491,8 +477,7 @@ describe('admin.settings.bootstrap', () => {
     }>(res)
 
     expect(json.bundle.siteIdentity.title).toBe('且听书吟')
-    // The secret is blanked in the admin-facing bundle; the mask exposes
-    // only the last 4 characters.
+    // The admin bundle blanks the secret; the mask exposes only the last 4 characters.
     expect(json.bundle.assets.storage.secretAccessKey).toBe('')
     expect(json.masks.assetsSecretAccessKeyMask).toBe('test')
     expect(json.timeZones.length).toBeGreaterThan(0)

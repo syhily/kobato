@@ -9,19 +9,14 @@ function makeQueryClient(): QueryClient {
   })
 }
 
-// ImagesView's mutation paths invalidate the library inline at the call
-// site through the procedure-level orpcQuery key. The grid caches the
-// library as an infinite query, the editor's ImageLibraryPicker as a plain
-// query — one procedure, two operation types, two distinct cache entries.
-// The react variant of the orpcQuery utils has no standalone
-// `queryKey`/`infiniteKey`; the options builders return the exact key
-// under `.queryKey`.
+// One procedure (admin.images.list), two operation types — infinite grid
+// and plain picker query — so two distinct cache entries. The options
+// builders return the exact key under `.queryKey`.
 function seedBothListVariants(qc: QueryClient) {
   const gridKey = orpcQuery.admin.images.list.infiniteOptions({
     input: (pageParam: number) => ({ q: undefined, kind: undefined, offset: pageParam, limit: 60 }),
     initialPageParam: 0,
-    // Irrelevant to the key (derived from `input(initialPageParam)` only),
-    // but required by the options builder's type.
+    // Type-required no-op: the key derives from `input(initialPageParam)` only.
     getNextPageParam: () => undefined,
   }).queryKey
   const pickerKey = orpcQuery.admin.images.list.queryOptions({
@@ -37,11 +32,7 @@ describe('ui/admin/images list cache — key grammar premise', () => {
     const qc = makeQueryClient()
     const { gridKey, pickerKey } = seedBothListVariants(qc)
 
-    // The grammar the inline call sites must never regress to: TanStack's
-    // prefix matcher bails on the first element-type mismatch (string vs
-    // nested path array), so a flat key silently invalidates nothing.
-    // Guards against a flat-key reintroduction or an orpc major-upgrade
-    // key change.
+    // TanStack's prefix matcher bails on the first element-type mismatch (string vs nested path array), so a flat key never matches.
     void qc.invalidateQueries({ queryKey: ['admin', 'images', 'list'] })
 
     expect(qc.getQueryState(gridKey)?.isInvalidated).toBe(false)

@@ -6,12 +6,9 @@ import { listAllSessions, revokeAllSessionsOfUser } from '@/server/domains/auth/
 import { session as sessionTable } from '@/server/infra/db/schema/session'
 import { user } from '@/server/infra/db/schema/user'
 
-// The sessions service is exercised against the real session/user tables.
-// `listSessionsByUser` and the basic `listAllSessions` join/empty paths are
-// already covered by ../auth-sessions.test.ts and ../auth-coverage.test.ts;
-// this file owns the branches those suites do not: the except-session
-// revocation, the multi-session-per-user join, the deleted-user fallback,
-// and the 10k soft cap.
+// Sessions service against the real session/user tables; this file owns
+// the branches auth-sessions/auth-coverage do not: except-session
+// revocation, deleted-user fallback, and the 10k soft cap.
 
 const db = getTestDb()
 
@@ -86,9 +83,7 @@ describe('auth/services/sessions — listAllSessions', () => {
   it('uses the deleted-user fallback when no user row matches the session owner', async () => {
     const u = await seedUser('admin', 'gone@example.com')
     await db.insert(sessionTable).values(liveSessionRow('sid-orphan', u.id, { ip: '3.3.3.3' }))
-    // A dangling owner cannot exist while FK checks are on (the user row
-    // cascades its sessions away), so drop the row with checks off — the
-    // same end state the fallback exists for.
+    // Drop the user with FK checks off — dangling owners cascade otherwise.
     db.run(sql`PRAGMA foreign_keys = OFF`)
     try {
       await db.delete(user)

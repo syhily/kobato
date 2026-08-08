@@ -17,9 +17,7 @@ import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-reg
 import { comment } from '@/server/infra/db/schema/comment'
 import { like, metric } from '@/server/infra/db/schema/metric'
 
-// The likes service is exercised against the real in-memory engine: the
-// transactional insert+bump, the token lifecycle, and the purge cutoff
-// are all SQL behavior that mocks used to merely pretend happened.
+// Likes against the real in-memory engine: insert+bump, token lifecycle, purge cutoff.
 const db = getTestDb()
 
 beforeEach(async () => {
@@ -88,8 +86,7 @@ describe('services/comments/likes — increaseLikes / decreaseLikes', () => {
     expect(await queryLikes(db, POST_A)).toBe(0)
     expect(await validateLikeToken(db, POST_A, token)).toBe(false)
 
-    // A second undo with the same token reports the no-op honestly —
-    // the count stays put and the caller learns nothing was consumed.
+    // A second undo with the same token reports the no-op honestly.
     await expect(decreaseLikes(db, POST_A, token)).resolves.toBe(false)
     expect(await queryLikes(db, POST_A)).toBe(0)
   })
@@ -155,8 +152,7 @@ describe('services/comments/likes — queryMetadata', () => {
     // POST_B has no metric row at all — the pending delta still surfaces.
     expect(merged.get('post:2')?.views).toBe(1)
 
-    // Once the flush lands, the stored count carries the delta and the
-    // merge adds nothing on top.
+    // After the flush, the stored count carries the delta; the merge adds nothing.
     await flushPageViews()
     const flushed = await queryMetadata(db, [POST_A], { likes: true, views: true, comments: false })
     expect(flushed.get('post:1')?.views).toBe(102)
@@ -181,11 +177,8 @@ describe('services/comments/likes — purgeStaleLikeTokens', () => {
     const now = Date.now()
     const dayMs = 24 * 60 * 60 * 1000
     const rows = [
-      // Soft-deleted 40 days ago — purge.
       { token: 'old-deleted', deletedAt: new Date(now - 40 * dayMs) },
-      // Soft-deleted yesterday — keep.
       { token: 'fresh-deleted', deletedAt: new Date(now - dayMs) },
-      // Active — keep.
       { token: 'active', deletedAt: null },
     ]
     for (const row of rows) {
@@ -216,16 +209,13 @@ describe('services/comments/likes — sweep timer', () => {
     vi.useFakeTimers()
     try {
       await seedStaleToken('sweep-me')
-      // A duplicate start must not replace the live timer or arm a second
-      // one — either bug would show up as the tick below never firing.
+      // A duplicate start must not replace the live timer or arm a second one.
       startLikeTokenSweep(db)
       startLikeTokenSweep(db)
 
-      // One interval passes — the tick runs the real purge.
       await vi.advanceTimersByTimeAsync(60 * 60 * 1000)
       expect((await likeRows()).map((r) => r.token)).not.toContain('sweep-me')
 
-      // After reset the timer is gone for real: another interval purges nothing.
       resetLikeTokenSweep()
       await seedStaleToken('after-reset')
       await vi.advanceTimersByTimeAsync(60 * 60 * 1000)

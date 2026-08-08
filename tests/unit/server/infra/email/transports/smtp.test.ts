@@ -1,8 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Mock nodemailer at the import boundary so the test never opens a real
-// SMTP socket. `createTransport` returns a stub transporter whose
-// `sendMail` we assert against.
+// Mock nodemailer at the import boundary so the test never opens a real SMTP socket.
 const { sendMailMock, createTransportMock } = vi.hoisted(() => {
   const sendMail = vi.fn()
   return {

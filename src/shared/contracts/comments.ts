@@ -30,7 +30,7 @@ export const adminPendingDashboardDto = z.object({
 })
 export type AdminPendingDashboardDto = z.infer<typeof adminPendingDashboardDto>
 
-// ─── comments (public wire — no PII) ───
+// comments (public wire — no PII)
 export const commentBaseDto = z.object({
   id: idString,
   createAt: isoDateTime,
@@ -64,22 +64,18 @@ export const commentItemDto = commentBaseDto.extend({
     return z.array(commentItemDto).optional()
   },
   // Thread-cap markers (see `parseComments`): present ONLY on a root whose
-  // reply thread exceeded the server-side cap. `childrenTotal` carries the
-  // full visible reply count so a future "load more" affordance knows how
-  // much was held back.
+  // reply thread exceeded the cap; `childrenTotal` is the full visible count.
   childrenTruncated: z.boolean().optional(),
   childrenTotal: z.number().int().nonnegative().optional(),
 })
 export type CommentItemWire = z.infer<typeof commentItemDto>
 
-// Shared output of the own-comment mutation trio (`comments.updateOwn` /
-// `requestDeleteOwn` / `cancelDeleteOwn`): the updated wire comment, so the
-// public comments reducer stays the single sync owner and the leaves never
-// need a full-loader revalidation to flip one flag.
+// Shared output of the own-comment mutation trio: the updated wire
+// comment, so the public reducer stays the single sync owner.
 export const ownCommentMutationDto = z.object({ comment: commentItemDto })
 export type OwnCommentMutationOutput = z.infer<typeof ownCommentMutationDto>
 
-// ─── admin comment wire (includes PII fields + content) ───
+// admin comment wire (includes PII fields + content)
 export const adminCommentBaseDto = commentBaseDto.extend({
   content: z.string().nullable(),
   ua: z.string().nullable(),
@@ -89,12 +85,10 @@ export const adminCommentBaseDto = commentBaseDto.extend({
 
 export const adminCommentDto = adminCommentBaseDto.extend({
   pageTitle: z.string().nullable(),
-  // The metric's `public_id` UUID for the page the comment belongs to.
-  // Drives the admin moderation filter Combobox.
+  // The metric's `public_id` UUID; drives the admin moderation filter Combobox.
   pagePublicId: z.string().nullable(),
   pageCover: z.string().nullable(),
-  // Fully-qualified public URL for the page this comment belongs to.
-  // Powers the per-row "查看文章" overflow-menu item.
+  // Fully-qualified public URL; powers the per-row "查看文章" overflow item.
   pagePermalink: z.string().nullable(),
 })
 export type AdminCommentWire = z.infer<typeof adminCommentDto>

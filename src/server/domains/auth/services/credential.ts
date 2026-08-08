@@ -1,6 +1,3 @@
-// Credential signin flow — email + password, with the passkey-method
-// refusal and the OTP staging branch when mail is ready.
-
 import type { Database } from '@/server/infra/db/database'
 
 import { recordAuditEvent } from '@/server/domains/audit/services/record'

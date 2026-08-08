@@ -13,8 +13,6 @@ import { footnoteSyncSignature, synchronizeFootnoteIndices } from '@/shared/pt/f
 // The renumbering engine's home is `@/shared/pt/footnote-sync` (pure PT-tree
 // semantics) — the bridge node module keeps only the PM↔PT converters.
 
-// --- fixture helpers ------------------------------------------------------
-
 let keyCounter = 0
 function key(prefix: string): string {
   keyCounter += 1
@@ -56,8 +54,6 @@ function tableCell(text: string, markDefs?: unknown[]): TableCell {
 function tableRow(cells: TableCell[]): TableRow {
   return { _type: 'tableRow', _key: key('r'), cells }
 }
-
-// --- synchronizeFootnoteIndices ------------------------------------------
 
 describe('shared/pt/footnote-sync — synchronizeFootnoteIndices', () => {
   it('returns the body unchanged when there are no footnote definitions', () => {
@@ -172,7 +168,6 @@ describe('shared/pt/footnote-sync — synchronizeFootnoteIndices', () => {
     // Cited first (index 1). Orphans appended in body order (orphan2 then
     // orphan1) then the whole def list sorted ascending by index.
     expect(defs.map((d) => d.index)).toEqual([1, 2, 3])
-    // orphan2 is declared first in the body so it gets the lower index.
     expect(defs.map((d) => d._key)).toEqual(['cited', 'orphan2', 'orphan1'])
   })
 
@@ -191,7 +186,6 @@ describe('shared/pt/footnote-sync — synchronizeFootnoteIndices', () => {
     const body = [ref.block, fnDef('eq', 1, [textBlock('y')])] as PortableTextBody
     const before = JSON.stringify(body)
     const result = synchronizeFootnoteIndices(body)
-    // No change to the structure (values already canonical).
     expect(JSON.stringify(result)).toBe(before)
   })
 
@@ -215,8 +209,6 @@ describe('shared/pt/footnote-sync — synchronizeFootnoteIndices', () => {
     expect(refDef).toMatchObject({ _type: 'footnoteRef', index: 1 })
   })
 })
-
-// --- footnoteSyncSignature -----------------------------------------------
 
 describe('shared/pt/footnote-sync — footnoteSyncSignature', () => {
   it('encodes inline occurrences and sorted definitions into a stable string', () => {

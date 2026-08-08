@@ -10,11 +10,7 @@ function AdminListPageRoot({ children }: { children: ReactNode }) {
 interface HeaderProps {
   title: ReactNode
   description?: string
-  /**
-   * Trailing slot rendered to the right of the title block on desktop,
-   * stacked below it on narrow viewports. Use for refresh / export /
-   * "new …" buttons; bulk-action toolbars belong inside `Toolbar`.
-   */
+  /** Trailing slot (desktop right, stacked on narrow viewports). */
   children?: ReactNode
 }
 
@@ -64,11 +60,8 @@ function AdminListPagePageNavigation({ totalPages, currentPage, onChange }: Page
 interface FilterFieldProps {
   /** Column label rendered above the control. Stays 28px tall to align with sibling columns that show a "X clear" button. */
   label: string
-  /**
-   * Optional trailing button rendered on the label row (e.g.
-   * `<ClearFilterButton />`). When absent the row still reserves 28px so
-   * a row of FilterFields doesn't jitter as filters are added or removed.
-   */
+  /** Optional trailing button on the label row; when absent the row still
+   *  reserves 28px so FilterFields don't jitter as filters change. */
   action?: ReactNode
   children: ReactNode
 }

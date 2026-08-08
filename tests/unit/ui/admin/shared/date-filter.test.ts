@@ -94,9 +94,7 @@ describe('resolveDateFilterBounds', () => {
   })
 })
 
-// ─────────────────────── single date + operator mode ───────────────────────
-// The comments filter mode: one calendar day compared with a Ghost-style
-// operator. Moved out of `useCommentsController` when the module converged.
+// Single-day filter mode with Ghost-style operators.
 
 describe('parseSingleDateFilter', () => {
   it('returns null for undefined or empty input', () => {
@@ -158,9 +156,7 @@ describe('singleDateFilterLabel', () => {
 })
 
 describe('resolveSingleDateFilterBounds', () => {
-  // The bounds are built in the runner's local timezone (matching what the
-  // picker does), so we mirror the SUT's construction here instead of
-  // hard-coding UTC offsets — otherwise the test would only pass in UTC.
+  // Expected bounds are built in the runner's local timezone, like the SUT.
   function expectedBounds(date: string) {
     const start = new Date(date)
     start.setHours(0, 0, 0, 0)
@@ -202,11 +198,7 @@ describe('resolveSingleDateFilterBounds', () => {
   })
 
   it('returns no bounds when the date is empty (operator-only chip)', () => {
-    // A freshly added date chip is operator-first — the user picks the
-    // operator before typing a date, so the editor may commit `{date: '',
-    // op}`. The bounds resolver must not crash on `new
-    // Date('').toISOString()` and must return undefined bounds so the
-    // server-side filter is a no-op until the user types a date.
+    // Operator-first chips commit {date: '', op} — must not crash and stay a no-op until a date is typed.
     expect(resolveSingleDateFilterBounds({ date: '', op: 'is-greater' })).toEqual({
       after: undefined,
       before: undefined,
@@ -218,8 +210,7 @@ describe('resolveSingleDateFilterBounds', () => {
   })
 
   it('returns no bounds when the date is unparseable', () => {
-    // Defensive against `new Date('not-a-date')` returning an `Invalid
-    // Date` whose `toISOString` would throw.
+    // `new Date('not-a-date')` is an Invalid Date whose `toISOString` throws.
     expect(resolveSingleDateFilterBounds({ date: 'not-a-date', op: 'is-less' })).toEqual({
       after: undefined,
       before: undefined,

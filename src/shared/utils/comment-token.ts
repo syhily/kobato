@@ -35,11 +35,8 @@ export function parseCommentTokensCookie(cookieHeader: string | null): CommentTo
 
 function cookieAttributes(maxAge: number): string {
   const parts = ['Path=/', 'SameSite=Lax', 'HttpOnly']
-  // `Secure` only in production — over plain HTTP (local dev on a LAN
-  // IP, TLS-less deployments) browsers refuse to store Secure cookies
-  // and the commenter token jar would silently never persist. The
-  // session and visitor cookies already follow this PROD-conditional
-  // pattern.
+  // `Secure` only in production — over plain HTTP browsers refuse to
+  // store Secure cookies (matches the session/visitor cookie pattern).
   if (import.meta.env.PROD) {
     parts.push('Secure')
   }

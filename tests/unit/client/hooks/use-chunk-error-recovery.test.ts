@@ -4,19 +4,8 @@ import { renderHook } from '#/_helpers/hook'
 import { subscribeChunkReload, useReloadOnChunkError } from '@/client/hooks/use-chunk-error-recovery'
 import { isChunkLoadError } from '@/shared/utils/chunk-error'
 
-// useChunkErrorRecovery (the hook) and useReloadOnChunkError attach
-// listeners in useEffect, which the SSR harness does not fire. But the
-// module also exports pure-ish helpers — subscribeChunkReload and
-// triggerChunkReload — whose logic (subscriber set management, the
-// reload-started guard, the sessionStorage cooldown) is fully testable
-// in isolation.
-//
-// `reloadStarted` is module-level state that flips to true after the
-// first triggerChunkReload() actually fires listeners. To keep tests
-// independent we isolate each case and accept that once triggered, the
-// module is "locked" for the remainder of the worker — each test below
-// that asserts pre-trigger behavior runs before any trigger call, and
-// the trigger-once tests run last in their own describe block.
+// The hooks attach listeners in useEffect, which the SSR harness does
+// not fire; the exported helpers are testable in isolation.
 
 describe('shared/utils/chunk-error — isChunkLoadError', () => {
   it('returns false for null / undefined', () => {
@@ -75,16 +64,12 @@ describe('client/hooks/use-chunk-error-recovery — subscribeChunkReload', () =>
     const listener = vi.fn()
     const unsub = subscribeChunkReload(listener)
     unsub()
-    // Calling again is a no-op (the listener is already gone from the set).
     expect(() => unsub()).not.toThrow()
   })
 })
 
 describe('client/hooks/use-chunk-error-recovery — triggerChunkReload', () => {
-  // triggerChunkReload latches a module-level `reloadStarted` flag, so
-  // the first successful call in the worker permanently no-ops every
-  // subsequent call. We isolate each case with vi.resetModules() + a
-  // fresh dynamic import so the latch resets between tests.
+  // The module-level latch is reset per case via vi.resetModules() + fresh import.
 
   beforeEach(() => {
     vi.stubGlobal('window', {
@@ -119,9 +104,7 @@ describe('client/hooks/use-chunk-error-recovery — triggerChunkReload', () => {
     const unsubBad = mod.subscribeChunkReload(bad)
     const unsubGood = mod.subscribeChunkReload(good)
     expect(() => mod.triggerChunkReload()).not.toThrow()
-    // The throwing listener was invoked…
     expect(bad).toHaveBeenCalledTimes(1)
-    // …and so was the healthy one registered after it.
     expect(good).toHaveBeenCalled()
     unsubBad()
     unsubGood()
@@ -135,8 +118,6 @@ describe('client/hooks/use-chunk-error-recovery — triggerChunkReload', () => {
     mod.triggerChunkReload()
     mod.triggerChunkReload()
     mod.triggerChunkReload()
-    // The module-level `reloadStarted` flag latches after the first
-    // successful trigger, so subsequent calls are no-ops.
     expect(listener).toHaveBeenCalledTimes(1)
     unsub()
   })
@@ -169,18 +150,13 @@ describe('client/hooks/use-chunk-error-recovery — triggerChunkReload', () => {
     })
     const mod = await import('@/client/hooks/use-chunk-error-recovery')
     mod.triggerChunkReload()
-    // rAF is double-nested in the source (rAF -> rAF -> reload), so it
-    // must have been called at least once.
+    // rAF is double-nested in the source — assert at least one call.
     expect(raf).toHaveBeenCalled()
   })
 })
 
 describe('client/hooks/use-chunk-error-recovery — useReloadOnChunkError', () => {
-  // useReloadOnChunkError reads `error` in a useEffect that does not fire
-  // under the SSR harness, so the hook itself is inert here. We assert it
-  // returns undefined without throwing on both chunk and non-chunk errors —
-  // this pins the hook's signature so a future refactor that changes the
-  // return type is caught.
+  // The hook's effect never fires under the SSR harness — these cases pin the undefined return.
   it('returns undefined for a chunk-load error', () => {
     const result = renderHook(() => useReloadOnChunkError(new Error('Loading chunk 5 failed.')))
     expect(result).toBeUndefined()

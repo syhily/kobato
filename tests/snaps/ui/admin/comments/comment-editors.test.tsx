@@ -3,12 +3,9 @@ import { describe, expect, it, vi } from 'vitest'
 import { renderToHtml, stableHtml } from '#/_helpers/render'
 import { CommentEditorToolbar } from '@/ui/public/comments/CommentEditorToolbar'
 
-// CommentEditorToolbar reads its active-state from TipTap's `useEditorState`
-// and fires `editor.chain().focus().toggleX().run()` on click. We can't bring
-// up a real TipTap Editor under SSR (it needs a browser DOM + ProseMirror
-// view), so we mock `@tiptap/react` to return a controlled `state` object and
-// a no-op chain stub. This lets us render every active/inactive branch of the
-// toolbar purely from props.
+// TipTap's useEditorState needs a live ProseMirror view (browser-only), so
+// @tiptap/react is mocked to return a controlled state object + no-op chain
+// stub — every active/inactive branch renders purely from props.
 
 interface ActiveState {
   bold: boolean
@@ -34,12 +31,10 @@ const INACTIVE: ActiveState = {
   link: false,
 }
 
-// Hoisted mutable so each test can drive a different active-state through the
-// mocked `useEditorState` selector. Initialized lazily inside the mock body.
+// Hoisted mutable drives the mocked useEditorState per test.
 const editorState = vi.hoisted(() => ({ active: null as ActiveState | null }))
 
-// The editor stub records chain calls so we could assert on interactions, but
-// for SSR coverage we only need it to not throw when rendered.
+// Chain stub only needs to not throw under SSR.
 function makeEditorStub() {
   const chain = () => {
     const self = {
@@ -66,10 +61,8 @@ function makeEditorStub() {
 }
 
 vi.mock('@tiptap/react', () => ({
-  // useEditorState returns the hoisted active-state so the toolbar renders the
-  // active/inactive variant for every mark/node. We bypass the real TipTap
-  // selector (which needs a live ProseMirror editor) entirely. Falls back to
-  // all-inactive before the first test sets a state.
+  // useEditorState returns the hoisted active-state (the real selector needs
+  // a live editor); falls back to all-inactive before the first test sets it.
   useEditorState: () =>
     editorState.active ?? {
       bold: false,
@@ -91,7 +84,6 @@ describe('snapshot: CommentEditorToolbar', () => {
   }
 
   it('renders all nine tool buttons in the inactive state', () => {
-    // Override the mock for this case: useEditorState must return INACTIVE.
     const html = renderWith({})
     expect(html).toContain('评论格式工具栏')
     expect(html).toContain('加粗 (Cmd/Ctrl+B)')
@@ -103,14 +95,12 @@ describe('snapshot: CommentEditorToolbar', () => {
     expect(html).toContain('有序列表')
     expect(html).toContain('引用')
     expect(html).toContain('链接')
-    // No active buttons yet.
     expect(html).not.toContain('aria-pressed="true"')
   })
 
   it('marks bold + italic as active (aria-pressed)', () => {
     const html = renderWith({ bold: true, italic: true })
     expect(html).toContain('aria-pressed="true"')
-    // Two active buttons.
     const activeCount = (html.match(/aria-pressed="true"/gu) ?? []).length
     expect(activeCount).toBe(2)
   })
@@ -151,7 +141,6 @@ describe('snapshot: CommentEditorToolbar', () => {
 
   it('disables every tool button when the disabled prop is set', () => {
     const html = renderWith({ bold: true }, true)
-    // Nine tool buttons all carry disabled="".
     const disabledCount = (html.match(/disabled=""/gu) ?? []).length
     expect(disabledCount).toBe(9)
     // The bold button is still marked active even when disabled.
@@ -160,7 +149,6 @@ describe('snapshot: CommentEditorToolbar', () => {
 
   it('renders tool dividers between the mark, list and link groups', () => {
     const html = renderWith({})
-    // Two dividers separate the three button groups.
     const dividerCount = (html.match(/aria-hidden="true" class="mx-1 h-4 w-px/gu) ?? []).length
     expect(dividerCount).toBe(2)
   })

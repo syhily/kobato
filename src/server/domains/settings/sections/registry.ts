@@ -36,11 +36,9 @@ export interface SectionMeta<
   defaults: Record<string, unknown> | null
 }
 
-// One module per section (`sections/<section>.ts`) owns that section's
-// Zod schema, seed defaults, and registry metadata (scope + bundle key)
-// — adding a section means adding ONE module plus ONE line here, never
-// a second enumeration. This map is composition only; the mapped-type
-// parity assert at the bottom pins every entry to its bundle slot.
+// One module per section owns its schema, defaults, and metadata — adding a section
+// means ONE module plus ONE line here. This map is composition only; the parity assert
+// below pins every entry to its bundle slot.
 export const SECTION_REGISTRY = {
   general: generalSection,
   assets: assetsSection,
@@ -65,11 +63,7 @@ export const SECTION_REGISTRY = {
 /** Common prefix used to fetch every settings row in one SELECT. */
 export const SETTINGS_SCOPE_PREFIX = 'blog.'
 
-/**
- * Reverse lookup: given a `scope` string from the DB, return the
- * matching section id (or `null` if the row belongs to some other
- * surface we don't recognise).
- */
+/** Reverse lookup from a DB `scope` string; `null` when the row belongs to a surface we don't recognise. */
 export function sectionFromScope(scope: string): SettingsSection | null {
   for (const section of SETTINGS_SECTIONS) {
     if (SECTION_REGISTRY[section].scope === scope) {
@@ -80,11 +74,8 @@ export function sectionFromScope(scope: string): SettingsSection | null {
 }
 
 /**
- * Validate one section's seed `defaults` against its own `schema`,
- * returning the parsed payload. Throws a DomainError when the seed
- * drifted from the schema. This is the single defaults validator: both
- * `buildDefaultSectionPayloads` (hydration backfill) and the write
- * path's merge base (`services/core.ts`) go through it.
+ * Validate one section's seed `defaults` against its own `schema`. The single defaults
+ * validator — hydration backfill and the write path's merge base both go through it.
  */
 export function validateSectionDefaults(meta: SectionMeta): Record<string, unknown> {
   const check = meta.schema.safeParse(meta.defaults)
@@ -99,11 +90,7 @@ export function validateSectionDefaults(meta: SectionMeta): Record<string, unkno
   return unsafeCast<Record<string, unknown>>(check.data)
 }
 
-/**
- * Validate every section's `defaults` payload against its own
- * `schema`, returning the list of `(section, parsed-payload)` pairs
- * for sections that ship with a non-null seed.
- */
+/** Every section with a non-null seed, validated against its own `schema`. */
 export function buildDefaultSectionPayloads(): {
   section: SettingsSection
   payload: Record<string, unknown>
@@ -119,20 +106,10 @@ export function buildDefaultSectionPayloads(): {
   return out
 }
 
-// Compile-time parity, ONE mapped type over SECTION_REGISTRY ×
-// SECTION_TO_BUNDLE_KEY. For every section — present AND future — it
-// pins two agreements at once:
-//   1. the registry entry's `key` literal must equal the shared
-//      SECTION_TO_BUNDLE_KEY mapping (the same fact is declared in both
-//      places; a wrong key on either side fails the check), and
-//   2. the section schema's OUTPUT type must equal the DTO of the
-//      bundle slot that shared mapping points at — hydration writes
-//      `parsed.data` straight into the bundle (`services/hydrate.ts`),
-//      so drift here means the DTO lies.
-// A missing registry entry already fails the `satisfies` on
-// SECTION_REGISTRY above; a missing SECTION_TO_BUNDLE_KEY entry fails
-// its own `satisfies` in `@/shared/config/sections`. This assert is
-// what fails on key disagreement or schema/DTO drift.
+// Compile-time parity over SECTION_REGISTRY × SECTION_TO_BUNDLE_KEY: each entry's `key`
+// must equal the shared mapping, and the schema's OUTPUT type must equal the bundle-slot
+// DTO (hydration writes `parsed.data` straight into the bundle). Missing entries fail the
+// `satisfies` clauses; disagreements fail here.
 type _SectionRegistryBundleParity = Assert<
   Equals<
     {

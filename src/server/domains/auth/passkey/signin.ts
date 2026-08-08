@@ -1,6 +1,3 @@
-// Passkey signin flow — verify the WebAuthn assertion and establish
-// the session.
-
 import type { AuthFlowResult, SigninFlowContext } from '@/server/domains/auth/services/shared'
 
 import { isPasskeyEnabled } from '@/server/domains/auth/passkey/gate'

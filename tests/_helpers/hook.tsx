@@ -3,19 +3,14 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { createMemoryRouter, RouterProvider, type RouteObject } from 'react-router'
 
 export interface RenderHookOptions<THookResult> {
-  /** Initial URL path for the memory router. */
   initialPath?: string
   /** Actions applied sequentially during the same render pass. */
   actions?: Array<(result: THookResult) => void>
-  /** Optional provider wrapper. */
   wrapper?: React.ComponentType<{ children: React.ReactNode }>
 }
 
-/**
- * Minimal SSR hook runner for unit tests. Renders the hook inside a memory
- * router (and optional provider), applies any queued actions, and returns the
- * final hook result. Avoids adding @testing-library/react.
- */
+/** Minimal SSR hook runner: renders the hook in a memory router, applies
+ *  queued actions, returns the final result. Avoids @testing-library/react. */
 export function renderHook<THookResult>(
   hookFn: () => THookResult,
   options: RenderHookOptions<THookResult> = {},

@@ -1,22 +1,6 @@
-// Shared blog settings fixtures for the test suite: any route, sidebar,
-// formatter, OG, or thumbhash test that touches the runtime config has to
-// seed the in-process snapshot before the import chain reaches
-// `requireBlogSettingsSection()`. The per-project setup files
-// (tests/unit/setup.ts, tests/it/setup.ts) install the bundle once per
-// worker so individual tests don't have to.
-//
-// `TEST_BLOG_SETTINGS_BUNDLE` is the bucketed shape that mirrors the
-// on-disk `setting('blog.<section>')` rows. Sections whose fixture values
-// are byte-identical to the registry seed IMPORT those defaults (seo,
-// mail, newsletter, rateLimit, backup, limits, analytics, security) so
-// they can never drift; the rest are deliberate historical freezes that
-// keep snapshot-based tests (post detail / home / SEO head / …) from
-// churning every time an unrelated default changes. The contract test
-// `tests/unit/shared/contracts/blog-settings-fixture.test.ts` parses
-// every section against its registry schema so a frozen value that stops
-// satisfying its schema fails loudly. Tests that need a different shape
-// can call `setBlogSettingsBundleForTests(custom)` in their own
-// `beforeEach`.
+// Shared blog settings fixtures. Seed the in-process snapshot before the
+// import chain reaches `requireBlogSettingsSection()`. Registry-identical
+// sections are imported from the seeds, the rest frozen for snapshot stability.
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
 import { deepFreeze } from '#/_helpers/deep-freeze'
@@ -44,10 +28,7 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
     initialYear: 2011,
     icpNo: '皖ICP备2021002315号-2',
   },
-  // Test fixture has the upload toggle ON with a fully-configured
-  // bucket so the storage-dispatch / render-enhance suites can
-  // exercise the "uploads enabled" path by default and switch the
-  // toggle off in individual tests as needed.
+  // Uploads enabled by default so render suites exercise the enabled path.
   assets: {
     asset: { host: 'assets.example.com', scheme: 'https' },
     storage: {
@@ -116,7 +97,6 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
   webmentions: {
     webmention: { receiveEnabled: true, displayOnPosts: true },
   },
-  // Byte-identical to the registry seeds — imported, not copied.
   seo: seoDefaults,
   mail: mailDefaults,
   newsletter: newsletterDefaults,
@@ -130,13 +110,7 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
       searchResult: { ...CACHE_BUCKET_FALLBACKS.searchResult },
     },
   },
-  // Rate-limit fixture mirrors the historical hard-coded thresholds
-  // (byte-identical to `rateLimitDefaults`, hence imported) so the
-  // suite's existing 429 assertions (auth flow, comment reply)
-  // keep passing without per-test bundle surgery. Tests that need to
-  // exercise the "exceeded" branch in a single hit can override the
-  // bucket through `setBlogSettingsBundleForTests({ ..., rateLimit:
-  // { ...rateLimit, signInIp: { windowSeconds: 60, maxAttempts: 1 } } })`.
+  // Historical 429 thresholds — suites assert against them; override per test when needed.
   rateLimit: rateLimitDefaults,
   fonts: {
     og: { family: '' },
@@ -148,9 +122,7 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
   backup: backupDefaults,
   limits: limitsDefaults,
   analytics: analyticsDefaults,
-  // The `as const` seed's empty `readonly []` slots won't assign to the
-  // DTO's mutable arrays — spread them into fresh mutable arrays (the
-  // values still track `securityDefaults` by construction).
+  // Spread readonly seed arrays — `as const` slots won't assign to mutable DTO arrays.
   security: {
     ...securityDefaults,
     csrf: { ...securityDefaults.csrf, exemptPaths: [...securityDefaults.csrf.exemptPaths] },
@@ -158,16 +130,9 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
   },
 }
 
-/**
- * Seed (or clear) the in-process blog-settings snapshot for tests.
- * Custom bundles are deep-cloned + deep-frozen so per-test overrides
- * can't leak mutations into a sibling test. The shared fixture itself
- * keeps its identity (suites assert `toBe(TEST_BLOG_SETTINGS_BUNDLE)`)
- * and is frozen in place instead — `deepFreeze` is idempotent, so the
- * per-test re-seed is a no-op after the first call. `undefined` drops
- * the in-flight hydration only (next read re-hydrates); `null` installs
- * a "no settings" snapshot.
- */
+/** Seed (or clear) the snapshot. Custom bundles are cloned + frozen; the
+ *  shared fixture keeps identity (`toBe`). `undefined` = no hydration,
+ *  `null` = "no settings". */
 export function setBlogSettingsBundleForTests(value: BlogSettingsBundle | null | undefined): void {
   const frozen =
     value == null ? value : value === TEST_BLOG_SETTINGS_BUNDLE ? deepFreeze(value) : deepFreeze(structuredClone(value))
@@ -175,11 +140,7 @@ export function setBlogSettingsBundleForTests(value: BlogSettingsBundle | null |
   BLOG_SETTINGS_SNAPSHOT_SLOT.writeHydration(frozen === undefined ? undefined : Promise.resolve(frozen ?? null))
 }
 
-/**
- * Empty the in-process blog-settings snapshot (value `null`, no
- * in-flight hydration), restoring the pre-install state so the next
- * `hydrateBlogSettings()` re-reads from the DB.
- */
+/** Clear the snapshot so the next hydrate re-reads from the DB. */
 export function resetBlogSettingsForTests(): void {
   BLOG_SETTINGS_SNAPSHOT_SLOT.write(null)
   BLOG_SETTINGS_SNAPSHOT_SLOT.writeHydration(undefined)

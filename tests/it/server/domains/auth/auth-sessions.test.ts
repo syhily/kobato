@@ -21,9 +21,7 @@ describe('listSessionsByUser', () => {
     const userId = u.id
     const loginAt = new Date()
 
-    // The session row is created by session-storage at commit time in
-    // production; we mirror that with a bare insert, then stamp the login
-    // meta via `recordSessionLogin` (which is UPDATE-only).
+    // Mirror production: bare row insert, then recordSessionLogin stamps the meta.
     const seeds = [
       { sid: 'sid-a', userAgent: 'Mozilla/5.0 (Macintosh) Chrome/120', ip: '203.0.113.1' },
       { sid: 'sid-b', userAgent: null, ip: '203.0.113.2' },

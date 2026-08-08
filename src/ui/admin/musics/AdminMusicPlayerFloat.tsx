@@ -59,13 +59,11 @@ export function AdminMusicPlayerFloat() {
   const [expanded, setExpanded] = useState(false)
   const [dragging, setDragging] = useState(false)
   const [offset, setOffset] = useState<PlayerPosition>({ x: 0, y: 0 })
-  // Initialize position from localStorage via lazy initializer.
   const [position, setPosition] = useState<PlayerPosition>(() => loadPosition())
   const containerRef = useRef<HTMLDivElement>(null)
 
   const visible = currentTrack !== null && !isMusicPage
 
-  // Drag handlers
   const handleDragStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     setDragging(true)
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX

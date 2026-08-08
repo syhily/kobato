@@ -10,12 +10,7 @@ import { filterSlashCommands, SLASH_COMMANDS, type SlashCommand } from '@/ui/adm
 import { cn } from '@/ui/lib/cn'
 
 interface SlashCommandsExtensionOptions {
-  /**
-   * Catalogue to filter against. Defaults to the full admin catalogue
-   * (`SLASH_COMMANDS`); pass a curated subset to scope the menu — the
-   * comment editor uses this to omit image/music/table/footnote
-   * commands without forking the renderer.
-   */
+  /** Catalogue to filter against; defaults to `SLASH_COMMANDS` (comment editor passes a curated subset). */
   commands: readonly SlashCommand[]
 }
 

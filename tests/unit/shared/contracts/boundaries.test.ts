@@ -2,8 +2,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { dirname as posixDirname, normalize as posixNormalize } from 'node:path/posix'
 import { describe, expect, it } from 'vitest'
 
-// Node-native replacement for ripgrep. GitHub's ubuntu-latest runner
-// doesn't ship rg, so execFileSync('rg', …) fails in CI.
+// Node-native walker — CI runners have no `rg`.
 const IGNORE_DIRS = new Set([
   'node_modules',
   '.git',
@@ -74,27 +73,19 @@ function files(...args: string[]): string[] {
   })
 }
 
-// Comment-stripped view of a source file: `//` and `/* */` blocks may
-// mention import paths or re-export syntax and must not trip the checks.
+// Comments may mention import paths or re-export syntax and must not trip the checks.
 function stripComments(source: string): string {
   return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
 }
 
-// Every static / dynamic import specifier in a comment-stripped source.
-// Line-oriented checks miss multiline statements whose `from '…'` clause
-// sits on its own line, so this matches the `from` / `import` keywords
-// directly across the whole file.
+// Whole-file match: a per-line scan misses multiline imports whose `from '…'` clause sits alone.
 function importSpecifiers(source: string): string[] {
   const specifierRe = /(?:\bfrom\s+|\bimport\s*\(\s*|\bimport\s+)['"]([^'"]+)['"]/g
   return [...source.matchAll(specifierRe)].map((match) => match[1])
 }
 
-// Specifiers bound by VALUE imports (static, side-effect, and dynamic) in a
-// comment-stripped source. `import type …` is erased at compile time and
-// excluded — a check that bans runtime coupling must not flag it. Matching
-// runs across the whole source, so a multiline import whose `from '…'`
-// clause sits on its own line is still caught (a per-line
-// `startsWith('import')` scan misses those).
+// VALUE imports only: `import type` is erased at compile time and must not
+// trip a runtime-coupling ban.
 function valueImportSpecifiers(source: string): string[] {
   const specifiers: string[] = []
   const staticRe = /\bimport\s+([^'";]*?)\s+from\s*['"]([^'"]+)['"]/g
@@ -114,10 +105,8 @@ function valueImportSpecifiers(source: string): string[] {
   return specifiers
 }
 
-// A relative specifier resolves against the importing file; everything else
-// (`@/` aliases, package names, node: builtins) passes through unchanged.
-// Layer checks compare against BOTH the `@/…` alias and the resolved
-// `src/…` path so a `../` escape cannot bypass an alias-only ban.
+// Checks compare both the `@/…` alias and the resolved `src/…` path so a
+// `../` escape cannot bypass an alias-only ban.
 function resolveSpecifier(file: string, specifier: string): string {
   if (specifier.startsWith('./') || specifier.startsWith('../')) {
     return posixNormalize(`${posixDirname(file)}/${specifier}`)
@@ -125,9 +114,8 @@ function resolveSpecifier(file: string, specifier: string): string {
   return specifier
 }
 
-// Local names bound by `import … from '…'` statements. Used to tell an
-// import-then-export facade apart from a legal `const x = …; export { x }`:
-// only exported bindings that came from an import are facades.
+// Exported bindings that came from an import are facades; locally-declared
+// exports are legal.
 function importedBindings(source: string): Set<string> {
   const names = new Set<string>()
   const importRe = /\bimport\s+([^'";]*?)\s+from\s*['"][^'"]+['"]/g
@@ -159,10 +147,8 @@ function importedBindings(source: string): Set<string> {
 
 describe('contract: module and bundle boundaries', () => {
   it('keeps value imports from @/server out of shared modules', () => {
-    // `@/shared/*` is bundled for server AND browser, so a value import of
-    // a server module would drag the server graph into the client bundle.
-    // Type imports are erased and stay legal. Both `@/server/…` aliases
-    // and relative `../server/…` escapes count.
+    // Value imports would drag the server graph into the shared (server +
+    // browser) bundle; type imports are erased and stay legal.
     const offenders: string[] = []
     for (const file of files('src/shared', '-g', '*.ts', '-g', '*.tsx')) {
       for (const specifier of valueImportSpecifiers(stripComments(readFileSync(file, 'utf8')))) {
@@ -177,16 +163,9 @@ describe('contract: module and bundle boundaries', () => {
   })
 
   it('keeps re-export facades out of src (every import points at the owning module)', () => {
-    // A re-exported symbol hides its owning module and drifts out of sync
-    // with the source — AGENTS.md bans `export { X } from 'y'` and the
-    // import-then-export variant project-wide. Re-exporting a
-    // locally-declared symbol (`const x = …; export { x }`, local aliases)
-    // stays legal: only bindings that came from an import are flagged.
-    //
-    // Allowlist: React Router requires `ErrorBoundary` to be exported from
-    // the route module itself, so the three layout routes re-export the
-    // shared admin fallback under that exact name. Entries are full
-    // `file: statement` pairs — any other re-export in these files flags.
+    // Import-then-export facades are banned; locally-declared exports stay
+    // legal. Allowlisted: the layout routes re-export AdminErrorFallback as
+    // ErrorBoundary (React Router requires that exact export name).
     const allowlist = new Set(
       ['src/routes/admin/layout.tsx', 'src/routes/auth/layout.tsx', 'src/routes/editor/layout.tsx'].map(
         (file) => `${file}: export { AdminErrorFallback as ErrorBoundary }`,
@@ -218,11 +197,8 @@ describe('contract: module and bundle boundaries', () => {
   })
 
   it('keeps barrel index modules out of src', () => {
-    // A barrel `index.ts` (nothing but re-exports) drags the whole feature
-    // graph into every consumer (`bundle-barrel-imports`). Route modules
-    // named index.tsx with a real loader/action/component are fine, so the
-    // check only fires when stripping every `export … from` statement
-    // leaves nothing but whitespace behind.
+    // Fires only when stripping every `export … from` leaves nothing but
+    // whitespace — real index.tsx routes stay legal.
     const exportFromRe = /\bexport\s+(?:type\s+)?(?:\*\s+as\s+[\w$]+|\*|\{[^{}]*\})\s*from\s*['"][^'"]+['"]/g
     const offenders = files('src', '-g', '*.ts', '-g', '*.tsx')
       .filter((file) => /(^|\/)index\.tsx?$/.test(file))
@@ -235,11 +211,7 @@ describe('contract: module and bundle boundaries', () => {
   })
 
   it('keeps the server layer graph one-way (infra → domains → render → http)', () => {
-    // `infra/` holds technical primitives with zero business knowledge, so
-    // it must stay unaware of every layer above it; `domains/` owns the
-    // business rules and must not reach into the SSR (`render/`) or
-    // transport (`http/`) perimeters; `render/` must not reach `http/`.
-    // Type imports count too — they pin the same coupling.
+    // One-way layering: infra → domains → render → http; type imports count too.
     const rules: Array<{ from: string; banned: string[] }> = [
       { from: 'src/server/infra/', banned: ['@/server/domains/', '@/server/http/', '@/server/render/'] },
       { from: 'src/server/domains/', banned: ['@/server/http/', '@/server/render/'] },
@@ -252,8 +224,6 @@ describe('contract: module and bundle boundaries', () => {
         continue
       }
       for (const specifier of importSpecifiers(stripComments(readFileSync(file, 'utf8')))) {
-        // Compare against the alias AND the resolved src/ path — a relative
-        // `../domains/…` escape must trip the same ban.
         const target = resolveSpecifier(file, specifier)
         if (rule.banned.some((banned) => target.startsWith(banned) || target.startsWith(`src/${banned.slice(2)}`))) {
           offenders.push(`${file}: ${specifier}`)
@@ -265,15 +235,9 @@ describe('contract: module and bundle boundaries', () => {
   })
 
   it('keeps the Postgres-era drivers and async transactions out of src', () => {
-    // The SQLite migration (node:sqlite + the DuckDB sidecar) retired the
-    // pg driver stack: `pg`, `pg-copy-streams`, and
-    // `drizzle-orm/node-postgres` must never re-enter src/ — the
-    // one-shot data pump lives in the standalone kobato-pg-pump
-    // project, outside this repository entirely. And
-    // node:sqlite transactions are SYNC: a `transaction(async` callback
-    // commits before its awaited work runs — a silent data-loss bug the
-    // drizzle types reject (DrizzleTypeError); this scan is the belt to
-    // that type-level suspender.
+    // The retired pg stack (`pg`, `pg-copy-streams`, `drizzle-orm/node-postgres`)
+    // must never re-enter src/. node:sqlite transactions are sync — a
+    // `transaction(async` callback commits before its awaited work runs.
     const BANNED_DRIVERS = ['pg', 'pg-copy-streams', 'drizzle-orm/node-postgres']
     const offenders: string[] = []
     for (const file of files('src', '-g', '*.ts', '-g', '*.tsx')) {
@@ -291,14 +255,8 @@ describe('contract: module and bundle boundaries', () => {
   })
 
   it('keeps the cross-domain import graph acyclic', () => {
-    // Domains compose in one direction only: a cycle (auth ↔ comments,
-    // pt → music → … → pt) makes every domain inside it impossible to
-    // understand or test in isolation, so the domain graph is a DAG and
-    // must stay one. Cross-domain values flow through caller-wired
-    // injection instead (see `domains/pt/embeds` and
-    // `domains/auth/services/password-reset`'s `PasswordResetFlowDeps`). Edges come from `@/server/domains/<other>`
-    // specifiers — a relative import escaping into another domain would
-    // count too, and type imports pin the same coupling as value imports.
+    // The domain graph must stay a DAG; cross-domain values flow through
+    // caller-wired injection. Relative escapes and type imports count too.
     const domainsRoot = 'src/server/domains'
     const domainOf = (path: string): string | null => {
       if (!path.startsWith(`${domainsRoot}/`)) {
@@ -346,9 +304,7 @@ describe('contract: module and bundle boundaries', () => {
       }
     }
 
-    // Three-color DFS topological check. The assertion payload is the
-    // cycle path itself, so a failure prints the offending loop
-    // (e.g. ['auth', 'comments', 'auth']) instead of a bare boolean.
+    // Three-color DFS; a failure reports the cycle path, not a bare boolean.
     const cycle: string[] = []
     const state = new Map<string, 'visiting' | 'done'>()
     const stack: string[] = []
@@ -381,13 +337,8 @@ describe('contract: module and bundle boundaries', () => {
   })
 
   it('keeps domains below the composition root', () => {
-    // `bootstrap/` is the composition root: it imports domain modules and
-    // wires their injected deps at boot (`wireRestoreMachine`,
-    // `wireBackupScheduler`, `wireBackupSnapshots`, `wireAccessLogBatcher`,
-    // `wireSessionStorageDb`, …). A domain importing back into bootstrap
-    // inverts that direction and risks an import cycle — every `wire*`
-    // seam exists precisely to avoid one. Both `@/`-aliased and relative
-    // specifiers count, and type imports pin the same coupling.
+    // `bootstrap/` is the composition root — domains must not import back
+    // into it (import cycle risk). Relative escapes and type imports count.
     const offenders: string[] = []
     for (const file of files('src/server/domains', '-g', '*.ts', '-g', '*.tsx')) {
       for (const specifier of importSpecifiers(stripComments(readFileSync(file, 'utf8')))) {
@@ -405,14 +356,9 @@ describe('contract: module and bundle boundaries', () => {
   })
 
   it('keeps domain repos private to their owning domain', () => {
-    // A domain's interface is its services/, projection, schema, and root
-    // feature modules; `repos/**` (or a root `repo.ts`) is the persistence
-    // implementation behind that interface. A cross-domain capability must
-    // be promoted to the owning domain's surface instead of imported out of
-    // its repos — that keeps the interface (not the storage layout) the
-    // test surface every consumer relies on. Importers inside the owning
-    // domain are fine; both `@/`-aliased and relative specifiers count, and
-    // type imports pin the same coupling.
+    // `repos/**` (or a root `repo.ts`) is a domain's private persistence
+    // layer; cross-domain capabilities must be promoted to the domain
+    // surface instead. Importers inside the owning domain stay legal.
     const domainsRoot = 'src/server/domains'
     const reposOwner = (path: string): string | null => {
       if (!path.startsWith(`${domainsRoot}/`)) {
@@ -454,12 +400,8 @@ describe('contract: module and bundle boundaries', () => {
   })
 
   it('keeps base-vocabulary root files from coexisting with their subdirectory', () => {
-    // One predictable import location per vocabulary: once a domain grows
-    // `services/` (or `repos/`, `schemas/`, …), the same-vocabulary root
-    // file (`service.ts`, `repo.ts`, `schema.ts`, …) must not survive next
-    // to it — two legal homes for the same vocabulary would leave every
-    // future import a coin flip and make the split cosmetic. Feature-named
-    // root files and directories are untouched by this rule.
+    // One legal home per vocabulary: a root file (`repo.ts`) must not
+    // coexist with its subdirectory (`repos/`).
     const pairs = [
       ['schema.ts', 'schemas'],
       ['repo.ts', 'repos'],
@@ -484,16 +426,9 @@ describe('contract: module and bundle boundaries', () => {
   })
 
   it('keeps routes on domain surfaces: no infra/db/operations imports under src/routes', () => {
-    // Route modules are wiring: extract the request context, call one
-    // orchestration (`http/loaders/*` or a domain-surface service), and
-    // render. A route reaching into `infra/db/operations` bypasses the
-    // domain interface and re-couples the URL layer to the storage
-    // layout — business data access belongs behind a domain surface or
-    // an http/loaders assembly (the same rule the repos-privacy test
-    // enforces between domains). Infra primitives that are not business
-    // data access (the rate limiter, `infra/http/status`) stay legal and
-    // are not matched here. Value and type imports both count, whether
-    // `@/`-aliased or relative.
+    // Routes must not reach into `infra/db/operations` — business data
+    // access belongs behind a domain surface or an http/loaders assembly.
+    // Non-data infra (rate limiter, `infra/http/status`) stays legal.
     const offenders: string[] = []
     for (const file of files('src/routes', '-g', '*.ts', '-g', '*.tsx')) {
       for (const specifier of importSpecifiers(stripComments(readFileSync(file, 'utf8')))) {
@@ -511,19 +446,8 @@ describe('contract: module and bundle boundaries', () => {
   })
 
   it('keeps the public render path on the content API: routes/public + root stay inside the server-import whitelist', () => {
-    // Every public-site data load goes through oRPC (`content.*` via the
-    // in-process `@/server/http/ssr-caller`) — route loaders and the root
-    // loader no longer import `@/server/domains/*` or the
-    // `@/server/http/loaders/*` orchestrators directly. What remains on
-    // the whitelist is the HTTP orchestration line only:
-    //
-    //   `@/server/http/ssr-caller`            — the one data-access seam
-    //   `@/server/http/loaders/route-exports` — cache-header constants
-    //   `@/server/infra/http/*`               — union→Response translation
-    //                                           (etag / redirects / status)
-    //   `@/server/render/warmup/*`            — root only: chunk manifest
-    //
-    // Value and type imports both count, whether `@/`-aliased or relative.
+    // Public data loads go through the in-process `ssr-caller`; the
+    // whitelist is the HTTP orchestration line only.
     const allowed = (file: string, target: string): boolean => {
       const prefixes = ['@/server/http/ssr-caller', '@/server/http/loaders/route-exports', '@/server/infra/http/']
       if (file === 'src/root.tsx') {
@@ -545,20 +469,8 @@ describe('contract: module and bundle boundaries', () => {
   })
 
   it('keeps the admin/editor SSR data path on the API: routes/admin + routes/editor stay inside the server-import whitelist', () => {
-    // Every admin/editor data load goes through oRPC (`admin.*`,
-    // `analytics.*`, `comments-authed.*`, `account.*` via the in-process
-    // `@/server/http/ssr-caller`) — the `@/server/http/loaders/*`
-    // orchestrators were deleted as part of the migration. What remains
-    // on the whitelist is the gating + HTTP orchestration line:
-    //
-    //   `@/server/http/ssr-caller`          — the one data-access seam
-    //   `@/server/http/request-context`     — action request-context
-    //                                         extraction (getRequestContext)
-    //   `@/server/domains/auth/rbac`        — loader requireRole gate
-    //   `@/server/infra/http/*`             — union→Response translation
-    //                                         (notFound / status)
-    //
-    // Value and type imports both count, whether `@/`-aliased or relative.
+    // Admin/editor data loads go through the in-process `ssr-caller`; the
+    // whitelist is gating + HTTP orchestration only.
     const allowed = (target: string): boolean => {
       const prefixes = [
         '@/server/http/ssr-caller',
@@ -585,29 +497,8 @@ describe('contract: module and bundle boundaries', () => {
   })
 
   it('keeps the auth orchestration imports direct: routes/auth stays on the signin/setup whitelist', () => {
-    // The auth routes are orchestration, not data reads: signin/setup
-    // assemble the authentication flow (session writes, Set-Cookie,
-    // redirects, token peeks, CSRF) that no data endpoint can replace —
-    // out of scope for the API migration by design. Their direct server
-    // imports are the flow's own domain surface plus the infra/HTTP
-    // primitives the actions need:
-    //
-    //   `@/server/domains/auth/*`                      — the auth flow
-    //                                                     (csrf / schema /
-    //                                                     services / setup-token /
-    //                                                     passkey)
-    //   `@/server/domains/comments/services/public-query` — hasApprovedComments
-    //                                                     (signed-in redirect)
-    //   `@/server/domains/settings/install-gate`        — ensureInstalledOrRedirect /
-    //                                                     ensureNoAdminOrRedirect
-    //   `@/server/http/loaders/signin`                  — loadSigninData (the one
-    //                                                     legacy loader kept)
-    //   `@/server/http/request-context`                 — action request-context
-    //                                                     extraction
-    //   `@/server/infra/rate-limit`                     — tryKeyedRateLimit on
-    //                                                     the signin/setup actions
-    //
-    // Value and type imports both count, whether `@/`-aliased or relative.
+    // Auth routes orchestrate the signin/setup flow — the whitelist is the
+    // auth domain surface plus the infra/HTTP primitives the actions need.
     const allowed = (target: string): boolean => {
       const prefixes = [
         '@/server/domains/auth/',
@@ -633,10 +524,8 @@ describe('contract: module and bundle boundaries', () => {
   })
 
   it('keeps client and ui modules out of the server layer', () => {
-    // `@/client/` hooks and `@/ui/` components touch DOM APIs and styles
-    // that cannot evaluate under SSR — the server must depend on
-    // `@/shared/` (isomorphic) and `@/server/` only. Guarded for both
-    // value and type imports.
+    // `@/client/` and `@/ui/` touch DOM APIs that cannot evaluate under
+    // SSR — server depends on `@/shared/` and `@/server/` only.
     const offenders: string[] = []
     for (const file of files('src/server', '-g', '*.ts', '-g', '*.tsx')) {
       for (const specifier of importSpecifiers(stripComments(readFileSync(file, 'utf8')))) {
@@ -656,10 +545,8 @@ describe('contract: module and bundle boundaries', () => {
   })
 
   it('keeps client modules out of shared (isomorphic) modules', () => {
-    // `shared/*` is imported by the server bundle, the browser bundle, and
-    // vite.config.ts, so it can only depend on itself — a `@/client/`
-    // import would drag browser-only hooks into every consumer. Guarded
-    // for both value and type imports.
+    // `shared/*` runs in server, browser, and vite config — a `@/client/`
+    // import would drag browser-only hooks into every consumer.
     const offenders: string[] = []
     for (const file of files('src/shared', '-g', '*.ts', '-g', '*.tsx')) {
       for (const specifier of importSpecifiers(stripComments(readFileSync(file, 'utf8')))) {
@@ -674,10 +561,8 @@ describe('contract: module and bundle boundaries', () => {
   })
 
   it('keeps the kv-store row-access plane private to the cache module', () => {
-    // `@/server/infra/cache/registry` is the ONLY consumer of kv-store —
-    // every other module must go through the cache verbs (through / get /
-    // set / clear / counters) so key shapes and codecs stay declared in
-    // one place.
+    // `@/server/infra/cache/registry` is the only kv-store consumer — key
+    // shapes and codecs stay declared in one place.
     const offenders = files('src', '-g', '*.ts', '-g', '*.tsx').filter((file) => {
       if (file.startsWith('src/server/infra/cache/')) {
         return false
@@ -689,11 +574,8 @@ describe('contract: module and bundle boundaries', () => {
   })
 
   it('keeps shared/seo isomorphic: shared-only value imports, no node specifiers', () => {
-    // Route `meta()` exports pull `shared/seo` into the browser bundle, so a
-    // server-layer or node-only import there would leak into every route
-    // chunk. This pins mechanically what the old `server/render/seo` path
-    // only documented in a comment. Whole-file matching catches multiline
-    // imports; relative `../` escapes resolve to their `src/…` target.
+    // Route `meta()` exports pull `shared/seo` into every route chunk — a
+    // server or node-only import there leaks into the browser bundle.
     const offenders: string[] = []
     for (const file of files('src/shared/seo', '-g', '*.ts', '-g', '*.tsx')) {
       const source = stripComments(readFileSync(file, 'utf8'))
@@ -737,8 +619,8 @@ describe('contract: module and bundle boundaries', () => {
   it('keeps the Bootstrap npm dep fully retired from the public bundle', () => {
     const globals = readFileSync('src/styles/public.css', 'utf8')
 
-    // Match real CSS/JS import statements only — comments documenting
-    // retired paths must not trip these.
+    // Match real import statements only — comments about retired paths must
+    // not trip these.
     expect(globals).not.toMatch(/^\s*@import\s+['"]bootstrap/m)
     expect(globals).not.toMatch(/^\s*import\s.*from\s+['"]bootstrap/m)
     expect(globals).not.toContain('_legacy-utilities')
@@ -801,9 +683,8 @@ describe('contract: module and bundle boundaries', () => {
     expect(tailwindCss).toMatch(/--ink-5:\s*#eaecf3;/)
     expect(tailwindCss).toMatch(/--color-ink-5:\s*var\(--ink-5\);/)
 
-    // Scan every source file for residual className tokens that would
-    // only resolve through the deleted partials. Strip comments first
-    // so the assertion fires on real markup.
+    // Scan for residual className tokens that would only resolve through
+    // the deleted partials.
     const offenders: string[] = []
     const bannedClassTokens = [
       'list-item',
@@ -1002,8 +883,6 @@ describe('contract: module and bundle boundaries', () => {
 
   it('keeps UI and client modules from importing server/runtime data modules', () => {
     // `import type` is compile-time only; runtime imports are banned.
-    // Whole-file matching catches multiline statements, and relative
-    // `../server/…` escapes resolve to their `src/server/…` target.
     const offenders: string[] = []
     for (const file of files('src/ui', 'src/client', '-g', '*.ts', '-g', '*.tsx')) {
       for (const specifier of valueImportSpecifiers(stripComments(readFileSync(file, 'utf8')))) {
@@ -1064,8 +943,7 @@ describe('contract: module and bundle boundaries', () => {
       expect(formSource).toMatch(/useSettingsCard/)
       // Direct `useForm` import means the form bypasses the wrapper.
       expect(formSource).not.toMatch(/import\s*\{[^}]*\buseForm\b[^}]*\}\s*from\s*['"]react-hook-form['"]/)
-      // `MailForm` may import `useFetcher` for the test-mail button;
-      // every other form must not import `useRevalidator` directly.
+      // No form may import `useRevalidator` directly.
       expect(formSource).not.toMatch(/import\s*\{[^}]*\buseRevalidator\b[^}]*\}\s*from\s*['"]react-router['"]/)
     }
   })
@@ -1088,14 +966,9 @@ describe('contract: module and bundle boundaries', () => {
     })
     expect(bareInputOffenders).toEqual([])
 
-    // Save-on-change for Switch / Checkbox / Select / RadioGroup / Combobox
-    // lives in the Settings* wrappers (SettingsSwitch, SettingsSelect, …):
-    // they merge RHF's `field.onChange` with the card's `save`. Two failure
-    // modes stay banned in card files:
-    //   1. the retired hand-rolled inline handler (`field.onChange(…)` then
-    //      `save()` in the same function) — use a wrapper instead;
-    //   2. a bare `onChange={field.onChange}` with no wrapper import anywhere
-    //      in the file — a control that never saves.
+    // Save-on-change lives in the Settings* wrappers. Banned in cards:
+    // hand-rolled `field.onChange(…)` + `save()` pairs, and bare
+    // `onChange={field.onChange}` with no wrapper import.
     const handRolledOffenders = settingsCardFiles.filter((file) =>
       /field\.onChange\([^)]*\)\s*save\(\)/.test(readFileSync(file, 'utf8')),
     )
@@ -1114,8 +987,8 @@ describe('contract: module and bundle boundaries', () => {
   })
 
   it('keeps non-type catalog imports out of UI components', () => {
-    // `shared/types/catalog` is the type-only catalog surface; a value
-    // import would drag shared runtime code into the component chunk.
+    // `shared/types/catalog` is type-only — a value import drags shared
+    // runtime code into the component chunk.
     const offenders: string[] = []
     for (const file of files('src/ui', '-g', '*.ts', '-g', '*.tsx')) {
       for (const specifier of valueImportSpecifiers(stripComments(readFileSync(file, 'utf8')))) {
@@ -1169,33 +1042,29 @@ describe('contract: module and bundle boundaries', () => {
         specifier: '../../../shared/utils/thumbhash.ts',
       },
       {
-        // Config-graph file: `@/` aliases are not resolved while Vite loads
-        // vite.config.ts, so this must stay relative (see process-worker above).
-        // The explicit extension keeps the graph loadable by Vite's native
-        // config loader, whose ESM resolution requires it.
+        // Config-graph file: Vite's config loader resolves no `@/` aliases
+        // and requires explicit extensions.
         key: 'route-warmup.ts -> ../../shared/constants/route-warmup.ts',
         file: 'src/server/infra/route-warmup.ts',
         specifier: '../../shared/constants/route-warmup.ts',
       },
       {
-        // Config-graph file (loaded by vite.config.ts): same alias caveat
-        // as the constants import above. The warmup file contract lives in
-        // this shared module so writer and reader cannot drift.
+        // Config-graph file: same alias caveat; shared contract keeps
+        // writer and reader from drifting.
         key: 'route-warmup.ts -> ../../shared/route-warmup/manifest.ts',
         file: 'src/server/infra/route-warmup.ts',
         specifier: '../../shared/route-warmup/manifest.ts',
       },
       {
-        // Config-graph file (loaded by vite.config.ts): same alias caveat
-        // as above. `unsafeCast` is needed because the Vite dev-server types
-        // are structurally compatible but not declared as our domain type.
+        // Config-graph file: same alias caveat; `unsafeCast` bridges
+        // Vite's structurally-compatible types.
         key: 'dev.ts -> ../../../shared/utils/unsafe-cast.ts',
         file: 'src/server/infra/hono/dev.ts',
         specifier: '../../../shared/utils/unsafe-cast.ts',
       },
       {
-        // Config-graph file (loaded by vite.config.ts): same alias caveat.
-        // `unsafeCast` is used on Vite internals (the env/ssr flags).
+        // Config-graph file: same alias caveat; `unsafeCast` bridges
+        // Vite internals (env/ssr flags).
         key: 'route-warmup.ts -> ../../shared/utils/unsafe-cast.ts',
         file: 'src/server/infra/route-warmup.ts',
         specifier: '../../shared/utils/unsafe-cast.ts',
@@ -1286,9 +1155,8 @@ describe('contract: module and bundle boundaries', () => {
     expect(root).not.toContain("import '@/assets/fonts/")
     expect(root).not.toContain('.ttf')
 
-    // Browser web fonts now flow through self-hosted packages resolved from
-    // the root loader's `fonts` field (resolved family + href per slot), not
-    // from external CSS URLs. Assert the new contract holds.
+    // Fonts flow from the root loader's `fonts` field (family + href per
+    // slot), not external CSS URLs.
     expect(root).toContain('rel="stylesheet" href={f.href}')
   })
 
@@ -1339,12 +1207,8 @@ describe('contract: module and bundle boundaries', () => {
   })
 
   it('keeps interaction-only animation libraries behind lazy boundaries', () => {
-    // The popup chrome enhances its content with a motion enter-animation,
-    // but the animation runtime must not ride the content pages' synchronous
-    // bundle — the components reach it through `lazy-motion.tsx` (dynamic
-    // import + Suspense fallback). `@number-flow/react` likewise animates
-    // only on like/unlike, so LikeActions lazy-loads it (admin Counters stay
-    // static — the admin bundle is already heavy).
+    // `motion/react` and `@number-flow/react` must stay behind lazy
+    // boundaries (`lazy-motion.tsx`, `lazy(() => …)`).
     const popupComponents = [
       'src/ui/components/alert-dialog.tsx',
       'src/ui/components/combobox.tsx',
@@ -1359,12 +1223,8 @@ describe('contract: module and bundle boundaries', () => {
       expect(source, `${file} statically imports motion/react`).not.toMatch(/^import .* from 'motion\/react'/m)
       expect(source, `${file} bypasses the lazy boundary`).not.toContain('motion.div')
     }
-    // The same rule holds for the deeper motion consumers: page-level
-    // transitions and ambient animations reach `motion/react` exclusively
-    // through `lazy-motion.tsx`, so the runtime is fetched when the first
-    // animated element mounts instead of riding the owning route/widget
-    // chunk as a static dependency (`useReducedMotion` is a hook and would
-    // force a static import — `useMediaQuery` covers the same media query).
+    // The same rule for page-level consumers: `motion/react` only via
+    // `lazy-motion.tsx`; `useReducedMotion` would force a static import.
     const motionConsumers = [
       'src/ui/public/widgets/Popup.tsx',
       'src/ui/public/post/TableOfContents.tsx',
@@ -1385,10 +1245,8 @@ describe('contract: module and bundle boundaries', () => {
     expect(likeActions).not.toMatch(/^import .* from '@number-flow\/react'/m)
     expect(likeActions).toContain("lazy(() => import('@number-flow/react'))")
 
-    // The rest of the public path follows the same rule: the root's
-    // MotionConfig goes through `LazyMotionConfig`, the deeply-animated
-    // public chrome (Popup, TableOfContents) is lazy-loaded at the call
-    // site, so `motion/react` never rides the entry/public bundle.
+    // Root MotionConfig goes through `LazyMotionConfig`; animated public
+    // chrome is lazy-loaded at call sites.
     const root = readFileSync('src/root.tsx', 'utf8')
     expect(root, 'root.tsx statically imports motion/react').not.toMatch(/^import .* from 'motion\/react'/m)
     const popupCallSites = [
@@ -1401,13 +1259,8 @@ describe('contract: module and bundle boundaries', () => {
       expect(source, `${file} statically imports Popup`).not.toContain("from '@/ui/public/widgets/Popup'")
     }
     const detailChrome = readFileSync('src/ui/public/post/DetailBodyChrome.tsx', 'utf8')
-    // DetailBodyChrome statically imports TableOfContents — the TOC's
-    // motion elements all render through `lazy-motion.tsx` (asserted above),
-    // so `motion/react` still never rides the public bundle. A component-
-    // level lazy boundary with a `fallback={null}` would drop the closed-
-    // drawer DOM from SSR and mismatch on hydration (React error #418) —
-    // that regression is pinned by tests/unit/ui/public/post/
-    // toc-hydration.test.tsx instead.
+    // Static import is safe: TOC motion renders through `lazy-motion.tsx`
+    // (lazy boundary regression pinned by toc-hydration.test.tsx).
     expect(detailChrome).toContain("import { TableOfContents } from '@/ui/public/post/TableOfContents'")
   })
 
@@ -1479,14 +1332,12 @@ describe('contract: module and bundle boundaries', () => {
     expect(publicCss).not.toMatch(/@import\s+['"][^'"]*ui\/post\/post\.css['"]/)
     expect(existsSync('src/ui/post/post.css')).toBe(false)
 
-    // The plugin registration lives in the two entries (the shared partial
-    // is entry-agnostic); both sides render `prose` classes.
+    // Registration lives in both entries; the shared partial is entry-agnostic.
     expect(publicCss).toContain("@plugin '@tailwindcss/typography'")
     expect(adminCss).toContain("@plugin '@tailwindcss/typography'")
     expect(tailwindCss).toMatch(/--code-bg:\s*rgb\(253,\s*246,\s*227\);/)
 
-    // Typography colours are driven by a shared --prose-blog-* slot table
-    // so light and invert ladders read from the same source.
+    // Light and invert ladders read from the same `--prose-blog-*` slot table.
     for (const slot of [
       'body',
       'headings',
@@ -1534,8 +1385,8 @@ describe('contract: module and bundle boundaries', () => {
 
   it('owns popup outside-click dismissal inside Popup (backdrop), with no data-popup-id protocol', () => {
     const popup = readFileSync('src/ui/public/widgets/Popup.tsx', 'utf8')
-    // The full-viewport fixed backdrop calls onClose: while open the rest of
-    // the document is inert, so every outside click lands there.
+    // The full-viewport backdrop keeps the rest of the document inert, so
+    // every outside click lands on it.
     expect(popup).toMatch(/fixed inset-0 bg-scrim\/80 backdrop-blur-sm/)
     expect(popup).toMatch(/onClick=\{onClose\}/)
     expect(popup).not.toMatch(/popupId/)
@@ -1654,9 +1505,8 @@ describe('contract: module and bundle boundaries', () => {
   })
 
   it('keeps ScrollTopButton on the GPU-layer / opacity toggle (mobile rendering-ghost fix)', () => {
-    // iOS Safari snapshots fixed-position layers into the compositor.
-    // A display toggle invalidates the layer mid-frame, leaving a ghost
-    // during inertial scroll. Opacity + pointer-events avoids that.
+    // iOS ghost fix: toggle visibility via opacity + pointer-events, never
+    // display.
     const scrollTop = readFileSync('src/ui/public/chrome/ScrollTopButton.tsx', 'utf8')
     expect(scrollTop).toMatch(/\btransform-gpu\b/)
     expect(scrollTop).toMatch(/\bopacity-0\b/)
@@ -1671,19 +1521,12 @@ describe('contract: module and bundle boundaries', () => {
 
   it('centralises all process.env access in config.ts, hono/dev.ts, and the SEA runtime modules', () => {
     const offenders: string[] = []
-    // Exceptions beyond config.ts / dev.ts:
-    // - sea.ts / sea-natives.ts / native-require.ts (SEA packaging):
-    //   `KOBATO_NATIVES_DIR` is runtime state written by the SEA
-    //   bootstrap (`bootstrapSeaRuntime`) and read lazily by
-    //   `requireExternal` / `nativeRequire` at call time — the validated
-    //   `serverConfig` snapshot cannot model a value assigned after
-    //   module load. `KOBATO_CACHE_DIR` / `XDG_CACHE_HOME` are read
-    //   before the config module's validation runs. These modules must
-    //   also stay dependency-light because the SEA bundles inline them
-    //   ahead of the app graph.
+    // SEA runtime modules read `KOBATO_NATIVES_DIR` / `KOBATO_CACHE_DIR`
+    // before the validated `serverConfig` snapshot exists, and must stay
+    // dependency-light (SEA bundles inline them ahead of the app graph).
     const allowed = new Set([
-      // The configuration module owns the process.env reads: it resolves
-      // `__`-convention env vars over kobato.config.json at module load.
+      // config.ts resolves `__`-convention env vars over kobato.config.json
+      // at module load.
       'src/server/infra/config.ts',
       'src/server/infra/hono/dev.ts',
       'src/server/infra/sea.ts',
@@ -1707,20 +1550,9 @@ describe('contract: module and bundle boundaries', () => {
   })
 
   it('routes the native packages through static imports + the bundler redirect plugin', () => {
-    // The native packages (sharp, @napi-rs/canvas) are STATICALLY
-    // imported and inlined into the SEA bundles; the
-    // redirect-native-requires plugin rewrites their internal platform
-    // loads to `nativeRequire` (see `src/server/infra/native-require.ts`).
-    // The inverted hazard: a `requireExternal('sharp' |
-    // '@napi-rs/canvas')` call site would hide the package from the
-    // bundler and crash under SEA (no node_modules tree to resolve
-    // against). Pin both halves of the mechanism:
-    //
-    //   1. no source file requires the native packages through
-    //      requireExternal (static imports only);
-    //   2. the redirect plugin exists and the SEA bundle config wires it —
-    //      without it the static imports would drag the platform `.node`
-    //      loads into the bundle and the build would fail.
+    // Native packages are statically imported and inlined; a
+    // `requireExternal` call site would hide them from the bundler and
+    // crash under SEA. Pin both halves: no call sites, plugin wired.
     const offenders: string[] = []
     const nativeRequireExternal = /requireExternal(?:<[^>]*>)?\(\s*['"](?:sharp|@napi-rs\/canvas)(?:\/[^'"]*)?['"]/
     for (const file of files('src', '-g', '*.ts', '-g', '*.tsx')) {
@@ -1746,9 +1578,7 @@ describe('contract: module and bundle boundaries', () => {
 })
 
 describe('contract checker internals (the scanners catch their own escape shapes)', () => {
-  // These pin the scanner helpers against the escape shapes the checks
-  // exist to catch — without them a scanner regression would silently
-  // neuter every layer check above while the suite stays green.
+  // Scanner regressions would silently neuter every layer check above.
   const MULTILINE_SAMPLE = [
     'import {',
     '  alpha,',

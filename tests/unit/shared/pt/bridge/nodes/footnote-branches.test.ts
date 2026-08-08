@@ -4,8 +4,6 @@ import type { FootnoteDefinitionBlock, NonRecursiveBlock } from '@/shared/pt/sch
 
 import { footnoteDefinitionBlockToPmNode } from '@/shared/pt/bridge/nodes/footnote'
 
-// --- fixture helpers ------------------------------------------------------
-
 let keyCounter = 0
 function key(prefix: string): string {
   keyCounter += 1
@@ -26,8 +24,6 @@ function fnDef(defKey: string, index: number, children: NonRecursiveBlock[] = []
   return { _type: 'footnoteDefinition', _key: defKey, index, children }
 }
 
-// --- footnoteDefinitionBlockToPmNode -------------------------------------
-
 describe('shared/pt/bridge/nodes/footnote — footnoteDefinitionBlockToPmNode', () => {
   it('pushes the provided children as content via the provided pushBlocks callback', () => {
     const def = fnDef('fn1', 1, [textBlock('hello')])
@@ -46,7 +42,7 @@ describe('shared/pt/bridge/nodes/footnote — footnoteDefinitionBlockToPmNode', 
 
   it('injects a placeholder paragraph when the definition has no children', () => {
     const def = fnDef('fn2', 2, [])
-    const pushBlocks = () => {} // no-op — leaves inner empty
+    const pushBlocks = () => {} // leaves inner empty
     const node = footnoteDefinitionBlockToPmNode(def as never, pushBlocks as never)
     expect(node.content).toEqual([{ type: 'paragraph' }])
   })

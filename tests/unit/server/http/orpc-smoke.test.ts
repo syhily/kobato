@@ -3,13 +3,8 @@ import { RPCHandler } from '@orpc/server/fetch'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 
-// End-to-end smoke for the oRPC + Hono mount pattern. We assemble a
-// miniature router with one procedure per base flavour (public /
-// authed / admin) using the same `os.$context<HandlerContext>()
-// .use(...)` shape that `src/server/http/orpc-base.ts` produces in
-// production, then drive requests through `RPCHandler.handle()` and
-// pin (a) 200 happy path, (b) 401 unauthorized, (c) 403 forbidden,
-// (d) Zod input validation rejection, (e) `z.void()` no-body output.
+// End-to-end smoke for the oRPC + Hono mount pattern, mirroring the
+// `os.$context<HandlerContext>().use(...)` shape of src/server/http/orpc-base.ts.
 
 interface Ctx {
   session: { get(key: 'user'): { id: string; role: 'admin' | 'author' | 'visitor' } | undefined }
@@ -57,9 +52,7 @@ const router = {
     softDelete: adminProc
       .input(z.object({ id: z.string() }))
       .output(z.void())
-      .handler(() => {
-        // intentionally returns nothing — `.output(z.void())` ships 204
-      }),
+      .handler(() => {}),
   },
 }
 
@@ -71,9 +64,7 @@ function makeCtx(role?: 'admin' | 'author' | 'visitor'): Ctx {
   }
 }
 
-// The oRPC RPC wire format wraps payloads in `{ json: <data>, meta?: [] }`
-// envelopes. Matches what `@orpc/client/fetch::RPCLink` serializes —
-// hand-crafting it here keeps the test free of an HTTP round-trip.
+// RPC wire format: { json: <data>, meta?: [] } envelopes, matching RPCLink's serialization.
 async function call(handler: RPCHandler<Ctx>, path: string, input: unknown, ctx: Ctx) {
   const url = `http://localhost/rpc${path}`
   const req = new Request(url, {
@@ -116,10 +107,7 @@ describe('oRPC smoke', () => {
   })
 
   it('admin procedure: 200 (RPC JSON) with z.void() output when admin', async () => {
-    // RPCHandler always returns JSON envelopes, including for void outputs.
-    // The 204-no-body shape is only meaningful on the OpenAPI handler;
-    // we keep `.output(z.void())` here so the schema is honest about
-    // "no payload" even though the RPC envelope wraps `null`.
+    // RPCHandler returns JSON envelopes even for z.void() outputs — 204 no-body is OpenAPI-only.
     const { matched, response } = await call(handler, '/admin/softDelete', { id: '5' }, makeCtx('admin'))
     expect(matched).toBe(true)
     expect(response?.status).toBe(200)

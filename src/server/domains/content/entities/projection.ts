@@ -2,11 +2,8 @@ import type { MetaRowBase } from '@/server/domains/content/entities/descriptor'
 
 /**
  * The 19 admin-DTO fields every content entity shares, projected from
- * the shared meta columns. Entity DTOs extend this with their extras —
- * see `AdminPostDto` / `AdminPageDto`.
- *
- * Bigint ids stringified because the admin contract declares strings up
- * front so React components never see the JSON envelope's coercion.
+ * the shared meta columns. Bigint ids are stringified — the admin
+ * contract declares strings up front.
  */
 export interface AdminMetaDto {
   id: string
@@ -27,25 +24,12 @@ export interface AdminMetaDto {
   deletedAt: string | null
   authorId: string | null
   authorName: string | null
-  /**
-   * Approved comment count for the row's metric row. Populated by the
-   * admin list; defaults to `0` on detail / save paths that don't need
-   * to fan out an extra query.
-   */
+  /** Approved comment count for the row's metric row; populated by the admin list, defaults to `0` elsewhere. */
   commentCount: number
-  /**
-   * The row's `metric.public_id` UUID — the opaque wire identifier the
-   * admin comment-count link uses to deep-link into
-   * `/admin/comments?pageKey=<uuid>`. Empty string on detail / save paths.
-   */
+  /** The row's `metric.public_id` UUID — the admin comment-count deep-link target; empty string outside the admin list. */
   commentPublicId: string
 }
 
-/**
- * Shared projection behind `toAdminPostDto` / `toAdminPageDto`: the 19
- * common fields, engagement counters included. Entity projections
- * spread this and append their extras.
- */
 export function toAdminMetaDto(
   row: MetaRowBase & { authorName?: string | null },
   options: { commentCount?: number; commentPublicId?: string } = {},

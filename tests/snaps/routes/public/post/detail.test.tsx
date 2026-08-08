@@ -20,9 +20,7 @@ describe('snapshot: routes/public/post/detail', () => {
       }),
     )
     const visibleTags = [makeTag({ name: 'typescript', slug: 'typescript' })]
-    // Stream-rendered (not renderInRouter): the TOC sits behind a lazy
-    // boundary, so only the streamed SSR output carries it — the same
-    // delivery a browser/bot gets in production.
+    // The TOC sits behind a lazy boundary — only streamed SSR output carries it.
     const html = stableHtml(
       await prerenderInRouter(
         <Route

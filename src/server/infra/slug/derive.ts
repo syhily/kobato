@@ -2,9 +2,7 @@ import { pinyin } from 'pinyin-pro'
 
 import { Slugger } from '@/shared/slug'
 
-// Canonical slug helper: `pinyin-pro` → `Slugger`.
-// Fresh slugger per call (stateless); callers that need dedup keep their own instance.
-// Lives in `server/` because `pinyin-pro` is ~150 KB and must not reach the client.
+// Server-only (`pinyin-pro` must not reach the client); fresh Slugger per call.
 export function deriveSlug(text: string): string {
   const romanised = pinyin(text, {
     toneType: 'none',

@@ -42,10 +42,8 @@ export function useLocalDraft<TBody>(
       ? draftEditKey(config.keyPrefix, entityId, clientRevisionToken)
       : null
 
-  // The draft lifecycle (load/persist/broadcast) lives in useDraftSession;
-  // this adapter only supplies the entity-keyed key and the loaded mapping.
-  // mapLoaded runs only while key !== null, which implies entityId and
-  // clientRevisionToken are non-null — the null branch is defensive.
+  // Lifecycle lives in useDraftSession; this adapter only supplies the
+  // entity-keyed key and the loaded mapping.
   const mapLoaded = useCallback(
     (record: DraftRecord, parsedBody: TBody): StoredDraft<TBody> | null =>
       entityId === null || clientRevisionToken === null

@@ -11,8 +11,7 @@ import { postDescriptor } from '@/server/domains/posts/descriptor'
 import { buildPostsOrderBy, buildPostsWhere } from '@/server/domains/posts/repos/shared'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 
-// Meta list/count come from the shared list-query factory
-// (`content/entities/meta-repo.ts`) with the post where/orderBy legs.
+// List/count come from the shared list-query factory with the post where/orderBy legs.
 const listQueries = makeMetaListQueries<PostMetaRow, ListPostsFilters>(postMetaTable, {
   buildWhere: buildPostsWhere,
   orderBy: buildPostsOrderBy,

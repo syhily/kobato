@@ -26,27 +26,20 @@ queryMocks.query = {
   refetch: vi.fn(),
 }
 
-// PostsView wires three option-list useQuery calls (categories + tags +
-// users) via orpcQuery; the list itself is a useInfiniteQuery behind
-// useAdminInfiniteList. Each spec below stubs them so SSR can render the
-// chrome without hitting the network. The filter surface is the shared
-// pill bar (the real `useFilterPills`, uncontrolled) — the view reads
-// `useLocation` for the URL seed, so we mount under a memory router at the
-// admin posts path.
+// PostsView's option-list queries (categories/tags/users) and the
+// infinite list are stubbed so SSR renders without the network; the view
+// reads useLocation for the URL seed, so mount under a memory router at /admin/posts.
 
 describe('snapshot: PostsView', () => {
   it('renders list chrome and skeleton while the initial query is pending', () => {
     const html = stableHtml(renderInRouter(<PostsView />, '/admin/posts'))
-    // Header title and the create link render in any state.
     expect(html).toContain('文章管理')
     expect(html).toContain('新建文章')
-    // Skeleton occupies the body before rows arrive.
     expect(html).toContain('skeleton')
   })
 
   it('renders the pill-bar trigger and the sort select while loading', () => {
     const html = stableHtml(renderInRouter(<PostsView />, '/admin/posts'))
-    // No active filters — just the 筛选 trigger in the header slot.
     expect(html).toContain('筛选')
     // The sort select is not a filter pill — it stays in the header.
     expect(html).toContain('最新发布')
@@ -57,7 +50,6 @@ describe('snapshot: PostsView', () => {
     // The seeded pill shows the field label and the resolved option label.
     expect(html).toContain('状态')
     expect(html).toContain('草稿')
-    // Active filters bring the 添加筛选 / 清除 affordances.
     expect(html).toContain('添加筛选')
     expect(html).toContain('清除')
   })

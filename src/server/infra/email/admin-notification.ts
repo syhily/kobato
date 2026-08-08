@@ -7,16 +7,12 @@ import { render } from '@/server/infra/email/render'
 import { sendEmail } from '@/server/infra/email/sender'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 
-// Single seam for every notification that goes to the site administrator
-// (new comment, webmention, friend application, …). The recipient is
-// always the site author and the subject always carries the
-// `您的网站【title】` prefix — callers pass only the suffix
-// (e.g. `有了新评论`) and the rendered layout element.
+// Single seam for admin notifications (new comment, webmention, …): recipient
+// is always the site author, subject is `您的网站【title】` + the caller's suffix.
 export async function sendAdminNotification({
   subject,
   element,
 }: {
-  /** Subject suffix appended to `您的网站【title】`. */
   subject: string
   element: ReactElement
 }): Promise<SendResult> {
@@ -25,10 +21,8 @@ export async function sendAdminNotification({
   return sendEmail(siteIdentity.author.email, `您的网站【${siteIdentity.title}】${subject}`, html)
 }
 
-// Admin notifications are fire-and-forget: a mail-pipeline hiccup must
-// never fail the action that triggered the notification (the pending
-// row / comment is the durable record). `what` is the static log
-// fragment, e.g. `new comment` → `failed to send new comment email`.
+// Fire-and-forget: a mail hiccup must never fail the triggering action.
+// `what` is the static log fragment (`new comment` → `failed to send new comment email`).
 export function fireAndForgetNotify(promise: Promise<SendResult>, log: Logger, what: string): void {
   void promise.catch((error) => {
     log.error(`failed to send ${what} email`, { error })

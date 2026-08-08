@@ -7,11 +7,9 @@ export const adminTagDto = z.object({
   name: z.string(),
   slug: z.string(),
   ogImage: z.string(),
-  // Number of live posts (visible + hidden + scheduled) that reference
-  // this row through the `post_tag` join. Mirrors the delete-block
-  // guard's view of references — i.e. if `postCount > 0`, deletion via
-  // the admin will be rejected with 409. Computed by the service from
-  // `countPostsByTaxonomy`; not persisted in the database.
+  // Live post count referencing this row via `post_tag` — mirrors the
+  // delete-block guard's view (postCount > 0 → 409). Computed by the
+  // service, not persisted.
   postCount: z.number().int().nonnegative(),
   createdAt: isoDateTime,
   updatedAt: isoDateTime,

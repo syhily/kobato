@@ -3,14 +3,9 @@ import { UAParser } from 'ua-parser-js'
 const MAX_RAW = 80
 
 /**
- * Build a short label suitable for a list cell. Uses `ua-parser-js`
- * for structured browser / OS / device extraction. Falls back to the
- * raw UA (truncated) when parsing fails so the operator can still
- * tell two devices apart by manual inspection.
- *
- * `platformHint` is the value of the `Sec-CH-UA-Platform` client hint.
- * It is preferred over the OS parsed from the UA because iOS/iPadOS
- * devices in "desktop mode" send a macOS-like User-Agent string.
+ * Short label for a list cell via `ua-parser-js`; falls back to the
+ * truncated raw UA. `platformHint` (`Sec-CH-UA-Platform`) is preferred
+ * over the parsed OS because desktop-mode iOS sends a macOS-like UA.
  */
 export function formatUserAgentLabel(ua: string | null | undefined, platformHint?: string | null): string {
   if (!ua) {

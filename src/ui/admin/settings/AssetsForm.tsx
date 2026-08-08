@@ -303,9 +303,7 @@ function AssetsUploadCard({ assets }: { assets: AssetsLoaderShape }) {
   )
 }
 
-// `robots.txt` is plain configuration text (not an asset), so it stays here
-// and flows through the regular settings PATCH; the actual brand assets are
-// managed at `/admin/library/branding`.
+// `robots.txt` is plain config text, so it stays on the settings PATCH; brand assets live elsewhere.
 function AssetsRobotsTxtCard({ assets }: { assets: AssetsLoaderShape }) {
   const { form, flushOnBlur, settingGroupProps } = useSettingsCard<AssetsLoaderShape, { robotsTxt: string }>({
     section: 'assets',

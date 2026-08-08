@@ -52,8 +52,7 @@ async function storeChallenge(
   challenge: string,
   data: Record<string, unknown>,
 ): Promise<void> {
-  // Plain JSON (superjson was dropped with the SQLite migration — the
-  // challenge payloads are `{ userId, deviceName }` / `{ email }`).
+  // Plain JSON payloads: `{ userId, deviceName }` / `{ email }`.
   const payload = data
   const expiresAt = new Date(Date.now() + CHALLENGE_TTL_SECONDS * 1000)
   await db
@@ -66,9 +65,8 @@ async function storeChallenge(
 }
 
 /**
- * Atomic consume: a single `DELETE … RETURNING payload` removes the row
- * and returns its payload in one statement, so a challenge can never be
- * replayed under concurrency. Expired rows consume as misses.
+ * Atomic consume via `DELETE … RETURNING` — a challenge can never be
+ * replayed under concurrency; expired rows consume as misses.
  */
 async function consumeChallenge(
   db: Database,
@@ -82,16 +80,13 @@ async function consumeChallenge(
       .where(and(eq(oneTimeToken.key, key), gt(oneTimeToken.expiresAt, new Date())))
       .returning({ payload: oneTimeToken.payload })
     const payload = rows[0]?.payload
-    // Rows written by `storeChallenge` carry the plain-JSON payload;
-    // anything but an object reads as a miss.
+    // Payloads are plain JSON; anything but an object reads as a miss.
     return isRecord(payload) ? payload : null
   } catch (error) {
     log.error('Failed to consume passkey challenge', { key, error })
     return null
   }
 }
-
-// ─── Registration ──────────────────────────────────────────
 
 export interface RegistrationBeginResult {
   options: PublicKeyCredentialCreationOptionsJSON
@@ -185,7 +180,6 @@ export async function verifyRegistrationResponse(
     }
     return inserted
   } catch (err) {
-    // Graceful duplicate handling
     if (isUniqueConstraintError(err)) {
       throw new DomainError('CONFLICT', '该 Passkey 凭据已注册。')
     }
@@ -193,8 +187,6 @@ export async function verifyRegistrationResponse(
     throw new DomainError('INTERNAL', '保存 Passkey 凭据失败。')
   }
 }
-
-// ─── Authentication ────────────────────────────────────────
 
 export interface AuthenticationBeginResult {
   options: PublicKeyCredentialRequestOptionsJSON
@@ -283,7 +275,6 @@ export async function verifyAuthenticationResponse(
     throw new DomainError('BAD_REQUEST', '账户状态异常，无法登录。')
   }
 
-  // Update counter and timestamp
   await db
     .update(passkeyCredential)
     .set({ counter: Number(verification.authenticationInfo.newCounter), updatedAt: new Date() })
@@ -291,8 +282,6 @@ export async function verifyAuthenticationResponse(
 
   return { user: dbUser, authMethod: 'passkey' }
 }
-
-// ─── Credential management ─────────────────────────────────
 
 export interface CredentialMeta {
   id: string
@@ -322,9 +311,8 @@ export async function listCredentials(db: Database, userId: number): Promise<Cre
   }))
 }
 
-// Invariant: `loginMethod = 'passkey'` must not outlive credentials — a
-// user whose method is passkey with zero passkeys would lock themselves
-// out. Every credential-deletion path runs this check so callers inherit it.
+// Invariant: `loginMethod = 'passkey'` must not outlive the last
+// credential — zero passkeys would lock the user out.
 async function revertMethodWhenNoCredentials(db: Database, userId: number): Promise<void> {
   const remaining = await db
     .select({ id: passkeyCredential.id })

@@ -1,20 +1,6 @@
-// Mailgun transport.
-//
-// Talks to the Mailgun v3 API directly with native `fetch` + `FormData` —
-// the official `mailgun.js` SDK was a thin wrapper around exactly this one
-// multipart POST, so the SDK (and its axios/form-data dependency tree) is
-// gone. Mirrors `zeabur-zsend.ts` line-by-line for skip / send /
-// error-classification behaviour so every HTTP-based transport speaks the
-// same vocabulary.
-//
-//   - `disabled` short-circuits with a debug log.
-//   - missing domain / apiKey / sender short-circuits with `unconfigured`.
-//   - upstream non-2xx surfaces as `reason=upstream` with the status.
-//   - fetch throw (DNS / TCP / timeout) surfaces as `reason=network`.
-//
-// US region only — the endpoint is hardcoded to `https://api.mailgun.net`.
-// EU customers would need `https://api.eu.mailgun.net`; the admin UI does
-// not expose a region selector.
+// Direct Mailgun v3 `fetch` + `FormData` client (no SDK dependency), sharing the
+// other transports' skip/error vocabulary. US region only — endpoint is hardcoded
+// to `https://api.mailgun.net`; the admin UI has no region selector.
 
 import type {
   EmailMessage,

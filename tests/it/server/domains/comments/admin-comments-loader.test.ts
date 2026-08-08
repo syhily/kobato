@@ -9,13 +9,9 @@ import { metric } from '@/server/infra/db/schema/metric'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
 
-// `loadAllComments` orchestrates the admin comments list: a `q`/`match`
-// text filter, `createdAfter`/`createdBefore` date bounds, the status
-// breakdown counts, and the publicId → target resolution. Every assertion
-// below runs against the real in-memory engine — the filter-propagation
-// contract is now pinned by real query results instead of mock call args:
-// a filter dropped from `extraFilters` would show up as status counts that
-// disagree with the returned list.
+// `loadAllComments` against the real engine: filter propagation is pinned
+// by real query results — a filter dropped from `extraFilters` shows up as
+// status counts disagreeing with the list.
 
 const db = getTestDb()
 
@@ -90,8 +86,7 @@ describe('loadAllComments — text filter propagation', () => {
     })
 
     expect(result.comments.map((c) => c.id).sort((a, b) => a - b)).toEqual([foo1, foo2])
-    // The single count query honors the same filter: the tabs reflect
-    // the filtered corpus, not the whole table.
+    // The count query honors the same filter: tabs reflect the filtered corpus.
     expect(result.statusCounts).toEqual({ all: 2, pending: 1, approved: 1, deleteRequested: 0 })
     expect(result.total).toBe(2)
     expect(result.hasMore).toBe(false)
@@ -129,10 +124,7 @@ describe('loadAllComments — text filter propagation', () => {
   })
 
   it('stacks the `match` filter on top of the status filter so the count breakdown stays consistent', async () => {
-    // The bug this pins: forgetting to put `match` into `extraFilters`
-    // would make the status counts inconsistent with the list — the
-    // user would see "3 pending" in the tab but the list would only
-    // show 1 row.
+    // Pins `match` in `extraFilters`: counts must stay consistent with the list.
     const uid = await seedUser()
     const pid = await seedPost('p4')
     const fooPending = await seedComment({ userId: uid, ownerId: pid, content: 'foo pending', isPending: true })
@@ -206,10 +198,7 @@ describe('loadAllComments — date filter propagation', () => {
   })
 
   it('stacks the date bounds on top of the status filter so the count breakdown stays consistent', async () => {
-    // The same shape-stability guarantee as the text filter: the status
-    // counts must reflect the same `extraFilters` (date bounds
-    // included) as the list — otherwise the tabs would mislead the
-    // user about how many rows the active filter produces.
+    // Same guarantee: the count query shares the date `extraFilters` with the list.
     const uid = await seedUser()
     const pid = await seedPost('p7')
     await seedComment({
@@ -260,8 +249,7 @@ describe('loadAllComments — options object shape', () => {
       filterPublicId: 'nonexistent',
     })
 
-    // A comment exists in the table, so the empty result proves the
-    // early return fired before any list/count query ran.
+    // A seeded row exists, so the empty result proves the early return fired.
     expect(result.comments).toEqual([])
     expect(result.total).toBe(0)
     expect(result.hasMore).toBe(false)

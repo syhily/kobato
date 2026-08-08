@@ -28,10 +28,7 @@ import { resolveSlug } from '@/server/infra/slug/resolve'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { idFromString } from '@/shared/utils/id'
 
-// The OG request path (`http/resources/images.ts`) serves category cards
-// under a `cat-`-prefixed slug and resolves an empty description to the
-// site description — the warm key must fold the same inputs or it fills
-// a key the crawler never asks for.
+// Warm key must match the OG route's inputs: `cat-` slug, empty description → site description.
 function categoryOgTarget(row: CategoryRow): OgWarmTarget {
   return {
     slug: `cat-${row.slug}`,
@@ -61,8 +58,7 @@ export async function upsertAdminCategory(db: Database, input: UpsertCategoryInp
       ...(input.sortOrder !== undefined ? { sortOrder: input.sortOrder } : {}),
     })
     invalidateContent(db, { entity: 'category' })
-    // Same crawler-first-scan warm as posts/pages (audit P1-12): the new
-    // content-hash OG key renders now, not on the first crawler request.
+    // Warm the new content-hash OG key now, not on first crawler request (audit P1-12).
     warmContentRenderCaches(db, categoryOgTarget(row))
     const counts = await countPostsByTaxonomy(db, { kind: 'category', gate: 'admin', name: row.name })
     return toAdminCategoryDto(row, counts.get(row.name) ?? 0)
@@ -94,8 +90,7 @@ export async function upsertAdminCategory(db: Database, input: UpsertCategoryInp
     throw new DomainError('NOT_FOUND', '分类不存在')
   }
   invalidateContent(db, { entity: 'category' })
-  // Re-warm under the NEW content-hash key (a rename/cover change derives
-  // a fresh key — see the og bucket's key shape in `infra/cache/registry`).
+  // Rename/cover change derives a fresh content-hash key — re-warm under it.
   warmContentRenderCaches(db, categoryOgTarget(updated))
   const counts = await countPostsByTaxonomy(db, { kind: 'category', gate: 'admin', name: updated.name })
   return toAdminCategoryDto(updated, counts.get(updated.name) ?? 0)

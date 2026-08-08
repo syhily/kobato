@@ -43,15 +43,8 @@ export interface EditorShellPersistMutations<
   directSaveDraft: UseEditorShellStateArgs<TMeta, TEntity, TUpsertMetaInput>['directSaveDraft']
 }
 
-/**
- * The few writes persist must report into orchestrator-owned state. The meta
- * draft and the revision-token race stay in the orchestrator: the token keys
- * the local-storage draft (`useLocalDraft`), and the freeze that draft feeds
- * into gates autosave here — moving the token into persist would close a
- * hook-ordering cycle between the two modules. The freeze itself is also
- * orchestrator-owned (both of its sources live there); persist only reports
- * the server-revision leg via `noteRevisionConflict`.
- */
+/** The few writes persist must report into orchestrator-owned state; the
+ *  revision token stays here — moving it would close a hook-ordering cycle. */
 export interface EditorShellPersistNotifications<TMeta> {
   /** Adopt the server-confirmed meta draft after a meta save / unpublish. */
   applyServerMeta: (meta: TMeta) => void
@@ -94,12 +87,8 @@ export function useEditorShellPersist<
   const { editPath, navigate } = routing
   const isEditing = detail !== undefined
 
-  // --- Owned save-flow state -------------------------------------------------
-  // Persist flows write these; the orchestrator only projects them into the
-  // sidebar / toolbar views. The banner protocol (arm → note legs → show /
-  // cancel) never crosses the module boundary. The autosave freeze is NOT
-  // here: both its sources are orchestrator-owned and arrive via
-  // `draft.freeze` (see the notifications doc).
+  // Persist-owned state. The autosave freeze is NOT here — both its sources
+  // are orchestrator-owned and arrive via `draft.freeze`.
   const [status, setStatus] = useState<EditorShellStatus>({ kind: 'idle' })
   const [displaySaveAtMs, setDisplaySaveAtMs] = useState<number | null>(() => deriveBaselineUpdatedAtMs(detail))
   const [lastSavedBody, setLastSavedBody] = useState<PortableTextBody>(() => deriveBaselineRevision(detail)?.body ?? [])
@@ -112,26 +101,18 @@ export function useEditorShellPersist<
     dismiss: dismissPreviewBanner,
   } = useActionBanner()
 
-  // Body snapshot submitted by the in-flight manual body save
-  // (persistSave's body leg / persistPublish). On its success the autosave
-  // baseline advances to it, so the next debounce tick's reference check
-  // short-circuits instead of re-PATCHing the same body. Cleared on any
-  // save outcome and on error so a stale snapshot never marks an
-  // unpersisted body as saved.
+  // Body snapshot of the in-flight manual save; on success the autosave
+  // baseline advances to it so the next debounce tick short-circuits.
   const manualSaveBodyRef = useRef<PortableTextBody | null>(null)
 
-  // Server publishedAt captured right before persistPublish's optimistic
-  // overwrite, so a failed publish can restore the pre-publish truth instead
-  // of leaving the optimistic value behind — a leftover future date would
-  // make a later picker-clear save send `publishedAt: null` (the server's
-  // cancel-schedule signal) and silently unpublish a live entity.
+  // Pre-publish `publishedAt` for rollback on a failed publish — a leftover
+  // optimistic future date would make a picker-clear save silently unpublish.
   const publishedAtBeforePublishRef = useRef<string | null>(null)
 
   const markBodySaved = useCallback((savedBody: PortableTextBody) => {
     setLastSavedBody(savedBody)
   }, [])
 
-  // --- Mutation reducers (module-private) ------------------------------------
   const noteError = useCallback(
     (message: string) => {
       manualSaveBodyRef.current = null
@@ -143,9 +124,7 @@ export function useEditorShellPersist<
 
   const noteMetaSaved = useCallback(
     (saved: TEntity) => {
-      // A save round runs the meta and body legs concurrently; when the body
-      // leg already landed with a warning or a conflict, the meta leg must
-      // not hide it.
+      // A concurrent body leg's warning / conflict must not be hidden.
       setStatus((prev) =>
         prev.kind === 'warning' || prev.kind === 'conflict' ? prev : { kind: 'saved', at: new Date() },
       )
@@ -160,15 +139,10 @@ export function useEditorShellPersist<
     [applyServerMeta, metaDraftFromEntity, noteActionLegSucceeded],
   )
 
-  // Mirror of the autosave engine's `markPersisted` (the engine is mounted
-  // further down, after these reducers are defined — same pattern as
-  // `handleBodySavedRef` below).
+  // Mirror of the engine's `markPersisted` — the engine mounts further down (see `handleBodySavedRef`).
   const markPersistedRef = useRef<(body: PortableTextBody) => void>(() => undefined)
 
-  // Advance the engine baseline for a body persisted outside both the engine
-  // and the manual-save flow — the orchestrator's adoptLocalDraft force-save.
-  // Without it the next debounce tick re-PATCHes the adopted body (and
-  // rotates the revision token server-side for nothing).
+  // Advance the engine baseline for a body persisted outside engine + manual-save flows (adoptLocalDraft force-save).
   const noteBodyPersisted = useCallback((persistedBody: PortableTextBody) => {
     markPersistedRef.current(persistedBody)
   }, [])
@@ -176,11 +150,9 @@ export function useEditorShellPersist<
   const noteBodySaved = useCallback(
     (payload: SaveBodyOutput) => {
       if (payload.status === 'conflict') {
-        // Freeze autosave via the orchestrator's `server`-sourced freeze:
-        // the expected token can never advance while the server keeps
-        // rejecting it, and the engine must not clobber this status with a
-        // generic `saved` tick. The freeze clears on the next clean save
-        // (the orchestrator resets it in `noteRevisionSaved`).
+        // Freeze autosave: the token can never advance while the server
+        // rejects it, and the engine must not clobber this status with a
+        // generic `saved` tick.
         manualSaveBodyRef.current = null
         noteRevisionConflict()
         setStatus({ kind: 'conflict', expectedToken: payload.expectedToken })
@@ -188,9 +160,7 @@ export function useEditorShellPersist<
         return
       }
       if (manualSaveBodyRef.current !== null) {
-        // A manual save just persisted this exact body snapshot outside the
-        // engine — advance the engine baseline so the next debounce tick
-        // short-circuits instead of re-PATCHing it.
+        // A manual save just persisted this exact snapshot — advance the engine baseline.
         markPersistedRef.current(manualSaveBodyRef.current)
         manualSaveBodyRef.current = null
       }
@@ -221,8 +191,7 @@ export function useEditorShellPersist<
 
   const noteUnpublishSaved = useCallback(
     (saved: TEntity) => {
-      // Same concurrent-leg rule as noteMetaSaved: an in-flight body leg may
-      // have surfaced a warning / conflict while unpublish was pending.
+      // Same concurrent-leg rule as noteMetaSaved.
       setStatus((prev) =>
         prev.kind === 'warning' || prev.kind === 'conflict' ? prev : { kind: 'saved', at: new Date() },
       )
@@ -256,11 +225,8 @@ export function useEditorShellPersist<
       }
     },
     onError: (error) => {
-      // The publish never landed: revert the optimistic server publishedAt
-      // persistPublish just applied, back to the pre-publish truth (the next
-      // meta save re-syncs it via noteMetaSaved). Only this optimistic write
-      // is rolled back — the user's picker input lives in the meta draft and
-      // stays untouched.
+      // Publish never landed: roll back the optimistic server publishedAt to
+      // the pre-publish truth; the user's picker input stays untouched.
       setServerPublishedAtIso(publishedAtBeforePublishRef.current)
       noteError(error.message)
     },
@@ -271,20 +237,16 @@ export function useEditorShellPersist<
     onError: (error) => noteError(error.message),
   })
 
-  // --- Mutation pending flags ------------------------------------------------
   const isSubmittingAny =
     upsertMetaMutation.isPending ||
     saveDraftMutation.isPending ||
     publishMutation.isPending ||
     unpublishMutation.isPending
 
-  // --- Autosave ------------------------------------------------------------
   const [isCreating, setIsCreating] = useState(false)
   const autosaveEnabled = isEditing && freeze === null && !isSubmittingAny
-  // The `noteBodySaved` reducer reads from a closure that captures
-  // `detail`, `expectedToken`, etc. We mirror it through a ref so the
-  // autosave flush always picks up the latest values without forcing
-  // every keystroke to recreate the flush callback.
+  // Mirror `noteBodySaved` through a ref so the flush picks up the latest
+  // closure values without recreating the callback every keystroke.
   const handleBodySavedRef = useRef<(payload: SaveBodyOutput) => void>(() => undefined)
   useEffect(() => {
     handleBodySavedRef.current = noteBodySaved
@@ -293,8 +255,7 @@ export function useEditorShellPersist<
   const flushAutosave = useCallback(
     async (snapshot: PortableTextBody): Promise<AutosaveFlushOutcome> => {
       if (!isEditing || !detail) {
-        // Unreachable while `enabled` gates on isEditing; treat as a no-op
-        // save so the engine's bookkeeping stays consistent.
+        // Unreachable while `enabled` gates on isEditing — no-op keeps the engine's bookkeeping consistent.
         return 'saved'
       }
       try {
@@ -320,11 +281,8 @@ export function useEditorShellPersist<
       if (autosaveStatus.kind === 'saving') {
         setStatus({ kind: 'saving' })
       } else if (autosaveStatus.kind === 'saved') {
-        // The flush's own noteBodySaved may have surfaced a save-result
-        // warning or a revision conflict; the engine's generic 'saved'
-        // tick must not hide either. (The engine no longer emits 'saved'
-        // for a conflicted flush at all — this is the belt-and-suspenders
-        // guard against regressions.)
+        // The flush's own noteBodySaved may have surfaced a warning / conflict —
+        // the engine's generic 'saved' tick must not hide either.
         setStatus((prev) =>
           prev.kind === 'warning' || prev.kind === 'conflict'
             ? prev
@@ -341,11 +299,8 @@ export function useEditorShellPersist<
   }, [markAutosavePersisted])
 
   // Seed the engine's persisted baseline with the opening body (audit P1-1):
-  // the editor mounts with server state, so the first debounce tick with zero
-  // edits must hit the reference check and no-op instead of firing an
-  // unconditional PATCH (which also rotates the revision token server-side
-  // and orphans the previous IndexedDB draft — P1-15). Seeded once per edit
-  // session: later body changes are real edits the engine must flush.
+  // the first debounce tick with zero edits must no-op instead of firing an
+  // unconditional PATCH (which rotates the token and orphans the IndexedDB draft — P1-15).
   const seededOpeningBodyRef = useRef(false)
   useEffect(() => {
     if (!isEditing || seededOpeningBodyRef.current) {
@@ -353,11 +308,9 @@ export function useEditorShellPersist<
     }
     seededOpeningBodyRef.current = true
     markPersistedRef.current(body)
-    // markPersistedRef is synced by the effect above; the ref guard keeps
-    // the seed once-only even though this re-runs on every body change.
+    // Ref guard keeps the seed once-only; this re-runs on every body change.
   }, [isEditing, body])
 
-  // --- Persist handlers ----------------------------------------------------
   const persistCreate = useCallback(async () => {
     if (isEditing || isCreating) {
       return
@@ -365,9 +318,8 @@ export function useEditorShellPersist<
     setIsCreating(true)
     setStatus({ kind: 'saving' })
 
-    // `null` (empty picker) means "no schedule supplied" on create — omit
-    // the field so the server applies its default instead of reading it as
-    // the cancel-schedule signal.
+    // `null` (empty picker) means "no schedule supplied" on create — omit the
+    // field so the server applies its default instead of the cancel-schedule signal.
     const publishedAt = localInputValueToIso(meta.publishedAt) ?? undefined
     let savedEntity: TEntity
     try {
@@ -434,10 +386,8 @@ export function useEditorShellPersist<
     setStatus({ kind: 'saving' })
     const pickerIso = localInputValueToIso(meta.publishedAt)
     const serverIsScheduled = serverPublishedAtIso !== null && (Date.parse(serverPublishedAtIso) || 0) > Date.now()
-    // Picker cleared while the server still holds a schedule: send an
-    // explicit `null` — the cancel-schedule signal, keeping the entity
-    // unpublished — instead of forcing it live with `new Date()`. With no
-    // schedule to cancel the field is omitted entirely (leave untouched).
+    // Picker cleared while the server holds a schedule: send explicit `null`
+    // (the cancel-schedule signal); with no schedule the field is omitted.
     const publishedAt = pickerIso ?? (serverIsScheduled ? null : undefined)
     const bodyDiverged = !arePortableTextBodiesEquivalent(body, lastSavedBody)
     beginActionBanner('draft', bodyDiverged ? 2 : 1)
@@ -500,17 +450,14 @@ export function useEditorShellPersist<
     unpublishMutation.mutate({ id: detail.entity.id })
   }, [isEditing, detail, unpublishMutation])
 
-  // --- Mutation pending flags ----------------------------------------------
   const isPending = isSubmittingAny || isCreating
   const isSavingDraft = upsertMetaMutation.isPending || saveDraftMutation.isPending
   const isPublishing = publishMutation.isPending
   const isUnpublishing = unpublishMutation.isPending
 
   return {
-    // Owned save-flow state the orchestrator projects into the sidebar and
-    // dialog. `setStatus` / `markBodySaved` are returned for the
-    // orchestrator's own adoption handlers (local-draft / server-version /
-    // revision-history), the only writers outside this module.
+    // Owned save-flow state; `setStatus` / `markBodySaved` are returned for
+    // the orchestrator's adoption handlers — the only writers outside this module.
     status,
     setStatus,
     displaySaveAtMs,

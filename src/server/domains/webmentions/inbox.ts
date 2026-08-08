@@ -16,17 +16,12 @@ import { getBlogSettingsBundleSync, isWebmentionReceiveEnabled } from '@/shared/
 
 const log = getLogger('webmentions.inbox')
 
-// Sequential single-worker verification loop, mirroring the outbound
-// outbox discipline: a small batch per wake-up and at least
-// INBOX_MIN_DELAY_MS between batches, so a mention burst cannot hammer
-// third-party source hosts back-to-back.
+// Sequential single-worker verification loop: small batches, at least
+// INBOX_MIN_DELAY_MS apart, so a burst cannot hammer source hosts back-to-back.
 export const INBOX_BATCH_SIZE = 5
 export const INBOX_MAX_ATTEMPTS = 3
 
-/** min(2^attempts × 60s, 12h), attempts already incremented: the first
- *  failure waits 2m, the second 4m — a source that is briefly
- *  unreachable (deploy, DNS flip) recovers in minutes, and the sender
- *  can always re-POST for a fresh row. */
+/** min(2^attempts × 60s, 12h) — attempts already incremented (1st failure waits 2m). */
 export function inboxBackoffMs(attempts: number): number {
   return Math.min(2 ** attempts * 60_000, 12 * 3_600_000)
 }
@@ -36,16 +31,8 @@ function failureMessage(error: string): string {
 }
 
 /**
- * Verify one queued pair through the same `receiveWebmention` path the
- * synchronous endpoint used (target re-resolution included — a target
- * deleted since enqueue is a terminal NOT_FOUND, not a retry). Success
- * deletes the row; a transient fetch failure (DomainError with
- * `retryable`, or an unexpected throw) backs off until the attempt
- * budget runs out; anything terminal lands as a VISIBLE failure: the
- * pair is recorded as a `pending` row with `verificationStatus='failed'`
- * and the last failure message, so the admin sees why the mention was
- * not accepted (a vanished target is the one exception — there is no
- * page left to anchor the mention to, so it drops silently).
+ * Verify one queued pair: success deletes the row, transient failures back
+ * off; terminal failures are recorded visibly, except a vanished target (silent drop).
  */
 export async function processWebmentionInboxRow(db: Database, row: WebmentionInboxRow): Promise<void> {
   try {
@@ -54,9 +41,7 @@ export async function processWebmentionInboxRow(db: Database, row: WebmentionInb
     return
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error)
-    // Non-DomainError throws (a hook bug, a DB hiccup) are treated as
-    // transient: dropping a verified-so-far mention on an internal
-    // hiccup would lose it silently.
+    // Non-DomainError throws count as transient — an internal hiccup must not silently drop a mention.
     const retryable = !(error instanceof DomainError) || error.retryable === true
     const attempts = row.attempts + 1
     if (retryable && attempts < INBOX_MAX_ATTEMPTS) {
@@ -90,11 +75,8 @@ export async function processWebmentionInboxRow(db: Database, row: WebmentionInb
   }
 }
 
-/** The scheduler's batch: a few due rows, verified strictly in sequence.
- *  When the receive switch is off the whole queue drains — the endpoint
- *  has been answering 410, so nothing queued can still be accepted. The
- *  switch read shares the endpoint's `isWebmentionReceiveEnabled`
- *  predicate (an unseeded section reads as the default ON). */
+/** The scheduler's batch: due rows verified strictly in sequence; with the
+ *  receive switch off the whole queue drains (nothing queued can be accepted). */
 export async function runWebmentionInboxBatch(db: Database): Promise<number> {
   if (!isWebmentionReceiveEnabled(getBlogSettingsBundleSync())) {
     const dropped = await clearWebmentionInbox(db)
@@ -108,10 +90,7 @@ export async function runWebmentionInboxBatch(db: Database): Promise<number> {
     try {
       await processWebmentionInboxRow(db, row)
     } catch (error: unknown) {
-      // A row must never kill the batch: processWebmentionInboxRow only
-      // rethrows on a DB failure of its own bookkeeping, which a retry
-      // mark would likely hit too — log and move on; the row stays due
-      // and the next wake-up takes another turn at it.
+      // A row must never kill the batch: log and move on; the row stays due.
       log.warn('Webmention inbox row processing threw', { id: row.id, error: String(error) })
     }
   }

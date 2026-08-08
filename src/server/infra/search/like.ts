@@ -9,9 +9,6 @@ import { post } from '@/server/infra/db/schema/post'
 import { getLogger } from '@/server/infra/logger'
 import { corpusLikeDisjuncts } from '@/server/infra/search/corpus'
 
-// LIKE search — verbatim substring match over the corpus, newest first.
-// The only search mode: vector and trigram drivers were removed.
-
 export function likeWhere(baseWhere: SQL, query: string): SQL | undefined {
   return and(baseWhere, or(...corpusLikeDisjuncts(query)))
 }

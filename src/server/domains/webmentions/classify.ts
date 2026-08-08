@@ -1,18 +1,9 @@
 import { normalizeForMatch } from '@/server/domains/webmentions/verify'
 
-// Response-type classification for received webmentions (async-inbox
-// design, docs/plans/2026-08-02-webmention-async-inbox-design.md):
-// IndieWeb sources declare the response kind with microformats2
-// class markers on the anchor that links to our target —
-//   <a class="u-in-reply-to" href="…"> → reply
-//   <a class="u-repost-of"   href="…"> → repost
-//   <a class="u-like-of"     href="…"> → like
-// and a source with no recognized marker is a plain `mention`.
-//
-// Deliberately minimal (regex-based, same discipline as verify.ts): only
-// markers carried ON the anchor itself are recognized. A marker on a
-// wrapper element (`<div class="u-like-of"><a href>…`) classifies as
-// `mention` — verification never depends on the classification, so a
+// mf2 response-type classification for received webmentions (async-inbox
+// design, docs/plans/2026-08-02-webmention-async-inbox-design.md). Only
+// markers carried ON the anchor count — a marker on a wrapper element
+// classifies as `mention`; verification never depends on the type, so a
 // miss costs presentation grouping, never acceptance.
 
 export type WebmentionType = 'mention' | 'reply' | 'like' | 'repost'
@@ -27,9 +18,7 @@ const MARKER_TYPES: ReadonlyArray<[marker: string, type: WebmentionType]> = [
   ['u-like-of', 'like'],
 ]
 
-// Priority when one document carries several markers pointing at the
-// target (a reply that is also a repost is a reply): the strongest
-// interaction wins.
+// Priority when several markers point at the target: the strongest wins.
 const TYPE_PRIORITY: Record<WebmentionType, number> = {
   mention: 0,
   like: 1,
@@ -53,10 +42,8 @@ function anchorMarkerTypes(tag: string): WebmentionType[] {
 }
 
 /**
- * Classify a verified webmention source: the strongest mf2 marker whose
- * anchor resolves to the target's canonical URL, `mention` when none
- * does. URL comparison reuses `normalizeForMatch`, so the equality
- * classes are exactly the link verification's.
+ * Strongest mf2 marker on an anchor resolving to the target canonical URL;
+ * URL equality is exactly the link verification's (`normalizeForMatch`).
  */
 export function classifyWebmentionType(html: string, sourceUrl: string, targetCanonicalUrl: string): WebmentionType {
   const wanted = normalizeForMatch(targetCanonicalUrl)

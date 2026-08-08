@@ -28,12 +28,8 @@ export interface EntityMutations<TInput extends UpsertMetaInputBase, TAdminDto> 
 }
 
 /**
- * The five-function meta-mutation skeleton every content entity shares:
- * resolve slug → reserve in-transaction → meta write → relation/registry
- * sync → post-commit side effects, with slug unique-constraint → CONFLICT
- * mapping. All entity behavior attaches through the descriptor hooks —
- * see `entities/descriptor.ts`. Restore re-claims the slug inside the
- * transaction and space-joins its warning ahead of `afterRestore`'s.
+ * The five-function meta-mutation skeleton every content entity shares;
+ * all entity behavior attaches through the descriptor hooks.
  */
 export function makeEntityMutations<
   TMeta extends MetaRowBase,
@@ -48,10 +44,8 @@ export function makeEntityMutations<
   const { repos, mutations } = descriptor
 
   /**
-   * `db.transaction` without drizzle's Promise-guard conditional — the
-   * guard refuses UNRESOLVED generic returns even when the callback is
-   * provably sync (drizzle can't know `TMeta` isn't a Promise). Every
-   * callback here is sync by construction (node:sqlite).
+   * `db.transaction` without drizzle's Promise-guard conditional —
+   * every callback here is sync by construction (node:sqlite).
    */
   function syncTransaction<T>(db: Database, fn: (tx: Database) => T): T {
     return unsafeCast<(fn: (tx: Database) => T) => T>(db.transaction.bind(db))(fn)
@@ -69,16 +63,13 @@ export function makeEntityMutations<
     const now = new Date()
     try {
       const row = syncTransaction(db, (tx) => {
-        // Slug rows are checked + inserted in one transaction; writers
-        // serialise on the single connection, so concurrent creation with
-        // the same slug serialises.
+        // Check + insert in one transaction; writers serialise on the single connection.
         reserveSlugInTransaction(tx, descriptor.entityType, slug, undefined, {
           findOwnMetaBySlugForUpdate: repos.findMetaBySlugForUpdate,
         })
         const inserted = repos.insertMeta(
           tx,
-          // Shared columns + insertExtras build the row structurally; the
-          // table union guarantees the shape at runtime.
+          // Shared columns + insertExtras build the row; the table union guarantees the shape.
           unsafeCast<TNew>({
             slug,
             title: input.title,
@@ -131,10 +122,7 @@ export function makeEntityMutations<
           webmentionsEnabled: input.webmentionsEnabled ?? existing.webmentionsEnabled,
           showToc: input.showToc ?? existing.showToc,
           showUpdated: input.showUpdated ?? existing.showUpdated,
-          // `publishedAt: null` is the explicit cancel-schedule signal (vs
-          // `undefined` = leave untouched): drop the future timestamp and
-          // flip back to unpublished so the live gate stays closed — the
-          // user asked to cancel the schedule, not to publish now.
+          // `null` cancels the schedule — drop the timestamp, flip back to unpublished.
           publishedAt: input.publishedAt === undefined ? existing.publishedAt : (input.publishedAt ?? now),
           ...(input.publishedAt === null ? { published: false } : {}),
           ...mutations.updateExtras(input, existing),
@@ -151,8 +139,7 @@ export function makeEntityMutations<
         throw new DomainError('NOT_FOUND', `${descriptor.label}不存在或已被删除。`)
       }
       await mutations.afterMutation?.(db, updated, 'update')
-      // `publishedAt` may have been set, moved, or cancelled — re-arm the
-      // scheduled-publish timer (no-op until the scheduler is started).
+      // `publishedAt` may have been set/moved/cancelled — re-arm the timer (no-op until started).
       rescheduleScheduledPublish()
       const extras = await mutations.mutationExtras?.(db, updated, { kind: 'upsert', input })
       return descriptor.adminDto.project(updated, extras)
@@ -188,9 +175,7 @@ export function makeEntityMutations<
     const meta = repos.findMetaById(db, id)
     descriptor.access.assertAccess(meta, viewer)
 
-    // Gather everything the post-commit side effects need inside the
-    // transaction so a failed restore never touches external state
-    // (posts: the search index).
+    // Gather post-commit needs inside the tx so a failed restore never touches external state.
     const { restored, slugWarning, ctx } = db.transaction((tx) => {
       const ok = repos.restoreMeta(tx, id)
       let slugConflict: string | undefined

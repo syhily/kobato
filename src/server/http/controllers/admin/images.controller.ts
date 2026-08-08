@@ -68,10 +68,8 @@ const recalculateThumbhash = authorProc
     return { image }
   })
 
-// oRPC RPC protocol supports `Blob` inputs natively (the standard
-// serializer emits a `multipart/form-data` envelope when a Blob is
-// present anywhere in the input tree). Clients pass the `File` from
-// the upload dialog as `file`; oRPC client + handler do the rest.
+// oRPC serializes `Blob` inputs as multipart/form-data natively — the
+// upload dialog's `File` passes straight through.
 const upload = authorProc
   .route({ method: 'POST', path: '/admin/images/upload' })
   .input(

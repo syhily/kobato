@@ -20,12 +20,9 @@ export const post = sqliteTable(
     og: text('og'),
     published: integer('published', { mode: 'boolean' }).notNull().default(true),
     commentsEnabled: integer('comments_enabled', { mode: 'boolean' }).notNull().default(true),
-    // Per-post kill switch for the public webmention block, ANDed with
-    // the global `blog.webmentions.webmention.displayOnPosts` setting.
+    // Per-post kill switch for the public webmention block, ANDed with the global `blog.webmentions.webmention.displayOnPosts` setting.
     webmentionsEnabled: integer('webmentions_enabled', { mode: 'boolean' }).notNull().default(true),
     showToc: integer('show_toc', { mode: 'boolean' }).notNull().default(false),
-    // Same semantics as `page.show_updated` — defaults false; flip on
-    // displayed in the meta row.
     showUpdated: integer('show_updated', { mode: 'boolean' }).notNull().default(false),
     visible: integer('visible', { mode: 'boolean' }).notNull().default(true),
     publishedAt: integer('published_at', { mode: 'timestamp_ms' })
@@ -36,7 +33,6 @@ export const post = sqliteTable(
     firstPublishedAt: integer('first_published_at', { mode: 'timestamp_ms' }),
     /** Author who created the post. NULL for legacy migrated posts. */
     authorId: integer('author_id'),
-    // Post-specific taxonomy fields
     categoryId: integer('category_id').references(() => category.id, { onDelete: 'set null' }),
     alias: text('alias', { mode: 'json' })
       .notNull()
@@ -45,18 +41,14 @@ export const post = sqliteTable(
     pinnedAt: integer('pinned_at', { mode: 'timestamp_ms' }),
   },
   (table) => [
-    // `slug` already has a UNIQUE constraint (implicit unique index);
-    // no need for a redundant non-unique index.
+    // No `idx_post_slug`: the slug UNIQUE constraint already creates the implicit index.
     index('idx_post_deleted_at').on(table.deletedAt),
     index('idx_post_category_id').on(table.categoryId),
     index('idx_post_published_at').on(table.publishedAt),
     index('idx_post_first_published_at').on(table.firstPublishedAt),
     index('idx_post_pinned_at').on(table.pinnedAt),
     index('idx_post_catalog').on(table.deletedAt, table.published, table.firstPublishedAt),
-    // Covering index for the public live-gate COUNT (`countPublicPosts`,
-    // audit P1-23): without it EXPLAIN shows a full `SCAN post` on every
-    // home/tag listing request; with it the count is
-    // `SEARCH post USING COVERING INDEX idx_post_live_gate` — index-only.
+    // Covering index for the public live-gate COUNT (`countPublicPosts`, audit P1-23) — makes it index-only.
     index('idx_post_live_gate').on(
       table.deletedAt,
       table.published,

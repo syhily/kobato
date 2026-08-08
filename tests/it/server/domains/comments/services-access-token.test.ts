@@ -12,10 +12,8 @@ import { oneTimeToken } from '@/server/infra/db/schema/one-time-token'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
 
-// Everything runs against the real engine — the canonicalize pipeline is
-// real (plain paragraph bodies skip the Shiki / KaTeX renderers) and the
-// content-invalidation door really clears the `kv_cache` bucket. Only the
-// outbound email stays mocked (a true external).
+// Everything runs against the real engine (canonicalize pipeline, kv_cache
+// invalidation); only the outbound email stays mocked.
 vi.mock('@/server/domains/comments/services/email', () => ({
   sendApprovedComment: vi.fn(async () => undefined),
   sendNewComment: vi.fn(async () => undefined),
@@ -82,8 +80,7 @@ describe('comments/services/moderate — approveComment', () => {
   it('flips is_pending=false and clears the comments cache bucket', async () => {
     const u1 = await seedUser()
     const id = await seedComment({ userId: u1, isPending: true })
-    // Pre-seed the bucket the `{ entity: 'comment' }` invalidation must
-    // clear, plus a control row in another bucket that must survive.
+    // Pre-seed the bucket the invalidation must clear, plus a surviving control row.
     await db
       .insert(kvCache)
       .values({ key: 'comments:latest', bucket: 'comments', value: [], blob: null, expiresAt: null })
@@ -283,8 +280,7 @@ describe('comments/services/token — cleanupExpiredTokens', () => {
   it('skips entries whose stored payload is not a payload object', async () => {
     const { cleanupExpiredTokens } = await import('@/server/domains/comments/services/token')
     const token = 'bad-json-' + Math.random().toString(36).slice(2)
-    // The json column accepts a bare JSON string; the shape guard reads
-    // it as a miss.
+    // The json column accepts a bare JSON string; the shape guard reads it as a miss.
     await db.insert(oneTimeToken).values({
       key: `comment:token:${token}`,
       payload: 'not-a-payload-object',
@@ -333,9 +329,7 @@ describe('comments/services/token — verifyCommentOwnership', () => {
 
 describe('comments/services/access — verifyCommentAccess', () => {
   it('short-circuits with ok=true for an admin session, no token rows needed', async () => {
-    // Behavioral pin for the admin bypass: the cookie passes through
-    // untouched and access is granted with an empty token jar — the
-    // ownership lookup never has anything to verify.
+    // Admin bypass: access is granted with an empty token jar.
     const { verifyCommentAccess } = await import('@/server/domains/comments/services/access')
     const r = await verifyCommentAccess(db, {}, '1', { id: '1', role: 'admin' })
     expect(r.ok).toBe(true)

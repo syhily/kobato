@@ -3,8 +3,8 @@ import { createContext, use } from 'react'
 import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
 
 /**
- * Token-claimed ownership of one comment. `expiresAt` (ms epoch) backs the
- * "editable for X more minutes" hint; absent when the token carries no expiry.
+ * Token-claimed ownership of one comment; `expiresAt` (ms epoch) is absent
+ * when the token carries no expiry.
  */
 export interface MyCommentOwnership {
   expiresAt?: number
@@ -15,10 +15,8 @@ export interface CommentTreeState {
   rootsLoaded: number
   rootsTotal: number
   replyToId: number
-  /**
-   * Owned ("my") comments keyed by stringified comment id. Lives in the reducer
-   * so the ownership map and the tree update atomically in one dispatch.
-   */
+  /** Owned comments keyed by stringified id; lives in the reducer so ownership
+   *  and the tree update atomically in one dispatch. */
   myComments: Map<string, MyCommentOwnership>
 }
 
@@ -34,8 +32,8 @@ export type CommentTreeAction =
   | { type: 'dismissMyComment'; id: string }
 
 /**
- * Hot tree state — a new identity on every dispatch. Only the orchestrator's
- * own slots (Header / List / LoadMore) subscribe; leaves never read this.
+ * Hot tree state — a new identity per dispatch; only the orchestrator's own
+ * slots (Header / List / LoadMore) subscribe.
  */
 export interface CommentsTreeContextValue {
   commentKey: string
@@ -44,9 +42,8 @@ export interface CommentsTreeContextValue {
 }
 
 /**
- * Viewer identity + ownership. Referentially stable across tree dispatches (the
- * reducer preserves the `myComments` map reference unless ownership itself changes),
- * so leaves subscribed here do not re-render on reply, edit, approve, or load-more.
+ * Viewer identity + ownership — referentially stable across tree dispatches, so
+ * leaves subscribed here do not re-render on reply, edit, approve, or load-more.
  */
 export interface CommentsIdentityContextValue {
   admin: boolean
@@ -54,10 +51,7 @@ export interface CommentsIdentityContextValue {
   myComments: ReadonlyMap<string, MyCommentOwnership>
 }
 
-/**
- * The reply-form slot — hot on reply-toggle only. Leaves subscribe to learn
- * whether they host the form; everything else about them stays stable.
- */
+/** The reply-form slot — hot on reply-toggle only. */
 export interface CommentsReplySlotContextValue {
   activeReplyToId: number
   replyForm: React.ReactNode

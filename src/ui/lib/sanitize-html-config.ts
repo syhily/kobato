@@ -1,7 +1,5 @@
-// Strategy data for `sanitizeHtmlString`, shared by the two engine
-// implementations (sanitize-html on the server, DOMPurify in the browser).
-// Keep this module dependency-free so both engines and the facade can
-// import it in either bundle.
+// Strategy data shared by the two sanitize engines. Dependency-free so both
+// engines and the facade can import it in either bundle.
 
 export type SafeHtmlStrategy = 'shiki' | 'math' | 'email' | 'audit' | 'preview'
 
@@ -13,8 +11,7 @@ export interface SanitizeStrategyConfig {
   styles?: Readonly<Record<string, readonly RegExp[]>>
 }
 
-// `data-*` attributes drive Tiptap, Base UI, and shiki state on inline
-// nodes in the admin editor.
+// `data-*` attributes drive Tiptap, Base UI, and shiki state on inline nodes.
 const DATA_ATTR = /^data-.*$/
 
 const BASE_TAGS = [
@@ -52,10 +49,8 @@ const BASE_ATTRIBUTES = ['class', 'href', 'title', 'alt', 'target', 'rel', DATA_
 
 const BASE_SCHEMES = ['http', 'https', 'mailto'] as const
 
-// Shiki's syntax highlighter emits inline `style="color:#…"` on every
-// token span. We restrict the allow-list to the property/value shapes
-// shiki actually produces so an attacker can't smuggle in
-// `expression()` / `url(javascript:)` / etc. via a hand-crafted PT body.
+// Restricted to the property/value shapes shiki actually emits, so a hand-crafted
+// body can't smuggle in `expression()` / `url(javascript:)` etc.
 const SHIKI_ALLOWED_STYLES: Readonly<Record<string, readonly RegExp[]>> = {
   color: [/^#?[0-9a-fA-F]+$/, /^rgba?\([^;]*\)$/i, /^hsla?\([^;]*\)$/i, /^inherit$/i, /^var\(/],
   'background-color': [/^#?[0-9a-fA-F]+$/, /^rgba?\([^;]*\)$/i, /^hsla?\([^;]*\)$/i, /^inherit$/i, /^var\(/],

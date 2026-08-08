@@ -28,7 +28,6 @@ const { scheduleNextArchive, rescheduleArchive, wireArchiveScheduler } =
   await import('@/server/domains/audit/services/scheduler')
 const { stopAllScheduledJobs } = await import('@/server/infra/scheduler-utils')
 
-/** Hydrate the real settings snapshot with the timeZone the scheduler reads. */
 function seedHydratedSettings() {
   setBlogSettingsBundleForTests({
     ...TEST_BLOG_SETTINGS_BUNDLE,

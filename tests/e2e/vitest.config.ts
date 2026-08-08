@@ -1,14 +1,10 @@
 import { defineConfig } from 'vitest/config'
 
-// True HTTP e2e — runs against a live kobato instance (the SEA binary
-// booted by scripts/sea/e2e.ts), never in-process. NOT part of the
-// default `pnpm test` run (root vitest.config.ts lists projects
-// explicitly); drive it via `pnpm run sea:e2e`, which boots the instance
-// and injects the KOBATO_E2E_* env contract.
+// True HTTP e2e — runs against a live kobato instance (SEA binary via
+// scripts/sea/e2e.ts), never in-process. Not part of `pnpm test`; drive
+// via `pnpm run sea:e2e`, which injects the KOBATO_E2E_* env contract.
 export default defineConfig({
-  // The orchestrator invokes this file via --config from the repo root;
-  // without an explicit root the include below would match every test in
-  // the repo.
+  // Without an explicit root, `include` would match every test in the repo.
   root: import.meta.dirname,
   resolve: { tsconfigPaths: true },
   test: {

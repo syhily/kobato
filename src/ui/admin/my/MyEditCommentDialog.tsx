@@ -19,13 +19,9 @@ import { Label } from '@/ui/components/label'
 import { EMPTY_COMMENT_BODY, isCommentBodyBlank } from '@/ui/public/comments/comment-body-helpers'
 import { CommentBodyEditor } from '@/ui/public/comments/CommentBodyEditor'
 
-// Self-edit dialog for `/admin/me/comments`. Differs from the
-// admin `EditCommentDialog`:
-// - posts to `comment.updateOwn` (visitor-allowed) instead of `comment.edit` (admin)
-// - takes the body straight from the loader-provided `MyCommentItem.body`
-//   so there's no extra getRaw round-trip
-// - server enforces the 30-min auto-approve vs re-pend rule; the UI
-//   surfaces both outcomes through the same success path
+// Self-edit dialog for `/admin/me/comments`: posts to `comment.updateOwn`
+// (visitor-allowed), takes the body from the loader item, and the server
+// enforces the 30-min auto-approve vs re-pend rule.
 export interface MyEditCommentDialogProps {
   target: { id: string; body: CommentBody } | null
   onClose: () => void
@@ -41,8 +37,7 @@ export function MyEditCommentDialog({ target, onClose, onSaved }: MyEditCommentD
   const [body, setBody] = useState<CommentBody>(EMPTY_COMMENT_BODY)
   const [bodyKey, setBodyKey] = useState(0)
   const [lastTargetId, setLastTargetId] = useState(target?.id)
-  // Reset on identity change, not on every render — `target` is freshly
-  // constructed by the parent on each row click.
+  // Reset on identity change — `target` is freshly constructed per row click.
   if (target?.id !== lastTargetId) {
     setLastTargetId(target?.id)
     if (!target) {

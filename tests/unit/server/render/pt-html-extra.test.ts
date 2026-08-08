@@ -1,12 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { MusicEmbedResolver } from '@/server/domains/pt/embeds'
-// Extends pt-html-branches.test.ts — fills in the remaining
-// uncovered branches: image alt/width/height/caption, code-block RSS
-// fallback, math svg/mathml web paths, twoColumn RSS concat, the
-// footnote section emit, heading-id map fallback, list/li marks, the
-// `solution`/`footnoteDefinition` music collectors, and inline marks
-// (strong/em/code/footnoteRef) including the undefined-value short-circuits.
+// Extends pt-html-branches.test.ts — fills in the remaining uncovered branches.
 
 import { renderPortableTextToHtml } from '@/server/render/pt-html'
 
@@ -233,7 +228,6 @@ describe('render/pt-html — heading id map fallback', () => {
       [''], // empty → deriveSlug path
       resolveMusicEmbeds,
     )
-    // deriveSlug('Hello World') should produce a slug.
     expect(html).toMatch(/id="hello-world"/)
   })
 })
@@ -264,7 +258,6 @@ describe('render/pt-html — lists and inline marks', () => {
       [],
       resolveMusicEmbeds,
     )
-    // bullet + number list components each render their <li> children.
     expect(html).toContain('<li>one</li>')
     expect(html).toContain('<li>two</li>')
   })

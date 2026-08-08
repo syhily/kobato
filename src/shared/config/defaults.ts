@@ -2,10 +2,7 @@ import type { RateLimitSettings } from '@/shared/config/types'
 import type { Assert, Equals } from '@/shared/contracts/primitives'
 
 // Bounds shared by the server section schema and the admin form's
-// min/max attributes: 60s ≤ window ≤ 24h (sub-minute windows treadmill
-// the counter; >24h could lock a returning visitor out for a day over
-// one typo), and 1 ≤ maxAttempts ≤ 1000 (0 would deny everyone; 1000 is
-// a sanity ceiling).
+// min/max attributes: 60s ≤ window ≤ 24h, 1 ≤ maxAttempts ≤ 1000.
 export const rateLimitBounds = {
   windowSeconds: { min: 60, max: 60 * 60 * 24 },
   maxAttempts: { min: 1, max: 1000 },
@@ -37,11 +34,8 @@ export const rateLimitDefaults = {
   passkeyDeleteIp: { windowSeconds: 60 * 5, maxAttempts: 10 },
 } as const
 
-// Compile-time half of the bucket parity contract (P1-26): the
-// `RateLimitSettings` interface has no runtime presence, so its key set
-// is pinned to the defaults here — adding a bucket to the interface (or
-// the infra limiter, which is type-bound to it) without a defaults entry
-// fails the typecheck instead of drifting into a NaN-window fallback.
-// The runtime half lives in `tests/unit/shared/contracts/
-// rate-limit-buckets.test.ts`.
+// Compile-time half of the bucket parity contract (P1-26): the key set
+// of `RateLimitSettings` is pinned to the defaults here, so adding a
+// bucket without a defaults entry fails the typecheck. The runtime half
+// lives in `tests/unit/shared/contracts/rate-limit-buckets.test.ts`.
 type _rateLimitDefaultsKeyParity = Assert<Equals<keyof typeof rateLimitDefaults, keyof RateLimitSettings>>

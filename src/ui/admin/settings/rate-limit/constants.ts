@@ -252,14 +252,10 @@ export const BUCKET_META: Record<
   },
 }
 
-// Groupings derived from each bucket's `group` field. First-appearance
-// order in BUCKET_META fixes both the group order and the key order
-// within a group, so rendering stays deterministic.
+// Grouped by `group`, ordered by first appearance in BUCKET_META.
 export const GROUPS: { label: string; keys: BucketKey[] }[] = (() => {
   const groups = new Map<string, BucketKey[]>()
-  // BUCKET_META is a full Record<BucketKey, …>, so its entries are
-  // exactly the bucket key set — the same narrowing Object.fromEntries
-  // needs elsewhere.
+  // BUCKET_META is a full Record — its entries are exactly the bucket key set.
   for (const [key, meta] of unsafeCast<[BucketKey, (typeof BUCKET_META)[BucketKey]][]>(Object.entries(BUCKET_META))) {
     const keys = groups.get(meta.group)
     if (keys) {

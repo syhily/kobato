@@ -85,17 +85,14 @@ describe('snapshot: PendingModerationPanel', () => {
     )
     expect(html).toContain('待审评论')
     expect(html).toContain('等待审核与作者删除申请合并展示')
-    // Refresh + go-to-moderation actions.
     expect(html).toContain('刷新')
     expect(html).toContain('进入评论管理')
     expect(html).toContain('/admin/comments?status=pending')
-    // First row — an approval item.
     expect(html).toContain('访客·林')
     expect(html).toContain('等待审核')
     expect(html).toContain('这篇写得真好，收藏了。')
     expect(html).toContain('《夜航星图》')
     expect(html).toContain('通过')
-    // Second row — a deletion item.
     expect(html).toContain('旧读者')
     expect(html).toContain('等待删除')
     expect(html).toContain('同意删除')
@@ -109,7 +106,6 @@ describe('snapshot: PendingModerationPanel', () => {
     )
     expect(html).toContain('待审评论')
     expect(html).toContain(line)
-    // No row chrome in the empty branch.
     expect(html).not.toContain('通过')
     expect(html).not.toContain('同意删除')
   })

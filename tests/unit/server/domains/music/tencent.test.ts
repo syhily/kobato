@@ -23,8 +23,6 @@ function mockFetchError(status: number, statusText: string) {
   )
 }
 
-// ── Fixture data ──────────────────────────────────────────────────────────────
-
 function makeRawSong(overrides: Record<string, unknown> = {}) {
   return {
     mid: '001ABCDEF',
@@ -40,8 +38,6 @@ function makeRawSong(overrides: Record<string, unknown> = {}) {
     ...overrides,
   }
 }
-
-// ── decodeHtmlEntities ──────────────────────────────────────────────────────
 
 describe('decodeHtmlEntities', () => {
   it('decodes &amp;', () => {
@@ -89,8 +85,6 @@ describe('decodeHtmlEntities', () => {
   })
 })
 
-// ── toTrack (via getTrack) ──────────────────────────────────────────────────
-
 describe('tencent provider getTrack', () => {
   it('maps raw song fields to ProviderTrack', async () => {
     const rawSong = makeRawSong()
@@ -126,8 +120,6 @@ describe('tencent provider getTrack', () => {
     vi.unstubAllGlobals()
   })
 })
-
-// ── search ──────────────────────────────────────────────────────────────────
 
 describe('tencent provider search', () => {
   it('returns metadata-only hits without resolved URLs', async () => {
@@ -174,8 +166,6 @@ describe('tencent provider search', () => {
     vi.unstubAllGlobals()
   })
 })
-
-// ── resolveAudioUrl ─────────────────────────────────────────────────────────
 
 describe('tencent provider resolveAudioUrl', () => {
   it('falls back through quality tiers', async () => {
@@ -300,8 +290,6 @@ describe('tencent provider resolveAudioUrl', () => {
   })
 })
 
-// ── resolveCoverUrl ─────────────────────────────────────────────────────────
-
 describe('tencent provider resolveCoverUrl', () => {
   it('returns direct cover URL template', async () => {
     const track = {
@@ -318,8 +306,6 @@ describe('tencent provider resolveCoverUrl', () => {
     expect(url).toBe('https://y.gtimg.cn/music/photo_new/T002R300x300M000albumMid001.jpg?max_age=2592000')
   })
 })
-
-// ── getLyric ────────────────────────────────────────────────────────────────
 
 describe('tencent provider getLyric', () => {
   it('handles base64 + callback wrapper stripping', async () => {
@@ -442,8 +428,6 @@ describe('tencent provider getLyric', () => {
     vi.unstubAllGlobals()
   })
 })
-
-// ── error handling ──────────────────────────────────────────────────────────
 
 describe('tencent provider error handling', () => {
   it('throws on non-2xx API response', async () => {

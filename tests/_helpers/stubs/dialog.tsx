@@ -1,16 +1,6 @@
-// SSR-safe double for `@/ui/components/dialog`. The real dialog is a Base UI
-// portal that mounts its content into `document.body`, which
-// `renderToStaticMarkup` never runs — under SSR the portal renders nothing,
-// so snapshot suites swap in these static stand-ins that render their
-// children inline with the same `data-slot` hooks the real components emit.
-//
-// Usage in a test file:
-//
-//   vi.mock('@/ui/components/dialog', () => import('#/_helpers/stubs/dialog'))
-//
-// Only the exports the admin views consume are stubbed; the real module also
-// exports DialogTrigger / DialogClose / DialogPortal / DialogBackdrop, which
-// no snapshot suite renders.
+// SSR-safe double for `@/ui/components/dialog` — the real one portals
+// into document.body, which renderToStaticMarkup never runs. Only the
+// exports the admin views consume are stubbed.
 
 import type { ReactNode } from 'react'
 

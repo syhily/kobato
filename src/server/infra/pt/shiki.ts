@@ -48,9 +48,6 @@ import solarizedLight from 'shiki/themes/solarized-light.mjs'
 
 import { HIGHLIGHT_LANGUAGES } from '@/shared/constants/languages'
 
-// Shiki transformer list used by the PT prerender highlighting pass
-// (`@/server/infra/pt/prerender`) when it pre-renders code blocks to HTML
-// at SSR time.
 export const shikiTransformers = () => [
   transformerNotationDiff({ matchAlgorithm: 'v3' }),
   transformerNotationHighlight({ matchAlgorithm: 'v3' }),
@@ -59,28 +56,16 @@ export const shikiTransformers = () => [
   transformerNotationErrorLevel({ matchAlgorithm: 'v3' }),
 ]
 
-// Dual-theme highlighting. With `themes: SHIKI_THEMES` + `defaultColor: false`
-// Shiki emits each token with both `--shiki-light` and `--shiki-dark` CSS
-// custom properties on the inline `style` attribute; the page CSS then picks
-// whichever one corresponds to the active `.dark` class, so the same HTML
-// renders correctly in both modes without re-highlighting on theme switch.
-// Picking solarized-dark as the pair for solarized-light keeps the token
-// palette correspondence one-to-one (base03↔base3, base01↔base1, …).
+// Dual-theme: `defaultColor: false` emits both `--shiki-light` and
+// `--shiki-dark` vars; the solarized pair matches the palette one-to-one.
 export const SHIKI_THEMES = {
   light: 'solarized-light',
   dark: 'solarized-dark',
 } as const
 
-// Fine-grained Shiki wiring (replacing the full `shiki` bundle — importing
-// `shiki` costs ~10 MB of server bundle in grammars/themes nothing here
-// uses). The 36 language modules below mirror `HIGHLIGHT_LANGUAGES`
-// one-to-one (keep them in sync — `SHIKI_SUPPORTED_LANGUAGES` derives the
-// runtime gate from the same list). Each module registers its embedded
-// grammars alongside (vue pulls html/css/js, ruby pulls haml/yaml, tex
-// pulls r, …), so embedded-language highlighting behaves exactly like the
-// full bundle. The Oniguruma engine's wasm arrives as base64-inlined JS
-// (`shiki/wasm` → @shikijs/engine-oniguruma/wasm-inlined) — plain bundle
-// content, no separate asset, identical to what the full bundle shipped.
+// Fine-grained wiring: the 36 modules below mirror `HIGHLIGHT_LANGUAGES`
+// one-to-one (keep in sync); wasm arrives base64-inlined, so there is no
+// separate asset.
 const SHIKI_LANGUAGE_MODULES = [
   bash,
   shell,
@@ -123,21 +108,14 @@ const SHIKI_LANGUAGE_MODULES = [
 const SHIKI_THEME_MODULES = [solarizedLight, solarizedDark]
 
 /**
- * Lookup view of `HIGHLIGHT_LANGUAGES` for the prerender runtime gate —
- * equivalent to the previous `block.language in bundledLanguages` check
- * (all 36 names are full-bundle grammars or aliases, verified). A future
- * shiki release that drops one now fails at BUILD time (the static import
- * breaks) instead of silently degrading to plain text.
+ * Lookup view of `HIGHLIGHT_LANGUAGES`; a shiki release dropping a grammar
+ * fails at build time instead of silently degrading to plain text.
  */
 export const SHIKI_SUPPORTED_LANGUAGES: ReadonlySet<string> = new Set(HIGHLIGHT_LANGUAGES)
 
 /**
- * Create the project's Shiki highlighter: the 36 explicit language
- * registrations + the two solarized themes, on the Oniguruma engine (the
- * exact wiring the full bundle's `createHighlighter` used). Callers wrap
- * this in their own lazy singleton (`createPromiseMemo`) — shiki memoizes
- * the wasm init process-wide, so each singleton only re-registers
- * grammars.
+ * The 36 languages + two solarized themes on the Oniguruma engine.
+ * Callers wrap this in their own lazy singleton (`createPromiseMemo`).
  */
 export function createShikiHighlighter() {
   return createHighlighterCore({

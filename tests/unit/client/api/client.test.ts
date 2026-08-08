@@ -4,7 +4,6 @@ const headersFn = vi.fn<() => Record<string, string>>()
 const lastUrlFn = { current: null as (() => string) | null }
 
 function RPCLinkMock(this: any, opts: { url: () => string; headers: () => Record<string, string> }) {
-  // Capture the headers callback so tests can inspect it.
   headersFn.mockImplementation(opts.headers)
   lastUrlFn.current = opts.url
   this.url = opts.url

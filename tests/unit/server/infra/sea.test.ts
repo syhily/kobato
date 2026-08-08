@@ -7,10 +7,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { getEmbeddedAsset, isSea, listEmbeddedAssetKeys, requireExternal, resolveCacheDir } from '@/server/infra/sea'
 
-// Unit tests for the SEA runtime helpers. Vitest never runs as a single
-// executable, so every SEA-specific read path must degrade gracefully
-// (null / [] / false) and `requireExternal` must behave exactly like a
-// static import against the real node_modules tree.
+// Unit tests for the SEA runtime helpers. Under vitest every SEA-specific
+// read path must degrade gracefully (null / [] / false) and requireExternal
+// must behave like a static import against the real node_modules tree.
 
 const tmpDirs: string[] = []
 
@@ -45,16 +44,13 @@ describe('infra/sea — requireExternal', () => {
   it('resolves packages from the real node_modules tree', () => {
     const sharp = requireExternal<typeof sharpDefault>('sharp')
     expect(typeof sharp).toBe('function')
-    // Callable: the constructor returns a pipeline without touching the
-    // input bytes until an output method runs.
+    // Callable: returns a pipeline without touching input bytes until an output method runs.
     const pipeline = sharp(Buffer.alloc(8))
     expect(typeof pipeline.metadata).toBe('function')
   })
 
   it('resolves packages from KOBATO_NATIVES_DIR when set', () => {
-    // Mirror the production layout: KOBATO_NATIVES_DIR is the extracted
-    // `<cache>/natives-<hash>/node_modules` tree, so the fake package lives
-    // inside it and resolution walks up from the noop.cjs shim.
+    // KOBATO_NATIVES_DIR mirrors the extracted `<cache>/natives-<hash>/node_modules` tree.
     const dir = makeTmpDir()
     const nativesDir = join(dir, 'node_modules')
     const pkgDir = join(nativesDir, 'fake-native-pkg')

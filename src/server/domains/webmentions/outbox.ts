@@ -15,28 +15,19 @@ import { requireBlogSettingsSection } from '@/shared/config/getters'
 
 const log = getLogger('webmentions.outbox')
 
-// Sequential single-worker send loop: a small batch per wake-up keeps the
-// request rate at any single target host trivially low (the batch cannot
-// hold two rows for the same target URL — the pair UNIQUE forbids it —
-// and consecutive batches are at least OUTBOX_MIN_DELAY_MS apart, so even
-// a full 50-link burst spaces its sends out instead of firing
-// back-to-back).
+// Sequential send loop: small batches ≥OUTBOX_MIN_DELAY_MS apart, so even a burst spaces its sends out.
 export const OUTBOX_BATCH_SIZE = 5
 export const OUTBOX_MAX_ATTEMPTS = 5
 
-// The response body is worthless to the sender (the W3C success payload
-// is a status code, sometimes a bare URL string) — cap it anyway.
+// The response body is worthless (W3C success is a status code) — cap it.
 const MAX_RESPONSE_BYTES = 16 * 1024
 
-/** min(2^n × 60s, 12h): 1m → 2m → 4m → 8m → 16m across the five attempts —
- *  endpoint outages are usually minute-scale, so the schedule stays under
- *  an hour and far below the scheduler's long-delay clamp. */
+/** min(2^n × 60s, 12h): 1m → 2m → 4m → 8m → 16m across the five attempts. */
 export function outboxBackoffMs(attempts: number): number {
   return Math.min(2 ** attempts * 60_000, 12 * 3_600_000)
 }
 
-/** Honest sender UA mirroring the receiver's convention, built from the
- *  configured site origin rather than hardcoded. */
+/** Sender UA built from the configured site origin. */
 function senderUa(): string {
   const website = requireBlogSettingsSection('siteIdentity').website
   return `Kobato Webmention Sender (+${website})`
@@ -48,9 +39,7 @@ export type SendResult =
   | { kind: 'rejected'; status: number }
   | { kind: 'retry'; error: string }
 
-/** POST the form-encoded mention through the shared SSRF guard — the
- *  protocol allowlist, host blocklist and per-hop DNS checks all apply to
- *  the endpoint exactly as they did during discovery. */
+/** POST the form-encoded mention through the shared SSRF guard. */
 export async function sendWebmention(endpoint: string, sourceUrl: string, targetUrl: string): Promise<SendResult> {
   const result = await safeFetch(endpoint, {
     method: 'POST',
@@ -85,10 +74,8 @@ function failureMessage(error: string): string {
   return error.length > 200 ? `${error.slice(0, 200)}…` : error
 }
 
-/** One more attempt against the row — or the `failed` terminal state when
- *  the budget is spent. `attempts` counts PROCESSING tries (discovery and
- *  send alike): a target whose page never answers must reach a terminal
- *  state just as much as one whose endpoint keeps 500ing. */
+/** One more attempt, or the `failed` terminal state when the budget is
+ *  spent — attempts count discovery and send alike. */
 async function scheduleRetry(db: Database, row: WebmentionOutboxRow, error: string): Promise<void> {
   const attempts = row.attempts + 1
   if (attempts >= OUTBOX_MAX_ATTEMPTS) {
@@ -99,11 +86,6 @@ async function scheduleRetry(db: Database, row: WebmentionOutboxRow, error: stri
   await markWebmentionOutboxRetry(db, row.id, attempts, new Date(Date.now() + outboxBackoffMs(attempts)), error)
 }
 
-/**
- * Drive one due row: discover the endpoint when missing (terminal
- * `no-endpoint` when undeclared), then POST the mention (terminal `sent`
- * on 2xx, terminal `failed` on 4xx, exponential-backoff retry otherwise).
- */
 export async function processWebmentionOutboxRow(
   db: Database,
   row: WebmentionOutboxRow,
@@ -143,8 +125,7 @@ export async function runWebmentionOutboxBatch(db: Database, hooks: OutboxHooks 
     try {
       await processWebmentionOutboxRow(db, row, hooks)
     } catch (error: unknown) {
-      // A row must never kill the batch: whatever threw (a hook, a DB
-      // hiccup) counts as one retryable failure and the loop moves on.
+      // A row must never kill the batch: whatever threw counts as one retryable failure.
       log.warn('Webmention outbox row processing threw', { id: row.id, error: String(error) })
       await scheduleRetry(db, row, error instanceof Error ? error.message : String(error)).catch(() => undefined)
     }

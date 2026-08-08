@@ -39,11 +39,7 @@ export interface PmListNode extends PmBlockNode {
 /** Regenerate-or-keep `_key` policy shared by every PM→PT converter. */
 export type BridgeEnsureKey = (attrs: Record<string, unknown> | undefined) => string
 
-/**
- * Recursion handles passed to the registry's container converters so node
- * modules never import the dispatch table itself (which would be an import
- * cycle: the registry imports the node modules).
- */
+/** Recursion handles for the registry's container converters — node modules must not import the dispatch table (import cycle). */
 export interface BridgeReverseContext {
   ensureKey: BridgeEnsureKey
   pushPmNode: (out: Block[], node: PmNode) => void

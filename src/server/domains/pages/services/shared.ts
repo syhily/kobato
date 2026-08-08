@@ -3,18 +3,12 @@ import type { PageMetaRow } from '@/server/infra/db/types'
 
 import { DomainError } from '@/server/infra/http/errors'
 
-/**
- * Page upsert input: the shared meta fields (see `UpsertMetaInputBase`)
- * plus the page-only friends-widget flag.
- */
 export interface UpsertPageMetaInput extends UpsertMetaInputBase {
   showFriends?: boolean
 }
 
 /**
- * The page access gate: existence only (pages are an admin-only
- * surface, so there is no ownership rule to evaluate — the post
- * counterpart `assertOwnPostOr404` additionally checks `canEditPost`).
+ * Existence-only access gate — pages are admin-only, so no ownership check.
  */
 export function assertPageExists(meta: PageMetaRow | null): asserts meta is PageMetaRow {
   if (meta === null) {

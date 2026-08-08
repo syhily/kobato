@@ -18,20 +18,12 @@ export interface SafeFetchOptions {
   headers?: Record<string, string>
   /** Redirect budget. `0` rejects the first 3xx outright. */
   maxRedirects?: number
-  /** Per-hop veto, evaluated after the SSRF guard but BEFORE the hop is
-   *  fetched. Return `false` to stop with `redirect-vetoed`. Lets callers
-   *  keep domain-specific redirect policy (the avatar default-avatar
-   *  sentinel) without owning the loop. */
+  /** Per-hop veto after the SSRF guard, before the hop is fetched; return `false` to stop with `redirect-vetoed`. */
   shouldFollowRedirect?: (nextUrl: URL) => boolean
-  /** HTTP method (default GET). With a `body`, redirect hops follow the
-   *  fetch spec: 303 (always) and 301/302 (for POST) rewrite the next hop
-   *  to a bodiless GET; 307/308 carry method and body forward. */
+  /** HTTP method (default GET). Redirects follow the fetch spec: 303 (always) and 301/302 (for POST) become a bodiless GET; 307/308 carry forward. */
   method?: string
-  /** Request body for POST-style methods. */
   body?: string
-  /** Return the final response with its body still streaming (cap-guarded
-   *  when `maxBytes` is given) instead of buffering it into `body`. For
-   *  proxy-style callers that forward the upstream body. */
+  /** Return the final response with its body still streaming (cap-guarded when `maxBytes` is given) instead of buffering it into `body`. */
   stream?: boolean
 }
 
@@ -74,9 +66,7 @@ export interface SafeFetchStreamSuccess {
   ok: true
   /** Final URL after any redirects. */
   url: string
-  /** The final response with its body still live (NOT buffered). When
-   *  `maxBytes` was given the body errors mid-stream once the cap is
-   *  exceeded. */
+  /** The final response with its body still live (NOT buffered); with `maxBytes` the body errors mid-stream past the cap. */
   response: Response
 }
 
@@ -93,21 +83,12 @@ function failure(
 }
 
 function isTimeoutError(error: unknown): boolean {
-  // `AbortSignal.timeout` rejects fetch with a DOMException named
-  // 'TimeoutError' (undici). Everything else is a plain network failure.
+  // undici's `AbortSignal.timeout` rejects with a DOMException named 'TimeoutError'.
   return error instanceof Error && error.name === 'TimeoutError'
 }
 
-/** Validate one fetch target (initial URL or redirect hop) against the
- *  protocol allowlist, the shared SSRF guard, and DNS: the hostname is
- *  resolved and EVERY returned address goes through the same blocklist —
- *  a single private result rejects the hop. This closes the "public name
- *  pointing at an internal address" hole (DNS rebinding, internal DNS).
- *  A lookup FAILURE does not reject: the fetch itself cannot connect to
- *  an unresolvable name either and surfaces the network error on its own.
- *  The lookup runs immediately before each hop's fetch, so a rebind would
- *  have to win a millisecond race; full connection pinning would need an
- *  undici Agent (`connect.lookup`), which is not a direct dependency. */
+/** Validate one target against the protocol allowlist, SSRF guard, and DNS:
+ *  every resolved address must pass the blocklist; a lookup failure doesn't reject. */
 async function guardTarget(parsed: URL, url: string): Promise<SafeFetchFailure | null> {
   if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
     return failure('bad-protocol', url)
@@ -115,8 +96,7 @@ async function guardTarget(parsed: URL, url: string): Promise<SafeFetchFailure |
   if (isBlockedFetchHost(parsed.hostname)) {
     return failure('blocked-host', url)
   }
-  // IP literals are fully validated by isBlockedFetchHost (including the
-  // hex/decimal/short-dot/IPv4-mapped variants) — skip the DNS lookup.
+  // IP literals are fully validated by isBlockedFetchHost — skip the DNS lookup.
   const bare =
     parsed.hostname.startsWith('[') && parsed.hostname.endsWith(']') ? parsed.hostname.slice(1, -1) : parsed.hostname
   if (isIP(bare) !== 0) {
@@ -136,10 +116,7 @@ async function guardTarget(parsed: URL, url: string): Promise<SafeFetchFailure |
   return null
 }
 
-/** Wrap a live response body in a byte-counting guard: once the streamed
- *  total exceeds `maxBytes` the stream errors and the upstream body is
- *  cancelled, so a chunked response without Content-Length cannot grow
- *  unbounded downstream either. */
+/** Byte-counting stream guard: past `maxBytes` the stream errors and the upstream body is cancelled. */
 function capByteStream(source: ReadableStream<Uint8Array>, maxBytes: number): ReadableStream<Uint8Array> {
   let total = 0
   return source.pipeThrough(
@@ -222,9 +199,7 @@ export async function safeFetch(
   }
 
   let currentUrl = url
-  // Per-hop request shape: a redirect may rewrite both fields (see the
-  // fetch-spec note on the options above), and the headers copy drops the
-  // content headers when the body does.
+  // Per-hop request shape — a redirect may rewrite method/body and drop content headers.
   let hopMethod = method
   let hopBody = body
   let hopHeaders = headers
@@ -265,9 +240,7 @@ export async function safeFetch(
     if (shouldFollowRedirect !== undefined && !shouldFollowRedirect(nextUrl)) {
       return failure('redirect-vetoed', nextUrl.toString())
     }
-    // Fetch-spec redirect method rewrite: 303 always becomes GET, and
-    // 301/302 rewrite a POST the same way; the content headers die with
-    // the body. 307/308 fall through unchanged.
+    // Fetch spec: 303 (and 301/302 for POST) become a bodiless GET; 307/308 carry forward.
     if (response.status === 303 || ((response.status === 301 || response.status === 302) && hopMethod === 'POST')) {
       hopMethod = 'GET'
       hopBody = undefined

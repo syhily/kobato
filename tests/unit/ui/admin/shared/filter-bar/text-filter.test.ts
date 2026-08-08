@@ -28,7 +28,6 @@ describe('parseTextFilterValue', () => {
 
   it('returns null for an operator outside the field’s vocabulary', () => {
     expect(parseTextFilterValue(JSON.stringify({ op: 'equals', value: 'foo' }), OPERATORS)).toBeNull()
-    // A single-operator field rejects the other comments operator.
     expect(parseTextFilterValue(JSON.stringify({ op: 'does-not-contain', value: 'foo' }), [OPERATORS[0]])).toBeNull()
   })
 

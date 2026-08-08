@@ -28,8 +28,7 @@ export function UserEditForm({ user }: UserEditFormProps) {
   const [useTextOverride, setUseTextOverride] = useState(user.badgeTextColor !== null)
   const [badgeTextColor, setBadgeTextColor] = useState(user.badgeTextColor ?? DEFAULT_BADGE_TEXT_COLOR)
 
-  // Re-seed the draft when a different user object arrives (e.g. after a
-  // refetch) — the React-blessed "adjust state during render" pattern.
+  // Re-seed the draft when a different user object arrives (e.g. after a refetch) — render-phase adjustment pattern.
   const [lastUser, setLastUser] = useState(user)
   if (user !== lastUser) {
     setLastUser(user)

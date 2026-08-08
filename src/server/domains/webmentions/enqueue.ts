@@ -9,15 +9,12 @@ import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { entityCommentUrl } from '@/shared/utils/paths'
 import { tryParseUrl } from '@/shared/utils/safe-url'
 
-// Backstop against pathological bodies, nothing more: the post body is
-// written by the site admin, so this only bounds a paste gone wrong.
+// Backstop against pathological bodies (admin-written), nothing more.
 export const MAX_OUTBOUND_LINKS_PER_POST = 50
 
 /**
- * External http(s) links in a post body — every `link` markDef href,
- * normalized the same way the receive side compares URLs (fragment,
- * default port, trailing slash stripped), deduped, excluding links back
- * to this site (self-mentions are meaningless). Pure and capped.
+ * External http(s) `link` markDef hrefs, deduped, normalized like the
+ * receive side, excluding links back to this site.
  */
 export function extractExternalLinks(body: PortableTextBody, siteHost: string): string[] {
   const seen = new Set<string>()
@@ -31,8 +28,7 @@ export function extractExternalLinks(body: PortableTextBody, siteHost: string): 
       if (def._type !== 'link') {
         continue
       }
-      // normalizeForMatch already rejects non-http(s) hrefs (mailto:,
-      // relative anchors, …) by returning null for them.
+      // normalizeForMatch returns null for non-http(s) hrefs (mailto:, relative…).
       const normalized = normalizeForMatch(def.href)
       if (normalized === null) {
         continue
@@ -51,15 +47,8 @@ export function extractExternalLinks(body: PortableTextBody, siteHost: string): 
 }
 
 /**
- * Enqueue one outbox row per external link in the freshly published body.
- * The upsert dedups on (source, target): already-`sent` rows are left
- * alone, `no-endpoint` / `failed` rows reset for another try, new links
- * land as fresh `pending` rows.
- *
- * A scheduled post (`publishedAt` in the future — the publish hook fires
- * when the revision is promoted, ahead of the public moment) has its
- * waterline pushed to the publish instant: the source page must actually
- * answer 200 when the endpoint verifies it. Returns the enqueued count.
+ * One outbox row per external link (upsert leaves `sent` alone, resets
+ * terminal rows); a future `publishedAt` delays the waterline to publish.
  */
 export async function enqueuePostWebmentionOutbox(
   db: Database,
@@ -85,12 +74,8 @@ export async function enqueuePostWebmentionOutbox(
   return links.length
 }
 
-/**
- * Composition-root wiring (called from `bootstrap/db-lifecycle`): register
- * the outbox enqueue as THE post-publish hook — the seam lives in the
- * posts domain (`posts/publish-hooks.ts`) because the DAG keeps posts from
- * importing webmentions back.
- */
+/** Composition-root wiring: the outbox enqueue is the post-publish hook
+ *  (the seam lives in the posts domain so posts never import webmentions). */
 export function wireWebmentionPostPublishHook(): void {
   wirePostPublishHook(async (db, meta, body) => {
     await enqueuePostWebmentionOutbox(db, meta.slug, body, meta.publishedAt)

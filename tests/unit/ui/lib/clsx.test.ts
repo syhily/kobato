@@ -9,9 +9,7 @@ function b(v: boolean): boolean {
 function n(v: number): number {
   return v
 }
-function noop(): void {
-  // intentionally empty for test
-}
+function noop(): void {}
 
 describe('clsx', () => {
   it('returns string for empty input', () => {

@@ -1,9 +1,6 @@
-// Page-window algorithm shared by the public site and the admin shell.
-// Both surfaces compose the same chip ladder so a `/page/3` link reads
-// identically in `/admin/posts` and on the public archive.
-//
-// Inputs / outputs are 1-based. Admin callers must `+1` before invoking
-// and `-1` on click.
+// Page-window algorithm shared by the public site and the admin shell —
+// the same chip ladder so `/page/3` reads identically in both.
+// Inputs / outputs are 1-based; admin callers `+1` / `-1` around calls.
 
 /** Threshold above which we switch from dense to windowed layout. */
 export const DENSE_THRESHOLD = 6
@@ -19,7 +16,6 @@ export interface PageWindowOptions {
   total: number
 }
 
-/** Compute the rendered page-chip sequence for `current` of `total`. */
 export function computePageWindow({ current, total }: PageWindowOptions): PageWindowItem[] {
   if (total <= 1) {
     return []
@@ -27,9 +23,7 @@ export function computePageWindow({ current, total }: PageWindowOptions): PageWi
   if (total <= DENSE_THRESHOLD) {
     return Array.from({ length: total }, (_, i) => i + 1)
   }
-  // Windowed layout — three mutually exclusive branches when total >= 7:
-  // nearStart covers pages 1-4, nearEnd covers the last four pages,
-  // and the middle covers the rest.
+  // Windowed layout — three branches: near the start, near the end, or the middle (total >= 7).
   const nearStart = current < 5
   const nearEnd = current > total - 4
 

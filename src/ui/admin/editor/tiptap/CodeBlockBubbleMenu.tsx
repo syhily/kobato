@@ -12,15 +12,7 @@ import {
   SelectValue,
 } from '@/ui/components/select'
 
-// Floating language picker shown while the cursor is inside a `codeBlock`
-// PM node. The chosen value lands on `codeBlock.attrs.language`, which the
-// PT bridge round-trips into `CodeBlock.language`; the SSR Shiki
-// highlighter (`@/server/domains/pt/prerender`) matches it against
-// `bundledLanguages`, falling back to plain text on miss.
-//
-// The list is a curated subset — Shiki's full bundled set is ~200
-// grammars and renders the dropdown unusable.
-
+// Floating language picker for `codeBlock` — the curated list stays small because Shiki's full set (~200 grammars) is unusable in a dropdown.
 interface LanguageOption {
   value: string
   label: string

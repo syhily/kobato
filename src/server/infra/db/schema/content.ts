@@ -1,14 +1,9 @@
 import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 import { randomUUID } from 'node:crypto'
 
-// Shared revision table for pages and posts. A single table avoids near-
-// identical projections and lets cross-content queries scan one index.
-//
-// `(type, owner_id)` is a polymorphic discriminator without a DB FK (not
-// expressible for polymorphic refs); the app enforces it in transactions.
-// `revision_no` increases per owner; concurrent saves serialise on the
-// single-writer connection. `client_revision_token` is rotated on every
-// write for optimistic concurrency.
+// Shared revision table for pages and posts. `(type, owner_id)` is a
+// polymorphic discriminator without a DB FK — the app enforces it in
+// transactions. `client_revision_token` rotates on every write (optimistic concurrency).
 export const content = sqliteTable(
   'content',
   {
@@ -44,8 +39,7 @@ export const content = sqliteTable(
   ],
 )
 
-// Plain text kept separate so the main `post` table stays narrow. LIKE
-// search joins this table for the body corpus (vector search removed).
+// Plain text kept separate so the main `post` table stays narrow; LIKE search joins this table for the body corpus.
 export const postSearchIndex = sqliteTable('post_search_index', {
   postId: integer('post_id').primaryKey().notNull(),
   plainText: text('plain_text').notNull().default(''),

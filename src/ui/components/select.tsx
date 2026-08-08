@@ -56,12 +56,9 @@ function SelectContent({
   return (
     <BaseSelect.Portal>
       {/*
-       * `alignItemWithTrigger={false}` disables Base UI's macOS-style mode
-       * where the popup overlays and appears to "swallow" the trigger
-       * (reported as 「下拉框样式很奇怪」); the popup anchors below the
-       * trigger like a standard shadcn/Radix popper instead.
-       * `min-w-[max(8rem,var(--anchor-width))]` matches the popup width to
-       * the trigger via the CSS variable Base UI's positioner exposes.
+       * `alignItemWithTrigger={false}` disables Base UI's macOS overlay mode
+       * (reported as 「下拉框样式很奇怪」); `min-w-[max(8rem,var(--anchor-width))]`
+       * matches the popup width to the trigger.
        */}
       <BaseSelect.Positioner
         align={align}

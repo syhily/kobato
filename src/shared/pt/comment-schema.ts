@@ -8,33 +8,13 @@ import {
   textBlockSchema,
 } from '@/shared/pt/schema'
 
-// Strict PortableText subset accepted in comment bodies. Comments are
-// authored through a deliberately-thin Tiptap editor (basic inline
-// formatting + lists + blockquote + fenced code + math) — the editor
-// UI is the first line of defence, but a malicious client could POST
-// any JSON to the resource route, so the server perimeter validates
-// every incoming body against this narrow schema before persisting.
-//
-// What's allowed vs. the full `portableTextBodySchema`:
-//   - Text blocks: style `normal` or `blockquote` ONLY (no h1-h4).
-//   - List items: `bullet` / `number` at levels 1-4 (matches editor).
-//   - Custom blocks: `code` (fenced) and `mathBlock` (`$$…$$`).
-//   - markDefs: `link` and `mathInline` only — `footnoteRef` is
-//     intentionally excluded because comments don't carry a footnote
-//     registry.
-//   - Spans use the standard decorator set (`strong`, `em`,
-//     `underline`, `code`, `strike-through`).
-//
-// What's NOT allowed (rejected at the perimeter):
-//   - Headings (h1-h4) — comment threads aren't sectioned content.
-//   - `image`, `horizontalRule`, `musicPlayer`,
-//     `table`, `solution`, `twoColumn`, `footnoteDefinition`.
-
+// Strict PortableText subset for comment bodies — the server perimeter validates every
+// incoming body. Allowed: `normal` / `blockquote` styles, lists to level 4, `code` +
+// `mathBlock`, markDefs `link` + `mathInline`, standard decorators.
 const COMMENT_LIST_MAX_LEVEL = 4
 
 const COMMENT_BLOCK_STYLES = ['normal', 'blockquote'] as const
 
-// markDef union for comment text blocks.
 const commentMarkDefSchema = z.discriminatedUnion('_type', [linkMarkDefSchema, mathInlineMarkDefSchema])
 
 export const commentTextBlockSchema = textBlockSchema.extend({

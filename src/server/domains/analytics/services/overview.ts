@@ -16,12 +16,8 @@ export interface AnalyticsOverviewData {
 }
 
 /**
- * The first-paint analytics fan-out: counters + views + heatmap plus the
- * first tab of every metric group, all in one `Promise.all`. The
- * remaining tabs hydrate on demand through the oRPC endpoints. This is
- * the single orchestration behind both analytics pages — the scope
- * (site-wide vs per-post) lives entirely in `input`, so callers only
- * resolve their `AnalyticsQueryInput` and hand it over.
+ * First-paint fan-out behind both analytics pages: counters + views +
+ * heatmap plus the first tab of every metric group in one `Promise.all`.
  */
 export async function loadAnalyticsOverview(
   reader: AnalyticsReader,

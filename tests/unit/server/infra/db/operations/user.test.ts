@@ -2,12 +2,9 @@ import { describe, expect, it, vi } from 'vitest'
 
 import type { Database } from '@/server/infra/db/database'
 
-// The SafeUser projections (`findSafeUserById` / `findSafeUserByEmail`)
-// are the single owner of the "never leaves the server" field list:
-// password, lastIp, lastUa. The projection is an explicit whitelist —
-// a fourth sensitive column added to the `user` table cannot leak
-// through it. These tests pin that contract through the select argument
-// the functions hand to drizzle.
+// The SafeUser projections are the single owner of the "never leaves the
+// server" field list (password, lastIp, lastUa) — pinned through the select
+// argument the functions hand to drizzle.
 
 const SAFE_USER_COLUMNS = [
   'id',

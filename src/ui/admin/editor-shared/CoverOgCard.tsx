@@ -14,10 +14,7 @@ export interface CoverOgCardProps {
   /** Editor-side title / summary — folded into the generated-OG preview cache-buster. */
   title: string
   summary: string
-  /**
-   * Persisted slug used to render the generated `/images/og/:slug.png`
-   * preview when the OG override is empty. Empty ⇒ pre-save hint instead.
-   */
+  /** Persisted slug for the generated `/images/og/:slug.png` preview; empty ⇒ pre-save hint. */
   ogPreviewSlug?: string | null
   disabled?: boolean
 }

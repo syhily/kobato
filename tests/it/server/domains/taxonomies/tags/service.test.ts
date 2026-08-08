@@ -35,9 +35,6 @@ describe('server/domains/taxonomies/tags/service — findTagBySlug', () => {
 
 describe('server/domains/taxonomies/tags/service — resolveTagBySlugOrName', () => {
   it('prefers the slug hit over a name hit on another row', async () => {
-    // A row whose NAME equals the query exists alongside the slug hit —
-    // the real engine proves the name lookup is never consulted (the
-    // Postgres-era unit test asserted this via a mock call count).
     const bySlug = await seedTag('React', 'react')
     await seedTag('react', 'react-as-name')
 

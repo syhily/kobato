@@ -13,14 +13,8 @@ import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 const { buildLoadContext } = await import('@/server/http/middleware-pipeline')
 
-// The hydration is REAL: `buildLoadContext` awaits `hydrateBlogSettings`
-// against the it harness's shared in-memory database (db-lifecycle is
-// initialized at import) — no getDb/hydrate doubles. The perimeter
-// middleware derives the canonical RequestContext
-// (`@/server/http/request-context`) once per request; `buildLoadContext`
-// sets it on the RouterContextProvider as-is. These tests hand it a stub
-// carrying the canonical fields (`session` / `viewer` / `clientAddress` /
-// `url`) plus the pass-through handles (`db` / `cspNonce`).
+// Real hydration against the harness db (no getDb/hydrate doubles); the stub carries
+// the canonical context fields plus the pass-through handles (`db` / `cspNonce`).
 const db = getTestDb()
 
 function makeContextStub(overrides: Record<string, unknown> = {}) {
@@ -43,8 +37,7 @@ function makeContextStub(overrides: Record<string, unknown> = {}) {
 describe('middleware-pipeline / buildLoadContext', () => {
   beforeEach(async () => {
     await clearAllTables(db)
-    // Restore the pre-install state so the real hydrate re-reads the
-    // setting table instead of resolving the worker's seeded bundle.
+    // Pre-install state so the real hydrate re-reads the setting table, not the seeded bundle.
     resetBlogSettingsForTests()
   })
 
@@ -65,8 +58,7 @@ describe('middleware-pipeline / buildLoadContext', () => {
 
     const context = await buildLoadContext(makeContextStub())
 
-    // The awaited hydration wrote the snapshot before the context
-    // returned — loaders can now read sections synchronously.
+    // Hydration wrote the snapshot before the context returned — loaders read sections synchronously.
     expect(context).toBeDefined()
     const bundle = getBlogSettingsBundleSync()
     expect(bundle?.siteIdentity?.title).toBe(TEST_BLOG_SETTINGS_BUNDLE.siteIdentity!.title)
@@ -79,8 +71,7 @@ describe('middleware-pipeline / buildLoadContext', () => {
   })
 
   it('does not swallow a hydration failure — it propagates so the request becomes a 500', async () => {
-    // A real failure mode: the database handle is closed underneath the
-    // hydration query.
+    // Real failure mode: the db handle is closed underneath the hydration query.
     const closed = createTestDatabaseFile()
     closeDatabase(closed)
 
@@ -91,9 +82,7 @@ describe('middleware-pipeline / buildLoadContext', () => {
     const c = makeContextStub()
     const context = await buildLoadContext(c)
 
-    // The REAL RouterContextProvider carries the canonical RequestContext
-    // itself (identity) under the single canonical key — the CSP nonce
-    // rides inside it.
+    // The provider carries the canonical RequestContext itself — the CSP nonce rides inside it.
     expect(context.get(requestContext)).toBe(c.var.requestContext)
     expect(context.get(requestContext)?.cspNonce).toBe('test-nonce-123')
   })

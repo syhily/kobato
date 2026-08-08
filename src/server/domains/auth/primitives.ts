@@ -37,14 +37,9 @@ export interface EstablishedLoginSession {
 }
 
 /**
- * Establish a login session after ANY successful credential check
- * (password / OTP / passkey / setup). This function owns the ENTIRE
- * login side-effect surface: it destroys the anonymous session, mints
- * the new sid, writes `last_login`, and records the `login` audit event
- * (attributed to the NEW sid). Callers MUST NOT re-write last_login or
- * record a second login audit — doing so double-writes and (before this
- * contract was made explicit) attributed the duplicate audit to the
- * just-destroyed anonymous sid.
+ * Establish a login session after ANY successful credential check. Owns
+ * the entire login side-effect surface; callers MUST NOT re-write
+ * `last_login` or record a second login audit.
  */
 export async function establishLoginSession(
   db: Database,
@@ -76,9 +71,7 @@ export async function establishLoginSession(
     role: dbUser.role,
   }
   const absoluteExpiry = Date.now() + resolveSessionMaxAge() * 1000
-  // Only the NEW session object carries the user — the (destroyed) old one
-  // is never committed again (the middleware skips its dirty-commit once
-  // this response sets a `__session` cookie).
+  // Only the NEW session carries the user; the old one is never committed.
   const newSession = buildSessionWithSid(sid, { user: userData, absoluteExpiry })
   const setCookie = await commitSessionWithMaxAge(newSession)
   const userAgent = request.headers.get('User-Agent')
@@ -117,10 +110,7 @@ export function userSession(session: BlogSession): SessionUser | undefined {
 }
 
 export async function logout(session: BlogSession): Promise<void> {
-  // Dropping `user` marks the session dirty; the commit rewrites the
-  // session row with no owner (`user_id` back to NULL), so the admin /
-  // self-service views stop listing it and the cookie no longer resolves
-  // to a logged-in user.
+  // Dropping `user` marks the session dirty; the commit clears the row owner.
   session.unset('user')
 }
 

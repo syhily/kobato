@@ -1,17 +1,10 @@
 import type { BlogSettingsBundle } from '@/shared/config/types'
 
 /**
- * ⚠️ SSR SAFETY WARNING
- *
- * The `storage` object below is module-level mutable state shared across
- * concurrent requests on the same Node.js instance. That is safe only
- * because writes happen in server-side lifecycle code and the stored
- * value is request-agnostic (global blog settings). If settings ever
- * become tenant- or request-specific, this MUST move to request-local
- * storage (e.g. AsyncLocalStorage) so data does not leak between
- * requests. The slot stays in `shared/` because moving it into
- * `src/server/` would break `getBlogSettingsBundleSync()` in isomorphic
- * code.
+ * ⚠️ Module-level mutable state — safe only because writes happen in server-side
+ * lifecycle code and the value is request-agnostic (global blog settings). If settings
+ * ever become tenant- or request-specific this MUST move to request-local storage;
+ * the slot stays in shared/ for the isomorphic sync getter.
  */
 type Storage = Readonly<{
   blogSettingsSnapshot: BlogSettingsBundle | null | undefined

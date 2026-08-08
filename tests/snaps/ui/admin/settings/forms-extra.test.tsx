@@ -10,18 +10,11 @@ const queryMocks = mockTanstackQuery()
 
 queryMocks.mutation = { isPending: false, mutate: vi.fn() }
 
-// `useSettingsMutation` (consumed by every `useSettingsCard`) fires a real
-// `useMutation` against the settings ORPC endpoint. Stubbed inert so the
-// forms render without a network stack — the same pattern used by
-// `admin/settings/forms.test.tsx`.
+// The inert `useSettingsMutation` stub (setup.ts) keeps forms network-free.
 
-// MailTestCard calls `useMutation(orpc.admin.mail.sendTest, …)`. The
-// `#/_helpers/mock-react-query` singleton returns an inert mutation tuple so
-// the test-send button renders without a network call.
-// `@tanstack/react-query` is otherwise left intact.
+// MailTestCard's sendTest mutation is inert via the mock-react-query singleton; react-query is otherwise left intact.
 
-// `orpc` is only reached when a mutation actually fires; the mock above
-// intercepts before invocation, but keep the import resolvable & inert.
+// orpc mock stays resolvable + inert; the react-query stub intercepts calls.
 vi.mock('@/client/api/client', () => ({
   orpc: {
     admin: {
@@ -30,13 +23,8 @@ vi.mock('@/client/api/client', () => ({
   },
 }))
 
-// ───────────────────────────── fixtures ─────────────────────────────
-//
-// `MailLoaderShape` is the masked form-facing mirror of `MailSettings`:
-// the encrypted secrets (`apiKey`, `smtpPass`, `mailgunApiKey`) are swapped
-// out for `*Mask` fields holding the trailing fragment of the secret (or
-// null when never configured). The `mail:` wrapper matches `mailSchema`
-// so patches validate on the server without translation.
+// `MailLoaderShape` mirrors `MailSettings` with secrets swapped for `*Mask`
+// trailing fragments (null when never configured); the `mail:` wrapper matches `mailSchema`.
 
 const zeaburPopulated: MailLoaderShape = {
   mail: {
@@ -95,9 +83,7 @@ const mailgunPopulated: MailLoaderShape = {
   },
 }
 
-// Empty / never-configured fixture: every transport is left blank so the
-// per-transport "尚未配置" hint copy renders and the test-send button
-// stays disabled (configured=false).
+// Never-configured fixture: blank transports → "尚未配置" hints + disabled test-send.
 const emptyMail: MailLoaderShape = {
   mail: {
     enabled: false,
@@ -117,44 +103,34 @@ const emptyMail: MailLoaderShape = {
   },
 }
 
-// ───────────────────────────── MailForm ─────────────────────────────
-
 describe('snapshot: MailForm', () => {
   it('renders the Zeabur transport branch with populated config', () => {
     const html = stableHtml(renderToHtml(<MailForm mail={zeaburPopulated} />))
-    // Master toggle card.
     expect(html).toContain('邮件发送总开关')
     expect(html).toContain('id="mail-enabled"')
     expect(html).toContain('发送通知邮件')
-    // Provider select. `<SelectContent>` is a Base UI portal and only mounts
-    // its items when open, so on SSR only the trigger's selected-value label
-    // is emitted — assert on the active transport label, not the option list.
+    // SelectContent is a portal — SSR emits only the trigger's selected-value label.
     expect(html).toContain('邮件服务提供商')
     expect(html).toContain('id="mail-transport"')
     expect(html).toContain('Zeabur ZSend')
     // Sender card (shared across transports).
     expect(html).toContain('发件人邮箱')
     expect(html).toContain('id="mail-sender"')
-    // Zeabur config card is the active branch (smtp / mailgun cards omitted).
     expect(html).toContain('Zeabur ZSend 配置')
     expect(html).toContain('id="mail-host"')
     expect(html).toContain('id="mail-api-key"')
     // api key is configured → the "已配置（结尾 …<mask>）" hint shows.
     expect(html).toContain('当前已配置（结尾 …••••key）')
     expect(html).toContain('留空保存表示保留现有 Key')
-    // SMTP / Mailgun config cards do NOT render for the zeabur transport.
     expect(html).not.toContain('SMTP 配置')
     expect(html).not.toContain('Mailgun 配置')
-    // Test-send card: configured=true (host+sender+apiKeyMask all set) so the
-    // button is enabled. The blog-settings test bundle seeds the author email
-    // (syhily@gmail.com) as the default `testTo`, which isLikelyEmail accepts.
+    // configured=true → button enabled; the test bundle seeds the author email as default testTo.
     expect(html).toContain('测试发送')
     expect(html).not.toContain('请先填入并保存 Zeabur 接入域名')
   })
 
   it('renders the SMTP transport branch with populated config', () => {
     const html = stableHtml(renderToHtml(<MailForm mail={smtpPopulated} />))
-    // SMTP card is the active branch.
     expect(html).toContain('SMTP 配置')
     expect(html).toContain('id="mail-smtp-host"')
     expect(html).toContain('id="mail-smtp-port"')
@@ -165,37 +141,30 @@ describe('snapshot: MailForm', () => {
     expect(html).toContain('id="mail-smtp-reject-unauthorized"')
     // SMTP password is configured → the mask hint shows.
     expect(html).toContain('当前已配置（结尾 …••••pass）')
-    // TLS / require-TLS / cert verify toggle labels.
     expect(html).toContain('启用 TLS（SSL）')
     expect(html).toContain('强制 TLS（requireTLS）')
     expect(html).toContain('验证 TLS 证书')
-    // Zeabur / Mailgun cards omitted.
     expect(html).not.toContain('Zeabur ZSend 配置')
     expect(html).not.toContain('Mailgun 配置')
   })
 
   it('renders the Mailgun transport branch with populated config', () => {
     const html = stableHtml(renderToHtml(<MailForm mail={mailgunPopulated} />))
-    // Mailgun card is the active branch.
     expect(html).toContain('Mailgun 配置')
     expect(html).toContain('id="mail-mailgun-domain"')
     expect(html).toContain('id="mail-mailgun-api-key"')
     expect(html).toContain('仅支持美国（US）区域')
     // Mailgun API key is configured → mask hint shows.
     expect(html).toContain('当前已配置（结尾 …••••mgkey）')
-    // Zeabur / SMTP cards omitted.
     expect(html).not.toContain('Zeabur ZSend 配置')
     expect(html).not.toContain('SMTP 配置')
   })
 
   it('renders the empty (never-configured) state and disables test-send', () => {
     const html = stableHtml(renderToHtml(<MailForm mail={emptyMail} />))
-    // No API key configured → the "尚未配置" hint renders for each secret
-    // input, with transport-specific copy.
+    // No API key → per-transport "尚未配置" hints.
     expect(html).toContain('尚未配置。在 Zeabur 控制台 ZSend 服务页面生成的密钥。')
-    // Empty sender + no api key → configured=false → the test-send button is
-    // disabled AND the transport-specific missing-config hint is surfaced via
-    // the button `title` attribute (zeabur copy for the default transport).
+    // configured=false → button disabled + missing-config hint via button title.
     expect(html).toContain('disabled=""')
     expect(html).toContain('请先填入并保存 Zeabur 接入域名、API Key 和发件人邮箱')
   })

@@ -54,11 +54,9 @@ describe('db/query/like.server', () => {
     const result = await consumeActiveLikeToken(db, POST_A, 'tok-consume')
     expect(result).toBe(true)
 
-    // Verify the row is now soft-deleted
     const rows = await db.select({ deletedAt: like.deletedAt }).from(like).where(eq(like.token, 'tok-consume'))
     expect(rows[0]?.deletedAt).not.toBeNull()
 
-    // Already deleted token cannot be consumed again
     expect(await consumeActiveLikeToken(db, POST_A, 'tok-deleted')).toBe(false)
   })
 })

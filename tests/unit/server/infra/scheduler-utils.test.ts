@@ -7,14 +7,12 @@ describe('infra/scheduler-utils — computeNextRun', () => {
   const timeZone = 'Asia/Shanghai'
 
   it('computes next daily run when target is later today', () => {
-    // 2024-01-15 10:00 CST
     const now = new Date('2024-01-15T10:00:00+08:00')
     const next = computeNextRun({ frequency: 'daily', hour: 14, minute: 30 }, timeZone, now)
     expect(next.toISOString()).toBe('2024-01-15T14:30:00.000+08:00')
   })
 
   it('computes next daily run when target has passed today', () => {
-    // 2024-01-15 16:00 CST
     const now = new Date('2024-01-15T16:00:00+08:00')
     const next = computeNextRun({ frequency: 'daily', hour: 14, minute: 30 }, timeZone, now)
     expect(next.toISOString()).toBe('2024-01-16T14:30:00.000+08:00')
@@ -42,21 +40,18 @@ describe('infra/scheduler-utils — computeNextRun', () => {
   })
 
   it('computes next monthly run on same day when time has not passed', () => {
-    // 2024-01-15 10:00 CST
     const now = new Date('2024-01-15T10:00:00+08:00')
     const next = computeNextRun({ frequency: 'monthly', hour: 14, minute: 0, dayOfMonth: 15 }, timeZone, now)
     expect(next.toISOString()).toBe('2024-01-15T14:00:00.000+08:00')
   })
 
   it('computes next monthly run on same day when time has passed', () => {
-    // 2024-01-15 16:00 CST
     const now = new Date('2024-01-15T16:00:00+08:00')
     const next = computeNextRun({ frequency: 'monthly', hour: 14, minute: 0, dayOfMonth: 15 }, timeZone, now)
     expect(next.toISOString()).toBe('2024-02-15T14:00:00.000+08:00')
   })
 
   it('computes next monthly run for a different day in the same month', () => {
-    // 2024-01-10 10:00 CST, target is the 20th
     const now = new Date('2024-01-10T10:00:00+08:00')
     const next = computeNextRun({ frequency: 'monthly', hour: 3, minute: 30, dayOfMonth: 20 }, timeZone, now)
     expect(next.toISOString()).toBe('2024-01-20T03:30:00.000+08:00')
@@ -111,10 +106,8 @@ describe('infra/scheduler-utils — computeNextRun', () => {
 })
 
 describe('infra/scheduler-utils — scheduleJob long-delay chunking', () => {
-  // Node clamps setTimeout delays ≥ 2^31-1 ms (~24.85 days) to 1 ms, so a
-  // monthly backup ~31 days out would otherwise fire back-to-back forever.
-  // Fake timers do not reproduce the clamp; these tests pin the chunking
-  // logic that keeps such delays from ever reaching a single setTimeout.
+  // Node clamps setTimeout delays ≥ 2^31-1 ms to 1 ms, so long delays must
+  // never reach a single setTimeout call.
   const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000
 
   beforeEach(() => {
@@ -141,8 +134,6 @@ describe('infra/scheduler-utils — scheduleJob long-delay chunking', () => {
     const run = vi.fn()
     scheduleJob({ name: 'test-no-early-run', nextDelayMs: () => THIRTY_DAYS_MS, run })
 
-    // Far past the 1 ms a clamped timer would have fired at — and past
-    // several chunk boundaries — the job must still not have run.
     vi.advanceTimersByTime(3 * MAX_TIMER_DELAY_MS)
     expect(run).not.toHaveBeenCalled()
   })
@@ -152,7 +143,6 @@ describe('infra/scheduler-utils — scheduleJob long-delay chunking', () => {
     const nextDelayMs = vi.fn().mockReturnValueOnce(THIRTY_DAYS_MS).mockReturnValue(60_000)
     scheduleJob({ name: 'test-chunked-converge', nextDelayMs, run })
 
-    // First chunk: reschedule only, no run; the fresh delay now fits.
     vi.advanceTimersByTime(MAX_TIMER_DELAY_MS)
     expect(run).not.toHaveBeenCalled()
 

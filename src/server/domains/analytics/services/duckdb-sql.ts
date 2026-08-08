@@ -27,9 +27,8 @@ const METRIC_COLUMN: Record<MetricType, string> = {
 }
 
 /**
- * Quote a column identifier for use in raw SQL. Total by construction:
- * the parameter type is constrained to MetricType so only columns from
- * the hard-coded METRIC_COLUMN map can be passed — never user input.
+ * Quote a column identifier for raw SQL. Safe by construction: `MetricType`
+ * can only name a column from the hard-coded `METRIC_COLUMN` map — never user input.
  */
 export function quoteIdent(name: MetricType): string {
   return `"${METRIC_COLUMN[name]}"`
@@ -41,25 +40,23 @@ export interface WhereParts {
 }
 
 /**
- * Bind expression for an epoch-ms BIGINT parameter as a DuckDB
- * TIMESTAMP. JS bigints bind as HUGEINT in the node API, so the
- * `?::BIGINT` cast is load-bearing — centralised here because every
- * analytics query needs it and a typo silently breaks the predicate.
+ * Bind expression for an epoch-ms BIGINT parameter as a DuckDB TIMESTAMP.
+ * JS bigints bind as HUGEINT in the node API, so the `?::BIGINT` cast is
+ * load-bearing — a typo here silently breaks every analytics predicate.
  */
 export const EPOCH_MS_PARAM = 'epoch_ms(?::BIGINT)'
 
-/** The parameter-side companion of EPOCH_MS_PARAM: a Date as the
- *  epoch-ms BIGINT the fragment casts. The pair travels together — a
- *  hand-rolled `BigInt(d.getTime())` at the call site breaks the
- *  predicate just as silently as a fragment typo would. */
+/** The Date-as-epoch-ms-BIGINT parameter for `EPOCH_MS_PARAM`. The pair
+ *  must travel together — a hand-rolled `BigInt(d.getTime())` breaks the
+ *  predicate just as silently. */
 export function epochMsParam(d: Date): bigint {
   return BigInt(d.getTime())
 }
 
 /**
  * Run a read query and materialize row objects. The one owner of the
- * runAndReadAll → getRowObjects idiom every analytics query module
- * used to re-implement; modules keep only their SQL and row mapper.
+ * `runAndReadAll` → `getRowObjects` idiom; modules keep only their SQL
+ * and row mapper.
  */
 export async function queryAnalyticsRows(
   reader: AnalyticsReader,
@@ -78,11 +75,8 @@ const BUCKET_INTERVAL: Record<number, string> = {
 }
 
 /**
- * The DuckDB INTERVAL literal for a `pickTimeBucketMs` width. The
- * bucket vocabulary has exactly one owner per side: the shared
- * contract picks the width in ms, this map turns it into SQL — an
- * unmapped width fails loudly here instead of producing
- * `INTERVAL 'undefined'`.
+ * The DuckDB INTERVAL literal for a `pickTimeBucketMs` width. An
+ * unmapped width fails loudly here instead of producing `INTERVAL 'undefined'`.
  */
 export function timeBucketInterval(bucketMs: number): string {
   const interval = BUCKET_INTERVAL[bucketMs]
@@ -115,12 +109,12 @@ export function whereClause(input: AnalyticsQueryInput): WhereParts {
   return { sql: conditions.join(' AND '), params }
 }
 
-/** The dashboard read connection type (DuckDB MVCC reader). */
+/** DuckDB MVCC reader connection. */
 export type AnalyticsReader = DuckDBConnection
 
 /** Convert a DuckDB TIMESTAMP result cell to epoch milliseconds. The
- *  node API surfaces timestamps as microseconds since epoch — either a
- *  raw bigint or an object carrying a `micros` bigint. */
+ *  node API surfaces timestamps as microseconds since epoch — a raw
+ *  bigint or an object carrying a `micros` bigint. */
 export function timestampToMs(value: DuckDBValue): number {
   if (typeof value === 'bigint') {
     return Number(value / 1000n)

@@ -29,29 +29,22 @@ export interface UseFilterPillsOptions<K extends string> {
   fields: readonly FilterFieldSpec<K>[]
   /** Uncontrolled seed (comments: the URL-restored pills). */
   initial?: ActiveFilter<K>[]
-  /** Controlled value (my-comments: pills derived from the URL — the URL
-   *  stays the source of truth and is adopted whenever it changes). */
+  /** Controlled value — the URL stays the source of truth, adopted on change. */
   value?: ActiveFilter<K>[]
-  /** Controlled sink — fired after every state-changing dispatch with the
-   *  resulting filters and the action that produced them. */
+  /** Controlled sink — fired after every state-changing dispatch with the resulting filters and action. */
   onChange?: (next: ActiveFilter<K>[], action: FilterPillsAction<K>) => void
 }
 
 interface PillsState<K extends string> {
   filters: ActiveFilter<K>[]
-  /** The dispatch that produced `filters` — null for seeds and controlled
-   *  resyncs so `onChange` only fires for genuine local dispatches. */
+  /** The dispatch that produced `filters` — null for seeds and controlled resyncs, so `onChange` fires only for local dispatches. */
   action: FilterPillsAction<K> | null
 }
 
 /**
- * The shared filter-pill state hook behind `<FilterPillBar>`. Owns the
- * reducer (one pill per field), the per-search-field debounced server
- * search (react-query `useQueries`), label rehydration for URL-restored
- * pills (`resolveOptions` → an internal `renameFilter`), every value codec
- * (text `{op,value}`, date-single `{date,op}`, date-range `{from,to}` —
- * malformed JSON falls back to the editor default and never throws), and
- * the `queryInput()` merge that maps active pills onto the list query.
+ * Shared filter-pill state behind `<FilterPillBar>`: reducer, per-search-field
+ * debounced server search, label rehydration, value codecs (malformed JSON
+ * falls back to the editor default and never throws), and the `queryInput()` merge.
  */
 export function useFilterPills<K extends string>({ fields, initial, value, onChange }: UseFilterPillsOptions<K>) {
   const controlled = value !== undefined
@@ -63,11 +56,8 @@ export function useFilterPills<K extends string>({ fields, initial, value, onCha
     onChangeRef.current = onChange
   })
 
-  // Controlled resync: adopt the external value whenever it meaningfully
-  // changes (the URL re-validated). Content-equal rebuilds (a fresh array
-  // identity with the same pills) are ignored so transient local pills —
-  // e.g. an empty text pill, which maps to q: null — survive unrelated
-  // re-renders; they are dropped only when the URL genuinely re-validates.
+  // Controlled resync: adopt the external value when it meaningfully changes;
+  // content-equal rebuilds are ignored so transient local pills survive.
   const [lastValue, setLastValue] = useState(value)
   if (controlled && value !== lastValue && !sameFilters(value, lastValue)) {
     setLastValue(value)
@@ -81,8 +71,7 @@ export function useFilterPills<K extends string>({ fields, initial, value, onCha
     })
   }, [])
 
-  // Notify the controlled sink once per produced state — identity-guarded
-  // so unrelated re-renders never re-fire it.
+  // Notify the controlled sink once per produced state — identity-guarded.
   const notifiedRef = useRef<PillsState<K> | null>(null)
   useEffect(() => {
     if (state.action && notifiedRef.current !== state) {
@@ -90,8 +79,6 @@ export function useFilterPills<K extends string>({ fields, initial, value, onCha
       onChangeRef.current?.(state.filters, state.action)
     }
   })
-
-  // --- async search fields ------------------------------------------------
 
   const searchFields = useMemo(() => fields.filter((f): f is SearchFilterField<K> => f.kind === 'search'), [fields])
 
@@ -115,9 +102,8 @@ export function useFilterPills<K extends string>({ fields, initial, value, onCha
     }),
   })
 
-  // Label rehydration: a URL-restored pill carries the raw value as its
-  // label; once the resolve query lands, rename it to the human label.
-  // Guarded on inequality so a resolved pill never re-dispatches.
+  // Label rehydration: rename a URL-restored pill to its human label once the
+  // resolve query lands; guarded on inequality so it never re-dispatches.
   useEffect(() => {
     searchFields.forEach((field, i) => {
       if (!field.resolveOptions) {
@@ -143,13 +129,10 @@ export function useFilterPills<K extends string>({ fields, initial, value, onCha
     searchFields.forEach((field, i) => {
       const result = searchResults[i]
       const debounced = debouncedInputs[field.key] ?? ''
-      // While a search query is active but its results haven't landed, the
-      // list stays empty (加载中… shows); with no active query, fall back to
-      // the spec's initial items (loader-provided lists).
+      // Active search query without results yet → empty list; no query → the spec's initial items.
       const items: FilterOptionItem[] =
         result?.data != null ? field.select(result.data) : debounced ? [] : [...(field.initialItems ?? [])]
-      // Pin the selected value into the items so the trigger always
-      // resolves its label, even when it isn't in the fetched window.
+      // Pin the selected value into the items so the trigger always resolves its label.
       const active = filters.find((f) => f.field === field.key)
       if (active && !items.some((item) => item.value === active.value)) {
         items.unshift({ value: active.value, label: active.label })
@@ -162,8 +145,6 @@ export function useFilterPills<K extends string>({ fields, initial, value, onCha
     })
     return out
   }, [searchFields, searchResults, debouncedInputs, filters])
-
-  // --- query input + typed accessors --------------------------------------
 
   const queryInput = useCallback(<TQuery extends object = Record<string, string>>(): TQuery => {
     const out: Record<string, string> = {}
@@ -179,8 +160,7 @@ export function useFilterPills<K extends string>({ fields, initial, value, onCha
         }
       }
     }
-    // The per-field `toQuery` patches are key-disjoint by convention, so
-    // the merge is exactly the domain's query-input shape.
+    // Per-field `toQuery` patches are key-disjoint by convention, so the merge is exactly the query-input shape.
     return unsafeCast<TQuery>(out)
   }, [fields, filters])
 
@@ -226,8 +206,7 @@ export function useFilterPills<K extends string>({ fields, initial, value, onCha
   return { filters, hasFilters: filters.length > 0, dispatch, queryInput, text, dateSingle, dateRange, bar }
 }
 
-/** Content equality for the controlled resync guard — the pill lists the
- *  URL derivation rebuilds are small, so a pairwise compare is cheap. */
+/** Content equality for the controlled resync guard — pill lists are small. */
 function sameFilters<K extends string>(a: ActiveFilter<K>[] | undefined, b: ActiveFilter<K>[] | undefined): boolean {
   if (a === b) {
     return true
@@ -246,9 +225,8 @@ function sameFilters<K extends string>(a: ActiveFilter<K>[] | undefined, b: Acti
   })
 }
 
-/** Decode a pill value through its field's codec and map it onto the query
- *  patch. Undecodable values (malformed JSON, empty dates) contribute
- *  nothing — a freshly added empty pill is a query no-op. */
+/** Decode a pill value through its field's codec onto the query patch;
+ *  undecodable values contribute nothing (a fresh empty pill is a no-op). */
 function resolveFieldQueryPatch<K extends string>(field: FilterFieldSpec<K>, raw: string): FilterQueryPatch {
   switch (field.kind) {
     case 'text': {

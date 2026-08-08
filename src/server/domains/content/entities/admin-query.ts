@@ -28,11 +28,8 @@ export interface EntityAdminQuery<TFilters extends LimitOffset, TAdminDto> {
 }
 
 /**
- * The admin-query trio every content entity shares: `listForAdmin`
- * (viewer-scoped filters, engagement + extras fan-out), the detail read
- * (meta + latest/published revision + extras), and the revision list.
- * All three gate through the descriptor's `assertAccess`, so a missing
- * entity surfaces the entity's NOT_FOUND.
+ * The admin-query trio every content entity shares, all gated through
+ * `assertAccess` — a missing entity surfaces NOT_FOUND.
  */
 export function makeEntityAdminQuery<
   TMeta extends MetaRowBase,

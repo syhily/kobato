@@ -16,9 +16,7 @@ export interface AccountProfileInput {
   receiveEmail?: boolean
 }
 
-// The self-service profile projection behind `/admin/me/profile`. A
-// missing row (deleted mid-session) degrades to empty fields instead of
-// failing the page — the layout already guarantees a live session.
+// Self-service profile projection; a missing row degrades to empty fields.
 export interface AccountProfile {
   id: string
   name: string
@@ -84,9 +82,7 @@ export async function updateAccountProfile(
     }
   }
 
-  // A visitor submitting ONLY badge fields ends up with nothing to
-  // update (badge writes are admin/author-only) — a graceful no-op,
-  // never drizzle's "No values to set" 500.
+  // Empty patch (badge-only submits by visitors) is a graceful no-op.
   if (Object.keys(patch).length === 0) {
     return dbUser
   }

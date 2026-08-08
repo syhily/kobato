@@ -12,9 +12,7 @@ import { createBoundedMap } from '@/shared/utils/memo'
 
 const log = getLogger('branding.storage')
 
-// User-asset branding slots — SVGs and binaries. `robotsTxt` is
-// configuration text (not an asset) and lives inline in the settings
-// row, edited through the regular assets PATCH.
+// Branding slots = SVG + binary user assets; `robotsTxt` is config text, not an asset.
 export type BrandingSlot = SvgSlot | BinarySlot
 
 export const BRANDING_SLOTS: readonly BrandingSlot[] = [...SVG_SLOTS, ...BINARY_SLOTS]
@@ -32,18 +30,10 @@ export function isSvgSlot(slot: BrandingSlot): slot is SvgSlot {
   return (SVG_SLOTS as readonly string[]).includes(slot)
 }
 
-// SVG uploads are served back AS-IS — no content sanitization (audit
-// P1-9, downgraded to accepted risk 2026-07-31, recorded in
-// docs/plans/2026-08-01-full-codebase-audit.md). The two backstops that make the
-// downgrade tenable: script inside an SVG referenced via <img> never
-// executes (browsers treat it as an image, not a document), and a
-// directly-opened SVG document falls under the site's CSP
-// (`script-src 'self' 'nonce-*'`), which blocks its inline script;
-// uploads are admin-only, and S3-configured sites serve the bytes from
-// an isolated origin anyway. Revisit here if either backstop changes.
+// SVG uploads are served AS-IS — no sanitization (accepted risk, audit P1-9,
+// docs/plans/2026-08-01-full-codebase-audit.md).
 
-// Per-slot expected MIME type. We use it to reject mismatched uploads
-// and to set the response `Content-Type` when serving the bytes back.
+// Per-slot expected MIME type: rejects mismatched uploads, sets response Content-Type.
 export const SLOT_CONTENT_TYPE: Readonly<Record<BrandingSlot, string>> = {
   faviconSvg: 'image/svg+xml',
   logoSvg: 'image/svg+xml',
@@ -61,9 +51,7 @@ export const SLOT_CONTENT_TYPE: Readonly<Record<BrandingSlot, string>> = {
   defaultMusicCover: 'image/png',
 }
 
-// Per-slot byte ceiling. We bound individual uploads so an oversized
-// hero image can't blow up the S3 bill — and so the bundled defaults
-// can be treated as worst-case footprint estimates.
+// Per-slot byte ceiling so an oversized upload can't blow up the S3 bill.
 export const SLOT_MAX_BYTES: Readonly<Record<BrandingSlot, number>> = {
   faviconSvg: 50 * 1024,
   logoSvg: 100 * 1024,
@@ -81,11 +69,7 @@ export const SLOT_MAX_BYTES: Readonly<Record<BrandingSlot, number>> = {
   defaultMusicCover: 100 * 1024,
 }
 
-// --- Per-kind content validation ---
-
-// Patterns that give an SVG side-effects when the response is opened
-// directly (e.g. visiting `/favicon.svg` in a tab). Reject up-front so a
-// stolen admin session can't poison the asset URL with a script.
+// SVG patterns with side-effects when opened directly (e.g. in a tab) — reject up-front.
 const SVG_DANGEROUS = [
   /<script\b/i,
   /\son[a-z]+\s*=/i,
@@ -94,8 +78,7 @@ const SVG_DANGEROUS = [
 ]
 
 function looksLikeSvg(buffer: Buffer): boolean {
-  // Skip a leading BOM and whitespace; the SVG must begin with `<?xml`
-  // or `<svg`. The strictest check that still accepts real artwork.
+  // Skip BOM/whitespace; the SVG must begin with `<?xml` or `<svg`.
   const text = buffer.toString('utf8').replace(/^﻿/, '').trimStart()
   return text.startsWith('<?xml') || text.startsWith('<svg')
 }
@@ -112,8 +95,7 @@ function validateSvg(buffer: Buffer): void {
   }
 }
 
-// Magic-byte sniff for binaries. Without it we'd happily serve
-// `200 image/png` for an HTML page or a zip file pasted into a slot.
+// Magic-byte sniff — never serve `200 image/png` for an HTML page or zip.
 function detectBinaryContentType(buffer: Buffer): 'image/png' | 'image/x-icon' | null {
   if (
     buffer.length >= 8 &&
@@ -156,10 +138,7 @@ export function ensureMatchesSlot(slot: BrandingSlot, buffer: Buffer): void {
   validateBinary(slot, buffer)
 }
 
-// Strip the type suffix from slot names that carry one. SVG slots
-// end in `Svg` (e.g. `faviconSvg` → `favicon`), and the single ICO
-// slot ends in `Ico` (`faviconIco` → `favicon`). Binary PNG slots
-// have no suffix and pass through unchanged.
+// Strip the `Svg`/`Ico` suffix from slot names; PNG slots pass through.
 function slotBaseName(slot: BrandingSlot): string {
   if (slot.endsWith('Svg')) {
     return slot.slice(0, -3)
@@ -170,15 +149,12 @@ function slotBaseName(slot: BrandingSlot): string {
   return slot
 }
 
-// Stable kebab-case conversion: `logoLargeDark` -> `logo-large-dark`,
-// `appleTouchIcon` -> `apple-touch-icon`.
+// Kebab-case: `logoLargeDark` -> `logo-large-dark`.
 function slotToKebab(slot: BrandingSlot): string {
   return slotBaseName(slot).replace(/([A-Z0-9]+)/g, (_, c: string) => `-${c.toLowerCase()}`)
 }
 
-// Map SLOT_CONTENT_TYPE values to file extensions so storage keys carry
-// the correct suffix — bare extensionless keys break `Content-Type`
-// detection in the local-storage router.
+// Extension per Content-Type — extensionless keys break Content-Type detection in the local-storage router.
 const EXT_BY_CONTENT_TYPE: Record<string, string> = {
   'image/svg+xml': '.svg',
   'image/x-icon': '.ico',
@@ -193,21 +169,15 @@ export function s3KeyForSlot(slot: BrandingSlot): string {
   return `branding/${slotToKebab(slot)}${extensionForSlot(slot)}`
 }
 
-/** Kebab-case preserving the original slot suffix (e.g. `faviconSvg` → `favicon-svg`).
- *  Only used by {@link legacyKeyForSlot} — new keys use {@link s3KeyForSlot}. */
+/** Kebab-case preserving the slot suffix; only used by {@link legacyKeyForSlot}. */
 function slotToKebabLegacy(slot: BrandingSlot): string {
   return slot.replace(/([A-Z0-9]+)/g, (_, c: string) => `-${c.toLowerCase()}`)
 }
 
-/**
- * Legacy key format (without extension) used before the 2026-06-22 fix.
- * Only needed for migration — new uploads always use {@link s3KeyForSlot}.
- */
+/** Legacy extensionless key format — migration only; new uploads use {@link s3KeyForSlot}. */
 export function legacyKeyForSlot(slot: BrandingSlot): string {
   return `branding/${slotToKebabLegacy(slot)}`
 }
-
-// --- Operations ---
 
 export async function putBrandingObject(slot: BrandingSlot, buffer: Buffer): Promise<BrandingObjectRef> {
   ensureMatchesSlot(slot, buffer)
@@ -226,9 +196,7 @@ export async function putBrandingObject(slot: BrandingSlot, buffer: Buffer): Pro
   cacheSet(slot, etag, buffer)
   log.info('Branding object uploaded', { slot, key, driver, size: buffer.length, etag })
 
-  // Clean up any legacy (extensionless) object left over from before the
-  // 2026-06-22 key-format fix. Best-effort: if it doesn't exist or the
-  // backend is unreachable, the new upload already succeeded.
+  // Best-effort cleanup of any legacy extensionless object.
   const legacyKey = legacyKeyForSlot(slot)
   backend.delete(legacyKey).catch((error) => {
     log.debug('Legacy key cleanup skipped', { slot, legacyKey, error: String(error) })
@@ -237,18 +205,13 @@ export async function putBrandingObject(slot: BrandingSlot, buffer: Buffer): Pro
   return ref
 }
 
-// Best-effort delete — if the backend already lacks the object, the
-// admin's "clear" should still succeed at the settings layer. `driver`
-// targets the backend the ref was uploaded to, so a local asset isn't
-// looked up in S3.
+// Best-effort; `driver` targets the backend the ref was uploaded to.
 export async function deleteBrandingObject(slot: BrandingSlot, driver: StorageDriver = 's3'): Promise<void> {
   const backend = backendFor(driver)
   const key = s3KeyForSlot(slot)
   const legacyKey = legacyKeyForSlot(slot)
 
-  // Delete both current and legacy keys so an old upload on a different
-  // driver (e.g. local→S3 migration happened after the fix) is also
-  // cleaned up. Both are best-effort.
+  // Delete current and legacy keys — an old upload may live on a different driver.
   const results = await Promise.allSettled([backend.delete(key), backend.delete(legacyKey)])
   for (const [i, k] of [key, legacyKey].entries()) {
     const r = results[i]
@@ -266,12 +229,7 @@ export async function deleteBrandingObject(slot: BrandingSlot, driver: StorageDr
   }
 }
 
-// --- Read path with in-process cache ---
-
-// Each branding slot is at most a few hundred KB. Keep the latest bytes
-// per (slot, etag) in memory so subsequent requests skip the S3 round-
-// trip. Etag-keyed so a re-upload to the same slot deterministically
-// misses the cache. Bounded FIFO map, capped well above the slot count.
+// Per-(slot, etag) byte cache, bounded FIFO — etag-keyed so re-uploads miss deterministically.
 const bufferCache = createBoundedMap<string, Buffer>(64)
 
 function cacheSet(slot: BrandingSlot, etag: string, buffer: Buffer): void {
@@ -282,13 +240,8 @@ function cacheGet(slot: BrandingSlot, etag: string): Buffer | undefined {
   return bufferCache.get(`${slot}:${etag}`)
 }
 
-// Returns `null` (rather than throwing) when the object can't be fetched
-// — the route handler falls back to the bundled default, so a missing
-// custom upload never 5xx's the asset route.
-//
-// Auto-migrates objects still stored under the legacy extensionless key
-// (pre-2026-06-22): copies the bytes to the current key and deletes the
-// legacy object, transparently to callers.
+// Returns `null` (not throw) so the route falls back to the bundled default;
+// auto-migrates legacy extensionless keys.
 export async function fetchBrandingObject(slot: BrandingSlot, ref: BrandingObjectRef): Promise<Buffer | null> {
   const cached = cacheGet(slot, ref.etag)
   if (cached !== undefined) {
@@ -303,17 +256,12 @@ export async function fetchBrandingObject(slot: BrandingSlot, ref: BrandingObjec
     cacheSet(slot, ref.etag, buffer)
     return buffer
   } catch (error) {
-    // If the current key isn't found, try the legacy (extensionless) key.
-    // On success, copy to the current key and delete the legacy object so
-    // subsequent reads hit the new key directly.
+    // Current key missing — retry the legacy key, then migrate it to the current key.
     if (error instanceof StorageObjectNotFound) {
       const legacyKey = legacyKeyForSlot(slot)
       try {
         const legacyBuffer = await backend.get(legacyKey)
-        // Copy to the new key first, then delete the legacy object.
-        // If the copy fails we still have the legacy object to retry
-        // next time; if the delete fails the legacy object is orphaned
-        // but harmless.
+        // Copy first, delete after — a failed copy leaves the legacy object retryable.
         await backend.put({
           key,
           body: legacyBuffer,

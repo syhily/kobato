@@ -4,20 +4,9 @@ import { createElement, lazy, Suspense, type ComponentProps, type CSSProperties,
 
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
-// Shared lazy handles on the `motion/react` runtime. The motion code only
-// matters while an animation runs, so it loads asynchronously instead of
-// riding the content pages' synchronous bundle: every handle below is a
-// `lazy()` on the SAME dynamic import, which Vite serves as one shared
-// chunk fetched the first time any animated element actually mounts.
-//
-// While the chunk is in flight — and under SSR, where the lazy boundary
-// never resolves — each element renders a static fallback: the same DOM
-// tag with every DOM prop (className, style, onClick, aria-*, inert,
-// tabIndex, ref) forwarded verbatim and only the animation-only props
-// stripped. The fallback stays fully functional; the accepted degradation
-// is the missing enter animation (the base layer's own CSS transitions
-// still apply). That keeps SSR output and the first hydrated render
-// identical.
+// Shared lazy handles on the `motion/react` runtime — one dynamic import, one
+// shared chunk. Until it resolves (incl. SSR) elements render a static DOM
+// fallback: DOM props forwarded, animation-only props stripped, enter animation lost.
 const MotionDiv = lazy(() => import('motion/react').then((module) => ({ default: module.motion.div })))
 const MotionButton = lazy(() => import('motion/react').then((module) => ({ default: module.motion.button })))
 const MotionSpan = lazy(() => import('motion/react').then((module) => ({ default: module.motion.span })))
@@ -25,9 +14,7 @@ const MotionH1 = lazy(() => import('motion/react').then((module) => ({ default: 
 const MotionP = lazy(() => import('motion/react').then((module) => ({ default: module.motion.p })))
 const AnimatePresenceImpl = lazy(() => import('motion/react').then((module) => ({ default: module.AnimatePresence })))
 
-// Props that drive the animation runtime only. They are stripped from the
-// static fallback (React would warn about unknown DOM attributes); every
-// other prop is DOM-safe and forwards.
+// Animation-only props, stripped from the static fallback (React warns on unknown DOM attributes).
 const ANIMATION_ONLY_PROPS = new Set([
   'initial',
   'animate',
@@ -55,9 +42,7 @@ const ANIMATION_ONLY_PROPS = new Set([
 
 type FallbackTag = 'div' | 'button' | 'span' | 'h1' | 'p'
 
-// `props` is the full motion-element prop bag; at runtime it is a plain
-// object, so narrowing it to a string map to partition DOM props from
-// animation props is shape-safe.
+// `props` is a plain object at runtime, so the string-map narrowing is shape-safe.
 function staticFallback(tag: FallbackTag, props: object, children: ReactNode): ReactNode {
   const source = unsafeCast<Record<string, unknown>>(props)
   const domProps: Record<string, unknown> = {}
@@ -77,15 +62,11 @@ function staticFallback(tag: FallbackTag, props: object, children: ReactNode): R
   return createElement(tag, domProps, children)
 }
 
-// `children` is narrowed to plain ReactNode: motion elements also accept
-// MotionValue children, but the static fallback is a plain element which
-// cannot render those — and no consumer passes them.
+// Static fallback cannot render MotionValue children; no consumer passes them.
 type LazyMotionElementProps<Props> = Omit<Props, 'children'> & {
   children?: ReactNode
-  /** Extra styles applied ONLY to the static fallback — for positional
-   *  state that must hold before the motion chunk arrives (e.g. the ToC
-   *  drawer's off-screen resting transform). Once the chunk resolves the
-   *  motion element takes over and this is ignored. */
+  /** Extra styles applied ONLY to the static fallback (e.g. the ToC drawer's
+   *  off-screen resting transform); ignored once the motion element takes over. */
   fallbackStyle?: CSSProperties
 }
 
@@ -136,9 +117,8 @@ export function LazyMotionP({ children, fallbackStyle, ...props }: LazyMotionPPr
 }
 
 /**
- * `AnimatePresence` behind the same lazy boundary: the fallback renders
- * the children bare, so content appears immediately and only exit
- * animations wait for the motion chunk.
+ * `AnimatePresence` behind the same lazy boundary; only exit animations wait
+ * for the motion chunk.
  */
 export function LazyAnimatePresence({ children, ...props }: ComponentProps<typeof AnimatePresence>) {
   return (
@@ -151,12 +131,8 @@ export function LazyAnimatePresence({ children, ...props }: ComponentProps<typeo
 const LazyMotionConfigImpl = lazy(() => import('motion/react').then((module) => ({ default: module.MotionConfig })))
 
 /**
- * `MotionConfig` behind the same lazy boundary: the provider renders no
- * DOM, so the Suspense fallback simply renders the children bare — SSR
- * output and the first hydrated render stay byte-identical either way.
- * Every motion consumer under it is itself behind a lazy boundary on the
- * SAME chunk, so by the time any animated element mounts, the context
- * (transition defaults, reducedMotion) is already in place.
+ * `MotionConfig` behind the same lazy boundary — no DOM, so the fallback
+ * renders children bare.
  */
 export function LazyMotionConfig({ children, ...props }: ComponentProps<typeof MotionConfig>) {
   return (

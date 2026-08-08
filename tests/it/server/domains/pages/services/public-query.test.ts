@@ -15,10 +15,8 @@ import {
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { page as pageTable } from '@/server/infra/db/schema/page'
 
-// pages services/public-query against the real engine — seeded meta rows
-// + content revisions instead of the old FakeQuery/driver mocks, so the
-// live gate, the slim projections, and the revision join are asserted
-// through real query results.
+// pages services/public-query against the real engine: the live gate,
+// slim projections, and the revision join via real query results.
 
 const db = getTestDb()
 

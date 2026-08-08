@@ -9,8 +9,7 @@ import { confirm, subscribe, unsubscribe } from '@/server/domains/newsletter/ser
 import { publicProc, resourceRateLimit } from '@/server/http/orpc-base'
 import { idFromString } from '@/shared/utils/id'
 
-// Uniform `{ ok: true }` on every path — the response must not reveal
-// whether an address is already subscribed (or was ever seen).
+// Uniform `{ ok: true }` — must not reveal whether an address was ever seen.
 const okOutput = z.object({ ok: z.literal(true) })
 
 const subscribeProc = publicProc

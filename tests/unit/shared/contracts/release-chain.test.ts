@@ -1,23 +1,9 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
-// Release-chain acceptance contract (D-1). The 2026-08-01 audit found the
-// entire automated release flow dead (P0-1): scripts/release.ts creates
-// the GitHub release as a DRAFT, and GitHub fires NO workflow events for
-// draft releases — so `release: [created]` triggers never fired, the SEA
-// assets never uploaded, the draft never published, and the semver Docker
-// image never built. The chain was re-designed around the one event the
-// flow always produces — the TAG PUSH:
-//
-//   release.ts: push tag ──► sea.yml (push:tags): build matrix
-//                          └► release-upload job: upload assets ──►
-//     gh release edit --draft=false ──► `published` event ──►
-//     docker.yml (release:[published]): semver image
-//
-// These tests read the workflow files and release.ts as TEXT and pin the
-// links of that chain, so a future edit that re-breaks any handoff fails
-// here instead of during a release. (Text assertions, not YAML parsing:
-// what matters is the exact trigger/gate/step spelling GitHub evaluates.)
+// Release-chain acceptance contract (D-1 / P0-1): the flow rides on
+// tag push → draft publish → `published` event; these tests pin each
+// handoff as text so a re-break fails here, not during a release.
 
 const sea = readFileSync('.github/workflows/sea.yml', 'utf-8')
 const docker = readFileSync('.github/workflows/docker.yml', 'utf-8')
@@ -33,8 +19,7 @@ describe('release chain: the draft-release flow stays triggerable', () => {
   })
 
   it('release.ts creates the release as a draft (the no-partial-release guarantee)', () => {
-    // Users must never see a release with missing assets: the release
-    // stays a draft until sea.yml's release-upload publishes it.
+    // Users must never see a release with missing assets.
     expect(releaseTs).toMatch(/gh release create[^\n]*--draft/)
   })
 
@@ -44,16 +29,9 @@ describe('release chain: the draft-release flow stays triggerable', () => {
   })
 
   it('sea.yml build matrix gate admits tag pushes — anchored per release-upload dependency job', () => {
-    // Without these gates the matrix jobs would be skipped on the tag
-    // push and release-upload's `needs` would never be satisfiable. A
-    // single whole-file match cannot detect ONE leg's gate being renamed
-    // or broken (the other two still match), which would silently make
-    // `needs: [build, build-darwin, build-windows]` unsatisfiable and
-    // the release would never publish — the P0-1 class. So each job's
-    // gate is asserted inside its own job block.
+    // Whole-file matches miss one leg's gate breaking — assert per job block.
     const tagGate = /if:.*startsWith\(github\.ref, 'refs\/tags\/'\)/
-    // Job keys are the only lines indented exactly two spaces under
-    // `jobs:`, so splitting there yields one block per job.
+    // Job keys are the only two-space-indented lines under `jobs:` — one block per job.
     const jobBlocks = sea.slice(sea.indexOf('jobs:')).split(/\n  (?=\S)/)
     for (const job of ['build', 'build-darwin', 'build-windows']) {
       const block = jobBlocks.find((b) => b.startsWith(`${job}:`))
@@ -70,10 +48,6 @@ describe('release chain: the draft-release flow stays triggerable', () => {
   })
 
   it('sea.yml release-upload stays gated on the full matrix and uploads BEFORE publishing (fix-review)', () => {
-    // Without the needs gate the job could run before some matrix leg
-    // finishes; without the step order the draft could go public with
-    // assets still missing — both re-introduce the partial-release
-    // class from P0-1, and neither was anchored until now.
     expect(sea).toMatch(/release-upload:[\s\S]*?needs: \[build, build-darwin, build-windows\]/)
     const uploadIdx = sea.indexOf('gh release upload')
     const publishIdx = sea.indexOf('--draft=false')
@@ -90,8 +64,7 @@ describe('release chain: the draft-release flow stays triggerable', () => {
   it('docker.yml builds the semver image on the `published` event the upload job produces', () => {
     const onBlock = docker.split('jobs:')[0]
     expect(onBlock).toMatch(/release:[\s\S]*types: \[[^\]]*\bpublished\b/)
-    // The semver tags are what the release commit writes into
-    // docker-compose.yml — without this link the compose pull breaks.
+    // The release commit writes these semver tags into docker-compose.yml — without them the compose pull breaks.
     expect(docker).toMatch(/type=semver,pattern=\{\{version\}\}/)
     expect(releaseTs).toMatch(/ghcr\.io\/syhily\/kobato:\$\{version\}/)
   })

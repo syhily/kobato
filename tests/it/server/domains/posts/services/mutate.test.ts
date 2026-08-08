@@ -8,11 +8,7 @@ import { content as contentTable, postSearchIndex } from '@/server/infra/db/sche
 import { page as pageTable } from '@/server/infra/db/schema/page'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 
-// search-index is wrapped (not replaced) so the happy paths below run the
-// REAL index writes against the real engine; the wrappers only exist to
-// inject one-shot failures for the warning branches. Everything else the
-// mutate pipeline touches (revisions, slug registry, tags, invalidation)
-// runs for real.
+// search-index is wrapped, not replaced: real writes, one-shot failures injected.
 vi.mock('@/server/domains/posts/services/search-index', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/server/domains/posts/services/search-index')>()
   return {
@@ -21,8 +17,7 @@ vi.mock('@/server/domains/posts/services/search-index', async (importOriginal) =
   }
 })
 
-// Same wrap-don't-replace pattern for the invalidation door: the real
-// clears/bumps run, the spy only pins WHICH mutations knock on it.
+// Same wrap-don't-replace pattern: the spy pins which mutations knock.
 vi.mock('@/server/domains/content/invalidate', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/server/domains/content/invalidate')>()
   return { invalidateContent: vi.fn(actual.invalidateContent) }
@@ -125,10 +120,7 @@ describe('posts/services/mutate — createPost', () => {
   })
 
   it('throws CONFLICT when a stale registry row owns the slug (the registry constraint leg)', async () => {
-    // A leftover registry row for a post that no longer has a meta row:
-    // the reservation pre-check passes (no meta conflict, same entity
-    // type), so the registry insert itself must surface as a clean
-    // CONFLICT — SQLite names the columns, never the index name.
+    // The registry insert itself surfaces the CONFLICT; SQLite names columns, not the index.
     await db.insert(slugRegistry).values({ slug: 'stale', entityType: 'post', entityId: 999 })
 
     await expect(createPost(db, { slug: 'stale', title: 'Stale' }, 1)).rejects.toMatchObject({
@@ -157,9 +149,7 @@ describe('posts/services/mutate — updatePostMeta', () => {
   })
 
   it('keeps the original pinnedAt when an already-pinned post is re-saved with a fresh stamp', async () => {
-    // The editor derives pinnedAt from its `pinned` boolean on EVERY meta
-    // save, so any edit to a pinned post arrives with a fresh stamp —
-    // applying it would silently reshuffle the pinned/featured order.
+    // Every editor save carries a fresh stamp; applying it would reshuffle the pinned order.
     const { postId } = await seedPublishedPost('pinned')
     const original = new Date('2026-01-15T08:00:00.000Z')
     await db.update(postMetaTable).set({ pinnedAt: original }).where(eq(postMetaTable.id, postId))
@@ -201,9 +191,7 @@ describe('posts/services/mutate — updatePostMeta', () => {
 
     await updatePostMeta(db, { id: postId, slug: 'old', title: 'Renamed', tags: [] })
 
-    // A published post's meta edit reaches the public surface immediately:
-    // the invalidation door fires and the search corpus is rebuilt from the
-    // persisted published revision (the body did not change, the title did).
+    // Published meta edits invalidate and re-index from the published revision.
     expect(invalidateContentMock).toHaveBeenCalledWith(db, { entity: 'post' })
     expect(indexPostMock).toHaveBeenCalledTimes(1)
     expect(indexPostMock.mock.calls[0]?.[2]).toBe('Renamed')
@@ -232,8 +220,7 @@ describe('posts/services/mutate — updatePostMeta', () => {
     expect(dto.published).toBe(false)
     const meta = await db.select().from(postMetaTable).where(eq(postMetaTable.id, postId))
     expect(meta[0]?.published).toBe(false)
-    // The future timestamp is gone (reset to the cancel time), so the post
-    // can never slip live later — the live gate stays closed.
+    // Future timestamp reset to cancel time — the live gate stays closed.
     expect(meta[0]?.publishedAt.getTime()).toBeLessThanOrEqual(Date.now())
     expect(
       isLive({
@@ -313,7 +300,7 @@ describe('posts/services/mutate — restorePost', () => {
     expect(meta[0]?.deletedAt).toBeNull()
     const registry = await db.select().from(slugRegistry).where(eq(slugRegistry.slug, 'hello'))
     expect(registry[0]?.entityId).toBe(postId)
-    // afterRestore re-indexed from the published revision body.
+    // Re-indexed from the published revision body.
     expect(indexPostMock).toHaveBeenCalledTimes(1)
     const rows = await indexRows()
     expect(rows).toHaveLength(1)
@@ -343,7 +330,6 @@ describe('posts/services/mutate — restorePost', () => {
     expect(result.warning).toBe(
       'slug "hello" 已被另一个页面占用，恢复后该 URL 不会指向此文章。请修改 slug 或先处理占用方。',
     )
-    // The page still owns the slug; the post was restored regardless.
     const registry = await db.select().from(slugRegistry).where(eq(slugRegistry.slug, 'hello'))
     expect(registry[0]?.entityType).toBe('page')
   })

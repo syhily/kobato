@@ -119,7 +119,6 @@ describe('draft-store', () => {
     expect(page!.type).toBe('page-create')
     expect(page!.meta).toEqual({ title: 'T' })
 
-    // Legacy keys removed, unrelated key preserved.
     expect(localStorageData.has('cms-post-draft:legacy-post:token')).toBe(false)
     expect(localStorageData.has('cms-page-draft:new:session-abc')).toBe(false)
     expect(localStorageData.get('other-key')).toBe('should-stay')
@@ -162,7 +161,6 @@ describe('draft-store', () => {
     expect(await getDraft('cms-post-draft:1:tok-a')).toBeNull()
     expect(await getDraft('cms-post-draft:1:tok-b')).toBeNull()
     expect(await getDraft('cms-post-draft:1:tok-c')).toBeNull()
-    // Other entities and other content types are untouched.
     expect(await getDraft('cms-post-draft:2:tok-a')).not.toBeNull()
     expect(await getDraft('cms-page-draft:1:tok-a')).not.toBeNull()
   })

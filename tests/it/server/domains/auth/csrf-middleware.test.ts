@@ -6,10 +6,8 @@ import type { Env } from '@/server/http/context'
 
 import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 
-// The csrf module runs for real: `validateCsrfToken` is a pure
-// constant-time comparison and `isPathExempt` reads the settings bundle,
-// so the exempt-path cases seed a bundle instead of mocking the module.
-// (The it setup's afterEach restores the default bundle automatically.)
+// csrfGuard runs for real; the exempt-path cases seed the settings
+// bundle instead of mocking the module.
 
 function makeSession(data: Partial<BlogSessionData> = {}) {
   return createSession<BlogSessionData, BlogSessionData>(data, 'test-session')

@@ -10,20 +10,8 @@ import {
   useMusicPlayerTime,
 } from '@/ui/admin/musics/MusicPlayerContext'
 
-// `MusicPlayerProvider` constructs its `HTMLAudioElement` and binds every
-// event listener inside a `useEffect`. The SSR `renderHook` harness runs a
-// single synchronous pass with no effects, so `audioRef.current` stays
-// `null`, the audio-setup effect (and the `play`/`pause`/`durationchange`
-// handlers it wires) never run, and the audio-driven state transitions are
-// covered by the snap/controller suites instead.
-//
-// What IS observable in a single pass:
-//   - the default fallback state returned when the hooks are consumed
-//     *outside* any provider (`DEFAULT_STATE` / `NOOP_ACTIONS`),
-//   - the initial provider state (every `useState` initializer),
-//   - every action callback is returned and short-circuits to a safe
-//     no-op because `audioRef.current === null`,
-//   - `playIndex` additionally guards against out-of-range indices.
+// The SSR `renderHook` harness runs a single pass with no effects, so the
+// audio-setup effect never fires and `audioRef.current` stays null.
 
 const track: AdminMusicDto = {
   id: 'm1',
@@ -66,7 +54,6 @@ describe('ui/admin/musics/MusicPlayerContext — fallbacks (no provider)', () =>
 
   it('useMusicPlayerActions returns NOOP_ACTIONS outside a provider', () => {
     const actions = renderHook(() => useMusicPlayerActions())
-    // Every fallback is an inert function that returns undefined.
     for (const fn of Object.values(actions)) {
       expect(typeof fn).toBe('function')
     }
@@ -82,9 +69,6 @@ describe('ui/admin/musics/MusicPlayerContext — fallbacks (no provider)', () =>
 })
 
 describe('ui/admin/musics/MusicPlayerContext — provider initial state', () => {
-  // The provider mounts under `renderHook`'s `wrapper`; no effects fire so
-  // `audioRef.current` stays null, but the initial `useState` values are
-  // observable via the state hook.
   it('exposes the default initial state on first render', () => {
     const state = renderHook(() => useMusicPlayerState(), {
       wrapper: MusicPlayerProvider,
@@ -120,11 +104,6 @@ describe('ui/admin/musics/MusicPlayerContext — provider initial state', () => 
 })
 
 describe('ui/admin/musics/MusicPlayerContext — action no-ops (no audio in SSR)', () => {
-  // Every action reads `audioRef.current`, which is null until the
-  // audio-setup effect runs. In the SSR harness that effect never fires,
-  // so each callback hits its guard and is a safe no-op. We invoke them
-  // inside the `actions` slot (run during the render pass) and also
-  // directly on the returned object to exercise both surfaces.
   it('load is a no-op when the audio element is not mounted', () => {
     const actions = renderHook(() => useMusicPlayerActions(), {
       wrapper: MusicPlayerProvider,
@@ -140,8 +119,6 @@ describe('ui/admin/musics/MusicPlayerContext — action no-ops (no audio in SSR)
     const actions = renderHook(() => useMusicPlayerActions(), {
       wrapper: MusicPlayerProvider,
     })
-    // The `newPlaylist.length > 0` branch is only meaningful once the
-    // audio is mounted; without it the whole body short-circuits first.
     expect(() => actions.load(track, [])).not.toThrow()
   })
 
@@ -181,11 +158,7 @@ describe('ui/admin/musics/MusicPlayerContext — action no-ops (no audio in SSR)
   })
 
   it('close resets state even without a mounted audio element', () => {
-    // `close` is the one action that mutates state unconditionally — it
-    // clears track/playlist/index regardless of `audioRef.current`. In
-    // the SSR pass the initial state is already the "cleared" state, so
-    // we assert close is safe to call and leaves the (already default)
-    // state untouched.
+    // `close` mutates state unconditionally, with no `audioRef.current` guard.
     const actions = renderHook(() => useMusicPlayerActions(), {
       wrapper: MusicPlayerProvider,
     })
@@ -196,9 +169,6 @@ describe('ui/admin/musics/MusicPlayerContext — action no-ops (no audio in SSR)
     const actions = renderHook(() => useMusicPlayerActions(), {
       wrapper: MusicPlayerProvider,
     })
-    // The playlist ref is empty in SSR, so every index is out of range
-    // and playIndex returns early — exercising both the negative and
-    // >= length guards.
     expect(() => actions.playIndex(-1)).not.toThrow()
     expect(() => actions.playIndex(0)).not.toThrow()
     expect(() => actions.playIndex(99)).not.toThrow()
@@ -206,18 +176,12 @@ describe('ui/admin/musics/MusicPlayerContext — action no-ops (no audio in SSR)
 })
 
 describe('ui/admin/musics/MusicPlayerContext — HTMLAudioElement polyfill safety', () => {
-  // The provider's audio-setup effect is skipped in SSR, but the
-  // `new Audio()` call inside it (and the `useDominantColor` → `new Image()`
-  // path) only matters for completeness. We assert the host globals the
-  // provider relies on are available so the module loads cleanly under
-  // the node environment.
+  // The module must load cleanly under node without audio/Image globals.
   afterEach(() => {
     vi.restoreAllMocks()
   })
 
   it('does not throw when constructing the provider tree', () => {
-    // Mounting the provider alone (with children) must not error even
-    // though the audio-setup effect is deferred.
     expect(() => renderHook(() => useMusicPlayerState(), { wrapper: MusicPlayerProvider })).not.toThrow()
   })
 })

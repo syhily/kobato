@@ -7,12 +7,9 @@ import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { orpcQuery } from '@/client/api/orpc-query'
 import { CategoriesView } from '@/ui/admin/categories/CategoriesView'
 
-// CategoriesView reads its rows straight from the list `useQuery` data
-// (TanStack single-track), plus delete / reorder `useMutation`s, with DnD via
-// dnd-kit. The existing `categories-view.test.tsx` covers the loading and
-// empty states; this spec adds populated rows (the `rows.map` callback inside
-// the SortableContext), the error state, and the mutation side effects
-// (delete success invalidates the list so the row disappears).
+// CategoriesView reads rows from the list useQuery + delete/reorder
+// mutations (dnd-kit). categories-view.test.tsx covers loading/empty; this
+// adds populated rows, the error state and mutation side effects.
 
 interface CapturedMutationOptions {
   onMutate?: (variables: { orderedIds: string[] }) => void
@@ -56,9 +53,7 @@ vi.mock('@tanstack/react-query', async () => {
 
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
 
-// dnd-kit touches `document`/DOM measurements at mount; the snapshot only
-// needs the tree structure, so each primitive is shimmed to render its
-// children (mirrors categories-view.test.tsx).
+// dnd-kit touches DOM at mount — each primitive is shimmed to render children.
 vi.mock('@dnd-kit/core', () => ({
   DndContext: ({ children }: { children: React.ReactNode }) => children,
   PointerSensor: class PointerSensor {},
@@ -71,8 +66,7 @@ vi.mock('@dnd-kit/sortable', () => ({
   SortableContext: ({ children }: { children: React.ReactNode }) => children,
   sortableKeyboardCoordinates: {},
   verticalListSortingStrategy: {},
-  // `useSortable` is called inside CategoryRow; return stable no-op values
-  // so SSR can render the row markup without touching the DOM.
+  // useSortable → stable no-ops so SSR renders rows without touching the DOM.
   useSortable: () => ({
     attributes: { 'aria-roledescription': 'sortable' },
     listeners: {},
@@ -92,8 +86,6 @@ vi.mock('@dnd-kit/modifiers', () => ({
 
 vi.mock('@/ui/components/dialog', () => import('#/_helpers/stubs/dialog'))
 
-// ───────────────────────────── fixtures ─────────────────────────────
-
 function makeCategory(overrides: Partial<AdminCategoryDto> = {}): AdminCategoryDto {
   return {
     id: 'cat-1',
@@ -109,8 +101,6 @@ function makeCategory(overrides: Partial<AdminCategoryDto> = {}): AdminCategoryD
     ...overrides,
   }
 }
-
-// ─────────────────────────── shared setup ───────────────────────────
 
 describe('snapshot: CategoriesView branches', () => {
   beforeEach(() => {
@@ -132,10 +122,8 @@ describe('snapshot: CategoriesView branches', () => {
     const html = stableHtml(renderInRouter(<CategoriesView />, '/admin/taxonomy/categories'))
     expect(html).toContain('前端')
     expect(html).toContain('随笔')
-    // CategoryRow renders the post-count suffix.
     expect(html).toContain('4 篇')
     expect(html).toContain('7 篇')
-    // Header title shows the resolved total.
     expect(html).toContain('分类管理')
   })
 
@@ -153,7 +141,7 @@ describe('snapshot: CategoriesView branches', () => {
     }
     const html = stableHtml(renderInRouter(<CategoriesView />, '/admin/taxonomy/categories'))
     expect(html).toContain('分类管理')
-    // No rows + not fetching => empty state. The toast is mocked.
+    // No rows + not fetching → empty state (toast mocked).
     expect(html).toContain('未找到分类')
   })
 

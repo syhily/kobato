@@ -6,8 +6,6 @@ const SETTINGS = {
   settings: { locale: 'zh-CN', timeZone: 'Asia/Shanghai', timeFormat: 'yyyy-LL-dd HH:mm' },
 }
 
-// --- formatBytes ----------------------------------------------------------
-
 describe('shared/utils/formatter — formatBytes', () => {
   it('renders bytes below 1 KiB as B', () => {
     expect(formatBytes(0)).toBe('0 B')
@@ -32,8 +30,6 @@ describe('shared/utils/formatter — formatBytes', () => {
   })
 })
 
-// --- slicePosts (extra branches) -----------------------------------------
-
 describe('shared/utils/formatter — slicePosts mergeTailWhenLessThan', () => {
   it('returns the natural last page tail when threshold is 0', () => {
     const result = slicePosts(
@@ -49,8 +45,6 @@ describe('shared/utils/formatter — slicePosts mergeTailWhenLessThan', () => {
   })
 
   it('merges the last page into the previous one when the tail is below the threshold', () => {
-    // 12 posts, pageSize 10 → natural last page has 2 posts. Threshold 3
-    // means 2 < 3, so the tail merges into page 1.
     const result = slicePosts(
       Array.from({ length: 12 }, (_, i) => i),
       1,
@@ -64,7 +58,6 @@ describe('shared/utils/formatter — slicePosts mergeTailWhenLessThan', () => {
   })
 
   it('keeps the natural totalPage when the tail meets the threshold', () => {
-    // 13 posts, pageSize 10 → tail of 3; threshold 3 keeps the split.
     const result = slicePosts(
       Array.from({ length: 13 }, (_, i) => i),
       1,
@@ -90,14 +83,11 @@ describe('shared/utils/formatter — slicePosts mergeTailWhenLessThan', () => {
   })
 
   it('threshold is ignored when totalPage would dip below 1', () => {
-    // Empty list → naturalTotalPage 0; merge never applies.
     const result = slicePosts([], 1, 10, { mergeTailWhenLessThan: 10 })
     expect(result.totalPage).toBe(0)
     expect(result.currentPosts).toEqual([])
   })
 })
-
-// --- formatShowDate (far-past branch) ------------------------------------
 
 describe('shared/utils/formatter — formatShowDate far-past branch', () => {
   it('falls through to formatLocalDate when the delta is >= 210 days', () => {
@@ -114,8 +104,6 @@ describe('shared/utils/formatter — formatShowDate far-past branch', () => {
     expect(formatShowDate(same, SETTINGS, now)).toBe('今天')
   })
 })
-
-// --- formatLocalDate (direct, multiple format tokens) --------------------
 
 describe('shared/utils/formatter — formatLocalDate token substitution', () => {
   it('substitutes every supported token', () => {

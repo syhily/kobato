@@ -23,14 +23,7 @@ function applyRatio(source: HTMLElement, target: HTMLElement) {
 
 /**
  * Bidirectional ratio-based scroll sync between the editor canvas and the
- * live-preview pane. The pane the user last interacted with becomes the
- * active source; the other pane follows via scroll-ratio mapping.
- *
- * `scrollTop / (scrollHeight - clientHeight)` is mapped onto the target's
- * equivalent range. This is the same strategy VS Code and GitHub use for
- * markdown preview sync — simple, robust to content changes, and good enough
- * because both panes share the same `prose-blog` stylesheet so block heights
- * stay roughly proportional.
+ * live-preview pane; the last-interacted pane is the active source.
  */
 export function useSyncScroll({ editorRef, previewRef, enabled }: UseSyncScrollOptions): void {
   const activeSourceRef = useRef<ActiveSource>(null)

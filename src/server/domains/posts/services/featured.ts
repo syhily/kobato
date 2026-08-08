@@ -73,8 +73,7 @@ export async function selectFeaturePosts(db: Database, seed: string): Promise<Cl
   const recentIds = new Set(recentMetas.map((r) => r.id))
   const pinnedSlugs = new Set(pinnedMetas.map((m) => m.slug))
   const candidateMetas = allWithCover.filter((m) => !pinnedSlugs.has(m.slug) && !recentIds.has(m.id))
-  // One name batch for the union of pinned + candidate rows — the same
-  // seam `hydratePostList` mounts for every other public listing.
+  // One name batch for the union of pinned + candidate rows.
   const [pinnedTagMap, candidateTagMap, categoryMap] = await Promise.all([
     findTagNamesByPostIds(
       db,
@@ -115,14 +114,8 @@ export async function selectSidebarPosts(db: Database, count: number): Promise<S
     return []
   }
   const where = and(livePostWhere(), eq(postMetaTable.visible, true))
-  // The previous ORDER BY (id*seed) expression sort evaluated and ordered
-  // the whole table per request, and the `Date.now():Math.random()` seed
-  // string silently degraded to a millisecond timestamp under SQLite's
-  // numeric-prefix parsing. Instead: read the candidate ids once (one
-  // cheap indexed column scan), pick distinct random positions in JS —
-  // uniform per request, no repeats — then fetch exactly those rows with
-  // one key-based IN query. The sidebar randomises on every load, so the
-  // pick deliberately uses a fresh CSPRNG draw each call.
+  // Read candidate ids once, pick distinct random positions in JS, fetch via
+  // one IN query; the pick uses a fresh CSPRNG draw each call.
   const idRows = await db
     .select({ id: postMetaTable.id })
     .from(postMetaTable)

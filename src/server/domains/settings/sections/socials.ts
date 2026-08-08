@@ -3,16 +3,8 @@ import { z } from 'zod'
 import { SOCIAL_NETWORK_META, SOCIAL_NETWORKS } from '@/shared/config/socials'
 import { httpUrlOrEmptyStringSchema } from '@/shared/utils/safe-url'
 
-// Each row is pinned to a platform from the closed `SOCIAL_NETWORKS`
-// list, and the display `type` is forced to the canonical type for that
-// platform (WeChat / QQ → qrcode, others → link). The admin form only
-// surfaces these as a fixed badge — the schema is the second line of
-// defence against a hand-crafted payload that tries to mix and match.
-//
-// The `superRefine` also enforces uniqueness so every platform appears
-// at most once — the admin form already filters used platforms out of
-// the picker, but a stale tab or a direct API call could otherwise
-// sneak duplicates past the UI.
+// Schema-level guard: `type` is forced to the platform's canonical display mode and each
+// platform may appear at most once — a hand-crafted payload could otherwise mix or duplicate rows.
 export const socialsSchema = z
   .object({
     socials: z

@@ -9,11 +9,8 @@ import { post as postTable } from '@/server/infra/db/schema/post'
 import { postTag } from '@/server/infra/db/schema/post-tag'
 import { category as categoryTable, tag as tagTable } from '@/server/infra/db/schema/taxonomy'
 
-// Listing routes (`/cats/:slug`, `/tags/:slug`, `/search/:keyword`) all share
-// the same skeleton. We pin the public 404/redirect contracts that are part
-// of the URL surface (AGENTS.md says these paths must remain stable forever)
-// against the real engine: seeded taxonomy + live posts (one hidden), real
-// LIKE search, real listing SEO.
+// Listing routes pin the public 404/redirect contracts (URL surface,
+// AGENTS.md: must remain stable forever) against the real engine.
 
 const db = getTestDb()
 
@@ -43,8 +40,7 @@ async function seedPost(opts: {
     .values({
       slug: opts.slug,
       title: `${opts.slug} react notes`,
-      // The LIKE corpus covers title + summary — 'react' keeps every seeded
-      // post searchable for the /search/:keyword cases.
+      // 'react' in title + summary keeps every seeded post searchable for /search/:keyword.
       summary: 'react summary',
       published: true,
       publishedAt: date,

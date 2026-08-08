@@ -31,7 +31,6 @@ function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
 }
 
-/** Fetch init captured from the most recent call. */
 function lastFetchInit(): RequestInit {
   const init = fetchMock.mock.calls.at(-1)?.[1] as RequestInit | undefined
   if (init === undefined) {

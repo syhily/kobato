@@ -12,13 +12,9 @@ import {
   sortManifestFiles,
 } from '../../../../scripts/sea/assets.ts'
 
-// Unit tests for the SEA blob compression contract: the writer
-// (`scripts/sea/assets.ts` packAssetBytes / manifest shape) and the
-// reader (`@/server/infra/sea` createEmbeddedAssetReader) must agree on
-// the packed format, with the manifest asset riding uncompressed as the
-// decompression registry. The reader is exercised against a stub
-// `node:sea`-shaped source — vitest never runs as a single executable, so
-// the real `getEmbeddedAsset` only degrades to null here (see sea.test.ts).
+// SEA blob compression contract: the writer and reader must agree on the
+// packed format, with the manifest asset riding uncompressed as the
+// decompression registry. The reader runs against a stub node:sea source (see sea.test.ts).
 
 function sha256(bytes: Buffer): string {
   return createHash('sha256').update(bytes).digest('hex')
@@ -35,13 +31,10 @@ interface ManifestEntryShape {
   size?: number
 }
 
-/**
- * Build the manifest asset bytes in the exact writer shape — entries
- * sorted by key, `{ key, path, sha256, codec, size }`, 2-space JSON with
- * a trailing newline (scripts/sea/assets.ts serializes it once and the
- * natives cache dir is named after the sha256 of these bytes). `codec`
- * and `size` are optional so tests can emulate pre-compression binaries.
- */
+/** Manifest bytes in the exact writer shape: entries sorted by key,
+ *  `{ key, path, sha256, codec, size }`, 2-space JSON + trailing newline
+ *  (the natives cache dir is named after the sha256 of these bytes);
+ *  `codec`/`size` optional to emulate pre-compression binaries. */
 function manifestAsset(entries: ManifestEntryShape[], rawByKey: Record<string, Buffer>): Buffer {
   const files = sortManifestFiles(
     entries.map((entry) => {
@@ -79,11 +72,8 @@ function makeSource(assets: Map<string, Buffer>) {
   return { source, reads }
 }
 
-/**
- * Pack every entry through the real writer helper and assemble the blob
- * assets (packed payloads + uncompressed manifest) the way
- * `collectSeaAssets` lays them out.
- */
+/** Packs entries through the real writer and assembles the blob assets
+ *  (packed payloads + uncompressed manifest) like `collectSeaAssets`. */
 function buildBlob(rawByKey: Record<string, Buffer>, codec: 'zstd' | 'brotli') {
   const assets = new Map<string, Buffer>()
   const entries = Object.keys(rawByKey).map((key) => {

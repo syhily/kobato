@@ -5,17 +5,8 @@ import { getProcessPool } from '@/server/infra/image/process-pool'
 import { processImageInWorker, WorkerDomainError } from '@/server/infra/image/process-worker'
 
 /**
- * Process an uploaded image buffer: decode, optional resize, re-encode to
- * progressive mozjpeg JPEG, and compute a ThumbHash placeholder.
- *
- * In production the work runs inside a `worker_threads` pool (see
- * `process-pool.ts`) so the decode + resize + re-encode + thumbhash
- * pipeline — typically 200–800ms — never blocks the request thread.
- *
- * In development the same pure function runs inline to keep HMR fast and
- * avoid worker spawn churn on every reload. `WorkerDomainError` thrown
- * by the inline path is re-thrown as a real `DomainError` so callers see
- * the exact same exception type in both modes.
+ * Decode / resize / re-encode an uploaded image (worker pool in prod,
+ * inline in dev); inline `WorkerDomainError`s come back as `DomainError`s.
  */
 export async function processImageBuffer(input: ProcessImageInput): Promise<ProcessedImage> {
   if (import.meta.env.DEV) {
@@ -30,10 +21,7 @@ export async function processImageBuffer(input: ProcessImageInput): Promise<Proc
 }
 
 /**
- * Convert a `WorkerDomainError` (used inside the worker isolate to avoid
- * importing the real `DomainError` class, which pulls in `pg`) back into a
- * proper `DomainError` on the main thread. Non-domain errors pass through
- * unchanged.
+ * Re-hydrate a `WorkerDomainError` into a real `DomainError`; others pass through.
  */
 function rehydrateDomainError(err: unknown): unknown {
   if (err instanceof WorkerDomainError) {

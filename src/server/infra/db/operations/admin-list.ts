@@ -7,20 +7,14 @@ import type { Database } from '@/server/infra/db/database'
 import { user } from '@/server/infra/db/schema/user'
 
 /**
- * Shared query shapes for the admin list endpoints. The entity
- * operation modules (`image`, `music`, `friend`, `category`, …) keep
- * only their entity-specific filter→SQL mapping and column
- * selections; the WHERE assembly, the offset/limit pagination tail,
- * and the `<entity> LEFT JOIN user` uploader projection live here so
- * the four near-identical implementations cannot drift apart.
+ * Shared query shapes for the admin list endpoints: WHERE assembly, the
+ * pagination tail, and the `<entity> LEFT JOIN user` uploader projection,
+ * so the near-identical list implementations cannot drift apart.
  */
 
 /**
- * Collapse a conditions array into a single `WHERE` fragment:
- * `undefined` when empty (caller skips `.where()` entirely), the
- * single condition verbatim, or the conjunction otherwise. Centralised
- * so the row listing and its pagination counter always filter on the
- * same predicate shape.
+ * Collapse conditions into one `WHERE` fragment — `undefined` when empty —
+ * so the row listing and its counter share the same predicate.
  */
 export function assembleWhere(conditions: SQL[]): SQL | undefined {
   if (conditions.length === 0) {
@@ -39,21 +33,12 @@ export interface AdminListPage {
   limit?: number
 }
 
-/**
- * Structural minimum `applyPage` needs from a Drizzle select: an
- * awaitable row list whose `limit`/`offset` tails stay awaitable.
- */
 type PageableQuery<TRow> = PromiseLike<TRow[]> & {
   limit(count: number): PromiseLike<TRow[]> & { offset(count: number): PromiseLike<TRow[]> }
   offset(count: number): PromiseLike<TRow[]>
 }
 
-/**
- * Apply the admin list pagination tail to an ordered select. `limit`
- * is the primary control; `offset` is only honoured when strictly
- * positive (a zero/negative offset must not emit `OFFSET 0`… or drop
- * the `LIMIT` branch). Passing neither returns the query untouched.
- */
+/** Apply the pagination tail; `offset` is only honored when strictly positive. */
 export function applyPage<TRow>(query: PageableQuery<TRow>, page: AdminListPage): Promise<TRow[]> {
   if (page.limit !== undefined) {
     if (page.offset !== undefined && page.offset > 0) {
@@ -68,48 +53,29 @@ export function applyPage<TRow>(query: PageableQuery<TRow>, page: AdminListPage)
 }
 
 /**
- * Projection adapter for the `<entity> LEFT JOIN user` pattern the
- * admin list views share: the entity's own columns (projected
- * verbatim, so `user.password` never leaks into a `select(*)`), plus
- * an `uploaderName` joined from `user`. The LEFT JOIN keeps rows
- * visible when `uploader_id` is NULL (legacy rows) or the uploader
- * was hard-deleted; `uploaderName` is `null` in both cases.
- *
- * Also owns the two consumers of that projection: the single-row
- * refetch by id, and the UPDATE…RETURNING two-step — PG's
- * `UPDATE ... RETURNING` cannot `JOIN`, so a mutation that must hand
- * the admin shell the full joined DTO updates first and re-reads the
- * row through the same projection.
+ * Projection adapter for the `<entity> LEFT JOIN user` pattern: entity
+ * columns verbatim (never `select(*)`, so `user.password` stays out),
+ * plus `uploaderName`; owns the by-id refetch and the update-then-refetch.
  */
 export function withUploader<TColumns extends SelectedFields>(options: {
-  /** Entity table the projection selects from. */
   table: SQLiteTable
-  /** The table's primary-key column, matched by `findJoinedRowById`. */
   idColumn: SQLiteColumn
-  /** The table's FK column the `user` join hangs off. */
   uploaderIdColumn: SQLiteColumn
   /** Entity-specific column selection, WITHOUT `uploaderName`. */
   columns: TColumns
 }) {
   const columns = { ...options.columns, uploaderName: user.name } as const
 
-  /** Base `<entity> LEFT JOIN user` select; callers chain `.where()` / `.orderBy()` as needed. */
   function selectJoined(db: Database) {
     return db.select(columns).from(options.table).leftJoin(user, eq(user.id, options.uploaderIdColumn))
   }
 
-  /** Single-row read through the joined projection, keyed by `idColumn`. */
   async function findJoinedRowById(db: Database, id: number) {
     const rows = await selectJoined(db).where(eq(options.idColumn, id)).limit(1)
     return rows[0] ?? null
   }
 
-  /**
-   * Run an entity update, then re-read the row through the joined
-   * projection so the caller receives the full DTO (including
-   * `uploaderName`) in one helper call. Returns `null` without a
-   * follow-up read when the update matched no row.
-   */
+  /** Update, then re-read through the joined projection so the caller gets the full DTO in one call. */
   async function updateThenRefetch<TUpdated>(
     db: Database,
     id: number,

@@ -52,8 +52,7 @@ describe('integration / webmention outbox enqueue on publish', () => {
     )
 
     const rows = await db.select().from(webmentionOutbox)
-    // The first two hrefs normalize to the same URL (fragment + trailing
-    // slash stripped) — one row, not two.
+    // The first two hrefs normalize to one URL (fragment + trailing slash stripped).
     expect(rows).toHaveLength(2)
     const targets = rows.map((r) => r.targetUrl).sort()
     expect(targets).toEqual(['https://external.dev/article', 'https://other.dev/x'])
@@ -132,8 +131,7 @@ describe('integration / webmention outbox waterline for scheduled posts', () => 
     const rows = await db.select().from(webmentionOutbox)
     expect(rows).toHaveLength(1)
     expect(rows[0]!.status).toBe('pending')
-    // The hook must see the publishedAt the publish transaction wrote, not
-    // the pre-publish (NULL) one.
+    // The hook sees the publish transaction's publishedAt, not the pre-publish NULL.
     expect(rows[0]!.nextRetryAt!.getTime()).toBe(publishedAt.getTime())
     expect(await pickDueWebmentionOutbox(db, new Date(), 10)).toHaveLength(0)
   })
@@ -154,9 +152,8 @@ describe('integration / webmention outbox waterline for scheduled posts', () => 
     // The real delayUntil mapping: future publishedAt → waterline = publishedAt.
     expect(rows[0]!.nextRetryAt!.getTime()).toBe(publishedAt.getTime())
 
-    // Not due now — the send must wait for the public moment …
+    // Not due now, but due exactly at the publish moment.
     expect(await pickDueWebmentionOutbox(db, new Date(), 10)).toHaveLength(0)
-    // … and it IS due at the publish moment.
     expect(await pickDueWebmentionOutbox(db, publishedAt, 10)).toHaveLength(1)
   })
 

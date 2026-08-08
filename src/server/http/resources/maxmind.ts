@@ -16,7 +16,7 @@ import { MAXMIND_DB_PATH } from '@/server/infra/paths'
 
 const log = getLogger('maxmind.http')
 
-const MAXMIND_MAX_BYTES = 100 * 1024 * 1024 // 100 MiB
+const MAXMIND_MAX_BYTES = 100 * 1024 * 1024
 
 export const maxmindRouter = new Hono<Env>().post(
   '/api/admin/maxmind/upload',
@@ -42,11 +42,8 @@ export const maxmindRouter = new Hono<Env>().post(
       return c.json({ error: { message: '上传文件为空' } }, 400)
     }
 
-    // Serialize with the remote-update flow — both swap the same
-    // database/meta pair. The write itself is atomic: stage to a temp
-    // file, validate by opening it, then rename into place. A corrupt
-    // upload never touches the live database (and readers never see a
-    // half-written file).
+    // Serialize with the remote-update flow; the write is atomic — stage,
+    // validate by opening, then rename. A corrupt upload never touches the live DB.
     const ok = await withGeoipWriteLock(async () => {
       await mkdir(path.dirname(MAXMIND_DB_PATH), { recursive: true })
       const tmpPath = `${MAXMIND_DB_PATH}.upload`
@@ -54,17 +51,13 @@ export const maxmindRouter = new Hono<Env>().post(
       try {
         await Reader.open(tmpPath)
       } catch {
-        await unlink(tmpPath).catch(() => {
-          /* already deleted */
-        })
+        await unlink(tmpPath).catch(() => {})
         return false
       }
       await rename(tmpPath, MAXMIND_DB_PATH)
 
-      // The swap is done — refresh the reader first, then record
-      // provenance best-effort: it tells the daily auto-update this
-      // database was installed manually and must not be replaced behind
-      // the admin's back.
+      // Refresh the reader first, then mark provenance — the daily auto-update
+      // must not replace a manually installed database.
       resetGeoReader()
       await writeGeoipMetaBestEffort({ version: null, source: 'upload', updatedAt: new Date().toISOString() })
       return true

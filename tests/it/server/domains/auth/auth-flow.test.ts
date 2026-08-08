@@ -13,16 +13,8 @@ import { session as sessionTable } from '@/server/infra/db/schema/session'
 import { user as userTable } from '@/server/infra/db/schema/user'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
-// `signUpInitialAdminWithSession` against the real engine: the admin
-// insert, the 18-section settings seed, the session establish, the
-// settings re-hydration, and the login audit all run for real against
-// the shared in-memory database. Nothing is mocked — the concurrent-
-// install race is reproduced with a real unique-constraint collision,
-// which also proves the transaction rolls the seed back atomically.
-//
-// The two legacy boundary cases that mocked `insertAdmin` returning []
-// are gone: with the real engine a successful INSERT always returns the
-// row, so that boundary is a mock artifact, not reachable behaviour.
+// signUpInitialAdminWithSession against the real engine — nothing
+// mocked; the concurrent-install race is a real UNIQUE collision.
 
 const db = getTestDb()
 
@@ -32,9 +24,7 @@ beforeEach(async () => {
 })
 
 afterEach(async () => {
-  // Flush BEFORE dropping the batcher: InsertBatcher.dispose() leaves an
-  // armed flush timer behind, so an unflushed queue would otherwise
-  // insert this case's stale events mid-next-test.
+  // Flush BEFORE dropping the batcher: an armed flush timer would insert after the wipe.
   await flushAuditLog()
   resetAllBatchers()
 })
@@ -163,9 +153,7 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1,
   })
 
   it('propagates the insert failure and rolls the seed back (concurrent install race)', async () => {
-    // A non-admin account holding the same email: `hasAdmin` passes,
-    // then `insertAdmin` collides with the real UNIQUE constraint on
-    // user.email — exactly the concurrent-install race.
+    // A visitor holds the email: insertAdmin collides with the real UNIQUE constraint.
     await db.insert(userTable).values({
       name: 'Squatter',
       email: 'admin@example.com',

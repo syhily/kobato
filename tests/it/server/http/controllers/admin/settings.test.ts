@@ -13,18 +13,13 @@ import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-reg
 import { auditLog, setting } from '@/server/infra/db/schema/config'
 import { user } from '@/server/infra/db/schema/user'
 
-// adminSettingsRouter.update against the real engine: the section write,
-// secret encryption, snapshot refresh, and admin projection all run for
-// real against the in-memory database. Section-change dispatch
-// (backup/audit reschedule, mail transport invalidation) is covered by
-// the unit tests and stays unregistered here.
+// update against the real engine (section write, encryption, snapshot,
+// projection); section-change dispatch stays unregistered (unit-covered).
 const db = getTestDb()
 
 let adminId = 0
 
-// `refreshBlogSettings` refuses to build a bundle while the two
-// setup-owned sections (siteIdentity / assets) have no stored row, so
-// every update test seeds them first.
+// `refreshBlogSettings` refuses a bundle until the setup-owned sections are seeded.
 async function seedBaselineSettings(): Promise<void> {
   await db.insert(setting).values([
     { scope: 'blog.general', data: TEST_BLOG_SETTINGS_BUNDLE.siteIdentity },
@@ -32,8 +27,7 @@ async function seedBaselineSettings(): Promise<void> {
   ])
 }
 
-// audit_log.actor_id references user.id, so the editor must be a real
-// row for the batched audit insert to survive the FK on flush.
+// audit_log.actor_id references user.id: the editor must be a real row for the FK.
 async function seedAdmin(): Promise<number> {
   const [row] = await db
     .insert(user)
@@ -57,8 +51,7 @@ beforeEach(async () => {
 afterEach(async () => {
   await flushAuditLog()
   resetAllBatchers()
-  // The real update refreshes the in-process settings snapshot from the
-  // test database; the it setup's afterEach re-seeds the fixture bundle.
+  // The real update refreshes the in-process snapshot; the it setup re-seeds it.
 })
 
 describe('adminSettingsRouter.update', () => {
@@ -74,8 +67,7 @@ describe('adminSettingsRouter.update', () => {
       { context: adminCtx() },
     )
 
-    // The response is the merged section in the admin display shape:
-    // secrets redacted, only the last-4 mask merged in.
+    // Admin display shape: secrets redacted to the last-4 mask.
     expect(res.section).toMatchObject({
       mail: {
         enabled: false,
@@ -90,7 +82,6 @@ describe('adminSettingsRouter.update', () => {
     const [row] = await db.select().from(setting).where(eq(setting.scope, 'blog.mail'))
     expect((row.data as { mail: { apiKey: string } }).mail.apiKey).toMatch(/^enc2:/)
 
-    // The write records a real audit row (flushed from the batcher).
     await flushAuditLog()
     const auditRows = await db.select().from(auditLog).where(eq(auditLog.action, 'settings_updated'))
     expect(auditRows).toHaveLength(1)

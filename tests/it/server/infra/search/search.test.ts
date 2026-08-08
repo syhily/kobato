@@ -31,8 +31,7 @@ function liveWhere() {
 beforeEach(async () => {
   await clearAllTables(db)
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
-  // The generation counter is memoized process-wide; drop the memo so
-  // each test re-reads the freshly cleared kv_cache table.
+  // Drop the process-wide memo so each test re-reads the cleared kv_cache table.
   __resetCacheCountersForTests()
   __clearLogCaptureForTests()
 })
@@ -89,8 +88,7 @@ describe('services/search — searchPosts', () => {
 
     const result = await searchPosts(db, liveWhere(), 'test', 2, 1)
 
-    // Ordered by publishedAt DESC: post-c, post-b, post-a
-    // offset=1, limit=2 → post-b, post-a
+    // publishedAt DESC, offset=1 → post-b, post-a.
     expect(result.hits).toEqual(['post-b', 'post-a'])
     expect(result.page).toBe(1)
     expect(result.totalPages).toBe(2)
@@ -119,24 +117,18 @@ describe('services/search — search result cache invalidation', () => {
   it('serves fresh results after the search generation is bumped', async () => {
     await seedPost({ slug: 'cache-alpha', title: 'Cache Alpha' })
 
-    // First query populates the result cache …
+    // First query populates the result cache; a corpus change stays invisible while the entry lives.
     const first = await searchPosts(db, liveWhere(), 'cache', 10)
     expect(first.hits).toEqual(['cache-alpha'])
 
-    // … a corpus change stays invisible while the cached entry lives.
     await seedPost({ slug: 'cache-beta', title: 'Cache Beta' })
     const stale = await searchPosts(db, liveWhere(), 'cache', 10)
     expect(stale.hits).toEqual(['cache-alpha'])
 
-    // Invalidation bumps the generation stamp, so the next query misses
-    // the old-generation entry and re-runs against the corpus.
     await bumpCounter(db, 'searchResult')
     const fresh = await searchPosts(db, liveWhere(), 'cache', 10)
     expect(fresh.hits).toEqual(['cache-beta', 'cache-alpha'])
 
-    // The counter row now exists, so a second bump takes the
-    // ON CONFLICT DO UPDATE branch (value::int + 1) — and invalidates
-    // all over again.
     await seedPost({ slug: 'cache-gamma', title: 'Cache Gamma' })
     const staleAgain = await searchPosts(db, liveWhere(), 'cache', 10)
     expect(staleAgain.hits).toEqual(['cache-beta', 'cache-alpha'])
@@ -178,7 +170,6 @@ describe('services/search — searchResult cache rows (real registry)', () => {
     expect(second.page).toBe(2)
     expect(second.totalPages).toBe(2)
 
-    // Both pages read the ONE cached slug list — no per-page entry.
     const rows = await db.select().from(kvCache).where(eq(kvCache.bucket, 'searchResult'))
     expect(rows).toHaveLength(1)
   })

@@ -1,9 +1,7 @@
 import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
-// One-shot tokens (setup token, passkey registration/authentication
-// challenges, comment tokens) — the replacement for Redis keys consumed
-// via GET-and-DEL. Consumption is a single `DELETE … RETURNING payload`
-// statement so the atomic no-replay semantics carry over.
+// One-shot tokens (setup, passkey challenges, comment tokens). Consumption
+// is a single `DELETE … RETURNING payload` — atomic no-replay.
 export const oneTimeToken = sqliteTable(
   'one_time_token',
   {

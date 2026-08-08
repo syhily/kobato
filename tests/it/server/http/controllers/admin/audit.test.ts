@@ -6,11 +6,8 @@ import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 import { auditLog } from '@/server/infra/db/schema/config'
 import { user } from '@/server/infra/db/schema/user'
 
-// auditLogRouter against the real engine: the four query functions run
-// against real audit_log/user rows (pagination math, actor join, CSV
-// assembly, and the 10k export cap are all exercised for real). Only the
-// Shiki-based syntax highlighter stays mocked — its WASM boot is heavy
-// and the unit tests already cover it.
+// auditLogRouter against the real engine (pagination, actor join, CSV, 10k export cap);
+// only mock: the Shiki highlighter (WASM boot, covered in unit tests).
 vi.mock('@/server/domains/audit/highlight', () => ({
   highlightAuditLogDetails: vi.fn((details: string | null) => Promise.resolve(details)),
 }))

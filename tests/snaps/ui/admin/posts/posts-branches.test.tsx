@@ -38,13 +38,9 @@ mocks.query = {
   refetch: vi.fn(),
 }
 
-// PostsView drives its rows from `useInfiniteQuery` (server state lives in
-// the TanStack cache) and its filter surface from the shared `useFilterPills`
-// hook. To maximise render-path branch coverage we bypass both: a hoisted
-// pill-list singleton each test can flip (the module mock swaps ONLY the
-// hook — the real `<FilterPillBar>` still renders the pills), a hoisted
-// slot for the infinite list query, and a shared slot for the three
-// option-list queries.
+// PostsView's list query, pill hook and option-list queries are bypassed
+// via hoisted singletons — the pill mock swaps ONLY the hook, so the real
+// FilterPillBar still renders the pills.
 
 vi.mock('@/ui/admin/shared/filter-bar/useFilterPills', async () => {
   const { buildPostFilterFields } = await vi.importActual<typeof import('@/ui/admin/posts/filter-fields')>(
@@ -70,8 +66,6 @@ vi.mock('@/ui/admin/shared/filter-bar/useFilterPills', async () => {
     }),
   }
 })
-
-// ───────────────────────────── fixtures ─────────────────────────────
 
 function makePost(overrides: Partial<AdminPostDto> = {}): AdminPostDto {
   return makeAdminPost({
@@ -99,8 +93,6 @@ function resetQueries(): void {
   mocks.query.isFetching = false
 }
 
-// ─────────────────────────── shared setup ───────────────────────────
-
 describe('snapshot: PostsView branches', () => {
   beforeEach(() => {
     mocks.filters = []
@@ -109,13 +101,10 @@ describe('snapshot: PostsView branches', () => {
     resetQueries()
   })
 
-  // ─────────────────── loading / empty / populated ───────────────────
-
   it('renders the skeleton when the list query is pending and there are no rows', () => {
     const html = stableHtml(renderInRouter(<PostsView />, '/admin/posts'))
     expect(html).toContain('文章管理')
     expect(html).toContain('新建文章')
-    // PostsSkeleton paints animate-pulse placeholders.
     expect(html).toContain('animate-pulse')
   })
 
@@ -123,7 +112,6 @@ describe('snapshot: PostsView branches', () => {
     setList([])
     const html = stableHtml(renderInRouter(<PostsView />, '/admin/posts'))
     expect(html).toContain('未找到文章')
-    // The create affordance remains visible.
     expect(html).toContain('新建文章')
   })
 
@@ -133,11 +121,8 @@ describe('snapshot: PostsView branches', () => {
     setList([a, b], 2)
     const html = stableHtml(renderInRouter(<PostsView />, '/admin/posts'))
     expect(html).toContain('已加载全部文章')
-    // PostRow renders the title.
     expect(html).toContain('另一篇文章')
   })
-
-  // ────────────────────────────── error ──────────────────────────────
 
   it('still renders the chrome when the list query errors (toast path)', () => {
     mocks.infinite.isLoading = false
@@ -150,8 +135,6 @@ describe('snapshot: PostsView branches', () => {
     expect(html).toContain('未找到文章')
   })
 
-  // ─────────────────── filter-bar placement + sort ───────────────────
-
   it('renders the bare 筛选 trigger and the sort select when no filters are active', () => {
     setList([])
     const html = stableHtml(renderInRouter(<PostsView />, '/admin/posts'))
@@ -161,10 +144,7 @@ describe('snapshot: PostsView branches', () => {
     expect(html).toContain('最新发布')
   })
 
-  // ─────────────────── active-filter pills ───────────────────
-  //
-  // Each active pill renders the field label on the left and the option
-  // label in the value editor; the bar gains 添加筛选 / 清除.
+  // Active pill → field label + value label; bar gains 添加筛选 / 清除.
 
   it.each([
     ['published', '已发布'],

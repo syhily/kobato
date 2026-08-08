@@ -6,24 +6,17 @@ import { getLogger } from '@/server/infra/logger'
 import { resolveLocalPath } from '@/server/infra/storage/backends/local'
 
 /**
- * Shared storage resolution and response assembly for the public file-serving
- * resource routes (`local-storage.ts`, `fonts-embedded.ts`). Callers own only
- * their URL gates and content-type mapping; this module owns filesystem error
- * mapping plus byte-range, ETag, and immutable-cache handling.
+ * Shared storage resolution + response assembly for the public file routes;
+ * callers own URL gates and content-type mapping, this owns filesystem
+ * errors plus byte-range, ETag, and immutable-cache handling.
  */
 
-// Both consumers serve content-addressed assets: uploads get timestamped
-// keys / random ids plus a `?v=` cache buster on re-upload, and font
-// packages are named by the sha256 of the source file. Responses can
-// therefore be marked immutable with a one-year cache lifetime.
+// Both consumers serve content-addressed assets (timestamped keys / sha256 names) — one-year immutable.
 export const IMMUTABLE_CACHE_CONTROL = 'public, max-age=31536000, immutable'
 
 /**
- * Bridge a Node `fs.createReadStream` into a DOM `ReadableStream` for the
- * `Response` body. The project builds web streams by hand (see
- * `analytics.ts`) rather than `Readable.toWeb`, because Node's
- * `stream/web` `ReadableStream` is structurally incompatible with the DOM
- * lib type `Response` expects.
+ * Bridge a Node `fs.createReadStream` into a DOM `ReadableStream`; Node's
+ * `stream/web` type is incompatible with the DOM lib `Response` expects.
  */
 export function nodeStreamToWeb(stream: Readable): ReadableStream<Uint8Array> {
   return new ReadableStream<Uint8Array>({
@@ -105,7 +98,6 @@ interface StoredLocalFileInput {
   }
 }
 
-/** Resolve, stat, and respond with a file owned by the local storage backend. */
 export async function serveStoredLocalFile(input: StoredLocalFileInput): Promise<Response> {
   let absPath: string
   try {
@@ -139,11 +131,7 @@ export async function serveStoredLocalFile(input: StoredLocalFileInput): Promise
   }
 }
 
-/**
- * Assemble the full GET response for an already-stat'ed local file: 304 on
- * a matching `If-None-Match`, 416 / 206 for `Range` requests, 200 with the
- * streamed body otherwise.
- */
+/** Full GET response for a stat'ed file: 304 / 416 / 206 / 200 with the streamed body. */
 export function respondWithLocalFile(input: LocalFileResponseInput): Response {
   const { absPath, size, mtimeMs, contentType, cacheControl, ifNoneMatch } = input
   const etag = `"${size}-${mtimeMs}"`
@@ -152,9 +140,7 @@ export function respondWithLocalFile(input: LocalFileResponseInput): Response {
     'Cache-Control': cacheControl,
     ETag: etag,
     AcceptRanges: 'bytes',
-    // Prevent MIME sniffing: uploads are content-validated (magic bytes)
-    // on write, but pinning the type defends against a mismatched-extension
-    // file ever being interpreted as HTML/script by the browser.
+    // Uploads are magic-byte validated on write, but pin the type against extension-mismatched HTML/script.
     'X-Content-Type-Options': 'nosniff',
   }
 

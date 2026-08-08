@@ -2,17 +2,9 @@ import { createMiddleware } from 'hono/factory'
 
 import type { Env } from '@/server/http/context'
 
-// WordPress probe detector. The site borrows the WordPress URL shape for
-// its real admin (`/admin/signin`, `/admin`, the install route
-// `/admin/setup`, plus the SPA sub-routes mounted under `/admin/*`);
-// every other request that *looks* like a WordPress install is almost
-// certainly an automated scanner. We answer those with a HTTP 404 plus
-// a custom "this is not a WordPress site" view rather than the generic
-// 404.
-//
-// The marker (`statusText: "Not WordPress"`) is what `src/root.tsx`
-// `ErrorBoundary` reads to switch from the regular 404 view to
-// `<NotWordPressView />`.
+// WordPress probe detector: the real admin borrows WP URL shapes; everything
+// else that looks like a WP install is answered with a custom 404 whose
+// `statusText: "Not WordPress"` the root ErrorBoundary switches on.
 
 const LEGIT_WP_PATHS = new Set(['/admin/signin', '/admin', '/admin/', '/admin/setup'])
 
@@ -21,9 +13,7 @@ export function isWordPressDecoyPath(pathname: string): boolean {
     return false
   }
 
-  // No `/admin/*` blanket rule: the real SPA shell serves clean
-  // extension-less paths there, and the WP probes under that prefix are
-  // all `.php` entry points — already caught by the rule below.
+  // No `/admin/*` blanket rule — the real SPA shell serves clean paths there; probes are `.php`.
   if (pathname.startsWith('/wp-content/')) {
     return true
   }
@@ -42,15 +32,8 @@ export function isWordPressDecoyPath(pathname: string): boolean {
 
 export const NOT_WORDPRESS_STATUS_TEXT = 'Not WordPress'
 
-/**
- * WordPress probe detector mounted as Hono middleware.
- *
- * Previously lived in RR loaders (`page.detail` + `not-found`) so the
- * error boundary would render inside `<BaseLayout>`. After the Hono
- * migration the 404 response is returned directly by the HTTP layer;
- * the root React Router boundary still catches it and switches to
- * `<NotWordPressView />` via `statusText === 'Not WordPress'`.
- */
+/** WordPress probe detector as Hono middleware; the root RR boundary
+ *  switches to `<NotWordPressView />` via the status text. */
 export const honoWpDecoyMiddleware = createMiddleware<Env>(async (c, next) => {
   if (isWordPressDecoyPath(c.req.path)) {
     return c.text(NOT_WORDPRESS_STATUS_TEXT, {

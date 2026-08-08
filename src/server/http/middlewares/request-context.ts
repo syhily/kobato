@@ -31,11 +31,8 @@ function getDirectRemoteAddress(c: { env: unknown }): string | undefined {
   if (typeof socket?.remoteAddress === 'string') {
     return socket.remoteAddress
   }
-  // node-server can report an undefined remoteAddress (e.g. behind a TCP
-  // reverse proxy) while remotePort is still known. Keying on `port:<n>`
-  // keeps rate-limit buckets per connection instead of collapsing every
-  // such peer into one shared 'unknown' bucket (V3-09). Unix sockets
-  // expose neither and keep the 'unknown' fallback in `getClientAddress`.
+  // node-server can report undefined remoteAddress (e.g. behind a TCP reverse
+  // proxy); keying on `port:<n>` keeps rate-limit buckets per connection (V3-09).
   if (typeof socket?.remotePort === 'number') {
     return `port:${socket.remotePort}`
   }
@@ -56,16 +53,11 @@ function readCookieValue(header: string | null, name: string): string | null {
   return m ? decodeURIComponent(m[1]!) : null
 }
 
-// Only safe methods (RFC 7231) may mint the anonymous `__csrf` cookie;
-// an unsafe anonymous request without it simply carries no token and the
-// CSRF guard rejects it — same as a bot POSTing without a token today.
+// Only safe methods mint the anonymous `__csrf` cookie — unsafe anonymous
+// requests carry none and the CSRF guard rejects them.
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS'])
 
-/**
- * Derive the canonical `RequestContext`. Called once per request by the
- * middleware; `directRemoteAddress` is the raw socket peer (Hono-specific
- * `c.env` dig, so it stays on the middleware side of the seam).
- */
+/** Derive the canonical `RequestContext` once per request; `directRemoteAddress` is the raw socket peer. */
 export async function deriveRequestContext(input: {
   request: Request
   directRemoteAddress: string | undefined
@@ -97,17 +89,8 @@ export async function deriveRequestContext(input: {
 }
 
 /**
- * The single per-request derivation point. Produces the canonical
- * `RequestContext` (see `@/server/http/request-context`) and stores it on
- * `c.var.requestContext`; every downstream surface (oRPC bridge, React
- * Router bridge, resource routers) projects from it — nothing re-derives.
- *
- * Also the single session commit point: same-session mutations mark the
- * context dirty (`markSessionDirty`) and the Set-Cookie goes out here,
- * after the response resolves — unless the route already set a
- * `__session` cookie itself, in which case the route's header wins and
- * the dirty commit is skipped. Sid-changing flows (login rotation,
- * logout) keep their explicit Set-Cookie channel — see ADR-0003.
+ * Single per-request derivation point and session commit point: the Set-Cookie
+ * goes out after the response unless the route already set `__session` (ADR-0003).
  */
 export const requestContextMiddleware = createMiddleware<Env>(async (c, next) => {
   const derived = await deriveRequestContext({
@@ -116,20 +99,12 @@ export const requestContextMiddleware = createMiddleware<Env>(async (c, next) =>
   })
   const { requestContext } = derived
 
-  // CSRF token resolution. Requests carrying the signed session cookie
-  // keep the persisted-token contract unchanged: the token lives in the
-  // session row, and minting one marks the context dirty so the commit
-  // below rewrites the row. Cookieless anonymous requests never persist a
-  // session just to carry a token — a bot flood would otherwise write one
-  // session row per GET (P1-4). Their token is derived statelessly from
-  // the HttpOnly `__csrf` cookie (see `@/server/domains/auth/csrf`) and
-  // parked in the in-memory session, so loaders and the CSRF guard read
-  // it exactly as before while nothing here marks the context dirty.
+  // Session bearers keep the persisted-token contract; anonymous requests derive
+  // a stateless token from the `__csrf` cookie — no session row per GET (P1-4).
   const cookieHeader = c.req.raw.headers.get('cookie')
   let csrfCookieToSet: string | null = null
   if (readCookieValue(cookieHeader, SESSION_COOKIE_NAME) !== null) {
-    // Ensure every session carries a CSRF token. The token is generated
-    // lazily on first access; subsequent requests reuse it.
+    // Token is minted lazily on first access; subsequent requests reuse it.
     const tokenBefore = requestContext.session.get('csrfToken')
     ensureCsrfToken(requestContext.session)
     if (requestContext.session.get('csrfToken') !== tokenBefore) {
@@ -155,12 +130,8 @@ export const requestContextMiddleware = createMiddleware<Env>(async (c, next) =>
   }
 
   if (derived.isSessionDirty()) {
-    // A route that sets the session cookie itself (login rotation, logout
-    // destroy, the OTP/setup explicit commits) owns the cookie channel for
-    // this response. Appending a second `__session` commit here would land
-    // LAST (browsers apply Set-Cookie in order) and override the route's
-    // header — for destroy/rotation flows that means resurrecting the very
-    // session row the route just deleted and keeping the old sid alive.
+    // A route-set `__session` cookie wins — appending the commit would override
+    // it (Set-Cookie applies in order), resurrecting a session the route destroyed.
     const routeTookOver = c.res.headers.getSetCookie().some((v) => v.startsWith(`${SESSION_COOKIE_NAME}=`))
     if (!routeTookOver) {
       const setCookie = await commitSessionWithMaxAge(requestContext.session)

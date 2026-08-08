@@ -3,12 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { makeMemoryBackend } from '#/_helpers/memory-storage'
-// upload.ts wires together pure validation (mime sniffing, size guard,
-// kind → key resolution) with IO (image processing, storage put, DB
-// insert/upsert). The DB side is REAL here — rows land in the shared
-// in-memory SQLite — while sharp (`processImageBuffer`) stays mocked and
-// the storage backend is the shared in-memory backend injected through
-// the registry seam (a true external — S3/local disk).
+// Real in-memory SQLite + storage registry; only sharp stays mocked.
 import { buildObjectKey } from '@/server/domains/images/key'
 import { image } from '@/server/infra/db/schema/media'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@/server/infra/storage/registry'
@@ -17,9 +12,7 @@ const processImageBufferMock = vi.hoisted(() => vi.fn())
 
 vi.mock('@/server/infra/image/process', () => ({ processImageBuffer: processImageBufferMock }))
 
-// Wrap-don't-replace: the real operations run against the real engine on
-// every happy path; the wrappers only exist to inject one-shot DB
-// failures for the rollback tests below.
+// Wrap-don't-replace: the wrappers only inject one-shot DB failures.
 vi.mock('@/server/infra/db/operations/image', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/server/infra/db/operations/image')>()
   return {
@@ -29,8 +22,7 @@ vi.mock('@/server/infra/db/operations/image', async (importOriginal) => {
   }
 })
 
-// Injected as the 's3' backend; its isAvailable() === true makes S3 the
-// ACTIVE backend, so uploads record driver 's3' exactly like production.
+// isAvailable() === true makes the mem backend S3-active, so uploads record driver 's3'.
 const mem = makeMemoryBackend()
 
 const { assertImageUploadAllowed, uploadImage } = await import('@/server/domains/images/services/upload')
@@ -44,7 +36,7 @@ beforeEach(async () => {
   __setStorageBackendForTests('s3', mem.backend)
   await clearAllTables(db)
   vi.clearAllMocks()
-  // Echo the input buffer back so the processed size matches the sniffed one.
+  // Echo the input: processed size must match the sniffed size.
   processImageBufferMock.mockImplementation(async ({ buffer }: { buffer: Buffer }) => ({
     buffer,
     width: 100,
@@ -59,10 +51,9 @@ afterEach(() => {
   mem.reset()
 })
 
-// Buffer builders for each sniffed format. Magic bytes matter — uploadImage
-// rejects anything whose first 12 bytes don't match a known signature.
+// Magic bytes matter: uploadImage rejects buffers whose first 12 bytes match no known signature.
 function jpeg(extra: number[] = []): Buffer {
-  // Always >= 12 bytes (3 magic + at least 9 filler) so the sniff check passes.
+  // >= 12 bytes (3 magic + filler) so the sniff check passes.
   const filler = extra.length >= 9 ? extra : [...extra, ...Array(9 - extra.length).fill(0)]
   return Buffer.from([0xff, 0xd8, 0xff, 0xe0, ...filler])
 }
@@ -133,7 +124,7 @@ describe('images/services/upload — pure validation + mime detection', () => {
     it('throws when ftyp appears but is too close to the buffer end', async () => {
       // ftyp at the very end (index 8), brand would be out of range.
       const buf = Buffer.alloc(12)
-      buf.write('ftyp', 8, 'ascii') // ftypIndex = 8, ftypIndex + 4 = 12 === length → brand read empty
+      buf.write('ftyp', 8, 'ascii')
       await expect(
         uploadImage(db, {
           kind: { kind: 'generic' },
@@ -185,7 +176,6 @@ describe('images/services/upload — pure validation + mime detection', () => {
 
     it('throws when the re-encoded buffer exceeds maxBytes', async () => {
       const original = png()
-      // processed returns something bigger than the limit.
       processImageBufferMock.mockResolvedValue({
         buffer: Buffer.alloc(original.length + 100),
         width: 1,
@@ -202,7 +192,6 @@ describe('images/services/upload — pure validation + mime detection', () => {
           uploader: null,
         }),
       ).rejects.toThrow(/重编码后体积超过上限/)
-      // Nothing reached the backend or the database.
       expect(mem.store.size).toBe(0)
       expect(await allImageRows()).toHaveLength(0)
     })
@@ -222,13 +211,11 @@ describe('images/services/upload — pure validation + mime detection', () => {
       expect(rows[0].storagePath).toMatch(/^images\/\d{4}\/\d{2}\/\d{16}\.jpg$/)
       expect(rows[0].storageDriver).toBe('s3')
       expect(dto.storagePath).toBe(rows[0].storagePath)
-      // The bytes landed on the backend under the row's key.
       expect(mem.store.has(rows[0].storagePath)).toBe(true)
     })
 
     it('swallows a duplicate-key insert failure into a friendly DomainError', async () => {
-      // Freeze the clock so the generic key is deterministic, then occupy
-      // it with a real row — the second insert hits the UNIQUE constraint.
+      // Freeze the clock and occupy the key: the second insert hits the UNIQUE constraint.
       vi.useFakeTimers()
       try {
         vi.setSystemTime(new Date('2026-07-30T12:34:56.789Z'))
@@ -250,11 +237,8 @@ describe('images/services/upload — pure validation + mime detection', () => {
             uploader: null,
           }),
         ).rejects.toThrow(/图片元数据写入失败/)
-        // Still exactly one row — the failed insert left nothing behind.
         expect(await allImageRows()).toHaveLength(1)
-        // Ownership-aware rollback (fix-review #4): the key is claimed by
-        // the pre-existing row, so the uploaded object is NOT deleted —
-        // deleting it would orphan THAT row (its storagePath would 404).
+        // The pre-existing row claims the key, so the rollback must NOT delete the uploaded object.
         expect(mem.putKeys).toContain(key)
         expect(mem.deletedKeys).not.toContain(key)
         expect(mem.store.has(key)).toBe(true)
@@ -264,8 +248,7 @@ describe('images/services/upload — pure validation + mime detection', () => {
     })
 
     it('deletes the orphaned object when the failed insert left no claiming row', async () => {
-      // A non-constraint failure (DB gone) leaves NO row claiming the key —
-      // the orphaned object must be rolled back or it leaks on the backend.
+      // No row claims the key: the orphaned object must be rolled back.
       insertImageMock.mockRejectedValueOnce(new Error('db gone'))
       await expect(
         uploadImage(db, {
@@ -294,8 +277,7 @@ describe('images/services/upload — pure validation + mime detection', () => {
         }),
       ).rejects.toThrow(/图片元数据写入失败/)
       const key = 'images/categories/rollback.jpg'
-      // The put landed BEFORE the DB write failed, so the rollback must
-      // delete it again — otherwise the object leaks on the backend.
+      // The put landed before the failure, so the rollback deletes it again.
       expect(mem.putKeys).toContain(key)
       expect(mem.deletedKeys).toContain(key)
       expect(mem.store.has(key)).toBe(false)
@@ -422,9 +404,7 @@ describe('images/services/upload — pure validation + mime detection', () => {
 })
 
 describe('assertImageUploadAllowed — declared-envelope validation (sunk from the controller)', () => {
-  // These are ORPCErrors (not DomainErrors) so the wire keeps its 400/413
-  // split: the declared-size pre-check reports 413 while the authoritative
-  // in-buffer checks inside uploadImage report 400.
+  // oRPC errors keep the 400/413 split: the declared-size pre-check reports 413, in-buffer checks 400.
   it('rejects a declared MIME type outside the allowlist with BAD_REQUEST', () => {
     expect(() => assertImageUploadAllowed({ type: 'image/tiff', size: 10 }, 1000)).toThrow(
       /不支持的图片格式，请上传 JPEG、PNG、WebP、AVIF 或 GIF 格式的图片/,

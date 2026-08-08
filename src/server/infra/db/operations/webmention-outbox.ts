@@ -7,20 +7,8 @@ import { webmentionOutbox } from '@/server/infra/db/schema/webmention'
 
 export type WebmentionOutboxStatus = WebmentionOutboxRow['status']
 
-/**
- * Enqueue dedup on UNIQUE(source_url, target_url): a fresh pair lands as
- * `pending`; an existing `no-endpoint` / `failed` row resets to `pending`
- * (attempts cleared, endpoint kept for reuse, error wiped) — a republish
- * IS the explicit retry signal. `sent` rows are never touched: replaying
- * a delivered mention would bomb the target.
- *
- * An already-`pending` row keeps its state but takes the LATER waterline
- * when the republish pushes the publish moment out (`nextRetryAt` given):
- * the source page must answer 200 before the mention fires, and firing on
- * the stale earlier waterline would burn the retry budget against a page
- * that is not live yet. The raise is one-way — an earlier reschedule
- * leaves the waterline alone (sending late is benign).
- */
+/** Dedup on UNIQUE(source_url, target_url): a republish resets `no-endpoint`/`failed`
+ *  rows to `pending`; `sent` rows stay untouched. Waterline raises are one-way. */
 export async function upsertWebmentionOutbox(
   db: Database,
   values: { sourceUrl: string; targetUrl: string; nextRetryAt?: Date | null },
@@ -55,11 +43,8 @@ export async function upsertWebmentionOutbox(
   }
 }
 
-/**
- * The worker's batch: due `pending` rows, immediately-sendable (`NULL`
- * waterline) first, then by retry time. SQLite sorts NULLs first on ASC,
- * which is exactly that order.
- */
+/** The worker's batch: due `pending` rows — NULL waterline first, then retry time
+ *  (SQLite ASC sorts NULLs first). */
 export async function pickDueWebmentionOutbox(db: Database, now: Date, limit: number): Promise<WebmentionOutboxRow[]> {
   return db
     .select()
@@ -74,10 +59,8 @@ export async function pickDueWebmentionOutbox(db: Database, now: Date, limit: nu
     .limit(limit)
 }
 
-/** The scheduler's next wake-up: the earliest retry time among pending
- *  rows, or NULL when a row is sendable right now (delay 0) / no row is
- *  pending (suspend). Sync (node:sqlite): the scheduleJob seam's
- *  `nextDelayMs` is synchronous. */
+/** The scheduler's next wake-up: earliest retry time, `'now'` when due, null when empty.
+ *  Sync (node:sqlite): scheduleJob's `nextDelayMs` is synchronous. */
 export function findNextWebmentionOutboxDueAt(db: Database): Date | 'now' | null {
   const rows = db
     .select({ nextRetryAt: webmentionOutbox.nextRetryAt })
@@ -105,7 +88,7 @@ export async function markWebmentionOutboxSent(db: Database, id: number): Promis
     .where(eq(webmentionOutbox.id, id))
 }
 
-/** Non-terminal failure: bump attempts, push the waterline out, record why. */
+/** Non-terminal failure — bump attempts, push the waterline out. */
 export async function markWebmentionOutboxRetry(
   db: Database,
   id: number,
@@ -119,9 +102,8 @@ export async function markWebmentionOutboxRetry(
     .where(eq(webmentionOutbox.id, id))
 }
 
-/** Terminal without delivery: `no-endpoint` (never declared) or `failed`
- *  (4xx, or attempts exhausted). `attempts` rides along when the terminal
- *  state was reached BY an attempt, so the counter stays honest. */
+/** Terminal without delivery — `no-endpoint` (never declared) or `failed` (4xx / exhausted).
+ *  `attempts` is only written when the terminal state came from an attempt. */
 export async function markWebmentionOutboxTerminal(
   db: Database,
   id: number,
@@ -176,9 +158,7 @@ export async function countWebmentionOutboxByStatus(db: Database): Promise<Webme
   return counts
 }
 
-/** Housekeeping for the entity delete/unpublish paths: rows belonging to
- *  a source that no longer exists are not worth retrying — but only
- *  `pending` ones; terminal rows stay, the send log survives the post. */
+/** Entity delete/unpublish housekeeping: drop only `pending` rows — terminal rows stay. */
 export async function deletePendingWebmentionOutboxBySource(db: Database, sourceUrl: string): Promise<void> {
   await db
     .delete(webmentionOutbox)

@@ -7,11 +7,9 @@ import type { RealtimeEvent } from '@/shared/contracts/analytics'
 
 import { useEventStream } from '@/ui/admin/analytics/use-event-stream'
 
-// The hook subscribes through the browser's native EventSource; the fake
-// below records every constructed instance so tests can drive 'events'
-// messages by hand — including the resend-the-tail behavior of a native
-// reconnect, which reuses the original URL with a stale `since` (audit
-// P1-20).
+// The hook subscribes through the native EventSource; the fake records
+// every instance so tests can drive 'events' by hand, including the
+// stale-`since` reconnect resend (audit P1-20).
 
 class FakeEventSource {
   static instances: FakeEventSource[] = []
@@ -70,9 +68,7 @@ describe('useEventStream', () => {
     act(() => source.emit([e1, e2]))
     expect(result.current.events).toEqual([e1, e2])
 
-    // A native reconnect reuses the original (stale-since) URL, so the
-    // server resends e2 ahead of the genuinely new e3 — the buffer must
-    // not grow a duplicate row.
+    // A stale-since reconnect resends the tail; the buffer must not duplicate it.
     const e3 = makeEvent('2026-08-01T00:00:03.000Z', '/c')
     act(() => source.emit([e2, e3]))
     expect(result.current.events).toEqual([e1, e2, e3])
@@ -95,13 +91,11 @@ describe('useEventStream', () => {
     const first = FakeEventSource.instances[0]!
     expect(first.url).not.toContain('since=')
 
-    // A reconnect resends the last-seen event; the watermark must still
-    // move to the newest ts the server reported, not stall on the dup.
+    // The watermark must advance past resent events to the newest ts reported.
     act(() => first.emit([makeEvent('2026-08-01T00:00:01.000Z', '/a')]))
     act(() => first.emit([makeEvent('2026-08-01T00:00:01.000Z', '/a'), makeEvent('2026-08-01T00:00:02.000Z', '/b')]))
 
-    // An effect re-run (here: the enabled toggle) rebuilds the URL from
-    // the watermark.
+    // An effect re-run rebuilds the URL from the watermark.
     rerender({ enabled: false })
     expect(first.closed).toBe(true)
     rerender({ enabled: true })

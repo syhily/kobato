@@ -9,12 +9,11 @@ import { ErrorView } from '@/ui/public/chrome/ErrorView'
 
 import type { Route } from './+types/layout'
 
-// Pathless layout wrapping every public-facing route. `BaseLayout`
-// statically imports `public.css`, so the compiled stylesheet lands in the
-// SSR `<Links />` output for every public URL, while the admin SPA sits
-// OUTSIDE this layout and never pulls `public.css` into admin chunks.
-//
-// Routes that need to opt out of the site footer use `handle.footer = false`.
+// Pathless layout wrapping every public-facing route. `BaseLayout` statically
+// imports `public.css`, so the compiled stylesheet lands in the SSR `<Links />`
+// output for every public URL, while the admin SPA sits OUTSIDE this layout and
+// never pulls `public.css` into admin chunks. Routes opt out of the site footer
+// via `handle.footer = false`.
 
 interface RootChromeData {
   currentUser?: { id: string; name: string; role: 'admin' | 'author' | 'visitor' } | null
@@ -54,10 +53,9 @@ export default function PublicLayoutRoute() {
   )
 }
 
-// `ErrorBoundary` lives on this layout (not just on `root`) so that 404s
-// thrown by public routes still render INSIDE `<BaseLayout>` synchronously.
-// Without it the error would bubble up to the root boundary, which can only
-// reach the chrome through a lazy chunk and would re-introduce FOUC.
+// `ErrorBoundary` lives on this layout so 404s still render INSIDE
+// `<BaseLayout>` synchronously — the root boundary would need a lazy chunk
+// and re-introduce FOUC.
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   useReloadOnChunkError(error)
 

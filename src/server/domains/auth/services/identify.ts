@@ -1,7 +1,6 @@
-// Identify step of the identifier-first signin: given only an email,
-// resolve which signin method the account uses. The answer drives the
-// client UI — passkey prompt, "check your mailbox" notice, or the
-// password field.
+// Identify step of the identifier-first signin: resolve which signin
+// method an account uses; the answer drives the client UI — passkey
+// prompt, "check your mailbox" notice, or the password field.
 
 import { z } from 'zod'
 
@@ -43,10 +42,7 @@ export async function handleIdentify(
   const existingUser = await findUserByEmail(db, email)
 
   if (isPasskeySigninUser(existingUser)) {
-    // Residual signal (documented, accepted): this answer proves a
-    // passkey account exists for the address — the passkey prompt UX
-    // cannot work without it. Enumeration is bounded by the per-email
-    // and per-IP rate limits above.
+    // Accepted residual signal: this answer proves a passkey account exists.
     return { kind: 'passkey' }
   }
 
@@ -65,16 +61,10 @@ export async function handleIdentify(
   }
 
   if (existingUser === null) {
-    // Unknown mailbox: answer exactly like a real magic-link send so the
-    // identify step is no account-existence oracle. No token row is
-    // issued and no mail goes out. The residual timing gap vs. a real
-    // SMTP round-trip is documented here deliberately and bounded by the
-    // per-email/IP rate limits above.
+    // Unknown mailbox answers like a real send — no account-existence oracle.
     return { kind: 'magic-link-sent' }
   }
 
-  // Known account on the password method (or magic-link while mail is
-  // not configured): the password step fails generically later, so this
-  // answer reveals nothing beyond "not passkey / not magic-link".
+  // Password answer reveals nothing beyond "not passkey / not magic-link".
   return { kind: 'password' }
 }

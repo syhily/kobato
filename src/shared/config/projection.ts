@@ -4,17 +4,15 @@ import type { MailSettings } from '@/shared/config/types'
 import type { Assert, Equals } from '@/shared/contracts/primitives'
 
 // Per-slot status surfaced to the admin form. `etag` drives cache-busting
-// in preview URLs and the "is configured?" check; we send the hash, NOT
-// the bytes, so the loader response stays tiny.
+// and the "is configured?" check; we send the hash, NOT the bytes.
 export interface BrandingSlotStatus {
   /** Empty string when the slot has no custom upload. */
   etag: string
 }
 
-// Zod twins of the three masked loader shapes. They are the runtime gate
-// of the settings save response (see `projectSectionForAdmin`): the save
-// round-trip must produce exactly the shape the loader serves, or the
-// assembly is drifting.
+// Zod twins of the two masked loader shapes — the runtime gate of the
+// settings save response (see `projectSectionForAdmin`): the save
+// round-trip must produce exactly the shape the loader serves.
 
 const brandingSlotStatusSchema = z.object({ etag: z.string() })
 
@@ -101,10 +99,9 @@ export interface AssetsLoaderShape {
   }
 }
 
-// Mirrors `MailSettings` but with the three secrets swapped for their
-// masks so the form never receives ciphertext. The outer `mail:` wrapper
-// matches `mailSchema` so the patches produced by `useSettingsCard`
-// validate on the server without translation.
+// Mirrors `MailSettings` with the three secrets swapped for their masks;
+// the outer `mail:` wrapper matches `mailSchema` so card patches validate
+// without translation.
 export interface MailLoaderShape {
   mail: {
     enabled: boolean
@@ -124,12 +121,7 @@ export interface MailLoaderShape {
   }
 }
 
-/**
- * Project the raw `AssetsSettings` (from the settings bundle) into the
- * shape `<AssetsForm>` expects, with secret masking and defaulted upload
- * limits. Kept in shared so route components can call it without
- * reaching into `server/`.
- */
+/** Project raw `AssetsSettings` into the shape `<AssetsForm>` expects (secret masking, defaulted upload limits). */
 interface RawBrandingRef {
   etag?: string
 }
@@ -208,12 +200,7 @@ export function projectAssetsForAdmin(
   }
 }
 
-/**
- * Project the raw `MailSettings` into the shape `<MailForm>` expects:
- * the three encrypted secrets are swapped for their masks, and both SMTP
- * TLS flags are forwarded. The input is the post-hydration bundle slice,
- * so schema defaults guarantee every non-secret field is present.
- */
+/** Project raw `MailSettings` into the shape `<MailForm>` expects: secrets swapped for masks, TLS flags forwarded. */
 export function projectMailForAdmin(
   mail: MailSettings,
   masks?: {
@@ -243,8 +230,7 @@ export function projectMailForAdmin(
   }
 }
 
-// Compile-time parity: the Zod twins above must stay isomorphic to the
-// hand-written interfaces the forms consume, or the runtime gate would be
-// validating a different shape than the one the UI expects.
+// Compile-time parity: the Zod twins must stay isomorphic to the
+// hand-written interfaces the forms consume.
 type _assetsShapeParity = Assert<Equals<z.infer<typeof assetsLoaderShapeSchema>, AssetsLoaderShape>>
 type _mailShapeParity = Assert<Equals<z.infer<typeof mailLoaderShapeSchema>, MailLoaderShape>>

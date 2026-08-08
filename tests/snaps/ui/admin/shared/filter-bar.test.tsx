@@ -61,17 +61,13 @@ describe('snapshot: FilterPillBar', () => {
         />,
       ),
     )
-    // Field labels from the specs.
     expect(html).toContain('操作类型')
     expect(html).toContain('资源类型')
     expect(html).toContain('IP')
     expect(html).toContain('时间')
-    // Resolved option labels on the pill triggers.
     expect(html).toContain('登录')
     expect(html).toContain('文章')
-    // The freetext editor renders its raw value into the input.
     expect(html).toContain('203.0.113')
-    // The date-range picker trigger renders the range label.
     expect(html).toContain('2024-01-01 起')
     expect(html).toContain('添加筛选')
     expect(html).toContain('清除')
@@ -128,7 +124,6 @@ describe('snapshot: SearchableOptionList', () => {
     expect(html).toContain('placeholder="搜索邮箱、姓名或 ID"')
     expect(html).toContain('admin@example.com')
     expect(html).toContain('guest@example.com')
-    // The selected row carries the accent background.
     expect(html).toContain('bg-accent text-accent-foreground')
   })
 
@@ -144,7 +139,7 @@ describe('snapshot: SearchableOptionList', () => {
   })
 })
 
-// --- DateSingleFilterEditor (+ pure helpers), moved from the comments suite ---
+// DateSingleFilterEditor and its pure helpers, moved from the comments suite.
 
 describe('DateSingleFilterEditor helpers', () => {
   it('parseDateInput returns undefined for empty input', () => {
@@ -179,7 +174,6 @@ describe('snapshot: DateSingleFilterEditor', () => {
     expect(html).toContain('placeholder="YYYY-MM-DD"')
     expect(html).toContain('aria-label="日期"')
     expect(html).toContain('aria-label="打开日历"')
-    // The committed value should appear as the input value.
     expect(html).toContain('value="2024-03-12"')
   })
 
@@ -189,7 +183,7 @@ describe('snapshot: DateSingleFilterEditor', () => {
   })
 })
 
-// --- TextFilterEditor, moved from the comments suite ---
+// TextFilterEditor, moved from the comments suite.
 
 describe('snapshot: TextFilterEditor', () => {
   const commentsTextField = COMMENT_FILTER_FIELDS.find((f) => f.key === 'text')

@@ -42,8 +42,7 @@ export function CommentActions({ comment, onEditAdmin, onEditOwn }: CommentActio
     onSuccess: () => actions.onDeleted(comment.id),
   })
 
-  // Own-comment mutations return the updated wire comment; route it through the
-  // same reducer action as every other mutation instead of revalidating the detail loader.
+  // Own-comment mutations return the updated wire comment — route through the same reducer action, no loader revalidate.
   const requestDelete = useMutation({
     ...orpcQuery.comments.requestDeleteOwn.mutationOptions(),
     onSuccess: (payload) => actions.onEdited(payload.comment),

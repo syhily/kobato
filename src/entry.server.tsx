@@ -17,26 +17,14 @@ export const streamTimeout = 5_000
 
 const log = getLogger('entry.server')
 
-// Server-side error reporting hook called by the React Router runtime for
-// loader/action errors (and shell-rendering failures rejected upstream).
-// Without this export RR falls back to a default handler that writes a bare
-// `console.error`, bypassing the structured pino pipeline. The runtime only
-// calls this for non-Response errors (and RouteErrorResponses carrying an
-// `error`), so deliberately thrown 4xx/5xx Responses stay silent. Streaming
-// errors after the shell are NOT routed here — they are logged in the
-// `onError` callback of `renderToPipeableStream` below.
+// Required export — RR would otherwise log errors via bare console.error, bypassing pino.
+// Only non-Response errors route here; post-shell streaming errors go to `onError` below.
 export function handleError(error: unknown, { request }: { request: Request }) {
-  // Client-aborted requests (cancelled navigation, closed tab) are not
-  // server faults — skip them.
+  // Client-aborted requests are not server faults — skip them.
   if (request.signal.aborted) {
     return
   }
-  // Mirror the runtime's default handler: unwrap RouteErrorResponses that
-  // carry the original error before extracting the message, so the log
-  // never degrades to "[object Object]". The runtime only forwards
-  // RouteErrorResponses when their `.error` is set (always an Error), but
-  // the field is `private` in RR's type declarations — hence the `in`
-  // narrowing instead of direct property access.
+  // Unwrap RouteErrorResponses carrying the original error so the log never degrades to "[object Object]".
   const cause = isRouteErrorResponse(error) && 'error' in error && error.error instanceof Error ? error.error : error
   log.error('Router request error', {
     error: cause instanceof Error ? cause.message : String(cause),
@@ -61,14 +49,7 @@ export default function handleRequest(
 
   const nonce = loadContext.get(requestContext).cspNonce
 
-  // WORKAROUND: React Router v8's HydratedRouter does not include `nonce` in
-  // FrameworkContext on the client, while ServerRouter does on the server. The
-  // dev-mode critical CSS `<link>` rendered by `<Links />` therefore ends up
-  // with a nonce attribute in the server HTML but not after client hydration,
-  // causing a hydration mismatch. In development we omit the FrameworkContext
-  // nonce so both sides render the link consistently without a nonce. The
-  // `renderToPipeableStream` nonce is kept for React's own inline scripts, and
-  // `<Scripts>` / `<ScrollRestoration>` still receive an explicit nonce prop.
+  // WORKAROUND: omit the FrameworkContext nonce in dev so server/client render the CSS <link> identically.
   // https://github.com/remix-run/react-router/issues/14666
   const serverRouterNonce = import.meta.env.DEV ? undefined : nonce
 
@@ -77,13 +58,12 @@ export default function handleRequest(
     let statusCode = responseStatusCode
     const userAgent = request.headers.get('user-agent')
 
-    // Ensure requests from bots and SPA Mode renders wait for all content to load before responding
+    // Bots and SPA-mode renders must wait for all content before responding.
     // https://react.dev/reference/react-dom/server/renderToPipeableStream#waiting-for-all-content-to-load-for-crawlers-and-static-generation
     const readyOption: keyof RenderToPipeableStreamOptions =
       isBot(userAgent) || routerContext.isSpaMode ? 'onAllReady' : 'onShellReady'
 
-    // Abort the rendering stream after the `streamTimeout` so it has time to
-    // flush down the rejected boundaries
+    // Abort after `streamTimeout` so rejected boundaries have time to flush.
     let timeoutId: ReturnType<typeof setTimeout> | undefined = setTimeout(() => abort(), streamTimeout + 1000)
 
     const { pipe, abort } = renderToPipeableStream(
@@ -118,9 +98,7 @@ export default function handleRequest(
         },
         onError(error: unknown) {
           statusCode = 500
-          // Log streaming rendering errors from inside the shell.  Don't log
-          // errors encountered during initial shell rendering since they'll
-          // reject and get logged in handleDocumentRequest.
+          // Log post-shell streaming errors; the initial shell render rejects via `onShellError`.
           if (shellRendered) {
             log.error('SSR streaming error', { error: error instanceof Error ? error.message : String(error) })
           }

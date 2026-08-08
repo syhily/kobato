@@ -7,16 +7,9 @@ import type { RateLimitBucket, RateLimitSettings } from '@/shared/config/types'
 import { readBucket, tryKeyedRateLimit } from '@/server/infra/rate-limit'
 
 /**
- * Rate-limit middleware factory. Uses the client IP as the discriminator.
- *
- * Accepts either a live settings bucket key (recommended) or an explicit
- * hard-coded bucket for edge cases.
- *
- * On exceed: throws `HTTPException(429)` so the perimeter `onError`
- * renders the standard API error JSON (`{ error: { message } }`).
- *
- * Example:
- *   `authedRoute(app, contract, impl, { middleware: [rateLimitByIp('invite', 'inviteIp')] })`
+ * Rate-limit middleware factory keyed on client IP. Accepts a live settings
+ * bucket key or an explicit hard-coded bucket; on exceed throws
+ * `HTTPException(429)` for the perimeter `onError` JSON shape.
  */
 export function rateLimitByIp(key: string, bucketOrName: RateLimitBucket | keyof RateLimitSettings) {
   return createMiddleware<Env>(async (c, next) => {

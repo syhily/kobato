@@ -19,10 +19,8 @@ import { collectHeadings, collectImageStoragePaths } from '@/shared/pt/utils'
 const log = getLogger('content.lifecycle')
 
 /**
- * Entity-agnostic draft→publish lifecycle for content revisions. Posts
- * and pages share one pipeline; everything entity-specific attaches
- * through this adapter (meta lookup, access gate, preview access gate,
- * preview projection, force-overwrite audit, post-publish side effects).
+ * Entity-agnostic draft→publish lifecycle for content revisions;
+ * entity-specific behavior attaches through this adapter.
  */
 export interface ContentEntityAdapter<TMeta, TPreview> {
   entityType: ContentType
@@ -30,9 +28,8 @@ export interface ContentEntityAdapter<TMeta, TPreview> {
   findPublicMetaBySlug(db: Database, slug: string): TMeta | null
   assertAccess(meta: TMeta | null, viewer?: ViewerIdentity): asserts meta is TMeta
   /**
-   * Draft-preview gate (CONTEXT.md "Draft preview"): posts author+, pages
-   * admin only. A predicate, not a throwing assert: the page loader must
-   * fall through to the published page when the viewer lacks preview rights.
+   * Draft-preview gate (posts author+, pages admin only). A predicate —
+   * callers fall through to the published page when rights are missing.
    */
   canPreviewDraft(role: RoleOrNull | undefined): boolean
   getId(meta: TMeta): number
@@ -53,9 +50,8 @@ export interface ForceOverwriteEntry<TMeta> {
 }
 
 /**
- * Shared `force_overwrite_save` audit payload for the entity adapters'
- * `recordForceOverwrite`. The logger scope and meta id key stay with
- * the caller so the emitted context keeps its historical shape.
+ * Shared `force_overwrite_save` audit payload; the logger scope and meta
+ * id key stay with the caller so the emitted context keeps its shape.
  */
 export function recordForceOverwriteAudit<TMeta extends { id: number }>(
   auditLog: Logger,
@@ -95,9 +91,8 @@ export type SaveBodyResult =
 export interface DraftPreviewResult<TPreview> {
   preview: TPreview
   /**
-   * True when the entity has a `status='draft'` revision newer than its
-   * `publishedRevisionId`. The body projected into `preview` is the
-   * draft one when this is true.
+   * True when a `status='draft'` revision is newer than
+   * `publishedRevisionId` — `preview` holds the draft when so.
    */
   hasNewerDraft: boolean
 }
@@ -129,15 +124,9 @@ export async function saveBody<TMeta, TPreview>(
   const imageSources = collectImageStoragePaths(body)
   const headings = collectHeadings(body, deriveSlug)
 
-  // The force-overwrite audit context is the latest revision of any
-  // status — not just the latest draft — so publishing over a published
-  // revision is audited the same way as overwriting a draft.
-  // A genuine empty result stays null (nothing to audit against), but a
-  // read ERROR propagates and aborts the save (audit P1-25): the force
-  // path is exactly where the audit trail matters most, and every other
-  // DB failure in this pipeline (the repo save itself, afterPublish)
-  // already fails loudly — swallowing only this read would land the
-  // overwrite while silently dropping its audit row.
+  // Audit context = the latest revision of any status; a read ERROR here
+  // propagates and aborts the save (audit P1-25) rather than drop the
+  // overwrite's audit row.
   const overwriteContext =
     input.force === true ? await findLatestRevision(db, adapter.entityType, adapter.getId(meta)) : null
 
@@ -173,25 +162,19 @@ export async function saveBody<TMeta, TPreview>(
     }
   }
   if (mode === 'publish' && wroteSuccessfully) {
-    // The publish transaction rewrote the meta row (`publishedRevisionId`,
-    // `published`, `publishedAt` — possibly a future schedule): re-read it
-    // so afterPublish consumers see the post-publish state. The webmention
-    // outbox hook reads `meta.publishedAt` to push a scheduled post's
-    // waterline to the publish instant; the pre-publish `meta` (NULL for a
-    // fresh post) would fire the mentions early.
+    // The publish transaction rewrote the meta row — re-read it so
+    // afterPublish sees post-publish state (mentions read `publishedAt`).
     const publishedMeta = adapter.findMetaById(db, input.entityId) ?? meta
     await adapter.afterPublish(db, publishedMeta, body, warnings)
-    // A publish can set a future `publishedAt` (scheduling) — re-arm the
-    // scheduled-publish timer (no-op until the scheduler is started).
+    // A publish can schedule into the future — re-arm the timer (no-op until started).
     rescheduleScheduledPublish()
   }
   return projectSaveResult(result, warnings.length > 0 ? warnings.join(' ') : undefined)
 }
 
 /**
- * Draft preview by slug: projects the latest draft when one exists,
- * otherwise the published revision. Soft-deleted rows return `null`.
- * This module enforces no access rule — callers gate through
+ * Draft preview by slug: latest draft, else the published revision;
+ * soft-deleted rows return `null`. No access gate — callers use
  * `adapter.canPreviewDraft`.
  */
 export async function loadDraftPreviewBySlug<TMeta, TPreview>(
@@ -216,9 +199,7 @@ export async function previewBody(
   rawBody: unknown,
   render: (body: PortableTextBody) => Promise<string>,
 ): Promise<{ html: string; headings: PortableTextHeading[] }> {
-  // Route preview through the same canonicalize + prerender pipeline as
-  // the save path so the preview matches what will actually be published
-  // (Shiki/KaTeX artifacts included).
+  // Preview through the same canonicalize + prerender pipeline as save, so it matches what publishes.
   const body = await canonicalizePortableTextBody(rawBody)
   const html = await render(body)
   const headings = collectHeadings(body, deriveSlug)

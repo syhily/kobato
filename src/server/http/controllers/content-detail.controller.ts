@@ -21,16 +21,9 @@ import {
 import { resolveFootnotesSectionTitle } from '@/shared/utils/footnotes-section-title'
 import { idFromString } from '@/shared/utils/id'
 
-// The post detail read (`/posts/:slug`). The decision tree (slim ETag
-// probe → role-gated draft fallback → 404 → canonical alias 301 → full
-// ETag re-check) lives in `loadPostPreview`, which still throws Responses
-// internally — translated here into the output union. This handler only
-// fans out the payload reads once the preview resolves.
-//
-// Comments are NOT part of this payload — the route fires
-// `content.comments.byKey` and `webmention.list` off the critical's
-// `commentKey` once this procedure settles, so both keep streaming
-// through `<Await>`.
+// `/posts/:slug`. The decision tree (ETag probe → draft fallback → 404 →
+// canonical 301 → ETag re-check) lives in `loadPostPreview`, which throws
+// Responses translated here. Comments stream via a separate fan-out.
 const postBySlug = publicProc
   .route({ method: 'GET', path: '/content/posts/bySlug' })
   .input(contentPostBySlugInputSchema)
@@ -50,10 +43,7 @@ const postBySlug = publicProc
       return translateThrownResponse(error)
     }
 
-    // One parallel block: the detail critical (likes, comment key,
-    // sidebar — with analytics tracking inside) is independent of the
-    // tag/sidebar/prerender reads — awaiting it after them would make the
-    // critical path their sum instead of their max.
+    // Parallel: the critical path is the max of these reads, not their sum.
     const [visibleTags, imageMeta, sidebarTags, sidebarPosts, enrichedBody, critical] = await Promise.all([
       getTagsByNames(db, preview.post.tags),
       resolveImageMetaBySources(db, preview.sourcePost.imageSources).then((r) => Object.fromEntries(r)),
@@ -79,20 +69,9 @@ const postBySlug = publicProc
     }
   })
 
-// The page detail read (`/:slug`). Same union shape as posts, with the
-// page-specific branches preserved through `loadPagePreview` (which
-// still throws Responses internally — translated here):
-//
-//   slug belongs to a live post → `redirect` 301 to `/posts/:slug`
-//   slim ETag probe → `not-modified` (skipped for `draft` previews —
-//                       an admin's preview may swap the body)
-//   catalog miss → role-gated draft preview (pages: admin only)
-//   full ETag re-check → `not-modified`; draft previews carry NO
-//                       public ETag (`etag: null`)
-//
-// The friends full-table scan only runs when the page renders the
-// section, and the music prerender starts the moment the preview
-// resolves — neither waits on the other.
+// `/:slug`. Same union shape; branches preserved through `loadPagePreview`
+// (throws Responses, translated here): post slug → redirect 301; draft
+// previews skip the ETag re-check (`etag: null`).
 const pageBySlug = publicProc
   .route({ method: 'GET', path: '/content/pages/bySlug' })
   .input(contentPageBySlugInputSchema)
@@ -113,11 +92,7 @@ const pageBySlug = publicProc
       return translateThrownResponse(error)
     }
 
-    // One parallel block keyed off the resolved preview. The music-player
-    // prerender starts immediately instead of waiting for the friends
-    // read, and the friends full-table scan + image hydration only run
-    // when the page actually renders the section — a hidden section keeps
-    // the payload an honest empty list.
+    // Music prerender and the friends scan (only when the section renders) run in parallel.
     const [friends, enrichedBody] = await Promise.all([
       preview.showFriends ? listAllFriends(db) : [],
       prerenderMusicPlayerBlocks(preview.body, (playerIds) => getPublicMusicMetasByIds(db, playerIds)),

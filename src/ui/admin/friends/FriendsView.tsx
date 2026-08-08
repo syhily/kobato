@@ -24,8 +24,7 @@ import { Input } from '@/ui/components/input'
 
 const PAGE_SIZE = 30
 
-// Pending applications rarely exceed a handful; a single bounded page
-// is enough for the review bucket (no infinite scroll there).
+// A single bounded page is enough for the pending-review bucket.
 const PENDING_LIMIT = 50
 
 type EditTarget = AdminFriendDto | null | undefined
@@ -37,8 +36,7 @@ export function FriendsView() {
   const [editTarget, setEditTarget] = useState<EditTarget>(undefined)
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
 
-  // Pending bucket: applications arrive as `visible: false` and surface
-  // on top of the list for one-click review.
+  // Pending bucket: applications arrive as `visible: false` and surface on top for one-click review.
   const pendingQuery = useQuery(
     orpcQuery.admin.friends.list.queryOptions({ input: { visible: false, limit: PENDING_LIMIT } }),
   )
@@ -58,9 +56,7 @@ export function FriendsView() {
   })
 
   const invalidateList = useCallback(() => {
-    // One procedure key covers both buckets — the pending `queryOptions`
-    // fetch and the infinite list are the same procedure, and `.key()`
-    // partial-matches every cached input across both operation types.
+    // One procedure key covers both buckets — `.key()` partial-matches every cached input across both operation types.
     void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.friends.list.key() })
   }, [queryClient])
 
@@ -75,9 +71,7 @@ export function FriendsView() {
     },
   })
 
-  // One-click approve: flip `visible` through the existing upsert path.
-  // Rows without a poster can't pass the upsert schema — the UI keeps
-  // the button disabled until the admin fills the cover via edit.
+  // One-click approve flips `visible` via the existing upsert path; rows without a poster can't pass the schema.
   const approveMutation = useMutation({
     mutationFn: (friend: AdminFriendDto) =>
       orpc.admin.friends.upsert({

@@ -17,32 +17,10 @@ export interface FlushResult {
   deadLettered: number
 }
 
-// The shared flush-loop skeleton for every buffered writer (insert
-// batchers that buffer whole rows, and the page-view batcher that
-// aggregates counters): a lazy unref'd interval timer, singleflight
-// flush with snapshot detach, and the shutdown-hook registration with
-// disposal. Subclasses own the payload: how a pending batch is
-// detached (`takePending`), written (`writePending`), and recovered
-// (`onWriteFailed` — dead-letter for rows, merge-back retry for
-// counters).
-//
-// Flush triggers:
-//   - The subclass arms a flush (threshold, interval via `armFlushTimer`).
-//   - Process receives SIGTERM / SIGINT / `beforeExit` (via
-//     `registerShutdownHook` with priority 100 so flushers run before
-//     the database-close hook at priority 0), and the restore flow
-//     flushes before swapping the database file. Both are TEARDOWN
-//     flushes (`flushForTeardown`): they ignore the pause gate, because
-//     a shutdown or swap landing inside the backup's consistency window
-//     must not strand the rows buffered there — the pause gates
-//     triggers, never durability.
-// A flush DRAINS: events buffered while a write was in flight had their
-// triggers swallowed by the singleflight, so a settled flush re-checks
-// the payload and keeps writing until it is empty (see the starvation
-// guard in `flush()`). On write failure the drain stops instead of
-// hot-looping, then re-arms the interval timer — rows buffered
-// mid-flush can have every trigger consumed by the singleflight, and
-// without the re-arm they would strand until the next event.
+// Shared flush-loop for buffered writers: lazy unref'd interval timer, singleflight
+// drain with snapshot detach, shutdown-hook disposal. Teardown flushes ignore the
+// pause gate; a flush drains until the payload is empty. Subclasses own takePending /
+// writePending / onWriteFailed.
 export abstract class FlushLoop<Pending, Result> {
   private timer: NodeJS.Timeout | null = null
   private flushing: Promise<Result> | null = null
@@ -62,22 +40,14 @@ export abstract class FlushLoop<Pending, Result> {
     registerShutdownHook(this.shutdownHook, 100)
   }
 
-  /**
-   * Detach this instance's shutdown hook, disarm any pending flush
-   * timer, and drop the pending payload. Called by the registry on
-   * reset (restore flow re-creates batchers against the new handle) so
-   * stale hooks can't accumulate across restores — and so an orphaned
-   * timer can never flush a pre-reset batch into a post-reset database
-   * (a restored file, or the next test's state).
-   */
+  /** Detach the shutdown hook, disarm the timer, drop pending payload (registry reset / restore). */
   dispose(): void {
     unregisterShutdownHook(this.shutdownHook)
     if (this.timer !== null) {
       clearTimeout(this.timer)
       this.timer = null
     }
-    // Detach-and-discard: reset semantics are "start empty", and the
-    // restore flow already flushed before resetting.
+    // Detach-and-discard: reset semantics are "start empty" — the restore flow already flushed.
     this.takePending()
   }
 
@@ -97,10 +67,7 @@ export abstract class FlushLoop<Pending, Result> {
     }
     if (this.timer === null) {
       this.timer = setTimeout(() => {
-        // Clear the field BEFORE flushing: when the timer fires into an
-        // in-flight flush, drain() returns at the singleflight guard and
-        // never clears it — a stale handle would wedge every future arm
-        // (`timer !== null`), stranding later batches.
+        // Clear the field before flushing — a stale handle would wedge every future arm.
         this.timer = null
         void this.flush()
       }, this.flushIntervalMs)
@@ -109,34 +76,22 @@ export abstract class FlushLoop<Pending, Result> {
   }
 
   /**
-   * Quiesce the loop for an external consistency window (the analytics
-   * backup suspends appends across its CHECKPOINT + file copy): drain
-   * whatever is pending, then hold — pushes keep buffering but no
-   * trigger (interval, threshold, explicit `flush`) writes until
-   * `resume`. Events buffered during the pause survive it; they flush
-   * on resume, and a teardown flush (shutdown hook, restore swap)
-   * drains them even inside the window.
+   * Quiesce the loop for an external consistency window: drain, then
+   * hold pushes and timers until `resume`. Teardown flushes still drain
+   * inside the window.
    */
   async pause(): Promise<void> {
     if (this.paused) {
       return
     }
-    // Gate FIRST, then drain: with the flag set before the first await,
-    // no push can start a fresh flush in the microtask gap between the
-    // drain settling and the flag landing (the old `await flush()`
-    // ordering left exactly that window open — a threshold-crossing push
-    // there saw `flushing === null` and wrote inside the consistency
-    // window). Events absorbed by the drain loop below are written
-    // before pause() resolves, i.e. before the caller opens the window.
+    // Set the pause flag before draining so a push can't start a flush inside the window.
     this.paused = true
-    // A push that raced the drain armed a fresh timer — disarm it so
-    // nothing fires inside the window.
+    // A push that raced the drain may have armed a fresh timer — disarm it.
     if (this.timer !== null) {
       clearTimeout(this.timer)
       this.timer = null
     }
-    // Join an in-flight flush (singleflight), then drain whatever is
-    // left over — events that arrived while that write was parked.
+    // Join an in-flight flush, then drain events that arrived while it was parked.
     if (this.flushing !== null) {
       await this.flushing
     }
@@ -148,8 +103,7 @@ export abstract class FlushLoop<Pending, Result> {
       return
     }
     this.paused = false
-    // Flush paused-time buffering right away instead of waiting out a
-    // fresh interval — the pause already delayed those events once.
+    // Flush paused-time buffering immediately, not after a fresh interval.
     void this.flush()
   }
 
@@ -161,21 +115,14 @@ export abstract class FlushLoop<Pending, Result> {
   }
 
   /**
-   * Teardown flush for the shutdown hook and the restore swap: drains
-   * the pending payload even while paused. A SIGTERM or a database swap
-   * landing inside the backup's consistency window must not strand the
-   * rows buffered there — `dispose()` runs detach-and-discard right
-   * after, so this is the last chance to write them.
+   * Teardown flush (shutdown hook, restore swap): drains even while
+   * paused — the last chance to write rows before `dispose()` drops them.
    */
   async flushForTeardown(): Promise<Result> {
     return this.drain()
   }
 
-  /**
-   * Singleflight drain of the pending payload — the shared write path
-   * for `flush()` (paused-gated), `pause()` (gated by its caller's
-   * flag-first ordering), and `flushForTeardown()` (ungated).
-   */
+  /** Singleflight drain — the shared write path for flush(), pause(), and flushForTeardown(). */
   private async drain(): Promise<Result> {
     if (this.flushing) {
       return this.flushing
@@ -196,28 +143,13 @@ export abstract class FlushLoop<Pending, Result> {
           try {
             result = await this.writePending(current)
           } catch (error) {
-            // The recovery policy (dead-letter, merge-back retry, …)
-            // owns what happens to a failed batch — stop draining
-            // rather than hot-looping a write that keeps failing.
+            // Recovery owns a failed batch — stop draining rather than hot-looping.
             const failed = await this.onWriteFailed(current, error)
-            // …but rows buffered while the failed write was in flight
-            // may have no trigger left: every timer they armed fired
-            // into this singleflight (a no-op join), and a
-            // threshold-crossing push armed nothing. Re-arm the
-            // interval so they flush instead of stranding until the
-            // next event or shutdown. No-ops when a subclass recovery
-            // already re-armed (idempotent) and while paused.
+            // Rows buffered mid-flush may have no trigger left; re-arm the interval so they flush.
             this.armFlushTimer()
             return failed
           }
-          // Starvation guard: events that arrived while this flush was
-          // in flight had every trigger swallowed by the singleflight —
-          // a threshold-crossing push got back THIS same promise (and
-          // armed no timer), and an interval timer that fired mid-flush
-          // was a no-op. Nothing else will ever schedule them, so keep
-          // draining until the payload is empty. The singleflight's
-          // awaiters (the shutdown hook included) only resolve once the
-          // whole backlog is durable.
+          // Starvation guard: triggers swallowed by the singleflight never reschedule — drain until empty.
           const more = this.takePending()
           if (more === null) {
             return result
@@ -232,17 +164,9 @@ export abstract class FlushLoop<Pending, Result> {
   }
 }
 
-// Generic in-memory batcher that flushes rows via one multi-row INSERT
-// in a single sync transaction — the shape SQLite excels at, and the
-// replacement for the old Postgres `COPY FROM STDIN` path with no loss
-// of durability (WAL + one commit per batch). Subclasses provide
-// `insertBatch()` for the write itself and `onInsertFailed()` for
-// domain-specific error handling (dead-letter, per-row fallback, etc.).
-//
-// The writer is a LAZY GETTER, not a constructor-captured handle: some
-// writers don't exist at batcher-construction time (the DuckDB sidecar
-// opens after the batchers register), and a reopened handle (restore
-// completion) must be picked up without re-registration.
+// Generic in-memory batcher: one multi-row INSERT per batch in a single
+// sync transaction. The writer is a LAZY GETTER, not a captured handle —
+// the DuckDB sidecar opens after registration, and restore reopens it.
 export abstract class InsertBatcher<T, W = Database> extends FlushLoop<T[], FlushResult> {
   private buffer: T[] = []
 
@@ -301,12 +225,7 @@ export abstract class InsertBatcher<T, W = Database> extends FlushLoop<T[], Flus
   }
 }
 
-// ─── dead-letter helpers ──────────────────────────────────
-
-// The shared dead-letter wire format: one plain-JSON object per line,
-// Dates rendered as epoch ms (superjson was dropped with the
-// migration). Per-domain code supplies only the revive step (Date
-// revival + validation) — the envelope mechanics live here.
+// Dead-letter wire format: one plain-JSON object per line, Dates as epoch ms.
 
 /** Serialize a batch to JSON-lines (trailing newline included). */
 export function serializeDeadLetterJsonLines<T>(events: T[]): string {
@@ -314,9 +233,8 @@ export function serializeDeadLetterJsonLines<T>(events: T[]): string {
 }
 
 /**
- * Parse one dead-letter line. `revive` receives the parsed raw object
- * and returns the domain event (reviving Dates, validating shape), or
- * null to count the line as a parse failure.
+ * Parse one dead-letter line. `revive` returns null to count the line
+ * as a parse failure.
  */
 export function deserializeDeadLetterJsonLine<T>(
   line: string,

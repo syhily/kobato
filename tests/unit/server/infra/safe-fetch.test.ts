@@ -5,13 +5,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { safeFetch } from '@/server/infra/safe-fetch'
 
-// Unit surface for the SSRF invariant itself (plan 042): protocol
-// allowlist, per-hop `isBlockedFetchHost` revalidation, redirect budget,
-// timeout, and size cap. The adapter suites (music write, webmentions,
-// avatar) pin the failure-union → error-mode mapping; these tests pin
-// the union. `isBlockedFetchHost` stays real — only `fetch` is stubbed.
-// DNS is mocked to a public address by default; individual tests rebind
-// it to exercise the rebinding guard.
+// Unit surface for the SSRF invariant (plan 042): allowlist, per-hop
+// host revalidation, redirect budget, timeout, size cap.
+// `isBlockedFetchHost` stays real — only `fetch` is stubbed; DNS defaults to a public address.
 
 interface DnsAddress {
   address: string
@@ -22,8 +18,7 @@ vi.mock('node:dns/promises', () => ({
   lookup: vi.fn(async (): Promise<DnsAddress[]> => [{ address: '93.184.216.34', family: 4 }]),
 }))
 
-// The real `lookup` is overloaded; vi.mocked picks the single-address
-// signature, so the mock is re-typed to the `{ all: true }` shape.
+// `lookup` is overloaded; the cast re-types it to the `{ all: true }` shape.
 const lookupMock = lookup as unknown as Mock<(hostname: string, options?: unknown) => Promise<DnsAddress[]>>
 
 const publicDns = [{ address: '93.184.216.34', family: 4 }]

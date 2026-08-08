@@ -12,10 +12,8 @@ import { post as postTable } from '@/server/infra/db/schema/post'
 import { postTag } from '@/server/infra/db/schema/post-tag'
 import { category as categoryTable, tag as tagTable } from '@/server/infra/db/schema/taxonomy'
 
-// selectFeedPosts against the real engine: the feed channel's visibility
-// policy (hidden included, scheduled excluded), the published-revision
-// hydration, and the scope-resolution rules run on seeded rows — the
-// resolvers are the same real ones the feed generator wires.
+// selectFeedPosts against the real engine: visibility policy, published-
+// revision hydration, and the real scope resolvers.
 const db = getTestDb()
 
 const RESOLVERS = { resolveCategory: resolveCategoryBySlugOrName, resolveTag: resolveTagBySlugOrName }

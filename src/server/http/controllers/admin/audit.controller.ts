@@ -20,8 +20,6 @@ import {
 } from '@/shared/contracts/audit'
 import { idFromString } from '@/shared/utils/id'
 
-// Helpers
-
 function assertValidActorId(actorId: string | undefined): void {
   if (!actorId) {
     return
@@ -34,8 +32,6 @@ function assertValidActorId(actorId: string | undefined): void {
 }
 
 const EXPORT_MAX_ROWS = 10_000
-
-// List
 
 const list = adminProc
   .route({ method: 'GET', path: '/admin/audit-log/list' })
@@ -67,8 +63,6 @@ const list = adminProc
       hasMore: input.offset + items.length < total,
     }
   })
-
-// Export (CSV)
 
 const exportCsv = adminProc
   .route({ method: 'POST', path: '/admin/audit-log/export' })

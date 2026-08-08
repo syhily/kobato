@@ -5,8 +5,7 @@ import { useChromeClock } from '@/ui/public/chrome/use-chrome-clock'
 export function Footer() {
   const siteIdentity = useSiteIdentity()
   const { website, title } = siteIdentity
-  // Hydration-safe live clock — SSR/hydration use the root loader's instant,
-  // then the mounted client clock takes over (see useChromeClock).
+  // Hydration-safe live clock (see useChromeClock).
   const thisYear = formatLocalDate(useChromeClock(), 'yyyy', siteIdentity)
   const { icpNo, moeIcpNo, initialYear } = siteIdentity
   const hasIcp = icpNo || moeIcpNo

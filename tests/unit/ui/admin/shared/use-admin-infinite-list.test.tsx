@@ -23,10 +23,8 @@ interface TestInput {
   limit: number
 }
 
-// Minimal structural stand-in for an oRPC procedure's TanStack utils: builds
-// real useInfiniteQuery options around an injected page fetcher, the same
-// way `orpcQuery.*.list.infiniteOptions` does. No network ever fires — the
-// fetcher resolves in-memory pages.
+// Structural stand-in for an oRPC procedure's TanStack utils, mirroring
+// `orpcQuery.*.list.infiniteOptions`; the fetcher resolves in-memory pages.
 function makeNamespace<TPage>(fetchPage: (input: TestInput) => Promise<TPage>) {
   return {
     key: () => ['test', 'admin-infinite-list'],
@@ -59,8 +57,7 @@ function makeWrapper() {
   )
 }
 
-// Page fetcher serving `total` rows in `pageSize` chunks, recording every
-// input it was called with.
+// Page fetcher serving `total` rows in `pageSize` chunks, recording every input.
 function makePager(total: number) {
   const fetched: TestInput[] = []
   const fetchPage = vi.fn((input: TestInput) => {
@@ -215,8 +212,7 @@ describe('ui/admin/shared/useAdminInfiniteList', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false))
     expect(rowIds(result)).toEqual(['r0', 'r1'])
 
-    // The observer notification rides the notifyManager scheduler, so the
-    // re-render lands a tick after the `setQueryData` call — poll for it.
+    // The re-render lands a tick after setQueryData — poll for it.
     await act(async () => {
       result.current.patchPages((data) => ({
         ...data,
@@ -249,8 +245,7 @@ describe('ui/admin/shared/useAdminInfiniteList', () => {
     act(() => {
       result.current.reset()
     })
-    // The cache entry is gone. Reset only drops the cache — the caller
-    // re-arms the machine (the music search flips `enabled` alongside).
+    // Reset only drops the cache; the caller re-arms the machine.
     expect(wrapper.queryClient.getQueryData(['test', 'admin-infinite-list'])).toBeUndefined()
   })
 })

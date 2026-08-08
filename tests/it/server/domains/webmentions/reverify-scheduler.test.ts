@@ -3,10 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.useFakeTimers()
 
-// The fetch-and-link-check round-trip goes through the REAL safeFetch
-// stack — only the network boundary is stubbed: `fetch` via installFetch,
-// DNS to a fixed public address (same discipline as the outbox scheduler
-// test and tests/unit/server/infra/safe-fetch.test.ts).
+// Real safeFetch round-trip; only the network boundary is stubbed: fetch via installFetch, DNS to a fixed address.
 vi.mock('node:dns/promises', () => ({
   lookup: async () => [{ address: '93.184.216.34', family: 4 }],
 }))
@@ -21,11 +18,7 @@ import { post } from '@/server/infra/db/schema/post'
 import { webmention } from '@/server/infra/db/schema/webmention'
 import { stopAllScheduledJobs } from '@/server/infra/scheduler-utils'
 
-// The daily re-verification job against the real engine: real
-// `webmention` rows feed the 24h waterline query, and the observable
-// effect is the real fetch-and-link-check round-trip (same discipline as
-// the outbox scheduler test). db-lifecycle (pulled in by the test-db
-// helper) wires the scheduler's db getter, so only
+// The daily re-verification job against the real engine; only
 // `scheduleWebmentionReverify()` is called explicitly, like server.ts.
 const db = getTestDb()
 
@@ -119,8 +112,7 @@ describe('webmentions/reverify scheduler throttle', () => {
     expect(vi.getTimerCount()).toBeGreaterThan(0)
 
     await seedRow(new Date(Date.now() - DAY_MS - 60_000))
-    // The suspended re-evaluation (30s) picks the row up, then the floor
-    // throttle applies before the fetch.
+    // The suspended re-check (30s) picks it up; the floor throttle applies before the fetch.
     await vi.advanceTimersByTimeAsync(30_000 + REVERIFY_MIN_DELAY_MS)
     expect(mockFetch.calls).toHaveLength(1)
   })
@@ -134,8 +126,7 @@ describe('webmentions/reverify scheduler throttle', () => {
     await vi.advanceTimersByTimeAsync(REVERIFY_MIN_DELAY_MS)
     expect(mockFetch.calls).toHaveLength(REVERIFY_BATCH_SIZE)
 
-    // The remaining row is still due NOW, but the next batch waits a full
-    // floor interval — this is the burst throttle.
+    // Still due NOW, but the next batch waits a full floor interval — the burst throttle.
     await vi.advanceTimersByTimeAsync(REVERIFY_MIN_DELAY_MS - 1)
     expect(mockFetch.calls).toHaveLength(REVERIFY_BATCH_SIZE)
 

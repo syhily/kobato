@@ -20,13 +20,9 @@ import { session as sessionTable } from '@/server/infra/db/schema/session'
 import { user as userTable } from '@/server/infra/db/schema/user'
 import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 
-// signInWithPasskey against the real engine: the passkey gate reads the
-// real settings bundle, the WebAuthn service consumes a real challenge
-// row and a real credential row, the session primitive mints a real
-// session-table row + last-login touch + login audit, and the rate
-// limiter is the real in-process one. The ONLY mock is
+// signInWithPasskey against the real engine; the only mock is
 // `@simplewebauthn/server` — the attestation crypto is a true external
-// that cannot produce a genuine ceremony in tests.
+// no test can drive.
 
 const swaMocks = vi.hoisted(() => ({
   generateAuthenticationOptions: vi.fn(),
@@ -81,7 +77,7 @@ async function seedCredential(userId: number, credentialId: string): Promise<voi
   })
 }
 
-/** Begin a real authentication ceremony — the challenge row lands in `one_time_token`. */
+/** Real ceremony — the challenge row lands in `one_time_token`. */
 async function beginAuthentication(challenge: string, email?: string): Promise<void> {
   swaMocks.generateAuthenticationOptions.mockResolvedValueOnce({ challenge, rpId: 'example.com' })
   await generateAuthenticationOptions(db, email)
@@ -114,9 +110,7 @@ beforeEach(async () => {
 })
 
 afterEach(async () => {
-  // Flush BEFORE dropping the batcher: InsertBatcher.dispose() leaves an
-  // armed flush timer behind, so an unflushed queue would otherwise
-  // insert this case's stale events mid-next-test.
+  // Flush BEFORE dropping the batcher: an armed flush timer would insert after the wipe.
   await flushAuditLog()
   resetAllBatchers()
 })
@@ -152,9 +146,7 @@ describe('auth/passkey/signin — signInWithPasskey (real engine)', () => {
   it('refuses when the finish rate limit trips', async () => {
     setBlogSettingsBundleForTests(passkeyFinishBucket(1))
 
-    // First reach of the flow consumes the single-slot budget (the
-    // verification itself fails on the unknown credential — the limiter
-    // bumps before the ceremony runs).
+    // First reach consumes the single-slot budget.
     const first = await signInWithPasskey(ctx(makeSession({})), request(), passkeyForm('nope'), '/admin')
     expect(first.type).toBe('error')
 
@@ -190,8 +182,7 @@ describe('auth/passkey/signin — signInWithPasskey (real engine)', () => {
     expect(result.to).toBe('/admin')
     expect(result.setCookie).toMatch(/^__session=/)
 
-    // The session primitive minted exactly one real session row, owned
-    // by the user, with the login meta stamped.
+    // One real session row, owned by the user, login meta stamped.
     const sessions = await db.select().from(sessionTable)
     expect(sessions).toHaveLength(1)
     expect(sessions[0]!.userId).toBe(userId)
@@ -206,8 +197,7 @@ describe('auth/passkey/signin — signInWithPasskey (real engine)', () => {
     const [cred] = await db.select().from(passkeyCredential).where(eq(passkeyCredential.credentialId, 'cred-1'))
     expect(cred!.counter).toBe(1)
 
-    // establishLoginSession owns the entire login side-effect surface —
-    // exactly ONE login audit, attributed to the new sid, method passkey.
+    // Exactly one login audit, attributed to the new sid, method passkey.
     await flushAuditLog()
     const logins = await db.select().from(auditLog).where(eq(auditLog.action, 'login'))
     expect(logins).toHaveLength(1)
@@ -232,8 +222,7 @@ describe('auth/passkey/signin — signInWithPasskey (real engine)', () => {
     const userId = await seedUser()
     await seedCredential(userId, 'cred-1')
     await beginAuthentication('challenge-1')
-    // The service does not wrap upstream failures — a non-Error
-    // rejection from the WebAuthn library propagates raw.
+    // The service does not wrap upstream failures — non-Error rejections propagate raw.
     swaMocks.verifyAuthenticationResponse.mockRejectedValueOnce('boom')
 
     const result = await signInWithPasskey(ctx(makeSession({})), request(), passkeyForm(), '/admin')

@@ -25,11 +25,7 @@ queryMocks.mutation = {
   isPending: false,
 }
 
-// BackupView wires up react-query + route loader. We stub the query layer
-// with a hoisted mutable singleton so individual cases can flip the status
-// query between pending / resolved, exercising the data-loaded branches
-// (warning banners + schedule form enabled state). `useMutation` returns
-// the real pending flags so BackupFileList props thread through unchanged.
+// Status query is stubbed via a hoisted singleton so cases flip pending/resolved; useMutation keeps real pending flags.
 
 vi.mock('react-router', async () => {
   const actual = await vi.importActual<typeof import('react-router')>('react-router')
@@ -39,9 +35,7 @@ vi.mock('react-router', async () => {
   }
 })
 
-// BackupScheduleForm (and BucketCard) save through the settings mutation
-// hook; the inert global stub from `tests/snaps/setup.ts` keeps the forms
-// rendering without a live API surface.
+// The inert settings-mutation stub (setup.ts) keeps these forms network-free.
 
 const scheduledBackup: BackupSettings = {
   scheduled: { enabled: true, frequency: 'weekly', hour: 3, minute: 30, dayOfWeek: 1 },
@@ -55,8 +49,7 @@ const dailyBackup: BackupSettings = {
 
 describe('snapshot: BackupView', () => {
   beforeEach(() => {
-    // Default back to the pending/loading state so the legacy loading test
-    // stays deterministic; data-loaded cases reassign below.
+    // Default stays pending so the loading test stays deterministic.
     queryMocks.query = { data: undefined, isPending: true, error: null }
     queryMocks.mutation = { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }
   })
@@ -70,30 +63,23 @@ describe('snapshot: BackupView', () => {
     // The schedule form always renders (independent of the status query).
     expect(html).toContain('定时备份')
     expect(html).toContain('配置自动备份的频率与保留策略')
-    // The manual file list section heading is always present.
     expect(html).toContain('备份文件')
   })
 
   it('renders the schedule form populated with the supplied backup config plus the file and manual-restore sections', () => {
-    // `BackupView` unconditionally mounts its three child sections
-    // (`BackupScheduleForm`, `BackupFileList`, the manual-restore
-    // `SettingGroup`) regardless of the status query state — so even with
-    // the loading banner visible we can assert the populated schedule
-    // wiring and the always-present section headings.
+    // The three child sections mount regardless of status-query state —
+    // assert the populated wiring even while loading.
     queryMocks.query = { data: undefined, isPending: true, error: null }
     const html = stableHtml(
       renderInRouter(<BackupView backup={scheduledBackup} timeZone="Asia/Shanghai" />, '/admin/settings'),
     )
-    // Schedule section surfaces the supplied weekly schedule fields.
     expect(html).toContain('定时备份')
     expect(html).toContain('启用定时备份')
     expect(html).toContain('备份频率')
     expect(html).toContain('保留策略')
-    // The file-list section + empty placeholder render (backupFiles is
-    // undefined on SSR → BackupView passes `[]`).
+    // backupFiles is undefined on SSR → the empty placeholder renders.
     expect(html).toContain('备份文件')
     expect(html).toContain('暂无备份文件')
-    // The manual-restore section is always mounted.
     expect(html).toContain('手动还原')
     expect(html).toContain('上传备份文件还原：.db.tar.gz 归档（内容 + 访问统计）')
     expect(html).toContain('选择文件')
@@ -105,12 +91,10 @@ describe('snapshot: BackupView', () => {
     const html = stableHtml(
       renderInRouter(<BackupView backup={dailyBackup} timeZone="Asia/Shanghai" />, '/admin/settings'),
     )
-    // Schedule section present but the weekly/daily detail rows collapse
-    // when `scheduled.enabled` is false.
+    // scheduled.enabled=false → weekly/daily detail rows collapse.
     expect(html).toContain('定时备份')
     expect(html).toContain('启用定时备份')
     expect(html).not.toContain('保留天数')
-    // File-list and manual-restore sections still render.
     expect(html).toContain('备份文件')
     expect(html).toContain('手动还原')
   })
@@ -121,7 +105,6 @@ describe('snapshot: BackupScheduleForm', () => {
     const html = stableHtml(renderToHtml(<BackupScheduleForm backup={scheduledBackup} canConfigure={true} />))
     expect(html).toContain('定时备份')
     expect(html).toContain('启用定时备份')
-    // Weekly-schedule-only fields surface when scheduled is on.
     expect(html).toContain('备份频率')
     expect(html).toContain('备份时间')
     expect(html).toContain('星期')
@@ -132,8 +115,7 @@ describe('snapshot: BackupScheduleForm', () => {
     const html = stableHtml(renderToHtml(<BackupScheduleForm backup={dailyBackup} canConfigure={true} />))
     expect(html).toContain('定时备份')
     expect(html).toContain('启用定时备份')
-    // The conditional weekly/daily detail rows are gated behind the
-    // `scheduledEnabled` watch, so they don't render.
+    // Detail rows are gated behind the scheduledEnabled watch.
     expect(html).not.toContain('备份频率')
     expect(html).not.toContain('保留天数')
   })
@@ -238,8 +220,7 @@ describe('snapshot: BackupFileList', () => {
       ),
     )
     expect(html).toContain('加载更多')
-    // React emits the count as a separate text node (`已展示 <!-- -->2<!-- --> 个备份文件`),
-    // so assert the pieces rather than the contiguous string.
+    // SSR comment markers split the count — assert the pieces separately.
     expect(html).toMatch(/已展示.*2.*个备份文件/su)
   })
 })

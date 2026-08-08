@@ -1,14 +1,8 @@
 import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
-// Post category. CRUD at `/admin/taxonomy/categories`. Posts reference a
-// category by id (`post.category_id` FK, `ON DELETE SET NULL`), so renames
-// cascade with zero post writes. `name` is `UNIQUE`; `slug` drives
-// `/cats/:slug` (`UNIQUE`). `sort_order` orders `/categories`.
-//
-// Counters (`counts` on the public DTO) stay derived from the post table
-// via `countPostsByTaxonomy` — they are NOT stored here so
-// a hot post's likes/views/comments churn never write-amplifies the
-// taxonomy table.
+// Post category. Counters (`counts` on the public DTO) are derived from
+// the post table via `countPostsByTaxonomy` — never stored here, so post
+// traffic never write-amplifies the taxonomy table.
 export const category = sqliteTable(
   'category',
   {
@@ -32,9 +26,7 @@ export const category = sqliteTable(
   ],
 )
 
-// Post tag. CRUD at `/admin/taxonomy/tags`. Posts reference tags through
-// the `post_tag` join (by `tag.id`), so renames propagate automatically;
-// `name` is `UNIQUE`, `slug` drives `/tags/:slug` (`UNIQUE`).
+// Post tag. Posts reference tags through the `post_tag` join, so renames propagate automatically.
 export const tag = sqliteTable('tag', {
   id: integer('id').primaryKey({ autoIncrement: true }).notNull(),
   createdAt: integer('created_at', { mode: 'timestamp_ms' })

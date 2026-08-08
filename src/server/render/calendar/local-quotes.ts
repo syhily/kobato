@@ -1,16 +1,6 @@
-// Built-in daily-quote bank for the calendar image, the final fallback
-// when the configured remote provider fails (or when `local` is the
-// configured source). This is the COMPLETE famous list from the source —
-// no editorial filtering; the renderer clamps long quotes to three lines
-// with an ellipsis, and `pickForDate` hashes the date so every entry
-// stays reachable across years.
-//
-// Vendored snapshot of BullshitGenerator's data.json, pinned commit
-// 690988559f39f2e452b1bfd5904282d90c7ace32:
-//   https://raw.githubusercontent.com/liutongyang/BullshitGenerator/690988559f39f2e452b1bfd5904282d90c7ace32/data.json
-// Entries were decoded from the `作者a，内容。b` template (unparseable
-// template residue dropped), punctuation spacing tidied, deduped by
-// content, source order preserved.
+// Built-in daily-quote bank (final fallback for the calendar image),
+// complete from the source — no editorial filtering. Vendored snapshot of
+// BullshitGenerator's data.json, pinned commit 690988559f39f2e452b1bfd5904282d90c7ace32.
 
 import type { DailyQuote } from '@/server/render/calendar/daily-quote'
 

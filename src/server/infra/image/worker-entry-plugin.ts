@@ -5,19 +5,9 @@ import { resolve } from 'node:path'
 import { build } from 'vite'
 
 /**
- * Vite plugin: build `process-worker.ts` as a standalone Node worker file.
- *
- * The main Vite build (SSR/Node target) does not emit standalone worker
- * chunks for `new Worker(new URL(...))` — that idiom targets browser Web
- * Workers. Rather than fight the shared module graph (tree-shaking strips
- * the `parentPort` bootstrap because it looks unreachable from the main
- * bundle context), we run a focused second build after the main build
- * completes.
- *
- * The worker bundle is fully self-contained: sharp and node builtins are
- * marked external (loaded at runtime), and every other dep is inlined so
- * Node's `worker_threads` can load the file with zero additional
- * resolution.
+ * Build `process-worker.ts` as a standalone Node worker file (the main
+ * build can't emit `new Worker(new URL(...))` chunks). Sharp and node
+ * builtins stay external; everything else is inlined.
  */
 
 const WORKER_ENTRY = resolve(process.cwd(), 'src/server/infra/image/process-worker.ts')
@@ -38,9 +28,7 @@ export function processWorkerEntryPlugin(): Plugin {
       const outFile = resolve(OUTPUT_DIR, OUTPUT_FILE)
       rmSync(outFile, { force: true })
 
-      // Run an isolated ES build for just the worker. `write: false` lets us
-      // capture the output chunks and write the relevant one ourselves,
-      // keeping full control over the filename (no content hash).
+      // `write: false` lets us write the chunk ourselves: stable filename, no hash.
       const result = await build({
         configFile: false,
         logLevel: 'warn',
@@ -48,18 +36,12 @@ export function processWorkerEntryPlugin(): Plugin {
           write: false,
           minify: false,
           sourcemap: false,
-          // Node-targeted bundle: keeps runtime env access live (the
-          // client define plugin would otherwise rewrite it to `{}`,
-          // breaking `requireExternal`'s KOBATO_NATIVES_DIR lookup in the
-          // worker) and treats node builtins as external.
+          // Node target: keeps runtime env access live and node builtins external.
           ssr: true,
           rolldownOptions: {
             input: WORKER_ENTRY,
-            // `sharp` is a static import in the worker source now — keep
-            // it external so this non-SEA bundle resolves node_modules at
-            // runtime (the SEA bundle inlines it instead and redirects
-            // its platform loads to `nativeRequire`). Node builtins must
-            // stay external either way.
+            // `sharp` resolves from node_modules here (the SEA bundle inlines it);
+            // node builtins stay external either way.
             external: ['sharp', 'pg', 'node:worker_threads', 'node:buffer', 'node:module', 'node:os', 'node:path'],
             output: {
               format: 'es',
@@ -75,8 +57,7 @@ export function processWorkerEntryPlugin(): Plugin {
         },
       })
 
-      // `build` with `write: false` returns RolldownOutput | RolldownOutput[].
-      // (A watcher is only returned when `watch: true`, which we never set.)
+      // `write: false` returns RolldownOutput | RolldownOutput[] (never a watcher).
       const results = Array.isArray(result) ? result : [result]
       for (const res of results) {
         if (!('output' in res)) {

@@ -8,17 +8,11 @@ import { hydrateBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { __clearSectionChangeHandlersForTests } from '@/server/domains/settings/services/section-changes'
 import { setting } from '@/server/infra/db/schema/config'
 
-// Section-change dispatch is covered by the unit tests; keep the
-// backup/audit schedulers out of these persistence-focused cases.
+// Section-change dispatch is covered by the unit tests; keep the schedulers out.
 const db = getTestDb()
 
-// Asset uploads (SVG / ICO / PNG) flow through the dedicated
-// /api/admin/branding/upload endpoint, which requires real S3 — so
-// those code paths are exercised by the unit tests in
-// `service.settings.branding.test.ts`. This integration test covers
-// what's left for the settings PATCH: storing robots.txt inline and
-// preserving previously-uploaded binary/SVG ObjectRefs on unrelated
-// asset-section saves.
+// Settings PATCH only: robots.txt inline storage + preserved ObjectRefs;
+// uploads need real S3 and stay with the unit tests.
 
 const ASSETS_BASE = {
   asset: { host: 'cdn.example.com', scheme: 'https' as const },
@@ -105,7 +99,6 @@ describe('integration / branding settings', () => {
   it('preserves uploaded asset ObjectRefs when the assets section is patched without branding', async () => {
     const ctx = makeAuthedCtx({ role: 'admin', db })
 
-    // Edit just the host — no branding in the PATCH payload.
     const updateRes = await callRpc(
       '/admin/settings/update',
       {
@@ -118,8 +111,7 @@ describe('integration / branding settings', () => {
       ctx,
     )
     expect(updateRes.status).toBe(200)
-    // The response carries the admin-projected section (mask field
-    // included) so the client never refetches after a save.
+    // Admin-projected section (mask included) — the client never refetches.
     const updateBody = await parseRpcJson<{
       section: { asset: { host: string }; secretAccessKeyMask: string | null }
     }>(updateRes)

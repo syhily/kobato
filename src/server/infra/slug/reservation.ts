@@ -5,12 +5,8 @@ import { DomainError } from '@/server/infra/http/errors'
 
 export type EntityType = 'post' | 'page'
 
-// Route-prefix fence shared by posts and pages. Slug uniqueness across
-// the two tables is enforced here: `reserveSlugInTransaction` below
-// checks the `slug_registry` row in-transaction, and raced DB UNIQUE
-// violations are mapped to a clean 409 by `rethrowSlugConflict`
-// (`@/server/domains/content/slug-conflict`). Taxonomy slugs are exempt
-// — they never mount at a route prefix of their own.
+// Route-prefix fence shared by posts and pages. Taxonomy slugs are exempt —
+// they never mount at a route prefix of their own.
 export const RESERVED_SLUGS = new Set<string>([
   'posts',
   'cats',

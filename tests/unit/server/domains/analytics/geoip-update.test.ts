@@ -5,9 +5,8 @@ import { DomainError } from '@/server/infra/http/errors'
 const DB_PATH = '/tmp/maxmind/GeoLite2-City.mmdb'
 const META_PATH = '/tmp/maxmind/GeoLite2-City.meta.json'
 
-// Per-test knobs read by the mocked modules below. `vi.resetModules()` in
-// beforeEach gives every test a fresh module graph (and a fresh inflight
-// slot), so rebinding these knobs per test is safe.
+// Per-test knobs read by the mocked modules; beforeEach's vi.resetModules()
+// gives each test a fresh module graph (and inflight slot).
 const knobs = vi.hoisted(() => ({
   installed: true,
   metaJson: null as string | null,
@@ -63,11 +62,7 @@ function downloadResponse(): Response {
   return new Response(new ReadableStream({ start: (c) => c.close() }), { status: 200 })
 }
 
-// The production timeout object: AbortSignal.timeout's reason is a real
-// TimeoutError DOMException, and isTimeoutError relies on
-// `instanceof Error` — stubbing with the genuine shape (not an Error
-// with a patched name) proves the guard accepts what undici/v8 actually
-// throws.
+// AbortSignal.timeout's reason is a real TimeoutError DOMException, which isTimeoutError's instanceof Error check expects.
 function timeoutError(): DOMException {
   return new DOMException('The operation timed out.', 'TimeoutError')
 }
@@ -134,7 +129,6 @@ describe('analytics/geoip-update', () => {
       expect(vi.mocked(fetch).mock.calls[1]![0]).toBe(
         'https://cdn.jsdelivr.net/npm/geolite2-city@1.0.87/GeoLite2-City.mmdb.gz',
       )
-      // The staged file is validated by the reader before the swap.
       expect(readerOpen).toHaveBeenCalledWith(`${DB_PATH}.download`)
       expect(fsPromiseMocks.rename).toHaveBeenCalledWith(`${DB_PATH}.download`, DB_PATH)
       expect(fsPromiseMocks.writeFile).toHaveBeenCalledWith(META_PATH, expect.stringContaining('"source":"remote"'))
@@ -203,9 +197,7 @@ describe('analytics/geoip-update', () => {
 
     it('propagates the size-guard DomainError from the stream and cleans the staged file', async () => {
       knobs.metaJson = meta({ version: '1.0.86', source: 'remote' })
-      // The gzip-bomb guard throws a DomainError inside the pipeline
-      // generator; it must flow out unmodified (no timeout translation)
-      // and the staged file must be dropped.
+      // The size-guard DomainError must propagate unmodified and the staged file be dropped.
       const sizeError = new DomainError('INTERNAL', 'GeoIP 数据库超过 100 MB 大小限制')
       pipelineMock.mockRejectedValueOnce(sizeError)
       vi.stubGlobal(
@@ -228,8 +220,6 @@ describe('analytics/geoip-update', () => {
       )
       const { runRemoteGeoipUpdate } = await import('@/server/domains/analytics/geoip-update')
 
-      // The database swap is a fact — a sidecar failure degrades to a
-      // warning instead of failing the operation.
       const result = await runRemoteGeoipUpdate()
       expect(result.status).toBe('updated')
       expect(fsPromiseMocks.rename).toHaveBeenCalledWith(`${DB_PATH}.download`, DB_PATH)

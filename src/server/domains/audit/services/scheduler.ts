@@ -7,18 +7,10 @@ import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 const log = getLogger('audit.scheduler')
 
-// Scheduler — daily at 04:00 in the site's configured timezone, same
-// wall-clock semantics as the backup scheduler. The domain owns only
-// the policy (next-fire computation); timer mechanics live in the
-// shared `scheduleJob` seam.
+// Daily 04:00 archive scheduler in the site's configured timezone.
+// Domain owns only next-fire policy; timer mechanics live in `scheduleJob`.
 
-// The db getter is injected by the composition root
-// (`@/server/bootstrap/db-lifecycle`, which imports this module) at
-// wire time — a direct import of db-lifecycle here would close an
-// import cycle. The getter is invoked when the job fires, so a
-// recreated pool (restore completion) is picked up without being
-// captured in module state. Same injection discipline as
-// `setRestartDb` / `setRestartRefreshSettings` in `@/server/infra/lifecycle`.
+// Injected getter (avoids an import cycle), re-read at fire time so a recreated pool is picked up.
 let resolveDb: (() => Database) | null = null
 let job: ScheduledJob | null = null
 
@@ -32,8 +24,7 @@ export function scheduleNextArchive(): void {
     nextDelayMs: () => {
       const bundle = getBlogSettingsBundleSync()
       if (!bundle) {
-        // Settings not hydrated yet (boot-time race) — suspend and let
-        // the seam re-evaluate shortly.
+        // Boot-time race: suspend; the seam re-evaluates shortly.
         log.warn('Settings not hydrated; audit archive suspended')
         return null
       }

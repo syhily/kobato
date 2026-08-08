@@ -48,9 +48,7 @@ export async function listPublicPostCards(
   return posts.map(toListingPostCard)
 }
 
-/** Cards for one listing page. The filtered count is deliberately not run
-    here: callers that need `total` call `countPublicPosts` themselves (all
-    current callers already do), so the count runs once per request. */
+/** Cards for one listing page. The filtered count is deliberately not run here — callers needing `total` call `countPublicPosts` themselves. */
 export async function listPublicPostCardsPaginated(
   db: Database,
   pageNum: number,
@@ -59,9 +57,7 @@ export async function listPublicPostCardsPaginated(
     sortBy?: 'publishedAt' | 'updatedAt'
     categoryId?: number
     tag?: string
-    /** Override the default offset (`(pageNum - 1) * pageSize`). Used when the
-        caller's pagination logic expands the last-page limit (tail-merge) so
-        the offset must still be based on the original page size. */
+    /** Override the default offset. Tail-merge callers must base it on the original page size. */
     offset?: number
   },
 ): Promise<ListingPostCard[]> {
@@ -116,12 +112,8 @@ export interface SitemapPostRow {
 }
 
 /**
- * Sitemap-only projection of published posts. Applies the shared live
- * gate (`livePostWhere`) — every published, non-deleted row with a
- * published revision whose `published_at` is not in the future — but
- * selects only `slug` + `firstPublishedAt` + `publishedAt` to avoid the
- * revision-join + image-hydration fan-out the full `listAllPosts`
- * path performs.
+ * Sitemap projection: applies `livePostWhere` but selects only the slug +
+ * date columns — no revision join or image hydration.
  */
 export async function listSitemapPosts(db: Database, now = new Date()): Promise<SitemapPostRow[]> {
   return db
@@ -136,9 +128,8 @@ export async function listSitemapPosts(db: Database, now = new Date()): Promise<
 }
 
 /**
- * Hydrates posts by slug. Rows come back in the caller's slug order — the
- * search pipeline passes a relevance-ranked list, so the DB result must not
- * be re-ordered by date.
+ * Hydrates posts by slug, in the caller's slug order — the search pipeline
+ * relies on the relevance ranking, so no re-ordering by date.
  */
 export async function getPostsBySlugs(
   db: Database,
@@ -157,9 +148,7 @@ export async function getPostsBySlugs(
   const now = new Date()
   const filteredRows = rows.filter((meta) => {
     const visible = filters.includeHidden || meta.visible
-    // The canonical live gate (content/schemas/live-gate.ts). `includeScheduled`
-    // relaxes only the publishedAt<=now leg — a row without a promoted
-    // revision is never public, scheduled or not.
+    // `includeScheduled` relaxes only the publishedAt<=now leg — a row without a promoted revision is never public.
     const live = isLive(meta, { asOf: now, includeScheduled: filters.includeScheduled })
     return visible && live
   })

@@ -8,8 +8,7 @@ import { parseCommentFiltersFromSearchParams } from '@/ui/admin/comments/useComm
 
 import type { Route } from './+types/comments'
 
-// The parse helper lives next to the controller's write-back so both URL
-// directions stay in sync; the route consumes it directly from there.
+// The parse helper lives next to the controller's write-back so both URL directions stay in sync.
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const rc = getRequestContext({ request, context })

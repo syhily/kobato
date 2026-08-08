@@ -1,8 +1,6 @@
-// Isomorphic role primitives. Pure types + functions, no Node deps —
-// safe to import from both `server/*` and `ui/*`. The server side
-// adds the throwing `requireRole` / `requireUserRole` guards on top
-// of these in `@/server/domains/auth/rbac`; UI consumers stick to `Role`,
-// `ROLE_LEVELS`, `hasAtLeast`, and `roleLabel`.
+// Isomorphic role primitives (no Node deps). The server adds the
+// throwing `requireRole` / `requireUserRole` guards in
+// `@/server/domains/auth/rbac`; UI consumers stick to `Role` + helpers.
 
 export const ROLE_LEVELS = { visitor: 1, author: 2, admin: 3 } as const
 
@@ -17,12 +15,7 @@ export function hasAtLeast(role: RoleOrNull | undefined, min: Role): boolean {
   return ROLE_LEVELS[role] >= ROLE_LEVELS[min]
 }
 
-/**
- * Human-readable Chinese label. Used by both the public chrome
- * (user menu badge) and the admin profile screen. Callers must narrow
- * to a non-null `Role` first — every real call site lives behind a
- * session gate.
- */
+/** Human-readable Chinese label; callers must narrow to a non-null `Role` first (every call site sits behind a session gate). */
 export function roleLabel(role: Role): string {
   switch (role) {
     case 'admin':

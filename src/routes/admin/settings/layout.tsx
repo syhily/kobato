@@ -13,39 +13,23 @@ interface ParentContext {
 
 export interface SettingsOutletContext extends ParentContext {
   /**
-   * Bucketed settings document straight from the storage layer. Each
-   * field maps 1:1 to a `setting('blog.<section>')` row, so a save to
-   * one section never re-shapes another section's bucket. Every bucket
-   * is non-null (enforced by the layout loader). Secrets are redacted
-   * (empty strings) — use `masks` for UI hints.
+   * Bucketed settings document straight from the storage layer; every bucket
+   * is non-null (loader-enforced). Secrets are redacted — use `masks`.
    */
   bundle: SettingsBundle
   /**
-   * Canonical IANA timezone list shared by every settings section that
-   * renders a timezone picker (currently only the general form).
-   * Resolved once at module load by `@/server/domains/settings/timezones` so
-   * we pay the `Intl.supportedValuesOf` cost once per process.
+   * Canonical IANA timezone list for every timezone picker; resolved once
+   * per process.
    */
   timeZones: readonly string[]
-  /**
-   * Pre-computed secret masks so the admin UI can show "…last4" hints
-   * without receiving the actual plaintext keys.
-   */
+  /** Pre-computed secret masks so the admin UI can show "…last4" hints without receiving plaintext keys. */
   masks: SecretMasks
 }
 
-// Single loader read shared by every section route below the shell. The
-// snapshot is small; saves deliberately do NOT revalidate it — each card
-// adopts the authoritative save response as its new baseline instead (see
-// `useSettingsMutation`), so this loader only re-runs on navigation.
-//
-// The defensive 503 lives in the `admin.settings.bootstrap` procedure
-// ONCE: a missing `siteIdentity` / `assets` row means the install never
-// completed, and any other missing section means an admin truncated a
-// row by hand (SERVICE_UNAVAILABLE carries the exact historical texts).
-// Owning the guard there lets every per-section route trust the bundle
-// is fully populated; this loader only translates the code back into
-// the thrown Response.
+// Single loader read shared by every section route; saves don't revalidate
+// it — cards adopt the authoritative save response as their baseline. The 503
+// guard lives ONCE in `admin.settings.bootstrap`; this loader only translates
+// it back to the thrown Response.
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { caller } = createSsrCaller({ request, context })
   try {

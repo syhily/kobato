@@ -43,8 +43,7 @@ export function EditTagDialog({ tag, onClose, onSaved }: EditTagDialogProps) {
     onSuccess: (payload) => {
       toast.success('标签已保存')
       setErrorMessage(null)
-      // The list lives in the TanStack cache (useInfiniteQuery in TagsView);
-      // invalidate the namespace instead of patching a local mirror.
+      // The list lives in the TanStack cache — invalidate the namespace instead of patching a local mirror.
       void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.tags.list.key() })
       onSaved(payload.tag)
     },

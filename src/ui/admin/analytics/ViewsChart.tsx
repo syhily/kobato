@@ -199,8 +199,7 @@ function AxisLabels({
   data: ViewsPoint[]
   hoverIndex: number | null
 }) {
-  // Show ~5 evenly-spaced timestamps so the X axis never gets
-  // crowded, regardless of how many buckets the API returned.
+  // ~5 evenly-spaced timestamps keep the X axis uncrowded regardless of bucket count.
   const labelCount = Math.min(5, data.length)
   return (
     <g className="text-muted-foreground">
@@ -278,8 +277,6 @@ function SingleBar({ label, value, color }: { label: string; value: number; colo
     </div>
   )
 }
-
-// Private helpers.
 
 function buildLinePath(xs: number[], ys: number[]): string {
   let d = ''

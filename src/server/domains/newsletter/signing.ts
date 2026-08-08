@@ -2,13 +2,9 @@ import { createHmac, hkdfSync, timingSafeEqual } from 'node:crypto'
 
 import { serverConfig } from '@/server/infra/config'
 
-// One-click unsubscribe URLs carry the subscriber id plus an HMAC-SHA256
-// signature so they can't be forged or enumerated. The signing key is
-// HKDF-derived from the deployment encryption key (same pattern as
-// `infra/crypto/secret-encryption`) — no extra secret to provision, and a
-// key rotation invalidates outstanding links, which is acceptable for a
-// one-click action. The config is immutable per process, so the derived
-// key is cached at module level.
+// HMAC-SHA256 signing key for unsubscribe URLs, HKDF-derived from the
+// deployment encryption key (no extra secret; rotation invalidates
+// outstanding links). Cached — the config is immutable per process.
 const HKDF_SALT = 'kobato-newsletter-unsubscribe-salt'
 const HKDF_INFO = 'newsletter-unsubscribe-signing-key'
 const SIGNATURE_HEX_LEN = 64

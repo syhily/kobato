@@ -45,12 +45,8 @@ function isRegistrationResponseJSON(value: unknown): value is RegistrationRespon
   return typeof resp.clientDataJSON === 'string' && typeof resp.attestationObject === 'string'
 }
 
-// ─── Input schemas ──────────────────────────────────────
-// Kept inline (was previously in `src/shared/contracts/account.ts`,
-// which is deleted as part of the oRPC migration). Schemas live next
-// to the procedure that owns them; UI input types are inferred from
-// the router via `InferRouterInputs`.
-
+// Schemas live next to the procedure that owns them; UI input types are
+// inferred from the router via `InferRouterInputs`.
 const updateProfileInput = z.object({
   name: z.string().min(1).max(50).optional(),
   link: z.url().max(255).optional().nullable(),
@@ -87,12 +83,8 @@ const accountUserOutput = z.object({
   emailVerified: z.boolean(),
 })
 
-// ─── Procedures ─────────────────────────────────────────
-
-// The self-service profile read behind `/admin/me/profile`: the domain's
-// full `AccountProfile` projection (a deleted-mid-session row degrades to
-// empty fields, matching the old loader) plus the two feature switches
-// the page renders. Raw service output — no projection here.
+// `/admin/me/profile`: the domain's full `AccountProfile` projection plus
+// the two feature switches; raw service output, no projection here.
 const profile = authedProc
   .route({ method: 'GET', path: '/account/profile' })
   .output(accountProfileOutputSchema)
@@ -102,9 +94,7 @@ const profile = authedProc
     return { user, passkeyEnabled: isPasskeyEnabled(), mailReady: isMailLoginReady() }
   })
 
-// The raw session rows behind `/admin/me/sessions`. Sorting and the
-// `isCurrent` flag stay in the route loader (`parseSessionSort` is
-// shared) — the endpoint only hands over the live-session list.
+// Raw session rows — sorting and `isCurrent` stay in the route loader.
 const sessions = authedProc
   .route({ method: 'GET', path: '/account/sessions' })
   .output(accountSessionsOutputSchema)
@@ -171,8 +161,6 @@ const revokeSession = authedProc
     }
     return { success: true, currentSession }
   })
-
-// ─── Passkey procedures ─────────────────────────────────
 
 const passkeyList = authedProc
   .route({ method: 'GET', path: '/account/passkeys' })

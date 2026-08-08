@@ -1,16 +1,8 @@
-// HTTP e2e orchestrator (`pnpm run sea:e2e [binary]`).
-//
-// Boots the built SEA binary against per-run temp files (SQLite content
-// DB + DuckDB sidecar under one mkdtemp root — no external services) —
-// the same shared lifecycle as the managed smoke
-// (scripts/sea/instance.ts) — but seeds the admin with a KNOWN random
-// password, then runs the tests/e2e vitest project against the live
-// server over real HTTP. The vitest exit code becomes this script's exit
-// code; the server and the temp dirs are always cleaned up.
-//
-// The e2e tests themselves are HTTP-only — they receive the base URL and
-// the admin credentials through the KOBATO_E2E_* env vars and never
-// touch the database directly.
+// HTTP e2e orchestrator (`pnpm run sea:e2e [binary]`): boots the built SEA
+// binary against per-run temp files (same shared lifecycle as the managed
+// smoke — no external services), seeds the admin with a KNOWN random
+// password, then runs the tests/e2e vitest project over real HTTP. The
+// tests receive the base URL + credentials via KOBATO_E2E_* env vars only.
 
 import bcrypt from 'bcryptjs'
 import { spawnSync } from 'node:child_process'
@@ -21,8 +13,8 @@ import { DatabaseSync } from 'node:sqlite'
 
 import type { SmokeServer } from './instance.ts'
 
-// The one src import: the canonical bucket table, so the relaxed
-// blog.rateLimit row below can never drift out of the section schema.
+// The one src import: the canonical bucket table, so the relaxed row below
+// can never drift out of the section schema.
 import { rateLimitDefaults } from '../../src/shared/config/defaults.ts'
 import { fail } from './exec.ts'
 import {
@@ -40,18 +32,10 @@ import { repoRoot, seaBinaryPath } from './paths.ts'
 const SHUTDOWN_TIMEOUT_MS = 15_000
 
 /**
- * The journeys share one instance and one source IP (127.0.0.1), so the
- * shipped sign-in / OTP-send budgets — sized for a public deployment —
- * would trip mid-suite (a dozen credential logins against a 5-per-30min
- * bucket). Relax exactly those buckets in the seeded settings row; every
- * other bucket keeps its production default. The row carries the full
- * bucket table because hydration validates it against the section schema.
- *
- * `resourceIp` is relaxed for sheer suite pressure: the journeys render
- * dozens of feed/OG/avatar resource URLs from the single test IP inside
- * one 60-second window, and even legitimate per-route counting would ride
- * the shipped 60/min bucket ceiling mid-suite. 1000 is the section
- * schema's ceiling (`rateLimitBounds`).
+ * Relax the rate-limit buckets the journeys would trip mid-suite (one
+ * shared instance, one source IP): sign-in / OTP / resource. The row
+ * carries the full bucket table because hydration validates it against
+ * the section schema.
  */
 function relaxRateLimitsForE2e(databasePath: string) {
   const relaxed = {
@@ -101,16 +85,13 @@ async function main() {
   }
 
   let vitestStatus: number | null = null
-  // Never fail() (process.exit) from here on: an immediate exit would skip
-  // the finally below and leak the server process plus the mkdtemp root
-  // holding the throwaway database and secrets. Throw instead — the
-  // top-level catch prints the message and sets a non-zero exit code.
+  // Never fail() from here on: an immediate exit would skip the finally
+  // below and leak the server process plus the mkdtemp root. Throw instead.
   let server: SmokeServer | null = null
   try {
     server = await bootServer(binaryPath, dirs, env, serverLogPath)
-    // First boot: applies the embedded migrations (the seed below needs
-    // the tables) and proves the fresh-install gate answers the setup
-    // redirect.
+    // First boot: applies the embedded migrations (the seed needs the
+    // tables) and proves the fresh-install gate answers the setup redirect.
     console.log(`    waiting for http://127.0.0.1:${server.port}/health (log: ${serverLogPath})`)
     const fresh = await waitForHttp(`http://127.0.0.1:${server.port}/health`, server.exitState)
     if (fresh.status !== 303) {
@@ -119,11 +100,8 @@ async function main() {
     server.child.kill('SIGTERM')
     await waitForExit(server, SHUTDOWN_TIMEOUT_MS)
 
-    // Unlike the smoke (which never logs in and seeds a placeholder
-    // hash), the e2e suite signs in over real HTTP — seed a bcrypt hash
-    // of a per-run random password handed to the tests via env. The
-    // settings snapshot only loads at boot, so the seeded instance needs
-    // a restart (same as the smoke's seeded phase).
+    // The suite signs in over real HTTP — seed a bcrypt hash of a per-run
+    // random password; the settings snapshot loads at boot, so restart.
     const adminEmail = 'e2e-admin@kobato.local'
     const adminPassword = randomBytes(12).toString('hex')
     await seedInstalledInstance(databases.database, {
@@ -139,8 +117,7 @@ async function main() {
       throw new Error(`expected /health 200 on the seeded instance, got ${health.status}`)
     }
 
-    // The env-driven first boot must have written its overrides back into
-    // the config file — assert the instance is self-contained.
+    // Assert the env-driven first boot wrote its overrides back into the config file.
     const converged = await readConvergedConfig(join(dirs.root, 'kobato.config.json'))
     if (converged.database !== databases.database) {
       throw new Error(
@@ -160,9 +137,7 @@ async function main() {
         KOBATO_E2E_BASE_URL: `http://127.0.0.1:${server.port}`,
         KOBATO_E2E_ADMIN_EMAIL: adminEmail,
         KOBATO_E2E_ADMIN_PASSWORD: adminPassword,
-        // Sanctioned seam for flows no admin RPC can stage (the magic-link
-        // journey flips user.login_method directly). The file is the
-        // throwaway per-run database — never a real deployment's.
+        // Sanctioned seam for flows no admin RPC can stage — the throwaway per-run DB.
         KOBATO_E2E_DATABASE: databases.database,
       },
     })
@@ -183,8 +158,7 @@ async function main() {
 }
 
 await main().catch((error: unknown) => {
-  // A thrown failure already ran main's finally (server stopped, mkdtemp
-  // root removed) — report it plainly and exit non-zero.
+  // The finally already ran (server stopped, temp root removed) — report and exit non-zero.
   console.error(error instanceof Error ? error.message : String(error))
   process.exitCode = 1
 })

@@ -12,14 +12,7 @@ import { unsafeCast } from '@/shared/utils/unsafe-cast'
 export type SettingsCommitResult = { ok: true; section: unknown } | { ok: false }
 
 export interface UseSettingsMutationResult {
-  /**
-   * Commit a section payload. Sets status to 'saving', posts to
-   * `admin.settings.update`. The response is AUTHORITATIVE — the merged,
-   * validated section in admin display shape (masks included). The caller
-   * adopts it as its new baseline; there is deliberately NO revalidate
-   * here: a save must never refetch the document out from under the
-   * user's hands (Ghost's useEditSettings discipline).
-   */
+  /** Commit a section payload; the response is authoritative — adopt it, never revalidate. */
   commit: <Section extends SettingsSection>(
     section: Section,
     payload: SettingsSectionPatch<Section>,
@@ -55,10 +48,7 @@ export function useSettingsMutation(): UseSettingsMutationResult {
           payload: unsafeCast<Record<string, unknown>>(payload),
         })
         setStatus('saved')
-        // The section IS persisted; warnings mean a post-save side effect
-        // (schedule re-arm, transport cache) failed and the derived state
-        // is stale. Show them as warnings, not errors — the baseline below
-        // is still honestly adopted.
+        // Persisted — warnings mean a post-save side effect failed; the baseline is still honestly adopted.
         for (const warning of result.warnings) {
           toast.warning(warning)
         }

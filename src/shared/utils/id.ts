@@ -1,11 +1,7 @@
-/** Parse a numeric string into a number id.
- *
- * All database ids are SQLite `integer` (JS `number`). The wire format
- * uses `idString` (Zod `z.string().regex(/^\d+$/)`) so clients never
- * have to care about the representation. This helper centralises the
- * conversion at the controller perimeter and validates the shape so a
- * malformed string throws early with a clear message instead of a raw
- * `NaN` propagating into a query.
+/**
+ * All database ids are SQLite `integer` (JS `number`); the wire format uses `idString`
+ * so clients never care about the representation. Centralised conversion at the controller
+ * perimeter validates the shape (clear early error instead of a `NaN` in a query).
  */
 export function idFromString(value: string | number): number {
   if (typeof value === 'number') {

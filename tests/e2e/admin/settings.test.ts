@@ -6,9 +6,7 @@ import { callE2eRpc } from '#/_helpers/e2e-rpc'
 const env = e2eEnv()
 
 // Settings write path over RPC: a section patch must validate, merge,
-// persist, refresh the live snapshot (the public SSR picks it up without
-// a restart), and project back to the admin. The journey restores the
-// seeded title on the way out so later journeys see the fixture state.
+// persist, refresh the live snapshot, and project back to the admin.
 describe('admin settings write (HTTP e2e)', () => {
   it('updates the site title and the public site reflects it immediately', async () => {
     const admin = new E2eClient(env.baseUrl)

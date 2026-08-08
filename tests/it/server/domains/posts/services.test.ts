@@ -300,9 +300,7 @@ describe('content/lifecycle (post adapter) — saveBody draft / publish', () => 
     const { createPost } = await import('@/server/domains/posts/services/mutate')
     const created = await createPost(db, { title: 'Force Audit' }, null)
     const pid = Number(created.id)
-    // Only a published revision exists: the old posts track looked up the
-    // latest *draft* here and skipped the audit; the merged pipeline reads
-    // the latest revision regardless of status.
+    // Force-save audits the latest revision of ANY status, not just drafts.
     await seedContent({
       type: 'post',
       ownerId: pid,
@@ -578,7 +576,6 @@ describe('posts/services/featured — selectSidebarPosts', () => {
       expect(['s1', 's2', 's3']).toContain(row.slug)
     }
 
-    // Asking for more than the table holds returns everything live.
     const all = await selectSidebarPosts(db, 10)
     expect(all).toHaveLength(3)
   })
@@ -599,10 +596,7 @@ describe('posts/services/featured — selectSidebarPosts', () => {
   })
 
   it('reads the post table a constant number of times regardless of count', async () => {
-    // Regression: the old implementation fired one `LIMIT 1 OFFSET n`
-    // query PER picked row — up to 100 parallel post-table reads per
-    // sidebar render. The pick must be computed in JS and fetched in one
-    // batched query.
+    // The pick is computed in JS and fetched in ONE batched query.
     for (let i = 0; i < 10; i++) {
       await seedPost({ slug: `q-${i}`, publishedRevisionId: i + 1, publishedAt: new Date('2020-01-01') })
     }

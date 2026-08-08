@@ -1,18 +1,5 @@
-// Zeabur ZSend HTTP transport.
-//
-// This is the original vendor-specific implementation, lifted verbatim
-// out of `sender.ts:sendEmail` (it used to live inline behind the
-// `https://${mail.host}/api/v1/zsend/emails` URL). It now sits behind
-// the `MailTransport` interface so the dispatcher can swap in a
-// different transport without touching call sites.
-//
-// Behavior preserved exactly:
-//   - `disabled` short-circuits with a debug log.
-//   - missing host / apiKey / sender short-circuits with `unconfigured`.
-//   - happy path POSTs JSON `{ from, to, bcc?, subject, html }` with
-//     `Bearer <apiKey>` and a 30s abort timeout.
-//   - upstream non-2xx surfaces as `reason=upstream` with the status.
-//   - fetch throw surfaces as `reason=network`.
+// Zeabur ZSend transport: `POST https://<host>/api/v1/zsend/emails` with
+// `Bearer <apiKey>`, 30s abort timeout, JSON body.
 
 import type {
   EmailMessage,

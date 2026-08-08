@@ -22,32 +22,14 @@ type MetaEnv<T> = {
 
 type ReactRouterHonoServerPluginOptions = {
   /**
-   * The path to the server file, relative to `vite.config.ts`.
-   *
-   * If it is a folder (`app/server`), it will look for an `index.ts` file.
-   *
-   * Defaults to `${appDirectory}/server[.ts | /index.ts]` if present.
-   *
-   * Fallback to a virtual module `virtual:react-router-hono-server/server`.`
+   * Path to the server file, relative to `vite.config.ts`; defaults to
+   * `${appDirectory}/server[.ts | /index.ts]`, else a virtual module.
    */
   serverEntryPoint?: string
-  /**
-   * The paths that are not served by the dev-server.
-   *
-   * Defaults include `appDirectory` content.
-   */
   dev?: {
-    /**
-     * The paths that are not served by the dev-server.
-     *
-     * Defaults include `appDirectory` content.
-     */
+    /** Paths not served by the dev-server; defaults include `appDirectory` content. */
     exclude?: DevServerOptions['exclude']
-    /**
-     * The name of the export to use for the server.
-     *
-     * Defaults to `default`.
-     */
+    /** Export name to use for the server; defaults to `default`. */
     export?: DevServerOptions['export']
   }
 }
@@ -151,9 +133,7 @@ export function reactRouterHonoServer(options: ReactRouterHonoServerPluginOption
       }
     },
     async configureServer(server) {
-      // Force development mode — the code default for NODE_ENV is now
-      // 'production', so the dev server must override it before any
-      // server module that reads env.ts is imported.
+      // Force 'development' before any server module that reads env.ts is imported.
       forceDevMode()
 
       setViteDevServer(server)
@@ -259,7 +239,6 @@ type PluginConfig = ReturnType<typeof resolvePluginConfig>
 
 let warned = false
 
-/** Force NODE_ENV to development (called by the Vite dev server plugin). */
 function forceDevMode(): void {
   if (process.env.NODE_ENV !== 'test') {
     process.env.NODE_ENV = 'development'

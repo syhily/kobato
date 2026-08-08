@@ -1,16 +1,11 @@
-// Wire-format DTOs for the tag-management endpoints. Lives in
-// `@/shared` so both the server (admin actions) and the client
-// (admin UI fetcher) can import the same shape without crossing the
-// server/client boundary. Bigints are stringified — the public site
-// never ships `id` to the browser, but the admin shell uses it as
-// the React list key.
+// Wire-format DTOs for the tag-management endpoints. Shared so
+// server (admin actions) and client (admin UI) import the same shape.
+// Bigints are stringified; the public site never ships `id`.
 
 import type { AdminTagDto } from '@/shared/contracts/tags'
 
-// `offset` / `limit` mirror the comment moderation listing
-// (`LoadAllCommentsInput`): the admin table is paginated server-side.
-// Both are optional — omitted requests fall back to `offset=0, limit=20`
-// (the default page size on the client).
+// `offset`/`limit` mirror the comment moderation listing: server-side
+// pagination, both optional (client default `offset=0, limit=20`).
 export interface ListTagsInput {
   q?: string
   offset?: number
@@ -25,9 +20,8 @@ export interface ListTagsOutput {
   hasMore: boolean
 }
 
-// `id` absent → create a new row. Present → update the matching row.
-// `slug` is optional on input; the server derives it from `name`
-// via `pinyin-pro` when blank.
+// `id` absent → create; present → update. Blank `slug` → derived from
+// `name` via `pinyin-pro`.
 export interface UpsertTagInput {
   id?: string
   name: string

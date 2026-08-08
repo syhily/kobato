@@ -31,15 +31,12 @@ export interface CommentsViewProps {
 }
 
 export function CommentsView({ currentUserName, currentUserEmail, initialFilters }: CommentsViewProps) {
-  // Editor dialog targets stay view-owned; the controller exposes them on
-  // the actions object as intents so the row never sees the dialogs.
+  // Dialog targets stay view-owned so the row never sees the dialogs.
   const [editTarget, setEditTarget] = useState<AdminComment | null>(null)
   const [replyTarget, setReplyTarget] = useState<AdminComment | null>(null)
   const [editUserTarget, setEditUserTarget] = useState<AdminComment | null>(null)
 
-  // The pills own the whole filter surface: reducer state, the debounced
-  // page/author searches, label rehydration for URL-restored pills, and the
-  // merged query input the controller's list query spreads.
+  // The pills own the whole filter surface: reducer state, debounced searches, label rehydration, merged query input.
   const pills = useFilterPills({ fields: COMMENT_FILTER_FIELDS, initial: initialFilters })
 
   const {

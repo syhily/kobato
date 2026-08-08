@@ -73,7 +73,6 @@ describe('integration / newsletter', () => {
     expect(pending!.status).toBe('pending')
     expect(pending!.confirmTokenHash).not.toBeNull()
 
-    // The confirm email went out exactly once, addressed to the subscriber.
     expect(mockFetch.calls).toHaveLength(1)
     expect(lastMailBody().to).toEqual(['reader@example.com'])
 

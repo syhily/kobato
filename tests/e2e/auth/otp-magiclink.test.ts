@@ -7,17 +7,9 @@ import { callE2eRpc } from '#/_helpers/e2e-rpc'
 
 const env = e2eEnv()
 
-// OTP / magic-link journeys. Mail delivery is real end to end — the
-// instance's `mail` settings are pointed at an in-process SMTP capture
-// server (tests/_helpers/e2e-mail), so the plaintext OTP code and the
-// signin link are extracted from the actual rendered emails. Nothing
-// leaves the machine.
-//
-// The magic-link flow needs an account on the `magic-link` login method,
-// which no admin RPC can set — the one sanctioned seam is a direct
-// one-column UPDATE against the throwaway per-run SQLite file (the path
-// arrives via KOBATO_E2E_DATABASE from scripts/sea/e2e.ts). The flip is
-// always restored, even on failure.
+// OTP / magic-link journeys over real mail (in-process SMTP capture;
+// nothing leaves the machine). The magic-link `login_method` flip uses
+// the sanctioned KOBATO_E2E_DATABASE seam and always restores.
 
 function e2eDatabasePath(): string {
   const path = process.env.KOBATO_E2E_DATABASE
@@ -38,12 +30,8 @@ function setLoginMethod(method: 'password' | 'magic-link'): void {
 
 const capture = new SmtpCapture()
 
-/**
- * An authenticated admin client left behind by whichever journey test ran
- * last, so afterAll can flip mail back off without a fresh login (a fresh
- * password login is impossible while mail is still on — it would stage an
- * OTP instead of signing in).
- */
+/** Authenticated admin client kept for afterAll — a fresh password login
+ *  is impossible while mail is still on (it stages an OTP instead). */
 let adminSession: { client: E2eClient; csrf: string } | null = null
 
 async function rememberAdminSession(client: E2eClient): Promise<void> {
@@ -104,8 +92,7 @@ describe('OTP signin (HTTP e2e)', () => {
     const client = new E2eClient(env.baseUrl)
     const { res, csrfToken } = await loginAdmin(client, env)
 
-    // With mail ready the credential step does NOT log in — it stages
-    // the OTP and redirects onto the verify form.
+    // With mail ready, the credential step stages the OTP instead of logging in.
     expect(res.status).toBe(302)
     const verifyUrl = new URL(res.headers.get('location')!, env.baseUrl)
     expect(verifyUrl.searchParams.get('action')).toBe('verifyotp')
@@ -142,8 +129,7 @@ describe('magic-link signin (HTTP e2e)', () => {
         throw new Error('no csrf_token hidden input on /admin/signin')
       }
 
-      // Identify step: the answer is deliberately generic; the link is
-      // what proves the account was found.
+      // Identify: the answer is deliberately generic — the link proves the account.
       const identified = await client.postForm('/admin/signin?action=identify&redirect_to=%2Fadmin', {
         csrf_token: csrfToken,
         email: env.adminEmail,
@@ -157,8 +143,7 @@ describe('magic-link signin (HTTP e2e)', () => {
       const token = new URLSearchParams(linkPath.slice(linkPath.indexOf('?'))).get('token')
       expect(token).toMatch(/^[A-Za-z0-9_-]{43}$/)
 
-      // The loader peeks (never consumes) the token and renders the
-      // confirm form — a mail-client prefetch must not burn it.
+      // The loader peeks (never consumes) the token — a prefetch must not burn it.
       const confirm = await client.get(linkPath)
       expect(confirm.status).toBe(200)
       expect(await confirm.text()).toContain('name="magic_token"')
@@ -175,8 +160,7 @@ describe('magic-link signin (HTTP e2e)', () => {
 
       await rememberAdminSession(client)
 
-      // Single-use: replaying the same token on a fresh session fails
-      // with the generic invalid-link error, not a redirect.
+      // Single-use: replaying the token fails with the generic error, not a redirect.
       const anonymous = new E2eClient(env.baseUrl)
       const anonPage = await anonymous.get('/admin/signin')
       const anonCsrf = (await anonPage.text()).match(/name="csrf_token" value="([^"]+)"/)?.[1]

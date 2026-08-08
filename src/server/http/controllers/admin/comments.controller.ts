@@ -128,7 +128,7 @@ const searchAuthors = adminProc
         try {
           out.push(idFromString(trimmed))
         } catch {
-          /* drop */
+          // invalid id — skip
         }
       }
       return out.length > 0 ? out : undefined
@@ -143,9 +143,7 @@ const approveCommentDeletion = adminProc
   .input(z.object({ commentId: z.string(), approve: z.boolean() }))
   .output(z.object({ success: z.boolean() }))
   .handler(async ({ input, context }) => {
-    // The delete-request state machine (existence, pending-request fence,
-    // approve → soft-delete / reject → clear, per-branch audit) lives in
-    // the comments domain.
+    // The delete-request state machine lives in the comments domain.
     await resolveCommentDeleteRequest(context.db, input.commentId, input.approve, context)
     return { success: true }
   })
@@ -164,8 +162,7 @@ const listPendingDashboard = adminProc
     return loadAdminPendingDashboard(context.db, input.kind, input.offset ?? 0, input.limit ?? 20)
   })
 
-// Total pending rows (`all` kind) for the admin layout's moderation
-// badge — one `count(*)`, no pagination.
+// Total pending rows for the admin layout's moderation badge — one count, no pagination.
 const pendingCount = adminProc
   .route({ method: 'GET', path: '/comment-admin/pending-count' })
   .output(adminCommentsPendingCountOutputSchema)

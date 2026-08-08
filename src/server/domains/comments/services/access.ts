@@ -5,17 +5,8 @@ import { findCommentWithUserById } from '@/server/domains/comments/services/look
 import { verifyCommentOwnership } from '@/server/domains/comments/services/token'
 import { idFromString } from '@/shared/utils/id'
 
-/**
- * Verify whether the caller may access a specific comment.
- *
- * Checks three paths in order:
- * 1. Admin bypass — admins always have access.
- * 2. Token ownership — the caller has a valid comment token.
- * 3. Session ownership — the caller is logged in and their user ID matches the comment's author.
- *
- * Returns whether access is granted, plus the cleaned cookie with
- * expired and invalid entries dropped.
- */
+/** Access in precedence order: admin bypass, comment-token ownership, then
+ *  session ownership. Also returns the cookie with dead entries dropped. */
 export async function verifyCommentAccess(
   db: Database,
   cookie: CommentTokenCookie,

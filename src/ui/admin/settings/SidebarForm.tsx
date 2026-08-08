@@ -173,8 +173,6 @@ function SidebarWidgetsCard({ sidebar }: SidebarFormProps) {
   )
 }
 
-// -------- 每日一言 --------
-
 const SOURCE_OPTIONS: { value: DailyQuoteSource; label: string }[] = [
   { value: 'shanbay', label: '扇贝每日一句（默认）' },
   { value: 'one', label: 'ONE · 一个' },

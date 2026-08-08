@@ -5,9 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { PortableTextBody } from '@/shared/pt/schema'
 
-// Mock the IndexedDB-backed draft store so tests don't need a real DB.
-// The mock captures every call into getDraft/setDraft/removeDraft and
-// lets each test program the return value.
+// Mock the IndexedDB-backed draft store; each test programs the return values.
 const draftStore = vi.hoisted(() => ({
   get: vi.fn<(key: string) => Promise<unknown>>(),
   set: vi.fn<(key: string, record: unknown) => Promise<void>>(),
@@ -35,11 +33,8 @@ import {
 } from '@/client/lib/draft-session'
 import { portableTextBodySchema } from '@/shared/pt/schema'
 
-// The shared draft-session invariants, exercised once at the seam: the
-// version gate, validate-or-purge, loadComplete gating, the per-key read
-// guard, and the cross-tab clear broadcast. The hook adapters'
-// (use-local-draft / use-create-draft) suites only cover keying and
-// migration on top of this.
+// Shared draft-session invariants exercised once at the seam; the hook
+// adapters' suites only cover keying and migration on top of this.
 
 const KEY = 'cms-post-draft:1:rev1'
 
@@ -67,8 +62,7 @@ function storedRecord(overrides: Record<string, unknown> = {}) {
   return { key: KEY, type: 'post-edit', body: [], savedAt: 9, version: DRAFT_STORAGE_VERSION, ...overrides }
 }
 
-// The load path is an async IIFE behind several awaits; flush the microtask
-// queue inside act so state updates commit before asserting.
+// Flush the microtask queue inside act so state updates commit before asserting.
 async function flushDraftEffects() {
   await act(async () => {
     for (let i = 0; i < 10; i++) {
@@ -245,9 +239,7 @@ describe('useDraftSession — broadcast clear protocol', () => {
   })
 
   it('clearDraft sweeps every key under clearPrefix when one is supplied (audit P1-15)', async () => {
-    // The edit key embeds the clientRevisionToken, so each rotation leaves
-    // an orphan draft; the edit adapter clears by entity prefix, not by the
-    // current-token key alone.
+    // Each clientRevisionToken rotation orphans a draft, so clearing sweeps by prefix.
     const { result } = renderHook(() => useDraftSession(makeArgs({ clearPrefix: 'cms-post-draft:1:' })))
     await flushDraftEffects()
 

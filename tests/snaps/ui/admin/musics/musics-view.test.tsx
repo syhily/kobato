@@ -51,22 +51,11 @@ queryMocks.queryClient = {
   removeQueries: vi.fn(),
 }
 
-// `MusicsView` inlines its sort/search state via `useState` (the old
-// `useMusicsReducer` pass-through was deleted); the defaults — q '',
-// sortBy 'createdAt', sortOrder 'desc', page size 24 — are exactly what
-// these SSR snapshots assert. `MusicsView` also calls `useInfiniteQuery`
-// against `orpc.admin.music.list`, which would hit the network, so we
-// stub out tanstack/react-query's fetch hooks. The TanStack hook seams are
-// owned by `#/_helpers/mock-react-query` (the `data` field is mutated per
-// test by reassigning a slot on the returned singleton); `sonner` is an
-// inert global stub from `tests/snaps/setup.ts`; the `orpcQuery` option
-// builders run for real but never execute — the mocked hooks swallow them.
+// MusicsView's useState defaults (q '', createdAt desc, 24/page) are what
+// these snapshots assert; fetch hooks are stubbed via mock-react-query,
+// sonner is inert from setup.ts, orpcQuery builders run but never execute.
 
-// The meting search machine now lives in `useMetingMusicSearch` (covered by
-// `tests/unit/ui/admin/musics/use-meting-music-search.test.tsx`). Stub it so
-// each snapshot sets the machine's state directly instead of driving it
-// through the old `useQuery` mock — and so the view never reads the
-// list-shaped `useInfiniteQuery` stub above.
+// `useMetingMusicSearch` (unit-covered) is stubbed so snapshots set the machine state directly.
 const searchHookMock = vi.hoisted(() => ({
   state: {
     results: [] as MetingSearchHit[],
@@ -97,8 +86,6 @@ function resetSearchHookMock(): void {
   }
 }
 
-// ───────────────────────────── fixtures ─────────────────────────────
-
 function makeAdminMusic(overrides: Partial<AdminMusicDto> = {}): AdminMusicDto {
   return {
     id: 'music-1',
@@ -123,8 +110,6 @@ function makeAdminMusic(overrides: Partial<AdminMusicDto> = {}): AdminMusicDto {
 
 const SAMPLE_LRC = ['[00:01.00]夜了呢', '[00:05.00]月光下的苍白', '[00:10.00]手风琴弹奏着那年代的向往'].join('\n')
 
-// ─────────────────────────── shared setup ───────────────────────────
-
 describe('snapshot: MusicsView', () => {
   beforeEach(() => {
     queryMocks.infinite = {
@@ -148,19 +133,14 @@ describe('snapshot: MusicsView', () => {
         '/admin/library/music',
       ),
     )
-    // Hero
     expect(html).toContain('音乐库')
-    // Play-all + add-music buttons
     expect(html).toContain('aria-label="播放全部"')
     expect(html).toContain('aria-label="添加音乐"')
-    // Sort trigger + order toggle render the initial sort label / order text
     expect(html).toContain('aria-label="排序"')
     expect(html).toContain('创建时间')
     expect(html).toContain('降序')
-    // Search box
     expect(html).toContain('aria-label="搜索歌曲"')
     expect(html).toContain('placeholder="搜索..."')
-    // Grid skeleton (animate-pulse placeholders)
     expect(html).toContain('animate-pulse')
     expect(html.length).toBeGreaterThan(0)
   })
@@ -203,14 +183,11 @@ describe('snapshot: MusicsView', () => {
     )
     expect(html).toContain('蓝色风暴')
     expect(html).toContain('周杰伦')
-    // Sentinel copy for end-of-list state
     expect(html).toContain('已加载全部')
   })
 })
 
-// ────────────────────────── MusicDetailView ─────────────────────────
-
-// The view is pure-props now: the route module supplies the id + navigate.
+// Pure-props view — the route module supplies id + navigate.
 const navigateMock = vi.fn()
 
 describe('snapshot: MusicDetailView', () => {
@@ -285,12 +262,9 @@ describe('snapshot: MusicDetailView', () => {
   })
 })
 
-// ──────────────────────────── AddMusicView ──────────────────────────
-
 describe('snapshot: AddMusicView', () => {
   beforeEach(() => {
-    // libraryQuery (useQuery) — empty library; the search machine
-    // (`useMetingMusicSearch`, stubbed above) starts idle with no results.
+    // Empty library; the search machine starts idle.
     queryMocks.query = {
       data: { musics: [], total: 0 },
       isLoading: false,
@@ -317,12 +291,9 @@ describe('snapshot: AddMusicView', () => {
     expect(html).toContain('placeholder="搜索歌曲、艺人、专辑..."')
     expect(html).toContain('来源')
     expect(html).toContain('aria-label="关闭"')
-    // The empty-search prompt copy.
     expect(html).toContain('输入关键词搜索音乐')
   })
 })
-
-// ────────────────────────── MusicLibraryHero ────────────────────────
 
 describe('snapshot: MusicLibraryHero', () => {
   it('renders hero title, song count and action children', () => {
@@ -340,9 +311,7 @@ describe('snapshot: MusicLibraryHero', () => {
     expect(html).toContain('音乐库')
     expect(html).toContain('共 1 首歌曲')
     expect(html).toContain('播放全部')
-    // The collage backdrop only paints after the ResizeObserver effect runs
-    // (browser-only), so on SSR we assert the hero scrim overlay is present
-    // and the title block is readable instead of the img cells.
+    // Collage paints only after a browser ResizeObserver effect — SSR asserts the scrim/title instead.
     expect(html).toContain('共 1 首歌曲')
   })
 
@@ -371,8 +340,6 @@ describe('snapshot: MusicLibraryHero', () => {
     expect(html).toContain('曲库一览')
   })
 })
-
-// ───────────────────────────── AlbumCard ────────────────────────────
 
 describe('snapshot: AlbumCard', () => {
   it('renders the cover image, title and artist', () => {
@@ -406,8 +373,6 @@ describe('snapshot: AlbumCard', () => {
   })
 })
 
-// ─────────────────────────── LyricsDisplay ──────────────────────────
-
 describe('snapshot: LyricsDisplay', () => {
   it('renders the empty-state copy when there is no lyric text', () => {
     const html = stableHtml(renderToHtml(<LyricsDisplay lrcText={null} currentTime={0} />))
@@ -429,8 +394,6 @@ describe('snapshot: LyricsDisplay', () => {
     expect(html).toMatch(/text-lg font-medium text-ink-1/u)
   })
 })
-
-// ─────────────────────────── ProgressSlider ────────────────────────
 
 describe('snapshot: ProgressSlider', () => {
   it('renders a horizontal slider with aria and a filled portion', () => {
@@ -465,8 +428,6 @@ describe('snapshot: ProgressSlider', () => {
   })
 })
 
-// ──────────────────────── AdminMusicPlayerFloat ─────────────────────
-
 describe('snapshot: AdminMusicPlayerFloat', () => {
   it('renders nothing while there is no current track (collapsed default)', () => {
     const html = stableHtml(
@@ -477,20 +438,15 @@ describe('snapshot: AdminMusicPlayerFloat', () => {
         '/admin/dashboard',
       ),
     )
-    // No current track in the default provider state => the float is
-    // intentionally not mounted.
+    // No current track → float intentionally unmounted.
     expect(html).toBe('')
   })
 })
 
-// ───────────────────────────── Equalizer ────────────────────────────
-
 describe('snapshot: Equalizer', () => {
   it('renders three animated bars with the brand color by default', () => {
     const html = stableHtml(renderToHtml(<Equalizer />))
-    // Three bar elements plus the wrapper.
     expect(html).toContain('var(--brand)')
-    // The wrapper carries the "flex items-end" base classes.
     expect(html).toMatch(/flex items-end gap-0\.5/u)
   })
 

@@ -40,8 +40,7 @@ export function BlockImage({
   const [resolvedMeta, setResolvedMeta] = useState<ResolvedImageMeta | null>(null)
   const { ref: setRef, loaded, handleLoad } = useImageLoaded(externalRef, onLoad)
 
-  // Resolve cached meta synchronously during render so we don't trigger
-  // a cascading render via setState-in-effect.
+  // Resolve cached meta during render — no setState-in-effect cascade.
   const cachedMeta = src !== undefined && !src.startsWith('data:') ? (imageMetaBySrcCache.get(src) ?? null) : null
   const effectiveResolved = resolvedMeta ?? cachedMeta
   const thumbhash = effectiveResolved?.thumbhash ?? propThumbhash

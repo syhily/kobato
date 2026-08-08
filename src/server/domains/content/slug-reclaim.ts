@@ -6,17 +6,8 @@ import { isUniqueConstraintError } from '@/server/infra/http/errors'
 
 const ENTITY_LABEL: Record<ContentType, string> = { post: '文章', page: '页面' }
 
-/**
- * Re-claims a soft-deleted entity's slug during restore. Runs inside the
- * caller's restore transaction: the row lock comes from
- * `findSlugRegistryBySlugForUpdate`, and a non-unique insert error aborts
- * the transaction. Returns the warning to surface when the slug could not
- * be reclaimed — occupied by another entity, or stolen by a concurrent
- * writer mid-restore — or undefined when the registry row now points at
- * the restored entity. Callers keep their own flow shape (post prepends
- * the warning at the end, page returns early).
- */
-// Sync (node:sqlite): runs inside the caller's restore transaction.
+/** Re-claims a soft-deleted entity's slug during restore; returns the warning when occupied or stolen mid-restore. */
+// Sync (node:sqlite): transactions are sync callbacks.
 export function reclaimSlugOnRestore(
   tx: Database,
   entityType: ContentType,
@@ -30,8 +21,7 @@ export function reclaimSlugOnRestore(
   try {
     insertSlugRegistry(tx, { slug, entityType, entityId })
   } catch (err) {
-    // SQLite names columns, not the index — `uq_slug_registry_slug`
-    // would never match.
+    // SQLite names columns, not the index.
     if (!isUniqueConstraintError(err, 'slug_registry.slug')) {
       throw err
     }

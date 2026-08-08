@@ -21,15 +21,13 @@ import { COMMENT_SLASH_COMMANDS } from '@/ui/public/comments/comment-slash-comma
 import { CommentEditorHint } from '@/ui/public/comments/CommentEditorHint'
 import { CommentEditorToolbar } from '@/ui/public/comments/CommentEditorToolbar'
 
-// Simplified Tiptap editor for comment bodies. Loads only extensions the comment dialect allows.
+// Loads only the extensions the comment dialect allows.
 
 export interface CommentBodyEditorProps {
   /** Initial PortableText body. Read on first mount + when `bodyKey` changes. */
   initialBody: CommentBody
-  /**
-   * Identity of the body source — when this string changes the editor resets
-   * its content from `initialBody` (e.g. reply form reset, switching comment).
-   */
+  /** Identity of the body source — when it changes the editor resets its content
+   *  from `initialBody` (reply form reset, switching comment). */
   bodyKey: string
   /** Fired on every editor update with the freshly-derived comment body. */
   onBodyChange: (body: CommentBody) => void
@@ -99,8 +97,7 @@ export function CommentBodyEditor({
     },
   })
 
-  // Reset editor content when `bodyKey` changes, reading `initialBody` via a
-  // ref — its identity changes every render, so depending on it would re-trigger the reset.
+  // Reset on `bodyKey` change, reading `initialBody` via a ref — its identity changes every render.
   const initialBodyRef = useRef(initialBody)
   useEffect(() => {
     initialBodyRef.current = initialBody

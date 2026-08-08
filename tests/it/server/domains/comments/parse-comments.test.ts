@@ -2,17 +2,9 @@ import { describe, expect, it } from 'vitest'
 
 import type { CommentAndUser, CommentItem } from '@/shared/types/comments'
 
-// `parseComments` consumes the raw `(roots + children)` union returned by
-// `loadComments` and produces the nested tree the public list renders.
-// Soft-deleted rows (`deleteAt !== null`) MUST disappear from the rendered
-// tree, but any surviving replies of a deleted comment have to "climb" the
-// `rid` chain and re-attach to the nearest non-deleted ancestor, or become
-// roots if every ancestor up to `rid=0` is deleted.
-//
-// `withCommentBadgeTextColor` (used inside the loader's projection pass)
-// reads the default badge colour off the real settings snapshot seeded by
-// the it setup. The exact value is irrelevant — we only assert on tree
-// shape.
+// `parseComments` turns the roots+children union into the render tree:
+// soft-deleted rows vanish and replies re-attach to the nearest live
+// ancestor, or become roots.
 const { parseComments, MAX_THREAD_CHILDREN } = await import('@/server/domains/comments/services/public-query')
 
 function row(overrides: Omit<Partial<CommentAndUser>, 'id'> & { id: number }): CommentAndUser {
@@ -84,7 +76,6 @@ describe('services/comments/loader — parseComments soft-delete reparenting', (
 
     const tree = await parseComments(input)
 
-    // The deleted root vanishes; its replies become top-level roots.
     expect(ids(tree).sort()).toEqual(['2', '3'])
     expect(tree.every((c) => c.children === undefined)).toBe(true)
   })
@@ -136,23 +127,18 @@ describe('services/comments/loader — parseComments soft-delete reparenting', (
   })
 
   it('terminates when rid points back at the row itself (cycle guard)', async () => {
-    // Pathological row: rid === id. Without the cycle guard the walker
-    // would loop forever; we assert parseComments returns synchronously
-    // with a sane shape.
+    // Pathological row: rid === id; the cycle guard must terminate.
     const input: CommentAndUser[] = [row({ id: 5, rid: 5, rootId: 0 })]
 
     const tree = await parseComments(input)
 
-    // The row survives (it is not itself deleted); cycle guard rewrites
-    // its rid to 0 so it lands as a root.
+    // Cycle guard rewrites its rid to 0 so it lands as a root.
     expect(ids(tree)).toEqual(['5'])
     expect(tree[0].rid).toBe(0)
   })
 
   it('treats a missing ancestor as terminating the walk at root', async () => {
-    // The parent id=99 is not present on this page (filtered out by
-    // paging / visibility). The reply should still render and become a
-    // root rather than disappear silently.
+    // Missing parent (filtered by paging / visibility): the reply still renders, promoted to root.
     const input: CommentAndUser[] = [row({ id: 7, rid: 99, rootId: 99 })]
 
     const tree = await parseComments(input)

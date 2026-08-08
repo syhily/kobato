@@ -3,17 +3,13 @@ import type { SafeFetchFailure } from '@/server/infra/safe-fetch'
 import { safeFetch } from '@/server/infra/safe-fetch'
 import { isHttpUrl } from '@/shared/utils/safe-url'
 
-// Endpoint discovery (W3C Webmention §4.1): the Link response header wins
-// over the HTML `<link>` / `<a rel="webmention">` fallback. Parsing is
-// regex-based, the same documented trade-off as the receive side
-// (`verify.ts`): the document is size-capped, so extraction is
-// best-effort by design — no HTML parser dependency.
+// W3C §4.1 discovery: the Link response header wins over the HTML
+// `<link>`/`<a rel="webmention">` fallback; regex-based, best-effort by
+// design (size-capped document, no HTML parser).
 
-const MAX_DISCOVERY_BYTES = 1024 * 1024 // 1 MB — mirrors fetchSourceHtml
+const MAX_DISCOVERY_BYTES = 1024 * 1024 // mirrors fetchSourceHtml
 
-// `<url>; rel="webmention"`, possibly several values in one header line.
-// The rel attribute may carry several space-separated tokens
-// (`rel="webmention pingback"`).
+// `<url>; rel="webmention"`, several per header line; rel may carry multiple tokens.
 const LINK_HEADER_ENTRY_RE = /<([^>]*)>\s*;[^,]*?rel\s*=\s*"([^"]*)"/gi
 // One `<link …>` or `<a …>` tag, then its rel / href attributes inside.
 const LINK_OR_ANCHOR_TAG_RE = /<(?:link|a)\b[^>]*>/gi
@@ -27,20 +23,15 @@ function relMentionsWebmention(rel: string): boolean {
 function resolveEndpoint(href: string, finalUrl: string): string | null {
   try {
     const resolved = new URL(href, finalUrl).toString()
-    // The real SSRF interception happens at POST time inside `safeFetch`
-    // (protocol allowlist + blocklist + per-hop DNS); discovery only
-    // insists on http(s) so it never stores an unusable value.
+    // Discovery only insists on http(s) so it never stores an unusable endpoint; the real SSRF guard runs at POST time.
     return isHttpUrl(resolved) ? resolved : null
   } catch {
     return null
   }
 }
 
-/**
- * Pure extraction, split from the network shell for testing: Link header
- * first, then the first HTML `<link>`/`<a>` whose rel lists `webmention`.
- * Relative endpoints resolve against the FINAL (post-redirect) URL.
- */
+/** Link header first, then the first HTML `<link>`/`<a>` listing webmention;
+ *  relative endpoints resolve against the FINAL (post-redirect) URL. */
 export function parseWebmentionEndpoint(linkHeader: string | null, html: string, finalUrl: string): string | null {
   if (linkHeader !== null) {
     for (const match of linkHeader.matchAll(LINK_HEADER_ENTRY_RE)) {
@@ -80,21 +71,14 @@ export type DiscoveryResult =
   /** The fetch itself failed (network, timeout, HTTP error, too large) — retryable. */
   | { kind: 'retry'; error: string }
 
-/** The sender-side rendering of a safe-fetch failure, shared by
- *  discovery and send: the union reason plus the upstream status when
- *  one came back. */
+/** Sender-side rendering of a safe-fetch failure (reason + HTTP status). */
 export function formatFetchFailure(result: SafeFetchFailure): string {
   const status = result.status === null ? '' : ` (HTTP ${result.status})`
   return `${result.reason}${status}`
 }
 
-/**
- * Fetch the target and discover its webmention endpoint. Every request
- * (initial and each redirect hop) goes through the shared SSRF guard in
- * `@/server/infra/safe-fetch`; fetch parameters mirror the receiver's
- * `fetchSourceHtml` exactly. The `ua` is supplied by the caller (the
- * worker composes it from the site's configured origin).
- */
+/** Fetch the target and discover its endpoint (SSRF-guarded per hop); the
+ *  UA comes from the caller. */
 export async function discoverEndpoint(targetUrl: string, ua: string): Promise<DiscoveryResult> {
   const result = await safeFetch(targetUrl, {
     maxBytes: MAX_DISCOVERY_BYTES,

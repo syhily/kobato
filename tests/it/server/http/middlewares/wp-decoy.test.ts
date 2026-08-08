@@ -8,15 +8,8 @@ import { isWordPressDecoyPath } from '@/server/http/middlewares/wp-decoy'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { page as pageTable } from '@/server/infra/db/schema/page'
 
-// WordPress probe decoy contract. Two things under test:
-//   1. `isWordPressDecoyPath` — pure predicate matching the patterns the
-//      project agreed to intercept. The Hono wp-decoy middleware is the
-//      single chokepoint that runs this predicate before any route
-//      loader and answers hits with the canonical `404 Not WordPress`.
-//   2. `routes/public/page/detail.tsx` — sanity check that real page slugs still
-//      resolve through the page-detail loader (the middleware is what
-//      handles probes; the loader never re-checks). Real engine: the page
-//      is a seeded meta row + published content revision.
+// WordPress probe decoy: `isWordPressDecoyPath` predicate + a sanity check that
+// real page slugs still resolve through the page-detail loader.
 
 const db = getTestDb()
 const session = regularSession()
@@ -74,13 +67,9 @@ describe('isWordPressDecoyPath', () => {
   it('preserves the legitimate WordPress-style routes (login, install, SPA shell)', () => {
     expect(isWordPressDecoyPath('/admin/signin')).toBe(false)
     expect(isWordPressDecoyPath('/admin')).toBe(false)
-    // The one-step install route. It ends in `.php` so without an
-    // explicit allow list the decoy filter would happily 404 it.
+    // `/admin/setup` ends in `.php` — an explicit allow list keeps it from being decoyed.
     expect(isWordPressDecoyPath('/admin/setup')).toBe(false)
-    // The admin SPA is mounted at `/admin/<page>` and `/admin/<page>/:id`;
-    // it shares the WordPress URL shape on purpose so admins can keep their muscle
-    // memory. Paths under that prefix that don't end in `.php` are SPA routes,
-    // not scanner probes.
+    // Non-`.php` paths under `/admin/*` are SPA routes, not scanner probes.
     expect(isWordPressDecoyPath('/admin/comments')).toBe(false)
     expect(isWordPressDecoyPath('/admin/security/users')).toBe(false)
     expect(isWordPressDecoyPath('/admin/security/users/12345')).toBe(false)

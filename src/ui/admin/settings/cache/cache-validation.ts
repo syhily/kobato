@@ -18,9 +18,7 @@ export function draftsEqual(a: BucketDraft, b: BucketDraft): boolean {
   return a.prefix === b.prefix && a.ttlHours === b.ttlHours
 }
 
-// Returns a human-readable error message when the draft conflicts
-// with another bucket's prefix or with a reserved system prefix.
-// Returns `null` when the draft is acceptable.
+// Conflict error for another bucket's or a reserved system prefix; `null` when acceptable.
 export function validateBucket(
   draft: BucketDraft,
   bucketId: CacheBucketId,
@@ -41,8 +39,7 @@ export function validateBucket(
   if (reserved !== undefined) {
     return `与系统保留前缀 \`${reserved}\` 冲突，请换一个名字`
   }
-  // Defensive: `allBuckets` is keyed by id so duplicates shouldn't
-  // occur, but skip an "other" entry sharing this card's bucket id.
+  // Defensive skip: an "other" entry sharing this card's bucket id shouldn't exist.
   for (const other of others) {
     if (other.id === bucketId) {
       continue

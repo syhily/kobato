@@ -3,13 +3,9 @@ import { describe, expect, it, vi } from 'vitest'
 import { renderToHtml } from '#/_helpers/render'
 import { SettingsFlushProvider, useSettingsFlushContext } from '@/ui/admin/settings/shell/SettingsFlushProvider'
 
-// The provider holds its registry in a `useRef` Map and registers fns from a
-// `useEffect` — neither of which run under `renderToStaticMarkup`. So these
-// tests cover what's reachable in SSR: the default (no-provider) context is
-// inert, the provider exposes the three API functions, and they're wired
-// through to children. The effect-driven dispatch (register → flushAll →
-// fn called) is a pure JS Map operation covered by the card-level snapshot
-// tests that render the full tree, and by manual verification.
+// `useEffect` never runs under renderToStaticMarkup, so only the
+// SSR-reachable surface is tested here; effect-driven dispatch is
+// covered by the card-level snapshot tests.
 
 function CaptureContext({ onContext }: { onContext: (ctx: ReturnType<typeof useSettingsFlushContext>) => void }) {
   onContext(useSettingsFlushContext())
@@ -44,7 +40,6 @@ describe('ui/admin/settings/shell/SettingsFlushProvider', () => {
       />,
     )
     expect(captured).not.toBeNull()
-    // These must not throw when called without a provider.
     expect(() => {
       captured!.flushAll()
       captured!.flushSection('any')
@@ -66,7 +61,6 @@ describe('ui/admin/settings/shell/SettingsFlushProvider', () => {
     )
     const unregister = captured!.registerFlush('general', vi.fn())
     expect(typeof unregister).toBe('function')
-    // Calling it must not throw.
     expect(() => unregister()).not.toThrow()
   })
 

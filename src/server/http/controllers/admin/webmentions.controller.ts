@@ -62,12 +62,8 @@ const reject = adminProc
     })
   })
 
-// Manual re-verification — the ONLY recovery path for a `hidden`
-// mention (the daily cycle leaves hidden rows alone): re-fetch the
-// source and confirm the link right now. Success restores `hidden` →
-// `approved` and resets the failure streak; failure records the message
-// on the row and surfaces it to the admin. Returns the refreshed row so
-// the UI patches its cache without a refetch.
+// Manual re-verification — the ONLY recovery path for a `hidden` mention;
+// success restores it, failure records the message. Returns the refreshed row.
 const reverify = adminProc
   .route({ method: 'POST', path: '/webmention-admin/reverify' })
   .input(z.object({ id: z.string() }))
@@ -82,9 +78,7 @@ const reverify = adminProc
     return asAdminWebmentionWire(row)
   })
 
-// The outbound send log, read-only: no mutations here on purpose — a
-// retry is a republish (the upsert resets terminal rows), and rows are
-// never deleted from the admin shell.
+// Outbound send log, read-only: retry = republish (upsert resets terminal rows); never deleted.
 const outbox = adminProc
   .route({ method: 'GET', path: '/webmention-admin/outbox' })
   .input(adminWebmentionOutboxListSchema)

@@ -8,13 +8,7 @@ import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 const log = getLogger('backup.scheduler')
 
-// The db getter is injected by the composition root
-// (`@/server/bootstrap/db-lifecycle`, which imports this module) at
-// wire time — a direct import of db-lifecycle here would close an
-// import cycle. The getter is invoked when the job fires, so a
-// recreated handle (restore completion) is picked up without being
-// captured in module state. Same injection discipline as
-// `wireArchiveScheduler` in `@/server/domains/audit/services/scheduler`.
+// Db getter injected by the composition root at wire time (avoids an import cycle).
 let resolveDb: (() => Database) | null = null
 let job: ScheduledJob | null = null
 let hydrationRetryAttempt = 0
@@ -38,8 +32,7 @@ async function runBackupJob(): Promise<void> {
       await cleanupOldBackups(db, backupSettings.retention.days)
     }
   } catch (error) {
-    // The single-flight slot is held by a manual backup (or a still-running
-    // previous tick) — skipping this run is expected, not a failure.
+    // Another backup holds the single-flight slot — skipping is expected.
     if (error instanceof DomainError && error.code === 'CONFLICT') {
       log.info('Scheduled backup skipped; another backup is in progress')
       return
@@ -48,14 +41,11 @@ async function runBackupJob(): Promise<void> {
   }
 }
 
-// The domain's scheduling POLICY as one closure (hydration backoff,
-// enable gate, past-time fallback); the shared `scheduleJob` seam owns
-// the timer mechanics.
+// Domain scheduling policy; the shared `scheduleJob` seam owns the timer.
 function nextBackupDelayMs(): number | null {
   const bundle = getBlogSettingsBundleSync()
   if (!bundle) {
-    // Settings not hydrated yet (boot-time race). Retry with
-    // exponential backoff: 5s → 10s → 20s → … capped at 5 min.
+    // Settings not hydrated yet (boot-time race) — retry with backoff.
     hydrationRetryAttempt += 1
     const delayMs = Math.min(5000 * 2 ** (hydrationRetryAttempt - 1), 300_000)
     log.warn('Settings not hydrated; retrying backup schedule', {
@@ -67,11 +57,9 @@ function nextBackupDelayMs(): number | null {
   hydrationRetryAttempt = 0
 
   const backupSettings = bundle.backup
-  // Scheduled backups run regardless of whether S3 is enabled — when S3 is
-  // off, backups land in local storage under `$DATA_PATH/storage/backup/`.
+  // Backups run regardless of S3 config — S3 off lands them in local storage.
   if (!backupSettings?.scheduled.enabled) {
-    // Suspended: the seam re-evaluates periodically, so toggling the
-    // setting on takes effect without an explicit reschedule too.
+    // Suspended — the seam re-evaluates periodically, so toggling on takes effect.
     return null
   }
 
@@ -80,7 +68,6 @@ function nextBackupDelayMs(): number | null {
   const delayMs = nextRun.getTime() - Date.now()
 
   if (delayMs <= 0) {
-    // Immediate fallback: if calculated time is in the past, run in 1 minute
     log.warn('Calculated next backup time is in the past; scheduling in 1 minute')
     return 60_000
   }

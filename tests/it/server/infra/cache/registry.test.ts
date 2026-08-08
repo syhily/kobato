@@ -65,8 +65,7 @@ describe('cache registry (integration)', () => {
     expect(first[0]?.value).toMatchObject({ found: true, width: 10 })
     expect(first[1]?.value).toEqual({ found: false })
 
-    // Second pass: both entries are cached (the negative included) — the
-    // loader never runs again.
+    // Second pass: both entries are cached, the negative included.
     const second = await throughMany(db, 'imageMeta', [{ storagePath: 'a.png' }, { storagePath: 'b.png' }], loader)
     expect(second[1]?.value).toEqual({ found: false })
     expect(loader).toHaveBeenCalledTimes(1)
@@ -113,8 +112,7 @@ describe('cache registry (integration)', () => {
   })
 
   it('devBypass re-runs the loader in dev but still writes the entry', async () => {
-    // Vitest runs with import.meta.env.PROD === false — the og/calendar
-    // declarations skip the read and always re-render.
+    // Vitest runs with PROD === false, so devBypass re-runs the loader on every through.
     const loader = vi.fn().mockResolvedValue(Buffer.from('png-1'))
     const params = { slug: 'post-x', title: 'T', summary: 'S', cover: '' }
 
@@ -124,7 +122,6 @@ describe('cache registry (integration)', () => {
 
     expect(loader).toHaveBeenCalledTimes(2)
 
-    // …but the write still landed — a direct read returns the latest render.
     const cached = await get(db, 'og', params)
     expect(cached).toEqual(Buffer.from('png-2'))
   })

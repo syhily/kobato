@@ -12,9 +12,7 @@ vi.mock('@/server/http/request-context', async () => {
   return createRequestContextMockModule()
 })
 
-// The only surviving mock: the composition-root wiring of the install
-// service. The route's contract is "parsed form + context in, AuthFlowResult
-// out" — the service's real behavior is covered end-to-end by
+// Only mock: the install service — its real behavior is covered by
 // setup-flow.test.ts against the same route.
 vi.mock('@/server/domains/auth/services/setup', async () => {
   const actual = await vi.importActual<typeof import('@/server/domains/auth/services/setup')>(
@@ -26,11 +24,8 @@ vi.mock('@/server/domains/auth/services/setup', async () => {
   }
 })
 
-// Install gate, setup token and CSRF all run REAL: the gate reads the
-// `user` table (a cleared table is noAdmin; a seeded admin row is
-// installed), the token lives in `one_time_token` (minted via the real
-// getSetupToken — boxLog stdout noise is expected), and CSRF is the real
-// session-token check (session carries csrfToken, forms carry csrf_token).
+// Install gate, setup token and CSRF run real: gate from `user`
+// (cleared = noAdmin), token in `one_time_token`, real CSRF check.
 const CSRF_TOKEN = 'setup-route-csrf-token'
 
 const db = getTestDb()
@@ -41,9 +36,7 @@ const { __resetRateLimitsForTests, tryKeyedRateLimit } = await import('@/server/
 const { action, loader } = await import('@/routes/auth/setup/index')
 
 beforeAll(() => {
-  // The factory mock derives the RequestContext from the RouterContextProvider
-  // on each call (the per-test session keeps flowing through); overlay the
-  // real db handle so the gate / token / CSRF code hits the integration db.
+  // Overlay the real db handle so the gate / token / CSRF code hits the integration db.
   const fromProvider = vi.mocked(mockContext.getRequestContext).getMockImplementation()
   vi.mocked(mockContext.getRequestContext).mockImplementation((args) => ({
     ...fromProvider!(args),
@@ -80,7 +73,6 @@ function withCsrf(formData: FormData): FormData {
   return formData
 }
 
-/** Mint the real setup token row the verify/install branches check against. */
 async function mintSetupToken(): Promise<string> {
   return getSetupToken(db)
 }
@@ -158,8 +150,7 @@ describe('routes/setup', () => {
           body: withCsrf(formData),
         }),
         url: new URL('http://localhost/admin/setup'),
-        // Anonymous session — the action commits it, and the session
-        // table's user_id FK rejects the helper's default fake user.
+        // Anonymous session — the session table's user_id FK rejects the helper's fake user.
         context: makeRouteContext({ session: csrfSession() }),
         params: {},
         pattern: 'admin/setup',
@@ -216,9 +207,7 @@ describe('routes/setup', () => {
     })
 
     it('returns 429 when rate limited', async () => {
-      // Trip the real fixed-window counter: the route's setup-verify
-      // bucket allows 10 attempts per hour per client IP, so ten seeded
-      // hits make the action's own hit the one that exceeds.
+      // Ten seeded hits trip the setup-verify bucket (10/hour/IP) before the action's own hit.
       for (let i = 0; i < 10; i += 1) {
         await tryKeyedRateLimit('rate-limit:setup-verify:127.0.0.1', { windowSeconds: 3600, maxAttempts: 10 })
       }
@@ -275,7 +264,6 @@ describe('routes/setup', () => {
       formData.set('name', 'A')
       formData.set('email', 'a@b.com')
       formData.set('password', 'Password1234')
-      // no intent field
 
       const result = await action({
         request: new Request('http://localhost/admin/setup', {
@@ -327,7 +315,6 @@ describe('routes/setup', () => {
 
       const formData = new FormData()
       formData.set('intent', 'install')
-      // missing required fields
 
       const result = await action({
         request: new Request('http://localhost/admin/setup', {

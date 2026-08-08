@@ -8,19 +8,9 @@ import { pmDocToBody } from '@/shared/pt/bridge/pm-to-pt'
 import { bodyToPmDoc } from '@/shared/pt/bridge/pt-to-pm'
 import { synchronizeFootnoteIndices } from '@/shared/pt/footnote-sync'
 
-// PortableText ↔ ProseMirror bridge contract tests. The on-disk PT is
-// the canonical shape (validated by the API perimeter); ProseMirror is
-// runtime-only. The contract is therefore one-sided:
-//
-//   - `bodyToPmDoc(body)` MUST produce a doc Tiptap will accept.
-//   - `pmDocToBody(bodyToPmDoc(body))` MUST round-trip the standard
-//     subset *equivalently* (same shape modulo span keys, which the
-//     bridge regenerates because PM's text nodes don't carry `_key`).
-//
-// We explicitly relax span keys because the bridge cannot recover the
-// original `_key` of a text run after it's been chunked + remarked by
-// ProseMirror's internal model. Block-level `_key` IS preserved end to
-// end and is asserted here.
+// PortableText ↔ ProseMirror bridge contract tests. Span `_key`s are
+// relaxed (PM's text nodes don't carry them); block-level `_key` IS
+// preserved and asserted.
 
 function stripSpanKeys(body: PortableTextBody): PortableTextBody {
   return body.map((block) => {
@@ -108,9 +98,6 @@ describe('contract: pt-bridge — round-trip on the standard subset', () => {
   })
 
   it('preserves bullet list items nested inside a blockquote', () => {
-    // Tiptap's blockquote accepts `block+`, so an authored quote may
-    // contain a bulletList. The naive bridge used to treat every quote
-    // child as a paragraph and silently drop list content.
     const doc = {
       type: 'doc' as const,
       content: [
@@ -216,11 +203,9 @@ describe('contract: pt-bridge — round-trip on the standard subset', () => {
       },
     ]
     const doc = bodyToPmDoc(body)
-    // Paragraph align stored on paragraph node
     expect((doc.content[0] as { attrs?: Record<string, unknown> }).attrs).toMatchObject({
       textAlign: 'center',
     })
-    // Heading align stored on heading node
     expect((doc.content[1] as { attrs?: Record<string, unknown> }).attrs).toMatchObject({
       textAlign: 'right',
     })
@@ -358,8 +343,7 @@ describe('contract: pt-bridge — round-trip on the standard subset', () => {
     if (block._type !== 'block') {
       return
     }
-    // The PT hard break is a `\n` inside span text — the same shape
-    // `@portabletext/react` renders as `<br>`.
+    // PT hard break = `\n` in span text (the shape @portabletext/react renders as `<br>`).
     expect(block.children.map((span) => span.text)).toEqual(['第一行', '\n', '第二行'])
     const pmAgain = bodyToPmDoc(body)
     expect((pmAgain.content[0] as PmBlockNode).content?.map((n) => n.type)).toEqual(['text', 'hardBreak', 'text'])

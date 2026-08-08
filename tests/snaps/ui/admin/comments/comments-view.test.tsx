@@ -35,9 +35,7 @@ queryMocks.infinite = {
 
 queryMocks.queryClient = { invalidateQueries: vi.fn() }
 
-// Silence the harmless "IntersectionObserver is not defined" warning that
-// the CommentsView effect logs under SSR — it is expected in this
-// environment and not something the snapshot should fail on.
+// Stub IntersectionObserver to silence its SSR warning (expected in this environment).
 vi.stubGlobal(
   'IntersectionObserver',
   class {
@@ -47,15 +45,9 @@ vi.stubGlobal(
   },
 )
 
-// --- data-loaded CommentsView mocks -----------------------------------------
-//
-// `CommentsView` pulls its comment list from `useCommentsController`, which
-// owns a `useInfiniteQuery` against `orpc.admin.comments.loadAll`. Queries
-// never fetch during synchronous SSR, so the list stays empty and only the
-// skeleton chrome renders. To cover the data-loaded render path (the
-// `comments.map` branch and the empty-state branch) we stub the controller
-// with a hoisted singleton, mirroring exactly what `tags.test.tsx` /
-// `musics-view.test.tsx` do for their own controllers.
+// Queries never fetch under SSR, so the controller is stubbed with a
+// hoisted singleton (same pattern as tags/musics-view specs) to cover the
+// data-loaded render path.
 
 const controllerState = vi.hoisted(() => ({
   comments: [] as AdminComment[],
@@ -66,9 +58,7 @@ const controllerState = vi.hoisted(() => ({
   isFetchingNextPage: false,
 }))
 
-// The admin comment row is presentational — every interactive affordance
-// flows through the single `actions` object. No-op stubs are enough for
-// SSR; hoisted so the controller mock factory below can reference them.
+// Presentational row: all affordances flow through `actions`; hoisted no-ops for the mock factory.
 const stubActions = vi.hoisted((): CommentActions => {
   const noop = () => {}
   return {
@@ -110,12 +100,8 @@ vi.mock('@/ui/admin/comments/useCommentsController', async () => {
   }
 })
 
-// The pill chrome (the real `useFilterPills`, driven by the `initialFilters`
-// prop) still calls react-query for the page/author autocomplete lookups —
-// stub the query hooks with inert defaults so the chrome renders without
-// issuing network calls.
-
-// --- Fixtures ----------------------------------------------------------------
+// The real `useFilterPills` still queries for autocomplete lookups — inert
+// defaults keep the chrome network-free.
 
 let commentSeq = 0
 
@@ -170,12 +156,9 @@ const rowProps = {
   actions: stubActions,
 }
 
-// --- 1. CommentsView (data-fetching view) ------------------------------------
-
 describe('snapshot: CommentsView', () => {
   beforeEach(() => {
-    // Reset the hoisted controller state between cases so each test
-    // controls which branch of the view it covers.
+    // Reset the hoisted controller state per case.
     controllerState.comments = []
     controllerState.total = 0
     controllerState.statusCounts = { all: 0, pending: 0, approved: 0, deleteRequested: 0 }
@@ -184,8 +167,7 @@ describe('snapshot: CommentsView', () => {
     controllerState.isFetchingNextPage = false
   })
 
-  // Regression guard: the page chrome + skeleton render while the first
-  // page of comments is still pending.
+  // Chrome + skeleton render while the first page is still pending.
   it('renders the page chrome with title and loading skeleton', () => {
     controllerState.isLoading = true
     const html = stableHtml(
@@ -228,7 +210,6 @@ describe('snapshot: CommentsView', () => {
         '/admin/comments',
       ),
     )
-    // Header chrome still rendered.
     expect(html).toContain('评论管理')
     // Approved-row branch (map callback executed for Alice).
     expect(html).toContain('Alice')
@@ -255,9 +236,7 @@ describe('snapshot: CommentsView', () => {
       ),
     )
     expect(html).toContain('评论管理')
-    // Empty-state branch takes over from the row map.
     expect(html).toContain('暂无评论')
-    // The "已加载全部评论" sentinel only fires when comments.length > 0.
     expect(html).not.toContain('已加载全部评论')
   })
 
@@ -273,7 +252,7 @@ describe('snapshot: CommentsView', () => {
       ),
     )
     expect(html).toContain('Solo')
-    // The intersection sentinel div is present when hasMore is true.
+    // hasMore → sentinel div.
     expect(html).toContain('class="h-1"')
   })
 
@@ -293,8 +272,6 @@ describe('snapshot: CommentsView', () => {
   })
 })
 
-// --- 2. AdminCommentRow (props-driven) ---------------------------------------
-
 describe('snapshot: AdminCommentRow', () => {
   it('renders an approved comment with author, body and actions', () => {
     const comment = makeAdminComment({
@@ -311,7 +288,6 @@ describe('snapshot: AdminCommentRow', () => {
     expect(html).toContain('Comment body')
     // Status badge for a non-pending, non-delete-requested comment.
     expect(html).toContain('已审核')
-    // Author badge text.
     expect(html).toContain('站长')
     // Action labels (the sm:inline spans are still emitted in SSR output).
     expect(html).toContain('编辑评论')
@@ -363,25 +339,17 @@ describe('snapshot: AdminCommentRow', () => {
   })
 })
 
-// --- 3. EditUserDialog -------------------------------------------------------
-//
-// The date / text filter editors moved to the shared filter-bar module —
-// their coverage lives in tests/snaps/ui/admin/shared/filter-bar.test.tsx.
+// Date/text filter editors are covered in shared/filter-bar.test.tsx.
 
 describe('snapshot: EditUserDialog', () => {
-  // The Dialog uses Base UI under the hood. When `comment` is null the
-  // dialog is closed and renders nothing visible; we assert that and the
-  // fact that the render itself does not throw.
+  // comment=null → closed dialog renders nothing visible.
   it('renders nothing user-visible in the closed state', () => {
     const html = stableHtml(renderInRouter(<EditUserDialog comment={null} onClose={() => {}} onSaved={() => {}} />))
-    // Closed dialog should not surface the form chrome.
     expect(html).not.toContain('编辑评论用户')
   })
 
-  // The open dialog mounts via a portal/layer that Base UI does not emit
-  // during synchronous SSR, so we cannot assert on the form fields here.
-  // Integration tests cover the opened UX. We keep the render call so a
-  // regression that synchronously throws is still caught.
+  // Open dialog mounts via a portal Base UI doesn't emit under SSR; keep
+  // the render call so a synchronous throw is caught.
   it('does not throw when rendered with an open comment target', () => {
     const comment = makeAdminComment({ name: 'Alice', email: 'alice@example.com' })
     expect(() =>

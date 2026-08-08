@@ -4,27 +4,12 @@ const coerceBoolean = z
   .union([z.boolean(), z.literal('true'), z.literal('false')])
   .transform((v) => (typeof v === 'boolean' ? v : v === 'true'))
 
-// Asset host/scheme base (shared by image public URLs and music
-// metadata), the S3-compatible storage credentials, and the upload
-// limits for the admin image library.
-//
-// Storage is always available: uploads go to S3 when `storage.enabled`
-// is on AND every bucket field is filled (the `superRefine` below
-// enforces the latter), and to the local filesystem otherwise. Each
-// asset row records its backend (`storageDriver`) so reads, deletes,
-// and public-URL resolution dispatch correctly after a local→S3 switch.
-//
-// The bucket fields stay nullable when disabled so toggling S3 off and
-// back on doesn't force re-pasting credentials. `secretAccessKey`
-// follows the same "optional ⇒ keep existing" convention as
-// `mail.apiKey`: `undefined` keeps the stored secret, any string
-// (including empty) overwrites it (`applySectionPatch` folds the
-// persisted value back in).
+// The asset host/scheme pair also feeds image public URLs and music metadata. Storage:
+// S3 when `storage.enabled` and every bucket field is filled, local otherwise. Bucket
+// fields stay nullable when disabled; `secretAccessKey` follows "optional ⇒ keep existing".
 
-// Branding binary slots are managed through `/admin/branding/upload` +
-// `/admin/branding/clear`, not this PATCH — but they must be declared
-// in the schema or Zod would strip them on read and the uploaded
-// ObjectRefs would silently disappear from the bundle.
+// Branding slots are managed via `/admin/branding/upload` + `/admin/branding/clear`, not
+// this PATCH — but must be declared or Zod strips them on read.
 const ROBOTS_PRINTABLE = /^[\t\n\r -~]*$/
 const robotsTxt = z
   .string()
@@ -38,8 +23,7 @@ const brandingObjectRef = z.object({
   contentType: z.string().min(1).max(128),
   size: z.number().int().min(0),
   updatedAt: z.string().min(1).max(64),
-  // Backend the bytes live in. Defaults to 's3' for refs persisted before
-  // local storage existed, so historical branding assets resolve correctly.
+  // Defaults to 's3' for refs persisted before local storage existed.
   driver: z.enum(['s3', 'local']).default('s3'),
 })
 
@@ -74,10 +58,8 @@ export const assetsSchema = z
     }),
     branding: z
       .object({
-        // The 5 SVG + 8 binary slots managed by
-        // `/admin/branding/upload` + `/admin/branding/clear`; absent
-        // until the admin uploads one. Slot names mirror
-        // `src/server/assets/defaults.ts`.
+        // The 5 SVG + 8 binary slots managed by `/admin/branding/upload` +
+        // `/admin/branding/clear`; absent until uploaded. Names mirror `src/server/assets/defaults.ts`.
         faviconSvg: brandingObjectRef.optional(),
         logoSvg: brandingObjectRef.optional(),
         logoDarkSvg: brandingObjectRef.optional(),
@@ -100,9 +82,7 @@ export const assetsSchema = z
     if (!value.storage.enabled) {
       return
     }
-    // When the toggle is on, every bucket field must carry a real value
-    // (the admin form mirrors these checks client-side; this catches a
-    // hand-crafted PATCH).
+    // When the toggle is on, every bucket field must carry a real value (catches a hand-crafted PATCH).
     const required: { key: keyof typeof value.storage; label: string }[] = [
       { key: 'endpoint', label: 'Endpoint' },
       { key: 'region', label: 'Region' },
@@ -121,10 +101,8 @@ export const assetsSchema = z
     }
   })
 
-// Install-form seed for the storage/upload buckets (the `asset`
-// host/scheme pair comes from the request hostname). Consumed by
-// `services/install-flow.ts` only; like `general`, the section ships no
-// registry seed because the setup-time first write arrives complete.
+// Install-form seed for the storage/upload buckets (the `asset` host/scheme pair
+// comes from the request hostname); consumed by `services/install-flow.ts` only.
 export const ASSETS_STORAGE_INSTALL_DEFAULTS = {
   storage: {
     enabled: false,

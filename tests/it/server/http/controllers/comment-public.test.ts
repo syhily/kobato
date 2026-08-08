@@ -15,16 +15,8 @@ import { user } from '@/server/infra/db/schema/user'
 import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 import { serializeCommentTokensCookie } from '@/shared/utils/comment-token'
 
-// The public comment controllers run against the real in-memory engine:
-// zod input validation, the in-process rate limiter (reset per test),
-// metric resolution, comment creation, token issuance, and the cookie
-// round trip are all real. Only two seams stay mocked:
-//
-//   * `services/email` — outbound mail is a true external;
-//   * `services/public-query`'s `loadComments` — kept as a thin spy over
-//     the REAL implementation so one test can force the defensive
-//     `null` return (the real loader never returns null; the branch
-//     exists to translate that into BAD_GATEWAY).
+// Public comment controllers against the real engine; only seams: email (true external)
+// and a loadComments spy that can force the null → BAD_GATEWAY branch.
 
 vi.mock('@/server/domains/comments/services/email', () => ({
   sendApprovedComment: vi.fn(async () => undefined),
@@ -121,7 +113,6 @@ function makeValidReplyInput() {
   }
 }
 
-/** A public ctx whose request carries the given raw Cookie header. */
 function makePublicCtxWithCookie(cookie: string): ReturnType<typeof makePublicCtx> {
   const request = new Request('http://localhost/rpc', { headers: { cookie } })
   const ctx = makePublicCtx({ db })
@@ -132,8 +123,7 @@ function makePublicCtxWithCookie(cookie: string): ReturnType<typeof makePublicCt
 
 describe('likesRouter.increase', () => {
   it('throws TOO_MANY_REQUESTS when the per-IP rate limit is exceeded', async () => {
-    // Shrink the like bucket so a single hit trips the limiter — the
-    // real in-process fixed window, not a mock.
+    // Single-hit bucket trips the real in-process limiter.
     setBlogSettingsBundleForTests({
       ...TEST_BLOG_SETTINGS_BUNDLE,
       rateLimit: {
@@ -214,8 +204,7 @@ describe('commentsRouter.loadComments', () => {
   })
 
   it('throws BAD_GATEWAY when the comment loader fails', async () => {
-    // The real loader never returns null — this pins the controller's
-    // defensive translation of that impossible branch into BAD_GATEWAY.
+    // Pins the controller's defensive null → BAD_GATEWAY translation.
     const pid = await seedPost('gateway')
     await seedMetricRow('post', pid, 'pk-gateway')
     vi.mocked(publicQuery.loadComments).mockResolvedValueOnce(null)
@@ -235,8 +224,7 @@ describe('commentsRouter.loadComments', () => {
     const ctx = makePublicCtx({ db })
     const res = await call(commentsRouter.loadComments, { page_key: 'pk-thread', offset: 0 }, { context: ctx })
 
-    // Anonymous viewers only see the approved comment; the pending one
-    // stays hidden until moderation.
+    // Anonymous viewers only see approved comments; pending stays hidden.
     expect(res.comments).toHaveLength(1)
     expect(res.comments[0]).toMatchObject({ name: 'Alice', isPending: false })
     expect(res.next).toBe(false)
@@ -273,13 +261,10 @@ describe('commentsRouter.replyComment', () => {
     expect(res.comment).toMatchObject({ name: 'Alice', link: 'https://example.test/about' })
     // A first-time commenter lands in the moderation queue.
     expect(res.comment.isPending).toBe(true)
-    // The row is really there, attached to the resolved metric target.
     const rows = await db.select().from(comment)
     expect(rows).toHaveLength(1)
     expect(rows[0]?.ownerId).toBe(pid)
     expect(rows[0]?.content).toContain('hello')
-    // The admin notification fired (mocked) and the ownership token
-    // rides out as a Set-Cookie.
     const emails = await import('@/server/domains/comments/services/email')
     expect(emails.sendNewComment).toHaveBeenCalledTimes(1)
     expect(ctx.responseHeaders.get('Set-Cookie')).toContain('__comment_tokens=')

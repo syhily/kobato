@@ -94,7 +94,6 @@ describe('admin users-crud controller', () => {
       expect(res).toEqual({ success: true })
       const row = await userRow(id)
       expect(row.name).toBe('Alice')
-      // Fields absent from the input are left untouched.
       expect(row.email).toBe('keep@example.com')
       expect(row.link).toBe('https://keep.example.com')
     })

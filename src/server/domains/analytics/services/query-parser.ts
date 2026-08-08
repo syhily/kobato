@@ -19,9 +19,7 @@ export interface AnalyticsQueryInput {
 
 /**
  * The typed shape every analytics query entry point converges on: the
- * raw string fields before range/filter/entity resolution. Loaders hand
- * in URL search params (`parseAnalyticsSearch` below); the oRPC
- * controller hands in its validated input directly — no URL round-trip.
+ * raw string fields before range/filter/entity resolution.
  */
 export interface AnalyticsSearchFields {
   preset?: string | null
@@ -68,7 +66,6 @@ export function parseAnalyticsInput(fields: AnalyticsSearchFields): AnalyticsQue
       if (typeof parsed === 'object' && parsed !== null) {
         for (const [key, value] of Object.entries(parsed)) {
           if (typeof value === 'string' && value.length > 0 && FILTERABLE_SET.has(key)) {
-            // FILTERABLE_SET is built from FILTERABLE_TYPES, so key is a valid MetricType.
             filters[unsafeCast<MetricType>(key)] = value
           }
         }
@@ -85,15 +82,12 @@ export function parseAnalyticsInput(fields: AnalyticsSearchFields): AnalyticsQue
     try {
       result.entityType = entityType
       result.entityId = idFromString(entityIdRaw)
-    } catch {
-      // ignore
-    }
+    } catch {}
   }
   return result
 }
 
-// URL-shaped entry point — only for callers whose input truly is a URL
-// (the route loaders). Everything else feeds `parseAnalyticsInput`.
+// URL-shaped entry point — for callers whose input truly is a URL (the route loaders).
 export function parseAnalyticsSearch(searchParams: URLSearchParams): AnalyticsQueryInput {
   return parseAnalyticsInput({
     preset: searchParams.get('preset'),

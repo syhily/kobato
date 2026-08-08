@@ -15,8 +15,6 @@ function pragmaNumber(handle: DatabaseHandle, pragma: string): number {
   return typeof value === 'number' ? value : Number(value ?? 0)
 }
 
-// ─── SQLite (content DB) ─────────────────────────────────
-
 const handle = getDatabaseHandle()
 
 beforeEach(() => {
@@ -27,9 +25,7 @@ beforeEach(() => {
 
 describe('db maintenance — SQLite freelist drain (plan §1.11)', () => {
   it('drains the freelist and logs page stats before and after', () => {
-    // Build freelist pages: write ~1 MB of rows, then delete them.
-    // auto_vacuum=INCREMENTAL moves freed pages onto the freelist but
-    // only `PRAGMA incremental_vacuum` reclaims them.
+    // auto_vacuum=INCREMENTAL leaves freed pages on the freelist; only incremental_vacuum reclaims them.
     handle.client.exec('CREATE TABLE maintenance_probe (id INTEGER PRIMARY KEY, payload TEXT)')
     const payload = 'x'.repeat(4096)
     const insert = handle.client.prepare('INSERT INTO maintenance_probe (payload) VALUES (?)')
@@ -57,8 +53,6 @@ describe('db maintenance — SQLite freelist drain (plan §1.11)', () => {
     )
   })
 })
-
-// ─── DuckDB (analytics sidecar) ──────────────────────────
 
 describe('db maintenance — DuckDB retention + checkpoint (plan §1.11)', () => {
   let analyticsHandle: AnalyticsHandle

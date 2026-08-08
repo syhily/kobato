@@ -8,10 +8,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { UseFileUploadOptions } from '@/client/hooks/use-file-upload'
 
-// The upload choreography itself is pinned by use-file-upload.test.tsx; this
-// spec pins the FontUploadButton wiring: the exact options handed to the
-// hook (endpoint, guards, message factories, family-name field) and the
-// phase transitions driven by onSuccess / onError.
+// Pins the FontUploadButton wiring: the exact options handed to the hook
+// (endpoint, guards, message factories, family-name field) and the phase transitions.
 const hookMock = vi.hoisted(() => ({
   options: undefined as UseFileUploadOptions | undefined,
   upload: vi.fn(),
@@ -55,7 +53,6 @@ function options(): UseFileUploadOptions {
 }
 
 function selectFile(file: File) {
-  // The hidden input is the only file input the button renders.
   const input = document.querySelector('input[type="file"]')
   if (!(input instanceof HTMLInputElement)) {
     throw new Error('file input not rendered')
@@ -91,7 +88,6 @@ describe('FontUploadButton', () => {
     // No success toast — the success phase is the feedback.
     expect(opts.messages?.success).toBeUndefined()
 
-    // Editing the family name re-renders the hook with the new field value.
     fireEvent.change(screen.getByDisplayValue('OPPOSans'), { target: { value: '  My Sans  ' } })
     expect(options().fields).toEqual({ familyName: 'My Sans' })
   })

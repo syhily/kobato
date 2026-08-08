@@ -19,8 +19,7 @@ beforeEach(async () => {
   await clearAllTables(db)
 })
 
-// audit_log.actor_id references user.id — the admin actor must be a
-// real row or the audit insert dead-letters on the FK.
+// audit_log.actor_id references user.id — a missing actor row dead-letters the audit insert.
 async function seedAdmin(): Promise<number> {
   const rows = await db
     .insert(user)
@@ -121,10 +120,7 @@ describe('integration / admin webmentions approve + reject', () => {
   })
 
   afterEach(async () => {
-    // Flush BEFORE reset (and before the next clearAllTables wipes the
-    // seeded admin) — otherwise the batcher's 500ms timer can fire into
-    // the next test and dead-letter the buffered events on the
-    // audit_log.actor_id FK.
+    // Flush BEFORE reset — the batcher's timer can dead-letter buffered events on the actor FK.
     await flushAuditLog()
     resetAllBatchers()
   })

@@ -12,21 +12,9 @@ import { CACHE_DECLARATIONS } from '@/shared/cache/registry'
 import { CACHE_BUCKET_IDS, RESERVED_CACHE_BUCKETS } from '@/shared/types/cache'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
-// Admin view over the shared cache declarations. Every bucket ID
-// (`og` / `calendar` / `avatar` / …) is a stable discriminator — it is
-// also the value written into the `kv_cache.bucket` column. The
-// user-facing prefix and TTL come from `resolveCacheSlot` (live
-// blog-settings snapshot for tunable buckets, the declared default
-// otherwise), so a rename in the admin panel takes effect on the next
-// read. Descriptions are rendered with the effective prefix at call time.
-//
-// Deliberately excludes:
-//  - sessions              clearing them would log every signed-in user out
-//                          and break in-flight tokens.
-//  - rate-limit counters   clearing them would let a throttled abuser retry
-//                          immediately, defeating the spam wall.
-// Those two surfaces DO surface read-only in the admin cache page via the
-// parallel `RESERVED_CACHE_BUCKETS` registry (see `snapshotReservedBuckets()`).
+// Admin view over the shared cache declarations; bucket IDs double as the
+// `kv_cache.bucket` column value. Sessions and rate-limit counters are
+// deliberately excluded — they surface read-only via `RESERVED_CACHE_BUCKETS`.
 
 export function getCacheBuckets(): CacheBucket[] {
   return CACHE_DECLARATIONS.map((declaration) => {
@@ -46,14 +34,11 @@ export function getBucket(id: CacheBucketId): CacheBucket | undefined {
   return getCacheBuckets().find((bucket) => bucket.id === id)
 }
 
-// Counts filter expired rows the same way kv-store reads do — the admin
-// panel reports what the cache would actually serve, not what the hourly
-// sweep hasn't reclaimed yet.
+// Filter expired rows like kv-store reads — report what the cache would actually serve.
 function liveEntries() {
   return or(isNull(kvCache.expiresAt), gt(kvCache.expiresAt, new Date()))
 }
 
-/** Count live `kv_cache` rows carrying the bucket label. */
 export async function countBucket(db: Database, bucket: CacheBucket): Promise<number> {
   const rows = await db
     .select({ value: count() })
@@ -62,13 +47,11 @@ export async function countBucket(db: Database, bucket: CacheBucket): Promise<nu
   return rows[0]?.value ?? 0
 }
 
-/** Delete every `kv_cache` row carrying the bucket label; returns the number removed. */
 export async function clearBucket(db: Database, bucket: CacheBucket): Promise<number> {
   const result = await db.delete(kvCache).where(eq(kvCache.bucket, bucket.id))
   return Number(result.changes)
 }
 
-/** Aggregate counts across every registered bucket. */
 export async function snapshotAllBuckets(db: Database): Promise<CacheBucketStats[]> {
   return Promise.all(
     getCacheBuckets().map(async (bucket) => ({
@@ -91,12 +74,7 @@ async function countReservedBucket(db: Database, id: ReservedCacheBucketId): Pro
   return rateLimitEntryCount()
 }
 
-/**
- * Count the read-only reserved buckets (live `session` rows, in-process
- * rate-limit windows). Returned alongside the editable bucket stats so
- * the admin cache page can surface them for visibility without exposing
- * a clear button.
- */
+/** Count the read-only reserved buckets (live sessions, rate-limit windows) — visibility without a clear button. */
 export async function snapshotReservedBuckets(db: Database): Promise<ReservedCacheBucketStats[]> {
   return Promise.all(
     RESERVED_CACHE_BUCKETS.map(async (bucket) => ({
@@ -108,12 +86,10 @@ export async function snapshotReservedBuckets(db: Database): Promise<ReservedCac
   )
 }
 
-/** Clear every registered bucket; returns the per-bucket removed counts. */
 export async function clearAllBuckets(db: Database): Promise<Record<CacheBucketId, number>> {
   const buckets = getCacheBuckets()
   const entries = await Promise.all(buckets.map(async (bucket) => [bucket.id, await clearBucket(db, bucket)] as const))
-  // CACHE_BUCKET_IDS covers every bucket id — the literal-keyed Record
-  // just can't be proven complete from a runtime map.
+  // CACHE_BUCKET_IDS covers every bucket id; the Record just can't be proven from a runtime map.
   const result = unsafeCast<Record<CacheBucketId, number>>(Object.fromEntries(CACHE_BUCKET_IDS.map((id) => [id, 0])))
   for (const [id, removed] of entries) {
     result[id] = removed

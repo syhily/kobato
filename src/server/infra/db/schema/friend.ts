@@ -1,19 +1,8 @@
 import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
-// Friend links for the public grid (`<Friends />` in posts, `show_friends` on
-// pages). CRUD at `/admin/taxonomy/friends`.
-//
-// Field design:
-// - No `slug`: the YAML's `slug` was an authoring shorthand only — the
-//   public renderer keys on `homepage` and the admin shell keys on
-//   `id`, neither of which needs a separate handle.
-// - No `sortOrder`: friends render in random order
-//   (`@/ui/pt/blocks/Friends.tsx` already shuffles), so no ranking is
-//   stored. Admin list sorts by `createdAt desc` (newest first).
-// - Soft-uniqueness on `homepage` is enforced at the service layer
-//   (CLI import + admin upsert): a strict DB UNIQUE would reject
-//   protocol/trailing-slash variants the editor probably meant as
-//   updates.
+// Friend links for the public grid (`<Friends />`, `show_friends` on pages).
+// No `slug`/`sortOrder`: the renderer keys on `homepage` and shuffles order.
+// `homepage` soft-uniqueness is enforced at the service layer, not a DB UNIQUE.
 export const friend = sqliteTable(
   'friend',
   {

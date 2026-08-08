@@ -8,10 +8,8 @@ import { Button } from '@/ui/components/button'
 import { Label } from '@/ui/components/label'
 import { cn } from '@/ui/lib/cn'
 
-// Shared cover/poster row used by `EditCategoryDialog`, `EditTagDialog`
-// and `EditFriendDialog`: click-to-upload thumbnail plus a clear button.
-// Manual URL pasting is intentionally removed so every image goes through
-// the upload pipeline (keeps CSP `img-src` predictable).
+// Shared cover/poster row; every image goes through the upload pipeline —
+// no manual URL pasting (keeps CSP `img-src` predictable).
 export interface CoverInputRowProps {
   label: string
   htmlFor: string
@@ -20,29 +18,14 @@ export interface CoverInputRowProps {
   value: string
   /** Updates the parent's draft when an upload completes or the value is cleared. */
   onChange: (value: string) => void
-  /**
-   * `kind` for the upload dialog. The parent must keep `slug` / `host`
-   * in sync with the matching form field — otherwise the upload lands
-   * at a stale object key. `null` disables the upload button (e.g. an
-   * empty slug field in "new entry" mode).
-   */
+  /** `kind` for the upload dialog — the parent must keep `slug` / `host` in
+   *  sync or the upload lands at a stale object key; `null` disables upload. */
   uploadKind: UploadKind | null
-  /**
-   * Preview shown inside the thumbnail when `value` is empty — used by
-   * OG fields to display the auto-generated default card before the
-   * operator overrides it.
-   */
+  /** Preview inside the thumbnail when `value` is empty (e.g. the auto-generated OG card). */
   fallbackSrc?: string
-  /**
-   * Optional Tailwind classes applied to the thumbnail button.
-   * Defaults to `h-24 w-full` when omitted.
-   */
+  /** Optional Tailwind classes for the thumbnail button; defaults to `h-24 w-full`. */
   thumbnailClassName?: string
-  /**
-   * Object-fit strategy for the preview image. Defaults to `cover`; use
-   * `contain` for fixed-aspect images shown in full (e.g. friend link
-   * banners at 1280×425).
-   */
+  /** Object-fit for the preview image; default `cover`, `contain` for fixed-aspect banners (1280×425). */
   objectFit?: 'cover' | 'contain'
 }
 
@@ -66,9 +49,7 @@ export function CoverInputRow({
     setUploadOpen(false)
   }
 
-  // Uploads always succeed (S3 when configured, local storage otherwise), so
-  // there's no "uploads disabled" gate — the only precondition is a supplied
-  // `kind` (the slug/host it needs is filled in).
+  // No "uploads disabled" gate — the only precondition is a supplied `kind` (the slug/host it needs).
   const uploadDisabled = uploadKind === null
   const uploadTitle = uploadKind === null ? '请先填写 slug / host 后再上传' : undefined
 

@@ -8,12 +8,8 @@ import { upsertWebmentionInbox } from '@/server/infra/db/operations/webmention-i
 
 /**
  * The receive endpoint's synchronous half (async-inbox design,
- * docs/plans/2026-08-02-webmention-async-inbox-design.md): resolve the
- * target and normalize the source — cheap, so an unknown target still
- * gets its 404 immediately — then enqueue the pair for the inbox worker
- * and nudge the scheduler so the endpoint can answer 202 at once.
- * Verification (fetch + link check + store) happens in the worker via
- * `receiveWebmention`.
+ * docs/plans/2026-08-02-webmention-async-inbox-design.md): unknown targets
+ * 404 at the route; verification happens in the inbox worker.
  */
 export async function enqueueWebmention(db: Database, input: WebmentionReceiveInput): Promise<void> {
   const target = await resolveWebmentionTargetOrThrow(db, input.target)

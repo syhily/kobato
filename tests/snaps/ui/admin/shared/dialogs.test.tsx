@@ -29,24 +29,17 @@ queryMocks.queryClient = {
   removeQueries: vi.fn(),
 }
 
-// UploadImageDialog wraps its body in a Base UI Dialog portal. The portal only
-// mounts its content after the open animation runs (client-only), so an *open*
-// dialog emits no user-visible HTML during SSR — same constraint as
-// ConfirmDialog in admin-shared.test.tsx. We therefore assert the closed state
-// directly and cover the title/empty-state logic via the exported `titleFor`
-// helper where possible. AdminSearchDialog is wired to two react-query calls;
-// we stub @tanstack/react-query so SSR never hits the network.
+// Base UI portals only mount after the open animation (client-only), so an
+// open dialog emits no SSR HTML — assert closed states directly (same
+// constraint as ConfirmDialog in admin-shared.test.tsx); search queries stubbed.
 
 const noop = () => undefined
-
-// ─────────────────────────── UploadImageDialog ─────────────────────────────
 
 describe('snapshot: UploadImageDialog', () => {
   it('renders nothing when closed (Base UI Dialog portal skips closed SSR)', () => {
     const html = stableHtml(
       renderToHtml(<UploadImageDialog open={false} kind={{ kind: 'generic' }} onClose={noop} onUploaded={noop} />),
     )
-    // Closed dialog emits no user-visible content during SSR.
     expect(html).toBe('')
   })
 
@@ -59,8 +52,6 @@ describe('snapshot: UploadImageDialog', () => {
     expect(html).toBe('')
   })
 })
-
-// ─────────────────────────── AdminSearchDialog ─────────────────────────────
 
 describe('snapshot: AdminSearchDialog', () => {
   it('renders nothing when closed', () => {
@@ -77,11 +68,7 @@ describe('snapshot: AdminSearchDialog', () => {
       refetch: vi.fn(),
     }
     const html = stableHtml(renderInRouter(<AdminSearchDialog open={true} onOpenChange={noop} />))
-    // The dialog portal emits the search chrome during SSR for this component
-    // because the content is rendered inline (not behind a keep-mounted popup
-    // that waits for animation). When the portal does emit, we see the chrome.
-    // If Base UI suppresses it, the assertion degrades gracefully to a
-    // no-throw render check.
+    // Portal usually emits during SSR — the guard keeps the assertion a no-throw check if it doesn't.
     if (html !== '') {
       expect(html).toContain('全站搜索…')
       expect(html).toContain('输入关键词搜索文章或页面')
@@ -109,9 +96,7 @@ describe('snapshot: AdminSearchDialog', () => {
   })
 })
 
-// ─────────────────────────────── NavMenuItem ───────────────────────────────
-// NavMenuItem.Link uses useIsActiveLink (react-router useMatch/useLocation) +
-// useSidebar, so it must mount under a router AND inside a SidebarProvider.
+// NavMenuItem.Link needs a router + SidebarProvider (useIsActiveLink / useSidebar).
 
 describe('snapshot: NavMenuItem', () => {
   function wrap(node: React.ReactNode, path = '/admin/posts') {
@@ -237,11 +222,7 @@ describe('snapshot: NavMenuItem', () => {
   })
 })
 
-// ──────────────────────────────── AdminShell ───────────────────────────────
-// AdminShell wires AppSidebar + MobileNavBar + music player providers. It is
-// heavy (react-query for music, version dialog, nav config), so we mount it
-// under a router + the react-query mock above and assert only the children
-// slot + skip-link render.
+// AdminShell is heavy (music query, version dialog, nav config) — assert only the children slot + skip-link.
 
 describe('snapshot: AdminShell', () => {
   it('renders the skip-link, sidebar shell and children slot', () => {
@@ -256,11 +237,8 @@ describe('snapshot: AdminShell', () => {
         '/admin/dashboard',
       ),
     )
-    // Skip-to-content link.
     expect(html).toContain('跳转到主要内容')
-    // Children slot renders inside <main>.
     expect(html).toContain('page-content')
-    // Site title appears in the sidebar header.
     expect(html).toContain('My Blog')
   })
 

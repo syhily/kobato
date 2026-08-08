@@ -14,9 +14,7 @@ interface RunOptions {
   env?: NodeJS.ProcessEnv
 }
 
-// shell is REQUIRED on Windows: pnpm and the node_modules/.bin tools are
-// .cmd shims there, and CreateProcess cannot execute them directly —
-// only cmd.exe can.
+// shell is REQUIRED on Windows: the .bin tools are .cmd shims only cmd.exe can run.
 const NEEDS_SHELL = process.platform === 'win32'
 
 export function run(command: string, args: string[], options: RunOptions = {}) {

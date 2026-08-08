@@ -9,8 +9,8 @@ interface ThemeToggleProps {
   variant?: 'rail' | 'floating'
 }
 
-// Glyph describes the action (Moon → dark, Sun → light). Both icons stay in the DOM;
-// `dark:` swaps via opacity + scale so noscript dark-OS visitors get the right icon pre-hydration.
+// Glyph describes the action (Moon → dark, Sun → light); both icons stay in the DOM so
+// noscript dark-OS visitors get the right icon pre-hydration (`dark:` swaps via opacity + scale).
 const moonClass = 'm-icon-inset transition-all dark:scale-0 dark:opacity-0'
 const sunClass = 'absolute inset-0 m-auto scale-0 opacity-0 transition-all dark:scale-100 dark:opacity-100'
 

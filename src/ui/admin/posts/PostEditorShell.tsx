@@ -22,13 +22,11 @@ export interface PostEditorShellProps {
   navigate: NavigateFunction
 }
 
-// Module-level DTO accessor — stable identity so the screen's memoized detail
-// object only recomputes when the loader DTO itself changes.
+// Module-level accessor — stable identity so the memoized detail only recomputes when the loader DTO changes.
 const getEntity = (d: AdminPostDetailDto) => d.post
 
 // Static post binding for the shared editor adapter (nouns, paths, draft
-// configs, meta helpers, oRPC namespace); per-render inputs (query client,
-// feature-gated sidebar) arrive as the runtime argument.
+// configs, meta helpers, oRPC namespace); per-render inputs arrive as runtime.
 const POST_EDITOR_ADAPTER_CONFIG: EditorAdapterConfig<
   PostMetaDraft,
   AdminPostDto,
@@ -71,9 +69,7 @@ const POST_EDITOR_ADAPTER_CONFIG: EditorAdapterConfig<
   listQueryKey: () => orpcQuery.admin.posts.list.key(),
 }
 
-// Thin post binding over the shared `EditorScreen`: the adapter shape and
-// wire wrappers are owned by `make-editor-adapter`; this only supplies the
-// per-render query client and the feature-gated post sidebar.
+// Thin post binding over `EditorScreen` — adapter shape and wire wrappers are owned by `make-editor-adapter`.
 export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps) {
   const queryClient = useQueryClient()
   const featureEnabled = useContentSettings().post.featureEnabled

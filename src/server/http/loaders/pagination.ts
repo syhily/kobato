@@ -3,9 +3,7 @@ import { redirect } from 'react-router'
 import { notFound } from '@/server/infra/http/status'
 import { pagePath } from '@/shared/utils/paths'
 
-// Raw `:num` URL param → integer. 404s when the segment isn't a numeric
-// string (we never want `/page/abc` to silently match page 1). The regex
-// guarantees `Number.parseInt` succeeds, so no follow-up NaN check is needed.
+// 404s when the segment isn't numeric — `/page/abc` must not match page 1.
 export function parsePageNum(raw: string | undefined): number {
   if (raw === undefined || raw === '' || !/^\d+$/.test(raw)) {
     notFound()
@@ -13,9 +11,7 @@ export function parsePageNum(raw: string | undefined): number {
   return Number.parseInt(raw, 10)
 }
 
-// Same as `parsePageNum` plus the canonical-collapse rule: `/page/1` redirects
-// to the bare root (e.g. `/page/1` → `/`). Returns the parsed `pageNum` when
-// the URL is the canonical one.
+// Same plus the canonical-collapse rule: `/page/1` redirects to the bare root.
 export function parseListingPage(raw: string | undefined, rootPath: string): number {
   const pageNum = raw === undefined ? 1 : parsePageNum(raw)
   if (raw !== undefined && pageNum <= 1) {
@@ -24,9 +20,7 @@ export function parseListingPage(raw: string | undefined, rootPath: string): num
   return pageNum
 }
 
-// Bounds-check the requested page against the catalog's actual page count.
-// Out-of-range pages redirect to the last valid page; an empty catalog 404s
-// (we never serve a blank listing).
+// Bounds-check: out-of-range pages redirect to the last valid page; an empty catalog 404s.
 export function redirectListingOverflow(
   raw: string | undefined,
   pageNum: number,

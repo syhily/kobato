@@ -9,15 +9,12 @@ import { compressImage } from '@/server/infra/image/compress'
 import { getDailyQuote } from '@/server/render/calendar/daily-quote'
 import { ensureCanvasFont, type FontSlot } from '@/server/render/canvas-fonts'
 
-// @napi-rs/canvas is statically imported and bundled; under SEA the
-// bundler plugin redirects its platform addon load to `nativeRequire`
-// (see `scripts/sea/redirect-native-requires.ts`).
+// Statically imported; the SEA bundler redirects the platform addon load to nativeRequire.
 
 const WIDTH = 600
 const HEIGHT = 880
 
-// Font registration lives in `render/canvas-fonts.ts` (`ensureCanvasFont`) —
-// one single-flight per slot, shared with the OG renderer.
+// Font registration lives in canvas-fonts.ts, shared with the OG renderer.
 function ensureFonts(): Promise<FontSlot | null> {
   return ensureCanvasFont('calendar')
 }
@@ -44,9 +41,7 @@ function getDailyAuspiciousLabel(date: Date) {
   const solar = Solar.fromYmd(getYear(date), getMonth(date) + 1, getDate(date))
   const lunar = solar.getLunar()
   const auspicious = lunar.getDayYi()
-  // Defensive guard (audit P2-25): getDayYi never returns an empty list
-  // for any day in 1900–2200 (verified exhaustively), but an empty list
-  // would render "宜undefined" — bail out instead.
+  // Defensive guard (audit P2-25): an empty list would render "宜undefined".
   if (auspicious.length === 0) {
     return ''
   }
@@ -91,9 +86,7 @@ export async function renderCalendar(date: Date, theme: CalendarTheme = 'light')
   const canvas = createCanvas(WIDTH, HEIGHT)
   const ctx = canvas.getContext('2d')
 
-  // Light keeps the original opaque white card; dark leaves the canvas
-  // transparent so the sidebar's dark background shows through, and
-  // strokes/text flip to white.
+  // Light: opaque white card; dark: transparent canvas, white ink.
   const inkColor = theme === 'dark' ? '#ffffff' : '#000000'
   if (theme === 'light') {
     ctx.fillStyle = '#ffffff'
@@ -150,9 +143,7 @@ export async function renderCalendar(date: Date, theme: CalendarTheme = 'light')
   ctx.font = `36px ${calFont}`
   const quoteText = quote.content
   const quoteLines = wrapText(ctx, quoteText, maxTextWidth)
-  // The full built-in bank contains entries of 100+ chars, which would
-  // overflow the card and collide with the author line — clamp to the
-  // three lines that fit and ellipsize the last visible one.
+  // Long entries overflow the card — clamp to three lines, ellipsize the last.
   const MAX_QUOTE_LINES = 3
   if (quoteLines.length > MAX_QUOTE_LINES) {
     quoteLines.length = MAX_QUOTE_LINES

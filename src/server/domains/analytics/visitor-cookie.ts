@@ -2,11 +2,9 @@ import { randomBytes } from 'node:crypto'
 
 import { KOBATO_AID_COOKIE } from '@/server/domains/analytics/track'
 
-// Long-lived opaque visitor identifier, issued once per browser so the
-// dashboard can track cross-day returning visitors without the daily-rotating
-// `visitor_hash`. Kept separate from the signed, login-keyed `__session`
-// cookie so anonymous readers get a stable handle and analytics stays
-// independent of the session secret. Value: 12-byte random hex (96 bits).
+// Long-lived opaque visitor identifier for cross-day returning-visitor
+// tracking. Kept separate from the signed, login-keyed `__session` cookie
+// so analytics stays independent of the session secret. 12-byte random hex.
 
 const MAX_AGE_SECONDS = 60 * 60 * 24 * 30
 
@@ -24,7 +22,7 @@ export interface VisitorCookieResolution {
   visitorId: string
   /**
    * Set-Cookie header value to attach to the response, or `null` when
-   * the request already carried a valid cookie (no rotation needed).
+   * the request already carried a valid cookie.
    */
   setCookie: string | null
 }

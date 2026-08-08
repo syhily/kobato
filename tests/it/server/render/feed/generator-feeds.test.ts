@@ -11,11 +11,8 @@ import { postTag } from '@/server/infra/db/schema/post-tag'
 import { category as categoryTable, tag as tagTable } from '@/server/infra/db/schema/taxonomy'
 import { generateFeeds } from '@/server/render/feed/generator'
 
-// Perimeter coverage for `generateFeeds` against the real engine: the
-// RSS/Atom envelope plus the wiring into the posts domain's
-// `selectFeedPosts` (scope resolution, the configured feed size, and the
-// miss → empty-feed policy), asserted through seeded rows and real XML
-// output instead of mocked domain seams.
+// `generateFeeds` perimeter against the real engine: the RSS/Atom envelope
+// plus `selectFeedPosts` wiring (scope, size, miss → empty-feed policy).
 const db = getTestDb()
 
 beforeEach(async () => {
@@ -113,9 +110,7 @@ describe('render/feed/generator — generateFeeds', () => {
   })
 
   it("lands a code block's code text in the feed XML (RN-1 regression)", async () => {
-    // Stored bodies carry the server-prerendered highlightedHtml (see
-    // infra/pt/prerender). rssMode used to CDATA-wrap it and sanitize-html
-    // dropped the CDATA whole, so subscribers saw an empty <pre><code>.
+    // Feed must keep the code text: sanitize-html used to drop CDATA-wrapped highlightedHtml.
     await seedPost({
       slug: 'with-code',
       title: 'With Code',
@@ -141,8 +136,6 @@ describe('render/feed/generator — generateFeeds', () => {
   })
 
   it('scopes the selection to the category and honors the configured feed size', async () => {
-    // Shrink the channel to two entries so the limit is observable
-    // without seeding twenty rows.
     setBlogSettingsBundleForTests({
       ...TEST_BLOG_SETTINGS_BUNDLE,
       content: { ...TEST_BLOG_SETTINGS_BUNDLE.content!, feed: { full: true, size: 2 } },

@@ -81,8 +81,8 @@ export function flattenList(
         flattenList(child, out, ensureKey, level + 1)
         continue
       }
-      // Loud failure: a listItem child we cannot represent (e.g. a code
-      // block) used to be silently dropped on save.
+      // Loud failure: a listItem child we cannot represent must not be
+      // silently dropped on save.
       throw new Error(
         `pt-bridge: cannot save — no converter registered for listItem child PM node type "${child.type}"`,
       )

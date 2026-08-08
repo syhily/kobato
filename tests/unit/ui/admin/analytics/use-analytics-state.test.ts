@@ -40,9 +40,8 @@ describe('ui/admin/analytics/useAnalyticsState', () => {
 
   it('computes a default range from the last-7d preset when no params are set', () => {
     const { range } = renderHook(() => useAnalyticsState())
-    // No explicit startAt/endAt → range falls back to computeDateRange
-    // with the default preset ('last-7d' is the fallback inside the
-    // hook when preset is null).
+    // No explicit startAt/endAt → the hook falls back to the default
+    // 'last-7d' preset.
     const expectedSpan = computeDateRange('last-7d')
     expect(range.endAt - range.startAt).toBe(expectedSpan.endAt - expectedSpan.startAt)
   })
@@ -185,8 +184,6 @@ describe('ui/admin/analytics/useAnalyticsState', () => {
     const [updater] = mock.setSearchParams.mock.calls[0]!
     const next = updater(new URLSearchParams())
     const parsed: Filters = JSON.parse(next.get('filters')!)
-    // The previously-present country filter is preserved alongside
-    // the new os entry.
     expect(parsed).toEqual({ country: 'China', os: 'iOS' })
   })
 

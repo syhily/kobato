@@ -18,19 +18,14 @@ export interface AdminMusicListFilters {
 }
 
 /**
- * Row projection used by the admin list endpoint. Same approach as
- * `AdminImageRowWithUploader`: project the `music` columns verbatim
- * plus a LEFT JOIN against `user` for the uploader display name. A
- * hard-deleted user (or a NULL `uploader_id` on legacy rows) keeps
- * the music row visible with `uploaderName === null`.
+ * Admin list projection: `music` columns plus `uploaderName` via LEFT
+ * JOIN `user`; null when the row has no uploader or the user was deleted.
  */
 export interface AdminMusicRowWithUploader extends MusicRow {
   uploaderName: string | null
 }
 
-// Entity-specific column selection for the admin-side
-// `music LEFT JOIN user` projection; `withUploader()` appends
-// `uploaderName` and owns the join plus the single-row refetch.
+// Entity-specific columns; `withUploader()` appends `uploaderName` and owns the join + refetch.
 const musicUploader = withUploader({
   table: music,
   idColumn: music.id,
@@ -54,9 +49,6 @@ const musicUploader = withUploader({
   },
 })
 
-// Entity-specific filter→SQL mapping for the admin music list. The
-// conditions-array → `WHERE` assembly is shared with the other admin
-// lists via `assembleWhere()`.
 function buildAdminMusicConditions(filters: AdminMusicListFilters): SQL[] {
   const conditions: SQL[] = []
 
@@ -121,12 +113,7 @@ export async function findMusicById(db: Database, id: number): Promise<MusicRow 
   return rows[0] ?? null
 }
 
-/**
- * Public lookup keyed on the opaque `playerId` stored in `musicPlayer`
- * PortableText blocks. Skips soft-deleted rows so a removed song renders
- * the player as a no-op placeholder instead of surfacing a 404 to the
- * reader.
- */
+/** Public lookup by the `playerId` stored in `musicPlayer` PortableText blocks; skips soft-deleted rows. */
 export async function findMusicByPlayerId(db: Database, playerId: string): Promise<MusicRow | null> {
   const rows = await db
     .select()
@@ -183,11 +170,8 @@ export async function softDeleteMusic(db: Database, id: number): Promise<MusicRo
 }
 
 /**
- * Undo a soft delete in place: clears `deletedAt` and refreshes the mutable
- * metadata. `addMusic` uses it when a re-added song's soft-deleted row still
- * occupies UNIQUE(source, source_id) — a plain insert would violate the key.
- * The row keeps its id, playerId, storage paths, and driver; the caller
- * re-uploads the assets to those same paths.
+ * Undo a soft delete in place — the row keeps id, playerId, and storage
+ * paths, so the caller re-uploads the assets to those same paths.
  */
 export async function restoreMusic(
   db: Database,

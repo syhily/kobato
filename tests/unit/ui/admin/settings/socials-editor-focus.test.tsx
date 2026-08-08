@@ -23,11 +23,9 @@ const socials: SocialsSettings = {
   socials: [{ name: 'GitHub', network: 'github', type: 'link', link: 'https://github.com/example' }],
 }
 
-// Regression: a revalidate delivers a NEW loader snapshot (new identity)
-// after any card's save. The useSettingsCard reseed must skip `reset()`
-// when the snapshot maps to the same form state — otherwise useFieldArray
-// regenerates ids, every row remounts, and the focused input loses focus
-// mid-typing (the "one letter, focus gone" bug).
+// Regression: a revalidate delivers a new snapshot identity; the reseed
+// must skip `reset()` when it maps to the same form state, or useFieldArray
+// regenerates ids and the focused input loses focus.
 describe('SocialsEditor — focus retention across revalidates', () => {
   beforeEach(() => {
     commit.mockReset()
@@ -56,8 +54,7 @@ describe('SocialsEditor — focus retention across revalidates', () => {
     fireEvent.blur(input) // blur-driven flush commits the edit
     await waitFor(() => expect(commit).toHaveBeenCalledOnce())
 
-    // The user keeps editing in the same field; the save round-trip then
-    // delivers the just-saved content with a new snapshot identity.
+    // Revalidate delivers the just-saved content with a new snapshot identity.
     input.focus()
     expect(document.activeElement).toBe(input)
     rerender(

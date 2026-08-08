@@ -2,9 +2,6 @@ import { describe, expect, it } from 'vitest'
 
 import { buildPageFilterFields, deriveStatusFields, type PageFilterFieldKey } from '@/ui/admin/pages/filter-fields'
 
-// Spec-level coverage for the pages filter-pill fields: the status→query
-// projection and the per-field toQuery mappers.
-
 const fields = buildPageFilterFields([{ id: 'u-1', name: '雨帆' }])
 
 function fieldSpec(key: PageFilterFieldKey) {

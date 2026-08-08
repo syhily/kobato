@@ -25,13 +25,7 @@ export interface EditorRouteLoaderProps<TDetail, TError extends Error = Error> {
   navigate: NavigateFunction
 }
 
-/**
- * Top-level wrapper around the entity editor shells that owns the
- * "fetch the detail DTO from the API on mount" lifecycle: error →
- * `EditorRouteError`, pending → `EditorRouteSkeleton`, data → the shell in
- * edit mode. Kept separate from the shells so they stay plain-props and
- * straightforward to unit-test.
- */
+/** Wrapper owning the detail-fetch lifecycle; kept separate so the shells stay plain-props. */
 export function EditorRouteLoader<TDetail, TError extends Error = Error>({
   entityLabel,
   listPath,

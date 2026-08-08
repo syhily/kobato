@@ -4,16 +4,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { Outlet, useOutletContext, createMemoryRouter, RouterProvider, type RouteObject } from 'react-router'
 import { describe, expect, it } from 'vitest'
-// SSR-render the remaining admin route `Component` exports. Each route
-// splits I/O into `loader`; the Component is pure given loaderData /
-// outlet context, so we drive it directly with fixture data and assert
-// the page chrome renders. Routes that just render a known View
-// component get a null/empty fixture — the View fetches via react-query
-// so it renders its loading / empty chrome under SSR, which still
-// exercises the route component function itself. Every test asserts on
-// real rendered content (headings, labels, fixture values), so a route
-// that degrades into the router's error boundary fails instead of
-// passing a vacuous `html.length > 0`.
+// SSR-render every admin route Component export with fixture loaderData;
+// assert real rendered content, so a route that degrades into the
+// router's error boundary fails instead of a vacuous length check.
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
@@ -42,12 +35,9 @@ import TagsRouteRaw from '@/routes/admin/taxonomy/tags'
 import { BlogSettingsProvider } from '@/shared/lib/blog-config-context'
 import { ThemeProvider } from '@/ui/lib/ThemeProvider'
 
-// The settings layout's loader path imports the settings service, whose
-// section-change wiring pulls in the backup/audit schedulers (and
-// transitively the DB bootstrap) — irrelevant to these snapshots.
-// Generated `Route.ComponentProps` types are strict (params/matches/…).
-// `asRoute` widens the prop bag so tests only need the fields each branch
-// actually reads (loaderData / actionData / outlet context).
+// `asRoute` widens the strict `Route.ComponentProps` so tests pass only
+// the fields each branch reads; the settings layout's loader transitively
+// pulls in the DB bootstrap — irrelevant to these snapshots.
 const AnalyticsLayoutRoute = asRoute(AnalyticsLayoutRouteRaw)
 const AnalyticsOverviewRoute = asRoute(AnalyticsOverviewRouteRaw)
 const AnalyticsRealtimeRoute = asRoute(AnalyticsRealtimeRouteRaw)
@@ -79,32 +69,19 @@ const MASKS = {
 
 const CURRENT_USER = { id: '1', name: 'Alice', email: 'alice@example.com' }
 
-// Default loaderData fixtures per route. Routes that read no loaderData
-// still receive an empty object — RR7's ComponentProps type requires it.
+// Routes that read no loaderData still get an empty object — RR7's ComponentProps requires it.
 const emptyLoaderData: Record<string, unknown> = {}
 
 const testQueryClient = new QueryClient({
   defaultOptions: { queries: { retry: false, gcTime: 0 }, mutations: { retry: false } },
 })
 
-/**
- * Render a node that expects outlet context from a parent route. Builds
- * a two-level memory router: the parent route renders
- * `<Outlet context={context} />`, the child is the test node, so
- * `useOutletContext()` inside the node resolves to the fixture. This is
- * how RR7 nested routes provide context in production.
- */
+/** Two-level memory router: parent renders `<Outlet context={context} />` so the node's `useOutletContext()` resolves to the fixture. */
 function renderInRouterWithOutlet(node: ReactNode, initialPath: string, context: Record<string, unknown>): string {
   return renderNested(initialPath, { parent: context, middle: <>{node}</> })
 }
 
-/**
- * Three-level nested router. The root route provides `parent` context
- * via `<Outlet context>`; an optional `middle` element (e.g. a layout
- * route that re-emits context) sits between root and the leaf; the
- * leaf is `child`. Used for routes like settings/layout that both
- * consume a parent context and forward a richer one to their outlet.
- */
+/** Three-level router: root provides `parent` context, optional `middle` re-emits it, leaf is `child`. */
 function renderNested(
   initialPath: string,
   layers: {
@@ -137,22 +114,16 @@ function OutletContextProvider({ context }: { context: Record<string, unknown> }
   return <Outlet context={context} />
 }
 
-/**
- * Child probe for the settings/layout test: consumes the
- * SettingsOutletContext the layout forwards and renders the bundle's
- * site title, proving the layout's `<Outlet context>` plumbing works.
- */
+/** Consumes the SettingsOutletContext the layout forwards and renders the bundle's site title. */
 function SettingsContextProbe() {
   const ctx = useOutletContextSafe()
   const title = ctx?.bundle?.siteIdentity?.title ?? ''
   return <div data-testid="probe">{title}</div>
 }
 
-// Minimal outlet-context reader; avoid importing the layout's typed
-// `SettingsOutletContext` to keep the probe decoupled.
+// Minimal outlet-context reader — avoids importing the layout's typed `SettingsOutletContext`.
 function useOutletContextSafe(): { bundle?: { siteIdentity?: { title?: string } } } | undefined {
   try {
-    // useOutletContext is imported below via the react-router module.
     return useOutletContext()
   } catch {
     return undefined
@@ -199,8 +170,7 @@ describe('admin routes — Component SSR renders', () => {
   describe('posts', () => {
     it('posts/index renders the PostsView shell', () => {
       const html = stableHtml(renderInRouter(<PostsRoute loaderData={emptyLoaderData} />, '/admin/posts'))
-      // The list query reports loading under SSR (the empty state never
-      // renders), so assert the header chrome the route always produces.
+      // Under SSR the list query reports loading — assert the always-rendered header chrome.
       expect(html).toContain('文章管理')
       expect(html).toContain('新建文章')
     })
@@ -228,8 +198,6 @@ describe('admin routes — Component SSR renders', () => {
 
   describe('me', () => {
     it('me/comments renders the MyCommentsView chrome', () => {
-      // The route reads `currentUser` from outlet context, so we wrap it
-      // under a parent route that provides the context via <Outlet context>.
       const html = stableHtml(
         renderInRouterWithOutlet(
           <MyCommentsRoute loaderData={{ status: 'all', q: '', entity: null, entityOptions: [] }} />,
@@ -272,11 +240,8 @@ describe('admin routes — Component SSR renders', () => {
     })
 
     it('library/music/detail renders the MusicDetailView with the seeded music', () => {
-      // The component reads `params.id` from RR7's injected ComponentProps
-      // — pass it explicitly so the detail view gets a non-empty id. The
-      // music query reports loading under SSR, so seed the shared client's
-      // cache (keyed by the same queryOptions the view uses) to make the
-      // view render the real detail chrome instead of the skeleton.
+      // Seed the shared query cache (same queryOptions the view uses) so SSR
+      // renders real detail chrome instead of the skeleton.
       testQueryClient.setQueryData(orpcQuery.admin.music.get.queryOptions({ input: { id: 'abc' } }).queryKey, {
         music: {
           id: 'abc',
@@ -297,9 +262,7 @@ describe('admin routes — Component SSR renders', () => {
           updatedAt: '2024-02-01T00:00:00.000Z',
         },
       })
-      // Render via the outlet wrapper so the tree uses this file's
-      // QueryClient (the one we just seeded); the view reads no outlet
-      // context, so an empty context suffices.
+      // Outlet wrapper keeps the seeded QueryClient in the tree; empty context suffices.
       const html = stableHtml(
         renderInRouterWithOutlet(
           <MusicDetailRoute loaderData={emptyLoaderData} params={{ id: 'abc' }} />,
@@ -349,13 +312,8 @@ describe('admin routes — Component SSR renders', () => {
     })
 
     it('security/users/detail renders the UserDetailView with the seeded user', () => {
-      // The route reads `params.id` from RR7's injected ComponentProps and
-      // `currentUser` from the admin layout's outlet context. We pass both
-      // explicitly so the detail view gets a non-empty userId and viewer.
-      // The view fetches the user + recent comments via react-query; seed
-      // the shared client's cache (keyed by the same queryOptions the view
-      // uses) so SSR renders the real detail chrome instead of the
-      // skeleton — an error boundary would not contain these strings.
+      // Seed the shared query cache (same queryOptions the view uses) so
+      // SSR renders real detail chrome instead of the skeleton.
       testQueryClient.setQueryData(orpcQuery.admin.users.get.queryOptions({ input: { id: '42' } }).queryKey, {
         user: {
           id: '42',
@@ -415,12 +373,8 @@ describe('admin routes — Component SSR renders', () => {
 
   describe('settings (the big one — many inline sections)', () => {
     it('settings/layout forwards bundle/timezones/masks to its outlet', () => {
-      // The layout reads ParentContext (`currentUser`) from its own
-      // parent outlet, then re-emits a SettingsOutletContext to children
-      // via <Outlet context>. We render it as the middle layer of a
-      // 3-level router with a probe child that consumes the forwarded
-      // context, so the layout's context-forwarding code path executes
-      // and produces visible markup.
+      // Layout consumes parent context and re-emits SettingsOutletContext;
+      // the probe child proves the forwarding runs end-to-end.
       const html = stableHtml(
         renderNested('/admin/settings', {
           parent: { currentUser: CURRENT_USER },
@@ -436,15 +390,11 @@ describe('admin routes — Component SSR renders', () => {
           child: <SettingsContextProbe />,
         }),
       )
-      // The probe renders the forwarded bundle's site title, proving
-      // the layout's <Outlet context> plumbing ran end-to-end.
       expect(html).toContain('且听书吟')
     })
 
     it('settings/index renders every settings section chrome (general, content, service, system groups)', () => {
-      // The settings page reads `bundle/timeZones/masks` from its
-      // parent outlet context. We provide the full test bundle so every
-      // SECTION_CONFIGS render() runs.
+      // Full bundle so every SECTION_CONFIGS render() runs.
       const html = stableHtml(
         renderInRouterWithOutlet(<SettingsIndexRoute loaderData={emptyLoaderData} />, '/admin/settings', {
           currentUser: CURRENT_USER,
@@ -454,9 +404,7 @@ describe('admin routes — Component SSR renders', () => {
         }),
       )
 
-      // The settings chrome includes the section nav + the rendered
-      // sections. Assert a stable nav group label plus the first
-      // section's heading, proving every SECTION_CONFIGS render() ran.
+      // Assert a stable nav group label plus the first section's heading.
       expect(html).toContain('通用')
       expect(html).toContain('基本信息')
     })

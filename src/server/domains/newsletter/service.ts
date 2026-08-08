@@ -17,10 +17,8 @@ import { requireBlogSettingsSection } from '@/shared/config/getters'
 
 const log = getLogger('newsletter.service')
 
-// Double-opt-in confirm tokens use the shared token primitives
-// (`@/server/infra/crypto/tokens`): 43-char base64url, stored as a
-// sha256 hash. 24h is generous enough for slow inboxes without leaving
-// pending rows open indefinitely.
+// Confirm tokens use the shared token primitives, stored as a sha256 hash;
+// 24h TTL keeps pending rows from lingering indefinitely.
 const CONFIRM_TTL_MS = 24 * 60 * 60 * 1000
 const CONFIRM_TTL_HOURS = CONFIRM_TTL_MS / (60 * 60 * 1000)
 
@@ -41,10 +39,8 @@ function requireNewsletterEnabled(): void {
   }
 }
 
-// Confirm links are single-use: the token hash is cleared on confirm, so
-// a replayed link simply finds no row (same "invalid" surface as a bad
-// token). Unsubscribe links stay valid forever — re-clicking one is a
-// no-op on an already-unsubscribed row.
+// Confirm links are single-use (token hash cleared on confirm); unsubscribe
+// links stay valid forever (re-click is a no-op).
 export function buildConfirmUrl(token: string): string {
   const { website } = requireBlogSettingsSection('siteIdentity')
   return `${website}/newsletter/confirm?token=${encodeURIComponent(token)}`
@@ -56,10 +52,8 @@ export function buildUnsubscribeUrl(id: number): string {
 }
 
 /**
- * Create a `pending` subscriber (or rotate the token of an existing
- * non-confirmed row) and send the confirmation email. Dedupe is by
- * normalized email; an already-`confirmed` row is a silent no-op so the
- * endpoint never reveals subscription state to a third party.
+ * Create or rotate a `pending` subscriber and send the confirm email.
+ * Confirmed rows are a silent no-op — never reveal subscription state.
  */
 export async function subscribe(db: Database, rawEmail: string): Promise<void> {
   requireNewsletterEnabled()
@@ -81,9 +75,7 @@ export async function subscribe(db: Database, rawEmail: string): Promise<void> {
       confirmTokenExpiresAt: expiresAt,
     })
   } else {
-    // Re-subscribe from `pending` or `unsubscribed`: rotate the token and
-    // move the row back to `pending`. Double-opt-in makes this safe — a
-    // third party can trigger the confirm email but never confirm it.
+    // Rotate to a fresh token — a third party can trigger the mail but never confirm it.
     await updateSubscriber(db, existing.id, {
       status: 'pending',
       confirmTokenHash: tokenHash,
@@ -95,8 +87,7 @@ export async function subscribe(db: Database, rawEmail: string): Promise<void> {
 
   const sent = await sendConfirmSubscription(email, buildConfirmUrl(token), CONFIRM_TTL_HOURS)
   if (!sent.ok) {
-    // The pending row stays — a later re-subscribe rotates the token and
-    // retries once the mail pipeline is healthy again.
+    // Keep the pending row — a re-subscribe rotates the token and retries.
     log.warn('Confirm email not sent', { email, reason: sent.reason })
     throw new DomainError('INTERNAL', '确认邮件发送失败，请稍后再试。')
   }
@@ -128,9 +119,8 @@ export async function confirm(db: Database, rawToken: string): Promise<Newslette
 }
 
 /**
- * One-click unsubscribe. Idempotent by design: unknown ids and
- * already-unsubscribed rows both resolve as success (never 404 on a
- * re-click); only a forged signature is rejected.
+ * One-click unsubscribe, idempotent: unknown or already-unsubscribed rows
+ * succeed silently; only a forged signature is rejected.
  */
 export async function unsubscribe(db: Database, id: number, signature: string): Promise<void> {
   requireNewsletterEnabled()

@@ -4,11 +4,8 @@ import { EmailLayout } from '@/server/infra/email/templates/layout/EmailLayout'
 import { light } from '@/server/infra/email/templates/styles/tokens'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 
-// One line inside the detail card. Text rows render `{label}{value}`
-// inline; the first text row is emphasised, the rest are muted (the
-// historical primary/detail split from the per-type templates). `html`
-// rows carry a pre-sanitised comment body from `commentBodyToHtml` and
-// render raw — see `RawEmailHtml` for the safety contract.
+// One card line: text rows render `{label}{value}` (first emphasised, rest muted);
+// `html` rows carry a pre-sanitised comment body — see `RawEmailHtml`.
 export type AdminNotificationRow = { label?: string; value: string } | { html: string }
 
 interface Props {
@@ -25,11 +22,8 @@ interface Props {
   cta: { label: string; href: string }
 }
 
-// The single layout every admin notification email (new comment,
-// webmention, friend application, …) renders through. Domains map their
-// payload to these props; the layout owns the recipient greeting, the
-// card chrome, and the CTA styling so a new notification type is one
-// data-mapping function, not a new template.
+// The single layout all admin notification emails render through — a new
+// notification type is one data-mapping function, not a new template.
 export function AdminNotificationEmail({ preview, title, contextLine, mutedNote, rows, cta }: Props) {
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
   return (

@@ -11,24 +11,13 @@ import { font } from '@/server/infra/db/schema/font'
 import { DomainError } from '@/server/infra/http/errors'
 
 // Upload pipeline: magic-byte validate → hash → dedupe → slice → store →
-// insert. Synchronous within the request (several seconds for a CJK font);
-// the UI shows a spinner and the row is only inserted on success, so there
-// is no `processing`/`failed` state to track (per the design spec).
+// insert. Synchronous within the request; rows only exist once inserted,
+// so there is no `processing`/`failed` state.
 
 /** Max accepted upload size for a source TTF/OTF. Matches the Canvas font route. */
 export const FONT_MAX_BYTES = 60 * 1024 * 1024 // 60 MiB
 
-/**
- * Magic-byte validation. Mirrors the image/branding precedent: reject early
- * with a clean 400 rather than letting the slicer fail opaquely on a
- * non-font payload.
- *
- * - TTF: `00 01 00 00` (the sfVersion field of an OpenType/TrueType header).
- * - OTF: `OTTO` (4F 54 54 4F) — CFF-flavoured OpenType.
- * - WOFF/woff2 are rejected; cn-font-split can read them but the admin UI
- *   advertises TTF/OTF only, and accepting woff2-as-source would let an
- *   already-sliced package masquerade as a source font.
- */
+/** Magic-byte kind check — TTF `00 01 00 00`, OTF `OTTO`, else null. */
 export function detectFontKind(buffer: Uint8Array): 'ttf' | 'otf' | null {
   if (buffer.length < 4) {
     return null
@@ -42,14 +31,7 @@ export function detectFontKind(buffer: Uint8Array): 'ttf' | 'otf' | null {
   return null
 }
 
-/**
- * Validate that the font's table directory doesn't reference data beyond the
- * file boundary. A truncated font (e.g. incomplete download or copy) would
- * pass magic-byte detection but fail silently in the wasm core with 0 chunks
- * and an opaque "UnexpectedEof" warning.
- *
- * Throws `DomainError('BAD_REQUEST', …)` on the first out-of-bounds table.
- */
+/** Reject fonts whose table directory references data beyond EOF. Throws `DomainError('BAD_REQUEST', …)`. */
 export function validateFontTableBounds(buffer: Uint8Array): void {
   if (buffer.length < 12) {
     throw new DomainError('BAD_REQUEST', '字体文件不完整：无法读取表目录')
@@ -77,7 +59,6 @@ function sha256Hex(buffer: Uint8Array): string {
 }
 
 export interface UploadFontInput {
-  /** Source font bytes. */
   buffer: Uint8Array
   /** Original upload filename, recorded for audit. */
   sourceName: string
@@ -85,11 +66,7 @@ export interface UploadFontInput {
   familyName: string
 }
 
-/**
- * Upload + slice + store + insert a font. Idempotent on the source bytes:
- * if a font row with the same sha256 already exists, it is returned without
- * re-slicing or re-storing (the dedup fast path).
- */
+/** Upload + slice + store + insert. Idempotent on source bytes — same sha256 returns the existing row. */
 export async function uploadFont(db: Database, input: UploadFontInput): Promise<AdminFontDto> {
   const { buffer, sourceName, familyName } = input
 
@@ -106,19 +83,16 @@ export async function uploadFont(db: Database, input: UploadFontInput): Promise<
   if (!detectFontKind(buffer)) {
     throw new DomainError('BAD_REQUEST', '仅支持 .ttf 或 .otf 字体文件')
   }
-  // Reject truncated fonts before we spend 15–20s in the wasm slicer.
   validateFontTableBounds(buffer)
 
   const hash = sha256Hex(buffer)
 
-  // Dedup fast path: same source bytes → same row, no re-slice.
   const existing = await findFontByHash(db, hash)
   if (existing) {
     return toAdminFontDto(existing)
   }
 
-  // Slice. Throws on a wasm contract drift or an internal core panic;
-  // the controller maps that to a 500.
+  // Throws on wasm contract drift or core panic; the controller maps it to a 500.
   const sliced = await sliceFont(Buffer.from(buffer), { fontFamily: trimmedFamily })
 
   // Persist css + every chunk under the content-addressed prefix.
@@ -132,8 +106,7 @@ export async function uploadFont(db: Database, input: UploadFontInput): Promise<
   ]
   const { driver } = await putFont(hash, files)
 
-  // etag = sha256(result.css) so repackaging busts caches without changing
-  // the storage key.
+  // etag = sha256(result.css); repackaging busts caches without changing the storage key.
   const etag = sha256Hex(sliced.css)
   const cssKey = fontCssKey(hash)
 

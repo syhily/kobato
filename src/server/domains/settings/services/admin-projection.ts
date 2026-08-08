@@ -14,22 +14,16 @@ import {
 } from '@/shared/config/projection'
 import { SECTION_TO_BUNDLE_KEY } from '@/shared/config/sections'
 
-// Per-section runtime gate for the admin display shape: the three masked
-// sections validate against their loader-shape Zod twins, every other
-// section against the registry schema (its stored shape IS the admin
-// shape there). A drifting projection fails HERE — loudly, at the
-// assembly point — instead of silently mistyping the save response.
+// Per-section runtime gate for the admin display shape: assets/mail validate against
+// their loader-shape Zod twins, every other section against the registry schema.
 const SECTION_OUTPUT_SCHEMAS: Partial<Record<SettingsSection, z.ZodType>> = {
   assets: assetsLoaderShapeSchema,
   mail: mailLoaderShapeSchema,
 }
 
 /**
- * Read a bundle slot that the projection requires to be populated. The
- * save path projects the section it has just written onto a freshly
- * refreshed bundle, so a null here means the snapshot itself is broken —
- * surface it as the same INTERNAL class the shape gate uses instead of an
- * untyped property-access crash.
+ * Read a bundle slot that must be populated — a null here means the snapshot is broken,
+ * surfaced as INTERNAL instead of an untyped property-access crash.
  */
 function requireBundleSection<K extends keyof BlogSettingsBundle>(
   bundle: BlogSettingsBundle,
@@ -43,12 +37,8 @@ function requireBundleSection<K extends keyof BlogSettingsBundle>(
 }
 
 /**
- * Project one section of a fresh bundle into the admin display shape the
- * settings cards expect — the exact TSource contract the layout loader +
- * `routes/admin/settings/index.tsx` produce (assets/mail/search get their
- * masks merged in; every other section is the redacted bundle slice). The
- * update endpoint returns this so the client can adopt the save response
- * as its new baseline instead of revalidating the loader.
+ * Project a fresh-bundle section into the admin display shape the settings cards expect;
+ * the update endpoint returns this so the client adopts the save response as its baseline.
  */
 export function projectSectionForAdmin(
   section: SettingsSection,

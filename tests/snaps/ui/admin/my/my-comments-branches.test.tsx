@@ -34,23 +34,9 @@ queryMocks.mutation = { mutate: vi.fn(), isPending: false }
 
 queryMocks.queryClient = { invalidateQueries: vi.fn() }
 
-// `MyCommentsView` reads its row list from a `useInfiniteQuery` against
-// `orpc.comments.loadMine` and its entity picker from the pill hook's
-// `useQueries` against `orpc.comments.searchMineEntities`. Both go through
-// `@tanstack/react-query`, so we stub the hooks through the
-// `#/_helpers/mock-react-query` singleton (mirroring `musics-view.test.tsx`)
-// and mutate the resolved data between cases.
-//
-// The render-path branches we target here:
-//   - the URL-derived pill derivation (controlled `useFilterPills`),
-//   - the entity search items: loader-provided `entityOptions` branch, live
-//     search-results branch, and the `current not in items` pinning,
-//   - `items` memo flatMap over the infinite slot's `data.pages`,
-//   - the loading skeleton / empty-state / populated row map branches,
-//   - the `hasNextPage` sentinel + the "加载中…" / "已加载全部评论" copies,
-//   - per-row conditional branches: pending / delete-requested / deleted
-//     badges, the parent-reply hint (deleted vs live), the edit / request-
-//     delete / cancel-delete action split.
+// `MyCommentsView` reads its list via a useInfiniteQuery and its entity
+// picker via the pill hook's useQueries — both stubbed through the
+// mock-react-query singleton. Covers pill derivation, sentinels, badges.
 
 vi.stubGlobal(
   'IntersectionObserver',
@@ -60,8 +46,6 @@ vi.stubGlobal(
     disconnect() {}
   },
 )
-
-// --- fixtures ----------------------------------------------------------------
 
 let itemSeq = 0
 
@@ -112,8 +96,6 @@ function resetInfinite() {
   queryMocks.infinite.error = null
 }
 
-// --- render-branch coverage --------------------------------------------------
-
 describe('snapshot: MyCommentsView render branches', () => {
   beforeEach(() => {
     itemSeq = 0
@@ -131,10 +113,8 @@ describe('snapshot: MyCommentsView render branches', () => {
     queryMocks.infinite.isPending = true
     const html = renderMy()
     expect(html).toContain('我的评论')
-    // Skeleton branch — three pulse placeholders.
     expect(html).toContain('animate-pulse')
-    // The total-count reads from pages[0].total; with no pages yet it falls
-    // back to 0.
+    // Total reads pages[0].total; no pages → 0.
     expect(html).toMatch(/共\s*<span[^>]*>\s*0\s*<\/span>\s*条评论/u)
   })
 
@@ -146,7 +126,6 @@ describe('snapshot: MyCommentsView render branches', () => {
     expect(html).toContain('暂无评论')
     // The count is split across a <span>: `共 <span>0</span> 条评论`.
     expect(html).toMatch(/共\s*<span[^>]*>\s*0\s*<\/span>\s*条评论/u)
-    // End-of-list sentinel must NOT fire when there are no items.
     expect(html).not.toContain('已加载全部评论')
   })
 
@@ -168,9 +147,7 @@ describe('snapshot: MyCommentsView render branches', () => {
     expect(html).toContain('Alice')
     expect(html).toContain('First Post')
     expect(html).toContain('Second Post')
-    // Row body rendered through PortableTextBody.
     expect(html).toContain('Body ')
-    // Entity permalink anchor.
     expect(html).toContain('href="/posts/first"')
     // Non-deleted, non-pending row → request-delete action.
     expect(html).toContain('aria-label="申请删除"')
@@ -214,8 +191,7 @@ describe('snapshot: MyCommentsView render branches', () => {
     }
     const html = renderMy()
     expect(html).toContain('已申请删除')
-    // Pending-delete row exposes the cancel-delete affordance, not the
-    // request-delete one.
+    // Pending-delete row exposes cancel-delete, not request-delete.
     expect(html).toContain('aria-label="撤回删除"')
     expect(html).not.toContain('aria-label="申请删除"')
   })
@@ -237,7 +213,6 @@ describe('snapshot: MyCommentsView render branches', () => {
     }
     const html = renderMy()
     expect(html).toContain('已删除')
-    // No action buttons for a deleted row.
     expect(html).not.toContain('aria-label="修改评论"')
     expect(html).not.toContain('aria-label="申请删除"')
     expect(html).not.toContain('aria-label="撤回删除"')
@@ -282,7 +257,6 @@ describe('snapshot: MyCommentsView render branches', () => {
     }
     const html = renderMy()
     expect(html).toContain('回复')
-    // Deleted-parent branch copy.
     expect(html).toContain('一条已删除的评论')
   })
 
@@ -298,7 +272,6 @@ describe('snapshot: MyCommentsView render branches', () => {
     }
     const html = renderMy()
     expect(html).toContain('data-slot="my-comment-row"')
-    // No permalink anchor when entity is null.
     expect(html).not.toContain('href="/posts/')
   })
 
@@ -310,7 +283,6 @@ describe('snapshot: MyCommentsView render branches', () => {
     const html = renderMy()
     // IntersectionObserver sentinel div.
     expect(html).toContain('class="h-1"')
-    // End-of-list copy suppressed while there is more to load.
     expect(html).not.toContain('已加载全部评论')
   })
 
@@ -338,7 +310,6 @@ describe('snapshot: MyCommentsView render branches', () => {
     expect(html).toContain('待审')
     // Clear-filters affordance only appears with active filters.
     expect(html).toContain('清除')
-    // Row still renders under the active filter.
     expect(html).toContain('data-slot="my-comment-row"')
   })
 
@@ -363,8 +334,7 @@ describe('snapshot: MyCommentsView render branches', () => {
       pages: [{ items: [makeItem({ id: '13' })], total: 1, hasMore: false }],
     }
     const html = renderMy({
-      // Pinned entity absent from the options list — the hook prepends a
-      // synthetic entry so the filter pill can resolve its label.
+      // Pinned entity absent from options — the hook prepends a synthetic entry.
       entity: 'post:missing',
       entityOptions: [{ value: 'post:1', label: 'Known Post' }],
     })
@@ -377,9 +347,7 @@ describe('snapshot: MyCommentsView render branches', () => {
     queryMocks.infinite.error = new Error('boom')
     queryMocks.infinite.data = { pages: [] }
     const html = renderMy()
-    // The view still renders its chrome — the error surfaces via a toast
-    // inside an effect, but the render path falls through to the empty
-    // branch because `items` is `[]`.
+    // Error surfaces via a toast effect; the render path falls through to the empty branch.
     expect(html).toContain('我的评论')
     expect(html).toContain('暂无评论')
   })

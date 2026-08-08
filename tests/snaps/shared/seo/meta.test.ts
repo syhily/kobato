@@ -2,9 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { routeMeta } from '@/shared/seo/meta'
 
-// Snapshot the full meta-tag head emitted for the three canonical page kinds
-// (default home, post detail, listing). A regression here changes the SEO
-// surface visible to crawlers, so we want it to surface as a PR diff.
+// Snapshot the head for the three canonical page kinds — SEO regressions surface as a PR diff.
 describe('snapshot: SEO meta head', () => {
   it('default (home / website) head', () => {
     const meta = routeMeta()

@@ -13,14 +13,9 @@ const queryMocks = mockTanstackQuery()
 
 queryMocks.mutation = { isPending: false, mutate: vi.fn(), mutateAsync: vi.fn() }
 
-// LikeButton + CommentActions + CommentReplyForm each drive `useMutation`
-// against the like / comment oRPC procedures. We mock `@tanstack/react-
-// query`'s `useMutation` to an inert pending-toggleable singleton (same
-// hoisted-singleton pattern as musics-view) so the views never issue real
-// network calls and the pending branch is reachable per-test.
+// useMutation is stubbed to an inert pending-toggleable singleton (musics-view pattern) so the pending branch is reachable per-test.
 
-// `useCommentGuest` (read by CommentReplyForm) reads localStorage; supply a
-// stable no-guest default so the SSR render does not touch storage.
+// useCommentGuest reads localStorage — stub a no-guest default for SSR.
 vi.mock('@/client/hooks/use-comment-guest', () => ({
   useCommentGuest: () => ({
     profile: null,
@@ -29,16 +24,12 @@ vi.mock('@/client/hooks/use-comment-guest', () => ({
   }),
 }))
 
-// `LazyCommentBodyEditor` lazy-imports a TipTap-backed editor on the client;
-// its SSR placeholder is a textarea, which is what we want. Replace it with a
-// deterministic element so the snapshot never depends on the lazy boundary.
+// Replace the lazy TipTap editor with a deterministic textarea so SSR output is stable.
 vi.mock('@/ui/public/comments/LazyCommentBodyEditor', () => ({
   LazyCommentBodyEditor: ({ bodyKey }: { bodyKey: string }) => (
     <textarea data-test="comment-body-editor" data-body-key={bodyKey} />
   ),
 }))
-
-// ──────────────────────────── fixtures ────────────────────────────
 
 function makeComment(overrides: Partial<CommentItemType> = {}): CommentItemType {
   return {
@@ -76,18 +67,14 @@ function makeComment(overrides: Partial<CommentItemType> = {}): CommentItemType 
   }
 }
 
-// ─────────────────────────── LikeButton ───────────────────────────
-
 describe('snapshot: LikeButton', () => {
   it('renders the not-liked state with the like count', () => {
     const html = stableHtml(renderToHtml(<LikeButton permalink="/posts/hello" commentKey="post-1" likes={42} />))
-    // The like button copy is fully present.
     expect(html).toContain('点赞')
     expect(html).toContain('aria-label="点赞"')
     expect(html).toContain('aria-pressed="false"')
     expect(html).toContain('data-liked="false"')
-    // NumberFlow is lazy-loaded (interaction-only chrome), so SSR renders
-    // the Suspense fallback: the plain count.
+    // NumberFlow is lazy-loaded → SSR renders the Suspense fallback plain count.
     expect(html).toContain('<span>42</span>')
   })
 
@@ -95,7 +82,6 @@ describe('snapshot: LikeButton', () => {
     const html = stableHtml(renderToHtml(<LikeButton permalink="/posts/hello" commentKey="post-1" likes={0} />))
     expect(html).toContain('<span>0</span>')
     expect(html).toContain('点赞')
-    // Button is not disabled in the idle (non-pending) state.
     expect(html).not.toContain('disabled=""')
   })
 
@@ -112,11 +98,7 @@ describe('snapshot: LikeButton', () => {
   })
 })
 
-// ───────────────────────────── LikeShare ──────────────────────────
-// `LikeShare` is already covered in `like-actions.test.tsx`. We re-assert
-// here only the permalink-driven share URL shape for a page (not post) so
-// the branch that joins the website root with the relative permalink has a
-// neighbour test in the same file.
+// LikeShare is covered in like-actions.test.tsx; here only the page (root-joined) share URL shape.
 
 describe('snapshot: LikeShare (page permalink)', () => {
   it('renders share buttons with the absolute page URL', () => {
@@ -135,13 +117,10 @@ describe('snapshot: LikeShare (page permalink)', () => {
     // The QQ / Weibo share URLs embed the absolute URL (joined with the
     // test-bundle website `https://example.com`).
     expect(html).toContain('url=https%3A%2F%2Fexample.com%2Fabout')
-    // The weibo share title wraps the post title — `【关于】About this blog.`
-    // — which is URL-encoded inside the href query string.
+    // Weibo title wraps the post title, URL-encoded in the href.
     expect(html).toContain('title=%E3%80%90%E5%85%B3%E4%BA%8E%E3%80%91')
   })
 })
-
-// ────────────────────────── CommentActions ────────────────────────
 
 describe('snapshot: CommentActions', () => {
   it('renders only the reply affordance in public mode for a foreign comment', () => {
@@ -180,10 +159,8 @@ describe('snapshot: CommentActions', () => {
     // Reply + admin edit (admin viewer → admin branch of the edit gate).
     expect(html).toContain('回复')
     expect(html).toContain('编辑')
-    // isPending=true → the "通过" approve button renders.
     expect(html).toContain('通过')
-    // Admin delete affordance. AlertDialog content is portalled and only
-    // mounts when open, so on SSR we assert only on the trigger button copy.
+    // AlertDialog content is portalled — SSR asserts only the trigger copy.
     expect(html).toContain('删除')
   })
 
@@ -199,7 +176,6 @@ describe('snapshot: CommentActions', () => {
     )
     expect(html).toContain('编辑')
     expect(html).toContain('删除')
-    // Approved → no "通过" approve affordance.
     expect(html).not.toContain('通过')
   })
 
@@ -217,8 +193,7 @@ describe('snapshot: CommentActions', () => {
         '/posts/1',
       ),
     )
-    // Owned by the current viewer → own-edit + request-delete show, the admin
-    // edit / approve / delete branches stay hidden.
+    // Owned by viewer → own-edit + request-delete; admin branches hidden.
     expect(html).toContain('回复')
     expect(html).toContain('修改')
     expect(html).toContain('申请删除')
@@ -247,8 +222,6 @@ describe('snapshot: CommentActions', () => {
   })
 })
 
-// ───────────────────────── CommentReplyForm ───────────────────────
-
 describe('snapshot: CommentReplyForm', () => {
   it('renders the top-level (no reply target) form with name / email / link fields', () => {
     const html = stableHtml(
@@ -257,16 +230,14 @@ describe('snapshot: CommentReplyForm', () => {
         '/posts/1',
       ),
     )
-    // Avatar + body editor stub.
     expect(html).toContain('/images/default-avatar.png')
     expect(html).toContain('data-test="comment-body-editor"')
     // Anonymous-mode identity inputs are visible (not hidden).
     expect(html).toContain('id="comment-name"')
     expect(html).toContain('id="comment-email"')
     expect(html).toContain('id="comment-url"')
-    // No reply target → the "再想想" cancel button is omitted.
     expect(html).not.toContain('再想想')
-    // Submit copy + honeypot (non-admin viewers see the honeypot).
+    // Non-admin viewers see the honeypot.
     expect(html).toContain('发表评论')
     expect(html).toContain('name="subtitle"')
   })
@@ -299,7 +270,6 @@ describe('snapshot: CommentReplyForm', () => {
     // Reply overlay quotes the target author + a clipped snippet.
     expect(html).toContain('回复 @雨帆')
     expect(html).toContain('回复内容片段。')
-    // Reply mode → the cancel button shows.
     expect(html).toContain('再想想')
     // The hidden rid input carries the target id.
     expect(html).toContain('value="42"')

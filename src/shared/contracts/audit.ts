@@ -1,7 +1,5 @@
 import { z } from 'zod'
 
-// Audit Log DTOs
-
 export const auditLogItemDto = z.object({
   id: z.string(),
   action: z.string(),

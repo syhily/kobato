@@ -8,8 +8,6 @@ import { fileURLToPath } from 'node:url'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(__dirname, '..')
 
-// --- Utilities ---
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
@@ -50,8 +48,6 @@ function getBranch(): string {
   return run('git branch --show-current')
 }
 
-// --- Commands ---
-
 function cmdSinceLast(): void {
   const tag = run('git describe --tags --abbrev=0')
   process.stdout.write(tag)
@@ -68,7 +64,6 @@ function cmdBump(version: string): void {
   const lockPath = 'pnpm-lock.yaml'
   const composePath = 'docker-compose.yml'
 
-  // Bump package.json
   const pkg = readJson(pkgPath)
   if (!isRecord(pkg)) {
     throw new Error('Invalid package.json')
@@ -77,14 +72,12 @@ function cmdBump(version: string): void {
   pkg['version'] = version
   writeJson(pkgPath, pkg)
 
-  // Update docker-compose.yml image tag
   if (existsSync(resolve(ROOT, composePath))) {
     let compose = readFileSync(resolve(ROOT, composePath), 'utf-8')
     compose = compose.replace(/ghcr\.io\/syhily\/kobato:[^\s]+/, `ghcr.io/syhily/kobato:${version}`)
     writeFileSync(resolve(ROOT, composePath), compose)
   }
 
-  // Stage and commit
   run(`git add ${pkgPath} ${lockPath} ${composePath}`)
   run(`git commit -m "build: release ${version}"`)
 
@@ -105,13 +98,11 @@ function cmdTag(args: string[]): void {
   }
   const version = requireString(pkg, 'version')
 
-  // Check tag doesn't already exist
   const tags = run('git tag --list').split('\n')
   if (tags.includes(version)) {
     throw new Error(`Tag ${version} already exists.`)
   }
 
-  // Verify gh CLI is available
   try {
     run('gh --version')
   } catch {
@@ -125,18 +116,14 @@ function cmdTag(args: string[]): void {
 
   const prerelease = args.includes('--prerelease') ? '--prerelease' : ''
 
-  // Create annotated tag
   run(`git tag -a "${version}" -m "Kobato ${version}"`)
   process.stdout.write(`Created tag ${version}\n`)
 
-  // Push tag
   run(`git push origin "${version}"`)
   process.stdout.write(`Pushed tag ${version}\n`)
 
-  // Create the GitHub release as a DRAFT: sea.yml uploads the SEA assets
-  // asynchronously, and only publishes (gh release edit --draft=false)
-  // after every binary is attached — users must never see a release with
-  // missing assets. If the upload fails, the draft stays for manual fixing.
+  // DRAFT: sea.yml publishes it after every SEA asset is attached — users
+  // must never see a release with missing assets.
   run(`gh release create "${version}" --draft --title "Kobato ${version}" ${notesFlag} ${prerelease}`)
   process.stdout.write(
     `GitHub draft release created: https://github.com/syhily/kobato/releases/tag/${version}\n` +
@@ -161,30 +148,24 @@ function cmdPrepareNext(): void {
     throw new Error('Invalid package.json')
   }
   const oldVersion = requireString(pkg, 'version')
-  // Strip any prerelease suffix from the old version to get the base
   const baseVersion = oldVersion.split('-')[0]
   const parts = baseVersion.split('.').map(Number)
   const nextVersion = `${parts[0]}.${parts[1]}.${parts[2] + 1}-dev`
 
-  // Update package.json
   pkg['version'] = nextVersion
   writeJson(pkgPath, pkg)
 
-  // Update docker-compose.yml to latest
   if (existsSync(resolve(ROOT, composePath))) {
     let compose = readFileSync(resolve(ROOT, composePath), 'utf-8')
     compose = compose.replace(/ghcr\.io\/syhily\/kobato:[^\s]+/, 'ghcr.io/syhily/kobato:latest')
     writeFileSync(resolve(ROOT, composePath), compose)
   }
 
-  // Stage and commit
   run(`git add ${pkgPath} ${lockPath} ${composePath}`)
   run(`git commit -m "chore: prepare next development cycle"`)
 
   process.stdout.write(`Prepared ${nextVersion} on develop (from ${oldVersion})`)
 }
-
-// --- Main ---
 
 const [, , command, ...args] = process.argv
 

@@ -1,20 +1,8 @@
-// Process-local memoization primitives. Plain module-scope state machines
-// — no React, no Node APIs — so they run identically in the server and
-// client bundles.
-//
-// Single-flight vocabulary used across the codebase: "share-in-flight"
-// means concurrent callers await the same promise; the failure policy is
-// one of "retry" (drop the rejected promise), "keep-stale" (serve the
-// last good value), or "no-cache" (never store the empty result).
+// Process-local memoization primitives (no React, no Node APIs).
+// "Share-in-flight" = concurrent callers await the same promise; failure
+// policy: retry | keep-stale | no-cache.
 
-/**
- * Failure-resetting async memo: the first call starts `loader` and every
- * concurrent caller shares that in-flight promise; a resolved value is
- * memoized for the lifetime of the module. Single-flight semantics:
- * share-in-flight; failure: retry — a rejected promise is dropped, so
- * the next call runs `loader` again instead of serving a cached
- * rejection.
- */
+/** Failure-resetting async memo: concurrent callers share the in-flight promise; a rejection is dropped and the next call retries. */
 export function createPromiseMemo<T>(loader: () => Promise<T>): () => Promise<T> {
   let pending: Promise<T> | null = null
   return () => {
@@ -37,11 +25,7 @@ export interface BoundedMap<K, V> {
   keys: () => IterableIterator<K>
 }
 
-/**
- * FIFO-evict bounded map: inserting a NEW key while at capacity evicts
- * the oldest-inserted entry. Re-setting an existing key updates it in
- * place (insertion order is preserved) and never triggers an eviction.
- */
+/** FIFO-evict bounded map: a NEW key at capacity evicts the oldest; re-setting an existing key never evicts. */
 export function createBoundedMap<K, V>(cap: number): BoundedMap<K, V> {
   const map = new Map<K, V>()
   return {

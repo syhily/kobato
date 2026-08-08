@@ -1,8 +1,6 @@
-// The resolved-theme cookie: written by the UI `ThemeProvider` on every
-// theme change, read server-side by `content.bootstrap` so SSR can stamp
-// the theme class (and `color-scheme`) on `<html>` without a flash of the
-// wrong theme. Isomorphic by design — the cookie name is shared by the
-// browser writer and the server reader.
+// The resolved-theme cookie: written by the UI `ThemeProvider`, read
+// server-side by `content.bootstrap` so SSR stamps the theme class
+// without a wrong-theme flash. Cookie name shared by writer + reader.
 export const THEME_COOKIE = 'kobato-blog-theme'
 
 export type ResolvedTheme = 'dark' | 'light'

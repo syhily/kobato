@@ -7,14 +7,8 @@ import { page as pageTable } from '@/server/infra/db/schema/page'
 import { post as postTable } from '@/server/infra/db/schema/post'
 import { buildSitemapXml } from '@/server/render/seo/sitemap'
 
-// The sitemap builder reads `slug` + `firstPublishedAt` + `publishedAt`
-// from the slim projections (`listSitemapPosts` / `listSitemapPages`).
-// Real engine: seeded meta rows prove the live gate does the draft /
-// scheduled exclusion for real — the builder trusts the projections,
-// and the XML shape is asserted against actual query results.
-//
-// The worker-seeded `TEST_BLOG_SETTINGS_BUNDLE` pins
-// `siteIdentity.website = https://example.com`.
+// Sitemap XML from the real slim projections + live gate; the worker-seeded
+// settings pin `siteIdentity.website = https://example.com`.
 
 const db = getTestDb()
 
@@ -122,8 +116,7 @@ describe('buildSitemapXml', () => {
     await seedPost({ slug: 'only-published', firstPublishedAt: date, publishedAt: date })
     // published = false — the live gate's `published` leg drops it.
     await seedPost({ slug: 'draft-post', published: false, publishedAt: date, withRevision: false })
-    // Published with a revision but dated in the future — the
-    // `publishedAt <= now` leg drops it.
+    // Published with a revision but dated in the future — the `publishedAt <= now` leg drops it.
     await seedPost({ slug: 'scheduled-post', publishedAt: new Date('2099-01-01') })
 
     const xml = await buildSitemapXml(db)
@@ -133,8 +126,7 @@ describe('buildSitemapXml', () => {
   })
 
   it('escapes special XML characters in loc', async () => {
-    // Although slugs are validated to be URL-safe, the builder must still
-    // escape any `&`/`<`/`>` that could appear so the XML stays well-formed.
+    // Slugs are URL-safe by validation, but the builder must still escape `&`/`<`/`>` for well-formed XML.
     const date = new Date('2024-10-01T00:00:00.000Z')
     await seedPost({ slug: 'a&b<c>', firstPublishedAt: date, publishedAt: date })
 

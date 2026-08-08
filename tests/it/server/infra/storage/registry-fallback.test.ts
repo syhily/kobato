@@ -10,13 +10,10 @@ import { STORAGE_DIR } from '@/server/infra/paths'
 import { localBackend, resolveLocalPath } from '@/server/infra/storage/backends/local'
 import { activeBackend, isS3Primary } from '@/server/infra/storage/registry'
 
-// The local backend resolves its root from DATA_PATH at module load. The it
-// setup pins DATA_PATH to a throwaway tmp root, so these tests exercise real
-// filesystem semantics without ever touching the dev data directory.
+// The it setup pins DATA_PATH to a throwaway tmp root, so these tests touch real files, never the dev data dir.
 const TEST_PREFIX = 'it-registry-fallback'
 
-// Same shape as the default test bundle but with S3 disabled — mirrors a
-// fresh install before the operator configures a bucket.
+// Default test bundle with S3 disabled — mirrors a fresh install.
 const LOCAL_ONLY_BUNDLE: BlogSettingsBundle = {
   ...TEST_BLOG_SETTINGS_BUNDLE,
   assets: {
@@ -56,9 +53,7 @@ describe('storage/registry — local fallback', () => {
   })
 
   it('resolves to s3 under the default test bundle (the fallback is not vacuous)', () => {
-    // The shared fixture enables a fully-configured bucket, so this proves
-    // the local result above comes from the S3 availability check and not
-    // from a registry that always answers "local".
+    // Proves the local result above comes from the S3 availability check, not a registry hardwired to 'local'.
     const resolved = activeBackend()
 
     expect(resolved.driver).toBe('s3')
@@ -87,15 +82,12 @@ describe('storage/registry — local fallback', () => {
     expect(readBack.equals(body)).toBe(true)
 
     await backend.delete(key)
-    // Real filesystem semantics the S3 SDK mocks cannot exercise: the object
-    // is gone both through the backend contract and on disk.
     expect(await backend.exists(key)).toBe(false)
     expect(existsSync(abs)).toBe(false)
   })
 
   it('falls back to local without throwing when the settings snapshot is not hydrated yet', () => {
-    // Early-boot / install-gate state: the snapshot slot is empty, so the
-    // S3 availability check throws — the registry must degrade to local.
+    // Unhydrated snapshot: the S3 availability check throws — the registry must degrade to local.
     setBlogSettingsBundleForTests(undefined)
 
     let resolved: ReturnType<typeof activeBackend> | undefined

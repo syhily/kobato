@@ -5,11 +5,7 @@ import { orpcQuery } from '@/client/api/orpc-query'
 
 const DEBOUNCE_MS = 200
 
-/**
- * Debounced `admin.renderMath` preview — same KaTeX renderer as inline math
- * (`MathInlinePanel`) and the save-time prerender pass (`display` mirrors
- * inline vs block math).
- */
+/** Debounced `admin.renderMath` preview; `display` mirrors inline vs block math. */
 export function useAdminMathPreview(
   tex: string,
   display: boolean,
@@ -37,9 +33,7 @@ export function useAdminMathPreview(
     },
   })
 
-  // Clear preview when tex becomes empty, and track the last valid render
-  // for continuity. Both run as render-phase adjustments to avoid
-  // setState-in-effect cascades.
+  // Clear preview on empty tex, track the last valid render — render-phase adjustments avoid setState-in-effect cascades.
   const [lastTex, setLastTex] = useState(tex)
   if (tex !== lastTex) {
     setLastTex(tex)

@@ -140,9 +140,7 @@ describe('listCategoriesForAdmin', () => {
     expect(result.categories[0]?.postCount).toBe(0)
   })
 
-  // Regression for the drifted gates: the admin list and the count
-  // returned by upsert must come from the same live-gate definition, so
-  // a draft + a published post both count as exactly 1 on either path.
+  // Regression for drifted gates: list and upsert counts share one live-gate definition.
   it('list count and upsert-returned count agree (both exclude drafts)', async () => {
     const [cat] = await db
       .insert(category)

@@ -3,20 +3,8 @@ import type { Database } from '@/server/infra/db/database'
 import { bumpCounter, clear } from '@/server/infra/cache/registry'
 
 /**
- * The single content-invalidation door. A mutation that changes what a
- * public surface shows emits one coarse event here instead of touching
- * cache buckets directly; this module owns the complete event → side
- * effect mapping. Best-effort — the cache verbs already log and swallow
- * failures, so call sites never try/catch.
- *
- * Mapping notes:
- * - post: feed XML, taxonomy lists, and the sitemap embed post data,
- *   and the search corpus changes with the post set → bump `searchResult`.
- * - page: only the sitemap lists pages; pages are outside the search corpus.
- * - category/tag: taxonomy list bucket AND the whole feed bucket — feed
- *   entries are keyed by taxonomy slug, so a rename would otherwise serve
- *   stale XML until the feed TTL.
- * - comment: the sidebar latest-comments list.
+ * The single content-invalidation door: mutations emit one coarse event,
+ * mapped to cache buckets here. Best-effort — call sites never try/catch.
  */
 export type ContentInvalidationEvent =
   | { entity: 'post' }

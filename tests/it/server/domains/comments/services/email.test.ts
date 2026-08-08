@@ -8,12 +8,8 @@ import { sendNewComment } from '@/server/domains/comments/services/email'
 import { post } from '@/server/infra/db/schema/post'
 import { sendTestMail } from '@/server/infra/email/sender'
 
-// `sendNewComment` against the real engine: the slug/title lookup hits a
-// seeded post row and `commentBodyToHtml` renders the fixture's real PT
-// body — both were module mocks in the unit era, but the unit-era claim
-// that the renderer drags in Shiki/KaTeX was stale (it is a pure
-// string builder). The only stub left is `fetch`: the Zeabur ZSend
-// HTTPS call is a genuine external boundary.
+// `sendNewComment` against the real engine: the slug/title lookup and
+// `commentBodyToHtml` are real; only `fetch` (Zeabur ZSend) is stubbed.
 
 const db = getTestDb()
 
@@ -31,8 +27,7 @@ function setMail(mail: Partial<MailFixture>) {
   })
 }
 
-// The post every comment-fired test below points at: slug `hi`, title
-// `Hi`, resolved through the real `findEntitySlugTitle`.
+// Shared target post: slug `hi` / title `Hi`, resolved by the real slug lookup.
 async function seedTargetPost(): Promise<number> {
   const rows = await db
     .insert(post)
@@ -50,16 +45,13 @@ beforeEach(async () => {
 })
 
 afterEach(() => {
-  // Restore the global fixture installed by `tests/setup.ts` so the
-  // next test in this file (and other files reusing the worker) sees a
-  // hydrated snapshot.
+  // Restore the setup fixture so the next test sees a hydrated snapshot.
   setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
   vi.unstubAllGlobals()
 })
 
 describe('email/sender — internalSend (via sendNewComment)', () => {
-  // Fixture row used by every comment-fired test below. `body` is a real
-  // PortableText body rendered by the real `commentBodyToHtml`.
+  // Fixture row used below; the PT body is rendered by the real `commentBodyToHtml`.
   const commentInfo = {
     id: 7,
     body: [{ _type: 'block', children: [{ _type: 'span', text: 'hello' }] }],

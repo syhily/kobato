@@ -6,23 +6,11 @@ import { getCounter, through } from '@/server/infra/cache/registry'
 import { getLogger } from '@/server/infra/logger'
 import { likeCacheKeyParts, runLikeSearch } from '@/server/infra/search/like'
 
-// Search-result cache
-//
-// The full ordered slug list for a query is cached so pagination never
-// re-runs the database query. The cache key incorporates every input
-// that could change the result set:
-//   - the cache generation (a `kv_cache` counter owned by the
-//     `searchResult` cache declaration — bumping it orphans every entry
-//     stamped with an older generation, so invalidation never enumerates
-//     keys)
-//   - the query itself — search is LIKE-only, so nothing else varies
-//     the result set
-//
-// Value is the slug array itself — short strings, negligible overhead.
-// Empty result sets are never cached (cacheWhen on the declaration).
+// Search-result cache: the full ordered slug list per query, so pagination
+// never re-runs the DB query. Key = generation + query; empty result sets
+// are never cached (cacheWhen on the declaration).
 
-// The visibility gate is supplied by the caller (infra has zero business
-// knowledge — the "live" rule lives in `@/server/domains/content/schemas/live-gate`).
+// Visibility gate comes from the caller — infra has zero business knowledge.
 export async function searchPosts(
   db: Database,
   baseWhere: SQL,

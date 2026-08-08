@@ -35,17 +35,12 @@ function isHmrData(value: unknown): value is { secretsMigrated?: boolean } {
 
 const hmr = isHmrData(import.meta.hot?.data) ? import.meta.hot.data : undefined
 
-// ─── Server assembly ─────────────────────────────────────
-
 const app = await createHonoServer<Env>({
   autoServe: false,
   configure(app) {
     configureMiddleware(app)
   },
-  // Must be async because `buildLoadContext` awaits `hydrateBlogSettings`.
-  // createHonoServer handles both sync and async getLoadContext, but
-  // keeping the `async` keyword here makes the promise boundary explicit
-  // and prevents a future edit from accidentally dropping the await.
+  // Keep `async` — dropping the await on `buildLoadContext` would lose `hydrateBlogSettings`.
   async getLoadContext(c) {
     return buildLoadContext(c)
   },
@@ -55,11 +50,7 @@ wrapFetchWithLeakedResponseHandler(app)
 
 setRestartApp(app)
 
-// ─── Scheduled tasks & startup migrations ────────────────
-//
-// Run migrations and hydrate settings before starting schedulers
-// so they never hit the "Settings not hydrated" race condition.
-// The entire block is HMR-safe (guarded by `secretsMigrated`).
+// Migrations and settings hydration must finish before schedulers start — else the "Settings not hydrated" race. Block is HMR-safe via `secretsMigrated`.
 
 if (!hmr?.secretsMigrated) {
   await migrateSecretsEncryption(getDb())
@@ -80,11 +71,7 @@ if (!hmr?.secretsMigrated) {
   }
 }
 
-// ─── Setup token (uninstalled deployments only) ──────────
-// Generate the one-time setup token on startup so operators can
-// read it from the console / docker logs before visiting the
-// install wizard.  Swallow errors (e.g. database unreachable) — the
-// token will be lazily created on the first visit to /admin/setup.
+// Uninstalled deployments only: emit the setup token at startup for the console/docker logs; errors are swallowed — /admin/setup creates it lazily.
 
 try {
   if (!(await hasAdmin(getDb()))) {
@@ -97,12 +84,7 @@ try {
   )
 }
 
-// ─── Eagerly warm the sharp worker pool (prod only) ──────
-//
-// In production we start the worker_threads pool up-front so the first
-// upload doesn't pay the ~50ms-per-worker spawn tax. The pool is lazy
-// by default (see `getProcessPool`), so this is an optimisation, not a
-// hard requirement. Dev skips it — the dev path runs sharp inline.
+// PROD: warm the worker pool up-front — the lazy default would tax the first upload; dev runs sharp inline.
 if (import.meta.env.PROD) {
   try {
     await getProcessPool()
@@ -113,8 +95,6 @@ if (import.meta.env.PROD) {
     )
   }
 }
-
-// ─── Start HTTP server ───────────────────────────────────
 
 const httpServer = import.meta.env.PROD
   ? serve({ fetch: app.fetch.bind(app), port: serverConfig.server.port }, (info) => {

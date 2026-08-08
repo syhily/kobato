@@ -8,18 +8,12 @@ import type { MetricRow } from '@/shared/contracts/analytics'
 import type { DraftSummary } from '@/shared/contracts/dashboard'
 import type { AdminPostDto } from '@/shared/contracts/posts'
 
-// ─── The admin SSR wire contract ─────────────────────────
 // The admin/me dashboard, settings, session, and analytics SSR loaders
 // reach their data through these procedures (in-process via
-// `@/server/http/ssr-caller`), so the wire contract is declared here once
-// and shared by both ends — same `z.custom<T>()` bargain as
-// `contracts/content.ts`: rich loader-data outputs reuse the historical
-// loader-data / domain types EXACTLY (bit-identical SSR payloads), and
-// HTTP-path coverage is planned in `tests/it/server/http/admin-api.test.ts`.
-// Inputs and simple scalar outputs still use real Zod. See
-// `src/shared/AGENTS.md` → Zod DTO single source.
+// `@/server/http/ssr-caller`) — same `z.custom<T>()` bargain as
+// `contracts/content.ts`; HTTP-path coverage in
+// `tests/it/server/http/admin-api.test.ts` (see `src/shared/AGENTS.md`).
 
-// ─── account.profile / account.sessions ─────────────────
 // `getAccountProfile`'s full projection (deleted-mid-session rows degrade
 // to empty fields) plus the two feature switches the profile page renders.
 export const accountProfileOutputSchema = z.object({
@@ -34,18 +28,14 @@ export type AccountProfileOutput = z.infer<typeof accountProfileOutputSchema>
 export const accountSessionsOutputSchema = z.custom<SessionMeta[]>()
 export type AccountSessionsOutput = z.infer<typeof accountSessionsOutputSchema>
 
-// ─── admin.users.* ───────────────────────────────────────
 export const adminUsersCountOutputSchema = z.number().int().nonnegative()
 
 export const adminUsersListSessionsOutputSchema = z.custom<SessionWithUser[]>()
 
 export const adminUsersPasskeyFlagOutputSchema = z.boolean()
 
-// ─── comments-authed.* ───────────────────────────────────
 // The full `countMyComments` tuple — the profile card renders all four
-// counters (the third row is "申请删除"), and the dashboard reads
-// total/pending. The service tuple passes through unchanged so the SSR
-// loaderData stays bit-identical to the historical direct call.
+// counters; the service tuple passes through unchanged.
 export const commentsMyCountsOutputSchema = z.object({
   total: z.number().int().nonnegative(),
   pending: z.number().int().nonnegative(),
@@ -54,16 +44,14 @@ export const commentsMyCountsOutputSchema = z.object({
 })
 export type CommentsMyCountsOutput = z.infer<typeof commentsMyCountsOutputSchema>
 
-// Follow-up resolve for a URL-pinned `type:ownerId` entity that is not in
-// the mine-comments entity list — `null` when the entity key is malformed
-// or the entity was hard-deleted (the caller keeps the pinned raw key).
+// Follow-up resolve for a URL-pinned `type:ownerId` entity not in the
+// mine-comments list; null when malformed or hard-deleted.
 export const commentsResolveEntityInputSchema = z.object({
   entity: z.string().min(1).max(2048),
 })
 export const commentsResolveEntityOutputSchema = z.object({ value: z.string(), label: z.string() }).nullable()
 export type CommentsResolveEntityOutput = z.infer<typeof commentsResolveEntityOutputSchema>
 
-// ─── admin.comments.* / admin.webmentions.* ──────────────
 // `countAdminPendingDashboard` projected to the `{ all }` badge the
 // admin layout renders; the approval/deletion split stays server-side.
 export const adminCommentsPendingCountOutputSchema = z.object({
@@ -72,7 +60,6 @@ export const adminCommentsPendingCountOutputSchema = z.object({
 
 export const adminWebmentionsPendingCountOutputSchema = z.number().int().nonnegative()
 
-// ─── admin.posts.mySummary ───────────────────────────────
 // Draft/published counts + the two recent-5 lists the dashboard cards
 // consume (projected to `DraftSummary`, identical to `loaders/dashboard.ts`).
 export const adminPostsMySummaryOutputSchema = z.object({
@@ -83,10 +70,8 @@ export const adminPostsMySummaryOutputSchema = z.object({
 })
 export type AdminPostsMySummaryOutput = z.infer<typeof adminPostsMySummaryOutputSchema>
 
-// ─── admin.analytics.* ───────────────────────────────────
-// `search` carries the raw query string (`preset=…&startAt=…&filters=…`);
-// `parseAnalyticsSearch` stays server-side so the URL grammar lives in
-// one place.
+// `search` carries the raw query string; `parseAnalyticsSearch` stays
+// server-side so the URL grammar lives in one place.
 export const adminAnalyticsSearchInputSchema = z.object({
   search: z.string().max(16_384),
 })
@@ -98,10 +83,8 @@ export const adminAnalyticsMentionsOutputSchema = z.object({
   referers: z.custom<MetricRow[]>(),
 })
 
-// ─── admin.posts.analytics ───────────────────────────────
-// The per-post analytics payload: the admin post DTO plus the overview
-// fan-out scoped to that post. Shape-identical to the historical
-// `loaders/post-analytics.ts` `PostAnalyticsData`.
+// Per-post analytics payload: the admin post DTO plus the overview
+// fan-out scoped to that post.
 export const adminPostAnalyticsInputSchema = z.object({
   postId: z.number().int().positive(),
   search: z.string().max(16_384),
@@ -114,11 +97,10 @@ export interface AdminPostAnalyticsData extends AnalyticsOverviewData {
 export const adminPostAnalyticsOutputSchema = z.custom<AdminPostAnalyticsData>()
 export type AdminPostAnalyticsOutput = z.infer<typeof adminPostAnalyticsOutputSchema>
 
-// ─── admin.settings.bootstrap ────────────────────────────
-// The settings layout loader data: the redacted (secrets stripped) fully
-// backfilled bundle, the IANA timezone list, and the secret masks for the
-// admin UI hints. `SERVICE_UNAVAILABLE` (503) carries the uninstalled /
-// truncated-sections semantics the layout route currently throws.
+// Settings layout loader data: the redacted (secrets stripped) backfilled
+// bundle, the IANA timezone list, and the secret masks. `SERVICE_UNAVAILABLE`
+// (503) carries the uninstalled / truncated-sections semantics the layout
+// route currently throws.
 export const adminSettingsBootstrapOutputSchema = z.object({
   bundle: z.custom<SettingsBundle>(),
   timeZones: z.custom<readonly string[]>(),

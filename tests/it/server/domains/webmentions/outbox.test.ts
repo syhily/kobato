@@ -1,9 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The real-send describe below drives `sendWebmention` through the REAL
-// safeFetch stack — only the network boundary is stubbed: `fetch` via
-// installFetch, DNS to a fixed public address (same discipline as
-// tests/unit/server/infra/safe-fetch.test.ts).
+// The real-send path drives sendWebmention through the REAL safeFetch stack — only the network boundary is stubbed.
 vi.mock('node:dns/promises', () => ({
   lookup: async () => [{ address: '93.184.216.34', family: 4 }],
 }))

@@ -11,8 +11,6 @@ import type {
 
 import { parseLocalDateTimeInput } from '@/ui/admin/editor-shell/editor-datetime'
 
-// --- Publish-state derivation -----------------------------------------------
-
 export function derivePublishState(
   latest: RevisionLike | null,
   published: RevisionLike | null,
@@ -34,12 +32,8 @@ export function derivePublishState(
   }
 }
 
-// --- Baseline revision projection -------------------------------------------
-
-// The baseline revision is the server's most advanced copy of the body: the
-// latest revision when one exists, else the published one. This precedence
-// has a single owner — every consumer (body seed, bodyKey, expected token,
-// conflict-dialog timestamp) derives from these two projections.
+// Baseline = latest revision, else the published one — single owner; every
+// consumer (body seed, bodyKey, expected token) derives from these projections.
 export function deriveBaselineRevision<TEntity extends EntityLike>(
   detail: EditorShellDetail<TEntity> | undefined,
 ): RevisionLike | null {
@@ -49,9 +43,8 @@ export function deriveBaselineRevision<TEntity extends EntityLike>(
   return detail.latestRevision ?? detail.publishedRevision
 }
 
-// ms-since-epoch of the baseline revision's last update, falling back to the
-// entity row's own `updatedAt` when no revision exists yet (a freshly created
-// entity whose first saveDraft leg failed still has a meaningful timestamp).
+// Baseline revision's ms-since-epoch, falling back to the entity row's own
+// `updatedAt` when no revision exists yet.
 export function deriveBaselineUpdatedAtMs<TEntity extends EntityLike>(
   detail: EditorShellDetail<TEntity> | undefined,
 ): number | null {
@@ -62,8 +55,6 @@ export function deriveBaselineUpdatedAtMs<TEntity extends EntityLike>(
   const ms = Date.parse(iso)
   return Number.isNaN(ms) ? null : ms
 }
-
-// --- Sidebar derivations ----------------------------------------------------
 
 export function deriveSidebarPublishStatus(args: {
   isEditing: boolean

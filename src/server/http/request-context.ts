@@ -7,29 +7,9 @@ import type { Database } from '@/server/infra/db/database'
 import type { RequestFacts } from '@/server/infra/http/request-facts'
 
 /**
- * The canonical per-request fact base — the lightweight CONTRACT module:
- * the type, the React Router context key, and the route-side accessor.
- * Derivation lives in `@/server/http/middlewares/request-context` (which
- * pulls the db/session/infra graph); this module deliberately imports
- * nothing at runtime beyond `react-router` so route modules and test
- * helpers can import the key without dragging the server graph in.
- *
- * Derived exactly once per request by `requestContextMiddleware` and
- * projected onto the three context surfaces:
- *
- *  - Hono:      `c.var.requestContext` (the only var besides `requestId`)
- *  - oRPC:      `HandlerContext` — explicit field copy + `responseHeaders`,
- *               deliberately WITHOUT `markSessionDirty` (read-only session)
- *  - React Router: the `requestContext` key below on the
- *               `RouterContextProvider`
- *
- * Rules the derivation owns so no consumer re-derives them:
- *  - proxy-aware client address (`clientAddress`)
- *  - session → identity projection (`viewer` IS the `SessionUser`)
- *  - URL normalization (`url` is the document URL — `.data` stripped)
- *  - the per-request db handle (recreation on restore stays visible)
- *  - the single CSP nonce
- *  - session dirty tracking (`markSessionDirty` → one commit at the seam)
+ * The canonical per-request fact base — the CONTRACT module: type, React
+ * Router context key, route-side accessor. Imports nothing at runtime
+ * beyond `react-router`; derived once by `requestContextMiddleware`.
  */
 export interface RequestContext {
   session: BlogSession
@@ -42,17 +22,11 @@ export interface RequestContext {
   db: Database
   cspNonce: string
   /**
-   * Mark the session as mutated. The perimeter middleware commits it
-   * (Set-Cookie) after the response resolves — the ONLY commit point for
-   * same-session mutations. Sid-changing flows (login rotation) keep
-   * their explicit Set-Cookie channel; see ADR-0003.
+   * Mark the session mutated — the middleware commits it after the response
+   * (the ONLY commit point; sid-changing flows keep their own channel, ADR-0003).
    */
   markSessionDirty(): void
 }
-
-// ─── React Router projection ────────────────────────────
-// The RR-side accessor for the canonical context — the single key every
-// loader/action reads via `getRequestContext`.
 
 export const requestContext = createContext<RequestContext>()
 

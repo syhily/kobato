@@ -9,11 +9,8 @@ export function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
 }
 
-// Section schemas wrap nested objects in transparent layers —
-// `cors: z.object({...}).default({...})`, optional secrets, pipes such as
-// `coerceBoolean`. Unwrap those layers until a plain object appears;
-// anything else is a leaf whose VALUE the post-merge validation owns
-// (arrays replace wholesale, so their element shapes are never walked).
+// Unwrap transparent schema layers (default / optional / pipe…) until a plain object
+// appears; anything else is a leaf — arrays replace wholesale, so their shapes are never walked.
 function objectShape(schema: z.core.$ZodType): Record<string, z.core.$ZodType> | null {
   let current = schema
   for (;;) {
@@ -61,14 +58,8 @@ function collectUnknownKeys(
 }
 
 /**
- * Strict key check for an incoming Section patch: every key in the
- * payload must exist in the section schema's (unwrapped) object shapes.
- * Unknown keys — loader mask fields, renamed keys, sibling buckets a card
- * does not own — reject with `DomainError BAD_REQUEST` carrying the issue
- * list, before any merge or validation runs. Key legality only; the
- * merged row's VALUES are validated against the full schema afterwards.
- * The assertion signature types a passing payload as the record the merge
- * step consumes.
+ * Strict key check: every payload key must exist in the section schema's unwrapped shapes;
+ * unknown keys reject with `BAD_REQUEST` (issue list) before any merge or validation runs.
  */
 export function assertSectionPatchKeys(
   section: SettingsSection,

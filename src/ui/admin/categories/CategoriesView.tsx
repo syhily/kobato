@@ -24,13 +24,10 @@ export function CategoriesView() {
   const [editTarget, setEditTarget] = useState<EditTarget>(undefined)
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
 
-  // Server rows live exclusively in the TanStack cache (the list procedure
-  // returns the full collection, no pagination) — mutations invalidate this
-  // namespace instead of patching a local mirror.
+  // Full collection in the TanStack cache — mutations invalidate the namespace, no local mirror.
   const listOptions = orpcQuery.admin.categories.list.queryOptions({ input: {} })
   const listQuery = useQuery(listOptions)
-  // Memoized so the empty-fallback array identity is stable across renders —
-  // `handleDragEnd` depends on `rows` and oxlint flags a fresh `?? []` each render.
+  // Memoized so the empty-fallback array identity is stable — `handleDragEnd` depends on `rows`.
   const rows = useMemo(() => listQuery.data?.categories ?? [], [listQuery.data?.categories])
   const total = listQuery.data?.total ?? 0
 
@@ -48,7 +45,6 @@ export function CategoriesView() {
     ...orpcQuery.admin.categories.delete.mutationOptions(),
     onSuccess: () => {
       toast.success('已删除分类')
-      // Invalidation re-syncs the cache so the deleted row disappears immediately.
       invalidateList()
     },
     onError: (error) => {
@@ -66,9 +62,7 @@ export function CategoriesView() {
   const reorderMutation = useMutation({
     ...orpcQuery.admin.categories.reorder.mutationOptions(),
     onMutate: ({ orderedIds }) => {
-      // Optimistic local reorder: rewrite each row's `sortOrder` to its new
-      // index so the UI badge updates immediately. The mutation settles by
-      // invalidating the list, restoring the canonical server order either way.
+      // Optimistic reorder rewrites each row's `sortOrder`; the mutation settles by invalidating the list.
       const byId = new Map(rows.map((row) => [row.id, row]))
       const categories: AdminCategoryDto[] = []
       for (const [index, id] of orderedIds.entries()) {
@@ -130,7 +124,6 @@ export function CategoriesView() {
           }
         >
           <div className="flex shrink-0 flex-wrap items-center gap-2">
-            {/* New category */}
             <button
               type="button"
               onClick={() => setEditTarget(null)}

@@ -27,14 +27,9 @@ queryMocks.queryClient = {
   invalidateQueries: vi.fn(),
 }
 
-// FriendsView derives its rows directly from `useInfiniteQuery` pages and
-// inlines its `{ q, includeHidden }` filter state via `useState` (the old
-// `useFriendsReducer` pass-through was deleted). The existing
-// `friends-view.test.tsx` covers the loading and empty states; this spec
-// adds populated rows (the `rows.map` callback), the error state, and the
-// include-hidden toggle's unchecked render branch. The checked branch is
-// event-driven (`onCheckedChange` flips inlined state), which SSR cannot
-// drive, so it is intentionally not covered here.
+// FriendsView derives rows from useInfiniteQuery pages and inlines
+// {q, includeHidden} via useState; friends-view.test.tsx covers
+// loading/empty. Adds populated rows, the error state, unchecked toggle.
 
 vi.mock('@/ui/admin/shared/useDebouncedSearch', () => ({
   useDebouncedSearch: () => [debouncedSearch.value, debouncedSearch.setInput],
@@ -46,8 +41,6 @@ const debouncedSearch = vi.hoisted(() => ({
   value: '',
   setInput: vi.fn(),
 }))
-
-// ───────────────────────────── fixtures ─────────────────────────────
 
 function makeFriend(overrides: Partial<AdminFriendDto> = {}): AdminFriendDto {
   return {
@@ -72,8 +65,6 @@ function setRows(friends: AdminFriendDto[], total = friends.length, hasMore = fa
     data: { pages: [{ friends, total, hasMore }] },
   }
 }
-
-// ─────────────────────────── shared setup ───────────────────────────
 
 describe('snapshot: FriendsView branches', () => {
   beforeEach(() => {
@@ -105,9 +96,7 @@ describe('snapshot: FriendsView branches', () => {
     // Edit / delete affordances carry the website name in their aria-labels.
     expect(html).toContain('编辑友链 示例博客')
     expect(html).toContain('删除友链 老朋友')
-    // Header title reflects the resolved total.
     expect(html).toContain('友链管理')
-    // End-of-list sentinel copy.
     expect(html).toContain('已加载全部友链')
   })
 
@@ -129,15 +118,12 @@ describe('snapshot: FriendsView branches', () => {
     expect(html).toContain('未找到友链')
   })
 
-  // ───────────── include-hidden toggle (unchecked default) ─────────────
-
   it('renders the include-hidden checkbox unchecked by default', () => {
     setRows([])
     const html = stableHtml(renderInRouter(<FriendsView />, '/admin/links'))
     expect(html).toContain('friends-include-hidden')
     expect(html).toContain('包含已隐藏')
-    // Base UI marks an unchecked checkbox with aria-checked="false" and
-    // omits the checkmark indicator svg entirely.
+    // Unchecked → aria-checked="false", no checkmark svg.
     expect(html).toContain('aria-checked="false"')
     expect(html).not.toContain('aria-checked="true"')
   })

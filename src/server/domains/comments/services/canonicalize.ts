@@ -10,22 +10,9 @@ import { commentBodySchema, isCommentBodyEmpty } from '@/shared/pt/comment-schem
 const COMMENT_MAX_BLOCKS = 200
 const COMMENT_MAX_HTTP_URLS = 3
 
-// Validate and prepare a comment body for persistence:
-//   1. Parse the incoming JSON through `commentBodySchema` so the
-//      narrow comment dialect is enforced at the API perimeter.
-//   2. Reject empty / link-spam bodies. The old markdown pipeline
-//      counted `https?://` substrings in raw text; the PT equivalent
-//      walks `link` markDefs (the only way the editor produces URLs)
-//      to keep the spam-prevention spirit intact.
-//   3. Pre-render heavy assets (Shiki for `code` blocks, KaTeX for
-//      `mathBlock` and `mathInline` markDefs). The renderer is
-//      shared with posts / pages and already no-ops for block types
-//      the comment dialect doesn't permit.
-//   4. Serialise the canonical PT body back into markdown for the
-//      `comment.content` rollback snapshot.
-//
-// On any validation failure, surface a `DomainError` so the resource
-// route can translate it into a structured `ActionFailure` response.
+// Validate and prepare a comment body for persistence: parse the comment
+// dialect, reject empty/link-spam bodies, pre-render heavy assets, and
+// serialize markdown for the `comment.content` snapshot. Failures → DomainError.
 export async function canonicalizeCommentBody(input: unknown): Promise<{ body: CommentBody; content: string }> {
   let parsed: CommentBody
   try {
@@ -47,8 +34,7 @@ export async function canonicalizeCommentBody(input: unknown): Promise<{ body: C
     throw new DomainError('BAD_REQUEST', `评论中链接过多（最多 ${COMMENT_MAX_HTTP_URLS} 个）。`)
   }
 
-  // Strip any client-supplied pre-rendered fields to prevent stored XSS.
-  // The server will re-generate these from tex/code after this call.
+  // Strip client-supplied pre-rendered fields (stored XSS); server re-generates them.
   stripClientRenderedFields(parsed)
 
   const body = await prerenderPortableTextBody(parsed)
@@ -81,11 +67,7 @@ function stripClientRenderedFields(body: CommentBody): void {
 }
 
 function countLinks(body: CommentBody): number {
-  // Only count http(s) URLs. Tiptap's `Link` extension autolinks
-  // anything URL-shaped — including bare email addresses, which it
-  // turns into `mailto:user@example.com` markDefs. Treating those as
-  // URLs would flag a perfectly legitimate "feel free to email me at
-  // x@y" reply as spam.
+  // Only http(s) URLs count — Tiptap autolinks email addresses as `mailto:`.
   let total = 0
   for (const block of body) {
     if (block._type !== 'block') {

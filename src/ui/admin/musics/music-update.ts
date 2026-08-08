@@ -1,8 +1,6 @@
 import type { AdminMusicDto } from '@/shared/contracts/music'
 
-// The detail view's edit draft: name / album stay plain strings, artist is
-// edited as a single `/`-separated string and split back into the list
-// shape the update procedure expects.
+// Edit draft: the single `/`-separated artist string splits back into the list shape the update expects.
 export interface MusicEditDraft {
   name: string
   artist: string
@@ -26,11 +24,8 @@ export function splitArtistDraft(draft: string): string[] {
     .filter((name) => name !== '')
 }
 
-/**
- * Build the update-procedure input from the edit draft. A blank name /
- * artist / album draft falls back to the stored value, so clearing a field
- * never wipes it; a blank lyric maps to undefined.
- */
+/** Build the update input from the edit draft; blank name/artist/album fall
+ *  back to the stored value (clearing never wipes), blank lyric → undefined. */
 export function buildMusicUpdate(
   music: Pick<AdminMusicDto, 'id' | 'name' | 'artist' | 'album'>,
   draft: MusicEditDraft,

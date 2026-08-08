@@ -3,12 +3,8 @@ import { DuckDBTimestampMillisecondsValue, type DuckDBAppender, type DuckDBConne
 import type { EnrichedAccessEvent } from '@/server/domains/analytics/types'
 
 /**
- * The access_log table shape — analytics-domain knowledge, owned here
- * (the infra DuckDB wrapper stays business-knowledge-free and receives
- * this DDL from the caller). No secondary indexes: zone maps +
- * columnar scans replace the six btree indexes the Postgres schema
- * carried (prototype-verified: 0.5 ms full count, 22–35 ms dashboard
- * queries at 1M rows).
+ * The access_log table shape — owned here (the infra DuckDB wrapper
+ * receives this DDL from the caller). No secondary indexes by design.
  */
 export const ACCESS_LOG_DDL = `
 CREATE TABLE IF NOT EXISTS access_log (
@@ -39,18 +35,13 @@ CREATE TABLE IF NOT EXISTS access_log (
 )
 `
 
-/** 180-day telemetry retention (plan §1.11) — fixed by design, not a
- *  setting: access_log is expendable telemetry (a missing file is
- *  recreated empty; backups archive it but never require it). */
+/** 180-day telemetry retention (plan §1.11) — fixed by design, not a setting. */
 export const ACCESS_LOG_RETENTION_DAYS = 180
 
 /**
- * Append one event as an access_log row. THE single owner of the column
- * order — it must match ACCESS_LOG_DDL above (the batcher and the test
- * seeder both write through this). Callers own the Appender protocol
- * around it: `endRow()` per row, `flushSync()` per ≤2048-row chunk,
- * `closeSync()` to commit the tail (~62k rows/s — 9× prepared INSERTs,
- * prototype-verified).
+ * Append one event as an access_log row — the single owner of the column
+ * order, which must match ACCESS_LOG_DDL. Callers own the Appender
+ * protocol (`endRow`/`flushSync`/`closeSync`).
  */
 export function appendAccessEvent(appender: DuckDBAppender, e: EnrichedAccessEvent): void {
   appender.appendTimestampMilliseconds(new DuckDBTimestampMillisecondsValue(BigInt(e.ts.getTime())))
@@ -93,13 +84,9 @@ export function appendAccessEvent(appender: DuckDBAppender, e: EnrichedAccessEve
 }
 
 /**
- * Append a whole batch through the Appender protocol — THE single owner
- * of it (the batcher and the test seeder both write through this):
- * `endRow()` per row, `flushSync()` per ≤2048-row chunk, `closeSync()`
- * in a finally.
- * closeSync commits whatever was flushed, so a mid-batch failure leaves
- * those rows visible while the batch also lands in the dead-letter
- * file — telemetry is at-least-once by design; losing rows is worse.
+ * Append a whole batch through the Appender protocol — `endRow()` per
+ * row, `flushSync()` per ≤2048-row chunk. At-least-once: a mid-batch
+ * failure leaves flushed rows visible while the batch dead-letters.
  */
 export async function appendAccessEvents(writer: DuckDBConnection, events: EnrichedAccessEvent[]): Promise<void> {
   const appender = await writer.createAppender('access_log')

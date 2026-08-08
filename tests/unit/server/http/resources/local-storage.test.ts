@@ -16,9 +16,7 @@ vi.mock('@/server/infra/paths', async (importOriginal) => {
 
 const { localStorageRouter } = await import('@/server/http/resources/local-storage')
 
-// Seed one object per namespace we care about. The route's allowlist is what
-// we're exercising, so each file's *contents* are irrelevant — only whether
-// the key is reachable.
+// The allowlist is under test: file contents are irrelevant — only key reachability matters.
 beforeAll(() => {
   mkdirSync(`${tmp.root}/images`, { recursive: true })
   mkdirSync(`${tmp.root}/musics`, { recursive: true })

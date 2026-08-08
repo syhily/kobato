@@ -5,10 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { renderCalendar } from '@/server/render/calendar/render'
 
-// `renderCalendar` mixes a third-party API (Shanbay daily quote), Chinese
-// lunar conversion, and napi-rs/canvas drawing. We mock fetch to keep the
-// test hermetic, then assert the structural invariants of the resulting PNG
-// — same approach as the OG test.
+// `renderCalendar` mixes the Shanbay quote API, lunar conversion, and canvas drawing —
+// mock fetch and assert the PNG structural invariants.
 
 const originalFetch = globalThis.fetch
 
@@ -58,15 +56,13 @@ describe('services/images/calendar — renderCalendar', () => {
   })
 
   it('encodes lunar dates for traditional Chinese New Year correctly', { timeout: 30_000 }, async () => {
-    // Smoke-test a date that's known to convert to Lunar New Year's eve in
-    // Asia/Shanghai — this exercises the Solar→Lunar branch end-to-end.
+    // 2024-02-09 converts to Lunar New Year's eve in Asia/Shanghai — exercises the Solar→Lunar branch.
     const buffer = await renderCalendar(parseISO('2024-02-09'))
     expect(buffer.byteLength).toBeGreaterThan(0)
   })
 
   it('clamps a very long quote instead of overflowing the card', { timeout: 30_000 }, async () => {
-    // Entries from the complete built-in bank can run 100+ chars; the
-    // renderer must clamp them to three lines with an ellipsis.
+    // Built-in bank entries can run 100+ chars — must clamp to three lines with an ellipsis.
     globalThis.fetch = vi.fn(
       async () =>
         new Response(JSON.stringify({ content: 'long', translation: '很长'.repeat(60), author: '某人' }), {

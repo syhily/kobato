@@ -1,9 +1,7 @@
 import { SHIKI_THEMES, createShikiHighlighter } from '@/server/infra/pt/shiki'
 import { createPromiseMemo } from '@/shared/utils/memo'
 
-// Process-level highlighter singleton (the shared 36-language
-// configuration — json included). Single-flight semantics:
-// share-in-flight; failure: retry.
+// Process-level singleton; single-flight, retries on failure.
 const getHighlighter = createPromiseMemo(() => createShikiHighlighter())
 
 export async function highlightAuditLogDetails(details: Record<string, unknown> | null): Promise<string | null> {

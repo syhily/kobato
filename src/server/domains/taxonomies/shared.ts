@@ -1,19 +1,14 @@
 import { DomainError } from '@/server/infra/http/errors'
 
-// Shared helpers for admin taxonomy CRUD (categories & tags). The two
-// entity types share structurally identical uniqueness checks, slug
-// resolution, delete-block guards, and error formatting. This module
-// provides parameterised versions so each domain service stays thin.
+// Uniqueness checks, delete guards, and error formatting shared by categories & tags.
 
-/** Shared with the category and tag services: format the "still
- *  referenced by N posts" 409 body shown to the admin on delete. */
+/** The "still referenced by N posts" 409 body shown on blocked deletes. */
 export function formatBlockMessage(kind: string, name: string, titles: readonly string[]): string {
   const preview = titles.slice(0, 5).join('、')
   const suffix = titles.length > 5 ? `等 ${titles.length} 篇文章` : `${titles.length} 篇文章`
   return `${kind}「${name}」仍被 ${suffix}引用：${preview}。请先在引用文章中修改后再删除。`
 }
 
-// Pre-flight uniqueness guard for create.
 export async function ensureUniqueOnCreateTaxonomy<T extends { id: number }>(
   findByName: (name: string) => Promise<T | null>,
   findBySlug: (slug: string) => Promise<T | null>,
@@ -33,8 +28,6 @@ export async function ensureUniqueOnCreateTaxonomy<T extends { id: number }>(
   }
 }
 
-// Pre-flight uniqueness guard for update. Skips the name / slug queries
-// when the value hasn't changed.
 export async function ensureUniqueOnUpdateTaxonomy<T extends { id: number }>(
   findByName: (name: string) => Promise<T | null>,
   findBySlug: (slug: string) => Promise<T | null>,
@@ -61,12 +54,8 @@ export async function ensureUniqueOnUpdateTaxonomy<T extends { id: number }>(
   }
 }
 
-// Block-only deletion: refuses to delete a taxonomy row while any post
-// still references it. `listPostTitles` is a deliberately slim seam
-// (titles only) — the guard must not pay for the full listing pipeline
-// just to name the referencing posts. It receives the whole row:
-// categories count references by `row.id`, tags by `row.name` (the
-// `post_tag` join key).
+// Block-only deletion: refuses while any post references the row. Pass a titles-only
+// `listPostTitles`; it gets the whole row — categories key by `row.id`, tags by `row.name`.
 export async function deleteAdminTaxonomy<T extends { id: number; name: string }>(
   id: number,
   entityLabel: string,

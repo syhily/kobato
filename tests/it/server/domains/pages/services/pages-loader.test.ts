@@ -10,13 +10,9 @@ import { content as contentTable } from '@/server/infra/db/schema/content'
 import { page as pageTable } from '@/server/infra/db/schema/page'
 import { post as postTable } from '@/server/infra/db/schema/post'
 
-// Tests for `loadPagePreview` in `@/server/http/loaders/page-preview`.
-// The loader uses parallel DB lookups (findPublicPostMetaBySlug +
-// findPageBySlug) instead of the old catalog cache (getEntryBySlug).
-//
-// Real engine: posts/pages are seeded meta rows (+ content revisions),
-// so the live gate, the post-wins redirect, and the admin draft preview
-// all run against actual rows.
+// Tests for `loadPagePreview` against the real engine: the live gate,
+// the post-wins redirect, and the admin draft preview run on seeded meta
+// rows + content revisions.
 
 const db = getTestDb()
 
@@ -102,9 +98,7 @@ async function seedPage(opts: {
 }
 
 function makeArgs(slug: string, viewer: SessionUser | null = null) {
-  // `loadPagePreview` takes the draft-preview gate inputs as plain values
-  // (viewer role + raw If-None-Match header) since the oRPC migration —
-  // no canonical request context involved anymore.
+  // Draft-preview gate inputs arrive as plain values (role + raw If-None-Match), not a request context.
   return {
     db,
     slug,
@@ -124,7 +118,6 @@ describe('loadPagePreview — slug redirect logic', () => {
       await loadPagePreview(makeArgs('hello'))
       expect.unreachable('should have thrown')
     } catch (err) {
-      // The thrown response should be a 301 redirect
       expect(err).toMatchObject({ status: 301 })
     }
   })

@@ -13,8 +13,6 @@ const log = getLogger('lifecycle')
 
 const DEFAULT_CLOSE_TIMEOUT_MS = 30_000
 
-// ─── Types ─────────────────────────────────────────────────
-
 export type ServerPhase = 'booting' | 'running' | 'restarting' | 'failed' | 'shutting-down'
 
 interface ShutdownHook {
@@ -24,9 +22,7 @@ interface ShutdownHook {
 
 type RefreshSettingsFn = (db: Database) => Promise<unknown>
 
-// Typed DI container that replaces the previous 10 module-level `let`
-// bindings. The explicit interface makes the container shape reviewable
-// and lets contract tests assert that no state leaks to globalThis.
+// Typed DI container — explicit shape lets contract tests assert no state leaks to globalThis.
 export interface LifecycleContainer {
   serverPhase: ServerPhase
   httpServer: ServerType | null
@@ -57,8 +53,6 @@ export function __getLifecycleContainer(): LifecycleContainer {
   return container
 }
 
-// ─── HTTP Server ─────────────────────────────────────────
-
 export function setHttpServer(server: ServerType): void {
   container.httpServer = server
 }
@@ -68,10 +62,7 @@ export async function closeHttpServer(timeoutMs = DEFAULT_CLOSE_TIMEOUT_MS): Pro
     return
   }
   const nodeServer = container.httpServer
-  // Detach up front so a close is idempotent: the self-update restart
-  // closes the socket before spawning the replacement process, and the
-  // graceful chain's own close in `performShutdown` must then be a no-op
-  // rather than a "Server is not running" warning.
+  // Detach up front: close must be idempotent (self-update closes before spawning the replacement).
   container.httpServer = null
   nodeServer.closeIdleConnections?.()
 
@@ -93,12 +84,7 @@ export async function closeHttpServer(timeoutMs = DEFAULT_CLOSE_TIMEOUT_MS): Pro
   })
 }
 
-// ─── Shutdown ────────────────────────────────────────────
-
-/**
- * Register a shutdown hook. Higher priority runs first.
- * Flush hooks: priority 100. Connection-close hooks: priority 0 (default).
- */
+/** Register a shutdown hook; higher priority runs first (flush hooks 100, connection-close 0). */
 export function registerShutdownHook(hook: () => Promise<void>, priority = 0): void {
   if (container.shuttingDown) {
     log.warn('Shutdown hook registered after shutdown started; ignoring')
@@ -108,11 +94,7 @@ export function registerShutdownHook(hook: () => Promise<void>, priority = 0): v
   container.hooks.sort((a, b) => b.priority - a.priority)
 }
 
-/**
- * Remove a previously registered hook by identity. Batchers re-created
- * on every database reopen (restore flow) dispose their old hooks this
- * way so the hook list can't grow unboundedly across restores.
- */
+/** Remove a hook by identity — batchers dispose theirs on every database reopen so the list can't grow unboundedly. */
 export function unregisterShutdownHook(hook: () => Promise<void>): void {
   const index = container.hooks.findIndex((entry) => entry.fn === hook)
   if (index !== -1) {
@@ -154,31 +136,19 @@ async function performShutdown(reason: string): Promise<void> {
 
 process.once('SIGTERM', () => requestShutdown('SIGTERM'))
 process.once('SIGINT', () => requestShutdown('SIGINT'))
-// Windows console control events: SIGHUP fires when the console window is
-// closed, SIGBREAK on Ctrl+Break — with SIGINT (Ctrl+C) these are the only
-// "signals" a Windows process can receive (there is no SIGTERM delivery;
-// taskkill / TerminateProcess gives no notification). On POSIX they are
-// legal to listen for and simply extend graceful shutdown to SIGHUP.
+// Windows console control events: SIGHUP (window closed) / SIGBREAK (Ctrl+Break)
+// stand in for SIGTERM (no delivery there); on POSIX they extend graceful shutdown.
 process.once('SIGHUP', () => requestShutdown('SIGHUP'))
 process.once('SIGBREAK', () => requestShutdown('SIGBREAK'))
 
-// Streamed loader promises (the detail page's comments promise,
-// `src/server/http/loaders/comments.ts`, consumed via `<Await>`) are only
-// tracked by React Router once turbo-stream serializes them — a rejection
-// before that point has no listener, and Node's default unhandledRejection
-// mode ('throw') would take the whole process down for a single failed
-// comment query. Log-and-continue is a deliberate trade-off (ADR-0005): a
-// streamed query failure is a per-request, recoverable fault and must not
-// kill every in-flight request; the cost (masking genuine bugs) is hedged
-// by making this log line loud and structured. Do NOT remove this handler
-// while any loader returns an un-awaited promise.
+// Un-awaited streamed loader promises have no rejection listener until
+// turbo-stream serializes them — the default 'throw' mode would kill the
+// process (ADR-0005). Do NOT remove while any loader returns one.
 export function handleUnhandledRejection(error: unknown): void {
   log.error('Unhandled promise rejection', { err: error instanceof Error ? error.message : String(error) })
 }
 
 process.on('unhandledRejection', handleUnhandledRejection)
-
-// ─── Server Phase ────────────────────────────────────────
 
 export function getServerPhase(): ServerPhase {
   return container.serverPhase
@@ -205,8 +175,6 @@ export function setServerPhase(newPhase: ServerPhase): void {
   log.info('Server phase changed', { phase: newPhase })
 }
 
-// ─── DI setters ──────────────────────────────────────────
-
 export function setRestartApp(app: Hono<any>): void {
   container.currentApp = app
 }
@@ -218,8 +186,6 @@ export function setRestartDb(db: Database): void {
 export function setRestartRefreshSettings(fn: RefreshSettingsFn): void {
   container.refreshSettingsFn = fn
 }
-
-// ─── Restart ─────────────────────────────────────────────
 
 export async function restartServer(): Promise<void> {
   if (container.shuttingDown) {
@@ -264,18 +230,14 @@ export async function restartServer(): Promise<void> {
       restartLog.error('Graceful restart failed', {
         err: err instanceof Error ? err.message : String(err),
       })
-      // Old server is already closed; new server failed to start. There is no
-      // recovery — flag the process as failed so health checks report 503.
+      // Old server is closed and the new one failed — no recovery; flag failed so health checks report 503.
       setServerPhase('failed')
       throw err
     }
   })()
 
   container.restartPromise = queued
-  // Queue restarts so they run sequentially, but swallow queue-chain
-  // rejections so they don't surface as unhandled. The caller awaiting
-  // `restartServer()` receives the original error via the returned
-  // `queued` promise.
+  // Sequential queue; swallowed rejections surface to the caller via the returned `queued` promise.
   container.restartQueue = container.restartQueue
     .then(() => queued)
     .catch(() => queued)

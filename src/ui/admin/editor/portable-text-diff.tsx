@@ -177,9 +177,7 @@ export function DiffPanel({ diff, side }: DiffPanelProps) {
         if (onlyOtherSide) {
           return (
             <li
-              // `entry.key` is the diff entry's PT-block `_key`. The idx
-              // suffix disambiguates the rare case where the same `_key`
-              // appears twice in the same diff (move + edit pair).
+              // `idx` disambiguates the same `_key` appearing twice in one diff.
               // oxlint-disable-next-line react/no-array-index-key
               key={`${entry.key}-${idx}`}
               className="rounded border border-dashed border-muted bg-muted/30 px-2 py-2 text-xs text-muted-foreground"

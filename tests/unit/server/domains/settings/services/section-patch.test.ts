@@ -7,9 +7,7 @@ import { assertSectionPatchKeys } from '@/server/domains/settings/services/secti
 import { DomainError } from '@/server/infra/http/errors'
 import { SETTINGS_SECTIONS } from '@/shared/config/sections'
 
-// Setup-time complete payloads for the two sections that ship no registry
-// defaults (`defaults: null`): their first write must arrive complete, so
-// the fixtures below stand in for `meta.defaults` in the parameter sweep.
+// Stand-ins for `meta.defaults` in the sections that ship none (`defaults: null`).
 const FULL_GENERAL = {
   title: '雨帆',
   description: '记录与思考',
@@ -45,10 +43,8 @@ function fullPayload(section: SettingsSection): Record<string, unknown> {
   return section === 'general' ? FULL_GENERAL : FULL_ASSETS
 }
 
-// One object-valued key per section for the depth ≥ 1 sweep. `limits` is
-// flat scalars and `socials` holds only an array at depth 1 — neither has
-// a nested object to walk into. `security.cors` sits behind a
-// `.default(...)` wrapper, pinning the unwrap logic.
+// One object-valued key per section for the depth ≥ 1 sweep. `security.cors`
+// sits behind a `.default(...)` wrapper, pinning the unwrap logic.
 const NESTED_OBJECT_KEY: Partial<Record<SettingsSection, string>> = {
   general: 'author',
   assets: 'storage',
@@ -124,9 +120,7 @@ describe('server/domains/settings/services/assertSectionPatchKeys', () => {
   })
 
   it('treats arrays as leaves — element values are the merged validation’s job', () => {
-    // The walker must not recurse into array elements (arrays replace
-    // wholesale); a bogus key inside a widget row is caught by the
-    // post-merge schema validation, not here.
+    // Arrays replace wholesale — the walker must not recurse into elements.
     expect(() =>
       assertSectionPatchKeys('sidebar', {
         sidebar: { widgets: [{ type: 'search', enabled: true, bogus: 1 }] },

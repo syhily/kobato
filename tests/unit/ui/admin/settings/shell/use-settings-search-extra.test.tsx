@@ -10,28 +10,9 @@ import {
   useSettingsSearchFilter,
 } from '@/ui/admin/settings/shell/useSettingsSearch'
 
-// Extra coverage for useSettingsSearch. The SSR `renderHook` harness runs
-// a single synchronous render pass (`renderToStaticMarkup`), so effects
-// do not fire and `setFilter` / `registerComponent` updates are NOT
-// observable within the same pass — the captured result reflects the
-// initial render only (filter === '', empty registered-components map).
-//
-// What IS observable in a single pass:
-//   - the initial filter / API shape and function identity
-//   - `checkVisible` against the empty-filter branch (`!filter` -> true)
-//   - `highlightKeywords` against the empty-filter branch (passthrough),
-//     plus its array / non-string passthrough sub-branches
-//   - `registerComponent` / `unregisterComponent` being callable without
-//     throwing (the underlying setState is scheduled but harmless)
-//   - `isOnlyVisibleComponent` / `getVisibleComponents` against the empty
-//     visible set
-//   - `setNoResult` being callable
-//
-// Filter-dependent branches (case-insensitive matching, visible-set
-// derivation from a populated registry, mark wrapping) require a
-// controlled context the SSR harness cannot seed without mocking React
-// internals, so they are intentionally left to the existing test and to
-// higher-level snapshot coverage.
+// Extra coverage for useSettingsSearch under the single-pass SSR harness
+// (no effects fire): observable surfaces are initial state, callable
+// callbacks, and the empty-filter branches.
 
 describe('ui/admin/settings/shell/useSettingsSearch — extra (initial-state surfaces)', () => {
   it('createSearchComponentId joins base and unique with a dash', () => {
@@ -63,8 +44,7 @@ describe('ui/admin/settings/shell/useSettingsSearch — extra (initial-state sur
   it('highlightKeywords returns a non-string, non-array ReactNode untouched', () => {
     const { highlightKeywords } = renderHook(useSettingsSearch, { wrapper: SettingsSearchProvider })
     const element = React.createElement('div', null, 'x')
-    // The `typeof text === 'string'` and `isReactNodeArray(text)` branches
-    // both miss, so the node passes straight through.
+    // Neither the string nor the array branch matches, so the node passes through.
     expect(highlightKeywords(element)).toBe(element)
   })
 
@@ -119,10 +99,8 @@ describe('ui/admin/settings/shell/useSettingsSearch — extra (initial-state sur
 
   it('the combined context merges filter state and the search API', () => {
     const ctx = renderHook(useSettingsSearchContext, { wrapper: SettingsSearchProvider })
-    // Filter-state half.
     expect(ctx.filter).toBe('')
     expect(ctx.setFilter).toBeInstanceOf(Function)
-    // API half — every method present.
     expect(ctx.checkVisible).toBeInstanceOf(Function)
     expect(ctx.highlightKeywords).toBeInstanceOf(Function)
     expect(ctx.noResult).toBe(false)
@@ -134,9 +112,7 @@ describe('ui/admin/settings/shell/useSettingsSearch — extra (initial-state sur
   })
 })
 
-// The default (no-provider) context fallbacks: importing the consumer
-// hooks outside a SettingsSearchProvider must not throw and must return
-// the documented no-op defaults. This covers the bare context objects.
+// No-provider fallbacks: hooks return the noop defaults and never throw.
 describe('ui/admin/settings/shell/useSettingsSearch — default (no provider) context', () => {
   it('useSettingsSearchFilter returns the default empty filter + noop setter', () => {
     const { filter, setFilter } = renderHook(useSettingsSearchFilter)
@@ -146,21 +122,16 @@ describe('ui/admin/settings/shell/useSettingsSearch — default (no provider) co
 
   it('useSettingsSearch returns the documented default API', () => {
     const api = renderHook(useSettingsSearch)
-    // checkVisible always returns true when there is no provider.
     expect(api.checkVisible(['anything'])).toBe(true)
     expect(api.checkVisible([])).toBe(true)
-    // highlightKeywords is an identity passthrough.
     expect(api.highlightKeywords('passthrough')).toBe('passthrough')
     const el = React.createElement('span')
     expect(api.highlightKeywords(el)).toBe(el)
-    // noResult defaults to false.
     expect(api.noResult).toBe(false)
     // getVisibleComponents returns an empty Set.
     expect(api.getVisibleComponents()).toBeInstanceOf(Set)
     expect(api.getVisibleComponents().size).toBe(0)
-    // isOnlyVisibleComponent always false.
     expect(api.isOnlyVisibleComponent('a')).toBe(false)
-    // All setters are callable no-ops.
     expect(() => {
       api.setNoResult(true)
       api.registerComponent('id', ['kw'])

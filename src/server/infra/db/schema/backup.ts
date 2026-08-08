@@ -1,17 +1,10 @@
 import { sql } from 'drizzle-orm'
 import { check, index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 
-// Database backups (a `VACUUM INTO` snapshot uploaded through the storage
-// abstraction). Unlike images/music, backups previously had no DB row —
-// the S3 listing was the source of truth — which made it impossible to
-// track which backend a given backup lives in after the local→S3
-// migration. This table is now that source of truth: `createBackup`
-// inserts a row, `listBackups` reads from it (+ reconciles any unrecorded
-// files), and delete/cleanup/download all dispatch on `storage_driver`.
-//
-// `timestamp` is the sortable ISO-ish string encoded in the key
-// (`backup/backup-<timestamp>.db`); `storage_path` is the full backend
-// key. `storage_driver` mirrors the `image`/`music` convention.
+// Database backups — a `VACUUM INTO` snapshot uploaded through the storage
+// abstraction; this table is the source of truth and every backup op
+// dispatches on `storage_driver`. `timestamp` is the sortable ISO-ish
+// string from the key (`backup/backup-<timestamp>.db`).
 export const backup = sqliteTable(
   'backup',
   {

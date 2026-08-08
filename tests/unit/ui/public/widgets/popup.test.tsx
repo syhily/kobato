@@ -1,11 +1,7 @@
 // @vitest-environment happy-dom
 
-// Behavioral pins for Popup-owned outside-click dismissal.
-//
-// `motion/react` is stubbed as a pass-through (same pattern as
-// tests/snaps/ui/admin/musics/musics-add.test.tsx) so AnimatePresence
-// mounts/unmounts synchronously — the tests pin dismissal wiring, not
-// animation timing.
+// Pins Popup-owned outside-click dismissal; `motion/react` is a synchronous
+// pass-through, so the tests pin dismissal wiring, not animation timing.
 
 import { fireEvent, render, screen } from '@testing-library/react'
 import { useState } from 'react'
@@ -39,9 +35,6 @@ vi.mock('motion/react', () => {
 })
 
 // Canonical consumer wiring: the trigger owns `open`, Popup owns dismissal.
-// In production a re-click on the open trigger passes through the inert
-// subtree and lands on the backdrop (Popup inerts every other body child);
-// the toggle below models the same end state.
 function Harness() {
   const [open, setOpen] = useState(false)
   return (

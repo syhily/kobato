@@ -25,14 +25,9 @@ import type {
 
 import { BUNDLE_KEYS } from '@/shared/config/sections'
 
-// Per-section React contexts. Adding a new settings section is a
-// two-line edit here — create the context and add it to
-// `SECTION_CONTEXTS_ANY`.
-//
-// Why one context per section (rather than one bundle context):
-// `<BlogSettingsProvider>` re-renders once per save, but the
-// per-section split means a save to `cache` never invalidates the
-// component that subscribed to `footer`.
+// Per-section React contexts. Adding a section = create the context and
+// add it to `SECTION_CONTEXTS_ANY`. Per-section (not one bundle context):
+// a save to one section never invalidates subscribers of another.
 
 function makeCtx<T>(displayName: string): Context<T | undefined> {
   const ctx = createContext<T | undefined>(undefined)
@@ -81,10 +76,7 @@ const SECTION_CONTEXTS_ANY: Record<BundleKey, Context<any>> = {
 }
 
 interface BlogSettingsProviderProps {
-  /**
-   * Live settings bundle from the root loader. `undefined` indicates a
-   * pre-install deployment.
-   */
+  /** Live settings bundle from the root loader; `undefined` = pre-install deployment. */
   value: BlogSettingsBundle | undefined
   children: ReactNode
 }
@@ -94,12 +86,7 @@ function getSlice(value: BlogSettingsBundle | undefined, key: BundleKey): Slice 
   return value === undefined ? undefined : ((value[key] ?? undefined) as Slice | undefined)
 }
 
-/**
- * Root settings provider split into one context per section. Public
- * consumers keep calling `useFooterSettings()` / `useSidebarSettings()`
- * etc., but each hook subscribes only to the bucket it renders so a save
- * to one settings section does not invalidate unrelated public chrome.
- */
+/** Root provider split into one context per section so a save to one section does not invalidate unrelated public chrome. */
 export function BlogSettingsProvider({ value, children }: BlogSettingsProviderProps) {
   let tree: ReactNode = children
   for (const key of BUNDLE_KEYS) {
@@ -114,11 +101,9 @@ export function BlogSettingsProvider({ value, children }: BlogSettingsProviderPr
   return tree
 }
 
-// Per-section accessors. Each section ships a strict variant that
-// throws when the section hasn't been seeded. A handful of accessors
-// that run before the install completes or that gracefully degrade
-// also expose an `…Optional` variant. New `Optional` variants should
-// NOT be added — call `use(<sectionContext>)` directly if needed.
+// Per-section accessors; strict variants throw when the section isn't
+// seeded, `…Optional` degrade. New `Optional` variants should NOT be
+// added — call `use(<sectionContext>)` directly if needed.
 
 function useSection<T>(name: string, context: Context<T | undefined>): T {
   const slice = use(context)

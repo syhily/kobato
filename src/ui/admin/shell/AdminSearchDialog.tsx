@@ -182,10 +182,6 @@ export function AdminSearchDialog({ open, onOpenChange }: AdminSearchDialogProps
   )
 }
 
-/* ------------------------------------------------------------------ */
-/*  Sub-components                                                     */
-/* ------------------------------------------------------------------ */
-
 function SearchGroup({
   label,
   icon: Icon,

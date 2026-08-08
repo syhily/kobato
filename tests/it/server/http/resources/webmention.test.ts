@@ -16,15 +16,13 @@ import { __resetRateLimitsForTests } from '@/server/infra/rate-limit'
 
 const db = getTestDb()
 
-// Verification moved to the inbox worker (plan 026 Phase 2): the
-// endpoint must NEVER fetch the source. The mock stays installed so any
-// regression that reaches for globalThis.fetch shows up in `calls`.
+// The endpoint must NEVER fetch the source (verification lives in the inbox worker, plan 026 Phase 2);
+// the mock surfaces any regression that reaches for globalThis.fetch in `calls`.
 const mockFetch = installFetch()
 
 beforeEach(async () => {
   await clearAllTables(db)
-  // The rate limiter is a process-level Map — reset it or earlier tests
-  // (same client IP) exhaust the window for later ones.
+  // The rate limiter is a process-level Map — reset it or earlier tests exhaust the window.
   __resetRateLimitsForTests()
   mockFetch.reset()
   globalThis.fetch = mockFetch.fetch as unknown as typeof globalThis.fetch
@@ -36,9 +34,7 @@ function buildApp(clientAddress = '203.0.113.10') {
   app.onError(onErrorHandler)
   app.use('*', async (c, next) => {
     c.set('requestId', 'test-request')
-    // Factory-built RequestContext — the router reads `.db` and the
-    // rate-limit middleware reads `.clientAddress`; no other field of
-    // the canonical context is consulted on this surface.
+    // The surface reads only `.db` and `.clientAddress` off the context.
     c.set('requestContext', makeRequestContext({ clientAddress, db }))
     await next()
   })
@@ -81,8 +77,7 @@ describe('integration / POST /webmention (async enqueue)', () => {
     const body = (await res.json()) as { status: string }
     expect(body.status).toBe('pending')
 
-    // No fetch, no mention row yet — the pair sits in the inbox queue,
-    // source normalized and target canonicalized.
+    // No fetch, no mention row — the pair sits in the inbox, source normalized, target canonicalized.
     expect(mockFetch.calls).toHaveLength(0)
     expect(await db.select().from(webmention)).toHaveLength(0)
     const queued = await db.select().from(webmentionInbox)
@@ -163,9 +158,7 @@ describe('integration / POST /webmention (async enqueue)', () => {
   })
 
   it('rejects a chunked request without content-length whose body exceeds the 16KB form cap', async () => {
-    // A stream body carries no content-length — this is the chunked
-    // transfer-encoding shape that must not bypass the cap and buffer
-    // the entire payload in memory.
+    // Chunked bodies carry no content-length — the cap must still apply.
     const stream = new ReadableStream<Uint8Array>({
       start(controller) {
         controller.enqueue(new TextEncoder().encode('x'.repeat(20 * 1024)))

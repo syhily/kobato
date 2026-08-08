@@ -90,11 +90,8 @@ interface CommentStats {
 
 const EMPTY_COMMENT_STATS: CommentStats = { commentCount: 0, pendingCount: 0, lastCommentAt: null }
 
-// Batched per-user comment stats for an already-paginated user set: one
-// grouped scan over just these users' comments (range scans on
-// idx_comment_user_id) instead of LEFT JOINing the whole comment table
-// before LIMIT can apply (audit P1-13). `lastCommentAt` intentionally
-// counts soft-deleted comments, matching the previous join semantics.
+// One grouped scan over just these users' comments (audit P1-13). `lastCommentAt`
+// intentionally counts soft-deleted comments.
 async function aggregateCommentStats(db: Database, userIds: readonly number[]): Promise<Map<number, CommentStats>> {
   const stats = new Map<number, CommentStats>()
   if (userIds.length === 0) {
@@ -129,9 +126,7 @@ export async function listAdminUsers(
 ): Promise<AdminUserRow[]> {
   const conditions = buildAdminUsersConditions(filters)
 
-  // Ordering by the comment aggregate requires counting every matching
-  // user before pagination can apply, so this sort keeps the LEFT JOIN +
-  // GROUP BY shape.
+  // commentCount sort needs the full aggregate, so it LEFT JOINs before LIMIT.
   if (sortBy === 'commentCount') {
     const commentCountSql = sql<number>`COUNT(${comment.id}) FILTER (WHERE ${comment.deletedAt} IS NULL)`
     const rows = await db
@@ -171,8 +166,7 @@ export async function listAdminUsers(
     }))
   }
 
-  // Default recency order: paginate the user rows first, then aggregate
-  // comments for just this page — LIMIT now constrains the comment work.
+  // Default recency order: aggregate comments only for this page after LIMIT.
   const rows = await db
     .select({
       id: user.id,

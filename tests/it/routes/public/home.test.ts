@@ -8,16 +8,8 @@ import { content as contentTable } from '@/server/infra/db/schema/content'
 import { post as postTable } from '@/server/infra/db/schema/post'
 import { category as categoryTable, tag as tagTable } from '@/server/infra/db/schema/taxonomy'
 
-// `home` loader is the SSR fan-out for `/` and `/page/:num`. The route is
-// part of the public URL surface (`AGENTS.md`: "/" canonical, "/page/N"
-// 30x to /N=1 etc.) so we pin its three observable contracts against the
-// real engine (seeded posts, real pagination, real sidebar/taxonomy
-// queries, real listing SEO):
-//
-//   1. /page/1 redirects to / (canonical collapse).
-//   2. The 3-block payload (listing, sidebar, seo) is shaped correctly
-//      for both the canonical / and the deep-paginated /page/N case.
-//   3. Out-of-range pagination triggers a redirect to the last real page.
+// home loader pins the URL-surface contracts (`/` canonical, `/page/N`
+// redirects) against the real engine: pagination, sidebar, listing SEO.
 
 const db = getTestDb()
 const session = regularSession()
@@ -36,9 +28,8 @@ async function seedTag(name: string, slug: string): Promise<number> {
   return rows[0]!.id
 }
 
-// The home loader's tail-merge guard folds an orphan last page into its
-// predecessor when the tail is strictly smaller than `pageSize - 2`. The
-// test settings fixture pins `pagination.posts = 6`, so threshold = 4.
+// Tail-merge guard: a tail smaller than `pageSize - 2` folds into the
+// previous page; the fixture pins pageSize 6 → threshold 4.
 async function seedPost(opts: {
   slug: string
   title?: string
@@ -67,7 +58,7 @@ async function seedPost(opts: {
   return postId
 }
 
-/** Seed `count` live posts (slug prefix + index), newest first by day. */
+/** Seed `count` live posts, newest first by day. */
 async function seedCatalog(count: number, slugPrefix: string, categoryId?: number): Promise<void> {
   for (let i = 0; i < count; i++) {
     await seedPost({ slug: `${slugPrefix}-${i}`, categoryId: categoryId ?? null, day: i + 1 })
@@ -93,9 +84,7 @@ describe('routes/home loader', () => {
   it('returns the unified listing payload (resolvedPosts, extra.sidebar, empty seo) on /', async () => {
     const categoryId = await seedCategory('general', 'general')
     await seedTag('typescript', 'typescript')
-    // 10 posts at pageSize 6 fan out to 6 + 4. The tail-merge threshold is
-    // `pageSize - 2 = 4` and the strict less-than check keeps a tail of
-    // exactly 4 on its own page, so /page/2 renders instead of redirecting.
+    // 10 posts → 6 + 4; a tail of exactly 4 meets the strict threshold, so /page/2 renders.
     await seedCatalog(10, 'post', categoryId)
 
     const result = await loader(
@@ -166,8 +155,7 @@ describe('routes/home loader', () => {
   })
 })
 
-// Tail-merge guard. 7 posts at pageSize 6 naturally split 6 + 1; the
-// threshold of 4 collapses the trailing single post into page 1.
+// 7 posts split 6 + 1; the threshold of 4 collapses the trailing post into page 1.
 describe('routes/home loader — tail-merge guard', () => {
   it('absorbs a 1-post tail into the previous page so /page/2 redirects to /', async () => {
     await seedCatalog(7, 'short')

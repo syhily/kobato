@@ -28,10 +28,7 @@ const status = adminProc
   .route({ method: 'GET', path: '/admin/backup/status' })
   .output(z.object({ primaryDriver: z.enum(['s3', 'local']) }))
   .handler(async () => {
-    // Backups run regardless of storage: when S3 is unconfigured they land
-    // in local storage. `primaryDriver` is informational only (shown in the
-    // UI as "where new backups go"); file-based backups need no external
-    // tooling, so there is no availability gate anymore.
+    // Backups land in local storage when S3 is unconfigured; `primaryDriver` is informational only.
     return { primaryDriver: activeBackend().driver }
   })
 
@@ -82,9 +79,8 @@ const restore = adminProc
     if (!isValidBackupKey(input.key)) {
       throw new ActionFailure(400, '无效的备份标识。')
     }
-    // Claim the restore slot BEFORE the (potentially large) download —
-    // check-then-act across an await races a second restore into the
-    // same staging path. The machine owns the claim/abort choreography.
+    // Claim BEFORE the (potentially large) download — check-then-act across an
+    // await races a second restore into the same staging path.
     const outcome = await withRestoreClaim(async () => {
       const { stream } = await getBackupStream(context.db, input.key)
       const staged = await stageBackup(stream)
@@ -93,8 +89,7 @@ const restore = adminProc
           await restoreFromStagedBackup(staged, input.key)
         },
         afterReopenFn: async () => {
-          // The audit event buffers into the re-initialized batcher, which
-          // writes to the restored database.
+          // The audit event buffers into the re-initialized batcher, writing to the restored DB.
           recordAuditEventFromContext(context, {
             action: 'backup_restored',
             resourceType: 'backup',

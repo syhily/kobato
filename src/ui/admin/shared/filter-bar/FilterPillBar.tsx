@@ -5,11 +5,8 @@ import type { FilterPillBarProps } from '@/ui/admin/shared/filter-bar/types'
 import { FilterAddButton } from '@/ui/admin/shared/filter-bar/add-button'
 import { FilterPill } from '@/ui/admin/shared/filter-bar/pill'
 
-// The filter chrome shared by every admin list surface: with no active
-// filters just the 筛选 trigger; otherwise the pill row + 添加筛选 + 清除.
-// Views render it as `<FilterPillBar {...pills.bar} />` — all state and
-// callbacks come from `useFilterPills`.
-
+// The filter chrome shared by every admin list surface: trigger-only with no
+// active filters, pill row + 添加筛选 + 清除 otherwise; state comes from `useFilterPills`.
 export function FilterPillBar<K extends string>({
   fields,
   filters,

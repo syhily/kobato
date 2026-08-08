@@ -20,11 +20,7 @@ export interface UseEditorDeleteRestoreArgs {
   navigate: NavigateFunction
 }
 
-/**
- * Shared soft-delete / restore flow for both editor screens. Owns the two
- * mutations plus the confirm-dialog state; callers render the returned
- * `confirm` into a single `ConfirmDialog`.
- */
+/** Shared soft-delete / restore flow; callers render the returned `confirm` state. */
 export function useEditorDeleteRestore({
   entity,
   entityLabel,

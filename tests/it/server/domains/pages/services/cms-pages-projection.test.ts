@@ -2,14 +2,9 @@ import { describe, expect, it } from 'vitest'
 
 import type { ContentRow, PageMetaRow } from '@/server/infra/db/types'
 
-// Projection-layer unit tests. These run without any mocks because
-// the projection module is pure data shaping — it accepts already-fetched
-// rows and produces the public/admin DTOs. The tests pin two contracts:
-//
-//   1. `toCmsPage` / `toAdminRevisionDto` reject malformed `body` payloads
-//      via `validatePortableTextBody` (defence-in-depth so a future direct
-//      INSERT can't blank the public site).
-//   2. The DTO field shape stays stable (id stringification, ISO dates).
+// Projection-layer tests, mock-free (pure data shaping): malformed-body
+// rejection via validatePortableTextBody and a stable DTO shape (id
+// stringification, ISO dates).
 
 const { toCmsPage } = await import('@/server/domains/pages/projection')
 const { toAdminRevisionDto } = await import('@/server/domains/content/projection')

@@ -15,9 +15,7 @@ import { page as pageMetaTable } from '@/server/infra/db/schema/page'
 const crud = makeMetaCrud<PageMetaRow, NewPageMeta>(pageMetaTable)
 
 /**
- * Slug-keyed lookup that **excludes** soft-deleted rows. Scheduled pages
- * (`published_at > now()`) are NOT filtered here — the catalog service
- * layer applies the timestamp gate instead.
+ * Slug-keyed lookup excluding soft-deleted rows; the timestamp gate is applied by the catalog layer.
  */
 export const findPublicPageMetaBySlug = crud.findPublicMetaBySlug
 
@@ -32,10 +30,8 @@ export async function listPublicPageMetas(db: Database, limit = 500): Promise<Pa
 }
 
 /**
- * Slim live-by-slug lookup — id + title only, gated by `livePageWhere`.
- * Cross-domain consumers that must know whether a slug resolves to a live
- * page (webmention target resolution) mount this instead of opening a
- * page-table query of their own.
+ * Slim live-by-slug lookup — id + title only, gated by `livePageWhere`,
+ * for cross-domain consumers that must resolve a live slug.
  */
 export async function findLivePageBySlug(db: Database, slug: string): Promise<{ id: number; title: string } | null> {
   const rows = await db
@@ -47,12 +43,7 @@ export async function findLivePageBySlug(db: Database, slug: string): Promise<{ 
 }
 
 /**
- * Slim live-by-slug ETag probe — `id` + `publishedRevisionId` +
- * `publishedAt` only, the exact inputs of the page detail route's weak
- * ETag (`page.updated` projects `meta.publishedAt`). Lets the loader
- * answer a matching If-None-Match with 304 after one indexed meta read
- * instead of the full meta+revision+image-hydration load. Pages have no
- * slug aliases, so an exact-slug match suffices (unlike the post probe).
+ * ETag probe — returns exactly the weak-ETag inputs of the page detail route; exact-slug match suffices (no slug aliases).
  */
 export async function findPageEtagInputBySlug(
   db: Database,
@@ -77,11 +68,7 @@ export interface SitemapPageRow {
   publishedAt: Date
 }
 
-/**
- * Sitemap-only projection of published pages: live-gated via
- * `livePageWhere`, selecting only the columns the sitemap needs so it
- * skips the revision-join + image-hydration of the full `listAllPages`.
- */
+/** Live-gated sitemap projection — sitemap columns only, no revision join or image hydration. */
 export async function listSitemapPages(db: Database, now = new Date()): Promise<SitemapPageRow[]> {
   return db
     .select({
@@ -116,7 +103,6 @@ export async function findPageBySlug(db: Database, slug: string): Promise<Page |
     return null
   }
   const revision = meta.publishedRevisionId === null ? null : findContentById(db, meta.publishedRevisionId)
-  // `toCmsPage` already returns the shared `Page` DTO — no promotion step.
   const page = toCmsPage(meta, revision)
   await hydratePageImages(db, [page])
   return page

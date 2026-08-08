@@ -30,10 +30,7 @@ function isExempt(pathname: string): boolean {
 }
 
 export const honoInstallGateMiddleware = createMiddleware<Env>(async (c, next) => {
-  // `requestContext.url` is the normalized document URL — the `.data`
-  // suffix React Router appends to data requests is already stripped,
-  // so the gate recognises exempt install / login routes and static
-  // assets without re-parsing.
+  // `requestContext.url` is the normalized document URL — `.data` is already stripped.
   if (isExempt(c.var.requestContext.url.pathname)) {
     return next()
   }

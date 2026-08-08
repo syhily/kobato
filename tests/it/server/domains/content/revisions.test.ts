@@ -11,7 +11,6 @@ beforeEach(async () => {
   await clearAllTables(db)
 })
 
-/** Seed a content row and return it. */
 async function seedContent(overrides: {
   type: 'post' | 'page'
   ownerId: number

@@ -44,18 +44,14 @@ export async function findMusicDtoById(db: Database, id: number): Promise<AdminM
 }
 
 /**
- * Fallback cover for tracks whose stored cover has no buildable public URL
- * (e.g. an S3 row after the CDN base was unset). Served by the bundled
- * default-asset route — see `src/server/domains/assets/services/routes.ts`
- * (`/images/default-music-cover.png` → the `defaultMusicCover` slot).
+ * Fallback cover for tracks whose stored cover has no buildable public URL.
+ * Served by the default-asset route (`defaultMusicCover` slot — `src/server/domains/assets/services/routes.ts`).
  */
 export const DEFAULT_MUSIC_COVER_URL = '/images/default-music-cover.png'
 
 /**
  * Row → public projection, the single owner of music URL building. Returns
- * `null` only when the audio URL can't be built — an unplayable track stays
- * hidden. A missing cover is not fatal: it falls back to the bundled default
- * vinyl image so the track stays playable (unplayable ≠ coverless).
+ * `null` when the audio URL can't be built; a missing cover falls back to the default.
  */
 function toPublicMusicMeta(row: MusicRow): PublicMusicMeta | null {
   const audioUrl = safeResolveAssetUrl(row.storageDriver, row.audioStoragePath)
@@ -74,9 +70,8 @@ function toPublicMusicMeta(row: MusicRow): PublicMusicMeta | null {
 }
 
 /**
- * Public projection for the SSR `<MusicPlayer />` and the public
- * `GET music.get` route. Returns `null` when the row is missing or
- * soft-deleted so the player can render a no-op placeholder.
+ * Public projection for the SSR `<MusicPlayer />` and `GET music.get`.
+ * Returns `null` when the row is missing or soft-deleted.
  */
 export async function getMusicMetaForPlayer(db: Database, playerId: string): Promise<PublicMusicMeta | null> {
   const row = await findMusicByPlayerId(db, playerId)
@@ -84,10 +79,8 @@ export async function getMusicMetaForPlayer(db: Database, playerId: string): Pro
 }
 
 /**
- * Batch variant of `getMusicMetaForPlayer` — one query regardless of how
- * many players a page embeds. Callers wire this into the PT-owned embed
- * seam (`@/server/domains/pt/embeds`) so PT itself never imports this
- * domain.
+ * Batch variant of `getMusicMetaForPlayer` — one query per page. Callers
+ * wire it into the PT embed seam (`@/server/domains/pt/embeds`).
  */
 export async function getPublicMusicMetasByIds(
   db: Database,

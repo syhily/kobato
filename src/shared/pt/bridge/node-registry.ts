@@ -30,17 +30,10 @@ import { pmTwoColumnToBlocks, twoColumnBlockToPmNode } from '@/shared/pt/bridge/
 import { isBlock, isInline } from '@/shared/pt/bridge/utils'
 import { headingStyleFromLevel } from '@/shared/pt/heading-levels'
 
-// One dispatch table drives BOTH bridge directions. Each entry binds a PM
-// node type to the PT block it round-trips with; per-node attribute
+// One dispatch table drives BOTH bridge directions; per-node attribute
 // knowledge lives in the co-located node modules (`bridge/nodes/*`).
-// Adding a node type = one entry + one fixture (the round-trip suite
-// enforces fixture completeness).
-//
-// `ptType` / `blockToPm` are `null` when the entry only exists for the
-// PM→PT leg: heading / blockquote / list items are styles of the PT text
-// `block`, and PT list streaks are consumed by the `consumeListStreak`
-// state machine in `pushBlocks`, never by per-block dispatch.
-
+// Adding a node type = one entry + one fixture. `ptType` / `blockToPm`
+// are null when the entry only exists for the PM→PT leg.
 export interface BridgeNodeEntry {
   /** PM node type claimed on the PM→PT leg. */
   readonly pmType: string
@@ -52,10 +45,9 @@ export interface BridgeNodeEntry {
   readonly pmToBlocks: (node: PmBlockNode, out: Block[], ctx: BridgeReverseContext) => void
 }
 
-// PortableText flattens — there is no "nested under blockquote" container.
-// Paragraphs adopt the blockquote style and inherit the quote's textAlign;
-// non-paragraph children flow back through the registry dispatch so their
-// content survives instead of being silently dropped.
+// PortableText flattens: no "nested under blockquote" container —
+// paragraphs adopt the quote style; other children flow back through
+// the registry dispatch so their content survives.
 function pmBlockquoteToBlocks(node: PmBlockNode, out: Block[], ctx: BridgeReverseContext): void {
   const textAlign = node.attrs?.textAlign as string | undefined
   for (const child of (node.content ?? []).filter(isBlock)) {
@@ -75,9 +67,8 @@ function pmBlockquoteToBlocks(node: PmBlockNode, out: Block[], ctx: BridgeRevers
   }
 }
 
-// Generic pass-through for PT blocks without a dedicated editor node
-// (mathBlock, musicPlayer, …). Tiptap renders these with the "block-card"
-// view that reads `attrs.payload`.
+// Pass-through for PT blocks without a dedicated editor node; Tiptap
+// renders them via the "block-card" view reading `attrs.payload`.
 function customBlockToPmNode(block: Block): PmBlockNode {
   return {
     type: 'blockCard',
@@ -195,12 +186,7 @@ for (const entry of BRIDGE_NODE_REGISTRY) {
   reverseByPmType.set(entry.pmType, entry)
 }
 
-/**
- * PT→PM dispatch. Block types without a dedicated entry fall back to the
- * generic `blockCard` pass-through, which round-trips their payload
- * opaquely — that default covers mathBlock / musicPlayer and any future
- * block type until it grows a real editor node.
- */
+/** PT→PM dispatch; block types without a dedicated entry fall back to the generic `blockCard` pass-through. */
 export function dispatchBlockToPm(block: Block, ctx: BridgeForwardContext): PmBlockNode {
   const entry = forwardByPtType.get(block._type)
   if (entry?.blockToPm != null) {
@@ -210,10 +196,9 @@ export function dispatchBlockToPm(block: Block, ctx: BridgeForwardContext): PmBl
 }
 
 /**
- * PM→PT dispatch. Unknown PM node types throw: this is the save path, and
- * silently dropping authored content is never acceptable — register a
- * converter instead of swallowing the node. Stray top-level inline text
- * (a malformed doc) is still ignored, as before.
+ * PM→PT dispatch. Unknown PM node types throw — silently dropping
+ * authored content on the save path is never acceptable. Stray
+ * top-level inline text is ignored.
  */
 export function dispatchPmNodeToBlocks(out: Block[], node: PmNode, ensureKey: BridgeEnsureKey): void {
   if (isInline(node)) {

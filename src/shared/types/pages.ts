@@ -2,23 +2,17 @@ import type { AdminPageDetailDto, AdminPageDto } from '@/shared/contracts/pages'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
 // Wire-format DTOs for the `/admin/pages` editor and the
-// `/api/admin/list-pages` oRPC procedure. Lives in `@/shared`
-// so server and client import the same shape without crossing
-// the boundary. Bigints are stringified. The row DTOs
-// (`AdminPageDto`, `AdminPageDetailDto`, list/revision outputs) are
-// zod-derived in `@/shared/contracts/pages`.
+// `/api/admin/list-pages` oRPC procedure. Bigints are stringified;
+// row DTOs are zod-derived in `@/shared/contracts/pages`.
 
 export interface ListPagesInput {
   q?: string
-  /** Deletion state filter. */
   deletedStatus?: 'all' | 'deleted' | 'normal'
-  /** Published state filter. */
   published?: boolean
-  /** Filter by author. */
   authorId?: string
-  /** Zero-based offset for pagination. */
+  /** Zero-based. */
   offset?: number
-  /** Page size; capped server-side. */
+  /** Capped server-side. */
   limit?: number
 }
 
@@ -165,9 +159,8 @@ export interface RestorePageOutput {
   success: boolean
 }
 
-// `unpublishPage` flips `meta.published` to false without touching
-// the latest published revision (so re-publishing later promotes the
-// existing content instead of writing an empty no-op revision).
+// Flips `meta.published` to false without touching the latest published
+// revision (re-publishing later promotes the existing content).
 export interface UnpublishPageInput {
   id: string
 }
@@ -181,7 +174,7 @@ export interface PreviewPageBodyInput {
 }
 
 export interface RenderMathInput {
-  /** Raw TeX source. Length-bounded by `renderMathSchema`. */
+  /** Length-bounded by `renderMathSchema`. */
   tex: string
   /** `true` for `$$ … $$` block math; `false` for inline `$ … $`. */
   display: boolean

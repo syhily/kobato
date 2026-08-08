@@ -40,11 +40,8 @@ import { SortableDragHandle, sortableIndexOf, useSortableRow, useSortableSensors
 import { Button } from '@/ui/components/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/components/card'
 
-// Self-hosted web-font library + slot assignment: a library grid (draggable
-// into a slot, delete refuses if referenced), the `FontUploadButton` upload
-// dialog, and three slot columns (global / post / code) persisted directly
-// via `admin.fonts.setSlot` (NOT the settings autosave path) + revalidate.
-
+// Web-font library + slot assignment: draggable grid, upload dialog, and
+// three slot columns persisted via `admin.fonts.setSlot` + revalidate.
 const SLOT_LABELS: Record<FontSlot, string> = {
   global: '全站',
   post: '文章正文',
@@ -74,9 +71,7 @@ export function FontsView() {
     mutationFn: (fontId: string) => orpc.admin.fonts.delete({ fontId }),
     onSuccess: () => {
       toast.success('字体已删除')
-      // Invalidate via the procedure-level orpcQuery key — a hand-rolled
-      // ['admin','fonts','list'] array can't match TanStack's nested key
-      // grammar and would leave the list stale forever.
+      // Invalidate via the procedure-level key — a hand-rolled array can't match TanStack's nested key grammar.
       void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.fonts.list.key() })
       void revalidator.revalidate()
     },
@@ -99,19 +94,15 @@ export function FontsView() {
 
   const sensors = useSortableSensors()
 
-  // The drag spans two containers: library rows only drop when the pointer
-  // is inside a slot rect (pointerWithin); slot items reorder with the
-  // "nearest corner" looseness of closestCorners. Dispatching by active
-  // type keeps both correct — closestCorners alone would land a library
-  // drag in the nearest slot without the pointer ever entering it.
+  // Two-container drag: library rows drop only inside a slot rect (pointerWithin);
+  // slot items reorder with closestCorners. Dispatch by active type keeps both correct.
   const collisionDetection: CollisionDetection = (args) => {
     const activeData = args.active.data.current
     const activeType =
       activeData && typeof activeData === 'object' ? (activeData as { type?: unknown }).type : undefined
     if (activeType === 'library') {
       const within = pointerWithin(args)
-      // pointerWithin already returns [] when the pointer is outside every
-      // droppable — pass it through so a library drag never lands.
+      // pointerWithin returns [] outside every droppable — pass through so a library drag never lands.
       return within.length > 0 ? within : []
     }
     return closestCorners(args)
@@ -128,8 +119,7 @@ export function FontsView() {
     }
     const overData = over.data.current
 
-    // Resolve the target slot + insertion index from the drop target: the
-    // slot container appends; an item targets its slot and index.
+    // Resolve the target slot + insertion index: the slot container appends; an item targets its slot and index.
     let targetSlot: FontSlot | undefined
     let targetIndex: number | undefined
     if (isSlotItemData(overData)) {
@@ -148,7 +138,6 @@ export function FontsView() {
       return
     }
 
-    // slotItem drag: reorder within, or move across slots.
     const fromSlot = activeData.slot
     if (targetSlot && targetSlot !== fromSlot) {
       slotsController.moveToSlot(activeData.fontId, targetSlot, targetIndex, fromSlot)
@@ -181,8 +170,6 @@ export function FontsView() {
     </AdminListPage>
   )
 }
-
-// ---- library section -------------------------------------------------------
 
 function LibrarySection({
   fonts,
@@ -266,8 +253,6 @@ function LibraryFontRow({ font, onDelete }: { font: AdminFontDto; onDelete: (fon
     </li>
   )
 }
-
-// ---- slot assignment -------------------------------------------------------
 
 function SlotAssignmentSection({
   fonts,

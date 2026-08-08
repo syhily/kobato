@@ -67,8 +67,7 @@ export const WeiboIcon: LucideIcon = createIcon('weibo', '0 0 1024 1024', [
   ],
 ])
 
-// Single source of truth for the `SocialNetwork → icon component` mapping
-// shared by the public Header and the admin SocialsEditor.
+// Single source of truth for the `SocialNetwork → icon component` mapping (Header + SocialsEditor).
 export const SOCIAL_NETWORK_ICONS: Record<SocialNetwork, LucideIcon> = {
   github: GithubIcon,
   x: XIcon,

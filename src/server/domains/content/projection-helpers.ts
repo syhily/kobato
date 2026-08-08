@@ -6,9 +6,7 @@ import { validatePortableTextBody } from '@/shared/pt/utils'
 import { readStringArray } from '@/shared/utils/tools'
 import { isRecord } from '@/shared/utils/type-guards'
 
-// `content.body` is `text({ mode: 'json' })` so Drizzle hands it to us
-// as `unknown`. Round-trip through `validatePortableTextBody` so a
-// corrupted blob (e.g. a direct INSERT) never blanks the public site.
+// Validate the `json` blob — a corrupted one must never blank the public site.
 export function readBody(value: unknown): PortableTextBody {
   if (value === null || value === undefined) {
     return []
@@ -38,10 +36,8 @@ export function readHeadings(value: unknown): MarkdownHeading[] {
 }
 
 /**
- * The revision-joined CMS fields both catalog projections (`toCmsPost`,
- * `toCmsPage`) derive identically: the PT body, the image-source list,
- * and the heading anchors — each empty when the entity has no published
- * revision yet.
+ * The revision-joined CMS fields both catalog projections derive
+ * identically — each empty when the entity has no published revision yet.
  */
 export function readRevisionProjection(revision: ContentRow | null): {
   body: PortableTextBody

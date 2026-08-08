@@ -4,11 +4,9 @@ import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderToHtml } from '#/_helpers/render'
 import { CategoryField } from '@/ui/admin/posts/meta/CategoryField'
 
-// CategoryField renders the post-editor category select. Base UI's
-// `<Select.Value>` renders the raw `value` by default — this component
-// resolves the category name via the SelectValue children function, so the
-// trigger must show "技术" for id "1", never the id itself (regression:
-// the trigger displayed the numeric id).
+// CategoryField resolves the category name via the SelectValue children
+// function (Base UI renders the raw value by default) — the trigger must
+// show "技术" for id "1", never the id itself.
 
 const queryMocks = mockTanstackQuery()
 

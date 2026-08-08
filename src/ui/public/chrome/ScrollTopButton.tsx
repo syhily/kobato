@@ -5,9 +5,7 @@ import { Button } from '@/ui/components/button'
 import { IconButtonContent } from '@/ui/components/icon-button-content'
 import { cn } from '@/ui/lib/cn'
 
-// Toggle visibility with `opacity` + `pointer-events` instead of `display`
-// to avoid iOS Safari compositor ghosting during scroll. `transform-gpu`
-// promotes the host to its own layer so opacity stays GPU-accelerated.
+// `opacity` + `pointer-events` (not `display`) avoids iOS Safari scroll ghosting; `transform-gpu` keeps opacity GPU-accelerated.
 export function ScrollTopButton() {
   const show = useShowOnScroll()
   return (

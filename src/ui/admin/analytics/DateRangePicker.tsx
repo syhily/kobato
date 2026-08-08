@@ -2,9 +2,7 @@ import { type PresetKey, PRESET_KEYS } from '@/shared/contracts/analytics'
 import { Button } from '@/ui/components/button'
 import { cn } from '@/ui/lib/cn'
 
-// Sink's preset chip row — plain buttons for the seven canonical ranges,
-// no calendar popover. Custom ranges go through `?startAt=`/`?endAt=`.
-
+// Preset chip row for the seven canonical ranges; custom ranges go through `?startAt=`/`?endAt=`.
 const PRESET_LABEL: Record<PresetKey, string> = {
   'last-1h': '最近 1 小时',
   today: '今天',

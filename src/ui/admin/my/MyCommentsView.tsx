@@ -51,10 +51,7 @@ export interface MyCommentsViewProps {
   q: string
   /** `${type}:${ownerId}` if the URL pins a specific post / page, else null. */
   entity: string | null
-  /**
-   * Posts / pages the user has commented on, plus the currently-selected
-   * entity (when the URL pins one that isn't in the capped result set).
-   */
+  /** Posts / pages the user commented on, plus the currently-selected entity (when the URL pins one outside the capped set). */
   entityOptions: MyCommentEntityOption[]
   currentUser: { id: string; name: string; email: string }
 }
@@ -73,16 +70,13 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
           next.set(key, value)
         }
       }
-      // setSearchParams re-runs the loader so the props stay in sync with
-      // the URL; `replace` keeps history clean and `preventScrollReset`
-      // avoids jumping to the top on every filter change.
+      // setSearchParams re-runs the loader; `replace` keeps history clean, `preventScrollReset` avoids jumping.
       setSearchParams(next, { replace: true, preventScrollReset: true })
     },
     [searchParams, setSearchParams],
   )
 
-  // The URL is the source of truth: the pills run in controlled mode over
-  // the loader props, and every pill action maps back onto the params.
+  // URL is the source of truth: pills run controlled over the loader props; every action maps back onto the params.
   const filtersFromUrl = useMemo<ActiveFilter<MyCommentFilterFieldKey>[]>(() => {
     const filters: ActiveFilter<MyCommentFilterFieldKey>[] = []
     if (status !== 'all') {
@@ -102,8 +96,7 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
 
   const fields = useMemo(() => buildMyCommentFilterFields(entityOptions), [entityOptions])
 
-  // Pill action → URL patch. An empty text pill maps to q: null — the pill
-  // survives locally in the hook until the URL next re-validates.
+  // Pill action → URL patch; an empty text pill maps to q: null and survives locally until the URL re-validates.
   const syncUrl = useCallback(
     (_next: ActiveFilter<MyCommentFilterFieldKey>[], action: FilterPillsAction<MyCommentFilterFieldKey>) => {
       switch (action.type) {
@@ -310,7 +303,6 @@ function MyCommentRow({
         </Avatar>
 
         <div className="min-w-0 flex-1">
-          {/* Header: name + badges */}
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-semibold">{currentUser.name}</span>
             {item.isPending && <Badge variant="secondary">待审核</Badge>}
@@ -318,7 +310,6 @@ function MyCommentRow({
             {isDeleted && <Badge variant="secondary">已删除</Badge>}
           </div>
 
-          {/* Meta: date + page */}
           <p className="mt-0.5 truncate text-admin-sm text-muted-foreground">
             {createdAt}
             {item.entity && (
@@ -331,7 +322,6 @@ function MyCommentRow({
             )}
           </p>
 
-          {/* Parent reply hint */}
           {item.parent && (
             <p className="mt-1 truncate text-sm text-muted-foreground">
               回复 <span className="underline-offset-2 hover:underline">{item.parent.name}</span>：
@@ -343,12 +333,10 @@ function MyCommentRow({
             </p>
           )}
 
-          {/* Body */}
           <div className="comment-content prose-blog prose prose-sm mt-2 max-w-none leading-copy wrap-break-word whitespace-normal">
             <PortableTextBody body={item.body} />
           </div>
 
-          {/* Action row */}
           {!isDeleted && (
             <div className="mt-4 flex flex-row flex-wrap items-center gap-2">
               {canEdit && (

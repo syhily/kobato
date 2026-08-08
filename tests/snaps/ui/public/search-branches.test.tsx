@@ -3,11 +3,8 @@ import { describe, expect, it } from 'vitest'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { SearchBar, SearchIconButton } from '@/ui/public/Search'
 
-// `Search` (public) has no existing snapshot coverage. These tests cover the
-// two exported SSR-reachable branches:
-//   - `SearchBar` renders the sidebar search form and input,
-//   - `SearchIconButton` renders the trigger button; the popup is portal-based
-//     and intentionally returns null during SSR.
+// First snapshot coverage for the public Search: SearchBar renders the
+// sidebar form; SearchIconButton's popup is portal-based and returns null under SSR.
 
 describe('snapshot: Search branches', () => {
   it('renders the sidebar search bar', () => {

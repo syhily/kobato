@@ -2,15 +2,10 @@ import type { RefObject } from 'react'
 
 import { useEffect, useRef } from 'react'
 
-// Shared IntersectionObserver driver for infinite-scroll lists. Consumers
-// mount the returned ref on a trailing sentinel div; once the sentinel
-// scrolls within `rootMargin` of the root (the viewport by default),
-// `fetchNextPage` fires.
-//
-// The observer only re-arms while there IS a next page and no page fetch
-// is in flight, so a single intersection can never double-fire a request.
-// Used by `useAdminInfiniteList` and directly by surfaces with custom
-// scroll roots (the meting-search dialog/view).
+// Shared IntersectionObserver driver for infinite-scroll lists: consumers
+// mount the returned ref on a trailing sentinel; intersection fires
+// `fetchNextPage`. The observer only arms while a next page exists and no
+// fetch is in flight, so a single intersection can't double-fire.
 export function useInfiniteScrollSentinel<TElement extends HTMLElement = HTMLDivElement>({
   hasNextPage,
   isFetchingNextPage,
@@ -21,9 +16,7 @@ export function useInfiniteScrollSentinel<TElement extends HTMLElement = HTMLDiv
   hasNextPage: boolean
   isFetchingNextPage: boolean
   fetchNextPage: () => unknown
-  /** Intersection root; defaults to the viewport. Passed as a ref object
-   *  (read at arm time, not during render) so scroll containers that mount
-   *  after first render — e.g. dialog bodies — work. */
+  /** Intersection root (defaults to the viewport); read at arm time so late-mounting scroll containers work. */
   root?: RefObject<Element | null>
   rootMargin?: string
 }): RefObject<TElement | null> {

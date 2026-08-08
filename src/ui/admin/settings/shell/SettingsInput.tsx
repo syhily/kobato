@@ -3,22 +3,9 @@ import type { ComponentProps, FocusEventHandler } from 'react'
 import { Input } from '@/ui/components/input'
 import { Textarea } from '@/ui/components/textarea'
 
-// `<Input>` + automatic blur-driven save for /admin/settings.
-//
-// Every text/number/url/email/password input on the settings page must go
-// through this wrapper so that:
-//   1. react-hook-form's own `onBlur` (register/Controller) still fires — it
-//      drives `mode: 'onChange'` field-level validation and the `touched`
-//      flag.
-//   2. `useSettingsCard.flushOnBlur` fires immediately after — committing the
-//      edit if (and only if) the form is dirty.
-//
-// Replace `<Input {...form.register('x')} />` with:
-//   `<SettingsInput flushOnBlur={flushOnBlur} {...form.register('x')} />`
-//
-// The `flushOnBlur` prop is split out from the rest (rather than smuggled
-// through `register`'s onBlur) so it survives `{...form.register('x')}` —
-// the spread's `onBlur` would otherwise overwrite a prop of the same name.
+// `<Input>` + blur-driven save: `flushOnBlur` is a separate prop so it
+// survives `{...form.register('x')}` — the spread's `onBlur` would
+// otherwise overwrite it.
 
 type InputProps = ComponentProps<typeof Input>
 
@@ -38,10 +25,8 @@ export function SettingsInput({ flushOnBlur, onBlur, ...props }: SettingsInputPr
   return <Input {...props} onBlur={handleBlur} />
 }
 
-// `<Textarea>` companion to `SettingsInput`. Same blur-saves pattern; needed
-// for the robots.txt card and any future multi-line field. Controlled usage
-// (these fields use `value`/`onChange` rather than `register`), so there's no
-// RHF onBlur to merge — flushOnBlur runs directly.
+// `<Textarea>` companion — same blur-saves pattern; controlled usage, so no
+// RHF onBlur to merge.
 type TextareaProps = ComponentProps<typeof Textarea>
 
 interface SettingsTextareaProps extends Omit<TextareaProps, 'onBlur'> {

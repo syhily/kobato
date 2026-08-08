@@ -11,12 +11,7 @@ import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
 import { toastApiError } from '@/client/lib/toast-api-error'
 
-// Optimistic slot controller for the fonts view: a local reducer mirrors
-// `blogSettings.fonts` so dragged items don't snap back while `setSlot`
-// round-trips; the `seeded` action rewrites from the server only when no
-// mutation is in flight, so a mid-sequence revalidate can't clobber the
-// optimistic state (same trade-off as the settings reseed guard).
-
+// Optimistic slot controller: mirrors `blogSettings.fonts`; `seeded` only rewrites from the server while no mutation is in flight.
 export const MAX_SLOT_FONTS = 8
 
 export type SlotState = Record<FontSlot, string[]>
@@ -66,8 +61,7 @@ export function useFontSlotsController() {
   const [slots, dispatch] = useReducer(slotsReducer, undefined, emptySlots)
   const inFlightRef = useRef(0)
 
-  // Seed from server, but skip while a mutation is in flight so the
-  // optimistic state survives the revalidate that fires on success.
+  // Seed from server, but skip while a mutation is in flight so the optimistic state survives the revalidate.
   useEffect(() => {
     if (inFlightRef.current > 0) {
       return
@@ -103,11 +97,8 @@ export function useFontSlotsController() {
     },
   })
 
-  // Serialize persists through a one-at-a-time queue: two rapid drags
-  // would otherwise fire concurrent unversioned POSTs, and an earlier
-  // payload landing last leaves the server holding a stale slot order
-  // (audit P1-19). Sequential writes make the last drag the authoritative
-  // end state; a failure surfaces via onError without stranding the queue.
+  // Serialize persists one-at-a-time (audit P1-19): concurrent unversioned
+  // POSTs could land out of order and leave the server holding a stale order.
   const persistQueueRef = useRef<Promise<void>>(Promise.resolve())
 
   const persist = (slot: FontSlot, ids: string[]) => {
@@ -142,8 +133,7 @@ export function useFontSlotsController() {
       return
     }
 
-    // Compute the post-move state once, then dispatch + persist from it
-    // (avoids reading a stale `slots` for the mutation payload).
+    // Compute the post-move state once, then dispatch + persist from it — avoids a stale `slots` read.
     const next: SlotState = { ...slots }
     if (fromSlot && fromSlot !== targetSlot) {
       next[fromSlot] = slots[fromSlot].filter((id) => id !== fontId)

@@ -37,16 +37,10 @@ export type VariantProps<Component extends (...args: any) => any> = Omit<
 
 const falsyToString = <T>(value: T) => (typeof value === 'boolean' ? `${value}` : value === 0 ? '0' : value)
 
-/* cx
-  ============================================ */
-
 export type CxOptions = Parameters<typeof clsx>
 export type CxReturn = ReturnType<typeof clsx>
 
 export const cx = clsx
-
-/* cva
-  ============================================ */
 
 type ConfigSchema = Record<string, Record<string, ClassValue>>
 

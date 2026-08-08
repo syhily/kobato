@@ -6,9 +6,7 @@ export interface ImageLoadedHook {
   handleLoad: (event: SyntheticEvent<HTMLImageElement>) => void
 }
 
-// Forward a node to either a callback ref or a ref object. Extracted to a
-// module-level helper so the React compiler doesn't treat the ref mutation
-// as a violation of hook-arg immutability.
+// Module-level: keeps the ref mutation out of the React compiler's hook-arg immutability check.
 function forwardRefValue<T>(ref: Ref<T> | undefined, value: T | null): void {
   if (typeof ref === 'function') {
     ref(value)

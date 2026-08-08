@@ -29,9 +29,8 @@ queryMocks.queryClient = {
   invalidateQueries: vi.fn(),
 }
 
-// FriendsView relies on an infinite-query list (no reducer) plus a delete
-// mutation and a debounced search hook. We neutralize the queries so SSR
-// emits the loading chrome.
+// FriendsView relies on an infinite-query list + delete mutation + debounced
+// search; queries are neutralized so SSR emits the loading chrome.
 
 vi.mock('@/ui/components/dialog', () => import('#/_helpers/stubs/dialog'))
 
@@ -76,7 +75,6 @@ describe('snapshot: FriendsView', () => {
     expect(html).toContain('搜索站名、简介或主页 URL')
     expect(html).toContain('包含已隐藏')
     expect(html).toContain('新增友链')
-    // Skeleton occupies the body while the first page is in flight.
     expect(html).toContain('skeleton')
   })
 
@@ -126,9 +124,7 @@ describe('snapshot: EditFriendDialog', () => {
       return <EditFriendDialog friend={target} onClose={() => undefined} onSaved={() => undefined} />
     }
     const html = stableHtml(renderToHtml(<Wrapper />))
-    // The dialog chrome renders in edit mode; the draft sync is a render-phase
-    // state update that React bails out of during a single SSR pass, so we
-    // assert on structure rather than the pre-filled field values.
+    // Draft sync bails out of a single SSR pass — assert structure, not field values.
     expect(html).toContain('编辑友链')
     expect(html).toContain('修改友链信息')
     expect(html).toContain('friend-website')

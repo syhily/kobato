@@ -2,13 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { cn } from '@/ui/lib/cn'
 
-// Guards against tailwind-merge regressions in `cn()`.
-//
-// These tests pin the merge semantics:
-//   - dedupe conflicting Tailwind utilities (gap-2 + gap-4 → gap-4)
-//   - leave non-Tailwind class literals (`btn`, `media`, `post-like`) opaque
-//   - respect responsive variant scoping (`md:gap-4` and `gap-3` are
-//     different cascade slots and both survive)
+// Pins `cn()` merge semantics against tailwind-merge regressions.
 describe('cn() — Tailwind utility merging', () => {
   it('drops falsy entries without leaving stray spaces', () => {
     const liked: boolean = false
@@ -39,11 +33,7 @@ describe('cn() — Tailwind utility merging', () => {
     expect(cn('text-(--color-foreground)', 'text-(--color-primary)')).toBe('text-(--color-primary)')
   })
 
-  // cn must NOT collapse a custom font-size token and a custom color
-  // token that share the text- prefix. Without explicit theme
-  // registration in cn.ts, every custom --text-foo token would
-  // arbitrate against every custom --color-bar token through a shared
-  // "unknown text-*" group, silently dropping the font-size.
+  // Custom --text-* and --color-* tokens must not collapse — they share the text- prefix.
   describe('cn() — custom theme tokens distinguished by namespace', () => {
     it('keeps custom --text-* font-size and custom --color-* text color side by side', () => {
       expect(cn('text-toc-toggle', 'text-ink-3')).toBe('text-toc-toggle text-ink-3')
@@ -87,10 +77,7 @@ describe('cn() — Tailwind utility merging', () => {
       expect(cn('rounded-sm', 'rounded-xs')).toBe('rounded-xs')
     })
 
-    // Tailwind v4 links font-size and line-height through a built-in
-    // "text resets leading" conflicting-class-groups rule. The project
-    // ships --text-badge and --leading-badge as a paired token, so
-    // cn.ts intentionally leaves leading-* unregistered.
+    // cn.ts intentionally leaves leading-* unregistered so paired --text-*/--leading-* tokens survive.
     it('keeps leading-<custom> alongside text-<same-name> on the badge call site', () => {
       const html = cn(
         'inline-flex shrink-0 items-center',

@@ -14,12 +14,8 @@ import { metric } from '@/server/infra/db/schema/metric'
 import { post } from '@/server/infra/db/schema/post'
 import { user } from '@/server/infra/db/schema/user'
 
-// De-mocked controller coverage: the comments projection, admin-query,
-// and moderate services all run real against seeded rows — filter
-// propagation is pinned by real query results instead of mock call args,
-// and the moderation endpoints are pinned by DB state plus audit rows.
-// Fixture shapes are adapted from the domain-seam suites in
-// tests/it/server/domains/comments/.
+// De-mocked controller coverage: projection/admin-query/moderate services run real
+// against seeded rows; moderation pinned by DB state + audit rows.
 
 const db = getTestDb()
 
@@ -29,8 +25,7 @@ beforeEach(async () => {
 })
 
 afterEach(async () => {
-  // Flush BEFORE reset so a failed test can't strand rows in a torn-down
-  // batcher.
+  // Flush BEFORE reset: a failed test must not strand rows in a torn-down batcher.
   await flushAuditLog()
   resetAllBatchers()
 })
@@ -51,8 +46,7 @@ async function seedUser(opts: Partial<typeof user.$inferInsert> = {}): Promise<n
   return rows[0]!.id
 }
 
-// audit_log.actor_id references user.id, so the admin viewer must be a
-// real row for the batched audit insert to survive the FK.
+// audit_log.actor_id is an FK: the admin viewer must be a real row.
 async function seedAdmin(): Promise<number> {
   return seedUser({ name: 'Admin', email: `admin-${++seq}@example.com`, role: 'admin' })
 }
@@ -338,10 +332,8 @@ describe('adminCommentsRouter.searchAuthors', () => {
 })
 
 describe('adminCommentsRouter.approveCommentDeletion', () => {
-  // The delete-request state machine is pinned at the domain seam in
-  // tests/it/server/domains/comments/moderation-flows.test.ts; here the
-  // same fences are induced by real rows so the controller's error
-  // translation and audit plumbing run end-to-end.
+  // The state machine is pinned at the domain seam; here only the controller's error
+  // translation and audit plumbing run.
   it('approving soft-deletes the comment and audits comment_delete_request_approved', async () => {
     const admin = await seedAdmin()
     const uid = await seedUser()

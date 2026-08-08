@@ -3,15 +3,9 @@ import type { LinkMarkDef, MathInlineMarkDef, Span } from '@/shared/pt/schema'
 
 import { escapeHtml } from '@/shared/utils/security'
 
-// Email-friendly server renderer for comment bodies, producing a
-// compact HTML string for transactional email templates. Unlike the
-// public-site `<PortableTextBody>` SSR renderer it emits no Shiki /
-// KaTeX class names (email clients strip classes anyway), renders math
-// as inline TeX inside `<code>` (MathML support in mail clients is
-// poor), and has no React dependency so server code stays inside the
-// `server → ui` import boundary. This module ONLY handles the comment
-// dialect; the richer post/page rendering path stays on
-// `<PortableTextBody>`.
+// Email-friendly HTML renderer for comment bodies (transactional mail):
+// no Shiki/KaTeX class names or MathML — math renders as inline TeX in
+// `<code>`. Handles the comment dialect only.
 
 const NEWLINE = '\n'
 
@@ -47,9 +41,7 @@ function renderSpan(span: Span, lookup: MarkLookup): string {
     }
   }
   let html = escapeHtml(span.text)
-  // `code` decorator wins over the typography decorators (markdown
-  // inline code doesn't honour bold/italic inside backticks). Apply
-  // the link wrapper last so the URL covers the whole span.
+  // `code` decorator wins over the typography decorators (markdown inline code).
   if (marks.includes('code')) {
     html = `<code>${escapeHtml(span.text)}</code>`
   } else {
@@ -95,8 +87,6 @@ interface ListFrame {
 function renderListItem(block: CommentTextBlock, stack: ListFrame[], out: string[]): void {
   const ordered = block.listItem === 'number'
   const level = block.level ?? 1
-  // Close frames that sit deeper than (or at the same level but with a
-  // different ordering than) the current item.
   while (stack.length > 0) {
     const top = stack[stack.length - 1]
     if (top.level > level || (top.level === level && top.ordered !== ordered)) {
@@ -106,7 +96,6 @@ function renderListItem(block: CommentTextBlock, stack: ListFrame[], out: string
     }
     break
   }
-  // Open frames up to the current level.
   while (stack.length === 0 || stack[stack.length - 1].level < level) {
     out.push(ordered ? '<ol>' : '<ul>')
     stack.push({ ordered, level: (stack[stack.length - 1]?.level ?? 0) + 1 })

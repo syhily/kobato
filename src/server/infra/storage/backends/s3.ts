@@ -18,18 +18,11 @@ import {
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
-// `@aws-sdk/client-s3` is loaded lazily via `getAwsSdk()` because
-// `@aws-sdk/core` ships an ESM index that does
-// `import './emitWarningIfUnsupportedVersion'` without the `.js`
-// extension. Node ESM (and the Vitest SSR loader) reject that import
-// at module-eval time. Rolldown bundles the SDK in `npm run build` so
-// production never sees it, but the lazy getter ensures test files
-// that transitively touch this module don't crash on import — the
-// AWS SDK is only evaluated when a function actually calls `getAwsSdk()`.
+// The SDK is loaded lazily via `getAwsSdk()`: `@aws-sdk/core`'s ESM index
+// imports a file without a `.js` extension, which Node ESM and the Vitest
+// SSR loader reject at module-eval time.
 
 const log = getLogger('storage.s3')
-
-// --- Lazy AWS SDK loader ---
 
 type AwsSdk = typeof import('@aws-sdk/client-s3')
 type S3ClientInstance = InstanceType<AwsSdk['S3Client']>
@@ -42,8 +35,6 @@ async function getAwsSdk(): Promise<AwsSdk> {
   }
   return awsSdk
 }
-
-// --- Client cache ---
 
 interface CachedClient {
   fingerprint: string
@@ -63,20 +54,14 @@ function fingerprintFor(storage: AssetsSettings['storage']): string {
   })
 }
 
-// --- Context resolver ---
-
 interface S3StorageContext {
   client: S3ClientInstance
   bucket: string
 }
 
 /**
- * Resolve the live S3 client + bucket name for the current operation.
- * Throws `ActionFailure(503)` when the upload toggle is OFF (unless
- * `requireEnabled: false` — reads/deletes/existence checks on historical
- * S3 objects must keep working after the toggle is flipped off) or when
- * the credentials are half-configured. Module-private: the only way in
- * from outside is the `StorageBackend` contract below.
+ * Resolve the live S3 client + bucket. Throws 503 when uploads are disabled
+ * (unless `requireEnabled: false`) or credentials are half-configured.
  */
 async function resolveS3Context(options?: { requireEnabled?: boolean }): Promise<S3StorageContext> {
   const settings = requireBlogSettingsSection('assets')
@@ -112,22 +97,11 @@ async function resolveS3Context(options?: { requireEnabled?: boolean }): Promise
       accessKeyId: storage.accessKeyId,
       secretAccessKey: storage.secretAccessKey ?? '',
     },
-    // Some S3-compatible services return base64-encoded Content-MD5 while
-    // the AWS SDK v3 expects hex, causing a false "Checksum mismatch" on
-    // GetObject. WHEN_REQUIRED skips automatic response validation unless
-    // the caller explicitly asks for it (ChecksumMode: ENABLED).
+    // Some S3-compatible services return base64 Content-MD5 (SDK expects hex) — WHEN_REQUIRED skips validation unless asked.
     responseChecksumValidation: 'WHEN_REQUIRED' as const,
-    // AWS SDK v3 (>= 3.729.0) defaults to computing request checksums for
-    // every PutObject. For streams of unknown length (e.g. the gzipped
-    // database backup) the checksum middleware sets `x-amz-decoded-content-length`
-    // to `undefined`, which Node rejects with "Invalid value undefined for
-    // header x-amz-decoded-content-length" and surfaces as "An error was
-    // encountered in a non-retryable streaming request." WHEN_REQUIRED keeps
-    // checksums off unless the caller explicitly opts in.
+    // SDK v3 defaults to request checksums, which fail on unknown-length streams —
+    // WHEN_REQUIRED keeps them off; callers wanting integrity pass `ChecksumAlgorithm`.
     //
-    // Note: this setting applies to every S3 upload (images, music, backups).
-    // Callers that upload known-length Buffers and want request integrity must
-    // pass `ChecksumAlgorithm` on the individual command.
     requestChecksumCalculation: 'WHEN_REQUIRED' as const,
   }
   const client = new sdk.S3Client(config)
@@ -136,14 +110,9 @@ async function resolveS3Context(options?: { requireEnabled?: boolean }): Promise
   return { client, bucket: storage.bucket }
 }
 
-// AWS SDK v3 (>= 3.729.0) defaults to CRC32 for `DeleteObjects`. Several
-// S3-compatible providers (Backblaze B2, MinIO older builds, some Aliyun
-// OSS configurations, Cloudflare R2 in certain regions) reject those
-// requests with `ErrMissingContentMD5` because they only honor the legacy
-// `Content-MD5` header for that one operation. The documented fallback
-// (https://github.com/aws/aws-sdk-js-v3/blob/main/supplemental-docs/MD5_FALLBACK.md)
-// is to install a middleware AFTER `flexibleChecksumsMiddleware` that
-// strips the modern checksum headers and replaces them with `Content-MD5`.
+// SDK v3 sends CRC32 checksums on `DeleteObjects`, which several S3-compatible
+// providers reject (`ErrMissingContentMD5`) — they only honor `Content-MD5` for
+// this operation. This middleware strips the modern checksums and sets `Content-MD5`.
 function installDeleteObjectsMd5Fallback(_sdk: AwsSdk, client: S3ClientInstance): void {
   const middleware: FinalizeRequestMiddleware<ServiceInputTypes, ServiceOutputTypes> =
     (next, context: HandlerExecutionContext) => async (args) => {
@@ -170,8 +139,6 @@ function installDeleteObjectsMd5Fallback(_sdk: AwsSdk, client: S3ClientInstance)
     tags: ['MD5_FALLBACK'],
   })
 }
-
-// --- Operations ---
 
 async function putObject(
   key: string,
@@ -202,12 +169,7 @@ function parseS3Contents(contents: _Object[] | undefined): StoredObjectMeta[] {
   return objects
 }
 
-/**
- * The SDK's not-found vocabulary, normalized into one predicate:
- * `NoSuchKey` (XML-error S3 services on `GetObject`), `NotFound`
- * (`HeadObject`), or a bare 404 from S3-compatible providers that don't
- * set an error name.
- */
+/** Normalized not-found predicate: `NoSuchKey`, `NotFound`, or a bare 404. */
 function isS3NotFoundError(error: unknown): boolean {
   const name = unsafeCast<{ name?: string }>(error).name
   const statusCode = unsafeCast<{ $metadata?: { httpStatusCode?: number } }>(error).$metadata?.httpStatusCode
@@ -215,12 +177,8 @@ function isS3NotFoundError(error: unknown): boolean {
 }
 
 /**
- * Existence check via a single `HeadObject`. Cheaper and more precise than
- * the prior `listS3Objects(key, 1)` approach (one request, exact-key match
- * rather than a prefix listing the migration would otherwise fire for every
- * object). Treats a `404`/`NotFound` as "absent" and any other failure as
- * "absent" too — a transient error mid-migration shouldn't abort, since the
- * subsequent PUT is idempotent (matches the old list-based contract).
+ * `HeadObject` existence check. Any failure — 404 or transient — counts as
+ * "absent": the subsequent PUT is idempotent, so a mid-migration blip is safe.
  */
 async function objectExists(key: string): Promise<boolean> {
   const sdk = await getAwsSdk()
@@ -264,11 +222,7 @@ async function listObjects(prefix: string, maxKeys = 10_000): Promise<StoredObje
   return objects
 }
 
-/**
- * `GetObject` with the seam's not-found normalization: an SDK `NoSuchKey` /
- * `NotFound` / bare-404 rejection becomes `StorageObjectNotFound`; any other
- * failure propagates unchanged.
- */
+/** `GetObject` with not-found normalization; any other failure propagates unchanged. */
 async function sendGetObject(
   sdk: AwsSdk,
   client: S3ClientInstance,
@@ -287,8 +241,7 @@ async function getObjectBuffer(key: string, maxSize = MAX_OBJECT_BUFFER_SIZE): P
   const { client, bucket } = await resolveS3Context({ requireEnabled: false })
   const response = await sendGetObject(sdk, client, bucket, key)
   if (response.Body === undefined) {
-    // An empty body is indistinguishable from a miss for callers — surface
-    // the seam's not-found either way.
+    // An empty body is indistinguishable from a miss — surface the seam's not-found.
     throw new StorageObjectNotFound(key)
   }
   const contentLength = response.ContentLength
@@ -314,9 +267,8 @@ async function getObjectBuffer(key: string, maxSize = MAX_OBJECT_BUFFER_SIZE): P
 }
 
 /**
- * Stream an object without buffering it into memory. Used for backups,
- * which can exceed the `MAX_OBJECT_BUFFER_SIZE` cap that buffered reads
- * enforce. Throws `StorageObjectNotFound` on a missing/empty object.
+ * Stream an object without buffering (backups exceed the buffered-read cap).
+ * Throws `StorageObjectNotFound` on a missing/empty object.
  */
 async function getObjectStream(key: string): Promise<Readable> {
   const sdk = await getAwsSdk()
@@ -352,12 +304,6 @@ function storageSettings() {
   return requireBlogSettingsSection('assets').storage
 }
 
-/**
- * S3-compatible backend. The lazy SDK loader, fingerprint-cached client,
- * MD5-delete fallback, and checksum workarounds all live above as
- * module-private code — the exported surface is exactly the
- * `StorageBackend` contract.
- */
 export const s3Backend: StorageBackend = {
   driver: 's3',
 
@@ -373,7 +319,6 @@ export const s3Backend: StorageBackend = {
   },
 
   async put(input: PutObjectInput): Promise<StoredObjectMeta> {
-    // Branding/backups are private-cache; images/music are public-cache.
     // The visibility → cache-control mapping lives here and nowhere else.
     const visibility = input.visibility ?? 'public'
     const cacheControl =
@@ -383,11 +328,7 @@ export const s3Backend: StorageBackend = {
   },
 
   async putStream(input: PutStreamInput): Promise<StoredObjectMeta> {
-    // Streamed bodies (backups) are private-cache, matching the buffered
-    // private put. A Transform meter counts the bytes in flight — unlike a
-    // 'data' listener it keeps backpressure intact — so the returned size
-    // is the exact uploaded byte count (the backup row's byteSize doubles
-    // as the download's Content-Length, where a guess would corrupt it).
+    // A Transform meter counts bytes (backpressure-safe) — the exact size is the backup's Content-Length.
     let size = 0
     const meter = new Transform({
       transform(chunk: Buffer, _encoding, callback) {
@@ -408,10 +349,6 @@ export const s3Backend: StorageBackend = {
   },
 
   async exists(key: string): Promise<boolean> {
-    // One `HeadObject` request with an exact-key match, rather than a
-    // prefix listing. A failure (e.g. S3 misconfigured mid-migration) is
-    // treated as "not present" — the subsequent PUT is idempotent and
-    // overwrites, so this is safe.
     return objectExists(key)
   },
 
@@ -424,17 +361,12 @@ export const s3Backend: StorageBackend = {
   },
 
   async deletePrefix(prefix: string): Promise<void> {
-    // S3 has no real directories — deleting all objects under the prefix
-    // effectively removes the "folder". List and delete in pages to handle
-    // prefixes with more than 1000 objects.
+    // No real directories: delete every object under the prefix (paginated).
     const objects = await listObjects(prefix)
     if (objects.length > 0) {
       await deleteObjects(objects.map((o) => o.key))
     }
-    // S3-compatible services that persist folder markers (MinIO, SeaweedFS,
-    // Aliyun OSS, …) leave a zero-byte object at the prefix itself after the
-    // contents are gone. The contract is "including the prefix directory
-    // itself", so best-effort delete it — a missing marker is not an error.
+    // Some services persist a folder-marker object at the prefix — best-effort delete it (missing marker is not an error).
     if (prefix.endsWith('/')) {
       try {
         await deleteObject(prefix)
@@ -449,8 +381,4 @@ export const s3Backend: StorageBackend = {
   },
 }
 
-// `buildPublicUrl` lives in `@/server/domains/images/services/cache` and
-// resolves the live `publicBaseUrl` directly through
-// `@/server/infra/storage/public-url`'s `resolveAssetUrl`. Keeping it out
-// of this module is what allows the SSR enhancer to stay free of the AWS
-// SDK in code paths that only need to compute a URL (no PUT/DELETE).
+// URL resolution lives in `public-url.ts` so URL-only SSR paths never load the AWS SDK.

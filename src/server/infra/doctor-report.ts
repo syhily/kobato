@@ -1,7 +1,5 @@
-// `kobato doctor` report assembly — pure functions over injected probes, so
-// the whole diagnostic shape is unit-testable without a SEA binary. The
-// sea-cli shell supplies the real probes (natives smoke, self-update gate,
-// config child-process probe); tests supply fakes.
+// `kobato doctor` report assembly — pure functions over injected probes,
+// so the whole diagnostic shape is unit-testable without a SEA binary.
 
 export interface DoctorReport {
   version: string
@@ -40,14 +38,11 @@ export async function collectDoctorReport(probes: DoctorProbes): Promise<DoctorR
 }
 
 export function doctorOk(report: DoctorReport): boolean {
-  // The self-update gate is advisory, not a failure: plenty of healthy
-  // deployments (Docker, macOS, -dev builds) are not meant to self-update.
+  // Self-update gate is advisory — healthy deployments may legitimately lack it.
   return report.natives.ok && report.config.ok
 }
 
-/** Issues ride the probe's stderr as `  - key: message` lines (the
- *  `loadServerConfig` bootstrap format). Anything else is preserved whole
- *  so an unexpected probe crash still surfaces in the report. */
+/** Probe issues ride stderr as `  - key: message` lines; anything else is preserved whole. */
 export function parseProbeIssues(stderr: string): string[] {
   const issues = stderr
     .split('\n')

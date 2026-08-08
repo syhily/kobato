@@ -3,14 +3,8 @@ import { CalendarIcon, ListChecksIcon, NetworkIcon, SearchIcon, UserIcon } from 
 import type { AuditLogActorDto } from '@/shared/contracts/audit'
 import type { FilterFieldSpec, FilterOptionItem } from '@/ui/admin/shared/filter-bar/types'
 
-// Audit-log filter-pill field specs. ACTION_OPTIONS / RESOURCE_TYPE_OPTIONS
-// double as the row badge vocabularies (AuditLogRow imports them here) —
-// the filter dropdowns use the same lists minus the synthetic 全部 entry.
-//
-// `buildAuditFilterFields` is a factory (memoized by the view) because the
-// actor options come from the async actors query. The actor rows keep their
-// icon + truncated-label rendering via `renderOption`.
-
+// Audit-log filter-pill specs. ACTION_OPTIONS / RESOURCE_TYPE_OPTIONS double
+// as the row badge vocabularies (minus the synthetic 全部 entry).
 export type AuditLogFilterFieldKey = 'action' | 'resourceType' | 'actor' | 'ip' | 'date'
 
 /** The `admin.auditLog.list` / `exportCsv` input contributed by the active pills. */

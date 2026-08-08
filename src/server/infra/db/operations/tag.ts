@@ -14,11 +14,7 @@ export interface AdminTagsListFilters {
   limit?: number
 }
 
-// Build the shared `WHERE` clause used by both `listAdminTagRows` and
-// `countAdminTags`. Keeping the construction in one place ensures the
-// row listing and the pagination counter always filter on the same
-// predicate; if they drifted, `total` would be inconsistent with the
-// returned page (and `hasMore` would lie).
+// Shared by the listing and its counter so both filter on the same predicate.
 function buildAdminTagWhere(filters: AdminTagsListFilters): SQL | undefined {
   if (filters.q && filters.q.trim() !== '') {
     const q = filters.q.trim()
@@ -27,18 +23,10 @@ function buildAdminTagWhere(filters: AdminTagsListFilters): SQL | undefined {
   return undefined
 }
 
-// Admin list view. `name ASC` matches the public listing so admins
-// can find a row by its Chinese name without an extra mental sort
-// step. Optional `q` matches `name` or `slug` with `LIKE`. When
-// `offset`/`limit` are supplied we paginate server-side; otherwise we
-// return the full filtered set (the catalog backfill and tests rely
-// on the latter).
+// Admin list view; `name ASC` matches the public listing. Without offset/limit the full filtered set is returned.
 export async function listAdminTagRows(db: Database, filters: AdminTagsListFilters = {}): Promise<TagRow[]> {
   const where = buildAdminTagWhere(filters)
-  // Drizzle's builder narrows the return type on each chained method,
-  // so we keep the chain expression and only branch on offset/limit at
-  // the very end. `0` is a legitimate offset value, so we test for
-  // `!== undefined` rather than truthiness.
+  // `0` is a legitimate offset — test `!== undefined`, not truthiness.
   const q = where
     ? db.select().from(tag).where(where).orderBy(asc(tag.name))
     : db.select().from(tag).orderBy(asc(tag.name))
@@ -54,10 +42,7 @@ export async function listAdminTagRows(db: Database, filters: AdminTagsListFilte
   return q
 }
 
-// Pagination counter. Returns the total number of rows matching the
-// same `q` filter `listAdminTagRows` uses, ignoring `offset`/`limit`.
-// Powers the `total` field of the admin list response so the table's
-// pagination control can render the right number of pages.
+// Counter: same `q` filter as the listing, ignoring offset/limit.
 export async function countAdminTags(db: Database, filters: AdminTagsListFilters = {}): Promise<number> {
   const where = buildAdminTagWhere(filters)
   const rows = where
@@ -107,10 +92,7 @@ export async function deleteTag(db: Database, id: number): Promise<boolean> {
   return result.length > 0
 }
 
-// Idempotent insert used by the one-shot CLI seeder. `ON CONFLICT
-// (name) DO NOTHING` so a re-run never overwrites a row the admin
-// has since edited (slug rename, …). Returns `true` when a new row
-// was inserted, `false` when the row already exists.
+// Idempotent seeder insert; `ON CONFLICT (name) DO NOTHING` — returns true when a new row was inserted.
 export async function seedTagIfMissing(db: Database, values: NewTag, tx = db): Promise<boolean> {
   const now = new Date()
   const result = await tx
@@ -121,9 +103,7 @@ export async function seedTagIfMissing(db: Database, values: NewTag, tx = db): P
   return result.length > 0
 }
 
-// Batch version of `seedTagIfMissing`. A single `INSERT ... ON CONFLICT`
-// with multiple values avoids N round-trips inside a transaction.
-// Sync (node:sqlite): called inside the upsert transaction.
+// Batch seeder insert, one round-trip. Sync (node:sqlite): called inside the upsert transaction.
 export function seedTagsIfMissing(db: Database, valuesList: NewTag[], tx = db): void {
   if (valuesList.length === 0) {
     return

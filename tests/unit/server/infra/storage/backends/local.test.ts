@@ -123,8 +123,6 @@ describe('storage/local — delete + list', () => {
   })
 
   it('deleteMany stays correct when destructured off the backend (no `this` reliance)', async () => {
-    // Pull the method off the object the way a callback/destructure would —
-    // if it relied on `this`, this call would lose the backend reference.
     const { deleteMany } = localBackend
     await deleteMany(['images/a.jpg', 'musics/c.mp3'])
     expect(await localBackend.exists('images/a.jpg')).toBe(false)

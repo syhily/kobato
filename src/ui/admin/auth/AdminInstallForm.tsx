@@ -35,9 +35,7 @@ export function AdminInstallForm() {
   const [waitStatus, setWaitStatus] = useState<'polling' | 'timeout'>('polling')
   const pollAbortRef = useRef<AbortController | null>(null)
 
-  // The restore POST goes through the shared upload adapter: the whole form
-  // (backup file + embedded CSRF field) is the body; failures render inline
-  // via restoreError, an accepted response kicks off the restart poll.
+  // Restore POST goes through the shared upload adapter; acceptance kicks off the restart poll.
   const { upload: uploadRestore, pending: isRestoring } = useFileUpload({
     endpoint: '/api/setup/restore',
     credentials: 'include',

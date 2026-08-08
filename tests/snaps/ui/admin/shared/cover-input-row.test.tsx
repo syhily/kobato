@@ -3,16 +3,14 @@ import { describe, expect, it, vi } from 'vitest'
 import { renderToHtml, stableHtml } from '#/_helpers/render'
 import { CoverInputRow } from '@/ui/admin/shared/CoverInputRow'
 
-// CoverInputRow renders a real upload dialog when a `kind` is present; stub
-// it so SSR stays deterministic and offline.
+// Stub the real upload dialog so SSR stays deterministic and offline.
 vi.mock('@/ui/admin/shared/UploadImageDialog', () => ({
   UploadImageDialog: () => null,
 }))
 
 describe('CoverInputRow — upload gating', () => {
   it('keeps the upload trigger enabled whenever a kind is supplied (no S3 toggle)', () => {
-    // The old `assets.storage.enabled` gate is gone — uploads always go to
-    // the active backend, so a populated kind is the only precondition.
+    // Uploads always go to the active backend — a populated kind is the only precondition.
     const html = stableHtml(
       renderToHtml(
         <CoverInputRow

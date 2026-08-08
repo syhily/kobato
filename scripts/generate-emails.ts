@@ -1,10 +1,6 @@
 #!/usr/bin/env node
-//
 // Renders every email template to a standalone HTML file under
-// `scripts/emails/` so you can preview them in a browser.
-//
-//   npm run emails:generate
-//
+// `scripts/emails/` for browser preview (`npm run emails:generate`).
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -73,8 +69,7 @@ const templates = [
         link: 'https://example.com/admin/invite?token=abcdef',
       }),
   },
-  // Admin notifications all render through `AdminNotificationEmail`;
-  // each entry below is the layout fed by one notification type's data.
+  // Admin notification layouts — one entry per notification type's data.
   {
     name: 'NewComment',
     make: () =>

@@ -25,8 +25,7 @@ export function CacheView({ cache }: CacheViewProps) {
   const [status, setStatus] = useState<ClearStatus>(idleClearStatus)
   const [confirmTarget, setConfirmTarget] = useState<ClearCacheTarget | null>(null)
 
-  // Only tunable buckets carry an editable settings slot; widening to a
-  // Partial keeps `bucket.id` (the full CacheBucketId union) indexable.
+  // Only tunable buckets carry an editable settings slot; `Partial` keeps `bucket.id` indexable.
   const tunableSlots: Partial<Record<CacheBucketId, CacheBucketSlot>> = cache
 
   const {

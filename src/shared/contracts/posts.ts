@@ -14,9 +14,8 @@ export const adminPostDto = z.object({
   commentsEnabled: z.boolean(),
   webmentionsEnabled: z.boolean(),
   showToc: z.boolean(),
-  // Opt the post into rendering「修改于 XXXX」next to the first-publish
-  // date on the public detail page. Toggled from the editor meta sidebar
-  // (next to the TOC toggle); defaults `false`.
+  // Opts the post into rendering「修改于 XXXX」on the public detail
+  // page; toggled from the editor meta sidebar, defaults `false`.
   showUpdated: z.boolean(),
   visible: z.boolean(),
   publishedAt: isoDateTime,
@@ -36,10 +35,8 @@ export const adminPostDto = z.object({
   // Approved comment count for this post's metric row. Populated by
   // the admin list endpoint; `0` on detail / save paths.
   commentCount: z.number().int().nonnegative(),
-  // The post's `metric.public_id` UUID — the opaque wire identifier the
-  // admin comment-count link uses to deep-link into
-  // `/admin/comments?pageKey=<uuid>`. Empty string on detail / save
-  // paths that don't fan out a metric upsert.
+  // The post's `metric.public_id` UUID — the wire identifier the admin
+  // comment-count link deep-links with. Empty on detail / save paths.
   commentPublicId: z.string(),
 })
 export type AdminPostDto = z.infer<typeof adminPostDto>

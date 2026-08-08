@@ -24,9 +24,7 @@ type CheckState = 'idle' | 'loading' | 'up-to-date' | 'available' | 'dev' | 'err
 
 const IS_DEV_BUILD = APP_VERSION.includes('-dev')
 
-// Per-state copy for the self-update job panel. There is no 'succeeded'
-// state — the process exits on success and the reload reveals the new
-// version.
+// Job-panel copy; no 'succeeded' state — the process exits on success.
 const JOB_STATE_COPY: Partial<Record<UpdateJobState, string>> = {
   downloading: '正在下载更新包…',
   verifying: '正在校验更新包…',
@@ -47,10 +45,8 @@ export function VersionDialog({ open, onOpenChange }: VersionDialogProps) {
 
   const { data: avatarData } = useQuery(orpcQuery.github.avatar.queryOptions({ input: {}, staleTime: 1000 * 60 * 60 }))
 
-  // Self-update job polling: enabled once apply succeeds; the interval
-  // callback stops polling on failure. Progress is read from this query's
-  // data; on 'restarting' the process exits and the page reloads itself
-  // (effect below).
+  // Self-update job polling: enabled once apply succeeds; the interval stops
+  // on failure, and on 'restarting' the process exits and the page reloads itself.
   const { data: jobStatus } = useQuery(
     orpcQuery.admin.update.status.queryOptions({
       input: {},
@@ -107,7 +103,6 @@ export function VersionDialog({ open, onOpenChange }: VersionDialogProps) {
         </DialogHeader>
 
         <div className="flex flex-col gap-5">
-          {/* Logo */}
           <div className="flex flex-col items-center gap-3">
             <div className="size-16">
               <img
@@ -137,7 +132,6 @@ export function VersionDialog({ open, onOpenChange }: VersionDialogProps) {
             <div className="text-center text-sm text-muted-foreground">{APP_DESCRIPTION}</div>
           </div>
 
-          {/* Links */}
           <div className="flex flex-wrap justify-center gap-2">
             <VersionLink
               href="https://yufan.me"
@@ -159,7 +153,6 @@ export function VersionDialog({ open, onOpenChange }: VersionDialogProps) {
             </VersionLink>
           </div>
 
-          {/* Update check */}
           <div className="rounded-xl border p-3">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">更新检查</span>

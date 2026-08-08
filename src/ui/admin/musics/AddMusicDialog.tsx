@@ -62,8 +62,7 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
     reset,
   } = useMetingMusicSearch({ limit: searchLimit })
 
-  // Infinite scroll inside the dialog's own scroll container — disarms
-  // while a page is in flight; `loadMore` self-guards too.
+  // Infinite scroll in the dialog's scroll container, disarmed while a page is in flight.
   const sentinelRef = useInfiniteScrollSentinel({
     hasNextPage: open && hasMore,
     isFetchingNextPage: isLoadingMore,
@@ -107,9 +106,7 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
     search({ source, keyword })
   }, [search, source, keyword])
 
-  // Auto-load next page if the sentinel is still inside the scroll container
-  // and more pages exist. Reads geometry in an effect (post-render) so we
-  // don't touch refs during render.
+  // Auto-load the next page when the sentinel is still inside the container; geometry read post-render.
   useEffect(() => {
     if (!hasMore) {
       return
@@ -125,9 +122,7 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
       }
     })
     return () => cancelAnimationFrame(id)
-    // `sentinelRef` / `scrollRef` are stable ref objects (the former is
-    // returned from a hook, so the lint rule can't prove it) — listing them
-    // is a no-op that satisfies exhaustive-deps.
+    // Stable ref objects listed to satisfy exhaustive-deps (the sentinel ref comes from a hook the lint can't see).
   }, [hasMore, loadMore, sentinelRef])
 
   const onPreview = useCallback(
@@ -254,7 +249,6 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
                 )
               })
             )}
-            {/* Sentinel for infinite scroll */}
             <div ref={sentinelRef} className="h-1" />
             {isLoadingMore ? (
               <div className="flex justify-center py-2">

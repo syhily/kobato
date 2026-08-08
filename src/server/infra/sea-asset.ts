@@ -1,20 +1,11 @@
-// SEA/disk asset text reads.
-//
-// Single owner of the "embedded asset under SEA, real file on disk
-// otherwise" read for JSON/SQL/text resources (warmup manifests, client
-// manifests, migration SQL). Callers keep ownership of the asset key
-// (the `@/shared/sea/assets` contract) and the disk path; this module
-// owns the `isSea()` dispatch and the missing-asset handling.
+// Owns the "embedded asset under SEA, real file on disk otherwise" read
+// for text resources (warmup/client manifests, migration SQL).
 
 import { existsSync, readFileSync } from 'node:fs'
 
 import { getEmbeddedAsset, isSea } from '@/server/infra/sea'
 
-/**
- * Read a text asset as UTF-8: the embedded SEA asset `key` when running
- * as a single executable, otherwise the file at `diskPath`. Returns null
- * when the asset or file is missing so callers can fall back.
- */
+/** Read a text asset as UTF-8 — embedded `key` under SEA, `diskPath` otherwise; null when missing. */
 export function readAssetTextOrDisk(key: string, diskPath: string): string | null {
   if (isSea()) {
     return getEmbeddedAsset(key)?.toString('utf-8') ?? null
@@ -25,11 +16,7 @@ export function readAssetTextOrDisk(key: string, diskPath: string): string | nul
   return readFileSync(diskPath, 'utf-8')
 }
 
-/**
- * Decode an embedded asset as UTF-8 text, throwing `missingMessage` when
- * the asset is absent. The caller supplies the message so each call site
- * keeps its specific diagnostic wording.
- */
+/** Decode an embedded asset as UTF-8, throwing `missingMessage` when absent. */
 export function requireEmbeddedAssetText(asset: Buffer | null, missingMessage: string): string {
   if (asset === null) {
     throw new Error(missingMessage)

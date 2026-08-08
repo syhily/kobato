@@ -15,16 +15,9 @@ import { LikeButton } from '@/ui/public/LikeActions'
 import { postMetaClass, postMetaDateClass, postTitleClass } from '@/ui/public/post/postChrome'
 import { TableOfContents } from '@/ui/public/post/TableOfContents'
 
-// The TOC must NOT be wrapped in a lazy boundary here: its motion runtime
-// already stays out of the public bundle (every animated element inside
-// renders through `ui/components/lazy-motion`), while the component itself
-// renders the closed-drawer DOM on the server (toggle button + off-screen
-// drawer, both aria-hidden/inert). A `fallback={null}` boundary would drop
-// that DOM from the SSR output entirely, and once the chunk resolves the
-// client renders it back — a server-vs-client element mismatch that
-// surfaces as React error #418 on every warm visit. The streamed Comments
-// boundary below is safe because its SSR fallback (`CommentsSkeleton`) is
-// a real placeholder the client renders until the Await resolves.
+// No lazy boundary around the TOC: its closed-drawer DOM must be in the SSR output —
+// a `fallback={null}` boundary would drop it and mismatch on re-render (#418).
+// The streamed Comments boundary is safe: its SSR fallback is a real placeholder.
 
 const DRAFT_MARKER_LABELS: Record<Exclude<DraftMarker, null>, { sr: string; visible: string }> = {
   draft: { sr: '未发布草稿：', visible: '【草稿】' },

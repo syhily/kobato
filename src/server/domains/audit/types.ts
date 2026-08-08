@@ -19,20 +19,17 @@ export interface AuditEventInput {
   createdAt?: Date
 }
 
-/** Batcher configuration options. */
 export interface BatcherOptions {
   flushIntervalMs: number
   flushThreshold: number
 }
 
-/** Archive task execution result. */
 export interface ArchiveResult {
   archivedDays: number
   archivedRows: number
   deletedRows: number
 }
 
-/** S3 cleanup result. */
 export interface CleanupResult {
   deletedFiles: number
 }

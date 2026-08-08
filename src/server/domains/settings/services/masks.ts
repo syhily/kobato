@@ -3,10 +3,8 @@ import type { BlogSettingsBundle, SecretMasks } from '@/shared/config/types'
 import { SECRET_FIELDS } from '@/server/domains/settings/secrets'
 
 /**
- * Derive the admin display masks: the last 4 characters of every
- * configured secret, or `null` when the secret is unset. The explicit
- * initializer keeps the output total — a new SECRET_FIELDS entry fails
- * type-checking here until its mask slot is added.
+ * Last-4 mask of every configured secret, `null` when unset. The explicit initializer
+ * keeps the output total — a new SECRET_FIELDS entry fails type-checking until its slot is added.
  */
 export function computeSecretMasks(bundle: BlogSettingsBundle): SecretMasks {
   const masks: SecretMasks = {
@@ -23,9 +21,8 @@ export function computeSecretMasks(bundle: BlogSettingsBundle): SecretMasks {
 }
 
 /**
- * Copy the bundle with every configured secret blanked, so admin-facing
- * payloads never carry ciphertext or plaintext secrets. Sections without
- * secrets keep their reference; the input is never mutated.
+ * Copy the bundle with every configured secret blanked, for admin-facing payloads.
+ * Sections without secrets keep their reference; the input is never mutated.
  */
 export function redactSecretsFromBundle(bundle: BlogSettingsBundle): BlogSettingsBundle {
   let redacted: BlogSettingsBundle = { ...bundle }

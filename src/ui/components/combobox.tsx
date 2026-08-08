@@ -81,13 +81,9 @@ function ComboboxContent<Item>({
               />
             </div>
             {/*
-             * Base UI's `Combobox.Empty` must stay mounted regardless of
-             * result state — it doubles as an `aria-live` region (see
-             * ComboboxEmpty.js docstring), so it can't be conditionally
-             * rendered or hidden with `display:none`. Instead the padding
-             * is scoped behind the `empty:` variant: the div is genuinely
-             * empty whenever Base UI hands it `null` children (list has
-             * matches).
+             * `Combobox.Empty` doubles as an `aria-live` region, so it must stay
+             * mounted — no conditional render, no `display:none`; padding is scoped
+             * behind the `empty:` variant, which applies when Base UI hands it null children.
              */}
             <BaseCombobox.Empty className="text-center text-sm text-muted-foreground not-empty:px-3 not-empty:py-6">
               {emptyMessage}

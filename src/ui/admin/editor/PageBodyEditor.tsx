@@ -46,33 +46,18 @@ import { cn } from '@/ui/lib/cn'
 export interface PageBodyEditorProps {
   /** Initial PortableText body. Only read on first mount + when `bodyKey` changes. */
   initialBody: PortableTextBody
-  /**
-   * Identity of the body source. When this string changes the editor
-   * resets its content from `initialBody` — use page id +
-   * `clientRevisionToken` so page switches and accepted remote
-   * revisions flush stale content.
-   */
+  /** Identity of the body source — a change resets the editor content from `initialBody`. */
   bodyKey: string
   /** Fired on every editor update with the freshly-derived PortableText body. */
   onBodyChange: (body: PortableTextBody) => void
   /** When true, the editor becomes read-only. */
   disabled?: boolean
-  /**
-   * Live preview column layout: toolbar stays fixed above the scrollable
-   * canvas. When false the toolbar scrolls inline and a floating
-   * duplicate pins to the bottom center once it scrolls out of view.
-   */
+  /** Live preview layout: toolbar fixed above a scrollable canvas; when false
+   *  it scrolls inline and a floating duplicate pins on scroll-out. */
   livePreviewOpen?: boolean
-  /**
-   * Ref to the scrollable container so the parent shell can wire
-   * bidirectional scroll sync with the live-preview pane.
-   */
+  /** Scrollable container ref for bidirectional scroll sync with the live preview. */
   scrollContainerRef?: React.RefObject<HTMLDivElement | null>
-  /**
-   * Action(s) rendered to the right of the floating toolbar (e.g. 发布草稿).
-   * Pass `null` to hide; renders nothing while the floating toolbar is
-   * hidden (live-preview mode, or before the operator has scrolled).
-   */
+  /** Actions right of the floating toolbar; hidden while the floating toolbar is hidden. */
   floatingActions?: React.ReactNode
 }
 
@@ -335,12 +320,8 @@ export function PageBodyEditor({
             <div className="min-h-0 grow px-3 pt-6 pb-editor-pad-bottom md:px-6">{editorCanvas}</div>
           </div>
           {showFloatingToolbar ? (
-            // Centered toolbar pill at the same `bottom-*` offset as the
-            // publish FAB column. `right-{n}` reserves room for that column
-            // on narrow phones — the pill shrinks via `overflow-x-auto`
-            // instead of stretching past the FABs. The FAB lives in its own
-            // fixed slot so pill width can change with density without
-            // dragging the publish button sideways.
+            // Centered toolbar pill at the same `bottom-*` offset as the publish
+            // FAB column; `right-{n}` reserves room for that column on narrow phones.
             <div className="pointer-events-none fixed right-20 bottom-6 left-0 z-40 flex touch-manipulation items-center justify-center px-3 sm:right-24 sm:bottom-8 lg:right-28">
               <div className="pointer-events-auto max-w-full overflow-x-auto rounded-xl border bg-card/95 p-1 shadow-lg ring-1 ring-border/60 backdrop-blur-sm supports-[backdrop-filter]:bg-card/90">
                 <Toolbar {...toolbarProps} className="border-b-0" />
@@ -348,11 +329,8 @@ export function PageBodyEditor({
             </div>
           ) : null}
           {showFloatingToolbar && floatingActions ? (
-            // Publish FAB column anchored bottom-right, independent of the
-            // centered toolbar pill — it never moves horizontally as toolbar
-            // density changes. `AdminScrollTopButton` lifts one row higher in
-            // focused mode so it sits directly above this slot. Gated on the
-            // same `showFloatingToolbar` flag as the pill.
+            // Publish FAB column anchored bottom-right, independent of the pill;
+            // gated on the same `showFloatingToolbar` flag.
             <div className="pointer-events-auto fixed right-4 bottom-6 z-40 touch-manipulation sm:bottom-8 lg:right-6">
               {floatingActions}
             </div>

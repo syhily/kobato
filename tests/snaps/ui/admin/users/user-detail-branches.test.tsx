@@ -6,19 +6,11 @@ import type { AdminUserDto } from '@/shared/contracts/users'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { UserDetailView } from '@/ui/admin/users/UserDetailView'
 
-// `UserDetailView` is already covered by `user-detail.test.tsx` and
-// `user-cards.test.tsx` for the skeleton, resolved user chrome and most
-// `UserOperationsCard` branches. This suite adds the remaining render-path
-// branches that are still reachable in SSR:
-//   - the recent-comments list (commentsQuery resolves with rows),
-//   - the user-query error branch,
-//   - an admin-role badge branch.
+// user-detail.test.tsx + user-cards.test.tsx cover the skeleton, resolved
+// user and most operations branches; this adds the recent-comments list,
+// the user-query error branch and the admin badge.
 
-// ─────────────────────── react-query mock ───────────────────────────
-//
-// UserDetailView calls useQuery twice in order (user, then comments) and
-// several useMutation hooks. We route the first call to the user fixture and
-// the second to the comments fixture.
+// useQuery call order: 1st = user, 2nd = comments.
 
 const queryMocks = vi.hoisted(() => ({
   userQuery: {
@@ -61,8 +53,6 @@ vi.mock('@tanstack/react-query', async () => {
 })
 
 const queryCounter = vi.hoisted(() => ({ n: 0 }))
-
-// ───────────────────────────── fixtures ─────────────────────────────
 
 function makeAdminUser(overrides: Partial<AdminUserDto> = {}): AdminUserDto {
   const id = overrides.id ?? `user-${Math.random().toString(36).slice(2, 8)}`
@@ -139,8 +129,6 @@ function renderDetail(userId: string): string {
     ),
   )
 }
-
-// ─────────────────────────── shared setup ───────────────────────────
 
 describe('snapshot: UserDetailView branches', () => {
   beforeEach(() => {

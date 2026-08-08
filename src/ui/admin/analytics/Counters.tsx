@@ -5,9 +5,7 @@ import type { CountersDto } from '@/shared/contracts/analytics'
 import { Card } from '@/ui/components/card'
 import { cn } from '@/ui/lib/cn'
 
-// Three pure-props KPI cards (visits / visitors / referers).
-// `NumberFlow` animates the digit roll on every value change, so
-// URL-driven re-fetches feel kinetic without owning any animation state.
+// Three pure-props KPI cards; `NumberFlow` animates the digit roll.
 
 export interface CountersProps {
   data: CountersDto | null

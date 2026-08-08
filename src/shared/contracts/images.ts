@@ -13,7 +13,6 @@ export const adminImageDto = z.object({
   byteSize: z.number().int().nonnegative(),
   thumbhash: z.string().nullable(),
   uploaderId: idString.nullable(),
-  /** Display name of the user who uploaded the image. */
   uploaderName: z.string().nullable(),
   note: z.string().nullable(),
   createdAt: isoDateTime,

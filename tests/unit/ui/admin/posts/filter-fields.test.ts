@@ -10,10 +10,6 @@ import {
   syncPostFiltersFromUrl,
 } from '@/ui/admin/posts/filter-fields'
 
-// Spec-level coverage for the posts filter-pill fields: the status→query
-// projection (including the unlisted leg), the per-field toQuery mappers, and
-// the URL seed/sync helpers the view wires into `useFilterPills`.
-
 const fields = buildPostFilterFields({
   categories: [{ id: 'c-1', name: '前端' }],
   tags: ['react'],

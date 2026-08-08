@@ -5,17 +5,10 @@ import type { WebmentionInboxRow } from '@/server/infra/db/types'
 
 import { webmentionInbox } from '@/server/infra/db/schema/webmention'
 
-// Receive-side verification queue operations (mirror of
-// webmention-outbox.ts). Every row is awaiting verification — success
-// and terminal failure both DELETE the row, so there is no status
-// column to filter on.
+// Receive-side verification queue (mirror of webmention-outbox.ts).
+// No status column: success and terminal failure both delete the row.
 
-/**
- * Enqueue a (source, target) pair for async verification. A repeat POST
- * while the pair is already queued resets the retry bookkeeping and
- * re-arms the row for immediate processing — the sender re-asserted the
- * mention, so whatever backoff the row was sitting on no longer applies.
- */
+/** Enqueue for async verification; a repeat POST resets the retry bookkeeping. */
 export async function upsertWebmentionInbox(
   db: Database,
   values: { sourceUrl: string; targetUrl: string },
@@ -35,7 +28,6 @@ export async function upsertWebmentionInbox(
     })
 }
 
-/** The worker's batch: rows due for verification, earliest first. */
 export async function pickDueWebmentionInbox(db: Database, now: Date, limit: number): Promise<WebmentionInboxRow[]> {
   return db
     .select()
@@ -45,10 +37,8 @@ export async function pickDueWebmentionInbox(db: Database, now: Date, limit: num
     .limit(limit)
 }
 
-/** The scheduler's next wake-up: the earliest retry time among queued
- *  rows, or NULL when a row is processable right now (delay 0) / no row
- *  is queued (suspend). Sync (node:sqlite): the scheduleJob seam's
- *  `nextDelayMs` is synchronous. */
+/** The scheduler's next wake-up: earliest retry time, `'now'` when due, null when empty.
+ *  Sync (node:sqlite): scheduleJob's `nextDelayMs` is synchronous. */
 export function findNextWebmentionInboxDueAt(db: Database): Date | 'now' | null {
   const rows = db
     .select({ nextRetryAt: webmentionInbox.nextRetryAt })
@@ -82,9 +72,7 @@ export async function deleteWebmentionInbox(db: Database, id: number): Promise<v
   await db.delete(webmentionInbox).where(eq(webmentionInbox.id, id))
 }
 
-/** Receive switched off while rows were queued: drain them all (the
- *  endpoint already told every sender 410 — nothing here will be
- *  accepted any more). Returns the dropped count for the log line. */
+/** Receive switched off: drain all queued rows. Returns the dropped count. */
 export async function clearWebmentionInbox(db: Database): Promise<number> {
   const rows = await db.delete(webmentionInbox).returning({ id: webmentionInbox.id })
   return rows.length

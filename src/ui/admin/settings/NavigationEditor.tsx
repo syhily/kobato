@@ -42,9 +42,7 @@ const TYPE_LABELS: Record<FooterNavItem['type'], string> = {
   search: '搜索',
 }
 
-// Runtime guards for the Select-option strings: the `<Select>` callback is
-// typed `(value: string) => void`, so narrowing back to the union needs a
-// guard, not a cast.
+// Narrow Select's `string` callback values back to the unions — guards, not casts.
 const FOOTER_NAV_TYPE_SET: ReadonlySet<string> = new Set(['social', 'themeToggle', 'search'])
 const SOCIAL_NETWORK_SET: ReadonlySet<string> = new Set(SOCIAL_NETWORKS)
 
@@ -63,8 +61,6 @@ function asFooterNavType(value: string | null): FooterNavItem['type'] {
 function asSocialNetwork(value: string | null): SocialNetwork {
   return value !== null && isSocialNetwork(value) ? value : 'github'
 }
-
-// Side Navigation Card
 
 function SortableSideNavRow({
   field,
@@ -224,8 +220,6 @@ function SideNavCard({ navigation }: { navigation: NavigationSettings }) {
     </SettingGroup>
   )
 }
-
-// Footer Navigation Card
 
 function SortableFooterNavRow({
   item,

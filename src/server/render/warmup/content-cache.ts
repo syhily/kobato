@@ -11,14 +11,9 @@ import { drawOpenGraph } from '@/server/render/og/render'
 const log = getLogger('render.warmup')
 
 /**
- * The render-layer half of the content warmup seam
- * (`domains/content/render-warmup.ts`): pre-warm the buckets a crawler's
- * first scan hits right after content goes out — the entity's OG card
- * and today's sidebar calendar (both themes). Each warm goes through the
- * SAME `through(...)` call the HTTP resources make, so the bucket fills
- * under the request path's own key and the first crawler hit reads
- * instead of rendering. Failures are logged and swallowed — a cold cache
- * must never reach the publish/mutation that triggered the warm.
+ * Render-layer half of the content warmup seam: pre-warm the OG card and
+ * today's calendar (both themes) through the same `through(...)` key the
+ * HTTP resources use. Failures are logged and swallowed.
  */
 function warmContentCaches(db: Database, og: OgWarmTarget): void {
   void through(db, 'og', og, () => drawOpenGraph(og)).catch((err: unknown) => {
@@ -41,6 +36,5 @@ function warmContentCaches(db: Database, og: OgWarmTarget): void {
   }
 }
 
-// Self-wire into the content domain's slot at import time. This module
-// loads with the OG/calendar request-path owner (`http/resources/images.ts`).
+// Self-wires into the content domain's warmup slot at import time.
 wireContentRenderWarmup(warmContentCaches)

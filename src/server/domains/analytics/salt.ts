@@ -1,12 +1,8 @@
 import { randomBytes } from 'node:crypto'
 
-// Daily-rotating salt for `visitorHash`. In-memory only — UV counts
-// reset across process restarts and replicas, acceptable for a
-// single-process personal blog.
-//
-// Why a fresh salt every UTC day: stable WITHIN a day → honest
-// `COUNT(DISTINCT visitor_hash)` on a 24h window; anonymous ACROSS days →
-// the same IP can't be linked across days.
+// Daily-rotating salt for `visitorHash`, in-memory only — UV counts
+// reset across restarts, acceptable for a single-process personal blog.
+// Fresh salt every UTC day: stable WITHIN a day, anonymous ACROSS days.
 
 let currentSalt = randomBytes(32).toString('hex')
 let currentDay = currentUtcDay()

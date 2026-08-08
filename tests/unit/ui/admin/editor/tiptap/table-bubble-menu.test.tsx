@@ -2,17 +2,9 @@ import type { Editor } from '@tiptap/core'
 
 import { describe, expect, it } from 'vitest'
 
-// The TableBubbleMenu's UI is composed of one `<Button>` per
-// editor command. The popover positioning is owned by Tiptap's
-// BubbleMenu / floating-ui; what *we* own is the command catalogue
-// — the mapping between visible action labels and the Tiptap chain
-// commands we run.
-//
-// To stay independent of the bubble-menu portal infra (which needs a
-// live EditorView) we extract the command set from the source by
-// asserting against the chained commands a stub editor records when
-// each action runs. This guards the contract that gives the menu
-// its meaning while keeping the test free of jsdom + tiptap setup.
+// Contract: each TableBubbleMenu action label maps to the exact Tiptap
+// chain commands asserted here. A stub editor records the chain instead
+// of the live BubbleMenu portal, which needs an EditorView.
 
 interface ChainCall {
   ops: string[]

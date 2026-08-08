@@ -66,7 +66,6 @@ describe('integration / concurrent settings edits', () => {
   it('updates two different sections without overwriting each other', async () => {
     const ctx = makeAuthedCtx({ role: 'admin', db })
 
-    // Update limits
     const limitsRes = await callRpc(
       '/admin/settings/update',
       { section: 'limits', payload: { maxRequestBodySize: 5 * 1024 * 1024 } },
@@ -74,7 +73,7 @@ describe('integration / concurrent settings edits', () => {
     )
     expect(limitsRes.status).toBe(200)
 
-    // Update general title (must pass all required fields)
+    // The general section requires all fields, hence the full payload.
     const generalRes = await callRpc(
       '/admin/settings/update',
       {
@@ -95,7 +94,6 @@ describe('integration / concurrent settings edits', () => {
     )
     expect(generalRes.status).toBe(200)
 
-    // Read back both
     const bundle = await hydrateBlogSettings(db)
     expect(bundle?.limits?.maxRequestBodySize).toBe(5 * 1024 * 1024)
     expect(bundle?.siteIdentity?.title).toBe('Updated Title')

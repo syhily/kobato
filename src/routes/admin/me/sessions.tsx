@@ -29,8 +29,7 @@ export interface MySessionItem {
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { caller, viewer, session } = createSsrCaller({ request, context })
   const ctx = { session, user: viewer ?? undefined, role: viewer?.role ?? null }
-  // admin.layout already gates on `visitor`; assert here to narrow
-  // `ctx.user` and guard against a future layout refactor widening access.
+  // admin.layout already gates visitor+; assert here to narrow `ctx.user` to non-null.
   requireRole(ctx, 'visitor')
   const url = new URL(request.url)
   const sort: SessionSortState<'lastActive' | 'loginTime'> = parseSessionSort(

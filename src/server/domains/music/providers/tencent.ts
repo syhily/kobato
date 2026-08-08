@@ -8,8 +8,6 @@ import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const log = getLogger('music.tencent')
 
-// ── HTTP helpers ────────────────────────────────────────────────────────────
-
 const TENCENT_HEADERS: Record<string, string> = {
   Referer: 'https://y.qq.com/',
   'User-Agent':
@@ -52,8 +50,6 @@ async function tencentGet(url: string, params: Record<string, string>): Promise<
   return res.json()
 }
 
-// ── HTML entity decoding ────────────────────────────────────────────────────
-
 const ENTITY_MAP: Record<string, string> = {
   '&apos;': "'",
   '&quot;': '"',
@@ -71,20 +67,17 @@ export function decodeHtmlEntities(text: string): string {
   for (const [entity, char] of Object.entries(ENTITY_MAP)) {
     decoded = decoded.replace(new RegExp(entity, 'g'), char)
   }
-  // Decimal entities &#39; (leave the original text on an out-of-range codepoint)
+  // Out-of-range codepoints (> U+10FFFF) are left as the original text.
   decoded = decoded.replace(/&#(\d+);/g, (match, dec: string) => {
     const cp = Number.parseInt(dec, 10)
     return cp <= 0x10ffff ? String.fromCodePoint(cp) : match
   })
-  // Hex entities &#x27;
   decoded = decoded.replace(/&#x([0-9a-fA-F]+);/g, (match, hex: string) => {
     const cp = Number.parseInt(hex, 16)
     return cp <= 0x10ffff ? String.fromCodePoint(cp) : match
   })
   return decoded
 }
-
-// ── Raw song parsing ───────────────────────────────────────────────────────
 
 interface RawTencentSinger {
   name: string
@@ -130,8 +123,6 @@ function toTrack(song: RawTencentSong): ProviderTrack {
   }
 }
 
-// ── Zod schemas for musicu.fcg responses ────────────────────────────────────
-
 const musicuSearchResponseSchema = z
   .object({
     req_1: z
@@ -168,8 +159,6 @@ const musicuSongDetailResponseSchema = z
   })
   .loose()
 
-// ── Quality map for URL resolution ─────────────────────────────────────────
-
 const QUALITY_MAP: Array<[keyof RawTencentFile, number, string, string]> = [
   ['size_flac', 999, 'F000', 'flac'],
   ['size_320mp3', 320, 'M800', 'mp3'],
@@ -179,8 +168,6 @@ const QUALITY_MAP: Array<[keyof RawTencentFile, number, string, string]> = [
   ['size_48aac', 48, 'C200', 'm4a'],
   ['size_24aac', 24, 'C100', 'm4a'],
 ]
-
-// ── Provider implementation ─────────────────────────────────────────────────
 
 export const tencentProvider: MusicProvider = {
   source: 'tencent',
@@ -251,7 +238,6 @@ export const tencentProvider: MusicProvider = {
   },
 
   async resolveAudioUrl(track: ProviderTrack): Promise<string> {
-    // Step 1: Get song detail to obtain file info
     const detailRes = await tencentPost('https://u.y.qq.com/cgi-bin/musicu.fcg', {
       comm: { ct: 24, cv: 0 },
       songinfo: {
@@ -275,7 +261,6 @@ export const tencentProvider: MusicProvider = {
     const guid = Math.floor(Math.random() * 1_000_000_000)
     const uin = '0'
 
-    // Step 2: Request vkey from the vkey server
     const payload = {
       req_0: {
         module: 'vkey.GetVkeyServer',
@@ -322,7 +307,6 @@ export const tencentProvider: MusicProvider = {
       throw new ActionFailure(404, '上游未返回音频地址（vkey 解析失败）')
     }
 
-    // Step 3: Pick the best available quality
     for (let i = 0; i < QUALITY_MAP.length; i++) {
       const [sizeKey] = QUALITY_MAP[i]
       if (songData.file[sizeKey] && midurlinfo[i]?.vkey) {
@@ -359,7 +343,6 @@ export const tencentProvider: MusicProvider = {
 
     const text = await res.text()
 
-    // Strip JSONP wrapper (various callback names)
     const jsonpMatch = text.match(/^(?:callback|MusicJsonCallback|jsonCallback)\(([\s\S]*)\)$/)
     const jsonStr = jsonpMatch?.[1] ?? text
 

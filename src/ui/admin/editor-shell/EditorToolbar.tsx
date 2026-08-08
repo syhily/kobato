@@ -30,10 +30,6 @@ export interface EditorToolbarProps {
   state: EditorToolbarState
 }
 
-// The toolbar splits into two intent groups that share a single row when
-// there is room: LEFT collapses to icons first, RIGHT keeps labels longer
-// for destructive actions, and `flex-wrap` rescues the meta button on
-// iPhone widths.
 export function EditorToolbar({ mode, entityLabel, listPath, publicPath, analyticsPath, state }: EditorToolbarProps) {
   return (
     <header className="flex flex-wrap items-center gap-2 text-sm">

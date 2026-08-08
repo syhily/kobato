@@ -4,53 +4,18 @@ import type { RouterContextProvider, ServerBuild } from 'react-router'
 export type ReactRouterHonoServerAppLoadContext = RouterContextProvider
 
 export interface HonoServerOptionsBase<E extends Env> {
-  /**
-   * The base Hono app to use as a replacement for the default one created automatically
-   *
-   * It will be used to mount the React Router server on the `basename` path
-   * defined in the [React Router config](https://api.reactrouter.com/v7/types/_react_router_dev.config.Config.html)
-   *
-   * {@link Hono}
-   */
+  /** Base Hono app replacing the default; the React Router server mounts on the `basename` path. */
   app?: Hono<E>
   /**
-   * Whether to automatically start the HTTP server in production mode.
-   *
-   * Set to `false` when the caller wants to manage the `serve()` lifecycle
-   * externally (e.g. for in-process graceful restart).
-   *
-   * @default true
+   * Automatically start the HTTP server in production mode; set `false` when
+   * the caller manages the `serve()` lifecycle. @default true
    */
   autoServe?: boolean
-  /**
-   * The port to start the server on
-   *
-   * Defaults to `PORT || 3000`
-   */
+  /** Port to start the server on (default `PORT || 3000`). */
   port?: number
   /**
-   * Augment the React Router AppLoadContext
-   *
-   * Don't forget to declare the AppLoadContext in your app, next to where you create the Hono server
-   *
-   * ```ts
-   * declare module "react-router" {
-   *   interface AppLoadContext {
-   *     // Add your custom context here
-   *     whatever: string;
-   *   }
-   * }
-   * ```
-   *
-   * **To make the typing works correctly, in your `react-router.config.ts` or where you want, add future v8_middleware flag type to true.**
-   *
-   * ```ts
-   * declare module "react-router" {
-   *   interface Future {
-   *     v8_middleware: true; // 👈 Enable middleware types
-   *   }
-   * }
-   * ```
+   * Augment the React Router AppLoadContext; declare the module and enable
+   * the `v8_middleware` future flag for the typings.
    */
   getLoadContext?: (
     c: Context<E>,
@@ -59,16 +24,8 @@ export interface HonoServerOptionsBase<E extends Env> {
       mode: string
     },
   ) => Promise<ReactRouterHonoServerAppLoadContext> | ReactRouterHonoServerAppLoadContext
-  /**
-   * Hook to add middleware that runs before any built-in middleware, including assets serving.
-   *
-   * You can use it to add protection middleware, for example.
-   */
+  /** Middleware hook running before any built-in middleware, including asset serving. */
   beforeAll?: (app: Hono<E>) => Promise<void> | void
-  /**
-   * Customize the Hono server, for example, adding middleware
-   *
-   * It is applied after the default middleware and before the React Router middleware
-   */
+  /** Middleware hook applied after the default middleware and before the React Router middleware. */
   configure?: (app: Hono<E>) => Promise<void> | void
 }

@@ -17,16 +17,13 @@ import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { getSidebarWidgetCount, isSidebarWidgetEnabled } from '@/shared/config/utils'
 import { formatLocalDate } from '@/shared/utils/formatter'
 
-// The homepage's tail-merge guard: when the natural last page would render
-// fewer than (pageSize − 2) posts, it merges into its predecessor (clamped
-// at 0 for tiny page sizes, which disables the merge). See
-// `listingLoader`'s `mergeTailWhenLessThan`.
+// Tail-merge guard: an orphan last page (< pageSize − 2 posts) merges into
+// its predecessor (clamped at 0 for tiny page sizes). See `listingLoader`.
 function homeMergeTailWhenLessThan(homePageSize: number): number {
   return Math.max(0, homePageSize - 2)
 }
 
-// Feature posts ride the home payload as plain listing cards — project the
-// `ClientPost` down to exactly the card fields, nothing more.
+// Feature posts ride the home payload as plain listing cards — project to exactly the card fields.
 function toFeaturePostCards(posts: ClientPost[]): ListingPostCard[] {
   return posts.map((post) => ({
     id: post.id,
@@ -42,11 +39,8 @@ function toFeaturePostCards(posts: ClientPost[]): ListingPostCard[] {
   }))
 }
 
-// The home listing pipeline (`/` + `/page/:num`) behind
-// `content.home`. The analytics access-log write (null target — the
-// homepage has no entity to count, but the row still counts toward
-// visits/visitors/referers) is part of the pipeline, as are all
-// settings reads (pagination, sidebar widgets, feature seed).
+// The home listing pipeline (`/` + `/page/:num`) behind `content.home`:
+// analytics access-log write (null target) + all settings reads.
 export async function loadHomeData({
   db,
   session,
@@ -62,9 +56,7 @@ export async function loadHomeData({
   clientAddress: string
   num: string | undefined
 }): Promise<ListingPageLoaderData<HomeExtra>> {
-  // Time-series access-log write for the analytics dashboard. The whole
-  // "counts as a view" gate (prefetch, admin exemption with the settings
-  // override, bot handling) lives inside `trackPageView`.
+  // Time-series access-log write; the view gate lives inside `trackPageView`.
   void trackPageView(requestFacts, null, {
     isAdmin: viewer?.role === 'admin',
     clientAddress,

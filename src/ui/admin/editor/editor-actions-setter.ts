@@ -1,8 +1,6 @@
 import type { EditorActions } from '@/ui/admin/editor/tiptap/editor-actions'
 
-// Module-level helper to set a property on the editor-actions storage object.
-// Extracting this keeps the mutation out of the hook body so the React
-// compiler doesn't flag it as "modifying a value returned from a hook".
+// Module-level so the React compiler doesn't flag a mutation of a hook-returned value.
 export function setEditorAction<K extends keyof EditorActions>(
   actions: EditorActions,
   name: K,

@@ -1,7 +1,3 @@
-// Wire-format DTOs for the admin image-management endpoints. Bigints
-// are stringified, public projection is separate from row-level fields,
-// and paginated list responses carry an explicit `total`.
-
 import type { AdminImageDto } from '@/shared/contracts/images'
 
 export type AdminImageKind = 'generic' | 'category' | 'friend'
@@ -50,11 +46,9 @@ export interface RecalculateThumbhashOutput {
 }
 
 /**
- * Sparse image metadata the server enhancer resolves for a Portable Text
- * image source (dimensions + thumbhash, no public URL — the block keeps its
- * own src). Isomorphic by construction: produced by the images domain's
- * render enhancer, consumed by the PT renderer (src/ui/pt) through the
- * image-meta context.
+ * Sparse image metadata resolved for a PT image source (dimensions +
+ * thumbhash; the block keeps its own src). Produced by the images
+ * domain enhancer, consumed by the PT renderer's image-meta context.
  */
 export interface ResolvedImageMeta {
   thumbhash?: string
@@ -62,7 +56,7 @@ export interface ResolvedImageMeta {
   height?: number
 }
 
-/** Pure client-friendly classifier so the table column doesn't have to import server code. */
+/** Client-friendly classifier so the table column doesn't have to import server code. */
 export function classifyImageKind(storagePath: string): AdminImageKind {
   if (storagePath.startsWith('images/categories/')) {
     return 'category'
@@ -75,11 +69,7 @@ export function classifyImageKind(storagePath: string): AdminImageKind {
 
 const SAFE_PATH_SEGMENT = /^[a-z0-9._-]+$/
 
-/**
- * Isomorphic host extractor used by client-side cover dialogs to
- * preview the upload target before invoking the server. Mirrors
- * `extractHostForFriendKey` in `@/server/domains/images/key`.
- */
+/** Isomorphic host extractor for client-side cover dialogs; must mirror `extractHostForFriendKey` in `@/server/domains/images/key`. */
 export function extractFriendHostSafe(homepage: string): string | null {
   const trimmed = homepage.trim()
   if (trimmed === '') {
@@ -97,11 +87,7 @@ export function extractFriendHostSafe(homepage: string): string | null {
   return host
 }
 
-/**
- * Slug validator for category covers. Categories enforce a lowercase
- * ASCII slug pattern at the form layer, but the cover row still wants
- * to know whether the current value is safe to embed in an S3 key.
- */
+/** Whether the value is safe to embed in an S3 key (categories enforce the lowercase ASCII pattern at the form layer). */
 export function isSafeImageSegment(value: string): boolean {
   const trimmed = value.trim()
   if (trimmed === '') {
@@ -110,12 +96,7 @@ export function isSafeImageSegment(value: string): boolean {
   return SAFE_PATH_SEGMENT.test(trimmed)
 }
 
-/**
- * Compute the public-facing base URL the runtime uses to address an
- * uploaded image from the `assets` settings section. The server's
- * render-enhancer keeps an authoritative copy of this logic; this
- * isomorphic mirror is what the admin preview helpers rely on.
- */
+/** Public base URL for uploaded images; isomorphic mirror of the server enhancer's authoritative copy. */
 export function buildPublicBaseUrlFromStorage(
   options:
     | {
@@ -141,13 +122,8 @@ export interface ImageUrlOptions {
   quality?: number
   assetHost: string
   /**
-   * Transform template for remote images hosted on `assetHost`.
-   *
-   * Supported placeholders:
-   *   - `{src}`     absolute source URL
-   *   - `{width}`   requested width
-   *   - `{height}`  requested height
-   *   - `{quality}` jpeg/webp quality, defaults to 100
+   * Transform template for remote images on `assetHost`.
+   * Placeholders: `{src}`, `{width}`, `{height}`, `{quality}` (defaults to 100).
    */
   urlTemplate?: string
 }
@@ -170,8 +146,7 @@ export function getImageUrl({ src, width, height, quality, assetHost, urlTemplat
     .replaceAll('{height}', String(height))
     .replaceAll('{quality}', String(imageQuality))
 
-  // Re-append any query string at the end so cache-buster params don't
-  // land in the middle of the URL (e.g. before a processing suffix).
+  // Re-append the query string so cache-buster params don't land mid-URL.
   const qIndex = src.indexOf('?')
   const srcPath = qIndex >= 0 ? src.slice(0, qIndex) : src
   const search = qIndex >= 0 ? src.slice(qIndex) : ''

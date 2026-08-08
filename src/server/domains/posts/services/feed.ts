@@ -5,9 +5,8 @@ import { buildPublicPostFilters, hydratePostList } from '@/server/domains/posts/
 import { listPublicPosts } from '@/server/domains/posts/services/public-query'
 
 /**
- * Like {@link listAllPosts} but loads Portable Text bodies + headings from the
- * published `content` revision. Prefer this when rendering post HTML (feeds);
- * use {@link listAllPosts} when only metadata is needed (sitemap, search index).
+ * Like {@link listAllPosts} but loads bodies + headings from the published
+ * `content` revision — use for feeds, {@link listAllPosts} for metadata only.
  */
 export async function listPublicPostsWithContent(
   db: Database,
@@ -36,9 +35,8 @@ export interface FeedPostSelection {
 }
 
 /**
- * Taxonomy resolution for feed scoping, caller-wired by the renderer: the
- * taxonomies domain already depends on posts, so importing its resolvers
- * here would close the domain DAG (the boundaries contract test pins it).
+ * Taxonomy resolution for feed scoping, caller-wired by the renderer —
+ * importing the taxonomies resolvers would close the domain DAG.
  */
 export interface FeedTaxonomyResolvers {
   resolveCategory: (db: Database, value: string) => Promise<{ id: number } | null>
@@ -46,11 +44,8 @@ export interface FeedTaxonomyResolvers {
 }
 
 /**
- * Post selection for the feed channel (RSS/Atom). Visibility is internal
- * to the feed channel: posts with `visible=false` are included (they stay
- * listed in feeds by design), scheduled posts are not. A category/tag scope resolves
- * slug-or-name through the injected resolvers; an unresolvable scope
- * yields an empty selection (an empty feed, not an error).
+ * Post selection for the feed channel: `visible=false` posts stay listed,
+ * scheduled posts do not; an unresolvable scope yields an empty feed.
  */
 export async function selectFeedPosts(
   db: Database,

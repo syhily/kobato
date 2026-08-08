@@ -8,20 +8,9 @@ import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 const log = getLogger('rate-limit')
 
-// Rate limiting is fully in-process: a module-level Map of fixed-window
-// counters, one entry per key. There is no external store, so the old
-// fail-closed failure mode (Redis down → every login denied) is gone —
-// the limiter simply cannot fail. Two deliberate trade-offs:
-//
-//   - Counters reset on process restart. A bounced deploy re-arms every
-//     window; acceptable for the single-process self-host target and far
-//     better than coupling login availability to a cache service.
-//   - Multi-instance deployments do not share counters. The project
-//     already assumes a single process.
-//
-// Keys keep the historical reserved `rate-limit:` namespace (see
-// `RESERVED_CACHE_PREFIXES` in `@/server/domains/settings/sections/cache`)
-// so key shapes stay stable for any key-level diagnostics.
+// In-process fixed-window counters (no external store: reset on restart,
+// not shared across instances). Keys keep the reserved `rate-limit:`
+// namespace — see `RESERVED_CACHE_PREFIXES` in settings/sections/cache.
 const RATE_LIMIT_NAMESPACE = 'rate-limit:'
 
 const signInKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}signin:${ip}`
@@ -30,9 +19,7 @@ const passwordResetKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}password-reset:
 const passwordResetTargetKey = (userId: number) => `${RATE_LIMIT_NAMESPACE}password-reset-target:${userId.toString()}`
 const commentPostIpKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}comment-post:${ip}`
 
-// Hash the email so the raw address never lands in the counter map.
-// SHA-256 truncated to 32 hex chars (128 bits) is more than enough
-// collision resistance for a per-window counter.
+// Hash the email so the raw address never lands in the counter map (SHA-256, 32 hex chars).
 function hashEmail(email: string): string {
   const normalized = email.trim().toLowerCase()
   return createHash('sha256').update(normalized).digest('hex').slice(0, 32)
@@ -54,20 +41,11 @@ const passkeyRegisterFinishIpKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}passk
 const passkeySetForceIpKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}passkey-set-force:${ip}`
 const passkeyDeleteIpKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}passkey-delete:${ip}`
 
-// Conservative fallbacks used ONLY when the settings snapshot has
-// not been hydrated yet (pre-install, or the very first request after
-// boot if a hydration race ever lets a request slip past the install
-// gate). The values are sourced from `rateLimitDefaults` in the
-// section registry — the same payload the install flow seeds and the
-// `loadSettingsFromDb` backfill writes for upgrading deployments — so
-// the fallback path behaves identically to the seeded path.
+// Fallbacks used only before the settings snapshot is hydrated; sourced from `rateLimitDefaults`, same payload the install flow seeds.
 const FALLBACK_RATE_LIMITS: RateLimitSettings = rateLimitDefaults
 
 export function readBucket(name: keyof RateLimitSettings): RateLimitBucket {
-  // We deliberately read the snapshot synchronously every call — the
-  // in-process slot is a single-pointer load, so the cost is
-  // negligible and an admin save takes effect on the very next
-  // request without any TTL or restart.
+  // Sync read per call so an admin save takes effect on the very next request.
   const bundle = getBlogSettingsBundleSync()
   const live = bundle?.rateLimit?.[name]
   if (live !== undefined) {
@@ -91,10 +69,7 @@ interface WindowEntry {
 
 const entries = new Map<string, WindowEntry>()
 
-// Hard cap on tracked keys. Expired entries are removed lazily — when
-// the same key is hit again, or by the sweeps below — so an attacker
-// spraying unique IPs/emails could otherwise grow the map without
-// bound. 10k entries at ~100 bytes each is ~1 MB: negligible.
+// Hard cap so a spray of unique keys can't grow the map without bound; removal is lazy.
 const MAX_ENTRIES = 10_000
 
 function sweepExpired(now: number): void {
@@ -105,11 +80,7 @@ function sweepExpired(now: number): void {
   }
 }
 
-// Make room for one more key when the map is full. Expired windows go
-// first; if every entry is still live, evict the windows closest to
-// expiring (their counters would have reset soonest anyway, so the
-// throttle loss is minimal) and warn — a full map of live counters
-// means the process is tracking an unusual number of distinct subjects.
+// Map full: sweep expired first, then evict the windows closest to expiring and warn.
 function ensureCapacity(now: number): void {
   if (entries.size < MAX_ENTRIES) {
     return
@@ -126,11 +97,7 @@ function ensureCapacity(now: number): void {
   log.warn('rate-limit counter map full; evicted the oldest windows', { evicted: excess, size: entries.size })
 }
 
-// Increment-and-check against the in-process fixed window. The first
-// hit in a window arms `resetAt` (now + windowSeconds); later hits in
-// the same window only bump the counter — the exact semantics of the
-// old INCR + EXPIRE … NX pipeline, minus the network round trip. The
-// signature stays async so every caller is untouched.
+// Fixed-window increment-and-check; stays async so every caller is untouched.
 export async function tryKeyedRateLimit(key: string, bucket: RateLimitBucket): Promise<RateLimitResult> {
   const now = Date.now()
   const live = entries.get(key)
@@ -146,11 +113,7 @@ export async function tryKeyedRateLimit(key: string, bucket: RateLimitBucket): P
   return { count: entry.count, exceeded: entry.count > bucket.maxAttempts }
 }
 
-/**
- * Number of live (unexpired) counter windows, for the admin cache
- * panel. Expired entries are swept first so the count never includes
- * ghosts.
- */
+/** Number of live (unexpired) counter windows for the admin cache panel. */
 export function rateLimitEntryCount(): number {
   sweepExpired(Date.now())
   return entries.size
@@ -167,51 +130,39 @@ export function __rateLimitKeysForTests(): string[] {
 }
 
 /**
- * Throttles login attempts by client IP. Counts every reach of the
- * sign-in form (success and failure both bump the counter); the
- * threshold is "attempts per `windowSeconds`" and the bookkeeping
- * shouldn't depend on the eventual outcome of the login.
+ * Throttles login attempts by client IP; success and failure both bump the counter.
  */
 export async function tryRateLimit(ip: string): Promise<RateLimitResult> {
   return tryKeyedRateLimit(signInKey(ip), readBucket('signInIp'))
 }
 
-/** Throttles admin author invitations by client IP. */
 export async function tryInviteRateLimit(ip: string): Promise<RateLimitResult> {
   return tryKeyedRateLimit(inviteKey(ip), readBucket('inviteIp'))
 }
 
 /**
- * Throttles admin author invitations by `(actor adminId, invitee email)`.
- * Additive to {@link tryInviteRateLimit}: even if an admin's per-IP
- * budget is fresh, they cannot re-send invites to the same mailbox
- * faster than this bucket allows. The email is hashed before it
- * becomes a counter key so the raw address is never stored.
+ * Throttles invitations by `(adminId, invitee email)`; additive to
+ * {@link tryInviteRateLimit}. Email is hashed before it becomes a key.
  */
 export async function tryInviteByEmailRateLimit(adminId: number, email: string): Promise<RateLimitResult> {
   return tryKeyedRateLimit(inviteEmailKey(adminId, email), readBucket('inviteEmail'))
 }
 
-/** Throttles password-reset requests by client IP. */
 export async function tryPasswordResetRateLimit(ip: string): Promise<RateLimitResult> {
   return tryKeyedRateLimit(passwordResetKey(ip), readBucket('passwordResetIp'))
 }
 
 /**
- * Throttles public lostpassword submissions by normalised target email.
- * Additive to {@link tryPasswordResetRateLimit}: stops an attacker
- * rotating client IPs from spamming reset prompts to a single mailbox.
- * The email is hashed before it becomes a counter key.
+ * Throttles lostpassword submissions by target email; additive to
+ * {@link tryPasswordResetRateLimit}. Email is hashed before it becomes a key.
  */
 export async function tryPasswordResetByEmailRateLimit(email: string): Promise<RateLimitResult> {
   return tryKeyedRateLimit(passwordResetEmailKey(email), readBucket('passwordResetEmail'))
 }
 
 /**
- * Throttles admin-triggered password-reset emails by target user id.
- * Scoped per-target (not per-actor) so any admin — including a
- * compromised cookie — can't carpet-bomb a single mailbox even if
- * their own IP budget is fresh.
+ * Throttles admin-triggered password-reset emails by target user id —
+ * per-target, so no admin (even a compromised cookie) can carpet-bomb a mailbox.
  */
 export async function tryPasswordResetByTargetRateLimit(userId: number): Promise<RateLimitResult> {
   return tryKeyedRateLimit(passwordResetTargetKey(userId), readBucket('passwordResetTarget'))
@@ -228,13 +179,8 @@ export async function tryCommentPostRateLimitByEmail(email: string): Promise<Rat
 }
 
 /**
- * Throttles `like` increases by client IP. Cancellation (the
- * token-driven decrease path) intentionally does NOT bump this
- * counter — only fresh inserts add `like` rows to the DB, so
- * gating insertion is the right shape to keep table growth
- * bounded. An admin who wants to relax the cap (e.g. a viral post)
- * can raise `maxAttempts` from `/admin/settings/rate-limit`
- * without touching cancel flows.
+ * Throttles `like` increases by client IP; cancellation does NOT bump this
+ * counter — only fresh inserts add rows, keeping table growth bounded.
  */
 export async function tryLikeIncreaseRateLimit(ip: string): Promise<RateLimitResult> {
   return tryKeyedRateLimit(likeIncreaseKey(ip), readBucket('likeIncreaseIp'))

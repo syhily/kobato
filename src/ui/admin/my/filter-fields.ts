@@ -4,14 +4,8 @@ import type { FilterFieldSpec, FilterOptionItem } from '@/ui/admin/shared/filter
 
 import { orpcQuery } from '@/client/api/orpc-query'
 
-// My-comments filter-pill field specs. The URL is the source of truth for
-// this view, so the `toQuery` mappers are intentionally inert — the list
-// input is built from the loader props directly, and `useFilterPills`'s
-// controlled mode mirrors pill edits back into the URL.
-//
-// `buildMyCommentFilterFields` is a factory (memoized by the view) because
-// the entity picker's idle items come from the loader's `entityOptions`.
-
+// My-comments filter-pill specs. The URL is the source of truth — the
+// `toQuery` mappers are inert; pill edits mirror back via controlled mode.
 export type MyCommentFilterFieldKey = 'status' | 'page' | 'text'
 
 export const MY_STATUS_OPTIONS: { value: string; label: string }[] = [

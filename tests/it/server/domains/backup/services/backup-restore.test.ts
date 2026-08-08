@@ -21,9 +21,7 @@ import { category } from '@/server/infra/db/schema/taxonomy'
 import { ActionFailure } from '@/server/infra/http/errors'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@/server/infra/storage/registry'
 
-// Route the storage registry at the shared in-memory backend (injected as
-// 's3', so it is also the ACTIVE backend) — createBackup/getBackupBuffer
-// round-trip without real S3 or settings.
+// In-memory backend injected as 's3' (the active backend) — no real S3 or settings.
 const mem = makeMemoryBackend()
 
 const db = getTestDb()
@@ -31,8 +29,7 @@ const db = getTestDb()
 beforeEach(async () => {
   __setStorageBackendForTests('s3', mem.backend)
   analyticsHandle = await createTestAnalyticsDb()
-  // The real snapshotAnalyticsTo runs against the adopted handle — wired
-  // explicitly now that the backup domain takes it by injection.
+  // The real snapshotAnalyticsTo, wired by injection to the adopted handle.
   __resetAnalyticsEngineForTests()
   __adoptAnalyticsHandleForTests(analyticsHandle)
   wireBackupSnapshots({ snapshotAnalyticsTo })
@@ -70,20 +67,16 @@ describe('backup and restore integration', () => {
     expect(buffer).toBeDefined()
     expect(buffer!.subarray(0, 2)).toEqual(Buffer.from([0x1f, 0x8b]))
 
-    // The decompressed payload is a tar archive with both engine files,
-    // each magic-valid.
+    // Decompressed payload is a tar archive with both engine files, each magic-valid.
     const payload = unpackBackupPayload(extractBackupFile(buffer!))
     expect(payload.content!.subarray(0, 16).toString('latin1')).toBe('SQLite format 3\0')
     expect(payload.analytics).not.toBeNull()
     expect(payload.analytics!.subarray(8, 12).toString('latin1')).toBe('DUCK')
 
-    // The backup row is listed and downloadable through the same backend.
     const downloaded = await getBackupBuffer(db, timestamp)
     expect(downloaded.equals(buffer!)).toBe(true)
 
-    // The seeded category is inside the archived content file: a fresh
-    // database opened on the extracted bytes finds it. (Written to a NEW
-    // path — overwriting an open handle's file would corrupt it.)
+    // Seeded category survives in the archive; the restore DB is written to a NEW path.
     const { mkdtempSync, writeFileSync } = await import('node:fs')
     const { tmpdir } = await import('node:os')
     const { join } = await import('node:path')
@@ -99,7 +92,6 @@ describe('backup and restore integration', () => {
       closeDatabase(restored)
     }
 
-    // The seeded access events are inside the archived sidecar file.
     const { openAnalyticsDatabase, closeAnalyticsDatabase } = await import('@/server/infra/analytics/duckdb')
     const { ACCESS_LOG_DDL } = await import('@/server/domains/analytics/services/access-log')
     writeFileSync(join(dir, 'restored.duckdb'), payload.analytics!)
@@ -111,9 +103,7 @@ describe('backup and restore integration', () => {
       await closeAnalyticsDatabase(restoredAnalytics)
     }
 
-    // The staged (streaming) restore path extracts the same archive
-    // without holding it in memory — both staged files validate and the
-    // staged content file opens as a real database.
+    // The staged (streaming) restore path extracts the same archive without holding it in memory.
     const { stageBackup } = await import('@/server/domains/backup/services/restore')
     const staged = await stageBackup(buffer!)
     const { rmSync } = await import('node:fs')
@@ -135,22 +125,9 @@ describe('backup and restore integration', () => {
   })
 
   it('records the exact stored byte count and a complete gzip header (stream-pipeline regression)', async () => {
-    // Regression: a `gzip.on('data')` byte counter forced the gzip stream
-    // into flowing mode, bypassing the pipe's backpressure and racing the
-    // backend consumer — the stored archive deterministically lost its
-    // first chunk (the 10-byte gzip header) while byteSize still counted
-    // it, so downloads (Content-Length = byteSize) corrupted. The size now
-    // comes from the backend's putStream return value.
-    //
-    // The backend below consumes one tick late, like the local backend's
-    // pipeline: a flowing-mode gzip has already emitted — and lost — its
-    // first chunk by the time the drain attaches.
-    //
-    // The 20ms is WALL-CLOCK on purpose and must not become a fake timer
-    // or a setImmediate turn: zlib compresses off the event loop (thread
-    // pool), so no fixed number of turns can guarantee the buggy flowing-
-    // mode gzip has emitted its first chunk before the consumer attaches.
-    // The regression this stages is itself a wall-clock race.
+    // Regression: a gzip 'data' byte counter forced flowing mode and lost
+    // the first chunk before the drain attached. The 20ms below is
+    // WALL-CLOCK on purpose — must not become a fake timer.
     __setStorageBackendForTests('s3', {
       ...mem.backend,
       async putStream(input) {
@@ -165,9 +142,8 @@ describe('backup and restore integration', () => {
     expect(row).not.toBeNull()
 
     const stored = await getBackupBuffer(db, timestamp)
-    // The archive is intact from byte zero — gzip magic, not a truncation.
+    // Gzip magic intact from byte zero — not a truncation.
     expect(stored.subarray(0, 2)).toEqual(Buffer.from([0x1f, 0x8b]))
-    // The recorded/uploaded size IS the stored object size, byte for byte.
     expect(row!.byteSize).toBe(stored.length)
     expect(size).toBe(stored.length)
   })

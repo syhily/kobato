@@ -1,10 +1,6 @@
 import type { FontSlot } from '@/shared/contracts/fonts'
 
-// Drag-and-drop protocol for the fonts view: discriminated `.data`
-// payloads so `handleDragEnd` can dispatch without re-deriving intent,
-// type guards that narrow dnd-kit's arbitrary `.data` (no casts), and the
-// id builders shared by rows, drop zones, and the drag-end handler.
-
+// Fonts drag protocol: discriminated `.data` payloads + type guards over dnd-kit's arbitrary `.data`.
 export type LibraryDragData = { type: 'library'; fontId: string }
 export type SlotItemDragData = { type: 'slotItem'; slot: FontSlot; fontId: string }
 export type SlotDropData = { type: 'slot'; slot: FontSlot }

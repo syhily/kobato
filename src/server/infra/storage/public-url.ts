@@ -4,13 +4,8 @@ import { ActionFailure } from '@/server/infra/http/errors'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 
 /**
- * Public base URL the runtime joins with `<storagePath>` to compute
- * public asset URLs for **S3** assets (images, music, etc.).
- *
- * Returns the configured bucket URL even when the upload toggle is OFF —
- * that lets the SSR enhancer keep rendering existing `s3` rows after an
- * admin disables further uploads. Returns `null` when the section is
- * unconfigured (no `publicBaseUrl` to join with).
+ * Public base URL for S3 assets, or `null` when unconfigured. Stays non-null
+ * while the upload toggle is OFF so existing `s3` rows keep rendering.
  */
 export function getPublicBaseUrl(): string | null {
   const assets = requireBlogSettingsSection('assets')
@@ -22,10 +17,7 @@ export function getPublicBaseUrl(): string | null {
 }
 
 /**
- * The site's canonical origin (e.g. `https://yufan.me`), used as the base
- * for **local** assets served through the app's own `/storage/*` route.
- * Local storage needs no extra configuration — this URL is already a
- * required field in the general settings.
+ * Canonical site origin; base for **local** assets served via `/storage/*`.
  */
 export function getGeneralWebsite(): string {
   return trimTrailingSlash(requireBlogSettingsSection('siteIdentity').website)
@@ -49,13 +41,8 @@ function appendVersion(url: string, version: number | undefined): string {
 
 export interface ResolveAssetUrlOptions {
   /**
-   * Route override for the `local` driver. Local assets default to the
-   * generic `/storage/<storagePath>` route; a dedicated public route (e.g.
-   * the self-hosted font route) claims the asset instead by passing its URL
-   * prefix as `route` (leading + trailing slash required). When the route
-   * already implies a leading storage-key prefix, `stripPrefix` drops it
-   * from the key first. Ignored for the `s3` driver — the bucket serves the
-   * raw storage key either way.
+   * Route override for the `local` driver (leading + trailing slash required);
+   * `stripPrefix` drops a matching storage-key prefix first.
    */
   local?: {
     route: string
@@ -64,20 +51,8 @@ export interface ResolveAssetUrlOptions {
 }
 
 /**
- * Resolve the absolute public URL for a stored object, dispatching on the
- * per-asset `driver`:
- *
- *  - `s3`    → `<publicBaseUrl>/<storagePath>` — served directly by the
- *              bucket/CDN. Throws `ActionFailure(503)` when the CDN host
- *              is unset (matches the historical `buildPublicUrl`).
- *  - `local` → `<generalWebsite>/storage/<storagePath>` — served by the
- *              app's public `/storage/*` route, unless `options.local`
- *              overrides the route (see `ResolveAssetUrlOptions`). Throws
- *              `ActionFailure(503)` when the site origin is unset; a
- *              relative URL would break in RSS / OG / email contexts that
- *              need an absolute URL.
- *
- * Both shapes append `?v=<updatedAtMs>` for cache busting when provided.
+ * Absolute public URL per driver (`s3` → CDN base; `local` → site origin or
+ * `options.local.route`). Throws 503 when the base is unset; appends `?v=<updatedAtMs>`.
  */
 export function resolveAssetUrl(
   driver: StorageDriver,
@@ -105,10 +80,7 @@ export function resolveAssetUrl(
   return appendVersion(`${publicBaseUrl}/${trimLeadingSlash(storagePath)}`, updatedAtMs)
 }
 
-/**
- * Null-safe variant: returns `null` instead of throwing when an S3 asset's
- * CDN base is unset. Used by SSR/list renderers that must degrade gracefully.
- */
+/** Null-safe variant: `null` instead of `ActionFailure` when the base is unset. */
 export function safeResolveAssetUrl(driver: StorageDriver, storagePath: string, updatedAtMs?: number): string | null {
   try {
     return resolveAssetUrl(driver, storagePath, updatedAtMs)

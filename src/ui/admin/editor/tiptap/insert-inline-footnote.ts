@@ -61,10 +61,7 @@ export interface FootnoteRefInsertAttrs {
   index: number
 }
 
-/**
- * Insert only the superscript `footnoteRef` at the caret (no definition block —
- * definitions are merged into PT outside the PM doc).
- */
+/** Insert the superscript `footnoteRef` at the caret (definitions merge into PT outside the PM doc). */
 export function insertFootnoteReferenceAtCaret(editor: Editor, attrs: FootnoteRefInsertAttrs): void {
   const label = String(attrs.index)
   const { from, to } = editor.state.selection

@@ -40,11 +40,7 @@ export type AdminCommentsData = InfiniteData<AdminCommentsPage, number>
 
 const ZERO_STATUS_COUNTS: StatusCounts = { all: 0, pending: 0, approved: 0, deleteRequested: 0 }
 
-// Local-mutation helpers: after an admin action (approve / delete / edit /
-// delete-request resolution) succeeds server-side, the view patches the cached
-// list pages in place instead of refetching. `total` is deliberately left
-// untouched on removal — the next page load re-syncs it.
-
+// Cache patches; `total` stays stale on removal — the next page load re-syncs it.
 export function removeCommentFromPages(data: AdminCommentsData, id: string): AdminCommentsData {
   const removed = data.pages.flatMap((page) => page.comments).find((comment) => idStr(comment.id) === id)
   return {
@@ -119,19 +115,15 @@ export function clearDeleteRequestInPages(data: AdminCommentsData, id: string, i
 }
 
 // View-owned editor intents: the edit / reply / edit-user dialogs live in
-// the view, so the view wires these three slots. Everything else on the
-// actions object is owned by the controller (mutations, confirm dialogs,
-// cache patches, filter shortcuts).
+// the view; everything else on the actions object is controller-owned.
 export interface CommentIntents {
   edit(comment: AdminComment): void
   reply(comment: AdminComment): void
   editUser(comment: AdminComment): void
 }
 
-// The single comment-actions surface handed to `AdminCommentRow`. Mutation
-// triggers lead through their confirm dialog first — `approve(comment)`
-// opens the 通过 confirm, and confirming fires the mutation, exactly the
-// flow the view used to choreograph by hand.
+// The single comment-actions surface handed to `AdminCommentRow`; mutation
+// triggers lead through their confirm dialog first.
 export interface CommentActions extends CommentIntents {
   /** 通过 — confirm, then approve the pending comment. */
   approve(comment: AdminComment): void
@@ -143,19 +135,14 @@ export interface CommentActions extends CommentIntents {
   rejectDeletion(comment: AdminComment): void
   filterByPage(pageKey: string, pageTitle: string): void
   filterByAuthor(userId: string, name: string): void
-  /** Per-comment pending gates — the mutations are shared across rows, so
-   *  a button disables only while ITS comment is in flight. */
+  /** Per-comment pending gates — mutations are shared, so a button disables only while ITS comment is in flight. */
   isApproving(comment: AdminComment): boolean
   isRemoving(comment: AdminComment): boolean
   isResolvingDeletion(comment: AdminComment): boolean
 }
 
-// Build the filter list from a `URLSearchParams` snapshot — the inverse of
-// the write-back inside the controller below. Used for the route's mount
-// seed (shared URLs) and for the controller's Back/Forward reseed, so both
-// directions agree on the URL shape. Intentionally lenient — invalid
-// values fall back to a sensible default rather than throwing, so a
-// hand-edited URL never bricks the page.
+// Inverse of the URL write-back; intentionally lenient — invalid values fall
+// back to defaults so a hand-edited URL never bricks the page.
 export function parseCommentFiltersFromSearchParams(
   searchParams: URLSearchParams,
 ): ActiveFilter<CommentFilterFieldKey>[] {
@@ -195,10 +182,7 @@ export function parseCommentFiltersFromSearchParams(
     const value = JSON.stringify({ date, op: dateOp })
     initialFilters.push({ field: 'date', value, label: singleDateFilterLabel({ date, op: dateOp }) })
   } else if (date) {
-    // Partial date URL — fall back to the default operator so the
-    // chip stays consistent with the picker, which always pairs a
-    // date with an operator. `dateOp` may be missing or invalid;
-    // `DEFAULT_SINGLE_DATE_OPERATOR` matches Ghost's "on or before" default.
+    // Partial date URL — pair with the default operator (Ghost's "on or before").
     const op = isSingleDateFilterOperator(dateOp) ? dateOp : DEFAULT_SINGLE_DATE_OPERATOR
     const value = JSON.stringify({ date, op })
     initialFilters.push({ field: 'date', value, label: singleDateFilterLabel({ date, op }) })
@@ -219,16 +203,10 @@ export interface UseCommentsControllerOptions {
 export function useCommentsController({ filters, dispatch, queryInput, intents }: UseCommentsControllerOptions) {
   const queryClient = useQueryClient()
 
-  // Mirror the active filters into the URL so a filtered view stays shareable.
-  // Debounced — text/date edits dispatch on every keystroke; the URL settles
-  // once the user pauses.
+  // Mirror active filters into the URL (debounced — text/date edits dispatch per keystroke) so a filtered view stays shareable.
   const [searchParams, setSearchParams] = useSearchParams()
   const urlSyncTimerRef = useRef<number | null>(null)
-  // The params string this controller last consumed (mount / popstate
-  // reseed) or produced (the write-back below). A `searchParams` change
-  // that doesn't match it came from outside — browser Back/Forward — so
-  // the URL becomes the source of truth again and the pills reseed from it
-  // instead of the stale pills being written back over the restored URL.
+  // Params string last consumed or produced; a mismatch means Back/Forward — the URL reseeds the pills.
   const consumedParamsRef = useRef<string | null>(null)
   useEffect(() => {
     const current = searchParams.toString()
@@ -262,7 +240,6 @@ export function useCommentsController({ filters, dispatch, queryInput, intents }
           next.set('userId', filter.value)
         } else if (filter.field === 'text' && filter.value) {
           try {
-            // parsed JSON validated immediately below
             const range = unsafeCast<{ value?: string; op?: string }>(JSON.parse(filter.value))
             if (range.value) {
               next.set('q', range.value)
@@ -275,7 +252,6 @@ export function useCommentsController({ filters, dispatch, queryInput, intents }
           }
         } else if (filter.field === 'date' && filter.value) {
           try {
-            // parsed JSON validated immediately below
             const range = unsafeCast<{ date?: string; op?: string }>(JSON.parse(filter.value))
             if (range.date) {
               next.set('date', range.date)
@@ -289,8 +265,7 @@ export function useCommentsController({ filters, dispatch, queryInput, intents }
         }
       }
       if (next.toString() !== searchParams.toString()) {
-        // Record the write so the reseed effect above recognizes this
-        // searchParams change as our own and leaves the pills alone.
+        // Record the write so the reseed effect above recognizes it as our own.
         consumedParamsRef.current = next.toString()
         setSearchParams(next, { replace: true, preventScrollReset: true })
       }
@@ -324,9 +299,7 @@ export function useCommentsController({ filters, dispatch, queryInput, intents }
   })
   const statusCounts = firstPage?.statusCounts ?? ZERO_STATUS_COUNTS
 
-  // After a server-side admin action succeeds, rewrite the cached list pages
-  // in place instead of refetching — the helpers above stay pure; `patchPages`
-  // owns the query key and the `setQueryData` call.
+  // Rewrite the cached list pages in place after a server-side action instead of refetching.
   const approveComment = useCallback(
     (id: string) => patchPages((data) => approveCommentInPages(data, id)),
     [patchPages],
@@ -345,14 +318,12 @@ export function useCommentsController({ filters, dispatch, queryInput, intents }
   )
 
   // Full refresh after mutations the local patches can't model (user edits,
-  // replies). The procedure-level key covers every cached `loadAll` input;
-  // only the active combination has a live query, so exactly that one refetches.
+  // replies) — only the active query combination refetches.
   const invalidateList = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.comments.loadAll.key() })
   }, [queryClient])
 
-  // Comment actions: each mutation owns its confirm-dialog state here, and
-  // its cache patch rides on success — the row stays presentational.
+  // Each mutation owns its confirm-dialog state here; its cache patch rides on success.
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
   const closeConfirm = useCallback(() => setConfirm(null), [])
 
@@ -364,8 +335,7 @@ export function useCommentsController({ filters, dispatch, queryInput, intents }
     ...orpcQuery.admin.comments.delete.mutationOptions(),
     onSuccess: (_result, variables) => removeComment(variables.commentId),
   })
-  // Shared by 同意删除 / 拒绝删除 — the per-call `onSuccess` captures the
-  // comment so the reject path keeps its `isPending` count fixup.
+  // Shared by 同意删除 / 拒绝删除 — the per-call `onSuccess` captures the comment for the reject path's count fixup.
   const resolveDeletionMutation = useMutation({
     ...orpcQuery.admin.comments.approveCommentDeletion.mutationOptions(),
     onError: (error) => {

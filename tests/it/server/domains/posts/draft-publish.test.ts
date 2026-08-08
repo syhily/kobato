@@ -14,12 +14,10 @@ describe('integration / draft publish flow', () => {
   it('creates a post, saves a draft, and publishes it', async () => {
     const ctx = makeAuthedCtx({ role: 'admin', db })
 
-    // 1. Create post meta
     const createRes = await callRpc('/admin/posts/upsertMeta', { title: 'Draft Post', summary: '', tags: [] }, ctx)
     expect(createRes.status).toBe(200)
     const { post } = await parseRpcJson<{ post: { id: string } }>(createRes)
 
-    // 2. Save draft body
     const draftRes = await callRpc(
       '/admin/posts/saveDraft',
       {
@@ -37,7 +35,7 @@ describe('integration / draft publish flow', () => {
     )
     expect(draftRes.status).toBe(200)
 
-    // 3. Publish latest (body is required by saveBodyInput)
+    // The body is required by saveBodyInput.
     const publishRes = await callRpc(
       '/admin/posts/publishLatest',
       {
@@ -55,7 +53,6 @@ describe('integration / draft publish flow', () => {
     )
     expect(publishRes.status).toBe(200)
 
-    // 4. Verify post appears in admin list as published
     const listRes = await callRpc('/admin/posts/list', { offset: 0, limit: 10 }, ctx)
     expect(listRes.status).toBe(200)
     const list = await parseRpcJson<{ posts: { id: string; published: boolean }[]; total: number }>(listRes)

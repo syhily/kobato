@@ -23,11 +23,8 @@ export interface PagePreviewResult {
   imageMeta: Record<string, ResolvedImageMeta>
 }
 
-// The page-detail read pipeline behind `content.pages.bySlug`. HTTP
-// facts arrive as plain values (`role`, the raw `ifNoneMatch` header)
-// so the procedure layer stays transport-agnostic; the thrown
-// redirect/304/404 Responses are translated into the procedure's
-// discriminated-union output by the controller.
+// Page-detail pipeline for `content.pages.bySlug`: plain HTTP facts in,
+// thrown Responses out (translated by the controller).
 export async function loadPagePreview({
   db,
   slug,
@@ -40,28 +37,19 @@ export async function loadPagePreview({
   wantsDraftPreview: boolean
   /** Viewer role for the draft-preview gate (`undefined`/`null` = anonymous). */
   role: RoleOrNull | undefined
-  /** Raw If-None-Match header value. */
   ifNoneMatch: string | null | undefined
 }): Promise<PagePreviewResult> {
   // findPublicPostMetaBySlug is sync (node:sqlite); the probe and
   // findPageBySlug stay async — no Promise.all needed.
   const postMeta = findPublicPostMetaBySlug(db, slug)
 
-  // If the slug belongs to a live post (not deleted, published, not
-  // scheduled), redirect to the canonical post URL. Matches the old
-  // slug-map semantics where only live posts appeared in the catalog.
+  // Live post slug → canonical 301 (only live posts appear in the catalog).
   if (postMeta !== null && isLive(postMeta)) {
     redirectPermanent(`/posts/${slug}`)
   }
 
-  // Cheap ETag probe: a repeat request whose If-None-Match still matches
-  // is answered 304 from one slim meta read, before the full load below
-  // (meta + revision + image hydration) and the draft lookup ever run.
-  // The probe inputs — id + publishedRevisionId + publishedAt — are
-  // exactly the ETag parts recomputed on the full path (both sites call
-  // the shared `pageEtag` builder). Draft-preview requests skip the
-  // probe: an admin's `?draft=true` may swap the body, so the published
-  // ETag must not 304 it.
+  // Slim ETag probe answers repeat requests before the full load; draft
+  // previews skip it — the published ETag must not 304 a swapped body.
   if (!wantsDraftPreview) {
     const etagInput = await findPageEtagInputBySlug(db, slug)
     if (etagInput !== null) {
@@ -84,8 +72,7 @@ export async function loadPagePreview({
     if (pageLifecycleAdapter.canPreviewDraft(role)) {
       const draftPreview = await loadDraftPreviewBySlug(db, pageLifecycleAdapter, slug)
       if (draftPreview !== null) {
-        // `draftPreview.preview` is already the shared `Page` DTO
-        // (`toCmsPage` returns it directly) — no promotion step.
+        // `draftPreview.preview` is already the shared `Page` DTO — no promotion.
         if (sourcePage === undefined) {
           sourcePage = draftPreview.preview
           draftMarker = 'draft'
@@ -105,9 +92,7 @@ export async function loadPagePreview({
     notFound()
   }
 
-  // Same builder as the early probe above (id + publishedRevisionId +
-  // publishedAt — `updated` projects `meta.publishedAt`); probe and full
-  // share `pageEtag`, so repeat visits keep hitting the same 304.
+  // Same builder as the early probe — repeat visits keep hitting the same 304.
   const publicEtag =
     draftMarker === null ? pageEtag(sourcePage.id, sourcePage.publishedRevisionId, sourcePage.updated) : null
   if (publicEtag !== null && etagHeaderMatches(ifNoneMatch, publicEtag)) {

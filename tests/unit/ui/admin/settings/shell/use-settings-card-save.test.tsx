@@ -37,12 +37,7 @@ function makeCardProps(source: Source, schema?: z.ZodType<State, any>) {
   }
 }
 
-// The save chain (react-hook-form submit → schema parse → mocked commit →
-// baseline update) is fully microtask-driven: the event loop drains the
-// entire microtask queue — including freshly queued links — before the
-// next macrotask, so two event-loop turns settle every pending save chain
-// deterministically. If a stray commit were ever going to fire, it has
-// fired by the time this resolves. Replaces fixed 20ms sleeps.
+// Two event-loop turns settle every pending microtask-driven save chain.
 const settleSaveChains = async () => {
   await new Promise((resolve) => setImmediate(resolve))
   await new Promise((resolve) => setImmediate(resolve))
@@ -56,10 +51,7 @@ describe('useSettingsCard — schema-aware save baseline', () => {
   })
 
   it('stays clean after saving a value the schema trims — no repeat PATCH on later flushes', async () => {
-    // The dirty guard compares `getValues()` (raw) against the committed
-    // baseline. If the baseline stored the resolver-PARSED values, a `.trim()`
-    // transform would make the card permanently dirty and every panel flush
-    // would re-POST the same patch.
+    // The baseline stores raw values — parsed ones would keep the card permanently dirty.
     function Harness({ source }: { source: Source }) {
       const { form, flushOnBlur } = useSettingsCard<Source, State>(
         makeCardProps(source, z.object({ title: z.string().trim().min(1) })),
@@ -73,10 +65,8 @@ describe('useSettingsCard — schema-aware save baseline', () => {
     fireEvent.change(input, { target: { value: '  Typed  ' } })
     fireEvent.blur(input)
     await waitFor(() => expect(commit).toHaveBeenCalledOnce())
-    // The patch is the schema-parsed (trimmed) value…
     expect(commit.mock.calls[0]![1]).toEqual({ title: 'Typed' })
 
-    // …but afterwards the card is clean: another blur / panel flush is a no-op.
     fireEvent.blur(input)
     await settleSaveChains()
     expect(commit).toHaveBeenCalledOnce()
@@ -103,8 +93,6 @@ describe('useSettingsCard — schema-aware save baseline', () => {
     fireEvent.change(input, { target: { value: '' } })
     fireEvent.click(screen.getByRole('button', { name: 'save' }))
 
-    // Nothing was persisted, the user sees why, and the control no longer
-    // holds the invalid value.
     await waitFor(() => expect(toastMock.error).toHaveBeenCalledOnce())
     expect(toastMock.error.mock.calls[0]).toEqual(['设置未保存', { description: '请填写站点标题' }])
     await waitFor(() => expect(input).toHaveValue('Hello'))
@@ -148,7 +136,6 @@ describe('useSettingsCard — field-scoped save (P1-13)', () => {
           <button
             type="button"
             onClick={() => {
-              // The SettingsSwitch wiring: field.onChange first, then save(name).
               form.setValue('enabled', true)
               save('enabled')
             }}
@@ -162,17 +149,12 @@ describe('useSettingsCard — field-scoped save (P1-13)', () => {
     render(<Harness source={{ title: 'Hello', enabled: false }} />)
     const input = screen.getByRole('textbox', { name: 'title' })
 
-    // The keyboard-trigger shape: the user is mid-edit in the text field
-    // (no blur — nothing committed) when the switch fires.
     fireEvent.change(input, { target: { value: 'Half typed' } })
     fireEvent.click(screen.getByRole('button', { name: 'toggle' }))
 
     await waitFor(() => expect(commit).toHaveBeenCalledOnce())
     expect(commit.mock.calls[0]![1]).toEqual({ enabled: true })
 
-    // The half-typed text stays local and dirty — its own blur commits it.
-    // (The blur path posts the card's honest full patch, so the already-
-    // committed `enabled` rides along at its SAVED value — idempotent.)
     fireEvent.blur(input)
     await waitFor(() => expect(commit).toHaveBeenCalledTimes(2))
     expect(commit.mock.calls[1]![1]).toEqual({ title: 'Half typed', enabled: true })
@@ -210,7 +192,6 @@ describe('useSettingsCard — field-scoped save (P1-13)', () => {
     await waitFor(() => expect(toastMock.error).toHaveBeenCalledOnce())
     expect(toastMock.error.mock.calls[0]).toEqual(['设置未保存', { description: '当前不允许开启' }])
     expect(commit).not.toHaveBeenCalled()
-    // The sibling's in-flight edit survives the rollback.
     expect(input).toHaveValue('Half typed')
   })
 

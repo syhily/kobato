@@ -3,11 +3,9 @@ import type { Database } from '@/server/infra/db/database'
 
 import { extractRequestFacts } from '@/server/http/utils/request-facts'
 
-// Builders for the `context` argument passed to oRPC procedures
-// (via `call(router.method, input, { context })`). Authed procedures
-// gate on `context.viewer` via the `requireAuth` / `requireRole`
-// middleware in `orpc-base.ts`; this helper seeds both the viewer and
-// the session-stub so tests can drive procedures end-to-end.
+// Builders for the oRPC `context` argument. Authed procedures gate on
+// `context.viewer` via requireAuth/requireRole; this seeds both the
+// viewer and the session-stub so tests drive procedures end-to-end.
 
 export interface MockCtxOptions {
   userId?: string
@@ -23,9 +21,7 @@ export interface MockCtxOptions {
 }
 
 function makeSessionStub(user: { id: string; role: string } | undefined, sessionId: string, csrfToken?: string) {
-  // Minimal `BlogSession` surface — only the methods orpc-base / the
-  // controllers actually call. Cast through `unknown` once at the use
-  // site so the typing surface in tests stays clean.
+  // Minimal `BlogSession` surface — only the methods orpc-base actually calls.
   return {
     id: sessionId,
     get: (key: string) => {

@@ -25,11 +25,9 @@ import {
 import { ActionFailure } from '@/server/infra/http/errors'
 
 /**
- * The in-memory backup tier, for tests only. Production paths stream
- * (stageBackup / createTarReadStream); these helpers pack, unpack, and
- * probe whole payloads in memory — convenient for fixtures, wrong for
- * a 500 MB upload. They lived inside the production modules until the
- * boundary was made explicit by moving them here.
+ * The in-memory backup tier, for tests only. Production paths stream;
+ * these helpers pack/unpack/probe whole payloads in memory — convenient
+ * for fixtures, wrong for a 500 MB upload.
  */
 
 const GZIP_MAGIC_1 = 0x1f
@@ -97,10 +95,8 @@ export interface BackupPayload {
 }
 
 /**
- * Unpack a decompressed backup into its engine payloads, in memory
- * (subarray views — no copies). Accepted shapes: the two-file tar
- * archive, a raw SQLite file (content-only), a raw DuckDB file
- * (analytics-only).
+ * Unpack a decompressed backup into engine payloads (subarray views).
+ * Accepted shapes: two-file tar, raw SQLite (content-only), raw DuckDB.
  */
 export function unpackBackupPayload(raw: Buffer): BackupPayload {
   if (isTarArchive(raw)) {
@@ -125,8 +121,7 @@ export function unpackBackupPayload(raw: Buffer): BackupPayload {
   return { content: raw, analytics: null }
 }
 
-/** Buffer-based admin probe: unpack, stage the content to a temp file,
- *  and run the same staged check the production setup route runs. */
+/** Buffer-based admin probe: stage the content and run the production setup check. */
 export async function assertBackupContainsAdmin(buffer: Buffer): Promise<void> {
   const { content } = unpackBackupPayload(extractBackupFile(buffer))
   if (content === null) {
@@ -143,7 +138,6 @@ export async function assertBackupContainsAdmin(buffer: Buffer): Promise<void> {
   }
 }
 
-/** Buffer-in convenience wrapper: stage, then swap into place. */
 export async function restoreFromBackup(buffer: Buffer, fileName: string, options: RestoreOptions = {}): Promise<void> {
   const staged = await stageBackup(buffer)
   await restoreFromStagedBackup(staged, fileName, options)

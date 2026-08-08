@@ -15,8 +15,7 @@ export function useEditorShellLayout() {
 
   const isLg = useMediaQuery('(min-width: 1024px)', true)
   const [metaOpen, setMetaOpen] = useState(isLg)
-  // Adjust state during render (not in an effect): when the viewport
-  // drops below lg, force both panels closed.
+  // Render-phase adjustment: when the viewport drops below lg, force both panels closed.
   const [wasLg, setWasLg] = useState(isLg)
   if (isLg !== wasLg) {
     setWasLg(isLg)

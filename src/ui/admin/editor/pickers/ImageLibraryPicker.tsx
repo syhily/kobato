@@ -11,22 +11,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/ui/components/input'
 import { cn } from '@/ui/lib/cn'
 
-// Image picker dialog driven by `admin.listImages`. The trigger is
-// customizable so the dialog can sit anywhere — embedded in a row of the
-// editor toolbar or in a property panel. `onPick` receives the full
-// `AdminImageDto` so the caller has both `publicUrl` and `storagePath`
-// without a second round trip.
+// Customizable trigger; `onPick` passes the full `AdminImageDto` (publicUrl + storagePath).
 
 export interface ImageLibraryPickerProps {
   trigger?: React.ReactNode
   onPick: (image: AdminImageDto) => void
-  /**
-   * Optional controlled-open pair. Pass when the caller wants to
-   * drive the dialog imperatively (e.g. a slash-command in the
-   * editor) instead of relying on a `trigger` button click. When
-   * `open` is provided, `trigger` becomes optional — the picker
-   * renders the dialog only.
-   */
+  /** Optional controlled-open pair — drive the dialog imperatively (e.g.
+   *  editor slash-command) instead of a `trigger` click; `trigger` becomes optional. */
   open?: boolean
   onOpenChange?: (open: boolean) => void
 }

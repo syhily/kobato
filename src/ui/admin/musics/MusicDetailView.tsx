@@ -66,8 +66,7 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
       orpc.admin.music.update(input),
     onSuccess: (data) => {
       queryClient.setQueryData(orpcQuery.admin.music.get.key({ input: { id } }), { music: data.music })
-      // The library is cached under both operation types (`query` hero,
-      // `infinite` grid); the procedure-level orpcQuery key matches both.
+      // The library is cached under both operation types — the procedure-level key matches both.
       void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.music.list.key() })
       toast.success('已保存')
       setEditing(false)

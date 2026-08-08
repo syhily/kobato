@@ -1,10 +1,6 @@
-// Generate a cryptographically random URL-safe token of the requested
-// character length. Uses base64url encoding (RFC 4648 §5) so each character
-// contributes ~6 bits of entropy: a 64-char token therefore carries 384 bits.
-//
-// We oversize the random byte pool to `ceil(length * 6 / 8)` so the encoded
-// output is always at least `length` characters, then slice to the exact
-// requested width.
+// Cryptographically random URL-safe token of `length` chars. base64url
+// (RFC 4648 §5) → ~6 bits per char. The byte pool is oversized so the
+// encoded output always reaches `length`, then sliced.
 export function makeToken(length: number): string {
   if (length <= 0) {
     return ''
@@ -12,7 +8,6 @@ export function makeToken(length: number): string {
   const byteCount = Math.ceil((length * 6) / 8)
   const bytes = new Uint8Array(byteCount)
   crypto.getRandomValues(bytes)
-  // Standard base64 → base64url (urlsafe alphabet, no padding).
   let binary = ''
   for (const byte of bytes) {
     binary += String.fromCharCode(byte)
@@ -27,11 +22,7 @@ export async function encodedEmail(email: string): Promise<string> {
   return Array.from(new Uint8Array(digest), (value) => value.toString(16).padStart(2, '0')).join('')
 }
 
-/**
- * Escape the four HTML entities that matter for double-quoted attribute
- * values and text content: `&`, `<`, `>` and `"`. Keep this the single
- * canonical implementation so security fixes only need to land in one place.
- */
+/** Escape the entities that matter for double-quoted attributes and text content — the single canonical implementation. */
 export function escapeHtml(input: string): string {
   return input.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 }

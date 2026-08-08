@@ -35,13 +35,7 @@ export function useAdminChrome(): AdminChromeContextValue {
   return ctx ?? NOOP_CHROME
 }
 
-/**
- * Convenience hook used by routes that want to enter focus mode for
- * the duration of a UI state. Pass `true` to collapse the chrome,
- * `false` to restore it. The unmount cleanup always restores so
- * routes that forget to flip the flag back don't leak focus mode
- * into the next navigation.
- */
+/** Enter/leave focus mode for a UI state; unmount cleanup always restores. */
 export function useAdminChromeFocus(active: boolean): void {
   const { setFocused } = useAdminChrome()
   useEffect(() => {
@@ -50,12 +44,8 @@ export function useAdminChromeFocus(active: boolean): void {
   }, [active, setFocused])
 }
 
-/**
- * Signals to the admin shell that the current route mounts a
- * bottom-right FAB (e.g. the editor's publish button), so the shared
- * `AdminScrollTopButton` should ride above its default slot to keep
- * both FABs reachable.
- */
+/** Signal the shell that the current route mounts a bottom-right FAB, so
+ *  `AdminScrollTopButton` rides above its default slot. */
 export function useAdminScrollTopLift(active: boolean): void {
   const { setScrollTopLifted } = useAdminChrome()
   useEffect(() => {

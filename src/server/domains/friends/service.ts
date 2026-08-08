@@ -22,9 +22,7 @@ import { getLogger } from '@/server/infra/logger'
 
 const log = getLogger('friends.service')
 
-// Public projection (no `id`/`visible`/timestamps/`rssUrl`) — matches
-// the `Friend` shape in `@/shared/types/catalog`, keeping the catalog
-// decoupled from the DB row layout.
+// Public projection matching `Friend` in `@/shared/types/catalog`.
 export interface PublicFriend {
   website: string
   description?: string
@@ -65,13 +63,11 @@ export async function listPublicFriends(db: Database): Promise<PublicFriend[]> {
 export interface AdminFriendsListResult {
   friends: AdminFriendDto[]
   total: number
-  /** True when `offset + rows.length < total` (i.e. another page exists). */
+  /** True when another page exists. */
   hasMore: boolean
 }
 
-// Server-side pagination: `[rows, total]` in parallel. `total` is the
-// full filtered count (independent of `offset`/`limit`) so the client
-// can render the correct number of pagination buttons.
+// `total` is the full filtered count, independent of `offset`/`limit`.
 export async function listFriendsForAdmin(
   db: Database,
   filters: AdminFriendsListFilters,
@@ -98,11 +94,8 @@ export interface UpsertFriendInputs {
   visible: boolean
 }
 
-// Single entry-point that the admin Resource Route action calls. The
-// `id` distinguishes update from create; on create we soft-check
-// `homepage` against existing rows to nudge the editor away from
-// accidental duplicates (a hard UNIQUE constraint would reject benign
-// protocol/trailing-slash variants).
+// Duplicate `homepage` is a soft check: reject other rows with the same URL,
+// allow protocol/trailing-slash variants.
 export async function upsertAdminFriend(db: Database, input: UpsertFriendInputs): Promise<AdminFriendDto> {
   const description = normaliseNullable(input.description)
   const rssUrl = normaliseNullable(input.rssUrl)
@@ -129,9 +122,7 @@ export async function upsertAdminFriend(db: Database, input: UpsertFriendInputs)
   if (existing === null) {
     throw new DomainError('NOT_FOUND', '友链不存在')
   }
-  // Allow the editor to keep the same `homepage` (it's the same row)
-  // but reject collisions with OTHER rows so two friend entries can't
-  // share the same URL by accident.
+  // Reject the URL only when another row already owns it.
   if (existing.homepage !== input.homepage) {
     const dup = await findFriendByHomepage(db, input.homepage)
     if (dup !== null && dup.id !== input.id) {
@@ -158,8 +149,6 @@ export async function deleteAdminFriend(db: Database, id: number): Promise<boole
   return deleteFriendRow(db, id)
 }
 
-// --- Public application -----------------------------------------------------
-
 export interface ApplyFriendInputs {
   website: string
   homepage: string
@@ -168,10 +157,8 @@ export interface ApplyFriendInputs {
   rssUrl?: string
 }
 
-// Entry-point for the public `friends.apply` procedure. The row lands
-// as `visible: false` (pending) — approval is the admin flipping the
-// flag. The admin notification is fire-and-forget: a mail-pipeline
-// hiccup must never fail the application.
+// Public `friends.apply`: rows land `visible: false` (pending); the admin
+// notification is fire-and-forget.
 export async function applyFriend(db: Database, input: ApplyFriendInputs): Promise<void> {
   const dup = await findFriendByHomepage(db, input.homepage)
   if (dup !== null) {
@@ -183,10 +170,7 @@ export async function applyFriend(db: Database, input: ApplyFriendInputs): Promi
     website: input.website,
     description: normaliseNullable(input.description),
     homepage: input.homepage,
-    // `friend.poster` is NOT NULL and applicants rarely have a cover
-    // URL handy — store '' and let the admin fill it before approving
-    // (the admin upsert schema requires a valid poster URL, so a
-    // poster-less application can't go public by accident).
+    // Store '' — the admin upsert schema still requires a valid poster URL.
     poster: input.poster ?? '',
     rssUrl: normaliseNullable(input.rssUrl),
     visible: false,
@@ -194,8 +178,7 @@ export async function applyFriend(db: Database, input: ApplyFriendInputs): Promi
   fireAndForgetNotify(sendNewFriendApplication(row), log, 'friend application')
 }
 
-// Trim and collapse '' to `null` so the DB never stores "" as a
-// sentinel for "no description".
+// Trim; collapse '' to `null` — the DB never stores "" as a sentinel.
 function normaliseNullable(value: string | null | undefined): string | null {
   if (value === null || value === undefined) {
     return null
@@ -203,8 +186,6 @@ function normaliseNullable(value: string | null | undefined): string | null {
   const trimmed = value.trim()
   return trimmed === '' ? null : trimmed
 }
-
-// --- Public catalog queries -------------------------------------------------
 
 async function hydrateFriendImages(db: Database, friends: Friend[]): Promise<void> {
   await hydrateImageRefs(

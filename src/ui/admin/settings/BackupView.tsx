@@ -127,8 +127,7 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
     [loadPage],
   )
 
-  // Defer the initial list load so `isInitialLoading` is derived from
-  // `backupFiles` state alone — no separate loading flag needed.
+  // Defer the initial load so `isInitialLoading` derives from `backupFiles` state alone.
   useEffect(() => {
     Promise.resolve()
       .then(() => safeLoadPage(5))
@@ -237,9 +236,7 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
     }
   }, [selectedFile, csrfToken])
 
-  // File-based backups need no external tooling — they land in S3 when
-  // configured and in local storage otherwise. `primaryDriver` only drives
-  // the informational banner below.
+  // Backups need no external tooling — they land in S3 when configured, local otherwise.
   const canConfigure = true
 
   return (

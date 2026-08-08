@@ -2,12 +2,8 @@ import type { ComponentProps } from 'react'
 
 import { Checkbox } from '@/ui/components/checkbox'
 
-// `<Checkbox>` + automatic immediate save for /admin/settings.
-//
-// Same save-on-change idiom as `SettingsSwitch` (see its header comment):
-// the upstream `onCheckedChange` (typically RHF's `field.onChange`) fires
-// first, then `save()` commits the card immediately. Used where a checkbox
-// fits better than a switch (e.g. the navigation row's 新窗口 toggle).
+// `<Checkbox>` + immediate save: the upstream `onCheckedChange` fires
+// first, then `save(name)` commits.
 
 type CheckboxProps = ComponentProps<typeof Checkbox>
 

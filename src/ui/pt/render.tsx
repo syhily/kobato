@@ -47,11 +47,7 @@ import {
   PT_INLINE,
 } from '@/ui/pt/render-shared'
 
-// PortableText renderer delegating standard pipeline to `@portabletext/react`
-// and kobato-specific blocks/marks to sibling modules.
-//
-// Headings use precomputed slugs zipped by index; fallback `Slugger` runs over
-// plain text (never React children) so SSR/hydration stay in sync.
+// Precomputed slugs zipped by index; fallback `Slugger` runs over plain text, never React children (SSR/hydration sync).
 
 export interface PortableTextBodyProps {
   body: EnrichedPortableTextBody

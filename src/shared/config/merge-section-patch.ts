@@ -6,10 +6,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 /**
  * Deep-merge a Section patch into a base settings object. Records merge
- * recursively; arrays and every non-record value REPLACE (never concat).
- * This is the single merge implementation for the settings write path:
- * the server applies it to the stored row before validating. The client
- * display comes from the save response instead — do not fork it.
+ * recursively; arrays / non-records REPLACE. The single merge for the
+ * settings write path — do not fork it.
  */
 export function mergeSectionPatch<T extends object>(
   base: T,
@@ -17,8 +15,7 @@ export function mergeSectionPatch<T extends object>(
   seen: WeakSet<object> = new WeakSet(),
 ): T {
   // T is an arbitrary settings DTO; spreading into a plain record is the
-  // canonical shape-preserving copy. The structural identity holds because
-  // `patch` only adds/overrides keys that already exist on `T`.
+  // canonical shape-preserving copy (the patch only touches existing keys).
   const result: Record<string, unknown> = { ...unsafeCast<Record<string, unknown>>(base) }
   for (const key of Object.keys(patch)) {
     const patchVal = patch[key]

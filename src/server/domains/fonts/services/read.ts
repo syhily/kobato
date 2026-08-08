@@ -6,9 +6,8 @@ import type { AdminFontDto } from '@/shared/contracts/fonts'
 
 import { font } from '@/server/infra/db/schema/font'
 
-// Read side of the fonts domain. Pure DB queries — no mutation, no audit,
-// no I/O beyond the database. The DTO mapping lives here so both the oRPC
-// `fonts.list` handler and the SSR bundle resolver share one mapper.
+// Read side of the fonts domain — pure DB queries. The DTO mapping lives
+// here so `fonts.list` and the SSR bundle resolver share it.
 
 export function toAdminFontDto(row: FontRow): AdminFontDto {
   return {
@@ -25,21 +24,13 @@ export function toAdminFontDto(row: FontRow): AdminFontDto {
   }
 }
 
-/** Return every font row, newest first — feeds the admin library grid. */
+/** Every font row, ordered by creation time (oldest first). */
 export async function listFonts(db: Database): Promise<AdminFontDto[]> {
   const rows = await db.select().from(font).orderBy(font.createdAt)
   return rows.map(toAdminFontDto)
 }
 
-/**
- * Resolve the font rows referenced by a settings `fonts` payload in a
- * single batched query, keyed by id. Unknown ids (stale UUIDs left in the
- * settings row after a font was GC'd) are silently dropped — the SSR
- * renderer simply omits them rather than crashing.
- *
- * Returns the rows in **no particular order**; callers that care about
- * slot order re-sort by the slot list themselves (see `resolveSlotOrder`).
- */
+/** Batched id→row lookup. Unknown ids are silently dropped; result order is unspecified — callers re-sort via `resolveSlotOrder`. */
 export async function findFontsByIds(db: Database, ids: readonly string[]): Promise<Map<string, FontRow>> {
   if (ids.length === 0) {
     return new Map()
@@ -53,11 +44,7 @@ export async function findFontsByIds(db: Database, ids: readonly string[]): Prom
   return byId
 }
 
-/**
- * Reorder a slot's font-id list into the corresponding `FontRow`s,
- * preserving the slot's declared order and dropping ids that no longer
- * resolve to a row (defensive against stale settings).
- */
+/** Slot ids → `FontRow`s in declared order; ids with no row are dropped. */
 export function resolveSlotOrder(ids: readonly string[], byId: Map<string, FontRow>): FontRow[] {
   const out: FontRow[] = []
   for (const id of ids) {
@@ -69,7 +56,6 @@ export function resolveSlotOrder(ids: readonly string[], byId: Map<string, FontR
   return out
 }
 
-/** Single-row fetch by id; `null` when the font does not exist. */
 export async function findFontById(db: Database, id: string): Promise<FontRow | null> {
   const rows = await db.select().from(font).where(eq(font.id, id)).limit(1)
   return rows[0] ?? null

@@ -3,11 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.useFakeTimers()
 
-// The send half of a fired batch goes through the REAL safeFetch stack —
-// only the network boundary is stubbed: `fetch` via installFetch, DNS to a
-// fixed public address (same discipline as tests/unit/server/infra/
-// safe-fetch.test.ts). The stubbed target pages declare no endpoint, so a
-// processed row lands on the terminal `no-endpoint` state.
+// Real safeFetch stack; only the network boundary is stubbed: fetch via installFetch, DNS to a fixed address.
+// Stubbed target pages declare no endpoint — processed rows land on the terminal `no-endpoint` state.
 vi.mock('node:dns/promises', () => ({
   lookup: async () => [{ address: '93.184.216.34', family: 4 }],
 }))
@@ -24,10 +21,7 @@ import { upsertWebmentionOutbox } from '@/server/infra/db/operations/webmention-
 import { webmentionOutbox } from '@/server/infra/db/schema/webmention'
 import { stopAllScheduledJobs } from '@/server/infra/scheduler-utils'
 
-// The webmention outbox job against the real engine: real outbox rows feed
-// the next-due waterline query, and the observable effect is the real
-// discovery/send round-trip. db-lifecycle (pulled in by the test-db helper)
-// is the composition root that wires the scheduler's db getter, so only
+// The webmention outbox job against the real engine; only
 // `scheduleWebmentionOutbox()` is called explicitly, like server.ts.
 const db = getTestDb()
 
@@ -108,8 +102,7 @@ describe('webmentions/outbox scheduler throttle', () => {
     scheduleWebmentionOutbox()
     expect(vi.getTimerCount()).toBeGreaterThan(0)
 
-    // Without the nudge a fresh row waits for the suspended re-check (30s),
-    // not the throttle floor.
+    // Without the nudge, the row waits for the suspended re-check (30s), not the floor.
     await seedDueRow()
     await vi.advanceTimersByTimeAsync(5_000)
     expect(mockFetch.calls).toHaveLength(0)
@@ -130,8 +123,7 @@ describe('webmentions/outbox scheduler throttle', () => {
     expect(mockFetch.calls).toHaveLength(OUTBOX_BATCH_SIZE)
     expect(statusCount('pending')).toBe(1)
 
-    // The remaining row is due NOW, but the next batch still waits a full
-    // floor interval — this is the burst throttle.
+    // Still due NOW, but the next batch waits a full floor interval — the burst throttle.
     await vi.advanceTimersByTimeAsync(OUTBOX_MIN_DELAY_MS - 1)
     expect(mockFetch.calls).toHaveLength(OUTBOX_BATCH_SIZE)
 

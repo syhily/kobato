@@ -6,8 +6,7 @@ import { CheckIcon } from 'lucide-react'
 import { cn } from '@/ui/lib/cn'
 
 function Checkbox({ className, ...props }: ComponentProps<typeof BaseCheckbox.Root>) {
-  // Base UI renders `<span role="checkbox">` (not `<button>`), so we need
-  // `inline-flex` to give `size-4` a block-level formatting context.
+  // Base UI renders `<span role="checkbox">`, so `inline-flex` gives `size-4` a formatting context.
   return (
     <BaseCheckbox.Root
       data-slot="checkbox"

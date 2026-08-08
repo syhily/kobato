@@ -15,9 +15,7 @@ export type PageMetaWithAuthor = PageMetaRow & { authorName: string | null }
 /** Pages filter exactly the shared admin-list legs — no entity extras. */
 export type ListPagesFilters = MetaListFiltersBase
 
-// Meta-row CRUD + admin list queries come from the shared factories
-// (`content/entities/meta-repo.ts`) bound to the page table — no
-// page-specific fork of these queries exists.
+// CRUD + admin-list queries come from the shared factories bound to the page table.
 const crud = makeMetaCrud<PageMetaRow, NewPageMeta>(pageMetaTable)
 
 export const findPageMetaById = crud.findMetaById

@@ -14,10 +14,8 @@ import { page as pageMetaTable } from '@/server/infra/db/schema/page'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { drawOpenGraph } from '@/server/render/og/render'
 
-// Renderers are stubbed to cheap buffers (canvas/font/quote work has its
-// own suites); the warmup module is wrap-don't-replace so the REAL
-// through() calls run against the real engine and fill the real buckets
-// — the spy only pins WHICH mutations knock on the warm door.
+// Renderers stubbed to cheap buffers; warmup is wrap-don't-replace, so the
+// real through() calls fill the real buckets.
 vi.mock('@/server/render/og/render', () => ({
   drawOpenGraph: vi.fn(async () => Buffer.from('og-png')),
 }))
@@ -32,8 +30,7 @@ vi.mock('@/server/domains/content/render-warmup', async (importOriginal) => {
 const warmMock = vi.mocked(warmContentRenderCaches)
 const drawOpenGraphMock = vi.mocked(drawOpenGraph)
 
-// Side-effect import: wires the real render-layer implementation into the
-// domain slot (with the stubbed renderers above).
+// Side-effect import: wires the real render layer into the domain slot.
 import '@/server/render/warmup/content-cache'
 
 const db = getTestDb()
@@ -82,8 +79,7 @@ describe('render cache warmup on content publish/update', () => {
       summary: '',
       cover: '',
     })
-    // The fire-and-forget warm fills the same buckets the crawler's first
-    // scan reads — wait for the async write to land.
+    // Fire-and-forget warm: wait for the async write to land.
     await vi.waitFor(async () => {
       const buckets = await cachedBuckets()
       expect(buckets).toContain('og')
@@ -100,8 +96,7 @@ describe('render cache warmup on content publish/update', () => {
     warmMock.mockClear()
 
     await updatePostMeta(db, { id: liveId, title: 'Live Post Renamed' })
-    // The meta update re-derives the slug from the new title (no explicit
-    // slug in the input) — the warm target carries the NEW slug.
+    // No explicit slug: the update re-derives it, so the warm target carries the NEW slug.
     expect(warmMock).toHaveBeenCalledWith(
       db,
       expect.objectContaining({ slug: 'live-post-renamed', title: 'Live Post Renamed' }),
@@ -124,9 +119,7 @@ describe('render cache warmup on content publish/update', () => {
     )
     expect(result.status).toBe('saved')
 
-    // The OG request path resolves an empty page summary to the site
-    // description (the test fixture's '诗与梦想的远方') — the warm key
-    // must fold the same inputs.
+    // The OG path resolves an empty page summary to the site description; the warm key must too.
     expect(warmMock).toHaveBeenCalledWith(db, {
       slug: 'about',
       title: 'About',
@@ -155,17 +148,13 @@ describe('category OG warmup (audit P1-12)', () => {
   it('warms the category OG card after a category create', async () => {
     await upsertAdminCategory(db, { name: 'Tech Notes', cover: '', description: '' })
 
-    // The OG route serves categories under a `cat-`-prefixed slug and
-    // resolves an empty description to the site description (the test
-    // fixture's '诗与梦想的远方') — the warm key must fold the same inputs.
+    // The OG route serves categories under a `cat-`-prefixed slug.
     expect(warmMock).toHaveBeenCalledWith(db, {
       slug: 'cat-tech-notes',
       title: 'Tech Notes',
       summary: '诗与梦想的远方',
       cover: '',
     })
-    // The fire-and-forget warm fills the same bucket the crawler's first
-    // scan reads — wait for the async write to land.
     await vi.waitFor(async () => {
       expect(await cachedBuckets()).toContain('og')
     })

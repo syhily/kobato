@@ -12,13 +12,9 @@ import { createBackup } from '@/server/domains/backup/services/backup'
 import { DomainError } from '@/server/infra/http/errors'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@/server/infra/storage/registry'
 
-// createBackup runs for REAL against the shared in-memory DB (VACUUM INTO
-// works from :memory:) and an in-memory storage backend — no S3, no
-// settings. These cases pin the concurrency fix: two backups overlapping
-// in the same second (second-precision timestamp → shared staging path /
-// S3 key / DB row) must not fail opaquely — the loser gets a DomainError
-// CONFLICT, and a stale staging file from a crashed attempt never blocks
-// the next run.
+// createBackup runs for REAL (VACUUM INTO works from :memory:) against an
+// in-memory backend; pins: overlapping same-second backups get CONFLICT,
+// stale staging files never block the next run.
 const mem = makeMemoryBackend()
 const db = getTestDb()
 
@@ -34,9 +30,7 @@ afterEach(() => {
 
 describe('createBackup — single-flight guard', () => {
   it('rejects a concurrent backup with CONFLICT while the first is still in flight', async () => {
-    // Stall the first backup mid-upload so the second attempt starts while
-    // the first still holds the slot — the interleaving two same-second
-    // admin clicks (or an overlapping scheduler tick) produce.
+    // Stall the first backup mid-upload so the second starts while the slot is held.
     let enteredPutStream!: () => void
     const putStreamEntered = new Promise<void>((resolve) => {
       enteredPutStream = resolve
@@ -75,11 +69,7 @@ describe('createBackup — single-flight guard', () => {
   })
 
   it('ignores a stale staging file a crashed same-second attempt left behind', async () => {
-    // A backup that died between `VACUUM INTO` and the cleanup unlink left
-    // `kobato-backup-<timestamp>.db` in the temp dir; the next backup in
-    // the same second used to fail its own VACUUM INTO on that existing
-    // file ("output file already exists"). The timestamp is
-    // second-precision, so seed stale files for a ±2s window around now.
+    // Stale staging files (`kobato-backup-<ts>.db`) around now — timestamps are second-precision.
     const stalePaths: string[] = []
     for (let offset = -2; offset <= 2; offset += 1) {
       const ts = new Date(Date.now() + offset * 1000).toISOString().replace(/[:.]/g, '-').slice(0, 19)

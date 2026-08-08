@@ -35,7 +35,6 @@ import { hasAtLeast } from '@/shared/utils/roles'
 
 const log = getLogger('posts.service')
 
-/** Tag + category names the admin DTO carries beyond the shared fields. */
 export interface PostAdminExtras {
   tags: string[]
   categoryName: string
@@ -81,11 +80,9 @@ async function resolveCategoryName(db: Database, categoryId: number | null): Pro
 const INDEX_FAILURE_WARNING = '搜索索引更新失败，该文章可能不会出现在搜索结果中。'
 
 /**
- * The post entity: RBAC ownership gate, author+ draft preview,
- * tag/category relations, visible/pinned/alias columns, and the
- * search-index side effects. Everything else — the body lifecycle and
- * the meta CRUD/mutation skeleton — comes from the generic
- * implementations this descriptor feeds (`content/entities/*`).
+ * The post entity: RBAC ownership, author+ draft preview, tag/category
+ * relations, visible/pinned/alias columns, search-index side effects;
+ * the body lifecycle and meta CRUD skeleton come from `content/entities/*`.
  */
 export const postDescriptor: MetaEntityDescriptor<
   PostMetaRow,
@@ -120,26 +117,21 @@ export const postDescriptor: MetaEntityDescriptor<
     project: (meta, revision) => toCmsPost(meta, revision),
     async afterPublish(db, meta, body, warnings) {
       invalidateContent(db, { entity: 'post' })
-      // Warm the OG card + today's calendar so a crawler's first scan of
-      // the fresh post hits a filled bucket instead of a cold render.
+      // Warm the OG card + today's calendar ahead of a crawler's first scan.
       warmContentRenderCaches(db, {
         slug: meta.slug,
         title: meta.title,
         summary: meta.summary,
         cover: meta.cover,
       })
-      // Index the canonical body already in scope rather than re-reading the
-      // row from the DB: `body` is freshly canonicalized + prerendered, so it
-      // matches what `publishLatestRevision` persisted — a re-read would only
-      // cost a round-trip and reintroduce a validation gap (raw JSONB).
+      // Index the in-scope `body` — freshly canonicalized; a re-read would cost a round-trip and reintroduce a validation gap.
       try {
         await indexPost(db, meta.id, meta.title, meta.summary, body)
       } catch (err: unknown) {
         log.warn('index post failed', { postId: meta.id, error: err })
         warnings.push(INDEX_FAILURE_WARNING)
       }
-      // Cross-domain extensions (Webmention outbox enqueue) run through
-      // the seam — see `posts/publish-hooks.ts`.
+      // Cross-domain extensions run through the seam — see `posts/publish-hooks.ts`.
       await runPostPublishHooks(db, meta, body, warnings)
     },
   },
@@ -176,8 +168,7 @@ export const postDescriptor: MetaEntityDescriptor<
   },
   mutations: {
     resolveAuthorId: (authorId, viewer) => (viewer && viewer.role !== 'admin' ? idFromString(viewer.id) : authorId),
-    // Pre-flight the referenced category so a stale admin select fails with
-    // a 400 instead of tripping the FK mid-transaction.
+    // Pre-flight the category so a stale select 400s instead of tripping the FK mid-transaction.
     async preflightUpsert(db, input) {
       if (input.categoryId != null && (await findCategoryById(db, input.categoryId)) === null) {
         throw new DomainError('BAD_REQUEST', '分类不存在')
@@ -191,10 +182,7 @@ export const postDescriptor: MetaEntityDescriptor<
     }),
     updateExtras: (input, existing) => ({
       visible: input.visible ?? existing.visible,
-      // The editor maps its `pinned` boolean to a FRESH stamp on every
-      // meta save, so a non-null input means "pinned", not "pin at this
-      // instant" — keep the original stamp on an already-pinned post or
-      // every unrelated edit would reshuffle the pinned/featured order.
+      // The editor sends a fresh stamp on every save — keep the original on an already-pinned post.
       pinnedAt:
         input.pinnedAt === undefined
           ? existing.pinnedAt
@@ -210,8 +198,7 @@ export const postDescriptor: MetaEntityDescriptor<
       const tagIds = resolveTagIdsForNames(tx, tagNames)
       setPostTags(tx, metaId, tagIds)
     },
-    // The index row goes inside the delete transaction so a rolled-back
-    // delete never loses it.
+    // The index row is deleted in-transaction so a rollback never loses it.
     deleteRelations(tx, metaId) {
       removePostIndex(tx, metaId)
     },
@@ -223,20 +210,13 @@ export const postDescriptor: MetaEntityDescriptor<
       return { tags, categoryName }
     },
     async afterMutation(db, meta, event) {
-      // create/update of a (still unpublished) post changes no public
-      // surface; publishing already invalidated through `preview.afterPublish`.
+      // An unpublished create/update changes no public surface; publish already invalidated.
       if ((event === 'create' || event === 'update') && !isPromoted(meta)) {
         return
       }
-      // A meta update on a PUBLISHED post (title/summary/tags/cover/
-      // visibility) reaches the public surface immediately — invalidate
-      // like a lifecycle flip, otherwise feed/sitemap/taxonomy lists stay
-      // stale for their TTLs and search for its full counter window.
+      // A published post's meta update reaches the public surface immediately — invalidate now.
       invalidateContent(db, { entity: 'post' })
-      // Live rows get their OG card + today's calendar re-warmed under
-      // the NEW render inputs (the OG key folds title/summary/cover, so
-      // an edit is always a fresh key a crawler would otherwise render
-      // cold). Deletes/unpublishes fail the live gate and skip.
+      // Re-warm live rows' OG card + calendar under the NEW render inputs; others skip.
       if (isLive(meta)) {
         warmContentRenderCaches(db, {
           slug: meta.slug,
@@ -254,9 +234,7 @@ export const postDescriptor: MetaEntityDescriptor<
         return
       }
       if (event === 'update' && isPromoted(meta)) {
-        // Re-index from the persisted published revision: the body did not
-        // change, but title/summary search hits did (the search corpus is
-        // otherwise rebuilt only on publish/restore).
+        // Body unchanged — re-index from the persisted revision for title/summary hits.
         const revision = findContentById(db, meta.publishedRevisionId)
         if (revision === null) {
           return
@@ -293,8 +271,7 @@ export const postDescriptor: MetaEntityDescriptor<
       }
       const bodyResult = portableTextBodySchema.safeParse(indexable.body)
       if (!bodyResult.success) {
-        // Corrupt JSONB (e.g. a direct INSERT) — the post is restored but
-        // would silently never be indexed without this log.
+        // Corrupt JSONB (e.g. direct INSERT) — restored but never indexed without this log.
         log.warn('restore post: body validation failed, skipping search index', {
           postId: indexable.id.toString(),
           error: bodyResult.error.message,

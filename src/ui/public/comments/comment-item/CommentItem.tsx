@@ -13,8 +13,7 @@ export interface CommentItemProps {
   pending?: boolean
 }
 
-// Memoized so a tree dispatch that preserves item references re-renders only
-// the affected leaf; reply-toggle still re-renders every wrapper via the reply slot context.
+// Memoized: reference-preserving dispatches re-render only the affected leaf.
 export const CommentItem = memo(function CommentItem(props: CommentItemProps) {
   return props.depth === 1 ? <RootComment {...props} /> : <NestedComment {...props} />
 })

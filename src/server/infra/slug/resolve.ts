@@ -5,13 +5,9 @@ import { DERIVED_SLUG_PATTERN, SLUG_MAX } from '@/shared/slug'
 
 export type SlugEntity = 'post' | 'page' | 'taxonomy'
 
-// The single fused slug resolver. An explicit non-empty value wins and is
-// validated inline (pattern, length, and — for posts/pages only — the
-// route-prefix fence); blank / missing falls back to `deriveSlug(name)`.
-// Every failure throws `DomainError('BAD_REQUEST', ...)` carrying a
-// zod-style `issues` array with path `['slug']` so editor errors attach
-// to the slug field. Taxonomy slugs skip the fence because they are never
-// mounted at a route prefix of their own.
+// Explicit non-empty slug wins (validated inline); blank falls back to
+// `deriveSlug(name)`. Failures throw `BAD_REQUEST` with `issues` path
+// `['slug']`; taxonomy skips the route-prefix fence.
 export function resolveSlug(
   explicit: string | undefined,
   fallbackName: string,

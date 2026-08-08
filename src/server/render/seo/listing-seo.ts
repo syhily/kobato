@@ -12,23 +12,14 @@ export interface ListingSeoProps {
   totalPage: number
   rootPath: string
   forceNoindex?: boolean
-  /**
-   * Optional scoped RSS/Atom links emitted as additional
-   * `<link rel="alternate">` entries (in addition to the site-wide feeds).
-   * Used by category and tag listings to advertise their dedicated feeds.
-   */
+  /** Scoped RSS/Atom `<link rel="alternate">` entries for category/tag listings. */
   feedLinks?: FeedLinkOptions
   /** Custom OG image URL; when omitted falls back to the site-wide default. */
   ogImageUrl?: string
 }
 
-// Produces the complete `MetaDescriptor[]` for a listing page in one call
-// so loaders ship the final tags over the wire; each route's `meta()` then
-// returns `loaderData?.seo ?? routeMeta()`.
-//
-// `bundle` is optional: loaders read the boot-hydrated snapshot, but a
-// caller (e.g. a `meta()` callback that already extracted the bundle from
-// `matches`) can pass it explicitly to avoid touching `globalThis`.
+// One call produces the full MetaDescriptor[] for a listing; `bundle`
+// is optional to avoid touching globalThis when the caller has it.
 export function listingSeo(
   { title, description, pageNum, totalPage, rootPath, forceNoindex = false, feedLinks, ogImageUrl }: ListingSeoProps,
   bundle?: BlogSettingsBundle | null,

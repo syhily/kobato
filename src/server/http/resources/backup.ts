@@ -30,20 +30,7 @@ import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const log = getLogger('backup.upload')
 
-/**
- * The upload-route stage → pre-validate choreography: stage the streamed
- * upload ONCE (streamed decompression), then verify the staged content
- * database opens for real and contains an admin row BEFORE the restore
- * slot is claimed — the magic-byte check alone lets a corrupt payload
- * through, and a backup without an admin soft-locks the restored site
- * behind the install gate. Post-swap validation would be too late: by
- * then the original file no longer exists. The staged files serve both
- * the validation and the swap, so the payload is decompressed a single
- * time and never fully held in memory. Every rejection cleans up the
- * staged dir. `allowAnalyticsOnly` skips the admin check when the upload
- * carries no content file (the admin route only — setup hard-requires
- * content).
- */
+/** Stage + pre-validate (real DB open, admin row) before claiming the slot; every rejection cleans up. */
 async function stageUploadForRestore(
   c: Context<Env>,
   file: File,
@@ -75,10 +62,7 @@ function busyRestoreResponse(c: Context<Env>, staged: StagedBackup): Response {
 
 export const backupRouter = new Hono<Env>()
   .get('/api/admin/backup/restore-status', requireRoleMw('admin'), (c) => {
-    // Pure projection of the restore machine: the running phase while a
-    // job is in flight, the terminal report once (consumed on read).
-    // Liveness readers (/ready) use peekRestoreJobPhase instead, so a
-    // poll can never eat the report this endpoint is waiting to show.
+    // Pure projection of the restore machine — consumed once on read.
     return c.json(consumeRestoreJobReport())
   })
   .get('/api/admin/backup/download/:timestamp{[^/]+}', requireRoleMw('admin'), async (c) => {
@@ -86,9 +70,7 @@ export const backupRouter = new Hono<Env>()
     if (!isValidBackupKey(timestamp)) {
       return c.json({ error: { message: '无效的备份标识。' } }, 400)
     }
-    // Streamed, not buffered: backups run to MAX_BACKUP_FILE_SIZE (500MB),
-    // well past the MAX_OBJECT_BUFFER_SIZE (100MB) cap a buffered read
-    // enforces — the download must not 413 on a legitimate backup.
+    // Streamed: backups exceed the 100MB buffered-read cap, buffering would 413.
     const { stream, byteSize } = await getBackupStream(c.var.requestContext.db, timestamp)
     const fileName = `backup-${timestamp}.db.tar.gz`
     c.header('Content-Type', 'application/gzip')
@@ -111,8 +93,7 @@ export const backupRouter = new Hono<Env>()
         return c.json({ error: { message: '请上传文件' } }, 400)
       }
 
-      // Stage + pre-validate BEFORE claiming the slot (see the helper —
-      // analytics-only uploads skip the admin check).
+      // Stage + pre-validate before claiming the slot (see the helper).
       const stagedOrError = await stageUploadForRestore(c, file, { allowAnalyticsOnly: true })
       if (stagedOrError instanceof Response) {
         return stagedOrError
@@ -126,8 +107,7 @@ export const backupRouter = new Hono<Env>()
           await restoreFromStagedBackup(staged, fileName)
           log.info('Restore from uploaded backup completed')
         },
-        // drain/prepareForSwap throwing inside the machine means the swap
-        // (and its finally-cleanup) never ran — drop the staged dir here.
+        // A pre-swap throw means the swap never ran — drop the staged dir.
         onFailureFn: () => {
           rmSync(staged.dir, { recursive: true, force: true })
         },
@@ -157,15 +137,12 @@ export const backupRouter = new Hono<Env>()
         return c.json({ error: { message: 'Setup Token 验证已过期或未完成，请先返回安装页面完成验证。' } }, 403)
       }
 
-      // Double-check the token is still active (defense against
-      // stale session flags after token expiration or invalidation).
+      // Session flag may be stale after token expiry — re-check the token.
       if (!(await isSetupTokenActive(c.var.requestContext.db))) {
         return c.json({ error: { message: 'Setup Token 已过期或失效，请重新验证。' } }, 403)
       }
 
-      // CSRF guard: the restore request carries the same session cookie
-      // as the setup flow, so we require the CSRF header to prevent
-      // cross-site form submission.
+      // CSRF: restore rides the setup session cookie — require the CSRF header.
       const csrfToken = c.req.header(CSRF_HEADER)
       if (!validateCsrfToken(c.var.requestContext.session, csrfToken)) {
         return c.json({ error: { message: '安全校验失败，请刷新页面后重试。' } }, 403)
@@ -177,34 +154,25 @@ export const backupRouter = new Hono<Env>()
         return c.json({ error: { message: '请上传文件' } }, 400)
       }
 
-      // Stage + pre-validate BEFORE claiming the slot (see the helper —
-      // setup hard-requires a content database with an admin row).
+      // Stage + pre-validate before claiming the slot (see the helper).
       const stagedOrError = await stageUploadForRestore(c, file, { allowAnalyticsOnly: false })
       if (stagedOrError instanceof Response) {
         return stagedOrError
       }
       const staged = stagedOrError
 
-      // Claim the slot as late as possible (staging + validation above
-      // need no slot) — contention cleans up the staged files.
+      // Claim the slot as late as possible — contention cleans up.
       const clientAddress = c.var.requestContext.clientAddress
       const userAgent = c.req.raw.headers.get('User-Agent')
       const fileName = file.name
 
       const outcome = await withRestoreClaim(async () => ({
         restoreFn: async () => {
-          // Setup applies the content database only — a fresh install
-          // never inherits an old site's telemetry, even when the
-          // upload is a two-file archive.
+          // Setup applies the content database only — a fresh install never inherits old telemetry.
           await restoreFromStagedBackup(staged, fileName, { withAnalytics: false })
         },
         afterReopenFn: async (db) => {
-          // Post-restore work runs against the FRESH handle on the
-          // swapped file — and it must be INFALLIBLE: the original file
-          // no longer exists, so a throw here would mark the restore
-          // failed while the server restarts on the swapped one. The
-          // admin guarantee was pre-validated against the upload, so
-          // everything here is best-effort by construction.
+          // Runs against the fresh handle; must be infallible — the original file is gone.
           const admin = await findFirstAdminUser(db)
           if (!admin) {
             log.warn('Setup restore: admin vanished between validation and swap — skipping the audit event', {
@@ -233,8 +201,6 @@ export const backupRouter = new Hono<Env>()
 
           log.info('Setup restore completed', { adminId: String(admin.id) })
         },
-        // drain/prepareForSwap throwing inside the machine means the swap
-        // (and its finally-cleanup) never ran — drop the staged dir here.
         onFailureFn: () => {
           rmSync(staged.dir, { recursive: true, force: true })
         },

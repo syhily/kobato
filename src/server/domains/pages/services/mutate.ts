@@ -6,9 +6,7 @@ import { makeEntityMutations } from '@/server/domains/content/entities/mutate'
 import { pageDescriptor } from '@/server/domains/pages/descriptor'
 import { DomainError } from '@/server/infra/http/errors'
 
-// The five meta mutations come from the shared descriptor-driven skeleton
-// (`content/entities/mutate.ts`); page behavior attaches through
-// `pageDescriptor`.
+// The five meta mutations come from the shared descriptor-driven skeleton via `pageDescriptor`.
 const mutations = makeEntityMutations(pageDescriptor)
 
 export const createPage = mutations.create

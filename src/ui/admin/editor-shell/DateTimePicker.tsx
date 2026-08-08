@@ -122,10 +122,7 @@ export function DateTimePicker({ value, onChange, disabled, id }: DateTimePicker
             locale={zhCN}
             startMonth={startMonth}
             endMonth={endMonth}
-            // Override the calendar's default `formatMonthDropdown`
-            // (which hardcodes `toLocaleString('default', …)` and
-            // therefore renders English month abbreviations regardless
-            // of the active locale prop) with a zhCN-bound formatter.
+            // Override the calendar's default month/year dropdown formatters with zhCN-bound ones.
             formatters={CALENDAR_FORMATTERS}
             components={CALENDAR_COMPONENTS}
             onSelect={handleDateSelect}

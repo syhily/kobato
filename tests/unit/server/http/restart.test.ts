@@ -50,7 +50,6 @@ describe('server/http/restart — restartServer', () => {
     setRestartApp(fakeApp)
     setServerPhase('restarting')
 
-    // Kick off two concurrent restarts
     const p1 = restartServer()
     const p2 = restartServer()
     await Promise.all([p1, p2])

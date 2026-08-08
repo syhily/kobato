@@ -11,12 +11,10 @@ import { AdminShell } from '@/ui/admin/shell/AdminShell'
 
 import type { Route } from './+types/layout'
 
-// `admin.css` is the admin-side Tailwind entry: it shares the token
-// partial (`tailwind.css`) with the public site but scans only
-// admin-rendered sources, so this route's bundle excludes the public
-// cascade (`public.css` — cursors, post chrome, public medium-zoom
-// stacking). `useDetachPublicCss` below covers SPA navigations that
-// arrive from a public page with `public.css` still in <head>.
+// `admin.css` is the admin-side Tailwind entry: it shares the token partial
+// with the public site but scans only admin-rendered sources, so this route's
+// bundle excludes the public cascade. `useDetachPublicCss` covers SPA
+// navigations arriving with `public.css` still in <head>.
 import '@/styles/admin.css'
 
 export const handle: RouteHandle = { layout: 'admin', postFonts: true }
@@ -25,12 +23,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const { caller, viewer } = createSsrCaller({ request, context })
   const user = viewer ?? undefined
   const role = viewer?.role ?? null
-  // Self-service visitors land on `/admin/me/profile`; other admin
-  // routes have their own per-route `requireRole` gate that promotes
-  // the minimum to `author` (content management) or `admin` (settings,
-  // user management, friends). Keeping the layout open to visitors
-  // lets a logged-in commenter reach their own profile without us
-  // having to ship two parallel chromes.
+  // Keep the layout open to visitors so a logged-in commenter reaches their
+  // own profile — no need for two parallel chromes. Other routes gate themselves.
   if (!hasAtLeast(role, 'visitor')) {
     const redirectPath = new URL(request.url).pathname
     throw redirect(`/admin/signin?redirect_to=${encodeURIComponent(redirectPath)}`)

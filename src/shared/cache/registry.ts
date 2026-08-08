@@ -1,16 +1,7 @@
 // Cache declaration registry — the metadata plane of the cache layer.
-//
-// One declaration per `kv_cache` bucket. Every derived enumeration
-// (`CacheBucketId`, `CACHE_BUCKET_IDS`, the contracts `z.enum`,
-// `CACHE_BUCKET_FALLBACKS`, the settings defaults and schema slots, the
-// admin cache panel) reads from this table, so adding a cache never
-// requires editing a second list. The behavior plane (key shapes,
-// codecs, `cacheWhen`, counters) lives in `@/server/infra/cache/registry`.
-//
-// The `id` doubles as the value written into the `kv_cache.bucket`
-// column. `tunable` buckets get a settings slot (prefix + TTL editable
-// at `/admin/settings/cache`); the rest show read-only in the panel.
-
+// One declaration per `kv_cache` bucket; every derived enumeration reads
+// from this table, so adding a cache never requires editing a second
+// list. The `id` doubles as the `kv_cache.bucket` value.
 export interface CacheDeclaration {
   /** Stable discriminator — also the `kv_cache.bucket` value. */
   readonly id: string
@@ -88,9 +79,8 @@ export const CACHE_DECLARATIONS = [
     defaultTtlSeconds: 300,
     tunable: false,
   },
-  // Taxonomy lists: TTL matches feed/sitemap — content and taxonomy
-  // mutations already clear these buckets via `invalidateContent`, so the
-  // TTL is only a backstop, not the freshness mechanism (audit P1-24).
+  // TTL matches feed/sitemap — a backstop only: content/taxonomy
+  // mutations clear these via `invalidateContent` (audit P1-24).
   {
     id: 'categories',
     label: '分类列表缓存',
@@ -136,10 +126,9 @@ export const CACHE_DECLARATIONS = [
 ] as const satisfies readonly CacheDeclaration[]
 
 /**
- * Default prefixes of the non-tunable declarations. The settings schema
- * treats them as reserved: a tunable bucket renamed onto one would merge
- * two namespaces under one prefix and let a prefix scan reach across
- * buckets.
+ * Default prefixes of the non-tunable declarations — reserved by the
+ * settings schema: renaming a tunable bucket onto one would merge two
+ * namespaces under a single prefix.
  */
 export const FIXED_CACHE_PREFIXES: readonly string[] = CACHE_DECLARATIONS.filter((entry) => !entry.tunable).map(
   (entry) => entry.defaultPrefix,

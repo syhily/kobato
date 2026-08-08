@@ -98,6 +98,10 @@ export default defineConfig(({ command }) => ({
       '#': resolve(projectRoot, 'tests'),
     },
   },
+  // build externalizes above so dev dependency optimization skips them.
+  optimizeDeps: {
+    exclude: ['@duckdb/node-api', 'sharp', '@napi-rs/canvas'],
+  },
   build: {
     emptyOutDir: true,
     chunkSizeWarningLimit: 500,

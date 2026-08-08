@@ -13,8 +13,6 @@ import { DomainError } from '@/server/infra/http/errors'
 
 const db = getTestDb()
 
-// ── Mock @simplewebauthn/server ─────────────────────────────────────────────
-
 const swaMocks = vi.hoisted(() => ({
   generateRegistrationOptions: vi.fn(),
   verifyRegistrationResponse: vi.fn(),
@@ -266,7 +264,6 @@ describe('passkey — registration failure branches', () => {
       },
     })
 
-    // First registration succeeds against the real table.
     await beginRegistration(dbUser, 'reg-dup-1')
     await passkeyService.verifyRegistrationResponse(db, dbUser, {
       ...registrationResponse('cred-dup'),
@@ -362,7 +359,6 @@ describe('passkey — authentication round-trip', () => {
   it('authenticates with a registered credential', async () => {
     const userId = await seedUser({ email: 'auth@example.com' })
 
-    // Register a credential first
     swaMocks.generateRegistrationOptions.mockResolvedValue({
       challenge: 'reg-challenge-auth',
       rp: { name: 'Test', id: 'example.com' },
@@ -398,7 +394,6 @@ describe('passkey — authentication round-trip', () => {
       challenge: 'reg-challenge-auth',
     })
 
-    // Now authenticate
     swaMocks.generateAuthenticationOptions.mockResolvedValue({
       challenge: 'auth-challenge-2',
       rpId: 'example.com',
@@ -437,7 +432,6 @@ describe('passkey — authentication round-trip', () => {
     expect(result.user).not.toHaveProperty('lastIp')
     expect(result.user).not.toHaveProperty('lastUa')
 
-    // Counter should be updated
     const cred = await db
       .select()
       .from(passkeyCredential)
@@ -662,7 +656,6 @@ describe('passkey — password reset clears passkeys', () => {
   it('deletes all credentials and resets loginMethod on password reset', async () => {
     const userId = await seedUser({ loginMethod: 'passkey' })
 
-    // Insert a credential
     await db.insert(passkeyCredential).values({
       userId,
       credentialId: 'cred-reset',
@@ -673,15 +666,12 @@ describe('passkey — password reset clears passkeys', () => {
       backedUp: false,
     })
 
-    // Verify credential exists
     let creds = await db.select().from(passkeyCredential).where(eq(passkeyCredential.userId, userId))
     expect(creds).toHaveLength(1)
 
-    // Simulate password reset clearing passkeys
     await db.update(user).set({ loginMethod: 'password' }).where(eq(user.id, userId))
     await passkeyService.deleteAllCredentials(db, userId)
 
-    // Verify cleared
     creds = await db.select().from(passkeyCredential).where(eq(passkeyCredential.userId, userId))
     expect(creds).toHaveLength(0)
 
@@ -735,7 +725,6 @@ describe('passkey — deleting last credential reverts to password login', () =>
       challenge: 'reg-c-force',
     })
 
-    // Verify credential exists and the method is still passkey
     let creds = await db.select().from(passkeyCredential).where(eq(passkeyCredential.userId, userId))
     expect(creds).toHaveLength(1)
 
@@ -752,7 +741,6 @@ describe('passkey — deleting last credential reverts to password login', () =>
     const ok = await passkeyService.deleteCredential(db, 'cred-force', userId)
     expect(ok).toBe(true)
 
-    // Verify the method reverted to password
     dbUserRow = await db
       .select()
       .from(user)
@@ -767,7 +755,6 @@ describe('passkey — replay attack prevention', () => {
   it('rejects reuse of a consumed authentication challenge', async () => {
     const userId = await seedUser({ email: 'replay@example.com' })
 
-    // Register a credential
     swaMocks.generateRegistrationOptions.mockResolvedValue({
       challenge: 'replay-reg-c',
       rp: { name: 'Test', id: 'example.com' },
@@ -803,7 +790,6 @@ describe('passkey — replay attack prevention', () => {
       challenge: 'replay-reg-c',
     })
 
-    // Begin authentication
     swaMocks.generateAuthenticationOptions.mockResolvedValue({
       challenge: 'replay-auth-c',
       rpId: 'example.com',
@@ -823,7 +809,6 @@ describe('passkey — replay attack prevention', () => {
       },
     })
 
-    // First use succeeds
     const firstResult = await passkeyService.verifyAuthenticationResponse(
       db,
       {

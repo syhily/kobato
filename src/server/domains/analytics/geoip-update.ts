@@ -1,19 +1,7 @@
-// Remote GeoLite2-City distribution: the `geolite2-city` npm package
-// (maintained by wp-statistics/VeronaLabs, licensed CC-BY-NC-SA-4.0)
-// mirrored on jsDelivr — an unofficial redistribution of MaxMind's
-// GeoLite2-City database, which itself ships under the MaxMind GeoLite2
-// EULA (attribution required). Chosen because MaxMind's official download
-// has required an account license key since 2019-12; deployments with
-// commercial-use obligations should license the database from MaxMind
-// directly and upload it manually — the auto-update never replaces a
-// manually uploaded database.
-//
-// The unversioned package.json URL resolves to the latest published
-// version (jsDelivr caches it ~12h — fine for a daily check); the
-// database itself ships as a gzipped `.mmdb` asset pinned to that
-// version. Local state (which version was installed, and whether it came
-// from a remote download or a manual upload) lives in a JSON sidecar
-// next to the database file.
+// GeoLite2-City, fetched from the `geolite2-city` npm package mirrored
+// on jsDelivr (CC-BY-NC-SA-4.0 / MaxMind GeoLite2 EULA, attribution
+// required). Installed state lives in a JSON sidecar next to the
+// database file; the auto-update never replaces a manual upload.
 
 import type { ReadableStream as WebReadableStream } from 'node:stream/web'
 
@@ -38,22 +26,16 @@ const GEOIP_PACKAGE = 'geolite2-city'
 const GEOIP_VERSION_URL = `https://cdn.jsdelivr.net/npm/${GEOIP_PACKAGE}/package.json`
 const VERSION_TIMEOUT_MS = 15_000
 const DOWNLOAD_TIMEOUT_MS = 5 * 60_000
-// Same ceiling as the manual upload endpoint (100 MiB), applied to the
-// DECOMPRESSED bytes so a gzip bomb can't slip through.
+// Same ceiling as the manual upload endpoint (100 MiB), measured on DECOMPRESSED bytes.
 const MAX_DB_BYTES = 100 * 1024 * 1024
 
 function geoipDownloadUrl(version: string): string {
   return `https://cdn.jsdelivr.net/npm/${GEOIP_PACKAGE}@${version}/GeoLite2-City.mmdb.gz`
 }
 
-// ─── Write lock ──────────────────────────────────────────
-// Both writers of the database/meta pair — the remote install below and
-// the upload endpoint (`http/resources/maxmind`) — serialize on this
-// promise chain. Without it an interleaved pair of writers can leave the
-// database file and its meta sidecar describing different installs (e.g.
-// the scheduler overwriting a just-uploaded database because it read the
-// stale 'remote' meta mid-upload).
-
+// Both writers of the database/meta pair (remote install + upload
+// endpoint) serialize on this promise chain so the file and its sidecar
+// never describe different installs.
 let writeChain: Promise<void> = Promise.resolve()
 
 export function withGeoipWriteLock<T>(fn: () => Promise<T>): Promise<T> {
@@ -64,8 +46,6 @@ export function withGeoipWriteLock<T>(fn: () => Promise<T>): Promise<T> {
   )
   return result
 }
-
-// ─── Metadata sidecar ────────────────────────────────────
 
 export interface GeoipDbMeta {
   /** npm package version; `null` for manual uploads (unknown provenance). */
@@ -96,10 +76,8 @@ export async function writeGeoipMeta(meta: GeoipDbMeta): Promise<void> {
 }
 
 /**
- * Best-effort meta write for callers that have ALREADY swapped the
- * database: the swap is a fact, so a sidecar failure (full disk, …) must
- * not fail the operation — it degrades to a warning. The sidecar only
- * feeds the status display and the auto-update provenance guard.
+ * Best-effort meta write for callers that have already swapped the
+ * database; the sidecar only feeds status and the provenance guard.
  */
 export async function writeGeoipMetaBestEffort(meta: GeoipDbMeta): Promise<void> {
   try {
@@ -110,8 +88,6 @@ export async function writeGeoipMetaBestEffort(meta: GeoipDbMeta): Promise<void>
     })
   }
 }
-
-// ─── Status & version check ──────────────────────────────
 
 export interface GeoipDbStatus {
   installed: boolean
@@ -156,8 +132,6 @@ export async function fetchLatestGeoipVersion(): Promise<string> {
   return parsed.data.version
 }
 
-// ─── Download & install ──────────────────────────────────
-
 async function installRemoteDb(version: string): Promise<void> {
   let res: Response
   try {
@@ -183,9 +157,8 @@ async function installRemoteDb(version: string): Promise<void> {
         for await (const chunk of source) {
           received += chunk.byteLength
           if (received > MAX_DB_BYTES) {
-            // DomainError, not a bare Error: without the translation the
-            // oRPC guard would surface this as a generic 500 instead of
-            // the size-limit message.
+            // DomainError, not a bare Error — the oRPC guard would
+            // otherwise surface a generic 500 instead of the size message.
             throw new DomainError('INTERNAL', 'GeoIP 数据库超过 100 MB 大小限制')
           }
           yield chunk
@@ -193,8 +166,7 @@ async function installRemoteDb(version: string): Promise<void> {
       },
       createWriteStream(tmpPath),
     )
-    // Validate before the swap, same discipline as the upload endpoint:
-    // a corrupt download must never replace a working database.
+    // Validate before the swap — a corrupt download must never replace a working database.
     try {
       await Reader.open(tmpPath)
     } catch {
@@ -204,22 +176,17 @@ async function installRemoteDb(version: string): Promise<void> {
   } catch (err) {
     await rm(tmpPath, { force: true }).catch(() => undefined)
     if (isTimeoutError(err)) {
-      // The header-stage catch above only covers fetch's initial await;
-      // an abort firing mid-stream rejects pipeline() instead — same
-      // TimeoutError DOMException, translated here so the admin sees the
-      // timeout message rather than a generic 500.
+      // An abort mid-stream rejects `pipeline()` instead of the fetch
+      // await — same TimeoutError, translated here.
       throw new DomainError('INTERNAL', 'GeoIP 数据库下载超时，请稍后再试')
     }
     throw err
   }
 
-  // The swap is done — refresh the reader even if the sidecar write
-  // below fails (best-effort, see writeGeoipMetaBestEffort).
+  // The swap is done — refresh the reader even if the sidecar write fails.
   resetGeoReader()
   await writeGeoipMetaBestEffort({ version, source: 'remote', updatedAt: new Date().toISOString() })
 }
-
-// ─── Update flows ────────────────────────────────────────
 
 export interface GeoipUpdateResult {
   status: 'updated' | 'up-to-date'
@@ -245,9 +212,8 @@ async function checkAndInstallRemote(): Promise<GeoipUpdateResult> {
   return { status: 'updated', version: latest, previousVersion }
 }
 
-// The manual button and the daily job can overlap; a single module-level
-// flight coalesces concurrent manual checks (the write lock serializes
-// everything else).
+// Concurrent manual checks coalesce on one module-level flight; the
+// write lock serializes everything else.
 let inflight: Promise<GeoipUpdateResult> | null = null
 
 /** Manual check-and-update: downloads whenever the remote version differs. */
@@ -259,11 +225,9 @@ export function runRemoteGeoipUpdate(): Promise<GeoipUpdateResult> {
 }
 
 /**
- * Scheduled auto-update. Conservative by design: it maintains databases
- * it installed itself (and installs one when none exists), but never
- * replaces a manually uploaded database. The provenance check runs
- * INSIDE the write lock so an in-flight manual upload can't be
- * overwritten off a stale meta read.
+ * Scheduled auto-update: maintains databases it installed itself (and
+ * installs one when none exists), never replaces a manual upload.
+ * The provenance check runs INSIDE the write lock.
  */
 export async function runScheduledGeoipUpdate(): Promise<void> {
   await withGeoipWriteLock(async () => {

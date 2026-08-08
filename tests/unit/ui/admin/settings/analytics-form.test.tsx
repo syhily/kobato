@@ -12,9 +12,8 @@ import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 // the canonical inert hook doubles keep this spec focused on the upload wiring.
 mockTanstackQuery()
 
-// The upload choreography itself is pinned by use-file-upload.test.tsx; this
-// spec pins the AnalyticsForm wiring: the exact options the MaxMind row
-// hands to the hook and the pending-driven button UX.
+// The upload choreography is pinned by use-file-upload.test.tsx; this spec
+// pins only the AnalyticsForm wiring.
 const hookMock = vi.hoisted(() => ({
   options: undefined as UseFileUploadOptions | undefined,
   upload: vi.fn(),

@@ -21,8 +21,7 @@ export const analyticsEventsRouter = new Hono<Env>().get('/api/analytics/events'
     lastSeen = new Date(Date.now() - 60_000)
   }
 
-  // The connection registry and the per-session cap live in the analytics
-  // domain; this resource keeps only the SSE/Hono plumbing.
+  // The connection registry + per-session cap live in the analytics domain; this keeps only the SSE plumbing.
   const connectionKey = realtimeConnectionKey(c.var.requestContext.session.id, c.var.requestContext.clientAddress)
   const releaseConnection = acquireRealtimeConnection(connectionKey)
   if (releaseConnection === null) {
@@ -108,11 +107,8 @@ export const analyticsEventsRouter = new Hono<Env>().get('/api/analytics/events'
       }, HEARTBEAT_INTERVAL_MS)
     },
     cancel() {
-      // Some runtimes (and in-process fetch) cancel the response body
-      // instead of aborting the request signal. Release through the same
-      // close path or the session's registry slot and both interval
-      // timers leak until the next failed enqueue (up to the 25s
-      // heartbeat — and forever when the stream stays silent).
+      // Some runtimes cancel the body instead of aborting the signal — release
+      // through the same close path or the registry slot and timers leak.
       closeStream?.()
     },
   })

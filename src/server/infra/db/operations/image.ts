@@ -10,38 +10,24 @@ import { image } from '@/server/infra/db/schema/media'
 export interface AdminImagesListFilters {
   q?: string
   /**
-   * Filter by `kind` derived from `storagePath` prefix. Accepts
-   *   `'generic'`  → `storage_path NOT LIKE 'images/categories/%' AND
-   *                   storage_path NOT LIKE 'images/links/%'`
-   *   `'category'` → `storage_path LIKE 'images/categories/%'`
-   *   `'friend'`   → `storage_path LIKE 'images/links/%'`
-   *   `'all'` / undefined → no filter
+   * Filter by `kind` derived from `storagePath` prefix: `'category'` /
+   * `'friend'` match their prefix, `'generic'` is the negation of both.
    */
   kind?: 'generic' | 'category' | 'friend' | 'all'
   offset?: number
   limit?: number
-  /**
-   * Default `false`: list view hides soft-deleted rows. The trash bin
-   * (a follow-up surface) flips this on.
-   */
+  /** Default `false`: list view hides soft-deleted rows. */
   includeDeleted?: boolean
 }
 
 /**
- * Row projection used by the admin list endpoint. The base columns
- * are projected verbatim from `image`, plus an `uploaderName` joined
- * from the `user` table so the table can render the uploader's
- * display name without an extra round-trip per row. `null` when the
- * row has no `uploaderId`, or when the referenced user has been
- * hard-deleted (the LEFT JOIN keeps the image visible in either case).
+ * Admin list projection: `image` columns plus `uploaderName` via LEFT
+ * JOIN `user`; null when the row has no uploader or the user was deleted.
  */
 export interface AdminImageRowWithUploader extends ImageRow {
   uploaderName: string | null
 }
 
-// Entity-specific filter→SQL mapping for the admin image list. The
-// conditions-array → `WHERE` assembly is shared with the other admin
-// lists via `assembleWhere()`.
 function buildAdminImageConditions(filters: AdminImagesListFilters): SQL[] {
   const conditions: SQL[] = []
 
@@ -55,8 +41,7 @@ function buildAdminImageConditions(filters: AdminImagesListFilters): SQL[] {
     } else if (filters.kind === 'friend') {
       conditions.push(like(image.storagePath, 'images/links/%'))
     } else {
-      // generic = neither category nor friend prefix; column is NOT NULL
-      // so the negation is safe without a NULL guard.
+      // generic = neither prefix; storage_path is NOT NULL, so no NULL guard needed.
       const notCat = sql`${image.storagePath} NOT LIKE 'images/categories/%'`
       const notFriend = sql`${image.storagePath} NOT LIKE 'images/links/%'`
       conditions.push(notCat)
@@ -75,10 +60,6 @@ function buildAdminImageConditions(filters: AdminImagesListFilters): SQL[] {
   return conditions
 }
 
-// Entity-specific column selection for the admin-side
-// `image LEFT JOIN user` projection; `withUploader()` appends
-// `uploaderName` and owns the join, the single-row refetch, and the
-// post-update refetch.
 const imageUploader = withUploader({
   table: image,
   idColumn: image.id,
@@ -110,12 +91,7 @@ export async function listAdminImageRows(
   return applyPage(q, filters)
 }
 
-/**
- * Single-row variant of `listAdminImageRows` keyed by `id`. Used by
- * the post-mutation paths in `@/server/domains/images/services/admin-read` so the admin
- * shell can patch the row in place without a second `SELECT user`
- * round-trip after `updateImageNote()` / `findImageDtoById()`.
- */
+/** Single-row variant of `listAdminImageRows` keyed by `id`; used by the post-mutation paths. */
 export async function findAdminImageRowById(db: Database, id: number): Promise<AdminImageRowWithUploader | null> {
   return imageUploader.findJoinedRowById(db, id)
 }
@@ -133,7 +109,7 @@ export async function findImageById(db: Database, id: number): Promise<ImageRow 
   return rows[0] ?? null
 }
 
-/** Batch-fetch by `id`. Skips empty input arrays to avoid `IN ()` syntax errors. */
+/** Skips empty input arrays to avoid `IN ()` syntax errors. */
 export async function findImagesByIds(db: Database, ids: readonly number[]): Promise<ImageRow[]> {
   if (ids.length === 0) {
     return []
@@ -144,7 +120,7 @@ export async function findImagesByIds(db: Database, ids: readonly number[]): Pro
     .where(inArray(image.id, [...ids]))
 }
 
-/** Batch-fetch by `storagePath`. Skips empty input arrays to avoid `IN ()` syntax errors. */
+/** Skips empty input arrays to avoid `IN ()` syntax errors. */
 export async function findImagesByStoragePaths(db: Database, paths: readonly string[]): Promise<ImageRow[]> {
   if (paths.length === 0) {
     return []
@@ -164,11 +140,7 @@ export async function insertImage(db: Database, values: NewImage): Promise<Image
   return rows[0]
 }
 
-/**
- * Idempotent insert for the one-shot historical import. Returns
- * `null` when the row was skipped because `storage_path` already
- * exists, so the importer can report `inserted` vs `skipped` counts.
- */
+/** Idempotent insert for the one-shot historical import; `null` when `storage_path` already exists. */
 export async function insertImageIfMissing(db: Database, values: NewImage): Promise<ImageRow | null> {
   const now = new Date()
   const rows = await db
@@ -179,11 +151,7 @@ export async function insertImageIfMissing(db: Database, values: NewImage): Prom
   return rows[0] ?? null
 }
 
-/**
- * Insert if `storage_path` is new, otherwise UPDATE the existing row.
- * Always clears `deleted_at` so re-uploading after a soft-delete
- * resurrects the row instead of carrying the tombstone forward.
- */
+/** Always clears `deleted_at` so a re-upload resurrects a soft-deleted row. */
 export async function upsertImageByStoragePath(db: Database, values: NewImage): Promise<ImageRow> {
   const now = new Date()
   const rows = await db
@@ -225,11 +193,7 @@ export async function updateImageNote(db: Database, id: number, note: string | n
   return rows[0] ?? null
 }
 
-/**
- * UPDATE the row's `note` and re-read it joined with `user` so the
- * admin shell receives the full DTO (including `uploaderName`) in
- * one helper call.
- */
+/** Re-reads joined with `user` so the admin shell gets the full DTO in one call. */
 export async function updateImageNoteWithUploader(
   db: Database,
   id: number,
@@ -243,10 +207,7 @@ export async function updateImageThumbhash(db: Database, id: number, thumbhash: 
   return rows[0] ?? null
 }
 
-/**
- * UPDATE the row's `thumbhash` and re-read it joined with `user` so the
- * admin shell receives the full DTO in one helper call.
- */
+/** Re-reads joined with `user` so the admin shell gets the full DTO in one call. */
 export async function updateImageThumbhashWithUploader(
   db: Database,
   id: number,

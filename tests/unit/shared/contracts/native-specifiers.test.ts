@@ -11,24 +11,9 @@ import {
 
 // Contract test: the platform require call sites inside the INSTALLED
 // sharp / @napi-rs/canvas / @duckdb/node-bindings packages must stay
-// exactly the set the SEA redirect machinery knows about. A future
-// sharp/canvas/duckdb release that adds a new platform specifier shape
-// fails HERE at upgrade time — not at `sea:smoke` or in production. Two
-// halves:
-//
-//   1. enumerate every `require(...)` call site carrying a platform
-//      marker in the packages' dist files and classify its shape —
-//      answered (nativeRequire resolves it), probe (throws into the
-//      package's own try/catch, which is also upstream's outcome), or
-//      UNKNOWN (test failure);
-//   2. prove the bundler plugin actually rewrites every one of those
-//      call sites (a shape the plugin misses would drag a `.node` /
-//      platform package resolution into the bundle and break the build).
+// exactly the set the SEA redirect machinery knows about.
 
-// The argument pattern allows ONE balanced nested paren pair so template
-// interpolations with calls — `` `@img/sharp-libvips-dev-${buildPlatformArch()}/include` ``
-// — are captured whole (the plugin's own rename re-emits them verbatim;
-// this enumeration must see the full specifier to classify it).
+// One balanced nested paren pair — template-interpolated calls must be captured whole.
 const NATIVE_REQUIRE_REGEX =
   /(?<![\w$.])require\(((?:[^()]|\([^()]*\))*?(?:@img\/sharp|@napi-rs\/canvas-|@duckdb\/node-bindings-|\.node|src\/build|skia\.wasi\.cjs)(?:[^()]|\([^()]*\))*?)\)/g
 
@@ -37,9 +22,7 @@ function packageRoot(name: string): string {
   try {
     return realpathSync(join(process.cwd(), 'node_modules', name))
   } catch {
-    // Transitive packages have no top-level node_modules symlink under
-    // pnpm (e.g. @duckdb/node-bindings rides inside @duckdb/node-api) —
-    // fall back to module resolution.
+    // Transitive packages have no top-level node_modules symlink under pnpm.
     try {
       const requireFromRepo = createRequire(join(process.cwd(), 'package.json'))
       return realpathSync(dirname(requireFromRepo.resolve(`${name}/package.json`)))
@@ -56,12 +39,10 @@ function distFiles(root: string): string[] {
     .map((name) => join(root, 'dist', name))
 }
 
-/** Extract every platform require argument from one source file. */
 function platformRequireArgs(source: string): string[] {
   return [...source.matchAll(NATIVE_REQUIRE_REGEX)].map((match) => match[1]!)
 }
 
-/** Normalize an argument: strip the surrounding quotes/backticks and collapse `${...}` to `<T>`. */
 function normalizeArg(arg: string): string {
   return arg
     .trim()
@@ -71,17 +52,7 @@ function normalizeArg(arg: string): string {
 
 type SpecifierClass = 'answered' | 'probe' | 'unknown'
 
-/**
- * Classify one normalized specifier.
- *
- *   answered — nativeRequire resolves it (addon loads, metadata probes);
- *              the non-current platforms' instances simply never execute.
- *   probe    — nativeRequire throws and the package's own try/catch
- *              absorbs it: build-from-source fallbacks, wasm candidates,
- *              libvips-dev headers, and the platform package's /versions
- *              probe (absent upstream too — sharp falls back to the
- *              libvips versions).
- */
+/** answered: nativeRequire resolves it; probe: nativeRequire throws and the package's try/catch absorbs it. */
 function classify(spec: string): SpecifierClass {
   // Addon loads (answered for the current platform's instance).
   if (/^@img\/sharp-(?!libvips)[^/]+\/sharp\.node$/.test(spec)) {
@@ -100,13 +71,11 @@ function classify(spec: string): SpecifierClass {
   if (/^@img\/sharp-(?!libvips)[^/]+\/package$/.test(spec)) {
     return 'answered'
   }
-  // The platform package's versions probe: throws on platforms without a
-  // versions.json (upstream MODULE_NOT_FOUND too); answered on win32.
+  // The platform package's /versions probe — throws where versions.json is absent (upstream MODULE_NOT_FOUND too).
   if (/^@img\/sharp-(?!libvips)[^/]+\/versions$/.test(spec)) {
     return 'probe'
   }
-  // Build-from-source fallbacks, relative addon attempts, wasm candidates,
-  // libvips-dev headers — thrown and absorbed by the packages' try/catch.
+  // Build-from-source / wasm / header probes — absorbed by the packages' own try/catch.
   if (
     spec.includes('src/build') ||
     spec.startsWith('./skia') ||
@@ -148,10 +117,8 @@ describe('contract: native platform specifiers', () => {
   const sites = enumerateCallSites()
 
   it('finds the platform require call sites in the installed packages', () => {
-    // A scanner regression must never pass vacuously: sharp's switch alone
-    // carries ~30 call sites, canvas's ~50, duckdb's ~7.
+    // A scanner regression must never pass vacuously.
     expect(sites.length).toBeGreaterThanOrEqual(50)
-    // All three addon shapes are present (otherwise the enumeration is broken).
     expect(sites.some((site) => site.normalized.includes('/sharp.node'))).toBe(true)
     expect(sites.some((site) => site.normalized.startsWith('@napi-rs/canvas-'))).toBe(true)
     expect(sites.some((site) => site.normalized.includes('/duckdb.node'))).toBe(true)
@@ -180,7 +147,6 @@ describe('contract: native platform specifiers', () => {
       }
       expect(rewritten, `${file} has platform requires but the plugin did not fire`).not.toBeNull()
       const output = rewritten!
-      // No platform require survives the rewrite; the binding was injected.
       expect(platformRequireArgs(output), `${file} still has unrewritten platform requires`).toEqual([])
       expect(output).toContain('nativeRequire')
       expect(isNativePackageModule(file)).toBe(true)
@@ -195,9 +161,7 @@ describe('contract: native platform specifiers', () => {
     const canvasIndex = join(packageRoot('@napi-rs/canvas'), 'geometry.js')
     const source = readFileSync(canvasIndex, 'utf-8')
     expect(redirectNativeRequires(source, canvasIndex)).toBeNull()
-    // `@img/colour` is a pure-JS dependency, not a platform specifier —
-    // even inside a scoped module it must never be redirected (its load
-    // is not try/catch-guarded upstream).
+    // @img/colour is pure-JS, not a platform specifier — redirecting it would throw unguarded.
     const colourCjs = join(packageRoot('sharp'), 'dist', 'colour.cjs')
     expect(redirectNativeRequires(readFileSync(colourCjs, 'utf-8'), colourCjs)).toBeNull()
   })

@@ -7,10 +7,8 @@ import { Tabs, TabsList, TabsTrigger } from '@/ui/components/tabs'
 
 type WebmentionTab = 'inbox' | 'outbox'
 
-// The Webmention page: one page, both directions —「接收审核」(the
-// moderation queue other sites' mentions land in) and「发送日志」(the
-// read-only outbound send log). Local tab state; a refresh lands back on
-// the inbox, which is where the admin's action queue lives.
+// One page, both directions: 「接收审核」(moderation queue) and 「发送日志」
+// (read-only outbound log). Local tab state; a refresh lands back on the inbox.
 export function WebmentionsView() {
   const [tab, setTab] = useState<WebmentionTab>('inbox')
 

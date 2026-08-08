@@ -8,18 +8,15 @@ import { hydrateBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { __clearSectionChangeHandlersForTests } from '@/server/domains/settings/services/section-changes'
 import { setting } from '@/server/infra/db/schema/config'
 
-// Section-change dispatch is covered by the unit tests; keep the
-// backup/audit schedulers out of these persistence-focused cases.
+// Section-change dispatch is covered by the unit tests; keep the schedulers out.
 const db = getTestDb()
 
 beforeEach(async () => {
   __clearSectionChangeHandlersForTests()
   await clearAllTables(db)
-  // Evict the in-process settings snapshot so tests don't reuse a
-  // stale hydration promise from a previous worker.
+  // Evict the snapshot so tests don't reuse a stale hydration promise.
   resetBlogSettingsForTests()
-  // Seed the three rows that `hydrateBlogSettings` treats as the
-  // "installed" baseline (general + assets + limits).
+  // Seed the three rows hydrateBlogSettings treats as the installed baseline.
   await db.insert(setting).values([
     {
       scope: 'blog.general',
@@ -84,8 +81,7 @@ describe('integration / admin settings', () => {
       ctx,
     )
     expect(updateRes.status).toBe(200)
-    // The response is authoritative: the merged section in admin display
-    // shape — the client adopts it as its new baseline without refetching.
+    // The response is authoritative — the client adopts it without refetching.
     const updateBody = await parseRpcJson<{ section: { maxRequestBodySize: number } }>(updateRes)
     expect(updateBody.section.maxRequestBodySize).toBe(5 * 1024 * 1024)
 

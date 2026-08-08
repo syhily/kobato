@@ -13,12 +13,8 @@ import { postTag } from '@/server/infra/db/schema/post-tag'
 import { category as categoryTable, tag as tagTable } from '@/server/infra/db/schema/taxonomy'
 import { weakEtag } from '@/server/infra/http/etag'
 
-// The `content.*` group is the Ghost-Content-API-style read surface every
-// public SSR loader consumes (in-process via the ssr-caller). These tests
-// drive the same procedures over the real RPCHandler JSON round-trip so
-// the wire contract — the discriminated-union HTTP signals (redirect /
-// not-modified), the ORPCError NOT_FOUNDs, and the happy-path payloads —
-// is pinned independently of the route translation layer.
+// The `content.*` read procedures over the real RPCHandler JSON round-trip:
+// union signals (redirect / not-modified), NOT_FOUNDs, and happy-path payloads.
 
 const db = getTestDb()
 
@@ -365,8 +361,7 @@ describe('content.pages.bySlug', () => {
 
   it('answers not-modified when the carried If-None-Match matches', async () => {
     const pageId = await seedPage({ slug: 'about', publishedAt: new Date('2024-01-01') })
-    // The page ETag inputs: id + publishedRevisionId + publishedAt (the
-    // seeded published revision is the row's only revision).
+    // Page ETag inputs: id + publishedRevisionId + publishedAt.
     const rows = await db
       .select({ publishedRevisionId: pageTable.publishedRevisionId })
       .from(pageTable)
@@ -430,9 +425,7 @@ describe('content.pages.bySlug', () => {
       .where(eq(pageTable.id, pageId))
     const publishedEtag = weakEtag(['page', String(pageId), rows[0]!.publishedRevisionId, new Date('2024-01-01')])
 
-    // A matching If-None-Match would answer `not-modified` on the
-    // published path — the `draft: true` flag must skip that probe so the
-    // draft body actually renders.
+    // `draft: true` must skip the published-ETag probe, or a match answers `not-modified` and the draft never renders.
     const res = await callRpc(
       '/content/pages/bySlug',
       { slug: 'about', draft: true, ifNoneMatch: publishedEtag },

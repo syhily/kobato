@@ -11,30 +11,15 @@ export interface LiveMeta {
 }
 
 export interface LiveContentOptions {
-  /**
-   * Rows are live when `publishedAt <= asOf`. Defaults to the current
-   * time.
-   */
+  /** Rows are live when `publishedAt <= asOf`; defaults to the current time. */
   asOf?: Date
-  /**
-   * Escape hatch for listings: skip the `publishedAt <= asOf` condition
-   * so scheduled rows (`publishedAt` later than `asOf`) are included.
-   */
+  /** Escape hatch for listings: include rows with a future `publishedAt`. */
   includeScheduled?: boolean
 }
 
 /**
- * In-memory projection of the "live" gate shared by posts and pages: a
- * row is publicly reachable when it is not soft-deleted, is published,
- * has a published revision, and its `publishedAt` is not in the future.
- *
- * `liveContentWhere` below is the SQL projection of the same gate — the
- * two MUST be changed together. SQL callers outside the content domain
- * must go through the post-/page-table bindings `livePostWhere` /
- * `livePageWhere`, never hand-bound columns. Inside the content domain
- * itself (the owner of this base — e.g. the scheduled-publish job, which
- * cannot import the entity bindings without closing an import cycle)
- * binding the struct directly is the sanctioned path.
+ * In-memory projection of the shared "live" gate; keep in sync with
+ * `liveContentWhere` — external SQL callers use the table bindings.
  */
 export function isLive(meta: LiveMeta, options: LiveContentOptions = {}): boolean {
   if (meta.deletedAt !== null) {
@@ -55,10 +40,7 @@ export function isLive(meta: LiveMeta, options: LiveContentOptions = {}): boolea
   return true
 }
 
-/**
- * The four meta columns the live gate reads. Structural over the `post`
- * and `page` tables — both declare these columns identically.
- */
+/** The four meta columns the live gate reads — structural over `post`/`page`. */
 export interface LiveContentColumns {
   deletedAt: typeof postMetaTable.deletedAt | typeof pageMetaTable.deletedAt
   published: typeof postMetaTable.published | typeof pageMetaTable.published
@@ -68,8 +50,7 @@ export interface LiveContentColumns {
 
 /**
  * SQL projection of the same "live" gate as `isLive` above; keep the
- * two in sync. `includeScheduled` skips only the `publishedAt <= asOf`
- * leg.
+ * two in sync.
  */
 export function liveContentWhere(columns: LiveContentColumns, options: LiveContentOptions = {}): SQL {
   const conditions: SQL[] = [
@@ -79,8 +60,7 @@ export function liveContentWhere(columns: LiveContentColumns, options: LiveConte
   ]
   if (!options.includeScheduled) {
     const asOf = options.asOf ?? new Date()
-    // Raw `sql` params carry no column mapping — bind epoch ms
-    // (a bare Date is not bindable by node:sqlite).
+    // Bare `Date` is not bindable by node:sqlite — bind epoch ms.
     conditions.push(sql`${columns.publishedAt} <= ${asOf.getTime()}`)
   }
   return and(...conditions)!
@@ -92,25 +72,14 @@ export interface PromotedMeta {
 }
 
 /**
- * In-memory projection of the "promoted" gate shared by posts and
- * pages: published with a published revision attached, ignoring
- * soft-delete state and scheduling. `promotedContentWhere` below is the
- * SQL projection — the two MUST be changed together. SQL callers must
- * go through the post-table binding `promotedPostWhere`
- * (`posts/live-gate.ts`).
- *
- * Declared as a type predicate so a promoted row's `publishedRevisionId`
- * narrows to non-null `bigint` for the caller (e.g. `restorePost`
- * fetching the published revision right after the check).
+ * In-memory projection of the shared "promoted" gate; declared as a type
+ * predicate so `publishedRevisionId` narrows to non-null.
  */
 export function isPromoted(meta: PromotedMeta): meta is PromotedMeta & { publishedRevisionId: number } {
   return meta.published && meta.publishedRevisionId !== null
 }
 
-/**
- * The two meta columns the promoted gate reads. Structural over the
- * `post` and `page` tables — both declare these columns identically.
- */
+/** The two meta columns the promoted gate reads — structural over `post`/`page`. */
 export interface PromotedContentColumns {
   published: typeof postMetaTable.published | typeof pageMetaTable.published
   publishedRevisionId: typeof postMetaTable.publishedRevisionId | typeof pageMetaTable.publishedRevisionId

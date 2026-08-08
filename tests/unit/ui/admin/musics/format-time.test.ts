@@ -2,10 +2,6 @@ import { describe, expect, it } from 'vitest'
 
 import { formatTime } from '@/ui/admin/musics/format-time'
 
-// `formatTime` is the pure helper shared by AdminMusicPlayerFloat and
-// AdminMusicPlayerBar for rendering the current / total track duration. It
-// guards against NaN/negative inputs and zero-pads the seconds component.
-
 describe('formatTime', () => {
   it('returns 0:00 for NaN input', () => {
     expect(formatTime(Number.NaN)).toBe('0:00')

@@ -18,22 +18,15 @@ vi.mock('@/server/http/request-context', async () => {
 
 const db = getTestDb()
 
-// Everything else runs against the REAL engine: the install gate derives
-// its state from the `user` table (a cleared table is the noAdmin branch),
-// the setup token is a real row in `one_time_token` (the loader mints it
-// on the first visit; its boxLog stdout noise is expected), and CSRF is
-// the real session-token check (session + form field below). The real
-// install also fires the login audit through the process-level batcher,
-// so this file keeps the batcher lifecycle hygiene.
+// Setup install flow against the real engine: gate from `user` (cleared
+// table = noAdmin), real `one_time_token` row, real CSRF check.
 const CSRF_TOKEN = 'setup-flow-csrf-token'
 
 const mockContext = await import('@/server/http/request-context')
 const { action, loader } = await import('@/routes/auth/setup/index')
 
 beforeAll(() => {
-  // The factory mock derives the RequestContext from the RouterContextProvider
-  // on each call (the per-test session keeps flowing through); overlay the
-  // real db/pool handles so the install flow hits the integration database.
+  // Overlay real db/pool handles so the install flow hits the integration database.
   const fromProvider = vi.mocked(mockContext.getRequestContext).getMockImplementation()
   vi.mocked(mockContext.getRequestContext).mockImplementation((args) => ({
     ...fromProvider!(args),
@@ -65,8 +58,7 @@ describe('integration: /admin/setup full install flow', () => {
     const session = emptySession()
     session.set('csrfToken', CSRF_TOKEN)
 
-    // 1. Loader returns unverified state (and mints the real setup token
-    //    into `one_time_token` as a side effect).
+    // 1. Loader returns unverified state, minting the real setup token as a side effect.
     const loaderResult = await loader({
       request: new Request('http://localhost/admin/setup'),
       url: new URL('http://localhost/admin/setup'),
@@ -122,19 +114,16 @@ describe('integration: /admin/setup full install flow', () => {
     expect(response.status).toBe(302)
     expect(response.headers.get('Location')).toBe('/admin')
 
-    // Verify admin user was created
     const adminRows = await db.select().from(user).where(eq(user.role, 'admin'))
     expect(adminRows).toHaveLength(1)
     expect(adminRows[0]?.name).toBe('Admin')
     expect(adminRows[0]?.email).toBe('admin@example.com')
     expect(adminRows[0]?.role).toBe('admin')
 
-    // Verify settings were seeded
     const settingRows = await db
       .select()
       .from(setting)
       .where(sql`${setting.scope} like 'blog.%'`)
-    // 18 sections — `blog.search` was removed, `blog.webmentions` added.
     expect(settingRows.length).toBe(18)
 
     const scopes = new Set(settingRows.map((r) => r.scope))
@@ -162,12 +151,10 @@ describe('integration: /admin/setup full install flow', () => {
       expect(scopes.has(scope)).toBe(true)
     }
 
-    // The install action's refreshBlogSettings is REAL: the in-process
-    // snapshot now reflects the rows the install just wrote.
+    // The real refreshBlogSettings: the in-process snapshot reflects the rows just written.
     const { getBlogSettingsBundleSync } = await import('@/shared/config/getters')
     expect(getBlogSettingsBundleSync()?.siteIdentity?.title).toBe('My Blog')
 
-    // The install consumed the setup token: the row is gone.
     expect(await db.select().from(oneTimeToken).where(eq(oneTimeToken.key, 'setup_token'))).toHaveLength(0)
 
     const cookies = response.headers.getSetCookie()

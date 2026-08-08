@@ -75,8 +75,7 @@ function decrypt(ciphertext: string): string {
     try {
       return tryDecrypt(ciphertext, getDeploymentKey())
     } catch {
-      // Fall back to legacy v2 key for backward compatibility with
-      // secrets encrypted before the salt was deployment-specific.
+      // Backward-compat fallback for pre-deployment-salt secrets.
     }
     return tryDecrypt(ciphertext, getLegacyV2Key())
   }

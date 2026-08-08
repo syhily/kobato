@@ -18,17 +18,12 @@ import {
   SEA_WASM_CNFS_KEY,
 } from '@/shared/sea/assets'
 
-// Contract test for the SEA embedded-asset keys. `src/shared/sea/assets.ts`
-// is the single owner of the key contract: the writer
-// (`scripts/sea/assets.ts`) and every runtime reader under `src/server/`
-// must source their keys from it. A hardcoded key anywhere else only
-// surfaces at `sea:smoke` time — these assertions catch the drift in the
-// unit suite instead. No blob is built; this is source-level wiring plus
-// value pinning.
+// Contract test for the SEA embedded-asset keys: writer and readers must
+// source every key from `src/shared/sea/assets.ts`. A hardcoded key only
+// surfaces at `sea:smoke` time — this pins the drift in the unit suite.
 
 const SHARED_MODULE = 'src/shared/sea/assets.ts'
 
-/** Every module that writes or reads embedded assets, with the constants it must import. */
 const PARTIES: { file: string; names: string[]; forbiddenLiterals: string[] }[] = [
   {
     file: 'scripts/sea/assets.ts',
@@ -166,20 +161,17 @@ describe('contract: SEA embedded-asset keys', () => {
 
   it('sea-natives no longer defines the manifest keys locally', () => {
     const source = readSource('src/server/infra/sea-natives.ts')
-    // The constants must come from the shared module — a local definition
-    // would fork the contract (the pre-shared-module bug shape).
+    // A local definition would fork the contract.
     expect(source).not.toMatch(/(?:export\s+)?const\s+SEA_MANIFEST_KEY\s*=/)
     expect(source).not.toMatch(/(?:export\s+)?const\s+SEA_SMOKE_WORKER_BUNDLE_KEY\s*=/)
     expect(source).not.toMatch(/(?:export\s+)?const\s+NATIVE_ASSET_PREFIX\s*=/)
-    // And the values it uses are exactly the shared ones: importing the
-    // names above from the shared module makes equality by construction.
+    // Importing from the shared module makes equality by construction.
     expect(source).toMatch(/import\s*\{[^}]*SEA_MANIFEST_KEY[^}]*\}\s*from\s*'@\/shared\/sea\/assets'/)
   })
 
   it('pins the asset codec union in the shared module', () => {
     const source = readSource(SHARED_MODULE)
-    // The manifest `codec` field has exactly three values; adding one means
-    // touching writer + reader, which this pins as a deliberate change.
+    // Adding a codec means touching writer + reader: a deliberate change.
     expect(source).toMatch(/export type SeaAssetCodec = 'zstd' \| 'brotli' \| 'none'/)
   })
 

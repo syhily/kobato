@@ -5,12 +5,8 @@ import type { RequestContext } from '@/server/http/request-context'
 import { makeRequestContext } from '#/_helpers/request-context'
 import { emptySession } from '#/_helpers/session'
 
-/**
- * Factory for `vi.mock('@/server/http/request-context', ...)` that returns
- * the canonical `RequestContext` stored on the `RouterContextProvider`
- * passed via `makeRouteContext`. Falls back to an empty-session stub when
- * the context is not a proper `RouterContextProvider` (e.g. `new Map()`).
- */
+/** Factory for `vi.mock('@/server/http/request-context', ...)`: returns the
+ *  canonical RequestContext; falls back to an empty-session stub otherwise. */
 export async function createRequestContextMockModule() {
   const actual = await vi.importActual<typeof import('@/server/http/request-context')>('@/server/http/request-context')
   return {

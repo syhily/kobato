@@ -6,12 +6,9 @@ import { renderHook } from '#/_helpers/hook'
 import { useDragPercentage } from '@/ui/public/aplayer/hooks/use-drag-percentage'
 import { computePercentage } from '@/ui/public/aplayer/utils/compute-percentage'
 
-// The renderHook harness renders a single synchronous SSR pass, so the
-// mousedown handler (and the document-level listeners it arms) must be
-// driven through the `actions` queue inside that pass. `document` is
-// stubbed to capture the listeners and their AbortSignals; geometry comes
-// from a fake track element (clientWidth 100 at left 0, so clientX maps
-// 1:1 onto the clamped percentage).
+// Single synchronous SSR pass: drive the mousedown handler and document
+// listeners via the `actions` queue; the fake track (clientWidth 100,
+// left 0) maps clientX 1:1 onto the clamped percentage.
 
 type DragHandler = (event: MouseEvent) => void
 
@@ -69,8 +66,7 @@ describe('ui/public/aplayer/hooks/useDragPercentage — drag lifecycle', () => {
     expect(onChange.mock.calls).toEqual([[0.25], [0.5], [0.75]])
     expect(onCommit).toHaveBeenCalledTimes(1)
     expect(onCommit).toHaveBeenCalledWith(0.75)
-    // The drag settled: both document listeners were armed with the same
-    // controller signal and aborted on mouseup.
+    // Both document listeners share one controller signal, aborted on mouseup.
     expect(listeners.has('mousemove')).toBe(true)
     expect(listeners.has('mouseup')).toBe(true)
     expect(signals).toHaveLength(2)
@@ -105,8 +101,7 @@ describe('ui/public/aplayer/hooks/useDragPercentage — drag lifecycle', () => {
       ],
     })
 
-    // First drag's pair aborted; the second drag registered a new,
-    // still-live pair of listeners.
+    // First drag's pair aborted; the second drag's pair is still live.
     expect(signals).toHaveLength(4)
     expect(signals[0]?.aborted).toBe(true)
     expect(signals[1]?.aborted).toBe(true)

@@ -33,14 +33,10 @@ queryMocks.mutation = {
   isPending: false,
 }
 
-// AuditLogView drives its rows from `useAdminInfiniteList` (server state
-// lives in the TanStack cache, via an internal `useInfiniteQuery`). The list
-// query is stubbed through a hoisted slot so each test can pick the branch;
-// the actors query and the export mutation are stubbed alongside.
+// Rows come from `useAdminInfiniteList`'s internal useInfiniteQuery; the
+// list/actors/mutation mocks are stubbed via hoisted slots.
 
-// Canonical fixtures shared by the snapshot tests below. Shapes mirror
-// `AuditLogItemDto` / `AuditLogActorDto` exactly so changing the wire
-// type fails this suite loudly.
+// Fixtures mirror the DTO shapes exactly so wire-type changes fail loudly.
 
 let rowIdCounter = 0
 function makeRow(overrides: Partial<AuditLogItemDto> = {}): AuditLogItemDto {
@@ -82,27 +78,22 @@ describe('snapshot: AuditLogView', () => {
   })
 
   it('renders the page shell under SSR (header, filter trigger, export button)', () => {
-    // The list query resolves with zero rows and no active filters, so the
-    // empty-state branch renders; we assert the always-on chrome (header
-    // copy, the "筛选" trigger that the filter bar mounts when no filter is
-    // active, and the export affordance).
+    // Empty branch — assert the always-on chrome instead.
     const html = stableHtml(renderInRouter(<AuditLogView retentionDays={90} />, '/admin/security/audit-log'))
 
-    // Header copy — title and the retention-window description both
-    // render synchronously off the props.
+    // Title + retention description render synchronously off the props.
     expect(html).toContain('审计日志')
     expect(html).toContain('90')
 
-    // Filter bar mounts inside the header when no filters are active;
-    // the add-button shows the bare "筛选" label (not "添加筛选").
+    // No active filters → bare "筛选" trigger, not "添加筛选".
     expect(html).toContain('筛选')
 
     // Export affordance is a real button surfaced to AT users.
     expect(html).toContain('导出 CSV')
     expect(html).toMatch(/<button[^>]*>/)
 
-    // With no fetched rows and no active filter, the empty branch
-    // renders the placeholder copy. We do not assert fetched rows.
+    // No fetched rows and no active filter → the empty branch renders the
+    // placeholder copy.
     expect(html).toContain('暂无审计日志记录')
   })
 })
@@ -124,9 +115,7 @@ describe('snapshot: AuditLogRow', () => {
     // Localised timestamp (Asia/Shanghai = UTC+8 → 10:30:00).
     expect(html).toContain('2024-01-15 10:30:00')
 
-    // Masked IP and resource-type label render in the meta line. React
-    // SSR emits a `<!-- -->` marker between the literal prefix and the
-    // dynamic value, so assert each segment separately.
+    // SSR emits `<!-- -->` between literal prefix and dynamic value — assert each segment separately.
     expect(html).toContain('IP:')
     expect(html).toContain('203.0.113.*')
     expect(html).toContain('会话')
@@ -135,8 +124,7 @@ describe('snapshot: AuditLogRow', () => {
   it('falls back to actor id when name is null', () => {
     const row = makeRow({ actorName: null, actorId: 'user-42' })
     const html = stableHtml(renderToHtml(<AuditLogRow row={row} />))
-    // React SSR inserts a `<!-- -->` marker between "ID:" and the id,
-    // so assert each segment separately.
+    // SSR `<!-- -->` splits "ID:" and the id — assert segments separately.
     expect(html).toContain('ID:')
     expect(html).toContain('user-42')
   })
@@ -168,7 +156,6 @@ describe('snapshot: AuditLogRow', () => {
   it('renders a non-expandable row without details', () => {
     const row = makeRow({ details: null })
     const html = stableHtml(renderToHtml(<AuditLogRow row={row} />))
-    // No interactive affordance when there is nothing to expand.
     expect(html).not.toContain('role="button"')
     expect(html).toContain('无详情数据')
   })

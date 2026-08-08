@@ -15,10 +15,7 @@ interface MailFormProps {
 }
 
 export function MailForm({ mail }: MailFormProps) {
-  // The save response is authoritative and saves never revalidate the
-  // loader, so the provider identity is tracked locally: the moment a
-  // provider switch commits, the config card and the test-send readiness
-  // below flip to the new provider instead of showing the stale snapshot.
+  // Track the last-saved transport so the UI flips to the new provider immediately.
   const [savedTransport, setSavedTransport] = useState<MailLoaderShape['mail']['transport'] | null>(null)
   const transport = savedTransport ?? mail.mail.transport
   return (

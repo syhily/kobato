@@ -47,20 +47,12 @@ queryMocks.queryClient = {
   removeQueries: vi.fn(),
 }
 
-// Render-path coverage companion to `musics-view.test.tsx`. We re-use the
-// same mock scaffolding (tanstack/react-query stub) so the SortIcon matrix,
-// every grid branch and the detail / add-music render arms are exercised
-// without ever hitting the network. Event handlers and effects are
-// intentionally not covered — SSR can't drive them — so this file focuses
-// strictly on what renders. `MusicsView` inlines its sort/search state via
-// `useState` (the old `useMusicsReducer` pass-through was deleted), so the
-// per-combo SortIcon matrix below renders the exported `SortIcon` directly.
+// Render-path companion to `musics-view.test.tsx` (same query stubs, no
+// event handlers — SSR can't drive them). `SortIcon` renders directly
+// because the view inlines its sort state via `useState`.
 
-// The meting search machine now lives in `useMetingMusicSearch` (covered by
-// `tests/unit/ui/admin/musics/use-meting-music-search.test.tsx`). Stub it so
-// each snapshot sets the machine's state directly instead of driving it
-// through the old `useQuery` mock — and so the view never reads the
-// list-shaped `useInfiniteQuery` stub above.
+// `useMetingMusicSearch` (unit-covered) is stubbed so snapshots set the
+// machine's state directly.
 const searchHookMock = vi.hoisted(() => ({
   state: {
     results: [] as MetingSearchHit[],
@@ -90,8 +82,6 @@ function resetSearchHookMock(): void {
     reset: vi.fn(),
   }
 }
-
-// ───────────────────────────── fixtures ─────────────────────────────
 
 function makeAdminMusic(overrides: Partial<AdminMusicDto> = {}): AdminMusicDto {
   return {
@@ -139,8 +129,6 @@ function renderDetail(): string {
   )
 }
 
-// ─────────────────────────── MusicsView: grid ───────────────────────────
-
 describe('MusicsView render branches', () => {
   beforeEach(() => {
     queryMocks.infinite = {
@@ -159,8 +147,7 @@ describe('MusicsView render branches', () => {
   it('renders the loading skeleton', () => {
     const html = renderMusics()
     expect(html).toContain('animate-pulse')
-    // The skeleton renders 12 placeholder cells; the grid never shows the
-    // empty-state copy while loading.
+    // Skeleton renders 12 placeholder cells — no empty-state copy while loading.
     expect(html).not.toContain('还没有音乐')
     expect(html).not.toContain('已加载全部')
   })
@@ -174,9 +161,7 @@ describe('MusicsView render branches', () => {
       error: { message: 'upstream timeout' },
       data: undefined,
     }
-    // MusicsView currently falls through to the empty-state when
-    // `data` is undefined but `isLoading` is false — verify the
-    // graceful fallback surfaces the empty copy and not the grid.
+    // undefined data + !isLoading falls through to the empty-state copy.
     const html = renderMusics()
     expect(html).toContain('还没有音乐')
   })
@@ -208,10 +193,8 @@ describe('MusicsView render branches', () => {
     expect(html).toContain('千里之外')
     expect(html).toContain('周杰伦')
     expect(html).toContain('费玉清')
-    // Sentinel "已加载全部" only renders when hasNextPage is false AND
-    // there are musics on screen — both conditions are met here.
+    // Sentinel needs hasNextPage=false AND musics on screen — both hold here.
     expect(html).toContain('已加载全部 2 首歌曲')
-    // No skeleton painted alongside the grid.
     expect(html).not.toContain('还没有音乐')
   })
 
@@ -240,10 +223,8 @@ describe('MusicsView render branches', () => {
       isPending: false,
       data: { pages: [{ musics: [a], total: 1, hasMore: false }] },
     }
-    // The sort menu starts closed — the design-system DropdownMenu keeps the
-    // popup unmounted until the trigger opens it — so the trigger renders
-    // but no role="menu" appears in the SSR output. Base UI applies
-    // `aria-expanded` only after hydration, so SSR asserts `aria-haspopup`.
+    // Sort menu starts closed (popup unmounted until opened); Base UI
+    // applies aria-expanded only after hydration, so SSR asserts aria-haspopup.
     const html = renderMusics()
     expect(html).toContain('aria-label="排序"')
     expect(html).toContain('aria-haspopup="menu"')
@@ -252,15 +233,9 @@ describe('MusicsView render branches', () => {
   })
 })
 
-// ──────────────────── MusicsView: SortIcon matrix ────────────────────────
-//
-// `SortIcon` is a switch over (sortBy, sortOrder) that picks one of
-// ClockArrow{Up,Down} / CalendarArrow{Up,Down} / Arrow{Up,Down}AZ. The sort
-// state is inlined in the view (`useState`) and only flips via event
-// handlers, which SSR cannot drive — so we render the exported `SortIcon`
-// directly for every combo and assert the lucide class, covering each
-// switch arm. The trigger's default label / order text (创建时间 / 降序)
-// remains covered by the full-view tests above.
+// `SortIcon` switches over (sortBy, sortOrder) picking a lucide icon; the
+// view's sort state only flips via event handlers SSR can't drive, so every
+// combo renders directly. Trigger label/order text stays in the full-view tests.
 
 describe('MusicsView SortIcon matrix', () => {
   it.each([
@@ -276,12 +251,9 @@ describe('MusicsView SortIcon matrix', () => {
     ['album', 'desc', 'lucide-arrow-down-a-z'],
   ] as const)('renders SortIcon for sortBy=%s sortOrder=%s', (sortBy, sortOrder, iconClass) => {
     const html = stableHtml(renderToHtml(<SortIcon sortBy={sortBy} sortOrder={sortOrder} />))
-    // The correct lucide icon class is emitted by the SortIcon switch.
     expect(html).toContain(iconClass)
   })
 })
-
-// ────────────────────────── MusicDetailView ──────────────────────────────
 
 describe('MusicDetailView render branches', () => {
   beforeEach(() => {
@@ -346,15 +318,12 @@ describe('MusicDetailView render branches', () => {
     expect(html).toContain('周杰伦')
     expect(html).toContain('我很忙')
     expect(html).toContain('https://cdn.example.com/cover.jpg')
-    // Parsed lyric lines render.
     expect(html).toContain('素胚勾勒出青花笔锋浓转淡')
     expect(html).toContain('瓶身描绘的牡丹一如你初妆')
     expect(html).toContain('aria-label="关闭"')
     expect(html).toContain('aria-label="播放"')
     expect(html).toContain('复制 playerId')
-    // Dates render through the shared formatLocalDate (site-configured
-    // timezone Asia/Shanghai from the test bundle): createdAt /
-    // updatedAt ISO fixtures land on these local dates.
+    // ISO fixtures land on Asia/Shanghai local dates via formatLocalDate.
     expect(html).toContain('2024-01-01')
     expect(html).toContain('2024-02-01')
   })
@@ -389,18 +358,13 @@ describe('MusicDetailView render branches', () => {
     }
     const html = renderDetail()
     expect(html).toContain('纯音乐')
-    // LyricsDisplay renders its empty-state copy for null lrcText.
     expect(html).toContain('暂无歌词')
   })
 })
 
-// ──────────────────────────── AddMusicView ───────────────────────────────
-
 describe('AddMusicView render branches', () => {
   beforeEach(() => {
-    // Empty library via libraryQuery (the view's only remaining useQuery)
-    // + the search machine idle; the populated-search branch is covered
-    // via SearchAlbumCard directly below.
+    // Empty library + idle search machine; populated-search covered via SearchAlbumCard below.
     queryMocks.query = {
       data: null,
       isLoading: false,
@@ -425,20 +389,16 @@ describe('AddMusicView render branches', () => {
     expect(html).toContain('添加音乐')
     expect(html).toContain('aria-label="搜索音乐"')
     expect(html).toContain('placeholder="搜索歌曲、艺人、专辑..."')
-    // Source selector: the trigger shows the selected value (网易云 by
-    // default). The full option list is only rendered when the popover
-    // opens, which is event-driven and unreachable in SSR.
+    // Trigger shows the selected source; the option list needs an event (unreachable in SSR).
     expect(html).toContain('来源')
     expect(html).toContain('add-music-source-full')
     expect(html).toContain('网易云')
-    // Empty-search prompt.
     expect(html).toContain('输入关键词搜索音乐')
     expect(html).toContain('支持歌曲名称、艺人、专辑搜索')
   })
 
   it('renders the populated library snapshot count when the library has musics', () => {
-    // AddMusicView's libraryQuery is also `useQuery` (mocked), so this
-    // payload drives the MusicLibraryHero count + collage.
+    // libraryQuery payload drives the MusicLibraryHero count + collage.
     const music = makeAdminMusic({ id: 'lib-1', name: '蓝色风暴', coverUrl: 'https://cdn.example.com/a.jpg' })
     queryMocks.query = {
       data: { musics: [music], total: 1 },
@@ -463,8 +423,7 @@ describe('AddMusicView render branches', () => {
   })
 
   it('renders the loading skeleton when an initial search is in flight', () => {
-    // The hook reports `isSearching` while the first page is in flight;
-    // with no results yet that surfaces the GridSkeleton branch.
+    // isSearching with no results → GridSkeleton branch.
     searchHookMock.state = {
       ...searchHookMock.state,
       isSearching: true,
@@ -501,21 +460,11 @@ describe('AddMusicView render branches', () => {
   })
 })
 
-// ─────────────── AddMusicView: populated search results branch ───────────
-//
-// The populated-results branch in AddMusicView (the `results.map` over
-// SearchAlbumCard) stays unreachable in a single SSR pass: the
-// `useMetingMusicSearch` machine starts idle (no submitted search) and only
-// an event (`search()`) starts fetching, so no results exist during SSR.
-// We cover the reachable render branches above and skip the populated-
-// results arm; SearchAlbumCard itself is snapshotted directly.
+// The populated-results branch needs a search event (machine starts idle)
+// — unreachable in one SSR pass; SearchAlbumCard is snapshotted directly.
 
-// ────────────── Direct LyricsDisplay branch for completeness ─────────────
-//
-// MusicDetailView proxies lyrics through <LyricsDisplay>. We render it
-// directly here to lock down its two branches independent of the detail
-// view's query wiring (the detail view already exercises the resolved
-// path above; this nails the empty + parsed arms at the source).
+// LyricsDisplay is rendered directly to lock down its two branches
+// independent of the detail view's query wiring.
 
 describe('LyricsDisplay direct render branches', () => {
   it('renders the empty-state copy for null lrcText', () => {

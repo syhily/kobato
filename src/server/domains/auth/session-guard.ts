@@ -1,9 +1,6 @@
 // Session-revocation policy — the single owner of "who may revoke whose
-// session". Three scopes:
-//   own   — strict ownership, no admin bypass.
-//   admin — an admin may revoke any non-admin's session and their own,
-//           but never another live admin's.
-//   bulk  — same admin-vs-admin rule, but no soft-delete exemption.
+// session". own: strict ownership; admin: any non-admin + own, never
+// another live admin; bulk: same rule, no soft-delete exemption.
 
 import type { ViewerIdentity } from '@/server/domains/auth/rbac'
 import type { Database } from '@/server/infra/db/database'
@@ -19,9 +16,8 @@ export interface SessionRevocation {
 }
 
 /**
- * Own-scope: revoke one of the actor's own sessions. Strict ownership —
- * an admin acting through `account.revokeSession` gets no bypass, so
- * the audit trail always reads as the owner managing their own session.
+ * Own-scope revocation: strict ownership — no admin bypass, so the
+ * audit trail always reads as the owner managing their own session.
  */
 export async function revokeOwnSessionWithGuard(
   db: Database,
@@ -40,10 +36,8 @@ export async function revokeOwnSessionWithGuard(
 }
 
 /**
- * Admin-scope: revoke one session by id. An admin may revoke any
- * non-admin's session, but never another live admin's. Reaching this
- * with a non-admin actor is not possible through `adminProc`; the role
- * check stays as defence in depth.
+ * Admin-scope revocation: any non-admin's session, or the actor's own —
+ * never another live admin's. The role check is defence in depth.
  */
 export async function revokeSessionWithGuard(
   db: Database,
@@ -54,8 +48,7 @@ export async function revokeSessionWithGuard(
   if (!meta) {
     return { targetUserId: null }
   }
-  // An admin may not revoke another live admin's session unless it is
-  // their own — prevents a compromised admin kicking out the others.
+  // An admin may not revoke another live admin's session (only their own).
   if (actor.role === 'admin' && meta.userId.toString() !== actor.id) {
     const targetUser = await findSafeUserById(db, meta.userId)
     if (targetUser && !targetUser.deletedAt && targetUser.role === 'admin') {
@@ -67,10 +60,8 @@ export async function revokeSessionWithGuard(
 }
 
 /**
- * Bulk-scope: revoke every session belonging to one user. An admin may
- * not bulk-revoke another admin's sessions; unlike the single-session
- * scope there is no soft-delete exemption (kept from the original
- * inline copy — see the module header).
+ * Bulk-scope revocation: never another admin's sessions; no soft-delete
+ * exemption (unlike the single-session scope).
  */
 export async function revokeAllSessionsWithGuard(
   db: Database,

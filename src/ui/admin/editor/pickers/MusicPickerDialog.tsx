@@ -11,20 +11,13 @@ import { Button } from '@/ui/components/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/ui/components/dialog'
 import { Input } from '@/ui/components/input'
 
-// Music picker pulling from the local admin library, with an inline add
-// flow. Newly added tracks are prepended to the picker list so the
-// operator can pick them straight into the article without leaving the
-// editor — `addMusic` already downloads the audio + cover to S3 and
-// inserts the row before resolving.
+// Local admin library picker with an inline add flow; new tracks are prepended.
 
 export interface MusicPickerDialogProps {
   trigger?: React.ReactNode
   onPick: (music: AdminMusicDto) => void
-  /**
-   * Optional controlled-open pair. Pass when the caller wants to
-   * drive the dialog imperatively (e.g. a slash-command in the
-   * editor) instead of relying on a `trigger` button click.
-   */
+  /** Optional controlled-open pair — drive the dialog imperatively (e.g.
+   *  editor slash-command) instead of a `trigger` button click. */
   open?: boolean
   onOpenChange?: (open: boolean) => void
 }
@@ -43,14 +36,10 @@ export function MusicPickerDialog({ trigger, onPick, open: openProp, onOpenChang
   const [addOpen, setAddOpen] = useState(false)
   const queryClient = useQueryClient()
 
-  // Key-driven: changing `q` changes the query key, so reopening the
-  // dialog with a stale cached key shows the cached rows while
-  // react-query revalidates instead of flashing a spinner.
+  // Key-driven: reopening with a stale cached key shows cached rows while react-query revalidates.
   const listInput = { q: q.trim() === '' ? undefined : q.trim(), limit: 60 }
   const listQuery = useQuery(orpcQuery.admin.music.list.queryOptions({ input: listInput, enabled: open }))
-  // `null` (not []) for undefined data keeps the loading/empty split — a
-  // fresh key yields `undefined` data → spinner, like the old
-  // clear-to-null flash.
+  // `null` (not []) keeps the loading/empty split — fresh key → undefined data → spinner.
   const musics = listQuery.data?.musics ?? null
 
   return (
@@ -117,10 +106,7 @@ export function MusicPickerDialog({ trigger, onPick, open: openProp, onOpenChang
         open={addOpen}
         onClose={() => setAddOpen(false)}
         onAdded={(music) => {
-          // Prepend the freshly-added row so the operator can pick it
-          // immediately. We don't auto-pick so multi-add still works
-          // (matches `MusicsView` behaviour where the dialog stays open
-          // after each successful add).
+          // Prepend the freshly-added row for immediate picking; no auto-pick so multi-add still works.
           queryClient.setQueryData(
             orpcQuery.admin.music.list.key({ input: { q: q.trim() === '' ? undefined : q.trim(), limit: 60 } }),
             (old: ListMusicOutput | undefined): ListMusicOutput | undefined => {
