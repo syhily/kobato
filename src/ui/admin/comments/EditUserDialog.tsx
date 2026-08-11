@@ -5,6 +5,7 @@ import { useState } from 'react'
 import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
 
 import { orpc } from '@/client/api/client'
+import { onMutationError } from '@/client/lib/toast-api-error'
 import { idStr } from '@/shared/utils/tools'
 import { Button } from '@/ui/components/button'
 import { Checkbox } from '@/ui/components/checkbox'
@@ -34,6 +35,7 @@ export function EditUserDialog({ comment, onClose, onSaved }: EditUserDialogProp
       return orpc.admin.users.update({ id: id!, ...body })
     },
     onSuccess: () => onSaved(),
+    onError: onMutationError('保存用户信息失败'),
   })
   const [lastCommentId, setLastCommentId] = useState(comment?.id)
   const [name, setName] = useState(comment?.name ?? '')

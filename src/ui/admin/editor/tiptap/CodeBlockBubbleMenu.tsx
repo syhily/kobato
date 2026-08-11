@@ -1,5 +1,6 @@
 import type { Editor } from '@tiptap/core'
 
+import { useEditorState } from '@tiptap/react'
 import { BubbleMenu } from '@tiptap/react/menus'
 
 import {
@@ -117,8 +118,14 @@ interface LanguageSelectProps {
 }
 
 function LanguageSelect({ editor }: LanguageSelectProps) {
-  const raw: unknown = editor.getAttributes('codeBlock').language
-  const current = typeof raw === 'string' && raw !== '' ? raw : PLACEHOLDER_VALUE
+  // Subscribed — the BubbleMenu portal would otherwise never re-render this on transactions.
+  const current = useEditorState({
+    editor,
+    selector: ({ editor: ed }) => {
+      const raw: unknown = ed.getAttributes('codeBlock').language
+      return typeof raw === 'string' && raw !== '' ? raw : PLACEHOLDER_VALUE
+    },
+  })
   const isKnown = KNOWN_VALUES.has(current)
   return (
     <Select

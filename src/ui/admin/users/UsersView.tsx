@@ -28,7 +28,7 @@ function buildQueryInput(filters: UsersFilters, offset: number) {
 
 export function UsersView() {
   const config = useSiteIdentity()
-  const { filters, setQ, setRole, setSortBy, setPageSize, setIncludeDeleted } = useUsersFilters()
+  const { filters, setQ, setRole, setSortBy, setIncludeDeleted } = useUsersFilters()
 
   const queryClient = useQueryClient()
 
@@ -70,11 +70,9 @@ export function UsersView() {
             <UsersToolbar
               role={filters.role}
               sortBy={filters.sortBy}
-              pageSize={filters.pageSize}
               includeDeleted={filters.includeDeleted}
               onRoleChange={setRole}
               onSortByChange={setSortBy}
-              onPageSizeChange={setPageSize}
               onIncludeDeletedChange={setIncludeDeleted}
             />
             <Button type="button" variant="default" size="sm" onClick={() => setInviteOpen(true)}>

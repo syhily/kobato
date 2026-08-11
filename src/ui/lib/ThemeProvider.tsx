@@ -48,9 +48,14 @@ export function ThemeProvider({ children, initialResolved = 'light' }: ThemeProv
     if (typeof window === 'undefined') {
       return 'system'
     }
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored === 'dark' || stored === 'light' || stored === 'system') {
-      return stored
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY)
+      if (stored === 'dark' || stored === 'light' || stored === 'system') {
+        return stored
+      }
+    } catch (err) {
+      // Storage-restricted browsers throw SecurityError on any access.
+      logger.warn('Failed to read theme preference', { error: err })
     }
     return 'system'
   })

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import type { AdminImageDto } from '@/shared/contracts/images'
 
 import { UploadImageDialog, type UploadKind } from '@/ui/admin/shared/UploadImageDialog'
+import { useErroredSrc } from '@/ui/admin/shared/useErroredSrc'
 import { Button } from '@/ui/components/button'
 import { Label } from '@/ui/components/label'
 import { cn } from '@/ui/lib/cn'
@@ -43,6 +44,8 @@ export function CoverInputRow({
   const [uploadOpen, setUploadOpen] = useState(false)
 
   const hasValue = value !== ''
+  const previewSrc = hasValue ? value : (fallbackSrc ?? null)
+  const [previewBroken, markPreviewErrored] = useErroredSrc(previewSrc)
 
   const onUploaded = (image: AdminImageDto) => {
     onChange(image.publicUrl)
@@ -84,27 +87,14 @@ export function CoverInputRow({
           )}
           title={uploadTitle ?? (value === '' ? '点击上传' : '点击替换')}
         >
-          {hasValue ? (
+          {previewSrc !== null && !previewBroken ? (
             <img
-              src={value}
-              alt={label}
+              src={previewSrc}
+              alt={hasValue ? label : `${label} 预览`}
               loading="lazy"
               decoding="async"
               className={cn('h-full w-full', objectFit === 'contain' ? 'object-contain' : 'object-cover')}
-              onError={(e) => {
-                ;(e.currentTarget as HTMLImageElement).style.visibility = 'hidden'
-              }}
-            />
-          ) : fallbackSrc ? (
-            <img
-              src={fallbackSrc}
-              alt={`${label} 预览`}
-              loading="lazy"
-              decoding="async"
-              className={cn('h-full w-full', objectFit === 'contain' ? 'object-contain' : 'object-cover')}
-              onError={(e) => {
-                ;(e.currentTarget as HTMLImageElement).style.visibility = 'hidden'
-              }}
+              onError={markPreviewErrored}
             />
           ) : (
             <ImageOffIcon className="size-4 text-muted-foreground" />

@@ -153,6 +153,13 @@ unrelated concerns.
   through `editor.storage.editorActions` — `tiptap/editor-actions.ts`, populated from React via
   `editor-actions-setter.ts`).
 - Image block uses a React NodeView (`tiptap/ImageNodeView`) for inline alt + caption edits.
+- **Tiptap v3 never re-renders on transactions.** `useEditor` and `BubbleMenu` children only
+  re-render on React-driven updates, so any UI that tracks the document or selection (mark
+  activeness, command availability, panel visibility) MUST subscribe via
+  `useEditorState({ editor, selector })` — `tiptap/BubbleMenu` and `tiptap/TableBubbleMenu` are the
+  reference. Panels that seed local state on mount (e.g. `MathInlinePanel`) additionally need a
+  `key` derived from the current mark's `_key` attr, so moving the caret between two marks of the
+  same type remounts the panel instead of leaking the first mark's state onto the second.
 - **Table dialect**: cells are inline-only — no nested blocks, lists, code blocks, math blocks, or
   footnote refs. Only `link` mark-defs. Slash-menu / toolbar inserts a 3×3 table with a header row.
 - Floating popups anchor with `position: fixed` off the suggestion plugin's `clientRect` or Tiptap's

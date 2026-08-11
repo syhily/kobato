@@ -3,8 +3,6 @@ import type { ComponentProps } from 'react'
 import { Combobox as BaseCombobox } from '@base-ui/react/combobox'
 import { CheckIcon, ChevronDownIcon, SearchIcon } from 'lucide-react'
 
-import { transitions } from '@/client/lib/motion'
-import { LazyMotionDiv } from '@/ui/components/lazy-motion'
 import { cn } from '@/ui/lib/cn'
 
 function Combobox<Value>(props: ComponentProps<typeof BaseCombobox.Root<Value, false>>) {
@@ -67,31 +65,24 @@ function ComboboxContent<Item>({
           )}
           {...props}
         >
-          <LazyMotionDiv
-            initial={{ y: 6, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ ...transitions.menu, delay: 0.02 }}
-            className="contents"
-          >
-            <div className="flex items-center gap-2 border-b px-3 py-2">
-              <SearchIcon className="size-4 shrink-0 text-muted-foreground" />
-              <BaseCombobox.Input
-                placeholder={inputPlaceholder}
-                className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
-              />
-            </div>
-            {/*
-             * `Combobox.Empty` doubles as an `aria-live` region, so it must stay
-             * mounted — no conditional render, no `display:none`; padding is scoped
-             * behind the `empty:` variant, which applies when Base UI hands it null children.
-             */}
-            <BaseCombobox.Empty className="text-center text-sm text-muted-foreground not-empty:px-3 not-empty:py-6">
-              {emptyMessage}
-            </BaseCombobox.Empty>
-            <BaseCombobox.List className="flex max-h-[min(var(--available-height),20rem)] flex-col gap-0.5 overflow-y-auto p-1">
-              {children}
-            </BaseCombobox.List>
-          </LazyMotionDiv>
+          <div className="flex items-center gap-2 border-b px-3 py-2">
+            <SearchIcon className="size-4 shrink-0 text-muted-foreground" />
+            <BaseCombobox.Input
+              placeholder={inputPlaceholder}
+              className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+            />
+          </div>
+          {/*
+           * `Combobox.Empty` doubles as an `aria-live` region, so it must stay
+           * mounted — no conditional render, no `display:none`; padding is scoped
+           * behind the `empty:` variant, which applies when Base UI hands it null children.
+           */}
+          <BaseCombobox.Empty className="text-center text-sm text-muted-foreground not-empty:px-3 not-empty:py-6">
+            {emptyMessage}
+          </BaseCombobox.Empty>
+          <BaseCombobox.List className="flex max-h-[min(var(--available-height),20rem)] flex-col gap-0.5 overflow-y-auto p-1">
+            {children}
+          </BaseCombobox.List>
         </BaseCombobox.Popup>
       </BaseCombobox.Positioner>
     </BaseCombobox.Portal>

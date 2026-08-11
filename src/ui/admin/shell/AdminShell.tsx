@@ -136,7 +136,7 @@ export function AdminShell({
                 {children}
               </MusicPlayerAwareMain>
               <AdminMusicPlayerBar />
-              <MobileNavBar />
+              <MobileNavBar role={currentUser.role} />
             </SidebarInset>
           </SidebarProvider>
           <AdminMusicPlayerFloat />

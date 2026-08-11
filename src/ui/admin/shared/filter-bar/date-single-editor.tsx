@@ -115,9 +115,15 @@ export function DateSingleFilterEditor({ value, onChange }: DateSingleFilterEdit
   }
 
   const handleBlur = () => {
-    if (localDate && !parsedDate) {
-      commitDate(new Date())
-    } else if (parsedDate) {
+    if (!localDate) {
+      // Cleared input: commit the empty date — `parseSingleDateFilter` rejects it,
+      // so the pill's query patch drops its bounds instead of silently keeping the old date.
+      setLastCommitted('')
+      onChange({ date: '', op })
+    } else if (!parsedDate) {
+      // Garbage input: restore the last committed value instead of inventing a date.
+      setLocalDate(lastCommitted)
+    } else {
       commitDate(parsedDate)
     }
   }

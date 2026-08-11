@@ -54,13 +54,8 @@ export function ImageDetailDialog({
   const nextKey = { open, imageId: image?.id ?? null }
   if (nextKey.open !== lastKey.open || nextKey.imageId !== lastKey.imageId) {
     setLastKey(nextKey)
-    if (!open || image === null) {
-      setEditingNote(false)
-      setNoteDraft('')
-    } else {
-      setEditingNote(false)
-      setNoteDraft(image.note ?? '')
-    }
+    setEditingNote(false)
+    setNoteDraft(!open || image === null ? '' : (image.note ?? ''))
   }
 
   useEffect(() => {

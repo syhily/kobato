@@ -8,7 +8,7 @@ import type { MyCommentsStatus } from '@/shared/types/comments'
 import type { ActiveFilter, FilterPillsAction } from '@/ui/admin/shared/filterPillsReducer'
 
 import { orpcQuery } from '@/client/api/orpc-query'
-import { toastApiError } from '@/client/lib/toast-api-error'
+import { onMutationError } from '@/client/lib/toast-api-error'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { commentBodySchema } from '@/shared/pt/comment-schema'
 import { avatarImageUrl } from '@/shared/utils/avatar'
@@ -161,18 +161,14 @@ export function MyCommentsView({ status, q, entity, entityOptions, currentUser }
     onSuccess: () => {
       invalidateList()
     },
-    onError: (error) => {
-      toastApiError(error, '申请删除失败')
-    },
+    onError: onMutationError('申请删除失败'),
   })
   const cancelDelete = useMutation({
     ...orpcQuery.comments.cancelDeleteOwn.mutationOptions(),
     onSuccess: () => {
       invalidateList()
     },
-    onError: (error) => {
-      toastApiError(error, '撤回删除申请失败')
-    },
+    onError: onMutationError('撤回删除申请失败'),
   })
 
   const submitting = requestDelete.isPending || cancelDelete.isPending

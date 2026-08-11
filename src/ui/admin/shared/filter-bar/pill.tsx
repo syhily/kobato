@@ -11,7 +11,7 @@ import {
   parseSingleDateFilter,
   singleDateFilterLabel,
 } from '@/ui/admin/shared/date-filter'
-import { DateSingleFilterEditor, formatDateInput } from '@/ui/admin/shared/filter-bar/date-single-editor'
+import { DateSingleFilterEditor } from '@/ui/admin/shared/filter-bar/date-single-editor'
 import {
   DateRangeEditor,
   FreetextEditor,
@@ -36,14 +36,11 @@ export function FilterPill<K extends string>({ field, filter, search, onRemove, 
   const fieldLabel = field?.label ?? filter.field
   const FieldIcon = field?.icon
 
-  // Malformed JSON falls back to the editor default, never throws.
+  // Malformed JSON falls back to an empty pill, never throws.
   const dateSingleValue = useMemo(
     () =>
       field?.kind === 'date-single'
-        ? (parseSingleDateFilter(filter.value) ?? {
-            date: formatDateInput(new Date()),
-            op: DEFAULT_SINGLE_DATE_OPERATOR,
-          })
+        ? (parseSingleDateFilter(filter.value) ?? { date: '', op: DEFAULT_SINGLE_DATE_OPERATOR })
         : null,
     [field, filter.value],
   )

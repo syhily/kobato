@@ -9,7 +9,7 @@ import type { AnalyticsSettings } from '@/shared/config/types'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { useFileUpload } from '@/client/hooks/use-file-upload'
-import { toastApiError } from '@/client/lib/toast-api-error'
+import { onMutationError } from '@/client/lib/toast-api-error'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
@@ -105,7 +105,7 @@ function MaxMindRemoteUpdateRow() {
       }
       void queryClient.invalidateQueries({ queryKey: geoipStatusKey() })
     },
-    onError: (error) => toastApiError(error, 'GeoIP 更新失败'),
+    onError: onMutationError('GeoIP 更新失败'),
   })
 
   return (

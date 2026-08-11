@@ -2,6 +2,7 @@ import { ArrowRightIcon } from 'lucide-react'
 import { useState } from 'react'
 import { Form } from 'react-router'
 
+import { MIN_PASSWORD_LENGTH } from '@/shared/utils/security'
 import { inputClasses, PasswordToggle } from '@/ui/admin/auth/shared'
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
@@ -35,7 +36,7 @@ export function ResetPasswordForm({ action, token, isSubmitting, csrfToken }: Re
             autoComplete="new-password"
             placeholder="•••••••••••••••"
             required
-            minLength={6}
+            minLength={MIN_PASSWORD_LENGTH}
             disabled={isSubmitting}
             className={cn(inputClasses, 'pr-12')}
           />

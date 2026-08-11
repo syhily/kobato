@@ -58,25 +58,46 @@ export function InlineEditForm({ commentId, onCancel, onSaved }: InlineEditFormP
 
   return (
     <div className="mt-2 block w-full">
-      <LazyCommentBodyEditor
-        initialBody={initialBody}
-        bodyKey={`edit-${commentId}-${bodyKey}`}
-        onBodyChange={setBody}
-        disabled={!loaded || saving}
-      />
-      <div className="mt-2 flex justify-end gap-2">
-        <Button
-          variant="default"
-          onMouseDown={(event) => event.preventDefault()}
-          onClick={handleSave}
-          disabled={!loaded || saving}
-        >
-          {saving ? '保存中…' : '保存'}
-        </Button>
-        <Button variant="light" onMouseDown={(event) => event.preventDefault()} onClick={onCancel} disabled={saving}>
-          取消
-        </Button>
-      </div>
+      {raw.isError ? (
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-alert" role="alert" aria-live="assertive">
+            加载评论原文失败
+          </span>
+          <Button variant="light" onClick={() => loadRawBody({ rid: String(commentId) })} disabled={raw.isPending}>
+            {raw.isPending ? '加载中…' : '重试'}
+          </Button>
+          <Button variant="light" onMouseDown={(event) => event.preventDefault()} onClick={onCancel}>
+            取消
+          </Button>
+        </div>
+      ) : (
+        <>
+          <LazyCommentBodyEditor
+            initialBody={initialBody}
+            bodyKey={`edit-${commentId}-${bodyKey}`}
+            onBodyChange={setBody}
+            disabled={!loaded || saving}
+          />
+          <div className="mt-2 flex justify-end gap-2">
+            <Button
+              variant="default"
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={handleSave}
+              disabled={!loaded || saving}
+            >
+              {saving ? '保存中…' : '保存'}
+            </Button>
+            <Button
+              variant="light"
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={onCancel}
+              disabled={saving}
+            >
+              取消
+            </Button>
+          </div>
+        </>
+      )}
     </div>
   )
 }

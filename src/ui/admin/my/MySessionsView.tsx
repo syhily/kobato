@@ -6,6 +6,7 @@ import { useRevalidator } from 'react-router'
 import type { MySessionItem } from '@/routes/admin/me/sessions'
 
 import { orpc } from '@/client/api/client'
+import { onMutationError } from '@/client/lib/toast-api-error'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { DEFAULT_MY_SORT, MY_SESSION_SORT_OPTIONS } from '@/shared/utils/sessions-sort'
 import { MySessionRow } from '@/ui/admin/sessions/MySessionRow'
@@ -29,6 +30,7 @@ export function MySessionsView({ items }: MySessionsViewProps) {
     onSuccess: () => {
       void revalidator.revalidate()
     },
+    onError: onMutationError('注销会话失败'),
   })
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
 

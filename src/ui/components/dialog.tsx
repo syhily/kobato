@@ -3,8 +3,6 @@ import type { ComponentProps } from 'react'
 import { Dialog as BaseDialog } from '@base-ui/react/dialog'
 import { XIcon } from 'lucide-react'
 
-import { transitions } from '@/client/lib/motion'
-import { LazyMotionDiv } from '@/ui/components/lazy-motion'
 import { cn } from '@/ui/lib/cn'
 
 function Dialog({ ...props }: ComponentProps<typeof BaseDialog.Root>) {
@@ -53,14 +51,7 @@ function DialogContent({
         )}
         {...props}
       >
-        <LazyMotionDiv
-          initial={{ y: 12, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ ...transitions.dialog, delay: 0.04 }}
-          className="contents"
-        >
-          {children}
-        </LazyMotionDiv>
+        {children}
         {showCloseButton && (
           <BaseDialog.Close
             data-slot="dialog-close"

@@ -6,8 +6,6 @@ export interface UseSyncScrollOptions {
   enabled: boolean
 }
 
-type ActiveSource = 'editor' | 'preview' | null
-
 function applyRatio(source: HTMLElement, target: HTMLElement) {
   const sourceMax = source.scrollHeight - source.clientHeight
   const targetMax = target.scrollHeight - target.clientHeight
@@ -23,16 +21,14 @@ function applyRatio(source: HTMLElement, target: HTMLElement) {
 
 /**
  * Bidirectional ratio-based scroll sync between the editor canvas and the
- * live-preview pane; the last-interacted pane is the active source.
+ * live-preview pane; the scrolled pane drives the other.
  */
 export function useSyncScroll({ editorRef, previewRef, enabled }: UseSyncScrollOptions): void {
-  const activeSourceRef = useRef<ActiveSource>(null)
   const isSyncingRef = useRef(false)
   const rafRef = useRef<number | null>(null)
 
   useEffect(() => {
     if (!enabled) {
-      activeSourceRef.current = null
       isSyncingRef.current = false
       if (rafRef.current !== null) {
         cancelAnimationFrame(rafRef.current)
@@ -51,7 +47,6 @@ export function useSyncScroll({ editorRef, previewRef, enabled }: UseSyncScrollO
       if (isSyncingRef.current) {
         return
       }
-      activeSourceRef.current = 'editor'
       isSyncingRef.current = true
       if (rafRef.current !== null) {
         cancelAnimationFrame(rafRef.current)
@@ -71,7 +66,6 @@ export function useSyncScroll({ editorRef, previewRef, enabled }: UseSyncScrollO
       if (isSyncingRef.current) {
         return
       }
-      activeSourceRef.current = 'preview'
       isSyncingRef.current = true
       if (rafRef.current !== null) {
         cancelAnimationFrame(rafRef.current)

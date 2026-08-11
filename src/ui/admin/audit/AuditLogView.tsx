@@ -1,8 +1,9 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { DownloadIcon, SearchIcon } from 'lucide-react'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { orpcQuery } from '@/client/api/orpc-query'
+import { toastApiError } from '@/client/lib/toast-api-error'
 import { AuditLogRow } from '@/ui/admin/audit/AuditLogRow'
 import { type AuditFilterQuery, buildAuditFilterFields } from '@/ui/admin/audit/filter-fields'
 import { AdminInfiniteListFooter } from '@/ui/admin/shared/AdminInfiniteListFooter'
@@ -38,15 +39,25 @@ export function AuditLogView({ retentionDays }: AuditLogViewProps) {
   const fields = useMemo(() => buildAuditFilterFields(actors), [actors])
   const pills = useFilterPills({ fields })
 
+  // The actors query only feeds the 操作人 filter options — a failure leaves the
+  // list usable but the filter empty, so surface it via toast (the list query's
+  // error renders inline below instead).
+  const actorsError = actorsQuery.error
+  useEffect(() => {
+    if (actorsError) {
+      toastApiError(actorsError, '加载操作人列表失败')
+    }
+  }, [actorsError])
+
   const [exportOpen, setExportOpen] = useState(false)
   const [includeFullIp, setIncludeFullIp] = useState(false)
 
-  const { rows, isLoading, hasNextPage, isFetchingNextPage, sentinelRef } = useAdminInfiniteList({
+  const { rows, isLoading, error, reset, hasNextPage, isFetchingNextPage, sentinelRef } = useAdminInfiniteList({
     namespace: orpcQuery.admin.auditLog.list,
     pageSize: PAGE_SIZE,
     buildInput: (offset) => ({ offset, limit: PAGE_SIZE, ...pills.queryInput<AuditFilterQuery>() }),
     selectRows: (page) => page.items,
-    noun: '审计日志',
+    // No `noun` — the error renders inline below, not as a toast.
   })
 
   const exportMutation = useMutation(orpcQuery.admin.auditLog.exportCsv.mutationOptions())
@@ -75,8 +86,9 @@ export function AuditLogView({ retentionDays }: AuditLogViewProps) {
       document.body.removeChild(link)
       URL.revokeObjectURL(url)
       setExportOpen(false)
-    } catch {
-      // Error is surfaced via exportMutation.error / isPending state
+    } catch (error) {
+      // mutateAsync rejects — surface the failure; the dialog stays open for a retry.
+      toastApiError(error, '导出审计日志失败')
     }
   }, [queryInput, exportMutation, includeFullIp])
 
@@ -114,6 +126,14 @@ export function AuditLogView({ retentionDays }: AuditLogViewProps) {
         {isLoading ? (
           <div className="divide-y">
             <AuditLogSkeleton />
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center gap-2 py-16 text-muted-foreground">
+            <p className="text-lg text-foreground">加载失败</p>
+            <p className="text-sm">{error.message || '请稍后重试'}</p>
+            <Button type="button" variant="outline" className="mt-4" onClick={reset}>
+              重试
+            </Button>
           </div>
         ) : rows.length === 0 ? (
           <Empty>

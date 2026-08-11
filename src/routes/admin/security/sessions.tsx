@@ -52,7 +52,6 @@ export async function loader({ request, context }: Route.LoaderArgs) {
         cmp = a.userName.localeCompare(b.userName, 'zh-Hans-CN')
         break
       case 'lastActive':
-      default:
         cmp = a.lastActiveAt.getTime() - b.lastActiveAt.getTime()
         break
     }

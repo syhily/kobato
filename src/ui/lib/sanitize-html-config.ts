@@ -176,7 +176,6 @@ export function strategyToConfig(strategy: SafeHtmlStrategy): SanitizeStrategyCo
 
     case 'audit':
     case 'preview':
-    default:
       return {
         tags: BASE_TAGS,
         attributes: BASE_ATTRIBUTES,

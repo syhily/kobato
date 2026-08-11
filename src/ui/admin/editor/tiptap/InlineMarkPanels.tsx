@@ -3,7 +3,7 @@ import type { Editor } from '@tiptap/core'
 
 import { getMarkRange } from '@tiptap/core'
 import { CheckIcon, EraserIcon, XIcon } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { orpc } from '@/client/api/client'
 import { generateBlockKey } from '@/shared/pt/utils'
@@ -38,19 +38,27 @@ function snapshotMathInlineTex(ed: Editor): string {
 }
 
 export function MathInlinePanel({ editor }: MathInlinePanelProps) {
-  const [tex, setTex] = useState('')
+  // Seed from the current mark on mount — comparing against `useState(editor)`
+  // never fired (the initial state equals the prop), so the textarea opened
+  // empty on an existing formula and 应用 destroyed it.
+  const [tex, setTex] = useState(() => snapshotMathInlineTex(editor))
   const [applying, setApplying] = useState(false)
   const baselineTexRef = useRef('')
   const applyAbortRef = useRef<AbortController | null>(null)
   const { previewHtml, renderError, showSpinner } = useAdminMathPreview(tex, false)
 
+  // Re-seed if the editor instance ever changes (render-phase adjust pattern —
+  // an effect-bound setTex would be a cascading render).
   const [lastEditor, setLastEditor] = useState(editor)
   if (editor !== lastEditor) {
     setLastEditor(editor)
-    editor.commands.extendMarkRange('mathInline')
-    const snap = snapshotMathInlineTex(editor)
-    setTex(snap)
+    setTex(snapshotMathInlineTex(editor))
   }
+
+  // Extend the selection over the whole mark once the panel opens.
+  useEffect(() => {
+    editor.commands.extendMarkRange('mathInline')
+  }, [editor])
 
   const apply = () => {
     void (async () => {

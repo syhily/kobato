@@ -231,7 +231,6 @@ function pushBlockText(block: Block, out: string[]): void {
   }
   if (block._type === 'musicPlayer') {
     out.push(`[Music: ${block.playerId}]`)
-    return
   }
 }
 

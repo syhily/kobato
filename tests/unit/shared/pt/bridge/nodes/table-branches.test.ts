@@ -174,14 +174,13 @@ describe('shared/pt/bridge/nodes/table — pmCellToTableCell', () => {
     expect(c.isHeader).toBe(true)
   })
 
-  it('uses only the first paragraph and ignores subsequent paragraphs', () => {
+  it('joins all paragraphs of a cell with hard-break spans', () => {
     const node = pmCellWith([
       { type: 'paragraph', attrs: { _key: 'p1' }, content: [{ type: 'text', text: 'first' }] },
       { type: 'paragraph', attrs: { _key: 'p2' }, content: [{ type: 'text', text: 'second' }] },
     ])
     const c = pmCellToTableCell(node, ensureKeyEcho)
-    expect(c.content).toHaveLength(1)
-    expect(c.content[0]!.text).toBe('first')
+    expect(c.content.map((s) => s.text)).toEqual(['first', '\n', 'second'])
   })
 
   it('throws on inline marks that pmMarkToSpanMark cannot convert (loud unknown policy)', () => {

@@ -1,6 +1,7 @@
 import { requireRole } from '@/server/domains/auth/rbac'
 import { createSsrCaller, isOrpcNotFound } from '@/server/http/ssr-caller'
 import { notFound } from '@/server/infra/http/status'
+import { titleMeta } from '@/shared/seo/title-meta'
 import { idFromString } from '@/shared/utils/id'
 import { PostAnalyticsHeader, PostAnalyticsView } from '@/ui/admin/analytics/PostAnalyticsView'
 
@@ -21,6 +22,8 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     throw error
   }
 }
+
+export const meta = titleMeta('文章分析')
 
 export default function PostAnalyticsPage({ loaderData }: Route.ComponentProps) {
   const { post, counters, views, heatmap, initialMetrics } = loaderData

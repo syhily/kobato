@@ -148,19 +148,15 @@ export async function parseComments(comments: CommentAndUser[]): Promise<Comment
     }
     const commentIdNumeric = Number(c.id)
     const resolvedRid = Number.isFinite(commentIdNumeric) ? resolveVisibleParentRid(commentIdNumeric, c.rid, byId) : 0
-    rewritten.push({ ...c, rid: resolvedRid })
+    rewritten.push({ ...c, rid: resolvedRid, content: null })
   }
 
-  const projected = rewritten.map((comment) => ({
-    ...comment,
-    content: null,
-  }))
   const childComments = groupBy(
-    projected.filter((comment) => !rootCommentFilter(comment)),
+    rewritten.filter((comment) => !rootCommentFilter(comment)),
     (c) => String(c.rid),
   )
 
-  return projected.filter(rootCommentFilter).map((comment) => capThreadChildren(commentItems(comment, childComments)))
+  return rewritten.filter(rootCommentFilter).map((comment) => capThreadChildren(commentItems(comment, childComments)))
 }
 
 function rootCommentFilter(comment: CommentAndUser): boolean {

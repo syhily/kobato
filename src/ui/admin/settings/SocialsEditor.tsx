@@ -1,6 +1,6 @@
 import { useFieldArray, useWatch } from 'react-hook-form'
 
-import type { SocialsSettings } from '@/shared/config/types'
+import type { SocialItem, SocialsSettings } from '@/shared/config/types'
 
 import { type SocialNetwork, SOCIAL_NETWORKS, getSocialNetworkMeta } from '@/shared/config/socials'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
@@ -45,13 +45,16 @@ export function SocialsEditor({ socials }: SocialsEditorProps) {
         .map((row) => {
           const meta = getSocialNetworkMeta(row.network)
           const customName = row.name.trim()
-          return {
+          const item: SocialItem = {
             name: customName || meta.defaultName,
             network: row.network,
             type: meta.type,
-            ...(meta.type === 'qrcode' && row.title.trim() ? { title: row.title.trim() } : {}),
             link: row.link.trim(),
           }
+          if (meta.type === 'qrcode' && row.title.trim()) {
+            item.title = row.title.trim()
+          }
+          return item
         }),
     }),
   })

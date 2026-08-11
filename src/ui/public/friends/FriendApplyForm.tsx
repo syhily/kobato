@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query'
-import { useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { Button } from '@/ui/components/button'
@@ -49,12 +49,16 @@ export function FriendApplyForm() {
   }
 
   const handleOpen = () => setOpen(true)
-  const handleClose = () => {
+  // `onClose` feeds Popup's focus-management effect ([open, mounted, onClose]),
+  // so its identity MUST stay stable: every re-render with a fresh closure tears
+  // the effect down, and the teardown focuses `previouslyFocusedRef` — stealing
+  // focus mid-session and re-capturing an in-dialog element as the restore target.
+  const handleClose = useCallback(() => {
     setOpen(false)
     // A closed dialog reopens fresh — clear stale success/error state.
     setSubmitted(false)
     setSubmitError(null)
-  }
+  }, [])
 
   return (
     <div className="not-prose mt-10 flex justify-center px-4 md:mt-8 md:px-0">

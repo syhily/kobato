@@ -1,12 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
+import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { QuickActions } from '@/ui/admin/dashboard/QuickActions'
 import { RecentDraftsCard } from '@/ui/admin/dashboard/RecentDraftsCard'
-import { RecentMyCommentsCard } from '@/ui/admin/dashboard/RecentMyCommentsCard'
 import { RecentPublishedCard } from '@/ui/admin/dashboard/RecentPublishedCard'
 import { StatsGrid } from '@/ui/admin/dashboard/StatsGrid'
-import { WeeklyTrendCard } from '@/ui/admin/dashboard/WeeklyTrendCard'
 
 describe('snapshot: QuickActions', () => {
   it('renders action buttons with links', () => {
@@ -125,72 +123,5 @@ describe('snapshot: RecentPublishedCard', () => {
     const html = stableHtml(renderInRouter(<RecentPublishedCard posts={[]} />))
     expect(html).toContain('最近发布')
     expect(html).toContain('暂无已发布文章')
-  })
-})
-
-describe('snapshot: RecentMyCommentsCard', () => {
-  it('renders a list of comments', () => {
-    const html = stableHtml(
-      renderInRouter(
-        <RecentMyCommentsCard
-          comments={[
-            {
-              id: '1',
-              excerpt: 'Great post!',
-              createdAtIso: '2024-01-15T10:00:00.000Z',
-              isPending: false,
-              entity: { title: 'Hello', permalink: '/posts/hello' },
-            },
-            {
-              id: '2',
-              excerpt: 'Pending comment',
-              createdAtIso: '2024-01-16T11:00:00.000Z',
-              isPending: true,
-              entity: null,
-            },
-          ]}
-        />,
-      ),
-    )
-    expect(html).toContain('我的最近评论')
-    expect(html).toContain('Great post!')
-    expect(html).toContain('Pending comment')
-    expect(html).toContain('《Hello》')
-    expect(html).toContain('/posts/hello')
-    expect(html).toContain('[待审]')
-    expect(html).toContain('(目标已删除)')
-  })
-
-  it('renders empty state', () => {
-    const html = stableHtml(renderInRouter(<RecentMyCommentsCard comments={[]} />))
-    expect(html).toContain('我的最近评论')
-    expect(html).toContain('你还没有发表过评论')
-  })
-})
-
-describe('snapshot: WeeklyTrendCard', () => {
-  it('renders trend chart with daily buckets', () => {
-    const html = stableHtml(
-      renderToHtml(
-        <WeeklyTrendCard
-          points={[
-            { time: '2024-01-15T00:00:00.000Z', visits: 10, visitors: 5 },
-            { time: '2024-01-15T01:00:00.000Z', visits: 20, visitors: 8 },
-            { time: '2024-01-16T00:00:00.000Z', visits: 30, visitors: 12 },
-          ]}
-        />,
-      ),
-    )
-    expect(html).toContain('最近 7 天访问趋势')
-    expect(html).toContain('总访问')
-    expect(html).toContain('60')
-    expect(html).toContain('<svg')
-    expect(html).toContain('path')
-  })
-
-  it('renders empty trend without points', () => {
-    const html = stableHtml(renderToHtml(<WeeklyTrendCard points={[]} />))
-    expect(html).toContain('最近 7 天访问趋势')
-    expect(html).toContain('0')
   })
 })

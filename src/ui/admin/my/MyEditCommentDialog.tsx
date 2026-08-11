@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
 import { orpcQuery } from '@/client/api/orpc-query'
+import { onMutationError } from '@/client/lib/toast-api-error'
 import { Button } from '@/ui/components/button'
 import {
   Dialog,
@@ -32,6 +33,7 @@ export function MyEditCommentDialog({ target, onClose, onSaved }: MyEditCommentD
   const update = useMutation({
     ...orpcQuery.comments.updateOwn.mutationOptions(),
     onSuccess: () => onSaved(),
+    onError: onMutationError('保存评论失败'),
   })
   const [initialBody, setInitialBody] = useState<CommentBody>(EMPTY_COMMENT_BODY)
   const [body, setBody] = useState<CommentBody>(EMPTY_COMMENT_BODY)

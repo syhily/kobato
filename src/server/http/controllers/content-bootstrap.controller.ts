@@ -14,7 +14,7 @@ export const contentBootstrap = publicProc
     const role = context.viewer?.role ?? null
     const csrfToken = context.session.get('csrfToken')
     if (typeof csrfToken !== 'string') {
-      throw new Error('CSRF token missing from session — session middleware must run before root loader')
+      throw new TypeError('CSRF token missing from session — session middleware must run before root loader')
     }
     const currentUser = context.viewer && role ? { id: context.viewer.id, name: context.viewer.name, role } : null
 

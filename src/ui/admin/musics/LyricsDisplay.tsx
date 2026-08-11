@@ -25,8 +25,8 @@ function parseLrc(lrcInput?: string | null): [time: number, text: string][] {
           continue
         }
         const min2sec = Number(oneTime[1]) * 60
-        const sec2sec = parseInt(oneTime[2])
-        const msec2sec = oneTime[4] ? parseInt(oneTime[4]) / ((oneTime[4] + '').length === 2 ? 100 : 1000) : 0
+        const sec2sec = parseInt(oneTime[2], 10)
+        const msec2sec = oneTime[4] ? parseInt(oneTime[4], 10) / ((oneTime[4] + '').length === 2 ? 100 : 1000) : 0
         const lrcTime = min2sec + sec2sec + msec2sec
         lrc.push([lrcTime, lrcText])
       }
@@ -60,7 +60,12 @@ export function LyricsDisplay({ lrcText, currentTime }: LyricsDisplayProps) {
     return 0
   }, [currentTime, lines])
 
-  const isAutoScrollingRef = useRef(false)
+  // Scroll position the in-flight programmatic smooth scroll is heading to;
+  // `null` when no auto-scroll is active. A boolean flag fails here because a
+  // smooth scroll fires a whole stream of scroll events — only the first one
+  // would be ignored and the rest would read as user scrolls, suppressing
+  // auto-scroll for 3s after every programmatic jump.
+  const autoScrollTargetRef = useRef<number | null>(null)
 
   // Detect user manual scroll and pause auto-scroll briefly
   useEffect(() => {
@@ -70,8 +75,13 @@ export function LyricsDisplay({ lrcText, currentTime }: LyricsDisplayProps) {
     }
 
     const handleScroll = () => {
-      if (isAutoScrollingRef.current) {
-        isAutoScrollingRef.current = false
+      if (autoScrollTargetRef.current !== null) {
+        // Programmatic smooth scroll in flight: keep ignoring events until
+        // the container lands on the target.
+        if (Math.abs(container.scrollTop - autoScrollTargetRef.current) > 1) {
+          return
+        }
+        autoScrollTargetRef.current = null
         return
       }
       isUserScrollingRef.current = true
@@ -83,9 +93,19 @@ export function LyricsDisplay({ lrcText, currentTime }: LyricsDisplayProps) {
       }, 3000)
     }
 
+    // Direct user input during a smooth scroll cancels the programmatic
+    // suppression, so the user's own scroll events start the 3s pause.
+    const cancelAutoScroll = () => {
+      autoScrollTargetRef.current = null
+    }
+
     container.addEventListener('scroll', handleScroll)
+    container.addEventListener('wheel', cancelAutoScroll, { passive: true })
+    container.addEventListener('touchstart', cancelAutoScroll, { passive: true })
     return () => {
       container.removeEventListener('scroll', handleScroll)
+      container.removeEventListener('wheel', cancelAutoScroll)
+      container.removeEventListener('touchstart', cancelAutoScroll)
       if (scrollTimeoutRef.current) {
         clearTimeout(scrollTimeoutRef.current)
       }
@@ -107,9 +127,12 @@ export function LyricsDisplay({ lrcText, currentTime }: LyricsDisplayProps) {
     const containerRect = container.getBoundingClientRect()
     const lineRect = lineEl.getBoundingClientRect()
     const relativeTop = lineRect.top - containerRect.top + container.scrollTop
-    const targetScroll = relativeTop - containerRect.height / 2 + lineRect.height / 2
+    // Clamp to the reachable range so the suppression target matches the
+    // position the browser actually scrolls to.
+    const maxScroll = container.scrollHeight - container.clientHeight
+    const targetScroll = Math.max(0, Math.min(relativeTop - containerRect.height / 2 + lineRect.height / 2, maxScroll))
 
-    isAutoScrollingRef.current = true
+    autoScrollTargetRef.current = targetScroll
     container.scrollTo({
       top: targetScroll,
       behavior: 'smooth',

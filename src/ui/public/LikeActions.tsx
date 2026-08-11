@@ -1,16 +1,6 @@
 import { useMutation } from '@tanstack/react-query'
 import { HeartIcon } from 'lucide-react'
-import {
-  startTransition,
-  Suspense,
-  lazy,
-  useCallback,
-  useEffect,
-  useOptimistic,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from 'react'
+import { startTransition, Suspense, lazy, useCallback, useEffect, useOptimistic, useRef, useState } from 'react'
 
 import type { DecreaseLikeOutput, IncreaseLikeOutput, ValidateLikeTokenOutput } from '@/shared/types/likes'
 
@@ -21,6 +11,7 @@ import { Button } from '@/ui/components/button'
 import { IconButtonContent } from '@/ui/components/icon-button-content'
 import { QQIcon, WechatIcon, WeiboIcon } from '@/ui/icons/brand'
 import { cn } from '@/ui/lib/cn'
+import { useHydrated } from '@/ui/lib/use-hydrated'
 import { QRDialog } from '@/ui/public/widgets/QRDialog'
 
 export interface LikeButtonProps {
@@ -32,9 +23,6 @@ export interface LikeButtonProps {
 }
 
 const LIKE_TOKENS_KEY = 'like-tokens'
-
-// No-op subscription — the store's snapshot flips on its own once hydration commits.
-const emptySubscribe = () => () => {}
 
 // Lazy, interaction-only chrome; the plain-number fallback keeps SSR and the
 // first hydrated render byte-identical.
@@ -110,11 +98,7 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
 
   // SSR and the first hydrated render take the server snapshot (plain span);
   // the store flips to NumberFlow only after hydration.
-  const showNumberFlow = useSyncExternalStore(
-    emptySubscribe,
-    () => true,
-    () => false,
-  )
+  const showNumberFlow = useHydrated()
 
   const tokenRef = useRef<string | null>(null)
   // Discard validate verdicts that predate a newer interaction.

@@ -38,7 +38,6 @@ export async function processWebmentionInboxRow(db: Database, row: WebmentionInb
   try {
     await receiveWebmention(db, { source: row.sourceUrl, target: row.targetUrl })
     await deleteWebmentionInbox(db, row.id)
-    return
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error)
     // Non-DomainError throws count as transient — an internal hiccup must not silently drop a mention.

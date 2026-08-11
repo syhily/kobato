@@ -55,9 +55,9 @@ describe('buildCspHeader', () => {
   it('adds the asset host as an https origin', () => {
     const csp = buildCspHeader({ bundle: bundleWith({ host: 'cdn.example.com' }), nonce: NONCE, isDev: false })
     expect(csp).toContain('https://cdn.example.com')
-    expect(csp).toContain('style-src ' + "'self' 'unsafe-inline'  https://cdn.example.com")
-    expect(csp).toContain('font-src ' + "'self'  https://cdn.example.com")
-    expect(csp).toContain('img-src ' + "'self' data: blob:  https://cdn.example.com")
+    expect(csp).toContain("style-src 'self' 'unsafe-inline'  https://cdn.example.com")
+    expect(csp).toContain("font-src 'self'  https://cdn.example.com")
+    expect(csp).toContain("img-src 'self' data: blob:  https://cdn.example.com")
   })
 
   it('handles a null bundle without throwing', () => {

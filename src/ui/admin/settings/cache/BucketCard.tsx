@@ -211,7 +211,7 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
           <SettingsRow
             label="键前缀"
             htmlFor={prefixId}
-            hint="必须以 `-` 或 `:` 结尾，作为前缀和后续字段的分隔符。修改后写入端立即用新前缀生成键。"
+            hint="必须以 `:` 结尾，作为前缀和后续字段的分隔符。修改后写入端立即用新前缀生成键。"
             error={validationError ?? undefined}
           >
             {(controlProps) => (
@@ -220,7 +220,7 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
                 {...controlProps}
                 value={draft.prefix}
                 onChange={(e) => setDraft((prev) => ({ ...prev, prefix: e.target.value }))}
-                placeholder={`${bucket.id}-`}
+                placeholder={`${bucket.id}:`}
                 maxLength={40}
                 required
               />

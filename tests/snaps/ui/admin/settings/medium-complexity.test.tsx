@@ -83,6 +83,7 @@ const baseAssets: AssetsLoaderShape = {
     blogPoster: { etag: '' },
     blogPosterDark: { etag: '' },
     defaultAvatar: { etag: '' },
+    defaultMusicCover: { etag: '' },
     robotsTxt: '',
   },
 }

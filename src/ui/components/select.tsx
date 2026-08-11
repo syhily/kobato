@@ -3,8 +3,6 @@ import type { ComponentProps } from 'react'
 import { Select as BaseSelect } from '@base-ui/react/select'
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-react'
 
-import { transitions } from '@/client/lib/motion'
-import { LazyMotionDiv } from '@/ui/components/lazy-motion'
 import { cn } from '@/ui/lib/cn'
 
 function Select<Value>(props: ComponentProps<typeof BaseSelect.Root<Value>>) {
@@ -78,14 +76,7 @@ function SelectContent({
           )}
           {...props}
         >
-          <LazyMotionDiv
-            initial={{ y: 6, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ ...transitions.menu, delay: 0.02 }}
-            className="contents"
-          >
-            <SelectGroup>{children}</SelectGroup>
-          </LazyMotionDiv>
+          <SelectGroup>{children}</SelectGroup>
         </BaseSelect.Popup>
         <BaseSelect.ScrollDownArrow className="flex cursor-default items-center justify-center py-1">
           <ChevronDownIcon className="size-4" />

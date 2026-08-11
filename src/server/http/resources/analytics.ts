@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 
 import type { Env } from '@/server/http/context'
+import type { RealtimeEvent } from '@/shared/contracts/analytics'
 
 import { getAnalyticsReader } from '@/server/bootstrap/analytics-lifecycle'
 import {
@@ -81,7 +82,11 @@ export const analyticsEventsRouter = new Hono<Env>().get('/api/analytics/events'
           try {
             const rows = await queryRealtimeTail(getAnalyticsReader(), lastSeen)
             if (rows.length > 0) {
-              const ordered = [...rows].reverse()
+              // ES2022 lib has no toReversed — build the reversed copy by hand.
+              const ordered: RealtimeEvent[] = []
+              for (let i = rows.length - 1; i >= 0; i -= 1) {
+                ordered.push(rows[i]!)
+              }
               lastSeen = new Date(ordered[ordered.length - 1]!.ts)
               send('events', ordered)
             }

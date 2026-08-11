@@ -17,6 +17,14 @@ export function toastApiError(err: unknown, title: string): void {
   }
 }
 
+/**
+ * Mutation `onError` shorthand for the toast-only failure path:
+ * `onError: onMutationError('保存失败')`.
+ */
+export function onMutationError(title: string): (error: unknown) => void {
+  return (error) => toastApiError(error, title)
+}
+
 function apiErrorDescription(err: unknown): string | undefined {
   const wireMessage = extractApiErrorMessage(err)
   if (wireMessage !== undefined) {

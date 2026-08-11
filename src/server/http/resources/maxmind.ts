@@ -51,7 +51,7 @@ export const maxmindRouter = new Hono<Env>().post(
       try {
         await Reader.open(tmpPath)
       } catch {
-        await unlink(tmpPath).catch(() => {})
+        await unlink(tmpPath).catch(() => undefined)
         return false
       }
       await rename(tmpPath, MAXMIND_DB_PATH)

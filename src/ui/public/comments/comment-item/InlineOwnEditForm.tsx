@@ -28,7 +28,6 @@ export function InlineOwnEditForm({ comment, onCancel, onSaved }: InlineOwnEditF
   })
   const seed = comment.body as CommentBody
   const [body, setBody] = useState<CommentBody>(seed)
-  const [bodyKey, setBodyKey] = useState(0)
 
   const submitting = updateOwn.isPending
 
@@ -43,11 +42,11 @@ export function InlineOwnEditForm({ comment, onCancel, onSaved }: InlineOwnEditF
     <div className="mt-2 block w-full">
       <LazyCommentBodyEditor
         initialBody={seed}
-        bodyKey={`own-edit-${comment.id}-${bodyKey}`}
-        onBodyChange={(next) => {
-          setBody(next)
-          setBodyKey((k) => (k === 0 ? k + 1 : k))
-        }}
+        // The seed is synchronous (unlike InlineEditForm's async getRaw), so a
+        // static key suffices — bumping it on the first editor update would
+        // re-run the reset effect and wipe the user's first keystrokes.
+        bodyKey={`own-edit-${comment.id}`}
+        onBodyChange={setBody}
         disabled={submitting}
       />
       <div className="mt-2 flex justify-end gap-2">

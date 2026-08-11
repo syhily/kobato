@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 
 import type { ArtistInfo, AudioInfo } from '@/ui/public/aplayer/types'
 
@@ -40,6 +40,16 @@ export function APlayer({
   const handlePlayButtonClick = useCallback(() => {
     audioControl.togglePlay()
   }, [audioControl])
+
+  const handlePlayButtonKeyDown = useCallback(
+    (e: ReactKeyboardEvent<HTMLDivElement>) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault()
+        audioControl.togglePlay()
+      }
+    },
+    [audioControl],
+  )
 
   const renderArtist = useCallback((artist?: string | ArtistInfo) => {
     if (!artist) {
@@ -96,11 +106,15 @@ export function APlayer({
         })}
       >
         <div
+          role="button"
+          tabIndex={0}
+          aria-label={audioControl.isPlaying ? '暂停' : '播放'}
           className={cn(
             'aplayer-pic group relative float-left cursor-pointer bg-cover bg-center transition-all duration-300 dark:[filter:brightness(0.72)_contrast(0.95)_saturate(0.9)]',
             hasLrc ? 'h-aplayer-art-lg w-aplayer-art-lg' : 'h-aplayer-art-sm w-aplayer-art-sm',
           )}
           onClick={handlePlayButtonClick}
+          onKeyDown={handlePlayButtonKeyDown}
           style={{ backgroundImage: `url("${audio.cover}")` }}
         >
           <div

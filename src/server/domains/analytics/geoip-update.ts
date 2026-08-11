@@ -197,7 +197,8 @@ export interface GeoipUpdateResult {
 async function checkAndInstallRemote(): Promise<GeoipUpdateResult> {
   const latest = await fetchLatestGeoipVersion()
   const installed = existsSync(MAXMIND_DB_PATH)
-  const previousVersion = (await readGeoipMeta())?.version ?? null
+  const previousMeta = await readGeoipMeta()
+  const previousVersion = previousMeta?.version ?? null
 
   if (installed && previousVersion === latest) {
     return { status: 'up-to-date', version: latest, previousVersion }
@@ -231,9 +232,12 @@ export function runRemoteGeoipUpdate(): Promise<GeoipUpdateResult> {
  */
 export async function runScheduledGeoipUpdate(): Promise<void> {
   await withGeoipWriteLock(async () => {
-    if (existsSync(MAXMIND_DB_PATH) && (await readGeoipMeta())?.source !== 'remote') {
-      log.debug('GeoIP auto-update skipped; database was installed manually')
-      return
+    if (existsSync(MAXMIND_DB_PATH)) {
+      const meta = await readGeoipMeta()
+      if (meta?.source !== 'remote') {
+        log.debug('GeoIP auto-update skipped; database was installed manually')
+        return
+      }
     }
     await checkAndInstallRemote()
   })

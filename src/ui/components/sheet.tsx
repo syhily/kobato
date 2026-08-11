@@ -3,8 +3,6 @@ import type { ComponentProps } from 'react'
 import { Dialog as BaseDialog } from '@base-ui/react/dialog'
 import { XIcon } from 'lucide-react'
 
-import { transitions } from '@/client/lib/motion'
-import { LazyMotionDiv } from '@/ui/components/lazy-motion'
 import { cn } from '@/ui/lib/cn'
 
 function Sheet({ ...props }: ComponentProps<typeof BaseDialog.Root>) {
@@ -64,18 +62,7 @@ function SheetContent({
         )}
         {...props}
       >
-        <LazyMotionDiv
-          initial={{
-            opacity: 0,
-            y: side === 'top' || side === 'bottom' ? 8 : 0,
-            x: side === 'left' || side === 'right' ? (side === 'left' ? -8 : 8) : 0,
-          }}
-          animate={{ opacity: 1, y: 0, x: 0 }}
-          transition={{ ...transitions.popup, delay: 0.05 }}
-          className="contents"
-        >
-          {children}
-        </LazyMotionDiv>
+        {children}
         <BaseDialog.Close
           data-slot="sheet-close-button"
           className="absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus-visible:shadow-focus focus-visible:outline-none disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*=size-])]:size-4"

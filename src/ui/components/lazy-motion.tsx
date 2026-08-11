@@ -1,16 +1,9 @@
 import type { AnimatePresence, MotionConfig, motion } from 'motion/react'
 
-import {
-  createElement,
-  lazy,
-  Suspense,
-  useSyncExternalStore,
-  type ComponentProps,
-  type CSSProperties,
-  type ReactNode,
-} from 'react'
+import { createElement, lazy, Suspense, type ComponentProps, type CSSProperties, type ReactNode } from 'react'
 
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
+import { useHydrated } from '@/ui/lib/use-hydrated'
 
 // Shared lazy handles on the `motion/react` runtime — one dynamic import, one
 // shared chunk. Until it resolves (incl. SSR) elements render a static DOM
@@ -138,9 +131,6 @@ export function LazyAnimatePresence({ children, ...props }: ComponentProps<typeo
 
 const LazyMotionConfigImpl = lazy(() => import('motion/react').then((module) => ({ default: module.MotionConfig })))
 
-// No-op subscription — the store's snapshot flips on its own once hydration commits.
-const emptySubscribe = () => () => {}
-
 /**
  * `MotionConfig` behind the same lazy boundary — no DOM, so the fallback
  * renders children bare.
@@ -154,11 +144,7 @@ const emptySubscribe = () => () => {}
  * swap did before.
  */
 export function LazyMotionConfig({ children, ...props }: ComponentProps<typeof MotionConfig>) {
-  const ready = useSyncExternalStore(
-    emptySubscribe,
-    () => true,
-    () => false,
-  )
+  const ready = useHydrated()
   if (!ready) {
     return <>{children}</>
   }

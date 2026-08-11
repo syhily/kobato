@@ -118,12 +118,7 @@ function BlockCardView(props: NodeViewProps) {
             <CardSourceEditor payload={payload} onCommit={commitPayload} onCancel={() => setEditing(false)} />
           ) : (
             <>
-              {payload !== null &&
-              typeof payload === 'object' &&
-              'auto' in payload &&
-              'center' in payload &&
-              getStringProperty(payload, '_type') === 'musicPlayer' &&
-              isBlock(payload) ? (
+              {isBlock(payload) && payload._type === 'musicPlayer' ? (
                 <MusicPlayerOptions
                   stableId={typeof rawAttrs._key === 'string' ? rawAttrs._key : ''}
                   auto={payload.auto === true}

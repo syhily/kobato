@@ -36,6 +36,5 @@ export function invalidateContent(db: Database, event: ContentInvalidationEvent)
       return
     case 'comment':
       clear(db, 'comments')
-      return
   }
 }

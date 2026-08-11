@@ -67,12 +67,19 @@ export function pmCellToTableCell(
   ensureKey: (attrs: Record<string, unknown> | undefined) => string,
 ): TableCell {
   const isHeader = node.type === 'tableHeader'
-  const firstParagraph = (node.content ?? []).filter(isBlock).find((c) => c.type === 'paragraph')
+  // Convert EVERY paragraph child — reading only the first silently dropped
+  // the rest on save. Extra paragraphs are joined with the same hard-break
+  // `\n` span used for hardBreak children below.
+  const paragraphs = (node.content ?? []).filter(isBlock).filter((c) => c.type === 'paragraph')
   const content: Span[] = []
   const markDefs: LinkMarkDef[] = []
   let nextSpanKey = 0
-  if (firstParagraph !== undefined) {
-    for (const child of firstParagraph.content ?? []) {
+  paragraphs.forEach((paragraph, paragraphIndex) => {
+    if (paragraphIndex > 0) {
+      nextSpanKey += 1
+      content.push({ _type: 'span', _key: `s-${nextSpanKey.toString(36)}`, text: '\n' })
+    }
+    for (const child of paragraph.content ?? []) {
       if (child.type === 'hardBreak') {
         // Same hard-break representation as paragraph children (`\n` span).
         nextSpanKey += 1
@@ -106,7 +113,7 @@ export function pmCellToTableCell(
         marks: marks.length > 0 ? marks : undefined,
       })
     }
-  }
+  })
   return {
     _type: 'tableCell',
     _key: ensureKey(node.attrs),

@@ -32,7 +32,9 @@ async function resolveFontPath(slot: 'og' | 'calendar'): Promise<string | null> 
   try {
     await access(ttf)
     return ttf
-  } catch {}
+  } catch {
+    // No .ttf for this slot — fall through to the .otf probe.
+  }
   try {
     await access(otf)
     return otf

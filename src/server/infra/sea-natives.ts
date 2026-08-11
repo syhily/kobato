@@ -83,7 +83,7 @@ function parseManifest(raw: Buffer): SeaManifest {
     throw new Error(`Invalid SEA manifest (${SEA_MANIFEST_KEY}): expected { version, target, files }`)
   }
   if (!Array.isArray(parsed.files)) {
-    throw new Error(`Invalid SEA manifest (${SEA_MANIFEST_KEY}): files must be an array`)
+    throw new TypeError(`Invalid SEA manifest (${SEA_MANIFEST_KEY}): files must be an array`)
   }
   const files: SeaManifestFile[] = []
   for (const entry of parsed.files as unknown[]) {

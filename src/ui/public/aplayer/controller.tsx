@@ -38,6 +38,8 @@ export function PlaybackControls({ themeColor, control }: PlaybackControlsProps)
         />
         <button
           type="button"
+          aria-label={control.loop ? '关闭循环播放' : '开启循环播放'}
+          aria-pressed={control.loop}
           className={cn(
             'aplayer-icon aplayer-icon-loop flex h-aplayer-icon w-aplayer-icon cursor-pointer items-center justify-center p-0 text-ink-3 transition-all duration-200 hover:text-black dark:text-ink-3 dark:hover:text-ink-1',
             !control.loop && 'opacity-40',

@@ -1,5 +1,6 @@
 import type { Editor } from '@tiptap/core'
 
+import { useEditorState } from '@tiptap/react'
 import {
   AlignCenterIcon,
   AlignLeftIcon,
@@ -54,6 +55,23 @@ export function Toolbar(props: ToolbarProps) {
 
   const [linkToolbarOpen, setLinkToolbarOpen] = useState(false)
 
+  // `useEditor` defaults to `shouldRerenderOnTransaction: false`, so mark /
+  // selection reads must be subscribed or they go stale on selection-only moves.
+  const active = useEditorState({
+    editor,
+    selector: ({ editor: ed }) => ({
+      link: ed.isActive('link'),
+      bold: ed.isActive('bold'),
+      italic: ed.isActive('italic'),
+      underline: ed.isActive('underline'),
+      strike: ed.isActive('strike'),
+      code: ed.isActive('code'),
+      bulletList: ed.isActive('bulletList'),
+      orderedList: ed.isActive('orderedList'),
+      canFootnote: canInsertFootnoteMark(ed),
+    }),
+  })
+
   const insertButtons = (
     <>
       <ToolbarButton title="插入图片" disabled={disabled} onClick={props.onOpenImagePicker}>
@@ -83,12 +101,12 @@ export function Toolbar(props: ToolbarProps) {
           render={
             <Button
               type="button"
-              variant={editor.isActive('link') ? 'secondary' : 'ghost'}
+              variant={active.link ? 'secondary' : 'ghost'}
               size="sm"
               disabled={disabled}
               title="链接"
               aria-label="链接"
-              aria-pressed={editor.isActive('link')}
+              aria-pressed={active.link}
               onMouseDownCapture={(event) => {
                 event.preventDefault()
               }}
@@ -128,7 +146,7 @@ export function Toolbar(props: ToolbarProps) {
         <ToolbarButton
           title="加粗 (Cmd/Ctrl+B)"
           disabled={disabled}
-          state={editor.isActive('bold') ? 'active' : 'inactive'}
+          state={active.bold ? 'active' : 'inactive'}
           onClick={() => editor.chain().focus().toggleBold().run()}
         >
           <BoldIcon />
@@ -136,7 +154,7 @@ export function Toolbar(props: ToolbarProps) {
         <ToolbarButton
           title="斜体 (Cmd/Ctrl+I)"
           disabled={disabled}
-          state={editor.isActive('italic') ? 'active' : 'inactive'}
+          state={active.italic ? 'active' : 'inactive'}
           onClick={() => editor.chain().focus().toggleItalic().run()}
         >
           <ItalicIcon />
@@ -144,7 +162,7 @@ export function Toolbar(props: ToolbarProps) {
         <ToolbarButton
           title="下划线 (Cmd/Ctrl+U)"
           disabled={disabled}
-          state={editor.isActive('underline') ? 'active' : 'inactive'}
+          state={active.underline ? 'active' : 'inactive'}
           onClick={() => editor.chain().focus().toggleUnderline().run()}
         >
           <UnderlineIcon />
@@ -152,7 +170,7 @@ export function Toolbar(props: ToolbarProps) {
         <ToolbarButton
           title="删除线"
           disabled={disabled}
-          state={editor.isActive('strike') ? 'active' : 'inactive'}
+          state={active.strike ? 'active' : 'inactive'}
           onClick={() => editor.chain().focus().toggleStrike().run()}
         >
           <StrikethroughIcon />
@@ -160,14 +178,14 @@ export function Toolbar(props: ToolbarProps) {
         <ToolbarButton
           title="行内代码"
           disabled={disabled}
-          state={editor.isActive('code') ? 'active' : 'inactive'}
+          state={active.code ? 'active' : 'inactive'}
           onClick={() => editor.chain().focus().toggleCode().run()}
         >
           <Code2Icon />
         </ToolbarButton>
         <ToolbarButton
           title="脚注引用（^ 空格快捷插入；行内上标；表格与代码块内不可用）"
-          disabled={disabled || !canInsertFootnoteMark(editor)}
+          disabled={disabled || !active.canFootnote}
           onClick={() => props.onOpenFootnoteInsertDialog()}
         >
           <SuperscriptIcon />
@@ -177,7 +195,7 @@ export function Toolbar(props: ToolbarProps) {
         <ToolbarButton
           title="无序列表"
           disabled={disabled}
-          state={editor.isActive('bulletList') ? 'active' : 'inactive'}
+          state={active.bulletList ? 'active' : 'inactive'}
           onClick={() => editor.chain().focus().toggleBulletList().run()}
         >
           <ListIcon />
@@ -185,7 +203,7 @@ export function Toolbar(props: ToolbarProps) {
         <ToolbarButton
           title="有序列表"
           disabled={disabled}
-          state={editor.isActive('orderedList') ? 'active' : 'inactive'}
+          state={active.orderedList ? 'active' : 'inactive'}
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
         >
           <ListOrderedIcon />
@@ -248,18 +266,22 @@ interface DensityGroupProps extends GroupProps {
 }
 
 function UndoRedoGroup({ editor, disabled }: GroupProps) {
+  const history = useEditorState({
+    editor,
+    selector: ({ editor: ed }) => ({ canUndo: ed.can().undo(), canRedo: ed.can().redo() }),
+  })
   return (
     <ToolbarGroup>
       <ToolbarButton
         title="撤销 (Cmd/Ctrl+Z)"
-        disabled={disabled || !editor.can().undo()}
+        disabled={disabled || !history.canUndo}
         onClick={() => editor.chain().focus().undo().run()}
       >
         <Undo2Icon />
       </ToolbarButton>
       <ToolbarButton
         title="重做 (Cmd/Ctrl+Shift+Z)"
-        disabled={disabled || !editor.can().redo()}
+        disabled={disabled || !history.canRedo}
         onClick={() => editor.chain().focus().redo().run()}
       >
         <Redo2Icon />
@@ -281,6 +303,14 @@ function BlockStyleGroup({ editor, disabled, density }: DensityGroupProps) {
 }
 
 function AlignGroup({ editor, disabled, density }: DensityGroupProps) {
+  const align = useEditorState({
+    editor,
+    selector: ({ editor: ed }) => ({
+      left: ed.isActive({ textAlign: 'left' }),
+      center: ed.isActive({ textAlign: 'center' }),
+      right: ed.isActive({ textAlign: 'right' }),
+    }),
+  })
   if (density === 'compact') {
     return (
       <ToolbarGroup>
@@ -293,7 +323,7 @@ function AlignGroup({ editor, disabled, density }: DensityGroupProps) {
       <ToolbarButton
         title="居左"
         disabled={disabled}
-        state={editor.isActive({ textAlign: 'left' }) ? 'active' : 'inactive'}
+        state={align.left ? 'active' : 'inactive'}
         onClick={() => editor.chain().focus().setTextAlign('left').run()}
       >
         <AlignLeftIcon />
@@ -301,7 +331,7 @@ function AlignGroup({ editor, disabled, density }: DensityGroupProps) {
       <ToolbarButton
         title="居中"
         disabled={disabled}
-        state={editor.isActive({ textAlign: 'center' }) ? 'active' : 'inactive'}
+        state={align.center ? 'active' : 'inactive'}
         onClick={() => editor.chain().focus().setTextAlign('center').run()}
       >
         <AlignCenterIcon />
@@ -309,7 +339,7 @@ function AlignGroup({ editor, disabled, density }: DensityGroupProps) {
       <ToolbarButton
         title="居右"
         disabled={disabled}
-        state={editor.isActive({ textAlign: 'right' }) ? 'active' : 'inactive'}
+        state={align.right ? 'active' : 'inactive'}
         onClick={() => editor.chain().focus().setTextAlign('right').run()}
       >
         <AlignRightIcon />

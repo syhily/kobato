@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 
 import { LoadingIcon } from '@/ui/icons/aplayer'
 import { useDragPercentage } from '@/ui/public/aplayer/hooks/use-drag-percentage'
@@ -26,20 +26,50 @@ export function ProgressBar({ themeColor, bufferedPercentage, playedPercentage, 
     }
   }, [playedPercentage, isDraggingRef])
 
+  // Keyboard seek: arrows step 5%, Home/End jump to the edges.
+  const handleKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (!onSeek) {
+      return
+    }
+    const current = progress ?? 0
+    let next: number | undefined
+    if (e.key === 'ArrowLeft') {
+      next = Math.max(0, current - 0.05)
+    } else if (e.key === 'ArrowRight') {
+      next = Math.min(1, current + 0.05)
+    } else if (e.key === 'Home') {
+      next = 0
+    } else if (e.key === 'End') {
+      next = 1
+    }
+    if (next !== undefined) {
+      e.preventDefault()
+      setProgress(next)
+      onSeek(next)
+    }
+  }
+
   return (
     <div
       ref={progressBarRef}
+      role="slider"
+      tabIndex={0}
+      aria-label="播放进度"
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={Math.round((progress ?? 0) * 100)}
       className="aplayer-bar-wrap group ml-aplayer-progress-indent flex-1 cursor-pointer py-1"
       onMouseDown={handleMouseDown}
+      onKeyDown={handleKeyDown}
     >
       <div className="aplayer-bar relative h-0.5 w-full bg-aplayer-bar dark:bg-widget-border">
-        {typeof bufferedPercentage !== 'undefined' ? (
+        {bufferedPercentage !== undefined ? (
           <div
             className="aplayer-loaded absolute top-0 bottom-0 left-0 h-0.5 bg-aplayer-bar-loaded transition-all duration-500 ease-linear dark:bg-ink-4"
             style={{ width: `${bufferedPercentage * 100}%` }}
           />
         ) : null}
-        {typeof progress !== 'undefined' ? (
+        {progress !== undefined ? (
           <div
             className="aplayer-played absolute top-0 bottom-0 left-0 h-0.5"
             style={{ width: `${progress * 100}%`, backgroundColor: themeColor }}

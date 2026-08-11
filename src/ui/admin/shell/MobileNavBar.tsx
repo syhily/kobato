@@ -1,6 +1,9 @@
 import { EllipsisIcon, NotebookPenIcon, TrendingUpIcon, UsersIcon } from 'lucide-react'
 import { Link } from 'react-router'
 
+import type { AdminShellProps } from '@/ui/admin/shell/AdminShell'
+
+import { hasAtLeast } from '@/shared/utils/roles'
 import { useIsActiveLink } from '@/ui/admin/shell/use-is-active-link'
 import { useSidebar } from '@/ui/components/sidebar'
 import { cn } from '@/ui/lib/cn'
@@ -31,12 +34,15 @@ function MobileNavButton({ to, activeMatch = 'exact', children, label }: MobileN
   )
 }
 
-export function MobileNavBar() {
+export function MobileNavBar({ role }: { role: AdminShellProps['currentUser']['role'] }) {
   const { isMobile, openMobile, setOpenMobile } = useSidebar()
 
   if (!isMobile) {
     return null
   }
+
+  const showAuthorItems = hasAtLeast(role, 'author')
+  const showAdminItems = hasAtLeast(role, 'admin')
 
   return (
     <div
@@ -44,18 +50,29 @@ export function MobileNavBar() {
         'fixed right-0 bottom-0 left-0 z-50 bg-sidebar/80 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden',
       )}
     >
-      <div className="mx-auto grid h-14 w-full max-w-[var(--container-popup-sm)] grid-cols-4 items-center justify-items-center px-5">
-        <MobileNavButton to="/admin/analytics" activeMatch="subpath" label="统计">
-          <TrendingUpIcon className="size-5" strokeWidth={1.5} />
-        </MobileNavButton>
+      <div
+        className={cn(
+          'mx-auto grid h-14 w-full max-w-[var(--container-popup-sm)] items-center justify-items-center px-5',
+          showAdminItems ? 'grid-cols-4' : showAuthorItems ? 'grid-cols-2' : 'grid-cols-1',
+        )}
+      >
+        {showAdminItems && (
+          <MobileNavButton to="/admin/analytics" activeMatch="subpath" label="统计">
+            <TrendingUpIcon className="size-5" strokeWidth={1.5} />
+          </MobileNavButton>
+        )}
 
-        <MobileNavButton to="/admin/posts" activeMatch="subpath" label="文章">
-          <NotebookPenIcon className="size-5" strokeWidth={1.5} />
-        </MobileNavButton>
+        {showAuthorItems && (
+          <MobileNavButton to="/admin/posts" activeMatch="subpath" label="文章">
+            <NotebookPenIcon className="size-5" strokeWidth={1.5} />
+          </MobileNavButton>
+        )}
 
-        <MobileNavButton to="/admin/security/users" activeMatch="subpath" label="用户">
-          <UsersIcon className="size-5" strokeWidth={1.5} />
-        </MobileNavButton>
+        {showAdminItems && (
+          <MobileNavButton to="/admin/security/users" activeMatch="subpath" label="用户">
+            <UsersIcon className="size-5" strokeWidth={1.5} />
+          </MobileNavButton>
+        )}
 
         <button
           type="button"

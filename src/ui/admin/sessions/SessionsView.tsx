@@ -6,6 +6,7 @@ import { useRevalidator } from 'react-router'
 import type { AdminSessionItem } from '@/routes/admin/security/sessions'
 
 import { orpcQuery } from '@/client/api/orpc-query'
+import { onMutationError } from '@/client/lib/toast-api-error'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { DEFAULT_ADMIN_SORT, SESSION_SORT_OPTIONS } from '@/shared/utils/sessions-sort'
 import { formatUserAgentLabel } from '@/shared/utils/user-agent'
@@ -29,6 +30,7 @@ export function SessionsView({ items }: SessionsViewProps) {
     onSuccess: () => {
       void revalidator.revalidate()
     },
+    onError: onMutationError('注销会话失败'),
   })
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
 

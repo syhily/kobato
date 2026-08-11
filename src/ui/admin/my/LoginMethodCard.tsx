@@ -5,9 +5,9 @@ import type { LoginMethod } from '@/shared/contracts/users'
 
 import { orpcQuery } from '@/client/api/orpc-query'
 import { loginMethodSchema } from '@/shared/contracts/users'
+import { LabelledRadio } from '@/ui/admin/shared/LabelledRadio'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/components/card'
-import { Label } from '@/ui/components/label'
-import { RadioGroup, RadioGroupItem } from '@/ui/components/radio-group'
+import { RadioGroup } from '@/ui/components/radio-group'
 
 interface LoginMethodOption {
   value: LoginMethod
@@ -82,22 +82,14 @@ export function LoginMethodCard({ loginMethod, passkeyEnabled, mailReady }: Logi
           disabled={mutation.isPending}
         >
           {options.map((option) => (
-            <div key={option.value} className="flex items-start gap-3">
-              <RadioGroupItem
-                id={`login-method-${option.value}`}
-                value={option.value}
-                disabled={option.disabled}
-                className="mt-1"
-              />
-              <div className="flex flex-col gap-1">
-                <Label htmlFor={`login-method-${option.value}`} className="font-medium">
-                  {option.label}
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  {option.disabled && option.disabledHint ? option.disabledHint : option.description}
-                </p>
-              </div>
-            </div>
+            <LabelledRadio
+              key={option.value}
+              id={`login-method-${option.value}`}
+              value={option.value}
+              disabled={option.disabled}
+              label={option.label}
+              description={option.disabled && option.disabledHint ? option.disabledHint : option.description}
+            />
           ))}
         </RadioGroup>
         {!!mutation.error && <p className="text-sm text-destructive">{mutation.error.message}</p>}

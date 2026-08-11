@@ -98,8 +98,8 @@ function TrendSparkline({ points }: { points: { visits: number }[] }) {
     <svg viewBox={`0 0 ${width} ${height}`} className="h-16 w-full max-w-xs" preserveAspectRatio="none">
       <defs>
         <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.25" />
-          <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0" />
+          <stop offset="0%" stopColor="var(--color-primary)" stopOpacity="0.25" />
+          <stop offset="100%" stopColor="var(--color-primary)" stopOpacity="0" />
         </linearGradient>
       </defs>
       {areaPath && <path d={areaPath} fill="url(#trendGradient)" />}
@@ -107,7 +107,7 @@ function TrendSparkline({ points }: { points: { visits: number }[] }) {
         <path
           d={linePath}
           fill="none"
-          stroke="hsl(var(--primary))"
+          stroke="var(--color-primary)"
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -127,6 +127,6 @@ function aggregateToDaily(points: ViewsPoint[]): { date: string; visits: number;
     map.set(date, existing)
   }
   return Array.from(map.entries())
-    .map(([date, vals]) => ({ date, ...vals }))
+    .map(([date, vals]) => Object.assign({ date }, vals))
     .sort((a, b) => a.date.localeCompare(b.date))
 }

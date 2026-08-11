@@ -8,7 +8,7 @@ import type { BackupFileDto } from '@/shared/types/backup'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
-import { toastApiError } from '@/client/lib/toast-api-error'
+import { onMutationError, toastApiError } from '@/client/lib/toast-api-error'
 import { extractApiErrorMessage, isApiAccepted } from '@/shared/utils/api-error'
 import { BackupFileList } from '@/ui/admin/settings/BackupFileList'
 import { BackupRestoreDialog } from '@/ui/admin/settings/BackupRestoreDialog'
@@ -180,9 +180,7 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
       setBackupFiles(undefined)
       void safeLoadPage(5)
     },
-    onError: (error: Error) => {
-      toastApiError(error, '删除失败')
-    },
+    onError: onMutationError('删除失败'),
   })
 
   const handleLoadMore = useCallback(() => {

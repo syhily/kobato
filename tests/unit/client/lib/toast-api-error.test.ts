@@ -4,7 +4,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const toastMock = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }))
 vi.mock('sonner', () => ({ toast: toastMock }))
 
-import { toastApiError } from '@/client/lib/toast-api-error'
+import { onMutationError, toastApiError } from '@/client/lib/toast-api-error'
+
+describe('onMutationError', () => {
+  beforeEach(() => {
+    toastMock.error.mockClear()
+  })
+
+  it('returns an onError handler that toasts through toastApiError', () => {
+    const onError = onMutationError('保存失败')
+    onError(new Error('服务器内部错误'))
+    expect(toastMock.error).toHaveBeenCalledWith('保存失败', { description: '服务器内部错误' })
+  })
+})
 
 describe('toastApiError', () => {
   beforeEach(() => {

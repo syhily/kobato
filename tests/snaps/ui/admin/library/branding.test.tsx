@@ -31,6 +31,7 @@ function buildBranding(overrides: Partial<AssetsLoaderShape['branding']> = {}): 
     blogPoster: { etag: '' },
     blogPosterDark: { etag: '' },
     defaultAvatar: { etag: '' },
+    defaultMusicCover: { etag: '' },
     robotsTxt: '',
   }
   return { ...base, ...overrides }

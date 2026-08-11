@@ -32,7 +32,7 @@ function resolveMarks(block: Block): Block {
     const resolved = original.map((name) =>
       DECORATOR_MARKS.has(name) ? { decorator: name } : (lookup.get(name) ?? { unresolved: name }),
     )
-    return { ...child, marks: resolved }
+    return Object.assign({}, child, { marks: resolved })
   })
   const { markDefs: _drop, ...rest } = block as Record<string, unknown>
   return { ...rest, children: resolvedChildren } as Block

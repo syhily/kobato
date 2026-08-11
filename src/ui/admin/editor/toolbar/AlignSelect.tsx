@@ -1,5 +1,7 @@
 import type { Editor } from '@tiptap/core'
 
+import { useEditorState } from '@tiptap/react'
+
 import { ALIGN_OPTIONS, getActiveAlign } from '@/ui/admin/editor/toolbar/style-helpers'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 
@@ -9,7 +11,7 @@ interface AlignSelectProps {
 }
 
 export function AlignSelect({ editor, disabled }: AlignSelectProps) {
-  const active = getActiveAlign(editor)
+  const active = useEditorState({ editor, selector: ({ editor: ed }) => getActiveAlign(ed) })
   return (
     <Select
       value={active}

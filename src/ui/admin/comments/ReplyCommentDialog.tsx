@@ -7,6 +7,7 @@ import type { AdminCommentWire as AdminComment } from '@/shared/contracts/commen
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
 import { orpcQuery } from '@/client/api/orpc-query'
+import { onMutationError } from '@/client/lib/toast-api-error'
 import { idStr } from '@/shared/utils/tools'
 import { Button } from '@/ui/components/button'
 import {
@@ -35,6 +36,7 @@ export function ReplyCommentDialog({ comment, authorName, authorEmail, onClose, 
     onSuccess: () => {
       onReplied()
     },
+    onError: onMutationError('回复发送失败'),
   })
   const [body, setBody] = useState<CommentBody>(EMPTY_COMMENT_BODY)
   const [bodyKey, setBodyKey] = useState(0)

@@ -53,7 +53,8 @@ function mapTree(items: CommentItemType[], fn: (item: CommentItemType) => Commen
 function filterTree(items: CommentItemType[], predicate: (item: CommentItemType) => boolean): CommentItemType[] {
   return items.filter(predicate).map((item) => {
     if (item.children && item.children.length > 0) {
-      return { ...item, children: filterTree(item.children, predicate) }
+      // Fresh target keeps the copy-on-write semantics — comment items are state.
+      return Object.assign({}, item, { children: filterTree(item.children, predicate) })
     }
     return item
   })

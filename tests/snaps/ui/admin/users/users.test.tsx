@@ -98,11 +98,9 @@ describe('snapshot: UsersToolbar', () => {
         <UsersToolbar
           role="all"
           sortBy="recent"
-          pageSize={20}
           includeDeleted={false}
           onRoleChange={() => {}}
           onSortByChange={() => {}}
-          onPageSizeChange={() => {}}
           onIncludeDeletedChange={() => {}}
         />,
       ),
@@ -117,11 +115,9 @@ describe('snapshot: UsersToolbar', () => {
         <UsersToolbar
           role="admin"
           sortBy="commentCount"
-          pageSize={20}
           includeDeleted={true}
           onRoleChange={() => {}}
           onSortByChange={() => {}}
-          onPageSizeChange={() => {}}
           onIncludeDeletedChange={() => {}}
         />,
       ),

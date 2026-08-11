@@ -1,13 +1,11 @@
 /// <reference types="node" />
 /// <reference types="vite/client" />
 
-interface ReactRouterHonoServerEnv {
+interface ImportMetaEnv {
   readonly REACT_ROUTER_HONO_SERVER_BUILD_DIRECTORY: string
   readonly REACT_ROUTER_HONO_SERVER_ASSETS_DIR: string
   readonly REACT_ROUTER_HONO_SERVER_BASENAME: string
 }
-
-interface ImportMetaEnv extends ReactRouterHonoServerEnv {}
 
 import type { ViteDevServer } from 'vite'
 

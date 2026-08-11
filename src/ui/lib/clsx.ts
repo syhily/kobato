@@ -1,6 +1,15 @@
 export type ClassDictionary = Record<string, unknown>
 export type ClassArray = ClassValue[]
-export type ClassValue = ClassArray | ClassDictionary | string | number | null | boolean | undefined | Function
+export type ClassValue =
+  | ClassArray
+  | ClassDictionary
+  | string
+  | number
+  | null
+  | boolean
+  | undefined
+  // Precise stand-in for upstream clsx's `Function`: accepts any call signature.
+  | ((...args: never[]) => unknown)
 
 function toVal(mix: ClassValue): string {
   let str = ''

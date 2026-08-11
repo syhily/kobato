@@ -19,7 +19,7 @@ import type { AdminFontDto, FontSlot } from '@/shared/contracts/fonts'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
-import { toastApiError } from '@/client/lib/toast-api-error'
+import { onMutationError } from '@/client/lib/toast-api-error'
 import { formatBytes } from '@/shared/utils/formatter'
 import {
   isDragData,
@@ -75,9 +75,7 @@ export function FontsView() {
       void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.fonts.list.key() })
       void revalidator.revalidate()
     },
-    onError: (error) => {
-      toastApiError(error, '删除失败')
-    },
+    onError: onMutationError('删除失败'),
   })
 
   const onDelete = (font: AdminFontDto) => {

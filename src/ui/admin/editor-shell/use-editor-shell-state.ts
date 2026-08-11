@@ -54,10 +54,14 @@ export function useEditorShellState<
 
   const isEditing = mode === 'edit' && detail !== undefined
 
+  // Create mode has no `detail` — once the async IndexedDB load resolves,
+  // the restored draft body is what PageBodyEditor must mount with instead.
+  const [restoredCreateBody, setRestoredCreateBody] = useState<PortableTextBody | null>(null)
+
   // `detail` is the loader-stable reference the screen memoizes.
   const initialBody = useMemo<PortableTextBody>(() => {
-    return deriveBaselineRevision(detail)?.body ?? EMPTY_BODY
-  }, [detail])
+    return deriveBaselineRevision(detail)?.body ?? restoredCreateBody ?? EMPTY_BODY
+  }, [detail, restoredCreateBody])
 
   const [body, setBody] = useState<PortableTextBody>(initialBody)
 
@@ -121,14 +125,16 @@ export function useEditorShellState<
   const createDraft = useCreateDraft(createDraftConfig, { body, meta })
 
   // Render-phase state adjustment (react-compiler-safe pattern, same as the
-  // conflict check below): hydrate once when the create draft resolves.
+  // conflict check below): hydrate once when the create draft resolves. The
+  // load is async (IndexedDB in useEffect), so only latch when a stored
+  // draft actually arrived — latching on the first null render would skip
+  // the restore while the banner still claims 已恢复本地草稿.
   const [createDraftHydrated, setCreateDraftHydrated] = useState(false)
-  if (!isEditing && !createDraftHydrated) {
+  if (!isEditing && !createDraftHydrated && createDraft.loadedDraft !== null) {
     setCreateDraftHydrated(true)
-    if (createDraft.loadedDraft !== null) {
-      setMeta(createDraft.loadedDraft.meta)
-      replaceBody(createDraft.loadedDraft.body, `create:restored:${createDraft.loadedDraft.savedAt}`)
-    }
+    setMeta(createDraft.loadedDraft.meta)
+    setRestoredCreateBody(createDraft.loadedDraft.body)
+    replaceBody(createDraft.loadedDraft.body, `create:restored:${createDraft.loadedDraft.savedAt}`)
   }
 
   const [conflict, setConflict] = useState<{
@@ -234,6 +240,7 @@ export function useEditorShellState<
   useEditorKeyboardShortcuts({
     mode,
     isEditing,
+    isPending,
     persistCreate,
     persistSave,
     persistPublish,

@@ -1,10 +1,11 @@
-import { ImagePlusIcon, LinkIcon, SparklesIcon, XIcon } from 'lucide-react'
+import { ImageOffIcon, ImagePlusIcon, LinkIcon, SparklesIcon, XIcon } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 
 import type { AdminImageDto } from '@/shared/contracts/images'
 
 import { ImageLibraryPicker } from '@/ui/admin/editor/pickers/ImageLibraryPicker'
 import { UploadImageDialog } from '@/ui/admin/shared/UploadImageDialog'
+import { useErroredSrc } from '@/ui/admin/shared/useErroredSrc'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
@@ -41,6 +42,7 @@ export function ImageField({
   const [droppedFile, setDroppedFile] = useState<File | null>(null)
   const handlePick = (image: AdminImageDto) => onChange(image.publicUrl)
   const hasValue = value !== ''
+  const [previewBroken, markPreviewErrored] = useErroredSrc(hasValue ? value : null)
 
   const handleDragOver = (e: React.DragEvent<HTMLButtonElement>) => {
     e.preventDefault()
@@ -126,17 +128,20 @@ export function ImageField({
               dragActive && 'border-primary ring-2 ring-primary/30',
             )}
           >
-            {hasValue ? (
+            {hasValue && !previewBroken ? (
               <img
                 src={value}
                 alt={`${label} 预览`}
                 loading="lazy"
                 decoding="async"
                 className="size-full object-cover"
-                onError={(e) => {
-                  ;(e.currentTarget as HTMLImageElement).style.visibility = 'hidden'
-                }}
+                onError={markPreviewErrored}
               />
+            ) : previewBroken ? (
+              <span className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                <ImageOffIcon className="size-6" />
+                <span className="text-xs">图片加载失败</span>
+              </span>
             ) : emptyContent !== undefined ? (
               emptyContent
             ) : (
@@ -204,18 +209,19 @@ export interface GeneratedOgPreviewProps {
 export function GeneratedOgPreview({ slug, cover, title, summary }: GeneratedOgPreviewProps) {
   const buster = djb2Short(`${title}${summary}${cover}`)
   const src = `/images/og/${encodeURIComponent(slug)}.png?_=${buster}`
+  const [previewBroken, markPreviewErrored] = useErroredSrc(src)
   return (
     <>
-      <img
-        src={src}
-        alt="默认生成的 OG 预览"
-        loading="lazy"
-        decoding="async"
-        className="size-full object-cover"
-        onError={(e) => {
-          ;(e.currentTarget as HTMLImageElement).style.visibility = 'hidden'
-        }}
-      />
+      {!previewBroken ? (
+        <img
+          src={src}
+          alt="默认生成的 OG 预览"
+          loading="lazy"
+          decoding="async"
+          className="size-full object-cover"
+          onError={markPreviewErrored}
+        />
+      ) : null}
       <Badge variant="secondary" className="pointer-events-none absolute top-1.5 left-1.5 gap-1">
         <SparklesIcon className="size-3" /> 默认生成
       </Badge>

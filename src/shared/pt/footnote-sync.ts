@@ -47,7 +47,7 @@ function walkMainColumnFootnoteRefs(body: PortableTextBody, visit: (targetKey: s
             scanSpans(cell.content, cell.markDefs ?? [])
           }
         }
-        return
+        break
       // Leaf blocks that cannot host footnote refs — explicit no-op
       // keeps `switch-exhaustiveness-check` happy without a default.
       case 'code':
@@ -55,7 +55,6 @@ function walkMainColumnFootnoteRefs(body: PortableTextBody, visit: (targetKey: s
       case 'image':
       case 'mathBlock':
       case 'musicPlayer':
-        return
     }
   }
 

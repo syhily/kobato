@@ -43,6 +43,7 @@ export const assetsLoaderShapeSchema = z.object({
     blogPoster: brandingSlotStatusSchema,
     blogPosterDark: brandingSlotStatusSchema,
     defaultAvatar: brandingSlotStatusSchema,
+    defaultMusicCover: brandingSlotStatusSchema,
     robotsTxt: z.string(),
   }),
 })
@@ -94,6 +95,7 @@ export interface AssetsLoaderShape {
     blogPoster: BrandingSlotStatus
     blogPosterDark: BrandingSlotStatus
     defaultAvatar: BrandingSlotStatus
+    defaultMusicCover: BrandingSlotStatus
     /** robots.txt content (inline configuration, not an S3-backed asset). */
     robotsTxt: string
   }
@@ -158,6 +160,7 @@ export function projectAssetsForAdmin(
       blogPoster?: RawBrandingRef
       blogPosterDark?: RawBrandingRef
       defaultAvatar?: RawBrandingRef
+      defaultMusicCover?: RawBrandingRef
       robotsTxt?: string
     }
   },
@@ -195,6 +198,7 @@ export function projectAssetsForAdmin(
       blogPoster: statusOf(b.blogPoster),
       blogPosterDark: statusOf(b.blogPosterDark),
       defaultAvatar: statusOf(b.defaultAvatar),
+      defaultMusicCover: statusOf(b.defaultMusicCover),
       robotsTxt: typeof b.robotsTxt === 'string' ? b.robotsTxt : '',
     },
   }

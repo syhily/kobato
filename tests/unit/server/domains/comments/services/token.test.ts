@@ -52,7 +52,7 @@ describe('appendCommentToken', () => {
   it('evicts the globally oldest entry even when it lives on another page', () => {
     const existing: CommentTokenCookie = {
       'page-old': [entry('ancient-token', 500)],
-      'page-a': buildCookie('page-a', 50)['page-a']!.map((e) => ({ ...e, expiresAt: e.expiresAt + 60_000 })),
+      'page-a': buildCookie('page-a', 50)['page-a']!.map((e) => Object.assign(e, { expiresAt: e.expiresAt + 60_000 })),
     }
     const next = appendCommentToken(existing, 'page-a', 'new-token', TTL_SECONDS)
     expect(totalEntries(next)).toBe(50)

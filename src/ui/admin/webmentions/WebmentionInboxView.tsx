@@ -6,7 +6,7 @@ import type { AdminWebmentionWire } from '@/shared/contracts/webmentions'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
-import { toastApiError } from '@/client/lib/toast-api-error'
+import { onMutationError } from '@/client/lib/toast-api-error'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { tryParseUrl } from '@/shared/utils/safe-url'
@@ -37,6 +37,10 @@ const TYPE_META: Record<AdminWebmentionWire['type'], { label: string }> = {
   reply: { label: '回应' },
   like: { label: '喜欢' },
   repost: { label: '转发' },
+}
+
+function isStatusFilter(value: unknown): value is StatusFilter {
+  return typeof value === 'string' && (value === 'all' || value in STATUS_META)
 }
 
 export type AdminWebmentionsPage = Awaited<ReturnType<typeof orpc.admin.webmentions.loadAll>>
@@ -231,18 +235,18 @@ export function WebmentionInboxView() {
     ...orpcQuery.admin.webmentions.approve.mutationOptions(),
     onSuccess: (_result, variables) =>
       patchPages((data) => moderateMentionInPages(data, variables.id, 'approved', status)),
-    onError: (error) => toastApiError(error, '批准 Webmention 失败'),
+    onError: onMutationError('批准 Webmention 失败'),
   })
   const rejectMutation = useMutation({
     ...orpcQuery.admin.webmentions.reject.mutationOptions(),
     onSuccess: (_result, variables) =>
       patchPages((data) => moderateMentionInPages(data, variables.id, 'rejected', status)),
-    onError: (error) => toastApiError(error, '拒绝 Webmention 失败'),
+    onError: onMutationError('拒绝 Webmention 失败'),
   })
   const reverifyMutation = useMutation({
     ...orpcQuery.admin.webmentions.reverify.mutationOptions(),
     onSuccess: (row) => patchPages((data) => applyReverifyToPages(data, row, status)),
-    onError: (error) => toastApiError(error, '重新验证失败'),
+    onError: onMutationError('重新验证失败'),
   })
 
   const isBusy = (mention: AdminWebmentionWire) =>
@@ -253,7 +257,14 @@ export function WebmentionInboxView() {
   return (
     <>
       <AdminListPage.Toolbar>
-        <Tabs value={status} onValueChange={(value) => setStatus(value as StatusFilter)}>
+        <Tabs
+          value={status}
+          onValueChange={(value: unknown) => {
+            if (isStatusFilter(value)) {
+              setStatus(value)
+            }
+          }}
+        >
           <TabsList>
             <TabsTrigger value="all">全部</TabsTrigger>
             <TabsTrigger value="pending">待审核</TabsTrigger>

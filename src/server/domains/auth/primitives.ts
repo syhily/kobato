@@ -142,12 +142,11 @@ export async function resolveSessionContext(
       }
       session.set('user', upgraded)
       user = upgraded
-      dirty = true
     } else {
       session.unset('user')
       user = undefined
-      dirty = true
     }
+    dirty = true
   }
 
   if (user) {

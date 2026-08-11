@@ -41,11 +41,10 @@ export async function listAllSessions(db: Database): Promise<SessionWithUser[]> 
   const userById = new Map(users.map((u) => [u.id.toString(), u]))
   return metas.map((meta) => {
     const u = userById.get(meta.userId.toString())
-    return {
-      ...meta,
+    return Object.assign({}, meta, {
       userName: u?.name ?? '已删除的用户',
       userEmail: u?.email ?? '',
       userRole: u?.role ?? null,
-    }
+    })
   })
 }

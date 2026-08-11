@@ -12,7 +12,7 @@ import {
   setLoginMethod,
   verifyRegistrationResponse,
 } from '@/server/domains/auth/passkey/service'
-import { MIN_PASSWORD_LENGTH, PASSWORD_COMPLEXITY_RE } from '@/server/domains/auth/schema'
+import { PASSWORD_COMPLEXITY_RE } from '@/server/domains/auth/schema'
 import { listSessionsByUser } from '@/server/domains/auth/services/sessions'
 import { isMailLoginReady } from '@/server/domains/auth/services/shared'
 import { revokeOwnSessionWithGuard } from '@/server/domains/auth/session-guard'
@@ -29,6 +29,7 @@ import {
 import { accountProfileOutputSchema, accountSessionsOutputSchema } from '@/shared/contracts/admin'
 import { loginMethodSchema } from '@/shared/contracts/users'
 import { idFromString } from '@/shared/utils/id'
+import { MIN_PASSWORD_LENGTH } from '@/shared/utils/security'
 import { isRecord } from '@/shared/utils/type-guards'
 
 function isRegistrationResponseJSON(value: unknown): value is RegistrationResponseJSON {

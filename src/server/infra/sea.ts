@@ -86,7 +86,7 @@ function parseCodecRegistry(manifestRaw: Buffer): Map<string, SeaAssetCodec> {
     parsed = JSON.parse(manifestRaw.toString('utf-8'))
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error)
-    throw new Error(`Invalid SEA manifest (${SEA_MANIFEST_KEY}): ${reason}`)
+    throw new Error(`Invalid SEA manifest (${SEA_MANIFEST_KEY}): ${reason}`, { cause: error })
   }
   const registry = new Map<string, SeaAssetCodec>()
   if (typeof parsed === 'object' && parsed !== null && 'files' in parsed && Array.isArray(parsed.files)) {
@@ -150,7 +150,7 @@ export function createEmbeddedAssetReader(source: EmbeddedAssetSource): (key: st
       bytes = codec === 'zstd' ? zstdDecompressSync(raw) : brotliDecompressSync(raw)
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error)
-      throw new Error(`SEA embedded asset ${key} failed ${codec} decompression: ${reason}`)
+      throw new Error(`SEA embedded asset ${key} failed ${codec} decompression: ${reason}`, { cause: error })
     }
     decodedByKey.set(key, bytes)
     return bytes

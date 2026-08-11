@@ -74,7 +74,7 @@ function PaginationEllipsis({ className, ...props }: ComponentProps<'span'>) {
     <span
       aria-hidden
       data-slot="pagination-ellipsis"
-      className={cn(chipBase, chipResting, 'cursor-default hover:bg-foreground', className)}
+      className={cn(chipBase, chipResting, 'cursor-default', className)}
       {...props}
     >
       <MoreHorizontalIcon className="size-4" />

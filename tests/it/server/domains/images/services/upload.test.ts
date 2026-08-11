@@ -54,7 +54,7 @@ afterEach(() => {
 // Magic bytes matter: uploadImage rejects buffers whose first 12 bytes match no known signature.
 function jpeg(extra: number[] = []): Buffer {
   // >= 12 bytes (3 magic + filler) so the sniff check passes.
-  const filler = extra.length >= 9 ? extra : [...extra, ...Array(9 - extra.length).fill(0)]
+  const filler = extra.length >= 9 ? extra : [...extra, ...Array.from({ length: 9 - extra.length }, () => 0)]
   return Buffer.from([0xff, 0xd8, 0xff, 0xe0, ...filler])
 }
 function png(): Buffer {

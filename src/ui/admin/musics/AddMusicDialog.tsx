@@ -96,11 +96,19 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
       setAddedSourceIds(new Set())
       setAddingSourceId(null)
       reset()
-      if (currentTrack && isPreviewId(currentTrack.id)) {
-        close()
-      }
     }
   }
+
+  // Stop the preview player on close — an ancestor setState, so it must run in an
+  // effect (gated on the open→closed transition), not in the render-adjust block above.
+  const wasOpenRef = useRef(open)
+  useEffect(() => {
+    const wasOpen = wasOpenRef.current
+    wasOpenRef.current = open
+    if (wasOpen && !open && currentTrack && isPreviewId(currentTrack.id)) {
+      close()
+    }
+  }, [open, currentTrack, close])
 
   const triggerSearch = useCallback(() => {
     search({ source, keyword })

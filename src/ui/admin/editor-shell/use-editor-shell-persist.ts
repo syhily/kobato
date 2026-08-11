@@ -267,7 +267,7 @@ export function useEditorShellPersist<
         handleBodySavedRef.current(result)
         return result.status === 'conflict' ? 'conflict' : 'saved'
       } catch (error) {
-        throw new Error(error instanceof Error ? error.message : '保存失败')
+        throw new Error(error instanceof Error ? error.message : '保存失败', { cause: error })
       }
     },
     [isEditing, detail, expectedToken, directSaveDraft],

@@ -3,7 +3,7 @@ function pad0(num: number): string {
 }
 
 export function formatAudioDuration(seconds: number | undefined): string {
-  if (typeof seconds === 'undefined') {
+  if (seconds === undefined) {
     return '--:--'
   }
   if (Number.isNaN(seconds)) {

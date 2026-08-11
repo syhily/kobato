@@ -116,7 +116,7 @@ export function ViewsChart({ data, className, height = 220 }: ViewsChartProps) {
           strokeLinejoin="round"
         />
 
-        {hoverIndex !== null && (
+        {hoverIndex !== null && hoverIndex < data.length && (
           <Crosshair
             x={xs[hoverIndex]!}
             geometry={geometry}

@@ -25,6 +25,10 @@ const STATUS_META: Record<AdminWebmentionOutboxWire['status'], { label: string; 
   failed: { label: '失败', variant: 'destructive' },
 }
 
+function isStatusFilter(value: unknown): value is StatusFilter {
+  return typeof value === 'string' && (value === 'all' || value in STATUS_META)
+}
+
 function OutboxRow({ row }: { row: AdminWebmentionOutboxWire }) {
   const config = useSiteIdentity()
   const meta = STATUS_META[row.status]
@@ -76,7 +80,14 @@ export function WebmentionOutboxView() {
   return (
     <>
       <AdminListPage.Toolbar>
-        <Tabs value={status} onValueChange={(value) => setStatus(value as StatusFilter)}>
+        <Tabs
+          value={status}
+          onValueChange={(value: unknown) => {
+            if (isStatusFilter(value)) {
+              setStatus(value)
+            }
+          }}
+        >
           <TabsList>
             <TabsTrigger value="all">全部</TabsTrigger>
             <TabsTrigger value="pending">待发送</TabsTrigger>

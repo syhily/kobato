@@ -1,9 +1,7 @@
 import { z } from 'zod'
 
 import { httpUrlOrEmptyStringSchema } from '@/shared/utils/safe-url'
-
-/** Minimum password length enforced everywhere (login, signup, reset, change). */
-export const MIN_PASSWORD_LENGTH = 10
+import { MIN_PASSWORD_LENGTH } from '@/shared/utils/security'
 
 /** Maximum password length to prevent DoS via oversized payloads. */
 export const MAX_PASSWORD_LENGTH = 128

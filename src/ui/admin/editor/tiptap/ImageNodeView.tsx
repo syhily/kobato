@@ -33,6 +33,9 @@ export function ImageNodeView(props: NodeViewProps) {
 
   const altTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const captionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Latest values waiting on the 300ms debounce — flushed on unmount below.
+  const pendingAltRef = useRef<string | null>(null)
+  const pendingCaptionRef = useRef<string | null>(null)
 
   const [lastAlt, setLastAlt] = useState(attrs.alt)
   if (attrs.alt !== lastAlt) {
@@ -53,24 +56,47 @@ export function ImageNodeView(props: NodeViewProps) {
       if (captionTimeoutRef.current) {
         clearTimeout(captionTimeoutRef.current)
       }
+      // Unmount would otherwise drop the pending debounce — flush the last
+      // keystrokes. Skip when the node is gone (deleted / doc replaced):
+      // writing attributes at a stale position would corrupt another node.
+      const pending: { alt?: string; caption?: string } = {}
+      if (pendingAltRef.current !== null) {
+        pending.alt = pendingAltRef.current
+      }
+      if (pendingCaptionRef.current !== null) {
+        pending.caption = pendingCaptionRef.current
+      }
+      if (pending.alt === undefined && pending.caption === undefined) {
+        return
+      }
+      const current = latestPropsRef.current
+      const pos = current.getPos()
+      if (typeof pos !== 'number' || current.editor.state.doc.nodeAt(pos) !== current.node) {
+        return
+      }
+      current.updateAttributes(pending)
     }
   }, [])
 
   const commitAlt = (value: string) => {
     setAlt(value)
+    pendingAltRef.current = value
     if (altTimeoutRef.current) {
       clearTimeout(altTimeoutRef.current)
     }
     altTimeoutRef.current = setTimeout(() => {
+      pendingAltRef.current = null
       latestPropsRef.current.updateAttributes({ alt: value })
     }, 300)
   }
   const commitCaption = (value: string) => {
     setCaption(value)
+    pendingCaptionRef.current = value
     if (captionTimeoutRef.current) {
       clearTimeout(captionTimeoutRef.current)
     }
     captionTimeoutRef.current = setTimeout(() => {
+      pendingCaptionRef.current = null
       latestPropsRef.current.updateAttributes({ caption: value })
     }, 300)
   }

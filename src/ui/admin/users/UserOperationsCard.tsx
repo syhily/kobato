@@ -10,11 +10,13 @@ import {
   VolumeOffIcon,
 } from 'lucide-react'
 import { useState } from 'react'
+import { toast } from 'sonner'
 
 import type { AdminUserDto } from '@/shared/contracts/users'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
+import { onMutationError, toastApiError } from '@/client/lib/toast-api-error'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
 import { invalidateUsersCache } from '@/ui/admin/users/users-cache'
 import { Button } from '@/ui/components/button'
@@ -23,6 +25,12 @@ import { Label } from '@/ui/components/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 
 type Role = NonNullable<AdminUserDto['role']>
+
+// Hoisted out of the click handlers so the callbacks create no JSX during render.
+const REVOKE_SESSIONS_ICON = <LogOutIcon data-icon />
+const CLEAR_PASSKEYS_ICON = <FingerprintIcon data-icon />
+const UNMUTE_ICON = <Volume2Icon data-icon />
+const MUTE_ICON = <VolumeOffIcon data-icon />
 
 interface UserOperationsCardProps {
   user: AdminUserDto
@@ -44,30 +52,47 @@ export function UserOperationsCard({ user, currentUserId, passkeyEnabled, onDele
     onSuccess: () => {
       setRoleDraft('')
       invalidateUsersCache(queryClient)
+      toast.success('角色已修改')
+    },
+    onError: (error) => {
+      setRoleDraft('')
+      toastApiError(error, '修改角色失败')
     },
   })
 
   const sendResetMutation = useMutation({
     ...orpcQuery.admin.users.sendPasswordReset.mutationOptions(),
+    onSuccess: () => {
+      toast.success('重置邮件已发送')
+    },
+    onError: onMutationError('发送重置邮件失败'),
   })
 
   const revokeSessionsMutation = useMutation({
     ...orpcQuery.admin.users.revokeAllSessions.mutationOptions(),
+    onSuccess: () => {
+      toast.success('已强制该用户全部登出')
+    },
+    onError: onMutationError('强制登出失败'),
   })
 
   const clearPasskeysMutation = useMutation({
     mutationFn: (vars: { userId: string }) => orpc.admin.users.clearPasskeys({ id: vars.userId }),
     onSuccess: () => {
       invalidateUsersCache(queryClient)
+      toast.success('已清除 Passkey')
     },
+    onError: onMutationError('清除 Passkey 失败'),
   })
 
   const muteMutation = useMutation({
     mutationFn: (vars: { userId: string; muted: boolean }) =>
       orpc.admin.users.mute({ id: vars.userId, muted: vars.muted }),
-    onSuccess: () => {
+    onSuccess: (_result, vars) => {
       invalidateUsersCache(queryClient)
+      toast.success(vars.muted ? '已禁言该用户' : '已解除禁言')
     },
+    onError: onMutationError('禁言操作失败'),
   })
 
   const bulkApproveMutation = useMutation({
@@ -75,7 +100,9 @@ export function UserOperationsCard({ user, currentUserId, passkeyEnabled, onDele
     onSuccess: () => {
       invalidateUsersCache(queryClient)
       void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.comments.loadAll.key() })
+      toast.success('已通过全部待审评论')
     },
+    onError: onMutationError('批量通过失败'),
   })
 
   const deleteMutation = useMutation({
@@ -84,13 +111,16 @@ export function UserOperationsCard({ user, currentUserId, passkeyEnabled, onDele
       invalidateUsersCache(queryClient)
       onDeleted()
     },
+    onError: onMutationError('删除用户失败'),
   })
 
   const restoreMutation = useMutation({
     mutationFn: (vars: { userId: string }) => orpc.admin.users.restore({ id: vars.userId, ...vars }),
     onSuccess: () => {
       invalidateUsersCache(queryClient)
+      toast.success('用户已恢复')
     },
+    onError: onMutationError('恢复用户失败'),
   })
 
   const bulkDeleteMutation = useMutation({
@@ -98,7 +128,9 @@ export function UserOperationsCard({ user, currentUserId, passkeyEnabled, onDele
     onSuccess: () => {
       invalidateUsersCache(queryClient)
       void queryClient.invalidateQueries({ queryKey: orpcQuery.admin.comments.loadAll.key() })
+      toast.success('已删除该用户的全部评论')
     },
+    onError: onMutationError('批量删除评论失败'),
   })
 
   return (
@@ -177,7 +209,7 @@ export function UserOperationsCard({ user, currentUserId, passkeyEnabled, onDele
                   description: '该用户在所有设备上的登录会话将立即被注销，下次访问需要重新登录。',
                   actionLabel: '强制登出',
                   destructive: true,
-                  actionIcon: <LogOutIcon data-icon />,
+                  actionIcon: REVOKE_SESSIONS_ICON,
                   onConfirm: () => revokeSessionsMutation.mutate({ userId: user.id }),
                 })
               }
@@ -195,7 +227,7 @@ export function UserOperationsCard({ user, currentUserId, passkeyEnabled, onDele
                   description: '清除后该用户的所有 Passkey 将被删除，登陆方式将重置为密码登陆。',
                   actionLabel: '清除',
                   destructive: true,
-                  actionIcon: <FingerprintIcon data-icon />,
+                  actionIcon: CLEAR_PASSKEYS_ICON,
                   onConfirm: () => clearPasskeysMutation.mutate({ userId: user.id }),
                 })
               }
@@ -215,7 +247,7 @@ export function UserOperationsCard({ user, currentUserId, passkeyEnabled, onDele
                     : '禁言后该用户无法再发表新的评论，但已有评论保持可见。',
                   actionLabel: user.isMuted ? '解除' : '禁言',
                   destructive: !user.isMuted,
-                  actionIcon: user.isMuted ? <Volume2Icon data-icon /> : <VolumeOffIcon data-icon />,
+                  actionIcon: user.isMuted ? UNMUTE_ICON : MUTE_ICON,
                   onConfirm: () => muteMutation.mutate({ userId: user.id, muted: !user.isMuted }),
                 })
               }

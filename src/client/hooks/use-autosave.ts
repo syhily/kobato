@@ -17,7 +17,7 @@ export type AutosaveFlushOutcome = 'saved' | 'conflict'
 export interface UseAutosaveOptions<TBody> {
   body: TBody
   enabled: boolean
-  flush: (body: TBody) => Promise<AutosaveFlushOutcome | void>
+  flush: (body: TBody) => Promise<AutosaveFlushOutcome | undefined>
   debounceMs?: number
   hardCapMs?: number
   retryDelaysMs?: number[]
@@ -51,7 +51,7 @@ export function useAutosave<TBody>({
   })
 
   const lastPersistedRef = useRef<TBody | null>(null)
-  const inFlightRef = useRef<Promise<AutosaveFlushOutcome | void> | null>(null)
+  const inFlightRef = useRef<Promise<AutosaveFlushOutcome | undefined> | null>(null)
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const hardCapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)

@@ -92,7 +92,11 @@ describe('server/infra/db/batcher-registry', () => {
   })
 
   it('flushAllBatchers isolates failures and never rejects', async () => {
-    const failing = { flush: vi.fn(async (): Promise<unknown> => Promise.reject(new Error('flush exploded'))) }
+    const failing = {
+      flush: vi.fn(async (): Promise<unknown> => {
+        throw new Error('flush exploded')
+      }),
+    }
     const healthy = fakeBatcher()
     registerBatcher('test-fail', () => failing)
     registerBatcher('test-healthy', () => healthy)

@@ -1,5 +1,7 @@
 import type { ListingPostCardWithMetadata } from '@/shared/types/catalog'
 
+import { useSiteIdentity } from '@/shared/lib/blog-config-context'
+import { localDateParts } from '@/shared/utils/formatter'
 import { groupBy } from '@/shared/utils/tools'
 import { cn } from '@/ui/lib/cn'
 import { postTitleClass } from '@/ui/public/post/postChrome'
@@ -11,9 +13,12 @@ export interface ArchivesBodyProps {
 }
 
 export function ArchivesBody({ resolvedPosts, listingNowIso }: ArchivesBodyProps) {
+  const { locale, timeZone } = useSiteIdentity()
+  // Bucket by the site-configured time zone (same path as the displayed
+  // dates), so SSR and hydration always agree on the group keys.
   const groupedPosts = groupBy(resolvedPosts, (post) => {
-    const date = new Date(post.date)
-    return `${date.getFullYear()} 年 ${date.getMonth() + 1} 月`
+    const parts = localDateParts(new Date(post.date), locale, timeZone)
+    return `${parts.year} 年 ${parts.month} 月`
   })
 
   return (

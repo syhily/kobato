@@ -7,7 +7,7 @@ import type { AdminImageDto } from '@/shared/contracts/images'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
-import { toastApiError } from '@/client/lib/toast-api-error'
+import { onMutationError } from '@/client/lib/toast-api-error'
 import { useAssetsSettings } from '@/shared/lib/blog-config-context'
 import { ImageDetailDialog } from '@/ui/admin/images/ImageDetailDialog'
 import { ImagesFilterBar } from '@/ui/admin/images/ImagesFilterBar'
@@ -64,9 +64,7 @@ export function ImagesView() {
       toast.success('图片已删除')
       invalidateList()
     },
-    onError: (error) => {
-      toastApiError(error, '删除图片失败')
-    },
+    onError: onMutationError('删除图片失败'),
   })
 
   const updateNoteMutation = useMutation({
@@ -77,9 +75,7 @@ export function ImagesView() {
       toast.success('备注已更新')
       invalidateList()
     },
-    onError: (error) => {
-      toastApiError(error, '更新图片备注失败')
-    },
+    onError: onMutationError('更新图片备注失败'),
   })
   const submitUpdateNote = updateNoteMutation.mutate
   const isUpdatingNote = updateNoteMutation.isPending
@@ -91,9 +87,7 @@ export function ImagesView() {
       toast.success('缩略图已重新计算')
       invalidateList()
     },
-    onError: (error) => {
-      toastApiError(error, '重新计算缩略图失败')
-    },
+    onError: onMutationError('重新计算缩略图失败'),
   })
   const submitRecalculate = recalculateMutation.mutate
   const isRecalculating = recalculateMutation.isPending

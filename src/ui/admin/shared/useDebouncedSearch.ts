@@ -6,7 +6,7 @@ interface UseDebouncedSearchOptions<T> {
   /** Debounce delay (ms). Defaults to 250 — snappy but tolerates CJK IME bursts. */
   delayMs?: number
   /** Fired on the trailing edge of the debounce window. */
-  onChange: (value: string) => T | void
+  onChange: (value: string) => T | undefined
 }
 
 /** Debounced text input helper: immediately-bound input value plus a setter

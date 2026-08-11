@@ -47,6 +47,20 @@ export function UserDetailView({ userId, currentUserId, navigate, passkeyEnabled
   const user = userQuery.data?.user ?? null
   const comments: AdminComment[] = commentsQuery.data?.comments ?? []
 
+  if (userQuery.isError) {
+    return (
+      <AdminListPage>
+        <div className="flex flex-col items-center justify-center gap-2 py-32 text-muted-foreground">
+          <p className="text-lg text-foreground">加载失败</p>
+          <p className="text-sm">{userQuery.error?.message ?? '请稍后重试'}</p>
+          <Button type="button" variant="outline" className="mt-4" onClick={() => void userQuery.refetch()}>
+            重试
+          </Button>
+        </div>
+      </AdminListPage>
+    )
+  }
+
   if (!user) {
     return <UserDetailSkeleton />
   }
@@ -175,6 +189,13 @@ export function UserDetailView({ userId, currentUserId, navigate, passkeyEnabled
             <CardContent>
               {commentsQuery.isPending && comments.length === 0 ? (
                 <Skeleton className="h-32 w-full" />
+              ) : commentsQuery.isError ? (
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm text-destructive">评论加载失败。</p>
+                  <Button type="button" variant="outline" size="sm" onClick={() => void commentsQuery.refetch()}>
+                    重试
+                  </Button>
+                </div>
               ) : comments.length === 0 ? (
                 <p className="text-sm text-muted-foreground">该用户暂无评论。</p>
               ) : (

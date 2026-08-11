@@ -1,5 +1,7 @@
 import { useMemo } from 'react'
 
+import type { RealtimeEvent } from '@/shared/contracts/analytics'
+
 import { useEventStream } from '@/ui/admin/analytics/use-event-stream'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/components/card'
 import { cn } from '@/ui/lib/cn'
@@ -11,7 +13,12 @@ export function RealtimeFeed({ className }: { className?: string }) {
 
   const ordered = useMemo(() => {
     // SSE delivers chronological order; the UI reads newest-first.
-    return [...events].reverse()
+    // ES2022 lib has no toReversed — build the reversed copy by hand.
+    const copy: RealtimeEvent[] = []
+    for (let i = events.length - 1; i >= 0; i -= 1) {
+      copy.push(events[i]!)
+    }
+    return copy
   }, [events])
 
   return (

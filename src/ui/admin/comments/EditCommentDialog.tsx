@@ -7,6 +7,7 @@ import type { AdminCommentWire as AdminComment } from '@/shared/contracts/commen
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
 import { orpcQuery } from '@/client/api/orpc-query'
+import { onMutationError } from '@/client/lib/toast-api-error'
 import { idStr } from '@/shared/utils/tools'
 import { Button } from '@/ui/components/button'
 import {
@@ -35,16 +36,18 @@ export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDial
   const [lastCommentId, setLastCommentId] = useState(comment?.id)
   const [lastRawData, setLastRawData] = useState<typeof rawData>(undefined)
 
-  const { data: rawData } = useQuery(
+  const rawQuery = useQuery(
     orpcQuery.comments.getRaw.queryOptions({
       input: { rid: comment ? idStr(comment.id) : '0' },
       enabled: !!comment,
     }),
   )
+  const { data: rawData } = rawQuery
 
   const editMutation = useMutation({
     ...orpcQuery.comments.edit.mutationOptions(),
     onSuccess: (payload) => onSaved({ body: payload.comment.body }),
+    onError: onMutationError('保存评论失败'),
   })
 
   // Reset the editor when the target comment changes; only refetch on id change.
@@ -93,12 +96,21 @@ export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDial
         >
           <div className="flex flex-col gap-2">
             <Label htmlFor="edit-comment-content">评论内容</Label>
-            <CommentBodyEditor
-              initialBody={initialBody}
-              bodyKey={`admin-edit-${dialogKey}-${bodyKey}`}
-              onBodyChange={setBody}
-              disabled={!loaded || submitting}
-            />
+            {rawQuery.isError ? (
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm text-destructive">评论内容加载失败。</p>
+                <Button type="button" variant="outline" size="sm" onClick={() => void rawQuery.refetch()}>
+                  重试
+                </Button>
+              </div>
+            ) : (
+              <CommentBodyEditor
+                initialBody={initialBody}
+                bodyKey={`admin-edit-${dialogKey}-${bodyKey}`}
+                onBodyChange={setBody}
+                disabled={!loaded || submitting}
+              />
+            )}
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onMouseDown={(event) => event.preventDefault()} onClick={onClose}>

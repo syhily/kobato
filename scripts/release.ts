@@ -18,7 +18,7 @@ function run(cmd: string): string {
   } catch (e: unknown) {
     const msg =
       e instanceof Error && 'stderr' in e && e.stderr instanceof Buffer ? e.stderr.toString().trim() : String(e)
-    throw new Error(`Command failed: ${cmd}\n${msg}`)
+    throw new Error(`Command failed: ${cmd}\n${msg}`, { cause: e })
   }
 }
 

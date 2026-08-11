@@ -33,7 +33,7 @@ export function validateBucket(
     return '前缀不能为空'
   }
   if (!PREFIX_PATTERN.test(trimmed)) {
-    return '前缀只能包含字母 / 数字 / `_` / `-`，且必须以 `-` 或 `:` 结尾'
+    return '前缀只能包含字母 / 数字 / `_` / `-`，且必须以 `:` 结尾'
   }
   const reserved = RESERVED_PREFIXES.find((slot) => collides(trimmed, slot))
   if (reserved !== undefined) {

@@ -7,6 +7,7 @@ import { useState } from 'react'
 import { useRevalidator } from 'react-router'
 
 import { orpcQuery } from '@/client/api/orpc-query'
+import { toastApiError } from '@/client/lib/toast-api-error'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { isRecord } from '@/shared/utils/type-guards'
@@ -41,6 +42,9 @@ function usePasskeyManagement(_userId: string, revalidator: ReturnType<typeof us
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: orpcQuery.account.passkeyList.key() })
       void revalidator.revalidate()
+    },
+    onError: (error) => {
+      toastApiError(error, '删除 Passkey 失败')
     },
   })
 
@@ -90,6 +94,8 @@ function usePasskeyManagement(_userId: string, revalidator: ReturnType<typeof us
   return {
     credentials,
     isLoading: passkeyQuery.isPending,
+    isError: passkeyQuery.isError,
+    refetch: passkeyQuery.refetch,
     registerError,
     registerMessage,
     handleRegister,
@@ -124,6 +130,13 @@ export function PasskeyManagementCard({ userId, passkeyEnabled }: PasskeyManagem
       <CardContent className="flex flex-col gap-4">
         {passkey.isLoading ? (
           <p className="text-sm text-muted-foreground">加载中…</p>
+        ) : passkey.isError ? (
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm text-destructive">Passkey 列表加载失败。</p>
+            <Button type="button" variant="outline" size="sm" onClick={() => void passkey.refetch()}>
+              重试
+            </Button>
+          </div>
         ) : passkey.credentials.length === 0 ? (
           <p className="text-sm text-muted-foreground">尚未注册任何 Passkey。</p>
         ) : (

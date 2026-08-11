@@ -8,7 +8,7 @@ import { toast } from 'sonner'
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
 import { transitions } from '@/client/lib/motion'
-import { toastApiError } from '@/client/lib/toast-api-error'
+import { onMutationError } from '@/client/lib/toast-api-error'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { LyricsDisplay } from '@/ui/admin/musics/LyricsDisplay'
@@ -71,9 +71,7 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
       toast.success('已保存')
       setEditing(false)
     },
-    onError: (error) => {
-      toastApiError(error, '保存失败')
-    },
+    onError: onMutationError('保存失败'),
   })
 
   const enterEdit = useCallback(() => {
@@ -133,9 +131,7 @@ export function MusicDetailView({ id, navigate }: MusicDetailViewProps) {
       toast.success('已删除')
       void navigate('/admin/library/music')
     },
-    onError: (error) => {
-      toastApiError(error, '删除失败')
-    },
+    onError: onMutationError('删除失败'),
   })
 
   const handleDelete = useCallback(() => {

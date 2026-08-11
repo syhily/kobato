@@ -82,7 +82,9 @@ export function parseAnalyticsInput(fields: AnalyticsSearchFields): AnalyticsQue
     try {
       result.entityType = entityType
       result.entityId = idFromString(entityIdRaw)
-    } catch {}
+    } catch {
+      // unparseable entityId → drop the entity scoping
+    }
   }
   return result
 }

@@ -9,7 +9,7 @@ import type { ListPendingDashboardOutput } from '@/shared/types/comments'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
-import { toastApiError } from '@/client/lib/toast-api-error'
+import { onMutationError } from '@/client/lib/toast-api-error'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { Badge } from '@/ui/components/badge'
@@ -33,7 +33,9 @@ export function PendingModerationPanel({ initial, emptyStateLine }: PendingModer
   } = useQuery(
     orpcQuery.admin.comments.listPendingDashboard.queryOptions({
       input: { kind: 'all', offset, limit: PAGE_SIZE },
-      initialData: initial,
+      // The SSR payload is page 0 only — seeding it under later offsets would
+      // briefly show page-0 rows on every other page before refetch lands.
+      initialData: offset === 0 ? initial : undefined,
     }),
   )
 
@@ -54,7 +56,7 @@ export function PendingModerationPanel({ initial, emptyStateLine }: PendingModer
       toast.success('已通过该评论')
       refresh()
     },
-    onError: (error) => toastApiError(error, '操作失败，请刷新页面重试'),
+    onError: onMutationError('操作失败，请刷新页面重试'),
   })
   const rejectApi = useMutation({
     mutationFn: (vars: { commentId: string }) => orpc.admin.comments.delete({ commentId: vars.commentId }),
@@ -62,7 +64,7 @@ export function PendingModerationPanel({ initial, emptyStateLine }: PendingModer
       toast.success('已拒绝并删除该评论')
       refresh()
     },
-    onError: (error) => toastApiError(error, '操作失败，请刷新页面重试'),
+    onError: onMutationError('操作失败，请刷新页面重试'),
   })
   const approveDeletionApi = useMutation({
     ...orpcQuery.admin.comments.approveCommentDeletion.mutationOptions(),
@@ -70,7 +72,7 @@ export function PendingModerationPanel({ initial, emptyStateLine }: PendingModer
       toast.success(data ? '已处理该删除申请' : '已处理')
       refresh()
     },
-    onError: (error) => toastApiError(error, '操作失败，请刷新页面重试'),
+    onError: onMutationError('操作失败，请刷新页面重试'),
   })
 
   const onApprove = (item: AdminPendingItemDto) => {
@@ -89,7 +91,9 @@ export function PendingModerationPanel({ initial, emptyStateLine }: PendingModer
   const anyMutationPending =
     approveApi.isPending || rejectApi.isPending || approveDeletionApi.isPending || isListPending
 
-  const totalPages = Math.max(1, Math.ceil(data.total / PAGE_SIZE))
+  // `data` is undefined only while a later page is loading — page 0 is always
+  // seeded from the SSR payload via `initialData`.
+  const totalPages = data === undefined ? 1 : Math.max(1, Math.ceil(data.total / PAGE_SIZE))
   const currentPage = Math.floor(offset / PAGE_SIZE) + 1
 
   return (
@@ -99,7 +103,10 @@ export function PendingModerationPanel({ initial, emptyStateLine }: PendingModer
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <h2 className="text-lg font-medium">
-            待审评论 <span className="ml-1 text-base font-normal text-muted-foreground">· {data.counts.all}</span>
+            待审评论{' '}
+            <span className="ml-1 text-base font-normal text-muted-foreground">
+              · {data?.counts.all ?? initial.counts.all}
+            </span>
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">等待审核与作者删除申请合并展示，按时间倒序。</p>
         </div>
@@ -118,7 +125,9 @@ export function PendingModerationPanel({ initial, emptyStateLine }: PendingModer
       {/* The only scroll container. `min-h-0` lets the flex parent compute
           available height so the inner `overflow-y-auto` actually engages. */}
       <div className="mt-3 min-h-0 flex-1 overflow-y-auto">
-        {data.items.length === 0 ? (
+        {data === undefined ? (
+          <p className="py-10 text-center text-sm text-muted-foreground">加载中…</p>
+        ) : data.items.length === 0 ? (
           <EmptyState line={emptyStateLine} />
         ) : (
           <ul className="flex flex-col divide-y divide-border">
@@ -137,7 +146,7 @@ export function PendingModerationPanel({ initial, emptyStateLine }: PendingModer
         )}
       </div>
 
-      {data.total > PAGE_SIZE && (
+      {data !== undefined && data.total > PAGE_SIZE && (
         <div className="mt-3 flex shrink-0 items-center justify-between gap-3 text-sm text-muted-foreground">
           <span>
             共 {data.total} 条 · 第 {currentPage} / {totalPages} 页

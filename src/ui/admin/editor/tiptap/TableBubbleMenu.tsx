@@ -1,5 +1,6 @@
 import type { Editor } from '@tiptap/core'
 
+import { useEditorState } from '@tiptap/react'
 import { BubbleMenu } from '@tiptap/react/menus'
 import {
   ArrowDownIcon,
@@ -26,6 +27,24 @@ export interface TableBubbleMenuProps {
 }
 
 export function TableBubbleMenu({ editor }: TableBubbleMenuProps) {
+  // The BubbleMenu portal never re-renders children on transactions — subscribe
+  // command availability explicitly or the buttons stay enabled/disabled stale.
+  const canRun = useEditorState({
+    editor,
+    selector: ({ editor: ed }) => ({
+      addRowBefore: ed.can().addRowBefore(),
+      addRowAfter: ed.can().addRowAfter(),
+      addColumnBefore: ed.can().addColumnBefore(),
+      addColumnAfter: ed.can().addColumnAfter(),
+      deleteRow: ed.can().deleteRow(),
+      deleteColumn: ed.can().deleteColumn(),
+      toggleHeaderRow: ed.can().toggleHeaderRow(),
+      toggleHeaderColumn: ed.can().toggleHeaderColumn(),
+      mergeCells: ed.can().mergeCells(),
+      splitCell: ed.can().splitCell(),
+      deleteTable: ed.can().deleteTable(),
+    }),
+  })
   return (
     <BubbleMenu
       editor={editor}
@@ -37,28 +56,28 @@ export function TableBubbleMenu({ editor }: TableBubbleMenuProps) {
         <TableButton
           title="上方插行"
           onClick={() => editor.chain().focus().addRowBefore().run()}
-          disabled={!editor.can().addRowBefore()}
+          disabled={!canRun.addRowBefore}
         >
           <ArrowUpIcon />
         </TableButton>
         <TableButton
           title="下方插行"
           onClick={() => editor.chain().focus().addRowAfter().run()}
-          disabled={!editor.can().addRowAfter()}
+          disabled={!canRun.addRowAfter}
         >
           <ArrowDownIcon />
         </TableButton>
         <TableButton
           title="左侧插列"
           onClick={() => editor.chain().focus().addColumnBefore().run()}
-          disabled={!editor.can().addColumnBefore()}
+          disabled={!canRun.addColumnBefore}
         >
           <ArrowLeftIcon />
         </TableButton>
         <TableButton
           title="右侧插列"
           onClick={() => editor.chain().focus().addColumnAfter().run()}
-          disabled={!editor.can().addColumnAfter()}
+          disabled={!canRun.addColumnAfter}
         >
           <ArrowRightIcon />
         </TableButton>
@@ -66,14 +85,14 @@ export function TableBubbleMenu({ editor }: TableBubbleMenuProps) {
         <TableButton
           title="删除当前行"
           onClick={() => editor.chain().focus().deleteRow().run()}
-          disabled={!editor.can().deleteRow()}
+          disabled={!canRun.deleteRow}
         >
           <MinusSquareIcon />
         </TableButton>
         <TableButton
           title="删除当前列"
           onClick={() => editor.chain().focus().deleteColumn().run()}
-          disabled={!editor.can().deleteColumn()}
+          disabled={!canRun.deleteColumn}
         >
           <MinusSquareIcon className="rotate-90" />
         </TableButton>
@@ -81,14 +100,14 @@ export function TableBubbleMenu({ editor }: TableBubbleMenuProps) {
         <TableButton
           title="切换表头行"
           onClick={() => editor.chain().focus().toggleHeaderRow().run()}
-          disabled={!editor.can().toggleHeaderRow()}
+          disabled={!canRun.toggleHeaderRow}
         >
           <HeaderRowIcon />
         </TableButton>
         <TableButton
           title="切换表头列"
           onClick={() => editor.chain().focus().toggleHeaderColumn().run()}
-          disabled={!editor.can().toggleHeaderColumn()}
+          disabled={!canRun.toggleHeaderColumn}
         >
           <HeaderColumnIcon />
         </TableButton>
@@ -96,14 +115,14 @@ export function TableBubbleMenu({ editor }: TableBubbleMenuProps) {
         <TableButton
           title="合并选中单元格"
           onClick={() => editor.chain().focus().mergeCells().run()}
-          disabled={!editor.can().mergeCells()}
+          disabled={!canRun.mergeCells}
         >
           <CombineIcon />
         </TableButton>
         <TableButton
           title="拆分单元格"
           onClick={() => editor.chain().focus().splitCell().run()}
-          disabled={!editor.can().splitCell()}
+          disabled={!canRun.splitCell}
         >
           <SplitIcon />
         </TableButton>
@@ -111,7 +130,7 @@ export function TableBubbleMenu({ editor }: TableBubbleMenuProps) {
         <TableButton
           title="删除整张表"
           onClick={() => editor.chain().focus().deleteTable().run()}
-          disabled={!editor.can().deleteTable()}
+          disabled={!canRun.deleteTable}
         >
           <Trash2Icon />
         </TableButton>

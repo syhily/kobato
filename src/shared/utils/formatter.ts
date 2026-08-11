@@ -57,7 +57,9 @@ function cachedFormatter(locale: string, timeZone: string): Intl.DateTimeFormat 
   return formatter
 }
 
-function localDateParts(source: Date, locale: string, timeZone: string): LocalDateParts {
+// Exported for calendar grouping (archives buckets) that must agree with the
+// displayed dates — both derive from the site-configured time zone.
+export function localDateParts(source: Date, locale: string, timeZone: string): LocalDateParts {
   const formatter = cachedFormatter(locale, timeZone)
   const parts = Object.fromEntries(
     formatter
@@ -149,9 +151,8 @@ export function formatShowDate(date: Date, config: FormatterLocale, now?: Date |
   } else if (deltaDays < 210) {
     const months = (nowParts.year - source.year) * 12 + nowParts.month - source.month
     return `${months} 月前`
-  } else {
-    return formatLocalDate(date, undefined, config)
   }
+  return formatLocalDate(date, undefined, config)
 }
 
 export function formatLocalDate(source: string | Date, format: string | undefined, config: FormatterLocale): string {

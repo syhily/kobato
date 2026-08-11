@@ -3,8 +3,8 @@ import { useState } from 'react'
 
 import type { RoleFilter, SortOrder } from '@/ui/admin/users/useUsersFilters'
 
+import { LabelledCheckbox } from '@/ui/admin/shared/LabelledCheckbox'
 import { Button } from '@/ui/components/button'
-import { Checkbox } from '@/ui/components/checkbox'
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/popover'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 import { Separator } from '@/ui/components/separator'
@@ -26,11 +26,9 @@ const SORT_OPTIONS: { value: SortOrder; label: string }[] = [
 interface UsersToolbarProps {
   role: RoleFilter
   sortBy: SortOrder
-  pageSize: number
   includeDeleted: boolean
   onRoleChange: (value: RoleFilter) => void
   onSortByChange: (value: SortOrder) => void
-  onPageSizeChange: (value: number) => void
   onIncludeDeletedChange: (value: boolean) => void
 }
 
@@ -107,16 +105,12 @@ export function UsersToolbar({
 
             <Separator />
 
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="users-include-deleted"
-                checked={includeDeleted}
-                onCheckedChange={(value) => onIncludeDeletedChange(value === true)}
-              />
-              <label htmlFor="users-include-deleted" className="text-sm select-none">
-                包含已删除用户
-              </label>
-            </div>
+            <LabelledCheckbox
+              id="users-include-deleted"
+              label="包含已删除用户"
+              checked={includeDeleted}
+              onCheckedChange={onIncludeDeletedChange}
+            />
 
             {hasFilters && (
               <>

@@ -39,7 +39,7 @@ describe('update/job startUpdateJob', () => {
 
   it('rejects a concurrent apply with CONFLICT', async () => {
     const job = await loadJob()
-    const gate = deferred<void>()
+    const gate = deferred<undefined>()
     pipelineMocks.runSelfUpdate.mockReturnValue(gate.promise)
 
     job.startUpdateJob('v9.9.9', { restart })
@@ -56,12 +56,12 @@ describe('update/job startUpdateJob', () => {
     }
     expect(caught).toMatchObject({ name: 'DomainError', code: 'CONFLICT' })
 
-    gate.resolve()
+    gate.resolve(undefined)
   })
 
   it('tracks pipeline states and schedules the restart on success', async () => {
     const job = await loadJob()
-    const gate = deferred<void>()
+    const gate = deferred<undefined>()
     pipelineMocks.runSelfUpdate.mockImplementation(({ onState }: { onState: (s: string) => void }) => {
       onState('verifying')
       return gate.promise
@@ -70,7 +70,7 @@ describe('update/job startUpdateJob', () => {
     job.startUpdateJob('v9.9.9', { restart })
     expect(job.getUpdateJobStatus().state).toBe('verifying')
 
-    gate.resolve()
+    gate.resolve(undefined)
     await vi.waitFor(() => {
       expect(job.getUpdateJobStatus().state).toBe('restarting')
     })
@@ -80,7 +80,7 @@ describe('update/job startUpdateJob', () => {
 
   it('marks the job failed on pipeline error and allows a retry', async () => {
     const job = await loadJob()
-    const gate = deferred<void>()
+    const gate = deferred<undefined>()
     pipelineMocks.runSelfUpdate.mockReturnValue(gate.promise)
 
     job.startUpdateJob('v9.9.9', { restart })
@@ -97,10 +97,10 @@ describe('update/job startUpdateJob', () => {
     expect(restart).not.toHaveBeenCalled()
 
     // A failed job releases the single-job slot.
-    const retry = deferred<void>()
+    const retry = deferred<undefined>()
     pipelineMocks.runSelfUpdate.mockReturnValue(retry.promise)
     job.startUpdateJob('v9.9.10', { restart })
     expect(job.getUpdateJobStatus()).toEqual({ state: 'downloading', targetVersion: 'v9.9.10' })
-    retry.resolve()
+    retry.resolve(undefined)
   })
 })

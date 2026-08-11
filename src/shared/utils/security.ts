@@ -1,3 +1,6 @@
+/** Minimum password length enforced everywhere (login, signup, reset, change). */
+export const MIN_PASSWORD_LENGTH = 10
+
 // Cryptographically random URL-safe token of `length` chars. base64url
 // (RFC 4648 §5) → ~6 bits per char. The byte pool is oversized so the
 // encoded output always reaches `length`, then sliced.

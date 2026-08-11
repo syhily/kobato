@@ -75,6 +75,8 @@ export function Sidebar({ data }: SidebarProps) {
               return <RandomTags key="randomTags" tags={data.tags} />
             case 'todayCalendar':
               return <TodayCalendar key="todayCalendar" />
+            default:
+              return null
           }
         })}
       </div>

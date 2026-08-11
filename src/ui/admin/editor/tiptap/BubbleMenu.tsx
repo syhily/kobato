@@ -17,6 +17,7 @@ import { useState } from 'react'
 const BUBBLE_MENU_OPTIONS = { placement: 'top' as const, offset: 8 }
 
 import { orpc } from '@/client/api/client'
+import { onMutationError } from '@/client/lib/toast-api-error'
 import { generateBlockKey } from '@/shared/pt/utils'
 import { MathInlinePanel } from '@/ui/admin/editor/tiptap/InlineMarkPanels'
 import { LinkPopover } from '@/ui/admin/editor/tiptap/LinkPopover'
@@ -46,6 +47,31 @@ function mathInlinePanelApplies(editor: Editor): boolean {
   return after !== null && after.isText === true && !!markType.isInSet(after.marks)
 }
 
+// Identity (`_key` attr) of the mathInline mark under the caret — the mark is
+// `inclusive: false`, so the leading edge needs the same nodeAfter probe as
+// `mathInlinePanelApplies`.
+function mathInlineMarkKey(editor: Editor): string | undefined {
+  const { state } = editor
+  const markType = state.schema.marks.mathInline
+  if (markType === undefined) {
+    return undefined
+  }
+  if (!state.selection.empty) {
+    const attrs: Record<string, unknown> = editor.getAttributes('mathInline')
+    return typeof attrs._key === 'string' && attrs._key !== '' ? attrs._key : undefined
+  }
+  const $from = state.selection.$from
+  let found = markType.isInSet($from.marks())
+  if (found === undefined) {
+    const after = $from.nodeAfter
+    if (after !== null && after.isText === true) {
+      found = markType.isInSet(after.marks)
+    }
+  }
+  const key: unknown = found?.attrs._key
+  return typeof key === 'string' && key !== '' ? key : undefined
+}
+
 function targetAllowsNativeFocusInsideBubble(event: { target: EventTarget | null }): boolean {
   const t = event.target
   if (!(t instanceof Element)) {
@@ -57,9 +83,14 @@ function targetAllowsNativeFocusInsideBubble(event: { target: EventTarget | null
 export function PageBubbleMenu({ editor }: PageBubbleMenuProps) {
   const [linkOpen, setLinkOpen] = useState(false)
 
-  const showMathPanel = useEditorState({
+  const mathPanel = useEditorState({
     editor,
-    selector: ({ editor: ed }) => mathInlinePanelApplies(ed),
+    selector: ({ editor: ed }) => {
+      if (!mathInlinePanelApplies(ed)) {
+        return { show: false, markKey: undefined as string | undefined }
+      }
+      return { show: true, markKey: mathInlineMarkKey(ed) }
+    },
   })
   const sigmaToggleActive = useEditorState({
     editor,
@@ -107,8 +138,11 @@ export function PageBubbleMenu({ editor }: PageBubbleMenuProps) {
       >
         {linkOpen ? (
           <LinkPopover variant="selection" editor={editor} onClose={() => setLinkOpen(false)} />
-        ) : showMathPanel ? (
-          <MathInlinePanel editor={editor} />
+        ) : mathPanel.show ? (
+          // Keyed per mark: the panel seeds its tex on mount, so moving the
+          // caret straight from one math mark to another must remount it —
+          // otherwise 应用 writes the previous mark's tex onto the new one.
+          <MathInlinePanel key={mathPanel.markKey ?? 'none'} editor={editor} />
         ) : (
           <ActionRow editor={editor} sigmaToggleActive={sigmaToggleActive} onLink={() => setLinkOpen(true)} />
         )}
@@ -124,39 +158,52 @@ interface ActionRowProps {
 }
 
 function ActionRow({ editor, sigmaToggleActive, onLink }: ActionRowProps) {
+  // The BubbleMenu portal never re-renders children on transactions — subscribe
+  // mark state explicitly or the toggles go stale on selection-only moves.
+  const active = useEditorState({
+    editor,
+    selector: ({ editor: ed }) => ({
+      bold: ed.isActive('bold'),
+      italic: ed.isActive('italic'),
+      underline: ed.isActive('underline'),
+      strike: ed.isActive('strike'),
+      code: ed.isActive('code'),
+      link: ed.isActive('link'),
+    }),
+  })
   return (
     <div className="flex items-center gap-0.5 px-1 py-1">
       <Toggle
         title="加粗"
-        state={editor.isActive('bold') ? 'active' : 'inactive'}
+        state={active.bold ? 'active' : 'inactive'}
         onClick={() => editor.chain().focus().toggleBold().run()}
       >
         <BoldIcon />
       </Toggle>
       <Toggle
         title="斜体"
-        state={editor.isActive('italic') ? 'active' : 'inactive'}
+        state={active.italic ? 'active' : 'inactive'}
         onClick={() => editor.chain().focus().toggleItalic().run()}
       >
         <ItalicIcon />
       </Toggle>
       <Toggle
         title="下划线"
-        state={editor.isActive('underline') ? 'active' : 'inactive'}
+        state={active.underline ? 'active' : 'inactive'}
         onClick={() => editor.chain().focus().toggleUnderline().run()}
       >
         <UnderlineIcon />
       </Toggle>
       <Toggle
         title="删除线"
-        state={editor.isActive('strike') ? 'active' : 'inactive'}
+        state={active.strike ? 'active' : 'inactive'}
         onClick={() => editor.chain().focus().toggleStrike().run()}
       >
         <StrikethroughIcon />
       </Toggle>
       <Toggle
         title="行内代码"
-        state={editor.isActive('code') ? 'active' : 'inactive'}
+        state={active.code ? 'active' : 'inactive'}
         onClick={() => editor.chain().focus().toggleCode().run()}
       >
         <Code2Icon />
@@ -164,7 +211,7 @@ function ActionRow({ editor, sigmaToggleActive, onLink }: ActionRowProps) {
       <Separator orientation="vertical" className="mx-1 h-5" />
       <Toggle
         title="链接"
-        state={editor.isActive('link') ? 'active' : 'inactive'}
+        state={active.link ? 'active' : 'inactive'}
         onClick={() => {
           if (editor.isActive('link')) {
             editor.chain().focus().extendMarkRange('link').run()
@@ -183,20 +230,27 @@ function ActionRow({ editor, sigmaToggleActive, onLink }: ActionRowProps) {
       >
         <SigmaIcon />
       </Toggle>
-      {editor.isActive('link') ? <OpenLinkPreview editor={editor} /> : null}
+      {active.link ? <OpenLinkPreview editor={editor} /> : null}
     </div>
   )
 }
 
 function OpenLinkPreview({ editor }: { editor: Editor }) {
-  const attrs: Record<string, unknown> = editor.getAttributes('link')
-  const href = typeof attrs.href === 'string' ? attrs.href : '#'
-  const newTab = attrs.target === '_blank'
+  const link = useEditorState({
+    editor,
+    selector: ({ editor: ed }) => {
+      const attrs: Record<string, unknown> = ed.getAttributes('link')
+      return {
+        href: typeof attrs.href === 'string' ? attrs.href : '#',
+        newTab: attrs.target === '_blank',
+      }
+    },
+  })
   return (
     <a
-      href={href}
-      {...(newTab ? { target: '_blank' as const, rel: 'noreferrer noopener' as const } : {})}
-      title={newTab ? '在新标签页打开' : '打开链接'}
+      href={link.href}
+      {...(link.newTab ? { target: '_blank' as const, rel: 'noreferrer noopener' as const } : {})}
+      title={link.newTab ? '在新标签页打开' : '打开链接'}
       className="inline-flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-accent"
     >
       <ExternalLinkIcon className="size-3.5" />
@@ -243,9 +297,14 @@ async function insertMathInline(editor: Editor) {
 
   let mathml: string | undefined
   if (tex.trim() !== '') {
-    const out = await orpc.admin.renders.math({ tex, display: false })
-    if (out.error === null && out.mathml !== '') {
-      mathml = out.mathml
+    try {
+      const out = await orpc.admin.renders.math({ tex, display: false })
+      if (out.error === null && out.mathml !== '') {
+        mathml = out.mathml
+      }
+    } catch (error) {
+      // The pre-render is a cache — the PT renderer falls back to the raw tex.
+      onMutationError('公式预渲染失败')(error)
     }
   }
 
@@ -254,9 +313,11 @@ async function insertMathInline(editor: Editor) {
     attrs.mathml = mathml
   }
 
+  // The RPC round-trip can outlive the captured selection — re-read it before mutating.
+  const fresh = editor.state.selection
   const chain = editor.chain().focus()
-  if (hasRange) {
-    chain.deleteRange({ from, to })
+  if (fresh.from < fresh.to) {
+    chain.deleteRange({ from: fresh.from, to: fresh.to })
   }
   chain
     .insertContent({

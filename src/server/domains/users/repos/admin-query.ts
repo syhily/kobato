@@ -157,13 +157,15 @@ export async function listAdminUsers(
       .limit(limit)
       .offset(offset)
 
-    return rows.map((row) => ({
-      ...row,
-      role: row.role ?? null,
-      commentCount: Number(row.commentCount ?? 0),
-      pendingCount: Number(row.pendingCount ?? 0),
-      passkeyCount: Number(row.passkeyCount ?? 0),
-    }))
+    return rows.map((row) =>
+      // Fresh drizzle result row — safe to normalize in place.
+      Object.assign(row, {
+        role: row.role ?? null,
+        commentCount: Number(row.commentCount ?? 0),
+        pendingCount: Number(row.pendingCount ?? 0),
+        passkeyCount: Number(row.passkeyCount ?? 0),
+      }),
+    )
   }
 
   // Default recency order: aggregate comments only for this page after LIMIT.
@@ -196,14 +198,14 @@ export async function listAdminUsers(
 
   return rows.map((row) => {
     const stat = stats.get(row.id) ?? EMPTY_COMMENT_STATS
-    return {
-      ...row,
+    // Fresh drizzle result row — safe to normalize in place.
+    return Object.assign(row, {
       role: row.role ?? null,
       commentCount: stat.commentCount,
       pendingCount: stat.pendingCount,
       lastCommentAt: stat.lastCommentAt,
       passkeyCount: Number(row.passkeyCount ?? 0),
-    }
+    })
   })
 }
 

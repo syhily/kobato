@@ -8,10 +8,10 @@ import type {
 } from '@/ui/admin/editor-shell/editor-shell-types'
 
 import { DateTimePicker } from '@/ui/admin/editor-shell/DateTimePicker'
+import { LabelledRadioCard } from '@/ui/admin/shared/LabelledRadio'
 import { Badge } from '@/ui/components/badge'
 import { Label } from '@/ui/components/label'
-import { RadioGroup, RadioGroupItem } from '@/ui/components/radio-group'
-import { cn } from '@/ui/lib/cn'
+import { RadioGroup } from '@/ui/components/radio-group'
 
 export interface PublishStatusRowProps {
   status: SidebarPublishStatus
@@ -69,14 +69,14 @@ export function PublishStatusRow({
           disabled={disabled}
           className="grid-cols-2 gap-2"
         >
-          <PublishModeOption
+          <LabelledRadioCard
             id={`${fieldId}-now`}
             value="now"
             active={!isScheduled}
             label="立即发布"
             description="使用当前时间"
           />
-          <PublishModeOption
+          <LabelledRadioCard
             id={`${fieldId}-scheduled`}
             value="scheduled"
             active={isScheduled}
@@ -104,32 +104,6 @@ function RevisionSummaryInline({ summary }: { summary: SidebarRevisionSummary | 
     return <span className="text-xs text-muted-foreground">当前还没有保存的修订</span>
   }
   return null
-}
-
-interface PublishModeOptionProps {
-  id: string
-  value: string
-  active: boolean
-  label: string
-  description: string
-}
-
-function PublishModeOption({ id, value, active, label, description }: PublishModeOptionProps) {
-  return (
-    <label
-      htmlFor={id}
-      className={cn(
-        'flex cursor-pointer items-start gap-2 rounded-xl border bg-background p-2 transition-colors',
-        active ? 'border-primary ring-1 ring-primary/30' : 'hover:bg-accent/40',
-      )}
-    >
-      <RadioGroupItem id={id} value={value} className="mt-0.5" />
-      <div className="grid gap-0.5 text-sm leading-tight">
-        <span className="font-medium">{label}</span>
-        <span className="text-xs text-muted-foreground">{description}</span>
-      </div>
-    </label>
-  )
 }
 
 function PublishBadge({ status, isFuture }: { status: SidebarPublishStatus; isFuture: boolean }) {

@@ -8,7 +8,7 @@ import type { ActiveFilter, FilterPillsAction } from '@/ui/admin/shared/filterPi
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
-import { toastApiError } from '@/client/lib/toast-api-error'
+import { onMutationError } from '@/client/lib/toast-api-error'
 import { idStr } from '@/shared/utils/tools'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import {
@@ -330,17 +330,17 @@ export function useCommentsController({ filters, dispatch, queryInput, intents }
   const approveMutation = useMutation({
     ...orpcQuery.admin.comments.approve.mutationOptions(),
     onSuccess: (_result, variables) => approveComment(variables.commentId),
+    onError: onMutationError('审核通过失败'),
   })
   const deleteMutation = useMutation({
     ...orpcQuery.admin.comments.delete.mutationOptions(),
     onSuccess: (_result, variables) => removeComment(variables.commentId),
+    onError: onMutationError('删除评论失败'),
   })
   // Shared by 同意删除 / 拒绝删除 — the per-call `onSuccess` captures the comment for the reject path's count fixup.
   const resolveDeletionMutation = useMutation({
     ...orpcQuery.admin.comments.approveCommentDeletion.mutationOptions(),
-    onError: (error) => {
-      toastApiError(error, '处理删除申请失败')
-    },
+    onError: onMutationError('处理删除申请失败'),
   })
 
   const actions: CommentActions = {

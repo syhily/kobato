@@ -45,7 +45,6 @@ export async function loader({ request, context }: Route.LoaderArgs) {
         cmp = a.loginAt.getTime() - b.loginAt.getTime()
         break
       case 'lastActive':
-      default:
         cmp = a.lastActiveAt.getTime() - b.lastActiveAt.getTime()
         break
     }

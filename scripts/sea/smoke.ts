@@ -53,7 +53,7 @@ function none<T>(): T | null {
 }
 
 /** Run one named check: print the verdict immediately, record it, never throw. */
-async function check(name: string, fn: () => string | void | Promise<string | void>) {
+async function check(name: string, fn: () => string | undefined | Promise<string | undefined>) {
   try {
     const detail = (await fn()) ?? ''
     results.push({ name, ok: true, detail })

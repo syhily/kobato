@@ -1,5 +1,7 @@
 import type { Editor } from '@tiptap/core'
 
+import { useEditorState } from '@tiptap/react'
+
 import {
   applyBlockStyle,
   BLOCK_STYLE_BUTTONS,
@@ -15,7 +17,7 @@ interface BlockStyleProps {
 }
 
 export function BlockStyleSelect({ editor, disabled }: BlockStyleProps) {
-  const active = getActiveBlockStyle(editor)
+  const active = useEditorState({ editor, selector: ({ editor: ed }) => getActiveBlockStyle(ed) })
   return (
     <Select
       value={active}
@@ -50,7 +52,7 @@ export function BlockStyleSelect({ editor, disabled }: BlockStyleProps) {
 }
 
 export function BlockStyleButtons({ editor, disabled }: BlockStyleProps) {
-  const active = getActiveBlockStyle(editor)
+  const active = useEditorState({ editor, selector: ({ editor: ed }) => getActiveBlockStyle(ed) })
   return (
     <>
       {BLOCK_STYLE_BUTTONS.map(({ value, title, Icon }) => (

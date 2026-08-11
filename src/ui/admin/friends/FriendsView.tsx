@@ -8,7 +8,7 @@ import type { DeleteFriendInput } from '@/shared/types/friends'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
-import { toastApiError } from '@/client/lib/toast-api-error'
+import { onMutationError } from '@/client/lib/toast-api-error'
 import { EditFriendDialog } from '@/ui/admin/friends/EditFriendDialog'
 import { FriendRow, FriendsSkeleton } from '@/ui/admin/friends/FriendRow'
 import { PendingFriendRow } from '@/ui/admin/friends/PendingFriendRow'
@@ -66,9 +66,7 @@ export function FriendsView() {
       toast.success('友链已删除')
       invalidateList()
     },
-    onError: (error) => {
-      toastApiError(error, '删除友链失败')
-    },
+    onError: onMutationError('删除友链失败'),
   })
 
   // One-click approve flips `visible` via the existing upsert path; rows without a poster can't pass the schema.
@@ -87,9 +85,7 @@ export function FriendsView() {
       toast.success('友链已通过审核')
       invalidateList()
     },
-    onError: (error) => {
-      toastApiError(error, '通过友链失败')
-    },
+    onError: onMutationError('通过友链失败'),
   })
 
   const [qInput, setQInput] = useDebouncedSearch({
