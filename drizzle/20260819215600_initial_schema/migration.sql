@@ -208,6 +208,7 @@ CREATE TABLE `page` (
 	`og` text,
 	`published` integer DEFAULT true NOT NULL,
 	`comments_enabled` integer DEFAULT true NOT NULL,
+	`webmentions_enabled` integer DEFAULT true NOT NULL,
 	`show_toc` integer DEFAULT false NOT NULL,
 	`show_updated` integer DEFAULT false NOT NULL,
 	`show_friends` integer DEFAULT false NOT NULL,
@@ -251,6 +252,7 @@ CREATE TABLE `post` (
 	`og` text,
 	`published` integer DEFAULT true NOT NULL,
 	`comments_enabled` integer DEFAULT true NOT NULL,
+	`webmentions_enabled` integer DEFAULT true NOT NULL,
 	`show_toc` integer DEFAULT false NOT NULL,
 	`show_updated` integer DEFAULT false NOT NULL,
 	`visible` integer DEFAULT true NOT NULL,
@@ -337,15 +339,46 @@ CREATE TABLE `webmention` (
 	`source_url` text NOT NULL,
 	`target_url` text NOT NULL,
 	`status` text DEFAULT 'pending' NOT NULL,
+	`type` text DEFAULT 'mention' NOT NULL,
 	`target_type` text NOT NULL,
 	`target_owner_id` integer NOT NULL,
-	`fetched_at` integer,
+	`verification_status` text DEFAULT 'verified' NOT NULL,
+	`last_verified_at` integer,
+	`last_error` text,
+	`verify_fail_streak` integer DEFAULT 0 NOT NULL,
 	`author_name` text,
 	`title` text,
 	`summary` text,
-	`raw_payload` text NOT NULL,
 	`moderated_at` integer,
-	CONSTRAINT "webmention_status_chk" CHECK("status" IN ('pending', 'approved', 'rejected'))
+	CONSTRAINT "webmention_status_chk" CHECK("status" IN ('pending', 'approved', 'rejected', 'hidden')),
+	CONSTRAINT "webmention_type_chk" CHECK("type" IN ('mention', 'reply', 'like', 'repost')),
+	CONSTRAINT "webmention_verification_chk" CHECK("verification_status" IN ('verified', 'failed'))
+);
+--> statement-breakpoint
+CREATE TABLE `webmention_inbox` (
+	`id` integer PRIMARY KEY AUTOINCREMENT,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL,
+	`source_url` text NOT NULL,
+	`target_url` text NOT NULL,
+	`attempts` integer DEFAULT 0 NOT NULL,
+	`next_retry_at` integer,
+	`last_error` text
+);
+--> statement-breakpoint
+CREATE TABLE `webmention_outbox` (
+	`id` integer PRIMARY KEY AUTOINCREMENT,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL,
+	`source_url` text NOT NULL,
+	`target_url` text NOT NULL,
+	`endpoint` text,
+	`status` text DEFAULT 'pending' NOT NULL,
+	`attempts` integer DEFAULT 0 NOT NULL,
+	`next_retry_at` integer,
+	`last_error` text,
+	`sent_at` integer,
+	CONSTRAINT "webmention_outbox_status_chk" CHECK("status" IN ('pending', 'sent', 'no-endpoint', 'failed'))
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `uq_backup_storage_path` ON `backup` (`storage_path`);--> statement-breakpoint
@@ -399,6 +432,7 @@ CREATE INDEX `idx_post_published_at` ON `post` (`published_at`);--> statement-br
 CREATE INDEX `idx_post_first_published_at` ON `post` (`first_published_at`);--> statement-breakpoint
 CREATE INDEX `idx_post_pinned_at` ON `post` (`pinned_at`);--> statement-breakpoint
 CREATE INDEX `idx_post_catalog` ON `post` (`deleted_at`,`published`,`first_published_at`);--> statement-breakpoint
+CREATE INDEX `idx_post_live_gate` ON `post` (`deleted_at`,`published`,`visible`,`published_at`,`published_revision_id`);--> statement-breakpoint
 CREATE INDEX `idx_post_author_id` ON `post` (`author_id`);--> statement-breakpoint
 CREATE INDEX `idx_session_user_id` ON `session` (`user_id`);--> statement-breakpoint
 CREATE INDEX `idx_session_expires_at` ON `session` (`expires_at`);--> statement-breakpoint
@@ -409,5 +443,11 @@ CREATE INDEX `idx_user_role` ON `user` (`role`) WHERE role IS NOT NULL;--> state
 CREATE INDEX `idx_verification_value` ON `verification` (`value`);--> statement-breakpoint
 CREATE INDEX `idx_verification_expires_at` ON `verification` (`expires_at`);--> statement-breakpoint
 CREATE UNIQUE INDEX `uq_verification_purpose_user` ON `verification` (`purpose`,`user_id`);--> statement-breakpoint
+CREATE UNIQUE INDEX `uq_webmention_pair` ON `webmention` (`source_url`,`target_url`);--> statement-breakpoint
 CREATE INDEX `idx_webmention_status` ON `webmention` (`status`);--> statement-breakpoint
-CREATE INDEX `idx_webmention_target` ON `webmention` (`target_type`,`target_owner_id`);
+CREATE INDEX `idx_webmention_target` ON `webmention` (`target_type`,`target_owner_id`);--> statement-breakpoint
+CREATE UNIQUE INDEX `uq_webmention_inbox_pair` ON `webmention_inbox` (`source_url`,`target_url`);--> statement-breakpoint
+CREATE INDEX `idx_webmention_inbox_pick` ON `webmention_inbox` (`next_retry_at`);--> statement-breakpoint
+CREATE UNIQUE INDEX `uq_webmention_outbox_pair` ON `webmention_outbox` (`source_url`,`target_url`);--> statement-breakpoint
+CREATE INDEX `idx_webmention_outbox_pick` ON `webmention_outbox` (`status`,`next_retry_at`);--> statement-breakpoint
+CREATE INDEX `idx_webmention_outbox_source` ON `webmention_outbox` (`source_url`);

@@ -1,1 +1,0 @@
-CREATE INDEX `idx_post_live_gate` ON `post` (`deleted_at`,`published`,`visible`,`published_at`,`published_revision_id`);

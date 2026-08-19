@@ -15,16 +15,21 @@ vi.mock('@/server/infra/lifecycle', () => ({
   registerShutdownHook: (...args: unknown[]) => registerShutdownHook(...args),
 }))
 
-// `nextDailyMaintenanceDelayMs` runs for real: with no hydrated settings the
-// timeZone defaults to UTC, and the fake timers make the 04:30 daily slot
-// deterministic — advancing a full day + margin crosses exactly one fire.
-const ADVANCE_TO_NEXT_RUN_MS = 86_400_000 + 1_000
+// `nextDailyMaintenanceDelayMs` runs for real. Pinning the fake clock to a
+// fixed instant keeps the delay-to-fire identical on every machine and run,
+// and advancing exactly that delay (+ 1 ms) crosses exactly one fire — a
+// full-day blind advance is wall-clock dependent (a run starting within 1 s
+// of the 04:30 slot double-fires) and sweeps a whole day of fake time.
+const PINNED_NOW = new Date('2026-01-15T12:00:00.000Z')
 
 const { scheduleNextTokenPurge, wireTokenPurgeScheduler } = await import('@/server/domains/auth/token-purge-scheduler')
-const { stopAllScheduledJobs } = await import('@/server/infra/scheduler-utils')
+const { nextDailyMaintenanceDelayMs, stopAllScheduledJobs } = await import('@/server/infra/scheduler-utils')
+
+const advanceToNextRun = () => vi.advanceTimersByTimeAsync(nextDailyMaintenanceDelayMs() + 1)
 
 describe('auth token-purge scheduler', () => {
   beforeEach(() => {
+    vi.setSystemTime(PINNED_NOW)
     vi.clearAllMocks()
     getDb.mockReturnValue(db)
     stopAllScheduledJobs()
@@ -44,17 +49,17 @@ describe('auth token-purge scheduler', () => {
     const freshDb = {}
     getDb.mockReturnValue(freshDb)
 
-    await vi.advanceTimersByTimeAsync(ADVANCE_TO_NEXT_RUN_MS)
+    await advanceToNextRun()
     expect(purgeExpired).toHaveBeenCalledTimes(1)
     expect(purgeExpired).toHaveBeenCalledWith(freshDb)
   })
 
   it('reschedules the next run after the job completes', async () => {
     scheduleNextTokenPurge()
-    await vi.advanceTimersByTimeAsync(ADVANCE_TO_NEXT_RUN_MS)
+    await advanceToNextRun()
     expect(purgeExpired).toHaveBeenCalledTimes(1)
     expect(vi.getTimerCount()).toBe(1)
-    await vi.advanceTimersByTimeAsync(ADVANCE_TO_NEXT_RUN_MS)
+    await advanceToNextRun()
     expect(purgeExpired).toHaveBeenCalledTimes(2)
   })
 

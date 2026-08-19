@@ -1,7 +1,7 @@
 {
   "version": "7",
   "dialect": "sqlite",
-  "id": "a64f41c7-8860-4ccc-9d35-1a31057ff23f",
+  "id": "9ada5c79-687e-467e-93e3-718f162fc619",
   "prevIds": [
     "00000000-0000-0000-0000-000000000000"
   ],
@@ -108,6 +108,14 @@
     },
     {
       "name": "webmention",
+      "entityType": "tables"
+    },
+    {
+      "name": "webmention_inbox",
+      "entityType": "tables"
+    },
+    {
+      "name": "webmention_outbox",
       "entityType": "tables"
     },
     {
@@ -1674,6 +1682,16 @@
       "type": "integer",
       "notNull": true,
       "autoincrement": false,
+      "default": "true",
+      "generated": null,
+      "name": "webmentions_enabled",
+      "entityType": "columns",
+      "table": "page"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
       "default": "false",
       "generated": null,
       "name": "show_toc",
@@ -1967,6 +1985,16 @@
       "default": "true",
       "generated": null,
       "name": "comments_enabled",
+      "entityType": "columns",
+      "table": "post"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "true",
+      "generated": null,
+      "name": "webmentions_enabled",
       "entityType": "columns",
       "table": "post"
     },
@@ -2624,6 +2652,16 @@
       "type": "text",
       "notNull": true,
       "autoincrement": false,
+      "default": "'mention'",
+      "generated": null,
+      "name": "type",
+      "entityType": "columns",
+      "table": "webmention"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
       "default": null,
       "generated": null,
       "name": "target_type",
@@ -2641,12 +2679,42 @@
       "table": "webmention"
     },
     {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'verified'",
+      "generated": null,
+      "name": "verification_status",
+      "entityType": "columns",
+      "table": "webmention"
+    },
+    {
       "type": "integer",
       "notNull": false,
       "autoincrement": false,
       "default": null,
       "generated": null,
-      "name": "fetched_at",
+      "name": "last_verified_at",
+      "entityType": "columns",
+      "table": "webmention"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "last_error",
+      "entityType": "columns",
+      "table": "webmention"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "verify_fail_streak",
       "entityType": "columns",
       "table": "webmention"
     },
@@ -2681,16 +2749,6 @@
       "table": "webmention"
     },
     {
-      "type": "text",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "raw_payload",
-      "entityType": "columns",
-      "table": "webmention"
-    },
-    {
       "type": "integer",
       "notNull": false,
       "autoincrement": false,
@@ -2699,6 +2757,196 @@
       "name": "moderated_at",
       "entityType": "columns",
       "table": "webmention"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "webmention_inbox"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "webmention_inbox"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "table": "webmention_inbox"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "source_url",
+      "entityType": "columns",
+      "table": "webmention_inbox"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "target_url",
+      "entityType": "columns",
+      "table": "webmention_inbox"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "attempts",
+      "entityType": "columns",
+      "table": "webmention_inbox"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "next_retry_at",
+      "entityType": "columns",
+      "table": "webmention_inbox"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "last_error",
+      "entityType": "columns",
+      "table": "webmention_inbox"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": true,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
+      "table": "webmention_outbox"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "table": "webmention_outbox"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "table": "webmention_outbox"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "source_url",
+      "entityType": "columns",
+      "table": "webmention_outbox"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "target_url",
+      "entityType": "columns",
+      "table": "webmention_outbox"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "endpoint",
+      "entityType": "columns",
+      "table": "webmention_outbox"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "'pending'",
+      "generated": null,
+      "name": "status",
+      "entityType": "columns",
+      "table": "webmention_outbox"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": "0",
+      "generated": null,
+      "name": "attempts",
+      "entityType": "columns",
+      "table": "webmention_outbox"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "next_retry_at",
+      "entityType": "columns",
+      "table": "webmention_outbox"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "last_error",
+      "entityType": "columns",
+      "table": "webmention_outbox"
+    },
+    {
+      "type": "integer",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "sent_at",
+      "entityType": "columns",
+      "table": "webmention_outbox"
     },
     {
       "columns": [
@@ -3023,6 +3271,24 @@
       "nameExplicit": false,
       "name": "webmention_pk",
       "table": "webmention",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "webmention_inbox_pk",
+      "table": "webmention_inbox",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "webmention_outbox_pk",
+      "table": "webmention_outbox",
       "entityType": "pks"
     },
     {
@@ -3810,6 +4076,36 @@
     {
       "columns": [
         {
+          "value": "deleted_at",
+          "isExpression": false
+        },
+        {
+          "value": "published",
+          "isExpression": false
+        },
+        {
+          "value": "visible",
+          "isExpression": false
+        },
+        {
+          "value": "published_at",
+          "isExpression": false
+        },
+        {
+          "value": "published_revision_id",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_post_live_gate",
+      "entityType": "indexes",
+      "table": "post"
+    },
+    {
+      "columns": [
+        {
           "value": "author_id",
           "isExpression": false
         }
@@ -3954,6 +4250,24 @@
     {
       "columns": [
         {
+          "value": "source_url",
+          "isExpression": false
+        },
+        {
+          "value": "target_url",
+          "isExpression": false
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "origin": "manual",
+      "name": "uq_webmention_pair",
+      "entityType": "indexes",
+      "table": "webmention"
+    },
+    {
+      "columns": [
+        {
           "value": "status",
           "isExpression": false
         }
@@ -3982,6 +4296,88 @@
       "name": "idx_webmention_target",
       "entityType": "indexes",
       "table": "webmention"
+    },
+    {
+      "columns": [
+        {
+          "value": "source_url",
+          "isExpression": false
+        },
+        {
+          "value": "target_url",
+          "isExpression": false
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "origin": "manual",
+      "name": "uq_webmention_inbox_pair",
+      "entityType": "indexes",
+      "table": "webmention_inbox"
+    },
+    {
+      "columns": [
+        {
+          "value": "next_retry_at",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_webmention_inbox_pick",
+      "entityType": "indexes",
+      "table": "webmention_inbox"
+    },
+    {
+      "columns": [
+        {
+          "value": "source_url",
+          "isExpression": false
+        },
+        {
+          "value": "target_url",
+          "isExpression": false
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "origin": "manual",
+      "name": "uq_webmention_outbox_pair",
+      "entityType": "indexes",
+      "table": "webmention_outbox"
+    },
+    {
+      "columns": [
+        {
+          "value": "status",
+          "isExpression": false
+        },
+        {
+          "value": "next_retry_at",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_webmention_outbox_pick",
+      "entityType": "indexes",
+      "table": "webmention_outbox"
+    },
+    {
+      "columns": [
+        {
+          "value": "source_url",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "idx_webmention_outbox_source",
+      "entityType": "indexes",
+      "table": "webmention_outbox"
     },
     {
       "columns": [
@@ -4140,10 +4536,28 @@
       "table": "user"
     },
     {
-      "value": "\"status\" IN ('pending', 'approved', 'rejected')",
+      "value": "\"status\" IN ('pending', 'approved', 'rejected', 'hidden')",
       "name": "webmention_status_chk",
       "entityType": "checks",
       "table": "webmention"
+    },
+    {
+      "value": "\"type\" IN ('mention', 'reply', 'like', 'repost')",
+      "name": "webmention_type_chk",
+      "entityType": "checks",
+      "table": "webmention"
+    },
+    {
+      "value": "\"verification_status\" IN ('verified', 'failed')",
+      "name": "webmention_verification_chk",
+      "entityType": "checks",
+      "table": "webmention"
+    },
+    {
+      "value": "\"status\" IN ('pending', 'sent', 'no-endpoint', 'failed')",
+      "name": "webmention_outbox_status_chk",
+      "entityType": "checks",
+      "table": "webmention_outbox"
     }
   ],
   "renames": []
