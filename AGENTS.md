@@ -266,12 +266,12 @@ Manual rollback: `kobato rollback && systemctl restart <service>` (the CLI subco
 
 ## Release workflow
 
-Use `/release <version>` (e.g., `/release 6.3.0`):
+Use `/release <version> <next-version>` (e.g., `/release 6.3.0 6.4.0-dev`):
 
 1. Analyze commits since last tag, draft AI-generated release notes.
-2. Bump version, push develop, fast-forward merge to main, push main.
+2. Bump to `<version>`, push develop, fast-forward merge to main, push main.
 3. Create git tag + GitHub release (Docker and SEA workflows trigger automatically).
-4. Switch back to develop, prepare next patch version, push.
+4. Switch back to develop, prepare `<next-version>`, push.
 
 No PRs — direct fast-forward merge from develop to main. Version is baked at build time via `vite.config.ts` `define.__APP_VERSION__`.
 

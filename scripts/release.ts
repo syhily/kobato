@@ -53,10 +53,14 @@ function cmdSinceLast(): void {
   process.stdout.write(tag)
 }
 
-function cmdBump(version: string): void {
+function assertVersion(version: string): void {
   if (!version || !/^\d+\.\d+\.\d+(-[\w.]+)?$/.test(version)) {
     throw new Error(`Invalid version: ${version}. Expected semver format like 6.3.0 or 6.3.0-beta.1.`)
   }
+}
+
+function cmdBump(version: string): void {
+  assertVersion(version)
 
   validateClean()
 
@@ -69,7 +73,7 @@ function cmdBump(version: string): void {
     throw new Error('Invalid package.json')
   }
   const oldVersion = requireString(pkg, 'version')
-  pkg['version'] = version
+  pkg.version = version
   writeJson(pkgPath, pkg)
 
   if (existsSync(resolve(ROOT, composePath))) {
@@ -131,7 +135,7 @@ function cmdTag(args: string[]): void {
   )
 }
 
-function cmdPrepareNext(): void {
+function cmdPrepareNext(version?: string): void {
   const branch = getBranch()
   if (branch !== 'develop') {
     throw new Error(`Must be on develop branch. Currently on: ${branch}`)
@@ -148,11 +152,17 @@ function cmdPrepareNext(): void {
     throw new Error('Invalid package.json')
   }
   const oldVersion = requireString(pkg, 'version')
-  const baseVersion = oldVersion.split('-')[0]
-  const parts = baseVersion.split('.').map(Number)
-  const nextVersion = `${parts[0]}.${parts[1]}.${parts[2] + 1}-dev`
+  let nextVersion: string
+  if (version) {
+    assertVersion(version)
+    nextVersion = version
+  } else {
+    const baseVersion = oldVersion.split('-')[0]
+    const parts = baseVersion.split('.').map(Number)
+    nextVersion = `${parts[0]}.${parts[1]}.${parts[2] + 1}-dev`
+  }
 
-  pkg['version'] = nextVersion
+  pkg.version = nextVersion
   writeJson(pkgPath, pkg)
 
   if (existsSync(resolve(ROOT, composePath))) {
@@ -173,7 +183,7 @@ const commands: Record<string, (args: string[]) => void> = {
   'since-last': () => cmdSinceLast(),
   bump: (args) => cmdBump(args[0]),
   tag: (args) => cmdTag(args),
-  'prepare-next': () => cmdPrepareNext(),
+  'prepare-next': (args) => cmdPrepareNext(args[0]),
 }
 
 if (!command || !commands[command]) {

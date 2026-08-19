@@ -1,24 +1,37 @@
-Execute a Kobato release. The user provides a target version number as the argument (e.g., `/release 6.3.0`).
+---
+name: release
+description: Execute a Kobato release. Use when the user runs `/release <version> <next-version>` or asks to release the project. The first argument is the version to release, the second is the next development version.
+arguments:
+  - version
+  - next_version
+---
 
-The entire release lifecycle runs automatically: analyze commits, draft notes, bump version, push to develop, fast-forward merge to main, tag and create GitHub release, switch back to develop, prepare next cycle.
+# Release
 
-## Workflow
+Execute a Kobato release. The user provides two arguments:
 
-Follow these steps in order. Do NOT skip steps or combine them.
+1. `$version` — the version to release (e.g. `6.3.0`).
+2. `$next_version` — the next development version on develop (e.g. `6.4.0-dev`).
 
-### Step 1: Validate preconditions
+The entire release lifecycle runs automatically: analyze commits, draft notes, bump version, push to develop, fast-forward merge to main, tag and create the GitHub release, switch back to develop, prepare the next cycle, and push.
+
+## Step 0: Validate arguments
+
+Both `$version` and `$next_version` must be present and match `X.Y.Z` or `X.Y.Z-prerelease` (e.g. `6.3.0`, `6.3.0-beta.1`, `6.4.0-dev`). If either is missing or malformed, stop and ask the user for the correct value.
+
+## Step 1: Validate preconditions
 
 - Run `git branch --show-current` — must be on `develop`.
 - Run `git status --porcelain` — working tree must be clean. If dirty, stop and tell the user to commit or stash.
-- Run `node --experimental-strip-types scripts/release.ts since-last` — note the last released tag.
+- Run `node scripts/release.ts since-last` — note the last released tag.
 
-### Step 2: Analyze commits
+## Step 2: Analyze commits
 
 Run `git log <last-tag>..HEAD --format="%h %s"` to get all commits since the last release.
 
 If there are zero commits, tell the user there's nothing to release and stop.
 
-### Step 3: Study the release notes style
+## Step 3: Study the release notes style
 
 Run `gh release view <last-tag>` to read the most recent release notes body. This is your primary style reference.
 
@@ -35,7 +48,7 @@ Internalize these style rules:
 - **Emojis**: Only as section header prefixes, never inline.
 - **Footer**: `**Full Changelog**: [prev...current](https://github.com/syhily/kobato/compare/PREV...CURRENT)` — a clickable markdown link
 
-### Step 4: Draft release notes
+## Step 4: Draft release notes
 
 Based on the commit analysis and the established style, draft the release notes. Group related commits under thematic sub-headers. Expand terse commit messages into descriptive bullets — the reader should understand _what_ changed and _why_ without reading the code.
 
@@ -43,21 +56,19 @@ For commits that are purely internal (e.g., `refactor: move X to Y`), collapse r
 
 Show the draft to the user and ask for approval or edits. Wait for their response before proceeding.
 
-### Step 5: Bump version
+## Step 5: Bump version
 
 After the user approves the release notes, run:
 
 ```
-node --experimental-strip-types scripts/release.ts bump <version>
+node scripts/release.ts bump $version
 ```
-
-where `<version>` is the argument the user provided to `/release`.
 
 Verify the commit was created:
 
-- Run `git log -1 --format="%h %s"` — should show `build: release <version>`.
+- Run `git log -1 --format="%h %s"` — should show `build: release $version`.
 
-### Step 6: Publish
+## Step 6: Publish
 
 Now execute the full publish sequence automatically:
 
@@ -66,25 +77,17 @@ Now execute the full publish sequence automatically:
 3. `git merge develop --ff-only` — fast-forward merge. If this fails (diverged histories), stop and tell the user to resolve manually.
 4. `git push origin main`
 5. Write the approved release notes to `/tmp/kobato-release-notes.md`
-6. `node --experimental-strip-types scripts/release.ts tag --notes-file /tmp/kobato-release-notes.md` — creates git tag and GitHub release
+6. `node scripts/release.ts tag --notes-file /tmp/kobato-release-notes.md` — creates git tag and GitHub release
 7. `git checkout develop`
 8. `git merge main --ff-only` — sync main back to develop
-9. `node --experimental-strip-types scripts/release.ts prepare-next` — bumps to next patch version, sets docker-compose to `latest`
+9. `node scripts/release.ts prepare-next $next_version` — sets develop to `$next_version` and docker-compose to `latest`
 10. `git push origin develop`
 
 After all steps complete, report the release URL and the new development version.
 
 ---
 
-## If the user runs `/release:tag` only
+## Recovery (when the full flow is interrupted)
 
-Use this when the bump was done separately and the user only wants to tag + publish on main. Runs steps 5–10 from above starting from the current state (expects to be on main with the release commit already present).
-
-## If the user runs `/release:prepare-next` only
-
-Use this when the release is already published and the user only wants to prepare the next dev cycle on develop.
-
-1. Verify on `develop`.
-2. `git merge main --ff-only`
-3. `node --experimental-strip-types scripts/release.ts prepare-next`
-4. `git push origin develop`
+- Tag/publish only: run `node scripts/release.ts tag --notes-file /tmp/kobato-release-notes.md` from `main` with the release commit already present.
+- Prepare next cycle only: run `node scripts/release.ts prepare-next <next_version>` from `develop`.
