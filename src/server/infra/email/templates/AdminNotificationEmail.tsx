@@ -95,6 +95,7 @@ export function AdminNotificationEmail({ preview, title, contextLine, mutedNote,
               <RawEmailHtml
                 key={row.html}
                 html={row.html}
+                className="dark-text-secondary"
                 style={{
                   fontSize: 16,
                   color: light.textSecondary,
@@ -138,7 +139,7 @@ export function AdminNotificationEmail({ preview, title, contextLine, mutedNote,
         })}
       </div>
 
-      <Hr />
+      <Hr className="dark-border" />
 
       <div style={{ paddingTop: 12, paddingBottom: 12 }}>
         <Link

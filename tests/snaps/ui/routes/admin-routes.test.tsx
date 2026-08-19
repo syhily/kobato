@@ -116,18 +116,9 @@ function OutletContextProvider({ context }: { context: Record<string, unknown> }
 
 /** Consumes the SettingsOutletContext the layout forwards and renders the bundle's site title. */
 function SettingsContextProbe() {
-  const ctx = useOutletContextSafe()
+  const ctx = useOutletContext<{ bundle?: { siteIdentity?: { title?: string } } }>()
   const title = ctx?.bundle?.siteIdentity?.title ?? ''
   return <div data-testid="probe">{title}</div>
-}
-
-// Minimal outlet-context reader — avoids importing the layout's typed `SettingsOutletContext`.
-function useOutletContextSafe(): { bundle?: { siteIdentity?: { title?: string } } } | undefined {
-  try {
-    return useOutletContext()
-  } catch {
-    return undefined
-  }
 }
 
 describe('admin routes — Component SSR renders', () => {

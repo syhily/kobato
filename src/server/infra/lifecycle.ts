@@ -78,7 +78,6 @@ export async function closeHttpServer(timeoutMs = DEFAULT_CLOSE_TIMEOUT_MS): Pro
         log.warn('HTTP server close error', { err: String(err) })
       }
       // Node.js server.close() callback fires at most once.
-      // eslint-disable-next-line promise/no-multiple-resolved
       resolve()
     })
   })

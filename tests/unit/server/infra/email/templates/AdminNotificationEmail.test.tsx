@@ -54,6 +54,9 @@ describe('email/templates/AdminNotificationEmail', () => {
     const html = renderTemplate({ rows: [{ html: '<p>写得非常<strong>清楚</strong></p>' }] })
     expect(html).toContain('<p>写得非常<strong>清楚</strong></p>')
     expect(html).toContain('data-safe-html-strategy="email"')
+    // Dark-mode override must reach the comment body wrapper too — otherwise
+    // the inline light-mode color stays dark on the dark card and disappears.
+    expect(html).toContain('class="dark-text-secondary"')
   })
 
   it('escapes HTML in text rows, titles and notes', () => {

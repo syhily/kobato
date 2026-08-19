@@ -66,6 +66,7 @@ export function ApprovedComment({ receiver, postTitle, postLink, commentContent,
       >
         <RawEmailHtml
           html={commentContent}
+          className="dark-text-secondary"
           style={{
             fontSize: 16,
             color: light.textSecondary,
@@ -95,7 +96,7 @@ export function ApprovedComment({ receiver, postTitle, postLink, commentContent,
         </Link>
       </div>
 
-      <Hr />
+      <Hr className="dark-border" />
 
       <Text
         style={{

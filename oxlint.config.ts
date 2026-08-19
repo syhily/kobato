@@ -65,8 +65,28 @@ export default defineConfig({
     // Oxc performance lints.
     'oxc/no-accumulating-spread': 'warn',
 
-    // React Compiler — lint-only diagnostics matching eslint-plugin-react-compiler.
-    'react/react-compiler': 'error',
+    // React Compiler — oxlint 1.79 split the single `react/react-compiler` rule
+    // into per-category rules. Keep the violation categories at `error` and
+    // leave the bailout/meta categories (rule-suppression, syntax, todo,
+    // unsupported-syntax, invariant) off, matching the old rule's default
+    // (`reportAllBailouts: false`).
+    'react/error-boundaries': 'error',
+    'react/globals': 'error',
+    'react/immutability': 'error',
+    'react/incompatible-library': 'error',
+    'react/preserve-manual-memoization': 'error',
+    'react/purity': 'error',
+    'react/refs': 'error',
+    'react/set-state-in-effect': 'error',
+    'react/set-state-in-render': 'error',
+    'react/static-components': 'error',
+    'react/use-memo': 'error',
+    'react/void-use-memo': 'error',
+    'react/capitalized-calls': 'error',
+    'react/exhaustive-effect-dependencies': 'warn',
+    'react/hooks': 'error',
+    'react/memo-dependencies': 'error',
+    'react/no-deriving-state-in-effects': 'error',
 
     // React and React Hooks.
     'react/exhaustive-deps': 'warn',
@@ -116,7 +136,19 @@ export default defineConfig({
     'typescript/no-unsafe-return': 'warn',
     'typescript/no-unsafe-type-assertion': 'warn',
     'typescript/prefer-nullish-coalescing': 'off',
-    'typescript/prefer-optional-chain': 'off',
+    'typescript/prefer-optional-chain': 'warn',
+    // tsgolint v7 stable audit (type-aware). Zero-violation guards are locked
+    // as errors; small backlogs drain incrementally as warnings. The noisy or
+    // stylistic survivors (prefer-readonly-parameter-types,
+    // no-unnecessary-condition, strict-void-return, consistent-return) stay off.
+    'typescript/consistent-type-exports': 'error',
+    'typescript/no-unnecessary-qualifier': 'error',
+    'typescript/prefer-find': 'error',
+    'typescript/prefer-readonly': 'warn',
+    'typescript/dot-notation': 'warn',
+    'typescript/no-unnecessary-type-parameters': 'warn',
+    'typescript/prefer-regexp-exec': 'warn',
+    'typescript/no-unnecessary-type-conversion': 'warn',
     'typescript/restrict-plus-operands': 'warn',
     // `${obj}` silently produces `"[object Object]"`. Caught us once in a
     // log line; the cost of locking it down is zero today.
@@ -358,7 +390,23 @@ export default defineConfig({
         // Mock thenables used to drive async code paths.
         'unicorn/no-thenable': 'off',
         // Fixture components deliberately break compiler rules.
-        'react/react-compiler': 'off',
+        'react/error-boundaries': 'off',
+        'react/globals': 'off',
+        'react/immutability': 'off',
+        'react/incompatible-library': 'off',
+        'react/preserve-manual-memoization': 'off',
+        'react/purity': 'off',
+        'react/refs': 'off',
+        'react/set-state-in-effect': 'off',
+        'react/set-state-in-render': 'off',
+        'react/static-components': 'off',
+        'react/use-memo': 'off',
+        'react/void-use-memo': 'off',
+        'react/capitalized-calls': 'off',
+        'react/exhaustive-effect-dependencies': 'off',
+        'react/hooks': 'off',
+        'react/memo-dependencies': 'off',
+        'react/no-deriving-state-in-effects': 'off',
         // Fixture markup with placeholder roles.
         'jsx-a11y/aria-role': 'off',
         // Wildcard imports of schemas/helpers are idiomatic in tests.

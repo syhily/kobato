@@ -78,6 +78,7 @@ export function NewReply({ receiver, postTitle, postLink, sourceContent, replyCo
       >
         <RawEmailHtml
           html={sourceContent}
+          className="dark-text-secondary"
           style={{
             fontSize: 16,
             color: light.textSecondary,
@@ -109,6 +110,7 @@ export function NewReply({ receiver, postTitle, postLink, sourceContent, replyCo
       >
         <RawEmailHtml
           html={replyContent}
+          className="dark-text-secondary"
           style={{
             fontSize: 16,
             color: light.textSecondary,
@@ -138,7 +140,7 @@ export function NewReply({ receiver, postTitle, postLink, sourceContent, replyCo
         </Link>
       </div>
 
-      <Hr />
+      <Hr className="dark-border" />
 
       <Text
         style={{

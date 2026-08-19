@@ -97,7 +97,7 @@ export function Img({ src, alt = '', style, className, width, height }: ImgProps
   return <img src={src} alt={alt} style={style} className={className} width={width} height={height} />
 }
 
-export function Hr({ style }: { style?: CSSProperties }) {
+export function Hr({ style, className }: { style?: CSSProperties; className?: string }) {
   return (
     <hr
       style={{
@@ -110,6 +110,7 @@ export function Hr({ style }: { style?: CSSProperties }) {
         borderBottomColor: '#EEF5F8',
         ...style,
       }}
+      className={className}
     />
   )
 }
