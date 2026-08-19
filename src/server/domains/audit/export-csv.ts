@@ -2,9 +2,8 @@ import type { auditLog } from '@/server/infra/db/schema/config'
 
 import { toAuditLogItemDto } from '@/server/domains/audit/projection'
 
-// Display-oriented CSV for spreadsheet export: cells starting with `=`,
-// `+`, `-`, `@` get a tab prefix (formula-injection protection).
-// Intentionally distinct from `server/infra/csv.ts` (Postgres COPY semantics).
+// Display-oriented CSV for the audit-log spreadsheet export: cells starting
+// with `=`, `+`, `-`, `@` get a tab prefix (formula-injection protection).
 const FORMULA_PREFIXES = new Set(['=', '+', '-', '@'])
 
 export function csvEscapeDisplay(value: string | number | null | undefined): string {

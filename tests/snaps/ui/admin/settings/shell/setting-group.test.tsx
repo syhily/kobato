@@ -8,7 +8,6 @@ import { SettingsMobileBar } from '@/ui/admin/settings/shell/SettingsMobileBar'
 import { SettingsNav } from '@/ui/admin/settings/shell/SettingsNav'
 import { SettingsPanel } from '@/ui/admin/settings/shell/SettingsPanel'
 import { SettingsSearchInput } from '@/ui/admin/settings/shell/SettingsSearchInput'
-import { SettingValue } from '@/ui/admin/settings/shell/SettingValue'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { ScrollSpyProvider } from '@/ui/admin/settings/shell/useSettingsScrollSpy'
 import { SettingsSearchProvider } from '@/ui/admin/settings/shell/useSettingsSearch'
@@ -57,33 +56,13 @@ describe('snapshot: SettingGroupContent', () => {
     const html = stableHtml(
       renderToHtml(
         <SettingGroupContent>
-          <SettingValue label="A" value="1" />
-          <SettingValue label="B" value="2" />
+          <p>A</p>
+          <p>B</p>
         </SettingGroupContent>,
       ),
     )
     expect(html).toContain('A')
     expect(html).toContain('B')
-  })
-})
-
-describe('snapshot: SettingValue', () => {
-  it('renders a plain value', () => {
-    const html = stableHtml(renderToHtml(<SettingValue label="站点名称" value="且听书吟" />))
-    expect(html).toContain('站点名称')
-    expect(html).toContain('且听书吟')
-  })
-
-  it('renders a code value', () => {
-    const html = stableHtml(renderToHtml(<SettingValue label="API Key" value="sk-123" format="code" />))
-    expect(html).toContain('API Key')
-    expect(html).toContain('sk-123')
-  })
-
-  it('renders a hint', () => {
-    const html = stableHtml(renderToHtml(<SettingValue label="备案号" value="皖ICP备" hint="管局颁发的备案编号。" />))
-    expect(html).toContain('备案号')
-    expect(html).toContain('管局颁发的备案编号')
   })
 })
 

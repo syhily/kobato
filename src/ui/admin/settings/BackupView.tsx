@@ -234,9 +234,6 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
     }
   }, [selectedFile, csrfToken])
 
-  // Backups need no external tooling — they land in S3 when configured, local otherwise.
-  const canConfigure = true
-
   return (
     <div className="flex flex-col gap-6">
       {(statusLoading || isInitialLoading) && <div className="text-sm text-muted-foreground">正在读取备份信息…</div>}
@@ -252,12 +249,11 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
         </div>
       )}
 
-      <BackupScheduleForm backup={source} canConfigure={canConfigure} />
+      <BackupScheduleForm backup={source} />
 
       <BackupFileList
         backups={backupFiles ?? []}
         timeZone={timeZone}
-        canConfigure={canConfigure}
         isCreating={createMutation.isPending}
         onCreate={() => createMutation.mutate()}
         restorePending={restoreMutation.isPending}

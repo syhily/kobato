@@ -72,13 +72,6 @@ export function isL3Tagged(value: string): boolean {
   return value.startsWith(L3_OPEN) && value.endsWith(L3_CLOSE)
 }
 
-export function stripL3(value: string): string {
-  if (!isL3Tagged(value)) {
-    return value
-  }
-  return value.slice(L3_OPEN.length, -L3_CLOSE.length)
-}
-
 export function stripL3Markers(value: unknown): unknown {
   if (value === null || value === undefined) {
     return value

@@ -21,30 +21,27 @@ interface ShutdownHook {
 }
 
 type RefreshSettingsFn = (db: Database) => Promise<unknown>
+type GetDbFn = () => Database
 
 // Typed DI container — explicit shape lets contract tests assert no state leaks to globalThis.
 export interface LifecycleContainer {
   serverPhase: ServerPhase
   httpServer: ServerType | null
-  shuttingDown: boolean
   hooks: ShutdownHook[]
   currentApp: Hono<any> | null
-  currentDb: Database | null
-  restartQueue: Promise<void>
   restartPromise: Promise<void> | null
   refreshSettingsFn: RefreshSettingsFn | null
+  getDbFn: GetDbFn | null
 }
 
 const container: LifecycleContainer = {
   serverPhase: 'booting',
   httpServer: null,
-  shuttingDown: false,
   hooks: [],
   currentApp: null,
-  currentDb: null,
-  restartQueue: Promise.resolve(),
   restartPromise: null,
   refreshSettingsFn: null,
+  getDbFn: null,
 }
 
 // Test-only surface so contract tests can inspect the container
@@ -85,7 +82,7 @@ export async function closeHttpServer(timeoutMs = DEFAULT_CLOSE_TIMEOUT_MS): Pro
 
 /** Register a shutdown hook; higher priority runs first (flush hooks 100, connection-close 0). */
 export function registerShutdownHook(hook: () => Promise<void>, priority = 0): void {
-  if (container.shuttingDown) {
+  if (container.serverPhase === 'shutting-down') {
     log.warn('Shutdown hook registered after shutdown started; ignoring')
     return
   }
@@ -102,10 +99,9 @@ export function unregisterShutdownHook(hook: () => Promise<void>): void {
 }
 
 export function requestShutdown(reason: string): void {
-  if (container.shuttingDown) {
+  if (container.serverPhase === 'shutting-down') {
     return
   }
-  container.shuttingDown = true
   setServerPhase('shutting-down')
   log.info('Shutdown requested', { reason })
   void performShutdown(reason)
@@ -178,8 +174,8 @@ export function setRestartApp(app: Hono<any>): void {
   container.currentApp = app
 }
 
-export function setRestartDb(db: Database): void {
-  container.currentDb = db
+export function setRestartGetDb(fn: GetDbFn): void {
+  container.getDbFn = fn
 }
 
 export function setRestartRefreshSettings(fn: RefreshSettingsFn): void {
@@ -187,7 +183,7 @@ export function setRestartRefreshSettings(fn: RefreshSettingsFn): void {
 }
 
 export async function restartServer(): Promise<void> {
-  if (container.shuttingDown) {
+  if (container.serverPhase === 'shutting-down') {
     log.warn('Restart requested during shutdown; ignoring')
     return
   }
@@ -208,14 +204,17 @@ export async function restartServer(): Promise<void> {
     try {
       await closeHttpServer()
 
-      const newServer = serve({ fetch: app.fetch.bind(app), port: serverConfig.server.port }, (info) => {
-        restartLog.info(`Server restarted on port ${info.port}`)
-      })
+      const newServer = serve(
+        { fetch: app.fetch.bind(app), port: serverConfig.server.port, hostname: serverConfig.server.host },
+        (info) => {
+          restartLog.info(`Server restarted on port ${info.port}`)
+        },
+      )
       setHttpServer(newServer)
 
-      if (container.currentDb && container.refreshSettingsFn) {
+      if (container.getDbFn && container.refreshSettingsFn) {
         try {
-          await container.refreshSettingsFn(container.currentDb)
+          await container.refreshSettingsFn(container.getDbFn())
         } catch (err) {
           restartLog.warn('refreshBlogSettings failed during restart; continuing', {
             err: err instanceof Error ? err.message : String(err),
@@ -235,14 +234,11 @@ export async function restartServer(): Promise<void> {
     }
   })()
 
+  // In-flight dedup: concurrent restarts coalesce onto this one promise.
+  // Known edge: a restart requested inside the `.finally` microtask window
+  // below (before restartPromise flips back to null) coalesces into the
+  // just-finished restart's completion rather than queueing a new one.
   container.restartPromise = queued
-  // Sequential queue; swallowed rejections surface to the caller via the returned `queued` promise.
-  container.restartQueue = container.restartQueue
-    .then(() => queued)
-    .catch(() => queued)
-    .catch(() => {
-      /* swallow queue-chain rejections */
-    })
 
   queued
     .finally(() => {

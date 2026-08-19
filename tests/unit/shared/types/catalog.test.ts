@@ -1,9 +1,8 @@
 import { describe, expect, expectTypeOf, it } from 'vitest'
 
-import type { ClientPage, ClientPost, Page, Post } from '@/shared/types/catalog'
+import type { ClientPage, ClientPost, Post } from '@/shared/types/catalog'
 
 import {
-  toClientPage,
   toClientPost,
   toDetailPageShell,
   toDetailPostShell,
@@ -63,20 +62,6 @@ describe('shared/types/catalog — toClientPost', () => {
     expect('body' in client).toBe(false)
     expect('imageSources' in client).toBe(false)
     expect('publishedRevisionId' in client).toBe(false)
-  })
-})
-
-describe('shared/types/catalog — toClientPage', () => {
-  it('strips body / imageSources / publishedRevisionId from a Page', () => {
-    const page: Page = {
-      ...basePage,
-      body: [],
-      imageSources: ['/a.png'],
-      publishedRevisionId: null,
-    }
-    const client = toClientPage(page)
-    expect(client).toEqual(basePage)
-    expect('body' in client).toBe(false)
   })
 })
 

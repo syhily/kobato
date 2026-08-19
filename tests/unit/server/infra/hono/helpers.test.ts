@@ -1,11 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import {
-  bindIncomingRequestSocketInfo,
-  createGetLoadContext,
-  getBuildMode,
-  importBuild,
-} from '@/server/infra/hono/helpers'
+import { bindIncomingRequestSocketInfo, getBuildMode, importBuild } from '@/server/infra/hono/helpers'
 
 describe('bindIncomingRequestSocketInfo', () => {
   it('populates socket info from proxy headers', async () => {
@@ -51,13 +46,6 @@ describe('bindIncomingRequestSocketInfo', () => {
       remotePort: undefined,
       remoteFamily: undefined,
     })
-  })
-})
-
-describe('createGetLoadContext', () => {
-  it('returns the supplied function unchanged', () => {
-    const fn = () => ({ foo: 'bar' })
-    expect(createGetLoadContext(fn as any)).toBe(fn)
   })
 })
 

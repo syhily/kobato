@@ -157,10 +157,3 @@ export async function countWebmentionOutboxByStatus(db: Database): Promise<Webme
   }
   return counts
 }
-
-/** Entity delete/unpublish housekeeping: drop only `pending` rows — terminal rows stay. */
-export async function deletePendingWebmentionOutboxBySource(db: Database, sourceUrl: string): Promise<void> {
-  await db
-    .delete(webmentionOutbox)
-    .where(and(eq(webmentionOutbox.sourceUrl, sourceUrl), eq(webmentionOutbox.status, 'pending')))
-}

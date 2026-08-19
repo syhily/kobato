@@ -20,9 +20,7 @@ export function asAdminWebmentionWire(row: WebmentionRow): AdminWebmentionWire {
     lastVerifiedAt: row.lastVerifiedAt === null ? null : row.lastVerifiedAt.toISOString(),
     lastError: row.lastError,
     verifyFailStreak: row.verifyFailStreak,
-    fetchedAt: row.fetchedAt === null ? null : row.fetchedAt.toISOString(),
     createdAt: row.createdAt.toISOString(),
-    moderatedAt: row.moderatedAt === null ? null : row.moderatedAt.toISOString(),
   }
 }
 

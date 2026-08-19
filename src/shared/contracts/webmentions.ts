@@ -16,9 +16,7 @@ export const adminWebmentionDto = z.object({
   lastVerifiedAt: isoDateTime.nullable(),
   lastError: z.string().nullable(),
   verifyFailStreak: z.number().int(),
-  fetchedAt: isoDateTime.nullable(),
   createdAt: isoDateTime,
-  moderatedAt: isoDateTime.nullable(),
 })
 export type AdminWebmentionWire = z.infer<typeof adminWebmentionDto>
 

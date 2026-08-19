@@ -48,7 +48,7 @@ import '@/server/domains/audit/services/batcher'
 import {
   closeHttpServer,
   restartServer,
-  setRestartDb,
+  setRestartGetDb,
   setRestartRefreshSettings,
   setServerPhase,
 } from '@/server/infra/lifecycle'
@@ -79,7 +79,7 @@ const engine = new ManagedEngine<DatabaseHandle>(
 )
 
 function wireDatabase(handle: DatabaseHandle): DatabaseHandle {
-  setRestartDb(handle.db)
+  setRestartGetDb(getDb)
   setRestartRefreshSettings(refreshBlogSettings)
   wireSessionStorageDb({ getDb })
   wireArchiveScheduler({ getDb })

@@ -109,7 +109,6 @@ export async function receiveWebmention(db: Database, input: WebmentionReceiveIn
     type,
     targetType: target.type,
     targetOwnerId: target.ownerId,
-    fetchedAt: new Date(),
     verificationStatus: 'verified',
     lastVerifiedAt: new Date(),
     lastError: null,
@@ -117,7 +116,6 @@ export async function receiveWebmention(db: Database, input: WebmentionReceiveIn
     authorName: meta.authorName,
     title: meta.title,
     summary: meta.summary,
-    rawPayload: { source: input.source, target: input.target },
   })
 
   if (outcome !== 'updated') {

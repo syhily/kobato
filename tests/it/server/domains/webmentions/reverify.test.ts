@@ -61,7 +61,6 @@ async function seedMention(
     type: 'mention',
     targetType: 'post',
     targetOwnerId: 1,
-    fetchedAt: new Date(),
     verificationStatus: 'verified',
     lastVerifiedAt: dueAt(),
     lastError: null,
@@ -69,7 +68,6 @@ async function seedMention(
     authorName: 'Jane Doe',
     title: 'Mentioning post',
     summary: null,
-    rawPayload: { source: SOURCE, target: TARGET },
     ...overrides,
   })
   return row.id

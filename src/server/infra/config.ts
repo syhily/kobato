@@ -9,6 +9,7 @@ import { dirname, join, resolve } from 'node:path'
 import process from 'node:process'
 import { z } from 'zod'
 
+import { parseConfigArg } from '@/server/infra/config-arg'
 import { isSea } from '@/server/infra/sea'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
@@ -81,20 +82,16 @@ export function configEnvName(path: readonly string[]): string {
 }
 
 function argvConfigPath(argv: string[]): string | null {
-  for (let i = 0; i < argv.length; i++) {
-    const arg = argv[i]
-    if (arg === '--config' || arg === '-c') {
-      const next = argv[i + 1]
-      if (next === undefined) {
-        fail(`命令行参数 ${arg} 需要一个配置文件路径。`)
-      }
-      return resolve(next)
+  const explicit = parseConfigArg(argv)
+  if (explicit === undefined) {
+    // `--config`/`-c` with no value parses as absent — re-scan for the flag name to fail precisely.
+    const flag = argv.find((arg) => arg === '--config' || arg === '-c')
+    if (flag !== undefined) {
+      fail(`命令行参数 ${flag} 需要一个配置文件路径。`)
     }
-    if (arg.startsWith('--config=')) {
-      return resolve(arg.slice('--config='.length))
-    }
+    return null
   }
-  return null
+  return resolve(explicit)
 }
 
 export interface ConfigCandidateEnv {

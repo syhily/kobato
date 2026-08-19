@@ -24,7 +24,6 @@ import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { getSidebarWidgetCount } from '@/shared/config/utils'
 import { idFromString } from '@/shared/utils/id'
 import { hasAtLeast } from '@/shared/utils/roles'
-import { groupBy } from '@/shared/utils/tools'
 
 const log = getLogger('comments.parse')
 
@@ -151,7 +150,7 @@ export async function parseComments(comments: CommentAndUser[]): Promise<Comment
     rewritten.push({ ...c, rid: resolvedRid, content: null })
   }
 
-  const childComments = groupBy(
+  const childComments = Object.groupBy(
     rewritten.filter((comment) => !rootCommentFilter(comment)),
     (c) => String(c.rid),
   )
@@ -163,7 +162,7 @@ function rootCommentFilter(comment: CommentAndUser): boolean {
   return comment.rid === 0 || comment.rid === null || comment.rid === undefined
 }
 
-function commentItems(comment: CommentAndUser, childComments: Record<string, CommentAndUser[]>): CommentItem {
+function commentItems(comment: CommentAndUser, childComments: Partial<Record<string, CommentAndUser[]>>): CommentItem {
   const children = childComments[`${comment.id}`]
   if (children === undefined) {
     return comment

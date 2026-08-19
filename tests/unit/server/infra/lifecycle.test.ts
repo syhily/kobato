@@ -16,7 +16,7 @@ const {
   getServerPhase,
   setServerPhase,
   setRestartApp,
-  setRestartDb,
+  setRestartGetDb,
   setRestartRefreshSettings,
   restartServer,
   handleUnhandledRejection,
@@ -28,14 +28,12 @@ describe('lifecycle', () => {
   beforeEach(() => {
     const c = getContainer()
     c.serverPhase = 'booting'
-    c.shuttingDown = false
     c.hooks = []
     c.httpServer = null
     c.currentApp = null
-    c.currentDb = null
     c.restartPromise = null
-    c.restartQueue = Promise.resolve()
     c.refreshSettingsFn = null
+    c.getDbFn = null
     vi.clearAllMocks()
   })
 
@@ -79,7 +77,7 @@ describe('lifecycle', () => {
   })
 
   it('ignores shutdown hooks after shutdown started', () => {
-    getContainer().shuttingDown = true
+    getContainer().serverPhase = 'shutting-down'
     const fn = vi.fn()
     registerShutdownHook(fn)
     expect(fn).not.toHaveBeenCalled()
@@ -88,13 +86,14 @@ describe('lifecycle', () => {
 
   it('sets DI references', () => {
     const app = { fetch: vi.fn() } as unknown as Parameters<typeof setRestartApp>[0]
-    const db = { id: 'db' } as unknown as Parameters<typeof setRestartDb>[0]
+    const db = { id: 'db' }
+    const getDb = vi.fn(() => db) as unknown as Parameters<typeof setRestartGetDb>[0]
     const refresh = vi.fn()
     setRestartApp(app)
-    setRestartDb(db)
+    setRestartGetDb(getDb)
     setRestartRefreshSettings(refresh)
     expect(getContainer().currentApp).toBe(app)
-    expect(getContainer().currentDb).toBe(db)
+    expect(getContainer().getDbFn).toBe(getDb)
     expect(getContainer().refreshSettingsFn).toBe(refresh)
   })
 
@@ -135,7 +134,7 @@ describe('lifecycle', () => {
     registerShutdownHook(hook, 100)
     requestShutdown('test')
     await vi.advanceTimersByTimeAsync(5)
-    expect(getContainer().shuttingDown).toBe(true)
+    expect(getServerPhase()).toBe('shutting-down')
     expect(hook).toHaveBeenCalled()
     expect(exitSpy).toHaveBeenCalledWith(0)
     exitSpy.mockRestore()
@@ -157,7 +156,7 @@ describe('lifecycle', () => {
   })
 
   it('returns early from restart when shutting down', async () => {
-    getContainer().shuttingDown = true
+    getContainer().serverPhase = 'shutting-down'
     await expect(restartServer()).resolves.toBeUndefined()
   })
 
@@ -169,7 +168,7 @@ describe('lifecycle', () => {
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never)
     requestShutdown('first')
     requestShutdown('second')
-    expect(getContainer().shuttingDown).toBe(true)
+    expect(getServerPhase()).toBe('shutting-down')
     // Second requestShutdown is a no-op: exit fires exactly once.
     await new Promise((resolve) => setImmediate(resolve))
     expect(exitSpy).toHaveBeenCalledOnce()
@@ -181,9 +180,9 @@ describe('lifecycle', () => {
     const fakeServer = { close: vi.fn((cb: (err?: Error) => void) => cb()) } as unknown as NodeHttpServer
     const app = { fetch: { bind: vi.fn(() => vi.fn()) } } as unknown as Parameters<typeof setRestartApp>[0]
     const refresh = vi.fn().mockRejectedValue(new Error('refresh failed'))
-    const db = { id: 'db' } as unknown as Parameters<typeof setRestartDb>[0]
+    const db = { id: 'db' }
     setRestartApp(app)
-    setRestartDb(db)
+    setRestartGetDb(vi.fn(() => db) as unknown as Parameters<typeof setRestartGetDb>[0])
     setRestartRefreshSettings(refresh)
     setHttpServer(fakeServer as Parameters<typeof setHttpServer>[0])
     serveMock.mockImplementation(() => ({ close: vi.fn() }))

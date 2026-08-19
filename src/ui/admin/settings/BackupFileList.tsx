@@ -15,7 +15,6 @@ interface BackupFile {
 interface BackupFileListProps {
   backups: BackupFile[]
   timeZone: string
-  canConfigure: boolean
   isCreating: boolean
   onCreate: () => void
   restorePending: boolean
@@ -48,7 +47,6 @@ function formatDateTime(iso: string, timeZone: string): string {
 export function BackupFileList({
   backups,
   timeZone,
-  canConfigure,
   isCreating,
   onCreate,
   restorePending,
@@ -65,7 +63,7 @@ export function BackupFileList({
       title="备份文件"
       description="S3 存储中 backup/ 目录下的所有备份文件。"
       actions={
-        <Button type="button" disabled={isCreating || !canConfigure} onClick={() => onCreate()}>
+        <Button type="button" disabled={isCreating} onClick={() => onCreate()}>
           {isCreating ? '备份中…' : '手动备份'}
         </Button>
       }

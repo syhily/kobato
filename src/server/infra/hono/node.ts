@@ -81,6 +81,7 @@ export async function createHonoServer<E extends Env = BlankEnv>(options?: HonoS
         log.info(`🏎️ Server started in ${Date.now() - startTime}ms`)
       }),
     port: options?.port || serverConfig.server.port,
+    hostname: options?.hostname || serverConfig.server.host,
     overrideGlobalObjects: options?.overrideGlobalObjects ?? false,
   }
   const mode = getBuildMode()

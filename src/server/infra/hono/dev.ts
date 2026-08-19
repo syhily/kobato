@@ -133,7 +133,8 @@ export function reactRouterHonoServer(options: ReactRouterHonoServerPluginOption
       }
     },
     async configureServer(server) {
-      // Force 'development' before any server module that reads env.ts is imported.
+      // Force 'development' before any server module that reads `NODE_ENV`
+      // from `@/server/infra/config` (parsed at module load) is imported.
       forceDevMode()
 
       setViteDevServer(server)

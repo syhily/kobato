@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { groupBy, idStr, isNumeric, readStringArray, safeBigInt, sampleSize, shuffle } from '@/shared/utils/tools'
+import { idStr, isNumeric, readStringArray, safeBigInt, sampleSize, shuffle } from '@/shared/utils/tools'
 
 describe('shared/utils/tools — safeBigInt', () => {
   it('returns BigInt for numeric strings', () => {
@@ -87,17 +87,5 @@ describe('shared/utils/tools — sampleSize', () => {
     for (const item of out) {
       expect(input).toContain(item)
     }
-  })
-})
-
-describe('shared/utils/tools — groupBy', () => {
-  it('groups items by the computed key', () => {
-    const out = groupBy([1, 2, 3, 4, 5, 6], (n) => (n % 2 === 0 ? 'even' : 'odd'))
-    expect(out.even).toEqual([2, 4, 6])
-    expect(out.odd).toEqual([1, 3, 5])
-  })
-
-  it('returns an empty record for empty input', () => {
-    expect(groupBy([] as number[], (n) => String(n))).toEqual({})
   })
 })

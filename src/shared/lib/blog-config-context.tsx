@@ -121,9 +121,6 @@ function useSectionOptional<T>(context: Context<T | undefined>): T | undefined {
 export function useSiteIdentity(): SiteIdentitySettings {
   return useSection('useSiteIdentity', siteIdentityContext)
 }
-export function useSiteIdentityOptional(): SiteIdentitySettings | undefined {
-  return useSectionOptional(siteIdentityContext)
-}
 
 export function useAssetsSettings(): AssetsSettings {
   return useSection('useAssetsSettings', assetsContext)
@@ -166,9 +163,6 @@ export function useMailSettings(): MailSettings {
 export function useNewsletterSettings(): NewsletterSettings {
   return useSection('useNewsletterSettings', newsletterContext)
 }
-export function useNewsletterSettingsOptional(): NewsletterSettings | undefined {
-  return useSectionOptional(newsletterContext)
-}
 
 export function useCacheSettings(): CacheSettings {
   return useSection('useCacheSettings', cacheContext)
@@ -179,41 +173,23 @@ export function useCacheSettings(): CacheSettings {
 export function useRateLimitSettings(): RateLimitSettings {
   return useSection('useRateLimitSettings', rateLimitContext)
 }
-export function useRateLimitSettingsOptional(): RateLimitSettings | undefined {
-  return useSectionOptional(rateLimitContext)
-}
 
 export function useFontsSettings(): FontsSettings {
   return useSection('useFontsSettings', fontsContext)
-}
-export function useFontsSettingsOptional(): FontsSettings | undefined {
-  return useSectionOptional(fontsContext)
 }
 
 export function useBackupSettings(): BackupSettings {
   return useSection('useBackupSettings', backupContext)
 }
-export function useBackupSettingsOptional(): BackupSettings | undefined {
-  return useSectionOptional(backupContext)
-}
 
 export function useLimitsSettings(): LimitsSettings {
   return useSection('useLimitsSettings', limitsContext)
-}
-export function useLimitsSettingsOptional(): LimitsSettings | undefined {
-  return useSectionOptional(limitsContext)
 }
 
 export function useAnalyticsSettings(): AnalyticsSettings {
   return useSection('useAnalyticsSettings', analyticsContext)
 }
-export function useAnalyticsSettingsOptional(): AnalyticsSettings | undefined {
-  return useSectionOptional(analyticsContext)
-}
 
 export function useSecuritySettings(): SecuritySettings {
   return useSection('useSecuritySettings', securityContext)
-}
-export function useSecuritySettingsOptional(): SecuritySettings | undefined {
-  return useSectionOptional(securityContext)
 }

@@ -25,11 +25,9 @@ function mentionValues(overrides: Partial<NewWebmention> = {}): NewWebmention {
     type: 'mention',
     targetType: 'post',
     targetOwnerId: 1,
-    fetchedAt: new Date('2026-08-01T00:00:00.000Z'),
     authorName: 'Jane Doe',
     title: 'Mentioning post',
     summary: 'a summary',
-    rawPayload: { source: 'https://sender.example/mentioning-post', target: 'https://example.com/posts/wm-target/' },
     ...overrides,
   }
 }
@@ -49,10 +47,9 @@ describe('integration / upsertWebmention (re-mention update semantics)', () => {
 
   it('refreshes a pending row in place and reports `updated`', async () => {
     const first = await upsertWebmention(db, mentionValues())
-    const refetched = new Date('2026-08-02T00:00:00.000Z')
     const second = await upsertWebmention(
       db,
-      mentionValues({ fetchedAt: refetched, title: 'Edited title', summary: 'edited summary', type: 'reply' }),
+      mentionValues({ title: 'Edited title', summary: 'edited summary', type: 'reply' }),
     )
 
     expect(second.outcome).toBe('updated')
@@ -65,7 +62,6 @@ describe('integration / upsertWebmention (re-mention update semantics)', () => {
     expect(row.summary).toBe('edited summary')
     // The mf2 classification refreshes with the rest of the extraction.
     expect(row.type).toBe('reply')
-    expect(row.fetchedAt?.toISOString()).toBe(refetched.toISOString())
     expect(row.updatedAt.getTime()).toBeGreaterThanOrEqual(first.row.updatedAt.getTime())
   })
 

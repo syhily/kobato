@@ -29,7 +29,6 @@ export const webmention = sqliteTable(
     type: text('type', { enum: WEBMENTION_TYPES }).notNull().default('mention'),
     targetType: text('target_type').$type<'post' | 'page'>().notNull(),
     targetOwnerId: integer('target_owner_id').notNull(),
-    fetchedAt: integer('fetched_at', { mode: 'timestamp_ms' }),
     verificationStatus: text('verification_status', { enum: WEBMENTION_VERIFY_STATUSES }).notNull().default('verified'),
     lastVerifiedAt: integer('last_verified_at', { mode: 'timestamp_ms' }),
     lastError: text('last_error'),
@@ -37,10 +36,6 @@ export const webmention = sqliteTable(
     authorName: text('author_name'),
     title: text('title'),
     summary: text('summary'),
-    rawPayload: text('raw_payload', { mode: 'json' })
-      .$type<{ source: string; target: string }>()
-      .notNull()
-      .$defaultFn(() => ({ source: '', target: '' })),
     moderatedAt: integer('moderated_at', { mode: 'timestamp_ms' }),
   },
   (table) => [

@@ -1,8 +1,9 @@
 // Date formatter primitives shared between SSR and the client bundle.
-// `Intl.DateTimeFormat` can't be cached at module scope — locale /
-// time zone come from runtime DB-backed config, so callers thread it in.
+// Built on date-fns + @date-fns/tz: `TZDate` carries the site-configured
+// time zone (runtime DB-backed config), so callers thread it in.
 
-import { createBoundedMap } from '@/shared/utils/memo'
+import { TZDate } from '@date-fns/tz'
+import { format as formatZonedDate } from 'date-fns'
 
 export type FormatterLocale =
   | { locale: string; timeZone: string; timeFormat: string }
@@ -28,52 +29,28 @@ interface LocalDateParts {
   second: number
 }
 
-function makeFormatter(locale: string, timeZone: string): Intl.DateTimeFormat {
-  return new Intl.DateTimeFormat(locale, {
-    timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hourCycle: 'h23',
-  })
-}
-
-// Bounded FIFO cache keyed by `${locale}|${timeZone}` so repeated calls
-// don't pay the `Intl.DateTimeFormat` ctor cost.
-const formatterCache = createBoundedMap<string, Intl.DateTimeFormat>(8)
-
-function cachedFormatter(locale: string, timeZone: string): Intl.DateTimeFormat {
-  const key = `${locale}|${timeZone}`
-  const existing = formatterCache.get(key)
-  if (existing !== undefined) {
-    return existing
+// Invalid input must keep the previous Intl.DateTimeFormat garbage-in
+// behavior: a RangeError('Invalid time value'), never NaN-filled output.
+function requireValidZonedDate(source: Date, timeZone: string): TZDate {
+  const zoned = new TZDate(source, timeZone)
+  if (Number.isNaN(zoned.getTime())) {
+    throw new RangeError('Invalid time value')
   }
-
-  const formatter = makeFormatter(locale, timeZone)
-  formatterCache.set(key, formatter)
-  return formatter
+  return zoned
 }
 
 // Exported for calendar grouping (archives buckets) that must agree with the
 // displayed dates — both derive from the site-configured time zone.
 export function localDateParts(source: Date, locale: string, timeZone: string): LocalDateParts {
-  const formatter = cachedFormatter(locale, timeZone)
-  const parts = Object.fromEntries(
-    formatter
-      .formatToParts(source)
-      .filter((part) => part.type !== 'literal')
-      .map((part) => [part.type, Number(part.value)]),
-  )
+  void locale // Kept for signature stability; zone math is locale-independent.
+  const zoned = requireValidZonedDate(source, timeZone)
   return {
-    year: parts.year,
-    month: parts.month,
-    day: parts.day,
-    hour: parts.hour,
-    minute: parts.minute,
-    second: parts.second,
+    year: zoned.getFullYear(),
+    month: zoned.getMonth() + 1,
+    day: zoned.getDate(),
+    hour: zoned.getHours(),
+    minute: zoned.getMinutes(),
+    second: zoned.getSeconds(),
   }
 }
 
@@ -85,10 +62,6 @@ function weekStartDay(parts: Pick<LocalDateParts, 'year' | 'month' | 'day'>): nu
   const day = dayNumber(parts)
   const weekday = new Date(Date.UTC(parts.year, parts.month - 1, parts.day)).getUTCDay()
   return day - ((weekday + 6) % 7)
-}
-
-function pad(value: number): string {
-  return String(value).padStart(2, '0')
 }
 
 export interface SlicePostsOptions {
@@ -156,17 +129,22 @@ export function formatShowDate(date: Date, config: FormatterLocale, now?: Date |
 }
 
 export function formatLocalDate(source: string | Date, format: string | undefined, config: FormatterLocale): string {
-  const { locale, timeZone, timeFormat } = pickLocale(config)
-  const date = new Date(source)
-  const parts = localDateParts(date, locale, timeZone)
+  const { timeZone, timeFormat } = pickLocale(config)
+  const zoned = requireValidZonedDate(new Date(source), timeZone)
+  // The format string is USER-SUPPLIED (stored in settings): only the six
+  // documented tokens are substituted, so it never reaches date-fns — every
+  // other character, including letters that are date-fns tokens (`a`, `E`,
+  // `p`…), renders verbatim. date-fns computes the six values off one
+  // canonical pattern instead.
+  const [year, month, day, hour, minute, second] = formatZonedDate(zoned, 'yyyy MM dd HH mm ss').split(' ')
   return (format || timeFormat)
-    .replaceAll('yyyy', String(parts.year))
-    .replaceAll('LL', pad(parts.month))
-    .replaceAll('MM', pad(parts.month))
-    .replaceAll('dd', pad(parts.day))
-    .replaceAll('HH', pad(parts.hour))
-    .replaceAll('mm', pad(parts.minute))
-    .replaceAll('ss', pad(parts.second))
+    .replaceAll('yyyy', year)
+    .replaceAll('LL', month)
+    .replaceAll('MM', month)
+    .replaceAll('dd', day)
+    .replaceAll('HH', hour)
+    .replaceAll('mm', minute)
+    .replaceAll('ss', second)
 }
 
 export function formatBytes(bytes: number): string {

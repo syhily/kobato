@@ -18,7 +18,7 @@ vi.mock('@/server/infra/lifecycle', () => ({
   unregisterShutdownHook: vi.fn(),
   setServerPhase: vi.fn(),
   restartServer: vi.fn(),
-  setRestartDb: vi.fn(),
+  setRestartGetDb: vi.fn(),
   setRestartRefreshSettings: vi.fn(),
 }))
 

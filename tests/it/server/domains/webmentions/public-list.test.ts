@@ -49,7 +49,6 @@ async function seedMention(
     type: 'mention',
     targetType,
     targetOwnerId,
-    fetchedAt: new Date(),
     verificationStatus: 'verified',
     lastVerifiedAt: new Date(),
     lastError: null,
@@ -57,7 +56,6 @@ async function seedMention(
     authorName: 'Jane Doe',
     title: 'Mentioning post',
     summary: null,
-    rawPayload: { source, target: TARGET_URL },
   })
   if (status !== 'pending') {
     await setWebmentionStatus(db, row.id, status)

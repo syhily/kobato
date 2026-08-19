@@ -4,8 +4,6 @@ import type { ServerBuild } from 'react-router'
 
 import { createMiddleware } from 'hono/factory'
 
-import type { HonoServerOptionsBase } from '@/server/infra/hono/types/hono-server-options-base'
-
 type SocketInfo = Partial<IncomingMessage['socket']>
 
 interface SocketEnv extends Env {
@@ -37,10 +35,6 @@ export function bindIncomingRequestSocketInfo() {
 
 export async function importBuild(): Promise<ServerBuild> {
   return import('virtual:react-router/server-build')
-}
-
-export function createGetLoadContext(getLoadContext: HonoServerOptionsBase<Env>['getLoadContext']) {
-  return getLoadContext
 }
 
 export function getBuildMode() {

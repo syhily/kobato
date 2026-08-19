@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { idSchema, upsertMetaBaseSchema } from '@/server/domains/content/schemas/meta-fields'
+import { upsertMetaBaseSchema } from '@/server/domains/content/schemas/meta-fields'
 import { safeBoolean } from '@/shared/utils/schema'
 
 export const listPagesSchema = z.object({
@@ -11,12 +11,6 @@ export const listPagesSchema = z.object({
   offset: z.coerce.number().int().min(0).optional(),
   limit: z.coerce.number().int().min(1).max(100).optional(),
 })
-
-export const getPageSchema = idSchema
-export const deletePageSchema = idSchema
-export const restorePageSchema = idSchema
-export const unpublishPageSchema = idSchema
-export const listPageRevisionsSchema = idSchema
 
 export const upsertPageMetaSchema = upsertMetaBaseSchema.extend({
   showFriends: safeBoolean().optional(),

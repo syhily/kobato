@@ -1,3 +1,4 @@
+import { format as formatDate } from 'date-fns'
 import { CalendarClockIcon, CheckCircle2Icon, CircleDashedIcon, EyeOffIcon } from 'lucide-react'
 import { useId, useState } from 'react'
 
@@ -8,6 +9,7 @@ import type {
 } from '@/ui/admin/editor-shell/editor-shell-types'
 
 import { DateTimePicker } from '@/ui/admin/editor-shell/DateTimePicker'
+import { dateToLocalInputValue } from '@/ui/admin/editor-shell/editor-datetime'
 import { LabelledRadioCard } from '@/ui/admin/shared/LabelledRadio'
 import { Badge } from '@/ui/components/badge'
 import { Label } from '@/ui/components/label'
@@ -162,12 +164,5 @@ function SaveStatusLine({ status }: { status: SidebarSaveStatus }) {
 }
 
 function formatSavedAtLocal(ms: number): string {
-  const d = new Date(ms)
-  const pad = (n: number) => n.toString().padStart(2, '0')
-  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 ${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
-
-function dateToLocalInputValue(d: Date): string {
-  const pad = (n: number) => n.toString().padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+  return formatDate(new Date(ms), 'yyyy年M月d日 HH:mm')
 }

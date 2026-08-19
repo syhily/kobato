@@ -2,12 +2,10 @@
 // is `YYYY-MM-DDTHH:mm`, wire is ISO. Empty AND unparseable input map to
 // the no-value sentinel (`null` for parsers, `''` for formatters).
 
-function pad(n: number): string {
-  return n.toString().padStart(2, '0')
-}
+import { format } from 'date-fns'
 
 function formatLocalInputValue(d: Date): string {
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+  return format(d, "yyyy-MM-dd'T'HH:mm")
 }
 
 /** Convert an ISO-8601 wire time into `YYYY-MM-DDTHH:mm`; `''` for invalid input. */

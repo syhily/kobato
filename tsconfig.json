@@ -15,7 +15,7 @@
     ".react-router/types/**/*"
   ],
   "compilerOptions": {
-    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "lib": ["DOM", "DOM.Iterable", "ES2022", "ES2024.Object"],
     "target": "ES2022",
     "forceConsistentCasingInFileNames": true,
     "module": "ES2022",

@@ -85,18 +85,6 @@ export function Link({ href, target, rel, style, className, children }: LinkProp
   )
 }
 
-type ImgProps = {
-  src: string
-  alt?: string
-  style?: CSSProperties
-  className?: string
-  width?: number
-  height?: number
-}
-export function Img({ src, alt = '', style, className, width, height }: ImgProps) {
-  return <img src={src} alt={alt} style={style} className={className} width={width} height={height} />
-}
-
 export function Hr({ style, className }: { style?: CSSProperties; className?: string }) {
   return (
     <hr

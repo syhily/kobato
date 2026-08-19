@@ -21,8 +21,8 @@ queryMocks.mutation = {
 }
 
 // Targets the BackupView render-path branches `backup.test.tsx` does not
-// reach: `backup ?? FALLBACK_BACKUP` and canConfigure=true on the render
-// path. Effect-gated file-list branches stay with the parent file.
+// reach: `backup ?? FALLBACK_BACKUP` on the render path. Effect-gated
+// file-list branches stay with the parent file.
 
 vi.mock('react-router', async () => {
   const actual = await vi.importActual<typeof import('react-router')>('react-router')
@@ -63,9 +63,9 @@ describe('snapshot: BackupView branches', () => {
     expect(html).toContain('未选择文件')
   })
 
-  it('threads canConfigure=true to the schedule form when the status query resolves', () => {
-    // `canConfigure` is always true (file-based backups need no external
-    // tooling); `primaryDriver` only drives the info banner.
+  it('renders the enabled schedule form when the status query resolves', () => {
+    // File-based backups need no external tooling; `primaryDriver` only
+    // drives the info banner.
     queryMocks.query = {
       data: { primaryDriver: 's3' },
       isPending: false,

@@ -42,7 +42,6 @@ async function seedRow(lastVerifiedAt: Date): Promise<void> {
     type: 'mention',
     targetType: 'post',
     targetOwnerId: 1,
-    fetchedAt: new Date(),
     verificationStatus: 'verified',
     lastVerifiedAt,
     lastError: null,
@@ -50,7 +49,6 @@ async function seedRow(lastVerifiedAt: Date): Promise<void> {
     authorName: 'Jane Doe',
     title: 'Mentioning post',
     summary: null,
-    rawPayload: { source: SOURCE, target: TARGET },
   })
   mockFetch.enqueue(
     /sender\.example/,

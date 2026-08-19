@@ -47,11 +47,9 @@ async function seedMention(
     status,
     targetType: 'post',
     targetOwnerId: 1,
-    fetchedAt: new Date(),
     authorName: 'Jane Doe',
     title: `Mention ${status}`,
     summary: null,
-    rawPayload: { source: `https://sender.example/${slug}-${status}`, target: `https://example.com/posts/${slug}/` },
   })
   return row.id
 }
@@ -193,14 +191,9 @@ describe('integration / admin webmentions approve + reject', () => {
       status: 'pending',
       targetType: 'post',
       targetOwnerId: 1,
-      fetchedAt: new Date(),
       authorName: 'Jane Doe',
       title: 'Edited after approval',
       summary: null,
-      rawPayload: {
-        source: 'https://sender.example/wm-target-approved',
-        target: 'https://example.com/posts/wm-target/',
-      },
     })
     expect(outcome).toBe('demoted')
     expect((await db.select().from(webmention).where(eq(webmention.id, id)))[0]!.status).toBe('pending')

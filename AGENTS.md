@@ -245,8 +245,11 @@ native-specifiers.test.ts`). `requireExternal` remains only as
   never hardcode a key in `scripts/` or `src/server/`. Enforced by
   `tests/unit/shared/contracts/sea-assets.test.ts`.
 - `KOBATO_NATIVES_DIR` / `KOBATO_CACHE_DIR` are documented runtime env
-  vars, deliberately read outside `env.ts` (see the allowlist comment on
-  the process.env centralization rule in the boundaries test).
+  vars, deliberately read outside `config.ts`: the SEA runtime modules
+  read them before the validated `serverConfig` snapshot exists and must
+  stay dependency-light, since the SEA bundles inline them ahead of the
+  app graph (see the allowlist comment on the process.env centralization
+  rule in the boundaries test).
 
 The production Docker image ships only the SEA binary on a glibc base —
 the historical musl blocker (a postject `.gnu.hash` corruption bug) is

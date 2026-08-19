@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
-import { formatBytes, formatLocalDate, formatShowDate, slicePosts } from '@/shared/utils/formatter'
+import { formatBytes, formatLocalDate, formatShowDate, localDateParts, slicePosts } from '@/shared/utils/formatter'
 
 const SETTINGS = {
   settings: { locale: 'zh-CN', timeZone: 'Asia/Shanghai', timeFormat: 'yyyy-LL-dd HH:mm' },
+}
+
+const NEW_YORK = {
+  settings: { locale: 'en-US', timeZone: 'America/New_York', timeFormat: 'yyyy-LL-dd HH:mm' },
 }
 
 describe('shared/utils/formatter — formatBytes', () => {
@@ -117,5 +121,60 @@ describe('shared/utils/formatter — formatLocalDate token substitution', () => 
   it('uses the configured timeFormat when no explicit format is passed', () => {
     const out = formatLocalDate('2024-03-05T06:07:08Z', undefined, SETTINGS)
     expect(out).toBe('2024-03-05 14:07')
+  })
+
+  it('pads the hour to 00 at local midnight (h23 semantics)', () => {
+    // 2024-03-05T16:00:00Z is exactly midnight 2024-03-06 in Asia/Shanghai.
+    const out = formatLocalDate('2024-03-05T16:00:00Z', 'yyyy-LL-dd HH:mm:ss', SETTINGS)
+    expect(out).toBe('2024-03-06 00:00:00')
+  })
+
+  it('preserves arbitrary literal text between tokens', () => {
+    const out = formatLocalDate('2024-03-05T06:07:08Z', 'yyyy年LL月dd日 HH时mm分ss秒', SETTINGS)
+    expect(out).toBe('2024年03月05日 14时07分08秒')
+  })
+
+  it('renders letters that are date-fns tokens as verbatim literals', () => {
+    // The format string is user-supplied: only the six documented tokens are
+    // substituted — `a`, `E`, `p` (and any other letter) must render as-is.
+    const out = formatLocalDate('2024-03-05T06:07:08Z', 'yyyy年LL月dd日 a E p', SETTINGS)
+    expect(out).toBe('2024年03月05日 a E p')
+  })
+
+  it('substitutes tokens adjacent to date-fns-token letters without swallowing them', () => {
+    const out = formatLocalDate('2024-03-05T06:07:08Z', 'day=dd month=LL year=yyyy', SETTINGS)
+    expect(out).toBe('day=05 month=03 year=2024')
+  })
+
+  it('throws RangeError on invalid date input (garbage-in parity with Intl)', () => {
+    expect(() => formatLocalDate('not-a-date', 'yyyy-LL-dd', SETTINGS)).toThrow(RangeError)
+    expect(() => formatLocalDate('not-a-date', 'yyyy-LL-dd', SETTINGS)).toThrow('Invalid time value')
+  })
+
+  it('localDateParts throws RangeError on invalid date input', () => {
+    expect(() => localDateParts(new Date(Number.NaN), 'zh-CN', 'Asia/Shanghai')).toThrow(RangeError)
+  })
+
+  it('handles the America/New_York spring-forward gap', () => {
+    // 2024-03-10: 02:00–03:00 local does not exist; 06:30Z is 01:30 EST, 07:30Z is 03:30 EDT.
+    expect(formatLocalDate('2024-03-10T06:30:00Z', 'yyyy-LL-dd HH:mm:ss', NEW_YORK)).toBe('2024-03-10 01:30:00')
+    expect(formatLocalDate('2024-03-10T07:30:00Z', 'yyyy-LL-dd HH:mm:ss', NEW_YORK)).toBe('2024-03-10 03:30:00')
+  })
+
+  it('handles the America/New_York fall-back overlap', () => {
+    // 2024-11-03: 01:30 happens twice (EDT then EST) — both instants render identically.
+    expect(formatLocalDate('2024-11-03T05:30:00Z', 'yyyy-LL-dd HH:mm:ss', NEW_YORK)).toBe('2024-11-03 01:30:00')
+    expect(formatLocalDate('2024-11-03T06:30:00Z', 'yyyy-LL-dd HH:mm:ss', NEW_YORK)).toBe('2024-11-03 01:30:00')
+  })
+
+  it('localDateParts returns numeric calendar fields in the configured zone', () => {
+    expect(localDateParts(new Date('2024-03-05T06:07:08Z'), 'zh-CN', 'Asia/Shanghai')).toEqual({
+      year: 2024,
+      month: 3,
+      day: 5,
+      hour: 14,
+      minute: 7,
+      second: 8,
+    })
   })
 })

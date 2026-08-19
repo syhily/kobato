@@ -7,7 +7,7 @@ const mockOpenDatabase = vi.hoisted(() =>
 )
 const mockCloseDatabase = vi.hoisted(() => vi.fn())
 const mockRegisterShutdownHook = vi.hoisted(() => vi.fn())
-const mockSetRestartDb = vi.hoisted(() => vi.fn())
+const mockSetRestartGetDb = vi.hoisted(() => vi.fn())
 const mockSetRestartRefreshSettings = vi.hoisted(() => vi.fn())
 const mockInitAllBatchers = vi.hoisted(() => vi.fn())
 const mockFlushAllBatchers = vi.hoisted(() => vi.fn())
@@ -42,7 +42,7 @@ vi.mock('@/server/infra/db/database', () => ({
 vi.mock('@/server/infra/lifecycle', () => ({
   registerShutdownHook: mockRegisterShutdownHook,
   restartServer: mockRestartServer,
-  setRestartDb: mockSetRestartDb,
+  setRestartGetDb: mockSetRestartGetDb,
   setRestartRefreshSettings: mockSetRestartRefreshSettings,
 }))
 

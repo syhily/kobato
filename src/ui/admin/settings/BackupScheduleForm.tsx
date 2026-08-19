@@ -38,10 +38,9 @@ function asBackupMinute(value: string | null): BackupSettings['scheduled']['minu
 
 interface BackupScheduleFormProps {
   backup: BackupSettings
-  canConfigure: boolean
 }
 
-export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormProps) {
+export function BackupScheduleForm({ backup }: BackupScheduleFormProps) {
   const { form, flushOnBlur, settingGroupProps, save } = useSettingsCard<BackupSettings, FormState>({
     section: 'backup',
     source: backup,
@@ -88,7 +87,6 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
                   name={field.name}
                   id="scheduled-enabled"
                   checked={field.value}
-                  disabled={!canConfigure}
                   onCheckedChange={field.onChange}
                   save={save}
                 />
@@ -112,7 +110,6 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
                     value={field.value}
                     onValueChange={field.onChange}
                     save={save}
-                    disabled={!canConfigure}
                     items={FREQUENCY_OPTIONS}
                   >
                     <SelectTrigger>
@@ -141,7 +138,6 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
                       value={String(field.value)}
                       onValueChange={(v) => field.onChange(Number(v))}
                       save={save}
-                      disabled={!canConfigure}
                     >
                       <SelectTrigger className="w-24">
                         <SelectValue />
@@ -166,7 +162,6 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
                       value={String(field.value)}
                       onValueChange={(v) => field.onChange(asBackupMinute(v))}
                       save={save}
-                      disabled={!canConfigure}
                       items={MINUTES.map((m) => ({ value: String(m), label: String(m).padStart(2, '0') }))}
                     >
                       <SelectTrigger className="w-24">
@@ -196,7 +191,6 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
                       value={field.value ? String(field.value) : ''}
                       onValueChange={(v) => field.onChange(Number(v))}
                       save={save}
-                      disabled={!canConfigure}
                       items={WEEKDAY_LABELS.map((label, idx) => ({ value: String(idx + 1), label }))}
                     >
                       <SelectTrigger>
@@ -226,7 +220,6 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
                       value={field.value ? String(field.value) : ''}
                       onValueChange={(v) => field.onChange(Number(v))}
                       save={save}
-                      disabled={!canConfigure}
                       items={Array.from({ length: 28 }, (_, i) => ({ value: String(i + 1), label: `${i + 1} 日` }))}
                     >
                       <SelectTrigger>
@@ -255,7 +248,6 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
                       name={field.name}
                       id="retention-enabled"
                       checked={field.value}
-                      disabled={!canConfigure}
                       onCheckedChange={field.onChange}
                       save={save}
                     />
@@ -274,7 +266,6 @@ export function BackupScheduleForm({ backup, canConfigure }: BackupScheduleFormP
                   type="number"
                   min={1}
                   max={365}
-                  disabled={!canConfigure}
                   {...form.register('retentionDays', { valueAsNumber: true })}
                 />
               </SettingsRow>

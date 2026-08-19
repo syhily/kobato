@@ -2,7 +2,7 @@ import type { Database } from '@/server/infra/db/database'
 import type { NewsletterSubscriberRow } from '@/server/infra/db/types'
 
 import { sendConfirmSubscription } from '@/server/domains/newsletter/email'
-import { signUnsubscribeId, verifyUnsubscribeSignature } from '@/server/domains/newsletter/signing'
+import { verifyUnsubscribeSignature } from '@/server/domains/newsletter/signing'
 import { generateToken, sha256, TOKEN_LEN_RE } from '@/server/infra/crypto/tokens'
 import {
   findSubscriberByConfirmTokenHash,
@@ -44,11 +44,6 @@ function requireNewsletterEnabled(): void {
 export function buildConfirmUrl(token: string): string {
   const { website } = requireBlogSettingsSection('siteIdentity')
   return `${website}/newsletter/confirm?token=${encodeURIComponent(token)}`
-}
-
-export function buildUnsubscribeUrl(id: number): string {
-  const { website } = requireBlogSettingsSection('siteIdentity')
-  return `${website}/newsletter/unsubscribe?id=${id.toString()}&sig=${signUnsubscribeId(id)}`
 }
 
 /**

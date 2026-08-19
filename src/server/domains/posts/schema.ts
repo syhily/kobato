@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { idSchema, upsertMetaBaseSchema } from '@/server/domains/content/schemas/meta-fields'
+import { upsertMetaBaseSchema } from '@/server/domains/content/schemas/meta-fields'
 import { safeBoolean } from '@/shared/utils/schema'
 
 export const listPostsSchema = z.object({
@@ -22,12 +22,6 @@ export const listPostsSchema = z.object({
   sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
   authorId: z.coerce.number().int().optional(),
 })
-
-export const getPostSchema = idSchema
-export const deletePostSchema = idSchema
-export const restorePostSchema = idSchema
-export const unpublishPostSchema = idSchema
-export const listPostRevisionsSchema = idSchema
 
 export const upsertPostMetaSchema = upsertMetaBaseSchema.extend({
   visible: safeBoolean().optional(),

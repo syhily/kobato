@@ -49,9 +49,3 @@ export async function listBackupStoragePaths(db: Database): Promise<string[]> {
   const rows = await db.select({ path: backup.storagePath }).from(backup)
   return rows.map((r) => r.path)
 }
-
-/** Count of local-driver backups — surfaced by the migration card. */
-export async function countLocalBackups(db: Database): Promise<number> {
-  const rows = await db.select({ id: backup.id }).from(backup).where(eq(backup.storageDriver, 'local'))
-  return rows.length
-}

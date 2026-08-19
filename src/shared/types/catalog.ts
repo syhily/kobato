@@ -201,11 +201,6 @@ export function toClientPost(post: Post): ClientPost {
   return rest
 }
 
-export function toClientPage(page: Page): ClientPage {
-  const { body: _body, imageSources: _imageSources, publishedRevisionId: _rev, ...rest } = page
-  return rest
-}
-
 export function toListingPostCard(post: ClientPost): ListingPostCard {
   return {
     id: post.id,

@@ -21,11 +21,9 @@ CREATE TABLE \`webmention\` (
 	\`status\` text DEFAULT 'pending' NOT NULL,
 	\`target_type\` text NOT NULL,
 	\`target_owner_id\` integer NOT NULL,
-	\`fetched_at\` integer,
 	\`author_name\` text,
 	\`title\` text,
 	\`summary\` text,
-	\`raw_payload\` text NOT NULL,
 	\`moderated_at\` integer,
 	CONSTRAINT "webmention_status_chk" CHECK("status" IN ('pending', 'approved', 'rejected'))
 );`
@@ -40,8 +38,8 @@ function seed(handle: DatabaseHandle, rows: SeedRow[]): void {
   const now = Date.now()
   for (const row of rows) {
     handle.db.run(
-      sql`INSERT INTO webmention (created_at, updated_at, source_url, target_url, status, target_type, target_owner_id, raw_payload, title)
-          VALUES (${row.createdAt ?? now}, ${now}, ${row.sourceUrl}, 'https://example.com/posts/wm-target/', 'pending', 'post', 1, '{}', ${row.title})`,
+      sql`INSERT INTO webmention (created_at, updated_at, source_url, target_url, status, target_type, target_owner_id, title)
+          VALUES (${row.createdAt ?? now}, ${now}, ${row.sourceUrl}, 'https://example.com/posts/wm-target/', 'pending', 'post', 1, ${row.title})`,
     )
   }
 }

@@ -3,12 +3,6 @@ import type { Block, PortableTextBody } from '@/shared/pt/schema'
 
 import { dispatchBlockToPm } from '@/shared/pt/bridge/node-registry'
 import { consumeListStreak } from '@/shared/pt/bridge/nodes/list'
-import { validatePortableTextBody } from '@/shared/pt/utils'
-
-/** Validate + convert untyped input into a PM `doc` (editor mount); raw `bodyToPmDoc` skips validation for hot-path round-trips. */
-export function parsePortableTextBodyForEditor(input: unknown): PmDoc {
-  return bodyToPmDoc(validatePortableTextBody(input))
-}
 
 export function bodyToPmDoc(body: PortableTextBody): PmDoc {
   const content: PmNode[] = []

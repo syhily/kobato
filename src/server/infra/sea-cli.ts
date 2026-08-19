@@ -12,6 +12,7 @@ import { once } from 'node:events'
 import { Worker } from 'node:worker_threads'
 
 import { rollbackBinary } from '@/server/infra/binary-rollback'
+import { parseConfigArg } from '@/server/infra/config-arg'
 import { collectDoctorReport, doctorOk, formatDoctorText, parseProbeIssues } from '@/server/infra/doctor-report'
 import { getEmbeddedAsset, isSea } from '@/server/infra/sea'
 import { bootstrapSeaRuntime } from '@/server/infra/sea-natives'
@@ -140,20 +141,8 @@ async function smokeWorker(): Promise<void> {
 /** Re-exec with --doctor-config-probe (forwarding --config): loading the
  * config graph IS the validation — exit 0 means it validates. */
 function probeConfig(): Promise<{ ok: boolean; issues: string[] }> {
-  const forward: string[] = []
-  const argv = process.argv.slice(2)
-  for (let i = 0; i < argv.length; i++) {
-    const arg = argv[i]
-    if (arg === '--config' || arg === '-c') {
-      const next = argv[i + 1]
-      if (next !== undefined) {
-        forward.push(arg, next)
-        i++
-      }
-    } else if (arg.startsWith('--config=')) {
-      forward.push(arg)
-    }
-  }
+  const explicit = parseConfigArg(process.argv.slice(2))
+  const forward = explicit !== undefined ? ['--config', explicit] : []
   const res = spawnSync(process.execPath, ['--doctor-config-probe', ...forward], {
     encoding: 'utf-8',
     timeout: 30_000,

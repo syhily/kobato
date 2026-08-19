@@ -1,153 +1,165 @@
+import { toHTML, type PortableTextComponents } from '@portabletext/to-html'
+
+/* oxlint-disable typescript/no-unsafe-argument, typescript/no-unsafe-type-assertion */
 import type { CommentBlock, CommentBody, CommentTextBlock } from '@/shared/pt/comment-schema'
-import type { LinkMarkDef, MathInlineMarkDef, Span } from '@/shared/pt/schema'
+import type { CodeBlock, MathBlock, PortableTextBlock, Span } from '@/shared/pt/schema'
 
 import { escapeHtml } from '@/shared/utils/security'
 
 // Email-friendly HTML renderer for comment bodies (transactional mail):
 // no Shiki/KaTeX class names or MathML — math renders as inline TeX in
 // `<code>`. Handles the comment dialect only.
+//
+// Deliberate pins keeping the output identical to the hand-rolled renderer
+// this replaced:
+// - `escapeHTML: escapeHtml` — the package default also escapes `'` and
+//   collapses runs of spaces into `&nbsp;`, which the old renderer never did.
+// - `hardBreak: () => '\n'` — the old renderer emitted raw newlines, not
+//   `<br />`.
+// - The list/listItem components restore the old renderer's '\n' between
+//   every structural element (toHTML joins children with no separator), and
+//   consecutive list items are chunked into runs (split on a top-level
+//   bullet↔number flip) so the runs can be joined with '\n' too.
+// - `normalizeBlock` re-applies the old renderer's mark precedence rules the
+//   toolkit does not know: mathInline wins over everything on the span,
+//   inline `code` suppresses the typography decorators (markdown semantics),
+//   and a list item's block style is ignored.
 
-const NEWLINE = '\n'
-
-function escapeAttr(input: string): string {
-  return escapeHtml(input)
+interface LinkMarkValue {
+  href?: string
+  rel?: string
+  target?: string
 }
 
-interface MarkLookup {
-  links: Map<string, LinkMarkDef>
-  mathInline: Map<string, MathInlineMarkDef>
+interface MathInlineMarkValue {
+  tex?: string
 }
 
-function buildMarkLookup(block: CommentTextBlock): MarkLookup {
-  const links = new Map<string, LinkMarkDef>()
-  const mathInline = new Map<string, MathInlineMarkDef>()
-  for (const def of block.markDefs ?? []) {
-    if (def._type === 'link') {
-      links.set(def._key, def)
-    } else if (def._type === 'mathInline') {
-      mathInline.set(def._key, def)
-    }
+function renderLinkMark(children: string, value: LinkMarkValue): string {
+  const href = escapeHtml(value.href ?? '')
+  const rel = escapeHtml(value.rel ?? 'nofollow noreferrer')
+  const target = escapeHtml(value.target ?? '_blank')
+  return `<a href="${href}" rel="${rel}" target="${target}">${children}</a>`
+}
+
+// The displayed glyph is the TeX source; the span's own text is dropped.
+function renderMathInlineMark(value: MathInlineMarkValue | undefined): string {
+  return `<code>$${escapeHtml(value?.tex ?? '')}$</code>`
+}
+
+function renderCodeBlock(value: CodeBlock): string {
+  const language = value.language ? ` data-language="${escapeHtml(value.language)}"` : ''
+  return `<pre><code${language}>${escapeHtml(value.code)}</code></pre>`
+}
+
+function renderMathBlock(value: MathBlock): string {
+  return `<pre><code>$$${escapeHtml(value.tex)}$$</code></pre>`
+}
+
+const components: PortableTextComponents = {
+  block: {
+    normal: ({ children }) => `<p>${children}</p>`,
+    blockquote: ({ children }) => `<blockquote>${children}</blockquote>`,
+  },
+  marks: {
+    strong: ({ children }) => `<strong>${children}</strong>`,
+    em: ({ children }) => `<em>${children}</em>`,
+    underline: ({ children }) => `<u>${children}</u>`,
+    'strike-through': ({ children }) => `<del>${children}</del>`,
+    code: ({ children }) => `<code>${children}</code>`,
+    link: ({ value, children }) => (value === undefined ? children : renderLinkMark(children, value)),
+    mathInline: ({ value }) => renderMathInlineMark(value),
+  },
+  list: {
+    bullet: ({ children }) => `<ul>${children}\n</ul>`,
+    number: ({ children }) => `<ol>${children}\n</ol>`,
+  },
+  listItem: {
+    bullet: ({ children }) => `\n<li>${children}</li>`,
+    number: ({ children }) => `\n<li>${children}</li>`,
+  },
+  types: {
+    code: ({ value }) => renderCodeBlock(value as CodeBlock),
+    mathBlock: ({ value }) => renderMathBlock(value as MathBlock),
+  },
+  hardBreak: () => '\n',
+  escapeHTML: escapeHtml,
+  unknownType: () => '',
+  unknownMark: ({ children }) => children,
+  unknownBlockStyle: ({ children }) => `<p>${children}</p>`,
+  unknownList: ({ children }) => `<ul>${children}</ul>`,
+  unknownListItem: ({ children }) => `<li>${children}</li>`,
+}
+
+const TYPOGRAPHY_DECORATORS = new Set(['em', 'strong', 'underline', 'strike-through'])
+
+function normalizeSpan(span: Span, mathInlineKeys: ReadonlySet<string>): Span {
+  const marks = span.marks
+  if (marks === undefined || marks.length === 0) {
+    return span
   }
-  return { links, mathInline }
+  // mathInline wins over every other mark on the span (annotations included).
+  const mathKey = marks.find((mark) => mathInlineKeys.has(mark))
+  if (mathKey !== undefined) {
+    return marks.length === 1 ? span : { ...span, marks: [mathKey] }
+  }
+  if (!marks.includes('code')) {
+    return span
+  }
+  // `code` wins over the typography decorators (markdown inline code);
+  // annotation keys (link) are unaffected.
+  const filtered = marks.filter((mark) => mark === 'code' || !TYPOGRAPHY_DECORATORS.has(mark))
+  return filtered.length === marks.length ? span : { ...span, marks: filtered }
 }
 
-function renderSpan(span: Span, lookup: MarkLookup): string {
-  const marks = span.marks ?? []
-  // mathInline span: the displayed glyph is the TeX source.
-  for (const name of marks) {
-    const math = lookup.mathInline.get(name)
-    if (math !== undefined) {
-      return `<code>$${escapeHtml(math.tex)}$</code>`
-    }
+function normalizeBlock(block: CommentBlock): CommentBlock {
+  if (block._type !== 'block') {
+    return block
   }
-  let html = escapeHtml(span.text)
-  // `code` decorator wins over the typography decorators (markdown inline code).
-  if (marks.includes('code')) {
-    html = `<code>${escapeHtml(span.text)}</code>`
-  } else {
-    if (marks.includes('strike-through')) {
-      html = `<del>${html}</del>`
-    }
-    if (marks.includes('em')) {
-      html = `<em>${html}</em>`
-    }
-    if (marks.includes('strong')) {
-      html = `<strong>${html}</strong>`
-    }
-    if (marks.includes('underline')) {
-      html = `<u>${html}</u>`
-    }
-  }
-  for (const name of marks) {
-    const link = lookup.links.get(name)
-    if (link !== undefined) {
-      const rel = link.rel ?? 'nofollow noreferrer'
-      const target = link.target ?? '_blank'
-      html = `<a href="${escapeAttr(link.href)}" rel="${escapeAttr(rel)}" target="${escapeAttr(target)}">${html}</a>`
-      break
-    }
-  }
-  return html
+  const mathInlineKeys = new Set(
+    (block.markDefs ?? []).filter((def) => def._type === 'mathInline').map((def) => def._key),
+  )
+  const children = block.children.map((child) => normalizeSpan(child, mathInlineKeys))
+  // A list item's block style is ignored — the toolkit would otherwise wrap
+  // the item's children in a <blockquote>.
+  const style = block.listItem !== undefined ? undefined : block.style
+  return { ...block, children, style }
 }
 
-function renderInline(block: CommentTextBlock): string {
-  const lookup = buildMarkLookup(block)
-  let out = ''
-  for (const child of block.children) {
-    out += renderSpan(child, lookup)
-  }
-  return out
+function renderChunk(chunk: CommentBlock[]): string {
+  return toHTML(chunk.map(normalizeBlock) as PortableTextBlock[], { components })
 }
 
-interface ListFrame {
-  ordered: boolean
-  level: number
-}
-
-function renderListItem(block: CommentTextBlock, stack: ListFrame[], out: string[]): void {
-  const ordered = block.listItem === 'number'
-  const level = block.level ?? 1
-  while (stack.length > 0) {
-    const top = stack[stack.length - 1]
-    if (top.level > level || (top.level === level && top.ordered !== ordered)) {
-      out.push(top.ordered ? '</ol>' : '</ul>')
-      stack.pop()
-      continue
-    }
-    break
-  }
-  while (stack.length === 0 || stack[stack.length - 1].level < level) {
-    out.push(ordered ? '<ol>' : '<ul>')
-    stack.push({ ordered, level: (stack[stack.length - 1]?.level ?? 0) + 1 })
-  }
-  out.push(`<li>${renderInline(block)}</li>`)
-}
-
-function closeListStack(stack: ListFrame[], out: string[]): void {
-  while (stack.length > 0) {
-    const top = stack.pop()!
-    out.push(top.ordered ? '</ol>' : '</ul>')
-  }
-}
-
-function renderTextBlock(block: CommentTextBlock, stack: ListFrame[], out: string[]): void {
-  if (block.listItem !== undefined) {
-    renderListItem(block, stack, out)
-    return
-  }
-  closeListStack(stack, out)
-  const inner = renderInline(block)
-  if (block.style === 'blockquote') {
-    out.push(`<blockquote>${inner}</blockquote>`)
-  } else {
-    out.push(`<p>${inner}</p>`)
-  }
-}
-
-function renderCodeBlock(block: Extract<CommentBlock, { _type: 'code' }>, out: string[]): void {
-  const language = block.language ? ` data-language="${escapeAttr(block.language)}"` : ''
-  out.push(`<pre><code${language}>${escapeHtml(block.code)}</code></pre>`)
-}
-
-function renderMathBlock(block: Extract<CommentBlock, { _type: 'mathBlock' }>, out: string[]): void {
-  out.push(`<pre><code>$$${escapeHtml(block.tex)}$$</code></pre>`)
-}
-
+// toHTML joins top-level nodes with no separator, so consecutive list items
+// (which nestLists must see as one run) are rendered per run and the runs are
+// joined with '\n' — the old renderer's block separator. A level-1 item whose
+// list type differs from the run's top-level list starts a new run: the old
+// renderer closed and reopened the list there.
 export function commentBodyToHtml(body: CommentBody): string {
   const out: string[] = []
-  const stack: ListFrame[] = []
-  for (const block of body) {
-    if (block._type === 'block') {
-      renderTextBlock(block, stack, out)
-      continue
-    }
-    closeListStack(stack, out)
-    if (block._type === 'code') {
-      renderCodeBlock(block, out)
-    } else if (block._type === 'mathBlock') {
-      renderMathBlock(block, out)
+  let listRun: CommentTextBlock[] = []
+  let runRootType: 'bullet' | 'number' | undefined
+  const flushListRun = (): void => {
+    if (listRun.length > 0) {
+      out.push(renderChunk(listRun))
+      listRun = []
+      runRootType = undefined
     }
   }
-  closeListStack(stack, out)
-  return out.join(NEWLINE)
+  for (const block of body) {
+    if (block._type === 'block' && block.listItem !== undefined) {
+      if ((block.level ?? 1) === 1) {
+        if (runRootType !== undefined && block.listItem !== runRootType) {
+          flushListRun()
+        }
+        runRootType = block.listItem
+      }
+      listRun.push(block)
+      continue
+    }
+    flushListRun()
+    out.push(renderChunk([block]))
+  }
+  flushListRun()
+  return out.join('\n')
 }

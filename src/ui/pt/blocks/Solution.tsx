@@ -20,11 +20,3 @@ export function Solution({ children }: SolutionProps) {
     </blockquote>
   )
 }
-
-export interface UnstyledSolutionProps {
-  children?: ReactNode
-}
-
-export function UnstyledSolution({ children }: UnstyledSolutionProps) {
-  return <blockquote>{children}</blockquote>
-}

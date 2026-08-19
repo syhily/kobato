@@ -101,8 +101,8 @@ describe('snapshot: BackupView', () => {
 })
 
 describe('snapshot: BackupScheduleForm', () => {
-  it('renders an enabled weekly schedule when configurable', () => {
-    const html = stableHtml(renderToHtml(<BackupScheduleForm backup={scheduledBackup} canConfigure={true} />))
+  it('renders an enabled weekly schedule', () => {
+    const html = stableHtml(renderToHtml(<BackupScheduleForm backup={scheduledBackup} />))
     expect(html).toContain('定时备份')
     expect(html).toContain('启用定时备份')
     expect(html).toContain('备份频率')
@@ -112,20 +112,12 @@ describe('snapshot: BackupScheduleForm', () => {
   })
 
   it('collapses the frequency/time rows when scheduling is disabled', () => {
-    const html = stableHtml(renderToHtml(<BackupScheduleForm backup={dailyBackup} canConfigure={true} />))
+    const html = stableHtml(renderToHtml(<BackupScheduleForm backup={dailyBackup} />))
     expect(html).toContain('定时备份')
     expect(html).toContain('启用定时备份')
     // Detail rows are gated behind the scheduledEnabled watch.
     expect(html).not.toContain('备份频率')
     expect(html).not.toContain('保留天数')
-  })
-
-  it('disables all inputs when canConfigure is false', () => {
-    const html = stableHtml(renderToHtml(<BackupScheduleForm backup={scheduledBackup} canConfigure={false} />))
-    expect(html).toContain('定时备份')
-    expect(html).toContain('备份频率')
-    // The toggle + selects carry `disabled` when S3/pg tooling is missing.
-    expect(html).toContain('disabled')
   })
 })
 
@@ -151,7 +143,6 @@ describe('snapshot: BackupFileList', () => {
         <BackupFileList
           backups={files}
           timeZone="Asia/Shanghai"
-          canConfigure={true}
           isCreating={false}
           onCreate={() => {}}
           restorePending={false}
@@ -183,7 +174,6 @@ describe('snapshot: BackupFileList', () => {
         <BackupFileList
           backups={[]}
           timeZone="Asia/Shanghai"
-          canConfigure={true}
           isCreating={false}
           onCreate={() => {}}
           restorePending={false}
@@ -206,7 +196,6 @@ describe('snapshot: BackupFileList', () => {
         <BackupFileList
           backups={files}
           timeZone="Asia/Shanghai"
-          canConfigure={true}
           isCreating={false}
           onCreate={() => {}}
           restorePending={false}

@@ -3,7 +3,7 @@ import { mkdirSync } from 'node:fs'
 import path from 'node:path'
 
 import { serverConfig } from '@/server/infra/config'
-import { isInMemoryPath } from '@/server/infra/db/database'
+import { isInMemoryPath, resolveStoragePath } from '@/server/infra/db/database'
 
 /**
  * The embedded DuckDB analytics sidecar: one file, one instance, one
@@ -24,11 +24,7 @@ export interface AnalyticsHandle {
 
 /** `:memory:` passes through — `path.resolve(':memory:')` would yield a file. */
 export function resolveAnalyticsPath(): string {
-  const configured = serverConfig.storage.analyticsDatabase
-  if (isInMemoryPath(configured)) {
-    return configured
-  }
-  return path.resolve(configured === '' ? path.join(serverConfig.storage.data, 'analytics.duckdb') : configured)
+  return resolveStoragePath(serverConfig.storage.analyticsDatabase, 'analytics.duckdb')
 }
 
 /** Open the sidecar and apply the caller's DDL (idempotent — a missing

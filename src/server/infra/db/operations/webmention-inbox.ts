@@ -1,4 +1,4 @@
-import { and, asc, eq, isNull, lte, or } from 'drizzle-orm'
+import { asc, eq, isNull, lte, or } from 'drizzle-orm'
 
 import type { Database } from '@/server/infra/db/database'
 import type { WebmentionInboxRow } from '@/server/infra/db/types'
@@ -81,18 +81,4 @@ export async function clearWebmentionInbox(db: Database): Promise<number> {
 /** Test/admin introspection: everything still queued. */
 export async function listWebmentionInbox(db: Database): Promise<WebmentionInboxRow[]> {
   return db.select().from(webmentionInbox).orderBy(asc(webmentionInbox.id))
-}
-
-/** Pair lookup — the endpoint's idempotency assertions. */
-export async function findWebmentionInboxByPair(
-  db: Database,
-  sourceUrl: string,
-  targetUrl: string,
-): Promise<WebmentionInboxRow | null> {
-  const rows = await db
-    .select()
-    .from(webmentionInbox)
-    .where(and(eq(webmentionInbox.sourceUrl, sourceUrl), eq(webmentionInbox.targetUrl, targetUrl)))
-    .limit(1)
-  return rows[0] ?? null
 }

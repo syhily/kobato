@@ -20,10 +20,6 @@ export async function getInstallState(db: Database): Promise<InstallState> {
   return 'installed'
 }
 
-export async function isInstalled(db: Database): Promise<boolean> {
-  return (await getInstallState(db)) === 'installed'
-}
-
 /** Loader/action helper for `/admin/setup`. */
 export async function ensureNoAdminOrRedirect(db: Database): Promise<null> {
   const state = await getInstallState(db)

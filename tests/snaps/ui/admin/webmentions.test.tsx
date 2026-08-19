@@ -24,9 +24,7 @@ function makeMention(overrides: Partial<AdminWebmentionWire> = {}): AdminWebment
     lastVerifiedAt: '2026-08-01T00:00:00.000Z',
     lastError: null,
     verifyFailStreak: 0,
-    fetchedAt: '2026-08-01T00:00:00.000Z',
     createdAt: '2026-08-01T00:00:00.000Z',
-    moderatedAt: null,
     ...overrides,
   }
 }

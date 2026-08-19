@@ -1,4 +1,3 @@
-import { unsafeCast } from '@/shared/utils/unsafe-cast'
 export function safeBigInt(value: string): number | null {
   try {
     const parsed = Number(value)
@@ -70,13 +69,4 @@ export function sampleSize<T>(items: readonly T[], n: number, seed?: string): T[
     return shuffle(items, seed)
   }
   return shuffle(items, seed).slice(0, n)
-}
-
-export function groupBy<T, K extends string | number>(items: readonly T[], keyFn: (item: T) => K): Record<K, T[]> {
-  const result = unsafeCast<Record<K, T[]>>({})
-  for (const item of items) {
-    const key = keyFn(item)
-    ;(result[key] ??= []).push(item)
-  }
-  return result
 }

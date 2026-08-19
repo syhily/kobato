@@ -27,13 +27,18 @@ export function isInMemoryPath(p: string): boolean {
   return p === ':memory:'
 }
 
-/** `:memory:` passes through for tests (one shared in-memory DB per process). */
-export function resolveDatabasePath(): string {
-  const configured = serverConfig.storage.database
+/** Shared storage-path resolution for both engines: `:memory:` passes
+ *  through for tests; '' falls back to `<storage.data>/<fallbackName>`. */
+export function resolveStoragePath(configured: string, fallbackName: string): string {
   if (isInMemoryPath(configured)) {
     return configured
   }
-  return path.resolve(configured === '' ? path.join(serverConfig.storage.data, 'kobato.db') : configured)
+  return path.resolve(configured === '' ? path.join(serverConfig.storage.data, fallbackName) : configured)
+}
+
+/** The content DB path (one shared in-memory DB per process when `:memory:`). */
+export function resolveDatabasePath(): string {
+  return resolveStoragePath(serverConfig.storage.database, 'kobato.db')
 }
 
 /**

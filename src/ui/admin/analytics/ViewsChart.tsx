@@ -1,3 +1,4 @@
+import { format } from 'date-fns'
 import { useMemo, useState } from 'react'
 
 import type { ViewsPoint } from '@/shared/contracts/analytics'
@@ -313,16 +314,11 @@ function formatAxisLabel(iso: string): string {
   // If the date is today, show HH:MM; otherwise show MM-DD.
   const now = new Date()
   if (d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate()) {
-    return `${pad(d.getHours())}:${pad(d.getMinutes())}`
+    return format(d, 'HH:mm')
   }
-  return `${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  return format(d, 'MM-dd')
 }
 
 function formatTooltipTime(iso: string): string {
-  const d = new Date(iso)
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
-
-function pad(n: number): string {
-  return n < 10 ? `0${n}` : String(n)
+  return format(new Date(iso), 'yyyy-MM-dd HH:mm')
 }

@@ -14,7 +14,7 @@ const migrateDatabase = vi.fn()
 const scheduleNextArchive = vi.fn()
 const refreshBlogSettings = vi.fn()
 const restartServer = vi.fn()
-const setRestartDb = vi.fn()
+const setRestartGetDb = vi.fn()
 const setRestartRefreshSettings = vi.fn()
 const closeDatabase = vi.fn()
 const registerShutdownHook = vi.fn((fn: () => unknown) => fn())
@@ -43,7 +43,7 @@ vi.mock('@/server/infra/config', async (importOriginal) => ({
 vi.mock('@/server/infra/lifecycle', () => ({
   registerShutdownHook: (fn: () => unknown) => registerShutdownHook(fn),
   restartServer: (...args: unknown[]) => restartServer(...args),
-  setRestartDb: (...args: unknown[]) => setRestartDb(...args),
+  setRestartGetDb: (...args: unknown[]) => setRestartGetDb(...args),
   setRestartRefreshSettings: (...args: unknown[]) => setRestartRefreshSettings(...args),
 }))
 

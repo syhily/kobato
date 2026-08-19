@@ -33,7 +33,6 @@ async function findWebmentionByPair(db: Database, sourceUrl: string, targetUrl: 
 // `verified`); `status` / `moderatedAt` are not touched here.
 function refreshSet(values: NewWebmention, now: Date) {
   return {
-    fetchedAt: values.fetchedAt ?? null,
     title: values.title ?? null,
     authorName: values.authorName ?? null,
     summary: values.summary ?? null,
@@ -42,7 +41,6 @@ function refreshSet(values: NewWebmention, now: Date) {
     lastVerifiedAt: values.lastVerifiedAt ?? null,
     lastError: values.lastError ?? null,
     verifyFailStreak: values.verifyFailStreak ?? 0,
-    rawPayload: values.rawPayload,
     updatedAt: now,
   }
 }
@@ -216,7 +214,6 @@ export async function upsertWebmentionVerificationFailure(
 ): Promise<WebmentionRow> {
   const now = new Date()
   const failureSet = {
-    fetchedAt: null,
     verificationStatus: 'failed' as const,
     lastVerifiedAt: now,
     lastError: truncateVerifyError(values.error),
@@ -230,7 +227,6 @@ export async function upsertWebmentionVerificationFailure(
     type: 'mention',
     targetType: values.targetType,
     targetOwnerId: values.targetOwnerId,
-    rawPayload: { source: values.sourceUrl, target: values.targetUrl },
     ...failureSet,
   }
   const existing = await findWebmentionByPair(db, values.sourceUrl, values.targetUrl)
@@ -310,7 +306,6 @@ export async function applyWebmentionReverifySuccess(
       lastVerifiedAt: now,
       lastError: null,
       verifyFailStreak: 0,
-      fetchedAt: now,
       title: values.title,
       authorName: values.authorName,
       summary: values.summary,
