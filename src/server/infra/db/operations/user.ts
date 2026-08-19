@@ -102,7 +102,7 @@ function timingFuzz(): Promise<void> {
 
 export async function verifyUserPassword(db: Database, email: string, password: string): Promise<User | null> {
   const u = await findUserByEmail(db, email)
-  if (u === null || u.deletedAt !== null || u.password === null || u.password === '') {
+  if (u?.deletedAt !== null || u.password === null || u.password === '') {
     await bcrypt.compare('dummy', DUMMY_HASH)
     await timingFuzz()
     return null

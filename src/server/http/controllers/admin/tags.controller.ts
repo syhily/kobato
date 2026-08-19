@@ -46,7 +46,7 @@ const upsert = authorProc
     recordAuditEventFromContext(context, {
       action: input.id === undefined ? 'tag_created' : 'tag_updated',
       resourceType: 'tag',
-      resourceId: String(tag.id),
+      resourceId: tag.id,
     })
     return { tag }
   })

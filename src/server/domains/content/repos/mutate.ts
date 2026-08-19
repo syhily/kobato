@@ -103,7 +103,7 @@ function writeRevisionRow(
   const now = new Date()
   const nextToken = randomUUID()
 
-  if (latest !== undefined && latest.status === 'draft') {
+  if (latest?.status === 'draft') {
     // Only runs on a draft row — `status` is an identity write or the draft→published flip.
     const updated = tx
       .update(contentTable)
@@ -155,8 +155,7 @@ export async function saveDraftRevision(
     const inputBody = portableTextBodySchema.safeParse(input.body)
     const latestBody = latest !== undefined ? portableTextBodySchema.safeParse(latest.body) : null
     if (
-      latest !== undefined &&
-      latest.status === 'published' &&
+      latest?.status === 'published' &&
       inputBody.success &&
       latestBody?.success &&
       arePortableTextBodiesEquivalent(inputBody.data, latestBody.data) &&

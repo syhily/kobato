@@ -28,9 +28,8 @@ export interface MySessionItem {
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { caller, viewer, session } = createSsrCaller({ request, context })
-  const ctx = { session, user: viewer ?? undefined, role: viewer?.role ?? null }
-  // admin.layout already gates visitor+; assert here to narrow `ctx.user` to non-null.
-  requireRole(ctx, 'visitor')
+  // admin.layout already gates visitor+; assert here to narrow `viewer` to non-null.
+  requireRole(viewer ?? undefined, 'visitor')
   const url = new URL(request.url)
   const sort: SessionSortState<'lastActive' | 'loginTime'> = parseSessionSort(
     url.searchParams.get('sort'),
@@ -58,7 +57,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     loginAtIso: s.loginAt.toISOString(),
     lastActiveAtIso: s.lastActiveAt.toISOString(),
     expiresAtIso: s.expiresAt.toISOString(),
-    isCurrent: s.sid === ctx.session.id,
+    isCurrent: s.sid === session.id,
   }))
   return data({ items })
 }

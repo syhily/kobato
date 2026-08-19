@@ -117,7 +117,7 @@ export async function commentCountsByOwnerIds(
     .groupBy(comment.ownerId)
   return rows
     .filter((r): r is { ownerId: number; count: number } => r.ownerId !== null)
-    .map((r) => ({ ownerId: r.ownerId, count: Number(r.count) }))
+    .map((r) => ({ ownerId: r.ownerId, count: r.count }))
 }
 
 export async function purgeOldLikeTokens(db: Database, before: Date): Promise<void> {

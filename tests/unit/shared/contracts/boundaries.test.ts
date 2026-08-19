@@ -41,7 +41,7 @@ function files(...args: string[]): string[] {
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '-g') {
       const glob = args[++i]
-      if (glob !== undefined && glob.startsWith('*.')) {
+      if (glob?.startsWith('*.')) {
         extensions.push(glob.slice(1))
       }
       continue
@@ -920,9 +920,11 @@ describe('contract: module and bundle boundaries', () => {
 
     expect(source).toContain('SECTION_CONTEXTS_ANY')
     expect(source).toContain("makeCtx<SiteIdentitySettings>('siteIdentityContext')")
-    expect(source).toContain("makeCtx<CacheSettings>('cacheContext')")
-    expect(source).toContain("makeCtx<RateLimitSettings>('rateLimitContext')")
-    expect((source.match(/makeCtx</g) ?? []).length).toBeGreaterThanOrEqual(12)
+    expect(source).toContain("makeCtx<ContentSettings>('contentContext')")
+    expect(source).toContain("makeCtx<SeoSettings>('seoContext')")
+    // One context per section with a live hook: siteIdentity, assets,
+    // navigation, socials, content, sidebar, seo.
+    expect((source.match(/[=] makeCtx</g) ?? []).length).toBe(7)
     expect(source).not.toContain('BlogSettingsBundleContext')
   })
 

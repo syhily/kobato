@@ -1,38 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import type { AdminPageDto } from '@/shared/contracts/pages'
-
+import { makeAdminPage } from '#/_helpers/catalog'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { PageRow } from '@/ui/admin/pages/PageRow'
 import { PagesSkeleton } from '@/ui/admin/pages/PagesSkeleton'
 import { PagesView } from '@/ui/admin/pages/PagesView'
-
-function makeAdminPage(overrides: Partial<AdminPageDto> = {}): AdminPageDto {
-  const id = overrides.id ?? `${Math.floor(Math.random() * 1_000_000)}`
-  return {
-    id,
-    slug: overrides.slug ?? `page-${id}`,
-    title: overrides.title ?? `Page ${id}`,
-    summary: overrides.summary ?? '',
-    cover: overrides.cover ?? '/images/cover.png',
-    og: overrides.og ?? null,
-    published: overrides.published ?? true,
-    commentsEnabled: overrides.commentsEnabled ?? true,
-    webmentionsEnabled: overrides.webmentionsEnabled ?? true,
-    showToc: overrides.showToc ?? false,
-    showUpdated: overrides.showUpdated ?? false,
-    showFriends: overrides.showFriends ?? false,
-    publishedAt: overrides.publishedAt ?? '2024-01-01T00:00:00.000Z',
-    publishedRevisionId: overrides.publishedRevisionId ?? 'rev-1',
-    createdAt: overrides.createdAt ?? '2024-01-01T00:00:00.000Z',
-    updatedAt: overrides.updatedAt ?? '2024-01-02T00:00:00.000Z',
-    deletedAt: overrides.deletedAt ?? null,
-    authorId: overrides.authorId ?? null,
-    authorName: overrides.authorName ?? 'Author',
-    commentCount: overrides.commentCount ?? 0,
-    commentPublicId: overrides.commentPublicId ?? `comment-${id}`,
-  }
-}
 
 describe('snapshot: PagesView', () => {
   it('renders the loading state', () => {

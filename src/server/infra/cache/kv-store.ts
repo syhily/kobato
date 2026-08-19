@@ -31,11 +31,11 @@ function expiryFrom(opts: KvStoreSetOptions): Date | null {
 }
 
 // The json-mode column already parsed the text — the cast is the registry's schema contract.
-function deserializeValue<T>(value: unknown): T | null {
+function deserializeValue(value: unknown): unknown {
   if (value === null || value === undefined) {
     return null
   }
-  return unsafeCast<T>(value)
+  return value
 }
 
 export async function getItem<T>(db: Database, key: string): Promise<T | null> {
@@ -48,7 +48,7 @@ export async function getItem<T>(db: Database, key: string): Promise<T | null> {
   if (!row) {
     return null
   }
-  return deserializeValue<T>(row.value)
+  return unsafeCast<T | null>(deserializeValue(row.value))
 }
 
 export async function setItem(db: Database, key: string, value: JsonValue, opts: KvStoreSetOptions): Promise<void> {
@@ -88,7 +88,7 @@ export async function removeItem(db: Database, key: string): Promise<void> {
   await db.delete(kvCache).where(eq(kvCache.key, key))
 }
 
-export async function getItems<T>(db: Database, keys: string[]): Promise<{ key: string; value: T | null }[]> {
+export async function getItems(db: Database, keys: string[]): Promise<{ key: string; value: unknown }[]> {
   if (keys.length === 0) {
     return []
   }
@@ -98,5 +98,5 @@ export async function getItems<T>(db: Database, keys: string[]): Promise<{ key: 
     .where(and(inArray(kvCache.key, keys), liveEntries()))
   const byKey = new Map(rows.map((row) => [row.key, row.value]))
   // Result order follows the input keys (MGET semantics); missing keys come back null.
-  return keys.map((key) => ({ key, value: deserializeValue<T>(byKey.get(key) ?? null) }))
+  return keys.map((key) => ({ key, value: deserializeValue(byKey.get(key) ?? null) }))
 }

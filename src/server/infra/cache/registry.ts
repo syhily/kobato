@@ -298,11 +298,11 @@ export async function get<K extends CacheBucketId, V>(
 }
 
 /** Direct write (best-effort — failures are logged and swallowed). */
-export async function set<K extends CacheBucketId, V>(
+export async function set<K extends CacheBucketId>(
   db: Database,
   id: K,
   params: CacheParamsMap[K],
-  value: V,
+  value: unknown,
 ): Promise<void> {
   const { key, slot } = keyFor(id, params)
   await writeEntry(db, id, key, slot, value)

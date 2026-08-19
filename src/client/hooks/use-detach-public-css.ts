@@ -44,7 +44,7 @@ export function useDetachPublicCss(): void {
           continue
         }
         try {
-          if (nextSibling !== null && nextSibling.parentNode === parent) {
+          if (nextSibling?.parentNode === parent) {
             parent.insertBefore(node, nextSibling)
           } else {
             parent.appendChild(node)

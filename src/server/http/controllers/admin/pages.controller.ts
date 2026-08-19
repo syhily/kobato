@@ -131,7 +131,7 @@ const upsertMeta = adminProc
     recordAuditEventFromContext(context, {
       action: input.id === undefined ? 'page_created' : 'page_meta_updated',
       resourceType: 'page',
-      resourceId: String(page.id),
+      resourceId: page.id,
     })
     return { page }
   })

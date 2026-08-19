@@ -13,13 +13,6 @@ import type { Route } from './+types/comments'
 
 export const meta = titleMeta('我的评论')
 
-export interface MyCommentEntityOption {
-  /** `${type}:${ownerId}` — opaque Combobox value. */
-  value: string
-  /** Entity title shown in the trigger and the dropdown rows. */
-  label: string
-}
-
 export interface MyCommentItem {
   id: string
   body: CommentBody
@@ -46,9 +39,8 @@ function parseStatus(raw: string | null): MyCommentsStatus {
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { caller, viewer } = createSsrCaller({ request, context })
-  const ctx = { user: viewer ?? undefined, role: viewer?.role ?? null }
   // Self-service path — any logged-in role can see their own comments.
-  requireRole(ctx, 'visitor')
+  requireRole(viewer ?? undefined, 'visitor')
   const url = new URL(request.url)
   const status = parseStatus(url.searchParams.get('status'))
   const q = (url.searchParams.get('q') ?? '').trim()
@@ -56,7 +48,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const entityValue = entity ? serializeCommentEntity(entity) : null
 
   const { entities } = await caller.comments.searchMineEntities({})
-  const entityOptions: MyCommentEntityOption[] = entities
+  const entityOptions = [...entities]
 
   // The URL may pin an entity outside the result set — resolve it so the
   // trigger can render the human-readable title.

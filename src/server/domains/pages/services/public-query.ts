@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull } from 'drizzle-orm'
+import { and, desc, eq } from 'drizzle-orm'
 
 import type { Database } from '@/server/infra/db/database'
 import type { NewPageMeta, PageMetaRow } from '@/server/infra/db/types'
@@ -18,16 +18,6 @@ const crud = makeMetaCrud<PageMetaRow, NewPageMeta>(pageMetaTable)
  * Slug-keyed lookup excluding soft-deleted rows; the timestamp gate is applied by the catalog layer.
  */
 export const findPublicPageMetaBySlug = crud.findPublicMetaBySlug
-
-/** All non-deleted page meta rows; cataloged at startup. */
-export async function listPublicPageMetas(db: Database, limit = 500): Promise<PageMetaRow[]> {
-  return db
-    .select()
-    .from(pageMetaTable)
-    .where(isNull(pageMetaTable.deletedAt))
-    .orderBy(desc(pageMetaTable.firstPublishedAt))
-    .limit(limit)
-}
 
 /**
  * Slim live-by-slug lookup — id + title only, gated by `livePageWhere`,
@@ -62,7 +52,7 @@ export async function findPageEtagInputBySlug(
 }
 
 /** Slim row for sitemap generation — only the fields needed to derive `permalink` + `lastmod`. */
-export interface SitemapPageRow {
+interface SitemapPageRow {
   slug: string
   firstPublishedAt: Date | null
   publishedAt: Date

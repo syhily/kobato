@@ -49,7 +49,7 @@ function readCookieValue(header: string | null, name: string): string | null {
   if (!header) {
     return null
   }
-  const m = header.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`))
+  const m = new RegExp(`(?:^|;\\s*)${name}=([^;]+)`).exec(header)
   return m ? decodeURIComponent(m[1]!) : null
 }
 

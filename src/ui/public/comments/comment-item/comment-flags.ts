@@ -28,7 +28,7 @@ export function commentFlags(comment: CommentItemType, identity: CommentIdentity
   const mine = identity.myComments.get(key)
   return {
     isMine: mine !== undefined,
-    isOwnedByCurrentUser: identity.currentUserId !== null && String(comment.userId) === identity.currentUserId,
+    isOwnedByCurrentUser: identity.currentUserId !== null && comment.userId === identity.currentUserId,
     hasPendingDelete: comment.deleteRequestedAt !== null && comment.deleteRequestedAt !== undefined,
     myExpiresAt: mine?.expiresAt,
   }

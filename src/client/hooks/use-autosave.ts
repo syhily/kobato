@@ -159,6 +159,7 @@ export function useAutosave<TBody>({
         debounceTimerRef.current = null
       }
     }
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- every `body` change must re-arm the debounce; the effect reads it through bodyRef
   }, [body, enabled, debounceMs, hardCapMs, doFlush])
 
   useEffect(() => {

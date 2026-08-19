@@ -35,9 +35,9 @@ const entries: BatcherEntry[] = []
  * Register a batcher factory (called at module scope). Re-registering a
  * name replaces the entry — HMR-safe.
  */
-export function registerBatcher<T extends RegisteredBatcher>(
+export function registerBatcher(
   name: string,
-  init: (handle: DatabaseHandle) => T,
+  init: (handle: DatabaseHandle) => RegisteredBatcher,
   options: { replayDeadLetter?: () => Promise<unknown> } = {},
 ): void {
   const index = entries.findIndex((entry) => entry.name === name)
@@ -111,11 +111,15 @@ export async function replayAllDeadLetters(): Promise<void> {
   }
 }
 
+// Return-only T is the typed-lookup API — callers write `getBatcher<PageViewBatcher>(name)`
+// instead of asserting the stored `RegisteredBatcher` at every call site.
+// oxlint-disable-next-line typescript/no-unnecessary-type-parameters
 export function getBatcher<T extends RegisteredBatcher>(name: string): T | undefined {
   const entry = entries.find((candidate) => candidate.name === name)
   return entry?.instance === undefined ? undefined : unsafeCast<T>(entry.instance)
 }
 
+// oxlint-disable-next-line typescript/no-unnecessary-type-parameters
 export function requireBatcher<T extends RegisteredBatcher>(name: string): T {
   const batcher = getBatcher<T>(name)
   if (!batcher) {

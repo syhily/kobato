@@ -11,9 +11,8 @@ export const meta = titleMeta('个人信息')
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { caller, viewer } = createSsrCaller({ request, context })
-  const ctx = { user: viewer ?? undefined, role: viewer?.role ?? null }
   // Any logged-in role can edit their own row; admin.layout already rejects anonymous visitors.
-  requireRole(ctx, 'visitor')
+  requireRole(viewer ?? undefined, 'visitor')
   const [profile, myCounts] = await Promise.all([caller.account.profile(), caller.comments.myCounts()])
   return data({
     user: profile.user,

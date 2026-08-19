@@ -132,10 +132,7 @@ export function isQQEmail(email: string): boolean {
 }
 
 export function getQQAvatarUrl(email: string, size: number): string | null {
-  const match = email
-    .trim()
-    .toLowerCase()
-    .match(/^(\d+)@qq\.com$/)
+  const match = /^(\d+)@qq\.com$/.exec(email.trim().toLowerCase())
   if (!match) {
     return null
   }

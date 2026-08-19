@@ -252,7 +252,7 @@ function CommentsRoot({ commentKey, initialItems, rootsCount, totalCount, user, 
   })
 
   const admin = user?.admin === true
-  const currentUserId = user?.id != null ? String(user.id) : null
+  const currentUserId = user?.id != null ? user.id : null
   const replyTarget = state.replyToId === 0 ? undefined : findComment(state.items, state.replyToId)
   const activeReplyToId = replyTarget ? state.replyToId : 0
 

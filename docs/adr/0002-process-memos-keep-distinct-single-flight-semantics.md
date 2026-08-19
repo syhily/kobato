@@ -16,7 +16,7 @@ whose similarity is only superficial:
   promise; a rejected bootstrap is dropped so the next call retries.
 - Three **verbatim** FIFO-evict bounded maps (the `Intl.DateTimeFormat`
   cache in `shared/utils/formatter`, the branding-byte cache in
-  `domains/assets/repos/storage`, the image-meta cache in
+  `domains/assets/services/storage`, the image-meta cache in
   `ui/pt/blocks/BlockImage`): insert past the cap evicts the oldest key.
 - Three single-flights whose **failure semantics differ and are
   load-bearing**: `infra/cache/inflight` drops the entry in `.finally`

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { adminSession, regularSession } from '#/_helpers/session'
-import { latestComments, loadComments, pendingComments } from '@/server/domains/comments/services/public-query'
+import { latestComments, loadComments } from '@/server/domains/comments/services/public-query'
 import { findMetricByTarget } from '@/server/infra/db/operations/metric'
 import { comment } from '@/server/infra/db/schema/comment'
 import { post } from '@/server/infra/db/schema/post'
@@ -137,7 +137,7 @@ describe('services/comments/loader — loadComments', () => {
   })
 })
 
-describe('services/comments/loader — latestComments / pendingComments', () => {
+describe('services/comments/loader — latestComments', () => {
   it('latestComments resolves authors and skips admins from the pool', async () => {
     const alice = await seedUser({ name: 'Alice', email: 'alice@example.com' })
     const bob = await seedUser({ name: 'Bob', email: 'bob@example.com' })
@@ -171,21 +171,5 @@ describe('services/comments/loader — latestComments / pendingComments', () => 
     const list = await latestComments(db)
 
     expect(list).toHaveLength(5)
-  })
-
-  it('pendingComments caps the digest at the configured sidebar count', async () => {
-    const uid = await seedUser({ name: 'Alice', email: 'alice@example.com' })
-    const pid = await seedPost('d', 'D')
-    for (let i = 0; i < 6; i++) {
-      await seedComment({ userId: uid, ownerId: pid, isPending: true, content: `pending-${i}` })
-    }
-
-    const rows = await pendingComments(db)
-
-    expect(rows).toHaveLength(5)
-    // Digest rows carry the entity title and the comment permalink.
-    expect(rows[0]?.title).toBe('D')
-    expect(rows[0]?.author).toBe('Alice')
-    expect(rows[0]?.permalink).toMatch(/^\/posts\/d\/#user-comment-\d+$/)
   })
 })

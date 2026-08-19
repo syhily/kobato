@@ -4,46 +4,30 @@ import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comm
 import type { CommentFormUser } from '@/shared/types/catalog'
 import type { Comments as CommentsData } from '@/shared/types/comments'
 
+import { makeComment } from '#/_helpers/catalog'
 import { makeLeafContext } from '#/_helpers/comments-leaf'
 import { renderInRouter } from '#/_helpers/render'
 import { CommentItem } from '@/ui/public/comments/comment-item/CommentItem'
 import { CommentReplyForm } from '@/ui/public/comments/CommentReplyForm'
 import { Comments } from '@/ui/public/comments/Comments'
 
-function makeComment(overrides: Partial<CommentItemType> = {}): CommentItemType {
-  return {
-    id: '1',
-    createAt: '2024-01-15T08:30:00.000Z',
-    updatedAt: '2024-01-15T08:30:00.000Z',
-    deleteAt: null,
-    body: [
-      {
-        _type: 'block',
-        _key: 'b1',
-        style: 'normal',
-        children: [{ _type: 'span', _key: 's1', text: 'Hello, world.' }],
-      },
-    ],
-    type: 'post' as const,
-    ownerId: '1',
-    userId: '42',
-    isVerified: true,
-    rid: 0,
-    isCollapsed: false,
-    isPending: false,
-    isPinned: false,
-    voteUp: 0,
-    voteDown: 0,
-    rootId: null,
-    name: 'Alice',
-    emailVerified: true,
-    link: 'https://alice.example.com',
-    badgeName: null,
-    badgeColor: null,
-    badgeTextColor: null,
-    children: [],
-    ...overrides,
-  }
+// Divergent defaults preserved from this file's former local factory (the
+// shared catalog factory is seq-based with 2024-03-12 dates).
+const aliceComment: Partial<CommentItemType> = {
+  id: '1',
+  createAt: '2024-01-15T08:30:00.000Z',
+  updatedAt: '2024-01-15T08:30:00.000Z',
+  body: [
+    {
+      _type: 'block',
+      _key: 'b1',
+      style: 'normal',
+      children: [{ _type: 'span', _key: 's1', text: 'Hello, world.' }],
+    },
+  ],
+  userId: '42',
+  name: 'Alice',
+  link: 'https://alice.example.com',
 }
 
 const adminUser: CommentFormUser = {
@@ -61,7 +45,7 @@ describe('snapshot: medium-complexity comment components', () => {
     const Leaf = makeLeafContext()
     const html = renderInRouter(
       <Leaf>
-        <CommentItem comment={makeComment()} depth={1} />
+        <CommentItem comment={makeComment({ ...aliceComment })} depth={1} />
       </Leaf>,
     )
     expect(html).toContain('id="user-comment-1"')
@@ -75,7 +59,7 @@ describe('snapshot: medium-complexity comment components', () => {
     const Leaf = makeLeafContext({ identity: { admin: true } })
     const html = renderInRouter(
       <Leaf>
-        <CommentItem comment={makeComment({ isPending: true })} depth={1} />
+        <CommentItem comment={makeComment({ ...aliceComment, isPending: true })} depth={1} />
       </Leaf>,
     )
     expect(html).toContain('通过')
@@ -88,7 +72,7 @@ describe('snapshot: medium-complexity comment components', () => {
       <Comments
         commentKey="/posts/hello"
         comments={commentsData}
-        items={[makeComment({ userId: '99' })]}
+        items={[makeComment({ ...aliceComment, userId: '99' })]}
         user={{ ...adminUser, id: '99', admin: false }}
       />,
     )
@@ -113,7 +97,7 @@ describe('snapshot: medium-complexity comment components', () => {
   })
 
   it('CommentReplyForm renders replying-to overlay for a nested reply', () => {
-    const replyTarget = makeComment({ id: '42', name: 'Bob' })
+    const replyTarget = makeComment({ ...aliceComment, id: '42', name: 'Bob' })
     const html = renderInRouter(
       <CommentReplyForm
         commentKey="/posts/hello"
@@ -129,7 +113,11 @@ describe('snapshot: medium-complexity comment components', () => {
 
   it('Comments renders header, reply form, list and load-more for one root', () => {
     const html = renderInRouter(
-      <Comments commentKey="/posts/hello" comments={{ ...commentsData, roots_count: 2 }} items={[makeComment()]} />,
+      <Comments
+        commentKey="/posts/hello"
+        comments={{ ...commentsData, roots_count: 2 }}
+        items={[makeComment({ ...aliceComment })]}
+      />,
     )
     expect(html).toContain('id="comments"')
     expect(html).toContain('评论')
@@ -144,8 +132,8 @@ describe('snapshot: medium-complexity comment components', () => {
   })
 
   it('Comments renders nested children under a root comment', () => {
-    const child = makeComment({ id: '2', name: 'Bob', rid: 1, rootId: '1' })
-    const root = makeComment({ children: [child] })
+    const child = makeComment({ ...aliceComment, id: '2', name: 'Bob', rid: 1, rootId: '1' })
+    const root = makeComment({ ...aliceComment, children: [child] })
     const html = renderInRouter(
       <Comments commentKey="/posts/hello" comments={{ ...commentsData, count: 2, roots_count: 1 }} items={[root]} />,
     )

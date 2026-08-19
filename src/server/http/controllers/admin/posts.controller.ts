@@ -151,7 +151,7 @@ const upsertMeta = authorProc
     recordAuditEventFromContext(context, {
       action: input.id === undefined ? 'post_created' : 'post_meta_updated',
       resourceType: 'post',
-      resourceId: String(post.id),
+      resourceId: post.id,
     })
     return { post }
   })

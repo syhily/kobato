@@ -21,7 +21,7 @@ interface CommentListJson {
 
 /** The post detail SSR embeds the metric public_id in the reply form's hidden input. */
 function scrapePageKey(html: string): string {
-  const input = html.match(/<input[^>]*name="page_key"[^>]*>/)
+  const input = /<input[^>]*name="page_key"[^>]*>/.exec(html)
   const value = input?.[0].match(/value="([^"]+)"/)
   if (!value?.[1]) {
     throw new Error('no page_key hidden input on the post detail page')

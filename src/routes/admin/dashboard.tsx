@@ -1,9 +1,5 @@
 import { useSyncExternalStore } from 'react'
 
-import type { CountersDto, ViewsPoint } from '@/shared/contracts/analytics'
-import type { DraftSummary } from '@/shared/contracts/dashboard'
-import type { ListPendingDashboardOutput } from '@/shared/types/comments'
-
 import { requireRole } from '@/server/domains/auth/rbac'
 import { createSsrCaller } from '@/server/http/ssr-caller'
 import { computeDateRange } from '@/shared/contracts/analytics'
@@ -22,24 +18,6 @@ import type { Route } from './+types/dashboard'
 
 export const meta = titleMeta('欢迎')
 
-export interface AdminDashboardData {
-  name: string
-  role: 'admin' | 'author' | 'visitor'
-  /** Admin-only branches — `null` for authors (the UI hides those cards). */
-  pendingModeration: ListPendingDashboardOutput | null
-  visitSummary: CountersDto | null
-  weeklyTrend: ViewsPoint[] | null
-  emptyStateLine: string
-  stats: {
-    draftCount: number
-    publishedCount: number
-    myCommentsTotal: number
-    myCommentsPending: number
-  }
-  recentDrafts: DraftSummary[]
-  recentPublished: DraftSummary[]
-}
-
 // Keep in lockstep with the `PAGE_SIZE` constant in `PendingModerationPanel.tsx` — the panel's pagination assumes this size.
 const PENDING_PAGE_SIZE = 3
 
@@ -47,11 +25,11 @@ const PENDING_PAGE_SIZE = 3
 // `computeDateRange` yields unix seconds, so stringify.
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { caller, viewer } = createSsrCaller({ request, context })
-  const ctx = { user: viewer ?? undefined, role: viewer?.role ?? null }
-  // Re-assert author+ so `ctx.user` / `ctx.role` narrow to non-null for the loader body.
-  requireRole(ctx, 'author')
+  const user = viewer ?? undefined
+  // Re-assert author+ so `user` narrows to non-null for the loader body.
+  requireRole(user, 'author')
 
-  const admin = ctx.user.role === 'admin'
+  const admin = user.role === 'admin'
 
   const now = new Date()
   const nowSec = Math.floor(now.getTime() / 1000)
@@ -72,8 +50,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   ])
 
   return {
-    name: ctx.user.name,
-    role: ctx.user.role,
+    name: user.name,
+    role: user.role,
     pendingModeration,
     visitSummary,
     weeklyTrend,

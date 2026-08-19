@@ -1,11 +1,12 @@
 import type { MetaEntityDescriptor } from '@/server/domains/content/entities/descriptor'
 import type { NewPageMeta, PageMetaRow } from '@/server/infra/db/types'
+import type { AdminPageDto } from '@/shared/contracts/pages'
 import type { Page } from '@/shared/types/catalog'
 
 import { invalidateContent } from '@/server/domains/content/invalidate'
 import { warmContentRenderCaches } from '@/server/domains/content/render-warmup'
 import { isLive } from '@/server/domains/content/schemas/live-gate'
-import { toAdminPageDto, toCmsPage, type AdminPageDto } from '@/server/domains/pages/projection'
+import { toAdminPageDto, toCmsPage } from '@/server/domains/pages/projection'
 import {
   findPageMetaById,
   findPageMetaBySlug,

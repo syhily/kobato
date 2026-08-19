@@ -27,5 +27,5 @@ export function hitToPreviewTrack(hit: MetingSearchHit): AdminMusicDto {
 }
 
 export function isPreviewId(id: string | undefined): boolean {
-  return id !== undefined && id.startsWith('preview:')
+  return id?.startsWith('preview:') ?? false
 }

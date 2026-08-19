@@ -124,7 +124,7 @@ export async function deleteAdminTag(db: Database, id: number, _viewer?: ViewerI
   const deleted = await deleteAdminTaxonomy(id, '标签', {
     findById: (id) => findTagById(db, id),
     deleteRow: (id) => deleteTagRow(db, id),
-    listPostTitles: (row) => listPostTitlesByTaxonomy(db, 'tag', row.name),
+    listPostTitles: (row) => listPostTitlesByTaxonomy(db, row.name),
   })
   if (deleted) {
     invalidateContent(db, { entity: 'tag' })

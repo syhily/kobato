@@ -5,7 +5,7 @@ import { orpcQuery } from '@/client/api/orpc-query'
 
 const DEBOUNCE_MS = 200
 
-/** Debounced `admin.renderMath` preview; `display` mirrors inline vs block math. */
+/** Debounced `admin.renders.math` preview; `display` mirrors inline vs block math. */
 export function useAdminMathPreview(
   tex: string,
   display: boolean,
@@ -32,6 +32,8 @@ export function useAdminMathPreview(
       setRenderError('渲染服务暂不可用')
     },
   })
+  // Destructured: `mutate` is stable across renders, the mutation object is not.
+  const { mutate: renderMathMutate } = renderMath
 
   // Clear preview on empty tex, track the last valid render — render-phase adjustments avoid setState-in-effect cascades.
   const [lastTex, setLastTex] = useState(tex)
@@ -55,13 +57,12 @@ export function useAdminMathPreview(
       return
     }
     const timer = setTimeout(() => {
-      renderMath.mutate({ tex, display })
+      renderMathMutate({ tex, display })
     }, DEBOUNCE_MS)
     return () => {
       clearTimeout(timer)
     }
-    // oxlint-disable-next-line exhaustive-deps
-  }, [tex, display, renderMath.mutate])
+  }, [tex, display, renderMathMutate])
 
   const showSpinner = previewMathml === '' && renderMath.isPending
   const previewHtml = previewMathml !== '' ? previewMathml : lastValidHtml

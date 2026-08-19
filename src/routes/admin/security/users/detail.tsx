@@ -9,7 +9,7 @@ import type { Route } from './+types/detail'
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { caller, viewer } = createSsrCaller({ request, context })
-  requireRole({ user: viewer ?? undefined, role: viewer?.role ?? null }, 'admin')
+  requireRole(viewer ?? undefined, 'admin')
   return { passkeyEnabled: await caller.admin.users.passkeyFlag() }
 }
 

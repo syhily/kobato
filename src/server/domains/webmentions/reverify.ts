@@ -61,7 +61,7 @@ export async function runWebmentionReverifyBatch(db: Database): Promise<number> 
         count: 'daily',
         hideStreak: WEBMENTION_HIDE_STREAK,
       })
-      if (updated !== null && updated.status === 'hidden') {
+      if (updated?.status === 'hidden') {
         log.info('Webmention hidden after consecutive verification failures', {
           id: row.id,
           streak: updated.verifyFailStreak,

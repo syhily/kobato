@@ -58,10 +58,10 @@ export function CommentActions({ comment, onEditAdmin, onEditOwn }: CommentActio
   const deleteToggleDisabled = requestDelete.isPending || cancelDelete.isPending
 
   const handleReply = () => actions.onReply(Number(comment.id))
-  const handleApprove = () => approve.mutate({ commentId: String(comment.id) })
-  const handleDelete = () => remove.mutate({ commentId: String(comment.id) })
-  const handleRequestDelete = () => requestDelete.mutate({ commentId: String(comment.id) })
-  const handleCancelDelete = () => cancelDelete.mutate({ commentId: String(comment.id) })
+  const handleApprove = () => approve.mutate({ commentId: comment.id })
+  const handleDelete = () => remove.mutate({ commentId: comment.id })
+  const handleRequestDelete = () => requestDelete.mutate({ commentId: comment.id })
+  const handleCancelDelete = () => cancelDelete.mutate({ commentId: comment.id })
 
   return (
     <div className="flex flex-1 items-center gap-2 text-xs text-ink-4">

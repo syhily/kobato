@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
-import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
 import type { Comments as CommentsData } from '@/shared/types/comments'
 
+import { makeComment } from '#/_helpers/catalog'
 import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { Comments } from '@/ui/public/comments/Comments'
@@ -17,46 +17,6 @@ mockTanstackQuery()
 
 // The render helper's BlogSettingsProvider seeds the full settings bundle;
 // CommentsRoot wires the rest internally — tests only feed props.
-
-let seq = 0
-function makeComment(overrides: Partial<CommentItemType> = {}): CommentItemType {
-  seq += 1
-  return {
-    id: overrides.id ?? String(seq),
-    createAt: overrides.createAt ?? '2024-03-12T08:30:00.000Z',
-    updatedAt: overrides.updatedAt ?? '2024-03-12T08:30:00.000Z',
-    deleteAt: overrides.deleteAt ?? null,
-    deleteRequestedAt: overrides.deleteRequestedAt ?? null,
-    body: overrides.body ?? [
-      {
-        _type: 'block',
-        _key: `b${seq}`,
-        style: 'normal',
-        markDefs: [],
-        children: [{ _type: 'span', _key: `s${seq}`, text: `Body ${seq}` }],
-      },
-    ],
-    type: overrides.type ?? 'post',
-    ownerId: overrides.ownerId ?? '1',
-    userId: overrides.userId ?? String(100 + seq),
-    isVerified: overrides.isVerified ?? true,
-    rid: overrides.rid ?? 0,
-    isCollapsed: overrides.isCollapsed ?? false,
-    isPending: overrides.isPending ?? false,
-    isPinned: overrides.isPinned ?? false,
-    voteUp: overrides.voteUp ?? 0,
-    voteDown: overrides.voteDown ?? 0,
-    rootId: overrides.rootId ?? null,
-    name: overrides.name ?? `Author ${seq}`,
-    emailVerified: overrides.emailVerified ?? true,
-    link: overrides.link ?? null,
-    badgeName: overrides.badgeName ?? null,
-    badgeColor: overrides.badgeColor ?? null,
-    badgeTextColor: overrides.badgeTextColor ?? null,
-    children: overrides.children ?? [],
-    ...overrides,
-  }
-}
 
 const commentsData = (count: number, roots: number): CommentsData => ({
   comments: [],

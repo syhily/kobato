@@ -164,7 +164,7 @@ export function routeWarmupPlugin(): Plugin {
         const env = unsafeCast<{ environment?: { name?: string } }>(this).environment
 
         // Skip client env (server manifest not written yet)
-        if (env && env.name === 'client') {
+        if (env?.name === 'client') {
           return
         }
         // If no environment API (older Vite), skip SSR builds

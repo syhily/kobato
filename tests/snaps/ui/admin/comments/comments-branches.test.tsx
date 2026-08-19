@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
-import type { CommentBody } from '@/shared/pt/comment-schema'
 import type { CommentFilterFieldKey } from '@/ui/admin/comments/filter-fields'
 import type { CommentActions } from '@/ui/admin/comments/useCommentsController'
 import type { ActiveFilter } from '@/ui/admin/shared/filterPillsReducer'
 
+import { makeAdminComment } from '#/_helpers/catalog'
 import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { CommentsView } from '@/ui/admin/comments/CommentsView'
@@ -103,54 +103,6 @@ vi.mock('@/ui/admin/comments/useCommentsController', async () => {
 
 // The shared query mock returns one control object for every `useQueries`
 // lookup — pack the option lists onto `data`.
-
-let commentSeq = 0
-
-function makeAdminComment(overrides: Partial<AdminComment> = {}): AdminComment {
-  commentSeq += 1
-  const body: CommentBody = [
-    {
-      _type: 'block',
-      _key: `b${commentSeq}`,
-      style: 'normal',
-      children: [{ _type: 'span', _key: `s${commentSeq}`, text: `Comment body ${commentSeq}` }],
-    },
-  ]
-  return {
-    id: String(commentSeq),
-    createAt: '2024-03-12T08:30:00.000Z',
-    updatedAt: '2024-03-12T08:30:00.000Z',
-    deleteAt: null,
-    deleteRequestedAt: null,
-    body,
-    type: 'post',
-    ownerId: null,
-    userId: String(commentSeq),
-    isVerified: false,
-    rid: 0,
-    isCollapsed: false,
-    isPending: false,
-    isPinned: false,
-    voteUp: 0,
-    voteDown: 0,
-    rootId: null,
-    name: `Author ${commentSeq}`,
-    emailVerified: false,
-    link: null,
-    badgeName: null,
-    badgeColor: null,
-    badgeTextColor: null,
-    content: `Comment body ${commentSeq}`,
-    ua: null,
-    ip: null,
-    email: 'author@example.com',
-    pageTitle: null,
-    pagePublicId: null,
-    pageCover: null,
-    pagePermalink: null,
-    ...overrides,
-  }
-}
 
 function resetController() {
   controllerState.comments = []

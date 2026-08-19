@@ -78,7 +78,7 @@ export async function requestPasswordReset(
   }
   if (emailStr) {
     const u = await findUserByEmail(db, emailStr)
-    if (u && u.role && !u.deletedAt) {
+    if (u?.role && !u.deletedAt) {
       await issueTokenAndEmail(db, u, u.role, clientAddress, request)
     } else if (u && !u.role && u.password === '' && !u.deletedAt) {
       // Anonymous commenter with an approved comment can claim the account.
@@ -131,7 +131,7 @@ export async function resetPasswordWithToken(
   }
 
   const dbUser = await findUserById(db, result.userId)
-  if (!dbUser || !dbUser.role || dbUser.deletedAt) {
+  if (!dbUser?.role || dbUser.deletedAt) {
     return { type: 'error', message: '账户状态异常，无法登录。' }
   }
   // Use the returned `setCookie` — a later `commitSession` would mint a

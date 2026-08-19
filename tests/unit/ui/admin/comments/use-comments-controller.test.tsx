@@ -7,6 +7,7 @@ import type { AdminCommentWire as AdminComment } from '@/shared/contracts/commen
 import type { CommentBody } from '@/shared/pt/comment-schema'
 import type { ActiveFilter } from '@/ui/admin/shared/filterPillsReducer'
 
+import { makeAdminComment } from '#/_helpers/catalog'
 import { renderHook } from '#/_helpers/hook'
 import { orpcQuery } from '@/client/api/orpc-query'
 import {
@@ -47,52 +48,6 @@ function makeWrapper() {
 
 // Inert stubs — the confirm/mutation actions are covered by use-comments-actions.test.tsx.
 const intents = { edit: () => {}, reply: () => {}, editUser: () => {} }
-
-let commentId = 0
-function makeAdminComment(overrides: Partial<AdminComment> = {}): AdminComment {
-  commentId += 1
-  const body: CommentBody = [
-    {
-      _type: 'block',
-      _key: `b${commentId}`,
-      children: [{ _type: 'span', _key: `s${commentId}`, text: `Comment ${commentId}` }],
-    },
-  ]
-  return {
-    id: String(commentId),
-    createAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-01T00:00:00.000Z',
-    deleteAt: null,
-    deleteRequestedAt: null,
-    body,
-    type: 'post',
-    ownerId: null,
-    userId: String(commentId),
-    isVerified: false,
-    rid: 0,
-    isCollapsed: false,
-    isPending: false,
-    isPinned: false,
-    voteUp: 0,
-    voteDown: 0,
-    rootId: null,
-    name: `Author ${commentId}`,
-    emailVerified: false,
-    link: null,
-    badgeName: null,
-    badgeColor: null,
-    badgeTextColor: null,
-    content: `Comment ${commentId}`,
-    ua: null,
-    ip: null,
-    email: 'author@example.com',
-    pageTitle: null,
-    pagePublicId: null,
-    pageCover: null,
-    pagePermalink: null,
-    ...overrides,
-  }
-}
 
 function makePage(comments: AdminComment[], overrides: Partial<AdminCommentsPage> = {}): AdminCommentsPage {
   return {

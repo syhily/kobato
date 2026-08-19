@@ -10,7 +10,6 @@ import {
   adminUserIds,
   commentsByIds,
   latestDistinctCommentIds,
-  pendingComments as pendingCommentsRepo,
 } from '@/server/domains/comments/repos/public-query/digest'
 import {
   countCommentsAndRoots,
@@ -26,14 +25,6 @@ import { idFromString } from '@/shared/utils/id'
 import { hasAtLeast } from '@/shared/utils/roles'
 
 const log = getLogger('comments.parse')
-
-export async function pendingComments(db: Database): Promise<LatestComment[]> {
-  const rows = await pendingCommentsRepo(
-    db,
-    getSidebarWidgetCount(requireBlogSettingsSection('sidebar'), 'recentComments'),
-  )
-  return rows.map(toLatestComment)
-}
 
 /** "Established commenter" rule — consumed cross-domain, e.g. the signin
  *  flow's account claim for anonymous commenters. */
@@ -145,7 +136,7 @@ export async function parseComments(comments: CommentAndUser[]): Promise<Comment
     if (c.deleteAt !== null) {
       continue
     }
-    const commentIdNumeric = Number(c.id)
+    const commentIdNumeric = c.id
     const resolvedRid = Number.isFinite(commentIdNumeric) ? resolveVisibleParentRid(commentIdNumeric, c.rid, byId) : 0
     rewritten.push({ ...c, rid: resolvedRid, content: null })
   }

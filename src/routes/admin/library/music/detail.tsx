@@ -9,7 +9,7 @@ import type { Route } from './+types/detail'
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
   const rc = getRequestContext({ request, context })
-  requireRole({ user: rc.viewer ?? undefined, role: rc.viewer?.role ?? null }, 'author')
+  requireRole(rc.viewer ?? undefined, 'author')
   return { id: params.id }
 }
 

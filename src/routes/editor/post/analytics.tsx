@@ -11,7 +11,7 @@ import type { Route } from './+types/analytics'
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
   const { caller, viewer } = createSsrCaller({ request, context })
-  requireRole({ user: viewer ?? undefined, role: viewer?.role ?? null }, 'author')
+  requireRole(viewer ?? undefined, 'author')
   const url = new URL(request.url)
   const postId = idFromString(params.id)
   try {

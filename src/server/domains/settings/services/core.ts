@@ -29,9 +29,9 @@ export interface SectionUpdateResult {
   warnings: string[]
 }
 
-export async function updateBlogSettingsSection<S extends SettingsSection>(
+export async function updateBlogSettingsSection(
   db: Database,
-  section: S,
+  section: SettingsSection,
   payload: unknown,
   updatedBy: number | null,
 ): Promise<SectionUpdateResult> {

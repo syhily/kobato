@@ -67,7 +67,7 @@ export function tryBeginRestore(): boolean {
 /** Release a claimed-but-never-started slot (body parse or pre-swap
  *  validation failed before `startRestoreJob` ran). */
 export function abortRestoreClaim(): void {
-  if (current !== null && current.phase === 'draining') {
+  if (current?.phase === 'draining') {
     current = null
   }
 }

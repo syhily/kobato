@@ -2,44 +2,28 @@ import { describe, expect, it } from 'vitest'
 
 import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
 
+import { makeComment } from '#/_helpers/catalog'
 import { makeLeafContext } from '#/_helpers/comments-leaf'
 import { renderInRouter } from '#/_helpers/render'
 import { CommentItem } from '@/ui/public/comments/comment-item/CommentItem'
 
-function makeComment(overrides: Partial<CommentItemType> = {}): CommentItemType {
-  return {
-    id: '1',
-    createAt: '2024-01-15T08:30:00.000Z',
-    updatedAt: '2024-01-15T08:30:00.000Z',
-    deleteAt: null,
-    body: [
-      {
-        _type: 'block',
-        _key: 'b1',
-        style: 'normal',
-        children: [{ _type: 'span', _key: 's1', text: 'Hello, world.' }],
-      },
-    ],
-    type: 'post' as const,
-    ownerId: '1',
-    userId: '42',
-    isVerified: true,
-    rid: 0,
-    isCollapsed: false,
-    isPending: false,
-    isPinned: false,
-    voteUp: 0,
-    voteDown: 0,
-    rootId: null,
-    name: 'Alice',
-    emailVerified: true,
-    link: 'https://alice.example.com',
-    badgeName: null,
-    badgeColor: null,
-    badgeTextColor: null,
-    children: [],
-    ...overrides,
-  }
+// Divergent defaults preserved from this file's former local factory (the
+// shared catalog factory is seq-based with 2024-03-12 dates).
+const aliceComment: Partial<CommentItemType> = {
+  id: '1',
+  createAt: '2024-01-15T08:30:00.000Z',
+  updatedAt: '2024-01-15T08:30:00.000Z',
+  body: [
+    {
+      _type: 'block',
+      _key: 'b1',
+      style: 'normal',
+      children: [{ _type: 'span', _key: 's1', text: 'Hello, world.' }],
+    },
+  ],
+  userId: '42',
+  name: 'Alice',
+  link: 'https://alice.example.com',
 }
 
 describe('snapshot: comment HTML', () => {
@@ -47,7 +31,7 @@ describe('snapshot: comment HTML', () => {
     const Leaf = makeLeafContext()
     const html = renderInRouter(
       <Leaf>
-        <CommentItem comment={makeComment()} depth={1} />
+        <CommentItem comment={makeComment({ ...aliceComment })} depth={1} />
       </Leaf>,
     )
     expect(html).toContain('id="user-comment-1"')
@@ -64,6 +48,7 @@ describe('snapshot: comment HTML', () => {
       <Leaf>
         <CommentItem
           comment={makeComment({
+            ...aliceComment,
             badgeName: '站长',
             badgeColor: '#6ab7ca',
             badgeTextColor: '#151b2b',
@@ -81,6 +66,7 @@ describe('snapshot: comment HTML', () => {
 
   it('root comment with one nested child, admin viewer (edit/delete buttons)', () => {
     const child = makeComment({
+      ...aliceComment,
       id: '2',
       rid: 1,
       rootId: '1',
@@ -90,7 +76,7 @@ describe('snapshot: comment HTML', () => {
         { _type: 'block', _key: 'b2', style: 'normal', children: [{ _type: 'span', _key: 's2', text: 'Reply.' }] },
       ],
     })
-    const root = makeComment({ children: [child] })
+    const root = makeComment({ ...aliceComment, children: [child] })
     const Leaf = makeLeafContext({ identity: { admin: true } })
     const html = renderInRouter(
       <Leaf>
@@ -110,7 +96,7 @@ describe('snapshot: comment HTML', () => {
     const Leaf = makeLeafContext()
     const html = renderInRouter(
       <Leaf>
-        <CommentItem comment={makeComment({ isPending: true })} depth={1} pending />
+        <CommentItem comment={makeComment({ ...aliceComment, isPending: true })} depth={1} pending />
       </Leaf>,
     )
     expect(html).toContain('您的评论正在等待审核中...')
@@ -120,7 +106,7 @@ describe('snapshot: comment HTML', () => {
     const Leaf = makeLeafContext({ identity: { admin: true } })
     const html = renderInRouter(
       <Leaf>
-        <CommentItem comment={makeComment()} depth={1} />
+        <CommentItem comment={makeComment({ ...aliceComment })} depth={1} />
       </Leaf>,
     )
     expect(html.toLowerCase()).not.toContain('onerror')

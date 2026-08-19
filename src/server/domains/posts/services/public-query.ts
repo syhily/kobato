@@ -95,7 +95,7 @@ export async function getClientPostsWithMetadata<PostLike extends { id: string }
 }
 
 /** Slim row for sitemap generation — only the fields needed to derive `permalink` + `lastmod`. */
-export interface SitemapPostRow {
+interface SitemapPostRow {
   slug: string
   firstPublishedAt: Date | null
   publishedAt: Date
@@ -145,10 +145,4 @@ export async function getPostsBySlugs(
   const order = new Map(slugs.map((slug, index) => [slug, index]))
   filteredRows.sort((a, b) => (order.get(a.slug) ?? 0) - (order.get(b.slug) ?? 0))
   return hydratePostList(db, filteredRows)
-}
-
-export async function listAllPosts(db: Database, options?: PostVisibilityOptions): Promise<Post[]> {
-  const filters = buildPublicPostFilters(options)
-  const metas = await listPublicPosts(db, { ...filters })
-  return hydratePostList(db, metas)
 }

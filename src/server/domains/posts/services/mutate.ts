@@ -1,7 +1,7 @@
 import type { ViewerIdentity } from '@/server/domains/auth/rbac'
-import type { AdminPostDto } from '@/server/domains/posts/projection'
 import type { PostMetaWriteInput } from '@/server/domains/posts/services/shared'
 import type { Database } from '@/server/infra/db/database'
+import type { AdminPostDto } from '@/shared/contracts/posts'
 
 import { makeEntityMutations } from '@/server/domains/content/entities/mutate'
 import { postDescriptor } from '@/server/domains/posts/descriptor'

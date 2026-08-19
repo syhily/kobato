@@ -47,10 +47,7 @@ export async function handleIdentify(
   }
 
   const isMagicLinkUser =
-    existingUser !== null &&
-    existingUser.loginMethod === 'magic-link' &&
-    Boolean(existingUser.role) &&
-    !existingUser.deletedAt
+    existingUser?.loginMethod === 'magic-link' && Boolean(existingUser.role) && !existingUser.deletedAt
 
   if (isMagicLinkUser && isMailLoginReady()) {
     const failure = await sendMagicLink(ctx, request, existingUser, redirectTo, origin)

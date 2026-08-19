@@ -31,7 +31,7 @@ embedded **DuckDB** sidecar. There is no database server to run, back up, or upg
 
 ## Requirements
 
-- Node.js 24+ for development (the SEA binary deployment needs no runtime); `pnpm run sea:build` requires Node.js 26
+- Node.js 26+ for development (the SEA binary deployment needs no runtime); `pnpm run sea:build` requires Node.js 26
 
 No database server: SQLite and DuckDB are embedded.
 

@@ -68,7 +68,11 @@ Adding a route: pick the area directory, choose a role filename, add the manifes
   `requireRole` gate, do their own `Promise.all` composition (role-conditional branches — e.g. the
   dashboard's admin-only analytics/moderation reads), and translate `ORPCError` codes back to
   Responses (`NOT_FOUND` → `notFound()`, `SERVICE_UNAVAILABLE` → the historical 503 texts). There
-  is no page-level aggregate group — orchestration stays in the loaders. The boundaries test pins
+  is no page-level aggregate group — orchestration stays in the loaders. Loaders whose ONLY job is
+  the role gate (`getRequestContext` → `requireRole` → `return null`) collapse to
+  `export const loader = guardOnlyLoader('<role>')` from `@/server/http/request-context`; loaders
+  that also fetch data keep the hand-written `requireRole(viewer ?? undefined, '<role>')` line. The
+  boundaries test pins
   the admin/editor whitelist (`ssr-caller`, `request-context`, `domains/auth/rbac`, `infra/http/*`)
   and the auth whitelist (signin/setup authentication-flow orchestration, which deliberately stays
   direct: `domains/auth/*`, `domains/comments/services/public-query`, `domains/settings/install-gate`,

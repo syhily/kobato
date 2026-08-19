@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AdminCategoryDto } from '@/shared/contracts/categories'
 
+import { makeAdminCategory } from '#/_helpers/catalog'
 import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { CategoriesView } from '@/ui/admin/categories/CategoriesView'
@@ -75,22 +76,6 @@ vi.mock('@dnd-kit/utilities', () => ({
 }))
 
 vi.mock('@/ui/components/dialog', () => import('#/_helpers/stubs/dialog'))
-
-function makeAdminCategory(overrides: Partial<AdminCategoryDto> = {}): AdminCategoryDto {
-  return {
-    id: 'cat-1',
-    name: '默认分类',
-    slug: 'default',
-    cover: '/images/categories/default.jpg',
-    og: null,
-    description: '',
-    sortOrder: 0,
-    postCount: 0,
-    createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-02T00:00:00.000Z',
-    ...overrides,
-  }
-}
 
 describe('snapshot: CategoriesView', () => {
   beforeEach(() => {

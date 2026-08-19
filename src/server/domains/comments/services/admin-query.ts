@@ -48,9 +48,9 @@ export async function countAdminPendingDashboard(db: Database): Promise<{
     })
     .from(comment)
   return {
-    all: Number(rows[0]?.all ?? 0),
-    approval: Number(rows[0]?.approval ?? 0),
-    deletion: Number(rows[0]?.deletion ?? 0),
+    all: rows[0]?.all ?? 0,
+    approval: rows[0]?.approval ?? 0,
+    deletion: rows[0]?.deletion ?? 0,
   }
 }
 

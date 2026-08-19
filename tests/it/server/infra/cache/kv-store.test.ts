@@ -118,7 +118,7 @@ describe('kv-store — getItems', () => {
     await setItem(db, 'k:a', 1, { bucket: 'feed' })
     await setItem(db, 'k:b', 2, { bucket: 'feed' })
 
-    const result = await getItems<number>(db, ['k:b', 'k:missing', 'k:a'])
+    const result = await getItems(db, ['k:b', 'k:missing', 'k:a'])
     expect(result).toEqual([
       { key: 'k:b', value: 2 },
       { key: 'k:missing', value: null },

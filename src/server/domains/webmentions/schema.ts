@@ -35,7 +35,6 @@ export type WebmentionReceiveInput = z.infer<typeof webmentionReceiveSchema>
 export const webmentionPublicListSchema = z.object({
   page_key: z.string(),
 })
-export type WebmentionPublicListInput = z.infer<typeof webmentionPublicListSchema>
 
 // Admin moderation list — `rejected` is a stored terminal state (not a
 // delete); `hidden` follows 7 consecutive daily re-verification failures.
@@ -44,7 +43,6 @@ export const adminWebmentionListSchema = z.object({
   limit: z.number().min(1).max(100),
   status: z.enum(['all', ...WEBMENTION_STATUSES]).optional(),
 })
-export type AdminWebmentionListInput = z.infer<typeof adminWebmentionListSchema>
 
 // Outbound send-log list — read-only; `all` carries no status constraint.
 export const adminWebmentionOutboxListSchema = z.object({
@@ -52,4 +50,3 @@ export const adminWebmentionOutboxListSchema = z.object({
   limit: z.number().min(1).max(100),
   status: z.enum(['all', ...WEBMENTION_OUTBOX_STATUSES]).optional(),
 })
-export type AdminWebmentionOutboxListInput = z.infer<typeof adminWebmentionOutboxListSchema>

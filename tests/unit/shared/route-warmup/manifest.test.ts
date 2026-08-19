@@ -57,7 +57,7 @@ describe('shared/route-warmup/manifest — parseClientManifest', () => {
   it('returns null when a route is missing its id', () => {
     const manifest = makeManifest()
     const routes: Record<string, Record<string, unknown>> = JSON.parse(JSON.stringify(manifest.routes))
-    delete routes['root']!['id']
+    delete routes.root!.id
     expect(parseClientManifest(serializeManifest({ ...manifest, routes }))).toBeNull()
   })
 
@@ -113,7 +113,7 @@ describe('shared/route-warmup/manifest — collectManifestChunks', () => {
   it('applies exclusion patterns against the chunk basename only', () => {
     const manifest = makeManifest()
     // Matches the basename 'canvas-hl.js' → excluded.
-    manifest.routes['root']!.imports.push('/assets/canvas-hl.js')
+    manifest.routes.root!.imports.push('/assets/canvas-hl.js')
     expect(collectManifestChunks(manifest, ['root'], [/^canvas-/])).toEqual([
       '/assets/root.js',
       '/assets/runtime.js',

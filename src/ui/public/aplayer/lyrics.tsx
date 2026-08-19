@@ -91,7 +91,7 @@ export function parseLrc(lrcInput?: string): [time: number, text: string][] {
         }
         const min2sec = Number(oneTime[1]) * 60
         const sec2sec = parseInt(oneTime[2], 10)
-        const msec2sec = oneTime[4] ? parseInt(oneTime[4], 10) / ((oneTime[4] + '').length === 2 ? 100 : 1000) : 0
+        const msec2sec = oneTime[4] ? parseInt(oneTime[4], 10) / (oneTime[4].length === 2 ? 100 : 1000) : 0
         const lrcTime = min2sec + sec2sec + msec2sec
         lrc.push([lrcTime, lrcText])
       }

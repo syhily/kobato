@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import type { AdminCategoryDto } from '@/shared/contracts/categories'
 
+import { makeAdminCategory } from '#/_helpers/catalog'
 import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderToHtml, stableHtml } from '#/_helpers/render'
 import { EditCategoryDialog } from '@/ui/admin/categories/EditCategoryDialog'
@@ -18,22 +19,6 @@ queryMocks.mutation = { isPending: false, mutate: vi.fn() }
 // The stubbed dialog renders inline (the real portal never mounts under SSR);
 // open = category !== undefined.
 vi.mock('@/ui/components/dialog', () => import('#/_helpers/stubs/dialog'))
-
-function makeAdminCategory(overrides: Partial<AdminCategoryDto> = {}): AdminCategoryDto {
-  return {
-    id: 'cat-1',
-    name: '摄影',
-    slug: 'photography',
-    cover: '/images/categories/photography.jpg',
-    og: null,
-    description: '',
-    sortOrder: 0,
-    postCount: 0,
-    createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-02T00:00:00.000Z',
-    ...overrides,
-  }
-}
 
 // Flips category from undefined (closed) to the target on first render so the dialog mounts.
 function OpenDialog({ category }: { category: AdminCategoryDto | null }) {

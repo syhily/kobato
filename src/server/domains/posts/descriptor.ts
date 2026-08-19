@@ -1,13 +1,14 @@
 import type { MetaEntityDescriptor } from '@/server/domains/content/entities/descriptor'
 import type { Database } from '@/server/infra/db/database'
 import type { NewPostMeta, PostMetaRow } from '@/server/infra/db/types'
+import type { AdminPostDto } from '@/shared/contracts/posts'
 import type { Post } from '@/shared/types/catalog'
 
 import { invalidateContent } from '@/server/domains/content/invalidate'
 import { warmContentRenderCaches } from '@/server/domains/content/render-warmup'
 import { findContentById } from '@/server/domains/content/revisions'
 import { isLive, isPromoted } from '@/server/domains/content/schemas/live-gate'
-import { toAdminPostDto, toCmsPost, type AdminPostDto } from '@/server/domains/posts/projection'
+import { toAdminPostDto, toCmsPost } from '@/server/domains/posts/projection'
 import { runPostPublishHooks } from '@/server/domains/posts/publish-hooks'
 import {
   insertPostMeta,

@@ -67,43 +67,44 @@ function addonFileName(key: string): string {
   return key.slice(SEA_NATIVE_ASSET_PREFIX.length)
 }
 
-function readEmbeddedMetadata<T>(key: string): T {
+function readEmbeddedMetadata(key: string): unknown {
   const raw = getEmbeddedAsset(key)
   if (raw === null) {
     throw new Error(`native-require: embedded metadata asset missing: ${key}`)
   }
   // The JSON shape is the caller's claim (each probe has its own type).
-  return unsafeCast<T>(JSON.parse(raw.toString('utf-8')))
+  const parsed: unknown = JSON.parse(raw.toString('utf-8'))
+  return parsed
 }
 
 /**
  * Resolve one redirected platform specifier — only the rewritten call sites
  * inside the bundled native packages call this, never project code.
  */
-export function nativeRequire<T>(specifier: string): T {
+export function nativeRequire(specifier: string): unknown {
   const nativesDir = process.env.KOBATO_NATIVES_DIR
   const underSea = nativesDir !== undefined && nativesDir !== ''
 
   switch (specifier) {
     case SHARP_ADDON_SPEC:
       // Under SEA the addon must load by absolute path — no package layout in the flat dir.
-      return requireExternal<T>(underSea ? join(nativesDir, addonFileName(SEA_NATIVE_SHARP_ADDON_KEY)) : specifier)
+      return requireExternal(underSea ? join(nativesDir, addonFileName(SEA_NATIVE_SHARP_ADDON_KEY)) : specifier)
     case CANVAS_ADDON_SPEC:
-      return requireExternal<T>(underSea ? join(nativesDir, addonFileName(SEA_NATIVE_SKIA_ADDON_KEY)) : specifier)
+      return requireExternal(underSea ? join(nativesDir, addonFileName(SEA_NATIVE_SKIA_ADDON_KEY)) : specifier)
     case DUCKDB_ADDON_SPEC:
-      return requireExternal<T>(underSea ? join(nativesDir, addonFileName(SEA_NATIVE_DUCKDB_ADDON_KEY)) : specifier)
+      return requireExternal(underSea ? join(nativesDir, addonFileName(SEA_NATIVE_DUCKDB_ADDON_KEY)) : specifier)
     case LIBVIPS_VERSIONS_SPEC:
-      return underSea ? readEmbeddedMetadata<T>(SEA_NATIVE_META_LIBVIPS_VERSIONS_KEY) : requireExternal<T>(specifier)
+      return underSea ? readEmbeddedMetadata(SEA_NATIVE_META_LIBVIPS_VERSIONS_KEY) : requireExternal(specifier)
     case LIBVIPS_PACKAGE_SPEC:
-      return underSea ? readEmbeddedMetadata<T>(SEA_NATIVE_META_LIBVIPS_PACKAGE_KEY) : requireExternal<T>(specifier)
+      return underSea ? readEmbeddedMetadata(SEA_NATIVE_META_LIBVIPS_PACKAGE_KEY) : requireExternal(specifier)
     case SHARP_PACKAGE_SPEC:
-      return underSea ? readEmbeddedMetadata<T>(SEA_NATIVE_META_SHARP_PACKAGE_KEY) : requireExternal<T>(specifier)
+      return underSea ? readEmbeddedMetadata(SEA_NATIVE_META_SHARP_PACKAGE_KEY) : requireExternal(specifier)
     case SHARP_VERSIONS_SPEC:
       // Only win32 platform packages ship this asset; elsewhere the throw is absorbed by sharp's own fallback.
-      return underSea ? readEmbeddedMetadata<T>(SEA_NATIVE_META_SHARP_VERSIONS_KEY) : requireExternal<T>(specifier)
+      return underSea ? readEmbeddedMetadata(SEA_NATIVE_META_SHARP_VERSIONS_KEY) : requireExternal(specifier)
     case LIBVIPS_LIB_SPEC:
       // Upstream this is `module.exports = __dirname`; the flat natives dir is exactly that search path.
-      return underSea ? unsafeCast<T>(nativesDir) : requireExternal<T>(specifier)
+      return underSea ? nativesDir : requireExternal(specifier)
     default:
       throw new Error(`native-require: unresolvable specifier: ${specifier}`)
   }

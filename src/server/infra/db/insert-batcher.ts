@@ -228,7 +228,7 @@ export abstract class InsertBatcher<T, W = Database> extends FlushLoop<T[], Flus
 // Dead-letter wire format: one plain-JSON object per line, Dates as epoch ms.
 
 /** Serialize a batch to JSON-lines (trailing newline included). */
-export function serializeDeadLetterJsonLines<T>(events: T[]): string {
+export function serializeDeadLetterJsonLines(events: unknown[]): string {
   return events.map((event) => JSON.stringify(toJsonSafe(event))).join('\n') + '\n'
 }
 

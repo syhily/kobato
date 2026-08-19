@@ -13,9 +13,9 @@ import { findTagNamesByPostIds } from '@/server/infra/db/operations/post-tag'
  * Resolves `cover` to its CDN public URL and attaches `coverThumbhash`
  * for any post-shaped projection carrying both fields.
  */
-export async function hydratePostImages<T extends { cover: string; coverThumbhash?: string }>(
+export async function hydratePostImages(
   db: Database,
-  posts: T[],
+  posts: { cover: string; coverThumbhash?: string }[],
 ): Promise<void> {
   await hydrateImageRefs(
     db,

@@ -26,7 +26,7 @@ function parseLrc(lrcInput?: string | null): [time: number, text: string][] {
         }
         const min2sec = Number(oneTime[1]) * 60
         const sec2sec = parseInt(oneTime[2], 10)
-        const msec2sec = oneTime[4] ? parseInt(oneTime[4], 10) / ((oneTime[4] + '').length === 2 ? 100 : 1000) : 0
+        const msec2sec = oneTime[4] ? parseInt(oneTime[4], 10) / (oneTime[4].length === 2 ? 100 : 1000) : 0
         const lrcTime = min2sec + sec2sec + msec2sec
         lrc.push([lrcTime, lrcText])
       }
@@ -45,7 +45,6 @@ export interface LyricsDisplayProps {
 export function LyricsDisplay({ lrcText, currentTime }: LyricsDisplayProps) {
   const lines = useMemo(() => parseLrc(lrcText), [lrcText])
   const containerRef = useRef<HTMLDivElement>(null)
-  const currentLineRef = useRef<HTMLParagraphElement>(null)
   const isUserScrollingRef = useRef(false)
   const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -119,8 +118,13 @@ export function LyricsDisplay({ lrcText, currentTime }: LyricsDisplayProps) {
     }
 
     const container = containerRef.current
-    const lineEl = currentLineRef.current
-    if (!container || !lineEl) {
+    if (!container) {
+      return
+    }
+    // The rendered <p> order matches `lines`, so the index addresses the
+    // current line's element directly — no ref needed.
+    const lineEl = container.querySelectorAll<HTMLParagraphElement>('p')[currentLineIndex]
+    if (!lineEl) {
       return
     }
 
@@ -153,7 +157,6 @@ export function LyricsDisplay({ lrcText, currentTime }: LyricsDisplayProps) {
         {lines.map(([time, text], index) => (
           <p
             key={`${time}-${text.slice(0, 20)}`}
-            ref={index === currentLineIndex ? currentLineRef : undefined}
             className={cn(
               'text-center text-base transition-all duration-300',
               index === currentLineIndex

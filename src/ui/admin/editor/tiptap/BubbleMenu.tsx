@@ -44,7 +44,7 @@ function mathInlinePanelApplies(editor: Editor): boolean {
     return true
   }
   const after = $from.nodeAfter
-  return after !== null && after.isText === true && !!markType.isInSet(after.marks)
+  return after?.isText === true && !!markType.isInSet(after.marks)
 }
 
 // Identity (`_key` attr) of the mathInline mark under the caret — the mark is
@@ -64,7 +64,7 @@ function mathInlineMarkKey(editor: Editor): string | undefined {
   let found = markType.isInSet($from.marks())
   if (found === undefined) {
     const after = $from.nodeAfter
-    if (after !== null && after.isText === true) {
+    if (after?.isText === true) {
       found = markType.isInSet(after.marks)
     }
   }

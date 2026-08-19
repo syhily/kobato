@@ -31,7 +31,7 @@ export function consumeListStreak(out: PmNode[], blocks: readonly Block[], start
     while (stack.length < level) {
       const parentList = stack[stack.length - 1]
       let parentItem = parentList.content[parentList.content.length - 1] as PmBlockNode | undefined
-      if (parentItem === undefined || parentItem.type !== 'listItem') {
+      if (parentItem?.type !== 'listItem') {
         parentItem = { type: 'listItem', content: [{ type: 'paragraph' }] }
         parentList.content.push(parentItem)
       }

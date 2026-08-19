@@ -247,7 +247,8 @@ export function PageBodyEditor({
     )
     observer.observe(target)
     return () => observer.disconnect()
-  }, [editor, livePreviewOpen, bodyKey])
+    // bodyKey swaps the editor's content, not the observed toolbar node — no re-observe needed.
+  }, [editor, livePreviewOpen])
 
   if (editor === null) {
     return (

@@ -10,23 +10,22 @@ const fsState = vi.hoisted(() => {
 })
 
 vi.mock('node:fs', () => ({
-  existsSync: (p: string) => fsState.dirExists.has(String(p)),
+  existsSync: (p: string) => fsState.dirExists.has(p),
   readdirSync: (dir: string) => {
-    const prefix = String(dir)
     return [...fsState.files.keys()]
-      .filter((k) => k.startsWith(prefix + '/') || k === prefix)
-      .map((k) => k.slice(prefix.length + 1))
+      .filter((k) => k.startsWith(dir + '/') || k === dir)
+      .map((k) => k.slice(dir.length + 1))
   },
   readFileSync: (file: string) => {
-    const v = fsState.files.get(String(file))
+    const v = fsState.files.get(file)
     if (v === undefined) {
       throw new Error(`ENOENT: ${file}`)
     }
     return v
   },
-  statSync: (file: string) => ({ size: fsState.sizes.get(String(file)) ?? 0 }),
+  statSync: (file: string) => ({ size: fsState.sizes.get(file) ?? 0 }),
   writeFileSync: (file: string, content: string) => {
-    fsState.files.set(String(file), content)
+    fsState.files.set(file, content)
   },
 }))
 
@@ -87,7 +86,7 @@ function buildPluginContext() {
       environment: undefined,
       options: { dir: '/build/server' } as { dir?: string },
       async writeFile(path: string, content: string) {
-        written[String(path)] = content
+        written[path] = content
       },
     },
   }

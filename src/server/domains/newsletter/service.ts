@@ -94,7 +94,7 @@ export async function confirm(db: Database, rawToken: string): Promise<Newslette
     throw new DomainError('BAD_REQUEST', INVALID_CONFIRM_MESSAGE)
   }
   const row = await findSubscriberByConfirmTokenHash(db, sha256(rawToken))
-  if (row === null || row.status !== 'pending') {
+  if (row?.status !== 'pending') {
     throw new DomainError('BAD_REQUEST', INVALID_CONFIRM_MESSAGE)
   }
   if (row.confirmTokenExpiresAt === null || row.confirmTokenExpiresAt.getTime() < Date.now()) {

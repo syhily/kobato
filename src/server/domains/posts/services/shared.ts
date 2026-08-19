@@ -1,6 +1,6 @@
 import type { UpsertMetaInputBase } from '@/server/domains/content/entities/descriptor'
-import type { AdminPostDto } from '@/server/domains/posts/projection'
 import type { PostMetaRow } from '@/server/infra/db/types'
+import type { AdminPostDto } from '@/shared/contracts/posts'
 
 import { canEditPost, type ViewerIdentity } from '@/server/domains/auth/rbac'
 import { DomainError, ErrorMessages } from '@/server/infra/http/errors'

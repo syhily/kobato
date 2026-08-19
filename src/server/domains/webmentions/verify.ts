@@ -102,7 +102,7 @@ function findMetaContent(html: string, key: 'name' | 'property', value: string):
     if (!keyRe.test(tag)) {
       continue
     }
-    const content = tag.match(/\bcontent\s*=\s*"([^"]*)"/i) ?? tag.match(/\bcontent\s*=\s*'([^']*)'/i)
+    const content = /\bcontent\s*=\s*"([^"]*)"/i.exec(tag) ?? /\bcontent\s*=\s*'([^']*)'/i.exec(tag)
     if (content?.[1] !== undefined) {
       return content[1]
     }
@@ -118,7 +118,7 @@ export interface SourceMetadata {
 
 /** Best-effort author/title/summary extraction for the moderation list. */
 export function extractSourceMetadata(html: string): SourceMetadata {
-  const titleMatch = html.match(TITLE_RE)
+  const titleMatch = TITLE_RE.exec(html)
   const title = titleMatch?.[1] !== undefined ? clean(titleMatch[1], MAX_TITLE_LENGTH) : null
   return {
     authorName: nullableMeta(html, 'name', 'author', MAX_AUTHOR_LENGTH),

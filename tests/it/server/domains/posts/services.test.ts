@@ -625,15 +625,6 @@ describe('posts/services/public-query — getPostsBySlugs', () => {
   })
 })
 
-describe('posts/services/public-query — listAllPosts', () => {
-  it('returns posts (no body projection)', async () => {
-    await seedPost({ slug: 'all', publishedRevisionId: 1 })
-    const { listAllPosts } = await import('@/server/domains/posts/services/public-query')
-    const posts = await listAllPosts(db)
-    expect(posts[0]?.slug).toBe('all')
-  })
-})
-
 describe('posts/services/taxonomy — listPostTitlesByCategoryId / listPostTitlesByTaxonomy', () => {
   it('returns only titles, including hidden and scheduled posts', async () => {
     const techId = await seedCategory('tech')
@@ -659,7 +650,7 @@ describe('posts/services/taxonomy — listPostTitlesByCategoryId / listPostTitle
     await linkTag(livePid, tid)
     await linkTag(draftPid, tid)
     const { listPostTitlesByTaxonomy } = await import('@/server/domains/posts/services/taxonomy')
-    expect(await listPostTitlesByTaxonomy(db, 'tag', 'React')).toEqual(['Live'])
+    expect(await listPostTitlesByTaxonomy(db, 'React')).toEqual(['Live'])
   })
 })
 

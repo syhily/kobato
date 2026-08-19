@@ -31,11 +31,7 @@ async function deleteRestoredObjectsUnlessClaimed(
   coverStoragePath: string,
 ): Promise<void> {
   const claimant = await findMusicById(db, rowId).catch(() => null)
-  if (
-    claimant !== null &&
-    claimant.audioStoragePath === audioStoragePath &&
-    claimant.coverStoragePath === coverStoragePath
-  ) {
+  if (claimant?.audioStoragePath === audioStoragePath && claimant.coverStoragePath === coverStoragePath) {
     return
   }
   await Promise.allSettled([backendFor(driver).delete(audioStoragePath), backendFor(driver).delete(coverStoragePath)])
@@ -67,7 +63,7 @@ export interface AddMusicPrefill {
  */
 export async function addMusic(db: Database, input: AddMusicInputs): Promise<AdminMusicDto> {
   const existing = await findMusicBySourceAndId(db, input.source, input.sourceId)
-  if (existing !== null && existing.deletedAt === null) {
+  if (existing?.deletedAt === null) {
     return toAdminMusicDto({ ...existing, uploaderName: input.uploader?.name ?? null }, input.uploader?.name ?? null)
   }
 

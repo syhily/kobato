@@ -1,5 +1,3 @@
-import type { AdminImageDto } from '@/shared/contracts/images'
-
 export type AdminImageKind = 'generic' | 'category' | 'friend'
 
 export interface ListImagesInput {
@@ -7,42 +5,6 @@ export interface ListImagesInput {
   kind?: AdminImageKind | 'all'
   offset?: number
   limit?: number
-}
-
-export interface UploadImageInput {
-  kind: 'generic' | 'category' | 'friend'
-  slug?: string
-  host?: string
-  note?: string
-}
-
-export interface UploadImageOutput {
-  image: AdminImageDto
-}
-
-export interface DeleteImageInput {
-  id: string
-}
-
-export interface DeleteImageOutput {
-  success: true
-}
-
-export interface UpdateImageNoteInput {
-  id: string
-  note: string | null
-}
-
-export interface UpdateImageNoteOutput {
-  image: AdminImageDto
-}
-
-export interface RecalculateThumbhashInput {
-  id: string
-}
-
-export interface RecalculateThumbhashOutput {
-  image: AdminImageDto
 }
 
 /**

@@ -82,7 +82,7 @@ export async function handleMagicLinkConsume(
   }
 
   const dbUser = await findUserById(db, result.userId)
-  if (!dbUser || !dbUser.role || dbUser.deletedAt) {
+  if (!dbUser?.role || dbUser.deletedAt) {
     return { type: 'error', message: '账户状态异常，无法登录。' }
   }
 

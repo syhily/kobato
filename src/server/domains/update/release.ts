@@ -16,7 +16,7 @@ export interface LatestRelease {
 }
 
 export function parseRepo(full: string): { owner: string; repo: string } | null {
-  const m = full.match(/github\.com\/([^/]+)\/([^/]+)/)
+  const m = /github\.com\/([^/]+)\/([^/]+)/.exec(full)
   if (!m) {
     return null
   }

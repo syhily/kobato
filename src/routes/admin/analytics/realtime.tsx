@@ -1,16 +1,7 @@
-import { requireRole } from '@/server/domains/auth/rbac'
-import { getRequestContext } from '@/server/http/request-context'
+import { guardOnlyLoader } from '@/server/http/request-context'
 import { RealtimeFeed } from '@/ui/admin/analytics/RealtimeFeed'
 
-import type { Route } from './+types/realtime'
-
-export async function loader({ request, context }: Route.LoaderArgs) {
-  const rc = getRequestContext({ request, context })
-  const user = rc.viewer ?? undefined
-  const role = rc.viewer?.role ?? null
-  requireRole({ user, role }, 'admin')
-  return null
-}
+export const loader = guardOnlyLoader('admin')
 
 export default function WpAdminAnalyticsRealtime() {
   return (

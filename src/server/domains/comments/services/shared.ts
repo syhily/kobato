@@ -23,7 +23,7 @@ export function asCommentTarget(type: string | null, ownerId: number | null): Me
 
 export async function resolveMetricTarget(db: Database, key: string): Promise<MetricTarget> {
   const row = await findMetricByPublicId(db, key)
-  if (row === null || row.type === null || row.ownerId === null) {
+  if (row?.type == null || row.ownerId == null) {
     throw new DomainError('NOT_FOUND', '评论目标不存在')
   }
   const target = asCommentTarget(row.type, row.ownerId)

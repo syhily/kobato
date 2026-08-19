@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
 
+import { makeComment } from '#/_helpers/catalog'
 import { makeLeafContext } from '#/_helpers/comments-leaf'
 import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
@@ -31,40 +32,23 @@ vi.mock('@/ui/public/comments/LazyCommentBodyEditor', () => ({
   ),
 }))
 
-function makeComment(overrides: Partial<CommentItemType> = {}): CommentItemType {
-  return {
-    id: '1',
-    createAt: '2024-01-15T08:30:00.000Z',
-    updatedAt: '2024-01-15T08:30:00.000Z',
-    deleteAt: null,
-    body: [
-      {
-        _type: 'block',
-        _key: 'b1',
-        style: 'normal',
-        children: [{ _type: 'span', _key: 's1', text: 'Hello, world.' }],
-      },
-    ],
-    type: 'post' as const,
-    ownerId: '1',
-    userId: '42',
-    isVerified: true,
-    rid: 0,
-    isCollapsed: false,
-    isPending: false,
-    isPinned: false,
-    voteUp: 0,
-    voteDown: 0,
-    rootId: null,
-    name: 'Alice',
-    emailVerified: true,
-    link: 'https://alice.example.com',
-    badgeName: null,
-    badgeColor: null,
-    badgeTextColor: null,
-    children: [],
-    ...overrides,
-  }
+// Divergent defaults preserved from this file's former local factory (the
+// shared catalog factory is seq-based with 2024-03-12 dates).
+const aliceComment: Partial<CommentItemType> = {
+  id: '1',
+  createAt: '2024-01-15T08:30:00.000Z',
+  updatedAt: '2024-01-15T08:30:00.000Z',
+  body: [
+    {
+      _type: 'block',
+      _key: 'b1',
+      style: 'normal',
+      children: [{ _type: 'span', _key: 's1', text: 'Hello, world.' }],
+    },
+  ],
+  userId: '42',
+  name: 'Alice',
+  link: 'https://alice.example.com',
 }
 
 describe('snapshot: LikeButton', () => {
@@ -128,7 +112,7 @@ describe('snapshot: CommentActions', () => {
     const html = stableHtml(
       renderInRouter(
         <Leaf>
-          <CommentActions comment={makeComment()} onEditAdmin={() => {}} onEditOwn={() => {}} />
+          <CommentActions comment={makeComment({ ...aliceComment })} onEditAdmin={() => {}} onEditOwn={() => {}} />
         </Leaf>,
         '/posts/1',
       ),
@@ -148,7 +132,7 @@ describe('snapshot: CommentActions', () => {
       renderInRouter(
         <Leaf>
           <CommentActions
-            comment={makeComment({ id: '7', isPending: true })}
+            comment={makeComment({ ...aliceComment, id: '7', isPending: true })}
             onEditAdmin={() => {}}
             onEditOwn={() => {}}
           />
@@ -169,7 +153,11 @@ describe('snapshot: CommentActions', () => {
     const html = stableHtml(
       renderInRouter(
         <Leaf>
-          <CommentActions comment={makeComment({ isPending: false })} onEditAdmin={() => {}} onEditOwn={() => {}} />
+          <CommentActions
+            comment={makeComment({ ...aliceComment, isPending: false })}
+            onEditAdmin={() => {}}
+            onEditOwn={() => {}}
+          />
         </Leaf>,
         '/admin',
       ),
@@ -185,7 +173,7 @@ describe('snapshot: CommentActions', () => {
       renderInRouter(
         <Leaf>
           <CommentActions
-            comment={makeComment({ id: '42', userId: '42' })}
+            comment={makeComment({ ...aliceComment, id: '42', userId: '42' })}
             onEditAdmin={() => {}}
             onEditOwn={() => {}}
           />
@@ -207,7 +195,12 @@ describe('snapshot: CommentActions', () => {
       renderInRouter(
         <Leaf>
           <CommentActions
-            comment={makeComment({ id: '42', userId: '42', deleteRequestedAt: '2024-06-01T00:00:00.000Z' })}
+            comment={makeComment({
+              ...aliceComment,
+              id: '42',
+              userId: '42',
+              deleteRequestedAt: '2024-06-01T00:00:00.000Z',
+            })}
             onEditAdmin={() => {}}
             onEditOwn={() => {}}
           />
@@ -244,6 +237,7 @@ describe('snapshot: CommentReplyForm', () => {
 
   it('renders the reply-target overlay and the cancel button when replyToId is set', () => {
     const replyTarget = makeComment({
+      ...aliceComment,
       id: '42',
       name: '雨帆',
       body: [

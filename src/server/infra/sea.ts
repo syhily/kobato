@@ -1,6 +1,6 @@
 // SEA runtime helpers — embedded assets read from memory, natives extracted
 // to disk. No-op / pass-through outside SEA mode. Import budget: only
-// `unsafeCast` + `@/shared/sea/assets` (bundled into the process worker).
+// `@/shared/sea/assets` (bundled into the process worker).
 
 import { createRequire } from 'node:module'
 import { homedir } from 'node:os'
@@ -8,7 +8,6 @@ import { join } from 'node:path'
 import { brotliDecompressSync, zstdDecompressSync } from 'node:zlib'
 
 import { SEA_MANIFEST_KEY, type SeaAssetCodec } from '@/shared/sea/assets'
-import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 interface NodeSeaModule {
   isSea(): boolean
@@ -46,7 +45,7 @@ function getSea(): NodeSeaModule | null {
     } catch {
       mod = null
     }
-    activeSea = mod !== null && mod.isSea() ? mod : null
+    activeSea = mod?.isSea() ? mod : null
   }
   return activeSea
 }
@@ -171,14 +170,12 @@ export function listEmbeddedAssetKeys(prefix: string): string[] {
  * loads extracted `.node` addons under SEA. Resolution: `KOBATO_NATIVES_DIR`
  * first, then the regular node_modules tree (identical to a static import).
  */
-export function requireExternal<T>(name: string): T {
+export function requireExternal(name: string): unknown {
   const nativesDir = process.env.KOBATO_NATIVES_DIR
-  const mod: unknown =
-    nativesDir !== undefined && nativesDir !== ''
-      ? createRequire(join(nativesDir, 'noop.cjs'))(name)
-      : nodeRequire(name)
-  // CJS require is untyped; the caller supplies T from the package's real types.
-  return unsafeCast<T>(mod)
+  // CJS require is untyped; the caller casts to the package's real types.
+  return nativesDir !== undefined && nativesDir !== ''
+    ? createRequire(join(nativesDir, 'noop.cjs'))(name)
+    : nodeRequire(name)
 }
 
 /**

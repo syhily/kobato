@@ -6,6 +6,7 @@ import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { getEmbeddedAsset, isSea, listEmbeddedAssetKeys, requireExternal, resolveCacheDir } from '@/server/infra/sea'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 // Unit tests for the SEA runtime helpers. Under vitest every SEA-specific
 // read path must degrade gracefully (null / [] / false) and requireExternal
@@ -42,7 +43,7 @@ describe('infra/sea — SEA detection and embedded assets', () => {
 
 describe('infra/sea — requireExternal', () => {
   it('resolves packages from the real node_modules tree', () => {
-    const sharp = requireExternal<typeof sharpDefault>('sharp')
+    const sharp = unsafeCast<typeof sharpDefault>(requireExternal('sharp'))
     expect(typeof sharp).toBe('function')
     // Callable: returns a pipeline without touching input bytes until an output method runs.
     const pipeline = sharp(Buffer.alloc(8))
@@ -59,7 +60,7 @@ describe('infra/sea — requireExternal', () => {
     writeFileSync(join(pkgDir, 'index.js'), 'module.exports = { marker: 42 }\n')
     vi.stubEnv('KOBATO_NATIVES_DIR', nativesDir)
 
-    const mod = requireExternal<{ marker: number }>('fake-native-pkg')
+    const mod = unsafeCast<{ marker: number }>(requireExternal('fake-native-pkg'))
     expect(mod.marker).toBe(42)
   })
 })

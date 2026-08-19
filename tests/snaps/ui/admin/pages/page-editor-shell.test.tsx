@@ -5,6 +5,7 @@ import type { AdminUserDto } from '@/shared/contracts/users'
 import type { PageFilterFieldKey } from '@/ui/admin/pages/filter-fields'
 import type { ActiveFilter } from '@/ui/admin/shared/filterPillsReducer'
 
+import { makeAdminPage } from '#/_helpers/catalog'
 import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { PagesView } from '@/ui/admin/pages/PagesView'
@@ -60,31 +61,18 @@ vi.mock('@/ui/admin/shared/filter-bar/useFilterPills', async () => {
   }
 })
 
-function makeAdminPage(overrides: Partial<AdminPageDto> = {}): AdminPageDto {
-  return {
-    id: '1000001',
-    slug: 'about',
-    title: '关于',
-    summary: '关于本站。',
-    cover: '/images/pages/about.jpg',
-    og: null,
-    published: true,
-    commentsEnabled: false,
-    webmentionsEnabled: true,
-    showToc: false,
-    showUpdated: false,
-    showFriends: false,
-    publishedAt: '2024-01-01T00:00:00.000Z',
-    publishedRevisionId: 'rev-1',
-    createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-02T00:00:00.000Z',
-    deletedAt: null,
-    authorId: '1',
-    authorName: '雨帆',
-    commentCount: 0,
-    commentPublicId: '',
-    ...overrides,
-  }
+// Divergent defaults preserved from this file's former local factory (the
+// shared catalog factory derives slug/title from a generated numeric id).
+const aboutPage: Partial<AdminPageDto> = {
+  id: '1000001',
+  slug: 'about',
+  title: '关于',
+  summary: '关于本站。',
+  cover: '/images/pages/about.jpg',
+  commentsEnabled: false,
+  authorId: '1',
+  authorName: '雨帆',
+  commentPublicId: '',
 }
 
 function makeAdminUser(overrides: Partial<AdminUserDto> = {}): AdminUserDto {
@@ -158,7 +146,7 @@ describe('snapshot: PagesView', () => {
     queryMocks.infinite = {
       ...queryMocks.infinite,
       isLoading: false,
-      data: { pages: [{ pages: [makeAdminPage()], total: 1, hasMore: false }] },
+      data: { pages: [{ pages: [makeAdminPage({ ...aboutPage })], total: 1, hasMore: false }] },
     }
     const html = renderView()
     expect(html).toContain('关于')

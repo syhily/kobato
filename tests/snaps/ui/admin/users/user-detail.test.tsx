@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { AdminUserDto } from '@/shared/contracts/users'
-
+import { makeAdminUser } from '#/_helpers/catalog'
 import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { UserDetailView } from '@/ui/admin/users/UserDetailView'
@@ -14,29 +13,6 @@ queryMocks.mutation = { mutate: vi.fn(), isPending: false, error: null as { mess
 
 // The cards own their TanStack mutations now. Stub `useMutation` with a
 // shared fixture so the update-error branch can be driven from the test.
-
-function makeAdminUser(overrides: Partial<AdminUserDto> = {}): AdminUserDto {
-  const id = overrides.id ?? `user-${Math.random().toString(36).slice(2, 8)}`
-  return {
-    id,
-    name: overrides.name ?? 'User',
-    email: overrides.email ?? `${id}@example.com`,
-    link: overrides.link ?? null,
-    badgeName: overrides.badgeName ?? null,
-    badgeColor: overrides.badgeColor ?? null,
-    badgeTextColor: overrides.badgeTextColor ?? null,
-    role: overrides.role ?? 'author',
-    isMuted: overrides.isMuted ?? false,
-    emailVerified: overrides.emailVerified ?? true,
-    createdAt: overrides.createdAt ?? '2024-01-01T00:00:00.000Z',
-    deletedAt: overrides.deletedAt ?? null,
-    commentCount: overrides.commentCount ?? 0,
-    pendingCount: overrides.pendingCount ?? 0,
-    lastCommentAt: overrides.lastCommentAt ?? null,
-    passkeyCount: overrides.passkeyCount ?? 0,
-    loginMethod: overrides.loginMethod ?? 'password',
-  }
-}
 
 beforeEach(() => {
   queryMocks.mutation = { mutate: vi.fn(), isPending: false, error: null }

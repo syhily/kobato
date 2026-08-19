@@ -40,7 +40,7 @@ The public site's read-only data contract is the `content.*` procedure group —
 
 Public route loaders and the root loader consume `content.*` through `createSsrCaller` (`ssr-caller.ts`), which runs the router **in-process** against a `HandlerContext` projected from the canonical `RequestContext` — no HTTP hop; admin/editor loaders use the same seam (it additionally returns `viewer`/`session` for the route-level `requireRole` gates and `isCurrent` projections, since `request-context` is not whitelisted for routes). `ssr-caller.ts` also owns the `unwrapListing`/`unwrapDetail` helpers that translate the output unions back into thrown Responses for the public loaders.
 
-The shared `loaders/*` helpers are the orchestration layer the content controllers call: `listing`/`search`/`sidebar`/`sidebar-select`/`comments`/`detail` plus the per-endpoint pipelines `page-preview` (pages), `post-detail` (posts — ETag probe, draft fallback, canonical 301) and `home` (the full home listing pipeline — analytics write, settings gates, feature fan-out; `loadHomeData`). The pipelines keep signalling 301/302/304/404 by throwing `Response`s, and `content-signals.ts::translateThrownResponse` maps those onto a discriminated signal union (or `ORPCError('NOT_FOUND')`). `content.bootstrap` takes no input — it parses the theme cookie itself via `@/shared/utils/theme-cookie` off `context.requestFacts.cookie`. (The former admin loader helpers `dashboard`/`analytics-overview`/`mentions`/`post-analytics` were retired with the admin migration — their orchestration lives in the route loaders now.)
+The shared `loaders/*` helpers are the orchestration layer the content controllers call: `listing`/`search`/`sidebar`/`sidebar-select`/`comments`/`detail` plus the per-endpoint pipelines `page-preview` (pages), `post-detail` (posts — ETag probe, draft fallback, canonical 301) and `home` (the full home listing pipeline — analytics write, settings gates, feature fan-out; `loadHomeData`). The pipelines keep signalling 301/302/304/404 by throwing `Response`s, and `http/content-signals.ts::translateThrownResponse` maps those onto a discriminated signal union (or `ORPCError('NOT_FOUND')`). `content.bootstrap` takes no input — it parses the theme cookie itself via `@/shared/utils/theme-cookie` off `context.requestFacts.cookie`. (The former admin loader helpers `dashboard`/`analytics-overview`/`mentions`/`post-analytics` were retired with the admin migration — their orchestration lives in the route loaders now.)
 
 ### Base procedures
 
@@ -84,9 +84,9 @@ Two embedded engines, zero services:
 
 ## Configuration & Install Gate
 
-- Source of truth: `setting` table — one plain-JSON row per section, `scope='blog.<section>'`. 17 sections defined in `SECTION_REGISTRY` (`domains/settings/sections/registry.ts`). Adding a section = one new module + one registry line.
+- Source of truth: `setting` table — one plain-JSON row per section, `scope='blog.<section>'`. 18 sections defined in `SECTION_REGISTRY` (`domains/settings/sections/registry.ts`). Adding a section = one new module + one registry line.
 - In-memory: `BlogSettingsBundle` (`@/shared/config/types`). SSR reads slices via `requireBlogSettingsSection('<key>')`; UI uses per-section hooks. New UI MUST NOT read the whole bundle.
-- Install flow: (1) `/admin/setup` creates first admin; (2) sets `blog.general` + `blog.assets`, seeds remaining 15 sections from registry defaults.
+- Install flow: (1) `/admin/setup` creates first admin; (2) sets `blog.general` + `blog.assets`, seeds remaining 16 sections from registry defaults.
 - `honoInstallGateMiddleware`: no admin → `/admin/setup`; installed → through. "Has admin" == "installed".
 - Admin saves: each card POSTs a Section patch; server strict-checks keys, deep-merges, validates against `SECTION_REGISTRY[section].schema`, writes ONLY that row.
 

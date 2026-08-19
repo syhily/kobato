@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AdminMusicDto } from '@/shared/contracts/music'
 
+import { makeAdminMusic } from '#/_helpers/catalog'
 import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { MusicDetailView } from '@/ui/admin/musics/MusicDetailView'
@@ -50,26 +51,12 @@ vi.mock('@/ui/admin/musics/MusicPlayerContext', () => ({
   useMusicPlayerTime: () => playerState.currentTime,
 }))
 
-function makeAdminMusic(overrides: Partial<AdminMusicDto> = {}): AdminMusicDto {
-  return {
-    id: 'music-1',
-    source: 'netease',
-    sourceId: '1001',
-    playerId: 'abcdef0123456789',
-    name: '青花瓷',
-    artist: ['周杰伦'],
-    album: '我很忙',
-    audioStoragePath: 'music/audio.mp3',
-    audioUrl: 'https://cdn.example.com/audio.mp3',
-    coverStoragePath: 'music/cover.jpg',
-    coverUrl: 'https://cdn.example.com/cover.jpg',
-    lyric: '[00:01.00]素胚勾勒出青花笔锋浓转淡',
-    uploaderId: 'user-1',
-    uploaderName: '雨帆',
-    createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-02-01T00:00:00.000Z',
-    ...overrides,
-  }
+// Divergent defaults preserved from this file's former local factory (the
+// shared catalog factory defaults to 夜的第七章 / 十一月的萧邦).
+const qingHuaCi: Partial<AdminMusicDto> = {
+  name: '青花瓷',
+  album: '我很忙',
+  lyric: '[00:01.00]素胚勾勒出青花笔锋浓转淡',
 }
 
 const navigateMock = vi.fn()
@@ -98,9 +85,10 @@ describe('snapshot: MusicDetailView player-context branches', () => {
   })
 
   it('renders the play button when the track is not the current track', () => {
-    const music = makeAdminMusic({ id: 'music-1' })
+    const music = makeAdminMusic({ id: 'music-1', ...qingHuaCi })
     playerState.currentTrack = makeAdminMusic({
       id: 'music-other',
+      ...qingHuaCi,
       name: '其他歌曲',
     })
     playerState.isPlaying = true
@@ -122,7 +110,7 @@ describe('snapshot: MusicDetailView player-context branches', () => {
   })
 
   it('renders the pause button when the track is the current track and playing', () => {
-    const music = makeAdminMusic({ id: 'music-1' })
+    const music = makeAdminMusic({ id: 'music-1', ...qingHuaCi })
     playerState.currentTrack = music
     playerState.isPlaying = true
     queryMocks.query = {

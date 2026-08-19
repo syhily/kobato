@@ -20,7 +20,7 @@ export function isSidebarWidgetEnabled(settings: SidebarSettings, type: SidebarW
 
 export function extractXHandle(socials: Array<{ network: SocialNetwork; link: string }>): string | undefined {
   const x = socials.find((s) => s.network === 'x')
-  if (!x || !x.link) {
+  if (!x?.link) {
     return undefined
   }
   try {

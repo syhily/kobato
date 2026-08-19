@@ -394,12 +394,12 @@ export function bundleFromMatches(matches: readonly unknown[]): BlogSettingsBund
   return rootLoader.blogSettings ?? null
 }
 
-export function metaWithFallback<TLoader extends { seo?: MetaDescriptor[] } | undefined>({
+export function metaWithFallback({
   loaderData,
   matches,
   fallback,
 }: {
-  loaderData: TLoader
+  loaderData: { seo?: MetaDescriptor[] } | undefined
   matches: readonly unknown[]
   fallback?: (bundle: BlogSettingsBundle | null | undefined) => MetaDescriptor[]
 }): MetaDescriptor[] {

@@ -68,7 +68,7 @@ export function ImageField({
       return
     }
     const file = e.dataTransfer.files?.[0]
-    if (file && file.type.startsWith('image/')) {
+    if (file?.type.startsWith('image/')) {
       setDroppedFile(file)
       setUploadOpen(true)
     }

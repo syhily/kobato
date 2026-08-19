@@ -26,7 +26,7 @@ import type { Route } from './+types/overview'
 // `search` string carries the raw query string, parsed server-side.
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { caller, viewer } = createSsrCaller({ request, context })
-  requireRole({ user: viewer ?? undefined, role: viewer?.role ?? null }, 'admin')
+  requireRole(viewer ?? undefined, 'admin')
   const url = new URL(request.url)
   return caller.analytics.overview({ search: url.searchParams.toString() })
 }

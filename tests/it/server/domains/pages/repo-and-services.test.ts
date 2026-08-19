@@ -196,17 +196,6 @@ describe('pages/services/public-query — findPublicPageMetaBySlug', () => {
   })
 })
 
-describe('pages/services/public-query — listPublicPageMetas', () => {
-  it('excludes soft-deleted rows', async () => {
-    await seedPage({ title: 'A' })
-    await seedPage({ title: 'B', deletedAt: new Date() })
-
-    const rows = await publicQuery.listPublicPageMetas(db)
-    expect(rows).toHaveLength(1)
-    expect(rows[0].title).toBe('A')
-  })
-})
-
 describe('pages/services/public-query — listSitemapPages', () => {
   it('returns published, non-deleted pages with revision', async () => {
     const rev = await seedRevision(0)

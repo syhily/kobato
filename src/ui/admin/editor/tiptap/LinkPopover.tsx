@@ -50,11 +50,11 @@ export function LinkPopover({ editor, variant, onClose }: LinkPopoverProps) {
   const firstFieldRef = useRef<HTMLInputElement | null>(null)
   const newTabFieldId = useId()
 
-  // Focus per variant; the variant dep stops unrelated remounts from stealing focus.
+  // Focus the first field on open; each popover mounts fresh with a fixed variant.
   useEffect(() => {
     firstFieldRef.current?.focus()
     firstFieldRef.current?.select()
-  }, [variant])
+  }, [])
 
   const applyToolbar = () => {
     const text = linkText.trim()

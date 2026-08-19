@@ -75,7 +75,7 @@ async function resolveS3Context(options?: { requireEnabled?: boolean }): Promise
 
   const fingerprint = fingerprintFor(storage)
   const cached = s3CachedClient
-  if (cached !== undefined && cached.fingerprint === fingerprint) {
+  if (cached?.fingerprint === fingerprint) {
     return { client: cached.client, bucket: storage.bucket }
   }
 

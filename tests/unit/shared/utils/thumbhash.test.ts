@@ -18,7 +18,6 @@ const SNAPSHOTS: Array<{
   source: { w: number; h: number }
   hashBase64: string
   decoded: { w: number; h: number; rgbaBase64: string }
-  averageRGBA: { r: number; g: number; b: number; a: number }
   aspectRatio: number
   thumbHashToDataURL: string
   rgbaToDataURL: string

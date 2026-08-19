@@ -37,7 +37,7 @@ export async function loadPostPreview({
   // Slim ETag probe answers repeat requests before the full load; alias
   // hits fall through so the canonical 301 still fires.
   const etagInput = await findPostEtagInputBySlug(db, slug)
-  if (etagInput !== null && etagInput.slug === slug) {
+  if (etagInput?.slug === slug) {
     const probeEtag = postEtag(etagInput.id, etagInput.publishedAt)
     if (etagHeaderMatches(ifNoneMatch, probeEtag)) {
       throw notModifiedResponse(probeEtag)

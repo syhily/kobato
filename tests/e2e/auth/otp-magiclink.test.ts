@@ -124,7 +124,7 @@ describe('magic-link signin (HTTP e2e)', () => {
       // GET the signin page first: session cookie + CSRF token.
       const page = await client.get('/admin/signin')
       const html = await page.text()
-      const csrfToken = html.match(/name="csrf_token" value="([^"]+)"/)?.[1]
+      const csrfToken = /name="csrf_token" value="([^"]+)"/.exec(html)?.[1]
       if (!csrfToken) {
         throw new Error('no csrf_token hidden input on /admin/signin')
       }
@@ -163,7 +163,7 @@ describe('magic-link signin (HTTP e2e)', () => {
       // Single-use: replaying the token fails with the generic error, not a redirect.
       const anonymous = new E2eClient(env.baseUrl)
       const anonPage = await anonymous.get('/admin/signin')
-      const anonCsrf = (await anonPage.text()).match(/name="csrf_token" value="([^"]+)"/)?.[1]
+      const anonCsrf = /name="csrf_token" value="([^"]+)"/.exec(await anonPage.text())?.[1]
       if (!anonCsrf) {
         throw new Error('no csrf_token hidden input on /admin/signin')
       }

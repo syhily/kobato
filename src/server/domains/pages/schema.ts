@@ -15,8 +15,3 @@ export const listPagesSchema = z.object({
 export const upsertPageMetaSchema = upsertMetaBaseSchema.extend({
   showFriends: safeBoolean().optional(),
 })
-
-export const renderMathSchema = z.object({
-  tex: z.string().max(4 * 1024, 'TeX 表达式过长'),
-  display: safeBoolean(),
-})

@@ -41,7 +41,7 @@ function createMockDb(rows: ResultRow[] = []) {
 
 // A stand-in for the Drizzle select tail that records the pagination
 // calls `applyPage` makes, and resolves `rows` when awaited.
-function createFakeQuery<TRow>(rows: TRow[]) {
+function createFakeQuery(rows: unknown[]) {
   const calls: Array<[string, number]> = []
   const query = {
     limit(count: number) {
@@ -52,7 +52,7 @@ function createFakeQuery<TRow>(rows: TRow[]) {
       calls.push(['offset', count])
       return query
     },
-    then(onFulfilled?: (v: TRow[]) => unknown) {
+    then(onFulfilled?: (v: unknown[]) => unknown) {
       return Promise.resolve(rows).then(onFulfilled)
     },
   }

@@ -17,7 +17,7 @@ export class SmtpCapture {
   private readonly server: Server
   private readonly messages: CapturedMail[] = []
   private waiters: Array<(mail: CapturedMail) => void> = []
-  private sockets = new Set<Socket>()
+  private readonly sockets = new Set<Socket>()
 
   constructor() {
     this.server = createServer((socket) => this.handle(socket))
@@ -176,12 +176,12 @@ export function decodeMail(raw: string): string {
 export function extractOtpCode(mail: CapturedMail): string {
   const text = decodeMail(mail.raw)
   // The template renders `你的登录验证码是 <code>，` in the preview span.
-  const preview = text.match(/验证码是\s*(\d{6})/)
+  const preview = /验证码是\s*(\d{6})/.exec(text)
   if (preview !== null) {
     return preview[1]!
   }
   // Fallback: the code also stands alone inside the big display div.
-  const standalone = text.match(/>\s*(\d{6})\s*</)
+  const standalone = />\s*(\d{6})\s*</.exec(text)
   if (standalone !== null) {
     return standalone[1]!
   }
@@ -191,7 +191,7 @@ export function extractOtpCode(mail: CapturedMail): string {
 /** The full signin URL (path + query) from a SignInLink mail. */
 export function extractMagicLinkPath(mail: CapturedMail): string {
   const text = decodeMail(mail.raw)
-  const href = text.match(/href="([^"]*action=magiclink[^"]*)"/)
+  const href = /href="([^"]*action=magiclink[^"]*)"/.exec(text)
   if (href === null) {
     throw new Error('no magic-link href found in the captured mail')
   }

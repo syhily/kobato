@@ -70,7 +70,7 @@ const add = authorProc
     recordAuditEventFromContext(context, {
       action: 'music_added',
       resourceType: 'music',
-      resourceId: String(music.id),
+      resourceId: music.id,
     })
     return { music }
   })

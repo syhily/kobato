@@ -1,24 +1,15 @@
 import { ActivityIcon, ChartLineIcon, LinkIcon } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router'
 
-import { requireRole } from '@/server/domains/auth/rbac'
-import { getRequestContext } from '@/server/http/request-context'
+import { guardOnlyLoader } from '@/server/http/request-context'
 import { titleMeta } from '@/shared/seo/title-meta'
 import { cn } from '@/ui/lib/cn'
-
-import type { Route } from './+types/layout'
 
 export const meta = titleMeta('访问统计')
 
 // Intentionally thin — the date-range picker + filters live on the child
 // routes so the realtime feed isn't forced to react to range changes.
-export async function loader({ request, context }: Route.LoaderArgs) {
-  const rc = getRequestContext({ request, context })
-  const user = rc.viewer ?? undefined
-  const role = rc.viewer?.role ?? null
-  requireRole({ user, role }, 'admin')
-  return null
-}
+export const loader = guardOnlyLoader('admin')
 
 const SUBNAV = [
   { to: '/admin/analytics', label: '概览', icon: ChartLineIcon, end: true },

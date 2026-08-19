@@ -146,6 +146,8 @@ export function useFilterPills<K extends string>({ fields, initial, value, onCha
     return out
   }, [searchFields, searchResults, debouncedInputs, filters])
 
+  // Return-only TQuery is the call-site typing API (`queryInput<PostsFilterQuery>()`).
+  // oxlint-disable-next-line typescript/no-unnecessary-type-parameters
   const queryInput = useCallback(<TQuery extends object = Record<string, string>>(): TQuery => {
     const out: Record<string, string> = {}
     for (const filter of filters) {

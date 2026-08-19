@@ -168,7 +168,7 @@ export async function verifyRegistrationResponse(
         userId: dbUser.id,
         credentialId: credential.id,
         publicKey: Buffer.from(credential.publicKey),
-        counter: Number(credential.counter),
+        counter: credential.counter,
         transports: unsafeCast<string[] | undefined>(credential.transports) ?? [],
         deviceName: input.deviceName ?? null,
         backedUp: verification.registrationInfo.credentialBackedUp ?? false,
@@ -271,13 +271,13 @@ export async function verifyAuthenticationResponse(
 
   // Verify user state BEFORE mutating the credential counter.
   const dbUser = await findSafeUserById(db, cred.userId)
-  if (!dbUser || !dbUser.role || dbUser.deletedAt) {
+  if (!dbUser?.role || dbUser.deletedAt) {
     throw new DomainError('BAD_REQUEST', '账户状态异常，无法登录。')
   }
 
   await db
     .update(passkeyCredential)
-    .set({ counter: Number(verification.authenticationInfo.newCounter), updatedAt: new Date() })
+    .set({ counter: verification.authenticationInfo.newCounter, updatedAt: new Date() })
     .where(eq(passkeyCredential.id, cred.id))
 
   return { user: dbUser, authMethod: 'passkey' }

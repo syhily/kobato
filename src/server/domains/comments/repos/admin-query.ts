@@ -110,10 +110,10 @@ export async function countAdminComments(
     .from(comment)
     .where(and(...conditions))
   return {
-    all: Number(rows[0]?.all ?? 0),
-    pending: Number(rows[0]?.pending ?? 0),
-    approved: Number(rows[0]?.approved ?? 0),
-    deleteRequested: Number(rows[0]?.deleteRequested ?? 0),
+    all: rows[0]?.all ?? 0,
+    pending: rows[0]?.pending ?? 0,
+    approved: rows[0]?.approved ?? 0,
+    deleteRequested: rows[0]?.deleteRequested ?? 0,
   }
 }
 

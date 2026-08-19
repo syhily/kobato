@@ -30,7 +30,7 @@ export const webmentionRouter = new Hono<Env>().post(
     }
 
     const body = await c.req.parseBody()
-    const parsed = webmentionReceiveSchema.safeParse({ source: body['source'], target: body['target'] })
+    const parsed = webmentionReceiveSchema.safeParse({ source: body.source, target: body.target })
     if (!parsed.success) {
       return c.json(
         { error: { message: 'Invalid webmention request: source and target must be valid http(s) URLs' } },

@@ -11,6 +11,6 @@ export function parseThemeCookie(cookie: string | null | undefined): ResolvedThe
   if (cookie === null || cookie === undefined) {
     return null
   }
-  const value = cookie.match(new RegExp(`(?:^|;\\s*)${THEME_COOKIE}=([^;]*)`))?.[1]
+  const value = new RegExp(`(?:^|;\\s*)${THEME_COOKIE}=([^;]*)`).exec(cookie)?.[1]
   return value === 'dark' || value === 'light' ? value : null
 }

@@ -8,9 +8,7 @@ import type { Route } from './+types/mentions'
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { caller, viewer } = createSsrCaller({ request, context })
-  const user = viewer ?? undefined
-  const role = viewer?.role ?? null
-  requireRole({ user, role }, 'admin')
+  requireRole(viewer ?? undefined, 'admin')
 
   const url = new URL(request.url)
   return caller.analytics.mentions({ search: url.searchParams.toString() })

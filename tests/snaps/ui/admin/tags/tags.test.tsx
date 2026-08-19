@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AdminTagDto } from '@/shared/contracts/tags'
 
+import { makeAdminTag } from '#/_helpers/catalog'
 import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { EditTagDialog } from '@/ui/admin/tags/EditTagDialog'
@@ -35,19 +36,6 @@ queryMocks.queryClient = {
 // delete mutation and the query client are stubbed alongside.
 
 vi.mock('@/ui/components/dialog', () => import('#/_helpers/stubs/dialog'))
-
-function makeAdminTag(overrides: Partial<AdminTagDto> = {}): AdminTagDto {
-  return {
-    id: 'tag-1',
-    name: '默认标签',
-    slug: 'default',
-    ogImage: '/images/open-graph.png',
-    postCount: 0,
-    createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-02T00:00:00.000Z',
-    ...overrides,
-  }
-}
 
 function resetInfinite(): void {
   queryMocks.infinite = {

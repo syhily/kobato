@@ -164,7 +164,7 @@ describe('editOwnComment — update-own flow with the reply edit lock', () => {
     const u = await seedVisitor({ name: 'U5', email: 'u5@x.com' })
     const pid = await seedPost('Replied Edit Post', 'replied-edit-post')
     const cid = await seedComment({ userId: u, ownerId: pid, type: 'post' })
-    await seedComment({ userId: u, ownerId: pid, type: 'post', rid: Number(cid), rootId: cid, isPending: false })
+    await seedComment({ userId: u, ownerId: pid, type: 'post', rid: cid, rootId: cid, isPending: false })
 
     const ctx = ctxFor(u)
     await expect(editOwnComment(db, String(cid), EDITED_BODY, ctx.viewer!, ctx)).rejects.toMatchObject({
@@ -181,12 +181,12 @@ describe('editOwnComment — update-own flow with the reply edit lock', () => {
     const u = await seedVisitor({ name: 'U6', email: 'u6@x.com' })
     const pid = await seedPost('Pending Reply Edit', 'pending-reply-edit')
     const cid = await seedComment({ userId: u, ownerId: pid, type: 'post' })
-    await seedComment({ userId: u, ownerId: pid, type: 'post', rid: Number(cid), rootId: cid, isPending: true })
+    await seedComment({ userId: u, ownerId: pid, type: 'post', rid: cid, rootId: cid, isPending: true })
     await seedComment({
       userId: u,
       ownerId: pid,
       type: 'post',
-      rid: Number(cid),
+      rid: cid,
       rootId: cid,
       isPending: false,
       deletedAt: new Date(),

@@ -5,8 +5,7 @@
 
 ## Context
 
-The 2026-08-01 architecture evaluation
-(`docs/plans/2026-08-01-architecture-evaluation.md`, revised) audited the
+The 2026-08-01 architecture evaluation audited the
 Hono + oRPC + React Router 8 stack against the framework's official
 capabilities and reached stable conclusions on every "should we replace a
 layer" question. Without a recorded decision, those questions resurface

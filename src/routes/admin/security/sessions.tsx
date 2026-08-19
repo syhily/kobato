@@ -32,8 +32,7 @@ export interface AdminSessionItem {
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { caller, viewer, session } = createSsrCaller({ request, context })
-  const ctx = { session, user: viewer ?? undefined, role: viewer?.role ?? null }
-  requireRole(ctx, 'admin')
+  requireRole(viewer ?? undefined, 'admin')
   const url = new URL(request.url)
   const sort: SessionSortState<'lastActive' | 'loginTime' | 'userName'> = parseSessionSort(
     url.searchParams.get('sort'),
@@ -70,7 +69,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     loginAtIso: s.loginAt.toISOString(),
     lastActiveAtIso: s.lastActiveAt.toISOString(),
     expiresAtIso: s.expiresAt.toISOString(),
-    isCurrent: s.sid === ctx.session.id,
+    isCurrent: s.sid === session.id,
   }))
   return data({ items })
 }

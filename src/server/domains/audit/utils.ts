@@ -4,7 +4,7 @@ export function maskIp(ip: string | null | undefined): string {
   }
 
   // IPv4-mapped IPv6: ::ffff:192.168.1.1
-  const mappedMatch = ip.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/i)
+  const mappedMatch = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/i.exec(ip)
   if (mappedMatch) {
     const v4 = mappedMatch[1]
     const parts = v4.split('.')
@@ -41,8 +41,8 @@ export function maskUserAgent(ua: string | null | undefined): string {
     return ''
   }
 
-  const browserMatch = ua.match(/(Chrome|Firefox|Safari|Edge|Opera|Brave)\/[^\s]+/i)
-  const osMatch = ua.match(/\(([^)]+)\)/)
+  const browserMatch = /(Chrome|Firefox|Safari|Edge|Opera|Brave)\/[^\s]+/i.exec(ua)
+  const osMatch = /\(([^)]+)\)/.exec(ua)
 
   if (browserMatch && osMatch) {
     const browser = browserMatch[1]

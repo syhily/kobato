@@ -39,7 +39,7 @@ export function buildBackupS3Key(timestamp: string): string {
 
 function parseTimestampFromKey(key: string): string | null {
   // Both archive generations: `.db.tar.gz` and legacy content-only `.db.gz`.
-  const match = key.match(/^backup\/backup-(.+)\.db(?:\.tar)?\.gz$/)
+  const match = /^backup\/backup-(.+)\.db(?:\.tar)?\.gz$/.exec(key)
   if (match === null) {
     return null
   }

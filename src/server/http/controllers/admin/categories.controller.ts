@@ -43,7 +43,7 @@ const upsert = adminProc
     recordAuditEventFromContext(context, {
       action: input.id === undefined ? 'category_created' : 'category_updated',
       resourceType: 'category',
-      resourceId: String(category.id),
+      resourceId: category.id,
     })
     return { category }
   })

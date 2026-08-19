@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AdminFriendDto } from '@/shared/contracts/friends'
 
+import { makeAdminFriend } from '#/_helpers/catalog'
 import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { EditFriendDialog } from '@/ui/admin/friends/EditFriendDialog'
@@ -33,21 +34,6 @@ queryMocks.queryClient = {
 // search; queries are neutralized so SSR emits the loading chrome.
 
 vi.mock('@/ui/components/dialog', () => import('#/_helpers/stubs/dialog'))
-
-function makeAdminFriend(overrides: Partial<AdminFriendDto> = {}): AdminFriendDto {
-  return {
-    id: 'friend-1',
-    website: '示例博客',
-    description: '一个示例博客',
-    homepage: 'https://example.com',
-    poster: '/images/friends/example.jpg',
-    rssUrl: null,
-    visible: true,
-    createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-02T00:00:00.000Z',
-    ...overrides,
-  }
-}
 
 describe('snapshot: FriendsView', () => {
   beforeEach(() => {

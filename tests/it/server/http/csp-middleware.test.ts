@@ -47,7 +47,7 @@ describe('CSP middleware', () => {
 
     const csp = res.headers.get('Content-Security-Policy')!
     expect(csp).toContain("script-src 'self' 'nonce-test-nonce-12345'")
-    const scriptSrcMatch = csp.match(/script-src[^;]+/)
+    const scriptSrcMatch = /script-src[^;]+/.exec(csp)
     expect(scriptSrcMatch?.[0]).not.toContain('unsafe-inline')
   })
 

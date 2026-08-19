@@ -63,7 +63,7 @@ export async function handleCredentialLogin(
   }
 
   const dbUser = await verifyUserPassword(db, input.email, input.password)
-  if (!dbUser || !dbUser.role) {
+  if (!dbUser?.role) {
     recordAuditEvent({
       action: 'credential_login_failed',
       resourceType: 'user',

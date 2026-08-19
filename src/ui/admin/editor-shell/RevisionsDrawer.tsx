@@ -247,6 +247,7 @@ function RevisionDetailView({ revision, currentBody, isCurrent, onAdopt }: Revis
     }
     left.scrollTop = 0
     right.scrollTop = 0
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- switching revisions must reset both panes' scroll; the effect touches only refs
   }, [revision.id])
 
   useEffect(() => {
@@ -279,7 +280,8 @@ function RevisionDetailView({ revision, currentBody, isCurrent, onAdopt }: Revis
       left.removeEventListener('scroll', onLeftScroll)
       right.removeEventListener('scroll', onRightScroll)
     }
-  }, [diff])
+    // The panes are stable host elements — attach once; `diff` only swaps their children.
+  }, [])
 
   return (
     <div className="flex min-h-0 grow flex-col gap-3 overflow-hidden px-4 pb-4">

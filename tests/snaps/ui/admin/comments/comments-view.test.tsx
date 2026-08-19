@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
-import type { CommentBody } from '@/shared/pt/comment-schema'
 import type { CommentActions } from '@/ui/admin/comments/useCommentsController'
 
+import { makeAdminComment } from '#/_helpers/catalog'
 import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
 import { AdminCommentRow } from '@/ui/admin/comments/AdminCommentRow'
@@ -102,54 +102,6 @@ vi.mock('@/ui/admin/comments/useCommentsController', async () => {
 
 // The real `useFilterPills` still queries for autocomplete lookups — inert
 // defaults keep the chrome network-free.
-
-let commentSeq = 0
-
-function makeAdminComment(overrides: Partial<AdminComment> = {}): AdminComment {
-  commentSeq += 1
-  const body: CommentBody = [
-    {
-      _type: 'block',
-      _key: `b${commentSeq}`,
-      style: 'normal',
-      children: [{ _type: 'span', _key: `s${commentSeq}`, text: `Comment body ${commentSeq}` }],
-    },
-  ]
-  return {
-    id: String(commentSeq),
-    createAt: '2024-03-12T08:30:00.000Z',
-    updatedAt: '2024-03-12T08:30:00.000Z',
-    deleteAt: null,
-    deleteRequestedAt: null,
-    body,
-    type: 'post',
-    ownerId: null,
-    userId: String(commentSeq),
-    isVerified: false,
-    rid: 0,
-    isCollapsed: false,
-    isPending: false,
-    isPinned: false,
-    voteUp: 0,
-    voteDown: 0,
-    rootId: null,
-    name: `Author ${commentSeq}`,
-    emailVerified: false,
-    link: null,
-    badgeName: null,
-    badgeColor: null,
-    badgeTextColor: null,
-    content: `Comment body ${commentSeq}`,
-    ua: null,
-    ip: null,
-    email: 'author@example.com',
-    pageTitle: null,
-    pagePublicId: null,
-    pageCover: null,
-    pagePermalink: null,
-    ...overrides,
-  }
-}
 
 const rowProps = {
   parentLookup: new Map<string, AdminComment>(),
@@ -330,7 +282,7 @@ describe('snapshot: AdminCommentRow', () => {
       rootId: '100',
       name: 'Dave',
     })
-    const parentLookup = new Map<string, AdminComment>([[String(parent.id), parent]])
+    const parentLookup = new Map<string, AdminComment>([[parent.id, parent]])
     const html = stableHtml(
       renderInRouter(<AdminCommentRow comment={child} {...rowProps} parentLookup={parentLookup} />),
     )

@@ -39,7 +39,7 @@ const upsert = adminProc
     recordAuditEventFromContext(context, {
       action: input.id === undefined ? 'friend_created' : 'friend_updated',
       resourceType: 'friend',
-      resourceId: String(friend.id),
+      resourceId: friend.id,
     })
     return { friend }
   })

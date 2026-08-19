@@ -190,7 +190,7 @@ export async function handleOtpVerify(
       recordAuditEvent({
         action: 'otp_failed',
         resourceType: 'user',
-        resourceId: String(pendingOtpUser.userId),
+        resourceId: pendingOtpUser.userId,
         actorId: userId,
         ipAddress: clientAddress,
         userAgent: request.headers.get('User-Agent'),
@@ -204,7 +204,7 @@ export async function handleOtpVerify(
     recordAuditEvent({
       action: 'otp_failed',
       resourceType: 'user',
-      resourceId: String(pendingOtpUser.userId),
+      resourceId: pendingOtpUser.userId,
       actorId: userId,
       ipAddress: clientAddress,
       userAgent: request.headers.get('User-Agent'),
@@ -219,7 +219,7 @@ export async function handleOtpVerify(
   clearPendingOtp(ctx)
 
   const dbUser = await findUserById(db, userId)
-  if (!dbUser || !dbUser.role || dbUser.deletedAt) {
+  if (!dbUser?.role || dbUser.deletedAt) {
     return {
       type: 'error',
       message: '账户状态异常，无法登录。',
@@ -248,7 +248,7 @@ export async function handleOtpResend(ctx: SigninFlowContext, request: Request):
   }
 
   const dbUser = await findUserById(db, userId)
-  if (!dbUser || !dbUser.role || dbUser.deletedAt) {
+  if (!dbUser?.role || dbUser.deletedAt) {
     return { type: 'error', message: '账户状态异常。' }
   }
 

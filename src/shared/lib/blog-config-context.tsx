@@ -2,25 +2,14 @@ import { createContext, type Context, type ReactNode, use } from 'react'
 
 import type { BundleKey } from '@/shared/config/sections'
 import type {
-  AnalyticsSettings,
   AssetsSettings,
-  BackupSettings,
   BlogSettingsBundle,
-  CacheSettings,
-  CommentsSettings,
   ContentSettings,
-  FontsSettings,
-  LimitsSettings,
-  MailSettings,
   NavigationSettings,
-  NewsletterSettings,
-  RateLimitSettings,
-  SecuritySettings,
   SeoSettings,
   SidebarSettings,
   SiteIdentitySettings,
   SocialsSettings,
-  WebmentionsSettings,
 } from '@/shared/config/types'
 
 import { BUNDLE_KEYS } from '@/shared/config/sections'
@@ -41,38 +30,18 @@ const navigationContext = makeCtx<NavigationSettings>('navigationContext')
 const socialsContext = makeCtx<SocialsSettings>('socialsContext')
 const contentContext = makeCtx<ContentSettings>('contentContext')
 const sidebarContext = makeCtx<SidebarSettings>('sidebarContext')
-const commentsContext = makeCtx<CommentsSettings>('commentsContext')
-const webmentionsContext = makeCtx<WebmentionsSettings>('webmentionsContext')
 const seoContext = makeCtx<SeoSettings>('seoContext')
-const mailContext = makeCtx<MailSettings>('mailContext')
-const newsletterContext = makeCtx<NewsletterSettings>('newsletterContext')
-const cacheContext = makeCtx<CacheSettings>('cacheContext')
-const rateLimitContext = makeCtx<RateLimitSettings>('rateLimitContext')
-const fontsContext = makeCtx<FontsSettings>('fontsContext')
-const backupContext = makeCtx<BackupSettings>('backupContext')
-const limitsContext = makeCtx<LimitsSettings>('limitsContext')
-const analyticsContext = makeCtx<AnalyticsSettings>('analyticsContext')
-const securityContext = makeCtx<SecuritySettings>('securityContext')
 
-const SECTION_CONTEXTS_ANY: Record<BundleKey, Context<any>> = {
+// Only sections with a live hook below get a context — the provider wraps
+// the tree in exactly these, nothing more.
+const SECTION_CONTEXTS_ANY: Partial<Record<BundleKey, Context<any>>> = {
   siteIdentity: siteIdentityContext,
   assets: assetsContext,
   navigation: navigationContext,
   socials: socialsContext,
   content: contentContext,
   sidebar: sidebarContext,
-  comments: commentsContext,
-  webmentions: webmentionsContext,
   seo: seoContext,
-  mail: mailContext,
-  newsletter: newsletterContext,
-  cache: cacheContext,
-  rateLimit: rateLimitContext,
-  fonts: fontsContext,
-  backup: backupContext,
-  limits: limitsContext,
-  analytics: analyticsContext,
-  security: securityContext,
 }
 
 interface BlogSettingsProviderProps {
@@ -90,8 +59,11 @@ function getSlice(value: BlogSettingsBundle | undefined, key: BundleKey): Slice 
 export function BlogSettingsProvider({ value, children }: BlogSettingsProviderProps) {
   let tree: ReactNode = children
   for (const key of BUNDLE_KEYS) {
-    const slice = getSlice(value, key)
     const Context = SECTION_CONTEXTS_ANY[key]
+    if (Context === undefined) {
+      continue
+    }
+    const slice = getSlice(value, key)
     tree = (
       <Context key={key} value={slice}>
         {tree}
@@ -102,8 +74,9 @@ export function BlogSettingsProvider({ value, children }: BlogSettingsProviderPr
 }
 
 // Per-section accessors; strict variants throw when the section isn't
-// seeded, `…Optional` degrade. New `Optional` variants should NOT be
-// added — call `use(<sectionContext>)` directly if needed.
+// seeded, `…Optional` degrade. The contexts are module-private, so a new
+// `Optional` variant means adding an exported hook here, not consuming a
+// context from outside.
 
 function useSection<T>(name: string, context: Context<T | undefined>): T {
   const slice = use(context)

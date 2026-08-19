@@ -34,7 +34,7 @@ export async function countCommentsAndRoots(
     .from(comment)
     .where(and(...baseConditions))
   const row = rows[0]
-  return { total: Number(row.total), roots: Number(row.roots) }
+  return { total: row.total, roots: row.roots }
 }
 
 export async function findRootComments(

@@ -35,7 +35,7 @@ export function InlineOwnEditForm({ comment, onCancel, onSaved }: InlineOwnEditF
     if (isCommentBodyBlank(body)) {
       return
     }
-    updateOwn.mutate({ commentId: String(comment.id), body })
+    updateOwn.mutate({ commentId: comment.id, body })
   }
 
   return (

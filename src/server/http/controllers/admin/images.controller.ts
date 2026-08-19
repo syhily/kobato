@@ -109,7 +109,7 @@ const upload = authorProc
     recordAuditEventFromContext(context, {
       action: 'image_uploaded',
       resourceType: 'image',
-      resourceId: String(image.id),
+      resourceId: image.id,
     })
     return { image }
   })

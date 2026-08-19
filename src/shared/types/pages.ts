@@ -1,6 +1,8 @@
 import type { AdminPageDetailDto, AdminPageDto } from '@/shared/contracts/pages'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
+
 // Wire-format DTOs for the `/admin/pages` editor and the
 // `/api/admin/list-pages` oRPC procedure. Bigints are stringified;
 // row DTOs are zod-derived in `@/shared/contracts/pages`.
@@ -84,21 +86,15 @@ export const EMPTY_PAGE_META_DRAFT: PageMetaDraft = {
   publishedAt: '',
 }
 
+// Keys derive from `EMPTY_PAGE_META_DRAFT` so a new `PageMetaDraft` field
+// joins the equality check automatically instead of silently desyncing.
+// Safe cast: the empty draft is a complete `PageMetaDraft`, so its runtime
+// keys are exactly `keyof PageMetaDraft`. All fields are primitives, so a
+// plain `===` comparison per key preserves the old hand-listed semantics.
+const PAGE_META_DRAFT_KEYS = unsafeCast<Array<keyof PageMetaDraft>>(Object.keys(EMPTY_PAGE_META_DRAFT))
+
 export function pageMetaDraftsEqual(a: PageMetaDraft, b: PageMetaDraft): boolean {
-  return (
-    a.slug === b.slug &&
-    a.title === b.title &&
-    a.summary === b.summary &&
-    a.cover === b.cover &&
-    a.og === b.og &&
-    a.published === b.published &&
-    a.commentsEnabled === b.commentsEnabled &&
-    a.webmentionsEnabled === b.webmentionsEnabled &&
-    a.showToc === b.showToc &&
-    a.showUpdated === b.showUpdated &&
-    a.showFriends === b.showFriends &&
-    a.publishedAt === b.publishedAt
-  )
+  return PAGE_META_DRAFT_KEYS.every((key) => a[key] === b[key])
 }
 
 export type PageMetaToggleKey = 'commentsEnabled' | 'webmentionsEnabled' | 'showToc' | 'showUpdated' | 'showFriends'
@@ -174,7 +170,7 @@ export interface PreviewPageBodyInput {
 }
 
 export interface RenderMathInput {
-  /** Length-bounded by `renderMathSchema`. */
+  /** Length-bounded by the `admin.renders.math` input schema. */
   tex: string
   /** `true` for `$$ … $$` block math; `false` for inline `$ … $`. */
   display: boolean

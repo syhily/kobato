@@ -188,7 +188,7 @@ async function migrateBranding(db: Database, result: MigrationResult): Promise<v
   let changed = false
   for (const slot of BRANDING_SLOTS) {
     const ref = branding[slot]
-    if (ref === undefined || ref.driver !== 'local') {
+    if (ref?.driver !== 'local') {
       continue
     }
     const key = s3KeyForSlot(slot)

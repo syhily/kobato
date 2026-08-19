@@ -97,7 +97,7 @@ export async function getPublicCsrfToken(client: E2eClient, path: string): Promi
 export async function loginAdmin(client: E2eClient, env: E2eEnv): Promise<{ res: Response; csrfToken: string }> {
   const page = await client.get('/admin/signin')
   const html = await page.text()
-  const match = html.match(/name="csrf_token" value="([^"]+)"/)
+  const match = /name="csrf_token" value="([^"]+)"/.exec(html)
   if (!match) {
     throw new Error('no csrf_token hidden input on /admin/signin')
   }

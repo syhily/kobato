@@ -288,12 +288,9 @@ describe('auth/rbac — predicates', () => {
   })
 
   it('requireRole delegates to requireUserRole', () => {
-    expect(() => requireRole({ user: undefined, role: null }, 'admin')).toThrow()
+    expect(() => requireRole(undefined, 'admin')).toThrow()
     expect(() =>
-      requireRole(
-        { user: { id: '1', name: 'T', email: 't@e.com', website: null, role: 'admin' }, role: 'admin' },
-        'admin',
-      ),
+      requireRole({ id: '1', name: 'T', email: 't@e.com', website: null, role: 'admin' }, 'admin'),
     ).not.toThrow()
   })
 

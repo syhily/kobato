@@ -5,8 +5,8 @@ import { buildPublicPostFilters, hydratePostList } from '@/server/domains/posts/
 import { listPublicPosts } from '@/server/domains/posts/services/public-query'
 
 /**
- * Like {@link listAllPosts} but loads bodies + headings from the published
- * `content` revision — use for feeds, {@link listAllPosts} for metadata only.
+ * Like {@link listClientPosts} but loads bodies + headings from the published
+ * `content` revision — use for feeds, {@link listClientPosts} for metadata only.
  */
 export async function listPublicPostsWithContent(
   db: Database,

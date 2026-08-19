@@ -1,36 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import type { AdminUserDto } from '@/shared/contracts/users'
-
 import { TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
+import { makeAdminUser } from '#/_helpers/catalog'
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { InviteAuthorDialog } from '@/ui/admin/users/InviteAuthorDialog'
 import { UsersTable } from '@/ui/admin/users/UsersTable'
 import { UsersToolbar } from '@/ui/admin/users/UsersToolbar'
 import { UsersView } from '@/ui/admin/users/UsersView'
-
-function makeAdminUser(overrides: Partial<AdminUserDto> = {}): AdminUserDto {
-  const id = overrides.id ?? `user-${Math.random().toString(36).slice(2, 8)}`
-  return {
-    id,
-    name: overrides.name ?? 'User',
-    email: overrides.email ?? `${id}@example.com`,
-    link: overrides.link ?? null,
-    badgeName: overrides.badgeName ?? null,
-    badgeColor: overrides.badgeColor ?? null,
-    badgeTextColor: overrides.badgeTextColor ?? null,
-    role: overrides.role ?? 'author',
-    isMuted: overrides.isMuted ?? false,
-    emailVerified: overrides.emailVerified ?? true,
-    createdAt: overrides.createdAt ?? '2024-01-01T00:00:00.000Z',
-    deletedAt: overrides.deletedAt ?? null,
-    commentCount: overrides.commentCount ?? 0,
-    pendingCount: overrides.pendingCount ?? 0,
-    lastCommentAt: overrides.lastCommentAt ?? null,
-    passkeyCount: overrides.passkeyCount ?? 0,
-    loginMethod: overrides.loginMethod ?? 'password',
-  }
-}
 
 describe('snapshot: UsersView', () => {
   it('renders the loading state', () => {

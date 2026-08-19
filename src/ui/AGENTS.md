@@ -45,7 +45,7 @@ parent.
   blocks under `ui/pt/blocks/` (CodeBlock, BlockImage, MusicPlayer, Solution, Friends).
 - `ui/icons/` — static-export icon library. Named imports only — no `<Icon name="..." />` string
   lookups. Import directly from `lucide-react`; the build tree-shakes unused icons.
-- `ui/lib/` — UI utilities (`cn`, `code-languages`, `ThemeProvider`, `blog-config-context`,
+- `ui/lib/` — UI utilities (`cn`, `code-languages`, `ThemeProvider`,
   `use-media-query`). shadcn's `aliases.lib` is pinned here. No `src/lib/` parallel.
 
 ## Tailwind-merge tokens

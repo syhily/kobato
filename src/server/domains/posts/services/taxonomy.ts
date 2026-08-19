@@ -12,7 +12,7 @@ import { category as categoryTable, tag as tagTable } from '@/server/infra/db/sc
  * Title-only lookup for the taxonomy delete guard: full-inclusion gate
  * (every live-ish reference blocks deletion), no hydration.
  */
-export async function listPostTitlesByTaxonomy(db: Database, kind: 'tag', name: string): Promise<string[]> {
+export async function listPostTitlesByTaxonomy(db: Database, name: string): Promise<string[]> {
   const where = buildPublicPostsWhere({ tag: name, includeHidden: true, includeScheduled: true })
   const rows = await db
     .select({ title: postMetaTable.title })

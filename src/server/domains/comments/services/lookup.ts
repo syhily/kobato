@@ -34,6 +34,6 @@ export async function countApprovedRepliesOfComment(db: Database, commentId: num
   const rows = await db
     .select({ count: count() })
     .from(comment)
-    .where(and(eq(comment.rid, Number(commentId)), eq(comment.isPending, false), isNull(comment.deletedAt)))
+    .where(and(eq(comment.rid, commentId), eq(comment.isPending, false), isNull(comment.deletedAt)))
   return rows[0]?.count ?? 0
 }

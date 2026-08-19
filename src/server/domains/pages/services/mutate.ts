@@ -1,6 +1,6 @@
-import type { AdminPageDto } from '@/server/domains/pages/projection'
 import type { PageMetaWriteInput } from '@/server/domains/pages/services/shared'
 import type { Database } from '@/server/infra/db/database'
+import type { AdminPageDto } from '@/shared/contracts/pages'
 
 import { makeEntityMutations } from '@/server/domains/content/entities/mutate'
 import { pageDescriptor } from '@/server/domains/pages/descriptor'

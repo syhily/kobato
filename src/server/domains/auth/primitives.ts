@@ -132,7 +132,7 @@ export async function resolveSessionContext(
         userId: user.id,
       })
     }
-    if (dbUser && dbUser.role && !dbUser.deletedAt) {
+    if (dbUser?.role && !dbUser.deletedAt) {
       const upgraded: SessionUser = {
         id: `${dbUser.id}`,
         name: dbUser.name,

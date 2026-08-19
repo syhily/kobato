@@ -211,6 +211,6 @@ function CardSummary({ payload }: { payload: unknown }) {
     case 'mathBlock':
       return <MathBlockSummary payload={payload} />
     default:
-      return <div className="mt-1 text-xs text-muted-foreground">_type: {String(payload._type)}</div>
+      return <div className="mt-1 text-xs text-muted-foreground">_type: {payload._type}</div>
   }
 }

@@ -6,7 +6,7 @@ const fields = buildPageFilterFields([{ id: 'u-1', name: '雨帆' }])
 
 function fieldSpec(key: PageFilterFieldKey) {
   const field = fields.find((f) => f.key === key)
-  if (!field || field.kind !== 'options') {
+  if (field?.kind !== 'options') {
     throw new Error(`expected an options field for ${key}`)
   }
   return field

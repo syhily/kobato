@@ -11,7 +11,7 @@ const config = {
   },
 }
 
-describe('services/markdown/formatter — date formatting', () => {
+describe('shared/utils/formatter — date formatting', () => {
   it('formatShowDate returns 今天 for the current calendar day', () => {
     expect(formatShowDate(new Date(), config)).toBe('今天')
   })

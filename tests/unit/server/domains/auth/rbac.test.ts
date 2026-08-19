@@ -53,8 +53,9 @@ describe('server/domains/auth/rbac — requireUserRole', () => {
 
 describe('server/domains/auth/rbac — requireRole', () => {
   it('delegates to requireUserRole and throws when forbidden', () => {
-    expect(() => requireRole({ role: 'visitor' }, 'admin')).toThrow(ActionFailure)
-    expect(() => requireRole({ user: sessionUser('admin'), role: 'admin' }, 'admin')).not.toThrow()
+    expect(() => requireRole(undefined, 'admin')).toThrow(ActionFailure)
+    expect(() => requireRole(sessionUser('visitor'), 'admin')).toThrow(ActionFailure)
+    expect(() => requireRole(sessionUser('admin'), 'admin')).not.toThrow()
   })
 })
 

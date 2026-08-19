@@ -23,25 +23,25 @@ function bundleWith(overrides: { host?: string | null }): BlogSettingsBundle {
 describe('buildCspHeader', () => {
   it('includes the nonce in script-src in production', () => {
     const csp = buildCspHeader({ bundle: bundleWith({ host: null }), nonce: NONCE, isDev: false })
-    const scriptSrc = csp.match(/script-src[^;]*/)?.[0]
+    const scriptSrc = /script-src[^;]*/.exec(csp)?.[0]
     expect(scriptSrc).toBe(`script-src 'self' 'nonce-${NONCE}'`)
     expect(scriptSrc).not.toContain('unsafe-inline')
   })
 
   it('uses unsafe-inline in script-src in dev mode and drops the nonce', () => {
     const csp = buildCspHeader({ bundle: bundleWith({ host: null }), nonce: NONCE, isDev: true })
-    const scriptSrc = csp.match(/script-src[^;]*/)?.[0]
+    const scriptSrc = /script-src[^;]*/.exec(csp)?.[0]
     expect(scriptSrc).toBe("script-src 'self' 'unsafe-inline'")
     expect(csp).not.toContain(`nonce-${NONCE}`)
   })
 
   it('adds blob: to worker-src only in dev mode', () => {
     const devCsp = buildCspHeader({ bundle: null, nonce: NONCE, isDev: true })
-    const devWorkerSrc = devCsp.match(/worker-src[^;]*/)?.[0]
+    const devWorkerSrc = /worker-src[^;]*/.exec(devCsp)?.[0]
     expect(devWorkerSrc).toBe("worker-src 'self' blob:")
 
     const prodCsp = buildCspHeader({ bundle: null, nonce: NONCE, isDev: false })
-    const prodWorkerSrc = prodCsp.match(/worker-src[^;]*/)?.[0]
+    const prodWorkerSrc = /worker-src[^;]*/.exec(prodCsp)?.[0]
     expect(prodWorkerSrc).toBe("worker-src 'self'")
   })
 

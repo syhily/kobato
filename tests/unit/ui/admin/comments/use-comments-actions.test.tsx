@@ -8,7 +8,8 @@ import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
-import type { CommentBody } from '@/shared/pt/comment-schema'
+
+import { makeAdminComment } from '#/_helpers/catalog'
 
 // Drives `useCommentsController` at the hook level; the plain-object
 // `orpc` mock covers loadAll and the three comment mutations.
@@ -58,52 +59,6 @@ function makeWrapper() {
         <MemoryRouter>{children}</MemoryRouter>
       </QueryClientProvider>
     )
-  }
-}
-
-let commentSeq = 0
-function makeAdminComment(overrides: Partial<AdminComment> = {}): AdminComment {
-  commentSeq += 1
-  const body: CommentBody = [
-    {
-      _type: 'block',
-      _key: `b${commentSeq}`,
-      children: [{ _type: 'span', _key: `s${commentSeq}`, text: `Comment ${commentSeq}` }],
-    },
-  ]
-  return {
-    id: String(commentSeq),
-    createAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-01T00:00:00.000Z',
-    deleteAt: null,
-    deleteRequestedAt: null,
-    body,
-    type: 'post',
-    ownerId: null,
-    userId: String(commentSeq),
-    isVerified: false,
-    rid: 0,
-    isCollapsed: false,
-    isPending: false,
-    isPinned: false,
-    voteUp: 0,
-    voteDown: 0,
-    rootId: null,
-    name: `Author ${commentSeq}`,
-    emailVerified: false,
-    link: null,
-    badgeName: null,
-    badgeColor: null,
-    badgeTextColor: null,
-    content: `Comment ${commentSeq}`,
-    ua: null,
-    ip: null,
-    email: 'author@example.com',
-    pageTitle: null,
-    pagePublicId: null,
-    pageCover: null,
-    pagePermalink: null,
-    ...overrides,
   }
 }
 

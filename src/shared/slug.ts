@@ -26,7 +26,7 @@ function makeSlug(text: string): string {
 }
 
 export class Slugger {
-  private seen = new Set<string>()
+  private readonly seen = new Set<string>()
 
   slug(text: string): string {
     let base = makeSlug(text)

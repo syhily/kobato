@@ -663,15 +663,15 @@ describe('contract: pt-bridge — custom blocks pass through opaquely', () => {
     const synced = synchronizeFootnoteIndices(body)
     const para = synced[0]
     expect(para?._type).toBe('block')
-    if (para === undefined || para._type !== 'block') {
+    if (para?._type !== 'block') {
       throw new Error('expected paragraph block')
     }
     const frB = para.markDefs?.find((m) => m._type === 'footnoteRef' && m._key === 'fr-b')
     const frA = para.markDefs?.find((m) => m._type === 'footnoteRef' && m._key === 'fr-a')
-    if (frB === undefined || frB._type !== 'footnoteRef') {
+    if (frB?._type !== 'footnoteRef') {
       throw new Error('expected fr-b footnoteRef')
     }
-    if (frA === undefined || frA._type !== 'footnoteRef') {
+    if (frA?._type !== 'footnoteRef') {
       throw new Error('expected fr-a footnoteRef')
     }
     expect(frB.index).toBe(1)

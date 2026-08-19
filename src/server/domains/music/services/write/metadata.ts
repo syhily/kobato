@@ -25,7 +25,7 @@ export async function updateMusicMetadata(
   viewer?: ViewerIdentity,
 ): Promise<AdminMusicDto> {
   const existing = await findMusicById(db, input.id)
-  if (existing === null || existing.deletedAt !== null) {
+  if (existing?.deletedAt !== null) {
     throw new DomainError('NOT_FOUND', '音乐不存在')
   }
   if (viewer && viewer.role !== 'admin' && existing.uploaderId?.toString() !== viewer.id) {

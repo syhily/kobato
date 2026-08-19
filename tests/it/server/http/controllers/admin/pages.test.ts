@@ -296,7 +296,7 @@ describe('adminPagesRouter.upsertMeta', () => {
     expect(audits).toHaveLength(1)
     expect(audits[0]).toMatchObject({
       resourceType: 'page',
-      resourceId: String(res.page.id),
+      resourceId: res.page.id,
       actorId: admin,
     })
   })

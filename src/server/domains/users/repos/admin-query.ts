@@ -109,8 +109,8 @@ async function aggregateCommentStats(db: Database, userIds: readonly number[]): 
     .groupBy(comment.userId)
   for (const row of rows) {
     stats.set(row.userId, {
-      commentCount: Number(row.commentCount ?? 0),
-      pendingCount: Number(row.pendingCount ?? 0),
+      commentCount: row.commentCount ?? 0,
+      pendingCount: row.pendingCount ?? 0,
       lastCommentAt: row.lastCommentAt ?? null,
     })
   }
@@ -161,9 +161,9 @@ export async function listAdminUsers(
       // Fresh drizzle result row — safe to normalize in place.
       Object.assign(row, {
         role: row.role ?? null,
-        commentCount: Number(row.commentCount ?? 0),
-        pendingCount: Number(row.pendingCount ?? 0),
-        passkeyCount: Number(row.passkeyCount ?? 0),
+        commentCount: row.commentCount ?? 0,
+        pendingCount: row.pendingCount ?? 0,
+        passkeyCount: row.passkeyCount ?? 0,
       }),
     )
   }
@@ -204,7 +204,7 @@ export async function listAdminUsers(
       commentCount: stat.commentCount,
       pendingCount: stat.pendingCount,
       lastCommentAt: stat.lastCommentAt,
-      passkeyCount: Number(row.passkeyCount ?? 0),
+      passkeyCount: row.passkeyCount ?? 0,
     })
   })
 }
@@ -242,6 +242,6 @@ export async function findAdminUserById(db: Database, id: number): Promise<Admin
     commentCount: stat.commentCount,
     pendingCount: stat.pendingCount,
     lastCommentAt: stat.lastCommentAt,
-    passkeyCount: Number(row.passkeyCount ?? 0),
+    passkeyCount: row.passkeyCount ?? 0,
   }
 }

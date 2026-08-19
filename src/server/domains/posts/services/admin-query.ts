@@ -1,9 +1,9 @@
 import type { ViewerIdentity } from '@/server/domains/auth/rbac'
-import type { AdminPostDetailDto } from '@/server/domains/posts/projection'
 import type { ListPostsFilters } from '@/server/domains/posts/repos/shared'
 import type { AdminPostsListResult } from '@/server/domains/posts/services/shared'
 import type { Database } from '@/server/infra/db/database'
 import type { PostMetaRow } from '@/server/infra/db/types'
+import type { AdminPostDetailDto } from '@/shared/contracts/posts'
 
 import { makeEntityAdminQuery } from '@/server/domains/content/entities/admin-query'
 import { makeMetaListQueries } from '@/server/domains/content/entities/meta-repo'

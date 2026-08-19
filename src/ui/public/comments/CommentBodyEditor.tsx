@@ -108,6 +108,7 @@ export function CommentBodyEditor({
       return
     }
     editor.commands.setContent(safeBodyToPmDoc(initialBodyRef.current) as JSONContent, { emitUpdate: false })
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- bodyKey is the deliberate reset trigger; initialBody is read via ref because its identity changes every render
   }, [bodyKey, editor])
 
   useEffect(() => {

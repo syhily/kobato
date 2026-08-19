@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { AdminMusicDto, MetingSearchHit } from '@/shared/contracts/music'
+import type { MetingSearchHit } from '@/shared/contracts/music'
 
+import { makeAdminMusic } from '#/_helpers/catalog'
 import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
 import { AddMusicDialog } from '@/ui/admin/musics/AddMusicDialog'
@@ -121,28 +122,6 @@ vi.mock('motion/react', async () => {
 })
 
 vi.mock('@/ui/components/dialog', () => import('#/_helpers/stubs/dialog'))
-
-function makeAdminMusic(overrides: Partial<AdminMusicDto> = {}): AdminMusicDto {
-  return {
-    id: 'music-1',
-    source: 'netease',
-    sourceId: '1001',
-    playerId: 'abcdef0123456789',
-    name: '夜的第七章',
-    artist: ['周杰伦'],
-    album: '十一月的萧邦',
-    audioStoragePath: 'music/audio.mp3',
-    audioUrl: 'https://cdn.example.com/audio.mp3',
-    coverStoragePath: 'music/cover.jpg',
-    coverUrl: 'https://cdn.example.com/cover.jpg',
-    lyric: '[00:01.00]夜了呢\n[00:05.00]月光下的苍白',
-    uploaderId: 'user-1',
-    uploaderName: '雨帆',
-    createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-02-01T00:00:00.000Z',
-    ...overrides,
-  }
-}
 
 function makeSearchHit(overrides: Partial<MetingSearchHit> = {}): MetingSearchHit {
   return {

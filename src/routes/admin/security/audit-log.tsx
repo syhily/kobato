@@ -8,7 +8,7 @@ import type { Route } from './+types/audit-log'
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const rc = getRequestContext({ request, context })
-  requireRole({ user: rc.viewer ?? undefined, role: rc.viewer?.role ?? null }, 'admin')
+  requireRole(rc.viewer ?? undefined, 'admin')
   const bundle = getBlogSettingsBundleSync()
   return {
     retentionDays: bundle?.limits?.auditLogDbRetentionDays ?? 30,

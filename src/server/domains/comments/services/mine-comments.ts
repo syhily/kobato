@@ -159,9 +159,9 @@ export async function countMyComments(
     .from(comment)
     .where(mineWhere(userId, filters, cutoff))
   return {
-    total: Number(rows[0]?.total ?? 0),
-    pending: Number(rows[0]?.pending ?? 0),
-    deleteRequested: Number(rows[0]?.deleteRequested ?? 0),
-    deleted: Number(rows[0]?.deleted ?? 0),
+    total: rows[0]?.total ?? 0,
+    pending: rows[0]?.pending ?? 0,
+    deleteRequested: rows[0]?.deleteRequested ?? 0,
+    deleted: rows[0]?.deleted ?? 0,
   }
 }

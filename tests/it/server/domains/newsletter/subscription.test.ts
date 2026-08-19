@@ -56,7 +56,7 @@ function lastMailBody(): { to: string[]; subject: string; html: string } {
 
 function extractConfirmToken(): string {
   const { html } = lastMailBody()
-  const match = html.match(/token=([A-Za-z0-9_-]{43})/)
+  const match = /token=([A-Za-z0-9_-]{43})/.exec(html)
   expect(match).not.toBeNull()
   return match![1]
 }

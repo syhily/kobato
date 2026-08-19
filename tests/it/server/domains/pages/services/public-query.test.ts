@@ -8,7 +8,6 @@ import {
   findLivePageBySlug,
   findPageBySlug,
   findPublicPageMetaBySlug,
-  listPublicPageMetas,
   listSitemapPages,
 } from '@/server/domains/pages/services/public-query'
 import { content as contentTable } from '@/server/infra/db/schema/content'
@@ -60,17 +59,12 @@ describe('pages services/public-query', () => {
 
     const meta = await findPublicPageMetaBySlug(db, 'hello')
     expect(meta).toMatchObject({ slug: 'hello', deletedAt: null })
-
-    const pages = await listPublicPageMetas(db)
-    expect(pages).toHaveLength(1)
-    expect(pages[0]?.slug).toBe('hello')
   })
 
   it('excludes soft-deleted rows from the public meta lookup', async () => {
     await seedPage({ slug: 'gone', deletedAt: new Date() })
 
     expect(await findPublicPageMetaBySlug(db, 'gone')).toBeNull()
-    expect(await listPublicPageMetas(db)).toHaveLength(0)
   })
 
   it('finds a live page by slug with the slim projection', async () => {

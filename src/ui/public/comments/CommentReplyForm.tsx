@@ -101,7 +101,7 @@ export function CommentReplyForm({
       return
     }
     const email = event.currentTarget.value
-    if (email && email.includes('@')) {
+    if (email?.includes('@')) {
       avatar.mutate({ email })
     } else {
       setAvatarSrc('/images/default-avatar.png')

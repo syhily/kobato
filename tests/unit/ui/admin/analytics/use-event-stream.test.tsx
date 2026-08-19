@@ -17,7 +17,7 @@ class FakeEventSource {
   onopen: (() => void) | null = null
   onerror: (() => void) | null = null
   closed = false
-  private listeners = new Map<string, ((event: MessageEvent) => void)[]>()
+  private readonly listeners = new Map<string, ((event: MessageEvent) => void)[]>()
 
   constructor(
     public readonly url: string,

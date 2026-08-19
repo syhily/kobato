@@ -1,6 +1,6 @@
-import type { AdminPageDetailDto, AdminPageDto } from '@/server/domains/pages/projection'
 import type { ListPagesFilters } from '@/server/domains/pages/repo'
 import type { Database } from '@/server/infra/db/database'
+import type { AdminPageDetailDto, AdminPageDto } from '@/shared/contracts/pages'
 
 import { makeEntityAdminQuery } from '@/server/domains/content/entities/admin-query'
 import { pageDescriptor } from '@/server/domains/pages/descriptor'

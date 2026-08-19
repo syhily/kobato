@@ -45,13 +45,6 @@ const CALENDAR_MIN_BYTES = 2_048
 const results: CheckResult[] = []
 let serverLogPath: string | null = null
 
-/**
- * Initializer for variables assigned only inside closures — keeps the declared union.
- */
-function none<T>(): T | null {
-  return null
-}
-
 /** Run one named check: print the verdict immediately, record it, never throw. */
 async function check(name: string, fn: () => string | undefined | Promise<string | undefined>) {
   try {
@@ -338,7 +331,7 @@ async function runHttpChecks(baseUrl: string, healthResponse: Response | null) {
     const pagePath = ssrPath
     await check(`GET ${pagePath} — SSR HTML`, async () => {
       const body = await fetchSsrPage(baseUrl, pagePath)
-      const match = body.match(/(?:href|src)="(\/assets\/[^"]+?\.js)"/)
+      const match = /(?:href|src)="(\/assets\/[^"]+?\.js)"/.exec(body)
       if (!match) {
         throw new Error('no /assets/*.js reference found in the SSR HTML')
       }
@@ -405,7 +398,9 @@ async function runManaged(binaryPath: string) {
     NODE_ENV: 'production',
   }
 
-  let server = none<SmokeServer>()
+  // Widened initializer: `server` is assigned only inside `check` closures, so a
+  // plain `= null` would narrow the declared union to `null` at the use sites.
+  let server = null as SmokeServer | null
   try {
     await check('SEA binary within the compression budget', () => checkBinarySize(binaryPath))
     await check('kobato --version', () => checkVersion(binaryPath))

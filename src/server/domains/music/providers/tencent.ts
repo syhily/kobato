@@ -343,7 +343,7 @@ export const tencentProvider: MusicProvider = {
 
     const text = await res.text()
 
-    const jsonpMatch = text.match(/^(?:callback|MusicJsonCallback|jsonCallback)\(([\s\S]*)\)$/)
+    const jsonpMatch = /^(?:callback|MusicJsonCallback|jsonCallback)\(([\s\S]*)\)$/.exec(text)
     const jsonStr = jsonpMatch?.[1] ?? text
 
     let data: Record<string, unknown>

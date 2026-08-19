@@ -11,11 +11,5 @@ export function isPasskeyEnabled(): boolean {
 export function isPasskeySigninUser(
   user: { loginMethod: string; role: string | null; deletedAt: Date | null } | null,
 ): boolean {
-  return (
-    user !== null &&
-    user.loginMethod === 'passkey' &&
-    Boolean(user.role) &&
-    user.deletedAt === null &&
-    isPasskeyEnabled()
-  )
+  return user?.loginMethod === 'passkey' && Boolean(user.role) && user.deletedAt === null && isPasskeyEnabled()
 }

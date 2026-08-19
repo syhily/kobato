@@ -20,7 +20,7 @@ declare global {
 }
 
 declare module '@hono/node-server/serve-static' {
-  import type { Env, MiddlewareHandler, ServeStaticOptions } from 'hono'
-  const serveStatic: <E extends Env = Env>(options?: ServeStaticOptions<E>) => MiddlewareHandler
+  import type { MiddlewareHandler, ServeStaticOptions } from 'hono'
+  const serveStatic: (options?: ServeStaticOptions) => MiddlewareHandler
   export { serveStatic }
 }

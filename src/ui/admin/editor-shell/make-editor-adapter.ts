@@ -77,8 +77,8 @@ export interface EditorAdapterRuntime<TMeta extends EditorMetaShape> {
 }
 
 // Module-level revision accessors — stable identities keep the screen's memoized detail object referentially stable.
-const getLatestRevision = <TDetail extends DetailRevisions>(detail: TDetail) => detail.latestRevision
-const getPublishedRevision = <TDetail extends DetailRevisions>(detail: TDetail) => detail.publishedRevision
+const getLatestRevision = (detail: DetailRevisions) => detail.latestRevision
+const getPublishedRevision = (detail: DetailRevisions) => detail.publishedRevision
 
 /** Assemble the `EditorScreenAdapter` for one entity; the wire wrappers (call → invalidate list → unwrap envelope) live here exactly once. */
 export function makeEditorAdapter<

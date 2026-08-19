@@ -18,7 +18,7 @@ const fields = buildPostFilterFields({
 
 function fieldSpec(key: PostFilterFieldKey) {
   const field = fields.find((f) => f.key === key)
-  if (!field || field.kind !== 'options') {
+  if (field?.kind !== 'options') {
     throw new Error(`expected an options field for ${key}`)
   }
   return field

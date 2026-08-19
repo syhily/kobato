@@ -35,7 +35,7 @@ export function useEventStream({ bufferSize = 100, enabled = true }: UseEventStr
   const size = Math.max(bufferSize, 50)
 
   useEffect(() => {
-    if (!enabled || typeof window === 'undefined' || window.EventSource === undefined) {
+    if (!enabled || window?.EventSource === undefined) {
       return
     }
 

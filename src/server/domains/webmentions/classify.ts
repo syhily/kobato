@@ -34,7 +34,7 @@ function anchorHref(tag: string): string | null {
 }
 
 function anchorMarkerTypes(tag: string): WebmentionType[] {
-  const classValue = (CLASS_RE.exec(tag))?.[1] ?? (CLASS_RE.exec(tag))?.[2]
+  const classValue = CLASS_RE.exec(tag)?.[1] ?? CLASS_RE.exec(tag)?.[2]
   if (classValue === undefined) {
     return []
   }

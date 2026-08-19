@@ -9,7 +9,7 @@ import type { Route } from './+types/branding'
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const rc = getRequestContext({ request, context })
-  requireRole({ user: rc.viewer ?? undefined, role: rc.viewer?.role ?? null }, 'admin')
+  requireRole(rc.viewer ?? undefined, 'admin')
   const bundle = getBlogSettingsBundleSync()
   if (!bundle?.assets) {
     return { branding: null }
