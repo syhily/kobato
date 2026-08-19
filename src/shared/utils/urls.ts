@@ -30,7 +30,3 @@ export function joinUrl(...parts: string[]): string {
   }
   return result
 }
-
-export function withLeadingSlash(value: string): string {
-  return value.startsWith('/') ? value : `/${value}`
-}

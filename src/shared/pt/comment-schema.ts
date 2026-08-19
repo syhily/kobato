@@ -36,10 +36,6 @@ export type CommentBlock = z.infer<typeof commentBlockSchema>
 export const commentBodySchema = z.array(commentBlockSchema)
 export type CommentBody = z.infer<typeof commentBodySchema>
 
-export function validateCommentBody(value: unknown): CommentBody {
-  return commentBodySchema.parse(value)
-}
-
 export function safeValidateCommentBody(
   value: unknown,
 ): { ok: true; body: CommentBody } | { ok: false; error: z.ZodError } {

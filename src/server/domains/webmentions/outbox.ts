@@ -2,6 +2,7 @@ import type { Database } from '@/server/infra/db/database'
 import type { WebmentionOutboxRow } from '@/server/infra/db/types'
 
 import { discoverEndpoint, formatFetchFailure, type DiscoveryResult } from '@/server/domains/webmentions/discover'
+import { truncateFailureMessage, webmentionBackoffMs } from '@/server/domains/webmentions/retry'
 import {
   markWebmentionOutboxRetry,
   markWebmentionOutboxSent,
@@ -21,11 +22,6 @@ export const OUTBOX_MAX_ATTEMPTS = 5
 
 // The response body is worthless (W3C success is a status code) — cap it.
 const MAX_RESPONSE_BYTES = 16 * 1024
-
-/** min(2^n × 60s, 12h): 1m → 2m → 4m → 8m → 16m across the five attempts. */
-export function outboxBackoffMs(attempts: number): number {
-  return Math.min(2 ** attempts * 60_000, 12 * 3_600_000)
-}
 
 /** Sender UA built from the configured site origin. */
 function senderUa(): string {
@@ -70,20 +66,16 @@ const REAL_HOOKS: OutboxHooks = {
   send: (endpoint, sourceUrl, targetUrl) => sendWebmention(endpoint, sourceUrl, targetUrl),
 }
 
-function failureMessage(error: string): string {
-  return error.length > 200 ? `${error.slice(0, 200)}…` : error
-}
-
 /** One more attempt, or the `failed` terminal state when the budget is
  *  spent — attempts count discovery and send alike. */
 async function scheduleRetry(db: Database, row: WebmentionOutboxRow, error: string): Promise<void> {
   const attempts = row.attempts + 1
   if (attempts >= OUTBOX_MAX_ATTEMPTS) {
-    await markWebmentionOutboxTerminal(db, row.id, 'failed', failureMessage(error), attempts)
+    await markWebmentionOutboxTerminal(db, row.id, 'failed', truncateFailureMessage(error), attempts)
     log.warn('Webmention send exhausted attempts', { targetUrl: row.targetUrl, attempts, error })
     return
   }
-  await markWebmentionOutboxRetry(db, row.id, attempts, new Date(Date.now() + outboxBackoffMs(attempts)), error)
+  await markWebmentionOutboxRetry(db, row.id, attempts, new Date(Date.now() + webmentionBackoffMs(attempts)), error)
 }
 
 export async function processWebmentionOutboxRow(

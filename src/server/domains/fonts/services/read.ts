@@ -56,11 +56,6 @@ export function resolveSlotOrder(ids: readonly string[], byId: Map<string, FontR
   return out
 }
 
-export async function findFontById(db: Database, id: string): Promise<FontRow | null> {
-  const rows = await db.select().from(font).where(eq(font.id, id)).limit(1)
-  return rows[0] ?? null
-}
-
 /** Single-row fetch by content hash (the dedup key). `null` when absent. */
 export async function findFontByHash(db: Database, hash: string): Promise<FontRow | null> {
   const rows = await db.select().from(font).where(eq(font.hash, hash)).limit(1)

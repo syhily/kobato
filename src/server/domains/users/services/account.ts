@@ -4,6 +4,7 @@ import type { Database } from '@/server/infra/db/database'
 import type { LoginMethod } from '@/shared/contracts/users'
 
 import { revokeAllSessionsOfUser } from '@/server/domains/auth/services/sessions'
+import { revokeTokensFor } from '@/server/domains/auth/verification-tokens'
 import { findUserById, PASSWORD_HASH_ROUNDS, updateUserById } from '@/server/infra/db/operations/user'
 import { DomainError } from '@/server/infra/http/errors'
 
@@ -112,4 +113,6 @@ export async function updateAccountPassword(
   const hashed = await bcrypt.hash(newPassword, PASSWORD_HASH_ROUNDS)
   await updateUserById(db, dbUser.id, { password: hashed })
   await revokeAllSessionsOfUser(db, dbUser.id, currentSessionId)
+  // A password change also kills any outstanding reset link for the account.
+  await revokeTokensFor(db, dbUser.id, 'password-reset')
 }

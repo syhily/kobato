@@ -4,7 +4,6 @@ import type { SessionUser } from '@/server/domains/auth/session-storage'
 
 import {
   canEditImage,
-  canEditMusic,
   canEditPost,
   isAdmin,
   isCommentOwner,
@@ -105,10 +104,9 @@ describe('server/domains/auth/rbac — canEditX family (admin or owner)', () => 
     expect(canEditPost(viewer('author', '5'), { authorId: 6 })).toBe(false)
   })
 
-  it('canEditImage and canEditMusic behave symmetrically', () => {
+  it('canEditImage lets the admin or the uploader act', () => {
     expect(canEditImage(viewer('admin'), { uploaderId: 7 })).toBe(true)
-    expect(canEditMusic(viewer('author', '7'), { uploaderId: 7 })).toBe(true)
     expect(canEditImage(viewer('visitor', '7'), { uploaderId: 7 })).toBe(true)
-    expect(canEditMusic(viewer('visitor', '7'), { uploaderId: 8 })).toBe(false)
+    expect(canEditImage(viewer('visitor', '7'), { uploaderId: 8 })).toBe(false)
   })
 })

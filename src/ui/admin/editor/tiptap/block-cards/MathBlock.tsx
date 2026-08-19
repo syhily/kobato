@@ -18,10 +18,6 @@ export function mathBlockTitle() {
   return '数学公式块'
 }
 
-export function isMathBlockEditable() {
-  return true
-}
-
 export function stripMathArtifacts(block: Block): Block {
   if (block._type !== 'mathBlock') {
     return block

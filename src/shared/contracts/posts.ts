@@ -1,43 +1,20 @@
 import { z } from 'zod'
 
+import { adminMetaBaseDto } from '@/shared/contracts/admin-meta'
 import { idString, isoDateTime } from '@/shared/contracts/primitives'
 import { adminRevisionDto } from '@/shared/contracts/revision'
 
-export const adminPostDto = z.object({
-  id: idString,
-  slug: z.string(),
-  title: z.string(),
-  summary: z.string(),
-  cover: z.string(),
-  og: z.string().nullable(),
-  published: z.boolean(),
-  commentsEnabled: z.boolean(),
-  webmentionsEnabled: z.boolean(),
-  showToc: z.boolean(),
-  // Opts the post into rendering「修改于 XXXX」on the public detail
-  // page; toggled from the editor meta sidebar, defaults `false`.
-  showUpdated: z.boolean(),
+// Shared content meta fields come from `adminMetaBaseDto`; only the
+// post-only fields are stated here.
+export const adminPostDto = adminMetaBaseDto.extend({
   visible: z.boolean(),
-  publishedAt: isoDateTime,
-  publishedRevisionId: idString.nullable(),
-  createdAt: isoDateTime,
-  updatedAt: isoDateTime,
-  deletedAt: isoDateTime.nullable(),
   category: z.string(),
   categoryId: idString.nullable(),
   tags: z.array(z.string()),
   alias: z.array(z.string()),
-  authorId: idString.nullable(),
-  authorName: z.string().nullable(),
   pinnedAt: isoDateTime.nullable(),
   /** Null until the first successful publish. */
   firstPublishedAt: isoDateTime.nullable(),
-  // Approved comment count for this post's metric row. Populated by
-  // the admin list endpoint; `0` on detail / save paths.
-  commentCount: z.number().int().nonnegative(),
-  // The post's `metric.public_id` UUID — the wire identifier the admin
-  // comment-count link deep-links with. Empty on detail / save paths.
-  commentPublicId: z.string(),
 })
 export type AdminPostDto = z.infer<typeof adminPostDto>
 

@@ -74,11 +74,6 @@ async function queryAllCategories(db: Database): Promise<Category[]> {
   return categories
 }
 
-export async function getCategoryLink(db: Database, name: string): Promise<string> {
-  const category = await findCategoryByName(db, name)
-  return category ? `/cats/${category.slug}` : ''
-}
-
 export async function getCategoryLinks(db: Database, names: readonly string[]): Promise<Record<string, string>> {
   const uniqueNames = [...new Set(names.filter((n): n is string => Boolean(n)))]
   if (uniqueNames.length === 0) {

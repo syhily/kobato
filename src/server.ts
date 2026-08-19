@@ -6,6 +6,7 @@ import { getDb } from '@/server/bootstrap/db-lifecycle'
 import { scheduleNextGeoipUpdate } from '@/server/domains/analytics/geoip-scheduler'
 import { scheduleNextArchive } from '@/server/domains/audit/services/scheduler'
 import { getSetupToken } from '@/server/domains/auth/setup-token'
+import { scheduleNextTokenPurge } from '@/server/domains/auth/token-purge-scheduler'
 import { scheduleNextBackup } from '@/server/domains/backup/scheduler'
 import { scheduleNextScheduledPublish } from '@/server/domains/content/scheduled-publish'
 import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
@@ -64,6 +65,7 @@ if (!hmr?.secretsMigrated) {
   scheduleWebmentionReverify()
   scheduleNextKvSweep()
   scheduleNextDbMaintenance()
+  scheduleNextTokenPurge()
   scheduleNextGeoipUpdate()
 
   if (hmr) {

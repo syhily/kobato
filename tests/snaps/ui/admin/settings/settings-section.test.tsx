@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { renderToHtml, stableHtml } from '#/_helpers/render'
-import { ReadOnlyField, SettingsCheckboxRow, SettingsRow } from '@/ui/admin/settings/SettingsSection'
+import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { Input } from '@/ui/components/input'
 
 describe('snapshot: SettingsRow', () => {
@@ -44,39 +44,5 @@ describe('snapshot: SettingsRow', () => {
     )
     expect(html).toContain('昵称')
     expect(html).toContain('2-20 个字符')
-  })
-})
-
-describe('snapshot: SettingsCheckboxRow', () => {
-  it('renders a checkbox row', () => {
-    const html = stableHtml(
-      renderToHtml(
-        <SettingsCheckboxRow
-          rowLabel="评论功能"
-          checkboxLabel="开启文章评论"
-          id="enable-comments"
-          checked={true}
-          onCheckedChange={() => {}}
-          hint="关闭后全站不显示评论模块。"
-        />,
-      ),
-    )
-    expect(html).toContain('评论功能')
-    expect(html).toContain('开启文章评论')
-    expect(html).toContain('关闭后全站不显示评论模块')
-  })
-})
-
-describe('snapshot: ReadOnlyField', () => {
-  it('renders a plain read-only value', () => {
-    const html = stableHtml(renderToHtml(<ReadOnlyField label="创建时间" value="2024-01-01" />))
-    expect(html).toContain('创建时间')
-    expect(html).toContain('2024-01-01')
-  })
-
-  it('renders an empty placeholder', () => {
-    const html = stableHtml(renderToHtml(<ReadOnlyField label="备注" value="" />))
-    expect(html).toContain('备注')
-    expect(html).toContain('—')
   })
 })

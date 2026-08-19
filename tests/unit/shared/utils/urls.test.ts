@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { joinUrl, withLeadingSlash } from '@/shared/utils/urls'
+import { joinUrl } from '@/shared/utils/urls'
 
 describe('client: url utilities', () => {
   describe('joinUrl', () => {
@@ -34,20 +34,6 @@ describe('client: url utilities', () => {
 
     it('handles multiple slashes in base', () => {
       expect(joinUrl('https://example.com/', '/path/')).toBe('https://example.com/path/')
-    })
-  })
-
-  describe('withLeadingSlash', () => {
-    it('adds a leading slash when missing', () => {
-      expect(withLeadingSlash('path')).toBe('/path')
-    })
-
-    it('preserves an existing leading slash', () => {
-      expect(withLeadingSlash('/path')).toBe('/path')
-    })
-
-    it('handles empty string', () => {
-      expect(withLeadingSlash('')).toBe('/')
     })
   })
 })

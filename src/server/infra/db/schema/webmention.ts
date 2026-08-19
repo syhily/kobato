@@ -6,7 +6,12 @@ import {
   WEBMENTION_STATUSES,
   WEBMENTION_TYPES,
   WEBMENTION_VERIFY_STATUSES,
-} from '@/server/infra/db/schema/shared'
+} from '@/shared/contracts/webmentions'
+
+// CHECK literal built from the canonical enum arrays — the generated SQL
+// is byte-identical to a hand-written `IN ('a', 'b', …)` list, so changing
+// an array regenerates the constraint instead of drifting from it.
+const sqlEnumList = (values: readonly string[]) => sql.raw(values.map((value) => `'${value}'`).join(', '))
 
 // Webmentions (W3C Webmention, receive side): rows land `pending` after
 // source verification, then moderation flips them `approved`/`rejected`;
@@ -42,9 +47,12 @@ export const webmention = sqliteTable(
     uniqueIndex('uq_webmention_pair').on(table.sourceUrl, table.targetUrl),
     index('idx_webmention_status').on(table.status),
     index('idx_webmention_target').on(table.targetType, table.targetOwnerId),
-    check('webmention_status_chk', sql`${table.status} IN ('pending', 'approved', 'rejected', 'hidden')`),
-    check('webmention_type_chk', sql`${table.type} IN ('mention', 'reply', 'like', 'repost')`),
-    check('webmention_verification_chk', sql`${table.verificationStatus} IN ('verified', 'failed')`),
+    check('webmention_status_chk', sql`${table.status} IN (${sqlEnumList(WEBMENTION_STATUSES)})`),
+    check('webmention_type_chk', sql`${table.type} IN (${sqlEnumList(WEBMENTION_TYPES)})`),
+    check(
+      'webmention_verification_chk',
+      sql`${table.verificationStatus} IN (${sqlEnumList(WEBMENTION_VERIFY_STATUSES)})`,
+    ),
   ],
 )
 
@@ -75,7 +83,7 @@ export const webmentionOutbox = sqliteTable(
     uniqueIndex('uq_webmention_outbox_pair').on(table.sourceUrl, table.targetUrl),
     index('idx_webmention_outbox_pick').on(table.status, table.nextRetryAt),
     index('idx_webmention_outbox_source').on(table.sourceUrl),
-    check('webmention_outbox_status_chk', sql`${table.status} IN ('pending', 'sent', 'no-endpoint', 'failed')`),
+    check('webmention_outbox_status_chk', sql`${table.status} IN (${sqlEnumList(WEBMENTION_OUTBOX_STATUSES)})`),
   ],
 )
 

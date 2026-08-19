@@ -3,26 +3,11 @@ import { describe, expect, it } from 'vitest'
 import {
   dateToLocalInputValue,
   futureLocalInputValueOrEmpty,
-  isoToLocalInputValue,
   localInputValueToIso,
   parseLocalDateTimeInput,
 } from '@/ui/admin/editor-shell/editor-datetime'
 
 const LOCAL_VALUE_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/
-
-describe('ui/admin/editor-shell/editor-datetime — isoToLocalInputValue', () => {
-  it('formats a valid ISO timestamp as a datetime-local input value', () => {
-    const value = isoToLocalInputValue('2026-06-01T12:00:00.000Z')
-    expect(value).toMatch(LOCAL_VALUE_RE)
-    // Round-trip: the local value denotes the same instant as the ISO input.
-    expect(Date.parse(value)).toBe(Date.parse('2026-06-01T12:00:00.000Z'))
-  })
-
-  it('maps unparseable input to the empty no-value sentinel', () => {
-    expect(isoToLocalInputValue('')).toBe('')
-    expect(isoToLocalInputValue('not-a-date')).toBe('')
-  })
-})
 
 describe('ui/admin/editor-shell/editor-datetime — dateToLocalInputValue', () => {
   it('pads every component to two digits', () => {
@@ -49,10 +34,10 @@ describe('ui/admin/editor-shell/editor-datetime — localInputValueToIso', () =>
     expect(localInputValueToIso('not-a-date')).toBeNull()
   })
 
-  it('round-trips with isoToLocalInputValue', () => {
+  it('round-trips with dateToLocalInputValue', () => {
     const iso = localInputValueToIso('2026-06-01T12:00')
     expect(iso).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/)
-    expect(isoToLocalInputValue(iso!)).toBe('2026-06-01T12:00')
+    expect(dateToLocalInputValue(new Date(iso!))).toBe('2026-06-01T12:00')
   })
 })
 

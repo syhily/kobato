@@ -5,7 +5,7 @@ import type { NewPageMeta, PageMetaRow } from '@/server/infra/db/types'
 import type { Page } from '@/shared/types/catalog'
 
 import { makeMetaCrud } from '@/server/domains/content/entities/meta-repo'
-import { findContentById, hydratePublishedRevisions } from '@/server/domains/content/revisions'
+import { findContentById } from '@/server/domains/content/revisions'
 import { isLive } from '@/server/domains/content/schemas/live-gate'
 import { hydrateImageRefs } from '@/server/domains/images/services/enhance'
 import { livePageWhere } from '@/server/domains/pages/live-gate'
@@ -106,21 +106,4 @@ export async function findPageBySlug(db: Database, slug: string): Promise<Page |
   const page = toCmsPage(meta, revision)
   await hydratePageImages(db, [page])
   return page
-}
-
-export async function listAllPages(db: Database): Promise<Page[]> {
-  const metas = await listPublicPageMetas(db)
-  const asOf = new Date()
-  const visible = metas.filter((meta) => isLive(meta, { asOf }))
-  if (visible.length === 0) {
-    return []
-  }
-
-  const revisionMap = await hydratePublishedRevisions(db, visible)
-  const pages = visible.map((meta) => {
-    const revision = meta.publishedRevisionId === null ? null : (revisionMap.get(meta.publishedRevisionId) ?? null)
-    return toCmsPage(meta, revision)
-  })
-  await hydratePageImages(db, pages)
-  return pages
 }

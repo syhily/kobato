@@ -3,7 +3,9 @@ import type { PageMetaRow } from '@/server/infra/db/types'
 
 import { DomainError } from '@/server/infra/http/errors'
 
-export interface UpsertPageMetaInput extends UpsertMetaInputBase {
+// Server-side write shape (number ids / Dates) — distinct from the wire
+// `UpsertPageMetaInput` in `@/shared/types/pages` (string ids / ISO dates).
+export interface PageMetaWriteInput extends UpsertMetaInputBase {
   showFriends?: boolean
 }
 

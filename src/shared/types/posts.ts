@@ -1,6 +1,8 @@
 import type { AdminPostDetailDto, AdminPostDto } from '@/shared/contracts/posts'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
+
 // The row DTOs (`AdminPostDto`, `AdminPostDetailDto`, list/revision
 // outputs) are zod-derived in `@/shared/contracts/posts`.
 
@@ -94,25 +96,19 @@ export const EMPTY_POST_META_DRAFT: PostMetaDraft = {
   publishedAt: '',
 }
 
+// Keys derive from `EMPTY_POST_META_DRAFT` so a new `PostMetaDraft` field
+// joins the equality check automatically instead of silently desyncing.
+// Safe cast: the empty draft is a complete `PostMetaDraft`, so its runtime
+// keys are exactly `keyof PostMetaDraft`.
+const POST_META_DRAFT_KEYS = unsafeCast<Array<keyof PostMetaDraft>>(Object.keys(EMPTY_POST_META_DRAFT))
+
 export function postMetaDraftsEqual(a: PostMetaDraft, b: PostMetaDraft): boolean {
-  return (
-    a.slug === b.slug &&
-    a.title === b.title &&
-    a.summary === b.summary &&
-    a.cover === b.cover &&
-    a.og === b.og &&
-    a.published === b.published &&
-    a.commentsEnabled === b.commentsEnabled &&
-    a.webmentionsEnabled === b.webmentionsEnabled &&
-    a.showToc === b.showToc &&
-    a.showUpdated === b.showUpdated &&
-    a.visible === b.visible &&
-    a.pinned === b.pinned &&
-    a.categoryId === b.categoryId &&
-    JSON.stringify(a.tags) === JSON.stringify(b.tags) &&
-    JSON.stringify(a.alias) === JSON.stringify(b.alias) &&
-    a.publishedAt === b.publishedAt
-  )
+  return POST_META_DRAFT_KEYS.every((key) => {
+    const av = a[key]
+    const bv = b[key]
+    // Array fields (tags/alias) compare element-wise via JSON; the rest are primitives.
+    return Array.isArray(av) && Array.isArray(bv) ? JSON.stringify(av) === JSON.stringify(bv) : av === bv
+  })
 }
 
 export interface DeletePostInput {

@@ -1,39 +1,12 @@
 import { and, desc, eq, inArray, sql } from 'drizzle-orm'
 
 import type { Database } from '@/server/infra/db/database'
-import type { Post, PostVisibilityOptions } from '@/shared/types/catalog'
 
 import { livePostWhere } from '@/server/domains/posts/live-gate'
-import { buildPublicPostFilters, hydratePostList } from '@/server/domains/posts/repos/hydrate'
 import { buildPublicPostsWhere } from '@/server/domains/posts/repos/shared'
-import { listPublicPosts } from '@/server/domains/posts/services/public-query'
-import { findCategoryByName } from '@/server/infra/db/operations/category'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
 import { postTag } from '@/server/infra/db/schema/post-tag'
 import { category as categoryTable, tag as tagTable } from '@/server/infra/db/schema/taxonomy'
-
-/**
- * Category and tag listings differ only in the filter key — one function
- * takes the `kind`; the category branch resolves the name to its row first.
- */
-export async function listPostsByTaxonomy(
-  db: Database,
-  kind: 'category' | 'tag',
-  name: string,
-  options?: PostVisibilityOptions,
-): Promise<Post[]> {
-  const filters = buildPublicPostFilters(options)
-  if (kind === 'category') {
-    const row = await findCategoryByName(db, name)
-    if (row === null) {
-      return []
-    }
-    const metas = await listPublicPosts(db, { ...filters, categoryId: row.id })
-    return hydratePostList(db, metas)
-  }
-  const metas = await listPublicPosts(db, { ...filters, tag: name })
-  return hydratePostList(db, metas)
-}
 
 /**
  * Title-only lookup for the taxonomy delete guard: full-inclusion gate
@@ -85,7 +58,7 @@ export async function countPostsByTaxonomy(
       ? livePostWhere({ includeScheduled: true })
       : and(livePostWhere(), eq(postMetaTable.visible, true))!
 
-  if (options.names !== undefined && options.names.length === 0) {
+  if (options.names?.length === 0) {
     return new Map()
   }
 

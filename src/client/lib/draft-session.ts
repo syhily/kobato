@@ -3,6 +3,7 @@ import type { ZodType } from 'zod'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import {
+  DRAFT_STORAGE_VERSION,
   getDraft,
   removeDraft,
   removeDraftsByPrefix,
@@ -14,10 +15,11 @@ import {
 /**
  * Single owner of the draft-record lifecycle: load → version/schema-check →
  * purge-or-hydrate, loadComplete-gated persist, cross-tab clear broadcast.
+ *
+ * The persisted-shape version constant lives in `draft-store` (the storage
+ * layer owns the record schema) so the store's migration code can reference
+ * it without an import cycle.
  */
-
-/** Bump when the persisted draft shape changes; stale records are purged on load. */
-export const DRAFT_STORAGE_VERSION = 1
 
 /** Edit-mode draft key — shared by the edit adapter and the create adapter's migration. */
 export function draftEditKey(keyPrefix: string, entityId: string, clientRevisionToken: string): string {

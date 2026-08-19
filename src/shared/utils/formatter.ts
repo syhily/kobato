@@ -64,47 +64,6 @@ function weekStartDay(parts: Pick<LocalDateParts, 'year' | 'month' | 'day'>): nu
   return day - ((weekday + 6) % 7)
 }
 
-export interface SlicePostsOptions {
-  // Positive M: a natural last page with fewer than M posts merges
-  // into its predecessor. Defaults to 0 (disabled).
-  mergeTailWhenLessThan?: number
-}
-
-export function slicePosts<Type>(
-  posts: Type[],
-  pageNum: number,
-  pageSize: number,
-  options: SlicePostsOptions = {},
-): { currentPosts: Type[]; totalPage: number } {
-  const naturalTotalPage = Math.ceil(posts.length / pageSize)
-  const totalPage = applyTailMerge(posts.length, pageSize, naturalTotalPage, options.mergeTailWhenLessThan ?? 0)
-
-  if (totalPage === 0 || pageNum > totalPage) {
-    return { currentPosts: [], totalPage }
-  }
-
-  return {
-    currentPosts:
-      pageNum === totalPage
-        ? posts.slice((pageNum - 1) * pageSize)
-        : posts.slice((pageNum - 1) * pageSize, pageNum * pageSize),
-    totalPage,
-  }
-}
-
-// Tail merge applies only when `threshold` > 0 and there are at least
-// two pages to begin with.
-function applyTailMerge(postCount: number, pageSize: number, naturalTotalPage: number, threshold: number): number {
-  if (threshold <= 0 || naturalTotalPage < 2) {
-    return naturalTotalPage
-  }
-  const tailSize = postCount - (naturalTotalPage - 1) * pageSize
-  if (tailSize < threshold) {
-    return naturalTotalPage - 1
-  }
-  return naturalTotalPage
-}
-
 /** `now` defaults to the runtime clock; pass an ISO string from the route loader so SSR and hydration agree. */
 export function formatShowDate(date: Date, config: FormatterLocale, now?: Date | string) {
   const { locale, timeZone } = pickLocale(config)

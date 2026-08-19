@@ -498,4 +498,17 @@ describe('users/services/account — updateAccountPassword', () => {
     const rows = await db.select({ password: user.password }).from(user).where(eq(user.id, u.id))
     expect(rows[0].password).not.toBe(hashed)
   })
+
+  it('revokes outstanding password-reset tokens on a successful change', async () => {
+    const bcrypt = await import('bcryptjs')
+    const { issueResetToken, peekToken } = await import('@/server/domains/auth/verification-tokens')
+    const hashed = await bcrypt.hash('correct', 4)
+    const u = await seedUser({ name: 'P', email: 'p2@example.com', password: hashed })
+    const { token } = issueResetToken(db, u.id)
+    expect(await peekToken(db, token, 'password-reset')).not.toBeNull()
+
+    await account.updateAccountPassword(db, u.id, 'correct', 'newpass')
+
+    expect(await peekToken(db, token, 'password-reset')).toBeNull()
+  })
 })

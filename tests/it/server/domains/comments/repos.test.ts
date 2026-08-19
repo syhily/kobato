@@ -16,7 +16,6 @@ import {
 import {
   insertComment,
   updateCommentBodyAndContent,
-  updateCommentContent,
   updateOwnCommentBody,
   updateOwnCommentBodyAndPending,
 } from '@/server/domains/comments/repos/mutate'
@@ -287,15 +286,6 @@ describe('comments/repos/mutate — insertComment', () => {
     })
     expect(row).not.toBeNull()
     expect(row!.content).toBe('hi')
-  })
-})
-
-describe('comments/repos/mutate — updateCommentContent', () => {
-  it('rewrites content', async () => {
-    const id = await seedComment({ content: 'old' })
-    await updateCommentContent(db, id, 'new')
-    const rows = await db.select({ content: comment.content }).from(comment).where(eq(comment.id, id))
-    expect(rows[0]?.content).toBe('new')
   })
 })
 

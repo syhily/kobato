@@ -14,16 +14,24 @@ vi.mock('@/server/infra/email/sender', () => ({
 }))
 
 // issueSetupToken is wrapped so tests can make it throw mid-transaction; defaults to the real implementation.
-const realVerificationTokens = await vi.importActual<typeof import('@/server/domains/auth/verification-tokens')>(
-  '@/server/domains/auth/verification-tokens',
-)
-const issueSetupToken = vi.fn(realVerificationTokens.issueSetupToken)
-
-vi.mock('@/server/domains/auth/verification-tokens', () => ({
-  issueResetToken: realVerificationTokens.issueResetToken,
-  issueSetupToken,
-  revokeTokensFor: realVerificationTokens.revokeTokensFor,
+// The factory is async (importOriginal): db-lifecycle's scheduler wiring pulls the real
+// verification-tokens module into this file's static import graph, so the factory can
+// fire before any top-level `await vi.importActual` in the file body would run (TDZ).
+const setupTokenMocks = vi.hoisted(() => ({
+  issueSetupToken: vi.fn(),
+  realIssueSetupToken:
+    undefined as unknown as typeof import('@/server/domains/auth/verification-tokens').issueSetupToken,
 }))
+
+vi.mock('@/server/domains/auth/verification-tokens', async (importOriginal) => {
+  const real = await importOriginal<typeof import('@/server/domains/auth/verification-tokens')>()
+  setupTokenMocks.realIssueSetupToken = real.issueSetupToken
+  return {
+    issueResetToken: real.issueResetToken,
+    issueSetupToken: (...args: Parameters<typeof real.issueSetupToken>) => setupTokenMocks.issueSetupToken(...args),
+    revokeTokensFor: real.revokeTokensFor,
+  }
+})
 
 // Import the service AFTER the mocks so the bindings propagate.
 const { inviteAuthorWithRollback } = await import('@/server/domains/users/services/admin')
@@ -33,8 +41,8 @@ const db = getTestDb()
 beforeEach(async () => {
   await clearAllTables(db)
   sendAuthorInvite.mockReset()
-  issueSetupToken.mockReset()
-  issueSetupToken.mockImplementation(realVerificationTokens.issueSetupToken)
+  setupTokenMocks.issueSetupToken.mockReset()
+  setupTokenMocks.issueSetupToken.mockImplementation(setupTokenMocks.realIssueSetupToken)
 })
 
 async function findUserRow(email: string) {
@@ -124,7 +132,7 @@ describe('integration / inviteAuthorWithRollback', () => {
 
   it('preserves atomicity when issueSetupToken fails mid-transaction', async () => {
     // Rollback must discard the insertAuthor write and never run sendAuthorInvite.
-    issueSetupToken.mockImplementationOnce(() => {
+    setupTokenMocks.issueSetupToken.mockImplementationOnce(() => {
       throw new Error('token store down')
     })
 

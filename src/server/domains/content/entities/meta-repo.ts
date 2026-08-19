@@ -1,4 +1,4 @@
-import { and, desc, eq, getColumns, isNotNull, isNull, or, sql, type Column, type SQL } from 'drizzle-orm'
+import { and, eq, getColumns, isNotNull, isNull, or, sql, type Column, type SQL } from 'drizzle-orm'
 
 import type { MetaCrud, MetaRowBase } from '@/server/domains/content/entities/descriptor'
 import type { LimitOffset } from '@/server/domains/content/pagination'
@@ -172,8 +172,4 @@ export function makeMetaListQueries<TMeta extends MetaRowBase, TFilters extends 
       return rows[0]?.count ?? 0
     },
   }
-}
-
-export function orderByUpdatedAtDesc(table: MetaTable): SQL {
-  return desc(table.updatedAt)
 }

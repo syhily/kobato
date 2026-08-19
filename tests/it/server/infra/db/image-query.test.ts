@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
-import { insertImageIfMissing, upsertImageByStoragePath } from '@/server/infra/db/operations/image'
+import { upsertImageByStoragePath } from '@/server/infra/db/operations/image'
 import { image } from '@/server/infra/db/schema/media'
 
 const db = getTestDb()
@@ -58,48 +58,5 @@ describe('db/query/image — upsertImageByStoragePath', () => {
     expect(second.mimeType).toBe('image/png')
     expect(second.deletedAt).toBeNull()
     expect(second.width).toBe(200)
-  })
-})
-
-describe('db/query/image — insertImageIfMissing', () => {
-  it('returns the new row on a successful insert', async () => {
-    const row = await insertImageIfMissing(db, {
-      storagePath: 'images/2026/05/unique.jpg',
-      mimeType: 'image/jpeg',
-      width: 800,
-      height: 600,
-      byteSize: 0,
-      thumbhash: null,
-      uploaderId: null,
-      note: null,
-    })
-    expect(row).not.toBeNull()
-    expect(row?.storagePath).toBe('images/2026/05/unique.jpg')
-  })
-
-  it('returns null when ON CONFLICT DO NOTHING skips the insert', async () => {
-    await insertImageIfMissing(db, {
-      storagePath: 'images/2026/05/duplicate.jpg',
-      mimeType: 'image/jpeg',
-      width: 1280,
-      height: 425,
-      byteSize: 0,
-      thumbhash: null,
-      uploaderId: null,
-      note: null,
-    })
-
-    const second = await insertImageIfMissing(db, {
-      storagePath: 'images/2026/05/duplicate.jpg',
-      mimeType: 'image/png',
-      width: 1,
-      height: 1,
-      byteSize: 1,
-      thumbhash: null,
-      uploaderId: null,
-      note: null,
-    })
-
-    expect(second).toBeNull()
   })
 })

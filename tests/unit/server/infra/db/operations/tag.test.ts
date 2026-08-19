@@ -146,17 +146,7 @@ describe('infra/db/operations/tag — insertTag / updateTag / deleteTag', () => 
   })
 })
 
-describe('infra/db/operations/tag — seedTagIfMissing / seedTagsIfMissing', () => {
-  it('seedTagIfMissing returns true when a new row was inserted', async () => {
-    const { seedTagIfMissing } = await import('@/server/infra/db/operations/tag')
-    expect(await seedTagIfMissing(createMockDb([{ id: 1 }]), { name: 'x', slug: 'x' } as never)).toBe(true)
-  })
-
-  it('seedTagIfMissing returns false when the row already existed', async () => {
-    const { seedTagIfMissing } = await import('@/server/infra/db/operations/tag')
-    expect(await seedTagIfMissing(createMockDb([]), { name: 'x', slug: 'x' } as never)).toBe(false)
-  })
-
+describe('infra/db/operations/tag — seedTagsIfMissing', () => {
   it('seedTagsIfMissing short-circuits on empty input', async () => {
     const { seedTagsIfMissing } = await import('@/server/infra/db/operations/tag')
     expect(() => seedTagsIfMissing(createMockDb([]), [])).not.toThrow()

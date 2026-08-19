@@ -227,31 +227,6 @@ export function thumbHashToRGBA(hash: ArrayLike<number>): {
   return { w, h, rgba }
 }
 
-/** Average color from a ThumbHash; RGB not premultiplied, values 0–1. */
-export function thumbHashToAverageRGBA(hash: ArrayLike<number>): {
-  r: number
-  g: number
-  b: number
-  a: number
-} {
-  const { min, max } = Math
-  const header = hash[0] | (hash[1] << 8) | (hash[2] << 16)
-  const l = (header & 63) / 63
-  const p = ((header >> 6) & 63) / 31.5 - 1
-  const q = ((header >> 12) & 63) / 31.5 - 1
-  const hasAlpha = header >> 23
-  const a = hasAlpha ? (hash[5] & 15) / 15 : 1
-  const b = l - (2 / 3) * p
-  const r = (3 * l - b + q) / 2
-  const g = r - q
-  return {
-    r: max(0, min(1, r)),
-    g: max(0, min(1, g)),
-    b: max(0, min(1, b)),
-    a,
-  }
-}
-
 /** Approximate aspect ratio of the original image (width / height). */
 export function thumbHashToApproximateAspectRatio(hash: ArrayLike<number>): number {
   const header = hash[3]

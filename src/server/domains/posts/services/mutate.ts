@@ -1,6 +1,6 @@
 import type { ViewerIdentity } from '@/server/domains/auth/rbac'
 import type { AdminPostDto } from '@/server/domains/posts/projection'
-import type { UpsertPostMetaInput } from '@/server/domains/posts/services/shared'
+import type { PostMetaWriteInput } from '@/server/domains/posts/services/shared'
 import type { Database } from '@/server/infra/db/database'
 
 import { makeEntityMutations } from '@/server/domains/content/entities/mutate'
@@ -18,7 +18,7 @@ export const unpublishPost = mutations.unpublish
 
 export async function updatePostMeta(
   db: Database,
-  input: UpsertPostMetaInput,
+  input: PostMetaWriteInput,
   viewer?: ViewerIdentity,
 ): Promise<AdminPostDto> {
   if (input.id === undefined) {

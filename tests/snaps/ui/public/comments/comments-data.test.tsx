@@ -15,7 +15,7 @@ mockTanstackQuery()
 // useMutation hooks run during render even though their effects don't fire
 // under SSR — stubbed to avoid network plumbing.
 
-// The render helper's BlogSettingsProvider covers useCommentsSettings;
+// The render helper's BlogSettingsProvider seeds the full settings bundle;
 // CommentsRoot wires the rest internally — tests only feed props.
 
 let seq = 0

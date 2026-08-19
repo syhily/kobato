@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import { WEBMENTION_OUTBOX_STATUSES, WEBMENTION_STATUSES } from '@/shared/contracts/webmentions'
+
 // W3C receive payload — form-encoded `source` + `target`; the caps stop a
 // junk POST from smuggling a large body into the parser (the route also caps content-length).
 const MAX_URL_LENGTH = 2048
@@ -40,7 +42,7 @@ export type WebmentionPublicListInput = z.infer<typeof webmentionPublicListSchem
 export const adminWebmentionListSchema = z.object({
   offset: z.number().min(0),
   limit: z.number().min(1).max(100),
-  status: z.enum(['all', 'pending', 'approved', 'rejected', 'hidden']).optional(),
+  status: z.enum(['all', ...WEBMENTION_STATUSES]).optional(),
 })
 export type AdminWebmentionListInput = z.infer<typeof adminWebmentionListSchema>
 
@@ -48,6 +50,6 @@ export type AdminWebmentionListInput = z.infer<typeof adminWebmentionListSchema>
 export const adminWebmentionOutboxListSchema = z.object({
   offset: z.number().min(0),
   limit: z.number().min(1).max(100),
-  status: z.enum(['all', 'pending', 'sent', 'no-endpoint', 'failed']).optional(),
+  status: z.enum(['all', ...WEBMENTION_OUTBOX_STATUSES]).optional(),
 })
 export type AdminWebmentionOutboxListInput = z.infer<typeof adminWebmentionOutboxListSchema>

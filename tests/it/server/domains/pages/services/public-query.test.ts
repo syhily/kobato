@@ -8,7 +8,6 @@ import {
   findLivePageBySlug,
   findPageBySlug,
   findPublicPageMetaBySlug,
-  listAllPages,
   listPublicPageMetas,
   listSitemapPages,
 } from '@/server/domains/pages/services/public-query'
@@ -119,15 +118,5 @@ describe('pages services/public-query', () => {
     await seedPage({ slug: 'hello', publishedAt: new Date('2099-01-01') })
 
     expect(await findPageBySlug(db, 'hello')).toBeNull()
-  })
-
-  it('lists all live pages and skips non-live rows', async () => {
-    await seedPage({ slug: 'live-a' })
-    await seedPage({ slug: 'live-b' })
-    await seedPage({ slug: 'draft', published: false, withRevision: false })
-
-    const pages = await listAllPages(db)
-    expect(pages.map((p) => p.slug).sort()).toEqual(['live-a', 'live-b'])
-    expect(pages[0]?.body).toEqual([])
   })
 })

@@ -1,4 +1,5 @@
 import { normalizeForMatch } from '@/server/domains/webmentions/verify'
+import { WEBMENTION_TYPES } from '@/shared/contracts/webmentions'
 
 // mf2 response-type classification for received webmentions (async-inbox
 // design, docs/plans/2026-08-02-webmention-async-inbox-design.md). Only
@@ -6,7 +7,7 @@ import { normalizeForMatch } from '@/server/domains/webmentions/verify'
 // classifies as `mention`; verification never depends on the type, so a
 // miss costs presentation grouping, never acceptance.
 
-export type WebmentionType = 'mention' | 'reply' | 'like' | 'repost'
+export type WebmentionType = (typeof WEBMENTION_TYPES)[number]
 
 const ANCHOR_TAG_RE = /<a\b[^>]*>/gi
 const HREF_RE = /\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i
@@ -27,13 +28,13 @@ const TYPE_PRIORITY: Record<WebmentionType, number> = {
 }
 
 function anchorHref(tag: string): string | null {
-  const match = tag.match(HREF_RE)
+  const match = HREF_RE.exec(tag)
   const href = match?.[1] ?? match?.[2] ?? match?.[3]
   return href === undefined || href === '' ? null : href
 }
 
 function anchorMarkerTypes(tag: string): WebmentionType[] {
-  const classValue = tag.match(CLASS_RE)?.[1] ?? tag.match(CLASS_RE)?.[2]
+  const classValue = (CLASS_RE.exec(tag))?.[1] ?? (CLASS_RE.exec(tag))?.[2]
   if (classValue === undefined) {
     return []
   }

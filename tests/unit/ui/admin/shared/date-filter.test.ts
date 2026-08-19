@@ -6,7 +6,6 @@ import {
   isSingleDateFilterOperator,
   parseDateFilter,
   parseSingleDateFilter,
-  resolveDateFilterBounds,
   resolveSingleDateFilterBounds,
   SINGLE_DATE_FILTER_OPERATORS,
   singleDateFilterLabel,
@@ -74,23 +73,6 @@ describe('dateFilterLabel', () => {
 
   it('shows range label', () => {
     expect(dateFilterLabel({ from: '2026-01-01', to: '2026-12-31' })).toBe('2026-01-01 ~ 2026-12-31')
-  })
-})
-
-describe('resolveDateFilterBounds', () => {
-  it('returns undefined bounds for null', () => {
-    expect(resolveDateFilterBounds(null)).toEqual({ from: undefined, to: undefined })
-  })
-
-  it('returns undefined for empty strings', () => {
-    expect(resolveDateFilterBounds({ from: '', to: '' })).toEqual({ from: undefined, to: undefined })
-  })
-
-  it('returns only non-empty bounds', () => {
-    expect(resolveDateFilterBounds({ from: '2026-01-01', to: '' })).toEqual({
-      from: '2026-01-01',
-      to: undefined,
-    })
   })
 })
 

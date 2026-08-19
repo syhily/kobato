@@ -39,10 +39,6 @@ function isReactNodeArray(value: unknown): value is ReactNode[] {
 
 export type SearchComponentId = string
 
-export function createSearchComponentId(base: string, unique: string): SearchComponentId {
-  return `${base}-${unique}`
-}
-
 // Filter state lives in its own context so nav items don't re-render per keystroke.
 
 interface FilterState {

@@ -1,6 +1,5 @@
 import { type ReactNode, useId } from 'react'
 
-import { Checkbox } from '@/ui/components/checkbox'
 import { Field, FieldContent, FieldDescription, FieldError, FieldLabel } from '@/ui/components/field'
 import { cn } from '@/ui/lib/cn'
 
@@ -55,61 +54,5 @@ export function SettingsRow({ label, htmlFor, hint, error, children }: SettingsR
         {error ? <FieldError id={errorId}>{error}</FieldError> : null}
       </FieldContent>
     </Field>
-  )
-}
-
-interface SettingsCheckboxRowProps {
-  /** Row label (left column on desktop, "feature group" of the toggle). */
-  rowLabel: string
-  /** Optional helper text rendered below the checkbox. */
-  hint?: ReactNode
-  /** Inline label sitting right next to the checkbox. */
-  checkboxLabel: string
-  /** DOM id shared between the checkbox and the inline label. */
-  id: string
-  checked: boolean
-  onCheckedChange: (checked: boolean) => void
-  disabled?: boolean
-}
-
-export function SettingsCheckboxRow({
-  rowLabel,
-  hint,
-  checkboxLabel,
-  id,
-  checked,
-  onCheckedChange,
-  disabled,
-}: SettingsCheckboxRowProps) {
-  return (
-    <SettingsRow label={rowLabel} hint={hint}>
-      <Field orientation="horizontal" className="w-fit">
-        <Checkbox
-          id={id}
-          checked={checked}
-          disabled={disabled}
-          onCheckedChange={(value) => onCheckedChange(value === true)}
-        />
-        <FieldLabel htmlFor={id} className="font-normal">
-          {checkboxLabel}
-        </FieldLabel>
-      </Field>
-    </SettingsRow>
-  )
-}
-
-interface ReadOnlyFieldProps {
-  label: string
-  value: ReactNode
-  hint?: ReactNode
-}
-
-export function ReadOnlyField({ label, value, hint }: ReadOnlyFieldProps) {
-  return (
-    <SettingsRow label={label} hint={hint}>
-      <div className="rounded-xl border bg-muted/40 px-3 py-2 font-mono text-sm break-all text-foreground">
-        {value || <span className="text-muted-foreground">—</span>}
-      </div>
-    </SettingsRow>
   )
 }

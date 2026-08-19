@@ -7,7 +7,6 @@ import {
   rgbaToDataURL,
   rgbaToThumbHash,
   thumbHashToApproximateAspectRatio,
-  thumbHashToAverageRGBA,
   thumbHashToDataURL,
   thumbHashToRGBA,
 } from '@/shared/utils/thumbhash'
@@ -71,17 +70,6 @@ describe('thumbhash', () => {
       expect(decoded.w).toBe(s.decoded.w)
       expect(decoded.h).toBe(s.decoded.h)
       expect(bytesToBase64(decoded.rgba)).toBe(s.decoded.rgbaBase64)
-    }
-  })
-
-  it('thumbHashToAverageRGBA matches snapshot', async () => {
-    for (const s of SNAPSHOTS) {
-      const hash = Uint8Array.from(atob(s.hashBase64), (c) => c.charCodeAt(0))
-      const avg = thumbHashToAverageRGBA(hash)
-      expect(avg.r).toBe(s.averageRGBA.r)
-      expect(avg.g).toBe(s.averageRGBA.g)
-      expect(avg.b).toBe(s.averageRGBA.b)
-      expect(avg.a).toBe(s.averageRGBA.a)
     }
   })
 

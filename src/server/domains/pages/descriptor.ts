@@ -16,7 +16,7 @@ import {
   updatePageMetaById,
 } from '@/server/domains/pages/repo'
 import { findPublicPageMetaBySlug } from '@/server/domains/pages/services/public-query'
-import { assertPageExists, type UpsertPageMetaInput } from '@/server/domains/pages/services/shared'
+import { assertPageExists, type PageMetaWriteInput } from '@/server/domains/pages/services/shared'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 
 // Warm key must mirror the OG resolver (`http/resources/images.ts`): empty summary → site description.
@@ -37,7 +37,7 @@ function pageOgTarget(meta: PageMetaRow) {
 export const pageDescriptor: MetaEntityDescriptor<
   PageMetaRow,
   NewPageMeta,
-  UpsertPageMetaInput,
+  PageMetaWriteInput,
   Record<string, never>,
   AdminPageDto,
   Page

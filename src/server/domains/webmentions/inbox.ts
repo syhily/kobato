@@ -1,6 +1,7 @@
 import type { Database } from '@/server/infra/db/database'
 import type { WebmentionInboxRow } from '@/server/infra/db/types'
 
+import { truncateFailureMessage, webmentionBackoffMs } from '@/server/domains/webmentions/retry'
 import { receiveWebmention } from '@/server/domains/webmentions/service'
 import { resolveWebmentionTarget } from '@/server/domains/webmentions/target'
 import { upsertWebmentionVerificationFailure } from '@/server/infra/db/operations/webmention'
@@ -21,15 +22,6 @@ const log = getLogger('webmentions.inbox')
 export const INBOX_BATCH_SIZE = 5
 export const INBOX_MAX_ATTEMPTS = 3
 
-/** min(2^attempts × 60s, 12h) — attempts already incremented (1st failure waits 2m). */
-export function inboxBackoffMs(attempts: number): number {
-  return Math.min(2 ** attempts * 60_000, 12 * 3_600_000)
-}
-
-function failureMessage(error: string): string {
-  return error.length > 200 ? `${error.slice(0, 200)}…` : error
-}
-
 /**
  * Verify one queued pair: success deletes the row, transient failures back
  * off; terminal failures are recorded visibly, except a vanished target (silent drop).
@@ -48,8 +40,8 @@ export async function processWebmentionInboxRow(db: Database, row: WebmentionInb
         db,
         row.id,
         attempts,
-        new Date(Date.now() + inboxBackoffMs(attempts)),
-        failureMessage(message),
+        new Date(Date.now() + webmentionBackoffMs(attempts)),
+        truncateFailureMessage(message),
       )
       return
     }

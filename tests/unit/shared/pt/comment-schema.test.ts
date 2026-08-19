@@ -4,12 +4,7 @@ import { z } from 'zod'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
 import { commentBodyToMarkdown } from '@/shared/pt/comment-markdown'
-import {
-  commentTextBlockSchema,
-  isCommentBodyEmpty,
-  safeValidateCommentBody,
-  validateCommentBody,
-} from '@/shared/pt/comment-schema'
+import { commentTextBlockSchema, isCommentBodyEmpty, safeValidateCommentBody } from '@/shared/pt/comment-schema'
 import { textBlockSchema } from '@/shared/pt/schema'
 
 // `commentBodyToMarkdown` is the rollback / plain-text snapshot
@@ -123,18 +118,9 @@ const validBody: CommentBody = [
   { _type: 'block', _key: 'b1', style: 'normal', children: [{ _type: 'span', _key: 's1', text: 'Hello' }] },
 ]
 
-describe('validateCommentBody', () => {
+describe('commentTextBlockSchema', () => {
   it('inherits the canonical text-block field set', () => {
     expect(Object.keys(commentTextBlockSchema.shape).sort()).toEqual(Object.keys(textBlockSchema.shape).sort())
-  })
-
-  it('returns a valid comment body', () => {
-    expect(validateCommentBody(validBody)).toEqual(validBody)
-  })
-
-  it('throws for a body with a disallowed block style', () => {
-    const bad = [{ _type: 'block', _key: 'b1', style: 'h2', children: [{ _type: 'span', _key: 's1', text: 'Hi' }] }]
-    expect(() => validateCommentBody(bad)).toThrow()
   })
 })
 

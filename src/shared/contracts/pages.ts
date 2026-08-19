@@ -1,37 +1,13 @@
 import { z } from 'zod'
 
-import { idString, isoDateTime } from '@/shared/contracts/primitives'
+import { adminMetaBaseDto } from '@/shared/contracts/admin-meta'
 import { adminRevisionDto } from '@/shared/contracts/revision'
 
-export const adminPageDto = z.object({
-  id: idString,
-  slug: z.string(),
-  title: z.string(),
-  summary: z.string(),
-  cover: z.string(),
-  og: z.string().nullable(),
-  published: z.boolean(),
-  commentsEnabled: z.boolean(),
-  webmentionsEnabled: z.boolean(),
-  showToc: z.boolean(),
-  /** Render the "Updated on XXXX" secondary timestamp on the public detail page. */
-  showUpdated: z.boolean(),
+// Shared content meta fields come from `adminMetaBaseDto`; only the
+// page-only field is stated here.
+export const adminPageDto = adminMetaBaseDto.extend({
   /** Render the global friends grid at the bottom of the page detail route. */
   showFriends: z.boolean(),
-  /** ISO-8601. Editable from the metadata panel. */
-  publishedAt: isoDateTime,
-  /** `null` while the page has never been published. */
-  publishedRevisionId: idString.nullable(),
-  createdAt: isoDateTime,
-  updatedAt: isoDateTime,
-  /** When non-null the row is soft-deleted. */
-  deletedAt: isoDateTime.nullable(),
-  authorId: idString.nullable(),
-  authorName: z.string().nullable(),
-  /** Approved comment count for this page's metric row. */
-  commentCount: z.number().int().nonnegative(),
-  /** The page's `metric.public_id` UUID — used by the admin comment-count link. */
-  commentPublicId: z.string(),
 })
 export type AdminPageDto = z.infer<typeof adminPageDto>
 

@@ -96,25 +96,6 @@ export function isSafeImageSegment(value: string): boolean {
   return SAFE_PATH_SEGMENT.test(trimmed)
 }
 
-/** Public base URL for uploaded images; isomorphic mirror of the server enhancer's authoritative copy. */
-export function buildPublicBaseUrlFromStorage(
-  options:
-    | {
-        storageEnabled: boolean
-        asset: { host: string; scheme: 'http' | 'https' }
-      }
-    | undefined,
-): string | null {
-  if (options === undefined) {
-    return null
-  }
-  if (!options.storageEnabled) {
-    return null
-  }
-  const trimmed = options.asset.host.replace(/\/$/, '')
-  return trimmed === '' ? null : `${options.asset.scheme}://${trimmed}`
-}
-
 export interface ImageUrlOptions {
   src: string
   width: number

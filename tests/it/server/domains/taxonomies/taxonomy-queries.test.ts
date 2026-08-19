@@ -98,8 +98,8 @@ describe('getCategoryLinks', () => {
     const { getCategoryLinks } = await import('@/server/domains/taxonomies/categories/services/query')
     const links = await getCategoryLinks(db, ['Tech', 'Life'])
 
-    expect(links['Tech']).toBe('/cats/tech')
-    expect(links['Life']).toBe('/cats/life')
+    expect(links.Tech).toBe('/cats/tech')
+    expect(links.Life).toBe('/cats/life')
   })
 
   it('filters out null/empty names', async () => {
@@ -115,22 +115,6 @@ describe('getCategoryLinks', () => {
     const links = await getCategoryLinks(db, ['Tech', 'Tech', 'Tech'])
 
     expect(Object.keys(links)).toHaveLength(1)
-  })
-})
-
-describe('getCategoryLink', () => {
-  it('returns /cats/slug for an existing category', async () => {
-    await db.insert(category).values({ name: 'Tech', slug: 'tech', cover: '', description: '', sortOrder: 0 })
-
-    const { getCategoryLink } = await import('@/server/domains/taxonomies/categories/services/query')
-    const link = await getCategoryLink(db, 'Tech')
-    expect(link).toBe('/cats/tech')
-  })
-
-  it('returns empty string for a non-existent category', async () => {
-    const { getCategoryLink } = await import('@/server/domains/taxonomies/categories/services/query')
-    const link = await getCategoryLink(db, 'Unknown')
-    expect(link).toBe('')
   })
 })
 

@@ -22,10 +22,6 @@ export function isBrandingSlot(value: unknown): value is BrandingSlot {
   return typeof value === 'string' && BRANDING_SLOT_SET.has(value)
 }
 
-export function isBinarySlot(slot: BrandingSlot): slot is BinarySlot {
-  return (BINARY_SLOTS as readonly string[]).includes(slot)
-}
-
 export function isSvgSlot(slot: BrandingSlot): slot is SvgSlot {
   return (SVG_SLOTS as readonly string[]).includes(slot)
 }

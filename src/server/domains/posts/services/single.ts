@@ -121,17 +121,3 @@ export async function findPostBySlug(db: Database, slug: string): Promise<Post |
   await hydratePostImages(db, [post])
   return post
 }
-
-export async function findPostBySlugForAdmin(db: Database, slug: string): Promise<Post | null> {
-  const result = await findPostWithRevisionBySlug(db, slug)
-  if (result === null) {
-    return null
-  }
-  const [tags, categoryName] = await Promise.all([
-    findTagNamesByPostId(db, result.meta.id),
-    resolveCategoryName(db, result.meta.categoryId),
-  ])
-  const post = toCmsPost(result.meta, result.revision, { tags, categoryName })
-  await hydratePostImages(db, [post])
-  return post
-}

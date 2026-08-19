@@ -130,31 +130,6 @@ describe('images/services/admin-read — listImagesForAdmin', () => {
   })
 })
 
-describe('images/services/admin-read — findImageDtoById', () => {
-  it('returns null for unknown id', async () => {
-    expect(await adminRead.findImageDtoById(db, 9999)).toBeNull()
-  })
-
-  it('returns dto for known id', async () => {
-    const img = await seedImage({ storagePath: 'images/byid.jpg' })
-    const dto = await adminRead.findImageDtoById(db, img.id)
-    expect(dto?.id).toBe(String(img.id))
-  })
-})
-
-describe('images/services/admin-read — bulkFindImagesByStoragePaths', () => {
-  it('returns an empty map for no input', async () => {
-    expect(await adminRead.bulkFindImagesByStoragePaths(db, [])).toEqual(new Map())
-  })
-
-  it('returns a map keyed by storage path', async () => {
-    await seedImage({ storagePath: 'images/x.jpg' })
-    const m = await adminRead.bulkFindImagesByStoragePaths(db, ['images/x.jpg', 'images/y.jpg'])
-    expect(m.size).toBe(1)
-    expect(m.has('images/x.jpg')).toBe(true)
-  })
-})
-
 describe('images/services/admin-read — toAdminImageDto', () => {
   it('stringifies ids and includes publicUrl', async () => {
     const img = await seedImage({ storagePath: 'images/dto.jpg' })

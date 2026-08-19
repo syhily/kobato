@@ -22,8 +22,6 @@ export const optionalText = (max: number) =>
     .optional()
     .transform((value) => value ?? '')
 
-export const idSchema = z.object({ id: z.string().min(1) })
-
 /**
  * The upsert-meta skeleton every content entity shares — the writable
  * shared meta columns; entity schemas `.extend()` it with their extras.

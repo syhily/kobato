@@ -49,7 +49,3 @@ export function serializeCommentTokensCookie(payload: CommentTokenCookie): strin
   const maxAge = 60 * 60 * 24 * 7
   return `${COMMENT_TOKEN_COOKIE_NAME}=${value}; ${cookieAttributes(maxAge)}`
 }
-
-export function clearCommentTokensCookie(): string {
-  return `${COMMENT_TOKEN_COOKIE_NAME}=; ${cookieAttributes(0)}`
-}

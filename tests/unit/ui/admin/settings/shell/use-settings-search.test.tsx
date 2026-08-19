@@ -3,17 +3,12 @@ import { describe, expect, it } from 'vitest'
 import { renderHook } from '#/_helpers/hook'
 import {
   SettingsSearchProvider,
-  createSearchComponentId,
   useSettingsSearch,
   useSettingsSearchContext,
   useSettingsSearchFilter,
 } from '@/ui/admin/settings/shell/useSettingsSearch'
 
 describe('ui/admin/settings/shell/useSettingsSearch', () => {
-  it('builds a stable component id', () => {
-    expect(createSearchComponentId('section', 'uuid-1')).toBe('section-uuid-1')
-  })
-
   it('exposes an empty filter and a setter', () => {
     const { filter, setFilter } = renderHook(useSettingsSearchFilter, {
       wrapper: SettingsSearchProvider,

@@ -153,26 +153,12 @@ describe('infra/db/operations/image — findImagesByIds / findImagesByStoragePat
   })
 })
 
-describe('infra/db/operations/image — insertImage / insertImageIfMissing / upsertImageByStoragePath', () => {
+describe('infra/db/operations/image — insertImage / upsertImageByStoragePath', () => {
   it('inserts and returns the row', async () => {
     const { insertImage } = await import('@/server/infra/db/operations/image')
     expect(await insertImage(createMockDb([{ id: 1 }]), { storagePath: 'a', mimeType: 'image/png' } as never)).toEqual({
       id: 1,
     })
-  })
-
-  it('insertImageIfMissing returns null on no returned rows', async () => {
-    const { insertImageIfMissing } = await import('@/server/infra/db/operations/image')
-    expect(
-      await insertImageIfMissing(createMockDb([]), { storagePath: 'a', mimeType: 'image/png' } as never),
-    ).toBeNull()
-  })
-
-  it('insertImageIfMissing returns the row when inserted', async () => {
-    const { insertImageIfMissing } = await import('@/server/infra/db/operations/image')
-    expect(
-      await insertImageIfMissing(createMockDb([{ id: 1 }]), { storagePath: 'a', mimeType: 'image/png' } as never),
-    ).toEqual({ id: 1 })
   })
 
   it('upsertImageByStoragePath returns the upserted row', async () => {

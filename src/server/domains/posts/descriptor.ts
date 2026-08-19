@@ -16,7 +16,7 @@ import {
   updatePostMetaById,
 } from '@/server/domains/posts/repos/write'
 import { indexPost, removePostIndex } from '@/server/domains/posts/services/search-index'
-import { assertOwnPostOr404, type UpsertPostMetaInput } from '@/server/domains/posts/services/shared'
+import { assertOwnPostOr404, type PostMetaWriteInput } from '@/server/domains/posts/services/shared'
 import {
   findPostMetaById,
   findPostMetaBySlug,
@@ -87,7 +87,7 @@ const INDEX_FAILURE_WARNING = '搜索索引更新失败，该文章可能不会�
 export const postDescriptor: MetaEntityDescriptor<
   PostMetaRow,
   NewPostMeta,
-  UpsertPostMetaInput,
+  PostMetaWriteInput,
   PostAdminExtras,
   AdminPostDto,
   Post,

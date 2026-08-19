@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { formatBytes, formatLocalDate, formatShowDate, localDateParts, slicePosts } from '@/shared/utils/formatter'
+import { formatBytes, formatLocalDate, formatShowDate, localDateParts } from '@/shared/utils/formatter'
 
 const SETTINGS = {
   settings: { locale: 'zh-CN', timeZone: 'Asia/Shanghai', timeFormat: 'yyyy-LL-dd HH:mm' },
@@ -31,65 +31,6 @@ describe('shared/utils/formatter — formatBytes', () => {
   it('renders bytes of 1 GiB and above as GB', () => {
     expect(formatBytes(1024 * 1024 * 1024)).toBe('1.0 GB')
     expect(formatBytes(1024 * 1024 * 1024 * 2.5)).toBe('2.5 GB')
-  })
-})
-
-describe('shared/utils/formatter — slicePosts mergeTailWhenLessThan', () => {
-  it('returns the natural last page tail when threshold is 0', () => {
-    const result = slicePosts(
-      Array.from({ length: 12 }, (_, i) => i),
-      2,
-      10,
-      {
-        mergeTailWhenLessThan: 0,
-      },
-    )
-    expect(result.totalPage).toBe(2)
-    expect(result.currentPosts).toEqual([10, 11])
-  })
-
-  it('merges the last page into the previous one when the tail is below the threshold', () => {
-    const result = slicePosts(
-      Array.from({ length: 12 }, (_, i) => i),
-      1,
-      10,
-      {
-        mergeTailWhenLessThan: 3,
-      },
-    )
-    expect(result.totalPage).toBe(1)
-    expect(result.currentPosts).toHaveLength(12)
-  })
-
-  it('keeps the natural totalPage when the tail meets the threshold', () => {
-    const result = slicePosts(
-      Array.from({ length: 13 }, (_, i) => i),
-      1,
-      10,
-      {
-        mergeTailWhenLessThan: 3,
-      },
-    )
-    expect(result.totalPage).toBe(2)
-  })
-
-  it('does not merge when there is only a single natural page', () => {
-    const result = slicePosts(
-      Array.from({ length: 5 }, (_, i) => i),
-      1,
-      10,
-      {
-        mergeTailWhenLessThan: 10,
-      },
-    )
-    expect(result.totalPage).toBe(1)
-    expect(result.currentPosts).toHaveLength(5)
-  })
-
-  it('threshold is ignored when totalPage would dip below 1', () => {
-    const result = slicePosts([], 1, 10, { mergeTailWhenLessThan: 10 })
-    expect(result.totalPage).toBe(0)
-    expect(result.currentPosts).toEqual([])
   })
 })
 

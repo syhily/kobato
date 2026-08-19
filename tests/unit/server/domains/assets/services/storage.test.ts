@@ -5,7 +5,6 @@ import {
   deleteBrandingObject,
   ensureMatchesSlot,
   fetchBrandingObject,
-  isBinarySlot,
   isBrandingSlot,
   isSvgSlot,
   putBrandingObject,
@@ -36,7 +35,6 @@ describe('assets storage', () => {
     expect(isBrandingSlot('logoSvg')).toBe(true)
     expect(isBrandingSlot('not-a-slot')).toBe(false)
     expect(isSvgSlot('logoSvg')).toBe(true)
-    expect(isBinarySlot('icon192')).toBe(true)
     expect(isSvgSlot('icon192')).toBe(false)
   })
 

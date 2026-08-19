@@ -4,7 +4,6 @@ import { describe, expect, it } from 'vitest'
 import { renderHook } from '#/_helpers/hook'
 import {
   SettingsSearchProvider,
-  createSearchComponentId,
   useSettingsSearch,
   useSettingsSearchContext,
   useSettingsSearchFilter,
@@ -15,11 +14,6 @@ import {
 // callbacks, and the empty-filter branches.
 
 describe('ui/admin/settings/shell/useSettingsSearch — extra (initial-state surfaces)', () => {
-  it('createSearchComponentId joins base and unique with a dash', () => {
-    expect(createSearchComponentId('general', 'abc')).toBe('general-abc')
-    expect(createSearchComponentId('', '')).toBe('-')
-  })
-
   it('exposes an empty filter and a function setter through the filter context', () => {
     const { filter, setFilter } = renderHook(useSettingsSearchFilter, {
       wrapper: SettingsSearchProvider,

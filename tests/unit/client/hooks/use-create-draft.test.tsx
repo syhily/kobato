@@ -10,6 +10,7 @@ const draftStore = vi.hoisted(() => ({
 }))
 
 vi.mock('@/client/lib/draft-store', () => ({
+  DRAFT_STORAGE_VERSION: 1,
   getDraft: (key: string) => draftStore.get(key),
   setDraft: (key: string, record: unknown) => draftStore.set(key, record),
   removeDraft: (key: string) => draftStore.remove(key),

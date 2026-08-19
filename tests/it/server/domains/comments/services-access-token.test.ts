@@ -220,20 +220,20 @@ describe('comments/services/admin-query — searchPageOptions / searchAuthorOpti
   })
 })
 
-describe('comments/services/token — issue/verify/revoke cycle', () => {
-  it('issues a token that verifies then is revoked', async () => {
-    const { issueCommentToken, verifyCommentToken, revokeCommentToken } =
+describe('comments/services/token — issue/revoke cycle', () => {
+  it('issues a token that cleanupExpiredTokens accepts, then is revoked', async () => {
+    const { issueCommentToken, cleanupExpiredTokens, revokeCommentToken } =
       await import('@/server/domains/comments/services/token')
     const tok = await issueCommentToken(db, 1, 2, 'post:1', 60)
-    const payload = await verifyCommentToken(db, tok)
-    expect(payload?.commentId).toBe('1')
-    expect(payload?.userId).toBe('2')
+    const cookie = { 'post:1': [{ token: tok, expiresAt: Date.now() + 60_000 }] }
+
+    const before = await cleanupExpiredTokens(db, cookie)
+    expect(before.validEntries[0]?.payload.commentId).toBe('1')
+    expect(before.validEntries[0]?.payload.userId).toBe('2')
+
     await revokeCommentToken(db, tok)
-    expect(await verifyCommentToken(db, tok)).toBeNull()
-  })
-  it('returns null for an unknown token', async () => {
-    const { verifyCommentToken } = await import('@/server/domains/comments/services/token')
-    expect(await verifyCommentToken(db, 'does-not-exist')).toBeNull()
+    const after = await cleanupExpiredTokens(db, cookie)
+    expect(after.validEntries).toEqual([])
   })
 })
 

@@ -18,10 +18,6 @@ export function insertComment(db: Database, values: NewComment): Comment | null 
   return row
 }
 
-export async function updateCommentContent(db: Database, id: number, content: string): Promise<void> {
-  await db.update(comment).set({ content }).where(eq(comment.id, id))
-}
-
 // Same inline invalidation as the moderation mutations; the optimistic-lock
 // pair emits only when a row was actually updated (a 0-row conflict leaves caches alone).
 export async function updateCommentBodyAndContent(

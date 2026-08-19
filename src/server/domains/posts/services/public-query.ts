@@ -38,16 +38,6 @@ export async function countPublicPosts(
   return rows[0]?.count ?? 0
 }
 
-export async function listPublicPostCards(
-  db: Database,
-  options?: PostVisibilityOptions & { sortBy?: 'publishedAt' | 'updatedAt' },
-): Promise<ListingPostCard[]> {
-  const filters = buildPublicPostFilters(options)
-  const metas = await listPublicPosts(db, { ...filters, sortBy: options?.sortBy })
-  const posts = await hydratePostList(db, metas, { images: false })
-  return posts.map(toListingPostCard)
-}
-
 /** Cards for one listing page. The filtered count is deliberately not run here — callers needing `total` call `countPublicPosts` themselves. */
 export async function listPublicPostCardsPaginated(
   db: Database,

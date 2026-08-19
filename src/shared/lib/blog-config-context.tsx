@@ -145,51 +145,6 @@ export function useSidebarSettings(): SidebarSettings {
   return useSection('useSidebarSettings', sidebarContext)
 }
 
-export function useCommentsSettings(): CommentsSettings {
-  return useSection('useCommentsSettings', commentsContext)
-}
-
-export function useSeoSettings(): SeoSettings {
-  return useSection('useSeoSettings', seoContext)
-}
 export function useSeoSettingsOptional(): SeoSettings | undefined {
   return useSectionOptional(seoContext)
-}
-
-export function useMailSettings(): MailSettings {
-  return useSection('useMailSettings', mailContext)
-}
-
-export function useNewsletterSettings(): NewsletterSettings {
-  return useSection('useNewsletterSettings', newsletterContext)
-}
-
-export function useCacheSettings(): CacheSettings {
-  return useSection('useCacheSettings', cacheContext)
-}
-
-// `rateLimit` is admin-only today (no public chrome reads it), but
-// the matching context + hooks land here for symmetry.
-export function useRateLimitSettings(): RateLimitSettings {
-  return useSection('useRateLimitSettings', rateLimitContext)
-}
-
-export function useFontsSettings(): FontsSettings {
-  return useSection('useFontsSettings', fontsContext)
-}
-
-export function useBackupSettings(): BackupSettings {
-  return useSection('useBackupSettings', backupContext)
-}
-
-export function useLimitsSettings(): LimitsSettings {
-  return useSection('useLimitsSettings', limitsContext)
-}
-
-export function useAnalyticsSettings(): AnalyticsSettings {
-  return useSection('useAnalyticsSettings', analyticsContext)
-}
-
-export function useSecuritySettings(): SecuritySettings {
-  return useSection('useSecuritySettings', securityContext)
 }

@@ -70,19 +70,6 @@ export async function issueCommentToken(
   return token
 }
 
-export async function verifyCommentToken(db: Database, token: string): Promise<CommentTokenPayload | null> {
-  const rows = await db
-    .select({ payload: oneTimeToken.payload })
-    .from(oneTimeToken)
-    .where(and(eq(oneTimeToken.key, `${TOKEN_KEY_PREFIX}${token}`), gt(oneTimeToken.expiresAt, new Date())))
-    .limit(1)
-  const row = rows[0]
-  if (!row) {
-    return null
-  }
-  return decodeTokenPayload(row.payload)
-}
-
 export async function revokeCommentToken(db: Database, token: string): Promise<void> {
   await db.delete(oneTimeToken).where(eq(oneTimeToken.key, `${TOKEN_KEY_PREFIX}${token}`))
 }

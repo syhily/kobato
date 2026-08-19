@@ -3,13 +3,7 @@ import type { ImageRow } from '@/server/infra/db/types'
 import type { AdminImageDto, ListImagesOutput } from '@/shared/contracts/images'
 import type { ListImagesInput } from '@/shared/types/images'
 
-import {
-  type AdminImagesListFilters,
-  countAdminImages,
-  findAdminImageRowById,
-  findImagesByStoragePaths,
-  listAdminImageRows,
-} from '@/server/infra/db/operations/image'
+import { type AdminImagesListFilters, countAdminImages, listAdminImageRows } from '@/server/infra/db/operations/image'
 import { safeResolveAssetUrl } from '@/server/infra/storage/public-url'
 import { classifyImageKind } from '@/shared/types/images'
 
@@ -34,26 +28,6 @@ export async function listImagesForAdmin(db: Database, input: ListImagesInput = 
     total,
     hasMore: offset + rows.length < total,
   }
-}
-
-export async function findImageDtoById(db: Database, id: number): Promise<AdminImageDto | null> {
-  const row = await findAdminImageRowById(db, id)
-  if (row === null) {
-    return null
-  }
-  return toAdminImageDto(row, row.uploaderName)
-}
-
-export async function bulkFindImagesByStoragePaths(
-  db: Database,
-  paths: readonly string[],
-): Promise<Map<string, ImageRow>> {
-  const rows = await findImagesByStoragePaths(db, paths)
-  const out = new Map<string, ImageRow>()
-  for (const row of rows) {
-    out.set(row.storagePath, row)
-  }
-  return out
 }
 
 export function toAdminImageDto(row: ImageRow, uploaderName: string | null): AdminImageDto {

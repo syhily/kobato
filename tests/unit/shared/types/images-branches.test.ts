@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-  buildPublicBaseUrlFromStorage,
   classifyImageKind,
   extractFriendHostSafe,
   getImageSrcset,
@@ -68,54 +67,6 @@ describe('shared/types/images — isSafeImageSegment', () => {
     expect(isSafeImageSegment('Foo')).toBe(false)
     expect(isSafeImageSegment('a/b')).toBe(false)
     expect(isSafeImageSegment('a b')).toBe(false)
-  })
-})
-
-describe('shared/types/images — buildPublicBaseUrlFromStorage', () => {
-  it('returns null when options is undefined', () => {
-    expect(buildPublicBaseUrlFromStorage(undefined)).toBeNull()
-  })
-
-  it('returns null when storage is disabled', () => {
-    expect(
-      buildPublicBaseUrlFromStorage({
-        storageEnabled: false,
-        asset: { host: 'cdn.example.com', scheme: 'https' },
-      }),
-    ).toBeNull()
-  })
-
-  it('returns null when asset host is the empty string', () => {
-    expect(
-      buildPublicBaseUrlFromStorage({
-        storageEnabled: true,
-        asset: { host: '', scheme: 'https' },
-      }),
-    ).toBeNull()
-  })
-
-  it('trims a single trailing slash from the host', () => {
-    expect(
-      buildPublicBaseUrlFromStorage({
-        storageEnabled: true,
-        asset: { host: 'cdn.example.com///', scheme: 'https' },
-      }),
-    ).toBe('https://cdn.example.com//')
-  })
-
-  it('builds scheme://host with trailing slash trimmed', () => {
-    expect(
-      buildPublicBaseUrlFromStorage({
-        storageEnabled: true,
-        asset: { host: 'cdn.example.com/', scheme: 'https' },
-      }),
-    ).toBe('https://cdn.example.com')
-    expect(
-      buildPublicBaseUrlFromStorage({
-        storageEnabled: true,
-        asset: { host: 'cdn.example.com', scheme: 'http' },
-      }),
-    ).toBe('http://cdn.example.com')
   })
 })
 

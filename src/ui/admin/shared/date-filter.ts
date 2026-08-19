@@ -39,19 +39,6 @@ export function dateFilterLabel(value: DateFilterValue): string {
   return '时间'
 }
 
-export function resolveDateFilterBounds(value: DateFilterValue | null): {
-  from: string | undefined
-  to: string | undefined
-} {
-  if (!value) {
-    return { from: undefined, to: undefined }
-  }
-  return {
-    from: value.from || undefined,
-    to: value.to || undefined,
-  }
-}
-
 export type SingleDateFilterOperator = 'is-less' | 'is-or-less' | 'is-greater' | 'is-or-greater'
 
 export const SINGLE_DATE_FILTER_OPERATORS: readonly { value: SingleDateFilterOperator; label: string }[] = [

@@ -14,6 +14,7 @@ const draftStore = vi.hoisted(() => ({
 }))
 
 vi.mock('@/client/lib/draft-store', () => ({
+  DRAFT_STORAGE_VERSION: 1,
   getDraft: (key: string) => draftStore.get(key),
   setDraft: (key: string, record: unknown) => draftStore.set(key, record),
   removeDraft: (key: string) => draftStore.remove(key),
@@ -22,15 +23,9 @@ vi.mock('@/client/lib/draft-store', () => ({
 
 vi.stubGlobal('BroadcastChannel', FakeBroadcastChannel)
 
-import type { DraftRecord } from '@/client/lib/draft-store'
-
 import { FakeBroadcastChannel } from '#/_helpers/fake-broadcast-channel'
-import {
-  DRAFT_STORAGE_VERSION,
-  draftEditKey,
-  useDraftSession,
-  type UseDraftSessionArgs,
-} from '@/client/lib/draft-session'
+import { draftEditKey, useDraftSession, type UseDraftSessionArgs } from '@/client/lib/draft-session'
+import { DRAFT_STORAGE_VERSION, type DraftRecord } from '@/client/lib/draft-store'
 import { portableTextBodySchema } from '@/shared/pt/schema'
 
 // Shared draft-session invariants exercised once at the seam; the hook

@@ -2,8 +2,14 @@ import type { ZodType } from 'zod'
 
 import { useCallback, useState } from 'react'
 
-import { DRAFT_STORAGE_VERSION, draftEditKey, useDraftSession } from '@/client/lib/draft-session'
-import { removeDraft, setDraft, type DraftRecord, type DraftType } from '@/client/lib/draft-store'
+import { draftEditKey, useDraftSession } from '@/client/lib/draft-session'
+import {
+  DRAFT_STORAGE_VERSION,
+  removeDraft,
+  setDraft,
+  type DraftRecord,
+  type DraftType,
+} from '@/client/lib/draft-store'
 
 export interface CreateDraftConfig<TBody> {
   keyPrefix: string

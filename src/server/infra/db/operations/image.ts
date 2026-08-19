@@ -140,17 +140,6 @@ export async function insertImage(db: Database, values: NewImage): Promise<Image
   return rows[0]
 }
 
-/** Idempotent insert for the one-shot historical import; `null` when `storage_path` already exists. */
-export async function insertImageIfMissing(db: Database, values: NewImage): Promise<ImageRow | null> {
-  const now = new Date()
-  const rows = await db
-    .insert(image)
-    .values({ ...values, createdAt: now, updatedAt: now })
-    .onConflictDoNothing({ target: image.storagePath })
-    .returning()
-  return rows[0] ?? null
-}
-
 /** Always clears `deleted_at` so a re-upload resurrects a soft-deleted row. */
 export async function upsertImageByStoragePath(db: Database, values: NewImage): Promise<ImageRow> {
   const now = new Date()

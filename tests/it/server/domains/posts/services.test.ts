@@ -414,15 +414,6 @@ describe('posts/services/single — findPostBySlug', () => {
   })
 })
 
-describe('posts/services/single — findPostBySlugForAdmin', () => {
-  it('returns the post regardless of published state', async () => {
-    await seedPost({ slug: 'admin', published: false, publishedRevisionId: null })
-    const { findPostBySlugForAdmin } = await import('@/server/domains/posts/services/single')
-    const r = await findPostBySlugForAdmin(db, 'admin')
-    expect(r?.slug).toBe('admin')
-  })
-})
-
 describe('posts/services/public-query — listPublicPosts', () => {
   it('applies limit + offset', async () => {
     await seedPost({ slug: 'a', publishedRevisionId: 1, firstPublishedAt: new Date('2026-01-01') })
@@ -451,13 +442,7 @@ describe('posts/services/public-query — countPublicPosts', () => {
   })
 })
 
-describe('posts/services/public-query — listPublicPostCards / Paginated / listClientPosts', () => {
-  it('lists post cards (no tags)', async () => {
-    await seedPost({ slug: 'card', publishedRevisionId: 1 })
-    const { listPublicPostCards } = await import('@/server/domains/posts/services/public-query')
-    const cards = await listPublicPostCards(db)
-    expect(cards[0]?.slug).toBe('card')
-  })
+describe('posts/services/public-query — listPublicPostCardsPaginated / listClientPosts', () => {
   it('paginates post cards', async () => {
     for (let i = 0; i < 3; i++) {
       await seedPost({ slug: `pg-${i}`, publishedRevisionId: 1 })
@@ -646,24 +631,6 @@ describe('posts/services/public-query — listAllPosts', () => {
     const { listAllPosts } = await import('@/server/domains/posts/services/public-query')
     const posts = await listAllPosts(db)
     expect(posts[0]?.slug).toBe('all')
-  })
-})
-
-describe('posts/services/taxonomy — listPostsByTaxonomy', () => {
-  it('lists posts by category', async () => {
-    const techId = await seedCategory('tech')
-    await seedPost({ slug: 'c', publishedRevisionId: 1, categoryId: techId })
-    const { listPostsByTaxonomy } = await import('@/server/domains/posts/services/taxonomy')
-    const posts = await listPostsByTaxonomy(db, 'category', 'tech')
-    expect(posts[0]?.slug).toBe('c')
-  })
-  it('lists posts by tag', async () => {
-    const tid = await seedTag('React')
-    const pid = await seedPost({ slug: 't', publishedRevisionId: 1 })
-    await linkTag(pid, tid)
-    const { listPostsByTaxonomy } = await import('@/server/domains/posts/services/taxonomy')
-    const posts = await listPostsByTaxonomy(db, 'tag', 'React')
-    expect(posts[0]?.slug).toBe('t')
   })
 })
 

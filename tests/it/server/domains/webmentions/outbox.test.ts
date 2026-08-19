@@ -9,11 +9,11 @@ import { installFetch } from '#/_helpers/fetch'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import {
   OUTBOX_MAX_ATTEMPTS,
-  outboxBackoffMs,
   processWebmentionOutboxRow,
   runWebmentionOutboxBatch,
   type OutboxHooks,
 } from '@/server/domains/webmentions/outbox'
+import { webmentionBackoffMs } from '@/server/domains/webmentions/retry'
 import {
   findNextWebmentionOutboxDueAt,
   pickDueWebmentionOutbox,
@@ -83,7 +83,7 @@ describe('webmentions/outbox state machine', () => {
     expect(after!.status).toBe('pending')
     expect(after!.attempts).toBe(1)
     expect(after!.lastError).toBe('timeout')
-    expect(after!.nextRetryAt!.getTime()).toBeGreaterThanOrEqual(before + outboxBackoffMs(1))
+    expect(after!.nextRetryAt!.getTime()).toBeGreaterThanOrEqual(before + webmentionBackoffMs(1))
   })
 
   it('treats a 4xx from the endpoint as a terminal refusal', async () => {
@@ -241,7 +241,7 @@ describe('webmentions/outbox real send path', () => {
     const headers = call.init?.headers as Record<string, string>
     expect(headers['User-Agent']).toBe('Kobato Webmention Sender (+https://example.com)')
     expect(headers['Content-Type']).toBe('application/x-www-form-urlencoded')
-    expect(headers['Accept']).toBe('*/*')
+    expect(headers.Accept).toBe('*/*')
     // Form encoding, pinned byte for byte.
     expect(call.init?.body).toBe(`source=${encodeURIComponent(SOURCE)}&target=${encodeURIComponent(TARGET)}`)
   })
@@ -268,7 +268,7 @@ describe('webmentions/outbox real send path', () => {
     expect(after!.status).toBe('pending')
     expect(after!.attempts).toBe(1)
     expect(after!.lastError).toBe('http-error (HTTP 500)')
-    expect(after!.nextRetryAt!.getTime()).toBeGreaterThanOrEqual(before + outboxBackoffMs(1))
+    expect(after!.nextRetryAt!.getTime()).toBeGreaterThanOrEqual(before + webmentionBackoffMs(1))
   })
 
   it('maps a network failure from the real stack to a retryable failure', async () => {

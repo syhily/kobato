@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-  clearCommentTokensCookie,
   parseCommentTokensCookie,
   serializeCommentTokensCookie,
   type CommentTokenCookie,
@@ -53,22 +52,12 @@ describe('client: comment token cookie utilities', () => {
       // visitor cookies: plain-HTTP deployments must be able to store
       // the commenter token jar.
       expect(serializeCommentTokensCookie(sample)).not.toContain('Secure')
-      expect(clearCommentTokensCookie()).not.toContain('Secure')
     })
 
     it('round-trips through parse', () => {
       const serialized = serializeCommentTokensCookie(sample)
       const valueOnly = serialized.split(';')[0] as string
       expect(parseCommentTokensCookie(valueOnly)).toEqual(sample)
-    })
-  })
-
-  describe('clearCommentTokensCookie', () => {
-    it('produces an expired cookie', () => {
-      const cookie = clearCommentTokensCookie()
-      expect(cookie).toContain('__comment_tokens=')
-      expect(cookie).toContain('Max-Age=0')
-      expect(cookie).toContain('Path=/')
     })
   })
 })

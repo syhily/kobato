@@ -13,7 +13,13 @@ import { getLogger } from '@/server/infra/logger'
 const log = getLogger('update.job')
 
 let current: UpdateJobStatus = { state: 'idle' }
-let running = false
+
+// Busy is derived: any state other than idle/failed holds the single-job
+// slot. After success the state stays 'restarting' (the process restarts),
+// which keeps the slot held forever — intentionally.
+function isBusy(): boolean {
+  return current.state !== 'idle' && current.state !== 'failed'
+}
 
 export function getUpdateJobStatus(): UpdateJobStatus {
   return current
@@ -39,7 +45,6 @@ function scheduleSelfRestart(): void {
         })
       }
       current = { ...current, state: 'failed', error: message }
-      running = false
     }
     try {
       const child = spawn(process.execPath, process.argv.slice(1), {
@@ -66,10 +71,9 @@ export interface StartUpdateJobOptions {
 }
 
 export function startUpdateJob(tagName: string, options: StartUpdateJobOptions = {}): void {
-  if (running) {
+  if (isBusy()) {
     throw new DomainError('CONFLICT', '已有更新任务正在进行中')
   }
-  running = true
   current = { state: 'downloading', targetVersion: tagName }
   const restart = options.restart ?? scheduleSelfRestart
 
@@ -94,7 +98,6 @@ export function startUpdateJob(tagName: string, options: StartUpdateJobOptions =
         error: err instanceof Error ? err.message : String(err),
         targetVersion: tagName,
       }
-      running = false
     }
   })()
 }

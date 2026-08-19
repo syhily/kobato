@@ -2,7 +2,8 @@ import { and, eq, gte, isNotNull, isNull, lte, not, or, sql } from 'drizzle-orm'
 
 import type { Database } from '@/server/infra/db/database'
 import type { EntityTarget, EntityType } from '@/server/infra/db/target'
-import type { MyCommentsStatus } from '@/shared/types/comments'
+import type { Assert, Equals } from '@/shared/contracts/primitives'
+import type { CommentAndUser, MyCommentsStatus } from '@/shared/types/comments'
 
 import { likeEscape } from '@/server/infra/db/like-escape'
 import { comment } from '@/server/infra/db/schema/comment'
@@ -46,6 +47,19 @@ export type CommentWithUser = {
     ? (typeof commentWithUser)[K]['_']['data']
     : (typeof commentWithUser)[K]['_']['data'] | null
 }
+
+// Compile-time parity between the select map and the shared `CommentAndUser`
+// row type. `shared/` cannot import the drizzle schema (layering), so the
+// interface is declared there and the drift check lives here where both sides
+// are visible: adding a key to either side without the other fails the
+// typecheck. `deleteRequestedBy` is deliberately server-only — moderation
+// internals never reach the wire-facing type.
+type _commentFieldKeyParity = Assert<Equals<keyof CommentWithUser, keyof CommentAndUser | 'deleteRequestedBy'>>
+
+// Type compatibility: every selected column must be assignable to the shared
+// declaration (which is deliberately wider in a few nullable spots and widens
+// `deleteRequestedAt` to also accept pre-serialized strings).
+type _commentFieldTypeParity = Assert<Omit<CommentWithUser, 'deleteRequestedBy'> extends CommentAndUser ? true : false>
 
 export function whereTarget(target: EntityTarget) {
   return and(eq(comment.type, target.type), eq(comment.ownerId, target.ownerId))

@@ -8,15 +8,6 @@ function formatLocalInputValue(d: Date): string {
   return format(d, "yyyy-MM-dd'T'HH:mm")
 }
 
-/** Convert an ISO-8601 wire time into `YYYY-MM-DDTHH:mm`; `''` for invalid input. */
-export function isoToLocalInputValue(iso: string): string {
-  const ms = Date.parse(iso)
-  if (Number.isNaN(ms)) {
-    return ''
-  }
-  return formatLocalInputValue(new Date(ms))
-}
-
 /** Format a `Date` as a datetime-local input value. */
 export function dateToLocalInputValue(date: Date): string {
   return formatLocalInputValue(date)

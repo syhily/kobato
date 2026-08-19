@@ -1,5 +1,8 @@
 import { z } from 'zod'
 
+import type { Assert, Equals } from '@/shared/contracts/primitives'
+import type { CommentAndUser } from '@/shared/types/comments'
+
 import { idString, isoDateTime } from '@/shared/contracts/primitives'
 import { commentBodySchema } from '@/shared/pt/comment-schema'
 
@@ -56,6 +59,15 @@ export const commentBaseDto = z.object({
   badgeColor: z.string().nullable(),
   badgeTextColor: z.string().nullable(),
 })
+
+// Compile-time PII-split guard: the public wire carries exactly the
+// `CommentAndUser` fields minus the PII / server-only set. Adding a field to
+// `CommentAndUser` fails the typecheck until it is either added to the DTO or
+// consciously appended to this omission list — the split can never leak by
+// drift. (Value shapes intentionally differ: string ids, ISO timestamps.)
+type _publicWireKeyParity = Assert<
+  Equals<keyof z.infer<typeof commentBaseDto>, keyof Omit<CommentAndUser, 'content' | 'ua' | 'ip' | 'email'>>
+>
 
 // The recursive `children` branch uses a getter so zod resolves the schema
 // lazily and `z.infer` derives the recursive wire type directly.

@@ -6,6 +6,9 @@ const DB_NAME = 'kobato-drafts'
 const DB_VERSION = 1
 const STORE_NAME = 'drafts'
 
+/** Bump when the persisted draft shape changes; stale records are purged on load. */
+export const DRAFT_STORAGE_VERSION = 1
+
 export type DraftType = 'post-edit' | 'page-edit' | 'post-create' | 'page-create'
 
 export interface DraftRecord<TBody = unknown, TMeta = unknown> {
@@ -86,7 +89,7 @@ async function migrateFromLocalStorage(db: IDBPDatabase<DraftsDB>): Promise<void
         continue
       }
       const record = parsed
-      if (record.version !== 1) {
+      if (record.version !== DRAFT_STORAGE_VERSION) {
         continue
       }
       if (!Array.isArray(record.body)) {
@@ -104,7 +107,7 @@ async function migrateFromLocalStorage(db: IDBPDatabase<DraftsDB>): Promise<void
         body: record.body,
         meta: record.meta,
         savedAt: typeof record.savedAt === 'number' ? record.savedAt : Date.now(),
-        version: 1,
+        version: DRAFT_STORAGE_VERSION,
       })
 
       window.localStorage.removeItem(key)

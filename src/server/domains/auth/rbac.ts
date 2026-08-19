@@ -64,7 +64,3 @@ export function canEditPost(viewer: ViewerIdentity, post: { authorId: number | n
 export function canEditImage(viewer: ViewerIdentity, img: { uploaderId: number | null }): boolean {
   return isAdmin(viewer) || isImageOwner(viewer, img)
 }
-
-export function canEditMusic(viewer: ViewerIdentity, m: { uploaderId: number | null }): boolean {
-  return isAdmin(viewer) || isMusicOwner(viewer, m)
-}

@@ -1,34 +1,11 @@
 import type { MetaRowBase } from '@/server/domains/content/entities/descriptor'
+import type { AdminMetaBaseDto } from '@/shared/contracts/admin-meta'
 
-/**
- * The 19 admin-DTO fields every content entity shares, projected from
- * the shared meta columns. Bigint ids are stringified — the admin
- * contract declares strings up front.
- */
-export interface AdminMetaDto {
-  id: string
-  slug: string
-  title: string
-  summary: string
-  cover: string
-  og: string | null
-  published: boolean
-  commentsEnabled: boolean
-  webmentionsEnabled: boolean
-  showToc: boolean
-  showUpdated: boolean
-  publishedAt: string
-  publishedRevisionId: string | null
-  createdAt: string
-  updatedAt: string
-  deletedAt: string | null
-  authorId: string | null
-  authorName: string | null
-  /** Approved comment count for the row's metric row; populated by the admin list, defaults to `0` elsewhere. */
-  commentCount: number
-  /** The row's `metric.public_id` UUID — the admin comment-count deep-link target; empty string outside the admin list. */
-  commentPublicId: string
-}
+// The shared admin-DTO fields are zod-derived from `adminMetaBaseDto`
+// (`@/shared/contracts/admin-meta`) — this module keeps only the real
+// transform from the shared meta columns (bigint ids stringified,
+// Dates → ISO strings).
+export type AdminMetaDto = AdminMetaBaseDto
 
 export function toAdminMetaDto(
   row: MetaRowBase & { authorName?: string | null },

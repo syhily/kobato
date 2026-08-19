@@ -92,17 +92,6 @@ export async function deleteTag(db: Database, id: number): Promise<boolean> {
   return result.length > 0
 }
 
-// Idempotent seeder insert; `ON CONFLICT (name) DO NOTHING` — returns true when a new row was inserted.
-export async function seedTagIfMissing(db: Database, values: NewTag, tx = db): Promise<boolean> {
-  const now = new Date()
-  const result = await tx
-    .insert(tag)
-    .values({ ...values, createdAt: now, updatedAt: now })
-    .onConflictDoNothing({ target: tag.name })
-    .returning({ id: tag.id })
-  return result.length > 0
-}
-
 // Batch seeder insert, one round-trip. Sync (node:sqlite): called inside the upsert transaction.
 export function seedTagsIfMissing(db: Database, valuesList: NewTag[], tx = db): void {
   if (valuesList.length === 0) {

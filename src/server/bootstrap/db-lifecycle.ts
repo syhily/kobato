@@ -7,6 +7,7 @@ import { ManagedEngine } from '@/server/bootstrap/managed-engine'
 import { rescheduleGeoipUpdate } from '@/server/domains/analytics/geoip-scheduler'
 import { rescheduleArchive, scheduleNextArchive, wireArchiveScheduler } from '@/server/domains/audit/services/scheduler'
 import { wireSessionStorageDb } from '@/server/domains/auth/session-storage'
+import { wireTokenPurgeScheduler } from '@/server/domains/auth/token-purge-scheduler'
 import { wireRestoreMachine } from '@/server/domains/backup/restore-machine'
 import { rescheduleBackup, wireBackupScheduler } from '@/server/domains/backup/scheduler'
 import { wireBackupSnapshots } from '@/server/domains/backup/services/backup'
@@ -82,6 +83,7 @@ function wireDatabase(handle: DatabaseHandle): DatabaseHandle {
   setRestartGetDb(getDb)
   setRestartRefreshSettings(refreshBlogSettings)
   wireSessionStorageDb({ getDb })
+  wireTokenPurgeScheduler({ getDb })
   wireArchiveScheduler({ getDb })
   wireBackupScheduler({ getDb })
   wireBackupSnapshots({ snapshotAnalyticsTo })

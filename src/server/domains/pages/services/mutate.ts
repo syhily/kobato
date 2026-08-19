@@ -1,5 +1,5 @@
 import type { AdminPageDto } from '@/server/domains/pages/projection'
-import type { UpsertPageMetaInput } from '@/server/domains/pages/services/shared'
+import type { PageMetaWriteInput } from '@/server/domains/pages/services/shared'
 import type { Database } from '@/server/infra/db/database'
 
 import { makeEntityMutations } from '@/server/domains/content/entities/mutate'
@@ -14,7 +14,7 @@ export const deletePage = mutations.remove
 export const restorePage = mutations.restore
 export const unpublishPage = mutations.unpublish
 
-export async function updatePageMeta(db: Database, input: UpsertPageMetaInput): Promise<AdminPageDto> {
+export async function updatePageMeta(db: Database, input: PageMetaWriteInput): Promise<AdminPageDto> {
   if (input.id === undefined) {
     throw new DomainError('BAD_REQUEST', 'updatePageMeta requires an id')
   }
