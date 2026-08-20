@@ -122,6 +122,11 @@ ceremony:
   overrides the setup-level one). The real `useDebouncedSearch` returns
   `['', setter]` under SSR — never stub it with that exact value; stub it
   only when a test drives the search text.
+  `tests/unit/setup.ts` also imports `@date-fns/tz` up front so `TZDate`
+  binds the real `Date` constructor before any test file calls
+  `vi.useFakeTimers()` — a fake-Date-derived `TZDate` silently falls back
+  to the system timezone and breaks `computeNextRun` whenever the system
+  zone differs from the settings zone.
   - `#/_helpers/blog-settings` — test settings bundle
   - `#/_helpers/deep-freeze` — recursive `Object.freeze` for fixtures that
     must stay mutation-proof across tests
