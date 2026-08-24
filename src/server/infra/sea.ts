@@ -5,7 +5,7 @@
 import { createRequire } from 'node:module'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
-import { brotliDecompressSync, zstdDecompressSync } from 'node:zlib'
+import { zstdDecompressSync } from 'node:zlib'
 
 import { SEA_MANIFEST_KEY, type SeaAssetCodec } from '@/shared/sea/assets'
 
@@ -94,7 +94,7 @@ function parseCodecRegistry(manifestRaw: Buffer): Map<string, SeaAssetCodec> {
         continue
       }
       const { key, codec } = entry
-      if (typeof key === 'string' && (codec === 'zstd' || codec === 'brotli' || codec === 'none')) {
+      if (typeof key === 'string' && (codec === 'zstd' || codec === 'none')) {
         registry.set(key, codec)
       }
     }
@@ -146,7 +146,7 @@ export function createEmbeddedAssetReader(source: EmbeddedAssetSource): (key: st
     }
     let bytes: Buffer
     try {
-      bytes = codec === 'zstd' ? zstdDecompressSync(raw) : brotliDecompressSync(raw)
+      bytes = zstdDecompressSync(raw)
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error)
       throw new Error(`SEA embedded asset ${key} failed ${codec} decompression: ${reason}`, { cause: error })

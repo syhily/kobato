@@ -96,7 +96,7 @@ function parseManifest(raw: Buffer): SeaManifest {
       throw new Error(`Invalid SEA manifest (${SEA_MANIFEST_KEY}): every file needs { key, path, sha256 }`)
     }
     const file: SeaManifestFile = { key: entry.key, path: entry.path, sha256: entry.sha256 }
-    if (entry.codec === 'zstd' || entry.codec === 'brotli' || entry.codec === 'none') {
+    if (entry.codec === 'zstd' || entry.codec === 'none') {
       file.codec = entry.codec
     }
     if (typeof entry.size === 'number') {

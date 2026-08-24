@@ -9,8 +9,8 @@
  */
 export const SEA_MANIFEST_KEY = 'manifest.json'
 
-/** Codec of an embedded asset, recorded in the manifest per file. 'none' = raw bytes — tiny assets, and always the manifest itself (it must be readable first); missing codec = 'none'. */
-export type SeaAssetCodec = 'zstd' | 'brotli' | 'none'
+/** Codec of an embedded asset, recorded in the manifest per file. zstd is the only pack codec the build emits; 'none' = raw bytes — tiny assets, and always the manifest itself (it must be readable first); missing codec = 'none'. */
+export type SeaAssetCodec = 'zstd' | 'none'
 
 /** Key of the bundled image worker, embedded as text and started via `new Worker(code, { eval: true, execArgv: ['--input-type=module'] })`. */
 export const SEA_PROCESS_WORKER_BUNDLE_KEY = 'worker/process-worker.mjs'

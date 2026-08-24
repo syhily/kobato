@@ -9,8 +9,9 @@ import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs'
 import { copyFile, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
+import { availableParallelism } from 'node:os'
 import { dirname, join, relative } from 'node:path'
-import { brotliCompressSync, constants as zlibConstants, zstdCompressSync } from 'node:zlib'
+import { constants as zlibConstants, zstdCompressSync } from 'node:zlib'
 
 // Relative import: this script runs under plain `node` — no path aliases.
 import {
@@ -49,8 +50,19 @@ const requireFromRepo = createRequire(join(repoRoot, 'package.json'))
  */
 export const SEA_COMPRESSION_MIN_BYTES = 1024
 
-/** Codec the build packs with — `'none'` is never a build choice, only the per-asset fallback. */
-export type SeaPackCodec = Exclude<SeaAssetCodec, 'none'>
+/**
+ * zstd packs multithreaded above ZSTD_MULTITHREAD_MIN_BYTES. Capped at 8 —
+ * zstd's job granularity saturates beyond that. Output stays a standard zstd
+ * frame (any decoder reads it) and is deterministic for a fixed worker count;
+ * cross-machine byte differences don't matter — the manifest hashes RAW bytes.
+ */
+const ZSTD_PACK_WORKERS = Math.min(availableParallelism(), 8)
+
+/**
+ * Payloads at or above this pack multithreaded; below it the thread-pool
+ * spin-up (~10 ms per call × ~250 small assets) outweighs the savings.
+ */
+const ZSTD_MULTITHREAD_MIN_BYTES = 4 * 1024 * 1024
 
 interface ManifestFileEntry {
   key: string
@@ -80,22 +92,22 @@ function sha256(bytes: Buffer) {
 
 /**
  * Compress one asset's raw bytes for the blob; small assets stay raw.
- * zstd level 19, brotli quality 11.
+ * zstd level 9, multithreaded on large payloads — the only pack codec.
+ *
+ * Why level 9 and not 19: the blob is ~50 MB either way (machine code packs
+ * poorly), but level 19 costs ~37 s where level 9 costs ~2 s on the four
+ * large natives. brotli-11 was measured too (42.3 MB vs 44.9 MB for zstd-19,
+ * ~8.4 min single-threaded) — not worth ~14× the pack time for ~6% of blob.
  */
-export function packAssetBytes(raw: Buffer, codec: SeaPackCodec): { codec: SeaAssetCodec; bytes: Buffer } {
+export function packAssetBytes(raw: Buffer): { codec: SeaAssetCodec; bytes: Buffer } {
   if (raw.byteLength < SEA_COMPRESSION_MIN_BYTES) {
     return { codec: 'none', bytes: raw }
   }
-  if (codec === 'brotli') {
-    return {
-      codec,
-      bytes: brotliCompressSync(raw, { params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 11 } }),
-    }
+  const params: Record<number, number> = { [zlibConstants.ZSTD_c_compressionLevel]: 9 }
+  if (raw.byteLength >= ZSTD_MULTITHREAD_MIN_BYTES) {
+    params[zlibConstants.ZSTD_c_nbWorkers] = ZSTD_PACK_WORKERS
   }
-  return {
-    codec,
-    bytes: zstdCompressSync(raw, { params: { [zlibConstants.ZSTD_c_compressionLevel]: 19 } }),
-  }
+  return { codec: 'zstd', bytes: zstdCompressSync(raw, { params }) }
 }
 
 /**
@@ -325,7 +337,6 @@ async function addNativeAssets(assets: Map<string, string>, files: ManifestFileE
 }
 
 interface PackContext {
-  codec: SeaPackCodec
   packedDir: string
   rawBytes: number
   packedBytes: number
@@ -346,7 +357,7 @@ async function addAsset(
     fail(`Duplicate SEA asset key ${key} (from ${sourcePath})`)
   }
   const raw = await readFile(sourcePath)
-  const packed = packAssetBytes(raw, ctx.codec)
+  const packed = packAssetBytes(raw)
   ctx.rawBytes += raw.byteLength
   ctx.packedBytes += packed.bytes.byteLength
   let blobPath = sourcePath
@@ -381,11 +392,11 @@ async function addTree(
  * Collect the full asset map, write manifest.json, and return the map
  * including the manifest asset itself — never packed, the reader needs it first.
  */
-export async function collectSeaAssets({ wasmPath, codec = 'zstd' }: { wasmPath: string; codec?: SeaPackCodec }) {
+export async function collectSeaAssets({ wasmPath }: { wasmPath: string }) {
   const assets = new Map<string, string>()
   const files: ManifestFileEntry[] = []
-  // Wipe the packed dir so a codec switch never leaves stale payloads.
-  const ctx: PackContext = { codec, packedDir: seaPackedAssetsDir(), rawBytes: 0, packedBytes: 0 }
+  // Wipe the packed dir so a rerun never leaves stale payloads.
+  const ctx: PackContext = { packedDir: seaPackedAssetsDir(), rawBytes: 0, packedBytes: 0 }
   await rm(ctx.packedDir, { recursive: true, force: true })
 
   // Whole build/client tree (fingerprinted static assets + public files).

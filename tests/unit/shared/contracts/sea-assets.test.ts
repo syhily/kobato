@@ -172,7 +172,7 @@ describe('contract: SEA embedded-asset keys', () => {
   it('pins the asset codec union in the shared module', () => {
     const source = readSource(SHARED_MODULE)
     // Adding a codec means touching writer + reader: a deliberate change.
-    expect(source).toMatch(/export type SeaAssetCodec = 'zstd' \| 'brotli' \| 'none'/)
+    expect(source).toMatch(/export type SeaAssetCodec = 'zstd' \| 'none'/)
   })
 
   it('writer and readers source the asset codec from the shared module', () => {

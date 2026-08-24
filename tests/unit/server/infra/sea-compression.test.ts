@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { brotliDecompressSync, zstdDecompressSync } from 'node:zlib'
+import { zstdDecompressSync } from 'node:zlib'
 import { describe, expect, it } from 'vitest'
 
 import { createEmbeddedAssetReader, type EmbeddedAssetSource } from '@/server/infra/sea'
@@ -74,10 +74,10 @@ function makeSource(assets: Map<string, Buffer>) {
 
 /** Packs entries through the real writer and assembles the blob assets
  *  (packed payloads + uncompressed manifest) like `collectSeaAssets`. */
-function buildBlob(rawByKey: Record<string, Buffer>, codec: 'zstd' | 'brotli') {
+function buildBlob(rawByKey: Record<string, Buffer>) {
   const assets = new Map<string, Buffer>()
   const entries = Object.keys(rawByKey).map((key) => {
-    const packed = packAssetBytes(rawByKey[key], codec)
+    const packed = packAssetBytes(rawByKey[key])
     assets.set(key, packed.bytes)
     return { key, codec: packed.codec, size: rawByKey[key].byteLength }
   })
@@ -88,35 +88,27 @@ function buildBlob(rawByKey: Record<string, Buffer>, codec: 'zstd' | 'brotli') {
 describe('sea-compression — writer packAssetBytes', () => {
   it('compresses above-threshold assets with zstd and round-trips', () => {
     const raw = sampleBytes(64 * 1024)
-    const packed = packAssetBytes(raw, 'zstd')
+    const packed = packAssetBytes(raw)
     expect(packed.codec).toBe('zstd')
     expect(packed.bytes.byteLength).toBeLessThan(raw.byteLength)
     expect(zstdDecompressSync(packed.bytes).equals(raw)).toBe(true)
   })
 
-  it('compresses with brotli quality 11 when requested and round-trips', () => {
-    const raw = sampleBytes(64 * 1024)
-    const packed = packAssetBytes(raw, 'brotli')
-    expect(packed.codec).toBe('brotli')
-    expect(brotliDecompressSync(packed.bytes).equals(raw)).toBe(true)
-  })
-
   it('keeps below-threshold assets raw', () => {
     const raw = sampleBytes(SEA_COMPRESSION_MIN_BYTES - 1)
-    const packed = packAssetBytes(raw, 'zstd')
+    const packed = packAssetBytes(raw)
     expect(packed.codec).toBe('none')
     expect(packed.bytes).toBe(raw)
   })
 
   it('compresses assets at exactly the threshold', () => {
-    const packed = packAssetBytes(sampleBytes(SEA_COMPRESSION_MIN_BYTES), 'zstd')
+    const packed = packAssetBytes(sampleBytes(SEA_COMPRESSION_MIN_BYTES))
     expect(packed.codec).toBe('zstd')
   })
 
   it('packs deterministically — same input, same bytes', () => {
     const raw = sampleBytes(8 * 1024)
-    expect(packAssetBytes(raw, 'zstd').bytes.equals(packAssetBytes(raw, 'zstd').bytes)).toBe(true)
-    expect(packAssetBytes(raw, 'brotli').bytes.equals(packAssetBytes(raw, 'brotli').bytes)).toBe(true)
+    expect(packAssetBytes(raw).bytes.equals(packAssetBytes(raw).bytes)).toBe(true)
   })
 })
 
@@ -155,23 +147,21 @@ describe('sea-compression — manifest schema and determinism', () => {
 })
 
 describe('sea-compression — reader createEmbeddedAssetReader', () => {
-  it('round-trips every codec through the real writer and reader', () => {
+  it('round-trips packed and raw assets through the real writer and reader', () => {
     const rawByKey = {
       'client/assets/app.js': sampleBytes(128 * 1024),
       'client/favicon.svg': sampleBytes(128), // below the threshold: 'none'
       'drizzle/0001_init/migration.sql': sampleBytes(8 * 1024),
     }
-    for (const codec of ['zstd', 'brotli'] as const) {
-      const { source } = makeSource(buildBlob(rawByKey, codec))
-      const read = createEmbeddedAssetReader(source)
-      for (const [key, raw] of Object.entries(rawByKey)) {
-        expect(read(key)?.equals(raw), `${codec} round-trip of ${key}`).toBe(true)
-      }
+    const { source } = makeSource(buildBlob(rawByKey))
+    const read = createEmbeddedAssetReader(source)
+    for (const [key, raw] of Object.entries(rawByKey)) {
+      expect(read(key)?.equals(raw), `round-trip of ${key}`).toBe(true)
     }
   })
 
   it('returns the manifest asset raw — it is the registry and rides uncompressed', () => {
-    const assets = buildBlob({ 'client/assets/app.js': sampleBytes(2048) }, 'zstd')
+    const assets = buildBlob({ 'client/assets/app.js': sampleBytes(2048) })
     const { source } = makeSource(assets)
     const read = createEmbeddedAssetReader(source)
     expect(read(SEA_MANIFEST_KEY)?.equals(assets.get(SEA_MANIFEST_KEY)!)).toBe(true)
@@ -189,7 +179,7 @@ describe('sea-compression — reader createEmbeddedAssetReader', () => {
   })
 
   it('returns null for unknown keys', () => {
-    const { source } = makeSource(buildBlob({ 'client/assets/app.js': sampleBytes(2048) }, 'zstd'))
+    const { source } = makeSource(buildBlob({ 'client/assets/app.js': sampleBytes(2048) }))
     const read = createEmbeddedAssetReader(source)
     expect(read('client/assets/missing.js')).toBeNull()
   })
@@ -199,7 +189,7 @@ describe('sea-compression — reader createEmbeddedAssetReader', () => {
       'client/assets/app.js': sampleBytes(16 * 1024),
       'client/assets/vendor.js': sampleBytes(32 * 1024),
     }
-    const { source, reads } = makeSource(buildBlob(rawByKey, 'zstd'))
+    const { source, reads } = makeSource(buildBlob(rawByKey))
     const read = createEmbeddedAssetReader(source)
 
     read('client/assets/app.js')
@@ -214,7 +204,7 @@ describe('sea-compression — reader createEmbeddedAssetReader', () => {
 
   it('throws a clear error naming the key on corrupt compressed bytes', () => {
     const raw = sampleBytes(16 * 1024)
-    const assets = buildBlob({ 'client/assets/app.js': raw }, 'zstd')
+    const assets = buildBlob({ 'client/assets/app.js': raw })
     const corrupted = Buffer.from(assets.get('client/assets/app.js')!)
     corrupted[0] ^= 0xff // destroy the zstd frame magic
     assets.set('client/assets/app.js', corrupted)
@@ -225,7 +215,7 @@ describe('sea-compression — reader createEmbeddedAssetReader', () => {
   })
 
   it('throws a clear error when the manifest asset is missing', () => {
-    const assets = buildBlob({ 'client/assets/app.js': sampleBytes(2048) }, 'zstd')
+    const assets = buildBlob({ 'client/assets/app.js': sampleBytes(2048) })
     assets.delete(SEA_MANIFEST_KEY)
     const { source } = makeSource(assets)
     const read = createEmbeddedAssetReader(source)

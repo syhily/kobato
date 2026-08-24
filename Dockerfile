@@ -5,9 +5,9 @@
 FROM node:26-bookworm-slim AS build
 WORKDIR /app
 
-# pnpm, matching the packageManager field (11.18.0). Node 25+ images no
+# pnpm, matching the packageManager field (11.23.0). Node 25+ images no
 # longer bundle Corepack, so install pnpm globally from npm instead.
-RUN npm install -g pnpm@11.18.0
+RUN npm install -g pnpm@11.23.0
 
 # patchelf — the SEA build rewrites the sharp addon's rpath to `$ORIGIN`
 # so the extracted flat dir is self-contained (see scripts/sea/assets.ts).
@@ -21,13 +21,11 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
 
 # Build the SEA single executable: react-router build + vite bundle +
-# `--build-sea` injection (see scripts/sea/build.ts). `--codec brotli`
-# packs the blob payload at brotli-11 (smallest release binaries; local
-# builds default to the faster zstd). The copied node binary and the
-# sharp / @napi-rs/canvas platform packages pnpm installs here are glibc
-# builds, matching the debian runtime stage below.
+# `--build-sea` injection (see scripts/sea/build.ts). The copied node
+# binary and the sharp / @napi-rs/canvas platform packages pnpm installs
+# here are glibc builds, matching the debian runtime stage below.
 COPY . .
-RUN pnpm run sea:build --codec brotli
+RUN pnpm run sea:build
 
 FROM debian:bookworm-slim AS runtime
 

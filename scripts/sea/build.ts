@@ -6,7 +6,7 @@ import { createHash } from 'node:crypto'
 import { readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
-import { collectSeaAssets, type SeaPackCodec } from './assets.ts'
+import { collectSeaAssets } from './assets.ts'
 import { BINARY_MAX_BYTES } from './budget.ts'
 import { fail, run } from './exec.ts'
 import { runInjectStep } from './inject.ts'
@@ -19,22 +19,6 @@ function ensureNodeVersion() {
   if (major < REQUIRED_NODE_MAJOR) {
     fail(`SEA build requires Node.js >= ${REQUIRED_NODE_MAJOR}, current ${process.versions.node}.`)
   }
-}
-
-/**
- * Blob payload codec: `--codec zstd` (default, fast build/decode) or
- * `--codec brotli` (quality 11, smallest release binaries).
- */
-function parseCodecArg(): SeaPackCodec {
-  const index = process.argv.indexOf('--codec')
-  if (index === -1) {
-    return 'zstd'
-  }
-  const value = process.argv[index + 1]
-  if (value === 'zstd' || value === 'brotli') {
-    return value
-  }
-  fail(`Invalid --codec "${value ?? '(missing)'}" — expected "zstd" or "brotli".`)
 }
 
 /** The server build emits exactly one hashed cnfs wasm — pin it down. */
@@ -56,8 +40,7 @@ async function writeBinaryChecksum() {
 
 async function main() {
   ensureNodeVersion()
-  const codec = parseCodecArg()
-  console.log(`==> SEA build (${process.platform}-${process.arch}, node ${process.versions.node}, codec ${codec})`)
+  console.log(`==> SEA build (${process.platform}-${process.arch}, node ${process.versions.node})`)
 
   console.log('==> react-router build')
   run('pnpm', ['run', 'build'], { env: { ...process.env, NODE_ENV: 'production' } })
@@ -76,7 +59,7 @@ async function main() {
 
   console.log('==> collect assets')
   const wasmPath = await locateCnfsWasm()
-  const { assets, stats } = await collectSeaAssets({ wasmPath, codec })
+  const { assets, stats } = await collectSeaAssets({ wasmPath })
   const mb = (bytes: number) => (bytes / 1024 / 1024).toFixed(1)
   console.log(`    ${assets.size} embedded assets, ${mb(stats.rawBytes)} MB raw -> ${mb(stats.packedBytes)} MB packed`)
 

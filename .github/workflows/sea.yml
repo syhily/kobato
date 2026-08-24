@@ -55,9 +55,7 @@ jobs:
       # scripts/sea/assets.ts). Preinstalled on the ubuntu-24.04 runner
       # image — this guards against image changes.
       - run: command -v patchelf >/dev/null || sudo apt-get install -y patchelf
-      # Release binaries pack the blob at brotli-11 (smallest; the slower
-      # pack is acceptable CI time). Local `sea:build` stays zstd.
-      - run: pnpm run sea:build --codec brotli
+      - run: pnpm run sea:build
       - name: Rename output to kobato-<target>
         env:
           BIN: kobato-${{ matrix.target }}
@@ -115,7 +113,7 @@ jobs:
           node-version: 26
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
-      - run: pnpm run sea:build --codec brotli
+      - run: pnpm run sea:build
       - name: Rename output to kobato-<target>
         env:
           BIN: kobato-${{ matrix.target }}
@@ -169,7 +167,7 @@ jobs:
           node-version: 26
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
-      - run: pnpm run sea:build --codec brotli
+      - run: pnpm run sea:build
       - name: Rename output to kobato-<target>
         env:
           BIN: kobato-${{ matrix.target }}
@@ -200,12 +198,11 @@ jobs:
             dist-sea/kobato-${{ matrix.target }}.sha256
 
   # develop validation: pushes to develop and PRs to main run ONLY this
-  # job — a single linux-x64 sea:build (local zstd codec, not the slow
-  # brotli release pack) + the full managed smoke + the real-HTTP e2e
-  # journeys against the just-built binary. The e2e suite was added to
-  # this job (audit D-2/P2-5): the binary already exists here, so the
-  # 18 journeys cost a few minutes and keep CSRF/session/restore
-  # regressions from reaching main unobserved.
+  # job — a single linux-x64 sea:build + the full managed smoke + the
+  # real-HTTP e2e journeys against the just-built binary. The e2e suite
+  # was added to this job (audit D-2/P2-5): the binary already exists
+  # here, so the 18 journeys cost a few minutes and keep CSRF/session/
+  # restore regressions from reaching main unobserved.
   build-develop:
     name: build (linux-x64, develop)
     if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/develop')

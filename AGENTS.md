@@ -70,7 +70,7 @@ extracted to a flat cache dir on first run
 **Node 26 pin.** `scripts/sea/build.ts` gates `REQUIRED_NODE_MAJOR = 26`;
 the CI matrices (`.github/workflows/sea.yml` ×4, `ci.yml` ×2) pin
 `node-version: 26`; the Dockerfile builds on `node:26-bookworm-slim` with
-`npm install -g pnpm@11.18.0` (Node 25+ images ship no Corepack — keep the
+`npm install -g pnpm@11.23.0` (Node 25+ images ship no Corepack — keep the
 version aligned with the `packageManager` field). Local dev/tests still
 run on the machine's default Node; only `sea:build` gates.
 
@@ -110,10 +110,13 @@ shim) and on `__APP_*__`/`__SEA_*__` identifiers the bundle's vite
 ReferenceError at boot).
 
 **Payload compression.** `scripts/sea/assets.ts` packs every asset above
-1 KB (zstd-19 by default, brotli-11 for release builds —
-`pnpm run sea:build --codec brotli`, wired into the Dockerfile and all
-three sea.yml jobs; local builds stay zstd) into
-`dist-sea/intermediates/packed/<key>`. `manifest.json` rides uncompressed
+1 KB into `dist-sea/intermediates/packed/<key>`. zstd is the ONLY pack
+codec (there is no `--codec` flag): level 9, multithreaded
+(`ZSTD_c_nbWorkers`, payloads ≥ 4 MB). Level 19 and brotli-11 were
+measured and rejected — on the ~170 MB of natives they shrink the blob
+by only ~5 MB / ~9 MB over level 9 while costing ~35 s / ~8 min of pack
+time; the binary stays far below the 230 MB budget regardless.
+`manifest.json` rides uncompressed
 as the codec registry (`{key, path, sha256(raw), codec, size}`);
 `getEmbeddedAsset` parses it once and decodes lazily, memoized per key.
 The smoke budgets the binary at 230 MB — `--build-sea` leaves no
