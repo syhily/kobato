@@ -10,7 +10,7 @@ import { safeFetch } from '@/server/infra/safe-fetch'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { DEFAULT_AVATAR_SIZE } from '@/shared/utils/avatar'
 import { idFromString } from '@/shared/utils/id'
-import { isAllowedMirrorUrl } from '@/shared/utils/safe-url'
+import { GRAVATAR_MIRROR_PRESETS, isAllowedMirrorUrl } from '@/shared/utils/safe-url'
 import { encodedEmail } from '@/shared/utils/security'
 import { isNumeric } from '@/shared/utils/tools'
 import { joinUrl } from '@/shared/utils/urls'
@@ -123,6 +123,36 @@ export async function fetchAvatarImage(hash: string, size: number): Promise<Buff
     return null
   }
   return compressImage(buffer)
+}
+
+// Connectivity probe behind the admin mirror dropdown: any HTTP status —
+// including the 404 that `d=404` yields for an unknown hash — proves the
+// mirror answers; only network-level failures count as unreachable.
+const MIRROR_PROBE_TIMEOUT_MS = 5_000
+
+/** md5('') — no account anywhere, so mirrors answer cheaply (404 via `d=404`). */
+const MIRROR_PROBE_HASH = 'd41d8cd98f00b204e9800998ecf8427e'
+
+export interface AvatarMirrorProbe {
+  url: string
+  reachable: boolean
+  latencyMs: number
+}
+
+async function probeAvatarMirror(url: string): Promise<AvatarMirrorProbe> {
+  const started = performance.now()
+  const result = await safeFetch(`${url}/${MIRROR_PROBE_HASH}?s=32&d=404`, {
+    timeoutMs: MIRROR_PROBE_TIMEOUT_MS,
+    maxRedirects: 2,
+    maxBytes: 16 * 1024,
+  })
+  const latencyMs = Math.max(1, Math.round(performance.now() - started))
+  return { url, reachable: result.ok || result.reason === 'http-error', latencyMs }
+}
+
+/** Probe every preset mirror concurrently; the result keeps preset order. */
+export async function probeAvatarMirrors(): Promise<AvatarMirrorProbe[]> {
+  return Promise.all(GRAVATAR_MIRROR_PRESETS.map((preset) => probeAvatarMirror(preset.value)))
 }
 
 const QQ_EMAIL_RE = /^\d+@qq\.com$/i

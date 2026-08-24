@@ -9,6 +9,7 @@ import {
   searchAuthorOptions,
   searchPageOptions,
 } from '@/server/domains/comments/services/admin-query'
+import { probeAvatarMirrors as probeAvatarMirrorUrls } from '@/server/domains/comments/services/avatar'
 import {
   approveComment,
   deleteCommentById,
@@ -171,6 +172,19 @@ const pendingCount = adminProc
     return { all: counts.all }
   })
 
+// Connectivity probe behind the settings avatar-mirror dropdown. Read-only,
+// targets a fixed preset list — no audit event, no input.
+const probeAvatarMirrors = adminProc
+  .route({ method: 'GET', path: '/comment-admin/probe-avatar-mirrors' })
+  .output(
+    z.object({
+      results: z.array(z.object({ url: z.string(), reachable: z.boolean(), latencyMs: z.number() })),
+    }),
+  )
+  .handler(async () => {
+    return { results: await probeAvatarMirrorUrls() }
+  })
+
 export const adminCommentsRouter = {
   approve,
   delete: deleteOne,
@@ -180,4 +194,5 @@ export const adminCommentsRouter = {
   approveCommentDeletion,
   listPendingDashboard,
   pendingCount,
+  probeAvatarMirrors,
 }

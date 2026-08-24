@@ -1,10 +1,17 @@
+import { useQuery } from '@tanstack/react-query'
+import { Controller } from 'react-hook-form'
+
 import type { CommentsSettings } from '@/shared/config/types'
 
+import { orpcQuery } from '@/client/api/orpc-query'
+import { GRAVATAR_MIRROR_PRESETS } from '@/shared/utils/safe-url'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
 import { SettingsInput } from '@/ui/admin/settings/shell/SettingsInput'
+import { SettingsSelect } from '@/ui/admin/settings/shell/SettingsSelect'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
+import { SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 
 interface CommentsFormProps {
   comments: CommentsSettings
@@ -41,7 +48,7 @@ function CommentsPaginationCard({ comments }: { comments: CommentsSettings }) {
 }
 
 function CommentsAvatarCard({ comments }: { comments: CommentsSettings }) {
-  const { form, flushOnBlur, settingGroupProps } = useSettingsCard<CommentsSettings, { avatarMirror: string }>({
+  const { form, save, settingGroupProps } = useSettingsCard<CommentsSettings, { avatarMirror: string }>({
     section: 'comments',
     source: comments,
     toState: (source) => ({
@@ -49,28 +56,82 @@ function CommentsAvatarCard({ comments }: { comments: CommentsSettings }) {
     }),
     fromState: (state) => ({
       comments: {
-        avatar: { mirror: state.avatarMirror.trim() },
+        avatar: { mirror: state.avatarMirror },
       },
     }),
   })
 
+  // Connectivity probe: fires on every dropdown open (never on SSR / first
+  // paint), one concurrent round per open. Stale results stay on screen
+  // while a re-probe is in flight.
+  const probe = useQuery({
+    ...orpcQuery.admin.comments.probeAvatarMirrors.queryOptions(),
+    enabled: false,
+  })
+  const probeByUrl = new Map((probe.data?.results ?? []).map((result) => [result.url, result]))
+
+  function probeStatus(url: string) {
+    const result = probeByUrl.get(url)
+    if (result === undefined) {
+      return probe.isFetching ? <span className="text-xs text-muted-foreground">检测中…</span> : null
+    }
+    if (!result.reachable) {
+      return <span className="text-xs text-destructive">不可达</span>
+    }
+    return <span className="text-xs text-green-600">{result.latencyMs} ms</span>
+  }
+
+  // A configured mirror outside the presets stays selectable — never strand
+  // an existing (allowlisted but non-preset) value on an unreadable option.
+  const current = comments.comments.avatar.mirror
+  const options = GRAVATAR_MIRROR_PRESETS.some((option) => option.value === current)
+    ? GRAVATAR_MIRROR_PRESETS
+    : [...GRAVATAR_MIRROR_PRESETS, { value: current, label: current }]
+
   return (
     <SettingGroup
       title="头像镜像"
-      description="访客头像通过 Gravatar 协议拉取。镜像 URL 用于绕过 gravatar.com 的访问限制。"
+      description="访客头像通过 Gravatar 协议拉取。镜像用于绕过 gravatar.com 的访问限制。"
       {...settingGroupProps}
     >
       <SettingGroupContent>
         <SettingsRow
-          label="Gravatar 镜像 URL"
+          label="Gravatar 镜像"
           htmlFor="comments-avatar-mirror"
-          hint="例如 https://gravatar.loli.net/avatar，结尾不带斜杠。"
+          hint="选择头像拉取使用的镜像服务；打开下拉框时自动检测各镜像的连通性。"
         >
-          <SettingsInput
-            flushOnBlur={flushOnBlur}
-            id="comments-avatar-mirror"
-            type="url"
-            {...form.register('avatarMirror')}
+          <Controller
+            control={form.control}
+            name="avatarMirror"
+            render={({ field }) => (
+              <SettingsSelect
+                name={field.name}
+                value={field.value}
+                onValueChange={field.onChange}
+                save={save}
+                onOpenChange={(open) => {
+                  if (open) {
+                    void probe.refetch()
+                  }
+                }}
+              >
+                <SelectTrigger id="comments-avatar-mirror" className="w-full">
+                  <SelectValue>
+                    {(value: string | null) => options.find((o) => o.value === value)?.label ?? value ?? ''}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {options.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      <span className="flex flex-1 items-center justify-between gap-4">
+                        <span>{option.label}</span>
+                        {probeStatus(option.value)}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </SettingsSelect>
+            )}
           />
         </SettingsRow>
       </SettingGroupContent>

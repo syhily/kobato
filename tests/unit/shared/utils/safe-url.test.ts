@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  GRAVATAR_MIRROR_PRESETS,
   httpUrlOrEmptyStringSchema,
   isAllowedMirrorUrl,
   isBlockedFetchHost,
@@ -212,9 +213,23 @@ describe('client: safe-url utilities', () => {
       expect(isAllowedMirrorUrl('https://sdn.geekzu.org/avatar/')).toBe(true)
       expect(isAllowedMirrorUrl('https://gravatar.loli.net/avatar/')).toBe(true)
       expect(isAllowedMirrorUrl('https://cravatar.cn/avatar/')).toBe(true)
-      expect(isAllowedMirrorUrl('https://seccdn.libravatar.org/avatar/')).toBe(true)
+      expect(isAllowedMirrorUrl('https://cravatar.com/avatar/')).toBe(true)
+      expect(isAllowedMirrorUrl('https://seccdn.libravatar.org/gravatarproxy')).toBe(true)
       expect(isAllowedMirrorUrl('https://weavatar.com/avatar/')).toBe(true)
       expect(isAllowedMirrorUrl('https://gravatar.webp.se/avatar/')).toBe(true)
+      expect(isAllowedMirrorUrl('https://gravatar.zeruns.com/avatar')).toBe(true)
+      expect(isAllowedMirrorUrl('https://gravatar.zeruns.tech/avatar')).toBe(true)
+      expect(isAllowedMirrorUrl('https://cdn.sep.cc/avatar')).toBe(true)
+      expect(isAllowedMirrorUrl('https://gravatar.w3tt.com/avatar')).toBe(true)
+      expect(isAllowedMirrorUrl('https://use.sevencdn.com/avatar')).toBe(true)
+    })
+
+    it('keeps every dropdown preset on the allowlist', () => {
+      // The admin form offers GRAVATAR_MIRROR_PRESETS; a preset rejected by
+      // the SSRF guard would be an unsaveable option.
+      for (const preset of GRAVATAR_MIRROR_PRESETS) {
+        expect(isAllowedMirrorUrl(preset.value), preset.value).toBe(true)
+      }
     })
 
     it('rejects non-gravatar hosts', () => {

@@ -12,6 +12,7 @@ import {
   fetchQQAvatarImage,
   getQQAvatarUrl,
   isQQEmail,
+  probeAvatarMirrors,
   resolveAvatarForEmail,
   resolveAvatarSize,
   serveAvatar,
@@ -21,6 +22,7 @@ import { user } from '@/server/infra/db/schema/user'
 import { imageWidth } from '@/server/infra/image/compress'
 // Only fetch is stubbed; the engine, kv cache registry, and sharp are real.
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@/server/infra/logger'
+import { GRAVATAR_MIRROR_PRESETS } from '@/shared/utils/safe-url'
 import { encodedEmail } from '@/shared/utils/security'
 
 const db = getTestDb()
@@ -601,5 +603,37 @@ describe('domains/comments/services/avatar — serveAvatar', () => {
 
     expect(result).toEqual({ kind: 'redirect' })
     expect(await cachedAvatar(120, md5)).toEqual({ status: AvatarStatus.NO_AVATAR, buffer: null })
+  })
+})
+
+describe('domains/comments/services/avatar — probeAvatarMirrors', () => {
+  it('reports every preset, marking 2xx and 404 reachable and network failures unreachable', async () => {
+    // URL-aware stub: loli.net answers 200, webp.se answers 404 (the d=404
+    // "no avatar" signal — still proof of connectivity), the rest refuse.
+    const fetchFn = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.startsWith('https://gravatar.loli.net/')) {
+        return new Response(null, { status: 200 })
+      }
+      if (url.startsWith('https://gravatar.webp.se/')) {
+        return new Response(null, { status: 404 })
+      }
+      throw new Error('connect ECONNREFUSED')
+    })
+    vi.stubGlobal('fetch', fetchFn)
+
+    const results = await probeAvatarMirrors()
+
+    expect(results.map((r) => r.url)).toEqual(GRAVATAR_MIRROR_PRESETS.map((p) => p.value))
+    const byUrl = new Map(results.map((r) => [r.url, r]))
+    expect(byUrl.get('https://gravatar.loli.net/avatar')).toMatchObject({ reachable: true })
+    expect(byUrl.get('https://gravatar.webp.se/avatar')).toMatchObject({ reachable: true })
+    expect(byUrl.get('https://gravatar.zeruns.com/avatar')).toMatchObject({ reachable: false })
+    for (const result of results) {
+      expect(result.latencyMs).toBeGreaterThanOrEqual(1)
+    }
+    // Every preset got exactly one probe request, at the d=404 probe URL.
+    expect(fetchFn).toHaveBeenCalledTimes(GRAVATAR_MIRROR_PRESETS.length)
+    expect(String(fetchFn.mock.calls[0]![0])).toMatch(/\/d41d8cd98f00b204e9800998ecf8427e\?s=32&d=404$/)
   })
 })
