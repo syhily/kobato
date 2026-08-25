@@ -48,6 +48,7 @@ export default [
     route('admin/library/music/:id', 'routes/admin/library/music/detail.tsx'),
     route('admin/library/branding', 'routes/admin/library/branding.tsx'),
     route('admin/library/fonts', 'routes/admin/library/fonts.tsx'),
+    route('admin/library/storage', 'routes/admin/library/storage.tsx'),
     route('admin/taxonomy/friends', 'routes/admin/taxonomy/friends.tsx'),
     route('admin/security/users', 'routes/admin/security/users/index.tsx'),
     route('admin/security/users/:id', 'routes/admin/security/users/detail.tsx'),

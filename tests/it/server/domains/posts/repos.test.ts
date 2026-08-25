@@ -85,9 +85,9 @@ async function seedImage(overrides: Partial<typeof imageTable.$inferInsert> = {}
   return rows[0]!
 }
 
-/** The CDN public URL the real hydrateImageRefs writes for a seeded row. */
+/** The site-owned public URL the real hydrateImageRefs writes for a seeded row. */
 function coverUrl(row: typeof imageTable.$inferSelect): string {
-  return `https://assets.example.com/${row.storagePath}?v=${row.updatedAt.getTime()}`
+  return `https://example.com/storage/${row.storagePath}?v=${row.updatedAt.getTime()}`
 }
 
 describe('posts/repos/shared — buildPostsWhere', () => {
@@ -206,7 +206,7 @@ describe('posts/repos/hydrate — hydratePostImages', () => {
     const { hydratePostImages } = await import('@/server/domains/posts/repos/hydrate')
     await expect(hydratePostImages(db, [])).resolves.toBeUndefined()
   })
-  it('rewrites a resolvable cover to its CDN public URL', async () => {
+  it('rewrites a resolvable cover to its site-owned public URL', async () => {
     const row = await seedImage()
     const { hydratePostImages } = await import('@/server/domains/posts/repos/hydrate')
     const item = { cover: '/images/cover.png' } as { cover: string; coverThumbhash?: string }

@@ -25,7 +25,16 @@ export interface PutStreamInput {
   key: string
   body: Readable
   contentType: string
+  /** `Cache-Control` header. Defaults to the private-cache value (streams are backups). */
+  cacheControl?: string
   visibility?: 'public' | 'private'
+}
+
+/** Result of `getStreamWithMeta` — the body plus the headers a verbatim copy needs. */
+export interface StreamWithMeta {
+  body: Readable
+  contentType?: string | undefined
+  cacheControl?: string | undefined
 }
 
 /**
@@ -44,12 +53,23 @@ export interface StorageBackend {
   get(key: string): Promise<Buffer>
   /** Stream an object without buffering (large backups). */
   getStream(key: string): Promise<Readable>
+  /**
+   * Stream an object together with its stored Content-Type / Cache-Control
+   * headers so a backend-to-backend migration can copy them verbatim.
+   * Optional: backends without stored headers (local FS) omit it and the
+   * migration falls back to key-based defaults.
+   */
+  getStreamWithMeta?(key: string): Promise<StreamWithMeta>
   exists(key: string): Promise<boolean>
   delete(key: string): Promise<void>
   deleteMany(keys: string[]): Promise<void>
   /** Delete every object under `prefix` including the prefix directory itself. */
   deletePrefix(prefix: string): Promise<void>
-  list(prefix: string, opts?: { maxKeys?: number }): Promise<StoredObjectMeta[]>
+  /**
+   * List objects under `prefix` in lexicographic key order. `startAfter`
+   * resumes strictly after the given key (migration checkpointing).
+   */
+  list(prefix: string, opts?: { maxKeys?: number; startAfter?: string }): Promise<StoredObjectMeta[]>
 }
 
 /**

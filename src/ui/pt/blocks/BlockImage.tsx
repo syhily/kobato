@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 
 import { orpc } from '@/client/api/client'
 import { useThumbhashBackground } from '@/client/hooks/use-thumbhash-bg'
-import { useAssetsSettings } from '@/shared/lib/blog-config-context'
+import { useAssetsSettings, useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { getImageSrcset, type ResolvedImageMeta } from '@/shared/types/images'
 import { createBoundedMap } from '@/shared/utils/memo'
 import { cn } from '@/ui/lib/cn'
@@ -32,6 +32,7 @@ export function BlockImage({
   const imageMeta = useImageMeta()
   const meta = src ? imageMeta?.[src] : undefined
   const { asset, storage } = useAssetsSettings()
+  const { website } = useSiteIdentity()
 
   const propWidth = readPositiveNumber(rest.width) ?? meta?.width
   const propHeight = readPositiveNumber(rest.height) ?? meta?.height
@@ -55,6 +56,7 @@ export function BlockImage({
           height,
           assetHost: asset.host,
           urlTemplate: storage.urlTemplate,
+          siteOrigin: website,
           breakpoints: [256, 512, 768, 1024],
         })
       : undefined

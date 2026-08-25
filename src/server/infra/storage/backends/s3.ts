@@ -4,7 +4,13 @@ import type { FinalizeRequestMiddleware, HandlerExecutionContext } from '@smithy
 import { createHash } from 'node:crypto'
 import { Readable, Transform } from 'node:stream'
 
-import type { PutObjectInput, PutStreamInput, StorageBackend, StoredObjectMeta } from '@/server/infra/storage/backend'
+import type {
+  PutObjectInput,
+  PutStreamInput,
+  StorageBackend,
+  StoredObjectMeta,
+  StreamWithMeta,
+} from '@/server/infra/storage/backend'
 import type { AssetsSettings } from '@/shared/config/types'
 
 import { ActionFailure } from '@/server/infra/http/errors'
@@ -27,6 +33,8 @@ const log = getLogger('storage.s3')
 type AwsSdk = typeof import('@aws-sdk/client-s3')
 type S3ClientInstance = InstanceType<AwsSdk['S3Client']>
 
+type S3StorageConfig = AssetsSettings['storage']
+
 let awsSdk: AwsSdk | undefined
 
 async function getAwsSdk(): Promise<AwsSdk> {
@@ -36,59 +44,12 @@ async function getAwsSdk(): Promise<AwsSdk> {
   return awsSdk
 }
 
-interface CachedClient {
-  fingerprint: string
-  client: S3ClientInstance
-}
-
-let s3CachedClient: CachedClient | undefined
-
-function fingerprintFor(storage: AssetsSettings['storage']): string {
-  return JSON.stringify({
-    endpoint: storage.endpoint,
-    region: storage.region,
-    bucket: storage.bucket,
-    accessKeyId: storage.accessKeyId,
-    forcePathStyle: storage.forcePathStyle,
-    secretFingerprint: storage.secretAccessKey === '' ? '<empty>' : 'present',
-  })
-}
-
 interface S3StorageContext {
   client: S3ClientInstance
   bucket: string
 }
 
-/**
- * Resolve the live S3 client + bucket. Throws 503 when uploads are disabled
- * (unless `requireEnabled: false`) or credentials are half-configured.
- */
-async function resolveS3Context(options?: { requireEnabled?: boolean }): Promise<S3StorageContext> {
-  const settings = requireBlogSettingsSection('assets')
-  const storage = settings.storage
-  if (options?.requireEnabled !== false && !storage.enabled) {
-    throw new ActionFailure(503, '图片上传未开启；请到 /admin/settings/assets 打开「启用 S3 上传」')
-  }
-  if ((storage.secretAccessKey ?? '') === '') {
-    throw new ActionFailure(503, '请先在 /admin/settings/assets 配置 S3 凭据')
-  }
-
-  const fingerprint = fingerprintFor(storage)
-  const cached = s3CachedClient
-  if (cached?.fingerprint === fingerprint) {
-    return { client: cached.client, bucket: storage.bucket }
-  }
-
-  if (cached !== undefined) {
-    try {
-      cached.client.destroy()
-    } catch (error) {
-      log.warn('Failed to destroy stale S3 client', { error })
-    }
-  }
-
-  const sdk = await getAwsSdk()
-
+async function newS3Client(sdk: AwsSdk, storage: S3StorageConfig): Promise<S3ClientInstance> {
   const config = {
     endpoint: storage.endpoint,
     region: storage.region,
@@ -106,6 +67,57 @@ async function resolveS3Context(options?: { requireEnabled?: boolean }): Promise
   }
   const client = new sdk.S3Client(config)
   installDeleteObjectsMd5Fallback(sdk, client)
+  return client
+}
+
+interface CachedClient {
+  fingerprint: string
+  client: S3ClientInstance
+}
+
+let s3CachedClient: CachedClient | undefined
+
+function fingerprintFor(storage: S3StorageConfig): string {
+  return JSON.stringify({
+    endpoint: storage.endpoint,
+    region: storage.region,
+    bucket: storage.bucket,
+    accessKeyId: storage.accessKeyId,
+    forcePathStyle: storage.forcePathStyle,
+    secretFingerprint: storage.secretAccessKey === '' ? '<empty>' : 'present',
+  })
+}
+
+/**
+ * Resolve the live S3 client + bucket. Throws 503 when uploads are disabled
+ * (unless `requireEnabled: false`) or credentials are half-configured.
+ */
+async function resolveS3Context(options?: { requireEnabled?: boolean }): Promise<S3StorageContext> {
+  const settings = requireBlogSettingsSection('assets')
+  const storage = settings.storage
+  if (options?.requireEnabled !== false && !storage.enabled) {
+    throw new ActionFailure(503, '图片上传未开启；请到 /admin/library/storage 完成存储迁移以启用 S3')
+  }
+  if ((storage.secretAccessKey ?? '') === '') {
+    throw new ActionFailure(503, '请先在 /admin/library/storage 配置 S3 凭据')
+  }
+
+  const fingerprint = fingerprintFor(storage)
+  const cached = s3CachedClient
+  if (cached?.fingerprint === fingerprint) {
+    return { client: cached.client, bucket: storage.bucket }
+  }
+
+  if (cached !== undefined) {
+    try {
+      cached.client.destroy()
+    } catch (error) {
+      log.warn('Failed to destroy stale S3 client', { error })
+    }
+  }
+
+  const sdk = await getAwsSdk()
+  const client = await newS3Client(sdk, storage)
   s3CachedClient = { fingerprint, client }
   return { client, bucket: storage.bucket }
 }
@@ -141,16 +153,16 @@ function installDeleteObjectsMd5Fallback(_sdk: AwsSdk, client: S3ClientInstance)
 }
 
 async function putObject(
+  ctx: S3StorageContext,
   key: string,
   body: Buffer | Readable,
   contentType: string,
   cacheControl: string,
 ): Promise<void> {
   const sdk = await getAwsSdk()
-  const { client, bucket } = await resolveS3Context()
-  await client.send(
+  await ctx.client.send(
     new sdk.PutObjectCommand({
-      Bucket: bucket,
+      Bucket: ctx.bucket,
       Key: key,
       Body: body,
       ContentType: contentType,
@@ -180,11 +192,10 @@ function isS3NotFoundError(error: unknown): boolean {
  * `HeadObject` existence check. Any failure — 404 or transient — counts as
  * "absent": the subsequent PUT is idempotent, so a mid-migration blip is safe.
  */
-async function objectExists(key: string): Promise<boolean> {
+async function objectExists(ctx: S3StorageContext, key: string): Promise<boolean> {
   const sdk = await getAwsSdk()
-  const { client, bucket } = await resolveS3Context({ requireEnabled: false })
   try {
-    await client.send(new sdk.HeadObjectCommand({ Bucket: bucket, Key: key }))
+    await ctx.client.send(new sdk.HeadObjectCommand({ Bucket: ctx.bucket, Key: key }))
     return true
   } catch (error) {
     if (isS3NotFoundError(error)) {
@@ -195,30 +206,31 @@ async function objectExists(key: string): Promise<boolean> {
   }
 }
 
-async function listObjects(prefix: string, maxKeys = 10_000): Promise<StoredObjectMeta[]> {
+async function listObjects(
+  ctx: S3StorageContext,
+  prefix: string,
+  opts?: { maxKeys?: number; startAfter?: string },
+): Promise<StoredObjectMeta[]> {
   const sdk = await getAwsSdk()
-  const { client, bucket } = await resolveS3Context({ requireEnabled: false })
+  const maxKeys = opts?.maxKeys ?? 10_000
   const objects: StoredObjectMeta[] = []
   let continuationToken: string | undefined
+  // S3 caps a page at 1000 keys; `MaxKeys` is sent per page (never more than
+  // the caller's remaining budget) so `list(prefix, { maxKeys })` is honored
+  // exactly and batched callers (migration) get the page size they asked for.
   do {
-    const response = await client.send(
+    const response = await ctx.client.send(
       new sdk.ListObjectsV2Command({
-        Bucket: bucket,
+        Bucket: ctx.bucket,
         Prefix: prefix,
+        MaxKeys: Math.min(1000, maxKeys - objects.length),
         ContinuationToken: continuationToken,
+        StartAfter: continuationToken === undefined ? opts?.startAfter : undefined,
       }),
     )
     objects.push(...parseS3Contents(response.Contents))
     continuationToken = response.NextContinuationToken
-    if (objects.length > maxKeys) {
-      log.warn('listObjects exceeded maxKeys; pagination aborted', {
-        prefix,
-        maxKeys,
-        returned: objects.length,
-      })
-      break
-    }
-  } while (continuationToken)
+  } while (continuationToken && objects.length < maxKeys)
   return objects
 }
 
@@ -236,10 +248,9 @@ async function sendGetObject(
   }
 }
 
-async function getObjectBuffer(key: string, maxSize = MAX_OBJECT_BUFFER_SIZE): Promise<Buffer> {
+async function getObjectBuffer(ctx: S3StorageContext, key: string, maxSize = MAX_OBJECT_BUFFER_SIZE): Promise<Buffer> {
   const sdk = await getAwsSdk()
-  const { client, bucket } = await resolveS3Context({ requireEnabled: false })
-  const response = await sendGetObject(sdk, client, bucket, key)
+  const response = await sendGetObject(sdk, ctx.client, ctx.bucket, key)
   if (response.Body === undefined) {
     // An empty body is indistinguishable from a miss — surface the seam's not-found.
     throw new StorageObjectNotFound(key)
@@ -270,34 +281,151 @@ async function getObjectBuffer(key: string, maxSize = MAX_OBJECT_BUFFER_SIZE): P
  * Stream an object without buffering (backups exceed the buffered-read cap).
  * Throws `StorageObjectNotFound` on a missing/empty object.
  */
-async function getObjectStream(key: string): Promise<Readable> {
+async function getObjectStream(ctx: S3StorageContext, key: string): Promise<Readable> {
   const sdk = await getAwsSdk()
-  const { client, bucket } = await resolveS3Context({ requireEnabled: false })
-  const response = await sendGetObject(sdk, client, bucket, key)
+  const response = await sendGetObject(sdk, ctx.client, ctx.bucket, key)
   if (response.Body === undefined) {
     throw new StorageObjectNotFound(key)
   }
   return unsafeCast<Readable>(response.Body)
 }
 
-async function deleteObject(key: string): Promise<void> {
+/** `getObjectStream` plus the stored headers a verbatim migration copy needs. */
+async function getObjectStreamWithMeta(ctx: S3StorageContext, key: string): Promise<StreamWithMeta> {
   const sdk = await getAwsSdk()
-  const { client, bucket } = await resolveS3Context({ requireEnabled: false })
-  await client.send(new sdk.DeleteObjectCommand({ Bucket: bucket, Key: key }))
+  const response = await sendGetObject(sdk, ctx.client, ctx.bucket, key)
+  if (response.Body === undefined) {
+    throw new StorageObjectNotFound(key)
+  }
+  return {
+    body: unsafeCast<Readable>(response.Body),
+    contentType: response.ContentType,
+    cacheControl: response.CacheControl,
+  }
 }
 
-async function deleteObjects(keys: string[]): Promise<void> {
+async function deleteObject(ctx: S3StorageContext, key: string): Promise<void> {
+  const sdk = await getAwsSdk()
+  await ctx.client.send(new sdk.DeleteObjectCommand({ Bucket: ctx.bucket, Key: key }))
+}
+
+async function deleteObjects(ctx: S3StorageContext, keys: string[]): Promise<void> {
   if (keys.length === 0) {
     return
   }
   const sdk = await getAwsSdk()
-  const { client, bucket } = await resolveS3Context()
-  await client.send(
+  await ctx.client.send(
     new sdk.DeleteObjectsCommand({
-      Bucket: bucket,
+      Bucket: ctx.bucket,
       Delete: { Objects: keys.map((key) => ({ Key: key })) },
     }),
   )
+}
+
+/** A config is usable once every connection field carries a real value. */
+function isS3ConfigComplete(storage: S3StorageConfig): boolean {
+  return (
+    storage.endpoint.trim() !== '' &&
+    storage.bucket.trim() !== '' &&
+    storage.accessKeyId.trim() !== '' &&
+    (storage.secretAccessKey ?? '').trim() !== ''
+  )
+}
+
+/**
+ * Build a backend bound to one context. Shared by the settings-driven
+ * singleton (`s3Backend`) and the migration's explicit-config backend
+ * (`createS3BackendFromConfig`).
+ */
+function makeS3Backend(
+  resolveContext: (options?: { requireEnabled?: boolean }) => Promise<S3StorageContext>,
+): StorageBackend {
+  return {
+    driver: 's3',
+
+    isAvailable(): boolean {
+      const s = storageSettings()
+      return s.enabled && isS3ConfigComplete(s)
+    },
+
+    async put(input: PutObjectInput): Promise<StoredObjectMeta> {
+      // The visibility → cache-control mapping lives here and nowhere else.
+      const visibility = input.visibility ?? 'public'
+      const cacheControl =
+        input.cacheControl ?? (visibility === 'private' ? DEFAULT_PRIVATE_CACHE_CONTROL : DEFAULT_PUBLIC_CACHE_CONTROL)
+      const ctx = await resolveContext()
+      await putObject(ctx, input.key, input.body, input.contentType, cacheControl)
+      return { key: input.key, size: input.body.length, lastModified: new Date() }
+    },
+
+    async putStream(input: PutStreamInput): Promise<StoredObjectMeta> {
+      // A Transform meter counts bytes (backpressure-safe) — the exact size is the backup's Content-Length.
+      let size = 0
+      const meter = new Transform({
+        transform(chunk: Buffer, _encoding, callback) {
+          size += chunk.length
+          callback(null, chunk)
+        },
+      })
+      const ctx = await resolveContext()
+      await putObject(
+        ctx,
+        input.key,
+        input.body.pipe(meter),
+        input.contentType,
+        input.cacheControl ?? DEFAULT_PRIVATE_CACHE_CONTROL,
+      )
+      return { key: input.key, size, lastModified: new Date() }
+    },
+
+    async get(key: string): Promise<Buffer> {
+      return getObjectBuffer(await resolveContext({ requireEnabled: false }), key)
+    },
+
+    async getStream(key: string): Promise<Readable> {
+      return getObjectStream(await resolveContext({ requireEnabled: false }), key)
+    },
+
+    async getStreamWithMeta(key: string): Promise<StreamWithMeta> {
+      return getObjectStreamWithMeta(await resolveContext({ requireEnabled: false }), key)
+    },
+
+    async exists(key: string): Promise<boolean> {
+      return objectExists(await resolveContext({ requireEnabled: false }), key)
+    },
+
+    async delete(key: string): Promise<void> {
+      await deleteObject(await resolveContext({ requireEnabled: false }), key)
+    },
+
+    async deleteMany(keys: string[]): Promise<void> {
+      await deleteObjects(await resolveContext(), keys)
+    },
+
+    async deletePrefix(prefix: string): Promise<void> {
+      const ctx = await resolveContext({ requireEnabled: false })
+      // No real directories: delete every object under the prefix (paginated).
+      const objects = await listObjects(ctx, prefix)
+      if (objects.length > 0) {
+        await deleteObjects(
+          ctx,
+          objects.map((o) => o.key),
+        )
+      }
+      // Some services persist a folder-marker object at the prefix — best-effort delete it (missing marker is not an error).
+      if (prefix.endsWith('/')) {
+        try {
+          await deleteObject(ctx, prefix)
+        } catch (error) {
+          log.warn('Failed to delete prefix folder marker', { prefix, error })
+        }
+      }
+    },
+
+    async list(prefix: string, opts?: { maxKeys?: number; startAfter?: string }): Promise<StoredObjectMeta[]> {
+      return listObjects(await resolveContext({ requireEnabled: false }), prefix, opts)
+    },
+  }
 }
 
 function storageSettings() {
@@ -305,80 +433,99 @@ function storageSettings() {
 }
 
 export const s3Backend: StorageBackend = {
-  driver: 's3',
+  ...makeS3Backend((options) => resolveS3Context(options)),
+}
 
-  isAvailable(): boolean {
-    const s = storageSettings()
-    return (
-      s.enabled &&
-      s.endpoint.trim() !== '' &&
-      s.bucket.trim() !== '' &&
-      s.accessKeyId.trim() !== '' &&
-      (s.secretAccessKey ?? '').trim() !== ''
-    )
-  },
+/**
+ * Build an S3 backend bound to an explicit config instead of the live
+ * settings — used by the storage migration to talk to the TARGET bucket
+ * while the settings still point at the source. The client is created once
+ * lazily and never touches the settings-driven cache.
+ */
+export function createS3BackendFromConfig(storage: S3StorageConfig): StorageBackend {
+  let ctxPromise: Promise<S3StorageContext> | undefined
+  const resolveContext = (): Promise<S3StorageContext> => {
+    ctxPromise ??= (async () => {
+      const sdk = await getAwsSdk()
+      return { client: await newS3Client(sdk, storage), bucket: storage.bucket }
+    })()
+    return ctxPromise
+  }
+  const backend = makeS3Backend(resolveContext)
+  // `isAvailable` on the settings-driven singleton reads live settings; an
+  // explicit-config backend is available iff the config itself is complete.
+  return {
+    ...backend,
+    isAvailable(): boolean {
+      return isS3ConfigComplete(storage)
+    },
+  }
+}
 
-  async put(input: PutObjectInput): Promise<StoredObjectMeta> {
-    // The visibility → cache-control mapping lives here and nowhere else.
-    const visibility = input.visibility ?? 'public'
-    const cacheControl =
-      input.cacheControl ?? (visibility === 'private' ? DEFAULT_PRIVATE_CACHE_CONTROL : DEFAULT_PUBLIC_CACHE_CONTROL)
-    await putObject(input.key, input.body, input.contentType, cacheControl)
-    return { key: input.key, size: input.body.length, lastModified: new Date() }
-  },
+export type S3ValidationResult = { ok: true } | { ok: false; message: string }
 
-  async putStream(input: PutStreamInput): Promise<StoredObjectMeta> {
-    // A Transform meter counts bytes (backpressure-safe) — the exact size is the backup's Content-Length.
-    let size = 0
-    const meter = new Transform({
-      transform(chunk: Buffer, _encoding, callback) {
-        size += chunk.length
-        callback(null, chunk)
-      },
-    })
-    await putObject(input.key, input.body.pipe(meter), input.contentType, DEFAULT_PRIVATE_CACHE_CONTROL)
-    return { key: input.key, size, lastModified: new Date() }
-  },
-
-  async get(key: string): Promise<Buffer> {
-    return getObjectBuffer(key)
-  },
-
-  async getStream(key: string): Promise<Readable> {
-    return getObjectStream(key)
-  },
-
-  async exists(key: string): Promise<boolean> {
-    return objectExists(key)
-  },
-
-  async delete(key: string): Promise<void> {
-    await deleteObject(key)
-  },
-
-  async deleteMany(keys: string[]): Promise<void> {
-    await deleteObjects(keys)
-  },
-
-  async deletePrefix(prefix: string): Promise<void> {
-    // No real directories: delete every object under the prefix (paginated).
-    const objects = await listObjects(prefix)
-    if (objects.length > 0) {
-      await deleteObjects(objects.map((o) => o.key))
-    }
-    // Some services persist a folder-marker object at the prefix — best-effort delete it (missing marker is not an error).
-    if (prefix.endsWith('/')) {
+/**
+ * Connectivity probe for a candidate S3 config — HeadBucket first, with a
+ * ListObjectsV2(MaxKeys=1) fallback for providers/credentials that lack
+ * HeadBucket. Distinguishes unreachable / bad credentials / missing bucket
+ * so the caller can show an actionable message.
+ */
+export async function validateS3Config(storage: S3StorageConfig): Promise<S3ValidationResult> {
+  const sdk = await getAwsSdk()
+  const client = await newS3Client(sdk, storage)
+  try {
+    await client.send(new sdk.HeadBucketCommand({ Bucket: storage.bucket }))
+    return { ok: true }
+  } catch (error) {
+    const statusCode = unsafeCast<{ $metadata?: { httpStatusCode?: number } }>(error).$metadata?.httpStatusCode
+    if (statusCode === 403) {
+      // Some providers deny HeadBucket while ListObjects works — probe once more.
       try {
-        await deleteObject(prefix)
-      } catch (error) {
-        log.warn('Failed to delete prefix folder marker', { prefix, error })
+        await client.send(new sdk.ListObjectsV2Command({ Bucket: storage.bucket, MaxKeys: 1 }))
+        return { ok: true }
+      } catch (fallbackError) {
+        return { ok: false, message: classifyS3ValidationError(fallbackError) }
       }
     }
-  },
+    return { ok: false, message: classifyS3ValidationError(error) }
+  } finally {
+    try {
+      client.destroy()
+    } catch {
+      // Best-effort cleanup — a half-connected client may fail to destroy.
+    }
+  }
+}
 
-  async list(prefix: string, opts?: { maxKeys?: number }): Promise<StoredObjectMeta[]> {
-    return listObjects(prefix, opts?.maxKeys)
-  },
+/** Exported for unit tests — the error→message classification table. */
+export function classifyS3ValidationError(error: unknown): string {
+  const name = unsafeCast<{ name?: string }>(error).name ?? ''
+  const statusCode = unsafeCast<{ $metadata?: { httpStatusCode?: number } }>(error).$metadata?.httpStatusCode
+  if (statusCode === 404 || name === 'NotFound' || name === 'NoSuchBucket') {
+    return '存储桶不存在或无权访问，请检查 Bucket 名称'
+  }
+  if (
+    statusCode === 401 ||
+    statusCode === 403 ||
+    name === 'AccessDenied' ||
+    name === 'InvalidAccessKeyId' ||
+    name === 'SignatureDoesNotMatch'
+  ) {
+    return '凭证无效或权限不足，请检查 Access Key / Secret Key'
+  }
+  if (name === 'TimeoutError' || name === 'ECONNREFUSED' || name === 'ENOTFOUND' || name === 'ETIMEDOUT') {
+    return '无法连接到 Endpoint，请检查网络与 Endpoint 地址'
+  }
+  const causeCode = unsafeCast<{ cause?: { code?: string } }>(error).cause?.code
+  if (
+    causeCode === 'ECONNREFUSED' ||
+    causeCode === 'ENOTFOUND' ||
+    causeCode === 'ETIMEDOUT' ||
+    causeCode === 'UND_ERR_CONNECT_TIMEOUT'
+  ) {
+    return '无法连接到 Endpoint，请检查网络与 Endpoint 地址'
+  }
+  return `S3 连通性验证失败：${error instanceof Error ? error.message : String(error)}`
 }
 
 // URL resolution lives in `public-url.ts` so URL-only SSR paths never load the AWS SDK.

@@ -1,14 +1,19 @@
 import { createHash } from 'node:crypto'
 
 import type { BinarySlot, SvgSlot } from '@/server/assets/defaults'
+import type { Database } from '@/server/infra/db/database'
 import type { BrandingObjectRef, StorageDriver } from '@/shared/config/types'
 
 import { BINARY_SLOTS, SVG_SLOTS } from '@/server/assets/defaults'
+import { SECTION_REGISTRY } from '@/server/domains/settings/sections/registry'
+import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
+import { findSettingByScope, upsertSetting } from '@/server/infra/db/operations/setting'
 import { ActionFailure } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { StorageObjectNotFound } from '@/server/infra/storage/backend'
 import { activeBackend, backendFor } from '@/server/infra/storage/registry'
 import { createBoundedMap } from '@/shared/utils/memo'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 const log = getLogger('branding.storage')
 
@@ -289,5 +294,35 @@ export async function fetchBrandingObject(slot: BrandingSlot, ref: BrandingObjec
       error: String(error),
     })
     return null
+  }
+}
+
+/**
+ * Re-point every branding slot's object ref after a storage-driver flip
+ * (`storage_driver` columns are flipped by the migration task; the refs live
+ * HERE, in the assets settings row). No-op when nothing carries the old
+ * driver. The storage migration consumes this surface through perimeter
+ * wiring — Platform domains stay leaves.
+ */
+export async function flipBrandingDrivers(db: Database, from: StorageDriver, to: StorageDriver): Promise<void> {
+  const scope = SECTION_REGISTRY.assets.scope
+  const existing = findSettingByScope(db, scope)
+  if (existing === null) {
+    return
+  }
+  const data = { ...unsafeCast<Record<string, unknown>>(existing.data) }
+  const branding = { ...unsafeCast<Record<string, BrandingObjectRef | undefined>>(data.branding) }
+  let changed = false
+  for (const slot of BRANDING_SLOTS) {
+    const ref = branding[slot]
+    if (ref?.driver === from) {
+      branding[slot] = { ...ref, driver: to }
+      changed = true
+    }
+  }
+  if (changed) {
+    data.branding = branding
+    upsertSetting(db, data, null, scope)
+    await refreshBlogSettings(db)
   }
 }

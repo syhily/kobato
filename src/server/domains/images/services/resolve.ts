@@ -61,7 +61,7 @@ export async function resolveImageRefs(db: Database, urls: string[]): Promise<Ma
       width: meta.width,
       height: meta.height,
       thumbhash: meta.thumbhash ?? undefined,
-      publicUrl: safeResolveAssetUrl(meta.driver, meta.storagePath, meta.updatedAtMs),
+      publicUrl: safeResolveAssetUrl(meta.storagePath, meta.updatedAtMs),
     })
   }
   return out

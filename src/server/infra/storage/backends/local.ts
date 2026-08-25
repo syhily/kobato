@@ -181,14 +181,18 @@ export const localBackend: StorageBackend = {
     }
   },
 
-  async list(prefix: string, opts?: { maxKeys?: number }): Promise<StoredObjectMeta[]> {
+  async list(prefix: string, opts?: { maxKeys?: number; startAfter?: string }): Promise<StoredObjectMeta[]> {
     const base = path.resolve(STORAGE_DIR, prefix)
     if (!isPathInside(base, STORAGE_DIR)) {
       return []
     }
     // Sort before slicing so `maxKeys` is a deterministic prefix (matches S3's lexicographic order).
     const walked = await walk(base, STORAGE_DIR)
-    const items = walked.sort((a, b) => a.key.localeCompare(b.key))
+    let items = walked.sort((a, b) => a.key.localeCompare(b.key))
+    if (opts?.startAfter !== undefined) {
+      const startAfter = opts.startAfter
+      items = items.filter((item) => item.key > startAfter)
+    }
     return opts?.maxKeys !== undefined ? items.slice(0, opts.maxKeys) : items
   },
 }

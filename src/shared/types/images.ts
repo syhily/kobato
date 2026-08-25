@@ -69,16 +69,101 @@ export interface ImageUrlOptions {
    * Placeholders: `{src}`, `{width}`, `{height}`, `{quality}` (defaults to 100).
    */
   urlTemplate?: string
+  /**
+   * Site origin (e.g. `https://example.com`). When set and `src` is a
+   * site-owned `/storage/<key>` URL, the template is NOT applied inline — the
+   * transform intent travels as `?w=&h=&q=` query params and the `/storage/*`
+   * 302 boundary substitutes it into the template server-side. The server-side
+   * twin of the `{src}/{width}/{height}/{quality}` substitution below is
+   * `buildRedirectLocation` in `src/server/http/resources/storage-redirect.ts`
+   * — keep the two semantics in sync.
+   */
+  siteOrigin?: string
 }
 
 const DEFAULT_SRCSET_BREAKPOINTS = [256, 512, 768, 1024, 1280, 1536]
 
-export function getImageUrl({ src, width, height, quality, assetHost, urlTemplate }: ImageUrlOptions): string {
+/** Path prefix of site-owned asset URLs served (and 302'd) by the origin itself. */
+const STORAGE_ROUTE_PREFIX = '/storage/'
+
+/**
+ * The src unchanged when it is a site-owned asset URL in either accepted
+ * form — origin-relative (`/storage/<key>`) or absolute on the site origin —
+ * otherwise `null` (external URLs keep the legacy inline-template path).
+ */
+export function siteOwnedStorageSrc(src: string, siteOrigin: string | undefined): string | null {
+  if (src.startsWith(STORAGE_ROUTE_PREFIX)) {
+    return src
+  }
+  if (siteOrigin === undefined || siteOrigin === '') {
+    return null
+  }
+  try {
+    const url = new URL(src)
+    if (
+      (url.protocol === 'https:' || url.protocol === 'http:') &&
+      `${url.protocol}//${url.host}` === siteOrigin.replace(/\/$/, '')
+    ) {
+      return url.pathname.startsWith(STORAGE_ROUTE_PREFIX) ? src : null
+    }
+  } catch {
+    // Not a URL (data:, malformed) — not site-owned storage.
+  }
+  return null
+}
+
+function appendTransformParams(src: string, width: number, height: number, quality: number | undefined): string {
+  const params = new URLSearchParams({ w: String(width), h: String(height) })
+  if (quality !== undefined) {
+    params.set('q', String(quality))
+  }
+  const sep = src.includes('?') ? '&' : '?'
+  return `${src}${sep}${params.toString()}`
+}
+
+interface RenderedSrcsetEntry {
+  url: string
+  width: number
+}
+
+function renderSrcset(
+  options: Pick<ImageUrlOptions, 'width' | 'height'>,
+  breakpoints: number[] | undefined,
+  renderUrl: (width: number, height: number) => string,
+): string {
+  const bps = breakpoints ?? DEFAULT_SRCSET_BREAKPOINTS
+  const maxWidth = Math.max(options.width * 2, 1536)
+  const ratio = options.height / options.width
+
+  const entries: RenderedSrcsetEntry[] = []
+  for (const w of bps) {
+    if (w <= maxWidth) {
+      entries.push({ url: renderUrl(w, Math.round(w * ratio)), width: w })
+    }
+  }
+  return entries.map(({ url, width }) => `${url} ${width}w`).join(', ')
+}
+
+export function getImageUrl({
+  src,
+  width,
+  height,
+  quality,
+  assetHost,
+  urlTemplate,
+  siteOrigin,
+}: ImageUrlOptions): string {
+  const template = (urlTemplate ?? '').trim()
+  if (siteOwnedStorageSrc(src, siteOrigin) !== null) {
+    // Site-owned asset: signal transform intent as query params; the
+    // `/storage/*` redirect substitutes them into the template. Without a
+    // template there is nothing to signal — serve the plain URL.
+    return template === '' ? src : appendTransformParams(src, width, height, quality)
+  }
+
   if (!isTransformableRemoteImage(src, assetHost)) {
     return src
   }
-
-  const template = (urlTemplate ?? '').trim()
   if (template === '') {
     return src
   }
@@ -119,29 +204,27 @@ export function getImageSrcset({
   quality,
   assetHost,
   urlTemplate,
+  siteOrigin,
   breakpoints,
 }: ImageSrcsetOptions): string {
+  const template = (urlTemplate ?? '').trim()
+  if (siteOwnedStorageSrc(src, siteOrigin) !== null) {
+    if (template === '') {
+      return ''
+    }
+    return renderSrcset({ width, height }, breakpoints, (w, h) => appendTransformParams(src, w, h, quality))
+  }
+
   if (!isTransformableRemoteImage(src, assetHost)) {
     return ''
   }
-
-  const template = (urlTemplate ?? '').trim()
   if (template === '') {
     return ''
   }
 
-  const bps = breakpoints ?? DEFAULT_SRCSET_BREAKPOINTS
-  const maxWidth = Math.max(width * 2, 1536)
-  const ratio = height / width
-
-  return bps
-    .filter((w) => w <= maxWidth)
-    .map((w) => {
-      const h = Math.round(w * ratio)
-      const url = getImageUrl({ src, width: w, height: h, quality, assetHost, urlTemplate })
-      return `${url} ${w}w`
-    })
-    .join(', ')
+  return renderSrcset({ width, height }, breakpoints, (w, h) =>
+    getImageUrl({ src, width: w, height: h, quality, assetHost, urlTemplate }),
+  )
 }
 
 export function isTransformableRemoteImage(src: string, assetHost: string): boolean {

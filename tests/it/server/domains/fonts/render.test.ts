@@ -74,10 +74,15 @@ describe('resolveFontsForRender — cssKey consumption', () => {
     ])
   })
 
-  it('builds the s3 href from the persisted cssKey on the raw storage key', async () => {
+  it('builds the same site-owned href for an s3 driver row (the route 302s to the backend)', async () => {
     await seedFont({ storageDriver: 's3' })
     const resolved = await resolveFontsForRender(db, settings(['font-1']), false)
-    expect(resolved.global).toEqual([{ family: 'Test Serif', href: `https://cdn.example.com/${CSS_KEY}?v=${VERSION}` }])
+    expect(resolved.global).toEqual([
+      {
+        family: 'Test Serif',
+        href: `https://site.example.com/fonts/embedded/${'c'.repeat(64)}/result.css?v=${VERSION}`,
+      },
+    ])
   })
 
   it('degrades to an empty href when the URL base is unconfigured', async () => {

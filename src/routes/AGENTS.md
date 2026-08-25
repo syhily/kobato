@@ -20,7 +20,7 @@ Four nested trees, each with its own `routes/<tree>/layout.tsx`:
 - `routes/auth/` — split-screen login + install: `signin`, `setup/index` (`/admin/setup`).
 - `routes/admin/` — admin SPA: `dashboard`, `comments`, `me/{profile,comments,sessions}`,
   `security/{sessions,audit-log,users/{index,detail}}`, `taxonomy/{categories,tags}`,
-  `library/{images,music,branding,friends}`, `pages/index`, `posts/{index,analytics}`,
+  `library/{images,music,branding,fonts,storage}`, `pages/index`, `posts/{index,analytics}`,
   `analytics/{layout,overview,realtime,mentions}`, `settings/{layout,index}`.
 - `routes/editor/` — standalone immersive editing shell (split from `routes/admin/`):
   `post/{new,edit,analytics}`, `page/{new,edit}`. Own layout keeps editor chrome free of admin

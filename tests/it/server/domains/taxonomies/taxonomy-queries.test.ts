@@ -56,7 +56,7 @@ describe('listAllCategories', () => {
     // Real hydration: the cover resolves against the seeded image row and
     // the DTO picks up the thumbhash + versioned public URL.
     expect(cats[0].coverThumbhash).toBe('cover-hash')
-    expect(cats[0].cover).toBe(`https://assets.example.com/images/categories/coding.jpg?v=${row.updatedAt.getTime()}`)
+    expect(cats[0].cover).toBe(`https://example.com/storage/images/categories/coding.jpg?v=${row.updatedAt.getTime()}`)
   })
 
   it('empty result → empty array', async () => {

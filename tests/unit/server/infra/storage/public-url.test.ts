@@ -38,7 +38,7 @@ describe('getPublicBaseUrl', () => {
     expect(getPublicBaseUrl()).toBe('https://assets2.example.com')
   })
 
-  it('keeps reporting the host-derived base when uploads are OFF (so SSR can still render historical s3 rows)', () => {
+  it('keeps reporting the host-derived base when uploads are OFF (the 302 target survives the toggle)', () => {
     seedSettings({ storageEnabled: false })
     expect(getPublicBaseUrl()).toBe('https://cdn.example.com')
   })
@@ -49,89 +49,72 @@ describe('getPublicBaseUrl', () => {
   })
 })
 
-describe('resolveAssetUrl — driver dispatch', () => {
-  it('joins the CDN base for an s3 asset', () => {
-    expect(resolveAssetUrl('s3', 'images/2026/05/x.jpg')).toBe('https://cdn.example.com/images/2026/05/x.jpg')
+// Site-owned contract: every stored asset renders as `${website}/storage/<key>`
+// regardless of the driver holding the bytes; the `/storage/*` route redirects.
+describe('resolveAssetUrl — site-owned URLs', () => {
+  it('joins the site origin + /storage for a local asset', () => {
+    expect(resolveAssetUrl('images/2026/05/x.jpg')).toBe('https://site.example.com/storage/images/2026/05/x.jpg')
   })
 
-  it('joins the site origin + /storage for a local asset', () => {
-    expect(resolveAssetUrl('local', 'images/2026/05/x.jpg')).toBe(
-      'https://site.example.com/storage/images/2026/05/x.jpg',
-    )
+  it('emits the same site-owned form for an s3 asset (never the CDN base)', () => {
+    expect(resolveAssetUrl('images/2026/05/x.jpg')).toBe('https://site.example.com/storage/images/2026/05/x.jpg')
+    seedSettings({ storageEnabled: false })
+    expect(resolveAssetUrl('images/2026/05/x.jpg')).toBe('https://site.example.com/storage/images/2026/05/x.jpg')
   })
 
   it('trims a leading slash on the storage path', () => {
-    expect(resolveAssetUrl('local', '/musics/a.mp3')).toBe('https://site.example.com/storage/musics/a.mp3')
+    expect(resolveAssetUrl('/musics/a.mp3')).toBe('https://site.example.com/storage/musics/a.mp3')
   })
 
   it('appends ?v=<updatedAtMs> when provided', () => {
-    expect(resolveAssetUrl('local', 'images/a.jpg', 123)).toBe('https://site.example.com/storage/images/a.jpg?v=123')
+    expect(resolveAssetUrl('images/a.jpg', 123)).toBe('https://site.example.com/storage/images/a.jpg?v=123')
   })
 })
 
-describe('resolveAssetUrl — missing-base guards', () => {
-  it('throws ActionFailure(503) for an s3 asset when the CDN host is empty', () => {
-    seedSettings({ assetHost: '' })
-    expect(() => resolveAssetUrl('s3', 'images/a.jpg')).toThrow(ActionFailure)
-    expect(safeResolveAssetUrl('s3', 'images/a.jpg')).toBeNull()
-  })
-
-  it('throws ActionFailure(503) for a local asset when the site origin is empty (no relative URL)', () => {
+describe('resolveAssetUrl — missing-origin guard', () => {
+  it('throws ActionFailure(503) when the site origin is empty (no relative URL)', () => {
     seedSettings({ website: '' })
-    expect(() => resolveAssetUrl('local', 'images/a.jpg')).toThrow(ActionFailure)
-    expect(safeResolveAssetUrl('local', 'images/a.jpg')).toBeNull()
+    expect(() => resolveAssetUrl('images/a.jpg')).toThrow(ActionFailure)
+    expect(() => resolveAssetUrl('images/a.jpg')).toThrow(
+      '请先在 /admin/settings/general 配置站点网址（siteIdentity.website）',
+    )
+    expect(safeResolveAssetUrl('images/a.jpg')).toBeNull()
   })
 
   it('re-throws non-ActionFailure errors from safeResolveAssetUrl', () => {
     // The unhydrated-snapshot Error must not be swallowed as an ActionFailure.
     setBlogSettingsBundleForTests(null)
-    expect(() => safeResolveAssetUrl('s3', 'images/a.jpg')).toThrow('not been hydrated')
+    expect(() => safeResolveAssetUrl('images/a.jpg')).toThrow('not been hydrated')
   })
 })
 
-// Font URL contract (hard repo rule): local → `/fonts/embedded/<hash>/result.css`,
-// s3 → `<publicBaseUrl>/fonts/<hash>/result.css`.
-describe('resolveAssetUrl — local route override (font options bag)', () => {
+// Font URL contract (hard repo rule): `/fonts/embedded/<hash>/result.css` —
+// the route override is driver-neutral, so the form holds for local AND s3 rows.
+describe('resolveAssetUrl — route override (font options bag)', () => {
   const HASH = 'a'.repeat(64)
   const CSS_KEY = `fonts/${HASH}/result.css`
-  const FONT_OPTIONS = { local: { route: '/fonts/embedded/', stripPrefix: 'fonts/' } }
+  const FONT_OPTIONS = { route: '/fonts/embedded/', stripPrefix: 'fonts/' }
 
-  it('reproduces the embedded-font local URL byte-for-byte', () => {
-    expect(resolveAssetUrl('local', CSS_KEY, undefined, FONT_OPTIONS)).toBe(
+  it('reproduces the embedded-font URL byte-for-byte', () => {
+    expect(resolveAssetUrl(CSS_KEY, undefined, FONT_OPTIONS)).toBe(
       `https://site.example.com/fonts/embedded/${HASH}/result.css`,
     )
   })
 
-  it('keeps the s3 URL on the raw storage key (options ignored)', () => {
-    expect(resolveAssetUrl('s3', CSS_KEY, undefined, FONT_OPTIONS)).toBe(`https://cdn.example.com/${CSS_KEY}`)
-  })
-
-  it('appends ?v=<updatedAtMs> under the route override, both drivers', () => {
-    expect(resolveAssetUrl('local', CSS_KEY, 123, FONT_OPTIONS)).toBe(
+  it('appends ?v=<updatedAtMs> under the route override', () => {
+    expect(resolveAssetUrl(CSS_KEY, 123, FONT_OPTIONS)).toBe(
       `https://site.example.com/fonts/embedded/${HASH}/result.css?v=123`,
     )
-    expect(resolveAssetUrl('s3', CSS_KEY, 123, FONT_OPTIONS)).toBe(`https://cdn.example.com/${CSS_KEY}?v=123`)
   })
 
   it('keeps the full key when stripPrefix does not match', () => {
-    expect(resolveAssetUrl('local', 'other/x.css', undefined, FONT_OPTIONS)).toBe(
+    expect(resolveAssetUrl('other/x.css', undefined, FONT_OPTIONS)).toBe(
       'https://site.example.com/fonts/embedded/other/x.css',
     )
   })
 
-  it('still throws ActionFailure(503) for local when the site origin is empty', () => {
+  it('still throws ActionFailure(503) when the site origin is empty', () => {
     seedSettings({ website: '' })
-    expect(() => resolveAssetUrl('local', CSS_KEY, undefined, FONT_OPTIONS)).toThrow(ActionFailure)
-    expect(() => resolveAssetUrl('local', CSS_KEY, undefined, FONT_OPTIONS)).toThrow(
-      '请先在 /admin/settings/general 配置站点网址（siteIdentity.website）',
-    )
-  })
-
-  it('still throws ActionFailure(503) for s3 when the CDN host is empty (options ignored)', () => {
-    seedSettings({ assetHost: '' })
-    expect(() => resolveAssetUrl('s3', CSS_KEY, undefined, FONT_OPTIONS)).toThrow(ActionFailure)
-    expect(() => resolveAssetUrl('s3', CSS_KEY, undefined, FONT_OPTIONS)).toThrow(
-      '请先在 /admin/settings/assets 配置 S3 公共访问基地址',
-    )
+    expect(() => resolveAssetUrl(CSS_KEY, undefined, FONT_OPTIONS)).toThrow(ActionFailure)
   })
 })

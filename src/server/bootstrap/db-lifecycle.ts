@@ -5,6 +5,7 @@ import {
 } from '@/server/bootstrap/analytics-lifecycle'
 import { ManagedEngine } from '@/server/bootstrap/managed-engine'
 import { rescheduleGeoipUpdate } from '@/server/domains/analytics/geoip-scheduler'
+import { flipBrandingDrivers } from '@/server/domains/assets/services/storage'
 import { rescheduleArchive, scheduleNextArchive, wireArchiveScheduler } from '@/server/domains/audit/services/scheduler'
 import { wireSessionStorageDb } from '@/server/domains/auth/session-storage'
 import { wireTokenPurgeScheduler } from '@/server/domains/auth/token-purge-scheduler'
@@ -18,8 +19,15 @@ import {
 } from '@/server/domains/backup/services/restore'
 import { resetLikeTokenSweep, startLikeTokenSweep } from '@/server/domains/comments/services/likes'
 import { wireScheduledPublishScheduler } from '@/server/domains/content/scheduled-publish'
+import {
+  backfillStorageAssetUrls,
+  runAssetUrlBackfillOnceAtBoot,
+} from '@/server/domains/content/services/asset-url-backfill'
+import { invalidateImageEnhanceCacheFor } from '@/server/domains/images/services/cache'
+import { updateBlogSettingsSection } from '@/server/domains/settings/services/core'
 import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { registerSectionChangeHandler } from '@/server/domains/settings/services/section-changes'
+import { wireS3Migration } from '@/server/domains/storage/s3-migration'
 import { wireWebmentionPostPublishHook } from '@/server/domains/webmentions/enqueue'
 import { wireWebmentionInboxScheduler } from '@/server/domains/webmentions/inbox-scheduler'
 import { wireWebmentionOutboxScheduler } from '@/server/domains/webmentions/outbox-scheduler'
@@ -42,10 +50,6 @@ import {
 import { wireDbMaintenanceScheduler } from '@/server/infra/db/maintenance'
 import { migrateDatabase } from '@/server/infra/db/migrate'
 import { invalidateMailTransportCache } from '@/server/infra/email/sender'
-// Load-bearing: each batcher module self-registers on the registry at import time.
-import '@/server/domains/analytics/services/batcher'
-import '@/server/domains/analytics/services/pv-batcher'
-import '@/server/domains/audit/services/batcher'
 import {
   closeHttpServer,
   restartServer,
@@ -53,7 +57,12 @@ import {
   setRestartRefreshSettings,
   setServerPhase,
 } from '@/server/infra/lifecycle'
+// Load-bearing: each batcher module self-registers on the registry at import time.
+import '@/server/domains/analytics/services/batcher'
+import '@/server/domains/analytics/services/pv-batcher'
+import '@/server/domains/audit/services/batcher'
 import { root } from '@/server/infra/logger'
+import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { isRecord } from '@/shared/utils/type-guards'
 
 // HMR re-evaluates server.ts per cycle; import.meta.hot.data persists.
@@ -94,6 +103,24 @@ function wireDatabase(handle: DatabaseHandle): DatabaseHandle {
   wireWebmentionPostPublishHook()
   wireKvSweepScheduler({ getDb })
   wireDbMaintenanceScheduler({ getHandle: () => engine.get() })
+  wireS3Migration({
+    persistFlippedStorage: async (db, storage) => {
+      // Send the FULL section (asset/upload carried over) — the assets section
+      // ships no defaults, so a storage-only patch cannot validate without a
+      // stored row. The override flag is reserved for this migration task.
+      const current = requireBlogSettingsSection('assets')
+      await updateBlogSettingsSection(db, 'assets', { asset: current.asset, upload: current.upload, storage }, null, {
+        allowStorageConfigOverride: true,
+      })
+    },
+    flipBrandingDrivers,
+    invalidateImageMeta: async (db, storagePaths) => {
+      for (const storagePath of storagePaths) {
+        await invalidateImageEnhanceCacheFor(db, storagePath)
+      }
+    },
+    postSwitchBackfill: async (db) => backfillStorageAssetUrls(db),
+  })
   initAllBatchers(handle)
   startLikeTokenSweep(handle.db)
   return handle
@@ -214,6 +241,13 @@ registerSectionChangeHandler('analytics', rescheduleGeoipUpdate)
 if (!migrationsRanInHmr()) {
   await migrateDatabase(getDb())
   markMigrationsRanInHmr()
+}
+
+// One-time rewrite of legacy baked CDN-absolute asset URLs to the site-owned
+// `/storage/<key>` form — flag-gated and failure-swallowing inside; fire-and-
+// forget so boot never waits on (or fails on) the corpus scan.
+if (!isVitest()) {
+  void runAssetUrlBackfillOnceAtBoot(getDb())
 }
 
 // The priority-0 shutdown hook (after the priority-100 batcher flushes) lives in the ManagedEngine.

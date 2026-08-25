@@ -4,6 +4,7 @@ import path from 'node:path'
 import type { Env } from '@/server/http/context'
 
 import { IMMUTABLE_CACHE_CONTROL, serveStoredLocalFile } from '@/server/http/resources/serve-local-file'
+import { s3StorageRedirect } from '@/server/http/resources/storage-redirect'
 
 export const localStorageRouter = new Hono<Env>()
 
@@ -59,6 +60,13 @@ localStorageRouter.get('/storage/*', async (c) => {
   // Gate before resolving — private namespaces 404 (not 403) before touching the filesystem.
   if (!isPublicStorageKey(key)) {
     return c.body(null, 404)
+  }
+
+  // S3 primary: the site-owned URL 302s to the current backend (query string
+  // preserved) instead of streaming — the local copy may not exist anymore.
+  const redirect = s3StorageRedirect(key, new URL(c.req.url).search)
+  if (redirect !== null) {
+    return redirect
   }
 
   return serveStoredLocalFile({

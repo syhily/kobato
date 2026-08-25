@@ -5,8 +5,8 @@ import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_hel
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { image as imageTable } from '@/server/infra/db/schema/media'
 
-// No module mocks: real image rows and the real settings snapshot's
-// assets.example.com base URL.
+// No module mocks: real image rows; the stamp is the origin-relative
+// site-owned form regardless of the settings snapshot.
 const { syncLibraryImageBlocks } = await import('@/server/domains/content/services/image-sync')
 
 const db = getTestDb()
@@ -71,7 +71,7 @@ describe('content/services/image-sync — collectImageBlocks routing', () => {
     await syncLibraryImageBlocks(db, body)
 
     const block = (body[0] as { children: Array<{ src: string; storagePath: string; thumbhash: string }> }).children[0]!
-    expect(block.src).toBe('https://assets.example.com/p/1.jpg')
+    expect(block.src).toBe('/storage/p/1.jpg')
     expect(block.storagePath).toBe('p/1.jpg')
     expect(block.thumbhash).toBe('th')
   })
@@ -156,7 +156,7 @@ describe('content/services/image-sync — row resolution', () => {
     expect((body[0] as { thumbhash: string }).thumbhash).toBe('original')
   })
 
-  it('leaves src untouched when the asset base URL is unconfigured', async () => {
+  it('always stamps the origin-relative site-owned src, independent of the CDN base', async () => {
     // Host '' makes the real getPublicBaseUrl() return null; the it setup's
     // afterEach restores the default bundle automatically.
     setBlogSettingsBundleForTests({
@@ -167,13 +167,12 @@ describe('content/services/image-sync — row resolution', () => {
       },
     })
     const id = await seedImage({ storagePath: 'p/1.jpg' })
-    const body = [img('i1', { imageId: String(id), src: 'external' })] as never
+    const body = [img('i1', { imageId: String(id), src: 'https://cdn.legacy.example/p/1.jpg' })] as never
 
     await syncLibraryImageBlocks(db, body)
 
     const block = body[0] as { src: string; storagePath: string }
-    expect(block.src).toBe('external')
-    // storagePath is canonicalised regardless of the base-URL configuration.
+    expect(block.src).toBe('/storage/p/1.jpg')
     expect(block.storagePath).toBe('p/1.jpg')
   })
 })

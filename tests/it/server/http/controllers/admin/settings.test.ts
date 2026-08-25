@@ -11,6 +11,7 @@ import { __clearSectionChangeHandlersForTests } from '@/server/domains/settings/
 import { adminSettingsRouter } from '@/server/http/controllers/admin/settings.controller'
 import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
 import { auditLog, setting } from '@/server/infra/db/schema/config'
+import { storageMigration } from '@/server/infra/db/schema/storage-migration'
 import { user } from '@/server/infra/db/schema/user'
 
 // update against the real engine (section write, encryption, snapshot,
@@ -117,5 +118,35 @@ describe('adminSettingsRouter.update', () => {
       code: 'BAD_REQUEST',
       data: [{ message: 'Unrecognized key: "bogus"', path: ['mail', 'bogus'] }],
     })
+  })
+
+  it('rejects storage patches with CONFLICT while a migration is in flight', async () => {
+    // The lock probe is injected by the controller from the storage domain —
+    // this exercises the real perimeter wiring, not a stubbed predicate.
+    const now = new Date()
+    await db.insert(storageMigration).values({
+      id: 1,
+      direction: 'local-to-s3',
+      targetStorage: null,
+      sourceStorage: null,
+      phase: 'copying',
+      cursor: null,
+      copiedObjects: 0,
+      copiedBytes: 0,
+      skippedObjects: 0,
+      error: null,
+      verification: null,
+      startedAt: now,
+      updatedAt: now,
+      finishedAt: null,
+    })
+
+    await expect(
+      call(
+        adminSettingsRouter.update,
+        { section: 'assets', payload: { storage: { endpoint: 'https://s3.example.com' } } },
+        { context: adminCtx() },
+      ),
+    ).rejects.toMatchObject({ code: 'CONFLICT' })
   })
 })

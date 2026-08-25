@@ -8,7 +8,7 @@ import type { AdminImageDto } from '@/shared/contracts/images'
 import { orpc } from '@/client/api/client'
 import { orpcQuery } from '@/client/api/orpc-query'
 import { onMutationError } from '@/client/lib/toast-api-error'
-import { useAssetsSettings } from '@/shared/lib/blog-config-context'
+import { useAssetsSettings, useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { ImageDetailDialog } from '@/ui/admin/images/ImageDetailDialog'
 import { ImagesFilterBar } from '@/ui/admin/images/ImagesFilterBar'
 import { JustifiedImageGrid, JustifiedImageGridSkeleton } from '@/ui/admin/images/JustifiedImageGrid'
@@ -26,6 +26,7 @@ import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empt
 export function ImagesView() {
   const { q, kind, dispatch, pageSize, activeFilters } = useImagesReducer()
   const { asset, storage } = useAssetsSettings()
+  const { website } = useSiteIdentity()
   const queryClient = useQueryClient()
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
   const [uploadOpen, setUploadOpen] = useState(false)
@@ -197,6 +198,7 @@ export function ImagesView() {
                 images={allImages}
                 assetHost={asset.host}
                 urlTemplate={storage.urlTemplate}
+                siteOrigin={website}
                 onSelect={setSelectedImage}
               />
               <div ref={sentinelRef} className="mt-8 flex items-center justify-center">

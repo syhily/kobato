@@ -1,5 +1,7 @@
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 
 // Point the route + `resolveLocalPath` at a fresh temp directory. The mock
 // factory runs before any import of the route, so STORAGE_DIR is set first.
@@ -15,6 +17,19 @@ vi.mock('@/server/infra/paths', async (importOriginal) => {
 })
 
 const { localStorageRouter } = await import('@/server/http/resources/local-storage')
+
+// The default test bundle enables a complete S3 config — override the toggle
+// per suite: OFF streams local bytes, ON exercises the 302 branch.
+function seedStorageEnabled(enabled: boolean, assetHost = 'assets.example.com') {
+  setBlogSettingsBundleForTests({
+    ...TEST_BLOG_SETTINGS_BUNDLE,
+    assets: {
+      ...TEST_BLOG_SETTINGS_BUNDLE.assets!,
+      asset: { scheme: 'https', host: assetHost },
+      storage: { ...TEST_BLOG_SETTINGS_BUNDLE.assets!.storage, enabled },
+    },
+  })
+}
 
 // The allowlist is under test: file contents are irrelevant — only key reachability matters.
 beforeAll(() => {
@@ -38,7 +53,13 @@ afterAll(() => {
   rmSync(tmp.root, { recursive: true, force: true })
 })
 
-describe('local-storage public route — namespace allowlist', () => {
+describe('local-storage public route — namespace allowlist (local driver)', () => {
+  // Streaming paths run with S3 OFF so the local driver owns the response.
+  // beforeEach (not beforeAll): the shared setup resets the snapshot per test.
+  beforeEach(() => {
+    seedStorageEnabled(false)
+  })
+
   it('serves allowlisted public namespaces', async () => {
     const img = await localStorageRouter.request('/storage/images/a.jpg')
     expect(img.status).toBe(200)
@@ -87,5 +108,35 @@ describe('local-storage public route — namespace allowlist', () => {
     expect(res.status).toBe(206)
     expect(res.headers.get('Content-Range')).toBe('bytes 0-1/3')
     expect(await res.text()).toBe('au')
+  })
+})
+
+// Default bundle (S3 enabled + complete) drives the redirect branch.
+describe('local-storage public route — s3 redirect', () => {
+  it('302s an allowlisted key to the current public base, preserving the query string', async () => {
+    const res = await localStorageRouter.request('/storage/images/a.jpg?v=123')
+    expect(res.status).toBe(302)
+    expect(res.headers.get('Location')).toBe('https://assets.example.com/images/a.jpg?v=123')
+    expect(res.headers.get('Cache-Control')).toBe('public, max-age=300')
+    expect(await res.text()).toBe('')
+  })
+
+  it('keeps the namespace allowlist ahead of the redirect (private keys 404, never redirect)', async () => {
+    const res = await localStorageRouter.request('/storage/backup/backup-2026-01-01T00-00-00.sql.gz?v=1')
+    expect(res.status).toBe(404)
+    expect(res.headers.get('Location')).toBeNull()
+  })
+
+  it('follows asset host updates immediately', async () => {
+    seedStorageEnabled(true, 'cdn2.example.com')
+    const res = await localStorageRouter.request('/storage/musics/b.mp3')
+    expect(res.status).toBe(302)
+    expect(res.headers.get('Location')).toBe('https://cdn2.example.com/musics/b.mp3')
+  })
+
+  it('answers 503 when S3 is active but the public base is unconfigured', async () => {
+    seedStorageEnabled(true, '')
+    const res = await localStorageRouter.request('/storage/images/a.jpg')
+    expect(res.status).toBe(503)
   })
 })

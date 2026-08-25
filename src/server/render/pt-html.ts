@@ -46,15 +46,18 @@ export async function renderPortableTextToHtml(
   options: RenderPortableTextToHtmlOptions = {},
 ): Promise<string> {
   const footnotesSectionTitle = resolveFootnotesSectionTitle(requireBlogSettingsSection('content'))
+  // Feed/SSR HTML crosses origins — origin-relative asset srcs are absolutized
+  // against the site origin at emit time (content stores `/storage/<key>`).
+  const website = trimTrailingSlash(requireBlogSettingsSection('siteIdentity').website)
 
   const headingIdByBlockKey = buildHeadingIdByBlockKey(body, headingSlugs, deriveSlug)
   const isRss = options.rssMode === true
 
   const { prose, definitions } = partitionFootnoteDefinitions(body)
 
-  const musicByPlayerId = await resolveMusicPlayerMeta(body, resolveMusicEmbeds)
+  const musicByPlayerId = await resolveMusicPlayerMeta(body, resolveMusicEmbeds, website)
 
-  const components = buildPortableTextComponents({ headingIdByBlockKey, isRss, musicByPlayerId })
+  const components = buildPortableTextComponents({ headingIdByBlockKey, isRss, musicByPlayerId, website })
 
   let html = toHTML(prose as PortableTextBlock[], { components })
 
@@ -77,6 +80,7 @@ interface MusicMeta {
 async function resolveMusicPlayerMeta(
   body: PortableTextBodyType,
   resolveMusicEmbeds: MusicEmbedResolver,
+  website: string,
 ): Promise<Map<string, MusicMeta>> {
   const playerIds = collectMusicPlayerIds(body)
   if (playerIds.length === 0) {
@@ -87,17 +91,27 @@ async function resolveMusicPlayerMeta(
 
   const map = new Map<string, MusicMeta>()
   for (const [playerId, meta] of metas) {
-    map.set(playerId, { name: meta.name, artist: meta.artist, audioUrl: meta.url, cover: absolutizeForFeed(meta.pic) })
+    map.set(playerId, {
+      name: meta.name,
+      artist: meta.artist,
+      audioUrl: absolutizeAssetSrc(meta.url, website),
+      cover: absolutizeAssetSrc(meta.pic, website),
+    })
   }
   return map
 }
 
-// Feed readers resolve URLs on another origin — absolutize relative covers.
-function absolutizeForFeed(url: string): string {
-  if (!url.startsWith('/')) {
+function trimTrailingSlash(value: string): string {
+  return value.endsWith('/') ? value.slice(0, -1) : value
+}
+
+// Feed readers resolve URLs on another origin — absolutize origin-relative
+// asset srcs (`/storage/…`, `/images/…`, `/fonts/…`) against the site origin.
+function absolutizeAssetSrc(url: string, website: string): string {
+  if (!url.startsWith('/') || url.startsWith('//') || website === '') {
     return url
   }
-  return joinUrl(requireBlogSettingsSection('siteIdentity').website, url)
+  return joinUrl(website, url)
 }
 
 // HTML components
@@ -106,6 +120,7 @@ interface ComponentContext {
   headingIdByBlockKey: Map<string, string>
   isRss: boolean
   musicByPlayerId: Map<string, MusicMeta>
+  website: string
 }
 
 // Shared mark rules: the block `marks` map and the table-cell inline path must not drift.
@@ -192,7 +207,7 @@ function buildPortableTextComponents(ctx: ComponentContext): PortableTextCompone
       footnoteRef: ({ value, children }) => renderFootnoteRefMark(children, value),
     },
     types: {
-      image: ({ value }) => renderImageBlock(value as ImageBlock),
+      image: ({ value }) => renderImageBlock(value as ImageBlock, ctx.website),
       code: ({ value }) => renderCodeBlock(value as CodeBlock, ctx.isRss),
       mathBlock: ({ value }) => renderMathBlock(value as MathBlock, ctx.isRss),
       horizontalRule: () => '<hr />',
@@ -223,8 +238,8 @@ function buildPortableTextComponents(ctx: ComponentContext): PortableTextCompone
 
 // Block renderers
 
-function renderImageBlock(value: ImageBlock): string {
-  const src = escapeHtml(value.src)
+function renderImageBlock(value: ImageBlock, website: string): string {
+  const src = escapeHtml(absolutizeAssetSrc(value.src, website))
   const alt = value.alt !== undefined && value.alt !== '' ? ` alt="${escapeHtml(value.alt)}"` : ''
   const width = value.width !== undefined ? ` width="${value.width}"` : ''
   const height = value.height !== undefined ? ` height="${value.height}"` : ''

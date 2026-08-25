@@ -47,8 +47,8 @@ describe('musicRouter.get', () => {
       name: 'Test Song',
       artist: 'Test Artist',
       album: 'Test Album',
-      url: 'https://assets.example.com/musics/abc123def4567890.mp3',
-      pic: 'https://assets.example.com/musics/abc123def4567890.jpg',
+      url: 'https://example.com/storage/musics/abc123def4567890.mp3',
+      pic: 'https://example.com/storage/musics/abc123def4567890.jpg',
       lyric: '[00:00.00]Lyric line 1',
     })
   })

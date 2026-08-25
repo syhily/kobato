@@ -54,7 +54,7 @@ export const DEFAULT_MUSIC_COVER_URL = '/images/default-music-cover.png'
  * `null` when the audio URL can't be built; a missing cover falls back to the default.
  */
 function toPublicMusicMeta(row: MusicRow): PublicMusicMeta | null {
-  const audioUrl = safeResolveAssetUrl(row.storageDriver, row.audioStoragePath)
+  const audioUrl = safeResolveAssetUrl(row.audioStoragePath)
   if (audioUrl === null) {
     return null
   }
@@ -64,7 +64,7 @@ function toPublicMusicMeta(row: MusicRow): PublicMusicMeta | null {
     artist: row.artist,
     album: row.album,
     url: audioUrl,
-    pic: safeResolveAssetUrl(row.storageDriver, row.coverStoragePath) ?? DEFAULT_MUSIC_COVER_URL,
+    pic: safeResolveAssetUrl(row.coverStoragePath) ?? DEFAULT_MUSIC_COVER_URL,
     lyric: row.lyric ?? '',
   }
 }

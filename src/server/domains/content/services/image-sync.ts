@@ -2,7 +2,6 @@ import type { Database } from '@/server/infra/db/database'
 import type { ImageBlock, PortableTextBody } from '@/shared/pt/schema'
 
 import { findImagesByIds, updateImageNote } from '@/server/infra/db/operations/image'
-import { getPublicBaseUrl } from '@/server/infra/storage/public-url'
 import { visitNestedBlocks } from '@/shared/pt/utils'
 import { idFromString } from '@/shared/utils/id'
 
@@ -52,11 +51,9 @@ export async function syncLibraryImageBlocks(db: Database, body: PortableTextBod
     if (row.thumbhash !== null && row.thumbhash !== undefined && row.thumbhash !== '') {
       target.thumbhash = row.thumbhash
     }
-    // Keep `src` at the bucket's canonical public URL so the body renders without the SSR enhancer.
-    const base = getPublicBaseUrl()
-    if (base !== null) {
-      target.src = `${base}/${row.storagePath}`
-    }
+    // Site-owned form: content stores the origin-relative `/storage/<key>` so a
+    // backend/CDN switch never breaks stored bodies; renderers absolutize.
+    target.src = `/storage/${row.storagePath}`
     const nextNote = (target.alt ?? '').trim()
     if (nextNote !== (row.note ?? '')) {
       await updateImageNote(db, row.id, nextNote === '' ? null : nextNote).catch(() => undefined)

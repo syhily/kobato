@@ -13,6 +13,7 @@ import { assertSectionPatchKeys, isRecord } from '@/server/domains/settings/serv
 import { findSettingByScope, upsertSetting } from '@/server/infra/db/operations/setting'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
+import { validateS3Config } from '@/server/infra/storage/backends/s3'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 import { mergeSectionPatch } from '@/shared/config/merge-section-patch'
 import { isValidPasskeyDomain } from '@/shared/utils/safe-url'
@@ -29,16 +30,37 @@ export interface SectionUpdateResult {
   warnings: string[]
 }
 
+export interface SectionUpdateOptions {
+  /**
+   * Internal escape hatch for the storage migration task: allows patching a
+   * LOCKED `assets.storage` config. Regular admin saves never pass this.
+   */
+  allowStorageConfigOverride?: boolean
+  /**
+   * Storage-migration lock probe, injected by the HTTP perimeter (Core may
+   * not import the storage domain): when it resolves `true`, storage.*
+   * patches are rejected with CONFLICT. Absent → treated as no active
+   * migration (internal callers never patch storage through this pipeline).
+   */
+  isStorageMigrationActive?: () => Promise<boolean>
+}
+
 export async function updateBlogSettingsSection(
   db: Database,
   section: SettingsSection,
   payload: unknown,
   updatedBy: number | null,
+  options?: SectionUpdateOptions,
 ): Promise<SectionUpdateResult> {
   const meta = SECTION_REGISTRY[section]
   // Strict key check before any DB work — unknown keys are a client bug; the
   // assertion signature types the passing payload for the merge below.
   assertSectionPatchKeys(section, payload)
+
+  if (section === 'assets' && options?.allowStorageConfigOverride !== true) {
+    // Lock + first-enable connectivity validation; async, so it runs before the sync transaction.
+    await assertAssetsStoragePatchAllowed(db, payload, options?.isStorageMigrationActive)
+  }
 
   // Sync transaction; the snapshot refresh runs in the same macrotask, so no reader can interleave.
   db.transaction((tx) => {
@@ -98,6 +120,78 @@ export async function updateBlogSettingsSection(
   }
 
   return { bundle, warnings }
+}
+
+/**
+ * Guard for `assets` patches touching `storage.*`:
+ * 1. A running storage migration owns the config — reject with CONFLICT
+ *    (the probe is injected by the perimeter; see {@link SectionUpdateOptions}).
+ * 2. Once S3 is enabled the config is locked — EXCEPT a patch that changes
+ *    only `accessKeyId` / `secretAccessKey` / `urlTemplate` (credential
+ *    rotation / CDN template tweaks); structural changes (endpoint, region,
+ *    bucket, path-style, the toggle) go through the migration wizard
+ *    (`/admin/library/storage`), not this pipeline.
+ * 3. Every patch allowed through — first-time configuration / enablement AND
+ *    a locked-state credential/template change — probes the merged config
+ *    (HeadBucket) and rejects when it cannot connect.
+ */
+async function assertAssetsStoragePatchAllowed(
+  db: Database,
+  payload: unknown,
+  isMigrationActive?: () => Promise<boolean>,
+): Promise<void> {
+  if (!isRecord(payload) || !isRecord(payload.storage)) {
+    return
+  }
+  if (isMigrationActive !== undefined && (await isMigrationActive())) {
+    throw new DomainError('CONFLICT', '存储迁移进行中，暂不能修改 S3 配置')
+  }
+
+  const current = getBlogSettingsBundleSync()?.assets?.storage
+  const patch = payload.storage
+  const merged = {
+    enabled: typeof patch.enabled === 'boolean' ? patch.enabled : (current?.enabled ?? false),
+    endpoint: typeof patch.endpoint === 'string' ? patch.endpoint : (current?.endpoint ?? ''),
+    region: typeof patch.region === 'string' ? patch.region : (current?.region ?? ''),
+    bucket: typeof patch.bucket === 'string' ? patch.bucket : (current?.bucket ?? ''),
+    accessKeyId: typeof patch.accessKeyId === 'string' ? patch.accessKeyId : (current?.accessKeyId ?? ''),
+    secretAccessKey:
+      typeof patch.secretAccessKey === 'string' ? patch.secretAccessKey : (current?.secretAccessKey ?? ''),
+    forcePathStyle:
+      typeof patch.forcePathStyle === 'boolean' ? patch.forcePathStyle : (current?.forcePathStyle ?? false),
+    urlTemplate: typeof patch.urlTemplate === 'string' ? patch.urlTemplate : (current?.urlTemplate ?? ''),
+  }
+  if (current?.enabled === true) {
+    // Locked: only credentials and the URL template may move; every structural
+    // field must match the persisted config exactly.
+    const structuralChange =
+      merged.enabled !== current.enabled ||
+      merged.endpoint !== current.endpoint ||
+      merged.region !== current.region ||
+      merged.bucket !== current.bucket ||
+      merged.forcePathStyle !== current.forcePathStyle
+    if (structuralChange) {
+      throw new DomainError('BAD_REQUEST', 'S3 配置已锁定；如需变更请使用存储迁移功能（媒体管理 → 存储管理）')
+    }
+    // An enabled config must stay complete — an exempt patch that empties a
+    // required field must not slip through unprobed.
+    if (
+      merged.endpoint.trim() === '' ||
+      merged.bucket.trim() === '' ||
+      merged.accessKeyId.trim() === '' ||
+      merged.secretAccessKey.trim() === ''
+    ) {
+      throw new DomainError('BAD_REQUEST', 'S3 配置不完整：Endpoint / Bucket / Access Key / Secret 均不能为空')
+    }
+  }
+  // Only probe a config that looks complete; incomplete patches fall through to schema validation.
+  if (merged.endpoint.trim() === '' || merged.bucket.trim() === '' || merged.accessKeyId.trim() === '') {
+    return
+  }
+  const validation = await validateS3Config(merged)
+  if (!validation.ok) {
+    throw new DomainError('BAD_REQUEST', validation.message)
+  }
 }
 
 /**

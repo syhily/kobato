@@ -150,6 +150,7 @@ export function NavContent({ role, pendingCommentCount = 0, pendingWebmentionCou
                 '/admin/library/music',
                 '/admin/library/branding',
                 '/admin/library/fonts',
+                '/admin/library/storage',
               ]}
             >
               <NavMenuItem.CollapsibleItem ariaLabel="展开媒体管理子菜单">
@@ -179,6 +180,13 @@ export function NavContent({ role, pendingCommentCount = 0, pendingWebmentionCou
                   <NavMenuItem>
                     <NavMenuItem.Link to="/admin/library/fonts" className="pl-11">
                       <NavMenuItem.Label>网站字体</NavMenuItem.Label>
+                    </NavMenuItem.Link>
+                  </NavMenuItem>
+                )}
+                {showAdminItems && (
+                  <NavMenuItem>
+                    <NavMenuItem.Link to="/admin/library/storage" className="pl-11">
+                      <NavMenuItem.Label>存储管理</NavMenuItem.Label>
                     </NavMenuItem.Link>
                   </NavMenuItem>
                 )}

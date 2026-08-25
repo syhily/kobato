@@ -89,8 +89,12 @@ export function makeMemoryBackend({ driver = 's3' }: { driver?: StorageDriver } 
         }
       }
     },
-    async list(prefix: string, opts?: { maxKeys?: number }): Promise<StoredObjectMeta[]> {
-      const keys = [...store.keys()].filter((key) => key.startsWith(prefix)).sort()
+    async list(prefix: string, opts?: { maxKeys?: number; startAfter?: string }): Promise<StoredObjectMeta[]> {
+      let keys = [...store.keys()].filter((key) => key.startsWith(prefix)).sort()
+      if (opts?.startAfter !== undefined) {
+        const startAfter = opts.startAfter
+        keys = keys.filter((key) => key > startAfter)
+      }
       const capped = opts?.maxKeys === undefined ? keys : keys.slice(0, opts.maxKeys)
       return capped.map((key) => ({ key, size: store.get(key)!.body.length }))
     },

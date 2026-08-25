@@ -1,5 +1,7 @@
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 
 // Point the route + `resolveLocalPath` at a fresh temp directory. The mock
 // factory runs before any import of the route, so STORAGE_DIR is set first.
@@ -15,6 +17,18 @@ vi.mock('@/server/infra/paths', async (importOriginal) => {
 })
 
 const { fontsEmbeddedRouter } = await import('@/server/http/resources/fonts-embedded')
+
+// The default test bundle enables a complete S3 config — override the toggle
+// per suite: OFF streams local bytes, ON exercises the 302 branch.
+function seedStorageEnabled(enabled: boolean) {
+  setBlogSettingsBundleForTests({
+    ...TEST_BLOG_SETTINGS_BUNDLE,
+    assets: {
+      ...TEST_BLOG_SETTINGS_BUNDLE.assets!,
+      storage: { ...TEST_BLOG_SETTINGS_BUNDLE.assets!.storage, enabled },
+    },
+  })
+}
 
 // Any 64-char lowercase hex string satisfies the route's sha256 shape check.
 const HASH = 'a'.repeat(64)
@@ -32,7 +46,13 @@ afterAll(() => {
   rmSync(tmp.root, { recursive: true, force: true })
 })
 
-describe('fonts-embedded public route', () => {
+describe('fonts-embedded public route (local driver)', () => {
+  // Streaming paths run with S3 OFF; the shared setup resets the snapshot per
+  // test, so the toggle reseeds in beforeEach.
+  beforeEach(() => {
+    seedStorageEnabled(false)
+  })
+
   it('serves a published font package file', async () => {
     const css = await fontsEmbeddedRouter.request(`/fonts/embedded/${HASH}/result.css`)
     expect(css.status).toBe(200)
@@ -71,5 +91,21 @@ describe('fonts-embedded public route', () => {
     expect(res.status).toBe(206)
     expect(res.headers.get('Content-Range')).toBe('bytes 0-4/11')
     expect(await res.text()).toBe('woff2')
+  })
+})
+
+// Default bundle (S3 enabled + complete) drives the redirect branch.
+describe('fonts-embedded public route — s3 redirect', () => {
+  it('302s to the raw storage key on the current public base, preserving the query string', async () => {
+    const res = await fontsEmbeddedRouter.request(`/fonts/embedded/${HASH}/result.css?v=3735928559`)
+    expect(res.status).toBe(302)
+    expect(res.headers.get('Location')).toBe(`https://assets.example.com/fonts/${HASH}/result.css?v=3735928559`)
+    expect(res.headers.get('Cache-Control')).toBe('public, max-age=300')
+  })
+
+  it('keeps the path-shape gate ahead of the redirect (malformed paths 400, never redirect)', async () => {
+    const res = await fontsEmbeddedRouter.request('/fonts/embedded/abc123/result.css')
+    expect(res.status).toBe(400)
+    expect(res.headers.get('Location')).toBeNull()
   })
 })

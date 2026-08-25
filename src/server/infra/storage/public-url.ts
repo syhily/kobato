@@ -1,11 +1,11 @@
-import type { StorageDriver } from '@/shared/config/types'
-
 import { ActionFailure } from '@/server/infra/http/errors'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 
 /**
  * Public base URL for S3 assets, or `null` when unconfigured. Stays non-null
- * while the upload toggle is OFF so existing `s3` rows keep rendering.
+ * while the upload toggle is OFF so existing `s3` rows keep rendering. This is
+ * the 302 TARGET for the site-owned `/storage/*` routes — asset URLs stored
+ * in content never carry it.
  */
 export function getPublicBaseUrl(): string | null {
   const assets = requireBlogSettingsSection('assets')
@@ -16,9 +16,7 @@ export function getPublicBaseUrl(): string | null {
   return `${assets.asset.scheme}://${trimTrailingSlash(host)}`
 }
 
-/**
- * Canonical site origin; base for **local** assets served via `/storage/*`.
- */
+/** Canonical site origin; base for every site-owned asset URL. */
 export function getGeneralWebsite(): string {
   return trimTrailingSlash(requireBlogSettingsSection('siteIdentity').website)
 }
@@ -41,49 +39,37 @@ function appendVersion(url: string, version: number | undefined): string {
 
 export interface ResolveAssetUrlOptions {
   /**
-   * Route override for the `local` driver (leading + trailing slash required);
-   * `stripPrefix` drops a matching storage-key prefix first.
+   * Site route override (leading + trailing slash required); `stripPrefix`
+   * drops a matching storage-key prefix first. Driver-neutral: the route
+   * shape (e.g. `/fonts/embedded/`) applies no matter where the bytes live.
    */
-  local?: {
-    route: string
-    stripPrefix?: string
-  }
+  route?: string
+  stripPrefix?: string
 }
 
 /**
- * Absolute public URL per driver (`s3` → CDN base; `local` → site origin or
- * `options.local.route`). Throws 503 when the base is unset; appends `?v=<updatedAtMs>`.
+ * Site-owned absolute URL for a stored asset: `${website}/storage/<key>`
+ * (or `options.route`), so a storage-backend switch never breaks stored
+ * links — the `/storage/*` route 302s to the current backend when S3 is
+ * active. Throws 503 when the site origin is unset; appends `?v=<updatedAtMs>`.
  */
-export function resolveAssetUrl(
-  driver: StorageDriver,
-  storagePath: string,
-  updatedAtMs?: number,
-  options?: ResolveAssetUrlOptions,
-): string {
-  if (driver === 'local') {
-    const website = getGeneralWebsite()
-    if (website === '') {
-      throw new ActionFailure(503, '请先在 /admin/settings/general 配置站点网址（siteIdentity.website）')
-    }
-    let key = trimLeadingSlash(storagePath)
-    const local = options?.local
-    if (local?.stripPrefix !== undefined && key.startsWith(local.stripPrefix)) {
-      key = key.slice(local.stripPrefix.length)
-    }
-    const route = local?.route ?? '/storage/'
-    return appendVersion(`${website}${route}${key}`, updatedAtMs)
+export function resolveAssetUrl(storagePath: string, updatedAtMs?: number, options?: ResolveAssetUrlOptions): string {
+  const website = getGeneralWebsite()
+  if (website === '') {
+    throw new ActionFailure(503, '请先在 /admin/settings/general 配置站点网址（siteIdentity.website）')
   }
-  const publicBaseUrl = getPublicBaseUrl()
-  if (publicBaseUrl === null) {
-    throw new ActionFailure(503, '请先在 /admin/settings/assets 配置 S3 公共访问基地址')
+  let key = trimLeadingSlash(storagePath)
+  if (options?.stripPrefix !== undefined && key.startsWith(options.stripPrefix)) {
+    key = key.slice(options.stripPrefix.length)
   }
-  return appendVersion(`${publicBaseUrl}/${trimLeadingSlash(storagePath)}`, updatedAtMs)
+  const route = options?.route ?? '/storage/'
+  return appendVersion(`${website}${route}${key}`, updatedAtMs)
 }
 
-/** Null-safe variant: `null` instead of `ActionFailure` when the base is unset. */
-export function safeResolveAssetUrl(driver: StorageDriver, storagePath: string, updatedAtMs?: number): string | null {
+/** Null-safe variant: `null` instead of `ActionFailure` when the site origin is unset. */
+export function safeResolveAssetUrl(storagePath: string, updatedAtMs?: number): string | null {
   try {
-    return resolveAssetUrl(driver, storagePath, updatedAtMs)
+    return resolveAssetUrl(storagePath, updatedAtMs)
   } catch (error) {
     if (error instanceof ActionFailure) {
       return null

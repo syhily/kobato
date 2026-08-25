@@ -1,7 +1,7 @@
 import type { ImgHTMLAttributes, Ref } from 'react'
 
 import { useThumbhashBackground } from '@/client/hooks/use-thumbhash-bg'
-import { useAssetsSettings } from '@/shared/lib/blog-config-context'
+import { useAssetsSettings, useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { getImageSrcset, getImageUrl } from '@/shared/types/images'
 import { cn } from '@/ui/lib/cn'
 import { useImageLoaded } from '@/ui/public/widgets/use-image-loaded'
@@ -17,6 +17,7 @@ export interface RawImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>,
   ref?: Ref<HTMLImageElement>
   assetHost?: string
   urlTemplate?: string
+  siteOrigin?: string
 }
 
 // Exported so plain `<img>` consumers can reuse the same dark-mode dimming.
@@ -33,6 +34,7 @@ export function RawImage({
   sizes,
   assetHost,
   urlTemplate,
+  siteOrigin,
   loading = 'lazy',
   decoding = 'async',
   className,
@@ -45,7 +47,7 @@ export function RawImage({
   const thumbhashStyle = useThumbhashBackground(thumbhash, loaded)
   const srcset =
     sizes !== undefined && sizes !== ''
-      ? getImageSrcset({ src, width, height, quality, assetHost: assetHost ?? '', urlTemplate })
+      ? getImageSrcset({ src, width, height, quality, assetHost: assetHost ?? '', urlTemplate, siteOrigin })
       : undefined
   const mergedStyle: React.CSSProperties | undefined =
     thumbhashStyle === undefined ? style : style === undefined ? thumbhashStyle : { ...thumbhashStyle, ...style }
@@ -54,7 +56,7 @@ export function RawImage({
     <img
       {...rest}
       ref={ref}
-      src={getImageUrl({ src, width, height, quality, assetHost: assetHost ?? '', urlTemplate })}
+      src={getImageUrl({ src, width, height, quality, assetHost: assetHost ?? '', urlTemplate, siteOrigin })}
       alt={alt}
       width={width}
       height={height}
@@ -69,7 +71,8 @@ export function RawImage({
   )
 }
 
-export function Image(props: Omit<RawImageProps, 'assetHost' | 'urlTemplate'>) {
+export function Image(props: Omit<RawImageProps, 'assetHost' | 'urlTemplate' | 'siteOrigin'>) {
   const { asset, storage } = useAssetsSettings()
-  return <RawImage {...props} assetHost={asset.host} urlTemplate={storage.urlTemplate} />
+  const { website } = useSiteIdentity()
+  return <RawImage {...props} assetHost={asset.host} urlTemplate={storage.urlTemplate} siteOrigin={website} />
 }

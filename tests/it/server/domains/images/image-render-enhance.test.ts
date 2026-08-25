@@ -46,7 +46,7 @@ describe('server/images/render-enhance — resolveImageRef', () => {
       width: 1280,
       height: 425,
       thumbhash: 'cover-hash',
-      publicUrl: `https://assets.example.com/images/categories/coding.jpg?v=${row.updatedAt.getTime()}`,
+      publicUrl: `https://example.com/storage/images/categories/coding.jpg?v=${row.updatedAt.getTime()}`,
     })
   })
 

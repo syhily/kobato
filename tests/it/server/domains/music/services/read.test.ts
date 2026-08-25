@@ -5,10 +5,8 @@ import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { music } from '@/server/infra/db/schema/media'
 
 const publicUrlMock = vi.hoisted(() => ({
-  resolveAssetUrl: vi.fn((_driver: string, p: string) => `https://cdn.example.com/${p}`),
-  safeResolveAssetUrl: vi.fn<(_driver: string, p: string) => string | null>(
-    (_driver: string, p: string) => `https://cdn.example.com/${p}`,
-  ),
+  resolveAssetUrl: vi.fn((p: string) => `https://cdn.example.com/${p}`),
+  safeResolveAssetUrl: vi.fn<(p: string) => string | null>((p: string) => `https://cdn.example.com/${p}`),
 }))
 
 vi.mock('@/server/infra/storage/public-url', () => publicUrlMock)
@@ -21,9 +19,7 @@ const db = getTestDb()
 beforeEach(async () => {
   await clearAllTables(db)
   vi.clearAllMocks()
-  publicUrlMock.safeResolveAssetUrl.mockImplementation(
-    (_driver: string, path: string) => `https://cdn.example.com/${path}`,
-  )
+  publicUrlMock.safeResolveAssetUrl.mockImplementation((path: string) => `https://cdn.example.com/${path}`)
 })
 
 async function seedMusic(overrides: Partial<typeof music.$inferInsert> = {}) {
@@ -72,7 +68,7 @@ describe('music/services/read — getMusicMetaForPlayer', () => {
 
   it('falls back to the default cover when the cover URL is unbuildable', async () => {
     await seedMusic()
-    publicUrlMock.safeResolveAssetUrl.mockImplementation((_driver: string, path: string) =>
+    publicUrlMock.safeResolveAssetUrl.mockImplementation((path: string) =>
       path === 'musics/c.jpg' ? null : `https://cdn.example.com/${path}`,
     )
     const meta = await getMusicMetaForPlayer(db, 'p1')
@@ -83,7 +79,7 @@ describe('music/services/read — getMusicMetaForPlayer', () => {
 
   it('returns null when the audio URL is unbuildable (unplayable ≠ coverless)', async () => {
     await seedMusic()
-    publicUrlMock.safeResolveAssetUrl.mockImplementation((_driver: string, path: string) =>
+    publicUrlMock.safeResolveAssetUrl.mockImplementation((path: string) =>
       path === 'musics/a.mp3' ? null : `https://cdn.example.com/${path}`,
     )
     expect(await getMusicMetaForPlayer(db, 'p1')).toBeNull()
@@ -111,7 +107,7 @@ describe('music/services/read — getPublicMusicMetasByIds', () => {
 
   it('keeps a coverless track playable with the default cover', async () => {
     await seedMusic()
-    publicUrlMock.safeResolveAssetUrl.mockImplementation((_driver: string, path: string) =>
+    publicUrlMock.safeResolveAssetUrl.mockImplementation((path: string) =>
       path === 'musics/c.jpg' ? null : `https://cdn.example.com/${path}`,
     )
     const metas = await getPublicMusicMetasByIds(db, ['p1'])

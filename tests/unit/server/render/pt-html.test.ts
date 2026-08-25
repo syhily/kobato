@@ -321,6 +321,23 @@ describe('renderPortableTextToHtml', () => {
     expect(html).toContain('<li>Bullet</li>')
   })
 
+  it('absolutizes origin-relative asset srcs against the site origin (feed boundary)', async () => {
+    const body = [
+      { _type: 'image', _key: 'img1', src: '/storage/images/2026/05/x.jpg' },
+      { _type: 'image', _key: 'img2', src: '/images/og/posts/hello.png' },
+      { _type: 'image', _key: 'img3', src: '/fonts/embedded/abc/result.css' },
+      { _type: 'image', _key: 'img4', src: 'https://cdn.example.com/baked.jpg' },
+      { _type: 'image', _key: 'img5', src: 'https://external.example/x.jpg' },
+    ]
+    const html = await renderPortableTextToHtml(body as never, [], resolveMusicEmbeds)
+    expect(html).toContain('<img src="https://example.com/storage/images/2026/05/x.jpg" />')
+    expect(html).toContain('<img src="https://example.com/images/og/posts/hello.png" />')
+    expect(html).toContain('<img src="https://example.com/fonts/embedded/abc/result.css" />')
+    // Absolute srcs pass through untouched.
+    expect(html).toContain('<img src="https://cdn.example.com/baked.jpg" />')
+    expect(html).toContain('<img src="https://external.example/x.jpg" />')
+  })
+
   it('renders rss mode for math inline and code blocks', async () => {
     const body = [
       {

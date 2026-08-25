@@ -18,8 +18,8 @@ const localMemory = makeMemoryBackend({ driver: 'local' })
 let s3Put: Mock<StorageBackend['put']>
 
 vi.mock('@/server/infra/storage/public-url', () => ({
-  resolveAssetUrl: vi.fn((_driver: string, p: string) => `https://assets.example.com/${p}`),
-  safeResolveAssetUrl: vi.fn((_driver: string, p: string) => `https://assets.example.com/${p}`),
+  resolveAssetUrl: vi.fn((p: string) => `https://assets.example.com/${p}`),
+  safeResolveAssetUrl: vi.fn((p: string) => `https://assets.example.com/${p}`),
 }))
 
 const processImageBufferMock = vi.fn(async ({ buffer }: { buffer: Buffer }) => ({
@@ -168,7 +168,7 @@ describe('music/services/read — getPublicMusicMetasByIds', () => {
     await seedMusic({ playerId: 'nocover', coverStoragePath: 'musics/nocover.jpg' })
     const buildMock = vi.mocked(publicUrlMod.safeResolveAssetUrl)
     // toPublicMusicMeta builds the audio URL first, then the cover URL.
-    buildMock.mockImplementationOnce((_driver: string, path: string) => `https://assets.example.com/${path}`)
+    buildMock.mockImplementationOnce((path: string) => `https://assets.example.com/${path}`)
     buildMock.mockImplementationOnce(() => null)
     const metas = await read.getPublicMusicMetasByIds(db, ['nocover'])
     expect(metas.get('nocover')?.pic).toBe(read.DEFAULT_MUSIC_COVER_URL)

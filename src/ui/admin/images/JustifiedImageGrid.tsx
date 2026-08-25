@@ -15,6 +15,7 @@ export interface JustifiedImageGridProps {
   images: AdminImageDto[]
   assetHost: string
   urlTemplate?: string
+  siteOrigin?: string
   targetRowHeight?: number
   gap?: number
   onSelect: (image: AdminImageDto) => void
@@ -142,6 +143,7 @@ export function JustifiedImageGrid({
   images,
   assetHost,
   urlTemplate,
+  siteOrigin,
   targetRowHeight,
   gap = 12,
   onSelect,
@@ -168,6 +170,7 @@ export function JustifiedImageGrid({
                 quality: 80,
                 assetHost,
                 urlTemplate,
+                siteOrigin,
               })
 
               return (

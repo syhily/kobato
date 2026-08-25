@@ -35,6 +35,9 @@ vi.mock('@aws-sdk/client-s3', () => {
   class HeadObjectCommand {
     constructor(public input: unknown) {}
   }
+  class HeadBucketCommand {
+    constructor(public input: unknown) {}
+  }
   class DeleteObjectCommand {
     constructor(public input: unknown) {}
   }
@@ -47,6 +50,7 @@ vi.mock('@aws-sdk/client-s3', () => {
     ListObjectsV2Command,
     GetObjectCommand,
     HeadObjectCommand,
+    HeadBucketCommand,
     DeleteObjectCommand,
     DeleteObjectsCommand,
   }
@@ -354,6 +358,25 @@ describe('storage/backends/s3 — not-found normalization', () => {
 })
 
 describe('storage/backends/s3 — list', () => {
+  /**
+   * Server-emulating mock: paginates via ContinuationToken, serving at most
+   * `serverPageCap` keys per page even when the caller's MaxKeys allows more
+   * (real servers short-page at their own cap, e.g. S3's 1000).
+   */
+  function mockPagedListing(keys: string[], serverPageCap = Number.POSITIVE_INFINITY) {
+    const all = keys.map((key) => ({ Key: key, Size: 1, LastModified: new Date('2024-01-01') }))
+    sendMock.mockImplementation((command) => {
+      const input = (command as { input: { MaxKeys: number; ContinuationToken?: string } }).input
+      const offset = input.ContinuationToken === undefined ? 0 : Number(input.ContinuationToken)
+      const page = all.slice(offset, offset + Math.min(input.MaxKeys, serverPageCap))
+      const next = offset + page.length
+      return Promise.resolve({
+        Contents: page,
+        NextContinuationToken: next < all.length ? String(next) : undefined,
+      })
+    })
+  }
+
   it('returns parsed contents and stops pagination when NextContinuationToken is absent', async () => {
     const backend = await importBackend()
     sendMock.mockResolvedValue({
@@ -365,23 +388,33 @@ describe('storage/backends/s3 — list', () => {
     const out = await backend.list('prefix')
     expect(out).toHaveLength(2)
     expect(out[0]).toMatchObject({ key: 'a', size: 10 })
+    // Default cap is sent server-side (one page of up to 1000).
+    expect(commandInput(0).MaxKeys).toBe(1000)
   })
 
-  it('aborts pagination when exceeding maxKeys', async () => {
+  it('sends MaxKeys and stops at the caller cap', async () => {
     const backend = await importBackend()
-    let i = 0
-    sendMock.mockImplementation(() => {
-      i += 1
-      return Promise.resolve({
-        Contents: [
-          { Key: `k${i}`, Size: 1, LastModified: new Date('2024-01-01') },
-          { Key: `k${i}-2`, Size: 1, LastModified: new Date('2024-01-01') },
-        ],
-        NextContinuationToken: 'tok',
-      })
-    })
+    mockPagedListing(['k1', 'k2', 'k3', 'k4', 'k5'])
+
     const out = await backend.list('prefix', { maxKeys: 3 })
-    expect(out.length).toBeLessThanOrEqual(5)
+
+    expect(out.map((o) => o.key)).toEqual(['k1', 'k2', 'k3'])
+    expect(sendMock).toHaveBeenCalledTimes(1)
+    expect(commandInput(0).MaxKeys).toBe(3)
+  })
+
+  it('paginates with the remaining budget as per-page MaxKeys', async () => {
+    const backend = await importBackend()
+    // Server short-pages at 3 keys per response.
+    mockPagedListing(['k1', 'k2', 'k3', 'k4', 'k5'], 3)
+
+    const out = await backend.list('prefix', { maxKeys: 4 })
+
+    expect(out.map((o) => o.key)).toEqual(['k1', 'k2', 'k3', 'k4'])
+    // The cap lands mid-pagination: page 2 must ask only for the remaining budget.
+    expect(commandInput(0).MaxKeys).toBe(4)
+    expect(sendMock).toHaveBeenCalledTimes(2)
+    expect(commandInput(1).MaxKeys).toBe(1)
   })
 
   it('skips entries missing key / size / lastModified', async () => {
@@ -447,5 +480,71 @@ describe('storage/backends/s3 — deletePrefix', () => {
 
     await expect(backend.deletePrefix('images/')).resolves.toBeUndefined()
     expect(sendMock).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('storage/backends/s3 — validateS3Config', () => {
+  async function importValidator() {
+    vi.resetModules()
+    const mod = await import('@/server/infra/storage/backends/s3')
+    return mod.validateS3Config
+  }
+
+  const config = {
+    enabled: true,
+    endpoint: 'https://s3.example.com',
+    region: 'auto',
+    bucket: 'kobato-test',
+    accessKeyId: 'AKIA-TEST',
+    secretAccessKey: 'secret-test',
+    forcePathStyle: false,
+    urlTemplate: '',
+  }
+
+  it('returns ok when HeadBucket succeeds', async () => {
+    const validate = await importValidator()
+    sendMock.mockResolvedValue({})
+    await expect(validate(config)).resolves.toEqual({ ok: true })
+    expect(destroyMock).toHaveBeenCalled()
+  })
+
+  it('classifies a 404 as a missing bucket', async () => {
+    const validate = await importValidator()
+    sendMock.mockRejectedValue({ name: 'NotFound', $metadata: { httpStatusCode: 404 } })
+    const result = await validate(config)
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.message).toContain('存储桶')
+    }
+  })
+
+  it('classifies a 403 without a working fallback as bad credentials', async () => {
+    const validate = await importValidator()
+    sendMock.mockRejectedValue({ name: 'AccessDenied', $metadata: { httpStatusCode: 403 } })
+    const result = await validate(config)
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.message).toContain('凭证')
+    }
+    // HeadBucket 403 → ListObjectsV2 fallback probe → also rejected.
+    expect(sendMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('accepts when HeadBucket is denied but the ListObjectsV2 fallback succeeds', async () => {
+    const validate = await importValidator()
+    sendMock.mockRejectedValueOnce({ name: 'AccessDenied', $metadata: { httpStatusCode: 403 } })
+    sendMock.mockResolvedValueOnce({ Contents: [] })
+    await expect(validate(config)).resolves.toEqual({ ok: true })
+    expect(sendMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('classifies a connect failure as unreachable', async () => {
+    const validate = await importValidator()
+    sendMock.mockRejectedValue(Object.assign(new Error('fetch failed'), { cause: { code: 'ECONNREFUSED' } }))
+    const result = await validate(config)
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.message).toContain('无法连接')
+    }
   })
 })

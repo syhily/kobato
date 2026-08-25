@@ -4,6 +4,7 @@ import path from 'node:path'
 import type { Env } from '@/server/http/context'
 
 import { IMMUTABLE_CACHE_CONTROL, serveStoredLocalFile } from '@/server/http/resources/serve-local-file'
+import { s3StorageRedirect } from '@/server/http/resources/storage-redirect'
 
 /**
  * Public route for self-hosted web-font packages: `/fonts/embedded/<hash>/<filename>`
@@ -63,9 +64,15 @@ fontsEmbeddedRouter.get('/fonts/embedded/*', async (c) => {
     return c.body(null, 400)
   }
 
-  // URL → storage-key inverse of `resolveAssetUrl`'s `local` branch — the
+  // URL → storage-key inverse of `resolveAssetUrl`'s route override — the
   // route shape is owned here; keep the pair in sync.
   const storageKey = `fonts/${parsed.hash}/${parsed.filename}`
+
+  // S3 primary: 302 to the raw storage key on the current public base.
+  const redirect = s3StorageRedirect(storageKey, new URL(c.req.url).search)
+  if (redirect !== null) {
+    return redirect
+  }
 
   return serveStoredLocalFile({
     key: storageKey,

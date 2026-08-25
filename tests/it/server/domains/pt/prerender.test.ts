@@ -9,10 +9,10 @@ import { music } from '@/server/infra/db/schema/media'
 const { setBlogSettingsBundleForTests } = await import('#/_helpers/blog-settings')
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('#/_helpers/blog-settings')
 
-// Public-url seam: every path resolves to a CDN URL except `musics/coverless.jpg` (S3 row whose CDN base is gone).
+// Public-url seam: every path resolves to an absolute URL except `musics/coverless.jpg` (S3 row whose base is gone).
 vi.mock('@/server/infra/storage/public-url', () => ({
-  resolveAssetUrl: vi.fn((_driver: string, path: string) => `https://assets.example.com/${path}`),
-  safeResolveAssetUrl: vi.fn((_driver: string, path: string) =>
+  resolveAssetUrl: vi.fn((path: string) => `https://assets.example.com/${path}`),
+  safeResolveAssetUrl: vi.fn((path: string) =>
     path === 'musics/coverless.jpg' ? null : `https://assets.example.com/${path}`,
   ),
 }))

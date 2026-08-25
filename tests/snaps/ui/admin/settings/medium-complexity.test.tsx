@@ -220,15 +220,13 @@ describe('snapshot: admin settings forms', () => {
     expect(html).toContain('上传 GeoLite2-City.mmdb')
   })
 
-  it('AssetsForm renders domain, S3, upload and robots cards', () => {
+  it('AssetsForm renders upload and robots cards (domain/S3 moved to /admin/library/storage)', () => {
     const html = stableHtml(renderToHtml(<AssetsForm assets={baseAssets} />))
-    expect(html).toContain('资源域名')
-    expect(html).toContain('启用图片上传')
-    expect(html).toContain('S3 兼容存储')
     expect(html).toContain('上传参数')
     expect(html).toContain('robots.txt')
-    expect(html).toContain('id="assets-asset-host"')
-    expect(html).toContain('域名')
+    expect(html).not.toContain('资源域名')
+    expect(html).not.toContain('启用图片上传')
+    expect(html).not.toContain('S3 兼容存储')
   })
 
   it('CacheView renders clear-all section and reserved buckets heading', () => {

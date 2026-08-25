@@ -50,7 +50,7 @@ export function toAdminImageDto(row: ImageRow, uploaderName: string | null): Adm
 }
 
 function resolvePublicUrl(row: ImageRow): string {
-  return safeResolveAssetUrl(row.storageDriver, row.storagePath, row.updatedAt.getTime()) ?? row.storagePath
+  return safeResolveAssetUrl(row.storagePath, row.updatedAt.getTime()) ?? row.storagePath
 }
 
 function clampOffset(value: number | undefined): number {

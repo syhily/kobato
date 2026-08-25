@@ -39,8 +39,9 @@ export async function resolveFontsForRender(
       let href: string
       try {
         // Consume the persisted `cssKey` — `route`/`stripPrefix` must stay in sync with fonts-embedded.ts.
-        href = resolveAssetUrl(row.storageDriver, row.cssKey, etagToTimestamp(row.etag), {
-          local: { route: '/fonts/embedded/', stripPrefix: 'fonts/' },
+        href = resolveAssetUrl(row.cssKey, etagToTimestamp(row.etag), {
+          route: '/fonts/embedded/',
+          stripPrefix: 'fonts/',
         })
       } catch (error) {
         // Asset base URL unconfigured — drop this font rather than failing the render.

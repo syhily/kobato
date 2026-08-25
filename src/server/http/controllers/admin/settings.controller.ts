@@ -10,6 +10,7 @@ import { updateBlogSettingsSection } from '@/server/domains/settings/services/co
 import { backfillSettingsSections, hydrateBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { computeSecretMasks, redactSecretsFromBundle } from '@/server/domains/settings/services/masks'
 import { getSupportedTimeZones } from '@/server/domains/settings/timezones'
+import { isStorageMigrationActive } from '@/server/domains/storage/s3-migration'
 import { adminProc } from '@/server/http/orpc-base'
 import { SETTINGS_SECTIONS } from '@/shared/config/sections'
 import { adminSettingsBootstrapOutputSchema } from '@/shared/contracts/admin'
@@ -31,8 +32,11 @@ const update = adminProc
   .handler(async ({ input, context }) => {
     const editorId = safeBigInt(context.viewer.id)
     // DomainError translation lives in orpc-base's domainErrorGuard —
-    // no per-controller catch here.
-    const { bundle, warnings } = await updateBlogSettingsSection(context.db, input.section, input.payload, editorId)
+    // no per-controller catch here. The lock probe is injected here because
+    // domains/settings may not import the storage (Platform) domain.
+    const { bundle, warnings } = await updateBlogSettingsSection(context.db, input.section, input.payload, editorId, {
+      isStorageMigrationActive: () => isStorageMigrationActive(context.db),
+    })
     recordAuditEventFromContext(context, {
       action: 'settings_updated',
       resourceType: 'setting',
