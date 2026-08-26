@@ -10,6 +10,7 @@ import { z } from 'zod'
 
 import { reactRouterHonoServer } from './src/server/infra/hono/dev.ts'
 import { processWorkerEntryPlugin } from './src/server/infra/image/worker-entry-plugin.ts'
+import { reactCompilerPlugin } from './src/server/infra/react-compiler-plugin.ts'
 import { routeWarmupPlugin } from './src/server/infra/route-warmup.ts'
 
 const pkgSchema = z.object({
@@ -85,6 +86,7 @@ export default defineConfig(({ command }) => ({
   },
   plugins: [
     sanitizeEngineAliasPlugin(),
+    reactCompilerPlugin(),
     reactRouterHonoServer(),
     ...(reactRouter() as Plugin[]),
     tailwindcss(),
@@ -100,6 +102,7 @@ export default defineConfig(({ command }) => ({
   },
   // build externalizes above so dev dependency optimization skips them.
   optimizeDeps: {
+    include: ['react/compiler-runtime'],
     exclude: ['@duckdb/node-api', 'sharp', '@napi-rs/canvas'],
   },
   build: {

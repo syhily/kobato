@@ -1034,6 +1034,11 @@ describe('contract: module and bundle boundaries', () => {
         specifier: './src/server/infra/image/worker-entry-plugin.ts',
       },
       {
+        key: 'vite.config.ts -> ./src/server/infra/react-compiler-plugin.ts',
+        file: 'vite.config.ts',
+        specifier: './src/server/infra/react-compiler-plugin.ts',
+      },
+      {
         key: 'dev.ts -> ./dev-server-ref.ts',
         file: 'src/server/infra/hono/dev.ts',
         specifier: './dev-server-ref.ts',
