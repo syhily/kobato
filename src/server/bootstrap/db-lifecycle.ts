@@ -8,14 +8,11 @@ import { rescheduleGeoipUpdate } from '@/server/domains/analytics/geoip-schedule
 import { flipBrandingDrivers } from '@/server/domains/assets/services/storage'
 import { rescheduleArchive } from '@/server/domains/audit/services/scheduler'
 import { wireSessionStorageDb } from '@/server/domains/auth/session-storage'
+import { createRestoreCompletion } from '@/server/domains/backup/restore-completion'
 import { wireRestoreMachine } from '@/server/domains/backup/restore-machine'
 import { rescheduleBackup } from '@/server/domains/backup/scheduler'
 import { wireBackupSnapshots } from '@/server/domains/backup/services/backup'
-import {
-  cleanupPreRestoreFiles,
-  rollbackPreRestoreFiles,
-  sweepStaleRestoreDirs,
-} from '@/server/domains/backup/services/restore'
+import { sweepStaleRestoreDirs } from '@/server/domains/backup/services/restore'
 import { resetLikeTokenSweep, startLikeTokenSweep } from '@/server/domains/comments/services/likes'
 import {
   backfillStorageAssetUrls,
@@ -43,19 +40,12 @@ import {
 } from '@/server/infra/db/database'
 import { migrateDatabase } from '@/server/infra/db/migrate'
 import { invalidateMailTransportCache } from '@/server/infra/email/sender'
-import { scheduleRegisteredJob, setJobHandleGetter } from '@/server/infra/job-registry'
-import {
-  closeHttpServer,
-  restartServer,
-  setRestartGetDb,
-  setRestartRefreshSettings,
-  setServerPhase,
-} from '@/server/infra/lifecycle'
+import { setJobHandleGetter } from '@/server/infra/job-registry'
+import { closeHttpServer, setRestartGetDb, setRestartRefreshSettings, setServerPhase } from '@/server/infra/lifecycle'
 // Load-bearing: each batcher module self-registers on the registry at import time.
 import '@/server/domains/analytics/services/batcher'
 import '@/server/domains/analytics/services/pv-batcher'
 import '@/server/domains/audit/services/batcher'
-import { root } from '@/server/infra/logger'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { isRecord } from '@/shared/utils/type-guards'
 
@@ -130,84 +120,6 @@ if (!isVitest()) {
   void sweepStaleRestoreDirs()
 }
 
-/** The restore machine's completion chain (tests invoke it directly). Idempotent reopen; only the archive job is rescheduled. */
-export async function completeRestore(success: boolean, err?: Error): Promise<void> {
-  if (!success) {
-    root.error({ err: err?.message }, 'Restore failed, restarting server for recovery')
-    // Roll back the originals before the recovery reopen.
-    try {
-      await rollbackPreRestoreFiles()
-    } catch (rollbackErr) {
-      root.error(
-        { err: rollbackErr instanceof Error ? rollbackErr.message : String(rollbackErr) },
-        'Pre-restore rollback failed during restore completion',
-      )
-    }
-  } else {
-    root.info('Restore succeeded, restarting server')
-  }
-
-  let recreated = false
-  try {
-    await reopenDatabase()
-    recreated = true
-  } catch (recreateErr) {
-    root.error(
-      { err: recreateErr instanceof Error ? recreateErr.message : String(recreateErr) },
-      'Database reopen failed during restore completion',
-    )
-  }
-
-  if (recreated) {
-    try {
-      scheduleRegisteredJob('audit.scheduler')
-    } catch (schedErr) {
-      root.warn(
-        { err: schedErr instanceof Error ? schedErr.message : String(schedErr) },
-        'Failed to reschedule archive after restore',
-      )
-    }
-  }
-
-  if (!recreated) {
-    // Never restart into a dead handle — stay down rather than 500 against a closed DB.
-    root.error('Restore completion aborted: no live database handle; server not restarted')
-    return
-  }
-
-  try {
-    try {
-      await migrateDatabase(getDb())
-      root.info('Database migrations completed after restore')
-      // Bulk-loaded file — refresh planner statistics (plan §1.9).
-      getDatabaseHandle().client.exec('ANALYZE')
-    } catch (migrateErr) {
-      root.error(
-        { err: migrateErr instanceof Error ? migrateErr.message : String(migrateErr) },
-        'Database migrations failed after restore',
-      )
-    }
-    await restartServer()
-    root.info('Restore completion finished, server back online')
-    // Success path — drop the pre-restore originals the swap kept.
-    if (success) {
-      try {
-        await cleanupPreRestoreFiles()
-      } catch (cleanupErr) {
-        root.warn(
-          { err: cleanupErr instanceof Error ? cleanupErr.message : String(cleanupErr) },
-          'Failed to clean pre-restore originals after a successful restore',
-        )
-      }
-    }
-  } catch (restartErr) {
-    root.error(
-      { err: restartErr instanceof Error ? restartErr.message : String(restartErr) },
-      'Server restart failed during restore completion',
-    )
-  }
-}
-
 wireRestoreMachine({
   drain: async () => {
     setServerPhase('restarting')
@@ -215,7 +127,10 @@ wireRestoreMachine({
   },
   prepareForSwap: prepareDatabaseForRestore,
   reopenAfterSwap: reopenDatabaseAndGetDb,
-  complete: completeRestore,
+  // The completion chain (rollback → reopen → reschedule → migrate →
+  // ANALYZE → restart) lives in the backup domain; only the engine access
+  // is wired here.
+  complete: createRestoreCompletion({ reopenDatabase, getDb, getDatabaseHandle }),
 })
 
 // Composition root: section-change side effects register here, keeping the registry module inert.

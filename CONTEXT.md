@@ -204,8 +204,12 @@ The single owner of a restore job's lifecycle
 validate → complete → release. Two separate states: the running job
 (the slot, claimed atomically by `tryBeginRestore`, released when the
 chain finishes) and the terminal report (consumed once by the status
-projection). Engine specifics (flush/close/reopen/migrate/restart) are
-injected once by the composition root via `wireRestoreMachine`; routes
-pass a buffer, never handles or phase names.
+projection). Engine specifics (flush/close/reopen) are injected once by
+the composition root via `wireRestoreMachine`; routes pass a buffer,
+never handles or phase names. The `complete` step's recovery policy —
+rollback → reopen → reschedule → migrate → ANALYZE → restart, including
+the never-restart-into-a-dead-handle invariant — lives in the backup
+domain too (`domains/backup/restore-completion.ts`), built by
+`createRestoreCompletion` over composition-root-injected engine access.
 _Avoid_: restore orchestrator (retired — the chain was split across
 lifecycle/orchestrator/db-lifecycle/routes before consolidation)
