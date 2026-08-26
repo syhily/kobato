@@ -2,6 +2,7 @@ import { and, asc, count, desc, eq, inArray, isNull, lt, lte, or } from 'drizzle
 
 import type { Database } from '@/server/infra/db/database'
 import type { WebmentionOutboxRow } from '@/server/infra/db/types'
+import type { WebmentionOutboxStatusCounts } from '@/shared/contracts/webmentions'
 
 import { webmentionOutbox } from '@/server/infra/db/schema/webmention'
 
@@ -135,14 +136,6 @@ export async function listWebmentionOutboxForAdmin(
     .orderBy(desc(webmentionOutbox.createdAt), desc(webmentionOutbox.id))
     .offset(offset)
     .limit(limit)
-}
-
-export interface WebmentionOutboxStatusCounts {
-  all: number
-  pending: number
-  sent: number
-  'no-endpoint': number
-  failed: number
 }
 
 export async function countWebmentionOutboxByStatus(db: Database): Promise<WebmentionOutboxStatusCounts> {

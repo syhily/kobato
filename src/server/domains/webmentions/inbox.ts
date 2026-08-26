@@ -1,8 +1,8 @@
 import type { Database } from '@/server/infra/db/database'
 import type { WebmentionInboxRow } from '@/server/infra/db/types'
 
+import { receiveWebmention } from '@/server/domains/webmentions/receive'
 import { truncateFailureMessage, webmentionBackoffMs } from '@/server/domains/webmentions/retry'
-import { receiveWebmention } from '@/server/domains/webmentions/service'
 import { resolveWebmentionTarget } from '@/server/domains/webmentions/target'
 import { upsertWebmentionVerificationFailure } from '@/server/infra/db/operations/webmention'
 import {

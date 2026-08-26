@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 import { idString, isoDateTime } from '@/shared/contracts/primitives'
+import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 // Canonical webmention value lists — the single source for the drizzle
 // `text({ enum })` columns, the SQL CHECK literals
@@ -72,3 +73,23 @@ export const publicWebmentionDto = z.object({
   createdAt: isoDateTime,
 })
 export type PublicWebmentionWire = z.infer<typeof publicWebmentionDto>
+
+// Status-count envelopes for the admin list outputs: `all` plus one entry per
+// lifecycle status, derived from the canonical value lists so a new status
+// cannot drift between the SQL GROUP BY, the wire schema, and the TS copies.
+function statusCountFields<T extends readonly string[]>(statuses: T): { [K in T[number]]: z.ZodNumber } {
+  // Safe: every entry of `statuses` becomes exactly one key, so the shape covers precisely `T[number]`.
+  return unsafeCast(Object.fromEntries(statuses.map((status) => [status, z.number().int()])))
+}
+
+export const webmentionStatusCountsSchema = z.object({
+  all: z.number().int(),
+  ...statusCountFields(WEBMENTION_STATUSES),
+})
+export type WebmentionStatusCounts = z.infer<typeof webmentionStatusCountsSchema>
+
+export const webmentionOutboxStatusCountsSchema = z.object({
+  all: z.number().int(),
+  ...statusCountFields(WEBMENTION_OUTBOX_STATUSES),
+})
+export type WebmentionOutboxStatusCounts = z.infer<typeof webmentionOutboxStatusCountsSchema>

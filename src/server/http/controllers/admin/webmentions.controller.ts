@@ -6,14 +6,19 @@ import { reverifyWebmention } from '@/server/domains/webmentions/reverify'
 import { adminWebmentionListSchema, adminWebmentionOutboxListSchema } from '@/server/domains/webmentions/schema'
 import {
   approveWebmention,
-  countPendingWebmentionsForAdmin,
   listAdminWebmentionOutbox,
   listAdminWebmentions,
   rejectWebmention,
 } from '@/server/domains/webmentions/service'
 import { adminProc } from '@/server/http/orpc-base'
+import { countWebmentions } from '@/server/infra/db/operations/webmention'
 import { adminWebmentionsPendingCountOutputSchema } from '@/shared/contracts/admin'
-import { adminWebmentionDto, adminWebmentionOutboxDto } from '@/shared/contracts/webmentions'
+import {
+  adminWebmentionDto,
+  adminWebmentionOutboxDto,
+  webmentionOutboxStatusCountsSchema,
+  webmentionStatusCountsSchema,
+} from '@/shared/contracts/webmentions'
 
 const loadAll = adminProc
   .route({ method: 'GET', path: '/webmention-admin/load-all' })
@@ -23,13 +28,7 @@ const loadAll = adminProc
       mentions: z.array(adminWebmentionDto),
       total: z.number().int(),
       hasMore: z.boolean(),
-      statusCounts: z.object({
-        all: z.number().int(),
-        pending: z.number().int(),
-        approved: z.number().int(),
-        rejected: z.number().int(),
-        hidden: z.number().int(),
-      }),
+      statusCounts: webmentionStatusCountsSchema,
     }),
   )
   .handler(async ({ input, context }) => {
@@ -87,13 +86,7 @@ const outbox = adminProc
       rows: z.array(adminWebmentionOutboxDto),
       total: z.number().int(),
       hasMore: z.boolean(),
-      statusCounts: z.object({
-        all: z.number().int(),
-        pending: z.number().int(),
-        sent: z.number().int(),
-        'no-endpoint': z.number().int(),
-        failed: z.number().int(),
-      }),
+      statusCounts: webmentionOutboxStatusCountsSchema,
     }),
   )
   .handler(async ({ input, context }) => {
@@ -104,7 +97,7 @@ const outbox = adminProc
 const pendingCount = adminProc
   .route({ method: 'GET', path: '/webmention-admin/pending-count' })
   .output(adminWebmentionsPendingCountOutputSchema)
-  .handler(({ context }) => countPendingWebmentionsForAdmin(context.db))
+  .handler(({ context }) => countWebmentions(context.db, 'pending'))
 
 export const adminWebmentionsRouter = {
   loadAll,

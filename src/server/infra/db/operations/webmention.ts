@@ -3,6 +3,7 @@ import { and, asc, count, desc, eq, isNull, lte, or, sql } from 'drizzle-orm'
 import type { Database } from '@/server/infra/db/database'
 import type { EntityTarget } from '@/server/infra/db/target'
 import type { NewWebmention, WebmentionRow } from '@/server/infra/db/types'
+import type { WebmentionStatusCounts } from '@/shared/contracts/webmentions'
 
 import { webmention } from '@/server/infra/db/schema/webmention'
 import { isUniqueConstraintError } from '@/server/infra/http/errors'
@@ -125,14 +126,6 @@ export async function countWebmentions(db: Database, status: WebmentionStatus | 
   return rows[0]?.count ?? 0
 }
 
-export interface WebmentionStatusCounts {
-  all: number
-  pending: number
-  approved: number
-  rejected: number
-  hidden: number
-}
-
 export async function countWebmentionsByStatus(db: Database): Promise<WebmentionStatusCounts> {
   const rows = await db
     .select({ status: webmention.status, count: count() })
@@ -144,11 +137,6 @@ export async function countWebmentionsByStatus(db: Database): Promise<Webmention
     counts.all += row.count
   }
   return counts
-}
-
-/** Sidebar badge feed: pending mentions awaiting moderation. */
-export async function countPendingWebmentions(db: Database): Promise<number> {
-  return countWebmentions(db, 'pending')
 }
 
 /** Public display: approved mentions of one entity, oldest first. Rides `idx_webmention_target` — no dedicated index at personal-blog volume. */
@@ -197,7 +185,7 @@ export async function setWebmentionStatus(
 export const WEBMENTION_REVERIFY_INTERVAL_MS = 24 * 60 * 60 * 1000
 const MAX_LAST_ERROR_LENGTH = 500
 
-export function truncateVerifyError(message: string): string {
+function truncateVerifyError(message: string): string {
   return message.length > MAX_LAST_ERROR_LENGTH ? `${message.slice(0, MAX_LAST_ERROR_LENGTH)}…` : message
 }
 
@@ -285,7 +273,9 @@ export function findNextWebmentionReverifyDueAt(db: Database): Date | 'now' | nu
   return new Date(first.lastVerifiedAt.getTime() + WEBMENTION_REVERIFY_INTERVAL_MS)
 }
 
-/** Successful verification: `verified` + fresh waterline, failure bookkeeping resets. `restoreStatus` flips `hidden`→`approved` (manual path only). */
+/** Successful verification: `verified` + fresh waterline, failure bookkeeping resets.
+ *  A `hidden` row restores to `approved` (the manual recovery path — the daily cycle
+ *  never picks `hidden`, so the CASE only ever fires there). */
 export async function applyWebmentionReverifySuccess(
   db: Database,
   id: number,
@@ -294,14 +284,13 @@ export async function applyWebmentionReverifySuccess(
     authorName: string | null
     summary: string | null
     type: WebmentionRow['type']
-    restoreStatus: boolean
   },
 ): Promise<WebmentionRow | null> {
   const now = new Date()
   const rows = await db
     .update(webmention)
     .set({
-      status: values.restoreStatus ? 'approved' : undefined,
+      status: sql`CASE WHEN ${webmention.status} = 'hidden' THEN 'approved' ELSE ${webmention.status} END`,
       verificationStatus: 'verified',
       lastVerifiedAt: now,
       lastError: null,

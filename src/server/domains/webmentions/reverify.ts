@@ -3,7 +3,7 @@ import type { SourceMetadata } from '@/server/domains/webmentions/verify'
 import type { Database } from '@/server/infra/db/database'
 import type { WebmentionRow } from '@/server/infra/db/types'
 
-import { verifyWebmentionSource } from '@/server/domains/webmentions/service'
+import { verifyWebmentionSource } from '@/server/domains/webmentions/receive'
 import { resolveWebmentionTarget } from '@/server/domains/webmentions/target'
 import {
   applyWebmentionReverifyFailure,
@@ -53,7 +53,7 @@ export async function runWebmentionReverifyBatch(db: Database): Promise<number> 
     try {
       const outcome = await checkRow(db, row)
       if (outcome.ok) {
-        await applyWebmentionReverifySuccess(db, row.id, { ...outcome.meta, type: outcome.type, restoreStatus: false })
+        await applyWebmentionReverifySuccess(db, row.id, { ...outcome.meta, type: outcome.type })
         continue
       }
       const updated = await applyWebmentionReverifyFailure(db, row.id, {
@@ -99,7 +99,6 @@ export async function reverifyWebmention(db: Database, id: string): Promise<Webm
   const updated = await applyWebmentionReverifySuccess(db, row.id, {
     ...outcome.meta,
     type: outcome.type,
-    restoreStatus: row.status === 'hidden',
   })
   if (updated === null) {
     throw new DomainError('NOT_FOUND', 'Webmention 不存在。')

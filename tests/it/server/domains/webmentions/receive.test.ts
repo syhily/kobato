@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { installFetch } from '#/_helpers/fetch'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
-import { receiveWebmention } from '@/server/domains/webmentions/service'
+import { receiveWebmention } from '@/server/domains/webmentions/receive'
 import { post } from '@/server/infra/db/schema/post'
 import { webmention } from '@/server/infra/db/schema/webmention'
 
