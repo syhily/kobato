@@ -1,4 +1,5 @@
 import type { Database } from '@/server/infra/db/database'
+import type { Logger } from '@/server/infra/logger'
 
 import { jobDb, registerJob } from '@/server/infra/job-registry'
 import { getLogger } from '@/server/infra/logger'
@@ -58,4 +59,34 @@ export function makeQueueScheduler(options: QueueSchedulerOptions): QueueSchedul
     minDelayMs: 1_000,
   }
   return queue
+}
+
+// The per-row error-isolation invariant, defined exactly once: a row must
+// never kill the batch. Each queue supplies only its picker and row handler;
+// `onRowError` is the escape hatch for post-throw recovery that must keep
+// the batch alive (the outbox counts a thrown row as one retryable attempt
+// there) — the hook itself owns not throwing.
+
+export interface RunDueRowsOptions<Row> {
+  pick: () => Promise<Row[]>
+  handleRow: (row: Row) => Promise<void>
+  log: Logger
+  rowThrewMessage: string
+  onRowError?: (row: Row, error: unknown) => Promise<void>
+}
+
+export async function runDueRows<Row extends { id: number | string }>(
+  options: RunDueRowsOptions<Row>,
+): Promise<number> {
+  const rows = await options.pick()
+  for (const row of rows) {
+    try {
+      await options.handleRow(row)
+    } catch (error: unknown) {
+      // A row must never kill the batch: log and move on; the row stays due.
+      options.log.warn(options.rowThrewMessage, { id: row.id, error: String(error) })
+      await options.onRowError?.(row, error)
+    }
+  }
+  return rows.length
 }

@@ -1,6 +1,7 @@
 import type { Database } from '@/server/infra/db/database'
 import type { WebmentionInboxRow } from '@/server/infra/db/types'
 
+import { runDueRows } from '@/server/domains/webmentions/queue-scheduler'
 import { receiveWebmention } from '@/server/domains/webmentions/receive'
 import { truncateFailureMessage, webmentionBackoffMs } from '@/server/domains/webmentions/retry'
 import { resolveWebmentionTarget } from '@/server/domains/webmentions/target'
@@ -76,14 +77,10 @@ export async function runWebmentionInboxBatch(db: Database): Promise<number> {
     }
     return 0
   }
-  const rows = await pickDueWebmentionInbox(db, new Date(), INBOX_BATCH_SIZE)
-  for (const row of rows) {
-    try {
-      await processWebmentionInboxRow(db, row)
-    } catch (error: unknown) {
-      // A row must never kill the batch: log and move on; the row stays due.
-      log.warn('Webmention inbox row processing threw', { id: row.id, error: String(error) })
-    }
-  }
-  return rows.length
+  return runDueRows({
+    pick: () => pickDueWebmentionInbox(db, new Date(), INBOX_BATCH_SIZE),
+    handleRow: (row) => processWebmentionInboxRow(db, row),
+    log,
+    rowThrewMessage: 'Webmention inbox row processing threw',
+  })
 }

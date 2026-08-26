@@ -3,6 +3,7 @@ import type { SourceMetadata } from '@/server/domains/webmentions/verify'
 import type { Database } from '@/server/infra/db/database'
 import type { WebmentionRow } from '@/server/infra/db/types'
 
+import { runDueRows } from '@/server/domains/webmentions/queue-scheduler'
 import { verifyWebmentionSource } from '@/server/domains/webmentions/receive'
 import { resolveWebmentionTarget } from '@/server/domains/webmentions/target'
 import {
@@ -45,34 +46,34 @@ async function checkRow(db: Database, row: WebmentionRow): Promise<VerifyOutcome
   }
 }
 
-/** The scheduler's batch: success refreshes metadata and resets the streak;
+/** One row's daily outcome: success refreshes metadata and resets the streak;
  *  failure bumps it and hides the row once the budget is spent. */
-export async function runWebmentionReverifyBatch(db: Database): Promise<number> {
-  const rows = await pickWebmentionsDueForReverify(db, new Date(), REVERIFY_BATCH_SIZE)
-  for (const row of rows) {
-    try {
-      const outcome = await checkRow(db, row)
-      if (outcome.ok) {
-        await applyWebmentionReverifySuccess(db, row.id, { ...outcome.meta, type: outcome.type })
-        continue
-      }
-      const updated = await applyWebmentionReverifyFailure(db, row.id, {
-        lastError: outcome.error,
-        count: 'daily',
-        hideStreak: WEBMENTION_HIDE_STREAK,
-      })
-      if (updated?.status === 'hidden') {
-        log.info('Webmention hidden after consecutive verification failures', {
-          id: row.id,
-          streak: updated.verifyFailStreak,
-        })
-      }
-    } catch (error) {
-      // A row must never kill the batch: log and move on; the row stays due.
-      log.warn('Webmention reverify row processing threw', { id: row.id, error: String(error) })
-    }
+async function applyDailyOutcome(db: Database, row: WebmentionRow, outcome: VerifyOutcome): Promise<void> {
+  if (outcome.ok) {
+    await applyWebmentionReverifySuccess(db, row.id, { ...outcome.meta, type: outcome.type })
+    return
   }
-  return rows.length
+  const updated = await applyWebmentionReverifyFailure(db, row.id, {
+    lastError: outcome.error,
+    count: 'daily',
+    hideStreak: WEBMENTION_HIDE_STREAK,
+  })
+  if (updated?.status === 'hidden') {
+    log.info('Webmention hidden after consecutive verification failures', {
+      id: row.id,
+      streak: updated.verifyFailStreak,
+    })
+  }
+}
+
+/** The scheduler's batch: one check + outcome per due row. */
+export async function runWebmentionReverifyBatch(db: Database): Promise<number> {
+  return runDueRows({
+    pick: () => pickWebmentionsDueForReverify(db, new Date(), REVERIFY_BATCH_SIZE),
+    handleRow: async (row) => applyDailyOutcome(db, row, await checkRow(db, row)),
+    log,
+    rowThrewMessage: 'Webmention reverify row processing threw',
+  })
 }
 
 /**

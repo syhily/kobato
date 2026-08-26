@@ -2,6 +2,7 @@ import type { Database } from '@/server/infra/db/database'
 import type { WebmentionOutboxRow } from '@/server/infra/db/types'
 
 import { discoverEndpoint, formatFetchFailure, type DiscoveryResult } from '@/server/domains/webmentions/discover'
+import { runDueRows } from '@/server/domains/webmentions/queue-scheduler'
 import { truncateFailureMessage, webmentionBackoffMs } from '@/server/domains/webmentions/retry'
 import {
   markWebmentionOutboxRetry,
@@ -112,15 +113,14 @@ export async function processWebmentionOutboxRow(
 
 /** The scheduler's batch: a few due rows, processed strictly in sequence. */
 export async function runWebmentionOutboxBatch(db: Database, hooks: OutboxHooks = REAL_HOOKS): Promise<number> {
-  const rows = await pickDueWebmentionOutbox(db, new Date(), OUTBOX_BATCH_SIZE)
-  for (const row of rows) {
-    try {
-      await processWebmentionOutboxRow(db, row, hooks)
-    } catch (error: unknown) {
-      // A row must never kill the batch: whatever threw counts as one retryable failure.
-      log.warn('Webmention outbox row processing threw', { id: row.id, error: String(error) })
-      await scheduleRetry(db, row, error instanceof Error ? error.message : String(error)).catch(() => undefined)
-    }
-  }
-  return rows.length
+  return runDueRows({
+    pick: () => pickDueWebmentionOutbox(db, new Date(), OUTBOX_BATCH_SIZE),
+    handleRow: (row) => processWebmentionOutboxRow(db, row, hooks),
+    log,
+    rowThrewMessage: 'Webmention outbox row processing threw',
+    // A thrown row still counts as one retryable attempt; the recovery write
+    // itself must never take the batch down.
+    onRowError: (row, error) =>
+      scheduleRetry(db, row, error instanceof Error ? error.message : String(error)).catch(() => undefined),
+  })
 }
