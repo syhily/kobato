@@ -6,8 +6,8 @@ import { invalidateContent } from '@/server/domains/content/invalidate'
 import { liveContentWhere, type LiveContentColumns } from '@/server/domains/content/schemas/live-gate'
 import { page as pageMetaTable } from '@/server/infra/db/schema/page'
 import { post as postMetaTable } from '@/server/infra/db/schema/post'
+import { jobDb, nudgeRegisteredJob, registerJob } from '@/server/infra/job-registry'
 import { getLogger } from '@/server/infra/logger'
-import { scheduleJob, type ScheduledJob } from '@/server/infra/scheduler-utils'
 
 const log = getLogger('content.scheduled-publish')
 
@@ -27,14 +27,9 @@ const pageLiveColumns = {
   publishedAt: pageMetaTable.publishedAt,
 } satisfies LiveContentColumns
 
-// Wired by the composition root; the getter is invoked at evaluate time,
-// so a recreated handle (restore completion) is picked up.
-let resolveDb: (() => Database) | null = null
-let job: ScheduledJob | null = null
-
-export function wireScheduledPublishScheduler(deps: { getDb: () => Database }): void {
-  resolveDb = deps.getDb
-}
+// The job registry owns boot start-up and the shared db getter; the getter
+// is invoked at evaluate time, so a recreated handle (restore completion)
+// is picked up.
 
 /**
  * The earliest future `publishedAt` among promoted posts AND pages —
@@ -65,11 +60,7 @@ function findNextScheduledPublishAt(db: Database): Date | null {
 }
 
 function nextScheduledPublishDelayMs(): number | null {
-  if (!resolveDb) {
-    // Suspended until wired; the seam re-evaluates, so late wiring still takes effect.
-    return null
-  }
-  const next = findNextScheduledPublishAt(resolveDb())
+  const next = findNextScheduledPublishAt(jobDb())
   if (next === null) {
     // Nothing scheduled: suspend — every content write nudges `rescheduleScheduledPublish`.
     return null
@@ -80,10 +71,7 @@ function nextScheduledPublishDelayMs(): number | null {
 
 // Sync (node:sqlite): invalidateContent is sync.
 function runScheduledPublish(): void {
-  if (!resolveDb) {
-    throw new Error('scheduled-publish job fired before wireScheduledPublishScheduler')
-  }
-  const db = resolveDb()
+  const db = jobDb()
   // The row is live as of now; invalidate both entities (idempotent).
   // No extra search reindex — the `searchResult` bump covers it.
   invalidateContent(db, { entity: 'post' })
@@ -91,19 +79,16 @@ function runScheduledPublish(): void {
   log.info('Scheduled publish reached; public caches invalidated')
 }
 
-export function scheduleNextScheduledPublish(): void {
-  job ??= scheduleJob({
-    name: 'content.scheduled-publish',
-    nextDelayMs: nextScheduledPublishDelayMs,
-    run: runScheduledPublish,
-  })
-  job.reschedule()
-}
+registerJob({
+  name: 'content.scheduled-publish',
+  nextDelayMs: nextScheduledPublishDelayMs,
+  run: runScheduledPublish,
+})
 
 /**
  * Nudge from every content write path that can move the next scheduled
  * row. No-op until the composition root starts the job.
  */
 export function rescheduleScheduledPublish(): void {
-  job?.reschedule()
+  nudgeRegisteredJob('content.scheduled-publish')
 }

@@ -8,7 +8,6 @@ vi.useFakeTimers()
 const runArchiveJob = vi.fn().mockResolvedValue(undefined)
 const registerShutdownHook = vi.fn()
 const db = {}
-const getDb = vi.fn().mockReturnValue(db)
 
 vi.mock('@/server/domains/audit/services/archive', () => ({
   runArchiveJob: (...args: unknown[]) => runArchiveJob(...args),
@@ -24,9 +23,14 @@ vi.mock('@/server/infra/lifecycle', () => ({
 // crosses exactly one fire.
 const ADVANCE_TO_NEXT_RUN_MS = 86_400_000 + 1_000
 
-const { scheduleNextArchive, rescheduleArchive, wireArchiveScheduler } =
-  await import('@/server/domains/audit/services/scheduler')
+const { rescheduleArchive } = await import('@/server/domains/audit/services/scheduler')
+const { scheduleRegisteredJob, setJobHandleGetter } = await import('@/server/infra/job-registry')
 const { stopAllScheduledJobs } = await import('@/server/infra/scheduler-utils')
+
+// The registry owns the shared db getter; a bare handle shape suffices —
+// the job reads only `.db` at fire time.
+let currentDb = db
+setJobHandleGetter({ getDatabaseHandle: () => ({ db: currentDb }) as never })
 
 function seedHydratedSettings() {
   setBlogSettingsBundleForTests({
@@ -39,10 +43,9 @@ describe('audit scheduler', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     __clearLogCaptureForTests()
-    getDb.mockReturnValue(db)
+    currentDb = db
     setBlogSettingsBundleForTests(null)
     stopAllScheduledJobs()
-    wireArchiveScheduler({ getDb })
   })
 
   afterEach(() => {
@@ -50,26 +53,26 @@ describe('audit scheduler', () => {
   })
 
   it('retries shortly when settings are not hydrated', () => {
-    scheduleNextArchive()
+    scheduleRegisteredJob('audit.scheduler')
     expect(vi.getTimerCount()).toBe(1)
     expect(runArchiveJob).not.toHaveBeenCalled()
   })
 
   it('schedules the next 04:00 run when settings are hydrated', () => {
     seedHydratedSettings()
-    scheduleNextArchive()
+    scheduleRegisteredJob('audit.scheduler')
     expect(vi.getTimerCount()).toBe(1)
     expect(runArchiveJob).not.toHaveBeenCalled()
   })
 
   it('runs the archive job with the lazily-resolved db when the timer fires', async () => {
     seedHydratedSettings()
-    scheduleNextArchive()
+    scheduleRegisteredJob('audit.scheduler')
 
-    // The db is read via getDb() at fire time, not captured at schedule
-    // time — a recreated pool (restore completion) is picked up.
+    // The db is read at fire time, not captured at schedule time — a
+    // recreated pool (restore completion) is picked up.
     const freshDb = {}
-    getDb.mockReturnValue(freshDb)
+    currentDb = freshDb
 
     await vi.advanceTimersByTimeAsync(ADVANCE_TO_NEXT_RUN_MS)
     expect(runArchiveJob).toHaveBeenCalledTimes(1)
@@ -78,7 +81,7 @@ describe('audit scheduler', () => {
 
   it('reschedules the next run after the job completes', async () => {
     seedHydratedSettings()
-    scheduleNextArchive()
+    scheduleRegisteredJob('audit.scheduler')
     await vi.advanceTimersByTimeAsync(ADVANCE_TO_NEXT_RUN_MS)
     expect(runArchiveJob).toHaveBeenCalledTimes(1)
     expect(vi.getTimerCount()).toBe(1)
@@ -89,7 +92,7 @@ describe('audit scheduler', () => {
   it('logs an error when the archive job fails', async () => {
     runArchiveJob.mockRejectedValueOnce(new Error('archive failed'))
     seedHydratedSettings()
-    scheduleNextArchive()
+    scheduleRegisteredJob('audit.scheduler')
     await vi.advanceTimersByTimeAsync(ADVANCE_TO_NEXT_RUN_MS)
     expect(__logCaptureForTests().some((e) => e.level === 'error')).toBe(true)
   })
@@ -102,7 +105,7 @@ describe('audit scheduler', () => {
 
   it('stops the scheduler', () => {
     seedHydratedSettings()
-    scheduleNextArchive()
+    scheduleRegisteredJob('audit.scheduler')
     expect(vi.getTimerCount()).toBe(1)
     stopAllScheduledJobs()
     expect(vi.getTimerCount()).toBe(0)

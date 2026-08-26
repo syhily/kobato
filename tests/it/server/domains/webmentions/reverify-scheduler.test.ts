@@ -12,14 +12,15 @@ import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_hel
 import { installFetch } from '#/_helpers/fetch'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { REVERIFY_BATCH_SIZE } from '@/server/domains/webmentions/reverify'
-import { REVERIFY_MIN_DELAY_MS, scheduleWebmentionReverify } from '@/server/domains/webmentions/reverify-scheduler'
+import { REVERIFY_MIN_DELAY_MS } from '@/server/domains/webmentions/reverify-scheduler'
 import { upsertWebmention } from '@/server/infra/db/operations/webmention'
 import { post } from '@/server/infra/db/schema/post'
 import { webmention } from '@/server/infra/db/schema/webmention'
+import { scheduleRegisteredJob } from '@/server/infra/job-registry'
 import { stopAllScheduledJobs } from '@/server/infra/scheduler-utils'
 
 // The daily re-verification job against the real engine; only
-// `scheduleWebmentionReverify()` is called explicitly, like server.ts.
+// The registered reverify job is started explicitly, like server.ts.
 const db = getTestDb()
 
 const mockFetch = installFetch()
@@ -83,7 +84,7 @@ afterEach(() => {
 describe('webmentions/reverify scheduler throttle', () => {
   it('fires a waterline-crossed row at the throttle floor — never before', async () => {
     await seedRow(new Date(Date.now() - DAY_MS - 60_000))
-    scheduleWebmentionReverify()
+    scheduleRegisteredJob('webmentions.reverify')
 
     await vi.advanceTimersByTimeAsync(REVERIFY_MIN_DELAY_MS - 1)
     expect(mockFetch.calls).toHaveLength(0)
@@ -95,7 +96,7 @@ describe('webmentions/reverify scheduler throttle', () => {
 
   it('waits for the 24h waterline instead of firing early', async () => {
     await seedRow(new Date(Date.now() - DAY_MS + HOUR_MS)) // due in ~1h
-    scheduleWebmentionReverify()
+    scheduleRegisteredJob('webmentions.reverify')
 
     await vi.advanceTimersByTimeAsync(HOUR_MS - 1)
     expect(mockFetch.calls).toHaveLength(0)
@@ -106,7 +107,7 @@ describe('webmentions/reverify scheduler throttle', () => {
 
   it('self-heals from suspension when a qualifying row appears', async () => {
     // Nothing qualifying: the job suspends on its re-check timer.
-    scheduleWebmentionReverify()
+    scheduleRegisteredJob('webmentions.reverify')
     expect(vi.getTimerCount()).toBeGreaterThan(0)
 
     await seedRow(new Date(Date.now() - DAY_MS - 60_000))
@@ -119,7 +120,7 @@ describe('webmentions/reverify scheduler throttle', () => {
     for (let i = 0; i < REVERIFY_BATCH_SIZE + 1; i++) {
       await seedRow(new Date(Date.now() - DAY_MS - 60_000))
     }
-    scheduleWebmentionReverify()
+    scheduleRegisteredJob('webmentions.reverify')
 
     await vi.advanceTimersByTimeAsync(REVERIFY_MIN_DELAY_MS)
     expect(mockFetch.calls).toHaveLength(REVERIFY_BATCH_SIZE)

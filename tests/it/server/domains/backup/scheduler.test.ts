@@ -27,13 +27,16 @@ vi.mock('@/server/infra/scheduler-utils', async (importOriginal) => {
 
 import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'
 
-const { scheduleNextBackup, rescheduleBackup, wireBackupScheduler } = await import('@/server/domains/backup/scheduler')
+const { scheduleRegisteredJob, setJobHandleGetter } = await import('@/server/infra/job-registry')
+const { rescheduleBackup } = await import('@/server/domains/backup/scheduler')
 const { stopAllScheduledJobs } = await import('@/server/infra/scheduler-utils')
 
 // Dynamic import: a static one would evaluate the db-lifecycle graph before the mock consts initialize.
 const { getTestDb } = await import('#/_helpers/integration-db')
 const testDb = getTestDb()
-wireBackupScheduler({ getDb: () => testDb })
+// The registry owns the shared db getter; a bare handle shape suffices —
+// the job reads only `.db` at fire time.
+setJobHandleGetter({ getDatabaseHandle: () => ({ db: testDb }) as never })
 
 // The stop-all hook registers once at module import — capture before beforeEach clears the mocks.
 const sharedJobStopHook = registerShutdownHook.mock.calls[0]?.[0] as (() => void | Promise<void>) | undefined
@@ -60,13 +63,13 @@ describe('backup scheduler', () => {
 
   it('retries when scheduled backup is disabled in settings', () => {
     setBlogSettingsBundleForTests(bundleWith({ scheduled: { enabled: false }, retention: { enabled: false } }))
-    scheduleNextBackup()
+    scheduleRegisteredJob('backup.scheduler')
     expect(vi.getTimerCount()).toBeGreaterThan(0)
   })
 
   it('never runs the backup when scheduled backup is disabled', async () => {
     setBlogSettingsBundleForTests(bundleWith({ scheduled: { enabled: false }, retention: { enabled: false } }))
-    scheduleNextBackup()
+    scheduleRegisteredJob('backup.scheduler')
     // Only the re-evaluation retry arms — the backup job itself never fires.
     await vi.advanceTimersByTimeAsync(10 * 60_000)
     expect(createBackup).not.toHaveBeenCalled()
@@ -76,7 +79,7 @@ describe('backup scheduler', () => {
     setBlogSettingsBundleForTests(
       bundleWith({ scheduled: { enabled: true, frequency: 'daily' }, retention: { enabled: true, days: 7 } }),
     )
-    scheduleNextBackup()
+    scheduleRegisteredJob('backup.scheduler')
     await vi.advanceTimersByTimeAsync(3_600_000)
     expect(createBackup).toHaveBeenCalled()
     expect(cleanupOldBackups).toHaveBeenCalledWith(expect.objectContaining({}), 7)
@@ -89,7 +92,7 @@ describe('backup scheduler', () => {
     setBlogSettingsBundleForTests(
       bundleWith({ scheduled: { enabled: true, frequency: 'daily' }, retention: { enabled: true, days: 7 } }),
     )
-    scheduleNextBackup()
+    scheduleRegisteredJob('backup.scheduler')
     __clearLogCaptureForTests()
     await vi.advanceTimersByTimeAsync(3_600_000)
 
@@ -106,7 +109,7 @@ describe('backup scheduler', () => {
     setBlogSettingsBundleForTests(
       bundleWith({ scheduled: { enabled: true, frequency: 'daily' }, retention: { enabled: false } }),
     )
-    scheduleNextBackup()
+    scheduleRegisteredJob('backup.scheduler')
     // Other periodic jobs stay armed in it; this pins that a past next-run does not throw.
   })
 
@@ -122,7 +125,7 @@ describe('backup scheduler', () => {
     setBlogSettingsBundleForTests(
       bundleWith({ scheduled: { enabled: true, frequency: 'daily' }, retention: { enabled: false } }),
     )
-    scheduleNextBackup()
+    scheduleRegisteredJob('backup.scheduler')
     stopAllScheduledJobs()
     await vi.advanceTimersByTimeAsync(10 * 3_600_000)
     expect(createBackup).not.toHaveBeenCalled()

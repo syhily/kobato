@@ -12,17 +12,14 @@ vi.mock('node:dns/promises', () => ({
 import { installFetch } from '#/_helpers/fetch'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { OUTBOX_BATCH_SIZE } from '@/server/domains/webmentions/outbox'
-import {
-  OUTBOX_MIN_DELAY_MS,
-  rescheduleWebmentionOutbox,
-  scheduleWebmentionOutbox,
-} from '@/server/domains/webmentions/outbox-scheduler'
+import { OUTBOX_MIN_DELAY_MS, rescheduleWebmentionOutbox } from '@/server/domains/webmentions/outbox-scheduler'
 import { upsertWebmentionOutbox } from '@/server/infra/db/operations/webmention-outbox'
 import { webmentionOutbox } from '@/server/infra/db/schema/webmention'
+import { scheduleRegisteredJob } from '@/server/infra/job-registry'
 import { stopAllScheduledJobs } from '@/server/infra/scheduler-utils'
 
 // The webmention outbox job against the real engine; only
-// `scheduleWebmentionOutbox()` is called explicitly, like server.ts.
+// The registered outbox job is started explicitly, like server.ts.
 const db = getTestDb()
 
 const mockFetch = installFetch()
@@ -62,7 +59,7 @@ afterEach(() => {
 describe('webmentions/outbox scheduler throttle', () => {
   it('fires a send-now row at the throttle floor — never before', async () => {
     await seedDueRow()
-    scheduleWebmentionOutbox()
+    scheduleRegisteredJob('webmentions.outbox')
 
     await vi.advanceTimersByTimeAsync(OUTBOX_MIN_DELAY_MS - 1)
     expect(mockFetch.calls).toHaveLength(0)
@@ -75,7 +72,7 @@ describe('webmentions/outbox scheduler throttle', () => {
 
   it('clamps a sub-floor waterline up to the floor', async () => {
     await seedDueRow(new Date(Date.now() + OUTBOX_MIN_DELAY_MS / 2))
-    scheduleWebmentionOutbox()
+    scheduleRegisteredJob('webmentions.outbox')
 
     // Past the waterline but below the floor: the row must not go out early.
     await vi.advanceTimersByTimeAsync(OUTBOX_MIN_DELAY_MS / 2 + 100)
@@ -88,7 +85,7 @@ describe('webmentions/outbox scheduler throttle', () => {
 
   it('waits for a far-future waterline instead of firing early', async () => {
     await seedDueRow(new Date(Date.now() + HOUR_MS))
-    scheduleWebmentionOutbox()
+    scheduleRegisteredJob('webmentions.outbox')
 
     await vi.advanceTimersByTimeAsync(HOUR_MS - 1)
     expect(mockFetch.calls).toHaveLength(0)
@@ -99,7 +96,7 @@ describe('webmentions/outbox scheduler throttle', () => {
   })
 
   it('stays suspended with nothing pending — the enqueue nudge arms the timer promptly', async () => {
-    scheduleWebmentionOutbox()
+    scheduleRegisteredJob('webmentions.outbox')
     expect(vi.getTimerCount()).toBeGreaterThan(0)
 
     // Without the nudge, the row waits for the suspended re-check (30s), not the floor.
@@ -117,7 +114,7 @@ describe('webmentions/outbox scheduler throttle', () => {
     for (let i = 0; i < OUTBOX_BATCH_SIZE + 1; i++) {
       await seedDueRow()
     }
-    scheduleWebmentionOutbox()
+    scheduleRegisteredJob('webmentions.outbox')
 
     await vi.advanceTimersByTimeAsync(OUTBOX_MIN_DELAY_MS)
     expect(mockFetch.calls).toHaveLength(OUTBOX_BATCH_SIZE)

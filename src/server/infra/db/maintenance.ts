@@ -1,7 +1,8 @@
 import type { DatabaseHandle } from '@/server/infra/db/database'
 
+import { jobHandle, registerJob } from '@/server/infra/job-registry'
 import { getLogger } from '@/server/infra/logger'
-import { nextDailyMaintenanceDelayMs, scheduleJob, type ScheduledJob } from '@/server/infra/scheduler-utils'
+import { nextDailyMaintenanceDelayMs } from '@/server/infra/scheduler-utils'
 
 const log = getLogger('db.maintenance')
 
@@ -40,26 +41,13 @@ export function runDbMaintenance(handle: DatabaseHandle): void {
   }
 }
 
-// The handle getter is injected at wire time so a reopened handle
-// (restore completion) is picked up without module state.
+// The handle getter lives in the job registry and is invoked when the job
+// fires — a reopened handle (restore completion) is picked up.
 
-let job: ScheduledJob | null = null
-let resolveHandle: (() => DatabaseHandle) | null = null
-
-export function wireDbMaintenanceScheduler(deps: { getHandle: () => DatabaseHandle }): void {
-  resolveHandle = deps.getHandle
-}
-
-export function scheduleNextDbMaintenance(): void {
-  job ??= scheduleJob({
-    name: 'db.maintenance',
-    nextDelayMs: nextDailyMaintenanceDelayMs,
-    run: () => {
-      if (resolveHandle === null) {
-        throw new Error('db maintenance fired before wireDbMaintenanceScheduler')
-      }
-      runDbMaintenance(resolveHandle())
-    },
-  })
-  job.reschedule()
-}
+registerJob({
+  name: 'db.maintenance',
+  nextDelayMs: nextDailyMaintenanceDelayMs,
+  run: () => {
+    runDbMaintenance(jobHandle())
+  },
+})

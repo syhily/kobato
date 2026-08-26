@@ -1,28 +1,19 @@
-import type { Database } from '@/server/infra/db/database'
-
 import { createBackup, cleanupOldBackups } from '@/server/domains/backup/services/backup'
 import { DomainError } from '@/server/infra/http/errors'
+import { jobDb, registerJob, scheduleRegisteredJob } from '@/server/infra/job-registry'
 import { getLogger } from '@/server/infra/logger'
-import { computeNextRun, scheduleJob, type ScheduledJob } from '@/server/infra/scheduler-utils'
+import { computeNextRun } from '@/server/infra/scheduler-utils'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
 const log = getLogger('backup.scheduler')
 
-// Db getter injected by the composition root at wire time (avoids an import cycle).
-let resolveDb: (() => Database) | null = null
-let job: ScheduledJob | null = null
+// The job registry owns boot start-up and the shared db getter; the db is
+// read at fire time so a recreated handle (restore) is picked up.
 let hydrationRetryAttempt = 0
 
-export function wireBackupScheduler(deps: { getDb: () => Database }): void {
-  resolveDb = deps.getDb
-}
-
 async function runBackupJob(): Promise<void> {
-  if (!resolveDb) {
-    throw new Error('backup scheduler fired before wireBackupScheduler')
-  }
   try {
-    const db = resolveDb()
+    const db = jobDb()
     const result = await createBackup(db, null)
     log.info('Scheduled backup created', result)
 
@@ -80,17 +71,14 @@ function nextBackupDelayMs(): number | null {
   return delayMs
 }
 
-export function scheduleNextBackup(): void {
-  job ??= scheduleJob({
-    name: 'backup.scheduler',
-    nextDelayMs: nextBackupDelayMs,
-    run: runBackupJob,
-  })
-  job.reschedule()
-}
+registerJob({
+  name: 'backup.scheduler',
+  nextDelayMs: nextBackupDelayMs,
+  run: runBackupJob,
+})
 
 export async function rescheduleBackup(): Promise<void> {
   log.info('Rescheduling backup due to settings change')
   hydrationRetryAttempt = 0
-  scheduleNextBackup()
+  scheduleRegisteredJob('backup.scheduler')
 }

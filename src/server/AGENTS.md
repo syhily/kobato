@@ -15,6 +15,7 @@ server/
 Pure primitives; imports nothing from `domains/`, `http/`, or `render/`.
 
 - `db/` — `database.ts` (node:sqlite `DatabaseSync` open/close + pragma block), `migrate.ts`, drizzle schema, `operations/<entity>.ts` raw helpers; `insert-batcher` + `batcher-registry` for process-level write batchers; `maintenance.ts` daily vacuum/optimize job.
+- `job-registry.ts` — the process-level background jobs (backup, audit archive, scheduled publish, webmention queues, maintenance sweeps, GeoIP) each self-register `(name, nextDelayMs, run)` at import time; the hydration phase arms them all with one `startAllRegisteredJobs()` call after settings load. The registry also owns the shared lazy db-handle getter (`setJobHandleGetter` + `jobDb()`), so adding a timer means editing only its own module — no wire preamble, no server.ts edit. Timer mechanics stay in `scheduler-utils::scheduleJob`; enqueue-path nudges use `nudgeRegisteredJob(name)` (no-op until started).
 - `analytics/` — the DuckDB sidecar wrapper (`duckdb.ts`: open/close/path — zero business knowledge; the access_log DDL + appender live in `domains/analytics/services/access-log`).
 - `cache/` — `registry` behavior plane; `through`/`get`/`set`/`remove`/`clear`/`throughMany` verbs, generation counters, `kv-maintenance` hourly expiry sweep, `inflight` request coalescing.
 - `http/` — `etag`, `headers`, `status`, `errors` with `DomainError` / `ActionFailure`.
@@ -128,7 +129,7 @@ Two embedded engines, zero services:
 ## Server layering constraints
 
 - `infra/*` imports nothing from `domains/`, `http/`, or `render/`.
-- `domains/*` imports nothing from `bootstrap/*` — the composition root wires domain deps through `wire*` seams (`wireRestoreMachine`, `wireBackupScheduler`, `wireBackupSnapshots`, `wireAccessLogBatcher`, `wireSessionStorageDb`, …); the boundaries contract test bans the direction outright.
+- `domains/*` imports nothing from `bootstrap/*` — the composition root wires domain deps through `wire*` seams (`wireRestoreMachine`, `wireBackupSnapshots`, `wireAccessLogBatcher`, `wireSessionStorageDb`, …); the boundaries contract test bans the direction outright. Background jobs are the exception that doesn't need wiring: they self-register on `infra/job-registry`.
 - `http/controllers/*` and `http/loaders/*` orchestrate only.
 - `render/*` produces strings / Buffers / Responses and never persists.
 - No barrel `index.ts` files anywhere inside `server/`.

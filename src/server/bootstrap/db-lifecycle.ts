@@ -6,11 +6,10 @@ import {
 import { ManagedEngine } from '@/server/bootstrap/managed-engine'
 import { rescheduleGeoipUpdate } from '@/server/domains/analytics/geoip-scheduler'
 import { flipBrandingDrivers } from '@/server/domains/assets/services/storage'
-import { rescheduleArchive, scheduleNextArchive, wireArchiveScheduler } from '@/server/domains/audit/services/scheduler'
+import { rescheduleArchive } from '@/server/domains/audit/services/scheduler'
 import { wireSessionStorageDb } from '@/server/domains/auth/session-storage'
-import { wireTokenPurgeScheduler } from '@/server/domains/auth/token-purge-scheduler'
 import { wireRestoreMachine } from '@/server/domains/backup/restore-machine'
-import { rescheduleBackup, wireBackupScheduler } from '@/server/domains/backup/scheduler'
+import { rescheduleBackup } from '@/server/domains/backup/scheduler'
 import { wireBackupSnapshots } from '@/server/domains/backup/services/backup'
 import {
   cleanupPreRestoreFiles,
@@ -18,7 +17,6 @@ import {
   sweepStaleRestoreDirs,
 } from '@/server/domains/backup/services/restore'
 import { resetLikeTokenSweep, startLikeTokenSweep } from '@/server/domains/comments/services/likes'
-import { wireScheduledPublishScheduler } from '@/server/domains/content/scheduled-publish'
 import {
   backfillStorageAssetUrls,
   runAssetUrlBackfillOnceAtBoot,
@@ -29,10 +27,6 @@ import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { registerSectionChangeHandler } from '@/server/domains/settings/services/section-changes'
 import { wireS3Migration } from '@/server/domains/storage/s3-migration'
 import { wireWebmentionPostPublishHook } from '@/server/domains/webmentions/enqueue'
-import { wireWebmentionInboxScheduler } from '@/server/domains/webmentions/inbox-scheduler'
-import { wireWebmentionOutboxScheduler } from '@/server/domains/webmentions/outbox-scheduler'
-import { wireWebmentionReverifyScheduler } from '@/server/domains/webmentions/reverify-scheduler'
-import { wireKvSweepScheduler } from '@/server/infra/cache/kv-maintenance'
 import { isVitest } from '@/server/infra/config'
 import {
   flushAllBatchers,
@@ -47,9 +41,9 @@ import {
   type Database,
   type DatabaseHandle,
 } from '@/server/infra/db/database'
-import { wireDbMaintenanceScheduler } from '@/server/infra/db/maintenance'
 import { migrateDatabase } from '@/server/infra/db/migrate'
 import { invalidateMailTransportCache } from '@/server/infra/email/sender'
+import { scheduleRegisteredJob, setJobHandleGetter } from '@/server/infra/job-registry'
 import {
   closeHttpServer,
   restartServer,
@@ -92,17 +86,12 @@ function wireDatabase(handle: DatabaseHandle): DatabaseHandle {
   setRestartGetDb(getDb)
   setRestartRefreshSettings(refreshBlogSettings)
   wireSessionStorageDb({ getDb })
-  wireTokenPurgeScheduler({ getDb })
-  wireArchiveScheduler({ getDb })
-  wireBackupScheduler({ getDb })
+  // Background jobs share one lazy handle getter (invoked at fire/evaluate
+  // time, so a reopened handle is picked up); the job registry owns their
+  // boot start-up.
+  setJobHandleGetter({ getDatabaseHandle: () => engine.get() })
   wireBackupSnapshots({ snapshotAnalyticsTo })
-  wireScheduledPublishScheduler({ getDb })
-  wireWebmentionOutboxScheduler({ getDb })
-  wireWebmentionInboxScheduler({ getDb })
-  wireWebmentionReverifyScheduler({ getDb })
   wireWebmentionPostPublishHook()
-  wireKvSweepScheduler({ getDb })
-  wireDbMaintenanceScheduler({ getHandle: () => engine.get() })
   wireS3Migration({
     persistFlippedStorage: async (db, storage) => {
       // Send the FULL section (asset/upload carried over) — the assets section
@@ -171,7 +160,7 @@ export async function completeRestore(success: boolean, err?: Error): Promise<vo
 
   if (recreated) {
     try {
-      scheduleNextArchive()
+      scheduleRegisteredJob('audit.scheduler')
     } catch (schedErr) {
       root.warn(
         { err: schedErr instanceof Error ? schedErr.message : String(schedErr) },

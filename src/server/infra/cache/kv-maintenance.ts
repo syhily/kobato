@@ -5,8 +5,8 @@ import type { Database } from '@/server/infra/db/database'
 import { kvCache } from '@/server/infra/db/schema/kv-cache'
 import { oneTimeToken } from '@/server/infra/db/schema/one-time-token'
 import { session } from '@/server/infra/db/schema/session'
+import { jobDb, registerJob } from '@/server/infra/job-registry'
 import { getLogger } from '@/server/infra/logger'
-import { scheduleJob, type ScheduledJob } from '@/server/infra/scheduler-utils'
 
 const log = getLogger('kv.maintenance')
 
@@ -24,27 +24,14 @@ export async function sweepExpiredKvEntries(db: Database): Promise<void> {
   await db.delete(session).where(lt(session.expiresAt, now))
 }
 
-// The db getter is injected at wire time (infra must not import bootstrap) and
-// invoked when the job fires — a reopened handle is picked up without module state.
+// The db getter lives in the job registry and is invoked when the job
+// fires — a reopened handle (restore completion) is picked up.
 
-let job: ScheduledJob | null = null
-let resolveDb: (() => Database) | null = null
-
-export function wireKvSweepScheduler(deps: { getDb: () => Database }): void {
-  resolveDb = deps.getDb
-}
-
-export function scheduleNextKvSweep(): void {
-  job ??= scheduleJob({
-    name: 'kv.maintenance',
-    nextDelayMs: () => SWEEP_INTERVAL_MS,
-    run: async () => {
-      if (!resolveDb) {
-        throw new Error('kv sweep fired before wireKvSweepScheduler')
-      }
-      await sweepExpiredKvEntries(resolveDb())
-      log.info('Expired kv entries swept')
-    },
-  })
-  job.reschedule()
-}
+registerJob({
+  name: 'kv.maintenance',
+  nextDelayMs: () => SWEEP_INTERVAL_MS,
+  run: async () => {
+    await sweepExpiredKvEntries(jobDb())
+    log.info('Expired kv entries swept')
+  },
+})

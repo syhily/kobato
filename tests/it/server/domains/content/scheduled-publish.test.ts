@@ -6,17 +6,17 @@ vi.useFakeTimers()
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import { makeAuthedCtx } from '#/_helpers/mock-ctx'
 import { callRpc, parseRpcJson } from '#/_helpers/rpc-call'
-import { scheduleNextScheduledPublish } from '@/server/domains/content/scheduled-publish'
 import { livePostWhere } from '@/server/domains/posts/live-gate'
 import { __resetCacheCountersForTests, bumpCounter, getCounter, set } from '@/server/infra/cache/registry'
 import { content } from '@/server/infra/db/schema/content'
 import { kvCache } from '@/server/infra/db/schema/kv-cache'
 import { page } from '@/server/infra/db/schema/page'
 import { post } from '@/server/infra/db/schema/post'
+import { scheduleRegisteredJob } from '@/server/infra/job-registry'
 import { stopAllScheduledJobs } from '@/server/infra/scheduler-utils'
 
 // The job against the real engine: real rows drive next-due and the effect
-// is real kv_cache invalidation; only scheduleNextScheduledPublish() is called.
+// is real kv_cache invalidation; only scheduleRegisteredJob('content.scheduled-publish') is called.
 const db = getTestDb()
 
 const HOUR_MS = 3_600_000
@@ -83,7 +83,7 @@ describe('scheduled-publish job', () => {
     bumpCounter(db, 'searchResult')
     const generationBefore = await getCounter(db, 'searchResult')
 
-    scheduleNextScheduledPublish()
+    scheduleRegisteredJob('content.scheduled-publish')
 
     // Before the due time: nothing fires, the public gate still hides the row.
     await vi.advanceTimersByTimeAsync(HOUR_MS - 60_000)
@@ -102,7 +102,7 @@ describe('scheduled-publish job', () => {
     await seedScheduledPost(new Date(Date.now() + 2 * HOUR_MS))
     await warmFeed()
 
-    scheduleNextScheduledPublish()
+    scheduleRegisteredJob('content.scheduled-publish')
 
     await vi.advanceTimersByTimeAsync(HOUR_MS)
     expect(feedRowCount()).toBe(0)
@@ -116,7 +116,7 @@ describe('scheduled-publish job', () => {
 
   it('stays suspended with nothing scheduled — caches are left alone', async () => {
     await warmFeed()
-    scheduleNextScheduledPublish()
+    scheduleRegisteredJob('content.scheduled-publish')
 
     expect(vi.getTimerCount()).toBeGreaterThan(0)
     await vi.advanceTimersByTimeAsync(10 * 60_000)
@@ -127,7 +127,7 @@ describe('scheduled-publish job', () => {
     await seedScheduledPage(new Date(Date.now() + HOUR_MS))
     await set(db, 'sitemap', {}, '<xml>stale</xml>')
 
-    scheduleNextScheduledPublish()
+    scheduleRegisteredJob('content.scheduled-publish')
     expect(sitemapRowCount()).toBe(1)
     await vi.advanceTimersByTimeAsync(HOUR_MS)
     expect(sitemapRowCount()).toBe(0)
@@ -135,7 +135,7 @@ describe('scheduled-publish job', () => {
 
   it('a meta update that moves the schedule earlier re-arms the timer', async () => {
     const postId = await seedScheduledPost(new Date(Date.now() + 2 * HOUR_MS))
-    scheduleNextScheduledPublish()
+    scheduleRegisteredJob('content.scheduled-publish')
 
     const ctx = makeAuthedCtx({ role: 'admin', db })
     const res = await callRpc(
@@ -153,7 +153,7 @@ describe('scheduled-publish job', () => {
 
   it('cancelling the schedule (publishedAt: null) disarms the pending fire', async () => {
     const postId = await seedScheduledPost(new Date(Date.now() + HOUR_MS))
-    scheduleNextScheduledPublish()
+    scheduleRegisteredJob('content.scheduled-publish')
 
     const ctx = makeAuthedCtx({ role: 'admin', db })
     const res = await callRpc('/admin/posts/upsertMeta', { id: String(postId), title: 'Post', publishedAt: null }, ctx)
@@ -171,7 +171,7 @@ describe('scheduled-publish job', () => {
     const { post: created } = await parseRpcJson<{ post: { id: string } }>(createRes)
 
     // The publish below must re-arm the suspended job via the lifecycle nudge.
-    scheduleNextScheduledPublish()
+    scheduleRegisteredJob('content.scheduled-publish')
 
     const publishRes = await callRpc(
       '/admin/posts/publishLatest',

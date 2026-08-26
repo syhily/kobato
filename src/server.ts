@@ -3,28 +3,32 @@ import { serve } from '@hono/node-server'
 import type { Env } from '@/server/http/context'
 
 import { getDb } from '@/server/bootstrap/db-lifecycle'
-import { scheduleNextGeoipUpdate } from '@/server/domains/analytics/geoip-scheduler'
-import { scheduleNextArchive } from '@/server/domains/audit/services/scheduler'
 import { getSetupToken } from '@/server/domains/auth/setup-token'
-import { scheduleNextTokenPurge } from '@/server/domains/auth/token-purge-scheduler'
-import { scheduleNextBackup } from '@/server/domains/backup/scheduler'
-import { scheduleNextScheduledPublish } from '@/server/domains/content/scheduled-publish'
 import { refreshBlogSettings } from '@/server/domains/settings/services/hydrate'
 import { migrateSecretsEncryption } from '@/server/domains/settings/services/migrate-secrets'
-import { scheduleWebmentionInbox } from '@/server/domains/webmentions/inbox-scheduler'
-import { scheduleWebmentionOutbox } from '@/server/domains/webmentions/outbox-scheduler'
-import { scheduleWebmentionReverify } from '@/server/domains/webmentions/reverify-scheduler'
 import { wrapFetchWithLeakedResponseHandler } from '@/server/http/leaked-response'
 import { buildLoadContext, configureMiddleware } from '@/server/http/middleware-pipeline'
-import { scheduleNextKvSweep } from '@/server/infra/cache/kv-maintenance'
 import { serverConfig } from '@/server/infra/config'
-import { scheduleNextDbMaintenance } from '@/server/infra/db/maintenance'
 import { hasAdmin } from '@/server/infra/db/operations/user'
 import { createHonoServer } from '@/server/infra/hono/node'
 import { getProcessPool } from '@/server/infra/image/process-pool'
+import { startAllRegisteredJobs } from '@/server/infra/job-registry'
 import { setHttpServer, setRestartApp, setServerPhase } from '@/server/infra/lifecycle'
 import { root } from '@/server/infra/logger'
 import { isRecord } from '@/shared/utils/type-guards'
+// Load-bearing: each background job module self-registers on the registry
+// at import time; `startAllRegisteredJobs()` below arms them in one loop.
+// Registration order is irrelevant — each job computes its own delay.
+import '@/server/domains/analytics/geoip-scheduler'
+import '@/server/domains/audit/services/scheduler'
+import '@/server/domains/auth/token-purge-scheduler'
+import '@/server/domains/backup/scheduler'
+import '@/server/domains/content/scheduled-publish'
+import '@/server/domains/webmentions/inbox-scheduler'
+import '@/server/domains/webmentions/outbox-scheduler'
+import '@/server/domains/webmentions/reverify-scheduler'
+import '@/server/infra/cache/kv-maintenance'
+import '@/server/infra/db/maintenance'
 
 function isHmrData(value: unknown): value is { secretsMigrated?: boolean } {
   if (!isRecord(value)) {
@@ -57,16 +61,7 @@ if (!hmr?.secretsMigrated) {
   await migrateSecretsEncryption(getDb())
   await refreshBlogSettings(getDb())
 
-  scheduleNextBackup()
-  scheduleNextArchive()
-  scheduleNextScheduledPublish()
-  scheduleWebmentionOutbox()
-  scheduleWebmentionInbox()
-  scheduleWebmentionReverify()
-  scheduleNextKvSweep()
-  scheduleNextDbMaintenance()
-  scheduleNextTokenPurge()
-  scheduleNextGeoipUpdate()
+  startAllRegisteredJobs()
 
   if (hmr) {
     hmr.secretsMigrated = true

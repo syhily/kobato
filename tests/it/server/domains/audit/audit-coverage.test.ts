@@ -13,10 +13,10 @@ import {
   fetchAuditLogActors,
 } from '@/server/domains/audit/services/query'
 import { recordAuditEvent } from '@/server/domains/audit/services/record'
-import { scheduleNextArchive } from '@/server/domains/audit/services/scheduler'
 import { initAllBatchers, resetAllBatchers } from '@/server/infra/db/batcher-registry'
 import { auditLog } from '@/server/infra/db/schema/config'
 import { user } from '@/server/infra/db/schema/user'
+import { scheduleRegisteredJob } from '@/server/infra/job-registry'
 import { stopAllScheduledJobs } from '@/server/infra/scheduler-utils'
 
 const db = getTestDb()
@@ -243,25 +243,25 @@ describe('audit/services/archive — runArchiveJob', () => {
   })
 })
 
-describe('audit/services/scheduler — scheduleNextArchive', () => {
+describe('audit/services/scheduler — the registered archive job', () => {
   it('retries every 30s when settings are not hydrated', () => {
     vi.useFakeTimers()
     setBlogSettingsBundleForTests(null)
-    scheduleNextArchive()
+    scheduleRegisteredJob('audit.scheduler')
     expect(vi.getTimerCount()).toBeGreaterThan(0)
   })
 
   it('schedules the next run when settings are hydrated', () => {
     vi.useFakeTimers()
     setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
-    scheduleNextArchive()
+    scheduleRegisteredJob('audit.scheduler')
     expect(vi.getTimerCount()).toBeGreaterThan(0)
   })
 
   it('stopAllScheduledJobs clears the pending timer', () => {
     vi.useFakeTimers()
     setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
-    scheduleNextArchive()
+    scheduleRegisteredJob('audit.scheduler')
     stopAllScheduledJobs()
     expect(vi.getTimerCount()).toBe(0)
   })

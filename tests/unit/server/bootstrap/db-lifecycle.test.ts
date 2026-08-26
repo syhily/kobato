@@ -11,7 +11,6 @@ const resetAllBatchers = vi.fn()
 const resetLikeTokenSweep = vi.fn()
 const startLikeTokenSweep = vi.fn()
 const migrateDatabase = vi.fn()
-const scheduleNextArchive = vi.fn()
 const refreshBlogSettings = vi.fn()
 const restartServer = vi.fn()
 const setRestartGetDb = vi.fn()
@@ -60,14 +59,11 @@ vi.mock('@/server/domains/analytics/services/pv-batcher', () => ({}))
 vi.mock('@/server/domains/audit/services/batcher', () => ({}))
 
 vi.mock('@/server/domains/audit/services/scheduler', () => ({
-  scheduleNextArchive: (...args: unknown[]) => scheduleNextArchive(...args),
   rescheduleArchive: vi.fn(),
-  wireArchiveScheduler: vi.fn(),
 }))
 
 vi.mock('@/server/domains/backup/scheduler', () => ({
   rescheduleBackup: vi.fn(),
-  wireBackupScheduler: vi.fn(),
 }))
 
 vi.mock('@/server/infra/email/sender', () => ({

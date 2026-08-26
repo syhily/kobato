@@ -12,7 +12,6 @@ const mockSetRestartRefreshSettings = vi.hoisted(() => vi.fn())
 const mockInitAllBatchers = vi.hoisted(() => vi.fn())
 const mockFlushAllBatchers = vi.hoisted(() => vi.fn())
 const mockResetAllBatchers = vi.hoisted(() => vi.fn())
-const mockScheduleNextArchive = vi.hoisted(() => vi.fn())
 const mockStartLikeTokenSweep = vi.hoisted(() => vi.fn())
 const mockResetLikeTokenSweep = vi.hoisted(() => vi.fn())
 const mockRefreshBlogSettings = vi.hoisted(() => vi.fn())
@@ -71,14 +70,11 @@ vi.mock('@/server/domains/analytics/services/pv-batcher', () => ({}))
 vi.mock('@/server/domains/audit/services/batcher', () => ({}))
 
 vi.mock('@/server/domains/audit/services/scheduler', () => ({
-  scheduleNextArchive: mockScheduleNextArchive,
   rescheduleArchive: vi.fn(),
-  wireArchiveScheduler: vi.fn(),
 }))
 
 vi.mock('@/server/domains/backup/scheduler', () => ({
   rescheduleBackup: vi.fn(),
-  wireBackupScheduler: vi.fn(),
 }))
 
 vi.mock('@/server/domains/backup/services/restore', () => ({
