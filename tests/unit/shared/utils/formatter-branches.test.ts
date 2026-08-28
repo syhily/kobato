@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { formatBytes, formatLocalDate, formatShowDate, localDateParts } from '@/shared/utils/formatter'
+import {
+  formatBytes,
+  formatDurationMs,
+  formatLocalDate,
+  formatShowDate,
+  localDateParts,
+} from '@/shared/utils/formatter'
 
 const SETTINGS = {
   settings: { locale: 'zh-CN', timeZone: 'Asia/Shanghai', timeFormat: 'yyyy-LL-dd HH:mm' },
@@ -31,6 +37,30 @@ describe('shared/utils/formatter — formatBytes', () => {
   it('renders bytes of 1 GiB and above as GB', () => {
     expect(formatBytes(1024 * 1024 * 1024)).toBe('1.0 GB')
     expect(formatBytes(1024 * 1024 * 1024 * 2.5)).toBe('2.5 GB')
+  })
+})
+
+describe('shared/utils/formatter — formatDurationMs', () => {
+  it('renders sub-second durations as 毫秒', () => {
+    expect(formatDurationMs(0)).toBe('0 毫秒')
+    expect(formatDurationMs(300)).toBe('300 毫秒')
+    expect(formatDurationMs(999)).toBe('999 毫秒')
+  })
+
+  it('renders sub-minute durations as 秒 with one decimal', () => {
+    expect(formatDurationMs(1000)).toBe('1.0 秒')
+    expect(formatDurationMs(1200)).toBe('1.2 秒')
+    expect(formatDurationMs(59_999)).toBe('60.0 秒')
+  })
+
+  it('renders minute-scale durations as 分 秒', () => {
+    expect(formatDurationMs(60_000)).toBe('1 分 0 秒')
+    expect(formatDurationMs(125_000)).toBe('2 分 5 秒')
+  })
+
+  it('floors the seconds digit instead of rounding up to 60 秒', () => {
+    expect(formatDurationMs(119_500)).toBe('1 分 59 秒')
+    expect(formatDurationMs(119_999)).toBe('1 分 59 秒')
   })
 })
 

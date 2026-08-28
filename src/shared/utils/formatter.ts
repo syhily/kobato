@@ -118,3 +118,16 @@ export function formatBytes(bytes: number): string {
   }
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
 }
+
+/** Compact duration for admin job/queue displays (`1.2 秒` / `3 分 5 秒`). */
+export function formatDurationMs(ms: number): string {
+  if (ms < 1000) {
+    return `${ms} 毫秒`
+  }
+  if (ms < 60_000) {
+    return `${(ms / 1000).toFixed(1)} 秒`
+  }
+  // Staircase truncation like formatBytes: the seconds digit is floored, never
+  // rounded — rounding would emit `1 分 60 秒` for 119.5s.
+  return `${Math.floor(ms / 60_000)} 分 ${Math.floor((ms % 60_000) / 1000)} 秒`
+}

@@ -25,6 +25,7 @@ interface AdminInfiniteListSource<TInput, TPage extends AdminListPageShape> {
     initialPageParam: number
     getNextPageParam: (lastPage: TPage, allPages: TPage[], lastPageParam: number) => number | undefined
     enabled?: boolean
+    refetchInterval?: number
   }): UseInfiniteQueryOptions<TPage, Error, InfiniteData<TPage, number>, QueryKey, number> & { queryKey: QueryKey }
 }
 
@@ -36,6 +37,7 @@ export function useAdminInfiniteList<TInput, TPage extends AdminListPageShape, T
   selectRows,
   noun,
   enabled = true,
+  refetchInterval,
 }: {
   /** Procedure utils exposing `infiniteOptions` — e.g. `orpcQuery.admin.posts.list`. */
   namespace: AdminInfiniteListSource<TInput, TPage>
@@ -47,12 +49,15 @@ export function useAdminInfiniteList<TInput, TPage extends AdminListPageShape, T
   noun?: string
   /** Pass false to hold the query idle until the caller arms it (e.g. a search waiting for a submitted keyword). */
   enabled?: boolean
+  /** Poll cadence in ms (refetches all loaded pages) — for views tracking live rows. */
+  refetchInterval?: number
 }) {
   const options = namespace.infiniteOptions({
     input: buildInput,
     initialPageParam: 0,
     getNextPageParam: (lastPage, _allPages, lastPageParam) => (lastPage.hasMore ? lastPageParam + pageSize : undefined),
     enabled,
+    refetchInterval,
   })
   const listQuery = useInfiniteQuery(options)
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = listQuery

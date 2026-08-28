@@ -40,6 +40,7 @@ export default [
     route('admin/pages', 'routes/admin/pages/index.tsx'),
     route('admin/comments', 'routes/admin/comments.tsx'),
     route('admin/webmentions', 'routes/admin/webmentions.tsx'),
+    route('admin/tasks', 'routes/admin/tasks.tsx'),
     route('admin/taxonomy/categories', 'routes/admin/taxonomy/categories.tsx'),
     route('admin/taxonomy/tags', 'routes/admin/taxonomy/tags.tsx'),
     route('admin/library/images', 'routes/admin/library/images.tsx'),

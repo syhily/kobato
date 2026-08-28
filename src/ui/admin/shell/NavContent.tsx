@@ -3,6 +3,7 @@ import {
   FileTextIcon,
   ImagesIcon,
   LibraryIcon,
+  ListChecksIcon,
   MessageSquareIcon,
   NotebookPenIcon,
   PlusIcon,
@@ -105,6 +106,15 @@ export function NavContent({ role, pendingCommentCount = 0, pendingWebmentionCou
                   {pendingWebmentionCount}
                 </SidebarMenuBadge>
               )}
+            </NavMenuItem>
+          )}
+
+          {showAdminItems && (
+            <NavMenuItem>
+              <NavMenuItem.Link to="/admin/tasks">
+                <ListChecksIcon />
+                <NavMenuItem.Label>任务管理</NavMenuItem.Label>
+              </NavMenuItem.Link>
             </NavMenuItem>
           )}
 
