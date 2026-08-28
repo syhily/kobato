@@ -1,4 +1,4 @@
-import { asc, eq, isNull, lte, or } from 'drizzle-orm'
+import { asc, count, eq, gt, isNull, lte, or } from 'drizzle-orm'
 
 import type { Database } from '@/server/infra/db/database'
 import type { WebmentionInboxRow } from '@/server/infra/db/types'
@@ -81,4 +81,11 @@ export async function clearWebmentionInbox(db: Database): Promise<number> {
 /** Test/admin introspection: everything still queued. */
 export async function listWebmentionInbox(db: Database): Promise<WebmentionInboxRow[]> {
   return db.select().from(webmentionInbox).orderBy(asc(webmentionInbox.id))
+}
+
+/** Task-center queue stats: queued rows + rows past their first attempt. */
+export async function countWebmentionInbox(db: Database): Promise<{ depth: number; attention: number }> {
+  const depthRows = await db.select({ value: count() }).from(webmentionInbox)
+  const attentionRows = await db.select({ value: count() }).from(webmentionInbox).where(gt(webmentionInbox.attempts, 0))
+  return { depth: depthRows[0]?.value ?? 0, attention: attentionRows[0]?.value ?? 0 }
 }

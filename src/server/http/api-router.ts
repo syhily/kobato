@@ -8,6 +8,7 @@ import { adminFontsRouter } from '@/server/http/controllers/admin/fonts.controll
 import { adminFriendsRouter } from '@/server/http/controllers/admin/friends.controller'
 import { adminGeoipRouter } from '@/server/http/controllers/admin/geoip.controller'
 import { adminImagesRouter } from '@/server/http/controllers/admin/images.controller'
+import { adminJobsRouter } from '@/server/http/controllers/admin/jobs.controller'
 import { adminMailRouter } from '@/server/http/controllers/admin/mail.controller'
 import { adminMusicRouter } from '@/server/http/controllers/admin/music.controller'
 import { adminPagesRouter } from '@/server/http/controllers/admin/pages.controller'
@@ -76,6 +77,7 @@ export const apiRouter = {
     categories: adminCategoriesRouter,
     tags: adminTagsRouter,
     images: adminImagesRouter,
+    jobs: adminJobsRouter,
     music: adminMusicRouter,
     pages: adminPagesRouter,
     posts: adminPostsRouter,
