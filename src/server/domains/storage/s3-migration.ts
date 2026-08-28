@@ -12,12 +12,12 @@ import { image, music } from '@/server/infra/db/schema/media'
 import { storageMigration } from '@/server/infra/db/schema/storage-migration'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
-import { DEFAULT_PRIVATE_CACHE_CONTROL, DEFAULT_PUBLIC_CACHE_CONTROL } from '@/server/infra/storage/backend'
 import {
   createS3BackendFromConfig,
   validateS3Config,
   type S3ValidationResult,
 } from '@/server/infra/storage/backends/s3'
+import { contentTypeForKey, visibilityForKey } from '@/server/infra/storage/key-policy'
 import { backendFor } from '@/server/infra/storage/registry'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import {
@@ -713,8 +713,12 @@ async function copyOne(
       await target.putStream({
         key: object.key,
         body: meta.body,
-        contentType: meta.contentType ?? guessContentType(object.key),
-        cacheControl: meta.cacheControl ?? defaultCacheControlForKey(object.key),
+        // Stored headers copy verbatim when the source reports them (S3);
+        // otherwise the target derives Cache-Control from the key's
+        // visibility class (`key-policy`) and the type from the extension.
+        contentType: meta.contentType ?? contentTypeForKey(object.key),
+        cacheControl: meta.cacheControl,
+        visibility: visibilityForKey(object.key),
       })
       counters.copiedObjects += 1
       counters.copiedBytes += object.size
@@ -800,49 +804,6 @@ async function flipDriverColumns(
   if (imagePaths.length > 0) {
     await requireHooks().invalidateImageMeta(db, imagePaths)
   }
-}
-
-// Objects that were always private-cache uploads; everything else is public.
-const PRIVATE_KEY_PREFIXES = ['backup/', 'branding/', 'audit-log/']
-
-function defaultCacheControlForKey(key: string): string {
-  return PRIVATE_KEY_PREFIXES.some((prefix) => key.startsWith(prefix))
-    ? DEFAULT_PRIVATE_CACHE_CONTROL
-    : DEFAULT_PUBLIC_CACHE_CONTROL
-}
-
-const CONTENT_TYPE_BY_EXT: Record<string, string> = {
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.png': 'image/png',
-  '.gif': 'image/gif',
-  '.webp': 'image/webp',
-  '.avif': 'image/avif',
-  '.svg': 'image/svg+xml',
-  '.ico': 'image/x-icon',
-  '.mp3': 'audio/mpeg',
-  '.flac': 'audio/flac',
-  '.ogg': 'audio/ogg',
-  '.m4a': 'audio/mp4',
-  '.woff': 'font/woff',
-  '.woff2': 'font/woff2',
-  '.ttf': 'font/ttf',
-  '.otf': 'font/otf',
-  '.db': 'application/octet-stream',
-  '.gz': 'application/gzip',
-  '.json': 'application/json',
-}
-
-/** Extension-based fallback for sources without stored headers (local FS). */
-function guessContentType(key: string): string {
-  const dot = key.lastIndexOf('.')
-  if (dot >= 0) {
-    const known = CONTENT_TYPE_BY_EXT[key.slice(dot).toLowerCase()]
-    if (known !== undefined) {
-      return known
-    }
-  }
-  return 'application/octet-stream'
 }
 
 function throwIfCancelled(handle: RunningHandle): void {

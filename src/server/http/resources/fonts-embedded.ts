@@ -1,10 +1,10 @@
 import { Hono } from 'hono'
-import path from 'node:path'
 
 import type { Env } from '@/server/http/context'
 
 import { IMMUTABLE_CACHE_CONTROL, serveStoredLocalFile } from '@/server/http/resources/serve-local-file'
 import { s3StorageRedirect } from '@/server/http/resources/storage-redirect'
+import { contentTypeForKey } from '@/server/infra/storage/key-policy'
 
 /**
  * Public route for self-hosted web-font packages: `/fonts/embedded/<hash>/<filename>`
@@ -12,18 +12,6 @@ import { s3StorageRedirect } from '@/server/http/resources/storage-redirect'
  * so responses are immutable with a one-year lifetime.
  */
 export const fontsEmbeddedRouter = new Hono<Env>()
-
-const CONTENT_TYPE_BY_EXT: Record<string, string> = {
-  '.css': 'text/css; charset=utf-8',
-  '.woff2': 'font/woff2',
-  '.woff': 'font/woff',
-  '.ttf': 'font/ttf',
-  '.otf': 'font/otf',
-}
-
-function contentTypeFor(key: string): string {
-  return CONTENT_TYPE_BY_EXT[path.extname(key).toLowerCase()] ?? 'application/octet-stream'
-}
 
 /** Extract hash + filename from `/fonts/embedded/<hash>/<filename>`; null when the
  *  pattern mismatches. Hash must be 64 lowercase hex; no hidden segments. */
@@ -76,7 +64,7 @@ fontsEmbeddedRouter.get('/fonts/embedded/*', async (c) => {
 
   return serveStoredLocalFile({
     key: storageKey,
-    contentType: contentTypeFor(storageKey),
+    contentType: contentTypeForKey(storageKey),
     cacheControl: IMMUTABLE_CACHE_CONTROL,
     headers: {
       ifNoneMatch: c.req.header('if-none-match'),

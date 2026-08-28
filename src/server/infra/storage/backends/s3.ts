@@ -15,12 +15,8 @@ import type { AssetsSettings } from '@/shared/config/types'
 
 import { ActionFailure } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
-import {
-  DEFAULT_PRIVATE_CACHE_CONTROL,
-  DEFAULT_PUBLIC_CACHE_CONTROL,
-  MAX_OBJECT_BUFFER_SIZE,
-  StorageObjectNotFound,
-} from '@/server/infra/storage/backend'
+import { MAX_OBJECT_BUFFER_SIZE, StorageObjectNotFound } from '@/server/infra/storage/backend'
+import { cacheControlForVisibility } from '@/server/infra/storage/key-policy'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
@@ -349,10 +345,8 @@ function makeS3Backend(
     },
 
     async put(input: PutObjectInput): Promise<StoredObjectMeta> {
-      // The visibility → cache-control mapping lives here and nowhere else.
-      const visibility = input.visibility ?? 'public'
-      const cacheControl =
-        input.cacheControl ?? (visibility === 'private' ? DEFAULT_PRIVATE_CACHE_CONTROL : DEFAULT_PUBLIC_CACHE_CONTROL)
+      // The visibility → cache-control mapping lives in `key-policy` and nowhere else.
+      const cacheControl = input.cacheControl ?? cacheControlForVisibility(input.visibility ?? 'public')
       const ctx = await resolveContext()
       await putObject(ctx, input.key, input.body, input.contentType, cacheControl)
       return { key: input.key, size: input.body.length, lastModified: new Date() }
@@ -373,7 +367,9 @@ function makeS3Backend(
         input.key,
         input.body.pipe(meter),
         input.contentType,
-        input.cacheControl ?? DEFAULT_PRIVATE_CACHE_CONTROL,
+        // Verbatim cache-control wins (migration copies); otherwise the
+        // visibility-derived default, private when no visibility is given.
+        input.cacheControl ?? cacheControlForVisibility(input.visibility ?? 'private'),
       )
       return { key: input.key, size, lastModified: new Date() }
     },

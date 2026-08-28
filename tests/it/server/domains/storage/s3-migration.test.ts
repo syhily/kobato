@@ -17,6 +17,7 @@ import { image } from '@/server/infra/db/schema/media'
 import { post as postTable } from '@/server/infra/db/schema/post'
 import { storageMigration } from '@/server/infra/db/schema/storage-migration'
 import { DomainError } from '@/server/infra/http/errors'
+import { DEFAULT_PRIVATE_CACHE_CONTROL, DEFAULT_PUBLIC_CACHE_CONTROL } from '@/server/infra/storage/key-policy'
 import { __resetStorageBackendsForTests, __setStorageBackendForTests } from '@/server/infra/storage/registry'
 import { getBlogSettingsBundleSync } from '@/shared/config/getters'
 
@@ -375,6 +376,60 @@ describe('storage/s3-migration — s3-to-s3', () => {
     expect(status.skippedObjects).toBe(1)
     expect(status.verification).toMatchObject({ sourceCount: 1, targetCount: 1, matches: false })
     expect(status.verification!.targetBytes).toBeLessThan(status.verification!.sourceBytes)
+  })
+})
+
+describe('storage/s3-migration — header propagation', () => {
+  it('copies stored content-type / cache-control verbatim when the source reports them (s3-to-s3)', async () => {
+    await seedSettingsRows(TEST_BLOG_SETTINGS_BUNDLE)
+    await s3Mem.backend.put({
+      key: 'images/v.jpg',
+      body: Buffer.from('v'),
+      contentType: 'image/jpeg',
+      cacheControl: 'public, max-age=60',
+    })
+    await s3Mem.backend.put({
+      key: 'backup/v.db.gz',
+      body: Buffer.from('dump'),
+      contentType: 'application/gzip',
+      cacheControl: 'private, max-age=1',
+    })
+
+    await startStorageMigration(db, { target: 's3', config: TARGET_CONFIG })
+    await __awaitStorageMigrationForTests()
+
+    expect((await getStorageMigrationStatus(db)).phase).toBe('completed')
+    expect(targetMem.store.get('images/v.jpg')).toMatchObject({
+      contentType: 'image/jpeg',
+      cacheControl: 'public, max-age=60',
+    })
+    // A private prefix with a stored header keeps THAT header — the prefix
+    // rule only applies when the source cannot report one.
+    expect(targetMem.store.get('backup/v.db.gz')).toMatchObject({
+      contentType: 'application/gzip',
+      cacheControl: 'private, max-age=1',
+    })
+  })
+
+  it('derives cache-control from key visibility and content-type from the extension when the source cannot report headers (local-to-s3)', async () => {
+    const bundle = bundleWithStorage({ enabled: false })
+    setBlogSettingsBundleForTests(bundle)
+    await seedSettingsRows(bundle)
+    seedObject(localMem, 'backup/x.db.gz')
+    seedObject(localMem, 'images/y.jpg')
+
+    await startStorageMigration(db, { target: 's3', config: TARGET_CONFIG })
+    await __awaitStorageMigrationForTests()
+
+    expect((await getStorageMigrationStatus(db)).phase).toBe('completed')
+    expect(targetMem.store.get('backup/x.db.gz')).toMatchObject({
+      contentType: 'application/gzip',
+      cacheControl: DEFAULT_PRIVATE_CACHE_CONTROL,
+    })
+    expect(targetMem.store.get('images/y.jpg')).toMatchObject({
+      contentType: 'image/jpeg',
+      cacheControl: DEFAULT_PUBLIC_CACHE_CONTROL,
+    })
   })
 })
 
@@ -786,10 +841,10 @@ describe('storage/s3-migration — corrupt rows & error paths', () => {
   })
 
   it('copies via getStream when the source backend lacks getStreamWithMeta', async () => {
-    const bundle = bundleWithStorage({ enabled: false })
-    setBlogSettingsBundleForTests(bundle)
-    await seedSettingsRows(bundle)
-    seedObject(localMem, 'images/a.jpg')
+    // s3-to-s3 binds the source through the factory seam — deleting
+    // getStreamWithMeta there forces the getStream + key-policy fallback.
+    await seedSettingsRows(TEST_BLOG_SETTINGS_BUNDLE)
+    seedObject(s3Mem, 'images/a.jpg')
 
     const legacySource = { ...s3Mem.backend } as Record<string, unknown>
     delete legacySource.getStreamWithMeta
@@ -801,7 +856,11 @@ describe('storage/s3-migration — corrupt rows & error paths', () => {
     const status = await getStorageMigrationStatus(db)
     expect(status.phase).toBe('completed')
     expect(status.copiedObjects).toBe(1)
-    expect(targetMem.store.has('images/a.jpg')).toBe(true)
+    // Extension-derived type + visibility-derived cache header on the target.
+    expect(targetMem.store.get('images/a.jpg')).toMatchObject({
+      contentType: 'image/jpeg',
+      cacheControl: DEFAULT_PUBLIC_CACHE_CONTROL,
+    })
   })
 
   it('reports the lock probe active while a task holds the in-memory slot', async () => {

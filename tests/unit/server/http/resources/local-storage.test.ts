@@ -41,6 +41,7 @@ beforeAll(() => {
   mkdirSync(`${tmp.root}/unknown`, { recursive: true })
   writeFileSync(`${tmp.root}/images/a.jpg`, 'img')
   writeFileSync(`${tmp.root}/musics/b.mp3`, 'aud')
+  writeFileSync(`${tmp.root}/musics/t.flac`, 'flac')
   writeFileSync(`${tmp.root}/branding/c.svg`, '<svg/>')
   writeFileSync(`${tmp.root}/backup/backup-2026-01-01T00-00-00.sql.gz`, 'dump')
   writeFileSync(`${tmp.root}/private/secret.txt`, 'shh')
@@ -72,6 +73,11 @@ describe('local-storage public route — namespace allowlist (local driver)', ()
     const svg = await localStorageRouter.request('/storage/branding/c.svg')
     expect(svg.status).toBe(200)
     expect(svg.headers.get('Content-Type')).toBe('image/svg+xml')
+
+    // Formerly served as octet-stream — the shared key-policy map closed the gap.
+    const flac = await localStorageRouter.request('/storage/musics/t.flac')
+    expect(flac.status).toBe(200)
+    expect(flac.headers.get('Content-Type')).toBe('audio/flac')
   })
 
   it('refuses to serve a database backup (P0: no unauthenticated dump leak)', async () => {

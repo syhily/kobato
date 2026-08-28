@@ -1,5 +1,6 @@
 import type { Readable } from 'node:stream'
 
+import type { ObjectVisibility } from '@/server/infra/storage/key-policy'
 import type { StorageDriver } from '@/shared/config/types'
 
 import { ActionFailure } from '@/server/infra/http/errors'
@@ -18,16 +19,21 @@ export interface PutObjectInput {
   /** `Cache-Control` header. Defaults to the visibility-appropriate immutable value. */
   cacheControl?: string
   /** `public` assets are CDN-cacheable; `private` ones (branding/backup) get a private cache. Defaults to `public`. */
-  visibility?: 'public' | 'private'
+  visibility?: ObjectVisibility
 }
 
 export interface PutStreamInput {
   key: string
   body: Readable
   contentType: string
-  /** `Cache-Control` header. Defaults to the private-cache value (streams are backups). */
+  /**
+   * `Cache-Control` header, carried verbatim by backend-to-backend copies.
+   * Defaults to the `visibility`-derived value — without a `visibility`, the
+   * private-cache value (streams are backups).
+   */
   cacheControl?: string
-  visibility?: 'public' | 'private'
+  /** Visibility class the default `cacheControl` derives from (see `key-policy`). */
+  visibility?: ObjectVisibility
 }
 
 /** Result of `getStreamWithMeta` — the body plus the headers a verbatim copy needs. */
@@ -85,6 +91,3 @@ export class StorageObjectNotFound extends ActionFailure {
 
 /** Hard cap for buffered reads (images / music / branding). Backups stream past it. */
 export const MAX_OBJECT_BUFFER_SIZE = 100 * 1024 * 1024 // 100 MB
-
-export const DEFAULT_PUBLIC_CACHE_CONTROL = 'public, max-age=31536000, immutable'
-export const DEFAULT_PRIVATE_CACHE_CONTROL = 'private, max-age=31536000'

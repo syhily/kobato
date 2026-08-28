@@ -1,10 +1,10 @@
 import { Hono } from 'hono'
-import path from 'node:path'
 
 import type { Env } from '@/server/http/context'
 
 import { IMMUTABLE_CACHE_CONTROL, serveStoredLocalFile } from '@/server/http/resources/serve-local-file'
 import { s3StorageRedirect } from '@/server/http/resources/storage-redirect'
+import { contentTypeForKey } from '@/server/infra/storage/key-policy'
 
 export const localStorageRouter = new Hono<Env>()
 
@@ -29,26 +29,6 @@ function isPublicStorageKey(key: string): boolean {
   return PUBLIC_STORAGE_PREFIXES.some((prefix) => key.startsWith(prefix))
 }
 
-const CONTENT_TYPE_BY_EXT: Record<string, string> = {
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.png': 'image/png',
-  '.webp': 'image/webp',
-  '.avif': 'image/avif',
-  '.gif': 'image/gif',
-  '.svg': 'image/svg+xml',
-  '.mp3': 'audio/mpeg',
-  '.m4a': 'audio/mp4',
-  '.ogg': 'audio/ogg',
-  '.ico': 'image/x-icon',
-  '.webmanifest': 'application/manifest+json',
-  '.json': 'application/json; charset=utf-8',
-}
-
-function contentTypeFor(key: string): string {
-  return CONTENT_TYPE_BY_EXT[path.extname(key).toLowerCase()] ?? 'application/octet-stream'
-}
-
 localStorageRouter.get('/storage/*', async (c) => {
   // `c.req.path` is already normalized; slice + percent-decode; the backend re-applies the traversal guard.
   let key: string
@@ -71,7 +51,7 @@ localStorageRouter.get('/storage/*', async (c) => {
 
   return serveStoredLocalFile({
     key,
-    contentType: contentTypeFor(key),
+    contentType: contentTypeForKey(key),
     cacheControl: IMMUTABLE_CACHE_CONTROL,
     headers: {
       ifNoneMatch: c.req.header('if-none-match'),

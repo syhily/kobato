@@ -1,16 +1,30 @@
 // In-memory StorageBackend for integration tests — the single shared fake
 // for the S3/local-disk external. Reads of an absent key reject with
 // `StorageObjectNotFound`; deletes are idempotent; `list` honours prefix.
+// Writes resolve Cache-Control exactly like the S3 adapter (`cacheControl`
+// verbatim, else the `key-policy` visibility default); `getStreamWithMeta`
+// exists only on the `s3` driver, mirroring the real backends (local FS
+// stores no headers, so migration tests against a `local` fake exercise the
+// key-policy fallback).
 import { Readable } from 'node:stream'
 
-import type { PutObjectInput, PutStreamInput, StorageBackend, StoredObjectMeta } from '@/server/infra/storage/backend'
+import type {
+  PutObjectInput,
+  PutStreamInput,
+  StorageBackend,
+  StoredObjectMeta,
+  StreamWithMeta,
+} from '@/server/infra/storage/backend'
 import type { StorageDriver } from '@/shared/config/types'
 
 import { StorageObjectNotFound } from '@/server/infra/storage/backend'
+import { cacheControlForVisibility } from '@/server/infra/storage/key-policy'
 
 export interface MemoryStoredObject {
   body: Buffer
   contentType: string
+  /** Cache-Control resolved at write time — what `getStreamWithMeta` reports back. */
+  cacheControl?: string
 }
 
 export interface MemoryBackend {
@@ -42,15 +56,23 @@ export function makeMemoryBackend({ driver = 's3' }: { driver?: StorageDriver } 
   const backend: StorageBackend = {
     driver,
     isAvailable: () => true,
-    async put({ key, body, contentType }: PutObjectInput): Promise<StoredObjectMeta> {
+    async put({ key, body, contentType, cacheControl, visibility }: PutObjectInput): Promise<StoredObjectMeta> {
       putKeys.push(key)
-      store.set(key, { body, contentType })
+      store.set(key, {
+        body,
+        contentType,
+        cacheControl: cacheControl ?? cacheControlForVisibility(visibility ?? 'public'),
+      })
       return { key, size: body.length }
     },
-    async putStream({ key, body, contentType }: PutStreamInput): Promise<StoredObjectMeta> {
+    async putStream({ key, body, contentType, cacheControl, visibility }: PutStreamInput): Promise<StoredObjectMeta> {
       putKeys.push(key)
       const buffer = await drain(body)
-      store.set(key, { body: buffer, contentType })
+      store.set(key, {
+        body: buffer,
+        contentType,
+        cacheControl: cacheControl ?? cacheControlForVisibility(visibility ?? 'private'),
+      })
       return { key, size: buffer.length }
     },
     async get(key: string): Promise<Buffer> {
@@ -98,6 +120,17 @@ export function makeMemoryBackend({ driver = 's3' }: { driver?: StorageDriver } 
       const capped = opts?.maxKeys === undefined ? keys : keys.slice(0, opts.maxKeys)
       return capped.map((key) => ({ key, size: store.get(key)!.body.length }))
     },
+  }
+
+  // Only the S3 driver reports stored headers — the real local backend has none.
+  if (driver === 's3') {
+    backend.getStreamWithMeta = async (key: string): Promise<StreamWithMeta> => {
+      const entry = store.get(key)
+      if (entry === undefined) {
+        throw new StorageObjectNotFound(key)
+      }
+      return { body: Readable.from([entry.body]), contentType: entry.contentType, cacheControl: entry.cacheControl }
+    }
   }
 
   return {

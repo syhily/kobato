@@ -1,6 +1,6 @@
 import type { StorageDriver } from '@/shared/config/types'
 
-import { DEFAULT_PUBLIC_CACHE_CONTROL } from '@/server/infra/storage/backend'
+import { DEFAULT_PUBLIC_CACHE_CONTROL } from '@/server/infra/storage/key-policy'
 import { activeBackend, backendFor } from '@/server/infra/storage/registry'
 
 // Storage entry point for the fonts domain. Writes go to the active backend;
