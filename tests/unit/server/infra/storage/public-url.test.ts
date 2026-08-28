@@ -2,7 +2,16 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { ActionFailure } from '@/server/infra/http/errors'
-import { getPublicBaseUrl, resolveAssetUrl, safeResolveAssetUrl } from '@/server/infra/storage/public-url'
+import {
+  getPublicBaseUrl,
+  parseAssetUrl,
+  resolveAssetUrl,
+  safeResolveAssetUrl,
+} from '@/server/infra/storage/public-url'
+import { EMBEDDED_FONT_ROUTE_PREFIX, STORAGE_ROUTE_PREFIX } from '@/shared/types/asset-url'
+
+const SITE = 'https://site.example.com'
+const HASH = 'a'.repeat(64)
 
 // `resolveAssetUrl` reads the real settings snapshot; each test overrides one section at a time.
 function seedSettings(overrides: { assetHost?: string; storageEnabled?: boolean; website?: string | null } = {}) {
@@ -91,7 +100,6 @@ describe('resolveAssetUrl — missing-origin guard', () => {
 // Font URL contract (hard repo rule): `/fonts/embedded/<hash>/result.css` —
 // the route override is driver-neutral, so the form holds for local AND s3 rows.
 describe('resolveAssetUrl — route override (font options bag)', () => {
-  const HASH = 'a'.repeat(64)
   const CSS_KEY = `fonts/${HASH}/result.css`
   const FONT_OPTIONS = { route: '/fonts/embedded/', stripPrefix: 'fonts/' }
 
@@ -116,5 +124,98 @@ describe('resolveAssetUrl — route override (font options bag)', () => {
   it('still throws ActionFailure(503) when the site origin is empty', () => {
     seedSettings({ website: '' })
     expect(() => resolveAssetUrl(CSS_KEY, undefined, FONT_OPTIONS)).toThrow(ActionFailure)
+  })
+})
+
+// Inverse grammar: parseAssetUrl is the exact counterpart of resolveAssetUrl
+// above — same module, shared path grammar in `@/shared/types/asset-url`.
+describe('parseAssetUrl — origin-relative forms', () => {
+  it('parses both route shapes', () => {
+    expect(parseAssetUrl('/storage/images/2026/05/x.jpg')).toEqual({
+      key: 'images/2026/05/x.jpg',
+      route: STORAGE_ROUTE_PREFIX,
+    })
+    expect(parseAssetUrl(`/fonts/embedded/${HASH}/result.css`)).toEqual({
+      key: `fonts/${HASH}/result.css`,
+      route: EMBEDDED_FONT_ROUTE_PREFIX,
+    })
+  })
+
+  it('strips the ?v= cache-buster and any other query/fragment', () => {
+    expect(parseAssetUrl('/storage/images/a.jpg?v=123')).toEqual({
+      key: 'images/a.jpg',
+      route: STORAGE_ROUTE_PREFIX,
+    })
+    expect(parseAssetUrl('/storage/images/a.jpg?w=800&h=600&q=80&v=1')).toEqual({
+      key: 'images/a.jpg',
+      route: STORAGE_ROUTE_PREFIX,
+    })
+    expect(parseAssetUrl('/storage/images/a.jpg#frag')).toEqual({
+      key: 'images/a.jpg',
+      route: STORAGE_ROUTE_PREFIX,
+    })
+  })
+
+  it('rejects paths outside the grammar', () => {
+    expect(parseAssetUrl('/images/foo.jpg')).toBeNull()
+    expect(parseAssetUrl('/storage/')).toBeNull()
+    expect(parseAssetUrl('/fonts/embedded/abc123/result.css')).toBeNull()
+    expect(parseAssetUrl('storage/images/a.jpg')).toBeNull()
+  })
+})
+
+describe('parseAssetUrl — absolute forms', () => {
+  it('parses an absolute URL on the given site origin', () => {
+    expect(parseAssetUrl(`${SITE}/storage/images/a.jpg?v=9`, { siteOrigin: SITE })).toEqual({
+      key: 'images/a.jpg',
+      route: STORAGE_ROUTE_PREFIX,
+    })
+  })
+
+  it('rejects absolute URLs without a site origin or anyOrigin', () => {
+    expect(parseAssetUrl(`${SITE}/storage/images/a.jpg`)).toBeNull()
+  })
+
+  it('rejects absolute CDN URLs and foreign origins', () => {
+    expect(parseAssetUrl('https://cdn.example.com/images/a.jpg', { siteOrigin: SITE })).toBeNull()
+    expect(parseAssetUrl('https://other.example/storage/images/a.jpg', { siteOrigin: SITE })).toBeNull()
+    // A CDN URL whose path happens to match the grammar still fails the origin check.
+    expect(parseAssetUrl('https://cdn.example.com/storage/images/a.jpg', { siteOrigin: SITE })).toBeNull()
+  })
+
+  it('anyOrigin mode accepts the grammar on any http(s) origin (domain moves)', () => {
+    expect(parseAssetUrl('https://moved.example/storage/images/a.jpg?v=1', { anyOrigin: true })).toEqual({
+      key: 'images/a.jpg',
+      route: STORAGE_ROUTE_PREFIX,
+    })
+    // …but the path grammar still applies.
+    expect(parseAssetUrl('https://cdn.example.com/images/a.jpg', { anyOrigin: true })).toBeNull()
+  })
+
+  it('rejects malformed and non-http(s) URLs', () => {
+    expect(parseAssetUrl('http://', { anyOrigin: true })).toBeNull()
+    expect(parseAssetUrl('data:image/png;base64,abc', { anyOrigin: true })).toBeNull()
+    expect(parseAssetUrl('ftp://site.example.com/storage/a.jpg', { anyOrigin: true })).toBeNull()
+    expect(parseAssetUrl('not-a-url', { siteOrigin: SITE })).toBeNull()
+  })
+})
+
+describe('parseAssetUrl — round-trip with resolveAssetUrl', () => {
+  it('inverts the default /storage/ route, with and without ?v=', () => {
+    const key = 'images/2026/05/x.jpg'
+    for (const url of [resolveAssetUrl(key), resolveAssetUrl(key, 123)]) {
+      expect(parseAssetUrl(url, { siteOrigin: SITE })).toEqual({ key, route: STORAGE_ROUTE_PREFIX })
+    }
+  })
+
+  it('inverts the embedded-font route override', () => {
+    const key = `fonts/${HASH}/result.css`
+    const options = { route: '/fonts/embedded/', stripPrefix: 'fonts/' }
+    for (const url of [resolveAssetUrl(key, undefined, options), resolveAssetUrl(key, 123, options)]) {
+      expect(parseAssetUrl(url, { siteOrigin: SITE })).toEqual({
+        key,
+        route: EMBEDDED_FONT_ROUTE_PREFIX,
+      })
+    }
   })
 })

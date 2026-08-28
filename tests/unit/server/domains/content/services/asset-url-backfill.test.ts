@@ -45,6 +45,13 @@ describe('rewriteBodyAssetUrls', () => {
     expect((body[0] as ImageBlock).src).toBe('/storage/images/x.jpg')
   })
 
+  it('drops a baked ?v= cache-buster on the origin-relative form', () => {
+    const body = [img({ _key: 'a', src: '/storage/images/x.jpg?v=1' })]
+    const { changed } = rewriteBodyAssetUrls(body as PortableTextBody, CDN)
+    expect(changed).toBe(true)
+    expect((body[0] as ImageBlock).src).toBe('/storage/images/x.jpg')
+  })
+
   it('leaves truly external images alone', () => {
     const body = [img({ _key: 'a', src: 'https://flickr.example/photos/x.jpg' })]
     const { changed } = rewriteBodyAssetUrls(body as PortableTextBody, CDN)

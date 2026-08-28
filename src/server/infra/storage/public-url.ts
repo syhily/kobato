@@ -1,5 +1,6 @@
 import { ActionFailure } from '@/server/infra/http/errors'
 import { requireBlogSettingsSection } from '@/shared/config/getters'
+import { isOnSiteOrigin, parseAssetUrlPath, type ParsedAssetUrl } from '@/shared/types/asset-url'
 
 /**
  * Public base URL for S3 assets, or `null` when unconfigured. Stays non-null
@@ -76,4 +77,54 @@ export function safeResolveAssetUrl(storagePath: string, updatedAtMs?: number): 
     }
     throw error
   }
+}
+
+export interface ParseAssetUrlOptions {
+  /**
+   * Site origin (e.g. `https://example.com`). Required to accept ABSOLUTE
+   * URLs: only this exact origin parses. Origin-relative forms always parse.
+   */
+  siteOrigin?: string
+  /**
+   * Domain-move mode: accept the site-owned path grammar on ANY http(s)
+   * origin. Reserved for the images matcher and the asset-URL backfill,
+   * which must resolve references baked under a previous domain.
+   */
+  anyOrigin?: boolean
+}
+
+function stripQueryAndFragment(url: string): string {
+  const cut = url.search(/[?#]/)
+  return cut === -1 ? url : url.slice(0, cut)
+}
+
+/**
+ * Inverse of `resolveAssetUrl`: site-owned asset URL → `{ key, route }`.
+ * Accepts the origin-relative forms (`/storage/<key>`,
+ * `/fonts/embedded/<hash>/<file>`) and — per `options` — the absolute form;
+ * the `?v=<updatedAt>` cache-buster (and any other query/fragment) is
+ * stripped. Returns `null` for absolute CDN URLs, foreign origins, malformed
+ * URLs, and anything outside the grammar. The path grammar itself is owned
+ * by `@/shared/types/asset-url` — this wrapper adds the origin policy.
+ */
+export function parseAssetUrl(url: string, options: ParseAssetUrlOptions = {}): ParsedAssetUrl | null {
+  if (url.startsWith('/') && !url.startsWith('//')) {
+    return parseAssetUrlPath(stripQueryAndFragment(url))
+  }
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    return null
+  }
+  let parsed: URL
+  try {
+    parsed = new URL(url)
+  } catch {
+    return null
+  }
+  if (options.anyOrigin !== true) {
+    const siteOrigin = options.siteOrigin
+    if (siteOrigin === undefined || siteOrigin === '' || !isOnSiteOrigin(parsed, siteOrigin)) {
+      return null
+    }
+  }
+  return parseAssetUrlPath(parsed.pathname)
 }

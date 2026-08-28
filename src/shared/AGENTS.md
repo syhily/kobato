@@ -25,7 +25,8 @@ server or client boundary catch and log it.
 - `contracts/` — Zod schemas (the wire format) plus the DTO types derived
   from them.
 - `types/` — Standalone shared types and isomorphic helpers with no
-  contract twin (catalog projections, domain inputs, image URL helpers).
+  contract twin (catalog projections, domain inputs, image URL helpers,
+  the site-owned asset-URL path grammar in `asset-url`).
 - `pt/` — PortableText schema, bridge, semantics, comment markdown,
   footnote-merge, the footnote anchor DOM contract (`footnote-anchors`),
   editor↔storage footnote sync (`footnote-sync`), the heading

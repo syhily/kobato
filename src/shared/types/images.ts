@@ -1,3 +1,5 @@
+import { isOnSiteOrigin, STORAGE_ROUTE_PREFIX } from '@/shared/types/asset-url'
+
 export type AdminImageKind = 'generic' | 'category' | 'friend'
 
 export interface ListImagesInput {
@@ -83,9 +85,6 @@ export interface ImageUrlOptions {
 
 const DEFAULT_SRCSET_BREAKPOINTS = [256, 512, 768, 1024, 1280, 1536]
 
-/** Path prefix of site-owned asset URLs served (and 302'd) by the origin itself. */
-const STORAGE_ROUTE_PREFIX = '/storage/'
-
 /**
  * The src unchanged when it is a site-owned asset URL in either accepted
  * form — origin-relative (`/storage/<key>`) or absolute on the site origin —
@@ -100,10 +99,7 @@ export function siteOwnedStorageSrc(src: string, siteOrigin: string | undefined)
   }
   try {
     const url = new URL(src)
-    if (
-      (url.protocol === 'https:' || url.protocol === 'http:') &&
-      `${url.protocol}//${url.host}` === siteOrigin.replace(/\/$/, '')
-    ) {
+    if (isOnSiteOrigin(url, siteOrigin)) {
       return url.pathname.startsWith(STORAGE_ROUTE_PREFIX) ? src : null
     }
   } catch {

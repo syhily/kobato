@@ -12,8 +12,9 @@ import { page } from '@/server/infra/db/schema/page'
 import { post } from '@/server/infra/db/schema/post'
 import { category } from '@/server/infra/db/schema/taxonomy'
 import { getLogger } from '@/server/infra/logger'
-import { getPublicBaseUrl } from '@/server/infra/storage/public-url'
+import { getPublicBaseUrl, parseAssetUrl } from '@/server/infra/storage/public-url'
 import { visitNestedBlocks } from '@/shared/pt/utils'
+import { STORAGE_ROUTE_PREFIX } from '@/shared/types/asset-url'
 import { unsafeCast } from '@/shared/utils/unsafe-cast'
 
 /**
@@ -40,12 +41,14 @@ export interface AssetUrlBackfillResult {
 }
 
 /**
- * Resolve a stored reference to its storage key when it is provably ours:
- * the CURRENT CDN base (any key prefix), or the `/storage/` pathname in
- * origin-relative and any-origin absolute forms (domain moves). The bare
- * `/images/…` form `resolveSrcToStoragePath` also accepts is deliberately
- * NOT rewritten here — it collides with first-party site routes
- * (`/images/og/…`, `/images/calendar/…`), which must stay untouched.
+ * Resolve a stored reference to its storage key when it is provably ours.
+ * The site-owned core is `parseAssetUrl` (origin-relative plus any-origin
+ * absolute forms — domain moves); the legacy CDN-absolute width (any key
+ * prefix, `!` transform suffixes) and the bare `storage/<key>` form stay
+ * layered on top via the images matcher. The bare `/images/…` form
+ * `resolveSrcToStoragePath` also accepts is deliberately NOT rewritten here —
+ * it collides with first-party site routes (`/images/og/…`,
+ * `/images/calendar/…`), which must stay untouched.
  */
 function rewritableStoragePath(src: string, publicBaseUrl: string | null): string | null {
   if (publicBaseUrl !== null && src.startsWith(`${publicBaseUrl}/`)) {
@@ -63,7 +66,14 @@ function rewritableStoragePath(src: string, publicBaseUrl: string | null): strin
       return null
     }
   }
-  return nonEmpty(resolveSrcToStoragePath(src, publicBaseUrl))
+  if (src.startsWith('storage/')) {
+    return nonEmpty(resolveSrcToStoragePath(src, null))
+  }
+  const parsed = parseAssetUrl(src, { anyOrigin: true })
+  if (parsed === null || parsed.route !== STORAGE_ROUTE_PREFIX) {
+    return null
+  }
+  return nonEmpty(parsed.key)
 }
 
 function nonEmpty(path: string | null): string | null {

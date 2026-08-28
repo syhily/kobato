@@ -91,6 +91,17 @@ describe('images/services/cache — resolveSrcToStoragePath', () => {
   it('handles bare base url', () => {
     expect(cache.resolveSrcToStoragePath('https://assets.example.com', 'https://assets.example.com')).toBe('')
   })
+
+  it('strips the ?v= cache-buster on site-owned /storage/ srcs', () => {
+    expect(cache.resolveSrcToStoragePath('/storage/images/foo.jpg?v=123', null)).toBe('images/foo.jpg')
+    expect(cache.resolveSrcToStoragePath('https://moved.example/storage/images/foo.jpg?v=123', null)).toBe(
+      'images/foo.jpg',
+    )
+  })
+
+  it('does not resolve embedded-font URLs to image keys', () => {
+    expect(cache.resolveSrcToStoragePath(`/fonts/embedded/${'a'.repeat(64)}/result.css`, null)).toBeNull()
+  })
 })
 
 describe('images/services/admin-read — listImagesForAdmin', () => {

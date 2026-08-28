@@ -4,6 +4,8 @@ import type { StorageDriver } from '@/shared/config/types'
 
 import { remove, throughMany } from '@/server/infra/cache/registry'
 import { findImagesByStoragePaths } from '@/server/infra/db/operations/image'
+import { parseAssetUrl } from '@/server/infra/storage/public-url'
+import { STORAGE_ROUTE_PREFIX } from '@/shared/types/asset-url'
 
 export interface CachedImageMetaPresent {
   found: true
@@ -68,6 +70,13 @@ export async function invalidateImageEnhanceCacheFor(db: Database, storagePath: 
   await remove(db, 'imageMeta', { storagePath })
 }
 
+/**
+ * Image src → storage key. The site-owned core (`/storage/<key>`, relative or
+ * absolute) is `parseAssetUrl`; this matcher deliberately accepts MORE legacy
+ * width around it: CDN-base-absolute keys, the bare `images/…`/`storage/…`
+ * and `/images/…` forms, `!` transform suffixes, and any-origin absolutes
+ * (domain moves). Embedded-font URLs never resolve to image rows.
+ */
 export function resolveSrcToStoragePath(src: string, publicBaseUrl: string | null): string | null {
   if (src.startsWith('http://') || src.startsWith('https://')) {
     if (publicBaseUrl !== null) {
@@ -78,22 +87,24 @@ export function resolveSrcToStoragePath(src: string, publicBaseUrl: string | nul
         return ''
       }
     }
+    const parsed = parseAssetUrl(src, { anyOrigin: true })
+    if (parsed !== null) {
+      return parsed.route === STORAGE_ROUTE_PREFIX ? normalizeStoragePath(parsed.key) : null
+    }
     try {
-      const url = new URL(src)
-      // Local-served assets live under `/storage/<key>` on the blog origin.
-      if (url.pathname.startsWith('/storage/')) {
-        return normalizeStoragePath(url.pathname.slice('/storage/'.length))
-      }
-      if (url.pathname.startsWith('/images/')) {
-        return normalizeStoragePath(url.pathname.slice(1))
+      const pathname = new URL(src).pathname
+      // Legacy absolute form: local-served assets under `/images/<key>`.
+      if (pathname.startsWith('/images/')) {
+        return normalizeStoragePath(pathname.slice(1))
       }
     } catch {
       // Malformed URL — fall through to "no match".
     }
     return null
   }
-  if (src.startsWith('/storage/')) {
-    return normalizeStoragePath(src.slice('/storage/'.length))
+  const parsed = parseAssetUrl(src)
+  if (parsed !== null) {
+    return parsed.route === STORAGE_ROUTE_PREFIX ? normalizeStoragePath(parsed.key) : null
   }
   if (src.startsWith('storage/')) {
     return normalizeStoragePath(src.slice('storage/'.length))
