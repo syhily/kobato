@@ -12,6 +12,7 @@ import type { Database } from '@/server/infra/db/database'
 import type { BackupFileDto } from '@/shared/types/backup'
 
 import { createTarReadStream } from '@/server/domains/backup/services/tar'
+import { finishJobRun, startJobRun } from '@/server/infra/db/job-run-recorder'
 import {
   deleteBackupRow,
   findBackupByTimestamp,
@@ -109,6 +110,24 @@ export async function createBackup(
     return await createBackupUnchecked(db, createdBy)
   } finally {
     backupRunning = false
+  }
+}
+
+/**
+ * Admin-triggered manual backup: wraps `createBackup` with a `job_run` history
+ * row. The scheduled path stays untouched (the scheduler's own instrumentation
+ * records it), so no double rows. Failures — including the CONFLICT
+ * single-flight rejection — finish the row as `failed`: an honest attempt.
+ */
+export async function createManualBackup(db: Database) {
+  const runId = startJobRun('backup', 'manual')
+  try {
+    const result = await createBackup(db, null)
+    finishJobRun(runId, 'success')
+    return result
+  } catch (error) {
+    finishJobRun(runId, 'failed', error instanceof Error ? error.message : String(error))
+    throw error
   }
 }
 

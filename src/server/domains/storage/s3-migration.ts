@@ -6,6 +6,7 @@ import type { AssetsSettings, StorageDriver } from '@/shared/config/types'
 
 import { recordAuditEvent } from '@/server/domains/audit/services/record'
 import { decryptIfNeeded, encryptIfNeeded } from '@/server/infra/crypto/secret-encryption'
+import { finishJobRun, startJobRun } from '@/server/infra/db/job-run-recorder'
 import { backup as backupTable } from '@/server/infra/db/schema/backup'
 import { font as fontTable } from '@/server/infra/db/schema/font'
 import { image, music } from '@/server/infra/db/schema/media'
@@ -96,10 +97,12 @@ class MigrationCancelled extends Error {
   }
 }
 
-/** The running task's in-memory handle: cancel flag + completion promise. */
+/** The running task's in-memory handle: cancel flag + completion promise + job_run row id. */
 interface RunningHandle {
   cancelRequested: boolean
   promise: Promise<void>
+  /** This attempt's `job_run` row, opened by `launch` (undefined when the recorder is unwired/failed). */
+  runId?: number | null
 }
 
 let running: RunningHandle | null = null
@@ -445,6 +448,10 @@ function launch(
   cursor: string | null,
   handle: RunningHandle,
 ): void {
+  // One history row per in-process attempt (a resume is a fresh attempt,
+  // same cursor) — a crash leaves it `running` until the boot-time orphan
+  // sweep marks it failed.
+  handle.runId = startJobRun('storage-migration', 'manual')
   handle.promise = runMigration(db, direction, sourceConfig, targetConfig, cursor, handle)
     .catch((error) => {
       // The run body records failures itself; this is the crash-only backstop.
@@ -514,16 +521,20 @@ async function runMigration(
   // The live checkpoint — copyAll advances it per completed batch so the
   // failure path persists the CURRENT cursor, not the original resume point.
   const progress = { cursor: resumeCursor }
-  if (resumeCursor !== null) {
-    const existing = await readRow(db)
-    if (existing !== null) {
-      counters.copiedObjects = existing.copiedObjects
-      counters.copiedBytes = existing.copiedBytes
-      counters.skippedObjects = existing.skippedObjects
-    }
-  }
 
+  // Everything from the counter restore on sits inside the try: an early
+  // throw (e.g. readRow) must still close the history row and the singleton
+  // row instead of leaving a phantom `running`.
   try {
+    if (resumeCursor !== null) {
+      const existing = await readRow(db)
+      if (existing !== null) {
+        counters.copiedObjects = existing.copiedObjects
+        counters.copiedBytes = existing.copiedBytes
+        counters.skippedObjects = existing.skippedObjects
+      }
+    }
+
     const endpoints = resolveEndpoints(direction, sourceConfig, targetConfig)
 
     await copyAll(db, endpoints.source, endpoints.target, progress, counters, handle)
@@ -565,9 +576,13 @@ async function runMigration(
     } catch (error) {
       log.warn('Post-migration asset URL backfill failed', { error: String(error) })
     }
+    // History closes LAST: a bookkeeping throw above (audit, backfill) must
+    // not flip a completed run to failed.
+    finishJobRun(handle.runId ?? null, 'success')
   } catch (error) {
     const cancelled = error instanceof MigrationCancelled
     const message = error instanceof Error ? error.message : String(error)
+    finishJobRun(handle.runId ?? null, cancelled ? 'cancelled' : 'failed', cancelled ? undefined : message)
     await persistCounters(db, counters, progress.cursor)
     await db
       .update(storageMigration)

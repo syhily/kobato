@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { recordAuditEventFromContext } from '@/server/domains/audit/services/record'
 import { withRestoreClaim } from '@/server/domains/backup/restore-machine'
 import {
-  createBackup,
+  createManualBackup,
   deleteBackup,
   getBackupStream,
   isValidBackupKey,
@@ -45,7 +45,7 @@ const create = adminProc
   .route({ method: 'POST', path: '/admin/backup/create' })
   .output(z.object({ fileName: z.string(), size: z.number(), timestamp: z.string() }))
   .handler(async ({ context }) => {
-    const result = await createBackup(context.db, null)
+    const result = await createManualBackup(context.db)
     recordAuditEventFromContext(context, {
       action: 'backup_created',
       resourceType: 'backup',
