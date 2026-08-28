@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
-import type { MailSettings } from '@/shared/config/types'
+import type { CommentsSettings, MailSettings } from '@/shared/config/types'
 
-import { projectAssetsForAdmin, projectMailForAdmin } from '@/shared/config/projection'
+import { projectAssetsForAdmin, projectCommentsForAdmin, projectMailForAdmin } from '@/shared/config/projection'
 
 describe('shared/config/projection — projectAssetsForAdmin', () => {
   const baseInput = {
@@ -193,5 +193,39 @@ describe('shared/config/projection — projectMailForAdmin', () => {
     expect(out.mail.apiKeyMask).toBeNull()
     expect(out.mail.smtpPassMask).toBeNull()
     expect(out.mail.mailgunApiKeyMask).toBeNull()
+  })
+})
+
+describe('shared/config/projection — projectCommentsForAdmin', () => {
+  const baseComments: CommentsSettings = {
+    comments: {
+      size: 10,
+      avatar: { mirror: 'https://gravatar.com/avatar/', sources: ['qq', 'github', 'gravatar'] },
+      githubToken: 'ghp-secret-99zz',
+      tokenTtlSeconds: 1800,
+    },
+  }
+
+  it('forwards every non-secret field, including the source order', () => {
+    const out = projectCommentsForAdmin(baseComments)
+    expect(out.comments.size).toBe(10)
+    expect(out.comments.avatar.mirror).toBe('https://gravatar.com/avatar/')
+    expect(out.comments.avatar.sources).toEqual(['qq', 'github', 'gravatar'])
+    expect(out.comments.tokenTtlSeconds).toBe(1800)
+  })
+
+  it('swaps the githubToken for the passed mask and never leaks the raw value', () => {
+    const out = projectCommentsForAdmin(baseComments, '••••mask')
+    expect(out.comments.githubTokenMask).toBe('••••mask')
+    expect(JSON.stringify(out)).not.toContain('ghp-secret-99zz')
+    expect('githubToken' in out.comments).toBe(false)
+  })
+
+  it('falls back to the last 4 chars of the raw token, or null when unset', () => {
+    expect(projectCommentsForAdmin(baseComments).comments.githubTokenMask).toBe('99zz')
+    const out = projectCommentsForAdmin({
+      comments: { ...baseComments.comments, githubToken: undefined },
+    })
+    expect(out.comments.githubTokenMask).toBeNull()
   })
 })

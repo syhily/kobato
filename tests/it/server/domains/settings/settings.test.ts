@@ -68,7 +68,7 @@ const fixtureBundle: BlogSettingsBundle = {
   comments: {
     comments: {
       size: 10,
-      avatar: { mirror: 'https://gravatar.com/avatar/' },
+      avatar: { mirror: 'https://gravatar.com/avatar/', sources: ['qq', 'github', 'gravatar'] },
       tokenTtlSeconds: 1800,
     },
   },
@@ -499,6 +499,75 @@ describe('services/settings — mail section', () => {
     expect(decryptIfNeeded(mail.mailgunApiKey as string)).toBe('STOREDMAILGUNKEY')
     expect(mail.apiKey).toMatch(/^enc2:/)
     expect(decryptIfNeeded(mail.apiKey as string)).toBe('ZEABURKEY')
+  })
+})
+
+describe('services/settings — comments section', () => {
+  it("writes the avatar patch to scope='blog.comments' with replace semantics for sources and encrypts the githubToken", async () => {
+    await seedSections()
+
+    await updateBlogSettingsSection(
+      db,
+      'comments',
+      {
+        comments: {
+          avatar: { mirror: 'https://gravatar.com/avatar/', sources: ['github', 'gravatar', 'qq'] },
+          githubToken: 'NEWGITHUBTOKEN',
+        },
+      },
+      null,
+    )
+
+    const comments = readBucket('blog.comments', 'comments')
+    const avatar = comments.avatar as Record<string, unknown>
+    // Arrays replace, never concatenate.
+    expect(avatar.sources).toEqual(['github', 'gravatar', 'qq'])
+    expect(comments.githubToken).toMatch(/^enc2:/)
+    expect(decryptIfNeeded(comments.githubToken as string)).toBe('NEWGITHUBTOKEN')
+  })
+
+  it('preserves the stored githubToken when the patch omits it', async () => {
+    await seedSections(fixtureBundle, { except: ['blog.comments'] })
+    await db.insert(setting).values({
+      scope: 'blog.comments',
+      data: {
+        comments: {
+          size: 10,
+          avatar: { mirror: 'https://gravatar.com/avatar/', sources: ['qq', 'github', 'gravatar'] },
+          githubToken: 'STOREDGITHUBTOKEN',
+          tokenTtlSeconds: 1800,
+        },
+      },
+    })
+
+    await updateBlogSettingsSection(db, 'comments', { comments: { avatar: { sources: ['gravatar'] } } }, null)
+
+    const comments = readBucket('blog.comments', 'comments')
+    // githubToken omitted from the patch: preserved from the stored row, then encrypted.
+    expect(comments.githubToken).toMatch(/^enc2:/)
+    expect(decryptIfNeeded(comments.githubToken as string)).toBe('STOREDGITHUBTOKEN')
+    const avatar = comments.avatar as Record<string, unknown>
+    expect(avatar.sources).toEqual(['gravatar'])
+    // Untouched avatar keys survive the sparse patch (deep-merge).
+    expect(avatar.mirror).toBe('https://gravatar.com/avatar/')
+  })
+
+  it('hydrates a legacy row without avatar.sources with the schema default', async () => {
+    await seedSections(fixtureBundle, { except: ['blog.comments'] })
+    await db.insert(setting).values({
+      scope: 'blog.comments',
+      data: {
+        comments: {
+          size: 10,
+          avatar: { mirror: 'https://gravatar.com/avatar/' },
+          tokenTtlSeconds: 1800,
+        },
+      },
+    })
+
+    const bundle = await hydrateBlogSettings(db)
+
+    expect(bundle?.comments?.comments.avatar.sources).toEqual(['qq', 'github', 'gravatar'])
   })
 })
 

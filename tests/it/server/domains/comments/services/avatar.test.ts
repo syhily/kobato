@@ -2,13 +2,17 @@ import { Buffer } from 'node:buffer'
 import sharp from 'sharp'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { AvatarSource } from '@/shared/utils/avatar'
+
 import { TEST_BLOG_SETTINGS_BUNDLE, setBlogSettingsBundleForTests } from '#/_helpers/blog-settings'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
 import {
   DEFAULT_AVATAR_SIZE_BUCKET,
   defaultAvatarUrl,
+  fetchAvatarByChain,
   fetchAvatarImage,
   fetchGithubAvatarDataUrl,
+  fetchGithubAvatarImage,
   fetchQQAvatarImage,
   getQQAvatarUrl,
   isQQEmail,
@@ -60,23 +64,50 @@ async function seedUser(opts: Partial<typeof user.$inferInsert> = {}): Promise<n
   return rows[0]!.id
 }
 
-function withAllowedMirror<T>(fn: () => Promise<T>): Promise<T> {
+function withAvatarConfig<T>(
+  overrides: { mirror?: string; sources?: AvatarSource[]; githubToken?: string },
+  fn: () => Promise<T>,
+): Promise<T> {
   const comments = TEST_BLOG_SETTINGS_BUNDLE.comments!
   setBlogSettingsBundleForTests({
     ...TEST_BLOG_SETTINGS_BUNDLE,
     comments: {
       comments: {
         ...comments.comments,
-        avatar: { ...comments.comments.avatar, mirror: 'https://gravatar.com/avatar/' },
+        avatar: {
+          ...comments.comments.avatar,
+          ...(overrides.mirror !== undefined ? { mirror: overrides.mirror } : {}),
+          ...(overrides.sources !== undefined ? { sources: overrides.sources } : {}),
+        },
+        ...(overrides.githubToken !== undefined ? { githubToken: overrides.githubToken } : {}),
       },
     },
   })
   return fn()
 }
 
+function withAllowedMirror<T>(fn: () => Promise<T>): Promise<T> {
+  return withAvatarConfig({ mirror: 'https://gravatar.com/avatar/' }, fn)
+}
+
+function withAvatarSources<T>(sources: AvatarSource[], fn: () => Promise<T>): Promise<T> {
+  return withAvatarConfig({ sources }, fn)
+}
+
+function withGithubToken<T>(githubToken: string, fn: () => Promise<T>): Promise<T> {
+  return withAvatarConfig({ githubToken }, fn)
+}
+
+function githubSearchResponse(items: unknown[]): Response {
+  return new Response(JSON.stringify({ total_count: items.length, items }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  })
+}
+
 function mockFetch(responses: Array<Response | (() => Response)>) {
   let i = 0
-  const fn = vi.fn(async () => {
+  const fn = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => {
     const r = responses[i]
     i += 1
     return typeof r === 'function' ? r() : (r ?? new Response(null, { status: 404 }))
@@ -282,6 +313,114 @@ describe('domains/comments/services/avatar — fetchQQAvatarImage', () => {
   })
 })
 
+describe('domains/comments/services/avatar — fetchGithubAvatarImage', () => {
+  it('returns null without calling fetch when no GitHub token is configured', async () => {
+    const spy = vi.fn()
+    vi.stubGlobal('fetch', spy)
+    expect(await fetchGithubAvatarImage('someone@example.com', 120)).toBeNull()
+    expect(spy).not.toHaveBeenCalled()
+  })
+
+  it('resolves the email via the Search API and fetches the CDN image by numeric id', async () => {
+    const body = await pngOfSize(128)
+    const fetchFn = mockFetch([
+      githubSearchResponse([{ id: 1761698 }]),
+      new Response(new Uint8Array(body), { status: 200 }),
+    ])
+
+    const result = await withGithubToken('ghp_test', () => fetchGithubAvatarImage('Someone@Example.com', 120))
+
+    expect(result).not.toBeNull()
+    expect(fetchFn).toHaveBeenCalledTimes(2)
+    const [searchUrl, searchInit] = fetchFn.mock.calls[0]!
+    expect(String(searchUrl)).toBe('https://api.github.com/search/users?q=someone%40example.com+in:email')
+    expect(searchInit?.headers).toMatchObject({ Authorization: 'Bearer ghp_test' })
+    expect(String(fetchFn.mock.calls[1]![0])).toBe('https://avatars.githubusercontent.com/u/1761698?s=120')
+  })
+
+  it('returns null on a 403/429 rate-limit response without fetching the image', async () => {
+    const fetchFn = mockFetch([new Response(null, { status: 403 })])
+    expect(await withGithubToken('ghp_test', () => fetchGithubAvatarImage('someone@example.com', 120))).toBeNull()
+    expect(fetchFn).toHaveBeenCalledTimes(1)
+  })
+
+  it('returns null when the search finds no user', async () => {
+    const fetchFn = mockFetch([githubSearchResponse([])])
+    expect(await withGithubToken('ghp_test', () => fetchGithubAvatarImage('someone@example.com', 120))).toBeNull()
+    expect(fetchFn).toHaveBeenCalledTimes(1)
+  })
+
+  it('returns null on a malformed search payload and on a non-numeric id', async () => {
+    mockFetch([new Response('not json', { status: 200 })])
+    expect(await withGithubToken('ghp_test', () => fetchGithubAvatarImage('someone@example.com', 120))).toBeNull()
+
+    mockFetch([githubSearchResponse([{ id: 'not-a-number' }])])
+    expect(await withGithubToken('ghp_test', () => fetchGithubAvatarImage('someone@example.com', 120))).toBeNull()
+  })
+
+  it('returns null when the CDN image fetch fails after a successful lookup', async () => {
+    const fetchFn = mockFetch([githubSearchResponse([{ id: 1761698 }]), new Response(null, { status: 404 })])
+    expect(await withGithubToken('ghp_test', () => fetchGithubAvatarImage('someone@example.com', 120))).toBeNull()
+    expect(fetchFn).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('domains/comments/services/avatar — fetchAvatarByChain', () => {
+  it('follows the configured order — gravatar before qq short-circuits the qq fetch', async () => {
+    const body = await pngOfSize(512)
+    const fetchFn = mockFetch([new Response(new Uint8Array(body), { status: 200 })])
+
+    const result = await withAvatarConfig({ mirror: 'https://gravatar.com/avatar/', sources: ['gravatar', 'qq'] }, () =>
+      fetchAvatarByChain({ email: '12345@qq.com', hash: GRAVATAR_HASH }, 120),
+    )
+
+    expect(result).not.toBeNull()
+    expect(fetchFn).toHaveBeenCalledTimes(1)
+    expect(String(fetchFn.mock.calls[0]![0])).toContain('https://gravatar.com/avatar/')
+  })
+
+  it('skips email-keyed sources when the email is unknown (hash-only requests)', async () => {
+    const body = await pngOfSize(512)
+    const fetchFn = mockFetch([new Response(new Uint8Array(body), { status: 200 })])
+
+    const result = await withAvatarConfig(
+      { mirror: 'https://gravatar.com/avatar/', sources: ['qq', 'github', 'gravatar'], githubToken: 'ghp_test' },
+      () => fetchAvatarByChain({ email: null, hash: GRAVATAR_HASH }, 120),
+    )
+
+    expect(result).not.toBeNull()
+    expect(fetchFn).toHaveBeenCalledTimes(1)
+    expect(String(fetchFn.mock.calls[0]![0])).toContain('https://gravatar.com/avatar/')
+  })
+
+  it('returns null when every source in the chain misses', async () => {
+    const fetchFn = mockFetch([new Response(null, { status: 404 })])
+
+    const result = await withAvatarConfig({ mirror: 'https://gravatar.com/avatar/', sources: ['qq', 'gravatar'] }, () =>
+      fetchAvatarByChain({ email: '12345@qq.com', hash: GRAVATAR_HASH }, 120),
+    )
+
+    expect(result).toBeNull()
+    expect(fetchFn).toHaveBeenCalledTimes(2)
+  })
+
+  it('serves the github hit without reaching later sources', async () => {
+    const body = await pngOfSize(128)
+    const fetchFn = mockFetch([
+      githubSearchResponse([{ id: 1761698 }]),
+      new Response(new Uint8Array(body), { status: 200 }),
+    ])
+
+    const result = await withAvatarConfig({ githubToken: 'ghp_test', sources: ['github', 'gravatar'] }, () =>
+      fetchAvatarByChain({ email: '12345@qq.com', hash: GRAVATAR_HASH }, 120),
+    )
+
+    expect(result).not.toBeNull()
+    expect(fetchFn).toHaveBeenCalledTimes(2)
+    expect(String(fetchFn.mock.calls[0]![0])).toContain('api.github.com/search/users')
+  })
+})
+
 describe('domains/comments/services/avatar — fetchGithubAvatarDataUrl (sunk from github.controller)', () => {
   it('inlines the upstream bytes as a base64 data URL with the upstream content type', async () => {
     mockFetch([
@@ -436,6 +575,23 @@ describe('domains/comments/services/avatar — resolveAvatarForEmail', () => {
       buffer: null,
     })
   })
+
+  it('pre-warms via the chain for a plain email when a GitHub token is configured', async () => {
+    const body = await pngOfSize(128)
+    const fetchFn = mockFetch([
+      githubSearchResponse([{ id: 1761698 }]),
+      new Response(new Uint8Array(body), { status: 200 }),
+    ])
+
+    const hash = await withAvatarConfig({ githubToken: 'ghp_test', sources: ['github'] }, () =>
+      resolveAvatarForEmail(db, 'someone@example.com'),
+    )
+
+    expect(fetchFn).toHaveBeenCalledTimes(2)
+    const entry = await cachedAvatar(DEFAULT_AVATAR_SIZE_BUCKET, hash)
+    expect(entry?.status).toBe(AvatarStatus.HAVE_AVATAR)
+    expect(entry?.buffer).toBeInstanceOf(Buffer)
+  })
 })
 
 describe('domains/comments/services/avatar — serveAvatar', () => {
@@ -501,7 +657,8 @@ describe('domains/comments/services/avatar — serveAvatar', () => {
     const id = await seedUser({ email: '12345@qq.com' })
     const fetchFn = mockFetch([new Response(null, { status: 404 })])
 
-    const first = await serveAvatar(db, String(id), 120)
+    // Pin the chain to qq-only so the fetch budget measures the QQ branch.
+    const first = await withAvatarSources(['qq'], () => serveAvatar(db, String(id), 120))
     const second = await serveAvatar(db, String(id), 120)
 
     expect(first).toEqual({ kind: 'redirect' })
@@ -603,6 +760,19 @@ describe('domains/comments/services/avatar — serveAvatar', () => {
 
     expect(result).toEqual({ kind: 'redirect' })
     expect(await cachedAvatar(120, md5)).toEqual({ status: AvatarStatus.NO_AVATAR, buffer: null })
+  })
+
+  it('follows the configured source order — gravatar wins over qq for a QQ email', async () => {
+    const id = await seedUser({ email: '12345@qq.com' })
+    const fetchFn = mockFetch([new Response(new Uint8Array(await pngOfSize(512)), { status: 200 })])
+
+    const result = await withAvatarConfig({ mirror: 'https://gravatar.com/avatar/', sources: ['gravatar', 'qq'] }, () =>
+      serveAvatar(db, String(id), 120),
+    )
+
+    expect(result.kind).toBe('png')
+    expect(fetchFn).toHaveBeenCalledTimes(1)
+    expect(String(fetchFn.mock.calls[0]![0])).toContain('https://gravatar.com/avatar/')
   })
 })
 

@@ -90,7 +90,7 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
   comments: {
     comments: {
       size: 10,
-      avatar: { mirror: 'https://gravatar.loli.net/avatar' },
+      avatar: { mirror: 'https://gravatar.loli.net/avatar', sources: ['qq', 'github', 'gravatar'] },
       tokenTtlSeconds: 1800,
     },
   },

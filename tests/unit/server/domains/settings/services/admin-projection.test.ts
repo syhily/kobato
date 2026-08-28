@@ -13,6 +13,7 @@ function bundleWithSecrets(): BlogSettingsBundle {
   bundle.mail!.mail.smtpPass = 'pass-bb22'
   bundle.mail!.mail.mailgunApiKey = 'mg-cc33'
   bundle.assets!.storage.secretAccessKey = 's3-dd44'
+  bundle.comments!.comments.githubToken = 'ghp-ee55'
   return bundle
 }
 
@@ -49,6 +50,19 @@ describe('projectSectionForAdmin', () => {
     // Every branding slot is present in the loader shape, even unset ones.
     expect(projected.branding.faviconSvg).toEqual({ etag: '' })
     expect(projected.branding.robotsTxt).toBe('')
+  })
+
+  it('projects the comments section into the loader shape with the githubToken mask', () => {
+    const bundle = bundleWithSecrets()
+
+    const projected = projectSectionForAdmin('comments', bundle, computeSecretMasks(bundle)) as {
+      comments: Record<string, unknown> & { avatar: Record<string, unknown> }
+    }
+
+    expect(projected.comments.githubTokenMask).toBe('ee55')
+    expect('githubToken' in projected.comments).toBe(false)
+    expect(projected.comments.avatar.sources).toEqual(['qq', 'github', 'gravatar'])
+    expect(projected.comments.size).toBe(bundle.comments?.comments.size)
   })
 
   it('projects a plain section as the redacted bundle slice', () => {

@@ -1,9 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import type { AssetsLoaderShape, MailLoaderShape } from '@/shared/config/projection'
+import type { AssetsLoaderShape, CommentsLoaderShape, MailLoaderShape } from '@/shared/config/projection'
 import type {
   AnalyticsSettings,
-  CommentsSettings,
   ContentSettings,
   LimitsSettings,
   NavigationSettings,
@@ -96,10 +95,11 @@ const baseCache = {
   searchResult: { prefix: 'search:', ttlSeconds: 3600 },
 }
 
-const baseComments: CommentsSettings = {
+const baseComments: CommentsLoaderShape = {
   comments: {
     size: 10,
-    avatar: { mirror: 'https://gravatar.loli.net/avatar' },
+    avatar: { mirror: 'https://gravatar.loli.net/avatar', sources: ['qq', 'github', 'gravatar'] },
+    githubTokenMask: null,
     tokenTtlSeconds: 1800,
   },
 }
@@ -236,12 +236,23 @@ describe('snapshot: admin settings forms', () => {
     expect(html).toContain('清空全部缓存')
   })
 
-  it('CommentsForm renders pagination, avatar mirror and token cards', () => {
+  it('CommentsForm renders pagination, avatar and token cards', () => {
     const html = stableHtml(renderToHtml(<CommentsForm comments={baseComments} />))
     expect(html).toContain('评论分页')
-    expect(html).toContain('头像镜像')
+    expect(html).toContain('获取顺序')
+    expect(html).toContain('GitHub Token')
+    expect(html).toContain('Gravatar 镜像')
     expect(html).toContain('匿名评论 Token')
     expect(html).toContain('gravatar.loli.net')
+    // The sortable source rows render in the configured order — compare
+    // label positions inside the sources block, after the '获取顺序' label.
+    const sourcesBlock = html.slice(html.indexOf('获取顺序'))
+    const qqAt = sourcesBlock.indexOf('QQ 邮箱')
+    const githubAt = sourcesBlock.indexOf('GitHub')
+    const gravatarAt = sourcesBlock.indexOf('Gravatar')
+    expect(qqAt).toBeGreaterThanOrEqual(0)
+    expect(githubAt).toBeGreaterThan(qqAt)
+    expect(gravatarAt).toBeGreaterThan(githubAt)
   })
 
   it('ContentForm renders pagination, feed, sort and footnote cards', () => {

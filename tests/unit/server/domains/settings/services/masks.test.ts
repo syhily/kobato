@@ -13,6 +13,7 @@ function bundleWithSecrets(): BlogSettingsBundle {
   bundle.mail!.mail.smtpPass = 'pass-bb22'
   bundle.mail!.mail.mailgunApiKey = 'mg-cc33'
   bundle.assets!.storage.secretAccessKey = 's3-dd44'
+  bundle.comments!.comments.githubToken = 'ghp-ee55'
   return bundle
 }
 
@@ -24,6 +25,7 @@ describe('redactSecretsFromBundle', () => {
     expect(redacted.mail?.mail.smtpPass).toBe('')
     expect(redacted.mail?.mail.mailgunApiKey).toBe('')
     expect(redacted.assets?.storage.secretAccessKey).toBe('')
+    expect(redacted.comments?.comments.githubToken).toBe('')
     // Non-secret neighbours survive the redaction untouched.
     expect(redacted.mail?.mail.host).toBe(TEST_BLOG_SETTINGS_BUNDLE.mail?.mail.host)
     expect(redacted.mail?.mail.sender).toBe(TEST_BLOG_SETTINGS_BUNDLE.mail?.mail.sender)

@@ -90,6 +90,43 @@ describe('settings/sections/comments', () => {
       }).success,
     ).toBe(false)
   })
+
+  it('defaults avatar sources to the full chain when absent (legacy rows)', () => {
+    const result = commentsSchema.safeParse({
+      comments: { size: 10, avatar: { mirror: 'https://gravatar.com/avatar/' } },
+    })
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.comments.avatar.sources).toEqual(['qq', 'github', 'gravatar'])
+      expect(result.data.comments.githubToken).toBeUndefined()
+    }
+  })
+
+  it('accepts a custom source order and an optional githubToken', () => {
+    const result = commentsSchema.safeParse({
+      comments: {
+        size: 10,
+        avatar: { mirror: 'https://gravatar.com/avatar/', sources: ['github', 'gravatar', 'qq'] },
+        githubToken: 'ghp_test',
+      },
+    })
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.comments.avatar.sources).toEqual(['github', 'gravatar', 'qq'])
+      expect(result.data.comments.githubToken).toBe('ghp_test')
+    }
+  })
+
+  it('rejects empty, duplicated, or unknown avatar sources', () => {
+    const mirror = 'https://gravatar.com/avatar/'
+    expect(commentsSchema.safeParse({ comments: { size: 10, avatar: { mirror, sources: [] } } }).success).toBe(false)
+    expect(
+      commentsSchema.safeParse({ comments: { size: 10, avatar: { mirror, sources: ['qq', 'qq'] } } }).success,
+    ).toBe(false)
+    expect(
+      commentsSchema.safeParse({ comments: { size: 10, avatar: { mirror, sources: ['qq', 'weibo'] } } }).success,
+    ).toBe(false)
+  })
 })
 
 describe('settings/sections/content', () => {
