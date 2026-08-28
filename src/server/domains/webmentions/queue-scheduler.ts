@@ -14,6 +14,8 @@ import { getLogger } from '@/server/infra/logger'
 export interface QueueSchedulerOptions {
   /** `webmentions.<queue>` — logger scope is `${name}-scheduler`. */
   name: string
+  /** Catalog task binding — live-state tracking only (no history: high-frequency batches would flood `job_run`). */
+  task: { key: string }
   findNextDueAt: (db: Database) => Date | 'now' | null
   runBatch: (db: Database) => Promise<number>
 }
@@ -51,6 +53,7 @@ export function makeQueueScheduler(options: QueueSchedulerOptions): QueueSchedul
 
   registerJob({
     name: options.name,
+    task: options.task,
     nextDelayMs,
     run,
   })

@@ -11,6 +11,7 @@ const log = getLogger('auth.token-purge')
 
 registerJob({
   name: 'auth.token-purge',
+  task: { key: 'token-purge', recordHistory: true },
   nextDelayMs: nextDailyMaintenanceDelayMs,
   run: async () => {
     const deleted = await purgeExpired(jobDb())

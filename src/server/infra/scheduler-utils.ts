@@ -1,6 +1,7 @@
 import { TZDate } from '@date-fns/tz'
 import { addDays, addMonths, isAfter } from 'date-fns'
 
+import { finishJobRun, startJobRun } from '@/server/infra/db/job-run-recorder'
 import { DomainError } from '@/server/infra/http/errors'
 import { registerShutdownHook } from '@/server/infra/lifecycle'
 import { getLogger } from '@/server/infra/logger'
@@ -93,6 +94,14 @@ export function nextDailyMaintenanceDelayMs(): number {
 // policy (next-fire/run closures), this module owns the mechanics. Jobs
 // close over the db-handle GETTER so a reopened handle is picked up.
 
+/** Catalog task binding — opt-in live-state tracking plus optional history. */
+export interface ScheduledJobTask {
+  /** Catalog task key (`shared/contracts/jobs`). */
+  key: string
+  /** Persist each fire to `job_run` via the recorder. */
+  recordHistory?: boolean
+}
+
 export interface ScheduledJobOptions {
   /** Logger scope. */
   name: string
@@ -101,12 +110,94 @@ export interface ScheduledJobOptions {
   run: () => Promise<void> | void
   /** Re-check delay while suspended (default 30s). */
   suspendedRetryMs?: number
+  /** Bind a catalog task: live-state tracking, plus `job_run` history when `recordHistory` is set. */
+  task?: ScheduledJobTask
 }
 
 export interface ScheduledJob {
   /** Clear the pending fire and recompute (settings changed, boot). */
   reschedule(): void
   stop(): void
+}
+
+/** Read-only live state for a tracked task (admin task center). */
+export interface TaskLiveState {
+  suspended: boolean
+  nextRunAt: Date | null
+  running: boolean
+}
+
+const taskStates = new Map<string, TaskLiveState>()
+
+/** Snapshot of a tracked task's live state; null when the key never ran through `scheduleJob`. */
+export function getSchedulerTaskState(taskKey: string): TaskLiveState | null {
+  const state = taskStates.get(taskKey)
+  return state === undefined ? null : { ...state }
+}
+
+/** Test seam: drop all tracked live states (unit-test isolation). */
+export function __resetSchedulerTaskStatesForTests(): void {
+  taskStates.clear()
+}
+
+/**
+ * Live-state mutation surface for one scheduled job. `reschedule()` calls
+ * these unconditionally — an untracked job binds the shared noop below.
+ */
+interface TaskTracker {
+  suspended(): void
+  armed(delayMs: number): void
+  started(): void
+  finished(): void
+}
+
+function noop(): void {
+  // Intentionally empty — the untracked-job tracker.
+}
+
+const noopTracker: TaskTracker = { suspended: noop, armed: noop, started: noop, finished: noop }
+
+function createTaskTracker(taskKey: string): TaskTracker {
+  const state = taskStates.get(taskKey) ?? {
+    suspended: false,
+    nextRunAt: null,
+    running: false,
+  }
+  taskStates.set(taskKey, state)
+  return {
+    suspended() {
+      state.suspended = true
+      state.nextRunAt = null
+    },
+    armed(delayMs: number) {
+      state.suspended = false
+      state.nextRunAt = new Date(Date.now() + delayMs)
+    },
+    started() {
+      state.running = true
+    },
+    finished() {
+      state.running = false
+    },
+  }
+}
+
+/**
+ * History recording wraps the run closure ONCE at schedule time: open a
+ * `job_run` row, finish it on success/failure, then rethrow so the outer
+ * error log fires unchanged. A null id (recorder unwired) is a no-op finish.
+ */
+function wrapWithHistory(taskKey: string, run: () => Promise<void> | void): () => Promise<void> {
+  return async () => {
+    const runId = startJobRun(taskKey, 'scheduled')
+    try {
+      await run()
+      finishJobRun(runId, 'success')
+    } catch (error) {
+      finishJobRun(runId, 'failed', error instanceof Error ? error.message : String(error))
+      throw error
+    }
+  }
 }
 
 const registeredJobs: ScheduledJob[] = []
@@ -121,6 +212,11 @@ export function scheduleJob(options: ScheduledJobOptions): ScheduledJob {
   const log = getLogger(options.name)
   const suspendedRetryMs = options.suspendedRetryMs ?? 30_000
   let timer: NodeJS.Timeout | null = null
+
+  // Bound once here: the timer callback and reschedule branches stay free of
+  // instrumentation conditionals.
+  const track = options.task === undefined ? noopTracker : createTaskTracker(options.task.key)
+  const run = options.task?.recordHistory === true ? wrapWithHistory(options.task.key, options.run) : options.run
 
   const job: ScheduledJob = {
     reschedule() {
@@ -143,18 +239,24 @@ export function scheduleJob(options: ScheduledJobOptions): ScheduledJob {
       }
       if (delayMs === null) {
         // Suspended: re-evaluate later WITHOUT running the job.
+        track.suspended()
         timer = setTimeout(() => job.reschedule(), suspendedRetryMs)
       } else if (delayMs > MAX_TIMER_DELAY_MS) {
-        // Too far out for one setTimeout — re-arm in chunks, never running early.
+        // Too far out for one setTimeout — re-arm in chunks, never running
+        // early. A chunk boundary is neither suspended nor due: keep the
+        // last meaningful live state.
         timer = setTimeout(() => job.reschedule(), MAX_TIMER_DELAY_MS)
       } else {
+        track.armed(delayMs)
         timer = setTimeout(() => {
           void (async () => {
+            track.started()
             try {
-              await options.run()
+              await run()
             } catch (error) {
               log.error('scheduled job run failed', { err: error instanceof Error ? error.message : String(error) })
             } finally {
+              track.finished()
               job.reschedule()
             }
           })()

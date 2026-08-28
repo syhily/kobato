@@ -12,6 +12,7 @@ const log = getLogger('audit.scheduler')
 
 registerJob({
   name: 'audit.scheduler',
+  task: { key: 'audit-archive', recordHistory: true },
   nextDelayMs: () => {
     const bundle = getBlogSettingsBundleSync()
     if (!bundle) {

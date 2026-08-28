@@ -64,6 +64,7 @@ export async function runAnalyticsMaintenance(): Promise<void> {
 export function scheduleNextAnalyticsMaintenance(): void {
   maintenanceJob ??= scheduleJob({
     name: 'analytics.maintenance',
+    task: { key: 'analytics-retention', recordHistory: true },
     nextDelayMs: nextDailyMaintenanceDelayMs,
     run: runAnalyticsMaintenance,
   })

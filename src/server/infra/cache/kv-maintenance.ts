@@ -29,6 +29,7 @@ export async function sweepExpiredKvEntries(db: Database): Promise<void> {
 
 registerJob({
   name: 'kv.maintenance',
+  task: { key: 'kv-sweep', recordHistory: true },
   nextDelayMs: () => SWEEP_INTERVAL_MS,
   run: async () => {
     await sweepExpiredKvEntries(jobDb())

@@ -1,7 +1,23 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { DomainError } from '@/server/infra/http/errors'
-import { MAX_TIMER_DELAY_MS, computeNextRun, scheduleJob, stopAllScheduledJobs } from '@/server/infra/scheduler-utils'
+
+// The recorder is mocked: this file asserts the scheduler's instrumentation
+// CALLS; real row writes are covered by the recorder's integration tests.
+vi.mock('@/server/infra/db/job-run-recorder', () => ({
+  startJobRun: vi.fn(() => 42),
+  finishJobRun: vi.fn(),
+}))
+
+import { finishJobRun, startJobRun } from '@/server/infra/db/job-run-recorder'
+import {
+  MAX_TIMER_DELAY_MS,
+  __resetSchedulerTaskStatesForTests,
+  computeNextRun,
+  getSchedulerTaskState,
+  scheduleJob,
+  stopAllScheduledJobs,
+} from '@/server/infra/scheduler-utils'
 
 describe('infra/scheduler-utils — computeNextRun', () => {
   const timeZone = 'Asia/Shanghai'
@@ -148,5 +164,113 @@ describe('infra/scheduler-utils — scheduleJob long-delay chunking', () => {
 
     vi.advanceTimersByTime(60_000)
     expect(run).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('infra/scheduler-utils — task live state & history', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.mocked(startJobRun).mockClear()
+    vi.mocked(finishJobRun).mockClear()
+  })
+
+  afterEach(() => {
+    stopAllScheduledJobs()
+    __resetSchedulerTaskStatesForTests()
+    vi.useRealTimers()
+  })
+
+  it('exposes an armed job’s nextRunAt estimate', () => {
+    scheduleJob({ name: 'test-state', task: { key: 'backup' }, nextDelayMs: () => 60_000, run: vi.fn() })
+    const state = getSchedulerTaskState('backup')
+    expect(state).not.toBeNull()
+    expect(state!.suspended).toBe(false)
+    expect(state!.running).toBe(false)
+    expect(state!.nextRunAt).toBeInstanceOf(Date)
+    expect(Math.abs(state!.nextRunAt!.getTime() - (Date.now() + 60_000))).toBeLessThan(1_000)
+  })
+
+  it('marks the task suspended when nextDelayMs returns null', () => {
+    scheduleJob({ name: 'test-suspended', task: { key: 'backup' }, nextDelayMs: () => null, run: vi.fn() })
+    const state = getSchedulerTaskState('backup')
+    expect(state).toEqual({ suspended: true, nextRunAt: null, running: false })
+  })
+
+  it('flips running during execution and back when the run settles', async () => {
+    let release!: () => void
+    const gate = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    scheduleJob({ name: 'test-running', task: { key: 'backup' }, nextDelayMs: () => 60_000, run: () => gate })
+
+    await vi.advanceTimersByTimeAsync(60_000)
+    expect(getSchedulerTaskState('backup')!.running).toBe(true)
+
+    release()
+    await vi.advanceTimersByTimeAsync(0)
+    const state = getSchedulerTaskState('backup')!
+    expect(state.running).toBe(false)
+  })
+
+  it('records success history when recordHistory is set', async () => {
+    scheduleJob({
+      name: 'test-history-ok',
+      task: { key: 'backup', recordHistory: true },
+      nextDelayMs: () => 60_000,
+      run: vi.fn(),
+    })
+    await vi.advanceTimersByTimeAsync(60_000)
+    expect(startJobRun).toHaveBeenCalledWith('backup', 'scheduled')
+    expect(finishJobRun).toHaveBeenCalledWith(42, 'success')
+  })
+
+  it('records failed history with the error message', async () => {
+    scheduleJob({
+      name: 'test-history-fail',
+      task: { key: 'backup', recordHistory: true },
+      nextDelayMs: () => 60_000,
+      run: () => {
+        throw new Error('boom')
+      },
+    })
+    await vi.advanceTimersByTimeAsync(60_000)
+    expect(finishJobRun).toHaveBeenCalledWith(42, 'failed', 'boom')
+  })
+
+  it('does not record history without recordHistory even when a task is bound', async () => {
+    scheduleJob({
+      name: 'test-no-history',
+      task: { key: 'webmention-outbox' },
+      nextDelayMs: () => 60_000,
+      run: vi.fn(),
+    })
+    await vi.advanceTimersByTimeAsync(60_000)
+    expect(startJobRun).not.toHaveBeenCalled()
+    expect(finishJobRun).not.toHaveBeenCalled()
+  })
+
+  it('leaves zero side effects without a task', async () => {
+    scheduleJob({ name: 'test-untracked', nextDelayMs: () => 60_000, run: vi.fn() })
+    await vi.advanceTimersByTimeAsync(60_000)
+    expect(getSchedulerTaskState('test-untracked')).toBeNull()
+    expect(startJobRun).not.toHaveBeenCalled()
+  })
+
+  it('keeps the live state untouched across chunked re-arms (>24h)', async () => {
+    const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000
+    const nextDelayMs = vi.fn().mockReturnValueOnce(THIRTY_DAYS_MS).mockReturnValue(60_000)
+    scheduleJob({ name: 'test-chunked-state', task: { key: 'backup' }, nextDelayMs, run: vi.fn() })
+
+    // A chunk boundary is neither suspended nor due: the initial state survives.
+    expect(getSchedulerTaskState('backup')).toEqual({
+      suspended: false,
+      nextRunAt: null,
+      running: false,
+    })
+
+    await vi.advanceTimersByTimeAsync(MAX_TIMER_DELAY_MS)
+    const state = getSchedulerTaskState('backup')!
+    expect(state.suspended).toBe(false)
+    expect(state.nextRunAt).toBeInstanceOf(Date)
   })
 })

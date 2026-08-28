@@ -1,5 +1,6 @@
 import type { DatabaseHandle } from '@/server/infra/db/database'
 
+import { pruneJobRuns } from '@/server/infra/db/job-run-recorder'
 import { jobHandle, registerJob } from '@/server/infra/job-registry'
 import { getLogger } from '@/server/infra/logger'
 import { nextDailyMaintenanceDelayMs } from '@/server/infra/scheduler-utils'
@@ -9,7 +10,8 @@ const log = getLogger('db.maintenance')
 /**
  * SQLite half of the daily DB maintenance job (plan §1.11 — DuckDB half
  * in `@/server/bootstrap/analytics-lifecycle`): incremental vacuum,
- * optimize, page stats. Full VACUUM is never scheduled.
+ * optimize, page stats, `job_run` history pruning. Full VACUUM is never
+ * scheduled.
  */
 
 /** Read a single-value PRAGMA (page_count, freelist_count) as a number. */
@@ -30,11 +32,14 @@ export function runDbMaintenance(handle: DatabaseHandle): void {
     handle.client.exec('PRAGMA incremental_vacuum')
     handle.client.exec('PRAGMA optimize')
     const after = pageStats(handle)
+    // History retention: 30 days / 200 rows per task, one sync transaction.
+    const jobRunsPruned = pruneJobRuns(handle.db)
     log.info('database maintenance completed', {
       pagesBefore: before.pageCount,
       pagesAfter: after.pageCount,
       freelistBefore: before.freelistCount,
       freelistAfter: after.freelistCount,
+      jobRunsPruned,
     })
   } catch (error) {
     log.error('database maintenance failed', { error: error instanceof Error ? error.message : String(error) })
@@ -46,6 +51,7 @@ export function runDbMaintenance(handle: DatabaseHandle): void {
 
 registerJob({
   name: 'db.maintenance',
+  task: { key: 'db-maintenance', recordHistory: true },
   nextDelayMs: nextDailyMaintenanceDelayMs,
   run: () => {
     runDbMaintenance(jobHandle())

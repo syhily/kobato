@@ -5,6 +5,7 @@ import { nudgeRegisteredJob } from '@/server/infra/job-registry'
 
 const queue = makeQueueScheduler({
   name: 'webmentions.inbox',
+  task: { key: 'webmention-inbox' },
   findNextDueAt: findNextWebmentionInboxDueAt,
   runBatch: runWebmentionInboxBatch,
 })

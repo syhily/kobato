@@ -12,6 +12,7 @@ const log = getLogger('analytics.geoip-scheduler')
 
 registerJob({
   name: 'analytics.geoip-scheduler',
+  task: { key: 'geoip-update', recordHistory: true },
   nextDelayMs: () => {
     const bundle = getBlogSettingsBundleSync()
     if (!bundle) {

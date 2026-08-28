@@ -81,6 +81,7 @@ function runScheduledPublish(): void {
 
 registerJob({
   name: 'content.scheduled-publish',
+  task: { key: 'scheduled-publish', recordHistory: true },
   nextDelayMs: nextScheduledPublishDelayMs,
   run: runScheduledPublish,
 })

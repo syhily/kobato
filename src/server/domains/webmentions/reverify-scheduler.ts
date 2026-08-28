@@ -4,6 +4,7 @@ import { findNextWebmentionReverifyDueAt } from '@/server/infra/db/operations/we
 
 const queue = makeQueueScheduler({
   name: 'webmentions.reverify',
+  task: { key: 'webmention-reverify' },
   findNextDueAt: findNextWebmentionReverifyDueAt,
   runBatch: runWebmentionReverifyBatch,
 })

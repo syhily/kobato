@@ -7,6 +7,7 @@ import { closeTestAnalyticsDb, createTestAnalyticsDb, seedAccessEvents } from '#
 import { getDatabaseHandle } from '@/server/bootstrap/db-lifecycle'
 import { runAccessLogRetention } from '@/server/domains/analytics/services/maintenance'
 import { runDbMaintenance } from '@/server/infra/db/maintenance'
+import { jobRun } from '@/server/infra/db/schema/job-run'
 import { __clearLogCaptureForTests, __logCaptureForTests } from '@/server/infra/logger'
 
 function pragmaNumber(handle: DatabaseHandle, pragma: string): number {
@@ -94,5 +95,28 @@ describe('db maintenance — DuckDB retention + checkpoint (plan §1.11)', () =>
     )
 
     await closeTestAnalyticsDb(analyticsHandle)
+  })
+})
+
+describe('db maintenance — job_run history prune', () => {
+  it('prunes job_run rows past the retention window and logs the count', () => {
+    const db = handle.db
+    db.delete(jobRun).run()
+    const old = new Date(Date.now() - 40 * 24 * 60 * 60 * 1000)
+    db.insert(jobRun).values({ taskKey: 'backup', trigger: 'scheduled', status: 'success', startedAt: old }).run()
+    db.insert(jobRun)
+      .values({ taskKey: 'backup', trigger: 'scheduled', status: 'success', startedAt: new Date() })
+      .run()
+
+    runDbMaintenance(handle)
+
+    expect(db.select().from(jobRun).all()).toHaveLength(1)
+    expect(__logCaptureForTests()).toContainEqual(
+      expect.objectContaining({
+        level: 'info',
+        msg: 'database maintenance completed',
+        ctx: expect.objectContaining({ jobRunsPruned: 1 }),
+      }),
+    )
   })
 })

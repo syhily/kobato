@@ -1,7 +1,7 @@
 import type { Database, DatabaseHandle } from '@/server/infra/db/database'
 
 import { getLogger } from '@/server/infra/logger'
-import { scheduleJob, type ScheduledJob } from '@/server/infra/scheduler-utils'
+import { scheduleJob, type ScheduledJob, type ScheduledJobTask } from '@/server/infra/scheduler-utils'
 
 const log = getLogger('job-registry')
 
@@ -19,6 +19,8 @@ interface JobRegistration {
   /** Milliseconds until the next fire, or `null` to suspend (re-check later). */
   nextDelayMs: () => number | null
   run: () => Promise<void> | void
+  /** Catalog task binding — opt-in live-state tracking + optional `job_run` history (see scheduler-utils). */
+  task?: ScheduledJobTask
 }
 
 interface JobEntry extends JobRegistration {
@@ -66,7 +68,12 @@ export function jobDb(): Database {
 }
 
 function arm(entry: JobEntry): void {
-  entry.instance ??= scheduleJob({ name: entry.name, nextDelayMs: entry.nextDelayMs, run: entry.run })
+  entry.instance ??= scheduleJob({
+    name: entry.name,
+    nextDelayMs: entry.nextDelayMs,
+    run: entry.run,
+    task: entry.task,
+  })
   entry.instance.reschedule()
 }
 

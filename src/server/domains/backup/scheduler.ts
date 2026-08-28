@@ -73,6 +73,7 @@ function nextBackupDelayMs(): number | null {
 
 registerJob({
   name: 'backup.scheduler',
+  task: { key: 'backup', recordHistory: true },
   nextDelayMs: nextBackupDelayMs,
   run: runBackupJob,
 })

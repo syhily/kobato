@@ -38,6 +38,7 @@ import {
   type Database,
   type DatabaseHandle,
 } from '@/server/infra/db/database'
+import { sweepOrphanedJobRuns, wireJobRunRecorder } from '@/server/infra/db/job-run-recorder'
 import { migrateDatabase } from '@/server/infra/db/migrate'
 import { invalidateMailTransportCache } from '@/server/infra/email/sender'
 import { setJobHandleGetter } from '@/server/infra/job-registry'
@@ -76,6 +77,9 @@ function wireDatabase(handle: DatabaseHandle): DatabaseHandle {
   setRestartGetDb(getDb)
   setRestartRefreshSettings(refreshBlogSettings)
   wireSessionStorageDb({ getDb })
+  // Job-run history recorder: unwired = silent no-op. Pure setter — the
+  // crash-recovery sweep is a boot-only call (see initDatabase).
+  wireJobRunRecorder({ getDb })
   // Background jobs share one lazy handle getter (invoked at fire/evaluate
   // time, so a reopened handle is picked up); the job registry owns their
   // boot start-up.
@@ -106,7 +110,11 @@ function wireDatabase(handle: DatabaseHandle): DatabaseHandle {
 }
 
 async function initDatabase(): Promise<void> {
-  wireDatabase(await engine.init())
+  const handle = wireDatabase(await engine.init())
+  // Crash recovery, boot ONLY: sweep `job_run` rows left `running` by a dead
+  // process. The restore rewiring (reopenDatabase → wireDatabase) skips this
+  // on purpose — this process's in-flight jobs hold legit `running` rows.
+  sweepOrphanedJobRuns(handle.db)
 }
 
 await initDatabase()
