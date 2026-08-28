@@ -5,9 +5,9 @@
 FROM node:26-bookworm-slim AS build
 WORKDIR /app
 
-# pnpm, matching the packageManager field (11.23.0). Node 25+ images no
+# pnpm, matching the packageManager field (11.24.0). Node 25+ images no
 # longer bundle Corepack, so install pnpm globally from npm instead.
-RUN npm install -g pnpm@11.23.0
+RUN npm install -g pnpm@11.24.0
 
 # patchelf — the SEA build rewrites the sharp addon's rpath to `$ORIGIN`
 # so the extracted flat dir is self-contained (see scripts/sea/assets.ts).
