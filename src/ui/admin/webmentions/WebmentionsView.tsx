@@ -1,21 +1,24 @@
-import { useState } from 'react'
-
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { WebmentionInboxView } from '@/ui/admin/webmentions/WebmentionInboxView'
 import { WebmentionOutboxView } from '@/ui/admin/webmentions/WebmentionOutboxView'
 import { Tabs, TabsList, TabsTrigger } from '@/ui/components/tabs'
 
-type WebmentionTab = 'inbox' | 'outbox'
+export type WebmentionTab = 'inbox' | 'outbox'
 
 function isWebmentionTab(value: unknown): value is WebmentionTab {
   return value === 'inbox' || value === 'outbox'
 }
 
 // One page, both directions: 「接收审核」(moderation queue) and 「发送日志」
-// (read-only outbound log). Local tab state; a refresh lands back on the inbox.
-export function WebmentionsView() {
-  const [tab, setTab] = useState<WebmentionTab>('inbox')
-
+// (read-only outbound log). Pure-props: the route owns the tab state and
+// mirrors it into `?tab=` so a switched tab survives reload/share.
+export function WebmentionsView({
+  tab,
+  onTabChange,
+}: {
+  tab: WebmentionTab
+  onTabChange: (tab: WebmentionTab) => void
+}) {
   return (
     <AdminListPage>
       <AdminListPage.Header
@@ -27,7 +30,7 @@ export function WebmentionsView() {
         value={tab}
         onValueChange={(value: unknown) => {
           if (isWebmentionTab(value)) {
-            setTab(value)
+            onTabChange(value)
           }
         }}
       >

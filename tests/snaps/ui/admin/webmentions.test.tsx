@@ -138,11 +138,23 @@ describe('snapshot: WebmentionInboxView', () => {
 describe('snapshot: WebmentionsView', () => {
   it('renders the page header with both direction tabs, inbox active by default', () => {
     queryMocks.infinite = { ...queryMocks.infinite, data: { pages: [inboxPage([])] } }
-    const html = stableHtml(renderInRouter(<WebmentionsView />, '/admin/webmentions'))
+    const html = stableHtml(renderInRouter(<WebmentionsView tab="inbox" onTabChange={vi.fn()} />, '/admin/webmentions'))
     expect(html).toContain('Webmention 管理')
     expect(html).toContain('接收审核')
     expect(html).toContain('发送日志')
     // Inbox is the default tab — its empty state renders.
     expect(html).toContain('暂无收到的 Webmention')
+  })
+
+  it('honours tab="outbox" (the ?tab= deep link) and shows the task-center link', () => {
+    queryMocks.infinite = { ...queryMocks.infinite, data: { pages: [{ rows: [], total: 0, hasMore: false }] } }
+    const html = stableHtml(
+      renderInRouter(<WebmentionsView tab="outbox" onTabChange={vi.fn()} />, '/admin/webmentions?tab=outbox'),
+    )
+    // The outbox empty state renders instead of the inbox one.
+    expect(html).toContain('暂无发送记录')
+    expect(html).not.toContain('暂无收到的 Webmention')
+    expect(html).toContain('队列状态见任务中心')
+    expect(html).toContain('href="/admin/tasks"')
   })
 })

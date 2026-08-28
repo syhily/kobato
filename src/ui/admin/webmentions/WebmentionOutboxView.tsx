@@ -1,5 +1,6 @@
 import { GlobeIcon } from 'lucide-react'
 import { useState } from 'react'
+import { Link } from 'react-router'
 
 import type { AdminWebmentionOutboxWire } from '@/shared/contracts/webmentions'
 
@@ -80,22 +81,27 @@ export function WebmentionOutboxView() {
   return (
     <>
       <AdminListPage.Toolbar>
-        <Tabs
-          value={status}
-          onValueChange={(value: unknown) => {
-            if (isStatusFilter(value)) {
-              setStatus(value)
-            }
-          }}
-        >
-          <TabsList>
-            <TabsTrigger value="all">全部</TabsTrigger>
-            <TabsTrigger value="pending">待发送</TabsTrigger>
-            <TabsTrigger value="sent">已发送</TabsTrigger>
-            <TabsTrigger value="no-endpoint">无端点</TabsTrigger>
-            <TabsTrigger value="failed">失败</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Tabs
+            value={status}
+            onValueChange={(value: unknown) => {
+              if (isStatusFilter(value)) {
+                setStatus(value)
+              }
+            }}
+          >
+            <TabsList>
+              <TabsTrigger value="all">全部</TabsTrigger>
+              <TabsTrigger value="pending">待发送</TabsTrigger>
+              <TabsTrigger value="sent">已发送</TabsTrigger>
+              <TabsTrigger value="no-endpoint">无端点</TabsTrigger>
+              <TabsTrigger value="failed">失败</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <Link to="/admin/tasks" className="text-link text-sm hover:underline">
+            队列状态见任务中心
+          </Link>
+        </div>
       </AdminListPage.Toolbar>
 
       <AdminListPage.Body>
