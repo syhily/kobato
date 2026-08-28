@@ -52,7 +52,7 @@ export const SECTION_DISPLAY: Record<SettingsSection, SectionDisplayMeta> = {
   },
   comments: {
     label: '评论与头像',
-    description: '评论分页与 Gravatar 镜像',
+    description: '评论分页、头像来源顺序与 Gravatar 镜像',
     group: 'content',
     icon: 'MessageSquare',
   },

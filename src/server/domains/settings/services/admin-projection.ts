@@ -8,17 +8,20 @@ import { redactSecretsFromBundle } from '@/server/domains/settings/services/mask
 import { DomainError } from '@/server/infra/http/errors'
 import {
   assetsLoaderShapeSchema,
+  commentsLoaderShapeSchema,
   mailLoaderShapeSchema,
   projectAssetsForAdmin,
+  projectCommentsForAdmin,
   projectMailForAdmin,
 } from '@/shared/config/projection'
 import { SECTION_TO_BUNDLE_KEY } from '@/shared/config/sections'
 
-// Per-section runtime gate for the admin display shape: assets/mail validate against
-// their loader-shape Zod twins, every other section against the registry schema.
+// Per-section runtime gate for the admin display shape: assets/mail/comments validate
+// against their loader-shape Zod twins, every other section against the registry schema.
 const SECTION_OUTPUT_SCHEMAS: Partial<Record<SettingsSection, z.ZodType>> = {
   assets: assetsLoaderShapeSchema,
   mail: mailLoaderShapeSchema,
+  comments: commentsLoaderShapeSchema,
 }
 
 /**
@@ -55,6 +58,8 @@ export function projectSectionForAdmin(
       smtpPassMask: masks.mailSmtpPassMask,
       mailgunApiKeyMask: masks.mailMailgunApiKeyMask,
     })
+  } else if (section === 'comments') {
+    projected = projectCommentsForAdmin(requireBundleSection(redacted, 'comments'), masks.commentsGithubTokenMask)
   } else {
     projected = redacted[SECTION_TO_BUNDLE_KEY[section]]
   }

@@ -1,7 +1,10 @@
 import { z } from 'zod'
 
-import type { MailSettings } from '@/shared/config/types'
+import type { CommentsSettings, MailSettings } from '@/shared/config/types'
 import type { Assert, Equals } from '@/shared/contracts/primitives'
+import type { AvatarSource } from '@/shared/utils/avatar'
+
+import { AVATAR_SOURCES } from '@/shared/utils/avatar'
 
 // Per-slot status surfaced to the admin form. `etag` drives cache-busting
 // and the "is configured?" check; we send the hash, NOT the bytes.
@@ -67,6 +70,18 @@ export const mailLoaderShapeSchema = z.object({
   }),
 })
 
+export const commentsLoaderShapeSchema = z.object({
+  comments: z.object({
+    size: z.number(),
+    avatar: z.object({
+      mirror: z.string(),
+      sources: z.array(z.enum(AVATAR_SOURCES)),
+    }),
+    githubTokenMask: z.string().nullable(),
+    tokenTtlSeconds: z.number(),
+  }),
+})
+
 export interface AssetsLoaderShape {
   asset: { host: string; scheme: 'http' | 'https' }
   storage: {
@@ -120,6 +135,22 @@ export interface MailLoaderShape {
     smtpRejectUnauthorized: boolean
     mailgunDomain: string
     mailgunApiKeyMask: string | null
+  }
+}
+
+// Mirrors `CommentsSettings` with the GitHub token swapped for its mask;
+// the outer `comments:` wrapper matches `commentsSchema` so card patches
+// validate without translation.
+export interface CommentsLoaderShape {
+  comments: {
+    size: number
+    avatar: {
+      mirror: string
+      sources: AvatarSource[]
+    }
+    /** Last 4 chars of the stored GitHub token, or `null` when unset. */
+    githubTokenMask: string | null
+    tokenTtlSeconds: number
   }
 }
 
@@ -234,7 +265,27 @@ export function projectMailForAdmin(
   }
 }
 
+/** Project raw `CommentsSettings` into the shape `<CommentsForm>` expects: GitHub token swapped for its mask. */
+export function projectCommentsForAdmin(
+  comments: CommentsSettings,
+  githubTokenMask?: string | null,
+): CommentsLoaderShape {
+  const c = comments.comments
+  return {
+    comments: {
+      size: c.size,
+      avatar: {
+        mirror: c.avatar.mirror,
+        sources: c.avatar.sources,
+      },
+      githubTokenMask: githubTokenMask ?? (c.githubToken ? c.githubToken.slice(-4) : null),
+      tokenTtlSeconds: c.tokenTtlSeconds,
+    },
+  }
+}
+
 // Compile-time parity: the Zod twins must stay isomorphic to the
 // hand-written interfaces the forms consume.
 type _assetsShapeParity = Assert<Equals<z.infer<typeof assetsLoaderShapeSchema>, AssetsLoaderShape>>
 type _mailShapeParity = Assert<Equals<z.infer<typeof mailLoaderShapeSchema>, MailLoaderShape>>
+type _commentsShapeParity = Assert<Equals<z.infer<typeof commentsLoaderShapeSchema>, CommentsLoaderShape>>

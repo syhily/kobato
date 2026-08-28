@@ -8,7 +8,7 @@ import type { Assert, Equals } from '@/shared/contracts/primitives'
 
 import { guardOnlyLoader } from '@/server/http/request-context'
 import { NAV_GROUP_LABEL, SECTION_DISPLAY } from '@/shared/config/display'
-import { projectAssetsForAdmin, projectMailForAdmin } from '@/shared/config/projection'
+import { projectAssetsForAdmin, projectCommentsForAdmin, projectMailForAdmin } from '@/shared/config/projection'
 import { SETTINGS_SECTIONS } from '@/shared/config/sections'
 import { titleMeta } from '@/shared/seo/title-meta'
 import { AnalyticsForm } from '@/ui/admin/settings/AnalyticsForm'
@@ -73,7 +73,9 @@ const SECTION_CONFIGS = [
   },
   {
     id: 'comments',
-    render: (bundle) => <CommentsForm comments={bundle.comments} />,
+    render: (bundle, _tz, masks) => (
+      <CommentsForm comments={projectCommentsForAdmin(bundle.comments, masks.commentsGithubTokenMask)} />
+    ),
   },
   {
     id: 'webmentions',

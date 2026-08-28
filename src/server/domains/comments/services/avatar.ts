@@ -1,4 +1,5 @@
 import { Buffer } from 'node:buffer'
+import { z } from 'zod'
 
 import type { Database } from '@/server/infra/db/database'
 
@@ -15,8 +16,8 @@ import { encodedEmail } from '@/shared/utils/security'
 import { isNumeric } from '@/shared/utils/tools'
 import { joinUrl } from '@/shared/utils/urls'
 
-// Avatar-fetch domain service: gravatar/QQ mirror redirects, the no-avatar
-// fallback, and id ↔ email-hash translation.
+// Avatar-fetch domain service: the admin-ordered upstream chain
+// (qq/github/gravatar), the no-avatar fallback, and id ↔ email-hash translation.
 
 const MAX_REDIRECT_HOPS = 5
 const FETCH_TIMEOUT_MS = 30_000
@@ -38,7 +39,7 @@ function bucketAvatarSize(size: number): number {
   return AVATAR_SIZE_BUCKETS[AVATAR_SIZE_BUCKETS.length - 1]
 }
 
-/** Bucket the site-wide default lands in — the QQ pre-warm writes this size. */
+/** Bucket the site-wide default lands in — the avatar-chain pre-warm writes this size. */
 export const DEFAULT_AVATAR_SIZE_BUCKET = bucketAvatarSize(DEFAULT_AVATAR_SIZE)
 
 /** Resolve `?s=`: clamp to [16, 512], round up to a cache bucket; absent/blank/non-finite → default bucket. */
@@ -70,7 +71,7 @@ interface SafeFetchOptions {
 
 /** Bounded redirects/timeout via safe-fetch; returns `null` on any failure. */
 async function safeFetchAvatar(
-  label: 'avatar' | 'avatar.qq',
+  label: 'avatar' | 'avatar.qq' | 'avatar.github',
   initialLink: string,
   options: SafeFetchOptions = {},
 ): Promise<ArrayBuffer | null> {
@@ -189,14 +190,111 @@ export async function fetchQQAvatarImage(email: string, size: number): Promise<B
   return compressImage(Buffer.from(body))
 }
 
-/** Canonical email hash; QQ emails pre-warm at DEFAULT_AVATAR_SIZE_BUCKET
- *  with a positive/negative entry, fetched only on miss (entries are final, audit V3-03). */
+// GitHub Search API reverse lookup (email → numeric user id), then the CDN
+// image. Both hosts are compile-time constants and the id is the only
+// interpolated value, so no URL allowlist is needed; safeFetch still guards
+// redirects. Rate limits (authenticated search: 30/min) degrade to `null`.
+const GITHUB_SEARCH_URL = 'https://api.github.com/search/users'
+const GITHUB_AVATAR_BASE_URL = 'https://avatars.githubusercontent.com/u'
+const GITHUB_SEARCH_MAX_BYTES = 64 * 1024
+
+/** First item's numeric id from a search/users payload; `null` on any shape deviation. */
+const githubSearchSchema = z.object({
+  items: z.array(z.object({ id: z.number().int().positive() })).min(1),
+})
+
+function parseGithubUserId(body: ArrayBuffer): number | null {
+  try {
+    const result = githubSearchSchema.safeParse(JSON.parse(Buffer.from(body).toString('utf8')))
+    return result.success ? result.data.items[0]!.id : null
+  } catch {
+    return null
+  }
+}
+
+/** Fetch the GitHub avatar PNG for an email at the requested size; `null`
+ *  when no `githubToken` is configured, the lookup misses, or any upstream
+ *  call fails. Never logs the email — it is user data. */
+export async function fetchGithubAvatarImage(email: string, size: number): Promise<Buffer | null> {
+  const token = requireBlogSettingsSection('comments').comments.githubToken
+  if (!token) {
+    return null
+  }
+
+  const search = await safeFetch(`${GITHUB_SEARCH_URL}?q=${encodeURIComponent(email.trim().toLowerCase())}+in:email`, {
+    timeoutMs: FETCH_TIMEOUT_MS,
+    maxRedirects: 0,
+    maxBytes: GITHUB_SEARCH_MAX_BYTES,
+    headers: {
+      Accept: 'application/vnd.github+json',
+      Authorization: `Bearer ${token}`,
+      'User-Agent': 'kobato',
+      'X-GitHub-Api-Version': '2022-11-28',
+    },
+  })
+  if (!search.ok) {
+    if (search.reason === 'fetch-failed' || search.reason === 'timeout') {
+      getLogger('avatar.github').warn('github avatar lookup failed', { error: fetchErrorMessage(search.error) })
+    }
+    return null
+  }
+  const id = parseGithubUserId(search.body)
+  if (id === null) {
+    return null
+  }
+
+  const body = await safeFetchAvatar('avatar.github', `${GITHUB_AVATAR_BASE_URL}/${id}?s=${size}`, {
+    headers: { Accept: 'image/png', 'User-Agent': 'kobato' },
+  })
+  if (body === null) {
+    return null
+  }
+  return compressImage(Buffer.from(body))
+}
+
+/** Try each configured upstream (`comments.avatar.sources`) in order; the
+ *  first non-null image wins. Email-keyed sources (qq/github) are skipped on
+ *  hash-only requests, where the email is unknown — note the cache is keyed
+ *  per size bucket, so a hash-only request at a non-default bucket can cache
+ *  a gravatar-only (possibly negative) outcome even though the prewarm ran
+ *  the email-aware chain at the default bucket. */
+export async function fetchAvatarByChain(
+  identity: { email: string | null; hash: string },
+  size: number,
+): Promise<Buffer | null> {
+  const sources = requireBlogSettingsSection('comments').comments.avatar.sources
+  for (const source of sources) {
+    let buffer: Buffer | null = null
+    if (source === 'qq' && identity.email !== null) {
+      buffer = await fetchQQAvatarImage(identity.email, size)
+    } else if (source === 'github' && identity.email !== null) {
+      buffer = await fetchGithubAvatarImage(identity.email, size)
+    } else if (source === 'gravatar') {
+      buffer = await fetchAvatarImage(identity.hash, size)
+    }
+    if (buffer !== null) {
+      return buffer
+    }
+  }
+  return null
+}
+
+/** Canonical email hash; pre-warms the source chain at DEFAULT_AVATAR_SIZE_BUCKET
+ *  with a positive/negative entry, fetched only on miss (entries are final, audit V3-03).
+ *  Hash-only image requests can't evaluate email-keyed sources (qq/github)
+ *  themselves, so this is where they get their chance — but only when such a
+ *  source can actually match this email (QQ shape, or a configured GitHub
+ *  token), so plain emails still cost zero upstream calls here. */
 export async function resolveAvatarForEmail(db: Database, email: string): Promise<string> {
   const hash = await encodedEmail(email)
-  if (isQQEmail(email)) {
+  const comments = requireBlogSettingsSection('comments').comments
+  const prewarmable = comments.avatar.sources.some(
+    (source) => (source === 'qq' && isQQEmail(email)) || (source === 'github' && comments.githubToken),
+  )
+  if (prewarmable) {
     const cached = await get<'avatar', AvatarEntry>(db, 'avatar', { size: DEFAULT_AVATAR_SIZE_BUCKET, email: hash })
     if (cached === null) {
-      const buffer = await fetchQQAvatarImage(email, DEFAULT_AVATAR_SIZE_BUCKET)
+      const buffer = await fetchAvatarByChain({ email, hash }, DEFAULT_AVATAR_SIZE_BUCKET)
       await set(
         db,
         'avatar',
@@ -257,8 +355,7 @@ export async function serveAvatar(db: Database, hash: string, size: number): Pro
     }
   }
 
-  const buffer =
-    email !== null && isQQEmail(email) ? await fetchQQAvatarImage(email, size) : await fetchAvatarImage(canonical, size)
+  const buffer = await fetchAvatarByChain({ email, hash: canonical }, size)
   if (buffer === null) {
     await set(db, 'avatar', { size, email: canonical }, { status: AvatarStatus.NO_AVATAR, buffer: null })
     return { kind: 'redirect' }

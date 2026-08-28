@@ -2,6 +2,7 @@ import type { BundleKey, SECTION_TO_BUNDLE_KEY, SettingsSection } from '@/shared
 import type { SocialNetwork } from '@/shared/config/socials'
 import type { Assert, Equals } from '@/shared/contracts/primitives'
 import type { CacheBucketSlot, TunableCacheBucketId } from '@/shared/types/cache'
+import type { AvatarSource } from '@/shared/utils/avatar'
 
 // The DB stores one row per section; `BlogSettingsBundle` is the in-memory
 // composition of those rows.
@@ -100,7 +101,11 @@ export interface CommentsSettings {
     size: number
     avatar: {
       mirror: string
+      /** Upstream fetch order; the site default avatar is the implicit final fallback. */
+      sources: AvatarSource[]
     }
+    /** GitHub PAT for the Search API email lookup; encrypted at rest, skipped when unset. */
+    githubToken?: string
     /** TTL for the temporary comment edit token (seconds). */
     tokenTtlSeconds: number
   }
@@ -309,6 +314,7 @@ export interface SecretMasks {
   mailSmtpPassMask: string | null
   mailMailgunApiKeyMask: string | null
   assetsSecretAccessKeyMask: string | null
+  commentsGithubTokenMask: string | null
 }
 
 export interface BlogSettingsBundle {
