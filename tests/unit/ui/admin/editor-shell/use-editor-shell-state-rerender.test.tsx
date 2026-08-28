@@ -19,7 +19,7 @@ vi.mock('@tanstack/react-query', () => ({
 }))
 
 // Shared autosave engine handles; same pattern as use-editor-shell-persist.test.
-const autosaveMockReturns = vi.hoisted(() => ({ forceFlush: vi.fn(), markPersisted: vi.fn() }))
+const autosaveMockReturns = vi.hoisted(() => ({ forceFlush: vi.fn(), setBaseline: vi.fn() }))
 
 vi.mock('@/client/hooks/use-autosave', () => ({
   useAutosave: vi.fn(() => autosaveMockReturns),
@@ -142,7 +142,7 @@ describe('ui/admin/editor-shell/useEditorShellState — client re-renders', () =
 describe('ui/admin/editor-shell/useEditorShellState — adoptLocalDraft (V3-04)', () => {
   beforeEach(() => {
     localDraftState.loadedDraft = null
-    autosaveMockReturns.markPersisted.mockClear()
+    autosaveMockReturns.setBaseline.mockClear()
     autosaveMockReturns.forceFlush.mockClear()
   })
 
@@ -173,9 +173,6 @@ describe('ui/admin/editor-shell/useEditorShellState — adoptLocalDraft (V3-04)'
 
     expect(result.current.dialog.conflict).toEqual({ localBody, localSavedAt: 123 })
 
-    // Discount the mount-time opening-body seed (covered by the persist suite).
-    autosaveMockReturns.markPersisted.mockClear()
-
     await act(async () => {
       await result.current.dialog.adoptLocalDraft()
     })
@@ -188,8 +185,10 @@ describe('ui/admin/editor-shell/useEditorShellState — adoptLocalDraft (V3-04)'
     })
     // …and the baseline advanced to that body reference, so the next tick
     // short-circuits instead of re-PATCHing it (and rotating the revision token).
-    expect(autosaveMockReturns.markPersisted).toHaveBeenCalledTimes(1)
-    expect(autosaveMockReturns.markPersisted).toHaveBeenCalledWith(localBody)
+    // The mount-time opening-body seed rides the engine's `initialBaseline`
+    // option, so this setBaseline call is the adopt flow's alone.
+    expect(autosaveMockReturns.setBaseline).toHaveBeenCalledTimes(1)
+    expect(autosaveMockReturns.setBaseline).toHaveBeenCalledWith(localBody)
     expect(result.current.body).toBe(localBody)
   })
 })

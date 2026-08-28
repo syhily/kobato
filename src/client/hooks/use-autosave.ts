@@ -18,6 +18,10 @@ export interface UseAutosaveOptions<TBody> {
   body: TBody
   enabled: boolean
   flush: (body: TBody) => Promise<AutosaveFlushOutcome | undefined>
+  /** Mount-time persisted baseline (the opening body): the first tick with
+   *  zero edits short-circuits instead of re-flushing. Read once at mount —
+   *  later prop changes are ignored; advance the baseline via `setBaseline`. */
+  initialBaseline?: TBody | null
   debounceMs?: number
   hardCapMs?: number
   retryDelaysMs?: number[]
@@ -31,11 +35,12 @@ export function useAutosave<TBody>({
   body,
   enabled,
   flush,
+  initialBaseline = null,
   debounceMs = 5_000,
   hardCapMs = 60_000,
   retryDelaysMs = DEFAULT_RETRY_DELAYS_MS,
   onStatusChange,
-}: UseAutosaveOptions<TBody>): { forceFlush: () => Promise<void>; markPersisted: (body: TBody) => void } {
+}: UseAutosaveOptions<TBody>): { forceFlush: () => Promise<void>; setBaseline: (body: TBody) => void } {
   const flushRef = useRef(flush)
   const bodyRef = useRef(body)
   const enabledRef = useRef(enabled)
@@ -50,7 +55,10 @@ export function useAutosave<TBody>({
     retryDelaysRef.current = retryDelaysMs
   })
 
-  const lastPersistedRef = useRef<TBody | null>(null)
+  // The single persisted-baseline owner: seeded once at mount from
+  // `initialBaseline`, advanced by a successful flush or an explicit
+  // `setBaseline` command from a write path that bypassed the engine.
+  const lastPersistedRef = useRef<TBody | null>(initialBaseline)
   const inFlightRef = useRef<Promise<AutosaveFlushOutcome | undefined> | null>(null)
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const hardCapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -204,12 +212,13 @@ export function useAutosave<TBody>({
   }, [doFlush])
 
   /**
-   * Advance the persisted baseline to a body persisted outside the engine
-   * (manual Ctrl+S) so the next debounce tick short-circuits.
+   * Advance the persisted baseline after a write that bypassed the engine
+   * (manual Ctrl+S, adopt-local force-save) so the next tick short-circuits.
+   * Every non-engine write path must route through this one command.
    */
-  const markPersisted = useCallback((persistedBody: TBody): void => {
+  const setBaseline = useCallback((persistedBody: TBody): void => {
     lastPersistedRef.current = persistedBody
   }, [])
 
-  return { forceFlush, markPersisted }
+  return { forceFlush, setBaseline }
 }

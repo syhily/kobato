@@ -26,8 +26,11 @@ parent.
     `FootnoteEditorDialog`, `portable-text-diff`). Self-contained; only `PageBodyEditor` is
     imported by other admin domains.
   - `editor-shell/` — orchestration layer wrapping the Tiptap editor into a draft/publish workflow:
-    `useEditorShellState` (shared FSM for Post + Page shells — drafts, conflict resolution,
-    autosave, revision-token race, persist save/publish/unpublish, shortcuts, layout toggles),
+    `useEditorShellState` (orchestrator for Post + Page shells — body/meta drafts, shortcuts,
+    layout toggles), `useEditorShellPersist` (deep persist module: owns the revision-token race,
+    both autosave freeze legs, the local-draft conflict, and the persisted baseline; wire/status
+    decisions are pure planners in `editor-shell-persist-plan.ts`), `useAutosave` (client-side
+    engine — sole baseline owner behind `setBaseline`, mount seed via `initialBaseline`),
     `EditorScreen` (single screen driven by an `EditorScreenAdapter`), `makeEditorAdapter`
     (factory: per-entity config + per-render runtime → adapter), plus `DraftConflictDialog`,
     `FloatingPublishButton`, `PreviewPanel`, `RevisionsDrawer`, `DateTimePicker`. The

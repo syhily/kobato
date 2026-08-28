@@ -110,7 +110,7 @@ describe('useAutosave — conflict outcome', () => {
   })
 })
 
-describe('useAutosave — markPersisted', () => {
+describe('useAutosave — setBaseline', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
@@ -124,12 +124,12 @@ describe('useAutosave — markPersisted', () => {
         flush: flush as never,
       }),
     )
-    result.markPersisted(sampleBody as never)
+    result.setBaseline(sampleBody as never)
     await result.forceFlush()
     expect(flush).not.toHaveBeenCalled()
   })
 
-  it('still flushes a body that changed after markPersisted', async () => {
+  it('still flushes a body that changed after setBaseline', async () => {
     const flush = vi.fn<(body: unknown) => Promise<void>>().mockResolvedValue(undefined)
     const result = renderHook(() =>
       useAutosave({
@@ -138,10 +138,50 @@ describe('useAutosave — markPersisted', () => {
         flush: flush as never,
       }),
     )
-    result.markPersisted([{ _type: 'block', _key: 'old' }] as never)
+    result.setBaseline([{ _type: 'block', _key: 'old' }] as never)
     await result.forceFlush()
     expect(flush).toHaveBeenCalledTimes(1)
     expect(flush).toHaveBeenCalledWith(sampleBody)
+  })
+})
+
+describe('useAutosave — initialBaseline seed', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('starts with the seed as the persisted baseline so the first tick is a no-op', async () => {
+    const flush = vi.fn<(body: unknown) => Promise<void>>().mockResolvedValue(undefined)
+    const result = renderHook(() =>
+      useAutosave({
+        body: sampleBody as never,
+        enabled: true,
+        flush: flush as never,
+        initialBaseline: sampleBody as never,
+      }),
+    )
+    await result.forceFlush()
+    expect(flush).not.toHaveBeenCalled()
+  })
+
+  it('ignores a changed initialBaseline after mount — setBaseline is the only later advance', async () => {
+    const flush = vi.fn<(body: unknown) => Promise<void>>().mockResolvedValue(undefined)
+    const otherBody = [
+      { _type: 'block', _key: 'b2', style: 'normal', children: [{ _type: 'span', _key: 's2', text: 'other' }] },
+    ]
+    const { result, rerender } = renderDomHook(
+      (props: { seed: unknown }) =>
+        useAutosave({
+          body: sampleBody as never,
+          enabled: true,
+          flush: flush as never,
+          initialBaseline: props.seed as never,
+        }),
+      { initialProps: { seed: sampleBody } },
+    )
+    rerender({ seed: otherBody })
+    await result.current.forceFlush()
+    expect(flush).not.toHaveBeenCalled()
   })
 })
 

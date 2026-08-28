@@ -3,26 +3,33 @@
 import { act, renderHook } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// This suite drives useEditorShellPersist's four mutation slots directly.
-// Slot order matches the useMutation call order in use-editor-shell-persist:
-//   0 = upsertMeta, 1 = saveDraft, 2 = publish, 3 = unpublish
+// Integration suite for useEditorShellPersist, crossing the same interface
+// callers do. The wire-payload and status-transition DECISIONS live in the
+// pure planner (editor-shell-persist-plan.test.ts); here we pin the React
+// wiring: gating, mutation legs, banner protocol, baseline/freeze/token
+// ownership. Mutation slots are keyed by mutationFn identity — never by
+// useMutation call order.
 
-interface MutationSlot {
+interface MutationConfig {
   onSuccess?: (data: never) => void
   onError?: (error: Error) => void
 }
 
-const slots: Array<{
-  config: MutationSlot | undefined
+interface MutationSlot {
+  config: MutationConfig
   mutate: ReturnType<typeof vi.fn>
   mutateAsync: ReturnType<typeof vi.fn>
-}> = Array.from({ length: 4 }, () => ({ config: undefined, mutate: vi.fn(), mutateAsync: vi.fn() }))
-let useMutationCalls = 0
+}
+
+const slotsByMutationFn = new Map<unknown, MutationSlot>()
 
 vi.mock('@tanstack/react-query', () => ({
-  useMutation: vi.fn((config: MutationSlot) => {
-    const slot = slots[useMutationCalls % 4]
-    useMutationCalls += 1
+  useMutation: vi.fn((config: MutationConfig & { mutationFn: unknown }) => {
+    let slot = slotsByMutationFn.get(config.mutationFn)
+    if (!slot) {
+      slot = { config: {}, mutate: vi.fn(), mutateAsync: vi.fn().mockResolvedValue(undefined) }
+      slotsByMutationFn.set(config.mutationFn, slot)
+    }
     slot.config = config
     return {
       mutate: slot.mutate,
@@ -34,20 +41,32 @@ vi.mock('@tanstack/react-query', () => ({
   }),
 }))
 
-const autosaveMockReturns = vi.hoisted(() => ({ forceFlush: vi.fn(), markPersisted: vi.fn() }))
+const autosaveMockReturns = vi.hoisted(() => ({ forceFlush: vi.fn(), setBaseline: vi.fn() }))
 
 vi.mock('@/client/hooks/use-autosave', () => ({
   useAutosave: vi.fn(() => autosaveMockReturns),
 }))
 
+// Per-test control over the stored local draft the conflict detection reads.
+const localDraftState = vi.hoisted(() => ({
+  loadedDraft: null as { body: unknown; savedAt: number } | null,
+}))
+
+vi.mock('@/client/hooks/use-local-draft', () => ({
+  useLocalDraft: vi.fn(() => ({ loadedDraft: localDraftState.loadedDraft, clearDraft: vi.fn() })),
+}))
+
 import type { AdminRevisionDto, SaveBodyOutput } from '@/shared/contracts/revision'
+import type { PortableTextBody } from '@/shared/pt/schema'
 import type { EditorShellDetail, EntityLike } from '@/ui/admin/editor-shell/editor-shell-types'
 import type { UseEditorShellPersistArgs } from '@/ui/admin/editor-shell/use-editor-shell-persist'
 
 import { useAutosave } from '@/client/hooks/use-autosave'
+import { useLocalDraft } from '@/client/hooks/use-local-draft'
 import { useEditorShellPersist } from '@/ui/admin/editor-shell/use-editor-shell-persist'
 
 const useAutosaveMock = vi.mocked(useAutosave)
+const useLocalDraftMock = vi.mocked(useLocalDraft)
 
 const WARNING = '图片库同步失败，部分图片可能无法正常显示。'
 
@@ -87,15 +106,20 @@ function savedPayload(overrides: Partial<AdminRevisionDto> = {}, warning?: strin
   return { status: 'saved', revision: makeRevision(overrides), ...(warning !== undefined ? { warning } : {}) }
 }
 
+function conflictPayload(expectedToken = 'tok-server'): SaveBodyOutput {
+  return { status: 'conflict', latest: makeRevision(), expectedToken }
+}
+
 function savedEntity(overrides: Partial<Entity> = {}): Entity {
   return { id: 'e1', slug: 's', updatedAt: '2026-07-10T00:00:00.000Z', publishedAt: null, ...overrides }
 }
 
-/** Edit-mode detail; `baselineBody` seeds persist's owned lastSavedBody. */
-function makeDetail(baselineBody?: ReturnType<typeof block>[]): EditorShellDetail<Entity> {
+/** Edit-mode detail; `baselineBody` seeds the owned lastSavedBody + expectedToken. */
+function makeDetail(baselineBody?: ReturnType<typeof block>[], token = 'tok-1'): EditorShellDetail<Entity> {
   return {
     entity: { id: 'e1', slug: 's', updatedAt: '2026-07-01T00:00:00.000Z', publishedAt: null },
-    latestRevision: baselineBody !== undefined ? makeRevision({ body: baselineBody }) : null,
+    latestRevision:
+      baselineBody !== undefined ? makeRevision({ body: baselineBody, clientRevisionToken: token }) : null,
     publishedRevision: null,
   }
 }
@@ -115,10 +139,10 @@ function makeArgs(
     draft: {
       meta: baseMeta,
       body: [],
-      expectedToken: null,
-      freeze: null,
+      initialBody: [],
       ...overrides.draft,
     },
+    localDraftConfig: {} as never,
     mutations: {
       upsertMetaFn: vi.fn(),
       saveDraftFn: vi.fn(),
@@ -132,8 +156,7 @@ function makeArgs(
     notifications: {
       applyServerMeta: vi.fn(),
       markMetaPublished: vi.fn(),
-      noteRevisionSaved: vi.fn(),
-      noteRevisionConflict: vi.fn(),
+      replaceBody: vi.fn(),
       ...overrides.notifications,
     },
     routing: { editPath: (id: string) => `/edit/${id}`, navigate: vi.fn() },
@@ -141,20 +164,41 @@ function makeArgs(
   }
 }
 
-beforeEach(() => {
-  useMutationCalls = 0
-  autosaveMockReturns.markPersisted.mockClear()
-  autosaveMockReturns.forceFlush.mockClear()
-  for (const slot of slots) {
-    slot.config = undefined
-    slot.mutate.mockClear()
-    slot.mutateAsync.mockClear()
-    slot.mutateAsync.mockResolvedValue(undefined)
+/** The mutation slot registered for one of the args' wire functions. */
+function slotFor(fn: unknown): MutationSlot {
+  const slot = slotsByMutationFn.get(fn)
+  expect(slot, 'mutation slot registered for the wire fn').toBeDefined()
+  return slot!
+}
+
+/** Options of the most recent useAutosave call (one per render). */
+function lastAutosaveOptions() {
+  const call = useAutosaveMock.mock.calls.at(-1)
+  expect(call).toBeDefined()
+  return call![0] as {
+    enabled: boolean
+    initialBaseline: PortableTextBody | null
+    flush: (body: never) => Promise<'saved' | 'conflict'>
+    onStatusChange: (status: { kind: string; at?: number }) => void
   }
+}
+
+/** Options of the most recent useLocalDraft call (one per render). */
+function lastLocalDraftOptions() {
+  const call = useLocalDraftMock.mock.calls.at(-1)
+  expect(call).toBeDefined()
+  return call![1] as { entityId: string | null; clientRevisionToken: string | null }
+}
+
+beforeEach(() => {
+  slotsByMutationFn.clear()
+  localDraftState.loadedDraft = null
+  autosaveMockReturns.setBaseline.mockClear()
+  autosaveMockReturns.forceFlush.mockClear()
 })
 
 describe('ui/admin/editor-shell/useEditorShellPersist — initial-return surface', () => {
-  it('returns the persist handlers, derived flags, and owned save-flow state in create mode', () => {
+  it('returns the persist handlers, derived flags, and owned state in create mode', () => {
     const { result } = renderHook(() => useEditorShellPersist(makeArgs()))
 
     expect(result.current.persistCreate).toBeInstanceOf(Function)
@@ -169,31 +213,56 @@ describe('ui/admin/editor-shell/useEditorShellPersist — initial-return surface
     expect(result.current.status).toEqual({ kind: 'idle' })
     expect(result.current.previewBanner).toBeNull()
     expect(result.current.displaySaveAtMs).toBeNull()
-    expect(result.current.lastSavedBody).toEqual([])
+    expect(result.current.isBodyDirty).toBe(false)
+
+    // Owned revision race + conflict state, read-only for the shell.
+    expect(result.current.expectedToken).toBeNull()
+    expect(result.current.latestRevision).toBeNull()
+    expect(result.current.publishedRevision).toBeNull()
+    expect(result.current.conflict).toBeNull()
+    expect(result.current.adoptLocalDraft).toBeInstanceOf(Function)
+    expect(result.current.adoptServerVersion).toBeInstanceOf(Function)
+    expect(result.current.adoptRevisionFromHistory).toBeInstanceOf(Function)
+  })
+
+  it('starts with a null token when no baseline revision exists', () => {
+    const { result } = renderHook(() => useEditorShellPersist(makeArgs({ detail: makeDetail() })))
+    expect(result.current.expectedToken).toBeNull()
+  })
+
+  it('derives the owned token from the baseline revision when one exists', () => {
+    const { result } = renderHook(() =>
+      useEditorShellPersist(makeArgs({ detail: makeDetail([block('b1', 'x')], 'tok-0') })),
+    )
+    expect(result.current.expectedToken).toBe('tok-0')
+    expect(lastLocalDraftOptions().clientRevisionToken).toBe('tok-0')
   })
 })
 
 describe('ui/admin/editor-shell/useEditorShellPersist — handler gating', () => {
   it('persistSave is a no-op (status untouched, no mutation) without detail', () => {
-    const { result } = renderHook(() => useEditorShellPersist(makeArgs()))
+    const args = makeArgs()
+    const { result } = renderHook(() => useEditorShellPersist(args))
     act(() => result.current.persistSave())
     expect(result.current.status).toEqual({ kind: 'idle' })
-    expect(slots[0].mutate).not.toHaveBeenCalled()
-    expect(slots[1].mutate).not.toHaveBeenCalled()
+    expect(slotFor(args.mutations.upsertMetaFn).mutate).not.toHaveBeenCalled()
+    expect(slotFor(args.mutations.saveDraftFn).mutate).not.toHaveBeenCalled()
   })
 
   it('persistPublish sets an error status without detail', () => {
-    const { result } = renderHook(() => useEditorShellPersist(makeArgs()))
+    const args = makeArgs()
+    const { result } = renderHook(() => useEditorShellPersist(args))
     act(() => result.current.persistPublish())
     expect(result.current.status).toEqual({ kind: 'error', message: '请先保存基本信息再发布。' })
-    expect(slots[2].mutate).not.toHaveBeenCalled()
+    expect(slotFor(args.mutations.publishFn).mutate).not.toHaveBeenCalled()
   })
 
   it('persistUnpublish is a no-op without detail', () => {
-    const { result } = renderHook(() => useEditorShellPersist(makeArgs()))
+    const args = makeArgs()
+    const { result } = renderHook(() => useEditorShellPersist(args))
     act(() => result.current.persistUnpublish())
     expect(result.current.status).toEqual({ kind: 'idle' })
-    expect(slots[3].mutate).not.toHaveBeenCalled()
+    expect(slotFor(args.mutations.unpublishFn).mutate).not.toHaveBeenCalled()
   })
 
   it('persistCreate is a no-op in edit mode (detail present)', async () => {
@@ -202,7 +271,7 @@ describe('ui/admin/editor-shell/useEditorShellPersist — handler gating', () =>
     await act(async () => {
       await result.current.persistCreate()
     })
-    expect(slots[0].mutateAsync).not.toHaveBeenCalled()
+    expect(slotFor(args.mutations.upsertMetaFn).mutateAsync).not.toHaveBeenCalled()
     expect(args.routing.navigate).not.toHaveBeenCalled()
   })
 })
@@ -220,8 +289,8 @@ describe('ui/admin/editor-shell/useEditorShellPersist — edit-mode save dispatc
     act(() => result.current.persistSave())
 
     expect(result.current.status).toEqual({ kind: 'saving' })
-    expect(slots[0].mutate).toHaveBeenCalledTimes(1)
-    expect(slots[1].mutate).not.toHaveBeenCalled()
+    expect(slotFor(args.mutations.upsertMetaFn).mutate).toHaveBeenCalledTimes(1)
+    expect(slotFor(args.mutations.saveDraftFn).mutate).not.toHaveBeenCalled()
     expect(args.mutations.buildUpsertMetaPayload).toHaveBeenCalledWith({
       meta: args.draft.meta,
       id: 'e1',
@@ -233,7 +302,7 @@ describe('ui/admin/editor-shell/useEditorShellPersist — edit-mode save dispatc
     const args = makeArgs({ detail: makeDetail() })
     const { result } = renderHook(() => useEditorShellPersist(args))
     act(() => result.current.persistSave())
-    act(() => slots[0].config?.onSuccess?.(savedEntity() as never))
+    act(() => slotFor(args.mutations.upsertMetaFn).config.onSuccess?.(savedEntity() as never))
     expect(result.current.previewBanner).toEqual({ kind: 'draft', slug: 's' })
     expect(result.current.status).toEqual({ kind: 'saved', at: expect.any(Date) })
     expect(result.current.displaySaveAtMs).toBe(Date.parse('2026-07-10T00:00:00.000Z'))
@@ -241,30 +310,37 @@ describe('ui/admin/editor-shell/useEditorShellPersist — edit-mode save dispatc
   })
 
   it('arms two legs when the body diverged and shows the banner only after both land', () => {
-    const revision = makeRevision({ body: [block('new', 'new text')] })
+    const revision = makeRevision({ body: [block('new', 'new text')], clientRevisionToken: 'tok-2' })
     const args = makeArgs({
-      detail: makeDetail([block('old', 'old text')]),
+      detail: makeDetail([block('old', 'old text')], 'tok-0'),
       draft: {
         meta: { ...baseMeta, publishedAt: '' },
         body: [block('new', 'new text')],
-        expectedToken: 'tok-0',
+        initialBody: [block('old', 'old text')],
       },
     })
     const { result } = renderHook(() => useEditorShellPersist(args))
     act(() => result.current.persistSave())
 
-    expect(slots[0].mutate).toHaveBeenCalledTimes(1)
-    expect(slots[1].mutate).toHaveBeenCalledTimes(1)
+    expect(slotFor(args.mutations.upsertMetaFn).mutate).toHaveBeenCalledTimes(1)
+    // The body leg carries the owned token onto the wire.
+    expect(slotFor(args.mutations.saveDraftFn).mutate).toHaveBeenCalledWith({
+      id: 'e1',
+      body: [block('new', 'new text')],
+      expectedClientRevisionToken: 'tok-0',
+    })
 
-    act(() => slots[0].config?.onSuccess?.(savedEntity() as never))
+    act(() => slotFor(args.mutations.upsertMetaFn).config.onSuccess?.(savedEntity() as never))
     expect(result.current.previewBanner).toBeNull()
 
-    act(() => slots[1].config?.onSuccess?.({ status: 'saved', revision } as never))
+    act(() => slotFor(args.mutations.saveDraftFn).config.onSuccess?.({ status: 'saved', revision } as never))
     expect(result.current.previewBanner).toEqual({ kind: 'draft', slug: 's' })
     expect(result.current.status).toEqual({ kind: 'saved', at: expect.any(Date) })
-    // Revision race → orchestrator; saved-body bookkeeping stays in persist.
-    expect(args.notifications.noteRevisionSaved).toHaveBeenCalledWith(revision)
-    expect(result.current.lastSavedBody).toEqual([block('new', 'new text')])
+    // The owned race advanced: token rotated, body no longer dirty, and the
+    // local-draft key follows the new token.
+    expect(result.current.expectedToken).toBe('tok-2')
+    expect(result.current.isBodyDirty).toBe(false)
+    expect(lastLocalDraftOptions().clientRevisionToken).toBe('tok-2')
   })
 
   it('surfaces a save-result warning and does not let the meta leg clobber it', () => {
@@ -275,10 +351,10 @@ describe('ui/admin/editor-shell/useEditorShellPersist — edit-mode save dispatc
     const { result } = renderHook(() => useEditorShellPersist(args))
     act(() => result.current.persistSave())
 
-    act(() => slots[1].config?.onSuccess?.(savedPayload({}, WARNING) as never))
+    act(() => slotFor(args.mutations.saveDraftFn).config.onSuccess?.(savedPayload({}, WARNING) as never))
     expect(result.current.status).toEqual({ kind: 'warning', message: WARNING })
 
-    act(() => slots[0].config?.onSuccess?.(savedEntity() as never))
+    act(() => slotFor(args.mutations.upsertMetaFn).config.onSuccess?.(savedEntity() as never))
     expect(result.current.status).toEqual({ kind: 'warning', message: WARNING })
   })
 
@@ -289,10 +365,10 @@ describe('ui/admin/editor-shell/useEditorShellPersist — edit-mode save dispatc
     })
     const { result } = renderHook(() => useEditorShellPersist(args))
     act(() => result.current.persistSave())
-    act(() => slots[1].config?.onSuccess?.(savedPayload({}, WARNING) as never))
+    act(() => slotFor(args.mutations.saveDraftFn).config.onSuccess?.(savedPayload({}, WARNING) as never))
     expect(result.current.status).toEqual({ kind: 'warning', message: WARNING })
 
-    act(() => slots[1].config?.onSuccess?.(savedPayload() as never))
+    act(() => slotFor(args.mutations.saveDraftFn).config.onSuccess?.(savedPayload() as never))
     expect(result.current.status).toEqual({ kind: 'saved', at: expect.any(Date) })
   })
 
@@ -304,16 +380,10 @@ describe('ui/admin/editor-shell/useEditorShellPersist — edit-mode save dispatc
     const { result } = renderHook(() => useEditorShellPersist(args))
     act(() => result.current.persistSave())
 
-    act(() =>
-      slots[1].config?.onSuccess?.({
-        status: 'conflict',
-        latest: makeRevision(),
-        expectedToken: 'tok-server',
-      } as never),
-    )
+    act(() => slotFor(args.mutations.saveDraftFn).config.onSuccess?.(conflictPayload() as never))
     expect(result.current.status).toEqual({ kind: 'conflict', expectedToken: 'tok-server' })
 
-    act(() => slots[0].config?.onSuccess?.(savedEntity() as never))
+    act(() => slotFor(args.mutations.upsertMetaFn).config.onSuccess?.(savedEntity() as never))
     expect(result.current.previewBanner).toBeNull()
   })
 
@@ -321,7 +391,7 @@ describe('ui/admin/editor-shell/useEditorShellPersist — edit-mode save dispatc
     const args = makeArgs({ detail: makeDetail() })
     const { result } = renderHook(() => useEditorShellPersist(args))
     act(() => result.current.persistSave())
-    act(() => slots[0].config?.onError?.(new Error('boom')))
+    act(() => slotFor(args.mutations.upsertMetaFn).config.onError?.(new Error('boom')))
     expect(result.current.status).toEqual({ kind: 'error', message: 'boom' })
   })
 })
@@ -334,14 +404,12 @@ describe('ui/admin/editor-shell/useEditorShellPersist — manual save advances t
       draft: { body: divergedBody },
     })
     const { result } = renderHook(() => useEditorShellPersist(args))
-    // Discount the mount-time opening-body seed (covered by its own suite).
-    autosaveMockReturns.markPersisted.mockClear()
     act(() => result.current.persistSave())
 
-    act(() => slots[1].config?.onSuccess?.(savedPayload({ body: divergedBody }) as never))
+    act(() => slotFor(args.mutations.saveDraftFn).config.onSuccess?.(savedPayload({ body: divergedBody }) as never))
     // Baseline moves to the submitted reference so the next debounce tick is a no-op.
-    expect(autosaveMockReturns.markPersisted).toHaveBeenCalledTimes(1)
-    expect(autosaveMockReturns.markPersisted).toHaveBeenCalledWith(divergedBody)
+    expect(autosaveMockReturns.setBaseline).toHaveBeenCalledTimes(1)
+    expect(autosaveMockReturns.setBaseline).toHaveBeenCalledWith(divergedBody)
   })
 
   it('does not touch the baseline on a meta-only save (body clean)', () => {
@@ -350,10 +418,9 @@ describe('ui/admin/editor-shell/useEditorShellPersist — manual save advances t
       draft: { body: [block('b1', 'same')] },
     })
     const { result } = renderHook(() => useEditorShellPersist(args))
-    autosaveMockReturns.markPersisted.mockClear() // mount-time seed; see the seed suite
     act(() => result.current.persistSave())
-    act(() => slots[0].config?.onSuccess?.(savedEntity() as never))
-    expect(autosaveMockReturns.markPersisted).not.toHaveBeenCalled()
+    act(() => slotFor(args.mutations.upsertMetaFn).config.onSuccess?.(savedEntity() as never))
+    expect(autosaveMockReturns.setBaseline).not.toHaveBeenCalled()
   })
 
   it('does not mark the baseline when the manual body save conflicts', () => {
@@ -362,83 +429,58 @@ describe('ui/admin/editor-shell/useEditorShellPersist — manual save advances t
       draft: { body: [block('new', 'new text')] },
     })
     const { result } = renderHook(() => useEditorShellPersist(args))
-    autosaveMockReturns.markPersisted.mockClear() // mount-time seed; see the seed suite
     act(() => result.current.persistSave())
 
-    act(() =>
-      slots[1].config?.onSuccess?.({
-        status: 'conflict',
-        latest: makeRevision(),
-        expectedToken: 'tok-server',
-      } as never),
-    )
-    expect(autosaveMockReturns.markPersisted).not.toHaveBeenCalled()
+    act(() => slotFor(args.mutations.saveDraftFn).config.onSuccess?.(conflictPayload() as never))
+    expect(autosaveMockReturns.setBaseline).not.toHaveBeenCalled()
 
     // The conflict dropped the pending snapshot; a later clean save must not mark a stale body.
-    act(() => slots[1].config?.onSuccess?.(savedPayload() as never))
-    expect(autosaveMockReturns.markPersisted).not.toHaveBeenCalled()
+    act(() => slotFor(args.mutations.saveDraftFn).config.onSuccess?.(savedPayload() as never))
+    expect(autosaveMockReturns.setBaseline).not.toHaveBeenCalled()
   })
 })
 
 describe('ui/admin/editor-shell/useEditorShellPersist — opening body seeds the autosave baseline', () => {
   // Audit P1-1: seeding the baseline makes the first debounce tick hit the reference check.
-  it('marks the opening body persisted on mount so the first autosave tick is a no-op', () => {
+  it('seeds the engine baseline with the opening body on mount', () => {
     const openingBody = [block('b1', 'server state')]
     const args = makeArgs({
       detail: makeDetail(openingBody),
-      draft: { body: openingBody },
+      draft: { body: openingBody, initialBody: openingBody },
     })
     renderHook(() => useEditorShellPersist(args))
-    expect(autosaveMockReturns.markPersisted).toHaveBeenCalledTimes(1)
-    expect(autosaveMockReturns.markPersisted).toHaveBeenCalledWith(openingBody)
+    expect(lastAutosaveOptions().initialBaseline).toBe(openingBody)
   })
 
-  it('does not seed the baseline in create mode (no server state to compare against)', () => {
+  it('passes no baseline seed in create mode (no server state to compare against)', () => {
     renderHook(() => useEditorShellPersist(makeArgs()))
-    expect(autosaveMockReturns.markPersisted).not.toHaveBeenCalled()
+    expect(lastAutosaveOptions().initialBaseline).toBeNull()
   })
 
-  it('seeds only once — a later body change must not re-seed the baseline', () => {
+  it('seeds only once — a later body change keeps the mount-time baseline reference', () => {
     const openingBody = [block('b1', 'server state')]
     const args = makeArgs({
       detail: makeDetail(openingBody),
-      draft: { body: openingBody },
+      draft: { body: openingBody, initialBody: openingBody },
     })
     const { rerender } = renderHook((props: { args: Args }) => useEditorShellPersist(props.args), {
       initialProps: { args },
     })
-    expect(autosaveMockReturns.markPersisted).toHaveBeenCalledTimes(1)
+    expect(lastAutosaveOptions().initialBaseline).toBe(openingBody)
 
     rerender({ args: { ...args, draft: { ...args.draft, body: [block('b2', 'user edit')] } } })
-    expect(autosaveMockReturns.markPersisted).toHaveBeenCalledTimes(1)
+    expect(lastAutosaveOptions().initialBaseline).toBe(openingBody)
   })
 })
 
-describe('ui/admin/editor-shell/useEditorShellPersist — autosave conflict freeze', () => {
-  /** Options of the most recent useAutosave call (one per render). */
-  function lastAutosaveOptions() {
-    const call = useAutosaveMock.mock.calls.at(-1)
-    expect(call).toBeDefined()
-    return call![0] as {
-      enabled: boolean
-      flush: (body: never) => Promise<'saved' | 'conflict'>
-      onStatusChange: (status: { kind: string; at?: number }) => void
-    }
-  }
-
+describe('ui/admin/editor-shell/useEditorShellPersist — owned conflict freeze', () => {
   function conflictSaveDraft() {
-    return vi.fn().mockResolvedValue({
-      status: 'conflict',
-      latest: makeRevision(),
-      expectedToken: 'tok-server',
-    })
+    return vi.fn().mockResolvedValue(conflictPayload())
   }
 
-  it('reports the server conflict as the freeze notification and never lets a saved tick clobber it', async () => {
+  it('a flush conflict freezes autosave and no saved tick clobbers the status', async () => {
     const args = makeArgs({ detail: makeDetail(), mutations: { directSaveDraft: conflictSaveDraft() } })
-    const { result, rerender } = renderHook((props: { args: Args }) => useEditorShellPersist(props.args), {
-      initialProps: { args },
-    })
+    const { result } = renderHook(() => useEditorShellPersist(args))
 
     expect(lastAutosaveOptions().enabled).toBe(true)
 
@@ -449,41 +491,55 @@ describe('ui/admin/editor-shell/useEditorShellPersist — autosave conflict free
     // The conflict outcome stops the engine from emitting its generic 'saved' tick.
     expect(outcome).toBe('conflict')
     expect(result.current.status).toEqual({ kind: 'conflict', expectedToken: 'tok-server' })
-    // Freeze is orchestrator-owned; persist only reports the server leg.
-    expect(args.notifications.noteRevisionConflict).toHaveBeenCalledTimes(1)
-
-    rerender({ args: { ...args, draft: { ...args.draft, freeze: 'server' } } })
+    // The server freeze leg is owned here: autosave is now gated off.
     expect(lastAutosaveOptions().enabled).toBe(false)
 
     act(() => lastAutosaveOptions().onStatusChange({ kind: 'saved', at: Date.now() }))
     expect(result.current.status).toEqual({ kind: 'conflict', expectedToken: 'tok-server' })
   })
 
-  it('gates autosave on the merged freeze flag alone — either source freezes, none unfreezes', async () => {
-    const args = makeArgs({ detail: makeDetail(), draft: { freeze: 'local' } })
-    const { rerender } = renderHook((props: { args: Args }) => useEditorShellPersist(props.args), {
-      initialProps: { args },
-    })
-    expect(lastAutosaveOptions().enabled).toBe(false)
-
-    rerender({ args: { ...args, draft: { ...args.draft, freeze: 'server' } } })
-    expect(lastAutosaveOptions().enabled).toBe(false)
-
-    rerender({ args: { ...args, draft: { ...args.draft, freeze: null } } })
-    expect(lastAutosaveOptions().enabled).toBe(true)
-  })
-
-  it('hands the clean save to the orchestrator (its unfreeze cue) after a conflict', async () => {
+  it('the next clean save unfreezes autosave and advances the owned token', async () => {
     const args = makeArgs({ detail: makeDetail(), mutations: { directSaveDraft: conflictSaveDraft() } })
-    renderHook(() => useEditorShellPersist(args))
+    const { result } = renderHook(() => useEditorShellPersist(args))
 
     await act(async () => {
       await lastAutosaveOptions().flush([] as never)
     })
-    expect(args.notifications.noteRevisionConflict).toHaveBeenCalledTimes(1)
+    expect(lastAutosaveOptions().enabled).toBe(false)
 
-    act(() => slots[1].config?.onSuccess?.(savedPayload() as never))
-    expect(args.notifications.noteRevisionSaved).toHaveBeenCalled()
+    act(() =>
+      slotFor(args.mutations.saveDraftFn).config.onSuccess?.(
+        savedPayload({ id: 'rev-2', revisionNo: 2, clientRevisionToken: 'tok-2' }) as never,
+      ),
+    )
+    expect(lastAutosaveOptions().enabled).toBe(true)
+    expect(result.current.expectedToken).toBe('tok-2')
+  })
+
+  it('a diverging stored local draft freezes autosave until the dialog resolves', () => {
+    const serverBody = [block('b1', 'server state')]
+    const localBody = [block('lb', 'local draft')]
+    const args = makeArgs({
+      detail: makeDetail(serverBody),
+      draft: { body: serverBody, initialBody: serverBody },
+    })
+    const { result, rerender } = renderHook((props: { args: Args }) => useEditorShellPersist(props.args), {
+      initialProps: { args },
+    })
+    expect(lastAutosaveOptions().enabled).toBe(true)
+    expect(result.current.conflict).toBeNull()
+
+    // The stored draft arrives (IndexedDB load resolves) and diverges.
+    localDraftState.loadedDraft = { body: localBody, savedAt: 123 }
+    rerender({ args })
+    expect(result.current.conflict).toEqual({ localBody, localSavedAt: 123 })
+    expect(lastAutosaveOptions().enabled).toBe(false)
+
+    // Adopting the server version resolves the conflict and unfreezes.
+    act(() => result.current.adoptServerVersion())
+    expect(result.current.conflict).toBeNull()
+    expect(lastAutosaveOptions().enabled).toBe(true)
+    expect(args.notifications.replaceBody).toHaveBeenCalledWith(serverBody, expect.stringContaining('adopt-server'))
   })
 })
 
@@ -526,16 +582,10 @@ describe('ui/admin/editor-shell/useEditorShellPersist — success legs never dow
     const { result } = renderHook(() => useEditorShellPersist(args))
     act(() => result.current.persistSave())
 
-    act(() =>
-      slots[1].config?.onSuccess?.({
-        status: 'conflict',
-        latest: makeRevision(),
-        expectedToken: 'tok-server',
-      } as never),
-    )
+    act(() => slotFor(args.mutations.saveDraftFn).config.onSuccess?.(conflictPayload() as never))
     expect(result.current.status).toEqual({ kind: 'conflict', expectedToken: 'tok-server' })
 
-    act(() => slots[0].config?.onSuccess?.(savedEntity() as never))
+    act(() => slotFor(args.mutations.upsertMetaFn).config.onSuccess?.(savedEntity() as never))
     expect(result.current.status).toEqual({ kind: 'conflict', expectedToken: 'tok-server' })
   })
 
@@ -548,16 +598,10 @@ describe('ui/admin/editor-shell/useEditorShellPersist — success legs never dow
     act(() => result.current.persistSave())
     act(() => result.current.persistUnpublish())
 
-    act(() =>
-      slots[1].config?.onSuccess?.({
-        status: 'conflict',
-        latest: makeRevision(),
-        expectedToken: 'tok-server',
-      } as never),
-    )
+    act(() => slotFor(args.mutations.saveDraftFn).config.onSuccess?.(conflictPayload() as never))
     expect(result.current.status).toEqual({ kind: 'conflict', expectedToken: 'tok-server' })
 
-    act(() => slots[3].config?.onSuccess?.(savedEntity() as never))
+    act(() => slotFor(args.mutations.unpublishFn).config.onSuccess?.(savedEntity() as never))
     expect(result.current.status).toEqual({ kind: 'conflict', expectedToken: 'tok-server' })
   })
 
@@ -570,10 +614,10 @@ describe('ui/admin/editor-shell/useEditorShellPersist — success legs never dow
     act(() => result.current.persistSave())
     act(() => result.current.persistUnpublish())
 
-    act(() => slots[1].config?.onSuccess?.(savedPayload({}, WARNING) as never))
+    act(() => slotFor(args.mutations.saveDraftFn).config.onSuccess?.(savedPayload({}, WARNING) as never))
     expect(result.current.status).toEqual({ kind: 'warning', message: WARNING })
 
-    act(() => slots[3].config?.onSuccess?.(savedEntity() as never))
+    act(() => slotFor(args.mutations.unpublishFn).config.onSuccess?.(savedEntity() as never))
     expect(result.current.status).toEqual({ kind: 'warning', message: WARNING })
   })
 })
@@ -585,7 +629,6 @@ describe('ui/admin/editor-shell/useEditorShellPersist — publish / unpublish', 
       draft: {
         meta: { ...baseMeta, publishedAt: '2099-06-01T12:00' },
         body: [block('b1', 'x')],
-        expectedToken: 'tok-1',
       },
     })
     const { result, rerender } = renderHook((props: { args: Args }) => useEditorShellPersist(props.args), {
@@ -594,12 +637,17 @@ describe('ui/admin/editor-shell/useEditorShellPersist — publish / unpublish', 
     act(() => result.current.persistPublish())
 
     expect(result.current.status).toEqual({ kind: 'saving' })
-    expect(slots[2].mutate).toHaveBeenCalledTimes(1)
+    expect(slotFor(args.mutations.publishFn).mutate).toHaveBeenCalledWith({
+      id: 'e1',
+      body: [block('b1', 'x')],
+      expectedClientRevisionToken: 'tok-1',
+      publishedAt: new Date('2099-06-01T12:00').toISOString(),
+    })
 
-    act(() => slots[2].config?.onSuccess?.(savedPayload({ status: 'published' }) as never))
+    act(() => slotFor(args.mutations.publishFn).config.onSuccess?.(savedPayload({ status: 'published' }) as never))
     expect(args.notifications.markMetaPublished).toHaveBeenCalledTimes(1)
-    expect(args.notifications.noteRevisionSaved).toHaveBeenCalled()
     expect(result.current.previewBanner).toEqual({ kind: 'published', slug: 's' })
+    expect(result.current.publishedRevision).not.toBeNull()
 
     // After a successful publish the optimistic publishedAt is the truth: an
     // empty picker cancels it with an explicit null — never a "publish now".
@@ -622,14 +670,13 @@ describe('ui/admin/editor-shell/useEditorShellPersist — publish / unpublish', 
       draft: {
         meta: { ...baseMeta, published: true, publishedAt: '2099-06-01T12:00' },
         body: [block('b1', 'x')],
-        expectedToken: 'tok-1',
       },
     })
     const { result, rerender } = renderHook((props: { args: Args }) => useEditorShellPersist(props.args), {
       initialProps: { args },
     })
     act(() => result.current.persistPublish())
-    act(() => slots[2].config?.onError?.(new Error('boom')))
+    act(() => slotFor(args.mutations.publishFn).config.onError?.(new Error('boom')))
     expect(result.current.status).toEqual({ kind: 'error', message: 'boom' })
 
     // After a failed publish the optimistic schedule is reverted: omit the
@@ -653,9 +700,9 @@ describe('ui/admin/editor-shell/useEditorShellPersist — publish / unpublish', 
     act(() => result.current.persistUnpublish())
 
     expect(result.current.status).toEqual({ kind: 'saving' })
-    expect(slots[3].mutate).toHaveBeenCalledTimes(1)
+    expect(slotFor(args.mutations.unpublishFn).mutate).toHaveBeenCalledTimes(1)
 
-    act(() => slots[3].config?.onSuccess?.(savedEntity() as never))
+    act(() => slotFor(args.mutations.unpublishFn).config.onSuccess?.(savedEntity() as never))
     expect(result.current.status).toEqual({ kind: 'saved', at: expect.any(Date) })
     expect(args.notifications.applyServerMeta).toHaveBeenCalledWith({ ...baseMeta, slug: 's' })
   })
