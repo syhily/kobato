@@ -27,7 +27,7 @@ export async function handleIdentify(
 ): Promise<IdentifyResult> {
   const { db, clientAddress } = ctx
   const email = formFieldString(formData, 'email')
-  if (!emailSchema.safeParse(email).success) {
+  if (!z.validate(emailSchema, email)) {
     return { kind: 'error', message: '请填写正确的邮箱地址。' }
   }
 

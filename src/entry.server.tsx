@@ -1,3 +1,7 @@
+// Zod 4.5 auto-compilation (3–9x parse on objects/unions) — must evaluate
+// before any module that constructs schemas. Server-only: the browser bundle
+// keeps `jitless` (see `@/shared/zod-config`), under which compile stands down.
+import 'zod/compile'
 import type { RenderToPipeableStreamOptions } from 'react-dom/server'
 import type { EntryContext, RouterContextProvider } from 'react-router'
 

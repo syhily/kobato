@@ -58,8 +58,12 @@ describe('updateUserSchema', () => {
     expect(data.name).toBe('New')
   })
 
-  it('accepts only userId because link normalises to an empty string', async () => {
-    const data = await updateUserSchema.parseAsync(base)
+  it('rejects a bare userId patch — an absent optional key no longer flows through preprocess (Zod 4.5)', async () => {
+    await expect(updateUserSchema.parseAsync(base)).rejects.toBeTruthy()
+  })
+
+  it('accepts an explicit empty-string link (normalised, counts as a provided field)', async () => {
+    const data = await updateUserSchema.parseAsync({ ...base, link: '' })
     expect(data).toEqual({ userId: '1', link: '' })
   })
 

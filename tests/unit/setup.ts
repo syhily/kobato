@@ -2,6 +2,9 @@
 // imports resolve; jest-dom matchers + RTL auto-cleanup for happy-dom tests
 // (no-ops otherwise).
 
+// Run the suite against Zod 4.5's compiled parsers, mirroring production
+// (`src/entry.server.tsx`); node tests never set `jitless` (browser-only).
+import 'zod/compile'
 import '@testing-library/jest-dom/vitest'
 import { cleanup } from '@testing-library/react'
 import { afterEach, vi } from 'vitest'

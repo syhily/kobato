@@ -1,5 +1,8 @@
 // Vitest worker setup for snapshot tests — no DB, just env vars + the settings snapshot slot.
 
+// Run the suite against Zod 4.5's compiled parsers, mirroring production
+// (`src/entry.server.tsx`); node tests never set `jitless` (browser-only).
+import 'zod/compile'
 import { afterEach, vi } from 'vitest'
 
 import { setBlogSettingsBundleForTests, TEST_BLOG_SETTINGS_BUNDLE } from '#/_helpers/blog-settings'

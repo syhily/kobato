@@ -80,6 +80,12 @@ forbidden in the injected script, so the whole server graph is one static
 import graph evaluated depth-first in import order. The entry shim
 (`scripts/sea/server-entry.ts`) sequences it:
 
+0. `zod/compile` — Zod 4.5 global auto-compilation, first so even the
+   config-graph schemas constructed below compile on first parse. The
+   server has no CSP, so `new Function` is available; the browser bundle
+   keeps `jitless` (`src/shared/zod-config.ts`, browser-only), under
+   which compile stands down. `src/entry.server.tsx` carries the same
+   first-line import for the dev/SSR server graph.
 1. `src/server/infra/sea-cli.ts` — argv handling: `--version`/`--help`
    exit with zero side effects; `--smoke-natives` / `--smoke-worker`
    bootstrap + run + exit.
