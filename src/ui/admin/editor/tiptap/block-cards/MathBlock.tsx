@@ -67,12 +67,21 @@ export function MathBlockSourceEditor({ payload, onCommit, onCancel }: MathBlock
       return
     }
     setSaving(true)
+    // React Compiler can't lower try/finally — capture and rethrow after the
+    // pending reset so propagation semantics stay identical.
+    let caught: unknown = null
+    let didThrow = false
     try {
       const out = await orpc.admin.renders.math({ tex: draft, display: true })
       const mathml = out.error === null && out.mathml !== '' ? out.mathml : ''
       onCommit({ ...payload, tex: draft }, mathml)
-    } finally {
-      setSaving(false)
+    } catch (err) {
+      caught = err
+      didThrow = true
+    }
+    setSaving(false)
+    if (didThrow) {
+      throw caught
     }
   }
 

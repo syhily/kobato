@@ -142,9 +142,9 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded, initialFile
       onUploaded(data.image)
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : '上传失败')
-    } finally {
-      setIsPending(false)
     }
+    // React Compiler can't lower try/finally — the pending reset runs after the catch instead.
+    setIsPending(false)
   }, [file, kind, note, onUploaded])
 
   const onSubmit: SubmitEventHandler<HTMLFormElement> = (event) => {

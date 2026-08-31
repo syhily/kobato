@@ -164,6 +164,10 @@ export function useEditorFootnotes(editor: Editor | null): UseEditorFootnotesRes
     }
     editorFootnoteSigRef.current = fp
     isSyncingFootnotesRef.current = true
+    // React Compiler can't lower try/finally — capture and rethrow after the
+    // ref reset so propagation semantics stay identical.
+    let caught: unknown = null
+    let didThrow = false
     try {
       const synced = synchronizeFootnoteIndices(merged)
       const applied = applyFootnoteRenumberTransaction(instance, synced)
@@ -172,8 +176,13 @@ export function useEditorFootnotes(editor: Editor | null): UseEditorFootnotesRes
           emitUpdate: false,
         })
       }
-    } finally {
-      isSyncingFootnotesRef.current = false
+    } catch (err) {
+      caught = err
+      didThrow = true
+    }
+    isSyncingFootnotesRef.current = false
+    if (didThrow) {
+      throw caught
     }
   }, [])
 

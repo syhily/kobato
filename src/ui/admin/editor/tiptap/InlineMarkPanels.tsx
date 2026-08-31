@@ -81,18 +81,26 @@ export function MathInlinePanel({ editor }: MathInlinePanelProps) {
       const trimmed = tex.trim()
       if (trimmed !== '') {
         setApplying(true)
+        // React Compiler can't lower try/finally — capture and rethrow after
+        // the pending reset so propagation semantics stay identical. An abort
+        // during the await skips the mathml assignment and falls through to
+        // the aborted check below.
+        let caught: unknown = null
+        let didThrow = false
         try {
           const out = await orpc.admin.renders.math({ tex, display: false })
-          if (controller.signal.aborted) {
-            return
-          }
-          if (out.error === null && out.mathml !== '') {
+          if (!controller.signal.aborted && out.error === null && out.mathml !== '') {
             mathml = out.mathml
           }
-        } finally {
-          if (!controller.signal.aborted) {
-            setApplying(false)
-          }
+        } catch (err) {
+          caught = err
+          didThrow = true
+        }
+        if (!controller.signal.aborted) {
+          setApplying(false)
+        }
+        if (didThrow) {
+          throw caught
         }
       }
 

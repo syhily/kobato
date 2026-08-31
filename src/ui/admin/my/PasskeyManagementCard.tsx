@@ -19,6 +19,22 @@ import { Label } from '@/ui/components/label'
 
 const DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 
+function isPublicKeyCredentialCreationOptionsJSON(value: unknown): value is PublicKeyCredentialCreationOptionsJSON {
+  return isRecord(value) && typeof value.challenge === 'string'
+}
+
+// Module scope because React Compiler can't lower `throw` inside a
+// component's try/catch; the caller's catch maps failures to user-facing copy.
+function resolveRegistrationOptions(response: unknown): PublicKeyCredentialCreationOptionsJSON {
+  if (!isRecord(response) || !('options' in response)) {
+    throw new Error('Invalid registration response')
+  }
+  if (!isPublicKeyCredentialCreationOptionsJSON(response.options)) {
+    throw new Error('Invalid registration options')
+  }
+  return response.options
+}
+
 function usePasskeyManagement(_userId: string, revalidator: ReturnType<typeof useRevalidator>) {
   const queryClient = useQueryClient()
   const [registerError, setRegisterError] = useState<string | null>(null)
@@ -48,22 +64,12 @@ function usePasskeyManagement(_userId: string, revalidator: ReturnType<typeof us
     },
   })
 
-  function isPublicKeyCredentialCreationOptionsJSON(value: unknown): value is PublicKeyCredentialCreationOptionsJSON {
-    return isRecord(value) && typeof value.challenge === 'string'
-  }
-
   const handleRegister = async (deviceName?: string) => {
     setRegisterError(null)
     setRegisterMessage(null)
     try {
       const response = await registerBeginMutation.mutateAsync({ deviceName })
-      if (!response || typeof response !== 'object' || !('options' in response)) {
-        throw new Error('Invalid registration response')
-      }
-      const opts = isPublicKeyCredentialCreationOptionsJSON(response.options) ? response.options : null
-      if (opts === null) {
-        throw new Error('Invalid registration options')
-      }
+      const opts = resolveRegistrationOptions(response)
       const registrationResponse = await startRegistration({ optionsJSON: opts })
       await registerFinishMutation.mutateAsync({
         response: registrationResponse,

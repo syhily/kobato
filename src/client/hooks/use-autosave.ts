@@ -94,13 +94,14 @@ export function useAutosave<TBody>({
       emit({ kind: 'saving' })
       const promise = flushRef.current(snapshot)
       inFlightRef.current = promise
+      // React Compiler can't lower try/finally — the in-flight reset runs
+      // after the try/catch instead (returns became branches to keep that).
       try {
         const outcome = await promise
-        if (outcome === 'conflict') {
-          return
+        if (outcome !== 'conflict') {
+          lastPersistedRef.current = snapshot
+          emit({ kind: 'saved', at: Date.now() })
         }
-        lastPersistedRef.current = snapshot
-        emit({ kind: 'saved', at: Date.now() })
       } catch (cause) {
         const delays = retryDelaysRef.current
         if (attempt >= delays.length) {
@@ -111,27 +112,26 @@ export function useAutosave<TBody>({
             nextAttemptAt: Date.now(),
             message: `本地已保留：${message}`,
           })
-          return
+        } else {
+          const delay = delays[attempt] ?? delays[delays.length - 1] ?? 1_000
+          const message = cause instanceof Error ? cause.message : '保存失败'
+          emit({
+            kind: 'retrying',
+            attempt: attempt + 1,
+            nextAttemptAt: Date.now() + delay,
+            message,
+          })
+          if (retryTimerRef.current !== null) {
+            clearTimeout(retryTimerRef.current)
+          }
+          retryTimerRef.current = setTimeout(() => {
+            retryTimerRef.current = null
+            void doFlushRef.current(attempt + 1)
+          }, delay)
         }
-        const delay = delays[attempt] ?? delays[delays.length - 1] ?? 1_000
-        const message = cause instanceof Error ? cause.message : '保存失败'
-        emit({
-          kind: 'retrying',
-          attempt: attempt + 1,
-          nextAttemptAt: Date.now() + delay,
-          message,
-        })
-        if (retryTimerRef.current !== null) {
-          clearTimeout(retryTimerRef.current)
-        }
-        retryTimerRef.current = setTimeout(() => {
-          retryTimerRef.current = null
-          void doFlushRef.current(attempt + 1)
-        }, delay)
-      } finally {
-        if (inFlightRef.current === promise) {
-          inFlightRef.current = null
-        }
+      }
+      if (inFlightRef.current === promise) {
+        inFlightRef.current = null
       }
     },
     [emit],

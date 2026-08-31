@@ -76,9 +76,9 @@ export function StorageMigrationDialog({ open, onOpenChange, s3Primary }: Storag
       await queryClient.invalidateQueries({ queryKey: orpcQuery.admin.storage.migrationStatus.key() })
     } catch (error) {
       toastApiError(error, '启动迁移失败')
-    } finally {
-      setSubmitting(false)
     }
+    // React Compiler can't lower try/finally — the pending reset runs after the catch instead.
+    setSubmitting(false)
   }
 
   const s3TargetIncomplete =

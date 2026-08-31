@@ -85,6 +85,12 @@ export function useFileUpload(options: UseFileUploadOptions): UseFileUploadResul
       }
 
       setPending(true)
+      // React Compiler can't lower try/finally or throw-inside-try, so the
+      // failure is captured and handled after the try/catch, ahead of the
+      // pending reset (the same ordering the finally block had).
+      let succeeded = false
+      let failed = false
+      let failure: unknown = null
       try {
         let formData: FormData
         if (input instanceof File) {
@@ -112,27 +118,32 @@ export function useFileUpload(options: UseFileUploadOptions): UseFileUploadResul
           const message = extractApiErrorMessage(data) ?? (messages?.httpFailure ?? defaultHttpFailure)(res.status)
           if (onError) {
             onError(message)
-            return false
+          } else {
+            failed = true
+            failure = new Error(message)
           }
-          throw new Error(message)
+        } else {
+          if (messages?.success !== undefined) {
+            toast.success(messages.success)
+          }
+          await onSuccess?.(body)
+          succeeded = true
         }
-        if (messages?.success !== undefined) {
-          toast.success(messages.success)
-        }
-        await onSuccess?.(body)
-        return true
       } catch (err) {
+        failed = true
+        failure = err
+      }
+      if (failed) {
         const fallback = messages?.failure ?? '上传失败'
         if (onError) {
-          // Inline-error mode: only transport/parse/onSuccess throws land here — the !res.ok path already returned.
+          // Inline-error mode: only transport/parse/onSuccess throws land here — the !res.ok path already reported its message.
           onError(fallback)
         } else {
-          toastApiError(err, fallback)
+          toastApiError(failure, fallback)
         }
-        return false
-      } finally {
-        setPending(false)
       }
+      setPending(false)
+      return succeeded
     },
     [options, csrfToken],
   )

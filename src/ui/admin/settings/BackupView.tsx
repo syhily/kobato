@@ -211,26 +211,27 @@ export function BackupView({ backup, timeZone }: BackupViewProps) {
       const json: unknown = await res.json()
       const errorMessage = extractApiErrorMessage(json)
       if (!res.ok) {
-        throw new Error(errorMessage ?? '上传还原失败')
-      }
-      const accepted = isApiAccepted(json)
-      if (accepted) {
-        setRestorePhase('waiting')
-        setRestoreKey('upload-restore')
-        pollAbortRef.current = new AbortController()
-        void pollReady(() => {
-          setRestoreKey(null)
-          setRestorePhase('confirm')
-        }, pollAbortRef.current.signal)
+        toastApiError(new Error(errorMessage ?? '上传还原失败'), '上传还原失败')
+      } else {
+        const accepted = isApiAccepted(json)
+        if (accepted) {
+          setRestorePhase('waiting')
+          setRestoreKey('upload-restore')
+          pollAbortRef.current = new AbortController()
+          void pollReady(() => {
+            setRestoreKey(null)
+            setRestorePhase('confirm')
+          }, pollAbortRef.current.signal)
+        }
       }
     } catch (err) {
       toastApiError(err, '上传还原失败')
-    } finally {
-      setUploading(false)
-      setSelectedFile(null)
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ''
-      }
+    }
+    // React Compiler can't lower try/finally — the cleanup runs after the catch instead.
+    setUploading(false)
+    setSelectedFile(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
     }
   }, [selectedFile, csrfToken])
 

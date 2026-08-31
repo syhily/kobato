@@ -275,15 +275,16 @@ function SlotRow({ meta, status }: { meta: SlotMeta; status: BrandingSlotStatus 
       if (!res.ok) {
         const data: unknown = await res.json().catch(() => null)
         const message = extractApiErrorMessage(data)
-        throw new Error(message ?? `清除失败 (${res.status})`)
+        toastApiError(new Error(message ?? `清除失败 (${res.status})`), '清除失败')
+      } else {
+        toast.success(`${meta.label} 已清除`)
+        await revalidator.revalidate()
       }
-      toast.success(`${meta.label} 已清除`)
-      await revalidator.revalidate()
     } catch (err) {
       toastApiError(err, '清除失败')
-    } finally {
-      setClearing(false)
     }
+    // React Compiler can't lower try/finally — the pending reset runs after the catch instead.
+    setClearing(false)
   }, [csrfToken, meta, revalidator])
 
   return (
