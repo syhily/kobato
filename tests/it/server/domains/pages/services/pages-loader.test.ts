@@ -149,7 +149,7 @@ describe('loadPagePreview — slug redirect logic', () => {
 
     expect(result.page.title).toBe('About')
     expect(result.page.slug).toBe('about')
-    expect(result.body).toEqual(pageBody)
+    expect(result.sourcePage.body).toEqual(pageBody)
     expect(result.draftMarker).toBeNull()
   })
 
@@ -172,7 +172,7 @@ describe('loadPagePreview — slug redirect logic', () => {
 
     expect(result.draftMarker).toBe('draft')
     expect(result.page.title).toBe('New Page Draft')
-    expect(result.body).toEqual(pageBody)
+    expect(result.sourcePage.body).toEqual(pageBody)
   })
 
   it('returns 404 when slug matches nothing and no admin session', async () => {

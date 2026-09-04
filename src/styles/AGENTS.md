@@ -7,14 +7,15 @@ Three files, two bundles:
 - `tailwind.css` — **shared token partial**, not a standalone entry. Holds
   every raw design token (`:root` / `.dark` / `prefers-color-scheme` / P3),
   the full `@theme inline` bridge, `@custom-variant` blocks, `@layer base`
-  overrides, and rules both sides render (`prose-blog`, PT tables, APlayer
+  overrides, and rules both sides render (`prose-blog`, body tables, the
+  hydration-injected code-block chrome, APlayer
   icon sizing, the theme-wipe view transition). It has no
   `@import 'tailwindcss'`, no `@plugin`, and no `@source` — importing it
   directly from TSX produces nothing.
 - `public.css` — **public entry**, imported by `ui/public/chrome/BaseLayout.tsx`.
   Owns `@import 'tailwindcss' source(none)` + the typography plugin, imports
   the shared partial and `cursors.css`, and scopes `@source` to public-rendered
-  dirs (`routes/public`, `ui/public`, `ui/pt`, `ui/components`, `ui/icons`,
+  dirs (`routes/public`, `ui/public`, `ui/components`, `ui/icons`,
   `ui/lib`, `root.tsx`, and `shared/lexical/cards` whose class constants render into
   the R10 card markup). A bare `@layer inkling, theme, base, components, utilities;`
   ordering statement at the top pins the inkling cascade layer below

@@ -138,7 +138,7 @@ export async function parseComments(comments: CommentAndUser[]): Promise<Comment
     }
     const commentIdNumeric = c.id
     const resolvedRid = Number.isFinite(commentIdNumeric) ? resolveVisibleParentRid(commentIdNumeric, c.rid, byId) : 0
-    rewritten.push({ ...c, rid: resolvedRid, content: null })
+    rewritten.push({ ...c, rid: resolvedRid })
   }
 
   const childComments = Object.groupBy(

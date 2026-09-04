@@ -46,24 +46,6 @@ export function makeCommentBody(text: string): CommentEditorState {
   })
 }
 
-// R12 interregnum: reader-facing fixtures default to legacy PT bodies (the
-// wire type is crossed with a deliberate cast) because the comment readers
-// still render PT until R13. Write-path tests use makeCommentBody instead.
-/** Legacy PT comment body — one normal block with one span. */
-export function makePtCommentBody(text: string): CommentEditorState {
-  commentSeqBodyKey += 1
-  return unsafeCast<CommentEditorState>([
-    {
-      _type: 'block',
-      _key: `b${commentSeqBodyKey}`,
-      style: 'normal',
-      markDefs: [],
-      children: [{ _type: 'span', _key: `s${commentSeqBodyKey}`, text, marks: [] }],
-    },
-  ])
-}
-let commentSeqBodyKey = 0
-
 // Post/page ids are numeric strings — generated ids MUST be numeric (the detail loader Number()s them).
 let idCounter = 1_000_000
 function nextNumericId(): string {
@@ -219,7 +201,7 @@ export function makeAdminMusic(overrides: Partial<AdminMusicDto> = {}): AdminMus
 
 export function makeAdminComment(overrides: Partial<AdminCommentWire> = {}): AdminCommentWire {
   commentSeq += 1
-  const body: CommentEditorState = makePtCommentBody(`Comment body ${commentSeq}`)
+  const body: CommentEditorState = makeCommentBody(`Comment body ${commentSeq}`)
   return {
     id: overrides.id ?? String(commentSeq),
     createAt: overrides.createAt ?? '2024-03-12T08:30:00.000Z',
@@ -244,7 +226,7 @@ export function makeAdminComment(overrides: Partial<AdminCommentWire> = {}): Adm
     badgeName: overrides.badgeName ?? null,
     badgeColor: overrides.badgeColor ?? null,
     badgeTextColor: overrides.badgeTextColor ?? null,
-    content: overrides.content ?? `Comment body ${commentSeq}`,
+    content: overrides.content ?? `<p>Comment body ${commentSeq}</p>`,
     ua: overrides.ua ?? null,
     ip: overrides.ip ?? null,
     email: overrides.email ?? 'author@example.com',
@@ -336,7 +318,8 @@ export function makeComment(overrides: Partial<CommentItemWire> = {}): CommentIt
     updatedAt: overrides.updatedAt ?? '2024-03-12T08:30:00.000Z',
     deleteAt: overrides.deleteAt ?? null,
     deleteRequestedAt: overrides.deleteRequestedAt ?? null,
-    body: overrides.body ?? makePtCommentBody(`Body ${commentSeq}`),
+    body: overrides.body ?? makeCommentBody(`Body ${commentSeq}`),
+    content: overrides.content ?? `<p>Body ${commentSeq}</p>`,
     type: overrides.type ?? 'post',
     ownerId: overrides.ownerId ?? '1',
     userId: overrides.userId ?? String(100 + commentSeq),

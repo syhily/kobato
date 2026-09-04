@@ -2,11 +2,10 @@ import { describe, expect, it, vi } from 'vitest'
 
 import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
 
-import { makeComment } from '#/_helpers/catalog'
+import { makeComment, makeCommentBody } from '#/_helpers/catalog'
 import { makeLeafContext } from '#/_helpers/comments-leaf'
 import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, renderToHtml, stableHtml } from '#/_helpers/render'
-import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { CommentActions } from '@/ui/public/comments/comment-item/CommentActions'
 import { CommentReplyForm } from '@/ui/public/comments/CommentReplyForm'
 import { LikeButton, LikeShare } from '@/ui/public/LikeActions'
@@ -35,19 +34,12 @@ vi.mock('@/ui/public/comments/LazyCommentBodyEditor', () => ({
 
 // Divergent defaults preserved from this file's former local factory (the
 // shared catalog factory is seq-based with 2024-03-12 dates).
-// R12 interregnum fixture: PT body via deliberate cast (see comments.test.tsx).
 const aliceComment: Partial<CommentItemType> = {
   id: '1',
   createAt: '2024-01-15T08:30:00.000Z',
   updatedAt: '2024-01-15T08:30:00.000Z',
-  body: unsafeCast<CommentItemType['body']>([
-    {
-      _type: 'block',
-      _key: 'b1',
-      style: 'normal',
-      children: [{ _type: 'span', _key: 's1', text: 'Hello, world.' }],
-    },
-  ]),
+  body: makeCommentBody('Hello, world.'),
+  content: '<p>Hello, world.</p>',
   userId: '42',
   name: 'Alice',
   link: 'https://alice.example.com',
@@ -242,14 +234,7 @@ describe('snapshot: CommentReplyForm', () => {
       ...aliceComment,
       id: '42',
       name: '雨帆',
-      body: unsafeCast<CommentItemType['body']>([
-        {
-          _type: 'block',
-          _key: 'b1',
-          style: 'normal',
-          children: [{ _type: 'span', _key: 's1', text: '回复内容片段。' }],
-        },
-      ]),
+      body: makeCommentBody('回复内容片段。'),
     })
     const html = stableHtml(
       renderInRouter(

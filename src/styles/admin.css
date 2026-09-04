@@ -22,11 +22,10 @@
 @source '../routes/editor';
 @source '../root.tsx';
 @source '../ui/admin';
-@source '../ui/pt';
 @source '../ui/components';
 @source '../ui/icons';
 @source '../ui/lib';
-/* Admin surfaces reuse public building blocks: aplayer (PT music previews),
+/* Admin surfaces reuse public building blocks: aplayer (music previews),
    chrome (root error views), the comment editor (top-level files only —
    comment-item/ is public-only), popups, and search. */
 @source '../ui/public/aplayer';

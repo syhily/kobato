@@ -171,7 +171,6 @@ export async function loadAllComments(db: Database, options: LoadAllCommentsOpti
     comments: comments.map((c) =>
       // Fresh object out of withCommentBadgeTextColor — safe to extend in place.
       Object.assign(withCommentBadgeTextColor(c), {
-        content: null,
         pageTitle: c.pageTitle,
         pagePublicId: c.pagePublicId,
         pagePermalink: c.pageSlug && c.type ? entityPermalink(c.type, c.pageSlug) : null,

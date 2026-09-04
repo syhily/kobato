@@ -1,7 +1,6 @@
 import { z } from 'zod'
 
 import type { BlogSettingsBundle } from '@/shared/config/types'
-import type { PortableTextBody } from '@/shared/pt/schema'
 import type {
   Category,
   ClientTag,
@@ -16,7 +15,6 @@ import type {
 } from '@/shared/types/catalog'
 import type { DetailPageComments, LatestComment } from '@/shared/types/comments'
 import type { ResolvedFonts } from '@/shared/types/fonts'
-import type { ResolvedImageMeta } from '@/shared/types/images'
 import type { ListingPageLoaderData } from '@/shared/types/listing'
 import type { Role } from '@/shared/utils/roles'
 
@@ -107,11 +105,11 @@ export const contentPostBySlugInputSchema = z.object({
 
 export interface PostDetailPayload {
   post: DetailPostShell
-  body: PortableTextBody
+  /** Saved `body_html` projection (inkling exportDOM); sanitized at the render boundary. */
+  bodyHtml: string
   visibleTags: ClientTag[]
   sidebarPosts: SidebarPostLink[]
   tags: ClientTag[]
-  imageMeta: Record<string, ResolvedImageMeta>
   draftMarker: DraftMarker
   critical: DetailCriticalPayload
 }
@@ -133,12 +131,11 @@ export const contentPageBySlugInputSchema = z.object({
 
 export interface PageDetailPayload {
   page: DetailPageShell
-  body: PortableTextBody
+  /** Saved `body_html` projection (inkling exportDOM); sanitized at the render boundary. */
+  bodyHtml: string
   friends: Friend[]
   showFriends: boolean
   draftMarker: DraftMarker
-  imageMeta: Record<string, ResolvedImageMeta>
-  footnotesSectionTitle: string
   critical: DetailCriticalPayload
 }
 

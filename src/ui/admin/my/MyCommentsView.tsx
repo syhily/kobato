@@ -4,7 +4,6 @@ import { useCallback, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router'
 
 import type { MyCommentItem } from '@/routes/admin/me/comments'
-import type { PortableTextBody as PortableTextBodyData } from '@/shared/pt/schema'
 import type { MyCommentsStatus } from '@/shared/types/comments'
 import type { ActiveFilter, FilterPillsAction } from '@/ui/admin/shared/filterPillsReducer'
 
@@ -14,7 +13,6 @@ import { commentEditorStateSchema } from '@/shared/lexical/comment-schema'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { avatarImageUrl } from '@/shared/utils/avatar'
 import { formatLocalDate } from '@/shared/utils/formatter'
-import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import {
   DEFAULT_TEXT_OPERATOR,
   parseTextFilter,
@@ -38,7 +36,7 @@ import { Button } from '@/ui/components/button'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { Skeleton } from '@/ui/components/skeleton'
 import { skeletonKeys } from '@/ui/lib/skeleton-keys'
-import { PortableTextBody } from '@/ui/pt/render'
+import { CommentContentHtml } from '@/ui/public/comments/CommentContentHtml'
 
 const ADMIN_DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 const PAGE_SIZE = 20
@@ -331,10 +329,10 @@ function MyCommentRow({
             </p>
           )}
 
-          <div className="comment-content prose-blog prose prose-sm mt-2 max-w-none leading-copy wrap-break-word whitespace-normal">
-            {/* R12 interregnum cast: pre-switch rows are still PT; R13 swaps the renderer. */}
-            <PortableTextBody body={unsafeCast<PortableTextBodyData>(item.body)} />
-          </div>
+          <CommentContentHtml
+            content={item.content}
+            className="comment-content prose-blog prose prose-sm mt-2 max-w-none leading-copy wrap-break-word whitespace-normal"
+          />
 
           {!isDeleted && (
             <div className="mt-4 flex flex-row flex-wrap items-center gap-2">

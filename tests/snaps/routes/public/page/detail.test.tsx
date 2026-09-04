@@ -24,7 +24,7 @@ describe('snapshot: routes/public/page/detail', () => {
         <Route
           loaderData={{
             page,
-            body: [{ _type: 'block', children: [{ _type: 'span', _key: 's1', text: 'About body' }] }],
+            bodyHtml: '<p>About body</p>',
             friends: [],
             showFriends: false,
             draftMarker: null,
@@ -37,8 +37,6 @@ describe('snapshot: routes/public/page/detail', () => {
               recentComments: [],
               currentUser: null,
             },
-            imageMeta: {},
-            footnotesSectionTitle: '尾声礼记',
           }}
         />,
         '/about',
@@ -65,7 +63,7 @@ describe('snapshot: routes/public/page/detail', () => {
         <Route
           loaderData={{
             page,
-            body: [{ _type: 'block', children: [{ _type: 'span', _key: 's1', text: 'Links body' }] }],
+            bodyHtml: '<p>Links body</p>',
             friends: [
               {
                 website: 'Alice',
@@ -85,8 +83,6 @@ describe('snapshot: routes/public/page/detail', () => {
               recentComments: [],
               currentUser: null,
             },
-            imageMeta: {},
-            footnotesSectionTitle: '尾声礼记',
           }}
         />,
         '/links',

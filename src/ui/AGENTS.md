@@ -40,11 +40,13 @@ parent.
 
 ## Cross-cutting UI modules
 
-- `ui/pt/` — PortableText SSR renderer: `render.tsx` (entry, components map, recursive blocks,
-  FootnotesSection), `render-blocks.tsx` (block renderers + table inline-span helpers),
-  `render-marks.tsx` (mark renderers + `renderMathMarkupOrTexFallback`), `render-shared.ts`
-  (PT_INLINE tokens + React contexts), plus `Footnotes.tsx`, `image-meta-context.tsx`, and custom
-  blocks under `ui/pt/blocks/` (CodeBlock, BlockImage, MusicPlayer, Solution, Friends).
+- `ui/public/post/` detail rendering — public post/page bodies render the saved `bodyHtml`
+  projection: `DetailBodyChrome` sanitizes it with `sanitizeHtml(html, 'body')` into the
+  `post-content` prose container, then five hydration hooks enhance the static markup on the
+  client: `useMediumZoom` (`@/client/hooks/use-medium-zoom`) plus `useThumbhashHydration`,
+  `useCodeCopyButtons`, `useMusicPlayers`, and `useFootnotePreviews` (the last four live beside
+  the chrome). Comment bodies render the stored `content` HTML column through
+  `comments/CommentContentHtml` with the same `'body'` sanitize preset.
 - `ui/icons/` — static-export icon library. Named imports only — no `<Icon name="..." />` string
   lookups. Import directly from `lucide-react`; the build tree-shakes unused icons.
 - `ui/lib/` — UI utilities (`cn`, `code-languages`, `ThemeProvider`,
@@ -131,22 +133,23 @@ state.
 
 ## LOC ceiling
 
-Stateful orchestrators (editor shells, multi-stage forms, comment threads, PortableText renderers)
+Stateful orchestrators (editor shells, multi-stage forms, comment threads)
 aim for ≤500 LOC per file. Past that, extract shared state into a hook, sub-components into
 siblings, or per-renderer modules — another agent should read the file without scrolling past
 unrelated concerns.
 
 ## Content editors
 
-- Zod dialect: `@/shared/pt/schema` (text / list / heading / blockquote + custom blocks `image`,
-  `code`, `mathBlock`, `horizontalRule`, `musicPlayer`, `solution`, `footnoteDefinition`, `table`).
-  The friends grid is NOT a body block — it's the `page.show_friends` toggle.
-- Server-only PT helpers in `@/server/domains/pt/*` (prerender, canonicalize) must never reach the
-  client bundle.
-- SSR renderer: `@/ui/pt/render` (`PortableTextBody`), composing `@portabletext/react` with
-  `@/ui/pt/blocks/*`. Heading anchor ids align with post anchors. Comments also render through it
-  until R13 — pre-switch rows still hold PT bodies (the readers cross the wire type with a
-  deliberate interregnum cast).
+- Storage format: Lexical editor states (`@/shared/lexical/schema` for posts/pages,
+  `@/shared/lexical/comment-schema` for comments). `@/shared/pt/schema` survives only for
+  legacy rows and the comment mail/plain-text paths. The friends grid is NOT a body block —
+  it's the `page.show_friends` toggle.
+- Server-only PT helpers in `@/server/domains/pt/*` (canonicalize, comment-to-html) must never
+  reach the client bundle.
+- Public SSR: bodies arrive as the saved `bodyHtml` projection (NULL falls back to an on-the-fly
+  headless projection server-side — see `src/server/AGENTS.md` → Content) and render through
+  `DetailBodyChrome` + the hydration hooks listed under Cross-cutting UI modules. Heading anchor
+  ids come from the revision's `headings` projection column.
 - Admin body editor: `@/ui/admin/editor/PageBodyEditor` (shared by pages and posts) wraps the
   inkling composer (`@inkling/editor` — the workspace package in `packages/inkling/`). The
   composer surface (floating format toolbar, slash menu, drag reorder, card chrome) comes from the
@@ -177,7 +180,7 @@ unrelated concerns.
 - `page` carries operator-facing booleans (`comments_enabled`, `show_toc`, `show_friends`) edited
   from `MetaSidebar` and consumed by `routes/public/page/detail.tsx` as render-time branches —
   never body mutations. `show_friends` appends the global friends grid below the body before the
-  Like button; PortableText has no `friends` block.
+  Like button; the body format has no `friends` block.
 - Adding a toggle touches: db schema + migration + snapshot, page projection, page service +
   schema, shared DTOs, `MetaSidebar` + `PageEditorShell`, and the `PageMetaDraft` meta type in
   `@/shared/types/pages` (passed through to `@/client/hooks/use-create-draft` by the editor shell).

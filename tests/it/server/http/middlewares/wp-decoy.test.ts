@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { makeLoaderArgs, unwrapLoaderData } from '#/_helpers/context'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
@@ -13,11 +13,6 @@ import { page as pageTable } from '@/server/infra/db/schema/page'
 
 const db = getTestDb()
 const session = regularSession()
-
-// Presentational seam — the loader contract under test never renders.
-vi.mock('@/ui/pt/render', () => ({
-  PortableTextBody: () => null,
-}))
 
 beforeEach(async () => {
   await clearAllTables(db)

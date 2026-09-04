@@ -1,42 +1,24 @@
 import { eq } from 'drizzle-orm'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import type { BlogSession } from '@/server/domains/auth/session-storage'
-import type { PortableTextBody } from '@/shared/pt/schema'
 
 import { makeLoaderArgs, unwrapLoaderData } from '#/_helpers/context'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { lexicalBodyWith, lexicalParagraph } from '#/_helpers/lexical'
 import { adminSession, authorSession, regularSession } from '#/_helpers/session'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { post as postTable } from '@/server/infra/db/schema/post'
 
 // post.detail draft-preview contract: `status=draft` posts are 404 for
-// anonymous/regular users; admin and author see the draft.
-
-// Presentational seam — the loader contract under test never renders.
-vi.mock('@/ui/pt/render', () => ({
-  PortableTextBody: () => null,
-}))
+// anonymous/regular users; admin and author see the draft. R13: the loader
+// serves the saved `body_html` projection — a Lexical draft row must NOT 500
+// (the pre-R13 read path force-parsed it as PortableText and threw).
 
 const db = getTestDb()
 
-const publishedBody: PortableTextBody = [
-  {
-    _type: 'block',
-    _key: 'p1',
-    style: 'normal',
-    children: [{ _type: 'span', _key: 's1', text: 'Published body.' }],
-  },
-]
-
-const draftBody: PortableTextBody = [
-  {
-    _type: 'block',
-    _key: 'p2',
-    style: 'normal',
-    children: [{ _type: 'span', _key: 's2', text: 'Draft body.' }],
-  },
-]
+const publishedBody = lexicalBodyWith([lexicalParagraph('Published body.')])
+const draftBody = lexicalBodyWith([lexicalParagraph('Draft body.')])
 
 beforeEach(async () => {
   await clearAllTables(db)
@@ -57,14 +39,25 @@ async function seedPublishedPost(slug: string, title: string): Promise<number> {
   const postId = rows[0]!.id
   const revisions = await db
     .insert(contentTable)
-    .values({ type: 'post', ownerId: postId, revisionNo: 1, status: 'published', body: publishedBody })
+    .values({
+      type: 'post',
+      ownerId: postId,
+      revisionNo: 1,
+      status: 'published',
+      body: publishedBody,
+      bodyHtml: '<p>Published body.</p>',
+    })
     .returning({ id: contentTable.id })
   await db.update(postTable).set({ publishedRevisionId: revisions[0]!.id }).where(eq(postTable.id, postId))
   return postId
 }
 
 /** A draft post: unpublished, hidden, no published revision pointer, one draft revision. */
-async function seedDraftPost(slug: string, title: string): Promise<number> {
+async function seedDraftPost(
+  slug: string,
+  title: string,
+  bodyHtml: string | null = '<p>Draft body.</p>',
+): Promise<number> {
   const rows = await db
     .insert(postTable)
     .values({ slug, title, published: false, visible: false, publishedRevisionId: null })
@@ -72,7 +65,7 @@ async function seedDraftPost(slug: string, title: string): Promise<number> {
   const postId = rows[0]!.id
   await db
     .insert(contentTable)
-    .values({ type: 'post', ownerId: postId, revisionNo: 1, status: 'draft', body: draftBody })
+    .values({ type: 'post', ownerId: postId, revisionNo: 1, status: 'draft', body: draftBody, bodyHtml })
   return postId
 }
 
@@ -89,7 +82,7 @@ const postRoute = await import('@/routes/public/post/detail')
 
 type LoaderResult = {
   post: { title: string }
-  body: PortableTextBody
+  bodyHtml: string
   draftMarker: 'draft' | 'unpublished-draft' | 'published-draft' | null
 }
 
@@ -121,7 +114,7 @@ describe('routes/post.detail draft visibility', () => {
 
     const result = unwrapLoaderData<LoaderResult>(await loadPost('hello', regularSession()))
 
-    expect(result.body).toEqual(publishedBody)
+    expect(result.bodyHtml).toBe('<p>Published body.</p>')
     expect(result.draftMarker).toBeNull()
   })
 
@@ -149,7 +142,7 @@ describe('routes/post.detail draft visibility', () => {
     const result = unwrapLoaderData<LoaderResult>(await loadPost('secret', adminSession()))
 
     expect(result.post.title).toBe('Secret')
-    expect(result.body).toEqual(draftBody)
+    expect(result.bodyHtml).toBe('<p>Draft body.</p>')
     expect(result.draftMarker).toBe('draft')
   })
 
@@ -158,8 +151,18 @@ describe('routes/post.detail draft visibility', () => {
 
     const result = unwrapLoaderData<LoaderResult>(await loadPost('secret', authorSession()))
 
-    expect(result.body).toEqual(draftBody)
+    expect(result.bodyHtml).toBe('<p>Draft body.</p>')
     expect(result.draftMarker).toBe('draft')
+  })
+
+  it('computes the projection on read when the draft row carries a NULL body_html (the R9a 500)', async () => {
+    await seedDraftPost('secret', 'Secret', null)
+
+    const result = unwrapLoaderData<LoaderResult>(await loadPost('secret', adminSession()))
+
+    expect(result.draftMarker).toBe('draft')
+    // The real headless projection renders the seeded paragraph.
+    expect(result.bodyHtml).toContain('Draft body.')
   })
 
   it('does not paint a marker on a published post (admin session)', async () => {
@@ -167,7 +170,7 @@ describe('routes/post.detail draft visibility', () => {
 
     const result = unwrapLoaderData<LoaderResult>(await loadPost('hello', adminSession()))
 
-    expect(result.body).toEqual(publishedBody)
+    expect(result.bodyHtml).toBe('<p>Published body.</p>')
     expect(result.draftMarker).toBeNull()
   })
 })

@@ -12,7 +12,7 @@ import { toClientPost, toDetailPostShell } from '@/shared/types/catalog'
 import { canonicalPostPath } from '@/shared/utils/paths'
 
 export interface PostPreviewResult {
-  /** The full post row — the controller still needs `body` and `imageSources`. */
+  /** The full post row — the controller needs `bodyHtml`/`bodyState`. */
   sourcePost: Post
   post: DetailPostShell
   etag: string

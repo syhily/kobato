@@ -96,7 +96,9 @@ Two embedded engines, zero services:
 
 ### Posts and pages
 
-- `post` → `/posts/:slug`; `page` → `/:slug`. Both rendered via `<PortableTextBody>`.
+- `post` → `/posts/:slug`; `page` → `/:slug`. Both render the revision's saved `bodyHtml`
+  projection; a NULL column falls back to an on-the-fly headless projection from the Lexical
+  state (`domains/content/services/body-html.ts::resolveBodyHtml`).
 - `visible=false` posts: excluded from home/random-post widgets but stay in archives, tags, search, sitemap, feeds.
 - **Draft gate**: a post is public-invisible when `status=draft` OR `publishedRevisionId=null` — all public queries MUST check both. The full "live" gate is defined once in `domains/content/schemas/live-gate.ts` as `isLive` (in-memory) and `liveContentWhere` (SQL). Never hand-assemble the struct.
 - **Body projections (R9b, inkling migration)**: the save pipeline (`domains/content/lifecycle.ts`) computes the revision row's `bodyHtml` / `bodyText` / `bodyHtmlFeed` columns via `infra/pt/lexical-projection.ts` (inkling `./headless` entry, jsdom-backed) over the canonical Lexical state; the feed variant's downgrade (math→TeX, code→plain pre, host-card substitution) is a state-copy transform in `shared/lexical/projection-state.ts`. Projection failure is best-effort (warn + NULL columns), and the no-op save short-circuit skips the computation — the repo/lifecycle share `repos/mutate::isEquivalentToPublishedLatest`.
@@ -104,7 +106,8 @@ Two embedded engines, zero services:
 ### Slug derivation
 
 - Canonical: `@/server/infra/slug/derive::deriveSlug(text)` — pipeline `pinyin-pro` → whitespace-collapse → `github-slugger`. Server-only (`pinyin-pro` must not reach the client). The fused explicit-or-derived resolver is `@/server/infra/slug/resolve::resolveSlug`; the route-prefix fence + in-transaction reservation live in `@/server/infra/slug/reservation`.
-- Heading anchors: SSR loaders pre-compute via `collectHeadings(body, deriveSlug)`.
+- Heading anchors: the save pipeline stores them in the revision's `headings` column
+  (`shared/lexical/collect`); SSR loaders read that projection.
 - Page ↔ post slugs share one namespace. Cross-table uniqueness is enforced by the `slug_registry` table: `@/server/infra/slug/reservation::reserveSlugInTransaction` checks it in-transaction, and `@/server/domains/content/slug-conflict::rethrowSlugConflict` maps raced DB `UNIQUE` violations (`{post,page}.slug`, `slug_registry.slug`) to a clean 409.
 
 ### Images

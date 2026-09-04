@@ -181,23 +181,39 @@ export interface CommentFormUser {
   admin: boolean
 }
 
-// Types that need PortableTextBody (isomorphic)
+// Types that need PortableTextBody / LexicalEditorState (isomorphic)
+import type { LexicalEditorState } from '@/shared/lexical/schema'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
 export interface Post extends ClientPost {
   body: PortableTextBody
+  /** Saved projection column; NULL for pre-R9b rows until the R15 backfill. */
+  bodyHtml: string | null
+  /** Parsed Lexical state, populated only when `bodyHtml` is NULL (compute-on-read fallback). */
+  bodyState: LexicalEditorState | null
   imageSources: string[]
   publishedRevisionId: number | null
 }
 
 export interface Page extends ClientPage {
   body: PortableTextBody
+  /** Saved projection column; NULL for pre-R9b rows until the R15 backfill. */
+  bodyHtml: string | null
+  /** Parsed Lexical state, populated only when `bodyHtml` is NULL (compute-on-read fallback). */
+  bodyState: LexicalEditorState | null
   imageSources: string[]
   publishedRevisionId: number | null
 }
 
 export function toClientPost(post: Post): ClientPost {
-  const { body: _body, imageSources: _imageSources, publishedRevisionId: _rev, ...rest } = post
+  const {
+    body: _body,
+    bodyHtml: _bodyHtml,
+    bodyState: _bodyState,
+    imageSources: _imageSources,
+    publishedRevisionId: _rev,
+    ...rest
+  } = post
   return rest
 }
 

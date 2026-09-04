@@ -1,50 +1,21 @@
 import { eq } from 'drizzle-orm'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import type { PortableTextBody } from '@/shared/pt/schema'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { makeLoaderArgs, unwrapLoaderData } from '#/_helpers/context'
 import { clearAllTables, getTestDb } from '#/_helpers/integration-db'
+import { lexicalBodyWith, lexicalHeading, lexicalParagraph } from '#/_helpers/lexical'
 import { regularSession } from '#/_helpers/session'
 import { content as contentTable } from '@/server/infra/db/schema/content'
 import { page as pageTable } from '@/server/infra/db/schema/page'
 
-// page.detail returns the row's PortableText body straight through —
-// real engine: seeded meta row + published content revision.
-
-// Presentational seam — the loader contract under test never renders.
-vi.mock('@/ui/pt/render', () => ({
-  PortableTextBody: () => null,
-}))
+// page.detail serves the saved `body_html` projection straight through —
+// real engine: seeded meta row + published content revision (R13).
 
 const db = getTestDb()
 const session = regularSession()
 
-const dbPageBody: PortableTextBody = [
-  {
-    _type: 'block',
-    _key: 'h1',
-    style: 'h2',
-    children: [{ _type: 'span', _key: 'h1s', text: 'About' }],
-  },
-  {
-    _type: 'block',
-    _key: 'p1',
-    style: 'normal',
-    children: [{ _type: 'span', _key: 'p1s', text: 'Hello from a DB-backed page.' }],
-  },
-  {
-    _type: 'image',
-    _key: 'img1',
-    src: 'https://cdn.example.com/photo.jpg',
-    alt: 'demo',
-  },
-  {
-    _type: 'musicPlayer',
-    _key: 'mp1',
-    playerId: 'abcd1234efgh5678',
-  },
-]
+const dbPageBody = lexicalBodyWith([lexicalHeading('h2', 'About'), lexicalParagraph('Hello from a DB-backed page.')])
+const dbPageBodyHtml = '<h2 id="about">About</h2><p>Hello from a DB-backed page.</p>'
 
 const dbPageHeadings = [{ depth: 2, text: 'About', slug: 'about' }]
 
@@ -75,7 +46,7 @@ async function seedAboutPage(): Promise<number> {
       revisionNo: 1,
       status: 'published',
       body: dbPageBody,
-      imageSources: ['https://cdn.example.com/photo.jpg'],
+      bodyHtml: dbPageBodyHtml,
       headings: dbPageHeadings,
     })
     .returning({ id: contentTable.id })
@@ -86,13 +57,12 @@ async function seedAboutPage(): Promise<number> {
 const pageRoute = await import('@/routes/public/page/detail')
 
 describe('routes/page.detail loader (DB-backed page)', () => {
-  it('returns the page row body as PortableText', async () => {
+  it('returns the saved body_html projection', async () => {
     await seedAboutPage()
 
     const result = unwrapLoaderData<{
       page: { permalink: string; title: string }
-      body: PortableTextBody
-      imageMeta: Record<string, unknown>
+      bodyHtml: string
     }>(
       await pageRoute.loader(
         makeLoaderArgs({
@@ -105,10 +75,7 @@ describe('routes/page.detail loader (DB-backed page)', () => {
     )
 
     expect(result.page.permalink).toBe('/about')
-    // Body preserved end-to-end; no players seeded, so the prerender passes it through.
-    expect(result.body).toEqual(dbPageBody)
-    // Real image-meta resolution: the CDN src matches no stored row, so the map is empty.
-    expect(result.imageMeta).toEqual({})
+    expect(result.bodyHtml).toBe(dbPageBodyHtml)
   })
 
   it('preserves headings + permalink so SEO + URL-stable consumers keep working', async () => {

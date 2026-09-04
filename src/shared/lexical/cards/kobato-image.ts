@@ -93,14 +93,13 @@ export const KOBATO_IMAGE_FIGURE_CLASSES = {
 export const KOBATO_IMAGE_IMG_CLASS =
   'transition-[filter] duration-300 dark:[filter:brightness(0.72)_contrast(0.95)_saturate(0.9)]'
 
-/** BlockImage's srcset breakpoints (`@/ui/pt/blocks/BlockImage`). */
+/** srcset breakpoints of the full-fidelity image exportDOM renderer. */
 export const KOBATO_IMAGE_SRCSET_BREAKPOINTS = [256, 512, 768, 1024] as const
 
 /**
  * The facts the full-fidelity srcset needs, delivered through the open
  * render-meta seam (the export-policy key set is closed): the assets
- * section's transform host/template and the site origin — the same triple
- * `BlockImage` reads from `useAssetsSettings`/`useSiteIdentity`. The server
+ * section's transform host/template and the site origin. The server
  * projection answers this kind; the browser clipboard export leaves it
  * unanswered and the srcset is skipped (parity with a context-free copy).
  */

@@ -1,8 +1,6 @@
+import { resolveBodyHtml } from '@/server/domains/content/services/body-html'
 import { listAllFriends } from '@/server/domains/friends/service'
-import { resolveImageMetaBySources } from '@/server/domains/images/services/enhance'
-import { getPublicMusicMetasByIds } from '@/server/domains/music/services/read'
 import { selectSidebarPosts } from '@/server/domains/posts/services/featured'
-import { prerenderMusicPlayerBlocks } from '@/server/domains/pt/prerender'
 import { getTagsByNames, listAllTags } from '@/server/domains/taxonomies/tags/service'
 import { translateThrownResponse } from '@/server/http/content-signals'
 import { loadPublicDetailData } from '@/server/http/loaders/detail'
@@ -18,12 +16,13 @@ import {
   contentPostBySlugInputSchema,
   contentPostBySlugOutputSchema,
 } from '@/shared/contracts/content'
-import { resolveFootnotesSectionTitle } from '@/shared/utils/footnotes-section-title'
 import { idFromString } from '@/shared/utils/id'
 
 // `/posts/:slug`. The decision tree (ETag probe → draft fallback → 404 →
 // canonical 301 → ETag re-check) lives in `loadPostPreview`, which throws
-// Responses translated here. Comments stream via a separate fan-out.
+// Responses translated here. Comments stream via a separate fan-out. The body
+// is the saved `body_html` projection (compute-on-read fallback inside
+// `resolveBodyHtml`) — image meta and music data are baked in at save time.
 const postBySlug = publicProc
   .route({ method: 'GET', path: '/content/posts/bySlug' })
   .input(contentPostBySlugInputSchema)
@@ -44,12 +43,11 @@ const postBySlug = publicProc
     }
 
     // Parallel: the critical path is the max of these reads, not their sum.
-    const [visibleTags, imageMeta, sidebarTags, sidebarPosts, enrichedBody, critical] = await Promise.all([
+    const [visibleTags, bodyHtml, sidebarTags, sidebarPosts, critical] = await Promise.all([
       getTagsByNames(db, preview.post.tags),
-      resolveImageMetaBySources(db, preview.sourcePost.imageSources).then((r) => Object.fromEntries(r)),
+      resolveBodyHtml(preview.sourcePost),
       listAllTags(db).then(selectSidebarTags),
       selectSidebarPosts(db, getSidebarWidgetCount(requireBlogSettingsSection('sidebar'), 'recentPosts')),
-      prerenderMusicPlayerBlocks(preview.sourcePost.body, (playerIds) => getPublicMusicMetasByIds(db, playerIds)),
       loadPublicDetailData(context, { type: 'post', ownerId: idFromString(preview.post.id) }),
     ])
 
@@ -58,11 +56,10 @@ const postBySlug = publicProc
       etag: preview.etag,
       payload: {
         post: preview.post,
-        body: enrichedBody ?? preview.sourcePost.body,
+        bodyHtml,
         visibleTags,
         sidebarPosts,
         tags: sidebarTags,
-        imageMeta,
         draftMarker: preview.draftMarker,
         critical,
       },
@@ -92,13 +89,12 @@ const pageBySlug = publicProc
       return translateThrownResponse(error)
     }
 
-    // Music prerender and the friends scan (only when the section renders) run in parallel.
-    const [friends, enrichedBody] = await Promise.all([
+    // The friends scan (only when the section renders) and the body_html
+    // fallback projection run in parallel.
+    const [friends, bodyHtml] = await Promise.all([
       preview.showFriends ? listAllFriends(db) : [],
-      prerenderMusicPlayerBlocks(preview.body, (playerIds) => getPublicMusicMetasByIds(db, playerIds)),
+      resolveBodyHtml(preview.sourcePage),
     ])
-
-    const footnotesSectionTitle = resolveFootnotesSectionTitle(requireBlogSettingsSection('content'))
 
     // Dependency-forced serial: the detail target needs the resolved page id.
     const critical = await loadPublicDetailData(context, { type: 'page', ownerId: idFromString(preview.page.id) })
@@ -108,12 +104,10 @@ const pageBySlug = publicProc
       etag: preview.publicEtag,
       payload: {
         page: preview.page,
-        body: enrichedBody ?? preview.body,
+        bodyHtml,
         friends,
         showFriends: preview.showFriends,
         draftMarker: preview.draftMarker,
-        imageMeta: preview.imageMeta,
-        footnotesSectionTitle,
         critical,
       },
     }

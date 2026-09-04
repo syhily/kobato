@@ -10,11 +10,17 @@ import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { LikeShare } from '@/ui/public/LikeActions'
 import { DetailBodyChrome } from '@/ui/public/post/DetailBodyChrome'
 import { postMetaTagsClass } from '@/ui/public/post/postChrome'
+import { useCodeCopyButtons } from '@/ui/public/post/use-code-copy-buttons'
+import { useFootnotePreviews } from '@/ui/public/post/use-footnote-previews'
+import { useMusicPlayers } from '@/ui/public/post/use-music-players'
+import { useThumbhashHydration } from '@/ui/public/post/use-thumbhash-hydration'
 import { Sidebar, type SidebarData } from '@/ui/public/Sidebar'
 
 export interface PostDetailBodyProps {
   post: DetailPostShell
   headings: MarkdownHeading[]
+  /** Saved `body_html` projection from the loader. */
+  bodyHtml: string
   visibleTags: ClientTag[]
   mode: 'admin' | 'public'
   likes: number
@@ -26,12 +32,12 @@ export interface PostDetailBodyProps {
   currentUser?: CommentFormUser
   draftMarker?: DraftMarker
   sidebar: SidebarData
-  children: ReactNode
 }
 
 export function PostDetailBody({
   post,
   headings,
+  bodyHtml,
   visibleTags,
   mode,
   likes,
@@ -41,11 +47,14 @@ export function PostDetailBody({
   currentUser,
   draftMarker,
   sidebar,
-  children,
 }: PostDetailBodyProps) {
   const config = useSiteIdentity()
   const postContentRef = useRef<HTMLDivElement>(null)
   useMediumZoom(postContentRef)
+  useThumbhashHydration(postContentRef)
+  useCodeCopyButtons(postContentRef)
+  useMusicPlayers(postContentRef)
+  useFootnotePreviews(postContentRef)
 
   return (
     <div className="py-4 md:py-6 lg:px-2 2xl:px-12 2xl:py-12">
@@ -72,6 +81,7 @@ export function PostDetailBody({
                 editHref={mode === 'admin' ? `/editor/post/${post.id}` : undefined}
                 draftMarker={draftMarker}
                 postContentRef={postContentRef}
+                bodyHtml={bodyHtml}
                 metaClassName="mt-4 mb-3"
                 metaExtra={
                   visibleTags.length > 0 ? (
@@ -90,9 +100,7 @@ export function PostDetailBody({
                   ) : null
                 }
                 afterLikeButton={<LikeShare post={post} />}
-              >
-                {children}
-              </DetailBodyChrome>
+              />
             </div>
           </div>
           <Sidebar data={sidebar} />

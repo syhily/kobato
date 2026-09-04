@@ -2,10 +2,7 @@ import { XIcon } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 
 import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
-import type { PortableTextBody as PortableTextBodyData } from '@/shared/pt/schema'
 
-import { unsafeCast } from '@/shared/utils/unsafe-cast'
-import { PortableTextBody } from '@/ui/pt/render'
 import { commentFlags } from '@/ui/public/comments/comment-item/comment-flags'
 import { CommentActions } from '@/ui/public/comments/comment-item/CommentActions'
 import { CommentAuthorLine, CommentAvatar } from '@/ui/public/comments/comment-item/CommentAuthorLine'
@@ -20,6 +17,7 @@ import {
 } from '@/ui/public/comments/comment-item/helpers'
 import { InlineEditForm } from '@/ui/public/comments/comment-item/InlineEditForm'
 import { InlineOwnEditForm } from '@/ui/public/comments/comment-item/InlineOwnEditForm'
+import { CommentContentHtml } from '@/ui/public/comments/CommentContentHtml'
 import { useCommentsActions, useCommentsIdentity } from '@/ui/public/comments/comments-context'
 
 interface CommentRowProps {
@@ -69,15 +67,11 @@ export function CommentRow({ comment, depth, pending, children }: CommentRowProp
               <div className="mt-1.5 mb-1.5 flex w-full items-center gap-1.5 rounded-md border border-status-warn-border/30 bg-status-warn-bg px-2.5 py-1 text-xs text-status-warn-fg">
                 <span>您的评论正在等待审核中...</span>
               </div>
-              {/* R12 interregnum cast: pre-switch rows are still PT; R13 swaps the renderer. */}
-              <PortableTextBody body={unsafeCast<PortableTextBodyData>(comment.body)} />
+              <CommentContentHtml content={comment.content} />
             </div>
           )}
           {(!isPending || flags.isMine) && (
-            <div className={commentContentClass(depth)}>
-              {/* R12 interregnum cast: pre-switch rows are still PT; R13 swaps the renderer. */}
-              <PortableTextBody body={unsafeCast<PortableTextBodyData>(comment.body)} />
-            </div>
+            <CommentContentHtml content={comment.content} className={commentContentClass(depth)} />
           )}
           {editing === 'admin' && (
             <InlineEditForm

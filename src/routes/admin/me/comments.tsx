@@ -16,6 +16,7 @@ export const meta = titleMeta('我的评论')
 export interface MyCommentItem {
   id: string
   body: CommentEditorState
+  content: string | null
   createdAtIso: string
   deletedAtIso: string | null
   deleteRequestedAtIso: string | null

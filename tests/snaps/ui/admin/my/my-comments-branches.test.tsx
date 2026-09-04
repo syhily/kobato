@@ -2,9 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { MyCommentItem } from '@/routes/admin/me/comments'
 
+import { makeCommentBody } from '#/_helpers/catalog'
 import { mockTanstackQuery } from '#/_helpers/mock-react-query'
 import { renderInRouter, stableHtml } from '#/_helpers/render'
-import { unsafeCast } from '@/shared/utils/unsafe-cast'
 import { MyCommentsView } from '@/ui/admin/my/MyCommentsView'
 
 const queryMocks = mockTanstackQuery()
@@ -49,23 +49,11 @@ vi.stubGlobal(
 
 let itemSeq = 0
 
-// R12 interregnum fixture: PT body via deliberate cast (see my-comments-data).
-function makeBody(text: string): MyCommentItem['body'] {
-  itemSeq += 1
-  return unsafeCast<MyCommentItem['body']>([
-    {
-      _type: 'block',
-      _key: `b${itemSeq}`,
-      style: 'normal',
-      children: [{ _type: 'span', _key: `s${itemSeq}`, text }],
-    },
-  ])
-}
-
 function makeItem(overrides: Partial<MyCommentItem> = {}): MyCommentItem {
   return {
     id: String(++itemSeq),
-    body: makeBody(`Body ${itemSeq}`),
+    body: makeCommentBody(`Body ${itemSeq}`),
+    content: `<p>Body ${itemSeq}</p>`,
     createdAtIso: '2024-03-12T08:30:00.000Z',
     deletedAtIso: null,
     deleteRequestedAtIso: null,

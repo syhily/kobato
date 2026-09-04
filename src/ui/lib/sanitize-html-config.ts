@@ -1,13 +1,13 @@
 // Strategy data shared by the two sanitize engines. Dependency-free so both
 // engines and the facade can import it in either bundle.
 
-export type SafeHtmlStrategy = 'shiki' | 'math' | 'email' | 'audit' | 'preview'
+export type SafeHtmlStrategy = 'shiki' | 'math' | 'email' | 'audit' | 'preview' | 'body'
 
 export interface SanitizeStrategyConfig {
   tags: readonly string[]
   attributes: readonly (string | RegExp)[]
   schemes: readonly string[]
-  /** Per-property CSS allowlist (shiki only); values must match one pattern. */
+  /** Per-property CSS allowlist (shiki + body); values must match one pattern. */
   styles?: Readonly<Record<string, readonly RegExp[]>>
 }
 
@@ -144,6 +144,44 @@ const EMAIL_ATTRIBUTES = [
   'src',
 ] as const
 
+// inkling `exportDOM` additions over BASE: inline marks (u/s/sup/sub/mark),
+// media wrappers (figure/figcaption/audio), the footnotes <section>, and the
+// solution card's inline SVG QED mark. `viewbox` matches sanitize-html's
+// lowercased attribute names AND DOMPurify's case-insensitive check against
+// the HTML parser's camelCase-adjusted SVG attributes.
+const BODY_TAGS = ['u', 's', 'sup', 'sub', 'mark', 'figure', 'figcaption', 'section', 'audio', 'svg', 'rect'] as const
+
+const BODY_ATTRIBUTES = [
+  'id',
+  'style',
+  'src',
+  'srcset',
+  'sizes',
+  'loading',
+  'decoding',
+  'start',
+  'colspan',
+  'rowspan',
+  'controls',
+  'preload',
+  'aria-hidden',
+  'aria-labelledby',
+  'viewbox',
+  'fill',
+  'stroke',
+  'stroke-width',
+  'x',
+  'y',
+] as const
+
+// Code blocks keep shiki's inline colors; paragraphs/headings add text-align;
+// images add aspect-ratio placeholders. Anything else (position, url(), …) dies.
+const BODY_ALLOWED_STYLES: Readonly<Record<string, readonly RegExp[]>> = {
+  ...SHIKI_ALLOWED_STYLES,
+  'text-align': [/^(left|right|center|justify|start|end)$/i],
+  'aspect-ratio': [/^\d+\s*\/\s*\d+$/],
+}
+
 export function strategyToConfig(strategy: SafeHtmlStrategy): SanitizeStrategyConfig {
   switch (strategy) {
     case 'shiki':
@@ -180,6 +218,18 @@ export function strategyToConfig(strategy: SafeHtmlStrategy): SanitizeStrategyCo
         tags: BASE_TAGS,
         attributes: BASE_ATTRIBUTES,
         schemes: BASE_SCHEMES,
+      }
+
+    // SSR/hydration boundary for the saved `body_html` projection (inkling
+    // exportDOM) and comment `content` (its feed variant). Everything inkling
+    // exports survives: data-* hooks, figure/img srcset + thumbhash, KaTeX
+    // MathML, footnote anchors, host-card markup, shiki code spans.
+    case 'body':
+      return {
+        tags: [...BASE_TAGS, ...BODY_TAGS, ...MATH_TAGS],
+        attributes: [...BASE_ATTRIBUTES, ...BODY_ATTRIBUTES, ...MATH_ATTRIBUTES],
+        schemes: BASE_SCHEMES,
+        styles: BODY_ALLOWED_STYLES,
       }
   }
 }

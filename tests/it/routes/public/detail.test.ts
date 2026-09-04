@@ -13,8 +13,8 @@ import { page as pageTable } from '@/server/infra/db/schema/page'
 import { post as postTable } from '@/server/infra/db/schema/post'
 import { weakEtag } from '@/server/infra/http/etag'
 
-// post/page.detail loaders against the real engine; seams: the PT
-// renderer (replaced) and wrapped probes gating per-test assertions.
+// post/page.detail loaders against the real engine; seams: wrapped probes
+// gating per-test assertions.
 
 const mocks = vi.hoisted(() => ({
   resolveSessionContext: vi.fn(),
@@ -23,7 +23,7 @@ const mocks = vi.hoisted(() => ({
   listAllFriends: vi.fn(),
   getTagsByNames: vi.fn(),
   loadPublicDetailData: vi.fn(),
-  prerenderMusicPlayerBlocks: vi.fn(),
+  resolveBodyHtml: vi.fn(),
 }))
 
 // Wrapped (not replaced): the loaders must never consult it.
@@ -76,16 +76,14 @@ vi.mock('@/server/http/loaders/detail', async () => {
   return { ...actual, loadPublicDetailData: mocks.loadPublicDetailData }
 })
 
-vi.mock('@/server/domains/pt/prerender', async () => {
-  const actual = await vi.importActual<typeof import('@/server/domains/pt/prerender')>('@/server/domains/pt/prerender')
-  mocks.prerenderMusicPlayerBlocks.mockImplementation(actual.prerenderMusicPlayerBlocks)
-  return { ...actual, prerenderMusicPlayerBlocks: mocks.prerenderMusicPlayerBlocks }
+// Wrapped: the body_html fallback projection runs in parallel with friends.
+vi.mock('@/server/domains/content/services/body-html', async () => {
+  const actual = await vi.importActual<typeof import('@/server/domains/content/services/body-html')>(
+    '@/server/domains/content/services/body-html',
+  )
+  mocks.resolveBodyHtml.mockImplementation(actual.resolveBodyHtml)
+  return { ...actual, resolveBodyHtml: mocks.resolveBodyHtml }
 })
-
-// Presentational seam — the loader contract under test never renders.
-vi.mock('@/ui/pt/render', () => ({
-  PortableTextBody: () => null,
-}))
 
 const db = getTestDb()
 const session = regularSession()
@@ -217,7 +215,7 @@ describe('routes/post.detail loader', () => {
 
     const data = unwrapLoaderData<{
       post: { title: string; permalink: string }
-      body: unknown[]
+      bodyHtml: string
     }>(
       await postRoute.loader(
         makeLoaderArgs({
@@ -231,7 +229,9 @@ describe('routes/post.detail loader', () => {
 
     expect(data.post.title).toBe('Hello')
     expect(data.post.permalink).toBe('/posts/hello')
-    expect(data.body).toEqual([])
+    // Seeded with a legacy PT body and no projection column — the fallback
+    // renders empty rather than failing the page.
+    expect(data.bodyHtml).toBe('')
   })
 })
 
@@ -459,10 +459,10 @@ describe('routes/page.detail loader — friends gating', () => {
 })
 
 describe('routes/page.detail loader — render waterfall', () => {
-  it('starts the music prerender as soon as the preview resolves, without waiting for friends', async () => {
+  it('starts the body_html resolution as soon as the preview resolves, without waiting for friends', async () => {
     await seedPage({ slug: 'links', showFriends: true })
 
-    // Hold the friends read open — serial composition would reach the prerender only after it settles.
+    // Hold the friends read open — serial composition would reach the body only after it settles.
     const { release } = gateOnce(mocks.listAllFriends)
     const pending = pageRoute.loader(
       makeLoaderArgs({
@@ -474,7 +474,7 @@ describe('routes/page.detail loader — render waterfall', () => {
     )
 
     await vi.waitFor(() => {
-      expect(mocks.prerenderMusicPlayerBlocks).toHaveBeenCalled()
+      expect(mocks.resolveBodyHtml).toHaveBeenCalled()
     })
     release()
     await pending

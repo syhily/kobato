@@ -45,12 +45,12 @@ Scheduled content is not live and answers 404 until its time arrives.
 _Avoid_: future-dated, timed
 
 **PT**:
-The strict PortableText subset that is this repo's wire and storage format
-for rich content, stored in `content.body` and `comment.body` (`jsonb`) and
-defined in `src/shared/pt/schema.ts`. The Tiptap editor round-trips through a
-bridge so the editor JSON and the PT wire format stay losslessly isomorphic;
-the `pt` directories (`src/shared/pt`, `src/ui/pt`, `src/server/infra/pt`,
-`src/server/domains/pt`) hold its schema, renderer, and services.
+The legacy PortableText subset that typed rich content before the inkling
+migration, defined in `src/shared/pt/schema.ts`. Lexical editor states are
+the live storage format (`src/shared/lexical/`); PT survives in pre-switch
+comment rows (mail templates, plain-text snippets) and the schema/semantics
+helpers. The PT SSR renderer and enriched-body overlay were retired in R13 —
+public bodies render the saved `bodyHtml` projection.
 _Avoid_: MDX (retired render target), InklingDocument (editor-vendor
 experiment, not the shipping store)
 

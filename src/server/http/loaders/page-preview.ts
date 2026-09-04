@@ -1,12 +1,9 @@
 import type { Database } from '@/server/infra/db/database'
-import type { PortableTextBody } from '@/shared/pt/schema'
-import type { DetailPageShell, DraftMarker } from '@/shared/types/catalog'
-import type { ResolvedImageMeta } from '@/shared/types/images'
+import type { DetailPageShell, DraftMarker, Page } from '@/shared/types/catalog'
 import type { RoleOrNull } from '@/shared/utils/roles'
 
 import { loadDraftPreviewBySlug } from '@/server/domains/content/lifecycle'
 import { isLive } from '@/server/domains/content/schemas/live-gate'
-import { resolveImageMetaBySources } from '@/server/domains/images/services/enhance'
 import { pageLifecycleAdapter } from '@/server/domains/pages/services/lifecycle-adapter'
 import { findPageBySlug, findPageEtagInputBySlug } from '@/server/domains/pages/services/public-query'
 import { findPublicPostMetaBySlug } from '@/server/domains/posts/services/single'
@@ -16,11 +13,11 @@ import { notFound } from '@/server/infra/http/status'
 
 export interface PagePreviewResult {
   page: DetailPageShell
-  body: PortableTextBody
+  /** The full page row — the controller needs `bodyHtml`/`bodyState` and friends. */
+  sourcePage: Page
   showFriends: boolean
   draftMarker: DraftMarker
   publicEtag: string | null
-  imageMeta: Record<string, ResolvedImageMeta>
 }
 
 // Page-detail pipeline for `content.pages.bySlug`: plain HTTP facts in,
@@ -118,14 +115,11 @@ export async function loadPagePreview({
     headings: sourcePage.headings,
   }
 
-  const imageMeta = Object.fromEntries(await resolveImageMetaBySources(db, sourcePage.imageSources))
-
   return {
     page: pageProjection,
-    body: sourcePage.body,
+    sourcePage,
     showFriends: sourcePage.showFriends,
     draftMarker,
     publicEtag,
-    imageMeta,
   }
 }

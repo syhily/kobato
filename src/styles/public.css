@@ -3,7 +3,7 @@
  *
  * Owns its own tailwindcss import, typography plugin, and a `@source`
  * scope covering exactly the sources the public site renders: public
- * routes, public/pt/components/icons/lib UI, root.tsx, and the inkling
+ * routes, public/components/icons/lib UI, root.tsx, and the inkling
  * host-card class constants the projected markup renders with. Admin-only
  * rules (music view transitions, admin medium-zoom stacking, scrollbar-thin)
  * live in admin.css and never reach this bundle.
@@ -22,7 +22,6 @@
 @source '../routes/public';
 @source '../root.tsx';
 @source '../ui/public';
-@source '../ui/pt';
 @source '../ui/components';
 @source '../ui/icons';
 @source '../ui/lib';

@@ -8,11 +8,17 @@ import { useMediumZoom } from '@/client/hooks/use-medium-zoom'
 import { useSiteIdentity } from '@/shared/lib/blog-config-context'
 import { Footer } from '@/ui/public/chrome/Footer'
 import { DetailBodyChrome } from '@/ui/public/post/DetailBodyChrome'
+import { useCodeCopyButtons } from '@/ui/public/post/use-code-copy-buttons'
+import { useFootnotePreviews } from '@/ui/public/post/use-footnote-previews'
+import { useMusicPlayers } from '@/ui/public/post/use-music-players'
+import { useThumbhashHydration } from '@/ui/public/post/use-thumbhash-hydration'
 import { Image } from '@/ui/public/widgets/Image'
 
 export interface PageDetailBodyProps {
   page: DetailPageShell
   headings: MarkdownHeading[]
+  /** Saved `body_html` projection from the loader. */
+  bodyHtml: string
   draftMarker?: DraftMarker
   likes: number
   commentKey: string
@@ -21,12 +27,14 @@ export interface PageDetailBodyProps {
   webmentions?: ReactNode
   currentUser?: CommentFormUser
   mode?: 'admin' | 'public'
-  children: ReactNode
+  /** Trailing slot after the body (the friends grid — a page meta toggle, not a body block). */
+  children?: ReactNode
 }
 
 export function PageDetailBody({
   page,
   headings,
+  bodyHtml,
   draftMarker = null,
   likes,
   commentKey,
@@ -39,6 +47,10 @@ export function PageDetailBody({
   const config = useSiteIdentity()
   const postContentRef = useRef<HTMLDivElement>(null)
   useMediumZoom(postContentRef)
+  useThumbhashHydration(postContentRef)
+  useCodeCopyButtons(postContentRef)
+  useMusicPlayers(postContentRef)
+  useFootnotePreviews(postContentRef)
 
   return (
     <div className="flex flex-wrap">
@@ -63,6 +75,7 @@ export function PageDetailBody({
             editHref={mode === 'admin' ? `/editor/page/${page.id}` : undefined}
             draftMarker={draftMarker}
             postContentRef={postContentRef}
+            bodyHtml={bodyHtml}
             metaClassName="mt-3 mb-4"
             contentWrapperClassName="mt-4 xl:mt-6"
           >
