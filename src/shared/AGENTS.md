@@ -41,7 +41,10 @@ server or client boundary catch and log it.
   real `lexicalStateToHtml` export), `collect` (headings / image storage
   paths / music player ids derived columns), `artifacts` (server-filled
   node-dataset slot registry), and `equivalence` (artifact-blind semantic
-  fingerprint for the save no-op short-circuit).
+  fingerprint for the save no-op short-circuit). R9b added
+  `projection-state` — deep-copy shaping for the headless projection render
+  (feed artifact stripping + host-card substitution until R10's card
+  classes exist).
 - `pt/` — PortableText schema, bridge, semantics, comment markdown,
   footnote-merge, the footnote anchor DOM contract (`footnote-anchors`),
   editor↔storage footnote sync (`footnote-sync`), the heading

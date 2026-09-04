@@ -1,0 +1,128 @@
+import { describe, expect, it } from 'vitest'
+
+import { lexicalBodyWith, lexicalHeading, lexicalImage, lexicalParagraph } from '#/_helpers/lexical'
+import { computeBodyProjections } from '@/server/infra/pt/lexical-projection'
+import { lexicalEditorStateSchema, type LexicalEditorState } from '@/shared/lexical/schema'
+
+// The projections consume the canonicalized state (artifacts already filled
+// by the prerender pass); fixtures here carry hand-filled sentinel artifacts
+// so the render forms are pinned without a KaTeX/Shiki bootstrap. jsdom runs
+// for real — the assertions pin inkling's actual exportDOM output.
+
+function parse(state: unknown): LexicalEditorState {
+  return lexicalEditorStateSchema.parse(state)
+}
+
+function textNode(text: string) {
+  return { type: 'extended-text', version: 1, detail: 0, format: 0, mode: 'normal', style: '', text }
+}
+
+const RICH_STATE = parse(
+  lexicalBodyWith([
+    lexicalHeading('h2', '你好 世界'),
+    lexicalParagraph('Hello <world> & 你好'),
+    { type: 'math', version: 1, tex: 'E=mc^2', mathml: '<math><mi>E</mi></math>', svg: '' },
+    {
+      type: 'paragraph',
+      version: 1,
+      direction: 'ltr',
+      format: '',
+      indent: 0,
+      children: [
+        textNode('inline '),
+        { type: 'math-inline', version: 1, tex: 'x^2', mathml: '<math><mi>x</mi></math>', svg: '' },
+      ],
+    },
+    {
+      type: 'codeblock',
+      version: 1,
+      code: 'const a = 1 < 2',
+      language: 'typescript',
+      caption: '',
+      highlightedHtml: '<span class="line">const a = 1</span>',
+    },
+    lexicalImage(),
+    { type: 'music-player', version: 1, playerId: 'p1', name: 'Song', artist: 'Artist' },
+    { type: 'two-column', version: 1 },
+    { type: 'solution', version: 1 },
+    lexicalParagraph('after cards'),
+  ]),
+)
+
+const FOOTNOTE_STATE = parse(
+  lexicalBodyWith([
+    {
+      type: 'paragraph',
+      version: 1,
+      direction: 'ltr',
+      format: '',
+      indent: 0,
+      children: [textNode('text'), { ...textNode('1'), type: 'footnote-ref', targetKey: 'fn-1' }],
+    },
+    { type: 'footnotedefinition', version: 1, content: '<p>note body</p>', targetKey: 'fn-1', index: 1 },
+  ]),
+)
+
+describe('infra/pt/lexical-projection — full-fidelity HTML', () => {
+  it('renders headings with ids, math/code artifacts, images, and host-card fallbacks', async () => {
+    const { bodyHtml } = await computeBodyProjections(RICH_STATE)
+
+    // Heading ids come from inkling's export (slug parity contract-tested in
+    // tests/unit/shared/contracts/lexical-heading-slug.test.ts).
+    expect(bodyHtml).toContain('<h2 id="%E4%BD%A0%E5%A5%BD-%E4%B8%96%E7%95%8C">你好 世界</h2>')
+    // Text is escaped.
+    expect(bodyHtml).toContain('<p>Hello &lt;world&gt; &amp; 你好</p>')
+    // Server-prerendered artifacts pass through (sanitized).
+    expect(bodyHtml).toContain('<div class="inkling-card inkling-math-card"><math><mi>E</mi></math></div>')
+    expect(bodyHtml).toContain('<span class="inkling-math-inline"><math><mi>x</mi></math></span>')
+    expect(bodyHtml).toContain('<span class="line">const a = 1</span>')
+    // Stock ImageNode export until KobatoImageNode lands (R10/R13).
+    expect(bodyHtml).toContain('<img src="/storage/posts/cover.png"')
+    // Host cards degrade instead of truncating: the music fallback paragraph
+    // renders AND the content after the unregistered cards survives.
+    expect(bodyHtml).toContain('<p>🎵 Song — Artist</p>')
+    expect(bodyHtml).not.toContain('two-column')
+    expect(bodyHtml).toContain('<p>after cards</p>')
+  })
+
+  it('renders the footnotes section with the settings-owned title and PT anchor contract', async () => {
+    const { bodyHtml } = await computeBodyProjections(FOOTNOTE_STATE)
+    expect(bodyHtml).toContain('<h3 id="footnotes-section-heading">尾声礼记</h3>')
+    expect(bodyHtml).toContain('href="#user-content-fn-1"')
+    expect(bodyHtml).toContain('<li id="user-content-fn-1">')
+    expect(bodyHtml).toContain('data-footnote-backref=""')
+  })
+})
+
+describe('infra/pt/lexical-projection — feed variant (rssMode parity)', () => {
+  it('degrades math to escaped TeX and code to a plain pre/code', async () => {
+    const { bodyHtmlFeed } = await computeBodyProjections(RICH_STATE)
+
+    // Block math: <pre><code>escaped tex</code></pre> (pt-html.ts:266-268).
+    expect(bodyHtmlFeed).toContain('<pre><code>E=mc^2</code></pre>')
+    expect(bodyHtmlFeed).not.toContain('inkling-math-card')
+    // Inline math: escaped TeX code (pt-html.ts:151-155).
+    expect(bodyHtmlFeed).toContain('<code class="inkling-math-inline">x^2</code>')
+    // Code: plain pre/code without the Shiki embed or copy-button hooks.
+    expect(bodyHtmlFeed).toContain('<pre><code class="language-typescript">const a = 1 &lt; 2</code></pre>')
+    expect(bodyHtmlFeed).not.toContain('data-code')
+    expect(bodyHtmlFeed).not.toContain('<span class="line">')
+    // Non-degraded content carries over unchanged.
+    expect(bodyHtmlFeed).toContain('<p>🎵 Song — Artist</p>')
+    expect(bodyHtmlFeed).toContain('<p>after cards</p>')
+  })
+
+  it('keeps the footnotes section intact in the feed variant', async () => {
+    const { bodyHtmlFeed } = await computeBodyProjections(FOOTNOTE_STATE)
+    expect(bodyHtmlFeed).toContain('<h3 id="footnotes-section-heading">尾声礼记</h3>')
+  })
+})
+
+describe('infra/pt/lexical-projection — plain text', () => {
+  it('extracts the search corpus without a DOM', async () => {
+    const { bodyText } = await computeBodyProjections(RICH_STATE)
+    expect(bodyText).toBe(
+      '你好 世界\n\nHello <world> & 你好\n\nE=mc^2\n\ninline \n\nconst a = 1 < 2\n\n🎵 Song — Artist\n\nafter cards',
+    )
+  })
+})

@@ -4,6 +4,7 @@
  */
 
 import type { ContentRow } from '@/server/infra/db/types'
+import type { BodyProjections } from '@/server/infra/pt/lexical-projection'
 
 export type ContentType = 'page' | 'post'
 
@@ -12,6 +13,12 @@ export interface SaveDraftInput {
   body: unknown
   imageSources: string[]
   headings: unknown
+  /**
+   * Save-time body projections (plan round R9b). `null`/absent = leave the
+   * columns untouched on a rewrite (the no-op short-circuit and the
+   * best-effort failure path both skip the computation).
+   */
+  projections?: BodyProjections | null
   authorId: number | null
   expectedClientRevisionToken?: string | null
   force?: boolean

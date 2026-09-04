@@ -15,10 +15,13 @@ import { DomainError } from '@/server/infra/http/errors'
 // force one rejection no real state can produce.
 vi.mock('@/server/domains/content/services/image-sync', { spy: true })
 vi.mock('@/server/domains/content/revisions', { spy: true })
+vi.mock('@/server/infra/pt/lexical-projection', { spy: true })
 
 const { loadDraftPreviewBySlug, previewBody, saveBody } = await import('@/server/domains/content/lifecycle')
 const { syncLibraryImageBlocks } = await import('@/server/domains/content/services/image-sync')
 const { findLatestRevision } = await import('@/server/domains/content/revisions')
+const { computeBodyProjections } = await import('@/server/infra/pt/lexical-projection')
+const { canonicalizeLexicalEditorState } = await import('@/server/domains/pt/services/lexical-canonicalize')
 
 const db = getTestDb()
 
@@ -320,6 +323,153 @@ describe('content/lifecycle — saveBody publish side effects', () => {
     expect(rows[0]!.status).toBe('draft')
     const metaRows = await db.select().from(postMetaTable).where(eq(postMetaTable.id, meta.id))
     expect(metaRows[0]!.publishedRevisionId).toBeNull()
+  })
+})
+
+describe('content/lifecycle — body projections (R9b)', () => {
+  it('fills all three projection columns on a draft save', async () => {
+    const meta = await seedPost()
+    const { adapter } = makeAdapter({ id: meta.id, publishedRevisionId: null })
+
+    const result = await saveBody(
+      db,
+      adapter,
+      { entityId: meta.id, body: VALID_BODY, authorId: null, resolveMusicEmbeds: NO_MUSIC },
+      'draft',
+    )
+
+    expect(result.status).toBe('saved')
+    expect(computeBodyProjections).toHaveBeenCalledTimes(1)
+    const rows = await revisionsOf(meta.id)
+    expect(rows[0]!.bodyHtml).toBe('<p>Hello world</p>')
+    expect(rows[0]!.bodyText).toBe('Hello world')
+    expect(rows[0]!.bodyHtmlFeed).toBe('<p>Hello world</p>')
+  })
+
+  it('fills the projection columns on publish', async () => {
+    const meta = await seedPost()
+    const { adapter } = makeAdapter({ id: meta.id, publishedRevisionId: null })
+
+    const result = await saveBody(
+      db,
+      adapter,
+      { entityId: meta.id, body: VALID_BODY, authorId: null, resolveMusicEmbeds: NO_MUSIC },
+      'publish',
+    )
+
+    expect(result.status).toBe('saved')
+    const rows = await revisionsOf(meta.id)
+    expect(rows[0]!.status).toBe('published')
+    expect(rows[0]!.bodyHtml).toBe('<p>Hello world</p>')
+    expect(rows[0]!.bodyHtmlFeed).toBe('<p>Hello world</p>')
+  })
+
+  it('writes the feed-degraded variant for math and code blocks', async () => {
+    const meta = await seedPost()
+    const { adapter } = makeAdapter({ id: meta.id, publishedRevisionId: null })
+    // Real KaTeX/Shiki artifacts: canonicalize fills the slots before the
+    // projection runs, so the two HTML columns diverge exactly on them.
+    const body = lexicalBodyWith([
+      { type: 'math', version: 1, tex: 'E=mc^2', mathml: '', svg: '' },
+      { type: 'codeblock', version: 1, code: 'const a = 1', language: 'typescript', caption: '', highlightedHtml: '' },
+    ])
+
+    const result = await saveBody(
+      db,
+      adapter,
+      { entityId: meta.id, body, authorId: null, resolveMusicEmbeds: NO_MUSIC },
+      'draft',
+    )
+
+    expect(result.status).toBe('saved')
+    const rows = await revisionsOf(meta.id)
+    // Full fidelity: KaTeX MathML + Shiki embed.
+    expect(rows[0]!.bodyHtml).toContain('<math')
+    expect(rows[0]!.bodyHtml).toContain('shiki')
+    // Feed: escaped TeX + plain pre/code (rssMode parity).
+    expect(rows[0]!.bodyHtmlFeed).toContain('<pre><code>E=mc^2</code></pre>')
+    expect(rows[0]!.bodyHtmlFeed).toContain('<pre><code class="language-typescript">const a = 1</code></pre>')
+    expect(rows[0]!.bodyHtmlFeed).not.toContain('<math')
+    expect(rows[0]!.bodyHtmlFeed).not.toContain('shiki')
+    expect(rows[0]!.bodyText).toContain('E=mc^2')
+  })
+
+  it('recomputes the projections when a draft is overwritten', async () => {
+    const meta = await seedPost()
+    const { adapter } = makeAdapter({ id: meta.id, publishedRevisionId: null })
+    await saveBody(
+      db,
+      adapter,
+      { entityId: meta.id, body: VALID_BODY, authorId: null, resolveMusicEmbeds: NO_MUSIC },
+      'draft',
+    )
+
+    await saveBody(
+      db,
+      adapter,
+      {
+        entityId: meta.id,
+        body: lexicalBodyWith([lexicalParagraph('Rewritten')]),
+        authorId: null,
+        resolveMusicEmbeds: NO_MUSIC,
+      },
+      'draft',
+    )
+
+    const rows = await revisionsOf(meta.id)
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!.bodyHtml).toBe('<p>Rewritten</p>')
+    expect(rows[0]!.bodyText).toBe('Rewritten')
+  })
+
+  it('skips the projection computation entirely on the no-op save path', async () => {
+    const meta = await seedPost()
+    // Seed the published revision with the CANONICAL form of the body the
+    // save will carry, so the repo's equivalence short-circuit fires.
+    const canonical = await canonicalizeLexicalEditorState(VALID_BODY)
+    await seedRevision(meta.id, {
+      status: 'published',
+      body: canonical as ContentRow['body'],
+      bodyHtml: '<p>Hello world</p>',
+      bodyText: 'Hello world',
+      bodyHtmlFeed: '<p>Hello world</p>',
+    })
+    const { adapter } = makeAdapter({ id: meta.id, publishedRevisionId: null })
+    vi.mocked(computeBodyProjections).mockClear()
+
+    const result = await saveBody(
+      db,
+      adapter,
+      { entityId: meta.id, body: VALID_BODY, authorId: null, resolveMusicEmbeds: NO_MUSIC },
+      'draft',
+    )
+
+    expect(result.status).toBe('saved')
+    expect(computeBodyProjections).not.toHaveBeenCalled()
+    // No write happened: one revision, columns untouched.
+    expect(await revisionsOf(meta.id)).toHaveLength(1)
+  })
+
+  it('degrades to NULL projection columns with a warning when the render fails', async () => {
+    const meta = await seedPost()
+    const { adapter } = makeAdapter({ id: meta.id, publishedRevisionId: null })
+    vi.mocked(computeBodyProjections).mockRejectedValueOnce(new Error('render boom'))
+
+    const result = await saveBody(
+      db,
+      adapter,
+      { entityId: meta.id, body: VALID_BODY, authorId: null, resolveMusicEmbeds: NO_MUSIC },
+      'draft',
+    )
+
+    // Best-effort: the save succeeds, the warning surfaces, columns stay NULL.
+    expect(result.status).toBe('saved')
+    expect(result.warning).toContain('正文投影生成失败')
+    const rows = await revisionsOf(meta.id)
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!.bodyHtml).toBeNull()
+    expect(rows[0]!.bodyText).toBeNull()
+    expect(rows[0]!.bodyHtmlFeed).toBeNull()
   })
 })
 

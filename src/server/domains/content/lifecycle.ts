@@ -9,7 +9,11 @@ import type { PortableTextBody, PortableTextHeading } from '@/shared/pt/schema'
 import type { RoleOrNull } from '@/shared/utils/roles'
 
 import { toAdminRevisionDto } from '@/server/domains/content/projection'
-import { publishLatestRevision, saveDraftRevision } from '@/server/domains/content/repos/mutate'
+import {
+  isEquivalentToPublishedLatest,
+  publishLatestRevision,
+  saveDraftRevision,
+} from '@/server/domains/content/repos/mutate'
 import { findContentById, findLatestDraft, findLatestRevision } from '@/server/domains/content/revisions'
 import { rescheduleScheduledPublish } from '@/server/domains/content/scheduled-publish'
 import { syncLibraryImageBlocks } from '@/server/domains/content/services/image-sync'
@@ -17,6 +21,7 @@ import { snapshotMusicPlayerMeta } from '@/server/domains/pt/lexical-music-snaps
 import { canonicalizePortableTextBody } from '@/server/domains/pt/services/canonicalize'
 import { canonicalizeLexicalEditorState } from '@/server/domains/pt/services/lexical-canonicalize'
 import { getLogger, type Logger } from '@/server/infra/logger'
+import { computeBodyProjections, type BodyProjections } from '@/server/infra/pt/lexical-projection'
 import { deriveSlug } from '@/server/infra/slug/derive'
 import { collectLexicalHeadings, collectLexicalImageStoragePaths } from '@/shared/lexical/collect'
 import { collectHeadings } from '@/shared/pt/utils'
@@ -152,10 +157,38 @@ export async function saveBody<TMeta, TPreview>(
     force: input.force,
   }
 
+  // Save-time projections (plan round R9b): the three body_html*/body_text
+  // columns. Skipped when the repo's no-op short-circuit will fire anyway —
+  // the pre-check mirrors `isEquivalentToPublishedLatest` so an equivalent
+  // save never re-pays the jsdom render (the repo re-checks under lock; a
+  // raced flip just leaves the columns stale, which the nullable schema
+  // tolerates). Best-effort: a render failure degrades to untouched columns
+  // plus a warning — the save itself must succeed.
+  const latestForProjectionCheck =
+    overwriteContext ??
+    (mode === 'draft' ? ((await findLatestRevision(db, adapter.entityType, adapter.getId(meta))) ?? undefined) : null)
+  let projections: BodyProjections | null = null
+  if (!(mode === 'draft' && isEquivalentToPublishedLatest(latestForProjectionCheck ?? undefined, repoInput))) {
+    try {
+      projections = await computeBodyProjections(body)
+    } catch (err: unknown) {
+      log.warn('body projection computation failed; projection columns left untouched', {
+        entityType: adapter.entityType,
+        entityId: input.entityId,
+        error: err,
+      })
+      warnings.push('正文投影生成失败，请重新保存以重试。')
+    }
+  }
+
   const result =
     mode === 'draft'
-      ? await saveDraftRevision(db, adapter.entityType, repoInput)
-      : await publishLatestRevision(db, adapter.entityType, { ...repoInput, publishedAt: input.publishedAt })
+      ? await saveDraftRevision(db, adapter.entityType, { ...repoInput, projections })
+      : await publishLatestRevision(db, adapter.entityType, {
+          ...repoInput,
+          projections,
+          publishedAt: input.publishedAt,
+        })
 
   const wroteSuccessfully = result.status === 'saved' || result.status === 'published'
   if (input.force === true && wroteSuccessfully && overwriteContext !== null) {
