@@ -27,6 +27,18 @@ export const content = sqliteTable(
     headings: text('headings', { mode: 'json' })
       .notNull()
       .$defaultFn(() => []),
+    // Save-time projections of `body` for the Lexical migration (plan round
+    // R8): server-side read-path derived data filled by the save pipeline
+    // and the PT→Lexical backfill. Never part of the editor contract or the
+    // version-conflict/equality check — equality compares `body` only.
+    // Nullable until R9 fills them; PT-era rows stay NULL.
+    // Full-fidelity HTML via inkling headless `lexicalStateToHtml` — SSR/public rendering.
+    bodyHtml: text('body_html'),
+    // Plain text via `lexicalStateToPlainText` — search and revision diffs.
+    bodyText: text('body_text'),
+    // Degraded feed variant of `bodyHtml` (math→TeX, code→plain pre,
+    // twoColumn flattened) matching the existing rssMode behavior.
+    bodyHtmlFeed: text('body_html_feed'),
     authorId: integer('author_id'),
     clientRevisionToken: text('client_revision_token')
       .notNull()
