@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest'
 
 import { __TOKENS_FOR_TESTS } from '@/ui/lib/cn'
 
-// Contract: cn.ts's hand-written tailwind-merge tables must mirror the
-// @theme inline tokens in tailwind.css exactly — tailwind-merge cannot
+// Contract: cn.ts's hand-written `cn` extension tables must mirror the
+// @theme inline tokens in tailwind.css exactly — the merge engine cannot
 // parse those blocks, so drift silently re-collapses token namespaces.
 
 interface ParsedThemeBlocks {
@@ -64,7 +64,7 @@ const BELOW_THE_LINE_NAMESPACES = new Set<string>(['breakpoint', 'container', 'r
 
 const CSS_PATH = 'src/styles/tailwind.css'
 
-describe('contract: @theme tokens are mirrored into tailwind-merge', () => {
+describe('contract: @theme tokens are mirrored into the cn engine', () => {
   const css = readFileSync(CSS_PATH, 'utf8')
   const { byNamespace } = parseThemeBlocks(css)
 
@@ -83,7 +83,7 @@ describe('contract: @theme tokens are mirrored into tailwind-merge', () => {
         `tailwind.css declares one or more @theme namespaces that nobody`,
         `decided about: ${undecided.join(', ')}.`,
         `Pick one:`,
-        `  - register the tokens in src/ui/lib/cn.ts via extendTailwindMerge`,
+        `  - register the tokens in src/ui/lib/cn.ts via createCn`,
         `    (preferred when cn() can compose a token in this namespace),`,
         `  - add the namespace to __TOKENS_FOR_TESTS.omitted in cn.ts and`,
         `    document why registration is wrong,`,
@@ -112,7 +112,7 @@ describe('contract: @theme tokens are mirrored into tailwind-merge', () => {
       [
         `src/ui/lib/cn.ts disagrees with src/styles/tailwind.css.`,
         `For each namespace below, the entries under "missingFromCn" exist in`,
-        `the CSS but were not registered with extendTailwindMerge -- a future`,
+        `the CSS but were not registered with createCn -- a future`,
         `cn() call composing two tokens of the same namespace prefix may`,
         `silently dedupe to a single class. The entries under "staleInCn" no`,
         `longer exist in the CSS and should be removed from cn.ts.`,

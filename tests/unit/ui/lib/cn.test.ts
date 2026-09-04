@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { cn } from '@/ui/lib/cn'
 
-// Pins `cn()` merge semantics against tailwind-merge regressions.
+// Pins `cn()` merge semantics against the `cn` package's engine.
 describe('cn() — Tailwind utility merging', () => {
   it('drops falsy entries without leaving stray spaces', () => {
     const liked: boolean = false

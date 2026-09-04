@@ -1,4 +1,4 @@
-import type { ClassValue } from '@/ui/lib/clsx'
+import { type ClassValue, clsx } from 'cn'
 
 /**
  * Copyright 2022 Joe Bell. All rights reserved.
@@ -15,7 +15,6 @@ import type { ClassValue } from '@/ui/lib/clsx'
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-import { clsx } from '@/ui/lib/clsx'
 
 export type ClassPropKey = 'class' | 'className'
 

@@ -51,9 +51,10 @@ parent.
 - `ui/lib/` — UI utilities (`cn`, `code-languages`, `ThemeProvider`,
   `use-media-query`). shadcn's `aliases.lib` is pinned here. No `src/lib/` parallel.
 
-## Tailwind-merge tokens
+## Merge-engine tokens
 
-`cn.ts` extends `tailwind-merge` with every project token namespace so custom `--text-*`,
+`cn.ts` builds the project-wide `cn()` with the [`cn`](https://github.com/shadcn-ui/cn) package's
+`createCn` (`cn/config`), extending every project token namespace so custom `--text-*`,
 `--color-*`, `--shadow-*` tokens land in the correct merge group — otherwise
 `cn('text-toc-toggle text-ink-3')` collapses to `'text-ink-3'` (both look like opaque `text-*`).
 

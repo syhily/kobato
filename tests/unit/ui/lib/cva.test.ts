@@ -1,7 +1,8 @@
-import { describe, expect, test } from 'vitest'
+import type { ClassValue } from 'cn'
 /* eslint-disable no-constant-binary-expression */
 
-import type { ClassValue } from '@/ui/lib/clsx'
+import { describe, expect, test } from 'vitest'
+
 import type { VariantProps } from '@/ui/lib/cva'
 
 import { cva, cx } from '@/ui/lib/cva'

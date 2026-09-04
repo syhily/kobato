@@ -1,8 +1,6 @@
-import { extendTailwindMerge } from 'tailwind-merge'
+import { createCn } from 'cn/config'
 
-import { type ClassValue, clsx } from '@/ui/lib/clsx'
-
-// Project-wide `cn` helper — custom `tailwind-merge` that registers every `@theme`
+// Project-wide `cn` helper — the `cn` package's engine extended with every `@theme`
 // token so custom utilities are classified correctly. Keep in sync with `src/styles/tailwind.css`.
 
 const TEXT_TOKENS = [
@@ -218,7 +216,7 @@ const SPACING_TOKENS = [
   'dialog-popup-md',
 ] as const
 
-const customTwMerge = extendTailwindMerge({
+export const cn = createCn({
   extend: {
     theme: {
       text: [...TEXT_TOKENS],
@@ -234,10 +232,6 @@ const customTwMerge = extendTailwindMerge({
     },
   },
 })
-
-export function cn(...inputs: ClassValue[]): string {
-  return customTwMerge(clsx(inputs))
-}
 
 export const __TOKENS_FOR_TESTS = {
   registered: {
